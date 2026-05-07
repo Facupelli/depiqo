@@ -109,7 +109,10 @@ const sidebarItems: SidebarItem[] = [
 		name: "Productos",
 		icon: Package,
 		href: "/dashboard/catalog/products",
-		children: [{ name: "Assets", href: "/dashboard/inventory/assets" }],
+		children: [
+			{ name: "Accesorios", href: "/dashboard/catalog/accessories" },
+			{ name: "Assets", href: "/dashboard/inventory/assets" },
+		],
 	},
 	{ name: "Combos", icon: Boxes, href: "/dashboard/catalog/bundles" },
 	{ name: "Promociones", icon: BadgePercent, href: "/dashboard/promotions" },

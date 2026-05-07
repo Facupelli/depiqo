@@ -34,7 +34,24 @@ interface ProductsTableProps {
 	onPaginationChange: (updater: PaginationState) => void;
 	onCategoryChange: (categoryId: string | undefined) => void;
 	isLoading?: boolean;
+	copy?: ProductsTableCopy;
 }
+
+interface ProductsTableCopy {
+	allCategoriesLabel: string;
+	categoryPlaceholder: string;
+	emptyMessage: string;
+	noItemsMessage: string;
+	totalItemsLabel: string;
+}
+
+const defaultCopy: ProductsTableCopy = {
+	allCategoriesLabel: "Todas",
+	categoryPlaceholder: "Todas las categorías",
+	emptyMessage: "No se encontraron productos.",
+	noItemsMessage: "No hay productos",
+	totalItemsLabel: "productos",
+};
 
 const ALL_CATEGORIES_VALUE = "All";
 
@@ -46,6 +63,7 @@ export function ProductsTable({
 	onPaginationChange,
 	onCategoryChange,
 	isLoading,
+	copy = defaultCopy,
 }: ProductsTableProps) {
 	const navigate = useNavigate();
 	const { data: categories } = useCategories();
@@ -83,6 +101,7 @@ export function ProductsTable({
 	const { pageIndex, pageSize } = pagination;
 	const firstItem = meta.total === 0 ? 0 : pageIndex * pageSize + 1;
 	const lastItem = Math.min((pageIndex + 1) * pageSize, meta.total);
+	const tableCopy = { ...defaultCopy, ...copy };
 
 	return (
 		<div className="space-y-4">
@@ -97,10 +116,12 @@ export function ProductsTable({
 					}))}
 				>
 					<SelectTrigger className="w-52">
-						<SelectValue placeholder="All Categories" />
+						<SelectValue placeholder={tableCopy.categoryPlaceholder} />
 					</SelectTrigger>
 					<SelectContent>
-						<SelectItem value={ALL_CATEGORIES_VALUE}>Todas</SelectItem>
+						<SelectItem value={ALL_CATEGORIES_VALUE}>
+							{tableCopy.allCategoriesLabel}
+						</SelectItem>
 						{categoryList.map((category) => (
 							<SelectItem key={category.id} value={category.id}>
 								{category.name}
@@ -165,7 +186,7 @@ export function ProductsTable({
 									colSpan={productColumns.length}
 									className="h-24 text-center text-muted-foreground"
 								>
-									No se encontraron productos.
+									{tableCopy.emptyMessage}
 								</TableCell>
 							</TableRow>
 						)}
@@ -177,8 +198,8 @@ export function ProductsTable({
 			<div className="flex items-center justify-between text-sm text-muted-foreground">
 				<span>
 					{meta.total > 0
-						? `${firstItem}–${lastItem} de ${meta.total} productos`
-						: "No products"}
+						? `${firstItem}–${lastItem} de ${meta.total} ${tableCopy.totalItemsLabel}`
+						: tableCopy.noItemsMessage}
 				</span>
 
 				<div className="flex items-center gap-2">
