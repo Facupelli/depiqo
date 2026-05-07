@@ -4,6 +4,7 @@ import { Promotion } from '../../domain/entities/promotion.entity';
 import { PricingTier } from '../../domain/entities/pricing-tier.entity';
 import { PromotionMapper } from '../persistence/mappers/promotion.mapper';
 import { PricingTierMapper } from '../persistence/mappers/pricing-tier.mapper';
+import { RentalItemKind } from '@repo/types';
 
 export type ProductTypeMeta = {
   billingUnitDurationMinutes: number;
@@ -25,7 +26,7 @@ export class PricingComputationReadService {
 
   async loadProductTypeMetaBatch(productTypeIds: string[]): Promise<Map<string, ProductTypeMeta>> {
     const rows = await this.prisma.client.productType.findMany({
-      where: { id: { in: productTypeIds } },
+      where: { id: { in: productTypeIds }, kind: RentalItemKind.PRIMARY },
       select: {
         id: true,
         categoryId: true,
@@ -67,6 +68,7 @@ export class PricingComputationReadService {
     const rows = await this.prisma.client.pricingTier.findMany({
       where: {
         productTypeId: { in: productTypeIds },
+        productType: { kind: RentalItemKind.PRIMARY },
         OR: [{ locationId }, { locationId: null }],
       },
     });
@@ -93,11 +95,12 @@ export class PricingComputationReadService {
       this.prisma.client.pricingTier.findMany({
         where: {
           productTypeId: { in: productTypeIds },
+          productType: { kind: RentalItemKind.PRIMARY },
           OR: [{ locationId }, { locationId: null }],
         },
       }),
       this.prisma.client.productType.findMany({
-        where: { id: { in: productTypeIds } },
+        where: { id: { in: productTypeIds }, kind: RentalItemKind.PRIMARY },
         select: {
           id: true,
           billingUnit: { select: { durationMinutes: true } },

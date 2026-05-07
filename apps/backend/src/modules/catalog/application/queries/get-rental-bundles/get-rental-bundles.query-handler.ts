@@ -7,6 +7,7 @@ import {
   GetAvailableAssetCountsQuery,
 } from 'src/modules/inventory/public/queries/get-available-asset-counts.query';
 import { BundleListResponseDto, ProductTypeIncludedItemDto } from '@repo/schemas';
+import { RentalItemKind } from '@repo/types';
 import { DateRange } from 'src/core/domain/value-objects/date-range.value-object';
 import {
   GetLocationContextQuery,
@@ -29,6 +30,11 @@ export class GetCombosQueryHandler implements IQueryHandler<GetRentalBundlesQuer
         tenantId,
         retiredAt: null,
         publishedAt: { not: null },
+        components: {
+          every: {
+            productType: { kind: RentalItemKind.PRIMARY },
+          },
+        },
       },
       select: {
         id: true,

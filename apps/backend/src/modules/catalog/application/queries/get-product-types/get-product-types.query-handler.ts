@@ -65,6 +65,10 @@ export class GetProductTypesQueryHandler implements IQueryHandler<
       where.categoryId = query.categoryId;
     }
 
+    if (query.kind !== undefined) {
+      where.kind = query.kind;
+    }
+
     if (query.isActive === true) {
       where.publishedAt = { not: null };
       where.retiredAt = null;

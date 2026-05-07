@@ -106,7 +106,7 @@ export class CatalogApplicationService implements CatalogPublicApi {
         components: {
           select: {
             quantity: true,
-            productType: { select: { id: true, name: true } },
+            productType: { select: { id: true, name: true, kind: true } },
           },
         },
       },
@@ -122,6 +122,10 @@ export class CatalogApplicationService implements CatalogPublicApi {
 
     if (row.pricingTiers.length === 0) {
       throw new BundleNotBookableAtLocationError(id, locationId);
+    }
+
+    if (row.components.some((component) => component.productType.kind !== RentalItemKind.PRIMARY)) {
+      throw new BundleInactiveForBookingError(id);
     }
 
     return new BundleBookingEligibilityDto(

@@ -21,7 +21,7 @@ export class GetProductTypesHttpController {
     @Query() dto: GetProductTypesRequestDto,
   ): Promise<GetProductTypesResponseDto> {
     return await this.queryBus.execute(
-      new GetProductTypesQuery(user.tenantId, dto.categoryId, dto.isActive, dto.search, dto.page, dto.limit),
+      new GetProductTypesQuery(user.tenantId, dto.categoryId, dto.isActive, dto.search, dto.kind, dto.page, dto.limit),
     );
   }
 }

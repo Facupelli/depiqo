@@ -58,6 +58,7 @@ export const productTypeResponseSchema = z.object({
 export const getProductTypesQuerySchema = z.object({
 	categoryId: z.uuid().optional(),
 	isActive: z.coerce.boolean().optional(),
+	kind: z.enum(RentalItemKind).optional(),
 	search: z.string().optional(),
 	page: z.coerce.number().optional(),
 	limit: z.coerce.number().optional(),

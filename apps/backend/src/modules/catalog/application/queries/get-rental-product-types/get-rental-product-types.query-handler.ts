@@ -12,6 +12,7 @@ import {
   LocationContextReadModel,
 } from 'src/modules/tenant/public/queries/get-location-context.query';
 import { RentalProductSort } from '@repo/schemas';
+import { RentalItemKind } from '@repo/types';
 
 type RentalIncludedItemReadModel = {
   name: string;
@@ -103,6 +104,7 @@ export class GetRentalProductTypesQueryHandler implements IQueryHandler<
     const rawProducts = await this.prisma.client.productType.findMany({
       where: {
         id: { in: productIds },
+        kind: RentalItemKind.PRIMARY,
       },
       select: {
         id: true,
