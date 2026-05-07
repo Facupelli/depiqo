@@ -10,6 +10,7 @@ export interface CreateAssetAssignmentProps {
   stage?: OrderAssignmentStage;
   source?: AssignmentSource;
   orderItemId?: string;
+  orderItemAccessoryId?: string;
   orderId?: string;
   reason?: string;
 }
@@ -22,6 +23,7 @@ export interface ReconstituteAssetAssignmentProps {
   stage: OrderAssignmentStage | null;
   source: AssignmentSource | null;
   orderItemId: string | null;
+  orderItemAccessoryId: string | null;
   orderId: string | null;
   reason: string | null;
 }
@@ -35,6 +37,7 @@ export class AssetAssignment {
     public readonly stage: OrderAssignmentStage | null,
     public readonly source: AssignmentSource | null,
     public readonly orderItemId: string | null,
+    public readonly orderItemAccessoryId: string | null,
     public readonly orderId: string | null,
     public readonly reason: string | null,
   ) {}
@@ -65,6 +68,7 @@ export class AssetAssignment {
       props.stage ?? null,
       props.source ?? null,
       props.orderItemId ?? null,
+      props.orderItemAccessoryId ?? null,
       props.orderId ?? null,
       props.reason ?? null,
     );
@@ -79,6 +83,7 @@ export class AssetAssignment {
       props.stage,
       props.source,
       props.orderItemId,
+      props.orderItemAccessoryId,
       props.orderId,
       props.reason,
     );

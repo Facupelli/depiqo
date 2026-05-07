@@ -11,6 +11,7 @@ export type RawAssetAssignment = {
   id: string;
   asset_id: string;
   order_item_id: string | null;
+  order_item_accessory_id: string | null;
   order_id: string | null;
   type: string;
   stage: string | null;
@@ -34,6 +35,7 @@ export class AssetAssignmentMapper {
       stage: raw.stage as OrderAssignmentStage | null,
       source: raw.source as AssignmentSource | null,
       orderItemId: raw.order_item_id,
+      orderItemAccessoryId: raw.order_item_accessory_id,
       orderId: raw.order_id,
       reason: raw.reason,
     });
@@ -43,9 +45,9 @@ export class AssetAssignmentMapper {
     const period = formatPostgresRange(entity.period);
     return Prisma.sql`
       INSERT INTO asset_assignments
-        (id, asset_id, order_item_id, order_id, type, stage, source, reason, period)
+        (id, asset_id, order_item_id, order_item_accessory_id, order_id, type, stage, source, reason, period)
       VALUES
-        (${entity.id}, ${entity.assetId}, ${entity.orderItemId}, ${entity.orderId},
+        (${entity.id}, ${entity.assetId}, ${entity.orderItemId}, ${entity.orderItemAccessoryId}, ${entity.orderId},
          ${entity.type}::"AssignmentType", ${entity.stage}::"OrderAssignmentStage", ${entity.source}::"AssignmentSource",
          ${entity.reason}, ${period}::tstzrange)
     `;

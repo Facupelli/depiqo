@@ -40,6 +40,11 @@ export const replaceOrderItemAccessoriesSchema = z.object({
   ),
 });
 
+export const assignOrderItemAccessoryAssetsSchema = z.object({
+  quantity: z.number().int().positive().optional(),
+  assetIds: z.array(z.uuid()).optional(),
+});
+
 export const orderItemSchema = z.discriminatedUnion("type", [
   productOrderItemSchema,
   bundleOrderItemSchema,
@@ -71,7 +76,42 @@ export const createOrderSchemaBase = z.object({
   deliveryRequest: deliveryRequestSchema.optional().nullable(),
 });
 
-export const createOrderSchema = createOrderSchemaBase.superRefine((value, ctx) => {
+export const createOrderSchema = createOrderSchemaBase.superRefine(
+  (value, ctx) => {
+    if (
+      value.fulfillmentMethod === FulfillmentMethod.DELIVERY &&
+      !value.deliveryRequest
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message:
+          "Delivery request is required when fulfillment method is DELIVERY",
+        path: ["deliveryRequest"],
+      });
+    }
+
+    if (
+      value.fulfillmentMethod === FulfillmentMethod.PICKUP &&
+      value.deliveryRequest
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message:
+          "Delivery request must be omitted when fulfillment method is PICKUP",
+        path: ["deliveryRequest"],
+      });
+    }
+  },
+);
+
+export const createDraftOrderSchema = createOrderSchemaBase
+  .extend({
+    customerId: z.uuid().optional().nullable(),
+    initialPricingAdjustment: createDraftOrderInitialPricingAdjustmentSchema
+      .optional()
+      .nullable(),
+  })
+  .superRefine((value, ctx) => {
     if (
       value.fulfillmentMethod === FulfillmentMethod.DELIVERY &&
       !value.deliveryRequest
@@ -97,41 +137,14 @@ export const createOrderSchema = createOrderSchemaBase.superRefine((value, ctx) 
     }
   });
 
-export const createDraftOrderSchema = createOrderSchemaBase.extend({
-  customerId: z.uuid().optional().nullable(),
-  initialPricingAdjustment:
-    createDraftOrderInitialPricingAdjustmentSchema.optional().nullable(),
-}).superRefine((value, ctx) => {
-  if (
-    value.fulfillmentMethod === FulfillmentMethod.DELIVERY &&
-    !value.deliveryRequest
-  ) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message:
-        "Delivery request is required when fulfillment method is DELIVERY",
-      path: ["deliveryRequest"],
-    });
-  }
-
-  if (
-    value.fulfillmentMethod === FulfillmentMethod.PICKUP &&
-    value.deliveryRequest
-  ) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message:
-        "Delivery request must be omitted when fulfillment method is PICKUP",
-      path: ["deliveryRequest"],
-    });
-  }
-});
-
 export type ProductOrderItemDto = z.infer<typeof productOrderItemSchema>;
 export type BundleOrderItemDto = z.infer<typeof bundleOrderItemSchema>;
 export type OrderItemDto = z.infer<typeof orderItemSchema>;
 export type ReplaceOrderItemAccessoriesDto = z.infer<
   typeof replaceOrderItemAccessoriesSchema
+>;
+export type AssignOrderItemAccessoryAssetsDto = z.infer<
+  typeof assignOrderItemAccessoryAssetsSchema
 >;
 export type DeliveryRequestDto = z.infer<typeof deliveryRequestSchema>;
 export type CreateOrderDto = z.infer<typeof createOrderSchema>;

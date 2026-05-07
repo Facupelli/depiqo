@@ -3,6 +3,7 @@ import { OrderItemType, OrderStatus, RentalItemKind } from '@repo/types';
 import { Result, err, ok } from 'neverthrow';
 
 import { PrismaService } from 'src/core/database/prisma.service';
+import { InventoryPublicApi } from 'src/modules/inventory/inventory.public-api';
 import {
   DuplicateOrderItemAccessoryError,
   InvalidOrderItemAccessoryQuantityError,
@@ -39,7 +40,10 @@ export class ReplaceOrderItemAccessoriesService implements ICommandHandler<
   ReplaceOrderItemAccessoriesCommand,
   Result<void, ReplaceOrderItemAccessoriesError>
 > {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly inventoryApi: InventoryPublicApi,
+  ) {}
 
   async execute(command: ReplaceOrderItemAccessoriesCommand): Promise<Result<void, ReplaceOrderItemAccessoriesError>> {
     const order = await this.prisma.client.order.findFirst({
@@ -118,6 +122,27 @@ export class ReplaceOrderItemAccessoriesService implements ICommandHandler<
     }
 
     await this.prisma.client.$transaction(async (tx) => {
+      const existingAccessories = await tx.orderItemAccessory.findMany({
+        where: {
+          tenantId: command.tenantId,
+          orderId: command.orderId,
+          orderItemId: command.orderItemId,
+        },
+        select: {
+          id: true,
+          accessoryRentalItemId: true,
+        },
+      });
+      const requestedAccessoriesByRentalItemId = new Map(
+        command.accessories.map((accessory) => [accessory.accessoryRentalItemId, accessory]),
+      );
+
+      for (const existingAccessory of existingAccessories) {
+        if (!requestedAccessoriesByRentalItemId.has(existingAccessory.accessoryRentalItemId)) {
+          await this.inventoryApi.releaseOrderItemAccessoryAssignments(existingAccessory.id, tx);
+        }
+      }
+
       await tx.orderItemAccessory.deleteMany({
         where: {
           tenantId: command.tenantId,
@@ -128,7 +153,7 @@ export class ReplaceOrderItemAccessoriesService implements ICommandHandler<
       });
 
       for (const accessory of command.accessories) {
-        await tx.orderItemAccessory.upsert({
+        const persistedAccessory = await tx.orderItemAccessory.upsert({
           where: {
             orderItemId_accessoryRentalItemId: {
               orderItemId: command.orderItemId,
@@ -147,6 +172,11 @@ export class ReplaceOrderItemAccessoriesService implements ICommandHandler<
             quantity: accessory.quantity,
             notes: accessory.notes,
           },
+          select: { id: true },
+        });
+
+        await this.inventoryApi.releaseOrderItemAccessoryAssignments(persistedAccessory.id, tx, {
+          keepCount: accessory.quantity,
         });
       }
     });

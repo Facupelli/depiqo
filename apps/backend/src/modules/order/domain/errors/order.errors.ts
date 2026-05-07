@@ -163,9 +163,7 @@ export class InvalidOrderItemAccessoryQuantityError extends OrderError {
 
 export class DuplicateOrderItemAccessoryError extends OrderError {
   constructor(accessoryRentalItemId: string) {
-    super(
-      `Accessory rental item '${accessoryRentalItemId}' appears more than once in the accessory selection list.`,
-    );
+    super(`Accessory rental item '${accessoryRentalItemId}' appears more than once in the accessory selection list.`);
   }
 }
 
@@ -186,6 +184,42 @@ export class OrderItemAccessoryIncompatibleError extends OrderError {
     super(
       `Accessory rental item '${accessoryRentalItemId}' is not compatible with primary rental item '${primaryRentalItemId}'.`,
     );
+  }
+}
+
+export class OrderItemAccessoryAssignmentNotFoundError extends OrderError {
+  constructor(orderItemAccessoryId: string) {
+    super(`Order item accessory '${orderItemAccessoryId}' was not found for asset assignment.`);
+  }
+}
+
+export class DuplicateOrderItemAccessoryAssetError extends OrderError {
+  constructor(assetId: string) {
+    super(`Asset '${assetId}' appears more than once in the accessory assignment request.`);
+  }
+}
+
+export class OrderItemAccessoryAssignmentQuantityExceededError extends OrderError {
+  constructor(orderItemAccessoryId: string, quantity: number) {
+    super(`Cannot assign more than ${quantity} assets to order item accessory '${orderItemAccessoryId}'.`);
+  }
+}
+
+export class OrderItemAccessoryAssetMismatchError extends OrderError {
+  constructor(assetId: string, accessoryRentalItemId: string) {
+    super(`Asset '${assetId}' does not belong to accessory rental item '${accessoryRentalItemId}'.`);
+  }
+}
+
+export class OrderItemAccessoryAssetLocationMismatchError extends OrderError {
+  constructor(assetId: string) {
+    super(`Asset '${assetId}' is not stocked at the order location.`);
+  }
+}
+
+export class OrderItemAccessoryAssetUnavailableError extends OrderError {
+  constructor(assetId: string) {
+    super(`Asset '${assetId}' is not available for the accessory assignment period.`);
   }
 }
 

@@ -13,12 +13,20 @@ export type SaveOrderAssignmentDto = {
   source: AssignmentSource;
   orderId: string;
   orderItemId: string;
+  orderItemAccessoryId?: string;
+};
+
+export type InventoryAssetSummary = {
+  id: string;
+  ownerId: string | null;
+  productTypeId: string;
+  locationId: string;
 };
 
 export abstract class InventoryPublicApi {
   abstract findAvailableAssetId(dto: FindAvailableParams, tx?: PrismaTransactionClient): Promise<string | null>;
   abstract findAvailableAssetIds(dto: FindAvailableParams, tx?: PrismaTransactionClient): Promise<string[]>;
-  abstract findAssetById(tenantId: string, assetId: string): Promise<{ id: string; ownerId: string | null } | null>;
+  abstract findAssetById(tenantId: string, assetId: string): Promise<InventoryAssetSummary | null>;
   abstract saveOrderAssignment(
     dto: SaveOrderAssignmentDto,
     tx: PrismaTransactionClient,
@@ -33,5 +41,10 @@ export abstract class InventoryPublicApi {
     orderId: string,
     stage: OrderAssignmentStage,
     tx: PrismaTransactionClient,
+  ): Promise<void>;
+  abstract releaseOrderItemAccessoryAssignments(
+    orderItemAccessoryId: string,
+    tx: PrismaTransactionClient,
+    options?: { keepCount?: number },
   ): Promise<void>;
 }

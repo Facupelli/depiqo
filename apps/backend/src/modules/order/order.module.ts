@@ -14,6 +14,7 @@ import { ExpireOrderService } from './application/commands/expire-order/expire-o
 import { UpdateDraftOrderPricingService } from './application/commands/update-draft-order-pricing/update-draft-order-pricing.service';
 import { UpdateDraftOrderService } from './application/commands/update-draft-order/update-draft-order.service';
 import { EditOrderService } from './application/commands/edit-order/edit-order.service';
+import { AssignOrderItemAccessoryAssetsService } from './application/commands/assign-order-item-accessory-assets/assign-order-item-accessory-assets.service';
 import { ReplaceOrderItemAccessoriesService } from './application/commands/replace-order-item-accessories/replace-order-item-accessories.service';
 import { InventoryModule } from '../inventory/inventory.module';
 import { GetOrdersScheduleQueryHandler } from './application/queries/get-orders-schedule/get-orders-schedule.query-handler';
@@ -35,6 +36,7 @@ import { ConfirmOrderHttpController } from './application/commands/confirm-order
 import { UpdateDraftOrderPricingHttpController } from './application/commands/update-draft-order-pricing/update-draft-order-pricing.http.controller';
 import { UpdateDraftOrderHttpController } from './application/commands/update-draft-order/update-draft-order.http.controller';
 import { EditOrderHttpController } from './application/commands/edit-order/edit-order.http.controller';
+import { AssignOrderItemAccessoryAssetsHttpController } from './application/commands/assign-order-item-accessory-assets/assign-order-item-accessory-assets.http.controller';
 import { ReplaceOrderItemAccessoriesHttpController } from './application/commands/replace-order-item-accessories/replace-order-item-accessories.http.controller';
 import { RejectOrderHttpController } from './application/commands/reject-order/reject-order.http.controller';
 import { CancelOrderHttpController } from './application/commands/cancel-order/cancel-order.http.controller';
@@ -66,6 +68,7 @@ import { OrderDocumentRendererService } from './application/pdf/order-document-r
     ConfirmOrderHttpController,
     UpdateDraftOrderHttpController,
     EditOrderHttpController,
+    AssignOrderItemAccessoryAssetsHttpController,
     ReplaceOrderItemAccessoriesHttpController,
     UpdateDraftOrderPricingHttpController,
     RejectOrderHttpController,
@@ -95,6 +98,7 @@ import { OrderDocumentRendererService } from './application/pdf/order-document-r
     ConfirmOrderService,
     UpdateDraftOrderService,
     EditOrderService,
+    AssignOrderItemAccessoryAssetsService,
     ReplaceOrderItemAccessoriesService,
     UpdateDraftOrderPricingService,
     RejectOrderService,
