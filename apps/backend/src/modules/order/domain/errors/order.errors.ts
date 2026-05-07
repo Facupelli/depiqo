@@ -167,6 +167,12 @@ export class DuplicateOrderItemAccessoryError extends OrderError {
   }
 }
 
+export class DuplicateOrderAccessoryPreparationItemError extends OrderError {
+  constructor(orderItemId: string) {
+    super(`Order item '${orderItemId}' appears more than once in the accessory preparation request.`);
+  }
+}
+
 export class OrderItemAccessoryRentalItemNotFoundError extends OrderError {
   constructor(accessoryRentalItemId: string) {
     super(`Accessory rental item '${accessoryRentalItemId}' was not found.`);
@@ -220,6 +226,14 @@ export class OrderItemAccessoryAssetLocationMismatchError extends OrderError {
 export class OrderItemAccessoryAssetUnavailableError extends OrderError {
   constructor(assetId: string) {
     super(`Asset '${assetId}' is not available for the accessory assignment period.`);
+  }
+}
+
+export class OrderItemAccessoryInsufficientAvailableAssetsError extends OrderError {
+  constructor(accessoryRentalItemId: string, requestedCount: number, availableCount: number) {
+    super(
+      `Accessory rental item '${accessoryRentalItemId}' has ${availableCount} available assets, but ${requestedCount} were requested.`,
+    );
   }
 }
 
