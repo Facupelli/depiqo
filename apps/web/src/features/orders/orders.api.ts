@@ -23,13 +23,17 @@ import {
 	getDraftOrderPricingParamSchema,
 	getOrderByIdParamSchema,
 	getOrdersQuerySchema,
+	type OrderAccessoryPreparationResponseDto,
 	type OrderDetailResponseDto,
 	type OrderListItem,
 	type OrderPricingPreviewRequestDto,
 	type OrderPricingPreviewResponseDto,
+	orderAccessoryPreparationResponseSchema,
 	orderPricingPreviewRequestSchema,
 	orderPricingPreviewResponseSchema,
 	type ProblemDetails,
+	type SaveOrderAccessoryPreparationDto,
+	saveOrderAccessoryPreparationSchema,
 	type UpdateDraftOrderPricingRequestDto,
 	updateDraftOrderPricingRequestSchema,
 } from "@repo/schemas";
@@ -116,6 +120,21 @@ export const getOrderById = createServerFn({ method: "GET" })
 		);
 
 		return result;
+	});
+
+export const getOrderAccessoryPreparation = createServerFn({ method: "GET" })
+	.inputValidator((data: GetOrderByIdParamDto) =>
+		getOrderByIdParamSchema.parse(data),
+	)
+	.handler(async ({ data }): Promise<OrderAccessoryPreparationResponseDto> => {
+		const result = await apiFetch<OrderAccessoryPreparationResponseDto>(
+			`${apiUrl}/${data.orderId}/accessory-preparation`,
+			{
+				method: "GET",
+			},
+		);
+
+		return orderAccessoryPreparationResponseSchema.parse(result);
 	});
 
 export const createOrder = createServerFn({ method: "POST" })
@@ -227,6 +246,11 @@ const updateDraftOrderPricingInputSchema = z.object({
 	dto: updateDraftOrderPricingRequestSchema,
 });
 
+const saveOrderAccessoryPreparationInputSchema = z.object({
+	params: getOrderByIdParamSchema,
+	dto: saveOrderAccessoryPreparationSchema,
+});
+
 export const updateDraftOrderPricing = createServerFn({ method: "POST" })
 	.inputValidator(
 		(data: {
@@ -240,6 +264,31 @@ export const updateDraftOrderPricing = createServerFn({ method: "POST" })
 				method: "POST",
 				body: data.dto,
 			});
+		} catch (error) {
+			if (error instanceof ProblemDetailsError) {
+				return { error: error.problemDetails };
+			}
+
+			throw error;
+		}
+	});
+
+export const saveOrderAccessoryPreparation = createServerFn({ method: "POST" })
+	.inputValidator(
+		(data: {
+			params: GetOrderByIdParamDto;
+			dto: SaveOrderAccessoryPreparationDto;
+		}) => saveOrderAccessoryPreparationInputSchema.parse(data),
+	)
+	.handler(async ({ data }): Promise<void | { error: ProblemDetails }> => {
+		try {
+			await apiFetch<void>(
+				`${apiUrl}/${data.params.orderId}/accessory-preparation`,
+				{
+					method: "PUT",
+					body: data.dto,
+				},
+			);
 		} catch (error) {
 			if (error instanceof ProblemDetailsError) {
 				return { error: error.problemDetails };

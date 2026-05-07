@@ -21,6 +21,7 @@ export * from "./order/get-orders-schedule-response.schema";
 export * from "./order/get-pending-review-orders.schema";
 export * from "./order/order.schema";
 export * from "./order/order-pricing-preview.schema";
+export * from "./order/order-accessory-preparation.schema";
 export * from "./portal/bundles.schema";
 export * from "./portal/cart-pricing.schema";
 export * from "./portal/customer/customer-me-response.schema";
