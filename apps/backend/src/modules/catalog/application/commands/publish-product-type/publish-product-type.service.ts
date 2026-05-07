@@ -1,8 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
+import { RentalItemKind } from '@repo/types';
 import { Result, err, ok } from 'neverthrow';
 import { PublishProductTypeCommand } from './publish-product-type.command';
 import {
+  AccessoryProductTypeCannotBePublishedError,
   ProductTypeAlreadyPublishedError,
   ProductTypeAlreadyRetiredError,
   ProductTypeCannotBePublishedWithoutActiveOwnerContractsError,
@@ -20,6 +22,7 @@ type PublishProductTypeResult = Result<
   | ProductTypeAlreadyRetiredError
   | ProductTypeCannotBePublishedWithoutAssetsError
   | ProductTypeCannotBePublishedWithoutActiveOwnerContractsError
+  | AccessoryProductTypeCannotBePublishedError
   | ProductTypeCannotBePublishedWithoutPricingTiersError
 >;
 
@@ -35,6 +38,10 @@ export class PublishProductTypeService implements ICommandHandler<PublishProduct
     const productType = await this.productTypeRepo.load(command.productTypeId, command.tenantId);
     if (!productType) {
       return err(new ProductTypeNotFoundError(command.productTypeId));
+    }
+
+    if (productType.currentKind === RentalItemKind.ACCESSORY) {
+      return err(new AccessoryProductTypeCannotBePublishedError(command.productTypeId));
     }
 
     const eligibilityResult = await this.publicationEligibility.ensureProductTypeCanBePublished(

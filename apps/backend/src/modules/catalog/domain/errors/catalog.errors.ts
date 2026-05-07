@@ -56,6 +56,12 @@ export class ProductTypeCannotBePublishedWithoutPricingTiersError extends Catalo
   }
 }
 
+export class AccessoryProductTypeCannotBePublishedError extends CatalogError {
+  constructor(productTypeId: string) {
+    super(`Accessory product type '${productTypeId}' cannot be published.`);
+  }
+}
+
 export class ProductTypeCannotBePublishedWithoutAssetsError extends CatalogError {
   constructor(productTypeId: string) {
     super(`Product type '${productTypeId}' cannot be published without active assets.`);

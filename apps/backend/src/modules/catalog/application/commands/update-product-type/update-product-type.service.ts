@@ -4,6 +4,7 @@ import { Result, err, ok } from 'neverthrow';
 import { UpdateProductTypeCommand } from './update-product-type.command';
 import { ProductTypeRepository } from 'src/modules/catalog/infrastructure/repositories/product-type.repository';
 import {
+  AccessoryProductTypeCannotBePublishedError,
   InvalidProductTypeNameError,
   ProductTypeAlreadyRetiredError,
   ProductTypeNotFoundError,
@@ -11,7 +12,10 @@ import {
 
 type UpdateProductTypeResult = Result<
   void,
-  ProductTypeNotFoundError | InvalidProductTypeNameError | ProductTypeAlreadyRetiredError
+  | ProductTypeNotFoundError
+  | InvalidProductTypeNameError
+  | ProductTypeAlreadyRetiredError
+  | AccessoryProductTypeCannotBePublishedError
 >;
 
 @CommandHandler(UpdateProductTypeCommand)

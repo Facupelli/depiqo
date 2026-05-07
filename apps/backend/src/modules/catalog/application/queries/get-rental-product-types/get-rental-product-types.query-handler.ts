@@ -231,6 +231,7 @@ export class GetRentalProductTypesQueryHandler implements IQueryHandler<
           LIMIT 1
         ) global_base ON TRUE
         WHERE pt.tenant_id = ${tenantId}
+          AND pt.kind = 'PRIMARY'::"RentalItemKind"
           AND pt.retired_at IS NULL
           AND pt.published_at IS NOT NULL
           ${categoryFilter}
@@ -290,6 +291,7 @@ export class GetRentalProductTypesQueryHandler implements IQueryHandler<
           LIMIT 1
         ) global_base ON TRUE
         WHERE pt.tenant_id = ${tenantId}
+          AND pt.kind = 'PRIMARY'::"RentalItemKind"
           AND pt.retired_at IS NULL
           AND pt.published_at IS NOT NULL
           ${categoryFilter}

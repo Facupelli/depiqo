@@ -1,6 +1,6 @@
 import { StaffRoute } from 'src/core/decorators/staff-route.decorator';
 import { BadRequestException, Body, Controller, Post } from '@nestjs/common';
-import { Permission } from '@repo/types';
+import { Permission, RentalItemKind } from '@repo/types';
 import { CommandBus } from '@nestjs/cqrs';
 import { CurrentUser } from 'src/core/decorators/current-user.decorator';
 import { AuthenticatedUser } from 'src/modules/auth/public/authenticated-user';
@@ -26,6 +26,7 @@ export class CreateProductTypeHttpController {
         name: dto.name,
         description: dto.description ?? null,
         imageUrl: dto.imageUrl ?? '',
+        kind: dto.kind ?? RentalItemKind.PRIMARY,
         trackingMode: dto.trackingMode,
         excludeFromNewArrivals: dto.excludeFromNewArrivals,
         attributes: dto.attributes ?? null,

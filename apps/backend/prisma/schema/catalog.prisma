@@ -24,9 +24,10 @@ model ProductType {
   billingUnitId          String       @map("billing_unit_id")
   name                   String
   description            String?
-  imageUrl               String?      @map("image_url")
-  trackingMode           TrackingMode @map("tracking_mode")
-  excludeFromNewArrivals Boolean      @default(false) @map("exclude_from_new_arrivals")
+  imageUrl               String?        @map("image_url")
+  kind                   RentalItemKind @default(PRIMARY)
+  trackingMode           TrackingMode   @map("tracking_mode")
+  excludeFromNewArrivals Boolean        @default(false) @map("exclude_from_new_arrivals")
   attributes             Json
   includedItems          Json         @default("[]") @map("included_items")
   createdAt              DateTime     @default(now()) @map("created_at")

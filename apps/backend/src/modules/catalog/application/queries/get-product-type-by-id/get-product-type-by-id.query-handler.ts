@@ -1,7 +1,7 @@
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { PrismaService } from 'src/core/database/prisma.service';
 import { GetProductTypeByIdQuery } from './get-product-type-by-id.query';
-import { TrackingMode } from '@repo/types';
+import { RentalItemKind, TrackingMode } from '@repo/types';
 
 type ProductTypeIncludedItemReadModel = {
   name: string;
@@ -15,6 +15,7 @@ type ProductTypeReadModel = {
   name: string;
   imageUrl: string;
   description: string | null;
+  kind: RentalItemKind;
   trackingMode: TrackingMode;
   excludeFromNewArrivals: boolean;
   attributes: Record<string, string>;
@@ -89,6 +90,7 @@ export class GetProductTypeByIdQueryHandler implements IQueryHandler<
       name: productType.name,
       imageUrl: productType.imageUrl ?? '',
       description: productType.description,
+      kind: productType.kind as RentalItemKind,
       trackingMode: productType.trackingMode as TrackingMode,
       excludeFromNewArrivals: productType.excludeFromNewArrivals,
       attributes: productType.attributes as Record<string, string>,

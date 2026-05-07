@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { TrackingMode } from "@repo/types";
+import { RentalItemKind, TrackingMode } from "@repo/types";
 
 export const productTypeAttributesSchema = z.record(z.string(), z.string());
 
@@ -15,6 +15,7 @@ export const createProductTypeSchema = z.object({
   name: z.string().min(1, "Name is required"),
   imageUrl: z.string(),
   description: z.string().nullable(),
+  kind: z.enum(RentalItemKind).default(RentalItemKind.PRIMARY),
   trackingMode: z.enum(TrackingMode),
   excludeFromNewArrivals: z.boolean().default(false),
   attributes: productTypeAttributesSchema,
@@ -27,6 +28,7 @@ export const updateProductTypeSchema = z.object({
   name: z.string().min(1, "Name is required").optional(),
   imageUrl: z.string().optional(),
   description: z.string().nullable().optional(),
+  kind: z.enum(RentalItemKind).optional(),
   trackingMode: z.enum(TrackingMode).optional(),
   excludeFromNewArrivals: z.boolean().optional(),
   attributes: productTypeAttributesSchema.optional(),

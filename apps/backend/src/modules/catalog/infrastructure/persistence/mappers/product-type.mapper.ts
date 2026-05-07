@@ -4,7 +4,7 @@ import {
   Prisma,
 } from 'src/generated/prisma/client';
 import { ProductType } from 'src/modules/catalog/domain/entities/product-type.entity';
-import { TrackingMode } from '@repo/types';
+import { RentalItemKind, TrackingMode } from '@repo/types';
 import { InputJsonValue } from '@prisma/client/runtime/client';
 
 type PrismaProductTypeWithRelations = PrismaProductType & {
@@ -21,6 +21,7 @@ export class ProductTypeMapper {
       name: raw.name,
       imageUrl: raw.imageUrl ?? '',
       description: raw.description,
+      kind: raw.kind as RentalItemKind,
       trackingMode: raw.trackingMode as TrackingMode,
       excludeFromNewArrivals: raw.excludeFromNewArrivals,
       attributes: raw.attributes as Record<string, unknown>,
@@ -40,6 +41,7 @@ export class ProductTypeMapper {
       name: entity.currentName,
       imageUrl: entity.currentImageUrl,
       description: entity.currentDescription,
+      kind: entity.currentKind,
       trackingMode: entity.currentTrackingMode,
       excludeFromNewArrivals: entity.isExcludedFromNewArrivals,
       attributes: entity.currentAttributes as InputJsonValue,

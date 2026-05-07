@@ -1,5 +1,5 @@
 import { ICommand } from '@nestjs/cqrs';
-import { TrackingMode } from '@repo/types';
+import { RentalItemKind, TrackingMode } from '@repo/types';
 
 type IncludedItemInput = {
   name: string;
@@ -13,6 +13,7 @@ type CreateProductTypeProps = {
   name: string;
   description: string | null;
   imageUrl: string;
+  kind: RentalItemKind;
   trackingMode: TrackingMode;
   excludeFromNewArrivals: boolean;
   attributes: Record<string, unknown> | null;

@@ -1,4 +1,4 @@
-import { TrackingMode } from "@repo/types";
+import { RentalItemKind, TrackingMode } from "@repo/types";
 import { z } from "zod";
 import { localDateSchema } from "../../shared/rental-temporal.schema";
 import {
@@ -38,6 +38,7 @@ export const productTypeResponseSchema = z.object({
 	name: z.string(),
 	imageUrl: z.string(),
 	description: z.string().nullable(),
+	kind: z.enum(RentalItemKind),
 	trackingMode: z.enum(TrackingMode),
 	excludeFromNewArrivals: z.boolean(),
 	attributes: productTypeAttributesSchema,

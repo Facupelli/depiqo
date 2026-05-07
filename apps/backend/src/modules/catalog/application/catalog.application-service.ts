@@ -12,7 +12,7 @@ import {
   ProductTypeNotBookableAtLocationError,
 } from '../catalog.public-api';
 import { PrismaService } from 'src/core/database/prisma.service';
-import { TrackingMode } from '@repo/types';
+import { RentalItemKind, TrackingMode } from '@repo/types';
 
 @Injectable()
 export class CatalogApplicationService implements CatalogPublicApi {
@@ -55,6 +55,7 @@ export class CatalogApplicationService implements CatalogPublicApi {
         id: true,
         tenantId: true,
         categoryId: true,
+        kind: true,
         retiredAt: true,
         publishedAt: true,
         pricingTiers: {
@@ -67,6 +68,10 @@ export class CatalogApplicationService implements CatalogPublicApi {
 
     if (!row || row.tenantId !== tenantId) {
       return null;
+    }
+
+    if (row.kind !== RentalItemKind.PRIMARY) {
+      throw new ProductTypeInactiveForBookingError(id);
     }
 
     if (row.retiredAt !== null || row.publishedAt === null) {
