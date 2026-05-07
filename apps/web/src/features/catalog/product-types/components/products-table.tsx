@@ -31,6 +31,7 @@ interface ProductsTableProps {
 	meta: PaginationMeta;
 	pagination: PaginationState;
 	categoryId: string | undefined;
+	variant?: "products" | "accessories";
 	onPaginationChange: (updater: PaginationState) => void;
 	onCategoryChange: (categoryId: string | undefined) => void;
 	isLoading?: boolean;
@@ -60,6 +61,7 @@ export function ProductsTable({
 	meta,
 	pagination,
 	categoryId,
+	variant = "products",
 	onPaginationChange,
 	onCategoryChange,
 	isLoading,
@@ -91,6 +93,14 @@ export function ProductsTable({
 	}
 
 	function handleRowClick(product: ProductTypeResponse) {
+		if (variant === "accessories") {
+			navigate({
+				to: "/dashboard/catalog/accessories/$accessoryId",
+				params: { accessoryId: product.id },
+			});
+			return;
+		}
+
 		navigate({
 			to: "/dashboard/catalog/products/$productId",
 			params: { productId: product.id },

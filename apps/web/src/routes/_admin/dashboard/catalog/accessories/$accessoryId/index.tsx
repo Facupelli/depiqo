@@ -7,30 +7,32 @@ import {
 import { productQueries } from "@/features/catalog/product-types/products.queries";
 
 export const Route = createFileRoute(
-	"/_admin/dashboard/catalog/products/$productId/",
+	"/_admin/dashboard/catalog/accessories/$accessoryId/",
 )({
 	validateSearch: productTypeDetailSearchSchema,
-	loader: ({ context: { queryClient }, params: { productId } }) =>
-		queryClient.ensureQueryData(productQueries.detail(productId)),
+	loader: ({ context: { queryClient }, params: { accessoryId } }) =>
+		queryClient.ensureQueryData(productQueries.detail(accessoryId)),
 	component: RouteComponent,
 });
 
 function RouteComponent() {
-	const { productId } = Route.useParams();
+	const { accessoryId } = Route.useParams();
 	const search = Route.useSearch();
 	const navigate = Route.useNavigate();
-	const { data: product } = useSuspenseQuery(productQueries.detail(productId));
+	const { data: accessory } = useSuspenseQuery(
+		productQueries.detail(accessoryId),
+	);
 
 	return (
 		<ProductTypeDetailPage
-			productId={productId}
-			product={product}
+			productId={accessoryId}
+			product={accessory}
 			search={search}
-			variant="products"
+			variant="accessories"
 			copy={{
-				parentLabel: "Productos",
-				parentTo: "/dashboard/catalog/products",
-				notFoundMessage: "Producto no encontrado.",
+				parentLabel: "Accesorios",
+				parentTo: "/dashboard/catalog/accessories",
+				notFoundMessage: "Accesorio no encontrado.",
 				physicalItemsTabLabel: "Items fisicos",
 				editLabel: "Editar detalles",
 			}}

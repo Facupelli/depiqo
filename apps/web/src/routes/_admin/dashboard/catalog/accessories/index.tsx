@@ -1,7 +1,8 @@
 import { RentalItemKind } from "@repo/types";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import type { PaginationState } from "@tanstack/react-table";
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ProductsTable } from "@/features/catalog/product-types/components/products-table";
 import {
@@ -67,6 +68,14 @@ function AccessoriesPage() {
 					value={search}
 					onChange={(event) => handleSearchChange(event.target.value)}
 				/>
+
+				<Button
+					render={
+						<Link to="/dashboard/catalog/accessories/new">
+							Crear accesorio
+						</Link>
+					}
+				/>
 			</header>
 
 			<div className="p-6 space-y-2">
@@ -79,6 +88,7 @@ function AccessoriesPage() {
 					}
 					pagination={pagination}
 					categoryId={categoryId}
+					variant="accessories"
 					onPaginationChange={setPagination}
 					onCategoryChange={handleCategoryChange}
 					isLoading={isFetching}

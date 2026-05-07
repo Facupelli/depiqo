@@ -17,28 +17,28 @@ import {
 } from "@/features/catalog/product-types/schemas/product-type-form.schema";
 import { tenantQueries } from "@/features/tenant/tenant.queries";
 
-export const Route = createFileRoute("/_admin/dashboard/catalog/products/new")({
-	component: CreateProductPage,
+export const Route = createFileRoute("/_admin/dashboard/catalog/accessories/new")({
+	component: CreateAccessoryPage,
 });
 
-const formId = "create-product-type";
+const formId = "create-accessory-type";
 
-function CreateProductPage() {
+function CreateAccessoryPage() {
 	const navigate = useNavigate();
 	const {
 		data: { billingUnits },
 	} = useSuspenseQuery(tenantQueries.me());
 	const { data: categories = [] } = useCategories();
 	const { mutateAsync: createProduct, isPending } = useCreateProduct();
-	const defaultValues = getProductTypeFormDefaults(RentalItemKind.PRIMARY);
+	const defaultValues = getProductTypeFormDefaults(RentalItemKind.ACCESSORY);
 
 	return (
 		<div className="grid place-items-center py-10">
 			<Card className="w-full sm:max-w-2xl">
 				<CardHeader>
-					<CardTitle>Crear producto</CardTitle>
+					<CardTitle>Crear accesorio</CardTitle>
 					<CardDescription>
-						Agrega un nuevo producto al catalogo de tu inventario.
+						Agrega un nuevo accesorio al catalogo de tu inventario.
 					</CardDescription>
 				</CardHeader>
 				<CardContent>
@@ -47,18 +47,24 @@ function CreateProductPage() {
 						defaultValues={defaultValues}
 						categories={categories}
 						billingUnits={billingUnits}
-						onCancel={() => navigate({ to: "/dashboard/catalog/products" })}
+						onCancel={() => navigate({ to: "/dashboard/catalog/accessories" })}
 						isPending={isPending}
-						submitLabel="Crear producto"
+						submitLabel="Crear accesorio"
 						pendingLabel="Creando..."
 						cancelLabel="Cancelar"
+						copy={{
+							nameLabel: "Nombre del accesorio",
+							imageLabel: "Imagen del accesorio",
+							newArrivalsDescription:
+								"Excluye este accesorio de la seccion de nuevos ingresos en la tienda.",
+						}}
 						onSubmit={async ({ values }) => {
-							const productTypeId = await createProduct(
+							const accessoryId = await createProduct(
 								toCreateProductTypeDto(values),
 							);
 							navigate({
-								to: "/dashboard/catalog/products/$productId",
-								params: { productId: productTypeId },
+								to: "/dashboard/catalog/accessories/$accessoryId",
+								params: { accessoryId },
 							});
 						}}
 					/>

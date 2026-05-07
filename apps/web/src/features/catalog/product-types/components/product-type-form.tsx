@@ -38,6 +38,7 @@ interface ProductTypeFormProps {
 	defaultValues: ProductTypeFormValues;
 	categories: CategoryOption[];
 	billingUnits: BillingUnitOption[];
+	copy?: Partial<ProductTypeFormCopy>;
 	onSubmit: (payload: {
 		values: ProductTypeFormValues;
 		dirtyValues: Partial<ProductTypeFormValues>;
@@ -50,10 +51,24 @@ interface ProductTypeFormProps {
 	formId: string;
 }
 
+interface ProductTypeFormCopy {
+	nameLabel: string;
+	imageLabel: string;
+	newArrivalsDescription: string;
+}
+
+const defaultCopy: ProductTypeFormCopy = {
+	nameLabel: "Nombre del producto",
+	imageLabel: "Imagen del producto",
+	newArrivalsDescription:
+		"Excluye este producto de la seccion de nuevos ingresos en la tienda.",
+};
+
 export function ProductTypeForm({
 	defaultValues,
 	categories,
 	billingUnits,
+	copy,
 	onSubmit,
 	onCancel,
 	isPending,
@@ -62,6 +77,7 @@ export function ProductTypeForm({
 	cancelLabel,
 	formId,
 }: ProductTypeFormProps) {
+	const formCopy = { ...defaultCopy, ...copy };
 	const form = useForm({
 		defaultValues,
 		validators: {
@@ -174,9 +190,7 @@ export function ProductTypeForm({
 
 							return (
 								<Field data-invalid={isInvalid}>
-									<FieldLabel htmlFor={field.name}>
-										Nombre del producto
-									</FieldLabel>
+									<FieldLabel htmlFor={field.name}>{formCopy.nameLabel}</FieldLabel>
 									<Input
 										id={field.name}
 										name={field.name}
@@ -199,7 +213,7 @@ export function ProductTypeForm({
 
 							return (
 								<Field>
-									<FieldLabel>Imagen del producto</FieldLabel>
+									<FieldLabel>{formCopy.imageLabel}</FieldLabel>
 									<CatalogImageUploader
 										currentPath={field.state.value}
 										onUploadComplete={(path) => field.handleChange(path)}
@@ -279,8 +293,7 @@ export function ProductTypeForm({
 										Ocultar de nuevos ingresos
 									</p>
 									<p className="mt-0.5 text-xs text-muted-foreground">
-										Excluye este producto de la seccion de nuevos ingresos en la
-										tienda.
+										{formCopy.newArrivalsDescription}
 									</p>
 								</div>
 								<div className="pt-1">
@@ -549,8 +562,21 @@ function getDirtyValues(
 		dirtyValues.description = values.description;
 	}
 
+	if (!areEqual(values.kind, defaultValues.kind)) {
+		dirtyValues.kind = values.kind;
+	}
+
 	if (!areEqual(values.trackingMode, defaultValues.trackingMode)) {
 		dirtyValues.trackingMode = values.trackingMode;
+	}
+
+	if (
+		!areEqual(
+			values.excludeFromNewArrivals,
+			defaultValues.excludeFromNewArrivals,
+		)
+	) {
+		dirtyValues.excludeFromNewArrivals = values.excludeFromNewArrivals;
 	}
 
 	if (!areEqual(values.attributes, defaultValues.attributes)) {
