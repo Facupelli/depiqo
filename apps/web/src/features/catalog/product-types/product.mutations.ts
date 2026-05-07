@@ -1,10 +1,15 @@
-import type { CreateProductTypeDto, UpdateProductTypeDto } from "@repo/schemas";
+import type {
+	CreateProductTypeDto,
+	ReplaceProductTypeAccessoryLinksDto,
+	UpdateProductTypeDto,
+} from "@repo/schemas";
 import type { MutationOptions } from "@tanstack/react-query";
 import { useMutation } from "@tanstack/react-query";
 import { ProblemDetailsError } from "@/shared/errors";
 import {
 	createProduct,
 	publishProductType,
+	replaceProductTypeAccessoryLinks,
 	retireProductType,
 	updateProductType,
 } from "./products.api";
@@ -25,6 +30,15 @@ type UpdateProductOptions = Omit<
 		void,
 		ProblemDetailsError,
 		{ productTypeId: string; dto: UpdateProductTypeDto }
+	>,
+	"mutationFn" | "mutationKey"
+>;
+
+type ReplaceProductTypeAccessoryLinksOptions = Omit<
+	MutationOptions<
+		void,
+		ProblemDetailsError,
+		{ productTypeId: string; dto: ReplaceProductTypeAccessoryLinksDto }
 	>,
 	"mutationFn" | "mutationKey"
 >;
@@ -83,6 +97,26 @@ export function useRetireProductType(options?: ProductLifecycleOptions) {
 		mutationFn: (data) => retireProductType({ data }),
 		meta: {
 			invalidates: productKeys.details(),
+		},
+	});
+}
+
+export function useReplaceProductTypeAccessoryLinks(
+	options?: ReplaceProductTypeAccessoryLinksOptions,
+) {
+	return useMutation<
+		void,
+		ProblemDetailsError,
+		{ productTypeId: string; dto: ReplaceProductTypeAccessoryLinksDto }
+	>({
+		...options,
+		mutationFn: ({ productTypeId, dto }) =>
+			replaceProductTypeAccessoryLinks({ data: { productTypeId, dto } }),
+		meta: {
+			invalidates: (variables) => [
+				productKeys.detail(variables.productTypeId),
+				productKeys.accessoryLinks(variables.productTypeId),
+			],
 		},
 	});
 }

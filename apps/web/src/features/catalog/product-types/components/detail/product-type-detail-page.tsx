@@ -1,4 +1,5 @@
 import type { ProductTypeResponse } from "@repo/schemas";
+import { RentalItemKind } from "@repo/types";
 import { useQueryClient } from "@tanstack/react-query";
 import { Link, useBlocker } from "@tanstack/react-router";
 import { Plus } from "lucide-react";
@@ -24,6 +25,7 @@ import {
 	type PricingTierFormValues,
 	toAddPricingTiersDto,
 } from "@/features/catalog/pricing-tier/schemas/pricing-tier-form.schema";
+import { AccessoriesTab } from "@/features/catalog/product-types/components/detail/accessories-tab";
 import { AssetsTab } from "@/features/catalog/product-types/components/detail/assets-tab";
 import { PricingTab } from "@/features/catalog/product-types/components/detail/pricing-tab";
 import {
@@ -80,8 +82,12 @@ export function ProductTypeDetailPage({
 	const [pendingTiers, setPendingTiers] = useState<PricingTierFormValues[]>([]);
 	const [dialogOpen, setDialogOpen] = useState(false);
 	const [isSaving, setIsSaving] = useState(false);
+	const [hasUnsavedAccessoryLinks, setHasUnsavedAccessoryLinks] =
+		useState(false);
+	const [activeTab, setActiveTab] = useState("physical-items");
 
-	const hasUnsavedChanges = pendingTiers.length > 0;
+	const hasUnsavedPricingTiers = pendingTiers.length > 0;
+	const hasUnsavedChanges = hasUnsavedPricingTiers || hasUnsavedAccessoryLinks;
 
 	const { proceed, reset, status } = useBlocker({
 		blockerFn: () => hasUnsavedChanges,
@@ -152,6 +158,8 @@ export function ProductTypeDetailPage({
 		);
 	}
 
+	const isPrimaryProduct = product.kind === RentalItemKind.PRIMARY;
+
 	return (
 		<>
 			<ProductProvider product={product}>
@@ -165,38 +173,56 @@ export function ProductTypeDetailPage({
 						<ProductHeader variant={variant} editLabel={copy.editLabel} />
 
 						<Tabs
-							defaultValue="physical-items"
+							value={activeTab}
+							onValueChange={setActiveTab}
 							className="flex flex-col gap-y-10"
 						>
 							<TabsList>
 								<TabsTrigger value="physical-items">
 									{copy.physicalItemsTabLabel}
 								</TabsTrigger>
+								{isPrimaryProduct && (
+									<TabsTrigger value="accessories">Accesorios</TabsTrigger>
+								)}
 								<TabsTrigger value="specifications">
 									Especificaciones
 								</TabsTrigger>
-								<TabsTrigger value="pricing">Precios</TabsTrigger>
+								{isPrimaryProduct && (
+									<TabsTrigger value="pricing">Precios</TabsTrigger>
+								)}
 							</TabsList>
 
 							<TabsContent value="specifications">
 								<SpecificationsTab />
 							</TabsContent>
 
-							<TabsContent value="pricing">
-								<div className="flex items-center justify-between pb-4">
-									<Button size="sm" onClick={() => setDialogOpen(true)}>
-										<Plus className="mr-1.5 size-3.5" />
-										Agregar tarifa
-									</Button>
-
-									{hasUnsavedChanges && (
-										<Button onClick={handleSaveChanges} disabled={isSaving}>
-											{isSaving ? "Guardando..." : "Guardar cambios"}
+							{isPrimaryProduct && (
+								<TabsContent value="pricing">
+									<div className="flex items-center justify-between pb-4">
+										<Button size="sm" onClick={() => setDialogOpen(true)}>
+											<Plus className="mr-1.5 size-3.5" />
+											Agregar tarifa
 										</Button>
-									)}
-								</div>
-								<PricingTab pendingTiers={pendingTiers} />
-							</TabsContent>
+
+										{hasUnsavedPricingTiers && (
+											<Button onClick={handleSaveChanges} disabled={isSaving}>
+												{isSaving ? "Guardando..." : "Guardar cambios"}
+											</Button>
+										)}
+									</div>
+									<PricingTab pendingTiers={pendingTiers} />
+								</TabsContent>
+							)}
+
+							{isPrimaryProduct && (
+								<TabsContent value="accessories">
+									<AccessoriesTab
+										key={product.id}
+										isActive={activeTab === "accessories"}
+										onDirtyChange={setHasUnsavedAccessoryLinks}
+									/>
+								</TabsContent>
+							)}
 
 							<TabsContent value="physical-items">
 								<AssetsTab
@@ -215,21 +241,22 @@ export function ProductTypeDetailPage({
 					</div>
 				</div>
 
-				<AddPricingTierDialogForm
-					open={dialogOpen}
-					onOpenChange={setDialogOpen}
-					billingUnitLabel={product.billingUnit.label}
-					onAdd={handleAddTier}
-				/>
+				{isPrimaryProduct && (
+					<AddPricingTierDialogForm
+						open={dialogOpen}
+						onOpenChange={setDialogOpen}
+						billingUnitLabel={product.billingUnit.label}
+						onAdd={handleAddTier}
+					/>
+				)}
 			</ProductProvider>
 
 			<AlertDialog open={status === "blocked"}>
 				<AlertDialogContent>
 					<AlertDialogHeader>
-						<AlertDialogTitle>Tarifas sin guardar</AlertDialogTitle>
+						<AlertDialogTitle>Cambios sin guardar</AlertDialogTitle>
 						<AlertDialogDescription>
-							Tienes {pendingTiers.length} tarifas sin guardar. Si sales ahora,
-							perderas los cambios.
+							Tienes cambios sin guardar. Si sales ahora, perderas los cambios.
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>
@@ -260,6 +287,7 @@ function ProductHeader({
 
 	const isPublished = product.publishedAt !== null;
 	const isRetired = product.retiredAt !== null;
+	const canManageLifecycle = variant === "products";
 
 	const { mutateAsync: publish, isPending: isPublishing } =
 		usePublishProductType();
@@ -295,7 +323,11 @@ function ProductHeader({
 						<h1 className="text-2xl font-bold tracking-tight">
 							{product.name}
 						</h1>
-						<LifecycleBadge isPublished={isPublished} isRetired={isRetired} />
+						<LifecycleBadge
+							variant={variant}
+							isPublished={isPublished}
+							isRetired={isRetired}
+						/>
 					</div>
 
 					{product.description && (
@@ -336,7 +368,7 @@ function ProductHeader({
 						/>
 					)}
 
-					{!isPublished && !isRetired && (
+					{canManageLifecycle && !isPublished && !isRetired && (
 						<Button
 							onClick={() => handlePublish(product.id)}
 							disabled={isPublishing}
@@ -345,7 +377,7 @@ function ProductHeader({
 						</Button>
 					)}
 
-					{isPublished && !isRetired && (
+					{canManageLifecycle && isPublished && !isRetired && (
 						<RetireProductTypeAlertDialog product={product} />
 					)}
 				</div>
@@ -375,14 +407,19 @@ function ProductHeader({
 }
 
 function LifecycleBadge({
+	variant,
 	isPublished,
 	isRetired,
 }: {
+	variant: "products" | "accessories";
 	isPublished: boolean;
 	isRetired: boolean;
 }) {
 	if (isRetired) {
 		return <Badge variant="destructive">Retirado</Badge>;
+	}
+	if (variant === "accessories") {
+		return <Badge variant="secondary">Activo</Badge>;
 	}
 	if (isPublished) {
 		return <Badge variant="default">Publicado</Badge>;

@@ -81,6 +81,12 @@ export const getProductTypesQuerySchema = z.object({
 	limit: z.coerce.number().optional(),
 });
 
+export const getAvailableAccessoriesQuerySchema = z.object({
+	search: z.string().optional(),
+	page: z.coerce.number().optional(),
+	limit: z.coerce.number().optional(),
+});
+
 export type ProductTypeCategoryResponse = z.infer<
 	typeof productTypeCategoryResponseSchema
 >;
@@ -95,6 +101,9 @@ export type ProductTypeAccessoryLinkResponse = z.infer<
 >;
 export type ProductTypeResponse = z.infer<typeof productTypeResponseSchema>;
 export type GetProductTypesQuery = z.infer<typeof getProductTypesQuerySchema>;
+export type GetAvailableAccessoriesQuery = z.infer<
+	typeof getAvailableAccessoriesQuerySchema
+>;
 
 // RENTAL
 

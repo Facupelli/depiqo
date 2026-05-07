@@ -48,6 +48,8 @@ import { ReplaceProductTypeAccessoryLinksService } from './application/commands/
 import { ReplaceProductTypeAccessoryLinksHttpController } from './application/commands/replace-product-type-accessory-links/replace-product-type-accessory-links.http.controller';
 import { GetProductTypeAccessoryLinksQueryHandler } from './application/queries/get-product-type-accessory-links/get-product-type-accessory-links.query-handler';
 import { GetProductTypeAccessoryLinksHttpController } from './application/queries/get-product-type-accessory-links/get-product-type-accessory-links.http.controller';
+import { GetAvailableAccessoriesQueryHandler } from './application/queries/get-available-accessories/get-available-accessories.query-handler';
+import { GetAvailableAccessoriesHttpController } from './application/queries/get-available-accessories/get-available-accessories.http.controller';
 
 const repositories = [ProductCategoryRepository, ProductTypeRepository, BundleRepository];
 
@@ -73,6 +75,7 @@ const queryHandlers = [
   GetBundlesQueryHandler,
   GetBundleByIdQueryHandler,
   GetProductTypeAccessoryLinksQueryHandler,
+  GetAvailableAccessoriesQueryHandler,
 ];
 
 const rentalQueryHandlers = [GetRentalProductTypesQueryHandler, GetNewArrivalsQueryHandler, GetCombosQueryHandler];
@@ -101,6 +104,7 @@ const rentalQueryHandlers = [GetRentalProductTypesQueryHandler, GetNewArrivalsQu
     GetRentalCategoriesHttpController,
     ReplaceProductTypeAccessoryLinksHttpController,
     GetProductTypeAccessoryLinksHttpController,
+    GetAvailableAccessoriesHttpController,
   ],
   providers: [
     ...repositories,
