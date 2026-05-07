@@ -49,9 +49,9 @@ import { useReplaceProductTypeAccessoryLinks } from "@/features/catalog/product-
 import { useAvailableProductTypeAccessories } from "@/features/catalog/product-types/products.queries";
 import {
 	type ProductTypeAccessoryLinkFormValues,
+	productTypeAccessoryLinkFormDefaults,
 	productTypeAccessoryLinksFormDefaults,
 	productTypeAccessoryLinksFormSchema,
-	productTypeAccessoryLinkFormDefaults,
 	toReplaceProductTypeAccessoryLinksDto,
 } from "@/features/catalog/product-types/schemas/product-type-accessory-link-form.schema";
 import useDebounce from "@/shared/hooks/use-debounce";
@@ -118,7 +118,9 @@ export function AccessoriesTab({
 			const accessory = accessoriesById.get(value.accessoryRentalItemId);
 
 			if (!accessory) {
-				setServerError("No pudimos preparar uno de los accesorios seleccionados.");
+				setServerError(
+					"No pudimos preparar uno de los accesorios seleccionados.",
+				);
 				return;
 			}
 
@@ -168,11 +170,10 @@ export function AccessoriesTab({
 							<CardTitle className="text-xl font-semibold">
 								Accesorios compatibles
 							</CardTitle>
-							<Info className="size-4 text-muted-foreground" />
 						</div>
 						<CardDescription className="mt-1">
 							Estos accesorios se sugieren automaticamente durante la
-							preparacion.
+							preparación del pedido.
 						</CardDescription>
 					</div>
 					<CardAction>
@@ -647,29 +648,29 @@ function AccessorySheetForm({
 												const selectedAccessory = isEditMode
 													? editAccessory
 													: selectedAccessories.find(
-														(accessory) =>
-															accessory.id === link.accessoryRentalItemId,
-													);
-
-										return (
-											<Fragment key={link.accessoryRentalItemId}>
-												{renderAccessoryLinkFormRow({
-													index,
-													accessory: selectedAccessory,
-													showRemove: !isEditMode,
-													onRemove: () => {
-														setSelectedAccessories(
-															selectedAccessories.filter(
-																(accessory) =>
-																	accessory.id !==
-																	link.accessoryRentalItemId,
-															),
+															(accessory) =>
+																accessory.id === link.accessoryRentalItemId,
 														);
-														field.removeValue(index);
-													},
-												})}
-											</Fragment>
-										);
+
+												return (
+													<Fragment key={link.accessoryRentalItemId}>
+														{renderAccessoryLinkFormRow({
+															index,
+															accessory: selectedAccessory,
+															showRemove: !isEditMode,
+															onRemove: () => {
+																setSelectedAccessories(
+																	selectedAccessories.filter(
+																		(accessory) =>
+																			accessory.id !==
+																			link.accessoryRentalItemId,
+																	),
+																);
+																field.removeValue(index);
+															},
+														})}
+													</Fragment>
+												);
 											})}
 										</div>
 									);

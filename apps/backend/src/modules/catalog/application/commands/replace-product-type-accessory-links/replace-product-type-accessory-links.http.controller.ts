@@ -6,6 +6,7 @@ import { CurrentUser } from 'src/core/decorators/current-user.decorator';
 import { StaffRoute } from 'src/core/decorators/staff-route.decorator';
 import { AuthenticatedUser } from 'src/modules/auth/public/authenticated-user';
 import {
+  AccessoryLinkDefaultQuantityExceedsAssetCountError,
   AccessoryLinkAccessoryMustBeAccessoryError,
   AccessoryLinkCrossTenantError,
   AccessoryLinkPrimaryMustBePrimaryError,
@@ -53,6 +54,7 @@ export class ReplaceProductTypeAccessoryLinksHttpController {
         error instanceof AccessoryLinkAccessoryMustBeAccessoryError ||
         error instanceof AccessoryLinkCrossTenantError ||
         error instanceof InvalidAccessoryLinkDefaultQuantityError ||
+        error instanceof AccessoryLinkDefaultQuantityExceedsAssetCountError ||
         error instanceof DuplicateAccessoryLinkError
       ) {
         throw new UnprocessableEntityException(error.message);

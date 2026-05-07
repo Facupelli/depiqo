@@ -86,6 +86,14 @@ export class InvalidAccessoryLinkDefaultQuantityError extends CatalogError {
   }
 }
 
+export class AccessoryLinkDefaultQuantityExceedsAssetCountError extends CatalogError {
+  constructor(productTypeId: string, requestedQuantity: number, assetCount: number) {
+    super(
+      `Accessory product type '${productTypeId}' has ${assetCount} active assets, but default quantity ${requestedQuantity} was requested.`,
+    );
+  }
+}
+
 export class DuplicateAccessoryLinkError extends CatalogError {
   constructor(productTypeId: string) {
     super(`Accessory product type '${productTypeId}' appears more than once in the accessory link list.`);

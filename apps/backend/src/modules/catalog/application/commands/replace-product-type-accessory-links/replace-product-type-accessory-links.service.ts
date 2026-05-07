@@ -4,6 +4,7 @@ import { Result, err, ok } from 'neverthrow';
 
 import { PrismaService } from 'src/core/database/prisma.service';
 import {
+  AccessoryLinkDefaultQuantityExceedsAssetCountError,
   AccessoryLinkAccessoryMustBeAccessoryError,
   AccessoryLinkCrossTenantError,
   AccessoryLinkPrimaryMustBePrimaryError,
@@ -21,6 +22,7 @@ type ReplaceProductTypeAccessoryLinksResult = Result<
   | AccessoryLinkAccessoryMustBeAccessoryError
   | AccessoryLinkCrossTenantError
   | InvalidAccessoryLinkDefaultQuantityError
+  | AccessoryLinkDefaultQuantityExceedsAssetCountError
   | DuplicateAccessoryLinkError
 >;
 
@@ -60,7 +62,18 @@ export class ReplaceProductTypeAccessoryLinksService implements ICommandHandler<
 
     const accessoryRentalItems = await this.prisma.client.productType.findMany({
       where: { id: { in: [...seenAccessoryIds] } },
-      select: { id: true, tenantId: true, kind: true },
+      select: {
+        id: true,
+        tenantId: true,
+        kind: true,
+        _count: {
+          select: {
+            assets: {
+              where: { isActive: true, deletedAt: null },
+            },
+          },
+        },
+      },
     });
 
     const accessoryRentalItemsById = new Map(accessoryRentalItems.map((item) => [item.id, item]));
@@ -78,6 +91,16 @@ export class ReplaceProductTypeAccessoryLinksService implements ICommandHandler<
 
       if (accessoryRentalItem.kind !== RentalItemKind.ACCESSORY) {
         return err(new AccessoryLinkAccessoryMustBeAccessoryError(accessoryRentalItem.id));
+      }
+
+      if (accessoryLink.defaultQuantity > accessoryRentalItem._count.assets) {
+        return err(
+          new AccessoryLinkDefaultQuantityExceedsAssetCountError(
+            accessoryRentalItem.id,
+            accessoryLink.defaultQuantity,
+            accessoryRentalItem._count.assets,
+          ),
+        );
       }
     }
 
