@@ -32,6 +32,22 @@ export const productTypePricingTierResponseSchema = z.object({
 		.nullable(),
 });
 
+export const productTypeAccessoryLinkResponseSchema = z.object({
+	id: z.uuid(),
+	primaryRentalItemId: z.uuid(),
+	accessoryRentalItemId: z.uuid(),
+	isDefaultIncluded: z.boolean(),
+	defaultQuantity: z.number().int().positive(),
+	notes: z.string().nullable(),
+	accessoryRentalItem: z.object({
+		id: z.uuid(),
+		name: z.string(),
+		imageUrl: z.string(),
+		trackingMode: z.enum(TrackingMode),
+		retiredAt: z.coerce.date().nullable(),
+	}),
+});
+
 export const productTypeResponseSchema = z.object({
 	id: z.uuid(),
 	tenantId: z.uuid(),
@@ -53,6 +69,7 @@ export const productTypeResponseSchema = z.object({
 	category: productTypeCategoryResponseSchema.nullable(),
 	billingUnit: productTypeBillingUnitResponseSchema,
 	pricingTiers: z.array(productTypePricingTierResponseSchema),
+	accessoryLinks: z.array(productTypeAccessoryLinkResponseSchema).optional(),
 });
 
 export const getProductTypesQuerySchema = z.object({
@@ -72,6 +89,9 @@ export type ProductTypeBillingUnitResponse = z.infer<
 >;
 export type ProductTypePricingTierResponse = z.infer<
 	typeof productTypePricingTierResponseSchema
+>;
+export type ProductTypeAccessoryLinkResponse = z.infer<
+	typeof productTypeAccessoryLinkResponseSchema
 >;
 export type ProductTypeResponse = z.infer<typeof productTypeResponseSchema>;
 export type GetProductTypesQuery = z.infer<typeof getProductTypesQuerySchema>;

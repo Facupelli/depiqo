@@ -45,11 +45,11 @@ model Order {
   updatedAt DateTime  @updatedAt @map("updated_at")
   deletedAt DateTime? @map("deleted_at")
 
-  location         Location              @relation(fields: [locationId], references: [id])
+  location         Location                 @relation(fields: [locationId], references: [id])
   items            OrderItem[]
   assetAssignments AssetAssignment[]
-  customer         Customer?             @relation(fields: [customerId], references: [id])
-  coupon           Coupon?               @relation(fields: [couponId], references: [id])
+  customer         Customer?                @relation(fields: [customerId], references: [id])
+  coupon           Coupon?                  @relation(fields: [couponId], references: [id])
   couponRedemption CouponRedemption?
   deliveryRequest  OrderDeliveryRequest?
   signingRequests  DocumentSigningRequest[]
@@ -68,7 +68,7 @@ model OrderItem {
   productTypeId         String?       @map("product_type_id")
   bundleId              String?       @map("bundle_id")
   priceSnapshot         Json          @map("price_snapshot")
-  manualPricingOverride Json? @map("manual_pricing_override")
+  manualPricingOverride Json?         @map("manual_pricing_override")
   createdAt             DateTime      @default(now()) @map("created_at")
   updatedAt             DateTime      @updatedAt @map("updated_at")
 

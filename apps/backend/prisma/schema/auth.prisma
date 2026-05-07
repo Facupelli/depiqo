@@ -36,7 +36,6 @@ model RefreshToken {
   @@map("refresh_tokens")
 }
 
-
 model ExternalIdentity {
   id              String                   @id @default(uuid())
   tenantId        String                   @map("tenant_id")
@@ -61,4 +60,3 @@ model ExternalIdentity {
   @@index([userId])
   @@map("external_identities")
 }
-

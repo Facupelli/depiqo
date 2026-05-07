@@ -35,6 +35,21 @@ type ProductTypeReadModel = {
     locationId: string | null;
     location: { id: string; name: string } | null;
   }>;
+  accessoryLinks: Array<{
+    id: string;
+    primaryRentalItemId: string;
+    accessoryRentalItemId: string;
+    isDefaultIncluded: boolean;
+    defaultQuantity: number;
+    notes: string | null;
+    accessoryRentalItem: {
+      id: string;
+      name: string;
+      imageUrl: string;
+      trackingMode: TrackingMode;
+      retiredAt: Date | null;
+    };
+  }>;
 };
 
 @QueryHandler(GetProductTypeByIdQuery)
@@ -69,6 +84,27 @@ export class GetProductTypeByIdQueryHandler implements IQueryHandler<
               select: { id: true, name: true },
             },
           },
+        },
+        accessoryLinksAsPrimary: {
+          where: {
+            accessoryRentalItem: {
+              kind: RentalItemKind.ACCESSORY,
+              deletedAt: null,
+              retiredAt: null,
+            },
+          },
+          include: {
+            accessoryRentalItem: {
+              select: {
+                id: true,
+                name: true,
+                imageUrl: true,
+                trackingMode: true,
+                retiredAt: true,
+              },
+            },
+          },
+          orderBy: { accessoryRentalItem: { name: 'asc' } },
         },
         _count: {
           select: {
@@ -119,6 +155,21 @@ export class GetProductTypeByIdQueryHandler implements IQueryHandler<
         pricePerUnit: tier.pricePerUnit.toNumber(),
         locationId: tier.locationId,
         location: tier.location ? { id: tier.location.id, name: tier.location.name } : null,
+      })),
+      accessoryLinks: productType.accessoryLinksAsPrimary.map((accessoryLink) => ({
+        id: accessoryLink.id,
+        primaryRentalItemId: accessoryLink.primaryRentalItemId,
+        accessoryRentalItemId: accessoryLink.accessoryRentalItemId,
+        isDefaultIncluded: accessoryLink.isDefaultIncluded,
+        defaultQuantity: accessoryLink.defaultQuantity,
+        notes: accessoryLink.notes,
+        accessoryRentalItem: {
+          id: accessoryLink.accessoryRentalItem.id,
+          name: accessoryLink.accessoryRentalItem.name,
+          imageUrl: accessoryLink.accessoryRentalItem.imageUrl ?? '',
+          trackingMode: accessoryLink.accessoryRentalItem.trackingMode as TrackingMode,
+          retiredAt: accessoryLink.accessoryRentalItem.retiredAt,
+        },
       })),
     };
   }

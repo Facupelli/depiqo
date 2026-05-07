@@ -18,10 +18,10 @@ model ProductCategory {
 }
 
 model ProductType {
-  id                     String       @id @default(uuid())
-  tenantId               String       @map("tenant_id")
-  categoryId             String?      @map("category_id")
-  billingUnitId          String       @map("billing_unit_id")
+  id                     String         @id @default(uuid())
+  tenantId               String         @map("tenant_id")
+  categoryId             String?        @map("category_id")
+  billingUnitId          String         @map("billing_unit_id")
   name                   String
   description            String?
   imageUrl               String?        @map("image_url")
@@ -29,12 +29,12 @@ model ProductType {
   trackingMode           TrackingMode   @map("tracking_mode")
   excludeFromNewArrivals Boolean        @default(false) @map("exclude_from_new_arrivals")
   attributes             Json
-  includedItems          Json         @default("[]") @map("included_items")
-  createdAt              DateTime     @default(now()) @map("created_at")
-  updatedAt              DateTime     @updatedAt @map("updated_at")
-  deletedAt              DateTime?    @map("deleted_at")
-  publishedAt            DateTime?    @map("published_at")
-  retiredAt              DateTime?    @map("retired_at")
+  includedItems          Json           @default("[]") @map("included_items")
+  createdAt              DateTime       @default(now()) @map("created_at")
+  updatedAt              DateTime       @updatedAt @map("updated_at")
+  deletedAt              DateTime?      @map("deleted_at")
+  publishedAt            DateTime?      @map("published_at")
+  retiredAt              DateTime?      @map("retired_at")
 
   tenant                       Tenant                        @relation(fields: [tenantId], references: [id])
   category                     ProductCategory?              @relation(fields: [categoryId], references: [id])
@@ -46,12 +46,33 @@ model ProductType {
   bundleComponents             BundleComponent[]
   snapshotComponents           BundleSnapshotComponent[]
   orderItems                   OrderItem[]
+  accessoryLinksAsPrimary      AccessoryLink[]               @relation("PrimaryRentalItemAccessoryLinks")
+  accessoryLinksAsAccessory    AccessoryLink[]               @relation("AccessoryRentalItemAccessoryLinks")
 
   @@index([tenantId, publishedAt, deletedAt, categoryId])
   @@map("product_types")
 }
 
+model AccessoryLink {
+  id                    String   @id @default(uuid())
+  tenantId              String   @map("tenant_id")
+  primaryRentalItemId   String   @map("primary_rental_item_id")
+  accessoryRentalItemId String   @map("accessory_rental_item_id")
+  isDefaultIncluded     Boolean  @default(false) @map("is_default_included")
+  defaultQuantity       Int      @map("default_quantity")
+  notes                 String?
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
 
+  tenant              Tenant      @relation(fields: [tenantId], references: [id])
+  primaryRentalItem   ProductType @relation("PrimaryRentalItemAccessoryLinks", fields: [primaryRentalItemId], references: [id])
+  accessoryRentalItem ProductType @relation("AccessoryRentalItemAccessoryLinks", fields: [accessoryRentalItemId], references: [id])
+
+  @@unique([tenantId, primaryRentalItemId, accessoryRentalItemId])
+  @@index([tenantId, primaryRentalItemId])
+  @@index([tenantId, accessoryRentalItemId])
+  @@map("accessory_links")
+}
 
 // ---------------------------------------------------------------------------
 // BUNDLE

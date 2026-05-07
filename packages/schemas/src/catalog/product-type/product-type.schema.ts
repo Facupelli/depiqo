@@ -9,6 +9,17 @@ export const productTypeIncludedItemSchema = z.object({
   notes: z.string().nullable(),
 });
 
+export const replaceProductTypeAccessoryLinksSchema = z.object({
+  accessoryLinks: z.array(
+    z.object({
+      accessoryRentalItemId: z.uuid(),
+      isDefaultIncluded: z.boolean(),
+      defaultQuantity: z.number().int().positive(),
+      notes: z.string().nullable().optional(),
+    }),
+  ),
+});
+
 export const createProductTypeSchema = z.object({
   categoryId: z.uuid().nullable(),
   billingUnitId: z.uuid(),
@@ -40,6 +51,9 @@ export type ProductTypeAttributesDto = z.infer<
 >;
 export type ProductTypeIncludedItemDto = z.infer<
   typeof productTypeIncludedItemSchema
+>;
+export type ReplaceProductTypeAccessoryLinksDto = z.infer<
+  typeof replaceProductTypeAccessoryLinksSchema
 >;
 export type CreateProductTypeDto = z.infer<typeof createProductTypeSchema>;
 export type UpdateProductTypeDto = z.infer<typeof updateProductTypeSchema>;

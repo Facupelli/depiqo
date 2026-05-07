@@ -62,6 +62,36 @@ export class AccessoryProductTypeCannotBePublishedError extends CatalogError {
   }
 }
 
+export class AccessoryLinkPrimaryMustBePrimaryError extends CatalogError {
+  constructor(productTypeId: string) {
+    super(`Product type '${productTypeId}' must be a primary rental item to have accessory links.`);
+  }
+}
+
+export class AccessoryLinkAccessoryMustBeAccessoryError extends CatalogError {
+  constructor(productTypeId: string) {
+    super(`Product type '${productTypeId}' must be an accessory rental item to be linked as an accessory.`);
+  }
+}
+
+export class AccessoryLinkCrossTenantError extends CatalogError {
+  constructor(productTypeId: string) {
+    super(`Accessory product type '${productTypeId}' does not belong to the same tenant as the primary rental item.`);
+  }
+}
+
+export class InvalidAccessoryLinkDefaultQuantityError extends CatalogError {
+  constructor() {
+    super('Accessory link default quantity must be greater than zero.');
+  }
+}
+
+export class DuplicateAccessoryLinkError extends CatalogError {
+  constructor(productTypeId: string) {
+    super(`Accessory product type '${productTypeId}' appears more than once in the accessory link list.`);
+  }
+}
+
 export class ProductTypeCannotBePublishedWithoutAssetsError extends CatalogError {
   constructor(productTypeId: string) {
     super(`Product type '${productTypeId}' cannot be published without active assets.`);
