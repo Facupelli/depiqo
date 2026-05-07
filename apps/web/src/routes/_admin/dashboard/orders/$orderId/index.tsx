@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { PageBreadcrumb } from "@/components/detail-id-breadcrumb";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -54,6 +54,9 @@ import {
 } from "@/features/orders/queries/get-order-by-id";
 import { nowUtc } from "@/lib/dates/parse";
 import { AdminRouteError } from "@/shared/components/admin-route-error";
+
+type OrderDetailItem = ParsedOrderDetailResponseDto["items"][number];
+type ProductOrderDetailItem = Extract<OrderDetailItem, { type: "PRODUCT" }>;
 
 export const Route = createFileRoute("/_admin/dashboard/orders/$orderId/")({
 	validateSearch: ordersListSearchSchema,
@@ -358,6 +361,7 @@ function OrderTabs() {
 			</TabsList>
 
 			<TabsContent value="equipment">
+				<EquipmentTabHeader />
 				<OrderItemsTable />
 				<ActivityLog />
 			</TabsContent>
@@ -370,6 +374,34 @@ function OrderTabs() {
 				<TabPlaceholder label="Todavia no hay notas internas." />
 			</TabsContent>
 		</Tabs>
+	);
+}
+
+function EquipmentTabHeader() {
+	const { order } = useOrderDetailContext();
+	const accessoryActionLabel = hasSavedAccessories(order.items)
+		? "Edit accessories"
+		: "Assign accessories";
+
+	return (
+		<div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+			<div>
+				<h2 className="text-sm font-semibold text-neutral-950">
+					Equipos y accesorios
+				</h2>
+				<p className="mt-1 text-xs text-neutral-500">
+					Revisa los equipos del pedido y los accesorios guardados.
+				</p>
+			</div>
+
+			<Link
+				to="/dashboard/orders/$orderId/accessories"
+				params={{ orderId: order.id }}
+				className={buttonVariants({ variant: "outline" })}
+			>
+				{accessoryActionLabel}
+			</Link>
+		</div>
 	);
 }
 
@@ -441,6 +473,7 @@ function OrderItemRow({
 	const serialNumber = getItemSerialNumber(item);
 	const bundleSummary = getBundleSummary(item);
 	const qty = getItemQty(item);
+	const savedAccessories = getSavedAccessories(item);
 
 	// For product items: show a single owner name if the asset is externally owned.
 	// For bundle items: show per-product-type external ownership — getOwnerDisplay
@@ -501,6 +534,22 @@ function OrderItemRow({
 							Bundle: {bundleSummary}
 						</span>
 					)}
+
+					{savedAccessories.length > 0 ? (
+						<div className="mt-2 space-y-1.5 rounded-md border border-neutral-200 bg-white px-3 py-2">
+							<p className="font-mono text-[9px] uppercase tracking-[0.14em] text-neutral-400">
+								Accesorios guardados
+							</p>
+							<div className="space-y-1.5">
+								{savedAccessories.map((accessory) => (
+									<SavedAccessoryLine
+										key={accessory.id}
+										accessory={accessory}
+									/>
+								))}
+							</div>
+						</div>
+					) : null}
 				</div>
 			</div>
 
@@ -524,6 +573,51 @@ function OrderItemRow({
 			</div>
 		</div>
 	);
+}
+
+function SavedAccessoryLine({
+	accessory,
+}: {
+	accessory: ProductOrderDetailItem["accessories"][number];
+}) {
+	const assignedAssetLabels = accessory.assignedAssets
+		.map((asset) => asset.serialNumber)
+		.filter((serialNumber): serialNumber is string => Boolean(serialNumber));
+
+	return (
+		<div className="rounded-sm bg-neutral-50 px-2.5 py-2">
+			<div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+				<span className="text-xs font-medium text-neutral-800">
+					{accessory.name}
+				</span>
+				<span className="font-mono text-[11px] text-neutral-500">
+					x{accessory.quantity}
+				</span>
+			</div>
+
+			{accessory.notes ? (
+				<p className="mt-1 text-[11px] text-neutral-500">{accessory.notes}</p>
+			) : null}
+
+			{assignedAssetLabels.length > 0 ? (
+				<p className="mt-1 font-mono text-[10px] text-neutral-400">
+					Assets: {assignedAssetLabels.join(", ")}
+				</p>
+			) : null}
+		</div>
+	);
+}
+
+function getSavedAccessories(item: OrderDetailItem) {
+	return isProductOrderItem(item) ? item.accessories : [];
+}
+
+function hasSavedAccessories(items: OrderDetailItem[]) {
+	return items.some((item) => getSavedAccessories(item).length > 0);
+}
+
+function isProductOrderItem(item: OrderDetailItem): item is ProductOrderDetailItem {
+	return item.type === "PRODUCT";
 }
 
 // ─── Activity Log ─────────────────────────────────────────────────────────────
