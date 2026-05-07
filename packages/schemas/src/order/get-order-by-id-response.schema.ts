@@ -55,12 +55,22 @@ const AssetSummarySchema = z.object({
   ownerName: z.string().nullable(),
 });
 
+const OrderItemAccessorySchema = z.object({
+  id: z.uuid(),
+  accessoryRentalItemId: z.uuid(),
+  name: z.string(),
+  quantity: z.number().int().positive(),
+  notes: z.string().nullable(),
+  assignedAssets: z.array(AssetSummarySchema),
+});
+
 const ProductTypeItemSchema = z.object({
   id: z.uuid(),
   type: z.literal(OrderItemType.PRODUCT),
   productTypeId: z.uuid(),
   name: z.string(),
   assets: z.array(AssetSummarySchema),
+  accessories: z.array(OrderItemAccessorySchema),
 });
 
 const BundleComponentSnapshotSchema = z.object({

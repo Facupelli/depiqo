@@ -47,6 +47,7 @@ model Order {
 
   location         Location                 @relation(fields: [locationId], references: [id])
   items            OrderItem[]
+  itemAccessories  OrderItemAccessory[]
   assetAssignments AssetAssignment[]
   customer         Customer?                @relation(fields: [customerId], references: [id])
   coupon           Coupon?                  @relation(fields: [couponId], references: [id])
@@ -76,11 +77,36 @@ model OrderItem {
   productType      ProductType?          @relation(fields: [productTypeId], references: [id])
   bundle           Bundle?               @relation(fields: [bundleId], references: [id])
   assetAssignments AssetAssignment[]
+  accessories      OrderItemAccessory[]
   ownerSplits      OrderItemOwnerSplit[]
   bundleSnapshot   BundleSnapshot?
 
   @@index([orderId])
   @@map("order_items")
+}
+
+model OrderItemAccessory {
+  id                    String   @id @default(uuid())
+  tenantId              String   @map("tenant_id")
+  orderId               String   @map("order_id")
+  orderItemId           String   @map("order_item_id")
+  accessoryRentalItemId String   @map("accessory_rental_item_id")
+  quantity              Int
+  notes                 String?
+  
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+
+  order               Order             @relation(fields: [orderId], references: [id])
+  orderItem           OrderItem         @relation(fields: [orderItemId], references: [id])
+  accessoryRentalItem ProductType       @relation("OrderItemAccessoryRentalItem", fields: [accessoryRentalItemId], references: [id])
+  assetAssignments    AssetAssignment[]
+
+  @@unique([orderItemId, accessoryRentalItemId])
+  @@index([tenantId, orderId])
+  @@index([orderItemId])
+  @@index([accessoryRentalItemId])
+  @@map("order_item_accessories")
 }
 
 model OrderDeliveryRequest {

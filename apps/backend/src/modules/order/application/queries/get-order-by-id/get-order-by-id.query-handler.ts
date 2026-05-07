@@ -90,6 +90,33 @@ export class GetOrderByIdQueryHandler implements IQueryHandler<GetOrderByIdQuery
                 },
               },
             },
+            accessories: {
+              select: {
+                id: true,
+                accessoryRentalItemId: true,
+                quantity: true,
+                notes: true,
+                accessoryRentalItem: {
+                  select: { name: true },
+                },
+                assetAssignments: {
+                  select: {
+                    asset: {
+                      select: {
+                        id: true,
+                        serialNumber: true,
+                        ownerId: true,
+                        productTypeId: true,
+                        owner: {
+                          select: { name: true },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+              orderBy: { createdAt: 'asc' },
+            },
             ownerSplits: {
               select: {
                 assetId: true,
@@ -142,6 +169,20 @@ export class GetOrderByIdQueryHandler implements IQueryHandler<GetOrderByIdQuery
         productTypeId: aa.asset.productTypeId,
         ownerName: aa.asset.owner?.name ?? null,
       }));
+      const accessories = item.accessories.map((accessory) => ({
+        id: accessory.id,
+        accessoryRentalItemId: accessory.accessoryRentalItemId,
+        name: accessory.accessoryRentalItem.name,
+        quantity: accessory.quantity,
+        notes: accessory.notes,
+        assignedAssets: accessory.assetAssignments.map((aa) => ({
+          id: aa.asset.id,
+          serialNumber: aa.asset.serialNumber,
+          ownerId: aa.asset.ownerId,
+          productTypeId: aa.asset.productTypeId,
+          ownerName: aa.asset.owner?.name ?? null,
+        })),
+      }));
 
       if (item.type === OrderItemType.PRODUCT && item.productType) {
         return {
@@ -150,6 +191,7 @@ export class GetOrderByIdQueryHandler implements IQueryHandler<GetOrderByIdQuery
           productTypeId: item.productTypeId!,
           name: item.productType.name,
           assets,
+          accessories,
         };
       }
 

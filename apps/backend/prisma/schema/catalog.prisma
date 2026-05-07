@@ -46,6 +46,7 @@ model ProductType {
   bundleComponents             BundleComponent[]
   snapshotComponents           BundleSnapshotComponent[]
   orderItems                   OrderItem[]
+  orderItemAccessorySelections OrderItemAccessory[]           @relation("OrderItemAccessoryRentalItem")
   accessoryLinksAsPrimary      AccessoryLink[]               @relation("PrimaryRentalItemAccessoryLinks")
   accessoryLinksAsAccessory    AccessoryLink[]               @relation("AccessoryRentalItemAccessoryLinks")
 

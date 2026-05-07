@@ -137,6 +137,58 @@ export class OrderCancellationBlockedBySettledOwnerSplitsError extends OrderErro
   }
 }
 
+export class OrderAccessorySelectionNotAllowedError extends OrderError {
+  constructor(status: OrderStatus) {
+    super(`Cannot change accessory selections for an order in '${status}' status.`);
+  }
+}
+
+export class OrderAccessorySelectionItemNotFoundError extends OrderError {
+  constructor(orderItemId: string) {
+    super(`Order item '${orderItemId}' was not found for accessory selection.`);
+  }
+}
+
+export class OrderAccessorySelectionRequiresProductItemError extends OrderError {
+  constructor(orderItemId: string) {
+    super(`Order item '${orderItemId}' must be a product item to have accessory selections.`);
+  }
+}
+
+export class InvalidOrderItemAccessoryQuantityError extends OrderError {
+  constructor() {
+    super('Accessory selection quantity must be greater than zero.');
+  }
+}
+
+export class DuplicateOrderItemAccessoryError extends OrderError {
+  constructor(accessoryRentalItemId: string) {
+    super(
+      `Accessory rental item '${accessoryRentalItemId}' appears more than once in the accessory selection list.`,
+    );
+  }
+}
+
+export class OrderItemAccessoryRentalItemNotFoundError extends OrderError {
+  constructor(accessoryRentalItemId: string) {
+    super(`Accessory rental item '${accessoryRentalItemId}' was not found.`);
+  }
+}
+
+export class OrderItemAccessoryMustBeAccessoryError extends OrderError {
+  constructor(accessoryRentalItemId: string) {
+    super(`Rental item '${accessoryRentalItemId}' must be an accessory to be selected for an order item.`);
+  }
+}
+
+export class OrderItemAccessoryIncompatibleError extends OrderError {
+  constructor(accessoryRentalItemId: string, primaryRentalItemId: string) {
+    super(
+      `Accessory rental item '${accessoryRentalItemId}' is not compatible with primary rental item '${primaryRentalItemId}'.`,
+    );
+  }
+}
+
 export type UnavailableItem = { type: 'PRODUCT'; productTypeId: string } | { type: 'BUNDLE'; bundleId: string };
 
 export type ConflictGroup = {

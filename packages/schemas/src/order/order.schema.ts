@@ -30,6 +30,16 @@ export const bundleOrderItemSchema = z.object({
   bundleId: z.uuid(),
 });
 
+export const replaceOrderItemAccessoriesSchema = z.object({
+  accessories: z.array(
+    z.object({
+      accessoryRentalItemId: z.uuid(),
+      quantity: z.number().int().positive(),
+      notes: z.string().nullable().optional(),
+    }),
+  ),
+});
+
 export const orderItemSchema = z.discriminatedUnion("type", [
   productOrderItemSchema,
   bundleOrderItemSchema,
@@ -120,6 +130,9 @@ export const createDraftOrderSchema = createOrderSchemaBase.extend({
 export type ProductOrderItemDto = z.infer<typeof productOrderItemSchema>;
 export type BundleOrderItemDto = z.infer<typeof bundleOrderItemSchema>;
 export type OrderItemDto = z.infer<typeof orderItemSchema>;
+export type ReplaceOrderItemAccessoriesDto = z.infer<
+  typeof replaceOrderItemAccessoriesSchema
+>;
 export type DeliveryRequestDto = z.infer<typeof deliveryRequestSchema>;
 export type CreateOrderDto = z.infer<typeof createOrderSchema>;
 export type CreateDraftOrderDto = z.infer<typeof createDraftOrderSchema>;

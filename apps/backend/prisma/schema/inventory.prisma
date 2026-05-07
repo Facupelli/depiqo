@@ -47,24 +47,28 @@ model Asset {
 // ---------------------------------------------------------------------------
 
 model AssetAssignment {
-  id          String                   @id @default(uuid())
-  assetId     String                   @map("asset_id")
-  orderItemId String?                  @map("order_item_id")
-  orderId     String?                  @map("order_id")
-  type        AssignmentType
-  stage       OrderAssignmentStage?
-  source      AssignmentSource?
-  reason      String?
-  period      Unsupported("tstzrange")
-  createdAt   DateTime                 @default(now()) @map("created_at")
-  updatedAt   DateTime                 @updatedAt @map("updated_at")
+  id                    String                   @id @default(uuid())
+  assetId               String                   @map("asset_id")
+  orderItemId           String?                  @map("order_item_id")
+  orderItemAccessoryId  String?                  @map("order_item_accessory_id")
+  orderId               String?                  @map("order_id")
+  
+  type                  AssignmentType
+  stage                 OrderAssignmentStage?
+  source                AssignmentSource?
+  reason                String?
+  period                Unsupported("tstzrange")
+  createdAt             DateTime                 @default(now()) @map("created_at")
+  updatedAt             DateTime                 @updatedAt @map("updated_at")
 
-  asset     Asset      @relation(fields: [assetId], references: [id])
-  orderItem OrderItem? @relation(fields: [orderItemId], references: [id])
-  order     Order?     @relation(fields: [orderId], references: [id])
+  asset               Asset               @relation(fields: [assetId], references: [id])
+  orderItem           OrderItem?          @relation(fields: [orderItemId], references: [id])
+  orderItemAccessory  OrderItemAccessory? @relation(fields: [orderItemAccessoryId], references: [id])
+  order               Order?              @relation(fields: [orderId], references: [id])
 
   @@index([orderId])
   @@index([orderItemId])
+  @@index([orderItemAccessoryId])
   @@index([assetId, type])
   @@map("asset_assignments")
 }
