@@ -39,6 +39,7 @@ export const orderAccessoryPreparationResponseSchema = z.object({
   locationId: z.uuid(),
   periodStart: z.iso.datetime(),
   periodEnd: z.iso.datetime(),
+  hasSavedAccessory: z.boolean(),
   items: z.array(accessoryPreparationItemSchema),
 });
 

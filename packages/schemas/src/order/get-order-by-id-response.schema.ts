@@ -69,6 +69,7 @@ const ProductTypeItemSchema = z.object({
   type: z.literal(OrderItemType.PRODUCT),
   productTypeId: z.uuid(),
   name: z.string(),
+  imageUrl: z.string().nullable(),
   assets: z.array(AssetSummarySchema),
   accessories: z.array(OrderItemAccessorySchema),
 });
@@ -84,6 +85,7 @@ const BundleItemSchema = z.object({
   type: z.literal(OrderItemType.BUNDLE),
   bundleId: z.uuid(),
   name: z.string(),
+  imageUrl: z.string().nullable(),
   components: z.array(BundleComponentSnapshotSchema),
   assets: z.array(AssetSummarySchema),
 });

@@ -41,6 +41,7 @@ model Order {
   periodStart       DateTime          @map("period_start")
   periodEnd         DateTime          @map("period_end")
 
+  accessorySavedAt DateTime?          @map("accessory_saved_at")
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime  @updatedAt @map("updated_at")
   deletedAt DateTime? @map("deleted_at")

@@ -60,10 +60,11 @@ export class GetOrderByIdQueryHandler implements IQueryHandler<GetOrderByIdQuery
         items: {
           include: {
             productType: {
-              select: { name: true },
+              select: { imageUrl: true, name: true },
             },
             bundle: {
               select: {
+                imageUrl: true,
                 name: true,
                 components: {
                   select: {
@@ -190,6 +191,7 @@ export class GetOrderByIdQueryHandler implements IQueryHandler<GetOrderByIdQuery
           type: OrderItemType.PRODUCT,
           productTypeId: item.productTypeId!,
           name: item.productType.name,
+          imageUrl: item.productType.imageUrl,
           assets,
           accessories,
         };
@@ -201,6 +203,7 @@ export class GetOrderByIdQueryHandler implements IQueryHandler<GetOrderByIdQuery
           type: OrderItemType.BUNDLE,
           bundleId: item.bundleId!,
           name: item.bundle.name,
+          imageUrl: item.bundle.imageUrl,
           components: item.bundle.components.map((c) => ({
             productTypeId: c.productType.id,
             productTypeName: c.productType.name,

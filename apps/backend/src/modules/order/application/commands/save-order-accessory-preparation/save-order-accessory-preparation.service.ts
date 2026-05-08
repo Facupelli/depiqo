@@ -312,6 +312,11 @@ export class SaveOrderAccessoryPreparationService implements ICommandHandler<
         }
       }
 
+      await tx.order.update({
+        where: { id: command.orderId },
+        data: { accessorySavedAt: new Date() },
+      });
+
       return ok(undefined);
     });
 

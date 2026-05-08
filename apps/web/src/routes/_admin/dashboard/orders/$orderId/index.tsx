@@ -10,20 +10,22 @@ import {
 	Mail,
 	MapPin,
 	Package,
+	ReceiptText,
 	RotateCcw,
 	Truck,
 	User2Icon,
 } from "lucide-react";
 import { useState } from "react";
 import { PageBreadcrumb } from "@/components/detail-id-breadcrumb";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
 	getCustomerContactName,
 	getCustomerDisplayName,
 	getCustomerInitials,
 } from "@/features/customer/customer.utils";
+import { accessoryPreparationQueries } from "@/features/orders/accessory-preparation/accessory-preparation.queries";
+import { AccessoryPreparationWorkspace } from "@/features/orders/accessory-preparation/components/accessory-preparation-workspace";
 import { OrderDetailActionsMenu } from "@/features/orders/components/order-detail-actions-menu";
 import { OrderDetailBudgetDialogs } from "@/features/orders/components/order-detail-budget-dialogs";
 import { OrderDetailCancelDialog } from "@/features/orders/components/order-detail-cancel-dialog";
@@ -35,24 +37,24 @@ import {
 	OrderDetailProvider,
 	useOrderDetailContext,
 } from "@/features/orders/contexts/order-detail.context";
-import { getOrderEditAvailability } from "@/features/orders/order-editor/utils/order-edit-availability";
 import {
 	formatMoney,
 	formatOrderNumber,
 	getBundleSummary,
 	getExternalOwnersByProductType,
 	getItemQty,
-	getItemSerialNumber,
 	getOrderHeaderBannerConfig,
 	getOwnerDisplay,
 	type OrderHeaderBannerTone,
 } from "@/features/orders/order.utils";
+import { getOrderEditAvailability } from "@/features/orders/order-editor/utils/order-edit-availability";
 import { ordersListSearchSchema } from "@/features/orders/orders-list.search";
 import {
 	createOrderDetailQueryOptions,
 	type ParsedOrderDetailResponseDto,
 } from "@/features/orders/queries/get-order-by-id";
 import { nowUtc } from "@/lib/dates/parse";
+import { buildR2PublicUrl } from "@/lib/r2-public-url";
 import { AdminRouteError } from "@/shared/components/admin-route-error";
 
 type OrderDetailItem = ParsedOrderDetailResponseDto["items"][number];
@@ -60,8 +62,13 @@ type ProductOrderDetailItem = Extract<OrderDetailItem, { type: "PRODUCT" }>;
 
 export const Route = createFileRoute("/_admin/dashboard/orders/$orderId/")({
 	validateSearch: ordersListSearchSchema,
-	loader: ({ context: { queryClient }, params: { orderId } }) => {
-		queryClient.ensureQueryData(createOrderDetailQueryOptions({ orderId }));
+	loader: async ({ context: { queryClient }, params: { orderId } }) => {
+		await Promise.all([
+			queryClient.ensureQueryData(createOrderDetailQueryOptions({ orderId })),
+			queryClient.ensureQueryData(
+				accessoryPreparationQueries.detail({ orderId }),
+			),
+		]);
 	},
 	errorComponent: ({ error }) => {
 		return (
@@ -78,8 +85,12 @@ export const Route = createFileRoute("/_admin/dashboard/orders/$orderId/")({
 function RouteComponent() {
 	const { orderId } = Route.useParams();
 	const search = Route.useSearch();
+	const [isPreparingAccessories, setIsPreparingAccessories] = useState(false);
 	const { data: order } = useSuspenseQuery(
 		createOrderDetailQueryOptions({ orderId }),
+	);
+	const { data: preparation } = useSuspenseQuery(
+		accessoryPreparationQueries.detail({ orderId }),
 	);
 
 	return (
@@ -92,20 +103,35 @@ function RouteComponent() {
 
 				<OrderHeader />
 
-				<div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] py-10 gap-20">
-					{/* Left */}
-					<div>
-						<OrderTabs />
+				{isPreparingAccessories ? (
+					<div className="py-10">
+						<AccessoryPreparationWorkspace
+							orderId={orderId}
+							productImagesByOrderItemId={getProductImagesByOrderItemId(
+								order.items,
+							)}
+							preparation={preparation}
+							onClose={() => setIsPreparingAccessories(false)}
+						/>
 					</div>
+				) : (
+					<div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] py-10 gap-20">
+						{/* Left */}
+						<div>
+							<OrderEquipmentSection
+								onPrepareAccessories={() => setIsPreparingAccessories(true)}
+							/>
+						</div>
 
-					{/* Right */}
-					<div className="space-y-4">
-						<OrderClientCard />
-						<OrderSigningCard />
-						<OrderLogisticsCard />
-						<OrderFinancialsCard />
+						{/* Right */}
+						<div className="space-y-4">
+							<OrderClientCard />
+							<OrderSigningCard />
+							<OrderLogisticsCard />
+							<OrderFinancialsCard />
+						</div>
 					</div>
-				</div>
+				)}
 			</div>
 		</OrderDetailProvider>
 	);
@@ -341,47 +367,33 @@ function getOrderHeaderPrimaryButtonConfig(
 	}
 }
 
-// ─── Tabs ─────────────────────────────────────────────────────────────────────
+// ─── Equipment ────────────────────────────────────────────────────────────────
 
-function OrderTabs() {
+function OrderEquipmentSection({
+	onPrepareAccessories,
+}: {
+	onPrepareAccessories: () => void;
+}) {
 	return (
-		<Tabs defaultValue="equipment" className="flex flex-col gap-y-6">
-			<TabsList>
-				{(
-					[
-						{ value: "equipment", label: "Equipos y combos" },
-						{ value: "documents", label: "Documentos" },
-						{ value: "notes", label: "Notas internas" },
-					] as const
-				).map((tab) => (
-					<TabsTrigger key={tab.value} value={tab.value}>
-						{tab.label}
-					</TabsTrigger>
-				))}
-			</TabsList>
-
-			<TabsContent value="equipment">
-				<EquipmentTabHeader />
-				<OrderItemsTable />
-				<ActivityLog />
-			</TabsContent>
-
-			<TabsContent value="documents">
-				<TabPlaceholder label="No hay documentos adjuntos." />
-			</TabsContent>
-
-			<TabsContent value="notes">
-				<TabPlaceholder label="Todavia no hay notas internas." />
-			</TabsContent>
-		</Tabs>
+		<div className="space-y-8">
+			<div>
+				<EquipmentSectionHeader onPrepareAccessories={onPrepareAccessories} />
+				<OrderItemsList />
+			</div>
+			<ActivityLog />
+		</div>
 	);
 }
 
-function EquipmentTabHeader() {
+function EquipmentSectionHeader({
+	onPrepareAccessories,
+}: {
+	onPrepareAccessories: () => void;
+}) {
 	const { order } = useOrderDetailContext();
 	const accessoryActionLabel = hasSavedAccessories(order.items)
-		? "Edit accessories"
-		: "Assign accessories";
+		? "Editar accesorios"
+		: "Asignar accesorios";
 
 	return (
 		<div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -394,123 +406,81 @@ function EquipmentTabHeader() {
 				</p>
 			</div>
 
-			<Link
-				to="/dashboard/orders/$orderId/accessories"
-				params={{ orderId: order.id }}
-				className={buttonVariants({ variant: "outline" })}
-			>
+			<Button type="button" variant="outline" onClick={onPrepareAccessories}>
 				{accessoryActionLabel}
-			</Link>
+			</Button>
 		</div>
 	);
 }
 
-function TabPlaceholder({ label }: { label: string }) {
-	return (
-		<div className="border border-dashed border-neutral-200 py-16 flex items-center justify-center rounded-md">
-			<span className="text-sm text-neutral-300">{label}</span>
-		</div>
-	);
-}
+// ─── Items List ───────────────────────────────────────────────────────────────
 
-// ─── Items Table ──────────────────────────────────────────────────────────────
-
-function OrderItemsTable() {
+function OrderItemsList() {
 	const { order } = useOrderDetailContext();
-	const { items, financial } = order;
-
-	// Build a map from orderItemId → financial line for O(1) lookup per row
-	const financialByItemId = new Map(
-		financial.items.map((line) => [line.orderItemId, line]),
-	);
+	const groupedItems = getGroupedOrderItems(order.items);
 
 	return (
-		<section className="mb-10">
-			{/* Column headers */}
-			<div className="grid grid-cols-[1fr_80px_100px_100px] gap-4 pb-3 border-b border-neutral-200">
+		<section className="mb-10 space-y-3">
+			<div className="grid grid-cols-[1fr_auto] gap-4 border-b border-neutral-200 pb-3">
 				<span className="font-mono text-[10px] tracking-[0.14em] uppercase text-neutral-400">
-					Item Description
+					Equipo
 				</span>
-				<span className="font-mono text-[10px] tracking-[0.14em] uppercase text-neutral-400 text-center">
-					Quantity
-				</span>
-				<span className="font-mono text-[10px] tracking-[0.14em] uppercase text-neutral-400 text-right">
-					Base Price
-				</span>
-				<span className="font-mono text-[10px] tracking-[0.14em] uppercase text-neutral-400 text-right">
-					Total
+				<span className="font-mono text-[10px] tracking-[0.14em] uppercase text-neutral-400">
+					Cantidad
 				</span>
 			</div>
 
-			<div>
-				{items.map((item) => (
-					<OrderItemRow
-						key={item.id}
-						item={item}
-						financialLine={financialByItemId.get(item.id) ?? null}
-					/>
-				))}
-			</div>
+			{groupedItems.map((item) => (
+				<OrderItemCard key={item.key} item={item} />
+			))}
 		</section>
 	);
 }
 
-// ─── Item Row ─────────────────────────────────────────────────────────────────
+// ─── Item Card ────────────────────────────────────────────────────────────────
 
-// OrderItemRow still receives props: it's a repeated row inside a list,
-// and each instance has its own item + financialLine data. Context would
-// require passing the item id and doing a lookup inside — props are cleaner here.
-
-function OrderItemRow({
-	item,
-	financialLine,
-}: {
-	item: ParsedOrderDetailResponseDto["items"][number];
-	financialLine:
-		| ParsedOrderDetailResponseDto["financial"]["items"][number]
-		| null;
-}) {
-	const serialNumber = getItemSerialNumber(item);
-	const bundleSummary = getBundleSummary(item);
-	const qty = getItemQty(item);
-	const savedAccessories = getSavedAccessories(item);
-
-	// For product items: show a single owner name if the asset is externally owned.
-	// For bundle items: show per-product-type external ownership — getOwnerDisplay
-	// would incorrectly imply the entire bundle is externally owned.
-	const productOwner =
-		item.type !== "BUNDLE" ? getOwnerDisplay(item.assets) : null;
-	const bundleExternalOwners =
-		item.type === "BUNDLE" ? getExternalOwnersByProductType(item) : [];
+function OrderItemCard({ item }: { item: GroupedOrderItem }) {
+	const productImage = buildR2PublicUrl(item.imageUrl, "catalog");
 
 	return (
-		<div className="grid grid-cols-[1fr_80px_100px_100px] gap-4 items-center py-4 border-b border-neutral-100 hover:bg-neutral-50 transition-colors rounded-sm">
-			{/* Info */}
-			<div className="flex items-center gap-4">
-				<div className="w-16 h-14 bg-neutral-100 border border-neutral-200 flex items-center justify-center shrink-0 rounded-sm">
-					<Package className="w-5 h-5 text-neutral-300" />
+		<div className="grid gap-4 rounded-xl border border-neutral-200 bg-white p-4 transition-colors hover:border-neutral-300 sm:grid-cols-[1fr_auto]">
+			<div className="flex gap-4">
+				<div className="flex size-18 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-neutral-200 bg-neutral-100">
+					{productImage ? (
+						<img
+							src={productImage}
+							alt={item.name}
+							loading="lazy"
+							decoding="async"
+							className="h-full w-full object-cover"
+						/>
+					) : (
+						<Package className="size-6 text-neutral-300" />
+					)}
 				</div>
 				<div className="flex flex-col gap-0.5 min-w-0">
-					<span className="text-sm font-semibold text-neutral-950 leading-snug">
-						{item.name}
-					</span>
-
-					{financialLine?.pricing.isOverridden && (
-						<span className="text-[11px] font-medium text-amber-700">
-							Precio ajustado manualmente
+					<div className="flex flex-wrap items-center gap-2">
+						<span className="font-semibold leading-snug text-neutral-950">
+							{item.name}
 						</span>
-					)}
+					</div>
 
-					{/* Product item: single owner line */}
-					{productOwner && (
+					<div className="text-xs text-neutral-400 font-semibold">
+						<span>Cantidad:</span>{" "}
+						<span className="text-sm text-neutral-500">{item.quantity}</span>{" "}
+						<span className="text-neutral-500">
+							{item.quantity > 1 ? "unidades" : "unidad"}
+						</span>
+					</div>
+
+					{item.productOwner && (
 						<span className="text-[11px] text-neutral-500 flex items-center gap-1">
 							<User2Icon className="size-3 shrink-0" />
-							{productOwner}
+							{item.productOwner}
 						</span>
 					)}
 
-					{/* Bundle item: one line per externally-owned product type */}
-					{bundleExternalOwners.map((entry) => (
+					{item.bundleExternalOwners.map((entry) => (
 						<span
 							key={entry.productTypeName}
 							className="text-[11px] text-neutral-500 flex items-center gap-1"
@@ -524,24 +494,21 @@ function OrderItemRow({
 						</span>
 					))}
 
-					{serialNumber && (
-						<span className="font-mono text-[11px] text-neutral-400">
-							S/N: {serialNumber}
-						</span>
-					)}
-					{bundleSummary && (
+					{item.bundleSummary && (
 						<span className="text-[11px] text-neutral-500 font-medium">
-							Bundle: {bundleSummary}
+							Bundle: {item.bundleSummary}
 						</span>
 					)}
 
-					{savedAccessories.length > 0 ? (
+					<SerialNumberGroups groups={item.serialGroups} />
+
+					{item.savedAccessories.length > 0 ? (
 						<div className="mt-2 space-y-1.5 rounded-md border border-neutral-200 bg-white px-3 py-2">
 							<p className="font-mono text-[9px] uppercase tracking-[0.14em] text-neutral-400">
 								Accesorios guardados
 							</p>
 							<div className="space-y-1.5">
-								{savedAccessories.map((accessory) => (
+								{item.savedAccessories.map((accessory) => (
 									<SavedAccessoryLine
 										key={accessory.id}
 										accessory={accessory}
@@ -553,26 +520,179 @@ function OrderItemRow({
 				</div>
 			</div>
 
-			{/* Qty */}
-			<div className="text-center">
-				<span className="font-mono text-sm text-neutral-600">{qty}</span>
-			</div>
-
-			{/* Base price */}
-			<div className="text-right">
-				<span className="font-mono text-sm text-neutral-500">
-					{financialLine ? formatMoney(financialLine.basePrice) : "—"}
-				</span>
-			</div>
-
-			{/* Final price */}
-			<div className="text-right">
-				<span className="font-mono text-sm font-bold text-neutral-950">
-					{financialLine ? formatMoney(financialLine.finalPrice) : "—"}
+			<div className="flex items-start justify-end">
+				<span className="rounded-full bg-neutral-100 px-2 py-0.5 text-[11px] font-medium text-neutral-600">
+					{item.type === "BUNDLE" ? "Combo" : "Producto"}
 				</span>
 			</div>
 		</div>
 	);
+}
+
+function SerialNumberGroups({ groups }: { groups: SerialNumberGroup[] }) {
+	if (groups.length === 0) {
+		return (
+			<span className="font-mono text-[11px] text-neutral-400">
+				Sin series asignadas
+			</span>
+		);
+	}
+
+	return (
+		<div className="mt-2 space-y-1.5">
+			<p className="text-xs text-neutral-400">Nº de serie</p>
+
+			{groups.map((group) => (
+				<div key={group.label ?? "serials"} className="flex flex-wrap gap-1.5">
+					{group.label ? (
+						<span className="mr-1 text-[11px] font-medium text-neutral-500">
+							{group.label}
+						</span>
+					) : null}
+					{group.serialNumbers.map((serialNumber) => (
+						<span
+							key={serialNumber}
+							className="rounded-sm border border-neutral-200 bg-neutral-50 px-2 py-0.5 font-mono text-xs text-neutral-600 font-semibold"
+						>
+							{serialNumber}
+						</span>
+					))}
+				</div>
+			))}
+		</div>
+	);
+}
+
+type GroupedOrderItem = {
+	key: string;
+	type: OrderDetailItem["type"];
+	name: string;
+	imageUrl: string | null;
+	quantity: number;
+	serialGroups: SerialNumberGroup[];
+	bundleSummary: string | null;
+	productOwner: string | null;
+	bundleExternalOwners: ReturnType<typeof getExternalOwnersByProductType>;
+	savedAccessories: ProductOrderDetailItem["accessories"];
+};
+
+type SerialNumberGroup = {
+	label: string | null;
+	serialNumbers: string[];
+};
+
+function getGroupedOrderItems(items: OrderDetailItem[]): GroupedOrderItem[] {
+	const groups = new Map<string, OrderDetailItem[]>();
+
+	for (const item of items) {
+		const key = getOrderItemGroupKey(item);
+		groups.set(key, [...(groups.get(key) ?? []), item]);
+	}
+
+	return [...groups.entries()].map(([key, groupItems]) => {
+		const firstItem = groupItems[0];
+		if (!firstItem) {
+			throw new Error("Cannot render an empty order item group.");
+		}
+		const assets = groupItems.flatMap((item) => item.assets);
+
+		return {
+			key,
+			type: firstItem.type,
+			name: firstItem.name,
+			imageUrl: firstItem.imageUrl,
+			quantity: groupItems.reduce((total, item) => total + getItemQty(item), 0),
+			serialGroups: getGroupedSerialNumbers(groupItems),
+			bundleSummary:
+				firstItem.type === "BUNDLE" ? getBundleSummary(firstItem) : null,
+			productOwner:
+				firstItem.type === "PRODUCT" ? getOwnerDisplay(assets) : null,
+			bundleExternalOwners:
+				firstItem.type === "BUNDLE"
+					? getGroupedBundleExternalOwners(groupItems)
+					: [],
+			savedAccessories: groupItems.flatMap((item) => getSavedAccessories(item)),
+		};
+	});
+}
+
+function getOrderItemGroupKey(item: OrderDetailItem): string {
+	return item.type === "PRODUCT"
+		? `PRODUCT:${item.productTypeId}`
+		: `BUNDLE:${item.bundleId}`;
+}
+
+function getGroupedSerialNumbers(
+	items: OrderDetailItem[],
+): SerialNumberGroup[] {
+	const firstItem = items[0];
+	if (!firstItem) {
+		return [];
+	}
+
+	if (firstItem.type === "PRODUCT") {
+		const serialNumbers = uniqueSerialNumbers(
+			items.flatMap((item) => item.assets.map((asset) => asset.serialNumber)),
+		);
+
+		return serialNumbers.length > 0 ? [{ label: null, serialNumbers }] : [];
+	}
+
+	const componentNameByProductTypeId = new Map(
+		firstItem.components.map((component) => [
+			component.productTypeId,
+			component.productTypeName,
+		]),
+	);
+	const serialsByComponent = new Map<string, Set<string>>();
+
+	for (const item of items) {
+		for (const asset of item.assets) {
+			if (!asset.serialNumber) continue;
+
+			const label = componentNameByProductTypeId.get(asset.productTypeId);
+			if (!label) continue;
+
+			const serialNumbers = serialsByComponent.get(label) ?? new Set<string>();
+			serialNumbers.add(asset.serialNumber);
+			serialsByComponent.set(label, serialNumbers);
+		}
+	}
+
+	return [...serialsByComponent.entries()].map(([label, serialNumbers]) => ({
+		label,
+		serialNumbers: [...serialNumbers],
+	}));
+}
+
+function getGroupedBundleExternalOwners(
+	items: OrderDetailItem[],
+): ReturnType<typeof getExternalOwnersByProductType> {
+	const ownerNamesByProductType = new Map<string, Set<string>>();
+
+	for (const item of items) {
+		for (const owner of getExternalOwnersByProductType(item)) {
+			const ownerNames =
+				ownerNamesByProductType.get(owner.productTypeName) ?? new Set<string>();
+			for (const name of owner.ownerNames.split(", ").filter(Boolean)) {
+				ownerNames.add(name);
+			}
+			ownerNamesByProductType.set(owner.productTypeName, ownerNames);
+		}
+	}
+
+	return [...ownerNamesByProductType.entries()].map(
+		([productTypeName, ownerNames]) => ({
+			productTypeName,
+			ownerNames: [...ownerNames].join(", "),
+		}),
+	);
+}
+
+function uniqueSerialNumbers(values: Array<string | null>): string[] {
+	return [
+		...new Set(values.filter((value): value is string => Boolean(value))),
+	];
 }
 
 function SavedAccessoryLine({
@@ -616,8 +736,20 @@ function hasSavedAccessories(items: OrderDetailItem[]) {
 	return items.some((item) => getSavedAccessories(item).length > 0);
 }
 
-function isProductOrderItem(item: OrderDetailItem): item is ProductOrderDetailItem {
+function isProductOrderItem(
+	item: OrderDetailItem,
+): item is ProductOrderDetailItem {
 	return item.type === "PRODUCT";
+}
+
+function getProductImagesByOrderItemId(
+	items: OrderDetailItem[],
+): Record<string, string | null> {
+	return Object.fromEntries(
+		items
+			.filter(isProductOrderItem)
+			.map((item) => [item.id, buildR2PublicUrl(item.imageUrl, "catalog")]),
+	);
 }
 
 // ─── Activity Log ─────────────────────────────────────────────────────────────
@@ -689,22 +821,22 @@ function OrderClientCard() {
 
 	return (
 		<section className="bg-white border border-neutral-200 rounded-lg p-5">
-			{/* Header */}
-			<div className="flex items-center justify-between mb-4 pb-3 border-b border-neutral-100">
-				<span className="font-mono text-[10px] tracking-[0.15em] uppercase text-neutral-400">
-					Información del Cliente
-				</span>
-				{customer ? (
-					<Link
-						to="/dashboard/customers/$customerId"
-						params={{ customerId: customer.id }}
-						className="flex items-center gap-1 text-xs font-medium text-neutral-500 hover:text-neutral-950 transition-colors"
-					>
-						Ver Perfil
-						<ExternalLink className="w-3 h-3" />
-					</Link>
-				) : null}
-			</div>
+			<SidebarCardHeader
+				icon={<User2Icon className="size-4" />}
+				title="Información del cliente"
+				action={
+					customer ? (
+						<Link
+							to="/dashboard/customers/$customerId"
+							params={{ customerId: customer.id }}
+							className="flex items-center gap-1 text-xs font-medium text-neutral-500 hover:text-neutral-950 transition-colors"
+						>
+							Ver Perfil
+							<ExternalLink className="w-3 h-3" />
+						</Link>
+					) : null
+				}
+			/>
 
 			{customer ? (
 				<>
@@ -763,7 +895,9 @@ function OrderSigningCard() {
 	const statusMeta = getSigningStatusMeta(order.signing.status);
 	const isSigned = order.signing.status === "SIGNED";
 	const summaryTimestamp =
-		order.signing.signedAt ?? order.signing.expiresAt ?? order.signing.createdAt;
+		order.signing.signedAt ??
+		order.signing.expiresAt ??
+		order.signing.createdAt;
 
 	return (
 		<section className="bg-white border border-neutral-200 rounded-lg p-5">
@@ -772,12 +906,11 @@ function OrderSigningCard() {
 				onClick={() => setIsExpanded((previous) => !previous)}
 				className="flex w-full items-start justify-between gap-4 text-left"
 			>
-				<div className="min-w-0">
-					<div className="flex items-center gap-2 pb-3">
-						<span className="font-mono text-[10px] tracking-[0.15em] uppercase text-neutral-400">
-							Firma del contrato
-						</span>
-					</div>
+				<div className="min-w-0 flex-1">
+					<SidebarCardHeader
+						icon={<FileSignature className="size-4" />}
+						title="Firma del contrato"
+					/>
 					<div className="flex items-center gap-3">
 						<div
 							className={`flex size-10 shrink-0 items-center justify-center rounded-full ${statusMeta.iconWrapClassName}`}
@@ -803,15 +936,6 @@ function OrderSigningCard() {
 			</button>
 
 			<div className="mt-4 space-y-3">
-				<SidebarField
-					icon={<Mail className="w-3.5 h-3.5" />}
-					value={
-						order.signing.recipientEmail ??
-						order.customer?.email ??
-						"Sin email cargado"
-					}
-				/>
-
 				{!isSigned ? (
 					<SigningSummaryDetails
 						summaryTimestamp={summaryTimestamp}
@@ -858,61 +982,54 @@ function OrderLogisticsCard() {
 
 	return (
 		<section className="bg-white border border-neutral-200 rounded-lg p-5">
-			<SidebarSectionLabel label="Logistics" />
+			<SidebarCardHeader
+				icon={<Truck className="size-4" />}
+				title="Logística"
+			/>
 
-			<div className="grid grid-cols-2 gap-4 mb-4">
-				<div>
-					<p className="font-mono text-[9px] tracking-[0.12em] uppercase text-neutral-400 mb-1">
+			<div className="grid grid-cols-2 gap-3 mb-3">
+				<div className="rounded-lg border border-neutral-100 bg-neutral-50 px-3 py-3">
+					<p className="font-mono text-[9px] uppercase text-neutral-500">
 						Fecha de retiro
 					</p>
-					<p className="text-sm font-bold text-neutral-950">
-						{bookingSnapshot.pickupDate.format("MMM DD, YYYY")}
-					</p>
-					<p className="font-mono text-[10px] text-neutral-400 mt-0.5">
+					<p className="text-sm font-bold text-neutral-900">
+						{bookingSnapshot.pickupDate.format("MMM DD, YYYY")}{" "}
 						{pickupAt.tz(bookingSnapshot.timezone).format("HH:mm")}
 					</p>
 				</div>
-				<div>
-					<p className="font-mono text-[9px] tracking-[0.12em] uppercase text-neutral-400 mb-1">
+				<div className="rounded-lg border border-neutral-100 bg-neutral-50 px-3 py-3">
+					<p className="font-mono text-[9px] uppercase text-neutral-500">
 						Fecha de devolución
 					</p>
-					<p className="text-sm font-bold text-neutral-950">
-						{bookingSnapshot.returnDate.format("MMM DD, YYYY")}
-					</p>
-					<p className="font-mono text-[10px] text-neutral-400 mt-0.5">
+					<p className="text-sm font-bold text-neutral-900">
+						{bookingSnapshot.returnDate.format("MMM DD, YYYY")}{" "}
 						{returnAt.tz(bookingSnapshot.timezone).format("HH:mm")}
 					</p>
 				</div>
 			</div>
 
-			<div className="flex items-center gap-3 bg-neutral-50 border border-neutral-100 rounded-md px-3 py-2.5">
-				<MapPin className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
-				<div>
-					<p className="font-mono text-[9px] tracking-widest uppercase text-neutral-400 mb-0.5">
-						Ubicación Depósito
-					</p>
-					<p className="text-sm font-semibold text-neutral-950">
-						{location.name}
-					</p>
-				</div>
-			</div>
-
-			<div className="mt-4 flex items-center gap-3 bg-neutral-50 border border-neutral-100 rounded-md px-3 py-2.5">
-				<Truck className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
-				<div>
-					<p className="font-mono text-[9px] tracking-widest uppercase text-neutral-400 mb-0.5">
-						Fulfillment
-					</p>
+			<div className="space-y-3">
+				<div className="bg-neutral-50 border border-neutral-100 rounded-lg px-3 py-3">
 					<p className="text-sm font-semibold text-neutral-950">
 						{fulfillmentMethod === FulfillmentMethod.DELIVERY
 							? "Solicitó delivery"
 							: "Retiro en punto de entrega"}
 					</p>
+					<div className="flex items-center gap-3 ">
+						<div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-white text-neutral-500">
+							<MapPin className="size-4" />
+						</div>
+						<div>
+							<p className="text-sm font-semibold text-neutral-950">
+								{location.name}
+							</p>
+						</div>
+					</div>
 				</div>
 			</div>
 
 			{deliveryRequest && (
-				<div className="mt-4 rounded-md border border-neutral-200 bg-white p-4">
+				<div className="mt-4 rounded-lg border border-neutral-200 bg-white p-4">
 					<p className="font-mono text-[9px] tracking-widest uppercase text-neutral-400 mb-3">
 						Pedido de Delivery
 					</p>
@@ -958,7 +1075,10 @@ function OrderFinancialsCard() {
 
 	return (
 		<section className="bg-white border border-neutral-200 rounded-lg p-5">
-			<SidebarSectionLabel label="Resumen financiero" />
+			<SidebarCardHeader
+				icon={<ReceiptText className="size-4" />}
+				title="Resumen financiero"
+			/>
 
 			{hasAdjustedLines ? (
 				<div className="mb-4 flex items-start justify-between gap-4 rounded-md border border-amber-200 bg-amber-50/50 px-3 py-2.5">
@@ -1219,11 +1339,25 @@ function formatSignedMoney(amount: string): string {
 
 // ─── Shared Sidebar Primitives ────────────────────────────────────────────────
 
-function SidebarSectionLabel({ label }: { label: string }) {
+function SidebarCardHeader({
+	icon,
+	title,
+	action,
+}: {
+	icon: React.ReactNode;
+	title: string;
+	action?: React.ReactNode;
+}) {
 	return (
-		<p className="font-mono text-[10px] tracking-[0.15em] uppercase text-neutral-400 mb-4 pb-3 border-b border-neutral-100">
-			{label}
-		</p>
+		<div className="mb-4 flex items-center justify-between gap-3 border-b border-neutral-100 pb-3">
+			<div className="flex items-center gap-2">
+				<span className="flex size-8 items-center justify-center text-neutral-600">
+					{icon}
+				</span>
+				<h2 className="text-sm font-bold text-neutral-950">{title}</h2>
+			</div>
+			{action}
+		</div>
 	);
 }
 

@@ -90,8 +90,11 @@ export function accessoryPreparationToFormValues(
 			assignedPrimaryAssets: item.assignedPrimaryAssets,
 			accessories: item.compatibleAccessories.map((accessory) => {
 				const selectedLine = accessory.selectedLine;
+				const suggestedQuantity = accessory.suggestedQuantity ?? 0;
+				const shouldApplySuggestedDefault =
+					!preparation.hasSavedAccessory && accessory.suggestedQuantity !== null;
 				const selected =
-					selectedLine !== null || accessory.suggestedQuantity !== null;
+					selectedLine !== null || shouldApplySuggestedDefault;
 
 				return {
 					accessoryRentalItemId: accessory.accessoryRentalItemId,
@@ -107,8 +110,8 @@ export function accessoryPreparationToFormValues(
 						selectedLine?.assignedAssets.map((asset) => asset.id) ?? [],
 					assignedAssets: selectedLine?.assignedAssets ?? [],
 					autoAssignQuantity:
-						selectedLine === null && accessory.suggestedQuantity !== null
-							? accessory.suggestedQuantity
+						selectedLine === null && shouldApplySuggestedDefault
+							? suggestedQuantity
 							: 0,
 				};
 			}),

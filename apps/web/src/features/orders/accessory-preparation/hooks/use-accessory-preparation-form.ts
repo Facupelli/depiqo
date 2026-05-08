@@ -134,17 +134,6 @@ export function useAccessoryPreparationForm({
 		});
 	}
 
-	function removeAssignedAsset(
-		itemIndex: number,
-		accessoryIndex: number,
-		assetId: string,
-	) {
-		updateAccessory(itemIndex, accessoryIndex, (accessory) => ({
-			...accessory,
-			selectedAssetIds: accessory.selectedAssetIds.filter((id) => id !== assetId),
-		}));
-	}
-
 	function buildPayload(valuesToSubmit: AccessoryPreparationFormValues = values) {
 		return toSaveOrderAccessoryPreparationDto(valuesToSubmit);
 	}
@@ -158,7 +147,6 @@ export function useAccessoryPreparationForm({
 		setAccessorySelected,
 		setAccessoryQuantity,
 		setAutoAssignQuantity,
-		removeAssignedAsset,
 	};
 }
 

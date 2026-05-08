@@ -40,11 +40,10 @@ export const GetOrderAccessoryPreparationResponseSchema = z.object({
   locationId: z.string().uuid(),
   periodStart: z.string().datetime(),
   periodEnd: z.string().datetime(),
+  hasSavedAccessory: z.boolean(),
   items: z.array(OrderItemAccessoryPreparationSchema),
 });
 
-export class GetOrderAccessoryPreparationResponseDto extends createZodDto(
-  GetOrderAccessoryPreparationResponseSchema,
-) {}
+export class GetOrderAccessoryPreparationResponseDto extends createZodDto(GetOrderAccessoryPreparationResponseSchema) {}
 
 export type GetOrderAccessoryPreparationResponse = z.infer<typeof GetOrderAccessoryPreparationResponseSchema>;

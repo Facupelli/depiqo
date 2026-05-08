@@ -29,6 +29,7 @@ export class GetOrderAccessoryPreparationQueryHandler implements IQueryHandler<
         locationId: true,
         periodStart: true,
         periodEnd: true,
+        accessorySavedAt: true,
         items: {
           where: { type: OrderItemType.PRODUCT },
           select: {
@@ -118,6 +119,7 @@ export class GetOrderAccessoryPreparationQueryHandler implements IQueryHandler<
       locationId: order.locationId,
       periodStart: order.periodStart.toISOString(),
       periodEnd: order.periodEnd.toISOString(),
+      hasSavedAccessory: order.accessorySavedAt !== null,
       items: order.items.map((item) => {
         if (!item.productTypeId || !item.productType) {
           throw new Error(`Product order item "${item.id}" is missing product type data.`);
