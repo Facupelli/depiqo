@@ -175,17 +175,8 @@ export class OrderDocumentRendererService {
             accessories: {
               select: {
                 quantity: true,
-                notes: true,
                 accessoryRentalItem: {
                   select: { name: true },
-                },
-                assetAssignments: {
-                  select: {
-                    asset: {
-                      select: { serialNumber: true },
-                    },
-                  },
-                  orderBy: { createdAt: 'asc' },
                 },
               },
               orderBy: { createdAt: 'asc' },
@@ -437,11 +428,7 @@ function parseIncludedItems(value: unknown): IncludedItem[] {
 
     const candidate = item as Record<string, unknown>;
 
-    if (
-      typeof candidate.name !== 'string' ||
-      typeof candidate.quantity !== 'number' ||
-      (candidate.notes !== null && candidate.notes !== undefined && typeof candidate.notes !== 'string')
-    ) {
+    if (typeof candidate.name !== 'string' || typeof candidate.quantity !== 'number') {
       return [];
     }
 
@@ -449,9 +436,6 @@ function parseIncludedItems(value: unknown): IncludedItem[] {
       {
         name: candidate.name,
         quantity: candidate.quantity,
-        notes: candidate.notes == null ? null : candidate.notes,
-        assignedAssetCount: null,
-        assignedAssetIdentifiers: [],
       },
     ];
   });
@@ -464,19 +448,12 @@ function parseLegacyIncludedItemsForHistoricalOrder(orderCreatedAt: Date, value:
 function mapSelectedAccessoriesToIncludedItems(
   accessories: Array<{
     quantity: number;
-    notes: string | null;
     accessoryRentalItem: { name: string };
-    assetAssignments: Array<{ asset: { serialNumber: string | null } }>;
   }>,
 ): IncludedItem[] {
   return accessories.map((accessory) => ({
     name: accessory.accessoryRentalItem.name,
     quantity: accessory.quantity,
-    notes: accessory.notes,
-    assignedAssetCount: accessory.assetAssignments.length,
-    assignedAssetIdentifiers: accessory.assetAssignments.flatMap((assignment) =>
-      assignment.asset.serialNumber ? [assignment.asset.serialNumber] : [],
-    ),
   }));
 }
 
