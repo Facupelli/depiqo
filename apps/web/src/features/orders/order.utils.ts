@@ -242,15 +242,12 @@ export type OrderHeaderBannerTone =
 	| "success"
 	| "muted";
 
-export type OrderHeaderBannerSecondaryAction = "edit" | null;
-
 export type OrderHeaderBannerConfig = {
 	tone: OrderHeaderBannerTone;
 	title: string;
 	subtitle: string | null;
 	meta: string;
 	primaryAction: OrderNextStep;
-	secondaryAction: OrderHeaderBannerSecondaryAction;
 };
 
 export function getOrderOperationalPhase(
@@ -477,17 +474,15 @@ export function getOrderHeaderBannerConfig(
 					"Todavía no entró en operación. Revisá los datos antes de confirmarlo.",
 				meta: "Pendiente de confirmación",
 				primaryAction: "confirm",
-				secondaryAction: "edit",
 			};
 		case OrderStatus.PENDING_REVIEW:
 			return {
-				tone: "warning",
+				tone: "neutral",
 				title: "Pendiente de revisión",
 				subtitle:
 					"Revisá el pedido y confirmalo para dejarlo listo para el retiro.",
 				meta: "Esperando confirmación operativa",
 				primaryAction: "confirm",
-				secondaryAction: null,
 			};
 		case OrderStatus.CONFIRMED:
 			if (localizedNow.isAfter(localizedPickupAt)) {
@@ -498,18 +493,16 @@ export function getOrderHeaderBannerConfig(
 						"La fecha de retiro ya pasó y el pedido sigue sin marcarse como retirado.",
 					meta: `Retiro previsto para ${formatOrderDateTime(order.pickupAt, timezone)}`,
 					primaryAction: "pickup",
-					secondaryAction: null,
 				};
 			}
 
 			if (localizedNow.isSame(localizedPickupAt, "day")) {
 				return {
-					tone: "warning",
+					tone: "neutral",
 					title: "Retiro hoy",
 					subtitle: "El cliente debería retirar el equipo hoy.",
 					meta: `Retiro previsto a las ${formatOrderTime(order.pickupAt, timezone)}`,
 					primaryAction: "pickup",
-					secondaryAction: null,
 				};
 			}
 
@@ -518,24 +511,22 @@ export function getOrderHeaderBannerConfig(
 				5
 			) {
 				return {
-					tone: "info",
+					tone: "neutral",
 					title: "Retiro próximo",
 					subtitle:
 						"El pedido está confirmado y listo para entregar cuando llegue el cliente.",
 					meta: `Retiro programado para ${formatOrderDateTime(order.pickupAt, timezone)}`,
 					primaryAction: "pickup",
-					secondaryAction: null,
 				};
 			}
 
 			return {
-				tone: "info",
+				tone: "neutral",
 				title: "Pedido confirmado",
 				subtitle:
 					"El pedido ya está listo y espera la fecha programada de retiro.",
 				meta: `Retiro programado para ${formatOrderDateTime(order.pickupAt, timezone)}`,
 				primaryAction: "pickup",
-				secondaryAction: null,
 			};
 		case OrderStatus.ACTIVE:
 			if (localizedNow.isAfter(localizedReturnAt)) {
@@ -546,30 +537,27 @@ export function getOrderHeaderBannerConfig(
 						"La fecha de devolución ya pasó y seguimos esperando que el cliente entregue el equipo.",
 					meta: `Debía devolverse el ${formatOrderDateTime(order.returnAt, timezone)}`,
 					primaryAction: "return",
-					secondaryAction: null,
 				};
 			}
 
 			if (localizedNow.isSame(localizedReturnAt, "day")) {
 				return {
-					tone: "warning",
+					tone: "neutral",
 					title: "Devolución hoy",
 					subtitle:
 						"El pedido está a la espera de devolución durante el día de hoy.",
 					meta: `Devolución prevista a las ${formatOrderTime(order.returnAt, timezone)}`,
 					primaryAction: "return",
-					secondaryAction: null,
 				};
 			}
 
 			return {
-				tone: "success",
+				tone: "neutral",
 				title: "Devolución programada",
 				subtitle:
 					"El equipo está alquilado y todavía hay margen antes de la devolución.",
 				meta: `Devolución prevista para ${formatOrderDateTime(order.returnAt, timezone)}`,
 				primaryAction: "return",
-				secondaryAction: null,
 			};
 		case OrderStatus.COMPLETED:
 			return {
@@ -579,7 +567,6 @@ export function getOrderHeaderBannerConfig(
 					"La devolución ya fue registrada y el flujo operativo quedó cerrado.",
 				meta: "Sin acciones operativas pendientes",
 				primaryAction: null,
-				secondaryAction: null,
 			};
 		case OrderStatus.CANCELLED:
 			return {
@@ -589,7 +576,6 @@ export function getOrderHeaderBannerConfig(
 					"Este pedido fue cancelado y ya no sigue en operación.",
 				meta: "Sin acciones disponibles",
 				primaryAction: null,
-				secondaryAction: null,
 			};
 		case OrderStatus.REJECTED:
 			return {
@@ -599,7 +585,6 @@ export function getOrderHeaderBannerConfig(
 					"El pedido no fue aprobado y quedó fuera del flujo operativo.",
 				meta: "Sin acciones disponibles",
 				primaryAction: null,
-				secondaryAction: null,
 			};
 		case OrderStatus.EXPIRED:
 			return {
@@ -609,7 +594,6 @@ export function getOrderHeaderBannerConfig(
 					"La reserva venció antes de iniciar el retiro y ya no sigue en operación.",
 				meta: "Sin acciones disponibles",
 				primaryAction: null,
-				secondaryAction: null,
 			};
 		default:
 			return {
@@ -618,7 +602,6 @@ export function getOrderHeaderBannerConfig(
 				subtitle: null,
 				meta: "Sin acciones disponibles",
 				primaryAction: null,
-				secondaryAction: null,
 			};
 	}
 }

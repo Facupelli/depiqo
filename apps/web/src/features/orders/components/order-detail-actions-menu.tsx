@@ -5,6 +5,7 @@ import {
 	CircleSlash,
 	FileSignature,
 	FileText,
+	PencilLine,
 } from "lucide-react";
 import { Fragment } from "react/jsx-runtime";
 import { Button } from "@/components/ui/button";
@@ -22,6 +23,8 @@ import {
 	useOrderDocuments,
 	useOrderSigning,
 } from "@/features/orders/contexts/order-detail.context";
+import { getOrderEditAvailability } from "@/features/orders/order-editor/utils/order-edit-availability";
+import { nowUtc } from "@/lib/dates/parse";
 
 type ActionItem = {
 	label: string;
@@ -35,7 +38,7 @@ type ActionItem = {
 type ActionGroup = ActionItem[];
 
 function useOrderActionGroups(): ActionGroup[] {
-	const { order } = useOrderDetailContext();
+	const { order, actions } = useOrderDetailContext();
 	const budget = useOrderBudget();
 	const documents = useOrderDocuments();
 	const cancellation = useOrderCancellation();
@@ -64,6 +67,8 @@ function useOrderActionGroups(): ActionGroup[] {
 		isConfirmedLifecycle && order.signing.status !== "SIGNED";
 	const isSignedContract = order.signing.status === "SIGNED";
 
+	const editAvailability = getOrderEditAvailability(order, nowUtc());
+
 	const signingAction: ActionItem = {
 		icon: FileSignature,
 		label:
@@ -79,6 +84,16 @@ function useOrderActionGroups(): ActionGroup[] {
 	};
 
 	const groups: ActionGroup[] = [
+		editAvailability.canEdit
+			? [
+					{
+						icon: PencilLine,
+						label: "Editar pedido",
+						onClick: actions.edit.open,
+					},
+				]
+			: [],
+
 		canOpenBudget
 			? [
 					{

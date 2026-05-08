@@ -1,7 +1,8 @@
-import { FulfillmentMethod } from "@repo/types";
+import { FulfillmentMethod, OrderStatus } from "@repo/types";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
+	Check,
 	CheckCircle2,
 	ChevronDown,
 	Clock,
@@ -15,7 +16,7 @@ import {
 	Truck,
 	User2Icon,
 } from "lucide-react";
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { PageBreadcrumb } from "@/components/detail-id-breadcrumb";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -32,6 +33,7 @@ import { OrderDetailCancelDialog } from "@/features/orders/components/order-deta
 import { OrderDetailConfirmDialog } from "@/features/orders/components/order-detail-confirm-dialog";
 import { OrderDetailDocumentErrorDialogs } from "@/features/orders/components/order-detail-document-error-dialogs";
 import { OrderDetailLifecycleDialog } from "@/features/orders/components/order-detail-lifecycle-dialog";
+import { OrderOperationalPhaseBadge } from "@/features/orders/components/order-operational-phase-badge";
 import { OrderSigningInvitationDialog } from "@/features/orders/components/order-signing-invitation-dialog";
 import {
 	OrderDetailProvider,
@@ -47,7 +49,6 @@ import {
 	getOwnerDisplay,
 	type OrderHeaderBannerTone,
 } from "@/features/orders/order.utils";
-import { getOrderEditAvailability } from "@/features/orders/order-editor/utils/order-edit-availability";
 import { ORDER_HEADER_BANNER_TONE_STYLES } from "@/features/orders/orders.constants";
 import { ordersListSearchSchema } from "@/features/orders/orders-list.search";
 import {
@@ -102,7 +103,7 @@ function RouteComponent() {
 					current={String(order.number)}
 				/>
 
-				<OrderHeader />
+				<OrderHeader preparation={preparation} />
 
 				{isPreparingAccessories ? (
 					<div className="py-10">
@@ -138,8 +139,13 @@ function RouteComponent() {
 	);
 }
 
-function OrderHeader() {
+function OrderHeader({
+	preparation,
+}: {
+	preparation: { hasSavedAccessory: boolean };
+}) {
 	const { order } = useOrderDetailContext();
+	const isTerminal = TERMINAL_STATUSES.has(order.status as OrderStatus);
 
 	return (
 		<header className="border-b border-neutral-200 pb-8">
@@ -152,6 +158,7 @@ function OrderHeader() {
 									<span>#{formatOrderNumber(order.number)}</span>
 								</h1>
 							</div>
+							{isTerminal ? <OrderOperationalPhaseBadge order={order} /> : null}
 						</div>
 						<p className="text-sm text-neutral-400 mt-2">
 							Creado el {order.createdAt.format("DD MMM, YYYY")} ·{" "}
@@ -164,7 +171,7 @@ function OrderHeader() {
 					</div>
 				</div>
 
-				<OrderHeaderBanner />
+				{!isTerminal ? <OrderHeaderBanner preparation={preparation} /> : null}
 			</div>
 
 			<OrderDetailDocumentErrorDialogs />
@@ -177,7 +184,18 @@ function OrderHeader() {
 	);
 }
 
-function OrderHeaderBanner() {
+const TERMINAL_STATUSES = new Set([
+	OrderStatus.COMPLETED,
+	OrderStatus.CANCELLED,
+	OrderStatus.REJECTED,
+	OrderStatus.EXPIRED,
+]);
+
+function OrderHeaderBanner({
+	preparation,
+}: {
+	preparation: { hasSavedAccessory: boolean };
+}) {
 	const { order } = useOrderDetailContext();
 	const banner = getOrderHeaderBannerConfig(
 		order,
@@ -192,34 +210,147 @@ function OrderHeaderBanner() {
 
 	return (
 		<section
-			className={`rounded-2xl border px-5 py-5 sm:px-6 ${styles.panelClassName}`}
+			className={`rounded-2xl border px-5 py-5 sm:px-6 ${styles.panelClassName} ${banner.tone === "danger" ? "border-l-4 border-l-red-500" : ""}`}
 		>
-			<div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-				<div className="flex items-start gap-4">
+			<div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+				<div className="flex items-start gap-4 min-w-0">
 					<div
-						className={`flex size-14 shrink-0 items-center justify-center rounded-2xl ${styles.iconWrapClassName}`}
+						className={`flex size-12 shrink-0 items-center justify-center rounded-2xl ${styles.iconWrapClassName}`}
 					>
-						<BannerIcon className={`size-7 ${styles.iconClassName}`} />
+						<BannerIcon className={`size-6 ${styles.iconClassName}`} />
 					</div>
 
-					<div className="space-y-2">
-						<h2 className="text-2xl font-semibold tracking-tight text-neutral-950">
+					<div className="space-y-3 min-w-0">
+						<h2 className="text-xl font-semibold tracking-tight text-neutral-950">
 							{banner.title}
 						</h2>
-						{banner.subtitle ? (
-							<p className="max-w-2xl text-sm text-neutral-700">
-								{banner.subtitle}
-							</p>
-						) : null}
-						<p className={`text-sm font-medium ${styles.metaClassName}`}>
-							{banner.meta}
-						</p>
+						<OrderTimeline order={order} preparation={preparation} />
 					</div>
 				</div>
 
-				<OrderHeaderBannerActions />
+				<div className="lg:shrink-0">
+					<OrderHeaderBannerActions />
+				</div>
 			</div>
 		</section>
+	);
+}
+
+type TimelineStep = {
+	label: string;
+	state: "completed" | "current" | "pending";
+};
+
+function getTimelineSteps(
+	order: { status: string; signing: { status: string } },
+	preparation: { hasSavedAccessory: boolean },
+): TimelineStep[] {
+	const status = order.status;
+	const signingStatus = order.signing?.status ?? "NO_REQUEST";
+
+	const confirmDone =
+		status === OrderStatus.CONFIRMED ||
+		status === OrderStatus.ACTIVE ||
+		status === OrderStatus.COMPLETED;
+	const pickupDone =
+		status === OrderStatus.ACTIVE || status === OrderStatus.COMPLETED;
+	const returnDone = status === OrderStatus.COMPLETED;
+
+	let currentStep: string | null = null;
+	if (status === OrderStatus.DRAFT || status === OrderStatus.PENDING_REVIEW) {
+		currentStep = "confirm";
+	} else if (status === OrderStatus.CONFIRMED) {
+		currentStep = "pickup";
+	} else if (status === OrderStatus.ACTIVE) {
+		currentStep = "return";
+	}
+
+	const stepState = (
+		isDone: boolean,
+		stepKey: string | null,
+	): TimelineStep["state"] => {
+		if (isDone) return "completed";
+		if (currentStep === stepKey) return "current";
+		return "pending";
+	};
+
+	return [
+		{
+			label: "Confirmado",
+			state: stepState(confirmDone, "confirm"),
+		},
+		{
+			label: "Accesorios",
+			state: preparation.hasSavedAccessory ? "completed" : "pending",
+		},
+		{
+			label: "Firma",
+			state:
+				signingStatus === "SIGNED"
+					? "completed"
+					: signingStatus === "PENDING"
+						? "current"
+						: "pending",
+		},
+		{
+			label: "Retiro",
+			state: stepState(pickupDone, "pickup"),
+		},
+		{
+			label: "Devolución",
+			state: stepState(returnDone, "return"),
+		},
+	];
+}
+
+function OrderTimeline({
+	order,
+	preparation,
+}: {
+	order: { status: string; signing: { status: string } };
+	preparation: { hasSavedAccessory: boolean };
+}) {
+	const steps = getTimelineSteps(order, preparation);
+
+	return (
+		<div className="flex items-center">
+			{steps.map((step, i) => (
+				<Fragment key={step.label}>
+					{i > 0 && (
+						<div
+							className={`h-px flex-1 min-w-5 mb-[17px] shrink ${
+								steps[i - 1].state === "completed" ||
+								steps[i - 1].state === "current"
+									? "bg-neutral-950"
+									: "bg-neutral-200"
+							}`}
+						/>
+					)}
+					<div className="flex flex-col items-center gap-1.5">
+						<div
+							className={`size-2 rounded-full shrink-0 ${
+								step.state === "completed"
+									? "bg-neutral-950"
+									: step.state === "current"
+										? "bg-neutral-950 ring-[3px] ring-offset-[1.5px] ring-neutral-950 ring-offset-white"
+										: "border border-neutral-300 bg-transparent"
+							}`}
+						/>
+						<span
+							className={`text-[11px] whitespace-nowrap leading-none tracking-wide ${
+								step.state === "completed"
+									? "text-neutral-500 font-medium"
+									: step.state === "current"
+										? "text-neutral-950 font-bold"
+										: "text-neutral-400 font-normal"
+							}`}
+						>
+							{step.label}
+						</span>
+					</div>
+				</Fragment>
+			))}
+		</div>
 	);
 }
 
@@ -234,32 +365,18 @@ function OrderHeaderBannerActions() {
 		banner.primaryAction,
 		actions,
 	);
-	const editAvailability = getOrderEditAvailability(order, nowUtc());
 
-	if (!primaryAction && !editAvailability.canEdit) {
+	if (!primaryAction) {
 		return null;
 	}
 
-	const PrimaryIcon = primaryAction?.icon;
+	const PrimaryIcon = primaryAction.icon;
 
 	return (
-		<div className="flex w-full flex-col gap-3 lg:w-70 lg:shrink-0">
-			{primaryAction && PrimaryIcon ? (
-				<Button
-					className={primaryAction.className}
-					onClick={primaryAction.onClick}
-				>
-					<PrimaryIcon className="size-4" />
-					{primaryAction.label}
-				</Button>
-			) : null}
-
-			{editAvailability.canEdit ? (
-				<Button variant="outline" onClick={actions.edit.open}>
-					Editar pedido
-				</Button>
-			) : null}
-		</div>
+		<Button className={primaryAction.className} onClick={primaryAction.onClick}>
+			<PrimaryIcon className="size-4" />
+			{primaryAction.label}
+		</Button>
 	);
 }
 
@@ -299,21 +416,21 @@ function getOrderHeaderPrimaryButtonConfig(
 			return {
 				label: "Confirmar pedido",
 				icon: CheckCircle2,
-				className: "h-11 bg-neutral-950 text-white hover:bg-neutral-800",
+				className: "bg-neutral-950 text-white hover:bg-neutral-800",
 				onClick: actions.confirmation.openDialog,
 			};
 		case "pickup":
 			return {
 				label: "Marcar equipo como retirado",
 				icon: Truck,
-				className: "h-11 bg-neutral-950 text-white hover:bg-neutral-800",
+				className: "bg-neutral-950 text-white hover:bg-neutral-800",
 				onClick: actions.lifecycle.openPickup,
 			};
 		case "return":
 			return {
 				label: "Marcar equipo como devuelto",
 				icon: RotateCcw,
-				className: "h-11 bg-neutral-950 text-white hover:bg-neutral-800",
+				className: "bg-neutral-950 text-white hover:bg-neutral-800",
 				onClick: actions.lifecycle.openReturn,
 			};
 		default:
@@ -355,9 +472,6 @@ function EquipmentSectionHeader({
 				<h2 className="text-sm font-semibold text-neutral-950">
 					Equipos y accesorios
 				</h2>
-				<p className="mt-1 text-xs text-neutral-500">
-					Revisa los equipos del pedido y los accesorios guardados.
-				</p>
 			</div>
 
 			<Button type="button" variant="outline" onClick={onPrepareAccessories}>
@@ -375,15 +489,6 @@ function OrderItemsList() {
 
 	return (
 		<section className="mb-10 space-y-3">
-			<div className="grid grid-cols-[1fr_auto] gap-4 border-b border-neutral-200 pb-3">
-				<span className="font-mono text-[10px] tracking-[0.14em] uppercase text-neutral-400">
-					Equipo
-				</span>
-				<span className="font-mono text-[10px] tracking-[0.14em] uppercase text-neutral-400">
-					Cantidad
-				</span>
-			</div>
-
 			{groupedItems.map((item) => (
 				<OrderItemCard key={item.key} item={item} />
 			))}
