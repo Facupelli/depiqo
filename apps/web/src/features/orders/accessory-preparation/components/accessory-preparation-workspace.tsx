@@ -36,7 +36,6 @@ export function AccessoryPreparationWorkspace({
 	productImagesByOrderItemId,
 	onClose,
 }: AccessoryPreparationWorkspaceProps) {
-	console.log({ preparation });
 	const preparationForm = useAccessoryPreparationForm({ orderId, preparation });
 	const items = preparationForm.values.items;
 	const [selectedOrderItemId, setSelectedOrderItemId] = useState<string | null>(

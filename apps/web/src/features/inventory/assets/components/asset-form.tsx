@@ -1,6 +1,6 @@
 import type { LocationListResponse, OwnerListResponse } from "@repo/schemas";
 import { TrackingMode } from "@repo/types";
-import { useForm, useStore } from "@tanstack/react-form";
+import { useForm } from "@tanstack/react-form";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,11 +17,11 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import { ProblemDetailsError } from "@/shared/errors";
 import {
 	type AssetFormValues,
 	assetFormSchema,
 } from "../schemas/asset-form.schema";
-import { ProblemDetailsError } from "@/shared/errors";
 
 interface AssetFormProps {
 	defaultValues: AssetFormValues;
@@ -67,7 +67,7 @@ export function AssetForm({
 	const form = useForm({
 		defaultValues,
 		validators: {
-			onSubmit: assetFormSchema,
+			onSubmit: assetFormSchema(trackingMode),
 		},
 		onSubmit: async ({ value }) => {
 			try {
@@ -94,13 +94,6 @@ export function AssetForm({
 			}
 		},
 	});
-
-	const values = useStore(form.store, (state) => state.values);
-	const hasChanges =
-		values.locationId !== defaultValues.locationId ||
-		values.ownerId !== defaultValues.ownerId ||
-		values.serialNumber !== defaultValues.serialNumber ||
-		values.notes !== defaultValues.notes;
 
 	return (
 		<>
@@ -163,12 +156,7 @@ export function AssetForm({
 
 							return (
 								<Field data-invalid={isInvalid}>
-									<FieldLabel htmlFor={field.name}>
-										Propietario{" "}
-										<span className="text-muted-foreground text-xs">
-											(opcional)
-										</span>
-									</FieldLabel>
+									<FieldLabel htmlFor={field.name}>Propietario </FieldLabel>
 									<Select
 										value={field.state.value || NO_OWNER_VALUE}
 										onValueChange={(value) => {
@@ -295,13 +283,15 @@ export function AssetForm({
 					Cancelar
 				</Button>
 				<form.Subscribe
-					selector={(state) => [state.canSubmit, state.isSubmitting]}
+					selector={(state) => {
+						return [state.canSubmit, state.isSubmitting];
+					}}
 				>
 					{([canSubmit, isSubmitting]) => (
 						<Button
 							type="submit"
 							form={formId}
-							disabled={!canSubmit || !hasChanges || isPending}
+							disabled={!canSubmit || isPending}
 						>
 							{isSubmitting || isPending ? pendingLabel : submitLabel}
 						</Button>

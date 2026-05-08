@@ -50,8 +50,6 @@ export class AuthenticateCustomerWithGoogleHttpController {
       throw error;
     }
 
-    console.log({ value: result.value });
-
     return {
       handoff_token: result.value.handoffToken,
       portal_origin: result.value.portalOrigin,
