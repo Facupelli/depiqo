@@ -97,41 +97,10 @@ export function useAccessoryPreparationForm({
 		accessoryIndex: number,
 		quantity: number,
 	) {
-		updateAccessory(itemIndex, accessoryIndex, (accessory) => {
-			const selectedAssetCount = accessory.selectedAssetIds.length;
-			const nextQuantity = Math.max(1, quantity, selectedAssetCount);
-			const maxAutoAssignQuantity = Math.max(0, nextQuantity - selectedAssetCount);
-
-			return {
-				...accessory,
-				quantity: nextQuantity,
-				autoAssignQuantity: Math.min(
-					accessory.autoAssignQuantity,
-					maxAutoAssignQuantity,
-				),
-			};
-		});
-	}
-
-	function setAutoAssignQuantity(
-		itemIndex: number,
-		accessoryIndex: number,
-		autoAssignQuantity: number,
-	) {
-		updateAccessory(itemIndex, accessoryIndex, (accessory) => {
-			const maxAutoAssignQuantity = Math.max(
-				0,
-				accessory.quantity - accessory.selectedAssetIds.length,
-			);
-
-			return {
-				...accessory,
-				autoAssignQuantity: Math.min(
-					Math.max(0, autoAssignQuantity),
-					maxAutoAssignQuantity,
-				),
-			};
-		});
+		updateAccessory(itemIndex, accessoryIndex, (accessory) => ({
+			...accessory,
+			quantity: Math.max(1, quantity),
+		}));
 	}
 
 	function buildPayload(valuesToSubmit: AccessoryPreparationFormValues = values) {
@@ -146,7 +115,6 @@ export function useAccessoryPreparationForm({
 		buildPayload,
 		setAccessorySelected,
 		setAccessoryQuantity,
-		setAutoAssignQuantity,
 	};
 }
 

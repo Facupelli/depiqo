@@ -47,8 +47,8 @@ export class AssetAssignment {
       if (!props.orderId) {
         throw new InvalidAssetAssignmentException('ORDER assignment requires orderId.');
       }
-      if (!props.orderItemId) {
-        throw new InvalidAssetAssignmentException('ORDER assignment requires orderItemId.');
+      if (!props.orderItemId && !props.orderItemAccessoryId) {
+        throw new InvalidAssetAssignmentException('ORDER assignment requires orderItemId or orderItemAccessoryId.');
       }
       if (!props.source) {
         throw new InvalidAssetAssignmentException('ORDER assignment requires source (OWNED or EXTERNAL).');

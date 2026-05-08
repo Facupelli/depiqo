@@ -2,8 +2,6 @@ export type SaveOrderAccessoryPreparationAccessoryInput = {
   accessoryRentalItemId: string;
   quantity: number;
   notes: string | null;
-  assetIds: string[] | null;
-  autoAssignQuantity: number | null;
 };
 
 export type SaveOrderAccessoryPreparationItemInput = {

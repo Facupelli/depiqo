@@ -274,9 +274,7 @@ function CompatibleAccessoryRow({
 	formState: AccessoryPreparationFormState;
 	itemIndex: number;
 }) {
-	const selectedAssets = accessory.assignedAssets.filter((asset) =>
-		accessory.selectedAssetIds.includes(asset.id),
-	);
+	const selectedAssets = accessory.assignedAssets;
 	const shouldShowAvailabilityWarning =
 		accessory.selected &&
 		(accessory.quantity > accessory.availableCount ||
@@ -349,7 +347,7 @@ function QuantityStepper({
 	formState: AccessoryPreparationFormState;
 	itemIndex: number;
 }) {
-	const minimumQuantity = Math.max(1, accessory.selectedAssetIds.length);
+	const minimumQuantity = 1;
 	const assignedQuantity = accessory.selected ? accessory.quantity : 0;
 
 	function handleDecrease() {

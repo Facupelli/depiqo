@@ -25,9 +25,7 @@ export const accessoryPreparationAccessoryFormSchema = z
 		saved: z.boolean(),
 		quantity: z.number().int().nonnegative(),
 		notes: z.string(),
-		selectedAssetIds: z.array(z.uuid()),
 		assignedAssets: z.array(accessoryPreparationAssetFormSchema),
-		autoAssignQuantity: z.number().int().nonnegative(),
 	})
 	.superRefine((row, context) => {
 		if (!row.selected) {
@@ -39,22 +37,6 @@ export const accessoryPreparationAccessoryFormSchema = z
 				code: "custom",
 				message: "La cantidad debe ser al menos 1",
 				path: ["quantity"],
-			});
-		}
-
-		if (row.selectedAssetIds.length > row.quantity) {
-			context.addIssue({
-				code: "custom",
-				message: "No puedes asignar mas assets que la cantidad",
-				path: ["selectedAssetIds"],
-			});
-		}
-
-		if (row.autoAssignQuantity > row.quantity - row.selectedAssetIds.length) {
-			context.addIssue({
-				code: "custom",
-				message: "La auto-asignacion no puede superar la cantidad restante",
-				path: ["autoAssignQuantity"],
 			});
 		}
 	});
@@ -106,13 +88,7 @@ export function accessoryPreparationToFormValues(
 					saved: selectedLine !== null,
 					quantity: selectedLine?.quantity ?? accessory.suggestedQuantity ?? 1,
 					notes: selectedLine?.notes ?? accessory.suggestedNotes ?? "",
-					selectedAssetIds:
-						selectedLine?.assignedAssets.map((asset) => asset.id) ?? [],
 					assignedAssets: selectedLine?.assignedAssets ?? [],
-					autoAssignQuantity:
-						selectedLine === null && shouldApplySuggestedDefault
-							? suggestedQuantity
-							: 0,
 				};
 			}),
 		})),
@@ -122,24 +98,18 @@ export function accessoryPreparationToFormValues(
 export function toSaveOrderAccessoryPreparationDto(
 	values: AccessoryPreparationFormValues,
 ): SaveOrderAccessoryPreparationDto {
-	const dto: SaveOrderAccessoryPreparationDto = {
-		items: values.items.map((item) => ({
-			orderItemId: item.orderItemId,
-			accessories: item.accessories
-				.filter((accessory) => accessory.selected)
-				.map((accessory) => ({
-					accessoryRentalItemId: accessory.accessoryRentalItemId,
-					quantity: accessory.quantity,
-					notes: emptyToNull(accessory.notes),
-					...(accessory.selectedAssetIds.length > 0
-						? { assetIds: accessory.selectedAssetIds }
-						: {}),
-					...(accessory.autoAssignQuantity > 0
-						? { autoAssignQuantity: accessory.autoAssignQuantity }
-						: {}),
-				})),
-		})),
-	};
+  const dto: SaveOrderAccessoryPreparationDto = {
+    items: values.items.map((item) => ({
+      orderItemId: item.orderItemId,
+      accessories: item.accessories
+        .filter((accessory) => accessory.selected)
+        .map((accessory) => ({
+          accessoryRentalItemId: accessory.accessoryRentalItemId,
+          quantity: accessory.quantity,
+          notes: emptyToNull(accessory.notes),
+        })),
+    })),
+  };
 
 	return saveOrderAccessoryPreparationSchema.parse(dto);
 }

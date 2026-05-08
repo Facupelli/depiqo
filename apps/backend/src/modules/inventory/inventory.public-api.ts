@@ -12,7 +12,7 @@ export type SaveOrderAssignmentDto = {
   stage: OrderAssignmentStage;
   source: AssignmentSource;
   orderId: string;
-  orderItemId: string;
+  orderItemId?: string;
   orderItemAccessoryId?: string;
 };
 

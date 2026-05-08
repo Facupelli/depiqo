@@ -47,8 +47,6 @@ export const saveOrderAccessoryPreparationAccessorySchema = z.object({
   accessoryRentalItemId: z.uuid(),
   quantity: z.number().int().positive(),
   notes: z.string().nullable().optional(),
-  assetIds: z.array(z.uuid()).optional(),
-  autoAssignQuantity: z.number().int().nonnegative().optional(),
 });
 
 export const saveOrderAccessoryPreparationSchema = z.object({

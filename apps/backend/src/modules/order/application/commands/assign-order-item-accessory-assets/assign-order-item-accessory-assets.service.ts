@@ -186,7 +186,6 @@ export class AssignOrderItemAccessoryAssetsService implements ICommandHandler<
               orderStatus === OrderStatus.PENDING_REVIEW ? OrderAssignmentStage.HOLD : OrderAssignmentStage.COMMITTED,
             source: AssignmentSource.OWNED,
             orderId: accessory.order.id,
-            orderItemId: accessory.orderItem.id,
             orderItemAccessoryId: accessory.id,
           },
           tx,

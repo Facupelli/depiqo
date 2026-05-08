@@ -99,8 +99,7 @@ export class GetOrdersScheduleQueryHandler implements IQueryHandler<
         c.company_name         AS customer_company_name,
         c.is_company           AS customer_is_company
       FROM orders o
-      JOIN order_items oi ON oi.order_id = o.id
-      JOIN asset_assignments aa ON aa.order_item_id = oi.id
+      JOIN asset_assignments aa ON aa.order_id = o.id
       LEFT JOIN customers c ON c.id = o.customer_id
       WHERE
         o.tenant_id = ${tenantId}
@@ -137,8 +136,7 @@ export class GetOrdersScheduleQueryHandler implements IQueryHandler<
         c.company_name         AS customer_company_name,
         c.is_company           AS customer_is_company
       FROM orders o
-      JOIN order_items oi ON oi.order_id = o.id
-      JOIN asset_assignments aa ON aa.order_item_id = oi.id
+      JOIN asset_assignments aa ON aa.order_id = o.id
       LEFT JOIN customers c ON c.id = o.customer_id
       WHERE
         o.tenant_id = ${tenantId}

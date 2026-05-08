@@ -30,16 +30,6 @@ export const bundleOrderItemSchema = z.object({
   bundleId: z.uuid(),
 });
 
-export const replaceOrderItemAccessoriesSchema = z.object({
-  accessories: z.array(
-    z.object({
-      accessoryRentalItemId: z.uuid(),
-      quantity: z.number().int().positive(),
-      notes: z.string().nullable().optional(),
-    }),
-  ),
-});
-
 export const assignOrderItemAccessoryAssetsSchema = z.object({
   quantity: z.number().int().positive().optional(),
   assetIds: z.array(z.uuid()).optional(),
@@ -140,9 +130,6 @@ export const createDraftOrderSchema = createOrderSchemaBase
 export type ProductOrderItemDto = z.infer<typeof productOrderItemSchema>;
 export type BundleOrderItemDto = z.infer<typeof bundleOrderItemSchema>;
 export type OrderItemDto = z.infer<typeof orderItemSchema>;
-export type ReplaceOrderItemAccessoriesDto = z.infer<
-  typeof replaceOrderItemAccessoriesSchema
->;
 export type AssignOrderItemAccessoryAssetsDto = z.infer<
   typeof assignOrderItemAccessoryAssetsSchema
 >;

@@ -15,16 +15,11 @@ import { DateRange } from 'src/core/domain/value-objects/date-range.value-object
 import { InventoryPublicApi } from 'src/modules/inventory/inventory.public-api';
 import {
   DuplicateOrderAccessoryPreparationItemError,
-  DuplicateOrderItemAccessoryAssetError,
   DuplicateOrderItemAccessoryError,
   InvalidOrderItemAccessoryQuantityError,
   OrderAccessorySelectionItemNotFoundError,
   OrderAccessorySelectionNotAllowedError,
   OrderAccessorySelectionRequiresProductItemError,
-  OrderItemAccessoryAssetLocationMismatchError,
-  OrderItemAccessoryAssetMismatchError,
-  OrderItemAccessoryAssetUnavailableError,
-  OrderItemAccessoryAssignmentQuantityExceededError,
   OrderItemAccessoryIncompatibleError,
   OrderItemAccessoryInsufficientAvailableAssetsError,
   OrderItemAccessoryMustBeAccessoryError,
@@ -32,10 +27,7 @@ import {
   OrderNotFoundError,
 } from 'src/modules/order/domain/errors/order.errors';
 
-import {
-  SaveOrderAccessoryPreparationAccessoryInput,
-  SaveOrderAccessoryPreparationCommand,
-} from './save-order-accessory-preparation.command';
+import { SaveOrderAccessoryPreparationCommand } from './save-order-accessory-preparation.command';
 
 const EDITABLE_ACCESSORY_PREPARATION_STATUSES = new Set<OrderStatus>([
   OrderStatus.DRAFT,
@@ -54,18 +46,7 @@ type SaveOrderAccessoryPreparationError =
   | OrderItemAccessoryRentalItemNotFoundError
   | OrderItemAccessoryMustBeAccessoryError
   | OrderItemAccessoryIncompatibleError
-  | DuplicateOrderItemAccessoryAssetError
-  | OrderItemAccessoryAssignmentQuantityExceededError
-  | OrderItemAccessoryAssetMismatchError
-  | OrderItemAccessoryAssetLocationMismatchError
-  | OrderItemAccessoryAssetUnavailableError
   | OrderItemAccessoryInsufficientAvailableAssetsError;
-
-type ExistingAccessoryLine = {
-  id: string;
-  accessoryRentalItemId: string;
-  assetAssignments: { assetId: string }[];
-};
 
 @CommandHandler(SaveOrderAccessoryPreparationCommand)
 export class SaveOrderAccessoryPreparationService implements ICommandHandler<
@@ -110,7 +91,6 @@ export class SaveOrderAccessoryPreparationService implements ICommandHandler<
     const orderItemById = new Map(order.items.map((item) => [item.id, item]));
     const submittedOrderItemIds = new Set<string>();
     const submittedAccessoryIds = new Set<string>();
-    const submittedPinnedAssetIds = new Set<string>();
 
     for (const item of command.items) {
       if (submittedOrderItemIds.has(item.orderItemId)) {
@@ -138,24 +118,6 @@ export class SaveOrderAccessoryPreparationService implements ICommandHandler<
         }
         itemAccessoryIds.add(accessory.accessoryRentalItemId);
         submittedAccessoryIds.add(accessory.accessoryRentalItemId);
-
-        const pinnedAssetIds = accessory.assetIds ?? [];
-        const autoAssignQuantity = accessory.autoAssignQuantity ?? 0;
-        if (pinnedAssetIds.length + autoAssignQuantity > accessory.quantity) {
-          return err(
-            new OrderItemAccessoryAssignmentQuantityExceededError(accessory.accessoryRentalItemId, accessory.quantity),
-          );
-        }
-
-        const linePinnedAssetIds = new Set<string>();
-        for (const assetId of pinnedAssetIds) {
-          if (linePinnedAssetIds.has(assetId) || submittedPinnedAssetIds.has(assetId)) {
-            return err(new DuplicateOrderItemAccessoryAssetError(assetId));
-          }
-
-          linePinnedAssetIds.add(assetId);
-          submittedPinnedAssetIds.add(assetId);
-        }
       }
     }
 
@@ -202,25 +164,6 @@ export class SaveOrderAccessoryPreparationService implements ICommandHandler<
       }
     }
 
-    for (const item of command.items) {
-      for (const accessory of item.accessories) {
-        for (const assetId of accessory.assetIds ?? []) {
-          const asset = await this.inventoryApi.findAssetById(command.tenantId, assetId);
-          if (!asset) {
-            return err(new OrderItemAccessoryAssetUnavailableError(assetId));
-          }
-
-          if (asset.productTypeId !== accessory.accessoryRentalItemId) {
-            return err(new OrderItemAccessoryAssetMismatchError(assetId, accessory.accessoryRentalItemId));
-          }
-
-          if (asset.locationId !== order.locationId) {
-            return err(new OrderItemAccessoryAssetLocationMismatchError(assetId));
-          }
-        }
-      }
-    }
-
     const period = DateRange.create(order.periodStart, order.periodEnd);
     const transactionResult = await this.prisma.client.$transaction(async (tx) => {
       const existingAccessories = await tx.orderItemAccessory.findMany({
@@ -233,29 +176,18 @@ export class SaveOrderAccessoryPreparationService implements ICommandHandler<
           id: true,
           orderItemId: true,
           accessoryRentalItemId: true,
-          assetAssignments: {
-            select: { assetId: true },
-            orderBy: { createdAt: 'asc' },
-          },
         },
       });
-      const existingByLineKey = new Map(
-        existingAccessories.map((accessory) => [
-          this.lineKey(accessory.orderItemId, accessory.accessoryRentalItemId),
-          accessory,
-        ]),
-      );
 
       for (const item of command.items) {
-        const requestedAccessoryIds = new Set(item.accessories.map((accessory) => accessory.accessoryRentalItemId));
+        const requestedAccessoryIds = new Set(item.accessories.map((a) => a.accessoryRentalItemId));
         const removedAccessories = existingAccessories.filter(
-          (accessory) =>
-            accessory.orderItemId === item.orderItemId && !requestedAccessoryIds.has(accessory.accessoryRentalItemId),
+          (a) => a.orderItemId === item.orderItemId && !requestedAccessoryIds.has(a.accessoryRentalItemId),
         );
 
-        for (const removedAccessory of removedAccessories) {
+        for (const removed of removedAccessories) {
           await tx.assetAssignment.deleteMany({
-            where: { orderItemAccessoryId: removedAccessory.id, type: AssignmentType.ORDER },
+            where: { orderItemAccessoryId: removed.id, type: AssignmentType.ORDER },
           });
         }
 
@@ -293,15 +225,14 @@ export class SaveOrderAccessoryPreparationService implements ICommandHandler<
             select: { id: true },
           });
 
-          const existingLine = existingByLineKey.get(this.lineKey(item.orderItemId, accessory.accessoryRentalItemId));
           const reconcileResult = await this.reconcileAssignments({
             command,
             orderStatus,
             orderLocationId: order.locationId,
             period,
             orderItemId: item.orderItemId,
-            accessory,
-            existingLine,
+            accessoryRentalItemId: accessory.accessoryRentalItemId,
+            accessoryQuantity: accessory.quantity,
             orderItemAccessoryId: persistedAccessory.id,
             tx,
           });
@@ -333,113 +264,74 @@ export class SaveOrderAccessoryPreparationService implements ICommandHandler<
     orderLocationId: string;
     period: DateRange;
     orderItemId: string;
-    accessory: SaveOrderAccessoryPreparationAccessoryInput;
-    existingLine: ExistingAccessoryLine | undefined;
+    accessoryRentalItemId: string;
+    accessoryQuantity: number;
     orderItemAccessoryId: string;
     tx: PrismaTransactionClient;
-  }): Promise<
-    Result<
-      void,
-      | OrderItemAccessoryAssetUnavailableError
-      | OrderItemAccessoryAssignmentQuantityExceededError
-      | OrderItemAccessoryInsufficientAvailableAssetsError
-    >
-  > {
-    const existingAssetIds = params.existingLine?.assetAssignments.map((assignment) => assignment.assetId) ?? [];
-    const requestedPinnedAssetIds = params.accessory.assetIds ?? null;
-    const autoAssignQuantity = params.accessory.autoAssignQuantity ?? 0;
-    const keepAssetIds = requestedPinnedAssetIds
-      ? existingAssetIds.filter((assetId) => requestedPinnedAssetIds.includes(assetId))
-      : existingAssetIds.slice(0, params.accessory.quantity);
-    const pinnedAssetIdsToAssign = requestedPinnedAssetIds?.filter((assetId) => !keepAssetIds.includes(assetId)) ?? [];
-    const requestedAssignmentCount = keepAssetIds.length + pinnedAssetIdsToAssign.length + autoAssignQuantity;
+  }): Promise<Result<void, OrderItemAccessoryInsufficientAvailableAssetsError>> {
+    const existingAssignments = await params.tx.assetAssignment.findMany({
+      where: {
+        orderItemAccessoryId: params.orderItemAccessoryId,
+        type: AssignmentType.ORDER,
+      },
+      select: { id: true, assetId: true },
+      orderBy: { createdAt: 'asc' },
+    });
 
-    if (requestedAssignmentCount > params.accessory.quantity) {
-      return err(
-        new OrderItemAccessoryAssignmentQuantityExceededError(params.orderItemAccessoryId, params.accessory.quantity),
-      );
-    }
+    const keepCount = Math.min(existingAssignments.length, params.accessoryQuantity);
 
-    const releaseAssetIds = existingAssetIds.filter((assetId) => !keepAssetIds.includes(assetId));
-    if (releaseAssetIds.length > 0) {
+    if (existingAssignments.length > keepCount) {
+      const releaseIds = existingAssignments.slice(keepCount).map((a) => a.id);
       await params.tx.assetAssignment.deleteMany({
-        where: {
-          orderItemAccessoryId: params.orderItemAccessoryId,
-          assetId: { in: releaseAssetIds },
-          type: AssignmentType.ORDER,
-        },
+        where: { id: { in: releaseIds } },
       });
     }
 
-    const resolvedNewAssetIds: string[] = [];
-    const excludeAssetIds = [...keepAssetIds];
+    const keptAssetIds = existingAssignments.slice(0, keepCount).map((a) => a.assetId);
+    const gap = params.accessoryQuantity - keepCount;
 
-    for (const assetId of pinnedAssetIdsToAssign) {
-      const availablePinnedIds = await this.inventoryApi.findAvailableAssetIds(
+    if (gap > 0) {
+      const availableIds = await this.inventoryApi.findAvailableAssetIds(
         {
-          productTypeId: params.accessory.accessoryRentalItemId,
+          productTypeId: params.accessoryRentalItemId,
           locationId: params.orderLocationId,
           period: params.period,
-          quantity: 1,
-          assetId,
-          excludeAssetIds,
+          quantity: gap,
+          excludeAssetIds: keptAssetIds,
         },
         params.tx,
       );
 
-      if (availablePinnedIds.length === 0) {
-        return err(new OrderItemAccessoryAssetUnavailableError(assetId));
-      }
-
-      resolvedNewAssetIds.push(assetId);
-      excludeAssetIds.push(assetId);
-    }
-
-    if (autoAssignQuantity > 0) {
-      const availableAssetIds = await this.inventoryApi.findAvailableAssetIds(
-        {
-          productTypeId: params.accessory.accessoryRentalItemId,
-          locationId: params.orderLocationId,
-          period: params.period,
-          quantity: autoAssignQuantity,
-          excludeAssetIds,
-        },
-        params.tx,
-      );
-
-      if (availableAssetIds.length < autoAssignQuantity) {
+      if (availableIds.length < gap) {
         return err(
           new OrderItemAccessoryInsufficientAvailableAssetsError(
-            params.accessory.accessoryRentalItemId,
-            autoAssignQuantity,
-            availableAssetIds.length,
+            params.accessoryRentalItemId,
+            gap,
+            availableIds.length,
           ),
         );
       }
 
-      resolvedNewAssetIds.push(...availableAssetIds);
-    }
+      for (const assetId of availableIds) {
+        const saveResult = await this.inventoryApi.saveOrderAssignment(
+          {
+            assetId,
+            period: params.period,
+            type: AssignmentType.ORDER,
+            stage:
+              params.orderStatus === OrderStatus.PENDING_REVIEW
+                ? OrderAssignmentStage.HOLD
+                : OrderAssignmentStage.COMMITTED,
+            source: AssignmentSource.OWNED,
+            orderId: params.command.orderId,
+            orderItemAccessoryId: params.orderItemAccessoryId,
+          },
+          params.tx,
+        );
 
-    for (const assetId of resolvedNewAssetIds) {
-      const saveResult = await this.inventoryApi.saveOrderAssignment(
-        {
-          assetId,
-          period: params.period,
-          type: AssignmentType.ORDER,
-          stage:
-            params.orderStatus === OrderStatus.PENDING_REVIEW
-              ? OrderAssignmentStage.HOLD
-              : OrderAssignmentStage.COMMITTED,
-          source: AssignmentSource.OWNED,
-          orderId: params.command.orderId,
-          orderItemId: params.orderItemId,
-          orderItemAccessoryId: params.orderItemAccessoryId,
-        },
-        params.tx,
-      );
-
-      if (saveResult.isErr()) {
-        return err(new OrderItemAccessoryAssetUnavailableError(assetId));
+        if (saveResult.isErr()) {
+          return err(new OrderItemAccessoryInsufficientAvailableAssetsError(params.accessoryRentalItemId, gap, 0));
+        }
       }
     }
 

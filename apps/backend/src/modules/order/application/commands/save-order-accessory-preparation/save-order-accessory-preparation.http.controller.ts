@@ -16,16 +16,11 @@ import { StaffRoute } from 'src/core/decorators/staff-route.decorator';
 import { AuthenticatedUser } from 'src/modules/auth/public/authenticated-user';
 import {
   DuplicateOrderAccessoryPreparationItemError,
-  DuplicateOrderItemAccessoryAssetError,
   DuplicateOrderItemAccessoryError,
   InvalidOrderItemAccessoryQuantityError,
   OrderAccessorySelectionItemNotFoundError,
   OrderAccessorySelectionNotAllowedError,
   OrderAccessorySelectionRequiresProductItemError,
-  OrderItemAccessoryAssetLocationMismatchError,
-  OrderItemAccessoryAssetMismatchError,
-  OrderItemAccessoryAssetUnavailableError,
-  OrderItemAccessoryAssignmentQuantityExceededError,
   OrderItemAccessoryIncompatibleError,
   OrderItemAccessoryInsufficientAvailableAssetsError,
   OrderItemAccessoryMustBeAccessoryError,
@@ -61,8 +56,6 @@ export class SaveOrderAccessoryPreparationHttpController {
             accessoryRentalItemId: accessory.accessoryRentalItemId,
             quantity: accessory.quantity,
             notes: accessory.notes ?? null,
-            assetIds: accessory.assetIds ?? null,
-            autoAssignQuantity: accessory.autoAssignQuantity ?? null,
           })),
         })),
       ),
@@ -84,11 +77,6 @@ export class SaveOrderAccessoryPreparationHttpController {
         error instanceof OrderItemAccessoryRentalItemNotFoundError ||
         error instanceof OrderItemAccessoryMustBeAccessoryError ||
         error instanceof OrderItemAccessoryIncompatibleError ||
-        error instanceof DuplicateOrderItemAccessoryAssetError ||
-        error instanceof OrderItemAccessoryAssignmentQuantityExceededError ||
-        error instanceof OrderItemAccessoryAssetMismatchError ||
-        error instanceof OrderItemAccessoryAssetLocationMismatchError ||
-        error instanceof OrderItemAccessoryAssetUnavailableError ||
         error instanceof OrderItemAccessoryInsufficientAvailableAssetsError
       ) {
         throw new UnprocessableEntityException(error.message);
