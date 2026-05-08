@@ -1,38 +1,19 @@
 import React from 'react';
-import { Image, Page, View, Text, StyleSheet } from '@react-pdf/renderer';
-import {
-  ContractData,
-  EquipmentLine,
-  SignedContractSummary,
-} from 'src/modules/order/domain/ports/contract-render.port';
-
-const A4_PAGE_SIZE = { width: 595.28, height: 841.89 } as const;
+import { Page, View, Text, StyleSheet } from '@react-pdf/renderer';
+import { ContractData, EquipmentLine } from 'src/modules/order/domain/ports/contract-render.port';
+import { A4_PAGE_SIZE } from './shared/page-constants';
+import { formatAccessoryText } from './shared/format-accessory-text';
+import { sharedStyles } from './shared/shared-styles';
+import { ElectronicAcceptanceBlock } from './shared/electronic-acceptance-block.component';
+import { PageFooter } from './shared/page-footer.component';
+import { RentalSignatureBlock } from './shared/rental-signature-block.component';
 
 // ---------------------------------------------------------------------------
 // Styles
 // ---------------------------------------------------------------------------
 
 const s = StyleSheet.create({
-  page: {
-    paddingTop: 8,
-    paddingBottom: 38,
-    paddingHorizontal: 26,
-    fontSize: 8.5,
-    fontFamily: 'Helvetica',
-    color: '#1a1a1a',
-  },
-
   // ── Header ────────────────────────────────────────────────────────────────
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 2,
-    minHeight: 34,
-  },
-  headerLine: {
-    flex: 1,
-    borderTop: '2pt solid #111111',
-  },
   headerCenterEmpty: {
     height: 24,
   },
@@ -45,16 +26,6 @@ const s = StyleSheet.create({
     width: 145,
     height: 62,
   },
-  headerRight: {
-    flex: 1,
-    alignItems: 'flex-end',
-    justifyContent: 'center',
-  },
-  headerRightContent: {
-    width: '100%',
-    alignItems: 'flex-end',
-    justifyContent: 'center',
-  },
   remitoNumber: {
     fontSize: 10,
     color: '#111',
@@ -62,22 +33,11 @@ const s = StyleSheet.create({
     marginBottom: 2,
   },
 
-  frame: {
-    border: '2pt solid #111111',
-    borderRadius: 14,
-    paddingTop: 16,
-    paddingHorizontal: 16,
-    paddingBottom: 16,
-  },
   frameFirstPage: {
     height: 690,
   },
   frameContinuationPage: {
     height: 722,
-  },
-  frameContent: {
-    flex: 1,
-    justifyContent: 'space-between',
   },
   frameTopContent: {
     flexShrink: 0,
@@ -177,87 +137,6 @@ const s = StyleSheet.create({
     color: '#111',
     lineHeight: 1.35,
   },
-
-  // ── Footer / signatures ───────────────────────────────────────────────────
-  signatureRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
-    marginTop: 20,
-  },
-  signatureBlock: {
-    width: '38%',
-  },
-  digitalSignatureBlock: {
-    width: '38%',
-  },
-  digitalSignatureVisual: {
-    height: 40,
-    marginBottom: 6,
-    justifyContent: 'flex-end',
-    alignItems: 'center',
-  },
-  digitalSignatureImage: {
-    width: 190,
-    height: 36,
-    objectFit: 'contain',
-  },
-  digitalSignatureLine: {
-    borderBottom: '1pt solid #111111',
-    marginBottom: 6,
-  },
-  digitalSignatureLabel: {
-    fontSize: 7.8,
-    color: '#111',
-    textAlign: 'center',
-  },
-  signatureVisual: {
-    position: 'relative',
-    height: 40,
-    marginBottom: 10,
-    justifyContent: 'flex-end',
-  },
-  signatureLine: {
-    borderBottom: '1pt solid #111111',
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-  },
-  signatureImageFrame: {
-    alignSelf: 'center',
-    backgroundColor: '#fff',
-    paddingHorizontal: 6,
-    marginBottom: 4,
-  },
-  signatureImage: {
-    width: 200,
-    height: 200,
-    objectFit: 'contain',
-  },
-  signatureLabel: {
-    fontSize: 7.8,
-    color: '#111',
-    textAlign: 'center',
-  },
-
-  // ── Page footer ───────────────────────────────────────────────────────────
-  pageFooter: {
-    position: 'absolute',
-    bottom: 12,
-    left: 54,
-    right: 54,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    fontSize: 7,
-    color: '#111',
-    paddingTop: 4,
-  },
-  footerText: {
-    maxWidth: '33%',
-    textAlign: 'center',
-    color: '#737373',
-  },
 });
 
 // ---------------------------------------------------------------------------
@@ -282,12 +161,12 @@ export function RemitoPage({ data, columns, isContinuation = false }: RemitoPage
   const signedSummary = document.signedSummary;
 
   return (
-    <Page size={A4_PAGE_SIZE} style={s.page} wrap={false}>
+    <Page size={A4_PAGE_SIZE} style={sharedStyles.page} wrap={false}>
       {!isContinuation && (
-        <View style={s.headerRow} fixed>
+        <View style={sharedStyles.headerRow} fixed>
           <View />
-          <View style={s.headerRight}>
-            <View style={s.headerRightContent}>
+          <View style={sharedStyles.headerRight}>
+            <View style={sharedStyles.headerRightContent}>
               <Text style={s.remitoNumber}>
                 {document.label} N° {document.number}
               </Text>
@@ -298,8 +177,8 @@ export function RemitoPage({ data, columns, isContinuation = false }: RemitoPage
 
       {isContinuation && <View style={s.headerCenterEmpty} />}
 
-      <View style={[s.frame, isContinuation ? s.frameContinuationPage : s.frameFirstPage]}>
-        <View style={s.frameContent}>
+      <View style={[sharedStyles.frame, isContinuation ? s.frameContinuationPage : s.frameFirstPage]}>
+        <View style={sharedStyles.frameContent}>
           <View style={s.frameTopContent}>
             {!isContinuation && (
               <View style={s.infoSection}>
@@ -372,54 +251,29 @@ export function RemitoPage({ data, columns, isContinuation = false }: RemitoPage
             </View>
           </View>
 
-          <View style={s.signatureRow}>
+          <View style={sharedStyles.signatureRow}>
             {signedSummary ? (
               <ElectronicAcceptanceBlock summary={signedSummary} />
             ) : (
-              <View style={s.signatureBlock}>
-                <View style={s.signatureVisual}>
-                  <View style={s.signatureLine} />
+              <View style={sharedStyles.signatureBlock}>
+                <View style={sharedStyles.signatureVisual}>
+                  <View style={sharedStyles.signatureLine} />
                 </View>
-                <Text style={s.signatureLabel}>FIRMA DEL RESPONSABLE DE PRODUCCIÓN</Text>
+                <Text style={sharedStyles.signatureLabel}>FIRMA DEL RESPONSABLE DE PRODUCCIÓN</Text>
               </View>
             )}
             {document.showRentalSignatureBlock && (
-              <View style={s.signatureBlock}>
-                <View style={s.signatureVisual}>
-                  <View style={s.signatureLine} />
-                  {document.rentalSignatureUrl && (
-                    <View style={s.signatureImageFrame}>
-                      <Image src={document.rentalSignatureUrl} style={s.signatureImage} />
-                    </View>
-                  )}
-                </View>
-                <Text style={s.signatureLabel}>FIRMA DEL RESPONSABLE DEL RENTAL</Text>
-              </View>
+              <RentalSignatureBlock rentalSignatureUrl={document.rentalSignatureUrl} />
             )}
           </View>
         </View>
       </View>
 
-      <View style={s.pageFooter} fixed>
-        <Text style={s.footerText}>2026. GUARIDA RENTAL. MADRID, ESPAÑA.</Text>
-        <Text style={s.footerText}>Telefono de contacto: 680 870 274</Text>
-        <Text style={s.footerText}>www.guaridarental.com - guaridarental@gmail.com</Text>
-      </View>
+      <PageFooter />
     </Page>
   );
 }
 
-function ElectronicAcceptanceBlock({ summary }: { summary: SignedContractSummary }) {
-  return (
-    <View style={s.digitalSignatureBlock}>
-      <View style={s.digitalSignatureVisual}>
-        <Image src={summary.signatureImageDataUrl} style={s.digitalSignatureImage} />
-      </View>
-      <View style={s.digitalSignatureLine} />
-      <Text style={s.digitalSignatureLabel}>FIRMA DIGITAL DEL ARRENDATARIO</Text>
-    </View>
-  );
-}
 // ---------------------------------------------------------------------------
 // Equipment line sub-component
 // ---------------------------------------------------------------------------
@@ -435,19 +289,6 @@ function EquipmentLineItem({ line }: { line: EquipmentLine }) {
       {accessoryText.length > 0 && <Text style={s.equipmentAccessories}>Con {accessoryText}</Text>}
     </View>
   );
-}
-
-function formatAccessoryText(item: EquipmentLine['includedItems'][number]): string {
-  const base = `${item.quantity}x ${item.name}`;
-  const assignedIdentifiers = item.assignedAssetIdentifiers.join(', ');
-  const pendingQuantity = item.assignedAssetCount === null ? 0 : Math.max(0, item.quantity - item.assignedAssetCount);
-  const details = [
-    item.notes,
-    assignedIdentifiers.length > 0 ? assignedIdentifiers : null,
-    pendingQuantity > 0 ? `${pendingQuantity} pendiente${pendingQuantity === 1 ? '' : 's'}` : null,
-  ].filter((value): value is string => Boolean(value));
-
-  return details.length > 0 ? `${base} (${details.join('; ')})` : base;
 }
 
 function PartyInfoBlock({ title, party }: { title: string; party: ContractData['document']['landlord'] }) {

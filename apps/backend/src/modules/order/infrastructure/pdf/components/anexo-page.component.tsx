@@ -1,62 +1,23 @@
 import React from 'react';
-import { Image, Page, View, Text, StyleSheet } from '@react-pdf/renderer';
+import { Page, View, Text, StyleSheet } from '@react-pdf/renderer';
 
 import { SignedContractSummary } from 'src/modules/order/domain/ports/contract-render.port';
-
-const A4_PAGE_SIZE = { width: 595.28, height: 841.89 } as const;
+import { A4_PAGE_SIZE } from './shared/page-constants';
+import { sharedStyles } from './shared/shared-styles';
+import { ElectronicAcceptanceBlock } from './shared/electronic-acceptance-block.component';
+import { PageFooter } from './shared/page-footer.component';
+import { RentalSignatureBlock } from './shared/rental-signature-block.component';
 
 // ---------------------------------------------------------------------------
 // Styles
 // ---------------------------------------------------------------------------
 
 const s = StyleSheet.create({
-  page: {
-    paddingTop: 8,
-    paddingBottom: 38,
-    paddingHorizontal: 26,
-    fontSize: 8.5,
-    fontFamily: 'Helvetica',
-    color: '#1a1a1a',
-  },
-
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 2,
-    minHeight: 34,
-  },
-  headerLine: {
-    flex: 1,
-    borderTop: '2pt solid #111111',
-  },
   anexoLabel: {
     fontSize: 10,
     color: '#111',
     textAlign: 'right',
     marginBottom: 2,
-  },
-  headerRight: {
-    flex: 1,
-    alignItems: 'flex-end',
-    justifyContent: 'center',
-  },
-  headerRightContent: {
-    width: '100%',
-    alignItems: 'flex-end',
-    justifyContent: 'center',
-  },
-
-  frame: {
-    height: 690,
-    border: '2pt solid #111111',
-    borderRadius: 14,
-    paddingTop: 16,
-    paddingHorizontal: 16,
-    paddingBottom: 16,
-  },
-  frameContent: {
-    flex: 1,
-    justifyContent: 'space-between',
   },
 
   intro: {
@@ -84,90 +45,12 @@ const s = StyleSheet.create({
     lineHeight: 1.2,
     marginBottom: 4,
   },
-  signatureRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
-    marginTop: 20,
-  },
-  signatureBlock: {
-    width: '38%',
-  },
-  digitalSignatureBlock: {
-    width: '38%',
-  },
-  digitalSignatureVisual: {
-    height: 40,
-    marginBottom: 6,
-    justifyContent: 'flex-end',
-    alignItems: 'center',
-  },
-  digitalSignatureLine: {
-    borderBottom: '1pt solid #111111',
-    marginBottom: 6,
-  },
-  digitalSignatureLabel: {
-    fontSize: 7.8,
-    color: '#111',
-    textAlign: 'center',
-  },
-  digitalSignatureImage: {
-    width: 190,
-    height: 36,
-    objectFit: 'contain',
-  },
-  signatureVisual: {
-    position: 'relative',
-    height: 40,
-    marginBottom: 10,
-    justifyContent: 'flex-end',
-  },
-  signatureLine: {
-    borderBottom: '1pt solid #1a1a1a',
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-  },
-  signatureImageFrame: {
-    alignSelf: 'center',
-    backgroundColor: '#fff',
-    paddingHorizontal: 6,
-    marginBottom: 4,
-  },
-  signatureImage: {
-    width: 200,
-    height: 200,
-    objectFit: 'contain',
-  },
-  signatureLabel: {
-    fontSize: 7.8,
-    color: '#111',
-    textAlign: 'center',
-  },
 
   conformityLine: {
     fontFamily: 'Helvetica-Bold',
     fontSize: 7.8,
     marginTop: 8,
     marginBottom: 2,
-  },
-
-  pageFooter: {
-    position: 'absolute',
-    bottom: 12,
-    left: 54,
-    right: 54,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    fontSize: 7,
-    color: '#111',
-    paddingTop: 4,
-  },
-  footerText: {
-    maxWidth: '33%',
-    textAlign: 'center',
-    color: '#737373',
   },
 });
 
@@ -218,17 +101,17 @@ export function AnexoPage({
   signedSummary,
 }: AnexoPageProps) {
   return (
-    <Page size={A4_PAGE_SIZE} style={s.page} wrap={false}>
-      <View style={s.headerRow}>
-        <View style={s.headerRight}>
-          <View style={s.headerRightContent}>
+    <Page size={A4_PAGE_SIZE} style={sharedStyles.page} wrap={false}>
+      <View style={sharedStyles.headerRow}>
+        <View style={sharedStyles.headerRight}>
+          <View style={sharedStyles.headerRightContent}>
             <Text style={s.anexoLabel}>ANEXO I</Text>
           </View>
         </View>
       </View>
 
-      <View style={s.frame}>
-        <View style={s.frameContent}>
+      <View style={[sharedStyles.frame, { height: 690 }]}>
+        <View style={sharedStyles.frameContent}>
           <View>
             <Text style={s.intro}>
               Este anexo tiene como fin establecer las condiciones de alquiler de equipos solicitados por el cliente,
@@ -254,51 +137,23 @@ export function AnexoPage({
             <Text style={s.conformityLine}>SE FIRMA ESTE EJEMPLAR EXPRESANDO CONFORMIDAD DE AMBAS PARTES.</Text>
           </View>
 
-          <View style={s.signatureRow}>
+          <View style={sharedStyles.signatureRow}>
             {signedSummary ? (
               <ElectronicAcceptanceBlock summary={signedSummary} />
             ) : (
-              <View style={s.signatureBlock}>
-                <View style={s.signatureVisual}>
-                  <View style={s.signatureLine} />
+              <View style={sharedStyles.signatureBlock}>
+                <View style={sharedStyles.signatureVisual}>
+                  <View style={sharedStyles.signatureLine} />
                 </View>
-                <Text style={s.signatureLabel}>FIRMA DEL RESPONSABLE DE PRODUCCIÓN</Text>
+                <Text style={sharedStyles.signatureLabel}>FIRMA DEL RESPONSABLE DE PRODUCCIÓN</Text>
               </View>
             )}
-            {showRentalSignatureBlock && (
-              <View style={s.signatureBlock}>
-                <View style={s.signatureVisual}>
-                  <View style={s.signatureLine} />
-                  {rentalSignatureUrl && (
-                    <View style={s.signatureImageFrame}>
-                      <Image src={rentalSignatureUrl} style={s.signatureImage} />
-                    </View>
-                  )}
-                </View>
-                <Text style={s.signatureLabel}>FIRMA DEL RESPONSABLE DEL RENTAL</Text>
-              </View>
-            )}
+            {showRentalSignatureBlock && <RentalSignatureBlock rentalSignatureUrl={rentalSignatureUrl} />}
           </View>
         </View>
       </View>
 
-      <View style={s.pageFooter} fixed>
-        <Text style={s.footerText}>2026. GUARIDA RENTAL. MADRID, ESPAÑA.</Text>
-        <Text style={s.footerText}>Telefono de contacto: 680 870 274</Text>
-        <Text style={s.footerText}>www.guaridarental.com - guaridarental@gmail.com</Text>
-      </View>
+      <PageFooter />
     </Page>
-  );
-}
-
-function ElectronicAcceptanceBlock({ summary }: { summary: SignedContractSummary }) {
-  return (
-    <View style={s.digitalSignatureBlock}>
-      <View style={s.digitalSignatureVisual}>
-        <Image src={summary.signatureImageDataUrl} style={s.digitalSignatureImage} />
-      </View>
-      <View style={s.digitalSignatureLine} />
-      <Text style={s.digitalSignatureLabel}>FIRMA DIGITAL DEL ARRENDATARIO</Text>
-    </View>
   );
 }
