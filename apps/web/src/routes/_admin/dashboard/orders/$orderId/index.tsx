@@ -2,7 +2,6 @@ import { FulfillmentMethod, OrderStatus } from "@repo/types";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
-	Check,
 	CheckCircle2,
 	ChevronDown,
 	Clock,
@@ -236,10 +235,26 @@ function OrderHeaderBanner({
 	);
 }
 
+// --- Types ---
+
 type TimelineStep = {
 	label: string;
 	state: "completed" | "current" | "pending";
 };
+
+type StepKey = "confirm" | "accessories" | "signing" | "pickup" | "return";
+
+// --- Logic ---
+
+function stepState(
+	isDone: boolean,
+	key: StepKey,
+	currentStep: StepKey | null,
+): TimelineStep["state"] {
+	if (isDone) return "completed";
+	if (currentStep === key) return "current";
+	return "pending";
+}
 
 function getTimelineSteps(
 	order: { status: string; signing: { status: string } },
@@ -252,56 +267,61 @@ function getTimelineSteps(
 		status === OrderStatus.CONFIRMED ||
 		status === OrderStatus.ACTIVE ||
 		status === OrderStatus.COMPLETED;
+
+	const accessoriesDone = preparation.hasSavedAccessory;
+
+	const signingDone = signingStatus === "SIGNED";
+
 	const pickupDone =
 		status === OrderStatus.ACTIVE || status === OrderStatus.COMPLETED;
+
 	const returnDone = status === OrderStatus.COMPLETED;
 
-	let currentStep: string | null = null;
+	let currentStep: StepKey | null = null;
 	if (status === OrderStatus.DRAFT || status === OrderStatus.PENDING_REVIEW) {
 		currentStep = "confirm";
+	} else if (status === OrderStatus.CONFIRMED && !accessoriesDone) {
+		currentStep = "accessories";
+	} else if (status === OrderStatus.CONFIRMED && signingStatus === "PENDING") {
+		currentStep = "signing";
 	} else if (status === OrderStatus.CONFIRMED) {
 		currentStep = "pickup";
 	} else if (status === OrderStatus.ACTIVE) {
 		currentStep = "return";
 	}
 
-	const stepState = (
-		isDone: boolean,
-		stepKey: string | null,
-	): TimelineStep["state"] => {
-		if (isDone) return "completed";
-		if (currentStep === stepKey) return "current";
-		return "pending";
-	};
-
 	return [
 		{
 			label: "Confirmado",
-			state: stepState(confirmDone, "confirm"),
+			state: stepState(confirmDone, "confirm", currentStep),
 		},
 		{
 			label: "Accesorios",
-			state: preparation.hasSavedAccessory ? "completed" : "pending",
+			state: stepState(accessoriesDone, "accessories", currentStep),
 		},
-		{
-			label: "Firma",
-			state:
-				signingStatus === "SIGNED"
-					? "completed"
-					: signingStatus === "PENDING"
-						? "current"
-						: "pending",
-		},
-		{
-			label: "Retiro",
-			state: stepState(pickupDone, "pickup"),
-		},
+		{ label: "Firma", state: stepState(signingDone, "signing", currentStep) },
+		{ label: "Retiro", state: stepState(pickupDone, "pickup", currentStep) },
 		{
 			label: "Devolución",
-			state: stepState(returnDone, "return"),
+			state: stepState(returnDone, "return", currentStep),
 		},
 	];
 }
+
+// --- Style maps (replaces all JSX ternary chains) ---
+
+const dotStyles: Record<TimelineStep["state"], string> = {
+	completed: "bg-neutral-950",
+	current:
+		"bg-neutral-950 ring-[3px] ring-offset-[1.5px] ring-neutral-950 ring-offset-white",
+	pending: "border border-neutral-300 bg-transparent",
+};
+
+const labelStyles: Record<TimelineStep["state"], string> = {
+	completed: "text-neutral-500 font-medium",
+	current: "text-neutral-950 font-bold",
+	pending: "text-neutral-400 font-normal",
+};
 
 function OrderTimeline({
 	order,
@@ -318,9 +338,8 @@ function OrderTimeline({
 				<Fragment key={step.label}>
 					{i > 0 && (
 						<div
-							className={`h-px flex-1 min-w-5 mb-[17px] shrink ${
-								steps[i - 1].state === "completed" ||
-								steps[i - 1].state === "current"
+							className={`h-px flex-1 min-w-5 mb-4.25 shrink ${
+								steps[i - 1].state === "completed"
 									? "bg-neutral-950"
 									: "bg-neutral-200"
 							}`}
@@ -328,22 +347,10 @@ function OrderTimeline({
 					)}
 					<div className="flex flex-col items-center gap-1.5">
 						<div
-							className={`size-2 rounded-full shrink-0 ${
-								step.state === "completed"
-									? "bg-neutral-950"
-									: step.state === "current"
-										? "bg-neutral-950 ring-[3px] ring-offset-[1.5px] ring-neutral-950 ring-offset-white"
-										: "border border-neutral-300 bg-transparent"
-							}`}
+							className={`size-2 rounded-full shrink-0 ${dotStyles[step.state]}`}
 						/>
 						<span
-							className={`text-[11px] whitespace-nowrap leading-none tracking-wide ${
-								step.state === "completed"
-									? "text-neutral-500 font-medium"
-									: step.state === "current"
-										? "text-neutral-950 font-bold"
-										: "text-neutral-400 font-normal"
-							}`}
+							className={`text-[11px] whitespace-nowrap leading-none tracking-wide ${labelStyles[step.state]}`}
 						>
 							{step.label}
 						</span>
@@ -1046,57 +1053,48 @@ function OrderLogisticsCard() {
 				title="Logística"
 			/>
 
-			<div className="grid grid-cols-2 gap-3 mb-3">
-				<div className="rounded-lg border border-neutral-100 bg-neutral-50 px-3 py-3">
-					<p className="font-mono text-[9px] uppercase text-neutral-500">
+			<div className="grid grid-cols-2 gap-x-6 gap-y-1 mb-4">
+				<div>
+					<p className="font-mono text-[10px] uppercase tracking-wider text-neutral-400 mb-0.5">
 						Fecha de retiro
 					</p>
-					<p className="text-sm font-bold text-neutral-800">
+					<p className="text-sm font-medium text-neutral-900">
 						{bookingSnapshot.pickupDate.format("MMM DD, YYYY")}
-						{" - "}
+						<span className="text-neutral-400 mx-1">·</span>
 						{pickupAt.tz(bookingSnapshot.timezone).format("HH:mm")}
 					</p>
 				</div>
-				<div className="rounded-lg border border-neutral-100 bg-neutral-50 px-3 py-3">
-					<p className="font-mono text-[9px] uppercase text-neutral-500">
+				<div>
+					<p className="font-mono text-[10px] uppercase tracking-wider text-neutral-400 mb-0.5">
 						Fecha de devolución
 					</p>
-					<p className="text-sm font-bold text-neutral-800">
+					<p className="text-sm font-medium text-neutral-900">
 						{bookingSnapshot.returnDate.format("MMM DD, YYYY")}
-						{" - "}
+						<span className="text-neutral-400 mx-1">·</span>
 						{returnAt.tz(bookingSnapshot.timezone).format("HH:mm")}
 					</p>
 				</div>
 			</div>
 
-			<div className="space-y-3">
-				<div className="bg-neutral-50 border border-neutral-100 rounded-lg px-3 py-3">
-					<p className="text-sm font-semibold text-neutral-950">
-						{fulfillmentMethod === FulfillmentMethod.DELIVERY
-							? "Solicitó delivery"
-							: "Retiro en punto de entrega"}
-					</p>
-					<div className="flex items-center gap-3 ">
-						<div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-white text-neutral-500">
-							<MapPin className="size-4" />
-						</div>
-						<div>
-							<p className="text-sm font-semibold text-neutral-950">
-								{location.name}
-							</p>
-						</div>
-					</div>
+			<div className="border-t border-neutral-100 pt-3">
+				<p className="text-xs text-neutral-400 mb-1.5">
+					{fulfillmentMethod === FulfillmentMethod.DELIVERY
+						? "Solicitó delivery"
+						: "Retiro en punto de entrega"}
+				</p>
+				<div className="flex items-center gap-2 text-sm font-medium text-neutral-900">
+					<MapPin className="size-3.5 text-neutral-400 shrink-0" />
+					{location.name}
 				</div>
 			</div>
 
 			{deliveryRequest && (
-				<div className="mt-4 rounded-lg border border-neutral-200 bg-white p-4">
-					<p className="font-mono text-[9px] tracking-widest uppercase text-neutral-400 mb-3">
+				<div className="border-t border-neutral-100 mt-3 pt-3">
+					<p className="font-mono text-[10px] uppercase tracking-wider text-neutral-400 mb-2">
 						Pedido de Delivery
 					</p>
-
-					<div className="space-y-2 text-sm text-neutral-700">
-						<p className="font-semibold text-neutral-950">
+					<div className="space-y-1 text-sm text-neutral-700">
+						<p className="font-medium text-neutral-900">
 							{deliveryRequest.recipientName}
 						</p>
 						<p>{deliveryRequest.phone}</p>
@@ -1112,9 +1110,9 @@ function OrderLogisticsCard() {
 						</p>
 						<p>{deliveryRequest.country}</p>
 						{deliveryRequest.instructions && (
-							<div className="rounded-md bg-neutral-50 px-3 py-2 text-neutral-600">
+							<p className="text-neutral-500 pt-1">
 								{deliveryRequest.instructions}
-							</div>
+							</p>
 						)}
 					</div>
 				</div>
@@ -1128,138 +1126,77 @@ function OrderLogisticsCard() {
 function OrderFinancialsCard() {
 	const { order } = useOrderDetailContext();
 	const { financial } = order;
-	const [showPricingAudit, setShowPricingAudit] = useState(false);
+	const [showItems, setShowItems] = useState(false);
+	const [showAudit, setShowAudit] = useState(false);
+
 	const hasAdjustedLines = financial.items.some(
 		(line) => line.pricing.isOverridden,
 	);
 	const hasOwnerObligations = financial.ownerObligations !== "0";
+	const hasInsurance = financial.insuranceApplied;
+	const hasDiscounts = financial.itemsDiscountTotal !== "0";
+	const showSubtotalChain = hasDiscounts || hasInsurance;
 
 	return (
 		<section className="bg-white border border-neutral-200 rounded-lg p-5">
-			<SidebarCardHeader
-				icon={<ReceiptText className="size-4" />}
-				title="Resumen financiero"
-			/>
-
-			{hasAdjustedLines ? (
-				<div className="mb-4 flex items-start justify-between gap-4 rounded-md border border-amber-200 bg-amber-50/50 px-3 py-2.5">
-					<div>
-						<p className="text-sm font-medium text-amber-900">
-							Hay precios ajustados manualmente
-						</p>
-						<p className="text-xs text-amber-800/80">
-							Mostrar auditoria detallada por linea
-						</p>
-					</div>
-					<Switch
-						checked={showPricingAudit}
-						onCheckedChange={setShowPricingAudit}
-						aria-label="Mostrar auditoria de ajustes manuales"
+			<button
+				type="button"
+				onClick={() => {
+					setShowItems((prev) => !prev);
+					if (showItems) setShowAudit(false);
+				}}
+				className="flex w-full items-start justify-between gap-4 text-left"
+			>
+				<div className="min-w-0 flex-1">
+					<SidebarCardHeader
+						icon={<ReceiptText className="size-4" />}
+						title="Resumen financiero"
 					/>
 				</div>
-			) : null}
+				<div className="flex shrink-0 items-center gap-2 pt-1 text-neutral-400">
+					<ChevronDown
+						className={`size-4 transition-transform ${showItems ? "rotate-180" : ""}`}
+					/>
+				</div>
+			</button>
 
-			<div>
-				{financial.items.map((line) => (
-					<div key={line.orderItemId} className="border-b border-neutral-100">
-						{/* Item label + base price */}
-						<div className="flex items-center justify-between">
-							<span className="text-sm text-neutral-500">{line.label}</span>
-							<span
-								className={`font-mono text-sm ${line.discounts.length > 0 ? `text-neutral-400` : `text-neutral-950`}`}
-							>
-								{formatMoney(line.basePrice)}
-							</span>
-						</div>
-
-						{/* Applied discounts — only shown when discounts exist */}
-						{line.discounts.length > 0 && (
-							<div className="border-l border-neutral-200 pl-3 flex flex-col gap-1">
-								{line.discounts.map((discount) => (
-									<div
-										key={`${discount.sourceId}-${discount.promotionId}-${discount.label}`}
-										className="flex items-center justify-between"
-									>
-										<span className="text-[11px] text-neutral-400">
-											{discount.label}
-										</span>
-										<span className="font-mono text-[11px] text-emerald-600">
-											-{formatMoney(discount.discountAmount)}
-										</span>
-									</div>
-								))}
-							</div>
-						)}
-
-						{/* Final price — only shown when discounts exist, to close the math */}
-						{line.discounts.length > 0 && (
-							<div className="flex items-center justify-end pt-0.5">
-								<span className="font-mono text-sm font-semibold text-neutral-950">
-									{formatMoney(line.finalPrice)}
-								</span>
-							</div>
-						)}
-
-						{line.pricing.isOverridden && showPricingAudit ? (
-							<PricingAuditSection line={line} />
-						) : null}
-
-						{/* Owner split breakdown — only shown for external-owned items */}
-						{line.ownerSplit && (
-							<div className="border-l border-accent pb-2.5 pl-3 flex flex-col gap-1">
-								{line.ownerSplit.componentName && (
-									<span className="text-[10px] font-mono tracking-wide uppercase text-neutral-400 mt-0.5">
-										{line.ownerSplit.componentName}
-									</span>
-								)}
-								<div className="flex items-center justify-between">
-									<span className="text-[11px] text-neutral-400">
-										Propietario - {line.ownerSplit.ownerName}
-									</span>
-									<span className="font-mono text-[11px] text-neutral-400">
-										{formatMoney(line.ownerSplit.ownerAmount)}
-									</span>
-								</div>
-								<div className="flex items-center justify-between">
-									<span className="text-[11px] text-neutral-400">Renta</span>
-									<span className="font-mono text-[11px] text-neutral-400">
-										{formatMoney(line.ownerSplit.rentalAmount)}
-									</span>
-								</div>
-							</div>
-						)}
-					</div>
-				))}
+			{/* Hero total — tight gap below header, no bottom padding when no chain follows */}
+			<div
+				className={`flex items-baseline justify-between pt-3 ${showSubtotalChain || hasOwnerObligations || showItems ? "pb-3" : ""}`}
+			>
+				<span className="text-sm font-bold text-neutral-950">Total</span>
+				<span className="font-mono text-xl font-bold text-neutral-950 tracking-tight">
+					{formatMoney(financial.total)}
+				</span>
 			</div>
 
-			<div className="mt-4 border-t border-dashed border-neutral-200 pt-4">
-				<div className="space-y-2">
+			{/* Subtotal chain — only mounts when it carries information */}
+			{showSubtotalChain && (
+				<div className="border-t border-dashed border-neutral-200 pt-3 space-y-2">
 					<FinancialSummaryRow
 						label="Subtotal antes de descuentos"
 						value={financial.subtotalBeforeDiscounts}
 					/>
-					<FinancialSummaryRow
-						label="Descuentos de artículos"
-						value={financial.itemsDiscountTotal}
-						tone="success"
-						prefix="-"
-					/>
-					<FinancialSummaryRow
-						label="Subtotal de equipos"
-						value={financial.itemsSubtotal}
-					/>
-					{financial.insuranceApplied && (
+					{hasDiscounts && (
+						<FinancialSummaryRow
+							label="Descuentos de artículos"
+							value={financial.itemsDiscountTotal}
+							tone="success"
+							prefix="-"
+						/>
+					)}
+					{hasInsurance && (
 						<FinancialSummaryRow
 							label="Seguro de equipos"
 							value={financial.insuranceAmount}
 						/>
 					)}
 				</div>
-			</div>
+			)}
 
-			{/* Revenue breakdown — only shown when order has external-owned assets */}
+			{/* Revenue split */}
 			{hasOwnerObligations && (
-				<div className="mt-3 pt-3 border-t border-dashed border-neutral-200 flex flex-col gap-1.5">
+				<div className="border-t border-dashed border-neutral-200 mt-3 pt-3 flex flex-col gap-1.5">
 					<div className="flex items-center justify-between">
 						<span className="text-xs text-neutral-500">Tus ingresos</span>
 						<span className="font-mono text-xs font-medium text-emerald-700">
@@ -1277,13 +1214,99 @@ function OrderFinancialsCard() {
 				</div>
 			)}
 
-			{/* Total */}
-			<div className="flex items-baseline justify-between pt-4 mt-1">
-				<span className="text-sm font-bold text-neutral-950">Total</span>
-				<span className="font-mono text-xl font-bold text-neutral-950 tracking-tight">
-					{formatMoney(financial.total)}
-				</span>
-			</div>
+			{/* Item breakdown — only mounts when expanded, no wrapper div when collapsed */}
+			{showItems && (
+				<div className="border-t border-neutral-100 mt-3 pt-3">
+					{hasAdjustedLines && (
+						<div className="mb-3 flex items-start justify-between gap-4 rounded-md border border-amber-200 bg-amber-50/50 px-3 py-2.5">
+							<div>
+								<p className="text-sm font-medium text-amber-900">
+									Hay precios ajustados manualmente
+								</p>
+								<p className="text-xs text-amber-800/80">
+									Mostrar auditoria detallada por línea
+								</p>
+							</div>
+							<Switch
+								checked={showAudit}
+								onCheckedChange={setShowAudit}
+								aria-label="Mostrar auditoria de ajustes manuales"
+							/>
+						</div>
+					)}
+
+					{financial.items.map((line) => (
+						<div key={line.orderItemId} className="border-b border-neutral-100">
+							<div className="flex items-center justify-between py-2">
+								<span className="text-sm text-neutral-500">{line.label}</span>
+								<span
+									className={`font-mono text-sm ${
+										line.discounts.length > 0
+											? "text-neutral-400"
+											: "text-neutral-950"
+									}`}
+								>
+									{formatMoney(line.basePrice)}
+								</span>
+							</div>
+
+							{line.discounts.length > 0 && (
+								<div className="border-l border-neutral-200 pl-3 flex flex-col gap-1">
+									{line.discounts.map((discount) => (
+										<div
+											key={`${discount.sourceId}-${discount.promotionId}-${discount.label}`}
+											className="flex items-center justify-between"
+										>
+											<span className="text-[11px] text-neutral-400">
+												{discount.label}
+											</span>
+											<span className="font-mono text-[11px] text-emerald-600">
+												-{formatMoney(discount.discountAmount)}
+											</span>
+										</div>
+									))}
+								</div>
+							)}
+
+							{line.discounts.length > 0 && (
+								<div className="flex items-center justify-end pt-0.5 pb-1">
+									<span className="font-mono text-sm font-semibold text-neutral-950">
+										{formatMoney(line.finalPrice)}
+									</span>
+								</div>
+							)}
+
+							{line.pricing.isOverridden && showAudit && (
+								<PricingAuditSection line={line} />
+							)}
+
+							{line.ownerSplit && (
+								<div className="border-l border-accent pb-2.5 pl-3 flex flex-col gap-1">
+									{line.ownerSplit.componentName && (
+										<span className="text-[10px] font-mono tracking-wide uppercase text-neutral-400 mt-0.5">
+											{line.ownerSplit.componentName}
+										</span>
+									)}
+									<div className="flex items-center justify-between">
+										<span className="text-[11px] text-neutral-400">
+											Propietario - {line.ownerSplit.ownerName}
+										</span>
+										<span className="font-mono text-[11px] text-neutral-400">
+											{formatMoney(line.ownerSplit.ownerAmount)}
+										</span>
+									</div>
+									<div className="flex items-center justify-between">
+										<span className="text-[11px] text-neutral-400">Renta</span>
+										<span className="font-mono text-[11px] text-neutral-400">
+											{formatMoney(line.ownerSplit.rentalAmount)}
+										</span>
+									</div>
+								</div>
+							)}
+						</div>
+					))}
+				</div>
+			)}
 		</section>
 	);
 }
