@@ -1,6 +1,7 @@
 import { QueryBus } from '@nestjs/cqrs';
 import { BookingMode, FulfillmentMethod, OrderAssignmentStage, OrderStatus, ScheduleSlotType } from '@repo/types';
 import Decimal from 'decimal.js';
+import { EventEmitter2 } from 'eventemitter2';
 import { ok } from 'neverthrow';
 
 import { PrismaService } from 'src/core/database/prisma.service';
@@ -42,6 +43,9 @@ describe('CreateOrderService', () => {
     const prisma = {
       client: {
         $transaction: jest.fn(async (callback: (tx: unknown) => Promise<unknown>) => callback({})),
+        order: {
+          findFirst: jest.fn(async () => ({ orderNumber: 'ORD-001' })),
+        },
       },
     } as unknown as PrismaService;
 
@@ -136,7 +140,10 @@ describe('CreateOrderService', () => {
       ),
     } as unknown as CreateOrderOwnerContractResolver;
 
+    const eventEmitter = new EventEmitter2();
+
     const service = new CreateOrderService(
+      eventEmitter,
       prisma,
       queryBus,
       orderRepository,

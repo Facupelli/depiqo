@@ -7,6 +7,7 @@ import {
   PricingAdjustmentSourceKind,
   PromotionAdjustmentType,
 } from '@repo/types';
+import { EventEmitter2 } from 'eventemitter2';
 import { ConfirmOrderService } from './confirm-order/confirm-order.service';
 import { ConfirmDraftOrderFlow } from './confirm-order/confirm-draft-order.flow';
 import { ConfirmPendingReviewOrderFlow } from './confirm-order/confirm-pending-review-order.flow';
@@ -360,7 +361,7 @@ describe('Order assignment lifecycle services', () => {
       voidCouponRedemptionWithinTransaction: jest.fn(async () => undefined),
     } as unknown as PricingPublicApi;
 
-    const service = new CancelOrderService(prisma, orderRepository, inventoryApi, pricingApi);
+    const service = new CancelOrderService(new EventEmitter2(), prisma, orderRepository, inventoryApi, pricingApi);
     const result = await service.execute(new CancelOrderCommand('tenant-1', order.id));
 
     expect(result.isOk()).toBe(true);
@@ -385,7 +386,7 @@ describe('Order assignment lifecycle services', () => {
       voidCouponRedemptionWithinTransaction: jest.fn(async () => undefined),
     } as unknown as PricingPublicApi;
 
-    const service = new CancelOrderService(prisma, orderRepository, inventoryApi, pricingApi);
+    const service = new CancelOrderService(new EventEmitter2(), prisma, orderRepository, inventoryApi, pricingApi);
     const result = await service.execute(new CancelOrderCommand('tenant-1', order.id));
 
     expect(result.isErr()).toBe(true);
