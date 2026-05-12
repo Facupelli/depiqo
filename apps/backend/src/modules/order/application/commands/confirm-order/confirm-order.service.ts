@@ -43,6 +43,6 @@ export class ConfirmOrderService implements ICommandHandler<ConfirmOrderCommand,
       return this.confirmDraftOrderFlow.execute(order);
     }
 
-    return this.confirmPendingReviewOrderFlow.execute(order);
+    return this.confirmPendingReviewOrderFlow.execute(order, command.reviewedByUserId);
   }
 }

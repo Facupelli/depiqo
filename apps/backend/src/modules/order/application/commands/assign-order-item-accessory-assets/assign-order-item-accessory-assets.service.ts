@@ -9,6 +9,7 @@ import {
   DuplicateOrderItemAccessoryAssetError,
   OrderAccessorySelectionNotAllowedError,
   OrderAccessorySelectionRequiresProductItemError,
+  OrderItemAccessoryAssetAssignmentNotAllowedError,
   OrderItemAccessoryAssetLocationMismatchError,
   OrderItemAccessoryAssetMismatchError,
   OrderItemAccessoryAssetUnavailableError,
@@ -18,16 +19,13 @@ import {
 
 import { AssignOrderItemAccessoryAssetsCommand } from './assign-order-item-accessory-assets.command';
 
-const ASSIGNABLE_ACCESSORY_ASSET_STATUSES = new Set<OrderStatus>([
-  OrderStatus.DRAFT,
-  OrderStatus.PENDING_REVIEW,
-  OrderStatus.CONFIRMED,
-]);
+const ASSIGNABLE_ACCESSORY_ASSET_STATUSES = new Set<OrderStatus>([OrderStatus.DRAFT, OrderStatus.CONFIRMED]);
 
 type AssignOrderItemAccessoryAssetsError =
   | OrderItemAccessoryAssignmentNotFoundError
   | OrderAccessorySelectionNotAllowedError
   | OrderAccessorySelectionRequiresProductItemError
+  | OrderItemAccessoryAssetAssignmentNotAllowedError
   | DuplicateOrderItemAccessoryAssetError
   | OrderItemAccessoryAssignmentQuantityExceededError
   | OrderItemAccessoryAssetMismatchError
@@ -85,6 +83,10 @@ export class AssignOrderItemAccessoryAssetsService implements ICommandHandler<
     }
 
     const orderStatus = accessory.order.status as OrderStatus;
+    if (orderStatus === OrderStatus.PENDING_REVIEW) {
+      return err(new OrderItemAccessoryAssetAssignmentNotAllowedError(orderStatus));
+    }
+
     if (!ASSIGNABLE_ACCESSORY_ASSET_STATUSES.has(orderStatus)) {
       return err(new OrderAccessorySelectionNotAllowedError(orderStatus));
     }
@@ -182,8 +184,7 @@ export class AssignOrderItemAccessoryAssetsService implements ICommandHandler<
             assetId,
             period,
             type: AssignmentType.ORDER,
-            stage:
-              orderStatus === OrderStatus.PENDING_REVIEW ? OrderAssignmentStage.HOLD : OrderAssignmentStage.COMMITTED,
+            stage: OrderAssignmentStage.COMMITTED,
             source: AssignmentSource.OWNED,
             orderId: accessory.order.id,
             orderItemAccessoryId: accessory.id,

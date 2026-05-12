@@ -127,38 +127,137 @@ function makeTransactionPrisma() {
 }
 
 describe('Order assignment lifecycle services', () => {
-  it('confirm converts hold assignments to committed assignments in the same transaction', async () => {
+  it('confirm approves pending-review orders by creating committed assignments and review metadata', async () => {
     const prisma = makeTransactionPrisma();
     const order = makeOrder(OrderStatus.PENDING_REVIEW);
+    order.addItem(
+      OrderItem.create({
+        orderId: order.id,
+        type: OrderItemType.PRODUCT,
+        productTypeId: 'product-type-1',
+        priceSnapshot: PriceSnapshot.create({
+          currency: 'ARS',
+          basePrice: new Decimal(100),
+          finalPrice: new Decimal(100),
+          totalUnits: 1,
+          pricePerBillingUnit: new Decimal(100),
+          discounts: [],
+        }),
+      }),
+    );
+
     const orderRepository = {
       load: jest.fn(async () => order),
       save: jest.fn(async () => order.id),
     } as unknown as OrderRepository;
     const inventoryApi = {
-      transitionOrderAssignmentsStage: jest.fn(async () => undefined),
+      saveOrderAssignment: jest.fn(async () => ok(undefined)),
     } as unknown as InventoryPublicApi;
     const assetResolver = {
-      resolveDemand: jest.fn(),
+      resolveDemand: jest.fn(async (demandUnits) => {
+        demandUnits[0].resolvedAssetId = 'asset-1';
+        return { unavailableItems: [], conflictGroups: [] };
+      }),
     } as unknown as CreateOrderAssetResolver;
     const ownerContractResolver = {
-      resolve: jest.fn(),
+      resolve: jest.fn(async () => new Map()),
     } as unknown as CreateOrderOwnerContractResolver;
-    const pendingReviewFlow = new ConfirmPendingReviewOrderFlow(prisma, orderRepository, inventoryApi);
+    const eventEmitter = {
+      emitAsync: jest.fn(async () => []),
+    } as unknown as EventEmitter2;
+    const pendingReviewFlow = new ConfirmPendingReviewOrderFlow(
+      eventEmitter,
+      prisma,
+      orderRepository,
+      inventoryApi,
+      assetResolver,
+      ownerContractResolver,
+    );
     const draftFlow = {
       execute: jest.fn(),
     } as unknown as ConfirmDraftOrderFlow;
 
     const service = new ConfirmOrderService(orderRepository, pendingReviewFlow, draftFlow);
-    const result = await service.execute(new ConfirmOrderCommand('tenant-1', order.id));
+    const result = await service.execute(new ConfirmOrderCommand('tenant-1', order.id, 'user-1'));
 
     expect(result.isOk()).toBe(true);
+    expect(order.currentStatus).toBe(OrderStatus.CONFIRMED);
+    expect(order.currentReviewedByUserId).toBe('user-1');
+    expect(order.currentReviewedAt).toBeInstanceOf(Date);
     expect(orderRepository.save).toHaveBeenCalled();
-    expect(inventoryApi.transitionOrderAssignmentsStage).toHaveBeenCalledWith(
-      order.id,
-      OrderAssignmentStage.HOLD,
-      OrderAssignmentStage.COMMITTED,
+    expect(inventoryApi.saveOrderAssignment).toHaveBeenCalledWith(
+      expect.objectContaining({
+        assetId: 'asset-1',
+        orderId: order.id,
+        orderItemId: order.getItems()[0].id,
+        stage: OrderAssignmentStage.COMMITTED,
+      }),
       { tx: true },
     );
+    expect(eventEmitter.emitAsync).toHaveBeenCalled();
+  });
+
+  it('confirm leaves pending-review orders unchanged when approval availability fails', async () => {
+    const prisma = makeTransactionPrisma();
+    const order = makeOrder(OrderStatus.PENDING_REVIEW);
+    order.addItem(
+      OrderItem.create({
+        orderId: order.id,
+        type: OrderItemType.PRODUCT,
+        productTypeId: 'product-type-1',
+        priceSnapshot: PriceSnapshot.create({
+          currency: 'ARS',
+          basePrice: new Decimal(100),
+          finalPrice: new Decimal(100),
+          totalUnits: 1,
+          pricePerBillingUnit: new Decimal(100),
+          discounts: [],
+        }),
+      }),
+    );
+
+    const orderRepository = {
+      load: jest.fn(async () => order),
+      save: jest.fn(async () => order.id),
+    } as unknown as OrderRepository;
+    const inventoryApi = {
+      saveOrderAssignment: jest.fn(async () => ok(undefined)),
+    } as unknown as InventoryPublicApi;
+    const assetResolver = {
+      resolveDemand: jest.fn(async () => ({
+        unavailableItems: [{ type: 'PRODUCT' as const, productTypeId: 'product-type-1' }],
+        conflictGroups: [],
+      })),
+    } as unknown as CreateOrderAssetResolver;
+    const ownerContractResolver = {
+      resolve: jest.fn(async () => new Map()),
+    } as unknown as CreateOrderOwnerContractResolver;
+    const eventEmitter = {
+      emitAsync: jest.fn(async () => []),
+    } as unknown as EventEmitter2;
+    const pendingReviewFlow = new ConfirmPendingReviewOrderFlow(
+      eventEmitter,
+      prisma,
+      orderRepository,
+      inventoryApi,
+      assetResolver,
+      ownerContractResolver,
+    );
+    const draftFlow = {
+      execute: jest.fn(),
+    } as unknown as ConfirmDraftOrderFlow;
+
+    const service = new ConfirmOrderService(orderRepository, pendingReviewFlow, draftFlow);
+    const result = await service.execute(new ConfirmOrderCommand('tenant-1', order.id, 'user-1'));
+
+    expect(result.isErr()).toBe(true);
+    expect(order.currentStatus).toBe(OrderStatus.PENDING_REVIEW);
+    expect(order.currentReviewedAt).toBeNull();
+    expect(order.currentReviewedByUserId).toBeNull();
+    expect(orderRepository.save).not.toHaveBeenCalled();
+    expect(inventoryApi.saveOrderAssignment).not.toHaveBeenCalled();
+    expect(ownerContractResolver.resolve).not.toHaveBeenCalled();
+    expect(eventEmitter.emitAsync).not.toHaveBeenCalled();
   });
 
   it('confirm requires a customer for draft orders', async () => {
@@ -200,7 +299,7 @@ describe('Order assignment lifecycle services', () => {
     const draftFlow = new ConfirmDraftOrderFlow(prisma, orderRepository, inventoryApi, assetResolver, ownerContractResolver);
 
     const service = new ConfirmOrderService(orderRepository, pendingReviewFlow, draftFlow);
-    const result = await service.execute(new ConfirmOrderCommand('tenant-1', order.id));
+    const result = await service.execute(new ConfirmOrderCommand('tenant-1', order.id, 'user-1'));
 
     expect(result.isErr()).toBe(true);
     expect(result._unsafeUnwrapErr()).toBeInstanceOf(OrderCustomerRequiredForConfirmationError);
@@ -289,7 +388,7 @@ describe('Order assignment lifecycle services', () => {
     const draftFlow = new ConfirmDraftOrderFlow(prisma, orderRepository, inventoryApi, assetResolver, ownerContractResolver);
 
     const service = new ConfirmOrderService(orderRepository, pendingReviewFlow, draftFlow);
-    const result = await service.execute(new ConfirmOrderCommand('tenant-1', order.id));
+    const result = await service.execute(new ConfirmOrderCommand('tenant-1', order.id, 'user-1'));
 
     expect(result.isOk()).toBe(true);
     expect(order.currentStatus).toBe(OrderStatus.CONFIRMED);
@@ -305,25 +404,27 @@ describe('Order assignment lifecycle services', () => {
     );
   });
 
-  it('reject releases hold assignments in the same transaction', async () => {
+  it('reject stores review metadata and does not release inventory', async () => {
     const prisma = makeTransactionPrisma();
     const order = makeOrder(OrderStatus.PENDING_REVIEW);
     const orderRepository = {
       load: jest.fn(async () => order),
       save: jest.fn(async () => order.id),
     } as unknown as OrderRepository;
-    const inventoryApi = {
-      releaseOrderAssignments: jest.fn(async () => undefined),
-    } as unknown as InventoryPublicApi;
+    const eventEmitter = {
+      emitAsync: jest.fn(async () => []),
+    } as unknown as EventEmitter2;
 
-    const service = new RejectOrderService(prisma, orderRepository, inventoryApi);
-    const result = await service.execute(new RejectOrderCommand('tenant-1', order.id));
+    const service = new RejectOrderService(eventEmitter, prisma, orderRepository);
+    const result = await service.execute(new RejectOrderCommand('tenant-1', order.id, 'user-1', 'Not available'));
 
     expect(result.isOk()).toBe(true);
+    expect(order.currentStatus).toBe(OrderStatus.REJECTED);
+    expect(order.currentReviewedByUserId).toBe('user-1');
+    expect(order.currentReviewedAt).toBeInstanceOf(Date);
+    expect(order.currentRejectionReason).toBe('Not available');
     expect(orderRepository.save).toHaveBeenCalled();
-    expect(inventoryApi.releaseOrderAssignments).toHaveBeenCalledWith(order.id, OrderAssignmentStage.HOLD, {
-      tx: true,
-    });
+    expect(eventEmitter.emitAsync).toHaveBeenCalled();
   });
 
   it('expire releases hold assignments in the same transaction', async () => {

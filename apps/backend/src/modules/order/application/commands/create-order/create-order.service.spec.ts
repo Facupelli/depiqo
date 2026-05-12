@@ -197,6 +197,10 @@ describe('CreateOrderService', () => {
     const result = await service.execute(makeCommand());
 
     expect(result.isOk()).toBe(true);
+    expect(result._unsafeUnwrap()).toEqual({
+      orderId: expect.any(String),
+      status: OrderStatus.CONFIRMED,
+    });
     expect(saved().savedStatus).toBe(OrderStatus.CONFIRMED);
     expect(saved().savedPeriod?.equals(period)).toBe(true);
     expect(saved().savedBookingSnapshot).toEqual({
@@ -209,14 +213,18 @@ describe('CreateOrderService', () => {
     expect(saved().savedAssignments).toEqual([{ stage: OrderAssignmentStage.COMMITTED }]);
   });
 
-  it('creates pending review orders for request-to-book tenants', async () => {
+  it('creates pending review orders for request-to-book tenants without assignments', async () => {
     const { service, saved } = makeService(BookingMode.REQUEST_TO_BOOK);
 
     const result = await service.execute(makeCommand());
 
     expect(result.isOk()).toBe(true);
+    expect(result._unsafeUnwrap()).toEqual({
+      orderId: expect.any(String),
+      status: OrderStatus.PENDING_REVIEW,
+    });
     expect(saved().savedStatus).toBe(OrderStatus.PENDING_REVIEW);
-    expect(saved().savedAssignments).toEqual([{ stage: OrderAssignmentStage.HOLD }]);
+    expect(saved().savedAssignments).toEqual([]);
   });
 
   it('rejects delivery orders for locations that do not support delivery', async () => {

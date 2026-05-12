@@ -117,6 +117,7 @@ export class EditOrderHttpController {
           {
             unavailableItems: error.unavailableItems,
             conflictGroups: error.conflictGroups,
+            accessoryConflicts: error.accessoryConflicts,
           },
         );
       }

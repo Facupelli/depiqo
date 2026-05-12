@@ -66,7 +66,11 @@ export class CreateOrderHttpController {
           'Order Items Unavailable',
           error.message,
           'errors://order-items-unavailable',
-          { unavailableItems: error.unavailableItems, conflictGroups: error.conflictGroups },
+          {
+            unavailableItems: error.unavailableItems,
+            conflictGroups: error.conflictGroups,
+            accessoryConflicts: error.accessoryConflicts,
+          },
         );
       }
 

@@ -42,6 +42,7 @@ import { BookingSnapshot } from 'src/modules/order/domain/value-objects/booking-
 import { OrderDeliveryRequest } from 'src/modules/order/domain/value-objects/order-delivery-request.value-object';
 import { TenantConfig } from '@repo/schemas';
 
+import { CreateOrderResponseDto } from './create-order.response.dto';
 import { CreateOrderCommand } from './create-order.command';
 import { CreateOrderAssetResolver, buildDemandUnits } from './create-order-asset-resolver';
 import { CreateOrderError, ResolvedItem } from './create-order.types';
@@ -61,7 +62,7 @@ import { TenantConfigNotFoundException } from '../../../domain/exceptions/order.
 import { OrderCreatedByCustomerEvent } from 'src/modules/order/public/events/order-created-by-customer.event';
 
 @CommandHandler(CreateOrderCommand)
-export class CreateOrderService implements ICommandHandler<CreateOrderCommand, Result<string, CreateOrderError>> {
+export class CreateOrderService implements ICommandHandler<CreateOrderCommand, Result<CreateOrderResponseDto, CreateOrderError>> {
   constructor(
     private readonly eventEmitter: EventEmitter2,
     private readonly prisma: PrismaService,
@@ -73,7 +74,7 @@ export class CreateOrderService implements ICommandHandler<CreateOrderCommand, R
     private readonly ownerContractResolver: CreateOrderOwnerContractResolver,
   ) {}
 
-  async execute(command: CreateOrderCommand): Promise<Result<string, CreateOrderError>> {
+  async execute(command: CreateOrderCommand): Promise<Result<CreateOrderResponseDto, CreateOrderError>> {
     if (command.items.length === 0) {
       return err(new OrderMustContainItemsError());
     }
@@ -174,22 +175,40 @@ export class CreateOrderService implements ICommandHandler<CreateOrderCommand, R
         insuranceRatePercent: insuranceTerms.insuranceRatePercent,
       });
 
-      const demandUnits = buildDemandUnits(resolvedItems);
-      const availability = await this.assetResolver.resolveDemand(demandUnits);
-      if (availability.unavailableItems.length > 0 || availability.conflictGroups.length > 0) {
-        return err(new OrderItemUnavailableError(availability.unavailableItems, availability.conflictGroups));
-      }
+      if (bookingMode === BookingMode.REQUEST_TO_BOOK) {
+        this.attachRequestToBookItemsToOrder(order, resolvedItems);
+      } else {
+        const demandUnits = buildDemandUnits(resolvedItems);
+        const availability = await this.assetResolver.resolveDemand(demandUnits);
+        if (availability.unavailableItems.length > 0 || availability.conflictGroups.length > 0) {
+          return err(new OrderItemUnavailableError(availability.unavailableItems, availability.conflictGroups));
+        }
 
-      const contractByAssetId = await this.ownerContractResolver.resolve(command.tenantId, period.start, demandUnits);
-      const assignmentStage =
-        bookingMode === BookingMode.REQUEST_TO_BOOK ? OrderAssignmentStage.HOLD : OrderAssignmentStage.COMMITTED;
-      const pendingAssignments = this.attachResolvedItemsToOrder(
-        order,
-        resolvedItems,
-        demandUnits,
-        contractByAssetId,
-        assignmentStage,
-      );
+        const contractByAssetId = await this.ownerContractResolver.resolve(command.tenantId, period.start, demandUnits);
+        const pendingAssignments = this.attachResolvedItemsToOrder(
+          order,
+          resolvedItems,
+          demandUnits,
+          contractByAssetId,
+          OrderAssignmentStage.COMMITTED,
+        );
+
+        const assignmentResults = await Promise.all(
+          pendingAssignments.map((assignment) => this.inventoryApi.saveOrderAssignment(assignment, tx)),
+        );
+
+        if (assignmentResults.some((result) => result.isErr())) {
+          return err(
+            new OrderItemUnavailableError(
+              resolvedItems.map((item) =>
+                item.type === 'PRODUCT'
+                  ? { type: 'PRODUCT', productTypeId: item.productTypeId }
+                  : { type: 'BUNDLE', bundleId: item.bundleId },
+              ),
+            ),
+          );
+        }
+      }
 
       await this.orderRepository.save(order, tx);
 
@@ -207,22 +226,6 @@ export class CreateOrderService implements ICommandHandler<CreateOrderCommand, R
         if (redeemCouponResult.isErr()) {
           return err(redeemCouponResult.error);
         }
-      }
-
-      const assignmentResults = await Promise.all(
-        pendingAssignments.map((assignment) => this.inventoryApi.saveOrderAssignment(assignment, tx)),
-      );
-
-      if (assignmentResults.some((result) => result.isErr())) {
-        return err(
-          new OrderItemUnavailableError(
-            resolvedItems.map((item) =>
-              item.type === 'PRODUCT'
-                ? { type: 'PRODUCT', productTypeId: item.productTypeId }
-                : { type: 'BUNDLE', bundleId: item.bundleId },
-            ),
-          ),
-        );
       }
 
       return ok({
@@ -267,7 +270,7 @@ export class CreateOrderService implements ICommandHandler<CreateOrderCommand, R
       }),
     );
 
-    return ok(result.value.orderId);
+    return ok({ orderId: result.value.orderId, status: result.value.status });
   }
 
   private async validateLocation(
@@ -518,5 +521,60 @@ export class CreateOrderService implements ICommandHandler<CreateOrderCommand, R
     }
 
     return pendingAssignments;
+  }
+
+  private attachRequestToBookItemsToOrder(order: Order, resolvedItems: ResolvedItem[]): void {
+    for (const item of resolvedItems) {
+      if (item.type === 'PRODUCT') {
+        for (let index = 0; index < item.quantity; index += 1) {
+          order.addItem(
+            OrderItem.create({
+              orderId: order.id,
+              type: OrderItemType.PRODUCT,
+              priceSnapshot: toPriceSnapshot(item.price, item.currency),
+              productTypeId: item.productTypeId,
+            }),
+          );
+        }
+
+        continue;
+      }
+
+      const snapshotComponents = item.bundle.components.map((component) =>
+        BundleSnapshotComponent.create({
+          productTypeId: component.productTypeId,
+          productTypeName: component.productTypeName,
+          quantity: component.quantity,
+          pricePerUnit: item.componentStandalonePrices.get(component.productTypeId) ?? new Decimal(0),
+        }),
+      );
+
+      const orderItem = OrderItem.create({
+        orderId: order.id,
+        type: OrderItemType.BUNDLE,
+        priceSnapshot: toPriceSnapshot(item.price, item.currency),
+        bundleId: item.bundleId,
+      });
+
+      order.addItem(
+        OrderItem.reconstitute({
+          id: orderItem.id,
+          orderId: orderItem.orderId,
+          type: orderItem.type,
+          priceSnapshot: orderItem.priceSnapshot,
+          manualPricingOverride: null,
+          productTypeId: orderItem.productTypeId,
+          bundleId: orderItem.bundleId,
+          bundleSnapshot: BundleSnapshot.create({
+            orderItemId: orderItem.id,
+            bundleId: item.bundle.id,
+            bundleName: item.bundle.name,
+            bundlePrice: item.price.finalPrice.toDecimal(),
+            components: snapshotComponents,
+          }),
+          ownerSplits: [],
+        }),
+      );
+    }
   }
 }

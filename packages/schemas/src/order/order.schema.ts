@@ -1,4 +1,4 @@
-import { FulfillmentMethod } from "@repo/types";
+import { FulfillmentMethod, OrderStatus } from "@repo/types";
 import { z } from "zod";
 import {
   localDateSchema,
@@ -136,3 +136,10 @@ export type AssignOrderItemAccessoryAssetsDto = z.infer<
 export type DeliveryRequestDto = z.infer<typeof deliveryRequestSchema>;
 export type CreateOrderDto = z.infer<typeof createOrderSchema>;
 export type CreateDraftOrderDto = z.infer<typeof createDraftOrderSchema>;
+
+export const createOrderResponseSchema = z.object({
+  orderId: z.uuid(),
+  status: z.enum(OrderStatus),
+});
+
+export type CreateOrderResponseDto = z.infer<typeof createOrderResponseSchema>;

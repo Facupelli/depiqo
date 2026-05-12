@@ -202,39 +202,21 @@ export class EditOrderService implements ICommandHandler<EditOrderCommand, Resul
 
     try {
       const transactionResult = await this.prisma.client.$transaction(async (tx) => {
-        const replacementOrder = Order.reconstitute({
-          id: existingOrder.id,
-          tenantId: existingOrder.tenantId,
-          locationId: command.locationId,
-          customerId: command.customerId ?? null,
-          period: bookingContext.period,
-          status: existingOrder.currentStatus,
-          fulfillmentMethod: command.fulfillmentMethod,
-          deliveryRequest:
-            command.fulfillmentMethod === FulfillmentMethod.DELIVERY && command.deliveryRequest
-              ? OrderDeliveryRequest.create(command.deliveryRequest)
-              : null,
-          bookingSnapshot: BookingSnapshot.create({
-            pickupDate: command.pickupDate,
-            pickupTime: command.pickupTime,
-            returnDate: command.returnDate,
-            returnTime: command.returnTime,
-            timezone: bookingContext.timezone,
-          }),
-          insuranceSelected: insuranceTerms.insuranceSelected,
-          financialSnapshot: OrderFinancialSnapshot.zero(
-            command.currency,
-            insuranceTerms.insuranceSelected,
-            insuranceTerms.insuranceRatePercent,
-          ),
-          notes: existingOrder.currentNotes,
-          items: [],
+        const replacementOrder = this.buildReplacementOrder({
+          existingOrder,
+          command,
+          bookingContext,
+          insuranceTerms,
         });
 
-        const assignmentStage =
-          existingOrder.currentStatus === OrderStatus.PENDING_REVIEW
-            ? OrderAssignmentStage.HOLD
-            : OrderAssignmentStage.COMMITTED;
+        if (existingOrder.currentStatus === OrderStatus.PENDING_REVIEW) {
+          this.attachResolvedItemsToPendingReviewOrder(replacementOrder, resolvedItems);
+          this.applyPricingAdjustment(replacementOrder, command, now);
+          await this.orderRepository.save(replacementOrder, tx, { replaceChildren: true });
+          return ok(undefined);
+        }
+
+        const assignmentStage = OrderAssignmentStage.COMMITTED;
         const demandUnits = buildDemandUnits(resolvedItems);
 
         await this.inventoryApi.releaseOrderAssignments(existingOrder.id, assignmentStage, tx);
@@ -383,6 +365,107 @@ export class EditOrderService implements ICommandHandler<EditOrderCommand, Resul
         ),
       };
     });
+  }
+
+  private buildReplacementOrder(params: {
+    existingOrder: Order;
+    command: EditOrderCommand;
+    bookingContext: {
+      period: DateRange;
+      insuranceEnabled: boolean;
+      insuranceRatePercent: number;
+      timezone: string;
+    };
+    insuranceTerms: ReturnType<typeof InsuranceCalculationService.resolveTerms>;
+  }): Order {
+    const { existingOrder, command, bookingContext, insuranceTerms } = params;
+
+    return Order.reconstitute({
+      id: existingOrder.id,
+      tenantId: existingOrder.tenantId,
+      locationId: command.locationId,
+      customerId: command.customerId ?? null,
+      period: bookingContext.period,
+      status: existingOrder.currentStatus,
+      fulfillmentMethod: command.fulfillmentMethod,
+      deliveryRequest:
+        command.fulfillmentMethod === FulfillmentMethod.DELIVERY && command.deliveryRequest
+          ? OrderDeliveryRequest.create(command.deliveryRequest)
+          : null,
+      bookingSnapshot: BookingSnapshot.create({
+        pickupDate: command.pickupDate,
+        pickupTime: command.pickupTime,
+        returnDate: command.returnDate,
+        returnTime: command.returnTime,
+        timezone: bookingContext.timezone,
+      }),
+      insuranceSelected: insuranceTerms.insuranceSelected,
+      financialSnapshot: OrderFinancialSnapshot.zero(
+        command.currency,
+        insuranceTerms.insuranceSelected,
+        insuranceTerms.insuranceRatePercent,
+      ),
+      notes: existingOrder.currentNotes,
+      items: [],
+      reviewedAt: existingOrder.currentReviewedAt,
+      reviewedByUserId: existingOrder.currentReviewedByUserId,
+      rejectionReason: existingOrder.currentRejectionReason,
+    });
+  }
+
+  private attachResolvedItemsToPendingReviewOrder(order: Order, resolvedItems: ResolvedItem[]): void {
+    for (const item of resolvedItems) {
+      if (item.type === 'PRODUCT') {
+        for (let index = 0; index < item.quantity; index += 1) {
+          order.addItem(
+            OrderItem.create({
+              orderId: order.id,
+              type: OrderItemType.PRODUCT,
+              priceSnapshot: toPriceSnapshot(item.price, item.currency),
+              productTypeId: item.productTypeId,
+            }),
+          );
+        }
+
+        continue;
+      }
+
+      const snapshotComponents = item.bundle.components.map((component) =>
+        BundleSnapshotComponent.create({
+          productTypeId: component.productTypeId,
+          productTypeName: component.productTypeName,
+          quantity: component.quantity,
+          pricePerUnit: item.componentStandalonePrices.get(component.productTypeId) ?? new Decimal(0),
+        }),
+      );
+
+      const orderItem = OrderItem.create({
+        orderId: order.id,
+        type: OrderItemType.BUNDLE,
+        priceSnapshot: toPriceSnapshot(item.price, item.currency),
+        bundleId: item.bundleId,
+      });
+
+      order.addItem(
+        OrderItem.reconstitute({
+          id: orderItem.id,
+          orderId: orderItem.orderId,
+          type: orderItem.type,
+          priceSnapshot: orderItem.priceSnapshot,
+          manualPricingOverride: null,
+          productTypeId: orderItem.productTypeId,
+          bundleId: orderItem.bundleId,
+          bundleSnapshot: BundleSnapshot.create({
+            orderItemId: orderItem.id,
+            bundleId: item.bundle.id,
+            bundleName: item.bundle.name,
+            bundlePrice: item.price.finalPrice.toDecimal(),
+            components: snapshotComponents,
+          }),
+          ownerSplits: [],
+        }),
+      );
+    }
   }
 
   private attachResolvedItemsToOperationalOrder(

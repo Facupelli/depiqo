@@ -1,8 +1,9 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { OrderAssignmentStage, OrderStatus } from '@repo/types';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { OrderStatus } from '@repo/types';
 import { err, ok, Result } from 'neverthrow';
 import { PrismaService } from 'src/core/database/prisma.service';
-import { InventoryPublicApi } from 'src/modules/inventory/inventory.public-api';
+import { OrderRejectedEvent } from 'src/modules/order/public/events/order-rejected.event';
 
 import { OrderRepository } from 'src/modules/order/infrastructure/persistence/repositories/order.repository';
 import { RejectOrderCommand } from './reject-order.command';
@@ -14,9 +15,9 @@ type RejectOrderError = OrderNotFoundError | OrderStatusTransitionNotAllowedErro
 @CommandHandler(RejectOrderCommand)
 export class RejectOrderService implements ICommandHandler<RejectOrderCommand, Result<void, RejectOrderError>> {
   constructor(
+    private readonly eventEmitter: EventEmitter2,
     private readonly prisma: PrismaService,
     private readonly orderRepository: OrderRepository,
-    private readonly inventoryApi: InventoryPublicApi,
   ) {}
 
   async execute(command: RejectOrderCommand): Promise<Result<void, RejectOrderError>> {
@@ -27,7 +28,7 @@ export class RejectOrderService implements ICommandHandler<RejectOrderCommand, R
     }
 
     try {
-      order.reject();
+      order.reject(command.reviewedByUserId, command.rejectionReason);
     } catch (error) {
       if (error instanceof InvalidOrderStatusTransitionException) {
         return err(new OrderStatusTransitionNotAllowedError(order.currentStatus, OrderStatus.REJECTED));
@@ -38,8 +39,18 @@ export class RejectOrderService implements ICommandHandler<RejectOrderCommand, R
 
     await this.prisma.client.$transaction(async (tx) => {
       await this.orderRepository.save(order, tx);
-      await this.inventoryApi.releaseOrderAssignments(order.id, OrderAssignmentStage.HOLD, tx);
     });
+
+    await this.eventEmitter.emitAsync(
+      OrderRejectedEvent.EVENT_NAME,
+      new OrderRejectedEvent({
+        orderId: order.id,
+        tenantId: order.tenantId,
+        customerId: order.customerId,
+        reviewedByUserId: command.reviewedByUserId,
+        rejectionReason: command.rejectionReason,
+      }),
+    );
 
     return ok(undefined);
   }

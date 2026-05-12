@@ -179,27 +179,7 @@ export class SaveOrderAccessoryPreparationService implements ICommandHandler<
         },
       });
 
-      for (const item of command.items) {
-        const requestedAccessoryIds = new Set(item.accessories.map((a) => a.accessoryRentalItemId));
-        const removedAccessories = existingAccessories.filter(
-          (a) => a.orderItemId === item.orderItemId && !requestedAccessoryIds.has(a.accessoryRentalItemId),
-        );
-
-        for (const removed of removedAccessories) {
-          await tx.assetAssignment.deleteMany({
-            where: { orderItemAccessoryId: removed.id, type: AssignmentType.ORDER },
-          });
-        }
-
-        await tx.orderItemAccessory.deleteMany({
-          where: {
-            tenantId: command.tenantId,
-            orderId: command.orderId,
-            orderItemId: item.orderItemId,
-            accessoryRentalItemId: { notIn: [...requestedAccessoryIds] },
-          },
-        });
-      }
+      await this.removeDeletedAccessories(command, existingAccessories, tx);
 
       for (const item of command.items) {
         for (const accessory of item.accessories) {
@@ -225,12 +205,15 @@ export class SaveOrderAccessoryPreparationService implements ICommandHandler<
             select: { id: true },
           });
 
-          const reconcileResult = await this.reconcileAssignments({
+          if (orderStatus === OrderStatus.PENDING_REVIEW) {
+            await this.releaseAccessoryAssignments(persistedAccessory.id, tx);
+            continue;
+          }
+
+          const reconcileResult = await this.reconcileOperationalAssignments({
             command,
-            orderStatus,
             orderLocationId: order.locationId,
             period,
-            orderItemId: item.orderItemId,
             accessoryRentalItemId: accessory.accessoryRentalItemId,
             accessoryQuantity: accessory.quantity,
             orderItemAccessoryId: persistedAccessory.id,
@@ -258,12 +241,49 @@ export class SaveOrderAccessoryPreparationService implements ICommandHandler<
     return ok(undefined);
   }
 
-  private async reconcileAssignments(params: {
+  private async removeDeletedAccessories(
+    command: SaveOrderAccessoryPreparationCommand,
+    existingAccessories: Array<{ id: string; orderItemId: string; accessoryRentalItemId: string }>,
+    tx: PrismaTransactionClient,
+  ): Promise<void> {
+    for (const item of command.items) {
+      const requestedAccessoryIds = new Set(item.accessories.map((accessory) => accessory.accessoryRentalItemId));
+      const removedAccessories = existingAccessories.filter(
+        (accessory) =>
+          accessory.orderItemId === item.orderItemId && !requestedAccessoryIds.has(accessory.accessoryRentalItemId),
+      );
+
+      for (const removedAccessory of removedAccessories) {
+        await this.releaseAccessoryAssignments(removedAccessory.id, tx);
+      }
+
+      await tx.orderItemAccessory.deleteMany({
+        where: {
+          tenantId: command.tenantId,
+          orderId: command.orderId,
+          orderItemId: item.orderItemId,
+          accessoryRentalItemId: { notIn: [...requestedAccessoryIds] },
+        },
+      });
+    }
+  }
+
+  private async releaseAccessoryAssignments(
+    orderItemAccessoryId: string,
+    tx: PrismaTransactionClient,
+  ): Promise<void> {
+    await tx.assetAssignment.deleteMany({
+      where: {
+        orderItemAccessoryId,
+        type: AssignmentType.ORDER,
+      },
+    });
+  }
+
+  private async reconcileOperationalAssignments(params: {
     command: SaveOrderAccessoryPreparationCommand;
-    orderStatus: OrderStatus;
     orderLocationId: string;
     period: DateRange;
-    orderItemId: string;
     accessoryRentalItemId: string;
     accessoryQuantity: number;
     orderItemAccessoryId: string;
@@ -318,10 +338,7 @@ export class SaveOrderAccessoryPreparationService implements ICommandHandler<
             assetId,
             period: params.period,
             type: AssignmentType.ORDER,
-            stage:
-              params.orderStatus === OrderStatus.PENDING_REVIEW
-                ? OrderAssignmentStage.HOLD
-                : OrderAssignmentStage.COMMITTED,
+            stage: OrderAssignmentStage.COMMITTED,
             source: AssignmentSource.OWNED,
             orderId: params.command.orderId,
             orderItemAccessoryId: params.orderItemAccessoryId,

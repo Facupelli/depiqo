@@ -42,6 +42,9 @@ export interface CreateOrderProps {
   insuranceRatePercent: number;
   customerId?: string;
   notes?: string;
+  reviewedAt?: Date | null;
+  reviewedByUserId?: string | null;
+  rejectionReason?: string | null;
 }
 
 export interface ReconstituteOrderProps {
@@ -58,6 +61,9 @@ export interface ReconstituteOrderProps {
   financialSnapshot: OrderFinancialSnapshot;
   notes: string | null;
   items: OrderItem[];
+  reviewedAt?: Date | null;
+  reviewedByUserId?: string | null;
+  rejectionReason?: string | null;
 }
 
 export class Order {
@@ -76,6 +82,9 @@ export class Order {
     private financialSnapshot: OrderFinancialSnapshot,
     private notes: string | null,
     private readonly items: OrderItem[],
+    private reviewedAt: Date | null,
+    private reviewedByUserId: string | null,
+    private rejectionReason: string | null,
   ) {}
 
   static create(props: CreateOrderProps): Order {
@@ -94,6 +103,9 @@ export class Order {
       OrderFinancialSnapshot.zero(props.currency, props.insuranceSelected, props.insuranceRatePercent),
       props.notes?.trim() ?? null,
       [],
+      props.reviewedAt ?? null,
+      props.reviewedByUserId ?? null,
+      props.rejectionReason?.trim() ?? null,
     );
   }
 
@@ -113,6 +125,9 @@ export class Order {
       props.financialSnapshot,
       props.notes,
       props.items,
+      props.reviewedAt ?? null,
+      props.reviewedByUserId ?? null,
+      props.rejectionReason?.trim() ?? null,
     );
   }
 
@@ -146,6 +161,18 @@ export class Order {
 
   get currentFinancialSnapshot(): OrderFinancialSnapshot {
     return this.financialSnapshot;
+  }
+
+  get currentReviewedAt(): Date | null {
+    return this.reviewedAt;
+  }
+
+  get currentReviewedByUserId(): string | null {
+    return this.reviewedByUserId;
+  }
+
+  get currentRejectionReason(): string | null {
+    return this.rejectionReason;
   }
 
   getItems(): OrderItem[] {
@@ -204,11 +231,23 @@ export class Order {
     this.transitionTo(OrderStatus.CANCELLED);
   }
 
-  confirm(): void {
+  confirm(reviewedByUserId?: string): void {
+    if (this.status === OrderStatus.PENDING_REVIEW) {
+      this.reviewedAt = new Date();
+      this.reviewedByUserId = reviewedByUserId ?? null;
+      this.rejectionReason = null;
+    }
+
     this.transitionTo(OrderStatus.CONFIRMED);
   }
 
-  reject(): void {
+  reject(reviewedByUserId?: string, rejectionReason?: string | null): void {
+    if (this.status === OrderStatus.PENDING_REVIEW) {
+      this.reviewedAt = new Date();
+      this.reviewedByUserId = reviewedByUserId ?? null;
+      this.rejectionReason = rejectionReason?.trim() || null;
+    }
+
     this.transitionTo(OrderStatus.REJECTED);
   }
 

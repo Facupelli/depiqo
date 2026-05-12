@@ -3,6 +3,8 @@ import {
 	type CreateOrderDto,
 	createDraftOrderSchema,
 	createOrderSchema,
+	createOrderResponseSchema,
+	type CreateOrderResponseDto,
 	type DraftOrderPricingProposalRequestDto,
 	type DraftOrderPricingProposalResponseDto,
 	draftOrderPricingProposalRequestSchema,
@@ -139,15 +141,15 @@ export const getOrderAccessoryPreparation = createServerFn({ method: "GET" })
 
 export const createOrder = createServerFn({ method: "POST" })
 	.inputValidator((data: CreateOrderDto) => createOrderSchema.parse(data))
-	.handler(async ({ data }): Promise<string | { error: ProblemDetails }> => {
+	.handler(async ({ data }): Promise<CreateOrderResponseDto | { error: ProblemDetails }> => {
 		try {
-			const result = await apiFetch<string>(apiUrl, {
+			const result = await apiFetch<CreateOrderResponseDto>(apiUrl, {
 				method: "POST",
 				body: data,
 				actorType: ActorType.CUSTOMER,
 			});
 
-			return result;
+			return createOrderResponseSchema.parse(result);
 		} catch (error) {
 			if (error instanceof ProblemDetailsError) {
 				return { error: error.problemDetails };

@@ -16,6 +16,7 @@ import {
   OrderStatus,
   Permission,
   PromotionType,
+  RentalItemKind,
   TrackingMode,
 } from '@repo/types';
 import request from 'supertest';
@@ -41,6 +42,9 @@ const ownerId = '10000000-0000-0000-0000-000000000010';
 const ownerContractId = '10000000-0000-0000-0000-000000000011';
 const promotionId = '10000000-0000-0000-0000-000000000012';
 const couponId = '10000000-0000-0000-0000-000000000013';
+const accessoryProductTypeId = '10000000-0000-0000-0000-000000000014';
+const accessoryAssetId = '10000000-0000-0000-0000-000000000015';
+const accessoryLinkId = '10000000-0000-0000-0000-000000000016';
 
 const TEST_PERIOD = {
   start: new Date('2026-04-02T10:00:00.000Z'),
@@ -83,6 +87,7 @@ describe('Order lifecycle HTTP integration', () => {
     if (orderIds.length > 0) {
       await prisma.client.assetAssignment.deleteMany({ where: { orderId: { in: orderIds } } });
       await prisma.client.couponRedemption.deleteMany({ where: { orderId: { in: orderIds } } });
+      await prisma.client.orderItemAccessory.deleteMany({ where: { orderId: { in: orderIds } } });
       await prisma.client.orderItemOwnerSplit.deleteMany({ where: { orderItemId: { in: orderItemIds } } });
       await prisma.client.orderItem.deleteMany({ where: { id: { in: orderItemIds } } });
       await prisma.client.order.deleteMany({ where: { id: { in: orderIds } } });
@@ -91,13 +96,14 @@ describe('Order lifecycle HTTP integration', () => {
   });
 
   afterAll(async () => {
-    await prisma.client.assetAssignment.deleteMany({ where: { assetId } });
+    await prisma.client.assetAssignment.deleteMany({ where: { assetId: { in: [assetId, accessoryAssetId] } } });
     await prisma.client.ownerContract.deleteMany({ where: { id: ownerContractId } });
-    await prisma.client.asset.deleteMany({ where: { id: assetId } });
+    await prisma.client.accessoryLink.deleteMany({ where: { id: accessoryLinkId } });
+    await prisma.client.asset.deleteMany({ where: { id: { in: [assetId, accessoryAssetId] } } });
     await prisma.client.owner.deleteMany({ where: { id: ownerId } });
     await prisma.client.coupon.deleteMany({ where: { id: couponId } });
     await prisma.client.promotion.deleteMany({ where: { id: promotionId } });
-    await prisma.client.productType.deleteMany({ where: { id: productTypeId } });
+    await prisma.client.productType.deleteMany({ where: { id: { in: [productTypeId, accessoryProductTypeId] } } });
     await prisma.client.location.deleteMany({ where: { id: locationId } });
     await prisma.client.userRole.deleteMany({ where: { userId: { in: [operatorUserId, limitedOperatorUserId] } } });
     await prisma.client.rolePermission.deleteMany({ where: { roleId: { in: [adminRoleId, limitedRoleId] } } });
@@ -110,22 +116,37 @@ describe('Order lifecycle HTTP integration', () => {
   });
 
   describe('happy path transitions', () => {
-    it('confirms a pending-review order and converts HOLD assignments to COMMITTED', async () => {
-      const { orderId } = await createOrderFixture(OrderStatus.PENDING_REVIEW, OrderAssignmentStage.HOLD);
+    it('confirms a pending-review order by creating COMMITTED assignments and review metadata', async () => {
+      const { orderId, orderItemId } = await createOrderFixture(OrderStatus.PENDING_REVIEW, null);
 
       await operatorRequest(`/orders/${orderId}/confirm`).expect(204);
 
       await expectOrderStatus(orderId, OrderStatus.CONFIRMED);
       await expectAssignmentStages(orderId, [OrderAssignmentStage.COMMITTED]);
+      await expectOwnerSplitStatuses(orderItemId, [SplitStatus.PENDING]);
+      await expectOrderReview(orderId, operatorUserId);
     });
 
-    it('rejects a pending-review order and releases HOLD assignments', async () => {
-      const { orderId } = await createOrderFixture(OrderStatus.PENDING_REVIEW, OrderAssignmentStage.HOLD);
+    it('rejects a pending-review order with review metadata and no inventory side effects', async () => {
+      const { orderId } = await createOrderFixture(OrderStatus.PENDING_REVIEW, null);
 
-      await operatorRequest(`/orders/${orderId}/reject`).expect(204);
+      await operatorRequest(`/orders/${orderId}/reject`).send({ rejectionReason: 'Unavailable after review' }).expect(204);
 
       await expectOrderStatus(orderId, OrderStatus.REJECTED);
       await expectAssignmentStages(orderId, []);
+      await expectOrderReview(orderId, operatorUserId, 'Unavailable after review');
+    });
+
+    it('confirms a pending-review order with accessories by creating committed accessory assignments', async () => {
+      const { orderId } = await createOrderFixture(OrderStatus.PENDING_REVIEW, null, {
+        accessories: [{ accessoryRentalItemId: accessoryProductTypeId, quantity: 1 }],
+      });
+
+      await operatorRequest(`/orders/${orderId}/confirm`).expect(204);
+
+      await expectOrderStatus(orderId, OrderStatus.CONFIRMED);
+      await expectAssignmentStages(orderId, [OrderAssignmentStage.COMMITTED, OrderAssignmentStage.COMMITTED]);
+      await expectAccessoryAssignmentCount(orderId, 1);
     });
 
     it('cancels a confirmed order, releases COMMITTED assignments, voids owner splits, and voids coupon redemption', async () => {
@@ -221,6 +242,46 @@ describe('Order lifecycle HTTP integration', () => {
         expect(response.body.detail).toBe(`Order "${missingOrderId}" was not found.`);
       },
     );
+
+    it('returns 422 and leaves the order pending review when confirmation availability fails', async () => {
+      await createOrderFixture(OrderStatus.CONFIRMED, OrderAssignmentStage.COMMITTED);
+      const { orderId } = await createOrderFixture(OrderStatus.PENDING_REVIEW, null);
+
+      const response = await operatorRequest(`/orders/${orderId}/confirm`).expect(422);
+
+      expect(response.body.type).toBe('errors://order-items-unavailable');
+      expect(response.body.title).toBe('Order Items Unavailable');
+
+      await expectOrderStatus(orderId, OrderStatus.PENDING_REVIEW);
+      await expectAssignmentStages(orderId, []);
+      await expectOrderReviewAbsent(orderId);
+    });
+
+    it('returns 422 and leaves the order pending review when accessory availability fails during confirmation', async () => {
+      await createOrderFixture(OrderStatus.CONFIRMED, null, {
+        accessories: [{ accessoryRentalItemId: accessoryProductTypeId, quantity: 1 }],
+        reserveAccessoryAssets: true,
+      });
+      const { orderId } = await createOrderFixture(OrderStatus.PENDING_REVIEW, null, {
+        accessories: [{ accessoryRentalItemId: accessoryProductTypeId, quantity: 1 }],
+      });
+
+      const response = await operatorRequest(`/orders/${orderId}/confirm`).expect(422);
+
+      expect(response.body.type).toBe('errors://order-items-unavailable');
+      expect(response.body.accessoryConflicts).toEqual([
+        {
+          orderItemAccessoryId: expect.any(String),
+          accessoryRentalItemId: accessoryProductTypeId,
+          requestedCount: 1,
+          availableCount: 0,
+        },
+      ]);
+
+      await expectOrderStatus(orderId, OrderStatus.PENDING_REVIEW);
+      await expectAssignmentStages(orderId, []);
+      await expectOrderReviewAbsent(orderId);
+    });
 
     it('returns 422 when cancellation is blocked by settled owner payouts', async () => {
       const { orderId, orderItemId } = await createOrderFixture(OrderStatus.CONFIRMED, OrderAssignmentStage.COMMITTED, {
@@ -335,10 +396,51 @@ describe('Order lifecycle HTTP integration', () => {
       },
     });
 
+    await prisma.client.productType.upsert({
+      where: { id: accessoryProductTypeId },
+      update: {},
+      create: {
+        id: accessoryProductTypeId,
+        tenantId,
+        billingUnitId,
+        name: 'Lifecycle Battery',
+        trackingMode: TrackingMode.IDENTIFIED,
+        kind: RentalItemKind.ACCESSORY,
+        attributes: {},
+      },
+    });
+
     await prisma.client.asset.upsert({
       where: { id: assetId },
       update: { ownerId },
       create: { id: assetId, locationId, productTypeId, ownerId, isActive: true },
+    });
+
+    await prisma.client.asset.upsert({
+      where: { id: accessoryAssetId },
+      update: {},
+      create: { id: accessoryAssetId, locationId, productTypeId: accessoryProductTypeId, isActive: true },
+    });
+
+    await prisma.client.accessoryLink.upsert({
+      where: { id: accessoryLinkId },
+      update: {
+        tenantId,
+        primaryRentalItemId: productTypeId,
+        accessoryRentalItemId: accessoryProductTypeId,
+        isDefaultIncluded: false,
+        defaultQuantity: 1,
+        notes: null,
+      },
+      create: {
+        id: accessoryLinkId,
+        tenantId,
+        primaryRentalItemId: productTypeId,
+        accessoryRentalItemId: accessoryProductTypeId,
+        isDefaultIncluded: false,
+        defaultQuantity: 1,
+        notes: null,
+      },
     });
 
     await prisma.client.ownerContract.upsert({
@@ -413,8 +515,13 @@ describe('Order lifecycle HTTP integration', () => {
 
   async function createOrderFixture(
     status: OrderStatus,
-    assignmentStage: OrderAssignmentStage,
-    options: { couponApplied?: boolean; ownerSplitStatus?: SplitStatus } = {},
+    assignmentStage: OrderAssignmentStage | null,
+    options: {
+      couponApplied?: boolean;
+      ownerSplitStatus?: SplitStatus;
+      accessories?: Array<{ accessoryRentalItemId: string; quantity: number; notes?: string | null }>;
+      reserveAccessoryAssets?: boolean;
+    } = {},
   ): Promise<CreatedOrder> {
     const orderId = randomUUID();
     const orderItemId = randomUUID();
@@ -479,31 +586,76 @@ describe('Order lifecycle HTTP integration', () => {
       });
     }
 
-    await prisma.client.$executeRaw`
-      INSERT INTO asset_assignments (
-        id,
-        asset_id,
-        order_item_id,
-        order_id,
-        type,
-        stage,
-        source,
-        period,
-        created_at,
-        updated_at
-      ) VALUES (
-        ${randomUUID()},
-        ${assetId},
-        ${orderItemId},
-        ${orderId},
-        ${AssignmentType.ORDER}::"AssignmentType",
-        ${assignmentStage}::"OrderAssignmentStage",
-        ${AssignmentSource.OWNED}::"AssignmentSource",
-        ${`[${TEST_PERIOD.start.toISOString()}, ${TEST_PERIOD.end.toISOString()})`}::tstzrange,
-        NOW(),
-        NOW()
-      )
-    `;
+    if (options.accessories) {
+      for (const accessory of options.accessories) {
+        const orderItemAccessory = await prisma.client.orderItemAccessory.create({
+          data: {
+            tenantId,
+            orderId,
+            orderItemId,
+            accessoryRentalItemId: accessory.accessoryRentalItemId,
+            quantity: accessory.quantity,
+            notes: accessory.notes ?? null,
+          },
+        });
+
+        if (options.reserveAccessoryAssets) {
+          await prisma.client.$executeRaw`
+            INSERT INTO asset_assignments (
+              id,
+              asset_id,
+              order_item_accessory_id,
+              order_id,
+              type,
+              stage,
+              source,
+              period,
+              created_at,
+              updated_at
+            ) VALUES (
+              ${randomUUID()},
+              ${accessoryAssetId},
+              ${orderItemAccessory.id},
+              ${orderId},
+              ${AssignmentType.ORDER}::"AssignmentType",
+              ${OrderAssignmentStage.COMMITTED}::"OrderAssignmentStage",
+              ${AssignmentSource.OWNED}::"AssignmentSource",
+              ${`[${TEST_PERIOD.start.toISOString()}, ${TEST_PERIOD.end.toISOString()})`}::tstzrange,
+              NOW(),
+              NOW()
+            )
+          `;
+        }
+      }
+    }
+
+    if (assignmentStage) {
+      await prisma.client.$executeRaw`
+        INSERT INTO asset_assignments (
+          id,
+          asset_id,
+          order_item_id,
+          order_id,
+          type,
+          stage,
+          source,
+          period,
+          created_at,
+          updated_at
+        ) VALUES (
+          ${randomUUID()},
+          ${assetId},
+          ${orderItemId},
+          ${orderId},
+          ${AssignmentType.ORDER}::"AssignmentType",
+          ${assignmentStage}::"OrderAssignmentStage",
+          ${AssignmentSource.OWNED}::"AssignmentSource",
+          ${`[${TEST_PERIOD.start.toISOString()}, ${TEST_PERIOD.end.toISOString()})`}::tstzrange,
+          NOW(),
+          NOW()
+        )
+      `;
+    }
 
     return { orderId, orderItemId };
   }
@@ -525,6 +677,44 @@ describe('Order lifecycle HTTP integration', () => {
     });
 
     expect(assignments.map((assignment) => assignment.stage)).toEqual(expectedStages);
+  }
+
+  async function expectAccessoryAssignmentCount(orderId: string, expectedCount: number) {
+    const assignments = await prisma.client.assetAssignment.findMany({
+      where: {
+        orderId,
+        orderItemAccessoryId: { not: null },
+      },
+      select: { id: true, stage: true },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    expect(assignments).toHaveLength(expectedCount);
+    expect(assignments.map((assignment) => assignment.stage)).toEqual(
+      Array.from({ length: expectedCount }, () => OrderAssignmentStage.COMMITTED),
+    );
+  }
+
+  async function expectOrderReview(orderId: string, reviewedByUserId: string, rejectionReason: string | null = null) {
+    const order = await prisma.client.order.findUniqueOrThrow({
+      where: { id: orderId },
+      select: { reviewedAt: true, reviewedByUserId: true, rejectionReason: true },
+    });
+
+    expect(order.reviewedAt).toBeInstanceOf(Date);
+    expect(order.reviewedByUserId).toBe(reviewedByUserId);
+    expect(order.rejectionReason).toBe(rejectionReason);
+  }
+
+  async function expectOrderReviewAbsent(orderId: string) {
+    const order = await prisma.client.order.findUniqueOrThrow({
+      where: { id: orderId },
+      select: { reviewedAt: true, reviewedByUserId: true, rejectionReason: true },
+    });
+
+    expect(order.reviewedAt).toBeNull();
+    expect(order.reviewedByUserId).toBeNull();
+    expect(order.rejectionReason).toBeNull();
   }
 
   async function expectOwnerSplitStatuses(orderItemId: string, expectedStatuses: SplitStatus[]) {

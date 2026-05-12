@@ -229,6 +229,12 @@ export class OrderItemAccessoryAssetUnavailableError extends OrderError {
   }
 }
 
+export class OrderItemAccessoryAssetAssignmentNotAllowedError extends OrderError {
+  constructor(status: OrderStatus) {
+    super(`Cannot assign concrete accessory assets while an order is in '${status}' status.`);
+  }
+}
+
 export class OrderItemAccessoryInsufficientAvailableAssetsError extends OrderError {
   constructor(accessoryRentalItemId: string, requestedCount: number, availableCount: number) {
     super(
@@ -238,6 +244,13 @@ export class OrderItemAccessoryInsufficientAvailableAssetsError extends OrderErr
 }
 
 export type UnavailableItem = { type: 'PRODUCT'; productTypeId: string } | { type: 'BUNDLE'; bundleId: string };
+
+export type AccessoryConflict = {
+  orderItemAccessoryId: string;
+  accessoryRentalItemId: string;
+  requestedCount: number;
+  availableCount: number;
+};
 
 export type ConflictGroup = {
   productTypeId: string;
@@ -250,6 +263,7 @@ export class OrderItemUnavailableError extends OrderError {
   constructor(
     public readonly unavailableItems: UnavailableItem[],
     public readonly conflictGroups: ConflictGroup[] = [],
+    public readonly accessoryConflicts: AccessoryConflict[] = [],
   ) {
     super('One or more order items are unavailable for the requested period.');
   }

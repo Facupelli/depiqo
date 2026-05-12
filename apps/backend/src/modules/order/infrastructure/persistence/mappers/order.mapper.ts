@@ -74,6 +74,9 @@ type OrderRow = {
   insuranceSelected: boolean;
   financialSnapshot: JsonValue;
   notes: string | null;
+  reviewedAt: Date | null;
+  reviewedByUserId: string | null;
+  rejectionReason: string | null;
   deliveryRequest: {
     recipientName: string;
     phone: string;
@@ -171,6 +174,9 @@ export class OrderMapper {
       financialSnapshot: OrderFinancialSnapshot.fromJSON(row.financialSnapshot),
       notes: row.notes,
       items,
+      reviewedAt: row.reviewedAt,
+      reviewedByUserId: row.reviewedByUserId,
+      rejectionReason: row.rejectionReason,
     });
   }
 
@@ -188,6 +194,9 @@ export class OrderMapper {
       insuranceSelected: order.currentInsuranceSelected,
       financialSnapshot: order.currentFinancialSnapshot.toJSON(),
       notes: order.currentNotes,
+      reviewedAt: order.currentReviewedAt,
+      reviewedByUserId: order.currentReviewedByUserId,
+      rejectionReason: order.currentRejectionReason,
     };
 
     const deliveryRequestRow = order.currentDeliveryRequest

@@ -1,6 +1,7 @@
 import type {
 	CreateDraftOrderDto,
 	CreateOrderDto,
+	CreateOrderResponseDto,
 	DraftOrderPricingProposalRequestDto,
 	DraftOrderPricingProposalResponseDto,
 	GetCalendarDotsQueryDto,
@@ -151,7 +152,7 @@ type OrderDetailMutationOptions = Omit<
 >;
 
 type OrderMutationOptions = Omit<
-	UseMutationOptions<string, ProblemDetailsError, CreateOrderDto>,
+	UseMutationOptions<CreateOrderResponseDto, ProblemDetailsError, CreateOrderDto>,
 	"mutationFn"
 >;
 
@@ -313,7 +314,7 @@ export function useCalendarDots<TData = GetCalendarDotsResponseDto>(
 }
 
 export function useCreateOrder(options?: OrderMutationOptions) {
-	return useMutation<string, ProblemDetailsError, CreateOrderDto>({
+	return useMutation<CreateOrderResponseDto, ProblemDetailsError, CreateOrderDto>({
 		...options,
 		mutationFn: async (data) => {
 			const result = await createOrder({ data });

@@ -18,6 +18,7 @@ import {
   DuplicateOrderItemAccessoryAssetError,
   OrderAccessorySelectionNotAllowedError,
   OrderAccessorySelectionRequiresProductItemError,
+  OrderItemAccessoryAssetAssignmentNotAllowedError,
   OrderItemAccessoryAssetLocationMismatchError,
   OrderItemAccessoryAssetMismatchError,
   OrderItemAccessoryAssetUnavailableError,
@@ -64,6 +65,7 @@ export class AssignOrderItemAccessoryAssetsHttpController {
       if (
         error instanceof OrderAccessorySelectionNotAllowedError ||
         error instanceof OrderAccessorySelectionRequiresProductItemError ||
+        error instanceof OrderItemAccessoryAssetAssignmentNotAllowedError ||
         error instanceof DuplicateOrderItemAccessoryAssetError ||
         error instanceof OrderItemAccessoryAssignmentQuantityExceededError ||
         error instanceof OrderItemAccessoryAssetMismatchError ||

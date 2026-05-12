@@ -1,5 +1,5 @@
 import { StaffRoute } from 'src/core/decorators/staff-route.decorator';
-import { Controller, HttpCode, HttpStatus, NotFoundException, Param, Post } from '@nestjs/common';
+import { Body, Controller, HttpCode, HttpStatus, NotFoundException, Param, Post } from '@nestjs/common';
 import { Permission } from '@repo/types';
 import { CommandBus } from '@nestjs/cqrs';
 
@@ -18,8 +18,14 @@ export class RejectOrderHttpController {
 
   @Post()
   @HttpCode(HttpStatus.NO_CONTENT)
-  async reject(@CurrentUser() user: AuthenticatedUser, @Param() dto: RejectOrderRequestDto): Promise<void> {
-    const result = await this.commandBus.execute(new RejectOrderCommand(user.tenantId, dto.orderId));
+  async reject(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('orderId') orderId: string,
+    @Body() body: Omit<RejectOrderRequestDto, 'orderId'>,
+  ): Promise<void> {
+    const result = await this.commandBus.execute(
+      new RejectOrderCommand(user.tenantId, orderId, user.id, body.rejectionReason ?? null),
+    );
 
     if (result.isErr()) {
       const error = result.error;
