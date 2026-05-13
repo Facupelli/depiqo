@@ -22,7 +22,7 @@ import { isAuthError } from "@/shared/errors";
 import { useCartOrderDelivery } from "./use-cart-order-delivery";
 import { useCartOrderPricing } from "./use-cart-order-pricing";
 import { useCartOrderTimes } from "./use-cart-order-times";
-import { useTenantPricingConfig } from "../../tenant/tenant.queries";
+import { useTenantRentalConfig } from "../../tenant/tenant.queries";
 
 type UseCartOrderParams = {
 	location: {
@@ -56,7 +56,8 @@ export function useCartOrder({
 }: UseCartOrderParams) {
 	const navigate = useNavigate();
 	const { data: sessionUser } = useCurrentPortalSession();
-	const { data: tenantPricingConfig } = useTenantPricingConfig();
+	const { data: tenantRentalConfig } = useTenantRentalConfig();
+	const tenantPricingConfig = tenantRentalConfig.pricing;
 	const cartItems = useCartItems();
 	const { clearCart } = useCartActions();
 
@@ -132,7 +133,7 @@ export function useCartOrder({
 		}
 
 		try {
-			await createOrder({
+			const createdOrder = await createOrder({
 				locationId: location.id,
 				pickupDate,
 				returnDate,
@@ -154,6 +155,8 @@ export function useCartOrder({
 					pickupDate: pricing.period.start.format("YYYY-MM-DD"),
 					pickupLocation: location.name,
 					pickupTime: formatSlot(times.pickupTime),
+					status: createdOrder.status,
+					bookingMode: tenantRentalConfig.bookingMode,
 				},
 			});
 		} catch (error) {

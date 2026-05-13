@@ -16,6 +16,11 @@ export const tenantPricingConfigSchema = z.object({
 	insuranceRatePercent: z.number().min(0).max(100),
 });
 
+export const tenantRentalConfigSchema = z.object({
+	pricing: tenantPricingConfigSchema,
+	bookingMode: bookingModeSchema.default(BookingMode.INSTANT_BOOK),
+});
+
 export const tenantNotificationsConfigSchema = z.object({
 	enabledChannels: z.array(notificationChannelSchema),
 });
@@ -50,6 +55,7 @@ export const tenantResponseSchema = z.object({
 });
 
 export type TenantPricingConfig = z.infer<typeof tenantPricingConfigSchema>;
+export type TenantRentalConfig = z.infer<typeof tenantRentalConfigSchema>;
 export type TenantNotificationsConfig = z.infer<typeof tenantNotificationsConfigSchema>;
 export type TenantConfig = z.infer<typeof tenantConfigSchema>;
 

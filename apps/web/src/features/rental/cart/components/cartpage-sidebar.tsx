@@ -43,7 +43,8 @@ import type {
 import { cn } from "@/lib/utils";
 import { useIsVisible } from "@/shared/hooks/use-is-visible";
 import { formatCurrency } from "@/shared/utils/price.utils";
-import { useTenantPricingConfig } from "../../tenant/tenant.queries";
+import { getBookingSubmitButtonLabel } from "@/features/rental/checkout/booking-mode-copy";
+import { useTenantRentalConfig } from "../../tenant/tenant.queries";
 import { computeOriginalSubtotal, formatDiscount } from "../cart.utils";
 import {
 	isDeliveryRequestComplete,
@@ -59,7 +60,8 @@ import {
 const CART_MONEY_FRACTION_DIGITS = 2;
 
 export function CartPageSidebar() {
-	const { data: tenantPriceConfig } = useTenantPricingConfig();
+	const { data: tenantRentalConfig } = useTenantRentalConfig();
+	const tenantPriceConfig = tenantRentalConfig.pricing;
 	const { cartItems } = useCartContext();
 	const {
 		breakdown,
@@ -83,9 +85,10 @@ export function CartPageSidebar() {
 		useCartBookingContext();
 
 	const isDisabled = cartItems.length === 0 || isPriceLoading || isPriceError;
-	const ctaLabel = isAuthenticated
-		? "Alquilar Equipo"
-		: "Iniciar sesión para reservar";
+	const ctaLabel = getBookingSubmitButtonLabel({
+		bookingMode: tenantRentalConfig.bookingMode,
+		isAuthenticated,
+	});
 
 	const [bookButtonRef, isBookButtonVisible] =
 		useIsVisible<HTMLButtonElement>();

@@ -1,13 +1,17 @@
+import { BookingMode, OrderStatus } from "@repo/types";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { CheckCircle2, Clock3, Mail, CalendarCheck, X } from "lucide-react";
 import { z } from "zod";
-import { CheckCircle2, Mail, CalendarCheck, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { resolveOrderConfirmationStatus } from "@/features/rental/checkout/booking-mode-copy";
 import { getTenantBranding } from "@/features/tenant-branding/tenant-branding";
 
 const orderConfirmationSearchSchema = z.object({
 	pickupDate: z.string().catch("—"),
 	pickupLocation: z.string().catch("—"),
 	pickupTime: z.string().catch("—"),
+	status: z.enum(OrderStatus).optional().catch(undefined),
+	bookingMode: z.enum(BookingMode).optional().catch(undefined),
 });
 
 export const Route = createFileRoute("/_portal/_tenant/order-confirmation/")({
@@ -18,10 +22,16 @@ export const Route = createFileRoute("/_portal/_tenant/order-confirmation/")({
 function OrderConfirmationPage() {
 	const { tenantContext } = Route.useRouteContext();
 
-	const { pickupDate, pickupLocation, pickupTime } = Route.useSearch();
+	const { pickupDate, pickupLocation, pickupTime, status, bookingMode } =
+		Route.useSearch();
 
 	const formattedDate = formatPickupDate(pickupDate);
 	const branding = getTenantBranding(tenantContext.tenant);
+	const orderStatus = resolveOrderConfirmationStatus({
+		status,
+		bookingMode,
+	});
+	const isPendingReview = orderStatus === OrderStatus.PENDING_REVIEW;
 
 	return (
 		<div className="min-h-screen bg-[#f0f0f0] flex flex-col items-center ">
@@ -64,8 +74,15 @@ function OrderConfirmationPage() {
 					{/* Heading */}
 					<div className="text-center space-y-1">
 						<h1 className="text-2xl font-bold tracking-tight text-neutral-900">
-							Tu pedido se creó con éxito
+							{isPendingReview
+								? "Tu solicitud fue enviada"
+								: "Tu reserva fue confirmada"}
 						</h1>
+						<p className="text-sm text-neutral-500">
+							{isPendingReview
+								? "El negocio revisará tu solicitud y confirmará disponibilidad."
+								: "Ya puedes continuar con los próximos pasos de tu alquiler."}
+						</p>
 					</div>
 
 					{/* Next Steps */}
@@ -74,17 +91,41 @@ function OrderConfirmationPage() {
 							Próximos pasos
 						</p>
 
-						<StepCard
-							icon={<Mail className="w-4 h-4 text-white" />}
-							title="Correo electrónico de confirmación enviado"
-							description="Revisa tu correo para obtener el detalle de tu alquiler y recibos."
-						/>
+						{isPendingReview ? (
+							<>
+								<StepCard
+									icon={<Clock3 className="w-4 h-4 text-white" />}
+									title="El negocio revisará tu solicitud"
+									description="Confirmará disponibilidad antes de aprobar la reserva."
+								/>
 
-						<StepCard
-							icon={<CalendarCheck className="w-4 h-4 text-white" />}
-							title={`Listo para retirar el equipo el ${formattedDate}`}
-							description={`Visita ${pickupLocation} a las ${pickupTime}hs`}
-						/>
+								<StepCard
+									icon={<CalendarCheck className="w-4 h-4 text-white" />}
+									title="El equipo todavía no queda reservado"
+									description={`Tu solicitud es para ${formattedDate} en ${pickupLocation} a las ${pickupTime}hs.`}
+								/>
+
+								<StepCard
+									icon={<Mail className="w-4 h-4 text-white" />}
+									title="Te avisaremos por email"
+									description="Recibirás una notificación cuando la solicitud sea aprobada o rechazada."
+								/>
+							</>
+						) : (
+							<>
+								<StepCard
+									icon={<Mail className="w-4 h-4 text-white" />}
+									title="Correo electrónico de confirmación enviado"
+									description="Revisa tu correo para obtener el detalle de tu alquiler y recibos."
+								/>
+
+								<StepCard
+									icon={<CalendarCheck className="w-4 h-4 text-white" />}
+									title={`Listo para retirar el equipo el ${formattedDate}`}
+									description={`Visita ${pickupLocation} a las ${pickupTime}hs`}
+								/>
+							</>
+						)}
 					</div>
 
 					{/* Actions */}

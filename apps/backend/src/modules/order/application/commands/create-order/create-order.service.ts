@@ -175,6 +175,9 @@ export class CreateOrderService implements ICommandHandler<CreateOrderCommand, R
         insuranceRatePercent: insuranceTerms.insuranceRatePercent,
       });
 
+      let pendingAssignments: Array<Parameters<InventoryPublicApi['saveOrderAssignment']>[0]> = [];
+
+      // Phase 1: construct the order aggregate in memory.
       if (bookingMode === BookingMode.REQUEST_TO_BOOK) {
         this.attachRequestToBookItemsToOrder(order, resolvedItems);
       } else {
@@ -185,19 +188,22 @@ export class CreateOrderService implements ICommandHandler<CreateOrderCommand, R
         }
 
         const contractByAssetId = await this.ownerContractResolver.resolve(command.tenantId, period.start, demandUnits);
-        const pendingAssignments = this.attachResolvedItemsToOrder(
+        pendingAssignments = this.attachResolvedItemsToOrder(
           order,
           resolvedItems,
           demandUnits,
           contractByAssetId,
           OrderAssignmentStage.COMMITTED,
         );
+      }
 
-        const assignmentResults = await Promise.all(
-          pendingAssignments.map((assignment) => this.inventoryApi.saveOrderAssignment(assignment, tx)),
-        );
+      // Phase 2: persist the order aggregate before dependent rows reference it.
+      await this.orderRepository.save(order, tx);
 
-        if (assignmentResults.some((result) => result.isErr())) {
+      // Phase 3: persist dependent inventory assignments.
+      for (const assignment of pendingAssignments) {
+        const assignmentResult = await this.inventoryApi.saveOrderAssignment(assignment, tx);
+        if (assignmentResult.isErr()) {
           return err(
             new OrderItemUnavailableError(
               resolvedItems.map((item) =>
@@ -210,8 +216,7 @@ export class CreateOrderService implements ICommandHandler<CreateOrderCommand, R
         }
       }
 
-      await this.orderRepository.save(order, tx);
-
+      // Phase 4: persist dependent pricing state.
       if (resolvedCouponId) {
         const redeemCouponResult = await this.pricingApi.redeemCouponWithinTransaction(
           {

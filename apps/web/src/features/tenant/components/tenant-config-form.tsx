@@ -2,6 +2,7 @@ import { BookingMode, RoundingRule } from "@repo/types";
 import { useForm } from "@tanstack/react-form";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { CircleHelp } from "lucide-react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
@@ -21,6 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { ProblemDetailsError } from "@/shared/errors";
 import {
   tenantConfigFormSchema,
   tenantConfigToFormValues,
@@ -35,7 +37,8 @@ interface TenantConfigFormProps {
 }
 
 export function TenantConfigForm({ section }: TenantConfigFormProps) {
-  const { form, hasDailyBillingUnits } = useTenantConfigSettingsForm();
+  const { form, hasDailyBillingUnits, submitErrorMessage } =
+    useTenantConfigSettingsForm();
 
 	function renderSectionFields() {
 		switch (section) {
@@ -49,7 +52,11 @@ export function TenantConfigForm({ section }: TenantConfigFormProps) {
 			case "insurance":
 				return <InsuranceSettingsFields form={form} />;
 			case "general":
-				return <GeneralSettingsFields form={form} />;
+				return (
+					<GeneralSettingsFields
+						form={form}
+					/>
+				);
 		}
 	}
 
@@ -64,6 +71,10 @@ export function TenantConfigForm({ section }: TenantConfigFormProps) {
     >
 		{renderSectionFields()}
 
+      {submitErrorMessage ? (
+        <p className="text-sm text-destructive">{submitErrorMessage}</p>
+      ) : null}
+
       <div className="flex justify-end">
         <Button type="submit">Guardar Configuración</Button>
       </div>
@@ -74,6 +85,9 @@ export function TenantConfigForm({ section }: TenantConfigFormProps) {
 function useTenantConfigSettingsForm() {
   const { data: tenant } = useSuspenseQuery(tenantQueries.me());
   const { mutateAsync: updateConfig } = useUpdateTenantConfig();
+  const [submitErrorMessage, setSubmitErrorMessage] = useState<string | null>(
+    null,
+  );
   const hasDailyBillingUnits = tenant.billingUnits.some(
     (billingUnit) => billingUnit.durationMinutes === 1440,
   );
@@ -87,9 +101,17 @@ function useTenantConfigSettingsForm() {
       const dto = toUpdateTenantConfigDto(value);
 
       try {
+        setSubmitErrorMessage(null);
         await updateConfig(dto);
       } catch (error) {
-        console.log({ error });
+        const submitError = getSubmitError(error);
+
+        if (submitError) {
+          setSubmitErrorMessage(submitError.message);
+          return;
+        }
+
+        throw error;
       }
     },
   });
@@ -97,6 +119,7 @@ function useTenantConfigSettingsForm() {
   return {
     form,
     hasDailyBillingUnits,
+    submitErrorMessage,
   };
 }
 
@@ -380,6 +403,18 @@ function InsuranceSettingsFields({
 	);
 }
 
+function getSubmitError(error: unknown) {
+  if (error instanceof ProblemDetailsError) {
+    return {
+      message:
+        error.problemDetails.detail ??
+        "No se pudo guardar la configuración.",
+    };
+  }
+
+  return null;
+}
+
 function GeneralSettingsFields({
   form,
 }: {
@@ -388,35 +423,78 @@ function GeneralSettingsFields({
   return (
     <div className="rounded-xl border border-border bg-card divide-y divide-border">
       <form.Field name="bookingMode">
-        {(field) => (
-          <div className="grid grid-cols-[1fr_auto] items-start gap-8 px-5 py-4">
-            <div>
-              <p className="text-sm font-semibold text-foreground">
-                Booking mode
-              </p>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Choose whether customer bookings confirm immediately or wait for
-                operator review.
-              </p>
+        {(field) => {
+          const errors =
+            field.state.meta.errors
+          const isInvalid =
+            (field.state.meta.isTouched && !field.state.meta.isValid) 
+
+          return (
+            <div className="grid grid-cols-[1fr_auto] items-start gap-8 px-5 py-4">
+              <div>
+                <p className="text-sm font-semibold text-foreground">
+                  Modo de reserva
+                </p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Elegí si las reservas se confirman automáticamente o si
+                  primero deben ser revisadas por tu equipo.
+                </p>
+                <div className="mt-2 space-y-1 text-xs text-muted-foreground">
+                  {field.state.value === BookingMode.INSTANT_BOOK ? (
+                    <p>
+                      Las reservas se confirman al finalizar el checkout y el
+                      inventario queda reservado en ese momento.
+                    </p>
+                  ) : (
+                    <>
+                      <p>
+                        Los clientes envían una solicitud de reserva. El
+                        inventario no se bloquea hasta que tu equipo apruebe la
+                        solicitud.
+                      </p>
+                      <p>
+                        La aprobación puede fallar si la disponibilidad cambia
+                        antes de la revisión.
+                      </p>
+                    </>
+                  )}
+                </div>
+              </div>
+              <Field data-invalid={isInvalid} className="items-end pt-1">
+                <FieldLabel htmlFor={field.name} className="sr-only">
+                  Modo de reserva
+                </FieldLabel>
+                <Select
+                  value={field.state.value}
+                  onValueChange={(value) => value && field.handleChange(value)}
+                  items={[
+                    {
+                      value: BookingMode.INSTANT_BOOK,
+                      label: "Reserva inmediata",
+                    },
+                    {
+                      value: BookingMode.REQUEST_TO_BOOK,
+                      label: "Solicitud de reserva",
+                    },
+                  ]}
+                >
+                  <SelectTrigger className="w-52">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={BookingMode.INSTANT_BOOK}>
+                      Reserva inmediata
+                    </SelectItem>
+                    <SelectItem value={BookingMode.REQUEST_TO_BOOK}>
+                      Solicitud de reserva
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+                {errors.length > 0 ? <FieldError errors={errors} /> : null}
+              </Field>
             </div>
-            <Select
-              value={field.state.value}
-              onValueChange={(value) => value && field.handleChange(value)}
-            >
-              <SelectTrigger className="w-44">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={BookingMode.INSTANT_BOOK}>
-                  Instant book
-                </SelectItem>
-                <SelectItem value={BookingMode.REQUEST_TO_BOOK} disabled>
-                  Request to book
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        )}
+          );
+        }}
       </form.Field>
 
       <form.Field name="timezone">
