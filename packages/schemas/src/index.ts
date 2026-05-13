@@ -22,6 +22,7 @@ export * from "./order/get-pending-review-orders.schema";
 export * from "./order/order.schema";
 export * from "./order/order-pricing-preview.schema";
 export * from "./order/order-accessory-preparation.schema";
+export * from "./order/order-items-unavailable-problem.schema";
 export * from "./order/reject-order.schema";
 export * from "./portal/bundles.schema";
 export * from "./portal/cart-pricing.schema";

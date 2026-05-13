@@ -53,7 +53,7 @@ export class ConfirmOrderHttpController {
 
       if (error instanceof OrderItemUnavailableError) {
         throw new ProblemException(
-          HttpStatus.UNPROCESSABLE_ENTITY,
+          HttpStatus.CONFLICT,
           'Order Items Unavailable',
           error.message,
           'errors://order-items-unavailable',

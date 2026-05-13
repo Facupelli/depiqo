@@ -283,6 +283,43 @@ describe('Order lifecycle HTTP integration', () => {
       await expectOrderReviewAbsent(orderId);
     });
 
+    it('returns 409 with conflict groups when a confirmed order edit exceeds availability', async () => {
+      const { orderId } = await createOrderFixture(OrderStatus.CONFIRMED, OrderAssignmentStage.COMMITTED);
+
+      const response = await request(app.getHttpServer())
+        .put(`/orders/${orderId}/edit`)
+        .set('Authorization', `Bearer ${createToken(ActorType.USER, operatorUserId)}`)
+        .send({
+          locationId,
+          customerId: null,
+          pickupDate: '2026-04-02',
+          returnDate: '2026-04-03',
+          pickupTime: 600,
+          returnTime: 600,
+          items: [{ type: 'PRODUCT', productTypeId, quantity: 2 }],
+          currency: 'ARS',
+          insuranceSelected: false,
+          fulfillmentMethod: 'PICKUP',
+        })
+        .expect(409);
+
+      expect(response.body.type).toBe('errors://order-items-unavailable');
+      expect(response.body.title).toBe('Order Items Unavailable');
+      expect(response.body.unavailableItems).toEqual([]);
+      expect(response.body.conflictGroups).toEqual([
+        {
+          productTypeId,
+          availableCount: 1,
+          requestedCount: 2,
+          affectedItems: [{ type: 'PRODUCT', productTypeId }],
+        },
+      ]);
+      expect(response.body.accessoryConflicts).toEqual([]);
+
+      await expectOrderStatus(orderId, OrderStatus.CONFIRMED);
+      await expectAssignmentStages(orderId, [OrderAssignmentStage.COMMITTED]);
+    });
+
     it('returns 422 when cancellation is blocked by settled owner payouts', async () => {
       const { orderId, orderItemId } = await createOrderFixture(OrderStatus.CONFIRMED, OrderAssignmentStage.COMMITTED, {
         ownerSplitStatus: SplitStatus.SETTLED,

@@ -77,6 +77,7 @@ export function useOrderActions(order: ParsedOrderDetailResponseDto) {
 		confirmation: {
 			isDialogOpen: confirmActions.isConfirmOrderDialogOpen,
 			setIsDialogOpen: confirmActions.setIsConfirmOrderDialogOpen,
+			conflict: confirmActions.confirmOrderConflict,
 			error: confirmActions.confirmOrderError,
 			isPending: confirmActions.isConfirmOrderPending,
 			openDialog: confirmActions.handleConfirmOrder,

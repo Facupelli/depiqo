@@ -9,10 +9,12 @@ import {
 	AlertDialogHeader,
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { OrderAvailabilityConflictFeedback } from "@/features/orders/components/order-availability-conflict-feedback";
 import {
 	useOrderConfirmation,
 	useOrderDetailContext,
 } from "@/features/orders/contexts/order-detail.context";
+import { buildOrderAvailabilityConflictDisplayModel, type OrderAvailabilityConflictDisplayModel } from "@/features/orders/order-availability-conflict.display-model";
 
 export function OrderDetailConfirmDialog() {
 	const { order } = useOrderDetailContext();
@@ -20,6 +22,12 @@ export function OrderDetailConfirmDialog() {
 	const isDraft = order.status === OrderStatus.DRAFT;
 	const isPendingReview = order.status === OrderStatus.PENDING_REVIEW;
 	const hasCustomer = Boolean(order.customer);
+	const conflictModel = confirmation.conflict
+		? buildOrderAvailabilityConflictDisplayModel({
+				order,
+				conflict: confirmation.conflict,
+			})
+		: null;
 
 	return (
 		<AlertDialog
@@ -47,9 +55,7 @@ export function OrderDetailConfirmDialog() {
 					</p>
 				) : null}
 
-				{confirmation.error ? (
-					<p className="text-sm text-destructive">{confirmation.error}</p>
-				) : null}
+			<OrderConfirmationError error={confirmation.error} conflictModel={conflictModel} />
 
 				<AlertDialogFooter>
 					<AlertDialogCancel disabled={confirmation.isPending}>
@@ -74,4 +80,14 @@ export function OrderDetailConfirmDialog() {
 			</AlertDialogContent>
 		</AlertDialog>
 	);
+}
+
+function OrderConfirmationError({ error, conflictModel }:{error:string|null, conflictModel: OrderAvailabilityConflictDisplayModel | null}) {
+    if (conflictModel) {
+        return <OrderAvailabilityConflictFeedback model={conflictModel} />;
+    }
+    if (error) {
+        return <p className="text-sm text-destructive">{error}</p>;
+    }
+    return null;
 }
