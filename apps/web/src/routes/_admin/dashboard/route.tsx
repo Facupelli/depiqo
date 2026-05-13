@@ -92,7 +92,17 @@ const sidebarItems: SidebarItem[] = [
 		href: "/dashboard/calendar",
 		children: [{ name: "Cronograma Hoy", href: "/dashboard/schedule" }],
 	},
-	{ name: "Pedidos", icon: ShoppingBag, href: "/dashboard/orders" },
+	{
+		name: "Pedidos",
+		icon: ShoppingBag,
+		href: "/dashboard/orders",
+		children: [
+			{
+				name: "Pendientes de revisión",
+				href: "/dashboard/orders/pending-review",
+			},
+		],
+	},
 	{
 		name: "Clientes",
 		icon: Users,

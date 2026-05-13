@@ -6,6 +6,7 @@ import type {
 	GetOrdersCalendarQueryDto,
 	GetOrdersQueryDto,
 	GetOrdersScheduleQuery,
+	GetPendingReviewOrdersQueryDto,
 	OrderPricingPreviewRequestDto,
 } from "@repo/schemas";
 
@@ -19,6 +20,9 @@ export const orderKeys = {
 	schedules: () => [...orderKeys.all(), "schedule"] as const,
 	schedule: (params: GetOrdersScheduleQuery) =>
 		[...orderKeys.schedules(), params] as const,
+	pendingReviews: () => [...orderKeys.all(), "pending-review"] as const,
+	pendingReviewList: (params: GetPendingReviewOrdersQueryDto) =>
+		[...orderKeys.pendingReviews(), params] as const,
 	calendars: () => [...orderKeys.all(), "calendar"] as const,
 	calendar: (params: GetOrdersCalendarQueryDto) =>
 		[...orderKeys.calendars(), params] as const,

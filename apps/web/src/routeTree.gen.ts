@@ -47,6 +47,7 @@ import { Route as AdminDashboardOwnersOwnerIdRouteImport } from './routes/_admin
 import { Route as AdminDashboardOrdersNewRouteImport } from './routes/_admin/dashboard/orders/new'
 import { Route as AdminDashboardLocationsLocationIdRouteImport } from './routes/_admin/dashboard/locations/$locationId'
 import { Route as AdminDashboardCustomersCustomerIdRouteImport } from './routes/_admin/dashboard/customers/$customerId'
+import { Route as AdminDashboardOrdersPendingReviewIndexRouteImport } from './routes/_admin/dashboard/orders/pending-review/index'
 import { Route as AdminDashboardOrdersOrderIdIndexRouteImport } from './routes/_admin/dashboard/orders/$orderId/index'
 import { Route as AdminDashboardInventoryAssetsIndexRouteImport } from './routes/_admin/dashboard/inventory/assets/index'
 import { Route as AdminDashboardCustomersPendingProfilesIndexRouteImport } from './routes/_admin/dashboard/customers/pending-profiles/index'
@@ -278,6 +279,12 @@ const AdminDashboardCustomersCustomerIdRoute =
     path: '/customers/$customerId',
     getParentRoute: () => AdminDashboardRouteRoute,
   } as any)
+const AdminDashboardOrdersPendingReviewIndexRoute =
+  AdminDashboardOrdersPendingReviewIndexRouteImport.update({
+    id: '/orders/pending-review/',
+    path: '/orders/pending-review/',
+    getParentRoute: () => AdminDashboardRouteRoute,
+  } as any)
 const AdminDashboardOrdersOrderIdIndexRoute =
   AdminDashboardOrdersOrderIdIndexRouteImport.update({
     id: '/orders/$orderId/',
@@ -470,6 +477,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/customers/pending-profiles/': typeof AdminDashboardCustomersPendingProfilesIndexRoute
   '/dashboard/inventory/assets/': typeof AdminDashboardInventoryAssetsIndexRoute
   '/dashboard/orders/$orderId/': typeof AdminDashboardOrdersOrderIdIndexRoute
+  '/dashboard/orders/pending-review/': typeof AdminDashboardOrdersPendingReviewIndexRoute
   '/dashboard/catalog/accessories/$accessoryId/edit': typeof AdminDashboardCatalogAccessoriesAccessoryIdEditRoute
   '/dashboard/catalog/bundles/$bundleId/edit': typeof AdminDashboardCatalogBundlesBundleIdEditRoute
   '/dashboard/catalog/products/$productId/edit': typeof AdminDashboardCatalogProductsProductIdEditRoute
@@ -530,6 +538,7 @@ export interface FileRoutesByTo {
   '/dashboard/customers/pending-profiles': typeof AdminDashboardCustomersPendingProfilesIndexRoute
   '/dashboard/inventory/assets': typeof AdminDashboardInventoryAssetsIndexRoute
   '/dashboard/orders/$orderId': typeof AdminDashboardOrdersOrderIdIndexRoute
+  '/dashboard/orders/pending-review': typeof AdminDashboardOrdersPendingReviewIndexRoute
   '/dashboard/catalog/accessories/$accessoryId/edit': typeof AdminDashboardCatalogAccessoriesAccessoryIdEditRoute
   '/dashboard/catalog/bundles/$bundleId/edit': typeof AdminDashboardCatalogBundlesBundleIdEditRoute
   '/dashboard/catalog/products/$productId/edit': typeof AdminDashboardCatalogProductsProductIdEditRoute
@@ -594,6 +603,7 @@ export interface FileRoutesById {
   '/_admin/dashboard/customers/pending-profiles/': typeof AdminDashboardCustomersPendingProfilesIndexRoute
   '/_admin/dashboard/inventory/assets/': typeof AdminDashboardInventoryAssetsIndexRoute
   '/_admin/dashboard/orders/$orderId/': typeof AdminDashboardOrdersOrderIdIndexRoute
+  '/_admin/dashboard/orders/pending-review/': typeof AdminDashboardOrdersPendingReviewIndexRoute
   '/_admin/dashboard/catalog/accessories/$accessoryId/edit': typeof AdminDashboardCatalogAccessoriesAccessoryIdEditRoute
   '/_admin/dashboard/catalog/bundles/$bundleId/edit': typeof AdminDashboardCatalogBundlesBundleIdEditRoute
   '/_admin/dashboard/catalog/products/$productId/edit': typeof AdminDashboardCatalogProductsProductIdEditRoute
@@ -657,6 +667,7 @@ export interface FileRouteTypes {
     | '/dashboard/customers/pending-profiles/'
     | '/dashboard/inventory/assets/'
     | '/dashboard/orders/$orderId/'
+    | '/dashboard/orders/pending-review/'
     | '/dashboard/catalog/accessories/$accessoryId/edit'
     | '/dashboard/catalog/bundles/$bundleId/edit'
     | '/dashboard/catalog/products/$productId/edit'
@@ -717,6 +728,7 @@ export interface FileRouteTypes {
     | '/dashboard/customers/pending-profiles'
     | '/dashboard/inventory/assets'
     | '/dashboard/orders/$orderId'
+    | '/dashboard/orders/pending-review'
     | '/dashboard/catalog/accessories/$accessoryId/edit'
     | '/dashboard/catalog/bundles/$bundleId/edit'
     | '/dashboard/catalog/products/$productId/edit'
@@ -780,6 +792,7 @@ export interface FileRouteTypes {
     | '/_admin/dashboard/customers/pending-profiles/'
     | '/_admin/dashboard/inventory/assets/'
     | '/_admin/dashboard/orders/$orderId/'
+    | '/_admin/dashboard/orders/pending-review/'
     | '/_admin/dashboard/catalog/accessories/$accessoryId/edit'
     | '/_admin/dashboard/catalog/bundles/$bundleId/edit'
     | '/_admin/dashboard/catalog/products/$productId/edit'
@@ -1076,6 +1089,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminDashboardCustomersCustomerIdRouteImport
       parentRoute: typeof AdminDashboardRouteRoute
     }
+    '/_admin/dashboard/orders/pending-review/': {
+      id: '/_admin/dashboard/orders/pending-review/'
+      path: '/orders/pending-review'
+      fullPath: '/dashboard/orders/pending-review/'
+      preLoaderRoute: typeof AdminDashboardOrdersPendingReviewIndexRouteImport
+      parentRoute: typeof AdminDashboardRouteRoute
+    }
     '/_admin/dashboard/orders/$orderId/': {
       id: '/_admin/dashboard/orders/$orderId/'
       path: '/orders/$orderId'
@@ -1304,6 +1324,7 @@ interface AdminDashboardRouteRouteChildren {
   AdminDashboardCustomersPendingProfilesIndexRoute: typeof AdminDashboardCustomersPendingProfilesIndexRoute
   AdminDashboardInventoryAssetsIndexRoute: typeof AdminDashboardInventoryAssetsIndexRoute
   AdminDashboardOrdersOrderIdIndexRoute: typeof AdminDashboardOrdersOrderIdIndexRoute
+  AdminDashboardOrdersPendingReviewIndexRoute: typeof AdminDashboardOrdersPendingReviewIndexRoute
   AdminDashboardCatalogAccessoriesAccessoryIdEditRoute: typeof AdminDashboardCatalogAccessoriesAccessoryIdEditRoute
   AdminDashboardCatalogBundlesBundleIdEditRoute: typeof AdminDashboardCatalogBundlesBundleIdEditRoute
   AdminDashboardCatalogProductsProductIdEditRoute: typeof AdminDashboardCatalogProductsProductIdEditRoute
@@ -1351,6 +1372,8 @@ const AdminDashboardRouteRouteChildren: AdminDashboardRouteRouteChildren = {
   AdminDashboardInventoryAssetsIndexRoute:
     AdminDashboardInventoryAssetsIndexRoute,
   AdminDashboardOrdersOrderIdIndexRoute: AdminDashboardOrdersOrderIdIndexRoute,
+  AdminDashboardOrdersPendingReviewIndexRoute:
+    AdminDashboardOrdersPendingReviewIndexRoute,
   AdminDashboardCatalogAccessoriesAccessoryIdEditRoute:
     AdminDashboardCatalogAccessoriesAccessoryIdEditRoute,
   AdminDashboardCatalogBundlesBundleIdEditRoute:

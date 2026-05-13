@@ -14,8 +14,11 @@ import type {
 	GetOrdersResponseDto,
 	GetOrdersScheduleQuery,
 	GetOrdersScheduleResponse,
+	GetPendingReviewOrdersQueryDto,
+	GetPendingReviewOrdersResponseDto,
 	OrderCalendarItem,
 	OrderListItem,
+	PendingReviewOrderListItem,
 	OrderPricingPreviewRequestDto,
 	OrderPricingPreviewResponseDto,
 	OrderSummary,
@@ -46,6 +49,7 @@ import {
 	getOrders,
 	getOrdersCalendar,
 	getOrdersSchedule,
+	getPendingReviewOrders,
 	markEquipmentAsRetired,
 	markEquipmentAsReturned,
 	updateDraftOrder,
@@ -103,6 +107,22 @@ type ParsedGetOrdersResponse = Omit<GetOrdersResponseDto, "data"> & {
 	data: ParsedOrderListItem[];
 };
 
+export type ParsedPendingReviewOrderListItem = Omit<
+	PendingReviewOrderListItem,
+	"createdAt" | "periodStart" | "periodEnd"
+> & {
+	createdAt: Dayjs;
+	periodStart: Dayjs;
+	periodEnd: Dayjs;
+};
+
+type ParsedGetPendingReviewOrdersResponse = Omit<
+	GetPendingReviewOrdersResponseDto,
+	"data"
+> & {
+	data: ParsedPendingReviewOrderListItem[];
+};
+
 export const orderQueries = {
 	list: <TData = ParsedGetOrdersResponse>(
 		params: GetOrdersQueryDto,
@@ -118,6 +138,22 @@ export const orderQueries = {
 				return options?.select ? options.select(raw) : (parsed as TData);
 			},
 		}),
+	pendingReviewList: <TData = ParsedGetPendingReviewOrdersResponse>(
+		params: GetPendingReviewOrdersQueryDto,
+		options?: GetPendingReviewOrdersQueryOptions<TData>,
+	) =>
+		queryOptions<GetPendingReviewOrdersResponseDto, ProblemDetailsError, TData>(
+			{
+				...options,
+				queryKey: orderKeys.pendingReviewList(params),
+				queryFn: () => getPendingReviewOrders({ data: params }),
+				placeholderData: keepPreviousData,
+				select: (raw) => {
+					const parsed = parsePendingReviewOrdersResponse(raw);
+					return options?.select ? options.select(raw) : (parsed as TData);
+				},
+			},
+		),
 };
 
 // -----------------------------------------------------
@@ -140,6 +176,17 @@ type GetOrdersCalendarQueryOptions<TData = ParsedGetOrdersCalendarResponse> =
 		UseQueryOptions<GetOrdersCalendarResponse, ProblemDetailsError, TData>,
 		"queryKey" | "queryFn"
 	>;
+
+type GetPendingReviewOrdersQueryOptions<
+	TData = ParsedGetPendingReviewOrdersResponse,
+> = Omit<
+	UseQueryOptions<
+		GetPendingReviewOrdersResponseDto,
+		ProblemDetailsError,
+		TData
+	>,
+	"queryKey" | "queryFn"
+>;
 
 type GetCalendarDotsQueryOptions<TData = GetCalendarDotsResponseDto> = Omit<
 	UseQueryOptions<GetCalendarDotsResponseDto, ProblemDetailsError, TData>,
@@ -250,6 +297,23 @@ function parseOrdersResponse(
 	};
 }
 
+function parsePendingReviewOrdersResponse(
+	raw: GetPendingReviewOrdersResponseDto,
+): ParsedGetPendingReviewOrdersResponse {
+	return {
+		...raw,
+		data: raw.data.map((order) => ({
+			...order,
+			createdAt: requireDayjs(parseTimestamp(order.createdAt), "createdAt"),
+			periodStart: requireDayjs(
+				parseTimestamp(order.periodStart),
+				"periodStart",
+			),
+			periodEnd: requireDayjs(parseTimestamp(order.periodEnd), "periodEnd"),
+		})),
+	};
+}
+
 // -----------------------------------------------------
 // Hooks
 // -----------------------------------------------------
@@ -299,6 +363,24 @@ export function useOrdersCalendar<TData = ParsedGetOrdersCalendarResponse>(
 			const parsed = parseOrdersCalendarResponse(raw);
 			return options?.select ? options.select(raw) : (parsed as TData);
 		},
+	});
+}
+
+export function usePendingReviewOrders<
+	TData = ParsedGetPendingReviewOrdersResponse,
+>(
+	params: GetPendingReviewOrdersQueryDto,
+	options?: GetPendingReviewOrdersQueryOptions<TData>,
+) {
+	const { queryKey, queryFn, select, placeholderData } =
+		orderQueries.pendingReviewList(params, options);
+
+	return useQuery({
+		...options,
+		queryKey,
+		queryFn,
+		select,
+		placeholderData,
 	});
 }
 

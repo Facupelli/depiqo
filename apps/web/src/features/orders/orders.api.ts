@@ -22,12 +22,16 @@ import {
 	type GetOrdersScheduleQuery,
 	GetOrdersScheduleQuerySchema,
 	type GetOrdersScheduleResponse,
+	type GetPendingReviewOrdersQueryDto,
+	type GetPendingReviewOrdersResponseDto,
 	getDraftOrderPricingParamSchema,
 	getOrderByIdParamSchema,
 	getOrdersQuerySchema,
+	getPendingReviewOrdersQuerySchema,
 	type OrderAccessoryPreparationResponseDto,
 	type OrderDetailResponseDto,
 	type OrderListItem,
+	type PendingReviewOrderListItem,
 	type OrderPricingPreviewRequestDto,
 	type OrderPricingPreviewResponseDto,
 	orderAccessoryPreparationResponseSchema,
@@ -43,8 +47,8 @@ import { ActorType } from "@repo/types";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import {
-	authenticatedApiFetch as apiFetch,
 	authenticatedApiFetchPaginated as apiFetchPaginated,
+	authenticatedApiFetch as apiFetch,
 } from "@/lib/api-auth";
 import { ProblemDetailsError } from "@/shared/errors";
 
@@ -68,6 +72,22 @@ export const getOrdersSchedule = createServerFn({ method: "GET" })
 	.handler(async ({ data }): Promise<GetOrdersScheduleResponse> => {
 		const result = await apiFetch<GetOrdersScheduleResponse>(
 			`${apiUrl}/schedule`,
+			{
+				method: "GET",
+				params: data,
+			},
+		);
+
+		return result;
+	});
+
+export const getPendingReviewOrders = createServerFn({ method: "GET" })
+	.inputValidator((data: GetPendingReviewOrdersQueryDto) =>
+		getPendingReviewOrdersQuerySchema.parse(data),
+	)
+	.handler(async ({ data }): Promise<GetPendingReviewOrdersResponseDto> => {
+		const result = await apiFetchPaginated<PendingReviewOrderListItem>(
+			`${apiUrl}/pending-review`,
 			{
 				method: "GET",
 				params: data,
