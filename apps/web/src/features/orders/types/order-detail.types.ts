@@ -9,7 +9,13 @@ export type TimelineStep = {
 	state: "completed" | "current" | "pending";
 };
 
-export type StepKey = "confirm" | "accessories" | "signing" | "pickup" | "return";
+export type StepKey =
+	| "pending"
+	| "confirm"
+	| "accessories"
+	| "signing"
+	| "pickup"
+	| "return";
 
 export type GroupedOrderItem = {
 	key: string;

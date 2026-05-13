@@ -46,10 +46,12 @@ export function getTimelineSteps(
 	const status = order.status;
 	const signingStatus = order.signing?.status ?? "NO_REQUEST";
 
-	const confirmDone =
+	const pendingDone =
 		status === OrderStatus.CONFIRMED ||
 		status === OrderStatus.ACTIVE ||
 		status === OrderStatus.COMPLETED;
+
+	const confirmDone = pendingDone;
 
 	const accessoriesDone = preparation.hasSavedAccessory;
 
@@ -62,7 +64,7 @@ export function getTimelineSteps(
 
 	let currentStep: StepKey | null = null;
 	if (status === OrderStatus.DRAFT || status === OrderStatus.PENDING_REVIEW) {
-		currentStep = "confirm";
+		currentStep = "pending";
 	} else if (status === OrderStatus.CONFIRMED && !accessoriesDone) {
 		currentStep = "accessories";
 	} else if (status === OrderStatus.CONFIRMED && signingStatus === "PENDING") {
@@ -74,6 +76,10 @@ export function getTimelineSteps(
 	}
 
 	return [
+		{
+			label: "Pendiente",
+			state: stepState(pendingDone, "pending", currentStep),
+		},
 		{
 			label: "Confirmado",
 			state: stepState(confirmDone, "confirm", currentStep),
