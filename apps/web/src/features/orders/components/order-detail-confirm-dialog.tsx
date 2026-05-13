@@ -18,6 +18,7 @@ export function OrderDetailConfirmDialog() {
 	const { order } = useOrderDetailContext();
 	const confirmation = useOrderConfirmation();
 	const isDraft = order.status === OrderStatus.DRAFT;
+	const isPendingReview = order.status === OrderStatus.PENDING_REVIEW;
 	const hasCustomer = Boolean(order.customer);
 
 	return (
@@ -28,12 +29,14 @@ export function OrderDetailConfirmDialog() {
 			<AlertDialogContent>
 				<AlertDialogHeader>
 					<AlertDialogTitle>
-						Confirmar pedido
+						{isPendingReview ? "Aprobar solicitud" : "Confirmar pedido"}
 					</AlertDialogTitle>
 					<AlertDialogDescription>
 						{isDraft
 							? "Vas a confirmar este pedido con los precios ya guardados. La confirmación no recalcula importes."
-							: "Confirma este pedido para dejarlo listo para operación."}
+							: isPendingReview
+								? "Al aprobar esta solicitud vamos a volver a validar disponibilidad y recién en ese momento se van a reservar y asignar los equipos disponibles. Si la disponibilidad cambió, la aprobación puede fallar."
+								: "Confirma este pedido para dejarlo listo para operación."}
 					</AlertDialogDescription>
 				</AlertDialogHeader>
 
@@ -60,11 +63,11 @@ export function OrderDetailConfirmDialog() {
 						disabled={confirmation.isPending}
 					>
 						{confirmation.isPending
-							? isDraft
-								? "Confirmando pedido..."
+							? isPendingReview
+								? "Aprobando solicitud..."
 								: "Confirmando pedido..."
-							: isDraft
-								? "Confirmar pedido"
+							: isPendingReview
+								? "Aprobar solicitud"
 								: "Confirmar pedido"}
 					</AlertDialogAction>
 				</AlertDialogFooter>

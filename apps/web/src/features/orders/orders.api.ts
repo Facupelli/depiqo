@@ -35,6 +35,8 @@ import {
 	type OrderPricingPreviewRequestDto,
 	type OrderPricingPreviewResponseDto,
 	orderAccessoryPreparationResponseSchema,
+	rejectOrderRequestSchema,
+	type RejectOrderRequestDto,
 	orderPricingPreviewRequestSchema,
 	orderPricingPreviewResponseSchema,
 	type ProblemDetails,
@@ -367,6 +369,33 @@ export const cancelOrder = createServerFn({ method: "POST" })
 		try {
 			await apiFetch<void>(`${apiUrl}/${data.orderId}/cancel`, {
 				method: "POST",
+			});
+		} catch (error) {
+			if (error instanceof ProblemDetailsError) {
+				return { error: error.problemDetails };
+			}
+
+			throw error;
+		}
+	});
+
+const rejectOrderInputSchema = z.object({
+	params: getOrderByIdParamSchema,
+	dto: rejectOrderRequestSchema,
+});
+
+export const rejectOrder = createServerFn({ method: "POST" })
+	.inputValidator(
+		(data: {
+			params: GetOrderByIdParamDto;
+			dto: RejectOrderRequestDto;
+		}) => rejectOrderInputSchema.parse(data),
+	)
+	.handler(async ({ data }): Promise<void | { error: ProblemDetails }> => {
+		try {
+			await apiFetch<void>(`${apiUrl}/${data.params.orderId}/reject`, {
+				method: "POST",
+				body: data.dto,
 			});
 		} catch (error) {
 			if (error instanceof ProblemDetailsError) {

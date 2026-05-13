@@ -3,6 +3,7 @@ import { useForm } from "@tanstack/react-form";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { CircleHelp } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
@@ -37,7 +38,7 @@ interface TenantConfigFormProps {
 }
 
 export function TenantConfigForm({ section }: TenantConfigFormProps) {
-  const { form, hasDailyBillingUnits, submitErrorMessage } =
+  const { form, hasDailyBillingUnits, submitErrorMessage, isPending } =
     useTenantConfigSettingsForm();
 
 	function renderSectionFields() {
@@ -76,7 +77,17 @@ export function TenantConfigForm({ section }: TenantConfigFormProps) {
       ) : null}
 
       <div className="flex justify-end">
-        <Button type="submit">Guardar Configuración</Button>
+        <form.Subscribe
+          selector={(state) => [state.canSubmit, state.isSubmitting]}
+        >
+          {([canSubmit, isSubmitting]) => (
+            <Button type="submit" disabled={!canSubmit || isPending}>
+              {isSubmitting || isPending
+                ? "Guardando..."
+                : "Guardar configuración"}
+            </Button>
+          )}
+        </form.Subscribe>
       </div>
     </form>
   );
@@ -84,7 +95,7 @@ export function TenantConfigForm({ section }: TenantConfigFormProps) {
 
 function useTenantConfigSettingsForm() {
   const { data: tenant } = useSuspenseQuery(tenantQueries.me());
-  const { mutateAsync: updateConfig } = useUpdateTenantConfig();
+  const { mutateAsync: updateConfig, isPending } = useUpdateTenantConfig();
   const [submitErrorMessage, setSubmitErrorMessage] = useState<string | null>(
     null,
   );
@@ -103,6 +114,7 @@ function useTenantConfigSettingsForm() {
       try {
         setSubmitErrorMessage(null);
         await updateConfig(dto);
+        toast.success("Configuración guardada");
       } catch (error) {
         const submitError = getSubmitError(error);
 
@@ -120,6 +132,7 @@ function useTenantConfigSettingsForm() {
     form,
     hasDailyBillingUnits,
     submitErrorMessage,
+    isPending,
   };
 }
 

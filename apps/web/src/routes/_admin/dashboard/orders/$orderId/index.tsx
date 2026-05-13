@@ -33,6 +33,7 @@ import { OrderDetailConfirmDialog } from "@/features/orders/components/order-det
 import { OrderDetailDocumentErrorDialogs } from "@/features/orders/components/order-detail-document-error-dialogs";
 import { OrderDetailLifecycleDialog } from "@/features/orders/components/order-detail-lifecycle-dialog";
 import { OrderOperationalPhaseBadge } from "@/features/orders/components/order-operational-phase-badge";
+import { OrderDetailRejectDialog } from "@/features/orders/components/order-detail-reject-dialog";
 import { OrderSigningInvitationDialog } from "@/features/orders/components/order-signing-invitation-dialog";
 import {
 	OrderDetailProvider,
@@ -177,6 +178,7 @@ function OrderHeader({
 			<OrderDetailCancelDialog />
 			<OrderDetailLifecycleDialog />
 			<OrderDetailConfirmDialog />
+			<OrderDetailRejectDialog />
 			<OrderDetailBudgetDialogs />
 			<OrderSigningInvitationDialog />
 		</header>
@@ -370,6 +372,7 @@ function OrderHeaderBannerActions() {
 	);
 	const primaryAction = getOrderHeaderPrimaryButtonConfig(
 		banner.primaryAction,
+		order.status,
 		actions,
 	);
 
@@ -416,12 +419,16 @@ function getOrderHeaderBannerIcon(
 
 function getOrderHeaderPrimaryButtonConfig(
 	action: "confirm" | "pickup" | "return" | null,
+	orderStatus: OrderStatus,
 	actions: ReturnType<typeof useOrderDetailContext>["actions"],
 ) {
 	switch (action) {
 		case "confirm":
 			return {
-				label: "Confirmar pedido",
+				label:
+					orderStatus === OrderStatus.PENDING_REVIEW
+						? "Aprobar solicitud"
+						: "Confirmar pedido",
 				icon: CheckCircle2,
 				className: "bg-neutral-950 text-white hover:bg-neutral-800",
 				onClick: actions.confirmation.openDialog,

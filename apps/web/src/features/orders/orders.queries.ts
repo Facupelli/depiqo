@@ -23,6 +23,7 @@ import type {
 	OrderPricingPreviewResponseDto,
 	OrderSummary,
 	ProblemDetails,
+	RejectOrderRequestDto,
 	ScheduleEvent,
 	UpdateDraftOrderPricingRequestDto,
 } from "@repo/schemas";
@@ -52,6 +53,7 @@ import {
 	getPendingReviewOrders,
 	markEquipmentAsRetired,
 	markEquipmentAsReturned,
+	rejectOrder,
 	updateDraftOrder,
 	updateDraftOrderPricing,
 } from "./orders.api";
@@ -195,6 +197,15 @@ type GetCalendarDotsQueryOptions<TData = GetCalendarDotsResponseDto> = Omit<
 
 type OrderDetailMutationOptions = Omit<
 	UseMutationOptions<void, ProblemDetailsError, GetOrderByIdParamDto>,
+	"mutationFn"
+>;
+
+type RejectOrderMutationOptions = Omit<
+	UseMutationOptions<
+		void,
+		ProblemDetailsError,
+		{ orderId: string; dto: RejectOrderRequestDto }
+	>,
 	"mutationFn"
 >;
 
@@ -577,6 +588,25 @@ export function useCancelOrder(options?: OrderDetailMutationOptions) {
 		...options,
 		mutationFn: async (data) => {
 			const result = await cancelOrder({ data });
+			if (hasMutationError(result)) {
+				throw new ProblemDetailsError(result.error);
+			}
+		},
+		meta: {
+			invalidates: orderKeys.all(),
+		},
+	});
+}
+
+export function useRejectOrder(options?: RejectOrderMutationOptions) {
+	return useMutation<
+		void,
+		ProblemDetailsError,
+		{ orderId: string; dto: RejectOrderRequestDto }
+	>({
+		...options,
+		mutationFn: async ({ orderId, dto }) => {
+			const result = await rejectOrder({ data: { params: { orderId }, dto } });
 			if (hasMutationError(result)) {
 				throw new ProblemDetailsError(result.error);
 			}

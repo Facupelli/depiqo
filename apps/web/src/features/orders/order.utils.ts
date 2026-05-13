@@ -372,9 +372,9 @@ export function getOrderNextStepGuidance(
 		case OrderStatus.PENDING_REVIEW:
 			return {
 				step: "confirm",
-				label: "Próximo paso: confirmar pedido",
+				label: "Próximo paso: aprobar solicitud",
 				description:
-					"Revisa el pedido y confírmalo para dejarlo listo para operación.",
+					"Revisa la solicitud y apruébala para confirmar disponibilidad y pasarla a operación.",
 			};
 		case OrderStatus.CONFIRMED:
 			return {
@@ -436,8 +436,8 @@ export function getOrderPrimaryAdminAction(
 		case OrderStatus.PENDING_REVIEW:
 			return {
 				action: "confirm",
-				label: "Confirmar pedido",
-				description: "Aprobar pedido",
+				label: "Aprobar solicitud",
+				description: "Validar disponibilidad y reservar ahora",
 			};
 		case OrderStatus.CONFIRMED:
 			return {
@@ -480,8 +480,8 @@ export function getOrderHeaderBannerConfig(
 				tone: "neutral",
 				title: "Pendiente de revisión",
 				subtitle:
-					"Revisá el pedido y confirmalo para dejarlo listo para el retiro.",
-				meta: "Esperando confirmación operativa",
+					"Revisá la solicitud y aprobala para confirmar disponibilidad y reservar el inventario en ese momento.",
+				meta: "Esperando aprobación operativa",
 				primaryAction: "confirm",
 			};
 		case OrderStatus.CONFIRMED:
