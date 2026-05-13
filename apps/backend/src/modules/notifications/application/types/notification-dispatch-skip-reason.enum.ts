@@ -1,0 +1,4 @@
+export enum NotificationDispatchSkipReason {
+  MUTED_BY_ENVIRONMENT = 'MUTED_BY_ENVIRONMENT',
+  UNSUPPORTED_CHANNEL = 'UNSUPPORTED_CHANNEL',
+}

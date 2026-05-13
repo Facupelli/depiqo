@@ -5,6 +5,7 @@ import { TenantContext } from '@repo/schemas';
 import { Env } from 'src/config/env.schema';
 import { SigningDocumentType } from 'src/generated/prisma/client';
 import { NotificationOrchestrator } from 'src/modules/notifications/application/notification-orchestrator.service';
+import { NotificationDispatchSkipReason } from 'src/modules/notifications/application/types/notification-dispatch-skip-reason.enum';
 import { NotificationChannel } from 'src/modules/notifications/domain/notification-channel.enum';
 import { NotificationType } from 'src/modules/notifications/domain/notification-type.enum';
 
@@ -71,6 +72,20 @@ export class SigningNotificationService {
     });
 
     if (dispatchResult.deliveredChannels.includes(NotificationChannel.EMAIL)) {
+      return {
+        signingUrl,
+        delivered: true,
+        failureReason: null,
+        failureMessage: null,
+        deliveryError: null,
+      };
+    }
+
+    const skippedEmail = dispatchResult.skippedChannels.find(
+      (skippedChannel) => skippedChannel.channel === NotificationChannel.EMAIL,
+    );
+
+    if (skippedEmail?.reason === NotificationDispatchSkipReason.MUTED_BY_ENVIRONMENT) {
       return {
         signingUrl,
         delivered: true,
