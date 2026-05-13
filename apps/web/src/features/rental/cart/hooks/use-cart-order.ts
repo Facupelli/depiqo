@@ -13,12 +13,8 @@ import type { CartPageContextValue } from "@/features/rental/cart/cart-page.cont
 import { getPortalAuthRedirectSearch } from "../../auth/portal-auth.redirect";
 import type { ConflictGroup } from "../cart.types";
 import { formatSlot } from "../cart.utils";
-import {
-	extractBookingConflicts,
-	isDeliveryNotSupportedError,
-	isDeliveryRequestComplete,
-} from "../cart-order.utils";
-import { isAuthError } from "@/shared/errors";
+import { isDeliveryRequestComplete } from "../cart-order.utils";
+import { parseCartBookingError } from "../cart-booking-errors";
 import { useCartOrderDelivery } from "./use-cart-order-delivery";
 import { useCartOrderPricing } from "./use-cart-order-pricing";
 import { useCartOrderTimes } from "./use-cart-order-times";
@@ -46,8 +42,8 @@ type UseCartOrderParams = {
  * - Fetch the price preview
  * - Join line items with cart item names (so views don't touch the cart store)
  * - Submit the order and navigate on success
- * - Track unavailable item IDs on 422 errors
- * - Track unexpected booking errors (non-422) for inline error display
+ * - Track booking conflicts for inline recovery
+ * - Track unexpected booking errors for inline error display
  */
 export function useCartOrder({
 	location,
@@ -160,36 +156,30 @@ export function useCartOrder({
 				},
 			});
 		} catch (error) {
-			const conflicts = extractBookingConflicts(error);
-			if (conflicts) {
-				setUnavailableIds(conflicts.unavailableIds);
-				setConflictGroups(conflicts.conflictGroups);
-				return;
-			}
+			const parsedError = parseCartBookingError(error);
 
-			if (isAuthError(error)) {
-				navigate({
-					to: "/login",
-					search: getPortalAuthRedirectSearch(
-						getCurrentRelativeRedirect("/cart"),
-					),
-				});
-				return;
+			switch (parsedError.kind) {
+				case "availability-conflict":
+					setUnavailableIds(parsedError.unavailableIds);
+					setConflictGroups(parsedError.conflictGroups);
+					setBookingErrorMessage(parsedError.message);
+					return;
+				case "auth":
+					navigate({
+						to: "/login",
+						search: getPortalAuthRedirectSearch(
+							getCurrentRelativeRedirect("/cart"),
+						),
+					});
+					return;
+				case "delivery-not-supported":
+					delivery.onFulfillmentMethodChange(FulfillmentMethod.PICKUP);
+					setBookingErrorMessage(parsedError.message);
+					return;
+				case "unknown":
+					setBookingErrorMessage(parsedError.message);
+					return;
 			}
-
-			if (isDeliveryNotSupportedError(error)) {
-				delivery.onFulfillmentMethodChange(FulfillmentMethod.PICKUP);
-				setBookingErrorMessage(
-					"Esta sucursal solo permite retiro en el local.",
-				);
-				return;
-			}
-
-			// Any non-422 error (5xx, network failure, etc.) — surface inline
-			// without re-throwing, so the page stays intact and the user can retry.
-			setBookingErrorMessage(
-				"La reserva falló inesperadamente. Por favor, intentalo de nuevo.",
-			);
 		}
 	};
 

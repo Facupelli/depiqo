@@ -4,8 +4,7 @@ import type {
   DeliveryRequestDto,
 } from "@repo/schemas";
 import { FulfillmentMethod } from "@repo/types";
-import { ProblemDetailsError } from "@/shared/errors";
-import type { CartItem, ConflictGroup } from "./cart.types";
+import type { CartItem } from "./cart.types";
 import type {
   DeliveryRequestFormState,
   JoinedLineItem,
@@ -122,34 +121,3 @@ export function isDeliveryRequestComplete(
   );
 }
 
-export function extractBookingConflicts(error: unknown): {
-  unavailableIds: string[];
-  conflictGroups: ConflictGroup[];
-} | null {
-  if (
-    !(error instanceof ProblemDetailsError) ||
-    error.problemDetails.status !== 422
-  ) {
-    return null;
-  }
-
-  const unavailableIds = (error.problemDetails.unavailableItems ?? [])
-    .map(
-      (item: { productTypeId?: string; bundleId?: string }) =>
-        item.productTypeId ?? item.bundleId ?? "",
-    )
-    .filter(Boolean);
-
-  return {
-    unavailableIds,
-    conflictGroups: error.problemDetails.conflictGroups ?? [],
-  };
-}
-
-export function isDeliveryNotSupportedError(error: unknown) {
-  return (
-    error instanceof ProblemDetailsError &&
-    error.problemDetails.status === 422 &&
-    error.problemDetails.type === "errors://delivery-not-supported"
-  );
-}
