@@ -143,9 +143,6 @@ function createPendingReviewOrdersColumns(): ColumnDef<ParsedPendingReviewOrderL
 					</p>
 					<div className="flex flex-wrap items-center gap-2">
 						<OrderStatusBadge status={row.original.status} />
-						<p className="font-mono text-[11px] text-muted-foreground/80">
-							{row.original.id}
-						</p>
 					</div>
 				</div>
 			),
@@ -163,7 +160,7 @@ function createPendingReviewOrdersColumns(): ColumnDef<ParsedPendingReviewOrderL
 				}
 
 				return (
-					<div className="space-y-1">
+					<div className="flex items-center gap-2">
 						<div className="flex items-center gap-2">
 							<Badge variant="outline" className="gap-1 rounded-full px-2 py-0.5">
 								{customer.isCompany ? (
