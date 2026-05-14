@@ -6,6 +6,7 @@ import {
 	Banknote,
 	Check,
 	CircleHelp,
+	LoaderCircle,
 	TicketPercent,
 	MapPin,
 	Tag,
@@ -43,8 +44,6 @@ import type {
 import { cn } from "@/lib/utils";
 import { useIsVisible } from "@/shared/hooks/use-is-visible";
 import { formatCurrency } from "@/shared/utils/price.utils";
-import { getBookingSubmitButtonLabel } from "@/features/rental/checkout/booking-mode-copy";
-import { useTenantRentalConfig } from "../../tenant/tenant.queries";
 import { computeOriginalSubtotal, formatDiscount } from "../cart.utils";
 import {
 	isDeliveryRequestComplete,
@@ -56,14 +55,14 @@ import {
 	useCartDeliveryContext,
 	useCartPricingContext,
 } from "../cart-page.context";
+import { getOrderSubmitButtonLabel } from "../../checkout/booking-mode-copy";
 
 const CART_MONEY_FRACTION_DIGITS = 2;
 
 export function CartPageSidebar() {
-	const { data: tenantRentalConfig } = useTenantRentalConfig();
-	const tenantPriceConfig = tenantRentalConfig.pricing;
 	const { cartItems } = useCartContext();
 	const {
+		priceConfig,
 		breakdown,
 		joinedLineItems,
 		insuranceSelected,
@@ -81,14 +80,28 @@ export function CartPageSidebar() {
 		onFulfillmentMethodChange,
 		onDeliveryRequestFieldChange,
 	} = useCartDeliveryContext();
-	const { isAuthenticated, isBookingError, bookingErrorMessage, handleBook } =
-		useCartBookingContext();
-
-	const isDisabled = cartItems.length === 0 || isPriceLoading || isPriceError;
-	const ctaLabel = getBookingSubmitButtonLabel({
-		bookingMode: tenantRentalConfig.bookingMode,
+	const {
+		bookingMode,
+		orderCommunicationMode,
 		isAuthenticated,
-	});
+		isSubmittingOrder,
+		isBookingError,
+		bookingErrorMessage,
+		handleBook,
+	} = useCartBookingContext();
+
+	const isDisabled =
+		cartItems.length === 0 ||
+		isPriceLoading ||
+		isPriceError ||
+		isSubmittingOrder;
+	const ctaLabel = isSubmittingOrder
+		? "Creando pedido..."
+		: getOrderSubmitButtonLabel({
+				bookingMode,
+				orderCommunicationMode,
+				isAuthenticated,
+			});
 
 	const [bookButtonRef, isBookButtonVisible] =
 		useIsVisible<HTMLButtonElement>();
@@ -112,7 +125,7 @@ export function CartPageSidebar() {
 					lineItems={joinedLineItems}
 					isLoading={isPriceLoading}
 					isError={isPriceError}
-					priceConfig={tenantPriceConfig}
+					priceConfig={priceConfig}
 				/>
 
 				<CartPageFulfillmentForm
@@ -140,7 +153,11 @@ export function CartPageSidebar() {
 					className="mt-4 flex w-full items-center justify-center gap-2 rounded-none bg-black py-4 text-xs font-bold uppercase tracking-widest text-white hover:bg-neutral-800 disabled:cursor-not-allowed disabled:bg-neutral-100 disabled:text-neutral-300"
 				>
 					{ctaLabel}
-					<ArrowRight className="h-3.5 w-3.5" />
+					{isSubmittingOrder ? (
+						<LoaderCircle className="h-3.5 w-3.5 animate-spin" />
+					) : (
+						<ArrowRight className="h-3.5 w-3.5" />
+					)}
 				</Button>
 
 				<div className="mt-4 space-y-2">
@@ -183,8 +200,8 @@ export function CartPageSidebar() {
 							{breakdown?.total != null
 								? formatCurrency(
 										breakdown.total,
-										tenantPriceConfig.currency,
-										tenantPriceConfig.locale,
+										priceConfig.currency,
+										priceConfig.locale,
 										CART_MONEY_FRACTION_DIGITS,
 									)
 								: "—"}
@@ -197,7 +214,11 @@ export function CartPageSidebar() {
 					className="flex items-center gap-2 rounded-none bg-black px-6 py-3 text-xs font-bold uppercase tracking-widest text-white hover:bg-neutral-800 disabled:cursor-not-allowed disabled:bg-neutral-100 disabled:text-neutral-300"
 				>
 					{ctaLabel}
-					<ArrowRight className="h-3.5 w-3.5" />
+					{isSubmittingOrder ? (
+						<LoaderCircle className="h-3.5 w-3.5 animate-spin" />
+					) : (
+						<ArrowRight className="h-3.5 w-3.5" />
+					)}
 				</Button>
 			</div>
 		</>

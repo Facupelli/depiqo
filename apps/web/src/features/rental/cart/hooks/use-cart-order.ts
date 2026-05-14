@@ -1,4 +1,4 @@
-import type { RentalLocationResponse } from "@repo/schemas";
+import type { RentalLocationResponse, TenantRentalConfig } from "@repo/schemas";
 import { CreateOrderNextStepType, FulfillmentMethod } from "@repo/types";
 import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
@@ -18,9 +18,9 @@ import { parseCartBookingError } from "../cart-booking-errors";
 import { useCartOrderDelivery } from "./use-cart-order-delivery";
 import { useCartOrderPricing } from "./use-cart-order-pricing";
 import { useCartOrderTimes } from "./use-cart-order-times";
-import { useTenantRentalConfig } from "../../tenant/tenant.queries";
 
 type UseCartOrderParams = {
+	tenantRentalConfig: TenantRentalConfig;
 	location: {
 		id: string;
 		name: string;
@@ -46,13 +46,13 @@ type UseCartOrderParams = {
  * - Track unexpected booking errors for inline error display
  */
 export function useCartOrder({
+	tenantRentalConfig,
 	location,
 	pickupDate,
 	returnDate,
 }: UseCartOrderParams) {
 	const navigate = useNavigate();
 	const { data: sessionUser } = useCurrentPortalSession();
-	const { data: tenantRentalConfig } = useTenantRentalConfig();
 	const tenantPricingConfig = tenantRentalConfig.pricing;
 	const cartItems = useCartItems();
 	const { clearCart } = useCartActions();
@@ -98,7 +98,8 @@ export function useCartOrder({
 		cartItems,
 	});
 
-	const { mutateAsync: createOrder } = useCreateOrder();
+	const { mutateAsync: createOrder, isPending: isSubmittingOrder } =
+		useCreateOrder();
 
 	const handleBook = async () => {
 		setUnavailableIds([]);
@@ -143,15 +144,26 @@ export function useCartOrder({
 				returnTime: times.returnTime,
 			});
 
-			clearCart();
-
 			if (
 				createdOrder.nextStep.type ===
 				CreateOrderNextStepType.REDIRECT_TO_WHATSAPP
 			) {
-				window.location.assign(createdOrder.nextStep.whatsappUrl);
+				if (!createdOrder.nextStep.whatsappUrl) {
+					clearCart();
+					navigate({ to: "/order-created-contact-team" });
+					return;
+				}
+
+				navigate({
+					to: "/order-created-whatsapp",
+					search: {
+						whatsappUrl: createdOrder.nextStep.whatsappUrl,
+					},
+				});
 				return;
 			}
+
+			clearCart();
 
 			navigate({
 				to: "/order-confirmation",
@@ -203,6 +215,7 @@ export function useCartOrder({
 			period: pricing.period,
 		},
 		pricing: {
+			priceConfig: tenantPricingConfig,
 			breakdown: pricing.breakdown,
 			joinedLineItems: pricing.joinedLineItems,
 			insuranceSelected,
@@ -228,7 +241,11 @@ export function useCartOrder({
 			onDeliveryRequestFieldChange: delivery.onDeliveryRequestFieldChange,
 		},
 		booking: {
+			bookingMode: tenantRentalConfig.bookingMode,
+			orderCommunicationMode:
+				tenantRentalConfig.communication.orderCommunicationMode,
 			isAuthenticated: Boolean(sessionUser),
+			isSubmittingOrder,
 			isBookingError: Boolean(bookingErrorMessage),
 			bookingErrorMessage,
 			unavailableIds,

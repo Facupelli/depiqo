@@ -10,6 +10,8 @@ import type {
 	TimesSlice,
 } from "@/features/rental/cart/cart-page.context.types";
 import { useCartOrder } from "@/features/rental/cart/hooks/use-cart-order";
+import { usePortalTenantId } from "@/features/tenant-context/use-portal-tenant-id";
+import { rentalTenantQueries } from "@/features/rental/tenant/tenant.queries";
 import { rentalLocationQueries } from "@/features/tenant/locations/locations.queries";
 
 const CartPageContext = createContext<CartPageContextValue | null>(null);
@@ -58,7 +60,13 @@ export function CartPageProvider({
 	returnDate,
 	locationId,
 }: CartPageProviderProps) {
-	const { data: locations } = useSuspenseQuery(rentalLocationQueries.list());
+	const tenantId = usePortalTenantId();
+	const { data: locations } = useSuspenseQuery(
+		rentalLocationQueries.list(tenantId),
+	);
+	const { data: tenantRentalConfig } = useSuspenseQuery(
+		rentalTenantQueries.me(tenantId),
+	);
 	const location = locations.find((l) => l.id === locationId);
 
 	if (!location) {
@@ -66,6 +74,7 @@ export function CartPageProvider({
 	}
 
 	const cartOrder = useCartOrder({
+		tenantRentalConfig,
 		location: {
 			id: location.id,
 			name: location.name,

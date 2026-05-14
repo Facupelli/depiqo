@@ -52,6 +52,11 @@ const settingsNavGroups: Array<{
     title: "Rental",
     items: [
       {
+        key: "general",
+        label: "General",
+        description: "Reservas, comunicación de pedidos y ajustes del catálogo.",
+      },
+      {
         key: "branding",
         label: "Marca",
         description: "Visual identity and tenant presentation.",
@@ -65,11 +70,6 @@ const settingsNavGroups: Array<{
         key: "domain",
         label: "Dominio",
         description: "Custom domain and storefront access.",
-      },
-      {
-        key: "general",
-        label: "General",
-        description: "Booking, timezone, and catalog defaults.",
       },
     ],
   },

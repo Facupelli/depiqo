@@ -1,5 +1,9 @@
-import type { CartPriceResult } from "@repo/schemas";
-import type { FulfillmentMethod } from "@repo/types";
+import type { CartPriceResult, TenantPricingConfig } from "@repo/schemas";
+import type {
+	BookingMode,
+	FulfillmentMethod,
+	OrderCommunicationMode,
+} from "@repo/types";
 import type { CartItem, ConflictGroup } from "./cart.types";
 import type {
 	CartOrderPeriod,
@@ -21,6 +25,7 @@ export type LocationSlice = {
 };
 
 export type PricingSlice = {
+	priceConfig: TenantPricingConfig;
 	breakdown: CartPriceResult | undefined;
 	joinedLineItems: JoinedLineItem[] | undefined;
 	insuranceSelected: boolean;
@@ -52,7 +57,10 @@ export type DeliverySlice = {
 };
 
 export type BookingSlice = {
+	bookingMode: BookingMode;
+	orderCommunicationMode: OrderCommunicationMode;
 	isAuthenticated: boolean;
+	isSubmittingOrder: boolean;
 	isBookingError: boolean;
 	bookingErrorMessage: string | null;
 	unavailableIds: string[];

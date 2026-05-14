@@ -6,18 +6,18 @@ export function buildCreateOrderWhatsAppMessage(context: CreateOrderCompletionCo
   const lines: string[] = [
     'Hola, quiero continuar con este pedido:',
     '',
-    `Pedido N° ${context.order.orderNumber}`,
-    `Nombre: ${context.customer.fullName}`,
+    `*Pedido N° ${context.order.orderNumber}*`,
+    `*Nombre:* _${context.customer.fullName}_`,
     '',
-    `Retiro: ${formatLocalDate(context.booking.pickupDate)} ${formatTime(context.booking.pickupTime)}`,
-    `Devolución: ${formatLocalDate(context.booking.returnDate)} ${formatTime(context.booking.returnTime)}`,
+    `*Retiro:* _${formatLocalDate(context.booking.pickupDate)} ${formatTime(context.booking.pickupTime)}_`,
+    `*Devolución:* _${formatLocalDate(context.booking.returnDate)} ${formatTime(context.booking.returnTime)}_`,
     '',
     ...buildFulfillmentLines(context),
     '',
-    'Items:',
+    '*Items:*',
     ...context.items.map((item) => `- ${item.quantity} x ${item.name}`),
     '',
-    `Total: ${formatCurrency(context.pricing.totalAmount, context.pricing.currency)}`,
+    `*Total:* _${formatCurrency(context.pricing.totalAmount, context.pricing.currency)}_`,
     '',
     'Espero tu respuesta para confirmar mi pedido'
   ];
@@ -29,22 +29,22 @@ function buildFulfillmentLines(context: CreateOrderCompletionContext): string[] 
   if (context.fulfillment.method === FulfillmentMethod.DELIVERY && context.fulfillment.deliveryRequest) {
     const { deliveryRequest } = context.fulfillment;
     const lines = [
-      'Modalidad: entrega a domicilio',
-      `Destinatario: ${deliveryRequest.recipientName}`,
-      `Dirección: ${formatDeliveryAddress(deliveryRequest)}`,
+      `*Modalidad:* _entrega a domicilio_`,
+      `*Destinatario:* _${deliveryRequest.recipientName}_`,
+      `*Dirección:* _${formatDeliveryAddress(deliveryRequest)}_`,
     ];
 
     if (deliveryRequest.instructions) {
-      lines.push(`Instrucciones: ${deliveryRequest.instructions}`);
+      lines.push(`*Instrucciones:* _${deliveryRequest.instructions}_`);
     }
 
     return lines;
   }
 
-  const lines = ['Modalidad: retiro en sucursal'];
+  const lines = [`*Modalidad:* _retiro en sucursal_`];
 
   if (context.fulfillment.locationName) {
-    lines.push(`Sucursal: ${context.fulfillment.locationName}`);
+    lines.push(`*Sucursal:* _${context.fulfillment.locationName}_`);
   }
 
   return lines;

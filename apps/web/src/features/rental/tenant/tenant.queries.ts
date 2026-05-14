@@ -13,9 +13,9 @@ export const rentalTenantKeys = {
 };
 
 export const rentalTenantQueries = {
-	me: (tenantId: string) =>
+	me: (tenantId?: string) =>
 		queryOptions<TenantRentalConfig>({
-			queryKey: rentalTenantKeys.me(tenantId),
+			queryKey: rentalTenantKeys.me(tenantId ?? "current"),
 			queryFn: () => getTenantRentalConfig(),
 			staleTime: 5 * 60 * 1000,
 		}),

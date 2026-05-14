@@ -1,4 +1,30 @@
-import { BookingMode, OrderStatus } from "@repo/types";
+import { BookingMode, OrderCommunicationMode, OrderStatus } from "@repo/types";
+
+export function getOrderSubmitButtonLabel({
+	bookingMode,
+	orderCommunicationMode,
+	isAuthenticated,
+}: {
+	bookingMode: BookingMode;
+	orderCommunicationMode: OrderCommunicationMode;
+	isAuthenticated: boolean;
+}) {
+	if (!isAuthenticated) {
+		return getBookingSubmitButtonLabel({
+			bookingMode,
+			isAuthenticated,
+		});
+	}
+
+	if (orderCommunicationMode === OrderCommunicationMode.WHATSAPP) {
+		return "Pedir por WhatsApp";
+	}
+
+	return getBookingSubmitButtonLabel({
+		bookingMode,
+		isAuthenticated,
+	});
+}
 
 export function getBookingSubmitButtonLabel({
 	bookingMode,

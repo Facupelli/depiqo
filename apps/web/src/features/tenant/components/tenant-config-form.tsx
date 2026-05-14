@@ -1,4 +1,4 @@
-import { BookingMode, RoundingRule } from "@repo/types";
+import { BookingMode, OrderCommunicationMode, RoundingRule } from "@repo/types";
 import { useForm } from "@tanstack/react-form";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { CircleHelp } from "lucide-react";
@@ -437,10 +437,8 @@ function GeneralSettingsFields({
     <div className="rounded-xl border border-border bg-card divide-y divide-border">
       <form.Field name="bookingMode">
         {(field) => {
-          const errors =
-            field.state.meta.errors
-          const isInvalid =
-            (field.state.meta.isTouched && !field.state.meta.isValid) 
+          const errors = field.state.meta.errors;
+          const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
 
           return (
             <div className="grid grid-cols-[1fr_auto] items-start gap-8 px-5 py-4">
@@ -509,6 +507,146 @@ function GeneralSettingsFields({
           );
         }}
       </form.Field>
+
+      <form.Field name="orderCommunicationMode">
+        {(field) => {
+          const errors = field.state.meta.errors;
+          const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+
+          return (
+            <div className="grid grid-cols-[1fr_auto] items-start gap-8 px-5 py-4">
+              <div>
+                <p className="text-sm font-semibold text-foreground">
+                  Modo de comunicación de pedidos
+                </p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Define cómo continúa la comunicación con el cliente después de
+                  crear un pedido.
+                </p>
+                <div className="mt-2 space-y-1 text-xs text-muted-foreground">
+                  {field.state.value === OrderCommunicationMode.WHATSAPP ? (
+                    <p>
+                      El cliente crea el pedido y es redirigido a WhatsApp para
+                      continuar la comunicación manualmente con el negocio.
+                    </p>
+                  ) : (
+                    <p>
+                      El cliente finaliza el pedido y recibe confirmaciones
+                      automáticas por email.
+                    </p>
+                  )}
+                </div>
+              </div>
+              <Field data-invalid={isInvalid} className="items-end pt-1">
+                <FieldLabel htmlFor={field.name} className="sr-only">
+                  Modo de comunicación de pedidos
+                </FieldLabel>
+                <Select
+                  value={field.state.value}
+                  onValueChange={(value) => value && field.handleChange(value)}
+                  items={[
+                    {
+                      value: OrderCommunicationMode.FORMAL,
+                      label: "Formal",
+                    },
+                    {
+                      value: OrderCommunicationMode.WHATSAPP,
+                      label: "WhatsApp",
+                    },
+                  ]}
+                >
+                  <SelectTrigger className="w-52">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={OrderCommunicationMode.FORMAL}>
+                      Formal
+                    </SelectItem>
+                    <SelectItem value={OrderCommunicationMode.WHATSAPP}>
+                      WhatsApp
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+                {errors.length > 0 ? <FieldError errors={errors} /> : null}
+              </Field>
+            </div>
+          );
+        }}
+      </form.Field>
+
+      <form.Subscribe
+        selector={(state) => ({
+          whatsAppNumber: state.values.whatsAppNumber,
+        })}
+      >
+        {({  whatsAppNumber }) => {
+          const hasWhatsAppNumber = Boolean(whatsAppNumber?.trim());
+
+          return (
+            <>
+              <form.Field name="whatsAppNumber">
+                {(field) => {
+                  const isInvalid =
+                    field.state.meta.isTouched && !field.state.meta.isValid;
+
+                  return (
+                    <div className="grid grid-cols-[1fr_auto] items-start gap-8 px-5 py-4">
+                      <div>
+                        <p className="text-sm font-semibold text-foreground">
+                          Número de WhatsApp
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          Ingresá el número en formato internacional, sin
+                          espacios ni símbolos. Ejemplo: 5491123456789.
+                        </p>
+                      </div>
+                      <Field data-invalid={isInvalid} className="items-end pt-1">
+                        <FieldLabel htmlFor={field.name} className="sr-only">
+                          Número de WhatsApp
+                        </FieldLabel>
+                        <Input
+                          id={field.name}
+                          value={field.state.value ?? ""}
+                          onChange={(e) => field.handleChange(e.target.value)}
+                          onBlur={field.handleBlur}
+                          className="w-56 text-right"
+                          placeholder="5491123456789"
+                        />
+                        {isInvalid ? <FieldError errors={field.state.meta.errors} /> : null}
+                      </Field>
+                    </div>
+                  );
+                }}
+              </form.Field>
+
+              <form.Field name="showFloatingWhatsAppButton">
+                {(field) => (
+                  <div className="grid grid-cols-[1fr_auto] items-start gap-8 px-5 py-4">
+                    <div>
+                      <p className="text-sm font-semibold text-foreground">
+                        Mostrar botón flotante de WhatsApp
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {hasWhatsAppNumber
+                          ? "Muestra un acceso rápido a WhatsApp en la tienda. Esta opción es independiente del modo de comunicación de pedidos."
+                          : "Primero configurá un número de WhatsApp para poder habilitar este botón."}
+                      </p>
+                    </div>
+                    <div className="pt-1">
+                      <Switch
+                        checked={field.state.value}
+                        onCheckedChange={field.handleChange}
+                        disabled={!hasWhatsAppNumber}
+                        aria-label="Mostrar botón flotante de WhatsApp"
+                      />
+                    </div>
+                  </div>
+                )}
+              </form.Field>
+            </>
+          );
+        }}
+      </form.Subscribe>
 
       <form.Field name="timezone">
         {(field) => {

@@ -25,6 +25,8 @@ import { Route as AuthGoogleCallbackRouteImport } from './routes/auth/google/cal
 import { Route as AdminAdminRegisterRouteImport } from './routes/_admin/admin/register'
 import { Route as AdminAdminLoginRouteImport } from './routes/_admin/admin/login'
 import { Route as PortalTenantRentalIndexRouteImport } from './routes/_portal/_tenant/rental/index'
+import { Route as PortalTenantOrderCreatedWhatsappIndexRouteImport } from './routes/_portal/_tenant/order-created-whatsapp/index'
+import { Route as PortalTenantOrderCreatedContactTeamIndexRouteImport } from './routes/_portal/_tenant/order-created-contact-team/index'
 import { Route as PortalTenantOrderConfirmationIndexRouteImport } from './routes/_portal/_tenant/order-confirmation/index'
 import { Route as PortalTenantOnboardIndexRouteImport } from './routes/_portal/_tenant/onboard/index'
 import { Route as PortalTenantCartIndexRouteImport } from './routes/_portal/_tenant/cart/index'
@@ -150,6 +152,18 @@ const PortalTenantRentalIndexRoute = PortalTenantRentalIndexRouteImport.update({
   path: '/rental/',
   getParentRoute: () => PortalTenantRouteRoute,
 } as any)
+const PortalTenantOrderCreatedWhatsappIndexRoute =
+  PortalTenantOrderCreatedWhatsappIndexRouteImport.update({
+    id: '/order-created-whatsapp/',
+    path: '/order-created-whatsapp/',
+    getParentRoute: () => PortalTenantRouteRoute,
+  } as any)
+const PortalTenantOrderCreatedContactTeamIndexRoute =
+  PortalTenantOrderCreatedContactTeamIndexRouteImport.update({
+    id: '/order-created-contact-team/',
+    path: '/order-created-contact-team/',
+    getParentRoute: () => PortalTenantRouteRoute,
+  } as any)
 const PortalTenantOrderConfirmationIndexRoute =
   PortalTenantOrderConfirmationIndexRouteImport.update({
     id: '/order-confirmation/',
@@ -460,6 +474,8 @@ export interface FileRoutesByFullPath {
   '/cart/': typeof PortalTenantCartIndexRoute
   '/onboard/': typeof PortalTenantOnboardIndexRoute
   '/order-confirmation/': typeof PortalTenantOrderConfirmationIndexRoute
+  '/order-created-contact-team/': typeof PortalTenantOrderCreatedContactTeamIndexRoute
+  '/order-created-whatsapp/': typeof PortalTenantOrderCreatedWhatsappIndexRoute
   '/rental/': typeof PortalTenantRentalIndexRoute
   '/dashboard/catalog/accessories/new': typeof AdminDashboardCatalogAccessoriesNewRoute
   '/dashboard/catalog/bundles/new': typeof AdminDashboardCatalogBundlesNewRoute
@@ -521,6 +537,8 @@ export interface FileRoutesByTo {
   '/cart': typeof PortalTenantCartIndexRoute
   '/onboard': typeof PortalTenantOnboardIndexRoute
   '/order-confirmation': typeof PortalTenantOrderConfirmationIndexRoute
+  '/order-created-contact-team': typeof PortalTenantOrderCreatedContactTeamIndexRoute
+  '/order-created-whatsapp': typeof PortalTenantOrderCreatedWhatsappIndexRoute
   '/rental': typeof PortalTenantRentalIndexRoute
   '/dashboard/catalog/accessories/new': typeof AdminDashboardCatalogAccessoriesNewRoute
   '/dashboard/catalog/bundles/new': typeof AdminDashboardCatalogBundlesNewRoute
@@ -586,6 +604,8 @@ export interface FileRoutesById {
   '/_portal/_tenant/cart/': typeof PortalTenantCartIndexRoute
   '/_portal/_tenant/onboard/': typeof PortalTenantOnboardIndexRoute
   '/_portal/_tenant/order-confirmation/': typeof PortalTenantOrderConfirmationIndexRoute
+  '/_portal/_tenant/order-created-contact-team/': typeof PortalTenantOrderCreatedContactTeamIndexRoute
+  '/_portal/_tenant/order-created-whatsapp/': typeof PortalTenantOrderCreatedWhatsappIndexRoute
   '/_portal/_tenant/rental/': typeof PortalTenantRentalIndexRoute
   '/_admin/dashboard/catalog/accessories/new': typeof AdminDashboardCatalogAccessoriesNewRoute
   '/_admin/dashboard/catalog/bundles/new': typeof AdminDashboardCatalogBundlesNewRoute
@@ -650,6 +670,8 @@ export interface FileRouteTypes {
     | '/cart/'
     | '/onboard/'
     | '/order-confirmation/'
+    | '/order-created-contact-team/'
+    | '/order-created-whatsapp/'
     | '/rental/'
     | '/dashboard/catalog/accessories/new'
     | '/dashboard/catalog/bundles/new'
@@ -711,6 +733,8 @@ export interface FileRouteTypes {
     | '/cart'
     | '/onboard'
     | '/order-confirmation'
+    | '/order-created-contact-team'
+    | '/order-created-whatsapp'
     | '/rental'
     | '/dashboard/catalog/accessories/new'
     | '/dashboard/catalog/bundles/new'
@@ -775,6 +799,8 @@ export interface FileRouteTypes {
     | '/_portal/_tenant/cart/'
     | '/_portal/_tenant/onboard/'
     | '/_portal/_tenant/order-confirmation/'
+    | '/_portal/_tenant/order-created-contact-team/'
+    | '/_portal/_tenant/order-created-whatsapp/'
     | '/_portal/_tenant/rental/'
     | '/_admin/dashboard/catalog/accessories/new'
     | '/_admin/dashboard/catalog/bundles/new'
@@ -933,6 +959,20 @@ declare module '@tanstack/react-router' {
       path: '/rental'
       fullPath: '/rental/'
       preLoaderRoute: typeof PortalTenantRentalIndexRouteImport
+      parentRoute: typeof PortalTenantRouteRoute
+    }
+    '/_portal/_tenant/order-created-whatsapp/': {
+      id: '/_portal/_tenant/order-created-whatsapp/'
+      path: '/order-created-whatsapp'
+      fullPath: '/order-created-whatsapp/'
+      preLoaderRoute: typeof PortalTenantOrderCreatedWhatsappIndexRouteImport
+      parentRoute: typeof PortalTenantRouteRoute
+    }
+    '/_portal/_tenant/order-created-contact-team/': {
+      id: '/_portal/_tenant/order-created-contact-team/'
+      path: '/order-created-contact-team'
+      fullPath: '/order-created-contact-team/'
+      preLoaderRoute: typeof PortalTenantOrderCreatedContactTeamIndexRouteImport
       parentRoute: typeof PortalTenantRouteRoute
     }
     '/_portal/_tenant/order-confirmation/': {
@@ -1264,6 +1304,8 @@ interface PortalTenantRouteRouteChildren {
   PortalTenantCartIndexRoute: typeof PortalTenantCartIndexRoute
   PortalTenantOnboardIndexRoute: typeof PortalTenantOnboardIndexRoute
   PortalTenantOrderConfirmationIndexRoute: typeof PortalTenantOrderConfirmationIndexRoute
+  PortalTenantOrderCreatedContactTeamIndexRoute: typeof PortalTenantOrderCreatedContactTeamIndexRoute
+  PortalTenantOrderCreatedWhatsappIndexRoute: typeof PortalTenantOrderCreatedWhatsappIndexRoute
   PortalTenantRentalIndexRoute: typeof PortalTenantRentalIndexRoute
 }
 
@@ -1272,6 +1314,10 @@ const PortalTenantRouteRouteChildren: PortalTenantRouteRouteChildren = {
   PortalTenantOnboardIndexRoute: PortalTenantOnboardIndexRoute,
   PortalTenantOrderConfirmationIndexRoute:
     PortalTenantOrderConfirmationIndexRoute,
+  PortalTenantOrderCreatedContactTeamIndexRoute:
+    PortalTenantOrderCreatedContactTeamIndexRoute,
+  PortalTenantOrderCreatedWhatsappIndexRoute:
+    PortalTenantOrderCreatedWhatsappIndexRoute,
   PortalTenantRentalIndexRoute: PortalTenantRentalIndexRoute,
 }
 
