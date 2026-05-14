@@ -85,7 +85,10 @@ export class SigningNotificationService {
       (skippedChannel) => skippedChannel.channel === NotificationChannel.EMAIL,
     );
 
-    if (skippedEmail?.reason === NotificationDispatchSkipReason.MUTED_BY_ENVIRONMENT) {
+    if (
+      skippedEmail?.reason === NotificationDispatchSkipReason.MUTED_BY_ENVIRONMENT ||
+      skippedEmail?.reason === NotificationDispatchSkipReason.SUPPRESSED_BY_TENANT_COMMUNICATION_MODE
+    ) {
       return {
         signingUrl,
         delivered: true,

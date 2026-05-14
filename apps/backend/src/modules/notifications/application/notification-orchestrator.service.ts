@@ -5,6 +5,7 @@ import { NotificationChannelPolicyResolver } from './notification-channel-policy
 import { EmailDeliveryPort } from './ports/email-delivery.port';
 import { EmailRenderer } from './ports/email-renderer.port';
 import { EmailSenderResolver } from './ports/email-sender.resolver';
+import { TenantNotificationSuppressionPolicy } from './tenant-notification-suppression-policy.service';
 import { NotificationDispatchRequest } from './types/notification-dispatch-request';
 import { NotificationDispatchResult } from './types/notification-dispatch-result';
 import { NotificationDispatchSkipReason } from './types/notification-dispatch-skip-reason.enum';
@@ -16,6 +17,7 @@ export class NotificationOrchestrator {
   constructor(
     private readonly channelPolicyResolver: NotificationChannelPolicyResolver,
     private readonly channelMutePolicy: NotificationChannelMutePolicy,
+    private readonly tenantNotificationSuppressionPolicy: TenantNotificationSuppressionPolicy,
     private readonly emailRenderer: EmailRenderer,
     private readonly emailDeliveryPort: EmailDeliveryPort,
     private readonly emailSenderResolver: EmailSenderResolver,
@@ -32,6 +34,23 @@ export class NotificationOrchestrator {
       skippedChannels: [],
       failedChannels: [],
     };
+
+    const suppressionDecision = await this.tenantNotificationSuppressionPolicy.evaluate(
+      request.tenantId,
+      request.notificationType,
+    );
+
+    if (suppressionDecision.suppressed) {
+      result.skippedChannels.push(
+        ...channels.map((channel) => ({
+          channel,
+          reason: suppressionDecision.reason,
+          message: suppressionDecision.message,
+        })),
+      );
+
+      return result;
+    }
 
     for (const channel of channels) {
       if (this.channelMutePolicy.isMuted(channel)) {

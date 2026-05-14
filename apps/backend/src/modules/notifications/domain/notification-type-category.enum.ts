@@ -1,0 +1,4 @@
+export enum NotificationTypeCategory {
+  TENANT_WORKFLOW = 'TENANT_WORKFLOW',
+  PLATFORM_OPERATIONAL = 'PLATFORM_OPERATIONAL',
+}

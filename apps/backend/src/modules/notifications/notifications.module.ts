@@ -9,6 +9,7 @@ import { SendOrderCancelledNotificationHandler } from './application/event-handl
 import { NotificationChannelMutePolicy } from './application/notification-channel-mute-policy.service';
 import { NotificationOrchestrator } from './application/notification-orchestrator.service';
 import { NotificationChannelPolicyResolver } from './application/notification-channel-policy.resolver';
+import { TenantNotificationSuppressionPolicy } from './application/tenant-notification-suppression-policy.service';
 import { ResendEmailDeliveryAdapter } from './infrastructure/delivery/resend-email-delivery.adapter';
 import { CodeBasedEmailRendererService } from './infrastructure/rendering/code-based-email-renderer.service';
 import { PlatformEmailSenderResolver } from './infrastructure/sender/platform-email-sender.resolver';
@@ -18,6 +19,7 @@ import { PlatformEmailSenderResolver } from './infrastructure/sender/platform-em
     NotificationOrchestrator,
     NotificationChannelPolicyResolver,
     NotificationChannelMutePolicy,
+    TenantNotificationSuppressionPolicy,
     SendOrderCreatedConfirmationNotificationHandler,
     SendOrderCreatedByCustomerNotificationHandler,
     SendOrderCancelledNotificationHandler,
