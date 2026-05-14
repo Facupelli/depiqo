@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ProblemDetailsError } from "@/shared/errors";
-import { useRejectOrder } from "../orders.queries";
+import { useRejectOrder } from "../orders.mutations";
 
 export function useOrderRejectActions(orderId: string) {
 	const [isRejectOrderDialogOpen, setIsRejectOrderDialogOpen] = useState(false);

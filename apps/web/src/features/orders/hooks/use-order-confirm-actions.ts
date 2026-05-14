@@ -2,7 +2,7 @@ import { useState } from "react";
 import type { OrderItemsUnavailableProblemDto } from "@repo/schemas";
 import { parseOrderActionError } from "@/features/orders/order-action-errors";
 import type { ParsedOrderDetailResponseDto } from "@/features/orders/queries/get-order-by-id";
-import { useConfirmOrder } from "../orders.queries";
+import { useConfirmOrder } from "../orders.mutations";
 
 export function useOrderConfirmActions(order: ParsedOrderDetailResponseDto) {
 	const [isConfirmOrderDialogOpen, setIsConfirmOrderDialogOpen] =

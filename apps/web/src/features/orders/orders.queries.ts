@@ -1,13 +1,6 @@
 import type {
-	CreateDraftOrderDto,
-	CreateOrderDto,
-	CreateOrderResponseDto,
-	DraftOrderPricingProposalRequestDto,
-	DraftOrderPricingProposalResponseDto,
 	GetCalendarDotsQueryDto,
 	GetCalendarDotsResponseDto,
-	GetDraftOrderPricingParamDto,
-	GetOrderByIdParamDto,
 	GetOrdersCalendarQueryDto,
 	GetOrdersCalendarResponse,
 	GetOrdersQueryDto,
@@ -23,39 +16,24 @@ import type {
 	OrderPricingPreviewResponseDto,
 	OrderSummary,
 	ProblemDetails,
-	RejectOrderRequestDto,
 	ScheduleEvent,
-	UpdateDraftOrderPricingRequestDto,
 } from "@repo/schemas";
 import {
 	keepPreviousData,
 	queryOptions,
-	type UseMutationOptions,
 	type UseQueryOptions,
-	useMutation,
 	useQuery,
 } from "@tanstack/react-query";
 import type { Dayjs } from "dayjs";
 import { fromDateParam, parseTimestamp } from "@/lib/dates/parse";
 import { ProblemDetailsError } from "@/shared/errors";
 import {
-	cancelOrder,
-	confirmOrder,
-	createDraftOrder,
-	createOrder,
-	editOrder,
 	getCalendarDots,
-	getDraftOrderPricingProposal,
 	getOrderPricingPreview,
 	getOrders,
 	getOrdersCalendar,
 	getOrdersSchedule,
 	getPendingReviewOrders,
-	markEquipmentAsRetired,
-	markEquipmentAsReturned,
-	rejectOrder,
-	updateDraftOrder,
-	updateDraftOrderPricing,
 } from "./orders.api";
 import { orderKeys } from "./orders.keys";
 
@@ -193,63 +171,6 @@ type GetPendingReviewOrdersQueryOptions<
 type GetCalendarDotsQueryOptions<TData = GetCalendarDotsResponseDto> = Omit<
 	UseQueryOptions<GetCalendarDotsResponseDto, ProblemDetailsError, TData>,
 	"queryKey" | "queryFn"
->;
-
-type OrderDetailMutationOptions = Omit<
-	UseMutationOptions<void, ProblemDetailsError, GetOrderByIdParamDto>,
-	"mutationFn"
->;
-
-type RejectOrderMutationOptions = Omit<
-	UseMutationOptions<
-		void,
-		ProblemDetailsError,
-		{ orderId: string; dto: RejectOrderRequestDto }
-	>,
-	"mutationFn"
->;
-
-type OrderMutationOptions = Omit<
-	UseMutationOptions<CreateOrderResponseDto, ProblemDetailsError, CreateOrderDto>,
-	"mutationFn"
->;
-
-type DraftOrderMutationOptions = Omit<
-	UseMutationOptions<string, ProblemDetailsError, CreateDraftOrderDto>,
-	"mutationFn"
->;
-
-type OrderCompositionMutationOptions = Omit<
-	UseMutationOptions<
-		void,
-		ProblemDetailsError,
-		{ orderId: string; data: CreateDraftOrderDto }
-	>,
-	"mutationFn"
->;
-
-type DraftOrderPricingProposalMutationOptions = Omit<
-	UseMutationOptions<
-		DraftOrderPricingProposalResponseDto,
-		ProblemDetailsError,
-		{
-			params: GetDraftOrderPricingParamDto;
-			dto: DraftOrderPricingProposalRequestDto;
-		}
-	>,
-	"mutationFn"
->;
-
-type UpdateDraftOrderPricingMutationOptions = Omit<
-	UseMutationOptions<
-		void,
-		ProblemDetailsError,
-		{
-			params: GetDraftOrderPricingParamDto;
-			dto: UpdateDraftOrderPricingRequestDto;
-		}
-	>,
-	"mutationFn"
 >;
 
 type OrderPricingPreviewQueryOptions<TData = OrderPricingPreviewResponseDto> =
@@ -406,104 +327,6 @@ export function useCalendarDots<TData = GetCalendarDotsResponseDto>(
 	});
 }
 
-export function useCreateOrder(options?: OrderMutationOptions) {
-	return useMutation<CreateOrderResponseDto, ProblemDetailsError, CreateOrderDto>({
-		...options,
-		mutationFn: async (data) => {
-			const result = await createOrder({ data });
-			if (typeof result === "object" && "error" in result) {
-				throw new ProblemDetailsError(result.error);
-			}
-			return result;
-		},
-		meta: {
-			invalidates: orderKeys.all(),
-		},
-	});
-}
-
-export function useCreateDraftOrder(options?: DraftOrderMutationOptions) {
-	return useMutation<string, ProblemDetailsError, CreateDraftOrderDto>({
-		...options,
-		mutationFn: async (data) => {
-			const result = await createDraftOrder({ data });
-			if (typeof result === "object" && "error" in result) {
-				throw new ProblemDetailsError(result.error);
-			}
-			return result;
-		},
-		meta: {
-			invalidates: orderKeys.all(),
-		},
-	});
-}
-
-export function useUpdateDraftOrder(options?: OrderCompositionMutationOptions) {
-	return useMutation<
-		void,
-		ProblemDetailsError,
-		{ orderId: string; data: CreateDraftOrderDto }
-	>({
-		...options,
-		mutationFn: async ({ orderId, data }) => {
-			const result = await updateDraftOrder({ data: { orderId, dto: data } });
-			if (typeof result === "object" && "error" in result) {
-				throw new ProblemDetailsError(result.error);
-			}
-			return result;
-		},
-		meta: {
-			invalidates: orderKeys.all(),
-		},
-	});
-}
-
-export function useEditOrder(options?: OrderCompositionMutationOptions) {
-	return useMutation<
-		void,
-		ProblemDetailsError,
-		{ orderId: string; data: CreateDraftOrderDto }
-	>({
-		...options,
-		mutationFn: async ({ orderId, data }) => {
-			const result = await editOrder({ data: { orderId, dto: data } });
-			if (typeof result === "object" && "error" in result) {
-				throw new ProblemDetailsError(result.error);
-			}
-			return result;
-		},
-		meta: {
-			invalidates: orderKeys.all(),
-		},
-	});
-}
-
-export function useDraftOrderPricingProposal(
-	options?: DraftOrderPricingProposalMutationOptions,
-) {
-	return useMutation<
-		DraftOrderPricingProposalResponseDto,
-		ProblemDetailsError,
-		{
-			params: GetDraftOrderPricingParamDto;
-			dto: DraftOrderPricingProposalRequestDto;
-		}
-	>({
-		...options,
-		mutationFn: async (data) => {
-			const result = await getDraftOrderPricingProposal({ data });
-			if (hasMutationError(result)) {
-				throw new ProblemDetailsError(result.error);
-			}
-			return result;
-		},
-		meta: {
-			invalidates: (variables) =>
-				orderKeys.draftPricingProposal(variables.params, variables.dto),
-		},
-	});
-}
-
 export function useOrderPricingPreview<TData = OrderPricingPreviewResponseDto>(
 	dto: OrderPricingPreviewRequestDto,
 	options?: OrderPricingPreviewQueryOptions<TData>,
@@ -520,117 +343,6 @@ export function useOrderPricingPreview<TData = OrderPricingPreviewResponseDto>(
 			return result;
 		},
 		placeholderData: keepPreviousData,
-	});
-}
-
-export function useUpdateDraftOrderPricing(
-	options?: UpdateDraftOrderPricingMutationOptions,
-) {
-	return useMutation<
-		void,
-		ProblemDetailsError,
-		{
-			params: GetDraftOrderPricingParamDto;
-			dto: UpdateDraftOrderPricingRequestDto;
-		}
-	>({
-		...options,
-		mutationFn: async (data) => {
-			const result = await updateDraftOrderPricing({ data });
-			if (hasMutationError(result)) {
-				throw new ProblemDetailsError(result.error);
-			}
-		},
-		meta: {
-			invalidates: (variables) => [
-				orderKeys.all(),
-				orderKeys.draft(variables.params),
-				orderKeys.draftPricingUpdate(variables.params),
-			],
-		},
-	});
-}
-
-export function useConfirmOrder(options?: OrderDetailMutationOptions) {
-	return useMutation<void, ProblemDetailsError, GetOrderByIdParamDto>({
-		...options,
-		mutationFn: async (data) => {
-			const result = await confirmOrder({ data });
-			if (hasMutationError(result)) {
-				throw new ProblemDetailsError(result.error);
-			}
-		},
-		meta: {
-			invalidates: orderKeys.all(),
-		},
-	});
-}
-
-export function useMarkEquipmentAsReturned(
-	options?: OrderDetailMutationOptions,
-) {
-	return useMutation<void, ProblemDetailsError, GetOrderByIdParamDto>({
-		...options,
-		mutationFn: async (data) => {
-			const result = await markEquipmentAsReturned({ data });
-			if (hasMutationError(result)) {
-				throw new ProblemDetailsError(result.error);
-			}
-		},
-		meta: {
-			invalidates: orderKeys.all(),
-		},
-	});
-}
-
-export function useCancelOrder(options?: OrderDetailMutationOptions) {
-	return useMutation<void, ProblemDetailsError, GetOrderByIdParamDto>({
-		...options,
-		mutationFn: async (data) => {
-			const result = await cancelOrder({ data });
-			if (hasMutationError(result)) {
-				throw new ProblemDetailsError(result.error);
-			}
-		},
-		meta: {
-			invalidates: orderKeys.all(),
-		},
-	});
-}
-
-export function useRejectOrder(options?: RejectOrderMutationOptions) {
-	return useMutation<
-		void,
-		ProblemDetailsError,
-		{ orderId: string; dto: RejectOrderRequestDto }
-	>({
-		...options,
-		mutationFn: async ({ orderId, dto }) => {
-			const result = await rejectOrder({ data: { params: { orderId }, dto } });
-			if (hasMutationError(result)) {
-				throw new ProblemDetailsError(result.error);
-			}
-		},
-		meta: {
-			invalidates: orderKeys.all(),
-		},
-	});
-}
-
-export function useMarkEquipmentAsRetired(
-	options?: OrderDetailMutationOptions,
-) {
-	return useMutation<void, ProblemDetailsError, GetOrderByIdParamDto>({
-		...options,
-		mutationFn: async (data) => {
-			const result = await markEquipmentAsRetired({ data });
-			if (hasMutationError(result)) {
-				throw new ProblemDetailsError(result.error);
-			}
-		},
-		meta: {
-			invalidates: orderKeys.all(),
-		},
 	});
 }
 

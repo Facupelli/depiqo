@@ -2,7 +2,7 @@ import type { RentalLocationResponse } from "@repo/schemas";
 import { FulfillmentMethod } from "@repo/types";
 import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { useCreateOrder } from "@/features/orders/orders.queries";
+import { useCreateOrder } from "@/features/orders/orders.mutations";
 import {
 	useCartActions,
 	useCartItems,

@@ -3,7 +3,7 @@ import { ProblemDetailsError } from "@/shared/errors";
 import {
 	useMarkEquipmentAsRetired,
 	useMarkEquipmentAsReturned,
-} from "../orders.queries";
+} from "../orders.mutations";
 
 type OrderLifecycleAction = "pickup" | "return" | null;
 
