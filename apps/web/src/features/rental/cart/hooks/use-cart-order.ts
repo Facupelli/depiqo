@@ -1,5 +1,5 @@
 import type { RentalLocationResponse } from "@repo/schemas";
-import { FulfillmentMethod } from "@repo/types";
+import { CreateOrderNextStepType, FulfillmentMethod } from "@repo/types";
 import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { useCreateOrder } from "@/features/orders/orders.mutations";
@@ -144,6 +144,14 @@ export function useCartOrder({
 			});
 
 			clearCart();
+
+			if (
+				createdOrder.nextStep.type ===
+				CreateOrderNextStepType.REDIRECT_TO_WHATSAPP
+			) {
+				window.location.assign(createdOrder.nextStep.whatsappUrl);
+				return;
+			}
 
 			navigate({
 				to: "/order-confirmation",

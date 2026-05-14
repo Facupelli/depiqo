@@ -1,4 +1,8 @@
-import { FulfillmentMethod, OrderStatus } from "@repo/types";
+import {
+  CreateOrderNextStepType,
+  FulfillmentMethod,
+  OrderStatus,
+} from "@repo/types";
 import { z } from "zod";
 import {
   localDateSchema,
@@ -137,9 +141,21 @@ export type DeliveryRequestDto = z.infer<typeof deliveryRequestSchema>;
 export type CreateOrderDto = z.infer<typeof createOrderSchema>;
 export type CreateDraftOrderDto = z.infer<typeof createDraftOrderSchema>;
 
+export const createOrderNextStepSchema = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal(CreateOrderNextStepType.SHOW_CONFIRMATION),
+  }),
+  z.object({
+    type: z.literal(CreateOrderNextStepType.REDIRECT_TO_WHATSAPP),
+    message: z.string().min(1),
+    whatsappUrl: z.url(),
+  }),
+]);
+
 export const createOrderResponseSchema = z.object({
   orderId: z.uuid(),
   status: z.enum(OrderStatus),
+  nextStep: createOrderNextStepSchema,
 });
 
 export type CreateOrderResponseDto = z.infer<typeof createOrderResponseSchema>;

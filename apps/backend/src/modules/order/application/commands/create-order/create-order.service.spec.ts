@@ -1,5 +1,14 @@
 import { QueryBus } from '@nestjs/cqrs';
-import { BookingMode, FulfillmentMethod, OrderAssignmentStage, OrderStatus, ScheduleSlotType } from '@repo/types';
+import {
+  BookingMode,
+  CreateOrderNextStepType,
+  FulfillmentMethod,
+  OrderAssignmentStage,
+  OrderCommunicationMode,
+  OrderItemType,
+  OrderStatus,
+  ScheduleSlotType,
+} from '@repo/types';
 import Decimal from 'decimal.js';
 import { EventEmitter2 } from 'eventemitter2';
 import { ok } from 'neverthrow';
@@ -28,7 +37,10 @@ describe('CreateOrderService', () => {
     };
   }
 
-  function makeService(bookingMode: BookingMode) {
+  function makeService(
+    bookingMode: BookingMode,
+    orderCommunicationMode: OrderCommunicationMode = OrderCommunicationMode.FORMAL,
+  ) {
     let savedStatus: OrderStatus | null = null;
     let savedPeriod: DateRange | null = null;
     let savedBookingSnapshot: {
@@ -44,7 +56,45 @@ describe('CreateOrderService', () => {
       client: {
         $transaction: jest.fn(async (callback: (tx: unknown) => Promise<unknown>) => callback({})),
         order: {
-          findFirst: jest.fn(async () => ({ orderNumber: 'ORD-001' })),
+          findFirst: jest.fn(async () => ({
+            id: 'order-1',
+            orderNumber: 1001,
+            bookingSnapshot: {
+              pickupDate: '2026-03-30',
+              pickupTime: 600,
+              returnDate: '2026-03-31',
+              returnTime: 900,
+              timezone: 'UTC',
+            },
+            fulfillmentMethod: FulfillmentMethod.PICKUP,
+            financialSnapshot: {
+              currency: 'ARS',
+              subtotalBeforeDiscounts: '100',
+              itemsDiscountTotal: '0',
+              itemsSubtotal: '100',
+              insuranceApplied: false,
+              insuranceRatePercent: 6,
+              insuranceAmount: '0',
+              total: '100',
+            },
+            customer: {
+              firstName: 'John',
+              lastName: 'Doe',
+            },
+            location: {
+              name: 'Main Branch',
+            },
+            deliveryRequest: null,
+            items: [
+              {
+                type: OrderItemType.PRODUCT,
+                productType: {
+                  name: 'Product 1',
+                },
+                bundle: null,
+              },
+            ],
+          })),
         },
       },
     } as unknown as PrismaService;
@@ -55,6 +105,11 @@ describe('CreateOrderService', () => {
           return {
             timezone: 'UTC',
             bookingMode,
+            communication: {
+              orderCommunicationMode,
+              whatsAppNumber: '34680870274',
+              showFloatingWhatsAppButton: false,
+            },
             pricing: {
               insuranceEnabled: false,
               insuranceRatePercent: 6,
@@ -200,6 +255,9 @@ describe('CreateOrderService', () => {
     expect(result._unsafeUnwrap()).toEqual({
       orderId: expect.any(String),
       status: OrderStatus.CONFIRMED,
+      nextStep: {
+        type: CreateOrderNextStepType.SHOW_CONFIRMATION,
+      },
     });
     expect(saved().savedStatus).toBe(OrderStatus.CONFIRMED);
     expect(saved().savedPeriod?.equals(period)).toBe(true);
@@ -222,9 +280,25 @@ describe('CreateOrderService', () => {
     expect(result._unsafeUnwrap()).toEqual({
       orderId: expect.any(String),
       status: OrderStatus.PENDING_REVIEW,
+      nextStep: {
+        type: CreateOrderNextStepType.SHOW_CONFIRMATION,
+      },
     });
     expect(saved().savedStatus).toBe(OrderStatus.PENDING_REVIEW);
     expect(saved().savedAssignments).toEqual([]);
+  });
+
+  it('returns a WhatsApp redirect next step for WhatsApp tenants', async () => {
+    const { service } = makeService(BookingMode.INSTANT_BOOK, OrderCommunicationMode.WHATSAPP);
+
+    const result = await service.execute(makeCommand());
+
+    expect(result.isOk()).toBe(true);
+    expect(result._unsafeUnwrap().nextStep).toEqual({
+      type: CreateOrderNextStepType.REDIRECT_TO_WHATSAPP,
+      message: expect.stringContaining('Pedido N° 1001'),
+      whatsappUrl: expect.stringContaining('https://wa.me/34680870274?text='),
+    });
   });
 
   it('rejects delivery orders for locations that do not support delivery', async () => {

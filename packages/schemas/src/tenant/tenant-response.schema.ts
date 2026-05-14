@@ -1,8 +1,9 @@
-import { BookingMode, RoundingRule } from "@repo/types";
+import { BookingMode, OrderCommunicationMode, RoundingRule } from "@repo/types";
 import { z } from "zod";
 
 export const roundingRuleSchema = z.enum(RoundingRule);
 export const bookingModeSchema = z.enum(BookingMode);
+export const orderCommunicationModeSchema = z.enum(OrderCommunicationMode);
 export const notificationChannelSchema = z.enum(["EMAIL"]);
 
 export const tenantPricingConfigSchema = z.object({
@@ -16,9 +17,16 @@ export const tenantPricingConfigSchema = z.object({
 	insuranceRatePercent: z.number().min(0).max(100),
 });
 
+export const tenantCommunicationConfigSchema = z.object({
+	orderCommunicationMode: orderCommunicationModeSchema,
+	whatsAppNumber: z.string().optional(),
+	showFloatingWhatsAppButton: z.boolean(),
+});
+
 export const tenantRentalConfigSchema = z.object({
 	pricing: tenantPricingConfigSchema,
 	bookingMode: bookingModeSchema.default(BookingMode.INSTANT_BOOK),
+	communication: tenantCommunicationConfigSchema,
 });
 
 export const tenantNotificationsConfigSchema = z.object({
@@ -33,6 +41,7 @@ export const tenantConfigSchema = z.object({
 	timezone: z.string(),
 	newArrivalsWindowDays: z.number().int().positive(),
 	bookingMode: bookingModeSchema.default(BookingMode.INSTANT_BOOK),
+	communication: tenantCommunicationConfigSchema,
 });
 
 const tenantBillingUnitResponseSchema = z.object({
@@ -57,6 +66,7 @@ export const tenantResponseSchema = z.object({
 export type TenantPricingConfig = z.infer<typeof tenantPricingConfigSchema>;
 export type TenantRentalConfig = z.infer<typeof tenantRentalConfigSchema>;
 export type TenantNotificationsConfig = z.infer<typeof tenantNotificationsConfigSchema>;
+export type TenantCommunicationConfig = z.infer<typeof tenantCommunicationConfigSchema>;
 export type TenantConfig = z.infer<typeof tenantConfigSchema>;
 
 export type TenantResponse = z.infer<typeof tenantResponseSchema>;

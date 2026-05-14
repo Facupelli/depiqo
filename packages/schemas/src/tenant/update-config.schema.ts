@@ -1,6 +1,10 @@
 import { RoundingRule } from "@repo/types";
 import { z } from "zod";
-import { bookingModeSchema, notificationChannelSchema } from "./tenant-response.schema";
+import {
+  bookingModeSchema,
+  notificationChannelSchema,
+  orderCommunicationModeSchema,
+} from "./tenant-response.schema";
 
 const roundingRuleSchema = z.enum(RoundingRule);
 
@@ -22,9 +26,16 @@ const notificationsPatchSchema = z.object({
   enabledChannels: z.array(notificationChannelSchema).optional(),
 });
 
+const communicationPatchSchema = z.object({
+  orderCommunicationMode: orderCommunicationModeSchema.optional(),
+  whatsAppNumber: z.string().trim().optional(),
+  showFloatingWhatsAppButton: z.boolean().optional(),
+});
+
 export const updateTenantConfigSchema = z.object({
   pricing: pricingPatchSchema.optional(),
   notifications: notificationsPatchSchema.optional(),
+  communication: communicationPatchSchema.optional(),
   timezone: z.string().optional(),
   newArrivalsWindowDays: z.number().int().positive().optional(),
   bookingMode: bookingModeSchema.optional(),

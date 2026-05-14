@@ -40,14 +40,14 @@ import { OrderItem } from 'src/modules/order/domain/entities/order-item.entity';
 import { BundleSnapshot, BundleSnapshotComponent } from 'src/modules/order/domain/entities/bundle-snapshot.entity';
 import { BookingSnapshot } from 'src/modules/order/domain/value-objects/booking-snapshot.value-object';
 import { OrderDeliveryRequest } from 'src/modules/order/domain/value-objects/order-delivery-request.value-object';
-import { TenantConfig } from '@repo/schemas';
-
 import { CreateOrderResponseDto } from './create-order.response.dto';
 import { CreateOrderCommand } from './create-order.command';
 import { CreateOrderAssetResolver, buildDemandUnits } from './create-order-asset-resolver';
 import { CreateOrderError, ResolvedItem } from './create-order.types';
 import { CreateOrderOwnerContractResolver } from './create-order-owner-contract-resolver';
 import { toPriceSnapshot } from './create-order-pricing-snapshot.mapper';
+import { loadCreateOrderCompletionContext } from './create-order-completion-context.loader';
+import { buildCreateOrderNextStep } from './create-order-next-step.builder';
 import {
   DeliveryNotSupportedForLocationError,
   InvalidPickupSlotError,
@@ -60,6 +60,7 @@ import {
 } from '../../../domain/errors/order.errors';
 import { TenantConfigNotFoundException } from '../../../domain/exceptions/order.exceptions';
 import { OrderCreatedByCustomerEvent } from 'src/modules/order/public/events/order-created-by-customer.event';
+import { TenantConfig } from 'src/modules/tenant/domain/value-objects/tenant-config.value-object';
 
 @CommandHandler(CreateOrderCommand)
 export class CreateOrderService implements ICommandHandler<CreateOrderCommand, Result<CreateOrderResponseDto, CreateOrderError>> {
@@ -244,19 +245,12 @@ export class CreateOrderService implements ICommandHandler<CreateOrderCommand, R
       return err(result.error);
     }
 
-    const persistedOrder = await this.prisma.client.order.findFirst({
-      where: {
-        id: result.value.orderId,
-        tenantId: command.tenantId,
-      },
-      select: {
-        orderNumber: true,
-      },
-    });
-
-    if (!persistedOrder) {
-      throw new Error(`Persisted order "${result.value.orderId}" not found after creation.`);
-    }
+    const completionContext = await loadCreateOrderCompletionContext(
+      this.prisma,
+      this.queryBus,
+      command.tenantId,
+      result.value.orderId,
+    );
 
     await this.eventEmitter.emitAsync(
       OrderCreatedByCustomerEvent.EVENT_NAME,
@@ -265,7 +259,7 @@ export class CreateOrderService implements ICommandHandler<CreateOrderCommand, R
         tenantId: command.tenantId,
         customerId: command.customerId!,
         locationId: command.locationId,
-        orderNumber: persistedOrder.orderNumber,
+        orderNumber: completionContext.order.orderNumber,
         status: result.value.status,
         fulfillmentMethod: result.value.fulfillmentMethod,
         pickupDate: command.pickupDate,
@@ -275,7 +269,11 @@ export class CreateOrderService implements ICommandHandler<CreateOrderCommand, R
       }),
     );
 
-    return ok({ orderId: result.value.orderId, status: result.value.status });
+    return ok({
+      orderId: result.value.orderId,
+      status: result.value.status,
+      nextStep: buildCreateOrderNextStep(completionContext),
+    });
   }
 
   private async validateLocation(

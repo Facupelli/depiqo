@@ -21,6 +21,7 @@ export class GetTenantPricingConfigHttpController {
     return {
       pricing: tenant.pricing,
       bookingMode: tenant.bookingMode,
+      communication: tenant.communication,
     };
   }
 }
