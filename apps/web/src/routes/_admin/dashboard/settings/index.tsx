@@ -37,7 +37,7 @@ const SETTINGS_SECTIONS = [
 type SettingsSection = (typeof SETTINGS_SECTIONS)[number];
 
 const settingsSearchSchema = z.object({
-  section: z.enum(SETTINGS_SECTIONS).default("branding"),
+  section: z.enum(SETTINGS_SECTIONS).default("general"),
 });
 
 const settingsNavGroups: Array<{

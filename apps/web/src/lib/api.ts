@@ -1,4 +1,4 @@
-import { problemDetailsSchema, type PaginatedDto } from "@repo/schemas";
+import { type PaginatedDto, problemDetailsSchema } from "@repo/schemas";
 import { ProblemDetailsError } from "@/shared/errors";
 
 export type ApiRequestOptions = Omit<RequestInit, "body"> & {

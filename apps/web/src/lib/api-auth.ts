@@ -4,7 +4,7 @@ import { createServerOnlyFn } from "@tanstack/react-start";
 import { requireSession } from "@/features/auth/auth-guards.server";
 import { refreshSession } from "@/features/auth/auth-refresh.server";
 import { ProblemDetailsError } from "@/shared/errors";
-import { apiFetch, apiFetchPaginated, type ApiFetchOptions } from "./api";
+import { type ApiFetchOptions, apiFetch, apiFetchPaginated } from "./api";
 
 type AuthenticatedApiFetchOptions = ApiFetchOptions & {
 	actorType?: ActorType;

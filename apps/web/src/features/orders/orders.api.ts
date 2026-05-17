@@ -1,10 +1,9 @@
 import {
 	type CreateDraftOrderDto,
-	type CreateOrderDto,
-	createDraftOrderSchema,
-	createOrderSchema,
-	createOrderResponseSchema,
 	type CreateOrderResponseDto,
+	createDraftOrderSchema,
+	createOrderResponseSchema,
+	createOrderSchema,
 	type DraftOrderPricingProposalRequestDto,
 	type DraftOrderPricingProposalResponseDto,
 	draftOrderPricingProposalRequestSchema,
@@ -31,15 +30,15 @@ import {
 	type OrderAccessoryPreparationResponseDto,
 	type OrderDetailResponseDto,
 	type OrderListItem,
-	type PendingReviewOrderListItem,
 	type OrderPricingPreviewRequestDto,
 	type OrderPricingPreviewResponseDto,
 	orderAccessoryPreparationResponseSchema,
-	rejectOrderRequestSchema,
-	type RejectOrderRequestDto,
 	orderPricingPreviewRequestSchema,
 	orderPricingPreviewResponseSchema,
+	type PendingReviewOrderListItem,
 	type ProblemDetails,
+	type RejectOrderRequestDto,
+	rejectOrderRequestSchema,
 	type SaveOrderAccessoryPreparationDto,
 	saveOrderAccessoryPreparationSchema,
 	type UpdateDraftOrderPricingRequestDto,
@@ -49,12 +48,22 @@ import { ActorType } from "@repo/types";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import {
-	authenticatedApiFetchPaginated as apiFetchPaginated,
 	authenticatedApiFetch as apiFetch,
+	authenticatedApiFetchPaginated as apiFetchPaginated,
 } from "@/lib/api-auth";
 import { ProblemDetailsError } from "@/shared/errors";
+import { CREATE_ORDER_IDEMPOTENCY_HEADER } from "./orders.constants";
 
 const apiUrl = "/orders";
+
+const createOrderInputSchema = z.object({
+	dto: createOrderSchema,
+	idempotencyKey: z.string().uuid(),
+});
+
+export type CreateOrderMutationVariables = z.infer<
+	typeof createOrderInputSchema
+>;
 
 export const getOrders = createServerFn({ method: "GET" })
 	.inputValidator((data: GetOrdersQueryDto) => getOrdersQuerySchema.parse(data))
@@ -162,23 +171,32 @@ export const getOrderAccessoryPreparation = createServerFn({ method: "GET" })
 	});
 
 export const createOrder = createServerFn({ method: "POST" })
-	.inputValidator((data: CreateOrderDto) => createOrderSchema.parse(data))
-	.handler(async ({ data }): Promise<CreateOrderResponseDto | { error: ProblemDetails }> => {
-		try {
-			const result = await apiFetch<CreateOrderResponseDto>(apiUrl, {
-				method: "POST",
-				body: data,
-				actorType: ActorType.CUSTOMER,
-			});
+	.inputValidator((data: CreateOrderMutationVariables) =>
+		createOrderInputSchema.parse(data),
+	)
+	.handler(
+		async ({
+			data,
+		}): Promise<CreateOrderResponseDto | { error: ProblemDetails }> => {
+			try {
+				const result = await apiFetch<CreateOrderResponseDto>(apiUrl, {
+					method: "POST",
+					body: data.dto,
+					headers: {
+						[CREATE_ORDER_IDEMPOTENCY_HEADER]: data.idempotencyKey,
+					},
+					actorType: ActorType.CUSTOMER,
+				});
 
-			return createOrderResponseSchema.parse(result);
-		} catch (error) {
-			if (error instanceof ProblemDetailsError) {
-				return { error: error.problemDetails };
+				return createOrderResponseSchema.parse(result);
+			} catch (error) {
+				if (error instanceof ProblemDetailsError) {
+					return { error: error.problemDetails };
+				}
+				throw error;
 			}
-			throw error;
-		}
-	});
+		},
+	);
 
 export const createDraftOrder = createServerFn({ method: "POST" })
 	.inputValidator((data: CreateDraftOrderDto) =>
@@ -386,10 +404,8 @@ const rejectOrderInputSchema = z.object({
 
 export const rejectOrder = createServerFn({ method: "POST" })
 	.inputValidator(
-		(data: {
-			params: GetOrderByIdParamDto;
-			dto: RejectOrderRequestDto;
-		}) => rejectOrderInputSchema.parse(data),
+		(data: { params: GetOrderByIdParamDto; dto: RejectOrderRequestDto }) =>
+			rejectOrderInputSchema.parse(data),
 	)
 	.handler(async ({ data }): Promise<void | { error: ProblemDetails }> => {
 		try {

@@ -2,22 +2,28 @@ import type { RentalLocationResponse, TenantRentalConfig } from "@repo/schemas";
 import { CreateOrderNextStepType, FulfillmentMethod } from "@repo/types";
 import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
+import { getCurrentRelativeRedirect } from "@/features/auth/auth-redirect";
 import { useCreateOrder } from "@/features/orders/orders.mutations";
+import { useCurrentPortalSession } from "@/features/rental/auth/portal-auth.queries";
 import {
 	useCartActions,
 	useCartItems,
 } from "@/features/rental/cart/cart.hooks";
-import { useCurrentPortalSession } from "@/features/rental/auth/portal-auth.queries";
-import { getCurrentRelativeRedirect } from "@/features/auth/auth-redirect";
 import type { CartPageContextValue } from "@/features/rental/cart/cart-page.context.types";
 import { getPortalAuthRedirectSearch } from "../../auth/portal-auth.redirect";
 import type { ConflictGroup } from "../cart.types";
 import { formatSlot } from "../cart.utils";
-import { isDeliveryRequestComplete } from "../cart-order.utils";
 import { parseCartBookingError } from "../cart-booking-errors";
+import { isDeliveryRequestComplete } from "../cart-order.utils";
+import { retryCreateOrderWhenInProgress } from "../cart-order-idempotency-retry";
+import {
+	buildCartCreateOrderDto,
+	createCartCreateOrderSubmissionSignature,
+} from "../cart-order-submit.utils";
 import { useCartOrderDelivery } from "./use-cart-order-delivery";
 import { useCartOrderPricing } from "./use-cart-order-pricing";
 import { useCartOrderTimes } from "./use-cart-order-times";
+import { useCreateOrderIdempotency } from "./use-create-order-idempotency";
 
 type UseCartOrderParams = {
 	tenantRentalConfig: TenantRentalConfig;
@@ -100,6 +106,7 @@ export function useCartOrder({
 
 	const { mutateAsync: createOrder, isPending: isSubmittingOrder } =
 		useCreateOrder();
+	const idempotency = useCreateOrderIdempotency();
 
 	const handleBook = async () => {
 		setUnavailableIds([]);
@@ -130,26 +137,38 @@ export function useCartOrder({
 		}
 
 		try {
-			const createdOrder = await createOrder({
+			const dto = buildCartCreateOrderDto({
 				locationId: location.id,
 				pickupDate,
 				returnDate,
 				currency: "USD",
 				items: pricing.itemPayload,
 				insuranceSelected,
-				couponCode: couponCode.trim() || undefined,
+				couponCode,
 				fulfillmentMethod: delivery.fulfillmentMethod,
 				deliveryRequest: delivery.normalizedDeliveryRequest,
 				pickupTime: times.pickupTime,
 				returnTime: times.returnTime,
 			});
 
+			const signature = createCartCreateOrderSubmissionSignature(dto);
+			const idempotencyKey = idempotency.getKeyForSignature(signature);
+
+			const createdOrder = await retryCreateOrderWhenInProgress(() =>
+				createOrder({
+					dto,
+					idempotencyKey,
+				}),
+			);
+
+			idempotency.clear();
+			clearCart();
+
 			if (
 				createdOrder.nextStep.type ===
 				CreateOrderNextStepType.REDIRECT_TO_WHATSAPP
 			) {
 				if (!createdOrder.nextStep.whatsappUrl) {
-					clearCart();
 					navigate({ to: "/order-created-contact-team" });
 					return;
 				}
@@ -162,8 +181,6 @@ export function useCartOrder({
 				});
 				return;
 			}
-
-			clearCart();
 
 			navigate({
 				to: "/order-confirmation",
@@ -194,6 +211,13 @@ export function useCartOrder({
 					return;
 				case "delivery-not-supported":
 					delivery.onFulfillmentMethodChange(FulfillmentMethod.PICKUP);
+					setBookingErrorMessage(parsedError.message);
+					return;
+				case "idempotency-conflict":
+					idempotency.discard();
+					setBookingErrorMessage(parsedError.message);
+					return;
+				case "idempotency-in-progress":
 					setBookingErrorMessage(parsedError.message);
 					return;
 				case "unknown":

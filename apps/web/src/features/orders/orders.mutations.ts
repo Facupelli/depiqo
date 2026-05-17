@@ -1,6 +1,5 @@
 import type {
 	CreateDraftOrderDto,
-	CreateOrderDto,
 	CreateOrderResponseDto,
 	DraftOrderPricingProposalRequestDto,
 	DraftOrderPricingProposalResponseDto,
@@ -20,6 +19,7 @@ import {
 	confirmOrder,
 	createDraftOrder,
 	createOrder,
+	type CreateOrderMutationVariables,
 	editOrder,
 	getDraftOrderPricingProposal,
 	markEquipmentAsRetired,
@@ -46,7 +46,7 @@ type RejectOrderMutationOptions = Omit<
 >;
 
 type OrderMutationOptions = Omit<
-	UseMutationOptions<CreateOrderResponseDto, ProblemDetailsError, CreateOrderDto>,
+	UseMutationOptions<CreateOrderResponseDto, ProblemDetailsError, CreateOrderMutationVariables>,
 	"mutationFn"
 >;
 
@@ -90,10 +90,10 @@ type UpdateDraftOrderPricingMutationOptions = Omit<
 >;
 
 export function useCreateOrder(options?: OrderMutationOptions) {
-	return useMutation<CreateOrderResponseDto, ProblemDetailsError, CreateOrderDto>({
+	return useMutation<CreateOrderResponseDto, ProblemDetailsError, CreateOrderMutationVariables>({
 		...options,
-		mutationFn: async (data) => {
-			const result = await createOrder({ data });
+		mutationFn: async (variables) => {
+			const result = await createOrder({ data: variables });
 			if (typeof result === "object" && "error" in result) {
 				throw new ProblemDetailsError(result.error);
 			}

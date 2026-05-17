@@ -1,6 +1,8 @@
 import { OrderStatus } from "@repo/types";
 import type { OrderHeaderBannerTone } from "./order.utils";
 
+export const CREATE_ORDER_IDEMPOTENCY_HEADER = "idempotency-key";
+
 export type StatusConfig = {
 	label: string;
 	className: string;
