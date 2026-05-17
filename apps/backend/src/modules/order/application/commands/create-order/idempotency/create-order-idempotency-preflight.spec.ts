@@ -15,7 +15,7 @@ import {
   IdempotencyKeyInProgressError,
   InvalidIdempotencyKeyError,
   MissingIdempotencyKeyError,
-} from '../create-order.types';
+} from './create-order-idempotency.errors';
 
 function makeCommand(overrides: Partial<ConstructorParameters<typeof CreateOrderCommand>[0]> = {}): CreateOrderCommand {
   return new CreateOrderCommand({

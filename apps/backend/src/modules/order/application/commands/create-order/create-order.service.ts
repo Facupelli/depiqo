@@ -43,7 +43,7 @@ import { OrderDeliveryRequest } from 'src/modules/order/domain/value-objects/ord
 import { CreateOrderResponseDto } from './create-order.response.dto';
 import { CreateOrderCommand } from './create-order.command';
 import { CreateOrderAssetResolver, buildDemandUnits } from './inventory/create-order-asset-resolver';
-import { CreateOrderError, ResolvedItem } from './create-order.types';
+import { CustomerCreateOrderError, ResolvedItem } from './create-order.types';
 import { CreateOrderOwnerContractResolver } from './ownership/create-order-owner-contract-resolver';
 import { toPriceSnapshot } from './pricing/create-order-pricing-snapshot.mapper';
 import { loadCreateOrderCompletionContext } from './completion/create-order-completion-context.loader';
@@ -66,14 +66,14 @@ import { OrderCreatedByCustomerEvent } from 'src/modules/order/public/events/ord
 import { TenantConfig } from 'src/modules/tenant/domain/value-objects/tenant-config.value-object';
 
 class CreateOrderTransactionResultError extends Error {
-  constructor(public readonly error: CreateOrderError) {
+  constructor(public readonly error: CustomerCreateOrderError) {
     super(error.message);
     this.name = 'CreateOrderTransactionResultError';
   }
 }
 
 @CommandHandler(CreateOrderCommand)
-export class CreateOrderService implements ICommandHandler<CreateOrderCommand, Result<CreateOrderResponseDto, CreateOrderError>> {
+export class CreateOrderService implements ICommandHandler<CreateOrderCommand, Result<CreateOrderResponseDto, CustomerCreateOrderError>> {
   constructor(
     private readonly eventEmitter: EventEmitter2,
     private readonly prisma: PrismaService,
@@ -87,7 +87,7 @@ export class CreateOrderService implements ICommandHandler<CreateOrderCommand, R
     private readonly idempotencyPreflight: CreateOrderIdempotencyPreflight,
   ) {}
 
-  async execute(command: CreateOrderCommand): Promise<Result<CreateOrderResponseDto, CreateOrderError>> {
+  async execute(command: CreateOrderCommand): Promise<Result<CreateOrderResponseDto, CustomerCreateOrderError>> {
     const preflight = await this.idempotencyPreflight.run(command);
 
     if (preflight.kind === CreateOrderIdempotencyPreflightKind.ERROR) {
@@ -180,7 +180,7 @@ export class CreateOrderService implements ICommandHandler<CreateOrderCommand, R
         error instanceof BundleNotBookableAtLocationError
       ) {
         await this.idempotency.release(idempotencyRecordId);
-        return err(error as CreateOrderError);
+        return err(error as CustomerCreateOrderError);
       }
 
       throw error;

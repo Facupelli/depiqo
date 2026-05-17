@@ -4,48 +4,64 @@ import { OrderStatus } from '@repo/types';
 export class OrderError extends DomainError {}
 
 export class OrderMustContainItemsError extends OrderError {
+  readonly code = 'ORDER_MUST_CONTAIN_ITEMS';
+
   constructor() {
     super('An order must contain at least one item.');
   }
 }
 
 export class NoActiveContractForAssetError extends OrderError {
+  readonly code = 'NO_ACTIVE_CONTRACT_FOR_ASSET';
+
   constructor(assetId: string, ownerId: string) {
     super(`Asset "${assetId}" belongs to owner "${ownerId}" but has no active contract.`);
   }
 }
 
 export class InvalidPickupSlotError extends OrderError {
+  readonly code = 'INVALID_PICKUP_SLOT';
+
   constructor(time: number) {
     super(`Pickup time ${time} is not a valid slot for the selected location and date.`);
   }
 }
 
 export class InvalidReturnSlotError extends OrderError {
+  readonly code = 'INVALID_RETURN_SLOT';
+
   constructor(time: number) {
     super(`Return time ${time} is not a valid slot for the selected location and date.`);
   }
 }
 
 export class ProductTypeNotFoundError extends OrderError {
+  readonly code = 'CATALOG_ITEM_NOT_FOUND';
+
   constructor(productTypeId: string) {
     super(`ProductType "${productTypeId}" was not found for order creation.`);
   }
 }
 
 export class BundleNotFoundError extends OrderError {
+  readonly code = 'CATALOG_ITEM_NOT_FOUND';
+
   constructor(bundleId: string) {
     super(`Bundle "${bundleId}" was not found for order creation.`);
   }
 }
 
 export class InvalidBookingLocationError extends OrderError {
+  readonly code = 'INVALID_BOOKING_CONTEXT';
+
   constructor(locationId: string) {
     super(`Location "${locationId}" is not valid for customer booking.`);
   }
 }
 
 export class DeliveryNotSupportedForLocationError extends OrderError {
+  readonly code = 'DELIVERY_NOT_SUPPORTED_FOR_LOCATION';
+
   constructor(locationId: string) {
     super(`Location "${locationId}" does not support delivery orders.`);
   }
@@ -106,6 +122,8 @@ export class OrderPricingItemNotFoundError extends OrderError {
 }
 
 export class OrderPricingTargetTotalInvalidError extends OrderError {
+  readonly code = 'ORDER_PRICING_TARGET_TOTAL_INVALID';
+
   constructor(targetTotal: string) {
     super(`Target total '${targetTotal}' is invalid. It must be greater than zero.`);
   }
@@ -260,6 +278,8 @@ export type ConflictGroup = {
 };
 
 export class OrderItemUnavailableError extends OrderError {
+  readonly code = 'ORDER_ITEM_UNAVAILABLE';
+
   constructor(
     public readonly unavailableItems: UnavailableItem[],
     public readonly conflictGroups: ConflictGroup[] = [],

@@ -10,12 +10,16 @@ import { CouponValidationFailureReason } from '../services/coupon-validation.ser
 export class PricingError extends DomainError {}
 
 export class CouponNotFoundError extends PricingError {
+  readonly code = 'COUPON_NOT_FOUND';
+
   constructor(codeOrId: string) {
     super(`Coupon "${codeOrId}" was not found.`);
   }
 }
 
 export class CouponValidationError extends PricingError {
+  readonly code = 'COUPON_VALIDATION_FAILED';
+
   constructor(public readonly reason: CouponValidationFailureReason) {
     super(`Coupon validation failed: ${reason}`);
   }

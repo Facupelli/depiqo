@@ -8,18 +8,18 @@ import {
 } from './create-order-idempotency.constants';
 import { CreateOrderIdempotencyService } from './create-order-idempotency.service';
 import { createOrderRequestHash } from './create-order-request-fingerprint';
+import { CustomerCreateOrderError } from '../create-order.types';
 import {
-  CreateOrderError,
   IdempotencyKeyConflictError,
   IdempotencyKeyInProgressError,
   InvalidIdempotencyKeyError,
   MissingIdempotencyKeyError,
-} from '../create-order.types';
+} from './create-order-idempotency.errors';
 
 export type CreateOrderIdempotencyPreflightResult =
   | { kind: CreateOrderIdempotencyPreflightKind.STARTED; recordId: string }
   | { kind: CreateOrderIdempotencyPreflightKind.REPLAY; orderId: string }
-  | { kind: CreateOrderIdempotencyPreflightKind.ERROR; error: CreateOrderError };
+  | { kind: CreateOrderIdempotencyPreflightKind.ERROR; error: CustomerCreateOrderError };
 
 @Injectable()
 export class CreateOrderIdempotencyPreflight {
