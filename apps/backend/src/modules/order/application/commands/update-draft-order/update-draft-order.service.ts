@@ -46,7 +46,7 @@ import {
 import { GetTenantConfigQuery } from 'src/modules/tenant/public/queries/get-tenant-config.query';
 
 import { UpdateDraftOrderCommand } from './update-draft-order.command';
-import { toPriceSnapshot } from '../create-order/create-order-pricing-snapshot.mapper';
+import { toPriceSnapshot } from '../create-order/pricing/create-order-pricing-snapshot.mapper';
 import { ResolvedItem } from '../create-order/create-order.types';
 import { TenantConfigNotFoundException } from '../../../domain/exceptions/order.exceptions';
 

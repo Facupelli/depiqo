@@ -20,9 +20,12 @@ import { InventoryPublicApi } from 'src/modules/inventory/inventory.public-api';
 import { OrderRepository } from 'src/modules/order/infrastructure/persistence/repositories/order.repository';
 import { PricingPublicApi } from 'src/modules/pricing/pricing.public-api';
 import { CreateOrderCommand } from './create-order.command';
-import { CreateOrderAssetResolver } from './create-order-asset-resolver';
-import { CreateOrderOwnerContractResolver } from './create-order-owner-contract-resolver';
+import { IdempotencyKeyConflictError, IdempotencyKeyInProgressError } from './create-order.types';
+import { CreateOrderIdempotencyPreflightKind } from './idempotency/create-order-idempotency.constants';
+import { CreateOrderAssetResolver } from './inventory/create-order-asset-resolver';
+import { CreateOrderOwnerContractResolver } from './ownership/create-order-owner-contract-resolver';
 import { CreateOrderService } from './create-order.service';
+import { OrderMustContainItemsError } from '../../../domain/errors/order.errors';
 
 describe('CreateOrderService', () => {
   const period = DateRange.create(new Date('2026-03-30T10:00:00.000Z'), new Date('2026-03-31T15:00:00.000Z'));
@@ -52,12 +55,14 @@ describe('CreateOrderService', () => {
     } | null = null;
     const savedAssignments: Array<{ stage: OrderAssignmentStage }> = [];
 
+    const transactionClient = {};
     const prisma = {
       client: {
-        $transaction: jest.fn(async (callback: (tx: unknown) => Promise<unknown>) => callback({})),
+        $transaction: jest.fn(async (callback: (tx: unknown) => Promise<unknown>) => callback(transactionClient)),
         order: {
           findFirst: jest.fn(async () => ({
             id: 'order-1',
+            status: savedStatus ?? OrderStatus.CONFIRMED,
             orderNumber: 1001,
             bookingSnapshot: {
               pickupDate: '2026-03-30',
@@ -196,6 +201,25 @@ describe('CreateOrderService', () => {
     } as unknown as CreateOrderOwnerContractResolver;
 
     const eventEmitter = new EventEmitter2();
+    const emitAsyncSpy = jest.spyOn(eventEmitter, 'emitAsync');
+
+    const idempotency = {
+      complete: jest.fn(async () => ok(undefined)),
+      release: jest.fn(async () => ok(undefined)),
+    };
+    const idempotencyPreflight = {
+      run: jest.fn<
+        Promise<
+          | { kind: CreateOrderIdempotencyPreflightKind.STARTED; recordId: string }
+          | { kind: CreateOrderIdempotencyPreflightKind.REPLAY; orderId: string }
+          | { kind: CreateOrderIdempotencyPreflightKind.ERROR; error: Error }
+        >,
+        [CreateOrderCommand]
+      >(async () => ({
+        kind: CreateOrderIdempotencyPreflightKind.STARTED,
+        recordId: 'idempotency-record-1',
+      })),
+    };
 
     const service = new CreateOrderService(
       eventEmitter,
@@ -206,11 +230,25 @@ describe('CreateOrderService', () => {
       inventoryApi,
       assetResolver,
       ownerContractResolver,
+      idempotency as never,
+      idempotencyPreflight as never,
     );
 
     return {
       service,
       saved: () => ({ savedStatus, savedPeriod, savedBookingSnapshot, savedAssignments }),
+      prisma,
+      queryBus,
+      orderRepository,
+      pricingApi,
+      inventoryApi,
+      assetResolver,
+      ownerContractResolver,
+      eventEmitter,
+      emitAsyncSpy,
+      idempotency,
+      idempotencyPreflight,
+      transactionClient,
     };
   }
 
@@ -227,6 +265,7 @@ describe('CreateOrderService', () => {
       currency: 'ARS',
       insuranceSelected: false,
       fulfillmentMethod: FulfillmentMethod.PICKUP,
+      idempotencyKey: '123e4567-e89b-42d3-a456-426614174000',
     });
   }
 
@@ -243,11 +282,14 @@ describe('CreateOrderService', () => {
       currency: 'ARS',
       insuranceSelected: true,
       fulfillmentMethod: FulfillmentMethod.PICKUP,
+      idempotencyKey: '123e4567-e89b-42d3-a456-426614174001',
     });
   }
 
   it('creates confirmed orders for instant-book tenants', async () => {
-    const { service, saved } = makeService(BookingMode.INSTANT_BOOK);
+    const { service, saved, idempotency, idempotencyPreflight, emitAsyncSpy, transactionClient } = makeService(
+      BookingMode.INSTANT_BOOK,
+    );
 
     const result = await service.execute(makeCommand());
 
@@ -269,6 +311,10 @@ describe('CreateOrderService', () => {
       timezone: 'UTC',
     });
     expect(saved().savedAssignments).toEqual([{ stage: OrderAssignmentStage.COMMITTED }]);
+    expect(idempotencyPreflight.run).toHaveBeenCalledWith(expect.objectContaining({ tenantId: 'tenant-1' }));
+    expect(idempotency.complete).toHaveBeenCalledWith('idempotency-record-1', expect.any(String), transactionClient);
+    expect(idempotency.release).not.toHaveBeenCalled();
+    expect(emitAsyncSpy).toHaveBeenCalledTimes(1);
   });
 
   it('creates pending review orders for request-to-book tenants without assignments', async () => {
@@ -301,8 +347,102 @@ describe('CreateOrderService', () => {
     });
   });
 
-  it('rejects delivery orders for locations that do not support delivery', async () => {
-    const { service } = makeService(BookingMode.INSTANT_BOOK);
+  it('returns a persisted order response for completed idempotency replays without creating side effects', async () => {
+    const {
+      service,
+      prisma,
+      pricingApi,
+      orderRepository,
+      inventoryApi,
+      idempotency,
+      idempotencyPreflight,
+      emitAsyncSpy,
+    } = makeService(BookingMode.INSTANT_BOOK);
+    idempotencyPreflight.run.mockResolvedValueOnce({
+      kind: CreateOrderIdempotencyPreflightKind.REPLAY,
+      orderId: 'order-1',
+    });
+
+    const result = await service.execute(makeCommand());
+
+    expect(result.isOk()).toBe(true);
+    expect(result._unsafeUnwrap()).toEqual({
+      orderId: 'order-1',
+      status: OrderStatus.CONFIRMED,
+      nextStep: {
+        type: CreateOrderNextStepType.SHOW_CONFIRMATION,
+      },
+    });
+    expect(prisma.client.$transaction).not.toHaveBeenCalled();
+    expect(pricingApi.priceBasket).not.toHaveBeenCalled();
+    expect(orderRepository.save).not.toHaveBeenCalled();
+    expect(inventoryApi.saveOrderAssignment).not.toHaveBeenCalled();
+    expect(idempotency.complete).not.toHaveBeenCalled();
+    expect(idempotency.release).not.toHaveBeenCalled();
+    expect(emitAsyncSpy).not.toHaveBeenCalled();
+  });
+
+  it('preserves WhatsApp next step responses for completed idempotency replays', async () => {
+    const { service, idempotencyPreflight, emitAsyncSpy } = makeService(
+      BookingMode.INSTANT_BOOK,
+      OrderCommunicationMode.WHATSAPP,
+    );
+    idempotencyPreflight.run.mockResolvedValueOnce({
+      kind: CreateOrderIdempotencyPreflightKind.REPLAY,
+      orderId: 'order-1',
+    });
+
+    const result = await service.execute(makeCommand());
+
+    expect(result.isOk()).toBe(true);
+    expect(result._unsafeUnwrap().nextStep).toEqual({
+      type: CreateOrderNextStepType.REDIRECT_TO_WHATSAPP,
+      message: expect.stringContaining('Pedido N° 1001'),
+      whatsappUrl: expect.stringContaining('https://wa.me/34680870274?text='),
+    });
+    expect(emitAsyncSpy).not.toHaveBeenCalled();
+  });
+
+  it('returns idempotency conflicts without creating side effects', async () => {
+    const { service, prisma, pricingApi, orderRepository, idempotencyPreflight, emitAsyncSpy } = makeService(
+      BookingMode.INSTANT_BOOK,
+    );
+    idempotencyPreflight.run.mockResolvedValueOnce({
+      kind: CreateOrderIdempotencyPreflightKind.ERROR,
+      error: new IdempotencyKeyConflictError(),
+    });
+
+    const result = await service.execute(makeCommand());
+
+    expect(result.isErr()).toBe(true);
+    expect(result._unsafeUnwrapErr()).toBeInstanceOf(IdempotencyKeyConflictError);
+    expect(prisma.client.$transaction).not.toHaveBeenCalled();
+    expect(pricingApi.priceBasket).not.toHaveBeenCalled();
+    expect(orderRepository.save).not.toHaveBeenCalled();
+    expect(emitAsyncSpy).not.toHaveBeenCalled();
+  });
+
+  it('returns in-progress idempotency errors without creating side effects', async () => {
+    const { service, prisma, pricingApi, orderRepository, idempotencyPreflight, emitAsyncSpy } = makeService(
+      BookingMode.INSTANT_BOOK,
+    );
+    idempotencyPreflight.run.mockResolvedValueOnce({
+      kind: CreateOrderIdempotencyPreflightKind.ERROR,
+      error: new IdempotencyKeyInProgressError(),
+    });
+
+    const result = await service.execute(makeCommand());
+
+    expect(result.isErr()).toBe(true);
+    expect(result._unsafeUnwrapErr()).toBeInstanceOf(IdempotencyKeyInProgressError);
+    expect(prisma.client.$transaction).not.toHaveBeenCalled();
+    expect(pricingApi.priceBasket).not.toHaveBeenCalled();
+    expect(orderRepository.save).not.toHaveBeenCalled();
+    expect(emitAsyncSpy).not.toHaveBeenCalled();
+  });
+
+  it('rejects delivery orders for locations that do not support delivery and releases the idempotency record', async () => {
+    const { service, idempotency } = makeService(BookingMode.INSTANT_BOOK);
 
     const result = await service.execute(
       new CreateOrderCommand({
@@ -317,6 +457,7 @@ describe('CreateOrderService', () => {
         currency: 'ARS',
         insuranceSelected: false,
         fulfillmentMethod: FulfillmentMethod.DELIVERY,
+        idempotencyKey: '123e4567-e89b-42d3-a456-426614174002',
         deliveryRequest: {
           recipientName: 'Jane Doe',
           phone: '+5491122334455',
@@ -331,6 +472,35 @@ describe('CreateOrderService', () => {
 
     expect(result.isErr()).toBe(true);
     expect(result._unsafeUnwrapErr().message).toContain('does not support delivery');
+    expect(idempotency.release).toHaveBeenCalledWith('idempotency-record-1');
+  });
+
+  it('rejects empty orders and releases the idempotency record', async () => {
+    const { service, pricingApi, orderRepository, idempotency, emitAsyncSpy } = makeService(BookingMode.INSTANT_BOOK);
+
+    const result = await service.execute(
+      new CreateOrderCommand({
+        tenantId: 'tenant-1',
+        locationId: 'location-1',
+        customerId: 'customer-1',
+        pickupDate: '2026-03-30',
+        returnDate: '2026-03-31',
+        pickupTime: 600,
+        returnTime: 900,
+        items: [],
+        currency: 'ARS',
+        insuranceSelected: false,
+        fulfillmentMethod: FulfillmentMethod.PICKUP,
+        idempotencyKey: '123e4567-e89b-42d3-a456-426614174003',
+      }),
+    );
+
+    expect(result.isErr()).toBe(true);
+    expect(result._unsafeUnwrapErr()).toBeInstanceOf(OrderMustContainItemsError);
+    expect(idempotency.release).toHaveBeenCalledWith('idempotency-record-1');
+    expect(pricingApi.priceBasket).not.toHaveBeenCalled();
+    expect(orderRepository.save).not.toHaveBeenCalled();
+    expect(emitAsyncSpy).not.toHaveBeenCalled();
   });
 
   it('ignores insurance selection when tenant insurance is disabled', async () => {

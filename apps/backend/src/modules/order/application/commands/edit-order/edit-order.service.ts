@@ -61,9 +61,9 @@ import {
 } from 'src/modules/tenant/public/queries/get-location-context.query';
 import { GetTenantConfigQuery } from 'src/modules/tenant/public/queries/get-tenant-config.query';
 
-import { CreateOrderAssetResolver, buildDemandUnits } from '../create-order/create-order-asset-resolver';
-import { CreateOrderOwnerContractResolver } from '../create-order/create-order-owner-contract-resolver';
-import { toPriceSnapshot } from '../create-order/create-order-pricing-snapshot.mapper';
+import { CreateOrderAssetResolver, buildDemandUnits } from '../create-order/inventory/create-order-asset-resolver';
+import { CreateOrderOwnerContractResolver } from '../create-order/ownership/create-order-owner-contract-resolver';
+import { toPriceSnapshot } from '../create-order/pricing/create-order-pricing-snapshot.mapper';
 import { ResolvedItem } from '../create-order/create-order.types';
 import { TenantConfigNotFoundException } from '../../../domain/exceptions/order.exceptions';
 import { EditOrderCommand } from './edit-order.command';

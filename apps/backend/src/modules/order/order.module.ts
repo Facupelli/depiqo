@@ -29,8 +29,10 @@ import { GetOrderAccessoryPreparationQueryHandler } from './application/queries/
 import { PrepareOrderAgreementForSigningQueryHandler } from './application/queries/prepare-order-agreement-for-signing/prepare-order-agreement-for-signing.query-handler';
 import { PrepareSignedOrderAgreementForSigningQueryHandler } from './application/queries/prepare-signed-order-agreement-for-signing/prepare-signed-order-agreement-for-signing.query-handler';
 import { TenantModule } from '../tenant/tenant.module';
-import { CreateOrderAssetResolver } from './application/commands/create-order/create-order-asset-resolver';
-import { CreateOrderOwnerContractResolver } from './application/commands/create-order/create-order-owner-contract-resolver';
+import { CreateOrderAssetResolver } from './application/commands/create-order/inventory/create-order-asset-resolver';
+import { CreateOrderOwnerContractResolver } from './application/commands/create-order/ownership/create-order-owner-contract-resolver';
+import { CreateOrderIdempotencyService } from './application/commands/create-order/idempotency/create-order-idempotency.service';
+import { CreateOrderIdempotencyPreflight } from './application/commands/create-order/idempotency/create-order-idempotency-preflight';
 import { CreateOrderHttpController } from './application/commands/create-order/create-order.http.controller';
 import { CreateDraftOrderHttpController } from './application/commands/create-draft-order/create-draft-order.http.controller';
 import { ConfirmOrderHttpController } from './application/commands/confirm-order/confirm-order.http.controller';
@@ -93,6 +95,8 @@ import { OrderDocumentRendererService } from './application/pdf/order-document-r
     OrderRepository,
     CreateOrderAssetResolver,
     CreateOrderOwnerContractResolver,
+    CreateOrderIdempotencyService,
+    CreateOrderIdempotencyPreflight,
     CreateOrderService,
     CreateDraftOrderService,
     DraftOrderPricingService,

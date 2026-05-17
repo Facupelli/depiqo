@@ -14,8 +14,8 @@ import {
   buildConfirmOrderDemandUnits,
   buildUnavailableError,
 } from './confirm-draft-order.flow';
-import { CreateOrderAssetResolver } from '../create-order/create-order-asset-resolver';
-import { CreateOrderOwnerContractResolver } from '../create-order/create-order-owner-contract-resolver';
+import { CreateOrderAssetResolver } from '../create-order/inventory/create-order-asset-resolver';
+import { CreateOrderOwnerContractResolver } from '../create-order/ownership/create-order-owner-contract-resolver';
 import { Order } from '../../../domain/entities/order.entity';
 import { InvalidOrderStatusTransitionException } from '../../../domain/exceptions/order.exceptions';
 import {

@@ -7,8 +7,8 @@ import { PrismaService } from 'src/core/database/prisma.service';
 import { InventoryPublicApi } from 'src/modules/inventory/inventory.public-api';
 import { OrderRepository } from 'src/modules/order/infrastructure/persistence/repositories/order.repository';
 
-import { CreateOrderAssetResolver, buildDemandUnits } from '../create-order/create-order-asset-resolver';
-import { CreateOrderOwnerContractResolver } from '../create-order/create-order-owner-contract-resolver';
+import { CreateOrderAssetResolver, buildDemandUnits } from '../create-order/inventory/create-order-asset-resolver';
+import { CreateOrderOwnerContractResolver } from '../create-order/ownership/create-order-owner-contract-resolver';
 import { DemandUnit } from '../create-order/create-order.types';
 import { Order } from '../../../domain/entities/order.entity';
 import { InvalidOrderStatusTransitionException } from '../../../domain/exceptions/order.exceptions';

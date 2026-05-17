@@ -65,7 +65,39 @@ export type DemandUnit = {
   resolvedAssetId?: string;
 };
 
+export class MissingIdempotencyKeyError extends Error {
+  constructor() {
+    super('Idempotency-Key header is required for order creation.');
+    this.name = 'MissingIdempotencyKeyError';
+  }
+}
+
+export class InvalidIdempotencyKeyError extends Error {
+  constructor() {
+    super('Idempotency-Key header must be a valid UUID.');
+    this.name = 'InvalidIdempotencyKeyError';
+  }
+}
+
+export class IdempotencyKeyInProgressError extends Error {
+  constructor() {
+    super('An order creation request with this idempotency key is already in progress.');
+    this.name = 'IdempotencyKeyInProgressError';
+  }
+}
+
+export class IdempotencyKeyConflictError extends Error {
+  constructor() {
+    super('Idempotency-Key was already used with a different order creation payload.');
+    this.name = 'IdempotencyKeyConflictError';
+  }
+}
+
 export type CreateOrderError =
+  | MissingIdempotencyKeyError
+  | InvalidIdempotencyKeyError
+  | IdempotencyKeyInProgressError
+  | IdempotencyKeyConflictError
   | OrderMustContainItemsError
   | OrderItemUnavailableError
   | InvalidPickupSlotError

@@ -1,6 +1,6 @@
 import { CreateOrderNextStepType, OrderCommunicationMode } from '@repo/types';
 
-import { CreateOrderResponseDto } from './create-order.response.dto';
+import { CreateOrderResponseDto } from '../create-order.response.dto';
 import { CreateOrderCompletionContext } from './create-order-next-step.types';
 import { buildCreateOrderWhatsAppMessage } from './create-order-whatsapp-message.builder';
 

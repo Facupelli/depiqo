@@ -7,7 +7,6 @@ const config: Config.InitialOptions = {
     "^.+\\.(t|j)s$": [
       "ts-jest",
       {
-        isolatedModules: true,
         diagnostics: false,
       },
     ],

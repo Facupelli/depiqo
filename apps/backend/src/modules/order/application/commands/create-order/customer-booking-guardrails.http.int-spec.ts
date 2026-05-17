@@ -1,3 +1,5 @@
+import { randomUUID } from 'crypto';
+
 import * as dotenv from 'dotenv';
 import * as path from 'path';
 
@@ -61,6 +63,7 @@ describe('Customer booking guardrails HTTP integration', () => {
     await prisma.client.orderItem.deleteMany({
       where: { order: { tenantId } },
     });
+    await prisma.client.orderCreateIdempotencyKey.deleteMany({ where: { tenantId } });
     await prisma.client.order.deleteMany({ where: { tenantId } });
   });
 
@@ -71,6 +74,7 @@ describe('Customer booking guardrails HTTP integration', () => {
     await prisma.client.orderItem.deleteMany({
       where: { order: { tenantId } },
     });
+    await prisma.client.orderCreateIdempotencyKey.deleteMany({ where: { tenantId } });
     await prisma.client.order.deleteMany({ where: { tenantId } });
     await prisma.client.pricingTier.deleteMany({
       where: { id: { in: [activeProductTierId] } },
@@ -375,10 +379,11 @@ describe('Customer booking guardrails HTTP integration', () => {
     };
   }
 
-  function customerOrderRequest(body: Record<string, unknown>) {
+  function customerOrderRequest(body: Record<string, unknown>, idempotencyKey = randomUUID()) {
     return request(app.getHttpServer())
       .post('/orders')
       .set('Authorization', `Bearer ${createToken(ActorType.CUSTOMER, authenticatedCustomerId)}`)
+      .set('Idempotency-Key', idempotencyKey)
       .send(body);
   }
 
@@ -386,6 +391,7 @@ describe('Customer booking guardrails HTTP integration', () => {
     return request(app.getHttpServer())
       .post('/orders')
       .set('Authorization', `Bearer ${createToken(ActorType.USER, 'operator-user-id')}`)
+      .set('Idempotency-Key', randomUUID())
       .send(body);
   }
 

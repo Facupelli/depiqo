@@ -3,8 +3,8 @@ import { Injectable } from '@nestjs/common';
 import { PrismaTransactionClient } from 'src/core/database/prisma-unit-of-work';
 import { InventoryPublicApi } from 'src/modules/inventory/inventory.public-api';
 
-import { ConflictGroup, UnavailableItem } from '../../../domain/errors/order.errors';
-import { DemandUnit, ResolveDemandResult } from './create-order.types';
+import { ConflictGroup, UnavailableItem } from '../../../../domain/errors/order.errors';
+import { DemandUnit, ResolveDemandResult } from '../create-order.types';
 
 @Injectable()
 export class CreateOrderAssetResolver {

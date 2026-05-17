@@ -35,6 +35,7 @@ export class CreateOrderCommand {
   public readonly fulfillmentMethod: FulfillmentMethod;
   public readonly deliveryRequest: CreateOrderDeliveryRequestCommand | undefined;
   public readonly couponCode?: string;
+  public readonly idempotencyKey: string | undefined;
 
   constructor(props: {
     tenantId: string;
@@ -50,6 +51,7 @@ export class CreateOrderCommand {
     fulfillmentMethod: FulfillmentMethod;
     deliveryRequest?: CreateOrderDeliveryRequestCommand;
     couponCode?: string;
+    idempotencyKey?: string;
   }) {
     this.tenantId = props.tenantId;
     this.locationId = props.locationId;
@@ -64,5 +66,6 @@ export class CreateOrderCommand {
     this.fulfillmentMethod = props.fulfillmentMethod;
     this.deliveryRequest = props.deliveryRequest;
     this.couponCode = props.couponCode;
+    this.idempotencyKey = props.idempotencyKey;
   }
 }

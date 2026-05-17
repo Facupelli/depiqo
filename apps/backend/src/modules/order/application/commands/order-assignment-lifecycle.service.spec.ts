@@ -34,8 +34,8 @@ import {
   OrderCancellationBlockedBySettledOwnerSplitsError,
   OrderCustomerRequiredForConfirmationError,
 } from '../../domain/errors/order.errors';
-import { CreateOrderAssetResolver } from './create-order/create-order-asset-resolver';
-import { CreateOrderOwnerContractResolver } from './create-order/create-order-owner-contract-resolver';
+import { CreateOrderAssetResolver } from './create-order/inventory/create-order-asset-resolver';
+import { CreateOrderOwnerContractResolver } from './create-order/ownership/create-order-owner-contract-resolver';
 import { ok } from 'neverthrow';
 
 function makeOrder(status: OrderStatus): Order {

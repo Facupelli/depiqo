@@ -42,12 +42,15 @@ import { BookingSnapshot } from 'src/modules/order/domain/value-objects/booking-
 import { OrderDeliveryRequest } from 'src/modules/order/domain/value-objects/order-delivery-request.value-object';
 import { CreateOrderResponseDto } from './create-order.response.dto';
 import { CreateOrderCommand } from './create-order.command';
-import { CreateOrderAssetResolver, buildDemandUnits } from './create-order-asset-resolver';
+import { CreateOrderAssetResolver, buildDemandUnits } from './inventory/create-order-asset-resolver';
 import { CreateOrderError, ResolvedItem } from './create-order.types';
-import { CreateOrderOwnerContractResolver } from './create-order-owner-contract-resolver';
-import { toPriceSnapshot } from './create-order-pricing-snapshot.mapper';
-import { loadCreateOrderCompletionContext } from './create-order-completion-context.loader';
-import { buildCreateOrderNextStep } from './create-order-next-step.builder';
+import { CreateOrderOwnerContractResolver } from './ownership/create-order-owner-contract-resolver';
+import { toPriceSnapshot } from './pricing/create-order-pricing-snapshot.mapper';
+import { loadCreateOrderCompletionContext } from './completion/create-order-completion-context.loader';
+import { buildCreateOrderResponse, buildCreateOrderResponseForPersistedOrder } from './completion/create-order-response.builder';
+import { CreateOrderIdempotencyPreflightKind } from './idempotency/create-order-idempotency.constants';
+import { CreateOrderIdempotencyService } from './idempotency/create-order-idempotency.service';
+import { CreateOrderIdempotencyPreflight } from './idempotency/create-order-idempotency-preflight';
 import {
   DeliveryNotSupportedForLocationError,
   InvalidPickupSlotError,
@@ -62,6 +65,13 @@ import { TenantConfigNotFoundException } from '../../../domain/exceptions/order.
 import { OrderCreatedByCustomerEvent } from 'src/modules/order/public/events/order-created-by-customer.event';
 import { TenantConfig } from 'src/modules/tenant/domain/value-objects/tenant-config.value-object';
 
+class CreateOrderTransactionResultError extends Error {
+  constructor(public readonly error: CreateOrderError) {
+    super(error.message);
+    this.name = 'CreateOrderTransactionResultError';
+  }
+}
+
 @CommandHandler(CreateOrderCommand)
 export class CreateOrderService implements ICommandHandler<CreateOrderCommand, Result<CreateOrderResponseDto, CreateOrderError>> {
   constructor(
@@ -73,20 +83,41 @@ export class CreateOrderService implements ICommandHandler<CreateOrderCommand, R
     private readonly inventoryApi: InventoryPublicApi,
     private readonly assetResolver: CreateOrderAssetResolver,
     private readonly ownerContractResolver: CreateOrderOwnerContractResolver,
+    private readonly idempotency: CreateOrderIdempotencyService,
+    private readonly idempotencyPreflight: CreateOrderIdempotencyPreflight,
   ) {}
 
   async execute(command: CreateOrderCommand): Promise<Result<CreateOrderResponseDto, CreateOrderError>> {
-    if (command.items.length === 0) {
-      return err(new OrderMustContainItemsError());
+    const preflight = await this.idempotencyPreflight.run(command);
+
+    if (preflight.kind === CreateOrderIdempotencyPreflightKind.ERROR) {
+      return err(preflight.error);
     }
 
-    const locationValidation = await this.validateLocation(command);
-    if (locationValidation.isErr()) {
-      return err(locationValidation.error);
+    if (preflight.kind === CreateOrderIdempotencyPreflightKind.REPLAY) {
+      return ok(
+        await buildCreateOrderResponseForPersistedOrder(this.prisma, this.queryBus, command.tenantId, preflight.orderId),
+      );
     }
 
-    const slotValidation = await this.validateSlots(command);
+    const idempotencyRecordId = preflight.recordId;
+    let idempotencyCompleted = false;
+
+    try {
+      if (command.items.length === 0) {
+        await this.idempotency.release(idempotencyRecordId);
+        return err(new OrderMustContainItemsError());
+      }
+
+      const locationValidation = await this.validateLocation(command);
+      if (locationValidation.isErr()) {
+        await this.idempotency.release(idempotencyRecordId);
+        return err(locationValidation.error);
+      }
+
+      const slotValidation = await this.validateSlots(command);
     if (slotValidation.isErr()) {
+      await this.idempotency.release(idempotencyRecordId);
       return err(slotValidation.error);
     }
 
@@ -131,10 +162,12 @@ export class CreateOrderService implements ICommandHandler<CreateOrderCommand, R
       resolvedCouponId = pricedBasket.resolvedCoupon?.couponId;
     } catch (error) {
       if (error instanceof PricingProductTypeNotFoundError) {
+        await this.idempotency.release(idempotencyRecordId);
         return err(new ProductTypeNotFoundError(error.productTypeId));
       }
 
       if (error instanceof PricingBundleNotFoundError) {
+        await this.idempotency.release(idempotencyRecordId);
         return err(new BundleNotFoundError(error.bundleId));
       }
 
@@ -146,6 +179,7 @@ export class CreateOrderService implements ICommandHandler<CreateOrderCommand, R
         error instanceof ProductTypeNotBookableAtLocationError ||
         error instanceof BundleNotBookableAtLocationError
       ) {
+        await this.idempotency.release(idempotencyRecordId);
         return err(error as CreateOrderError);
       }
 
@@ -185,7 +219,9 @@ export class CreateOrderService implements ICommandHandler<CreateOrderCommand, R
         const demandUnits = buildDemandUnits(resolvedItems);
         const availability = await this.assetResolver.resolveDemand(demandUnits);
         if (availability.unavailableItems.length > 0 || availability.conflictGroups.length > 0) {
-          return err(new OrderItemUnavailableError(availability.unavailableItems, availability.conflictGroups));
+          throw new CreateOrderTransactionResultError(
+            new OrderItemUnavailableError(availability.unavailableItems, availability.conflictGroups),
+          );
         }
 
         const contractByAssetId = await this.ownerContractResolver.resolve(command.tenantId, period.start, demandUnits);
@@ -205,7 +241,7 @@ export class CreateOrderService implements ICommandHandler<CreateOrderCommand, R
       for (const assignment of pendingAssignments) {
         const assignmentResult = await this.inventoryApi.saveOrderAssignment(assignment, tx);
         if (assignmentResult.isErr()) {
-          return err(
+          throw new CreateOrderTransactionResultError(
             new OrderItemUnavailableError(
               resolvedItems.map((item) =>
                 item.type === 'PRODUCT'
@@ -230,9 +266,11 @@ export class CreateOrderService implements ICommandHandler<CreateOrderCommand, R
         );
 
         if (redeemCouponResult.isErr()) {
-          return err(redeemCouponResult.error);
+          throw new CreateOrderTransactionResultError(redeemCouponResult.error);
         }
       }
+
+      await this.idempotency.complete(idempotencyRecordId, order.id, tx);
 
       return ok({
         orderId: order.id,
@@ -242,8 +280,11 @@ export class CreateOrderService implements ICommandHandler<CreateOrderCommand, R
     });
 
     if (result.isErr()) {
+      await this.idempotency.release(idempotencyRecordId);
       return err(result.error);
     }
+
+    idempotencyCompleted = true;
 
     const completionContext = await loadCreateOrderCompletionContext(
       this.prisma,
@@ -269,11 +310,24 @@ export class CreateOrderService implements ICommandHandler<CreateOrderCommand, R
       }),
     );
 
-    return ok({
-      orderId: result.value.orderId,
-      status: result.value.status,
-      nextStep: buildCreateOrderNextStep(completionContext),
-    });
+      return ok(
+        buildCreateOrderResponse({
+          orderId: result.value.orderId,
+          status: result.value.status,
+          completionContext,
+        }),
+      );
+    } catch (error) {
+      if (!idempotencyCompleted) {
+        await this.idempotency.release(idempotencyRecordId);
+      }
+
+      if (error instanceof CreateOrderTransactionResultError) {
+        return err(error.error);
+      }
+
+      throw error;
+    }
   }
 
   private async validateLocation(
