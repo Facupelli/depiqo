@@ -33,7 +33,7 @@ import { ManualPricingOverride } from 'src/modules/order/domain/value-objects/ma
 import { DraftOrderPricingService } from 'src/modules/order/domain/services/draft-order-pricing.service';
 
 import { CreateDraftOrderCommand } from './create-draft-order.command';
-import { toPriceSnapshot } from '../create-order/create-order-pricing-snapshot.mapper';
+import { toPriceSnapshot } from '../create-order/pricing/create-order-pricing-snapshot.mapper';
 import { CreateOrderError, ResolvedItem } from '../create-order/create-order.types';
 import {
   DeliveryNotSupportedForLocationError,

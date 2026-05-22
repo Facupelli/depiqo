@@ -1,7 +1,9 @@
+import { OrderStatus } from "@repo/types";
 import { CheckCircle2, RotateCcw, Truck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
 	useOrderConfirmation,
+	useOrderDetailContext,
 	useOrderLifecycle,
 } from "@/features/orders/contexts/order-detail.context";
 import type { getOrderPrimaryAdminAction } from "@/features/orders/order.utils";
@@ -47,6 +49,7 @@ export function OrderDetailPrimaryActionButton({
 }: {
 	action: ReturnType<typeof getOrderPrimaryAdminAction>;
 }) {
+	const { order } = useOrderDetailContext();
 	const confirmation = useOrderConfirmation();
 	const lifecycle = useOrderLifecycle();
 	const config = getPrimaryAdminButtonConfig({
@@ -72,7 +75,12 @@ export function OrderDetailPrimaryActionButton({
 					<Icon className="h-4 w-4" />
 				</div>
 				<div>
-					<p className="text-sm font-semibold leading-none">{action?.label}</p>
+					<p className="text-sm font-semibold leading-none">
+						{action?.action === "confirm" &&
+						order.status === OrderStatus.PENDING_REVIEW
+							? "Aprobar solicitud"
+							: action?.label}
+					</p>
 					<p className="mt-1 text-xs text-white/80">{action?.description}</p>
 				</div>
 			</div>

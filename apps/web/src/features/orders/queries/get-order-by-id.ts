@@ -7,7 +7,7 @@ import type { Dayjs } from "dayjs";
 import { fromDate, fromDateParam, parseTimestamp } from "@/lib/dates/parse";
 import type { ProblemDetailsError } from "@/shared/errors";
 import { getOrderById } from "../orders.api";
-import { orderKeys } from "../orders.queries";
+import { orderKeys } from "../orders.keys";
 
 // TODO: replace parseDailyBound with parseTimestamp for hourly orders once
 // rentalType is available on OrderDetailResponseDto (tracked: BillingUnit.type).

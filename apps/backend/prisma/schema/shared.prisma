@@ -3,6 +3,11 @@ enum TrackingMode {
   POOLED
 }
 
+enum RentalItemKind {
+  PRIMARY
+  ACCESSORY
+}
+
 enum FulfillmentMethod {
   PICKUP
   DELIVERY

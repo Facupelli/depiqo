@@ -16,6 +16,7 @@ import { resolveTenantContext } from "@/features/tenant-context/resolve-tenant-c
 import type { ResolvedTenantContext } from "@repo/schemas";
 import { NotFoundPage } from "@/components/not-found-page";
 import { ServiceUnavailablePage } from "@/components/service-unavailable-page";
+import { Toaster } from "@/components/ui/sonner";
 
 export interface RouterContext {
   queryClient: QueryClient;
@@ -89,6 +90,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
             ]}
           />
         )}
+        <Toaster />
         <Scripts />
       </body>
     </html>

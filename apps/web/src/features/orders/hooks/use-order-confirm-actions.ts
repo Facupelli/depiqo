@@ -1,7 +1,8 @@
 import { useState } from "react";
+import type { OrderItemsUnavailableProblemDto } from "@repo/schemas";
+import { parseOrderActionError } from "@/features/orders/order-action-errors";
 import type { ParsedOrderDetailResponseDto } from "@/features/orders/queries/get-order-by-id";
-import { ProblemDetailsError } from "@/shared/errors";
-import { useConfirmOrder } from "../orders.queries";
+import { useConfirmOrder } from "../orders.mutations";
 
 export function useOrderConfirmActions(order: ParsedOrderDetailResponseDto) {
 	const [isConfirmOrderDialogOpen, setIsConfirmOrderDialogOpen] =
@@ -9,16 +10,20 @@ export function useOrderConfirmActions(order: ParsedOrderDetailResponseDto) {
 	const [confirmOrderError, setConfirmOrderError] = useState<string | null>(
 		null,
 	);
+	const [confirmOrderConflict, setConfirmOrderConflict] =
+		useState<OrderItemsUnavailableProblemDto | null>(null);
 	const { mutateAsync: confirmOrder, isPending: isConfirmingOrder } =
 		useConfirmOrder();
 
 	const handleConfirmOrder = () => {
 		setConfirmOrderError(null);
+		setConfirmOrderConflict(null);
 		setIsConfirmOrderDialogOpen(true);
 	};
 
 	const handleConfirmOrderSubmission = async () => {
 		setConfirmOrderError(null);
+		setConfirmOrderConflict(null);
 
 		if (!order.customer) {
 			setConfirmOrderError(
@@ -31,24 +36,26 @@ export function useOrderConfirmActions(order: ParsedOrderDetailResponseDto) {
 			await confirmOrder({ orderId: order.id });
 			setIsConfirmOrderDialogOpen(false);
 		} catch (error) {
-			if (error instanceof ProblemDetailsError) {
-				setConfirmOrderError(getConfirmOrderErrorMessage(error));
-				return;
-			}
-
-			setConfirmOrderError("Ocurrio un error al confirmar el pedido.");
+			const parsedError = parseOrderActionError(
+				{ action: "confirm", orderStatus: order.status },
+				error,
+			);
+			setConfirmOrderConflict(parsedError.conflict);
+			setConfirmOrderError(parsedError.message);
 		}
 	};
 
 	const setIsConfirmOrderDialogOpenWithReset = (open: boolean) => {
 		if (!open) {
 			setConfirmOrderError(null);
+			setConfirmOrderConflict(null);
 		}
 
 		setIsConfirmOrderDialogOpen(open);
 	};
 
 	return {
+		confirmOrderConflict,
 		confirmOrderError,
 		isConfirmOrderDialogOpen,
 		isConfirmOrderPending: isConfirmingOrder,
@@ -56,23 +63,4 @@ export function useOrderConfirmActions(order: ParsedOrderDetailResponseDto) {
 		handleConfirmOrderSubmission,
 		setIsConfirmOrderDialogOpen: setIsConfirmOrderDialogOpenWithReset,
 	};
-}
-
-function getConfirmOrderErrorMessage(error: ProblemDetailsError): string {
-	const fallbackMessage =
-		error.problemDetails.detail ??
-		error.problemDetails.title ??
-		"No pudimos confirmar el pedido.";
-
-	switch (error.problemDetails.type) {
-		case "errors://order-customer-required":
-			return "Este borrador necesita un cliente vinculado antes de poder confirmarse.";
-		case "errors://order-items-unavailable":
-			return (
-				error.problemDetails.detail ??
-				"No pudimos confirmar el borrador porque uno o más equipos ya no estan disponibles para este periodo."
-			);
-		default:
-			return fallbackMessage;
-	}
 }

@@ -1,3 +1,4 @@
+import type { OrderItemsUnavailableProblemDto } from "@repo/schemas";
 import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { useDraftOrderContext } from "@/features/orders/draft-order/draft-order.context";
@@ -5,15 +6,15 @@ import {
 	buildCreateDraftOrderPayload,
 	validateDraftOrderForSave,
 } from "@/features/orders/draft-order/utils/draft-order-save";
+import { parseOrderActionError } from "@/features/orders/order-action-errors";
 import {
 	useCreateDraftOrder,
 	useEditOrder,
 	useUpdateDraftOrder,
-} from "@/features/orders/orders.queries";
+} from "@/features/orders/orders.mutations";
 import type { OrderEditorMode } from "@/features/orders/order-editor/types/order-editor.types";
 import { getOrderEditorCopy } from "@/features/orders/order-editor/utils/order-editor-copy";
 import { useLocationId } from "@/shared/contexts/location/location.hooks";
-import { ProblemDetailsError } from "@/shared/errors";
 
 export function useSaveOrderEditor(
 	orderId?: string,
@@ -29,9 +30,12 @@ export function useSaveOrderEditor(
 		useUpdateDraftOrder();
 	const { mutateAsync: editOrder, isPending: isEditPending } = useEditOrder();
 	const [saveError, setSaveError] = useState<string | null>(null);
+	const [saveConflict, setSaveConflict] =
+		useState<OrderItemsUnavailableProblemDto | null>(null);
 
 	async function handleSaveOrderEditor() {
 		setSaveError(null);
+		setSaveConflict(null);
 
 		const validationError = validateDraftOrderForSave({
 			state,
@@ -78,31 +82,20 @@ export function useSaveOrderEditor(
 				});
 			}
 		} catch (error) {
-			setSaveError(getSaveErrorMessage(error, mode));
+			const parsedError = parseOrderActionError(
+				{ action: "save", mode },
+				error,
+			);
+			setSaveConflict(parsedError.conflict);
+			setSaveError(parsedError.message);
 		}
 	}
 
 	return {
 		handleSaveOrderEditor,
+		saveConflict,
 		saveError,
 		isSaving: isCreatePending || isUpdatePending || isEditPending,
 		hasBudget: state.budget !== null,
 	};
-}
-
-function getSaveErrorMessage(error: unknown, mode: OrderEditorMode): string {
-	const fallback =
-		mode === "create-draft" || mode === "edit-draft"
-			? "No pudimos guardar el borrador."
-			: "No pudimos guardar los cambios del pedido.";
-
-	if (error instanceof ProblemDetailsError) {
-		return error.problemDetails.detail ?? error.problemDetails.title ?? fallback;
-	}
-
-	if (error instanceof Error) {
-		return error.message;
-	}
-
-	return fallback;
 }

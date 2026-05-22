@@ -10,7 +10,7 @@ import { AssetNotAvailableError } from './domain/errors/inventory.errors';
 import { AssetAssignmentRepository } from './infrastructure/persistence/repositories/asset-assignment.repository';
 import { AssetAvailabilityService } from './infrastructure/read-services/asset-availability.service';
 import { FindAvailableParams } from './inventory.contracts';
-import { InventoryPublicApi, SaveOrderAssignmentDto } from './inventory.public-api';
+import { InventoryAssetSummary, InventoryPublicApi, SaveOrderAssignmentDto } from './inventory.public-api';
 import { PrismaService } from 'src/core/database/prisma.service';
 
 @Injectable()
@@ -29,7 +29,7 @@ export class InventoryFacade implements InventoryPublicApi {
     return this.availabilityService.findAvailableAssetIds(dto, tx);
   }
 
-  async findAssetById(tenantId: string, assetId: string): Promise<{ id: string; ownerId: string | null } | null> {
+  async findAssetById(tenantId: string, assetId: string): Promise<InventoryAssetSummary | null> {
     const asset = await this.prisma.client.asset.findFirst({
       where: {
         id: assetId,
@@ -40,6 +40,8 @@ export class InventoryFacade implements InventoryPublicApi {
       select: {
         id: true,
         ownerId: true,
+        productTypeId: true,
+        locationId: true,
       },
     });
 
@@ -79,5 +81,13 @@ export class InventoryFacade implements InventoryPublicApi {
     tx: PrismaTransactionClient,
   ): Promise<void> {
     await this.assignmentRepo.releaseOrderAssignments(orderId, stage, tx);
+  }
+
+  async releaseOrderItemAccessoryAssignments(
+    orderItemAccessoryId: string,
+    tx: PrismaTransactionClient,
+    options?: { keepCount?: number },
+  ): Promise<void> {
+    await this.assignmentRepo.releaseOrderItemAccessoryAssignments(orderItemAccessoryId, tx, options);
   }
 }

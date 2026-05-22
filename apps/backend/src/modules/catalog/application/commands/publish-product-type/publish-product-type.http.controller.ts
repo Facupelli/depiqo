@@ -13,6 +13,7 @@ import { CurrentUser } from 'src/core/decorators/current-user.decorator';
 import { AuthenticatedUser } from 'src/modules/auth/public/authenticated-user';
 import { PublishProductTypeCommand } from './publish-product-type.command';
 import {
+  AccessoryProductTypeCannotBePublishedError,
   ProductTypeAlreadyPublishedError,
   ProductTypeAlreadyRetiredError,
   ProductTypeCannotBePublishedWithoutActiveOwnerContractsError,
@@ -43,6 +44,7 @@ export class PublishProductTypeHttpController {
 
       if (
         error instanceof ProductTypeCannotBePublishedWithoutPricingTiersError ||
+        error instanceof AccessoryProductTypeCannotBePublishedError ||
         error instanceof ProductTypeCannotBePublishedWithoutAssetsError ||
         error instanceof ProductTypeCannotBePublishedWithoutActiveOwnerContractsError
       ) {

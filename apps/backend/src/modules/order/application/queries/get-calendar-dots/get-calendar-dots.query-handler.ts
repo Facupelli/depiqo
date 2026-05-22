@@ -50,8 +50,7 @@ export class GetCalendarDotsQueryHandler implements IQueryHandler<GetCalendarDot
     return this.prisma.client.$queryRaw<RawDateRow[]>`
       SELECT DISTINCT to_char(lower(aa.period) AT TIME ZONE ${timezone}, 'YYYY-MM-DD') AS date
       FROM orders o
-      JOIN order_items oi ON oi.order_id = o.id
-      JOIN asset_assignments aa ON aa.order_item_id = oi.id
+      JOIN asset_assignments aa ON aa.order_id = o.id
       WHERE
         o.tenant_id = ${tenantId}
         AND
@@ -72,8 +71,7 @@ export class GetCalendarDotsQueryHandler implements IQueryHandler<GetCalendarDot
     return this.prisma.client.$queryRaw<RawDateRow[]>`
       SELECT DISTINCT to_char(upper(aa.period) AT TIME ZONE ${timezone}, 'YYYY-MM-DD') AS date
       FROM orders o
-      JOIN order_items oi ON oi.order_id = o.id
-      JOIN asset_assignments aa ON aa.order_item_id = oi.id
+      JOIN asset_assignments aa ON aa.order_id = o.id
       WHERE
         o.tenant_id = ${tenantId}
         AND

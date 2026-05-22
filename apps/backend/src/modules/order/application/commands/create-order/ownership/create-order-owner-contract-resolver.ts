@@ -4,8 +4,8 @@ import { ContractBasis } from '@repo/types';
 import { PrismaService } from 'src/core/database/prisma.service';
 import { TenantPublicApi } from 'src/modules/tenant/tenant.public-api';
 
-import { NoActiveContractForAssetError } from '../../../domain/errors/order.errors';
-import { DemandUnit } from './create-order.types';
+import { NoActiveContractForAssetError } from '../../../../domain/errors/order.errors';
+import { DemandUnit } from '../create-order.types';
 
 export type OwnerContractByAssetId = Map<
   string,

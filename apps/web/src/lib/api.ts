@@ -1,4 +1,4 @@
-import { problemDetailsSchema, type PaginatedDto } from "@repo/schemas";
+import { type PaginatedDto, problemDetailsSchema } from "@repo/schemas";
 import { ProblemDetailsError } from "@/shared/errors";
 
 export type ApiRequestOptions = Omit<RequestInit, "body"> & {
@@ -57,16 +57,16 @@ export async function requestJson<T>(
 		const raw = await response.json().catch(() => null);
 		const parsed = problemDetailsSchema.safeParse(raw);
 
-		throw new ProblemDetailsError({
-			type: parsed.success ? parsed.data.type : "about:blank",
-			title: parsed.success
-				? parsed.data.title
-				: (response.statusText ?? "Request Failed"),
-			status: parsed.success ? parsed.data.status : response.status,
-			detail:
-				(parsed.success ? parsed.data.detail : undefined) ??
-				`Request to ${path} failed with status ${response.status}`,
-		});
+		throw new ProblemDetailsError(
+			parsed.success
+				? parsed.data
+				: {
+						type: "about:blank",
+						title: response.statusText ?? "Request Failed",
+						status: response.status,
+						detail: `Request to ${path} failed with status ${response.status}`,
+					},
+		);
 	}
 
 	if (response.status === 204) {

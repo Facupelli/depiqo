@@ -8,7 +8,7 @@ import {
 	useMutation,
 	useQuery,
 } from "@tanstack/react-query";
-import type { ProblemDetailsError } from "@/shared/errors";
+import { ProblemDetailsError } from "@/shared/errors";
 import {
 	getCurrentTenant,
 	updateTenantBranding,
@@ -54,7 +54,13 @@ type UpdateTenantBrandingOptions = Omit<
 export function useUpdateTenantConfig(options?: UpdateTenantConfigOptions) {
 	return useMutation<string, ProblemDetailsError, UpdateTenantConfigDto>({
 		...options,
-		mutationFn: (data) => updateTenantConfig({ data }),
+		mutationFn: async (data) => {
+			const result = await updateTenantConfig({ data });
+			if (typeof result === "object" && result !== null && "error" in result) {
+				throw new ProblemDetailsError(result.error);
+			}
+			return result;
+		},
 		meta: {
 			invalidates: tenantKeys.all(),
 		},

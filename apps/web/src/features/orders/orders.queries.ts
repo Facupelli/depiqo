@@ -1,55 +1,41 @@
 import type {
-	CreateDraftOrderDto,
-	CreateOrderDto,
-	DraftOrderPricingProposalRequestDto,
-	DraftOrderPricingProposalResponseDto,
 	GetCalendarDotsQueryDto,
 	GetCalendarDotsResponseDto,
-	GetDraftOrderPricingParamDto,
-	GetOrderByIdParamDto,
 	GetOrdersCalendarQueryDto,
 	GetOrdersCalendarResponse,
 	GetOrdersQueryDto,
 	GetOrdersResponseDto,
 	GetOrdersScheduleQuery,
 	GetOrdersScheduleResponse,
+	GetPendingReviewOrdersQueryDto,
+	GetPendingReviewOrdersResponseDto,
 	OrderCalendarItem,
 	OrderListItem,
+	PendingReviewOrderListItem,
 	OrderPricingPreviewRequestDto,
 	OrderPricingPreviewResponseDto,
 	OrderSummary,
 	ProblemDetails,
 	ScheduleEvent,
-	UpdateDraftOrderPricingRequestDto,
 } from "@repo/schemas";
 import {
 	keepPreviousData,
 	queryOptions,
-	type UseMutationOptions,
 	type UseQueryOptions,
-	useMutation,
 	useQuery,
 } from "@tanstack/react-query";
 import type { Dayjs } from "dayjs";
 import { fromDateParam, parseTimestamp } from "@/lib/dates/parse";
 import { ProblemDetailsError } from "@/shared/errors";
 import {
-	cancelOrder,
-	confirmOrder,
-	createDraftOrder,
-	createOrder,
-	editOrder,
 	getCalendarDots,
-	getDraftOrderPricingProposal,
 	getOrderPricingPreview,
 	getOrders,
 	getOrdersCalendar,
 	getOrdersSchedule,
-	markEquipmentAsRetired,
-	markEquipmentAsReturned,
-	updateDraftOrder,
-	updateDraftOrderPricing,
+	getPendingReviewOrders,
 } from "./orders.api";
+import { orderKeys } from "./orders.keys";
 
 // -----------------------------------------------------
 // Parsed Types
@@ -101,42 +87,20 @@ type ParsedGetOrdersResponse = Omit<GetOrdersResponseDto, "data"> & {
 	data: ParsedOrderListItem[];
 };
 
-// -----------------------------------------------------
-// Key Factory
-// -----------------------------------------------------
+export type ParsedPendingReviewOrderListItem = Omit<
+	PendingReviewOrderListItem,
+	"createdAt" | "periodStart" | "periodEnd"
+> & {
+	createdAt: Dayjs;
+	periodStart: Dayjs;
+	periodEnd: Dayjs;
+};
 
-export const orderKeys = {
-	all: () => ["orders"] as const,
-	lists: () => [...orderKeys.all(), "list"] as const,
-	list: (params: GetOrdersQueryDto) => [...orderKeys.lists(), params] as const,
-	details: () => [...orderKeys.all(), "detail"] as const,
-	detail: (params: GetOrderByIdParamDto) =>
-		[...orderKeys.details(), params] as const,
-	schedules: () => [...orderKeys.all(), "schedule"] as const,
-	schedule: (params: GetOrdersScheduleQuery) =>
-		[...orderKeys.schedules(), params] as const,
-	calendars: () => [...orderKeys.all(), "calendar"] as const,
-	calendar: (params: GetOrdersCalendarQueryDto) =>
-		[...orderKeys.calendars(), params] as const,
-	calendarDots: () => [...orderKeys.all(), "calendar-dots"] as const,
-	calendarDot: (params: GetCalendarDotsQueryDto) =>
-		[...orderKeys.calendarDots(), params] as const,
-	drafts: () => [...orderKeys.all(), "drafts"] as const,
-	draft: (params: GetDraftOrderPricingParamDto) =>
-		[...orderKeys.drafts(), params] as const,
-	draftPricingProposals: () =>
-		[...orderKeys.all(), "draft-pricing-proposals"] as const,
-	draftPricingProposal: (
-		params: GetDraftOrderPricingParamDto,
-		dto: DraftOrderPricingProposalRequestDto,
-	) => [...orderKeys.draftPricingProposals(), params, dto] as const,
-	draftPricingUpdates: () =>
-		[...orderKeys.all(), "draft-pricing-updates"] as const,
-	draftPricingUpdate: (params: GetDraftOrderPricingParamDto) =>
-		[...orderKeys.draftPricingUpdates(), params] as const,
-	pricingPreviews: () => [...orderKeys.all(), "pricing-previews"] as const,
-	pricingPreview: (dto: OrderPricingPreviewRequestDto) =>
-		[...orderKeys.pricingPreviews(), dto] as const,
+type ParsedGetPendingReviewOrdersResponse = Omit<
+	GetPendingReviewOrdersResponseDto,
+	"data"
+> & {
+	data: ParsedPendingReviewOrderListItem[];
 };
 
 export const orderQueries = {
@@ -154,6 +118,22 @@ export const orderQueries = {
 				return options?.select ? options.select(raw) : (parsed as TData);
 			},
 		}),
+	pendingReviewList: <TData = ParsedGetPendingReviewOrdersResponse>(
+		params: GetPendingReviewOrdersQueryDto,
+		options?: GetPendingReviewOrdersQueryOptions<TData>,
+	) =>
+		queryOptions<GetPendingReviewOrdersResponseDto, ProblemDetailsError, TData>(
+			{
+				...options,
+				queryKey: orderKeys.pendingReviewList(params),
+				queryFn: () => getPendingReviewOrders({ data: params }),
+				placeholderData: keepPreviousData,
+				select: (raw) => {
+					const parsed = parsePendingReviewOrdersResponse(raw);
+					return options?.select ? options.select(raw) : (parsed as TData);
+				},
+			},
+		),
 };
 
 // -----------------------------------------------------
@@ -177,57 +157,20 @@ type GetOrdersCalendarQueryOptions<TData = ParsedGetOrdersCalendarResponse> =
 		"queryKey" | "queryFn"
 	>;
 
-type GetCalendarDotsQueryOptions<TData = GetCalendarDotsResponseDto> = Omit<
-	UseQueryOptions<GetCalendarDotsResponseDto, ProblemDetailsError, TData>,
+type GetPendingReviewOrdersQueryOptions<
+	TData = ParsedGetPendingReviewOrdersResponse,
+> = Omit<
+	UseQueryOptions<
+		GetPendingReviewOrdersResponseDto,
+		ProblemDetailsError,
+		TData
+	>,
 	"queryKey" | "queryFn"
 >;
 
-type OrderDetailMutationOptions = Omit<
-	UseMutationOptions<void, ProblemDetailsError, GetOrderByIdParamDto>,
-	"mutationFn"
->;
-
-type OrderMutationOptions = Omit<
-	UseMutationOptions<string, ProblemDetailsError, CreateOrderDto>,
-	"mutationFn"
->;
-
-type DraftOrderMutationOptions = Omit<
-	UseMutationOptions<string, ProblemDetailsError, CreateDraftOrderDto>,
-	"mutationFn"
->;
-
-type OrderCompositionMutationOptions = Omit<
-	UseMutationOptions<
-		void,
-		ProblemDetailsError,
-		{ orderId: string; data: CreateDraftOrderDto }
-	>,
-	"mutationFn"
->;
-
-type DraftOrderPricingProposalMutationOptions = Omit<
-	UseMutationOptions<
-		DraftOrderPricingProposalResponseDto,
-		ProblemDetailsError,
-		{
-			params: GetDraftOrderPricingParamDto;
-			dto: DraftOrderPricingProposalRequestDto;
-		}
-	>,
-	"mutationFn"
->;
-
-type UpdateDraftOrderPricingMutationOptions = Omit<
-	UseMutationOptions<
-		void,
-		ProblemDetailsError,
-		{
-			params: GetDraftOrderPricingParamDto;
-			dto: UpdateDraftOrderPricingRequestDto;
-		}
-	>,
-	"mutationFn"
+type GetCalendarDotsQueryOptions<TData = GetCalendarDotsResponseDto> = Omit<
+	UseQueryOptions<GetCalendarDotsResponseDto, ProblemDetailsError, TData>,
+	"queryKey" | "queryFn"
 >;
 
 type OrderPricingPreviewQueryOptions<TData = OrderPricingPreviewResponseDto> =
@@ -286,6 +229,23 @@ function parseOrdersResponse(
 	};
 }
 
+function parsePendingReviewOrdersResponse(
+	raw: GetPendingReviewOrdersResponseDto,
+): ParsedGetPendingReviewOrdersResponse {
+	return {
+		...raw,
+		data: raw.data.map((order) => ({
+			...order,
+			createdAt: requireDayjs(parseTimestamp(order.createdAt), "createdAt"),
+			periodStart: requireDayjs(
+				parseTimestamp(order.periodStart),
+				"periodStart",
+			),
+			periodEnd: requireDayjs(parseTimestamp(order.periodEnd), "periodEnd"),
+		})),
+	};
+}
+
 // -----------------------------------------------------
 // Hooks
 // -----------------------------------------------------
@@ -338,6 +298,24 @@ export function useOrdersCalendar<TData = ParsedGetOrdersCalendarResponse>(
 	});
 }
 
+export function usePendingReviewOrders<
+	TData = ParsedGetPendingReviewOrdersResponse,
+>(
+	params: GetPendingReviewOrdersQueryDto,
+	options?: GetPendingReviewOrdersQueryOptions<TData>,
+) {
+	const { queryKey, queryFn, select, placeholderData } =
+		orderQueries.pendingReviewList(params, options);
+
+	return useQuery({
+		...options,
+		queryKey,
+		queryFn,
+		select,
+		placeholderData,
+	});
+}
+
 export function useCalendarDots<TData = GetCalendarDotsResponseDto>(
 	params: GetCalendarDotsQueryDto,
 	options?: GetCalendarDotsQueryOptions<TData>,
@@ -346,104 +324,6 @@ export function useCalendarDots<TData = GetCalendarDotsResponseDto>(
 		...options,
 		queryKey: orderKeys.calendarDot(params),
 		queryFn: () => getCalendarDots({ data: params }),
-	});
-}
-
-export function useCreateOrder(options?: OrderMutationOptions) {
-	return useMutation<string, ProblemDetailsError, CreateOrderDto>({
-		...options,
-		mutationFn: async (data) => {
-			const result = await createOrder({ data });
-			if (typeof result === "object" && "error" in result) {
-				throw new ProblemDetailsError(result.error);
-			}
-			return result;
-		},
-		meta: {
-			invalidates: orderKeys.all(),
-		},
-	});
-}
-
-export function useCreateDraftOrder(options?: DraftOrderMutationOptions) {
-	return useMutation<string, ProblemDetailsError, CreateDraftOrderDto>({
-		...options,
-		mutationFn: async (data) => {
-			const result = await createDraftOrder({ data });
-			if (typeof result === "object" && "error" in result) {
-				throw new ProblemDetailsError(result.error);
-			}
-			return result;
-		},
-		meta: {
-			invalidates: orderKeys.all(),
-		},
-	});
-}
-
-export function useUpdateDraftOrder(options?: OrderCompositionMutationOptions) {
-	return useMutation<
-		void,
-		ProblemDetailsError,
-		{ orderId: string; data: CreateDraftOrderDto }
-	>({
-		...options,
-		mutationFn: async ({ orderId, data }) => {
-			const result = await updateDraftOrder({ data: { orderId, dto: data } });
-			if (typeof result === "object" && "error" in result) {
-				throw new ProblemDetailsError(result.error);
-			}
-			return result;
-		},
-		meta: {
-			invalidates: orderKeys.all(),
-		},
-	});
-}
-
-export function useEditOrder(options?: OrderCompositionMutationOptions) {
-	return useMutation<
-		void,
-		ProblemDetailsError,
-		{ orderId: string; data: CreateDraftOrderDto }
-	>({
-		...options,
-		mutationFn: async ({ orderId, data }) => {
-			const result = await editOrder({ data: { orderId, dto: data } });
-			if (typeof result === "object" && "error" in result) {
-				throw new ProblemDetailsError(result.error);
-			}
-			return result;
-		},
-		meta: {
-			invalidates: orderKeys.all(),
-		},
-	});
-}
-
-export function useDraftOrderPricingProposal(
-	options?: DraftOrderPricingProposalMutationOptions,
-) {
-	return useMutation<
-		DraftOrderPricingProposalResponseDto,
-		ProblemDetailsError,
-		{
-			params: GetDraftOrderPricingParamDto;
-			dto: DraftOrderPricingProposalRequestDto;
-		}
-	>({
-		...options,
-		mutationFn: async (data) => {
-			const result = await getDraftOrderPricingProposal({ data });
-			if (hasMutationError(result)) {
-				throw new ProblemDetailsError(result.error);
-			}
-			return result;
-		},
-		meta: {
-			invalidates: (variables) =>
-				orderKeys.draftPricingProposal(variables.params, variables.dto),
-		},
 	});
 }
 
@@ -463,98 +343,6 @@ export function useOrderPricingPreview<TData = OrderPricingPreviewResponseDto>(
 			return result;
 		},
 		placeholderData: keepPreviousData,
-	});
-}
-
-export function useUpdateDraftOrderPricing(
-	options?: UpdateDraftOrderPricingMutationOptions,
-) {
-	return useMutation<
-		void,
-		ProblemDetailsError,
-		{
-			params: GetDraftOrderPricingParamDto;
-			dto: UpdateDraftOrderPricingRequestDto;
-		}
-	>({
-		...options,
-		mutationFn: async (data) => {
-			const result = await updateDraftOrderPricing({ data });
-			if (hasMutationError(result)) {
-				throw new ProblemDetailsError(result.error);
-			}
-		},
-		meta: {
-			invalidates: (variables) => [
-				orderKeys.all(),
-				orderKeys.draft(variables.params),
-				orderKeys.draftPricingUpdate(variables.params),
-			],
-		},
-	});
-}
-
-export function useConfirmOrder(options?: OrderDetailMutationOptions) {
-	return useMutation<void, ProblemDetailsError, GetOrderByIdParamDto>({
-		...options,
-		mutationFn: async (data) => {
-			const result = await confirmOrder({ data });
-			if (hasMutationError(result)) {
-				throw new ProblemDetailsError(result.error);
-			}
-		},
-		meta: {
-			invalidates: orderKeys.all(),
-		},
-	});
-}
-
-export function useMarkEquipmentAsReturned(
-	options?: OrderDetailMutationOptions,
-) {
-	return useMutation<void, ProblemDetailsError, GetOrderByIdParamDto>({
-		...options,
-		mutationFn: async (data) => {
-			const result = await markEquipmentAsReturned({ data });
-			if (hasMutationError(result)) {
-				throw new ProblemDetailsError(result.error);
-			}
-		},
-		meta: {
-			invalidates: orderKeys.all(),
-		},
-	});
-}
-
-export function useCancelOrder(options?: OrderDetailMutationOptions) {
-	return useMutation<void, ProblemDetailsError, GetOrderByIdParamDto>({
-		...options,
-		mutationFn: async (data) => {
-			const result = await cancelOrder({ data });
-			if (hasMutationError(result)) {
-				throw new ProblemDetailsError(result.error);
-			}
-		},
-		meta: {
-			invalidates: orderKeys.all(),
-		},
-	});
-}
-
-export function useMarkEquipmentAsRetired(
-	options?: OrderDetailMutationOptions,
-) {
-	return useMutation<void, ProblemDetailsError, GetOrderByIdParamDto>({
-		...options,
-		mutationFn: async (data) => {
-			const result = await markEquipmentAsRetired({ data });
-			if (hasMutationError(result)) {
-				throw new ProblemDetailsError(result.error);
-			}
-		},
-		meta: {
-			invalidates: orderKeys.all(),
-		},
 	});
 }
 

@@ -10,9 +10,9 @@ Related docs:
 - `rental-ownership-and-payouts.md` for downstream owner split implications
 - `user-customer-auth.md` for customer versus user identity boundaries around order flows
 
-## Orders As Commercial Commitments
+## Orders As Commercial Records
 
-`Order` represents the rental agreement the business accepted.
+`Order` represents the commercial rental record for a customer checkout or staff-created rental. For confirmed/active orders, it is the rental agreement the business accepted. For request-to-book orders in `PENDING_REVIEW`, it is only a customer request awaiting staff acceptance.
 
 An order belongs to:
 
@@ -65,12 +65,12 @@ For actor boundaries between customer-facing and admin-facing order flows, see `
 
 ## Booking Mode And Initial State
 
-The initial order status depends on tenant booking mode:
+The initial order status and reservation side effects depend on tenant booking mode:
 
-- `INSTANT_BOOK` creates the order as `CONFIRMED`
-- `REQUEST_TO_BOOK` creates the order as `PENDING_REVIEW`
+- `INSTANT_BOOK` creates the order as `CONFIRMED` and creates `COMMITTED` asset assignments immediately.
+- `REQUEST_TO_BOOK` creates the order as `PENDING_REVIEW` and does **not** create asset assignments or block availability at customer submission time.
 
-That distinction matters because acceptance and physical reservation may be tentative or committed depending on booking policy.
+That distinction matters because request-to-book separates customer intent from business acceptance and physical reservation. A pending-review request is review work for staff; it is not yet an operational reservation.
 
 ## Order Lifecycle
 
@@ -94,24 +94,27 @@ This reflects a workflow where review and acceptance may be separate from final 
 
 ## Assignment Stage
 
-Asset assignments remain the physical reservation primitive, but the current model adds an assignment stage:
+Asset assignments are the physical reservation primitive. An order blocks availability only through asset assignments, not merely by existing in a particular order status.
+
+The assignment stage enum currently includes:
 
 - `HOLD`
 - `COMMITTED`
 
-Assignment stage is driven by booking mode:
+For the supported booking modes:
 
-- request-to-book orders start with `HOLD` assignments
 - instant-book orders start with `COMMITTED` assignments
+- request-to-book orders start with no assignments while they are `PENDING_REVIEW`
 
 Lifecycle actions update order state and reservation state together:
 
-- confirming a pending-review order promotes assignments from `HOLD` to `COMMITTED`
-- rejecting or expiring a pending-review order releases held assignments
+- approving/confirming a pending-review order re-checks availability and creates `COMMITTED` assignments transactionally
+- approving/confirming a pending-review order can fail if the requested assets/items are no longer available for the requested rental period
+- rejecting or expiring a pending-review order closes the request without releasing inventory, because no inventory was blocked by the pending request
 - cancelling a confirmed order releases committed assignments
 - activating and completing an order advance fulfillment lifecycle around already committed assignments
 
-So the current fulfillment story is centered on tentative versus committed reservation, not on a generic sourcing status.
+`HOLD` remains part of the shared model, but customer request-to-book submission should not use it to reserve inventory. The current request-to-book fulfillment story is centered on approval-time commitment, not tentative reservation.
 
 ## Assignment Source
 

@@ -1,14 +1,18 @@
 import { useState } from "react";
 
 const WHATSAPP_GREEN = "#25D366";
+const WHATSAPP_MESSAGE = "¿No encontrás tu combo? Escribinos y te lo armamos";
+
+type WhatsAppFloatProps = {
+  phoneNumber: string;
+};
 
 export default function WhatsAppFloat({
-  phoneNumber = "34680870274",
-  message = "¿No encontrás tu combo? Escribinos y te lo armamos",
-}) {
+  phoneNumber,
+}: WhatsAppFloatProps) {
   const [bubbleVisible, setBubbleVisible] = useState(true);
 
-  const encodedMessage = encodeURIComponent(message);
+  const encodedMessage = encodeURIComponent(WHATSAPP_MESSAGE);
   const href = `https://wa.me/${phoneNumber}?text=${encodedMessage}`;
 
   return (
@@ -16,7 +20,7 @@ export default function WhatsAppFloat({
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      aria-label="Contactanos por WhatsApp"
+      aria-label={WHATSAPP_MESSAGE}
       className="group fixed bottom-2 right-2 md:bottom-6 md:right-6 z-50 flex flex-col items-end gap-4"
     >
       {/* ── Chat bubble ──────────────────────────────────────────────── */}

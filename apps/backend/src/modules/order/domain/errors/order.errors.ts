@@ -4,48 +4,64 @@ import { OrderStatus } from '@repo/types';
 export class OrderError extends DomainError {}
 
 export class OrderMustContainItemsError extends OrderError {
+  readonly code = 'ORDER_MUST_CONTAIN_ITEMS';
+
   constructor() {
     super('An order must contain at least one item.');
   }
 }
 
 export class NoActiveContractForAssetError extends OrderError {
+  readonly code = 'NO_ACTIVE_CONTRACT_FOR_ASSET';
+
   constructor(assetId: string, ownerId: string) {
     super(`Asset "${assetId}" belongs to owner "${ownerId}" but has no active contract.`);
   }
 }
 
 export class InvalidPickupSlotError extends OrderError {
+  readonly code = 'INVALID_PICKUP_SLOT';
+
   constructor(time: number) {
     super(`Pickup time ${time} is not a valid slot for the selected location and date.`);
   }
 }
 
 export class InvalidReturnSlotError extends OrderError {
+  readonly code = 'INVALID_RETURN_SLOT';
+
   constructor(time: number) {
     super(`Return time ${time} is not a valid slot for the selected location and date.`);
   }
 }
 
 export class ProductTypeNotFoundError extends OrderError {
+  readonly code = 'CATALOG_ITEM_NOT_FOUND';
+
   constructor(productTypeId: string) {
     super(`ProductType "${productTypeId}" was not found for order creation.`);
   }
 }
 
 export class BundleNotFoundError extends OrderError {
+  readonly code = 'CATALOG_ITEM_NOT_FOUND';
+
   constructor(bundleId: string) {
     super(`Bundle "${bundleId}" was not found for order creation.`);
   }
 }
 
 export class InvalidBookingLocationError extends OrderError {
+  readonly code = 'INVALID_BOOKING_CONTEXT';
+
   constructor(locationId: string) {
     super(`Location "${locationId}" is not valid for customer booking.`);
   }
 }
 
 export class DeliveryNotSupportedForLocationError extends OrderError {
+  readonly code = 'DELIVERY_NOT_SUPPORTED_FOR_LOCATION';
+
   constructor(locationId: string) {
     super(`Location "${locationId}" does not support delivery orders.`);
   }
@@ -106,6 +122,8 @@ export class OrderPricingItemNotFoundError extends OrderError {
 }
 
 export class OrderPricingTargetTotalInvalidError extends OrderError {
+  readonly code = 'ORDER_PRICING_TARGET_TOTAL_INVALID';
+
   constructor(targetTotal: string) {
     super(`Target total '${targetTotal}' is invalid. It must be greater than zero.`);
   }
@@ -137,7 +155,120 @@ export class OrderCancellationBlockedBySettledOwnerSplitsError extends OrderErro
   }
 }
 
+export class OrderAccessorySelectionNotAllowedError extends OrderError {
+  constructor(status: OrderStatus) {
+    super(`Cannot change accessory selections for an order in '${status}' status.`);
+  }
+}
+
+export class OrderAccessorySelectionItemNotFoundError extends OrderError {
+  constructor(orderItemId: string) {
+    super(`Order item '${orderItemId}' was not found for accessory selection.`);
+  }
+}
+
+export class OrderAccessorySelectionRequiresProductItemError extends OrderError {
+  constructor(orderItemId: string) {
+    super(`Order item '${orderItemId}' must be a product item to have accessory selections.`);
+  }
+}
+
+export class InvalidOrderItemAccessoryQuantityError extends OrderError {
+  constructor() {
+    super('Accessory selection quantity must be greater than zero.');
+  }
+}
+
+export class DuplicateOrderItemAccessoryError extends OrderError {
+  constructor(accessoryRentalItemId: string) {
+    super(`Accessory rental item '${accessoryRentalItemId}' appears more than once in the accessory selection list.`);
+  }
+}
+
+export class DuplicateOrderAccessoryPreparationItemError extends OrderError {
+  constructor(orderItemId: string) {
+    super(`Order item '${orderItemId}' appears more than once in the accessory preparation request.`);
+  }
+}
+
+export class OrderItemAccessoryRentalItemNotFoundError extends OrderError {
+  constructor(accessoryRentalItemId: string) {
+    super(`Accessory rental item '${accessoryRentalItemId}' was not found.`);
+  }
+}
+
+export class OrderItemAccessoryMustBeAccessoryError extends OrderError {
+  constructor(accessoryRentalItemId: string) {
+    super(`Rental item '${accessoryRentalItemId}' must be an accessory to be selected for an order item.`);
+  }
+}
+
+export class OrderItemAccessoryIncompatibleError extends OrderError {
+  constructor(accessoryRentalItemId: string, primaryRentalItemId: string) {
+    super(
+      `Accessory rental item '${accessoryRentalItemId}' is not compatible with primary rental item '${primaryRentalItemId}'.`,
+    );
+  }
+}
+
+export class OrderItemAccessoryAssignmentNotFoundError extends OrderError {
+  constructor(orderItemAccessoryId: string) {
+    super(`Order item accessory '${orderItemAccessoryId}' was not found for asset assignment.`);
+  }
+}
+
+export class DuplicateOrderItemAccessoryAssetError extends OrderError {
+  constructor(assetId: string) {
+    super(`Asset '${assetId}' appears more than once in the accessory assignment request.`);
+  }
+}
+
+export class OrderItemAccessoryAssignmentQuantityExceededError extends OrderError {
+  constructor(orderItemAccessoryId: string, quantity: number) {
+    super(`Cannot assign more than ${quantity} assets to order item accessory '${orderItemAccessoryId}'.`);
+  }
+}
+
+export class OrderItemAccessoryAssetMismatchError extends OrderError {
+  constructor(assetId: string, accessoryRentalItemId: string) {
+    super(`Asset '${assetId}' does not belong to accessory rental item '${accessoryRentalItemId}'.`);
+  }
+}
+
+export class OrderItemAccessoryAssetLocationMismatchError extends OrderError {
+  constructor(assetId: string) {
+    super(`Asset '${assetId}' is not stocked at the order location.`);
+  }
+}
+
+export class OrderItemAccessoryAssetUnavailableError extends OrderError {
+  constructor(assetId: string) {
+    super(`Asset '${assetId}' is not available for the accessory assignment period.`);
+  }
+}
+
+export class OrderItemAccessoryAssetAssignmentNotAllowedError extends OrderError {
+  constructor(status: OrderStatus) {
+    super(`Cannot assign concrete accessory assets while an order is in '${status}' status.`);
+  }
+}
+
+export class OrderItemAccessoryInsufficientAvailableAssetsError extends OrderError {
+  constructor(accessoryRentalItemId: string, requestedCount: number, availableCount: number) {
+    super(
+      `Accessory rental item '${accessoryRentalItemId}' has ${availableCount} available assets, but ${requestedCount} were requested.`,
+    );
+  }
+}
+
 export type UnavailableItem = { type: 'PRODUCT'; productTypeId: string } | { type: 'BUNDLE'; bundleId: string };
+
+export type AccessoryConflict = {
+  orderItemAccessoryId: string;
+  accessoryRentalItemId: string;
+  requestedCount: number;
+  availableCount: number;
+};
 
 export type ConflictGroup = {
   productTypeId: string;
@@ -147,9 +278,12 @@ export type ConflictGroup = {
 };
 
 export class OrderItemUnavailableError extends OrderError {
+  readonly code = 'ORDER_ITEM_UNAVAILABLE';
+
   constructor(
     public readonly unavailableItems: UnavailableItem[],
     public readonly conflictGroups: ConflictGroup[] = [],
+    public readonly accessoryConflicts: AccessoryConflict[] = [],
   ) {
     super('One or more order items are unavailable for the requested period.');
   }

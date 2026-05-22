@@ -111,12 +111,13 @@ export class EditOrderHttpController {
       if (error instanceof OrderItemUnavailableError) {
         throw new ProblemException(
           HttpStatus.CONFLICT,
-          'Order Item Unavailable',
+          'Order Items Unavailable',
           error.message,
-          'errors://order-item-unavailable',
+          'errors://order-items-unavailable',
           {
             unavailableItems: error.unavailableItems,
             conflictGroups: error.conflictGroups,
+            accessoryConflicts: error.accessoryConflicts,
           },
         );
       }

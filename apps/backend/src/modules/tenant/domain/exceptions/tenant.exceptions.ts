@@ -61,3 +61,25 @@ export class InvalidBookingModeException extends Error {
     super(`bookingMode must be 'instant-book' or 'request-to-book', got ${mode}`);
   }
 }
+
+export class InvalidOrderCommunicationModeException extends Error {
+  constructor(mode: string) {
+    super(`orderCommunicationMode must be 'FORMAL' or 'WHATSAPP', got ${mode}`);
+  }
+}
+
+export class MissingWhatsAppNumberForWhatsAppModeException extends Error {
+  constructor() {
+    super('whatsAppNumber is required when orderCommunicationMode is WHATSAPP.');
+    this.name = 'MissingWhatsAppNumberForWhatsAppModeException';
+  }
+}
+
+export class InvalidWhatsAppNumberException extends Error {
+  constructor(whatsAppNumber: string) {
+    super(
+      `whatsAppNumber must be a valid international WhatsApp number in canonical wa.me-compatible format, got ${whatsAppNumber}`,
+    );
+    this.name = 'InvalidWhatsAppNumberException';
+  }
+}

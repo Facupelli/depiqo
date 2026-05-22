@@ -1,30 +1,32 @@
-import type { RentalLocationResponse } from "@repo/schemas";
-import { FulfillmentMethod } from "@repo/types";
+import type { RentalLocationResponse, TenantRentalConfig } from "@repo/schemas";
+import { CreateOrderNextStepType, FulfillmentMethod } from "@repo/types";
 import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { useCreateOrder } from "@/features/orders/orders.queries";
+import { getCurrentRelativeRedirect } from "@/features/auth/auth-redirect";
+import { useCreateOrder } from "@/features/orders/orders.mutations";
+import { useCurrentPortalSession } from "@/features/rental/auth/portal-auth.queries";
 import {
 	useCartActions,
 	useCartItems,
 } from "@/features/rental/cart/cart.hooks";
-import { useCurrentPortalSession } from "@/features/rental/auth/portal-auth.queries";
-import { getCurrentRelativeRedirect } from "@/features/auth/auth-redirect";
 import type { CartPageContextValue } from "@/features/rental/cart/cart-page.context.types";
 import { getPortalAuthRedirectSearch } from "../../auth/portal-auth.redirect";
 import type { ConflictGroup } from "../cart.types";
 import { formatSlot } from "../cart.utils";
+import { parseCartBookingError } from "../cart-booking-errors";
+import { isDeliveryRequestComplete } from "../cart-order.utils";
+import { retryCreateOrderWhenInProgress } from "../cart-order-idempotency-retry";
 import {
-	extractBookingConflicts,
-	isDeliveryNotSupportedError,
-	isDeliveryRequestComplete,
-} from "../cart-order.utils";
-import { isAuthError } from "@/shared/errors";
+	buildCartCreateOrderDto,
+	createCartCreateOrderSubmissionSignature,
+} from "../cart-order-submit.utils";
 import { useCartOrderDelivery } from "./use-cart-order-delivery";
 import { useCartOrderPricing } from "./use-cart-order-pricing";
 import { useCartOrderTimes } from "./use-cart-order-times";
-import { useTenantPricingConfig } from "../../tenant/tenant.queries";
+import { useCreateOrderIdempotency } from "./use-create-order-idempotency";
 
 type UseCartOrderParams = {
+	tenantRentalConfig: TenantRentalConfig;
 	location: {
 		id: string;
 		name: string;
@@ -46,17 +48,18 @@ type UseCartOrderParams = {
  * - Fetch the price preview
  * - Join line items with cart item names (so views don't touch the cart store)
  * - Submit the order and navigate on success
- * - Track unavailable item IDs on 422 errors
- * - Track unexpected booking errors (non-422) for inline error display
+ * - Track booking conflicts for inline recovery
+ * - Track unexpected booking errors for inline error display
  */
 export function useCartOrder({
+	tenantRentalConfig,
 	location,
 	pickupDate,
 	returnDate,
 }: UseCartOrderParams) {
 	const navigate = useNavigate();
 	const { data: sessionUser } = useCurrentPortalSession();
-	const { data: tenantPricingConfig } = useTenantPricingConfig();
+	const tenantPricingConfig = tenantRentalConfig.pricing;
 	const cartItems = useCartItems();
 	const { clearCart } = useCartActions();
 
@@ -101,7 +104,9 @@ export function useCartOrder({
 		cartItems,
 	});
 
-	const { mutateAsync: createOrder } = useCreateOrder();
+	const { mutateAsync: createOrder, isPending: isSubmittingOrder } =
+		useCreateOrder();
+	const idempotency = useCreateOrderIdempotency();
 
 	const handleBook = async () => {
 		setUnavailableIds([]);
@@ -132,21 +137,50 @@ export function useCartOrder({
 		}
 
 		try {
-			await createOrder({
+			const dto = buildCartCreateOrderDto({
 				locationId: location.id,
 				pickupDate,
 				returnDate,
 				currency: "USD",
 				items: pricing.itemPayload,
 				insuranceSelected,
-				couponCode: couponCode.trim() || undefined,
+				couponCode,
 				fulfillmentMethod: delivery.fulfillmentMethod,
 				deliveryRequest: delivery.normalizedDeliveryRequest,
 				pickupTime: times.pickupTime,
 				returnTime: times.returnTime,
 			});
 
+			const signature = createCartCreateOrderSubmissionSignature(dto);
+			const idempotencyKey = idempotency.getKeyForSignature(signature);
+
+			const createdOrder = await retryCreateOrderWhenInProgress(() =>
+				createOrder({
+					dto,
+					idempotencyKey,
+				}),
+			);
+
+			idempotency.clear();
 			clearCart();
+
+			if (
+				createdOrder.nextStep.type ===
+				CreateOrderNextStepType.REDIRECT_TO_WHATSAPP
+			) {
+				if (!createdOrder.nextStep.whatsappUrl) {
+					navigate({ to: "/order-created-contact-team" });
+					return;
+				}
+
+				navigate({
+					to: "/order-created-whatsapp",
+					search: {
+						whatsappUrl: createdOrder.nextStep.whatsappUrl,
+					},
+				});
+				return;
+			}
 
 			navigate({
 				to: "/order-confirmation",
@@ -154,39 +188,42 @@ export function useCartOrder({
 					pickupDate: pricing.period.start.format("YYYY-MM-DD"),
 					pickupLocation: location.name,
 					pickupTime: formatSlot(times.pickupTime),
+					status: createdOrder.status,
+					bookingMode: tenantRentalConfig.bookingMode,
 				},
 			});
 		} catch (error) {
-			const conflicts = extractBookingConflicts(error);
-			if (conflicts) {
-				setUnavailableIds(conflicts.unavailableIds);
-				setConflictGroups(conflicts.conflictGroups);
-				return;
-			}
+			const parsedError = parseCartBookingError(error);
 
-			if (isAuthError(error)) {
-				navigate({
-					to: "/login",
-					search: getPortalAuthRedirectSearch(
-						getCurrentRelativeRedirect("/cart"),
-					),
-				});
-				return;
+			switch (parsedError.kind) {
+				case "availability-conflict":
+					setUnavailableIds(parsedError.unavailableIds);
+					setConflictGroups(parsedError.conflictGroups);
+					setBookingErrorMessage(parsedError.message);
+					return;
+				case "auth":
+					navigate({
+						to: "/login",
+						search: getPortalAuthRedirectSearch(
+							getCurrentRelativeRedirect("/cart"),
+						),
+					});
+					return;
+				case "delivery-not-supported":
+					delivery.onFulfillmentMethodChange(FulfillmentMethod.PICKUP);
+					setBookingErrorMessage(parsedError.message);
+					return;
+				case "idempotency-conflict":
+					idempotency.discard();
+					setBookingErrorMessage(parsedError.message);
+					return;
+				case "idempotency-in-progress":
+					setBookingErrorMessage(parsedError.message);
+					return;
+				case "unknown":
+					setBookingErrorMessage(parsedError.message);
+					return;
 			}
-
-			if (isDeliveryNotSupportedError(error)) {
-				delivery.onFulfillmentMethodChange(FulfillmentMethod.PICKUP);
-				setBookingErrorMessage(
-					"Esta sucursal solo permite retiro en el local.",
-				);
-				return;
-			}
-
-			// Any non-422 error (5xx, network failure, etc.) — surface inline
-			// without re-throwing, so the page stays intact and the user can retry.
-			setBookingErrorMessage(
-				"La reserva falló inesperadamente. Por favor, intentalo de nuevo.",
-			);
 		}
 	};
 
@@ -202,6 +239,7 @@ export function useCartOrder({
 			period: pricing.period,
 		},
 		pricing: {
+			priceConfig: tenantPricingConfig,
 			breakdown: pricing.breakdown,
 			joinedLineItems: pricing.joinedLineItems,
 			insuranceSelected,
@@ -227,7 +265,11 @@ export function useCartOrder({
 			onDeliveryRequestFieldChange: delivery.onDeliveryRequestFieldChange,
 		},
 		booking: {
+			bookingMode: tenantRentalConfig.bookingMode,
+			orderCommunicationMode:
+				tenantRentalConfig.communication.orderCommunicationMode,
 			isAuthenticated: Boolean(sessionUser),
+			isSubmittingOrder,
 			isBookingError: Boolean(bookingErrorMessage),
 			bookingErrorMessage,
 			unavailableIds,

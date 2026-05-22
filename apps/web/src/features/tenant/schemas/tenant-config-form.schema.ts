@@ -1,4 +1,4 @@
-import { BookingMode, RoundingRule } from "@repo/types";
+import { BookingMode, OrderCommunicationMode, RoundingRule } from "@repo/types";
 import {
   updateTenantConfigSchema,
   type UpdateTenantConfigDto,
@@ -6,8 +6,10 @@ import {
 import { z } from "zod";
 
 const bookingModeSchema = z.enum(BookingMode);
+const orderCommunicationModeSchema = z.enum(OrderCommunicationMode);
 
-export const tenantConfigFormSchema = z.object({
+export const tenantConfigFormSchema = z
+  .object({
   overRentalEnabled: z.boolean(),
   maxOverRentThreshold: z.number().nonnegative(),
   weekendCountsAsOne: z.boolean(),
@@ -19,7 +21,22 @@ export const tenantConfigFormSchema = z.object({
   timezone: z.string().min(1, "Timezone is required"),
   newArrivalsWindowDays: z.number().int().positive(),
   bookingMode: bookingModeSchema,
-});
+  orderCommunicationMode: orderCommunicationModeSchema,
+  whatsAppNumber: z.string().trim().optional(),
+  showFloatingWhatsAppButton: z.boolean(),
+  })
+  .superRefine((values, context) => {
+    if (
+      values.orderCommunicationMode === OrderCommunicationMode.WHATSAPP &&
+      !values.whatsAppNumber
+    ) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "El número de WhatsApp es obligatorio en este modo.",
+        path: ["whatsAppNumber"],
+      });
+    }
+  });
 
 export type TenantConfigFormValues = z.infer<typeof tenantConfigFormSchema>;
 
@@ -35,6 +52,9 @@ export const tenantConfigFormDefaults: TenantConfigFormValues = {
   timezone: "UTC",
   newArrivalsWindowDays: 30,
   bookingMode: BookingMode.INSTANT_BOOK,
+  orderCommunicationMode: OrderCommunicationMode.FORMAL,
+  whatsAppNumber: undefined,
+  showFloatingWhatsAppButton: false,
 };
 
 export function tenantConfigToFormValues(config: {
@@ -51,6 +71,11 @@ export function tenantConfigToFormValues(config: {
   timezone: string;
   newArrivalsWindowDays: number;
   bookingMode: BookingMode;
+  communication: {
+    orderCommunicationMode: OrderCommunicationMode;
+    whatsAppNumber?: string;
+    showFloatingWhatsAppButton: boolean;
+  };
 }): TenantConfigFormValues {
   return {
     overRentalEnabled: config.pricing.overRentalEnabled,
@@ -64,6 +89,9 @@ export function tenantConfigToFormValues(config: {
     timezone: config.timezone,
     newArrivalsWindowDays: config.newArrivalsWindowDays,
     bookingMode: config.bookingMode,
+    orderCommunicationMode: config.communication.orderCommunicationMode,
+    whatsAppNumber: config.communication.whatsAppNumber,
+    showFloatingWhatsAppButton: config.communication.showFloatingWhatsAppButton,
   };
 }
 
@@ -84,6 +112,11 @@ export function toUpdateTenantConfigDto(
     timezone: values.timezone,
     newArrivalsWindowDays: values.newArrivalsWindowDays,
     bookingMode: values.bookingMode,
+    communication: {
+      orderCommunicationMode: values.orderCommunicationMode,
+      whatsAppNumber: values.whatsAppNumber?.trim() || undefined,
+      showFloatingWhatsAppButton: values.showFloatingWhatsAppButton,
+    },
   };
 
   return updateTenantConfigSchema.parse(dto);

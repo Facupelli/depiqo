@@ -4,17 +4,30 @@ import {
 	type UpdateAssetDto,
 	updateAssetSchema,
 } from "@repo/schemas";
+import { TrackingMode } from "@repo/types";
 import { z } from "zod";
 import { emptyToNull, emptyToNullOrUndefined } from "@/shared/utils/form.utils";
 
-export const assetFormSchema = z.object({
+export const pooledAssetFormSchema = z.object({
 	locationId: z.string().min(1, "Location is required"),
 	ownerId: z.string().or(z.literal("")),
 	serialNumber: z.string().or(z.literal("")),
 	notes: z.string().or(z.literal("")),
 });
 
-export type AssetFormValues = z.infer<typeof assetFormSchema>;
+export const identifiedAssetFormSchema = z.object({
+	locationId: z.string().min(1, "Location is required"),
+	ownerId: z.string().or(z.literal("")),
+	serialNumber: z.string().min(1, "Numero de serie es requerido"),
+	notes: z.string().or(z.literal("")),
+});
+
+export const assetFormSchema = (trackingMode: TrackingMode) =>
+	trackingMode === TrackingMode.IDENTIFIED
+		? identifiedAssetFormSchema
+		: pooledAssetFormSchema;
+
+export type AssetFormValues = z.infer<typeof pooledAssetFormSchema>;
 
 export function getAssetFormDefaults(locationId: string): AssetFormValues {
 	return {

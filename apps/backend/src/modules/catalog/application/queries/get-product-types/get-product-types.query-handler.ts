@@ -1,7 +1,7 @@
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { PrismaService } from 'src/core/database/prisma.service';
 import { GetProductTypesQuery } from './get-product-types.query';
-import { TrackingMode } from '@repo/types';
+import { RentalItemKind, TrackingMode } from '@repo/types';
 
 type ProductTypeIncludedItemReadModel = {
   name: string;
@@ -15,6 +15,7 @@ type ProductTypeListItemReadModel = {
   name: string;
   imageUrl: string;
   description: string | null;
+  kind: RentalItemKind;
   trackingMode: TrackingMode;
   excludeFromNewArrivals: boolean;
   attributes: Record<string, string>;
@@ -62,6 +63,10 @@ export class GetProductTypesQueryHandler implements IQueryHandler<
 
     if (query.categoryId !== undefined) {
       where.categoryId = query.categoryId;
+    }
+
+    if (query.kind !== undefined) {
+      where.kind = query.kind;
     }
 
     if (query.isActive === true) {
@@ -128,6 +133,7 @@ export class GetProductTypesQueryHandler implements IQueryHandler<
         name: pt.name,
         imageUrl: pt.imageUrl ?? '',
         description: pt.description,
+        kind: pt.kind as RentalItemKind,
         trackingMode: pt.trackingMode as TrackingMode,
         excludeFromNewArrivals: pt.excludeFromNewArrivals,
         attributes: pt.attributes as Record<string, string>,

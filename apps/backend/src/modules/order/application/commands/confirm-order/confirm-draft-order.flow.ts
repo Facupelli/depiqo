@@ -7,8 +7,8 @@ import { PrismaService } from 'src/core/database/prisma.service';
 import { InventoryPublicApi } from 'src/modules/inventory/inventory.public-api';
 import { OrderRepository } from 'src/modules/order/infrastructure/persistence/repositories/order.repository';
 
-import { CreateOrderAssetResolver, buildDemandUnits } from '../create-order/create-order-asset-resolver';
-import { CreateOrderOwnerContractResolver } from '../create-order/create-order-owner-contract-resolver';
+import { CreateOrderAssetResolver, buildDemandUnits } from '../create-order/inventory/create-order-asset-resolver';
+import { CreateOrderOwnerContractResolver } from '../create-order/ownership/create-order-owner-contract-resolver';
 import { DemandUnit } from '../create-order/create-order.types';
 import { Order } from '../../../domain/entities/order.entity';
 import { InvalidOrderStatusTransitionException } from '../../../domain/exceptions/order.exceptions';
@@ -25,7 +25,7 @@ type ConfirmDraftOrderError =
   | OrderItemUnavailableError
   | OrderStatusTransitionNotAllowedError;
 
-type DraftDemandUnit = DemandUnit & {
+export type ConfirmOrderDemandUnit = DemandUnit & {
   orderItemId: string;
 };
 
@@ -44,7 +44,7 @@ export class ConfirmDraftOrderFlow {
       return err(new OrderCustomerRequiredForConfirmationError(order.id));
     }
 
-    const demandUnits = buildDraftDemandUnits(order);
+    const demandUnits = buildConfirmOrderDemandUnits(order);
     const availability = await this.assetResolver.resolveDemand(demandUnits);
 
     if (availability.unavailableItems.length > 0 || availability.conflictGroups.length > 0) {
@@ -67,7 +67,7 @@ export class ConfirmDraftOrderFlow {
         order.currentPeriod.start,
         demandUnits,
       );
-      const assignments = attachDraftDemandToOrder(order, demandUnits, contractByAssetId);
+      const assignments = attachConfirmedDemandToOrder(order, demandUnits, contractByAssetId);
 
       await this.orderRepository.save(order, tx);
       const assignmentResults = await Promise.all(
@@ -89,8 +89,8 @@ export class ConfirmDraftOrderFlow {
   }
 }
 
-function buildDraftDemandUnits(order: Order): DraftDemandUnit[] {
-  const units: DraftDemandUnit[] = [];
+export function buildConfirmOrderDemandUnits(order: Order): ConfirmOrderDemandUnit[] {
+  const units: ConfirmOrderDemandUnit[] = [];
 
   for (const item of order.getItems()) {
     if (item.isProduct()) {
@@ -136,9 +136,9 @@ function buildDraftDemandUnits(order: Order): DraftDemandUnit[] {
   return units;
 }
 
-function attachDraftDemandToOrder(
+export function attachConfirmedDemandToOrder(
   order: Order,
-  demandUnits: DraftDemandUnit[],
+  demandUnits: ConfirmOrderDemandUnit[],
   contractByAssetId: Awaited<ReturnType<CreateOrderOwnerContractResolver['resolve']>>,
 ): Array<Parameters<InventoryPublicApi['saveOrderAssignment']>[0]> {
   const orderItemsById = new Map(order.getItems().map((item) => [item.id, item]));
@@ -175,7 +175,7 @@ function attachDraftDemandToOrder(
   });
 }
 
-function buildUnavailableError(demandUnits: DraftDemandUnit[]): OrderItemUnavailableError {
+export function buildUnavailableError(demandUnits: ConfirmOrderDemandUnit[]): OrderItemUnavailableError {
   const seen = new Set<string>();
 
   return new OrderItemUnavailableError(

@@ -7,12 +7,16 @@ const config: Config.InitialOptions = {
   moduleNameMapper: {
     ...e2eConfig.moduleNameMapper,
     '^@generated/prisma$': '<rootDir>/src/generated/prisma',
+    '^jose$': '<rootDir>/src/__mocks__/jose.ts',
   },
-  globals: {
-    'ts-jest': {
-      tsconfig: '<rootDir>/tsconfig.json',
-      diagnostics: false,
-    },
+  transform: {
+    '^.+\\.(t|j)s$': [
+      'ts-jest',
+      {
+        tsconfig: '<rootDir>/tsconfig.spec.json',
+        diagnostics: false,
+      },
+    ],
   },
 };
 

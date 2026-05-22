@@ -6,6 +6,7 @@ import { useOrderConfirmActions } from "./use-order-confirm-actions";
 import { useOrderContractActions } from "./use-order-contract-actions";
 import { useOrderDocumentState } from "./use-order-document-state";
 import { useOrderLifecycleActions } from "./use-order-lifecycle-actions";
+import { useOrderRejectActions } from "./use-order-reject-actions";
 import { useOrderSigningActions } from "./use-order-signing-actions";
 
 export function useOrderActions(order: ParsedOrderDetailResponseDto) {
@@ -30,6 +31,7 @@ export function useOrderActions(order: ParsedOrderDetailResponseDto) {
 	});
 	const confirmActions = useOrderConfirmActions(order);
 	const cancelActions = useOrderCancelActions(order.id);
+	const rejectActions = useOrderRejectActions(order.id);
 	const lifecycleActions = useOrderLifecycleActions(order.id);
 	const signingActions = useOrderSigningActions(order);
 
@@ -75,6 +77,7 @@ export function useOrderActions(order: ParsedOrderDetailResponseDto) {
 		confirmation: {
 			isDialogOpen: confirmActions.isConfirmOrderDialogOpen,
 			setIsDialogOpen: confirmActions.setIsConfirmOrderDialogOpen,
+			conflict: confirmActions.confirmOrderConflict,
 			error: confirmActions.confirmOrderError,
 			isPending: confirmActions.isConfirmOrderPending,
 			openDialog: confirmActions.handleConfirmOrder,
@@ -87,6 +90,16 @@ export function useOrderActions(order: ParsedOrderDetailResponseDto) {
 			isPending: cancelActions.isCancelOrderPending,
 			openDialog: cancelActions.handleOpenCancelOrder,
 			submit: cancelActions.handleConfirmCancelOrder,
+		},
+		rejection: {
+			isDialogOpen: rejectActions.isRejectOrderDialogOpen,
+			setIsDialogOpen: rejectActions.setIsRejectOrderDialogOpen,
+			error: rejectActions.rejectOrderError,
+			isPending: rejectActions.isRejectOrderPending,
+			reason: rejectActions.rejectionReason,
+			openDialog: rejectActions.handleOpenRejectOrder,
+			setReason: rejectActions.setRejectionReason,
+			submit: rejectActions.handleConfirmRejectOrder,
 		},
 		lifecycle: {
 			pendingAction: lifecycleActions.pendingLifecycleAction,

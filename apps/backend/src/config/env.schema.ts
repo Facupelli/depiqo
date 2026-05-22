@@ -1,5 +1,21 @@
 import { z } from 'zod';
 
+import { NotificationChannel } from 'src/modules/notifications/domain/notification-channel.enum';
+
+const notificationChannelSchema = z.enum(NotificationChannel);
+
+const notificationsMutedChannelsByEnvSchema = z.preprocess((value) => {
+  if (typeof value !== 'string' || value.trim() === '') {
+    return {};
+  }
+
+  try {
+    return JSON.parse(value);
+  } catch {
+    return value;
+  }
+}, z.record(z.string(), z.array(notificationChannelSchema)).default({}));
+
 export const EnvSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   PORT: z.coerce.number().default(3000),
@@ -32,6 +48,7 @@ export const EnvSchema = z.object({
   NOTIFICATIONS_EMAIL_FROM: z.string(),
   NOTIFICATIONS_EMAIL_FROM_NAME: z.string().optional(),
   NOTIFICATIONS_EMAIL_REPLY_TO: z.string().optional(),
+  NOTIFICATIONS_MUTED_CHANNELS_BY_ENV: notificationsMutedChannelsByEnvSchema,
 
   INTERNAL_API_TOKEN: z.string(),
   ROOT_DOMAIN: z.string(),

@@ -1,4 +1,4 @@
-import { TrackingMode } from "@repo/types";
+import { RentalItemKind, TrackingMode } from "@repo/types";
 import { z } from "zod";
 import { localDateSchema } from "../../shared/rental-temporal.schema";
 import {
@@ -32,12 +32,29 @@ export const productTypePricingTierResponseSchema = z.object({
 		.nullable(),
 });
 
+export const productTypeAccessoryLinkResponseSchema = z.object({
+	id: z.uuid(),
+	primaryRentalItemId: z.uuid(),
+	accessoryRentalItemId: z.uuid(),
+	isDefaultIncluded: z.boolean(),
+	defaultQuantity: z.number().int().positive(),
+	notes: z.string().nullable(),
+	accessoryRentalItem: z.object({
+		id: z.uuid(),
+		name: z.string(),
+		imageUrl: z.string(),
+		trackingMode: z.enum(TrackingMode),
+		retiredAt: z.coerce.date().nullable(),
+	}),
+});
+
 export const productTypeResponseSchema = z.object({
 	id: z.uuid(),
 	tenantId: z.uuid(),
 	name: z.string(),
 	imageUrl: z.string(),
 	description: z.string().nullable(),
+	kind: z.enum(RentalItemKind),
 	trackingMode: z.enum(TrackingMode),
 	excludeFromNewArrivals: z.boolean(),
 	attributes: productTypeAttributesSchema,
@@ -52,11 +69,19 @@ export const productTypeResponseSchema = z.object({
 	category: productTypeCategoryResponseSchema.nullable(),
 	billingUnit: productTypeBillingUnitResponseSchema,
 	pricingTiers: z.array(productTypePricingTierResponseSchema),
+	accessoryLinks: z.array(productTypeAccessoryLinkResponseSchema).optional(),
 });
 
 export const getProductTypesQuerySchema = z.object({
 	categoryId: z.uuid().optional(),
 	isActive: z.coerce.boolean().optional(),
+	kind: z.enum(RentalItemKind).optional(),
+	search: z.string().optional(),
+	page: z.coerce.number().optional(),
+	limit: z.coerce.number().optional(),
+});
+
+export const getAvailableAccessoriesQuerySchema = z.object({
 	search: z.string().optional(),
 	page: z.coerce.number().optional(),
 	limit: z.coerce.number().optional(),
@@ -71,8 +96,14 @@ export type ProductTypeBillingUnitResponse = z.infer<
 export type ProductTypePricingTierResponse = z.infer<
 	typeof productTypePricingTierResponseSchema
 >;
+export type ProductTypeAccessoryLinkResponse = z.infer<
+	typeof productTypeAccessoryLinkResponseSchema
+>;
 export type ProductTypeResponse = z.infer<typeof productTypeResponseSchema>;
 export type GetProductTypesQuery = z.infer<typeof getProductTypesQuerySchema>;
+export type GetAvailableAccessoriesQuery = z.infer<
+	typeof getAvailableAccessoriesQuerySchema
+>;
 
 // RENTAL
 

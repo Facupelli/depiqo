@@ -1,6 +1,10 @@
-import { RoundingRule } from '@repo/types';
+import { OrderCommunicationMode, RoundingRule } from '@repo/types';
 
-import { InvalidBookingModeException, InvalidInsuranceRatePercentException } from '../exceptions/tenant.exceptions';
+import {
+  InvalidBookingModeException,
+  InvalidInsuranceRatePercentException,
+  InvalidOrderCommunicationModeException,
+} from '../exceptions/tenant.exceptions';
 import { TenantConfig } from './tenant-config.value-object';
 
 describe('TenantConfig', () => {
@@ -11,6 +15,10 @@ describe('TenantConfig', () => {
     expect(config.toPlainObject().bookingMode).toBe('instant-book');
     expect(config.pricing.insuranceEnabled).toBe(false);
     expect(config.pricing.insuranceRatePercent).toBe(0);
+    expect(config.communication.orderCommunicationMode).toBe(
+      OrderCommunicationMode.FORMAL,
+    );
+    expect(config.communication.showFloatingWhatsAppButton).toBe(false);
   });
 
   it('rejects invalid bookingMode values', () => {
@@ -29,8 +37,36 @@ describe('TenantConfig', () => {
         timezone: 'UTC',
         newArrivalsWindowDays: 30,
         bookingMode: 'invalid-mode' as never,
+        communication: {
+          orderCommunicationMode: OrderCommunicationMode.FORMAL,
+          showFloatingWhatsAppButton: false,
+        },
       }),
     ).toThrow(InvalidBookingModeException);
+  });
+
+  it('rejects invalid order communication mode values', () => {
+    expect(() =>
+      TenantConfig.create({
+        pricing: {
+          overRentalEnabled: false,
+          maxOverRentThreshold: 0,
+          weekendCountsAsOne: false,
+          roundingRule: RoundingRule.IGNORE_PARTIAL_DAY,
+          currency: 'ARS',
+          locale: 'es-AR',
+          insuranceEnabled: false,
+          insuranceRatePercent: 0,
+        },
+        timezone: 'UTC',
+        newArrivalsWindowDays: 30,
+        bookingMode: 'instant-book',
+        communication: {
+          orderCommunicationMode: 'invalid-mode' as never,
+          showFloatingWhatsAppButton: false,
+        },
+      }),
+    ).toThrow(InvalidOrderCommunicationModeException);
   });
 
   it('normalizes legacy configs without bookingMode on reconstitution', () => {
@@ -47,6 +83,10 @@ describe('TenantConfig', () => {
       },
       timezone: 'UTC',
       newArrivalsWindowDays: 30,
+      communication: {
+        orderCommunicationMode: OrderCommunicationMode.FORMAL,
+        showFloatingWhatsAppButton: false,
+      },
     });
 
     expect(config.bookingMode).toBe('instant-book');
@@ -68,6 +108,10 @@ describe('TenantConfig', () => {
       },
       timezone: 'UTC',
       newArrivalsWindowDays: 30,
+      communication: {
+        orderCommunicationMode: OrderCommunicationMode.FORMAL,
+        showFloatingWhatsAppButton: false,
+      },
     });
 
     expect(config.pricing.roundingRule).toBe(RoundingRule.BILL_OVER_HALF_DAY);
@@ -89,6 +133,10 @@ describe('TenantConfig', () => {
         timezone: 'UTC',
         newArrivalsWindowDays: 30,
         bookingMode: 'instant-book',
+        communication: {
+          orderCommunicationMode: OrderCommunicationMode.FORMAL,
+          showFloatingWhatsAppButton: false,
+        },
       }),
     ).toThrow(InvalidInsuranceRatePercentException);
   });

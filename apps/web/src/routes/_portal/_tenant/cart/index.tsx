@@ -5,6 +5,7 @@ import { CartPageConflictPanel } from "@/features/rental/cart/components/cartpag
 import { CartPageItemList } from "@/features/rental/cart/components/cartpage-itemlist";
 import { CartPagePeriod } from "@/features/rental/cart/components/cartpage-period";
 import { CartPageSidebar } from "@/features/rental/cart/components/cartpage-sidebar";
+import { rentalTenantQueries } from "@/features/rental/tenant/tenant.queries";
 import { rentalLocationQueries } from "@/features/tenant/locations/locations.queries";
 
 const cartPageSearchSchema = z.object({
@@ -17,9 +18,14 @@ export const Route = createFileRoute("/_portal/_tenant/cart/")({
   validateSearch: cartPageSearchSchema,
   component: CartPage,
   loader: async ({ context: { queryClient, tenantContext } }) => {
-    await queryClient.ensureQueryData(
-      rentalLocationQueries.list(tenantContext.tenant.id),
-    );
+    await Promise.all([
+      queryClient.ensureQueryData(
+        rentalLocationQueries.list(tenantContext.tenant.id),
+      ),
+      queryClient.ensureQueryData(
+        rentalTenantQueries.me(tenantContext.tenant.id),
+      ),
+    ]);
   },
 });
 

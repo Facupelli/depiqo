@@ -44,6 +44,12 @@ import { GetRentalBundlesHttpController } from './application/queries/get-rental
 import { GetNewArrivalsHttpController } from './application/queries/get-rental-new-arrivals/get-rental-new-arrival.http.controller';
 import { GetRentalCategoriesHttpController } from './application/queries/get-rental-categories/get-rental-categories.http.controller';
 import { CatalogPublicationEligibilityService } from './application/services/catalog-publication-eligibility.service';
+import { ReplaceProductTypeAccessoryLinksService } from './application/commands/replace-product-type-accessory-links/replace-product-type-accessory-links.service';
+import { ReplaceProductTypeAccessoryLinksHttpController } from './application/commands/replace-product-type-accessory-links/replace-product-type-accessory-links.http.controller';
+import { GetProductTypeAccessoryLinksQueryHandler } from './application/queries/get-product-type-accessory-links/get-product-type-accessory-links.query-handler';
+import { GetProductTypeAccessoryLinksHttpController } from './application/queries/get-product-type-accessory-links/get-product-type-accessory-links.http.controller';
+import { GetAvailableAccessoriesQueryHandler } from './application/queries/get-available-accessories/get-available-accessories.query-handler';
+import { GetAvailableAccessoriesHttpController } from './application/queries/get-available-accessories/get-available-accessories.http.controller';
 
 const repositories = [ProductCategoryRepository, ProductTypeRepository, BundleRepository];
 
@@ -59,6 +65,7 @@ const commandhandlers = [
   RetireProductTypeService,
   PublishBundleService,
   RetireBundleService,
+  ReplaceProductTypeAccessoryLinksService,
 ];
 
 const queryHandlers = [
@@ -67,6 +74,8 @@ const queryHandlers = [
   GetProductCategoriesQueryHandler,
   GetBundlesQueryHandler,
   GetBundleByIdQueryHandler,
+  GetProductTypeAccessoryLinksQueryHandler,
+  GetAvailableAccessoriesQueryHandler,
 ];
 
 const rentalQueryHandlers = [GetRentalProductTypesQueryHandler, GetNewArrivalsQueryHandler, GetCombosQueryHandler];
@@ -93,6 +102,9 @@ const rentalQueryHandlers = [GetRentalProductTypesQueryHandler, GetNewArrivalsQu
     GetRentalBundlesHttpController,
     GetNewArrivalsHttpController,
     GetRentalCategoriesHttpController,
+    ReplaceProductTypeAccessoryLinksHttpController,
+    GetProductTypeAccessoryLinksHttpController,
+    GetAvailableAccessoriesHttpController,
   ],
   providers: [
     ...repositories,

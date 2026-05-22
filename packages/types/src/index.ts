@@ -5,8 +5,11 @@ export * from "./enums/customer-status.enum";
 export * from "./enums/rounding-rule.enum";
 
 export * from "./enums/tracking-mode.enum";
+export * from "./enums/rental-item-kind.enum";
 export * from "./enums/assignments.enum";
 export * from "./enums/order.enum";
+export * from "./enums/create-order-next-step-type.enum";
+export * from "./enums/order-communication-mode.enum";
 export * from "./enums/permissions.enum";
 export * from "./enums/pricing.enum";
 export * from "./enums/onboard-status.enum";

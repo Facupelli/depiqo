@@ -2,16 +2,22 @@ import type { Config } from "@jest/types";
 
 /**
  * Base config shared by all presets.
- * - No tsconfig path here: each consuming app injects its own via globals.
- * - No diagnostics: type-checking is the compiler's job, not the test runner's.
+ * - ts-jest config is in the transform option (globals.ts-jest is deprecated).
+ * - Prisma v7 generates .js extension imports that must map to .ts files.
  */
 const base: Config.InitialOptions = {
   moduleFileExtensions: ["js", "json", "ts"],
   transform: {
-    "^.+\\.(t|j)s$": "ts-jest",
+    "^.+\\.(t|j)s$": [
+      "ts-jest",
+      {
+        diagnostics: false,
+      },
+    ],
   },
   moduleNameMapper: {
     "^src/(.*)$": "<rootDir>/src/$1",
+    "^(\\.{1,2}/.*)\\.js$": "$1",
   },
   testEnvironment: "node",
 };

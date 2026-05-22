@@ -3,7 +3,7 @@ import { DateRange } from 'src/core/domain/value-objects/date-range.value-object
 import { InventoryPublicApi } from 'src/modules/inventory/inventory.public-api';
 
 import { CreateOrderAssetResolver } from './create-order-asset-resolver';
-import { DemandUnit } from './create-order.types';
+import { DemandUnit } from '../create-order.types';
 
 describe('CreateOrderAssetResolver', () => {
   const period = DateRange.create(new Date('2026-03-30T10:00:00.000Z'), new Date('2026-03-31T10:00:00.000Z'));

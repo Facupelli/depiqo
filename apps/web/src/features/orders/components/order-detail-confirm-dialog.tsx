@@ -9,16 +9,25 @@ import {
 	AlertDialogHeader,
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { OrderAvailabilityConflictFeedback } from "@/features/orders/components/order-availability-conflict-feedback";
 import {
 	useOrderConfirmation,
 	useOrderDetailContext,
 } from "@/features/orders/contexts/order-detail.context";
+import { buildOrderAvailabilityConflictDisplayModel, type OrderAvailabilityConflictDisplayModel } from "@/features/orders/order-availability-conflict.display-model";
 
 export function OrderDetailConfirmDialog() {
 	const { order } = useOrderDetailContext();
 	const confirmation = useOrderConfirmation();
 	const isDraft = order.status === OrderStatus.DRAFT;
+	const isPendingReview = order.status === OrderStatus.PENDING_REVIEW;
 	const hasCustomer = Boolean(order.customer);
+	const conflictModel = confirmation.conflict
+		? buildOrderAvailabilityConflictDisplayModel({
+				order,
+				conflict: confirmation.conflict,
+			})
+		: null;
 
 	return (
 		<AlertDialog
@@ -28,12 +37,14 @@ export function OrderDetailConfirmDialog() {
 			<AlertDialogContent>
 				<AlertDialogHeader>
 					<AlertDialogTitle>
-						Confirmar pedido
+						{isPendingReview ? "Aprobar solicitud" : "Confirmar pedido"}
 					</AlertDialogTitle>
 					<AlertDialogDescription>
 						{isDraft
 							? "Vas a confirmar este pedido con los precios ya guardados. La confirmación no recalcula importes."
-							: "Confirma este pedido para dejarlo listo para operación."}
+							: isPendingReview
+								? "Al aprobar esta solicitud vamos a volver a validar disponibilidad y recién en ese momento se van a reservar y asignar los equipos disponibles. Si la disponibilidad cambió, la aprobación puede fallar."
+								: "Confirma este pedido para dejarlo listo para operación."}
 					</AlertDialogDescription>
 				</AlertDialogHeader>
 
@@ -44,9 +55,7 @@ export function OrderDetailConfirmDialog() {
 					</p>
 				) : null}
 
-				{confirmation.error ? (
-					<p className="text-sm text-destructive">{confirmation.error}</p>
-				) : null}
+			<OrderConfirmationError error={confirmation.error} conflictModel={conflictModel} />
 
 				<AlertDialogFooter>
 					<AlertDialogCancel disabled={confirmation.isPending}>
@@ -60,15 +69,25 @@ export function OrderDetailConfirmDialog() {
 						disabled={confirmation.isPending}
 					>
 						{confirmation.isPending
-							? isDraft
-								? "Confirmando pedido..."
+							? isPendingReview
+								? "Aprobando solicitud..."
 								: "Confirmando pedido..."
-							: isDraft
-								? "Confirmar pedido"
+							: isPendingReview
+								? "Aprobar solicitud"
 								: "Confirmar pedido"}
 					</AlertDialogAction>
 				</AlertDialogFooter>
 			</AlertDialogContent>
 		</AlertDialog>
 	);
+}
+
+function OrderConfirmationError({ error, conflictModel }:{error:string|null, conflictModel: OrderAvailabilityConflictDisplayModel | null}) {
+    if (conflictModel) {
+        return <OrderAvailabilityConflictFeedback model={conflictModel} />;
+    }
+    if (error) {
+        return <p className="text-sm text-destructive">{error}</p>;
+    }
+    return null;
 }

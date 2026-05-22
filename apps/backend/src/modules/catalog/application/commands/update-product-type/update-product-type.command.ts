@@ -1,4 +1,4 @@
-import { TrackingMode } from '@repo/types';
+import { RentalItemKind, TrackingMode } from '@repo/types';
 
 type IncludedItemInput = {
   name: string;
@@ -12,6 +12,7 @@ export type UpdateProductTypeProps = {
   name?: string;
   description?: string | null;
   imageUrl?: string;
+  kind?: RentalItemKind;
   trackingMode?: TrackingMode;
   excludeFromNewArrivals?: boolean;
   attributes?: Record<string, unknown> | null;

@@ -1,5 +1,6 @@
 import type {
 	CustomerResponseDto,
+	OrderItemsUnavailableProblemDto,
 	OrderPricingPreviewRequestDto,
 	OrderPricingPreviewResponseDto,
 } from "@repo/schemas";
@@ -55,6 +56,8 @@ import {
 	isValidNonNegativeMoneyAmount,
 	normalizeMoneyAmount,
 } from "@/features/orders/draft-order/utils/draft-order-pricing";
+import { OrderAvailabilityConflictFeedback } from "@/features/orders/components/order-availability-conflict-feedback";
+import type { OrderAvailabilityConflictDisplayModel } from "@/features/orders/order-availability-conflict.display-model";
 import { useSaveOrderEditor } from "@/features/orders/order-editor/hooks/use-save-order-editor";
 import { formatMoney } from "@/features/orders/order.utils";
 import { useOrderPricingPreview } from "@/features/orders/orders.queries";
@@ -71,9 +74,13 @@ const EMPTY_PRICING_PREVIEW_PRODUCT_ID = "00000000-0000-0000-0000-000000000000";
 export function DraftOrderComposerPage({
 	mode = "edit-draft",
 	orderId,
+	buildConflictDisplayModel,
 }: {
 	mode?: OrderEditorMode;
 	orderId?: string;
+	buildConflictDisplayModel?: (
+		conflict: OrderItemsUnavailableProblemDto,
+	) => OrderAvailabilityConflictDisplayModel | null;
 }) {
 	const pricingPreview = useDraftOrderPricingPreview();
 
@@ -89,6 +96,7 @@ export function DraftOrderComposerPage({
 				<DraftSidebarSection
 					mode={mode}
 					orderId={orderId}
+					buildConflictDisplayModel={buildConflictDisplayModel}
 					pricingPreview={pricingPreview}
 				/>
 			</div>
@@ -607,10 +615,14 @@ function ItemsSection({
 function DraftSidebarSection({
 	mode,
 	orderId,
+	buildConflictDisplayModel,
 	pricingPreview,
 }: {
 	mode: OrderEditorMode;
 	orderId?: string;
+	buildConflictDisplayModel?: (
+		conflict: OrderItemsUnavailableProblemDto,
+	) => OrderAvailabilityConflictDisplayModel | null;
 	pricingPreview: DraftOrderPricingPreviewState;
 }) {
 	const copy = getOrderEditorCopy(mode);
@@ -621,11 +633,13 @@ function DraftSidebarSection({
 	const { currency, budget, setBudgetTargetTotal } = useDraftOrderPricing();
 	const preview = pricingPreview.data;
 	const previewCurrency = preview?.currency ?? currency;
-	const { handleSaveOrderEditor, saveError, isSaving } = useSaveOrderEditor(
-		orderId,
-		mode,
-	);
+	const { handleSaveOrderEditor, saveConflict, saveError, isSaving } =
+		useSaveOrderEditor(orderId, mode);
 	const [isConfirmSaveOpen, setIsConfirmSaveOpen] = useState(false);
+	const saveConflictModel =
+		saveConflict && buildConflictDisplayModel
+			? buildConflictDisplayModel(saveConflict)
+			: null;
 
 	function handlePrimarySaveClick() {
 		if (mode === "edit-confirmed") {
@@ -701,7 +715,12 @@ function DraftSidebarSection({
 					/>
 				</div>
 
-				{saveError ? (
+				{saveConflictModel && saveError ? (
+					<OrderAvailabilityConflictFeedback
+						message={saveError}
+						model={saveConflictModel}
+					/>
+				) : saveError ? (
 					<p className="text-sm text-destructive">{saveError}</p>
 				) : null}
 

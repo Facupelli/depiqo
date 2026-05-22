@@ -1,4 +1,7 @@
 import { OrderStatus } from "@repo/types";
+import type { OrderHeaderBannerTone } from "./order.utils";
+
+export const CREATE_ORDER_IDEMPOTENCY_HEADER = "idempotency-key";
 
 export type StatusConfig = {
 	label: string;
@@ -38,5 +41,52 @@ export const ORDER_STATUS_MAP: Record<OrderStatus, StatusConfig> = {
 	[OrderStatus.CANCELLED]: {
 		label: "Cancelado",
 		className: "bg-red-50 text-red-600 ring-1 ring-red-200",
+	},
+};
+
+export const ORDER_HEADER_BANNER_TONE_STYLES: Record<
+	OrderHeaderBannerTone,
+	{
+		panelClassName: string;
+		iconWrapClassName: string;
+		iconClassName: string;
+		metaClassName: string;
+	}
+> = {
+	neutral: {
+		panelClassName: "border-neutral-200 bg-white",
+		iconWrapClassName: "bg-neutral-100 text-neutral-700",
+		iconClassName: "text-neutral-700",
+		metaClassName: "",
+	},
+	info: {
+		panelClassName: "border-neutral-200 bg-white",
+		iconWrapClassName: "bg-neutral-100 text-neutral-700",
+		iconClassName: "text-neutral-700",
+		metaClassName: "",
+	},
+	warning: {
+		panelClassName: "border-neutral-200 bg-white",
+		iconWrapClassName: "bg-neutral-100 text-neutral-700",
+		iconClassName: "text-neutral-700",
+		metaClassName: "",
+	},
+	danger: {
+		panelClassName: "border-neutral-200 bg-white",
+		iconWrapClassName: "bg-red-50 text-red-600",
+		iconClassName: "text-red-600",
+		metaClassName: "",
+	},
+	success: {
+		panelClassName: "border-neutral-200 bg-white",
+		iconWrapClassName: "bg-neutral-100 text-neutral-700",
+		iconClassName: "text-neutral-700",
+		metaClassName: "",
+	},
+	muted: {
+		panelClassName: "border-neutral-200 bg-white",
+		iconWrapClassName: "bg-neutral-100 text-neutral-700",
+		iconClassName: "text-neutral-700",
+		metaClassName: "",
 	},
 };

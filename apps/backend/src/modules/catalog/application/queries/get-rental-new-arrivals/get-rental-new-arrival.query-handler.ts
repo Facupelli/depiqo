@@ -3,6 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { GetNewArrivalsQuery } from './get-rental-new-arrival.query';
 import { PrismaService } from 'src/core/database/prisma.service';
 import { GetTenantConfigQuery } from 'src/modules/tenant/public/queries/get-tenant-config.query';
+import { RentalItemKind } from '@repo/types';
 
 type TenantConfigReadModel = {
   newArrivalsWindowDays: number;
@@ -44,6 +45,7 @@ export class GetNewArrivalsQueryHandler implements IQueryHandler<GetNewArrivalsQ
     const productTypes = await this.prisma.client.productType.findMany({
       where: {
         tenantId,
+        kind: RentalItemKind.PRIMARY,
         retiredAt: null,
         excludeFromNewArrivals: false,
         publishedAt: { not: null, gte: since },

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Document, DocumentProps } from '@react-pdf/renderer';
 import { ContractData, EquipmentLine } from 'src/modules/order/domain/ports/contract-render.port';
+import { formatAccessoryText } from './shared/format-accessory-text';
 import { RemitoPage } from './remito-page.component';
 import { AnexoPage } from './anexo-page.component';
 
@@ -89,9 +90,7 @@ function createEmptyPage() {
 }
 
 function estimateItemHeight(line: EquipmentLine): number {
-  const accessoriesText = line.includedItems
-    .map((item) => `${item.quantity}x ${item.name}${item.notes ? ` (${item.notes})` : ''}`)
-    .join(', ');
+  const accessoriesText = line.includedItems.map(formatAccessoryText).join(', ');
 
   const nameText = `x${line.quantity} ${line.name}`;
   const nameLines = Math.max(1, Math.ceil(nameText.length / COLUMN_CHAR_WIDTH));

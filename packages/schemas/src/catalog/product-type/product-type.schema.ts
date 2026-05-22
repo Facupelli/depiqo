@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { TrackingMode } from "@repo/types";
+import { RentalItemKind, TrackingMode } from "@repo/types";
 
 export const productTypeAttributesSchema = z.record(z.string(), z.string());
 
@@ -9,12 +9,24 @@ export const productTypeIncludedItemSchema = z.object({
   notes: z.string().nullable(),
 });
 
+export const replaceProductTypeAccessoryLinksSchema = z.object({
+  accessoryLinks: z.array(
+    z.object({
+      accessoryRentalItemId: z.uuid(),
+      isDefaultIncluded: z.boolean(),
+      defaultQuantity: z.number().int().positive(),
+      notes: z.string().nullable().optional(),
+    }),
+  ),
+});
+
 export const createProductTypeSchema = z.object({
   categoryId: z.uuid().nullable(),
   billingUnitId: z.uuid(),
   name: z.string().min(1, "Name is required"),
   imageUrl: z.string(),
   description: z.string().nullable(),
+  kind: z.enum(RentalItemKind).default(RentalItemKind.PRIMARY),
   trackingMode: z.enum(TrackingMode),
   excludeFromNewArrivals: z.boolean().default(false),
   attributes: productTypeAttributesSchema,
@@ -27,6 +39,7 @@ export const updateProductTypeSchema = z.object({
   name: z.string().min(1, "Name is required").optional(),
   imageUrl: z.string().optional(),
   description: z.string().nullable().optional(),
+  kind: z.enum(RentalItemKind).optional(),
   trackingMode: z.enum(TrackingMode).optional(),
   excludeFromNewArrivals: z.boolean().optional(),
   attributes: productTypeAttributesSchema.optional(),
@@ -38,6 +51,9 @@ export type ProductTypeAttributesDto = z.infer<
 >;
 export type ProductTypeIncludedItemDto = z.infer<
   typeof productTypeIncludedItemSchema
+>;
+export type ReplaceProductTypeAccessoryLinksDto = z.infer<
+  typeof replaceProductTypeAccessoryLinksSchema
 >;
 export type CreateProductTypeDto = z.infer<typeof createProductTypeSchema>;
 export type UpdateProductTypeDto = z.infer<typeof updateProductTypeSchema>;

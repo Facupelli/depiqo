@@ -6,6 +6,7 @@ import {
   NotFoundException,
   Param,
   Patch,
+  UnprocessableEntityException,
 } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
 import { Permission } from '@repo/types';
@@ -14,6 +15,7 @@ import { StaffRoute } from 'src/core/decorators/staff-route.decorator';
 import { CurrentUser } from 'src/core/decorators/current-user.decorator';
 import { AuthenticatedUser } from 'src/modules/auth/public/authenticated-user';
 import {
+  AccessoryProductTypeCannotBePublishedError,
   InvalidProductTypeNameError,
   ProductTypeAlreadyRetiredError,
   ProductTypeNotFoundError,
@@ -39,6 +41,7 @@ export class UpdateProductTypeHttpController {
       name: dto.name,
       description: dto.description,
       imageUrl: dto.imageUrl,
+      kind: dto.kind,
       trackingMode: dto.trackingMode,
       excludeFromNewArrivals: dto.excludeFromNewArrivals,
       attributes: dto.attributes,
@@ -65,6 +68,10 @@ export class UpdateProductTypeHttpController {
 
       if (error instanceof ProductTypeAlreadyRetiredError) {
         throw new ConflictException(error.message);
+      }
+
+      if (error instanceof AccessoryProductTypeCannotBePublishedError) {
+        throw new UnprocessableEntityException(error.message);
       }
 
       throw error;

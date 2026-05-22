@@ -1,7 +1,8 @@
 import { randomUUID } from 'crypto';
-import { TrackingMode } from '@repo/types';
+import { RentalItemKind, TrackingMode } from '@repo/types';
 import { Result, err, ok } from 'neverthrow';
 import {
+  AccessoryProductTypeCannotBePublishedError,
   InvalidProductTypeNameError,
   ProductTypeAlreadyPublishedError,
   ProductTypeCannotBePublishedWithoutPricingTiersError,
@@ -21,6 +22,7 @@ export interface CreateProductTypeProps {
   name: string;
   imageUrl: string;
   description: string | null;
+  kind?: RentalItemKind;
   trackingMode: TrackingMode;
   excludeFromNewArrivals: boolean;
   attributes: Record<string, unknown> | null;
@@ -35,6 +37,7 @@ export interface ReconstituteProductTypeProps {
   name: string;
   imageUrl: string;
   description: string | null;
+  kind: RentalItemKind;
   trackingMode: TrackingMode;
   excludeFromNewArrivals: boolean;
   attributes: Record<string, unknown>;
@@ -53,6 +56,7 @@ export class ProductType {
     private name: string,
     private imageUrl: string,
     private description: string | null,
+    private kind: RentalItemKind,
     private trackingMode: TrackingMode,
     private excludeFromNewArrivals: boolean,
     private attributes: Record<string, unknown>,
@@ -77,6 +81,7 @@ export class ProductType {
         props.name.trim(),
         props.imageUrl,
         props.description?.trim() ?? null,
+        props.kind ?? RentalItemKind.PRIMARY,
         props.trackingMode,
         props.excludeFromNewArrivals,
         props.attributes ?? {},
@@ -97,6 +102,7 @@ export class ProductType {
       props.name,
       props.imageUrl,
       props.description,
+      props.kind,
       props.trackingMode,
       props.excludeFromNewArrivals,
       props.attributes,
@@ -133,6 +139,10 @@ export class ProductType {
     return this.trackingMode;
   }
 
+  get currentKind(): RentalItemKind {
+    return this.kind;
+  }
+
   get isExcludedFromNewArrivals(): boolean {
     return this.excludeFromNewArrivals;
   }
@@ -162,7 +172,7 @@ export class ProductType {
   }
 
   isAvailableForBooking(): boolean {
-    return this.isPublished() && !this.isRetired();
+    return this.kind === RentalItemKind.PRIMARY && this.isPublished() && !this.isRetired();
   }
 
   // --- Commands ---
@@ -173,7 +183,10 @@ export class ProductType {
 
   update(
     props: Partial<Omit<CreateProductTypeProps, 'tenantId'>>,
-  ): Result<void, InvalidProductTypeNameError | ProductTypeAlreadyRetiredError> {
+  ): Result<
+    void,
+    InvalidProductTypeNameError | ProductTypeAlreadyRetiredError | AccessoryProductTypeCannotBePublishedError
+  > {
     if (this.isRetired()) {
       return err(new ProductTypeAlreadyRetiredError());
     }
@@ -202,6 +215,14 @@ export class ProductType {
       this.description = props.description?.trim() ?? null;
     }
 
+    if (props.kind !== undefined) {
+      if (props.kind === RentalItemKind.ACCESSORY && this.isPublished()) {
+        return err(new AccessoryProductTypeCannotBePublishedError(this.id));
+      }
+
+      this.kind = props.kind;
+    }
+
     if (props.trackingMode !== undefined) {
       this.trackingMode = props.trackingMode;
     }
@@ -225,6 +246,7 @@ export class ProductType {
     void,
     | ProductTypeAlreadyRetiredError
     | ProductTypeAlreadyPublishedError
+    | AccessoryProductTypeCannotBePublishedError
     | ProductTypeCannotBePublishedWithoutPricingTiersError
   > {
     if (this.isRetired()) {
@@ -232,6 +254,9 @@ export class ProductType {
     }
     if (this.isPublished()) {
       return err(new ProductTypeAlreadyPublishedError());
+    }
+    if (this.kind === RentalItemKind.ACCESSORY) {
+      return err(new AccessoryProductTypeCannotBePublishedError(this.id));
     }
     if (!this.hasPricingTiersConfigured) {
       return err(new ProductTypeCannotBePublishedWithoutPricingTiersError(this.id));

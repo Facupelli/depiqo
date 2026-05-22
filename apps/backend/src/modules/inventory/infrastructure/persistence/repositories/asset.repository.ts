@@ -38,7 +38,7 @@ export class AssetRepository {
 
     const assignments = await this.prisma.client.$queryRaw<RawAssetAssignment[]>`
         SELECT
-          id, asset_id, order_item_id, order_id,
+          id, asset_id, order_item_id, order_item_accessory_id, order_id,
           type, stage, source, reason,
           period::text AS period,
           created_at, updated_at

@@ -42,12 +42,12 @@ model Customer {
   updatedAt DateTime  @updatedAt @map("updated_at")
   deletedAt DateTime? @map("deleted_at")
 
-  profile           CustomerProfile?
-  tenant            Tenant             @relation(fields: [tenantId], references: [id])
-  orders            Order[]
-  signingRequests   DocumentSigningRequest[]
-  restrictedCoupons Coupon[]
-  couponRedemptions CouponRedemption[]
+  profile            CustomerProfile?
+  tenant             Tenant                   @relation(fields: [tenantId], references: [id])
+  orders             Order[]
+  signingRequests    DocumentSigningRequest[]
+  restrictedCoupons  Coupon[]
+  couponRedemptions  CouponRedemption[]
   externalIdentities ExternalIdentity[]
 
   @@unique([tenantId, email])

@@ -1,7 +1,8 @@
 import {
 	type CreateDraftOrderDto,
-	type CreateOrderDto,
+	type CreateOrderResponseDto,
 	createDraftOrderSchema,
+	createOrderResponseSchema,
 	createOrderSchema,
 	type DraftOrderPricingProposalRequestDto,
 	type DraftOrderPricingProposalResponseDto,
@@ -20,16 +21,26 @@ import {
 	type GetOrdersScheduleQuery,
 	GetOrdersScheduleQuerySchema,
 	type GetOrdersScheduleResponse,
+	type GetPendingReviewOrdersQueryDto,
+	type GetPendingReviewOrdersResponseDto,
 	getDraftOrderPricingParamSchema,
 	getOrderByIdParamSchema,
 	getOrdersQuerySchema,
+	getPendingReviewOrdersQuerySchema,
+	type OrderAccessoryPreparationResponseDto,
 	type OrderDetailResponseDto,
 	type OrderListItem,
 	type OrderPricingPreviewRequestDto,
 	type OrderPricingPreviewResponseDto,
+	orderAccessoryPreparationResponseSchema,
 	orderPricingPreviewRequestSchema,
 	orderPricingPreviewResponseSchema,
+	type PendingReviewOrderListItem,
 	type ProblemDetails,
+	type RejectOrderRequestDto,
+	rejectOrderRequestSchema,
+	type SaveOrderAccessoryPreparationDto,
+	saveOrderAccessoryPreparationSchema,
 	type UpdateDraftOrderPricingRequestDto,
 	updateDraftOrderPricingRequestSchema,
 } from "@repo/schemas";
@@ -41,8 +52,18 @@ import {
 	authenticatedApiFetchPaginated as apiFetchPaginated,
 } from "@/lib/api-auth";
 import { ProblemDetailsError } from "@/shared/errors";
+import { CREATE_ORDER_IDEMPOTENCY_HEADER } from "./orders.constants";
 
 const apiUrl = "/orders";
+
+const createOrderInputSchema = z.object({
+	dto: createOrderSchema,
+	idempotencyKey: z.string().uuid(),
+});
+
+export type CreateOrderMutationVariables = z.infer<
+	typeof createOrderInputSchema
+>;
 
 export const getOrders = createServerFn({ method: "GET" })
 	.inputValidator((data: GetOrdersQueryDto) => getOrdersQuerySchema.parse(data))
@@ -62,6 +83,22 @@ export const getOrdersSchedule = createServerFn({ method: "GET" })
 	.handler(async ({ data }): Promise<GetOrdersScheduleResponse> => {
 		const result = await apiFetch<GetOrdersScheduleResponse>(
 			`${apiUrl}/schedule`,
+			{
+				method: "GET",
+				params: data,
+			},
+		);
+
+		return result;
+	});
+
+export const getPendingReviewOrders = createServerFn({ method: "GET" })
+	.inputValidator((data: GetPendingReviewOrdersQueryDto) =>
+		getPendingReviewOrdersQuerySchema.parse(data),
+	)
+	.handler(async ({ data }): Promise<GetPendingReviewOrdersResponseDto> => {
+		const result = await apiFetchPaginated<PendingReviewOrderListItem>(
+			`${apiUrl}/pending-review`,
 			{
 				method: "GET",
 				params: data,
@@ -118,24 +155,48 @@ export const getOrderById = createServerFn({ method: "GET" })
 		return result;
 	});
 
-export const createOrder = createServerFn({ method: "POST" })
-	.inputValidator((data: CreateOrderDto) => createOrderSchema.parse(data))
-	.handler(async ({ data }): Promise<string | { error: ProblemDetails }> => {
-		try {
-			const result = await apiFetch<string>(apiUrl, {
-				method: "POST",
-				body: data,
-				actorType: ActorType.CUSTOMER,
-			});
+export const getOrderAccessoryPreparation = createServerFn({ method: "GET" })
+	.inputValidator((data: GetOrderByIdParamDto) =>
+		getOrderByIdParamSchema.parse(data),
+	)
+	.handler(async ({ data }): Promise<OrderAccessoryPreparationResponseDto> => {
+		const result = await apiFetch<OrderAccessoryPreparationResponseDto>(
+			`${apiUrl}/${data.orderId}/accessory-preparation`,
+			{
+				method: "GET",
+			},
+		);
 
-			return result;
-		} catch (error) {
-			if (error instanceof ProblemDetailsError) {
-				return { error: error.problemDetails };
-			}
-			throw error;
-		}
+		return orderAccessoryPreparationResponseSchema.parse(result);
 	});
+
+export const createOrder = createServerFn({ method: "POST" })
+	.inputValidator((data: CreateOrderMutationVariables) =>
+		createOrderInputSchema.parse(data),
+	)
+	.handler(
+		async ({
+			data,
+		}): Promise<CreateOrderResponseDto | { error: ProblemDetails }> => {
+			try {
+				const result = await apiFetch<CreateOrderResponseDto>(apiUrl, {
+					method: "POST",
+					body: data.dto,
+					headers: {
+						[CREATE_ORDER_IDEMPOTENCY_HEADER]: data.idempotencyKey,
+					},
+					actorType: ActorType.CUSTOMER,
+				});
+
+				return createOrderResponseSchema.parse(result);
+			} catch (error) {
+				if (error instanceof ProblemDetailsError) {
+					return { error: error.problemDetails };
+				}
+				throw error;
+			}
+		},
+	);
 
 export const createDraftOrder = createServerFn({ method: "POST" })
 	.inputValidator((data: CreateDraftOrderDto) =>
@@ -227,6 +288,11 @@ const updateDraftOrderPricingInputSchema = z.object({
 	dto: updateDraftOrderPricingRequestSchema,
 });
 
+const saveOrderAccessoryPreparationInputSchema = z.object({
+	params: getOrderByIdParamSchema,
+	dto: saveOrderAccessoryPreparationSchema,
+});
+
 export const updateDraftOrderPricing = createServerFn({ method: "POST" })
 	.inputValidator(
 		(data: {
@@ -240,6 +306,31 @@ export const updateDraftOrderPricing = createServerFn({ method: "POST" })
 				method: "POST",
 				body: data.dto,
 			});
+		} catch (error) {
+			if (error instanceof ProblemDetailsError) {
+				return { error: error.problemDetails };
+			}
+
+			throw error;
+		}
+	});
+
+export const saveOrderAccessoryPreparation = createServerFn({ method: "POST" })
+	.inputValidator(
+		(data: {
+			params: GetOrderByIdParamDto;
+			dto: SaveOrderAccessoryPreparationDto;
+		}) => saveOrderAccessoryPreparationInputSchema.parse(data),
+	)
+	.handler(async ({ data }): Promise<void | { error: ProblemDetails }> => {
+		try {
+			await apiFetch<void>(
+				`${apiUrl}/${data.params.orderId}/accessory-preparation`,
+				{
+					method: "PUT",
+					body: data.dto,
+				},
+			);
 		} catch (error) {
 			if (error instanceof ProblemDetailsError) {
 				return { error: error.problemDetails };
@@ -296,6 +387,31 @@ export const cancelOrder = createServerFn({ method: "POST" })
 		try {
 			await apiFetch<void>(`${apiUrl}/${data.orderId}/cancel`, {
 				method: "POST",
+			});
+		} catch (error) {
+			if (error instanceof ProblemDetailsError) {
+				return { error: error.problemDetails };
+			}
+
+			throw error;
+		}
+	});
+
+const rejectOrderInputSchema = z.object({
+	params: getOrderByIdParamSchema,
+	dto: rejectOrderRequestSchema,
+});
+
+export const rejectOrder = createServerFn({ method: "POST" })
+	.inputValidator(
+		(data: { params: GetOrderByIdParamDto; dto: RejectOrderRequestDto }) =>
+			rejectOrderInputSchema.parse(data),
+	)
+	.handler(async ({ data }): Promise<void | { error: ProblemDetails }> => {
+		try {
+			await apiFetch<void>(`${apiUrl}/${data.params.orderId}/reject`, {
+				method: "POST",
+				body: data.dto,
 			});
 		} catch (error) {
 			if (error instanceof ProblemDetailsError) {

@@ -1,7 +1,7 @@
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { PrismaService } from 'src/core/database/prisma.service';
 import { GetProductTypeByIdQuery } from './get-product-type-by-id.query';
-import { TrackingMode } from '@repo/types';
+import { RentalItemKind, TrackingMode } from '@repo/types';
 
 type ProductTypeIncludedItemReadModel = {
   name: string;
@@ -15,6 +15,7 @@ type ProductTypeReadModel = {
   name: string;
   imageUrl: string;
   description: string | null;
+  kind: RentalItemKind;
   trackingMode: TrackingMode;
   excludeFromNewArrivals: boolean;
   attributes: Record<string, string>;
@@ -33,6 +34,21 @@ type ProductTypeReadModel = {
     pricePerUnit: number;
     locationId: string | null;
     location: { id: string; name: string } | null;
+  }>;
+  accessoryLinks: Array<{
+    id: string;
+    primaryRentalItemId: string;
+    accessoryRentalItemId: string;
+    isDefaultIncluded: boolean;
+    defaultQuantity: number;
+    notes: string | null;
+    accessoryRentalItem: {
+      id: string;
+      name: string;
+      imageUrl: string;
+      trackingMode: TrackingMode;
+      retiredAt: Date | null;
+    };
   }>;
 };
 
@@ -69,6 +85,27 @@ export class GetProductTypeByIdQueryHandler implements IQueryHandler<
             },
           },
         },
+        accessoryLinksAsPrimary: {
+          where: {
+            accessoryRentalItem: {
+              kind: RentalItemKind.ACCESSORY,
+              deletedAt: null,
+              retiredAt: null,
+            },
+          },
+          include: {
+            accessoryRentalItem: {
+              select: {
+                id: true,
+                name: true,
+                imageUrl: true,
+                trackingMode: true,
+                retiredAt: true,
+              },
+            },
+          },
+          orderBy: { accessoryRentalItem: { name: 'asc' } },
+        },
         _count: {
           select: {
             assets: {
@@ -89,6 +126,7 @@ export class GetProductTypeByIdQueryHandler implements IQueryHandler<
       name: productType.name,
       imageUrl: productType.imageUrl ?? '',
       description: productType.description,
+      kind: productType.kind as RentalItemKind,
       trackingMode: productType.trackingMode as TrackingMode,
       excludeFromNewArrivals: productType.excludeFromNewArrivals,
       attributes: productType.attributes as Record<string, string>,
@@ -117,6 +155,21 @@ export class GetProductTypeByIdQueryHandler implements IQueryHandler<
         pricePerUnit: tier.pricePerUnit.toNumber(),
         locationId: tier.locationId,
         location: tier.location ? { id: tier.location.id, name: tier.location.name } : null,
+      })),
+      accessoryLinks: productType.accessoryLinksAsPrimary.map((accessoryLink) => ({
+        id: accessoryLink.id,
+        primaryRentalItemId: accessoryLink.primaryRentalItemId,
+        accessoryRentalItemId: accessoryLink.accessoryRentalItemId,
+        isDefaultIncluded: accessoryLink.isDefaultIncluded,
+        defaultQuantity: accessoryLink.defaultQuantity,
+        notes: accessoryLink.notes,
+        accessoryRentalItem: {
+          id: accessoryLink.accessoryRentalItem.id,
+          name: accessoryLink.accessoryRentalItem.name,
+          imageUrl: accessoryLink.accessoryRentalItem.imageUrl ?? '',
+          trackingMode: accessoryLink.accessoryRentalItem.trackingMode as TrackingMode,
+          retiredAt: accessoryLink.accessoryRentalItem.retiredAt,
+        },
       })),
     };
   }

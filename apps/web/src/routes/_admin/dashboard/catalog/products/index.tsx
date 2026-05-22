@@ -1,3 +1,4 @@
+import { RentalItemKind } from "@repo/types";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import type { PaginationState } from "@tanstack/react-table";
 import { useState } from "react";
@@ -9,10 +10,13 @@ import {
 	useProducts,
 } from "@/features/catalog/product-types/products.queries";
 import { AdminRouteError } from "@/shared/components/admin-route-error";
+import useDebounce from "@/shared/hooks/use-debounce";
 
 export const Route = createFileRoute("/_admin/dashboard/catalog/products/")({
 	loader: ({ context: { queryClient } }) =>
-		queryClient.ensureQueryData(productQueries.list()),
+		queryClient.ensureQueryData(
+			productQueries.list({ kind: RentalItemKind.PRIMARY }),
+		),
 	errorComponent: ({ error }) => {
 		return (
 			<AdminRouteError
@@ -34,11 +38,15 @@ function ProductsPage() {
 	const [pagination, setPagination] =
 		useState<PaginationState>(DEFAULT_PAGINATION);
 	const [categoryId, setCategoryId] = useState<string | undefined>(undefined);
+	const [search, setSearch] = useState("");
+	const debouncedSearch = useDebounce(search, 300);
 
 	const { data: products, isFetching } = useProducts({
+		kind: RentalItemKind.PRIMARY,
 		page: pagination.pageIndex + 1, // TanStack Table is 0-indexed; API is 1-indexed
 		limit: pagination.pageSize,
 		categoryId,
+		search: debouncedSearch || undefined,
 	});
 
 	// When a filter changes, reset to first page to avoid landing on a
@@ -48,10 +56,20 @@ function ProductsPage() {
 		setPagination((prev) => ({ ...prev, pageIndex: 0 }));
 	}
 
+	function handleSearchChange(nextSearch: string) {
+		setSearch(nextSearch);
+		setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+	}
+
 	return (
 		<>
 			<header className="flex items-center justify-between border-b gap-10 border-gray-200 bg-white p-6">
-				<Input type="search" placeholder="Search" />
+				<Input
+					type="search"
+					placeholder="Buscar productos"
+					value={search}
+					onChange={(event) => handleSearchChange(event.target.value)}
+				/>
 
 				<Button
 					render={

@@ -1,6 +1,6 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { RentalItemKind } from "@repo/types";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import {
 	Card,
 	CardContent,
@@ -12,7 +12,7 @@ import { useCategories } from "@/features/catalog/product-categories/categories.
 import { ProductTypeForm } from "@/features/catalog/product-types/components/product-type-form";
 import { useCreateProduct } from "@/features/catalog/product-types/product.mutations";
 import {
-	productTypeFormDefaults,
+	getProductTypeFormDefaults,
 	toCreateProductTypeDto,
 } from "@/features/catalog/product-types/schemas/product-type-form.schema";
 import { tenantQueries } from "@/features/tenant/tenant.queries";
@@ -30,6 +30,7 @@ function CreateProductPage() {
 	} = useSuspenseQuery(tenantQueries.me());
 	const { data: categories = [] } = useCategories();
 	const { mutateAsync: createProduct, isPending } = useCreateProduct();
+	const defaultValues = getProductTypeFormDefaults(RentalItemKind.PRIMARY);
 
 	return (
 		<div className="grid place-items-center py-10">
@@ -43,7 +44,7 @@ function CreateProductPage() {
 				<CardContent>
 					<ProductTypeForm
 						formId={formId}
-						defaultValues={productTypeFormDefaults}
+						defaultValues={defaultValues}
 						categories={categories}
 						billingUnits={billingUnits}
 						onCancel={() => navigate({ to: "/dashboard/catalog/products" })}

@@ -1,1 +1,1 @@
-export type CreateOrderResponseDto = string;
+export type { CreateOrderResponseDto } from '@repo/schemas';

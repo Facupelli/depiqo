@@ -7,7 +7,7 @@ import {
 	useQuery,
 } from "@tanstack/react-query";
 import type { Dayjs } from "dayjs";
-import { orderKeys } from "@/features/orders/orders.queries";
+import { orderKeys } from "@/features/orders/orders.keys";
 import { parseTimestamp } from "@/lib/dates/parse";
 import { ProblemDetailsError } from "@/shared/errors";
 import {

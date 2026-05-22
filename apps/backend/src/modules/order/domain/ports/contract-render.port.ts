@@ -1,12 +1,12 @@
 export interface IncludedItem {
   name: string;
   quantity: number;
-  notes: string | null;
 }
 
 export interface EquipmentLine {
   name: string;
   quantity: number;
+  /** Actual selected accessories for normalized orders; legacy included items only for historical orders. */
   includedItems: IncludedItem[];
 }
 

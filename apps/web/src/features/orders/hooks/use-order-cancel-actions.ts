@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ProblemDetailsError } from "@/shared/errors";
-import { useCancelOrder } from "../orders.queries";
+import { useCancelOrder } from "../orders.mutations";
 
 export function useOrderCancelActions(orderId: string) {
 	const [isCancelOrderDialogOpen, setIsCancelOrderDialogOpen] = useState(false);

@@ -1,3 +1,4 @@
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Suspense } from "react";
 import { Button } from "@/components/ui/button";
@@ -25,6 +26,7 @@ import {
   rentalPageSearchSchema,
   useRentalPageSearch,
 } from "@/features/rental/catalog/hooks/use-catalog-page-search";
+import { rentalTenantQueries } from "@/features/rental/tenant/tenant.queries";
 import { rentalLocationQueries } from "@/features/tenant/locations/locations.queries";
 import { getTenantBranding } from "@/features/tenant-branding/tenant-branding";
 import { cn } from "@/lib/utils";
@@ -43,9 +45,12 @@ export const Route = createFileRoute("/_portal/_tenant/rental/")({
     returnDate: search.returnDate,
   }),
   loader: async ({ context: { queryClient, tenantContext } }) => {
-    await queryClient.ensureQueryData(
-      rentalLocationQueries.list(tenantContext.tenant.id),
-    );
+    await Promise.all([
+      queryClient.ensureQueryData(
+        rentalLocationQueries.list(tenantContext.tenant.id),
+      ),
+      queryClient.ensureQueryData(rentalTenantQueries.me(tenantContext.tenant.id)),
+    ]);
 
     return {
       tenantName: getTenantBranding(tenantContext.tenant).tenantName,
@@ -76,6 +81,10 @@ export const Route = createFileRoute("/_portal/_tenant/rental/")({
 });
 
 function RentalPage() {
+  const { tenantContext } = Route.useRouteContext();
+  const { data: tenantRentalConfig } = useSuspenseQuery(
+    rentalTenantQueries.me(tenantContext.tenant.id),
+  );
   const {
     search,
     setUrlParam,
@@ -83,6 +92,10 @@ function RentalPage() {
     handleLocationChange,
     handleSortChange,
   } = useRentalPageSearch();
+  const whatsAppNumber = tenantRentalConfig.communication.whatsAppNumber;
+  const shouldShowWhatsAppButton =
+    tenantRentalConfig.communication.showFloatingWhatsAppButton &&
+    Boolean(whatsAppNumber);
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
@@ -142,7 +155,9 @@ function RentalPage() {
         </section>
       </main>
 
-      <WhatsAppFloat />
+      {shouldShowWhatsAppButton && whatsAppNumber ? (
+        <WhatsAppFloat phoneNumber={whatsAppNumber} />
+      ) : null}
 
       <PoweredByFooter />
     </div>

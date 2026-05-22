@@ -23,6 +23,7 @@ export class AssetAssignmentRepository {
           id,
           asset_id,
           order_item_id,
+          order_item_accessory_id,
           order_id,
           type,
           stage,
@@ -35,6 +36,7 @@ export class AssetAssignmentRepository {
           ${assignment.id}::uuid,
           ${assignment.assetId}::uuid,
           ${assignment.orderItemId}::uuid,
+          ${assignment.orderItemAccessoryId}::uuid,
           ${assignment.orderId}::uuid,
           ${assignment.type}::"AssignmentType",
           ${assignment.stage}::"OrderAssignmentStage",
@@ -79,6 +81,40 @@ export class AssetAssignmentRepository {
         type: AssignmentType.ORDER,
         stage,
       },
+    });
+  }
+
+  async releaseOrderItemAccessoryAssignments(
+    orderItemAccessoryId: string,
+    tx: PrismaTransactionClient,
+    options?: { keepCount?: number },
+  ): Promise<void> {
+    if (options?.keepCount == null) {
+      await tx.assetAssignment.deleteMany({
+        where: {
+          orderItemAccessoryId,
+          type: AssignmentType.ORDER,
+        },
+      });
+      return;
+    }
+
+    const assignments = await tx.assetAssignment.findMany({
+      where: {
+        orderItemAccessoryId,
+        type: AssignmentType.ORDER,
+      },
+      select: { id: true },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    const releaseIds = assignments.slice(Math.max(options.keepCount, 0)).map((assignment) => assignment.id);
+    if (releaseIds.length === 0) {
+      return;
+    }
+
+    await tx.assetAssignment.deleteMany({
+      where: { id: { in: releaseIds } },
     });
   }
 }

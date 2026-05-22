@@ -3,7 +3,6 @@ enum ScheduleSlotType {
   RETURN
 }
 
-
 // ---------------------------------------------------------------------------
 // TENANT
 // ---------------------------------------------------------------------------
@@ -42,10 +41,10 @@ model Tenant {
   ownerContracts      OwnerContract[]
   coupons             Coupon[]
   externalIdentities  ExternalIdentity[]
+  accessoryLinks      AccessoryLink[]
 
   @@map("tenants")
 }
-
 
 model CustomDomain {
   id           String             @id @default(uuid())
@@ -62,7 +61,6 @@ model CustomDomain {
 
   @@map("custom_domains")
 }
-
 
 // ---------------------------------------------------------------------------
 // LOCATION
@@ -96,7 +94,6 @@ model Location {
   @@index([tenantId, isActive])
   @@map("locations")
 }
-
 
 model LocationSchedule {
   id         String           @id @default(uuid())

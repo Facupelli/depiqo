@@ -56,24 +56,32 @@ export class BundleBookingEligibilityDto {
 }
 
 export class ProductTypeInactiveForBookingError extends Error {
+  readonly code = 'CATALOG_ITEM_INACTIVE_FOR_BOOKING';
+
   constructor(productTypeId: string) {
     super(`ProductType "${productTypeId}" is inactive and cannot be booked.`);
   }
 }
 
 export class BundleInactiveForBookingError extends Error {
+  readonly code = 'CATALOG_ITEM_INACTIVE_FOR_BOOKING';
+
   constructor(bundleId: string) {
     super(`Bundle "${bundleId}" is inactive and cannot be booked.`);
   }
 }
 
 export class ProductTypeNotBookableAtLocationError extends Error {
+  readonly code = 'INVALID_BOOKING_CONTEXT';
+
   constructor(productTypeId: string, locationId: string) {
     super(`ProductType "${productTypeId}" is not bookable at location "${locationId}".`);
   }
 }
 
 export class BundleNotBookableAtLocationError extends Error {
+  readonly code = 'INVALID_BOOKING_CONTEXT';
+
   constructor(bundleId: string, locationId: string) {
     super(`Bundle "${bundleId}" is not bookable at location "${locationId}".`);
   }

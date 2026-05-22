@@ -53,6 +53,10 @@ export function useOrderCancellation() {
 	return useOrderDetailContext().actions.cancellation;
 }
 
+export function useOrderRejection() {
+	return useOrderDetailContext().actions.rejection;
+}
+
 export function useOrderLifecycle() {
 	return useOrderDetailContext().actions.lifecycle;
 }

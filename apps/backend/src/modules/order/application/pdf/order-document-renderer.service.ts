@@ -70,8 +70,10 @@ type RenderOrderDocumentError =
   | OrderSigningAllowedOnlyForConfirmedOrdersError;
 
 type GroupableEquipmentLine = EquipmentLine & {
-  productTypeId: string | null;
+  groupKey: string;
 };
+
+const ORDER_ITEM_ACCESSORY_NORMALIZATION_STARTED_AT = new Date('2026-05-07T14:41:13.000Z');
 
 @Injectable()
 export class OrderDocumentRendererService {
@@ -170,6 +172,15 @@ export class OrderDocumentRendererService {
                 includedItems: true,
               },
             },
+            accessories: {
+              select: {
+                quantity: true,
+                accessoryRentalItem: {
+                  select: { name: true },
+                },
+              },
+              orderBy: { createdAt: 'asc' },
+            },
             bundleSnapshot: {
               include: {
                 components: {
@@ -245,22 +256,30 @@ export class OrderDocumentRendererService {
     const equipmentLines = groupEquipmentLines(
       order.items.flatMap((item): GroupableEquipmentLine[] => {
         if (item.type === OrderItemType.PRODUCT && item.productType) {
+          const selectedAccessories = mapSelectedAccessoriesToIncludedItems(item.accessories);
+
           return [
             {
-              productTypeId: item.productTypeId,
+              groupKey: item.id,
               name: item.productType.name,
               quantity: 1,
-              includedItems: parseIncludedItems(item.productType.includedItems),
+              includedItems:
+                selectedAccessories.length > 0
+                  ? selectedAccessories
+                  : parseLegacyIncludedItemsForHistoricalOrder(order.createdAt, item.productType.includedItems),
             },
           ];
         }
 
         if (item.type === OrderItemType.BUNDLE && item.bundleSnapshot) {
           return item.bundleSnapshot.components.map((component) => ({
-            productTypeId: component.productTypeId,
+            groupKey: component.productTypeId,
             name: component.productType.name,
             quantity: component.quantity,
-            includedItems: parseIncludedItems(component.productType.includedItems),
+            includedItems: parseLegacyIncludedItemsForHistoricalOrder(
+              order.createdAt,
+              component.productType.includedItems,
+            ),
           }));
         }
 
@@ -409,11 +428,7 @@ function parseIncludedItems(value: unknown): IncludedItem[] {
 
     const candidate = item as Record<string, unknown>;
 
-    if (
-      typeof candidate.name !== 'string' ||
-      typeof candidate.quantity !== 'number' ||
-      (candidate.notes !== null && candidate.notes !== undefined && typeof candidate.notes !== 'string')
-    ) {
+    if (typeof candidate.name !== 'string' || typeof candidate.quantity !== 'number') {
       return [];
     }
 
@@ -421,25 +436,39 @@ function parseIncludedItems(value: unknown): IncludedItem[] {
       {
         name: candidate.name,
         quantity: candidate.quantity,
-        notes: candidate.notes == null ? null : candidate.notes,
       },
     ];
   });
+}
+
+function parseLegacyIncludedItemsForHistoricalOrder(orderCreatedAt: Date, value: unknown): IncludedItem[] {
+  return orderCreatedAt < ORDER_ITEM_ACCESSORY_NORMALIZATION_STARTED_AT ? parseIncludedItems(value) : [];
+}
+
+function mapSelectedAccessoriesToIncludedItems(
+  accessories: Array<{
+    quantity: number;
+    accessoryRentalItem: { name: string };
+  }>,
+): IncludedItem[] {
+  return accessories.map((accessory) => ({
+    name: accessory.accessoryRentalItem.name,
+    quantity: accessory.quantity,
+  }));
 }
 
 function groupEquipmentLines(lines: GroupableEquipmentLine[]): EquipmentLine[] {
   const grouped = new Map<string, EquipmentLine>();
 
   for (const line of lines) {
-    const key = line.productTypeId ?? line.name;
-    const existing = grouped.get(key);
+    const existing = grouped.get(line.groupKey);
 
     if (existing) {
       existing.quantity += line.quantity;
       continue;
     }
 
-    grouped.set(key, {
+    grouped.set(line.groupKey, {
       name: line.name,
       quantity: line.quantity,
       includedItems: line.includedItems,

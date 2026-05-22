@@ -1,0 +1,1 @@
+export const A4_PAGE_SIZE = { width: 595.28, height: 841.89 } as const;

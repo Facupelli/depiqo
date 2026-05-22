@@ -64,7 +64,7 @@ function EditOrderPage() {
 			</div>
 
 			<OrderEditorProvider initialOrder={orderToEditorState(order)}>
-				<OrderEditorComposerPage mode={mode} orderId={orderId} />
+				<OrderEditorComposerPage mode={mode} orderId={orderId} order={order} />
 			</OrderEditorProvider>
 		</div>
 	);

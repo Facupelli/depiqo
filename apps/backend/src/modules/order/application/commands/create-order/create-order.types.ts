@@ -7,6 +7,12 @@ import {
   ProductTypeNotBookableAtLocationError,
 } from 'src/modules/catalog/catalog.public-api';
 import { CouponNotFoundError, CouponValidationError } from 'src/modules/pricing/pricing.public-api';
+import {
+  IdempotencyKeyConflictError,
+  IdempotencyKeyInProgressError,
+  InvalidIdempotencyKeyError,
+  MissingIdempotencyKeyError,
+} from './idempotency/create-order-idempotency.errors';
 import { DateRange } from 'src/core/domain/value-objects/date-range.value-object';
 import {
   DeliveryNotSupportedForLocationError,
@@ -66,6 +72,10 @@ export type DemandUnit = {
 };
 
 export type CreateOrderError =
+  | MissingIdempotencyKeyError
+  | InvalidIdempotencyKeyError
+  | IdempotencyKeyInProgressError
+  | IdempotencyKeyConflictError
   | OrderMustContainItemsError
   | OrderItemUnavailableError
   | InvalidPickupSlotError
@@ -82,6 +92,8 @@ export type CreateOrderError =
   | CouponNotFoundError
   | CouponValidationError
   | OrderPricingTargetTotalInvalidError;
+
+export type CustomerCreateOrderError = Exclude<CreateOrderError, NoActiveContractForAssetError | OrderPricingTargetTotalInvalidError>;
 
 export type ResolveDemandResult = {
   unavailableItems: UnavailableItem[];
