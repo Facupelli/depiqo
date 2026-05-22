@@ -202,7 +202,7 @@ export function RemitoPage({ data, columns, isContinuation = false }: RemitoPage
                     <View style={s.infoCell}>
                       <View style={s.infoInline}>
                         <Text style={s.infoLabel}>PRECIO ACORDADO:</Text>
-                        <Text style={s.infoValue}>{document.agreedPrice}</Text>
+                        <Text style={s.infoValue}>{document.agreedPrice} + IVA</Text>
                       </View>
                     </View>
                   </View>
