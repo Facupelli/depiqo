@@ -6,7 +6,7 @@ import {
   ProductTypeInactiveForBookingError,
   ProductTypeNotBookableAtLocationError,
 } from 'src/modules/catalog/catalog.public-api';
-import { CouponNotFoundError, CouponValidationError } from 'src/modules/pricing/pricing.public-api';
+import { CouponNotFoundError, CouponValidationError, PricedLinePriceDto } from 'src/modules/pricing/pricing.public-api';
 import {
   IdempotencyKeyConflictError,
   IdempotencyKeyInProgressError,
@@ -28,7 +28,6 @@ import {
   ProductTypeNotFoundError,
   UnavailableItem,
 } from '../../../domain/errors/order.errors';
-import { NewPricingResult } from 'src/modules/pricing/domain/services/new-pricing-calculator.service';
 
 export type ResolvedProductItem = {
   type: 'PRODUCT';
@@ -38,7 +37,7 @@ export type ResolvedProductItem = {
   locationId: string;
   period: DateRange;
   currency: string;
-  price: NewPricingResult;
+  price: PricedLinePriceDto;
 };
 
 export type ResolvedBundleItem = {
@@ -56,7 +55,7 @@ export type ResolvedBundleItem = {
   locationId: string;
   period: DateRange;
   currency: string;
-  price: NewPricingResult;
+  price: PricedLinePriceDto;
   componentStandalonePrices: Map<string, Decimal>;
 };
 

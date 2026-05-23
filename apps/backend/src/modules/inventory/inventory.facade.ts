@@ -10,7 +10,12 @@ import { AssetNotAvailableError } from './domain/errors/inventory.errors';
 import { AssetAssignmentRepository } from './infrastructure/persistence/repositories/asset-assignment.repository';
 import { AssetAvailabilityService } from './infrastructure/read-services/asset-availability.service';
 import { FindAvailableParams } from './inventory.contracts';
-import { InventoryAssetSummary, InventoryPublicApi, SaveOrderAssignmentDto } from './inventory.public-api';
+import {
+  InventoryAssetOwnershipSummary,
+  InventoryAssetSummary,
+  InventoryPublicApi,
+  SaveOrderAssignmentDto,
+} from './inventory.public-api';
 import { PrismaService } from 'src/core/database/prisma.service';
 
 @Injectable()
@@ -46,6 +51,28 @@ export class InventoryFacade implements InventoryPublicApi {
     });
 
     return asset ?? null;
+  }
+
+  async findAssetOwnershipByIds(
+    tenantId: string,
+    assetIds: string[],
+  ): Promise<InventoryAssetOwnershipSummary[]> {
+    if (assetIds.length === 0) {
+      return [];
+    }
+
+    return this.prisma.client.asset.findMany({
+      where: {
+        id: { in: assetIds },
+        location: {
+          tenantId,
+        },
+      },
+      select: {
+        id: true,
+        ownerId: true,
+      },
+    });
   }
 
   async saveOrderAssignment(

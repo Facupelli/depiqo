@@ -1,7 +1,7 @@
 import { PriceSnapshot } from 'src/modules/order/domain/value-objects/price-snapshot.value-object';
-import { NewPricingResult } from 'src/modules/pricing/domain/services/new-pricing-calculator.service';
+import { PricedLinePriceDto } from 'src/modules/pricing/pricing.public-api';
 
-export function toPriceSnapshot(result: NewPricingResult, currency: string): PriceSnapshot {
+export function toPriceSnapshot(result: PricedLinePriceDto, currency: string): PriceSnapshot {
   const discounts = result.appliedAdjustments.map((adjustment) => ({
     sourceKind: adjustment.sourceKind,
     sourceId: adjustment.sourceId,

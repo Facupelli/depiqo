@@ -23,10 +23,16 @@ export type InventoryAssetSummary = {
   locationId: string;
 };
 
+export type InventoryAssetOwnershipSummary = {
+  id: string;
+  ownerId: string | null;
+};
+
 export abstract class InventoryPublicApi {
   abstract findAvailableAssetId(dto: FindAvailableParams, tx?: PrismaTransactionClient): Promise<string | null>;
   abstract findAvailableAssetIds(dto: FindAvailableParams, tx?: PrismaTransactionClient): Promise<string[]>;
   abstract findAssetById(tenantId: string, assetId: string): Promise<InventoryAssetSummary | null>;
+  abstract findAssetOwnershipByIds(tenantId: string, assetIds: string[]): Promise<InventoryAssetOwnershipSummary[]>;
   abstract saveOrderAssignment(
     dto: SaveOrderAssignmentDto,
     tx: PrismaTransactionClient,

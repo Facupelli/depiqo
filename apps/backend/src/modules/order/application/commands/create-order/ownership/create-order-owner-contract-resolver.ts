@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ContractBasis } from '@repo/types';
 
-import { PrismaService } from 'src/core/database/prisma.service';
+import { InventoryPublicApi } from 'src/modules/inventory/inventory.public-api';
 import { TenantPublicApi } from 'src/modules/tenant/tenant.public-api';
 
 import { NoActiveContractForAssetError } from '../../../../domain/errors/order.errors';
@@ -21,7 +21,7 @@ export type OwnerContractByAssetId = Map<
 @Injectable()
 export class CreateOrderOwnerContractResolver {
   constructor(
-    private readonly prisma: PrismaService,
+    private readonly inventoryApi: InventoryPublicApi,
     private readonly tenantApi: TenantPublicApi,
   ) {}
 
@@ -30,10 +30,7 @@ export class CreateOrderOwnerContractResolver {
       .map((unit) => unit.resolvedAssetId)
       .filter((assetId): assetId is string => assetId !== undefined);
 
-    const assetOwnerRows = await this.prisma.client.asset.findMany({
-      where: { id: { in: resolvedAssetIds } },
-      select: { id: true, ownerId: true },
-    });
+    const assetOwnerRows = await this.inventoryApi.findAssetOwnershipByIds(tenantId, resolvedAssetIds);
 
     const ownerByAssetId = new Map(assetOwnerRows.map((asset) => [asset.id, asset.ownerId]));
     const contractByAssetId: OwnerContractByAssetId = new Map();

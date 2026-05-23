@@ -1,7 +1,9 @@
 import Decimal from 'decimal.js';
+import { PricingAdjustmentSourceKind, PromotionAdjustmentType } from '@repo/types';
 import { Result } from 'neverthrow';
 import { DateRange } from 'src/core/domain/value-objects/date-range.value-object';
 import { PrismaTransactionClient } from 'src/core/database/prisma-unit-of-work';
+import { Money } from 'src/core/domain/value-objects/money.value-object';
 import { CouponNotFoundError, CouponValidationError } from './domain/errors/pricing.errors';
 
 export type PriceBasketProductItemDto = {
@@ -37,6 +39,23 @@ export type PricedBasketBundleComponentDto = {
   standalonePricePerUnit: Decimal;
 };
 
+export type PricedLineAdjustmentDto = {
+  sourceKind: PricingAdjustmentSourceKind;
+  sourceId: string;
+  label: string;
+  effectType: PromotionAdjustmentType;
+  configuredValue: number;
+  discountAmount: Money;
+};
+
+export type PricedLinePriceDto = {
+  basePrice: Money;
+  finalPrice: Money;
+  pricePerBillingUnit: Money;
+  totalUnits: number;
+  appliedAdjustments: PricedLineAdjustmentDto[];
+};
+
 export type PricedBasketProductLineDto = {
   type: 'PRODUCT';
   productTypeId: string;
@@ -45,7 +64,7 @@ export type PricedBasketProductLineDto = {
   locationId: string;
   period: DateRange;
   currency: string;
-  price: import('./domain/services/new-pricing-calculator.service').NewPricingResult;
+  price: PricedLinePriceDto;
 };
 
 export type PricedBasketBundleLineDto = {
@@ -55,7 +74,7 @@ export type PricedBasketBundleLineDto = {
   locationId: string;
   period: DateRange;
   currency: string;
-  price: import('./domain/services/new-pricing-calculator.service').NewPricingResult;
+  price: PricedLinePriceDto;
   bundleName: string;
   components: PricedBasketBundleComponentDto[];
 };

@@ -18,6 +18,7 @@ import {
   PriceBasketProductItemDto,
   PriceBasketResultDto,
   PricedBasketBundleComponentDto,
+  PricedLinePriceDto,
   PricingPublicApi,
   RedeemCouponDto,
   RedeemCouponError,
@@ -154,21 +155,23 @@ export class PricingApplicationService implements PricingPublicApi {
           locationId: dto.locationId,
           period,
           currency: dto.currency,
-          price: this.calculateProductPriceFromContext({
-            productTypeId: item.productTypeId,
-            period,
-            currency: dto.currency,
-            bookingCreatedAt,
-            customerId: dto.customerId,
-            applicablePromotionIds,
-            standaloneProductQuantity,
-            orderSubtotalBeforePromotions,
-            applyPromotions: true,
-            meta,
-            promotions,
-            pricingContext,
-            tiers: productTiers.get(item.productTypeId) ?? [],
-          }),
+          price: this.toPricedLinePriceDto(
+            this.calculateProductPriceFromContext({
+              productTypeId: item.productTypeId,
+              period,
+              currency: dto.currency,
+              bookingCreatedAt,
+              customerId: dto.customerId,
+              applicablePromotionIds,
+              standaloneProductQuantity,
+              orderSubtotalBeforePromotions,
+              applyPromotions: true,
+              meta,
+              promotions,
+              pricingContext,
+              tiers: productTiers.get(item.productTypeId) ?? [],
+            }),
+          ),
         };
       }
 
@@ -189,21 +192,23 @@ export class PricingApplicationService implements PricingPublicApi {
         locationId: dto.locationId,
         period,
         currency: dto.currency,
-        price: this.calculateBundlePriceFromContext({
-          bundleId: item.bundleId,
-          period,
-          currency: dto.currency,
-          bookingCreatedAt,
-          customerId: dto.customerId,
-          applicablePromotionIds,
-          standaloneProductQuantity,
-          orderSubtotalBeforePromotions,
-          applyPromotions: true,
-          meta,
-          promotions,
-          pricingContext,
-          tiers: bundleTiers.get(item.bundleId) ?? [],
-        }),
+        price: this.toPricedLinePriceDto(
+          this.calculateBundlePriceFromContext({
+            bundleId: item.bundleId,
+            period,
+            currency: dto.currency,
+            bookingCreatedAt,
+            customerId: dto.customerId,
+            applicablePromotionIds,
+            standaloneProductQuantity,
+            orderSubtotalBeforePromotions,
+            applyPromotions: true,
+            meta,
+            promotions,
+            pricingContext,
+            tiers: bundleTiers.get(item.bundleId) ?? [],
+          }),
+        ),
         bundleName: bundle.name,
         components: bundle.components.map<PricedBasketBundleComponentDto>((component) => ({
           productTypeId: component.productTypeId,
@@ -260,6 +265,23 @@ export class PricingApplicationService implements PricingPublicApi {
 
   async voidCouponRedemptionWithinTransaction(orderId: string, tx: PrismaTransactionClient): Promise<void> {
     await this.voidCouponRedemptionService.voidRedemption(orderId, tx);
+  }
+
+  private toPricedLinePriceDto(result: NewPricingResult): PricedLinePriceDto {
+    return {
+      basePrice: result.basePrice,
+      finalPrice: result.finalPrice,
+      pricePerBillingUnit: result.pricePerBillingUnit,
+      totalUnits: result.totalUnits,
+      appliedAdjustments: result.appliedAdjustments.map((adjustment) => ({
+        sourceKind: adjustment.sourceKind,
+        sourceId: adjustment.sourceId,
+        label: adjustment.label,
+        effectType: adjustment.effectType,
+        configuredValue: adjustment.configuredValue,
+        discountAmount: adjustment.discountAmount,
+      })),
+    };
   }
 
   private async loadPricingContext(tenantId: string, locationId: string): Promise<PricingContext> {
