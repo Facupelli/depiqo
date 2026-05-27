@@ -116,199 +116,199 @@ export class CreateOrderService implements ICommandHandler<CreateOrderCommand, R
       }
 
       const slotValidation = await this.validateSlots(command);
-    if (slotValidation.isErr()) {
-      await this.idempotency.release(idempotencyRecordId);
-      return err(slotValidation.error);
-    }
+      if (slotValidation.isErr()) {
+        await this.idempotency.release(idempotencyRecordId);
+        return err(slotValidation.error);
+      }
 
-    const bookingContext = await this.deriveBookingContext(command);
-    const { period, bookingMode } = bookingContext;
-    const now = new Date();
-    const insuranceTerms = InsuranceCalculationService.resolveTerms(
-      {
-        insuranceEnabled: bookingContext.insuranceEnabled,
-        insuranceRatePercent: bookingContext.insuranceRatePercent,
-      },
-      command.insuranceSelected,
-    );
+      const bookingContext = await this.deriveBookingContext(command);
+      const { period, bookingMode } = bookingContext;
+      const now = new Date();
+      const insuranceTerms = InsuranceCalculationService.resolveTerms(
+        {
+          insuranceEnabled: bookingContext.insuranceEnabled,
+          insuranceRatePercent: bookingContext.insuranceRatePercent,
+        },
+        command.insuranceSelected,
+      );
 
-    let resolvedItems: ResolvedItem[];
-    let resolvedCouponId: string | undefined;
-    try {
-      const pricedBasket = await this.pricingApi.priceBasket({
-        tenantId: command.tenantId,
-        locationId: command.locationId,
-        currency: command.currency,
-        customerId: command.customerId,
-        period,
-        bookingCreatedAt: now,
-        couponCode: command.couponCode,
-        items: command.items.map((item) =>
-          item.type === 'PRODUCT'
-            ? {
-                type: 'PRODUCT' as const,
-                productTypeId: item.productTypeId,
-                quantity: item.quantity,
-                assetId: item.assetId,
-              }
-            : {
-                type: 'BUNDLE' as const,
-                bundleId: item.bundleId,
-              },
-        ),
+      let resolvedItems: ResolvedItem[];
+      let resolvedCouponId: string | undefined;
+      try {
+        const pricedBasket = await this.pricingApi.priceBasket({
+          tenantId: command.tenantId,
+          locationId: command.locationId,
+          currency: command.currency,
+          customerId: command.customerId,
+          period,
+          bookingCreatedAt: now,
+          couponCode: command.couponCode,
+          items: command.items.map((item) =>
+            item.type === 'PRODUCT'
+              ? {
+                  type: 'PRODUCT' as const,
+                  productTypeId: item.productTypeId,
+                  quantity: item.quantity,
+                  assetId: item.assetId,
+                }
+              : {
+                  type: 'BUNDLE' as const,
+                  bundleId: item.bundleId,
+                },
+          ),
+        });
+
+        resolvedItems = this.toResolvedItems(pricedBasket.items);
+        resolvedCouponId = pricedBasket.resolvedCoupon?.couponId;
+      } catch (error) {
+        if (error instanceof PricingProductTypeNotFoundError) {
+          await this.idempotency.release(idempotencyRecordId);
+          return err(new ProductTypeNotFoundError(error.productTypeId));
+        }
+
+        if (error instanceof PricingBundleNotFoundError) {
+          await this.idempotency.release(idempotencyRecordId);
+          return err(new BundleNotFoundError(error.bundleId));
+        }
+
+        if (
+          error instanceof CouponNotFoundError ||
+          error instanceof CouponValidationError ||
+          error instanceof ProductTypeInactiveForBookingError ||
+          error instanceof BundleInactiveForBookingError ||
+          error instanceof ProductTypeNotBookableAtLocationError ||
+          error instanceof BundleNotBookableAtLocationError
+        ) {
+          await this.idempotency.release(idempotencyRecordId);
+          return err(error as CustomerCreateOrderError);
+        }
+
+        throw error;
+      }
+
+      const result = await this.prisma.client.$transaction(async (tx) => {
+        const order = Order.create({
+          tenantId: command.tenantId,
+          locationId: command.locationId,
+          currency: command.currency,
+          customerId: command.customerId,
+          period,
+          status: bookingMode === BookingMode.REQUEST_TO_BOOK ? OrderStatus.PENDING_REVIEW : OrderStatus.CONFIRMED,
+          fulfillmentMethod: command.fulfillmentMethod,
+          deliveryRequest:
+            command.fulfillmentMethod === FulfillmentMethod.DELIVERY && command.deliveryRequest
+              ? OrderDeliveryRequest.create(command.deliveryRequest)
+              : null,
+          bookingSnapshot: BookingSnapshot.create({
+            pickupDate: command.pickupDate,
+            pickupTime: command.pickupTime,
+            returnDate: command.returnDate,
+            returnTime: command.returnTime,
+            timezone: bookingContext.timezone,
+          }),
+          insuranceSelected: insuranceTerms.insuranceSelected,
+          insuranceRatePercent: insuranceTerms.insuranceRatePercent,
+        });
+
+        let pendingAssignments: Array<Parameters<InventoryPublicApi['saveOrderAssignment']>[0]> = [];
+
+        // Phase 1: construct the order aggregate in memory.
+        if (bookingMode === BookingMode.REQUEST_TO_BOOK) {
+          this.attachRequestToBookItemsToOrder(order, resolvedItems);
+        } else {
+          const demandUnits = buildDemandUnits(resolvedItems);
+          const availability = await this.assetResolver.resolveDemand(demandUnits);
+          if (availability.unavailableItems.length > 0 || availability.conflictGroups.length > 0) {
+            throw new CreateOrderTransactionResultError(
+              new OrderItemUnavailableError(availability.unavailableItems, availability.conflictGroups),
+            );
+          }
+
+          const contractByAssetId = await this.ownerContractResolver.resolve(command.tenantId, period.start, demandUnits);
+          pendingAssignments = this.attachResolvedItemsToOrder(
+            order,
+            resolvedItems,
+            demandUnits,
+            contractByAssetId,
+            OrderAssignmentStage.COMMITTED,
+          );
+        }
+
+        // Phase 2: persist the order aggregate before dependent rows reference it.
+        await this.orderRepository.save(order, tx);
+
+        // Phase 3: persist dependent inventory assignments.
+        for (const assignment of pendingAssignments) {
+          const assignmentResult = await this.inventoryApi.saveOrderAssignment(assignment, tx);
+          if (assignmentResult.isErr()) {
+            throw new CreateOrderTransactionResultError(
+              new OrderItemUnavailableError(
+                resolvedItems.map((item) =>
+                  item.type === 'PRODUCT'
+                    ? { type: 'PRODUCT', productTypeId: item.productTypeId }
+                    : { type: 'BUNDLE', bundleId: item.bundleId },
+                ),
+              ),
+            );
+          }
+        }
+
+        // Phase 4: persist dependent pricing state.
+        if (resolvedCouponId) {
+          const redeemCouponResult = await this.pricingApi.redeemCouponWithinTransaction(
+            {
+              couponId: resolvedCouponId,
+              orderId: order.id,
+              customerId: command.customerId,
+              now,
+            },
+            tx,
+          );
+
+          if (redeemCouponResult.isErr()) {
+            throw new CreateOrderTransactionResultError(redeemCouponResult.error);
+          }
+        }
+
+        await this.idempotency.complete(idempotencyRecordId, order.id, tx);
+
+        return ok({
+          orderId: order.id,
+          status: order.currentStatus,
+          fulfillmentMethod: order.currentFulfillmentMethod,
+        });
       });
 
-      resolvedItems = this.toResolvedItems(pricedBasket.items);
-      resolvedCouponId = pricedBasket.resolvedCoupon?.couponId;
-    } catch (error) {
-      if (error instanceof PricingProductTypeNotFoundError) {
+      if (result.isErr()) {
         await this.idempotency.release(idempotencyRecordId);
-        return err(new ProductTypeNotFoundError(error.productTypeId));
+        return err(result.error);
       }
 
-      if (error instanceof PricingBundleNotFoundError) {
-        await this.idempotency.release(idempotencyRecordId);
-        return err(new BundleNotFoundError(error.bundleId));
-      }
+      idempotencyCompleted = true;
 
-      if (
-        error instanceof CouponNotFoundError ||
-        error instanceof CouponValidationError ||
-        error instanceof ProductTypeInactiveForBookingError ||
-        error instanceof BundleInactiveForBookingError ||
-        error instanceof ProductTypeNotBookableAtLocationError ||
-        error instanceof BundleNotBookableAtLocationError
-      ) {
-        await this.idempotency.release(idempotencyRecordId);
-        return err(error as CustomerCreateOrderError);
-      }
+      const completionContext = await loadCreateOrderCompletionContext(
+        this.prisma,
+        this.queryBus,
+        command.tenantId,
+        result.value.orderId,
+      );
 
-      throw error;
-    }
-
-    const result = await this.prisma.client.$transaction(async (tx) => {
-      const order = Order.create({
-        tenantId: command.tenantId,
-        locationId: command.locationId,
-        currency: command.currency,
-        customerId: command.customerId,
-        period,
-        status: bookingMode === BookingMode.REQUEST_TO_BOOK ? OrderStatus.PENDING_REVIEW : OrderStatus.CONFIRMED,
-        fulfillmentMethod: command.fulfillmentMethod,
-        deliveryRequest:
-          command.fulfillmentMethod === FulfillmentMethod.DELIVERY && command.deliveryRequest
-            ? OrderDeliveryRequest.create(command.deliveryRequest)
-            : null,
-        bookingSnapshot: BookingSnapshot.create({
+      await this.eventEmitter.emitAsync(
+        OrderCreatedByCustomerEvent.EVENT_NAME,
+        new OrderCreatedByCustomerEvent({
+          orderId: result.value.orderId,
+          tenantId: command.tenantId,
+          customerId: command.customerId!,
+          locationId: command.locationId,
+          orderNumber: completionContext.order.orderNumber,
+          status: result.value.status,
+          fulfillmentMethod: result.value.fulfillmentMethod,
           pickupDate: command.pickupDate,
           pickupTime: command.pickupTime,
           returnDate: command.returnDate,
           returnTime: command.returnTime,
-          timezone: bookingContext.timezone,
         }),
-        insuranceSelected: insuranceTerms.insuranceSelected,
-        insuranceRatePercent: insuranceTerms.insuranceRatePercent,
-      });
-
-      let pendingAssignments: Array<Parameters<InventoryPublicApi['saveOrderAssignment']>[0]> = [];
-
-      // Phase 1: construct the order aggregate in memory.
-      if (bookingMode === BookingMode.REQUEST_TO_BOOK) {
-        this.attachRequestToBookItemsToOrder(order, resolvedItems);
-      } else {
-        const demandUnits = buildDemandUnits(resolvedItems);
-        const availability = await this.assetResolver.resolveDemand(demandUnits);
-        if (availability.unavailableItems.length > 0 || availability.conflictGroups.length > 0) {
-          throw new CreateOrderTransactionResultError(
-            new OrderItemUnavailableError(availability.unavailableItems, availability.conflictGroups),
-          );
-        }
-
-        const contractByAssetId = await this.ownerContractResolver.resolve(command.tenantId, period.start, demandUnits);
-        pendingAssignments = this.attachResolvedItemsToOrder(
-          order,
-          resolvedItems,
-          demandUnits,
-          contractByAssetId,
-          OrderAssignmentStage.COMMITTED,
-        );
-      }
-
-      // Phase 2: persist the order aggregate before dependent rows reference it.
-      await this.orderRepository.save(order, tx);
-
-      // Phase 3: persist dependent inventory assignments.
-      for (const assignment of pendingAssignments) {
-        const assignmentResult = await this.inventoryApi.saveOrderAssignment(assignment, tx);
-        if (assignmentResult.isErr()) {
-          throw new CreateOrderTransactionResultError(
-            new OrderItemUnavailableError(
-              resolvedItems.map((item) =>
-                item.type === 'PRODUCT'
-                  ? { type: 'PRODUCT', productTypeId: item.productTypeId }
-                  : { type: 'BUNDLE', bundleId: item.bundleId },
-              ),
-            ),
-          );
-        }
-      }
-
-      // Phase 4: persist dependent pricing state.
-      if (resolvedCouponId) {
-        const redeemCouponResult = await this.pricingApi.redeemCouponWithinTransaction(
-          {
-            couponId: resolvedCouponId,
-            orderId: order.id,
-            customerId: command.customerId,
-            now,
-          },
-          tx,
-        );
-
-        if (redeemCouponResult.isErr()) {
-          throw new CreateOrderTransactionResultError(redeemCouponResult.error);
-        }
-      }
-
-      await this.idempotency.complete(idempotencyRecordId, order.id, tx);
-
-      return ok({
-        orderId: order.id,
-        status: order.currentStatus,
-        fulfillmentMethod: order.currentFulfillmentMethod,
-      });
-    });
-
-    if (result.isErr()) {
-      await this.idempotency.release(idempotencyRecordId);
-      return err(result.error);
-    }
-
-    idempotencyCompleted = true;
-
-    const completionContext = await loadCreateOrderCompletionContext(
-      this.prisma,
-      this.queryBus,
-      command.tenantId,
-      result.value.orderId,
-    );
-
-    await this.eventEmitter.emitAsync(
-      OrderCreatedByCustomerEvent.EVENT_NAME,
-      new OrderCreatedByCustomerEvent({
-        orderId: result.value.orderId,
-        tenantId: command.tenantId,
-        customerId: command.customerId!,
-        locationId: command.locationId,
-        orderNumber: completionContext.order.orderNumber,
-        status: result.value.status,
-        fulfillmentMethod: result.value.fulfillmentMethod,
-        pickupDate: command.pickupDate,
-        pickupTime: command.pickupTime,
-        returnDate: command.returnDate,
-        returnTime: command.returnTime,
-      }),
-    );
+      );
 
       return ok(
         buildCreateOrderResponse({
