@@ -190,7 +190,9 @@ export function ProductTypeForm({
 
 							return (
 								<Field data-invalid={isInvalid}>
-									<FieldLabel htmlFor={field.name}>{formCopy.nameLabel}</FieldLabel>
+									<FieldLabel htmlFor={field.name}>
+										{formCopy.nameLabel}
+									</FieldLabel>
 									<Input
 										id={field.name}
 										name={field.name}

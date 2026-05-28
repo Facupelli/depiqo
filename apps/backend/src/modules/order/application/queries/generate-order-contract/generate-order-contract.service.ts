@@ -9,9 +9,10 @@ import { GenerateOrderContractQuery, GenerateOrderContractResult } from './gener
 type GenerateOrderContractQueryResult = Result<GenerateOrderContractResult, ContractCustomerProfileMissingError>;
 
 @QueryHandler(GenerateOrderContractQuery)
-export class GenerateOrderContractService
-  implements IQueryHandler<GenerateOrderContractQuery, GenerateOrderContractQueryResult>
-{
+export class GenerateOrderContractService implements IQueryHandler<
+  GenerateOrderContractQuery,
+  GenerateOrderContractQueryResult
+> {
   constructor(private readonly orderDocumentRenderer: OrderDocumentRendererService) {}
 
   async execute(query: GenerateOrderContractQuery): Promise<GenerateOrderContractQueryResult> {

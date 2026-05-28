@@ -64,6 +64,7 @@ export function getRouter() {
 		context: {
 			queryClient,
 			tenantContext: undefined as unknown as ResolvedTenantContext,
+			user: null,
 		},
 		scrollRestoration: true,
 		defaultPreload: "intent",

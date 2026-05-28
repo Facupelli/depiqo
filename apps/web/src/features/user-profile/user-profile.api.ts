@@ -1,7 +1,7 @@
 import {
 	type CreateUserProfileDto,
-	type ProblemDetails,
 	createUserProfileSchema,
+	type ProblemDetails,
 	type UpdateUserProfileDto,
 	type UserProfileResponseDto,
 	updateUserProfileSchema,

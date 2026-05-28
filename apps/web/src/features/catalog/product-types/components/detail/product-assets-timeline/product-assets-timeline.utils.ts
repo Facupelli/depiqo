@@ -186,7 +186,10 @@ export function getBlockLayout(
 
 	return {
 		left: ((clippedStart - rangeStart) / duration) * 100,
-		width: Math.max(((clippedEnd - clippedStart) / duration) * 100, minWidthPercent),
+		width: Math.max(
+			((clippedEnd - clippedStart) / duration) * 100,
+			minWidthPercent,
+		),
 		isClippedStart: blockStart < rangeStart,
 		isClippedEnd: blockEnd > rangeEnd,
 	};

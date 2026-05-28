@@ -31,7 +31,9 @@ export function OrderBudgetCustomerDialog({
 }: {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
-	onSubmit: (values: ReturnType<typeof toOrderBudgetRequestDto>) => Promise<void>;
+	onSubmit: (
+		values: ReturnType<typeof toOrderBudgetRequestDto>,
+	) => Promise<void>;
 	isOpeningBudget: boolean;
 }) {
 	const form = useForm({

@@ -1,0 +1,89 @@
+import type { GetRentalDetailResponseDto } from "@repo/api-contracts";
+import { useState } from "react";
+import { toast } from "sonner";
+import { ProblemDetailsError } from "@/shared/errors";
+import { useSendSigningInvitation } from "@/v2/features/document-signing/send-signing-invitation/send-signing-invitation.mutation";
+import {
+	type RentalSigningInvitationFormValues,
+	toRentalSigningInvitationDto,
+} from "../rental-signing-invitation.schema";
+
+export type RentalSigningDialogIntent = "send" | "resend";
+
+export function useRentalSigningInvitationActions(
+	rental: GetRentalDetailResponseDto,
+) {
+	const [isInvitationDialogOpen, setIsInvitationDialogOpen] = useState(false);
+	const [dialogIntent, setDialogIntent] =
+		useState<RentalSigningDialogIntent>("send");
+	const [submitError, setSubmitError] = useState<string | null>(null);
+	const sendInvitationMutation = useSendSigningInvitation();
+
+	function openSendDialog() {
+		setDialogIntent("send");
+		setSubmitError(null);
+		setIsInvitationDialogOpen(true);
+	}
+
+	function openResendDialog() {
+		setDialogIntent("resend");
+		setSubmitError(null);
+		setIsInvitationDialogOpen(true);
+	}
+
+	function handleInvitationDialogOpenChange(open: boolean) {
+		setIsInvitationDialogOpen(open);
+
+		if (!open) {
+			setSubmitError(null);
+		}
+	}
+
+	async function submitInvitation(values: RentalSigningInvitationFormValues) {
+		setSubmitError(null);
+
+		try {
+			const result = await sendInvitationMutation.mutateAsync({
+				orderId: rental.id,
+				body: toRentalSigningInvitationDto(values),
+			});
+
+			toast.success(
+				dialogIntent === "send"
+					? result.reusedExistingRequest
+						? "La invitación ya estaba activa y fue reenviada."
+						: "Invitación de firma enviada."
+					: result.reusedExistingRequest
+						? "Invitación de firma reenviada."
+						: "Se generó una nueva invitación de firma.",
+			);
+
+			setIsInvitationDialogOpen(false);
+		} catch (error) {
+			setSubmitError(getSigningInvitationErrorMessage(error));
+		}
+	}
+
+	return {
+		isInvitationDialogOpen,
+		setIsInvitationDialogOpen: handleInvitationDialogOpenChange,
+		dialogIntent,
+		submitError,
+		isPending: sendInvitationMutation.isPending,
+		openSendDialog,
+		openResendDialog,
+		submitInvitation,
+	};
+}
+
+function getSigningInvitationErrorMessage(error: unknown) {
+	if (error instanceof ProblemDetailsError) {
+		return (
+			error.problemDetails.detail ||
+			error.problemDetails.title ||
+			"No pudimos enviar la invitación de firma."
+		);
+	}
+
+	return "No pudimos enviar la invitación de firma.";
+}

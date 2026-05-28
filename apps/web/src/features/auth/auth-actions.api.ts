@@ -1,18 +1,18 @@
+import type { LoginResponseDto } from "@repo/api-contracts";
+import {
+	type RegisterDto,
+	type RegisterResponse,
+	registerSchema,
+} from "@repo/schemas";
 import { createServerFn } from "@tanstack/react-start";
 import { apiFetch } from "@/lib/api";
 import { authenticatedApiFetch } from "@/lib/api-auth";
+import type { SessionUser } from "@/lib/session";
 import { getAppSession } from "@/lib/session.server";
 import {
-	loginSchema,
 	type LoginDto,
-	type LoginResponseDto,
-} from "./schemas/login-form.schema";
-import {
-	registerSchema,
-	type RegisterDto,
-	type RegisterResponse,
-} from "@repo/schemas";
-import type { SessionUser } from "@/lib/session";
+	loginSchema,
+} from "@/v2/features/tenant-management/auth/login/login-form.schema";
 import { getOptionalSessionUser } from "./auth-guards.server";
 import { writeSessionFromTokens } from "./auth-session.server";
 
@@ -34,7 +34,7 @@ export const registerTenantUserFn = createServerFn({ method: "POST" })
 export const loginUserFn = createServerFn({ method: "POST" })
 	.inputValidator((data: LoginDto) => loginSchema.parse(data))
 	.handler(async ({ data }): Promise<SessionUser> => {
-		const response = await apiFetch<LoginResponseDto>("/auth/login", {
+		await apiFetch<LoginResponseDto>("/auth/login", {
 			method: "POST",
 			body: data,
 		});
@@ -42,8 +42,8 @@ export const loginUserFn = createServerFn({ method: "POST" })
 		const session = await getAppSession();
 
 		return writeSessionFromTokens(session, {
-			accessToken: response.access_token,
-			refreshToken: response.refresh_token,
+			accessToken: "",
+			refreshToken: "",
 		});
 	});
 

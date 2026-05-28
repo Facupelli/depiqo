@@ -1,13 +1,11 @@
-import { ScheduleSlotType } from "@repo/types";
 import type { Dayjs } from "dayjs";
 import { AlertTriangle, Calendar, Clock } from "lucide-react";
-import { useLocationScheduleSlots } from "@/features/tenant/locations/location-schedules.queries";
 import {
 	formatDailyRange,
 	formatDateShort,
 	formatRentalDuration,
 } from "@/lib/dates/format";
-import { toDateParam } from "@/lib/dates/parse";
+import { useStorefrontBranchScheduleSlots } from "@/v2/features/tenant-management/branch/branch.queries";
 import { formatSlot } from "../cart.utils";
 import {
 	useCartContext,
@@ -17,9 +15,20 @@ import {
 } from "../cart-page.context";
 
 export function CartPagePeriod() {
-	const { cartItems } = useCartContext();
 	const { period, locationId, locationName } = useCartLocationContext();
-	const { breakdown } = useCartPricingContext();
+
+	const scheduleSlotsQuery = {
+		periodStart: period.start.format("YYYY-MM-DD"),
+		periodEnd: period.end.format("YYYY-MM-DD"),
+	};
+
+	const { data: slots, isLoading } = useStorefrontBranchScheduleSlots(
+		locationId,
+		scheduleSlotsQuery,
+	);
+
+	const { cartItems } = useCartContext();
+	const { preview } = useCartPricingContext();
 	const {
 		isTimesRequired,
 		onPickupTimeChange,
@@ -31,8 +40,8 @@ export function CartPagePeriod() {
 	const startDate = period.start;
 	const endDate = period.end;
 	const durationLabel = formatCartDuration(
-		breakdown?.totalUnits,
-		cartItems[0]?.billingUnitLabel,
+		preview?.chargedDays,
+		cartItems[0]?.pricing?.ratePlan.billingUnit,
 		startDate,
 		endDate,
 	);
@@ -77,18 +86,16 @@ export function CartPagePeriod() {
 
 					<TimeSelectCell
 						label="Hora de Retiro"
-						date={toDateParam(startDate)}
-						locationId={locationId}
-						type={ScheduleSlotType.PICKUP}
+						slots={slots?.pickupSlots}
+						isLoading={isLoading}
 						value={pickupTime}
 						onChange={onPickupTimeChange}
 					/>
 
 					<TimeSelectCell
 						label="Hora de Devolución"
-						date={toDateParam(endDate)}
-						locationId={locationId}
-						type={ScheduleSlotType.RETURN}
+						slots={slots?.returnSlots}
+						isLoading={isLoading}
 						value={returnTime}
 						onChange={onReturnTimeChange}
 					/>
@@ -153,17 +160,15 @@ export function CartPagePeriod() {
 					<div className="col-span-2 grid grid-cols-2 divide-x divide-neutral-200 border-t border-neutral-200">
 						<TimeSelectCell
 							label="Hora de Retiro"
-							date={toDateParam(startDate)}
-							locationId={locationId}
-							type={ScheduleSlotType.PICKUP}
+							slots={slots?.pickupSlots}
+							isLoading={isLoading}
 							value={pickupTime}
 							onChange={onPickupTimeChange}
 						/>
 						<TimeSelectCell
 							label="Hora de Devolución"
-							date={toDateParam(endDate)}
-							locationId={locationId}
-							type={ScheduleSlotType.RETURN}
+							slots={slots?.returnSlots}
+							isLoading={isLoading}
 							value={returnTime}
 							onChange={onReturnTimeChange}
 						/>
@@ -233,27 +238,19 @@ function PeriodCell({
 
 type TimeSelectCellProps = {
 	label: string;
-	date: string;
-	locationId: string;
-	type: ScheduleSlotType;
+	slots: number[] | undefined;
 	value: number | undefined;
+	isLoading: boolean;
 	onChange: (value: number) => void;
 };
 
 export function TimeSelectCell({
 	label,
-	date,
-	locationId,
-	type,
 	value,
 	onChange,
+	slots,
+	isLoading,
 }: TimeSelectCellProps) {
-	const { data: slots, isLoading } = useLocationScheduleSlots({
-		date,
-		type,
-		locationId,
-	});
-
 	const isClosed = !isLoading && (!slots || slots.length === 0);
 
 	return (

@@ -1,0 +1,39 @@
+enum V2ContractArtifactKind {
+  UNSIGNED_PDF
+  SIGNED_PDF
+}
+
+enum V2ContractArtifactVisibility {
+  INTERNAL
+  PUBLIC
+}
+
+model V2ContractArtifact {
+  id         String                       @id @default(uuid())
+  tenantId   String                       @map("tenant_id")
+  contractId String                       @map("contract_id")
+
+  kind       V2ContractArtifactKind
+  visibility V2ContractArtifactVisibility @default(INTERNAL)
+
+  storageKey  String @map("storage_key")
+  fileName    String @map("file_name")
+  contentType String @map("content_type")
+  byteSize    Int    @map("byte_size")
+
+  hashAlgorithm String? @map("hash_algorithm") // e.g. SHA-256
+  documentHash  String? @map("document_hash")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  contract V2Contract @relation(fields: [contractId], references: [id])
+  
+  signingRequestsAsUnsigned V2DocumentSigningRequest[] @relation("SigningRequestUnsignedArtifact")
+
+  acceptedAsUnsignedIn V2DocumentSignatureAcceptance[] @relation("UnsignedArtifactAccepted")
+  producedAsSignedIn   V2DocumentSignatureAcceptance[] @relation("SignedArtifactProduced")
+
+  @@index([tenantId, contractId, kind])
+  @@index([tenantId, contractId, kind, visibility])
+  @@map("v2_contract_artifacts")
+}

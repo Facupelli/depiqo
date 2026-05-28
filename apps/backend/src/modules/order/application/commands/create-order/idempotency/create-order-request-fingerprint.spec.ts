@@ -55,14 +55,10 @@ describe('createOrderRequestHash', () => {
     const baseHash = createOrderRequestHash(makeCommand());
 
     expect(
-      createOrderRequestHash(
-        makeCommand({ items: [{ type: 'PRODUCT', productTypeId: 'product-1', quantity: 2 }] }),
-      ),
+      createOrderRequestHash(makeCommand({ items: [{ type: 'PRODUCT', productTypeId: 'product-1', quantity: 2 }] })),
     ).not.toBe(baseHash);
     expect(
-      createOrderRequestHash(
-        makeCommand({ items: [{ type: 'PRODUCT', productTypeId: 'product-2', quantity: 1 }] }),
-      ),
+      createOrderRequestHash(makeCommand({ items: [{ type: 'PRODUCT', productTypeId: 'product-2', quantity: 1 }] })),
     ).not.toBe(baseHash);
     expect(
       createOrderRequestHash(
@@ -86,7 +82,9 @@ describe('createOrderRequestHash', () => {
       items: [{ type: 'PRODUCT', productTypeId: 'product-1', quantity: undefined, assetId: undefined }],
     });
 
-    expect(createOrderRequestHash(implicitOptionalValues)).toBe(createOrderRequestHash(explicitUndefinedOptionalValues));
+    expect(createOrderRequestHash(implicitOptionalValues)).toBe(
+      createOrderRequestHash(explicitUndefinedOptionalValues),
+    );
   });
 
   it('normalizes undefined delivery request optional values consistently', () => {
@@ -117,7 +115,9 @@ describe('createOrderRequestHash', () => {
       },
     });
 
-    expect(createOrderRequestHash(implicitOptionalValues)).toBe(createOrderRequestHash(explicitUndefinedOptionalValues));
+    expect(createOrderRequestHash(implicitOptionalValues)).toBe(
+      createOrderRequestHash(explicitUndefinedOptionalValues),
+    );
   });
 
   it('changes the hash when delivery request details change', () => {

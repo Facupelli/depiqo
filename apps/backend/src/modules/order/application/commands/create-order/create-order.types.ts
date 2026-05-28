@@ -92,7 +92,10 @@ export type CreateOrderError =
   | CouponValidationError
   | OrderPricingTargetTotalInvalidError;
 
-export type CustomerCreateOrderError = Exclude<CreateOrderError, NoActiveContractForAssetError | OrderPricingTargetTotalInvalidError>;
+export type CustomerCreateOrderError = Exclude<
+  CreateOrderError,
+  NoActiveContractForAssetError | OrderPricingTargetTotalInvalidError
+>;
 
 export type ResolveDemandResult = {
   unavailableItems: UnavailableItem[];

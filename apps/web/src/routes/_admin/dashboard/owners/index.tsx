@@ -1,13 +1,10 @@
-import { Button } from "@/components/ui/button";
-import { CreateOwnerDialog } from "@/features/tenant/owners/components/create-owner-dialog-form";
-import { ownerColumns } from "@/features/tenant/owners/components/owners-columns";
-import { OwnersDataTable } from "@/features/tenant/owners/components/owners-table";
-import { useOwners } from "@/features/tenant/owners/owners.queries";
-import { AdminRouteError } from "@/shared/components/admin-route-error";
-import type { OwnerListItemResponse } from "@repo/schemas";
+import type { GetOwnersItemDto } from "@repo/api-contracts";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Plus } from "lucide-react";
-import { useState } from "react";
+import { AdminRouteError } from "@/shared/components/admin-route-error";
+import { CreateOwnerWithContractDialog } from "@/v2/features/asset-inventory/owners/create-owner-with-contract/components/create-owner-with-contract-dialog";
+import { ownerColumns } from "@/v2/features/asset-inventory/owners/get-owners/components/owners-columns";
+import { OwnersDataTable } from "@/v2/features/asset-inventory/owners/get-owners/components/owners-table";
+import { useOwners } from "@/v2/features/asset-inventory/owners/owners.queries";
 
 export const Route = createFileRoute("/_admin/dashboard/owners/")({
 	errorComponent: ({ error }) => {
@@ -25,9 +22,7 @@ export const Route = createFileRoute("/_admin/dashboard/owners/")({
 function OwnersPage() {
 	const navigate = useNavigate();
 
-	const [dialogOpen, setDialogOpen] = useState(false);
-
-	function handleRowClick(owner: OwnerListItemResponse) {
+	function handleRowClick(owner: GetOwnersItemDto) {
 		navigate({
 			to: "/dashboard/owners/$ownerId",
 			params: { ownerId: owner.id },
@@ -39,21 +34,17 @@ function OwnersPage() {
 			<div className="flex items-start justify-between">
 				<div>
 					<h1 className="text-2xl font-semibold tracking-tight">
-						Asset Owners
+						Propietarios de Activos
 					</h1>
 					<p className="text-sm text-muted-foreground">
-						Manage external entities owning rental inventory.
+						Gestiona las entidades externas propietarias del inventario de
+						alquiler.
 					</p>
 				</div>
-				<Button onClick={() => setDialogOpen(true)}>
-					<Plus className="mr-2 h-4 w-4" />
-					Add Owner
-				</Button>
+				<CreateOwnerWithContractDialog triggerLabel="Agregar Propietario" />
 			</div>
 
 			<OwnersTable handleRowClick={handleRowClick} />
-
-			<CreateOwnerDialog open={dialogOpen} onOpenChange={setDialogOpen} />
 		</div>
 	);
 }
@@ -61,20 +52,20 @@ function OwnersPage() {
 function OwnersTable({
 	handleRowClick,
 }: {
-	handleRowClick: (owner: OwnerListItemResponse) => void;
+	handleRowClick: (owner: GetOwnersItemDto) => void;
 }) {
 	const { data: owners = [], isPending, isError } = useOwners();
 
 	if (isError) {
 		return (
 			<p className="text-sm text-destructive">
-				Failed to load owners. Please try again.
+				No pudimos cargar los propietarios. Intenta nuevamente.
 			</p>
 		);
 	}
 
 	if (isPending) {
-		return <p className="text-sm text-muted-foreground">Loading...</p>;
+		return <p className="text-sm text-muted-foreground">Cargando...</p>;
 	}
 
 	return (
@@ -82,7 +73,7 @@ function OwnersTable({
 			columns={ownerColumns}
 			data={owners}
 			searchColumn="name"
-			searchPlaceholder="Search owners..."
+			searchPlaceholder="Buscar propietarios..."
 			handleRowClick={handleRowClick}
 		/>
 	);

@@ -4,6 +4,7 @@ const GOOGLE_AUTHORIZATION_ENDPOINT =
 	"https://accounts.google.com/o/oauth2/v2/auth";
 
 type DecodedGoogleAuthState = {
+	portalOrigin?: string;
 	redirectPath: string;
 };
 
@@ -25,7 +26,10 @@ export function buildGoogleAuthorizationUrl(state: string): string {
 }
 
 export function getGoogleCallbackRedirectUri(): string {
-	return new URL("/auth/google/callback", clientEnv.VITE_SHARED_AUTH_ORIGIN).toString();
+	return new URL(
+		"/auth/google/callback",
+		clientEnv.VITE_SHARED_AUTH_ORIGIN,
+	).toString();
 }
 
 export function decodeGoogleAuthState(state: string): DecodedGoogleAuthState {
@@ -36,15 +40,22 @@ export function decodeGoogleAuthState(state: string): DecodedGoogleAuthState {
 	}
 
 	try {
-		const parsed = JSON.parse(decodeBase64Url(payload)) as Partial<
-			DecodedGoogleAuthState
-		>;
+		const parsed = JSON.parse(
+			decodeBase64Url(payload),
+		) as Partial<DecodedGoogleAuthState>;
 
-		if (typeof parsed.redirectPath !== "string" || parsed.redirectPath.length === 0) {
+		if (
+			typeof parsed.redirectPath !== "string" ||
+			parsed.redirectPath.length === 0
+		) {
 			throw new Error("Missing redirect path");
 		}
 
 		return {
+			portalOrigin:
+				typeof parsed.portalOrigin === "string"
+					? parsed.portalOrigin
+					: undefined,
 			redirectPath: parsed.redirectPath,
 		};
 	} catch {

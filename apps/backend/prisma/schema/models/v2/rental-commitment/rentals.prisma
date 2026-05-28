@@ -1,0 +1,80 @@
+// ---------------------------------------------------------------------------
+// V2 RENTAL COMMITMENT - RENTALS
+// ---------------------------------------------------------------------------
+
+enum V2RentalStatus {
+  PENDING
+  DRAFT
+  CONFIRMED
+  PREPARED
+  CANCELLED
+  COMPLETED
+}
+
+enum V2RentalSource {
+  STAFF
+  WHATSAPP_FLOW
+  FORMAL
+}
+
+model V2Rental {
+  id         String  @id @default(uuid())
+  tenantId   String  @map("tenant_id")
+  branchId   String  @map("branch_id")
+  customerId String? @map("customer_id")
+
+  status            V2RentalStatus       @default(PENDING)
+  fulfillmentMethod V2FulfillmentMethod? @map("fulfillment_method")
+  notes             String?
+  insuranceSelected Boolean              @default(false) @map("insurance_selected")
+  bookingSnapshot   Json?                @map("booking_snapshot")
+
+  periodStart   DateTime        @map("period_start")
+  periodEnd     DateTime        @map("period_end")
+  priceSnapshot Json?           @map("price_snapshot")
+  source        V2RentalSource?
+
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  cancelledAt DateTime? @map("cancelled_at")
+  confirmedAt DateTime? @map("confirmed_at")
+
+  deliveryDetails           V2RentalDeliveryDetails?
+  selections                V2RentalSelection[]
+  demandLines               V2RentalDemandLine[]
+  assignedAssets            V2AssignedAsset[]
+  assetBlocks               V2AssetBlock[]
+  ownerSplits               V2RentalOwnerSplit[]
+  accessorySelections       V2RentalAccessorySelection[]
+  accessoryAssetAssignments V2RentalAccessoryAssetAssignment[]
+
+  @@index([tenantId, branchId, status, createdAt(sort: Desc)])
+  @@index([tenantId, branchId, periodStart, periodEnd])
+  @@index([tenantId, customerId])
+  @@map("v2_rentals")
+}
+
+model V2RentalDeliveryDetails {
+  id            String @id @default(uuid())
+  tenantId      String @map("tenant_id")
+  rentalOrderId String @unique @map("rental_order_id")
+
+  addressLine1 String  @map("address_line_1")
+  addressLine2 String? @map("address_line_2")
+  city         String
+  state        String? @map("state")
+  postalCode   String? @map("postal_code")
+  country      String? @map("country")
+
+  contactName  String? @map("contact_name")
+  contactPhone String? @map("contact_phone")
+  notes        String? @map("notes")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  rental V2Rental @relation(fields: [rentalOrderId], references: [id])
+
+  @@index([tenantId])
+  @@map("rental_delivery_details")
+}

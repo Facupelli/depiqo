@@ -6,7 +6,7 @@ import {
 } from "@tanstack/react-query";
 import { usePortalTenantId } from "@/features/tenant-context/use-portal-tenant-id";
 
-import { ProblemDetailsError } from "@/shared/errors";
+import type { ProblemDetailsError } from "@/shared/errors";
 
 import { getRentalCategories } from "./categories.api";
 

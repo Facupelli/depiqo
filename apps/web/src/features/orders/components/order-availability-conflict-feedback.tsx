@@ -1,5 +1,5 @@
-import type { OrderAvailabilityConflictDisplayModel } from "@/features/orders/order-availability-conflict.display-model";
 import { OrderAvailabilityConflictPanel } from "@/features/orders/components/order-availability-conflict-panel";
+import type { OrderAvailabilityConflictDisplayModel } from "@/features/orders/order-availability-conflict.display-model";
 
 export function OrderAvailabilityConflictFeedback({
 	model,

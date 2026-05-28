@@ -1,0 +1,90 @@
+// ---------------------------------------------------------------------------
+// V2 RENTAL CATALOG - RENTABLE ITEMS, OFFERS, AND FULFILLMENT REQUIREMENTS
+// ---------------------------------------------------------------------------
+
+enum V2RentableItemKind {
+  SINGLE
+  PACKAGE
+  KIT
+  BUNDLE
+}
+
+enum V2RentableItemStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
+model V2RentableItemCategory {
+  id        String    @id @default(uuid())
+  tenantId  String    @map("tenant_id")
+  name      String
+  slug      String
+  sortOrder Int       @default(0) @map("sort_order")
+  isActive  Boolean   @default(true) @map("is_active")
+  deletedAt DateTime? @map("deleted_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  rentableItems V2RentableItem[]
+
+  @@unique([tenantId, slug, deletedAt])
+  @@index([tenantId, isActive, deletedAt])
+  @@map("rentable_item_categories")
+}
+
+model V2RentableItem {
+  id          String               @id @default(uuid())
+  tenantId    String               @map("tenant_id")
+  name        String
+  description String?
+  imageUrl    String?              @map("image_url")
+  categoryId  String?              @map("category_id")
+  kind        V2RentableItemKind
+  status      V2RentableItemStatus @default(DRAFT)
+  deletedAt   DateTime?            @map("deleted_at")
+  createdAt   DateTime             @default(now()) @map("created_at")
+  updatedAt   DateTime             @updatedAt @map("updated_at")
+
+  category     V2RentableItemCategory?     @relation(fields: [categoryId], references: [id])
+  rentalOffers V2RentalOffer[]
+  requirements V2RentableItemRequirement[]
+
+  @@index([tenantId, status, deletedAt, categoryId])
+  @@map("v2_rentable_items")
+}
+
+model V2RentalOffer {
+  id             String    @id @default(uuid())
+  tenantId       String    @map("tenant_id")
+  branchId       String    @map("branch_id")
+  rentableItemId String    @map("rentable_item_id")
+  isVisible      Boolean   @default(true) @map("is_visible")
+  isRentable     Boolean   @default(true) @map("is_rentable")
+  deletedAt      DateTime? @map("deleted_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  rentableItem V2RentableItem @relation(fields: [rentableItemId], references: [id])
+
+  @@unique([tenantId, branchId, rentableItemId, deletedAt])
+  @@index([tenantId, branchId, isVisible, isRentable, deletedAt])
+  @@index([rentableItemId])
+  @@map("v2_rental_offers")
+}
+
+model V2RentableItemRequirement {
+  id              String   @id @default(uuid())
+  tenantId        String   @map("tenant_id")
+  rentableItemId  String   @map("rentable_item_id")
+  equipmentTypeId String   @map("equipment_type_id")
+  quantityPerItem Int      @map("quantity_per_item")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  rentableItem V2RentableItem @relation(fields: [rentableItemId], references: [id])
+
+  @@unique([rentableItemId, equipmentTypeId])
+  @@index([tenantId, rentableItemId])
+  @@map("v2_fulfillment_requirements")
+}

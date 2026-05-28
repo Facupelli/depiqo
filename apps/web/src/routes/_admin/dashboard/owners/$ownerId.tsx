@@ -1,5 +1,4 @@
-import type { GetOwnerResponseDto } from "@repo/schemas";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import type { GetOwnerDetailResponseDto } from "@repo/api-contracts";
 import { createFileRoute } from "@tanstack/react-router";
 import {
 	AlertTriangle,
@@ -8,16 +7,16 @@ import {
 	Phone,
 	StickyNote,
 } from "lucide-react";
-import { Suspense } from "react";
 import { ErrorBoundary, type FallbackProps } from "react-error-boundary";
 import { PageBreadcrumb } from "@/components/detail-id-breadcrumb";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ContractHistoryTable } from "@/features/tenant/owners/components/contract-history-table";
-import { NewOwnerContractDialog } from "@/features/tenant/owners/components/owner-contract-dialog-form";
-import { ownerQueries } from "@/features/tenant/owners/owners.queries";
+import {
+	ownerQueries,
+	useOwnerDetail,
+} from "@/v2/features/asset-inventory/owners/owners.queries";
 
 export const Route = createFileRoute("/_admin/dashboard/owners/$ownerId")({
 	loader: ({ context: { queryClient }, params: { ownerId } }) =>
@@ -27,74 +26,83 @@ export const Route = createFileRoute("/_admin/dashboard/owners/$ownerId")({
 });
 
 function RouteComponent() {
+	return (
+		<ErrorBoundary FallbackComponent={OwnerDetailError}>
+			<OwnerDetailPage />
+		</ErrorBoundary>
+	);
+}
+
+function OwnerDetailPage() {
 	const { ownerId } = Route.useParams();
-	const { data: owner } = useSuspenseQuery(ownerQueries.detail(ownerId));
+	const { data: owner, isPending, isError, error } = useOwnerDetail(ownerId);
 
-	const activeContract = owner.contracts.find((c) => c.isActive) ?? null;
+	if (isPending) {
+		return <OwnerDetailSkeleton />;
+	}
 
+	if (isError) {
+		throw error;
+	}
+
+	const activeContract = owner.contracts.find(isActiveContract) ?? null;
 	const pastContracts = owner.contracts
-		.filter((c) => !c.isActive)
+		.filter((contract) => contract.id !== activeContract?.id)
 		.sort(
 			(a, b) =>
 				new Date(b.validFrom).getTime() - new Date(a.validFrom).getTime(),
 		);
 
 	return (
-		<ErrorBoundary FallbackComponent={OwnerDetailError}>
-			<Suspense fallback={<OwnerDetailSkeleton />}>
-				<div className="min-h-screen bg-neutral-50">
-					<div className="mx-auto max-w-6xl px-8">
-						<PageBreadcrumb
-							parent={{ label: "Propietarios", to: "/dashboard/owners" }}
-							current={owner.name}
-						/>
+		<div className="min-h-screen bg-neutral-50">
+			<div className="mx-auto max-w-6xl px-8">
+				<PageBreadcrumb
+					parent={{ label: "Propietarios", to: "/dashboard/owners" }}
+					current={owner.name}
+				/>
 
-						{/* Page header */}
-						<div className="mb-8 flex items-start justify-between gap-4">
-							<div>
-								<h1 className="text-3xl font-bold tracking-tight text-neutral-900">
-									Detalle del Propietario
-								</h1>
-								<p className="mt-1 text-sm text-neutral-500">
-									Información contractual y datos de contacto
-								</p>
-							</div>
-							<NewOwnerContractDialog ownerId={owner.id} />
-						</div>
-
-						{/* Top grid: owner card + active contract */}
-						<div className="grid grid-cols-1 gap-4 lg:grid-cols-[340px_1fr]">
-							<OwnerCard owner={owner} />
-							<ActiveContractCard contract={activeContract} />
-						</div>
-
-						{/* Contract history */}
-						<div className="mt-6 rounded-lg border border-neutral-200 bg-white">
-							<div className="flex items-center justify-between border-b border-neutral-100 px-6 py-4">
-								<h2 className="text-sm font-semibold uppercase tracking-wider text-neutral-500">
-									Historial de Contratos
-								</h2>
-								<span className="font-mono text-xs text-neutral-400">
-									{pastContracts.length}{" "}
-									{pastContracts.length === 1 ? "registro" : "registros"}
-								</span>
-							</div>
-							<div className="px-2">
-								<ContractHistoryTable contracts={pastContracts} />
-							</div>
-						</div>
+				{/* Page header */}
+				<div className="mb-8 flex items-start justify-between gap-4">
+					<div>
+						<h1 className="text-3xl font-bold tracking-tight text-neutral-900">
+							Detalle del Propietario
+						</h1>
+						<p className="mt-1 text-sm text-neutral-500">
+							Información contractual y datos de contacto
+						</p>
 					</div>
 				</div>
-			</Suspense>
-		</ErrorBoundary>
+
+				{/* Top grid: owner card + active contract */}
+				<div className="grid grid-cols-1 gap-4 lg:grid-cols-[340px_1fr]">
+					<OwnerCard owner={owner} isActive={Boolean(activeContract)} />
+					<ActiveContractCard contract={activeContract} />
+				</div>
+
+				{/* Contract history */}
+				<div className="mt-6 rounded-lg border border-neutral-200 bg-white">
+					<div className="flex items-center justify-between border-b border-neutral-100 px-6 py-4">
+						<h2 className="text-sm font-semibold uppercase tracking-wider text-neutral-500">
+							Otros Contratos
+						</h2>
+						<span className="font-mono text-xs text-neutral-400">
+							{pastContracts.length}{" "}
+							{pastContracts.length === 1 ? "registro" : "registros"}
+						</span>
+					</div>
+					<ContractList contracts={pastContracts} />
+				</div>
+			</div>
+		</div>
 	);
 }
 
 interface OwnerCardProps {
-	owner: GetOwnerResponseDto;
+	owner: GetOwnerDetailResponseDto;
+	isActive: boolean;
 }
 
-function OwnerCard({ owner }: OwnerCardProps) {
+function OwnerCard({ owner, isActive }: OwnerCardProps) {
 	const initials = owner.name
 		.split(" ")
 		.map((n) => n[0])
@@ -117,9 +125,9 @@ function OwnerCard({ owner }: OwnerCardProps) {
 							<h2 className="text-xl font-semibold text-neutral-900 leading-tight">
 								{owner.name}
 							</h2>
-							{!owner.isActive && (
+							{!isActive && (
 								<Badge variant="secondary" className="text-xs">
-									Inactivo
+									Sin contrato activo
 								</Badge>
 							)}
 						</div>
@@ -162,18 +170,30 @@ function OwnerCard({ owner }: OwnerCardProps) {
 	);
 }
 
-type OwnerContract = GetOwnerResponseDto["contracts"][number];
+type OwnerContract = GetOwnerDetailResponseDto["contracts"][number];
 
 interface ActiveContractCardProps {
 	contract: OwnerContract | null;
 }
 
-function formatDate(date: Date | string): string {
+function isActiveContract(contract: OwnerContract): boolean {
+	const now = new Date();
+	const validFrom = new Date(contract.validFrom);
+	const validTo = contract.validTo ? new Date(contract.validTo) : null;
+
+	return validFrom <= now && (!validTo || validTo >= now);
+}
+
+function formatDate(date: string): string {
 	return new Date(date).toLocaleDateString("es-ES", {
 		day: "2-digit",
 		month: "short",
 		year: "numeric",
 	});
+}
+
+function formatShare(share: string): number {
+	return Math.round(Number(share) * 100);
 }
 
 function ActiveContractCard({ contract }: ActiveContractCardProps) {
@@ -187,8 +207,8 @@ function ActiveContractCard({ contract }: ActiveContractCardProps) {
 		);
 	}
 
-	const ownerPct = Math.round(contract.ownerShare * 100);
-	const rentalPct = Math.round(contract.rentalShare * 100);
+	const ownerPct = formatShare(contract.ownerShare);
+	const rentalPct = formatShare(contract.rentalShare);
 
 	return (
 		<Card className="border-neutral-900 bg-neutral-900 text-white shadow-none">
@@ -238,20 +258,56 @@ function ActiveContractCard({ contract }: ActiveContractCardProps) {
 							{formatDate(contract.validFrom)}
 						</p>
 						<p className="text-xs text-neutral-500">
-							{contract.validUntil
-								? `hasta ${formatDate(contract.validUntil)}`
+							{contract.validTo
+								? `hasta ${formatDate(contract.validTo)}`
 								: "Indefinido"}
 						</p>
 					</div>
 				</div>
-
-				{contract.notes && (
-					<p className="mt-4 border-t border-neutral-800 pt-4 text-xs text-neutral-500 leading-relaxed">
-						{contract.notes}
-					</p>
-				)}
 			</CardContent>
 		</Card>
+	);
+}
+
+function ContractList({ contracts }: { contracts: OwnerContract[] }) {
+	if (contracts.length === 0) {
+		return (
+			<div className="flex items-center justify-center py-12 text-sm text-neutral-400">
+				Sin contratos adicionales.
+			</div>
+		);
+	}
+
+	return (
+		<div className="divide-y divide-neutral-100 px-6">
+			{contracts.map((contract) => {
+				const ownerPct = formatShare(contract.ownerShare);
+				const rentalPct = formatShare(contract.rentalShare);
+
+				return (
+					<div
+						key={contract.id}
+						className="grid gap-4 py-4 md:grid-cols-[1fr_auto_auto] md:items-center"
+					>
+						<div>
+							<p className="font-mono text-xs text-neutral-400">
+								{contract.id.slice(0, 8).toUpperCase()}
+							</p>
+							<p className="mt-1 text-sm text-neutral-600">
+								{formatDate(contract.validFrom)} —{" "}
+								{contract.validTo ? formatDate(contract.validTo) : "Indefinido"}
+							</p>
+						</div>
+						<div className="font-mono text-sm font-medium text-neutral-800">
+							{ownerPct}/{rentalPct}
+						</div>
+						<Badge variant="outline" className="w-fit text-xs font-medium">
+							{contract.basis}
+						</Badge>
+					</div>
+				);
+			})}
+		</div>
 	);
 }
 
@@ -268,7 +324,6 @@ function OwnerDetailSkeleton() {
 						<Skeleton className="h-8 w-64" />
 						<Skeleton className="h-4 w-48" />
 					</div>
-					<Skeleton className="h-9 w-36" />
 				</div>
 
 				{/* Top grid */}
@@ -277,7 +332,7 @@ function OwnerDetailSkeleton() {
 					<Skeleton className="h-52 rounded-lg" />
 				</div>
 
-				{/* History table */}
+				{/* History list */}
 				<Skeleton className="mt-6 h-64 rounded-lg" />
 			</div>
 		</div>

@@ -3,6 +3,7 @@ import { Request, Response } from 'express';
 import { ProblemException } from '../exceptions/problem.exception';
 import { ProblemDetails } from '@repo/schemas';
 import { ObjectStorageProviderError } from 'src/modules/object-storage/application/errors/object-storage-provider.error';
+import { V2ProblemException } from '../problem-details/v2';
 
 type HandlerResult = { status: number; problemDetails: ProblemDetails };
 
@@ -14,6 +15,8 @@ export class ProblemDetailsFilter implements ExceptionFilter {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest<Request>();
+
+    console.dir({ exception }, { depth: null });
 
     const { status, problemDetails } = this.resolve(exception, request);
 
@@ -27,6 +30,7 @@ export class ProblemDetailsFilter implements ExceptionFilter {
   private resolve(exception: unknown, request: Request): HandlerResult {
     return (
       this.tryHandleProblemException(exception) ??
+      this.tryHandleV2ProblemException(exception) ??
       this.tryHandleObjectStorageProviderError(exception, request) ??
       this.tryHandleValidationException(exception, request) ??
       this.tryHandleHttpException(exception, request) ??
@@ -36,6 +40,15 @@ export class ProblemDetailsFilter implements ExceptionFilter {
 
   private tryHandleProblemException(exception: unknown): HandlerResult | null {
     if (!(exception instanceof ProblemException)) return null;
+
+    return {
+      status: exception.getStatus(),
+      problemDetails: exception.getProblemDetails(),
+    };
+  }
+
+  private tryHandleV2ProblemException(exception: unknown): HandlerResult | null {
+    if (!(exception instanceof V2ProblemException)) return null;
 
     return {
       status: exception.getStatus(),

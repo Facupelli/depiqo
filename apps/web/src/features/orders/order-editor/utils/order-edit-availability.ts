@@ -18,11 +18,17 @@ export function getOrderEditAvailability(
 		return { canEdit: false, reason: "unsupported-status" };
 	}
 
-	if (order.pickupAt.isSame(referenceDate) || order.pickupAt.isBefore(referenceDate)) {
+	if (
+		order.pickupAt.isSame(referenceDate) ||
+		order.pickupAt.isBefore(referenceDate)
+	) {
 		return { canEdit: false, reason: "pickup-started" };
 	}
 
-	if (order.status === OrderStatus.CONFIRMED && order.signing.status === "SIGNED") {
+	if (
+		order.status === OrderStatus.CONFIRMED &&
+		order.signing.status === "SIGNED"
+	) {
 		return { canEdit: false, reason: "signed" };
 	}
 

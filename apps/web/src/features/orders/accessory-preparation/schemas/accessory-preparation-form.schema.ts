@@ -74,9 +74,9 @@ export function accessoryPreparationToFormValues(
 				const selectedLine = accessory.selectedLine;
 				const suggestedQuantity = accessory.suggestedQuantity ?? 0;
 				const shouldApplySuggestedDefault =
-					!preparation.hasSavedAccessory && accessory.suggestedQuantity !== null;
-				const selected =
-					selectedLine !== null || shouldApplySuggestedDefault;
+					!preparation.hasSavedAccessory &&
+					accessory.suggestedQuantity !== null;
+				const selected = selectedLine !== null || shouldApplySuggestedDefault;
 
 				return {
 					accessoryRentalItemId: accessory.accessoryRentalItemId,
@@ -98,18 +98,18 @@ export function accessoryPreparationToFormValues(
 export function toSaveOrderAccessoryPreparationDto(
 	values: AccessoryPreparationFormValues,
 ): SaveOrderAccessoryPreparationDto {
-  const dto: SaveOrderAccessoryPreparationDto = {
-    items: values.items.map((item) => ({
-      orderItemId: item.orderItemId,
-      accessories: item.accessories
-        .filter((accessory) => accessory.selected)
-        .map((accessory) => ({
-          accessoryRentalItemId: accessory.accessoryRentalItemId,
-          quantity: accessory.quantity,
-          notes: emptyToNull(accessory.notes),
-        })),
-    })),
-  };
+	const dto: SaveOrderAccessoryPreparationDto = {
+		items: values.items.map((item) => ({
+			orderItemId: item.orderItemId,
+			accessories: item.accessories
+				.filter((accessory) => accessory.selected)
+				.map((accessory) => ({
+					accessoryRentalItemId: accessory.accessoryRentalItemId,
+					quantity: accessory.quantity,
+					notes: emptyToNull(accessory.notes),
+				})),
+		})),
+	};
 
 	return saveOrderAccessoryPreparationSchema.parse(dto);
 }

@@ -9,32 +9,32 @@ export type CartOrderPeriod = {
 export type JoinedLineItem = CartPriceLineItem & { name: string };
 
 export type DeliveryRequestFormState = {
-	recipientName: string;
-	phone: string;
+	contactName: string;
+	contactPhone: string;
 	addressLine1: string;
 	addressLine2: string;
 	city: string;
-	stateRegion: string;
+	state: string;
 	postalCode: string;
 	country: string;
-	instructions: string;
+	notes: string;
 };
 
 export type DeliveryDefaultsFormState = Pick<
 	DeliveryRequestFormState,
-	"country" | "stateRegion" | "city" | "postalCode"
+	"country" | "state" | "city" | "postalCode"
 >;
 
 export type DeliveryRequestField = keyof DeliveryRequestFormState;
 
 export const EMPTY_DELIVERY_REQUEST: DeliveryRequestFormState = {
-	recipientName: "",
-	phone: "",
+	contactName: "",
+	contactPhone: "",
 	addressLine1: "",
 	addressLine2: "",
 	city: "",
-	stateRegion: "",
+	state: "",
 	postalCode: "",
 	country: "",
-	instructions: "",
+	notes: "",
 };

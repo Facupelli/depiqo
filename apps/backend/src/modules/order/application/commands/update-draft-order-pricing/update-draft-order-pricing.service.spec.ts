@@ -10,9 +10,7 @@ import { BookingSnapshot } from 'src/modules/order/domain/value-objects/booking-
 import { ManualPricingOverride } from 'src/modules/order/domain/value-objects/manual-pricing-override.value-object';
 import { PriceSnapshot } from 'src/modules/order/domain/value-objects/price-snapshot.value-object';
 import { OrderRepository } from 'src/modules/order/infrastructure/persistence/repositories/order.repository';
-import {
-  OrderPricingAdjustmentNotAllowedError,
-} from 'src/modules/order/domain/errors/order.errors';
+import { OrderPricingAdjustmentNotAllowedError } from 'src/modules/order/domain/errors/order.errors';
 import { UpdateDraftOrderPricingCommand } from './update-draft-order-pricing.command';
 import { UpdateDraftOrderPricingService } from './update-draft-order-pricing.service';
 

@@ -15,9 +15,7 @@ describe('TenantConfig', () => {
     expect(config.toPlainObject().bookingMode).toBe('instant-book');
     expect(config.pricing.insuranceEnabled).toBe(false);
     expect(config.pricing.insuranceRatePercent).toBe(0);
-    expect(config.communication.orderCommunicationMode).toBe(
-      OrderCommunicationMode.FORMAL,
-    );
+    expect(config.communication.orderCommunicationMode).toBe(OrderCommunicationMode.FORMAL);
     expect(config.communication.showFloatingWhatsAppButton).toBe(false);
   });
 

@@ -2,15 +2,15 @@ import {
 	type CreateProductTypeDto,
 	createProductTypeSchema,
 	type GetAvailableAccessoriesQuery,
-	getAvailableAccessoriesQuerySchema,
 	type GetProductTimelineQuery,
 	type GetProductTypesQuery,
+	getAvailableAccessoriesQuerySchema,
 	getProductTimelineQuerySchema,
 	getProductTypesQuerySchema,
 	type PaginatedDto,
 	type ProblemDetails,
-	type ProductTypeAccessoryLinkResponse,
 	type ProductTimelineResponse,
+	type ProductTypeAccessoryLinkResponse,
 	type ProductTypeResponse,
 	type ReplaceProductTypeAccessoryLinksDto,
 	replaceProductTypeAccessoryLinksSchema,
@@ -113,8 +113,10 @@ export const replaceProductTypeAccessoryLinks = createServerFn({
 	method: "POST",
 })
 	.inputValidator(
-		(data: { productTypeId: string; dto: ReplaceProductTypeAccessoryLinksDto }) =>
-			replaceProductTypeAccessoryLinksInputSchema.parse(data),
+		(data: {
+			productTypeId: string;
+			dto: ReplaceProductTypeAccessoryLinksDto;
+		}) => replaceProductTypeAccessoryLinksInputSchema.parse(data),
 	)
 	.handler(async ({ data }): Promise<void> => {
 		await apiFetch<void>(`${apiUrl}/${data.productTypeId}/accessory-links`, {

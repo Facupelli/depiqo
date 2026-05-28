@@ -18,7 +18,8 @@
     "test": "jest --config jest.config.ts",
     "test:cov": "jest --config jest.config.ts --coverage",
     "test:integration": "jest --config jest.config.integration.ts",
-    "test:e2e": "jest --config jest.config.e2e.ts"
+    "test:e2e": "jest --config jest.config.e2e.ts",
+    "migrate:tenant-to-v2": "tsx src/scripts/migrate-tenant-to-v2/migrate-tenant-to-v2.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1045.0",
@@ -33,9 +34,13 @@
     "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "^7.8.0",
     "@react-pdf/renderer": "^4.5.1",
+    "@repo/api-contracts": "workspace:*",
+    "argon2": "^0.44.0",
     "bcrypt": "^6.0.0",
+    "connect-pg-simple": "^10.0.0",
     "decimal.js": "^10.6.0",
     "eventemitter2": "^6.4.9",
+    "express-session": "^1.19.0",
     "jose": "^6.2.3",
     "nestjs-zod": "^5.3.0",
     "neverthrow": "^8.2.0",
@@ -51,6 +56,7 @@
     "reflect-metadata": "^0.2.0",
     "resend": "^6.12.3",
     "rxjs": "^7.8.1",
+    "uuid": "^14.0.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {
@@ -64,13 +70,17 @@
     "@repo/types": "workspace:*",
     "@repo/typescript-config": "workspace:*",
     "@types/bcrypt": "^6.0.0",
+    "@types/connect-pg-simple": "^7.0.3",
     "@types/express": "^5.0.0",
+    "@types/express-session": "^1.19.0",
     "@types/jest": "^29.5.14",
     "@types/node": "^20.19.33",
+    "@types/passport": "^1.0.17",
     "@types/passport-jwt": "^4.0.1",
     "@types/passport-local": "^1.0.38",
     "@types/react": "^19.2.14",
     "@types/supertest": "^6.0.0",
+    "@types/uuid": "^11.0.0",
     "@typescript-eslint/eslint-plugin": "^8.0.0",
     "@typescript-eslint/parser": "^8.0.0",
     "dotenv": "^17.3.1",
@@ -85,6 +95,7 @@
     "ts-loader": "^9.4.3",
     "ts-node": "^10.9.1",
     "tsconfig-paths": "^4.2.0",
+    "tsx": "^4.21.0",
     "typescript": "^5.1.3"
   }
 }

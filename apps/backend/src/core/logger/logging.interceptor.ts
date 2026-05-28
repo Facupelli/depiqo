@@ -1,6 +1,7 @@
 import { Injectable, NestInterceptor, ExecutionContext, CallHandler, HttpException, HttpStatus } from '@nestjs/common';
 import { Observable, tap, catchError, throwError } from 'rxjs';
 import { Response } from 'express';
+import { V2ProblemException } from 'src/core/problem-details/v2';
 import { AppLogger } from './app-logger.service';
 import { LogContext } from './log-context';
 
@@ -20,13 +21,26 @@ export class LoggingInterceptor implements NestInterceptor {
         const status = err instanceof HttpException ? err.getStatus() : HttpStatus.INTERNAL_SERVER_ERROR;
 
         LogContext.set('httpStatus', status);
-        LogContext.set('errorCode', err instanceof Error ? err.constructor.name : 'UnknownError');
-        LogContext.set('errorMessage', err instanceof Error ? err.message : String(err));
+        this.enrichError(err);
 
         this.flush();
         return throwError(() => err);
       }),
     );
+  }
+
+  private enrichError(err: unknown): void {
+    if (err instanceof V2ProblemException) {
+      const problemDetails = err.getProblemDetails();
+
+      LogContext.set('problemType', problemDetails.type);
+      LogContext.set('problemTitle', problemDetails.title);
+      LogContext.set('problemDetail', problemDetails.detail);
+      return;
+    }
+
+    LogContext.set('errorCode', err instanceof Error ? err.constructor.name : 'UnknownError');
+    LogContext.set('errorMessage', err instanceof Error ? err.message : String(err));
   }
 
   private flush(): void {

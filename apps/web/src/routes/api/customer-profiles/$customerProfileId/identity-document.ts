@@ -1,8 +1,8 @@
+// import { env } from "cloudflare:workers";
 import { createFileRoute } from "@tanstack/react-router";
-import { env } from "cloudflare:workers";
 import { z } from "zod";
-import { requireAdminSessionUser } from "@/features/auth/auth-guards.server";
 import { WrongActorError } from "@/shared/errors";
+import { requireV2TenantUser } from "@/v2/lib/auth/route-auth.server";
 
 const customerProfileParamsSchema = z.object({
 	customerProfileId: z.uuid(),
@@ -21,7 +21,8 @@ export const Route = createFileRoute(
 	server: {
 		handlers: {
 			GET: async ({ params, request }) => {
-				const customersBucket = env.CUSTOMERS_BUCKET;
+				// const customersBucket = env.CUSTOMERS_BUCKET;
+				const customersBucket = {} as R2Bucket;
 
 				const parsedParams = customerProfileParamsSchema.safeParse(params);
 
@@ -40,7 +41,7 @@ export const Route = createFileRoute(
 				}
 
 				try {
-					await requireAdminSessionUser();
+					await requireV2TenantUser();
 				} catch (error) {
 					if (error instanceof WrongActorError) {
 						return new Response("Forbidden", { status: 403 });

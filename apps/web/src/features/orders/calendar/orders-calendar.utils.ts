@@ -1,7 +1,7 @@
 import type { EventApi, EventInput } from "@fullcalendar/core";
 import { formatOrderNumber } from "@/features/orders/order.utils";
-import type { ParsedOrderCalendarItem } from "@/features/orders/orders.queries";
 import dayjs from "@/lib/dates/dayjs";
+import type { ParsedRentalsCalendarItem } from "@/v2/features/rental-commitment/rentals/rentals.queries";
 
 export const ORDERS_CALENDAR_VIEWS = [
 	"dayGridDay",
@@ -25,7 +25,7 @@ export type OrdersCalendarRange = {
 };
 
 export type OrdersCalendarEventProps = {
-	order: ParsedOrderCalendarItem;
+	order: ParsedRentalsCalendarItem;
 };
 
 export const DEFAULT_ORDERS_CALENDAR_VIEW: OrdersCalendarView = "dayGridWeek";
@@ -40,8 +40,12 @@ export function getDefaultOrdersCalendarDate(timezone: string): string {
 	return dayjs().tz(timezone).format("YYYY-MM-DD");
 }
 
+export function getCalendarDateParamFromDate(date: Date): string {
+	return date.toISOString().slice(0, 10);
+}
+
 export function toOrdersCalendarEvent(
-	order: ParsedOrderCalendarItem,
+	order: ParsedRentalsCalendarItem,
 ): EventInput {
 	return {
 		id: order.id,
@@ -60,12 +64,12 @@ export function toOrdersCalendarEvent(
 
 export function getOrdersCalendarEventOrder(
 	event: EventApi,
-): ParsedOrderCalendarItem {
+): ParsedRentalsCalendarItem {
 	return (event.extendedProps as OrdersCalendarEventProps).order;
 }
 
 export function getOrdersCalendarEventTitle(
-	order: ParsedOrderCalendarItem,
+	order: ParsedRentalsCalendarItem,
 ): string {
 	const label = order.customer?.displayName?.trim();
 	return label
@@ -74,18 +78,20 @@ export function getOrdersCalendarEventTitle(
 }
 
 export function formatOrdersCalendarTooltipDateTime(
-	value: ParsedOrderCalendarItem["pickupAt"],
+	value: ParsedRentalsCalendarItem["pickupAt"],
 	timezone: string,
 ): string {
 	return value.tz(timezone).format("ddd D MMM, HH:mm");
 }
 
 export function getOrdersCalendarStatusLabel(
-	order: ParsedOrderCalendarItem,
+	order: ParsedRentalsCalendarItem,
 ): string {
-	return order.status === "ACTIVE" ? "Activo" : "Pendiente";
+	return order.status === "CONFIRMED" ? "Activo" : "Pendiente";
 }
 
-function toCalendarDateToken(value: ParsedOrderCalendarItem["pickupDate"]): string {
+function toCalendarDateToken(
+	value: ParsedRentalsCalendarItem["pickupDate"],
+): string {
 	return value.format("YYYY-MM-DD");
 }

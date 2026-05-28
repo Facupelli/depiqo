@@ -23,9 +23,13 @@ import { Popover, PopoverContent } from "@/components/ui/popover";
 import { formatOrderNumber } from "@/features/orders/order.utils";
 import { fromDate, toISOString } from "@/lib/dates/parse";
 import { cn } from "@/lib/utils";
-import type { ParsedOrderCalendarItem } from "../orders.queries";
+import type {
+	ParsedGetRentalsCalendarResponse,
+	ParsedRentalsCalendarItem,
+} from "@/v2/features/rental-commitment/rentals/rentals.queries";
 import {
 	formatOrdersCalendarTooltipDateTime,
+	getCalendarDateParamFromDate,
 	getOrdersCalendarEventOrder,
 	getOrdersCalendarStatusLabel,
 	ORDERS_CALENDAR_VIEW_LABELS,
@@ -38,7 +42,7 @@ type OrdersCalendarProps = {
 	currentDate: string;
 	currentView: OrdersCalendarView;
 	timezone: string;
-	orders: ParsedOrderCalendarItem[];
+	orders: ParsedGetRentalsCalendarResponse;
 	isLoading: boolean;
 	isFetching: boolean;
 	isError: boolean;
@@ -164,10 +168,13 @@ export function OrdersCalendar({
 	}
 
 	function handleDatesSet(arg: DatesSetArg) {
+		const calendarApi = calendarRef.current?.getApi();
+		const anchorDate = calendarApi?.getDate() ?? arg.view.currentStart;
+
 		setTitle(arg.view.title);
 		onRangeChange({
 			view: arg.view.type as OrdersCalendarView,
-			date: fromDate(arg.view.currentStart).tz(timezone).format("YYYY-MM-DD"),
+			date: getCalendarDateParamFromDate(anchorDate),
 			rangeStart: toISOString(fromDate(arg.start)),
 			rangeEnd: toISOString(fromDate(arg.end)),
 			title: arg.view.title,
@@ -390,7 +397,7 @@ export function OrdersCalendar({
 						eventContent={(arg) => <CalendarEventContent arg={arg} />}
 						eventClassNames={(arg) => {
 							const order = getOrdersCalendarEventOrder(arg.event);
-							return order.status === "ACTIVE"
+							return order.status === "CONFIRMED"
 								? ["orders-calendar-event", "orders-calendar-event--active"]
 								: ["orders-calendar-event", "orders-calendar-event--confirmed"];
 						}}
@@ -474,14 +481,14 @@ function OrdersCalendarPopover({
 	onHoverEnd: () => void;
 	onHoverStart: () => void;
 	onOrderClick: () => void;
-	order: ParsedOrderCalendarItem;
+	order: ParsedRentalsCalendarItem;
 	timezone: string;
 }) {
 	const statusLabel = getOrdersCalendarStatusLabel(order);
 	const statusDotClass =
-		order.status === "ACTIVE" ? "bg-blue-500" : "bg-green-400";
+		order.status === "CONFIRMED" ? "bg-blue-500" : "bg-green-400";
 	const headingColorClass =
-		order.status === "ACTIVE" ? "text-blue-700" : "text-green-600";
+		order.status === "CONFIRMED" ? "text-blue-700" : "text-green-600";
 
 	return (
 		<Popover open onOpenChange={(open) => !open && onClose()}>

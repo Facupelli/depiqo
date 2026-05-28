@@ -142,8 +142,7 @@ export class AuthenticateCustomerWithGoogleCommandHandler implements ICommandHan
   ): Promise<
     Result<
       CustomerForAuthReadModel,
-      | CustomerGoogleIdentityLinkedToUserError
-      | CustomerUnavailableForAuthenticationError
+      CustomerGoogleIdentityLinkedToUserError | CustomerUnavailableForAuthenticationError
     >
   > {
     if (!identity.isLinkedToCustomer()) {

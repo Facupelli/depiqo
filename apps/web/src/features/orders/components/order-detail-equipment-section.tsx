@@ -1,6 +1,5 @@
 import { Clock, Package, User2Icon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { buildR2PublicUrl } from "@/lib/r2-public-url";
 import { useOrderDetailContext } from "@/features/orders/contexts/order-detail.context";
 import {
 	getGroupedOrderItems,
@@ -11,6 +10,7 @@ import type {
 	ProductOrderDetailItem,
 	SerialNumberGroup,
 } from "@/features/orders/types/order-detail.types";
+import { buildR2PublicUrl } from "@/lib/r2-public-url";
 
 export function OrderEquipmentSection({
 	onPrepareAccessories,

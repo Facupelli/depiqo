@@ -28,6 +28,11 @@ const TENANT_EXCLUDED_MODELS = new Set([
   'PromotionExclusion', // scoped through Promotion
   'OrderDeliveryRequest',
   'CustomerProfile',
+  // V2
+  'V2Tenant',
+  'V2BranchSchedule',
+  'V2Contract',
+  'V2CustomerProfile',
 ]);
 
 // Operations that only need WHERE injection

@@ -69,7 +69,8 @@ function InventoryConflictSection({
 								{group.productTypeName}
 							</p>
 							<p className="mt-1 text-xs font-medium text-amber-800">
-								Disponibles: {group.availableCount} · Solicitados: {group.requestedCount}
+								Disponibles: {group.availableCount} · Solicitados:{" "}
+								{group.requestedCount}
 							</p>
 						</div>
 					</div>
@@ -109,10 +110,14 @@ function AccessoryConflictSection({
 						{entry.accessoryName}
 					</p>
 					<p className="mt-1 text-xs font-medium text-amber-800">
-						Disponibles: {entry.availableCount} · Solicitados: {entry.requestedCount}
+						Disponibles: {entry.availableCount} · Solicitados:{" "}
+						{entry.requestedCount}
 					</p>
 					<p className="mt-2 text-xs text-neutral-500">
-						Accesorio del equipo <span className="font-medium text-neutral-700">{entry.parentItemName}</span>
+						Accesorio del equipo{" "}
+						<span className="font-medium text-neutral-700">
+							{entry.parentItemName}
+						</span>
 					</p>
 				</div>
 			))}

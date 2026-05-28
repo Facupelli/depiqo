@@ -10,14 +10,19 @@ describe('GetRentalProductTypesQueryHandler', () => {
     const findMany = jest.fn(async () => []);
     const prisma = {
       client: {
-        $queryRaw: jest.fn().mockResolvedValueOnce([{ id: 'accessory-1' }]).mockResolvedValueOnce([{ total: 1n }]),
+        $queryRaw: jest
+          .fn()
+          .mockResolvedValueOnce([{ id: 'accessory-1' }])
+          .mockResolvedValueOnce([{ total: 1n }]),
         productType: { findMany },
       },
     } as unknown as PrismaService;
     const queryBus = { execute: jest.fn() } as unknown as QueryBus;
     const handler = new GetRentalProductTypesQueryHandler(prisma, queryBus);
 
-    const result = await handler.execute(new GetRentalProductTypesQuery('tenant-1', 'location-1', undefined, undefined));
+    const result = await handler.execute(
+      new GetRentalProductTypesQuery('tenant-1', 'location-1', undefined, undefined),
+    );
 
     expect(result.data).toEqual([]);
     expect(findMany).toHaveBeenCalledWith(

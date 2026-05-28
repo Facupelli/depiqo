@@ -1,5 +1,5 @@
 import type { DeliveryRequestDto } from "@repo/schemas";
-import { FulfillmentMethod } from "@repo/types";
+import type { FulfillmentMethod } from "@repo/types";
 
 export type DraftOrderCustomerRef = {
 	id: string;

@@ -1,8 +1,6 @@
-import { OrderStatus } from "@repo/types";
+import type { OrderStatus } from "@repo/types";
 import { Fragment } from "react";
 import { Button } from "@/components/ui/button";
-import { nowUtc } from "@/lib/dates/parse";
-import { OrderOperationalPhaseBadge } from "@/features/orders/components/order-operational-phase-badge";
 import { OrderDetailActionsMenu } from "@/features/orders/components/order-detail-actions-menu";
 import { OrderDetailBudgetDialogs } from "@/features/orders/components/order-detail-budget-dialogs";
 import { OrderDetailCancelDialog } from "@/features/orders/components/order-detail-cancel-dialog";
@@ -10,10 +8,13 @@ import { OrderDetailConfirmDialog } from "@/features/orders/components/order-det
 import { OrderDetailDocumentErrorDialogs } from "@/features/orders/components/order-detail-document-error-dialogs";
 import { OrderDetailLifecycleDialog } from "@/features/orders/components/order-detail-lifecycle-dialog";
 import { OrderDetailRejectDialog } from "@/features/orders/components/order-detail-reject-dialog";
+import { OrderOperationalPhaseBadge } from "@/features/orders/components/order-operational-phase-badge";
 import { OrderSigningInvitationDialog } from "@/features/orders/components/order-signing-invitation-dialog";
 import { useOrderDetailContext } from "@/features/orders/contexts/order-detail.context";
-import { formatOrderNumber, getOrderHeaderBannerConfig } from "@/features/orders/order.utils";
-import { ORDER_HEADER_BANNER_TONE_STYLES } from "@/features/orders/orders.constants";
+import {
+	formatOrderNumber,
+	getOrderHeaderBannerConfig,
+} from "@/features/orders/order.utils";
 import {
 	dotStyles,
 	getOrderHeaderBannerIcon,
@@ -22,6 +23,8 @@ import {
 	labelStyles,
 	TERMINAL_STATUSES,
 } from "@/features/orders/order-detail.utils";
+import { ORDER_HEADER_BANNER_TONE_STYLES } from "@/features/orders/orders.constants";
+import { nowUtc } from "@/lib/dates/parse";
 
 export function OrderHeader({
 	preparation,

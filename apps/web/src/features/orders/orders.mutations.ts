@@ -9,17 +9,14 @@ import type {
 	RejectOrderRequestDto,
 	UpdateDraftOrderPricingRequestDto,
 } from "@repo/schemas";
-import {
-	type UseMutationOptions,
-	useMutation,
-} from "@tanstack/react-query";
+import { type UseMutationOptions, useMutation } from "@tanstack/react-query";
 import { ProblemDetailsError } from "@/shared/errors";
 import {
+	type CreateOrderMutationVariables,
 	cancelOrder,
 	confirmOrder,
 	createDraftOrder,
 	createOrder,
-	type CreateOrderMutationVariables,
 	editOrder,
 	getDraftOrderPricingProposal,
 	markEquipmentAsRetired,
@@ -46,7 +43,11 @@ type RejectOrderMutationOptions = Omit<
 >;
 
 type OrderMutationOptions = Omit<
-	UseMutationOptions<CreateOrderResponseDto, ProblemDetailsError, CreateOrderMutationVariables>,
+	UseMutationOptions<
+		CreateOrderResponseDto,
+		ProblemDetailsError,
+		CreateOrderMutationVariables
+	>,
 	"mutationFn"
 >;
 
@@ -85,12 +86,20 @@ type UpdateDraftOrderPricingVariables = {
 };
 
 type UpdateDraftOrderPricingMutationOptions = Omit<
-	UseMutationOptions<void, ProblemDetailsError, UpdateDraftOrderPricingVariables>,
+	UseMutationOptions<
+		void,
+		ProblemDetailsError,
+		UpdateDraftOrderPricingVariables
+	>,
 	"mutationFn"
 >;
 
 export function useCreateOrder(options?: OrderMutationOptions) {
-	return useMutation<CreateOrderResponseDto, ProblemDetailsError, CreateOrderMutationVariables>({
+	return useMutation<
+		CreateOrderResponseDto,
+		ProblemDetailsError,
+		CreateOrderMutationVariables
+	>({
 		...options,
 		mutationFn: async (variables) => {
 			const result = await createOrder({ data: variables });
@@ -179,7 +188,11 @@ export function useDraftOrderPricingProposal(
 export function useUpdateDraftOrderPricing(
 	options?: UpdateDraftOrderPricingMutationOptions,
 ) {
-	return useMutation<void, ProblemDetailsError, UpdateDraftOrderPricingVariables>({
+	return useMutation<
+		void,
+		ProblemDetailsError,
+		UpdateDraftOrderPricingVariables
+	>({
 		...options,
 		mutationFn: async (data) => {
 			const result = await updateDraftOrderPricing({ data });

@@ -1,8 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import { QueryBus } from '@nestjs/cqrs';
-import { TenantConfig } from '@repo/schemas';
 import { OrderCommunicationMode } from '@repo/types';
-import { GetTenantConfigQuery } from 'src/modules/tenant/public/queries/get-tenant-config.query';
+
+import { TenantManagementPublicApi } from 'src/modules/v2/tenant-management/public-api/tenant-management.public-api';
 
 import { NotificationDispatchSkipReason } from './types/notification-dispatch-skip-reason.enum';
 import { getNotificationTypeCategory } from '../domain/notification-type-category-registry';
@@ -21,28 +20,26 @@ export type NotificationSuppressionDecision =
 
 @Injectable()
 export class TenantNotificationSuppressionPolicy {
-  constructor(private readonly queryBus: QueryBus) {}
+  constructor(private readonly tenantManagementPublicApi: TenantManagementPublicApi) {}
 
   async evaluate(tenantId: string, notificationType: NotificationType): Promise<NotificationSuppressionDecision> {
     if (getNotificationTypeCategory(notificationType) !== NotificationTypeCategory.TENANT_WORKFLOW) {
       return { suppressed: false };
     }
 
-    let tenantConfig: TenantConfig | null;
+    let tenantConfigResult: Awaited<ReturnType<TenantManagementPublicApi['getTenantConfig']>>;
 
     try {
-      tenantConfig = await this.queryBus.execute<GetTenantConfigQuery, TenantConfig | null>(
-        new GetTenantConfigQuery(tenantId),
-      );
+      tenantConfigResult = await this.tenantManagementPublicApi.getTenantConfig({ tenantId });
     } catch {
       return { suppressed: false };
     }
 
-    if (!tenantConfig) {
+    if (tenantConfigResult.isErr()) {
       return { suppressed: false };
     }
 
-    if (tenantConfig.communication.orderCommunicationMode !== OrderCommunicationMode.WHATSAPP) {
+    if (tenantConfigResult.value.communication.orderCommunicationMode !== OrderCommunicationMode.WHATSAPP) {
       return { suppressed: false };
     }
 

@@ -1,10 +1,10 @@
-import { authenticatedApiFetch as apiFetch } from "@/lib/api-auth";
 import {
-	syncTenantBillingUnitsSchema,
 	type SyncTenantBillingUnitsDto,
+	syncTenantBillingUnitsSchema,
 	type TenantBillingUnitListResponse,
 } from "@repo/schemas";
 import { createServerFn } from "@tanstack/react-start";
+import { authenticatedApiFetch as apiFetch } from "@/lib/api-auth";
 
 const apiUrl = "/tenants/billing-units";
 

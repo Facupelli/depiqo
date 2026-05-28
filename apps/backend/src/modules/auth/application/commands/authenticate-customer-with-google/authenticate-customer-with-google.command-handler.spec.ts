@@ -44,7 +44,12 @@ describe('AuthenticateCustomerWithGoogleCommandHandler', () => {
   }
 
   function makeCommand(): AuthenticateCustomerWithGoogleCommand {
-    return new AuthenticateCustomerWithGoogleCommand('auth-code', 'https://portal.example.com/auth/google/callback', 'state', 'verifier');
+    return new AuthenticateCustomerWithGoogleCommand(
+      'auth-code',
+      'https://portal.example.com/auth/google/callback',
+      'state',
+      'verifier',
+    );
   }
 
   function makeHandler(options?: {

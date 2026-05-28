@@ -1,72 +1,109 @@
 import { createFileRoute, useSearch } from "@tanstack/react-router";
 import z from "zod";
 import { CartPageProvider } from "@/features/rental/cart/cart-page.context";
+import { FulfillmentForm } from "@/features/rental/cart/components/cart-sidebar/fulfillment-form";
+import { PriceBreakdown } from "@/features/rental/cart/components/cart-sidebar/price-breakdown";
+import {
+	MobileSidebarCta,
+	SidebarSubmitButton,
+} from "@/features/rental/cart/components/cart-sidebar/sidebar-cta";
+import {
+	BookingErrorMessage,
+	SidebarNotices,
+} from "@/features/rental/cart/components/cart-sidebar/sidebar-notices";
 import { CartPageConflictPanel } from "@/features/rental/cart/components/cartpage-conflict-panel";
 import { CartPageItemList } from "@/features/rental/cart/components/cartpage-itemlist";
 import { CartPagePeriod } from "@/features/rental/cart/components/cartpage-period";
-import { CartPageSidebar } from "@/features/rental/cart/components/cartpage-sidebar";
-import { rentalTenantQueries } from "@/features/rental/tenant/tenant.queries";
-import { rentalLocationQueries } from "@/features/tenant/locations/locations.queries";
+import { useCartSidebarViewModel } from "@/features/rental/cart/hooks/use-cart-sidebar-view-model";
+import { useIsVisible } from "@/shared/hooks/use-is-visible";
+import { storefrontBranchQueries } from "@/v2/features/rental-commitment/branches/branches.queries";
+import { tenantQueries } from "@/v2/features/tenant-management/tenant/tenant.queries";
 
 const cartPageSearchSchema = z.object({
-  pickupDate: z.iso.date(),
-  returnDate: z.iso.date(),
-  locationId: z.string(),
+	periodStart: z.iso.date(),
+	periodEnd: z.iso.date(),
+	branchId: z.string(),
 });
 
 export const Route = createFileRoute("/_portal/_tenant/cart/")({
-  validateSearch: cartPageSearchSchema,
-  component: CartPage,
-  loader: async ({ context: { queryClient, tenantContext } }) => {
-    await Promise.all([
-      queryClient.ensureQueryData(
-        rentalLocationQueries.list(tenantContext.tenant.id),
-      ),
-      queryClient.ensureQueryData(
-        rentalTenantQueries.me(tenantContext.tenant.id),
-      ),
-    ]);
-  },
+	validateSearch: cartPageSearchSchema,
+	component: CartPage,
+	loader: async ({ context: { queryClient } }) => {
+		await Promise.all([
+			queryClient.ensureQueryData(storefrontBranchQueries.list()),
+			queryClient.ensureQueryData(tenantQueries.publicConfig()),
+		]);
+	},
 });
 
 function CartPage() {
-  const { pickupDate, returnDate, locationId } = useSearch({
-    from: "/_portal/_tenant/cart/",
-  });
+	const { branchId, periodStart, periodEnd } = useSearch({
+		from: "/_portal/_tenant/cart/",
+	});
 
-  return (
-    <CartPageProvider
-      pickupDate={pickupDate}
-      returnDate={returnDate}
-      locationId={locationId}
-    >
-      <div className="min-h-screen bg-neutral-50">
-        <div className="mx-auto max-w-6xl px-4 md:px-6 py-8 md:py-12 space-y-8">
-          <div>
-            <h1 className="text-4xl font-black uppercase tracking-tight text-black">
-              Revisa Tu Pedido
-            </h1>
-            <p className="mt-2 text-sm text-neutral-500">
-              Revisa tu pedido y asegúrate de que todo está en orden.
-            </p>
-          </div>
+	return (
+		<CartPageProvider
+			branchId={branchId}
+			periodStart={periodStart}
+			periodEnd={periodEnd}
+		>
+			<div className="min-h-screen bg-neutral-50">
+				<div className="mx-auto max-w-6xl px-4 md:px-6 py-8 md:py-12 space-y-8">
+					<div>
+						<h1 className="text-4xl font-black uppercase tracking-tight text-black">
+							Revisa Tu Pedido
+						</h1>
+						<p className="mt-2 text-sm text-neutral-500">
+							Revisa tu pedido y asegúrate de que todo está en orden.
+						</p>
+					</div>
 
-          <CartPagePeriod />
+					<CartPagePeriod />
 
-          <CartPageConflictPanel />
+					<CartPageConflictPanel />
 
-          {/*
+					{/*
           CSS Grid — two-column layout:
           Left column owns the content flow.
           Right column is fixed-width sticky sidebar.
           Mobile: single column, sidebar stacks below.
         */}
-          <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_380px] lg:items-start lg:gap-12">
-            <CartPageItemList />
-            <CartPageSidebar />
-          </div>
-        </div>
-      </div>
-    </CartPageProvider>
-  );
+					<div className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_380px] lg:items-start lg:gap-12">
+						<CartPageItemList />
+						<CartPageSidebar />
+					</div>
+				</div>
+			</div>
+		</CartPageProvider>
+	);
+}
+
+function CartPageSidebar() {
+	const viewModel = useCartSidebarViewModel();
+	const [submitButtonRef, isSubmitButtonVisible] =
+		useIsVisible<HTMLButtonElement>();
+
+	return (
+		<>
+			<div className="border border-neutral-200 bg-white p-6 lg:sticky lg:top-6 lg:self-start lg:max-h-[calc(100vh-3rem)] lg:overflow-y-auto">
+				<PriceBreakdown />
+				<FulfillmentForm />
+
+				{viewModel.isBookingError && viewModel.bookingErrorMessage && (
+					<BookingErrorMessage message={viewModel.bookingErrorMessage} />
+				)}
+
+				<SidebarSubmitButton
+					viewModel={viewModel}
+					buttonRef={submitButtonRef}
+				/>
+				<SidebarNotices isAuthenticated={viewModel.isAuthenticated} />
+			</div>
+
+			<MobileSidebarCta
+				viewModel={viewModel}
+				isSubmitButtonVisible={isSubmitButtonVisible}
+			/>
+		</>
+	);
 }

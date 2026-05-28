@@ -1,13 +1,13 @@
 import {
-	createPromotionSchema,
 	type CreatePromotionDto,
-	type ProblemDetails,
-	listPromotionsQuerySchema,
+	createPromotionSchema,
 	type ListPromotionsQueryDto,
-	listPromotionsResponseSchema,
 	type ListPromotionsResponseDto,
-	promotionViewSchema,
+	listPromotionsQuerySchema,
+	listPromotionsResponseSchema,
+	type ProblemDetails,
 	type PromotionView,
+	promotionViewSchema,
 } from "@repo/schemas";
 import { createServerFn } from "@tanstack/react-start";
 import {
@@ -55,9 +55,12 @@ export const createPromotion = createServerFn({ method: "POST" })
 export const getPromotion = createServerFn({ method: "GET" })
 	.inputValidator((data: { promotionId: string }) => data)
 	.handler(async ({ data }): Promise<PromotionView> => {
-		const result = await apiFetch<PromotionView>(`${apiUrl}/${data.promotionId}`, {
-			method: "GET",
-		});
+		const result = await apiFetch<PromotionView>(
+			`${apiUrl}/${data.promotionId}`,
+			{
+				method: "GET",
+			},
+		);
 
 		return promotionViewSchema.parse(result);
 	});

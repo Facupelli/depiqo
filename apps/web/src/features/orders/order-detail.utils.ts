@@ -1,15 +1,15 @@
 import { OrderStatus } from "@repo/types";
 import { CheckCircle2, Clock, Package, RotateCcw, Truck } from "lucide-react";
-import { buildR2PublicUrl } from "@/lib/r2-public-url";
-import { useOrderDetailContext } from "@/features/orders/contexts/order-detail.context";
+import type { useOrderDetailContext } from "@/features/orders/contexts/order-detail.context";
 import {
+	type ExternalOwnerEntry,
 	formatMoney,
 	getBundleSummary,
 	getExternalOwnersByProductType,
 	getItemQty,
 	getOwnerDisplay,
-	type ExternalOwnerEntry,
 } from "@/features/orders/order.utils";
+import type { ParsedOrderDetailResponseDto } from "@/features/orders/queries/get-order-by-id";
 import type {
 	GroupedOrderItem,
 	OrderDetailItem,
@@ -18,7 +18,7 @@ import type {
 	StepKey,
 	TimelineStep,
 } from "@/features/orders/types/order-detail.types";
-import type { ParsedOrderDetailResponseDto } from "@/features/orders/queries/get-order-by-id";
+import { buildR2PublicUrl } from "@/lib/r2-public-url";
 
 export const TERMINAL_STATUSES = new Set([
 	OrderStatus.COMPLETED,
@@ -163,7 +163,9 @@ export function getOrderHeaderPrimaryButtonConfig(
 
 // ─── Item grouping ────────────────────────────────────────────────────────────
 
-export function getGroupedOrderItems(items: OrderDetailItem[]): GroupedOrderItem[] {
+export function getGroupedOrderItems(
+	items: OrderDetailItem[],
+): GroupedOrderItem[] {
 	const groups = new Map<string, OrderDetailItem[]>();
 
 	for (const item of items) {

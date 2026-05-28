@@ -3,7 +3,7 @@ import {
 	createFileRoute,
 	Link,
 	redirect,
-	useNavigate,
+	useRouter,
 } from "@tanstack/react-router";
 import { Lock, Mail } from "lucide-react";
 import { useState } from "react";
@@ -15,16 +15,11 @@ import {
 	FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { getOptionalPrincipalFn } from "@/features/auth/auth-guards.api";
 import { buildSharedGoogleAuthStartUrl } from "@/features/rental/auth/google/google-auth.redirect";
 import {
 	customerLoginSchema,
 	loginCustomerFormDefaults,
 } from "@/features/rental/auth/login/customer-login-form.schema";
-import {
-	useCreateGoogleCustomerState,
-	useCustomerLogin,
-} from "@/features/rental/auth/portal-auth.queries";
 import {
 	getPortalAuthRedirectTarget,
 	portalAuthRedirectSchema,
@@ -32,17 +27,17 @@ import {
 import { getTenantBranding } from "@/features/tenant-branding/tenant-branding";
 import { PoweredByFooter } from "@/shared/components/powered-by-footer";
 import { isAuthError, ProblemDetailsError } from "@/shared/errors";
+import { useCreateCustomerGoogleState } from "@/v2/features/tenant-management/auth/customer-google-state/customer-google-state.mutation";
+import { useCustomerLogin } from "@/v2/features/tenant-management/auth/customer-login/customer-login.mutation";
 
 export const Route = createFileRoute("/_portal/login")({
 	validateSearch: portalAuthRedirectSchema,
-	beforeLoad: async ({ search }) => {
-		const principal = await getOptionalPrincipalFn();
-
-		if (principal.kind === "customerAccount") {
+	beforeLoad: async ({ context, search }) => {
+		if (context.user?.actorType === "TENANT_CUSTOMER") {
 			throw redirect(getPortalAuthRedirectTarget(search));
 		}
 
-		if (principal.kind === "adminUser") {
+		if (context.user?.actorType === "TENANT_USER") {
 			throw redirect({ to: "/dashboard" });
 		}
 	},
@@ -55,10 +50,10 @@ function LoginPage() {
 	const { tenantContext } = Route.useRouteContext();
 	const redirectSearch = Route.useSearch();
 
-	const navigate = useNavigate();
+	const router = useRouter();
 	const { mutateAsync: customerLogin, isPending } = useCustomerLogin();
 	const { mutateAsync: createGoogleState, isPending: isGoogleStatePending } =
-		useCreateGoogleCustomerState();
+		useCreateCustomerGoogleState();
 	const [serverError, setServerError] = useState<string | null>(null);
 	const redirectTarget = getPortalAuthRedirectTarget(redirectSearch);
 	const isGooglePending = isGoogleStatePending;
@@ -72,8 +67,14 @@ function LoginPage() {
 			setServerError(null);
 
 			try {
-				await customerLogin(value);
-				navigate(redirectTarget);
+				await customerLogin({
+					body: {
+						tenantId: tenantContext.tenant.id,
+						...value,
+					},
+				});
+				await router.invalidate({ sync: true });
+				router.navigate(redirectTarget);
 			} catch (error) {
 				if (isAuthError(error)) {
 					setServerError("Email o contraseña inválidos.");
@@ -92,9 +93,10 @@ function LoginPage() {
 
 		try {
 			const { state } = await createGoogleState({
-				tenantId: tenantContext.tenant.id,
-				portalOrigin: window.location.origin,
-				redirectPath: redirectTarget.href,
+				body: {
+					portalOrigin: window.location.origin,
+					redirectPath: redirectTarget.href,
+				},
 			});
 			window.location.assign(buildSharedGoogleAuthStartUrl(state));
 		} catch (error) {

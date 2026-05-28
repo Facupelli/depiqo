@@ -10,13 +10,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import {
-	scheduleSlotFormSchema,
-	type ScheduleSlotFormValues,
-} from "../../locations/schemas/location-schedule-form.schema";
-import {
 	DAYS_OF_WEEK,
 	SLOT_INTERVAL_OPTIONS,
 } from "../../locations/constants/location-schedule.constants";
+import {
+	type ScheduleSlotFormValues,
+	scheduleSlotFormSchema,
+} from "../../locations/schemas/location-schedule-form.schema";
 
 // ---------------------------------------------------------------------------
 // Props

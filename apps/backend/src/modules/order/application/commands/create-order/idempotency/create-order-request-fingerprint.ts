@@ -3,7 +3,9 @@ import { createHash } from 'crypto';
 import { CreateOrderCommand, CreateOrderDeliveryRequestCommand, CreateOrderItemCommand } from '../create-order.command';
 
 export function createOrderRequestHash(command: CreateOrderCommand): string {
-  return createHash('sha256').update(stableStringify(buildCreateOrderRequestFingerprint(command))).digest('hex');
+  return createHash('sha256')
+    .update(stableStringify(buildCreateOrderRequestFingerprint(command)))
+    .digest('hex');
 }
 
 type CreateOrderRequestFingerprint = {

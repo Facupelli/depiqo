@@ -1,26 +1,26 @@
+import type { LocationScheduleResponseDto } from "@repo/schemas";
+import type { ScheduleSlotType } from "@repo/types";
 import { useState } from "react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
 	Dialog,
 	DialogContent,
+	DialogDescription,
 	DialogHeader,
 	DialogTitle,
-	DialogDescription,
 } from "@/components/ui/dialog";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import type { LocationScheduleResponseDto } from "@repo/schemas";
-import {
-	getScheduleSlotDefaults,
-	scheduleToFormValues,
-	toAddScheduleDtos,
-	type ScheduleSlotFormValues,
-} from "../../locations/schemas/location-schedule-form.schema";
-import { ScheduleSlotType } from "@repo/types";
-import { ScheduleSlotForm } from "./schedule-slot-form";
+import { ProblemDetailsError } from "@/shared/errors";
 import {
 	useBulkCreateLocationSchedules,
 	useUpdateLocationSchedule,
 } from "../../locations/location-schedules.queries";
-import { ProblemDetailsError } from "@/shared/errors";
+import {
+	getScheduleSlotDefaults,
+	type ScheduleSlotFormValues,
+	scheduleToFormValues,
+	toAddScheduleDtos,
+} from "../../locations/schemas/location-schedule-form.schema";
+import { ScheduleSlotForm } from "./schedule-slot-form";
 
 // ---------------------------------------------------------------------------
 // Modal state discriminated union

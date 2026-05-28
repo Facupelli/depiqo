@@ -17,7 +17,9 @@ import {
 } from "@/features/catalog/product-types/schemas/product-type-form.schema";
 import { tenantQueries } from "@/features/tenant/tenant.queries";
 
-export const Route = createFileRoute("/_admin/dashboard/catalog/accessories/new")({
+export const Route = createFileRoute(
+	"/_admin/dashboard/catalog/accessories/new",
+)({
 	component: CreateAccessoryPage,
 });
 

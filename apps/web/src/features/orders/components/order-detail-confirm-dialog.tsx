@@ -14,7 +14,10 @@ import {
 	useOrderConfirmation,
 	useOrderDetailContext,
 } from "@/features/orders/contexts/order-detail.context";
-import { buildOrderAvailabilityConflictDisplayModel, type OrderAvailabilityConflictDisplayModel } from "@/features/orders/order-availability-conflict.display-model";
+import {
+	buildOrderAvailabilityConflictDisplayModel,
+	type OrderAvailabilityConflictDisplayModel,
+} from "@/features/orders/order-availability-conflict.display-model";
 
 export function OrderDetailConfirmDialog() {
 	const { order } = useOrderDetailContext();
@@ -55,7 +58,10 @@ export function OrderDetailConfirmDialog() {
 					</p>
 				) : null}
 
-			<OrderConfirmationError error={confirmation.error} conflictModel={conflictModel} />
+				<OrderConfirmationError
+					error={confirmation.error}
+					conflictModel={conflictModel}
+				/>
 
 				<AlertDialogFooter>
 					<AlertDialogCancel disabled={confirmation.isPending}>
@@ -82,12 +88,18 @@ export function OrderDetailConfirmDialog() {
 	);
 }
 
-function OrderConfirmationError({ error, conflictModel }:{error:string|null, conflictModel: OrderAvailabilityConflictDisplayModel | null}) {
-    if (conflictModel) {
-        return <OrderAvailabilityConflictFeedback model={conflictModel} />;
-    }
-    if (error) {
-        return <p className="text-sm text-destructive">{error}</p>;
-    }
-    return null;
+function OrderConfirmationError({
+	error,
+	conflictModel,
+}: {
+	error: string | null;
+	conflictModel: OrderAvailabilityConflictDisplayModel | null;
+}) {
+	if (conflictModel) {
+		return <OrderAvailabilityConflictFeedback model={conflictModel} />;
+	}
+	if (error) {
+		return <p className="text-sm text-destructive">{error}</p>;
+	}
+	return null;
 }

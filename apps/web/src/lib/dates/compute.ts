@@ -1,4 +1,4 @@
-import { type Dayjs } from "dayjs";
+import type { Dayjs } from "dayjs";
 
 export function addDays(date: Dayjs, amount: number): Dayjs {
 	return date.add(amount, "day");

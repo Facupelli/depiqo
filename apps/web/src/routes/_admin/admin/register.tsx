@@ -1,6 +1,7 @@
-import { useState } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
 import { useForm } from "@tanstack/react-form";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
 import {
 	Card,
 	CardContent,
@@ -16,14 +17,13 @@ import {
 	FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { useCreateTenantUser } from "@/features/auth/auth-actions.queries";
 import {
 	registerFormDefaults,
 	registerFormSchema,
 	toRegisterDto,
 } from "@/features/auth/schemas/register-form.schema";
 import { ProblemDetailsError } from "@/shared/errors";
+import { useRegisterTenantWithOwner } from "@/v2/features/tenant-management/tenant/register-tenant-with-owner/register-tenant-with-owner.mutation";
 
 export const Route = createFileRoute("/_admin/admin/register")({
 	component: RegisterPage,
@@ -32,7 +32,8 @@ export const Route = createFileRoute("/_admin/admin/register")({
 const formId = "register-user-tenant";
 
 function RegisterPage() {
-	const { mutateAsync: createTenantUser, isPending } = useCreateTenantUser();
+	const { mutateAsync: registerTenantWithOwner, isPending } =
+		useRegisterTenantWithOwner();
 
 	const form = useForm({
 		defaultValues: registerFormDefaults,
@@ -42,7 +43,9 @@ function RegisterPage() {
 		onSubmit: async ({ value }) => {
 			const dto = toRegisterDto(value);
 			try {
-				const data = await createTenantUser(dto);
+				const data = await registerTenantWithOwner({
+					body: dto,
+				});
 				setSuccessData(data);
 			} catch (error) {
 				console.log(error);
@@ -54,7 +57,7 @@ function RegisterPage() {
 	});
 
 	const [successData, setSuccessData] = useState<{
-		userId: string;
+		tenantUserId: string;
 		tenantId: string;
 	} | null>(null);
 	const [serverError, setServerError] = useState<string | null>(null);
@@ -62,8 +65,10 @@ function RegisterPage() {
 	if (successData) {
 		return (
 			<div>
-				<h2>Registration successful!</h2>
-				<p>Your account has been created. You can now log in.</p>
+				<h2>¡Tu cuenta está lista!</h2>
+				<p>
+					Ya puedes iniciar sesión y empezar a configurar tu empresa en Depiqo.
+				</p>
 			</div>
 		);
 	}
@@ -73,13 +78,19 @@ function RegisterPage() {
 			{serverError && <p role="alert">{serverError}</p>}
 
 			<div className="grid gap-y-10">
-				<h1 className="text-3xl font-bold text-primary text-center">DEPIQO</h1>
+				<div className="grid gap-y-2 text-center">
+					<h1 className="text-3xl font-bold text-primary">DEPIQO</h1>
+					<p className="text-sm text-muted-foreground">
+						Gestiona tu alquiler de equipos con más orden desde el primer día.
+					</p>
+				</div>
 
 				<Card className="w-md">
 					<CardHeader>
-						<CardTitle>Create Admin Account</CardTitle>
+						<CardTitle>Crea tu cuenta en Depiqo</CardTitle>
 						<CardDescription>
-							Initialize your organizational workspace.
+							Prepara tu empresa para gestionar equipos, clientes y reservas en
+							un solo lugar.
 						</CardDescription>
 					</CardHeader>
 					<CardContent>
@@ -90,7 +101,7 @@ function RegisterPage() {
 								e.stopPropagation();
 								form.handleSubmit();
 							}}
-							className="space-y-10"
+							className="space-y-4"
 						>
 							<FieldGroup>
 								<form.Field
@@ -101,7 +112,7 @@ function RegisterPage() {
 										return (
 											<Field data-invalid={isInvalid}>
 												<FieldLabel htmlFor={field.name}>
-													Company Name:
+													Nombre de la empresa
 												</FieldLabel>
 												<Input
 													id={field.name}
@@ -110,7 +121,7 @@ function RegisterPage() {
 													onBlur={field.handleBlur}
 													onChange={(e) => field.handleChange(e.target.value)}
 													aria-invalid={isInvalid}
-													placeholder="e.g. Skyline Logisitics"
+													placeholder="Ej. Andamios del Norte"
 												/>
 												{isInvalid && (
 													<FieldError errors={field.state.meta.errors} />
@@ -130,9 +141,7 @@ function RegisterPage() {
 												field.state.meta.isTouched && !field.state.meta.isValid;
 											return (
 												<Field data-invalid={isInvalid}>
-													<FieldLabel htmlFor={field.name}>
-														First Name:
-													</FieldLabel>
+													<FieldLabel htmlFor={field.name}>Nombre</FieldLabel>
 													<Input
 														id={field.name}
 														name={field.name}
@@ -140,7 +149,7 @@ function RegisterPage() {
 														onBlur={field.handleBlur}
 														onChange={(e) => field.handleChange(e.target.value)}
 														aria-invalid={isInvalid}
-														placeholder="Alexander"
+														placeholder="Carlos"
 														autoComplete="off"
 													/>
 													{isInvalid && (
@@ -157,9 +166,7 @@ function RegisterPage() {
 												field.state.meta.isTouched && !field.state.meta.isValid;
 											return (
 												<Field data-invalid={isInvalid}>
-													<FieldLabel htmlFor={field.name}>
-														Last Name:
-													</FieldLabel>
+													<FieldLabel htmlFor={field.name}>Apellido</FieldLabel>
 													<Input
 														id={field.name}
 														name={field.name}
@@ -167,7 +174,7 @@ function RegisterPage() {
 														onBlur={field.handleBlur}
 														onChange={(e) => field.handleChange(e.target.value)}
 														aria-invalid={isInvalid}
-														placeholder="Ross"
+														placeholder="Méndez"
 														autoComplete="off"
 													/>
 													{isInvalid && (
@@ -185,7 +192,9 @@ function RegisterPage() {
 											field.state.meta.isTouched && !field.state.meta.isValid;
 										return (
 											<Field data-invalid={isInvalid}>
-												<FieldLabel htmlFor={field.name}>Email:</FieldLabel>
+												<FieldLabel htmlFor={field.name}>
+													Correo electrónico
+												</FieldLabel>
 												<Input
 													id={field.name}
 													name={field.name}
@@ -194,7 +203,7 @@ function RegisterPage() {
 													onChange={(e) => field.handleChange(e.target.value)}
 													aria-invalid={isInvalid}
 													type="email"
-													placeholder="admin@skylines.com"
+													placeholder="admin@tuempresa.com"
 												/>
 												{isInvalid && (
 													<FieldError errors={field.state.meta.errors} />
@@ -210,7 +219,7 @@ function RegisterPage() {
 											field.state.meta.isTouched && !field.state.meta.isValid;
 										return (
 											<Field data-invalid={isInvalid}>
-												<FieldLabel htmlFor={field.name}>Password:</FieldLabel>
+												<FieldLabel htmlFor={field.name}>Contraseña</FieldLabel>
 												<Input
 													id={field.name}
 													name={field.name}
@@ -219,7 +228,7 @@ function RegisterPage() {
 													onChange={(e) => field.handleChange(e.target.value)}
 													aria-invalid={isInvalid}
 													type="password"
-													placeholder="********"
+													placeholder="Crea una contraseña segura"
 												/>
 												{isInvalid && (
 													<FieldError errors={field.state.meta.errors} />
@@ -242,7 +251,7 @@ function RegisterPage() {
 										form={formId}
 										disabled={!canSubmit || isPending}
 									>
-										{isSubmitting ? "..." : "Create Account"}
+										{isSubmitting ? "Creando cuenta..." : "Crear mi cuenta"}
 									</Button>
 								</Field>
 							)}
@@ -250,9 +259,9 @@ function RegisterPage() {
 
 						<div>
 							<p className="text-center text-sm text-muted-foreground">
-								Already have an account?{" "}
+								¿Ya tienes una cuenta?{" "}
 								<Link to="/admin/login" className="underline">
-									Log in
+									Inicia sesión
 								</Link>
 							</p>
 						</div>

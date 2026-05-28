@@ -27,7 +27,10 @@ export class PublicSigningSessionLoader {
     }
 
     const now = new Date();
-    if (request.currentStatus === DocumentSigningRequestStatus.PENDING && request.expiresOn.getTime() <= now.getTime()) {
+    if (
+      request.currentStatus === DocumentSigningRequestStatus.PENDING &&
+      request.expiresOn.getTime() <= now.getTime()
+    ) {
       const expireResult = request.expire(now);
       if (expireResult.isErr()) {
         throw expireResult.error;

@@ -14,6 +14,7 @@ This file only routes agents to implementation rules.
 - Controllers: `controller.md`
 - Request DTOs: `request-dto.md`
 - Response DTOs: `response-dto.md`
+- Aggregates: `aggregate.md`
 - Entities: `entity.md`
 - Value Objects: `value-object.md`
 - Domain Services: `domain-service.md`
@@ -21,3 +22,4 @@ This file only routes agents to implementation rules.
 - Domain Errors: `domain-error.md`
 - Repositories: `repository.md`
 - Mappers: `mapper.md`
+- Problem Details / HTTP error responses: `problem-details.md`

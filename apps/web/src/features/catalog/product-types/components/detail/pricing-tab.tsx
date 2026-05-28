@@ -1,6 +1,6 @@
 import { PricingTiersTable } from "@/features/catalog/pricing-tier/components/pricing-tiers-table";
-import { useProduct } from "./product-detail.context";
 import type { PricingTierFormValues } from "@/features/catalog/pricing-tier/schemas/pricing-tier-form.schema";
+import { useProduct } from "./product-detail.context";
 
 export function PricingTab({
 	pendingTiers,

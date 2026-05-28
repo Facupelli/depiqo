@@ -1,175 +1,61 @@
-# Domain Service
+### Domain Service
 
-## Role
+#### Role
+A **Domain Service** encapsulates business logic that does not naturally belong to a single entity or aggregate. It is primarily used to coordinate logic across multiple aggregate boundaries, compare multiple aggregate roots, or handle operations that would otherwise force an entity to know about concepts outside its specific scope. 
 
-A Domain Service encapsulates business logic that does not naturally belong to a single entity or aggregate. It is used when a rule or operation involves multiple entities, requires coordination across aggregate boundaries, or would force an entity to know about things outside its own scope.
-
-Domain Services are pure domain objects. They operate only on domain types and have no infrastructure dependencies.
-
----
-
-## Rules
-
-### Use it only when the logic does not fit an entity
-
-- Before creating a Domain Service, ask: does this logic belong to one of the entities involved? If yes, put it there.
-- Domain Services are for logic that genuinely spans multiple aggregates or requires information from multiple sources that no single entity should own.
-- A Domain Service that is just an excuse to keep entities anemic is an anti-pattern. Entities must hold their own business logic.
-
-### Stateless
-
-- Domain Services have no mutable instance state. They do not hold data between calls.
-- All input comes through method parameters. All output is returned.
-- If a Domain Service is stateless and has no collaborators, prefer a plain class over framework-managed wiring.
-
-### No infrastructure dependencies
-
-- Domain Services do not inject or call `PrismaService`, EventEmitter2, or any NestJS service.
-- If the logic requires fetching data, the Application Service or a repository loads the data and passes it to the Domain Service as parameters.
-- If the logic requires persisting data, the Application Service handles persistence after the Domain Service returns.
-
-### Return Result for recoverable failures
-
-- If the domain service can produce an expected, recoverable domain error, return a `Result` type.
-- Do not throw for expected business failures.
-- Pure calculation or validation services may also return plain values when there is no meaningful recoverable failure to model.
-
-### NestJS integration
-
-- Domain Services are domain-layer constructs first, not framework constructs.
-- If a Domain Service is stateless, pure, and has no dependencies, prefer a plain class with no `@Injectable()`.
-- If a Domain Service benefits from dependency injection for composition, reuse, or wiring consistency, it may be decorated with `@Injectable()` and registered as a module provider.
-- Do not introduce `@Injectable()` purely to satisfy convention when direct instantiation is simpler.
-- Whether plain or injectable, Domain Services remain internal to the module unless there is a clear, intentional reason to expose them.
-
-### Naming
-
-- File: `[concept-name].service.ts` (within the `domain/` folder to distinguish from Application Services)
-- Class: `[ConceptName]Service` — e.g. `BookingAvailabilityService`, `PricingService`, `RentalPeriodCalculatorService`
+Crucially, a Domain Service is a **pure domain object**—it contains the "why" and "how" of a cross-root business rule but knows nothing about database tables, APIs, or external frameworks.
 
 ---
 
-## Structure
-
-```typescript
-import { Result, ok, err } from 'neverthrow';
-import { BookingEntity } from './booking.entity';
-import { BookingPeriod } from './booking-period.value-object';
-import { EquipmentUnavailableError } from './errors/booking.errors';
-
-export class BookingAvailabilityService {
-  /**
-   * Checks whether a given period is available for an equipment item,
-   * given its existing non-cancelled bookings.
-   *
-   * This logic spans multiple BookingEntity instances and does not
-   * belong to any single one of them.
-   */
-  checkAvailability(period: BookingPeriod, existingBookings: BookingEntity[]): Result<void, EquipmentUnavailableError> {
-    const hasConflict = existingBookings.some((booking) => booking.period.overlaps(period));
-
-    if (hasConflict) {
-      return err(new EquipmentUnavailableError());
-    }
-
-    return ok(undefined);
-  }
-}
-```
-
-When dependency injection genuinely adds value, an injectable Domain Service is also acceptable:
-
-```typescript
-import { Injectable } from '@nestjs/common';
-
-@Injectable()
-export class BookingAvailabilityService {
-  checkAvailability(period: BookingPeriod, existingBookings: BookingEntity[]) {
-    // same pure domain logic
-  }
-}
-```
-
-### Application Service using a Domain Service
-
-```typescript
-// Application Service loads aggregates, passes them to the Domain Service, handles the result
-@CommandHandler(CreateBookingCommand)
-export class CreateBookingService implements ICommandHandler<CreateBookingCommand> {
-
-  constructor(
-    private readonly bookingRepository: BookingRepository,
-    private readonly bookingAvailability: BookingAvailabilityService,
-  ) {}
-
-  async execute(command: CreateBookingCommand) {
-    // 1. Load what the Domain Service needs
-    const existingBookings = await this.bookingRepository.findActiveForEquipment(
-      command.tenantId,
-      command.equipmentId,
-    );
-
-    // 2. Delegate domain logic to the Domain Service
-    const availabilityResult = this.bookingAvailability.checkAvailability(
-      command.period,
-      existingBookings,
-    );
-    if (availabilityResult.isErr()) {
-      return err(availabilityResult.error);
-    }
-
-    // 3. Continue with the use case
-    const booking = BookingEntity.create({ ... });
-    await this.bookingRepository.save(booking);
-    return ok({ id: booking.id });
-  }
-}
-```
+#### Core Philosophy: Coordination, Not Command
+The video sources emphasize that the application layer is more than a "pass-through"; it orchestrates, while Domain Services handle the complex logic of that orchestration.
+*   **Avoid the Anemic Anti-Pattern:** A Domain Service should never be an excuse to strip behavior away from entities. If a rule can be enforced by the **Aggregate Root**, it must stay there.
+*   **Enforce Cross-Boundary Rules:** Use a Domain Service when a rule spans multiple roots (e.g., checking if a User has sufficient "Member Credits" before allowing them to "Reserve" a seat in a Dinner aggregate).
+*   **Contextual Split:** As the sources suggest, different parts of a system may have different models for the same concept (e.g., `GroupMembership` vs. `GroupChat`). A Domain Service can coordinate these separate models when they must interact to fulfill a workflow.
 
 ---
 
-## Examples
+#### Rules
 
-### ✅ Correct: logic that spans multiple entities goes in a Domain Service
+**1. Statelessness**
+*   **No Internal State:** Domain Services must have no mutable instance state and must not hold data between calls.
+*   **Pure Functions:** All inputs should come through method parameters, and all results should be returned to the caller. They should act as pure calculation or coordination engines.
 
-```typescript
-// Availability depends on comparing a period against multiple existing bookings —
-// no single BookingEntity can own this check
-checkAvailability(period: BookingPeriod, existingBookings: BookingEntity[]): Result<void, EquipmentUnavailableError> {
-  const hasConflict = existingBookings.some((b) => b.period.overlaps(period));
-  if (hasConflict) return err(new EquipmentUnavailableError());
-  return ok(undefined);
-}
-```
+**2. No Infrastructure Dependencies**
+*   **Infrastructure-Free:** They must not inject or call database services (e.g., Prisma), event emitters, or framework-specific utilities.
+*   **Data Injection:** If the service needs data, the **Application Service** (the orchestrator) should load that data via a repository and pass it into the Domain Service as a parameter.
+*   **Persistence-Free:** The Domain Service never saves data. It returns a result, and the Application Service handles the persistence of any changed aggregates.
 
-### ❌ Wrong: logic that belongs to a single entity extracted into a Domain Service
+**3. Expressive Return Types**
+*   **Result Objects:** For recoverable business failures (e.g., "Insufficient Funds"), return a `Result` or `Either` type rather than throwing technical exceptions.
+*   **Calculation Results:** For pure logic (e.g., a `PricingService`), return the calculated value directly.
 
-```typescript
-// confirm() is BookingEntity's own responsibility — not a cross-entity concern
-confirmBooking(booking: BookingEntity): void {
-  if (booking.status !== BookingStatus.PENDING) { ... }
-  // This should be booking.confirm()
-}
-```
+**4. NestJS & Framework Integration**
+*   **Domain First:** Domain Services are domain-layer constructs, not framework constructs. 
+*   **Optional Injectability:** While they can be decorated with `@Injectable()` for consistency in NestJS, they should remain functional and testable without the framework. Do not use dependency injection purely to satisfy convention if direct instantiation is simpler.
 
 ---
 
-### ✅ Correct: Domain Service receives loaded data as parameters — no Prisma inside
+#### Domain Service vs. Application Service
+| Feature | Domain Service | Application Service |
+| :--- | :--- | :--- |
+| **Responsibility** | Complex business logic spanning roots. | Orchestration, I/O, and transaction management. |
+| **State** | Stateless. | Stateless (usually). |
+| **Dependencies** | Pure Domain Objects (Entities, Value Objects). | Repositories, External APIs, Bus. |
+| **Database** | Never interacts with DB. | Loads and saves aggregates. |
 
-```typescript
-// The Application Service loads the data, the Domain Service receives it
-checkAvailability(period: BookingPeriod, existingBookings: BookingEntity[]): Result<...> { ... }
-```
+---
 
-### ❌ Wrong: Domain Service fetches data from the database directly
+#### When to Create a Domain Service
+*   When a business rule requires **comparing** two or more different Aggregate Roots.
+*   When an operation requires a **calculation** that uses data from multiple sources but shouldn't live in the "root" because it's not part of that root's primary consistency boundary.
+*   When you need to **transform** domain concepts between different bounded contexts or split entities.
 
-```typescript
-@Injectable()
-export class BookingAvailabilityService {
-  constructor(private readonly prisma: PrismaService) {} // infrastructure in domain — wrong
+---
 
-  async checkAvailability(equipmentId: string, period: BookingPeriod) {
-    const records = await this.prisma.booking.findMany({ ... }); // domain must not do this
-  }
-}
-```
+#### Examples
+
+*   **✅ Correct (Cross-Root Coordination):** A `BookingAvailabilityService` that checks a `Guest`'s history and a `Dinner`'s current capacity to decide if a reservation is allowed.
+*   **❌ Wrong (Anemic Entity):** A `ShipmentService` that has a `completePickup(shipment)` method which just calls `shipment.status = 'departed'`. This logic belongs inside the `Shipment` aggregate.
+*   **✅ Correct (Pure Logic):** A `PricingService` that takes a `Product` and a `DiscountCode` value object and returns a new `Price` value object.
+*   **❌ Wrong (Infrastructure Leak):** A Domain Service that uses a `PrismaClient` to check if a user exists before performing a calculation.

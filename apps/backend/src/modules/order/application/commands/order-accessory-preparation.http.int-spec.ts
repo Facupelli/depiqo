@@ -72,7 +72,9 @@ describe('Order accessory preparation HTTP integration', () => {
     await prisma.client.assetAssignment.deleteMany({ where: { assetId: accessoryAssetId } });
     await prisma.client.accessoryLink.deleteMany({ where: { id: accessoryLinkId } });
     await prisma.client.asset.deleteMany({ where: { id: accessoryAssetId } });
-    await prisma.client.productType.deleteMany({ where: { id: { in: [primaryProductTypeId, accessoryProductTypeId] } } });
+    await prisma.client.productType.deleteMany({
+      where: { id: { in: [primaryProductTypeId, accessoryProductTypeId] } },
+    });
     await prisma.client.location.deleteMany({ where: { id: locationId } });
     await prisma.client.userRole.deleteMany({ where: { userId: operatorUserId } });
     await prisma.client.rolePermission.deleteMany({ where: { roleId: adminRoleId } });

@@ -1,6 +1,6 @@
 import {
-	syncTenantBillingUnitsSchema,
 	type SyncTenantBillingUnitsDto,
+	syncTenantBillingUnitsSchema,
 } from "@repo/schemas";
 import { z } from "zod";
 

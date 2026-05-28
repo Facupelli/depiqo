@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { ContractBasis } from "@repo/types";
 import { useForm } from "@tanstack/react-form";
 import { Info, Plus } from "lucide-react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -12,30 +13,29 @@ import {
 	DialogTrigger,
 } from "@/components/ui/dialog";
 import {
+	Field,
+	FieldContent,
+	FieldDescription,
+	FieldError,
+	FieldGroup,
+	FieldLabel,
+} from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import {
 	Select,
 	SelectContent,
 	SelectItem,
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import {
-	Field,
-	FieldLabel,
-	FieldError,
-	FieldGroup,
-	FieldDescription,
-	FieldContent,
-} from "@/components/ui/field";
+import { Textarea } from "@/components/ui/textarea";
 import { useCreateOwnerContract } from "../owners.queries";
 import {
 	getOwnerContractFormDefaults,
 	ownerContractFormSchema,
 	toCreateOwnerContractDto,
 } from "../schemas/owner-contract-form.schema";
-import { ContractBasis } from "@repo/types";
 
 interface NewOwnerContractDialogProps {
 	ownerId: string;

@@ -1,0 +1,54 @@
+// ---------------------------------------------------------------------------
+// V2 TENANT MANAGEMENT - BRANCHES
+// ---------------------------------------------------------------------------
+
+enum V2BranchScheduleSlotType {
+  PICKUP
+  RETURN
+}
+
+model V2Branch {
+  id       String  @id @default(uuid())
+  tenantId String  @map("tenant_id")
+  name     String
+  address  String?
+  timezone String?
+  isActive Boolean @default(true) @map("is_active")
+
+  supportsDelivery           Boolean @default(false) @map("supports_delivery")
+  deliveryDefaultCountry     String? @map("delivery_default_country")
+  deliveryDefaultStateRegion String? @map("delivery_default_state_region")
+  deliveryDefaultCity        String? @map("delivery_default_city")
+  deliveryDefaultPostalCode  String? @map("delivery_default_postal_code")
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  tenant    V2Tenant           @relation(fields: [tenantId], references: [id])
+  schedules V2BranchSchedule[]
+
+  @@index([tenantId, isActive, deletedAt])
+  @@map("v2_branches")
+}
+
+model V2BranchSchedule {
+  id       String                   @id @default(uuid())
+  branchId String                   @map("branch_id")
+  type     V2BranchScheduleSlotType
+
+  dayOfWeek    Int?      @map("day_of_week")
+  specificDate DateTime? @map("specific_date") @db.Date
+
+  openTime            Int  @map("open_time")
+  closeTime           Int  @map("close_time")
+  slotIntervalMinutes Int? @map("slot_interval_minutes")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  branch V2Branch @relation(fields: [branchId], references: [id])
+
+  @@index([branchId, type])
+  @@map("v2_branch_schedules")
+}

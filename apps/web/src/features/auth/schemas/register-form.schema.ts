@@ -1,4 +1,7 @@
-import { registerSchema, type RegisterDto } from "@repo/schemas";
+import {
+	type RegisterTenantWithOwnerBodyDto,
+	RegisterTenantWithOwnerBodySchema,
+} from "@repo/api-contracts";
 import { z } from "zod";
 
 export const registerFormSchema = z.object({
@@ -19,18 +22,19 @@ export const registerFormDefaults: RegisterFormValues = {
 	lastName: "",
 };
 
-export function toRegisterDto(values: RegisterFormValues): RegisterDto {
+export function toRegisterDto(
+	values: RegisterFormValues,
+): RegisterTenantWithOwnerBodyDto {
 	const dto = {
 		tenant: {
 			name: values.tenantName.trim(),
 		},
-		user: {
+		owner: {
+			name: `${values.firstName.trim()} ${values.lastName.trim()}`,
 			email: values.email.trim(),
 			password: values.password,
-			firstName: values.firstName.trim(),
-			lastName: values.lastName.trim(),
 		},
 	};
 
-	return registerSchema.parse(dto);
+	return RegisterTenantWithOwnerBodySchema.parse(dto);
 }

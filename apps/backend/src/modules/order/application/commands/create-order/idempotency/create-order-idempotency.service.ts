@@ -26,9 +26,7 @@ export type StartCreateOrderIdempotencyResult =
 export class CreateOrderIdempotencyService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async start(
-    params: StartCreateOrderIdempotencyParams,
-  ): Promise<Result<StartCreateOrderIdempotencyResult, never>> {
+  async start(params: StartCreateOrderIdempotencyParams): Promise<Result<StartCreateOrderIdempotencyResult, never>> {
     try {
       const record = await this.prisma.client.orderCreateIdempotencyKey.create({
         data: {

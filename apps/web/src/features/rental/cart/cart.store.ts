@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import type { CartState, CartItem, CartItemKey } from "./cart.types";
+import type { CartItem, CartItemKey, CartState } from "./cart.types";
 
 function matchesKey(item: CartItem, key: CartItemKey): boolean {
 	if (key.type === "PRODUCT" && item.type === "PRODUCT") {

@@ -1,10 +1,10 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { format } from "date-fns";
-import { useCustomerDetail } from "../../customer.queries";
 import { OnboardingStatus } from "@repo/types";
+import { format } from "date-fns";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useCustomerDetail } from "../../customer.queries";
 
 interface OverviewTabProps {
 	customerId: string;

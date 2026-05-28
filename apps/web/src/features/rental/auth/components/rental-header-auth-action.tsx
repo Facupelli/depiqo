@@ -1,3 +1,4 @@
+import type { AuthCustomerDto } from "@repo/api-contracts";
 import { useNavigate } from "@tanstack/react-router";
 import { LogOut, User } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -6,19 +7,19 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 } from "@/components/ui/popover";
-import { cn } from "@/lib/utils";
 import { getCurrentRelativeRedirect } from "@/features/auth/auth-redirect";
-import {
-	useCurrentPortalSession,
-	useCustomerLogout,
-} from "../portal-auth.queries";
+import { cn } from "@/lib/utils";
+import { useLogout } from "@/v2/features/tenant-management/auth/logout/logout.mutation";
 import { getPortalAuthRedirectSearch } from "../portal-auth.redirect";
 
-export function RentalHeaderAuthAction() {
+export function RentalHeaderAuthAction({
+	user,
+}: {
+	user: AuthCustomerDto | null;
+}) {
 	const navigate = useNavigate();
-	const { data: sessionUser } = useCurrentPortalSession();
 
-	if (!sessionUser) {
+	if (!user) {
 		return (
 			<button
 				type="button"
@@ -37,7 +38,7 @@ export function RentalHeaderAuthAction() {
 		);
 	}
 
-	return <RentalHeaderUserPopover email={sessionUser.email} />;
+	return <RentalHeaderUserPopover email={user.email} />;
 }
 
 type RentalHeaderUserPopoverProps = {
@@ -45,7 +46,7 @@ type RentalHeaderUserPopoverProps = {
 };
 
 function RentalHeaderUserPopover({ email }: RentalHeaderUserPopoverProps) {
-	const { mutate: logOut, isPending } = useCustomerLogout();
+	const { mutate: logOut, isPending } = useLogout();
 
 	return (
 		<Popover>

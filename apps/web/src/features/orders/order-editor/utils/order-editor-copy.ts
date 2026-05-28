@@ -31,7 +31,8 @@ export function getOrderEditorCopy(mode: OrderEditorMode): OrderEditorCopy {
 	if (isDraftMode) {
 		return {
 			pageTitle: mode === "create-draft" ? "Crear borrador" : "Editar borrador",
-			breadcrumbCurrent: mode === "create-draft" ? "Crear borrador" : "Editar borrador",
+			breadcrumbCurrent:
+				mode === "create-draft" ? "Crear borrador" : "Editar borrador",
 			setupTitle: "Configuración del borrador",
 			setupCustomerOptionalLabel: "(Opcional)",
 			logisticsDescription:
@@ -43,10 +44,14 @@ export function getOrderEditorCopy(mode: OrderEditorMode): OrderEditorCopy {
 			saveLabel: "Guardar borrador",
 			savingLabel: "Guardando...",
 			resetLabel: "Reiniciar borrador local",
-			incompleteText: "Falta completar el período o los ítems antes de guardar.",
-			locationRequiredText: "Seleccioná una locación antes de guardar el borrador.",
-			periodRequiredText: "Completá el periodo compartido antes de guardar el borrador.",
-			itemsRequiredText: "Agregá al menos un item antes de guardar el borrador.",
+			incompleteText:
+				"Falta completar el período o los ítems antes de guardar.",
+			locationRequiredText:
+				"Seleccioná una locación antes de guardar el borrador.",
+			periodRequiredText:
+				"Completá el periodo compartido antes de guardar el borrador.",
+			itemsRequiredText:
+				"Agregá al menos un item antes de guardar el borrador.",
 			deliveryRequiredText:
 				"Completá el delivery request antes de guardar un borrador con entrega.",
 			pickerLocationRequiredText:
@@ -73,7 +78,8 @@ export function getOrderEditorCopy(mode: OrderEditorMode): OrderEditorCopy {
 		resetLabel: "Reiniciar cambios",
 		incompleteText: "Falta completar el período o los ítems antes de guardar.",
 		locationRequiredText: "Seleccioná una locación antes de guardar el pedido.",
-		periodRequiredText: "Completá el periodo compartido antes de guardar el pedido.",
+		periodRequiredText:
+			"Completá el periodo compartido antes de guardar el pedido.",
 		itemsRequiredText: "Agregá al menos un item antes de guardar el pedido.",
 		deliveryRequiredText:
 			"Completá el delivery request antes de guardar un pedido con entrega.",

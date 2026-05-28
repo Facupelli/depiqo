@@ -1,28 +1,28 @@
 import {
+	type ApproveCustomerProfileDto,
+	approveCustomerProfileSchema,
+	type CustomerDetailResponseDto,
+	type CustomerProfileResponseDto,
+	CustomerProfileResponseSchema,
+	type CustomerResponseDto,
+	type GetCustomersQueryDto,
+	type GetPendingCustomerProfilesResponseDto,
+	getCustomersQuerySchema,
+	getPendingCustomerProfilesResponseSchema,
+	type PaginatedDto,
+	type PendingCustomerProfileReviewCountResponseDto,
+	type ProblemDetails,
+	pendingCustomerProfileReviewCountResponseSchema,
+	type RejectCustomerProfileDto,
+	rejectCustomerProfileSchema,
+} from "@repo/schemas";
+import { createServerFn } from "@tanstack/react-start";
+import z from "zod";
+import {
 	authenticatedApiFetch as apiFetch,
 	authenticatedApiFetchPaginated as apiFetchPaginated,
 } from "@/lib/api-auth";
 import { ProblemDetailsError } from "@/shared/errors";
-import {
-	approveCustomerProfileSchema,
-	CustomerProfileResponseSchema,
-	getPendingCustomerProfilesResponseSchema,
-	getCustomersQuerySchema,
-	pendingCustomerProfileReviewCountResponseSchema,
-	rejectCustomerProfileSchema,
-	type ApproveCustomerProfileDto,
-	type CustomerDetailResponseDto,
-	type CustomerProfileResponseDto,
-	type CustomerResponseDto,
-	type GetPendingCustomerProfilesResponseDto,
-	type GetCustomersQueryDto,
-	type PendingCustomerProfileReviewCountResponseDto,
-	type PaginatedDto,
-	type ProblemDetails,
-	type RejectCustomerProfileDto,
-} from "@repo/schemas";
-import { createServerFn } from "@tanstack/react-start";
-import z from "zod";
 
 const apiUrl = "/customers";
 

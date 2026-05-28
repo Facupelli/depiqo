@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common';
-import { PrismaUnitOfWork } from 'src/core/database/prisma-unit-of-work';
 import { PrismaService } from 'src/core/database/prisma.service';
 import { UsersModule } from '../users/users.module';
 import { TenantRepository } from './infrastructure/persistence/repositories/tenant.repository';
@@ -153,7 +152,6 @@ const controllers = [
   imports: [UsersModule, InventoryModule],
   controllers: controllers,
   providers: [
-    PrismaUnitOfWork,
     ...repositories,
     ...commandHandlers,
     ...queryHandlers,

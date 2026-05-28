@@ -1,6 +1,6 @@
-import { authenticatedApiFetch as apiFetch } from "@/lib/api-auth";
 import type { BillingUnitListResponse } from "@repo/schemas";
 import { createServerFn } from "@tanstack/react-start";
+import { authenticatedApiFetch as apiFetch } from "@/lib/api-auth";
 
 const apiUrl = "/billing-units";
 

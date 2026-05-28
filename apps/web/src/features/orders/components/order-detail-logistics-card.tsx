@@ -1,7 +1,7 @@
 import { FulfillmentMethod } from "@repo/types";
 import { MapPin, Truck } from "lucide-react";
-import { useOrderDetailContext } from "@/features/orders/contexts/order-detail.context";
 import { SidebarCardHeader } from "@/features/orders/components/order-detail-sidebar-primitives";
+import { useOrderDetailContext } from "@/features/orders/contexts/order-detail.context";
 
 export function OrderLogisticsCard() {
 	const { order } = useOrderDetailContext();

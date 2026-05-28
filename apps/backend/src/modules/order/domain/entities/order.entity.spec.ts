@@ -18,19 +18,19 @@ function makeOrder(status: OrderStatus = OrderStatus.PENDING_REVIEW): Order {
     locationId: 'location-1',
     currency: 'ARS',
     customerId: 'customer-1',
-      period: DateRange.create(new Date('2026-03-30T10:00:00.000Z'), new Date('2026-03-31T10:00:00.000Z')),
-      status,
-      fulfillmentMethod: FulfillmentMethod.PICKUP,
-      bookingSnapshot: BookingSnapshot.create({
-        pickupDate: '2026-03-30',
-        pickupTime: 600,
-        returnDate: '2026-03-31',
-        returnTime: 600,
-        timezone: 'UTC',
-      }),
-      insuranceSelected: false,
-      insuranceRatePercent: 0,
-    });
+    period: DateRange.create(new Date('2026-03-30T10:00:00.000Z'), new Date('2026-03-31T10:00:00.000Z')),
+    status,
+    fulfillmentMethod: FulfillmentMethod.PICKUP,
+    bookingSnapshot: BookingSnapshot.create({
+      pickupDate: '2026-03-30',
+      pickupTime: 600,
+      returnDate: '2026-03-31',
+      returnTime: 600,
+      timezone: 'UTC',
+    }),
+    insuranceSelected: false,
+    insuranceRatePercent: 0,
+  });
 }
 
 function makeDeliveryRequest(): OrderDeliveryRequest {

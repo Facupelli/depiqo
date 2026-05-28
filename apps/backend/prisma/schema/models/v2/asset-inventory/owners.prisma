@@ -1,0 +1,45 @@
+// ---------------------------------------------------------------------------
+// V2 ASSET INVENTORY - OWNERS AND CONTRACTS
+// ---------------------------------------------------------------------------
+
+enum V2OwnerContractBasis {
+  GROSS
+  NET
+}
+
+model V2AssetOwner {
+  id          String   @id @default(uuid())
+  tenantId    String   @map("tenant_id")
+  name        String
+  contactInfo Json     @default("{}") @map("contact_info")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  assets    V2Asset[]
+  contracts V2OwnerContract[]
+
+  @@index([tenantId, name])
+  @@map("v2_asset_owners")
+}
+
+model V2OwnerContract {
+  id          String               @id @default(uuid())
+  tenantId    String               @map("tenant_id")
+  ownerId     String               @map("owner_id")
+  assetId     String?              @map("asset_id")
+  terms       Json                 @default("{}")
+  basis       V2OwnerContractBasis
+  ownerShare  Decimal              @map("owner_share")
+  rentalShare Decimal              @map("rental_share")
+  validFrom   DateTime             @map("valid_from")
+  validTo     DateTime?            @map("valid_to")
+  createdAt   DateTime             @default(now()) @map("created_at")
+  updatedAt   DateTime             @updatedAt @map("updated_at")
+
+  owner V2AssetOwner @relation(fields: [ownerId], references: [id])
+  asset V2Asset?     @relation(fields: [assetId], references: [id])
+
+  @@index([tenantId, ownerId, validFrom, validTo])
+  @@index([assetId])
+  @@map("v2_owner_contracts")
+}

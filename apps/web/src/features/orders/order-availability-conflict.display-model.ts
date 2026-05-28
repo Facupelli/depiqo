@@ -2,14 +2,14 @@ import type {
 	OrderItemsUnavailableProblemDto,
 	UnavailableOrderItemDto,
 } from "@repo/schemas";
-import type { ParsedOrderDetailResponseDto } from "@/features/orders/queries/get-order-by-id";
+import { toUnavailableOrderItemKey } from "@/features/orders/order-availability-conflict.keys";
 import {
 	findAccessoryConflict,
+	type GroupedOrderItem,
 	getGroupedOrderItemsByKey,
 	getProductTypeConflictName,
-	type GroupedOrderItem,
 } from "@/features/orders/order-availability-conflict.lookup";
-import { toUnavailableOrderItemKey } from "@/features/orders/order-availability-conflict.keys";
+import type { ParsedOrderDetailResponseDto } from "@/features/orders/queries/get-order-by-id";
 
 type ConflictItemKindLabel = "Producto" | "Combo";
 
@@ -88,8 +88,10 @@ export function buildOrderAvailabilityConflictDisplayModel({
 		conflict.unavailableItems
 			.filter(
 				(item) =>
-					!isItemRepresentedInInventoryConflicts(item, conflict.conflictGroups) &&
-					!isItemRepresentedInAccessoryConflicts(item, order, conflict),
+					!isItemRepresentedInInventoryConflicts(
+						item,
+						conflict.conflictGroups,
+					) && !isItemRepresentedInAccessoryConflicts(item, order, conflict),
 			)
 			.map((item) => toAffectedItemDisplay(item, groupedItemByKey))
 			.filter((item): item is OrderAvailabilityConflictAffectedItem =>

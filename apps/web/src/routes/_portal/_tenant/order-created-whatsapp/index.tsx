@@ -96,7 +96,9 @@ function OrderCreatedWhatsappPage() {
 
 					<div className="w-full space-y-3">
 						<InfoCard
-							icon={<LoaderCircle className="w-4 h-4 text-white animate-spin" />}
+							icon={
+								<LoaderCircle className="w-4 h-4 text-white animate-spin" />
+							}
 							title="Redirigiendo ahora"
 							description="Si todo va bien, WhatsApp se abrirá automáticamente en unos instantes."
 						/>

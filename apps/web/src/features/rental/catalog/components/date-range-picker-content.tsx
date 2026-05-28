@@ -1,26 +1,25 @@
-import type { LocationScheduleResponseDto } from "@repo/schemas";
+import type { GetStorefrontBranchSchedulesResponseDto } from "@repo/api-contracts";
 import { ScheduleSlotType } from "@repo/types";
 import { es } from "date-fns/locale";
 import type { DateRange } from "react-day-picker";
 import { Calendar } from "@/components/ui/calendar";
-import { useRentalLocationSchedules } from "@/features/tenant/locations/location-schedules.queries";
+import { useStorefrontBranchSchedules } from "@/v2/features/tenant-management/branch/branch.queries";
 
 type DateRangePickerContentProps = {
-	locationId?: string;
+	branchId?: string;
 	value: DateRange;
 	onChange: (range: DateRange | undefined) => void;
 	numberOfMonths: number;
 };
 
 export function DateRangePickerContent({
-	locationId,
+	branchId,
 	value,
 	onChange,
 	numberOfMonths,
 }: DateRangePickerContentProps) {
-	const { data: schedules } = useRentalLocationSchedules(locationId ?? "", {
-		enabled: Boolean(locationId),
-	});
+	const { data: schedules } = useStorefrontBranchSchedules(branchId);
+
 	const boundaryType =
 		value.from && !value.to ? ScheduleSlotType.RETURN : ScheduleSlotType.PICKUP;
 
@@ -43,7 +42,7 @@ export function DateRangePickerContent({
 function isScheduleBoundaryDisabled(
 	date: Date,
 	type: ScheduleSlotType,
-	schedules?: LocationScheduleResponseDto[],
+	schedules?: GetStorefrontBranchSchedulesResponseDto,
 ): boolean {
 	if (!schedules || schedules.length === 0) {
 		return false;
@@ -55,7 +54,7 @@ function isScheduleBoundaryDisabled(
 			return false;
 		}
 
-		return isSameCalendarDay(schedule.specificDate, date);
+		return isSameCalendarDay(new Date(schedule.specificDate), date);
 	});
 
 	if (overrideSchedules.length > 0) {

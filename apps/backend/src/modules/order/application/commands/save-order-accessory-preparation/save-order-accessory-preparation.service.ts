@@ -268,10 +268,7 @@ export class SaveOrderAccessoryPreparationService implements ICommandHandler<
     }
   }
 
-  private async releaseAccessoryAssignments(
-    orderItemAccessoryId: string,
-    tx: PrismaTransactionClient,
-  ): Promise<void> {
+  private async releaseAccessoryAssignments(orderItemAccessoryId: string, tx: PrismaTransactionClient): Promise<void> {
     await tx.assetAssignment.deleteMany({
       where: {
         orderItemAccessoryId,

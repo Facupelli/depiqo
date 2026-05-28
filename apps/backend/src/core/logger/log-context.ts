@@ -28,6 +28,9 @@ export interface CanonicalLog {
   // --- Outcome ---
   errorCode?: string;
   errorMessage?: string;
+  problemType?: string;
+  problemTitle?: string;
+  problemDetail?: string;
 
   // --- Extensible ---
   [key: string]: unknown;

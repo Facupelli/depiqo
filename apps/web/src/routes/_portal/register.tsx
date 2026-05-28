@@ -11,13 +11,7 @@ import {
 	FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { getOptionalPrincipalFn } from "@/features/auth/auth-guards.api";
 import { buildSharedGoogleAuthStartUrl } from "@/features/rental/auth/google/google-auth.redirect";
-import {
-	useCreateGoogleCustomerState,
-	useCustomerLogin,
-	useCustomerRegister,
-} from "@/features/rental/auth/portal-auth.queries";
 import {
 	getPortalAuthRedirectTarget,
 	portalAuthRedirectSchema,
@@ -25,22 +19,20 @@ import {
 import {
 	customerRegisterDefaultValues,
 	customerRegisterSchema,
-	toRegisterCustomerDto,
 } from "@/features/rental/auth/register/customer-register-form.schema";
 import { getTenantBranding } from "@/features/tenant-branding/tenant-branding";
 import { PoweredByFooter } from "@/shared/components/powered-by-footer";
 import { isAuthError, ProblemDetailsError } from "@/shared/errors";
+import { useCreateCustomerGoogleState } from "@/v2/features/tenant-management/auth/customer-google-state/customer-google-state.mutation";
 
 export const Route = createFileRoute("/_portal/register")({
 	validateSearch: portalAuthRedirectSchema,
-	beforeLoad: async ({ search }) => {
-		const principal = await getOptionalPrincipalFn();
-
-		if (principal.kind === "customerAccount") {
+	beforeLoad: async ({ context, search }) => {
+		if (context.user?.actorType === "TENANT_CUSTOMER") {
 			throw redirect(getPortalAuthRedirectTarget(search));
 		}
 
-		if (principal.kind === "adminUser") {
+		if (context.user?.actorType === "TENANT_USER") {
 			throw redirect({ to: "/dashboard" });
 		}
 	},
@@ -52,12 +44,10 @@ const formId = "register-customer";
 function RegisterPage() {
 	const { tenantContext } = Route.useRouteContext();
 	const redirectSearch = Route.useSearch();
-	const navigate = Route.useNavigate();
 
-	const { mutateAsync: register, isPending } = useCustomerRegister();
-	const { mutateAsync: customerLogin } = useCustomerLogin();
+	const isPending = false;
 	const { mutateAsync: createGoogleState, isPending: isGoogleStatePending } =
-		useCreateGoogleCustomerState();
+		useCreateCustomerGoogleState();
 	const [serverError, setServerError] = useState<string | null>(null);
 	const redirectTarget = getPortalAuthRedirectTarget(redirectSearch);
 	const isGooglePending = isGoogleStatePending;
@@ -67,20 +57,10 @@ function RegisterPage() {
 		validators: {
 			onSubmit: customerRegisterSchema,
 		},
-		onSubmit: async ({ value }) => {
-			setServerError(null);
-			const dto = toRegisterCustomerDto(value);
-
-			try {
-				await register(dto);
-				await customerLogin({
-					email: value.email,
-					password: value.password,
-				});
-				navigate(redirectTarget);
-			} catch (error) {
-				setServerError(getRegisterAuthErrorMessage(error));
-			}
+		onSubmit: async () => {
+			setServerError(
+				"El registro con email y contraseña está temporalmente deshabilitado. Usa Google para crear tu cuenta.",
+			);
 		},
 	});
 
@@ -89,9 +69,10 @@ function RegisterPage() {
 
 		try {
 			const { state } = await createGoogleState({
-				tenantId: tenantContext.tenant.id,
-				portalOrigin: window.location.origin,
-				redirectPath: redirectTarget.href,
+				body: {
+					portalOrigin: window.location.origin,
+					redirectPath: redirectTarget.href,
+				},
 			});
 			window.location.assign(buildSharedGoogleAuthStartUrl(state));
 		} catch (error) {
@@ -454,20 +435,4 @@ function getGoogleAuthErrorMessage(error: unknown): string {
 	}
 
 	return "Ocurrió un error inesperado al iniciar sesión con Google.";
-}
-
-function getRegisterAuthErrorMessage(error: unknown): string {
-	if (isAuthError(error)) {
-		return "No pudimos completar el registro.";
-	}
-
-	if (error instanceof ProblemDetailsError) {
-		return error.problemDetails.detail;
-	}
-
-	if (error instanceof Error) {
-		return error.message;
-	}
-
-	return "Ocurrió un error inesperado al crear la cuenta.";
 }

@@ -15,27 +15,29 @@ import {
 	SheetTitle,
 	SheetTrigger,
 } from "@/components/ui/sheet";
-import { useRentalCategories } from "@/features/rental/catalog/categories.queries";
-import { useRentalLocations } from "@/features/tenant/locations/locations.queries";
 import { localDateToDateParam } from "@/lib/dates/parse";
 import { cn } from "@/lib/utils";
-import type { RentalPageSearch } from "../hooks/use-catalog-page-search";
+import type { V2RentalPageSearch } from "@/routes/_portal/_tenant/v2/rental";
+import { useIsMobile } from "@/shared/hooks/use-mobile";
+import { useStorefrontCategories } from "@/v2/features/catalog/storefront-categories/storefront-categories.queries";
+import { useStorefrontBranches } from "@/v2/features/rental-commitment/branches/branches.queries";
 import { DateRangePicker } from "./date-range-picker";
 
 interface RentalFiltersProps {
-	search: RentalPageSearch;
-	onLocationChange: (value: string) => void;
-	setUrlParam: (patch: Partial<RentalPageSearch>) => void;
+	search: V2RentalPageSearch;
+	onBranchChange: (value: string) => void;
+	setUrlParam: (patch: Partial<V2RentalPageSearch>) => void;
 	onCategorySelect: (id: string) => void;
 }
 
 export function RentalFilters({
 	search,
-	onLocationChange,
+	onBranchChange,
 	setUrlParam,
 	onCategorySelect,
 }: RentalFiltersProps) {
-	const { data: locations } = useRentalLocations();
+	const isMobile = useIsMobile();
+	const { data: branches } = useStorefrontBranches();
 
 	const activeFilterCount = [search.categoryId].filter(Boolean).length;
 
@@ -50,13 +52,13 @@ export function RentalFilters({
 								Ubicación del rental
 							</p>
 							<Select
-								value={search.locationId}
+								value={search.branchId}
 								onValueChange={(value: string | null) => {
-									if (value) onLocationChange(value);
+									if (value) onBranchChange(value);
 								}}
-								items={locations?.map((location) => ({
-									label: location.name,
-									value: location.id,
+								items={branches?.map((branch) => ({
+									label: branch.name,
+									value: branch.id,
 								}))}
 							>
 								<SelectTrigger
@@ -66,9 +68,9 @@ export function RentalFilters({
 									<SelectValue placeholder="Seleccionar ubicación" />
 								</SelectTrigger>
 								<SelectContent>
-									{locations?.map((location) => (
-										<SelectItem key={location.id} value={location.id}>
-											{location.name}
+									{branches?.map((branch) => (
+										<SelectItem key={branch.id} value={branch.id}>
+											{branch.name}
 										</SelectItem>
 									))}
 								</SelectContent>
@@ -81,15 +83,15 @@ export function RentalFilters({
 								Periodo de alquiler
 							</p>
 							<DateRangePicker
-								locationId={search.locationId}
-								pickupDate={search.pickupDate}
-								returnDate={search.returnDate}
+								branchId={search.branchId}
+								pickupDate={search.periodStart}
+								returnDate={search.periodEnd}
 								onChange={(range) =>
 									setUrlParam({
-										pickupDate: range?.from
+										periodStart: range?.from
 											? localDateToDateParam(range.from)
 											: undefined,
-										returnDate: range?.to
+										periodEnd: range?.to
 											? localDateToDateParam(range.to)
 											: undefined,
 									})
@@ -104,15 +106,15 @@ export function RentalFilters({
 
 			<div className="flex items-center gap-3 md:hidden">
 				<Select
-					value={search.locationId}
+					value={search.branchId}
 					onValueChange={(value: string | null) => {
 						if (value) {
-							onLocationChange(value);
+							onBranchChange(value);
 						}
 					}}
-					items={locations?.map((location) => ({
-						label: location.name,
-						value: location.id,
+					items={branches?.map((branch) => ({
+						label: branch.name,
+						value: branch.id,
 					}))}
 				>
 					<SelectTrigger
@@ -122,31 +124,33 @@ export function RentalFilters({
 						<SelectValue placeholder="Seleccionar ubicacion" />
 					</SelectTrigger>
 					<SelectContent>
-						{locations?.map((location) => (
-							<SelectItem key={location.id} value={location.id}>
-								{location.name}
+						{branches?.map((branch) => (
+							<SelectItem key={branch.id} value={branch.id}>
+								{branch.name}
 							</SelectItem>
 						))}
 					</SelectContent>
 				</Select>
 
 				{/* ── Filters sheet button — mobile only ── */}
-				<div className="ml-auto md:hidden">
-					<FiltersSheet
-						search={search}
-						setUrlParam={setUrlParam}
-						onCategorySelect={onCategorySelect}
-						activeFilterCount={activeFilterCount}
-					/>
-				</div>
+				{isMobile && (
+					<div className="ml-auto md:hidden">
+						<FiltersSheet
+							search={search}
+							setUrlParam={setUrlParam}
+							onCategorySelect={onCategorySelect}
+							activeFilterCount={activeFilterCount}
+						/>
+					</div>
+				)}
 			</div>
 		</div>
 	);
 }
 
 interface FiltersSheetProps {
-	search: RentalPageSearch;
-	setUrlParam: (patch: Partial<RentalPageSearch>) => void;
+	search: V2RentalPageSearch;
+	setUrlParam: (patch: Partial<V2RentalPageSearch>) => void;
 	onCategorySelect: (id: string) => void;
 	activeFilterCount: number;
 }
@@ -157,7 +161,7 @@ function FiltersSheet({
 	onCategorySelect,
 	activeFilterCount,
 }: FiltersSheetProps) {
-	const { data: categories } = useRentalCategories();
+	const { data: categories } = useStorefrontCategories();
 
 	return (
 		<Sheet>
@@ -189,15 +193,15 @@ function FiltersSheet({
 							PERIODO DE ALQUILER
 						</p>
 						<DateRangePicker
-							locationId={search.locationId}
-							pickupDate={search.pickupDate}
-							returnDate={search.returnDate}
+							branchId={search.branchId}
+							pickupDate={search.periodStart}
+							returnDate={search.periodEnd}
 							onChange={(range) =>
 								setUrlParam({
-									pickupDate: range?.from
+									periodStart: range?.from
 										? localDateToDateParam(range.from)
 										: undefined,
-									returnDate: range?.to
+									periodEnd: range?.to
 										? localDateToDateParam(range.to)
 										: undefined,
 								})
@@ -214,21 +218,21 @@ function FiltersSheet({
 								CATEGORIA
 							</p>
 							<div className="flex flex-wrap gap-2">
-								{categories.map((cat) => (
+								{categories.map((category) => (
 									<Button
-										key={cat.id}
+										key={category.id}
 										variant={
-											search.categoryId === cat.id ? "default" : "outline"
+											search.categoryId === category.id ? "default" : "outline"
 										}
 										size="sm"
-										onClick={() => onCategorySelect(cat.id)}
+										onClick={() => onCategorySelect(category.id)}
 										className={cn(
 											"rounded-full",
-											search.categoryId !== cat.id &&
+											search.categoryId !== category.id &&
 												"border-neutral-700 bg-transparent text-neutral-50 hover:bg-white/10 hover:text-neutral-50",
 										)}
 									>
-										{cat.name}
+										{category.name}
 									</Button>
 								))}
 							</div>

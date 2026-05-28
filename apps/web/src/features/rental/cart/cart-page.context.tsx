@@ -1,4 +1,3 @@
-import { useSuspenseQuery } from "@tanstack/react-query";
 import { createContext, useContext } from "react";
 import type {
 	BookingSlice,
@@ -9,10 +8,9 @@ import type {
 	PricingSlice,
 	TimesSlice,
 } from "@/features/rental/cart/cart-page.context.types";
-import { useCartOrder } from "@/features/rental/cart/hooks/use-cart-order";
-import { usePortalTenantId } from "@/features/tenant-context/use-portal-tenant-id";
-import { rentalTenantQueries } from "@/features/rental/tenant/tenant.queries";
-import { rentalLocationQueries } from "@/features/tenant/locations/locations.queries";
+import { useStorefrontBranches } from "@/v2/features/rental-commitment/branches/branches.queries";
+import { usePublicTenantConfig } from "@/v2/features/tenant-management/tenant/tenant.queries";
+import { useCartPageModel } from "./hooks/use-cart-page-model";
 
 const CartPageContext = createContext<CartPageContextValue | null>(null);
 
@@ -49,49 +47,35 @@ export function useCartBookingContext(): BookingSlice {
 
 type CartPageProviderProps = {
 	children: React.ReactNode;
-	pickupDate: string;
-	returnDate: string;
-	locationId: string;
+	branchId: string;
+	periodStart: string;
+	periodEnd: string;
 };
 
 export function CartPageProvider({
 	children,
-	pickupDate,
-	returnDate,
-	locationId,
+	branchId,
+	periodStart,
+	periodEnd,
 }: CartPageProviderProps) {
-	const tenantId = usePortalTenantId();
-	const { data: locations } = useSuspenseQuery(
-		rentalLocationQueries.list(tenantId),
-	);
-	const { data: tenantRentalConfig } = useSuspenseQuery(
-		rentalTenantQueries.me(tenantId),
-	);
-	const location = locations.find((l) => l.id === locationId);
+	const { data: branches } = useStorefrontBranches();
+	const { data: tenantPublicConfig } = usePublicTenantConfig();
 
-	if (!location) {
-		throw new Error(`Rental location not found for cart: ${locationId}`);
+	const branch = branches?.find((branch) => branch.id === branchId);
+
+	if (!branch || !tenantPublicConfig) {
+		throw new Error(`Branch not found for cart: ${branchId}`);
 	}
 
-	const cartOrder = useCartOrder({
-		tenantRentalConfig,
-		location: {
-			id: location.id,
-			name: location.name,
-			supportsDelivery: location.supportsDelivery,
-			deliveryDefaults: {
-				country: location.deliveryDefaults?.country ?? "",
-				stateRegion: location.deliveryDefaults?.stateRegion ?? "",
-				city: location.deliveryDefaults?.city ?? "",
-				postalCode: location.deliveryDefaults?.postalCode ?? "",
-			},
-		},
-		pickupDate,
-		returnDate,
+	const cartPageModel = useCartPageModel({
+		tenantPublicConfig,
+		branch,
+		periodStart,
+		periodEnd,
 	});
 
 	return (
-		<CartPageContext.Provider value={cartOrder}>
+		<CartPageContext.Provider value={cartPageModel}>
 			{children}
 		</CartPageContext.Provider>
 	);

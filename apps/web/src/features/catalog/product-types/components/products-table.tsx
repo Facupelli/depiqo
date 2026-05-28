@@ -1,3 +1,12 @@
+import type { PaginationMeta, ProductTypeResponse } from "@repo/schemas";
+import { useNavigate } from "@tanstack/react-router";
+import {
+	flexRender,
+	getCoreRowModel,
+	type PaginationState,
+	useReactTable,
+} from "@tanstack/react-table";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
 	Select,
@@ -14,17 +23,8 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import { useNavigate } from "@tanstack/react-router";
-import {
-	flexRender,
-	getCoreRowModel,
-	useReactTable,
-	type PaginationState,
-} from "@tanstack/react-table";
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import { productColumns } from "./products-columns";
-import type { PaginationMeta, ProductTypeResponse } from "@repo/schemas";
 import { useCategories } from "../../product-categories/categories.queries";
+import { productColumns } from "./products-columns";
 
 interface ProductsTableProps {
 	products: ProductTypeResponse[];

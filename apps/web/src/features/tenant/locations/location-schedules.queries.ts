@@ -1,26 +1,26 @@
-import {
-	queryOptions,
-	useMutation,
-	useQuery,
-	useQueryClient,
-	type MutationOptions,
-	type UseQueryOptions,
-} from "@tanstack/react-query";
-import {
-	getLocationSchedules,
-	getRentalLocationSchedules,
-	createLocationSchedule,
-	updateLocationSchedule,
-	bulkCreateLocationSchedules,
-	getLocationScheduleSlots,
-} from "./location-schedules.api";
-import type { ProblemDetailsError } from "@/shared/errors";
 import type {
 	AddScheduleToLocationDto,
 	GetLocationScheduleSlotsQueryDto,
 	LocationScheduleResponseDto,
 	LocationScheduleSlotsResponse,
 } from "@repo/schemas";
+import {
+	type MutationOptions,
+	queryOptions,
+	type UseQueryOptions,
+	useMutation,
+	useQuery,
+	useQueryClient,
+} from "@tanstack/react-query";
+import type { ProblemDetailsError } from "@/shared/errors";
+import {
+	bulkCreateLocationSchedules,
+	createLocationSchedule,
+	getLocationScheduleSlots,
+	getLocationSchedules,
+	getRentalLocationSchedules,
+	updateLocationSchedule,
+} from "./location-schedules.api";
 
 // ---------------------------------------------------------------------------
 

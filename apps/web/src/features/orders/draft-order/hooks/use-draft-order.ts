@@ -234,7 +234,7 @@ export function useDraftOrder(initialOrder?: DraftOrderState | null) {
 			),
 			hasItems: state.items.length > 0,
 		},
-			actions: {
+		actions: {
 			setCustomer: (customer: DraftOrderCustomerRef | null) =>
 				dispatch({ type: "set_customer", customer }),
 			setCustomerField: (field: keyof DraftOrderCustomerRef, value: string) =>

@@ -1,11 +1,11 @@
-import { emptyToNull, emptyToNullOrUndefined } from "@/shared/utils/form.utils";
 import {
-	createOwnerSchema,
-	updateOwnerSchema,
 	type CreateOwnerDto,
+	createOwnerSchema,
 	type UpdateOwnerDto,
+	updateOwnerSchema,
 } from "@repo/schemas";
 import { z } from "zod";
+import { emptyToNull, emptyToNullOrUndefined } from "@/shared/utils/form.utils";
 
 export const ownerFormSchema = z.object({
 	name: z.string().min(1, "Name is required"),

@@ -19,7 +19,7 @@ export function buildCreateOrderWhatsAppMessage(context: CreateOrderCompletionCo
     '',
     `*Total:* _${formatCurrency(context.pricing.totalAmount, context.pricing.currency)}_`,
     '',
-    'Espero tu respuesta para confirmar mi pedido'
+    'Espero tu respuesta para confirmar mi pedido',
   ];
 
   return lines.join('\n');
@@ -50,7 +50,9 @@ function buildFulfillmentLines(context: CreateOrderCompletionContext): string[] 
   return lines;
 }
 
-function formatDeliveryAddress(deliveryRequest: NonNullable<CreateOrderCompletionContext['fulfillment']['deliveryRequest']>): string {
+function formatDeliveryAddress(
+  deliveryRequest: NonNullable<CreateOrderCompletionContext['fulfillment']['deliveryRequest']>,
+): string {
   return [
     deliveryRequest.addressLine1,
     deliveryRequest.addressLine2,

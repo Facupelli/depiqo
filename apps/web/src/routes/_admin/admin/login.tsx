@@ -1,9 +1,11 @@
-import { useLogin } from "@/features/auth/auth-actions.queries";
+import { useForm } from "@tanstack/react-form";
 import {
-	authRedirectSearchSchema,
-	normalizeSafeRedirectTo,
-} from "@/features/auth/auth-redirect";
-import { getOptionalPrincipalFn } from "@/features/auth/auth-guards.api";
+	createFileRoute,
+	Link,
+	redirect,
+	useRouter,
+} from "@tanstack/react-router";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -20,30 +22,22 @@ import {
 	FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { useForm } from "@tanstack/react-form";
 import {
-	createFileRoute,
-	Link,
-	redirect,
-	useRouter,
-} from "@tanstack/react-router";
-import { useState } from "react";
-import { loginSchema } from "@/features/auth/schemas/login-form.schema";
+	authRedirectSearchSchema,
+	normalizeSafeRedirectTo,
+} from "@/features/auth/auth-redirect";
 import { isAuthError, ProblemDetailsError } from "@/shared/errors";
+import { useLogin } from "@/v2/features/tenant-management/auth/login/login.mutation";
+import { loginSchema } from "@/v2/features/tenant-management/auth/login/login-form.schema";
 
 export const Route = createFileRoute("/_admin/admin/login")({
 	validateSearch: authRedirectSearchSchema,
-	beforeLoad: async ({ search }) => {
-		const principal = await getOptionalPrincipalFn();
-
-		if (principal.kind === "adminUser") {
+	beforeLoad: async ({ context }) => {
+		// TODO: if tenant-customer user redirect to /rental instead
+		if (context.user) {
 			throw redirect({
-				href: normalizeSafeRedirectTo(search.redirectTo, "/dashboard"),
+				to: "/dashboard",
 			});
-		}
-
-		if (principal.kind === "customerAccount") {
-			throw redirect({ to: "/rental" });
 		}
 	},
 	component: LoginPage,
@@ -68,7 +62,12 @@ function LoginPage() {
 			setServerError(null);
 
 			try {
-				await login(value);
+				await login({
+					body: value,
+				});
+
+				await router.invalidate({ sync: true });
+
 				router.navigate({
 					href: normalizeSafeRedirectTo(search.redirectTo, "/dashboard"),
 				});
@@ -94,9 +93,10 @@ function LoginPage() {
 
 				<Card className="w-md">
 					<CardHeader>
-						<CardTitle>Admin Login</CardTitle>
+						<CardTitle>Backoffice Login</CardTitle>
 						<CardDescription>
-							Please authenticate to access your workspace.
+							Inicia sesión con tu cuenta para acceder a tu panel de
+							administración.
 						</CardDescription>
 					</CardHeader>
 					<CardContent>
@@ -141,7 +141,9 @@ function LoginPage() {
 
 										return (
 											<Field data-invalid={isInvalid}>
-												<FieldLabel htmlFor={field.name}>Password:</FieldLabel>
+												<FieldLabel htmlFor={field.name}>
+													Contraseña:
+												</FieldLabel>
 												<Input
 													id={field.name}
 													name={field.name}
@@ -178,7 +180,9 @@ function LoginPage() {
 										form={formId}
 										disabled={!canSubmit || isPending}
 									>
-										{isSubmitting || isPending ? "Submitting..." : "Sign In"}
+										{isSubmitting || isPending
+											? "Cargando..."
+											: "Iniciar sesión"}
 									</Button>
 
 									{serverError && (

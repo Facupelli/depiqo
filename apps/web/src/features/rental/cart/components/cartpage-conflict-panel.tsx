@@ -1,12 +1,12 @@
-import type {
-	ConflictGroup,
-	ConflictAffectedItem,
-	CartItem,
-} from "../cart.types";
-import type { CartItemKey } from "../cart.types";
-import { AlertTriangle, Package, Trash2 } from "lucide-react";
 import clsx from "clsx";
+import { AlertTriangle, Package, Trash2 } from "lucide-react";
+import type { V2RentalCartItem } from "@/v2/features/rental-commitment/cart/v2-rental-cart.types";
 import { useCartActions } from "../cart.hooks";
+import type {
+	CartItemKey,
+	ConflictAffectedItem,
+	ConflictGroup,
+} from "../cart.types";
 import { useCartBookingContext, useCartContext } from "../cart-page.context";
 
 export function CartPageConflictPanel() {
@@ -120,7 +120,7 @@ function ConflictGroupCard({ group }: ConflictGroupCardProps) {
 
 type ConflictAffectedItemRowProps = {
 	affected: ConflictAffectedItem;
-	cartItem: CartItem;
+	cartItem: V2RentalCartItem;
 	onRemove: () => void;
 	onSetQuantity: (qty: number) => void;
 };
@@ -246,7 +246,7 @@ function StandaloneQuantityControl({
  */
 function computeCurrentDemand(
 	affectedItems: ConflictAffectedItem[],
-	cartItems: CartItem[],
+	cartItems: V2RentalCartItem[],
 ): number {
 	return affectedItems.reduce((sum, affected) => {
 		const cartItem = findCartItem(affected, cartItems);
@@ -259,16 +259,9 @@ function computeCurrentDemand(
  */
 function findCartItem(
 	affected: ConflictAffectedItem,
-	cartItems: CartItem[],
-): CartItem | undefined {
-	if (affected.type === "PRODUCT") {
-		return cartItems.find(
-			(i) => i.type === "PRODUCT" && i.productTypeId === affected.productTypeId,
-		);
-	}
-	return cartItems.find(
-		(i) => i.type === "BUNDLE" && i.bundleId === affected.bundleId,
-	);
+	cartItems: V2RentalCartItem[],
+): V2RentalCartItem | undefined {
+	return cartItems.find((i) => i.rentalOfferId === affected.type);
 }
 
 /**

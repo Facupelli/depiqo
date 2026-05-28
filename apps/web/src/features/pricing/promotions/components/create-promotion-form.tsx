@@ -1,14 +1,6 @@
-import {
-	PromotionActivationType,
-	PromotionApplicabilityTarget,
-	PromotionConditionType,
-	PromotionEffectType,
-	PromotionStackingType,
-} from "@repo/types";
 import { useForm } from "@tanstack/react-form";
-import { CircleHelp, Minus, Plus } from "lucide-react";
-import type { ReactNode } from "react";
-import { useState } from "react";
+import { Minus, Plus } from "lucide-react";
+import { type ReactNode, useId, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -20,126 +12,76 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import {
-	Popover,
-	PopoverContent,
-	PopoverDescription,
-	PopoverHeader,
-	PopoverTitle,
-	PopoverTrigger,
-} from "@/components/ui/popover";
-import {
 	Select,
 	SelectContent,
 	SelectItem,
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { useCreatePromotion } from "../promotions.mutations";
+import { useCreatePromotion } from "@/v2/features/pricing/promotions/create-promotion/create-promotion.mutation";
 import {
-	defaultConditionFor,
-	defaultEffectFor,
-	type PromotionConditionFormValues,
+	createEmptyExclusion,
+	createEmptyScope,
+	createPromotionFormDefaultValues,
+	type PromotionExclusionFormValues,
+	type PromotionExclusionType,
 	type PromotionFormValues,
-	promotionFormDefaults,
+	type PromotionScopeFormValues,
+	type PromotionScopeType,
 	promotionFormSchema,
 	toCreatePromotionDto,
 } from "../schemas/promotion-form.schema";
 
-const ACTIVATION_TYPE_LABELS: Record<PromotionActivationType, string> = {
-	[PromotionActivationType.AUTOMATIC]: "Automatica",
-	[PromotionActivationType.COUPON]: "Con cupon",
-};
+const activationItems = [
+	{ value: "AUTOMATIC", label: "Automática" },
+	{ value: "COUPON_REQUIRED", label: "Con cupón" },
+] as const;
 
-const STACKING_TYPE_LABELS: Record<PromotionStackingType, string> = {
-	[PromotionStackingType.EXCLUSIVE]: "Exclusiva",
-	[PromotionStackingType.COMBINABLE]: "Combinable",
-};
+const effectTypeItems = [
+	{ value: "PERCENTAGE_OFF", label: "Porcentaje" },
+	{ value: "FIXED_AMOUNT_OFF", label: "Monto fijo" },
+] as const;
 
-const APPLICABILITY_LABELS: Record<PromotionApplicabilityTarget, string> = {
-	[PromotionApplicabilityTarget.PRODUCT]: "Productos",
-	[PromotionApplicabilityTarget.BUNDLE]: "Bundles",
-};
+const targetItems = [
+	{ value: "ORDER", label: "Toda la orden" },
+	{ value: "ELIGIBLE_LINES", label: "Solo líneas elegibles" },
+] as const;
 
-const CONDITION_TYPE_META: Record<
-	PromotionConditionType,
-	{ label: string; description: string }
-> = {
-	[PromotionConditionType.BOOKING_WINDOW]: {
-		label: "Ventana de reserva",
-		description:
-			"La promocion aplica solo cuando la fecha de reserva cae dentro de un rango.",
-	},
-	[PromotionConditionType.RENTAL_WINDOW]: {
-		label: "Ventana de alquiler",
-		description:
-			"La promocion aplica solo cuando el periodo alquilado ocurre dentro de un rango.",
-	},
-	[PromotionConditionType.CUSTOMER_ID_IN]: {
-		label: "Clientes especificos",
-		description:
-			"Restringe la promocion a una lista concreta de clientes por UUID.",
-	},
-	[PromotionConditionType.MIN_SUBTOTAL]: {
-		label: "Subtotal minimo",
-		description: "Exige un monto minimo antes de aplicar el descuento.",
-	},
-	[PromotionConditionType.RENTAL_DURATION_MIN]: {
-		label: "Duracion minima",
-		description:
-			"Requiere una cantidad minima de unidades de alquiler, como dias u horas.",
-	},
-	[PromotionConditionType.MIN_PRODUCT_QUANTITY]: {
-		label: "Cantidad minima de productos",
-		description:
-			"Exige una cantidad minima total de productos standalone en la orden.",
-	},
-	[PromotionConditionType.MIN_PRODUCT_UNIT_PRICE]: {
-		label: "Precio minimo por producto",
-		description:
-			"La promocion solo aplica a lineas de producto cuyo precio base por producto alcance ese monto.",
-	},
-};
+const scopeModeItems = [
+	{ value: "ALL", label: "Todos los ítems" },
+	{ value: "RENTABLE_ITEM", label: "Ítems rentables específicos" },
+	{ value: "RENTAL_OFFER", label: "Ofertas específicas" },
+	{ value: "CATEGORY", label: "Categorías específicas" },
+] as const;
 
-const EFFECT_TYPE_LABELS: Record<PromotionEffectType, string> = {
-	[PromotionEffectType.PERCENT_OFF]: "Porcentaje simple",
-	[PromotionEffectType.LONG_RENTAL_TIERED_PERCENT_OFF]:
-		"Tramos por alquiler largo",
-};
+const exclusionTypeItems = [
+	{ value: "RENTABLE_ITEM", label: "Ítem rentable" },
+	{ value: "RENTAL_OFFER", label: "Oferta" },
+	{ value: "CATEGORY", label: "Categoría" },
+] as const;
 
-type RootDateFieldName = "validFrom" | "validUntil";
-type RootTextFieldName = "name";
-type RootNumberFieldName = "priority";
-type ConditionFieldName = `conditions[${number}]`;
-type ConditionTypeFieldName = `conditions[${number}].type`;
-type ConditionDateFieldName =
-	| `conditions[${number}].from`
-	| `conditions[${number}].to`;
-type ConditionCurrencyFieldName = `conditions[${number}].currency`;
-type ConditionNumberFieldName =
-	| `conditions[${number}].amount`
-	| `conditions[${number}].minUnits`
-	| `conditions[${number}].minQuantity`;
-type StringArrayFieldName =
-	| "applicability.excludedProductTypeIds"
-	| "applicability.excludedBundleIds"
-	| `conditions[${number}].customerIds`;
-type EffectPercentageFieldName = "effect.percentage";
-type TierNumberFieldName =
-	| `effect.tiers[${number}].fromUnits`
-	| `effect.tiers[${number}].percentage`;
-type TierNullableNumberFieldName = `effect.tiers[${number}].toUnits`;
+type PromotionFormApi = ReturnType<typeof usePromotionForm>["form"];
+type TextFieldName = "name" | "effectValue" | "minOrderSubtotal";
+type NumberFieldName = "priority";
+type DateFieldName = "validFrom" | "validUntil";
+type OptionalIntegerFieldName = "minRentalUnits" | "maxRentalUnits";
 
-type SelectItemOption<T extends string> = {
-	label: string;
-	value: T;
-};
+interface PromotionFormProps {
+	formId?: string;
+	defaultValues?: PromotionFormValues;
+	onCancel: () => void;
+	onSubmit: (values: PromotionFormValues) => Promise<void>;
+	isPending: boolean;
+	submitLabel: string;
+	pendingLabel: string;
+}
 
 function usePromotionForm({
 	defaultValues,
 	onSubmit,
 }: Pick<PromotionFormProps, "defaultValues" | "onSubmit">) {
 	const form = useForm({
-		defaultValues,
+		defaultValues: defaultValues ?? createPromotionFormDefaultValues(),
 		validators: {
 			onSubmit: promotionFormSchema,
 		},
@@ -151,30 +93,8 @@ function usePromotionForm({
 	return { form };
 }
 
-type PromotionFormApi = ReturnType<typeof usePromotionForm>["form"];
-
-interface PromotionFormProps {
-	formId: string;
-	defaultValues: PromotionFormValues;
-	onCancel: () => void;
-	onSubmit: (values: PromotionFormValues) => Promise<void>;
-	isPending: boolean;
-	submitLabel: string;
-	pendingLabel: string;
-}
-
-const activationTypeItems = toSelectItems(ACTIVATION_TYPE_LABELS);
-const stackingTypeItems = toSelectItems(STACKING_TYPE_LABELS);
-const effectTypeItems = toSelectItems(EFFECT_TYPE_LABELS);
-const conditionTypeItems = Object.entries(CONDITION_TYPE_META).map(
-	([value, meta]) => ({
-		value: value as PromotionConditionType,
-		label: meta.label,
-	}),
-);
-
 export function PromotionForm({
-	formId,
+	formId: providedFormId,
 	defaultValues,
 	onCancel,
 	onSubmit,
@@ -182,366 +102,145 @@ export function PromotionForm({
 	submitLabel,
 	pendingLabel,
 }: PromotionFormProps) {
+	const generatedFormId = useId();
+	const formId = providedFormId ?? generatedFormId;
 	const { form } = usePromotionForm({ defaultValues, onSubmit });
-	const [firstConditionType] = conditionTypeItems;
-	const [nextConditionType, setNextConditionType] = useState(
-		firstConditionType?.value ?? PromotionConditionType.BOOKING_WINDOW,
-	);
 
 	return (
 		<form
 			id={formId}
-			onSubmit={(e) => {
-				e.preventDefault();
-				e.stopPropagation();
+			onSubmit={(event) => {
+				event.preventDefault();
+				event.stopPropagation();
 				form.handleSubmit();
 			}}
-			className="space-y-6"
+			className="space-y-8"
 		>
-			<FieldGroup>
-				<Section
-					title="Configuracion basica"
-					description="Define cuando se activa y como se combina la promocion."
-				>
-					<TextField form={form} name="name" label="Nombre" />
-
-					<div className="grid gap-4 sm:grid-cols-2">
-						<form.Field name="activationType">
-							{(field) => {
-								const isInvalid =
-									field.state.meta.isTouched && !field.state.meta.isValid;
-
-								return (
-									<Field data-invalid={isInvalid}>
-										<FieldLabel>Tipo de activacion</FieldLabel>
-										<Select
-											value={field.state.value}
-											onValueChange={(value) => {
-												if (value !== null) {
-													field.handleChange(value);
-												}
-											}}
-											items={activationTypeItems}
-										>
-											<SelectTrigger aria-invalid={isInvalid}>
-												<SelectValue />
-											</SelectTrigger>
-											<SelectContent>
-												{activationTypeItems.map((item) => (
-													<SelectItem key={item.value} value={item.value}>
-														{item.label}
-													</SelectItem>
-												))}
-											</SelectContent>
-										</Select>
-										{isInvalid ? (
-											<FieldError errors={field.state.meta.errors} />
-										) : null}
-									</Field>
-								);
-							}}
-						</form.Field>
-						<form.Field name="stackingType">
-							{(field) => {
-								const isInvalid =
-									field.state.meta.isTouched && !field.state.meta.isValid;
-
-								return (
-									<Field data-invalid={isInvalid}>
-										<FieldLabel>Acumulacion</FieldLabel>
-										<Select
-											value={field.state.value}
-											onValueChange={(value) => {
-												if (value !== null) {
-													field.handleChange(value);
-												}
-											}}
-											items={stackingTypeItems}
-										>
-											<SelectTrigger aria-invalid={isInvalid}>
-												<SelectValue />
-											</SelectTrigger>
-											<SelectContent>
-												{stackingTypeItems.map((item) => (
-													<SelectItem key={item.value} value={item.value}>
-														{item.label}
-													</SelectItem>
-												))}
-											</SelectContent>
-										</Select>
-										{isInvalid ? (
-											<FieldError errors={field.state.meta.errors} />
-										) : null}
-									</Field>
-								);
-							}}
-						</form.Field>
-					</div>
-
-					<div className="grid gap-4 sm:grid-cols-3">
-						<NumberField
+			<div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_22rem] xl:items-start">
+				<FieldGroup className="space-y-6">
+					<Section
+						title="Datos básicos"
+						description="Definí el nombre, la activación, la vigencia y el comportamiento general."
+					>
+						<TextField
 							form={form}
-							name="priority"
-							label="Prioridad"
-							description="Menor numero = mayor prioridad."
-							min={0}
+							name="name"
+							label="Nombre"
+							placeholder="Ej: 20% off por alquiler largo"
 						/>
-						<DateField form={form} name="validFrom" label="Valida desde" />
-						<DateField form={form} name="validUntil" label="Valida hasta" />
-					</div>
-				</Section>
 
-				<Section
-					title="Aplicabilidad"
-					description="Define si la promocion aplica a productos, bundles o ambos, y que elementos quedan excluidos."
-				>
-					<form.Field name="applicability.appliesTo">
-						{(field) => (
-							<Field>
-								<FieldLabel>Aplica a</FieldLabel>
-								<div className="grid gap-3 sm:grid-cols-2">
-									{Object.values(PromotionApplicabilityTarget).map((target) => {
-										const checked = field.state.value.includes(target);
+						<div className="grid gap-4 sm:grid-cols-2">
+							<SelectField
+								form={form}
+								name="activation"
+								label="Activación"
+								items={activationItems}
+							/>
+							<NumberField
+								form={form}
+								name="priority"
+								label="Prioridad"
+								description="Mayor número = mayor prioridad."
+								min={0}
+							/>
+						</div>
 
-										return (
-											<div
-												key={target}
-												className="flex items-start gap-3 rounded-lg border px-4 py-3"
-											>
-												<Checkbox
-													id={`applies-to-${target}`}
-													checked={checked}
-													onCheckedChange={(nextChecked) => {
-														field.handleChange(
-															nextChecked === true
-																? field.state.value.includes(target)
-																	? field.state.value
-																	: [...field.state.value, target]
-																: field.state.value.filter(
-																		(value) => value !== target,
-																	),
-														);
-													}}
-												/>
-												<div>
-													<FieldLabel htmlFor={`applies-to-${target}`}>
-														{APPLICABILITY_LABELS[target]}
-													</FieldLabel>
-													<p className="text-muted-foreground text-xs">
-														{target === PromotionApplicabilityTarget.PRODUCT
-															? "Considera lineas de producto individuales."
-															: "Aplica sobre bundles completos."}
-													</p>
-												</div>
-											</div>
-										);
-									})}
-								</div>
-								{field.state.meta.isTouched && !field.state.meta.isValid ? (
-									<FieldError errors={field.state.meta.errors} />
-								) : null}
-							</Field>
-						)}
-					</form.Field>
+						<div className="grid gap-4 sm:grid-cols-2">
+							<DateField form={form} name="validFrom" label="Vigente desde" />
+							<DateField form={form} name="validUntil" label="Vigente hasta" />
+						</div>
 
-					<StringArrayField
-						form={form}
-						name="applicability.excludedProductTypeIds"
-						label="IDs de tipos de producto excluidos"
-						description="Usa UUIDs de tipos de producto que no deben recibir la promocion."
-						placeholder="UUID del tipo de producto"
-					/>
-					<StringArrayField
-						form={form}
-						name="applicability.excludedBundleIds"
-						label="IDs de bundles excluidos"
-						description="Usa UUIDs de bundles que no deben recibir la promocion."
-						placeholder="UUID del bundle"
-					/>
-				</Section>
+						<div className="grid gap-4 sm:grid-cols-2">
+							<BooleanField
+								form={form}
+								name="stackable"
+								label="Acumulable"
+								description="Permite combinar esta promoción con otras promociones acumulables."
+							/>
+							<BooleanField
+								form={form}
+								name="isActive"
+								label="Activa"
+								description="Solo las promociones activas se evalúan al calcular precios."
+							/>
+						</div>
+					</Section>
 
-				<Section
-					title="Condiciones"
-					description="Las condiciones califican la promocion usando el contexto completo de la orden."
-				>
-					<form.Field name="conditions" mode="array">
-						{(field) => (
-							<div className="space-y-4">
-								<div className="flex flex-col gap-3 rounded-xl border border-dashed p-4 sm:flex-row sm:items-end sm:justify-between">
-									<div className="grid gap-2">
-										<FieldLabel className="flex items-center gap-2">
-											<span>Agregar condicion</span>
-											<ConditionTypeHelpPopover />
-										</FieldLabel>
-										<Select
-											value={nextConditionType}
-											onValueChange={(value) =>
-												setNextConditionType(value as PromotionConditionType)
-											}
-											items={conditionTypeItems}
-										>
-											<SelectTrigger className="sm:min-w-72">
-												<SelectValue />
-											</SelectTrigger>
-											<SelectContent>
-												{conditionTypeItems.map((item) => (
-													<SelectItem key={item.value} value={item.value}>
-														{item.label}
-													</SelectItem>
-												))}
-											</SelectContent>
-										</Select>
-									</div>
+					<Section
+						title="Descuento"
+						description="Definí cuánto descuenta la promoción y sobre qué parte del alquiler se aplica."
+					>
+						<div className="grid gap-4 sm:grid-cols-3">
+							<SelectField
+								form={form}
+								name="effectType"
+								label="Tipo de descuento"
+								items={effectTypeItems}
+							/>
+							<TextField
+								form={form}
+								name="effectValue"
+								label="Valor"
+								placeholder="Ej: 20 para 20% / 5000 para $5000"
+							/>
+							<SelectField
+								form={form}
+								name="target"
+								label="Aplicar descuento sobre"
+								items={targetItems}
+							/>
+						</div>
+						<div className="rounded-lg border bg-muted/30 px-4 py-3 text-muted-foreground text-sm">
+							<p>
+								<strong className="text-foreground">Toda la orden:</strong>{" "}
+								calcula el descuento sobre el total del alquiler.
+							</p>
+							<p>
+								<strong className="text-foreground">
+									Solo líneas elegibles:
+								</strong>{" "}
+								calcula el descuento únicamente sobre los ítems incluidos en el
+								alcance.
+							</p>
+						</div>
+					</Section>
 
-									<Button
-										type="button"
-										onClick={() =>
-											field.pushValue(defaultConditionFor(nextConditionType))
-										}
-										className="gap-2"
-									>
-										<Plus className="h-4 w-4" />
-										Agregar condicion
-									</Button>
-								</div>
+					<Section
+						title="Condiciones para aplicar"
+						description="La promoción solo se aplica si la orden cumple estas condiciones."
+					>
+						<div className="grid gap-4 sm:grid-cols-3">
+							<TextField
+								form={form}
+								name="minOrderSubtotal"
+								label="Subtotal mínimo"
+								placeholder="Sin mínimo"
+							/>
+							<OptionalIntegerField
+								form={form}
+								name="minRentalUnits"
+								label="Duración mínima facturada"
+								placeholder="Sin mínimo"
+							/>
+							<OptionalIntegerField
+								form={form}
+								name="maxRentalUnits"
+								label="Duración máxima facturada"
+								placeholder="Sin máximo"
+							/>
+						</div>
+						<p className="rounded-lg bg-muted/40 px-4 py-3 text-muted-foreground text-sm">
+							La duración se mide en unidades facturadas según el plan de
+							precio: horas, días o semanas. No representa cantidad de ítems.
+						</p>
+					</Section>
 
-								{field.state.value.length === 0 ? (
-									<div className="rounded-lg border border-dashed px-4 py-6 text-center text-sm text-muted-foreground">
-										Sin condiciones. La promocion dependera solo de su
-										activacion y aplicabilidad.
-									</div>
-								) : null}
+					<ScopeEditor form={form} />
+					<ExclusionEditor form={form} />
+				</FieldGroup>
 
-								{field.state.value.map((condition, index) => {
-									const conditionName =
-										`conditions[${index}]` as ConditionFieldName;
-									const conditionTypeName =
-										`conditions[${index}].type` as ConditionTypeFieldName;
-
-									return (
-										<div
-											key={`${condition.type}-${index}`}
-											className="space-y-4 rounded-xl border p-4"
-										>
-											<div className="flex items-center justify-between gap-3">
-												<div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
-													<div>
-														<p className="font-medium text-sm">
-															Condicion {index + 1}
-														</p>
-													</div>
-													<form.Field name={conditionTypeName}>
-														{(typeField) => (
-															<Field>
-																<FieldLabel className="flex items-center gap-2">
-																	<span>Tipo</span>
-																	<ConditionTypeHelpPopover />
-																</FieldLabel>
-																<Select
-																	value={typeField.state.value}
-																	onValueChange={(value) => {
-																		form.setFieldValue(
-																			conditionName,
-																			defaultConditionFor(
-																				value as PromotionConditionType,
-																			),
-																		);
-																	}}
-																	items={conditionTypeItems}
-																>
-																	<SelectTrigger>
-																		<SelectValue />
-																	</SelectTrigger>
-																	<SelectContent>
-																		{conditionTypeItems.map((item) => (
-																			<SelectItem
-																				key={item.value}
-																				value={item.value}
-																			>
-																				{item.label}
-																			</SelectItem>
-																		))}
-																	</SelectContent>
-																</Select>
-															</Field>
-														)}
-													</form.Field>
-												</div>
-												<Button
-													type="button"
-													variant="ghost"
-													size="sm"
-													onClick={() => field.removeValue(index)}
-												>
-													<Minus className="h-4 w-4" />
-													Quitar
-												</Button>
-											</div>
-
-											<ConditionFields
-												form={form}
-												index={index}
-												condition={condition}
-											/>
-										</div>
-									);
-								})}
-							</div>
-						)}
-					</form.Field>
-				</Section>
-
-				<Section
-					title="Efecto"
-					description="Define si el descuento es un porcentaje simple o por tramos de alquiler largo."
-				>
-					<form.Field name="effect.type">
-						{(field) => (
-							<Field>
-								<FieldLabel>Tipo de efecto</FieldLabel>
-								<Select
-									value={field.state.value}
-									onValueChange={(value) => {
-										form.setFieldValue(
-											"effect",
-											defaultEffectFor(value as PromotionEffectType),
-										);
-									}}
-									items={effectTypeItems}
-								>
-									<SelectTrigger>
-										<SelectValue />
-									</SelectTrigger>
-									<SelectContent>
-										{effectTypeItems.map((item) => (
-											<SelectItem key={item.value} value={item.value}>
-												{item.label}
-											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
-							</Field>
-						)}
-					</form.Field>
-
-					<form.Subscribe selector={(state) => state.values.effect}>
-						{(effect) =>
-							effect.type === PromotionEffectType.PERCENT_OFF ? (
-								<NumberField
-									form={form}
-									name="effect.percentage"
-									label="Porcentaje"
-									min={0}
-									max={100}
-									step={0.01}
-								/>
-							) : (
-								<LongRentalTierEditor form={form} />
-							)
-						}
-					</form.Subscribe>
-				</Section>
-			</FieldGroup>
+				<PromotionSummary form={form} />
+			</div>
 
 			<div className="flex justify-end gap-3 border-t pt-6">
 				<Button
@@ -552,15 +251,23 @@ export function PromotionForm({
 				>
 					Cancelar
 				</Button>
-				<Button type="submit" form={formId} disabled={isPending}>
-					{isPending ? pendingLabel : submitLabel}
-				</Button>
+				<form.Subscribe
+					selector={(state) => [state.canSubmit, state.isSubmitting]}
+				>
+					{([canSubmit, isSubmitting]) => (
+						<Button
+							type="submit"
+							form={formId}
+							disabled={!canSubmit || isPending}
+						>
+							{isSubmitting || isPending ? pendingLabel : submitLabel}
+						</Button>
+					)}
+				</form.Subscribe>
 			</div>
 		</form>
 	);
 }
-
-const createFormId = "create-promotion";
 
 export function CreatePromotionForm({
 	onCancel,
@@ -573,17 +280,269 @@ export function CreatePromotionForm({
 
 	return (
 		<PromotionForm
-			formId={createFormId}
-			defaultValues={promotionFormDefaults}
 			onCancel={onCancel}
 			onSubmit={async (values) => {
-				await createPromotion(toCreatePromotionDto(values));
+				await createPromotion({ body: toCreatePromotionDto(values) });
 				await onSuccess();
 			}}
 			isPending={isPending}
-			submitLabel="Crear promocion"
+			submitLabel="Crear promoción"
 			pendingLabel="Creando..."
 		/>
+	);
+}
+
+function ScopeEditor({ form }: { form: PromotionFormApi }) {
+	return (
+		<Section
+			title="Alcance"
+			description="Definí qué ítems pueden recibir esta promoción."
+		>
+			<form.Field name="scopes" mode="array">
+				{(field) => {
+					const currentMode = getScopeMode(field.state.value);
+					const addLabel = getAddScopeLabel(currentMode);
+
+					return (
+						<div className="space-y-4">
+							<Field>
+								<FieldLabel>Aplicar a</FieldLabel>
+								<StaticSelect
+									value={currentMode}
+									onValueChange={(value) => {
+										const nextMode = value as PromotionScopeType;
+										form.setFieldValue("scopes", [createEmptyScope(nextMode)]);
+										if (nextMode !== "ALL") {
+											form.setFieldValue("target", "ELIGIBLE_LINES");
+										}
+									}}
+									items={scopeModeItems}
+								/>
+							</Field>
+
+							{currentMode === "ALL" ? (
+								<p className="rounded-lg border bg-muted/30 px-4 py-4 text-muted-foreground text-sm">
+									Esta promoción puede aplicarse a todos los ítems elegibles de
+									la orden.
+								</p>
+							) : (
+								<>
+									<div className="flex justify-end">
+										<Button
+											type="button"
+											variant="outline"
+											onClick={() =>
+												field.pushValue(createEmptyScope(currentMode))
+											}
+										>
+											<Plus className="h-4 w-4" />
+											{addLabel}
+										</Button>
+									</div>
+									{field.state.value.map((scope, index) => (
+										<ScopeRow
+											key={`${scope.type}-${index}`}
+											form={form}
+											field={field}
+											scope={scope}
+											index={index}
+											canRemove={field.state.value.length > 1}
+										/>
+									))}
+								</>
+							)}
+
+							{field.state.meta.isTouched && !field.state.meta.isValid ? (
+								<FieldError errors={field.state.meta.errors} />
+							) : null}
+						</div>
+					);
+				}}
+			</form.Field>
+		</Section>
+	);
+}
+
+function ScopeRow({
+	form,
+	field,
+	scope,
+	index,
+	canRemove,
+}: {
+	form: PromotionFormApi;
+	field: { removeValue: (index: number) => void };
+	scope: PromotionScopeFormValues;
+	index: number;
+	canRemove: boolean;
+}) {
+	return (
+		<div className="grid gap-4 rounded-xl border p-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+			<ScopeIdentifierField form={form} index={index} scope={scope} />
+			<Button
+				type="button"
+				variant="ghost"
+				size="sm"
+				onClick={() => field.removeValue(index)}
+				disabled={!canRemove}
+			>
+				<Minus className="h-4 w-4" />
+				Quitar
+			</Button>
+		</div>
+	);
+}
+
+function ScopeIdentifierField({
+	form,
+	index,
+	scope,
+}: {
+	form: PromotionFormApi;
+	index: number;
+	scope: PromotionScopeFormValues;
+}) {
+	if (scope.type === "ALL") {
+		return null;
+	}
+
+	const fieldName =
+		scope.type === "RENTABLE_ITEM"
+			? (`scopes[${index}].rentableItemId` as const)
+			: scope.type === "RENTAL_OFFER"
+				? (`scopes[${index}].rentalOfferId` as const)
+				: (`scopes[${index}].categoryId` as const);
+
+	return (
+		<UuidField
+			form={form}
+			name={fieldName}
+			label={getScopeUuidLabel(scope.type)}
+		/>
+	);
+}
+
+function ExclusionEditor({ form }: { form: PromotionFormApi }) {
+	const [nextType, setNextType] =
+		useState<PromotionExclusionType>("RENTABLE_ITEM");
+
+	return (
+		<Section
+			title="Exclusiones"
+			description="Opcionalmente excluí ítems, ofertas o categorías que no deben recibir el descuento."
+		>
+			<form.Field name="exclusions" mode="array">
+				{(field) => (
+					<div className="space-y-4">
+						<div className="flex flex-col gap-3 rounded-xl border border-dashed p-4 sm:flex-row sm:items-end sm:justify-between">
+							<div className="grid gap-2">
+								<FieldLabel>Excluir por</FieldLabel>
+								<StaticSelect
+									value={nextType}
+									onValueChange={(value) =>
+										setNextType(value as PromotionExclusionType)
+									}
+									items={exclusionTypeItems}
+								/>
+							</div>
+							<Button
+								type="button"
+								variant="outline"
+								onClick={() => field.pushValue(createEmptyExclusion(nextType))}
+							>
+								<Plus className="h-4 w-4" />
+								Agregar exclusión
+							</Button>
+						</div>
+
+						{field.state.value.length === 0 ? (
+							<p className="rounded-lg border border-dashed px-4 py-6 text-center text-muted-foreground text-sm">
+								No hay exclusiones. La promoción se aplicará a todo lo definido
+								en el alcance.
+							</p>
+						) : null}
+
+						{field.state.value.map((exclusion, index) => (
+							<ExclusionRow
+								key={`${exclusion.type}-${index}`}
+								form={form}
+								field={field}
+								exclusion={exclusion}
+								index={index}
+							/>
+						))}
+					</div>
+				)}
+			</form.Field>
+		</Section>
+	);
+}
+
+function ExclusionRow({
+	form,
+	field,
+	exclusion,
+	index,
+}: {
+	form: PromotionFormApi;
+	field: { removeValue: (index: number) => void };
+	exclusion: PromotionExclusionFormValues;
+	index: number;
+}) {
+	const fieldName =
+		exclusion.type === "RENTABLE_ITEM"
+			? (`exclusions[${index}].rentableItemId` as const)
+			: exclusion.type === "RENTAL_OFFER"
+				? (`exclusions[${index}].rentalOfferId` as const)
+				: (`exclusions[${index}].categoryId` as const);
+
+	return (
+		<div className="grid gap-4 rounded-xl border p-4 sm:grid-cols-[14rem_minmax(0,1fr)_auto] sm:items-end">
+			<form.Field name={`exclusions[${index}].type`}>
+				{(typeField) => (
+					<Field>
+						<FieldLabel>Excluir por</FieldLabel>
+						<StaticSelect
+							value={typeField.state.value}
+							onValueChange={(value) =>
+								form.setFieldValue(
+									`exclusions[${index}]`,
+									createEmptyExclusion(value as PromotionExclusionType),
+								)
+							}
+							items={exclusionTypeItems}
+						/>
+					</Field>
+				)}
+			</form.Field>
+			<UuidField form={form} name={fieldName} label="UUID" />
+			<Button
+				type="button"
+				variant="ghost"
+				size="sm"
+				onClick={() => field.removeValue(index)}
+			>
+				<Minus className="h-4 w-4" />
+				Quitar
+			</Button>
+		</div>
+	);
+}
+
+function PromotionSummary({ form }: { form: PromotionFormApi }) {
+	return (
+		<aside className="xl:sticky xl:top-6">
+			<form.Subscribe selector={(state) => state.values}>
+				{(values) => (
+					<section className="rounded-2xl border bg-muted/20 p-5 shadow-sm">
+						<p className="font-semibold text-sm">Resumen</p>
+						<p className="mt-3 text-muted-foreground text-sm leading-6">
+							{buildPromotionSummary(values)}
+						</p>
+					</section>
+				)}
+			</form.Subscribe>
+		</aside>
 	);
 }
 
@@ -597,420 +556,13 @@ function Section({
 	children: ReactNode;
 }) {
 	return (
-		<section className="space-y-4 rounded-xl border bg-muted/20 p-4">
+		<section className="space-y-4 border-t pt-6 first:border-t-0 first:pt-0">
 			<div>
-				<p className="font-medium text-sm">{title}</p>
-				<p className="text-muted-foreground text-xs">{description}</p>
+				<h2 className="font-semibold text-base">{title}</h2>
+				<p className="text-muted-foreground text-sm">{description}</p>
 			</div>
 			{children}
 		</section>
-	);
-}
-
-function ConditionTypeHelpPopover() {
-	return (
-		<Popover>
-			<PopoverTrigger
-				render={
-					<Button
-						type="button"
-						variant="ghost"
-						size="icon-xs"
-						className="text-muted-foreground"
-						aria-label="Explicacion de tipos de condicion"
-					>
-						<CircleHelp className="h-4 w-4" />
-					</Button>
-				}
-			/>
-			<PopoverContent align="start" className="w-80">
-				<PopoverHeader>
-					<PopoverTitle>Tipos de condicion</PopoverTitle>
-					<PopoverDescription>
-						Cada condicion usa una regla distinta para decidir si la promocion
-						califica.
-					</PopoverDescription>
-				</PopoverHeader>
-				<div className="space-y-3">
-					{Object.values(PromotionConditionType).map((type) => (
-						<div key={type} className="space-y-1">
-							<p className="font-medium text-sm">
-								{CONDITION_TYPE_META[type].label}
-							</p>
-							<p className="text-muted-foreground text-xs">
-								{CONDITION_TYPE_META[type].description}
-							</p>
-						</div>
-					))}
-				</div>
-			</PopoverContent>
-		</Popover>
-	);
-}
-
-function DateField({
-	form,
-	name,
-	label,
-}: {
-	form: PromotionFormApi;
-	name: RootDateFieldName | ConditionDateFieldName;
-	label: string;
-}) {
-	return (
-		<form.Field name={name}>
-			{(field) => {
-				const isInvalid =
-					field.state.meta.isTouched && !field.state.meta.isValid;
-
-				return (
-					<Field data-invalid={isInvalid}>
-						<FieldLabel htmlFor={field.name}>{label}</FieldLabel>
-						<Input
-							id={field.name}
-							type="date"
-							value={field.state.value}
-							onBlur={field.handleBlur}
-							onChange={(e) => field.handleChange(e.target.value)}
-							aria-invalid={isInvalid}
-						/>
-						{isInvalid ? <FieldError errors={field.state.meta.errors} /> : null}
-					</Field>
-				);
-			}}
-		</form.Field>
-	);
-}
-
-function StringArrayField({
-	form,
-	name,
-	label,
-	description,
-	placeholder,
-}: {
-	form: PromotionFormApi;
-	name: StringArrayFieldName;
-	label: string;
-	description?: string;
-	placeholder: string;
-}) {
-	return (
-		<form.Field name={name} mode="array">
-			{(field) => (
-				<div className="space-y-3">
-					<div>
-						<FieldLabel>{label}</FieldLabel>
-						{description ? (
-							<FieldDescription>{description}</FieldDescription>
-						) : null}
-					</div>
-
-					{field.state.value.length === 0 ? (
-						<p className="text-muted-foreground text-sm">
-							Sin valores cargados.
-						</p>
-					) : (
-						field.state.value.map((value, index) => {
-							const itemName = `${name}[${index}]` as const;
-
-							return (
-								<form.Field
-									key={`${name}-${value || "empty"}-${index}`}
-									name={itemName}
-								>
-									{(itemField) => {
-										const isInvalid =
-											itemField.state.meta.isTouched &&
-											!itemField.state.meta.isValid;
-
-										return (
-											<Field data-invalid={isInvalid}>
-												<div className="flex items-start gap-2">
-													<Input
-														value={itemField.state.value}
-														onBlur={itemField.handleBlur}
-														onChange={(e) =>
-															itemField.handleChange(e.target.value)
-														}
-														placeholder={placeholder}
-														aria-invalid={isInvalid}
-													/>
-													<Button
-														type="button"
-														variant="ghost"
-														size="icon"
-														onClick={() => field.removeValue(index)}
-													>
-														<Minus className="h-4 w-4" />
-													</Button>
-												</div>
-												{isInvalid ? (
-													<FieldError errors={itemField.state.meta.errors} />
-												) : null}
-											</Field>
-										);
-									}}
-								</form.Field>
-							);
-						})
-					)}
-
-					<Button
-						type="button"
-						variant="outline"
-						size="sm"
-						onClick={() => field.pushValue("")}
-					>
-						<Plus className="h-4 w-4" />
-						Agregar UUID
-					</Button>
-				</div>
-			)}
-		</form.Field>
-	);
-}
-
-function ConditionFields({
-	form,
-	index,
-	condition,
-}: {
-	form: PromotionFormApi;
-	index: number;
-	condition: PromotionConditionFormValues;
-}) {
-	if (
-		condition.type === PromotionConditionType.BOOKING_WINDOW ||
-		condition.type === PromotionConditionType.RENTAL_WINDOW
-	) {
-		return (
-			<div className="grid gap-4 sm:grid-cols-2">
-				<DateField
-					form={form}
-					name={`conditions[${index}].from`}
-					label="Desde"
-				/>
-				<DateField form={form} name={`conditions[${index}].to`} label="Hasta" />
-			</div>
-		);
-	}
-
-	if (condition.type === PromotionConditionType.CUSTOMER_ID_IN) {
-		return (
-			<StringArrayField
-				form={form}
-				name={`conditions[${index}].customerIds`}
-				label="IDs de clientes"
-				placeholder="UUID del cliente"
-			/>
-		);
-	}
-
-	if (condition.type === PromotionConditionType.MIN_SUBTOTAL) {
-		const currencyName =
-			`conditions[${index}].currency` as ConditionCurrencyFieldName;
-
-		return (
-			<div className="grid gap-4 sm:grid-cols-2">
-				<NumberField
-					form={form}
-					name={`conditions[${index}].amount`}
-					label="Monto minimo"
-					step={0.01}
-				/>
-				<form.Field name={currencyName}>
-					{(field) => {
-						const isInvalid =
-							field.state.meta.isTouched && !field.state.meta.isValid;
-
-						return (
-							<Field data-invalid={isInvalid}>
-								<FieldLabel htmlFor={field.name}>Moneda</FieldLabel>
-								<Input
-									id={field.name}
-									maxLength={3}
-									value={field.state.value}
-									onBlur={field.handleBlur}
-									onChange={(e) =>
-										field.handleChange(e.target.value.toUpperCase())
-									}
-									aria-invalid={isInvalid}
-								/>
-								{isInvalid ? (
-									<FieldError errors={field.state.meta.errors} />
-								) : null}
-							</Field>
-						);
-					}}
-				</form.Field>
-			</div>
-		);
-	}
-
-	if (condition.type === PromotionConditionType.RENTAL_DURATION_MIN) {
-		return (
-			<NumberField
-				form={form}
-				name={`conditions[${index}].minUnits`}
-				label="Unidades minimas"
-				min={1}
-			/>
-		);
-	}
-
-	if (condition.type === PromotionConditionType.MIN_PRODUCT_QUANTITY) {
-		return (
-			<NumberField
-				form={form}
-				name={`conditions[${index}].minQuantity`}
-				label="Cantidad minima"
-					description="Cuenta solo productos individuales, no componentes de bundles."
-					min={1}
-				/>
-		);
-	}
-
-	if (condition.type === PromotionConditionType.MIN_PRODUCT_UNIT_PRICE) {
-		return (
-			<div className="grid gap-4 sm:grid-cols-2">
-				<NumberField
-					form={form}
-					name={`conditions[${index}].amount`}
-					label="Monto minimo por producto"
-					description="La linea debe tener este precio base o mas para calificar."
-					min={0}
-					step={0.01}
-				/>
-				<form.Field name={`conditions[${index}].currency` as ConditionCurrencyFieldName}>
-					{(field) => {
-						const isInvalid =
-							field.state.meta.isTouched && !field.state.meta.isValid;
-
-						return (
-							<Field data-invalid={isInvalid}>
-								<FieldLabel htmlFor={field.name}>Moneda</FieldLabel>
-								<Input
-									id={field.name}
-									maxLength={3}
-									value={field.state.value}
-									onBlur={field.handleBlur}
-									onChange={(e) =>
-										field.handleChange(e.target.value.toUpperCase())
-									}
-									aria-invalid={isInvalid}
-								/>
-								{isInvalid ? <FieldError errors={field.state.meta.errors} /> : null}
-							</Field>
-						);
-					}}
-				</form.Field>
-			</div>
-		);
-	}
-
-	return null;
-}
-
-function LongRentalTierEditor({ form }: { form: PromotionFormApi }) {
-	return (
-		<form.Field name="effect.tiers" mode="array">
-			{(field) => (
-				<div className="space-y-4">
-					{field.state.value.map((tier, index) => {
-						const toUnitsName =
-							`effect.tiers[${index}].toUnits` as TierNullableNumberFieldName;
-
-						return (
-							<div
-								key={`${tier.fromUnits}-${index}`}
-								className="grid gap-4 rounded-xl border p-4 sm:grid-cols-4"
-							>
-								<NumberField
-									form={form}
-									name={`effect.tiers[${index}].fromUnits`}
-									label="Desde"
-									min={1}
-								/>
-								<form.Field name={toUnitsName}>
-									{(subField) => {
-										const isInvalid =
-											subField.state.meta.isTouched &&
-											!subField.state.meta.isValid;
-
-										return (
-											<Field data-invalid={isInvalid}>
-												<FieldLabel htmlFor={subField.name}>Hasta</FieldLabel>
-												<Input
-													id={subField.name}
-													type="number"
-													min={1}
-													placeholder="Abierto"
-													value={subField.state.value ?? ""}
-													onBlur={subField.handleBlur}
-													onChange={(e) =>
-														subField.handleChange(
-															e.target.value === ""
-																? null
-																: Number(e.target.value),
-														)
-													}
-													aria-invalid={isInvalid}
-												/>
-												{isInvalid ? (
-													<FieldError errors={subField.state.meta.errors} />
-												) : null}
-											</Field>
-										);
-									}}
-								</form.Field>
-								<NumberField
-									form={form}
-									name={`effect.tiers[${index}].percentage`}
-									label="Porcentaje"
-									min={0}
-									max={100}
-									step={0.01}
-								/>
-								<div className="flex items-end">
-									<Button
-										type="button"
-										variant="ghost"
-										size="sm"
-										onClick={() => field.removeValue(index)}
-										disabled={field.state.value.length <= 1}
-									>
-										<Minus className="h-4 w-4" />
-										Quitar
-									</Button>
-								</div>
-							</div>
-						);
-					})}
-
-					<Button
-						type="button"
-						variant="outline"
-						size="sm"
-						onClick={() => {
-							const lastTier = field.state.value[field.state.value.length - 1];
-							const nextFrom = lastTier?.toUnits
-								? lastTier.toUnits + 1
-								: lastTier.fromUnits + 1;
-
-							field.pushValue({
-								fromUnits: nextFrom,
-								toUnits: null,
-								percentage: lastTier?.percentage ?? 10,
-							});
-						}}
-					>
-						<Plus className="h-4 w-4" />
-						Agregar tramo
-					</Button>
-				</div>
-			)}
-		</form.Field>
 	);
 }
 
@@ -1021,7 +573,7 @@ function TextField({
 	placeholder,
 }: {
 	form: PromotionFormApi;
-	name: RootTextFieldName;
+	name: TextFieldName;
 	label: string;
 	placeholder?: string;
 }) {
@@ -1030,7 +582,6 @@ function TextField({
 			{(field) => {
 				const isInvalid =
 					field.state.meta.isTouched && !field.state.meta.isValid;
-
 				return (
 					<Field data-invalid={isInvalid}>
 						<FieldLabel htmlFor={field.name}>{label}</FieldLabel>
@@ -1038,8 +589,80 @@ function TextField({
 							id={field.name}
 							value={field.state.value}
 							onBlur={field.handleBlur}
-							onChange={(e) => field.handleChange(e.target.value)}
+							onChange={(event) => field.handleChange(event.target.value)}
 							placeholder={placeholder}
+							aria-invalid={isInvalid}
+						/>
+						{isInvalid ? <FieldError errors={field.state.meta.errors} /> : null}
+					</Field>
+				);
+			}}
+		</form.Field>
+	);
+}
+
+function UuidField({
+	form,
+	name,
+	label,
+}: {
+	form: PromotionFormApi;
+	name:
+		| `scopes[${number}].rentableItemId`
+		| `scopes[${number}].rentalOfferId`
+		| `scopes[${number}].categoryId`
+		| `exclusions[${number}].rentableItemId`
+		| `exclusions[${number}].rentalOfferId`
+		| `exclusions[${number}].categoryId`;
+	label: string;
+}) {
+	return (
+		<form.Field name={name}>
+			{(field) => {
+				const isInvalid =
+					field.state.meta.isTouched && !field.state.meta.isValid;
+				return (
+					<Field data-invalid={isInvalid}>
+						<FieldLabel htmlFor={field.name}>{label}</FieldLabel>
+						<Input
+							id={field.name}
+							value={field.state.value}
+							onBlur={field.handleBlur}
+							onChange={(event) => field.handleChange(event.target.value)}
+							placeholder="UUID"
+							aria-invalid={isInvalid}
+						/>
+						{isInvalid ? <FieldError errors={field.state.meta.errors} /> : null}
+					</Field>
+				);
+			}}
+		</form.Field>
+	);
+}
+
+function DateField({
+	form,
+	name,
+	label,
+}: {
+	form: PromotionFormApi;
+	name: DateFieldName;
+	label: string;
+}) {
+	return (
+		<form.Field name={name}>
+			{(field) => {
+				const isInvalid =
+					field.state.meta.isTouched && !field.state.meta.isValid;
+				return (
+					<Field data-invalid={isInvalid}>
+						<FieldLabel htmlFor={field.name}>{label}</FieldLabel>
+						<Input
+							id={field.name}
+							type="date"
+							value={field.state.value}
+							onBlur={field.handleBlur}
+							onChange={(event) => field.handleChange(event.target.value)}
 							aria-invalid={isInvalid}
 						/>
 						{isInvalid ? <FieldError errors={field.state.meta.errors} /> : null}
@@ -1056,27 +679,18 @@ function NumberField({
 	label,
 	description,
 	min,
-	max,
-	step,
 }: {
 	form: PromotionFormApi;
-	name:
-		| RootNumberFieldName
-		| ConditionNumberFieldName
-		| EffectPercentageFieldName
-		| TierNumberFieldName;
+	name: NumberFieldName;
 	label: string;
 	description?: string;
 	min?: number;
-	max?: number;
-	step?: number;
 }) {
 	return (
 		<form.Field name={name}>
 			{(field) => {
 				const isInvalid =
 					field.state.meta.isTouched && !field.state.meta.isValid;
-
 				return (
 					<Field data-invalid={isInvalid}>
 						<FieldLabel htmlFor={field.name}>{label}</FieldLabel>
@@ -1084,11 +698,11 @@ function NumberField({
 							id={field.name}
 							type="number"
 							min={min}
-							max={max}
-							step={step}
 							value={field.state.value}
 							onBlur={field.handleBlur}
-							onChange={(e) => field.handleChange(Number(e.target.value))}
+							onChange={(event) =>
+								field.handleChange(Number(event.target.value))
+							}
 							aria-invalid={isInvalid}
 						/>
 						{description ? (
@@ -1102,11 +716,235 @@ function NumberField({
 	);
 }
 
-function toSelectItems<T extends string>(
-	options: Record<T, string>,
-): SelectItemOption<T>[] {
-	return Object.entries(options).map(([value, label]) => ({
-		value: value as T,
-		label: String(label),
-	}));
+function OptionalIntegerField({
+	form,
+	name,
+	label,
+	placeholder,
+}: {
+	form: PromotionFormApi;
+	name: OptionalIntegerFieldName;
+	label: string;
+	placeholder: string;
+}) {
+	return (
+		<form.Field name={name}>
+			{(field) => {
+				const isInvalid =
+					field.state.meta.isTouched && !field.state.meta.isValid;
+				return (
+					<Field data-invalid={isInvalid}>
+						<FieldLabel htmlFor={field.name}>{label}</FieldLabel>
+						<Input
+							id={field.name}
+							type="number"
+							min={1}
+							value={field.state.value}
+							onBlur={field.handleBlur}
+							onChange={(event) => field.handleChange(event.target.value)}
+							placeholder={placeholder}
+							aria-invalid={isInvalid}
+						/>
+						{isInvalid ? <FieldError errors={field.state.meta.errors} /> : null}
+					</Field>
+				);
+			}}
+		</form.Field>
+	);
+}
+
+function BooleanField({
+	form,
+	name,
+	label,
+	description,
+}: {
+	form: PromotionFormApi;
+	name: "stackable" | "isActive";
+	label: string;
+	description: string;
+}) {
+	return (
+		<form.Field name={name}>
+			{(field) => (
+				<div className="flex items-start gap-3 rounded-lg border px-4 py-3">
+					<Checkbox
+						id={field.name}
+						checked={field.state.value}
+						onCheckedChange={(checked) => field.handleChange(checked === true)}
+					/>
+					<div>
+						<FieldLabel htmlFor={field.name}>{label}</FieldLabel>
+						<p className="text-muted-foreground text-xs">{description}</p>
+					</div>
+				</div>
+			)}
+		</form.Field>
+	);
+}
+
+function SelectField<T extends string>({
+	form,
+	name,
+	label,
+	items,
+}: {
+	form: PromotionFormApi;
+	name: "activation" | "effectType" | "target";
+	label: string;
+	items: readonly { value: T; label: string }[];
+}) {
+	return (
+		<form.Field name={name}>
+			{(field) => {
+				const isInvalid =
+					field.state.meta.isTouched && !field.state.meta.isValid;
+				return (
+					<Field data-invalid={isInvalid}>
+						<FieldLabel>{label}</FieldLabel>
+						<StaticSelect
+							value={field.state.value}
+							onValueChange={(value) => field.handleChange(value)}
+							items={items}
+						/>
+						{isInvalid ? <FieldError errors={field.state.meta.errors} /> : null}
+					</Field>
+				);
+			}}
+		</form.Field>
+	);
+}
+
+function StaticSelect<T extends string>({
+	value,
+	onValueChange,
+	items,
+}: {
+	value: T;
+	onValueChange: (value: T) => void;
+	items: readonly { value: T; label: string }[];
+}) {
+	return (
+		<Select
+			value={value}
+			onValueChange={(nextValue) => onValueChange(nextValue as T)}
+			items={items}
+		>
+			<SelectTrigger>
+				<SelectValue />
+			</SelectTrigger>
+			<SelectContent>
+				{items.map((item) => (
+					<SelectItem key={item.value} value={item.value}>
+						{item.label}
+					</SelectItem>
+				))}
+			</SelectContent>
+		</Select>
+	);
+}
+
+function getScopeMode(scopes: PromotionScopeFormValues[]): PromotionScopeType {
+	return scopes[0]?.type ?? "ALL";
+}
+
+function getAddScopeLabel(scopeType: PromotionScopeType): string {
+	switch (scopeType) {
+		case "RENTABLE_ITEM":
+			return "Agregar ítem rentable";
+		case "RENTAL_OFFER":
+			return "Agregar oferta";
+		case "CATEGORY":
+			return "Agregar categoría";
+		case "ALL":
+			return "Agregar alcance";
+		default:
+			return assertNever(scopeType);
+	}
+}
+
+function getScopeUuidLabel(
+	scopeType: Exclude<PromotionScopeType, "ALL">,
+): string {
+	switch (scopeType) {
+		case "RENTABLE_ITEM":
+			return "Ítem rentable";
+		case "RENTAL_OFFER":
+			return "Oferta";
+		case "CATEGORY":
+			return "Categoría";
+		default:
+			return assertNever(scopeType);
+	}
+}
+
+function buildPromotionSummary(values: PromotionFormValues): string {
+	const discount = formatDiscount(values);
+	const target =
+		values.target === "ORDER"
+			? "sobre toda la orden"
+			: "sobre las líneas elegibles";
+	const conditions = formatConditions(values);
+	const scope = formatScope(values.scopes);
+	const exclusions =
+		values.exclusions.length === 0
+			? "no tiene exclusiones"
+			: `tiene ${values.exclusions.length} exclusión${values.exclusions.length === 1 ? "" : "es"}`;
+	const stackable = values.stackable ? "Es acumulable." : "No es acumulable.";
+
+	return `Esta promoción aplica ${discount} de descuento ${target}${conditions}. ${scope} y ${exclusions}. ${stackable}`;
+}
+
+function formatDiscount(values: PromotionFormValues): string {
+	const value = values.effectValue.trim() || "un valor pendiente";
+	return values.effectType === "PERCENTAGE_OFF" ? `un ${value}%` : `$${value}`;
+}
+
+function formatConditions(values: PromotionFormValues): string {
+	const conditions: string[] = [];
+
+	if (values.minOrderSubtotal.trim()) {
+		conditions.push(
+			`el subtotal sea de $${values.minOrderSubtotal.trim()} o más`,
+		);
+	}
+
+	if (values.minRentalUnits.trim()) {
+		conditions.push(
+			`la duración facturada sea de ${values.minRentalUnits.trim()} unidades o más`,
+		);
+	}
+
+	if (values.maxRentalUnits.trim()) {
+		conditions.push(
+			`la duración facturada sea de hasta ${values.maxRentalUnits.trim()} unidades`,
+		);
+	}
+
+	if (conditions.length === 0) {
+		return "";
+	}
+
+	return ` cuando ${conditions.join(" y ")}`;
+}
+
+function formatScope(scopes: PromotionScopeFormValues[]): string {
+	const firstScope = scopes[0];
+
+	if (!firstScope || firstScope.type === "ALL") {
+		return "Aplica a todos los ítems elegibles";
+	}
+
+	const label =
+		firstScope.type === "RENTABLE_ITEM"
+			? "ítems rentables específicos"
+			: firstScope.type === "RENTAL_OFFER"
+				? "ofertas específicas"
+				: "categorías específicas";
+
+	return `Aplica a ${label}`;
+}
+
+function assertNever(value: never): never {
+	throw new Error(`Unhandled promotion form variant: ${value}`);
 }

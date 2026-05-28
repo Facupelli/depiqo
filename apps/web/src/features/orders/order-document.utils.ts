@@ -24,10 +24,7 @@ export async function preflightContractRequest({
 }: {
 	url: string;
 	onBusinessError: (message: string) => void;
-	onRequestError: (error: {
-		status: number;
-		message: string;
-	}) => void;
+	onRequestError: (error: { status: number; message: string }) => void;
 	fallbackMessage: string;
 	notFoundMessage: string;
 }): Promise<boolean> {

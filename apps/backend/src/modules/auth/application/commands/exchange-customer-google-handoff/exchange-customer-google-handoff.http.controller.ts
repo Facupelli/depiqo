@@ -12,15 +12,18 @@ import {
   CustomerUnavailableForAuthenticationError,
   InvalidAuthHandoffTokenError,
 } from '../../../domain/errors/auth.errors';
+import { SkipCsrf } from 'src/modules/v2/tenant-management/auth/shared/csrf/skip-csrf.decorator';
 
 @Controller('auth')
 export class ExchangeCustomerGoogleHandoffHttpController {
   constructor(private readonly commandBus: CommandBus) {}
 
   @Public()
+  @SkipCsrf()
   @Post('customer/google/handoff')
   @HttpCode(HttpStatus.OK)
   async exchange(@Body() dto: ExchangeCustomerGoogleHandoffRequestDto) {
+    console.log('HANDOFF ENDPOINT', dto);
     const result = await this.commandBus.execute<
       ExchangeCustomerGoogleHandoffCommand,
       ExchangeCustomerGoogleHandoffResult

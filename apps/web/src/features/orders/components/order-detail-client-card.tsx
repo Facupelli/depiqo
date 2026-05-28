@@ -1,15 +1,15 @@
-import { ExternalLink, Mail, User2Icon } from "lucide-react";
 import { Link } from "@tanstack/react-router";
+import { ExternalLink, Mail, User2Icon } from "lucide-react";
 import {
 	getCustomerContactName,
 	getCustomerDisplayName,
 	getCustomerInitials,
 } from "@/features/customer/customer.utils";
-import { useOrderDetailContext } from "@/features/orders/contexts/order-detail.context";
 import {
 	SidebarCardHeader,
 	SidebarField,
 } from "@/features/orders/components/order-detail-sidebar-primitives";
+import { useOrderDetailContext } from "@/features/orders/contexts/order-detail.context";
 
 export function OrderClientCard() {
 	const { order } = useOrderDetailContext();

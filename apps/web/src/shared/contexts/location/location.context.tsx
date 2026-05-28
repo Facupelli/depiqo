@@ -1,4 +1,4 @@
-import type { LocationListResponse } from "@repo/schemas";
+import type { GetBranchesResponseDto } from "@repo/api-contracts";
 import type React from "react";
 import { createContext, useContext, useState } from "react";
 import { createStore, type StoreApi, useStore } from "zustand";
@@ -9,12 +9,12 @@ const LocationStoreContext = createContext<StoreApi<LocationStore> | null>(
 );
 
 type LocationStoreProviderProps = {
-	locations: LocationListResponse;
+	branches: GetBranchesResponseDto;
 	children: React.ReactNode;
 };
 
 export function LocationStoreProvider({
-	locations,
+	branches,
 	children,
 }: LocationStoreProviderProps) {
 	const [store] = useState(() => {
@@ -24,9 +24,9 @@ export function LocationStoreProvider({
 				: null;
 
 		const isValid =
-			persisted !== null && locations.some((loc) => loc.id === persisted);
+			persisted !== null && branches.some((loc) => loc.id === persisted);
 
-		const initialLocationId = isValid ? persisted : (locations[0]?.id ?? null);
+		const initialLocationId = isValid ? persisted : (branches[0]?.id ?? null);
 
 		return createStore<LocationStore>((set) => ({
 			locationId: initialLocationId,

@@ -1,22 +1,11 @@
+import { Search } from "lucide-react";
 import { startTransition, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useRentalCategories } from "@/features/rental/catalog/categories.queries";
+import type { V2RentalPageSearch } from "@/routes/_portal/_tenant/v2/rental";
 import useDebounce from "@/shared/hooks/use-debounce";
-import type { RentalProductSort } from "@repo/schemas";
-import { Search } from "lucide-react";
-import {
-	DEFAULT_RENTAL_PRODUCT_SORT,
-	type RentalPageSearch,
-} from "../hooks/use-catalog-page-search";
+import { useStorefrontCategories } from "@/v2/features/catalog/storefront-categories/storefront-categories.queries";
 
 interface CategoryFilterProps {
 	activeCategory: string | undefined;
@@ -27,7 +16,7 @@ export function CategoryFilter({
 	activeCategory,
 	onSelect,
 }: CategoryFilterProps) {
-	const { data: categories, isFetching } = useRentalCategories();
+	const { data: categories, isFetching } = useStorefrontCategories();
 
 	if (isFetching) {
 		const skeletonKeys = ["one", "two", "three", "four", "five"];
@@ -61,24 +50,12 @@ export function CategoryFilter({
 	);
 }
 
-const SORT_OPTIONS: Array<{ label: string; value: RentalProductSort }> = [
-	{ label: "Mayor precio", value: "price-desc" },
-	{ label: "Menor precio", value: "price-asc" },
-	{ label: "Alfabético", value: "alphabetical" },
-];
-
-interface SearchAndSortFiltersProps {
-	search: RentalPageSearch;
-
-	onSortChange: (sort: RentalProductSort) => void;
+interface SearchFiltersProps {
+	search: V2RentalPageSearch;
 	onSearchCommit: (value: string) => void;
 }
 
-export function SearchAndSortFilters({
-	search,
-	onSearchCommit,
-	onSortChange,
-}: SearchAndSortFiltersProps) {
+export function SearchFilter({ search, onSearchCommit }: SearchFiltersProps) {
 	const [localSearch, setLocalSearch] = useState(search.search ?? "");
 	const debouncedSearch = useDebounce(localSearch, 300);
 
@@ -109,28 +86,6 @@ export function SearchAndSortFilters({
 					value={localSearch}
 					onChange={(e) => setLocalSearch(e.target.value)}
 				/>
-			</div>
-
-			<div className="flex items-center justify-end gap-3">
-				<span className="text-sm font-medium text-muted-foreground">
-					Ordenar por
-				</span>
-				<Select
-					value={search.sort ?? DEFAULT_RENTAL_PRODUCT_SORT}
-					onValueChange={(value) => onSortChange(value as RentalProductSort)}
-					items={SORT_OPTIONS}
-				>
-					<SelectTrigger className="w-44" aria-label="Ordenar por">
-						<SelectValue placeholder="Ordenar por" />
-					</SelectTrigger>
-					<SelectContent>
-						{SORT_OPTIONS.map((option) => (
-							<SelectItem key={option.value} value={option.value}>
-								{option.label}
-							</SelectItem>
-						))}
-					</SelectContent>
-				</Select>
 			</div>
 		</div>
 	);

@@ -1,13 +1,13 @@
-import { z } from "zod";
-import { emptyToNull, emptyToNullOrUndefined } from "@/shared/utils/form.utils";
 import {
-	createCustomerSchema,
-	customerRegisterSchema,
-	updateCustomerSchema,
 	type CreateCustomerDto,
 	type CustomerRegisterDto,
+	createCustomerSchema,
+	customerRegisterSchema,
 	type UpdateCustomerDto,
+	updateCustomerSchema,
 } from "@repo/schemas";
+import { z } from "zod";
+import { emptyToNull, emptyToNullOrUndefined } from "@/shared/utils/form.utils";
 
 const customerFieldsFormSchema = {
 	email: z.email("Invalid email"),

@@ -50,8 +50,8 @@ export function orderToDraftOrderState(
 		items: order.items.map((item) => orderItemToDraftItem(item)),
 		budget: hasManualPricing
 			? {
-				targetTotal: order.financial.itemsSubtotal,
-			}
+					targetTotal: order.financial.itemsSubtotal,
+				}
 			: null,
 	};
 }

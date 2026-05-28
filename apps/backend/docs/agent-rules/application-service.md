@@ -36,10 +36,11 @@ One Application Service per state-changing use case.
 
 ### Error handling
 
-- Return Domain Errors as `err(new SomeDomainError())`.
+- Return Domain Errors or module application errors as `err(error)`.
 - Do not throw for expected business failures.
 - Let infrastructure exceptions propagate.
 - Do not throw HTTP exceptions here.
+- For HTTP-facing v2 use cases, follow `problem-details.md`: map known domain/public-module failures into module application errors, then let controllers convert them to Problem Details.
 
 ### Domain Events
 

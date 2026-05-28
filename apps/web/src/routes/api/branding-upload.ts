@@ -7,7 +7,7 @@ import {
 import { cloudflare } from "@better-upload/server/clients";
 import { createFileRoute } from "@tanstack/react-router";
 import { serverEnv } from "@/config/server-env";
-import { getCurrentTenantServer } from "@/features/tenant/tenant.api";
+import { requireV2TenantUser } from "@/v2/lib/auth/route-auth.server";
 
 const s3 = cloudflare({
 	accountId: serverEnv.CLOUDFLARE_ACCOUNT_ID,
@@ -23,13 +23,15 @@ const uploadRouter: Router = {
 			fileTypes: ["image/webp"],
 			maxFileSize: 1024 * 1024 * 3,
 			onBeforeUpload: async () => {
-				const tenant = await getCurrentTenantServer();
+				let tenantId: string;
 
-				if (!tenant) {
+				try {
+					tenantId = (await requireV2TenantUser()).tenantId;
+				} catch {
 					throw new RejectUpload("Unauthorized");
 				}
 
-				const key = `${tenant.id}/logo/${crypto.randomUUID()}.webp`;
+				const key = `${tenantId}/logo/${crypto.randomUUID()}.webp`;
 
 				return {
 					objectInfo: { key },
@@ -41,13 +43,15 @@ const uploadRouter: Router = {
 			fileTypes: ["image/png"],
 			maxFileSize: 1024 * 1024,
 			onBeforeUpload: async () => {
-				const tenant = await getCurrentTenantServer();
+				let tenantId: string;
 
-				if (!tenant) {
+				try {
+					tenantId = (await requireV2TenantUser()).tenantId;
+				} catch {
 					throw new RejectUpload("Unauthorized");
 				}
 
-				const key = `${tenant.id}/favicon/${crypto.randomUUID()}.png`;
+				const key = `${tenantId}/favicon/${crypto.randomUUID()}.png`;
 
 				return {
 					objectInfo: { key },
@@ -59,13 +63,15 @@ const uploadRouter: Router = {
 			fileTypes: ["image/png"],
 			maxFileSize: 1024 * 1024 * 3,
 			onBeforeUpload: async () => {
-				const tenant = await getCurrentTenantServer();
+				let tenantId: string;
 
-				if (!tenant) {
+				try {
+					tenantId = (await requireV2TenantUser()).tenantId;
+				} catch {
 					throw new RejectUpload("Unauthorized");
 				}
 
-				const key = `${tenant.id}/signatures/${crypto.randomUUID()}.png`;
+				const key = `${tenantId}/signatures/${crypto.randomUUID()}.png`;
 
 				return {
 					objectInfo: { key },

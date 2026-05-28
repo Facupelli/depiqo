@@ -1,41 +1,82 @@
-import { createFileRoute, Link, redirect } from "@tanstack/react-router";
+import {
+	createFileRoute,
+	Link,
+	useNavigate,
+	useRouter,
+} from "@tanstack/react-router";
+import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
 import { FieldError } from "@/components/ui/field";
-import { loginCustomerWithGoogleHandoffFn } from "@/features/rental/auth/portal-auth.api";
 import {
 	getPortalAuthRedirectTarget,
 	portalAuthRedirectSchema,
 } from "@/features/rental/auth/portal-auth.redirect";
 import { ProblemDetailsError } from "@/shared/errors";
+import { finalizeCustomerGoogleLogin } from "@/v2/features/tenant-management/auth/customer-google-finalize/customer-google-finalize.api";
 
 const searchSchema = portalAuthRedirectSchema.extend({
-	handoff_token: z.string().min(1),
+	ticket: z.string().min(1),
 });
 
 export const Route = createFileRoute("/_portal/auth/google/finalize")({
 	validateSearch: searchSchema,
-	loaderDeps: ({ search }) => search,
-	loader: async ({ deps }) => {
-		await loginCustomerWithGoogleHandoffFn({
-			data: {
-				handoffToken: deps.handoff_token,
-			},
-		});
-
-		throw redirect(getPortalAuthRedirectTarget(deps));
-	},
-	errorComponent: ({ error }) => <GoogleFinalizeErrorPage error={error} />,
-	component: FinalizingGoogleLoginPage,
+	component: GoogleFinalizePage,
 });
+
+function GoogleFinalizePage() {
+	const search = Route.useSearch();
+	const navigate = useNavigate();
+	const router = useRouter();
+	const [error, setError] = useState<unknown>(null);
+	const didStartFinalization = useRef(false);
+
+	useEffect(() => {
+		if (didStartFinalization.current) return;
+		didStartFinalization.current = true;
+
+		let isActive = true;
+
+		async function finalizeGoogleLogin() {
+			try {
+				await finalizeCustomerGoogleLogin({
+					body: {
+						ticket: search.ticket,
+					},
+				});
+
+				if (!isActive) return;
+
+				await router.invalidate({ sync: true });
+				await navigate(getPortalAuthRedirectTarget(search));
+			} catch (caughtError) {
+				if (isActive) {
+					setError(caughtError);
+				}
+			}
+		}
+
+		finalizeGoogleLogin();
+
+		return () => {
+			isActive = false;
+		};
+	}, [navigate, router, search]);
+
+	if (error) {
+		return <GoogleFinalizeErrorPage error={error} />;
+	}
+
+	return <FinalizingGoogleLoginPage />;
+}
 
 function FinalizingGoogleLoginPage() {
 	return (
 		<div className="flex min-h-svh items-center justify-center bg-neutral-100 px-4 py-10">
 			<div className="w-full max-w-sm rounded-xl border bg-background p-6 shadow-sm">
 				<div className="space-y-2">
-					<h1 className="text-lg font-semibold">Iniciando sesion</h1>
+					<h1 className="text-lg font-semibold">Iniciando sesión</h1>
 					<p className="text-sm text-muted-foreground">
-						Estamos preparando tu sesion en el portal.
+						Estamos preparando tu sesión en el portal.
 					</p>
 				</div>
 				<div className="mt-4 flex items-center gap-3 text-sm text-muted-foreground">
@@ -54,7 +95,7 @@ function GoogleFinalizeErrorPage({ error }: { error: unknown }) {
 		<div className="flex min-h-svh items-center justify-center bg-neutral-100 px-4 py-10">
 			<div className="w-full max-w-sm rounded-xl border bg-background p-6 shadow-sm">
 				<div className="space-y-2">
-					<h1 className="text-lg font-semibold">No pudimos iniciar sesion</h1>
+					<h1 className="text-lg font-semibold">No pudimos iniciar sesión</h1>
 					<p className="text-sm text-muted-foreground">
 						Intenta nuevamente desde el portal.
 					</p>
@@ -76,7 +117,7 @@ function GoogleFinalizeErrorPage({ error }: { error: unknown }) {
 function getRouteErrorMessage(error: unknown): string {
 	if (error instanceof ProblemDetailsError) {
 		if (error.problemDetails.status === 401) {
-			return "El acceso con Google expiro o ya fue utilizado. Intenta nuevamente.";
+			return "El acceso con Google expiró o ya fue utilizado. Intenta nuevamente.";
 		}
 
 		return error.problemDetails.detail;
@@ -86,5 +127,5 @@ function getRouteErrorMessage(error: unknown): string {
 		return error.message;
 	}
 
-	return "Ocurrio un error inesperado al completar el acceso con Google.";
+	return "Ocurrió un error inesperado al completar el acceso con Google.";
 }

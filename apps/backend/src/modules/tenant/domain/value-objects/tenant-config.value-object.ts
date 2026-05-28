@@ -166,9 +166,7 @@ export class TenantConfig {
     };
   }
 
-  private static normalizeCommunication(
-    communication: TenantCommunicationConfigProps,
-  ): TenantCommunicationConfigProps {
+  private static normalizeCommunication(communication: TenantCommunicationConfigProps): TenantCommunicationConfigProps {
     const whatsAppNumber = TenantConfig.normalizeWhatsAppNumber(communication.whatsAppNumber);
 
     return {
@@ -188,9 +186,7 @@ export class TenantConfig {
       return undefined;
     }
 
-    const numberWithoutLeadingPlus = trimmedNumber.startsWith('+')
-      ? trimmedNumber.slice(1)
-      : trimmedNumber;
+    const numberWithoutLeadingPlus = trimmedNumber.startsWith('+') ? trimmedNumber.slice(1) : trimmedNumber;
     const canonicalNumber = numberWithoutLeadingPlus.replace(/[\s\-().]/g, '');
 
     if (!/^\d+$/.test(canonicalNumber)) {
@@ -243,10 +239,7 @@ export class TenantConfig {
       TenantConfig.validateWhatsAppNumber(communication.whatsAppNumber);
     }
 
-    if (
-      communication.orderCommunicationMode === OrderCommunicationMode.WHATSAPP &&
-      !communication.whatsAppNumber
-    ) {
+    if (communication.orderCommunicationMode === OrderCommunicationMode.WHATSAPP && !communication.whatsAppNumber) {
       throw new MissingWhatsAppNumberForWhatsAppModeException();
     }
   }

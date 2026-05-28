@@ -1,13 +1,12 @@
-import { ProblemDetailsError } from "@/shared/errors";
 import type {
 	ApproveCustomerProfileDto,
 	CustomerDetailResponseDto,
 	CustomerProfileResponseDto,
 	CustomerResponseDto,
-	GetPendingCustomerProfilesResponseDto,
 	GetCustomersQueryDto,
-	PendingCustomerProfileReviewCountResponseDto,
+	GetPendingCustomerProfilesResponseDto,
 	PaginatedDto,
+	PendingCustomerProfileReviewCountResponseDto,
 	RejectCustomerProfileDto,
 } from "@repo/schemas";
 import {
@@ -20,6 +19,7 @@ import {
 	useQuery,
 	useSuspenseQuery,
 } from "@tanstack/react-query";
+import { ProblemDetailsError } from "@/shared/errors";
 import {
 	approveCustomerProfile,
 	getCustomerDetail,

@@ -1,162 +1,76 @@
-# Value Object
+### Value Object
 
-## Role
-
-A Value Object represents a domain concept that is defined entirely by its properties, not by an identity. Two Value Objects are equal if all their properties are equal. They have no `id`.
-
-Value Objects are **immutable**. Once created, their state never changes. If a different value is needed, a new Value Object is created.
-
-We use Value Objects for **complex, multi-field domain concepts** where the combination of values carries invariants and behavior. We do not create Value Object wrappers for single primitive values.
+#### Role
+A **Value Object** represents a domain concept defined entirely by its attributes rather than a unique identity. Unlike entities, Value Objects are interchangeable if their properties are identical. They are **immutable** and serve as the primary tool for encapsulating "trivial validation," ensuring that the data entering an aggregate or entity is always valid from the moment of construction.
 
 ---
 
-## Rules
-
-### When to create a Value Object
-
-- The concept involves **multiple fields** that always belong together and carry a combined meaning.
-- There are **invariants** that involve the relationship between those fields (e.g. end must be after start).
-- There is **behavior** that naturally belongs to the concept (e.g. overlap check, serialization, formatting).
-- A plain `email: string` or `price: number` does not qualify. Keep those as primitives.
-
-### Immutability
-
-- All properties are `readonly`.
-- No setters. No mutation methods.
-- Methods that would "change" the value return a new instance instead.
-
-### Construction
-
-- Use a constructor or a `static create()` factory method.
-- Validate all invariants in the constructor. Throw a `DomainException` on violation — fail fast.
-- Value Objects must always be in a valid state.
-
-### Equality
-
-- Implement an `equals()` method that compares all properties structurally.
-- Do not rely on reference equality (`===`) for Value Objects.
-
-### No infrastructure concerns
-
-- Value Objects are pure domain objects. No Prisma, no NestJS, no HTTP.
-- If a Value Object needs to be serialized for persistence (e.g. `tstzrange`), it exposes a method for that (e.g. `toPostgresRange()`). The method belongs on the Value Object, but it is called by the mapper — not by the Value Object itself reaching into infrastructure.
-
-### Naming
-
-- File: `[concept-name].value-object.ts`
-- Class: `[ConceptName]` (no suffix needed — the name should be expressive on its own, e.g. `BookingPeriod`, `Address`, `MoneyAmount`)
+#### Core Philosophy: Simplify the Aggregate
+The video sources highlight that Value Objects are essential for keeping Aggregate Roots clean and focused on complex business logic. 
+*   **Offload Trivial Validation:** Instead of an Aggregate Root having methods that check if a price is greater than zero or if a string is non-empty, these rules should be moved into a Value Object (e.g., `ProductPrice`).
+*   **Guarantee Validity:** By forcing callers to pass in a Value Object, the receiving method is guaranteed to receive valid data, removing the need for defensive checks within the domain logic.
+*   **Model Rules, Not Data:** A Value Object is not just a data container; it is a way to model a specific domain rule or meaningful semantic concept (e.g., a `BookingPeriod` that ensures the end date is after the start date).
 
 ---
 
-## Structure
+#### Rules
 
-```typescript
-import { DomainException } from 'src/core/exceptions/domain.exception';
+**1. Identity-less Equality**
+*   **Structural Comparison:** Two Value Objects are equal if all their properties match.
+*   **No ID:** Value Objects must not have an ID field. If you find yourself adding an ID, you are likely modeling an Entity.
 
-export class BookingPeriod {
-  readonly start: Date;
-  readonly end: Date;
+**2. Absolute Immutability**
+*   **Readonly State:** All properties must be `readonly`, and no public setters should exist.
+*   **Functional "Mutations":** Methods that appear to change the state must instead return a **new instance** of the Value Object with the updated values.
 
-  constructor(start: Date, end: Date) {
-    if (!(start instanceof Date) || isNaN(start.getTime())) {
-      throw new DomainException('BookingPeriod: start must be a valid date');
+**3. Self-Validation (Fail Fast)**
+*   **Valid on Construction:** A Value Object must never exist in an invalid state. Validation must occur in the constructor or a static factory method.
+*   **Throw on Violation:** If invalid data is provided, the Value Object should throw a domain exception immediately.
+
+**4. Domain Purity**
+*   **Infrastructure-Free:** Value Objects are pure domain objects and should never contain framework decorators (like NestJS), database types (like Prisma), or transport-layer logic.
+*   **Explicit Mapping:** If a Value Object needs to be serialized for a database, it should expose a method for that (e.g., `toPostgresRange()`), but this method is invoked by a separate **Mapper**, never by the Value Object itself interacting with the database.
+
+---
+
+#### When to Create a Value Object
+*   When a concept involves **multiple fields** that belong together (e.g., an `Address` or `MoneyAmount`).
+*   When a relationship between fields requires an **invariant** (e.g., a `DateRange` where start < end).
+*   When a single primitive value (like a string or decimal) carries **non-trivial validation** or domain behavior (e.g., a `ProductPrice` that must be positive).
+
+---
+
+#### When NOT to Create a Value Object
+*   **Pure Aesthetics:** Do not create "primitive wrappers" just for type aesthetics if the value has no unique domain behavior or validation.
+*   **Anemic Data:** A plain `name: string` or `description: string` with no behavior should remain a primitive to avoid unnecessary complexity.
+*   **Identity Matters:** If the object has a lifecycle and must be tracked over time even as its properties change, it must be an **Entity**.
+
+---
+
+#### Examples
+
+*   **✅ Correct (Self-Validating):**
+    ```typescript
+    // The ProductPrice ensures it is valid upon creation.
+    const price = new ProductPrice(10.50); 
+    // Aggregate root can now trust 'price' is positive.
+    product.updatePrice(price); 
+    ```
+*   **❌ Wrong (Validation Leaked):**
+    ```typescript
+    // Trivial validation is handled by the caller or the root,
+    // leading to duplicate logic and potential invalid states.
+    if (newPrice > 0) {
+       product.price = newPrice;
     }
-    if (!(end instanceof Date) || isNaN(end.getTime())) {
-      throw new DomainException('BookingPeriod: end must be a valid date');
-    }
-    if (end <= start) {
-      throw new DomainException('BookingPeriod: end must be after start');
-    }
-    this.start = start;
-    this.end = end;
-  }
-
-  // Behavior: domain concept logic belongs here
-  overlaps(other: BookingPeriod): boolean {
-    return this.start < other.end && this.end > other.start;
-  }
-
-  contains(date: Date): boolean {
-    return date >= this.start && date < this.end;
-  }
-
-  durationInDays(): number {
-    return Math.ceil((this.end.getTime() - this.start.getTime()) / (1000 * 60 * 60 * 24));
-  }
-
-  // Serialization for persistence — called by the mapper, not by infrastructure directly
-  toPostgresRange(): string {
-    return `[${this.start.toISOString()},${this.end.toISOString()})`;
-  }
-
-  // Deserialization — used in the mapper when rehydrating from a Prisma record
-  static fromDates(start: Date, end: Date): BookingPeriod {
-    return new BookingPeriod(start, end);
-  }
-
-  // Equality
-  equals(other: BookingPeriod): boolean {
-    return this.start.getTime() === other.start.getTime() && this.end.getTime() === other.end.getTime();
-  }
-}
-```
-
----
-
-## Examples
-
-### ✅ Correct: Value Object enforces its own invariant on construction
-
-```typescript
-const period = new BookingPeriod(startDate, endDate);
-// If endDate <= startDate, throws DomainException immediately
-```
-
-### ❌ Wrong: invariant checked outside the Value Object
-
-```typescript
-// This check belongs inside BookingPeriod, not scattered across services
-if (endDate <= startDate) {
-  throw new DomainException('end must be after start');
-}
-const period = new BookingPeriod(startDate, endDate); // now accepts invalid state if check is missed
-```
-
----
-
-### ✅ Correct: "mutation" returns a new instance
-
-```typescript
-// Extending a period returns a new Value Object — original is untouched
-extendBy(days: number): BookingPeriod {
-  const newEnd = new Date(this.end);
-  newEnd.setDate(newEnd.getDate() + days);
-  return new BookingPeriod(this.start, newEnd);
-}
-```
-
-### ❌ Wrong: mutating the Value Object's state
-
-```typescript
-extend(days: number): void {
-  this.end.setDate(this.end.getDate() + days); // breaks immutability
-}
-```
-
----
-
-### ✅ Correct: equality via equals()
-
-```typescript
-if (existingPeriod.equals(newPeriod)) {
-  // same period
-}
-```
-
-### ❌ Wrong: reference equality
-
-```typescript
-if (existingPeriod === newPeriod) {
-  // always false for two different object instances, even with identical values
-}
-```
+    ```
+*   **✅ Correct (Immutability):**
+    ```typescript
+    // Adding to money returns a NEW instance.
+    const total = salary.add(bonus); 
+    ```
+*   **❌ Wrong (Mutation):**
+    ```typescript
+    // Mutating internal state breaks the Value Object contract.
+    salary.amount += bonus.amount; 
+    ```

@@ -1,9 +1,9 @@
 import type { ActorType } from "@repo/types";
 import {
 	getTokenExpirationTimestamp,
-	toSessionUser,
 	type SessionData,
 	type SessionUser,
+	toSessionUser,
 } from "@/lib/session";
 import type { AppSession } from "@/lib/session.server";
 

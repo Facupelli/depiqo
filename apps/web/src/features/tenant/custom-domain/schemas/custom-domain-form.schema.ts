@@ -1,7 +1,7 @@
 import {
-	type RegisterCustomDomainDto,
-	registerCustomDomainSchema,
-} from "@repo/schemas";
+	type RegisterCustomDomainBodyDto,
+	RegisterCustomDomainBodySchema,
+} from "@repo/api-contracts";
 import { z } from "zod";
 
 export const customDomainFormSchema = z.object({
@@ -14,16 +14,18 @@ export const customDomainFormSchema = z.object({
 
 export type CustomDomainFormValues = z.infer<typeof customDomainFormSchema>;
 
-export const customDomainFormDefaults: CustomDomainFormValues = {
-	domain: "",
-};
+export function createCustomDomainFormDefaultValues(): CustomDomainFormValues {
+	return {
+		domain: "",
+	};
+}
 
 export function toRegisterCustomDomainDto(
 	values: CustomDomainFormValues,
-): RegisterCustomDomainDto {
+): RegisterCustomDomainBodyDto {
 	const dto = {
 		domain: values.domain.trim().toLowerCase(),
 	};
 
-	return registerCustomDomainSchema.parse(dto);
+	return RegisterCustomDomainBodySchema.parse(dto);
 }

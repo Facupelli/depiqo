@@ -4,10 +4,11 @@ import { ImageOff, LoaderCircle, Trash2, Upload } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { buildR2PublicUrl } from "@/lib/r2-public-url";
-import { tenantQueries, useUpdateTenantBranding } from "../tenant.queries";
+import { tenantQueries } from "@/v2/features/tenant-management/tenant/tenant.queries";
+import { useUpdateTenantBranding } from "@/v2/features/tenant-management/tenant/update-tenant-branding/update-tenant-branding.mutation";
 
 export function TenantBrandingSection() {
-	const { data: tenant } = useSuspenseQuery(tenantQueries.me());
+	const { data: tenant } = useSuspenseQuery(tenantQueries.current());
 	const [failedLogoPath, setFailedLogoPath] = useState<string | null>(null);
 	const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
 	const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -15,8 +16,8 @@ export function TenantBrandingSection() {
 	const { mutateAsync: updateTenantBranding, isPending: isSaving } =
 		useUpdateTenantBranding();
 
-	const logoUrl = tenant.logoUrl;
-	const faviconUrl = tenant.faviconUrl;
+	const logoUrl = tenant.branding.logoUrl;
+	const faviconUrl = tenant.branding.faviconUrl;
 	const previewUrl = buildR2PublicUrl(logoUrl, "branding");
 	const showPreview = Boolean(previewUrl && failedLogoPath !== logoUrl);
 
@@ -28,7 +29,13 @@ export function TenantBrandingSection() {
 		setFeedbackMessage(null);
 
 		try {
-			await updateTenantBranding(branding);
+			await updateTenantBranding({
+				...branding,
+				accentColor: null,
+				primaryColor: null,
+				storefrontName: null,
+				tagline: null,
+			});
 			setFailedLogoPath(null);
 			setFeedbackMessage(
 				branding.logoUrl

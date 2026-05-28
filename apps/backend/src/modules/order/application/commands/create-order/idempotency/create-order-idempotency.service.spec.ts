@@ -172,7 +172,9 @@ describe('CreateOrderIdempotencyService', () => {
       createdAt: new Date(),
     });
 
-    await expect(service.start(params)).rejects.toThrow('Completed order create idempotency key is missing an order id');
+    await expect(service.start(params)).rejects.toThrow(
+      'Completed order create idempotency key is missing an order id',
+    );
   });
 
   it('marks a record completed', async () => {

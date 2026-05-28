@@ -1,4 +1,4 @@
-import { createCouponSchema, type CreateCouponDto } from "@repo/schemas";
+import { type CreateCouponDto, createCouponSchema } from "@repo/schemas";
 import { z } from "zod";
 
 export const couponFormSchema = z.object({

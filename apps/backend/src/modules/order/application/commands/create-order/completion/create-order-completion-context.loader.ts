@@ -131,7 +131,7 @@ export async function loadCreateOrderCompletionContext(
 
 function aggregateOrderItems(
   items: Array<{
-    type: "PRODUCT" | "BUNDLE";
+    type: 'PRODUCT' | 'BUNDLE';
     productType: { name: string } | null;
     bundle: { name: string } | null;
   }>,
@@ -158,7 +158,7 @@ function aggregateOrderItems(
 }
 
 function resolveItemName(item: {
-  type: "PRODUCT" | "BUNDLE";
+  type: 'PRODUCT' | 'BUNDLE';
   productType: { name: string } | null;
   bundle: { name: string } | null;
 }): string {
@@ -190,9 +190,7 @@ function formatCustomerFullName(firstName?: string | null, lastName?: string | n
   return fullName || 'Cliente';
 }
 
-function hasBookingSnapshot(
-  raw: unknown,
-): raw is {
+function hasBookingSnapshot(raw: unknown): raw is {
   pickupDate: string;
   pickupTime: number;
   returnDate: string;

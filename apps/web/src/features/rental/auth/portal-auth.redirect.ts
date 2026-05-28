@@ -1,8 +1,8 @@
 import {
+	type AuthRedirectSearch,
 	authRedirectSearchSchema,
 	normalizeSafeRedirectTo,
 	toAuthRedirectSearch,
-	type AuthRedirectSearch,
 } from "@/features/auth/auth-redirect";
 
 export const PORTAL_AUTH_REDIRECT_FALLBACK = "/rental";

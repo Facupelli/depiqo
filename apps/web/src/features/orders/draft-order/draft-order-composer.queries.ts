@@ -19,10 +19,11 @@ import {
 
 type PaginatedRentalProducts = PaginatedDto<RentalProductResponse>;
 
-type DraftOrderRentalProductsQueryOptions<TData = PaginatedRentalProducts> = Omit<
-	UseQueryOptions<PaginatedRentalProducts, ProblemDetailsError, TData>,
-	"queryKey" | "queryFn"
->;
+type DraftOrderRentalProductsQueryOptions<TData = PaginatedRentalProducts> =
+	Omit<
+		UseQueryOptions<PaginatedRentalProducts, ProblemDetailsError, TData>,
+		"queryKey" | "queryFn"
+	>;
 
 type DraftOrderRentalBundlesQueryOptions<TData = BundleListResponseDto> = Omit<
 	UseQueryOptions<BundleListResponseDto, ProblemDetailsError, TData>,

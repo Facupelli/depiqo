@@ -1,7 +1,4 @@
-import type {
-	CreateDraftOrderDto,
-	DeliveryRequestDto,
-} from "@repo/schemas";
+import type { CreateDraftOrderDto, DeliveryRequestDto } from "@repo/schemas";
 import { FulfillmentMethod } from "@repo/types";
 import type {
 	DraftOrderItem,
@@ -74,7 +71,9 @@ export function buildCreateDraftOrderPayload({
 	};
 }
 
-function toCreateDraftOrderItem(item: DraftOrderItem): CreateDraftOrderDto["items"][number] {
+function toCreateDraftOrderItem(
+	item: DraftOrderItem,
+): CreateDraftOrderDto["items"][number] {
 	if (item.selection.type === "PRODUCT") {
 		return {
 			type: "PRODUCT",

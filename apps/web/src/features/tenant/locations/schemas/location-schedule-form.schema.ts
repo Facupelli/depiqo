@@ -1,10 +1,10 @@
-import dayjs from "dayjs";
-import { z } from "zod";
 import {
-	addScheduleToLocationSchema,
 	type AddScheduleToLocationDto,
+	addScheduleToLocationSchema,
 	type LocationScheduleResponseDto,
 } from "@repo/schemas";
+import dayjs from "dayjs";
+import { z } from "zod";
 
 export function minutesToTimeString(minutes: number): string {
 	return dayjs().startOf("day").add(minutes, "minute").format("HH:mm");

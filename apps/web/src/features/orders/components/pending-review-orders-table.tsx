@@ -1,3 +1,4 @@
+import type { ColumnDef } from "@tanstack/react-table";
 import {
 	flexRender,
 	getCoreRowModel,
@@ -7,7 +8,6 @@ import {
 } from "@tanstack/react-table";
 import dayjs from "dayjs";
 import { Building2, ChevronLeft, ChevronRight, User } from "lucide-react";
-import type { ColumnDef } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -19,10 +19,11 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import { formatOrderNumber, getRelativeOrderDateContext } from "@/features/orders/order.utils";
-import type {
-	ParsedPendingReviewOrderListItem,
-} from "@/features/orders/orders.queries";
+import {
+	formatOrderNumber,
+	getRelativeOrderDateContext,
+} from "@/features/orders/order.utils";
+import type { ParsedPendingReviewOrderListItem } from "@/features/orders/orders.queries";
 import type { PendingReviewOrdersSearch } from "@/features/orders/pending-review-orders.search";
 import { OrderStatusBadge } from "./order-status-badge";
 
@@ -162,7 +163,10 @@ function createPendingReviewOrdersColumns(): ColumnDef<ParsedPendingReviewOrderL
 				return (
 					<div className="flex items-center gap-2">
 						<div className="flex items-center gap-2">
-							<Badge variant="outline" className="gap-1 rounded-full px-2 py-0.5">
+							<Badge
+								variant="outline"
+								className="gap-1 rounded-full px-2 py-0.5"
+							>
 								{customer.isCompany ? (
 									<Building2 className="h-3 w-3" />
 								) : (

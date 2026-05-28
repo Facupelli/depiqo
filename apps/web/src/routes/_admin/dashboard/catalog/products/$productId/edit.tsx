@@ -1,7 +1,5 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
-import { productQueries } from "@/features/catalog/product-types/products.queries";
-import { useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import {
 	Card,
 	CardContent,
@@ -12,6 +10,7 @@ import {
 import { useCategories } from "@/features/catalog/product-categories/categories.queries";
 import { ProductTypeForm } from "@/features/catalog/product-types/components/product-type-form";
 import { useUpdateProductType } from "@/features/catalog/product-types/product.mutations";
+import { productQueries } from "@/features/catalog/product-types/products.queries";
 import {
 	productTypeToFormValues,
 	toUpdateProductTypeDto,

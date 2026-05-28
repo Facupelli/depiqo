@@ -1,7 +1,8 @@
 import { PromotionActivationType } from "@repo/types";
 import { useForm } from "@tanstack/react-form";
+import { Plus } from "lucide-react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
 	Dialog,
 	DialogContent,
@@ -12,18 +13,19 @@ import {
 	DialogTrigger,
 } from "@/components/ui/dialog";
 import {
+	Field,
+	FieldError,
+	FieldGroup,
+	FieldLabel,
+} from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import {
 	Select,
 	SelectContent,
 	SelectItem,
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import {
-	Field,
-	FieldError,
-	FieldGroup,
-	FieldLabel,
-} from "@/components/ui/field";
 import { usePromotions } from "../../promotions/promotions.queries";
 import { useCreateCoupon } from "../coupons.queries";
 import {
@@ -31,8 +33,6 @@ import {
 	couponFormSchema,
 	toCreateCouponDto,
 } from "../schemas/create-coupon-form.schema";
-import { Plus } from "lucide-react";
-import { useState } from "react";
 
 const formId = "create-coupon";
 

@@ -59,7 +59,11 @@ export class ConfirmPendingReviewOrderFlow {
         throw error;
       }
 
-      const contractByAssetId = await this.ownerContractResolver.resolve(order.tenantId, order.currentPeriod.start, demandUnits);
+      const contractByAssetId = await this.ownerContractResolver.resolve(
+        order.tenantId,
+        order.currentPeriod.start,
+        demandUnits,
+      );
       const assignments = attachConfirmedDemandToOrder(order, demandUnits, contractByAssetId);
 
       await this.orderRepository.save(order, tx);
@@ -127,14 +131,18 @@ export class ConfirmPendingReviewOrderFlow {
 
       if (availableAssetIds.length < accessoryRequest.quantity) {
         return err(
-          new OrderItemUnavailableError([], [], [
-            {
-              orderItemAccessoryId: accessoryRequest.id,
-              accessoryRentalItemId: accessoryRequest.accessoryRentalItemId,
-              requestedCount: accessoryRequest.quantity,
-              availableCount: availableAssetIds.length,
-            },
-          ]),
+          new OrderItemUnavailableError(
+            [],
+            [],
+            [
+              {
+                orderItemAccessoryId: accessoryRequest.id,
+                accessoryRentalItemId: accessoryRequest.accessoryRentalItemId,
+                requestedCount: accessoryRequest.quantity,
+                availableCount: availableAssetIds.length,
+              },
+            ],
+          ),
         );
       }
 
@@ -154,14 +162,18 @@ export class ConfirmPendingReviewOrderFlow {
 
         if (saveResult.isErr()) {
           return err(
-            new OrderItemUnavailableError([], [], [
-              {
-                orderItemAccessoryId: accessoryRequest.id,
-                accessoryRentalItemId: accessoryRequest.accessoryRentalItemId,
-                requestedCount: accessoryRequest.quantity,
-                availableCount: 0,
-              },
-            ]),
+            new OrderItemUnavailableError(
+              [],
+              [],
+              [
+                {
+                  orderItemAccessoryId: accessoryRequest.id,
+                  accessoryRentalItemId: accessoryRequest.accessoryRentalItemId,
+                  requestedCount: accessoryRequest.quantity,
+                  availableCount: 0,
+                },
+              ],
+            ),
           );
         }
       }
@@ -174,15 +186,17 @@ export class ConfirmPendingReviewOrderFlow {
     order: Order,
     tx: PrismaTransactionClient,
   ): Promise<Array<{ id: string; accessoryRentalItemId: string; quantity: number }>> {
-    const orderItemAccessoryDelegate = (tx as PrismaTransactionClient & {
-      orderItemAccessory?: {
-        findMany: (args: {
-          where: { tenantId: string; orderId: string };
-          select: { id: true; accessoryRentalItemId: true; quantity: true };
-          orderBy: { createdAt: 'asc' };
-        }) => Promise<Array<{ id: string; accessoryRentalItemId: string; quantity: number }>>;
-      };
-    }).orderItemAccessory;
+    const orderItemAccessoryDelegate = (
+      tx as PrismaTransactionClient & {
+        orderItemAccessory?: {
+          findMany: (args: {
+            where: { tenantId: string; orderId: string };
+            select: { id: true; accessoryRentalItemId: true; quantity: true };
+            orderBy: { createdAt: 'asc' };
+          }) => Promise<Array<{ id: string; accessoryRentalItemId: string; quantity: number }>>;
+        };
+      }
+    ).orderItemAccessory;
 
     if (!orderItemAccessoryDelegate) {
       return [];

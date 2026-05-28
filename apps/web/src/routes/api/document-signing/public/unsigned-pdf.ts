@@ -1,7 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
-import { fetchPublicSigningUnsignedPdfResponse } from "@/features/document-signing/document-signing.api";
-import { ProblemDetailsError } from "@/shared/errors";
+import { fetchPublicSigningUnsignedPdfResponse } from "@/v2/features/document-signing/stream-public-unsigned-document/stream-public-unsigned-document.api";
 
 const searchSchema = z.object({
 	token: z.string().trim().min(1),
@@ -52,14 +51,12 @@ export const Route = createFileRoute(
 						headers,
 					});
 				} catch (error) {
-					if (error instanceof ProblemDetailsError) {
-						return jsonError(
-							error.problemDetails.detail || error.problemDetails.title,
-							error.problemDetails.status,
-						);
-					}
-
-					return jsonError("No pudimos cargar el PDF para firma.", 500);
+					return jsonError(
+						error instanceof Error
+							? error.message
+							: "No pudimos cargar el PDF para firma.",
+						500,
+					);
 				}
 			},
 		},

@@ -1,11 +1,4 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
 import { CreatePromotionForm } from "@/features/pricing/promotions/components/create-promotion-form";
 
 export const Route = createFileRoute("/_admin/dashboard/promotions/new")({
@@ -20,27 +13,24 @@ function CreatePromotionPage() {
 			to: "/dashboard/promotions",
 			search: {
 				tab: "promotions",
-				page: 1,
 				search: undefined,
-				activationType: undefined,
 			},
 		});
 	}
 
 	return (
-		<div className="mx-auto max-w-5xl px-6 py-8">
-			<Card>
-				<CardHeader>
-					<CardTitle>Nueva promocion</CardTitle>
-					<CardDescription>
-						Configura activacion, condiciones, aplicabilidad y efecto de la
-						promocion en una vista mas comoda para formularios largos.
-					</CardDescription>
-				</CardHeader>
-				<CardContent>
-					<CreatePromotionForm onCancel={goBack} onSuccess={goBack} />
-				</CardContent>
-			</Card>
+		<div className="mx-auto max-w-7xl space-y-8 px-6 py-8">
+			<header className="max-w-3xl space-y-2">
+				<h1 className="font-semibold text-3xl tracking-tight">
+					Nueva promoción
+				</h1>
+				<p className="text-muted-foreground">
+					Configurá un descuento automático o con cupón. Podés definir cuándo se
+					aplica, qué ítems alcanza y si puede combinarse con otras promociones.
+				</p>
+			</header>
+
+			<CreatePromotionForm onCancel={goBack} onSuccess={goBack} />
 		</div>
 	);
 }

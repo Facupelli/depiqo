@@ -1,6 +1,7 @@
+import { OnboardingStatus } from "@repo/types";
 import { X } from "lucide-react";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
 	Select,
 	SelectContent,
@@ -8,9 +9,8 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { OnboardingStatus } from "@repo/types";
-import type { useCustomersFilters } from "./use-customers-filters";
 import { ONBOARDING_STATUS_LABELS } from "./customers-columns";
+import type { useCustomersFilters } from "./use-customers-filters";
 
 // ---------------------------------------------------------------------------
 // The toolbar receives the filter state + setters from the parent.

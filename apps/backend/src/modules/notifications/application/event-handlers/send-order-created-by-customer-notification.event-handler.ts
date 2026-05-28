@@ -1,18 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { QueryBus } from '@nestjs/cqrs';
 import { OnEvent } from '@nestjs/event-emitter';
-import { TenantContext } from '@repo/schemas';
 
-import { FindCustomerForAuthByIdQuery } from 'src/modules/customer/public/queries/find-customer-for-auth-by-id.query';
-import { CustomerForAuthReadModel } from 'src/modules/customer/public/read-models/customer-for-auth.read-model';
 import { OrderCreatedByCustomerEvent } from 'src/modules/order/public/events/order-created-by-customer.event';
-import { FindTenantByIdQuery } from 'src/modules/tenant/public/queries/find-tenant-by-id.query';
-import {
-  GetLocationContextQuery,
-  LocationContextReadModel,
-} from 'src/modules/tenant/public/queries/get-location-context.query';
-import { FindTenantAdminNotificationRecipientsQuery } from 'src/modules/users/public/queries/find-tenant-admin-notification-recipients.query';
-import { TenantAdminNotificationRecipientReadModel } from 'src/modules/users/public/read-models/tenant-admin-notification-recipient.read-model';
+import { TenantManagementPublicApi } from 'src/modules/v2/tenant-management/public-api/tenant-management.public-api';
 
 import { NotificationType } from '../../domain/notification-type.enum';
 import { NotificationOrchestrator } from '../notification-orchestrator.service';
@@ -29,24 +19,29 @@ function formatMinutesFromMidnight(minutes: number): string {
 @Injectable()
 export class SendOrderCreatedByCustomerNotificationHandler {
   constructor(
-    private readonly queryBus: QueryBus,
+    private readonly tenantManagementPublicApi: TenantManagementPublicApi,
     private readonly notificationOrchestrator: NotificationOrchestrator,
   ) {}
 
   @OnEvent(OrderCreatedByCustomerEvent.EVENT_NAME, { async: true })
   async handle(event: OrderCreatedByCustomerEvent): Promise<void> {
-    const [customer, tenant, location, recipients] = await Promise.all([
-      this.queryBus.execute<FindCustomerForAuthByIdQuery, CustomerForAuthReadModel | null>(
-        new FindCustomerForAuthByIdQuery(event.customerId),
-      ),
-      this.queryBus.execute<FindTenantByIdQuery, TenantContext | null>(new FindTenantByIdQuery(event.tenantId)),
-      this.queryBus.execute<GetLocationContextQuery, LocationContextReadModel | null>(
-        new GetLocationContextQuery(event.tenantId, event.locationId),
-      ),
-      this.queryBus.execute<FindTenantAdminNotificationRecipientsQuery, TenantAdminNotificationRecipientReadModel[]>(
-        new FindTenantAdminNotificationRecipientsQuery(event.tenantId),
-      ),
+    const [customerResult, tenantResult, branchContextResult, recipientsResult] = await Promise.all([
+      this.tenantManagementPublicApi.getRentalCustomerNotificationRecipient({
+        tenantId: event.tenantId,
+        rentalCustomerId: event.customerId,
+      }),
+      this.tenantManagementPublicApi.getTenant({ tenantId: event.tenantId }),
+      this.tenantManagementPublicApi.getBranchContext({
+        tenantId: event.tenantId,
+        branchId: event.locationId,
+      }),
+      this.tenantManagementPublicApi.getTenantAdminNotificationRecipients({ tenantId: event.tenantId }),
     ]);
+
+    const customer = customerResult.isOk() ? customerResult.value : null;
+    const tenant = tenantResult.isOk() ? tenantResult.value : null;
+    const branchContext = branchContextResult.isOk() ? branchContextResult.value : null;
+    const recipients = recipientsResult.isOk() ? recipientsResult.value : [];
 
     if (!customer || customer.deletedAt || !customer.isActive || recipients.length === 0) {
       return;
@@ -69,7 +64,7 @@ export class SendOrderCreatedByCustomerNotificationHandler {
         pickupTime: formatMinutesFromMidnight(event.pickupTime),
         returnDate: event.returnDate,
         returnTime: formatMinutesFromMidnight(event.returnTime),
-        timezone: location?.effectiveTimezone,
+        timezone: branchContext?.effectiveTimezone,
       },
       metadata: {
         orderId: event.aggregateId,

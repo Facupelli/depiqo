@@ -4,17 +4,20 @@ import { NotificationChannel } from 'src/modules/notifications/domain/notificati
 
 const notificationChannelSchema = z.enum(NotificationChannel);
 
-const notificationsMutedChannelsByEnvSchema = z.preprocess((value) => {
-  if (typeof value !== 'string' || value.trim() === '') {
-    return {};
-  }
+const notificationsMutedChannelsByEnvSchema = z.preprocess(
+  (value) => {
+    if (typeof value !== 'string' || value.trim() === '') {
+      return {};
+    }
 
-  try {
-    return JSON.parse(value);
-  } catch {
-    return value;
-  }
-}, z.record(z.string(), z.array(notificationChannelSchema)).default({}));
+    try {
+      return JSON.parse(value);
+    } catch {
+      return value;
+    }
+  },
+  z.record(z.string(), z.array(notificationChannelSchema)).default({}),
+);
 
 export const EnvSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
@@ -22,6 +25,14 @@ export const EnvSchema = z.object({
 
   DATABASE_URL: z.url(),
   DATABASE_POOL_SIZE: z.coerce.number().default(10),
+
+  CORS_ALLOWED_ORIGINS: z.string(),
+  BFF_INTERNAL_TOKEN: z.string(),
+  STOREFRONT_TENANT_JWT_SECRET: z.string(),
+  STOREFRONT_TENANT_JWT_ISSUER: z.string(),
+  STOREFRONT_TENANT_JWT_AUDIENCE: z.string(),
+
+  SESSION_SECRET: z.string(),
 
   JWT_SECRET: z.string(),
   JWT_EXPIRATION_TIME_SECONDS: z.coerce.number().default(3600),
@@ -31,6 +42,7 @@ export const EnvSchema = z.object({
 
   GOOGLE_CLIENT_ID: z.string(),
   GOOGLE_CLIENT_SECRET: z.string(),
+  GOOGLE_OAUTH_REDIRECT_URI: z.url(),
   GOOGLE_AUTH_STATE_SECRET: z.string(),
   GOOGLE_AUTH_STATE_EXPIRATION_TIME_SECONDS: z.coerce.number().default(600),
   GOOGLE_AUTH_HANDOFF_EXPIRATION_TIME_SECONDS: z.coerce.number().default(300),
@@ -43,6 +55,7 @@ export const EnvSchema = z.object({
   R2_ACCESS_KEY_ID: z.string(),
   R2_SECRET_ACCESS_KEY: z.string(),
   DOCUMENT_SIGNING_SESSION_TTL_SECONDS: z.coerce.number().default(604800),
+  DOCUMENT_SIGNING_RECEIPT_TOKEN_TTL_SECONDS: z.coerce.number().default(604800),
 
   RESEND_API_KEY: z.string(),
   NOTIFICATIONS_EMAIL_FROM: z.string(),

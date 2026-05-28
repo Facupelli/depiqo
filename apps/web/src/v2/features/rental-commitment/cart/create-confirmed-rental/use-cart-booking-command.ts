@@ -1,0 +1,180 @@
+import { useNavigate } from "@tanstack/react-router";
+import { useState } from "react";
+import { getCurrentRelativeRedirect } from "@/features/auth/auth-redirect";
+import { getPortalAuthRedirectSearch } from "@/features/rental/auth/portal-auth.redirect";
+import type { ConflictGroup } from "@/features/rental/cart/cart.types";
+import { formatSlot } from "@/features/rental/cart/cart.utils";
+import { parseCartBookingError } from "@/features/rental/cart/cart-booking-errors";
+import type { DeliveryRequestFormState } from "@/features/rental/cart/cart-order.types";
+import { isDeliveryRequestComplete } from "@/features/rental/cart/cart-order.utils";
+import { useCreateConfirmedRental } from "../../confirmed-rentals/create-confirmed-rental/create-confirmed-rental.mutation";
+import type { V2RentalCartItem } from "../v2-rental-cart.types";
+import {
+	buildCreateConfirmedRentalBody,
+	type CartCheckoutPeriod,
+} from "./cart-checkout-model";
+
+type UseCartBookingCommandParams = {
+	branch: {
+		id: string;
+		name: string;
+	};
+
+	periodStart: string;
+	rentalPeriod: CartCheckoutPeriod;
+
+	cartItems: V2RentalCartItem[];
+
+	isAuthenticated: boolean;
+
+	pickupTime: number | undefined;
+	returnTime: number | undefined;
+	requireTimes: () => void;
+
+	fulfillmentMethod: "PICKUP" | "DELIVERY";
+	normalizedDeliveryRequest: DeliveryRequestFormState;
+	requireDeliveryDetails: () => void;
+	onFulfillmentMethodChange: (value: "PICKUP" | "DELIVERY") => void;
+
+	insuranceSelected: boolean;
+
+	clearCart: () => void;
+};
+
+export function useCartBookingCommand({
+	branch,
+	periodStart,
+	rentalPeriod,
+	cartItems,
+	isAuthenticated,
+	pickupTime,
+	returnTime,
+	requireTimes,
+	fulfillmentMethod,
+	normalizedDeliveryRequest,
+	requireDeliveryDetails,
+	onFulfillmentMethodChange,
+	insuranceSelected,
+	clearCart,
+}: UseCartBookingCommandParams) {
+	const navigate = useNavigate();
+
+	const [unavailableIds, setUnavailableIds] = useState<string[]>([]);
+	const [conflictGroups, setConflictGroups] = useState<ConflictGroup[]>([]);
+	const [bookingErrorMessage, setBookingErrorMessage] = useState<string | null>(
+		null,
+	);
+
+	const { mutateAsync: createConfirmedRental, isPending: isSubmittingOrder } =
+		useCreateConfirmedRental();
+
+	// const idempotency = useCreateOrderIdempotency();
+
+	const submitBooking = async () => {
+		setUnavailableIds([]);
+		setConflictGroups([]);
+		setBookingErrorMessage(null);
+
+		if (!isAuthenticated) {
+			navigate({
+				to: "/login",
+				search: getPortalAuthRedirectSearch(
+					getCurrentRelativeRedirect("/cart"),
+				),
+			});
+			return;
+		}
+
+		if (pickupTime === undefined || returnTime === undefined) {
+			requireTimes();
+			return;
+		}
+
+		if (
+			fulfillmentMethod === "DELIVERY" &&
+			!isDeliveryRequestComplete(normalizedDeliveryRequest)
+		) {
+			requireDeliveryDetails();
+			return;
+		}
+
+		try {
+			await createConfirmedRental({
+				body: buildCreateConfirmedRentalBody({
+					branchId: branch.id,
+					rentalPeriod,
+					cartItems,
+					fulfillmentMethod,
+					deliveryDetails: normalizedDeliveryRequest,
+					insuranceSelected,
+				}),
+			});
+
+			clearCart();
+
+			navigate({
+				to: "/confirmed-rental-success",
+				search: {
+					fulfillmentMethod,
+					pickupDate: periodStart,
+					pickupLocation: branch.name,
+					pickupTime: formatSlot(pickupTime),
+					deliveryAddress:
+						fulfillmentMethod === "DELIVERY" && normalizedDeliveryRequest
+							? [
+									normalizedDeliveryRequest.addressLine1,
+									normalizedDeliveryRequest.city,
+								]
+									.filter(Boolean)
+									.join(" · ")
+							: undefined,
+				},
+			});
+		} catch (error) {
+			const parsedError = parseCartBookingError(error);
+
+			switch (parsedError.kind) {
+				case "availability-conflict":
+					setUnavailableIds(parsedError.unavailableIds);
+					setConflictGroups(parsedError.conflictGroups);
+					setBookingErrorMessage(parsedError.message);
+					return;
+
+				case "auth":
+					navigate({
+						to: "/login",
+						search: getPortalAuthRedirectSearch(
+							getCurrentRelativeRedirect("/cart"),
+						),
+					});
+					return;
+
+				case "delivery-not-supported":
+					onFulfillmentMethodChange("PICKUP");
+					setBookingErrorMessage(parsedError.message);
+					return;
+
+				case "idempotency-conflict":
+					setBookingErrorMessage(parsedError.message);
+					return;
+
+				case "idempotency-in-progress":
+					setBookingErrorMessage(parsedError.message);
+					return;
+
+				case "unknown":
+					setBookingErrorMessage(parsedError.message);
+					return;
+			}
+		}
+	};
+
+	return {
+		isSubmittingOrder,
+		isBookingError: Boolean(bookingErrorMessage),
+		bookingErrorMessage,
+		unavailableIds,
+		conflictGroups,
+		submitBooking,
+	};
+}

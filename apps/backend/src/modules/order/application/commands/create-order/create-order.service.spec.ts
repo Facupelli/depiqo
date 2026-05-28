@@ -20,7 +20,10 @@ import { InventoryPublicApi } from 'src/modules/inventory/inventory.public-api';
 import { OrderRepository } from 'src/modules/order/infrastructure/persistence/repositories/order.repository';
 import { PricingPublicApi } from 'src/modules/pricing/pricing.public-api';
 import { CreateOrderCommand } from './create-order.command';
-import { IdempotencyKeyConflictError, IdempotencyKeyInProgressError } from './idempotency/create-order-idempotency.errors';
+import {
+  IdempotencyKeyConflictError,
+  IdempotencyKeyInProgressError,
+} from './idempotency/create-order-idempotency.errors';
 import { CreateOrderIdempotencyPreflightKind } from './idempotency/create-order-idempotency.constants';
 import { CreateOrderAssetResolver } from './inventory/create-order-asset-resolver';
 import { CreateOrderOwnerContractResolver } from './ownership/create-order-owner-contract-resolver';

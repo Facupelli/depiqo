@@ -34,24 +34,27 @@ const adminDraftOrderCartPreviewInputSchema = z.object({
 	request: calculateCartPricesRequestSchema,
 });
 
-export const getAdminDraftOrderRentalProducts = createServerFn({ method: "POST" })
-	.inputValidator((data: { tenantId: string; query: GetRentalProductTypesQuery }) =>
-		adminDraftOrderRentalProductsInputSchema.parse(data),
+export const getAdminDraftOrderRentalProducts = createServerFn({
+	method: "POST",
+})
+	.inputValidator(
+		(data: { tenantId: string; query: GetRentalProductTypesQuery }) =>
+			adminDraftOrderRentalProductsInputSchema.parse(data),
 	)
-	.handler(
-		async ({ data }): Promise<PaginatedDto<RentalProductResponse>> => {
-			return storefrontApiFetchPaginated<RentalProductResponse>(
-				data.tenantId,
-				"/rental/product-types",
-				{
-					method: "GET",
-					params: data.query,
-				},
-			);
-		},
-	);
+	.handler(async ({ data }): Promise<PaginatedDto<RentalProductResponse>> => {
+		return storefrontApiFetchPaginated<RentalProductResponse>(
+			data.tenantId,
+			"/rental/product-types",
+			{
+				method: "GET",
+				params: data.query,
+			},
+		);
+	});
 
-export const getAdminDraftOrderRentalBundles = createServerFn({ method: "POST" })
+export const getAdminDraftOrderRentalBundles = createServerFn({
+	method: "POST",
+})
 	.inputValidator((data: { tenantId: string; query: GetCombosParams }) =>
 		adminDraftOrderRentalBundlesInputSchema.parse(data),
 	)

@@ -3,7 +3,7 @@ import {
 	getOrderOperationalPhase,
 	type OrderOperationalPhase,
 } from "@/features/orders/order.utils";
-import type { ParsedOrderListItem } from "@/features/orders/orders.queries";
+import type { ParsedRentalListItem } from "@/v2/features/rental-commitment/rentals/rentals.queries";
 
 const ORDER_OPERATIONAL_PHASE_MAP: Record<
 	OrderOperationalPhase,
@@ -50,7 +50,7 @@ const ORDER_OPERATIONAL_PHASE_MAP: Record<
 export function OrderOperationalPhaseBadge({
 	order,
 }: {
-	order: Pick<ParsedOrderListItem, "status" | "pickupAt" | "returnAt">;
+	order: Pick<ParsedRentalListItem, "status" | "pickupAt" | "returnAt">;
 }) {
 	const phase = getOrderOperationalPhase(order, dayjs());
 	const config = ORDER_OPERATIONAL_PHASE_MAP[phase];

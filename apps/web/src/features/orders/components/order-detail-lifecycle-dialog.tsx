@@ -38,10 +38,7 @@ export function OrderDetailLifecycleDialog() {
 				};
 
 	return (
-		<AlertDialog
-			open={Boolean(action)}
-			onOpenChange={lifecycle.setDialogOpen}
-		>
+		<AlertDialog open={Boolean(action)} onOpenChange={lifecycle.setDialogOpen}>
 			<AlertDialogContent>
 				<AlertDialogHeader>
 					<AlertDialogTitle>{copy.title}</AlertDialogTitle>

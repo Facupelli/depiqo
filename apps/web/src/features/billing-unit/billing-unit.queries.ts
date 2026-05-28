@@ -1,6 +1,6 @@
-import { useQuery, type UseQueryOptions } from "@tanstack/react-query";
-import type { ProblemDetailsError } from "@/shared/errors";
 import type { BillingUnitListResponse } from "@repo/schemas";
+import { type UseQueryOptions, useQuery } from "@tanstack/react-query";
+import type { ProblemDetailsError } from "@/shared/errors";
 import { getBillingUnits } from "./billing-unit.api";
 
 // -----------------------------------------------------

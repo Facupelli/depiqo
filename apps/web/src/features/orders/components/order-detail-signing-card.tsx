@@ -1,7 +1,7 @@
 import { ChevronDown, FileSignature } from "lucide-react";
 import { useState } from "react";
-import { useOrderDetailContext } from "@/features/orders/contexts/order-detail.context";
 import { SidebarCardHeader } from "@/features/orders/components/order-detail-sidebar-primitives";
+import { useOrderDetailContext } from "@/features/orders/contexts/order-detail.context";
 import {
 	formatOptionalSigningDate,
 	formatSigningDate,

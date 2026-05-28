@@ -1,4 +1,4 @@
-import { useNavigate, useRouter, useSearch } from "@tanstack/react-router";
+import { useNavigate, useSearch } from "@tanstack/react-router";
 import {
 	ArrowRight,
 	Calendar,
@@ -19,19 +19,18 @@ import {
 	PopoverTrigger,
 } from "@/components/ui/popover";
 import { DateRangePicker } from "@/features/rental/catalog/components/date-range-picker";
-import { useRentalLocations } from "@/features/tenant/locations/locations.queries";
 import dayjs from "@/lib/dates/dayjs";
 import { dateParamToLocalDate, localDateToDateParam } from "@/lib/dates/parse";
+import { useStorefrontBranches } from "@/v2/features/rental-commitment/branches/branches.queries";
 import {
-	useCartActions,
-	useCartIsEmpty,
-	useCartItemCount,
-	useCartItems,
-} from "../cart.hooks";
-import type { CartItem } from "../cart.types";
+	useV2RentalCartActions,
+	useV2RentalCartItemCount,
+	useV2RentalCartItems,
+} from "@/v2/features/rental-commitment/cart/v2-rental-cart.hooks";
+import type { V2RentalCartItem } from "@/v2/features/rental-commitment/cart/v2-rental-cart.types";
 
 export function CartPopover() {
-	const itemCount = useCartItemCount();
+	const itemCount = useV2RentalCartItemCount();
 
 	const [open, setOpen] = useState(false);
 
@@ -96,11 +95,11 @@ export function CartPopoverHeader({ onClose }: CartPopoverHeaderProps) {
 }
 
 function CartPopoverContext() {
-	const { locationId, pickupDate, returnDate } = useSearch({
-		from: "/_portal/_tenant/rental/",
+	const { branchId, periodStart, periodEnd } = useSearch({
+		from: "/_portal/_tenant/v2/rental/",
 	});
-	const { data: locations } = useRentalLocations();
-	const location = locations?.find((l) => l.id === locationId);
+	const { data: branches } = useStorefrontBranches();
+	const branch = branches?.find((branch) => branch.id === branchId);
 
 	const formatDate = (date: string) => {
 		return dayjs(dateParamToLocalDate(date)).format("MM/DD/YYYY");
@@ -114,8 +113,8 @@ function CartPopoverContext() {
 					<p className="text-[10px] font-semibold uppercase tracking-widest text-neutral-400 pb-1">
 						Ubicación de retiro
 					</p>
-					{location ? (
-						<p className="text-sm text-black">{location.name}</p>
+					{branch ? (
+						<p className="text-sm text-black">{branch.name}</p>
 					) : (
 						<p className="text-sm text-neutral-300">No seleccionado</p>
 					)}
@@ -128,9 +127,9 @@ function CartPopoverContext() {
 					<p className="text-[10px] font-semibold uppercase tracking-widest text-neutral-400 pb-1">
 						Perido de Alquiler
 					</p>
-					{pickupDate && returnDate ? (
+					{periodStart && periodEnd ? (
 						<p className="text-sm text-black">
-							{formatDate(pickupDate)} — {formatDate(returnDate)}
+							{formatDate(periodStart)} — {formatDate(periodEnd)}
 						</p>
 					) : (
 						<p className="text-sm text-neutral-300">
@@ -144,7 +143,7 @@ function CartPopoverContext() {
 }
 
 function CartPopoverItemList() {
-	const items = useCartItems();
+	const items = useV2RentalCartItems();
 
 	if (items.length === 0) {
 		return (
@@ -166,29 +165,19 @@ function CartPopoverItemList() {
 		<div className="max-h-64 overflow-y-auto px-3 md:px-5">
 			<div className="divide-y divide-neutral-100">
 				{items.map((item) => (
-					<CartPopoverItem
-						key={item.type === "PRODUCT" ? item.productTypeId : item.bundleId}
-						item={item}
-					/>
+					<CartPopoverItem key={item.rentalOfferId} item={item} />
 				))}
 			</div>
 		</div>
 	);
 }
 
-function CartPopoverItem({ item }: { item: CartItem }) {
-	const isBundle = item.type === "BUNDLE";
-	const { incrementQuantity, decrementQuantity, removeItem } = useCartActions();
-
-	const key =
-		item.type === "PRODUCT"
-			? { type: "PRODUCT" as const, productTypeId: item.productTypeId }
-			: { type: "BUNDLE" as const, bundleId: item.bundleId };
+function CartPopoverItem({ item }: { item: V2RentalCartItem }) {
+	const { incrementRentalOffer, decrementRentalOffer, removeRentalOffer } =
+		useV2RentalCartActions();
 
 	const atStockLimit =
-		item.type === "PRODUCT" && item.assetCount !== null
-			? item.quantity >= item.assetCount
-			: false;
+		item.availableCount !== null ? item.quantity >= item.availableCount : false;
 
 	return (
 		<div className="flex items-start justify-between gap-4 py-4 md:py-6">
@@ -197,37 +186,19 @@ function CartPopoverItem({ item }: { item: CartItem }) {
 					{item.name}
 				</p>
 
-				{isBundle ? (
-					<div className="mt-1 space-y-0.5">
-						{item.components.map((component) => (
-							<p
-								key={component.productTypeId}
-								className="text-[11px] uppercase tracking-wider text-neutral-400"
-							>
-								{component.name}
-								{component.quantity > 1 && (
-									<span className="ml-1 text-neutral-300">
-										×{component.quantity}
-									</span>
-								)}
-							</p>
-						))}
-					</div>
-				) : (
-					<div className="mt-0.5 flex items-center gap-1.5">
-						<Package className="h-3 w-3 text-neutral-300" />
-						<p className="text-[11px] uppercase tracking-wider text-neutral-400">
-							{item.billingUnitLabel}
-						</p>
-					</div>
-				)}
+				<div className="mt-0.5 flex items-center gap-1.5">
+					<Package className="h-3 w-3 text-neutral-300" />
+					<p className="text-[11px] uppercase tracking-wider text-neutral-400">
+						Oferta de alquiler
+					</p>
+				</div>
 			</div>
 
 			<div className="flex shrink-0 items-center gap-2">
 				{item.quantity === 1 ? (
 					<button
 						type="button"
-						onClick={() => removeItem(key)}
+						onClick={() => removeRentalOffer(item.rentalOfferId)}
 						className="flex size-6 items-center justify-center text-neutral-300 transition-colors hover:text-red-500"
 						aria-label="Remove item"
 					>
@@ -236,7 +207,7 @@ function CartPopoverItem({ item }: { item: CartItem }) {
 				) : (
 					<button
 						type="button"
-						onClick={() => decrementQuantity(key)}
+						onClick={() => decrementRentalOffer(item.rentalOfferId)}
 						className="flex size-6 items-center justify-center text-neutral-300 transition-colors hover:text-black"
 						aria-label="Decrease quantity"
 					>
@@ -250,7 +221,7 @@ function CartPopoverItem({ item }: { item: CartItem }) {
 
 				<button
 					type="button"
-					onClick={() => incrementQuantity(key)}
+					onClick={() => incrementRentalOffer(item.rentalOfferId)}
 					disabled={atStockLimit}
 					className="flex size-6 items-center justify-center text-neutral-300 transition-colors hover:text-black disabled:cursor-not-allowed disabled:opacity-30"
 					aria-label="Increase quantity"
@@ -267,23 +238,21 @@ type CartPopoverFooterProps = {
 };
 
 export function CartPopoverFooter({ onClose }: CartPopoverFooterProps) {
-	const { locationId, pickupDate, returnDate } = useSearch({
-		from: "/_portal/_tenant/rental/",
+	const { branchId, periodStart, periodEnd } = useSearch({
+		from: "/_portal/_tenant/v2/rental/",
 	});
-	const router = useRouter();
-	const navigate = useNavigate({ from: "/rental/" });
-	const isEmpty = useCartIsEmpty();
-	const hasRentalPeriod = Boolean(pickupDate && returnDate);
+	const navigate = useNavigate({ from: "/v2/rental/" });
+	const hasRentalPeriod = Boolean(periodStart && periodEnd);
 
 	function handleRentalPeriodChange(range: DateRange | undefined) {
 		startTransition(() => {
 			navigate({
 				search: (prev) => ({
 					...prev,
-					pickupDate: range?.from
+					periodStart: range?.from
 						? localDateToDateParam(range.from)
 						: undefined,
-					returnDate: range?.to ? localDateToDateParam(range.to) : undefined,
+					periodEnd: range?.to ? localDateToDateParam(range.to) : undefined,
 					page: 1,
 				}),
 				resetScroll: false,
@@ -293,22 +262,15 @@ export function CartPopoverFooter({ onClose }: CartPopoverFooterProps) {
 	}
 
 	function handleReviewOrder() {
-		if (!pickupDate || !returnDate) {
-			return;
-		}
-
+		navigate({
+			to: "/cart",
+			search: {
+				branchId,
+				periodStart: periodStart as string,
+				periodEnd: periodEnd as string,
+			},
+		});
 		onClose();
-
-		if (locationId != null) {
-			router.navigate({
-				to: "/cart",
-				search: {
-					locationId,
-					pickupDate,
-					returnDate,
-				},
-			});
-		}
 	}
 
 	return (
@@ -316,7 +278,6 @@ export function CartPopoverFooter({ onClose }: CartPopoverFooterProps) {
 			{hasRentalPeriod ? (
 				<Button
 					onClick={handleReviewOrder}
-					disabled={isEmpty}
 					className="flex w-full items-center justify-center gap-2 py-5 rounded-none text-xs font-bold uppercase tracking-widest text-white "
 				>
 					Revisar Pedido
@@ -324,9 +285,9 @@ export function CartPopoverFooter({ onClose }: CartPopoverFooterProps) {
 				</Button>
 			) : (
 				<DateRangePicker
-					locationId={locationId}
-					pickupDate={pickupDate}
-					returnDate={returnDate}
+					branchId={branchId}
+					pickupDate={periodStart}
+					returnDate={periodEnd}
 					onChange={handleRentalPeriodChange}
 					numberOfMonths={1}
 					buttonClassName="flex w-full min-w-0 justify-center rounded-none border border-neutral-900 bg-neutral-900 px-4 py-5 hover:bg-neutral-800"

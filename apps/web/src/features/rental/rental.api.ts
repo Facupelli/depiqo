@@ -14,11 +14,11 @@ import {
 	type RentalProductResponse,
 } from "@repo/schemas";
 import { createServerFn } from "@tanstack/react-start";
+import { portalTenantMiddleware } from "@/features/tenant-context/portal-tenant.middleware";
 import {
 	storefrontApiFetch,
 	storefrontApiFetchPaginated,
 } from "@/lib/storefront-api";
-import { portalTenantMiddleware } from "@/features/tenant-context/portal-tenant.middleware";
 
 const apiUrl = "/rental";
 

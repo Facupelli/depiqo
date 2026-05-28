@@ -10,13 +10,17 @@ type OrderLifecycleAction = "pickup" | "return" | null;
 export function useOrderLifecycleActions(orderId: string) {
 	const [pendingLifecycleAction, setPendingLifecycleAction] =
 		useState<OrderLifecycleAction>(null);
-	const [lifecycleActionError, setLifecycleActionError] = useState<string | null>(
-		null,
-	);
-	const { mutateAsync: markEquipmentAsRetired, isPending: isMarkingAsPickedUp } =
-		useMarkEquipmentAsRetired();
-	const { mutateAsync: markEquipmentAsReturned, isPending: isMarkingAsReturned } =
-		useMarkEquipmentAsReturned();
+	const [lifecycleActionError, setLifecycleActionError] = useState<
+		string | null
+	>(null);
+	const {
+		mutateAsync: markEquipmentAsRetired,
+		isPending: isMarkingAsPickedUp,
+	} = useMarkEquipmentAsRetired();
+	const {
+		mutateAsync: markEquipmentAsReturned,
+		isPending: isMarkingAsReturned,
+	} = useMarkEquipmentAsReturned();
 
 	const handleMarkAsPickedUp = () => {
 		setLifecycleActionError(null);

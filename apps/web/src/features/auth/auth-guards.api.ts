@@ -1,22 +1,22 @@
-import { createServerFn } from "@tanstack/react-start";
 import { redirect } from "@tanstack/react-router";
+import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import type { SessionPrincipal, SessionUser } from "@/lib/session";
-import {
-	authRedirectSearchSchema,
-	toAuthRedirectSearch,
-} from "./auth-redirect";
-import {
-	getOptionalPrincipal,
-	getOptionalCustomerSession,
-	requireAdminSessionUser,
-	requireCustomerSessionUser,
-} from "./auth-guards.server";
 import {
 	AuthRequiredError,
 	SessionExpiredError,
 	WrongActorError,
 } from "@/shared/errors";
+import {
+	getOptionalCustomerSession,
+	getOptionalPrincipal,
+	requireAdminSessionUser,
+	requireCustomerSessionUser,
+} from "./auth-guards.server";
+import {
+	authRedirectSearchSchema,
+	toAuthRedirectSearch,
+} from "./auth-redirect";
 
 const guardInputSchema = z
 	.object({

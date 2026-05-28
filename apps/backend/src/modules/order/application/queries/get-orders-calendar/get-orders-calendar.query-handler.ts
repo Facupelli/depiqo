@@ -29,9 +29,10 @@ type RawOrderCalendarRow = {
 const ORDER_CALENDAR_STATUSES = [OrderStatus.CONFIRMED, OrderStatus.ACTIVE] as const;
 
 @QueryHandler(GetOrdersCalendarQuery)
-export class GetOrdersCalendarQueryHandler
-  implements IQueryHandler<GetOrdersCalendarQuery, GetOrdersCalendarResponseDto>
-{
+export class GetOrdersCalendarQueryHandler implements IQueryHandler<
+  GetOrdersCalendarQuery,
+  GetOrdersCalendarResponseDto
+> {
   constructor(
     private readonly prisma: PrismaService,
     private readonly queryBus: QueryBus,

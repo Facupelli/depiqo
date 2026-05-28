@@ -1,6 +1,6 @@
-import type { ProblemDetailsError } from "@/shared/errors";
 import type { SetPricingTiersDto } from "@repo/schemas";
-import { useMutation, type UseMutationOptions } from "@tanstack/react-query";
+import { type UseMutationOptions, useMutation } from "@tanstack/react-query";
+import type { ProblemDetailsError } from "@/shared/errors";
 import { setPricingTiers } from "./pricing-tier.api";
 
 type PricingTierMutationOptions = Omit<

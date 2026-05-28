@@ -1,9 +1,9 @@
 import {
-	orderItemsUnavailableProblemSchema,
 	type OrderItemsUnavailableProblemDto,
+	orderItemsUnavailableProblemSchema,
 } from "@repo/schemas";
-import type { ParsedOrderDetailResponseDto } from "@/features/orders/queries/get-order-by-id";
 import type { OrderEditorMode } from "@/features/orders/order-editor/types/order-editor.types";
+import type { ParsedOrderDetailResponseDto } from "@/features/orders/queries/get-order-by-id";
 import { ProblemDetailsError } from "@/shared/errors";
 
 type OrderActionErrorContext =
@@ -28,7 +28,9 @@ export function extractOrderAvailabilityConflict(
 		return null;
 	}
 
-	const parsed = orderItemsUnavailableProblemSchema.safeParse(error.problemDetails);
+	const parsed = orderItemsUnavailableProblemSchema.safeParse(
+		error.problemDetails,
+	);
 	return parsed.success ? parsed.data : null;
 }
 
@@ -41,7 +43,11 @@ export function parseOrderActionError(
 	if (context.action === "confirm") {
 		return {
 			conflict,
-			message: getConfirmOrderErrorMessage(error, context.orderStatus, conflict),
+			message: getConfirmOrderErrorMessage(
+				error,
+				context.orderStatus,
+				conflict,
+			),
 		};
 	}
 
@@ -91,7 +97,11 @@ function getSaveOrderErrorMessage(
 	}
 
 	if (error instanceof ProblemDetailsError) {
-		return error.problemDetails.detail ?? error.problemDetails.title ?? getSaveOrderFallback(mode);
+		return (
+			error.problemDetails.detail ??
+			error.problemDetails.title ??
+			getSaveOrderFallback(mode)
+		);
 	}
 
 	if (error instanceof Error) {

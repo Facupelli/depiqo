@@ -10,9 +10,10 @@ import { OrderNotFoundError, OrderStatusTransitionNotAllowedError } from '../../
 type MarkEquipmentAsRetiredError = OrderNotFoundError | OrderStatusTransitionNotAllowedError;
 
 @CommandHandler(MarkEquipmentAsRetiredCommand)
-export class MarkEquipmentAsRetiredService
-  implements ICommandHandler<MarkEquipmentAsRetiredCommand, Result<void, MarkEquipmentAsRetiredError>>
-{
+export class MarkEquipmentAsRetiredService implements ICommandHandler<
+  MarkEquipmentAsRetiredCommand,
+  Result<void, MarkEquipmentAsRetiredError>
+> {
   constructor(private readonly orderRepository: OrderRepository) {}
 
   async execute(command: MarkEquipmentAsRetiredCommand): Promise<Result<void, MarkEquipmentAsRetiredError>> {

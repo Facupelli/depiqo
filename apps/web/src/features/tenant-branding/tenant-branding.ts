@@ -1,5 +1,8 @@
-import type { ResolvedTenantContext, TenantContext } from "@repo/schemas";
 import { buildR2PublicUrl } from "@/lib/r2-public-url";
+import type {
+	PublicStorefrontTenantContext,
+	PublicTenantContext,
+} from "@/v2/features/tenant-management/tenant-context/types";
 
 export interface TenantBranding {
 	tenantName: string;
@@ -7,7 +10,9 @@ export interface TenantBranding {
 	faviconHref: string | null;
 }
 
-export function getTenantBranding(tenant: TenantContext): TenantBranding {
+export function getTenantBranding(
+	tenant: PublicStorefrontTenantContext,
+): TenantBranding {
 	return {
 		tenantName: tenant.name,
 		logoSrc: buildR2PublicUrl(tenant.logoUrl, "branding"),
@@ -16,9 +21,9 @@ export function getTenantBranding(tenant: TenantContext): TenantBranding {
 }
 
 export function getResolvedTenantBranding(
-	tenantContext: ResolvedTenantContext,
+	tenantContext: PublicTenantContext,
 ): TenantBranding | null {
-	if (tenantContext.face !== "portal") {
+	if (tenantContext.face !== "storefront") {
 		return null;
 	}
 

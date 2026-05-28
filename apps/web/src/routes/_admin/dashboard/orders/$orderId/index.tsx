@@ -1,29 +1,20 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
 import { PageBreadcrumb } from "@/components/detail-id-breadcrumb";
-import { accessoryPreparationQueries } from "@/features/orders/accessory-preparation/accessory-preparation.queries";
-import { AccessoryPreparationWorkspace } from "@/features/orders/accessory-preparation/components/accessory-preparation-workspace";
-import { OrderDetailProvider } from "@/features/orders/contexts/order-detail.context";
-import { OrderHeader } from "@/features/orders/components/order-detail-header";
-import { OrderEquipmentSection } from "@/features/orders/components/order-detail-equipment-section";
-import { OrderClientCard } from "@/features/orders/components/order-detail-client-card";
-import { OrderSigningCard } from "@/features/orders/components/order-detail-signing-card";
-import { OrderLogisticsCard } from "@/features/orders/components/order-detail-logistics-card";
-import { OrderFinancialsCard } from "@/features/orders/components/order-detail-financials-card";
-import { getProductImagesByOrderItemId } from "@/features/orders/order-detail.utils";
+import { formatOrderNumber } from "@/features/orders/order.utils";
 import { ordersListSearchSchema } from "@/features/orders/orders-list.search";
-import { createOrderDetailQueryOptions } from "@/features/orders/queries/get-order-by-id";
 import { AdminRouteError } from "@/shared/components/admin-route-error";
+import { RentalDetailHeader } from "@/v2/features/rental-commitment/rentals/detail/components/rental-detail-header";
+import { RentalEquipmentSection } from "@/v2/features/rental-commitment/rentals/detail/components/rental-equipment-section";
+import { RentalSidebarCards } from "@/v2/features/rental-commitment/rentals/detail/components/rental-sidebar-cards";
+import { RentalDetailProvider } from "@/v2/features/rental-commitment/rentals/detail/rental-detail.context";
+import { rentalQueries } from "@/v2/features/rental-commitment/rentals/rentals.queries";
 
 export const Route = createFileRoute("/_admin/dashboard/orders/$orderId/")({
 	validateSearch: ordersListSearchSchema,
 	loader: async ({ context: { queryClient }, params: { orderId } }) => {
 		await Promise.all([
-			queryClient.ensureQueryData(createOrderDetailQueryOptions({ orderId })),
-			queryClient.ensureQueryData(
-				accessoryPreparationQueries.detail({ orderId }),
-			),
+			queryClient.ensureQueryData(rentalQueries.detail(orderId)),
 		]);
 	},
 	errorComponent: ({ error }) => {
@@ -41,54 +32,24 @@ export const Route = createFileRoute("/_admin/dashboard/orders/$orderId/")({
 function RouteComponent() {
 	const { orderId } = Route.useParams();
 	const search = Route.useSearch();
-	const [isPreparingAccessories, setIsPreparingAccessories] = useState(false);
-	const { data: order } = useSuspenseQuery(
-		createOrderDetailQueryOptions({ orderId }),
-	);
-	const { data: preparation } = useSuspenseQuery(
-		accessoryPreparationQueries.detail({ orderId }),
-	);
+	const { data: rental } = useSuspenseQuery(rentalQueries.detail(orderId));
 
 	return (
-		<OrderDetailProvider order={order}>
-			<div className="min-h-screen bg-neutral-50 text-neutral-950 px-8">
-				<PageBreadcrumb
-					parent={{ label: "Pedidos", to: "/dashboard/orders", search }}
-					current={String(order.number)}
-				/>
+		<div className="min-h-screen bg-neutral-50 text-neutral-950 px-8">
+			<PageBreadcrumb
+				parent={{ label: "Pedidos", to: "/dashboard/orders", search }}
+				current={formatOrderNumber(rental.number)}
+			/>
 
-				<OrderHeader preparation={preparation} />
-
-				{isPreparingAccessories ? (
-					<div className="py-10">
-						<AccessoryPreparationWorkspace
-							orderId={orderId}
-							productImagesByOrderItemId={getProductImagesByOrderItemId(
-								order.items,
-							)}
-							preparation={preparation}
-							onClose={() => setIsPreparingAccessories(false)}
-						/>
+			<RentalDetailProvider rental={rental}>
+				<RentalDetailHeader />
+				<div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] py-10 gap-20">
+					<div>
+						<RentalEquipmentSection />
 					</div>
-				) : (
-					<div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] py-10 gap-20">
-						{/* Left */}
-						<div>
-							<OrderEquipmentSection
-								onPrepareAccessories={() => setIsPreparingAccessories(true)}
-							/>
-						</div>
-
-						{/* Right */}
-						<div className="space-y-4">
-							<OrderClientCard />
-							<OrderSigningCard />
-							<OrderLogisticsCard />
-							<OrderFinancialsCard />
-						</div>
-					</div>
-				)}
-			</div>
-		</OrderDetailProvider>
+					<RentalSidebarCards />
+				</div>
+			</RentalDetailProvider>
+		</div>
 	);
 }

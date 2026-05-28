@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
 
+import { V2TenantManagementModule } from 'src/modules/v2/tenant-management/tenant-management.module';
+
 import { EmailDeliveryPort } from './application/ports/email-delivery.port';
 import { EmailRenderer } from './application/ports/email-renderer.port';
 import { EmailSenderResolver } from './application/ports/email-sender.resolver';
@@ -15,6 +17,7 @@ import { CodeBasedEmailRendererService } from './infrastructure/rendering/code-b
 import { PlatformEmailSenderResolver } from './infrastructure/sender/platform-email-sender.resolver';
 
 @Module({
+  imports: [V2TenantManagementModule],
   providers: [
     NotificationOrchestrator,
     NotificationChannelPolicyResolver,

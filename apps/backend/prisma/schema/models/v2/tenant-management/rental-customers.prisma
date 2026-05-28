@@ -1,0 +1,119 @@
+// ---------------------------------------------------------------------------
+// V2 TENANT MANAGEMENT - RENTAL CUSTOMERS
+// ---------------------------------------------------------------------------
+
+enum V2RentalCustomerOnboardingStatus {
+  NOT_STARTED
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model V2RentalCustomer {
+  id               String                           @id @default(uuid())
+  tenantId         String                           @map("tenant_id")
+  email            String
+  passwordHash     String?                          @map("password_hash")
+  firstName        String                           @map("first_name")
+  lastName         String                           @map("last_name")
+  phone            String?
+  emailVerifiedAt  DateTime?                        @map("email_verified_at")
+  avatarUrl        String?                          @map("avatar_url")
+  sessionVersion   Int                              @default(1) @map("session_version")
+  lastLoginAt      DateTime?                        @map("last_login_at")
+  isCompany        Boolean                          @default(false) @map("is_company")
+  companyName      String?                          @map("company_name")
+  isActive         Boolean                          @default(true) @map("is_active")
+  onboardingStatus V2RentalCustomerOnboardingStatus @default(NOT_STARTED) @map("onboarding_status")
+  profileSnapshot  Json                             @default("{}") @map("profile_snapshot")
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  profile        V2CustomerProfile?
+  tenant         V2Tenant                       @relation(fields: [tenantId], references: [id])
+  authIdentities V2RentalCustomerAuthIdentity[]
+
+  @@unique([tenantId, email])
+  @@index([tenantId, isActive, deletedAt])
+  @@index([tenantId, isCompany])
+  @@map("v2_rental_customers")
+}
+
+model V2RentalCustomerAuthIdentity {
+  id String @id @default(cuid())
+
+  tenantId   String           @map("tenant_id")
+  customerId String           @map("customer_id")
+  customer   V2RentalCustomer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  provider          V2AuthProvider
+  providerAccountId String         @map("provider_account_id")
+
+  email         String?
+  emailVerified Boolean @default(false) @map("email_verified")
+  profile       Json?
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([tenantId, provider, providerAccountId])
+  @@unique([customerId, provider])
+  @@index([tenantId, customerId])
+  @@index([tenantId, email])
+  @@map("v2_rental_customer_auth_identities")
+}
+
+model V2CustomerProfile {
+  id         String @id @default(uuid())
+  customerId String @unique @map("customer_id")
+
+  // Personal
+  fullName             String   @map("full_name")
+  phone                String
+  birthDate            DateTime @map("birth_date") @db.Date
+  documentNumber       String   @map("document_number")
+  identityDocumentPath String   @map("identity_document_path")
+
+  // Address
+  address     String
+  city        String
+  stateRegion String @map("state_region")
+  country     String
+
+  // Professional
+  occupation   String
+  company      String?
+  taxId        String? @map("tax_id")
+  businessName String? @map("business_name")
+
+  // Bank
+  bankName      String @map("bank_name")
+  accountNumber String @map("account_number")
+
+  // Acquisition
+  instagram             String?
+  knowsExistingCustomer Boolean @default(false) @map("knows_existing_customer")
+  knownCustomerName     String? @map("known_customer_name")
+
+  // Reference contacts
+  contact1Name         String @map("contact1_name")
+  contact1Phone        String @default("migration") @map("contact1_phone")
+  contact1Relationship String @map("contact1_relationship")
+  contact2Name         String @map("contact2_name")
+  contact2Phone        String @default("migration") @map("contact2_phone")
+  contact2Relationship String @map("contact2_relationship")
+
+  // Review
+  rejectionReason String?   @map("rejection_reason")
+  reviewedAt      DateTime? @map("reviewed_at")
+  reviewedById    String?   @map("reviewed_by_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  customer V2RentalCustomer @relation(fields: [customerId], references: [id])
+
+  @@map("v2_customer_profiles")
+}

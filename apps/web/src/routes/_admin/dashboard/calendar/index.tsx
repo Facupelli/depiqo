@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useCallback } from "react";
 import { z } from "zod";
 import type { OrdersCalendarSearch } from "@/features/orders/calendar/orders-calendar.utils";
 import { OrdersCalendarPage } from "@/features/orders/calendar/orders-calendar-page";
@@ -27,16 +28,16 @@ function CalendarRoute() {
 	const search = Route.useSearch();
 	const navigate = useNavigate({ from: Route.fullPath });
 
-	function handleSearchChange(
-		nextSearch: OrdersCalendarSearch,
-		replace = false,
-	) {
-		navigate({
-			to: ".",
-			search: nextSearch,
-			replace,
-		});
-	}
+	const handleSearchChange = useCallback(
+		(nextSearch: OrdersCalendarSearch, replace = false) => {
+			navigate({
+				to: ".",
+				search: nextSearch,
+				replace,
+			});
+		},
+		[navigate],
+	);
 
 	return (
 		<OrdersCalendarPage search={search} onSearchChange={handleSearchChange} />

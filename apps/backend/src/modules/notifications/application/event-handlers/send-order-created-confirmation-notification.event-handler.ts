@@ -1,12 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { QueryBus } from '@nestjs/cqrs';
 import { OnEvent } from '@nestjs/event-emitter';
-import { TenantContext } from '@repo/schemas';
 
-import { FindCustomerForAuthByIdQuery } from 'src/modules/customer/public/queries/find-customer-for-auth-by-id.query';
-import { CustomerForAuthReadModel } from 'src/modules/customer/public/read-models/customer-for-auth.read-model';
 import { OrderCreatedByCustomerEvent } from 'src/modules/order/public/events/order-created-by-customer.event';
-import { FindTenantByIdQuery } from 'src/modules/tenant/public/queries/find-tenant-by-id.query';
+import { TenantManagementPublicApi } from 'src/modules/v2/tenant-management/public-api/tenant-management.public-api';
 
 import { NotificationType } from '../../domain/notification-type.enum';
 import { NotificationOrchestrator } from '../notification-orchestrator.service';
@@ -23,18 +19,22 @@ function formatMinutesFromMidnight(minutes: number): string {
 @Injectable()
 export class SendOrderCreatedConfirmationNotificationHandler {
   constructor(
-    private readonly queryBus: QueryBus,
+    private readonly tenantManagementPublicApi: TenantManagementPublicApi,
     private readonly notificationOrchestrator: NotificationOrchestrator,
   ) {}
 
   @OnEvent(OrderCreatedByCustomerEvent.EVENT_NAME, { async: true })
   async handle(event: OrderCreatedByCustomerEvent): Promise<void> {
-    const [customer, tenant] = await Promise.all([
-      this.queryBus.execute<FindCustomerForAuthByIdQuery, CustomerForAuthReadModel | null>(
-        new FindCustomerForAuthByIdQuery(event.customerId),
-      ),
-      this.queryBus.execute<FindTenantByIdQuery, TenantContext | null>(new FindTenantByIdQuery(event.tenantId)),
+    const [customerResult, tenantResult] = await Promise.all([
+      this.tenantManagementPublicApi.getRentalCustomerNotificationRecipient({
+        tenantId: event.tenantId,
+        rentalCustomerId: event.customerId,
+      }),
+      this.tenantManagementPublicApi.getTenant({ tenantId: event.tenantId }),
     ]);
+
+    const customer = customerResult.isOk() ? customerResult.value : null;
+    const tenant = tenantResult.isOk() ? tenantResult.value : null;
 
     if (!customer || customer.deletedAt || !customer.isActive) {
       return;

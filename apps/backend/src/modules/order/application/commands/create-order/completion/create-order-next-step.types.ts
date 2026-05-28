@@ -22,18 +22,16 @@ export type CreateOrderCompletionContext = {
   fulfillment: {
     method: FulfillmentMethod;
     locationName: string | null;
-    deliveryRequest:
-      | {
-          recipientName: string;
-          addressLine1: string;
-          addressLine2: string | null;
-          city: string;
-          stateRegion: string;
-          postalCode: string;
-          country: string;
-          instructions: string | null;
-        }
-      | null;
+    deliveryRequest: {
+      recipientName: string;
+      addressLine1: string;
+      addressLine2: string | null;
+      city: string;
+      stateRegion: string;
+      postalCode: string;
+      country: string;
+      instructions: string | null;
+    } | null;
   };
   items: Array<{
     name: string;

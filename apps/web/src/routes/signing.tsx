@@ -1,3 +1,4 @@
+import type { AcceptPublicSigningSessionResponseDto } from "@repo/api-contracts";
 import { createFileRoute } from "@tanstack/react-router";
 import {
 	Download,
@@ -10,20 +11,18 @@ import { useState } from "react";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
-import { PublicSigningForm } from "@/features/document-signing/components/public-signing-form";
-import { PublicSigningPdfViewer } from "@/features/document-signing/components/public-signing-pdf-viewer";
-import { PublicSigningTerminalState } from "@/features/document-signing/components/public-signing-terminal-state";
-import {
-	getPublicSigningSignedPdfUrl,
-	getPublicSigningUnsignedPdfUrl,
-} from "@/features/document-signing/document-signing.api";
-import {
-	type ParsedAcceptPublicSigningSessionResponseDto,
-	useAcceptPublicSigningSession,
-	usePublicSigningSession,
-} from "@/features/document-signing/document-signing.queries";
-import type { toAcceptPublicSigningSessionDto } from "@/features/document-signing/public-signing-form.schema";
 import { getProblemDetailsStatus, ProblemDetailsError } from "@/shared/errors";
+import { useAcceptPublicSigningSession } from "@/v2/features/document-signing/accept-public-signing-session/accept-public-signing-session.mutation";
+import { usePublicSigningSession } from "@/v2/features/document-signing/document-signing.queries";
+import { PublicSigningForm } from "@/v2/features/document-signing/public-signing-session/public-signing-form";
+import {
+	type PublicSigningFormValues,
+	toAcceptPublicSigningSessionDto,
+} from "@/v2/features/document-signing/public-signing-session/public-signing-form.schema";
+import { PublicSigningPdfViewer } from "@/v2/features/document-signing/public-signing-session/public-signing-pdf-viewer";
+import { PublicSigningTerminalState } from "@/v2/features/document-signing/public-signing-session/public-signing-terminal-state";
+import { getPublicSigningSignedPdfUrlFromDownloadUrl } from "@/v2/features/document-signing/stream-public-signed-receipt-document/stream-public-signed-receipt-document.api";
+import { getPublicSigningUnsignedPdfUrl } from "@/v2/features/document-signing/stream-public-unsigned-document/stream-public-unsigned-document.api";
 
 const signingSearchSchema = z.object({
 	token: z.string().trim().min(1).optional().catch(undefined),
@@ -38,18 +37,19 @@ export const Route = createFileRoute("/signing")({
 			},
 		],
 	}),
-	component: SigningPage,
+	component: PublicSigningPage,
 });
 
-function SigningPage() {
+function PublicSigningPage() {
 	const { token } = Route.useSearch();
+
 	const [submitError, setSubmitError] = useState<string | null>(null);
 	const [terminalStatus, setTerminalStatus] = useState<number | null>(null);
 	const [unexpectedTerminalMessage, setUnexpectedTerminalMessage] = useState<
 		string | null
 	>(null);
 	const [successResult, setSuccessResult] =
-		useState<ParsedAcceptPublicSigningSessionResponseDto | null>(null);
+		useState<AcceptPublicSigningSessionResponseDto | null>(null);
 
 	const sessionQuery = usePublicSigningSession(
 		{ token: token ?? "" },
@@ -60,19 +60,21 @@ function SigningPage() {
 	);
 	const acceptMutation = useAcceptPublicSigningSession();
 
-	const submitSign = async (
-		dto: ReturnType<typeof toAcceptPublicSigningSessionDto>,
-	) => {
+	const submitSign = async (values: PublicSigningFormValues) => {
 		setSubmitError(null);
 		setUnexpectedTerminalMessage(null);
 
-		if (!token) {
+		if (!token || !sessionQuery.data) {
 			setSubmitError("No pudimos verificar tu identidad. Intenta nuevamente.");
 			return;
 		}
 
 		try {
-			const result = await acceptMutation.mutateAsync({ token, dto });
+			const body = toAcceptPublicSigningSessionDto(
+				values,
+				sessionQuery.data.acceptance.textVersion,
+			);
+			const result = await acceptMutation.mutateAsync({ token, body });
 			setSuccessResult(result);
 		} catch (error) {
 			const status = getProblemDetailsStatus(error) ?? null;
@@ -113,14 +115,18 @@ function SigningPage() {
 	}
 
 	if (successResult) {
+		const signedPdfUrl = getPublicSigningSignedPdfUrlFromDownloadUrl(
+			successResult.downloadUrl,
+		);
+
 		return (
 			<PublicSigningTerminalState
 				icon={FileCheck2}
 				title="Contrato firmado correctamente"
 				description="Tu firma quedó registrada. Ya puedes descargar la versión firmada del contrato."
-				detail={`Firmado el ${successResult.signedAt.format("DD/MM/YYYY HH:mm")}.`}
+				detail={`Firmado el ${formatDateTime(successResult.signedAt)}.`}
 				actionLabel="Descargar PDF firmado"
-				actionHref={getPublicSigningSignedPdfUrl(token)}
+				actionHref={signedPdfUrl}
 			/>
 		);
 	}
@@ -184,14 +190,13 @@ function SigningPage() {
 						src={unsignedPdfUrl}
 					/>
 
-					{successResult ? null : (
-						<PublicSigningForm
-							key={session.requestId}
-							submitError={submitError}
-							isPending={acceptMutation.isPending}
-							onSubmit={(dto) => submitSign(dto)}
-						/>
-					)}
+					<PublicSigningForm
+						key={session.requestId}
+						acceptanceText={session.acceptance.textSnapshot}
+						submitError={submitError}
+						isPending={acceptMutation.isPending}
+						onSubmit={submitSign}
+					/>
 				</div>
 			</main>
 		</div>
@@ -258,4 +263,20 @@ function getProblemDetailsMessage(error: unknown): string | null {
 	}
 
 	return null;
+}
+
+function formatDateTime(value: string): string {
+	const date = new Date(value);
+
+	if (Number.isNaN(date.getTime())) {
+		return value;
+	}
+
+	return new Intl.DateTimeFormat("es-AR", {
+		day: "2-digit",
+		month: "2-digit",
+		year: "numeric",
+		hour: "2-digit",
+		minute: "2-digit",
+	}).format(date);
 }

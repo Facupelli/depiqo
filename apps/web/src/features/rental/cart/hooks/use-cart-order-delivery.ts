@@ -1,4 +1,3 @@
-import { FulfillmentMethod } from "@repo/types";
 import { useMemo, useState } from "react";
 import {
 	type DeliveryDefaultsFormState,
@@ -14,7 +13,7 @@ function toInitialDeliveryRequest(
 	return {
 		...EMPTY_DELIVERY_REQUEST,
 		country: deliveryDefaults.country,
-		stateRegion: deliveryDefaults.stateRegion,
+		state: deliveryDefaults.state,
 		city: deliveryDefaults.city,
 		postalCode: deliveryDefaults.postalCode,
 	};
@@ -27,9 +26,9 @@ export function useCartOrderDelivery({
 	supportsDelivery: boolean;
 	deliveryDefaults: DeliveryDefaultsFormState;
 }) {
-	const [fulfillmentMethod, setFulfillmentMethod] = useState<FulfillmentMethod>(
-		FulfillmentMethod.PICKUP,
-	);
+	const [fulfillmentMethod, setFulfillmentMethod] = useState<
+		"PICKUP" | "DELIVERY"
+	>("PICKUP");
 	const [deliveryRequest, setDeliveryRequest] =
 		useState<DeliveryRequestFormState>(() =>
 			toInitialDeliveryRequest(deliveryDefaults),
@@ -37,14 +36,14 @@ export function useCartOrderDelivery({
 	const [isDeliveryDetailsRequired, setIsDeliveryDetailsRequired] =
 		useState(false);
 
-	const onFulfillmentMethodChange = (value: FulfillmentMethod) => {
-		if (value === FulfillmentMethod.DELIVERY && !supportsDelivery) {
+	const onFulfillmentMethodChange = (value: "PICKUP" | "DELIVERY") => {
+		if (value === "DELIVERY" && !supportsDelivery) {
 			return;
 		}
 
 		setFulfillmentMethod(value);
 
-		if (value === FulfillmentMethod.PICKUP) {
+		if (value === "PICKUP") {
 			setIsDeliveryDetailsRequired(false);
 			return;
 		}

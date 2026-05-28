@@ -1,18 +1,16 @@
-import { PromotionActivationType } from "@repo/types";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import z from "zod";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CouponsTab } from "@/features/pricing/coupons/components/coupons-tab";
-import { CreateCouponDialogForm } from "@/features/pricing/coupons/components/create-coupon-dialog-form";
+
 import { PromotionsTab } from "@/features/pricing/promotions/components/promotions-tab";
 import { AdminRouteError } from "@/shared/components/admin-route-error";
 
 const promotionsSearchSchema = z.object({
 	tab: z.enum(["coupons", "promotions"]).default("promotions"),
-	page: z.number().int().min(1).default(1),
 	search: z.string().optional(),
-	activationType: z.enum(PromotionActivationType).optional(),
+	activation: z.enum(["AUTOMATIC", "COUPON_REQUIRED"]).optional(),
 });
 
 type Tab = "coupons" | "promotions";
@@ -39,9 +37,8 @@ function RouteComponent() {
 		navigate({
 			search: () => ({
 				tab: value as Tab,
-				page: 1,
 				search: undefined,
-				activationType: undefined,
+				activation: undefined,
 			}),
 		});
 	}
@@ -63,7 +60,7 @@ function RouteComponent() {
 						render={<Link to="/dashboard/promotions/new">Nueva promocion</Link>}
 					/>
 				)}
-				{tab === "coupons" && <CreateCouponDialogForm />}
+				{/* TODO: Restore the coupon creation dialog after it is migrated to v2 promotion queries. */}
 			</div>
 
 			{/* Tabs */}

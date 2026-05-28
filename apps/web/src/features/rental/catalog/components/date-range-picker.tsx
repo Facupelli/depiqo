@@ -24,7 +24,7 @@ const EMPTY_DATE_RANGE: DateRange = {
 };
 
 interface DateRangePickerProps {
-	locationId?: string;
+	branchId?: string;
 	pickupDate?: string;
 	returnDate?: string;
 	onChange: (range: DateRange | undefined) => void;
@@ -40,7 +40,7 @@ export function DateRangePicker({
 	numberOfMonths = 2,
 	buttonClassName,
 	datesButtonClassName,
-	locationId,
+	branchId,
 }: DateRangePickerProps) {
 	const [open, setOpen] = useState(false);
 	const [hasOpened, setHasOpened] = useState(false);
@@ -138,7 +138,7 @@ export function DateRangePicker({
 						}
 					>
 						<LazyDateRangePickerContent
-							locationId={locationId}
+							branchId={branchId}
 							value={draftValue ?? EMPTY_DATE_RANGE}
 							onChange={handleRangeSelect}
 							numberOfMonths={numberOfMonths}

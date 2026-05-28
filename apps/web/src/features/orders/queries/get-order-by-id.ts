@@ -50,9 +50,9 @@ export type ParsedOrderDetailResponseDto = Omit<
 									OrderDetailResponseDto["financial"]["items"][number]["pricing"]["manualOverride"]
 								>,
 								"setAt"
-							> & {
+						  > & {
 								setAt: Dayjs | null;
-							})
+						  })
 						| null;
 				};
 			}
@@ -105,9 +105,9 @@ export function parseOrderDetailResponse(
 					...item.pricing,
 					manualOverride: item.pricing.manualOverride
 						? {
-							...item.pricing.manualOverride,
-							setAt: parseTimestamp(item.pricing.manualOverride.setAt),
-						}
+								...item.pricing.manualOverride,
+								setAt: parseTimestamp(item.pricing.manualOverride.setAt),
+							}
 						: null,
 				},
 			})),

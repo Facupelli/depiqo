@@ -1,0 +1,90 @@
+enum PromotionActivation {
+  AUTOMATIC
+  COUPON_REQUIRED
+}
+
+enum PromotionEffectType {
+  PERCENTAGE_OFF
+  FIXED_AMOUNT_OFF
+}
+
+enum PromotionApplicationTarget {
+  ORDER
+  ELIGIBLE_LINES
+}
+
+model V2Promotion {
+  id         String              @id @default(uuid())
+  tenantId   String              @map("tenant_id")
+  name       String
+  activation PromotionActivation @default(AUTOMATIC)
+  priority   Int                 @default(0)
+  stackable  Boolean             @default(false)
+  isActive   Boolean             @default(true) @map("is_active")
+
+  validFrom  DateTime? @map("valid_from")
+  validUntil DateTime? @map("valid_until")
+
+  effectType  PromotionEffectType        @map("effect_type")
+  effectValue Decimal                    @map("effect_value")
+  target      PromotionApplicationTarget @default(ORDER)
+
+  minOrderSubtotal Decimal? @map("min_order_subtotal")
+  minRentalUnits   Int?     @map("min_rental_units")
+  maxRentalUnits   Int?     @map("max_rental_units")
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  scopes     V2PromotionScope[]
+  exclusions V2PromotionExclusion[]
+  coupons    V2Coupon[]
+
+  @@index([tenantId, isActive, activation, priority])
+  @@index([tenantId, validFrom, validUntil])
+  @@map("v2_promotions")
+}
+
+model V2PromotionScope {
+  id          String @id @default(uuid())
+  tenantId    String @map("tenant_id")
+  promotionId String @map("promotion_id")
+
+  appliesToAll   Boolean @default(false) @map("applies_to_all")
+  rentableItemId String? @map("rentable_item_id")
+  rentalOfferId  String? @map("rental_offer_id")
+  categoryId     String? @map("category_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  promotion V2Promotion @relation(fields: [promotionId], references: [id])
+
+  @@index([tenantId])
+  @@index([promotionId])
+  @@index([rentableItemId])
+  @@index([rentalOfferId])
+  @@index([categoryId])
+  @@map("v2_promotion_scopes")
+}
+
+model V2PromotionExclusion {
+  id          String @id @default(uuid())
+  tenantId    String @map("tenant_id")
+  promotionId String @map("promotion_id")
+
+  rentableItemId String? @map("rentable_item_id")
+  rentalOfferId  String? @map("rental_offer_id")
+  categoryId     String? @map("category_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  promotion V2Promotion @relation(fields: [promotionId], references: [id])
+
+  @@index([tenantId])
+  @@index([promotionId])
+  @@index([rentableItemId])
+  @@index([rentalOfferId])
+  @@index([categoryId])
+  @@map("v2_promotion_exclusions")
+}

@@ -43,6 +43,7 @@ import {
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { useCustomers } from "@/features/customer/customer.queries";
+import { OrderAvailabilityConflictFeedback } from "@/features/orders/components/order-availability-conflict-feedback";
 import { DraftOrderItemPicker } from "@/features/orders/draft-order/components/draft-order-item-picker";
 import {
 	useDraftOrderActions,
@@ -56,13 +57,12 @@ import {
 	isValidNonNegativeMoneyAmount,
 	normalizeMoneyAmount,
 } from "@/features/orders/draft-order/utils/draft-order-pricing";
-import { OrderAvailabilityConflictFeedback } from "@/features/orders/components/order-availability-conflict-feedback";
+import { formatMoney } from "@/features/orders/order.utils";
 import type { OrderAvailabilityConflictDisplayModel } from "@/features/orders/order-availability-conflict.display-model";
 import { useSaveOrderEditor } from "@/features/orders/order-editor/hooks/use-save-order-editor";
-import { formatMoney } from "@/features/orders/order.utils";
-import { useOrderPricingPreview } from "@/features/orders/orders.queries";
 import type { OrderEditorMode } from "@/features/orders/order-editor/types/order-editor.types";
 import { getOrderEditorCopy } from "@/features/orders/order-editor/utils/order-editor-copy";
+import { useOrderPricingPreview } from "@/features/orders/orders.queries";
 import { useCurrentTenant } from "@/features/tenant/tenant.queries";
 import dayjs from "@/lib/dates/dayjs";
 import { dateParamToLocalDate, localDateToDateParam } from "@/lib/dates/parse";
@@ -157,14 +157,14 @@ function useDraftOrderPricingPreview(): DraftOrderPricingPreviewState {
 								}),
 					}))
 				: [
-					{
-						draftItemId: "empty",
-						label: "Empty",
-						type: "PRODUCT",
-						productTypeId: EMPTY_PRICING_PREVIEW_PRODUCT_ID,
-						quantity: 1,
-					},
-				],
+						{
+							draftItemId: "empty",
+							label: "Empty",
+							type: "PRODUCT",
+							productTypeId: EMPTY_PRICING_PREVIEW_PRODUCT_ID,
+							quantity: 1,
+						},
+					],
 		pricingAdjustment: budget
 			? {
 					mode: "TARGET_TOTAL",
@@ -550,11 +550,11 @@ function ItemsSection({
 											<TableCell>
 												<div className="space-y-1">
 													<p className="font-medium">{item.selection.label}</p>
-												<p className="text-xs text-muted-foreground">
-													{pricing?.hasAdjustment
-														? "Vista previa proporcional"
-														: "Precio calculado"}
-												</p>
+													<p className="text-xs text-muted-foreground">
+														{pricing?.hasAdjustment
+															? "Vista previa proporcional"
+															: "Precio calculado"}
+													</p>
 												</div>
 											</TableCell>
 											<TableCell>
@@ -563,33 +563,31 @@ function ItemsSection({
 													: "Combo"}
 											</TableCell>
 											<TableCell>
-											{item.selection.type === "PRODUCT" ? (
-												<Input
-													type="number"
-													min={1}
-													value={item.selection.quantity}
-													onChange={(event) => {
-														const quantity = Number(event.target.value);
-														if (Number.isFinite(quantity) && quantity > 0) {
-															setProductQuantity(
-																item.draftItemId,
-																Math.trunc(quantity),
-															);
-														}
-													}}
-													className="w-20"
-												/>
-											) : (
-												"-"
-											)}
-										</TableCell>
-										<TableCell>
-											<ItemPricingSummary pricing={pricing} />
-										</TableCell>
-										<TableCell>
-											<ItemBudgetPreview
-												pricing={pricing}
-											/>
+												{item.selection.type === "PRODUCT" ? (
+													<Input
+														type="number"
+														min={1}
+														value={item.selection.quantity}
+														onChange={(event) => {
+															const quantity = Number(event.target.value);
+															if (Number.isFinite(quantity) && quantity > 0) {
+																setProductQuantity(
+																	item.draftItemId,
+																	Math.trunc(quantity),
+																);
+															}
+														}}
+														className="w-20"
+													/>
+												) : (
+													"-"
+												)}
+											</TableCell>
+											<TableCell>
+												<ItemPricingSummary pricing={pricing} />
+											</TableCell>
+											<TableCell>
+												<ItemBudgetPreview pricing={pricing} />
 											</TableCell>
 											<TableCell className="text-right">
 												<Button
@@ -660,11 +658,17 @@ function DraftSidebarSection({
 				<div className="space-y-3 rounded-lg border border-border bg-muted/20 p-4">
 					<SummaryRow
 						label="Subtotal calculado"
-						value={formatMoney(preview?.calculatedSubtotal ?? "0.00", previewCurrency)}
+						value={formatMoney(
+							preview?.calculatedSubtotal ?? "0.00",
+							previewCurrency,
+						)}
 					/>
 					<SummaryRow
 						label="Total presupuesto"
-						value={formatMoney(preview?.effectiveSubtotal ?? "0.00", previewCurrency)}
+						value={formatMoney(
+							preview?.effectiveSubtotal ?? "0.00",
+							previewCurrency,
+						)}
 					/>
 					<SummaryRow
 						label="Objetivo"

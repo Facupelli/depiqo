@@ -71,10 +71,11 @@ export function useAccessoryPreparationForm({
 
 				return {
 					...item,
-					accessories: item.accessories.map((accessory, currentAccessoryIndex) =>
-						currentAccessoryIndex === accessoryIndex
-							? updater(accessory)
-							: accessory,
+					accessories: item.accessories.map(
+						(accessory, currentAccessoryIndex) =>
+							currentAccessoryIndex === accessoryIndex
+								? updater(accessory)
+								: accessory,
 					),
 				};
 			}),
@@ -103,7 +104,9 @@ export function useAccessoryPreparationForm({
 		}));
 	}
 
-	function buildPayload(valuesToSubmit: AccessoryPreparationFormValues = values) {
+	function buildPayload(
+		valuesToSubmit: AccessoryPreparationFormValues = values,
+	) {
 		return toSaveOrderAccessoryPreparationDto(valuesToSubmit);
 	}
 

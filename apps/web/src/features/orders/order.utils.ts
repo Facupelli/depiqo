@@ -6,7 +6,7 @@ import type { ParsedOrderDetailResponseDto } from "./queries/get-order-by-id";
 type OrderItem = ParsedOrderDetailResponseDto["items"][number];
 type AssetSummary = OrderItem["assets"][number];
 
-export function formatOrderNumber(orderNumber: number): string {
+export function formatOrderNumber(orderNumber: string): string {
 	return `ORD-${String(orderNumber).padStart(5, "0")}`;
 }
 
@@ -251,7 +251,7 @@ export type OrderHeaderBannerConfig = {
 };
 
 export function getOrderOperationalPhase(
-	order: Pick<ParsedOrderListItem, "status" | "pickupAt" | "returnAt">,
+	order: Pick<ParsedOrderDetailResponseDto, "status" | "pickupAt" | "returnAt">,
 	referenceDate: Dayjs,
 ): OrderOperationalPhase {
 	switch (order.status) {
@@ -261,22 +261,18 @@ export function getOrderOperationalPhase(
 			return "completed";
 		case OrderStatus.CANCELLED:
 			return "cancelled";
-		case OrderStatus.REJECTED:
-			return "rejected";
-		case OrderStatus.EXPIRED:
-			return "expired";
 		case OrderStatus.CONFIRMED:
 			if (referenceDate.isAfter(order.pickupAt)) {
 				return "pickup-overdue";
 			}
 
 			return "pending-pickup";
-		case OrderStatus.ACTIVE:
-			if (referenceDate.isAfter(order.returnAt)) {
-				return "overdue";
-			}
+		// case OrderStatus.ACTIVE:
+		// 	if (referenceDate.isAfter(order.returnAt)) {
+		// 		return "overdue";
+		// 	}
 
-			return "active";
+		// return "active";
 	}
 
 	return "active";
@@ -299,7 +295,8 @@ export function getOrderTemporalInsight(
 			return {
 				state: "pending-review",
 				title: "Pendiente de revisión",
-				description: "Este pedido espera aprobación antes de pasar a operación.",
+				description:
+					"Este pedido espera aprobación antes de pasar a operación.",
 				deadline: "Pendiente de confirmación",
 			};
 		case OrderStatus.CANCELLED:
@@ -507,8 +504,9 @@ export function getOrderHeaderBannerConfig(
 			}
 
 			if (
-				localizedPickupAt.startOf("day").diff(localizedNow.startOf("day"), "day") <=
-				5
+				localizedPickupAt
+					.startOf("day")
+					.diff(localizedNow.startOf("day"), "day") <= 5
 			) {
 				return {
 					tone: "neutral",
@@ -572,8 +570,7 @@ export function getOrderHeaderBannerConfig(
 			return {
 				tone: "danger",
 				title: "Pedido cancelado",
-				subtitle:
-					"Este pedido fue cancelado y ya no sigue en operación.",
+				subtitle: "Este pedido fue cancelado y ya no sigue en operación.",
 				meta: "Sin acciones disponibles",
 				primaryAction: null,
 			};

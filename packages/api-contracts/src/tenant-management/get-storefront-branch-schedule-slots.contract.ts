@@ -1,0 +1,58 @@
+import { z } from "zod";
+
+import type { ApiContract } from "../api-contract";
+
+export const GetStorefrontBranchScheduleSlotsParamsSchema = z.object({
+  branchId: z.uuid(),
+});
+
+export const GetStorefrontBranchScheduleSlotsQuerySchema = z
+  .object({
+    periodStart: z.string().date().optional(),
+    periodEnd: z.string().date().optional(),
+  })
+  .refine((query) => query.periodStart !== undefined || query.periodEnd !== undefined, {
+    message: "At least one of periodStart or periodEnd is required.",
+  })
+  .refine(
+    (query) => {
+      if (query.periodStart === undefined || query.periodEnd === undefined) {
+        return true;
+      }
+
+      return query.periodEnd > query.periodStart;
+    },
+    {
+      message: "periodEnd must be after periodStart.",
+      path: ["periodEnd"],
+    },
+  );
+
+export const GetStorefrontBranchScheduleSlotsResponseSchema = z.object({
+  pickupSlots: z.array(z.number().int().min(0).max(1439)).optional(),
+  returnSlots: z.array(z.number().int().min(0).max(1439)).optional(),
+});
+
+export type GetStorefrontBranchScheduleSlotsParamsDto = z.infer<
+  typeof GetStorefrontBranchScheduleSlotsParamsSchema
+>;
+export type GetStorefrontBranchScheduleSlotsQueryDto = z.infer<
+  typeof GetStorefrontBranchScheduleSlotsQuerySchema
+>;
+export type GetStorefrontBranchScheduleSlotsResponseDto = z.infer<
+  typeof GetStorefrontBranchScheduleSlotsResponseSchema
+>;
+
+export const getStorefrontBranchScheduleSlotsContract = {
+  method: "GET",
+  path: "/storefront/tenant-management/branches/:branchId/schedule-slots",
+  params: GetStorefrontBranchScheduleSlotsParamsSchema,
+  query: GetStorefrontBranchScheduleSlotsQuerySchema,
+  response: GetStorefrontBranchScheduleSlotsResponseSchema,
+} satisfies ApiContract<
+  typeof GetStorefrontBranchScheduleSlotsParamsSchema,
+  typeof GetStorefrontBranchScheduleSlotsQuerySchema,
+  undefined,
+  undefined,
+  typeof GetStorefrontBranchScheduleSlotsResponseSchema
+>;

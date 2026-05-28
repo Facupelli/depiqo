@@ -1,11 +1,11 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { PendingReviewOrdersTable } from "@/features/orders/components/pending-review-orders-table";
 import { PendingReviewOrdersToolbar } from "@/features/orders/components/pending-review-orders-toolbar";
+import { usePendingReviewOrders } from "@/features/orders/orders.queries";
 import {
 	type PendingReviewOrdersSearch,
 	pendingReviewOrdersSearchSchema,
 } from "@/features/orders/pending-review-orders.search";
-import { usePendingReviewOrders } from "@/features/orders/orders.queries";
 import { AdminRouteError } from "@/shared/components/admin-route-error";
 
 export const Route = createFileRoute(

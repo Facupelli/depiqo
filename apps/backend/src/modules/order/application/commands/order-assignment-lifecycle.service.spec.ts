@@ -296,7 +296,13 @@ describe('Order assignment lifecycle services', () => {
     const pendingReviewFlow = {
       execute: jest.fn(),
     } as unknown as ConfirmPendingReviewOrderFlow;
-    const draftFlow = new ConfirmDraftOrderFlow(prisma, orderRepository, inventoryApi, assetResolver, ownerContractResolver);
+    const draftFlow = new ConfirmDraftOrderFlow(
+      prisma,
+      orderRepository,
+      inventoryApi,
+      assetResolver,
+      ownerContractResolver,
+    );
 
     const service = new ConfirmOrderService(orderRepository, pendingReviewFlow, draftFlow);
     const result = await service.execute(new ConfirmOrderCommand('tenant-1', order.id, 'user-1'));
@@ -385,7 +391,13 @@ describe('Order assignment lifecycle services', () => {
     const pendingReviewFlow = {
       execute: jest.fn(),
     } as unknown as ConfirmPendingReviewOrderFlow;
-    const draftFlow = new ConfirmDraftOrderFlow(prisma, orderRepository, inventoryApi, assetResolver, ownerContractResolver);
+    const draftFlow = new ConfirmDraftOrderFlow(
+      prisma,
+      orderRepository,
+      inventoryApi,
+      assetResolver,
+      ownerContractResolver,
+    );
 
     const service = new ConfirmOrderService(orderRepository, pendingReviewFlow, draftFlow);
     const result = await service.execute(new ConfirmOrderCommand('tenant-1', order.id, 'user-1'));

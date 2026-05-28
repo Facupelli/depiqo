@@ -1,12 +1,14 @@
-import { createFileRoute, Link, redirect } from "@tanstack/react-router";
+import {
+	createFileRoute,
+	Link,
+	useNavigate,
+	useRouter,
+} from "@tanstack/react-router";
+import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
 import { FieldError } from "@/components/ui/field";
-import { authenticateCustomerWithGoogleFn } from "@/features/rental/auth/google/google-auth.api";
-import {
-	decodeGoogleAuthState,
-	getGoogleCallbackRedirectUri,
-} from "@/features/rental/auth/google/google-auth.redirect";
 import { ProblemDetailsError } from "@/shared/errors";
+import { createCustomerGoogleHandoff } from "@/v2/features/tenant-management/auth/customer-google-handoff/customer-google-handoff.api";
 
 const searchSchema = z.object({
 	code: z.string().min(1).optional(),
@@ -17,40 +19,85 @@ const searchSchema = z.object({
 
 export const Route = createFileRoute("/auth/google/callback")({
 	validateSearch: searchSchema,
-	loaderDeps: ({ search }) => search,
-	loader: async ({ deps }) => {
-		if (deps.error) {
-			throw new Error(
-				deps.error_description ?? "Google rechazo la autenticacion.",
-			);
-		}
-
-		if (!deps.code) {
-			throw new Error("Google no devolvio un codigo de autorizacion.");
-		}
-
-		if (!deps.state) {
-			throw new Error("Google no devolvio un estado de autenticacion valido.");
-		}
-
-		const response = await authenticateCustomerWithGoogleFn({
-			data: {
-				code: deps.code,
-				redirectUri: getGoogleCallbackRedirectUri(),
-				state: deps.state,
-			},
-		});
-
-		const { redirectPath } = decodeGoogleAuthState(deps.state);
-		const finalizeUrl = new URL("/auth/google/finalize", response.portal_origin);
-		finalizeUrl.searchParams.set("handoff_token", response.handoff_token);
-		finalizeUrl.searchParams.set("redirectTo", redirectPath);
-
-		throw redirect({ href: finalizeUrl.toString() });
-	},
-	errorComponent: ({ error }) => <GoogleAuthErrorPage error={error} />,
-	component: RedirectingToPortalPage,
+	component: GoogleCallbackPage,
 });
+
+function GoogleCallbackPage() {
+	const search = Route.useSearch();
+	const navigate = useNavigate();
+	const router = useRouter();
+	const [error, setError] = useState<unknown>(null);
+	const didStartHandoff = useRef(false);
+
+	useEffect(() => {
+		if (didStartHandoff.current) return;
+		didStartHandoff.current = true;
+
+		let isActive = true;
+
+		async function finalizeGoogleLogin() {
+			try {
+				if (search.error) {
+					throw new Error(
+						search.error_description ?? "Google rechazo la autenticacion.",
+					);
+				}
+
+				if (!search.code) {
+					throw new Error("Google no devolvio un codigo de autorizacion.");
+				}
+
+				if (!search.state) {
+					throw new Error(
+						"Google no devolvio un estado de autenticacion valido.",
+					);
+				}
+
+				const handoff = await createCustomerGoogleHandoff({
+					body: {
+						code: search.code,
+						state: search.state,
+					},
+				});
+
+				if (!isActive) return;
+
+				const finalizeUrl = new URL(
+					"/auth/google/finalize",
+					handoff.portalOrigin,
+				);
+				finalizeUrl.searchParams.set("ticket", handoff.ticket);
+				finalizeUrl.searchParams.set("redirectTo", handoff.redirectPath);
+
+				await router.invalidate({ sync: true });
+				await navigate({ href: finalizeUrl.toString() });
+			} catch (caughtError) {
+				if (isActive) {
+					setError(caughtError);
+				}
+			}
+		}
+
+		finalizeGoogleLogin();
+
+		return () => {
+			isActive = false;
+		};
+	}, [
+		navigate,
+		router,
+		search.code,
+		search.error,
+		search.error_description,
+		search.state,
+	]);
+
+	if (error) {
+		return <GoogleAuthErrorPage error={error} />;
+	}
+
+	return <RedirectingToPortalPage />;
+}
 
 function RedirectingToPortalPage() {
 	return (
@@ -78,7 +125,9 @@ function GoogleAuthErrorPage({ error }: { error: unknown }) {
 		<div className="flex min-h-svh items-center justify-center bg-neutral-100 px-4 py-10">
 			<div className="w-full max-w-sm rounded-xl border bg-background p-6 shadow-sm">
 				<div className="space-y-2">
-					<h1 className="text-lg font-semibold">No pudimos completar el acceso</h1>
+					<h1 className="text-lg font-semibold">
+						No pudimos completar el acceso
+					</h1>
 					<p className="text-sm text-muted-foreground">
 						Revisa el error e intenta nuevamente.
 					</p>

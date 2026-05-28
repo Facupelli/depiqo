@@ -1,4 +1,4 @@
-import { useRef, useSyncExternalStore, type RefObject } from "react";
+import { type RefObject, useRef, useSyncExternalStore } from "react";
 
 /**
  * Returns true when the observed element is intersecting the viewport.

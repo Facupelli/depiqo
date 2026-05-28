@@ -1,13 +1,13 @@
 import { ActorType } from "@repo/types";
-import { getAppSession } from "@/lib/session.server";
 import {
 	hasActiveSession,
-	toSessionPrincipal,
-	toSessionUser,
 	type SessionData,
 	type SessionPrincipal,
 	type SessionUser,
+	toSessionPrincipal,
+	toSessionUser,
 } from "@/lib/session";
+import { getAppSession } from "@/lib/session.server";
 import {
 	AuthRequiredError,
 	SessionExpiredError,

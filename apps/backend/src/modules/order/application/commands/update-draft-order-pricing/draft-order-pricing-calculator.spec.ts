@@ -115,7 +115,9 @@ describe('DraftOrderPricingService', () => {
     const order = makeDraftOrder();
 
     expect(() =>
-      pricingService.buildFinalPriceMapFromItems(order, [{ orderItemId: order.getItems()[0].id, finalPrice: '150.00' }]),
+      pricingService.buildFinalPriceMapFromItems(order, [
+        { orderItemId: order.getItems()[0].id, finalPrice: '150.00' },
+      ]),
     ).toThrow(OrderPricingItemsPayloadMismatchError);
   });
 

@@ -1,4 +1,3 @@
-import type { PromotionView } from "@repo/schemas";
 import { useState } from "react";
 import {
 	AlertDialog,
@@ -13,10 +12,15 @@ import {
 import { ProblemDetailsError } from "@/shared/errors";
 import { useDeletePromotion } from "../promotions.mutations";
 
+interface DeletablePromotion {
+	id: string;
+	name: string;
+}
+
 interface DeletePromotionAlertDialogProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
-	promotion: PromotionView | null;
+	promotion: DeletablePromotion | null;
 }
 
 export function DeletePromotionAlertDialog({
@@ -25,6 +29,7 @@ export function DeletePromotionAlertDialog({
 	promotion,
 }: DeletePromotionAlertDialogProps) {
 	const [errorMessage, setErrorMessage] = useState<string | null>(null);
+	// TODO: Replace this old delete flow when a v2 delete promotion mutation is available.
 	const { mutateAsync: deletePromotion, isPending } = useDeletePromotion();
 
 	if (!promotion) {

@@ -2,16 +2,16 @@ import {
 	type GenerateOrderBudgetRequestDto,
 	generateOrderBudgetRequestSchema,
 } from "@repo/schemas";
-import { ActorType } from "@repo/types";
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
-import { requireSession } from "@/features/auth/auth-guards.server";
 import {
 	AuthRequiredError,
 	ProblemDetailsError,
 	SessionExpiredError,
 	WrongActorError,
 } from "@/shared/errors";
+import { apiFetchRaw } from "@/v2/lib/api/api-fetch-raw";
+import { requireV2TenantUser } from "@/v2/lib/auth/route-auth.server";
 
 const orderParamsSchema = z.object({
 	orderId: z.uuid(),
@@ -38,13 +38,12 @@ export const Route = createFileRoute("/api/orders/$orderId/budget/download")({
 				}
 
 				try {
-					const session = await requireSession({ actorType: ActorType.USER });
-					const response = await fetch(
-						`${process.env.BACKEND_URL}/orders/${parsedParams.data.orderId}/presupuesto/download`,
+					await requireV2TenantUser();
+					const response = await apiFetchRaw(
+						`/orders/${parsedParams.data.orderId}/presupuesto/download`,
 						{
 							method: "POST",
 							headers: {
-								Authorization: `Bearer ${session.accessToken}`,
 								"Content-Type": "application/json",
 							},
 							body: JSON.stringify(body),
@@ -80,7 +79,10 @@ export const Route = createFileRoute("/api/orders/$orderId/budget/download")({
 					}
 
 					const raw = await response.json().catch(() => null);
-					const problem = raw && typeof raw === "object" ? raw : null;
+					const problem =
+						raw && typeof raw === "object"
+							? (raw as { detail?: unknown })
+							: null;
 
 					if (response.status === 422) {
 						return jsonError(

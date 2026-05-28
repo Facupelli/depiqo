@@ -1,7 +1,7 @@
-import { Badge } from "@/components/ui/badge";
 import type { CustomerResponseDto } from "@repo/schemas";
 import { OnboardingStatus } from "@repo/types";
 import type { ColumnDef } from "@tanstack/react-table";
+import { Badge } from "@/components/ui/badge";
 
 export const ONBOARDING_STATUS_LABELS: Record<OnboardingStatus, string> = {
 	[OnboardingStatus.NOT_STARTED]: "No iniciado",

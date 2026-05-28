@@ -3,6 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { DomainEventsCollector } from '../domain/events/domain-events.collector';
 import { DomainEventPublisher } from '../domain/events/domain-event.publisher';
 import { InMemoryDomainEventsCollector } from '../domain/events/in-memory-domain-events.collector';
+import { AppLogger } from '../logger/app-logger.service';
 
 import { PrismaService } from './prisma.service';
 
@@ -23,6 +24,7 @@ export class PrismaUnitOfWork {
   constructor(
     private readonly prisma: PrismaService,
     private readonly domainEventPublisher: DomainEventPublisher,
+    private readonly logger: AppLogger,
   ) {}
 
   async runInTransaction<T>(work: (context: PrismaTransactionContext) => Promise<T>): Promise<T> {
@@ -39,7 +41,14 @@ export class PrismaUnitOfWork {
 
     try {
       await this.domainEventPublisher.publish(recordedEvents);
-    } catch {}
+    } catch (error) {
+      const stack = error instanceof Error ? error.stack : undefined;
+      this.logger.error(
+        `Domain event publication failed after transaction commit for ${recordedEvents.length} event(s)`,
+        stack,
+        PrismaUnitOfWork.name,
+      );
+    }
 
     return result;
   }

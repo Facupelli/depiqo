@@ -4,10 +4,7 @@ import { UsersModule } from './modules/users/users.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { DatabaseModule } from './core/database/database.module';
 import { AppConfigModule } from './config/config.module';
-import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
-import { ActorTypeGuard } from './modules/auth/infrastructure/guards/actor-type.guard';
-import { JwtAuthGuard } from './modules/auth/infrastructure/guards/jwt-auth.guard';
-import { PermissionsGuard } from './modules/auth/infrastructure/guards/permissions.guard';
+import { APP_INTERCEPTOR } from '@nestjs/core';
 import { TenantInterceptor } from './modules/shared/tenant/tenant.interceptor';
 import { LoggerModule } from './core/logger/logger.module';
 import { CatalogModule } from './modules/catalog/catalog.module';
@@ -25,6 +22,14 @@ import { ObjectStorageModule } from './modules/object-storage/object-storage.mod
 import { DocumentSigningModule } from './modules/document-signing/document-signing.module';
 import { HealthController } from './health/health.controller';
 import { DomainEventsModule } from './core/domain/events/domain-events.module';
+import { V2TenantManagementModule } from './modules/v2/tenant-management/tenant-management.module';
+import { V2CatalogModule } from './modules/v2/catalog/catalog.module';
+import { V2OfferingSetupModule } from './modules/v2/offering-setup/offering-setup.module';
+import { V2AssetInventoryModule } from './modules/v2/asset-inventory/asset-inventory.module';
+import { V2PricingModule } from './modules/v2/pricing/pricing.module';
+import { V2RentalCommitmentModule } from './modules/v2/rental-commitment/rental-commitment.module';
+import { V2ContractsModule } from './modules/v2/contracts/contracts.module';
+import { V2DocumentSigningModule } from './modules/v2/document-signing/document-signing.module';
 
 @Module({
   imports: [
@@ -48,20 +53,29 @@ import { DomainEventsModule } from './core/domain/events/domain-events.module';
     OrderModule,
     BillingUnitModule,
     PricingModule,
+    // V2
+    V2TenantManagementModule,
+    V2CatalogModule,
+    V2OfferingSetupModule,
+    V2AssetInventoryModule,
+    V2PricingModule,
+    V2RentalCommitmentModule,
+    V2ContractsModule,
+    V2DocumentSigningModule,
   ],
   providers: [
-    {
-      provide: APP_GUARD,
-      useClass: JwtAuthGuard,
-    },
-    {
-      provide: APP_GUARD,
-      useClass: ActorTypeGuard,
-    },
-    {
-      provide: APP_GUARD,
-      useClass: PermissionsGuard,
-    },
+    // {
+    //   provide: APP_GUARD,
+    //   useClass: JwtAuthGuard,
+    // },
+    // {
+    //   provide: APP_GUARD,
+    //   useClass: ActorTypeGuard,
+    // },
+    // {
+    //   provide: APP_GUARD,
+    //   useClass: PermissionsGuard,
+    // },
     {
       provide: APP_INTERCEPTOR,
       useClass: TenantInterceptor,

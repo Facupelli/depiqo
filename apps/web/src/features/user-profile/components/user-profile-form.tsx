@@ -277,8 +277,8 @@ export function UserProfileForm({
 											</div>
 										) : (
 											<p className="text-sm text-muted-foreground">
-												Acepta cualquier imagen. La convertimos a PNG antes
-												de subirla.
+												Acepta cualquier imagen. La convertimos a PNG antes de
+												subirla.
 											</p>
 										)}
 									</div>

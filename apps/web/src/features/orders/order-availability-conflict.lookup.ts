@@ -1,6 +1,9 @@
-import type { ParsedOrderDetailResponseDto } from "@/features/orders/queries/get-order-by-id";
-import type { GroupedOrderItem, ProductOrderDetailItem } from "@/features/orders/types/order-detail.types";
 import { getGroupedOrderItems } from "@/features/orders/order-detail.utils";
+import type { ParsedOrderDetailResponseDto } from "@/features/orders/queries/get-order-by-id";
+import type {
+	GroupedOrderItem,
+	ProductOrderDetailItem,
+} from "@/features/orders/types/order-detail.types";
 
 export function getGroupedOrderItemsByKey(order: ParsedOrderDetailResponseDto) {
 	return new Map(

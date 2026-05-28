@@ -53,10 +53,7 @@ export class InventoryFacade implements InventoryPublicApi {
     return asset ?? null;
   }
 
-  async findAssetOwnershipByIds(
-    tenantId: string,
-    assetIds: string[],
-  ): Promise<InventoryAssetOwnershipSummary[]> {
+  async findAssetOwnershipByIds(tenantId: string, assetIds: string[]): Promise<InventoryAssetOwnershipSummary[]> {
     if (assetIds.length === 0) {
       return [];
     }

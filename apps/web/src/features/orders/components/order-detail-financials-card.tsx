@@ -1,8 +1,8 @@
 import { ChevronDown, ReceiptText } from "lucide-react";
 import { useState } from "react";
 import { Switch } from "@/components/ui/switch";
-import { useOrderDetailContext } from "@/features/orders/contexts/order-detail.context";
 import { SidebarCardHeader } from "@/features/orders/components/order-detail-sidebar-primitives";
+import { useOrderDetailContext } from "@/features/orders/contexts/order-detail.context";
 import { formatMoney } from "@/features/orders/order.utils";
 import { formatSignedMoney } from "@/features/orders/order-detail.utils";
 import type { ParsedOrderDetailResponseDto } from "@/features/orders/queries/get-order-by-id";

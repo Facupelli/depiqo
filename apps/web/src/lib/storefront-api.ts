@@ -1,6 +1,6 @@
 import type { PaginatedDto } from "@repo/schemas";
 import { serverEnv } from "@/config/server-env";
-import { requestJson, type ApiRequestOptions } from "./api";
+import { type ApiRequestOptions, requestJson } from "./api";
 
 type StorefrontApiRequestOptions = ApiRequestOptions;
 

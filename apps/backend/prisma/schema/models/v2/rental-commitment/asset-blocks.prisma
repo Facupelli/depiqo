@@ -1,0 +1,30 @@
+// ---------------------------------------------------------------------------
+// V2 RENTAL COMMITMENT - ASSET BLOCKS
+// ---------------------------------------------------------------------------
+
+enum V2AssetBlockType {
+  EQUIPMENT
+  ACCESSORY
+}
+
+// TODO(v2-migration): add a PostgreSQL exclusion constraint for active blocks to
+// prevent concurrent confirmed rentals from double-booking the same asset:
+// EXCLUDE USING gist (tenant_id WITH =, asset_id WITH =, period WITH &&)
+// WHERE (released_at IS NULL).
+model V2AssetBlock {
+  id         String                   @id @default(uuid())
+  tenantId   String                   @map("tenant_id")
+  rentalId   String                   @map("rental_id")
+  assetId    String                   @map("asset_id")
+  period     Unsupported("tstzrange")
+  blockType  V2AssetBlockType         @map("block_type")
+  createdAt  DateTime                 @default(now()) @map("created_at")
+  releasedAt DateTime?                @map("released_at")
+
+  rental V2Rental @relation(fields: [rentalId], references: [id])
+
+  @@index([tenantId, rentalId])
+  @@index([assetId])
+  @@index([tenantId, assetId, releasedAt])
+  @@map("v2_asset_blocks")
+}

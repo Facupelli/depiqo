@@ -1,3 +1,5 @@
+import type { GetRentalCustomersItemDto } from "@repo/api-contracts";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -9,20 +11,12 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import {
-	customerQueries,
-	usePendingCustomerProfiles,
-} from "@/features/customer/customer.queries";
 import { AdminRouteError } from "@/shared/components/admin-route-error";
-import type { PendingCustomerProfileListItem } from "@repo/schemas";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useRentalCustomers } from "@/v2/features/tenant-management/customer/rental-customer.queries";
 
 export const Route = createFileRoute(
 	"/_admin/dashboard/customers/pending-profiles/",
 )({
-	loader: async ({ context: { queryClient } }) => {
-		await queryClient.ensureQueryData(customerQueries.pendingProfiles());
-	},
 	pendingComponent: PendingProfilesTableSkeleton,
 	errorComponent: ({ error }) => (
 		<AdminRouteError
@@ -41,7 +35,12 @@ const submittedAtFormatter = new Intl.DateTimeFormat("es-AR", {
 
 function PendingProfilesPage() {
 	const navigate = useNavigate();
-	const { data: pendingProfiles } = usePendingCustomerProfiles();
+
+	const { data: pendingProfiles, isLoading } = useRentalCustomers({
+		page: 1,
+		pageSize: 100,
+		status: "PENDING",
+	});
 
 	return (
 		<div className="space-y-6 p-6">
@@ -61,35 +60,48 @@ function PendingProfilesPage() {
 							<TableHead>Nombre</TableHead>
 							<TableHead>Fecha</TableHead>
 							<TableHead>Estado</TableHead>
-							<TableHead className="text-right">Accion</TableHead>
+							<TableHead className="text-right">Acción</TableHead>
 						</TableRow>
 					</TableHeader>
 
-					<TableBody>
-						{pendingProfiles.length === 0 ? (
+					{isLoading || !pendingProfiles ? (
+						<TableBody>
 							<TableRow>
 								<TableCell
 									colSpan={4}
 									className="h-32 text-center text-muted-foreground"
 								>
-									No hay altas de cliente pendientes.
+									Cargando...
 								</TableCell>
 							</TableRow>
-						) : (
-							pendingProfiles.map((profile) => (
-								<PendingProfileRow
-									key={profile.id}
-									profile={profile}
-									onOpen={() =>
-										navigate({
-											to: "/dashboard/customers/pending-profiles/$customerProfileId",
-											params: { customerProfileId: profile.id },
-										})
-									}
-								/>
-							))
-						)}
-					</TableBody>
+						</TableBody>
+					) : (
+						<TableBody>
+							{pendingProfiles.data.length === 0 ? (
+								<TableRow>
+									<TableCell
+										colSpan={4}
+										className="h-32 text-center text-muted-foreground"
+									>
+										No hay altas de cliente pendientes.
+									</TableCell>
+								</TableRow>
+							) : (
+								pendingProfiles.data.map((profile) => (
+									<PendingProfileRow
+										key={profile.id}
+										profile={profile}
+										onOpen={() =>
+											navigate({
+												to: "/dashboard/customers/pending-profiles/$customerId",
+												params: { customerId: profile.id },
+											})
+										}
+									/>
+								))
+							)}
+						</TableBody>
+					)}
 				</Table>
 			</div>
 		</div>
@@ -100,13 +112,17 @@ function PendingProfileRow({
 	profile,
 	onOpen,
 }: {
-	profile: PendingCustomerProfileListItem;
+	profile: GetRentalCustomersItemDto;
 	onOpen: () => void;
 }) {
 	return (
 		<TableRow>
-			<TableCell className="font-medium">{profile.customerName}</TableCell>
-			<TableCell>{submittedAtFormatter.format(profile.submittedAt)}</TableCell>
+			<TableCell className="font-medium">
+				{profile.firstName} {profile.lastName}
+			</TableCell>
+			<TableCell>
+				{submittedAtFormatter.format(new Date(profile.createdAt))}
+			</TableCell>
 			<TableCell>
 				<Badge
 					variant="outline"

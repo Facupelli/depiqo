@@ -1,28 +1,28 @@
-import {
-	keepPreviousData,
-	queryOptions,
-	useQuery,
-	useSuspenseQuery,
-	type UseQueryOptions,
-	type UseSuspenseQueryOptions,
-} from "@tanstack/react-query";
-import {
-	getAvailableProductTypeAccessories,
-	getProductTypeAccessoryLinks,
-	getProductDetail,
-	getProductTimeline,
-	getProducts,
-} from "./products.api";
 import type {
 	GetAvailableAccessoriesQuery,
 	GetProductTimelineQuery,
 	GetProductTypesQuery,
 	PaginatedDto,
-	ProductTypeAccessoryLinkResponse,
 	ProductTimelineResponse,
+	ProductTypeAccessoryLinkResponse,
 	ProductTypeResponse,
 } from "@repo/schemas";
+import {
+	keepPreviousData,
+	queryOptions,
+	type UseQueryOptions,
+	type UseSuspenseQueryOptions,
+	useQuery,
+	useSuspenseQuery,
+} from "@tanstack/react-query";
 import type { ProblemDetailsError } from "@/shared/errors";
+import {
+	getAvailableProductTypeAccessories,
+	getProductDetail,
+	getProducts,
+	getProductTimeline,
+	getProductTypeAccessoryLinks,
+} from "./products.api";
 
 type PaginatedProducts = PaginatedDto<ProductTypeResponse>;
 
@@ -36,24 +36,28 @@ export type ProductDetailQueryOverrides<TData = ProductTypeResponse> = Omit<
 	"queryKey" | "queryFn"
 >;
 
-export type ProductTimelineQueryOverrides<
-	TData = ProductTimelineResponse,
-> = Omit<
-	UseQueryOptions<ProductTimelineResponse, ProblemDetailsError, TData>,
-	"queryKey" | "queryFn"
->;
+export type ProductTimelineQueryOverrides<TData = ProductTimelineResponse> =
+	Omit<
+		UseQueryOptions<ProductTimelineResponse, ProblemDetailsError, TData>,
+		"queryKey" | "queryFn"
+	>;
 
 export type ProductAccessoryLinksQueryOverrides<
 	TData = ProductTypeAccessoryLinkResponse[],
 > = Omit<
-	UseQueryOptions<ProductTypeAccessoryLinkResponse[], ProblemDetailsError, TData>,
+	UseQueryOptions<
+		ProductTypeAccessoryLinkResponse[],
+		ProblemDetailsError,
+		TData
+	>,
 	"queryKey" | "queryFn"
 >;
 
-export type AvailableAccessoriesQueryOverrides<TData = PaginatedProducts> = Omit<
-	UseQueryOptions<PaginatedProducts, ProblemDetailsError, TData>,
-	"queryKey" | "queryFn"
->;
+export type AvailableAccessoriesQueryOverrides<TData = PaginatedProducts> =
+	Omit<
+		UseQueryOptions<PaginatedProducts, ProblemDetailsError, TData>,
+		"queryKey" | "queryFn"
+	>;
 
 // -------------------------------------------------------
 // Query Key Factory
@@ -104,7 +108,11 @@ export const productQueries = {
 		id: string,
 		overrides?: ProductAccessoryLinksQueryOverrides<TData>,
 	) =>
-		queryOptions<ProductTypeAccessoryLinkResponse[], ProblemDetailsError, TData>({
+		queryOptions<
+			ProductTypeAccessoryLinkResponse[],
+			ProblemDetailsError,
+			TData
+		>({
 			queryKey: productKeys.accessoryLinks(id),
 			queryFn: () =>
 				getProductTypeAccessoryLinks({ data: { productTypeId: id } }),

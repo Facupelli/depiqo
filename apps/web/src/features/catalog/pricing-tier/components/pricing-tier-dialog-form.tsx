@@ -15,13 +15,13 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import { useLocations } from "@/features/tenant/locations/locations.queries";
 import {
 	GLOBAL_LOCATION_VALUE,
+	type PricingTierFormValues,
 	pricingTierFormDefaults,
 	pricingTierFormSchema,
-	type PricingTierFormValues,
 } from "../schemas/pricing-tier-form.schema";
-import { useLocations } from "@/features/tenant/locations/locations.queries";
 
 interface AddPricingTierDialogProps {
 	open: boolean;

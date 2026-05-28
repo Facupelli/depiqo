@@ -1,22 +1,22 @@
-import {
-	type GetOrdersQueryDto,
-	getOrdersQuerySchema,
-	type OrderListDateLens,
-	type OrderListSortBy,
-	type OrderListSortDirection,
-} from "@repo/schemas";
+import type {
+	GetRentalsDateLensDto,
+	GetRentalsQueryDto,
+	GetRentalsSortByDto,
+	GetRentalsSortDirectionDto,
+} from "@repo/api-contracts";
+import { GetRentalsQuerySchema } from "@repo/api-contracts";
 
-export const ordersListSearchSchema = getOrdersQuerySchema;
+export const ordersListSearchSchema = GetRentalsQuerySchema;
 
-export type OrdersListSearch = GetOrdersQueryDto;
+export type OrdersListSearch = GetRentalsQueryDto;
 
 export type OrdersListSort = {
-	sortBy: OrderListSortBy;
-	sortDirection: OrderListSortDirection;
+	sortBy: GetRentalsSortByDto;
+	sortDirection: GetRentalsSortDirectionDto;
 };
 
 export function getDefaultOrdersSort(
-	dateLens?: OrderListDateLens,
+	dateLens?: GetRentalsDateLensDto,
 ): OrdersListSort {
 	switch (dateLens) {
 		case "UPCOMING":
@@ -25,13 +25,12 @@ export function getDefaultOrdersSort(
 			return { sortBy: "returnDate", sortDirection: "asc" };
 		case "PAST":
 			return { sortBy: "returnDate", sortDirection: "desc" };
-		case "TODAY":
 		default:
 			return { sortBy: "createdAt", sortDirection: "desc" };
 	}
 }
 
-export function hasExplicitOrdersSort(search: OrdersListSearch): boolean {
+export function hasExplicitOrdersSort(search: GetRentalsQueryDto): boolean {
 	return Boolean(search.sortBy || search.sortDirection);
 }
 

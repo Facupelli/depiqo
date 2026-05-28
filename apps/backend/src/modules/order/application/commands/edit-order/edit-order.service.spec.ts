@@ -197,7 +197,11 @@ describe('EditOrderService', () => {
     expect(saved()?.currentFulfillmentMethod).toBe(FulfillmentMethod.DELIVERY);
     expect(saved()?.currentDeliveryRequest?.toJSON()).toMatchObject({ recipientName: 'Jane Client' });
     expect(saved()?.getItems()).toHaveLength(2);
-    expect(saved()?.getItems().every((item) => item.ownerSplits.length === 0)).toBe(true);
+    expect(
+      saved()
+        ?.getItems()
+        .every((item) => item.ownerSplits.length === 0),
+    ).toBe(true);
   });
 
   it('preserves confirmed edit assignment behavior and review metadata', async () => {

@@ -1,19 +1,14 @@
-import type { CartPriceResult, TenantPricingConfig } from "@repo/schemas";
-import type {
-	BookingMode,
-	FulfillmentMethod,
-	OrderCommunicationMode,
-} from "@repo/types";
-import type { CartItem, ConflictGroup } from "./cart.types";
+import type { CalculateCartPriceResponseDto } from "@repo/api-contracts";
+import type { V2RentalCartItem } from "@/v2/features/rental-commitment/cart/v2-rental-cart.types";
+import type { ConflictGroup } from "./cart.types";
 import type {
 	CartOrderPeriod,
 	DeliveryRequestField,
 	DeliveryRequestFormState,
-	JoinedLineItem,
 } from "./cart-order.types";
 
 export type CartSlice = {
-	cartItems: CartItem[];
+	cartItems: V2RentalCartItem[];
 };
 
 export type LocationSlice = {
@@ -25,9 +20,10 @@ export type LocationSlice = {
 };
 
 export type PricingSlice = {
-	priceConfig: TenantPricingConfig;
-	breakdown: CartPriceResult | undefined;
-	joinedLineItems: JoinedLineItem[] | undefined;
+	preview: CalculateCartPriceResponseDto | undefined;
+	fallbackCurrency: string;
+	fallbackLocale: string;
+	insuranceEnabled: boolean;
 	insuranceSelected: boolean;
 	onInsuranceSelectedChange: (value: boolean) => void;
 	couponCode: string;
@@ -46,10 +42,10 @@ export type TimesSlice = {
 
 export type DeliverySlice = {
 	supportsDelivery: boolean;
-	fulfillmentMethod: FulfillmentMethod;
+	fulfillmentMethod: "PICKUP" | "DELIVERY";
 	deliveryRequest: DeliveryRequestFormState;
 	isDeliveryDetailsRequired: boolean;
-	onFulfillmentMethodChange: (value: FulfillmentMethod) => void;
+	onFulfillmentMethodChange: (value: "PICKUP" | "DELIVERY") => void;
 	onDeliveryRequestFieldChange: (
 		field: DeliveryRequestField,
 		value: string,
@@ -57,15 +53,15 @@ export type DeliverySlice = {
 };
 
 export type BookingSlice = {
-	bookingMode: BookingMode;
-	orderCommunicationMode: OrderCommunicationMode;
+	bookingMode: "instant-book" | "request-to-book";
+	orderCommunicationMode: "FORMAL" | "WHATSAPP";
 	isAuthenticated: boolean;
 	isSubmittingOrder: boolean;
 	isBookingError: boolean;
 	bookingErrorMessage: string | null;
 	unavailableIds: string[];
 	conflictGroups: ConflictGroup[];
-	handleBook: () => Promise<void>;
+	submitBooking: () => Promise<void>;
 };
 
 export type CartPageContextValue = {

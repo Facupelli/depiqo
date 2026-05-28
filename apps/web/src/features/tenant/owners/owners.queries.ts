@@ -1,23 +1,23 @@
-import {
-	queryOptions,
-	useMutation,
-	useQuery,
-	type UseMutationOptions,
-	type UseQueryOptions,
-} from "@tanstack/react-query";
-import {
-	createOwner,
-	createOwnerContract,
-	getOwner,
-	getOwners,
-} from "./owners.api";
-import type { ProblemDetailsError } from "@/shared/errors";
 import type {
 	CreateOwnerContractDto,
 	CreateOwnerDto,
 	GetOwnerResponseDto,
 	OwnerListResponse,
 } from "@repo/schemas";
+import {
+	queryOptions,
+	type UseMutationOptions,
+	type UseQueryOptions,
+	useMutation,
+	useQuery,
+} from "@tanstack/react-query";
+import type { ProblemDetailsError } from "@/shared/errors";
+import {
+	createOwner,
+	createOwnerContract,
+	getOwner,
+	getOwners,
+} from "./owners.api";
 
 // -----------------------------------------------------
 // Key Factory

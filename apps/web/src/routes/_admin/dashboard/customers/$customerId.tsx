@@ -1,17 +1,17 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { Bell, Search } from "lucide-react";
+import { useState } from "react";
+import { PageBreadcrumb } from "@/components/detail-id-breadcrumb";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { OverviewTab } from "@/features/customer/components/detail/overview-tab";
+import { ProfileTab } from "@/features/customer/components/detail/profile-tab";
 import {
 	customerQueries,
 	useCustomerDetail,
 } from "@/features/customer/customer.queries";
-import { createFileRoute } from "@tanstack/react-router";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Bell, Search } from "lucide-react";
-import { useState } from "react";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { OverviewTab } from "@/features/customer/components/detail/overview-tab";
-import { ProfileTab } from "@/features/customer/components/detail/profile-tab";
-import { PageBreadcrumb } from "@/components/detail-id-breadcrumb";
 
 export const Route = createFileRoute("/_admin/dashboard/customers/$customerId")(
 	{

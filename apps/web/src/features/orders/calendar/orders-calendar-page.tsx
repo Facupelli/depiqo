@@ -1,9 +1,8 @@
-import { useSuspenseQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { useOrdersCalendar } from "@/features/orders/orders.queries";
-import { locationQueries } from "@/features/tenant/locations/locations.queries";
 import { useSelectedLocation } from "@/shared/contexts/location/location.hooks";
+import { useRentalsCalendar } from "@/v2/features/rental-commitment/rentals/rentals.queries";
+import { useBranches } from "@/v2/features/tenant-management/branch/branch.queries";
 import { OrdersCalendar } from "./orders-calendar";
 import {
 	DEFAULT_ORDERS_CALENDAR_VIEW,
@@ -22,30 +21,30 @@ export function OrdersCalendarPage({
 	onSearchChange,
 }: OrdersCalendarPageProps) {
 	const navigate = useNavigate();
-	const { data: locations } = useSuspenseQuery(locationQueries.list());
-	const selectedLocation = useSelectedLocation(locations);
-	const timezone = selectedLocation?.effectiveTimezone ?? "UTC";
+	const { data: branches } = useBranches();
+	const selectedBranch = useSelectedLocation(branches ?? []);
+	const timezone = selectedBranch?.timezone ?? "UTC";
 	const currentView = search.view ?? DEFAULT_ORDERS_CALENDAR_VIEW;
 	const currentDate = search.date ?? getDefaultOrdersCalendarDate(timezone);
 	const [visibleRange, setVisibleRange] = useState<OrdersCalendarRange | null>(
 		null,
 	);
+	const rentalsCalendarQuery =
+		selectedBranch && visibleRange
+			? {
+					branchId: selectedBranch.id,
+					from: new Date(visibleRange.rangeStart),
+					to: new Date(visibleRange.rangeEnd),
+				}
+			: undefined;
 
-	const { data, isPending, isFetching, isError } = useOrdersCalendar(
-		{
-			locationId: selectedLocation?.id ?? "",
-			rangeStart: visibleRange?.rangeStart ?? "",
-			rangeEnd: visibleRange?.rangeEnd ?? "",
-		},
-		{
-			enabled: Boolean(selectedLocation && visibleRange),
-		},
-	);
+	const { data, isPending, isFetching, isError } =
+		useRentalsCalendar(rentalsCalendarQuery);
 
 	function handleRangeChange(nextRange: OrdersCalendarRange) {
 		setVisibleRange(nextRange);
 
-		if (search.view === nextRange.view && search.date === nextRange.date) {
+		if (currentView === nextRange.view && currentDate === nextRange.date) {
 			return;
 		}
 
@@ -58,7 +57,7 @@ export function OrdersCalendarPage({
 		);
 	}
 
-	if (!selectedLocation) {
+	if (!selectedBranch) {
 		return (
 			<div className="flex h-full items-center justify-center p-6">
 				<div className="rounded-lg border border-dashed px-4 py-10 text-center text-sm text-muted-foreground">
@@ -93,7 +92,7 @@ export function OrdersCalendarPage({
 				currentDate={currentDate}
 				currentView={currentView}
 				timezone={timezone}
-				orders={data?.orders ?? []}
+				orders={data ?? []}
 				isLoading={isPending && !visibleRange}
 				isFetching={isFetching}
 				isError={isError}

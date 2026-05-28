@@ -1,7 +1,9 @@
-import type { RentalProductResponse } from "@repo/schemas";
+import type { StorefrontRentalOfferListViewItemDto } from "@/v2/features/storefront/rental-offers/get-storefront-rental-offer-list-view/get-storefront-rental-offer-list-view.schema";
 import { useCartActions, useCartItems } from "../cart.hooks";
 
-export function useProductCardState(product: RentalProductResponse) {
+export function useProductCardState(
+	product: StorefrontRentalOfferListViewItemDto,
+) {
 	const items = useCartItems();
 	const { addProduct, incrementQuantity, decrementQuantity } = useCartActions();
 
@@ -24,11 +26,12 @@ export function useProductCardState(product: RentalProductResponse) {
 		addProduct({
 			productTypeId: product.id,
 			name: product.name,
-			pricePerUnit: product.pricingTiers[0].pricePerUnit,
-			billingUnitLabel: product.billingUnit.label,
+			pricePerUnit: Number(product.pricing.ratePlan.tiers[0].pricePerUnit),
+			billingUnitLabel: product.pricing.ratePlan.billingUnit,
 			assetCount: product.availableCount,
-			imageUrl: product.imageUrl ?? null,
-			includedItems: product.includedItems ?? [],
+			imageUrl: product.image ?? null,
+			// includedItems: product.includedItems ?? [],
+			includedItems: [],
 		});
 	}
 

@@ -1,27 +1,18 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { PromotionActivationType } from "@repo/types";
 import z from "zod";
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
 import { PromotionForm } from "@/features/pricing/promotions/components/create-promotion-form";
-import { useUpdatePromotion } from "@/features/pricing/promotions/promotions.mutations";
-import { promotionQueries } from "@/features/pricing/promotions/promotions.queries";
 import {
 	promotionToFormValues,
-	toCreatePromotionDto,
+	toUpdatePromotionDto,
 } from "@/features/pricing/promotions/schemas/promotion-form.schema";
+import { promotionQueries } from "@/v2/features/pricing/promotions/promotions.queries";
+import { useUpdatePromotion } from "@/v2/features/pricing/promotions/update-promotion/update-promotion.mutation";
 
 const promotionsSearchSchema = z.object({
 	tab: z.enum(["coupons", "promotions"]).default("promotions"),
-	page: z.number().int().min(1).default(1),
 	search: z.string().optional(),
-	activationType: z.enum(PromotionActivationType).optional(),
+	activation: z.enum(["AUTOMATIC", "COUPON_REQUIRED"]).optional(),
 });
 
 const formId = "edit-promotion";
@@ -52,34 +43,33 @@ function EditPromotionPage() {
 	}
 
 	return (
-		<div className="mx-auto max-w-5xl px-6 py-8">
-			<Card>
-				<CardHeader>
-					<CardTitle>Editar promocion</CardTitle>
-					<CardDescription>
-						Actualiza la configuracion de la promocion sin perder el contexto de
-						tu listado.
-					</CardDescription>
-				</CardHeader>
-				<CardContent>
-					<PromotionForm
-						key={promotion.id}
-						formId={formId}
-						defaultValues={promotionToFormValues(promotion)}
-						onCancel={goBack}
-						onSubmit={async (values) => {
-							await updatePromotion({
-								promotionId: promotion.id,
-								dto: toCreatePromotionDto(values),
-							});
-							goBack();
-						}}
-						isPending={isPending}
-						submitLabel="Guardar cambios"
-						pendingLabel="Guardando..."
-					/>
-				</CardContent>
-			</Card>
+		<div className="mx-auto max-w-7xl space-y-8 px-6 py-8">
+			<header className="max-w-3xl space-y-2">
+				<h1 className="font-semibold text-3xl tracking-tight">
+					Editar promoción
+				</h1>
+				<p className="text-muted-foreground">
+					Actualizá la configuración de la promoción sin perder el contexto de
+					tu listado.
+				</p>
+			</header>
+
+			<PromotionForm
+				key={promotion.id}
+				formId={formId}
+				defaultValues={promotionToFormValues(promotion)}
+				onCancel={goBack}
+				onSubmit={async (values) => {
+					await updatePromotion({
+						params: { promotionId: promotion.id },
+						body: toUpdatePromotionDto(values),
+					});
+					goBack();
+				}}
+				isPending={isPending}
+				submitLabel="Guardar cambios"
+				pendingLabel="Guardando..."
+			/>
 		</div>
 	);
 }

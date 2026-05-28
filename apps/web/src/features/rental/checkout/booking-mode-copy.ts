@@ -5,8 +5,8 @@ export function getOrderSubmitButtonLabel({
 	orderCommunicationMode,
 	isAuthenticated,
 }: {
-	bookingMode: BookingMode;
-	orderCommunicationMode: OrderCommunicationMode;
+	bookingMode: "instant-book" | "request-to-book";
+	orderCommunicationMode: "FORMAL" | "WHATSAPP";
 	isAuthenticated: boolean;
 }) {
 	if (!isAuthenticated) {
@@ -30,7 +30,7 @@ export function getBookingSubmitButtonLabel({
 	bookingMode,
 	isAuthenticated,
 }: {
-	bookingMode: BookingMode;
+	bookingMode: "instant-book" | "request-to-book";
 	isAuthenticated: boolean;
 }) {
 	if (!isAuthenticated) {

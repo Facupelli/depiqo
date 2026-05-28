@@ -7,8 +7,8 @@ import {
 import { cloudflare } from "@better-upload/server/clients";
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
-import { requireCustomerSessionUser } from "@/features/auth/auth-guards.server";
 import { serverEnv } from "@/config/server-env";
+import { requireV2TenantCustomer } from "@/v2/lib/auth/route-auth.server";
 
 const s3 = cloudflare({
 	accountId: serverEnv.CLOUDFLARE_ACCOUNT_ID,
@@ -35,7 +35,7 @@ const uploadRouter: Router = {
 				let customerId: string;
 
 				try {
-					customerId = (await requireCustomerSessionUser()).userId;
+					customerId = (await requireV2TenantCustomer()).id;
 				} catch {
 					throw new RejectUpload("Unauthorized");
 				}

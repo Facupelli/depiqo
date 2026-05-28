@@ -2,7 +2,10 @@ import type { ExternalOwnerEntry } from "@/features/orders/order.utils";
 import type { ParsedOrderDetailResponseDto } from "@/features/orders/queries/get-order-by-id";
 
 export type OrderDetailItem = ParsedOrderDetailResponseDto["items"][number];
-export type ProductOrderDetailItem = Extract<OrderDetailItem, { type: "PRODUCT" }>;
+export type ProductOrderDetailItem = Extract<
+	OrderDetailItem,
+	{ type: "PRODUCT" }
+>;
 
 export type TimelineStep = {
 	label: string;

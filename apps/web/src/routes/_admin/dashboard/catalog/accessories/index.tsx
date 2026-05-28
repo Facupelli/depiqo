@@ -71,9 +71,7 @@ function AccessoriesPage() {
 
 				<Button
 					render={
-						<Link to="/dashboard/catalog/accessories/new">
-							Crear accesorio
-						</Link>
+						<Link to="/dashboard/catalog/accessories/new">Crear accesorio</Link>
 					}
 				/>
 			</header>

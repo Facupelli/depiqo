@@ -1,5 +1,5 @@
 import type { ProductTypeResponse } from "@repo/schemas";
-import { createContext, useContext, type ReactNode } from "react";
+import { createContext, type ReactNode, useContext } from "react";
 
 interface ProductContextValue {
 	product: ProductTypeResponse;

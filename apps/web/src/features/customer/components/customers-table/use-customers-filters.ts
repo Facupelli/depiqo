@@ -1,7 +1,7 @@
-import useDebounce from "@/shared/hooks/use-debounce";
 import type { GetCustomersQueryDto } from "@repo/schemas";
 import type { OnboardingStatus } from "@repo/types";
 import { useState } from "react";
+import useDebounce from "@/shared/hooks/use-debounce";
 
 type FiltersState = {
 	page: number;

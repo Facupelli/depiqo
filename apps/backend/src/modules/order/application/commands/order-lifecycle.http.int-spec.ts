@@ -130,7 +130,9 @@ describe('Order lifecycle HTTP integration', () => {
     it('rejects a pending-review order with review metadata and no inventory side effects', async () => {
       const { orderId } = await createOrderFixture(OrderStatus.PENDING_REVIEW, null);
 
-      await operatorRequest(`/orders/${orderId}/reject`).send({ rejectionReason: 'Unavailable after review' }).expect(204);
+      await operatorRequest(`/orders/${orderId}/reject`)
+        .send({ rejectionReason: 'Unavailable after review' })
+        .expect(204);
 
       await expectOrderStatus(orderId, OrderStatus.REJECTED);
       await expectAssignmentStages(orderId, []);

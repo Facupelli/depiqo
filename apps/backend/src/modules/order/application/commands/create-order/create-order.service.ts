@@ -47,7 +47,10 @@ import { CustomerCreateOrderError, ResolvedItem } from './create-order.types';
 import { CreateOrderOwnerContractResolver } from './ownership/create-order-owner-contract-resolver';
 import { toPriceSnapshot } from './pricing/create-order-pricing-snapshot.mapper';
 import { loadCreateOrderCompletionContext } from './completion/create-order-completion-context.loader';
-import { buildCreateOrderResponse, buildCreateOrderResponseForPersistedOrder } from './completion/create-order-response.builder';
+import {
+  buildCreateOrderResponse,
+  buildCreateOrderResponseForPersistedOrder,
+} from './completion/create-order-response.builder';
 import { CreateOrderIdempotencyPreflightKind } from './idempotency/create-order-idempotency.constants';
 import { CreateOrderIdempotencyService } from './idempotency/create-order-idempotency.service';
 import { CreateOrderIdempotencyPreflight } from './idempotency/create-order-idempotency-preflight';
@@ -73,7 +76,10 @@ class CreateOrderTransactionResultError extends Error {
 }
 
 @CommandHandler(CreateOrderCommand)
-export class CreateOrderService implements ICommandHandler<CreateOrderCommand, Result<CreateOrderResponseDto, CustomerCreateOrderError>> {
+export class CreateOrderService implements ICommandHandler<
+  CreateOrderCommand,
+  Result<CreateOrderResponseDto, CustomerCreateOrderError>
+> {
   constructor(
     private readonly eventEmitter: EventEmitter2,
     private readonly prisma: PrismaService,
@@ -96,7 +102,12 @@ export class CreateOrderService implements ICommandHandler<CreateOrderCommand, R
 
     if (preflight.kind === CreateOrderIdempotencyPreflightKind.REPLAY) {
       return ok(
-        await buildCreateOrderResponseForPersistedOrder(this.prisma, this.queryBus, command.tenantId, preflight.orderId),
+        await buildCreateOrderResponseForPersistedOrder(
+          this.prisma,
+          this.queryBus,
+          command.tenantId,
+          preflight.orderId,
+        ),
       );
     }
 
@@ -224,7 +235,11 @@ export class CreateOrderService implements ICommandHandler<CreateOrderCommand, R
             );
           }
 
-          const contractByAssetId = await this.ownerContractResolver.resolve(command.tenantId, period.start, demandUnits);
+          const contractByAssetId = await this.ownerContractResolver.resolve(
+            command.tenantId,
+            period.start,
+            demandUnits,
+          );
           pendingAssignments = this.attachResolvedItemsToOrder(
             order,
             resolvedItems,

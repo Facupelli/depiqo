@@ -1,6 +1,6 @@
-import { Badge } from "@/components/ui/badge";
 import type { ProductTypeResponse } from "@repo/schemas";
 import type { ColumnDef } from "@tanstack/react-table";
+import { Badge } from "@/components/ui/badge";
 
 const TRACKING_MODE_LABELS: Record<string, string> = {
 	SERIALIZED: "Serialized",

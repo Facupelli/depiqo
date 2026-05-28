@@ -1,6 +1,6 @@
 import { BookingMode, OrderStatus } from "@repo/types";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { CheckCircle2, Clock3, Mail, CalendarCheck, X } from "lucide-react";
+import { CalendarCheck, CheckCircle2, Clock3, Mail, X } from "lucide-react";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { resolveOrderConfirmationStatus } from "@/features/rental/checkout/booking-mode-copy";
