@@ -10,7 +10,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "cf-typegen": "wrangler types",
-    "deploy": "set VITE_SHARED_AUTH_ORIGIN=https://auth.depiqo.com&& pnpm run build && wrangler deploy",
+    "deploy": "VITE_SHARED_AUTH_ORIGIN=https://auth.depiqo.com pnpm run build && wrangler deploy",
     "test": "vitest run",
     "format": "biome format",
     "lint": "biome lint",

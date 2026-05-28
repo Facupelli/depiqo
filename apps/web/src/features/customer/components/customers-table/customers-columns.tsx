@@ -4,10 +4,10 @@ import { OnboardingStatus } from "@repo/types";
 import type { ColumnDef } from "@tanstack/react-table";
 
 export const ONBOARDING_STATUS_LABELS: Record<OnboardingStatus, string> = {
-	[OnboardingStatus.NOT_STARTED]: "Not Started",
-	[OnboardingStatus.PENDING]: "Pending",
-	[OnboardingStatus.APPROVED]: "Approved",
-	[OnboardingStatus.REJECTED]: "Rejected",
+	[OnboardingStatus.NOT_STARTED]: "No iniciado",
+	[OnboardingStatus.PENDING]: "Pendiente",
+	[OnboardingStatus.APPROVED]: "Aprovado",
+	[OnboardingStatus.REJECTED]: "Rechazado",
 };
 
 // Maps each status to a shadcn Badge variant
@@ -25,7 +25,7 @@ export const customersColumns: ColumnDef<CustomerResponseDto>[] = [
 		// Combine first + last into one "Name" column.
 		// Using accessorFn gives us a sortable string while keeping rendering flexible.
 		id: "name",
-		header: "Name",
+		header: "Nombre",
 		accessorFn: (row) => `${row.firstName} ${row.lastName}`,
 		cell: ({ row }) => {
 			const { firstName, lastName, isCompany, companyName } = row.original;
@@ -52,7 +52,7 @@ export const customersColumns: ColumnDef<CustomerResponseDto>[] = [
 	},
 	{
 		accessorKey: "isCompany",
-		header: "Type",
+		header: "Tipo",
 		cell: ({ getValue }) => {
 			const isCompany = getValue<boolean>();
 			return (
@@ -64,12 +64,12 @@ export const customersColumns: ColumnDef<CustomerResponseDto>[] = [
 	},
 	{
 		accessorKey: "isActive",
-		header: "Status",
+		header: "Estado",
 		cell: ({ getValue }) => {
 			const isActive = getValue<boolean>();
 			return (
 				<Badge variant={isActive ? "default" : "secondary"}>
-					{isActive ? "Active" : "Inactive"}
+					{isActive ? "Activo" : "Inactivo"}
 				</Badge>
 			);
 		},
@@ -88,7 +88,7 @@ export const customersColumns: ColumnDef<CustomerResponseDto>[] = [
 	},
 	{
 		accessorKey: "createdAt",
-		header: "Created",
+		header: "Creado",
 		cell: ({ getValue }) => {
 			const date = getValue<Date>();
 			return (
