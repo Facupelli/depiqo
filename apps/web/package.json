@@ -8,9 +8,10 @@
   "scripts": {
     "dev": "vite dev --port 3001",
     "build": "vite build",
+    "build:production": "vite build --mode production",
     "preview": "vite preview",
     "cf-typegen": "wrangler types",
-    "deploy": "VITE_SHARED_AUTH_ORIGIN=https://auth.depiqo.com pnpm run build && wrangler deploy",
+    "deploy": "pnpm run build:production && wrangler deploy",
     "test": "vitest run",
     "format": "biome format",
     "lint": "biome lint",
