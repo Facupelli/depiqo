@@ -2,8 +2,8 @@
 name: backend-use-case-implementation
 description: >
   Guides implementation of backend use cases in the NestJS app. Use this skill when
-  adding or changing a v2 command, query, handler, service, controller, DTO, mapper,
-  repository, API contract, or HTTP error mapper in `apps/backend/`.
+  adding or changing a backend command, query, handler, service, controller, DTO, mapper,
+  repository, API contract, or HTTP error mapper in `apps/backend`.
 ---
 
 # Backend Use Case Implementation
@@ -33,7 +33,7 @@ Use this path when the endpoint retrieves data and should not mutate state.
 - Tenant-scoped reads must filter by tenant id from request context/current user.
 - List reads should support pagination unless the use case explicitly does not need it.
 - Return DTO-safe primitives; serialize dates as ISO strings.
-- Expected read failures should return `Result<T, ApplicationError>` and be mapped by the controller to v2 Problem Details.
+- Expected read failures should return `Result<T, ApplicationError>` and be mapped by the controller to Problem Details.
 
 ### Mutation / Command Use Case
 
@@ -46,7 +46,7 @@ Use this path when the endpoint creates, updates, deletes, confirms, cancels, or
 - Use repositories for aggregate persistence on the command side.
 - Cross-module coordination must go through public APIs/facades, not private module internals.
 - Expected failures return `Result<T, ApplicationError>`.
-- Application errors stay transport-agnostic; controllers map them to v2 Problem Details.
+- Application errors stay transport-agnostic; controllers map them to Problem Details.
 - Let unexpected infrastructure failures propagate.
 
 ## API Contracts and DTOs
@@ -68,10 +68,10 @@ When a use case exposes or changes an HTTP contract:
 - Validate transport input through DTOs.
 - Dispatch via `CommandBus` or `QueryBus`.
 - Return response DTO-shaped objects.
-- Convert expected `Result` errors to v2 Problem Details at the HTTP boundary.
+- Convert expected `Result` errors to Problem Details at the HTTP boundary.
 - Do not put business rules, Prisma calls, persistence, or orchestration logic in controllers.
 
-## Problem Details for v2 HTTP Errors
+## Problem Details for HTTP Errors
 
 For expected HTTP-facing failures:
 
@@ -84,7 +84,7 @@ For expected HTTP-facing failures:
 
 ## Module Boundaries
 
-- Put v2 vertical-slice use cases under `apps/backend/src/modules/v2/<bounded-context>/features/<use-case>/` unless nearby code says otherwise.
+- Put vertical-slice use cases under `apps/backend/src/modules/<bounded-context>/features/<use-case>/` unless nearby code says otherwise.
 - Respect bounded-context ownership from planning docs and existing module layout.
 - If a use case needs another bounded context, depend on its public API only.
 - Do not import private domain errors, repositories, or entities from another module.
@@ -108,9 +108,9 @@ Choose the smallest useful validation:
 
 ## Common Anchors
 
-- v2 vertical-slice query example: `src/modules/v2/tenant-management/features/get-branches/`
-- v2 command/controller/error flow example: `src/modules/v2/asset-inventory/features/add-assets-to-equipment-type/`
-- Tenant management module wiring: `src/modules/v2/tenant-management/tenant-management.module.ts`
+- Vertical-slice query example: `src/modules/tenant-management/features/get-branches/`
+- Command/controller/error flow example: `src/modules/asset-inventory/features/add-assets-to-equipment-type/`
+- Tenant management module wiring: `src/modules/tenant-management/tenant-management.module.ts`
 - API contracts: `packages/api-contracts/src/`
 - Backend rule index: `apps/backend/docs/agent-rules/architecture.md`
 - Problem Details rule: `apps/backend/docs/agent-rules/problem-details.md`

@@ -26,7 +26,7 @@ Controllers contain no business logic. They are thin translation layers between 
 ### Error mapping
 
 - Controllers are the HTTP boundary where application failures become HTTP responses.
-- For v2 APIs, use Problem Details (`problem-details.md`) instead of ad-hoc Nest HTTP exceptions.
+- For current APIs, use Problem Details (`problem-details.md`) instead of ad-hoc Nest HTTP exceptions.
 - Prefer module-level Problem Details mappers such as `toSomeProblem(error)` over inline `instanceof` HTTP mapping.
 - Rethrow or let unrecognized infrastructure failures propagate to the global Problem Details filter.
 
@@ -136,7 +136,7 @@ async create(@Body() dto: CreateBookingRequestDto): Promise<CreateBookingRespons
 
 ---
 
-### Correct: v2 Problem Details mapping
+### Correct: Problem Details mapping
 
 ```typescript
 if (result.isErr()) {
@@ -144,7 +144,7 @@ if (result.isErr()) {
 }
 ```
 
-### Acceptable in legacy/non-v2 code: explicit mapping of Domain Errors
+### Acceptable only in legacy code: explicit mapping of Domain Errors
 
 ```typescript
 if (result.isErr()) {

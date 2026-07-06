@@ -130,11 +130,11 @@ Use extensions for machine-readable context, for example:
 
 ```json
 {
-  "type": "https://api.depiqo.com/problems/v2/rental-commitment/insufficient-asset-availability",
+  "type": "https://api.depiqo.com/problems/rental-commitment/insufficient-asset-availability",
   "title": "Insufficient asset availability",
   "status": 409,
   "detail": "Not enough equipment is available for the requested rental period.",
-  "instance": "/v2/rentals/confirmed",
+  "instance": "/rentals/confirmed",
   "equipmentTypeId": "excavator-small",
   "requiredQuantity": 3,
   "availableQuantity": 1
@@ -162,7 +162,7 @@ For validation-style failures, prefer the `invalid-params` extension:
 
 ---
 
-## Current v2 anchors
+## Current anchors
 
 Core Problem Details infrastructure:
 
@@ -174,6 +174,6 @@ Core Problem Details infrastructure:
 
 Example module flow:
 
-- `src/modules/v2/rental-commitment/features/create-confirmed-rental/rental-commitment-application.error.ts`
-- `src/modules/v2/rental-commitment/features/create-confirmed-rental/map-rental-commitment-error.ts`
-- `src/modules/v2/rental-commitment/features/create-confirmed-rental/rental-commitment-http-error.mapper.ts`
+- `src/modules/rental-commitment/features/create-confirmed-rental/rental-commitment-application.error.ts`
+- `src/modules/rental-commitment/features/create-confirmed-rental/map-rental-commitment-error.ts`
+- `src/modules/rental-commitment/features/create-confirmed-rental/rental-commitment-http-error.mapper.ts`

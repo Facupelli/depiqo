@@ -145,16 +145,15 @@ return new BookingResponseDto({ ...bookingEntity.props, id: bookingEntity.id });
 
 ---
 
-### ✅ Correct: versioning when a breaking change is needed
+### ✅ Correct: versioning when a future breaking change is needed
 
 ```typescript
-// v1 controller keeps the original response shape
+// Current controller keeps the existing response shape
 @Get(':id')
-@Version('1')
-async findOneV1(@Param('id') id: string): Promise<BookingResponseDto> { ... }
+async findOne(@Param('id') id: string): Promise<BookingResponseDto> { ... }
 
-// v2 controller introduces the new shape
+// A future versioned controller introduces the new shape only when required
 @Get(':id')
-@Version('2')
-async findOneV2(@Param('id') id: string): Promise<BookingResponseDtoV2> { ... }
+@Version('3')
+async findOneV3(@Param('id') id: string): Promise<BookingResponseDtoV3> { ... }
 ```
