@@ -1,11 +1,11 @@
 import type { Dayjs } from "dayjs";
 import { AlertTriangle, Calendar, Clock } from "lucide-react";
+import { useStorefrontBranchScheduleSlots } from "@/features/tenant-management/branch/branch.queries";
 import {
 	formatDailyRange,
 	formatDateShort,
 	formatRentalDuration,
 } from "@/lib/dates/format";
-import { useStorefrontBranchScheduleSlots } from "@/features/tenant-management/branch/branch.queries";
 import { formatSlot } from "../cart.utils";
 import {
 	useCartContext,

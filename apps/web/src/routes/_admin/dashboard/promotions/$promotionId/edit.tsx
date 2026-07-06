@@ -2,11 +2,11 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import z from "zod";
 import { PromotionForm } from "@/features/pricing/promotions/create-promotion/components/create-promotion-form";
+import { promotionQueries } from "@/features/pricing/promotions/promotions.queries";
 import {
 	promotionToFormValues,
 	toUpdatePromotionDto,
 } from "@/features/pricing/promotions/schemas/promotion-form.schema";
-import { promotionQueries } from "@/features/pricing/promotions/promotions.queries";
 import { useUpdatePromotion } from "@/features/pricing/promotions/update-promotion/update-promotion.mutation";
 
 const promotionsSearchSchema = z.object({

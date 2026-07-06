@@ -10,11 +10,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
-import { ProblemDetailsError } from "@/shared/errors";
 import { useRefreshCustomDomainStatus } from "@/features/tenant-management/tenant/custom-domain/refresh-custom-domain-status.mutation";
 import { useRegisterCustomDomain } from "@/features/tenant-management/tenant/custom-domain/register-custom-domain.mutation";
 import { useCustomDomain } from "@/features/tenant-management/tenant/tenant.queries";
+import { cn } from "@/lib/utils";
+import { ProblemDetailsError } from "@/shared/errors";
 import {
 	type CustomDomainFormValues,
 	createCustomDomainFormDefaultValues,

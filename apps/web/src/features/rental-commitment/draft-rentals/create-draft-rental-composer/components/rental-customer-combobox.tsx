@@ -1,6 +1,6 @@
 import { Field, FieldLabel } from "@/components/ui/field";
-import { withForm } from "@/shared/contexts/form.context";
 import { RentalCustomerSelector } from "@/features/tenant-management/customer/components/rental-customer-selector";
+import { withForm } from "@/shared/contexts/form.context";
 import { createDraftRentalComposerDefaultValues } from "../create-draft-rental-composer.schema";
 
 export const RentalCustomerCombobox = withForm({

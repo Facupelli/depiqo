@@ -10,18 +10,6 @@ export const GetRentalDetailParamsSchema = z.object({
 	rentalId: z.string().trim().min(1),
 });
 
-export const GetRentalDetailCustomerSchema = z.object({
-	id: z.string(),
-	displayName: z.string(),
-	email: z.string().email(),
-	phone: z.string().nullable(),
-});
-
-export const GetRentalDetailBranchSchema = z.object({
-	id: z.string(),
-	name: z.string(),
-});
-
 export const GetRentalDetailPeriodSchema = z.object({
 	start: z.string().datetime(),
 	end: z.string().datetime(),
@@ -39,15 +27,8 @@ export const GetRentalDetailDeliveryDetailsSchema = z.object({
 	notes: z.string().nullable(),
 });
 
-export const GetRentalDetailAssetOwnerSchema = z.object({
-	id: z.string(),
-	name: z.string(),
-});
-
 export const GetRentalDetailAssignedAssetSchema = z.object({
-	id: z.string(),
-	serialNumber: z.string().nullable(),
-	owner: GetRentalDetailAssetOwnerSchema.nullable(),
+	assetId: z.string(),
 });
 
 export const GetRentalDetailEquipmentLineSchema = z.object({
@@ -195,8 +176,8 @@ export const GetRentalDetailResponseSchema = z.object({
 	updatedAt: z.string().datetime(),
 	cancelledAt: z.string().datetime().nullable(),
 	confirmedAt: z.string().datetime().nullable(),
-	customer: GetRentalDetailCustomerSchema.nullable(),
-	branch: GetRentalDetailBranchSchema,
+	customerId: z.string().nullable(),
+	branchId: z.string(),
 	period: GetRentalDetailPeriodSchema,
 	fulfillment: z.object({
 		method: GetRentalsFulfillmentMethodSchema.nullable(),
@@ -210,20 +191,11 @@ export const GetRentalDetailResponseSchema = z.object({
 export type GetRentalDetailParamsDto = z.infer<
 	typeof GetRentalDetailParamsSchema
 >;
-export type GetRentalDetailCustomerDto = z.infer<
-	typeof GetRentalDetailCustomerSchema
->;
-export type GetRentalDetailBranchDto = z.infer<
-	typeof GetRentalDetailBranchSchema
->;
 export type GetRentalDetailPeriodDto = z.infer<
 	typeof GetRentalDetailPeriodSchema
 >;
 export type GetRentalDetailDeliveryDetailsDto = z.infer<
 	typeof GetRentalDetailDeliveryDetailsSchema
->;
-export type GetRentalDetailAssetOwnerDto = z.infer<
-	typeof GetRentalDetailAssetOwnerSchema
 >;
 export type GetRentalDetailAssignedAssetDto = z.infer<
 	typeof GetRentalDetailAssignedAssetSchema

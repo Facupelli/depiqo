@@ -1,9 +1,9 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { AdminRouteError } from "@/shared/components/admin-route-error";
 import { useBranches } from "@/features/tenant-management/branch/branch.queries";
 import { BranchesTable } from "@/features/tenant-management/branch/get-branches/components/branches-table";
+import { AdminRouteError } from "@/shared/components/admin-route-error";
 
 export const Route = createFileRoute("/_admin/dashboard/locations/")({
 	errorComponent: ({ error }) => {

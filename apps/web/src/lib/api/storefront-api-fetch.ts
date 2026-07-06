@@ -1,7 +1,7 @@
 import { problemDetailsSchema } from "@repo/schemas";
-import { ProblemDetailsError } from "@/shared/errors";
 import { resolveTrustedTenantContextFromRequest } from "@/features/tenant-management/tenant-context/resolve-trusted-tenant-context.server";
 import { signStorefrontTenantToken } from "@/features/tenant-management/tenant-context/sign-storefront-tenant-token.server";
+import { ProblemDetailsError } from "@/shared/errors";
 
 const SERVER_API_BASE_URL = process.env.API_BASE_URL ?? "http://localhost:3000";
 

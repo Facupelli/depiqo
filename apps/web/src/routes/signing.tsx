@@ -11,7 +11,6 @@ import { useState } from "react";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
-import { getProblemDetailsStatus, ProblemDetailsError } from "@/shared/errors";
 import { useAcceptPublicSigningSession } from "@/features/document-signing/accept-public-signing-session/accept-public-signing-session.mutation";
 import { usePublicSigningSession } from "@/features/document-signing/document-signing.queries";
 import { PublicSigningForm } from "@/features/document-signing/public-signing-session/public-signing-form";
@@ -23,6 +22,7 @@ import { PublicSigningPdfViewer } from "@/features/document-signing/public-signi
 import { PublicSigningTerminalState } from "@/features/document-signing/public-signing-session/public-signing-terminal-state";
 import { getPublicSigningSignedPdfUrlFromDownloadUrl } from "@/features/document-signing/stream-public-signed-receipt-document/stream-public-signed-receipt-document.api";
 import { getPublicSigningUnsignedPdfUrl } from "@/features/document-signing/stream-public-unsigned-document/stream-public-unsigned-document.api";
+import { getProblemDetailsStatus, ProblemDetailsError } from "@/shared/errors";
 
 const signingSearchSchema = z.object({
 	token: z.string().trim().min(1).optional().catch(undefined),

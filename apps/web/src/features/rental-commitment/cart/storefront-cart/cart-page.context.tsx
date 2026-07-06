@@ -1,4 +1,5 @@
 import { createContext, useContext } from "react";
+import { useStorefrontBranches } from "@/features/rental-commitment/branches/branches.queries";
 import type {
 	BookingSlice,
 	CartPageContextValue,
@@ -8,7 +9,6 @@ import type {
 	PricingSlice,
 	TimesSlice,
 } from "@/features/rental-commitment/cart/storefront-cart/cart-page.context.types";
-import { useStorefrontBranches } from "@/features/rental-commitment/branches/branches.queries";
 import { usePublicTenantConfig } from "@/features/tenant-management/tenant/tenant.queries";
 import { useCartPageModel } from "./hooks/use-cart-page-model";
 

@@ -2,7 +2,10 @@ import type { GetRentalsStatusDto } from "@repo/api-contracts";
 
 export type RentalStatusConfig = { label: string; className: string };
 
-export const RENTAL_STATUS_CONFIG: Record<GetRentalsStatusDto, RentalStatusConfig> = {
+export const RENTAL_STATUS_CONFIG: Record<
+	GetRentalsStatusDto,
+	RentalStatusConfig
+> = {
 	DRAFT: {
 		label: "Borrador",
 		className: "bg-stone-100 text-stone-700 ring-1 ring-stone-200",

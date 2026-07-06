@@ -1,8 +1,8 @@
 // import { env } from "cloudflare:workers";
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
-import { WrongActorError } from "@/shared/errors";
 import { requireV2TenantUser } from "@/lib/auth/route-auth.server";
+import { WrongActorError } from "@/shared/errors";
 
 const customerProfileParamsSchema = z.object({
 	customerProfileId: z.uuid(),

@@ -32,13 +32,13 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import type { ParsedRentalListItem } from "@/features/rental-commitment/rentals/rentals.queries";
+import dayjs from "@/lib/dates/dayjs";
+import { cn } from "@/lib/utils";
 import {
 	formatOrderNumber,
 	getRelativeOrderDateContext,
 } from "@/shared/utils/formatters";
-import dayjs from "@/lib/dates/dayjs";
-import { cn } from "@/lib/utils";
-import type { ParsedRentalListItem } from "@/features/rental-commitment/rentals/rentals.queries";
 import {
 	getEffectiveRentalOrdersSort,
 	type RentalOrdersListSort,

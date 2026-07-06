@@ -15,9 +15,10 @@ export interface RentableItemSummaryReadModel {
 export type GetRentableItemSummariesResult = RentableItemSummaryReadModel[];
 
 @QueryHandler(GetRentableItemSummariesQuery)
-export class GetRentableItemSummariesHandler
-  implements IQueryHandler<GetRentableItemSummariesQuery, GetRentableItemSummariesResult>
-{
+export class GetRentableItemSummariesHandler implements IQueryHandler<
+  GetRentableItemSummariesQuery,
+  GetRentableItemSummariesResult
+> {
   constructor(private readonly prisma: PrismaService) {}
 
   async execute(query: GetRentableItemSummariesQuery): Promise<GetRentableItemSummariesResult> {

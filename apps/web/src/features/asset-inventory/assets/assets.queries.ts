@@ -7,12 +7,11 @@ import {
 import type { ProblemDetailsError } from "@/shared/errors";
 import { getAssetSummaries } from "./get-asset-summaries/get-asset-summaries.api";
 
-export type AssetSummariesQueryOverrides<
-	TData = GetAssetSummariesResponseDto,
-> = Omit<
-	UseQueryOptions<GetAssetSummariesResponseDto, ProblemDetailsError, TData>,
-	"queryKey" | "queryFn"
->;
+export type AssetSummariesQueryOverrides<TData = GetAssetSummariesResponseDto> =
+	Omit<
+		UseQueryOptions<GetAssetSummariesResponseDto, ProblemDetailsError, TData>,
+		"queryKey" | "queryFn"
+	>;
 
 export const assetKeys = {
 	all: () => ["v2", "asset-inventory", "assets"] as const,

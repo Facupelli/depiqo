@@ -17,13 +17,13 @@ import {
 	FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { useRegisterTenantWithOwner } from "@/features/tenant-management/tenant/register-tenant-with-owner/register-tenant-with-owner.mutation";
 import {
 	registerFormDefaults,
 	registerFormSchema,
 	toRegisterDto,
 } from "@/features/tenant-management/tenant/register-tenant-with-owner/register-tenant-with-owner-form.schema";
 import { ProblemDetailsError } from "@/shared/errors";
-import { useRegisterTenantWithOwner } from "@/features/tenant-management/tenant/register-tenant-with-owner/register-tenant-with-owner.mutation";
 
 export const Route = createFileRoute("/_admin/admin/register")({
 	component: RegisterPage,

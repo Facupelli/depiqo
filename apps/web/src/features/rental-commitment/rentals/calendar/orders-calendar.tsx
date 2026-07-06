@@ -20,13 +20,13 @@ import {
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent } from "@/components/ui/popover";
-import { formatOrderNumber } from "@/shared/utils/formatters";
-import { fromDate, toISOString } from "@/lib/dates/parse";
-import { cn } from "@/lib/utils";
 import type {
 	ParsedGetRentalsCalendarResponse,
 	ParsedRentalsCalendarItem,
 } from "@/features/rental-commitment/rentals/rentals.queries";
+import { fromDate, toISOString } from "@/lib/dates/parse";
+import { cn } from "@/lib/utils";
+import { formatOrderNumber } from "@/shared/utils/formatters";
 import {
 	formatOrdersCalendarTooltipDateTime,
 	getCalendarDateParamFromDate,

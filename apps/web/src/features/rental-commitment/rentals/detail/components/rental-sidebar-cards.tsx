@@ -12,9 +12,9 @@ import {
 	User2Icon,
 } from "lucide-react";
 import { type ReactNode, useState } from "react";
-import { formatMoney } from "@/shared/utils/formatters";
 import { useRentalContractSigningSummary } from "@/features/contracts/contracts.queries";
 import { useBranchDetail } from "@/features/tenant-management/branch/branch.queries";
+import { formatMoney } from "@/shared/utils/formatters";
 import { AssignCustomerToDraftRentalDialog } from "../../assign-customer-to-draft-rental/assign-customer-to-draft-rental-dialog";
 import {
 	formatRentalContractSigningDate,
@@ -39,9 +39,15 @@ export function RentalSidebarCards() {
 }
 
 function RentalClientCard() {
-	const { rental } = useRentalDetailContext();
-	const customer = rental.customer;
-	const canAssignCustomer = !customer && rental.status === "DRAFT";
+	const {
+		rental,
+		customerSummary,
+		isCustomerSummaryLoading,
+		isCustomerSummaryError,
+	} = useRentalDetailContext();
+	const customer = customerSummary;
+	const hasLinkedCustomer = rental.customerId !== null;
+	const canAssignCustomer = !hasLinkedCustomer && rental.status === "DRAFT";
 
 	return (
 		<SidebarCard
@@ -85,6 +91,18 @@ function RentalClientCard() {
 						) : null}
 					</div>
 				</>
+			) : isCustomerSummaryLoading && hasLinkedCustomer ? (
+				<p className="text-sm text-neutral-500">Cargando cliente...</p>
+			) : isCustomerSummaryError && hasLinkedCustomer ? (
+				<div className="space-y-1 rounded-md border border-amber-200 bg-amber-50 p-3">
+					<p className="text-sm font-semibold text-amber-950">
+						Cliente no encontrado
+					</p>
+					<p className="text-xs text-amber-900">
+						El pedido tiene un cliente vinculado, pero no pudimos cargar su
+						resumen.
+					</p>
+				</div>
 			) : canAssignCustomer ? (
 				<div className="space-y-2 rounded-md border border-amber-200 bg-amber-50 p-3">
 					<p className="text-xs text-amber-900">
@@ -243,7 +261,7 @@ function RentalLogisticsCard() {
 	const { rental } = useRentalDetailContext();
 	const delivery = rental.fulfillment.deliveryDetails;
 	const { data: branch, isLoading: isBranchLoading } = useBranchDetail(
-		rental.branch.id,
+		rental.branchId,
 	);
 	const timezone = branch?.timezone ?? "UTC";
 
@@ -278,7 +296,7 @@ function RentalLogisticsCard() {
 				</p>
 				<div className="flex items-center gap-2 text-sm font-medium text-neutral-900">
 					<MapPin className="size-3.5 text-neutral-400 shrink-0" />
-					{rental.branch.name}
+					{branch?.name ?? "Sucursal no encontrada"}
 				</div>
 			</div>
 			{delivery ? (

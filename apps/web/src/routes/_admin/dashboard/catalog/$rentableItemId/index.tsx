@@ -51,8 +51,6 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AdminRouteError } from "@/shared/components/admin-route-error";
-import { ProblemDetailsError } from "@/shared/errors";
 import { CreateRentalOfferWithPricingDialog } from "@/features/admin/offering-setup/create-rental-offer-with-pricing/create-rental-offer-with-pricing-dialog";
 import { useActivateRentableItem } from "@/features/catalog/rentable-items/activate-rentable-item/activate-rentable-item.mutation";
 import { rentableItemQueries } from "@/features/catalog/rentable-items/rentable-items.queries";
@@ -62,6 +60,8 @@ import { AttachRatePlanToRentalOfferForm } from "@/features/pricing/rental-offer
 import { useCreateRatePlanAndAttachToRentalOffer } from "@/features/pricing/rental-offer-pricings/create-rate-plan-and-attach-to-rental-offer/create-rate-plan-and-attach-to-rental-offer.mutation";
 import { toCreateRatePlanAndAttachToRentalOfferDto } from "@/features/pricing/rental-offer-pricings/create-rate-plan-and-attach-to-rental-offer/create-rate-plan-and-attach-to-rental-offer.schema";
 import { CreateRatePlanAndAttachForm } from "@/features/pricing/rental-offer-pricings/create-rate-plan-and-attach-to-rental-offer/create-rate-plan-and-attach-to-rental-offer-form";
+import { AdminRouteError } from "@/shared/components/admin-route-error";
+import { ProblemDetailsError } from "@/shared/errors";
 
 export const Route = createFileRoute(
 	"/_admin/dashboard/catalog/$rentableItemId/",

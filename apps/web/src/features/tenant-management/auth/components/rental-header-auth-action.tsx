@@ -7,10 +7,10 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 } from "@/components/ui/popover";
+import { useLogout } from "@/features/tenant-management/auth/logout/logout.mutation";
 import { cn } from "@/lib/utils";
 import { getCurrentRelativeRedirect } from "@/shared/auth/auth-redirect";
 import { getPortalAuthRedirectSearch } from "@/shared/auth/portal-auth-redirect";
-import { useLogout } from "@/features/tenant-management/auth/logout/logout.mutation";
 
 export function RentalHeaderAuthAction({
 	user,

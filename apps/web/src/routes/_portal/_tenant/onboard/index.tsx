@@ -1,10 +1,8 @@
 import type { AuthCustomerDto } from "@repo/api-contracts";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
-import { RentalHeaderAuthAction } from "@/features/tenant-management/auth/components/rental-header-auth-action";
-import { getTenantBranding } from "@/features/tenant-management/tenant-context/tenant-branding";
-import { getProblemDetailsStatus } from "@/shared/errors";
 import { authQueries } from "@/features/tenant-management/auth/auth.queries";
+import { RentalHeaderAuthAction } from "@/features/tenant-management/auth/components/rental-header-auth-action";
 import { rentalCustomerQueries } from "@/features/tenant-management/customer/rental-customer.queries";
 import { CustomerProfileOnboardingForm } from "@/features/tenant-management/customer/submit-customer-profile/components/customer-profile-onboarding-form";
 import {
@@ -13,6 +11,8 @@ import {
 	fromCustomerProfileDetailToOnboardingPrefillValues,
 	toCustomerProfileOnboardingFormValues,
 } from "@/features/tenant-management/customer/submit-customer-profile/components/customer-profile-onboarding-form.schema";
+import { getTenantBranding } from "@/features/tenant-management/tenant-context/tenant-branding";
+import { getProblemDetailsStatus } from "@/shared/errors";
 
 interface OnboardLoaderData {
 	customerId: string;

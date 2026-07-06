@@ -1,11 +1,11 @@
 import { useMemo, useState } from "react";
-import { normalizeDeliveryRequest } from "./cart-checkout-delivery";
 import {
 	type DeliveryDefaultsFormState,
 	type DeliveryRequestField,
 	type DeliveryRequestFormState,
 	EMPTY_DELIVERY_REQUEST,
 } from "./cart-checkout.types";
+import { normalizeDeliveryRequest } from "./cart-checkout-delivery";
 
 function toInitialDeliveryRequest(
 	deliveryDefaults: DeliveryDefaultsFormState,

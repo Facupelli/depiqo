@@ -4,8 +4,8 @@ import type {
 } from "@repo/api-contracts";
 import type { MutationOptions } from "@tanstack/react-query";
 import { useMutation } from "@tanstack/react-query";
-import type { ProblemDetailsError } from "@/shared/errors";
 import { rentableItemKeys } from "@/features/catalog/rentable-items/rentable-items.queries";
+import type { ProblemDetailsError } from "@/shared/errors";
 import { createRentableEquipment } from "./create-rentable-equipment.api";
 
 type CreateRentableEquipmentOptions = Omit<

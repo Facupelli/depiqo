@@ -9,7 +9,7 @@ const CONFIRM_RENTAL_FALLBACK_ERROR =
 	"No pudimos confirmar el alquiler. Revisá que tenga cliente, precio calculado y equipos disponibles para el período.";
 
 export function useRentalDetailActions() {
-	const { rental } = useRentalDetailContext();
+	const { rental, customerSummary } = useRentalDetailContext();
 	const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
 	const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
 
@@ -23,9 +23,9 @@ export function useRentalDetailActions() {
 	});
 
 	const isDraftRental = rental.status === "DRAFT";
-	const canSendSigningInvitation = rental.customer !== null;
+	const canSendSigningInvitation = customerSummary !== null;
 	const hasConfirmPrerequisites =
-		rental.customer !== null && rental.pricing !== null;
+		customerSummary !== null && rental.pricing !== null;
 	const canConfirmRental = isDraftRental && hasConfirmPrerequisites;
 	const canCancelRental = !["CANCELLED", "COMPLETED"].includes(rental.status);
 	const confirmRentalErrorMessage = confirmRental.error
@@ -75,7 +75,7 @@ export function useRentalDetailActions() {
 		signingDialogProps: {
 			open: signing.isInvitationDialogOpen,
 			onOpenChange: signing.setIsInvitationDialogOpen,
-			defaultEmail: rental.customer?.email,
+			defaultEmail: customerSummary?.email,
 			dialogIntent: signing.dialogIntent,
 			submitError: signing.submitError,
 			isPending: signing.isPending,

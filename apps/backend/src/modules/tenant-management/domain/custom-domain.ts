@@ -1,9 +1,6 @@
 import { err, ok, Result } from 'neverthrow';
 
-import {
-  InvalidCustomDomainError,
-  UnsupportedApexCustomDomainError,
-} from './errors/tenant-management.errors';
+import { InvalidCustomDomainError, UnsupportedApexCustomDomainError } from './errors/tenant-management.errors';
 
 const HOSTNAME_PATTERN = /^(?=.{1,253}$)(?:(?!-)[a-z0-9-]{1,63}(?<!-)\.)+(?:(?!-)[a-z0-9-]{2,63}(?<!-))$/;
 

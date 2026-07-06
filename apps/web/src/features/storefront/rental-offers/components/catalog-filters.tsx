@@ -15,12 +15,12 @@ import {
 	SheetTitle,
 	SheetTrigger,
 } from "@/components/ui/sheet";
+import { useStorefrontCategories } from "@/features/catalog/storefront-categories/storefront-categories.queries";
+import { useStorefrontBranches } from "@/features/rental-commitment/branches/branches.queries";
 import { localDateToDateParam } from "@/lib/dates/parse";
 import { cn } from "@/lib/utils";
 import type { V2RentalPageSearch } from "@/routes/_portal/_tenant/v2/rental";
 import { useIsMobile } from "@/shared/hooks/use-mobile";
-import { useStorefrontCategories } from "@/features/catalog/storefront-categories/storefront-categories.queries";
-import { useStorefrontBranches } from "@/features/rental-commitment/branches/branches.queries";
 import { DateRangePicker } from "./date-range-picker";
 
 interface RentalFiltersProps {

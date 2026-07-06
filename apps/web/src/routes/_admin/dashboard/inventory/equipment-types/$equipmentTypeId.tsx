@@ -20,7 +20,6 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AdminRouteError } from "@/shared/components/admin-route-error";
 import { useAddAssetsToEquipmentType } from "@/features/asset-inventory/equipment-types/add-assets-to-equipment-type/add-assets-to-equipment-type.mutation";
 import { toAddAssetsToEquipmentTypeDto } from "@/features/asset-inventory/equipment-types/add-assets-to-equipment-type/add-assets-to-equipment-type.schema";
 import { AddAssetsToEquipmentTypeForm } from "@/features/asset-inventory/equipment-types/add-assets-to-equipment-type/add-assets-to-equipment-type-form";
@@ -30,6 +29,7 @@ import { CreateEquipmentTypeAccessoryDefaultsForm } from "@/features/asset-inven
 import { equipmentTypeQueries } from "@/features/asset-inventory/equipment-types/equipment-types.queries";
 import { useOwners } from "@/features/asset-inventory/owners/owners.queries";
 import { useBranches } from "@/features/tenant-management/branch/branch.queries";
+import { AdminRouteError } from "@/shared/components/admin-route-error";
 
 export const Route = createFileRoute(
 	"/_admin/dashboard/inventory/equipment-types/$equipmentTypeId",

@@ -33,9 +33,9 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import { useRentalCustomers } from "@/features/tenant-management/customer/rental-customer.queries";
 import { AdminRouteError } from "@/shared/components/admin-route-error";
 import useDebounce from "@/shared/hooks/use-debounce";
-import { useRentalCustomers } from "@/features/tenant-management/customer/rental-customer.queries";
 
 export const Route = createFileRoute("/_admin/dashboard/customers/")({
 	errorComponent: ({ error }) => {

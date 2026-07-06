@@ -18,9 +18,6 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 } from "@/components/ui/popover";
-import { DateRangePicker } from "@/features/storefront/rental-offers/components/date-range-picker";
-import dayjs from "@/lib/dates/dayjs";
-import { dateParamToLocalDate, localDateToDateParam } from "@/lib/dates/parse";
 import { useStorefrontBranches } from "@/features/rental-commitment/branches/branches.queries";
 import {
 	useV2RentalCartActions,
@@ -28,6 +25,9 @@ import {
 	useV2RentalCartItems,
 } from "@/features/rental-commitment/cart/v2-rental-cart.hooks";
 import type { V2RentalCartItem } from "@/features/rental-commitment/cart/v2-rental-cart.types";
+import { DateRangePicker } from "@/features/storefront/rental-offers/components/date-range-picker";
+import dayjs from "@/lib/dates/dayjs";
+import { dateParamToLocalDate, localDateToDateParam } from "@/lib/dates/parse";
 
 export function CartPopover() {
 	const itemCount = useV2RentalCartItemCount();

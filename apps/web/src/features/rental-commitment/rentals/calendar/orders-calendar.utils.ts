@@ -1,7 +1,7 @@
 import type { EventApi, EventInput } from "@fullcalendar/core";
-import { formatOrderNumber } from "@/shared/utils/formatters";
-import dayjs from "@/lib/dates/dayjs";
 import type { ParsedRentalsCalendarItem } from "@/features/rental-commitment/rentals/rentals.queries";
+import dayjs from "@/lib/dates/dayjs";
+import { formatOrderNumber } from "@/shared/utils/formatters";
 
 export const ORDERS_CALENDAR_VIEWS = [
 	"dayGridDay",

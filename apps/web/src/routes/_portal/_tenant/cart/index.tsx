@@ -1,5 +1,6 @@
 import { createFileRoute, useSearch } from "@tanstack/react-router";
 import z from "zod";
+import { storefrontBranchQueries } from "@/features/rental-commitment/branches/branches.queries";
 import { CartPageProvider } from "@/features/rental-commitment/cart/storefront-cart/cart-page.context";
 import { FulfillmentForm } from "@/features/rental-commitment/cart/storefront-cart/components/cart-sidebar/fulfillment-form";
 import { PriceBreakdown } from "@/features/rental-commitment/cart/storefront-cart/components/cart-sidebar/price-breakdown";
@@ -15,9 +16,8 @@ import { CartPageConflictPanel } from "@/features/rental-commitment/cart/storefr
 import { CartPageItemList } from "@/features/rental-commitment/cart/storefront-cart/components/cartpage-itemlist";
 import { CartPagePeriod } from "@/features/rental-commitment/cart/storefront-cart/components/cartpage-period";
 import { useCartSidebarViewModel } from "@/features/rental-commitment/cart/storefront-cart/hooks/use-cart-sidebar-view-model";
-import { useIsVisible } from "@/shared/hooks/use-is-visible";
-import { storefrontBranchQueries } from "@/features/rental-commitment/branches/branches.queries";
 import { tenantQueries } from "@/features/tenant-management/tenant/tenant.queries";
+import { useIsVisible } from "@/shared/hooks/use-is-visible";
 
 const cartPageSearchSchema = z.object({
 	periodStart: z.iso.date(),

@@ -20,21 +20,21 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
+import { useApproveSubmittedCustomerOnboarding } from "@/features/tenant-management/customer/approve-submitted-customer-onboarding/approve-submitted-customer-onboarding.mutation";
 import {
 	getDocumentFileName,
 	getDocumentPreviewType,
 	getInstagramProfileUrl,
 	maskAccountNumber,
 } from "@/features/tenant-management/customer/components/review/customer-profile-review.utils";
-import { cn } from "@/lib/utils";
-import { AdminRouteError } from "@/shared/components/admin-route-error";
-import { ProblemDetailsError } from "@/shared/errors";
-import { useApproveSubmittedCustomerOnboarding } from "@/features/tenant-management/customer/approve-submitted-customer-onboarding/approve-submitted-customer-onboarding.mutation";
 import { useRejectSubmittedCustomerOnboarding } from "@/features/tenant-management/customer/reject-submitted-customer-onboarding/reject-submitted-customer-onboarding.mutation";
 import {
 	rentalCustomerQueries,
 	useCustomerProfileDetail,
 } from "@/features/tenant-management/customer/rental-customer.queries";
+import { cn } from "@/lib/utils";
+import { AdminRouteError } from "@/shared/components/admin-route-error";
+import { ProblemDetailsError } from "@/shared/errors";
 
 export const Route = createFileRoute(
 	"/_admin/dashboard/customers/pending-profiles/$customerId",

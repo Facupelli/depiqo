@@ -15,10 +15,7 @@ export class CreatePackageHttpController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  async create(
-    @Body() dto: CreatePackageRequestDto,
-    @CurrentUser() user: AuthUser,
-  ): Promise<CreatePackageResponseDto> {
+  async create(@Body() dto: CreatePackageRequestDto, @CurrentUser() user: AuthUser): Promise<CreatePackageResponseDto> {
     const result = await this.commandBus.execute<CreatePackageCommand, CreatePackageServiceResult>(
       new CreatePackageCommand({
         tenantId: user.tenantId,

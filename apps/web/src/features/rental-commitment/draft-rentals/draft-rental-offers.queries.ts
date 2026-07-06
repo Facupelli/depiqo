@@ -4,8 +4,8 @@ import {
 	type UseQueryOptions,
 	useQuery,
 } from "@tanstack/react-query";
-import type { ProblemDetailsError } from "@/shared/errors";
 import { getCsrfToken } from "@/features/tenant-management/auth/csrf-token";
+import type { ProblemDetailsError } from "@/shared/errors";
 import { searchDraftRentalOffersFn } from "./search-draft-rental-offers/search-draft-rental-offers.functions";
 import type {
 	SearchDraftRentalOffersInputDto,

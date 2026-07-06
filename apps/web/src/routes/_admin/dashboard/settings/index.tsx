@@ -1,11 +1,11 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import z from "zod";
-import { TenantBrandingSection } from "@/features/tenant-management/tenant/update-tenant-branding/components/tenant-branding-section";
+import { TenantContractSignerSettingsSection } from "@/features/tenant-management/tenant/contract-signer/components/tenant-contract-signer-settings-section";
 import { CustomDomainSection } from "@/features/tenant-management/tenant/custom-domain/components/custom-domain-section";
+import { TenantBrandingSection } from "@/features/tenant-management/tenant/update-tenant-branding/components/tenant-branding-section";
+import { TenantConfigSettingsSection } from "@/features/tenant-management/tenant/update-tenant-config/components/tenant-config-form";
 import { cn } from "@/lib/utils";
 import { AdminRouteError } from "@/shared/components/admin-route-error";
-import { TenantContractSignerSettingsSection } from "@/features/tenant-management/tenant/contract-signer/components/tenant-contract-signer-settings-section";
-import { TenantConfigSettingsSection } from "@/features/tenant-management/tenant/update-tenant-config/components/tenant-config-form";
 
 const SETTINGS_SECTIONS = [
 	"branding",

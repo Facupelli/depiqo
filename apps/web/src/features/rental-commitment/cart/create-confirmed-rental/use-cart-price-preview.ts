@@ -1,11 +1,11 @@
 import { toCalculateCartPriceBody } from "@/features/pricing/calculate-cart-price/calculate-cart-price.mapper";
 import { useCalculatedCartPrice } from "@/features/pricing/calculate-cart-price/calculate-cart-price.queries";
 import type { V2RentalCartItem } from "../v2-rental-cart.types";
+import type { CartCheckoutPeriod } from "./cart-checkout.types";
 import {
 	buildCartPricePreviewBody,
 	isValidCartRentalPeriod,
 } from "./cart-checkout-model";
-import type { CartCheckoutPeriod } from "./cart-checkout.types";
 
 type UseCartPricePreviewParams = {
 	branchId: string;

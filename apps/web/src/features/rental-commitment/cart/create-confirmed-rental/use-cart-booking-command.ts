@@ -4,13 +4,12 @@ import { useState } from "react";
 import dayjs from "@/lib/dates/dayjs";
 import { getCurrentRelativeRedirect } from "@/shared/auth/auth-redirect";
 import { getPortalAuthRedirectSearch } from "@/shared/auth/portal-auth-redirect";
-import { parseCartBookingError } from "./cart-booking-errors";
-import { isDeliveryRequestComplete } from "./cart-checkout-delivery";
-import type { ConflictGroup } from "./cart-checkout.types";
 import { useCreateConfirmedRental } from "../../confirmed-rentals/create-confirmed-rental/create-confirmed-rental.mutation";
 import type { V2RentalCartItem } from "../v2-rental-cart.types";
+import { parseCartBookingError } from "./cart-booking-errors";
+import type { CartCheckoutPeriod, ConflictGroup } from "./cart-checkout.types";
+import { isDeliveryRequestComplete } from "./cart-checkout-delivery";
 import { buildCreateConfirmedRentalBody } from "./cart-checkout-model";
-import type { CartCheckoutPeriod } from "./cart-checkout.types";
 
 const formatSlot = (minutes: number): string =>
 	dayjs().startOf("day").add(minutes, "minute").format("h:mm A");

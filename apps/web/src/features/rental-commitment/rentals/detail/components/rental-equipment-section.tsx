@@ -1,11 +1,12 @@
-import type {
-	GetRentalDetailEquipmentLineDto,
-	GetRentalDetailResponseDto,
-} from "@repo/api-contracts";
 import { Clock, Package, User2Icon } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { buildR2PublicUrl } from "@/lib/r2-public-url";
 import { cn } from "@/lib/utils";
+import type {
+	GetRentalDetailViewResponseDto,
+	RentalDetailViewEquipmentLineDto,
+} from "../get-rental-detail-view/get-rental-detail-view.schema";
 import { useRentalDetailContext } from "../rental-detail.context";
 import {
 	formatRentalDetailDateTime,
@@ -66,11 +67,11 @@ type EquipmentCardItem = {
 	rentableItemId: string;
 	rentableItemName: string;
 	quantity: number;
-	children: GetRentalDetailEquipmentLineDto[];
+	children: RentalDetailViewEquipmentLineDto[];
 };
 
 function mapEquipmentsToCardItems(
-	equipments: GetRentalDetailEquipmentLineDto[],
+	equipments: RentalDetailViewEquipmentLineDto[],
 ): EquipmentCardItem[] {
 	const cardsBySelectionId = new Map<string, EquipmentCardItem>();
 
@@ -101,7 +102,7 @@ function RentalEquipmentCard({
 	equipment: EquipmentCardItem;
 	accessoriesByEquipmentLine: Map<
 		string,
-		GetRentalDetailResponseDto["accessories"]
+		GetRentalDetailViewResponseDto["accessories"]
 	>;
 }) {
 	const isPackage = equipment.children.length > 1;
@@ -115,14 +116,17 @@ function RentalEquipmentCard({
 	const serials = primaryEquipment
 		? getAssetSerials(primaryEquipment.assignedAssets)
 		: [];
+	const missingAssetIds = primaryEquipment
+		? getMissingAssetIds(primaryEquipment.assignedAssets)
+		: [];
 
 	return (
 		<div className="rounded-xl border border-neutral-200 bg-white p-4 transition-colors hover:border-neutral-300">
 			<div className="grid gap-4 sm:grid-cols-[1fr_auto]">
 				<div className="flex gap-4">
-					<div className="flex size-18 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-neutral-200 bg-neutral-100">
-						<Package className="size-6 text-neutral-300" />
-					</div>
+					<ProductImage
+						imageUrl={equipment.children[0]?.rentableItem?.imageUrl ?? null}
+					/>
 					<div className="flex min-w-0 flex-col gap-0.5">
 						<span className="font-semibold leading-snug text-neutral-950">
 							{equipment.rentableItemName}
@@ -149,6 +153,7 @@ function RentalEquipmentCard({
 										Sin assets asignadas
 									</span>
 								)}
+								<MissingAssetsFeedback assetIds={missingAssetIds} />
 							</div>
 						) : null}
 					</div>
@@ -176,10 +181,10 @@ function RentalPackageChildrenList({
 	items,
 	accessoriesByEquipmentLine,
 }: {
-	items: GetRentalDetailEquipmentLineDto[];
+	items: RentalDetailViewEquipmentLineDto[];
 	accessoriesByEquipmentLine: Map<
 		string,
-		GetRentalDetailResponseDto["accessories"]
+		GetRentalDetailViewResponseDto["accessories"]
 	>;
 }) {
 	return (
@@ -204,19 +209,21 @@ function RentalPackageChildRow({
 	equipment,
 	accessories,
 }: {
-	equipment: GetRentalDetailEquipmentLineDto;
-	accessories: GetRentalDetailResponseDto["accessories"];
+	equipment: RentalDetailViewEquipmentLineDto;
+	accessories: GetRentalDetailViewResponseDto["accessories"];
 }) {
 	const owners = getAssetOwners(equipment.assignedAssets);
 	const serials = getAssetSerials(equipment.assignedAssets);
+	const missingAssetIds = getMissingAssetIds(equipment.assignedAssets);
 
 	return (
 		<div className="rounded-lg border border-neutral-100 bg-neutral-50 px-3 py-2">
 			<div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-center">
 				<div className="flex min-w-0 items-start gap-3">
-					<div className="flex size-10 shrink-0 items-center justify-center rounded-md border border-neutral-200 bg-white">
-						<Package className="size-4 text-neutral-300" />
-					</div>
+					<ProductImage
+						imageUrl={equipment.rentableItem?.imageUrl ?? null}
+						variant="compact"
+					/>
 					<div className="min-w-0 space-y-0.5">
 						<p className="truncate font-medium text-neutral-800 text-sm">
 							{equipment.equipmentTypeName}
@@ -233,7 +240,7 @@ function RentalPackageChildRow({
 						))}
 					</div>
 				</div>
-				<div className="sm:justify-self-end">
+				<div className="space-y-1 sm:justify-self-end">
 					{serials.length > 0 ? (
 						<SerialChips serials={serials} maxVisible={3} />
 					) : (
@@ -241,6 +248,7 @@ function RentalPackageChildRow({
 							Sin serie
 						</span>
 					)}
+					<MissingAssetsFeedback assetIds={missingAssetIds} />
 				</div>
 			</div>
 			{accessories.length > 0 ? (
@@ -254,7 +262,7 @@ function RentalAccessoriesList({
 	accessories,
 	variant = "default",
 }: {
-	accessories: GetRentalDetailResponseDto["accessories"];
+	accessories: GetRentalDetailViewResponseDto["accessories"];
 	variant?: "default" | "compact";
 }) {
 	return (
@@ -302,10 +310,11 @@ function RentalAccessoryRow({
 	accessory,
 	variant = "default",
 }: {
-	accessory: GetRentalDetailResponseDto["accessories"][number];
+	accessory: GetRentalDetailViewResponseDto["accessories"][number];
 	variant?: "default" | "compact";
 }) {
 	const serials = getAssetSerials(accessory.assignedAssets);
+	const missingAssetIds = getMissingAssetIds(accessory.assignedAssets);
 
 	return (
 		<div
@@ -342,7 +351,7 @@ function RentalAccessoryRow({
 					<QuantityText quantity={accessory.quantity} compact />
 				</div>
 			</div>
-			<div className="sm:justify-self-end">
+			<div className="space-y-1 sm:justify-self-end">
 				{serials.length > 0 ? (
 					<SerialChips serials={serials} maxVisible={3} />
 				) : (
@@ -350,6 +359,7 @@ function RentalAccessoryRow({
 						Sin serie
 					</span>
 				)}
+				<MissingAssetsFeedback assetIds={missingAssetIds} />
 			</div>
 		</div>
 	);
@@ -358,7 +368,7 @@ function RentalAccessoryRow({
 function UnlinkedAccessoriesCard({
 	accessories,
 }: {
-	accessories: GetRentalDetailResponseDto["accessories"];
+	accessories: GetRentalDetailViewResponseDto["accessories"];
 }) {
 	return (
 		<div className="rounded-xl border border-amber-200 bg-amber-50/60 p-4">
@@ -403,6 +413,49 @@ function SerialChips({
 	);
 }
 
+function ProductImage({
+	imageUrl,
+	variant = "default",
+}: {
+	imageUrl: string | null;
+	variant?: "default" | "compact";
+}) {
+	const publicImageUrl = buildR2PublicUrl(imageUrl, "catalog");
+	const sizeClassName = variant === "default" ? "size-18" : "size-10";
+	const iconClassName = variant === "default" ? "size-6" : "size-4";
+
+	return (
+		<div
+			className={cn(
+				"flex shrink-0 items-center justify-center overflow-hidden rounded-lg border border-neutral-200 bg-neutral-100",
+				sizeClassName,
+			)}
+		>
+			{publicImageUrl ? (
+				<img
+					alt=""
+					className="h-full w-full object-cover"
+					src={publicImageUrl}
+				/>
+			) : (
+				<Package className={cn("text-neutral-300", iconClassName)} />
+			)}
+		</div>
+	);
+}
+
+function MissingAssetsFeedback({ assetIds }: { assetIds: string[] }) {
+	if (assetIds.length === 0) {
+		return null;
+	}
+
+	return (
+		<p className="font-mono text-[11px] text-amber-700">
+			Asset no encontrado: {assetIds.join(", ")}
+		</p>
+	);
+}
+
 function QuantityText({
 	quantity,
 	compact = false,
@@ -430,9 +483,12 @@ function QuantityText({
 }
 
 function groupAccessoriesByEquipmentLine(
-	accessories: GetRentalDetailResponseDto["accessories"],
+	accessories: GetRentalDetailViewResponseDto["accessories"],
 ) {
-	const groups = new Map<string, GetRentalDetailResponseDto["accessories"]>();
+	const groups = new Map<
+		string,
+		GetRentalDetailViewResponseDto["accessories"]
+	>();
 
 	for (const accessory of accessories) {
 		if (!accessory.sourceRentalDemandLineId) {
@@ -448,19 +504,29 @@ function groupAccessoriesByEquipmentLine(
 }
 
 function getAssetOwners(
-	assets: GetRentalDetailResponseDto["equipment"][number]["assignedAssets"],
+	assets: GetRentalDetailViewResponseDto["equipment"][number]["assignedAssets"],
 ) {
 	return [
 		...new Set(
-			assets.map((asset) => asset.owner?.name).filter(isNonEmptyString),
+			assets.map((asset) => asset.asset?.owner?.name).filter(isNonEmptyString),
 		),
 	];
 }
 
 function getAssetSerials(
-	assets: GetRentalDetailResponseDto["equipment"][number]["assignedAssets"],
+	assets: GetRentalDetailViewResponseDto["equipment"][number]["assignedAssets"],
 ) {
-	return assets.map((asset) => asset.serialNumber).filter(isNonEmptyString);
+	return assets
+		.map((asset) => asset.asset?.serialNumber)
+		.filter(isNonEmptyString);
+}
+
+function getMissingAssetIds(
+	assets: GetRentalDetailViewResponseDto["equipment"][number]["assignedAssets"],
+) {
+	return assets
+		.filter((asset) => asset.isMissing)
+		.map((asset) => asset.assetId);
 }
 
 function ActivityLog() {

@@ -3,9 +3,9 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { ImageOff, LoaderCircle, Trash2, Upload } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { buildR2PublicUrl } from "@/lib/r2-public-url";
 import { tenantQueries } from "@/features/tenant-management/tenant/tenant.queries";
 import { useUpdateTenantBranding } from "@/features/tenant-management/tenant/update-tenant-branding/update-tenant-branding.mutation";
+import { buildR2PublicUrl } from "@/lib/r2-public-url";
 
 export function TenantBrandingSection() {
 	const { data: tenant } = useSuspenseQuery(tenantQueries.current());

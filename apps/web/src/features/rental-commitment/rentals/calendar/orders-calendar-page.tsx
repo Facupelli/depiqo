@@ -1,8 +1,8 @@
 import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { useSelectedLocation } from "@/shared/contexts/location/location.hooks";
 import { useRentalsCalendar } from "@/features/rental-commitment/rentals/rentals.queries";
 import { useBranches } from "@/features/tenant-management/branch/branch.queries";
+import { useSelectedLocation } from "@/shared/contexts/location/location.hooks";
 import { OrdersCalendar } from "./orders-calendar";
 import {
 	DEFAULT_ORDERS_CALENDAR_VIEW,

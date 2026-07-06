@@ -7,12 +7,12 @@ import {
 import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
 import { FieldError } from "@/components/ui/field";
+import { finalizeCustomerGoogleLogin } from "@/features/tenant-management/auth/customer-google-finalize/customer-google-finalize.api";
 import {
 	getPortalAuthRedirectTarget,
 	portalAuthRedirectSchema,
 } from "@/features/tenant-management/auth/portal/portal-auth.redirect";
 import { ProblemDetailsError } from "@/shared/errors";
-import { finalizeCustomerGoogleLogin } from "@/features/tenant-management/auth/customer-google-finalize/customer-google-finalize.api";
 
 const searchSchema = portalAuthRedirectSchema.extend({
 	ticket: z.string().min(1),

@@ -1,6 +1,6 @@
 import { problemDetailsSchema } from "@repo/schemas";
-import { ProblemDetailsError } from "@/shared/errors";
 import { getCsrfToken } from "@/features/tenant-management/auth/csrf-token";
+import { ProblemDetailsError } from "@/shared/errors";
 import {
 	getForwardedCookieHeader,
 	getForwardedCsrfHeader,

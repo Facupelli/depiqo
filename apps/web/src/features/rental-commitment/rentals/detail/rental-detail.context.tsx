@@ -1,7 +1,13 @@
-import type { GetRentalDetailResponseDto } from "@repo/api-contracts";
+import type { GetCustomerSummaryResponseDto } from "@repo/api-contracts";
 import { createContext, type ReactNode, useContext } from "react";
+import type { GetRentalDetailViewResponseDto } from "./get-rental-detail-view/get-rental-detail-view.schema";
 
-type RentalDetailContextValue = { rental: GetRentalDetailResponseDto };
+type RentalDetailContextValue = {
+	rental: GetRentalDetailViewResponseDto;
+	customerSummary: GetCustomerSummaryResponseDto | null;
+	isCustomerSummaryLoading: boolean;
+	isCustomerSummaryError: boolean;
+};
 
 const RentalDetailContext = createContext<RentalDetailContextValue | null>(
 	null,
@@ -9,13 +15,26 @@ const RentalDetailContext = createContext<RentalDetailContextValue | null>(
 
 export function RentalDetailProvider({
 	rental,
+	customerSummary,
+	isCustomerSummaryLoading = false,
+	isCustomerSummaryError = false,
 	children,
 }: {
-	rental: GetRentalDetailResponseDto;
+	rental: GetRentalDetailViewResponseDto;
+	customerSummary: GetCustomerSummaryResponseDto | null;
+	isCustomerSummaryLoading?: boolean;
+	isCustomerSummaryError?: boolean;
 	children: ReactNode;
 }) {
 	return (
-		<RentalDetailContext.Provider value={{ rental }}>
+		<RentalDetailContext.Provider
+			value={{
+				rental,
+				customerSummary,
+				isCustomerSummaryLoading,
+				isCustomerSummaryError,
+			}}
+		>
 			{children}
 		</RentalDetailContext.Provider>
 	);

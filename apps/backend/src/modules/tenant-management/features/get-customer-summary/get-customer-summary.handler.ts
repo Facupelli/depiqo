@@ -21,15 +21,10 @@ export interface GetCustomerSummaryReadModel {
   lastName: string;
 }
 
-export type GetCustomerSummaryResult = Result<
-  GetCustomerSummaryReadModel,
-  TenantManagementApplicationError
->;
+export type GetCustomerSummaryResult = Result<GetCustomerSummaryReadModel, TenantManagementApplicationError>;
 
 @QueryHandler(GetCustomerSummaryQuery)
-export class GetCustomerSummaryHandler
-  implements IQueryHandler<GetCustomerSummaryQuery, GetCustomerSummaryResult>
-{
+export class GetCustomerSummaryHandler implements IQueryHandler<GetCustomerSummaryQuery, GetCustomerSummaryResult> {
   constructor(private readonly prisma: PrismaService) {}
 
   async execute(query: GetCustomerSummaryQuery): Promise<GetCustomerSummaryResult> {

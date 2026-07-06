@@ -5,8 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { formatMoney } from "@/shared/utils/formatters";
 import { withForm } from "@/shared/contexts/form.context";
+import { formatMoney } from "@/shared/utils/formatters";
 import { useDraftRentalComposer } from "../create-draft-rental-composer.context";
 import { createDraftRentalComposerDefaultValues } from "../create-draft-rental-composer.schema";
 

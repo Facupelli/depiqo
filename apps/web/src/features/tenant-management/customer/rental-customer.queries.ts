@@ -48,11 +48,7 @@ export type CustomerProfileDetailQueryOverrides<
 export type CustomerSummaryQueryOverrides<
 	TData = GetCustomerSummaryResponseDto,
 > = Omit<
-	UseQueryOptions<
-		GetCustomerSummaryResponseDto,
-		ProblemDetailsError,
-		TData
-	>,
+	UseQueryOptions<GetCustomerSummaryResponseDto, ProblemDetailsError, TData>,
 	"queryKey" | "queryFn"
 >;
 
@@ -96,17 +92,11 @@ export const rentalCustomerQueries = {
 		customerId?: string,
 		overrides?: CustomerSummaryQueryOverrides<TData>,
 	) =>
-		queryOptions<
-			GetCustomerSummaryResponseDto,
-			ProblemDetailsError,
-			TData
-		>({
+		queryOptions<GetCustomerSummaryResponseDto, ProblemDetailsError, TData>({
 			queryKey: rentalCustomerKeys.summary(customerId),
 			queryFn: () => {
 				if (!customerId) {
-					throw new Error(
-						"customerId is required to fetch customer summary.",
-					);
+					throw new Error("customerId is required to fetch customer summary.");
 				}
 
 				return getCustomerSummary(customerId);
@@ -151,9 +141,10 @@ export function useRentalCustomers<TData = GetRentalCustomersResponseDto>(
 	return useQuery(rentalCustomerQueries.list(query, overrides));
 }
 
-export function useCustomerSummary<
-	TData = GetCustomerSummaryResponseDto,
->(customerId?: string, overrides?: CustomerSummaryQueryOverrides<TData>) {
+export function useCustomerSummary<TData = GetCustomerSummaryResponseDto>(
+	customerId?: string,
+	overrides?: CustomerSummaryQueryOverrides<TData>,
+) {
 	return useQuery(rentalCustomerQueries.summary(customerId, overrides));
 }
 

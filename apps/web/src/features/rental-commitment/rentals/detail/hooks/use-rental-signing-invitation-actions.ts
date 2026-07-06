@@ -1,8 +1,8 @@
-import type { GetRentalDetailResponseDto } from "@repo/api-contracts";
 import { useState } from "react";
 import { toast } from "sonner";
-import { ProblemDetailsError } from "@/shared/errors";
 import { useSendSigningInvitation } from "@/features/document-signing/send-signing-invitation/send-signing-invitation.mutation";
+import { ProblemDetailsError } from "@/shared/errors";
+import type { GetRentalDetailViewResponseDto } from "../get-rental-detail-view/get-rental-detail-view.schema";
 import {
 	type RentalSigningInvitationFormValues,
 	toRentalSigningInvitationDto,
@@ -11,7 +11,7 @@ import {
 export type RentalSigningDialogIntent = "send" | "resend";
 
 export function useRentalSigningInvitationActions(
-	rental: GetRentalDetailResponseDto,
+	rental: GetRentalDetailViewResponseDto,
 ) {
 	const [isInvitationDialogOpen, setIsInvitationDialogOpen] = useState(false);
 	const [dialogIntent, setDialogIntent] =

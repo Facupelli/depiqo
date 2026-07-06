@@ -22,13 +22,13 @@ import {
 	FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { useLogin } from "@/features/tenant-management/auth/login/login.mutation";
+import { loginSchema } from "@/features/tenant-management/auth/login/login-form.schema";
 import {
 	authRedirectSearchSchema,
 	normalizeSafeRedirectTo,
 } from "@/shared/auth/auth-redirect";
 import { isAuthError, ProblemDetailsError } from "@/shared/errors";
-import { useLogin } from "@/features/tenant-management/auth/login/login.mutation";
-import { loginSchema } from "@/features/tenant-management/auth/login/login-form.schema";
 
 export const Route = createFileRoute("/_admin/admin/login")({
 	validateSearch: authRedirectSearchSchema,

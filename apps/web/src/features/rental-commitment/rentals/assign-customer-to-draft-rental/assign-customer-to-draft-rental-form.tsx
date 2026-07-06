@@ -1,8 +1,8 @@
 import { useId } from "react";
 import { Button } from "@/components/ui/button";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
-import { useAppForm } from "@/shared/contexts/form.context";
 import { RentalCustomerSelector } from "@/features/tenant-management/customer/components/rental-customer-selector";
+import { useAppForm } from "@/shared/contexts/form.context";
 import {
 	type AssignCustomerToDraftRentalFormValues,
 	assignCustomerToDraftRentalFormSchema,

@@ -2,8 +2,8 @@ import { type RentalProductSort, rentalProductSortSchema } from "@repo/schemas";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { startTransition, useCallback, useEffect } from "react";
 import z from "zod";
-import type { V2RentalPageSearch } from "@/routes/_portal/_tenant/v2/rental";
 import { useStorefrontBranches } from "@/features/rental-commitment/branches/branches.queries";
+import type { V2RentalPageSearch } from "@/routes/_portal/_tenant/v2/rental";
 
 export const rentalPageSearchSchema = z.object({
 	locationId: z.string().optional(),

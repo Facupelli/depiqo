@@ -51,7 +51,8 @@ type ConflictGroupCardProps = {
 };
 
 function ConflictGroupCard({ group }: ConflictGroupCardProps) {
-	const { changeRentalOfferQuantity, removeRentalOffer } = useV2RentalCartActions();
+	const { changeRentalOfferQuantity, removeRentalOffer } =
+		useV2RentalCartActions();
 	const { cartItems } = useCartContext();
 
 	const currentDemand = computeCurrentDemand(group.affectedItems, cartItems);
@@ -220,5 +221,7 @@ function findCartItem(
 	affected: ConflictAffectedItem,
 	cartItems: V2RentalCartItem[],
 ): V2RentalCartItem | undefined {
-	return cartItems.find((item) => item.rentalOfferId === affected.productTypeId);
+	return cartItems.find(
+		(item) => item.rentalOfferId === affected.productTypeId,
+	);
 }

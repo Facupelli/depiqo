@@ -3,7 +3,6 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Suspense } from "react";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
-import { RentalHeaderAuthAction } from "@/features/tenant-management/auth/components/rental-header-auth-action";
 import { CartPopover } from "@/features/rental-commitment/cart/storefront-cart/components/cart-popover";
 import { RentalFilters } from "@/features/storefront/rental-offers/components/catalog-filters";
 import {
@@ -12,9 +11,10 @@ import {
 } from "@/features/storefront/rental-offers/components/product-catalog";
 import { SectionErrorBoundary } from "@/features/storefront/rental-offers/components/section-error-boundary";
 import { useRentalPageSearch } from "@/features/storefront/rental-offers/hooks/use-catalog-page-search";
+import { storefrontRentalOfferListViewQueries } from "@/features/storefront/rental-offers/storefront-rental-offer-list-view.queries";
+import { RentalHeaderAuthAction } from "@/features/tenant-management/auth/components/rental-header-auth-action";
 import { getTenantBranding } from "@/features/tenant-management/tenant-context/tenant-branding";
 import { cn } from "@/lib/utils";
-import { storefrontRentalOfferListViewQueries } from "@/features/storefront/rental-offers/storefront-rental-offer-list-view.queries";
 
 const v2RentalSearchSchema = z.object({
 	branchId: z.string().trim().min(1),

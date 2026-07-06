@@ -6,8 +6,8 @@ import {
 	generateRentalRemitoContract,
 } from "@repo/api-contracts";
 import { problemDetailsSchema } from "@repo/schemas";
-import { ProblemDetailsError } from "@/shared/errors";
 import { getForwardedCookieHeader } from "@/lib/api/request-context";
+import { ProblemDetailsError } from "@/shared/errors";
 
 const SERVER_API_BASE_URL = process.env.API_BASE_URL ?? "http://localhost:3000";
 const BROWSER_API_BASE_URL =

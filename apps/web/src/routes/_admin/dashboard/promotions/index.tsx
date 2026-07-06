@@ -74,7 +74,6 @@ function RouteComponent() {
 				<TabsContent value="promotions" hidden={tab !== "promotions"}>
 					<PromotionsTab />
 				</TabsContent>
-
 			</Tabs>
 		</div>
 	);
