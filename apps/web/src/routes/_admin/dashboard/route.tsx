@@ -117,7 +117,7 @@ const sidebarItems: SidebarItem[] = [
 		icon: Warehouse,
 		href: "/dashboard/inventory/equipment-types",
 	},
-	{ name: "Sucursales", icon: Store, href: "/dashboard/locations" },
+	{ name: "Sucursales", icon: Store, href: "/dashboard/branches" },
 	{
 		name: "Clientes",
 		icon: Users,

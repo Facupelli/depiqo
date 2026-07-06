@@ -13,7 +13,7 @@ import { useCreateBranch } from "@/features/tenant-management/branch/create-bran
 import { AdminRouteError } from "@/shared/components/admin-route-error";
 import { ProblemDetailsError } from "@/shared/errors";
 
-export const Route = createFileRoute("/_admin/dashboard/locations/new")({
+export const Route = createFileRoute("/_admin/dashboard/branches/new")({
 	errorComponent: ({ error }) => {
 		return (
 			<AdminRouteError
@@ -34,7 +34,7 @@ function CreateBranchPage() {
 	const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
 	function goBackToBranches() {
-		navigate({ to: "/dashboard/locations" });
+		navigate({ to: "/dashboard/branches" });
 	}
 
 	async function handleSubmit(values: CreateBranchFormValues) {

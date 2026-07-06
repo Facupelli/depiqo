@@ -16,7 +16,7 @@ import { AdminRouteError } from "@/shared/components/admin-route-error";
 import { ProblemDetailsError } from "@/shared/errors";
 
 export const Route = createFileRoute(
-	"/_admin/dashboard/locations/$branchId/edit",
+	"/_admin/dashboard/branches/$branchId/edit",
 )({
 	errorComponent: ({ error }) => {
 		return (
@@ -45,7 +45,7 @@ function UpdateBranchPage() {
 	const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
 	function goBackToBranches() {
-		navigate({ to: "/dashboard/locations" });
+		navigate({ to: "/dashboard/branches" });
 	}
 
 	async function handleSubmit(values: UpdateBranchFormValues) {

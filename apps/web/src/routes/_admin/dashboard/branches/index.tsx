@@ -5,7 +5,7 @@ import { useBranches } from "@/features/tenant-management/branch/branch.queries"
 import { BranchesTable } from "@/features/tenant-management/branch/get-branches/components/branches-table";
 import { AdminRouteError } from "@/shared/components/admin-route-error";
 
-export const Route = createFileRoute("/_admin/dashboard/locations/")({
+export const Route = createFileRoute("/_admin/dashboard/branches/")({
 	errorComponent: ({ error }) => {
 		return (
 			<AdminRouteError
@@ -30,7 +30,7 @@ function BranchesPage() {
 						Gestiona los puntos operativos donde administras tu inventario.
 					</p>
 				</div>
-				<Button onClick={() => navigate({ to: "/dashboard/locations/new" })}>
+				<Button onClick={() => navigate({ to: "/dashboard/branches/new" })}>
 					<Plus className="mr-2 h-4 w-4" />
 					Agregar sucursal
 				</Button>
@@ -39,7 +39,7 @@ function BranchesPage() {
 			<BranchesList
 				onEditBranch={(branchId) =>
 					navigate({
-						to: "/dashboard/locations/$branchId/edit",
+						to: "/dashboard/branches/$branchId/edit",
 						params: { branchId },
 					})
 				}

@@ -67,8 +67,6 @@ export function BranchForm({
 		(timezone) =>
 			timezone.startsWith("Europe/") || timezone.startsWith("America/"),
 	);
-	const branchName = useStore(form.store, (state) => state.values.name);
-	const branchAddress = useStore(form.store, (state) => state.values.address);
 	const supportsDelivery = useStore(
 		form.store,
 		(state) => state.values.supportsDelivery,
@@ -89,17 +87,6 @@ export function BranchForm({
 		form.store,
 		(state) => state.values.returnSchedule,
 	);
-	const deliveryDefaults = useStore(form.store, (state) => ({
-		country: state.values.deliveryDefaultCountry,
-		stateRegion: state.values.deliveryDefaultStateRegion,
-		city: state.values.deliveryDefaultCity,
-		postalCode: state.values.deliveryDefaultPostalCode,
-	}));
-	const isBranchDataComplete =
-		branchName.trim().length > 0 && branchAddress.trim().length > 0;
-	const isDeliveryComplete =
-		!supportsDelivery ||
-		Object.values(deliveryDefaults).every((value) => value.trim().length > 0);
 
 	return (
 		<>
@@ -361,8 +348,6 @@ export function BranchForm({
 
 				<aside className="xl:sticky xl:top-6 xl:self-start">
 					<ProcessSummary
-						isBranchDataComplete={isBranchDataComplete}
-						isDeliveryComplete={isDeliveryComplete}
 						scheduleEnabled={scheduleEnabled}
 						useSameScheduleForPickupAndReturn={
 							useSameScheduleForPickupAndReturn
@@ -417,30 +402,6 @@ function StepBadge({ children }: { children: ReactNode }) {
 		<span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-foreground text-sm font-semibold text-background">
 			{children}
 		</span>
-	);
-}
-
-function SummaryStatusLine({
-	label,
-	isComplete,
-}: {
-	label: string;
-	isComplete: boolean;
-}) {
-	return (
-		<div className="flex items-center justify-between gap-3 rounded-lg border bg-background p-3">
-			<p className="text-sm font-medium">{label}</p>
-			<span
-				className={cn(
-					"rounded-full px-2.5 py-1 text-xs font-medium",
-					isComplete
-						? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
-						: "bg-muted text-muted-foreground",
-				)}
-			>
-				{isComplete ? "Completo" : "Pendiente"}
-			</span>
-		</div>
 	);
 }
 
@@ -649,15 +610,11 @@ function ScheduleWindowFields({
 }
 
 function ProcessSummary({
-	isBranchDataComplete,
-	isDeliveryComplete,
 	scheduleEnabled,
 	useSameScheduleForPickupAndReturn,
 	pickupSchedule,
 	returnSchedule,
 }: {
-	isBranchDataComplete: boolean;
-	isDeliveryComplete: boolean;
 	scheduleEnabled: boolean;
 	useSameScheduleForPickupAndReturn: boolean;
 	pickupSchedule: BranchScheduleWindowFormValues;
@@ -673,15 +630,6 @@ function ProcessSummary({
 				<CardTitle>Resumen</CardTitle>
 			</CardHeader>
 			<CardContent className="space-y-3">
-				<SummaryStatusLine
-					label="Datos de la sucursal"
-					isComplete={isBranchDataComplete}
-				/>
-				<SummaryStatusLine
-					label="Entrega a domicilio"
-					isComplete={isDeliveryComplete}
-				/>
-
 				<div className="rounded-lg border bg-background p-3">
 					<p className="text-sm font-medium">Horarios iniciales</p>
 					{!scheduleEnabled ? (

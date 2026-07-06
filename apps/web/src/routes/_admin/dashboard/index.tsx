@@ -54,7 +54,7 @@ const STOREFRONT_STEPS: StepConfig[] = [
 		description:
 			"Agrega la dirección de tu negocio para habilitar entregas locales y zonas de envío.",
 		icon: MapPin,
-		path: "/dashboard/locations",
+		path: "/dashboard/branches",
 	},
 	{
 		id: "hours",
@@ -62,7 +62,7 @@ const STOREFRONT_STEPS: StepConfig[] = [
 		description:
 			"Indica a tus clientes cuándo estás disponible para atender o hacer entregas.",
 		icon: Clock,
-		path: `/dashboard/locations/locationId/`,
+		path: `/dashboard/branches/locationId/`,
 	},
 	{
 		id: "catalog",

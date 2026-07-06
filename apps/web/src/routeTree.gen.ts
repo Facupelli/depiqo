@@ -33,10 +33,10 @@ import { Route as AdminDashboardSettingsIndexRouteImport } from './routes/_admin
 import { Route as AdminDashboardPromotionsIndexRouteImport } from './routes/_admin/dashboard/promotions/index'
 import { Route as AdminDashboardOwnersIndexRouteImport } from './routes/_admin/dashboard/owners/index'
 import { Route as AdminDashboardOrdersIndexRouteImport } from './routes/_admin/dashboard/orders/index'
-import { Route as AdminDashboardLocationsIndexRouteImport } from './routes/_admin/dashboard/locations/index'
 import { Route as AdminDashboardCustomersIndexRouteImport } from './routes/_admin/dashboard/customers/index'
 import { Route as AdminDashboardCatalogIndexRouteImport } from './routes/_admin/dashboard/catalog/index'
 import { Route as AdminDashboardCalendarIndexRouteImport } from './routes/_admin/dashboard/calendar/index'
+import { Route as AdminDashboardBranchesIndexRouteImport } from './routes/_admin/dashboard/branches/index'
 import { Route as ApiOrdersOrderIdContractRouteImport } from './routes/api/orders/$orderId/contract'
 import { Route as ApiOrdersOrderIdBudgetRouteImport } from './routes/api/orders/$orderId/budget'
 import { Route as ApiDocumentSigningPublicUnsignedPdfRouteImport } from './routes/api/document-signing/public/unsigned-pdf'
@@ -46,8 +46,8 @@ import { Route as PortalAuthGoogleFinalizeRouteImport } from './routes/_portal/a
 import { Route as AdminDashboardPromotionsNewRouteImport } from './routes/_admin/dashboard/promotions/new'
 import { Route as AdminDashboardOwnersOwnerIdRouteImport } from './routes/_admin/dashboard/owners/$ownerId'
 import { Route as AdminDashboardOrdersNewRouteImport } from './routes/_admin/dashboard/orders/new'
-import { Route as AdminDashboardLocationsNewRouteImport } from './routes/_admin/dashboard/locations/new'
 import { Route as AdminDashboardCatalogNewRouteImport } from './routes/_admin/dashboard/catalog/new'
+import { Route as AdminDashboardBranchesNewRouteImport } from './routes/_admin/dashboard/branches/new'
 import { Route as PortalTenantV2RentalIndexRouteImport } from './routes/_portal/_tenant/v2/rental/index'
 import { Route as AdminDashboardOrdersOrderIdIndexRouteImport } from './routes/_admin/dashboard/orders/$orderId/index'
 import { Route as AdminDashboardInventoryEquipmentTypesIndexRouteImport } from './routes/_admin/dashboard/inventory/equipment-types/index'
@@ -58,10 +58,10 @@ import { Route as ApiOrdersOrderIdContractSignedRouteImport } from './routes/api
 import { Route as ApiOrdersOrderIdContractDownloadRouteImport } from './routes/api/orders/$orderId/contract/download'
 import { Route as ApiOrdersOrderIdBudgetDownloadRouteImport } from './routes/api/orders/$orderId/budget/download'
 import { Route as AdminDashboardPromotionsPromotionIdEditRouteImport } from './routes/_admin/dashboard/promotions/$promotionId/edit'
-import { Route as AdminDashboardLocationsBranchIdEditRouteImport } from './routes/_admin/dashboard/locations/$branchId/edit'
 import { Route as AdminDashboardInventoryEquipmentTypesEquipmentTypeIdRouteImport } from './routes/_admin/dashboard/inventory/equipment-types/$equipmentTypeId'
 import { Route as AdminDashboardCustomersPendingProfilesCustomerIdRouteImport } from './routes/_admin/dashboard/customers/pending-profiles/$customerId'
 import { Route as AdminDashboardCatalogPackagesNewRouteImport } from './routes/_admin/dashboard/catalog/packages/new'
+import { Route as AdminDashboardBranchesBranchIdEditRouteImport } from './routes/_admin/dashboard/branches/$branchId/edit'
 import { Route as ApiOrdersOrderIdContractSignedDownloadRouteImport } from './routes/api/orders/$orderId/contract/signed/download'
 
 const SigningRoute = SigningRouteImport.update({
@@ -192,12 +192,6 @@ const AdminDashboardOrdersIndexRoute =
     path: '/orders/',
     getParentRoute: () => AdminDashboardRouteRoute,
   } as any)
-const AdminDashboardLocationsIndexRoute =
-  AdminDashboardLocationsIndexRouteImport.update({
-    id: '/locations/',
-    path: '/locations/',
-    getParentRoute: () => AdminDashboardRouteRoute,
-  } as any)
 const AdminDashboardCustomersIndexRoute =
   AdminDashboardCustomersIndexRouteImport.update({
     id: '/customers/',
@@ -214,6 +208,12 @@ const AdminDashboardCalendarIndexRoute =
   AdminDashboardCalendarIndexRouteImport.update({
     id: '/calendar/',
     path: '/calendar/',
+    getParentRoute: () => AdminDashboardRouteRoute,
+  } as any)
+const AdminDashboardBranchesIndexRoute =
+  AdminDashboardBranchesIndexRouteImport.update({
+    id: '/branches/',
+    path: '/branches/',
     getParentRoute: () => AdminDashboardRouteRoute,
   } as any)
 const ApiOrdersOrderIdContractRoute =
@@ -268,16 +268,16 @@ const AdminDashboardOrdersNewRoute = AdminDashboardOrdersNewRouteImport.update({
   path: '/orders/new',
   getParentRoute: () => AdminDashboardRouteRoute,
 } as any)
-const AdminDashboardLocationsNewRoute =
-  AdminDashboardLocationsNewRouteImport.update({
-    id: '/locations/new',
-    path: '/locations/new',
-    getParentRoute: () => AdminDashboardRouteRoute,
-  } as any)
 const AdminDashboardCatalogNewRoute =
   AdminDashboardCatalogNewRouteImport.update({
     id: '/catalog/new',
     path: '/catalog/new',
+    getParentRoute: () => AdminDashboardRouteRoute,
+  } as any)
+const AdminDashboardBranchesNewRoute =
+  AdminDashboardBranchesNewRouteImport.update({
+    id: '/branches/new',
+    path: '/branches/new',
     getParentRoute: () => AdminDashboardRouteRoute,
   } as any)
 const PortalTenantV2RentalIndexRoute =
@@ -340,12 +340,6 @@ const AdminDashboardPromotionsPromotionIdEditRoute =
     path: '/promotions/$promotionId/edit',
     getParentRoute: () => AdminDashboardRouteRoute,
   } as any)
-const AdminDashboardLocationsBranchIdEditRoute =
-  AdminDashboardLocationsBranchIdEditRouteImport.update({
-    id: '/locations/$branchId/edit',
-    path: '/locations/$branchId/edit',
-    getParentRoute: () => AdminDashboardRouteRoute,
-  } as any)
 const AdminDashboardInventoryEquipmentTypesEquipmentTypeIdRoute =
   AdminDashboardInventoryEquipmentTypesEquipmentTypeIdRouteImport.update({
     id: '/inventory/equipment-types/$equipmentTypeId',
@@ -362,6 +356,12 @@ const AdminDashboardCatalogPackagesNewRoute =
   AdminDashboardCatalogPackagesNewRouteImport.update({
     id: '/catalog/packages/new',
     path: '/catalog/packages/new',
+    getParentRoute: () => AdminDashboardRouteRoute,
+  } as any)
+const AdminDashboardBranchesBranchIdEditRoute =
+  AdminDashboardBranchesBranchIdEditRouteImport.update({
+    id: '/branches/$branchId/edit',
+    path: '/branches/$branchId/edit',
     getParentRoute: () => AdminDashboardRouteRoute,
   } as any)
 const ApiOrdersOrderIdContractSignedDownloadRoute =
@@ -385,8 +385,8 @@ export interface FileRoutesByFullPath {
   '/auth/google/callback': typeof AuthGoogleCallbackRoute
   '/auth/google/start': typeof AuthGoogleStartRoute
   '/dashboard/': typeof AdminDashboardIndexRoute
+  '/dashboard/branches/new': typeof AdminDashboardBranchesNewRoute
   '/dashboard/catalog/new': typeof AdminDashboardCatalogNewRoute
-  '/dashboard/locations/new': typeof AdminDashboardLocationsNewRoute
   '/dashboard/orders/new': typeof AdminDashboardOrdersNewRoute
   '/dashboard/owners/$ownerId': typeof AdminDashboardOwnersOwnerIdRoute
   '/dashboard/promotions/new': typeof AdminDashboardPromotionsNewRoute
@@ -396,10 +396,10 @@ export interface FileRoutesByFullPath {
   '/api/document-signing/public/unsigned-pdf': typeof ApiDocumentSigningPublicUnsignedPdfRoute
   '/api/orders/$orderId/budget': typeof ApiOrdersOrderIdBudgetRouteWithChildren
   '/api/orders/$orderId/contract': typeof ApiOrdersOrderIdContractRouteWithChildren
+  '/dashboard/branches/': typeof AdminDashboardBranchesIndexRoute
   '/dashboard/calendar/': typeof AdminDashboardCalendarIndexRoute
   '/dashboard/catalog/': typeof AdminDashboardCatalogIndexRoute
   '/dashboard/customers/': typeof AdminDashboardCustomersIndexRoute
-  '/dashboard/locations/': typeof AdminDashboardLocationsIndexRoute
   '/dashboard/orders/': typeof AdminDashboardOrdersIndexRoute
   '/dashboard/owners/': typeof AdminDashboardOwnersIndexRoute
   '/dashboard/promotions/': typeof AdminDashboardPromotionsIndexRoute
@@ -410,10 +410,10 @@ export interface FileRoutesByFullPath {
   '/order-confirmation/': typeof PortalTenantOrderConfirmationIndexRoute
   '/order-created-contact-team/': typeof PortalTenantOrderCreatedContactTeamIndexRoute
   '/order-created-whatsapp/': typeof PortalTenantOrderCreatedWhatsappIndexRoute
+  '/dashboard/branches/$branchId/edit': typeof AdminDashboardBranchesBranchIdEditRoute
   '/dashboard/catalog/packages/new': typeof AdminDashboardCatalogPackagesNewRoute
   '/dashboard/customers/pending-profiles/$customerId': typeof AdminDashboardCustomersPendingProfilesCustomerIdRoute
   '/dashboard/inventory/equipment-types/$equipmentTypeId': typeof AdminDashboardInventoryEquipmentTypesEquipmentTypeIdRoute
-  '/dashboard/locations/$branchId/edit': typeof AdminDashboardLocationsBranchIdEditRoute
   '/dashboard/promotions/$promotionId/edit': typeof AdminDashboardPromotionsPromotionIdEditRoute
   '/api/orders/$orderId/budget/download': typeof ApiOrdersOrderIdBudgetDownloadRoute
   '/api/orders/$orderId/contract/download': typeof ApiOrdersOrderIdContractDownloadRoute
@@ -439,8 +439,8 @@ export interface FileRoutesByTo {
   '/auth/google/callback': typeof AuthGoogleCallbackRoute
   '/auth/google/start': typeof AuthGoogleStartRoute
   '/dashboard': typeof AdminDashboardIndexRoute
+  '/dashboard/branches/new': typeof AdminDashboardBranchesNewRoute
   '/dashboard/catalog/new': typeof AdminDashboardCatalogNewRoute
-  '/dashboard/locations/new': typeof AdminDashboardLocationsNewRoute
   '/dashboard/orders/new': typeof AdminDashboardOrdersNewRoute
   '/dashboard/owners/$ownerId': typeof AdminDashboardOwnersOwnerIdRoute
   '/dashboard/promotions/new': typeof AdminDashboardPromotionsNewRoute
@@ -450,10 +450,10 @@ export interface FileRoutesByTo {
   '/api/document-signing/public/unsigned-pdf': typeof ApiDocumentSigningPublicUnsignedPdfRoute
   '/api/orders/$orderId/budget': typeof ApiOrdersOrderIdBudgetRouteWithChildren
   '/api/orders/$orderId/contract': typeof ApiOrdersOrderIdContractRouteWithChildren
+  '/dashboard/branches': typeof AdminDashboardBranchesIndexRoute
   '/dashboard/calendar': typeof AdminDashboardCalendarIndexRoute
   '/dashboard/catalog': typeof AdminDashboardCatalogIndexRoute
   '/dashboard/customers': typeof AdminDashboardCustomersIndexRoute
-  '/dashboard/locations': typeof AdminDashboardLocationsIndexRoute
   '/dashboard/orders': typeof AdminDashboardOrdersIndexRoute
   '/dashboard/owners': typeof AdminDashboardOwnersIndexRoute
   '/dashboard/promotions': typeof AdminDashboardPromotionsIndexRoute
@@ -464,10 +464,10 @@ export interface FileRoutesByTo {
   '/order-confirmation': typeof PortalTenantOrderConfirmationIndexRoute
   '/order-created-contact-team': typeof PortalTenantOrderCreatedContactTeamIndexRoute
   '/order-created-whatsapp': typeof PortalTenantOrderCreatedWhatsappIndexRoute
+  '/dashboard/branches/$branchId/edit': typeof AdminDashboardBranchesBranchIdEditRoute
   '/dashboard/catalog/packages/new': typeof AdminDashboardCatalogPackagesNewRoute
   '/dashboard/customers/pending-profiles/$customerId': typeof AdminDashboardCustomersPendingProfilesCustomerIdRoute
   '/dashboard/inventory/equipment-types/$equipmentTypeId': typeof AdminDashboardInventoryEquipmentTypesEquipmentTypeIdRoute
-  '/dashboard/locations/$branchId/edit': typeof AdminDashboardLocationsBranchIdEditRoute
   '/dashboard/promotions/$promotionId/edit': typeof AdminDashboardPromotionsPromotionIdEditRoute
   '/api/orders/$orderId/budget/download': typeof ApiOrdersOrderIdBudgetDownloadRoute
   '/api/orders/$orderId/contract/download': typeof ApiOrdersOrderIdContractDownloadRoute
@@ -496,8 +496,8 @@ export interface FileRoutesById {
   '/auth/google/callback': typeof AuthGoogleCallbackRoute
   '/auth/google/start': typeof AuthGoogleStartRoute
   '/_admin/dashboard/': typeof AdminDashboardIndexRoute
+  '/_admin/dashboard/branches/new': typeof AdminDashboardBranchesNewRoute
   '/_admin/dashboard/catalog/new': typeof AdminDashboardCatalogNewRoute
-  '/_admin/dashboard/locations/new': typeof AdminDashboardLocationsNewRoute
   '/_admin/dashboard/orders/new': typeof AdminDashboardOrdersNewRoute
   '/_admin/dashboard/owners/$ownerId': typeof AdminDashboardOwnersOwnerIdRoute
   '/_admin/dashboard/promotions/new': typeof AdminDashboardPromotionsNewRoute
@@ -507,10 +507,10 @@ export interface FileRoutesById {
   '/api/document-signing/public/unsigned-pdf': typeof ApiDocumentSigningPublicUnsignedPdfRoute
   '/api/orders/$orderId/budget': typeof ApiOrdersOrderIdBudgetRouteWithChildren
   '/api/orders/$orderId/contract': typeof ApiOrdersOrderIdContractRouteWithChildren
+  '/_admin/dashboard/branches/': typeof AdminDashboardBranchesIndexRoute
   '/_admin/dashboard/calendar/': typeof AdminDashboardCalendarIndexRoute
   '/_admin/dashboard/catalog/': typeof AdminDashboardCatalogIndexRoute
   '/_admin/dashboard/customers/': typeof AdminDashboardCustomersIndexRoute
-  '/_admin/dashboard/locations/': typeof AdminDashboardLocationsIndexRoute
   '/_admin/dashboard/orders/': typeof AdminDashboardOrdersIndexRoute
   '/_admin/dashboard/owners/': typeof AdminDashboardOwnersIndexRoute
   '/_admin/dashboard/promotions/': typeof AdminDashboardPromotionsIndexRoute
@@ -521,10 +521,10 @@ export interface FileRoutesById {
   '/_portal/_tenant/order-confirmation/': typeof PortalTenantOrderConfirmationIndexRoute
   '/_portal/_tenant/order-created-contact-team/': typeof PortalTenantOrderCreatedContactTeamIndexRoute
   '/_portal/_tenant/order-created-whatsapp/': typeof PortalTenantOrderCreatedWhatsappIndexRoute
+  '/_admin/dashboard/branches/$branchId/edit': typeof AdminDashboardBranchesBranchIdEditRoute
   '/_admin/dashboard/catalog/packages/new': typeof AdminDashboardCatalogPackagesNewRoute
   '/_admin/dashboard/customers/pending-profiles/$customerId': typeof AdminDashboardCustomersPendingProfilesCustomerIdRoute
   '/_admin/dashboard/inventory/equipment-types/$equipmentTypeId': typeof AdminDashboardInventoryEquipmentTypesEquipmentTypeIdRoute
-  '/_admin/dashboard/locations/$branchId/edit': typeof AdminDashboardLocationsBranchIdEditRoute
   '/_admin/dashboard/promotions/$promotionId/edit': typeof AdminDashboardPromotionsPromotionIdEditRoute
   '/api/orders/$orderId/budget/download': typeof ApiOrdersOrderIdBudgetDownloadRoute
   '/api/orders/$orderId/contract/download': typeof ApiOrdersOrderIdContractDownloadRoute
@@ -553,8 +553,8 @@ export interface FileRouteTypes {
     | '/auth/google/callback'
     | '/auth/google/start'
     | '/dashboard/'
+    | '/dashboard/branches/new'
     | '/dashboard/catalog/new'
-    | '/dashboard/locations/new'
     | '/dashboard/orders/new'
     | '/dashboard/owners/$ownerId'
     | '/dashboard/promotions/new'
@@ -564,10 +564,10 @@ export interface FileRouteTypes {
     | '/api/document-signing/public/unsigned-pdf'
     | '/api/orders/$orderId/budget'
     | '/api/orders/$orderId/contract'
+    | '/dashboard/branches/'
     | '/dashboard/calendar/'
     | '/dashboard/catalog/'
     | '/dashboard/customers/'
-    | '/dashboard/locations/'
     | '/dashboard/orders/'
     | '/dashboard/owners/'
     | '/dashboard/promotions/'
@@ -578,10 +578,10 @@ export interface FileRouteTypes {
     | '/order-confirmation/'
     | '/order-created-contact-team/'
     | '/order-created-whatsapp/'
+    | '/dashboard/branches/$branchId/edit'
     | '/dashboard/catalog/packages/new'
     | '/dashboard/customers/pending-profiles/$customerId'
     | '/dashboard/inventory/equipment-types/$equipmentTypeId'
-    | '/dashboard/locations/$branchId/edit'
     | '/dashboard/promotions/$promotionId/edit'
     | '/api/orders/$orderId/budget/download'
     | '/api/orders/$orderId/contract/download'
@@ -607,8 +607,8 @@ export interface FileRouteTypes {
     | '/auth/google/callback'
     | '/auth/google/start'
     | '/dashboard'
+    | '/dashboard/branches/new'
     | '/dashboard/catalog/new'
-    | '/dashboard/locations/new'
     | '/dashboard/orders/new'
     | '/dashboard/owners/$ownerId'
     | '/dashboard/promotions/new'
@@ -618,10 +618,10 @@ export interface FileRouteTypes {
     | '/api/document-signing/public/unsigned-pdf'
     | '/api/orders/$orderId/budget'
     | '/api/orders/$orderId/contract'
+    | '/dashboard/branches'
     | '/dashboard/calendar'
     | '/dashboard/catalog'
     | '/dashboard/customers'
-    | '/dashboard/locations'
     | '/dashboard/orders'
     | '/dashboard/owners'
     | '/dashboard/promotions'
@@ -632,10 +632,10 @@ export interface FileRouteTypes {
     | '/order-confirmation'
     | '/order-created-contact-team'
     | '/order-created-whatsapp'
+    | '/dashboard/branches/$branchId/edit'
     | '/dashboard/catalog/packages/new'
     | '/dashboard/customers/pending-profiles/$customerId'
     | '/dashboard/inventory/equipment-types/$equipmentTypeId'
-    | '/dashboard/locations/$branchId/edit'
     | '/dashboard/promotions/$promotionId/edit'
     | '/api/orders/$orderId/budget/download'
     | '/api/orders/$orderId/contract/download'
@@ -663,8 +663,8 @@ export interface FileRouteTypes {
     | '/auth/google/callback'
     | '/auth/google/start'
     | '/_admin/dashboard/'
+    | '/_admin/dashboard/branches/new'
     | '/_admin/dashboard/catalog/new'
-    | '/_admin/dashboard/locations/new'
     | '/_admin/dashboard/orders/new'
     | '/_admin/dashboard/owners/$ownerId'
     | '/_admin/dashboard/promotions/new'
@@ -674,10 +674,10 @@ export interface FileRouteTypes {
     | '/api/document-signing/public/unsigned-pdf'
     | '/api/orders/$orderId/budget'
     | '/api/orders/$orderId/contract'
+    | '/_admin/dashboard/branches/'
     | '/_admin/dashboard/calendar/'
     | '/_admin/dashboard/catalog/'
     | '/_admin/dashboard/customers/'
-    | '/_admin/dashboard/locations/'
     | '/_admin/dashboard/orders/'
     | '/_admin/dashboard/owners/'
     | '/_admin/dashboard/promotions/'
@@ -688,10 +688,10 @@ export interface FileRouteTypes {
     | '/_portal/_tenant/order-confirmation/'
     | '/_portal/_tenant/order-created-contact-team/'
     | '/_portal/_tenant/order-created-whatsapp/'
+    | '/_admin/dashboard/branches/$branchId/edit'
     | '/_admin/dashboard/catalog/packages/new'
     | '/_admin/dashboard/customers/pending-profiles/$customerId'
     | '/_admin/dashboard/inventory/equipment-types/$equipmentTypeId'
-    | '/_admin/dashboard/locations/$branchId/edit'
     | '/_admin/dashboard/promotions/$promotionId/edit'
     | '/api/orders/$orderId/budget/download'
     | '/api/orders/$orderId/contract/download'
@@ -894,13 +894,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminDashboardOrdersIndexRouteImport
       parentRoute: typeof AdminDashboardRouteRoute
     }
-    '/_admin/dashboard/locations/': {
-      id: '/_admin/dashboard/locations/'
-      path: '/locations'
-      fullPath: '/dashboard/locations/'
-      preLoaderRoute: typeof AdminDashboardLocationsIndexRouteImport
-      parentRoute: typeof AdminDashboardRouteRoute
-    }
     '/_admin/dashboard/customers/': {
       id: '/_admin/dashboard/customers/'
       path: '/customers'
@@ -920,6 +913,13 @@ declare module '@tanstack/react-router' {
       path: '/calendar'
       fullPath: '/dashboard/calendar/'
       preLoaderRoute: typeof AdminDashboardCalendarIndexRouteImport
+      parentRoute: typeof AdminDashboardRouteRoute
+    }
+    '/_admin/dashboard/branches/': {
+      id: '/_admin/dashboard/branches/'
+      path: '/branches'
+      fullPath: '/dashboard/branches/'
+      preLoaderRoute: typeof AdminDashboardBranchesIndexRouteImport
       parentRoute: typeof AdminDashboardRouteRoute
     }
     '/api/orders/$orderId/contract': {
@@ -985,18 +985,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminDashboardOrdersNewRouteImport
       parentRoute: typeof AdminDashboardRouteRoute
     }
-    '/_admin/dashboard/locations/new': {
-      id: '/_admin/dashboard/locations/new'
-      path: '/locations/new'
-      fullPath: '/dashboard/locations/new'
-      preLoaderRoute: typeof AdminDashboardLocationsNewRouteImport
-      parentRoute: typeof AdminDashboardRouteRoute
-    }
     '/_admin/dashboard/catalog/new': {
       id: '/_admin/dashboard/catalog/new'
       path: '/catalog/new'
       fullPath: '/dashboard/catalog/new'
       preLoaderRoute: typeof AdminDashboardCatalogNewRouteImport
+      parentRoute: typeof AdminDashboardRouteRoute
+    }
+    '/_admin/dashboard/branches/new': {
+      id: '/_admin/dashboard/branches/new'
+      path: '/branches/new'
+      fullPath: '/dashboard/branches/new'
+      preLoaderRoute: typeof AdminDashboardBranchesNewRouteImport
       parentRoute: typeof AdminDashboardRouteRoute
     }
     '/_portal/_tenant/v2/rental/': {
@@ -1069,13 +1069,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminDashboardPromotionsPromotionIdEditRouteImport
       parentRoute: typeof AdminDashboardRouteRoute
     }
-    '/_admin/dashboard/locations/$branchId/edit': {
-      id: '/_admin/dashboard/locations/$branchId/edit'
-      path: '/locations/$branchId/edit'
-      fullPath: '/dashboard/locations/$branchId/edit'
-      preLoaderRoute: typeof AdminDashboardLocationsBranchIdEditRouteImport
-      parentRoute: typeof AdminDashboardRouteRoute
-    }
     '/_admin/dashboard/inventory/equipment-types/$equipmentTypeId': {
       id: '/_admin/dashboard/inventory/equipment-types/$equipmentTypeId'
       path: '/inventory/equipment-types/$equipmentTypeId'
@@ -1095,6 +1088,13 @@ declare module '@tanstack/react-router' {
       path: '/catalog/packages/new'
       fullPath: '/dashboard/catalog/packages/new'
       preLoaderRoute: typeof AdminDashboardCatalogPackagesNewRouteImport
+      parentRoute: typeof AdminDashboardRouteRoute
+    }
+    '/_admin/dashboard/branches/$branchId/edit': {
+      id: '/_admin/dashboard/branches/$branchId/edit'
+      path: '/branches/$branchId/edit'
+      fullPath: '/dashboard/branches/$branchId/edit'
+      preLoaderRoute: typeof AdminDashboardBranchesBranchIdEditRouteImport
       parentRoute: typeof AdminDashboardRouteRoute
     }
     '/api/orders/$orderId/contract/signed/download': {
@@ -1143,23 +1143,23 @@ const PortalRouteRouteWithChildren = PortalRouteRoute._addFileChildren(
 
 interface AdminDashboardRouteRouteChildren {
   AdminDashboardIndexRoute: typeof AdminDashboardIndexRoute
+  AdminDashboardBranchesNewRoute: typeof AdminDashboardBranchesNewRoute
   AdminDashboardCatalogNewRoute: typeof AdminDashboardCatalogNewRoute
-  AdminDashboardLocationsNewRoute: typeof AdminDashboardLocationsNewRoute
   AdminDashboardOrdersNewRoute: typeof AdminDashboardOrdersNewRoute
   AdminDashboardOwnersOwnerIdRoute: typeof AdminDashboardOwnersOwnerIdRoute
   AdminDashboardPromotionsNewRoute: typeof AdminDashboardPromotionsNewRoute
+  AdminDashboardBranchesIndexRoute: typeof AdminDashboardBranchesIndexRoute
   AdminDashboardCalendarIndexRoute: typeof AdminDashboardCalendarIndexRoute
   AdminDashboardCatalogIndexRoute: typeof AdminDashboardCatalogIndexRoute
   AdminDashboardCustomersIndexRoute: typeof AdminDashboardCustomersIndexRoute
-  AdminDashboardLocationsIndexRoute: typeof AdminDashboardLocationsIndexRoute
   AdminDashboardOrdersIndexRoute: typeof AdminDashboardOrdersIndexRoute
   AdminDashboardOwnersIndexRoute: typeof AdminDashboardOwnersIndexRoute
   AdminDashboardPromotionsIndexRoute: typeof AdminDashboardPromotionsIndexRoute
   AdminDashboardSettingsIndexRoute: typeof AdminDashboardSettingsIndexRoute
+  AdminDashboardBranchesBranchIdEditRoute: typeof AdminDashboardBranchesBranchIdEditRoute
   AdminDashboardCatalogPackagesNewRoute: typeof AdminDashboardCatalogPackagesNewRoute
   AdminDashboardCustomersPendingProfilesCustomerIdRoute: typeof AdminDashboardCustomersPendingProfilesCustomerIdRoute
   AdminDashboardInventoryEquipmentTypesEquipmentTypeIdRoute: typeof AdminDashboardInventoryEquipmentTypesEquipmentTypeIdRoute
-  AdminDashboardLocationsBranchIdEditRoute: typeof AdminDashboardLocationsBranchIdEditRoute
   AdminDashboardPromotionsPromotionIdEditRoute: typeof AdminDashboardPromotionsPromotionIdEditRoute
   AdminDashboardCatalogRentableItemIdIndexRoute: typeof AdminDashboardCatalogRentableItemIdIndexRoute
   AdminDashboardCatalogCategoriesIndexRoute: typeof AdminDashboardCatalogCategoriesIndexRoute
@@ -1170,26 +1170,26 @@ interface AdminDashboardRouteRouteChildren {
 
 const AdminDashboardRouteRouteChildren: AdminDashboardRouteRouteChildren = {
   AdminDashboardIndexRoute: AdminDashboardIndexRoute,
+  AdminDashboardBranchesNewRoute: AdminDashboardBranchesNewRoute,
   AdminDashboardCatalogNewRoute: AdminDashboardCatalogNewRoute,
-  AdminDashboardLocationsNewRoute: AdminDashboardLocationsNewRoute,
   AdminDashboardOrdersNewRoute: AdminDashboardOrdersNewRoute,
   AdminDashboardOwnersOwnerIdRoute: AdminDashboardOwnersOwnerIdRoute,
   AdminDashboardPromotionsNewRoute: AdminDashboardPromotionsNewRoute,
+  AdminDashboardBranchesIndexRoute: AdminDashboardBranchesIndexRoute,
   AdminDashboardCalendarIndexRoute: AdminDashboardCalendarIndexRoute,
   AdminDashboardCatalogIndexRoute: AdminDashboardCatalogIndexRoute,
   AdminDashboardCustomersIndexRoute: AdminDashboardCustomersIndexRoute,
-  AdminDashboardLocationsIndexRoute: AdminDashboardLocationsIndexRoute,
   AdminDashboardOrdersIndexRoute: AdminDashboardOrdersIndexRoute,
   AdminDashboardOwnersIndexRoute: AdminDashboardOwnersIndexRoute,
   AdminDashboardPromotionsIndexRoute: AdminDashboardPromotionsIndexRoute,
   AdminDashboardSettingsIndexRoute: AdminDashboardSettingsIndexRoute,
+  AdminDashboardBranchesBranchIdEditRoute:
+    AdminDashboardBranchesBranchIdEditRoute,
   AdminDashboardCatalogPackagesNewRoute: AdminDashboardCatalogPackagesNewRoute,
   AdminDashboardCustomersPendingProfilesCustomerIdRoute:
     AdminDashboardCustomersPendingProfilesCustomerIdRoute,
   AdminDashboardInventoryEquipmentTypesEquipmentTypeIdRoute:
     AdminDashboardInventoryEquipmentTypesEquipmentTypeIdRoute,
-  AdminDashboardLocationsBranchIdEditRoute:
-    AdminDashboardLocationsBranchIdEditRoute,
   AdminDashboardPromotionsPromotionIdEditRoute:
     AdminDashboardPromotionsPromotionIdEditRoute,
   AdminDashboardCatalogRentableItemIdIndexRoute:
