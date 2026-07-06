@@ -9,6 +9,7 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { buildR2PublicUrl } from "@/lib/r2-public-url";
 
 const kindLabels = {
 	SINGLE: "Individual",
@@ -48,12 +49,13 @@ export function createRentableItemsColumns({
 			header: "Ítem",
 			cell: ({ row }) => {
 				const item = row.original;
+				const imageUrl = buildR2PublicUrl(item.imageUrl, "catalog");
 
 				return (
 					<div className="flex min-w-52 items-center gap-3">
-						{item.imageUrl ? (
+						{imageUrl ? (
 							<img
-								src={item.imageUrl}
+								src={imageUrl}
 								alt={item.name}
 								className="h-11 w-11 rounded-lg border object-cover"
 							/>

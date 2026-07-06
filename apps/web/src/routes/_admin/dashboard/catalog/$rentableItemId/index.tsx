@@ -60,6 +60,7 @@ import { AttachRatePlanToRentalOfferForm } from "@/features/pricing/rental-offer
 import { useCreateRatePlanAndAttachToRentalOffer } from "@/features/pricing/rental-offer-pricings/create-rate-plan-and-attach-to-rental-offer/create-rate-plan-and-attach-to-rental-offer.mutation";
 import { toCreateRatePlanAndAttachToRentalOfferDto } from "@/features/pricing/rental-offer-pricings/create-rate-plan-and-attach-to-rental-offer/create-rate-plan-and-attach-to-rental-offer.schema";
 import { CreateRatePlanAndAttachForm } from "@/features/pricing/rental-offer-pricings/create-rate-plan-and-attach-to-rental-offer/create-rate-plan-and-attach-to-rental-offer-form";
+import { buildR2PublicUrl } from "@/lib/r2-public-url";
 import { AdminRouteError } from "@/shared/components/admin-route-error";
 import { ProblemDetailsError } from "@/shared/errors";
 
@@ -125,6 +126,7 @@ function RouteComponent() {
 		(offer) => offer.activeRatePlan,
 	).length;
 	const startingPrice = getStartingPrice(item);
+	const imageUrl = buildR2PublicUrl(item.imageUrl, "catalog");
 
 	return (
 		<div className="px-6 pb-8">
@@ -175,9 +177,9 @@ function RouteComponent() {
 				<Card className="overflow-hidden rounded-2xl shadow-sm py-4">
 					<CardContent className="grid gap-6 lg:grid-cols-[460px_1fr] px-4">
 						<div className="overflow-hidden rounded-md border bg-muted/30">
-							{item.imageUrl ? (
+							{imageUrl ? (
 								<img
-									src={item.imageUrl}
+									src={imageUrl}
 									alt={item.name}
 									className="aspect-4/3 h-full w-full object-cover"
 								/>
