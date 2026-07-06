@@ -1,6 +1,7 @@
 import type {
 	GetCurrentRentalCustomerProfileResponseDto,
 	GetCustomerProfileDetailResponseDto,
+	GetCustomerSummaryResponseDto,
 	GetRentalCustomersQueryDto,
 	GetRentalCustomersResponseDto,
 } from "@repo/api-contracts";
@@ -12,6 +13,7 @@ import {
 import type { ProblemDetailsError } from "@/shared/errors";
 import { getCurrentRentalCustomerProfile } from "./get-current-rental-customer-profile/get-current-rental-customer-profile.api";
 import { getCustomerProfileDetail } from "./get-customer-profile-detail/get-customer-profile-detail.api";
+import { getCustomerSummary } from "./get-customer-summary/get-customer-summary.api";
 import { getRentalCustomers } from "./get-rental-customers/get-rental-customers.api";
 
 export type RentalCustomersQueryOverrides<
@@ -43,6 +45,17 @@ export type CustomerProfileDetailQueryOverrides<
 	"queryKey" | "queryFn"
 >;
 
+export type CustomerSummaryQueryOverrides<
+	TData = GetCustomerSummaryResponseDto,
+> = Omit<
+	UseQueryOptions<
+		GetCustomerSummaryResponseDto,
+		ProblemDetailsError,
+		TData
+	>,
+	"queryKey" | "queryFn"
+>;
+
 export const rentalCustomerKeys = {
 	all: () => ["v2", "tenant-management", "rental-customers"] as const,
 	lists: () => [...rentalCustomerKeys.all(), "list"] as const,
@@ -53,6 +66,8 @@ export const rentalCustomerKeys = {
 		[...rentalCustomerKeys.details(), "me", "profile"] as const,
 	profileDetail: (customerId?: string) =>
 		[...rentalCustomerKeys.details(), customerId, "profile"] as const,
+	summary: (customerId?: string) =>
+		[...rentalCustomerKeys.all(), "summary", customerId] as const,
 };
 
 export const rentalCustomerQueries = {
@@ -75,6 +90,28 @@ export const rentalCustomerQueries = {
 		queryOptions<GetRentalCustomersResponseDto, ProblemDetailsError, TData>({
 			queryKey: rentalCustomerKeys.list(query),
 			queryFn: () => getRentalCustomers(query),
+			...overrides,
+		}),
+	summary: <TData = GetCustomerSummaryResponseDto>(
+		customerId?: string,
+		overrides?: CustomerSummaryQueryOverrides<TData>,
+	) =>
+		queryOptions<
+			GetCustomerSummaryResponseDto,
+			ProblemDetailsError,
+			TData
+		>({
+			queryKey: rentalCustomerKeys.summary(customerId),
+			queryFn: () => {
+				if (!customerId) {
+					throw new Error(
+						"customerId is required to fetch customer summary.",
+					);
+				}
+
+				return getCustomerSummary(customerId);
+			},
+			enabled: !!customerId,
 			...overrides,
 		}),
 	profileDetail: <TData = GetCustomerProfileDetailResponseDto>(
@@ -112,6 +149,12 @@ export function useRentalCustomers<TData = GetRentalCustomersResponseDto>(
 	overrides?: RentalCustomersQueryOverrides<TData>,
 ) {
 	return useQuery(rentalCustomerQueries.list(query, overrides));
+}
+
+export function useCustomerSummary<
+	TData = GetCustomerSummaryResponseDto,
+>(customerId?: string, overrides?: CustomerSummaryQueryOverrides<TData>) {
+	return useQuery(rentalCustomerQueries.summary(customerId, overrides));
 }
 
 export function useCustomerProfileDetail<

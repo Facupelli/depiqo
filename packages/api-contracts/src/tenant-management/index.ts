@@ -8,6 +8,7 @@ export * from "./get-contract-signer.contract";
 export * from "./get-branches.contract";
 export * from "./get-customer-profile-detail.contract";
 export * from "./get-current-rental-customer-profile.contract";
+export * from "./get-customer-summary.contract";
 export * from "./get-rental-customers.contract";
 export * from "./get-storefront-branch-schedule-slots.contract";
 export * from "./get-storefront-branch-schedules.contract";

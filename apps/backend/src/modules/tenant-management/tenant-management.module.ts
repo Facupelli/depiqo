@@ -26,6 +26,8 @@ import { GetCustomDomainHttpController } from './features/get-custom-domain/get-
 import { GetCustomDomainHandler } from './features/get-custom-domain/get-custom-domain.handler';
 import { GetPublicTenantConfigHttpController } from './features/get-public-tenant-config/get-public-tenant-config.controller';
 import { GetPublicTenantConfigHandler } from './features/get-public-tenant-config/get-public-tenant-config.handler';
+import { GetCustomerSummaryHttpController } from './features/get-customer-summary/get-customer-summary.controller';
+import { GetCustomerSummaryHandler } from './features/get-customer-summary/get-customer-summary.handler';
 import { GetRentalCustomersHttpController } from './features/get-rental-customers/get-rental-customers.controller';
 import { GetRentalCustomersHandler } from './features/get-rental-customers/get-rental-customers.handler';
 import { GetCurrentRentalCustomerProfileHttpController } from './customer/features/get-current-rental-customer-profile/get-current-rental-customer-profile.controller';
@@ -68,6 +70,7 @@ import { CloudflareCustomHostnameService } from './infrastructure/cloudflare-cus
     GetCurrentTenantHttpController,
     GetCustomDomainHttpController,
     GetPublicTenantConfigHttpController,
+    GetCustomerSummaryHttpController,
     GetRentalCustomersHttpController,
     GetStorefrontBranchScheduleSlotsHttpController,
     GetStorefrontBranchSchedulesHttpController,
@@ -96,6 +99,7 @@ import { CloudflareCustomHostnameService } from './infrastructure/cloudflare-cus
     GetCurrentTenantHandler,
     GetCustomDomainHandler,
     GetPublicTenantConfigHandler,
+    GetCustomerSummaryHandler,
     GetRentalCustomersHandler,
     GetStorefrontBranchScheduleSlotsHandler,
     GetStorefrontBranchSchedulesHandler,
