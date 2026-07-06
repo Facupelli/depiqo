@@ -11,6 +11,8 @@ import { CreateEquipmentTypeHandler } from './features/create-equipment-type/cre
 import { CreateEquipmentTypeSetupService } from './features/create-equipment-type-setup/create-equipment-type-setup.service';
 import { CreateOwnerWithContractHttpController } from './features/create-owner-with-contract/create-owner-with-contract.controller';
 import { CreateOwnerWithContractHandler } from './features/create-owner-with-contract/create-owner-with-contract.handler';
+import { GetAssetSummariesHttpController } from './features/get-asset-summaries/get-asset-summaries.controller';
+import { GetAssetSummariesHandler } from './features/get-asset-summaries/get-asset-summaries.handler';
 import { GetEquipmentTypeDetailHttpController } from './features/get-equipment-type-detail/get-equipment-type-detail.controller';
 import { GetEquipmentTypeDetailHandler } from './features/get-equipment-type-detail/get-equipment-type-detail.handler';
 import { GetEquipmentTypeSummariesHttpController } from './features/get-equipment-type-summaries/get-equipment-type-summaries.controller';
@@ -35,6 +37,7 @@ import { AssetInventoryPublicApi } from './public-api/asset-inventory.public-api
     CreateEquipmentTypeAccessoryDefaultsHttpController,
     CreateEquipmentTypeHttpController,
     CreateOwnerWithContractHttpController,
+    GetAssetSummariesHttpController,
     GetEquipmentTypeDetailHttpController,
     GetEquipmentTypeSummariesHttpController,
     GetEquipmentTypesHttpController,
@@ -47,6 +50,7 @@ import { AssetInventoryPublicApi } from './public-api/asset-inventory.public-api
     CreateEquipmentTypeAccessoryDefaultsHandler,
     CreateEquipmentTypeHandler,
     CreateOwnerWithContractHandler,
+    GetAssetSummariesHandler,
     GetEquipmentTypeDetailHandler,
     GetEquipmentTypeSummariesHandler,
     GetEquipmentTypesHandler,
