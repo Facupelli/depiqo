@@ -16,7 +16,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
 	ownerQueries,
 	useOwnerDetail,
-} from "@/v2/features/asset-inventory/owners/owners.queries";
+} from "@/features/asset-inventory/owners/owners.queries";
 
 export const Route = createFileRoute("/_admin/dashboard/owners/$ownerId")({
 	loader: ({ context: { queryClient }, params: { ownerId } }) =>

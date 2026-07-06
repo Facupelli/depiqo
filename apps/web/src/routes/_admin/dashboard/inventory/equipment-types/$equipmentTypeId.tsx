@@ -21,15 +21,15 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AdminRouteError } from "@/shared/components/admin-route-error";
-import { useAddAssetsToEquipmentType } from "@/v2/features/asset-inventory/equipment-types/add-assets-to-equipment-type/add-assets-to-equipment-type.mutation";
-import { toAddAssetsToEquipmentTypeDto } from "@/v2/features/asset-inventory/equipment-types/add-assets-to-equipment-type/add-assets-to-equipment-type.schema";
-import { AddAssetsToEquipmentTypeForm } from "@/v2/features/asset-inventory/equipment-types/add-assets-to-equipment-type/add-assets-to-equipment-type-form";
-import { useCreateEquipmentTypeAccessoryDefaults } from "@/v2/features/asset-inventory/equipment-types/create-equipment-type-accessory-defaults/create-equipment-type-accessory-defaults.mutation";
-import { toCreateEquipmentTypeAccessoryDefaultsDto } from "@/v2/features/asset-inventory/equipment-types/create-equipment-type-accessory-defaults/create-equipment-type-accessory-defaults.schema";
-import { CreateEquipmentTypeAccessoryDefaultsForm } from "@/v2/features/asset-inventory/equipment-types/create-equipment-type-accessory-defaults/create-equipment-type-accessory-defaults-form";
-import { equipmentTypeQueries } from "@/v2/features/asset-inventory/equipment-types/equipment-types.queries";
-import { useOwners } from "@/v2/features/asset-inventory/owners/owners.queries";
-import { useBranches } from "@/v2/features/tenant-management/branch/branch.queries";
+import { useAddAssetsToEquipmentType } from "@/features/asset-inventory/equipment-types/add-assets-to-equipment-type/add-assets-to-equipment-type.mutation";
+import { toAddAssetsToEquipmentTypeDto } from "@/features/asset-inventory/equipment-types/add-assets-to-equipment-type/add-assets-to-equipment-type.schema";
+import { AddAssetsToEquipmentTypeForm } from "@/features/asset-inventory/equipment-types/add-assets-to-equipment-type/add-assets-to-equipment-type-form";
+import { useCreateEquipmentTypeAccessoryDefaults } from "@/features/asset-inventory/equipment-types/create-equipment-type-accessory-defaults/create-equipment-type-accessory-defaults.mutation";
+import { toCreateEquipmentTypeAccessoryDefaultsDto } from "@/features/asset-inventory/equipment-types/create-equipment-type-accessory-defaults/create-equipment-type-accessory-defaults.schema";
+import { CreateEquipmentTypeAccessoryDefaultsForm } from "@/features/asset-inventory/equipment-types/create-equipment-type-accessory-defaults/create-equipment-type-accessory-defaults-form";
+import { equipmentTypeQueries } from "@/features/asset-inventory/equipment-types/equipment-types.queries";
+import { useOwners } from "@/features/asset-inventory/owners/owners.queries";
+import { useBranches } from "@/features/tenant-management/branch/branch.queries";
 
 export const Route = createFileRoute(
 	"/_admin/dashboard/inventory/equipment-types/$equipmentTypeId",

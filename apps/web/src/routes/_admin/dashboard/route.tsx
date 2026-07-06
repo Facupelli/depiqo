@@ -37,9 +37,9 @@ import {
 	useLocationActions as useBranchActions,
 	useLocationId as useBranchId,
 } from "@/shared/contexts/location/location.hooks";
-import { useLogout } from "@/v2/features/tenant-management/auth/logout/logout.mutation";
-import { branchQueries } from "@/v2/features/tenant-management/branch/branch.queries";
-import { tenantQueries } from "@/v2/features/tenant-management/tenant/tenant.queries";
+import { useLogout } from "@/features/tenant-management/auth/logout/logout.mutation";
+import { branchQueries } from "@/features/tenant-management/branch/branch.queries";
+import { tenantQueries } from "@/features/tenant-management/tenant/tenant.queries";
 
 export const Route = createFileRoute("/_admin/dashboard")({
 	beforeLoad: async ({ context, location }) => {

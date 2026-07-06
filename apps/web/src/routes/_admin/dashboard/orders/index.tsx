@@ -4,9 +4,9 @@ import {
 } from "@repo/api-contracts";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
-import { RentalOrdersListProvider } from "@/features/orders/rental-orders-list/rental-orders-list.context";
-import { RentalOrdersTable } from "@/features/orders/rental-orders-list/rental-orders-table";
-import { RentalOrdersToolbar } from "@/features/orders/rental-orders-list/rental-orders-toolbar";
+import { RentalOrdersListProvider } from "@/features/rental-commitment/rentals/get-rentals/components/rental-orders-list.context";
+import { RentalOrdersTable } from "@/features/rental-commitment/rentals/get-rentals/components/rental-orders-table";
+import { RentalOrdersToolbar } from "@/features/rental-commitment/rentals/get-rentals/components/rental-orders-toolbar";
 import { AdminRouteError } from "@/shared/components/admin-route-error";
 
 export type OrdersListSearch = GetRentalsQueryDto;

@@ -3,8 +3,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { CalendarCheck, CheckCircle2, Clock3, Mail, X } from "lucide-react";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
-import { resolveOrderConfirmationStatus } from "@/features/rental/checkout/booking-mode-copy";
-import { getTenantBranding } from "@/features/tenant-branding/tenant-branding";
+import { resolveOrderConfirmationStatus } from "@/features/rental-commitment/cart/storefront-cart/utils/booking-mode-copy";
+import { getTenantBranding } from "@/features/tenant-management/tenant-context/tenant-branding";
 
 const orderConfirmationSearchSchema = z.object({
 	pickupDate: z.string().catch("—"),

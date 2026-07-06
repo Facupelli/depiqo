@@ -25,10 +25,10 @@ import { Input } from "@/components/ui/input";
 import {
 	authRedirectSearchSchema,
 	normalizeSafeRedirectTo,
-} from "@/features/auth/auth-redirect";
+} from "@/shared/auth/auth-redirect";
 import { isAuthError, ProblemDetailsError } from "@/shared/errors";
-import { useLogin } from "@/v2/features/tenant-management/auth/login/login.mutation";
-import { loginSchema } from "@/v2/features/tenant-management/auth/login/login-form.schema";
+import { useLogin } from "@/features/tenant-management/auth/login/login.mutation";
+import { loginSchema } from "@/features/tenant-management/auth/login/login-form.schema";
 
 export const Route = createFileRoute("/_admin/admin/login")({
 	validateSearch: authRedirectSearchSchema,

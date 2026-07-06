@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
-import { fetchPublicSigningSignedPdfResponse } from "@/v2/features/document-signing/stream-public-signed-receipt-document/stream-public-signed-receipt-document.api";
+import { fetchPublicSigningSignedPdfResponse } from "@/features/document-signing/stream-public-signed-receipt-document/stream-public-signed-receipt-document.api";
 
 const searchSchema = z.object({
 	token: z.string().trim().min(1),

@@ -5,24 +5,24 @@ import { PageBreadcrumb } from "@/components/detail-id-breadcrumb";
 import { Card, CardContent } from "@/components/ui/card";
 import { useAppForm } from "@/shared/contexts/form.context";
 import { useLocationId } from "@/shared/contexts/location/location.hooks";
-import { useCalculatedDraftRentalPrice } from "@/v2/features/pricing/calculate-draft-rental-price/calculate-draft-rental-price.queries";
-import { useCreateDraftRental } from "@/v2/features/rental-commitment/draft-rentals/create-draft-rental/create-draft-rental.mutation";
-import { DraftRentalOfferSearchSection } from "@/v2/features/rental-commitment/draft-rentals/create-draft-rental-composer/components/draft-rental-offer-search-section";
-import { DraftRentalReviewPanel } from "@/v2/features/rental-commitment/draft-rentals/create-draft-rental-composer/components/draft-rental-review-panel";
-import { DraftRentalSelectedOffersSection } from "@/v2/features/rental-commitment/draft-rentals/create-draft-rental-composer/components/draft-rental-selected-offers-section";
-import { DraftRentalSetupSection } from "@/v2/features/rental-commitment/draft-rentals/create-draft-rental-composer/components/draft-rental-setup-section";
+import { useCalculatedDraftRentalPrice } from "@/features/pricing/calculate-draft-rental-price/calculate-draft-rental-price.queries";
+import { useCreateDraftRental } from "@/features/rental-commitment/draft-rentals/create-draft-rental/create-draft-rental.mutation";
+import { DraftRentalOfferSearchSection } from "@/features/rental-commitment/draft-rentals/create-draft-rental-composer/components/draft-rental-offer-search-section";
+import { DraftRentalReviewPanel } from "@/features/rental-commitment/draft-rentals/create-draft-rental-composer/components/draft-rental-review-panel";
+import { DraftRentalSelectedOffersSection } from "@/features/rental-commitment/draft-rentals/create-draft-rental-composer/components/draft-rental-selected-offers-section";
+import { DraftRentalSetupSection } from "@/features/rental-commitment/draft-rentals/create-draft-rental-composer/components/draft-rental-setup-section";
 import {
 	type DraftRentalComposerContextValue,
 	DraftRentalComposerProvider,
-} from "@/v2/features/rental-commitment/draft-rentals/create-draft-rental-composer/create-draft-rental-composer.context";
+} from "@/features/rental-commitment/draft-rentals/create-draft-rental-composer/create-draft-rental-composer.context";
 import {
 	createDraftRentalComposerDefaultValues,
 	draftRentalComposerFormSchema,
 	toCalculateDraftRentalPriceDto,
 	toCreateDraftRentalDto,
-} from "@/v2/features/rental-commitment/draft-rentals/create-draft-rental-composer/create-draft-rental-composer.schema";
-import { useBranches } from "@/v2/features/tenant-management/branch/branch.queries";
-import { useCurrentTenant } from "@/v2/features/tenant-management/tenant/tenant.queries";
+} from "@/features/rental-commitment/draft-rentals/create-draft-rental-composer/create-draft-rental-composer.schema";
+import { useBranches } from "@/features/tenant-management/branch/branch.queries";
+import { useCurrentTenant } from "@/features/tenant-management/tenant/tenant.queries";
 
 export const Route = createFileRoute("/_admin/dashboard/orders/new")({
 	component: NewDraftOrderPage,

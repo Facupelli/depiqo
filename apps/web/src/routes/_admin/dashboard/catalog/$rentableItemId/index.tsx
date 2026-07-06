@@ -53,15 +53,15 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AdminRouteError } from "@/shared/components/admin-route-error";
 import { ProblemDetailsError } from "@/shared/errors";
-import { CreateRentalOfferWithPricingDialog } from "@/v2/features/admin/offering-setup/create-rental-offer-with-pricing/create-rental-offer-with-pricing-dialog";
-import { useActivateRentableItem } from "@/v2/features/catalog/rentable-items/activate-rentable-item/activate-rentable-item.mutation";
-import { rentableItemQueries } from "@/v2/features/catalog/rentable-items/rentable-items.queries";
-import { useAttachRatePlanToRentalOffer } from "@/v2/features/pricing/rental-offer-pricings/attach-rate-plan-to-rental-offer/attach-rate-plan-to-rental-offer.mutation";
-import { toAttachRatePlanToRentalOfferDto } from "@/v2/features/pricing/rental-offer-pricings/attach-rate-plan-to-rental-offer/attach-rate-plan-to-rental-offer.schema";
-import { AttachRatePlanToRentalOfferForm } from "@/v2/features/pricing/rental-offer-pricings/attach-rate-plan-to-rental-offer/attach-rate-plan-to-rental-offer-form";
-import { useCreateRatePlanAndAttachToRentalOffer } from "@/v2/features/pricing/rental-offer-pricings/create-rate-plan-and-attach-to-rental-offer/create-rate-plan-and-attach-to-rental-offer.mutation";
-import { toCreateRatePlanAndAttachToRentalOfferDto } from "@/v2/features/pricing/rental-offer-pricings/create-rate-plan-and-attach-to-rental-offer/create-rate-plan-and-attach-to-rental-offer.schema";
-import { CreateRatePlanAndAttachForm } from "@/v2/features/pricing/rental-offer-pricings/create-rate-plan-and-attach-to-rental-offer/create-rate-plan-and-attach-to-rental-offer-form";
+import { CreateRentalOfferWithPricingDialog } from "@/features/admin/offering-setup/create-rental-offer-with-pricing/create-rental-offer-with-pricing-dialog";
+import { useActivateRentableItem } from "@/features/catalog/rentable-items/activate-rentable-item/activate-rentable-item.mutation";
+import { rentableItemQueries } from "@/features/catalog/rentable-items/rentable-items.queries";
+import { useAttachRatePlanToRentalOffer } from "@/features/pricing/rental-offer-pricings/attach-rate-plan-to-rental-offer/attach-rate-plan-to-rental-offer.mutation";
+import { toAttachRatePlanToRentalOfferDto } from "@/features/pricing/rental-offer-pricings/attach-rate-plan-to-rental-offer/attach-rate-plan-to-rental-offer.schema";
+import { AttachRatePlanToRentalOfferForm } from "@/features/pricing/rental-offer-pricings/attach-rate-plan-to-rental-offer/attach-rate-plan-to-rental-offer-form";
+import { useCreateRatePlanAndAttachToRentalOffer } from "@/features/pricing/rental-offer-pricings/create-rate-plan-and-attach-to-rental-offer/create-rate-plan-and-attach-to-rental-offer.mutation";
+import { toCreateRatePlanAndAttachToRentalOfferDto } from "@/features/pricing/rental-offer-pricings/create-rate-plan-and-attach-to-rental-offer/create-rate-plan-and-attach-to-rental-offer.schema";
+import { CreateRatePlanAndAttachForm } from "@/features/pricing/rental-offer-pricings/create-rate-plan-and-attach-to-rental-offer/create-rate-plan-and-attach-to-rental-offer-form";
 
 export const Route = createFileRoute(
 	"/_admin/dashboard/catalog/$rentableItemId/",
@@ -84,12 +84,15 @@ interface RentableItemDetailPageProps {
 	item: GetRentableItemDetailResponseDto;
 }
 
-const kindLabels: Record<GetRentableItemDetailResponseDto["kind"], string> = {
+const kindLabels = {
 	SINGLE: "Individual",
 	PACKAGE: "Paquete",
 	KIT: "Kit",
-	BUNDLE: "Combo",
-};
+} satisfies Partial<Record<GetRentableItemDetailResponseDto["kind"], string>>;
+
+function getKindLabel(kind: GetRentableItemDetailResponseDto["kind"]): string {
+	return kindLabels[kind as keyof typeof kindLabels] ?? kind;
+}
 
 const statusLabels: Record<GetRentableItemDetailResponseDto["status"], string> =
 	{
@@ -141,7 +144,7 @@ function RouteComponent() {
 						</div>
 
 						<div className="flex flex-wrap gap-2">
-							<TopChip icon={PackageOpen} label={kindLabels[item.kind]} />
+							<TopChip icon={PackageOpen} label={getKindLabel(item.kind)} />
 							<TopChip
 								icon={Tag}
 								label={item.categoryName ?? "Sin categoría"}
@@ -199,7 +202,7 @@ function RouteComponent() {
 											label="Categoría"
 											value={item.categoryName ?? "Sin categoría"}
 										/>
-										<Info label="Tipo" value={kindLabels[item.kind]} />
+										<Info label="Tipo" value={getKindLabel(item.kind)} />
 									</div>
 
 									<div className="space-y-0 pl-4">

@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { CalendarCheck, CheckCircle2, Mail, X } from "lucide-react";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
-import { getTenantBranding } from "@/features/tenant-branding/tenant-branding";
+import { getTenantBranding } from "@/features/tenant-management/tenant-context/tenant-branding";
 
 const confirmedRentalSuccessSearchSchema = z.object({
 	fulfillmentMethod: z.enum(["PICKUP", "DELIVERY"]).catch("PICKUP"),

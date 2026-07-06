@@ -11,19 +11,19 @@ import {
 	FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { buildSharedGoogleAuthStartUrl } from "@/features/rental/auth/google/google-auth.redirect";
+import { buildSharedGoogleAuthStartUrl } from "@/features/tenant-management/auth/portal/google-auth.redirect";
 import {
 	getPortalAuthRedirectTarget,
 	portalAuthRedirectSchema,
-} from "@/features/rental/auth/portal-auth.redirect";
+} from "@/features/tenant-management/auth/portal/portal-auth.redirect";
 import {
 	customerRegisterDefaultValues,
 	customerRegisterSchema,
-} from "@/features/rental/auth/register/customer-register-form.schema";
-import { getTenantBranding } from "@/features/tenant-branding/tenant-branding";
+} from "@/features/tenant-management/auth/portal/customer-register-form.schema";
+import { getTenantBranding } from "@/features/tenant-management/tenant-context/tenant-branding";
 import { PoweredByFooter } from "@/shared/components/powered-by-footer";
 import { isAuthError, ProblemDetailsError } from "@/shared/errors";
-import { useCreateCustomerGoogleState } from "@/v2/features/tenant-management/auth/customer-google-state/customer-google-state.mutation";
+import { useCreateCustomerGoogleState } from "@/features/tenant-management/auth/customer-google-state/customer-google-state.mutation";
 
 export const Route = createFileRoute("/_portal/register")({
 	validateSearch: portalAuthRedirectSchema,

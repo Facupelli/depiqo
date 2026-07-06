@@ -6,8 +6,8 @@ import {
 	SessionExpiredError,
 	WrongActorError,
 } from "@/shared/errors";
-import { apiFetchRaw } from "@/v2/lib/api/api-fetch-raw";
-import { requireV2TenantUser } from "@/v2/lib/auth/route-auth.server";
+import { apiFetchRaw } from "@/lib/api/api-fetch-raw";
+import { requireV2TenantUser } from "@/lib/auth/route-auth.server";
 
 const orderParamsSchema = z.object({
 	orderId: z.uuid(),

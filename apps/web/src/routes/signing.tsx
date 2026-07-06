@@ -12,17 +12,17 @@ import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { getProblemDetailsStatus, ProblemDetailsError } from "@/shared/errors";
-import { useAcceptPublicSigningSession } from "@/v2/features/document-signing/accept-public-signing-session/accept-public-signing-session.mutation";
-import { usePublicSigningSession } from "@/v2/features/document-signing/document-signing.queries";
-import { PublicSigningForm } from "@/v2/features/document-signing/public-signing-session/public-signing-form";
+import { useAcceptPublicSigningSession } from "@/features/document-signing/accept-public-signing-session/accept-public-signing-session.mutation";
+import { usePublicSigningSession } from "@/features/document-signing/document-signing.queries";
+import { PublicSigningForm } from "@/features/document-signing/public-signing-session/public-signing-form";
 import {
 	type PublicSigningFormValues,
 	toAcceptPublicSigningSessionDto,
-} from "@/v2/features/document-signing/public-signing-session/public-signing-form.schema";
-import { PublicSigningPdfViewer } from "@/v2/features/document-signing/public-signing-session/public-signing-pdf-viewer";
-import { PublicSigningTerminalState } from "@/v2/features/document-signing/public-signing-session/public-signing-terminal-state";
-import { getPublicSigningSignedPdfUrlFromDownloadUrl } from "@/v2/features/document-signing/stream-public-signed-receipt-document/stream-public-signed-receipt-document.api";
-import { getPublicSigningUnsignedPdfUrl } from "@/v2/features/document-signing/stream-public-unsigned-document/stream-public-unsigned-document.api";
+} from "@/features/document-signing/public-signing-session/public-signing-form.schema";
+import { PublicSigningPdfViewer } from "@/features/document-signing/public-signing-session/public-signing-pdf-viewer";
+import { PublicSigningTerminalState } from "@/features/document-signing/public-signing-session/public-signing-terminal-state";
+import { getPublicSigningSignedPdfUrlFromDownloadUrl } from "@/features/document-signing/stream-public-signed-receipt-document/stream-public-signed-receipt-document.api";
+import { getPublicSigningUnsignedPdfUrl } from "@/features/document-signing/stream-public-unsigned-document/stream-public-unsigned-document.api";
 
 const signingSearchSchema = z.object({
 	token: z.string().trim().min(1).optional().catch(undefined),

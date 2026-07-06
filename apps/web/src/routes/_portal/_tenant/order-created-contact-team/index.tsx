@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AlertCircle, MessageCircleMore, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { getTenantBranding } from "@/features/tenant-branding/tenant-branding";
+import { getTenantBranding } from "@/features/tenant-management/tenant-context/tenant-branding";
 
 export const Route = createFileRoute(
 	"/_portal/_tenant/order-created-contact-team/",

@@ -7,7 +7,7 @@ import {
 import { cloudflare } from "@better-upload/server/clients";
 import { createFileRoute } from "@tanstack/react-router";
 import { serverEnv } from "@/config/server-env";
-import { requireV2TenantUser } from "@/v2/lib/auth/route-auth.server";
+import { requireV2TenantUser } from "@/lib/auth/route-auth.server";
 
 const s3 = cloudflare({
 	accountId: serverEnv.CLOUDFLARE_ACCOUNT_ID,

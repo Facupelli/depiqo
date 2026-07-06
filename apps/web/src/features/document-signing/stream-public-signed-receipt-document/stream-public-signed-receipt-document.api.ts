@@ -1,0 +1,83 @@
+import {
+	StreamPublicSignedReceiptDocumentQuerySchema,
+	streamPublicSignedReceiptDocumentContract,
+} from "@repo/api-contracts";
+import { getForwardedCookieHeader } from "@/lib/api/request-context";
+
+export function getPublicSigningSignedPdfUrl(token: string): string {
+	const parsedQuery = StreamPublicSignedReceiptDocumentQuerySchema.parse({
+		token,
+	});
+	const searchParams = new URLSearchParams({ token: parsedQuery.token ?? "" });
+
+	return `/api/document-signing/public/signed-pdf?${searchParams.toString()}`;
+}
+
+export function getPublicSigningSignedPdfUrlFromDownloadUrl(
+	downloadUrl: string,
+): string {
+	const url = new URL(downloadUrl, "http://localhost");
+	const token = url.searchParams.get("token") ?? "";
+
+	return getPublicSigningSignedPdfUrl(token);
+}
+
+function createPdfProxyProblem(status: number, fallbackMessage: string) {
+	return new Error(`${status}: ${fallbackMessage}`);
+}
+
+export async function fetchPublicSigningSignedPdfResponse(token: string) {
+	const parsedQuery = StreamPublicSignedReceiptDocumentQuerySchema.parse({
+		token,
+	});
+
+	let response: Response;
+
+	try {
+		const headers = new Headers();
+		const cookie = getForwardedCookieHeader();
+
+		if (cookie) {
+			headers.set("cookie", cookie);
+		}
+
+		const searchParams = new URLSearchParams({
+			token: parsedQuery.token ?? "",
+		});
+
+		response = await fetch(
+			`${process.env.API_BASE_URL ?? "http://localhost:3000"}${streamPublicSignedReceiptDocumentContract.path}?${searchParams.toString()}`,
+			{
+				method: streamPublicSignedReceiptDocumentContract.method,
+				headers,
+			},
+		);
+	} catch (error) {
+		throw createPdfProxyProblem(
+			0,
+			error instanceof Error
+				? error.message
+				: "No pudimos descargar el PDF firmado.",
+		);
+	}
+
+	if (!response.ok) {
+		const raw = await response.json().catch(() => null);
+		const detail =
+			raw &&
+			typeof raw === "object" &&
+			"detail" in raw &&
+			typeof raw.detail === "string"
+				? raw.detail
+				: raw &&
+						typeof raw === "object" &&
+						"message" in raw &&
+						typeof raw.message === "string"
+					? raw.message
+					: "No pudimos descargar el PDF firmado.";
+
+		throw createPdfProxyProblem(response.status, detail);
+	}
+
+	return response;
+}

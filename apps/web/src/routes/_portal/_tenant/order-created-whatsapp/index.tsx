@@ -3,8 +3,8 @@ import { CheckCircle2, LoaderCircle, MessageCircleMore, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
-import { useCartActions } from "@/features/rental/cart/cart.hooks";
-import { getTenantBranding } from "@/features/tenant-branding/tenant-branding";
+import { useCartActions } from "@/features/rental-commitment/cart/storefront-cart/cart.hooks";
+import { getTenantBranding } from "@/features/tenant-management/tenant-context/tenant-branding";
 
 const orderCreatedWhatsappSearchSchema = z.object({
 	whatsappUrl: z.url().catch(""),

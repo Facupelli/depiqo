@@ -1,72 +1,67 @@
 import type {
-	ListPromotionsQueryDto,
-	ListPromotionsResponseDto,
-	PromotionView,
-} from "@repo/schemas";
+	GetPromotionDetailResponseDto,
+	GetPromotionsQueryDto,
+	GetPromotionsResponseDto,
+} from "@repo/api-contracts";
 import {
-	keepPreviousData,
 	queryOptions,
 	type UseQueryOptions,
 	useQuery,
 } from "@tanstack/react-query";
 import type { ProblemDetailsError } from "@/shared/errors";
-import { getPromotion, getPromotions } from "./promotions.api";
+import { getPromotionDetail } from "./get-promotion-detail/get-promotion-detail.api";
+import { getPromotions } from "./get-promotions/get-promotions.api";
 
-type PaginatedPromotions = ListPromotionsResponseDto;
-type Promotion = PromotionView;
-
-export type PromotionsQueryOverrides<TData = PaginatedPromotions> = Omit<
-	UseQueryOptions<PaginatedPromotions, ProblemDetailsError, TData>,
+export type PromotionsQueryOverrides<TData = GetPromotionsResponseDto> = Omit<
+	UseQueryOptions<GetPromotionsResponseDto, ProblemDetailsError, TData>,
 	"queryKey" | "queryFn"
 >;
 
-export type PromotionQueryOverrides<TData = Promotion> = Omit<
-	UseQueryOptions<Promotion, ProblemDetailsError, TData>,
-	"queryKey" | "queryFn"
->;
+export type PromotionQueryOverrides<TData = GetPromotionDetailResponseDto> =
+	Omit<
+		UseQueryOptions<GetPromotionDetailResponseDto, ProblemDetailsError, TData>,
+		"queryKey" | "queryFn"
+	>;
 
 export const promotionKeys = {
-	all: () => ["promotions"] as const,
+	all: () => ["v2", "pricing", "promotions"] as const,
 	details: () => [...promotionKeys.all(), "detail"] as const,
 	detail: (promotionId: string) =>
 		[...promotionKeys.details(), promotionId] as const,
 	lists: () => [...promotionKeys.all(), "list"] as const,
-	list: (params: ListPromotionsQueryDto) =>
-		[...promotionKeys.lists(), params] as const,
+	list: (query?: GetPromotionsQueryDto) =>
+		[...promotionKeys.lists(), query ?? {}] as const,
 };
 
 export const promotionQueries = {
-	detail: <TData = Promotion>(
+	detail: <TData = GetPromotionDetailResponseDto>(
 		promotionId: string,
 		overrides?: PromotionQueryOverrides<TData>,
 	) =>
-		queryOptions<Promotion, ProblemDetailsError, TData>({
+		queryOptions<GetPromotionDetailResponseDto, ProblemDetailsError, TData>({
 			queryKey: promotionKeys.detail(promotionId),
-			queryFn: () => getPromotion({ data: { promotionId } }),
+			queryFn: () => getPromotionDetail({ promotionId }),
 			...overrides,
 		}),
-	list: <TData = PaginatedPromotions>(
-		params: ListPromotionsQueryDto,
+	list: <TData = GetPromotionsResponseDto>(
+		query?: GetPromotionsQueryDto,
 		overrides?: PromotionsQueryOverrides<TData>,
 	) =>
-		queryOptions<PaginatedPromotions, ProblemDetailsError, TData>({
-			queryKey: promotionKeys.list(params),
-			queryFn: () => getPromotions({ data: params }),
+		queryOptions<GetPromotionsResponseDto, ProblemDetailsError, TData>({
+			queryKey: promotionKeys.list(query),
+			queryFn: () => getPromotions(query),
 			...overrides,
 		}),
 };
 
-export function usePromotions<TData = PaginatedPromotions>(
-	params: ListPromotionsQueryDto,
+export function usePromotions<TData = GetPromotionsResponseDto>(
+	query?: GetPromotionsQueryDto,
 	overrides?: PromotionsQueryOverrides<TData>,
 ) {
-	return useQuery({
-		...promotionQueries.list(params, overrides),
-		placeholderData: keepPreviousData,
-	});
+	return useQuery(promotionQueries.list(query, overrides));
 }
 
-export function usePromotion<TData = Promotion>(
+export function usePromotion<TData = GetPromotionDetailResponseDto>(
 	promotionId: string,
 	overrides?: PromotionQueryOverrides<TData>,
 ) {

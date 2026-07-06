@@ -5,15 +5,15 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { AdminRouteError } from "@/shared/components/admin-route-error";
 import { ProblemDetailsError } from "@/shared/errors";
-import { useBranchDetail } from "@/v2/features/tenant-management/branch/branch.queries";
-import { BranchForm } from "@/v2/features/tenant-management/branch/components/branch-form";
-import { useUpdateBranch } from "@/v2/features/tenant-management/branch/update-branch/update-branch.mutation";
+import { useBranchDetail } from "@/features/tenant-management/branch/branch.queries";
+import { BranchForm } from "@/features/tenant-management/branch/components/branch-form";
+import { useUpdateBranch } from "@/features/tenant-management/branch/update-branch/update-branch.mutation";
 import {
 	toUpdateBranchBodyDto,
 	toUpdateBranchFormDefaults,
 	type UpdateBranchFormValues,
 	updateBranchFormSchema,
-} from "@/v2/features/tenant-management/branch/update-branch/update-branch-form.schema";
+} from "@/features/tenant-management/branch/update-branch/update-branch-form.schema";
 
 export const Route = createFileRoute(
 	"/_admin/dashboard/locations/$branchId/edit",

@@ -1,6 +1,6 @@
 import { createFileRoute, notFound } from "@tanstack/react-router";
-import { getTenantBranding } from "@/features/tenant-branding/tenant-branding";
-import type { PublicStorefrontTenantContext } from "@/v2/features/tenant-management/tenant-context/types";
+import { getTenantBranding } from "@/features/tenant-management/tenant-context/tenant-branding";
+import type { PublicStorefrontTenantContext } from "@/features/tenant-management/tenant-context/types";
 
 export const Route = createFileRoute("/_portal")({
 	beforeLoad: ({ context }) => {

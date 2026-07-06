@@ -21,9 +21,9 @@ import {
 	registerFormDefaults,
 	registerFormSchema,
 	toRegisterDto,
-} from "@/features/auth/schemas/register-form.schema";
+} from "@/features/tenant-management/tenant/register-tenant-with-owner/register-tenant-with-owner-form.schema";
 import { ProblemDetailsError } from "@/shared/errors";
-import { useRegisterTenantWithOwner } from "@/v2/features/tenant-management/tenant/register-tenant-with-owner/register-tenant-with-owner.mutation";
+import { useRegisterTenantWithOwner } from "@/features/tenant-management/tenant/register-tenant-with-owner/register-tenant-with-owner.mutation";
 
 export const Route = createFileRoute("/_admin/admin/register")({
 	component: RegisterPage,

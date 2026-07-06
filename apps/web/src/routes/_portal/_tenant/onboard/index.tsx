@@ -1,18 +1,18 @@
 import type { AuthCustomerDto } from "@repo/api-contracts";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
-import { RentalHeaderAuthAction } from "@/features/rental/auth/components/rental-header-auth-action";
-import { getTenantBranding } from "@/features/tenant-branding/tenant-branding";
+import { RentalHeaderAuthAction } from "@/features/tenant-management/auth/components/rental-header-auth-action";
+import { getTenantBranding } from "@/features/tenant-management/tenant-context/tenant-branding";
 import { getProblemDetailsStatus } from "@/shared/errors";
-import { authQueries } from "@/v2/features/tenant-management/auth/auth.queries";
-import { rentalCustomerQueries } from "@/v2/features/tenant-management/customer/rental-customer.queries";
-import { CustomerProfileOnboardingForm } from "@/v2/features/tenant-management/customer/submit-customer-profile/components/customer-profile-onboarding-form";
+import { authQueries } from "@/features/tenant-management/auth/auth.queries";
+import { rentalCustomerQueries } from "@/features/tenant-management/customer/rental-customer.queries";
+import { CustomerProfileOnboardingForm } from "@/features/tenant-management/customer/submit-customer-profile/components/customer-profile-onboarding-form";
 import {
 	type CustomerProfileOnboardingPrefillValues,
 	createCustomerProfileOnboardingPrefillValues,
 	fromCustomerProfileDetailToOnboardingPrefillValues,
 	toCustomerProfileOnboardingFormValues,
-} from "@/v2/features/tenant-management/customer/submit-customer-profile/components/customer-profile-onboarding-form.schema";
+} from "@/features/tenant-management/customer/submit-customer-profile/components/customer-profile-onboarding-form.schema";
 
 interface OnboardLoaderData {
 	customerId: string;

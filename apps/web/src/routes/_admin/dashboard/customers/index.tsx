@@ -35,7 +35,7 @@ import {
 } from "@/components/ui/table";
 import { AdminRouteError } from "@/shared/components/admin-route-error";
 import useDebounce from "@/shared/hooks/use-debounce";
-import { useRentalCustomers } from "@/v2/features/tenant-management/customer/rental-customer.queries";
+import { useRentalCustomers } from "@/features/tenant-management/customer/rental-customer.queries";
 
 export const Route = createFileRoute("/_admin/dashboard/customers/")({
 	errorComponent: ({ error }) => {
@@ -253,7 +253,7 @@ function CustomersPage() {
 								pageSize={filters.pageSize}
 								onRowClick={(customer) =>
 									navigate({
-										to: "/dashboard/customers/$customerId",
+										to: "/dashboard/customers/pending-profiles/$customerId",
 										params: { customerId: customer.id },
 									})
 								}

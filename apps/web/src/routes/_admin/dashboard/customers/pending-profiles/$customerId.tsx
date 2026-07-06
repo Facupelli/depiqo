@@ -25,16 +25,16 @@ import {
 	getDocumentPreviewType,
 	getInstagramProfileUrl,
 	maskAccountNumber,
-} from "@/features/customer/components/review/customer-profile-review.utils";
+} from "@/features/tenant-management/customer/components/review/customer-profile-review.utils";
 import { cn } from "@/lib/utils";
 import { AdminRouteError } from "@/shared/components/admin-route-error";
 import { ProblemDetailsError } from "@/shared/errors";
-import { useApproveSubmittedCustomerOnboarding } from "@/v2/features/tenant-management/customer/approve-submitted-customer-onboarding/approve-submitted-customer-onboarding.mutation";
-import { useRejectSubmittedCustomerOnboarding } from "@/v2/features/tenant-management/customer/reject-submitted-customer-onboarding/reject-submitted-customer-onboarding.mutation";
+import { useApproveSubmittedCustomerOnboarding } from "@/features/tenant-management/customer/approve-submitted-customer-onboarding/approve-submitted-customer-onboarding.mutation";
+import { useRejectSubmittedCustomerOnboarding } from "@/features/tenant-management/customer/reject-submitted-customer-onboarding/reject-submitted-customer-onboarding.mutation";
 import {
 	rentalCustomerQueries,
 	useCustomerProfileDetail,
-} from "@/v2/features/tenant-management/customer/rental-customer.queries";
+} from "@/features/tenant-management/customer/rental-customer.queries";
 
 export const Route = createFileRoute(
 	"/_admin/dashboard/customers/pending-profiles/$customerId",

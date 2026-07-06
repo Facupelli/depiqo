@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { CreatePromotionForm } from "@/features/pricing/promotions/components/create-promotion-form";
+import { CreatePromotionForm } from "@/features/pricing/promotions/create-promotion/components/create-promotion-form";
 
 export const Route = createFileRoute("/_admin/dashboard/promotions/new")({
 	component: CreatePromotionPage,

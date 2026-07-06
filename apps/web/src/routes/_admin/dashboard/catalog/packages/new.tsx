@@ -1,12 +1,12 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { AdminRouteError } from "@/shared/components/admin-route-error";
-import { useCreatePackage } from "@/v2/features/admin/offering-setup/create-package/create-package.mutation";
-import { toCreatePackageDto } from "@/v2/features/admin/offering-setup/create-package/create-package.schema";
-import { CreatePackageForm } from "@/v2/features/admin/offering-setup/create-package/create-package-form";
-import { useEquipmentTypes } from "@/v2/features/asset-inventory/equipment-types/equipment-types.queries";
-import { useCategories } from "@/v2/features/catalog/categories/categories.queries";
-import { useBranches } from "@/v2/features/tenant-management/branch/branch.queries";
+import { useCreatePackage } from "@/features/admin/offering-setup/create-package/create-package.mutation";
+import { toCreatePackageDto } from "@/features/admin/offering-setup/create-package/create-package.schema";
+import { CreatePackageForm } from "@/features/admin/offering-setup/create-package/create-package-form";
+import { useEquipmentTypes } from "@/features/asset-inventory/equipment-types/equipment-types.queries";
+import { useCategories } from "@/features/catalog/categories/categories.queries";
+import { useBranches } from "@/features/tenant-management/branch/branch.queries";
 
 export const Route = createFileRoute("/_admin/dashboard/catalog/packages/new")({
 	errorComponent: ({ error }) => {

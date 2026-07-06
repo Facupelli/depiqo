@@ -1,14 +1,14 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { PageBreadcrumb } from "@/components/detail-id-breadcrumb";
-import { formatOrderNumber } from "@/features/orders/order.utils";
-import { ordersListSearchSchema } from "@/features/orders/orders-list.search";
+import { formatOrderNumber } from "@/shared/utils/formatters";
+import { ordersListSearchSchema } from "@/features/rental-commitment/rentals/get-rentals/orders-list.search";
 import { AdminRouteError } from "@/shared/components/admin-route-error";
-import { RentalDetailHeader } from "@/v2/features/rental-commitment/rentals/detail/components/rental-detail-header";
-import { RentalEquipmentSection } from "@/v2/features/rental-commitment/rentals/detail/components/rental-equipment-section";
-import { RentalSidebarCards } from "@/v2/features/rental-commitment/rentals/detail/components/rental-sidebar-cards";
-import { RentalDetailProvider } from "@/v2/features/rental-commitment/rentals/detail/rental-detail.context";
-import { rentalQueries } from "@/v2/features/rental-commitment/rentals/rentals.queries";
+import { RentalDetailHeader } from "@/features/rental-commitment/rentals/detail/components/rental-detail-header";
+import { RentalEquipmentSection } from "@/features/rental-commitment/rentals/detail/components/rental-equipment-section";
+import { RentalSidebarCards } from "@/features/rental-commitment/rentals/detail/components/rental-sidebar-cards";
+import { RentalDetailProvider } from "@/features/rental-commitment/rentals/detail/rental-detail.context";
+import { rentalQueries } from "@/features/rental-commitment/rentals/rentals.queries";
 
 export const Route = createFileRoute("/_admin/dashboard/orders/$orderId/")({
 	validateSearch: ordersListSearchSchema,

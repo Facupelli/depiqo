@@ -1,7 +1,7 @@
 import { createFileRoute, notFound, redirect } from "@tanstack/react-router";
 import { DepiqoLandingPage } from "@/features/marketing/pages/depiqo-landing";
-import { getResolvedTenantBranding } from "@/features/tenant-branding/tenant-branding";
-import { tenantLandingRegistry } from "@/features/tenant-landings/tenant-landing-registry";
+import { getResolvedTenantBranding } from "@/features/tenant-management/tenant-context/tenant-branding";
+import { tenantLandingRegistry } from "@/features/storefront/tenant-landings/tenant-landing-registry";
 
 const platformSeo = {
 	title: "Depiqo | Software para alquiler de equipos",

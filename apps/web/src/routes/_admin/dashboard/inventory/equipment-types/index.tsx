@@ -5,11 +5,11 @@ import { startTransition, useEffect, useState } from "react";
 import { z } from "zod";
 import { AdminRouteError } from "@/shared/components/admin-route-error";
 import useDebounce from "@/shared/hooks/use-debounce";
-import { CreateEquipmentTypeDialog } from "@/v2/features/asset-inventory/equipment-types/create-equipment-type/create-equipment-type-dialog";
-import { useEquipmentTypeSummaries } from "@/v2/features/asset-inventory/equipment-types/equipment-types.queries";
-import { EquipmentTypeSummariesFilters } from "@/v2/features/asset-inventory/equipment-types/get-equipment-type-summaries/components/equipment-type-summaries-filters";
-import { EquipmentTypeSummariesTable } from "@/v2/features/asset-inventory/equipment-types/get-equipment-type-summaries/components/equipment-type-summaries-table";
-import { useBranches } from "@/v2/features/tenant-management/branch/branch.queries";
+import { CreateEquipmentTypeDialog } from "@/features/asset-inventory/equipment-types/create-equipment-type/create-equipment-type-dialog";
+import { useEquipmentTypeSummaries } from "@/features/asset-inventory/equipment-types/equipment-types.queries";
+import { EquipmentTypeSummariesFilters } from "@/features/asset-inventory/equipment-types/get-equipment-type-summaries/components/equipment-type-summaries-filters";
+import { EquipmentTypeSummariesTable } from "@/features/asset-inventory/equipment-types/get-equipment-type-summaries/components/equipment-type-summaries-table";
+import { useBranches } from "@/features/tenant-management/branch/branch.queries";
 
 const BooleanSearchParamSchema = z.preprocess((value) => {
 	if (value === undefined || value === null || value === "") {

@@ -22,7 +22,7 @@ import {
 interface PromotionsListProps {
 	promotions: GetPromotionsPromotionDto[];
 	onEdit: (promotion: GetPromotionsPromotionDto) => void;
-	onDelete: (promotion: GetPromotionsPromotionDto) => void;
+	onDelete?: (promotion: GetPromotionsPromotionDto) => void;
 }
 
 const ACTIVATION_LABELS: Record<
@@ -50,7 +50,7 @@ export function PromotionsList({
 					key={promotion.id}
 					promotion={promotion}
 					onEdit={() => onEdit(promotion)}
-					onDelete={() => onDelete(promotion)}
+					onDelete={onDelete ? () => onDelete(promotion) : undefined}
 				/>
 			))}
 		</div>
@@ -63,7 +63,7 @@ function PromotionCard({
 	onEdit,
 }: {
 	promotion: GetPromotionsPromotionDto;
-	onDelete: () => void;
+	onDelete?: () => void;
 	onEdit: () => void;
 }) {
 	return (
@@ -171,7 +171,7 @@ function RowActions({
 	onDelete,
 	onEdit,
 }: {
-	onDelete: () => void;
+	onDelete?: () => void;
 	onEdit: () => void;
 }) {
 	return (
@@ -194,10 +194,12 @@ function RowActions({
 					Editar
 				</DropdownMenuItem>
 
-				<DropdownMenuItem variant="destructive" onClick={onDelete}>
-					<Trash2 className="h-4 w-4" />
-					Eliminar
-				</DropdownMenuItem>
+				{onDelete ? (
+					<DropdownMenuItem variant="destructive" onClick={onDelete}>
+						<Trash2 className="h-4 w-4" />
+						Eliminar
+					</DropdownMenuItem>
+				) : null}
 			</DropdownMenuContent>
 		</DropdownMenu>
 	);

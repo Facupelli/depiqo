@@ -1,23 +1,23 @@
 import { createFileRoute, useSearch } from "@tanstack/react-router";
 import z from "zod";
-import { CartPageProvider } from "@/features/rental/cart/cart-page.context";
-import { FulfillmentForm } from "@/features/rental/cart/components/cart-sidebar/fulfillment-form";
-import { PriceBreakdown } from "@/features/rental/cart/components/cart-sidebar/price-breakdown";
+import { CartPageProvider } from "@/features/rental-commitment/cart/storefront-cart/cart-page.context";
+import { FulfillmentForm } from "@/features/rental-commitment/cart/storefront-cart/components/cart-sidebar/fulfillment-form";
+import { PriceBreakdown } from "@/features/rental-commitment/cart/storefront-cart/components/cart-sidebar/price-breakdown";
 import {
 	MobileSidebarCta,
 	SidebarSubmitButton,
-} from "@/features/rental/cart/components/cart-sidebar/sidebar-cta";
+} from "@/features/rental-commitment/cart/storefront-cart/components/cart-sidebar/sidebar-cta";
 import {
 	BookingErrorMessage,
 	SidebarNotices,
-} from "@/features/rental/cart/components/cart-sidebar/sidebar-notices";
-import { CartPageConflictPanel } from "@/features/rental/cart/components/cartpage-conflict-panel";
-import { CartPageItemList } from "@/features/rental/cart/components/cartpage-itemlist";
-import { CartPagePeriod } from "@/features/rental/cart/components/cartpage-period";
-import { useCartSidebarViewModel } from "@/features/rental/cart/hooks/use-cart-sidebar-view-model";
+} from "@/features/rental-commitment/cart/storefront-cart/components/cart-sidebar/sidebar-notices";
+import { CartPageConflictPanel } from "@/features/rental-commitment/cart/storefront-cart/components/cartpage-conflict-panel";
+import { CartPageItemList } from "@/features/rental-commitment/cart/storefront-cart/components/cartpage-itemlist";
+import { CartPagePeriod } from "@/features/rental-commitment/cart/storefront-cart/components/cartpage-period";
+import { useCartSidebarViewModel } from "@/features/rental-commitment/cart/storefront-cart/hooks/use-cart-sidebar-view-model";
 import { useIsVisible } from "@/shared/hooks/use-is-visible";
-import { storefrontBranchQueries } from "@/v2/features/rental-commitment/branches/branches.queries";
-import { tenantQueries } from "@/v2/features/tenant-management/tenant/tenant.queries";
+import { storefrontBranchQueries } from "@/features/rental-commitment/branches/branches.queries";
+import { tenantQueries } from "@/features/tenant-management/tenant/tenant.queries";
 
 const cartPageSearchSchema = z.object({
 	periodStart: z.iso.date(),

@@ -1,7 +1,6 @@
 import type { GetPromotionsPromotionDto } from "@repo/api-contracts";
 import { useNavigate } from "@tanstack/react-router";
 import { Search } from "lucide-react";
-import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import {
 	Select,
@@ -13,7 +12,6 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Route } from "@/routes/_admin/dashboard/promotions";
 import { usePromotionsTab } from "../hooks/use-promotions-tab";
-import { DeletePromotionAlertDialog } from "./delete-promotion-alert-dialog";
 import { PromotionsList } from "./promotions-list";
 
 const TABLE_SKELETON_KEYS = [
@@ -27,8 +25,6 @@ const TABLE_SKELETON_KEYS = [
 export function PromotionsTab() {
 	const navigate = useNavigate({ from: Route.fullPath });
 	const search = Route.useSearch();
-	const [deletingPromotion, setDeletingPromotion] =
-		useState<GetPromotionsPromotionDto | null>(null);
 	const {
 		inputValue,
 		setInputValue,
@@ -46,8 +42,7 @@ export function PromotionsTab() {
 	}
 
 	return (
-		<>
-			<div className="space-y-4">
+		<div className="space-y-4">
 				<div className="flex flex-col gap-3 sm:flex-row sm:items-center">
 					<div className="relative max-w-sm flex-1">
 						<Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -100,26 +95,11 @@ export function PromotionsTab() {
 								No se encontraron promociones.
 							</p>
 						) : (
-							<PromotionsList
-								promotions={query.data ?? []}
-								onEdit={handleEdit}
-								onDelete={setDeletingPromotion}
-							/>
+							<PromotionsList promotions={query.data ?? []} onEdit={handleEdit} />
 						)}
 					</div>
 				</div>
-			</div>
-
-			<DeletePromotionAlertDialog
-				open={deletingPromotion !== null}
-				onOpenChange={(open) => {
-					if (!open) {
-						setDeletingPromotion(null);
-					}
-				}}
-				promotion={deletingPromotion}
-			/>
-		</>
+		</div>
 	);
 }
 

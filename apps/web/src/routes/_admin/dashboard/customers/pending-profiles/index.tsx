@@ -12,7 +12,7 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { AdminRouteError } from "@/shared/components/admin-route-error";
-import { useRentalCustomers } from "@/v2/features/tenant-management/customer/rental-customer.queries";
+import { useRentalCustomers } from "@/features/tenant-management/customer/rental-customer.queries";
 
 export const Route = createFileRoute(
 	"/_admin/dashboard/customers/pending-profiles/",

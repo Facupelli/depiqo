@@ -2,7 +2,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Route } from "@/routes/_admin/dashboard/promotions";
 import useDebounce from "@/shared/hooks/use-debounce";
-import { usePromotions } from "@/v2/features/pricing/promotions/promotions.queries";
+import { usePromotions } from "@/features/pricing/promotions/promotions.queries";
 
 const DEBOUNCE_MS = 300;
 

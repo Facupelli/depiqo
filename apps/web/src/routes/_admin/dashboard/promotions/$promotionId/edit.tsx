@@ -1,13 +1,13 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import z from "zod";
-import { PromotionForm } from "@/features/pricing/promotions/components/create-promotion-form";
+import { PromotionForm } from "@/features/pricing/promotions/create-promotion/components/create-promotion-form";
 import {
 	promotionToFormValues,
 	toUpdatePromotionDto,
 } from "@/features/pricing/promotions/schemas/promotion-form.schema";
-import { promotionQueries } from "@/v2/features/pricing/promotions/promotions.queries";
-import { useUpdatePromotion } from "@/v2/features/pricing/promotions/update-promotion/update-promotion.mutation";
+import { promotionQueries } from "@/features/pricing/promotions/promotions.queries";
+import { useUpdatePromotion } from "@/features/pricing/promotions/update-promotion/update-promotion.mutation";
 
 const promotionsSearchSchema = z.object({
 	tab: z.enum(["coupons", "promotions"]).default("promotions"),

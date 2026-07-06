@@ -10,9 +10,9 @@ import { FieldError } from "@/components/ui/field";
 import {
 	getPortalAuthRedirectTarget,
 	portalAuthRedirectSchema,
-} from "@/features/rental/auth/portal-auth.redirect";
+} from "@/features/tenant-management/auth/portal/portal-auth.redirect";
 import { ProblemDetailsError } from "@/shared/errors";
-import { finalizeCustomerGoogleLogin } from "@/v2/features/tenant-management/auth/customer-google-finalize/customer-google-finalize.api";
+import { finalizeCustomerGoogleLogin } from "@/features/tenant-management/auth/customer-google-finalize/customer-google-finalize.api";
 
 const searchSchema = portalAuthRedirectSchema.extend({
 	ticket: z.string().min(1),

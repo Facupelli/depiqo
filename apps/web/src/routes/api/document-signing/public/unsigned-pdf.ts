@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
-import { fetchPublicSigningUnsignedPdfResponse } from "@/v2/features/document-signing/stream-public-unsigned-document/stream-public-unsigned-document.api";
+import { fetchPublicSigningUnsignedPdfResponse } from "@/features/document-signing/stream-public-unsigned-document/stream-public-unsigned-document.api";
 
 const searchSchema = z.object({
 	token: z.string().trim().min(1),

@@ -1,8 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AdminRouteError } from "@/shared/components/admin-route-error";
-import { useCategories } from "@/v2/features/catalog/categories/categories.queries";
-import { CategoriesTable } from "@/v2/features/catalog/categories/components/categories-table";
-import { CreateCategoryDialog } from "@/v2/features/catalog/categories/create-category/create-category-dialog";
+import { useCategories } from "@/features/catalog/categories/categories.queries";
+import { CategoriesTable } from "@/features/catalog/categories/components/categories-table";
+import { CreateCategoryDialog } from "@/features/catalog/categories/create-category/create-category-dialog";
 
 export const Route = createFileRoute("/_admin/dashboard/catalog/categories/")({
 	errorComponent: ({ error }) => {

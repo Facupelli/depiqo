@@ -8,7 +8,7 @@ import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
 import { FieldError } from "@/components/ui/field";
 import { ProblemDetailsError } from "@/shared/errors";
-import { createCustomerGoogleHandoff } from "@/v2/features/tenant-management/auth/customer-google-handoff/customer-google-handoff.api";
+import { createCustomerGoogleHandoff } from "@/features/tenant-management/auth/customer-google-handoff/customer-google-handoff.api";
 
 const searchSchema = z.object({
 	code: z.string().min(1).optional(),

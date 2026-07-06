@@ -1,6 +1,6 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { z } from "zod";
-import { buildGoogleAuthorizationUrl } from "@/features/rental/auth/google/google-auth.redirect";
+import { buildGoogleAuthorizationUrl } from "@/features/tenant-management/auth/portal/google-auth.redirect";
 
 const searchSchema = z.object({
 	state: z.string().min(1),

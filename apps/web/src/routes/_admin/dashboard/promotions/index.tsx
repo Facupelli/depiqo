@@ -2,18 +2,16 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import z from "zod";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CouponsTab } from "@/features/pricing/coupons/components/coupons-tab";
-
 import { PromotionsTab } from "@/features/pricing/promotions/components/promotions-tab";
 import { AdminRouteError } from "@/shared/components/admin-route-error";
 
 const promotionsSearchSchema = z.object({
-	tab: z.enum(["coupons", "promotions"]).default("promotions"),
+	tab: z.enum(["promotions"]).default("promotions"),
 	search: z.string().optional(),
 	activation: z.enum(["AUTOMATIC", "COUPON_REQUIRED"]).optional(),
 });
 
-type Tab = "coupons" | "promotions";
+type Tab = "promotions";
 
 export const Route = createFileRoute("/_admin/dashboard/promotions/")({
 	validateSearch: promotionsSearchSchema,
@@ -71,16 +69,12 @@ function RouteComponent() {
 			>
 				<TabsList>
 					<TabsTrigger value="promotions">Promociones</TabsTrigger>
-					<TabsTrigger value="coupons">Cupones</TabsTrigger>
 				</TabsList>
 
 				<TabsContent value="promotions" hidden={tab !== "promotions"}>
 					<PromotionsTab />
 				</TabsContent>
 
-				<TabsContent value="coupons" hidden={tab !== "coupons"}>
-					<CouponsTab />
-				</TabsContent>
 			</Tabs>
 		</div>
 	);
