@@ -10,7 +10,7 @@ import { GetRentalAccessoryDefaultsQuery } from './get-rental-accessory-defaults
 import { GetRentalAccessoryDefaultsParamsDto } from './get-rental-accessory-defaults.request.dto';
 import type { GetRentalAccessoryDefaultsResponseDto } from './get-rental-accessory-defaults.response.dto';
 
-@Controller('v2/asset-inventory/rentals')
+@Controller('asset-inventory/rentals')
 export class GetRentalAccessoryDefaultsHttpController {
   constructor(private readonly queryBus: QueryBus) {}
 

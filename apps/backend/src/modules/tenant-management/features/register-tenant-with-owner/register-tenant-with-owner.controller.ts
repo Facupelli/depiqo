@@ -12,7 +12,7 @@ import { SkipCsrf } from '../../auth/shared/csrf/skip-csrf.decorator';
 
 @Public()
 @SkipCsrf()
-@Controller('v2/tenant-management')
+@Controller('tenant-management')
 export class RegisterTenantWithOwnerController {
   constructor(private readonly commandBus: CommandBus) {}
 

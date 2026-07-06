@@ -13,7 +13,7 @@ import { CustomerGoogleStateRequestDto } from './customer-google-state.request.d
 
 @Public()
 @SkipCsrf()
-@Controller('v2/auth/customer/google')
+@Controller('auth/customer/google')
 export class CustomerGoogleStateController {
   constructor(
     private readonly prisma: PrismaService,

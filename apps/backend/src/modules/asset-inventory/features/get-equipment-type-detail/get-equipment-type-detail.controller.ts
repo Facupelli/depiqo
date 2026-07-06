@@ -9,7 +9,7 @@ import { GetEquipmentTypeDetailQuery } from './get-equipment-type-detail.query';
 import { GetEquipmentTypeDetailParamsDto } from './get-equipment-type-detail.request.dto';
 import type { GetEquipmentTypeDetailResponseDto } from './get-equipment-type-detail.response.dto';
 
-@Controller('v2/asset-inventory/equipment-types')
+@Controller('asset-inventory/equipment-types')
 export class GetEquipmentTypeDetailHttpController {
   constructor(private readonly queryBus: QueryBus) {}
 

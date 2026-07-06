@@ -12,7 +12,7 @@ import { toGetCurrentRentalCustomerProfileProblem } from './get-current-rental-c
 import { GetCurrentRentalCustomerProfileQuery } from './get-current-rental-customer-profile.query';
 import { GetCurrentRentalCustomerProfileResponseDto } from './get-current-rental-customer-profile.response.dto';
 
-@Controller('v2/tenant-management/rental-customers')
+@Controller('tenant-management/rental-customers')
 export class GetCurrentRentalCustomerProfileHttpController {
   constructor(private readonly queryBus: QueryBus) {}
 

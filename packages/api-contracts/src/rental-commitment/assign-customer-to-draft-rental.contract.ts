@@ -24,7 +24,7 @@ export type AssignCustomerToDraftRentalResponseDto = z.infer<
 
 export const assignCustomerToDraftRentalContract = {
 	method: "PUT",
-	path: "/v2/rental-commitments/rentals/:rentalId/customer",
+	path: "/rental-commitments/rentals/:rentalId/customer",
 	params: AssignCustomerToDraftRentalParamsSchema,
 	body: AssignCustomerToDraftRentalBodySchema,
 	response: AssignCustomerToDraftRentalResponseSchema,

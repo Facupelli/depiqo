@@ -13,7 +13,7 @@ import { GetRentalDetailQuery } from './get-rental-detail.query';
 import { GetRentalDetailParamsDto } from './get-rental-detail.request.dto';
 import type { GetRentalDetailResponseDto } from './get-rental-detail.response.dto';
 
-@Controller('v2/rental-commitments/rentals')
+@Controller('rental-commitments/rentals')
 export class GetRentalDetailHttpController {
   constructor(private readonly queryBus: QueryBus) {}
 

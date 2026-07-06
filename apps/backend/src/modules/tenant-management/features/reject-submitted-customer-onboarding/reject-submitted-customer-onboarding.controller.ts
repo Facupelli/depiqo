@@ -11,7 +11,7 @@ import {
   RejectSubmittedCustomerOnboardingRequestDto,
 } from './reject-submitted-customer-onboarding.request.dto';
 
-@Controller('v2/tenant-management/rental-customers')
+@Controller('tenant-management/rental-customers')
 export class RejectSubmittedCustomerOnboardingHttpController {
   constructor(private readonly commandBus: CommandBus) {}
 

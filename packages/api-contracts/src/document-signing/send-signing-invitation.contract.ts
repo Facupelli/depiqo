@@ -31,7 +31,7 @@ export type SendSigningInvitationResponseDto = z.infer<
 
 export const sendSigningInvitationContract = {
 	method: "POST",
-	path: "/v2/document-signing/orders/:orderId/sessions",
+	path: "/document-signing/orders/:orderId/sessions",
 	params: SendSigningInvitationParamsSchema,
 	body: SendSigningInvitationBodySchema,
 	response: SendSigningInvitationResponseSchema,

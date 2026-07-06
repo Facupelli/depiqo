@@ -10,6 +10,6 @@ export type GetCsrfTokenResponseDto = z.infer<typeof GetCsrfTokenResponseSchema>
 
 export const getCsrfTokenContract = {
   method: "GET",
-  path: "/v2/auth/csrf",
+  path: "/auth/csrf",
   response: GetCsrfTokenResponseSchema,
 } satisfies ApiContract<undefined, undefined, undefined, undefined, typeof GetCsrfTokenResponseSchema>;

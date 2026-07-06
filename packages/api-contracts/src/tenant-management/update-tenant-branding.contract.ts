@@ -26,7 +26,7 @@ export type UpdateTenantBrandingResponseDto = z.infer<
 
 export const updateTenantBrandingContract = {
   method: "PUT",
-  path: "/v2/tenant-management/tenant/branding",
+  path: "/tenant-management/tenant/branding",
   body: UpdateTenantBrandingBodySchema,
   response: UpdateTenantBrandingResponseSchema,
 } satisfies ApiContract<

@@ -15,7 +15,7 @@ import {
 } from './assign-rental-accessories.request.dto';
 import { toAssignRentalAccessoriesProblem } from './assign-rental-accessories-http-error.mapper';
 
-@Controller('v2/rental-commitments/rentals')
+@Controller('rental-commitments/rentals')
 export class AssignRentalAccessoriesHttpController {
   constructor(private readonly commandBus: CommandBus) {}
 

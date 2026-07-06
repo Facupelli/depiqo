@@ -13,7 +13,7 @@ import { toSubmitCustomerProfileProblem } from './submit-customer-profile-http-e
 import { SubmitCustomerProfileRequestDto } from './submit-customer-profile.request.dto';
 import { SubmitCustomerProfileResponseDto } from './submit-customer-profile.response.dto';
 
-@Controller('v2/tenant-management/customer/profile')
+@Controller('tenant-management/customer/profile')
 export class SubmitCustomerProfileHttpController {
   constructor(private readonly commandBus: CommandBus) {}
 

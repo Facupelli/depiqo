@@ -7,7 +7,7 @@ import { GetCustomDomainResult } from './get-custom-domain.handler';
 import { GetCustomDomainQuery } from './get-custom-domain.query';
 import { GetCustomDomainResponseDto } from './get-custom-domain.response.dto';
 
-@Controller('v2/tenant-management/tenant/custom-domain')
+@Controller('tenant-management/tenant/custom-domain')
 export class GetCustomDomainHttpController {
   constructor(private readonly queryBus: QueryBus) {}
 

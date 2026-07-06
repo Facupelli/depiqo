@@ -31,7 +31,7 @@ export type CreateRentableEquipmentResponseDto = z.infer<typeof CreateRentableEq
 
 export const createRentableEquipmentContract = {
   method: "POST",
-  path: "/v2/offering-setup/rentable-equipment",
+  path: "/offering-setup/rentable-equipment",
   body: CreateRentableEquipmentBodySchema,
   response: CreateRentableEquipmentResponseSchema,
 } satisfies ApiContract<undefined, undefined, undefined, typeof CreateRentableEquipmentBodySchema, typeof CreateRentableEquipmentResponseSchema>;

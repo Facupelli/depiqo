@@ -12,7 +12,7 @@ import { ConfirmRentalResult } from './confirm-rental.handler';
 import { toConfirmRentalProblem } from './confirm-rental-http-error.mapper';
 import { ConfirmRentalParamsDto } from './confirm-rental.request.dto';
 
-@Controller('v2/rental-commitments/rentals')
+@Controller('rental-commitments/rentals')
 export class ConfirmRentalHttpController {
   constructor(private readonly commandBus: CommandBus) {}
 

@@ -8,7 +8,7 @@ import { GetRentalCustomersQuery } from './get-rental-customers.query';
 import { GetRentalCustomersRequestDto } from './get-rental-customers.request.dto';
 import type { GetRentalCustomersResponseDto } from './get-rental-customers.response.dto';
 
-@Controller('v2/tenant-management/rental-customers')
+@Controller('tenant-management/rental-customers')
 export class GetRentalCustomersHttpController {
   constructor(private readonly queryBus: QueryBus) {}
 

@@ -29,7 +29,7 @@ export type CreateRentalOfferWithPricingResponseDto = z.infer<typeof CreateRenta
 
 export const createRentalOfferWithPricingContract = {
   method: "POST",
-  path: "/v2/offering-setup/rental-offers",
+  path: "/offering-setup/rental-offers",
   body: CreateRentalOfferWithPricingBodySchema,
   response: CreateRentalOfferWithPricingResponseSchema,
 } satisfies ApiContract<

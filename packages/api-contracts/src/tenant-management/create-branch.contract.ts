@@ -37,7 +37,7 @@ export type CreateBranchResponseDto = z.infer<typeof CreateBranchResponseSchema>
 
 export const createBranchContract = {
   method: "POST",
-  path: "/v2/tenant-management/branches",
+  path: "/tenant-management/branches",
   body: CreateBranchBodySchema,
   response: CreateBranchResponseSchema,
 } satisfies ApiContract<

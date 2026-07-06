@@ -32,7 +32,7 @@ export type UpdateTenantConfigResponseDto = z.infer<
 
 export const updateTenantConfigContract = {
   method: "PATCH",
-  path: "/v2/tenant-management/tenant/config",
+  path: "/tenant-management/tenant/config",
   body: UpdateTenantConfigBodySchema,
   response: UpdateTenantConfigResponseSchema,
 } satisfies ApiContract<

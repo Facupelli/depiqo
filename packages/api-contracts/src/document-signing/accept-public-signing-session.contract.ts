@@ -26,7 +26,7 @@ export type AcceptPublicSigningSessionResponseDto = z.infer<
 
 export const acceptPublicSigningSessionContract = {
 	method: "POST",
-	path: "/v2/document-signing/public/sessions/me/accept",
+	path: "/document-signing/public/sessions/me/accept",
 	body: AcceptPublicSigningSessionBodySchema,
 	response: AcceptPublicSigningSessionResponseSchema,
 } satisfies ApiContract<

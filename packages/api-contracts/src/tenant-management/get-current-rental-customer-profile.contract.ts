@@ -10,7 +10,7 @@ export type GetCurrentRentalCustomerProfileResponseDto = GetCustomerProfileDetai
 
 export const getCurrentRentalCustomerProfileContract = {
   method: "GET",
-  path: "/v2/tenant-management/rental-customers/me/profile",
+  path: "/tenant-management/rental-customers/me/profile",
   response: GetCurrentRentalCustomerProfileResponseSchema,
 } satisfies ApiContract<
   undefined,

@@ -50,7 +50,7 @@ export type CreateDraftRentalResponseDto = z.infer<
 
 export const createDraftRentalContract = {
 	method: "POST",
-	path: "/v2/rental-commitments/draft-rentals",
+	path: "/rental-commitments/draft-rentals",
 	body: CreateDraftRentalBodySchema,
 	response: CreateDraftRentalResponseSchema,
 } satisfies ApiContract<

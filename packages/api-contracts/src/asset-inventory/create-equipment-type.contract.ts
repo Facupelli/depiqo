@@ -25,7 +25,7 @@ export type CreateEquipmentTypeResponseDto = z.infer<typeof CreateEquipmentTypeR
 
 export const createEquipmentTypeContract = {
   method: "POST",
-  path: "/v2/asset-inventory/equipment-types",
+  path: "/asset-inventory/equipment-types",
   body: CreateEquipmentTypeBodySchema,
   response: CreateEquipmentTypeResponseSchema,
 } satisfies ApiContract<undefined, undefined, undefined, typeof CreateEquipmentTypeBodySchema, typeof CreateEquipmentTypeResponseSchema>;

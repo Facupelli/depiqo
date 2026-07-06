@@ -16,7 +16,7 @@ export type AttachRatePlanToRentalOfferResponseDto = z.infer<typeof AttachRatePl
 
 export const attachRatePlanToRentalOfferContract = {
   method: "PUT",
-  path: "/v2/pricing/rental-offer-pricings",
+  path: "/pricing/rental-offer-pricings",
   body: AttachRatePlanToRentalOfferBodySchema,
   response: AttachRatePlanToRentalOfferResponseSchema,
 } satisfies ApiContract<

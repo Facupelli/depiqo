@@ -17,7 +17,7 @@ export type RegisterCustomDomainResponseDto = z.infer<typeof RegisterCustomDomai
 
 export const registerCustomDomainContract = {
   method: "POST",
-  path: "/v2/tenant-management/tenant/custom-domain",
+  path: "/tenant-management/tenant/custom-domain",
   body: RegisterCustomDomainBodySchema,
   response: RegisterCustomDomainResponseSchema,
 } satisfies ApiContract<

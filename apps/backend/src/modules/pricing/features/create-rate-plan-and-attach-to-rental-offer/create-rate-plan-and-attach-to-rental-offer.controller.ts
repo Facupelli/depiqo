@@ -11,7 +11,7 @@ import { CreateRatePlanAndAttachToRentalOfferResult } from './create-rate-plan-a
 import { CreateRatePlanAndAttachToRentalOfferRequestDto } from './create-rate-plan-and-attach-to-rental-offer.request.dto';
 import { CreateRatePlanAndAttachToRentalOfferResponseDto } from './create-rate-plan-and-attach-to-rental-offer.response.dto';
 
-@Controller('v2/pricing/rental-offer-pricings')
+@Controller('pricing/rental-offer-pricings')
 export class CreateRatePlanAndAttachToRentalOfferHttpController {
   constructor(private readonly commandBus: CommandBus) {}
 

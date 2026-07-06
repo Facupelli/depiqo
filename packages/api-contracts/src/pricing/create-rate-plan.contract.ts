@@ -29,7 +29,7 @@ export type CreateRatePlanResponseDto = z.infer<typeof CreateRatePlanResponseSch
 
 export const createRatePlanContract = {
   method: "POST",
-  path: "/v2/pricing/rate-plans",
+  path: "/pricing/rate-plans",
   body: CreateRatePlanBodySchema,
   response: CreateRatePlanResponseSchema,
 } satisfies ApiContract<undefined, undefined, undefined, typeof CreateRatePlanBodySchema, typeof CreateRatePlanResponseSchema>;

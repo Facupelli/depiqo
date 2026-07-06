@@ -7,7 +7,7 @@ import { CustomerGoogleLoginService } from './customer-google-login.service';
 
 @Public()
 @SkipCsrf()
-@Controller('v2/auth/customer/google')
+@Controller('auth/customer/google')
 export class CustomerGoogleLoginController {
   constructor(private readonly customerGoogleLoginService: CustomerGoogleLoginService) {}
 

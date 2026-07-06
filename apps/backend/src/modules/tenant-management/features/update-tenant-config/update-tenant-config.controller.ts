@@ -11,7 +11,7 @@ import { UpdateTenantConfigResult } from './update-tenant-config.handler';
 import { UpdateTenantConfigRequestDto } from './update-tenant-config.request.dto';
 import { UpdateTenantConfigResponseDto } from './update-tenant-config.response.dto';
 
-@Controller('v2/tenant-management/tenant/config')
+@Controller('tenant-management/tenant/config')
 export class UpdateTenantConfigHttpController {
   constructor(private readonly commandBus: CommandBus) {}
 

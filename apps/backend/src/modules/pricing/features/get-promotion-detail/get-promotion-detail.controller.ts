@@ -11,7 +11,7 @@ import { GetPromotionDetailQuery } from './get-promotion-detail.query';
 import { GetPromotionDetailParamsDto } from './get-promotion-detail.request.dto';
 import { GetPromotionDetailResponseDto } from './get-promotion-detail.response.dto';
 
-@Controller('v2/pricing/promotions')
+@Controller('pricing/promotions')
 export class GetPromotionDetailHttpController {
   constructor(private readonly queryBus: QueryBus) {}
 

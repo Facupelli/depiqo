@@ -8,7 +8,7 @@ import { GetBranchesQuery } from './get-branches.query';
 import { GetBranchesRequestDto } from './get-branches.request.dto';
 import type { GetBranchesResponseDto } from './get-branches.response.dto';
 
-@Controller('v2/tenant-management/branches')
+@Controller('tenant-management/branches')
 export class GetBranchesHttpController {
   constructor(private readonly queryBus: QueryBus) {}
 

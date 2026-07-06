@@ -13,7 +13,7 @@ export type UpdateContractSignerResponseDto = ContractSignerMutationResponseDto;
 
 export const updateContractSignerContract = {
   method: "PUT",
-  path: "/v2/tenant-management/tenant/contract-signer",
+  path: "/tenant-management/tenant/contract-signer",
   body: ContractSignerBodySchema,
   response: ContractSignerMutationResponseSchema,
 } satisfies ApiContract<

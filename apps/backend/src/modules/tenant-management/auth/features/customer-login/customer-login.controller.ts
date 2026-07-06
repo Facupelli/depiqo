@@ -14,7 +14,7 @@ type CustomerLoginRequest = Request & {
 
 @Public()
 @SkipCsrf()
-@Controller('v2/auth/customer')
+@Controller('auth/customer')
 export class CustomerLoginController {
   constructor(
     private readonly sessionRegenerator: SessionRegeneratorService,

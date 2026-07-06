@@ -8,7 +8,7 @@ import { GetPromotionsQuery } from './get-promotions.query';
 import { GetPromotionsRequestDto } from './get-promotions.request.dto';
 import type { GetPromotionsResponseDto } from './get-promotions.response.dto';
 
-@Controller('v2/pricing/promotions')
+@Controller('pricing/promotions')
 export class GetPromotionsHttpController {
   constructor(private readonly queryBus: QueryBus) {}
 

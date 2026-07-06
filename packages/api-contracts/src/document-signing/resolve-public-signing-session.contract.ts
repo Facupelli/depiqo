@@ -19,7 +19,7 @@ export type ResolvePublicSigningSessionResponseDto = z.infer<
 
 export const resolvePublicSigningSessionContract = {
 	method: "GET",
-	path: "/v2/document-signing/public/sessions/resolve",
+	path: "/document-signing/public/sessions/resolve",
 	query: ResolvePublicSigningSessionQuerySchema,
 	response: ResolvePublicSigningSessionResponseSchema,
 } satisfies ApiContract<

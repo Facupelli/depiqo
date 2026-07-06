@@ -9,7 +9,7 @@ import { CreateOwnerWithContractResult } from './create-owner-with-contract.hand
 import { CreateOwnerWithContractRequestDto } from './create-owner-with-contract.request.dto';
 import { CreateOwnerWithContractResponseDto } from './create-owner-with-contract.response.dto';
 
-@Controller('v2/asset-inventory/owners')
+@Controller('asset-inventory/owners')
 export class CreateOwnerWithContractHttpController {
   constructor(private readonly commandBus: CommandBus) {}
 

@@ -3,7 +3,7 @@ import { AuthActor } from '../../shared/auth.types';
 import { CurrentUser } from '../../shared/current-user/current-user.decorator';
 import { SessionAuthGuard } from '../../shared/session/session-auth.guard';
 
-@Controller('v2/auth')
+@Controller('auth')
 export class GetCurrentUserController {
   @Get('me')
   @UseGuards(SessionAuthGuard)

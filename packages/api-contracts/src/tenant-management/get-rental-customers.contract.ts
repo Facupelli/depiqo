@@ -39,7 +39,7 @@ export type GetRentalCustomersResponseDto = z.infer<typeof GetRentalCustomersRes
 
 export const getRentalCustomersContract = {
   method: "GET",
-  path: "/v2/tenant-management/rental-customers",
+  path: "/tenant-management/rental-customers",
   query: GetRentalCustomersQuerySchema,
   response: GetRentalCustomersResponseSchema,
 } satisfies ApiContract<

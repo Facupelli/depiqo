@@ -13,7 +13,7 @@ export type ActivateRentableItemResponseDto = z.infer<typeof ActivateRentableIte
 
 export const activateRentableItemContract = {
   method: "POST",
-  path: "/v2/catalog/rentable-items/:rentableItemId/activate",
+  path: "/catalog/rentable-items/:rentableItemId/activate",
   params: ActivateRentableItemParamsSchema,
   response: ActivateRentableItemResponseSchema,
 } satisfies ApiContract<

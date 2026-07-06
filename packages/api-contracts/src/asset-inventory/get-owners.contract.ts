@@ -16,6 +16,6 @@ export type GetOwnersResponseDto = z.infer<typeof GetOwnersResponseSchema>;
 
 export const getOwnersContract = {
   method: "GET",
-  path: "/v2/asset-inventory/owners",
+  path: "/asset-inventory/owners",
   response: GetOwnersResponseSchema,
 } satisfies ApiContract<undefined, undefined, undefined, undefined, typeof GetOwnersResponseSchema>;

@@ -11,7 +11,7 @@ import { CreateCategoryRequestDto } from './create-category.request.dto';
 import { CreateCategoryResponseDto } from './create-category.response.dto';
 import { CreateCategoryResult } from './create-category.handler';
 
-@Controller('v2/catalog/categories')
+@Controller('catalog/categories')
 export class CreateCategoryHttpController {
   constructor(private readonly commandBus: CommandBus) {}
 

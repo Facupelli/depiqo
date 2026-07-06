@@ -12,7 +12,7 @@ import { StreamPublicSignedReceiptDocumentQuery } from './stream-public-signed-r
 import { StreamPublicSignedReceiptDocumentQueryDto } from './stream-public-signed-receipt-document.request.dto';
 import { StreamPublicSignedReceiptDocumentQueryError } from './stream-public-signed-receipt-document.service';
 
-@Controller('v2/document-signing/public/receipts')
+@Controller('document-signing/public/receipts')
 export class StreamPublicSignedReceiptDocumentHttpController {
   constructor(private readonly queryBus: QueryBus) {}
 

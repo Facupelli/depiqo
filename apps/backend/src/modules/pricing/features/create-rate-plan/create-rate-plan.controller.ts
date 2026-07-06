@@ -11,7 +11,7 @@ import { CreateRatePlanRequestDto } from './create-rate-plan.request.dto';
 import { CreateRatePlanResponseDto } from './create-rate-plan.response.dto';
 import { CreateRatePlanResult } from './create-rate-plan.handler';
 
-@Controller('v2/pricing/rate-plans')
+@Controller('pricing/rate-plans')
 export class CreateRatePlanHttpController {
   constructor(private readonly commandBus: CommandBus) {}
 

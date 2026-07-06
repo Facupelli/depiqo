@@ -9,7 +9,7 @@ import { CreateRentalOfferWithPricingServiceResult } from './create-rental-offer
 import { CreateRentalOfferWithPricingRequestDto } from './create-rental-offer-with-pricing.request.dto';
 import { CreateRentalOfferWithPricingResponseDto } from './create-rental-offer-with-pricing.response.dto';
 
-@Controller('v2/offering-setup/rental-offers')
+@Controller('offering-setup/rental-offers')
 export class CreateRentalOfferWithPricingHttpController {
   constructor(private readonly commandBus: CommandBus) {}
 

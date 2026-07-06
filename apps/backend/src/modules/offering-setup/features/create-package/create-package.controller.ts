@@ -9,7 +9,7 @@ import { CreatePackageServiceResult } from './create-package.handler';
 import { CreatePackageRequestDto } from './create-package.request.dto';
 import { CreatePackageResponseDto } from './create-package.response.dto';
 
-@Controller('v2/offering-setup/packages')
+@Controller('offering-setup/packages')
 export class CreatePackageHttpController {
   constructor(private readonly commandBus: CommandBus) {}
 

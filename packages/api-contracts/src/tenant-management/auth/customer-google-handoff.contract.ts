@@ -19,7 +19,7 @@ export type CustomerGoogleHandoffResponseDto = z.infer<typeof CustomerGoogleHand
 
 export const customerGoogleHandoffContract = {
   method: "POST",
-  path: "/v2/auth/customer/google/handoff",
+  path: "/auth/customer/google/handoff",
   body: CustomerGoogleHandoffBodySchema,
   response: CustomerGoogleHandoffResponseSchema,
 } satisfies ApiContract<undefined, undefined, undefined, typeof CustomerGoogleHandoffBodySchema, typeof CustomerGoogleHandoffResponseSchema>;

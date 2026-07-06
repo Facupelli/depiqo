@@ -19,7 +19,7 @@ export type CustomerLoginResponseDto = z.infer<typeof CustomerLoginResponseSchem
 
 export const customerLoginContract = {
   method: "POST",
-  path: "/v2/auth/customer/login",
+  path: "/auth/customer/login",
   body: CustomerLoginBodySchema,
   response: CustomerLoginResponseSchema,
 } satisfies ApiContract<undefined, undefined, undefined, typeof CustomerLoginBodySchema, typeof CustomerLoginResponseSchema>;

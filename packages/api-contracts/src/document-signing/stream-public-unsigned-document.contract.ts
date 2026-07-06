@@ -14,7 +14,7 @@ export type StreamPublicUnsignedDocumentQueryDto = z.infer<
 
 export const streamPublicUnsignedDocumentContract = {
 	method: "GET",
-	path: "/v2/document-signing/public/sessions/me/unsigned-pdf",
+	path: "/document-signing/public/sessions/me/unsigned-pdf",
 	query: StreamPublicUnsignedDocumentQuerySchema,
 	response: StreamPublicUnsignedDocumentResponseSchema,
 } satisfies ApiContract<

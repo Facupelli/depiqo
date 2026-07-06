@@ -11,7 +11,7 @@ import { SearchRentalOffersQuery } from './search-rental-offers.query';
 import { SearchRentalOffersRequestDto } from './search-rental-offers.request.dto';
 import type { SearchRentalOffersResponseDto } from './search-rental-offers.response.dto';
 
-@Controller('v2/catalog/rental-offers/search')
+@Controller('catalog/rental-offers/search')
 export class SearchRentalOffersHttpController {
   constructor(private readonly queryBus: QueryBus) {}
 

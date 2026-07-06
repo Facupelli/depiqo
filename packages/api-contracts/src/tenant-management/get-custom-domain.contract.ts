@@ -9,6 +9,6 @@ export type GetCustomDomainResponseDto = z.infer<typeof GetCustomDomainResponseS
 
 export const getCustomDomainContract = {
   method: "GET",
-  path: "/v2/tenant-management/tenant/custom-domain",
+  path: "/tenant-management/tenant/custom-domain",
   response: GetCustomDomainResponseSchema,
 } satisfies ApiContract<undefined, undefined, undefined, undefined, typeof GetCustomDomainResponseSchema>;

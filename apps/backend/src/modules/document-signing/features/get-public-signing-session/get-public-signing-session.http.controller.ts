@@ -14,7 +14,7 @@ import { GetPublicSigningSessionQuery } from './get-public-signing-session.query
 import { GetPublicSigningSessionResponseDto } from './get-public-signing-session.response.dto';
 import { GetPublicSigningSessionQueryError } from './get-public-signing-session.service';
 
-@Controller('v2/document-signing/public/sessions')
+@Controller('document-signing/public/sessions')
 export class GetPublicSigningSessionHttpController {
   constructor(private readonly queryBus: QueryBus) {}
 

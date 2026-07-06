@@ -15,7 +15,7 @@ export type CancelRentalResponseDto = z.infer<
 
 export const cancelRentalContract = {
 	method: "DELETE",
-	path: "/v2/rental-commitments/rentals/:rentalId",
+	path: "/rental-commitments/rentals/:rentalId",
 	params: CancelRentalParamsSchema,
 	response: CancelRentalResponseSchema,
 } satisfies ApiContract<

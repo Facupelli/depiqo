@@ -81,7 +81,7 @@ export type GetRentalContractSigningSummaryResponseDto = z.infer<
 
 export const getRentalContractSigningSummaryContract = {
 	method: "GET",
-	path: "/v2/contracts/rentals/:rentalId/signing-summary",
+	path: "/contracts/rentals/:rentalId/signing-summary",
 	params: GetRentalContractSigningSummaryParamsSchema,
 	response: GetRentalContractSigningSummaryResponseSchema,
 } satisfies ApiContract<

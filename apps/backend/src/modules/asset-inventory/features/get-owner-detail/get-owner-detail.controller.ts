@@ -9,7 +9,7 @@ import { GetOwnerDetailQuery } from './get-owner-detail.query';
 import { GetOwnerDetailParamsDto } from './get-owner-detail.request.dto';
 import type { GetOwnerDetailResponseDto } from './get-owner-detail.response.dto';
 
-@Controller('v2/asset-inventory/owners')
+@Controller('asset-inventory/owners')
 export class GetOwnerDetailHttpController {
   constructor(private readonly queryBus: QueryBus) {}
 

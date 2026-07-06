@@ -26,7 +26,7 @@ export type CreatePackageResponseDto = z.infer<typeof CreatePackageResponseSchem
 
 export const createPackageContract = {
   method: "POST",
-  path: "/v2/offering-setup/packages",
+  path: "/offering-setup/packages",
   body: CreatePackageBodySchema,
   response: CreatePackageResponseSchema,
 } satisfies ApiContract<undefined, undefined, undefined, typeof CreatePackageBodySchema, typeof CreatePackageResponseSchema>;

@@ -12,7 +12,7 @@ import {
   CreateEquipmentTypeAccessoryDefaultsRequestDto,
 } from './create-equipment-type-accessory-defaults.request.dto';
 
-@Controller('v2/asset-inventory/equipment-types/:equipmentTypeId/accessory-defaults')
+@Controller('asset-inventory/equipment-types/:equipmentTypeId/accessory-defaults')
 export class CreateEquipmentTypeAccessoryDefaultsHttpController {
   constructor(private readonly commandBus: CommandBus) {}
 

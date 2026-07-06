@@ -14,7 +14,7 @@ import { mapStreamPublicUnsignedDocumentHttpError } from './stream-public-unsign
 import { StreamPublicUnsignedDocumentQuery } from './stream-public-unsigned-document.query';
 import { StreamPublicUnsignedDocumentQueryError } from './stream-public-unsigned-document.service';
 
-@Controller('v2/document-signing/public/sessions')
+@Controller('document-signing/public/sessions')
 export class StreamPublicUnsignedDocumentHttpController {
   constructor(private readonly queryBus: QueryBus) {}
 

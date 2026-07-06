@@ -16,7 +16,7 @@ export type CustomerGoogleStateResponseDto = z.infer<typeof CustomerGoogleStateR
 
 export const customerGoogleStateContract = {
   method: "POST",
-  path: "/v2/auth/customer/google/state",
+  path: "/auth/customer/google/state",
   body: CustomerGoogleStateBodySchema,
   response: CustomerGoogleStateResponseSchema,
 } satisfies ApiContract<undefined, undefined, undefined, typeof CustomerGoogleStateBodySchema, typeof CustomerGoogleStateResponseSchema>;

@@ -11,7 +11,7 @@ import { CreateContractSignerResult } from './create-contract-signer.handler';
 import { CreateContractSignerRequestDto } from './create-contract-signer.request.dto';
 import { CreateContractSignerResponseDto } from './create-contract-signer.response.dto';
 
-@Controller('v2/tenant-management/tenant/contract-signer')
+@Controller('tenant-management/tenant/contract-signer')
 export class CreateContractSignerHttpController {
   constructor(private readonly commandBus: CommandBus) {}
 

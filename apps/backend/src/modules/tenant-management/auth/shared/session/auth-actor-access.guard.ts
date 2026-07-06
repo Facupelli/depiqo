@@ -13,10 +13,6 @@ export class AuthActorAccessGuard implements CanActivate {
   canActivate(context: ExecutionContext): boolean {
     const req = context.switchToHttp().getRequest<Request & { user?: AuthActor }>();
 
-    if (!req.path.startsWith('/v2/')) {
-      return true;
-    }
-
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
       context.getHandler(),
       context.getClass(),
@@ -30,7 +26,7 @@ export class AuthActorAccessGuard implements CanActivate {
       throw new UnauthorizedException('Authentication required.');
     }
 
-    if (req.path.startsWith('/v2/auth/')) {
+    if (req.path.startsWith('/auth/')) {
       return true;
     }
 

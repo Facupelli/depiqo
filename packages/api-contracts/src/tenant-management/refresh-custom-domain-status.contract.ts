@@ -9,6 +9,6 @@ export type RefreshCustomDomainStatusResponseDto = z.infer<typeof RefreshCustomD
 
 export const refreshCustomDomainStatusContract = {
   method: "POST",
-  path: "/v2/tenant-management/tenant/custom-domain/refresh",
+  path: "/tenant-management/tenant/custom-domain/refresh",
   response: RefreshCustomDomainStatusResponseSchema,
 } satisfies ApiContract<undefined, undefined, undefined, undefined, typeof RefreshCustomDomainStatusResponseSchema>;

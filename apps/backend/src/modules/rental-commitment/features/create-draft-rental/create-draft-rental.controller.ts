@@ -16,7 +16,7 @@ import { toRentalCommitmentProblem } from '../create-confirmed-rental/rental-com
 import { FulfillmentMethod } from '../../domain/rental-status';
 import { RentalPeriod } from '../../domain/value-objects/rental-period.value-object';
 
-@Controller('v2/rental-commitments/draft-rentals')
+@Controller('rental-commitments/draft-rentals')
 export class CreateDraftRentalHttpController {
   constructor(private readonly commandBus: CommandBus) {}
 

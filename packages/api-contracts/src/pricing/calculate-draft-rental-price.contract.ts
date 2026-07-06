@@ -144,7 +144,7 @@ export type CalculateDraftRentalPriceResponseDto = z.infer<
 
 export const calculateDraftRentalPriceContract = {
 	method: "POST",
-	path: "/v2/pricing/draft-rentals/price",
+	path: "/pricing/draft-rentals/price",
 	body: CalculateDraftRentalPriceBodySchema,
 	response: CalculateDraftRentalPriceResponseSchema,
 } satisfies ApiContract<

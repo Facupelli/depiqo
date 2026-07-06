@@ -17,7 +17,7 @@ export type CustomerGoogleFinalizeResponseDto = z.infer<typeof CustomerGoogleFin
 
 export const customerGoogleFinalizeContract = {
   method: "POST",
-  path: "/v2/auth/customer/google/finalize",
+  path: "/auth/customer/google/finalize",
   body: CustomerGoogleFinalizeBodySchema,
   response: CustomerGoogleFinalizeResponseSchema,
 } satisfies ApiContract<undefined, undefined, undefined, typeof CustomerGoogleFinalizeBodySchema, typeof CustomerGoogleFinalizeResponseSchema>;

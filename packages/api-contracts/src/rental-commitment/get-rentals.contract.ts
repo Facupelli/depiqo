@@ -78,7 +78,7 @@ export type GetRentalsResponseDto = z.infer<typeof GetRentalsResponseSchema>;
 
 export const getRentalsContract = {
   method: "GET",
-  path: "/v2/rental-commitments/rentals",
+  path: "/rental-commitments/rentals",
   query: GetRentalsQuerySchema,
   response: GetRentalsResponseSchema,
 } satisfies ApiContract<undefined, typeof GetRentalsQuerySchema, undefined, undefined, typeof GetRentalsResponseSchema>;

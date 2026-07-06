@@ -7,7 +7,7 @@ import { GetOwnersResult } from './get-owners.handler';
 import { GetOwnersQuery } from './get-owners.query';
 import type { GetOwnersResponseDto } from './get-owners.response.dto';
 
-@Controller('v2/asset-inventory/owners')
+@Controller('asset-inventory/owners')
 export class GetOwnersHttpController {
   constructor(private readonly queryBus: QueryBus) {}
 

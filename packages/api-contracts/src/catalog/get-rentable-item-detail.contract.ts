@@ -74,7 +74,7 @@ export type GetRentableItemDetailResponseDto = z.infer<typeof GetRentableItemDet
 
 export const getRentableItemDetailContract = {
   method: "GET",
-  path: "/v2/catalog/rentable-items/:rentableItemId",
+  path: "/catalog/rentable-items/:rentableItemId",
   params: GetRentableItemDetailParamsSchema,
   response: GetRentableItemDetailResponseSchema,
 } satisfies ApiContract<

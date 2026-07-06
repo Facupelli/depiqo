@@ -48,7 +48,7 @@ export type CreatePromotionResponseDto = z.infer<typeof CreatePromotionResponseS
 
 export const createPromotionContract = {
   method: "POST",
-  path: "/v2/pricing/promotions",
+  path: "/pricing/promotions",
   body: CreatePromotionBodySchema,
   response: CreatePromotionResponseSchema,
 } satisfies ApiContract<undefined, undefined, undefined, typeof CreatePromotionBodySchema, typeof CreatePromotionResponseSchema>;

@@ -15,7 +15,7 @@ import { AcceptPublicSigningSessionBodyDto } from './accept-public-signing-sessi
 import { AcceptPublicSigningSessionResponseDto } from './accept-public-signing-session.response.dto';
 import { AcceptPublicSigningSessionCommandError } from './accept-public-signing-session.service';
 
-@Controller('v2/document-signing/public/sessions')
+@Controller('document-signing/public/sessions')
 export class AcceptPublicSigningSessionHttpController {
   constructor(private readonly commandBus: CommandBus) {}
 

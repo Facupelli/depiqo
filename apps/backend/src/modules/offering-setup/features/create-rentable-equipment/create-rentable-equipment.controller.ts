@@ -9,7 +9,7 @@ import { CreateRentableEquipmentServiceResult } from './create-rentable-equipmen
 import { CreateRentableEquipmentRequestDto } from './create-rentable-equipment.request.dto';
 import { CreateRentableEquipmentResponseDto } from './create-rentable-equipment.response.dto';
 
-@Controller('v2/offering-setup/rentable-equipment')
+@Controller('offering-setup/rentable-equipment')
 export class CreateRentableEquipmentHttpController {
   constructor(private readonly commandBus: CommandBus) {}
 

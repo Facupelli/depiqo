@@ -20,7 +20,7 @@ export type CustomerGoogleLoginResponseDto = z.infer<typeof CustomerGoogleLoginR
 
 export const customerGoogleLoginContract = {
   method: "POST",
-  path: "/v2/auth/customer/google/login",
+  path: "/auth/customer/google/login",
   body: CustomerGoogleLoginBodySchema,
   response: CustomerGoogleLoginResponseSchema,
 } satisfies ApiContract<undefined, undefined, undefined, typeof CustomerGoogleLoginBodySchema, typeof CustomerGoogleLoginResponseSchema>;

@@ -10,7 +10,7 @@ import { CreateEquipmentTypeServiceResult } from './create-equipment-type.handle
 import { CreateEquipmentTypeRequestDto } from './create-equipment-type.request.dto';
 import { CreateEquipmentTypeResponseDto } from './create-equipment-type.response.dto';
 
-@Controller('v2/asset-inventory/equipment-types')
+@Controller('asset-inventory/equipment-types')
 export class CreateEquipmentTypeHttpController {
   constructor(private readonly commandBus: CommandBus) {}
 

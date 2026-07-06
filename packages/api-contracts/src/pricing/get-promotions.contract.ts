@@ -47,7 +47,7 @@ export type GetPromotionsResponseDto = z.infer<typeof GetPromotionsResponseSchem
 
 export const getPromotionsContract = {
   method: "GET",
-  path: "/v2/pricing/promotions",
+  path: "/pricing/promotions",
   query: GetPromotionsQuerySchema,
   response: GetPromotionsResponseSchema,
 } satisfies ApiContract<undefined, typeof GetPromotionsQuerySchema, undefined, undefined, typeof GetPromotionsResponseSchema>;

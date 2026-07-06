@@ -11,7 +11,7 @@ import { toUpdatePromotionProblem } from './update-promotion-http-error.mapper';
 import { UpdatePromotionParamsDto, UpdatePromotionRequestDto } from './update-promotion.request.dto';
 import { UpdatePromotionResponseDto } from './update-promotion.response.dto';
 
-@Controller('v2/pricing/promotions')
+@Controller('pricing/promotions')
 export class UpdatePromotionHttpController {
   constructor(private readonly commandBus: CommandBus) {}
 

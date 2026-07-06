@@ -27,7 +27,7 @@ export type RegisterTenantWithOwnerResponseDto = z.infer<
 
 export const registerTenantWithOwnerContract = {
   method: "POST",
-  path: "/v2/tenant-management/register",
+  path: "/tenant-management/register",
   body: RegisterTenantWithOwnerBodySchema,
   response: RegisterTenantWithOwnerResponseSchema,
 } satisfies ApiContract<

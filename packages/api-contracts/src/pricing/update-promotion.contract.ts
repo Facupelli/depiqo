@@ -25,7 +25,7 @@ export type UpdatePromotionResponseDto = z.infer<typeof UpdatePromotionResponseS
 
 export const updatePromotionContract = {
   method: "PUT",
-  path: "/v2/pricing/promotions/:promotionId",
+  path: "/pricing/promotions/:promotionId",
   params: UpdatePromotionParamsSchema,
   body: UpdatePromotionBodySchema,
   response: UpdatePromotionResponseSchema,

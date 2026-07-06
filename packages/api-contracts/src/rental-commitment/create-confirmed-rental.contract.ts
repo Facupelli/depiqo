@@ -65,7 +65,7 @@ export type CreateConfirmedRentalResponseDto = z.infer<
 
 export const createConfirmedRentalContract = {
 	method: "POST",
-	path: "/v2/rental-commitments/confirmed-rentals",
+	path: "/rental-commitments/confirmed-rentals",
 	body: CreateConfirmedRentalBodySchema,
 	response: CreateConfirmedRentalResponseSchema,
 } satisfies ApiContract<

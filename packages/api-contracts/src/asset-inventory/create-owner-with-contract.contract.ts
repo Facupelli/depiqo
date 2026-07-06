@@ -49,7 +49,7 @@ export type CreateOwnerWithContractResponseDto = z.infer<typeof CreateOwnerWithC
 
 export const createOwnerWithContractContract = {
   method: "POST",
-  path: "/v2/asset-inventory/owners",
+  path: "/asset-inventory/owners",
   body: CreateOwnerWithContractBodySchema,
   response: CreateOwnerWithContractResponseSchema,
 } satisfies ApiContract<

@@ -8,7 +8,7 @@ import { toGetCurrentTenantProblem } from './get-current-tenant-http-error.mappe
 import { GetCurrentTenantQuery } from './get-current-tenant.query';
 import { GetCurrentTenantResponseDto } from './get-current-tenant.response.dto';
 
-@Controller('v2/tenant-management/tenant')
+@Controller('tenant-management/tenant')
 export class GetCurrentTenantHttpController {
   constructor(private readonly queryBus: QueryBus) {}
 

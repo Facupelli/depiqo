@@ -11,7 +11,7 @@ import { CreatePromotionResult } from './create-promotion.handler';
 import { CreatePromotionRequestDto } from './create-promotion.request.dto';
 import { CreatePromotionResponseDto } from './create-promotion.response.dto';
 
-@Controller('v2/pricing/promotions')
+@Controller('pricing/promotions')
 export class CreatePromotionHttpController {
   constructor(private readonly commandBus: CommandBus) {}
 

@@ -41,7 +41,7 @@ export type GetBranchesResponseDto = z.infer<typeof GetBranchesResponseSchema>;
 
 export const getBranchesContract = {
   method: "GET",
-  path: "/v2/tenant-management/branches",
+  path: "/tenant-management/branches",
   query: GetBranchesQuerySchema,
   response: GetBranchesResponseSchema,
 } satisfies ApiContract<

@@ -11,7 +11,7 @@ export type GetContractSignerResponseDto = z.infer<
 
 export const getContractSignerContract = {
   method: "GET",
-  path: "/v2/tenant-management/tenant/contract-signer",
+  path: "/tenant-management/tenant/contract-signer",
   response: GetContractSignerResponseSchema,
 } satisfies ApiContract<
   undefined,

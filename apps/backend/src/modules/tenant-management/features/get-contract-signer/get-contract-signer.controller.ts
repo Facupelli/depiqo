@@ -7,7 +7,7 @@ import { CurrentUser } from '../../auth/shared/current-user/current-user.decorat
 import { GetContractSignerResult } from './get-contract-signer.handler';
 import { GetContractSignerQuery } from './get-contract-signer.query';
 
-@Controller('v2/tenant-management/tenant/contract-signer')
+@Controller('tenant-management/tenant/contract-signer')
 export class GetContractSignerHttpController {
   constructor(private readonly queryBus: QueryBus) {}
 

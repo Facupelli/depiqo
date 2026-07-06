@@ -35,7 +35,7 @@ export type GetRentalAccessoryDefaultsResponseDto = z.infer<
 
 export const getRentalAccessoryDefaultsContract = {
 	method: "GET",
-	path: "/v2/asset-inventory/rentals/:rentalId/accessory-defaults",
+	path: "/asset-inventory/rentals/:rentalId/accessory-defaults",
 	params: GetRentalAccessoryDefaultsParamsSchema,
 	response: GetRentalAccessoryDefaultsResponseSchema,
 } satisfies ApiContract<

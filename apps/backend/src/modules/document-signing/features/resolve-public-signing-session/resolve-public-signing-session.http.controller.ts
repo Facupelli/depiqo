@@ -14,7 +14,7 @@ import { ResolvePublicSigningSessionResponseDto } from './resolve-public-signing
 import { ResolvePublicSigningSessionResult } from './resolve-public-signing-session.result';
 import { ResolvePublicSigningSessionQueryError } from './resolve-public-signing-session.service';
 
-@Controller('v2/document-signing/public/sessions')
+@Controller('document-signing/public/sessions')
 export class ResolvePublicSigningSessionHttpController {
   constructor(private readonly queryBus: QueryBus) {}
 

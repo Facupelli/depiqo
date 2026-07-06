@@ -8,7 +8,7 @@ import { GetRentableItemsQuery } from './get-rentable-items.query';
 import { GetRentableItemsRequestDto } from './get-rentable-items.request.dto';
 import type { GetRentableItemsResponseDto } from './get-rentable-items.response.dto';
 
-@Controller('v2/catalog/rentable-items')
+@Controller('catalog/rentable-items')
 export class GetRentableItemsHttpController {
   constructor(private readonly queryBus: QueryBus) {}
 

@@ -41,7 +41,7 @@ export type GetBranchDetailResponseDto = z.infer<typeof GetBranchDetailResponseS
 
 export const getBranchDetailContract = {
   method: "GET",
-  path: "/v2/tenant-management/branches/:branchId",
+  path: "/tenant-management/branches/:branchId",
   params: GetBranchDetailParamsSchema,
   response: GetBranchDetailResponseSchema,
 } satisfies ApiContract<

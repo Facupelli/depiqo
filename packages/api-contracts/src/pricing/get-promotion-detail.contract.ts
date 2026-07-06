@@ -14,7 +14,7 @@ export type GetPromotionDetailResponseDto = z.infer<typeof GetPromotionDetailRes
 
 export const getPromotionDetailContract = {
   method: "GET",
-  path: "/v2/pricing/promotions/:promotionId",
+  path: "/pricing/promotions/:promotionId",
   params: GetPromotionDetailParamsSchema,
   response: GetPromotionDetailResponseSchema,
 } satisfies ApiContract<typeof GetPromotionDetailParamsSchema, undefined, undefined, undefined, typeof GetPromotionDetailResponseSchema>;

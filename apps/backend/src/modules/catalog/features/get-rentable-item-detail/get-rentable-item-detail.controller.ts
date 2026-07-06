@@ -11,7 +11,7 @@ import { GetRentableItemDetailQuery } from './get-rentable-item-detail.query';
 import { GetRentableItemDetailRequestDto } from './get-rentable-item-detail.request.dto';
 import type { GetRentableItemDetailResponseDto } from './get-rentable-item-detail.response.dto';
 
-@Controller('v2/catalog/rentable-items')
+@Controller('catalog/rentable-items')
 export class GetRentableItemDetailHttpController {
   constructor(private readonly queryBus: QueryBus) {}
 

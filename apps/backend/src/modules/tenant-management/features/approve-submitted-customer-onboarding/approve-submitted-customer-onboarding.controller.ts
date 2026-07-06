@@ -8,7 +8,7 @@ import { toApproveSubmittedCustomerOnboardingProblem } from './approve-submitted
 import { ApproveSubmittedCustomerOnboardingResult } from './approve-submitted-customer-onboarding.handler';
 import { ApproveSubmittedCustomerOnboardingParamsDto } from './approve-submitted-customer-onboarding.request.dto';
 
-@Controller('v2/tenant-management/rental-customers')
+@Controller('tenant-management/rental-customers')
 export class ApproveSubmittedCustomerOnboardingHttpController {
   constructor(private readonly commandBus: CommandBus) {}
 

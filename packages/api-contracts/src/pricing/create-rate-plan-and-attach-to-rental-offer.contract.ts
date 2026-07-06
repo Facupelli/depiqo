@@ -21,7 +21,7 @@ export type CreateRatePlanAndAttachToRentalOfferResponseDto = z.infer<
 
 export const createRatePlanAndAttachToRentalOfferContract = {
   method: "POST",
-  path: "/v2/pricing/rental-offer-pricings/create-rate-plan",
+  path: "/pricing/rental-offer-pricings/create-rate-plan",
   body: CreateRatePlanAndAttachToRentalOfferBodySchema,
   response: CreateRatePlanAndAttachToRentalOfferResponseSchema,
 } satisfies ApiContract<

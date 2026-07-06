@@ -44,7 +44,7 @@ export type GetEquipmentTypeDetailResponseDto = z.infer<typeof GetEquipmentTypeD
 
 export const getEquipmentTypeDetailContract = {
   method: "GET",
-  path: "/v2/asset-inventory/equipment-types/:equipmentTypeId",
+  path: "/asset-inventory/equipment-types/:equipmentTypeId",
   params: GetEquipmentTypeDetailParamsSchema,
   response: GetEquipmentTypeDetailResponseSchema,
 } satisfies ApiContract<

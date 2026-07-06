@@ -24,7 +24,7 @@ export type UpdateBranchResponseDto = z.infer<typeof UpdateBranchResponseSchema>
 
 export const updateBranchContract = {
   method: "PUT",
-  path: "/v2/tenant-management/branches/:branchId",
+  path: "/tenant-management/branches/:branchId",
   params: UpdateBranchParamsSchema,
   body: UpdateBranchBodySchema,
   response: UpdateBranchResponseSchema,

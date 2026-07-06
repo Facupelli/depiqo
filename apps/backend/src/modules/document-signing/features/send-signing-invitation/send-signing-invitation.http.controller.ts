@@ -15,7 +15,7 @@ import { SendSigningInvitationBodyDto, SendSigningInvitationParamDto } from './s
 import { SendSigningInvitationResponseDto } from './send-signing-invitation.response.dto';
 import { SendSigningInvitationCommandError } from './send-signing-invitation.service';
 
-@Controller('v2/document-signing/orders/:orderId/sessions')
+@Controller('document-signing/orders/:orderId/sessions')
 export class SendSigningInvitationHttpController {
   constructor(private readonly commandBus: CommandBus) {}
 

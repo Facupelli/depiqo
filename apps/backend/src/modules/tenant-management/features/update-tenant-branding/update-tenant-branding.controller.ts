@@ -11,7 +11,7 @@ import { UpdateTenantBrandingResult } from './update-tenant-branding.handler';
 import { UpdateTenantBrandingRequestDto } from './update-tenant-branding.request.dto';
 import { UpdateTenantBrandingResponseDto } from './update-tenant-branding.response.dto';
 
-@Controller('v2/tenant-management/tenant/branding')
+@Controller('tenant-management/tenant/branding')
 export class UpdateTenantBrandingHttpController {
   constructor(private readonly commandBus: CommandBus) {}
 

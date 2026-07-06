@@ -8,6 +8,6 @@ export type LogoutResponseDto = z.infer<typeof LogoutResponseSchema>;
 
 export const logoutContract = {
   method: "POST",
-  path: "/v2/auth/logout",
+  path: "/auth/logout",
   response: LogoutResponseSchema,
 } satisfies ApiContract<undefined, undefined, undefined, undefined, typeof LogoutResponseSchema>;

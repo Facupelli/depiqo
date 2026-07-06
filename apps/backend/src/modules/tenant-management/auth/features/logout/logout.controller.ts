@@ -3,7 +3,7 @@ import { Request, Response } from 'express';
 import { SESSION_COOKIE_NAME } from '../../shared/session/auth-session.constants';
 import { SessionRegeneratorService } from '../../shared/session/session-regenerator.service';
 
-@Controller('v2/auth')
+@Controller('auth')
 export class LogoutController {
   constructor(private readonly sessionRegenerator: SessionRegeneratorService) {}
 

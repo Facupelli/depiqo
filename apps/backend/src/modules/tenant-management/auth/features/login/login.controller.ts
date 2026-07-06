@@ -10,7 +10,7 @@ import { SkipCsrf } from '../../shared/csrf/skip-csrf.decorator';
 
 @Public()
 @SkipCsrf()
-@Controller('v2/auth')
+@Controller('auth')
 export class LoginController {
   constructor(
     private readonly sessionRegenerator: SessionRegeneratorService,

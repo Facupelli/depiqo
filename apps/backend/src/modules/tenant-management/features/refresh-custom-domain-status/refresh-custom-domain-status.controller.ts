@@ -8,7 +8,7 @@ import { RefreshCustomDomainStatusCommand } from './refresh-custom-domain-status
 import { RefreshCustomDomainStatusResult } from './refresh-custom-domain-status.handler';
 import { RefreshCustomDomainStatusResponseDto } from './refresh-custom-domain-status.response.dto';
 
-@Controller('v2/tenant-management/tenant/custom-domain/refresh')
+@Controller('tenant-management/tenant/custom-domain/refresh')
 export class RefreshCustomDomainStatusHttpController {
   constructor(private readonly commandBus: CommandBus) {}
 

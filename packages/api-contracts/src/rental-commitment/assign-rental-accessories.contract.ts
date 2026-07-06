@@ -33,7 +33,7 @@ export type AssignRentalAccessoriesResponseDto = z.infer<
 
 export const assignRentalAccessoriesContract = {
 	method: "PUT",
-	path: "/v2/rental-commitments/rentals/:rentalId/accessories",
+	path: "/rental-commitments/rentals/:rentalId/accessories",
 	params: AssignRentalAccessoriesParamsSchema,
 	body: AssignRentalAccessoriesBodySchema,
 	response: AssignRentalAccessoriesResponseSchema,

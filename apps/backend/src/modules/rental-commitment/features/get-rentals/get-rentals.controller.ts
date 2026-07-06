@@ -11,7 +11,7 @@ import { GetRentalsQuery } from './get-rentals.query';
 import { GetRentalsRequestDto } from './get-rentals.request.dto';
 import type { GetRentalsResponseDto } from './get-rentals.response.dto';
 
-@Controller('v2/rental-commitments/rentals')
+@Controller('rental-commitments/rentals')
 export class GetRentalsHttpController {
   constructor(private readonly queryBus: QueryBus) {}
 

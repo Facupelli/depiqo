@@ -12,7 +12,7 @@ import { GetRentalsCalendarQuery } from './get-rentals-calendar.query';
 import { GetRentalsCalendarRequestDto } from './get-rentals-calendar.request.dto';
 import type { GetRentalsCalendarResponseDto } from './get-rentals-calendar.response.dto';
 
-@Controller('v2/rental-commitments/rentals/calendar')
+@Controller('rental-commitments/rentals/calendar')
 export class GetRentalsCalendarHttpController {
   constructor(private readonly queryBus: QueryBus) {}
 

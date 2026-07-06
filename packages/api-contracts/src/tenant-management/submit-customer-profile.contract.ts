@@ -43,7 +43,7 @@ export type SubmitCustomerProfileResponseDto = z.infer<typeof SubmitCustomerProf
 
 export const submitCustomerProfileContract = {
   method: "POST",
-  path: "/v2/tenant-management/customer/profile/submit",
+  path: "/tenant-management/customer/profile/submit",
   body: SubmitCustomerProfileBodySchema,
   response: SubmitCustomerProfileResponseSchema,
 } satisfies ApiContract<undefined, undefined, undefined, typeof SubmitCustomerProfileBodySchema, typeof SubmitCustomerProfileResponseSchema>;

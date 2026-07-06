@@ -13,7 +13,7 @@ import {
 } from './add-assets-to-equipment-type.request.dto';
 import { AddAssetsToEquipmentTypeResponseDto } from './add-assets-to-equipment-type.response.dto';
 
-@Controller('v2/asset-inventory/equipment-types/:equipmentTypeId/assets')
+@Controller('asset-inventory/equipment-types/:equipmentTypeId/assets')
 export class AddAssetsToEquipmentTypeHttpController {
   constructor(private readonly commandBus: CommandBus) {}
 

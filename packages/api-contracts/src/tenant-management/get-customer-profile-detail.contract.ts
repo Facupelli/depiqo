@@ -61,7 +61,7 @@ export type GetCustomerProfileDetailResponseDto = z.infer<typeof GetCustomerProf
 
 export const getCustomerProfileDetailContract = {
   method: "GET",
-  path: "/v2/tenant-management/rental-customers/:customerId/profile",
+  path: "/tenant-management/rental-customers/:customerId/profile",
   params: GetCustomerProfileDetailParamsSchema,
   response: GetCustomerProfileDetailResponseSchema,
 } satisfies ApiContract<

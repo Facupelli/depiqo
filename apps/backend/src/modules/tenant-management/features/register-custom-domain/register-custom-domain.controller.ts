@@ -9,7 +9,7 @@ import { RegisterCustomDomainResult } from './register-custom-domain.handler';
 import { RegisterCustomDomainRequestDto } from './register-custom-domain.request.dto';
 import { RegisterCustomDomainResponseDto } from './register-custom-domain.response.dto';
 
-@Controller('v2/tenant-management/tenant/custom-domain')
+@Controller('tenant-management/tenant/custom-domain')
 export class RegisterCustomDomainHttpController {
   constructor(private readonly commandBus: CommandBus) {}
 

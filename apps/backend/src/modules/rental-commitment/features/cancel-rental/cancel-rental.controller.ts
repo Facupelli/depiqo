@@ -12,7 +12,7 @@ import { CancelRentalResult } from './cancel-rental.handler';
 import { toCancelRentalProblem } from './cancel-rental-http-error.mapper';
 import { CancelRentalParamsDto } from './cancel-rental.request.dto';
 
-@Controller('v2/rental-commitments/rentals')
+@Controller('rental-commitments/rentals')
 export class CancelRentalHttpController {
   constructor(private readonly commandBus: CommandBus) {}
 

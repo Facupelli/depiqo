@@ -16,6 +16,6 @@ export class SigningReceiptUrlService {
     const hostname = input.tenant.customDomain ?? `${input.tenant.slug}.${this.rootDomain}`;
     const token = encodeURIComponent(input.rawReceiptToken);
 
-    return `https://${hostname}/api/v2/document-signing/public/receipts/signed-pdf?token=${token}`;
+    return `https://${hostname}/api/document-signing/public/receipts/signed-pdf?token=${token}`;
   }
 }

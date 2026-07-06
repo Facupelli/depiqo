@@ -12,7 +12,7 @@ import { UpdateBranchResult } from './update-branch.handler';
 import { UpdateBranchParamsDto, UpdateBranchRequestDto } from './update-branch.request.dto';
 import { UpdateBranchResponseDto } from './update-branch.response.dto';
 
-@Controller('v2/tenant-management/branches')
+@Controller('tenant-management/branches')
 export class UpdateBranchHttpController {
   constructor(private readonly commandBus: CommandBus) {}
 

@@ -20,7 +20,7 @@ export type GenerateRentalRemitoResponseDto = z.infer<
 
 export const generateRentalRemitoContract = {
 	method: "GET",
-	path: "/v2/contracts/rentals/:rentalId/remito",
+	path: "/contracts/rentals/:rentalId/remito",
 	params: GenerateRentalRemitoParamsSchema,
 	response: GenerateRentalRemitoResponseSchema,
 } satisfies ApiContract<
@@ -33,7 +33,7 @@ export const generateRentalRemitoContract = {
 
 export const downloadRentalRemitoContract = {
 	method: "GET",
-	path: "/v2/contracts/rentals/:rentalId/remito/download",
+	path: "/contracts/rentals/:rentalId/remito/download",
 	params: GenerateRentalRemitoParamsSchema,
 	response: GenerateRentalRemitoResponseSchema,
 } satisfies ApiContract<

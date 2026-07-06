@@ -24,7 +24,7 @@ export type RejectSubmittedCustomerOnboardingResponseDto = z.infer<
 
 export const rejectSubmittedCustomerOnboardingContract = {
   method: "POST",
-  path: "/v2/tenant-management/rental-customers/:customerId/onboarding/reject",
+  path: "/tenant-management/rental-customers/:customerId/onboarding/reject",
   params: RejectSubmittedCustomerOnboardingParamsSchema,
   body: RejectSubmittedCustomerOnboardingBodySchema,
   response: RejectSubmittedCustomerOnboardingResponseSchema,

@@ -27,7 +27,7 @@ export type AddAssetsToEquipmentTypeResponseDto = z.infer<typeof AddAssetsToEqui
 
 export const addAssetsToEquipmentTypeContract = {
   method: "POST",
-  path: "/v2/asset-inventory/equipment-types/:equipmentTypeId/assets",
+  path: "/asset-inventory/equipment-types/:equipmentTypeId/assets",
   params: AddAssetsToEquipmentTypeParamsSchema,
   body: AddAssetsToEquipmentTypeBodySchema,
   response: AddAssetsToEquipmentTypeResponseSchema,

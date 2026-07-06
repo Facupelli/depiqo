@@ -36,7 +36,7 @@ export type GetOwnerDetailResponseDto = z.infer<typeof GetOwnerDetailResponseSch
 
 export const getOwnerDetailContract = {
   method: "GET",
-  path: "/v2/asset-inventory/owners/:ownerId",
+  path: "/asset-inventory/owners/:ownerId",
   params: GetOwnerDetailParamsSchema,
   response: GetOwnerDetailResponseSchema,
 } satisfies ApiContract<

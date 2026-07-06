@@ -55,7 +55,7 @@ export type GetRentalsCalendarResponseDto = z.infer<
 
 export const getRentalsCalendarContract = {
 	method: "GET",
-	path: "/v2/rental-commitments/rentals/calendar",
+	path: "/rental-commitments/rentals/calendar",
 	query: GetRentalsCalendarQuerySchema,
 	response: GetRentalsCalendarResponseSchema,
 } satisfies ApiContract<

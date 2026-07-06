@@ -9,7 +9,7 @@ import { GetCustomerProfileDetailQuery } from './get-customer-profile-detail.que
 import { GetCustomerProfileDetailParamsDto } from './get-customer-profile-detail.request.dto';
 import { GetCustomerProfileDetailResponseDto } from './get-customer-profile-detail.response.dto';
 
-@Controller('v2/tenant-management/rental-customers')
+@Controller('tenant-management/rental-customers')
 export class GetCustomerProfileDetailHttpController {
   constructor(private readonly queryBus: QueryBus) {}
 

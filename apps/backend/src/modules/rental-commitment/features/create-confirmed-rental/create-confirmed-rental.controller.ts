@@ -17,7 +17,7 @@ import { toRentalCommitmentProblem } from './rental-commitment-http-error.mapper
 import { CreateConfirmedRentalRequestDto } from './create-confirmed-rental.request.dto';
 import { CreateConfirmedRentalResponseDto } from './create-confirmed-rental.response.dto';
 
-@Controller('v2/rental-commitments/confirmed-rentals')
+@Controller('rental-commitments/confirmed-rentals')
 export class CreateConfirmedRentalHttpController {
   constructor(private readonly commandBus: CommandBus) {}
 

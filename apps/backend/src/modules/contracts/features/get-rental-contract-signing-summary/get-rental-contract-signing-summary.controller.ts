@@ -12,7 +12,7 @@ import { GetRentalContractSigningSummaryQuery } from './get-rental-contract-sign
 import { GetRentalContractSigningSummaryParamsDto } from './get-rental-contract-signing-summary.request.dto';
 import type { GetRentalContractSigningSummaryResponseDto } from './get-rental-contract-signing-summary.response.dto';
 
-@Controller('v2/contracts/rentals')
+@Controller('contracts/rentals')
 export class GetRentalContractSigningSummaryHttpController {
   constructor(private readonly queryBus: QueryBus) {}
 

@@ -12,7 +12,7 @@ import { CreateBranchResponseDto } from './create-branch.response.dto';
 import { CreateBranchResult } from './create-branch.handler';
 import { toCreateBranchApplicationError } from './map-create-branch-error';
 
-@Controller('v2/tenant-management/branches')
+@Controller('tenant-management/branches')
 export class CreateBranchHttpController {
   constructor(private readonly commandBus: CommandBus) {}
 

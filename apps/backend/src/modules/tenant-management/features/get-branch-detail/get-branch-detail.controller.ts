@@ -9,7 +9,7 @@ import { GetBranchDetailQuery } from './get-branch-detail.query';
 import { GetBranchDetailParamsDto } from './get-branch-detail.request.dto';
 import { GetBranchDetailResponseDto } from './get-branch-detail.response.dto';
 
-@Controller('v2/tenant-management/branches')
+@Controller('tenant-management/branches')
 export class GetBranchDetailHttpController {
   constructor(private readonly queryBus: QueryBus) {}
 

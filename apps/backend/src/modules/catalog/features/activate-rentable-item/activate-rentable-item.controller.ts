@@ -9,7 +9,7 @@ import { ActivateRentableItemCommand } from './activate-rentable-item.command';
 import { toActivateRentableItemProblem } from './activate-rentable-item-http-error.mapper';
 import { ActivateRentableItemRequestDto } from './activate-rentable-item.request.dto';
 
-@Controller('v2/catalog/rentable-items')
+@Controller('catalog/rentable-items')
 export class ActivateRentableItemHttpController {
   constructor(private readonly commandBus: CommandBus) {}
 

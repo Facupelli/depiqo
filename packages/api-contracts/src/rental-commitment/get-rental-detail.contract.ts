@@ -285,7 +285,7 @@ export type GetRentalDetailResponseDto = z.infer<
 
 export const getRentalDetailContract = {
 	method: "GET",
-	path: "/v2/rental-commitments/rentals/:rentalId",
+	path: "/rental-commitments/rentals/:rentalId",
 	params: GetRentalDetailParamsSchema,
 	response: GetRentalDetailResponseSchema,
 } satisfies ApiContract<

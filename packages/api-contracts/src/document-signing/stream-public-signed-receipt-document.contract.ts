@@ -14,7 +14,7 @@ export type StreamPublicSignedReceiptDocumentQueryDto = z.infer<
 
 export const streamPublicSignedReceiptDocumentContract = {
 	method: "GET",
-	path: "/v2/document-signing/public/receipts/signed-pdf",
+	path: "/document-signing/public/receipts/signed-pdf",
 	query: StreamPublicSignedReceiptDocumentQuerySchema,
 	response: StreamPublicSignedReceiptDocumentResponseSchema,
 } satisfies ApiContract<

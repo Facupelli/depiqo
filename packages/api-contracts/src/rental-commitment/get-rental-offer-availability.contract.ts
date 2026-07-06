@@ -36,7 +36,7 @@ export type GetRentalOfferAvailabilityResponseDto = z.infer<typeof GetRentalOffe
 
 export const getRentalOfferAvailabilityContract = {
   method: "POST",
-  path: "/v2/rental-commitment/rental-offers/availability",
+  path: "/rental-commitment/rental-offers/availability",
   body: GetRentalOfferAvailabilityRequestSchema,
   response: GetRentalOfferAvailabilityResponseSchema,
 } satisfies ApiContract<

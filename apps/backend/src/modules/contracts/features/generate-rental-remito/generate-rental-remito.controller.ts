@@ -12,7 +12,7 @@ import { GenerateRentalRemitoResult } from './generate-rental-remito.handler';
 import { GenerateRentalRemitoQuery } from './generate-rental-remito.query';
 import { toGenerateRentalRemitoProblem } from './generate-rental-remito-http-error.mapper';
 
-@Controller('v2/contracts/rentals')
+@Controller('contracts/rentals')
 export class GenerateRentalRemitoHttpController {
   constructor(private readonly queryBus: QueryBus) {}
 

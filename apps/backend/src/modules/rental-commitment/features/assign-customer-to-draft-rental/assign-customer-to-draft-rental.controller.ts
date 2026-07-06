@@ -15,7 +15,7 @@ import {
 } from './assign-customer-to-draft-rental.request.dto';
 import { toAssignCustomerToDraftRentalProblem } from './assign-customer-to-draft-rental-http-error.mapper';
 
-@Controller('v2/rental-commitments/rentals')
+@Controller('rental-commitments/rentals')
 export class AssignCustomerToDraftRentalHttpController {
   constructor(private readonly commandBus: CommandBus) {}
 

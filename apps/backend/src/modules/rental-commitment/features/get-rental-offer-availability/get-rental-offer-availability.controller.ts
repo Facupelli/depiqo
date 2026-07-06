@@ -14,7 +14,7 @@ import { GetRentalOfferAvailabilityQuery } from './get-rental-offer-availability
 import { GetRentalOfferAvailabilityRequestDto } from './get-rental-offer-availability.request.dto';
 import type { GetRentalOfferAvailabilityResponseDto } from './get-rental-offer-availability.response.dto';
 
-@Controller('v2/rental-commitment/rental-offers/availability')
+@Controller('rental-commitment/rental-offers/availability')
 export class GetRentalOfferAvailabilityHttpController {
   constructor(private readonly queryBus: QueryBus) {}
 

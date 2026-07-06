@@ -11,7 +11,7 @@ import { GetRentalOffersPricingQuery } from './get-rental-offers-pricing.query';
 import { GetRentalOffersPricingRequestDto } from './get-rental-offers-pricing.request.dto';
 import { GetRentalOffersPricingResponseDto } from './get-rental-offers-pricing.response.dto';
 
-@Controller('v2/pricing/rental-offer-pricings')
+@Controller('pricing/rental-offer-pricings')
 export class GetRentalOffersPricingHttpController {
   constructor(private readonly queryBus: QueryBus) {}
 

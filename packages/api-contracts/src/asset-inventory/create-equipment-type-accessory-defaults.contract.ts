@@ -29,7 +29,7 @@ export type CreateEquipmentTypeAccessoryDefaultsResponseDto = z.infer<
 
 export const createEquipmentTypeAccessoryDefaultsContract = {
   method: "POST",
-  path: "/v2/asset-inventory/equipment-types/:equipmentTypeId/accessory-defaults",
+  path: "/asset-inventory/equipment-types/:equipmentTypeId/accessory-defaults",
   params: CreateEquipmentTypeAccessoryDefaultsParamsSchema,
   body: CreateEquipmentTypeAccessoryDefaultsBodySchema,
   response: CreateEquipmentTypeAccessoryDefaultsResponseSchema,

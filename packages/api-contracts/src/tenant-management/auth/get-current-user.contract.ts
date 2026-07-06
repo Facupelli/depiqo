@@ -9,6 +9,6 @@ export type GetCurrentUserResponseDto = z.infer<typeof GetCurrentUserResponseSch
 
 export const getCurrentUserContract = {
   method: "GET",
-  path: "/v2/auth/me",
+  path: "/auth/me",
   response: GetCurrentUserResponseSchema,
 } satisfies ApiContract<undefined, undefined, undefined, undefined, typeof GetCurrentUserResponseSchema>;

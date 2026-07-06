@@ -18,6 +18,6 @@ export type GetCategoriesResponseDto = z.infer<typeof GetCategoriesResponseSchem
 
 export const getCategoriesContract = {
   method: "GET",
-  path: "/v2/catalog/categories",
+  path: "/catalog/categories",
   response: GetCategoriesResponseSchema,
 } satisfies ApiContract<undefined, undefined, undefined, undefined, typeof GetCategoriesResponseSchema>;

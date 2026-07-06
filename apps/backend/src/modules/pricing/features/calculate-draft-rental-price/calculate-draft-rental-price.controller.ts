@@ -15,7 +15,7 @@ import { CalculateDraftRentalPriceQuery } from './calculate-draft-rental-price.q
 import { CalculateDraftRentalPriceRequestDto } from './calculate-draft-rental-price.request.dto';
 import { CalculateDraftRentalPriceResponseDto } from './calculate-draft-rental-price.response.dto';
 
-@Controller('v2/pricing/draft-rentals')
+@Controller('pricing/draft-rentals')
 export class CalculateDraftRentalPriceHttpController {
   constructor(private readonly queryBus: QueryBus) {}
 

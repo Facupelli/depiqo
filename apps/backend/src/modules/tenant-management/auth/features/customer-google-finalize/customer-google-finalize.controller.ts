@@ -11,7 +11,7 @@ import { CustomerGoogleFinalizeRequestDto } from './customer-google-finalize.req
 
 @Public()
 @SkipCsrf()
-@Controller('v2/auth/customer/google')
+@Controller('auth/customer/google')
 export class CustomerGoogleFinalizeController {
   constructor(
     private readonly handoffTicketService: CustomerGoogleHandoffTicketService,

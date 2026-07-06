@@ -55,7 +55,7 @@ export type GetEquipmentTypeSummariesResponseDto = z.infer<typeof GetEquipmentTy
 
 export const getEquipmentTypeSummariesContract = {
   method: "GET",
-  path: "/v2/asset-inventory/equipment-types",
+  path: "/asset-inventory/equipment-types",
   query: GetEquipmentTypeSummariesQuerySchema,
   response: GetEquipmentTypeSummariesResponseSchema,
 } satisfies ApiContract<

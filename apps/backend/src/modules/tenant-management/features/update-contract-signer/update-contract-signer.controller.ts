@@ -11,7 +11,7 @@ import { UpdateContractSignerResult } from './update-contract-signer.handler';
 import { UpdateContractSignerRequestDto } from './update-contract-signer.request.dto';
 import { UpdateContractSignerResponseDto } from './update-contract-signer.response.dto';
 
-@Controller('v2/tenant-management/tenant/contract-signer')
+@Controller('tenant-management/tenant/contract-signer')
 export class UpdateContractSignerHttpController {
   constructor(private readonly commandBus: CommandBus) {}
 

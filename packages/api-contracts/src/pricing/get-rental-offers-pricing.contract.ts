@@ -48,7 +48,7 @@ export type GetRentalOffersPricingResponseDto = z.infer<typeof GetRentalOffersPr
 
 export const getRentalOffersPricingContract = {
   method: "GET",
-  path: "/v2/pricing/rental-offer-pricings",
+  path: "/pricing/rental-offer-pricings",
   query: GetRentalOffersPricingQuerySchema,
   response: GetRentalOffersPricingResponseSchema,
 } satisfies ApiContract<

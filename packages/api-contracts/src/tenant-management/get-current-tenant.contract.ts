@@ -69,6 +69,6 @@ export type GetCurrentTenantResponseDto = z.infer<typeof GetCurrentTenantRespons
 
 export const getCurrentTenantContract = {
   method: "GET",
-  path: "/v2/tenant-management/tenant/me",
+  path: "/tenant-management/tenant/me",
   response: GetCurrentTenantResponseSchema,
 } satisfies ApiContract<undefined, undefined, undefined, undefined, typeof GetCurrentTenantResponseSchema>;

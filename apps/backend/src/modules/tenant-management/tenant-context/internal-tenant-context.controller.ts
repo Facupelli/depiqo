@@ -12,7 +12,7 @@ const TENANT_CONTEXT_NOT_FOUND_CACHE_CONTROL = 'public, max-age=0, s-maxage=60';
 
 @Public()
 @SkipCsrf()
-@Controller('v2/internal/tenant-context')
+@Controller('internal/tenant-context')
 @UseGuards(InternalTokenGuard)
 export class InternalTenantContextController {
   constructor(private readonly tenantContextResolver: TenantContextResolverService) {}

@@ -17,7 +17,7 @@ export type ApproveSubmittedCustomerOnboardingResponseDto = z.infer<
 
 export const approveSubmittedCustomerOnboardingContract = {
   method: "POST",
-  path: "/v2/tenant-management/rental-customers/:customerId/onboarding/approve",
+  path: "/tenant-management/rental-customers/:customerId/onboarding/approve",
   params: ApproveSubmittedCustomerOnboardingParamsSchema,
   response: ApproveSubmittedCustomerOnboardingResponseSchema,
 } satisfies ApiContract<
