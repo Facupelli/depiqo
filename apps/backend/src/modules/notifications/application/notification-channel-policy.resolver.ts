@@ -3,7 +3,7 @@ import { Injectable } from '@nestjs/common';
 import {
   GetTenantConfigResult,
   TenantManagementPublicApi,
-} from 'src/modules/v2/tenant-management/public-api/tenant-management.public-api';
+} from 'src/modules/tenant-management/public-api/tenant-management.public-api';
 
 import { getAllowedChannelsForNotificationType } from '../domain/notification-channel-registry';
 import { NotificationChannel } from '../domain/notification-channel.enum';

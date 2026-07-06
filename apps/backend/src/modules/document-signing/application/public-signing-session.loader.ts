@@ -1,84 +1,186 @@
-import { createHash } from 'crypto';
-
 import { Injectable } from '@nestjs/common';
+import { Result, err, ok } from 'neverthrow';
 
-import { DocumentSigningRequestStatus } from 'src/generated/prisma/client';
-import { DocumentSigningRequest } from '../domain/entities/document-signing-request.entity';
+import { PrismaService } from 'src/core/database/prisma.service';
+import { V2ContractArtifactKind, V2DocumentSigningRequestStatus } from 'src/generated/prisma/enums';
+
+import { SigningTokenService } from './signing-token.service';
 import {
-  DocumentSigningRequestExpiredError,
-  DocumentSigningRequestTokenNotFoundError,
-  DocumentSigningRequestUnavailableError,
+  PublicSigningRequestExpiredError,
+  PublicSigningRequestNotFoundError,
+  PublicSigningRequestUnavailableError,
+  PublicSigningTokenRequiredError,
+  PublicSigningUnsignedArtifactHashMissingError,
+  PublicSigningUnsignedArtifactMissingError,
 } from '../domain/errors/document-signing.errors';
-import { DocumentSigningRequestRepository } from '../infrastructure/persistence/repositories/document-signing-request.repository';
+
+export type PublicSigningSessionLoaderError =
+  | PublicSigningTokenRequiredError
+  | PublicSigningRequestNotFoundError
+  | PublicSigningRequestExpiredError
+  | PublicSigningRequestUnavailableError
+  | PublicSigningUnsignedArtifactMissingError
+  | PublicSigningUnsignedArtifactHashMissingError;
+
+export interface PublicSigningSession {
+  id: string;
+  tenantId: string;
+  contractId: string;
+  rentalId: string;
+  signerName: string;
+  signerEmail: string | null;
+  signerPhone: string | null;
+  status: V2DocumentSigningRequestStatus;
+  expiresAt: Date | null;
+  signedAt: Date | null;
+  providerData: unknown;
+  unsignedArtifact: {
+    id: string;
+    storageKey: string;
+    fileName: string;
+    contentType: string;
+    byteSize: number;
+    documentHash: string;
+    hashAlgorithm: 'SHA-256';
+  };
+  contract: {
+    id: string;
+    documentNumber: string | null;
+    status: string;
+  };
+}
+
+export interface LoadPublicSigningSessionOptions {
+  rawToken: string | null | undefined;
+  allowedStatuses: V2DocumentSigningRequestStatus[];
+  markViewed?: boolean;
+}
 
 @Injectable()
 export class PublicSigningSessionLoader {
-  constructor(private readonly documentSigningRequestRepository: DocumentSigningRequestRepository) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly signingTokenService: SigningTokenService,
+  ) {}
 
-  async loadRequiredPublicSession(rawToken: string): Promise<DocumentSigningRequest> {
-    const normalizedToken = rawToken.trim();
-    if (normalizedToken.length === 0) {
-      throw new DocumentSigningRequestTokenNotFoundError();
+  async load(
+    options: LoadPublicSigningSessionOptions,
+  ): Promise<Result<PublicSigningSession, PublicSigningSessionLoaderError>> {
+    const rawToken = normalizeToken(options.rawToken);
+
+    if (!rawToken) {
+      return err(new PublicSigningTokenRequiredError());
     }
 
-    const request = await this.documentSigningRequestRepository.findByTokenHash(hashString(normalizedToken));
-    if (!request) {
-      throw new DocumentSigningRequestTokenNotFoundError();
-    }
-
+    const tokenHash = this.signingTokenService.hashToken(rawToken);
     const now = new Date();
-    if (
-      request.currentStatus === DocumentSigningRequestStatus.PENDING &&
-      request.expiresOn.getTime() <= now.getTime()
-    ) {
-      const expireResult = request.expire(now);
-      if (expireResult.isErr()) {
-        throw expireResult.error;
-      }
 
-      await this.documentSigningRequestRepository.save(request);
-      throw new DocumentSigningRequestExpiredError(request.id);
-    }
+    const request = await this.prisma.client.v2DocumentSigningRequest.findUnique({
+      where: {
+        tokenHash,
+      },
+      include: {
+        contract: {
+          select: {
+            id: true,
+            documentNumber: true,
+            status: true,
+          },
+        },
+        unsignedArtifact: {
+          select: {
+            id: true,
+            kind: true,
+            storageKey: true,
+            fileName: true,
+            contentType: true,
+            byteSize: true,
+            documentHash: true,
+            hashAlgorithm: true,
+          },
+        },
+      },
+    });
 
-    if (request.currentStatus === DocumentSigningRequestStatus.EXPIRED) {
-      throw new DocumentSigningRequestExpiredError(request.id);
-    }
-
-    if (
-      request.currentStatus === DocumentSigningRequestStatus.SIGNED ||
-      request.currentStatus === DocumentSigningRequestStatus.VOIDED
-    ) {
-      throw new DocumentSigningRequestUnavailableError(request.id, request.currentStatus);
-    }
-
-    return request;
-  }
-
-  async loadRequiredSignedPublicSession(rawToken: string): Promise<DocumentSigningRequest> {
-    const request = await this.loadRequiredSessionByToken(rawToken);
-
-    if (request.currentStatus !== DocumentSigningRequestStatus.SIGNED) {
-      throw new DocumentSigningRequestUnavailableError(request.id, request.currentStatus);
-    }
-
-    return request;
-  }
-
-  private async loadRequiredSessionByToken(rawToken: string): Promise<DocumentSigningRequest> {
-    const normalizedToken = rawToken.trim();
-    if (normalizedToken.length === 0) {
-      throw new DocumentSigningRequestTokenNotFoundError();
-    }
-
-    const request = await this.documentSigningRequestRepository.findByTokenHash(hashString(normalizedToken));
     if (!request) {
-      throw new DocumentSigningRequestTokenNotFoundError();
+      return err(new PublicSigningRequestNotFoundError());
     }
 
-    return request;
+    if (request.expiresAt && request.expiresAt.getTime() <= now.getTime()) {
+      await this.prisma.client.v2DocumentSigningRequest.update({
+        where: {
+          id: request.id,
+        },
+        data: {
+          status: V2DocumentSigningRequestStatus.EXPIRED,
+          tokenHash: null,
+        },
+      });
+
+      return err(new PublicSigningRequestExpiredError());
+    }
+
+    if (!options.allowedStatuses.includes(request.status)) {
+      return err(new PublicSigningRequestUnavailableError());
+    }
+
+    if (request.unsignedArtifact.kind !== V2ContractArtifactKind.UNSIGNED_PDF) {
+      return err(new PublicSigningUnsignedArtifactMissingError());
+    }
+
+    if (!request.unsignedArtifact.documentHash || request.unsignedArtifact.hashAlgorithm !== 'SHA-256') {
+      return err(new PublicSigningUnsignedArtifactHashMissingError());
+    }
+
+    const shouldMarkViewed = options.markViewed === true && request.status === V2DocumentSigningRequestStatus.SENT;
+
+    if (shouldMarkViewed) {
+      await this.prisma.client.v2DocumentSigningRequest.update({
+        where: {
+          id: request.id,
+        },
+        data: {
+          status: V2DocumentSigningRequestStatus.VIEWED,
+          viewedAt: now,
+        },
+      });
+
+      request.status = V2DocumentSigningRequestStatus.VIEWED;
+      request.viewedAt = now;
+    }
+
+    return ok({
+      id: request.id,
+      tenantId: request.tenantId,
+      contractId: request.contractId,
+      rentalId: request.rentalId,
+      signerName: request.signerName,
+      signerEmail: request.signerEmail,
+      signerPhone: request.signerPhone,
+      status: request.status,
+      expiresAt: request.expiresAt,
+      signedAt: request.signedAt,
+      providerData: request.providerData,
+      unsignedArtifact: {
+        id: request.unsignedArtifact.id,
+        storageKey: request.unsignedArtifact.storageKey,
+        fileName: request.unsignedArtifact.fileName,
+        contentType: request.unsignedArtifact.contentType,
+        byteSize: request.unsignedArtifact.byteSize,
+        documentHash: request.unsignedArtifact.documentHash,
+        hashAlgorithm: request.unsignedArtifact.hashAlgorithm,
+      },
+      contract: {
+        id: request.contract.id,
+        documentNumber: request.contract.documentNumber,
+        status: request.contract.status,
+      },
+    });
   }
 }
 
-function hashString(value: string): string {
-  return createHash('sha256').update(value).digest('hex');
+function normalizeToken(value: string | null | undefined): string | null {
+  const normalized = value?.trim();
+
+  return normalized && normalized.length > 0 ? normalized : null;
 }

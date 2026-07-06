@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { OrderCommunicationMode } from '@repo/types';
 
-import { TenantManagementPublicApi } from 'src/modules/v2/tenant-management/public-api/tenant-management.public-api';
+import { TenantManagementPublicApi } from 'src/modules/tenant-management/public-api/tenant-management.public-api';
 
 import { NotificationDispatchSkipReason } from './types/notification-dispatch-skip-reason.enum';
 import { getNotificationTypeCategory } from '../domain/notification-type-category-registry';

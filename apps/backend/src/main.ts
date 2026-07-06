@@ -9,7 +9,7 @@ import {
   SESSION_COOKIE_NAME,
   SESSION_MAX_AGE_MS,
   SESSION_TTL_SECONDS,
-} from './modules/v2/tenant-management/auth/shared/session/auth-session.constants';
+} from './modules/tenant-management/auth/shared/session/auth-session.constants';
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 import passport = require('passport');
 // eslint-disable-next-line @typescript-eslint/no-require-imports

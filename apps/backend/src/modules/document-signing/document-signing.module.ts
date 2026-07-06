@@ -1,45 +1,54 @@
 import { Module } from '@nestjs/common';
 
-import { NotificationsModule } from '../notifications/notifications.module';
-import { ObjectStorageModule } from '../object-storage/object-storage.module';
+import { NotificationsModule } from 'src/modules/notifications/notifications.module';
+import { ObjectStorageModule } from 'src/modules/object-storage/object-storage.module';
 
-import { AcceptPublicSigningSessionHttpController } from './application/commands/accept-public-signing-session/accept-public-signing-session.http.controller';
-import { AcceptPublicSigningSessionService } from './application/commands/accept-public-signing-session/accept-public-signing-session.service';
-import { SendSigningInvitationHttpController } from './application/commands/send-signing-invitation/send-signing-invitation.http.controller';
-import { SendSigningInvitationService } from './application/commands/send-signing-invitation/send-signing-invitation.service';
-import { GetPublicSigningSessionQueryHandler } from './application/queries/get-public-signing-session/get-public-signing-session.query-handler';
-import { GetOrderSigningSummaryQueryHandler } from './application/queries/get-order-signing-summary/get-order-signing-summary.query-handler';
-import { GetLatestSignedOrderSigningRequestQueryHandler } from './application/queries/get-latest-signed-order-signing-request/get-latest-signed-order-signing-request.query-handler';
-import { GetPublicSigningSessionHttpController } from './application/queries/get-public-signing-session/get-public-signing-session.http.controller';
-import { ResolvePublicSigningSessionQueryHandler } from './application/queries/resolve-public-signing-session/resolve-public-signing-session.query-handler';
+import { ContractsModule } from '../contracts/contracts.module';
+import { TenantManagementModule } from '../tenant-management/tenant-management.module';
 import { PublicSigningSessionLoader } from './application/public-signing-session.loader';
-import { SigningNotificationService } from './application/services/signing-notification.service';
-import { SigningRequestPdfStorageService } from './application/services/signing-request-pdf-storage.service';
-import { StreamPublicSignedDocumentService } from './application/services/stream-public-signed-document.service';
-import { StreamPublicUnsignedDocumentService } from './application/services/stream-public-unsigned-document.service';
-
-import { DocumentSigningRequestRepository } from './infrastructure/persistence/repositories/document-signing-request.repository';
+import { SigningAcceptanceTextService } from './application/signing-acceptance-text.service';
+import { SigningNotificationService } from './application/signing-notification.service';
+import { SigningPdfStorageService } from './application/signing-pdf-storage.service';
+import { SigningTokenService } from './application/signing-token.service';
+import { AcceptPublicSigningSessionHttpController } from './features/accept-public-signing-session/accept-public-signing-session.http.controller';
+import { AcceptPublicSigningSessionService } from './features/accept-public-signing-session/accept-public-signing-session.service';
+import { GetPublicSigningSessionHttpController } from './features/get-public-signing-session/get-public-signing-session.http.controller';
+import { GetPublicSigningSessionService } from './features/get-public-signing-session/get-public-signing-session.service';
+import { ResolvePublicSigningSessionHttpController } from './features/resolve-public-signing-session/resolve-public-signing-session.http.controller';
+import { ResolvePublicSigningSessionService } from './features/resolve-public-signing-session/resolve-public-signing-session.service';
+import { SendSigningInvitationHttpController } from './features/send-signing-invitation/send-signing-invitation.http.controller';
+import { SendSigningInvitationService } from './features/send-signing-invitation/send-signing-invitation.service';
+import { StreamPublicUnsignedDocumentHttpController } from './features/stream-public-unsigned-document/stream-public-unsigned-document.http.controller';
+import { StreamPublicUnsignedDocumentService } from './features/stream-public-unsigned-document/stream-public-unsigned-document.service';
+import { SigningReceiptTokenService } from './application/signing-receipt-token.service';
+import { SigningReceiptUrlService } from './application/signing-receipt-url.service';
+import { StreamPublicSignedReceiptDocumentHttpController } from './features/stream-public-signed-receipt-document/stream-public-signed-receipt-document.http.controller';
+import { StreamPublicSignedReceiptDocumentService } from './features/stream-public-signed-receipt-document/stream-public-signed-receipt-document.service';
 
 @Module({
-  imports: [NotificationsModule, ObjectStorageModule],
+  imports: [NotificationsModule, ObjectStorageModule, ContractsModule, TenantManagementModule],
   controllers: [
     SendSigningInvitationHttpController,
+    ResolvePublicSigningSessionHttpController,
     GetPublicSigningSessionHttpController,
+    StreamPublicUnsignedDocumentHttpController,
     AcceptPublicSigningSessionHttpController,
+    StreamPublicSignedReceiptDocumentHttpController,
   ],
   providers: [
-    DocumentSigningRequestRepository,
     PublicSigningSessionLoader,
+    SigningAcceptanceTextService,
     SigningNotificationService,
-    SigningRequestPdfStorageService,
-    StreamPublicSignedDocumentService,
-    ResolvePublicSigningSessionQueryHandler,
-    GetLatestSignedOrderSigningRequestQueryHandler,
-    GetPublicSigningSessionQueryHandler,
-    StreamPublicUnsignedDocumentService,
-    GetOrderSigningSummaryQueryHandler,
-    AcceptPublicSigningSessionService,
+    SigningPdfStorageService,
+    SigningReceiptTokenService,
+    SigningReceiptUrlService,
+    SigningTokenService,
     SendSigningInvitationService,
+    ResolvePublicSigningSessionService,
+    GetPublicSigningSessionService,
+    StreamPublicUnsignedDocumentService,
+    AcceptPublicSigningSessionService,
+    StreamPublicSignedReceiptDocumentService,
   ],
 })
 export class DocumentSigningModule {}
