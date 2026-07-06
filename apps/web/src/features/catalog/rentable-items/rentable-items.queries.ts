@@ -1,5 +1,6 @@
 import type {
 	GetRentableItemDetailResponseDto,
+	GetRentableItemSummariesResponseDto,
 	GetRentableItemsQueryDto,
 	GetRentableItemsResponseDto,
 } from "@repo/api-contracts";
@@ -10,6 +11,7 @@ import {
 } from "@tanstack/react-query";
 import type { ProblemDetailsError } from "@/shared/errors";
 import { getRentableItemDetail } from "./get-rentable-item-detail/get-rentable-item-detail.api";
+import { getRentableItemSummaries } from "./get-rentable-item-summaries/get-rentable-item-summaries.api";
 import { getRentableItems } from "./get-rentable-items/get-rentable-items.api";
 
 export type RentableItemsQueryOverrides<TData = GetRentableItemsResponseDto> =
@@ -25,6 +27,17 @@ export type RentableItemDetailQueryOverrides<
 	"queryKey" | "queryFn"
 >;
 
+export type RentableItemSummariesQueryOverrides<
+	TData = GetRentableItemSummariesResponseDto,
+> = Omit<
+	UseQueryOptions<
+		GetRentableItemSummariesResponseDto,
+		ProblemDetailsError,
+		TData
+	>,
+	"queryKey" | "queryFn"
+>;
+
 export const rentableItemKeys = {
 	all: () => ["v2", "catalog", "rentable-items"] as const,
 	lists: () => [...rentableItemKeys.all(), "list"] as const,
@@ -33,6 +46,8 @@ export const rentableItemKeys = {
 	details: () => [...rentableItemKeys.all(), "detail"] as const,
 	detail: (rentableItemId?: string) =>
 		[...rentableItemKeys.details(), rentableItemId] as const,
+	summaries: (ids: string[]) =>
+		[...rentableItemKeys.all(), "summaries", ids] as const,
 };
 
 export const rentableItemQueries = {
@@ -63,6 +78,20 @@ export const rentableItemQueries = {
 			enabled: !!rentableItemId,
 			...overrides,
 		}),
+	summaries: <TData = GetRentableItemSummariesResponseDto>(
+		ids: string[],
+		overrides?: RentableItemSummariesQueryOverrides<TData>,
+	) =>
+		queryOptions<
+			GetRentableItemSummariesResponseDto,
+			ProblemDetailsError,
+			TData
+		>({
+			queryKey: rentableItemKeys.summaries(ids),
+			queryFn: () => getRentableItemSummaries(ids),
+			enabled: ids.length > 0,
+			...overrides,
+		}),
 };
 
 export function useRentableItems<TData = GetRentableItemsResponseDto>(
@@ -77,4 +106,10 @@ export function useRentableItemDetail<TData = GetRentableItemDetailResponseDto>(
 	overrides?: RentableItemDetailQueryOverrides<TData>,
 ) {
 	return useQuery(rentableItemQueries.detail(rentableItemId, overrides));
+}
+
+export function useRentableItemSummaries<
+	TData = GetRentableItemSummariesResponseDto,
+>(ids: string[], overrides?: RentableItemSummariesQueryOverrides<TData>) {
+	return useQuery(rentableItemQueries.summaries(ids, overrides));
 }

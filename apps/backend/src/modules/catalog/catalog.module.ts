@@ -10,6 +10,8 @@ import { GetCategoriesHttpController } from './features/get-categories/get-categ
 import { GetCategoriesHandler } from './features/get-categories/get-categories.handler';
 import { GetRentableItemDetailHttpController } from './features/get-rentable-item-detail/get-rentable-item-detail.controller';
 import { GetRentableItemDetailHandler } from './features/get-rentable-item-detail/get-rentable-item-detail.handler';
+import { GetRentableItemSummariesHttpController } from './features/get-rentable-item-summaries/get-rentable-item-summaries.controller';
+import { GetRentableItemSummariesHandler } from './features/get-rentable-item-summaries/get-rentable-item-summaries.handler';
 import { GetRentableItemsHttpController } from './features/get-rentable-items/get-rentable-items.controller';
 import { GetRentableItemsHandler } from './features/get-rentable-items/get-rentable-items.handler';
 import { GetStorefrontCategoriesHttpController } from './features/get-storefront-categories/get-storefront-categories.controller';
@@ -31,6 +33,7 @@ import { CatalogPublicApiService } from './public-api/catalog.public-api.service
     CreateCategoryHttpController,
     GetCategoriesHttpController,
     GetRentableItemDetailHttpController,
+    GetRentableItemSummariesHttpController,
     GetRentableItemsHttpController,
     GetStorefrontCategoriesHttpController,
     GetStorefrontRentalOffersHttpController,
@@ -44,6 +47,7 @@ import { CatalogPublicApiService } from './public-api/catalog.public-api.service
     CreateRentableItemOfferingService,
     GetCategoriesHandler,
     GetRentableItemDetailHandler,
+    GetRentableItemSummariesHandler,
     GetRentableItemsHandler,
     GetStorefrontCategoriesHandler,
     GetStorefrontRentalOffersHandler,
