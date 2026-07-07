@@ -84,12 +84,6 @@ export function formatOrdersCalendarTooltipDateTime(
 	return value.tz(timezone).format("ddd D MMM, HH:mm");
 }
 
-export function getOrdersCalendarStatusLabel(
-	order: ParsedRentalsCalendarItem,
-): string {
-	return order.status === "CONFIRMED" ? "Activo" : "Pendiente";
-}
-
 function toCalendarDateToken(
 	value: ParsedRentalsCalendarItem["pickupDate"],
 ): string {

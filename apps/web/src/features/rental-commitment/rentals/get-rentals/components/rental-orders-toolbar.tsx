@@ -17,49 +17,13 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import {
+	getRentalOrderStatusLabel,
+	RENTAL_ORDER_STATUS_OPTIONS,
+} from "../../rental-order-status";
 import { useRentalOrdersList } from "./rental-orders-list.context";
 
-export type RentalOrderStatusConfig = { label: string; className: string };
-
-export const RENTAL_ORDER_STATUS_CONFIG: Record<
-	GetRentalsStatusDto,
-	RentalOrderStatusConfig
-> = {
-	DRAFT: {
-		label: "Borrador",
-		className: "bg-stone-100 text-stone-700 ring-1 ring-stone-200",
-	},
-	PENDING: {
-		label: "Pendiente Revisión",
-		className: "bg-amber-50 text-amber-700 ring-1 ring-amber-200",
-	},
-	CONFIRMED: {
-		label: "Confirmado",
-		className: "bg-blue-50 text-blue-700 ring-1 ring-blue-200",
-	},
-	PREPARED: {
-		label: "Preparado",
-		className: "bg-sky-50 text-sky-700 ring-1 ring-sky-200",
-	},
-	COMPLETED: {
-		label: "Completado",
-		className: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200",
-	},
-	CANCELLED: {
-		label: "Cancelado",
-		className: "bg-red-50 text-red-600 ring-1 ring-red-200",
-	},
-};
-
 const ALL_VALUE = "__ALL__";
-const RENTAL_ORDER_STATUS_OPTIONS = [
-	"DRAFT",
-	"PENDING",
-	"CONFIRMED",
-	"PREPARED",
-	"CANCELLED",
-	"COMPLETED",
-] as const satisfies readonly GetRentalsStatusDto[];
 const OPERATIONALLY_ACTIVE_STATUSES = ["CONFIRMED", "PREPARED"] as const;
 const DATE_LENS_OPTIONS: Array<{
 	value: GetRentalsDateLensDto;
@@ -192,7 +156,7 @@ export function RentalOrdersToolbar() {
 										checked={effectiveStatuses.includes(status)}
 										onCheckedChange={() => toggleStatus(status)}
 									/>
-									<span>{RENTAL_ORDER_STATUS_CONFIG[status].label}</span>
+									<span>{getRentalOrderStatusLabel(status)}</span>
 								</label>
 							);
 						})}
@@ -258,7 +222,6 @@ function normalizeStatusesFilter(
 
 function getStatusFilterLabel(statuses: GetRentalsStatusDto[]): string {
 	if (statuses.length === 0) return "Todos los estados";
-	if (statuses.length === 1)
-		return RENTAL_ORDER_STATUS_CONFIG[statuses[0]].label;
+	if (statuses.length === 1) return getRentalOrderStatusLabel(statuses[0]);
 	return `${statuses.length} estados`;
 }

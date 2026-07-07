@@ -24,6 +24,11 @@ import type {
 	ParsedGetRentalsCalendarResponse,
 	ParsedRentalsCalendarItem,
 } from "@/features/rental-commitment/rentals/rentals.queries";
+import {
+	getRentalOrderStatusPresentation,
+	RENTAL_ORDER_STATUS_LEGEND_ITEMS,
+} from "@/features/rental-commitment/rentals/rental-order-status";
+import dayjs from "@/lib/dates/dayjs";
 import { fromDate, toISOString } from "@/lib/dates/parse";
 import { cn } from "@/lib/utils";
 import { formatOrderNumber } from "@/shared/utils/formatters";
@@ -31,7 +36,6 @@ import {
 	formatOrdersCalendarTooltipDateTime,
 	getCalendarDateParamFromDate,
 	getOrdersCalendarEventOrder,
-	getOrdersCalendarStatusLabel,
 	ORDERS_CALENDAR_VIEW_LABELS,
 	type OrdersCalendarRange,
 	type OrdersCalendarView,
@@ -397,9 +401,15 @@ export function OrdersCalendar({
 						eventContent={(arg) => <CalendarEventContent arg={arg} />}
 						eventClassNames={(arg) => {
 							const order = getOrdersCalendarEventOrder(arg.event);
-							return order.status === "CONFIRMED"
-								? ["orders-calendar-event", "orders-calendar-event--active"]
-								: ["orders-calendar-event", "orders-calendar-event--confirmed"];
+							const statusPresentation = getRentalOrderStatusPresentation(
+								order,
+								dayjs(),
+							);
+
+							return [
+								"orders-calendar-event",
+								statusPresentation.calendarEventClassName,
+							];
 						}}
 					/>
 
@@ -424,8 +434,13 @@ export function OrdersCalendar({
 			)}
 
 			<div className="flex flex-wrap items-center gap-4 rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-700">
-				<LegendItem colorClass="bg-blue-500" label="Activo" />
-				<LegendItem colorClass="bg-emerald-500" label="Pendiente" />
+				{RENTAL_ORDER_STATUS_LEGEND_ITEMS.map((item) => (
+					<LegendItem
+						key={item.label}
+						colorClass={item.colorClass}
+						label={item.label}
+					/>
+				))}
 			</div>
 		</div>
 	);
@@ -484,11 +499,7 @@ function OrdersCalendarPopover({
 	order: ParsedRentalsCalendarItem;
 	timezone: string;
 }) {
-	const statusLabel = getOrdersCalendarStatusLabel(order);
-	const statusDotClass =
-		order.status === "CONFIRMED" ? "bg-blue-500" : "bg-green-400";
-	const headingColorClass =
-		order.status === "CONFIRMED" ? "text-blue-700" : "text-green-600";
+	const statusPresentation = getRentalOrderStatusPresentation(order, dayjs());
 
 	return (
 		<Popover open onOpenChange={(open) => !open && onClose()}>
@@ -523,7 +534,7 @@ function OrdersCalendarPopover({
 						<p
 							className={cn(
 								"font-mono text-sm font-semibold",
-								headingColorClass,
+								statusPresentation.headingClassName,
 							)}
 						>
 							#{formatOrderNumber(order.number)}
@@ -554,8 +565,13 @@ function OrdersCalendarPopover({
 						<div className="grid grid-cols-[96px_1fr] items-center gap-3">
 							<span className="text-neutral-500">Estado</span>
 							<div className="flex items-center gap-2 font-medium text-neutral-700">
-								<span className={cn("size-2.5 rounded-full", statusDotClass)} />
-								<span>{statusLabel}</span>
+								<span
+									className={cn(
+										"size-2.5 rounded-full",
+										statusPresentation.dotClassName,
+									)}
+								/>
+								<span>{statusPresentation.label}</span>
 							</div>
 						</div>
 					</div>

@@ -1,7 +1,6 @@
 import type {
 	GetRentalsSortByDto,
 	GetRentalsSortDirectionDto,
-	GetRentalsStatusDto,
 } from "@repo/api-contracts";
 import type { ColumnDef } from "@tanstack/react-table";
 import {
@@ -32,6 +31,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import { getRentalOrderStatusPresentation } from "@/features/rental-commitment/rentals/rental-order-status";
 import type { ParsedRentalListItem } from "@/features/rental-commitment/rentals/rentals.queries";
 import dayjs from "@/lib/dates/dayjs";
 import { cn } from "@/lib/utils";
@@ -44,7 +44,6 @@ import {
 	type RentalOrdersListSort,
 	useRentalOrdersList,
 } from "./rental-orders-list.context";
-import { RENTAL_ORDER_STATUS_CONFIG } from "./rental-orders-toolbar";
 
 export function RentalOrdersTable() {
 	const {
@@ -293,69 +292,17 @@ function createRentalOrdersColumns({
 }
 
 function RentalOrderStatusBadge({ rental }: { rental: ParsedRentalListItem }) {
-	const config = getRentalOrderStatusConfig(rental, dayjs());
+	const config = getRentalOrderStatusPresentation(rental, dayjs());
 
 	return (
 		<span
 			className={cn(
 				"inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium",
-				config.className,
+				config.badgeClassName,
 			)}
 		>
 			{config.label}
 		</span>
-	);
-}
-
-function getRentalOrderStatusConfig(
-	rental: Pick<ParsedRentalListItem, "status" | "pickupAt" | "returnAt">,
-	referenceDate: Dayjs,
-) {
-	if (rental.status === "CANCELLED" || rental.status === "COMPLETED") {
-		return RENTAL_ORDER_STATUS_CONFIG[rental.status];
-	}
-
-	if (isRentalOrderPeriodAwareStatus(rental.status)) {
-		if (isRentalOrderInProgress(rental, referenceDate)) {
-			return {
-				label: "En curso",
-				className: "bg-violet-50 text-violet-700 ring-1 ring-violet-200",
-			};
-		}
-
-		if (isRentalOrderPastReturn(rental, referenceDate)) {
-			return {
-				label: "Terminado",
-				className: "bg-orange-50 text-orange-700 ring-1 ring-orange-200",
-			};
-		}
-	}
-
-	return RENTAL_ORDER_STATUS_CONFIG[rental.status];
-}
-
-function isRentalOrderPeriodAwareStatus(status: GetRentalsStatusDto): boolean {
-	return status === "CONFIRMED" || status === "PREPARED";
-}
-
-function isRentalOrderInProgress(
-	rental: Pick<ParsedRentalListItem, "pickupAt" | "returnAt">,
-	referenceDate: Dayjs,
-): boolean {
-	return (
-		(referenceDate.isSame(rental.pickupAt) ||
-			referenceDate.isAfter(rental.pickupAt)) &&
-		referenceDate.isBefore(rental.returnAt)
-	);
-}
-
-function isRentalOrderPastReturn(
-	rental: Pick<ParsedRentalListItem, "returnAt">,
-	referenceDate: Dayjs,
-): boolean {
-	return (
-		referenceDate.isSame(rental.returnAt) ||
-		referenceDate.isAfter(rental.returnAt)
 	);
 }
 
