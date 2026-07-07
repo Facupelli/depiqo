@@ -52,23 +52,28 @@ export class GetRentalDetailHandler implements IQueryHandler<GetRentalDetailQuer
             notes: true,
           },
         },
-        demandLines: {
+        selections: {
           select: {
             id: true,
-            rentalSelectionId: true,
-            equipmentTypeId: true,
-            equipmentTypeNameSnapshot: true,
+            rentalOfferId: true,
+            rentableItemId: true,
+            rentableItemNameSnapshot: true,
+            rentableItemKindSnapshot: true,
             quantity: true,
-            rentalSelection: {
+            demandLines: {
               select: {
-                rentableItemId: true,
-                rentableItemNameSnapshot: true,
+                id: true,
+                rentalSelectionId: true,
+                equipmentTypeId: true,
+                equipmentTypeNameSnapshot: true,
+                quantity: true,
+                assignedAssets: { select: { assetId: true } },
               },
+              orderBy: { createdAt: 'asc' },
             },
-            assignedAssets: { select: { assetId: true } },
           },
           orderBy: { createdAt: 'asc' },
-        },
+        }, 
         accessorySelections: {
           select: {
             id: true,
@@ -108,15 +113,21 @@ export class GetRentalDetailHandler implements IQueryHandler<GetRentalDetailQuer
         method: rental.fulfillmentMethod,
         deliveryDetails: rental.deliveryDetails,
       },
-      equipment: rental.demandLines.map((line) => ({
-        id: line.id,
-        rentalSelectionId: line.rentalSelectionId,
-        equipmentTypeId: line.equipmentTypeId,
-        equipmentTypeName: line.equipmentTypeNameSnapshot,
-        rentableItemId: line.rentalSelection.rentableItemId,
-        rentableItemName: line.rentalSelection.rentableItemNameSnapshot,
-        quantity: line.quantity,
-        assignedAssets: line.assignedAssets.map((assignment) => ({ assetId: assignment.assetId })),
+      selections: rental.selections.map((selection) => ({
+        id: selection.id,
+        rentalOfferId: selection.rentalOfferId,
+        rentableItemId: selection.rentableItemId,
+        rentableItemName: selection.rentableItemNameSnapshot,
+        rentableItemKind: selection.rentableItemKindSnapshot,
+        quantity: selection.quantity,
+        demandLines: selection.demandLines.map((line) => ({
+          id: line.id,
+          rentalSelectionId: line.rentalSelectionId,
+          equipmentTypeId: line.equipmentTypeId,
+          equipmentTypeName: line.equipmentTypeNameSnapshot,
+          quantity: line.quantity,
+          assignedAssets: line.assignedAssets.map((assignment) => ({ assetId: assignment.assetId })),
+        })),
       })),
       accessories: rental.accessorySelections.map((selection) => ({
         id: selection.id,

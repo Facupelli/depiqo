@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import type { ApiContract } from "../api-contract";
+import { GetRentableItemsKindSchema } from "../catalog/get-rentable-items.contract";
 import {
 	GetRentalsFulfillmentMethodSchema,
 	GetRentalsStatusSchema,
@@ -31,15 +32,23 @@ export const GetRentalDetailAssignedAssetSchema = z.object({
 	assetId: z.string(),
 });
 
-export const GetRentalDetailEquipmentLineSchema = z.object({
+export const GetRentalDetailDemandLineSchema = z.object({
 	id: z.string(),
 	rentalSelectionId: z.string(),
 	equipmentTypeId: z.string(),
 	equipmentTypeName: z.string(),
-	rentableItemId: z.string(),
-	rentableItemName: z.string(),
 	quantity: z.number().int().positive(),
 	assignedAssets: z.array(GetRentalDetailAssignedAssetSchema),
+});
+
+export const GetRentalDetailSelectionSchema = z.object({
+	id: z.string(),
+	rentalOfferId: z.string(),
+	rentableItemId: z.string(),
+	rentableItemName: z.string(),
+	rentableItemKind: GetRentableItemsKindSchema,
+	quantity: z.number().int().positive(),
+	demandLines: z.array(GetRentalDetailDemandLineSchema),
 });
 
 export const GetRentalDetailAccessorySchema = z.object({
@@ -183,7 +192,7 @@ export const GetRentalDetailResponseSchema = z.object({
 		method: GetRentalsFulfillmentMethodSchema.nullable(),
 		deliveryDetails: GetRentalDetailDeliveryDetailsSchema.nullable(),
 	}),
-	equipment: z.array(GetRentalDetailEquipmentLineSchema),
+	selections: z.array(GetRentalDetailSelectionSchema),
 	accessories: z.array(GetRentalDetailAccessorySchema),
 	pricing: GetRentalDetailPricingSchema.nullable(),
 });
@@ -200,8 +209,11 @@ export type GetRentalDetailDeliveryDetailsDto = z.infer<
 export type GetRentalDetailAssignedAssetDto = z.infer<
 	typeof GetRentalDetailAssignedAssetSchema
 >;
-export type GetRentalDetailEquipmentLineDto = z.infer<
-	typeof GetRentalDetailEquipmentLineSchema
+export type GetRentalDetailDemandLineDto = z.infer<
+	typeof GetRentalDetailDemandLineSchema
+>;
+export type GetRentalDetailSelectionDto = z.infer<
+	typeof GetRentalDetailSelectionSchema
 >;
 export type GetRentalDetailAccessoryDto = z.infer<
 	typeof GetRentalDetailAccessorySchema

@@ -1,9 +1,10 @@
 import {
 	AssetSummarySchema,
 	GetRentalDetailAccessorySchema,
-	GetRentalDetailEquipmentLineSchema,
+	GetRentalDetailDemandLineSchema,
 	GetRentalDetailParamsSchema,
 	GetRentalDetailResponseSchema,
+	GetRentalDetailSelectionSchema,
 	RentableItemSummarySchema,
 } from "@repo/api-contracts";
 import { z } from "zod";
@@ -16,10 +17,15 @@ export const RentalDetailViewAssignedAssetSchema = z.object({
 	isMissing: z.boolean(),
 });
 
-export const RentalDetailViewEquipmentLineSchema =
-	GetRentalDetailEquipmentLineSchema.omit({ assignedAssets: true }).extend({
-		rentableItem: RentableItemSummarySchema.nullable(),
+export const RentalDetailViewDemandLineSchema =
+	GetRentalDetailDemandLineSchema.omit({ assignedAssets: true }).extend({
 		assignedAssets: z.array(RentalDetailViewAssignedAssetSchema),
+	});
+
+export const RentalDetailViewSelectionSchema =
+	GetRentalDetailSelectionSchema.omit({ demandLines: true }).extend({
+		rentableItem: RentableItemSummarySchema.nullable(),
+		demandLines: z.array(RentalDetailViewDemandLineSchema),
 	});
 
 export const RentalDetailViewAccessorySchema =
@@ -29,10 +35,10 @@ export const RentalDetailViewAccessorySchema =
 
 export const GetRentalDetailViewResponseSchema =
 	GetRentalDetailResponseSchema.omit({
-		equipment: true,
+		selections: true,
 		accessories: true,
 	}).extend({
-		equipment: z.array(RentalDetailViewEquipmentLineSchema),
+		selections: z.array(RentalDetailViewSelectionSchema),
 		accessories: z.array(RentalDetailViewAccessorySchema),
 	});
 
@@ -42,8 +48,11 @@ export type GetRentalDetailViewInputDto = z.infer<
 export type RentalDetailViewAssignedAssetDto = z.infer<
 	typeof RentalDetailViewAssignedAssetSchema
 >;
-export type RentalDetailViewEquipmentLineDto = z.infer<
-	typeof RentalDetailViewEquipmentLineSchema
+export type RentalDetailViewDemandLineDto = z.infer<
+	typeof RentalDetailViewDemandLineSchema
+>;
+export type RentalDetailViewSelectionDto = z.infer<
+	typeof RentalDetailViewSelectionSchema
 >;
 export type RentalDetailViewAccessoryDto = z.infer<
 	typeof RentalDetailViewAccessorySchema

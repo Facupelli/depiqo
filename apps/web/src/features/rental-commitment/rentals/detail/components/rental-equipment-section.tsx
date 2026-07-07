@@ -5,7 +5,8 @@ import { buildR2PublicUrl } from "@/lib/r2-public-url";
 import { cn } from "@/lib/utils";
 import type {
 	GetRentalDetailViewResponseDto,
-	RentalDetailViewEquipmentLineDto,
+	RentalDetailViewDemandLineDto,
+	RentalDetailViewSelectionDto,
 } from "../get-rental-detail-view/get-rental-detail-view.schema";
 import { useRentalDetailContext } from "../rental-detail.context";
 import {
@@ -17,7 +18,6 @@ import { RentalAccessoryAssignmentSheet } from "./rental-accessory-assignment-sh
 export function RentalEquipmentSection() {
 	const { rental } = useRentalDetailContext();
 	const [isAccessorySheetOpen, setIsAccessorySheetOpen] = useState(false);
-	const rentalEquipment = mapEquipmentsToCardItems(rental.equipment);
 	const accessoriesByEquipmentLine = groupAccessoriesByEquipmentLine(
 		rental.accessories,
 	);
@@ -45,11 +45,11 @@ export function RentalEquipmentSection() {
 					</Button>
 				</div>
 				<section className="mb-10 space-y-3">
-					{rentalEquipment.map((item) => (
+					{rental.selections.map((selection) => (
 						<RentalEquipmentCard
-							key={item.rentalSelectionId}
-							equipment={item}
+							key={selection.id}
 							accessoriesByEquipmentLine={accessoriesByEquipmentLine}
+							selection={selection}
 						/>
 					))}
 					{unlinkedAccessories.length > 0 ? (
@@ -62,76 +62,41 @@ export function RentalEquipmentSection() {
 	);
 }
 
-type EquipmentCardItem = {
-	rentalSelectionId: string;
-	rentableItemId: string;
-	rentableItemName: string;
-	quantity: number;
-	children: RentalDetailViewEquipmentLineDto[];
-};
-
-function mapEquipmentsToCardItems(
-	equipments: RentalDetailViewEquipmentLineDto[],
-): EquipmentCardItem[] {
-	const cardsBySelectionId = new Map<string, EquipmentCardItem>();
-
-	for (const equipment of equipments) {
-		const existingCard = cardsBySelectionId.get(equipment.rentalSelectionId);
-
-		if (existingCard) {
-			existingCard.children.push(equipment);
-			continue;
-		}
-
-		cardsBySelectionId.set(equipment.rentalSelectionId, {
-			rentalSelectionId: equipment.rentalSelectionId,
-			rentableItemId: equipment.rentableItemId,
-			rentableItemName: equipment.rentableItemName,
-			quantity: equipment.quantity,
-			children: [equipment],
-		});
-	}
-
-	return Array.from(cardsBySelectionId.values());
-}
-
 function RentalEquipmentCard({
-	equipment,
+	selection,
 	accessoriesByEquipmentLine,
 }: {
-	equipment: EquipmentCardItem;
+	selection: RentalDetailViewSelectionDto;
 	accessoriesByEquipmentLine: Map<
 		string,
 		GetRentalDetailViewResponseDto["accessories"]
 	>;
 }) {
-	const isPackage = equipment.children.length > 1;
-	const primaryEquipment = equipment.children[0];
-	const accessories = primaryEquipment
-		? (accessoriesByEquipmentLine.get(primaryEquipment.id) ?? [])
+	const isPackage = selection.rentableItemKind !== "SINGLE";
+	const singleDemandLine = selection.demandLines[0];
+	const accessories = singleDemandLine
+		? (accessoriesByEquipmentLine.get(singleDemandLine.id) ?? [])
 		: [];
-	const owners = primaryEquipment
-		? getAssetOwners(primaryEquipment.assignedAssets)
+	const owners = singleDemandLine
+		? getAssetOwners(singleDemandLine.assignedAssets)
 		: [];
-	const serials = primaryEquipment
-		? getAssetSerials(primaryEquipment.assignedAssets)
+	const serials = singleDemandLine
+		? getAssetSerials(singleDemandLine.assignedAssets)
 		: [];
-	const missingAssetIds = primaryEquipment
-		? getMissingAssetIds(primaryEquipment.assignedAssets)
+	const missingAssetIds = singleDemandLine
+		? getMissingAssetIds(singleDemandLine.assignedAssets)
 		: [];
 
 	return (
 		<div className="rounded-xl border border-neutral-200 bg-white p-4 transition-colors hover:border-neutral-300">
 			<div className="grid gap-4 sm:grid-cols-[1fr_auto]">
 				<div className="flex gap-4">
-					<ProductImage
-						imageUrl={equipment.children[0]?.rentableItem?.imageUrl ?? null}
-					/>
+					<ProductImage imageUrl={selection.rentableItem?.imageUrl ?? null} />
 					<div className="flex min-w-0 flex-col gap-0.5">
 						<span className="font-semibold leading-snug text-neutral-950">
-							{equipment.rentableItemName}
+							{selection.rentableItemName}
 						</span>
-						<QuantityText quantity={equipment.quantity} />
+						<QuantityText quantity={selection.quantity} />
 						{!isPackage
 							? owners.map((owner) => (
 									<span
@@ -167,7 +132,7 @@ function RentalEquipmentCard({
 			{isPackage ? (
 				<RentalPackageChildrenList
 					accessoriesByEquipmentLine={accessoriesByEquipmentLine}
-					items={equipment.children}
+					items={selection.demandLines}
 				/>
 			) : null}
 			{!isPackage && accessories.length > 0 ? (
@@ -181,7 +146,7 @@ function RentalPackageChildrenList({
 	items,
 	accessoriesByEquipmentLine,
 }: {
-	items: RentalDetailViewEquipmentLineDto[];
+	items: RentalDetailViewDemandLineDto[];
 	accessoriesByEquipmentLine: Map<
 		string,
 		GetRentalDetailViewResponseDto["accessories"]
@@ -209,7 +174,7 @@ function RentalPackageChildRow({
 	equipment,
 	accessories,
 }: {
-	equipment: RentalDetailViewEquipmentLineDto;
+	equipment: RentalDetailViewDemandLineDto;
 	accessories: GetRentalDetailViewResponseDto["accessories"];
 }) {
 	const owners = getAssetOwners(equipment.assignedAssets);
@@ -220,10 +185,7 @@ function RentalPackageChildRow({
 		<div className="rounded-lg border border-neutral-100 bg-neutral-50 px-3 py-2">
 			<div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-center">
 				<div className="flex min-w-0 items-start gap-3">
-					<ProductImage
-						imageUrl={equipment.rentableItem?.imageUrl ?? null}
-						variant="compact"
-					/>
+					<ProductImage imageUrl={null} variant="compact" />
 					<div className="min-w-0 space-y-0.5">
 						<p className="truncate font-medium text-neutral-800 text-sm">
 							{equipment.equipmentTypeName}
@@ -504,7 +466,7 @@ function groupAccessoriesByEquipmentLine(
 }
 
 function getAssetOwners(
-	assets: GetRentalDetailViewResponseDto["equipment"][number]["assignedAssets"],
+	assets: GetRentalDetailViewResponseDto["selections"][number]["demandLines"][number]["assignedAssets"],
 ) {
 	return [
 		...new Set(
@@ -514,7 +476,7 @@ function getAssetOwners(
 }
 
 function getAssetSerials(
-	assets: GetRentalDetailViewResponseDto["equipment"][number]["assignedAssets"],
+	assets: GetRentalDetailViewResponseDto["selections"][number]["demandLines"][number]["assignedAssets"],
 ) {
 	return assets
 		.map((asset) => asset.asset?.serialNumber)
@@ -522,7 +484,7 @@ function getAssetSerials(
 }
 
 function getMissingAssetIds(
-	assets: GetRentalDetailViewResponseDto["equipment"][number]["assignedAssets"],
+	assets: GetRentalDetailViewResponseDto["selections"][number]["demandLines"][number]["assignedAssets"],
 ) {
 	return assets
 		.filter((asset) => asset.isMissing)

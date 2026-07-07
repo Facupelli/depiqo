@@ -22,15 +22,17 @@ export async function getRentalDetailView(
 	const rental = await getRentalDetail(parsedInput.rentalId);
 
 	const assetIds = unique([
-		...rental.equipment.flatMap((line) =>
-			line.assignedAssets.map((assignment) => assignment.assetId),
+		...rental.selections.flatMap((selection) =>
+			selection.demandLines.flatMap((line) =>
+				line.assignedAssets.map((assignment) => assignment.assetId),
+			),
 		),
 		...rental.accessories.flatMap((accessory) =>
 			accessory.assignedAssets.map((assignment) => assignment.assetId),
 		),
 	]);
 	const rentableItemIds = unique(
-		rental.equipment.map((line) => line.rentableItemId),
+		rental.selections.map((selection) => selection.rentableItemId),
 	);
 
 	const [assetSummaries, rentableItemSummaries] = await Promise.all([
@@ -52,10 +54,13 @@ export async function getRentalDetailView(
 
 	return GetRentalDetailViewResponseSchema.parse({
 		...rental,
-		equipment: rental.equipment.map((line) => ({
-			...line,
-			rentableItem: rentableItemsById.get(line.rentableItemId) ?? null,
-			assignedAssets: enrichAssignedAssets(line.assignedAssets, assetsById),
+		selections: rental.selections.map((selection) => ({
+			...selection,
+			rentableItem: rentableItemsById.get(selection.rentableItemId) ?? null,
+			demandLines: selection.demandLines.map((line) => ({
+				...line,
+				assignedAssets: enrichAssignedAssets(line.assignedAssets, assetsById),
+			})),
 		})),
 		accessories: rental.accessories.map((accessory) => ({
 			...accessory,
