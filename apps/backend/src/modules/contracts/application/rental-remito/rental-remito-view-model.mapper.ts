@@ -3,9 +3,8 @@ import { err, ok, Result } from 'neverthrow';
 
 import { rentalRemitoApplicationError, RentalRemitoApplicationError } from './rental-remito-application.error';
 import {
-  formatCurrencyFromSnapshot,
   formatLocalDate,
-  resolveBillingUnitsFromSnapshot,
+  resolveRentalRemitoPricingFromSnapshot,
 } from './rental-remito-formatters';
 import { RentalRemitoPdfData, RentalRemitoEquipmentLine, SignedContractSummary } from './rental-remito-pdf-data';
 import { RentalRemitoSourceReadModel } from './rental-remito-source-read-model';
@@ -21,10 +20,9 @@ export class RentalRemitoViewModelMapper {
     source: RentalRemitoSourceReadModel,
     options: MapRentalRemitoViewModelOptions,
   ): Result<RentalRemitoPdfData, RentalRemitoApplicationError> {
-    const agreedPrice = formatCurrencyFromSnapshot(source.rental.priceSnapshot);
-    const jornadas = resolveBillingUnitsFromSnapshot(source.rental.priceSnapshot);
+    const pricing = resolveRentalRemitoPricingFromSnapshot(source.rental.priceSnapshot);
 
-    if (options.requireValidPriceSnapshot && (!agreedPrice || jornadas === null)) {
+    if (options.requireValidPriceSnapshot && !pricing) {
       return err(
         rentalRemitoApplicationError(
           'PriceSnapshotInvalid',
@@ -43,8 +41,8 @@ export class RentalRemitoViewModelMapper {
         equipmentTitle: 'LISTA DE EQUIPOS RETIRADOS',
         pickupDate: formatLocalDate(source.rental.periodStart, timezone),
         returnDate: formatLocalDate(source.rental.periodEnd, timezone),
-        jornadas: jornadas ?? 0,
-        agreedPrice: agreedPrice ?? '',
+        jornadas: pricing?.chargedDays ?? 0,
+        agreedPrice: pricing?.formattedTotal ?? '',
         logoUrl: source.tenant.branding?.logoUrl ?? null,
         rentalSignatureUrl: source.contractSigner?.signatureUrl ?? null,
         showRentalSignatureBlock: true,

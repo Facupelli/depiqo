@@ -34,35 +34,31 @@ export function formatSignedTimestamp(date: Date, timezone: string): string {
   return `${get('day')}/${get('month')}/${get('year')} ${get('hour')}:${get('minute')}:${get('second')}`;
 }
 
-export function formatCurrencyFromSnapshot(priceSnapshot: unknown): string | null {
+export type RentalRemitoPricingView = {
+  currency: string;
+  total: string;
+  chargedDays: number;
+  formattedTotal: string;
+};
+
+export function resolveRentalRemitoPricingFromSnapshot(priceSnapshot: unknown): RentalRemitoPricingView | null {
   if (!isConfirmedRentalPriceSnapshot(priceSnapshot)) {
     return null;
   }
 
-  const amount = Number(priceSnapshot.calculated.total);
-  const currency = priceSnapshot.calculated.currency;
+  const amount = Number(priceSnapshot.final.total);
+  const currency = priceSnapshot.final.currency;
 
   if (!Number.isFinite(amount)) {
     return null;
   }
 
-  try {
-    return new Intl.NumberFormat(resolveLocaleForCurrency(currency), {
-      style: 'currency',
-      currency,
-      maximumFractionDigits: 0,
-    }).format(amount);
-  } catch {
-    return `${currency} ${amount.toFixed(2)}`;
-  }
-}
-
-export function resolveBillingUnitsFromSnapshot(priceSnapshot: unknown): number | null {
-  if (!isConfirmedRentalPriceSnapshot(priceSnapshot)) {
-    return null;
-  }
-
-  return priceSnapshot.calculated.chargedDays;
+  return {
+    currency,
+    total: priceSnapshot.final.total,
+    chargedDays: priceSnapshot.final.chargedDays,
+    formattedTotal: formatCurrency(amount, currency),
+  };
 }
 
 function isConfirmedRentalPriceSnapshot(value: unknown): value is RentalPriceSnapshotV1 {
@@ -73,16 +69,28 @@ function isConfirmedRentalPriceSnapshot(value: unknown): value is RentalPriceSna
     value.schema === RENTAL_PRICE_SNAPSHOT_SCHEMA &&
     'version' in value &&
     value.version === RENTAL_PRICE_SNAPSHOT_VERSION &&
-    'pricing' in value &&
-    typeof value.pricing === 'object' &&
-    value.pricing !== null &&
-    'currency' in value.pricing &&
-    typeof value.pricing.currency === 'string' &&
-    'total' in value.pricing &&
-    typeof value.pricing.total === 'string' &&
-    'chargedDays' in value.pricing &&
-    typeof value.pricing.chargedDays === 'number'
+    'final' in value &&
+    typeof value.final === 'object' &&
+    value.final !== null &&
+    'currency' in value.final &&
+    typeof value.final.currency === 'string' &&
+    'total' in value.final &&
+    typeof value.final.total === 'string' &&
+    'chargedDays' in value.final &&
+    typeof value.final.chargedDays === 'number'
   );
+}
+
+function formatCurrency(amount: number, currency: string): string {
+  try {
+    return new Intl.NumberFormat(resolveLocaleForCurrency(currency), {
+      style: 'currency',
+      currency,
+      maximumFractionDigits: 0,
+    }).format(amount);
+  } catch {
+    return `${currency} ${amount.toFixed(2)}`;
+  }
 }
 
 function resolveLocaleForCurrency(currency: string): string {
