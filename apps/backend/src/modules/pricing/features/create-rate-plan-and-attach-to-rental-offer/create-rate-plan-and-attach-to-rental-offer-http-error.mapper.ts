@@ -1,6 +1,6 @@
 import { HttpStatus } from '@nestjs/common';
 
-import { createV2ProblemType, V2PlatformProblemTypes, V2ProblemException } from 'src/core/problem-details/v2';
+import { createProblemType, PlatformProblemTypes, ProblemException } from 'src/core/problem-details';
 
 import {
   CreateRatePlanAndAttachToRentalOfferApplicationError,
@@ -19,25 +19,25 @@ const CreateRatePlanAndAttachToRentalOfferProblemCatalog: Record<
   CreateRatePlanAndAttachToRentalOfferProblemDefinition
 > = {
   RentalOfferNotFound: {
-    type: createV2ProblemType('pricing/rental-offer-not-found'),
+    type: createProblemType('pricing/rental-offer-not-found'),
     title: 'Rental offer not found',
     status: HttpStatus.NOT_FOUND,
     detail: 'The requested rental offer was not found.',
   },
   RatePlanNameAlreadyInUse: {
-    type: createV2ProblemType('pricing/rate-plan-name-already-in-use'),
+    type: createProblemType('pricing/rate-plan-name-already-in-use'),
     title: 'Rate plan name already in use',
     status: HttpStatus.CONFLICT,
     detail: 'A rate plan with the requested name already exists.',
   },
   InvalidRatePlan: {
-    type: createV2ProblemType('pricing/invalid-rate-plan'),
+    type: createProblemType('pricing/invalid-rate-plan'),
     title: 'Invalid rate plan',
     status: HttpStatus.UNPROCESSABLE_ENTITY,
     detail: 'The rate plan could not be created because it violates pricing rules.',
   },
   Unexpected: {
-    type: V2PlatformProblemTypes.system.internalServerError,
+    type: PlatformProblemTypes.system.internalServerError,
     title: 'Internal server error',
     status: HttpStatus.INTERNAL_SERVER_ERROR,
     detail: 'An unexpected error occurred. Please try again later.',
@@ -46,10 +46,10 @@ const CreateRatePlanAndAttachToRentalOfferProblemCatalog: Record<
 
 export function toCreateRatePlanAndAttachToRentalOfferProblem(
   error: CreateRatePlanAndAttachToRentalOfferApplicationError,
-): V2ProblemException {
+): ProblemException {
   const definition = CreateRatePlanAndAttachToRentalOfferProblemCatalog[error.code];
 
-  return V2ProblemException.from({
+  return ProblemException.from({
     type: definition.type,
     title: definition.title,
     status: definition.status,

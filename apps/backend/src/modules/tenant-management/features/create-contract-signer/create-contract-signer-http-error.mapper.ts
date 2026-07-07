@@ -1,6 +1,6 @@
 import { HttpStatus } from '@nestjs/common';
 
-import { createV2ProblemType, V2PlatformProblemTypes, V2ProblemException } from 'src/core/problem-details/v2';
+import { createProblemType, PlatformProblemTypes, ProblemException } from 'src/core/problem-details';
 
 import {
   CreateContractSignerApplicationError,
@@ -19,23 +19,23 @@ const CreateContractSignerProblemCatalog: Record<
   CreateContractSignerProblemDefinition
 > = {
   ContractSignerAlreadyExists: {
-    type: createV2ProblemType('tenant-management/contract-signer-already-exists'),
+    type: createProblemType('tenant-management/contract-signer-already-exists'),
     title: 'Contract signer already exists',
     status: HttpStatus.CONFLICT,
     detail: 'The current tenant already has an active contract signer.',
   },
   Unexpected: {
-    type: V2PlatformProblemTypes.system.internalServerError,
+    type: PlatformProblemTypes.system.internalServerError,
     title: 'Internal server error',
     status: HttpStatus.INTERNAL_SERVER_ERROR,
     detail: 'An unexpected error occurred. Please try again later.',
   },
 };
 
-export function toCreateContractSignerProblem(error: CreateContractSignerApplicationError): V2ProblemException {
+export function toCreateContractSignerProblem(error: CreateContractSignerApplicationError): ProblemException {
   const definition = CreateContractSignerProblemCatalog[error.code];
 
-  return V2ProblemException.from({
+  return ProblemException.from({
     type: definition.type,
     title: definition.title,
     status: definition.status,

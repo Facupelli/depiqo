@@ -1,7 +1,7 @@
 import { Injectable, NestInterceptor, ExecutionContext, CallHandler, HttpException, HttpStatus } from '@nestjs/common';
 import { Observable, tap, catchError, throwError } from 'rxjs';
 import { Response } from 'express';
-import { V2ProblemException } from 'src/core/problem-details/v2';
+import { ProblemException } from 'src/core/problem-details';
 import { AppLogger } from './app-logger.service';
 import { LogContext } from './log-context';
 
@@ -30,7 +30,7 @@ export class LoggingInterceptor implements NestInterceptor {
   }
 
   private enrichError(err: unknown): void {
-    if (err instanceof V2ProblemException) {
+    if (err instanceof ProblemException) {
       const problemDetails = err.getProblemDetails();
 
       LogContext.set('problemType', problemDetails.type);

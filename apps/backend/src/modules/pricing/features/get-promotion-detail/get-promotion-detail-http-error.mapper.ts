@@ -1,6 +1,6 @@
 import { HttpStatus } from '@nestjs/common';
 
-import { createV2ProblemType, V2ProblemException } from 'src/core/problem-details/v2';
+import { createProblemType, ProblemException } from 'src/core/problem-details';
 
 import {
   GetPromotionDetailApplicationError,
@@ -19,17 +19,17 @@ const GetPromotionDetailProblemCatalog: Record<
   GetPromotionDetailProblemDefinition
 > = {
   PromotionNotFound: {
-    type: createV2ProblemType('pricing/promotion-not-found'),
+    type: createProblemType('pricing/promotion-not-found'),
     title: 'Promotion not found',
     status: HttpStatus.NOT_FOUND,
     detail: 'The requested promotion was not found.',
   },
 };
 
-export function toGetPromotionDetailProblem(error: GetPromotionDetailApplicationError): V2ProblemException {
+export function toGetPromotionDetailProblem(error: GetPromotionDetailApplicationError): ProblemException {
   const definition = GetPromotionDetailProblemCatalog[error.code];
 
-  return V2ProblemException.from({
+  return ProblemException.from({
     type: definition.type,
     title: definition.title,
     status: definition.status,

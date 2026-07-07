@@ -1,6 +1,6 @@
-export const V2_PROBLEM_DETAILS_CONTENT_TYPE = 'application/problem+json' as const;
+export const PROBLEM_DETAILS_CONTENT_TYPE = 'application/problem+json' as const;
 
-export interface V2ProblemDetailsBody {
+export interface ProblemDetailsBody {
   type: string;
   title: string;
   status: number;
@@ -9,7 +9,7 @@ export interface V2ProblemDetailsBody {
   [extension: string]: unknown;
 }
 
-export type V2ProblemDetailsExtensions = Record<string, unknown>;
+export type ProblemDetailsExtensions = Record<string, unknown>;
 
 export interface InvalidParam {
   name: string;

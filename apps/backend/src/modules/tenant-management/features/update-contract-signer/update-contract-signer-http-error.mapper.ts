@@ -1,6 +1,6 @@
 import { HttpStatus } from '@nestjs/common';
 
-import { createV2ProblemType, V2PlatformProblemTypes, V2ProblemException } from 'src/core/problem-details/v2';
+import { createProblemType, PlatformProblemTypes, ProblemException } from 'src/core/problem-details';
 
 import {
   UpdateContractSignerApplicationError,
@@ -19,23 +19,23 @@ const UpdateContractSignerProblemCatalog: Record<
   UpdateContractSignerProblemDefinition
 > = {
   ContractSignerNotFound: {
-    type: createV2ProblemType('tenant-management/contract-signer-not-found'),
+    type: createProblemType('tenant-management/contract-signer-not-found'),
     title: 'Contract signer not found',
     status: HttpStatus.NOT_FOUND,
     detail: 'The current tenant does not have an active contract signer.',
   },
   Unexpected: {
-    type: V2PlatformProblemTypes.system.internalServerError,
+    type: PlatformProblemTypes.system.internalServerError,
     title: 'Internal server error',
     status: HttpStatus.INTERNAL_SERVER_ERROR,
     detail: 'An unexpected error occurred. Please try again later.',
   },
 };
 
-export function toUpdateContractSignerProblem(error: UpdateContractSignerApplicationError): V2ProblemException {
+export function toUpdateContractSignerProblem(error: UpdateContractSignerApplicationError): ProblemException {
   const definition = UpdateContractSignerProblemCatalog[error.code];
 
-  return V2ProblemException.from({
+  return ProblemException.from({
     type: definition.type,
     title: definition.title,
     status: definition.status,

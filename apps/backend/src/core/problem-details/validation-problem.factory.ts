@@ -1,7 +1,7 @@
 import { HttpStatus } from '@nestjs/common';
 
-import { createV2ProblemDetails } from './problem-details.factory';
-import { InvalidParam, V2ProblemDetailsBody, V2ProblemDetailsExtensions } from './problem-details';
+import { createProblemDetails } from './problem-details.factory';
+import { InvalidParam, ProblemDetailsBody, ProblemDetailsExtensions } from './problem-details';
 
 export interface CreateV2ValidationProblemInput {
   type: string;
@@ -11,11 +11,11 @@ export interface CreateV2ValidationProblemInput {
   traceId?: string;
   requestId?: string;
   invalidParams: InvalidParam[];
-  extensions?: V2ProblemDetailsExtensions;
+  extensions?: ProblemDetailsExtensions;
 }
 
-export function createV2ValidationProblem(input: CreateV2ValidationProblemInput): V2ProblemDetailsBody {
-  return createV2ProblemDetails({
+export function createValidationProblem(input: CreateV2ValidationProblemInput): ProblemDetailsBody {
+  return createProblemDetails({
     type: input.type,
     title: 'Validation failed',
     status: input.status ?? HttpStatus.BAD_REQUEST,

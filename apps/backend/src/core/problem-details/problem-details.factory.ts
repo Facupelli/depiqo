@@ -1,8 +1,8 @@
-import { V2ProblemDetailsBody, V2ProblemDetailsExtensions } from './problem-details';
+import { ProblemDetailsBody, ProblemDetailsExtensions } from './problem-details';
 
 const RESERVED_PROBLEM_DETAIL_KEYS = new Set(['type', 'title', 'status', 'detail', 'instance']);
 
-export interface CreateV2ProblemDetailsInput {
+export interface CreateProblemDetailsInput {
   type: string;
   title: string;
   status: number;
@@ -10,11 +10,11 @@ export interface CreateV2ProblemDetailsInput {
   instance?: string;
   traceId?: string;
   requestId?: string;
-  extensions?: V2ProblemDetailsExtensions;
+  extensions?: ProblemDetailsExtensions;
 }
 
-export function createV2ProblemDetails(input: CreateV2ProblemDetailsInput): V2ProblemDetailsBody {
-  assertNoReservedV2ProblemExtensionKeys(input.extensions);
+export function createProblemDetails(input: CreateProblemDetailsInput): ProblemDetailsBody {
+  assertNoReservedProblemExtensionKeys(input.extensions);
 
   return {
     type: input.type,
@@ -28,7 +28,7 @@ export function createV2ProblemDetails(input: CreateV2ProblemDetailsInput): V2Pr
   };
 }
 
-export function assertNoReservedV2ProblemExtensionKeys(extensions?: V2ProblemDetailsExtensions): void {
+export function assertNoReservedProblemExtensionKeys(extensions?: ProblemDetailsExtensions): void {
   if (!extensions) return;
 
   const reservedKeys = Object.keys(extensions).filter((key) => RESERVED_PROBLEM_DETAIL_KEYS.has(key));

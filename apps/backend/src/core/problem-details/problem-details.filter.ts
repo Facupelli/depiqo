@@ -3,13 +3,13 @@ import { Request, Response } from 'express';
 
 import { LogContext } from 'src/core/logger/log-context';
 
-import { createV2ProblemDetails } from './problem-details.factory';
-import { InvalidParam, V2_PROBLEM_DETAILS_CONTENT_TYPE, V2ProblemDetailsBody } from './problem-details';
-import { V2PlatformProblemTypes } from './platform-problem-types';
-import { createV2ValidationProblem } from './validation-problem.factory';
-import { V2ProblemException } from './problem.exception';
+import { createProblemDetails } from './problem-details.factory';
+import { InvalidParam, PROBLEM_DETAILS_CONTENT_TYPE, ProblemDetailsBody } from './problem-details';
+import { PlatformProblemTypes } from './platform-problem-types';
+import { createValidationProblem } from './validation-problem.factory';
+import { ProblemException } from './problem.exception';
 
-type HandlerResult = { status: number; problemDetails: V2ProblemDetailsBody };
+type HandlerResult = { status: number; problemDetails: ProblemDetailsBody };
 
 interface HttpProblemDefaults {
   type: string;
@@ -18,7 +18,7 @@ interface HttpProblemDefaults {
 }
 
 @Catch()
-export class V2ProblemDetailsFilter implements ExceptionFilter {
+export class ProblemDetailsFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost): void {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
@@ -33,20 +33,20 @@ export class V2ProblemDetailsFilter implements ExceptionFilter {
 
     this.enrichCanonicalLog(exception, body);
 
-    response.status(status).contentType(V2_PROBLEM_DETAILS_CONTENT_TYPE).json(body);
+    response.status(status).contentType(PROBLEM_DETAILS_CONTENT_TYPE).json(body);
   }
 
   private resolve(exception: unknown, request: Request): HandlerResult {
     return (
-      this.tryHandleV2ProblemException(exception, request) ??
+      this.tryHandleProblemException(exception, request) ??
       this.tryHandleValidationException(exception, request) ??
       this.tryHandleHttpException(exception, request) ??
       this.handleUnknownException(exception, request)
     );
   }
 
-  private tryHandleV2ProblemException(exception: unknown, request: Request): HandlerResult | null {
-    if (!(exception instanceof V2ProblemException)) return null;
+  private tryHandleProblemException(exception: unknown, request: Request): HandlerResult | null {
+    if (!(exception instanceof ProblemException)) return null;
 
     const status = exception.getStatus();
     const problemDetails = exception.getProblemDetails();
@@ -73,8 +73,8 @@ export class V2ProblemDetailsFilter implements ExceptionFilter {
 
     return {
       status,
-      problemDetails: createV2ValidationProblem({
-        type: V2PlatformProblemTypes.request.validationFailed,
+      problemDetails: createValidationProblem({
+        type: PlatformProblemTypes.request.validationFailed,
         status,
         instance: this.getRequestInstance(request),
         invalidParams,
@@ -90,7 +90,7 @@ export class V2ProblemDetailsFilter implements ExceptionFilter {
 
     return {
       status,
-      problemDetails: createV2ProblemDetails({
+      problemDetails: createProblemDetails({
         type: defaults.type,
         title: defaults.title,
         status,
@@ -105,8 +105,8 @@ export class V2ProblemDetailsFilter implements ExceptionFilter {
 
     return {
       status,
-      problemDetails: createV2ProblemDetails({
-        type: V2PlatformProblemTypes.system.internalServerError,
+      problemDetails: createProblemDetails({
+        type: PlatformProblemTypes.system.internalServerError,
         title: 'Internal server error',
         status,
         detail: 'An unexpected error occurred. Please try again later.',
@@ -119,75 +119,75 @@ export class V2ProblemDetailsFilter implements ExceptionFilter {
     switch (status) {
       case HttpStatus.BAD_REQUEST:
         return {
-          type: V2PlatformProblemTypes.request.badRequest,
+          type: PlatformProblemTypes.request.badRequest,
           title: 'Bad request',
           detail: 'The request could not be understood or processed.',
         };
       case HttpStatus.UNAUTHORIZED:
         return {
-          type: V2PlatformProblemTypes.auth.unauthorized,
+          type: PlatformProblemTypes.auth.unauthorized,
           title: 'Unauthorized',
           detail: 'Authentication is required to access this resource.',
         };
       case HttpStatus.FORBIDDEN:
         return {
-          type: V2PlatformProblemTypes.auth.forbidden,
+          type: PlatformProblemTypes.auth.forbidden,
           title: 'Forbidden',
           detail: 'You do not have permission to access this resource.',
         };
       case HttpStatus.NOT_FOUND:
         return {
-          type: V2PlatformProblemTypes.request.notFound,
+          type: PlatformProblemTypes.request.notFound,
           title: 'Not found',
           detail: 'The requested resource could not be found.',
         };
       case HttpStatus.METHOD_NOT_ALLOWED:
         return {
-          type: V2PlatformProblemTypes.request.methodNotAllowed,
+          type: PlatformProblemTypes.request.methodNotAllowed,
           title: 'Method not allowed',
           detail: 'The requested HTTP method is not allowed for this resource.',
         };
       case HttpStatus.CONFLICT:
         return {
-          type: V2PlatformProblemTypes.request.conflict,
+          type: PlatformProblemTypes.request.conflict,
           title: 'Conflict',
           detail: 'The request conflicts with the current state of the resource.',
         };
       case HttpStatus.UNSUPPORTED_MEDIA_TYPE:
         return {
-          type: V2PlatformProblemTypes.request.unsupportedMediaType,
+          type: PlatformProblemTypes.request.unsupportedMediaType,
           title: 'Unsupported media type',
           detail: 'The request media type is not supported.',
         };
       case HttpStatus.UNPROCESSABLE_ENTITY:
         return {
-          type: V2PlatformProblemTypes.request.unprocessableEntity,
+          type: PlatformProblemTypes.request.unprocessableEntity,
           title: 'Unprocessable entity',
           detail: 'The request was well-formed but could not be processed.',
         };
       case HttpStatus.TOO_MANY_REQUESTS:
         return {
-          type: V2PlatformProblemTypes.request.tooManyRequests,
+          type: PlatformProblemTypes.request.tooManyRequests,
           title: 'Too many requests',
           detail: 'Too many requests were sent in a given amount of time.',
         };
       case HttpStatus.SERVICE_UNAVAILABLE:
         return {
-          type: V2PlatformProblemTypes.system.dependencyUnavailable,
+          type: PlatformProblemTypes.system.dependencyUnavailable,
           title: 'Dependency unavailable',
           detail: 'A required dependency is temporarily unavailable.',
         };
       default:
         if (status >= 500) {
           return {
-            type: V2PlatformProblemTypes.system.internalServerError,
+            type: PlatformProblemTypes.system.internalServerError,
             title: 'Internal server error',
             detail: 'An unexpected error occurred. Please try again later.',
           };
         }
 
         return {
-          type: V2PlatformProblemTypes.request.badRequest,
+          type: PlatformProblemTypes.request.badRequest,
           title: 'Bad request',
           detail: 'The request could not be understood or processed.',
         };
@@ -333,7 +333,7 @@ export class V2ProblemDetailsFilter implements ExceptionFilter {
     return request.originalUrl || request.url;
   }
 
-  private enrichCanonicalLog(exception: unknown, problemDetails: V2ProblemDetailsBody): void {
+  private enrichCanonicalLog(exception: unknown, problemDetails: ProblemDetailsBody): void {
     LogContext.set('httpStatus', problemDetails.status);
     LogContext.set('errorCode', problemDetails.type);
     LogContext.set('errorMessage', this.canonicalErrorMessage(exception, problemDetails));
@@ -342,8 +342,8 @@ export class V2ProblemDetailsFilter implements ExceptionFilter {
     LogContext.set('problemDetail', problemDetails.detail);
   }
 
-  private canonicalErrorMessage(exception: unknown, problemDetails: V2ProblemDetailsBody): string {
-    if (exception instanceof V2ProblemException) return problemDetails.detail;
+  private canonicalErrorMessage(exception: unknown, problemDetails: ProblemDetailsBody): string {
+    if (exception instanceof ProblemException) return problemDetails.detail;
 
     if (exception instanceof Error) return exception.message;
 
