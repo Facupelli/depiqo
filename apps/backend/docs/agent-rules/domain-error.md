@@ -2,11 +2,41 @@
 
 ## Role
 
-A Domain Error represents an expected, recoverable business rule violation. It is a normal part of domain operation — not an exceptional failure. Domain Errors are **returned**, not thrown, using the `Result` type from `neverthrow`.
+A Domain Error represents an expected, recoverable business rule violation inside the domain model. It is a normal domain outcome, not an exceptional technical failure.
 
-Examples of Domain Errors: equipment is not available for the requested period, a booking cannot be cancelled because it has already started, a tenant has exceeded their credit limit.
+Domain Errors are returned with `Result` from `neverthrow`; they are not thrown for expected business failures.
 
-Examples of what is NOT a Domain Error: database connection failure, an invariant violated by a bug, a missing required configuration value. Those are exceptional failures and should be thrown as standard exceptions.
+For HTTP-facing error flow, also read `error-handling-problem-details.md`.
+
+---
+
+## Domain Error vs Application Error
+
+Use Domain Errors for business rules owned by entities, value objects, or domain services.
+
+Examples:
+
+```text
+equipment is unavailable for a period
+booking cannot be cancelled from its current state
+quantity is insufficient
+rental period violates a domain policy
+```
+
+Use feature/application errors at the HTTP-facing use-case boundary.
+
+A command/query handler may map domain errors into `<feature>.errors.ts` application errors before returning to the controller. The controller then maps those feature errors to Problem Details.
+
+Flow:
+
+```text
+domain entity/service returns Result<T, DomainError>
+  -> handler maps known DomainError to FeatureError
+  -> handler returns Result<T, FeatureError>
+  -> controller maps FeatureError to ProblemException
+```
+
+Unexpected technical failures are not Domain Errors. Database failures, missing configuration, programmer mistakes, impossible invariants, and unknown dependency failures should throw/bubble.
 
 ---
 
@@ -14,38 +44,41 @@ Examples of what is NOT a Domain Error: database connection failure, an invarian
 
 ### Return, do not throw
 
-- Domain Errors are returned as `err(new SomeDomainError())` wrapped in a `Result` type.
-- The function signature explicitly declares which errors it can return, making all failure cases visible to the caller.
-- Never use `throw` for an expected business failure.
+- Return Domain Errors as `err(new SomeDomainError(...))`.
+- Declare possible domain failures in the `Result` type.
+- Never throw for an expected business failure.
 
 ### Class hierarchy
 
-- All domain errors extend a base `DomainError` class.
-- Each module defines a module-level base error (e.g. `BookingError`) that extends `DomainError`.
-- Specific errors extend the module-level base (e.g. `EquipmentUnavailableError extends BookingError`).
-- This hierarchy allows callers to catch at different levels of granularity.
+- All domain errors extend the base `DomainError` class.
+- Each module may define a module-level base error, e.g. `BookingError extends DomainError`.
+- Specific errors extend the module-level base, e.g. `EquipmentUnavailableError extends BookingError`.
 
 ### Error message
 
-- Include enough context in the error message to make debugging straightforward: include relevant IDs or values.
-- Messages are for developers and logs, not for end users. The controller maps domain errors to user-facing HTTP responses.
+- Include enough context for debugging, such as relevant IDs or values.
+- Messages are for developers and logs.
+- Messages are not automatically safe API response text.
+- Controllers should expose client-safe Problem Details, not raw domain messages by default.
 
 ### Naming
 
-- File: `[module-name].errors.ts` (all errors for a module in one file)
-- Classes: descriptive past-tense or noun phrases — `EquipmentUnavailableError`, `BookingAlreadyConfirmedError`, `InsufficientCreditError`
+- File: `[module-name].errors.ts` for module/domain errors.
+- Classes: descriptive names such as `EquipmentUnavailableError`, `BookingAlreadyConfirmedError`, `InsufficientCreditError`.
 
 ### What never belongs here
 
 - HTTP status codes.
-- User-facing messages.
+- Problem Details mappings.
+- User-facing API messages.
 - Logging calls.
+- NestJS HTTP exceptions.
 
 ---
 
 ## Structure
 
-### Base classes (defined once in core)
+### Base class
 
 ```typescript
 // src/core/exceptions/domain.error.ts
@@ -53,7 +86,7 @@ export class DomainError extends Error {
   constructor(message: string) {
     super(message);
     this.name = this.constructor.name;
-    // maintains proper stack trace in V8
+
     if (Error.captureStackTrace) {
       Error.captureStackTrace(this, this.constructor);
     }
@@ -61,7 +94,7 @@ export class DomainError extends Error {
 }
 ```
 
-### Module errors file
+### Module domain errors
 
 ```typescript
 // modules/booking/domain/errors/booking.errors.ts
@@ -80,65 +113,51 @@ export class BookingAlreadyConfirmedError extends BookingError {
     super(`Booking ${bookingId} is already confirmed`);
   }
 }
-
-export class BookingCannotBeCancelledError extends BookingError {
-  constructor(bookingId: string, currentStatus: string) {
-    super(`Booking ${bookingId} cannot be cancelled from status '${currentStatus}'`);
-  }
-}
 ```
 
-### Using Result in a domain service or entity method
+### Returning a Domain Error
 
 ```typescript
-import { Result, ok, err } from 'neverthrow';
-import { EquipmentUnavailableError } from '../errors/booking.errors';
+import { err, ok, Result } from 'neverthrow';
 
 checkAvailability(
   period: BookingPeriod,
   existingBookings: BookingEntity[],
 ): Result<void, EquipmentUnavailableError> {
-  const hasConflict = existingBookings.some((b) => b.period.overlaps(period));
+  const hasConflict = existingBookings.some((booking) => booking.period.overlaps(period));
+
   if (hasConflict) {
     return err(new EquipmentUnavailableError(this.equipmentId));
   }
+
   return ok(undefined);
 }
 ```
 
-### Handling Result in the Application Service
+### Mapping a Domain Error at the use-case boundary
 
 ```typescript
-const result = this.bookingAvailability.checkAvailability(command.period, existingBookings);
-if (result.isErr()) {
-  return err(result.error); // propagate up to the controller
+const availabilityResult = this.bookingAvailability.checkAvailability(command.period, existingBookings);
+
+if (availabilityResult.isErr()) {
+  return err(
+    createBookingError(
+      'booking.equipment_unavailable',
+      availabilityResult.error.message,
+      availabilityResult.error,
+      context,
+    ),
+  );
 }
 ```
 
-### Mapping to HTTP in the Controller
-
-```typescript
-const result = await this.commandBus.execute(command);
-
-if (result.isErr()) {
-  const error = result.error;
-  if (error instanceof EquipmentUnavailableError) {
-    throw new ConflictException(error.message);
-  }
-  if (error instanceof BookingCannotBeCancelledError) {
-    throw new UnprocessableEntityException(error.message);
-  }
-  throw error; // unknown error — propagates as 500
-}
-
-return new CreateBookingResponseDto({ id: result.value.id });
-```
+The domain error is preserved as `cause`; the returned error belongs to the HTTP-facing feature contract.
 
 ---
 
 ## Examples
 
-### ✅ Correct: expected business failure returned as Result
+### Correct: expected business failure returned as Result
 
 ```typescript
 if (hasConflict) {
@@ -146,36 +165,34 @@ if (hasConflict) {
 }
 ```
 
-### ❌ Wrong: expected business failure thrown as exception
+### Wrong: expected business failure thrown as exception
 
 ```typescript
 if (hasConflict) {
-  throw new EquipmentUnavailableError(equipmentId); // invisible to caller at compile time
+  throw new EquipmentUnavailableError(equipmentId);
 }
 ```
 
 ---
 
-### ✅ Correct: HTTP mapping only in the controller
+### Correct: HTTP mapping happens outside the domain layer
 
 ```typescript
-// Controller maps domain errors to HTTP status codes
-if (error instanceof EquipmentUnavailableError) {
-  throw new ConflictException(error.message);
-}
+// Controller maps feature/application errors to ProblemException.
+throw toCreateBookingProblem(result.error);
 ```
 
-### ❌ Wrong: HTTP concerns inside the domain error class
+### Wrong: HTTP concerns inside a domain error
 
 ```typescript
 export class EquipmentUnavailableError extends BookingError {
-  readonly httpStatus = 409; // domain layer must not know about HTTP
+  readonly httpStatus = 409;
 }
 ```
 
 ---
 
-### ✅ Correct: error message includes context for debugging
+### Correct: error message includes debugging context
 
 ```typescript
 export class EquipmentUnavailableError extends BookingError {
@@ -185,12 +202,24 @@ export class EquipmentUnavailableError extends BookingError {
 }
 ```
 
-### ❌ Wrong: vague error message with no context
+### Wrong: vague error message
 
 ```typescript
 export class EquipmentUnavailableError extends BookingError {
   constructor() {
-    super('Equipment not available'); // which equipment? what period?
+    super('Equipment not available');
   }
 }
+```
+
+---
+
+## Canonical HTTP-Facing Example
+
+For the current feature/application error flow, use:
+
+```text
+apps/backend/src/modules/pricing/features/calculate-cart-price/calculate-cart-price.errors.ts
+apps/backend/src/modules/pricing/features/calculate-cart-price/calculate-cart-price.handler.ts
+apps/backend/src/modules/pricing/features/calculate-cart-price/calculate-cart-price.controller.ts
 ```

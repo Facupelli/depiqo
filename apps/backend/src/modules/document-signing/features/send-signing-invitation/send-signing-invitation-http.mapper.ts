@@ -1,6 +1,6 @@
 import { BadGatewayException, HttpStatus, NotFoundException } from '@nestjs/common';
 
-import { ProblemException } from 'src/core/exceptions/problem.exception';
+import { ProblemException } from 'src/core/problem-details';
 
 import {
   SigningInvitationCustomerProfileMissingError,
@@ -24,12 +24,13 @@ export function mapSendSigningInvitationHttpError(error: unknown): Error {
     error instanceof SigningInvitationOrderNotReadyError ||
     error instanceof SigningInvitationRecipientEmailRequiredError
   ) {
-    return new ProblemException(
-      HttpStatus.UNPROCESSABLE_ENTITY,
-      'Signing Invitation Not Allowed',
-      error.message,
-      'errors://v2-signing-invitation-not-allowed',
-    );
+    return ProblemException.from({
+      status: HttpStatus.UNPROCESSABLE_ENTITY,
+      title: 'Signing Invitation Not Allowed',
+      detail: error.message,
+      type: 'errors://v2-signing-invitation-not-allowed',
+      cause: error,
+    });
   }
 
   if (error instanceof SigningInvitationEmailDeliveryFailedError) {

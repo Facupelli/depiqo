@@ -7,18 +7,11 @@ import { InsuranceCalculationService } from 'src/core/domain/services/insurance-
 import { PrismaService } from 'src/core/database/prisma.service';
 
 import { PricingContextLoader } from '../../application/pricing-context-loader';
-import {
-  CouponNotApplicableError,
-  InvalidPricingInputError,
-  PricingError,
-} from '../../pricing-engine/errors/pricing.errors';
+import { CouponNotApplicableError, InvalidPricingInputError } from '../../pricing-engine/errors/pricing.errors';
 import { PricingInput } from '../../pricing-engine/final/pricing-input.types';
 import { PricingResult } from '../../pricing-engine/final/pricing-result.type';
 import { RentalPricingService } from '../../pricing-engine/final/rental-pricing.service';
-import {
-  CalculateCartPriceApplicationError,
-  calculateCartPriceApplicationError,
-} from './calculate-cart-price-application.error';
+import { CalculateCartPriceError, calculateCartPriceError } from './calculate-cart-price.errors';
 import { CalculateCartPriceQuery } from './calculate-cart-price.query';
 import { CatalogPublicApi } from 'src/modules/catalog/public-api/catalog.public-api';
 import {
@@ -26,6 +19,11 @@ import {
   TenantManagementPublicApi,
 } from 'src/modules/tenant-management/public-api/tenant-management.public-api';
 import { BasePricingSelectionInput } from '../../public-api/pricing.public-api';
+import {
+  InvalidCatalogSelectionQuantityError,
+  RentalCommitmentError,
+  RentalInvalidFieldError,
+} from 'src/modules/rental-commitment/domain/errors/rental-commitment.errors';
 
 type CalculateCartPriceResult = {
   currency: string | null;
@@ -51,7 +49,7 @@ type CalculateCartPriceResult = {
 @QueryHandler(CalculateCartPriceQuery)
 export class CalculateCartPriceHandler implements IQueryHandler<
   CalculateCartPriceQuery,
-  Result<CalculateCartPriceResult, CalculateCartPriceApplicationError>
+  Result<CalculateCartPriceResult, CalculateCartPriceError>
 > {
   private readonly calculator = new RentalPricingService();
 
@@ -64,8 +62,9 @@ export class CalculateCartPriceHandler implements IQueryHandler<
 
   async execute(
     query: CalculateCartPriceQuery,
-  ): Promise<Result<CalculateCartPriceResult, CalculateCartPriceApplicationError>> {
-    const validationError = this.validateQuery(query);
+  ): Promise<Result<CalculateCartPriceResult, CalculateCartPriceError>> {
+    const context = this.errorContext(query);
+    const validationError = this.validateQuery(query, context);
     if (validationError) {
       return err(validationError);
     }
@@ -75,10 +74,11 @@ export class CalculateCartPriceHandler implements IQueryHandler<
     });
     if (tenantPricingConfigResult.isErr()) {
       return err(
-        calculateCartPriceApplicationError(
-          'TenantPricingConfigUnavailable',
+        calculateCartPriceError(
+          'pricing.tenant_config_unavailable',
           `Tenant pricing config for tenant "${query.tenantId}" is unavailable.`,
           tenantPricingConfigResult.error,
+          context,
         ),
       );
     }
@@ -95,7 +95,14 @@ export class CalculateCartPriceHandler implements IQueryHandler<
     }
 
     if (query.couponCode && !query.customerId) {
-      return err(calculateCartPriceApplicationError('CouponRequiresCustomer', 'Coupon pricing requires a customer.'));
+      return err(
+        calculateCartPriceError(
+          'pricing.coupon_requires_customer',
+          'Coupon pricing requires a customer.',
+          undefined,
+          context,
+        ),
+      );
     }
 
     const branch = await this.prisma.client.v2Branch.findFirst({
@@ -104,7 +111,14 @@ export class CalculateCartPriceHandler implements IQueryHandler<
     });
 
     if (!branch) {
-      return err(calculateCartPriceApplicationError('BranchNotFound', `Branch "${query.branchId}" was not found.`));
+      return err(
+        calculateCartPriceError(
+          'pricing.branch_not_found',
+          `Branch "${query.branchId}" was not found.`,
+          undefined,
+          context,
+        ),
+      );
     }
 
     const resolvedCatalogSelections = await this.catalogApi.resolveSelectedRentalOffers({
@@ -117,94 +131,127 @@ export class CalculateCartPriceHandler implements IQueryHandler<
     });
 
     if (resolvedCatalogSelections.isErr()) {
-      return err(calculateCartPriceApplicationError('RentalOfferNotFound', `Rental offer was not found.`));
+      return err(this.mapCatalogSelectionError(resolvedCatalogSelections.error, context));
     }
 
+    const pricingContext = await this.pricingContextLoader.loadPricingCalculationContext({
+      tenantId: query.tenantId,
+      customerId: query.customerId,
+      couponCode: query.couponCode,
+      rentalOfferIds: query.selectedOffers.map((selection) => selection.rentalOfferId),
+    });
+
+    const pricingInput: PricingInput = {
+      tenantId: query.tenantId,
+      branchId: query.branchId,
+      rentalPeriod: { start: query.rentalPeriodStart, end: query.rentalPeriodEnd },
+      pricingConfig: {
+        timezone: branch.timezone ?? tenantPricingConfig.timezone,
+        dailyBillingPolicy: tenantPricingConfig.dailyBillingPolicy,
+        minimumChargedDays: tenantPricingConfig.minimumChargedDays,
+        halfDayThresholdMinutes: tenantPricingConfig.halfDayThresholdMinutes,
+      },
+      selections: resolvedCatalogSelections.value.resolvedOffers.map((offer) => ({
+        rentalOfferId: offer.rentalOfferId,
+        rentableItemId: offer.rentableItem.id,
+        rentableItemName: offer.rentableItem.name,
+        categoryId: offer.rentableItem.categoryId ?? undefined,
+        quantity: offer.quantity,
+        ratePlan: pricingContext.ratePlansByRentalOfferId.get(offer.rentalOfferId),
+      })) as BasePricingSelectionInput[],
+      customerId: query.customerId,
+      calculationDate: new Date(),
+      automaticPromotions: pricingContext.automaticPromotions,
+      couponCode: query.couponCode,
+      coupon: pricingContext.coupon,
+    };
+
+    let pricingResult: PricingResult;
     try {
-      const pricingContext = await this.pricingContextLoader.loadPricingCalculationContext({
-        tenantId: query.tenantId,
-        customerId: query.customerId,
-        couponCode: query.couponCode,
-        rentalOfferIds: query.selectedOffers.map((selection) => selection.rentalOfferId),
-      });
-
-      const pricingInput: PricingInput = {
-        tenantId: query.tenantId,
-        branchId: query.branchId,
-        rentalPeriod: { start: query.rentalPeriodStart, end: query.rentalPeriodEnd },
-        pricingConfig: {
-          timezone: branch.timezone ?? tenantPricingConfig.timezone,
-          dailyBillingPolicy: tenantPricingConfig.dailyBillingPolicy,
-          minimumChargedDays: tenantPricingConfig.minimumChargedDays,
-          halfDayThresholdMinutes: tenantPricingConfig.halfDayThresholdMinutes,
-        },
-        selections: resolvedCatalogSelections.value.resolvedOffers.map((offer) => ({
-          rentalOfferId: offer.rentalOfferId,
-          rentableItemId: offer.rentableItem.id,
-          rentableItemName: offer.rentableItem.name,
-          categoryId: offer.rentableItem.categoryId ?? undefined,
-          quantity: offer.quantity,
-          ratePlan: pricingContext.ratePlansByRentalOfferId.get(offer.rentalOfferId),
-        })) as BasePricingSelectionInput[],
-        customerId: query.customerId,
-        calculationDate: new Date(),
-        automaticPromotions: pricingContext.automaticPromotions,
-        couponCode: query.couponCode,
-        coupon: pricingContext.coupon,
-      };
-
-      const pricingResult = this.calculator.calculate(pricingInput);
-
-      return ok(
-        this.buildResult({
-          pricingResult,
-          insuranceSelected: query.insuranceSelected,
-          tenantPricingConfig,
-        }),
-      );
+      pricingResult = this.calculator.calculate(pricingInput);
     } catch (error) {
-      return this.mapCalculationError(error);
+      return this.mapCalculationError(error, context);
     }
+
+    return ok(
+      this.buildResult({
+        pricingResult,
+        insuranceSelected: query.insuranceSelected,
+        tenantPricingConfig,
+      }),
+    );
   }
 
-  private validateQuery(query: CalculateCartPriceQuery): CalculateCartPriceApplicationError | null {
+  private errorContext(query: CalculateCartPriceQuery): Record<string, unknown> {
+    return {
+      useCase: 'CalculateCartPrice',
+      tenantId: query.tenantId,
+      branchId: query.branchId,
+      customerId: query.customerId,
+      hasCouponCode: Boolean(query.couponCode),
+      selectedOfferCount: query.selectedOffers.length,
+    };
+  }
+
+  private validateQuery(
+    query: CalculateCartPriceQuery,
+    context: Record<string, unknown>,
+  ): CalculateCartPriceError | null {
     if (!query.tenantId.trim()) {
-      return calculateCartPriceApplicationError('InvalidCartSelection', 'tenantId is required.');
+      return calculateCartPriceError('pricing.invalid_cart_selection', 'tenantId is required.', undefined, context);
     }
     if (!query.branchId.trim()) {
-      return calculateCartPriceApplicationError('InvalidCartSelection', 'branchId is required.');
+      return calculateCartPriceError('pricing.invalid_cart_selection', 'branchId is required.', undefined, context);
     }
     if (!(query.rentalPeriodStart instanceof Date) || Number.isNaN(query.rentalPeriodStart.getTime())) {
-      return calculateCartPriceApplicationError('RentalPeriodInvalid', 'rentalPeriod.start must be a valid date.');
+      return calculateCartPriceError(
+        'pricing.invalid_rental_period',
+        'rentalPeriod.start must be a valid date.',
+        undefined,
+        context,
+      );
     }
     if (!(query.rentalPeriodEnd instanceof Date) || Number.isNaN(query.rentalPeriodEnd.getTime())) {
-      return calculateCartPriceApplicationError('RentalPeriodInvalid', 'rentalPeriod.end must be a valid date.');
+      return calculateCartPriceError(
+        'pricing.invalid_rental_period',
+        'rentalPeriod.end must be a valid date.',
+        undefined,
+        context,
+      );
     }
     if (query.rentalPeriodEnd <= query.rentalPeriodStart) {
-      return calculateCartPriceApplicationError(
-        'RentalPeriodInvalid',
+      return calculateCartPriceError(
+        'pricing.invalid_rental_period',
         'rentalPeriod.end must be after rentalPeriod.start.',
+        undefined,
+        context,
       );
     }
 
     const seenRentalOfferIds = new Set<string>();
     for (const [index, selection] of query.selectedOffers.entries()) {
       if (!selection.rentalOfferId.trim()) {
-        return calculateCartPriceApplicationError(
-          'InvalidCartSelection',
+        return calculateCartPriceError(
+          'pricing.invalid_cart_selection',
           `selectedOffers.${index}.rentalOfferId is required.`,
+          undefined,
+          context,
         );
       }
       if (!Number.isInteger(selection.quantity) || selection.quantity <= 0) {
-        return calculateCartPriceApplicationError(
-          'InvalidCartSelection',
+        return calculateCartPriceError(
+          'pricing.invalid_cart_selection',
           `selectedOffers.${index}.quantity must be a positive integer.`,
+          undefined,
+          context,
         );
       }
       if (seenRentalOfferIds.has(selection.rentalOfferId)) {
-        return calculateCartPriceApplicationError(
-          'InvalidCartSelection',
+        return calculateCartPriceError(
+          'pricing.invalid_cart_selection',
           `Rental offer "${selection.rentalOfferId}" was selected more than once.`,
+          undefined,
+          context,
         );
       }
       seenRentalOfferIds.add(selection.rentalOfferId);
@@ -275,17 +322,43 @@ export class CalculateCartPriceHandler implements IQueryHandler<
     };
   }
 
-  private mapCalculationError(error: unknown): Result<CalculateCartPriceResult, CalculateCartPriceApplicationError> {
+  private mapCatalogSelectionError(
+    error: RentalCommitmentError,
+    context: Record<string, unknown>,
+  ): CalculateCartPriceError {
+    if (error instanceof InvalidCatalogSelectionQuantityError) {
+      return calculateCartPriceError('pricing.invalid_cart_selection', error.message, error, context);
+    }
+
+    if (error instanceof RentalInvalidFieldError) {
+      if (error.field === 'rentalOfferId' && error.reason.includes('not found')) {
+        return calculateCartPriceError('pricing.rental_offer_not_found', error.message, error, context);
+      }
+
+      if (error.field === 'rentalOfferId' && error.reason.includes('not selectable')) {
+        return calculateCartPriceError('pricing.rental_offer_not_selectable', error.message, error, context);
+      }
+
+      if (error.field === 'rentableItemId' && error.reason.includes('not active')) {
+        return calculateCartPriceError('pricing.rentable_item_inactive', error.message, error, context);
+      }
+
+      return calculateCartPriceError('pricing.invalid_cart_selection', error.message, error, context);
+    }
+
+    throw error;
+  }
+
+  private mapCalculationError(
+    error: unknown,
+    context: Record<string, unknown>,
+  ): Result<CalculateCartPriceResult, CalculateCartPriceError> {
     if (error instanceof CouponNotApplicableError) {
-      return err(calculateCartPriceApplicationError('CouponNotApplicable', error.message, error));
+      return err(calculateCartPriceError('pricing.coupon_not_applicable', error.message, error, context));
     }
 
     if (error instanceof InvalidPricingInputError && error.message.includes('no active pricing')) {
-      return err(calculateCartPriceApplicationError('MissingActivePricing', error.message, error));
-    }
-
-    if (error instanceof PricingError) {
-      return err(calculateCartPriceApplicationError('PricingCalculationFailed', error.message, error));
+      return err(calculateCartPriceError('pricing.missing_active_pricing', error.message, error, context));
     }
 
     throw error;

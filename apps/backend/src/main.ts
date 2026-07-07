@@ -2,7 +2,7 @@ import { NestFactory, Reflector } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module';
 import { ZodValidationPipe } from 'nestjs-zod';
-import { ProblemDetailsFilter } from './core/exceptions/problem-detail.filter';
+import { ProblemDetailsFilter } from './core/problem-details';
 import { AppLogger } from './core/logger/app-logger.service';
 import { TransformInterceptor } from './core/response/transform.interceptor';
 import {
@@ -85,7 +85,7 @@ async function bootstrap() {
   app.use(passport.session());
 
   app.useGlobalPipes(new ZodValidationPipe());
-  app.useGlobalFilters(new ProblemDetailsFilter());
+  app.useGlobalFilters(new ProblemDetailsFilter(logger));
   app.useGlobalInterceptors(new TransformInterceptor(new Reflector()));
 
   await app.listen(PORT);

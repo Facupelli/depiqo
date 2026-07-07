@@ -14,7 +14,7 @@ export class LoggingMiddleware implements NestMiddleware {
       {
         requestId,
         httpMethod: req.method,
-        httpPath: req.baseUrl,
+        httpPath: req.originalUrl || req.url,
         startedAt: Date.now(),
         dbQueries: 0,
         dbDurationMs: 0,

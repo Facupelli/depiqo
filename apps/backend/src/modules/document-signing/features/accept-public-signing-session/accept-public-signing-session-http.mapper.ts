@@ -1,6 +1,6 @@
 import { GoneException, HttpStatus, UnauthorizedException } from '@nestjs/common';
 
-import { ProblemException } from 'src/core/exceptions/problem.exception';
+import { ProblemException } from 'src/core/problem-details';
 
 import {
   PublicSigningRequestExpiredError,
@@ -34,12 +34,13 @@ export function mapAcceptPublicSigningSessionHttpError(error: unknown): Error {
     error instanceof PublicSigningUnsignedArtifactMissingError ||
     error instanceof SigningAcceptanceAlreadyCompletedError
   ) {
-    return new ProblemException(
-      HttpStatus.CONFLICT,
-      'Signing Session Unavailable',
-      error.message,
-      'errors://v2-public-signing-session-unavailable',
-    );
+    return ProblemException.from({
+      status: HttpStatus.CONFLICT,
+      title: 'Signing Session Unavailable',
+      detail: error.message,
+      type: 'errors://v2-public-signing-session-unavailable',
+      cause: error,
+    });
   }
 
   if (
@@ -48,21 +49,23 @@ export function mapAcceptPublicSigningSessionHttpError(error: unknown): Error {
     error instanceof SigningAcceptanceTextVersionRequiredError ||
     error instanceof SigningAcceptanceTextVersionInvalidError
   ) {
-    return new ProblemException(
-      HttpStatus.UNPROCESSABLE_ENTITY,
-      'Signing Acceptance Invalid',
-      error.message,
-      'errors://v2-signing-acceptance-invalid',
-    );
+    return ProblemException.from({
+      status: HttpStatus.UNPROCESSABLE_ENTITY,
+      title: 'Signing Acceptance Invalid',
+      detail: error.message,
+      type: 'errors://v2-signing-acceptance-invalid',
+      cause: error,
+    });
   }
 
   if (error instanceof SigningAcceptanceRenderFailedError) {
-    return new ProblemException(
-      HttpStatus.BAD_GATEWAY,
-      'Signed Document Rendering Failed',
-      error.message,
-      'errors://v2-signed-document-rendering-failed',
-    );
+    return ProblemException.from({
+      status: HttpStatus.BAD_GATEWAY,
+      title: 'Signed Document Rendering Failed',
+      detail: error.message,
+      type: 'errors://v2-signed-document-rendering-failed',
+      cause: error,
+    });
   }
 
   return error as Error;

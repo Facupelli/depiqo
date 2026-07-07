@@ -1,6 +1,6 @@
 import { GoneException, HttpStatus, UnauthorizedException } from '@nestjs/common';
 
-import { ProblemException } from 'src/core/exceptions/problem.exception';
+import { ProblemException } from 'src/core/problem-details';
 
 import {
   PublicSigningRequestExpiredError,
@@ -27,12 +27,13 @@ export function mapStreamPublicUnsignedDocumentHttpError(error: unknown): Error 
     error instanceof PublicSigningRequestUnavailableError ||
     error instanceof PublicSigningUnsignedArtifactMissingError
   ) {
-    return new ProblemException(
-      HttpStatus.CONFLICT,
-      'Signing Document Unavailable',
-      error.message,
-      'errors://v2-public-signing-document-unavailable',
-    );
+    return ProblemException.from({
+      status: HttpStatus.CONFLICT,
+      title: 'Signing Document Unavailable',
+      detail: error.message,
+      type: 'errors://v2-public-signing-document-unavailable',
+      cause: error,
+    });
   }
 
   return error as Error;

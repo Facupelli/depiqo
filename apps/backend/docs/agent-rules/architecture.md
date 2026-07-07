@@ -22,4 +22,4 @@ This file only routes agents to implementation rules.
 - Domain Errors: `domain-error.md`
 - Repositories: `repository.md`
 - Mappers: `mapper.md`
-- Problem Details / HTTP error responses: `problem-details.md`
+- Error handling / Result flow / Problem Details: `error-handling-problem-details.md`

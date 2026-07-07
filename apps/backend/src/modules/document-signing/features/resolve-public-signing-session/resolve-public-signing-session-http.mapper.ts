@@ -1,6 +1,6 @@
 import { GoneException, HttpStatus, UnauthorizedException } from '@nestjs/common';
 
-import { ProblemException } from 'src/core/exceptions/problem.exception';
+import { ProblemException } from 'src/core/problem-details';
 
 import {
   PublicSigningRequestExpiredError,
@@ -23,12 +23,13 @@ export function mapResolvePublicSigningSessionHttpError(error: unknown): Error {
   }
 
   if (error instanceof PublicSigningRequestUnavailableError) {
-    return new ProblemException(
-      HttpStatus.CONFLICT,
-      'Signing Session Unavailable',
-      error.message,
-      'errors://v2-public-signing-session-unavailable',
-    );
+    return ProblemException.from({
+      status: HttpStatus.CONFLICT,
+      title: 'Signing Session Unavailable',
+      detail: error.message,
+      type: 'errors://v2-public-signing-session-unavailable',
+      cause: error,
+    });
   }
 
   return error as Error;

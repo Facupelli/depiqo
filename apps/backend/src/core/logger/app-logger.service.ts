@@ -74,6 +74,6 @@ export class AppLogger implements LoggerService {
    * Called once per request by the LoggingInterceptor.
    */
   canonical(log: Record<string, unknown>): void {
-    this.pino.info({ ...log, type: 'canonical' }, `canonical ${log.httpMethod} ${log.httpPath} -> ${log.httpStatus}`);
+    this.pino.info({ ...log, type: 'canonical' }, `${log.httpMethod} ${log.httpPath} -> ${log.httpStatus}`);
   }
 }
