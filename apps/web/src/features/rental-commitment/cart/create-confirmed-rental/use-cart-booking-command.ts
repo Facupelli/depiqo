@@ -7,7 +7,7 @@ import { getPortalAuthRedirectSearch } from "@/shared/auth/portal-auth-redirect"
 import { useCreateConfirmedRental } from "../../confirmed-rentals/create-confirmed-rental/create-confirmed-rental.mutation";
 import type { V2RentalCartItem } from "../v2-rental-cart.types";
 import { parseCartBookingError } from "./cart-booking-errors";
-import type { CartCheckoutPeriod, ConflictGroup } from "./cart-checkout.types";
+import type { CartCheckoutPeriod } from "./cart-checkout.types";
 import { isDeliveryRequestComplete } from "./cart-checkout-delivery";
 import { buildCreateConfirmedRentalBody } from "./cart-checkout-model";
 
@@ -59,8 +59,6 @@ export function useCartBookingCommand({
 }: UseCartBookingCommandParams) {
 	const navigate = useNavigate();
 
-	const [unavailableIds, setUnavailableIds] = useState<string[]>([]);
-	const [conflictGroups, setConflictGroups] = useState<ConflictGroup[]>([]);
 	const [bookingErrorMessage, setBookingErrorMessage] = useState<string | null>(
 		null,
 	);
@@ -71,8 +69,6 @@ export function useCartBookingCommand({
 	// const idempotency = useCreateOrderIdempotency();
 
 	const submitBooking = async () => {
-		setUnavailableIds([]);
-		setConflictGroups([]);
 		setBookingErrorMessage(null);
 
 		if (!isAuthenticated) {
@@ -135,8 +131,6 @@ export function useCartBookingCommand({
 
 			switch (parsedError.kind) {
 				case "availability-conflict":
-					setUnavailableIds(parsedError.unavailableIds);
-					setConflictGroups(parsedError.conflictGroups);
 					setBookingErrorMessage(parsedError.message);
 					return;
 
@@ -173,8 +167,6 @@ export function useCartBookingCommand({
 		isSubmittingOrder,
 		isBookingError: Boolean(bookingErrorMessage),
 		bookingErrorMessage,
-		unavailableIds,
-		conflictGroups,
 		submitBooking,
 	};
 }

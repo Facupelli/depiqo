@@ -20,14 +20,14 @@ import {
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent } from "@/components/ui/popover";
-import type {
-	ParsedGetRentalsCalendarResponse,
-	ParsedRentalsCalendarItem,
-} from "@/features/rental-commitment/rentals/rentals.queries";
 import {
 	getRentalOrderStatusPresentation,
 	RENTAL_ORDER_STATUS_LEGEND_ITEMS,
 } from "@/features/rental-commitment/rentals/rental-order-status";
+import type {
+	ParsedGetRentalsCalendarResponse,
+	ParsedRentalsCalendarItem,
+} from "@/features/rental-commitment/rentals/rentals.queries";
 import dayjs from "@/lib/dates/dayjs";
 import { fromDate, toISOString } from "@/lib/dates/parse";
 import { cn } from "@/lib/utils";

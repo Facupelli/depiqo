@@ -12,15 +12,6 @@ export type CartOrderPeriod = {
 	end: Dayjs;
 };
 
-export type ConflictAffectedItem = { type: "PRODUCT"; productTypeId: string };
-
-export type ConflictGroup = {
-	productTypeId: string;
-	availableCount: number;
-	requestedCount: number;
-	affectedItems: ConflictAffectedItem[];
-};
-
 export type DeliveryRequestFormState = {
 	contactName: string;
 	contactPhone: string;
@@ -104,8 +95,6 @@ export type BookingSlice = {
 	isSubmittingOrder: boolean;
 	isBookingError: boolean;
 	bookingErrorMessage: string | null;
-	unavailableIds: string[];
-	conflictGroups: ConflictGroup[];
 	submitBooking: () => Promise<void>;
 };
 

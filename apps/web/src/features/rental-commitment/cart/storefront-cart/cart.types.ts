@@ -25,15 +25,6 @@ export type CartItem = CartProductItem;
 
 export type CartItemKey = { type: "PRODUCT"; productTypeId: string };
 
-export type ConflictAffectedItem = { type: "PRODUCT"; productTypeId: string };
-
-export type ConflictGroup = {
-	productTypeId: string;
-	availableCount: number;
-	requestedCount: number;
-	affectedItems: ConflictAffectedItem[];
-};
-
 export type CartActions = {
 	addProduct: (product: Omit<CartProductItem, "type" | "quantity">) => void;
 	incrementQuantity: (key: CartItemKey) => void;

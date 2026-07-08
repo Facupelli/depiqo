@@ -1,5 +1,7 @@
-import type { GetPublicTenantConfigResponseDto } from "@repo/api-contracts";
-import type { RentalLocationResponse } from "@repo/schemas";
+import type {
+	GetPublicTenantConfigResponseDto,
+	GetStorefrontBranchDto,
+} from "@repo/api-contracts";
 import { buildCartRentalPeriod } from "@/features/rental-commitment/cart/create-confirmed-rental/cart-checkout-model";
 import { buildCartPageContextValue } from "@/features/rental-commitment/cart/create-confirmed-rental/cart-page-context-model";
 import { useCartBookingCommand } from "@/features/rental-commitment/cart/create-confirmed-rental/use-cart-booking-command";
@@ -13,13 +15,7 @@ import { useCurrentUser } from "@/features/tenant-management/auth/auth.queries";
 
 type UseCartPageModelParams = {
 	tenantPublicConfig: GetPublicTenantConfigResponseDto;
-	branch: {
-		id: string;
-		name: string;
-		timezone: string;
-		supportsDelivery: boolean;
-		deliveryDefaults: NonNullable<RentalLocationResponse["deliveryDefaults"]>;
-	};
+	branch: GetStorefrontBranchDto;
 	periodStart: string;
 	periodEnd: string;
 };

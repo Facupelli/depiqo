@@ -1,6 +1,5 @@
 import type { CalculateCartPriceResponseDto } from "@repo/api-contracts";
 import type { V2RentalCartItem } from "@/features/rental-commitment/cart/v2-rental-cart.types";
-import type { ConflictGroup } from "./cart.types";
 import type {
 	CartOrderPeriod,
 	DeliveryRequestField,
@@ -59,8 +58,6 @@ export type BookingSlice = {
 	isSubmittingOrder: boolean;
 	isBookingError: boolean;
 	bookingErrorMessage: string | null;
-	unavailableIds: string[];
-	conflictGroups: ConflictGroup[];
 	submitBooking: () => Promise<void>;
 };
 

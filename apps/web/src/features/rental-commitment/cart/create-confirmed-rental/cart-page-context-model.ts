@@ -117,8 +117,6 @@ export function buildCartPageContextValue({
 			isSubmittingOrder: booking.isSubmittingOrder,
 			isBookingError: booking.isBookingError,
 			bookingErrorMessage: booking.bookingErrorMessage,
-			unavailableIds: booking.unavailableIds,
-			conflictGroups: booking.conflictGroups,
 			submitBooking: booking.submitBooking,
 		},
 	};

@@ -1,20 +1,15 @@
-import {
-	type OrderItemsUnavailableProblemDto,
-	orderItemsUnavailableProblemSchema,
-} from "@repo/schemas";
 import { isAuthError, ProblemDetailsError } from "@/shared/errors";
-import type { ConflictGroup } from "./cart-checkout.types";
 
-const CREATE_ORDER_IDEMPOTENCY_IN_PROGRESS_TYPE =
+const PROBLEM_TYPE_BASE_URI = "https://api.depiqo.com/problems";
+const INSUFFICIENT_ASSET_AVAILABILITY_TYPE = `${PROBLEM_TYPE_BASE_URI}/rental-commitment/insufficient-asset-availability`;
+const UNSUPPORTED_BRANCH_FULFILLMENT_METHOD_TYPE = `${PROBLEM_TYPE_BASE_URI}/rental-commitment/unsupported-branch-fulfillment-method`;
+const CREATE_RENTAL_IDEMPOTENCY_IN_PROGRESS_TYPE =
 	"errors://idempotency-key-in-progress";
-const CREATE_ORDER_IDEMPOTENCY_CONFLICT_TYPE =
+const CREATE_RENTAL_IDEMPOTENCY_CONFLICT_TYPE =
 	"errors://idempotency-key-conflict";
 
 type CartBookingAvailabilityConflict = {
 	kind: "availability-conflict";
-	conflict: OrderItemsUnavailableProblemDto;
-	unavailableIds: string[];
-	conflictGroups: ConflictGroup[];
 	message: string;
 };
 
@@ -51,18 +46,11 @@ export type ParsedCartBookingError =
 	| CartBookingUnknownError;
 
 export function parseCartBookingError(error: unknown): ParsedCartBookingError {
-	const conflict = extractCartBookingAvailabilityConflict(error);
-	if (conflict) {
-		const { unavailableIds, conflictGroups } =
-			toCartAvailabilityConflictState(conflict);
+	if (isInsufficientAssetAvailabilityError(error)) {
 		return {
 			kind: "availability-conflict",
-			conflict,
-			unavailableIds,
-			conflictGroups,
 			message:
-				conflict.detail ??
-				"No se puede completar la reserva porque algunos equipos o accesorios ya no están disponibles para este período.",
+				"No se puede completar la reserva porque algunos equipos ya no están disponibles para este período. Ajustá las cantidades del carrito y volvé a intentarlo.",
 		};
 	}
 
@@ -77,7 +65,7 @@ export function parseCartBookingError(error: unknown): ParsedCartBookingError {
 		};
 	}
 
-	if (isCreateOrderIdempotencyConflictError(error)) {
+	if (isCreateRentalIdempotencyConflictError(error)) {
 		return {
 			kind: "idempotency-conflict",
 			message:
@@ -85,7 +73,7 @@ export function parseCartBookingError(error: unknown): ParsedCartBookingError {
 		};
 	}
 
-	if (isRetryableCreateOrderInProgressError(error)) {
+	if (isRetryableCreateRentalInProgressError(error)) {
 		return {
 			kind: "idempotency-in-progress",
 			message:
@@ -99,56 +87,31 @@ export function parseCartBookingError(error: unknown): ParsedCartBookingError {
 	};
 }
 
-export function extractCartBookingAvailabilityConflict(
-	error: unknown,
-): OrderItemsUnavailableProblemDto | null {
-	if (!(error instanceof ProblemDetailsError)) {
-		return null;
-	}
-
-	const parsed = orderItemsUnavailableProblemSchema.safeParse(
-		error.problemDetails,
-	);
-	return parsed.success ? parsed.data : null;
-}
-
-export function toCartAvailabilityConflictState(
-	conflict: OrderItemsUnavailableProblemDto,
-): {
-	unavailableIds: string[];
-	conflictGroups: ConflictGroup[];
-} {
-	return {
-		unavailableIds: conflict.unavailableItems
-			.filter((item) => item.type === "PRODUCT")
-			.map((item) => item.productTypeId),
-		conflictGroups: conflict.conflictGroups.map((group) => ({
-			...group,
-			affectedItems: group.affectedItems.filter(
-				(item) => item.type === "PRODUCT",
-			),
-		})),
-	};
-}
-
-function isDeliveryNotSupportedError(error: unknown) {
+function isInsufficientAssetAvailabilityError(error: unknown): boolean {
 	return (
 		error instanceof ProblemDetailsError &&
-		error.problemDetails.type === "errors://delivery-not-supported"
+		error.problemDetails.type === INSUFFICIENT_ASSET_AVAILABILITY_TYPE
 	);
 }
 
-function isRetryableCreateOrderInProgressError(error: unknown): boolean {
+function isDeliveryNotSupportedError(error: unknown): boolean {
 	return (
 		error instanceof ProblemDetailsError &&
-		error.problemDetails.type === CREATE_ORDER_IDEMPOTENCY_IN_PROGRESS_TYPE &&
+		error.problemDetails.type === UNSUPPORTED_BRANCH_FULFILLMENT_METHOD_TYPE
+	);
+}
+
+function isRetryableCreateRentalInProgressError(error: unknown): boolean {
+	return (
+		error instanceof ProblemDetailsError &&
+		error.problemDetails.type === CREATE_RENTAL_IDEMPOTENCY_IN_PROGRESS_TYPE &&
 		error.problemDetails.retryable === true
 	);
 }
 
-function isCreateOrderIdempotencyConflictError(error: unknown): boolean {
+function isCreateRentalIdempotencyConflictError(error: unknown): boolean {
 	return (
 		error instanceof ProblemDetailsError &&
-		error.problemDetails.type === CREATE_ORDER_IDEMPOTENCY_CONFLICT_TYPE
+		error.problemDetails.type === CREATE_RENTAL_IDEMPOTENCY_CONFLICT_TYPE
 	);
 }

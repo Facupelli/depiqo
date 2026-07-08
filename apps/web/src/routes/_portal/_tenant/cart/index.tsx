@@ -12,7 +12,6 @@ import {
 	BookingErrorMessage,
 	SidebarNotices,
 } from "@/features/rental-commitment/cart/storefront-cart/components/cart-sidebar/sidebar-notices";
-import { CartPageConflictPanel } from "@/features/rental-commitment/cart/storefront-cart/components/cartpage-conflict-panel";
 import { CartPageItemList } from "@/features/rental-commitment/cart/storefront-cart/components/cartpage-itemlist";
 import { CartPagePeriod } from "@/features/rental-commitment/cart/storefront-cart/components/cartpage-period";
 import { useCartSidebarViewModel } from "@/features/rental-commitment/cart/storefront-cart/hooks/use-cart-sidebar-view-model";
@@ -59,8 +58,6 @@ function CartPage() {
 					</div>
 
 					<CartPagePeriod />
-
-					<CartPageConflictPanel />
 
 					{/*
           CSS Grid — two-column layout:

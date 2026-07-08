@@ -1,12 +1,9 @@
-import type { CartPriceLineItem } from "@repo/schemas";
 import type { Dayjs } from "dayjs";
 
 export type CartOrderPeriod = {
 	start: Dayjs;
 	end: Dayjs;
 };
-
-export type JoinedLineItem = CartPriceLineItem & { name: string };
 
 export type DeliveryRequestFormState = {
 	contactName: string;

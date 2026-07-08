@@ -1,16 +1,11 @@
 import type { CalculateCartPriceResponseDto } from "@repo/api-contracts";
 import { Link } from "@tanstack/react-router";
-import clsx from "clsx";
-import { Package, ShoppingBag, XCircle } from "lucide-react";
+import { Package, ShoppingBag } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { V2RentalCartItem } from "@/features/rental-commitment/cart/v2-rental-cart.types";
 import { buildR2PublicUrl } from "@/lib/r2-public-url";
 import { formatCurrency } from "@/shared/utils/price.utils";
-import {
-	useCartBookingContext,
-	useCartContext,
-	useCartPricingContext,
-} from "../cart-page.context";
+import { useCartContext, useCartPricingContext } from "../cart-page.context";
 
 const CART_MONEY_FRACTION_DIGITS = 2;
 
@@ -36,7 +31,6 @@ export function CartPageItemList() {
 	const { cartItems } = useCartContext();
 	const { preview, fallbackCurrency, fallbackLocale, isPriceLoading } =
 		useCartPricingContext();
-	const { unavailableIds } = useCartBookingContext();
 
 	const items = cartItems;
 	const lines = preview?.lines ?? [];
@@ -89,7 +83,6 @@ export function CartPageItemList() {
 							item={item}
 							line={line}
 							isLoading={isLoading}
-							isUnavailable={unavailableIds.includes(item.rentalOfferId)}
 							currency={currency}
 							locale={locale}
 						/>
@@ -104,7 +97,6 @@ type CartPageRentalOfferItemProps = {
 	item: V2RentalCartItem;
 	line: CartPriceLine | undefined;
 	isLoading: boolean;
-	isUnavailable: boolean;
 	currency: string;
 	locale: string;
 };
@@ -113,17 +105,11 @@ export function CartPageRentalOfferItem({
 	item,
 	line,
 	isLoading,
-	isUnavailable,
 	currency,
 	locale,
 }: CartPageRentalOfferItemProps) {
 	return (
-		<div
-			className={clsx(
-				"border bg-white border-neutral-200",
-				isUnavailable && "border-red-300 border-l-4 border-l-red-500",
-			)}
-		>
+		<div className="border bg-white border-neutral-200">
 			<div className="flex items-start gap-4 p-4">
 				<div className="h-20 w-20 shrink-0 overflow-hidden">
 					<CartPageImage src={item.image} alt={item.name} />
@@ -154,16 +140,6 @@ export function CartPageRentalOfferItem({
 					</p>
 				</div>
 			</div>
-
-			{isUnavailable && (
-				<div className="flex items-center gap-2 border-t border-red-200 bg-red-50 px-4 py-2.5">
-					<XCircle className="h-3.5 w-3.5 shrink-0 text-red-500" />
-					<p className="text-[11px] font-bold uppercase tracking-widest text-red-600">
-						No disponible para tu periodo seleccionado — cambia las fechas o
-						quita este item.
-					</p>
-				</div>
-			)}
 		</div>
 	);
 }
