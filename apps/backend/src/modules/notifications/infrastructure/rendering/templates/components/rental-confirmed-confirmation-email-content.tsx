@@ -1,12 +1,13 @@
 import { Column, Heading, Row, Section, Text } from 'react-email';
 import * as React from 'react';
-import { FulfillmentMethod, OrderStatus } from '@repo/types';
+
+import { FulfillmentMethod, RentalStatus } from 'src/modules/rental-commitment/domain/rental-status';
 
 import { emailTheme } from '../../react-email/email-theme';
 
-type OrderCreatedConfirmationEmailContentProps = {
-  orderNumber: number;
-  status: OrderStatus;
+type RentalConfirmedConfirmationEmailContentProps = {
+  rentalNumber: number | string;
+  status: RentalStatus;
   fulfillmentMethod: FulfillmentMethod;
   pickupDate: string;
   pickupTime: string;
@@ -79,12 +80,6 @@ const styles = {
     lineHeight: '28px',
     color: emailTheme.colors.text,
   },
-  detailValueAccent: {
-    margin: 0,
-    fontSize: '18px',
-    lineHeight: '28px',
-    color: emailTheme.colors.primary,
-  },
   detailSubvalue: {
     margin: '4px 0 0',
     fontSize: '16px',
@@ -93,38 +88,38 @@ const styles = {
   },
 };
 
-export function OrderCreatedConfirmationEmailContent({
-  orderNumber,
+export function RentalConfirmedConfirmationEmailContent({
+  rentalNumber,
   status,
   fulfillmentMethod,
   pickupDate,
   pickupTime,
   returnDate,
   returnTime,
-}: OrderCreatedConfirmationEmailContentProps) {
+}: RentalConfirmedConfirmationEmailContentProps) {
   return (
     <>
       <Heading as="h1" style={styles.introTitle}>
-        ¡Tu pedido fue creado!
+        ¡Tu alquiler fue confirmado!
       </Heading>
       <Text style={styles.introText}>
-        Gracias por elegirnos. Estamos procesando tu pedido y te avisaremos cuando esté listo.
+        Gracias por elegirnos. Tu alquiler ya está confirmado y te avisaremos ante cualquier novedad.
       </Text>
 
       <Section style={styles.card}>
         <Row>
           <Column width="48%">
-            <Text style={styles.cardLabel}>Número de pedido</Text>
-            <Text style={styles.cardPrimaryValue}>#{orderNumber}</Text>
+            <Text style={styles.cardLabel}>Número de alquiler</Text>
+            <Text style={styles.cardPrimaryValue}>#{rentalNumber}</Text>
           </Column>
           <Column width="52%" style={styles.dividerColumn}>
             <Text style={styles.cardLabel}>Estado</Text>
-            <Text style={styles.cardPrimaryValue}>{formatOrderStatus(status)}</Text>
+            <Text style={styles.cardPrimaryValue}>{formatRentalStatus(status)}</Text>
           </Column>
         </Row>
       </Section>
 
-      <Text style={styles.sectionTitle}>Detalle del pedido</Text>
+      <Text style={styles.sectionTitle}>Detalle del alquiler</Text>
 
       <DetailRow label="Método de entrega" value={formatFulfillmentMethod(fulfillmentMethod)} />
       <DetailRow label="Retiro" value={pickupDate} secondaryValue={pickupTime} />
@@ -137,10 +132,9 @@ type DetailRowProps = {
   label: string;
   value: string;
   secondaryValue?: string;
-  accent?: boolean;
 };
 
-function DetailRow({ label, value, secondaryValue, accent = false }: DetailRowProps) {
+function DetailRow({ label, value, secondaryValue }: DetailRowProps) {
   return (
     <Section style={styles.detailRow}>
       <Row>
@@ -148,7 +142,7 @@ function DetailRow({ label, value, secondaryValue, accent = false }: DetailRowPr
           <Text style={styles.detailLabel}>{label}</Text>
         </Column>
         <Column width="58%">
-          <Text style={accent ? styles.detailValueAccent : styles.detailValue}>{value}</Text>
+          <Text style={styles.detailValue}>{value}</Text>
           {secondaryValue ? <Text style={styles.detailSubvalue}>{secondaryValue}</Text> : null}
         </Column>
       </Row>
@@ -156,22 +150,20 @@ function DetailRow({ label, value, secondaryValue, accent = false }: DetailRowPr
   );
 }
 
-function formatOrderStatus(status: OrderStatus): string {
+function formatRentalStatus(status: RentalStatus): string {
   switch (status) {
-    case OrderStatus.PENDING_REVIEW:
+    case RentalStatus.Pending:
       return 'Pendiente';
-    case OrderStatus.CONFIRMED:
+    case RentalStatus.Draft:
+      return 'Borrador';
+    case RentalStatus.Confirmed:
       return 'Confirmado';
-    case OrderStatus.REJECTED:
-      return 'Rechazado';
-    case OrderStatus.EXPIRED:
-      return 'Expirado';
-    case OrderStatus.ACTIVE:
-      return 'Activo';
-    case OrderStatus.COMPLETED:
-      return 'Completado';
-    case OrderStatus.CANCELLED:
+    case RentalStatus.Prepared:
+      return 'Preparado';
+    case RentalStatus.Cancelled:
       return 'Cancelado';
+    case RentalStatus.Completed:
+      return 'Completado';
     default:
       return status;
   }
@@ -179,9 +171,9 @@ function formatOrderStatus(status: OrderStatus): string {
 
 function formatFulfillmentMethod(method: FulfillmentMethod): string {
   switch (method) {
-    case FulfillmentMethod.PICKUP:
+    case FulfillmentMethod.Pickup:
       return 'Retiro en sucursal';
-    case FulfillmentMethod.DELIVERY:
+    case FulfillmentMethod.Delivery:
       return 'Entrega a domicilio';
     default:
       return method;

@@ -28,9 +28,7 @@ export function extractInvalidParams(responseBody: unknown): InvalidParam[] {
 function normalizeValidationArray(errors: unknown[]): InvalidParam[] {
   const invalidParams = errors.flatMap((error) => normalizeValidationEntry(error));
 
-  return invalidParams.length > 0
-    ? invalidParams
-    : [{ name: 'request', reason: 'Invalid request.' }];
+  return invalidParams.length > 0 ? invalidParams : [{ name: 'request', reason: 'Invalid request.' }];
 }
 
 function normalizeValidationEntry(error: unknown): InvalidParam[] {
@@ -54,9 +52,7 @@ function normalizeValidationEntry(error: unknown): InvalidParam[] {
 
   const nestedErrors = errorObject.errors ?? errorObject.children;
   const nestedInvalidParams = Array.isArray(nestedErrors)
-    ? normalizeValidationArray(nestedErrors).map((param) =>
-        prefixNestedParam(errorObject, param),
-      )
+    ? normalizeValidationArray(nestedErrors).map((param) => prefixNestedParam(errorObject, param))
     : [];
 
   const name = validationPath(errorObject);

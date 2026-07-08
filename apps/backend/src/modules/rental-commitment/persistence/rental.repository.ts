@@ -1,11 +1,11 @@
-import { Prisma } from 'src/generated/prisma/client';
+import { PrismaTransactionClient } from 'src/core/database/prisma-unit-of-work';
 
 import { Rental } from '../domain/rental.aggregate';
 import { RentalOwnerSplitDraft } from '../owner-split/owner-split-calculator.types';
 
 export interface SaveRentalOptions {
   ownerSplits?: RentalOwnerSplitDraft[];
-  tx?: Prisma.TransactionClient;
+  tx?: PrismaTransactionClient;
 }
 
 export abstract class RentalRepository {

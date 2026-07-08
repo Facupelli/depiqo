@@ -1,6 +1,7 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { err, ok, Result } from 'neverthrow';
 
+import { PrismaUnitOfWork } from 'src/core/database/prisma-unit-of-work';
 import { V2AssetBlockType } from 'src/generated/prisma/enums';
 import { TenantManagementPublicApi } from 'src/modules/tenant-management/public-api/tenant-management.public-api';
 
@@ -37,6 +38,7 @@ export class ConfirmRentalHandler implements ICommandHandler<ConfirmRentalComman
     private readonly tenantManagementApi: TenantManagementPublicApi,
     private readonly rentalAssetAllocation: RentalAssetAllocationService,
     private readonly rentalOwnerSplitCalculator: RentalOwnerSplitCalculator,
+    private readonly unitOfWork: PrismaUnitOfWork,
   ) {}
 
   async execute(command: ConfirmRentalCommand): Promise<ConfirmRentalResult> {
@@ -153,7 +155,10 @@ export class ConfirmRentalHandler implements ICommandHandler<ConfirmRentalComman
 
     // TODO(rental-commitment): close the race between allocation planning and asset block insertion
     // with transaction-level locking or an allocation+save repository method.
-    await this.rentalRepository.save(rental, { ownerSplits: splits });
+    await this.unitOfWork.runInTransaction(async ({ tx, events }) => {
+      await this.rentalRepository.save(rental, { ownerSplits: splits, tx });
+      events.collectFrom(rental);
+    });
 
     return ok(undefined);
   }

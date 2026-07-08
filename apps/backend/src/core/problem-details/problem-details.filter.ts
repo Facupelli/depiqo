@@ -53,7 +53,4 @@ export class ProblemDetailsFilter implements ExceptionFilter {
       requestId: problemDetails.requestId ?? defaults.requestId,
     };
   }
-
-
-
 }

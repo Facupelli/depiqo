@@ -68,9 +68,7 @@ const CalculateDraftRentalPriceProblemCatalog: Record<
   },
 };
 
-export function toCalculateDraftRentalPriceProblem(
-  error: CalculateDraftRentalPriceApplicationError,
-): ProblemException {
+export function toCalculateDraftRentalPriceProblem(error: CalculateDraftRentalPriceApplicationError): ProblemException {
   const definition = CalculateDraftRentalPriceProblemCatalog[error.code];
 
   return ProblemException.from({

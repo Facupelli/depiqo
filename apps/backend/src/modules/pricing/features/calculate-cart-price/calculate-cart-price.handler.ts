@@ -60,9 +60,7 @@ export class CalculateCartPriceHandler implements IQueryHandler<
     private readonly tenantManagementApi: TenantManagementPublicApi,
   ) {}
 
-  async execute(
-    query: CalculateCartPriceQuery,
-  ): Promise<Result<CalculateCartPriceResult, CalculateCartPriceError>> {
+  async execute(query: CalculateCartPriceQuery): Promise<Result<CalculateCartPriceResult, CalculateCartPriceError>> {
     const context = this.errorContext(query);
     const validationError = this.validateQuery(query, context);
     if (validationError) {

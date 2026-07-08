@@ -1,22 +1,22 @@
 import * as React from 'react';
 
-import { OrderCreatedByCustomerEmailPayload, RenderedEmail } from '../../../application/ports/email-renderer.port';
+import { RentalCreatedByCustomerEmailPayload, RenderedEmail } from '../../../application/ports/email-renderer.port';
 import { EmailLayout } from '../react-email/components/email-layout';
 import { renderReactEmail } from '../react-email/render-react-email';
-import { OrderCreatedByCustomerEmailContent } from './components/order-created-by-customer-email-content';
+import { RentalCreatedByCustomerEmailContent } from './components/rental-created-by-customer-email-content';
 
-export async function renderOrderCreatedByCustomerEmailTemplate(
-  payload: OrderCreatedByCustomerEmailPayload,
+export async function renderRentalCreatedByCustomerEmailTemplate(
+  payload: RentalCreatedByCustomerEmailPayload,
 ): Promise<RenderedEmail> {
   return await renderReactEmail({
-    subject: `Nuevo pedido #${payload.orderNumber} recibido`,
+    subject: `Nueva rental-order #${payload.rentalNumber} recibida`,
     component: (
       <EmailLayout
         headerLabel="Notificación del sistema"
-        previewText={`Nuevo pedido #${payload.orderNumber} creado por ${payload.customerEmail}.`}
+        previewText={`Nueva rental-order #${payload.rentalNumber} creada por ${payload.customerEmail}.`}
       >
-        <OrderCreatedByCustomerEmailContent
-          orderNumber={payload.orderNumber}
+        <RentalCreatedByCustomerEmailContent
+          rentalNumber={payload.rentalNumber}
           customerEmail={payload.customerEmail}
           status={payload.status}
           fulfillmentMethod={payload.fulfillmentMethod}

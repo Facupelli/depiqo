@@ -2,6 +2,8 @@ import { randomUUID } from 'node:crypto';
 
 import { err, ok, Result } from 'neverthrow';
 
+import { AggregateRootBase } from 'src/core/domain/aggregate-root.base';
+
 import { AssetBlock } from './asset-block.entity';
 import { AssignedAsset, CreateAssignedAssetProps } from './assigned-asset.entity';
 import {
@@ -33,6 +35,8 @@ import { CreateRentalSelectionProps, RentalSelection } from './rental-selection.
 import { ConfirmedPriceSnapshot } from './value-objects/confirmed-price-snapshot.value-object';
 import { BookingSnapshot, JsonSnapshot, JsonValue } from './value-objects/json-snapshot.value-object';
 import { RentalPeriod } from './value-objects/rental-period.value-object';
+import { RentalCancelledEvent } from '../public-api/events/rental-cancelled.event';
+import { RentalConfirmedEvent } from '../public-api/events/rental-confirmed.event';
 
 export interface RentalDeliveryDetails {
   addressLine1: string;
@@ -156,11 +160,12 @@ interface CreateRentalFromEntitiesProps {
   confirmedAt?: Date;
 }
 
-export class Rental {
+export class Rental extends AggregateRootBase {
   readonly id: RentalId;
   private props: RentalProps;
 
   private constructor(id: RentalId, props: RentalProps) {
+    super();
     this.id = id;
     this.props = props;
   }
@@ -333,7 +338,8 @@ export class Rental {
       return err(assetBlocks.error);
     }
 
-    return this.createFromEntities(RentalStatus.Confirmed, {
+    const confirmedAt = new Date();
+    const rental = this.createFromEntities(RentalStatus.Confirmed, {
       ...props,
       id: rentalId,
       confirmedPriceSnapshot: confirmedPriceSnapshot.value,
@@ -341,8 +347,16 @@ export class Rental {
       demandLines: demandLines.value,
       assignedAssets: assignedAssets.value,
       assetBlocks: assetBlocks.value,
-      confirmedAt: new Date(),
+      confirmedAt,
     });
+
+    if (rental.isErr()) {
+      return err(rental.error);
+    }
+
+    rental.value.recordRentalConfirmedEvent(confirmedAt);
+
+    return ok(rental.value);
   }
 
   static reconstitute(props: ReconstituteRentalProps): Result<Rental, RentalCommitmentError> {
@@ -408,6 +422,7 @@ export class Rental {
 
     this.props.status = RentalStatus.Cancelled;
     this.props.cancelledAt = releasedAt;
+    this.recordRentalCancelledEvent(releasedAt);
 
     return ok(undefined);
   }
@@ -464,6 +479,37 @@ export class Rental {
     this.props.confirmedAt = params.confirmedAt ? new Date(params.confirmedAt) : new Date();
 
     return ok(undefined);
+  }
+
+  private recordRentalCancelledEvent(cancelledAt: Date): void {
+    this.recordDomainEvent(
+      new RentalCancelledEvent({
+        tenantId: this.tenantId,
+        rentalId: this.id,
+        rentalCustomerId: this.rentalCustomerId ?? null,
+        branchId: this.branchId,
+        cancelledAt,
+        occurredAt: cancelledAt,
+      }),
+    );
+  }
+
+  private recordRentalConfirmedEvent(occurredAt: Date): void {
+    if (!this.rentalCustomerId) {
+      return;
+    }
+
+    this.recordDomainEvent(
+      new RentalConfirmedEvent({
+        tenantId: this.tenantId,
+        rentalId: this.id,
+        rentalCustomerId: this.rentalCustomerId,
+        branchId: this.branchId,
+        status: RentalStatus.Confirmed,
+        fulfillmentMethod: this.fulfillmentMethod ?? FulfillmentMethod.Pickup,
+        occurredAt,
+      }),
+    );
   }
 
   private createConfirmedPriceSnapshotFromCurrentPrice(): Result<ConfirmedPriceSnapshot, RentalCommitmentError> {

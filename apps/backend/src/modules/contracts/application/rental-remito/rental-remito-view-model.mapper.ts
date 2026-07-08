@@ -2,10 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { err, ok, Result } from 'neverthrow';
 
 import { rentalRemitoApplicationError, RentalRemitoApplicationError } from './rental-remito-application.error';
-import {
-  formatLocalDate,
-  resolveRentalRemitoPricingFromSnapshot,
-} from './rental-remito-formatters';
+import { formatLocalDate, resolveRentalRemitoPricingFromSnapshot } from './rental-remito-formatters';
 import { RentalRemitoPdfData, RentalRemitoEquipmentLine, SignedContractSummary } from './rental-remito-pdf-data';
 import { RentalRemitoSourceReadModel } from './rental-remito-source-read-model';
 

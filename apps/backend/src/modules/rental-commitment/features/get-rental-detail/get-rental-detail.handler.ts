@@ -73,7 +73,7 @@ export class GetRentalDetailHandler implements IQueryHandler<GetRentalDetailQuer
             },
           },
           orderBy: { createdAt: 'asc' },
-        }, 
+        },
         accessorySelections: {
           select: {
             id: true,

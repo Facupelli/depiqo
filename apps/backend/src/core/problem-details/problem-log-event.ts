@@ -142,7 +142,5 @@ function readAndClearRequestContext(): Record<string, unknown> {
 }
 
 function compactObject(value: Record<string, unknown>): Record<string, unknown> {
-  return Object.fromEntries(
-    Object.entries(value).filter(([, entryValue]) => entryValue !== undefined),
-  );
+  return Object.fromEntries(Object.entries(value).filter(([, entryValue]) => entryValue !== undefined));
 }

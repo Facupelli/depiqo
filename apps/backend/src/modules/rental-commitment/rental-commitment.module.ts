@@ -32,6 +32,8 @@ import { PrismaRentalRepository } from './persistence/prisma-rental.repository';
 import { RentalRepository } from './persistence/rental.repository';
 import { UpsertRentalAssetCandidateWhenAssetCreatedEventHandler } from './projections/upsert-rental-asset-candidate-when-asset-created.event-handler';
 import { RentalOwnerSplitCalculator } from './owner-split/rental-owner-split-calculator';
+import { RentalCommitmentPublicApiService } from './public-api/rental-commitment.public-api.service';
+import { RentalCommitmentPublicApi } from './public-api/rental-commitment.public-api';
 
 @Module({
   imports: [CatalogModule, PricingModule, TenantManagementModule],
@@ -66,6 +68,8 @@ import { RentalOwnerSplitCalculator } from './owner-split/rental-owner-split-cal
     GetStorefrontRentalOfferAvailabilityHandler,
     UpsertRentalAssetCandidateWhenAssetCreatedEventHandler,
     RentalOwnerSplitCalculator,
+    { provide: RentalCommitmentPublicApi, useClass: RentalCommitmentPublicApiService },
   ],
+  exports: [RentalCommitmentPublicApi],
 })
 export class RentalCommitmentModule {}

@@ -1,4 +1,4 @@
-import { ApplicationError } from "src/core/errors/application-error";
+import { ApplicationError } from 'src/core/errors/application-error';
 
 export type CalculateCartPriceErrorCode =
   | 'pricing.invalid_cart_selection'

@@ -1,5 +1,6 @@
+import { FulfillmentMethod, RentalStatus } from 'src/modules/rental-commitment/domain/rental-status';
+
 import { NotificationType } from '../../domain/notification-type.enum';
-import { FulfillmentMethod, OrderStatus } from '@repo/types';
 
 export interface PasswordResetEmailPayload {
   resetUrl: string;
@@ -17,16 +18,16 @@ export interface DocumentSigningInvitationEmailPayload {
   isReplacement: boolean;
 }
 
-export interface OrderCancelledEmailPayload {
+export interface RentalCancelledEmailPayload {
   tenantName?: string;
   recipientName?: string;
 }
 
-export interface OrderCreatedByCustomerEmailPayload {
+export interface RentalCreatedByCustomerEmailPayload {
   tenantName?: string;
-  orderNumber: number;
+  rentalNumber: number | string;
   customerEmail: string;
-  status: OrderStatus;
+  status: RentalStatus;
   fulfillmentMethod: FulfillmentMethod;
   pickupDate: string;
   pickupTime: string;
@@ -36,10 +37,10 @@ export interface OrderCreatedByCustomerEmailPayload {
   timezone?: string;
 }
 
-export interface OrderCreatedConfirmationEmailPayload {
+export interface RentalConfirmedConfirmationEmailPayload {
   tenantName?: string;
-  orderNumber: number;
-  status: OrderStatus;
+  rentalNumber: number | string;
+  status: RentalStatus;
   fulfillmentMethod: FulfillmentMethod;
   pickupDate: string;
   pickupTime: string;
@@ -48,9 +49,9 @@ export interface OrderCreatedConfirmationEmailPayload {
 }
 
 export interface NotificationEmailPayloadMap {
-  [NotificationType.ORDER_CREATED_CONFIRMATION]: OrderCreatedConfirmationEmailPayload;
-  [NotificationType.ORDER_CREATED_BY_CUSTOMER]: OrderCreatedByCustomerEmailPayload;
-  [NotificationType.ORDER_CANCELLED]: OrderCancelledEmailPayload;
+  [NotificationType.RENTAL_CONFIRMED_CONFIRMATION]: RentalConfirmedConfirmationEmailPayload;
+  [NotificationType.RENTAL_CREATED_BY_CUSTOMER]: RentalCreatedByCustomerEmailPayload;
+  [NotificationType.RENTAL_CANCELLED]: RentalCancelledEmailPayload;
   [NotificationType.DOCUMENT_SIGNING_INVITATION]: DocumentSigningInvitationEmailPayload;
   [NotificationType.PASSWORD_RESET]: PasswordResetEmailPayload;
 }

@@ -1,6 +1,7 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { err, ok, Result } from 'neverthrow';
 
+import { PrismaUnitOfWork } from 'src/core/database/prisma-unit-of-work';
 import { CatalogPublicApi } from 'src/modules/catalog/public-api/catalog.public-api';
 import { PricingPublicApi } from 'src/modules/pricing/public-api/pricing.public-api';
 import { TenantManagementPublicApi } from 'src/modules/tenant-management/public-api/tenant-management.public-api';
@@ -36,6 +37,7 @@ export class CreateConfirmedRentalService implements ICommandHandler<
     private readonly pricingApi: PricingPublicApi,
     private readonly rentalAssetAllocation: RentalAssetAllocationService,
     private readonly rentalOwnerSplitCalculator: RentalOwnerSplitCalculator,
+    private readonly unitOfWork: PrismaUnitOfWork,
   ) {}
 
   async execute(command: CreateConfirmedRentalCommand): Promise<CreateConfirmedRentalServiceResult> {
@@ -223,7 +225,10 @@ export class CreateConfirmedRentalService implements ICommandHandler<
       return err(toRentalCommitmentApplicationError(error));
     }
 
-    await this.rentalRepository.save(confirmedRental, { ownerSplits: splits });
+    await this.unitOfWork.runInTransaction(async ({ tx, events }) => {
+      await this.rentalRepository.save(confirmedRental, { ownerSplits: splits, tx });
+      events.collectFrom(confirmedRental);
+    });
 
     return ok({ rentalId: confirmedRental.id });
   }

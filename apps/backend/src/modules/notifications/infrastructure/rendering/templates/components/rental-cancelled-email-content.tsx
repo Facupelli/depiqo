@@ -3,7 +3,7 @@ import * as React from 'react';
 
 import { emailTheme } from '../../react-email/email-theme';
 
-type OrderCancelledEmailContentProps = {
+type RentalCancelledEmailContentProps = {
   tenantName?: string;
   recipientName?: string;
 };
@@ -44,19 +44,19 @@ const styles = {
   },
 };
 
-export function OrderCancelledEmailContent({ tenantName, recipientName }: OrderCancelledEmailContentProps) {
+export function RentalCancelledEmailContent({ tenantName, recipientName }: RentalCancelledEmailContentProps) {
   return (
     <>
       <Heading as="h1" style={styles.introTitle}>
-        Tu pedido fue cancelado
+        Tu rental-order fue cancelada
       </Heading>
       <Text style={styles.introText}>{buildIntro(recipientName, tenantName)}</Text>
 
       <Section style={styles.block}>
         <Text style={styles.blockTitle}>Qué significa esto</Text>
         <Text style={styles.blockText}>
-          El pedido ha sido cancelado y no se procesará ningún cobro. Si ya realizaste un pago, te
-          contactaremos para gestionar el reembolso.
+          La rental-order ha sido cancelada y no se procesará ningún cobro. Si ya realizaste un pago,
+          te contactaremos para gestionar el reembolso.
         </Text>
       </Section>
 
@@ -65,7 +65,7 @@ export function OrderCancelledEmailContent({ tenantName, recipientName }: OrderC
       <Section>
         <Text style={styles.blockTitle}>¿Necesitás ayuda?</Text>
         <Text style={styles.blockText}>
-          Si tenés alguna duda o querés realizar un nuevo pedido, estamos para ayudarte.
+          Si tenés alguna duda o querés realizar una nueva rental-order, estamos para ayudarte.
         </Text>
       </Section>
     </>
@@ -74,16 +74,16 @@ export function OrderCancelledEmailContent({ tenantName, recipientName }: OrderC
 
 function buildIntro(recipientName?: string, tenantName?: string): string {
   if (recipientName && tenantName) {
-    return `${recipientName}, te informamos que tu pedido con ${tenantName} ha sido cancelado. Lamentamos las molestias ocasionadas.`;
+    return `${recipientName}, te informamos que tu rental-order con ${tenantName} ha sido cancelada. Lamentamos las molestias ocasionadas.`;
   }
 
   if (recipientName) {
-    return `${recipientName}, te informamos que tu pedido ha sido cancelado. Lamentamos las molestias ocasionadas.`;
+    return `${recipientName}, te informamos que tu rental-order ha sido cancelada. Lamentamos las molestias ocasionadas.`;
   }
 
   if (tenantName) {
-    return `Te informamos que tu pedido con ${tenantName} ha sido cancelado. Lamentamos las molestias ocasionadas.`;
+    return `Te informamos que tu rental-order con ${tenantName} ha sido cancelada. Lamentamos las molestias ocasionadas.`;
   }
 
-  return 'Te informamos que tu pedido ha sido cancelado. Lamentamos las molestias ocasionadas.';
+  return 'Te informamos que tu rental-order ha sido cancelada. Lamentamos las molestias ocasionadas.';
 }

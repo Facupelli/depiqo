@@ -1,6 +1,8 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { err, ok, Result } from 'neverthrow';
 
+import { PrismaUnitOfWork } from 'src/core/database/prisma-unit-of-work';
+
 import { RentalRepository } from '../../persistence/rental.repository';
 import { CancelRentalApplicationError, cancelRentalApplicationError } from './cancel-rental-application.error';
 import { CancelRentalCommand } from './cancel-rental.command';
@@ -10,7 +12,10 @@ export type CancelRentalResult = Result<void, CancelRentalApplicationError>;
 
 @CommandHandler(CancelRentalCommand)
 export class CancelRentalHandler implements ICommandHandler<CancelRentalCommand, CancelRentalResult> {
-  constructor(private readonly rentalRepository: RentalRepository) {}
+  constructor(
+    private readonly rentalRepository: RentalRepository,
+    private readonly unitOfWork: PrismaUnitOfWork,
+  ) {}
 
   async execute(command: CancelRentalCommand): Promise<CancelRentalResult> {
     const rental = await this.rentalRepository.findById(command.tenantId, command.rentalId);
@@ -25,7 +30,10 @@ export class CancelRentalHandler implements ICommandHandler<CancelRentalCommand,
       return err(toCancelRentalApplicationError(cancellation.error));
     }
 
-    await this.rentalRepository.save(rental);
+    await this.unitOfWork.runInTransaction(async ({ tx, events }) => {
+      await this.rentalRepository.save(rental, { tx });
+      events.collectFrom(rental);
+    });
 
     return ok(undefined);
   }

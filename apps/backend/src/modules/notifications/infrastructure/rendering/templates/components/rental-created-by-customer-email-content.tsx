@@ -1,13 +1,14 @@
 import { Column, Heading, Row, Section, Text } from 'react-email';
 import * as React from 'react';
-import { FulfillmentMethod, OrderStatus } from '@repo/types';
+
+import { FulfillmentMethod, RentalStatus } from 'src/modules/rental-commitment/domain/rental-status';
 
 import { emailTheme } from '../../react-email/email-theme';
 
-type OrderCreatedByCustomerEmailContentProps = {
-  orderNumber: number;
+type RentalCreatedByCustomerEmailContentProps = {
+  rentalNumber: number | string;
   customerEmail: string;
-  status: OrderStatus;
+  status: RentalStatus;
   fulfillmentMethod: FulfillmentMethod;
   pickupDate: string;
   pickupTime: string;
@@ -102,8 +103,8 @@ const styles = {
   },
 };
 
-export function OrderCreatedByCustomerEmailContent({
-  orderNumber,
+export function RentalCreatedByCustomerEmailContent({
+  rentalNumber,
   customerEmail,
   status,
   fulfillmentMethod,
@@ -113,19 +114,19 @@ export function OrderCreatedByCustomerEmailContent({
   returnTime,
   locationName,
   timezone,
-}: OrderCreatedByCustomerEmailContentProps) {
+}: RentalCreatedByCustomerEmailContentProps) {
   return (
     <>
       <Heading as="h1" style={styles.introTitle}>
-        Nuevo pedido creado
+        Nueva rental-order creada
       </Heading>
-      <Text style={styles.introText}>Se registró un nuevo pedido en el sistema.</Text>
+      <Text style={styles.introText}>Se registró una nueva rental-order en el sistema.</Text>
 
       <Section style={styles.card}>
         <Row>
           <Column width="48%">
-            <Text style={styles.cardLabel}>Orden</Text>
-            <Text style={styles.cardPrimaryValue}>#{orderNumber}</Text>
+            <Text style={styles.cardLabel}>Rental-order</Text>
+            <Text style={styles.cardPrimaryValue}>#{rentalNumber}</Text>
           </Column>
           <Column width="52%" style={styles.dividerColumn}>
             <Text style={styles.cardLabel}>Cliente</Text>
@@ -134,7 +135,7 @@ export function OrderCreatedByCustomerEmailContent({
         </Row>
       </Section>
 
-      <DetailRow label="Estado" value={formatOrderStatus(status)} accent />
+      <DetailRow label="Estado" value={formatRentalStatus(status)} accent />
       <DetailRow label="Método de entrega" value={formatFulfillmentMethod(fulfillmentMethod)} />
       <DetailRow label="Retiro" value={pickupDate} secondaryValue={pickupTime} />
       <DetailRow label="Devolución" value={returnDate} secondaryValue={returnTime} />
@@ -142,7 +143,7 @@ export function OrderCreatedByCustomerEmailContent({
       {timezone ? <DetailRow label="Zona horaria" value={timezone} /> : null}
 
       <Text style={styles.closingText}>
-        Revisá el pedido para confirmar disponibilidad y coordinar la operación.
+        Revisá la rental-order para confirmar disponibilidad y coordinar la operación.
       </Text>
     </>
   );
@@ -171,22 +172,20 @@ function DetailRow({ label, value, secondaryValue, accent = false }: DetailRowPr
   );
 }
 
-function formatOrderStatus(status: OrderStatus): string {
+function formatRentalStatus(status: RentalStatus): string {
   switch (status) {
-    case OrderStatus.PENDING_REVIEW:
+    case RentalStatus.Pending:
       return 'Pendiente';
-    case OrderStatus.CONFIRMED:
+    case RentalStatus.Draft:
+      return 'Borrador';
+    case RentalStatus.Confirmed:
       return 'Confirmado';
-    case OrderStatus.REJECTED:
-      return 'Rechazado';
-    case OrderStatus.EXPIRED:
-      return 'Expirado';
-    case OrderStatus.ACTIVE:
-      return 'Activo';
-    case OrderStatus.COMPLETED:
-      return 'Completado';
-    case OrderStatus.CANCELLED:
+    case RentalStatus.Prepared:
+      return 'Preparado';
+    case RentalStatus.Cancelled:
       return 'Cancelado';
+    case RentalStatus.Completed:
+      return 'Completado';
     default:
       return status;
   }
@@ -194,9 +193,9 @@ function formatOrderStatus(status: OrderStatus): string {
 
 function formatFulfillmentMethod(method: FulfillmentMethod): string {
   switch (method) {
-    case FulfillmentMethod.PICKUP:
+    case FulfillmentMethod.Pickup:
       return 'Retiro en sucursal';
-    case FulfillmentMethod.DELIVERY:
+    case FulfillmentMethod.Delivery:
       return 'Entrega a domicilio';
     default:
       return method;
