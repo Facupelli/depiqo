@@ -12,7 +12,7 @@ General rules:
 
 Package roles:
 
-- `@repo/types` holds shared enums and lightweight TypeScript contract types.
+- `@repo/api-contracts` holds backend/web API contracts, DTO schemas, and shared contract enums.
 - `@repo/schemas` holds shared Zod schemas and response/request contract definitions.
 - `@repo/typescript-config` holds shared TypeScript compiler config.
 - `@repo/jest-config` holds reusable Jest configuration presets.
@@ -20,12 +20,11 @@ Package roles:
 Validation guidance:
 
 - For package-only changes, run the package's own build or lint command when available.
-- For changes to `types` or `schemas`, also validate the affected consumer app or run workspace validation because these packages are consumed across the repo.
+- For changes to `api-contracts` or `schemas`, also validate the affected consumer app or run workspace validation because these packages are consumed across the repo.
 - Prefer workspace `pnpm build` or `pnpm lint` when a package change has likely app-level impact.
 
 Representative examples:
 
-- shared enum exports: `packages/types/src/enums/order.enum.ts`
-- shared problem details type: `packages/types/src/problem-details.type.ts`
+- shared contract entrypoint: `packages/api-contracts/src/index.ts`
 - shared schema entrypoint: `packages/schemas/src/index.ts`
 - shared response schema shape: `packages/schemas/src/order/get-order-by-id-response.schema.ts`

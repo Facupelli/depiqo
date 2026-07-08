@@ -1,5 +1,0 @@
-export enum PromotionType {
-  COUPON = "COUPON",
-  SEASONAL = "SEASONAL",
-  CUSTOMER_SPECIFIC = "CUSTOMER_SPECIFIC",
-}
