@@ -370,9 +370,6 @@ importers:
       '@repo/schemas':
         specifier: workspace:*
         version: link:../../packages/schemas
-      '@repo/types':
-        specifier: workspace:*
-        version: link:../../packages/types
       '@repo/typescript-config':
         specifier: workspace:*
         version: link:../../packages/typescript-config

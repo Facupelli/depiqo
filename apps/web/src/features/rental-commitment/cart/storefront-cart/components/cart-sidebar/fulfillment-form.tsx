@@ -1,4 +1,3 @@
-import { FulfillmentMethod } from "@repo/types";
 import { CircleHelp, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -68,23 +67,17 @@ export function FulfillmentForm() {
 								const nextValue = groupValue[0];
 								if (!nextValue) return;
 								deliverySheet.selectFulfillmentMethod(
-									nextValue as FulfillmentMethod,
+									nextValue as "PICKUP" | "DELIVERY",
 								);
 							}}
 							variant="outline"
 							size="sm"
 							className="shrink-0"
 						>
-							<ToggleGroupItem
-								value={FulfillmentMethod.PICKUP}
-								className="min-w-20"
-							>
+							<ToggleGroupItem value="PICKUP" className="min-w-20">
 								Retiro en persona
 							</ToggleGroupItem>
-							<ToggleGroupItem
-								value={FulfillmentMethod.DELIVERY}
-								className="min-w-20"
-							>
+							<ToggleGroupItem value="DELIVERY" className="min-w-20">
 								Envío
 							</ToggleGroupItem>
 						</ToggleGroup>
@@ -96,7 +89,7 @@ export function FulfillmentForm() {
 				</div>
 
 				{deliverySheet.hasConfirmedDeliveryAddress &&
-					fulfillmentMethod === FulfillmentMethod.DELIVERY &&
+					fulfillmentMethod === "DELIVERY" &&
 					addressSummary && (
 						<button
 							type="button"

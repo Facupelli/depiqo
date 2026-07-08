@@ -6,8 +6,23 @@ import {
 	type UpdateTenantConfigBodyDto,
 	UpdateTenantConfigBodySchema,
 } from "@repo/api-contracts";
-import { BookingMode, OrderCommunicationMode, RoundingRule } from "@repo/types";
 import { z } from "zod";
+
+export const TENANT_CONFIG_VALUES = {
+	roundingRule: {
+		ignorePartialDay: "IGNORE_PARTIAL_DAY",
+		billOverHalfDay: "BILL_OVER_HALF_DAY",
+		billAnyPartialDay: "BILL_ANY_PARTIAL_DAY",
+	},
+	bookingMode: {
+		instantBook: "instant-book",
+		requestToBook: "request-to-book",
+	},
+	orderCommunicationMode: {
+		formal: "FORMAL",
+		whatsApp: "WHATSAPP",
+	},
+} as const;
 
 export const tenantConfigFormSchema = z
 	.object({
@@ -30,7 +45,8 @@ export const tenantConfigFormSchema = z
 	})
 	.superRefine((values, context) => {
 		if (
-			values.orderCommunicationMode === OrderCommunicationMode.WHATSAPP &&
+			values.orderCommunicationMode ===
+				TENANT_CONFIG_VALUES.orderCommunicationMode.whatsApp &&
 			!values.whatsAppNumber.trim()
 		) {
 			context.addIssue({
@@ -48,15 +64,15 @@ export function createTenantConfigFormDefaultValues(): TenantConfigFormValues {
 		overRentalEnabled: false,
 		maxOverRentThreshold: 0,
 		weekendCountsAsOne: false,
-		roundingRule: RoundingRule.IGNORE_PARTIAL_DAY,
+		roundingRule: TENANT_CONFIG_VALUES.roundingRule.ignorePartialDay,
 		currency: "ARS",
 		locale: "es-AR",
 		insuranceEnabled: false,
 		insuranceRatePercent: 0,
 		timezone: "UTC",
 		newArrivalsWindowDays: 30,
-		bookingMode: BookingMode.INSTANT_BOOK,
-		orderCommunicationMode: OrderCommunicationMode.FORMAL,
+		bookingMode: TENANT_CONFIG_VALUES.bookingMode.instantBook,
+		orderCommunicationMode: TENANT_CONFIG_VALUES.orderCommunicationMode.formal,
 		whatsAppNumber: "",
 		showFloatingWhatsAppButton: false,
 	};

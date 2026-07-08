@@ -1,4 +1,3 @@
-import { BookingMode, OrderCommunicationMode, RoundingRule } from "@repo/types";
 import { useForm } from "@tanstack/react-form";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { CircleHelp } from "lucide-react";
@@ -28,6 +27,7 @@ import { tenantQueries } from "../../tenant.queries";
 import { useUpdateTenantConfig } from "../update-tenant-config.mutation";
 import {
 	createTenantConfigFormDefaultValues,
+	TENANT_CONFIG_VALUES,
 	type TenantConfigFormValues,
 	tenantConfigFormSchema,
 	tenantConfigToFormValues,
@@ -243,20 +243,18 @@ function PricingSettingsFields({
 						</div>
 						<Select
 							value={field.state.value}
-							onValueChange={(value) =>
-								field.handleChange(value as RoundingRule)
-							}
+							onValueChange={field.handleChange}
 							items={[
 								{
-									value: RoundingRule.IGNORE_PARTIAL_DAY,
+									value: TENANT_CONFIG_VALUES.roundingRule.ignorePartialDay,
 									label: "No cobrar la fracción restante",
 								},
 								{
-									value: RoundingRule.BILL_OVER_HALF_DAY,
+									value: TENANT_CONFIG_VALUES.roundingRule.billOverHalfDay,
 									label: "Cobrar desde media jornada extra",
 								},
 								{
-									value: RoundingRule.BILL_ANY_PARTIAL_DAY,
+									value: TENANT_CONFIG_VALUES.roundingRule.billAnyPartialDay,
 									label: "Cobrar cualquier fracción extra",
 								},
 							]}
@@ -265,13 +263,19 @@ function PricingSettingsFields({
 								<SelectValue />
 							</SelectTrigger>
 							<SelectContent>
-								<SelectItem value={RoundingRule.IGNORE_PARTIAL_DAY}>
+								<SelectItem
+									value={TENANT_CONFIG_VALUES.roundingRule.ignorePartialDay}
+								>
 									No cobrar la fracción restante
 								</SelectItem>
-								<SelectItem value={RoundingRule.BILL_OVER_HALF_DAY}>
+								<SelectItem
+									value={TENANT_CONFIG_VALUES.roundingRule.billOverHalfDay}
+								>
 									Cobrar desde media jornada extra
 								</SelectItem>
-								<SelectItem value={RoundingRule.BILL_ANY_PARTIAL_DAY}>
+								<SelectItem
+									value={TENANT_CONFIG_VALUES.roundingRule.billAnyPartialDay}
+								>
 									Cobrar cualquier fracción extra
 								</SelectItem>
 							</SelectContent>
@@ -408,11 +412,14 @@ function GeneralSettingsFields({
 						label="Modo de reserva"
 						description="Elegí si las reservas se confirman automáticamente o si primero deben ser revisadas por tu equipo."
 						value={field.state.value}
-						onValueChange={(value) => field.handleChange(value as BookingMode)}
+						onValueChange={field.handleChange}
 						options={[
-							{ value: BookingMode.INSTANT_BOOK, label: "Reserva inmediata" },
 							{
-								value: BookingMode.REQUEST_TO_BOOK,
+								value: TENANT_CONFIG_VALUES.bookingMode.instantBook,
+								label: "Reserva inmediata",
+							},
+							{
+								value: TENANT_CONFIG_VALUES.bookingMode.requestToBook,
 								label: "Solicitud de reserva",
 							},
 						]}
@@ -426,12 +433,16 @@ function GeneralSettingsFields({
 						label="Modo de comunicación de pedidos"
 						description="Define cómo continúa la comunicación con el cliente después de crear un pedido."
 						value={field.state.value}
-						onValueChange={(value) =>
-							field.handleChange(value as OrderCommunicationMode)
-						}
+						onValueChange={field.handleChange}
 						options={[
-							{ value: OrderCommunicationMode.FORMAL, label: "Formal" },
-							{ value: OrderCommunicationMode.WHATSAPP, label: "WhatsApp" },
+							{
+								value: TENANT_CONFIG_VALUES.orderCommunicationMode.formal,
+								label: "Formal",
+							},
+							{
+								value: TENANT_CONFIG_VALUES.orderCommunicationMode.whatsApp,
+								label: "WhatsApp",
+							},
 						]}
 					/>
 				)}

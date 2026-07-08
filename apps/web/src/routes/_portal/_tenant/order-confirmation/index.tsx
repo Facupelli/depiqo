@@ -1,4 +1,3 @@
-import { BookingMode, OrderStatus } from "@repo/types";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { CalendarCheck, CheckCircle2, Clock3, Mail, X } from "lucide-react";
 import { z } from "zod";
@@ -10,8 +9,11 @@ const orderConfirmationSearchSchema = z.object({
 	pickupDate: z.string().catch("—"),
 	pickupLocation: z.string().catch("—"),
 	pickupTime: z.string().catch("—"),
-	status: z.enum(OrderStatus).optional().catch(undefined),
-	bookingMode: z.enum(BookingMode).optional().catch(undefined),
+	status: z.enum(["PENDING", "CONFIRMED"]).optional().catch(undefined),
+	bookingMode: z
+		.enum(["instant-book", "request-to-book"])
+		.optional()
+		.catch(undefined),
 });
 
 export const Route = createFileRoute("/_portal/_tenant/order-confirmation/")({
@@ -31,7 +33,7 @@ function OrderConfirmationPage() {
 		status,
 		bookingMode,
 	});
-	const isPendingReview = orderStatus === OrderStatus.PENDING_REVIEW;
+	const isPendingReview = orderStatus === "PENDING";
 
 	return (
 		<div className="min-h-screen bg-[#f0f0f0] flex flex-col items-center ">

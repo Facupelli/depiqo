@@ -1,12 +1,14 @@
-import { BookingMode, OrderCommunicationMode, OrderStatus } from "@repo/types";
+export type StorefrontBookingMode = "instant-book" | "request-to-book";
+export type StorefrontOrderCommunicationMode = "FORMAL" | "WHATSAPP";
+export type StorefrontRentalStatus = "PENDING" | "CONFIRMED";
 
 export function getOrderSubmitButtonLabel({
 	bookingMode,
 	orderCommunicationMode,
 	isAuthenticated,
 }: {
-	bookingMode: "instant-book" | "request-to-book";
-	orderCommunicationMode: "FORMAL" | "WHATSAPP";
+	bookingMode: StorefrontBookingMode;
+	orderCommunicationMode: StorefrontOrderCommunicationMode;
 	isAuthenticated: boolean;
 }) {
 	if (!isAuthenticated) {
@@ -16,7 +18,7 @@ export function getOrderSubmitButtonLabel({
 		});
 	}
 
-	if (orderCommunicationMode === OrderCommunicationMode.WHATSAPP) {
+	if (orderCommunicationMode === "WHATSAPP") {
 		return "Pedir por WhatsApp";
 	}
 
@@ -30,16 +32,16 @@ export function getBookingSubmitButtonLabel({
 	bookingMode,
 	isAuthenticated,
 }: {
-	bookingMode: "instant-book" | "request-to-book";
+	bookingMode: StorefrontBookingMode;
 	isAuthenticated: boolean;
 }) {
 	if (!isAuthenticated) {
-		return bookingMode === BookingMode.REQUEST_TO_BOOK
+		return bookingMode === "request-to-book"
 			? "Iniciar sesión para solicitar la reserva"
 			: "Iniciar sesión para reservar";
 	}
 
-	return bookingMode === BookingMode.REQUEST_TO_BOOK
+	return bookingMode === "request-to-book"
 		? "Solicitar reserva"
 		: "Confirmar reserva";
 }
@@ -48,14 +50,12 @@ export function resolveOrderConfirmationStatus({
 	bookingMode,
 	status,
 }: {
-	bookingMode?: BookingMode;
-	status?: OrderStatus;
-}) {
+	bookingMode?: StorefrontBookingMode;
+	status?: StorefrontRentalStatus;
+}): StorefrontRentalStatus {
 	if (status) {
 		return status;
 	}
 
-	return bookingMode === BookingMode.REQUEST_TO_BOOK
-		? OrderStatus.PENDING_REVIEW
-		: OrderStatus.CONFIRMED;
+	return bookingMode === "request-to-book" ? "PENDING" : "CONFIRMED";
 }

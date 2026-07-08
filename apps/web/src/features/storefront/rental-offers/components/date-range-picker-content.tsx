@@ -1,9 +1,11 @@
 import type { GetStorefrontBranchSchedulesResponseDto } from "@repo/api-contracts";
-import { ScheduleSlotType } from "@repo/types";
 import { es } from "date-fns/locale";
 import type { DateRange } from "react-day-picker";
 import { Calendar } from "@/components/ui/calendar";
 import { useStorefrontBranchSchedules } from "@/features/tenant-management/branch/branch.queries";
+
+type StorefrontBranchScheduleSlotType =
+	GetStorefrontBranchSchedulesResponseDto[number]["type"];
 
 type DateRangePickerContentProps = {
 	branchId?: string;
@@ -20,8 +22,8 @@ export function DateRangePickerContent({
 }: DateRangePickerContentProps) {
 	const { data: schedules } = useStorefrontBranchSchedules(branchId);
 
-	const boundaryType =
-		value.from && !value.to ? ScheduleSlotType.RETURN : ScheduleSlotType.PICKUP;
+	const boundaryType: StorefrontBranchScheduleSlotType =
+		value.from && !value.to ? "RETURN" : "PICKUP";
 
 	return (
 		<Calendar
@@ -41,7 +43,7 @@ export function DateRangePickerContent({
 
 function isScheduleBoundaryDisabled(
 	date: Date,
-	type: ScheduleSlotType,
+	type: StorefrontBranchScheduleSlotType,
 	schedules?: GetStorefrontBranchSchedulesResponseDto,
 ): boolean {
 	if (!schedules || schedules.length === 0) {

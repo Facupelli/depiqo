@@ -1,4 +1,3 @@
-import { FulfillmentMethod } from "@repo/types";
 import { useState } from "react";
 import type {
 	DeliveryRequestField,
@@ -8,6 +7,8 @@ import {
 	isDeliveryRequestComplete,
 	normalizeDeliveryRequest,
 } from "../cart-order.utils";
+
+type FulfillmentMethod = "PICKUP" | "DELIVERY";
 
 type UseDeliveryRequestSheetParams = {
 	supportsDelivery: boolean;
@@ -32,7 +33,7 @@ export function useDeliveryRequestSheet({
 
 	const confirmedDeliveryRequest = normalizeDeliveryRequest({
 		deliveryRequest,
-		fulfillmentMethod: FulfillmentMethod.DELIVERY,
+		fulfillmentMethod: "DELIVERY",
 	});
 	const hasConfirmedDeliveryAddress = isDeliveryRequestComplete(
 		confirmedDeliveryRequest,
@@ -64,18 +65,18 @@ export function useDeliveryRequestSheet({
 		close();
 
 		if (!hasConfirmedDeliveryAddress) {
-			onFulfillmentMethodChange(FulfillmentMethod.PICKUP);
+			onFulfillmentMethodChange("PICKUP");
 		}
 	};
 
 	const selectFulfillmentMethod = (value: FulfillmentMethod) => {
-		if (value === FulfillmentMethod.PICKUP) {
+		if (value === "PICKUP") {
 			close();
-			onFulfillmentMethodChange(FulfillmentMethod.PICKUP);
+			onFulfillmentMethodChange("PICKUP");
 			return;
 		}
 
-		onFulfillmentMethodChange(FulfillmentMethod.DELIVERY);
+		onFulfillmentMethodChange("DELIVERY");
 		open();
 	};
 
@@ -87,7 +88,7 @@ export function useDeliveryRequestSheet({
 	const confirm = () => {
 		const normalizedDraftDeliveryRequest = normalizeDeliveryRequest({
 			deliveryRequest: draftDeliveryRequest,
-			fulfillmentMethod: FulfillmentMethod.DELIVERY,
+			fulfillmentMethod: "DELIVERY",
 		});
 
 		if (!isDeliveryRequestComplete(normalizedDraftDeliveryRequest)) {
