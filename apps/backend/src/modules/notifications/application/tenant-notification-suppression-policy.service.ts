@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { OrderCommunicationMode } from '@repo/types';
 
+import { TenantOrderCommunicationMode } from 'src/modules/tenant-management/domain/value-objects/tenant-config.value-object';
 import { TenantManagementPublicApi } from 'src/modules/tenant-management/public-api/tenant-management.public-api';
 
 import { NotificationDispatchSkipReason } from './types/notification-dispatch-skip-reason.enum';
@@ -39,7 +39,7 @@ export class TenantNotificationSuppressionPolicy {
       return { suppressed: false };
     }
 
-    if (tenantConfigResult.value.communication.orderCommunicationMode !== OrderCommunicationMode.WHATSAPP) {
+    if (tenantConfigResult.value.communication.orderCommunicationMode !== TenantOrderCommunicationMode.WHATSAPP) {
       return { suppressed: false };
     }
 

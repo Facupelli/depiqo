@@ -39,10 +39,6 @@ import { ContractsModule } from './modules/contracts/contracts.module';
     ContractsModule,
   ],
   providers: [
-    // {
-    //   provide: APP_GUARD,
-    //   useClass: PermissionsGuard,
-    // },
     {
       provide: APP_INTERCEPTOR,
       useClass: TenantInterceptor,
