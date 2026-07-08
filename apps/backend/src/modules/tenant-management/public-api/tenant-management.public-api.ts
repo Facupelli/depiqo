@@ -1,4 +1,3 @@
-import { TenantContext } from '@repo/schemas';
 import { Result } from 'neverthrow';
 
 import { RentalCommitmentError } from '../../rental-commitment/domain/errors/rental-commitment.errors';
@@ -36,6 +35,16 @@ export interface ValidateOfferingSetupInput {
 
 export interface GetTenantInput {
   tenantId: string;
+}
+
+export interface TenantContext {
+  id: string;
+  slug: string;
+  name: string;
+  customDomain: string | null;
+  logoUrl: string | null;
+  faviconUrl: string | null;
+  primaryColor: string | null;
 }
 
 export interface GetTenantConfigInput {

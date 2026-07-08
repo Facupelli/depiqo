@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { TenantContext } from '@repo/schemas';
 import { err, ok, Result } from 'neverthrow';
 
 import { PrismaService } from 'src/core/database/prisma.service';
@@ -17,6 +16,7 @@ import { FulfillmentMethod } from 'src/modules/rental-commitment/domain/rental-s
 
 import {
   BranchContext,
+  TenantContext,
   GetBranchContextInput,
   GetRentalCustomerNotificationRecipientInput,
   GetTenantAdminNotificationRecipientsInput,
