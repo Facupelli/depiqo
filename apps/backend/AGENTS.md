@@ -6,34 +6,53 @@ Run commands from `apps/backend/` unless there is a clear reason to run from the
 
 Use `pnpm`.
 
-Common backend commands:
+## Commands
 
-- `pnpm build`
-- `pnpm lint`
-- `pnpm test`
-- `pnpm test:integration`
-- `pnpm test:e2e`
+Backend-local:
 
-Workspace commands:
+- `pnpm run build`
+- `pnpm run lint`
+- `pnpm run test`
+- `pnpm run test:integration`
+- `pnpm run test:e2e`
 
-- `pnpm build`
-- `pnpm lint`
+## Documentation Map
 
-Use `apps/backend/docs/constitution/` as the source of truth for project mission, technical direction, and architectural decisions.
+Use these docs as the routing table.
 
-Use `apps/backend/docs/agent-rules/` as the source of truth for implementation rules, invariants, and examples.
+| Need | Read |
+| --- | --- |
+| Product mission / technical direction | `apps/backend/docs/constitution/` |
+| Architecture overview / module boundary rules | `apps/backend/docs/architecture/overview.md` |
+| Architecture decisions | `apps/backend/docs/architecture/adr/` |
+| Implementation rules by artifact type | `apps/backend/docs/agent-rules/architecture.md` |
+| Module-specific domain boundaries | `apps/backend/src/modules/*/README.md` |
+| Public cross-module contracts | `apps/backend/src/modules/**/*.public-api.ts` |
 
-Start with `apps/backend/docs/agent-rules/architecture.md` only when you need implementation-rule navigation. Then load any additional artifact-specific rule documents from `docs/agent-rules/` as needed for the code you are changing.
+## Implementation Rule Navigation
 
-Use existing backend skills for specialized workflows:
+Start with:
 
-- `backend-use-case-implementation` for command/query/controller/repository use-case work
+```text
+apps/backend/docs/agent-rules/architecture.md
+```
+
+Then load only the artifact-specific rule docs needed for the change, such as command, query, controller, repository, mapper, DTO, domain error, entity, aggregate, value object, domain service, domain event, or testing rules.
+
+## Backend Skills
+
+Use existing backend skills for specialized workflows when available:
+
+- `backend-use-case-implementation` for backend command/query/controller/repository/use-case work
 - `prisma-domain-change-safely` for changes that cross Prisma, mappers, and domain entities
 - `module-boundary-review` for auditing cross-module interactions and public contracts
 - `backend-testing-selection` for choosing the smallest effective verification command
 
-Use `apps/backend/docs/system-explanations/` for subsystem behavior and architecture references when working in a specific area of the product.
+## Module Docs
 
-Use `apps/backend/docs/system-explanations/rental-domain-model.md` as the overview for rental-domain concepts, then load the linked focused docs as needed.
+When working inside a module, read that module's README first:
 
-`AGENTS.md` is only an entrypoint and routing guide. Do not duplicate detailed rules here if they already exist in the docs.
+```text
+apps/backend/src/modules/<module>/README.md
+```
+
