@@ -96,7 +96,7 @@ export function CartPopoverHeader({ onClose }: CartPopoverHeaderProps) {
 
 function CartPopoverContext() {
 	const { branchId, periodStart, periodEnd } = useSearch({
-		from: "/_portal/_tenant/v2/rental/",
+		from: "/_portal/_tenant/rental/",
 	});
 	const { data: branches } = useStorefrontBranches();
 	const branch = branches?.find((branch) => branch.id === branchId);
@@ -239,9 +239,9 @@ type CartPopoverFooterProps = {
 
 export function CartPopoverFooter({ onClose }: CartPopoverFooterProps) {
 	const { branchId, periodStart, periodEnd } = useSearch({
-		from: "/_portal/_tenant/v2/rental/",
+		from: "/_portal/_tenant/rental/",
 	});
-	const navigate = useNavigate({ from: "/v2/rental/" });
+	const navigate = useNavigate({ from: "/rental/" });
 	const hasRentalPeriod = Boolean(periodStart && periodEnd);
 
 	function handleRentalPeriodChange(range: DateRange | undefined) {

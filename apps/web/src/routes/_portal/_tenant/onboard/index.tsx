@@ -41,11 +41,11 @@ export const Route = createFileRoute("/_portal/_tenant/onboard/")({
 		}
 
 		if (user.onboardingStatus === "APPROVED") {
-			throw redirect({ to: "/v2/rental" });
+			throw redirect({ to: "/rental" });
 		}
 
 		if (user.onboardingStatus === "PENDING" && submittedProfile) {
-			throw redirect({ to: "/v2/rental" });
+			throw redirect({ to: "/rental" });
 		}
 
 		if (user.onboardingStatus === "REJECTED") {

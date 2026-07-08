@@ -23,6 +23,7 @@ import { Route as AuthGoogleStartRouteImport } from './routes/auth/google/start'
 import { Route as AuthGoogleCallbackRouteImport } from './routes/auth/google/callback'
 import { Route as AdminAdminRegisterRouteImport } from './routes/_admin/admin/register'
 import { Route as AdminAdminLoginRouteImport } from './routes/_admin/admin/login'
+import { Route as PortalTenantRentalIndexRouteImport } from './routes/_portal/_tenant/rental/index'
 import { Route as PortalTenantOrderCreatedWhatsappIndexRouteImport } from './routes/_portal/_tenant/order-created-whatsapp/index'
 import { Route as PortalTenantOrderCreatedContactTeamIndexRouteImport } from './routes/_portal/_tenant/order-created-contact-team/index'
 import { Route as PortalTenantOrderConfirmationIndexRouteImport } from './routes/_portal/_tenant/order-confirmation/index'
@@ -38,7 +39,6 @@ import { Route as AdminDashboardCatalogIndexRouteImport } from './routes/_admin/
 import { Route as AdminDashboardCalendarIndexRouteImport } from './routes/_admin/dashboard/calendar/index'
 import { Route as AdminDashboardBranchesIndexRouteImport } from './routes/_admin/dashboard/branches/index'
 import { Route as ApiOrdersOrderIdContractRouteImport } from './routes/api/orders/$orderId/contract'
-import { Route as ApiOrdersOrderIdBudgetRouteImport } from './routes/api/orders/$orderId/budget'
 import { Route as ApiDocumentSigningPublicUnsignedPdfRouteImport } from './routes/api/document-signing/public/unsigned-pdf'
 import { Route as ApiDocumentSigningPublicSignedPdfRouteImport } from './routes/api/document-signing/public/signed-pdf'
 import { Route as ApiCustomerProfilesCustomerProfileIdIdentityDocumentRouteImport } from './routes/api/customer-profiles/$customerProfileId/identity-document'
@@ -48,7 +48,6 @@ import { Route as AdminDashboardOwnersOwnerIdRouteImport } from './routes/_admin
 import { Route as AdminDashboardOrdersNewRouteImport } from './routes/_admin/dashboard/orders/new'
 import { Route as AdminDashboardCatalogNewRouteImport } from './routes/_admin/dashboard/catalog/new'
 import { Route as AdminDashboardBranchesNewRouteImport } from './routes/_admin/dashboard/branches/new'
-import { Route as PortalTenantV2RentalIndexRouteImport } from './routes/_portal/_tenant/v2/rental/index'
 import { Route as AdminDashboardOrdersOrderIdIndexRouteImport } from './routes/_admin/dashboard/orders/$orderId/index'
 import { Route as AdminDashboardInventoryEquipmentTypesIndexRouteImport } from './routes/_admin/dashboard/inventory/equipment-types/index'
 import { Route as AdminDashboardCustomersPendingProfilesIndexRouteImport } from './routes/_admin/dashboard/customers/pending-profiles/index'
@@ -56,7 +55,6 @@ import { Route as AdminDashboardCatalogCategoriesIndexRouteImport } from './rout
 import { Route as AdminDashboardCatalogRentableItemIdIndexRouteImport } from './routes/_admin/dashboard/catalog/$rentableItemId/index'
 import { Route as ApiOrdersOrderIdContractSignedRouteImport } from './routes/api/orders/$orderId/contract/signed'
 import { Route as ApiOrdersOrderIdContractDownloadRouteImport } from './routes/api/orders/$orderId/contract/download'
-import { Route as ApiOrdersOrderIdBudgetDownloadRouteImport } from './routes/api/orders/$orderId/budget/download'
 import { Route as AdminDashboardPromotionsPromotionIdEditRouteImport } from './routes/_admin/dashboard/promotions/$promotionId/edit'
 import { Route as AdminDashboardInventoryEquipmentTypesEquipmentTypeIdRouteImport } from './routes/_admin/dashboard/inventory/equipment-types/$equipmentTypeId'
 import { Route as AdminDashboardCustomersPendingProfilesCustomerIdRouteImport } from './routes/_admin/dashboard/customers/pending-profiles/$customerId'
@@ -132,6 +130,11 @@ const AdminAdminLoginRoute = AdminAdminLoginRouteImport.update({
   id: '/_admin/admin/login',
   path: '/admin/login',
   getParentRoute: () => rootRouteImport,
+} as any)
+const PortalTenantRentalIndexRoute = PortalTenantRentalIndexRouteImport.update({
+  id: '/_tenant/rental/',
+  path: '/rental/',
+  getParentRoute: () => PortalRouteRoute,
 } as any)
 const PortalTenantOrderCreatedWhatsappIndexRoute =
   PortalTenantOrderCreatedWhatsappIndexRouteImport.update({
@@ -222,11 +225,6 @@ const ApiOrdersOrderIdContractRoute =
     path: '/api/orders/$orderId/contract',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiOrdersOrderIdBudgetRoute = ApiOrdersOrderIdBudgetRouteImport.update({
-  id: '/api/orders/$orderId/budget',
-  path: '/api/orders/$orderId/budget',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ApiDocumentSigningPublicUnsignedPdfRoute =
   ApiDocumentSigningPublicUnsignedPdfRouteImport.update({
     id: '/api/document-signing/public/unsigned-pdf',
@@ -280,12 +278,6 @@ const AdminDashboardBranchesNewRoute =
     path: '/branches/new',
     getParentRoute: () => AdminDashboardRouteRoute,
   } as any)
-const PortalTenantV2RentalIndexRoute =
-  PortalTenantV2RentalIndexRouteImport.update({
-    id: '/_tenant/v2/rental/',
-    path: '/v2/rental/',
-    getParentRoute: () => PortalRouteRoute,
-  } as any)
 const AdminDashboardOrdersOrderIdIndexRoute =
   AdminDashboardOrdersOrderIdIndexRouteImport.update({
     id: '/orders/$orderId/',
@@ -327,12 +319,6 @@ const ApiOrdersOrderIdContractDownloadRoute =
     id: '/download',
     path: '/download',
     getParentRoute: () => ApiOrdersOrderIdContractRoute,
-  } as any)
-const ApiOrdersOrderIdBudgetDownloadRoute =
-  ApiOrdersOrderIdBudgetDownloadRouteImport.update({
-    id: '/download',
-    path: '/download',
-    getParentRoute: () => ApiOrdersOrderIdBudgetRoute,
   } as any)
 const AdminDashboardPromotionsPromotionIdEditRoute =
   AdminDashboardPromotionsPromotionIdEditRouteImport.update({
@@ -394,7 +380,6 @@ export interface FileRoutesByFullPath {
   '/api/customer-profiles/$customerProfileId/identity-document': typeof ApiCustomerProfilesCustomerProfileIdIdentityDocumentRoute
   '/api/document-signing/public/signed-pdf': typeof ApiDocumentSigningPublicSignedPdfRoute
   '/api/document-signing/public/unsigned-pdf': typeof ApiDocumentSigningPublicUnsignedPdfRoute
-  '/api/orders/$orderId/budget': typeof ApiOrdersOrderIdBudgetRouteWithChildren
   '/api/orders/$orderId/contract': typeof ApiOrdersOrderIdContractRouteWithChildren
   '/dashboard/branches/': typeof AdminDashboardBranchesIndexRoute
   '/dashboard/calendar/': typeof AdminDashboardCalendarIndexRoute
@@ -410,12 +395,12 @@ export interface FileRoutesByFullPath {
   '/order-confirmation/': typeof PortalTenantOrderConfirmationIndexRoute
   '/order-created-contact-team/': typeof PortalTenantOrderCreatedContactTeamIndexRoute
   '/order-created-whatsapp/': typeof PortalTenantOrderCreatedWhatsappIndexRoute
+  '/rental/': typeof PortalTenantRentalIndexRoute
   '/dashboard/branches/$branchId/edit': typeof AdminDashboardBranchesBranchIdEditRoute
   '/dashboard/catalog/packages/new': typeof AdminDashboardCatalogPackagesNewRoute
   '/dashboard/customers/pending-profiles/$customerId': typeof AdminDashboardCustomersPendingProfilesCustomerIdRoute
   '/dashboard/inventory/equipment-types/$equipmentTypeId': typeof AdminDashboardInventoryEquipmentTypesEquipmentTypeIdRoute
   '/dashboard/promotions/$promotionId/edit': typeof AdminDashboardPromotionsPromotionIdEditRoute
-  '/api/orders/$orderId/budget/download': typeof ApiOrdersOrderIdBudgetDownloadRoute
   '/api/orders/$orderId/contract/download': typeof ApiOrdersOrderIdContractDownloadRoute
   '/api/orders/$orderId/contract/signed': typeof ApiOrdersOrderIdContractSignedRouteWithChildren
   '/dashboard/catalog/$rentableItemId/': typeof AdminDashboardCatalogRentableItemIdIndexRoute
@@ -423,7 +408,6 @@ export interface FileRoutesByFullPath {
   '/dashboard/customers/pending-profiles/': typeof AdminDashboardCustomersPendingProfilesIndexRoute
   '/dashboard/inventory/equipment-types/': typeof AdminDashboardInventoryEquipmentTypesIndexRoute
   '/dashboard/orders/$orderId/': typeof AdminDashboardOrdersOrderIdIndexRoute
-  '/v2/rental/': typeof PortalTenantV2RentalIndexRoute
   '/api/orders/$orderId/contract/signed/download': typeof ApiOrdersOrderIdContractSignedDownloadRoute
 }
 export interface FileRoutesByTo {
@@ -448,7 +432,6 @@ export interface FileRoutesByTo {
   '/api/customer-profiles/$customerProfileId/identity-document': typeof ApiCustomerProfilesCustomerProfileIdIdentityDocumentRoute
   '/api/document-signing/public/signed-pdf': typeof ApiDocumentSigningPublicSignedPdfRoute
   '/api/document-signing/public/unsigned-pdf': typeof ApiDocumentSigningPublicUnsignedPdfRoute
-  '/api/orders/$orderId/budget': typeof ApiOrdersOrderIdBudgetRouteWithChildren
   '/api/orders/$orderId/contract': typeof ApiOrdersOrderIdContractRouteWithChildren
   '/dashboard/branches': typeof AdminDashboardBranchesIndexRoute
   '/dashboard/calendar': typeof AdminDashboardCalendarIndexRoute
@@ -464,12 +447,12 @@ export interface FileRoutesByTo {
   '/order-confirmation': typeof PortalTenantOrderConfirmationIndexRoute
   '/order-created-contact-team': typeof PortalTenantOrderCreatedContactTeamIndexRoute
   '/order-created-whatsapp': typeof PortalTenantOrderCreatedWhatsappIndexRoute
+  '/rental': typeof PortalTenantRentalIndexRoute
   '/dashboard/branches/$branchId/edit': typeof AdminDashboardBranchesBranchIdEditRoute
   '/dashboard/catalog/packages/new': typeof AdminDashboardCatalogPackagesNewRoute
   '/dashboard/customers/pending-profiles/$customerId': typeof AdminDashboardCustomersPendingProfilesCustomerIdRoute
   '/dashboard/inventory/equipment-types/$equipmentTypeId': typeof AdminDashboardInventoryEquipmentTypesEquipmentTypeIdRoute
   '/dashboard/promotions/$promotionId/edit': typeof AdminDashboardPromotionsPromotionIdEditRoute
-  '/api/orders/$orderId/budget/download': typeof ApiOrdersOrderIdBudgetDownloadRoute
   '/api/orders/$orderId/contract/download': typeof ApiOrdersOrderIdContractDownloadRoute
   '/api/orders/$orderId/contract/signed': typeof ApiOrdersOrderIdContractSignedRouteWithChildren
   '/dashboard/catalog/$rentableItemId': typeof AdminDashboardCatalogRentableItemIdIndexRoute
@@ -477,7 +460,6 @@ export interface FileRoutesByTo {
   '/dashboard/customers/pending-profiles': typeof AdminDashboardCustomersPendingProfilesIndexRoute
   '/dashboard/inventory/equipment-types': typeof AdminDashboardInventoryEquipmentTypesIndexRoute
   '/dashboard/orders/$orderId': typeof AdminDashboardOrdersOrderIdIndexRoute
-  '/v2/rental': typeof PortalTenantV2RentalIndexRoute
   '/api/orders/$orderId/contract/signed/download': typeof ApiOrdersOrderIdContractSignedDownloadRoute
 }
 export interface FileRoutesById {
@@ -505,7 +487,6 @@ export interface FileRoutesById {
   '/api/customer-profiles/$customerProfileId/identity-document': typeof ApiCustomerProfilesCustomerProfileIdIdentityDocumentRoute
   '/api/document-signing/public/signed-pdf': typeof ApiDocumentSigningPublicSignedPdfRoute
   '/api/document-signing/public/unsigned-pdf': typeof ApiDocumentSigningPublicUnsignedPdfRoute
-  '/api/orders/$orderId/budget': typeof ApiOrdersOrderIdBudgetRouteWithChildren
   '/api/orders/$orderId/contract': typeof ApiOrdersOrderIdContractRouteWithChildren
   '/_admin/dashboard/branches/': typeof AdminDashboardBranchesIndexRoute
   '/_admin/dashboard/calendar/': typeof AdminDashboardCalendarIndexRoute
@@ -521,12 +502,12 @@ export interface FileRoutesById {
   '/_portal/_tenant/order-confirmation/': typeof PortalTenantOrderConfirmationIndexRoute
   '/_portal/_tenant/order-created-contact-team/': typeof PortalTenantOrderCreatedContactTeamIndexRoute
   '/_portal/_tenant/order-created-whatsapp/': typeof PortalTenantOrderCreatedWhatsappIndexRoute
+  '/_portal/_tenant/rental/': typeof PortalTenantRentalIndexRoute
   '/_admin/dashboard/branches/$branchId/edit': typeof AdminDashboardBranchesBranchIdEditRoute
   '/_admin/dashboard/catalog/packages/new': typeof AdminDashboardCatalogPackagesNewRoute
   '/_admin/dashboard/customers/pending-profiles/$customerId': typeof AdminDashboardCustomersPendingProfilesCustomerIdRoute
   '/_admin/dashboard/inventory/equipment-types/$equipmentTypeId': typeof AdminDashboardInventoryEquipmentTypesEquipmentTypeIdRoute
   '/_admin/dashboard/promotions/$promotionId/edit': typeof AdminDashboardPromotionsPromotionIdEditRoute
-  '/api/orders/$orderId/budget/download': typeof ApiOrdersOrderIdBudgetDownloadRoute
   '/api/orders/$orderId/contract/download': typeof ApiOrdersOrderIdContractDownloadRoute
   '/api/orders/$orderId/contract/signed': typeof ApiOrdersOrderIdContractSignedRouteWithChildren
   '/_admin/dashboard/catalog/$rentableItemId/': typeof AdminDashboardCatalogRentableItemIdIndexRoute
@@ -534,7 +515,6 @@ export interface FileRoutesById {
   '/_admin/dashboard/customers/pending-profiles/': typeof AdminDashboardCustomersPendingProfilesIndexRoute
   '/_admin/dashboard/inventory/equipment-types/': typeof AdminDashboardInventoryEquipmentTypesIndexRoute
   '/_admin/dashboard/orders/$orderId/': typeof AdminDashboardOrdersOrderIdIndexRoute
-  '/_portal/_tenant/v2/rental/': typeof PortalTenantV2RentalIndexRoute
   '/api/orders/$orderId/contract/signed/download': typeof ApiOrdersOrderIdContractSignedDownloadRoute
 }
 export interface FileRouteTypes {
@@ -562,7 +542,6 @@ export interface FileRouteTypes {
     | '/api/customer-profiles/$customerProfileId/identity-document'
     | '/api/document-signing/public/signed-pdf'
     | '/api/document-signing/public/unsigned-pdf'
-    | '/api/orders/$orderId/budget'
     | '/api/orders/$orderId/contract'
     | '/dashboard/branches/'
     | '/dashboard/calendar/'
@@ -578,12 +557,12 @@ export interface FileRouteTypes {
     | '/order-confirmation/'
     | '/order-created-contact-team/'
     | '/order-created-whatsapp/'
+    | '/rental/'
     | '/dashboard/branches/$branchId/edit'
     | '/dashboard/catalog/packages/new'
     | '/dashboard/customers/pending-profiles/$customerId'
     | '/dashboard/inventory/equipment-types/$equipmentTypeId'
     | '/dashboard/promotions/$promotionId/edit'
-    | '/api/orders/$orderId/budget/download'
     | '/api/orders/$orderId/contract/download'
     | '/api/orders/$orderId/contract/signed'
     | '/dashboard/catalog/$rentableItemId/'
@@ -591,7 +570,6 @@ export interface FileRouteTypes {
     | '/dashboard/customers/pending-profiles/'
     | '/dashboard/inventory/equipment-types/'
     | '/dashboard/orders/$orderId/'
-    | '/v2/rental/'
     | '/api/orders/$orderId/contract/signed/download'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -616,7 +594,6 @@ export interface FileRouteTypes {
     | '/api/customer-profiles/$customerProfileId/identity-document'
     | '/api/document-signing/public/signed-pdf'
     | '/api/document-signing/public/unsigned-pdf'
-    | '/api/orders/$orderId/budget'
     | '/api/orders/$orderId/contract'
     | '/dashboard/branches'
     | '/dashboard/calendar'
@@ -632,12 +609,12 @@ export interface FileRouteTypes {
     | '/order-confirmation'
     | '/order-created-contact-team'
     | '/order-created-whatsapp'
+    | '/rental'
     | '/dashboard/branches/$branchId/edit'
     | '/dashboard/catalog/packages/new'
     | '/dashboard/customers/pending-profiles/$customerId'
     | '/dashboard/inventory/equipment-types/$equipmentTypeId'
     | '/dashboard/promotions/$promotionId/edit'
-    | '/api/orders/$orderId/budget/download'
     | '/api/orders/$orderId/contract/download'
     | '/api/orders/$orderId/contract/signed'
     | '/dashboard/catalog/$rentableItemId'
@@ -645,7 +622,6 @@ export interface FileRouteTypes {
     | '/dashboard/customers/pending-profiles'
     | '/dashboard/inventory/equipment-types'
     | '/dashboard/orders/$orderId'
-    | '/v2/rental'
     | '/api/orders/$orderId/contract/signed/download'
   id:
     | '__root__'
@@ -672,7 +648,6 @@ export interface FileRouteTypes {
     | '/api/customer-profiles/$customerProfileId/identity-document'
     | '/api/document-signing/public/signed-pdf'
     | '/api/document-signing/public/unsigned-pdf'
-    | '/api/orders/$orderId/budget'
     | '/api/orders/$orderId/contract'
     | '/_admin/dashboard/branches/'
     | '/_admin/dashboard/calendar/'
@@ -688,12 +663,12 @@ export interface FileRouteTypes {
     | '/_portal/_tenant/order-confirmation/'
     | '/_portal/_tenant/order-created-contact-team/'
     | '/_portal/_tenant/order-created-whatsapp/'
+    | '/_portal/_tenant/rental/'
     | '/_admin/dashboard/branches/$branchId/edit'
     | '/_admin/dashboard/catalog/packages/new'
     | '/_admin/dashboard/customers/pending-profiles/$customerId'
     | '/_admin/dashboard/inventory/equipment-types/$equipmentTypeId'
     | '/_admin/dashboard/promotions/$promotionId/edit'
-    | '/api/orders/$orderId/budget/download'
     | '/api/orders/$orderId/contract/download'
     | '/api/orders/$orderId/contract/signed'
     | '/_admin/dashboard/catalog/$rentableItemId/'
@@ -701,7 +676,6 @@ export interface FileRouteTypes {
     | '/_admin/dashboard/customers/pending-profiles/'
     | '/_admin/dashboard/inventory/equipment-types/'
     | '/_admin/dashboard/orders/$orderId/'
-    | '/_portal/_tenant/v2/rental/'
     | '/api/orders/$orderId/contract/signed/download'
   fileRoutesById: FileRoutesById
 }
@@ -720,7 +694,6 @@ export interface RootRouteChildren {
   ApiCustomerProfilesCustomerProfileIdIdentityDocumentRoute: typeof ApiCustomerProfilesCustomerProfileIdIdentityDocumentRoute
   ApiDocumentSigningPublicSignedPdfRoute: typeof ApiDocumentSigningPublicSignedPdfRoute
   ApiDocumentSigningPublicUnsignedPdfRoute: typeof ApiDocumentSigningPublicUnsignedPdfRoute
-  ApiOrdersOrderIdBudgetRoute: typeof ApiOrdersOrderIdBudgetRouteWithChildren
   ApiOrdersOrderIdContractRoute: typeof ApiOrdersOrderIdContractRouteWithChildren
 }
 
@@ -823,6 +796,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/login'
       preLoaderRoute: typeof AdminAdminLoginRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_portal/_tenant/rental/': {
+      id: '/_portal/_tenant/rental/'
+      path: '/rental'
+      fullPath: '/rental/'
+      preLoaderRoute: typeof PortalTenantRentalIndexRouteImport
+      parentRoute: typeof PortalRouteRoute
     }
     '/_portal/_tenant/order-created-whatsapp/': {
       id: '/_portal/_tenant/order-created-whatsapp/'
@@ -929,13 +909,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiOrdersOrderIdContractRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/orders/$orderId/budget': {
-      id: '/api/orders/$orderId/budget'
-      path: '/api/orders/$orderId/budget'
-      fullPath: '/api/orders/$orderId/budget'
-      preLoaderRoute: typeof ApiOrdersOrderIdBudgetRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/document-signing/public/unsigned-pdf': {
       id: '/api/document-signing/public/unsigned-pdf'
       path: '/api/document-signing/public/unsigned-pdf'
@@ -999,13 +972,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminDashboardBranchesNewRouteImport
       parentRoute: typeof AdminDashboardRouteRoute
     }
-    '/_portal/_tenant/v2/rental/': {
-      id: '/_portal/_tenant/v2/rental/'
-      path: '/v2/rental'
-      fullPath: '/v2/rental/'
-      preLoaderRoute: typeof PortalTenantV2RentalIndexRouteImport
-      parentRoute: typeof PortalRouteRoute
-    }
     '/_admin/dashboard/orders/$orderId/': {
       id: '/_admin/dashboard/orders/$orderId/'
       path: '/orders/$orderId'
@@ -1054,13 +1020,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/orders/$orderId/contract/download'
       preLoaderRoute: typeof ApiOrdersOrderIdContractDownloadRouteImport
       parentRoute: typeof ApiOrdersOrderIdContractRoute
-    }
-    '/api/orders/$orderId/budget/download': {
-      id: '/api/orders/$orderId/budget/download'
-      path: '/download'
-      fullPath: '/api/orders/$orderId/budget/download'
-      preLoaderRoute: typeof ApiOrdersOrderIdBudgetDownloadRouteImport
-      parentRoute: typeof ApiOrdersOrderIdBudgetRoute
     }
     '/_admin/dashboard/promotions/$promotionId/edit': {
       id: '/_admin/dashboard/promotions/$promotionId/edit'
@@ -1117,7 +1076,7 @@ interface PortalRouteRouteChildren {
   PortalTenantOrderConfirmationIndexRoute: typeof PortalTenantOrderConfirmationIndexRoute
   PortalTenantOrderCreatedContactTeamIndexRoute: typeof PortalTenantOrderCreatedContactTeamIndexRoute
   PortalTenantOrderCreatedWhatsappIndexRoute: typeof PortalTenantOrderCreatedWhatsappIndexRoute
-  PortalTenantV2RentalIndexRoute: typeof PortalTenantV2RentalIndexRoute
+  PortalTenantRentalIndexRoute: typeof PortalTenantRentalIndexRoute
 }
 
 const PortalRouteRouteChildren: PortalRouteRouteChildren = {
@@ -1134,7 +1093,7 @@ const PortalRouteRouteChildren: PortalRouteRouteChildren = {
     PortalTenantOrderCreatedContactTeamIndexRoute,
   PortalTenantOrderCreatedWhatsappIndexRoute:
     PortalTenantOrderCreatedWhatsappIndexRoute,
-  PortalTenantV2RentalIndexRoute: PortalTenantV2RentalIndexRoute,
+  PortalTenantRentalIndexRoute: PortalTenantRentalIndexRoute,
 }
 
 const PortalRouteRouteWithChildren = PortalRouteRoute._addFileChildren(
@@ -1206,20 +1165,6 @@ const AdminDashboardRouteRouteChildren: AdminDashboardRouteRouteChildren = {
 const AdminDashboardRouteRouteWithChildren =
   AdminDashboardRouteRoute._addFileChildren(AdminDashboardRouteRouteChildren)
 
-interface ApiOrdersOrderIdBudgetRouteChildren {
-  ApiOrdersOrderIdBudgetDownloadRoute: typeof ApiOrdersOrderIdBudgetDownloadRoute
-}
-
-const ApiOrdersOrderIdBudgetRouteChildren: ApiOrdersOrderIdBudgetRouteChildren =
-  {
-    ApiOrdersOrderIdBudgetDownloadRoute: ApiOrdersOrderIdBudgetDownloadRoute,
-  }
-
-const ApiOrdersOrderIdBudgetRouteWithChildren =
-  ApiOrdersOrderIdBudgetRoute._addFileChildren(
-    ApiOrdersOrderIdBudgetRouteChildren,
-  )
-
 interface ApiOrdersOrderIdContractSignedRouteChildren {
   ApiOrdersOrderIdContractSignedDownloadRoute: typeof ApiOrdersOrderIdContractSignedDownloadRoute
 }
@@ -1271,7 +1216,6 @@ const rootRouteChildren: RootRouteChildren = {
     ApiDocumentSigningPublicSignedPdfRoute,
   ApiDocumentSigningPublicUnsignedPdfRoute:
     ApiDocumentSigningPublicUnsignedPdfRoute,
-  ApiOrdersOrderIdBudgetRoute: ApiOrdersOrderIdBudgetRouteWithChildren,
   ApiOrdersOrderIdContractRoute: ApiOrdersOrderIdContractRouteWithChildren,
 }
 export const routeTree = rootRouteImport

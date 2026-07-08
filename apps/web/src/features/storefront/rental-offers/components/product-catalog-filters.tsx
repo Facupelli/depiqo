@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useStorefrontCategories } from "@/features/catalog/storefront-categories/storefront-categories.queries";
-import type { V2RentalPageSearch } from "@/routes/_portal/_tenant/v2/rental";
+import type { V2RentalPageSearch } from "@/routes/_portal/_tenant/rental";
 import useDebounce from "@/shared/hooks/use-debounce";
 
 interface CategoryFilterProps {

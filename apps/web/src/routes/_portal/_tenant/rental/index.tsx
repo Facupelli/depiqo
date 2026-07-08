@@ -28,7 +28,7 @@ const v2RentalSearchSchema = z.object({
 
 export type V2RentalPageSearch = z.infer<typeof v2RentalSearchSchema>;
 
-export const Route = createFileRoute("/_portal/_tenant/v2/rental/")({
+export const Route = createFileRoute("/_portal/_tenant/rental/")({
 	validateSearch: v2RentalSearchSchema,
 	loaderDeps: ({ search }) => ({
 		branchId: search.branchId,

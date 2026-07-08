@@ -19,7 +19,7 @@ import { useStorefrontCategories } from "@/features/catalog/storefront-categorie
 import { useStorefrontBranches } from "@/features/rental-commitment/branches/branches.queries";
 import { localDateToDateParam } from "@/lib/dates/parse";
 import { cn } from "@/lib/utils";
-import type { V2RentalPageSearch } from "@/routes/_portal/_tenant/v2/rental";
+import type { V2RentalPageSearch } from "@/routes/_portal/_tenant/rental";
 import { useIsMobile } from "@/shared/hooks/use-mobile";
 import { DateRangePicker } from "./date-range-picker";
 

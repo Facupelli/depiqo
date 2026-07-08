@@ -17,7 +17,7 @@ import type { StorefrontRentalOfferListViewItemDto } from "@/features/storefront
 import { useStorefrontRentalOfferListView } from "@/features/storefront/rental-offers/storefront-rental-offer-list-view.queries";
 import { usePublicTenantConfig } from "@/features/tenant-management/tenant/tenant.queries";
 import { buildR2PublicUrl } from "@/lib/r2-public-url";
-import type { V2RentalPageSearch } from "@/routes/_portal/_tenant/v2/rental";
+import type { V2RentalPageSearch } from "@/routes/_portal/_tenant/rental";
 import { formatCurrency } from "@/shared/utils/price.utils";
 import { CategoryFilter, SearchFilter } from "./product-catalog-filters";
 
