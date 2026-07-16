@@ -34,10 +34,6 @@ export function ProductCatalog({
 	handleCategorySelect,
 	setUrlParam,
 }: ProductCatalogProps) {
-	if (!search.branchId) {
-		return null;
-	}
-
 	const { data: rentalOffers, isFetching } =
 		useStorefrontRentalOfferListView(search);
 	const { data: tenantPublicConfig } = usePublicTenantConfig();
@@ -138,6 +134,7 @@ function ProductCard({
 		isUnavailable,
 		isInCart,
 		quantity,
+		maxQuantity,
 		canIncrement,
 		handleAdd,
 		handleIncrement,
@@ -154,6 +151,9 @@ function ProductCard({
 	const category = "General";
 
 	const productImage = buildR2PublicUrl(product.image, "catalog");
+	const isAtAvailabilityLimit =
+		isInCart && maxQuantity !== null && quantity >= maxQuantity;
+	const availabilityLimitMessageId = `availability-limit-${product.id}`;
 
 	return (
 		<Card className="overflow-hidden rounded-xs py-0 pb-6">
@@ -186,8 +186,8 @@ function ProductCard({
 				</p>
 			</CardHeader>
 
-			<CardFooter className="flex items-center justify-between">
-				<div>
+			<CardFooter className="flex items-start justify-between gap-4">
+				<div className="flex h-10 items-center">
 					{unitPrice != null && product.pricing && displayCurrency ? (
 						<>
 							<span className="text-lg font-bold">
@@ -204,29 +204,46 @@ function ProductCard({
 				</div>
 
 				{isInCart ? (
-					<div className="flex items-center gap-2 border rounded-md px-1">
-						<Button
-							variant="ghost"
-							size="icon"
-							className="h-8 w-8"
-							onClick={handleDecrement}
-							aria-label="Decrease quantity"
-						>
-							<Minus className="w-3 h-3" />
-						</Button>
-						<span className="text-sm font-medium w-4 text-center">
-							{quantity}
-						</span>
-						<Button
-							variant="ghost"
-							size="icon"
-							className="h-8 w-8"
-							onClick={handleIncrement}
-							disabled={!canIncrement}
-							aria-label="Increase quantity"
-						>
-							<Plus className="w-3 h-3" />
-						</Button>
+					<div className="flex flex-col items-end gap-1.5">
+						<div className="flex h-10 items-center gap-2 border rounded-md px-1">
+							<Button
+								variant="ghost"
+								size="icon"
+								className="h-8 w-8"
+								onClick={handleDecrement}
+								aria-label="Disminuir cantidad"
+							>
+								<Minus className="w-3 h-3" />
+							</Button>
+							<span className="text-sm font-medium w-4 text-center">
+								{quantity}
+							</span>
+							<Button
+								variant="ghost"
+								size="icon"
+								className="h-8 w-8"
+								onClick={handleIncrement}
+								disabled={!canIncrement}
+								aria-label={
+									isAtAvailabilityLimit
+										? "Cantidad máxima disponible alcanzada"
+										: "Aumentar cantidad"
+								}
+								aria-describedby={
+									isAtAvailabilityLimit ? availabilityLimitMessageId : undefined
+								}
+							>
+								<Plus className="w-3 h-3" />
+							</Button>
+						</div>
+						{isAtAvailabilityLimit && (
+							<p
+								id={availabilityLimitMessageId}
+								className="text-right text-xs font-medium text-amber-700"
+							>
+								Máximo disponible: {maxQuantity}
+							</p>
+						)}
 					</div>
 				) : (
 					<Button
