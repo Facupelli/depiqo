@@ -47,6 +47,15 @@ export interface ValidateEquipmentTypeResult {
   equipmentIds: string[];
 }
 
+export interface ValidatePackageRequirementsForBranchesInput {
+  tenantId: string;
+  branchIds: string[];
+  requirements: Array<{
+    equipmentTypeId: string;
+    quantityPerItem: number;
+  }>;
+}
+
 export abstract class AssetInventoryPublicApi {
   abstract createEquipmentTypeSetup(
     input: CreateEquipmentTypeSetupInput,
@@ -61,4 +70,8 @@ export abstract class AssetInventoryPublicApi {
   abstract validateEquipmentType(
     input: ValidateEquipmentTypeInput,
   ): Promise<Result<ValidateEquipmentTypeResult, AssetInventoryError>>;
+
+  abstract validatePackageRequirementsForBranches(
+    input: ValidatePackageRequirementsForBranchesInput,
+  ): Promise<Result<void, AssetInventoryError>>;
 }

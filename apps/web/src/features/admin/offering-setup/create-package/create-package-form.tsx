@@ -29,8 +29,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { CatalogImageUploader } from "@/shared/components/catalog-image-uploader";
 import {
 	type CreatePackageFormValues,
-	createPackageFormDefaults,
+	createPackageFormDefaultValues,
 	createPackageFormSchema,
+	type PackageEquipmentOption,
 } from "./create-package.schema";
 
 interface SelectOption {
@@ -48,7 +49,7 @@ interface CreatePackageFormProps {
 	defaultValues?: CreatePackageFormValues;
 	categories: SelectOption[];
 	branches: SelectOption[];
-	equipmentTypes: SelectOption[];
+	equipmentTypes: PackageEquipmentOption[];
 	equipmentSearch: string;
 	isPending: boolean;
 	submitLabel?: string;
@@ -61,7 +62,7 @@ interface CreatePackageFormProps {
 
 export function CreatePackageForm({
 	formId,
-	defaultValues = createPackageFormDefaults,
+	defaultValues = createPackageFormDefaultValues(),
 	categories,
 	branches,
 	equipmentTypes,
@@ -96,13 +97,6 @@ export function CreatePackageForm({
 		value: branch.id,
 		label: branch.name,
 	}));
-	const equipmentItems: SelectItemOption[] = equipmentTypes.map(
-		(equipmentType) => ({
-			value: equipmentType.id,
-			label: equipmentType.name,
-		}),
-	);
-
 	return (
 		<>
 			<form
@@ -254,46 +248,73 @@ export function CreatePackageForm({
 							alquilar.
 						</p>
 					</div>
-					<form.Field name="branchIds">
-						{(field) => {
-							const isInvalid =
-								field.state.meta.isTouched && !field.state.meta.isValid;
+					<form.Subscribe selector={(state) => state.values.requirements}>
+						{(requirements) => (
+							<form.Field name="branchIds">
+								{(field) => {
+									const isInvalid =
+										field.state.meta.isTouched && !field.state.meta.isValid;
 
-							return (
-								<Field data-invalid={isInvalid}>
-									<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-										{branchItems.map((branch) => {
-											const isChecked = field.state.value.includes(
-												branch.value,
-											);
+									return (
+										<Field data-invalid={isInvalid}>
+											<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+												{branchItems.map((branch) => {
+													const isChecked = field.state.value.includes(
+														branch.value,
+													);
+													const incompatibleRequirements = requirements.filter(
+														(requirement) =>
+															requirement.quantityPerItem >
+															(requirement.activeStockByBranch[branch.value] ??
+																0),
+													);
+													const isDisabled =
+														!isChecked && incompatibleRequirements.length > 0;
 
-											return (
-												<div
-													key={branch.value}
-													className="flex items-center gap-3 rounded-lg border p-3 text-sm"
-												>
-													<Checkbox
-														checked={isChecked}
-														onCheckedChange={(checked) => {
-															field.handleChange(
-																checked
-																	? [...field.state.value, branch.value]
-																	: field.state.value.filter(
-																			(id) => id !== branch.value,
-																		),
-															);
-														}}
-													/>
-													<span>{branch.label}</span>
-												</div>
-											);
-										})}
-									</div>
-									{isInvalid && <FieldError errors={field.state.meta.errors} />}
-								</Field>
-							);
-						}}
-					</form.Field>
+													return (
+														<div
+															key={branch.value}
+															className="rounded-lg border p-3 text-sm"
+														>
+															<div className="flex items-center gap-3">
+																<Checkbox
+																	checked={isChecked}
+																	disabled={isDisabled}
+																	onCheckedChange={(checked) => {
+																		field.handleChange(
+																			checked
+																				? [...field.state.value, branch.value]
+																				: field.state.value.filter(
+																						(id) => id !== branch.value,
+																					),
+																		);
+																	}}
+																/>
+																<span>{branch.label}</span>
+															</div>
+															{isDisabled && (
+																<p className="mt-2 text-muted-foreground text-xs">
+																	Stock insuficiente para{" "}
+																	{
+																		incompatibleRequirements[0]
+																			.equipmentTypeName
+																	}
+																	.
+																</p>
+															)}
+														</div>
+													);
+												})}
+											</div>
+											{isInvalid && (
+												<FieldError errors={field.state.meta.errors} />
+											)}
+										</Field>
+									);
+								}}
+							</form.Field>
+						)}
+					</form.Subscribe>
 				</section>
 
 				<section className="space-y-5 border-t pt-8">
@@ -307,150 +328,204 @@ export function CreatePackageForm({
 						</p>
 					</div>
 
-					<form.Field name="requirements" mode="array">
-						{(field) => {
-							const selectedIds = new Set(
-								field.state.value.map(
-									(requirement) => requirement.equipmentTypeId,
-								),
-							);
-							const availableEquipmentItems = equipmentItems.filter(
-								(item) => !selectedIds.has(item.value),
-							);
-							const isInvalid =
-								field.state.meta.isTouched && !field.state.meta.isValid;
+					<form.Subscribe selector={(state) => state.values.branchIds}>
+						{(selectedBranchIds) => (
+							<form.Field name="requirements" mode="array">
+								{(field) => {
+									const selectedIds = new Set(
+										field.state.value.map(
+											(requirement) => requirement.equipmentTypeId,
+										),
+									);
+									const availableEquipmentTypes = equipmentTypes.filter(
+										(equipmentType) =>
+											!selectedIds.has(equipmentType.id) &&
+											getMaximumActiveStock(
+												equipmentType.activeStockByBranch,
+												selectedBranchIds,
+											) > 0,
+									);
+									const availableEquipmentItems = availableEquipmentTypes.map(
+										(equipmentType) => ({
+											value: equipmentType.id,
+											label: equipmentType.name,
+										}),
+									);
+									const isInvalid =
+										field.state.meta.isTouched && !field.state.meta.isValid;
 
-							return (
-								<div className="space-y-4">
-									<div className="grid gap-3 rounded-xl border bg-muted/20 p-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-										<Field>
-											<FieldLabel htmlFor={equipmentSearchId}>
-												Buscar equipo
-											</FieldLabel>
-											<Input
-												id={equipmentSearchId}
-												value={equipmentSearch}
-												onChange={(event) =>
-													onEquipmentSearchChange(event.target.value)
-												}
-												placeholder="Ej. cámara, trípode, micrófono"
-											/>
-										</Field>
-										<Field>
-											<FieldLabel>Resultados</FieldLabel>
-											<Select
-												items={availableEquipmentItems}
-												value=""
-												onValueChange={(value) => {
-													if (!value || selectedIds.has(value)) return;
-													const equipmentType = equipmentItems.find(
-														(item) => item.value === value,
-													);
+									return (
+										<div className="space-y-4">
+											<div className="grid gap-3 rounded-xl border bg-muted/20 p-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+												<Field>
+													<FieldLabel htmlFor={equipmentSearchId}>
+														Buscar equipo
+													</FieldLabel>
+													<Input
+														id={equipmentSearchId}
+														disabled={selectedBranchIds.length === 0}
+														value={equipmentSearch}
+														onChange={(event) =>
+															onEquipmentSearchChange(event.target.value)
+														}
+														placeholder="Ej. cámara, trípode, micrófono"
+													/>
+												</Field>
+												<Field>
+													<FieldLabel>Resultados</FieldLabel>
+													<Select
+														items={availableEquipmentItems}
+														disabled={selectedBranchIds.length === 0}
+														value=""
+														onValueChange={(value) => {
+															if (!value || selectedIds.has(value)) return;
+															const equipmentType =
+																availableEquipmentTypes.find(
+																	(item) => item.id === value,
+																);
 
-													if (!equipmentType) return;
+															if (!equipmentType) return;
 
-													field.pushValue({
-														equipmentTypeId: value,
-														equipmentTypeName: equipmentType.label,
-														quantityPerItem: 1,
-													});
-												}}
-											>
-												<SelectTrigger>
-													<SelectValue placeholder="Agregar equipo al combo" />
-												</SelectTrigger>
-												<SelectContent>
-													{availableEquipmentItems.map((item) => (
-														<SelectItem key={item.value} value={item.value}>
-															{item.label}
-														</SelectItem>
-													))}
-												</SelectContent>
-											</Select>
-										</Field>
-									</div>
+															field.pushValue({
+																equipmentTypeId: value,
+																equipmentTypeName: equipmentType.name,
+																quantityPerItem: 1,
+																activeStockByBranch:
+																	equipmentType.activeStockByBranch,
+															});
+														}}
+													>
+														<SelectTrigger>
+															<SelectValue
+																placeholder={
+																	selectedBranchIds.length === 0
+																		? "Selecciona una sucursal primero"
+																		: "Agregar equipo al combo"
+																}
+															/>
+														</SelectTrigger>
+														<SelectContent>
+															{availableEquipmentTypes.map((equipmentType) => {
+																const maximum = getMaximumActiveStock(
+																	equipmentType.activeStockByBranch,
+																	selectedBranchIds,
+																);
 
-									{field.state.value.length === 0 ? (
-										<div className="rounded-xl border border-dashed p-6 text-sm">
-											<p className="font-medium text-foreground">
-												Todavía no agregaste equipos.
-											</p>
-											<p className="mt-1 text-muted-foreground">
-												Busca y agrega al menos un equipo para crear el combo.
-											</p>
+																return (
+																	<SelectItem
+																		key={equipmentType.id}
+																		value={equipmentType.id}
+																	>
+																		{equipmentType.name} ({maximum} disponibles)
+																	</SelectItem>
+																);
+															})}
+														</SelectContent>
+													</Select>
+												</Field>
+											</div>
+
+											{field.state.value.length === 0 ? (
+												<div className="rounded-xl border border-dashed p-6 text-sm">
+													<p className="font-medium text-foreground">
+														Todavía no agregaste equipos.
+													</p>
+													<p className="mt-1 text-muted-foreground">
+														Busca y agrega al menos un equipo para crear el
+														combo.
+													</p>
+												</div>
+											) : (
+												<div className="rounded-sm border">
+													<Table>
+														<TableHeader>
+															<TableRow>
+																<TableHead>Equipo</TableHead>
+																<TableHead className="w-40">Cantidad</TableHead>
+																<TableHead className="w-12" />
+															</TableRow>
+														</TableHeader>
+														<TableBody>
+															{field.state.value.map((requirement, index) => (
+																<TableRow key={requirement.equipmentTypeId}>
+																	<TableCell>
+																		{requirement.equipmentTypeName}
+																	</TableCell>
+																	<TableCell>
+																		<form.Field
+																			name={`requirements[${index}].quantityPerItem`}
+																		>
+																			{(subField) => {
+																				const subFieldInvalid =
+																					subField.state.meta.isTouched &&
+																					!subField.state.meta.isValid;
+																				const maximum = getMaximumActiveStock(
+																					requirement.activeStockByBranch,
+																					selectedBranchIds,
+																				);
+
+																				return (
+																					<Field data-invalid={subFieldInvalid}>
+																						<Input
+																							type="number"
+																							min={1}
+																							max={maximum}
+																							step={1}
+																							value={subField.state.value}
+																							onBlur={subField.handleBlur}
+																							onChange={(event) => {
+																								const nextValue =
+																									event.target.valueAsNumber;
+																								subField.handleChange(
+																									Number.isNaN(nextValue)
+																										? 1
+																										: Math.min(
+																												maximum,
+																												Math.max(1, nextValue),
+																											),
+																								);
+																							}}
+																							aria-invalid={subFieldInvalid}
+																							aria-label={`Cantidad de ${requirement.equipmentTypeName}, máximo ${maximum}`}
+																						/>
+																						{subFieldInvalid && (
+																							<FieldError
+																								errors={
+																									subField.state.meta.errors
+																								}
+																							/>
+																						)}
+																					</Field>
+																				);
+																			}}
+																		</form.Field>
+																	</TableCell>
+																	<TableCell>
+																		<Button
+																			type="button"
+																			variant="ghost"
+																			size="icon"
+																			onClick={() => field.removeValue(index)}
+																			aria-label={`Eliminar equipo ${index + 1}`}
+																		>
+																			<Trash2 className="h-4 w-4" />
+																		</Button>
+																	</TableCell>
+																</TableRow>
+															))}
+														</TableBody>
+													</Table>
+												</div>
+											)}
+											{isInvalid && (
+												<FieldError errors={field.state.meta.errors} />
+											)}
 										</div>
-									) : (
-										<div className="rounded-sm border">
-											<Table>
-												<TableHeader>
-													<TableRow>
-														<TableHead>Equipo</TableHead>
-														<TableHead className="w-40">Cantidad</TableHead>
-														<TableHead className="w-12" />
-													</TableRow>
-												</TableHeader>
-												<TableBody>
-													{field.state.value.map((requirement, index) => (
-														<TableRow key={requirement.equipmentTypeId}>
-															<TableCell>
-																{requirement.equipmentTypeName}
-															</TableCell>
-															<TableCell>
-																<form.Field
-																	name={`requirements[${index}].quantityPerItem`}
-																>
-																	{(subField) => {
-																		const subFieldInvalid =
-																			subField.state.meta.isTouched &&
-																			!subField.state.meta.isValid;
-
-																		return (
-																			<Field data-invalid={subFieldInvalid}>
-																				<Input
-																					type="number"
-																					min={1}
-																					step={1}
-																					value={subField.state.value}
-																					onBlur={subField.handleBlur}
-																					onChange={(event) =>
-																						subField.handleChange(
-																							event.target.valueAsNumber,
-																						)
-																					}
-																					aria-invalid={subFieldInvalid}
-																				/>
-																				{subFieldInvalid && (
-																					<FieldError
-																						errors={subField.state.meta.errors}
-																					/>
-																				)}
-																			</Field>
-																		);
-																	}}
-																</form.Field>
-															</TableCell>
-															<TableCell>
-																<Button
-																	type="button"
-																	variant="ghost"
-																	size="icon"
-																	onClick={() => field.removeValue(index)}
-																	aria-label={`Eliminar equipo ${index + 1}`}
-																>
-																	<Trash2 className="h-4 w-4" />
-																</Button>
-															</TableCell>
-														</TableRow>
-													))}
-												</TableBody>
-											</Table>
-										</div>
-									)}
-									{isInvalid && <FieldError errors={field.state.meta.errors} />}
-								</div>
-							);
-						}}
-					</form.Field>
+									);
+								}}
+							</form.Field>
+						)}
+					</form.Subscribe>
 				</section>
 			</form>
 
@@ -477,5 +552,16 @@ export function CreatePackageForm({
 				</form.Subscribe>
 			</div>
 		</>
+	);
+}
+
+function getMaximumActiveStock(
+	activeStockByBranch: Record<string, number>,
+	selectedBranchIds: string[],
+): number {
+	if (selectedBranchIds.length === 0) return 0;
+
+	return Math.min(
+		...selectedBranchIds.map((branchId) => activeStockByBranch[branchId] ?? 0),
 	);
 }

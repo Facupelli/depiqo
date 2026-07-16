@@ -127,8 +127,6 @@ export class ActivateRentableItemHandler implements ICommandHandler<
       );
     }
 
-    let bestInsufficientContext: InsufficientActiveAssetsContext | undefined;
-
     for (const offer of pricedOffers) {
       const insufficientContext = await this.findInsufficientRequirementForBranch(
         tenantId,
@@ -136,21 +134,19 @@ export class ActivateRentableItemHandler implements ICommandHandler<
         item.requirements,
       );
 
-      if (!insufficientContext) {
-        return ok(undefined);
+      if (insufficientContext) {
+        return err(
+          activateRentableItemApplicationError(
+            'RentableItemHasInsufficientActiveAssets',
+            'Every priced branch offer must have enough active assets to fulfill the rentable item requirements.',
+            undefined,
+            insufficientContext,
+          ),
+        );
       }
-
-      bestInsufficientContext ??= insufficientContext;
     }
 
-    return err(
-      activateRentableItemApplicationError(
-        'RentableItemHasInsufficientActiveAssets',
-        'No priced branch offer has enough active assets to fulfill the rentable item requirements.',
-        undefined,
-        bestInsufficientContext,
-      ),
-    );
+    return ok(undefined);
   }
 
   private async findInsufficientRequirementForBranch(

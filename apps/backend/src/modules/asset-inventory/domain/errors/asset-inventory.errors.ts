@@ -61,3 +61,16 @@ export class EquipmentTypeNotActiveError extends AssetInventoryError {
     super(`Equipment type "${equipmentTypeId}" is not active.`);
   }
 }
+
+export class InsufficientActiveEquipmentStockError extends AssetInventoryError {
+  constructor(
+    public readonly branchId: string,
+    public readonly equipmentTypeId: string,
+    public readonly requiredQuantity: number,
+    public readonly activeAssetCount: number,
+  ) {
+    super(
+      `Equipment type "${equipmentTypeId}" requires ${requiredQuantity} active assets in branch "${branchId}" but only ${activeAssetCount} are available.`,
+    );
+  }
+}

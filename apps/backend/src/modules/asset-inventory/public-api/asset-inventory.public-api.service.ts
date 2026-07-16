@@ -9,6 +9,7 @@ import {
   AssetInventoryError,
   EquipmentTypeNotActiveError,
   EquipmentTypeNotFoundError,
+  InsufficientActiveEquipmentStockError,
 } from '../domain/errors/asset-inventory.errors';
 import {
   AssetInventoryPublicApi,
@@ -17,6 +18,7 @@ import {
   CreateEquipmentTypeSetupResult,
   ValidateEquipmentTypeInput,
   ValidateEquipmentTypeResult,
+  ValidatePackageRequirementsForBranchesInput,
 } from './asset-inventory.public-api';
 
 @Injectable()
@@ -76,6 +78,59 @@ export class AssetInventoryPublicApiService extends AssetInventoryPublicApi {
     }
 
     return ok({ equipmentIds });
+  }
+
+  async validatePackageRequirementsForBranches(
+    input: ValidatePackageRequirementsForBranchesInput,
+  ): Promise<Result<void, AssetInventoryError>> {
+    const equipmentTypeValidation = await this.validateEquipmentType({
+      tenantId: input.tenantId,
+      equipmentIds: input.requirements.map((requirement) => requirement.equipmentTypeId),
+    });
+
+    if (equipmentTypeValidation.isErr()) {
+      return err(equipmentTypeValidation.error);
+    }
+
+    const branchIds = [...new Set(input.branchIds)];
+    const equipmentTypeIds = equipmentTypeValidation.value.equipmentIds;
+    const stockGroups = await this.prisma.client.v2Asset.groupBy({
+      by: ['equipmentTypeId', 'branchId'],
+      where: {
+        tenantId: input.tenantId,
+        branchId: { in: branchIds },
+        equipmentTypeId: { in: equipmentTypeIds },
+        status: 'ACTIVE',
+        deletedAt: null,
+      },
+      _count: { _all: true },
+    });
+    const activeStockByEquipmentTypeAndBranch = new Map(
+      stockGroups.map((group) => [
+        `${group.equipmentTypeId}:${group.branchId}`,
+        group._count._all,
+      ]),
+    );
+
+    for (const requirement of input.requirements) {
+      for (const branchId of branchIds) {
+        const activeAssetCount =
+          activeStockByEquipmentTypeAndBranch.get(`${requirement.equipmentTypeId}:${branchId}`) ?? 0;
+
+        if (activeAssetCount < requirement.quantityPerItem) {
+          return err(
+            new InsufficientActiveEquipmentStockError(
+              branchId,
+              requirement.equipmentTypeId,
+              requirement.quantityPerItem,
+              activeAssetCount,
+            ),
+          );
+        }
+      }
+    }
+
+    return ok(undefined);
   }
 
   async listAssetsByEquipmentTypeAndBranch(input: {

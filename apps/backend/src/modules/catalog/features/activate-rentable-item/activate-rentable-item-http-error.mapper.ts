@@ -52,7 +52,7 @@ const ActivateRentableItemProblemCatalog: Record<
     type: createProblemType('catalog/rentable-item-has-insufficient-active-assets'),
     title: 'Rentable item has insufficient active assets',
     status: HttpStatus.UNPROCESSABLE_ENTITY,
-    detail: 'No priced branch offer has enough active assets to fulfill the rentable item requirements.',
+    detail: 'Every priced branch offer must have enough active assets to fulfill the rentable item requirements.',
   },
   Unexpected: {
     type: PlatformProblemTypes.system.internalServerError,

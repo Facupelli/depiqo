@@ -27,7 +27,7 @@ const CreatePackageProblemCatalog: Record<OfferingSetupApplicationErrorCode, Cre
     type: createProblemType('offering-setup/package-asset-inventory-validation-failed'),
     title: 'Asset inventory validation failed',
     status: HttpStatus.UNPROCESSABLE_ENTITY,
-    detail: 'One or more selected equipment types are not available for package setup.',
+    detail: 'One or more selected branches do not have enough active equipment for this package.',
   },
   ActiveOwnerContractNotFound: {
     type: createProblemType('offering-setup/package-active-owner-contract-not-found'),
@@ -69,6 +69,6 @@ export function toCreatePackageProblem(error: OfferingSetupApplicationError): Pr
     title: definition.title,
     status: definition.status,
     detail: definition.detail,
-    extensions: definition.extensions?.(error.cause),
+    extensions: error.context ?? definition.extensions?.(error.cause),
   });
 }

@@ -34,9 +34,10 @@ export class CreatePackageHandler implements ICommandHandler<CreatePackageComman
       return err(mapTenantManagementError(tenantValidation.error));
     }
 
-    const equipmentTypeValidation = await this.assetInventory.validateEquipmentType({
+    const equipmentTypeValidation = await this.assetInventory.validatePackageRequirementsForBranches({
       tenantId: command.tenantId,
-      equipmentIds: command.requirements.map((requirement) => requirement.equipmentTypeId),
+      branchIds: command.branchIds,
+      requirements: command.requirements,
     });
 
     if (equipmentTypeValidation.isErr()) {
