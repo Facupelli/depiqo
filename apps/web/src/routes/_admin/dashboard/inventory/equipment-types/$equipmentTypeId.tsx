@@ -162,10 +162,10 @@ function AssetsTable({
 		>
 			<TableHeader>
 				<TableRow className="bg-muted/80">
-					<TableHead className="pl-4">Serial number</TableHead>
+					<TableHead className="pl-4">N° de serie</TableHead>
 					<TableHead>Sucursal</TableHead>
 					<TableHead>Estado</TableHead>
-					<TableHead>Owner</TableHead>
+					<TableHead>Dueño</TableHead>
 					<TableHead>Última actualización</TableHead>
 				</TableRow>
 			</TableHeader>
