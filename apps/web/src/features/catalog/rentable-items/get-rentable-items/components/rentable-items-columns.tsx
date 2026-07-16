@@ -1,4 +1,5 @@
 import type { GetRentableItemsItemDto } from "@repo/api-contracts";
+import { Link } from "@tanstack/react-router";
 import type { ColumnDef } from "@tanstack/react-table";
 import { PackageOpen } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -58,9 +59,15 @@ export function createRentableItemsColumns({
 							</div>
 						)}
 						<div className="min-w-0">
-							<p className="truncate font-medium text-foreground">
+							<Link
+								to="/dashboard/catalog/$rentableItemId"
+								params={{ rentableItemId: item.id }}
+								preload={false}
+								onClick={(event) => event.stopPropagation()}
+								className="block truncate rounded-sm font-medium text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+							>
 								{item.name}
-							</p>
+							</Link>
 							<p className="truncate text-xs text-muted-foreground">
 								{item.id}
 							</p>

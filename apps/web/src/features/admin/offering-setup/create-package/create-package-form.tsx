@@ -538,13 +538,16 @@ export function CreatePackageForm({
 						state.canSubmit,
 						state.isSubmitting,
 						state.isDirty,
+						state.values.requirements.length,
 					]}
 				>
-					{([canSubmit, isSubmitting, isDirty]) => (
+					{([canSubmit, isSubmitting, isDirty, requirementCount]) => (
 						<Button
 							type="submit"
 							form={formId}
-							disabled={!canSubmit || !isDirty || isPending}
+							disabled={
+								!canSubmit || !isDirty || requirementCount === 0 || isPending
+							}
 						>
 							{isSubmitting || isPending ? pendingLabel : submitLabel}
 						</Button>
