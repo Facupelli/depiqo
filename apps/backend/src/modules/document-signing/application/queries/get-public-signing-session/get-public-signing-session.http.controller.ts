@@ -1,9 +1,12 @@
 import { Controller, Get, Headers, Query, Res } from '@nestjs/common';
 import { QueryBus } from '@nestjs/cqrs';
+import { Result } from 'neverthrow';
 import { Response } from 'express';
 
 import { Public } from 'src/core/decorators/public.decorator';
-import { extractBearerToken, mapDocumentSigningPublicHttpError } from '../../document-signing-public-http.helper';
+import { extractBearerToken } from '../../document-signing-public-http.helper';
+import { PublicSigningSessionError } from '../../public-signing-session.errors';
+import { toPublicSigningSessionProblem } from '../../public-signing-session.http-errors';
 import { StreamPublicSignedDocumentService } from '../../services/stream-public-signed-document.service';
 import { StreamPublicUnsignedDocumentService } from '../../services/stream-public-unsigned-document.service';
 
@@ -26,24 +29,30 @@ export class GetPublicSigningSessionHttpController {
 
   @Get('resolve')
   async resolve(@Query() query: ResolvePublicSigningSessionQueryDto): Promise<PublicSigningSessionResolveResponseDto> {
-    try {
-      return await this.queryBus.execute(new ResolvePublicSigningSessionQuery(query.token));
-    } catch (error) {
-      throw mapDocumentSigningPublicHttpError(error, {
-        signingRequestUnavailableAsProblemException: true,
-      });
+    const result = await this.queryBus.execute<
+      ResolvePublicSigningSessionQuery,
+      Result<PublicSigningSessionResolveResponseDto, PublicSigningSessionError>
+    >(new ResolvePublicSigningSessionQuery(query.token));
+
+    if (result.isErr()) {
+      throw toPublicSigningSessionProblem(result.error);
     }
+
+    return result.value;
   }
 
   @Get('me')
   async getSession(@Headers('authorization') authorization?: string): Promise<PublicSigningSessionResponseDto> {
-    try {
-      return await this.queryBus.execute(new GetPublicSigningSessionQuery(extractBearerToken(authorization)));
-    } catch (error) {
-      throw mapDocumentSigningPublicHttpError(error, {
-        signingRequestUnavailableAsProblemException: true,
-      });
+    const result = await this.queryBus.execute<
+      GetPublicSigningSessionQuery,
+      Result<PublicSigningSessionResponseDto, PublicSigningSessionError>
+    >(new GetPublicSigningSessionQuery(extractBearerToken(authorization)));
+
+    if (result.isErr()) {
+      throw toPublicSigningSessionProblem(result.error);
     }
+
+    return result.value;
   }
 
   @Get('me/unsigned-pdf')
@@ -51,21 +60,20 @@ export class GetPublicSigningSessionHttpController {
     @Headers('authorization') authorization: string | undefined,
     @Res() res: Response,
   ): Promise<void> {
-    try {
-      const document = await this.streamPublicUnsignedDocumentService.stream(extractBearerToken(authorization));
-
-      res.set({
-        'Content-Type': document.contentType,
-        'Content-Disposition': `inline; filename="${document.fileName}"`,
-        'Content-Length': document.contentLength,
-      });
-
-      document.stream.pipe(res);
-    } catch (error) {
-      throw mapDocumentSigningPublicHttpError(error, {
-        signingRequestUnavailableAsProblemException: true,
-      });
+    const result = await this.streamPublicUnsignedDocumentService.stream(extractBearerToken(authorization));
+    if (result.isErr()) {
+      throw toPublicSigningSessionProblem(result.error);
     }
+
+    const document = result.value;
+
+    res.set({
+      'Content-Type': document.contentType,
+      'Content-Disposition': `inline; filename="${document.fileName}"`,
+      'Content-Length': document.contentLength,
+    });
+
+    document.stream.pipe(res);
   }
 
   @Get('me/signed-pdf')
@@ -73,20 +81,19 @@ export class GetPublicSigningSessionHttpController {
     @Headers('authorization') authorization: string | undefined,
     @Res() res: Response,
   ): Promise<void> {
-    try {
-      const document = await this.streamPublicSignedDocumentService.stream(extractBearerToken(authorization));
-
-      res.set({
-        'Content-Type': document.contentType,
-        'Content-Disposition': `attachment; filename="${document.fileName}"`,
-        'Content-Length': document.contentLength,
-      });
-
-      document.stream.pipe(res);
-    } catch (error) {
-      throw mapDocumentSigningPublicHttpError(error, {
-        signingRequestUnavailableAsProblemException: true,
-      });
+    const result = await this.streamPublicSignedDocumentService.stream(extractBearerToken(authorization));
+    if (result.isErr()) {
+      throw toPublicSigningSessionProblem(result.error);
     }
+
+    const document = result.value;
+
+    res.set({
+      'Content-Type': document.contentType,
+      'Content-Disposition': `attachment; filename="${document.fileName}"`,
+      'Content-Length': document.contentLength,
+    });
+
+    document.stream.pipe(res);
   }
 }

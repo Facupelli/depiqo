@@ -218,10 +218,7 @@ export class DocumentSigningRequest {
       return err(signatureImageDataUrl.error);
     }
 
-    const acceptanceTextVersion = this.normalizeRequiredString(
-      'acceptanceTextVersion',
-      props.acceptanceTextVersion,
-    );
+    const acceptanceTextVersion = this.normalizeRequiredString('acceptanceTextVersion', props.acceptanceTextVersion);
     if (acceptanceTextVersion.isErr()) {
       return err(acceptanceTextVersion.error);
     }

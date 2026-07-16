@@ -1,20 +1,29 @@
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
+import { Result, err, ok } from 'neverthrow';
 
 import { PublicSigningSessionLoader } from '../../public-signing-session.loader';
+import { PublicSigningSessionError } from '../../public-signing-session.errors';
 import { PublicSigningSessionReadModel } from './get-public-signing-session.contract';
 import { GetPublicSigningSessionQuery } from './get-public-signing-session.query';
 
 @QueryHandler(GetPublicSigningSessionQuery)
 export class GetPublicSigningSessionQueryHandler implements IQueryHandler<
   GetPublicSigningSessionQuery,
-  PublicSigningSessionReadModel
+  Result<PublicSigningSessionReadModel, PublicSigningSessionError>
 > {
   constructor(private readonly publicSigningSessionLoader: PublicSigningSessionLoader) {}
 
-  async execute(query: GetPublicSigningSessionQuery): Promise<PublicSigningSessionReadModel> {
-    const request = await this.publicSigningSessionLoader.loadRequiredPublicSession(query.rawToken);
+  async execute(
+    query: GetPublicSigningSessionQuery,
+  ): Promise<Result<PublicSigningSessionReadModel, PublicSigningSessionError>> {
+    const requestResult = await this.publicSigningSessionLoader.loadRequiredPublicSession(query.rawToken);
+    if (requestResult.isErr()) {
+      return err(requestResult.error);
+    }
 
-    return {
+    const request = requestResult.value;
+
+    return ok({
       requestId: request.id,
       documentType: request.documentType,
       status: request.currentStatus,
@@ -30,6 +39,6 @@ export class GetPublicSigningSessionQueryHandler implements IQueryHandler<
         fullName: request.currentSignerFullName,
         documentNumber: request.currentSignerDocumentNumber,
       },
-    };
+    });
   }
 }

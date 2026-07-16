@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { TenantContext } from '@repo/schemas';
+import { TenantContext } from 'src/modules/tenant-management/public-api/tenant-management.public-api';
 
 import { Env } from 'src/config/env.schema';
 import { SigningDocumentType } from 'src/generated/prisma/client';

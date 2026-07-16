@@ -1,15 +1,11 @@
-import { Body, Controller, Headers, HttpCode, HttpStatus, Post, UnprocessableEntityException } from '@nestjs/common';
+import { Body, Controller, Headers, HttpCode, HttpStatus, Post } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
 import { Result } from 'neverthrow';
 
 import { Public } from 'src/core/decorators/public.decorator';
-import {
-  SigningAcceptanceConfirmationRequiredError,
-  SigningAcceptanceIdentityRequiredError,
-} from 'src/modules/document-signing/domain/errors/document-signing.errors';
-
-import { extractBearerToken, mapDocumentSigningPublicHttpError } from '../../document-signing-public-http.helper';
+import { extractBearerToken } from '../../document-signing-public-http.helper';
 import { AcceptPublicSigningSessionCommand } from './accept-public-signing-session.command';
+import { toAcceptPublicSigningSessionProblem } from './accept-public-signing-session.http-errors';
 import { AcceptPublicSigningError, AcceptPublicSigningResult } from './accept-public-signing-session.contract';
 import { AcceptPublicSigningSessionBodyDto } from './accept-public-signing-session.request.dto';
 import { AcceptPublicSigningSessionResponseDto } from './accept-public-signing-session.response.dto';
@@ -38,16 +34,7 @@ export class AcceptPublicSigningSessionHttpController {
     );
 
     if (result.isErr()) {
-      const error = result.error;
-
-      if (
-        error instanceof SigningAcceptanceConfirmationRequiredError ||
-        error instanceof SigningAcceptanceIdentityRequiredError
-      ) {
-        throw new UnprocessableEntityException(error.message);
-      }
-
-      throw mapDocumentSigningPublicHttpError(error);
+      throw toAcceptPublicSigningSessionProblem(result.error);
     }
 
     return result.value;

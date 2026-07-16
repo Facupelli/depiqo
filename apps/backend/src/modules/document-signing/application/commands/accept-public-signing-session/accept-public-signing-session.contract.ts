@@ -1,12 +1,5 @@
 import { DocumentSigningRequestStatus } from 'src/generated/prisma/client';
-import {
-  DocumentSigningRequestStatusTransitionNotAllowedError,
-  DocumentSigningRequestExpiredError,
-  DocumentSigningRequestTokenNotFoundError,
-  DocumentSigningRequestUnavailableError,
-  SigningAcceptanceConfirmationRequiredError,
-  SigningAcceptanceIdentityRequiredError,
-} from 'src/modules/document-signing/domain/errors/document-signing.errors';
+import { AcceptPublicSigningSessionError } from './accept-public-signing-session.errors';
 
 export interface AcceptPublicSigningInput {
   rawToken: string;
@@ -21,10 +14,4 @@ export interface AcceptPublicSigningResult {
   signedAt: Date;
 }
 
-export type AcceptPublicSigningError =
-  | DocumentSigningRequestStatusTransitionNotAllowedError
-  | SigningAcceptanceConfirmationRequiredError
-  | SigningAcceptanceIdentityRequiredError
-  | DocumentSigningRequestExpiredError
-  | DocumentSigningRequestTokenNotFoundError
-  | DocumentSigningRequestUnavailableError;
+export type AcceptPublicSigningError = AcceptPublicSigningSessionError;

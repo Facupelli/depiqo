@@ -3,12 +3,7 @@ import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { DocumentSigningRequestStatus } from 'src/generated/prisma/client';
 import { Result, err, ok } from 'neverthrow';
 
-import {
-  DocumentSigningRequestExpiredError,
-  DocumentSigningRequestTokenNotFoundError,
-  DocumentSigningRequestUnavailableError,
-  SigningAcceptanceConfirmationRequiredError,
-} from 'src/modules/document-signing/domain/errors/document-signing.errors';
+import { SigningAcceptanceIdentityRequiredError } from 'src/modules/document-signing/domain/errors/document-signing.errors';
 import { DocumentSigningRequestRepository } from 'src/modules/document-signing/infrastructure/persistence/repositories/document-signing-request.repository';
 
 import { PublicSigningSessionLoader } from '../../public-signing-session.loader';
@@ -18,6 +13,7 @@ import {
   AcceptPublicSigningInput,
   AcceptPublicSigningResult,
 } from './accept-public-signing-session.contract';
+import { acceptPublicSigningSessionError } from './accept-public-signing-session.errors';
 
 @Injectable()
 @CommandHandler(AcceptPublicSigningSessionCommand)
@@ -40,24 +36,32 @@ export class AcceptPublicSigningSessionService implements ICommandHandler<
       accepted: command.accepted,
     };
 
+    const context = { useCase: 'AcceptPublicSigningSession' };
+
     if (!input.accepted) {
-      return err(new SigningAcceptanceConfirmationRequiredError());
+      return err(
+        acceptPublicSigningSessionError(
+          'document_signing.acceptance_confirmation_required',
+          'Signing acceptance requires explicit confirmation from the signer.',
+          undefined,
+          context,
+        ),
+      );
     }
 
-    let request;
-    try {
-      request = await this.publicSigningSessionLoader.loadRequiredPublicSession(input.rawToken);
-    } catch (error) {
-      if (
-        error instanceof DocumentSigningRequestTokenNotFoundError ||
-        error instanceof DocumentSigningRequestExpiredError ||
-        error instanceof DocumentSigningRequestUnavailableError
-      ) {
-        return err(error);
-      }
-
-      throw error;
+    const requestResult = await this.publicSigningSessionLoader.loadRequiredPublicSession(input.rawToken);
+    if (requestResult.isErr()) {
+      return err(
+        acceptPublicSigningSessionError(
+          mapPublicSessionErrorCode(requestResult.error.code),
+          requestResult.error.message,
+          requestResult.error,
+          requestResult.error.context,
+        ),
+      );
     }
+
+    const request = requestResult.value;
 
     const signedAt = new Date();
     const signResult = request.markSigned({
@@ -66,7 +70,17 @@ export class AcceptPublicSigningSessionService implements ICommandHandler<
       acceptanceTextVersion: input.acceptanceTextVersion,
     });
     if (signResult.isErr()) {
-      return err(signResult.error);
+      const code =
+        signResult.error instanceof SigningAcceptanceIdentityRequiredError
+          ? 'document_signing.signing_identity_required'
+          : 'document_signing.signing_request_conflict';
+
+      return err(
+        acceptPublicSigningSessionError(code, signResult.error.message, signResult.error, {
+          ...context,
+          requestId: request.id,
+        }),
+      );
     }
 
     await this.documentSigningRequestRepository.save(request);
@@ -76,5 +90,17 @@ export class AcceptPublicSigningSessionService implements ICommandHandler<
       status: DocumentSigningRequestStatus.SIGNED,
       signedAt,
     });
+  }
+}
+
+function mapPublicSessionErrorCode(code: string): AcceptPublicSigningError['code'] {
+  switch (code) {
+    case 'document_signing.signing_token_not_found':
+    case 'document_signing.signing_request_expired':
+    case 'document_signing.signing_request_unavailable':
+    case 'document_signing.signing_request_conflict':
+      return code;
+    default:
+      throw new Error(`Unsupported accept public signing session error code: ${code}`);
   }
 }

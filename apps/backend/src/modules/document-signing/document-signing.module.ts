@@ -1,7 +1,9 @@
 import { Module } from '@nestjs/common';
 
+import { ContractsModule } from '../contracts/contracts.module';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { ObjectStorageModule } from '../object-storage/object-storage.module';
+import { TenantManagementModule } from '../tenant-management/tenant-management.module';
 
 import { AcceptPublicSigningSessionHttpController } from './application/commands/accept-public-signing-session/accept-public-signing-session.http.controller';
 import { AcceptPublicSigningSessionService } from './application/commands/accept-public-signing-session/accept-public-signing-session.service';
@@ -21,7 +23,7 @@ import { StreamPublicUnsignedDocumentService } from './application/services/stre
 import { DocumentSigningRequestRepository } from './infrastructure/persistence/repositories/document-signing-request.repository';
 
 @Module({
-  imports: [NotificationsModule, ObjectStorageModule],
+  imports: [ContractsModule, NotificationsModule, ObjectStorageModule, TenantManagementModule],
   controllers: [
     SendSigningInvitationHttpController,
     GetPublicSigningSessionHttpController,

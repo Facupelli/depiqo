@@ -1,12 +1,13 @@
-import { Body, Controller, HttpCode, HttpStatus, Param, Post } from '@nestjs/common';
+import { Body, Controller, HttpCode, HttpStatus, Param, Post, UseGuards } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
-import { Permission } from '@repo/types';
 import { Result } from 'neverthrow';
 
-import { CurrentUser } from 'src/core/decorators/current-user.decorator';
-import { StaffRoute } from 'src/core/decorators/staff-route.decorator';
-import { AuthenticatedUser } from 'src/modules/auth/public/authenticated-user';
 import { SigningDocumentType } from 'src/generated/prisma/client';
+import { AUTH_ACTOR_TYPES, AuthUser } from 'src/modules/tenant-management/auth/shared/auth.types';
+import { CurrentUser } from 'src/modules/tenant-management/auth/shared/current-user/current-user.decorator';
+import { AllowAuthActors } from 'src/modules/tenant-management/auth/shared/session/auth-actor-access.decorator';
+import { SessionAuthGuard } from 'src/modules/tenant-management/auth/shared/session/session-auth.guard';
+import { TenantUserSessionGuard } from 'src/modules/tenant-management/auth/shared/session/tenant-user-session.guard';
 import { mapSendSigningInvitationHttpError } from './send-signing-invitation-http.mapper';
 import { SendSigningInvitationCommand } from './send-signing-invitation.command';
 import { SendSigningInvitationResult } from './send-signing-invitation.contract';
@@ -14,16 +15,17 @@ import { SendSigningInvitationBodyDto, SendSigningInvitationParamDto } from './s
 import { SendSigningInvitationResponseDto } from './send-signing-invitation.response.dto';
 import { SendSigningInvitationCommandError } from './send-signing-invitation.service';
 
-@StaffRoute(Permission.CONFIRM_ORDERS)
 @Controller('document-signing/orders/:orderId/sessions')
 export class SendSigningInvitationHttpController {
   constructor(private readonly commandBus: CommandBus) {}
 
   @Post()
   @HttpCode(HttpStatus.OK)
+  @AllowAuthActors(AUTH_ACTOR_TYPES.TENANT_USER)
+  @UseGuards(SessionAuthGuard, TenantUserSessionGuard)
   async sendInvitation(
     @Param() params: SendSigningInvitationParamDto,
-    @CurrentUser() user: AuthenticatedUser,
+    @CurrentUser() user: AuthUser,
     @Body() body: SendSigningInvitationBodyDto,
   ): Promise<SendSigningInvitationResponseDto> {
     const result = await this.commandBus.execute<
