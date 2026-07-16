@@ -12,9 +12,9 @@ import { TenantManagementPublicApi } from 'src/modules/tenant-management/public-
 
 import { DocumentSigningRequestRepository } from 'src/modules/document-signing/infrastructure/persistence/repositories/document-signing-request.repository';
 
-import { SigningNotificationService } from '../../services/signing-notification.service';
-import { SigningRequestPdfStorageService } from '../../services/signing-request-pdf-storage.service';
-import { hashSigningDocument } from '../../signing-document-hash';
+import { SigningNotificationService } from '../../application/services/signing-notification.service';
+import { SigningRequestPdfStorageService } from '../../application/services/signing-request-pdf-storage.service';
+import { hashSigningDocument } from '../../application/signing-document-hash';
 import { SendSigningInvitationCommand } from './send-signing-invitation.command';
 import { SendSigningInvitationInput, SendSigningInvitationResult } from './send-signing-invitation.contract';
 import { sendSigningInvitationError, SendSigningInvitationError } from './send-signing-invitation.errors';

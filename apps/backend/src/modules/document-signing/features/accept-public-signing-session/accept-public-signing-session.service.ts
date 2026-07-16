@@ -6,7 +6,7 @@ import { Result, err, ok } from 'neverthrow';
 import { SigningAcceptanceIdentityRequiredError } from 'src/modules/document-signing/domain/errors/document-signing.errors';
 import { DocumentSigningRequestRepository } from 'src/modules/document-signing/infrastructure/persistence/repositories/document-signing-request.repository';
 
-import { PublicSigningSessionLoader } from '../../public-signing-session.loader';
+import { PublicSigningSessionLoader } from '../../application/public-signing-session.loader';
 import { AcceptPublicSigningSessionCommand } from './accept-public-signing-session.command';
 import {
   AcceptPublicSigningError,

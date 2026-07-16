@@ -5,9 +5,9 @@ import { Result, err, ok } from 'neverthrow';
 
 import { V2ContractsPublicApi } from 'src/modules/contracts/public-api/contracts.public-api';
 
-import { PublicSigningDocumentStream } from '../document-signing-public-document-stream.contract';
-import { publicSigningSessionError, PublicSigningSessionError } from '../public-signing-session.errors';
-import { PublicSigningSessionLoader } from '../public-signing-session.loader';
+import { PublicSigningDocumentStream } from '../../application/document-signing-public-document-stream.contract';
+import { publicSigningSessionError, PublicSigningSessionError } from '../../application/public-signing-session.errors';
+import { PublicSigningSessionLoader } from '../../application/public-signing-session.loader';
 
 @Injectable()
 export class StreamPublicSignedDocumentService {

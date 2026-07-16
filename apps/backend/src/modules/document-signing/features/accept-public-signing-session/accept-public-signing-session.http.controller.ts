@@ -3,7 +3,7 @@ import { CommandBus } from '@nestjs/cqrs';
 import { Result } from 'neverthrow';
 
 import { Public } from 'src/core/decorators/public.decorator';
-import { extractBearerToken } from '../../document-signing-public-http.helper';
+import { extractBearerToken } from '../../application/document-signing-public-http.helper';
 import { AcceptPublicSigningSessionCommand } from './accept-public-signing-session.command';
 import { toAcceptPublicSigningSessionProblem } from './accept-public-signing-session.http-errors';
 import { AcceptPublicSigningError, AcceptPublicSigningResult } from './accept-public-signing-session.contract';

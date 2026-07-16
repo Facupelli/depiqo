@@ -1,8 +1,8 @@
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { Result, err, ok } from 'neverthrow';
 
-import { PublicSigningSessionLoader } from '../../public-signing-session.loader';
-import { PublicSigningSessionError } from '../../public-signing-session.errors';
+import { PublicSigningSessionLoader } from '../../application/public-signing-session.loader';
+import { PublicSigningSessionError } from '../../application/public-signing-session.errors';
 import { ResolvePublicSigningSessionQuery } from './resolve-public-signing-session.query';
 
 @QueryHandler(ResolvePublicSigningSessionQuery)

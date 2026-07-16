@@ -4,11 +4,11 @@ import { Result } from 'neverthrow';
 import { Response } from 'express';
 
 import { Public } from 'src/core/decorators/public.decorator';
-import { extractBearerToken } from '../../document-signing-public-http.helper';
-import { PublicSigningSessionError } from '../../public-signing-session.errors';
-import { toPublicSigningSessionProblem } from '../../public-signing-session.http-errors';
-import { StreamPublicSignedDocumentService } from '../../services/stream-public-signed-document.service';
-import { StreamPublicUnsignedDocumentService } from '../../services/stream-public-unsigned-document.service';
+import { extractBearerToken } from '../../application/document-signing-public-http.helper';
+import { PublicSigningSessionError } from '../../application/public-signing-session.errors';
+import { toPublicSigningSessionProblem } from '../../application/public-signing-session.http-errors';
+import { StreamPublicSignedDocumentService } from '../stream-public-signed-document/stream-public-signed-document.service';
+import { StreamPublicUnsignedDocumentService } from '../stream-public-unsigned-document/stream-public-unsigned-document.service';
 
 import { ResolvePublicSigningSessionQueryDto } from './get-public-signing-session.request.dto';
 import {
