@@ -1,23 +1,33 @@
 import type { AuthCustomerDto } from "@repo/api-contracts";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { Suspense } from "react";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
+import { storefrontBranchQueries } from "@/features/rental-commitment/branches/branches.queries";
 import { CartPopover } from "@/features/rental-commitment/cart/storefront-cart/components/cart-popover";
 import { RentalFilters } from "@/features/storefront/rental-offers/components/catalog-filters";
 import {
 	ProductCatalog,
 	ProductCatalogSkeleton,
 } from "@/features/storefront/rental-offers/components/product-catalog";
+import {
+	BranchSelection,
+	CatalogUnavailable,
+} from "@/features/storefront/rental-offers/components/rental-catalog-entry-state";
 import { SectionErrorBoundary } from "@/features/storefront/rental-offers/components/section-error-boundary";
 import { useRentalPageSearch } from "@/features/storefront/rental-offers/hooks/use-catalog-page-search";
+import { resolveRentalBranch } from "@/features/storefront/rental-offers/rental-branch-resolution";
 import { storefrontRentalOfferListViewQueries } from "@/features/storefront/rental-offers/storefront-rental-offer-list-view.queries";
 import { RentalHeaderAuthAction } from "@/features/tenant-management/auth/components/rental-header-auth-action";
 import { getTenantBranding } from "@/features/tenant-management/tenant-context/tenant-branding";
 import { cn } from "@/lib/utils";
 
 const v2RentalSearchSchema = z.object({
-	branchId: z.string().trim().min(1),
+	branchId: z
+		.string()
+		.trim()
+		.optional()
+		.transform((value) => value || undefined),
 	page: z.coerce.number().int().positive().default(1),
 	pageSize: z.coerce.number().int().positive().max(100).default(20),
 	periodStart: z.iso.date().optional(),
@@ -26,23 +36,53 @@ const v2RentalSearchSchema = z.object({
 	search: z.string().optional(),
 });
 
-export type V2RentalPageSearch = z.infer<typeof v2RentalSearchSchema>;
+type V2RentalRouteSearch = z.infer<typeof v2RentalSearchSchema>;
+
+export type V2RentalPageSearch = Omit<V2RentalRouteSearch, "branchId"> & {
+	branchId: string;
+};
 
 export const Route = createFileRoute("/_portal/_tenant/rental/")({
 	validateSearch: v2RentalSearchSchema,
-	loaderDeps: ({ search }) => ({
-		branchId: search.branchId,
-		page: search.page,
-		pageSize: search.pageSize,
-	}),
+	loaderDeps: ({ search }) => search,
 	loader: async ({ context: { queryClient, tenantContext }, deps }) => {
-		await queryClient.ensureQueryData(
-			storefrontRentalOfferListViewQueries.list(deps),
+		const branches = await queryClient.ensureQueryData(
+			storefrontBranchQueries.list(),
 		);
+		const resolution = resolveRentalBranch(deps.branchId, branches);
+		const tenantName = tenantContext.tenant.name;
 
-		return {
-			tenantName: tenantContext.tenant.name,
-		};
+		if (resolution.kind === "redirect") {
+			throw redirect({
+				to: "/rental",
+				search: { ...deps, branchId: resolution.branchId },
+				replace: true,
+			});
+		}
+
+		if (resolution.kind === "catalog") {
+			const search: V2RentalPageSearch = {
+				...deps,
+				branchId: resolution.branchId,
+			};
+
+			await queryClient.ensureQueryData(
+				storefrontRentalOfferListViewQueries.list(search),
+			);
+
+			return { mode: "catalog" as const, search, tenantName };
+		}
+
+		if (resolution.kind === "selection") {
+			return {
+				mode: "selection" as const,
+				branches,
+				invalidBranchRequested: resolution.invalidBranchRequested,
+				tenantName,
+			};
+		}
+
+		return { mode: "no-branches" as const, tenantName };
 	},
 	head: ({ loaderData }) => ({
 		meta: [
@@ -57,33 +97,63 @@ export const Route = createFileRoute("/_portal/_tenant/rental/")({
 });
 
 function V2RentalPage() {
-	const { search, setUrlParam, handleCategorySelect, handleBranchChange } =
-		useRentalPageSearch();
+	const loaderData = Route.useLoaderData();
+	const navigate = useNavigate({ from: "/rental/" });
+
+	function handleBranchSelect(branchId: string) {
+		navigate({
+			search: (previous) => ({ ...previous, branchId, page: 1 }),
+			replace: true,
+		});
+	}
 
 	return (
-		<div className="flex flex-col min-h-screen bg-gray-50">
+		<div className="flex min-h-screen flex-col bg-gray-50">
 			<RentalHeader />
 
-			<main className="container mx-auto px-4">
-				<RentalFilters
-					search={search}
-					onBranchChange={handleBranchChange}
-					setUrlParam={setUrlParam}
-					onCategorySelect={handleCategorySelect}
-				/>
-
-				<SectionErrorBoundary message="Nuestro inventario no está disponible.">
-					<Suspense fallback={<ProductCatalogSkeleton />}>
-						<ProductCatalog
-							search={search}
-							onPageChange={(page) => setUrlParam({ page })}
-							handleCategorySelect={handleCategorySelect}
-							setUrlParam={setUrlParam}
+			{loaderData.mode === "catalog" ? (
+				<RentalCatalog search={loaderData.search} />
+			) : (
+				<main className="container mx-auto flex flex-1 items-center justify-center px-4 py-12">
+					{loaderData.mode === "selection" ? (
+						<BranchSelection
+							branches={loaderData.branches}
+							invalidBranchRequested={loaderData.invalidBranchRequested}
+							onSelect={handleBranchSelect}
 						/>
-					</Suspense>
-				</SectionErrorBoundary>
-			</main>
+					) : (
+						<CatalogUnavailable />
+					)}
+				</main>
+			)}
 		</div>
+	);
+}
+
+function RentalCatalog({ search }: { search: V2RentalPageSearch }) {
+	const { setUrlParam, handleCategorySelect, handleBranchChange } =
+		useRentalPageSearch(search);
+
+	return (
+		<main className="container mx-auto px-4">
+			<RentalFilters
+				search={search}
+				onBranchChange={handleBranchChange}
+				setUrlParam={setUrlParam}
+				onCategorySelect={handleCategorySelect}
+			/>
+
+			<SectionErrorBoundary message="Nuestro inventario no está disponible.">
+				<Suspense fallback={<ProductCatalogSkeleton />}>
+					<ProductCatalog
+						search={search}
+						onPageChange={(page) => setUrlParam({ page })}
+						handleCategorySelect={handleCategorySelect}
+						setUrlParam={setUrlParam}
+					/>
+				</Suspense>
+			</SectionErrorBoundary>
+		</main>
 	);
 }
 

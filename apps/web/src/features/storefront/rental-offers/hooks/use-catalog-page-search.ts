@@ -1,31 +1,9 @@
-import { useNavigate, useSearch } from "@tanstack/react-router";
-import { startTransition, useCallback, useEffect } from "react";
-import { useStorefrontBranches } from "@/features/rental-commitment/branches/branches.queries";
+import { useNavigate } from "@tanstack/react-router";
+import { startTransition, useCallback } from "react";
 import type { V2RentalPageSearch } from "@/routes/_portal/_tenant/rental";
 
-export function useRentalPageSearch() {
-	const rawSearch = useSearch({ from: "/_portal/_tenant/rental/" });
+export function useRentalPageSearch(search: V2RentalPageSearch) {
 	const navigate = useNavigate({ from: "/rental/" });
-
-	const { data: branches } = useStorefrontBranches();
-
-	const branchId = rawSearch.branchId ?? branches?.[0].id;
-
-	// If branchId wasn't in the URL, write it in silently.
-	// This runs client-side only — no SSR redirect, no stream hang.
-	// useEffect is correct here: we're syncing derived state into an external
-	// system (the URL) after render, not computing a value.
-	useEffect(() => {
-		if (!rawSearch.branchId && branchId) {
-			navigate({
-				search: (prev) => ({ ...prev, branchId }),
-				replace: true,
-				resetScroll: false,
-			});
-		}
-	}, [rawSearch.branchId, branchId, navigate]);
-
-	const search: V2RentalPageSearch = { ...rawSearch, branchId };
 
 	const setUrlParam = useCallback(
 		(patch: Partial<V2RentalPageSearch>) => {
