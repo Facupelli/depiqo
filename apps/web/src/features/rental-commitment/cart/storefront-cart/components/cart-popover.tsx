@@ -21,7 +21,6 @@ import {
 import { useStorefrontBranches } from "@/features/rental-commitment/branches/branches.queries";
 import {
 	useV2RentalCartActions,
-	useV2RentalCartItemCount,
 	useV2RentalCartItems,
 } from "@/features/rental-commitment/cart/v2-rental-cart.hooks";
 import type { V2RentalCartItem } from "@/features/rental-commitment/cart/v2-rental-cart.types";
@@ -30,7 +29,9 @@ import dayjs from "@/lib/dates/dayjs";
 import { dateParamToLocalDate, localDateToDateParam } from "@/lib/dates/parse";
 
 export function CartPopover() {
-	const itemCount = useV2RentalCartItemCount();
+	const items = useV2RentalCartItems();
+	const itemCount = items.length;
+	const cartLabel = `${itemCount} ${itemCount === 1 ? "oferta de alquiler distinta" : "ofertas de alquiler distintas"}`;
 
 	const [open, setOpen] = useState(false);
 
@@ -42,11 +43,17 @@ export function CartPopover() {
 		<Popover open={open} onOpenChange={setOpen}>
 			<PopoverTrigger
 				render={
-					<Button className="relative flex items-center gap-2 rounded-full bg-black px-4 py-2 text-white hover:bg-neutral-800">
+					<Button
+						aria-label={`Pedido, ${cartLabel}`}
+						className="relative flex items-center gap-2 rounded-full bg-black px-4 py-2 text-white hover:bg-neutral-800"
+					>
 						<span className="relative">
 							<ShoppingBag className="h-4 w-4" />
 							{itemCount > 0 && (
-								<span className="absolute -right-2 -top-2 flex h-4 w-4 items-center justify-center rounded-full bg-white text-[10px] font-bold leading-none text-black">
+								<span
+									aria-hidden="true"
+									className="absolute -right-2 -top-2 flex h-4 w-4 items-center justify-center rounded-full bg-white text-[10px] font-bold leading-none text-black"
+								>
 									{itemCount > 99 ? "99+" : itemCount}
 								</span>
 							)}
@@ -125,7 +132,7 @@ function CartPopoverContext() {
 				<Calendar className="h-3.5 w-3.5 shrink-0 text-neutral-400" />
 				<div>
 					<p className="text-[10px] font-semibold uppercase tracking-widest text-neutral-400 pb-1">
-						Perido de Alquiler
+						Periodo de Alquiler
 					</p>
 					{periodStart && periodEnd ? (
 						<p className="text-sm text-black">
@@ -133,7 +140,7 @@ function CartPopoverContext() {
 						</p>
 					) : (
 						<p className="text-sm text-neutral-300">
-							No seleccionate el periodo
+							No seleccionaste el periodo
 						</p>
 					)}
 				</div>
