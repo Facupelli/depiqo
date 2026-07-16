@@ -45,6 +45,7 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CreateRentalOfferWithPricingDialog } from "@/features/admin/offering-setup/create-rental-offer-with-pricing/create-rental-offer-with-pricing-dialog";
+import { getActivateRentableItemErrorMessage } from "@/features/catalog/rentable-items/activate-rentable-item/activate-rentable-item.errors";
 import { useActivateRentableItem } from "@/features/catalog/rentable-items/activate-rentable-item/activate-rentable-item.mutation";
 import { rentableItemQueries } from "@/features/catalog/rentable-items/rentable-items.queries";
 import { useRatePlans } from "@/features/pricing/rate-plans/rate-plans.queries";
@@ -56,7 +57,6 @@ import { toCreateRatePlanAndAttachToRentalOfferDto } from "@/features/pricing/re
 import { CreateRatePlanAndAttachForm } from "@/features/pricing/rental-offer-pricings/create-rate-plan-and-attach-to-rental-offer/create-rate-plan-and-attach-to-rental-offer-form";
 import { buildR2PublicUrl } from "@/lib/r2-public-url";
 import { AdminRouteError } from "@/shared/components/admin-route-error";
-import { ProblemDetailsError } from "@/shared/errors";
 
 export const Route = createFileRoute(
 	"/_admin/dashboard/catalog/$rentableItemId/",
@@ -156,7 +156,9 @@ function RouteComponent() {
 
 					<div className="flex shrink-0 flex-wrap items-center gap-2">
 						{item.status === "DRAFT" ? (
-							<ActivateRentableItemAction rentableItemId={rentableItemId} />
+							<ActivateRentableItemAction
+								item={item}
+							/>
 						) : null}
 
 						<Button size="lg" onClick={() => undefined}>
@@ -276,9 +278,9 @@ function RouteComponent() {
 }
 
 function ActivateRentableItemAction({
-	rentableItemId,
+	item,
 }: {
-	rentableItemId: string;
+	item: GetRentableItemDetailResponseDto;
 }) {
 	const [open, setOpen] = useState(false);
 	const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -288,19 +290,10 @@ function ActivateRentableItemAction({
 		setErrorMessage(null);
 
 		try {
-			await activateMutation.mutateAsync({ rentableItemId });
+			await activateMutation.mutateAsync({ rentableItemId: item.id });
 			setOpen(false);
 		} catch (error) {
-			if (error instanceof ProblemDetailsError) {
-				setErrorMessage(
-					error.problemDetails.detail ??
-						error.problemDetails.title ??
-						"No pudimos activar el ítem rentable.",
-				);
-				return;
-			}
-
-			setErrorMessage("Ocurrió un error al activar el ítem rentable.");
+			setErrorMessage(getActivateRentableItemErrorMessage(error, item));
 		}
 	}
 
