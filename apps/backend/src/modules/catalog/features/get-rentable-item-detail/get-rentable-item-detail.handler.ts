@@ -8,6 +8,7 @@ import {
   getRentableItemDetailApplicationError,
 } from './get-rentable-item-detail-application.error';
 import { GetRentableItemDetailQuery } from './get-rentable-item-detail.query';
+import { buildRentalOfferSetupSummary } from './rental-offer-setup-summary.policy';
 
 export interface GetRentableItemDetailRequiredEquipmentReadModel {
   equipmentTypeId: string;
@@ -44,6 +45,7 @@ export interface GetRentableItemDetailOfferReadModel {
   isRentable: boolean;
   updatedAt: string;
   activeRatePlan: GetRentableItemDetailActiveRatePlanReadModel | null;
+  setupSummary: import('@repo/api-contracts').GetRentableItemDetailOfferSetupSummaryDto;
 }
 
 export interface GetRentableItemDetailReadModel {
@@ -124,7 +126,7 @@ export class GetRentableItemDetailHandler implements IQueryHandler<
     const [branches, equipmentTypes, pricings] = await this.prisma.client.$transaction([
       this.prisma.client.v2Branch.findMany({
         where: { tenantId: query.tenantId, id: { in: branchIds }, deletedAt: null },
-        select: { id: true, name: true, timezone: true, supportsDelivery: true },
+        select: { id: true, name: true, timezone: true, supportsDelivery: true, isActive: true },
       }),
       this.prisma.client.v2EquipmentType.findMany({
         where: { tenantId: query.tenantId, id: { in: equipmentTypeIds }, deletedAt: null },
@@ -134,20 +136,20 @@ export class GetRentableItemDetailHandler implements IQueryHandler<
         where: {
           tenantId: query.tenantId,
           catalogRentalOfferId: { in: offerIds },
-          isActive: true,
           deletedAt: null,
-          ratePlan: { isActive: true, deletedAt: null },
         },
         select: {
           id: true,
           catalogRentalOfferId: true,
           ratePlanId: true,
+          isActive: true,
           ratePlan: {
             select: {
               name: true,
               currency: true,
               billingUnit: true,
               isActive: true,
+              deletedAt: true,
               tiers: {
                 select: { fromUnit: true, toUnit: true, pricePerUnit: true },
                 orderBy: { fromUnit: 'asc' },
@@ -188,6 +190,33 @@ export class GetRentableItemDetailHandler implements IQueryHandler<
       offers: item.rentalOffers.map((offer) => {
         const branch = branchById.get(offer.branchId);
         const pricing = activePricingByOfferId.get(offer.id);
+        const pricingForSetup = pricing
+          ? {
+              isActive: pricing.isActive,
+              ratePlan: {
+                id: pricing.ratePlanId,
+                name: pricing.ratePlan.name,
+                currency: pricing.ratePlan.currency,
+                billingUnit: pricing.ratePlan.billingUnit,
+                isActive: pricing.ratePlan.isActive && pricing.ratePlan.deletedAt === null,
+                tiers: pricing.ratePlan.tiers.map((tier) => ({
+                  pricePerUnit: tier.pricePerUnit.toString(),
+                })),
+              },
+            }
+          : null;
+        const setupSummary = buildRentalOfferSetupSummary({
+          itemStatus: item.status,
+          branch: branch ? { isActive: branch.isActive } : null,
+          offer,
+          pricing: pricingForSetup,
+        });
+        const hasActivePricing =
+          pricing !== undefined &&
+          pricing.isActive &&
+          pricing.ratePlan.isActive &&
+          pricing.ratePlan.deletedAt === null &&
+          pricing.ratePlan.tiers.length > 0;
 
         return {
           rentalOfferId: offer.id,
@@ -198,7 +227,7 @@ export class GetRentableItemDetailHandler implements IQueryHandler<
           isVisible: offer.isVisible,
           isRentable: offer.isRentable,
           updatedAt: offer.updatedAt.toISOString(),
-          activeRatePlan: pricing
+          activeRatePlan: hasActivePricing
             ? {
                 rentalOfferPricingId: pricing.id,
                 ratePlanId: pricing.ratePlanId,
@@ -213,6 +242,7 @@ export class GetRentableItemDetailHandler implements IQueryHandler<
                 })),
               }
             : null,
+          setupSummary,
         };
       }),
     });

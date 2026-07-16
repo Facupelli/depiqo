@@ -19,6 +19,8 @@ import { GetPromotionDetailHttpController } from './features/get-promotion-detai
 import { GetPromotionDetailHandler } from './features/get-promotion-detail/get-promotion-detail.handler';
 import { GetPromotionsHttpController } from './features/get-promotions/get-promotions.controller';
 import { GetPromotionsHandler } from './features/get-promotions/get-promotions.handler';
+import { GetRatePlansHttpController } from './features/get-rate-plans/get-rate-plans.controller';
+import { GetRatePlansHandler } from './features/get-rate-plans/get-rate-plans.handler';
 import { GetRentalOffersPricingHttpController } from './features/get-rental-offers-pricing/get-rental-offers-pricing.controller';
 import { GetRentalOffersPricingHandler } from './features/get-rental-offers-pricing/get-rental-offers-pricing.handler';
 import { GetStorefrontRentalOffersPricingHttpController } from './features/get-storefront-rental-offers-pricing/get-storefront-rental-offers-pricing.controller';
@@ -44,6 +46,7 @@ import { TenantManagementModule } from '../tenant-management/tenant-management.m
     CreateRatePlanHttpController,
     GetPromotionDetailHttpController,
     GetPromotionsHttpController,
+    GetRatePlansHttpController,
     GetRentalOffersPricingHttpController,
     GetStorefrontRentalOffersPricingHttpController,
     UpdatePromotionHttpController,
@@ -59,6 +62,7 @@ import { TenantManagementModule } from '../tenant-management/tenant-management.m
     CreateRatePlanHandler,
     GetPromotionDetailHandler,
     GetPromotionsHandler,
+    GetRatePlansHandler,
     GetRentalOffersPricingHandler,
     GetStorefrontRentalOffersPricingHandler,
     PricingContextLoader,

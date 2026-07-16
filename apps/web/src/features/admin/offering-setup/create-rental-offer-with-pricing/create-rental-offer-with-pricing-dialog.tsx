@@ -98,7 +98,7 @@ export function CreateRentalOfferWithPricingDialog({
 		<Dialog open={open} onOpenChange={handleOpenChange}>
 			<Button type="button" onClick={() => setOpen(true)}>
 				<Plus className="mr-2 size-4" />
-				Agregar oferta
+				Ofrecer en otra sucursal
 			</Button>
 
 			<DialogContent className={getDialogContentClassName(step)}>

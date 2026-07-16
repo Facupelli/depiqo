@@ -1,14 +1,7 @@
 import type { GetRentableItemsItemDto } from "@repo/api-contracts";
 import type { ColumnDef } from "@tanstack/react-table";
-import { MoreHorizontal, PackageOpen } from "lucide-react";
+import { PackageOpen } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { buildR2PublicUrl } from "@/lib/r2-public-url";
 
 const kindLabels = {
@@ -141,39 +134,6 @@ export function createRentableItemsColumns({
 				const count = row.original.requiredEquipment.length;
 				return count === 1 ? "1 equipo" : `${count} equipos`;
 			},
-		},
-		{
-			id: "actions",
-			header: () => <span className="sr-only">Acciones</span>,
-			cell: ({ row }) => (
-				<DropdownMenu>
-					<DropdownMenuTrigger
-						render={
-							<Button
-								type="button"
-								variant="ghost"
-								size="icon"
-								className="ml-auto h-8 w-8"
-								onClick={(event) => event.stopPropagation()}
-							>
-								<span className="sr-only">Abrir acciones</span>
-								<MoreHorizontal className="h-4 w-4" />
-							</Button>
-						}
-					/>
-					<DropdownMenuContent align="end" className="w-40">
-						<DropdownMenuItem
-							onClick={(event) => {
-								event.stopPropagation();
-								// TODO: navigate to rentable item detail route.
-								void row.original.id;
-							}}
-						>
-							Ver detalle
-						</DropdownMenuItem>
-					</DropdownMenuContent>
-				</DropdownMenu>
-			),
 		},
 	];
 }

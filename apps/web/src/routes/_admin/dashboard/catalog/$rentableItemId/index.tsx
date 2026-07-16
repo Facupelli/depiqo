@@ -7,7 +7,6 @@ import {
 	CircleDollarSign,
 	Eye,
 	type LucideIcon,
-	MoreHorizontal,
 	PackageOpen,
 	Pencil,
 	Tag,
@@ -37,12 +36,6 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog";
 import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
 	Table,
 	TableBody,
 	TableCell,
@@ -54,6 +47,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CreateRentalOfferWithPricingDialog } from "@/features/admin/offering-setup/create-rental-offer-with-pricing/create-rental-offer-with-pricing-dialog";
 import { useActivateRentableItem } from "@/features/catalog/rentable-items/activate-rentable-item/activate-rentable-item.mutation";
 import { rentableItemQueries } from "@/features/catalog/rentable-items/rentable-items.queries";
+import { useRatePlans } from "@/features/pricing/rate-plans/rate-plans.queries";
 import { useAttachRatePlanToRentalOffer } from "@/features/pricing/rental-offer-pricings/attach-rate-plan-to-rental-offer/attach-rate-plan-to-rental-offer.mutation";
 import { toAttachRatePlanToRentalOfferDto } from "@/features/pricing/rental-offer-pricings/attach-rate-plan-to-rental-offer/attach-rate-plan-to-rental-offer.schema";
 import { AttachRatePlanToRentalOfferForm } from "@/features/pricing/rental-offer-pricings/attach-rate-plan-to-rental-offer/attach-rate-plan-to-rental-offer-form";
@@ -113,8 +107,6 @@ function RouteComponent() {
 	const { data: item } = useSuspenseQuery(
 		rentableItemQueries.detail(rentableItemId),
 	);
-
-	const [activeTab, setActiveTab] = useState("equipment");
 
 	const branchNames = item.offers
 		.map((offer) => offer.branchName ?? offer.branchId)
@@ -249,35 +241,24 @@ function RouteComponent() {
 					</CardContent>
 				</Card>
 
-				<Tabs
-					value={activeTab}
-					onValueChange={setActiveTab}
-					className="flex flex-col gap-y-4"
-				>
+				<Tabs defaultValue="equipment" className="flex flex-col gap-y-4">
 					<TabsList
 						variant="line"
 						className="h-auto justify-start rounded-none border-b bg-transparent p-0"
 					>
+						<TabsTrigger
+							value="branches"
+							className="gap-2 rounded-none border-b-2 border-transparent px-5 py-3 text-sm font-medium text-muted-foreground shadow-none transition-none focus-visible:ring-0 [&::after]:hidden data-active:border-b-primary data-active:border-t-transparent data-active:border-l-transparent data-active:border-r-transparent data-active:bg-transparent data-active:font-semibold data-active:text-primary data-active:shadow-none"
+						>
+							<Building2 className="size-4" />
+							Ofertas por sucursal
+						</TabsTrigger>
 						<TabsTrigger
 							value="equipment"
 							className="gap-2 rounded-none border-b-2 border-transparent px-5 py-3 text-sm font-medium text-muted-foreground shadow-none transition-none focus-visible:ring-0 [&::after]:hidden data-active:border-b-primary data-active:border-t-transparent data-active:border-l-transparent data-active:border-r-transparent data-active:bg-transparent data-active:font-semibold data-active:text-primary data-active:shadow-none"
 						>
 							<PackageOpen className="size-4" />
 							Equipo
-						</TabsTrigger>
-						<TabsTrigger
-							value="branches"
-							className="gap-2 rounded-none border-b-2 border-transparent px-5 py-3 text-sm font-medium text-muted-foreground shadow-none transition-none focus-visible:ring-0 [&::after]:hidden data-active:border-b-primary data-active:border-t-transparent data-active:border-l-transparent data-active:border-r-transparent data-active:bg-transparent data-active:font-semibold data-active:text-primary data-active:shadow-none"
-						>
-							<Building2 className="size-4" />
-							Sucursales y disponibilidad
-						</TabsTrigger>
-						<TabsTrigger
-							value="pricing"
-							className="gap-2 rounded-none border-b-2 border-transparent px-5 py-3 text-sm font-medium text-muted-foreground shadow-none transition-none focus-visible:ring-0 [&::after]:hidden data-active:border-b-primary data-active:border-t-transparent data-active:border-l-transparent data-active:border-r-transparent data-active:bg-transparent data-active:font-semibold data-active:text-primary data-active:shadow-none"
-						>
-							<CircleDollarSign className="size-4" />
-							Precios
 						</TabsTrigger>
 					</TabsList>
 
@@ -287,10 +268,6 @@ function RouteComponent() {
 
 					<TabsContent value="branches" className="mt-0">
 						<BranchOffersTable item={item} />
-					</TabsContent>
-
-					<TabsContent value="pricing" className="mt-0">
-						<PricingTable item={item} />
 					</TabsContent>
 				</Tabs>
 			</div>
@@ -452,31 +429,32 @@ function RequiredEquipmentTable({ item }: RentableItemDetailPageProps) {
 }
 
 function BranchOffersTable({ item }: RentableItemDetailPageProps) {
-	// TODO: Replace item-derived rate plan options with all tenant/catalog rate plans.
-	const ratePlanOptions = getRatePlanOptions(item.offers);
+	const { data: ratePlans = [] } = useRatePlans({ isActive: true });
+	const ratePlanOptions = ratePlans
+		.filter((plan) => plan.tierCount > 0)
+		.map((plan) => ({ id: plan.id, name: plan.name }));
 
 	return (
 		<DetailTable
 			title="Ofertas por sucursal"
+			description="Consulta dónde se ofrece el ítem, qué falta para completar cada oferta y cuál es el próximo paso."
 			action={
 				<CreateRentalOfferWithPricingDialog
 					item={item}
 					ratePlanOptions={ratePlanOptions}
 				/>
 			}
-			colSpan={7}
+			colSpan={5}
 			isEmpty={item.offers.length === 0}
 			emptyMessage="No hay ofertas por sucursal."
 		>
 			<TableHeader className="bg-neutral-100">
 				<TableRow>
 					<TableHead>Sucursal</TableHead>
-					<TableHead>Visible en catálogo</TableHead>
-					<TableHead>Rentable</TableHead>
-					<TableHead>Con precios</TableHead>
-					<TableHead>Precio inicial</TableHead>
-					<TableHead>Última actualización</TableHead>
-					<TableHead className="w-12 text-right">Acciones</TableHead>
+					<TableHead>Estado</TableHead>
+					<TableHead>Precio / plan</TableHead>
+					<TableHead>Configuración</TableHead>
+					<TableHead className="text-right">Acción</TableHead>
 				</TableRow>
 			</TableHeader>
 			<TableBody>
@@ -486,38 +464,26 @@ function BranchOffersTable({ item }: RentableItemDetailPageProps) {
 							{offer.branchName ?? offer.branchId}
 						</TableCell>
 						<TableCell>
-							<BooleanBadge
-								value={offer.isVisible}
-								trueLabel="Visible"
-								falseLabel="Oculto"
-							/>
+							<OfferSetupStatus summary={offer.setupSummary} />
 						</TableCell>
 						<TableCell>
-							<BooleanBadge
-								value={offer.isRentable}
-								trueLabel="Rentable"
-								falseLabel="No rentable"
-							/>
+							<div className="space-y-1">
+								<p className="font-medium">
+									{offer.setupSummary.priceSummary?.ratePlanName ?? "Sin plan"}
+								</p>
+								<p className="text-sm text-muted-foreground">
+									{formatPriceSummary(offer.setupSummary.priceSummary)}
+								</p>
+							</div>
 						</TableCell>
-						<TableCell>
-							<BooleanBadge
-								value={!!offer.activeRatePlan}
-								trueLabel="Con precios"
-								falseLabel="Sin precios"
-							/>
-						</TableCell>
-						<TableCell>
-							{offer.activeRatePlan
-								? formatTierPrice(offer.activeRatePlan)
-								: "Sin precio"}
-						</TableCell>
-						<TableCell className="text-muted-foreground">
-							{formatDate(offer.updatedAt)}
+						<TableCell className="text-sm text-muted-foreground">
+							{offer.isVisible ? "Visible" : "Oculta"} ·{" "}
+							{offer.isRentable ? "Rentable" : "Alquiler deshabilitado"}
 						</TableCell>
 						<TableCell className="text-right">
 							<ConfigureRentalOfferPriceAction
 								offer={offer}
-								offers={item.offers}
+								ratePlanOptions={ratePlanOptions}
 							/>
 						</TableCell>
 					</TableRow>
@@ -527,201 +493,213 @@ function BranchOffersTable({ item }: RentableItemDetailPageProps) {
 	);
 }
 
+type PriceAssignmentStep = "choose" | "existing" | "create";
+
 function ConfigureRentalOfferPriceAction({
 	offer,
-	offers,
+	ratePlanOptions,
 }: {
 	offer: GetRentableItemDetailResponseDto["offers"][number];
-	offers: GetRentableItemDetailResponseDto["offers"];
+	ratePlanOptions: Array<{ id: string; name: string }>;
 }) {
 	const attachFormId = useId();
 	const createFormId = useId();
-	const [attachOpen, setAttachOpen] = useState(false);
-	const [createOpen, setCreateOpen] = useState(false);
+	const [open, setOpen] = useState(false);
+	const [step, setStep] = useState<PriceAssignmentStep>("choose");
 	const attachMutation = useAttachRatePlanToRentalOffer();
 	const createMutation = useCreateRatePlanAndAttachToRentalOffer();
 	const branchLabel = offer.branchName ?? offer.branchId;
-	// TODO: Replace item-derived rate plan options with all tenant/catalog rate plans.
-	const ratePlanOptions = getRatePlanOptions(offers);
+	const canAssign =
+		offer.setupSummary.availableActions.includes("ASSIGN_PRICE");
+	const canEdit = offer.setupSummary.availableActions.includes("EDIT_PRICING");
 
-	return (
-		<>
-			<DropdownMenu>
-				<DropdownMenuTrigger
-					render={
-						<Button variant="ghost" size="icon-sm" aria-label="Abrir acciones">
-							<MoreHorizontal className="size-4" />
-						</Button>
-					}
-				/>
-				<DropdownMenuContent align="end" className="w-52">
-					<DropdownMenuItem onClick={() => setAttachOpen(true)}>
-						<CircleDollarSign className="size-4" />
-						Vincular precio
-					</DropdownMenuItem>
-					<DropdownMenuItem onClick={() => setCreateOpen(true)}>
-						<CircleDollarSign className="size-4" />
-						Configurar precio
-					</DropdownMenuItem>
-				</DropdownMenuContent>
-			</DropdownMenu>
+	if (!canAssign && !canEdit) return null;
 
-			<Dialog open={attachOpen} onOpenChange={setAttachOpen}>
-				<DialogContent>
-					<DialogHeader>
-						<DialogTitle>Vincular precio</DialogTitle>
-						<DialogDescription>
-							Asocia un plan de precios existente a la oferta de {branchLabel}.
-						</DialogDescription>
-					</DialogHeader>
-
-					{attachOpen ? (
-						<AttachRatePlanToRentalOfferForm
-							formId={attachFormId}
-							ratePlanOptions={ratePlanOptions}
-							isPending={attachMutation.isPending}
-							submitLabel="Vincular plan"
-							pendingLabel="Vinculando..."
-							onSubmit={async (values) => {
-								const body = toAttachRatePlanToRentalOfferDto(values, {
-									catalogRentalOfferId: offer.rentalOfferId,
-								});
-
-								await attachMutation.mutateAsync({ body });
-								setAttachOpen(false);
-							}}
-							onCancel={() => setAttachOpen(false)}
-						/>
-					) : null}
-				</DialogContent>
-			</Dialog>
-
-			<Dialog open={createOpen} onOpenChange={setCreateOpen}>
-				<DialogContent className="max-h-[calc(100vh-2rem)] overflow-y-auto sm:max-w-4xl">
-					<DialogHeader>
-						<DialogTitle>Configurar precio</DialogTitle>
-						<DialogDescription>
-							Crea un plan de precios y asígnalo a la oferta de {branchLabel}.
-						</DialogDescription>
-					</DialogHeader>
-
-					{createOpen ? (
-						<CreateRatePlanAndAttachForm
-							formId={createFormId}
-							catalogRentalOfferId={offer.rentalOfferId}
-							isPending={createMutation.isPending}
-							submitLabel="Crear y asociar plan"
-							pendingLabel="Creando y asociando..."
-							onSubmit={async (values, context) => {
-								const body = toCreateRatePlanAndAttachToRentalOfferDto(
-									values,
-									context,
-								);
-
-								await createMutation.mutateAsync({ body });
-								setCreateOpen(false);
-							}}
-							onCancel={() => setCreateOpen(false)}
-						/>
-					) : null}
-				</DialogContent>
-			</Dialog>
-		</>
-	);
-}
-
-function getRatePlanOptions(
-	offers: GetRentableItemDetailResponseDto["offers"],
-) {
-	const optionsById = new Map<string, { id: string; name: string }>();
-
-	for (const offer of offers) {
-		const plan = offer.activeRatePlan;
-		if (!plan) continue;
-		optionsById.set(plan.ratePlanId, {
-			id: plan.ratePlanId,
-			name: plan.ratePlanName,
-		});
+	function handleOpenChange(nextOpen: boolean) {
+		setOpen(nextOpen);
+		if (!nextOpen) setStep("choose");
 	}
 
-	return Array.from(optionsById.values());
-}
-
-function PricingTable({ item }: RentableItemDetailPageProps) {
-	const offersWithPricing = item.offers.flatMap((offer) =>
-		offer.activeRatePlan
-			? [{ ...offer, activeRatePlan: offer.activeRatePlan }]
-			: [],
-	);
-
 	return (
-		<DetailTable
-			title="Planes de precios"
-			colSpan={5}
-			isEmpty={offersWithPricing.length === 0}
-			emptyMessage="No hay planes de precios activos."
-		>
-			<TableHeader className="bg-neutral-100">
-				<TableRow>
-					<TableHead>Sucursal</TableHead>
-					<TableHead>Plan</TableHead>
-					<TableHead>Unidad</TableHead>
-					<TableHead>Tramos</TableHead>
-					<TableHead>Estado</TableHead>
-				</TableRow>
-			</TableHeader>
-			<TableBody>
-				{offersWithPricing.map((offer) => {
-					const { activeRatePlan: plan } = offer;
+		<Dialog open={open} onOpenChange={handleOpenChange}>
+			<Button
+				type="button"
+				variant={canAssign ? "default" : "outline"}
+				onClick={() => setOpen(true)}
+			>
+				<CircleDollarSign className="mr-2 size-4" />
+				{canAssign ? "Asignar precio" : "Editar precio"}
+			</Button>
 
-					return (
-						<TableRow key={plan.rentalOfferPricingId}>
-							<TableCell className="font-medium">
-								{offer.branchName ?? offer.branchId}
-							</TableCell>
-							<TableCell>{plan.ratePlanName}</TableCell>
-							<TableCell>{billingUnitLabels[plan.billingUnit]}</TableCell>
-							<TableCell>{summarizeTiers(plan)}</TableCell>
-							<TableCell>
-								<Badge variant="outline" className="bg-primary/10 text-primary">
-									{plan.status === "ACTIVE" ? "Activo" : "Inactivo"}
-								</Badge>
-							</TableCell>
-						</TableRow>
-					);
-				})}
-			</TableBody>
-		</DetailTable>
+			<DialogContent
+				className={
+					step === "create"
+						? "max-h-[calc(100vh-2rem)] overflow-y-auto sm:max-w-4xl"
+						: undefined
+				}
+			>
+				<DialogHeader>
+					<DialogTitle>
+						{step === "choose"
+							? `${canAssign ? "Asignar" : "Editar"} precio a ${branchLabel}`
+							: step === "existing"
+								? "Usar plan existente"
+								: "Crear nuevo plan"}
+					</DialogTitle>
+					<DialogDescription>
+						{step === "choose"
+							? "Selecciona un plan existente o crea uno nuevo para esta oferta."
+							: `El plan quedará asignado a la oferta de ${branchLabel}.`}
+					</DialogDescription>
+				</DialogHeader>
+
+				{step === "choose" ? (
+					<div className="grid gap-3 sm:grid-cols-2">
+						<PricingChoiceButton
+							title="Usar plan existente"
+							description="Asigna a esta oferta un plan de precios reutilizable."
+							disabled={ratePlanOptions.length === 0}
+							onClick={() => setStep("existing")}
+						/>
+						<PricingChoiceButton
+							title="Crear nuevo plan"
+							description="Crea un plan de precios y asígnalo a esta oferta."
+							onClick={() => setStep("create")}
+						/>
+					</div>
+				) : null}
+
+				{step === "existing" ? (
+					<AttachRatePlanToRentalOfferForm
+						formId={attachFormId}
+						ratePlanOptions={ratePlanOptions}
+						isPending={attachMutation.isPending}
+						submitLabel="Asignar plan"
+						pendingLabel="Asignando..."
+						onSubmit={async (values) => {
+							const body = toAttachRatePlanToRentalOfferDto(values, {
+								catalogRentalOfferId: offer.rentalOfferId,
+							});
+							await attachMutation.mutateAsync({ body });
+							handleOpenChange(false);
+						}}
+						onCancel={() => setStep("choose")}
+					/>
+				) : null}
+
+				{step === "create" ? (
+					<CreateRatePlanAndAttachForm
+						formId={createFormId}
+						catalogRentalOfferId={offer.rentalOfferId}
+						isPending={createMutation.isPending}
+						submitLabel="Crear y asignar plan"
+						pendingLabel="Creando y asignando..."
+						onSubmit={async (values, context) => {
+							const body = toCreateRatePlanAndAttachToRentalOfferDto(
+								values,
+								context,
+							);
+							await createMutation.mutateAsync({ body });
+							handleOpenChange(false);
+						}}
+						onCancel={() => setStep("choose")}
+					/>
+				) : null}
+			</DialogContent>
+		</Dialog>
 	);
 }
 
-function BooleanBadge({
-	value,
-	trueLabel,
-	falseLabel,
+function PricingChoiceButton({
+	title,
+	description,
+	disabled = false,
+	onClick,
 }: {
-	value: boolean;
-	trueLabel: string;
-	falseLabel: string;
+	title: string;
+	description: string;
+	disabled?: boolean;
+	onClick: () => void;
 }) {
 	return (
-		<Badge
-			variant="outline"
-			className={
-				value
-					? "border-emerald-200 bg-emerald-50 text-emerald-700"
-					: "border-muted bg-muted text-muted-foreground"
-			}
+		<button
+			type="button"
+			disabled={disabled}
+			onClick={onClick}
+			className="rounded-xl border bg-background p-4 text-left transition hover:border-primary hover:bg-primary/5 disabled:cursor-not-allowed disabled:opacity-50"
 		>
-			<span
-				className={
-					value
-						? "mr-2 size-2 rounded-full bg-emerald-600"
-						: "mr-2 size-2 rounded-full bg-muted-foreground"
-				}
-			/>
-			{value ? trueLabel : falseLabel}
-		</Badge>
+			<CircleDollarSign className="mb-3 size-5 text-primary" />
+			<p className="font-semibold text-sm">{title}</p>
+			<p className="mt-1 text-muted-foreground text-sm">{description}</p>
+		</button>
+	);
+}
+
+const setupStatusPresentation = {
+	BRANCH_UNAVAILABLE: {
+		label: "Sucursal no disponible",
+		className: "border-red-200 bg-red-50 text-red-700",
+	},
+	MISSING_PRICING: {
+		label: "Falta precio",
+		className: "border-amber-200 bg-amber-50 text-amber-800",
+	},
+	INVALID_PRICING: {
+		label: "Precio incompleto",
+		className: "border-red-200 bg-red-50 text-red-700",
+	},
+	NOT_RENTABLE: {
+		label: "No rentable",
+		className: "border-red-200 bg-red-50 text-red-700",
+	},
+	NOT_VISIBLE: {
+		label: "No visible",
+		className: "border-muted bg-muted text-muted-foreground",
+	},
+	READY: {
+		label: "Oferta lista",
+		className: "border-emerald-200 bg-emerald-50 text-emerald-700",
+	},
+} satisfies Record<
+	GetRentableItemDetailResponseDto["offers"][number]["setupSummary"]["status"],
+	{ label: string; className: string }
+>;
+
+const setupIssueLabels = {
+	BRANCH_INACTIVE: "La sucursal está inactiva",
+	BRANCH_UNAVAILABLE: "La sucursal ya no está disponible",
+	MISSING_PRICING: "No tiene un plan de precios asignado",
+	PRICING_ASSIGNMENT_INACTIVE: "La asignación de precios está inactiva",
+	RATE_PLAN_INACTIVE: "El plan de precios está inactivo",
+	NO_VALID_TIERS: "El plan no tiene tramos de precios válidos",
+	OFFER_NOT_RENTABLE: "El alquiler está deshabilitado",
+	OFFER_NOT_VISIBLE: "La oferta no es visible",
+} satisfies Record<
+	GetRentableItemDetailResponseDto["offers"][number]["setupSummary"]["issues"][number],
+	string
+>;
+
+function OfferSetupStatus({
+	summary,
+}: {
+	summary: GetRentableItemDetailResponseDto["offers"][number]["setupSummary"];
+}) {
+	const presentation = setupStatusPresentation[summary.status];
+	const details = summary.issues
+		.map((issue) => setupIssueLabels[issue])
+		.join(" · ");
+
+	return (
+		<div className="space-y-1.5">
+			<Badge variant="outline" className={presentation.className}>
+				{presentation.label}
+			</Badge>
+			{details ? (
+				<p className="max-w-80 text-xs leading-5 text-muted-foreground">
+					{details}
+				</p>
+			) : null}
+		</div>
 	);
 }
 
@@ -812,35 +790,12 @@ function getStartingPrice(item: GetRentableItemDetailResponseDto) {
 		: null;
 }
 
-function formatTierPrice(
-	plan: NonNullable<
-		GetRentableItemDetailResponseDto["offers"][number]["activeRatePlan"]
-	>,
+function formatPriceSummary(
+	summary: GetRentableItemDetailResponseDto["offers"][number]["setupSummary"]["priceSummary"],
 ) {
-	const firstTier = plan.tiers[0];
-	return firstTier
-		? `Desde ${formatCurrency(firstTier.pricePerUnit, plan.currency)} / ${billingUnitLabels[plan.billingUnit]}`
+	return summary
+		? `Desde ${formatCurrency(summary.startingPrice, summary.currency)} / ${billingUnitLabels[summary.billingUnit]}`
 		: "Sin precio";
-}
-
-function summarizeTiers(
-	plan: NonNullable<
-		GetRentableItemDetailResponseDto["offers"][number]["activeRatePlan"]
-	>,
-) {
-	return plan.tiers
-		.map(
-			(tier) =>
-				`${tier.fromUnit}-${tier.toUnit ?? "∞"}: ${formatCurrency(tier.pricePerUnit, plan.currency)}`,
-		)
-		.join(" · ");
-}
-
-function formatDate(value: string) {
-	return new Intl.DateTimeFormat("es-AR", {
-		dateStyle: "medium",
-		timeStyle: "short",
-	}).format(new Date(value));
 }
 
 function formatCurrency(amount: string, currency: string) {

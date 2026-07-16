@@ -36,6 +36,43 @@ export const GetRentableItemDetailActiveRatePlanSchema = z.object({
   tiers: z.array(GetRentableItemDetailRatePlanTierSchema),
 });
 
+export const GetRentableItemDetailOfferSetupStatusSchema = z.enum([
+  "BRANCH_UNAVAILABLE",
+  "MISSING_PRICING",
+  "INVALID_PRICING",
+  "NOT_RENTABLE",
+  "NOT_VISIBLE",
+  "READY",
+]);
+
+export const GetRentableItemDetailOfferSetupIssueSchema = z.enum([
+  "BRANCH_INACTIVE",
+  "BRANCH_UNAVAILABLE",
+  "MISSING_PRICING",
+  "PRICING_ASSIGNMENT_INACTIVE",
+  "RATE_PLAN_INACTIVE",
+  "NO_VALID_TIERS",
+  "OFFER_NOT_RENTABLE",
+  "OFFER_NOT_VISIBLE",
+]);
+
+export const GetRentableItemDetailOfferSetupActionSchema = z.enum(["ASSIGN_PRICE", "EDIT_PRICING"]);
+
+export const GetRentableItemDetailOfferPriceSummarySchema = z.object({
+  ratePlanId: z.string(),
+  ratePlanName: z.string(),
+  startingPrice: z.string(),
+  currency: z.string(),
+  billingUnit: GetRentableItemsBillingUnitSchema,
+});
+
+export const GetRentableItemDetailOfferSetupSummarySchema = z.object({
+  status: GetRentableItemDetailOfferSetupStatusSchema,
+  issues: z.array(GetRentableItemDetailOfferSetupIssueSchema),
+  priceSummary: GetRentableItemDetailOfferPriceSummarySchema.nullable(),
+  availableActions: z.array(GetRentableItemDetailOfferSetupActionSchema),
+});
+
 export const GetRentableItemDetailOfferSchema = z.object({
   rentalOfferId: z.string(),
   branchId: z.string(),
@@ -46,6 +83,7 @@ export const GetRentableItemDetailOfferSchema = z.object({
   isRentable: z.boolean(),
   updatedAt: z.string().datetime(),
   activeRatePlan: GetRentableItemDetailActiveRatePlanSchema.nullable(),
+  setupSummary: GetRentableItemDetailOfferSetupSummarySchema,
 });
 
 export const GetRentableItemDetailResponseSchema = z.object({
@@ -69,6 +107,12 @@ export type GetRentableItemDetailRequiredEquipmentDto = z.infer<
 >;
 export type GetRentableItemDetailRatePlanTierDto = z.infer<typeof GetRentableItemDetailRatePlanTierSchema>;
 export type GetRentableItemDetailActiveRatePlanDto = z.infer<typeof GetRentableItemDetailActiveRatePlanSchema>;
+export type GetRentableItemDetailOfferSetupStatusDto = z.infer<
+  typeof GetRentableItemDetailOfferSetupStatusSchema
+>;
+export type GetRentableItemDetailOfferSetupIssueDto = z.infer<typeof GetRentableItemDetailOfferSetupIssueSchema>;
+export type GetRentableItemDetailOfferSetupActionDto = z.infer<typeof GetRentableItemDetailOfferSetupActionSchema>;
+export type GetRentableItemDetailOfferSetupSummaryDto = z.infer<typeof GetRentableItemDetailOfferSetupSummarySchema>;
 export type GetRentableItemDetailOfferDto = z.infer<typeof GetRentableItemDetailOfferSchema>;
 export type GetRentableItemDetailResponseDto = z.infer<typeof GetRentableItemDetailResponseSchema>;
 

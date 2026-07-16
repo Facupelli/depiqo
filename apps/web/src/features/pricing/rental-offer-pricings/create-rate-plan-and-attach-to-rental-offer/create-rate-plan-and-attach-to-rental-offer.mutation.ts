@@ -2,6 +2,7 @@ import type { CreateRatePlanAndAttachToRentalOfferResponseDto } from "@repo/api-
 import type { MutationOptions } from "@tanstack/react-query";
 import { useMutation } from "@tanstack/react-query";
 import { rentableItemKeys } from "@/features/catalog/rentable-items/rentable-items.queries";
+import { ratePlanKeys } from "@/features/pricing/rate-plans/rate-plans.queries";
 import type { ProblemDetailsError } from "@/shared/errors";
 import { rentalOfferPricingKeys } from "../rental-offer-pricings.queries";
 import {
@@ -29,11 +30,12 @@ export function useCreateRatePlanAndAttachToRentalOffer(
 		...options,
 		mutationFn: createRatePlanAndAttachToRentalOffer,
 		meta: {
-			invalidates: [rentalOfferPricingKeys.all(), rentableItemKeys.all()],
+			invalidates: [
+				rentalOfferPricingKeys.all(),
+				rentableItemKeys.all(),
+				ratePlanKeys.all(),
+			],
 			...options?.meta,
-		},
-		onError: (error) => {
-			console.log({ error });
 		},
 	});
 }

@@ -6,6 +6,7 @@ export * from "./create-rate-plan-and-attach-to-rental-offer.contract";
 export * from "./create-rate-plan.contract";
 export * from "./get-promotion-detail.contract";
 export * from "./get-promotions.contract";
+export * from "./get-rate-plans.contract";
 export * from "./get-rental-offers-pricing.contract";
 export * from "./get-storefront-rental-offers-pricing.contract";
 export * from "./update-promotion.contract";
