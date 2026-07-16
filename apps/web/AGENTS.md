@@ -14,6 +14,8 @@ Common app commands:
 - `pnpm lint`
 - `pnpm check`
 
+For authenticated browser verification with `chrome-devtools-axi`, follow `docs/agent-rules/testing.md`, including its credential-handling instructions.
+
 Use local config and nearby code as the primary source of truth:
 
 - `package.json`
