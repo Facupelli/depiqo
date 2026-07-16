@@ -73,7 +73,6 @@ export function ProductCatalog({
 							branchId={search.branchId}
 							product={rentalOffer}
 							locale={tenantPublicConfig?.locale}
-							currency={tenantPublicConfig?.currency}
 						/>
 					))}
 				</div>
@@ -107,7 +106,6 @@ export function ProductCatalog({
 							branchId={search.branchId}
 							product={rentalOffer}
 							locale={tenantPublicConfig?.locale}
-							currency={tenantPublicConfig?.currency}
 						/>
 					))}
 				</div>
@@ -130,12 +128,10 @@ function ProductCard({
 	branchId,
 	product,
 	locale,
-	currency,
 }: {
 	branchId: string;
 	product: StorefrontRentalOfferListViewItemDto;
 	locale: string | undefined;
-	currency: string | undefined;
 }) {
 	const {
 		isAvailable,
@@ -154,6 +150,7 @@ function ProductCard({
 	const unitPrice = product.pricing
 		? Number(product.pricing.ratePlan.tiers[0].pricePerUnit)
 		: null;
+	const displayCurrency = product.pricing?.ratePlan.currency;
 	const category = "General";
 
 	const productImage = buildR2PublicUrl(product.image, "catalog");
@@ -191,14 +188,10 @@ function ProductCard({
 
 			<CardFooter className="flex items-center justify-between">
 				<div>
-					{unitPrice != null && product.pricing ? (
+					{unitPrice != null && product.pricing && displayCurrency ? (
 						<>
 							<span className="text-lg font-bold">
-								{formatCurrency(
-									unitPrice,
-									currency ?? "ARS",
-									locale ?? "es-AR",
-								)}
+								{formatCurrency(unitPrice, displayCurrency, locale ?? "es-AR")}
 							</span>
 							<span className="text-xs text-muted-foreground">
 								{" "}
