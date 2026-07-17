@@ -1,6 +1,5 @@
+import { serverEnv } from "@/config/server-env";
 import { getForwardedCookieHeader } from "./request-context";
-
-const SERVER_API_BASE_URL = process.env.API_BASE_URL ?? "http://localhost:3000";
 
 export async function apiFetchRaw(
 	path: string,
@@ -13,7 +12,7 @@ export async function apiFetchRaw(
 		headers.set("cookie", cookie);
 	}
 
-	return fetch(`${SERVER_API_BASE_URL}${path}`, {
+	return fetch(new URL(path, serverEnv.BACKEND_URL), {
 		...init,
 		headers,
 	});

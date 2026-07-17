@@ -1,8 +1,9 @@
-// import { env } from "cloudflare:workers";
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
+import { getCustomerProfileDetail } from "@/features/tenant-management/customer/get-customer-profile-detail/get-customer-profile-detail.api";
 import { requireV2TenantUser } from "@/lib/auth/route-auth.server";
-import { WrongActorError } from "@/shared/errors";
+import { getCustomerDocument } from "@/lib/object-storage/r2-customer-document-storage.server";
+import { ProblemDetailsError, WrongActorError } from "@/shared/errors";
 
 const customerProfileParamsSchema = z.object({
 	customerProfileId: z.uuid(),
@@ -21,9 +22,6 @@ export const Route = createFileRoute(
 	server: {
 		handlers: {
 			GET: async ({ params, request }) => {
-				// const customersBucket = env.CUSTOMERS_BUCKET;
-				const customersBucket = {} as R2Bucket;
-
 				const parsedParams = customerProfileParamsSchema.safeParse(params);
 
 				if (!parsedParams.success) {
@@ -50,28 +48,61 @@ export const Route = createFileRoute(
 					return new Response("Unauthorized", { status: 401 });
 				}
 
-				const object = await customersBucket.get(parsedSearch.data.objectPath);
+				try {
+					const customer = await getCustomerProfileDetail(
+						parsedParams.data.customerProfileId,
+					);
 
-				if (!object?.body) {
-					return new Response("Document not found", { status: 404 });
+					if (
+						customer.profile.identityDocumentPath !==
+						parsedSearch.data.objectPath
+					) {
+						return new Response("Document not found", { status: 404 });
+					}
+				} catch (error) {
+					if (error instanceof ProblemDetailsError) {
+						return new Response(error.problemDetails.detail, {
+							status: error.problemDetails.status,
+						});
+					}
+
+					return new Response("Unable to retrieve customer profile", {
+						status: 500,
+					});
 				}
 
-				const headers = new Headers();
-				object.writeHttpMetadata(headers);
-				headers.set("Cache-Control", "private, no-store");
-				headers.set("Content-Disposition", "inline");
-				headers.set("X-Content-Type-Options", "nosniff");
+				try {
+					const object = await getCustomerDocument(
+						parsedSearch.data.objectPath,
+					);
 
-				if (!headers.has("Content-Type")) {
-					headers.set("Content-Type", "application/octet-stream");
+					if (!object) {
+						return new Response("Document not found", { status: 404 });
+					}
+
+					const headers = new Headers({
+						"Cache-Control": "private, no-store",
+						"Content-Disposition": "inline",
+						"Content-Type": object.contentType ?? "application/octet-stream",
+						ETag: object.etag ?? "",
+						"X-Content-Type-Options": "nosniff",
+					});
+
+					if (object.contentLength !== undefined) {
+						headers.set("Content-Length", String(object.contentLength));
+					}
+
+					if (!object.etag) {
+						headers.delete("ETag");
+					}
+
+					return new Response(object.body, {
+						status: 200,
+						headers,
+					});
+				} catch {
+					return new Response("Unable to retrieve document", { status: 500 });
 				}
-
-				headers.set("ETag", object.httpEtag);
-
-				return new Response(object.body, {
-					status: 200,
-					headers,
-				});
 			},
 		},
 	},

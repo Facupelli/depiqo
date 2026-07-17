@@ -2,6 +2,7 @@ import {
 	StreamPublicUnsignedDocumentQuerySchema,
 	streamPublicUnsignedDocumentContract,
 } from "@repo/api-contracts";
+import { getBackendApiBaseUrl } from "@/lib/api/backend-api-url";
 import { getForwardedCookieHeader } from "@/lib/api/request-context";
 
 export function getPublicSigningUnsignedPdfUrl(token: string): string {
@@ -31,7 +32,10 @@ export async function fetchPublicSigningUnsignedPdfResponse(token: string) {
 		}
 
 		response = await fetch(
-			`${process.env.API_BASE_URL ?? "http://localhost:3000"}${streamPublicUnsignedDocumentContract.path}`,
+			new URL(
+				streamPublicUnsignedDocumentContract.path,
+				getBackendApiBaseUrl(),
+			),
 			{
 				method: streamPublicUnsignedDocumentContract.method,
 				headers,

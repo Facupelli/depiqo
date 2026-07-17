@@ -6,12 +6,9 @@ import {
 	generateRentalRemitoContract,
 } from "@repo/api-contracts";
 import { problemDetailsSchema } from "@repo/schemas";
+import { getBackendApiBaseUrl } from "@/lib/api/backend-api-url";
 import { getForwardedCookieHeader } from "@/lib/api/request-context";
 import { ProblemDetailsError } from "@/shared/errors";
-
-const SERVER_API_BASE_URL = process.env.API_BASE_URL ?? "http://localhost:3000";
-const BROWSER_API_BASE_URL =
-	import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3000";
 
 export type RentalRemitoPdfResponse = {
 	blob: GenerateRentalRemitoResponseDto;
@@ -23,7 +20,7 @@ async function fetchRentalRemitoPdf(
 	path: string,
 ): Promise<RentalRemitoPdfResponse> {
 	const isServer = typeof window === "undefined";
-	const baseUrl = isServer ? SERVER_API_BASE_URL : BROWSER_API_BASE_URL;
+	const baseUrl = getBackendApiBaseUrl();
 	const headers = new Headers();
 
 	if (isServer) {

@@ -2,6 +2,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import {
 	createFileRoute,
 	Link,
+	notFound,
 	Outlet,
 	redirect,
 } from "@tanstack/react-router";
@@ -45,20 +46,15 @@ export const Route = createFileRoute("/_admin/dashboard")({
 	beforeLoad: async ({ context, location }) => {
 		const redirectTo = `${location.pathname}${location.searchStr ?? ""}${location.hash ?? ""}`;
 
-		if (context.tenantContext.face !== "admin") {
+		if (!context.user) {
 			throw redirect({
 				to: "/admin/login",
 				search: { redirectTo },
 			});
 		}
 
-		if (!context.user || context.user.actorType !== "TENANT_USER") {
-			throw redirect({
-				to: "/login",
-				search: {
-					redirectTo: location.href,
-				},
-			});
+		if (context.user.actorType !== "TENANT_USER") {
+			throw notFound();
 		}
 
 		return {

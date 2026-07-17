@@ -1,9 +1,8 @@
 import { problemDetailsSchema } from "@repo/schemas";
+import { serverEnv } from "@/config/server-env";
 import { resolveTrustedTenantContextFromRequest } from "@/features/tenant-management/tenant-context/resolve-trusted-tenant-context.server";
 import { signStorefrontTenantToken } from "@/features/tenant-management/tenant-context/sign-storefront-tenant-token.server";
 import { ProblemDetailsError } from "@/shared/errors";
-
-const SERVER_API_BASE_URL = process.env.API_BASE_URL ?? "http://localhost:3000";
 
 const STOREFRONT_TENANT_CONTEXT_HEADER_NAME = "x-storefront-tenant-context";
 
@@ -108,7 +107,7 @@ function buildStorefrontApiUrl(
 	path: StorefrontApiPath,
 	query?: StorefrontApiFetchOptions["query"],
 ): string {
-	const url = new URL(path, SERVER_API_BASE_URL);
+	const url = new URL(path, serverEnv.BACKEND_URL);
 
 	for (const [key, value] of Object.entries(query ?? {})) {
 		if (value === null || value === undefined) {

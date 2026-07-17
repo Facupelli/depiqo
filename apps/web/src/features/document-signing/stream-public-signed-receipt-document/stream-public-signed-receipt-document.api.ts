@@ -2,6 +2,7 @@ import {
 	StreamPublicSignedReceiptDocumentQuerySchema,
 	streamPublicSignedReceiptDocumentContract,
 } from "@repo/api-contracts";
+import { getBackendApiBaseUrl } from "@/lib/api/backend-api-url";
 import { getForwardedCookieHeader } from "@/lib/api/request-context";
 
 export function getPublicSigningSignedPdfUrl(token: string): string {
@@ -45,13 +46,16 @@ export async function fetchPublicSigningSignedPdfResponse(token: string) {
 			token: parsedQuery.token ?? "",
 		});
 
-		response = await fetch(
-			`${process.env.API_BASE_URL ?? "http://localhost:3000"}${streamPublicSignedReceiptDocumentContract.path}?${searchParams.toString()}`,
-			{
-				method: streamPublicSignedReceiptDocumentContract.method,
-				headers,
-			},
+		const url = new URL(
+			streamPublicSignedReceiptDocumentContract.path,
+			getBackendApiBaseUrl(),
 		);
+		url.search = searchParams.toString();
+
+		response = await fetch(url, {
+			method: streamPublicSignedReceiptDocumentContract.method,
+			headers,
+		});
 	} catch (error) {
 		throw createPdfProxyProblem(
 			0,

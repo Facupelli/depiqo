@@ -1,15 +1,11 @@
 import { problemDetailsSchema } from "@repo/schemas";
 import { getCsrfToken } from "@/features/tenant-management/auth/csrf-token";
 import { ProblemDetailsError } from "@/shared/errors";
+import { getBackendApiBaseUrl } from "./backend-api-url";
 import {
 	getForwardedCookieHeader,
 	getForwardedCsrfHeader,
 } from "./request-context";
-
-const SERVER_API_BASE_URL = process.env.API_BASE_URL ?? "http://localhost:3000";
-
-const BROWSER_API_BASE_URL =
-	import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3000";
 
 const UNSAFE_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 const CSRF_HEADER_NAME = "x-csrf-token";
@@ -19,7 +15,7 @@ export async function apiFetch<T = unknown>(
 	init: RequestInit = {},
 ): Promise<T | null> {
 	const isServer = typeof window === "undefined";
-	const baseUrl = isServer ? SERVER_API_BASE_URL : BROWSER_API_BASE_URL;
+	const baseUrl = getBackendApiBaseUrl();
 
 	const method = (init.method ?? "GET").toUpperCase();
 	const headers = new Headers(init.headers);

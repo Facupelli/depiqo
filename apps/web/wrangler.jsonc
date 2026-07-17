@@ -9,13 +9,8 @@
   },
   "r2_buckets": [
     {
-      "binding": "BUCKET",
-      "bucket_name": "equipment",
-    },
-    {
       "binding": "CUSTOMERS_BUCKET",
       "bucket_name": "customers",
-      // "remote": true,
     },
   ],
   "vars": {

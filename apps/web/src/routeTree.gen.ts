@@ -11,7 +11,9 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SigningRouteImport } from './routes/signing'
 import { Route as PortalRouteRouteImport } from './routes/_portal/route'
+import { Route as AdminRouteRouteImport } from './routes/_admin/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as BackendSplatRouteImport } from './routes/backend/$'
 import { Route as ApiUploadRouteImport } from './routes/api/upload'
 import { Route as ApiCustomerUploadRouteImport } from './routes/api/customer-upload'
 import { Route as ApiBrandingUploadRouteImport } from './routes/api/branding-upload'
@@ -71,9 +73,18 @@ const PortalRouteRoute = PortalRouteRouteImport.update({
   id: '/_portal',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminRouteRoute = AdminRouteRouteImport.update({
+  id: '/_admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BackendSplatRoute = BackendSplatRouteImport.update({
+  id: '/backend/$',
+  path: '/backend/$',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiUploadRoute = ApiUploadRouteImport.update({
@@ -102,9 +113,9 @@ const PortalLoginRoute = PortalLoginRouteImport.update({
   getParentRoute: () => PortalRouteRoute,
 } as any)
 const AdminDashboardRouteRoute = AdminDashboardRouteRouteImport.update({
-  id: '/_admin/dashboard',
+  id: '/dashboard',
   path: '/dashboard',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AdminRouteRoute,
 } as any)
 const AdminDashboardIndexRoute = AdminDashboardIndexRouteImport.update({
   id: '/',
@@ -122,14 +133,14 @@ const AuthGoogleCallbackRoute = AuthGoogleCallbackRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminAdminRegisterRoute = AdminAdminRegisterRouteImport.update({
-  id: '/_admin/admin/register',
+  id: '/admin/register',
   path: '/admin/register',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AdminRouteRoute,
 } as any)
 const AdminAdminLoginRoute = AdminAdminLoginRouteImport.update({
-  id: '/_admin/admin/login',
+  id: '/admin/login',
   path: '/admin/login',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AdminRouteRoute,
 } as any)
 const PortalTenantRentalIndexRoute = PortalTenantRentalIndexRouteImport.update({
   id: '/_tenant/rental/',
@@ -366,6 +377,7 @@ export interface FileRoutesByFullPath {
   '/api/branding-upload': typeof ApiBrandingUploadRoute
   '/api/customer-upload': typeof ApiCustomerUploadRoute
   '/api/upload': typeof ApiUploadRoute
+  '/backend/$': typeof BackendSplatRoute
   '/admin/login': typeof AdminAdminLoginRoute
   '/admin/register': typeof AdminAdminRegisterRoute
   '/auth/google/callback': typeof AuthGoogleCallbackRoute
@@ -418,6 +430,7 @@ export interface FileRoutesByTo {
   '/api/branding-upload': typeof ApiBrandingUploadRoute
   '/api/customer-upload': typeof ApiCustomerUploadRoute
   '/api/upload': typeof ApiUploadRoute
+  '/backend/$': typeof BackendSplatRoute
   '/admin/login': typeof AdminAdminLoginRoute
   '/admin/register': typeof AdminAdminRegisterRoute
   '/auth/google/callback': typeof AuthGoogleCallbackRoute
@@ -465,6 +478,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_admin': typeof AdminRouteRouteWithChildren
   '/_portal': typeof PortalRouteRouteWithChildren
   '/signing': typeof SigningRoute
   '/_admin/dashboard': typeof AdminDashboardRouteRouteWithChildren
@@ -473,6 +487,7 @@ export interface FileRoutesById {
   '/api/branding-upload': typeof ApiBrandingUploadRoute
   '/api/customer-upload': typeof ApiCustomerUploadRoute
   '/api/upload': typeof ApiUploadRoute
+  '/backend/$': typeof BackendSplatRoute
   '/_admin/admin/login': typeof AdminAdminLoginRoute
   '/_admin/admin/register': typeof AdminAdminRegisterRoute
   '/auth/google/callback': typeof AuthGoogleCallbackRoute
@@ -528,6 +543,7 @@ export interface FileRouteTypes {
     | '/api/branding-upload'
     | '/api/customer-upload'
     | '/api/upload'
+    | '/backend/$'
     | '/admin/login'
     | '/admin/register'
     | '/auth/google/callback'
@@ -580,6 +596,7 @@ export interface FileRouteTypes {
     | '/api/branding-upload'
     | '/api/customer-upload'
     | '/api/upload'
+    | '/backend/$'
     | '/admin/login'
     | '/admin/register'
     | '/auth/google/callback'
@@ -626,6 +643,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/_admin'
     | '/_portal'
     | '/signing'
     | '/_admin/dashboard'
@@ -634,6 +652,7 @@ export interface FileRouteTypes {
     | '/api/branding-upload'
     | '/api/customer-upload'
     | '/api/upload'
+    | '/backend/$'
     | '/_admin/admin/login'
     | '/_admin/admin/register'
     | '/auth/google/callback'
@@ -681,14 +700,13 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminRouteRoute: typeof AdminRouteRouteWithChildren
   PortalRouteRoute: typeof PortalRouteRouteWithChildren
   SigningRoute: typeof SigningRoute
-  AdminDashboardRouteRoute: typeof AdminDashboardRouteRouteWithChildren
   ApiBrandingUploadRoute: typeof ApiBrandingUploadRoute
   ApiCustomerUploadRoute: typeof ApiCustomerUploadRoute
   ApiUploadRoute: typeof ApiUploadRoute
-  AdminAdminLoginRoute: typeof AdminAdminLoginRoute
-  AdminAdminRegisterRoute: typeof AdminAdminRegisterRoute
+  BackendSplatRoute: typeof BackendSplatRoute
   AuthGoogleCallbackRoute: typeof AuthGoogleCallbackRoute
   AuthGoogleStartRoute: typeof AuthGoogleStartRoute
   ApiCustomerProfilesCustomerProfileIdIdentityDocumentRoute: typeof ApiCustomerProfilesCustomerProfileIdIdentityDocumentRoute
@@ -713,11 +731,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PortalRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_admin': {
+      id: '/_admin'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AdminRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/backend/$': {
+      id: '/backend/$'
+      path: '/backend/$'
+      fullPath: '/backend/$'
+      preLoaderRoute: typeof BackendSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/upload': {
@@ -760,7 +792,7 @@ declare module '@tanstack/react-router' {
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof AdminDashboardRouteRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AdminRouteRoute
     }
     '/_admin/dashboard/': {
       id: '/_admin/dashboard/'
@@ -788,14 +820,14 @@ declare module '@tanstack/react-router' {
       path: '/admin/register'
       fullPath: '/admin/register'
       preLoaderRoute: typeof AdminAdminRegisterRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AdminRouteRoute
     }
     '/_admin/admin/login': {
       id: '/_admin/admin/login'
       path: '/admin/login'
       fullPath: '/admin/login'
       preLoaderRoute: typeof AdminAdminLoginRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AdminRouteRoute
     }
     '/_portal/_tenant/rental/': {
       id: '/_portal/_tenant/rental/'
@@ -1066,40 +1098,6 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface PortalRouteRouteChildren {
-  PortalLoginRoute: typeof PortalLoginRoute
-  PortalRegisterRoute: typeof PortalRegisterRoute
-  PortalAuthGoogleFinalizeRoute: typeof PortalAuthGoogleFinalizeRoute
-  PortalTenantCartIndexRoute: typeof PortalTenantCartIndexRoute
-  PortalTenantConfirmedRentalSuccessIndexRoute: typeof PortalTenantConfirmedRentalSuccessIndexRoute
-  PortalTenantOnboardIndexRoute: typeof PortalTenantOnboardIndexRoute
-  PortalTenantOrderConfirmationIndexRoute: typeof PortalTenantOrderConfirmationIndexRoute
-  PortalTenantOrderCreatedContactTeamIndexRoute: typeof PortalTenantOrderCreatedContactTeamIndexRoute
-  PortalTenantOrderCreatedWhatsappIndexRoute: typeof PortalTenantOrderCreatedWhatsappIndexRoute
-  PortalTenantRentalIndexRoute: typeof PortalTenantRentalIndexRoute
-}
-
-const PortalRouteRouteChildren: PortalRouteRouteChildren = {
-  PortalLoginRoute: PortalLoginRoute,
-  PortalRegisterRoute: PortalRegisterRoute,
-  PortalAuthGoogleFinalizeRoute: PortalAuthGoogleFinalizeRoute,
-  PortalTenantCartIndexRoute: PortalTenantCartIndexRoute,
-  PortalTenantConfirmedRentalSuccessIndexRoute:
-    PortalTenantConfirmedRentalSuccessIndexRoute,
-  PortalTenantOnboardIndexRoute: PortalTenantOnboardIndexRoute,
-  PortalTenantOrderConfirmationIndexRoute:
-    PortalTenantOrderConfirmationIndexRoute,
-  PortalTenantOrderCreatedContactTeamIndexRoute:
-    PortalTenantOrderCreatedContactTeamIndexRoute,
-  PortalTenantOrderCreatedWhatsappIndexRoute:
-    PortalTenantOrderCreatedWhatsappIndexRoute,
-  PortalTenantRentalIndexRoute: PortalTenantRentalIndexRoute,
-}
-
-const PortalRouteRouteWithChildren = PortalRouteRoute._addFileChildren(
-  PortalRouteRouteChildren,
-)
-
 interface AdminDashboardRouteRouteChildren {
   AdminDashboardIndexRoute: typeof AdminDashboardIndexRoute
   AdminDashboardBranchesNewRoute: typeof AdminDashboardBranchesNewRoute
@@ -1165,6 +1163,56 @@ const AdminDashboardRouteRouteChildren: AdminDashboardRouteRouteChildren = {
 const AdminDashboardRouteRouteWithChildren =
   AdminDashboardRouteRoute._addFileChildren(AdminDashboardRouteRouteChildren)
 
+interface AdminRouteRouteChildren {
+  AdminDashboardRouteRoute: typeof AdminDashboardRouteRouteWithChildren
+  AdminAdminLoginRoute: typeof AdminAdminLoginRoute
+  AdminAdminRegisterRoute: typeof AdminAdminRegisterRoute
+}
+
+const AdminRouteRouteChildren: AdminRouteRouteChildren = {
+  AdminDashboardRouteRoute: AdminDashboardRouteRouteWithChildren,
+  AdminAdminLoginRoute: AdminAdminLoginRoute,
+  AdminAdminRegisterRoute: AdminAdminRegisterRoute,
+}
+
+const AdminRouteRouteWithChildren = AdminRouteRoute._addFileChildren(
+  AdminRouteRouteChildren,
+)
+
+interface PortalRouteRouteChildren {
+  PortalLoginRoute: typeof PortalLoginRoute
+  PortalRegisterRoute: typeof PortalRegisterRoute
+  PortalAuthGoogleFinalizeRoute: typeof PortalAuthGoogleFinalizeRoute
+  PortalTenantCartIndexRoute: typeof PortalTenantCartIndexRoute
+  PortalTenantConfirmedRentalSuccessIndexRoute: typeof PortalTenantConfirmedRentalSuccessIndexRoute
+  PortalTenantOnboardIndexRoute: typeof PortalTenantOnboardIndexRoute
+  PortalTenantOrderConfirmationIndexRoute: typeof PortalTenantOrderConfirmationIndexRoute
+  PortalTenantOrderCreatedContactTeamIndexRoute: typeof PortalTenantOrderCreatedContactTeamIndexRoute
+  PortalTenantOrderCreatedWhatsappIndexRoute: typeof PortalTenantOrderCreatedWhatsappIndexRoute
+  PortalTenantRentalIndexRoute: typeof PortalTenantRentalIndexRoute
+}
+
+const PortalRouteRouteChildren: PortalRouteRouteChildren = {
+  PortalLoginRoute: PortalLoginRoute,
+  PortalRegisterRoute: PortalRegisterRoute,
+  PortalAuthGoogleFinalizeRoute: PortalAuthGoogleFinalizeRoute,
+  PortalTenantCartIndexRoute: PortalTenantCartIndexRoute,
+  PortalTenantConfirmedRentalSuccessIndexRoute:
+    PortalTenantConfirmedRentalSuccessIndexRoute,
+  PortalTenantOnboardIndexRoute: PortalTenantOnboardIndexRoute,
+  PortalTenantOrderConfirmationIndexRoute:
+    PortalTenantOrderConfirmationIndexRoute,
+  PortalTenantOrderCreatedContactTeamIndexRoute:
+    PortalTenantOrderCreatedContactTeamIndexRoute,
+  PortalTenantOrderCreatedWhatsappIndexRoute:
+    PortalTenantOrderCreatedWhatsappIndexRoute,
+  PortalTenantRentalIndexRoute: PortalTenantRentalIndexRoute,
+}
+
+const PortalRouteRouteWithChildren = PortalRouteRoute._addFileChildren(
+  PortalRouteRouteChildren,
+)
+
 interface ApiOrdersOrderIdContractSignedRouteChildren {
   ApiOrdersOrderIdContractSignedDownloadRoute: typeof ApiOrdersOrderIdContractSignedDownloadRoute
 }
@@ -1200,14 +1248,13 @@ const ApiOrdersOrderIdContractRouteWithChildren =
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminRouteRoute: AdminRouteRouteWithChildren,
   PortalRouteRoute: PortalRouteRouteWithChildren,
   SigningRoute: SigningRoute,
-  AdminDashboardRouteRoute: AdminDashboardRouteRouteWithChildren,
   ApiBrandingUploadRoute: ApiBrandingUploadRoute,
   ApiCustomerUploadRoute: ApiCustomerUploadRoute,
   ApiUploadRoute: ApiUploadRoute,
-  AdminAdminLoginRoute: AdminAdminLoginRoute,
-  AdminAdminRegisterRoute: AdminAdminRegisterRoute,
+  BackendSplatRoute: BackendSplatRoute,
   AuthGoogleCallbackRoute: AuthGoogleCallbackRoute,
   AuthGoogleStartRoute: AuthGoogleStartRoute,
   ApiCustomerProfilesCustomerProfileIdIdentityDocumentRoute:

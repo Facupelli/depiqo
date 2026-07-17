@@ -2,11 +2,10 @@ import {
 	GetCsrfTokenResponseSchema,
 	getCsrfTokenContract,
 } from "@repo/api-contracts";
+import { BACKEND_PROXY_PREFIX } from "@/lib/api/backend-api-url";
 
 let csrfToken: string | null = null;
 let csrfTokenPromise: Promise<string> | null = null;
-
-const BROWSER_API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "/api";
 
 export function setCsrfToken(token: string | null): void {
 	csrfToken = token;
@@ -17,7 +16,7 @@ export async function getCsrfToken(): Promise<string> {
 
 	if (!csrfTokenPromise) {
 		csrfTokenPromise = fetch(
-			`${BROWSER_API_BASE_URL}${getCsrfTokenContract.path}`,
+			`${BACKEND_PROXY_PREFIX}${getCsrfTokenContract.path}`,
 			{
 				method: getCsrfTokenContract.method,
 				credentials: "include",
