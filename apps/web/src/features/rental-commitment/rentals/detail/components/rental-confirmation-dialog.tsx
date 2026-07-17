@@ -1,9 +1,5 @@
 import { AlertCircle, CalendarDays, Package, ReceiptText } from "lucide-react";
 import type { ReactNode } from "react";
-import { formatMoney } from "@/shared/utils/formatters";
-import { buildRentalConfirmationSummary } from "../rental-confirmation-summary";
-import { useRentalDetailContext } from "../rental-detail.context";
-import { formatRentalDetailDateBlock } from "../rental-detail.utils";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -14,6 +10,10 @@ import {
 	AlertDialogHeader,
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { formatMoney } from "@/shared/utils/formatters";
+import { buildRentalConfirmationSummary } from "../rental-confirmation-summary";
+import { useRentalDetailContext } from "../rental-detail.context";
+import { formatRentalDetailDateBlock } from "../rental-detail.utils";
 
 export type RentalConfirmationDialogProps = {
 	open: boolean;

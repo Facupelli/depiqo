@@ -37,9 +37,10 @@ export function RentalEquipmentSection() {
 						Equipos y accesorios
 					</h2>
 					{rental.status === "DRAFT" ? (
-						<span className="text-sm text-muted-foreground">Confirma el pedido para asignar accesorios</span>
-					): (
-
+						<span className="text-sm text-muted-foreground">
+							Confirma el pedido para asignar accesorios
+						</span>
+					) : (
 						<Button
 							type="button"
 							variant="outline"

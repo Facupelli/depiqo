@@ -45,14 +45,14 @@ export function RentalCustomerSelector({
 	return (
 		<Popover open={open} onOpenChange={setOpen}>
 			<PopoverTrigger
-					render={
-						<Button
-							type="button"
-							variant="outline"
-							className="w-full min-w-0 justify-start overflow-hidden"
-						/>
-					}
-				>
+				render={
+					<Button
+						type="button"
+						variant="outline"
+						className="w-full min-w-0 justify-start overflow-hidden"
+					/>
+				}
+			>
 				<span className="min-w-0 flex-1 truncate text-left">
 					{selectedLabel}
 				</span>

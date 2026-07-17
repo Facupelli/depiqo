@@ -16,8 +16,7 @@ const activationErrorMessages = {
 		"Asigná un plan de precios activo a una oferta antes de activar el ítem.",
 } as const;
 
-const insufficientActiveAssetsProblemType =
-	`${PROBLEM_TYPE_BASE_URI}/catalog/rentable-item-has-insufficient-active-assets`;
+const insufficientActiveAssetsProblemType = `${PROBLEM_TYPE_BASE_URI}/catalog/rentable-item-has-insufficient-active-assets`;
 
 type ActivationErrorContext = {
 	equipmentTypeId: string;
@@ -38,9 +37,11 @@ export function getActivateRentableItemErrorMessage(
 
 		if (context) {
 			const equipment = item.requiredEquipment.find(
-				(requirement) => requirement.equipmentTypeId === context.equipmentTypeId,
+				(requirement) =>
+					requirement.equipmentTypeId === context.equipmentTypeId,
 			);
-			const equipmentName = equipment?.equipmentTypeName ?? "este tipo de equipo";
+			const equipmentName =
+				equipment?.equipmentTypeName ?? "este tipo de equipo";
 
 			return `No se puede activar el ítem porque no hay suficientes equipos activos de ${equipmentName}: se requieren ${context.requiredQuantity} y hay ${context.activeAssetCount}.`;
 		}
@@ -58,7 +59,8 @@ export function getActivateRentableItemErrorMessage(
 function getInsufficientActiveAssetsContext(
 	problemDetails: Record<string, unknown>,
 ): ActivationErrorContext | null {
-	const { equipmentTypeId, requiredQuantity, activeAssetCount } = problemDetails;
+	const { equipmentTypeId, requiredQuantity, activeAssetCount } =
+		problemDetails;
 
 	if (
 		typeof equipmentTypeId !== "string" ||

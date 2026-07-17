@@ -48,10 +48,10 @@ export function buildRentalConfirmationSummary(
 				selection.rentableItemKind === "SINGLE"
 					? []
 					: selection.demandLines.map((demandLine) => ({
-						id: demandLine.id,
-						name: demandLine.equipmentTypeName,
-						quantity: demandLine.quantity,
-					})),
+							id: demandLine.id,
+							name: demandLine.equipmentTypeName,
+							quantity: demandLine.quantity,
+						})),
 		})),
 		accessories: rental.accessories.map((accessory) => ({
 			id: accessory.id,
