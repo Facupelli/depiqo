@@ -139,6 +139,7 @@ function OfferCard({
 				type="button"
 				size="sm"
 				variant={unavailable ? "outline" : "default"}
+				aria-label={`Agregar ${offer.name} al borrador`}
 				disabled={unavailable}
 				onClick={() => onAdd(offer)}
 			>

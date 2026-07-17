@@ -2,6 +2,7 @@ import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { PageBreadcrumb } from "@/components/detail-id-breadcrumb";
 import { RentalDetailHeader } from "@/features/rental-commitment/rentals/detail/components/rental-detail-header";
+import { RentalDetailPageSkeleton } from "@/features/rental-commitment/rentals/detail/components/rental-detail-page-skeleton";
 import { RentalEquipmentSection } from "@/features/rental-commitment/rentals/detail/components/rental-equipment-section";
 import { RentalSidebarCards } from "@/features/rental-commitment/rentals/detail/components/rental-sidebar-cards";
 import { RentalDetailProvider } from "@/features/rental-commitment/rentals/detail/rental-detail.context";
@@ -24,6 +25,9 @@ export const Route = createFileRoute("/_admin/dashboard/orders/$orderId/")({
 			);
 		}
 	},
+	pendingComponent: RentalDetailPageSkeleton,
+	pendingMs: 0,
+	pendingMinMs: 250,
 	errorComponent: ({ error }) => {
 		return (
 			<AdminRouteError
