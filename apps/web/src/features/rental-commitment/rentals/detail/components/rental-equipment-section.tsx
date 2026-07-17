@@ -36,13 +36,18 @@ export function RentalEquipmentSection() {
 					<h2 className="text-sm font-semibold text-neutral-950">
 						Equipos y accesorios
 					</h2>
-					<Button
-						type="button"
-						variant="outline"
-						onClick={() => setIsAccessorySheetOpen(true)}
-					>
-						Asignar accesorios
-					</Button>
+					{rental.status === "DRAFT" ? (
+						<span className="text-sm text-muted-foreground">Confirma el pedido para asignar accesorios</span>
+					): (
+
+						<Button
+							type="button"
+							variant="outline"
+							onClick={() => setIsAccessorySheetOpen(true)}
+						>
+							Asignar accesorios
+						</Button>
+					)}
 				</div>
 				<section className="mb-10 space-y-3">
 					{rental.selections.map((selection) => (
