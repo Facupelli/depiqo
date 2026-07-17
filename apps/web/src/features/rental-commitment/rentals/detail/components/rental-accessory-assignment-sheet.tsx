@@ -1,4 +1,3 @@
-import { useQueryClient } from "@tanstack/react-query";
 import { AlertCircle, PackagePlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -9,7 +8,6 @@ import {
 } from "@/components/ui/sheet";
 import { useRentalAccessoryDefaults } from "@/features/asset-inventory/rental-accessory-defaults/rental-accessory-defaults.queries";
 import { useAssignRentalAccessories } from "../../assign-rental-accessories/assign-rental-accessories.mutation";
-import { rentalKeys } from "../../rentals.queries";
 import {
 	createRentalAccessoryAssignmentFormDefaultValues,
 	type RentalAccessoryAssignmentFormValues,
@@ -49,7 +47,6 @@ function RentalAccessoryAssignmentSheetBody({
 	onClose: () => void;
 }) {
 	const { rental } = useRentalDetailContext();
-	const queryClient = useQueryClient();
 	const {
 		data: defaults,
 		isPending,
@@ -60,9 +57,6 @@ function RentalAccessoryAssignmentSheetBody({
 	async function handleSubmit(values: RentalAccessoryAssignmentFormValues) {
 		const body = toAssignRentalAccessoriesDto(values);
 		await assignAccessories.mutateAsync({ rentalId: rental.id, body });
-		await queryClient.invalidateQueries({
-			queryKey: rentalKeys.detail(rental.id),
-		});
 		onClose();
 	}
 
