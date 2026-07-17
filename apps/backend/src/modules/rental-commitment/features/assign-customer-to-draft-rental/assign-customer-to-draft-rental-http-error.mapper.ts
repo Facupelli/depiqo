@@ -1,6 +1,6 @@
 import { HttpStatus } from '@nestjs/common';
 
-import { createProblemType, PlatformProblemTypes, ProblemException } from 'src/core/problem-details';
+import { createProblemDetails, createProblemType, ProblemException } from 'src/core/problem-details';
 
 import {
   AssignCustomerToDraftRentalApplicationError,
@@ -10,46 +10,62 @@ import {
 interface ProblemDefinition {
   type: string;
   title: string;
-  status: number;
+  status: HttpStatus;
   detail: string;
 }
 
-const ProblemCatalog: Record<AssignCustomerToDraftRentalApplicationErrorCode, ProblemDefinition> = {
-  RentalNotFound: {
+const problemCatalog: Record<AssignCustomerToDraftRentalApplicationErrorCode, ProblemDefinition> = {
+  'rental-commitment.rental-not-found': {
     type: createProblemType('rental-commitment/rental-not-found'),
     title: 'Rental not found',
     status: HttpStatus.NOT_FOUND,
     detail: 'The requested rental could not be found.',
   },
-  RentalMustBeDraft: {
+  'rental-commitment.rental-must-be-draft': {
     type: createProblemType('rental-commitment/rental-must-be-draft'),
     title: 'Rental must be draft',
     status: HttpStatus.UNPROCESSABLE_ENTITY,
     detail: 'The requested rental must be a draft rental.',
   },
-  CustomerNotFoundOrNotAssignable: {
+  'rental-commitment.customer-not-found-or-outside-tenant': {
     type: createProblemType('rental-commitment/customer-not-assignable-to-draft-rental'),
     title: 'Customer cannot be assigned to draft rental',
     status: HttpStatus.UNPROCESSABLE_ENTITY,
-    detail: 'The requested customer could not be assigned to the draft rental.',
+    detail: 'The requested customer is not available for this draft rental.',
   },
-  Unexpected: {
-    type: PlatformProblemTypes.system.internalServerError,
-    title: 'Internal server error',
-    status: HttpStatus.INTERNAL_SERVER_ERROR,
-    detail: 'An unexpected error occurred. Please try again later.',
+  'rental-commitment.customer-deleted': {
+    type: createProblemType('rental-commitment/customer-deleted'),
+    title: 'Customer is deleted',
+    status: HttpStatus.UNPROCESSABLE_ENTITY,
+    detail: 'The requested customer is no longer available.',
+  },
+  'rental-commitment.customer-inactive': {
+    type: createProblemType('rental-commitment/customer-inactive'),
+    title: 'Customer is inactive',
+    status: HttpStatus.UNPROCESSABLE_ENTITY,
+    detail: 'The requested customer is inactive.',
+  },
+  'rental-commitment.invalid-customer': {
+    type: createProblemType('rental-commitment/invalid-customer'),
+    title: 'Invalid customer',
+    status: HttpStatus.UNPROCESSABLE_ENTITY,
+    detail: 'The requested customer is invalid.',
   },
 };
 
 export function toAssignCustomerToDraftRentalProblem(
   error: AssignCustomerToDraftRentalApplicationError,
 ): ProblemException {
-  const definition = ProblemCatalog[error.code];
+  const definition = problemCatalog[error.code];
 
   return ProblemException.from({
-    type: definition.type,
-    title: definition.title,
-    status: definition.status,
-    detail: definition.detail,
+    problemDetails: createProblemDetails({
+      type: definition.type,
+      title: definition.title,
+      status: definition.status,
+      detail: definition.detail,
+    }),
+    applicationError: error,
+    cause: error.cause,
   });
 }

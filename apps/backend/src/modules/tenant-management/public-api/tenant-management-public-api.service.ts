@@ -29,6 +29,8 @@ import {
   TenantAdminNotificationRecipient,
   TenantManagementPublicApi,
   TenantManagementPublicApiError,
+  ValidateCustomerForStaffDraftRentalInput,
+  ValidateCustomerForStaffDraftRentalResult,
   ValidateDraftRentalInput,
   ValidateDraftRentalResult,
   ValidateOfferingSetupInput,
@@ -68,6 +70,29 @@ export class TenantManagementPublicApiService extends TenantManagementPublicApi 
     _input: ValidateWhatsAppStylePendingRentalInput,
   ): Promise<Result<void, RentalCommitmentError>> {
     return ok(undefined);
+  }
+
+  async validateCustomerForStaffDraftRental(
+    input: ValidateCustomerForStaffDraftRentalInput,
+  ): Promise<ValidateCustomerForStaffDraftRentalResult> {
+    const customer = await this.prisma.client.v2RentalCustomer.findFirst({
+      where: { id: input.customerId, tenantId: input.tenantId },
+      select: { deletedAt: true, isActive: true },
+    });
+
+    if (!customer) {
+      return { eligible: false, reason: 'CustomerNotFoundOrOutsideTenant' };
+    }
+
+    if (customer.deletedAt) {
+      return { eligible: false, reason: 'CustomerDeleted' };
+    }
+
+    if (!customer.isActive) {
+      return { eligible: false, reason: 'CustomerInactive' };
+    }
+
+    return { eligible: true };
   }
 
   async validateDraftRental(

@@ -17,6 +17,10 @@ export async function getRentalCustomers(
 		searchParams.set("status", parsedQuery.status);
 	}
 
+	if (parsedQuery.isActive !== undefined) {
+		searchParams.set("isActive", String(parsedQuery.isActive));
+	}
+
 	if (parsedQuery.search !== undefined) {
 		searchParams.set("search", parsedQuery.search);
 	}

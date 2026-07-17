@@ -33,6 +33,7 @@ export class GetRentalCustomersHandler implements IQueryHandler<GetRentalCustome
       tenantId: query.tenantId,
       deletedAt: null,
       ...(query.status === undefined ? {} : { onboardingStatus: query.status }),
+      ...(query.isActive === undefined ? {} : { isActive: query.isActive }),
       ...(query.search
         ? {
             OR: [

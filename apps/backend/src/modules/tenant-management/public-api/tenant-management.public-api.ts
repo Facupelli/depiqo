@@ -60,6 +60,20 @@ export interface GetRentalCustomerNotificationRecipientInput {
   rentalCustomerId: string;
 }
 
+export interface ValidateCustomerForStaffDraftRentalInput {
+  tenantId: string;
+  customerId: string;
+}
+
+export type StaffDraftRentalCustomerEligibilityReason =
+  | 'CustomerNotFoundOrOutsideTenant'
+  | 'CustomerDeleted'
+  | 'CustomerInactive';
+
+export type ValidateCustomerForStaffDraftRentalResult =
+  | { eligible: true }
+  | { eligible: false; reason: StaffDraftRentalCustomerEligibilityReason };
+
 export interface RentalCustomerNotificationRecipient {
   id: string;
   tenantId: string;
@@ -154,6 +168,10 @@ export abstract class TenantManagementPublicApi {
   abstract getTenantPricingConfig(
     input: GetTenantPricingConfigInput,
   ): Promise<Result<GetTenantPricingConfigResult, RentalCommitmentError>>;
+
+  abstract validateCustomerForStaffDraftRental(
+    input: ValidateCustomerForStaffDraftRentalInput,
+  ): Promise<ValidateCustomerForStaffDraftRentalResult>;
 
   abstract getRentalCustomerNotificationRecipient(
     input: GetRentalCustomerNotificationRecipientInput,

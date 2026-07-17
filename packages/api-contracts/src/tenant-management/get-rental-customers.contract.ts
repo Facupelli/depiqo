@@ -11,6 +11,7 @@ export const RentalCustomerOnboardingStatusSchema = z.enum([
 
 export const GetRentalCustomersQuerySchema = z.object({
   status: RentalCustomerOnboardingStatusSchema.optional(),
+  isActive: z.coerce.boolean().optional(),
   search: z.string().trim().min(1).optional(),
   page: z.coerce.number().int().positive().default(1),
   pageSize: z.coerce.number().int().positive().max(100).default(20),

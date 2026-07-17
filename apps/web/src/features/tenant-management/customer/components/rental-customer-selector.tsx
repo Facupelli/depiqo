@@ -1,6 +1,7 @@
 import type { GetRentalCustomersItemDto } from "@repo/api-contracts";
 import { Check, Search, X } from "lucide-react";
 import { useState } from "react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -28,6 +29,7 @@ export function RentalCustomerSelector({
 	const [search, setSearch] = useState("");
 	const debouncedSearch = useDebounce(search, 250).trim();
 	const { data, isFetching } = useRentalCustomers({
+		isActive: true,
 		search: debouncedSearch || undefined,
 		page: 1,
 		pageSize: 8,
@@ -42,13 +44,29 @@ export function RentalCustomerSelector({
 
 	return (
 		<Popover open={open} onOpenChange={setOpen}>
-			<PopoverTrigger render={<Button type="button" variant="outline" />}>
+			<PopoverTrigger
+					render={
+						<Button
+							type="button"
+							variant="outline"
+							className="w-full min-w-0 justify-start overflow-hidden"
+						/>
+					}
+				>
 				<span className="min-w-0 flex-1 truncate text-left">
 					{selectedLabel}
 				</span>
+
+				{selectedCustomer ? (
+					<CustomerOnboardingStatusBadge
+						status={selectedCustomer.status}
+						className="shrink-0"
+					/>
+				) : null}
+
 				{value && allowEmpty ? (
 					<X
-						className="size-4 text-muted-foreground"
+						className="size-4 shrink-0 text-muted-foreground"
 						onClick={(event) => {
 							event.stopPropagation();
 							onValueChange("");
@@ -97,6 +115,10 @@ export function RentalCustomerSelector({
 								<span className="block truncate text-muted-foreground text-xs">
 									{customer.email}
 								</span>
+								<CustomerOnboardingStatusBadge
+									status={customer.status}
+									className="mt-1.5"
+								/>
 							</span>
 							{value === customer.id ? <Check className="size-4" /> : null}
 						</button>
@@ -122,4 +144,42 @@ function customerLabel(customer: Customer) {
 	return customer.email
 		? `${customerName(customer)} · ${customer.email}`
 		: customerName(customer);
+}
+
+const onboardingStatusPresentation = {
+	NOT_STARTED: {
+		label: "Perfil sin iniciar",
+		className: "border-muted bg-muted text-muted-foreground",
+	},
+	PENDING: {
+		label: "Perfil pendiente de aprobación",
+		className: "border-amber-200 bg-amber-50 text-amber-800",
+	},
+	APPROVED: {
+		label: "Perfil aprobado",
+		className: "border-emerald-200 bg-emerald-50 text-emerald-700",
+	},
+	REJECTED: {
+		label: "Perfil rechazado",
+		className: "border-red-200 bg-red-50 text-red-700",
+	},
+} satisfies Record<Customer["status"], { label: string; className: string }>;
+
+function CustomerOnboardingStatusBadge({
+	status,
+	className = "",
+}: {
+	status: Customer["status"];
+	className?: string;
+}) {
+	const presentation = onboardingStatusPresentation[status];
+
+	return (
+		<Badge
+			variant="outline"
+			className={`${className} ${presentation.className}`}
+		>
+			{presentation.label}
+		</Badge>
+	);
 }

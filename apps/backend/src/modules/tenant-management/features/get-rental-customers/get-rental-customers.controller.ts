@@ -18,7 +18,7 @@ export class GetRentalCustomersHttpController {
     @CurrentUser() user: AuthUser,
   ): Promise<GetRentalCustomersResponseDto> {
     return this.queryBus.execute<GetRentalCustomersQuery, GetRentalCustomersResult>(
-      new GetRentalCustomersQuery(user.tenantId, dto.status, dto.search, dto.page, dto.pageSize),
+      new GetRentalCustomersQuery(user.tenantId, dto.status, dto.isActive, dto.search, dto.page, dto.pageSize),
     );
   }
 }

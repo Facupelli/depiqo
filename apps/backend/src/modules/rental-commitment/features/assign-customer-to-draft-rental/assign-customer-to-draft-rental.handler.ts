@@ -1,8 +1,10 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { err, ok, Result } from 'neverthrow';
 
-import { PrismaService } from 'src/core/database/prisma.service';
-import { V2RentalCustomerOnboardingStatus } from 'src/generated/prisma/enums';
+import {
+  StaffDraftRentalCustomerEligibilityReason,
+  TenantManagementPublicApi,
+} from 'src/modules/tenant-management/public-api/tenant-management.public-api';
 
 import {
   RentalInvalidFieldError,
@@ -23,43 +25,44 @@ export class AssignCustomerToDraftRentalHandler implements ICommandHandler<
   AssignCustomerToDraftRentalResult
 > {
   constructor(
-    private readonly prisma: PrismaService,
     private readonly rentalRepository: RentalRepository,
+    private readonly tenantManagementApi: TenantManagementPublicApi,
   ) {}
 
   async execute(command: AssignCustomerToDraftRentalCommand): Promise<AssignCustomerToDraftRentalResult> {
+    const context = this.errorContext(command);
     const rental = await this.rentalRepository.findById(command.tenantId, command.rentalId);
 
     if (!rental) {
       return err(
-        assignCustomerToDraftRentalApplicationError('RentalNotFound', `Rental "${command.rentalId}" was not found.`),
+        assignCustomerToDraftRentalApplicationError(
+          'rental-commitment.rental-not-found',
+          `Rental "${command.rentalId}" was not found.`,
+          undefined,
+          context,
+        ),
       );
     }
 
-    // TODO: Replace this cross-module Prisma validation with a tenant-management public API/facade.
-    const customer = await this.prisma.client.v2RentalCustomer.findFirst({
-      where: {
-        id: command.customerId,
-        tenantId: command.tenantId,
-        deletedAt: null,
-        isActive: true,
-        onboardingStatus: V2RentalCustomerOnboardingStatus.APPROVED,
-      },
-      select: { id: true },
+    const customerValidation = await this.tenantManagementApi.validateCustomerForStaffDraftRental({
+      tenantId: command.tenantId,
+      customerId: command.customerId,
     });
 
-    if (!customer) {
+    if (!customerValidation.eligible) {
       return err(
         assignCustomerToDraftRentalApplicationError(
-          'CustomerNotFoundOrNotAssignable',
-          `Customer "${command.customerId}" cannot be assigned to draft rental "${command.rentalId}".`,
+          this.customerEligibilityErrorCode(customerValidation.reason),
+          `Customer "${command.customerId}" cannot be assigned to draft rental "${command.rentalId}" because it is ${customerValidation.reason}.`,
+          undefined,
+          { ...context, customerEligibilityReason: customerValidation.reason },
         ),
       );
     }
 
     const assignedRental = rental.assignCustomer(command.customerId);
     if (assignedRental.isErr()) {
-      return err(this.toApplicationError(assignedRental.error));
+      return err(this.toApplicationError(assignedRental.error, context));
     }
 
     await this.rentalRepository.save(rental);
@@ -67,15 +70,50 @@ export class AssignCustomerToDraftRentalHandler implements ICommandHandler<
     return ok(undefined);
   }
 
-  private toApplicationError(error: unknown): AssignCustomerToDraftRentalApplicationError {
+  private errorContext(command: AssignCustomerToDraftRentalCommand): Record<string, unknown> {
+    return {
+      useCase: 'AssignCustomerToDraftRental',
+      tenantId: command.tenantId,
+      rentalId: command.rentalId,
+      customerId: command.customerId,
+    };
+  }
+
+  private customerEligibilityErrorCode(
+    reason: StaffDraftRentalCustomerEligibilityReason,
+  ): AssignCustomerToDraftRentalApplicationError['code'] {
+    switch (reason) {
+      case 'CustomerNotFoundOrOutsideTenant':
+        return 'rental-commitment.customer-not-found-or-outside-tenant';
+      case 'CustomerDeleted':
+        return 'rental-commitment.customer-deleted';
+      case 'CustomerInactive':
+        return 'rental-commitment.customer-inactive';
+    }
+  }
+
+  private toApplicationError(
+    error: unknown,
+    context: Record<string, unknown>,
+  ): AssignCustomerToDraftRentalApplicationError {
     if (error instanceof RentalMustBeDraftToAssignCustomerError) {
-      return assignCustomerToDraftRentalApplicationError('RentalMustBeDraft', error.message, error);
+      return assignCustomerToDraftRentalApplicationError(
+        'rental-commitment.rental-must-be-draft',
+        error.message,
+        error,
+        context,
+      );
     }
 
     if (error instanceof RentalInvalidFieldError) {
-      return assignCustomerToDraftRentalApplicationError('CustomerNotFoundOrNotAssignable', error.message, error);
+      return assignCustomerToDraftRentalApplicationError(
+        'rental-commitment.invalid-customer',
+        error.message,
+        error,
+        context,
+      );
     }
 
-    return assignCustomerToDraftRentalApplicationError('Unexpected', 'An unexpected error occurred.', error);
+    throw error;
   }
 }
