@@ -58,15 +58,10 @@ export class ManualPricingAdjustmentApplier {
     });
 
     const finalTotal = Money.of(allocation.targetTotal, pricingResult.currency);
-    const finalSubtotal = this.calculateFinalSubtotal({
-      pricingResult,
-      finalTotal,
-    });
 
     return {
       pricingResult: {
         ...pricingResult,
-        subtotal: finalSubtotal.toSnapshotString(),
         total: finalTotal.toSnapshotString(),
         lines: adjustedLines,
       },
@@ -103,14 +98,6 @@ export class ManualPricingAdjustmentApplier {
         reason: manualPricingAdjustment.reason,
       },
     };
-  }
-
-  private calculateFinalSubtotal(input: { pricingResult: PricingResult; finalTotal: Money }): Money {
-    const { pricingResult, finalTotal } = input;
-
-    const discountTotal = Money.of(pricingResult.discountTotal, pricingResult.currency);
-
-    return finalTotal.add(discountTotal);
   }
 
   private assertNever(value: never): never {

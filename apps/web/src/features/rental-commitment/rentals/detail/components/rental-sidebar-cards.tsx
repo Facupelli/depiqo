@@ -305,9 +305,11 @@ function RentalLogisticsCard() {
 						Pedido de Delivery
 					</p>
 					<div className="space-y-1 text-sm text-neutral-700">
-						<p className="font-medium text-neutral-900">
-							{delivery.contactName ?? "Sin contacto"}
-						</p>
+						{delivery.contactName && (
+							<p className="font-medium text-neutral-900">
+								{delivery.contactName}
+							</p>
+						)}
 						{delivery.contactPhone ? <p>{delivery.contactPhone}</p> : null}
 						<p>
 							{delivery.addressLine1}
