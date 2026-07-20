@@ -11,8 +11,8 @@ import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 import { NotFoundPage } from "@/components/not-found-page";
 import { ServiceUnavailablePage } from "@/components/service-unavailable-page";
 import "@/config/client-env";
-import { resolvePublicTenantContext } from "@/modules/tenant-management/resolve-public-tenant-context/resolve-public-tenant-context.function";
 import TanStackQueryDevtools from "@/integrations/tanstack-query/devtools";
+import { resolvePublicTenantContext } from "@/modules/tenant-management/resolve-public-tenant-context/resolve-public-tenant-context.function";
 import appCss from "../styles.css?url";
 
 export interface StorefrontRouterContext {
@@ -48,10 +48,7 @@ export const Route = createRootRouteWithContext<StorefrontRouterContext>()({
 			},
 			{ title: "Depiqo | Equipment Rental" },
 		],
-		links: [
-			{ rel: "stylesheet", href: appCss },
-			{ rel: "icon", href: "/favicon.svg", type: "image/svg+xml" },
-		],
+		links: [{ rel: "stylesheet", href: appCss }],
 	}),
 	shellComponent: RootDocument,
 	notFoundComponent: () => <NotFoundPage />,
