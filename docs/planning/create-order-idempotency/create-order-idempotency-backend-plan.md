@@ -597,7 +597,7 @@ Even though this plan is backend-focused, backend should document expected clien
 
 Likely touched files when frontend work is implemented later:
 
-- `apps/web/src/**` checkout/cart order submission hooks or services
+- `apps/backoffice/src/**` checkout/cart order submission hooks or services
 - shared API client files if present
 - storefront cart/checkout submit components
 

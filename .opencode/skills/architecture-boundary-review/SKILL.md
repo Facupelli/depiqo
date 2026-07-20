@@ -20,5 +20,5 @@ Use this skill when a change risks violating intended structure.
 
 - root review expectations: `docs/agent-rules/review.md`
 - backend boundaries: `apps/backend/docs/agent-rules/architecture.md`
-- web boundaries: `apps/web/docs/agent-rules/architecture.md`
+- web boundaries: `apps/backoffice/docs/agent-rules/architecture.md`
 - shared package rules: `packages/docs/agent-rules/shared-packages.md`

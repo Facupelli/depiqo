@@ -1,6 +1,6 @@
 # Web Architecture
 
-Treat `apps/web/` as a route-driven frontend app with TanStack Start routing and feature-oriented UI.
+Treat `apps/backoffice/` as a route-driven frontend app with TanStack Start routing and feature-oriented UI.
 
 Follow the surrounding feature structure before introducing a new pattern. For backend-backed/backoffice work, use `src/features/` and follow nearby feature slice conventions.
 

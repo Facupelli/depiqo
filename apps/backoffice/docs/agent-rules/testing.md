@@ -8,7 +8,7 @@ Common commands:
 - `pnpm check` for formatting, linting, and import organization together
 - `pnpm test` for the default Vitest run
 - `pnpm build` for routing, server-function, config, or production-sensitive changes
-- workspace `pnpm build` or `pnpm lint` when a change in `apps/web/` also modifies shared packages under `packages/`
+- workspace `pnpm build` or `pnpm lint` when a change in `apps/backoffice/` also modifies shared packages under `packages/`
 
 Focused Vitest examples:
 
@@ -25,7 +25,7 @@ If a change touches `@repo/api-contracts` or `@repo/schemas`, treat it as a cros
 
 Use `chrome-devtools-axi` for end-to-end browser verification. Protected backoffice routes redirect unauthenticated users to `/admin/login`.
 
-Local credentials are stored in the ignored `apps/web/.env.agent.local` file:
+Local credentials are stored in the ignored `apps/backoffice/.env.agent.local` file:
 
 * `AXI_ADMIN_EMAIL`
 * `AXI_ADMIN_PASSWORD`
@@ -33,7 +33,7 @@ Local credentials are stored in the ignored `apps/web/.env.agent.local` file:
 Never print, inspect, commit, or copy their values into tracked files. When authentication is required, obtain fresh element references with `snapshot`, then source the credentials and fill the form within the same shell invocation:
 
 ```bash
-source apps/web/.env.agent.local
+source apps/backoffice/.env.agent.local
 
 npx -y chrome-devtools-axi fill @<email-ref> "$AXI_ADMIN_EMAIL"
 npx -y chrome-devtools-axi fill @<password-ref> "$AXI_ADMIN_PASSWORD"

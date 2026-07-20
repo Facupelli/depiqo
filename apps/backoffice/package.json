@@ -1,5 +1,5 @@
 {
-  "name": "@repo/web",
+  "name": "@repo/backoffice",
   "private": true,
   "type": "module",
   "imports": {

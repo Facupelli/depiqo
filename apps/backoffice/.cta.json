@@ -1,5 +1,5 @@
 {
-  "projectName": "web",
+  "projectName": "backoffice",
   "mode": "file-router",
   "typescript": true,
   "packageManager": "pnpm",

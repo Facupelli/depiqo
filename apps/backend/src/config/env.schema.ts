@@ -20,7 +20,7 @@ const notificationsMutedChannelsByEnvSchema = z.preprocess(
 );
 
 export const EnvSchema = z.object({
-  NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
+  NODE_ENV: z.enum(['development', 'production', 'staging','test']).default('development'),
   PORT: z.coerce.number().default(3000),
 
   DATABASE_URL: z.url(),
@@ -33,12 +33,6 @@ export const EnvSchema = z.object({
   STOREFRONT_TENANT_JWT_AUDIENCE: z.string(),
 
   SESSION_SECRET: z.string(),
-
-  JWT_SECRET: z.string(),
-  JWT_EXPIRATION_TIME_SECONDS: z.coerce.number().default(3600),
-
-  JWT_REFRESH_SECRET: z.string(),
-  JWT_REFRESH_EXPIRATION_TIME_SECONDS: z.coerce.number().default(604800), // 7 days
 
   GOOGLE_CLIENT_ID: z.string(),
   GOOGLE_CLIENT_SECRET: z.string(),

@@ -163,7 +163,7 @@ Goal: allow staff to enable request-to-book safely.
 
 Tasks:
 
-- [ ] Remove the disabled state from the `Request to book` option in `apps/web/src/features/tenant/components/tenant-config-form.tsx`.
+- [ ] Remove the disabled state from the `Request to book` option in `apps/backoffice/src/features/tenant/components/tenant-config-form.tsx`.
 - [ ] Add explanatory copy:
   - instant-book confirms and reserves inventory immediately
   - request-to-book creates a pending request; inventory is not reserved until staff approves it
@@ -302,7 +302,7 @@ Tasks:
 Verification commands:
 
 - Backend-focused changes: run app-local backend tests/lint from `apps/backend`.
-- Web-focused changes: run app-local web tests/lint/check from `apps/web`.
+- Web-focused changes: run app-local web tests/lint/check from `apps/backoffice`.
 - Shared contract changes: run workspace build/lint from repository root.
 
 ## Step 10 - Future: Stale Request Cleanup

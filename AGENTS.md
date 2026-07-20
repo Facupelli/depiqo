@@ -19,7 +19,8 @@ Top-level structure:
 When working inside an app, follow that app's local `AGENTS.md` for package-specific guidance:
 
 - `apps/backend/AGENTS.md`
-- `apps/web/AGENTS.md`
+- `apps/backoffice/AGENTS.md`
+- `apps/storefront/AGENTS.md`
 
 When working inside shared packages, follow `packages/AGENTS.md` and any package-local `AGENTS.md` files.
 

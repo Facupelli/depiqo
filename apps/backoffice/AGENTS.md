@@ -2,7 +2,7 @@
 
 Frontend app for the equipment rental platform built with TanStack Start, React 19, TypeScript, Tailwind CSS v4, Vitest, and Biome.
 
-Run commands from `apps/web/` unless there is a clear reason to do otherwise.
+Run commands from `apps/backoffice/` unless there is a clear reason to do otherwise.
 
 Use `pnpm`.
 

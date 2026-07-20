@@ -11,7 +11,7 @@
 
 ## 1. Repository Structure: Monorepo
 
-**Decision:** Use a Monorepo (managed via Turborepo/pnpm) containing `apps/backend`, `apps/web`, and shared packages.
+**Decision:** Use a Monorepo (managed via Turborepo/pnpm) containing `apps/backend`, `apps/backoffice`, `apps/storefront`, and shared packages.
 **Why:**
 
 - **End-to-End Type Safety:** Allows sharing TypeScript interfaces (DTOs) between backend and frontend. Changes in the API contract trigger compile-time errors on the client, eliminating "drift" bugs.
