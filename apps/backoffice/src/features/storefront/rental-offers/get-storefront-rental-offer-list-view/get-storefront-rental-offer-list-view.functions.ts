@@ -5,7 +5,7 @@ import { getStorefrontRentalOfferListView } from "./get-storefront-rental-offer-
 export const getStorefrontRentalOfferListViewFn = createServerFn({
 	method: "GET",
 })
-	.inputValidator((data) =>
+	.validator((data) =>
 		GetStorefrontRentalOfferListViewInputSchema.parse(data),
 	)
 	.handler(async ({ data }) => getStorefrontRentalOfferListView(data));

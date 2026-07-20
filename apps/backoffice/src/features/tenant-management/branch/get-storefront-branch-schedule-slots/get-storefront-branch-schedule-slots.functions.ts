@@ -14,7 +14,7 @@ const GetStorefrontBranchScheduleSlotsInputSchema = z.object({
 export const getStorefrontBranchScheduleSlotsFn = createServerFn({
 	method: "GET",
 })
-	.inputValidator((data) =>
+	.validator((data) =>
 		GetStorefrontBranchScheduleSlotsInputSchema.parse(data),
 	)
 	.handler(async ({ data }) =>

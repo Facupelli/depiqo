@@ -1,6 +1,15 @@
+import {
+	Popover,
+	PopoverContent,
+	PopoverDescription,
+	PopoverHeader,
+	PopoverTitle,
+	PopoverTrigger,
+} from "@repo/ui/components/popover";
 import { Skeleton } from "@repo/ui/components/skeleton";
-import { Tag } from "lucide-react";
-import { formatCurrency } from "@/shared/utils/price.utils";
+import { Switch } from "@repo/ui/components/switch";
+import { CircleHelp, Tag } from "lucide-react";
+import { formatCartMoney, parseCartMoneyAmount } from "../cart-money.utils";
 import {
 	useCartPeriodContext,
 	useCartPricingContext,
@@ -18,6 +27,9 @@ export function PriceBreakdown() {
 	} = useCartPricingContext();
 	const currency = pricing?.currency ?? config.currency;
 	const locale = pricing?.locale ?? config.locale;
+	const insuranceRatePercent = parseCartMoneyAmount(
+		pricing?.insurance.ratePercent,
+	);
 
 	return (
 		<section className="rounded-xl border bg-card p-5">
@@ -58,27 +70,30 @@ export function PriceBreakdown() {
 											className="mt-1 inline-flex items-center gap-1 rounded bg-emerald-50 px-2 py-1 text-[11px] font-semibold text-emerald-700"
 										>
 											<Tag className="size-3" /> {adjustment.name} -
-											{formatCurrency(
-												Number(adjustment.amount),
-												currency,
-												locale,
-											)}
+											{formatCartMoney(adjustment.amount, currency, locale)}
 										</span>
 									))}
 								</div>
 								<div className="shrink-0 text-right">
 									{Number(line.discountTotal) > 0 && (
 										<p className="text-xs text-muted-foreground line-through">
-											{formatCurrency(Number(line.subtotal), currency, locale)}
+											{formatCartMoney(line.subtotal, currency, locale)}
 										</p>
 									)}
 									<p className="font-semibold">
-										{formatCurrency(Number(line.total), currency, locale)}
+										{formatCartMoney(line.total, currency, locale)}
 									</p>
 								</div>
 							</div>
 						))}
 					</div>
+					{config.insuranceEnabled && (
+						<InsuranceToggleRow
+							checked={insuranceSelected}
+							onCheckedChange={setInsuranceSelected}
+							ratePercent={insuranceRatePercent}
+						/>
+					)}
 					<div className="border-t pt-4">
 						<MoneyRow
 							label="Subtotal antes de descuentos"
@@ -89,10 +104,11 @@ export function PriceBreakdown() {
 						{Number(pricing.discountTotal) > 0 && (
 							<MoneyRow
 								label="Descuentos"
-								amount={`-${pricing.discountTotal}`}
+								amount={pricing.discountTotal}
 								currency={currency}
 								locale={locale}
 								tone="success"
+								prefix="-"
 							/>
 						)}
 						<MoneyRow
@@ -117,7 +133,7 @@ export function PriceBreakdown() {
 					<div className="flex items-baseline justify-between border-t pt-4">
 						<strong>Total</strong>
 						<strong className="text-2xl">
-							{formatCurrency(Number(pricing.total), currency, locale)}
+							{formatCartMoney(pricing.total, currency, locale)}
 						</strong>
 					</div>
 				</div>
@@ -126,16 +142,7 @@ export function PriceBreakdown() {
 					El precio todavía no está disponible.
 				</p>
 			)}
-			{config.insuranceEnabled && (
-				<label className="mt-5 flex cursor-pointer items-center gap-3 border-t pt-4 text-sm">
-					<input
-						type="checkbox"
-						checked={insuranceSelected}
-						onChange={(event) => setInsuranceSelected(event.target.checked)}
-					/>
-					Incluir seguro
-				</label>
-			)}
+			
 		</section>
 	);
 }
@@ -155,19 +162,94 @@ function MoneyRow({
 	currency,
 	locale,
 	tone = "default",
+	prefix = "",
 }: {
 	label: string;
 	amount: string;
 	currency: string;
 	locale: string;
 	tone?: "default" | "success";
+	prefix?: string;
 }) {
 	return (
 		<div
 			className={`mt-2 flex justify-between gap-4 ${tone === "success" ? "text-emerald-700" : "text-muted-foreground"}`}
 		>
 			<span>{label}</span>
-			<span>{formatCurrency(Number(amount), currency, locale)}</span>
+			<span>
+				{prefix}
+				{formatCartMoney(amount, currency, locale)}
+			</span>
+		</div>
+	);
+}
+
+function InsuranceToggleRow({
+	checked,
+	onCheckedChange,
+	ratePercent,
+}: {
+	checked: boolean;
+	onCheckedChange: (checked: boolean) => void;
+	ratePercent?: number;
+}) {
+	return (
+		<div className="mt-5 flex items-center gap-4 border-t pt-4">
+			<Switch
+				checked={checked}
+				onCheckedChange={onCheckedChange}
+				aria-label="Activar seguro de equipos"
+			/>
+			<div className="flex min-w-0 items-center gap-1.5">
+				<span className="text-sm font-medium">
+					Seguro de equipos{ratePercent == null ? "" : ` (${ratePercent}%)`}
+				</span>
+				<Popover>
+					<PopoverTrigger
+						render={
+							<button
+								type="button"
+								aria-label="Más información sobre el seguro de equipos"
+								className="grid size-7 shrink-0 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+							>
+								<CircleHelp className="size-4" />
+							</button>
+						}
+					/>
+					<PopoverContent
+						align="start"
+						sideOffset={8}
+						className="w-[min(24rem,calc(100vw-2rem))] gap-3 bg-foreground p-4 text-background"
+					>
+						<PopoverHeader className="gap-2">
+							<PopoverTitle className="text-sm text-background">
+								Seguro de equipos
+							</PopoverTitle>
+							<PopoverDescription className="space-y-3 text-xs leading-5 text-background/80">
+								<p>
+									Protege tu pedido ante imprevistos durante el alquiler. El
+									cargo{" "}
+									{ratePercent == null
+										? "se calcula sobre el"
+										: `es el ${ratePercent}% del`}{" "}
+									subtotal antes de descuentos y se suma al total final.
+								</p>
+								<p>
+									No cubre daños por mal uso, impericia o negligencia; daños
+									eléctricos, magnéticos, estéticos, de software o por defectos
+									latentes; hurto, estafa, pérdida, apropiación indebida ni
+									contaminación.
+								</p>
+								<p>
+									Durante el transporte al rodaje cubre accidentes del vehículo
+									portador. Durante el montaje y rodaje cubre robo, incendio,
+									roturas y daños por agua.
+								</p>
+							</PopoverDescription>
+						</PopoverHeader>
+					</PopoverContent>
+				</Popover>
+			</div>
 		</div>
 	);
 }

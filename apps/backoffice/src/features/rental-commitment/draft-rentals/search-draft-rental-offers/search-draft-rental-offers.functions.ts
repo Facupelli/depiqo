@@ -5,5 +5,5 @@ import { searchDraftRentalOffers } from "./search-draft-rental-offers.server";
 export const searchDraftRentalOffersFn = createServerFn({
 	method: "GET",
 })
-	.inputValidator((data) => SearchDraftRentalOffersInputSchema.parse(data))
+	.validator((data) => SearchDraftRentalOffersInputSchema.parse(data))
 	.handler(async ({ data }) => searchDraftRentalOffers(data));

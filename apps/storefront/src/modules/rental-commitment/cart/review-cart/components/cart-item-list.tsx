@@ -1,7 +1,7 @@
 import { Button } from "@repo/ui/components/button";
 import { Minus, Plus, Trash2 } from "lucide-react";
 import { buildR2PublicUrl } from "@/lib/r2-public-url";
-import { formatCurrency } from "@/shared/utils/price.utils";
+import { formatCartMoney } from "../cart-money.utils";
 import { useCartContext, useCartPricingContext } from "../cart-page.context";
 
 export function CartItemList() {
@@ -39,8 +39,8 @@ export function CartItemList() {
 								</p>
 								{line && pricing?.currency && (
 									<p className="mt-2 text-sm font-bold">
-										{formatCurrency(
-											Number(line.total),
+										{formatCartMoney(
+											line.total,
 											pricing.currency,
 											pricing.locale,
 										)}

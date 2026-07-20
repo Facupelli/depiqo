@@ -3,5 +3,5 @@ import { createServerFn } from "@tanstack/react-start";
 import { calculateCartPrice } from "./calculate-cart-price.api";
 
 export const calculateCartPriceFn = createServerFn({ method: "POST" })
-	.inputValidator((data) => CalculateCartPriceBodySchema.parse(data))
+	.validator((data) => CalculateCartPriceBodySchema.parse(data))
 	.handler(({ data }) => calculateCartPrice(data));

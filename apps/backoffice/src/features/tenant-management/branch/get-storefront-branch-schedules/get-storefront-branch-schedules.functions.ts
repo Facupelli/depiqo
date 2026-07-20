@@ -10,7 +10,7 @@ const GetStorefrontBranchSchedulesInputSchema = z.object({
 export const getStorefrontBranchSchedulesFn = createServerFn({
 	method: "GET",
 })
-	.inputValidator((data) => GetStorefrontBranchSchedulesInputSchema.parse(data))
+	.validator((data) => GetStorefrontBranchSchedulesInputSchema.parse(data))
 	.handler(async ({ data }) =>
 		getStorefrontBranchSchedules(data.params.branchId),
 	);
