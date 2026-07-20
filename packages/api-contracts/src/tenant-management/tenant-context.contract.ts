@@ -4,6 +4,9 @@ import type { ApiContract } from "../api-contract";
 
 export const StorefrontTenantScopeSchema = z.literal("public-storefront");
 
+export const STOREFRONT_TENANT_CONTEXT_HEADER_NAME =
+  "x-storefront-tenant-context";
+
 export const PublicStorefrontTenantContextSchema = z.object({
   slug: z.string().min(1),
   name: z.string().min(1),

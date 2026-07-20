@@ -1,12 +1,14 @@
-import { StorefrontTenantTokenPayloadSchema, type StorefrontTenantTokenPayload } from '@repo/api-contracts';
+import {
+  STOREFRONT_TENANT_CONTEXT_HEADER_NAME,
+  StorefrontTenantTokenPayloadSchema,
+  type StorefrontTenantTokenPayload,
+} from '@repo/api-contracts';
 import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { jwtVerify } from 'jose';
 import { Request } from 'express';
 import { Env } from 'src/config/env.schema';
 import { StorefrontTenantContext } from '../tenant-context.contract';
-
-const STOREFRONT_TENANT_CONTEXT_HEADER_NAME = 'x-storefront-tenant-context';
 
 export type StorefrontTenantRequest = Request & {
   storefrontTenantContext: StorefrontTenantContext;
@@ -47,6 +49,8 @@ export class StorefrontTenantContextGuard implements CanActivate {
 
     try {
       const result = await jwtVerify(token, encodedSecret, {
+        algorithms: ['HS256'],
+        typ: 'JWT',
         issuer,
         audience,
       });

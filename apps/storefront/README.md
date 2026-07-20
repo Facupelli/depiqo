@@ -25,16 +25,29 @@ The development server listens on `http://localhost:3002`.
 Copy `.env.example` to `.env.local` for local development and provide:
 
 - `BACKEND_URL`
+- `BFF_INTERNAL_TOKEN`
+- `STOREFRONT_TENANT_JWT_SECRET`
+- `STOREFRONT_TENANT_JWT_ISSUER`
+- `STOREFRONT_TENANT_JWT_AUDIENCE`
 - `VITE_R2_PUBLIC_URL`
 - `VITE_BRANDING_R2_PUBLIC_URL`
 - `VITE_GOOGLE_CLIENT_ID`
 - `VITE_SHARED_AUTH_ORIGIN`
 
-Server and client variables are validated independently. `BACKEND_URL` must contain only a scheme, hostname, and optional port.
+Server and client variables are validated independently. `BACKEND_URL` must contain only a scheme, hostname, and optional port. `BFF_INTERNAL_TOKEN` and `STOREFRONT_TENANT_JWT_SECRET` are server-only credentials and must be configured as Cloudflare Worker secrets, never as Wrangler variables or `VITE_` variables. The JWT issuer and audience are regular server-only variables.
+
+For a deployed Worker, provision credentials outside source control:
+
+```bash
+wrangler secret put BFF_INTERNAL_TOKEN
+wrangler secret put STOREFRONT_TENANT_JWT_SECRET
+```
 
 ## Health check
 
-Open `/health`. The status is rendered by the Worker, while the hydration control verifies that React attached successfully in the browser.
+Open `/health`. The status is rendered by the Worker, while the hydration control verifies that React attached successfully in the browser. This route bypasses tenant resolution.
+
+All other application requests resolve their normalized `Host` through the trusted backend tenant resolver. Unknown and admin hosts are rejected before storefront routes render. Tenant-scoped backend calls use a short-lived server-signed tenant-context token.
 
 ## Deployment
 

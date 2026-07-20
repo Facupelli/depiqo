@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { ShellPage, ShellPanel, ShellRule } from "@/components/shell-page";
-import { getHealthStatus } from "@/features/health/get-health-status.function";
+import { getHealthStatus } from "@/modules/health/get-health-status.function";
 
 export const Route = createFileRoute("/health")({
 	loader: () => getHealthStatus(),
@@ -32,10 +32,7 @@ function HealthPage() {
 				<p className="mb-5 font-mono text-[0.7rem] tracking-[0.14em] text-[#59584e] uppercase">
 					Storefront de Depiqo
 				</p>
-				<h1
-					id="health-title"
-					className="max-w-[12ch] font-serif text-5xl leading-[0.94] font-normal tracking-[-0.055em] sm:text-7xl lg:text-8xl"
-				>
+				<h1 className="max-w-[12ch] font-serif text-5xl leading-[0.94] font-normal tracking-[-0.055em] sm:text-7xl lg:text-8xl">
 					El servicio está operativo.
 				</h1>
 				<p className="my-8 max-w-lg font-sans text-[0.95rem] leading-7 text-[#59584e]">

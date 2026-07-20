@@ -8,10 +8,7 @@ export function ServiceUnavailablePage() {
 					Servicio no disponible
 				</p>
 				<ShellRule error />
-				<h1
-					id="service-error-title"
-					className="max-w-[12ch] font-serif text-5xl leading-[0.94] font-normal tracking-[-0.055em] sm:text-7xl lg:text-8xl"
-				>
+				<h1 className="max-w-[12ch] font-serif text-5xl leading-[0.94] font-normal tracking-[-0.055em] sm:text-7xl lg:text-8xl">
 					No pudimos cargar esta página.
 				</h1>
 				<p className="my-8 max-w-lg font-sans text-[0.95rem] leading-7 text-[#59584e]">

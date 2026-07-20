@@ -1,3 +1,4 @@
+import { createServerOnlyFn } from "@tanstack/react-start";
 import { z } from "zod";
 
 const backendOriginSchema = z.url().refine((value) => {
@@ -14,8 +15,18 @@ const backendOriginSchema = z.url().refine((value) => {
 
 const serverEnvSchema = z.object({
 	BACKEND_URL: backendOriginSchema,
+	BFF_INTERNAL_TOKEN: z.string().min(1),
+	STOREFRONT_TENANT_JWT_SECRET: z.string().min(1),
+	STOREFRONT_TENANT_JWT_ISSUER: z.string().min(1),
+	STOREFRONT_TENANT_JWT_AUDIENCE: z.string().min(1),
 });
 
-export function validateServerEnvironment() {
-	serverEnvSchema.parse(process.env);
+export type ServerEnvironment = z.infer<typeof serverEnvSchema>;
+
+export const getServerEnvironment = createServerOnlyFn(
+	(): ServerEnvironment => serverEnvSchema.parse(process.env),
+);
+
+export function validateServerEnvironment(): void {
+	getServerEnvironment();
 }

@@ -11,7 +11,7 @@ export function getRouter() {
 
 	const router = createTanStackRouter({
 		routeTree,
-		context: { queryClient },
+		context: { queryClient, tenantContext: null },
 		Wrap: ({ children }) => (
 			<TanstackQueryProvider queryClient={queryClient}>
 				{children}
