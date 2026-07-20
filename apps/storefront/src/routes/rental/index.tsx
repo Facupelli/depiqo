@@ -5,7 +5,6 @@ import {
 	useNavigate,
 } from "@tanstack/react-router";
 import { Suspense } from "react";
-import { storefrontBranchQueries } from "@/modules/tenant-management/branches/branches.queries";
 import { RentalFilters } from "@/modules/catalog/components/catalog-filters";
 import {
 	ProductCatalog,
@@ -23,13 +22,17 @@ import {
 	rentalCatalogSearchSchema,
 } from "@/modules/catalog/rental-catalog-search";
 import { storefrontRentalOfferListViewQueries } from "@/modules/catalog/storefront-rental-offer-list-view.queries";
+import { CartPopover } from "@/modules/rental-commitment/cart/view-cart/cart-popover";
+import { storefrontBranchQueries } from "@/modules/tenant-management/branches/branches.queries";
 import { getTenantBranding } from "@/modules/tenant-management/tenant-branding/tenant-branding";
 
 export const Route = createFileRoute("/rental/")({
 	validateSearch: rentalCatalogSearchSchema,
 	loaderDeps: ({ search }) => search,
 	loader: async ({ context: { queryClient, tenantContext }, deps }) => {
-		if (!tenantContext || tenantContext.face !== "storefront") {throw notFound();}
+		if (!tenantContext || tenantContext.face !== "storefront") {
+			throw notFound();
+		}
 
 		const branches = await queryClient.ensureQueryData(
 			storefrontBranchQueries.list(),
@@ -64,7 +67,7 @@ export const Route = createFileRoute("/rental/")({
 				branding,
 			};
 		}
-		
+
 		return { mode: "no-branches" as const, branding };
 	},
 	head: ({ loaderData }) => ({
@@ -95,7 +98,7 @@ function RentalPage() {
 	return (
 		<div className="flex min-h-screen flex-col bg-gray-50">
 			<header className="sticky top-0 z-10 border-b bg-white">
-				<div className="container mx-auto flex h-16 items-center px-4">
+				<div className="container mx-auto flex h-16 items-center gap-4 px-4">
 					{loaderData.branding.logoSrc ? (
 						<img
 							src={loaderData.branding.logoSrc}
@@ -107,6 +110,11 @@ function RentalPage() {
 							{loaderData.branding.tenantName}
 						</span>
 					)}
+					<div className="ml-auto">
+						{loaderData.mode === "catalog" && (
+							<CartPopover search={loaderData.search} />
+						)}
+					</div>
 				</div>
 			</header>
 			{loaderData.mode === "catalog" ? (

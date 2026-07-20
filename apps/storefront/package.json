@@ -38,7 +38,8 @@
     "react-error-boundary": "^6.1.1",
     "tailwind-merge": "^3.6.0",
     "tailwindcss": "^4.3.0",
-    "zod": "^4.4.3"
+    "zod": "^4.4.3",
+    "zustand": "^5.0.13"
   },
   "devDependencies": {
     "@biomejs/biome": "2.2.4",

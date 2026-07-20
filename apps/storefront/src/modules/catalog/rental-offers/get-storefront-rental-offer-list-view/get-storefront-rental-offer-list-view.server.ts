@@ -4,9 +4,9 @@ import type {
 	GetStorefrontRentalOffersPricingItemDto,
 	GetStorefrontRentalOffersResponseDto,
 } from "@repo/api-contracts";
+import { getStorefrontRentalOfferAvailability } from "@/modules/catalog/get-storefront-rental-offer-availability/get-storefront-rental-offer-availability.api";
 import { getStorefrontRentalOffers } from "@/modules/catalog/rental-offers/get-storefront-rental-offers/get-storefront-rental-offers.api";
 import { getStorefrontRentalOffersPricing } from "@/modules/pricing/rental-offer-pricings/get-storefront-rental-offers-pricing/get-storefront-rental-offers-pricing.api";
-import { getStorefrontRentalOfferAvailability } from "@/modules/catalog/get-storefront-rental-offer-availability/get-storefront-rental-offer-availability.api";
 import type {
 	GetStorefrontRentalOfferListViewInputDto,
 	GetStorefrontRentalOfferListViewResponseDto,

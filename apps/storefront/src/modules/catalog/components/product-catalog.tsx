@@ -1,4 +1,5 @@
 import { Badge } from "@repo/ui/components/badge";
+import { Button } from "@repo/ui/components/button";
 import {
 	Card,
 	CardFooter,
@@ -15,11 +16,13 @@ import {
 	PaginationPrevious,
 } from "@repo/ui/components/pagination";
 import { Skeleton } from "@repo/ui/components/skeleton";
-import type { StorefrontRentalOfferListViewItemDto } from "@/modules/catalog/rental-offers/get-storefront-rental-offer-list-view/get-storefront-rental-offer-list-view.schema";
-import type { RentalCatalogSearch } from "@/modules/catalog/rental-catalog-search";
-import { useStorefrontRentalOfferListView } from "@/modules/catalog/storefront-rental-offer-list-view.queries";
-import { usePublicTenantConfig } from "@/modules/tenant-management/tenant/tenant.queries";
+import { Minus, Plus, ShoppingBag } from "lucide-react";
 import { buildR2PublicUrl } from "@/lib/r2-public-url";
+import type { RentalCatalogSearch } from "@/modules/catalog/rental-catalog-search";
+import type { StorefrontRentalOfferListViewItemDto } from "@/modules/catalog/rental-offers/get-storefront-rental-offer-list-view/get-storefront-rental-offer-list-view.schema";
+import { useStorefrontRentalOfferListView } from "@/modules/catalog/storefront-rental-offer-list-view.queries";
+import { useRentalOfferCartState } from "@/modules/rental-commitment/cart/add-rental-offer/use-rental-offer-cart-state";
+import { usePublicTenantConfig } from "@/modules/tenant-management/tenant/tenant.queries";
 import { formatCurrency } from "@/shared/utils/price.utils";
 import { CategoryFilter, SearchFilter } from "./product-catalog-filters";
 
@@ -70,6 +73,7 @@ export function ProductCatalog({
 							key={rentalOffer.id}
 							product={rentalOffer}
 							locale={tenantPublicConfig.locale}
+							branchId={search.branchId}
 						/>
 					))}
 				</div>
@@ -102,6 +106,7 @@ export function ProductCatalog({
 							key={rentalOffer.id}
 							product={rentalOffer}
 							locale={tenantPublicConfig.locale}
+							branchId={search.branchId}
 						/>
 					))}
 				</div>
@@ -123,22 +128,18 @@ export function ProductCatalog({
 function ProductCard({
 	product,
 	locale,
+	branchId,
 }: {
 	product: StorefrontRentalOfferListViewItemDto;
 	locale: string | undefined;
+	branchId: string;
 }) {
+	const cart = useRentalOfferCartState(branchId, product);
 	const unitPrice = product.pricing
 		? Number(product.pricing.ratePlan.tiers[0].pricePerUnit)
 		: null;
 	const displayCurrency = product.pricing?.ratePlan.currency;
 	const productImage = buildR2PublicUrl(product.image, "catalog");
-	const availabilityLabel =
-		product.availableCount === null
-			? null
-			: product.availableCount > 0
-				? `${product.availableCount} disponibles`
-				: "No disponible para este periodo";
-
 	return (
 		<Card className="overflow-hidden rounded-xs py-0 pb-6">
 			<div className="aspect-4/3 bg-gray-100 relative overflow-hidden">
@@ -181,10 +182,41 @@ function ProductCard({
 						<span className="text-sm text-muted-foreground">Contactanos</span>
 					)}
 				</div>
-				{availabilityLabel && (
-					<p className="max-w-36 text-right text-xs text-muted-foreground">
-						{availabilityLabel}
-					</p>
+				{cart.isInCart ? (
+					<div className="flex items-center gap-1 rounded-full border bg-background p-1">
+						<Button
+							type="button"
+							variant="ghost"
+							size="icon-sm"
+							aria-label="Disminuir cantidad"
+							onClick={cart.decrement}
+						>
+							<Minus />
+						</Button>
+						<span className="min-w-6 text-center text-sm font-semibold">
+							{cart.quantity}
+						</span>
+						<Button
+							type="button"
+							variant="ghost"
+							size="icon-sm"
+							aria-label="Aumentar cantidad"
+							disabled={!cart.canIncrement}
+							onClick={cart.increment}
+						>
+							<Plus />
+						</Button>
+					</div>
+				) : (
+					<Button
+						type="button"
+						size="sm"
+						disabled={cart.unavailable}
+						onClick={cart.add}
+						className="gap-2"
+					>
+						<ShoppingBag /> Agregar
+					</Button>
 				)}
 			</CardFooter>
 		</Card>
