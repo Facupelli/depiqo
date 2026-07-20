@@ -4,14 +4,14 @@ import type {
 } from "@repo/api-contracts";
 import { Search, X } from "lucide-react";
 import { useId } from "react";
-import { Input } from "@/components/ui/input";
+import { Input } from "@repo/ui/components/input";
 import {
 	Select,
 	SelectContent,
 	SelectItem,
 	SelectTrigger,
 	SelectValue,
-} from "@/components/ui/select";
+} from "@repo/ui/components/select";
 
 export interface EquipmentTypeSummariesFilterValue {
 	search?: string;

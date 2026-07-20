@@ -2,27 +2,27 @@ import type { GetRentableItemDetailResponseDto } from "@repo/api-contracts";
 import { useForm } from "@tanstack/react-form";
 import { ArrowLeft, CircleDollarSign, Plus } from "lucide-react";
 import { useId, useState } from "react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@repo/ui/components/button";
 import {
 	Dialog,
 	DialogContent,
 	DialogDescription,
 	DialogHeader,
 	DialogTitle,
-} from "@/components/ui/dialog";
+} from "@repo/ui/components/dialog";
 import {
 	Field,
 	FieldError,
 	FieldGroup,
 	FieldLabel,
-} from "@/components/ui/field";
+} from "@repo/ui/components/field";
 import {
 	Select,
 	SelectContent,
 	SelectItem,
 	SelectTrigger,
 	SelectValue,
-} from "@/components/ui/select";
+} from "@repo/ui/components/select";
 import type { AttachRatePlanToRentalOfferRatePlanOption } from "@/features/pricing/rental-offer-pricings/attach-rate-plan-to-rental-offer/attach-rate-plan-to-rental-offer-form";
 import { AttachRatePlanToRentalOfferForm } from "@/features/pricing/rental-offer-pricings/attach-rate-plan-to-rental-offer/attach-rate-plan-to-rental-offer-form";
 import { useBranches } from "@/features/tenant-management/branch/branch.queries";

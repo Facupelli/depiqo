@@ -9,10 +9,10 @@ import {
 } from "lucide-react";
 import { ErrorBoundary, type FallbackProps } from "react-error-boundary";
 import { PageBreadcrumb } from "@/components/detail-id-breadcrumb";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@repo/ui/components/badge";
+import { Button } from "@repo/ui/components/button";
+import { Card, CardContent, CardHeader } from "@repo/ui/components/card";
+import { Skeleton } from "@repo/ui/components/skeleton";
 import {
 	ownerQueries,
 	useOwnerDetail,

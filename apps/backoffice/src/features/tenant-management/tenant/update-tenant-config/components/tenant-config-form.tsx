@@ -3,9 +3,9 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { CircleHelp } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Field, FieldError, FieldLabel } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
+import { Button } from "@repo/ui/components/button";
+import { Field, FieldError, FieldLabel } from "@repo/ui/components/field";
+import { Input } from "@repo/ui/components/input";
 import {
 	Popover,
 	PopoverContent,
@@ -13,15 +13,15 @@ import {
 	PopoverHeader,
 	PopoverTitle,
 	PopoverTrigger,
-} from "@/components/ui/popover";
+} from "@repo/ui/components/popover";
 import {
 	Select,
 	SelectContent,
 	SelectItem,
 	SelectTrigger,
 	SelectValue,
-} from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
+} from "@repo/ui/components/select";
+import { Switch } from "@repo/ui/components/switch";
 import { ProblemDetailsError } from "@/shared/errors";
 import { tenantQueries } from "../../tenant.queries";
 import { useUpdateTenantConfig } from "../update-tenant-config.mutation";

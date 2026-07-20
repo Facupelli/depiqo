@@ -6,7 +6,7 @@ import {
 } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
-import { FieldError } from "@/components/ui/field";
+import { FieldError } from "@repo/ui/components/field";
 import { finalizeCustomerGoogleLogin } from "@/features/tenant-management/auth/customer-google-finalize/customer-google-finalize.api";
 import {
 	getPortalAuthRedirectTarget,

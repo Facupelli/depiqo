@@ -1,12 +1,12 @@
 import type { AuthCustomerDto } from "@repo/api-contracts";
 import { useNavigate } from "@tanstack/react-router";
 import { LogOut, User } from "lucide-react";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button, buttonVariants } from "@repo/ui/components/button";
 import {
 	Popover,
 	PopoverContent,
 	PopoverTrigger,
-} from "@/components/ui/popover";
+} from "@repo/ui/components/popover";
 import { useLogout } from "@/features/tenant-management/auth/logout/logout.mutation";
 import { cn } from "@/lib/utils";
 import { getCurrentRelativeRedirect } from "@/shared/auth/auth-redirect";

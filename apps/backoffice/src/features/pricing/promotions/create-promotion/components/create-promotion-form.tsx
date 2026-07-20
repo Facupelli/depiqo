@@ -1,23 +1,23 @@
 import { useForm } from "@tanstack/react-form";
 import { Minus, Plus } from "lucide-react";
 import { type ReactNode, useId, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Button } from "@repo/ui/components/button";
+import { Checkbox } from "@repo/ui/components/checkbox";
 import {
 	Field,
 	FieldDescription,
 	FieldError,
 	FieldGroup,
 	FieldLabel,
-} from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
+} from "@repo/ui/components/field";
+import { Input } from "@repo/ui/components/input";
 import {
 	Select,
 	SelectContent,
 	SelectItem,
 	SelectTrigger,
 	SelectValue,
-} from "@/components/ui/select";
+} from "@repo/ui/components/select";
 import { useCreatePromotion } from "@/features/pricing/promotions/create-promotion/create-promotion.mutation";
 import {
 	createEmptyExclusion,

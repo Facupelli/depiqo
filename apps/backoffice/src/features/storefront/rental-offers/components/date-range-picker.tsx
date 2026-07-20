@@ -1,13 +1,13 @@
 import { CalendarIcon } from "lucide-react";
 import { lazy, Suspense, useState } from "react";
 import type { DateRange } from "react-day-picker";
-import { Button } from "@/components/ui/button";
+import { Button } from "@repo/ui/components/button";
 import {
 	Popover,
 	PopoverContent,
 	PopoverTrigger,
-} from "@/components/ui/popover";
-import { Skeleton } from "@/components/ui/skeleton";
+} from "@repo/ui/components/popover";
+import { Skeleton } from "@repo/ui/components/skeleton";
 import dayjs from "@/lib/dates/dayjs";
 import { dateParamToLocalDate } from "@/lib/dates/parse";
 import { cn } from "@/lib/utils";

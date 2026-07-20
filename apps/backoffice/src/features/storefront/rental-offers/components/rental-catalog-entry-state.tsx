@@ -1,7 +1,7 @@
 import type { GetStorefrontBranchDto } from "@repo/api-contracts";
 import { Link } from "@tanstack/react-router";
 import { Building2, MapPin } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@repo/ui/components/button";
 
 interface BranchSelectionProps {
 	branches: GetStorefrontBranchDto[];

@@ -4,15 +4,15 @@ import {
 	FieldError,
 	FieldGroup,
 	FieldLabel,
-} from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
+} from "@repo/ui/components/field";
+import { Input } from "@repo/ui/components/input";
 import {
 	Select,
 	SelectContent,
 	SelectItem,
 	SelectTrigger,
 	SelectValue,
-} from "@/components/ui/select";
+} from "@repo/ui/components/select";
 import { withForm } from "@/shared/contexts/form.context";
 import { customerProfileOnboardingFormDefaultValues } from "./customer-profile-onboarding-form.schema";
 

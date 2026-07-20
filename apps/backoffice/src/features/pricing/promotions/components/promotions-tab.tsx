@@ -1,15 +1,15 @@
 import type { GetPromotionsPromotionDto } from "@repo/api-contracts";
 import { useNavigate } from "@tanstack/react-router";
 import { Search } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { Input } from "@repo/ui/components/input";
 import {
 	Select,
 	SelectContent,
 	SelectItem,
 	SelectTrigger,
 	SelectValue,
-} from "@/components/ui/select";
-import { Skeleton } from "@/components/ui/skeleton";
+} from "@repo/ui/components/select";
+import { Skeleton } from "@repo/ui/components/skeleton";
 import { Route } from "@/routes/_admin/dashboard/promotions";
 import { usePromotionsTab } from "../hooks/use-promotions-tab";
 import { PromotionsList } from "./promotions-list";

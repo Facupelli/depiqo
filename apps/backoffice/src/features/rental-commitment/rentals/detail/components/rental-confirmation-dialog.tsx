@@ -9,7 +9,7 @@ import {
 	AlertDialogFooter,
 	AlertDialogHeader,
 	AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+} from "@repo/ui/components/alert-dialog";
 import { formatMoney } from "@/shared/utils/formatters";
 import { buildRentalConfirmationSummary } from "../rental-confirmation-summary";
 import { useRentalDetailContext } from "../rental-detail.context";

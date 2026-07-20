@@ -1,21 +1,21 @@
 import { useForm } from "@tanstack/react-form";
 import type { ReactNode } from "react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@repo/ui/components/button";
 import {
 	Card,
 	CardContent,
 	CardDescription,
 	CardHeader,
 	CardTitle,
-} from "@/components/ui/card";
+} from "@repo/ui/components/card";
 import {
 	Field,
 	FieldError,
 	FieldGroup,
 	FieldLabel,
-} from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+} from "@repo/ui/components/field";
+import { Input } from "@repo/ui/components/input";
+import { Textarea } from "@repo/ui/components/textarea";
 import { buildR2PublicUrl } from "@/lib/r2-public-url";
 import {
 	createTenantContractSignerFormDefaultValues,

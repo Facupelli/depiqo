@@ -1,8 +1,8 @@
 import { useStore } from "@tanstack/react-form";
 import { Package, Trash2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { Button } from "@repo/ui/components/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@repo/ui/components/card";
+import { Input } from "@repo/ui/components/input";
 import { withForm } from "@/shared/contexts/form.context";
 import {
 	createDraftRentalComposerDefaultValues,

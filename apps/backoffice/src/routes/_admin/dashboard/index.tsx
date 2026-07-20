@@ -12,15 +12,15 @@ import {
 	Warehouse,
 } from "lucide-react";
 import { useState } from "react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Badge } from "@repo/ui/components/badge";
+import { Button } from "@repo/ui/components/button";
 import {
 	Card,
 	CardContent,
 	CardDescription,
 	CardHeader,
 	CardTitle,
-} from "@/components/ui/card";
+} from "@repo/ui/components/card";
 
 export const Route = createFileRoute("/_admin/dashboard/")({
 	beforeLoad: async () => {

@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AlertCircle, MessageCircleMore, X } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@repo/ui/components/button";
 import { getTenantBranding } from "@/features/tenant-management/tenant-context/tenant-branding";
 
 export const Route = createFileRoute(

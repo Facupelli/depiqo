@@ -1,7 +1,7 @@
 import { useForm } from "@tanstack/react-form";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@repo/ui/components/button";
 import {
 	Card,
 	CardContent,
@@ -9,14 +9,14 @@ import {
 	CardFooter,
 	CardHeader,
 	CardTitle,
-} from "@/components/ui/card";
+} from "@repo/ui/components/card";
 import {
 	Field,
 	FieldError,
 	FieldGroup,
 	FieldLabel,
-} from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
+} from "@repo/ui/components/field";
+import { Input } from "@repo/ui/components/input";
 import { useRegisterTenantWithOwner } from "@/features/tenant-management/tenant/register-tenant-with-owner/register-tenant-with-owner.mutation";
 import {
 	registerFormDefaults,

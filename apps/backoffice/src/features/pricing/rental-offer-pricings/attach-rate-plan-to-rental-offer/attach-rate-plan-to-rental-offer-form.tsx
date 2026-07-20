@@ -1,19 +1,19 @@
 import { useForm } from "@tanstack/react-form";
 import type React from "react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@repo/ui/components/button";
 import {
 	Field,
 	FieldError,
 	FieldGroup,
 	FieldLabel,
-} from "@/components/ui/field";
+} from "@repo/ui/components/field";
 import {
 	Select,
 	SelectContent,
 	SelectItem,
 	SelectTrigger,
 	SelectValue,
-} from "@/components/ui/select";
+} from "@repo/ui/components/select";
 import {
 	type AttachRatePlanToRentalOfferFormValues,
 	attachRatePlanToRentalOfferFormDefaultValues,

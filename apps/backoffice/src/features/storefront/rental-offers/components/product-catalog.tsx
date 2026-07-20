@@ -1,7 +1,7 @@
 import { Minus, Plus } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@repo/ui/components/badge";
+import { Button } from "@repo/ui/components/button";
+import { Card, CardFooter, CardHeader, CardTitle } from "@repo/ui/components/card";
 import {
 	Pagination,
 	PaginationContent,
@@ -10,8 +10,8 @@ import {
 	PaginationLink,
 	PaginationNext,
 	PaginationPrevious,
-} from "@/components/ui/pagination";
-import { Skeleton } from "@/components/ui/skeleton";
+} from "@repo/ui/components/pagination";
+import { Skeleton } from "@repo/ui/components/skeleton";
 import { useV2RentalOfferCardState } from "@/features/rental-commitment/cart/use-v2-rental-offer-card-state";
 import type { StorefrontRentalOfferListViewItemDto } from "@/features/storefront/rental-offers/get-storefront-rental-offer-list-view/get-storefront-rental-offer-list-view.schema";
 import { useStorefrontRentalOfferListView } from "@/features/storefront/rental-offers/storefront-rental-offer-list-view.queries";

@@ -8,7 +8,7 @@ import {
 	Pencil,
 	Tag,
 } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent } from "@repo/ui/components/card";
 import { cn } from "@/lib/utils";
 import { getKindLabel } from "../rentable-item-detail.utils";
 

@@ -1,7 +1,7 @@
 import { RotateCcw } from "lucide-react";
 import { useEffect, useId, useRef } from "react";
 import SignaturePad from "signature_pad";
-import { Button } from "@/components/ui/button";
+import { Button } from "@repo/ui/components/button";
 import { cn } from "@/lib/utils";
 
 type SignaturePadFieldProps = {

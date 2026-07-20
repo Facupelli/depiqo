@@ -1,6 +1,6 @@
 import type { AuthCustomerDto } from "@repo/api-contracts";
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { Button } from "@/components/ui/button";
+import { Button } from "@repo/ui/components/button";
 import { authQueries } from "@/features/tenant-management/auth/auth.queries";
 import { RentalHeaderAuthAction } from "@/features/tenant-management/auth/components/rental-header-auth-action";
 import { rentalCustomerQueries } from "@/features/tenant-management/customer/rental-customer.queries";

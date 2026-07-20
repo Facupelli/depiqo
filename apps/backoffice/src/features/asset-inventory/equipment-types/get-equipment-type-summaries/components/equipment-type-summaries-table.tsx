@@ -6,7 +6,7 @@ import {
 	useReactTable,
 } from "@tanstack/react-table";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@repo/ui/components/button";
 import {
 	Table,
 	TableBody,
@@ -14,7 +14,7 @@ import {
 	TableHead,
 	TableHeader,
 	TableRow,
-} from "@/components/ui/table";
+} from "@repo/ui/components/table";
 import { equipmentTypeSummariesColumns } from "./equipment-type-summaries-columns";
 
 interface EquipmentTypeSummariesTableProps {

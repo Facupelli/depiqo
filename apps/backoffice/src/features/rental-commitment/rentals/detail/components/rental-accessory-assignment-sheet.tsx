@@ -1,11 +1,11 @@
 import { AlertCircle, PackagePlus } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@repo/ui/components/button";
 import {
 	Sheet,
 	SheetContent,
 	SheetHeader,
 	SheetTitle,
-} from "@/components/ui/sheet";
+} from "@repo/ui/components/sheet";
 import { useRentalAccessoryDefaults } from "@/features/asset-inventory/rental-accessory-defaults/rental-accessory-defaults.queries";
 import { useAssignRentalAccessories } from "../../assign-rental-accessories/assign-rental-accessories.mutation";
 import {

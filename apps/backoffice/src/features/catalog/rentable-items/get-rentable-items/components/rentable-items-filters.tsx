@@ -5,15 +5,15 @@ import type {
 } from "@repo/api-contracts";
 import { Search, SlidersHorizontal, X } from "lucide-react";
 import { useId } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Button } from "@repo/ui/components/button";
+import { Input } from "@repo/ui/components/input";
 import {
 	Select,
 	SelectContent,
 	SelectItem,
 	SelectTrigger,
 	SelectValue,
-} from "@/components/ui/select";
+} from "@repo/ui/components/select";
 
 type RentableItemKind = NonNullable<GetRentableItemsQueryDto["kind"]>;
 type RentableItemStatus = NonNullable<GetRentableItemsQueryDto["status"]>;

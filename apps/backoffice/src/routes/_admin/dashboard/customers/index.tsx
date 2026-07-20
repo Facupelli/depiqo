@@ -14,17 +14,17 @@ import {
 } from "@tanstack/react-table";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { useMemo, useState } from "react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Badge } from "@repo/ui/components/badge";
+import { Button } from "@repo/ui/components/button";
+import { Input } from "@repo/ui/components/input";
 import {
 	Select,
 	SelectContent,
 	SelectItem,
 	SelectTrigger,
 	SelectValue,
-} from "@/components/ui/select";
-import { Skeleton } from "@/components/ui/skeleton";
+} from "@repo/ui/components/select";
+import { Skeleton } from "@repo/ui/components/skeleton";
 import {
 	Table,
 	TableBody,
@@ -32,7 +32,7 @@ import {
 	TableHead,
 	TableHeader,
 	TableRow,
-} from "@/components/ui/table";
+} from "@repo/ui/components/table";
 import { useRentalCustomers } from "@/features/tenant-management/customer/rental-customer.queries";
 import { AdminRouteError } from "@/shared/components/admin-route-error";
 import useDebounce from "@/shared/hooks/use-debounce";

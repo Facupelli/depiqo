@@ -15,11 +15,11 @@ import {
 } from "lucide-react";
 import { type ElementType, type ReactNode, useState } from "react";
 import { PageBreadcrumb } from "@/components/detail-id-breadcrumb";
-import { Badge } from "@/components/ui/badge";
-import { Button, buttonVariants } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@repo/ui/components/badge";
+import { Button, buttonVariants } from "@repo/ui/components/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@repo/ui/components/card";
+import { Skeleton } from "@repo/ui/components/skeleton";
+import { Textarea } from "@repo/ui/components/textarea";
 import { useApproveSubmittedCustomerOnboarding } from "@/features/tenant-management/customer/approve-submitted-customer-onboarding/approve-submitted-customer-onboarding.mutation";
 import {
 	getDocumentFileName,

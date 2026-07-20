@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { CalendarCheck, CheckCircle2, Mail, X } from "lucide-react";
 import { z } from "zod";
-import { Button } from "@/components/ui/button";
+import { Button } from "@repo/ui/components/button";
 import { getTenantBranding } from "@/features/tenant-management/tenant-context/tenant-branding";
 
 const confirmedRentalSuccessSearchSchema = z.object({

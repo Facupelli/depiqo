@@ -6,7 +6,7 @@ import {
 } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
-import { FieldError } from "@/components/ui/field";
+import { FieldError } from "@repo/ui/components/field";
 import { createCustomerGoogleHandoff } from "@/features/tenant-management/auth/customer-google-handoff/customer-google-handoff.api";
 import { ProblemDetailsError } from "@/shared/errors";
 

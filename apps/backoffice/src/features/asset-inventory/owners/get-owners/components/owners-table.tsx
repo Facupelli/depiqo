@@ -11,8 +11,8 @@ import {
 } from "@tanstack/react-table";
 import clsx from "clsx";
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Button } from "@repo/ui/components/button";
+import { Input } from "@repo/ui/components/input";
 import {
 	Table,
 	TableBody,
@@ -20,7 +20,7 @@ import {
 	TableHead,
 	TableHeader,
 	TableRow,
-} from "@/components/ui/table";
+} from "@repo/ui/components/table";
 
 interface OwnersDataTableProps<TData, TValue> {
 	columns: ColumnDef<TData, TValue>[];

@@ -1,13 +1,13 @@
 import { useStore } from "@tanstack/react-form";
 import { CalendarIcon, Truck, Warehouse } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Field, FieldError, FieldLabel } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle } from "@repo/ui/components/card";
+import { Checkbox } from "@repo/ui/components/checkbox";
+import { Field, FieldError, FieldLabel } from "@repo/ui/components/field";
+import { Input } from "@repo/ui/components/input";
 import {
 	NativeSelect,
 	NativeSelectOption,
-} from "@/components/ui/native-select";
+} from "@repo/ui/components/native-select";
 import { withForm } from "@/shared/contexts/form.context";
 import { useDraftRentalComposer } from "../create-draft-rental-composer.context";
 import { createDraftRentalComposerDefaultValues } from "../create-draft-rental-composer.schema";

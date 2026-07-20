@@ -7,8 +7,8 @@ import {
 	TicketPercent,
 	X,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Button } from "@repo/ui/components/button";
+import { Input } from "@repo/ui/components/input";
 import {
 	Popover,
 	PopoverContent,
@@ -16,9 +16,9 @@ import {
 	PopoverHeader,
 	PopoverTitle,
 	PopoverTrigger,
-} from "@/components/ui/popover";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Switch } from "@/components/ui/switch";
+} from "@repo/ui/components/popover";
+import { Skeleton } from "@repo/ui/components/skeleton";
+import { Switch } from "@repo/ui/components/switch";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/shared/utils/price.utils";
 import { useCartPricingContext } from "../../cart-page.context";

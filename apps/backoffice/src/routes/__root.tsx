@@ -10,7 +10,7 @@ import {
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 import { NotFoundPage } from "@/components/not-found-page";
 import { ServiceUnavailablePage } from "@/components/service-unavailable-page";
-import { Toaster } from "@/components/ui/sonner";
+import { Toaster } from "@repo/ui/components/sonner";
 import { getCurrentUser } from "@/features/tenant-management/auth/get-current-user/get-current-user.api";
 import { getPublicTenantContext } from "@/features/tenant-management/tenant-context/get-public-tenant-context.api";
 import type { PublicTenantContext } from "@/features/tenant-management/tenant-context/types";

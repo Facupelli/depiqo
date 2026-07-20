@@ -1,9 +1,9 @@
 import { useForm } from "@tanstack/react-form";
 import { Maximize2, PenLine, X } from "lucide-react";
 import { useId, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Field, FieldError, FieldLabel } from "@/components/ui/field";
+import { Button } from "@repo/ui/components/button";
+import { Checkbox } from "@repo/ui/components/checkbox";
+import { Field, FieldError, FieldLabel } from "@repo/ui/components/field";
 import {
 	createPublicSigningFormDefaults,
 	type PublicSigningFormValues,

@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { CalendarCheck, CheckCircle2, Clock3, Mail, X } from "lucide-react";
 import { z } from "zod";
-import { Button } from "@/components/ui/button";
+import { Button } from "@repo/ui/components/button";
 import { resolveOrderConfirmationStatus } from "@/features/rental-commitment/cart/storefront-cart/utils/booking-mode-copy";
 import { getTenantBranding } from "@/features/tenant-management/tenant-context/tenant-branding";
 

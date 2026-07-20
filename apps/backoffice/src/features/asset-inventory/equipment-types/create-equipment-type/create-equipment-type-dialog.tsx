@@ -1,7 +1,7 @@
 import { useNavigate } from "@tanstack/react-router";
 import { Plus } from "lucide-react";
 import { useId, useState } from "react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@repo/ui/components/button";
 import {
 	Dialog,
 	DialogContent,
@@ -9,7 +9,7 @@ import {
 	DialogHeader,
 	DialogTitle,
 	DialogTrigger,
-} from "@/components/ui/dialog";
+} from "@repo/ui/components/dialog";
 import { useOwners } from "@/features/asset-inventory/owners/owners.queries";
 import { useBranches } from "@/features/tenant-management/branch/branch.queries";
 import { useCreateEquipmentType } from "./create-equipment-type.mutation";

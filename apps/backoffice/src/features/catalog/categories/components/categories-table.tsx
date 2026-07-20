@@ -1,5 +1,5 @@
 import type { CategoryDto } from "@repo/api-contracts";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@repo/ui/components/badge";
 import {
 	Table,
 	TableBody,
@@ -7,7 +7,7 @@ import {
 	TableHead,
 	TableHeader,
 	TableRow,
-} from "@/components/ui/table";
+} from "@repo/ui/components/table";
 
 interface CategoriesTableProps {
 	categories: CategoryDto[];

@@ -1,7 +1,7 @@
 import type { GetOwnersItemDto } from "@repo/api-contracts";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ArrowUpDown } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@repo/ui/components/button";
 
 export const ownerColumns: ColumnDef<GetOwnersItemDto>[] = [
 	{

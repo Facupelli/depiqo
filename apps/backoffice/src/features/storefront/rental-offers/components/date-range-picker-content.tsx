@@ -1,7 +1,7 @@
 import type { GetStorefrontBranchSchedulesResponseDto } from "@repo/api-contracts";
 import { es } from "date-fns/locale";
 import type { DateRange } from "react-day-picker";
-import { Calendar } from "@/components/ui/calendar";
+import { Calendar } from "@repo/ui/components/calendar";
 import { useStorefrontBranchSchedules } from "@/features/tenant-management/branch/branch.queries";
 
 type StorefrontBranchScheduleSlotType =

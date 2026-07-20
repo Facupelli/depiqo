@@ -3,7 +3,7 @@ import {
 	GetRentalsQuerySchema,
 } from "@repo/api-contracts";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Button } from "@/components/ui/button";
+import { Button } from "@repo/ui/components/button";
 import { RentalOrdersListProvider } from "@/features/rental-commitment/rentals/get-rentals/components/rental-orders-list.context";
 import { RentalOrdersTable } from "@/features/rental-commitment/rentals/get-rentals/components/rental-orders-table";
 import { RentalOrdersToolbar } from "@/features/rental-commitment/rentals/get-rentals/components/rental-orders-toolbar";

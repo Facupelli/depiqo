@@ -1,8 +1,8 @@
 import { Search } from "lucide-react";
 import { startTransition, useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@repo/ui/components/button";
+import { Input } from "@repo/ui/components/input";
+import { Skeleton } from "@repo/ui/components/skeleton";
 import { useStorefrontCategories } from "@/features/catalog/storefront-categories/storefront-categories.queries";
 import type { V2RentalPageSearch } from "@/routes/_portal/_tenant/rental";
 import useDebounce from "@/shared/hooks/use-debounce";

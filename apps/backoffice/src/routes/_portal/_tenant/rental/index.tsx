@@ -2,7 +2,7 @@ import type { AuthCustomerDto } from "@repo/api-contracts";
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { Suspense } from "react";
 import { z } from "zod";
-import { Button } from "@/components/ui/button";
+import { Button } from "@repo/ui/components/button";
 import { storefrontBranchQueries } from "@/features/rental-commitment/branches/branches.queries";
 import { CartPopover } from "@/features/rental-commitment/cart/storefront-cart/components/cart-popover";
 import { RentalFilters } from "@/features/storefront/rental-offers/components/catalog-filters";

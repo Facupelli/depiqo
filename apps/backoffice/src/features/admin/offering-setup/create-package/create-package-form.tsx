@@ -1,22 +1,22 @@
 import { useForm } from "@tanstack/react-form";
 import { Trash2 } from "lucide-react";
 import { useId } from "react";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Button } from "@repo/ui/components/button";
+import { Checkbox } from "@repo/ui/components/checkbox";
 import {
 	Field,
 	FieldError,
 	FieldGroup,
 	FieldLabel,
-} from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
+} from "@repo/ui/components/field";
+import { Input } from "@repo/ui/components/input";
 import {
 	Select,
 	SelectContent,
 	SelectItem,
 	SelectTrigger,
 	SelectValue,
-} from "@/components/ui/select";
+} from "@repo/ui/components/select";
 import {
 	Table,
 	TableBody,
@@ -24,8 +24,8 @@ import {
 	TableHead,
 	TableHeader,
 	TableRow,
-} from "@/components/ui/table";
-import { Textarea } from "@/components/ui/textarea";
+} from "@repo/ui/components/table";
+import { Textarea } from "@repo/ui/components/textarea";
 import { CatalogImageUploader } from "@/shared/components/catalog-image-uploader";
 import {
 	type CreatePackageFormValues,

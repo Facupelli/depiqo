@@ -18,8 +18,8 @@ import {
 	CircleUserRound,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Popover, PopoverContent } from "@/components/ui/popover";
+import { Button } from "@repo/ui/components/button";
+import { Popover, PopoverContent } from "@repo/ui/components/popover";
 import {
 	getRentalOrderStatusPresentation,
 	RENTAL_ORDER_STATUS_LEGEND_ITEMS,

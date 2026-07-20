@@ -1,11 +1,11 @@
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Alert, AlertDescription } from "@repo/ui/components/alert";
 import {
 	Dialog,
 	DialogContent,
 	DialogDescription,
 	DialogHeader,
 	DialogTitle,
-} from "@/components/ui/dialog";
+} from "@repo/ui/components/dialog";
 import type { RentalSigningDialogIntent } from "../hooks/use-rental-signing-invitation-actions";
 import { createRentalSigningInvitationFormDefaults } from "../rental-signing-invitation.schema";
 import { RentalSigningInvitationForm } from "./rental-signing-invitation-form";

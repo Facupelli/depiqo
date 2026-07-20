@@ -25,14 +25,14 @@ import {
 	Popover,
 	PopoverContent,
 	PopoverTrigger,
-} from "@/components/ui/popover";
+} from "@repo/ui/components/popover";
 import {
 	Select,
 	SelectContent,
 	SelectItem,
 	SelectTrigger,
 	SelectValue,
-} from "@/components/ui/select";
+} from "@repo/ui/components/select";
 import { useLogout } from "@/features/tenant-management/auth/logout/logout.mutation";
 import { branchQueries } from "@/features/tenant-management/branch/branch.queries";
 import { tenantQueries } from "@/features/tenant-management/tenant/tenant.queries";

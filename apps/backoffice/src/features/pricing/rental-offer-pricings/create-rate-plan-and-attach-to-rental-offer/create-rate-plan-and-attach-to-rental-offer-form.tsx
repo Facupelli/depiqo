@@ -1,5 +1,5 @@
 import type React from "react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@repo/ui/components/button";
 import { useAppForm } from "@/shared/contexts/form.context";
 import { RatePlanFields } from "../../rate-plan/rate-plan-fields";
 import {

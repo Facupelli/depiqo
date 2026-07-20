@@ -7,7 +7,7 @@ import {
 	Loader2,
 } from "lucide-react";
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@repo/ui/components/button";
 import { cn } from "@/lib/utils";
 import { useAppForm } from "@/shared/contexts/form.context";
 import { ProblemDetailsError } from "@/shared/errors";

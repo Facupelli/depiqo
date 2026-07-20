@@ -7,14 +7,14 @@ import {
 } from "@tanstack/react-router";
 import { Lock, Mail } from "lucide-react";
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@repo/ui/components/button";
 import {
 	Field,
 	FieldError,
 	FieldGroup,
 	FieldLabel,
-} from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
+} from "@repo/ui/components/field";
+import { Input } from "@repo/ui/components/input";
 import { useCreateCustomerGoogleState } from "@/features/tenant-management/auth/customer-google-state/customer-google-state.mutation";
 import { useCustomerLogin } from "@/features/tenant-management/auth/customer-login/customer-login.mutation";
 import {

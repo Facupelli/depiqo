@@ -1,6 +1,6 @@
 import { UserPlus } from "lucide-react";
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@repo/ui/components/button";
 import {
 	Dialog,
 	DialogContent,
@@ -8,7 +8,7 @@ import {
 	DialogHeader,
 	DialogTitle,
 	DialogTrigger,
-} from "@/components/ui/dialog";
+} from "@repo/ui/components/dialog";
 import { useRentalDetailContext } from "../detail/rental-detail.context";
 import { getAssignCustomerToDraftRentalErrorMessage } from "./assign-customer-to-draft-rental.errors";
 import { useAssignCustomerToDraftRental } from "./assign-customer-to-draft-rental.mutation";

@@ -6,7 +6,7 @@ import {
 	useRouter,
 } from "@tanstack/react-router";
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@repo/ui/components/button";
 import {
 	Card,
 	CardContent,
@@ -14,14 +14,14 @@ import {
 	CardFooter,
 	CardHeader,
 	CardTitle,
-} from "@/components/ui/card";
+} from "@repo/ui/components/card";
 import {
 	Field,
 	FieldError,
 	FieldGroup,
 	FieldLabel,
-} from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
+} from "@repo/ui/components/field";
+import { Input } from "@repo/ui/components/input";
 import { useLogin } from "@/features/tenant-management/auth/login/login.mutation";
 import { loginSchema } from "@/features/tenant-management/auth/login/login-form.schema";
 import {

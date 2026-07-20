@@ -1,6 +1,6 @@
 import { ArrowRight, LoaderCircle } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@repo/ui/components/button";
+import { Skeleton } from "@repo/ui/components/skeleton";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/shared/utils/price.utils";
 import type { useCartSidebarViewModel } from "../../hooks/use-cart-sidebar-view-model";

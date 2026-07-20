@@ -14,10 +14,10 @@ import {
 	AlertDialogHeader,
 	AlertDialogTitle,
 	AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+} from "@repo/ui/components/alert-dialog";
+import { Badge } from "@repo/ui/components/badge";
+import { Button } from "@repo/ui/components/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@repo/ui/components/tabs";
 import { CreateRentalOfferWithPricingDialog } from "@/features/admin/offering-setup/create-rental-offer-with-pricing/create-rental-offer-with-pricing-dialog";
 import { getActivateRentableItemErrorMessage } from "@/features/catalog/rentable-items/activate-rentable-item/activate-rentable-item.errors";
 import { useActivateRentableItem } from "@/features/catalog/rentable-items/activate-rentable-item/activate-rentable-item.mutation";

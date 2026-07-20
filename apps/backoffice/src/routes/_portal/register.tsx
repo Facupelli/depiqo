@@ -2,15 +2,15 @@ import { useForm } from "@tanstack/react-form";
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { Building2, Lock, Mail } from "lucide-react";
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Button } from "@repo/ui/components/button";
+import { Checkbox } from "@repo/ui/components/checkbox";
 import {
 	Field,
 	FieldError,
 	FieldGroup,
 	FieldLabel,
-} from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
+} from "@repo/ui/components/field";
+import { Input } from "@repo/ui/components/input";
 import { useCreateCustomerGoogleState } from "@/features/tenant-management/auth/customer-google-state/customer-google-state.mutation";
 import {
 	customerRegisterDefaultValues,

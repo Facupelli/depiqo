@@ -3,20 +3,20 @@ import type {
 	GetRentalsStatusDto,
 } from "@repo/api-contracts";
 import { ChevronDown, X } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Button } from "@repo/ui/components/button";
+import { Checkbox } from "@repo/ui/components/checkbox";
 import {
 	Popover,
 	PopoverContent,
 	PopoverTrigger,
-} from "@/components/ui/popover";
+} from "@repo/ui/components/popover";
 import {
 	Select,
 	SelectContent,
 	SelectItem,
 	SelectTrigger,
 	SelectValue,
-} from "@/components/ui/select";
+} from "@repo/ui/components/select";
 import {
 	getRentalOrderStatusLabel,
 	RENTAL_ORDER_STATUS_OPTIONS,

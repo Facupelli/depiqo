@@ -1,10 +1,10 @@
 import { useStore } from "@tanstack/react-form";
 import { Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Field, FieldError, FieldLabel } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@repo/ui/components/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@repo/ui/components/card";
+import { Field, FieldError, FieldLabel } from "@repo/ui/components/field";
+import { Input } from "@repo/ui/components/input";
+import { Textarea } from "@repo/ui/components/textarea";
 import { withForm } from "@/shared/contexts/form.context";
 import { formatMoney } from "@/shared/utils/formatters";
 import { useDraftRentalComposer } from "../create-draft-rental-composer.context";

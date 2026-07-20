@@ -2,7 +2,7 @@ import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { CheckCircle2, LoaderCircle, MessageCircleMore, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
-import { Button } from "@/components/ui/button";
+import { Button } from "@repo/ui/components/button";
 import { useCartActions } from "@/features/rental-commitment/cart/storefront-cart/cart.hooks";
 import { getTenantBranding } from "@/features/tenant-management/tenant-context/tenant-branding";
 

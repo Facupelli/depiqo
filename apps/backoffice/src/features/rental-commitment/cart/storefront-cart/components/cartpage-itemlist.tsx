@@ -1,7 +1,7 @@
 import type { CalculateCartPriceResponseDto } from "@repo/api-contracts";
 import { Link } from "@tanstack/react-router";
 import { Package, ShoppingBag } from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Skeleton } from "@repo/ui/components/skeleton";
 import type { V2RentalCartItem } from "@/features/rental-commitment/cart/v2-rental-cart.types";
 import { buildR2PublicUrl } from "@/lib/r2-public-url";
 import { formatCurrency } from "@/shared/utils/price.utils";

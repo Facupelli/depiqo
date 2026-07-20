@@ -5,13 +5,13 @@ import {
 	Send,
 	Trash2,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@repo/ui/components/button";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
 	DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from "@repo/ui/components/dropdown-menu";
 
 export type RentalActionsDropdownProps = {
 	isDraftRental: boolean;

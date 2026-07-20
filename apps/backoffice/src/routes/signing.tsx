@@ -9,8 +9,8 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { z } from "zod";
-import { Button } from "@/components/ui/button";
-import { Spinner } from "@/components/ui/spinner";
+import { Button } from "@repo/ui/components/button";
+import { Spinner } from "@repo/ui/components/spinner";
 import { useAcceptPublicSigningSession } from "@/features/document-signing/accept-public-signing-session/accept-public-signing-session.mutation";
 import { usePublicSigningSession } from "@/features/document-signing/document-signing.queries";
 import { PublicSigningForm } from "@/features/document-signing/public-signing-session/public-signing-form";
