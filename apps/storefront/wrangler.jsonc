@@ -1,7 +1,31 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "tanstack-start-app",
+  "name": "repo-storefront",
   "compatibility_date": "2025-09-02",
   "compatibility_flags": ["nodejs_compat"],
-  "main": "@tanstack/react-start/server-entry"
+  "main": "@tanstack/react-start/server-entry",
+  "observability": {
+    "enabled": true,
+  },
+  "vars": {
+    "BACKEND_URL": "https://api.depiqo.com",
+    "VITE_R2_PUBLIC_URL": "https://equipment.depiqo.com",
+    "VITE_BRANDING_R2_PUBLIC_URL": "https://branding.depiqo.com",
+    "VITE_GOOGLE_CLIENT_ID": "95835950658-d0n7ngg3kb1a582345erhldulp89m2e2.apps.googleusercontent.com",
+    "VITE_SHARED_AUTH_ORIGIN": "https://auth.depiqo.com",
+    "NODE_ENV": "production",
+  },
+  "routes": [
+    {
+      "pattern": "depiqo.com",
+      "zone_name": "depiqo.com",
+      "custom_domain": true,
+    },
+    {
+      "pattern": "*/*",
+      "zone_name": "depiqo.com",
+    },
+  ],
+  "workers_dev": true,
+  "preview_urls": true,
 }
