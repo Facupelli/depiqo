@@ -1,55 +1,36 @@
-export type PublicStorefrontTenantContext = {
-	slug: string;
-	name: string;
-	customDomain: string | null;
-	logoUrl: string | null;
-	faviconUrl: string | null;
-	primaryColor: string | null;
+import {
+	PublicTenantContextSchema,
+	type PublicStorefrontTenantContext,
+	type PublicTenantContext,
+	type TrustedTenantContext,
+} from "@repo/api-contracts";
+
+export type {
+	PublicStorefrontTenantContext,
+	PublicTenantContext,
+	TrustedTenantContext,
 };
-
-export type PublicTenantContext =
-	| {
-			face: "platform";
-	  }
-	| {
-			face: "admin";
-	  }
-	| {
-			face: "storefront";
-			tenant: PublicStorefrontTenantContext;
-	  };
-
-export type TrustedTenantContext =
-	| {
-			face: "platform";
-			host: string;
-	  }
-	| {
-			face: "admin";
-			host: string;
-	  }
-	| {
-			face: "storefront";
-			host: string;
-			tenantId: string;
-			slug: string;
-			scope: "public-storefront";
-			publicTenant: PublicStorefrontTenantContext;
-	  };
 
 export function toPublicTenantContext(
 	context: TrustedTenantContext,
 ): PublicTenantContext {
 	if (context.face === "platform") {
-		return { face: "platform" };
+		return PublicTenantContextSchema.parse({ face: "platform" });
 	}
 
 	if (context.face === "admin") {
-		return { face: "admin" };
+		return PublicTenantContextSchema.parse({ face: "admin" });
 	}
 
-	return {
+	return PublicTenantContextSchema.parse({
 		face: "storefront",
-		tenant: context.publicTenant,
-	};
+		tenant: {
+			slug: context.publicTenant.slug,
+			name: context.publicTenant.name,
+			customDomain: context.publicTenant.customDomain,
+			logoUrl: context.publicTenant.logoUrl,
+			faviconUrl: context.publicTenant.faviconUrl,
+			primaryColor: context.publicTenant.primaryColor,
+		},
+	});
 }

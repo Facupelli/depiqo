@@ -1,3 +1,4 @@
+import { StorefrontTenantTokenPayloadSchema, type StorefrontTenantTokenPayload } from '@repo/api-contracts';
 import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { jwtVerify } from 'jose';
@@ -6,12 +7,6 @@ import { Env } from 'src/config/env.schema';
 import { StorefrontTenantContext } from '../tenant-context.contract';
 
 const STOREFRONT_TENANT_CONTEXT_HEADER_NAME = 'x-storefront-tenant-context';
-
-type StorefrontTenantJwtPayload = {
-  scope?: unknown;
-  tenant_id?: unknown;
-  host?: unknown;
-};
 
 export type StorefrontTenantRequest = Request & {
   storefrontTenantContext: StorefrontTenantContext;
@@ -32,18 +27,6 @@ export class StorefrontTenantContextGuard implements CanActivate {
 
     const payload = await this.verifyToken(token);
 
-    if (payload.scope !== 'public-storefront') {
-      throw new UnauthorizedException('Invalid storefront tenant scope');
-    }
-
-    if (typeof payload.tenant_id !== 'string' || !payload.tenant_id) {
-      throw new UnauthorizedException('Invalid storefront tenant id');
-    }
-
-    if (typeof payload.host !== 'string' || !payload.host) {
-      throw new UnauthorizedException('Invalid storefront tenant host');
-    }
-
     const storefrontRequest = request as StorefrontTenantRequest;
 
     storefrontRequest.storefrontTenantContext = {
@@ -55,7 +38,7 @@ export class StorefrontTenantContextGuard implements CanActivate {
     return true;
   }
 
-  private async verifyToken(token: string): Promise<StorefrontTenantJwtPayload> {
+  private async verifyToken(token: string): Promise<StorefrontTenantTokenPayload> {
     const secret = this.configService.get('STOREFRONT_TENANT_JWT_SECRET');
     const issuer = this.configService.get('STOREFRONT_TENANT_JWT_ISSUER');
     const audience = this.configService.get('STOREFRONT_TENANT_JWT_AUDIENCE');
@@ -68,7 +51,13 @@ export class StorefrontTenantContextGuard implements CanActivate {
         audience,
       });
 
-      return result.payload as StorefrontTenantJwtPayload;
+      const payload = StorefrontTenantTokenPayloadSchema.safeParse(result.payload);
+
+      if (!payload.success) {
+        throw new UnauthorizedException('Invalid storefront tenant context');
+      }
+
+      return payload.data;
     } catch {
       throw new UnauthorizedException('Invalid storefront tenant context');
     }

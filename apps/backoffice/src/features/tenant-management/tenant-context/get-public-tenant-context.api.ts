@@ -6,6 +6,6 @@ export const getPublicTenantContext = createServerFn({ method: "GET" }).handler(
 	async () => {
 		const trustedContext = await resolveTrustedTenantContextFromRequest();
 
-		return toPublicTenantContext(trustedContext.data);
+		return toPublicTenantContext(trustedContext);
 	},
 );

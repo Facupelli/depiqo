@@ -104,10 +104,10 @@ Tenant context is resolved through a trusted backend resolver owned by Tenant Ma
 
 ```text
 TanStack Start request
-  -> POST /v2/internal/tenant-context/resolve
+  -> GET /internal/tenant-context/resolve?hostname=<hostname>
   -> Tenant Management resolves host/domain/slug
   -> backend returns trusted tenant context
-  -> frontend renders using trusted tenant context
+  -> frontend maps it to public tenant context before rendering
 ```
 
 The frontend may pass request facts such as host and pathname, but the backend decides the trusted tenant context.

@@ -18,6 +18,7 @@ export * from "./register-tenant-with-owner.contract";
 export * from "./reject-submitted-customer-onboarding.contract";
 export * from "./submit-customer-profile.contract";
 export * from "./tenant-domain.contract";
+export * from "./tenant-context.contract";
 export * from "./get-custom-domain.contract";
 export * from "./register-custom-domain.contract";
 export * from "./refresh-custom-domain-status.contract";

@@ -27,7 +27,7 @@ export async function storefrontApiFetch<T = unknown>(
 ): Promise<T | null> {
 	const trustedTenantContext = await resolveTrustedTenantContextFromRequest();
 
-	if (trustedTenantContext.data.face !== "storefront") {
+	if (trustedTenantContext.face !== "storefront") {
 		throw new ProblemDetailsError({
 			type: "about:blank",
 			title: "Invalid Storefront Context",
@@ -37,7 +37,7 @@ export async function storefrontApiFetch<T = unknown>(
 	}
 
 	const tenantContextToken = await signStorefrontTenantToken(
-		trustedTenantContext.data,
+		trustedTenantContext,
 	);
 
 	const method = (options.method ?? "GET").toUpperCase();

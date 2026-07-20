@@ -1,29 +1,28 @@
+import {
+	resolveInternalTenantContextContract,
+	TrustedTenantContextSchema,
+	type TrustedTenantContext,
+} from "@repo/api-contracts";
 import { getRequestHeader } from "@tanstack/react-start/server";
-import type { TrustedTenantContext } from "./types";
+import { z } from "zod";
+import { serverEnv } from "@/config/server-env";
 
-const BACKEND_URL = process.env.BACKEND_URL;
-const BFF_INTERNAL_TOKEN = process.env.BFF_INTERNAL_TOKEN;
+const ResolverResponseSchema = z.object({
+	data: TrustedTenantContextSchema,
+});
 
-export async function resolveTrustedTenantContextFromRequest(): Promise<{
-	data: TrustedTenantContext;
-}> {
+export async function resolveTrustedTenantContextFromRequest(): Promise<TrustedTenantContext> {
 	const hostname = getTrustedRequestHostname();
-
-	if (!BACKEND_URL) {
-		throw new Error("Missing BACKEND_URL");
-	}
-
-	if (!BFF_INTERNAL_TOKEN) {
-		throw new Error("Missing BFF_INTERNAL_TOKEN");
-	}
-
-	const url = new URL("/internal/tenant-context/resolve", BACKEND_URL);
+	const url = new URL(
+		resolveInternalTenantContextContract.path,
+		serverEnv.BACKEND_URL,
+	);
 	url.searchParams.set("hostname", hostname);
 
 	const response = await fetch(url, {
-		method: "GET",
+		method: resolveInternalTenantContextContract.method,
 		headers: {
-			"x-internal-token": BFF_INTERNAL_TOKEN,
+			"x-internal-token": serverEnv.BFF_INTERNAL_TOKEN,
 		},
 	});
 
@@ -35,7 +34,13 @@ export async function resolveTrustedTenantContextFromRequest(): Promise<{
 		throw new Error(`Failed to resolve tenant context: ${response.status}`);
 	}
 
-	return response.json() as Promise<{ data: TrustedTenantContext }>;
+	const result = ResolverResponseSchema.safeParse(await response.json());
+
+	if (!result.success) {
+		throw new Error("Tenant context resolver returned an invalid response");
+	}
+
+	return result.data.data;
 }
 
 function getTrustedRequestHostname(): string {
