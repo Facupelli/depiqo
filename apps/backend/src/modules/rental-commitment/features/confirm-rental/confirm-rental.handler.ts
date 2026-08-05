@@ -7,19 +7,26 @@ import { TenantManagementPublicApi } from 'src/modules/tenant-management/public-
 
 import { RentalAssetAllocationService } from '../../asset-allocation/rental-asset-allocation.service';
 import {
+  BranchUnavailableForRentalError,
   ConfirmedRentalRequiresPriceSnapshotError,
+  DuplicateAssignedAssetError,
+  InsufficientAssetAvailabilityError,
+  RentalCannotBeConfirmedFromStatusError,
   RentalConfirmationRequiresCustomerError,
+  RentalCustomerUnavailableForRentalError,
+  RentalInvalidFieldError,
+  TenantUnavailableForRentalError,
+  UnsupportedBranchFulfillmentMethodError,
 } from '../../domain/errors/rental-commitment.errors';
 import { FulfillmentMethod } from '../../domain/rental-status';
 import { AssetId, EquipmentTypeId } from '../../domain/types/rental-commitment-ids';
 import { RentalOwnerSplitDraft } from '../../owner-split/owner-split-calculator.types';
 import { RentalOwnerSplitCalculator } from '../../owner-split/rental-owner-split-calculator';
 import { RentalRepository } from '../../persistence/rental.repository';
-import { ConfirmRentalApplicationError, confirmRentalApplicationError } from './confirm-rental-application.error';
 import { ConfirmRentalCommand } from './confirm-rental.command';
-import { toConfirmRentalApplicationError } from './map-confirm-rental-error';
+import { confirmRentalError, ConfirmRentalError } from './confirm-rental.errors';
 
-export type ConfirmRentalResult = Result<void, ConfirmRentalApplicationError>;
+export type ConfirmRentalResult = Result<void, ConfirmRentalError>;
 
 interface ConfirmedPriceSnapshotForOwnerSplits {
   calculated: {
@@ -42,14 +49,27 @@ export class ConfirmRentalHandler implements ICommandHandler<ConfirmRentalComman
   ) {}
 
   async execute(command: ConfirmRentalCommand): Promise<ConfirmRentalResult> {
+    const context = {
+      useCase: 'ConfirmRental',
+      tenantId: command.tenantId,
+      rentalId: command.rentalId,
+    };
     const rental = await this.rentalRepository.findById(command.tenantId, command.rentalId);
 
     if (!rental) {
-      return err(confirmRentalApplicationError('RentalNotFound', `Rental "${command.rentalId}" was not found.`));
+      return err(
+        confirmRentalError(
+          'rental_commitment.rental_not_found',
+          `Rental "${command.rentalId}" was not found.`,
+          undefined,
+          context,
+        ),
+      );
     }
 
     if (!rental.rentalCustomerId) {
-      return err(toConfirmRentalApplicationError(new RentalConfirmationRequiresCustomerError(rental.id)));
+      const error = new RentalConfirmationRequiresCustomerError(rental.id);
+      return err(this.toApplicationError(error, context));
     }
 
     const fulfillmentMethod = rental.fulfillmentMethod ?? FulfillmentMethod.Pickup;
@@ -63,7 +83,7 @@ export class ConfirmRentalHandler implements ICommandHandler<ConfirmRentalComman
     });
 
     if (tenantValidation.isErr()) {
-      return err(toConfirmRentalApplicationError(tenantValidation.error));
+      return err(this.toApplicationError(tenantValidation.error, context));
     }
 
     const assetAssignmentPlan = await this.rentalAssetAllocation.planAllocations({
@@ -84,7 +104,7 @@ export class ConfirmRentalHandler implements ICommandHandler<ConfirmRentalComman
     });
 
     if (assetAssignmentPlan.isErr()) {
-      return err(toConfirmRentalApplicationError(assetAssignmentPlan.error));
+      return err(this.toApplicationError(assetAssignmentPlan.error, context));
     }
 
     const confirmResult = rental.confirm({
@@ -95,7 +115,7 @@ export class ConfirmRentalHandler implements ICommandHandler<ConfirmRentalComman
     });
 
     if (confirmResult.isErr()) {
-      return err(toConfirmRentalApplicationError(confirmResult.error));
+      return err(this.toApplicationError(confirmResult.error, context));
     }
 
     const confirmedPriceSnapshot = rental.confirmedPriceSnapshot?.toJSON() as
@@ -103,7 +123,7 @@ export class ConfirmRentalHandler implements ICommandHandler<ConfirmRentalComman
       | undefined;
 
     if (!confirmedPriceSnapshot) {
-      return err(toConfirmRentalApplicationError(new ConfirmedRentalRequiresPriceSnapshotError(rental.id)));
+      return err(this.toApplicationError(new ConfirmedRentalRequiresPriceSnapshotError(rental.id), context));
     }
 
     const assignmentsByAssetAndDemandLine = new Map(
@@ -113,45 +133,40 @@ export class ConfirmRentalHandler implements ICommandHandler<ConfirmRentalComman
       ]),
     );
 
-    let splits: RentalOwnerSplitDraft[];
-    try {
-      ({ splits } = this.rentalOwnerSplitCalculator.calculate({
-        tenantId: rental.tenantId,
-        rentalId: rental.id,
-        currency: confirmedPriceSnapshot.calculated.currency,
-        selections: rental.selections.map((selection) => ({ id: selection.id })),
-        demandLines: rental.demandLines.map((demandLine) => ({
-          id: demandLine.id,
-          sourceSelectionId: demandLine.rentalSelectionId,
-        })),
-        fulfilledAssets: assetAssignmentPlan.value.allocations.map((allocation) => {
-          const assignment = assignmentsByAssetAndDemandLine.get(
-            this.assignmentKey(allocation.assetId, allocation.rentalDemandLineId),
-          );
+    const { splits }: { splits: RentalOwnerSplitDraft[] } = this.rentalOwnerSplitCalculator.calculate({
+      tenantId: rental.tenantId,
+      rentalId: rental.id,
+      currency: confirmedPriceSnapshot.calculated.currency,
+      selections: rental.selections.map((selection) => ({ id: selection.id })),
+      demandLines: rental.demandLines.map((demandLine) => ({
+        id: demandLine.id,
+        sourceSelectionId: demandLine.rentalSelectionId,
+      })),
+      fulfilledAssets: assetAssignmentPlan.value.allocations.map((allocation) => {
+        const assignment = assignmentsByAssetAndDemandLine.get(
+          this.assignmentKey(allocation.assetId, allocation.rentalDemandLineId),
+        );
 
-          return {
-            id: assignment?.id ?? allocation.assetId,
-            rentalDemandLineId: allocation.rentalDemandLineId,
-            assetId: allocation.assetId,
-            ownershipKind: allocation.ownershipKind,
-            ownerId: allocation.ownerId ?? null,
-            ownerContractSnapshot: allocation.ownerContractSnapshot
-              ? {
-                  contractId: allocation.ownerContractSnapshot.contractId,
-                  basis: allocation.ownerContractSnapshot.basis,
-                  ownerShare: String(allocation.ownerContractSnapshot.ownerShare),
-                }
-              : null,
-          };
-        }),
-        priceLines: confirmedPriceSnapshot.calculated.lines.map((line) => ({
-          rentalSelectionId: line.rentalSelectionId,
-          netAmount: line.total,
-        })),
-      }));
-    } catch (error) {
-      return err(toConfirmRentalApplicationError(error));
-    }
+        return {
+          id: assignment?.id ?? allocation.assetId,
+          rentalDemandLineId: allocation.rentalDemandLineId,
+          assetId: allocation.assetId,
+          ownershipKind: allocation.ownershipKind,
+          ownerId: allocation.ownerId ?? null,
+          ownerContractSnapshot: allocation.ownerContractSnapshot
+            ? {
+                contractId: allocation.ownerContractSnapshot.contractId,
+                basis: allocation.ownerContractSnapshot.basis,
+                ownerShare: String(allocation.ownerContractSnapshot.ownerShare),
+              }
+            : null,
+        };
+      }),
+      priceLines: confirmedPriceSnapshot.calculated.lines.map((line) => ({
+        rentalSelectionId: line.rentalSelectionId,
+        netAmount: line.total,
+      })),
+    });
 
     // TODO(rental-commitment): close the race between allocation planning and asset block insertion
     // with transaction-level locking or an allocation+save repository method.
@@ -165,5 +180,78 @@ export class ConfirmRentalHandler implements ICommandHandler<ConfirmRentalComman
 
   private assignmentKey(assetId: AssetId, rentalDemandLineId: string): string {
     return `${rentalDemandLineId}:${assetId}`;
+  }
+
+  private toApplicationError(error: unknown, context: Record<string, unknown>): ConfirmRentalError {
+    if (error instanceof RentalCannotBeConfirmedFromStatusError) {
+      return confirmRentalError(
+        'rental_commitment.rental_cannot_be_confirmed_from_status',
+        error.message,
+        error,
+        context,
+      );
+    }
+
+    if (error instanceof RentalConfirmationRequiresCustomerError) {
+      return confirmRentalError(
+        'rental_commitment.rental_confirmation_requires_customer',
+        error.message,
+        error,
+        context,
+      );
+    }
+
+    if (error instanceof ConfirmedRentalRequiresPriceSnapshotError) {
+      return confirmRentalError(
+        'rental_commitment.confirmed_rental_requires_price_snapshot',
+        error.message,
+        error,
+        context,
+      );
+    }
+
+    if (error instanceof InsufficientAssetAvailabilityError) {
+      return confirmRentalError('rental_commitment.insufficient_asset_availability', error.message, error, {
+        ...context,
+        equipmentTypeId: error.equipmentTypeId,
+        rentalSelectionId: error.rentalSelectionId,
+        requiredQuantity: error.requiredQuantity,
+        availableQuantity: error.availableQuantity,
+      });
+    }
+
+    if (error instanceof DuplicateAssignedAssetError) {
+      return confirmRentalError('rental_commitment.duplicate_assigned_asset', error.message, error, context);
+    }
+
+    if (error instanceof RentalInvalidFieldError) {
+      return confirmRentalError('rental_commitment.invalid_rental_field', error.message, error, {
+        ...context,
+        field: error.field,
+      });
+    }
+
+    if (error instanceof TenantUnavailableForRentalError) {
+      return confirmRentalError('rental_commitment.tenant_unavailable', error.message, error, context);
+    }
+
+    if (error instanceof BranchUnavailableForRentalError) {
+      return confirmRentalError('rental_commitment.branch_unavailable', error.message, error, context);
+    }
+
+    if (error instanceof RentalCustomerUnavailableForRentalError) {
+      return confirmRentalError('rental_commitment.customer_unavailable', error.message, error, context);
+    }
+
+    if (error instanceof UnsupportedBranchFulfillmentMethodError) {
+      return confirmRentalError(
+        'rental_commitment.unsupported_branch_fulfillment_method',
+        error.message,
+        error,
+        context,
+      );
+    }
+
+    throw error;
   }
 }

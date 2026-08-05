@@ -49,8 +49,8 @@ Canonical example: `src/modules/pricing/features/calculate-cart-price/`.
 
 - [x] `assign-customer-to-draft-rental`
 - [ ] `assign-rental-accessories`
-- [ ] `cancel-rental`
-- [ ] `confirm-rental`
+- [x] `cancel-rental`
+- [x] `confirm-rental`
 - [ ] `create-confirmed-rental`
 - [ ] `create-draft-rental`
 - [x] `get-rental-detail`
