@@ -5,29 +5,31 @@ import { PrismaService } from 'src/core/database/prisma.service';
 
 import { CatalogRentableItemCannotBeActivatedFromStatusError } from '../../domain/errors/catalog.errors';
 import { PrismaRentableItemRepository } from '../create-rentable-item-offering/prisma-rentable-item.repository';
-import {
-  ActivateRentableItemApplicationError,
-  activateRentableItemApplicationError,
-  InsufficientActiveAssetsContext,
-} from './activate-rentable-item-application.error';
 import { ActivateRentableItemCommand } from './activate-rentable-item.command';
+import { ActivateRentableItemError, activateRentableItemError } from './activate-rentable-item.errors';
 
 @CommandHandler(ActivateRentableItemCommand)
 export class ActivateRentableItemHandler implements ICommandHandler<
   ActivateRentableItemCommand,
-  Result<void, ActivateRentableItemApplicationError>
+  Result<void, ActivateRentableItemError>
 > {
   constructor(
     private readonly prisma: PrismaService,
     private readonly rentableItemRepository: PrismaRentableItemRepository,
   ) {}
 
-  async execute(command: ActivateRentableItemCommand): Promise<Result<void, ActivateRentableItemApplicationError>> {
+  async execute(command: ActivateRentableItemCommand): Promise<Result<void, ActivateRentableItemError>> {
+    const context = this.errorContext(command);
     const rentableItem = await this.rentableItemRepository.load(command.tenantId, command.rentableItemId);
 
     if (!rentableItem) {
       return err(
-        activateRentableItemApplicationError('RentableItemNotFound', 'The requested rentable item could not be found.'),
+        activateRentableItemError(
+          'catalog.rentable_item_not_found',
+          `Rentable item "${command.rentableItemId}" was not found.`,
+          undefined,
+          context,
+        ),
       );
     }
 
@@ -35,17 +37,16 @@ export class ActivateRentableItemHandler implements ICommandHandler<
     if (activationResult.isErr()) {
       if (activationResult.error instanceof CatalogRentableItemCannotBeActivatedFromStatusError) {
         return err(
-          activateRentableItemApplicationError(
-            'RentableItemNotInDraftStatus',
+          activateRentableItemError(
+            'catalog.rentable_item_not_in_draft_status',
             activationResult.error.message,
             activationResult.error,
+            context,
           ),
         );
       }
 
-      return err(
-        activateRentableItemApplicationError('Unexpected', 'An unexpected error occurred.', activationResult.error),
-      );
+      throw activationResult.error;
     }
 
     // TODO: Refactor these direct Prisma validations behind cross-bounded-context public APIs/facades
@@ -60,10 +61,19 @@ export class ActivateRentableItemHandler implements ICommandHandler<
     return ok(undefined);
   }
 
+  private errorContext(command: ActivateRentableItemCommand): Record<string, unknown> {
+    return {
+      useCase: 'ActivateRentableItem',
+      tenantId: command.tenantId,
+      rentableItemId: command.rentableItemId,
+    };
+  }
+
   private async validateActivationEligibility(
     tenantId: string,
     rentableItemId: string,
-  ): Promise<Result<void, ActivateRentableItemApplicationError>> {
+  ): Promise<Result<void, ActivateRentableItemError>> {
+    const context = { useCase: 'ActivateRentableItem', tenantId, rentableItemId };
     const item = await this.prisma.client.v2RentableItem.findFirst({
       where: { id: rentableItemId, tenantId, deletedAt: null },
       select: {
@@ -78,23 +88,34 @@ export class ActivateRentableItemHandler implements ICommandHandler<
     });
 
     if (!item) {
-      return err(activateRentableItemApplicationError('RentableItemNotFound', 'The rentable item was not found.'));
+      return err(
+        activateRentableItemError(
+          'catalog.rentable_item_not_found',
+          `Rentable item "${rentableItemId}" was not found.`,
+          undefined,
+          context,
+        ),
+      );
     }
 
     if (item.requirements.length === 0) {
       return err(
-        activateRentableItemApplicationError(
-          'RentableItemHasNoRequirements',
+        activateRentableItemError(
+          'catalog.rentable_item_has_no_requirements',
           'The rentable item must have at least one equipment requirement before it can be activated.',
+          undefined,
+          context,
         ),
       );
     }
 
     if (item.rentalOffers.length === 0) {
       return err(
-        activateRentableItemApplicationError(
-          'RentableItemHasNoRentalOffers',
+        activateRentableItemError(
+          'catalog.rentable_item_has_no_rental_offers',
           'The rentable item must have at least one rental offer before it can be activated.',
+          undefined,
+          context,
         ),
       );
     }
@@ -120,9 +141,11 @@ export class ActivateRentableItemHandler implements ICommandHandler<
 
     if (pricedOffers.length === 0) {
       return err(
-        activateRentableItemApplicationError(
-          'RentableItemHasNoActivePricing',
+        activateRentableItemError(
+          'catalog.rentable_item_has_no_active_pricing',
           'At least one rental offer must have active pricing before the rentable item can be activated.',
+          undefined,
+          context,
         ),
       );
     }
@@ -136,11 +159,11 @@ export class ActivateRentableItemHandler implements ICommandHandler<
 
       if (insufficientContext) {
         return err(
-          activateRentableItemApplicationError(
-            'RentableItemHasInsufficientActiveAssets',
+          activateRentableItemError(
+            'catalog.rentable_item_has_insufficient_active_assets',
             'Every priced branch offer must have enough active assets to fulfill the rentable item requirements.',
             undefined,
-            insufficientContext,
+            { ...context, ...insufficientContext },
           ),
         );
       }
@@ -153,7 +176,9 @@ export class ActivateRentableItemHandler implements ICommandHandler<
     tenantId: string,
     branchId: string,
     requirements: Array<{ equipmentTypeId: string; quantityPerItem: number }>,
-  ): Promise<InsufficientActiveAssetsContext | undefined> {
+  ): Promise<
+    { branchId: string; equipmentTypeId: string; requiredQuantity: number; activeAssetCount: number } | undefined
+  > {
     for (const requirement of requirements) {
       const activeAssetCount = await this.prisma.client.v2Asset.count({
         where: {
