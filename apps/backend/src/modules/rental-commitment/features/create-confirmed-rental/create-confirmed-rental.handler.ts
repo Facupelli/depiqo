@@ -9,8 +9,7 @@ import { TenantManagementPublicApi } from 'src/modules/tenant-management/public-
 import { CreateConfirmedRentalCommand } from './create-confirmed-rental.command';
 import { Rental } from '../../domain/rental.aggregate';
 import { FulfillmentMethod } from '../../domain/rental-status';
-import { toRentalCommitmentApplicationError } from './map-rental-commitment-error';
-import { RentalCommitmentApplicationError } from './rental-commitment-application.error';
+import { createConfirmedRentalError, CreateConfirmedRentalError } from './create-confirmed-rental.errors';
 import { RentalRepository } from '../../persistence/rental.repository';
 import { RentalAssetAllocationService } from '../../asset-allocation/rental-asset-allocation.service';
 import { RentalSelectionId } from '../../domain/ids/rental-selection-id';
@@ -18,12 +17,29 @@ import { RentalDemandLineId } from '../../domain/ids/rental-demand-line-id';
 import { EquipmentTypeId } from '../../domain/types/rental-commitment-ids';
 import { RentalOwnerSplitCalculator } from '../../owner-split/rental-owner-split-calculator';
 import { RentalOwnerSplitDraft } from '../../owner-split/owner-split-calculator.types';
+import {
+  BranchUnavailableForRentalError,
+  DuplicateAssignedAssetError,
+  DuplicateRentalOfferSelectionError,
+  EquipmentTypeNotFoundError,
+  EquipmentTypeNotRentableError,
+  InsufficientAssetAvailabilityError,
+  InvalidCatalogSelectionQuantityError,
+  PickupTimeOutsideBranchScheduleError,
+  ProfessionalConfirmedRentalCreationDisabledError,
+  RentalCustomerUnavailableForRentalError,
+  RentalInvalidFieldError,
+  RentalMustContainSelectionError,
+  ReturnTimeOutsideBranchScheduleError,
+  TenantUnavailableForRentalError,
+  UnsupportedBranchFulfillmentMethodError,
+} from '../../domain/errors/rental-commitment.errors';
 
 export interface CreateConfirmedRentalResult {
   rentalId: string;
 }
 
-export type CreateConfirmedRentalServiceResult = Result<CreateConfirmedRentalResult, RentalCommitmentApplicationError>;
+export type CreateConfirmedRentalServiceResult = Result<CreateConfirmedRentalResult, CreateConfirmedRentalError>;
 
 @CommandHandler(CreateConfirmedRentalCommand)
 export class CreateConfirmedRentalService implements ICommandHandler<
@@ -41,6 +57,12 @@ export class CreateConfirmedRentalService implements ICommandHandler<
   ) {}
 
   async execute(command: CreateConfirmedRentalCommand): Promise<CreateConfirmedRentalServiceResult> {
+    const context = {
+      useCase: 'CreateConfirmedRental',
+      tenantId: command.tenantId,
+      branchId: command.branchId,
+      rentalCustomerId: command.rentalCustomerId,
+    };
     const tenantValidation = await this.tenantManagementApi.validateProfessionalConfirmedRentalCreation({
       tenantId: command.tenantId,
       branchId: command.branchId,
@@ -50,7 +72,7 @@ export class CreateConfirmedRentalService implements ICommandHandler<
     });
 
     if (tenantValidation.isErr()) {
-      return err(toRentalCommitmentApplicationError(tenantValidation.error));
+      return err(this.toApplicationError(tenantValidation.error, context));
     }
 
     const resolvedCatalogSelections = await this.catalogApi.resolveSelectedRentalOffers({
@@ -63,7 +85,7 @@ export class CreateConfirmedRentalService implements ICommandHandler<
     });
 
     if (resolvedCatalogSelections.isErr()) {
-      return err(toRentalCommitmentApplicationError(resolvedCatalogSelections.error));
+      return err(this.toApplicationError(resolvedCatalogSelections.error, context));
     }
 
     const rentalSelectionsDraft = resolvedCatalogSelections.value.resolvedOffers.map((offer) => ({
@@ -98,7 +120,7 @@ export class CreateConfirmedRentalService implements ICommandHandler<
     });
 
     if (pricingResult.isErr()) {
-      return err(toRentalCommitmentApplicationError(pricingResult.error));
+      return err(this.toApplicationError(pricingResult.error, context));
     }
 
     const equipmentDemandLines = rentalSelectionsDraft.flatMap((selection) =>
@@ -125,7 +147,7 @@ export class CreateConfirmedRentalService implements ICommandHandler<
     });
 
     if (assetAssignmentPlan.isErr()) {
-      return err(toRentalCommitmentApplicationError(assetAssignmentPlan.error));
+      return err(this.toApplicationError(assetAssignmentPlan.error, context));
     }
 
     const rental = Rental.createConfirmed({
@@ -164,7 +186,7 @@ export class CreateConfirmedRentalService implements ICommandHandler<
     });
 
     if (rental.isErr()) {
-      return err(toRentalCommitmentApplicationError(rental.error));
+      return err(this.toApplicationError(rental.error, context));
     }
 
     const confirmedRental = rental.value;
@@ -218,12 +240,7 @@ export class CreateConfirmedRentalService implements ICommandHandler<
       })),
     };
 
-    let splits: RentalOwnerSplitDraft[];
-    try {
-      ({ splits } = this.rentalOwnerSplitCalculator.calculate(ownerSplitInput));
-    } catch (error) {
-      return err(toRentalCommitmentApplicationError(error));
-    }
+    const { splits }: { splits: RentalOwnerSplitDraft[] } = this.rentalOwnerSplitCalculator.calculate(ownerSplitInput);
 
     await this.unitOfWork.runInTransaction(async ({ tx, events }) => {
       await this.rentalRepository.save(confirmedRental, { ownerSplits: splits, tx });
@@ -236,4 +253,103 @@ export class CreateConfirmedRentalService implements ICommandHandler<
   private assignmentKey(assetId: string, rentalDemandLineId: string): string {
     return `${rentalDemandLineId}:${assetId}`;
   }
+
+  private toApplicationError(error: unknown, context: Record<string, unknown>): CreateConfirmedRentalError {
+    if (error instanceof RentalMustContainSelectionError) {
+      return createConfirmedRentalError('rental_commitment.rental_requires_selection', error.message, error, context);
+    }
+    if (error instanceof DuplicateRentalOfferSelectionError) {
+      return createConfirmedRentalError('rental_commitment.duplicate_rental_offer_selection', error.message, error, {
+        ...context,
+        rentalOfferId: error.rentalOfferId,
+      });
+    }
+    if (error instanceof InsufficientAssetAvailabilityError) {
+      return createConfirmedRentalError('rental_commitment.insufficient_asset_availability', error.message, error, {
+        ...context,
+        equipmentTypeId: error.equipmentTypeId,
+        rentalSelectionId: error.rentalSelectionId,
+        requiredQuantity: error.requiredQuantity,
+        availableQuantity: error.availableQuantity,
+      });
+    }
+    if (error instanceof ProfessionalConfirmedRentalCreationDisabledError) {
+      return createConfirmedRentalError(
+        'rental_commitment.confirmed_rental_creation_disabled',
+        error.message,
+        error,
+        context,
+      );
+    }
+    if (error instanceof TenantUnavailableForRentalError) {
+      return createConfirmedRentalError('rental_commitment.tenant_unavailable', error.message, error, context);
+    }
+    if (error instanceof BranchUnavailableForRentalError) {
+      return createConfirmedRentalError('rental_commitment.branch_unavailable', error.message, error, context);
+    }
+    if (error instanceof RentalCustomerUnavailableForRentalError) {
+      return createConfirmedRentalError('rental_commitment.customer_unavailable', error.message, error, context);
+    }
+    if (error instanceof EquipmentTypeNotFoundError) {
+      return createConfirmedRentalError('rental_commitment.equipment_type_not_found', error.message, error, {
+        ...context,
+        equipmentTypeId: error.equipmentTypeId,
+      });
+    }
+    if (error instanceof EquipmentTypeNotRentableError) {
+      return createConfirmedRentalError('rental_commitment.equipment_type_not_rentable', error.message, error, {
+        ...context,
+        equipmentTypeId: error.equipmentTypeId,
+      });
+    }
+    if (error instanceof UnsupportedBranchFulfillmentMethodError) {
+      return createConfirmedRentalError(
+        'rental_commitment.unsupported_branch_fulfillment_method',
+        error.message,
+        error,
+        context,
+      );
+    }
+    if (error instanceof PickupTimeOutsideBranchScheduleError) {
+      return createConfirmedRentalError(
+        'rental_commitment.pickup_time_outside_branch_schedule',
+        error.message,
+        error,
+        context,
+      );
+    }
+    if (error instanceof ReturnTimeOutsideBranchScheduleError) {
+      return createConfirmedRentalError(
+        'rental_commitment.return_time_outside_branch_schedule',
+        error.message,
+        error,
+        context,
+      );
+    }
+    if (error instanceof RentalInvalidFieldError) {
+      return createConfirmedRentalError('rental_commitment.invalid_rental_field', error.message, error, {
+        ...context,
+        field: error.field,
+      });
+    }
+    if (error instanceof InvalidCatalogSelectionQuantityError) {
+      return createConfirmedRentalError('rental_commitment.invalid_catalog_selection_quantity', error.message, error, {
+        ...context,
+        field: error.field,
+        quantity: error.quantity,
+      });
+    }
+    if (isErrorWithCode(error, 'INVALID_PRICING_INPUT')) {
+      return createConfirmedRentalError('rental_commitment.invalid_pricing_input', error.message, error, context);
+    }
+    if (error instanceof DuplicateAssignedAssetError) {
+      return createConfirmedRentalError('rental_commitment.duplicate_assigned_asset', error.message, error, context);
+    }
+
+    throw error;
+  }
+}
+
+function isErrorWithCode(error: unknown, code: string): error is Error & { code: string } {
+  return error instanceof Error && 'code' in error && error.code === code;
 }

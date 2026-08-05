@@ -1,20 +1,24 @@
 import { Body, Controller, HttpCode, HttpStatus, Post, UseGuards } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
 
+import { createProblemDetails, createProblemType, ProblemException } from 'src/core/problem-details';
 import { AUTH_ACTOR_TYPES, AuthUser } from 'src/modules/tenant-management/auth/shared/auth.types';
 import { CurrentUser } from 'src/modules/tenant-management/auth/shared/current-user/current-user.decorator';
 import { AllowAuthActors } from 'src/modules/tenant-management/auth/shared/session/auth-actor-access.decorator';
 import { SessionAuthGuard } from 'src/modules/tenant-management/auth/shared/session/session-auth.guard';
 import { TenantUserSessionGuard } from 'src/modules/tenant-management/auth/shared/session/tenant-user-session.guard';
 
+import { FulfillmentMethod } from '../../domain/rental-status';
+import { RentalPeriod } from '../../domain/value-objects/rental-period.value-object';
 import { CreateDraftRentalCommand } from './create-draft-rental.command';
+import {
+  createDraftRentalError,
+  CreateDraftRentalError,
+  CreateDraftRentalErrorCode,
+} from './create-draft-rental.errors';
 import { CreateDraftRentalRequestDto } from './create-draft-rental.request.dto';
 import { CreateDraftRentalResponseDto } from './create-draft-rental.response.dto';
 import { CreateDraftRentalServiceResult } from './create-draft-rental.service';
-import { rentalCommitmentApplicationError } from '../create-confirmed-rental/rental-commitment-application.error';
-import { toRentalCommitmentProblem } from '../create-confirmed-rental/rental-commitment-http-error.mapper';
-import { FulfillmentMethod } from '../../domain/rental-status';
-import { RentalPeriod } from '../../domain/value-objects/rental-period.value-object';
 
 @Controller('rental-commitments/draft-rentals')
 export class CreateDraftRentalHttpController {
@@ -33,8 +37,11 @@ export class CreateDraftRentalHttpController {
     try {
       period = new RentalPeriod(dto.period.start, dto.period.end);
     } catch (error) {
-      throw toRentalCommitmentProblem(
-        rentalCommitmentApplicationError('InvalidRentalPeriod', 'Invalid rental period.', error),
+      throw toCreateDraftRentalProblem(
+        createDraftRentalError('rental_commitment.invalid_rental_period', 'Invalid rental period.', error, {
+          useCase: 'CreateDraftRental',
+          tenantId: user.tenantId,
+        }),
       );
     }
 
@@ -54,10 +61,98 @@ export class CreateDraftRentalHttpController {
       }),
     );
 
-    if (result.isErr()) {
-      throw toRentalCommitmentProblem(result.error);
-    }
+    if (result.isErr()) throw toCreateDraftRentalProblem(result.error);
 
     return { id: result.value.rentalId };
   }
+}
+
+function toCreateDraftRentalProblem(error: CreateDraftRentalError): ProblemException {
+  const problem = createDraftRentalProblemMap[error.code];
+  return ProblemException.from({
+    problemDetails: createProblemDetails({ ...problem, extensions: { code: error.code } }),
+    applicationError: error,
+    cause: error.cause,
+  });
+}
+
+const createDraftRentalProblemMap = {
+  'rental_commitment.invalid_rental_period': problem(
+    'invalid_rental_period',
+    'Invalid rental period',
+    HttpStatus.UNPROCESSABLE_ENTITY,
+    'The requested rental period is invalid.',
+  ),
+  'rental_commitment.rental_requires_selection': problem(
+    'rental_requires_selection',
+    'Rental requires selection',
+    HttpStatus.UNPROCESSABLE_ENTITY,
+    'A draft rental must include at least one selected offer.',
+  ),
+  'rental_commitment.duplicate_rental_offer_selection': problem(
+    'duplicate_rental_offer_selection',
+    'Duplicate rental offer selection',
+    HttpStatus.CONFLICT,
+    'The same rental offer cannot be selected more than once.',
+  ),
+  'rental_commitment.tenant_unavailable': problem(
+    'tenant_unavailable',
+    'Tenant unavailable',
+    HttpStatus.UNPROCESSABLE_ENTITY,
+    'The tenant is not available for draft rental creation.',
+  ),
+  'rental_commitment.branch_unavailable': problem(
+    'branch_unavailable',
+    'Branch unavailable',
+    HttpStatus.UNPROCESSABLE_ENTITY,
+    'The selected branch is not available for draft rental creation.',
+  ),
+  'rental_commitment.customer_unavailable': problem(
+    'customer_unavailable',
+    'Customer unavailable',
+    HttpStatus.UNPROCESSABLE_ENTITY,
+    'The selected customer is not available for draft rental creation.',
+  ),
+  'rental_commitment.unsupported_branch_fulfillment_method': problem(
+    'unsupported_branch_fulfillment_method',
+    'Unsupported fulfillment method',
+    HttpStatus.UNPROCESSABLE_ENTITY,
+    'The selected branch does not support the requested fulfillment method.',
+  ),
+  'rental_commitment.pickup_time_outside_branch_schedule': problem(
+    'pickup_time_outside_branch_schedule',
+    'Pickup time outside branch schedule',
+    HttpStatus.UNPROCESSABLE_ENTITY,
+    'The requested pickup time is outside the branch schedule.',
+  ),
+  'rental_commitment.return_time_outside_branch_schedule': problem(
+    'return_time_outside_branch_schedule',
+    'Return time outside branch schedule',
+    HttpStatus.UNPROCESSABLE_ENTITY,
+    'The requested return time is outside the branch schedule.',
+  ),
+  'rental_commitment.invalid_rental_field': problem(
+    'invalid_rental_field',
+    'Invalid rental field',
+    HttpStatus.UNPROCESSABLE_ENTITY,
+    'The rental contains an invalid field value.',
+  ),
+  'rental_commitment.invalid_catalog_selection_quantity': problem(
+    'invalid_catalog_selection_quantity',
+    'Invalid selection quantity',
+    HttpStatus.UNPROCESSABLE_ENTITY,
+    'A selected offer has an invalid quantity.',
+  ),
+  'rental_commitment.invalid_pricing_input': problem(
+    'invalid_pricing_input',
+    'Invalid pricing input',
+    HttpStatus.UNPROCESSABLE_ENTITY,
+    'The rental could not be priced with the provided input.',
+  ),
+} satisfies Record<CreateDraftRentalErrorCode, ProblemDefinition>;
+
+type ProblemDefinition = { type: string; title: string; status: HttpStatus; detail: string };
+
+function problem(slug: string, title: string, status: HttpStatus, detail: string): ProblemDefinition {
+  return { type: createProblemType(`rental_commitment.${slug}`), title, status, detail };
 }
