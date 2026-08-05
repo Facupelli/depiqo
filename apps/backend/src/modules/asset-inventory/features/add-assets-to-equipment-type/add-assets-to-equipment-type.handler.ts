@@ -9,15 +9,18 @@ import { EquipmentTypeNotActiveError, EquipmentTypeNotFoundError } from '../../d
 import { AssetRepository } from '../../persistence/asset.repository';
 import { EquipmentTypeRepository } from '../../persistence/equipment-type.repository';
 import { TenantManagementPublicApi } from '../../../tenant-management/public-api/tenant-management.public-api';
-import { AddAssetsToEquipmentTypeApplicationError } from './add-assets-to-equipment-type-application.error';
 import { AddAssetsToEquipmentTypeCommand } from './add-assets-to-equipment-type.command';
-import { mapAssetInventoryError, mapTenantManagementError } from './map-add-assets-to-equipment-type-error';
+import {
+  AddAssetsToEquipmentTypeError,
+  mapAssetInventoryError,
+  mapTenantValidationError,
+} from './add-assets-to-equipment-type.errors';
 
 export type AddAssetsToEquipmentTypeServiceResult = Result<
   {
     assetIds: string[];
   },
-  AddAssetsToEquipmentTypeApplicationError
+  AddAssetsToEquipmentTypeError
 >;
 
 @CommandHandler(AddAssetsToEquipmentTypeCommand)
@@ -41,7 +44,7 @@ export class AddAssetsToEquipmentTypeHandler implements ICommandHandler<
       branchIds,
     });
     if (tenantValidation.isErr()) {
-      return err(mapTenantManagementError(tenantValidation.error));
+      return err(mapTenantValidationError(tenantValidation.error));
     }
 
     const equipmentType = await this.equipmentTypeRepository.loadByIdForTenant({

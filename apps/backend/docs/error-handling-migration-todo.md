@@ -8,7 +8,7 @@ Canonical example: `src/modules/pricing/features/calculate-cart-price/`.
 
 ### Asset inventory
 
-- [ ] `add-assets-to-equipment-type`
+- [x] `add-assets-to-equipment-type`
 - [ ] `create-equipment-type`
 - [ ] `create-equipment-type-accessory-defaults`
 - [ ] `get-equipment-type-detail`
