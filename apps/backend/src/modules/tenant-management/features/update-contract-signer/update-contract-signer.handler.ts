@@ -3,20 +3,14 @@ import { err, ok, Result } from 'neverthrow';
 
 import { PrismaService } from 'src/core/database/prisma.service';
 
-import {
-  updateContractSignerApplicationError,
-  UpdateContractSignerApplicationError,
-} from './update-contract-signer-application.error';
+import { UpdateContractSignerError, updateContractSignerError } from './update-contract-signer.errors';
 import { UpdateContractSignerCommand } from './update-contract-signer.command';
 
 export interface UpdateContractSignerResult {
   id: string;
 }
 
-export type UpdateContractSignerHandlerResult = Result<
-  UpdateContractSignerResult,
-  UpdateContractSignerApplicationError
->;
+export type UpdateContractSignerHandlerResult = Result<UpdateContractSignerResult, UpdateContractSignerError>;
 
 @CommandHandler(UpdateContractSignerCommand)
 export class UpdateContractSignerHandler implements ICommandHandler<
@@ -26,6 +20,10 @@ export class UpdateContractSignerHandler implements ICommandHandler<
   constructor(private readonly prisma: PrismaService) {}
 
   async execute(command: UpdateContractSignerCommand): Promise<UpdateContractSignerHandlerResult> {
+    const context = {
+      useCase: 'UpdateContractSigner',
+      tenantId: command.tenantId,
+    };
     const existingSigner = await this.prisma.client.v2TenantContractSigner.findFirst({
       where: {
         tenantId: command.tenantId,
@@ -37,9 +35,11 @@ export class UpdateContractSignerHandler implements ICommandHandler<
 
     if (!existingSigner) {
       return err(
-        updateContractSignerApplicationError(
-          'ContractSignerNotFound',
+        updateContractSignerError(
+          'tenant_management.contract_signer_not_found',
           `Tenant "${command.tenantId}" does not have an active contract signer.`,
+          undefined,
+          context,
         ),
       );
     }

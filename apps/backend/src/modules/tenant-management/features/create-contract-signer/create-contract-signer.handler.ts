@@ -3,20 +3,14 @@ import { err, ok, Result } from 'neverthrow';
 
 import { PrismaService } from 'src/core/database/prisma.service';
 
-import {
-  createContractSignerApplicationError,
-  CreateContractSignerApplicationError,
-} from './create-contract-signer-application.error';
+import { CreateContractSignerError, createContractSignerError } from './create-contract-signer.errors';
 import { CreateContractSignerCommand } from './create-contract-signer.command';
 
 export interface CreateContractSignerResult {
   id: string;
 }
 
-export type CreateContractSignerHandlerResult = Result<
-  CreateContractSignerResult,
-  CreateContractSignerApplicationError
->;
+export type CreateContractSignerHandlerResult = Result<CreateContractSignerResult, CreateContractSignerError>;
 
 @CommandHandler(CreateContractSignerCommand)
 export class CreateContractSignerHandler implements ICommandHandler<
@@ -26,6 +20,10 @@ export class CreateContractSignerHandler implements ICommandHandler<
   constructor(private readonly prisma: PrismaService) {}
 
   async execute(command: CreateContractSignerCommand): Promise<CreateContractSignerHandlerResult> {
+    const context = {
+      useCase: 'CreateContractSigner',
+      tenantId: command.tenantId,
+    };
     const existingSigner = await this.prisma.client.v2TenantContractSigner.findFirst({
       where: {
         tenantId: command.tenantId,
@@ -37,9 +35,11 @@ export class CreateContractSignerHandler implements ICommandHandler<
 
     if (existingSigner) {
       return err(
-        createContractSignerApplicationError(
-          'ContractSignerAlreadyExists',
+        createContractSignerError(
+          'tenant_management.contract_signer_already_exists',
           `Tenant "${command.tenantId}" already has an active contract signer.`,
+          undefined,
+          context,
         ),
       );
     }

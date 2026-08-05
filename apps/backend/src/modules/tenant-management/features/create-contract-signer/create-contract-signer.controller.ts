@@ -2,11 +2,12 @@ import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
 import { Result } from 'neverthrow';
 
+import { createProblemDetails, createProblemType, ProblemException } from 'src/core/problem-details';
+
 import { AuthUser } from '../../auth/shared/auth.types';
 import { CurrentUser } from '../../auth/shared/current-user/current-user.decorator';
-import { CreateContractSignerApplicationError } from './create-contract-signer-application.error';
 import { CreateContractSignerCommand } from './create-contract-signer.command';
-import { toCreateContractSignerProblem } from './create-contract-signer-http-error.mapper';
+import { CreateContractSignerError, CreateContractSignerErrorCode } from './create-contract-signer.errors';
 import { CreateContractSignerResult } from './create-contract-signer.handler';
 import { CreateContractSignerRequestDto } from './create-contract-signer.request.dto';
 import { CreateContractSignerResponseDto } from './create-contract-signer.response.dto';
@@ -23,7 +24,7 @@ export class CreateContractSignerHttpController {
   ): Promise<CreateContractSignerResponseDto> {
     const result = await this.commandBus.execute<
       CreateContractSignerCommand,
-      Result<CreateContractSignerResult, CreateContractSignerApplicationError>
+      Result<CreateContractSignerResult, CreateContractSignerError>
     >(
       new CreateContractSignerCommand({
         tenantId: user.tenantId,
@@ -42,3 +43,28 @@ export class CreateContractSignerHttpController {
     return result.value;
   }
 }
+
+function toCreateContractSignerProblem(error: CreateContractSignerError): ProblemException {
+  const problem = createContractSignerProblemMap[error.code];
+
+  return ProblemException.from({
+    problemDetails: createProblemDetails({
+      type: problem.type,
+      title: problem.title,
+      status: problem.status,
+      detail: problem.detail,
+      extensions: { code: error.code },
+    }),
+    applicationError: error,
+    cause: error.cause,
+  });
+}
+
+const createContractSignerProblemMap = {
+  'tenant_management.contract_signer_already_exists': {
+    type: createProblemType('tenant-management/contract-signer-already-exists'),
+    title: 'Contract signer already exists',
+    status: HttpStatus.CONFLICT,
+    detail: 'The current tenant already has an active contract signer.',
+  },
+} satisfies Record<CreateContractSignerErrorCode, { type: string; title: string; status: HttpStatus; detail: string }>;

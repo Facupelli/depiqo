@@ -59,7 +59,7 @@ Canonical example: `src/modules/pricing/features/calculate-cart-price/`.
 
 - [x] `approve-submitted-customer-onboarding`
 - [x] `create-branch`
-- [ ] `create-contract-signer`
+- [x] `create-contract-signer`
 - [x] `get-branch-detail`
 - [ ] `get-current-tenant`
 - [ ] `get-customer-profile-detail`
@@ -70,7 +70,7 @@ Canonical example: `src/modules/pricing/features/calculate-cart-price/`.
 - [ ] `register-tenant-with-owner`
 - [x] `reject-submitted-customer-onboarding`
 - [x] `update-branch`
-- [ ] `update-contract-signer`
+- [x] `update-contract-signer`
 - [ ] `update-tenant-branding`
 - [ ] `update-tenant-config`
 - [ ] `customer/get-current-rental-customer-profile`
