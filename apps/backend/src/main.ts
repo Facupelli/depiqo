@@ -1,105 +1,46 @@
-import { NestFactory, Reflector } from '@nestjs/core';
-import { NestExpressApplication } from '@nestjs/platform-express';
-import { AppModule } from './app.module';
 import { ConfigService } from '@nestjs/config';
+import { NestFactory } from '@nestjs/core';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import { Logger } from 'nestjs-pino';
-import { ZodValidationPipe } from 'nestjs-zod';
-import { Env } from './config/env.schema';
-import { ProblemDetailsFilter } from './core/problem-details';
-import { TransformInterceptor } from './core/response/transform.interceptor';
-import {
-  SESSION_COOKIE_NAME,
-  SESSION_MAX_AGE_MS,
-  SESSION_TTL_SECONDS,
-} from './modules/tenant-management/auth/shared/session/auth-session.constants';
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-import passport = require('passport');
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const session = require('express-session');
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const connectPgSimple = require('connect-pg-simple');
 
-const PORT = process.env.PORT ?? 3000;
+import { AppModule } from './app.module';
+import { Env } from './config/env.schema';
+import { configureApp } from './configure-app';
 
 async function bootstrap() {
-  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
-    bufferLogs: true,
-  });
-
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, { bufferLogs: true });
   const logger = app.get(Logger);
   app.useLogger(logger);
 
   const config = app.get<ConfigService<Env, true>>(ConfigService);
-  const isProduction = config.get('NODE_ENV') === 'production';
-  const sessionSecret = process.env.SESSION_SECRET;
-  const databaseUrl = process.env.DATABASE_URL;
+  if (config.get('NODE_ENV') === 'production') app.set('trust proxy', 1);
 
-  if (isProduction) {
-    app.set('trust proxy', 1);
-  }
-
-  const allowedOrigins = getAllowedOrigins();
-
-  app.enableCors({
-    credentials: true,
-    origin(origin, callback) {
-      if (!origin) {
-        return callback(null, true);
-      }
-
-      if (allowedOrigins.has(origin)) {
-        return callback(null, true);
-      }
-
-      return callback(new Error(`CORS origin not allowed: ${origin}`), false);
-    },
-    methods: ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'X-CSRF-Token'],
-    exposedHeaders: [],
-    maxAge: 60 * 60,
+  const resources = configureApp(app, {
+    allowedOrigins: getAllowedOrigins(config.get('CORS_ALLOWED_ORIGINS')),
   });
+  registerShutdownSignals(app, resources.close);
 
-  const PgSession = connectPgSimple(session);
-
-  app.use(
-    session({
-      name: SESSION_COOKIE_NAME,
-      secret: sessionSecret,
-      resave: false,
-      saveUninitialized: false,
-      rolling: false,
-      store: new PgSession({
-        conString: databaseUrl,
-        tableName: 'session',
-        createTableIfMissing: false,
-        ttl: SESSION_TTL_SECONDS,
-      }),
-      cookie: {
-        httpOnly: true,
-        secure: isProduction,
-        sameSite: 'lax',
-        path: '/',
-        maxAge: SESSION_MAX_AGE_MS,
-      },
-    }),
-  );
-
-  app.use(passport.initialize());
-  app.use(passport.session());
-
-  app.useGlobalPipes(new ZodValidationPipe());
-  app.useGlobalFilters(new ProblemDetailsFilter(isProduction));
-  app.useGlobalInterceptors(new TransformInterceptor(new Reflector()));
-
-  await app.listen(PORT);
-  logger.log(`Application started on port ${PORT}`, 'Bootstrap');
+  const port = config.get('PORT');
+  await app.listen(port);
+  logger.log(`Application started on port ${port}`, 'Bootstrap');
 }
 
-bootstrap();
+void bootstrap();
 
-function getAllowedOrigins(): Set<string> {
-  const rawOrigins = process.env.CORS_ALLOWED_ORIGINS ?? '';
+function registerShutdownSignals(app: NestExpressApplication, closeResources: () => Promise<void>): void {
+  let shuttingDown = false;
+  const shutdown = async () => {
+    if (shuttingDown) return;
+    shuttingDown = true;
+    await app.close();
+    await closeResources();
+  };
 
+  process.once('SIGINT', () => void shutdown());
+  process.once('SIGTERM', () => void shutdown());
+}
+
+function getAllowedOrigins(rawOrigins: string): Set<string> {
   return new Set(
     rawOrigins
       .split(',')
