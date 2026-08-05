@@ -27,7 +27,7 @@ Canonical example: `src/modules/pricing/features/calculate-cart-price/`.
 
 ### Document signing
 
-- [ ] `get-public-signing-session`
+- [x] `get-public-signing-session`
 
 ### Offering setup
 
