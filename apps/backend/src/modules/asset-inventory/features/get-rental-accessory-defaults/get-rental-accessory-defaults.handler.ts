@@ -7,14 +7,14 @@ import { Prisma } from 'src/generated/prisma/client';
 import { V2AssetBlockType } from 'src/generated/prisma/enums';
 
 import {
-  getRentalAccessoryDefaultsApplicationError,
-  GetRentalAccessoryDefaultsApplicationError,
-} from './get-rental-accessory-defaults-application.error';
+  getRentalAccessoryDefaultsError,
+  GetRentalAccessoryDefaultsError,
+} from './get-rental-accessory-defaults.errors';
 import { GetRentalAccessoryDefaultsQuery } from './get-rental-accessory-defaults.query';
 
 export type GetRentalAccessoryDefaultsResult = Result<
   GetRentalAccessoryDefaultsResponseDto,
-  GetRentalAccessoryDefaultsApplicationError
+  GetRentalAccessoryDefaultsError
 >;
 
 type DemandLine = {
@@ -64,7 +64,12 @@ export class GetRentalAccessoryDefaultsHandler implements IQueryHandler<
 
     if (!rental) {
       return err(
-        getRentalAccessoryDefaultsApplicationError('RentalNotFound', `Rental "${query.rentalId}" was not found.`),
+        getRentalAccessoryDefaultsError(
+          'asset_inventory.rental_not_found',
+          `Rental "${query.rentalId}" was not found.`,
+          undefined,
+          { rentalId: query.rentalId },
+        ),
       );
     }
 

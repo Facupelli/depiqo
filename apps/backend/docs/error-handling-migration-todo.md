@@ -13,7 +13,7 @@ Canonical example: `src/modules/pricing/features/calculate-cart-price/`.
 - [x] `create-equipment-type-accessory-defaults`
 - [x] `get-equipment-type-detail`
 - [x] `get-owner-detail`
-- [ ] `get-rental-accessory-defaults`
+- [x] `get-rental-accessory-defaults`
 
 ### Catalog
 
