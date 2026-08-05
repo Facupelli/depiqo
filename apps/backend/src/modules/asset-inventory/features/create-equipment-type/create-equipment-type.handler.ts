@@ -7,14 +7,14 @@ import {
   CreateEquipmentTypeSetupResult,
   CreateEquipmentTypeSetupService,
 } from '../create-equipment-type-setup/create-equipment-type-setup.service';
-import { CreateEquipmentTypeApplicationError } from './create-equipment-type-application.error';
 import { CreateEquipmentTypeCommand } from './create-equipment-type.command';
-import { mapAssetInventoryError, mapTenantManagementError } from './map-create-equipment-type-error';
+import {
+  CreateEquipmentTypeError,
+  mapAssetInventoryError,
+  mapTenantValidationError,
+} from './create-equipment-type.errors';
 
-export type CreateEquipmentTypeServiceResult = Result<
-  CreateEquipmentTypeSetupResult,
-  CreateEquipmentTypeApplicationError
->;
+export type CreateEquipmentTypeServiceResult = Result<CreateEquipmentTypeSetupResult, CreateEquipmentTypeError>;
 
 @CommandHandler(CreateEquipmentTypeCommand)
 export class CreateEquipmentTypeHandler implements ICommandHandler<
@@ -34,7 +34,7 @@ export class CreateEquipmentTypeHandler implements ICommandHandler<
       branchIds,
     });
     if (tenantValidation.isErr()) {
-      return err(mapTenantManagementError(tenantValidation.error));
+      return err(mapTenantValidationError(tenantValidation.error));
     }
 
     const equipmentTypeSetup = await this.createEquipmentTypeSetupService.execute(

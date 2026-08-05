@@ -5,8 +5,8 @@ import { CurrentUser } from 'src/core/decorators/current-user.decorator';
 import { AuthUser } from 'src/modules/tenant-management/auth/shared/auth.types';
 
 import { CreateEquipmentTypeCommand } from './create-equipment-type.command';
-import { toCreateEquipmentTypeProblem } from './create-equipment-type-http-error.mapper';
 import { CreateEquipmentTypeServiceResult } from './create-equipment-type.handler';
+import { toCreateEquipmentTypeProblem } from './create-equipment-type.http-errors';
 import { CreateEquipmentTypeRequestDto } from './create-equipment-type.request.dto';
 import { CreateEquipmentTypeResponseDto } from './create-equipment-type.response.dto';
 
