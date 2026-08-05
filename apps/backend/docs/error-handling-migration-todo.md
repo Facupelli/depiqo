@@ -23,7 +23,7 @@ Canonical example: `src/modules/pricing/features/calculate-cart-price/`.
 
 ### Contracts
 
-- [ ] `generate-rental-remito`
+- [x] `generate-rental-remito`
 
 ### Document signing
 
