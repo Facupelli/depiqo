@@ -11,12 +11,9 @@ import { InsufficientAssetAvailabilityError } from '../../domain/errors/rental-c
 import { RentalDemandLineId } from '../../domain/ids/rental-demand-line-id';
 import { AssetId, EquipmentTypeId, RentalSelectionId } from '../../domain/types/rental-commitment-ids';
 import { AssignRentalAccessoriesCommand } from './assign-rental-accessories.command';
-import {
-  assignRentalAccessoriesApplicationError,
-  AssignRentalAccessoriesApplicationError,
-} from './assign-rental-accessories-application.error';
+import { assignRentalAccessoriesError, AssignRentalAccessoriesError } from './assign-rental-accessories.errors';
 
-export type AssignRentalAccessoriesResult = Result<void, AssignRentalAccessoriesApplicationError>;
+export type AssignRentalAccessoriesResult = Result<void, AssignRentalAccessoriesError>;
 
 type RentalReadModel = {
   id: string;
@@ -58,6 +55,7 @@ export class AssignRentalAccessoriesHandler implements ICommandHandler<
   ) {}
 
   async execute(command: AssignRentalAccessoriesCommand): Promise<AssignRentalAccessoriesResult> {
+    const context = this.errorContext(command);
     const rental = await this.prisma.client.v2Rental.findFirst({
       where: { id: command.rentalId, tenantId: command.tenantId },
       select: {
@@ -72,20 +70,27 @@ export class AssignRentalAccessoriesHandler implements ICommandHandler<
 
     if (!rental) {
       return err(
-        assignRentalAccessoriesApplicationError('RentalNotFound', `Rental "${command.rentalId}" was not found.`),
+        assignRentalAccessoriesError(
+          'rental_commitment.rental_not_found',
+          `Rental "${command.rentalId}" was not found.`,
+          undefined,
+          context,
+        ),
       );
     }
 
     if (!ASSIGNABLE_RENTAL_STATUSES.has(rental.status)) {
       return err(
-        assignRentalAccessoriesApplicationError(
-          'RentalStatusDoesNotAllowAccessoryAssignment',
+        assignRentalAccessoriesError(
+          'rental_commitment.rental_status_does_not_allow_accessory_assignment',
           `Rental status "${rental.status}" does not allow accessory assignment.`,
+          undefined,
+          { ...context, rentalStatus: rental.status },
         ),
       );
     }
 
-    const inputValidation = await this.validateInput(command, rental);
+    const inputValidation = await this.validateInput(command, context);
     if (inputValidation.isErr()) return err(inputValidation.error);
 
     const existingSelections = await this.prisma.client.v2RentalAccessorySelection.findMany({
@@ -151,11 +156,16 @@ export class AssignRentalAccessoriesHandler implements ICommandHandler<
     if (allocationPlan.isErr()) {
       if (allocationPlan.error instanceof InsufficientAssetAvailabilityError) {
         return err(
-          assignRentalAccessoriesApplicationError('InsufficientAssetAvailability', allocationPlan.error.message),
+          assignRentalAccessoriesError(
+            'rental_commitment.insufficient_asset_availability',
+            allocationPlan.error.message,
+            allocationPlan.error,
+            context,
+          ),
         );
       }
 
-      return err(assignRentalAccessoriesApplicationError('Unexpected', 'An unexpected allocation error occurred.'));
+      throw allocationPlan.error;
     }
 
     const newAssetIdsBySelectionId = new Map<string, string[]>();
@@ -176,17 +186,19 @@ export class AssignRentalAccessoriesHandler implements ICommandHandler<
 
   private async validateInput(
     command: AssignRentalAccessoriesCommand,
-    _rental: RentalReadModel,
-  ): Promise<Result<void, AssignRentalAccessoriesApplicationError>> {
+    context: Record<string, unknown>,
+  ): Promise<Result<void, AssignRentalAccessoriesError>> {
     const sourceDemandLineIds = new Set<string>();
     const selectionKeys = new Set<string>();
 
     for (const [index, accessory] of command.accessories.entries()) {
       if (accessory.quantity <= 0) {
         return err(
-          assignRentalAccessoriesApplicationError(
-            'InvalidAccessoryQuantity',
+          assignRentalAccessoriesError(
+            'rental_commitment.invalid_accessory_quantity',
             `accessories.${index}.quantity must be a positive integer.`,
+            undefined,
+            { ...context, accessoryIndex: index },
           ),
         );
       }
@@ -194,9 +206,11 @@ export class AssignRentalAccessoriesHandler implements ICommandHandler<
       const key = this.selectionKey(accessory);
       if (selectionKeys.has(key)) {
         return err(
-          assignRentalAccessoriesApplicationError(
-            'DuplicateAccessorySelection',
+          assignRentalAccessoriesError(
+            'rental_commitment.duplicate_accessory_selection',
             `accessories.${index} duplicates another accessory selection.`,
+            undefined,
+            { ...context, accessoryIndex: index },
           ),
         );
       }
@@ -218,15 +232,25 @@ export class AssignRentalAccessoriesHandler implements ICommandHandler<
 
       if (count !== sourceDemandLineIds.size) {
         return err(
-          assignRentalAccessoriesApplicationError(
-            'SourceRentalDemandLineNotFound',
+          assignRentalAccessoriesError(
+            'rental_commitment.source_rental_demand_line_not_found',
             'One or more source rental demand lines do not belong to this rental.',
+            undefined,
+            context,
           ),
         );
       }
     }
 
     return ok(undefined);
+  }
+
+  private errorContext(command: AssignRentalAccessoriesCommand): Record<string, unknown> {
+    return {
+      useCase: 'AssignRentalAccessories',
+      tenantId: command.tenantId,
+      rentalId: command.rentalId,
+    };
   }
 
   private async persistPlan(
