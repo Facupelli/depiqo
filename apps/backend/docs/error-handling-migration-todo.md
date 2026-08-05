@@ -31,9 +31,9 @@ Canonical example: `src/modules/pricing/features/calculate-cart-price/`.
 
 ### Offering setup
 
-- [ ] `create-package`
-- [ ] `create-rentable-equipment`
-- [ ] `create-rental-offer-with-pricing`
+- [x] `create-package`
+- [x] `create-rentable-equipment`
+- [x] `create-rental-offer-with-pricing`
 
 ### Pricing
 

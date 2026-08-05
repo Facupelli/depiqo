@@ -6,13 +6,21 @@ import { PrismaService } from 'src/core/database/prisma.service';
 import { CreateEquipmentTypeSetupCommand } from '../features/create-equipment-type-setup/create-equipment-type-setup.command';
 import { CreateEquipmentTypeSetupService } from '../features/create-equipment-type-setup/create-equipment-type-setup.service';
 import {
+  ActiveOwnerContractNotFoundError,
   AssetInventoryError,
+  AssetOwnerNotFoundError,
+  DuplicateAssetSerialNumberError,
+  DuplicateEquipmentTypeNameError,
   EquipmentTypeNotActiveError,
   EquipmentTypeNotFoundError,
   InsufficientActiveEquipmentStockError,
+  InvalidAssetFieldError,
+  InvalidEquipmentTypeFieldError,
+  MultipleActiveOwnerContractsError,
 } from '../domain/errors/asset-inventory.errors';
 import {
   AssetInventoryPublicApi,
+  AssetInventoryPublicApiError,
   AssetReadModel,
   CreateEquipmentTypeSetupInput,
   CreateEquipmentTypeSetupResult,
@@ -30,10 +38,10 @@ export class AssetInventoryPublicApiService extends AssetInventoryPublicApi {
     super();
   }
 
-  createEquipmentTypeSetup(
+  async createEquipmentTypeSetup(
     input: CreateEquipmentTypeSetupInput,
-  ): Promise<Result<CreateEquipmentTypeSetupResult, AssetInventoryError>> {
-    return this.createEquipmentTypeSetupService.execute(
+  ): Promise<Result<CreateEquipmentTypeSetupResult, AssetInventoryPublicApiError>> {
+    const result = await this.createEquipmentTypeSetupService.execute(
       new CreateEquipmentTypeSetupCommand({
         tenantId: input.tenantId,
         name: input.equipmentType.name,
@@ -41,11 +49,13 @@ export class AssetInventoryPublicApiService extends AssetInventoryPublicApi {
         assets: input.assets,
       }),
     );
+
+    return result.mapErr(mapAssetInventoryPublicApiError);
   }
 
   async validateEquipmentType(
     input: ValidateEquipmentTypeInput,
-  ): Promise<Result<ValidateEquipmentTypeResult, AssetInventoryError>> {
+  ): Promise<Result<ValidateEquipmentTypeResult, AssetInventoryPublicApiError>> {
     const equipmentIds = [...new Set(input.equipmentIds)];
 
     if (equipmentIds.length === 0) {
@@ -69,11 +79,11 @@ export class AssetInventoryPublicApiService extends AssetInventoryPublicApi {
       const equipmentType = equipmentTypesById.get(equipmentTypeId);
 
       if (!equipmentType) {
-        return err(new EquipmentTypeNotFoundError(equipmentTypeId));
+        return err(mapAssetInventoryPublicApiError(new EquipmentTypeNotFoundError(equipmentTypeId)));
       }
 
       if (!equipmentType.isActive) {
-        return err(new EquipmentTypeNotActiveError(equipmentTypeId));
+        return err(mapAssetInventoryPublicApiError(new EquipmentTypeNotActiveError(equipmentTypeId)));
       }
     }
 
@@ -82,7 +92,7 @@ export class AssetInventoryPublicApiService extends AssetInventoryPublicApi {
 
   async validatePackageRequirementsForBranches(
     input: ValidatePackageRequirementsForBranchesInput,
-  ): Promise<Result<void, AssetInventoryError>> {
+  ): Promise<Result<void, AssetInventoryPublicApiError>> {
     const equipmentTypeValidation = await this.validateEquipmentType({
       tenantId: input.tenantId,
       equipmentIds: input.requirements.map((requirement) => requirement.equipmentTypeId),
@@ -116,11 +126,13 @@ export class AssetInventoryPublicApiService extends AssetInventoryPublicApi {
 
         if (activeAssetCount < requirement.quantityPerItem) {
           return err(
-            new InsufficientActiveEquipmentStockError(
-              branchId,
-              requirement.equipmentTypeId,
-              requirement.quantityPerItem,
-              activeAssetCount,
+            mapAssetInventoryPublicApiError(
+              new InsufficientActiveEquipmentStockError(
+                branchId,
+                requirement.equipmentTypeId,
+                requirement.quantityPerItem,
+                activeAssetCount,
+              ),
             ),
           );
         }
@@ -152,4 +164,52 @@ export class AssetInventoryPublicApiService extends AssetInventoryPublicApi {
       },
     });
   }
+}
+
+function mapAssetInventoryPublicApiError(error: AssetInventoryError): AssetInventoryPublicApiError {
+  if (error instanceof InvalidEquipmentTypeFieldError) {
+    return publicError('InvalidEquipmentTypeField', error, { field: error.field });
+  }
+  if (error instanceof DuplicateEquipmentTypeNameError) {
+    return publicError('DuplicateEquipmentTypeName', error, { name: error.name });
+  }
+  if (error instanceof InvalidAssetFieldError) {
+    return publicError('InvalidAssetField', error, { field: error.field });
+  }
+  if (error instanceof DuplicateAssetSerialNumberError) {
+    return publicError('DuplicateAssetSerialNumber', error, { serialNumber: error.serialNumber });
+  }
+  if (error instanceof AssetOwnerNotFoundError) {
+    return publicError('AssetOwnerNotFound', error, { ownerId: error.ownerId });
+  }
+  if (error instanceof ActiveOwnerContractNotFoundError) {
+    return publicError('ActiveOwnerContractNotFound', error, { ownerId: error.ownerId });
+  }
+  if (error instanceof MultipleActiveOwnerContractsError) {
+    return publicError('MultipleActiveOwnerContracts', error, { ownerId: error.ownerId });
+  }
+  if (error instanceof EquipmentTypeNotFoundError) {
+    return publicError('EquipmentTypeNotFound', error, { equipmentTypeId: error.equipmentTypeId });
+  }
+  if (error instanceof EquipmentTypeNotActiveError) {
+    return publicError('EquipmentTypeNotActive', error, { equipmentTypeId: error.equipmentTypeId });
+  }
+  if (error instanceof InsufficientActiveEquipmentStockError) {
+    return publicError('InsufficientActiveEquipmentStock', error, {
+      branchId: error.branchId,
+      equipmentTypeId: error.equipmentTypeId,
+      requiredQuantity: error.requiredQuantity,
+      activeAssetCount: error.activeAssetCount,
+    });
+  }
+
+  throw error;
+}
+
+function publicError(
+  code: AssetInventoryPublicApiError['code'],
+  cause: AssetInventoryError,
+  context?: Record<string, unknown>,
+): AssetInventoryPublicApiError {
+  return { code, message: cause.message, cause, context };
 }

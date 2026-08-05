@@ -1,7 +1,5 @@
 import { Result } from 'neverthrow';
 
-import { AssetInventoryError } from '../domain/errors/asset-inventory.errors';
-
 export interface EquipmentTypeReadModel {
   id: string;
   tenantId: string;
@@ -38,6 +36,25 @@ export interface CreateEquipmentTypeSetupResult {
   assetIds: string[];
 }
 
+export type AssetInventoryPublicApiErrorCode =
+  | 'InvalidEquipmentTypeField'
+  | 'DuplicateEquipmentTypeName'
+  | 'InvalidAssetField'
+  | 'DuplicateAssetSerialNumber'
+  | 'AssetOwnerNotFound'
+  | 'ActiveOwnerContractNotFound'
+  | 'MultipleActiveOwnerContracts'
+  | 'EquipmentTypeNotFound'
+  | 'EquipmentTypeNotActive'
+  | 'InsufficientActiveEquipmentStock';
+
+export interface AssetInventoryPublicApiError {
+  code: AssetInventoryPublicApiErrorCode;
+  message: string;
+  cause?: unknown;
+  context?: Record<string, unknown>;
+}
+
 export interface ValidateEquipmentTypeInput {
   tenantId: string;
   equipmentIds: string[];
@@ -59,7 +76,7 @@ export interface ValidatePackageRequirementsForBranchesInput {
 export abstract class AssetInventoryPublicApi {
   abstract createEquipmentTypeSetup(
     input: CreateEquipmentTypeSetupInput,
-  ): Promise<Result<CreateEquipmentTypeSetupResult, AssetInventoryError>>;
+  ): Promise<Result<CreateEquipmentTypeSetupResult, AssetInventoryPublicApiError>>;
 
   abstract listAssetsByEquipmentTypeAndBranch(input: {
     tenantId: string;
@@ -69,9 +86,9 @@ export abstract class AssetInventoryPublicApi {
 
   abstract validateEquipmentType(
     input: ValidateEquipmentTypeInput,
-  ): Promise<Result<ValidateEquipmentTypeResult, AssetInventoryError>>;
+  ): Promise<Result<ValidateEquipmentTypeResult, AssetInventoryPublicApiError>>;
 
   abstract validatePackageRequirementsForBranches(
     input: ValidatePackageRequirementsForBranchesInput,
-  ): Promise<Result<void, AssetInventoryError>>;
+  ): Promise<Result<void, AssetInventoryPublicApiError>>;
 }

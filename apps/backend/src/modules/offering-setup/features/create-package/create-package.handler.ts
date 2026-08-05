@@ -1,19 +1,21 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { err, ok, Result } from 'neverthrow';
 
-import { AssetInventoryPublicApi } from '../../../asset-inventory/public-api/asset-inventory.public-api';
-import { CatalogPublicApi } from '../../../catalog/public-api/catalog.public-api';
-import { TenantManagementPublicApi } from '../../../tenant-management/public-api/tenant-management.public-api';
+import {
+  AssetInventoryPublicApi,
+  AssetInventoryPublicApiError,
+} from '../../../asset-inventory/public-api/asset-inventory.public-api';
+import { CatalogPublicApi, CatalogPublicApiError } from '../../../catalog/public-api/catalog.public-api';
+import {
+  TenantManagementPublicApi,
+  ValidateOfferingSetupError,
+} from '../../../tenant-management/public-api/tenant-management.public-api';
 import { CreatePackageCommand } from './create-package.command';
-import { mapAssetInventoryError, mapCatalogError, mapTenantManagementError } from './map-create-package-error';
-import { OfferingSetupApplicationError } from '../offering-setup-application.error';
+import { CreatePackageError, createPackageError } from './create-package.errors';
 
 export type CreatePackageServiceResult = Result<
-  {
-    rentableItemId: string;
-    rentalOfferIds: string[];
-  },
-  OfferingSetupApplicationError
+  { rentableItemId: string; rentalOfferIds: string[] },
+  CreatePackageError
 >;
 
 @CommandHandler(CreatePackageCommand)
@@ -29,20 +31,14 @@ export class CreatePackageHandler implements ICommandHandler<CreatePackageComman
       tenantId: command.tenantId,
       branchIds: command.branchIds,
     });
+    if (tenantValidation.isErr()) return err(mapTenantError(tenantValidation.error));
 
-    if (tenantValidation.isErr()) {
-      return err(mapTenantManagementError(tenantValidation.error));
-    }
-
-    const equipmentTypeValidation = await this.assetInventory.validatePackageRequirementsForBranches({
+    const equipmentValidation = await this.assetInventory.validatePackageRequirementsForBranches({
       tenantId: command.tenantId,
       branchIds: command.branchIds,
       requirements: command.requirements,
     });
-
-    if (equipmentTypeValidation.isErr()) {
-      return err(mapAssetInventoryError(equipmentTypeValidation.error));
-    }
+    if (equipmentValidation.isErr()) return err(mapAssetInventoryError(equipmentValidation.error));
 
     const rentableItem = await this.catalog.createRentableItemOffering({
       tenantId: command.tenantId,
@@ -54,14 +50,34 @@ export class CreatePackageHandler implements ICommandHandler<CreatePackageComman
       requirements: command.requirements,
       branchIds: command.branchIds,
     });
+    if (rentableItem.isErr()) return err(mapCatalogError(rentableItem.error));
 
-    if (rentableItem.isErr()) {
-      return err(mapCatalogError(rentableItem.error));
-    }
-
-    return ok({
-      rentableItemId: rentableItem.value.rentableItemId,
-      rentalOfferIds: rentableItem.value.rentalOfferIds,
-    });
+    return ok(rentableItem.value);
   }
+}
+
+function mapTenantError(error: ValidateOfferingSetupError): CreatePackageError {
+  if (error.code === 'TenantUnavailable') {
+    return createPackageError('offering_setup.tenant_unavailable', error.message, error, error.context);
+  }
+  if (error.code === 'BranchUnavailable') {
+    return createPackageError('offering_setup.branch_unavailable', error.message, error, error.context);
+  }
+  throw error;
+}
+
+function mapAssetInventoryError(error: AssetInventoryPublicApiError): CreatePackageError {
+  const codes = {
+    EquipmentTypeNotFound: 'offering_setup.equipment_type_not_found',
+    EquipmentTypeNotActive: 'offering_setup.equipment_type_inactive',
+    InsufficientActiveEquipmentStock: 'offering_setup.insufficient_active_equipment_stock',
+  } as const;
+  const code = codes[error.code as keyof typeof codes];
+  if (!code) throw error;
+  return createPackageError(code, error.message, error, error.context);
+}
+
+function mapCatalogError(error: CatalogPublicApiError): CreatePackageError {
+  if (error.code !== 'InvalidField') throw error;
+  return createPackageError('offering_setup.invalid_package', error.message, error, error.context);
 }

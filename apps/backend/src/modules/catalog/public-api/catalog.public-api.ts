@@ -1,7 +1,6 @@
 import { Result } from 'neverthrow';
 
 import { RentalCommitmentError } from '../../rental-commitment/domain/errors/rental-commitment.errors';
-import { CatalogError } from '../domain/errors/catalog.errors';
 import { RentableItemKind } from '../domain/rentable-item.aggregate';
 
 export type { RentableItemKind } from '../domain/rentable-item.aggregate';
@@ -67,6 +66,22 @@ export interface CreateRentalOfferForRentableItemResult {
   rentalOfferId: string;
 }
 
+export type CatalogPublicApiErrorCode =
+  | 'InvalidField'
+  | 'RentableItemNotFound'
+  | 'RentableItemArchived'
+  | 'RentalOfferAlreadyExists'
+  | 'EquipmentTypeNotFound'
+  | 'EquipmentTypeNotActive'
+  | 'RentableItemRequirementAlreadyExists';
+
+export interface CatalogPublicApiError {
+  code: CatalogPublicApiErrorCode;
+  message: string;
+  cause?: unknown;
+  context?: Record<string, unknown>;
+}
+
 export abstract class CatalogPublicApi {
   abstract resolveSelectedRentalOffers(
     input: ResolveSelectedRentalOffersInput,
@@ -74,9 +89,9 @@ export abstract class CatalogPublicApi {
 
   abstract createRentableItemOffering(
     input: CreateRentableItemOfferingInput,
-  ): Promise<Result<CreateRentableItemOfferingResult, CatalogError>>;
+  ): Promise<Result<CreateRentableItemOfferingResult, CatalogPublicApiError>>;
 
   abstract createRentalOfferForRentableItem(
     input: CreateRentalOfferForRentableItemInput,
-  ): Promise<Result<CreateRentalOfferForRentableItemResult, CatalogError>>;
+  ): Promise<Result<CreateRentalOfferForRentableItemResult, CatalogPublicApiError>>;
 }

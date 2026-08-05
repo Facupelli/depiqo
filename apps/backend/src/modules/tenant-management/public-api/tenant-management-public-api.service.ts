@@ -33,6 +33,7 @@ import {
   ValidateCustomerForStaffDraftRentalResult,
   ValidateDraftRentalInput,
   ValidateDraftRentalResult,
+  ValidateOfferingSetupError,
   ValidateOfferingSetupInput,
   ValidateProfessionalConfirmedRentalCreationInput,
   ValidateProfessionalConfirmedRentalCreationResult,
@@ -162,14 +163,20 @@ export class TenantManagementPublicApiService extends TenantManagementPublicApi 
     });
   }
 
-  async validateOfferingSetup(input: ValidateOfferingSetupInput): Promise<Result<void, RentalCommitmentError>> {
+  async validateOfferingSetup(input: ValidateOfferingSetupInput): Promise<Result<void, ValidateOfferingSetupError>> {
     const tenant = await this.prisma.client.v2Tenant.findFirst({
       where: { id: input.tenantId, status: 'ACTIVE', deletedAt: null },
       select: { id: true },
     });
 
     if (!tenant) {
-      return err(new TenantUnavailableForRentalError(input.tenantId));
+      const cause = new TenantUnavailableForRentalError(input.tenantId);
+      return err({
+        code: 'TenantUnavailable',
+        message: cause.message,
+        cause,
+        context: { tenantId: input.tenantId },
+      });
     }
 
     const branchIds = [...new Set(input.branchIds)];
@@ -190,7 +197,13 @@ export class TenantManagementPublicApiService extends TenantManagementPublicApi 
     const unavailableBranchId = branchIds.find((branchId) => !activeBranchIds.has(branchId));
 
     if (unavailableBranchId) {
-      return err(new BranchUnavailableForRentalError(unavailableBranchId));
+      const cause = new BranchUnavailableForRentalError(unavailableBranchId);
+      return err({
+        code: 'BranchUnavailable',
+        message: cause.message,
+        cause,
+        context: { branchId: unavailableBranchId },
+      });
     }
 
     return ok(undefined);

@@ -33,6 +33,15 @@ export interface ValidateOfferingSetupInput {
   branchIds: string[];
 }
 
+export type ValidateOfferingSetupErrorCode = 'TenantUnavailable' | 'BranchUnavailable';
+
+export interface ValidateOfferingSetupError {
+  code: ValidateOfferingSetupErrorCode;
+  message: string;
+  cause?: unknown;
+  context?: Record<string, unknown>;
+}
+
 export interface GetTenantInput {
   tenantId: string;
 }
@@ -157,7 +166,7 @@ export abstract class TenantManagementPublicApi {
     input: ValidateProfessionalConfirmedRentalCreationInput,
   ): Promise<Result<ValidateProfessionalConfirmedRentalCreationResult, RentalCommitmentError>>;
 
-  abstract validateOfferingSetup(input: ValidateOfferingSetupInput): Promise<Result<void, RentalCommitmentError>>;
+  abstract validateOfferingSetup(input: ValidateOfferingSetupInput): Promise<Result<void, ValidateOfferingSetupError>>;
 
   abstract getTenant(input: GetTenantInput): Promise<Result<TenantContext, TenantManagementPublicApiError>>;
 
