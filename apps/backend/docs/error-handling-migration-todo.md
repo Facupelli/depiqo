@@ -74,7 +74,7 @@ Canonical example: `src/modules/pricing/features/calculate-cart-price/`.
 - [x] `update-tenant-branding`
 - [x] `update-tenant-config`
 - [ ] `customer/get-current-rental-customer-profile`
-- [ ] `customer/submit-customer-profile`
+- [x] `customer/submit-customer-profile`
 
 ## Auth use cases requiring separate review
 

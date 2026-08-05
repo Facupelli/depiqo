@@ -5,19 +5,13 @@ import { PrismaService } from 'src/core/database/prisma.service';
 import { V2RentalCustomerOnboardingStatus } from 'src/generated/prisma/enums';
 
 import { SubmitCustomerProfileCommand } from './submit-customer-profile.command';
-import {
-  submitCustomerProfileApplicationError,
-  SubmitCustomerProfileApplicationError,
-} from './submit-customer-profile-application.error';
+import { submitCustomerProfileError, SubmitCustomerProfileError } from './submit-customer-profile.errors';
 
 export interface SubmitCustomerProfileResult {
   id: string;
 }
 
-export type SubmitCustomerProfileServiceResult = Result<
-  SubmitCustomerProfileResult,
-  SubmitCustomerProfileApplicationError
->;
+export type SubmitCustomerProfileServiceResult = Result<SubmitCustomerProfileResult, SubmitCustomerProfileError>;
 
 @CommandHandler(SubmitCustomerProfileCommand)
 export class SubmitCustomerProfileHandler implements ICommandHandler<
@@ -27,6 +21,11 @@ export class SubmitCustomerProfileHandler implements ICommandHandler<
   constructor(private readonly prisma: PrismaService) {}
 
   async execute(command: SubmitCustomerProfileCommand): Promise<SubmitCustomerProfileServiceResult> {
+    const context = {
+      useCase: 'SubmitCustomerProfile',
+      tenantId: command.tenantId,
+      customerId: command.customerId,
+    };
     const result = await this.prisma.client.$transaction(async (tx) => {
       const customer = await tx.v2RentalCustomer.findFirst({
         where: {
@@ -45,27 +44,33 @@ export class SubmitCustomerProfileHandler implements ICommandHandler<
 
       if (!customer) {
         return err(
-          submitCustomerProfileApplicationError(
-            'CustomerNotFound',
+          submitCustomerProfileError(
+            'tenant_management.rental_customer_not_found',
             `Rental customer "${command.customerId}" was not found.`,
+            undefined,
+            context,
           ),
         );
       }
 
       if (customer.onboardingStatus === V2RentalCustomerOnboardingStatus.PENDING) {
         return err(
-          submitCustomerProfileApplicationError(
-            'CustomerProfileAlreadyPending',
+          submitCustomerProfileError(
+            'tenant_management.customer_profile_already_pending',
             'The customer profile has already been submitted and is pending review.',
+            undefined,
+            context,
           ),
         );
       }
 
       if (customer.onboardingStatus === V2RentalCustomerOnboardingStatus.APPROVED) {
         return err(
-          submitCustomerProfileApplicationError(
-            'CustomerProfileAlreadyApproved',
+          submitCustomerProfileError(
+            'tenant_management.customer_profile_already_approved',
             'The customer profile has already been approved.',
+            undefined,
+            context,
           ),
         );
       }
