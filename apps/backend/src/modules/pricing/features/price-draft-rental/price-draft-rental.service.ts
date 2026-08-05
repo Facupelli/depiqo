@@ -84,7 +84,11 @@ export class PriceDraftRentalService {
         }),
       );
     } catch (error) {
-      return err(this.toPricingError(error));
+      if (error instanceof PricingError) {
+        return err(error);
+      }
+
+      throw error;
     }
   }
 
@@ -180,13 +184,5 @@ export class PriceDraftRentalService {
     }
 
     return null;
-  }
-
-  private toPricingError(error: unknown): PricingError {
-    if (error instanceof PricingError) {
-      return error;
-    }
-
-    return new InvalidPricingInputError(error instanceof Error ? error.message : 'Unknown pricing error.');
   }
 }

@@ -6,15 +6,17 @@ import { err, ok, Result } from 'neverthrow';
 
 import { PrismaService } from 'src/core/database/prisma.service';
 import { CatalogPublicApi } from 'src/modules/catalog/public-api/catalog.public-api';
+import {
+  InvalidCatalogSelectionQuantityError,
+  RentalCommitmentError,
+  RentalInvalidFieldError,
+} from 'src/modules/rental-commitment/domain/errors/rental-commitment.errors';
 import { TenantManagementPublicApi } from 'src/modules/tenant-management/public-api/tenant-management.public-api';
 
 import { InvalidPricingInputError, PricingError } from '../../pricing-engine/errors/pricing.errors';
 import { RentalPriceSnapshotV1 } from '../../public-api/rental-price-snapshot.type';
 import { PriceDraftRentalService } from '../price-draft-rental/price-draft-rental.service';
-import {
-  CalculateDraftRentalPriceApplicationError,
-  calculateDraftRentalPriceApplicationError,
-} from './calculate-draft-rental-price-application.error';
+import { CalculateDraftRentalPriceError, calculateDraftRentalPriceError } from './calculate-draft-rental-price.errors';
 import { CalculateDraftRentalPriceQuery } from './calculate-draft-rental-price.query';
 
 export type CalculateDraftRentalPriceResult = RentalPriceSnapshotV1;
@@ -23,7 +25,7 @@ export type CalculateDraftRentalPriceResult = RentalPriceSnapshotV1;
 @QueryHandler(CalculateDraftRentalPriceQuery)
 export class CalculateDraftRentalPriceHandler implements IQueryHandler<
   CalculateDraftRentalPriceQuery,
-  Result<CalculateDraftRentalPriceResult, CalculateDraftRentalPriceApplicationError>
+  Result<CalculateDraftRentalPriceResult, CalculateDraftRentalPriceError>
 > {
   constructor(
     private readonly prisma: PrismaService,
@@ -34,8 +36,9 @@ export class CalculateDraftRentalPriceHandler implements IQueryHandler<
 
   async execute(
     query: CalculateDraftRentalPriceQuery,
-  ): Promise<Result<CalculateDraftRentalPriceResult, CalculateDraftRentalPriceApplicationError>> {
-    const validationError = this.validateQuery(query);
+  ): Promise<Result<CalculateDraftRentalPriceResult, CalculateDraftRentalPriceError>> {
+    const context = this.errorContext(query);
+    const validationError = this.validateQuery(query, context);
     if (validationError) {
       return err(validationError);
     }
@@ -45,10 +48,11 @@ export class CalculateDraftRentalPriceHandler implements IQueryHandler<
     });
     if (tenantPricingConfigResult.isErr()) {
       return err(
-        calculateDraftRentalPriceApplicationError(
-          'TenantPricingConfigUnavailable',
+        calculateDraftRentalPriceError(
+          'pricing.tenant_config_unavailable',
           `Tenant pricing config for tenant "${query.tenantId}" is unavailable.`,
           tenantPricingConfigResult.error,
+          context,
         ),
       );
     }
@@ -62,7 +66,12 @@ export class CalculateDraftRentalPriceHandler implements IQueryHandler<
 
     if (!branch) {
       return err(
-        calculateDraftRentalPriceApplicationError('BranchNotFound', `Branch "${query.branchId}" was not found.`),
+        calculateDraftRentalPriceError(
+          'pricing.branch_not_found',
+          `Branch "${query.branchId}" was not found.`,
+          undefined,
+          context,
+        ),
       );
     }
 
@@ -76,13 +85,7 @@ export class CalculateDraftRentalPriceHandler implements IQueryHandler<
     });
 
     if (resolvedCatalogSelections.isErr()) {
-      return err(
-        calculateDraftRentalPriceApplicationError(
-          'RentalOfferNotFound',
-          'Rental offer was not found.',
-          resolvedCatalogSelections.error,
-        ),
-      );
+      return err(this.mapCatalogSelectionError(resolvedCatalogSelections.error, context));
     }
 
     const pricingResult = await this.priceDraftRentalService.price({
@@ -117,48 +120,99 @@ export class CalculateDraftRentalPriceHandler implements IQueryHandler<
     });
 
     if (pricingResult.isErr()) {
-      return err(this.toApplicationError(pricingResult.error));
+      return err(this.toApplicationError(pricingResult.error, context));
     }
 
     return ok(pricingResult.value);
   }
 
-  private validateQuery(query: CalculateDraftRentalPriceQuery): CalculateDraftRentalPriceApplicationError | null {
+  private errorContext(query: CalculateDraftRentalPriceQuery): Record<string, unknown> {
+    return {
+      useCase: 'CalculateDraftRentalPrice',
+      tenantId: query.tenantId,
+      tenantUserId: query.tenantUserId,
+      branchId: query.branchId,
+      rentalCustomerId: query.rentalCustomerId,
+      selectedOfferCount: query.selectedOffers.length,
+      hasManualPricingAdjustment: Boolean(query.manualPricingAdjustment),
+    };
+  }
+
+  private validateQuery(
+    query: CalculateDraftRentalPriceQuery,
+    context: Record<string, unknown>,
+  ): CalculateDraftRentalPriceError | null {
     if (!query.tenantId.trim()) {
-      return calculateDraftRentalPriceApplicationError('InvalidDraftRentalPricingInput', 'tenantId is required.');
+      return calculateDraftRentalPriceError(
+        'pricing.invalid_draft_rental_selection',
+        'tenantId is required.',
+        undefined,
+        context,
+      );
     }
     if (!query.tenantUserId.trim()) {
-      return calculateDraftRentalPriceApplicationError('InvalidDraftRentalPricingInput', 'tenantUserId is required.');
+      return calculateDraftRentalPriceError(
+        'pricing.invalid_draft_rental_selection',
+        'tenantUserId is required.',
+        undefined,
+        context,
+      );
     }
     if (!query.branchId.trim()) {
-      return calculateDraftRentalPriceApplicationError('InvalidDraftRentalPricingInput', 'branchId is required.');
+      return calculateDraftRentalPriceError(
+        'pricing.invalid_draft_rental_selection',
+        'branchId is required.',
+        undefined,
+        context,
+      );
     }
     if (!(query.rentalPeriodStart instanceof Date) || Number.isNaN(query.rentalPeriodStart.getTime())) {
-      return calculateDraftRentalPriceApplicationError('RentalPeriodInvalid', 'period.start must be a valid date.');
+      return calculateDraftRentalPriceError(
+        'pricing.invalid_rental_period',
+        'period.start must be a valid date.',
+        undefined,
+        context,
+      );
     }
     if (!(query.rentalPeriodEnd instanceof Date) || Number.isNaN(query.rentalPeriodEnd.getTime())) {
-      return calculateDraftRentalPriceApplicationError('RentalPeriodInvalid', 'period.end must be a valid date.');
+      return calculateDraftRentalPriceError(
+        'pricing.invalid_rental_period',
+        'period.end must be a valid date.',
+        undefined,
+        context,
+      );
     }
     if (query.rentalPeriodEnd <= query.rentalPeriodStart) {
-      return calculateDraftRentalPriceApplicationError('RentalPeriodInvalid', 'period.end must be after period.start.');
+      return calculateDraftRentalPriceError(
+        'pricing.invalid_rental_period',
+        'period.end must be after period.start.',
+        undefined,
+        context,
+      );
     }
     if (query.selectedOffers.length === 0) {
-      return calculateDraftRentalPriceApplicationError(
-        'InvalidDraftRentalPricingInput',
+      return calculateDraftRentalPriceError(
+        'pricing.invalid_draft_rental_selection',
         'selectedOffers must contain at least one rental offer.',
+        undefined,
+        context,
       );
     }
     if (query.manualPricingAdjustment) {
       if (query.manualPricingAdjustment.mode !== 'TARGET_TOTAL') {
-        return calculateDraftRentalPriceApplicationError(
-          'InvalidDraftRentalPricingInput',
+        return calculateDraftRentalPriceError(
+          'pricing.invalid_draft_rental_selection',
           'manualPricingAdjustment.mode is invalid.',
+          undefined,
+          context,
         );
       }
       if (!query.manualPricingAdjustment.targetTotal.trim()) {
-        return calculateDraftRentalPriceApplicationError(
-          'InvalidDraftRentalPricingInput',
+        return calculateDraftRentalPriceError(
+          'pricing.invalid_draft_rental_selection',
           'manualPricingAdjustment.targetTotal is required.',
+          undefined,
+          context,
         );
       }
     }
@@ -166,21 +220,27 @@ export class CalculateDraftRentalPriceHandler implements IQueryHandler<
     const seenRentalOfferIds = new Set<string>();
     for (const [index, selection] of query.selectedOffers.entries()) {
       if (!selection.rentalOfferId.trim()) {
-        return calculateDraftRentalPriceApplicationError(
-          'InvalidDraftRentalPricingInput',
+        return calculateDraftRentalPriceError(
+          'pricing.invalid_draft_rental_selection',
           `selectedOffers.${index}.rentalOfferId is required.`,
+          undefined,
+          context,
         );
       }
       if (!Number.isInteger(selection.quantity) || selection.quantity <= 0) {
-        return calculateDraftRentalPriceApplicationError(
-          'InvalidDraftRentalPricingInput',
+        return calculateDraftRentalPriceError(
+          'pricing.invalid_draft_rental_selection',
           `selectedOffers.${index}.quantity must be a positive integer.`,
+          undefined,
+          context,
         );
       }
       if (seenRentalOfferIds.has(selection.rentalOfferId)) {
-        return calculateDraftRentalPriceApplicationError(
-          'InvalidDraftRentalPricingInput',
+        return calculateDraftRentalPriceError(
+          'pricing.invalid_draft_rental_selection',
           `Rental offer "${selection.rentalOfferId}" was selected more than once.`,
+          undefined,
+          context,
         );
       }
       seenRentalOfferIds.add(selection.rentalOfferId);
@@ -189,15 +249,40 @@ export class CalculateDraftRentalPriceHandler implements IQueryHandler<
     return null;
   }
 
-  private toApplicationError(error: PricingError): CalculateDraftRentalPriceApplicationError {
+  private mapCatalogSelectionError(
+    error: RentalCommitmentError,
+    context: Record<string, unknown>,
+  ): CalculateDraftRentalPriceError {
+    if (error instanceof InvalidCatalogSelectionQuantityError) {
+      return calculateDraftRentalPriceError('pricing.invalid_draft_rental_selection', error.message, error, context);
+    }
+
+    if (error instanceof RentalInvalidFieldError) {
+      if (error.field === 'rentalOfferId' && error.reason.includes('not found')) {
+        return calculateDraftRentalPriceError('pricing.rental_offer_not_found', error.message, error, context);
+      }
+      if (error.field === 'rentalOfferId' && error.reason.includes('not selectable')) {
+        return calculateDraftRentalPriceError('pricing.rental_offer_not_selectable', error.message, error, context);
+      }
+      if (error.field === 'rentableItemId' && error.reason.includes('not active')) {
+        return calculateDraftRentalPriceError('pricing.rentable_item_inactive', error.message, error, context);
+      }
+
+      return calculateDraftRentalPriceError('pricing.invalid_draft_rental_selection', error.message, error, context);
+    }
+
+    throw error;
+  }
+
+  private toApplicationError(error: PricingError, context: Record<string, unknown>): CalculateDraftRentalPriceError {
     if (error instanceof InvalidPricingInputError && error.message.includes('no active pricing')) {
-      return calculateDraftRentalPriceApplicationError('MissingActivePricing', error.message, error);
+      return calculateDraftRentalPriceError('pricing.missing_active_pricing', error.message, error, context);
     }
 
     if (error instanceof PricingError) {
-      return calculateDraftRentalPriceApplicationError('PricingCalculationFailed', error.message, error);
+      return calculateDraftRentalPriceError('pricing.invalid_pricing_configuration', error.message, error, context);
     }
 
-    return calculateDraftRentalPriceApplicationError('Unexpected', 'An unexpected error occurred.', error);
+    throw error;
   }
 }
