@@ -47,13 +47,13 @@ Canonical example: `src/modules/pricing/features/calculate-cart-price/`.
 
 ### Rental commitment
 
-- [ ] `assign-customer-to-draft-rental`
+- [x] `assign-customer-to-draft-rental`
 - [ ] `assign-rental-accessories`
 - [ ] `cancel-rental`
 - [ ] `confirm-rental`
 - [ ] `create-confirmed-rental`
 - [ ] `create-draft-rental`
-- [ ] `get-rental-detail`
+- [x] `get-rental-detail`
 
 ### Tenant management
 

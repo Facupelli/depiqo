@@ -13,11 +13,11 @@ import {
 import { RentalRepository } from '../../persistence/rental.repository';
 import { AssignCustomerToDraftRentalCommand } from './assign-customer-to-draft-rental.command';
 import {
-  assignCustomerToDraftRentalApplicationError,
-  AssignCustomerToDraftRentalApplicationError,
-} from './assign-customer-to-draft-rental-application.error';
+  assignCustomerToDraftRentalError,
+  AssignCustomerToDraftRentalError,
+} from './assign-customer-to-draft-rental.errors';
 
-export type AssignCustomerToDraftRentalResult = Result<void, AssignCustomerToDraftRentalApplicationError>;
+export type AssignCustomerToDraftRentalResult = Result<void, AssignCustomerToDraftRentalError>;
 
 @CommandHandler(AssignCustomerToDraftRentalCommand)
 export class AssignCustomerToDraftRentalHandler implements ICommandHandler<
@@ -35,8 +35,8 @@ export class AssignCustomerToDraftRentalHandler implements ICommandHandler<
 
     if (!rental) {
       return err(
-        assignCustomerToDraftRentalApplicationError(
-          'rental-commitment.rental-not-found',
+        assignCustomerToDraftRentalError(
+          'rental_commitment.rental_not_found',
           `Rental "${command.rentalId}" was not found.`,
           undefined,
           context,
@@ -51,7 +51,7 @@ export class AssignCustomerToDraftRentalHandler implements ICommandHandler<
 
     if (!customerValidation.eligible) {
       return err(
-        assignCustomerToDraftRentalApplicationError(
+        assignCustomerToDraftRentalError(
           this.customerEligibilityErrorCode(customerValidation.reason),
           `Customer "${command.customerId}" cannot be assigned to draft rental "${command.rentalId}" because it is ${customerValidation.reason}.`,
           undefined,
@@ -81,37 +81,24 @@ export class AssignCustomerToDraftRentalHandler implements ICommandHandler<
 
   private customerEligibilityErrorCode(
     reason: StaffDraftRentalCustomerEligibilityReason,
-  ): AssignCustomerToDraftRentalApplicationError['code'] {
+  ): AssignCustomerToDraftRentalError['code'] {
     switch (reason) {
       case 'CustomerNotFoundOrOutsideTenant':
-        return 'rental-commitment.customer-not-found-or-outside-tenant';
+        return 'rental_commitment.customer_not_found_or_outside_tenant';
       case 'CustomerDeleted':
-        return 'rental-commitment.customer-deleted';
+        return 'rental_commitment.customer_deleted';
       case 'CustomerInactive':
-        return 'rental-commitment.customer-inactive';
+        return 'rental_commitment.customer_inactive';
     }
   }
 
-  private toApplicationError(
-    error: unknown,
-    context: Record<string, unknown>,
-  ): AssignCustomerToDraftRentalApplicationError {
+  private toApplicationError(error: unknown, context: Record<string, unknown>): AssignCustomerToDraftRentalError {
     if (error instanceof RentalMustBeDraftToAssignCustomerError) {
-      return assignCustomerToDraftRentalApplicationError(
-        'rental-commitment.rental-must-be-draft',
-        error.message,
-        error,
-        context,
-      );
+      return assignCustomerToDraftRentalError('rental_commitment.rental_must_be_draft', error.message, error, context);
     }
 
     if (error instanceof RentalInvalidFieldError) {
-      return assignCustomerToDraftRentalApplicationError(
-        'rental-commitment.invalid-customer',
-        error.message,
-        error,
-        context,
-      );
+      return assignCustomerToDraftRentalError('rental_commitment.invalid_customer', error.message, error, context);
     }
 
     throw error;

@@ -3,15 +3,12 @@ import type { GetRentalDetailResponseDto } from '@repo/api-contracts';
 import { err, ok, Result } from 'neverthrow';
 
 import { PrismaService } from 'src/core/database/prisma.service';
-
-import {
-  getRentalDetailApplicationError,
-  GetRentalDetailApplicationError,
-} from './get-rental-detail-application.error';
-import { GetRentalDetailQuery } from './get-rental-detail.query';
 import { RentalPriceSnapshotV1 } from 'src/modules/pricing/public-api/rental-price-snapshot.type';
 
-export type GetRentalDetailResult = Result<GetRentalDetailResponseDto, GetRentalDetailApplicationError>;
+import { getRentalDetailError, GetRentalDetailError } from './get-rental-detail.errors';
+import { GetRentalDetailQuery } from './get-rental-detail.query';
+
+export type GetRentalDetailResult = Result<GetRentalDetailResponseDto, GetRentalDetailError>;
 
 @QueryHandler(GetRentalDetailQuery)
 export class GetRentalDetailHandler implements IQueryHandler<GetRentalDetailQuery, GetRentalDetailResult> {
@@ -89,7 +86,14 @@ export class GetRentalDetailHandler implements IQueryHandler<GetRentalDetailQuer
     });
 
     if (!rental) {
-      return err(getRentalDetailApplicationError('RentalNotFound', `Rental "${query.rentalId}" was not found.`));
+      return err(
+        getRentalDetailError(
+          'rental_commitment.rental_not_found',
+          `Rental "${query.rentalId}" was not found.`,
+          undefined,
+          { useCase: 'GetRentalDetail', tenantId: query.tenantId, rentalId: query.rentalId },
+        ),
+      );
     }
 
     return ok({
