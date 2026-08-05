@@ -4,10 +4,10 @@ import { Result } from 'neverthrow';
 
 import { AuthUser } from '../../auth/shared/auth.types';
 import { CurrentUser } from '../../auth/shared/current-user/current-user.decorator';
-import { TenantManagementError } from '../../domain/errors/tenant-management.errors';
-import { toUpdateBranchApplicationError } from './map-update-branch-error';
+import { createProblemDetails, createProblemType, ProblemException } from 'src/core/problem-details';
+
 import { UpdateBranchCommand } from './update-branch.command';
-import { toUpdateBranchProblem } from './update-branch-http-error.mapper';
+import { UpdateBranchError, UpdateBranchErrorCode } from './update-branch.errors';
 import { UpdateBranchResult } from './update-branch.handler';
 import { UpdateBranchParamsDto, UpdateBranchRequestDto } from './update-branch.request.dto';
 import { UpdateBranchResponseDto } from './update-branch.response.dto';
@@ -23,10 +23,7 @@ export class UpdateBranchHttpController {
     @Body() dto: UpdateBranchRequestDto,
     @CurrentUser() user: AuthUser,
   ): Promise<UpdateBranchResponseDto> {
-    const result = await this.commandBus.execute<
-      UpdateBranchCommand,
-      Result<UpdateBranchResult, TenantManagementError>
-    >(
+    const result = await this.commandBus.execute<UpdateBranchCommand, Result<UpdateBranchResult, UpdateBranchError>>(
       new UpdateBranchCommand({
         tenantId: user.tenantId,
         branchId: params.branchId,
@@ -50,9 +47,46 @@ export class UpdateBranchHttpController {
     );
 
     if (result.isErr()) {
-      throw toUpdateBranchProblem(toUpdateBranchApplicationError(result.error));
+      throw toUpdateBranchProblem(result.error);
     }
 
     return result.value;
   }
 }
+
+function toUpdateBranchProblem(error: UpdateBranchError): ProblemException {
+  const problem = updateBranchProblemMap[error.code];
+
+  return ProblemException.from({
+    problemDetails: createProblemDetails({
+      type: problem.type,
+      title: problem.title,
+      status: problem.status,
+      detail: problem.detail,
+      extensions: { code: error.code },
+    }),
+    applicationError: error,
+    cause: error.cause,
+  });
+}
+
+const updateBranchProblemMap = {
+  'tenant_management.branch_not_found': {
+    type: createProblemType('tenant-management/branch-not-found'),
+    title: 'Branch not found',
+    status: HttpStatus.NOT_FOUND,
+    detail: 'The requested branch was not found.',
+  },
+  'tenant_management.branch_invalid_input': {
+    type: createProblemType('tenant-management/branch-invalid-input'),
+    title: 'Branch input is invalid',
+    status: HttpStatus.UNPROCESSABLE_ENTITY,
+    detail: 'The branch request contains invalid input.',
+  },
+  'tenant_management.branch_schedule_invalid_input': {
+    type: createProblemType('tenant-management/branch-schedule-invalid-input'),
+    title: 'Branch schedule input is invalid',
+    status: HttpStatus.UNPROCESSABLE_ENTITY,
+    detail: 'The branch schedule request contains invalid input.',
+  },
+} satisfies Record<UpdateBranchErrorCode, { type: string; title: string; status: HttpStatus; detail: string }>;

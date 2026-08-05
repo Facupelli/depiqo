@@ -3,10 +3,7 @@ import { err, ok, Result } from 'neverthrow';
 
 import { PrismaService } from 'src/core/database/prisma.service';
 
-import {
-  tenantManagementApplicationError,
-  TenantManagementApplicationError,
-} from '../tenant-management-application.error';
+import { GetBranchDetailError, getBranchDetailError } from './get-branch-detail.errors';
 import { GetBranchDetailQuery } from './get-branch-detail.query';
 
 export interface GetBranchDetailScheduleReadModel {
@@ -37,13 +34,18 @@ export interface GetBranchDetailReadModel {
   updatedAt: string;
 }
 
-export type GetBranchDetailResult = Result<GetBranchDetailReadModel, TenantManagementApplicationError>;
+export type GetBranchDetailResult = Result<GetBranchDetailReadModel, GetBranchDetailError>;
 
 @QueryHandler(GetBranchDetailQuery)
 export class GetBranchDetailHandler implements IQueryHandler<GetBranchDetailQuery, GetBranchDetailResult> {
   constructor(private readonly prisma: PrismaService) {}
 
   async execute(query: GetBranchDetailQuery): Promise<GetBranchDetailResult> {
+    const context = {
+      useCase: 'GetBranchDetail',
+      tenantId: query.tenantId,
+      branchId: query.branchId,
+    };
     const branch = await this.prisma.client.v2Branch.findFirst({
       where: {
         id: query.branchId,
@@ -81,7 +83,14 @@ export class GetBranchDetailHandler implements IQueryHandler<GetBranchDetailQuer
     });
 
     if (!branch) {
-      return err(tenantManagementApplicationError('BranchNotFound', `Branch "${query.branchId}" was not found.`));
+      return err(
+        getBranchDetailError(
+          'tenant_management.branch_not_found',
+          `Branch "${query.branchId}" was not found.`,
+          undefined,
+          context,
+        ),
+      );
     }
 
     return ok({
