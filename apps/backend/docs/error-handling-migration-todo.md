@@ -67,7 +67,7 @@ Canonical example: `src/modules/pricing/features/calculate-cart-price/`.
 - [x] `get-public-tenant-config`
 - [ ] `refresh-custom-domain-status`
 - [ ] `register-custom-domain`
-- [ ] `register-tenant-with-owner`
+- [x] `register-tenant-with-owner`
 - [x] `reject-submitted-customer-onboarding`
 - [x] `update-branch`
 - [x] `update-contract-signer`

@@ -14,8 +14,13 @@ import {
 import { normalizeEmail } from '../../auth/shared/auth.types';
 import { PasswordService } from '../../auth/shared/password/password.service';
 import { Tenant } from '../../domain/entities/tenant.aggregate';
-import { TenantManagementError, TenantSlugAlreadyInUseError } from '../../domain/errors/tenant-management.errors';
+import {
+  InvalidTenantNameError,
+  InvalidTenantSlugError,
+  TenantSlugAlreadyInUseError,
+} from '../../domain/errors/tenant-management.errors';
 import { RegisterTenantWithOwnerCommand } from './register-tenant-with-owner.command';
+import { RegisterTenantWithOwnerError, registerTenantWithOwnerError } from './register-tenant-with-owner.errors';
 
 export interface RegisterTenantWithOwnerResponse {
   tenantId: string;
@@ -25,7 +30,7 @@ export interface RegisterTenantWithOwnerResponse {
 @CommandHandler(RegisterTenantWithOwnerCommand)
 export class RegisterTenantWithOwnerService implements ICommandHandler<
   RegisterTenantWithOwnerCommand,
-  Result<RegisterTenantWithOwnerResponse, TenantManagementError>
+  Result<RegisterTenantWithOwnerResponse, RegisterTenantWithOwnerError>
 > {
   constructor(
     private readonly prisma: PrismaService,
@@ -34,12 +39,26 @@ export class RegisterTenantWithOwnerService implements ICommandHandler<
 
   async execute(
     command: RegisterTenantWithOwnerCommand,
-  ): Promise<Result<RegisterTenantWithOwnerResponse, TenantManagementError>> {
+  ): Promise<Result<RegisterTenantWithOwnerResponse, RegisterTenantWithOwnerError>> {
+    const context = { useCase: 'RegisterTenantWithOwner' };
     const slug = this.createSlug(command.tenantName);
     const tenantResult = Tenant.create({ name: command.tenantName, slug });
 
     if (tenantResult.isErr()) {
-      return err(tenantResult.error);
+      const error = tenantResult.error;
+
+      if (error instanceof InvalidTenantNameError || error instanceof InvalidTenantSlugError) {
+        return err(
+          registerTenantWithOwnerError(
+            'tenant_management.tenant_registration_invalid_input',
+            error.message,
+            error,
+            context,
+          ),
+        );
+      }
+
+      throw error;
     }
 
     const tenant = tenantResult.value;
@@ -49,7 +68,11 @@ export class RegisterTenantWithOwnerService implements ICommandHandler<
     });
 
     if (existingTenant) {
-      return err(new TenantSlugAlreadyInUseError(tenant.slug));
+      const error = new TenantSlugAlreadyInUseError(tenant.slug);
+
+      return err(
+        registerTenantWithOwnerError('tenant_management.tenant_slug_already_in_use', error.message, error, context),
+      );
     }
 
     const email = normalizeEmail(command.ownerEmail);
