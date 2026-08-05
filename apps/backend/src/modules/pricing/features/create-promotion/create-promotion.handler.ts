@@ -4,7 +4,7 @@ import { err, ok, Result } from 'neverthrow';
 import { PrismaService } from 'src/core/database/prisma.service';
 import { PromotionEffectType } from 'src/generated/prisma/client';
 
-import { CreatePromotionApplicationError, createPromotionApplicationError } from './create-promotion-application.error';
+import { CreatePromotionError, createPromotionError } from './create-promotion.errors';
 import { CreatePromotionCommand } from './create-promotion.command';
 
 export interface CreatePromotionResult {
@@ -14,14 +14,15 @@ export interface CreatePromotionResult {
 @CommandHandler(CreatePromotionCommand)
 export class CreatePromotionHandler implements ICommandHandler<
   CreatePromotionCommand,
-  Result<CreatePromotionResult, CreatePromotionApplicationError>
+  Result<CreatePromotionResult, CreatePromotionError>
 > {
   constructor(private readonly prisma: PrismaService) {}
 
-  async execute(
-    command: CreatePromotionCommand,
-  ): Promise<Result<CreatePromotionResult, CreatePromotionApplicationError>> {
-    const validationError = validatePromotion(command);
+  async execute(command: CreatePromotionCommand): Promise<Result<CreatePromotionResult, CreatePromotionError>> {
+    const validationError = validatePromotion(command, {
+      useCase: 'CreatePromotion',
+      tenantId: command.tenantId,
+    });
 
     if (validationError) {
       return err(validationError);
@@ -78,27 +79,30 @@ export class CreatePromotionHandler implements ICommandHandler<
   }
 }
 
-function validatePromotion(command: CreatePromotionCommand): CreatePromotionApplicationError | undefined {
+function validatePromotion(
+  command: CreatePromotionCommand,
+  context: Record<string, unknown>,
+): CreatePromotionError | undefined {
+  const promotionError = (code: CreatePromotionError['code'], message: string): CreatePromotionError =>
+    createPromotionError(code, message, undefined, context);
+
   if (command.scopes.length === 0) {
-    return createPromotionApplicationError(
-      'InvalidPromotionConfiguration',
-      'A promotion must have at least one scope.',
-    );
+    return promotionError('pricing.invalid_promotion_configuration', 'A promotion must have at least one scope.');
   }
 
   if (command.validFrom && command.validUntil && new Date(command.validUntil) <= new Date(command.validFrom)) {
-    return createPromotionApplicationError('InvalidPromotionConfiguration', 'validUntil must be after validFrom.');
+    return promotionError('pricing.invalid_promotion_configuration', 'validUntil must be after validFrom.');
   }
 
   const effectValue = Number(command.effectValue);
 
   if (!Number.isFinite(effectValue) || effectValue <= 0) {
-    return createPromotionApplicationError('InvalidPromotionConfiguration', 'effectValue must be greater than zero.');
+    return promotionError('pricing.invalid_promotion_configuration', 'effectValue must be greater than zero.');
   }
 
   if (command.effectType === PromotionEffectType.PERCENTAGE_OFF && effectValue > 100) {
-    return createPromotionApplicationError(
-      'InvalidPromotionConfiguration',
+    return promotionError(
+      'pricing.invalid_promotion_configuration',
       'Percentage discount effectValue must be less than or equal to 100.',
     );
   }
@@ -108,21 +112,18 @@ function validatePromotion(command: CreatePromotionCommand): CreatePromotionAppl
     command.maxRentalUnits !== undefined &&
     command.minRentalUnits > command.maxRentalUnits
   ) {
-    return createPromotionApplicationError(
-      'InvalidPromotionConfiguration',
+    return promotionError(
+      'pricing.invalid_promotion_configuration',
       'minRentalUnits must be less than or equal to maxRentalUnits.',
     );
   }
 
   if (hasDuplicateTargets(command.scopes.map(scopeTargetKey))) {
-    return createPromotionApplicationError('DuplicatePromotionTarget', 'Promotion scopes contain duplicate targets.');
+    return promotionError('pricing.duplicate_promotion_target', 'Promotion scopes contain duplicate targets.');
   }
 
   if (hasDuplicateTargets(command.exclusions.map(exclusionTargetKey))) {
-    return createPromotionApplicationError(
-      'DuplicatePromotionTarget',
-      'Promotion exclusions contain duplicate targets.',
-    );
+    return promotionError('pricing.duplicate_promotion_target', 'Promotion exclusions contain duplicate targets.');
   }
 
   return undefined;

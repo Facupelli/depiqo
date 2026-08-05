@@ -1,12 +1,13 @@
-import { Controller, Get, Param } from '@nestjs/common';
+import { Controller, Get, HttpStatus, Param } from '@nestjs/common';
 import { QueryBus } from '@nestjs/cqrs';
 import { Result } from 'neverthrow';
 
+import { createProblemDetails, createProblemType, ProblemException } from 'src/core/problem-details';
+
 import { AuthUser } from '../../../tenant-management/auth/shared/auth.types';
 import { CurrentUser } from '../../../tenant-management/auth/shared/current-user/current-user.decorator';
-import { GetPromotionDetailApplicationError } from './get-promotion-detail-application.error';
+import { GetPromotionDetailError, GetPromotionDetailErrorCode } from './get-promotion-detail.errors';
 import { GetPromotionDetailResult } from './get-promotion-detail.handler';
-import { toGetPromotionDetailProblem } from './get-promotion-detail-http-error.mapper';
 import { GetPromotionDetailQuery } from './get-promotion-detail.query';
 import { GetPromotionDetailParamsDto } from './get-promotion-detail.request.dto';
 import { GetPromotionDetailResponseDto } from './get-promotion-detail.response.dto';
@@ -22,7 +23,7 @@ export class GetPromotionDetailHttpController {
   ): Promise<GetPromotionDetailResponseDto> {
     const result = await this.queryBus.execute<
       GetPromotionDetailQuery,
-      Result<GetPromotionDetailResult, GetPromotionDetailApplicationError>
+      Result<GetPromotionDetailResult, GetPromotionDetailError>
     >(
       new GetPromotionDetailQuery({
         tenantId: user.tenantId,
@@ -37,3 +38,25 @@ export class GetPromotionDetailHttpController {
     return result.value;
   }
 }
+
+function toGetPromotionDetailProblem(error: GetPromotionDetailError): ProblemException {
+  const problem = getPromotionDetailProblemMap[error.code];
+
+  return ProblemException.from({
+    problemDetails: createProblemDetails({
+      ...problem,
+      extensions: { code: error.code },
+    }),
+    applicationError: error,
+    cause: error.cause,
+  });
+}
+
+const getPromotionDetailProblemMap = {
+  'pricing.promotion_not_found': {
+    type: createProblemType('pricing.promotion_not_found'),
+    title: 'Promotion not found',
+    status: HttpStatus.NOT_FOUND,
+    detail: 'The requested promotion was not found.',
+  },
+} satisfies Record<GetPromotionDetailErrorCode, { type: string; title: string; status: HttpStatus; detail: string }>;

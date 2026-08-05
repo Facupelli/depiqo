@@ -4,10 +4,7 @@ import { err, ok, Result } from 'neverthrow';
 
 import { PrismaService } from 'src/core/database/prisma.service';
 
-import {
-  getPromotionDetailApplicationError,
-  GetPromotionDetailApplicationError,
-} from './get-promotion-detail-application.error';
+import { getPromotionDetailError, GetPromotionDetailError } from './get-promotion-detail.errors';
 import { GetPromotionDetailQuery } from './get-promotion-detail.query';
 
 export type GetPromotionDetailResult = GetPromotionDetailResponseDto;
@@ -15,13 +12,11 @@ export type GetPromotionDetailResult = GetPromotionDetailResponseDto;
 @QueryHandler(GetPromotionDetailQuery)
 export class GetPromotionDetailHandler implements IQueryHandler<
   GetPromotionDetailQuery,
-  Result<GetPromotionDetailResult, GetPromotionDetailApplicationError>
+  Result<GetPromotionDetailResult, GetPromotionDetailError>
 > {
   constructor(private readonly prisma: PrismaService) {}
 
-  async execute(
-    query: GetPromotionDetailQuery,
-  ): Promise<Result<GetPromotionDetailResult, GetPromotionDetailApplicationError>> {
+  async execute(query: GetPromotionDetailQuery): Promise<Result<GetPromotionDetailResult, GetPromotionDetailError>> {
     const promotion = await this.prisma.client.v2Promotion.findFirst({
       where: {
         id: query.promotionId,
@@ -66,7 +61,13 @@ export class GetPromotionDetailHandler implements IQueryHandler<
     });
 
     if (!promotion) {
-      return err(getPromotionDetailApplicationError('PromotionNotFound', 'Promotion not found.'));
+      return err(
+        getPromotionDetailError('pricing.promotion_not_found', 'Promotion not found.', undefined, {
+          useCase: 'GetPromotionDetail',
+          tenantId: query.tenantId,
+          promotionId: query.promotionId,
+        }),
+      );
     }
 
     return ok({

@@ -4,7 +4,7 @@ import { err, ok, Result } from 'neverthrow';
 import { PrismaService } from 'src/core/database/prisma.service';
 import { PromotionEffectType } from 'src/generated/prisma/client';
 
-import { updatePromotionApplicationError, UpdatePromotionApplicationError } from './update-promotion-application.error';
+import { updatePromotionError, UpdatePromotionError } from './update-promotion.errors';
 import { UpdatePromotionCommand } from './update-promotion.command';
 
 export interface UpdatePromotionResult {
@@ -14,14 +14,17 @@ export interface UpdatePromotionResult {
 @CommandHandler(UpdatePromotionCommand)
 export class UpdatePromotionHandler implements ICommandHandler<
   UpdatePromotionCommand,
-  Result<UpdatePromotionResult, UpdatePromotionApplicationError>
+  Result<UpdatePromotionResult, UpdatePromotionError>
 > {
   constructor(private readonly prisma: PrismaService) {}
 
-  async execute(
-    command: UpdatePromotionCommand,
-  ): Promise<Result<UpdatePromotionResult, UpdatePromotionApplicationError>> {
-    const validationError = validatePromotion(command);
+  async execute(command: UpdatePromotionCommand): Promise<Result<UpdatePromotionResult, UpdatePromotionError>> {
+    const context = {
+      useCase: 'UpdatePromotion',
+      tenantId: command.tenantId,
+      promotionId: command.promotionId,
+    };
+    const validationError = validatePromotion(command, context);
 
     if (validationError) {
       return err(validationError);
@@ -102,34 +105,37 @@ export class UpdatePromotionHandler implements ICommandHandler<
     });
 
     if (!updatedPromotion) {
-      return err(updatePromotionApplicationError('PromotionNotFound', 'Promotion not found.'));
+      return err(updatePromotionError('pricing.promotion_not_found', 'Promotion not found.', undefined, context));
     }
 
     return ok({ id: updatedPromotion.id });
   }
 }
 
-function validatePromotion(command: UpdatePromotionCommand): UpdatePromotionApplicationError | undefined {
+function validatePromotion(
+  command: UpdatePromotionCommand,
+  context: Record<string, unknown>,
+): UpdatePromotionError | undefined {
+  const promotionError = (code: UpdatePromotionError['code'], message: string): UpdatePromotionError =>
+    updatePromotionError(code, message, undefined, context);
+
   if (command.scopes.length === 0) {
-    return updatePromotionApplicationError(
-      'InvalidPromotionConfiguration',
-      'A promotion must have at least one scope.',
-    );
+    return promotionError('pricing.invalid_promotion_configuration', 'A promotion must have at least one scope.');
   }
 
   if (command.validFrom && command.validUntil && new Date(command.validUntil) <= new Date(command.validFrom)) {
-    return updatePromotionApplicationError('InvalidPromotionConfiguration', 'validUntil must be after validFrom.');
+    return promotionError('pricing.invalid_promotion_configuration', 'validUntil must be after validFrom.');
   }
 
   const effectValue = Number(command.effectValue);
 
   if (!Number.isFinite(effectValue) || effectValue <= 0) {
-    return updatePromotionApplicationError('InvalidPromotionConfiguration', 'effectValue must be greater than zero.');
+    return promotionError('pricing.invalid_promotion_configuration', 'effectValue must be greater than zero.');
   }
 
   if (command.effectType === PromotionEffectType.PERCENTAGE_OFF && effectValue > 100) {
-    return updatePromotionApplicationError(
-      'InvalidPromotionConfiguration',
+    return promotionError(
+      'pricing.invalid_promotion_configuration',
       'Percentage discount effectValue must be less than or equal to 100.',
     );
   }
@@ -139,21 +145,18 @@ function validatePromotion(command: UpdatePromotionCommand): UpdatePromotionAppl
     command.maxRentalUnits !== undefined &&
     command.minRentalUnits > command.maxRentalUnits
   ) {
-    return updatePromotionApplicationError(
-      'InvalidPromotionConfiguration',
+    return promotionError(
+      'pricing.invalid_promotion_configuration',
       'minRentalUnits must be less than or equal to maxRentalUnits.',
     );
   }
 
   if (hasDuplicateTargets(command.scopes.map(scopeTargetKey))) {
-    return updatePromotionApplicationError('DuplicatePromotionTarget', 'Promotion scopes contain duplicate targets.');
+    return promotionError('pricing.duplicate_promotion_target', 'Promotion scopes contain duplicate targets.');
   }
 
   if (hasDuplicateTargets(command.exclusions.map(exclusionTargetKey))) {
-    return updatePromotionApplicationError(
-      'DuplicatePromotionTarget',
-      'Promotion exclusions contain duplicate targets.',
-    );
+    return promotionError('pricing.duplicate_promotion_target', 'Promotion exclusions contain duplicate targets.');
   }
 
   return undefined;
