@@ -3,13 +3,13 @@ import { err, ok, Result } from 'neverthrow';
 
 import { PrismaService } from 'src/core/database/prisma.service';
 
-import {
-  approveSubmittedCustomerOnboardingApplicationError,
-  ApproveSubmittedCustomerOnboardingApplicationError,
-} from './approve-submitted-customer-onboarding-application.error';
 import { ApproveSubmittedCustomerOnboardingCommand } from './approve-submitted-customer-onboarding.command';
+import {
+  approveSubmittedCustomerOnboardingError,
+  ApproveSubmittedCustomerOnboardingError,
+} from './approve-submitted-customer-onboarding.errors';
 
-export type ApproveSubmittedCustomerOnboardingResult = Result<void, ApproveSubmittedCustomerOnboardingApplicationError>;
+export type ApproveSubmittedCustomerOnboardingResult = Result<void, ApproveSubmittedCustomerOnboardingError>;
 
 @CommandHandler(ApproveSubmittedCustomerOnboardingCommand)
 export class ApproveSubmittedCustomerOnboardingHandler implements ICommandHandler<
@@ -19,6 +19,11 @@ export class ApproveSubmittedCustomerOnboardingHandler implements ICommandHandle
   constructor(private readonly prisma: PrismaService) {}
 
   async execute(command: ApproveSubmittedCustomerOnboardingCommand): Promise<ApproveSubmittedCustomerOnboardingResult> {
+    const context = {
+      useCase: 'ApproveSubmittedCustomerOnboarding',
+      tenantId: command.tenantId,
+      customerId: command.customerId,
+    };
     const customer = await this.prisma.client.v2RentalCustomer.findFirst({
       where: {
         id: command.customerId,
@@ -38,27 +43,33 @@ export class ApproveSubmittedCustomerOnboardingHandler implements ICommandHandle
 
     if (!customer) {
       return err(
-        approveSubmittedCustomerOnboardingApplicationError(
-          'RentalCustomerNotFound',
+        approveSubmittedCustomerOnboardingError(
+          'tenant_management.rental_customer_not_found',
           `Rental customer "${command.customerId}" was not found.`,
+          undefined,
+          context,
         ),
       );
     }
 
     if (!customer.profile) {
       return err(
-        approveSubmittedCustomerOnboardingApplicationError(
-          'CustomerProfileNotFound',
+        approveSubmittedCustomerOnboardingError(
+          'tenant_management.customer_profile_not_found',
           `Profile for rental customer "${command.customerId}" was not found.`,
+          undefined,
+          context,
         ),
       );
     }
 
     if (customer.onboardingStatus !== 'PENDING') {
       return err(
-        approveSubmittedCustomerOnboardingApplicationError(
-          'CustomerOnboardingNotPending',
+        approveSubmittedCustomerOnboardingError(
+          'tenant_management.customer_onboarding_not_pending',
           `Rental customer "${command.customerId}" onboarding is not pending.`,
+          undefined,
+          context,
         ),
       );
     }
