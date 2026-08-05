@@ -3,10 +3,7 @@ import { err, ok, Result } from 'neverthrow';
 
 import { PrismaService } from 'src/core/database/prisma.service';
 
-import {
-  getEquipmentTypeDetailApplicationError,
-  GetEquipmentTypeDetailApplicationError,
-} from './get-equipment-type-detail-application.error';
+import { getEquipmentTypeDetailError, GetEquipmentTypeDetailError } from './get-equipment-type-detail.errors';
 import { GetEquipmentTypeDetailQuery } from './get-equipment-type-detail.query';
 
 export interface GetEquipmentTypeDetailAccessoryDefaultReadModel {
@@ -38,10 +35,7 @@ export interface GetEquipmentTypeDetailReadModel {
   assets: GetEquipmentTypeDetailAssetReadModel[];
 }
 
-export type GetEquipmentTypeDetailResult = Result<
-  GetEquipmentTypeDetailReadModel,
-  GetEquipmentTypeDetailApplicationError
->;
+export type GetEquipmentTypeDetailResult = Result<GetEquipmentTypeDetailReadModel, GetEquipmentTypeDetailError>;
 
 @QueryHandler(GetEquipmentTypeDetailQuery)
 export class GetEquipmentTypeDetailHandler implements IQueryHandler<
@@ -98,9 +92,11 @@ export class GetEquipmentTypeDetailHandler implements IQueryHandler<
 
     if (!equipmentType) {
       return err(
-        getEquipmentTypeDetailApplicationError(
-          'EquipmentTypeNotFound',
+        getEquipmentTypeDetailError(
+          'asset_inventory.equipment_type_not_found',
           `Equipment type "${query.equipmentTypeId}" was not found.`,
+          undefined,
+          { equipmentTypeId: query.equipmentTypeId },
         ),
       );
     }
