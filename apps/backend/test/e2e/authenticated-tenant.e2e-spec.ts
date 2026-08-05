@@ -10,7 +10,7 @@ describe('authenticated tenant HTTP flow', () => {
   let app: INestApplication;
   let closeAppResources: () => Promise<void>;
 
-  beforeEach(async () => {
+  beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
     app = moduleRef.createNestApplication<NestExpressApplication>();
     const resources = configureApp(app as NestExpressApplication);
@@ -18,7 +18,7 @@ describe('authenticated tenant HTTP flow', () => {
     await app.init();
   });
 
-  afterEach(async () => {
+  afterAll(async () => {
     await app.close();
     await closeAppResources();
   });
