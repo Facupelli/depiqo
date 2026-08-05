@@ -4,8 +4,8 @@ import { Prisma } from 'src/generated/prisma/client';
 
 import { PrismaService } from 'src/core/database/prisma.service';
 
-import { CreateCategoryApplicationError, createCategoryApplicationError } from './create-category-application.error';
 import { CreateCategoryCommand } from './create-category.command';
+import { CreateCategoryError, createCategoryError } from './create-category.errors';
 
 export interface CreateCategoryResult {
   id: string;
@@ -14,14 +14,19 @@ export interface CreateCategoryResult {
 @CommandHandler(CreateCategoryCommand)
 export class CreateCategoryHandler implements ICommandHandler<
   CreateCategoryCommand,
-  Result<CreateCategoryResult, CreateCategoryApplicationError>
+  Result<CreateCategoryResult, CreateCategoryError>
 > {
   constructor(private readonly prisma: PrismaService) {}
 
-  async execute(command: CreateCategoryCommand): Promise<Result<CreateCategoryResult, CreateCategoryApplicationError>> {
+  async execute(command: CreateCategoryCommand): Promise<Result<CreateCategoryResult, CreateCategoryError>> {
     const name = command.name.trim();
     const providedSlug = command.slug?.trim().toLowerCase();
     const slug = providedSlug ?? (await this.createAvailableSlug(command.tenantId, this.slugify(name)));
+    const context = {
+      useCase: 'CreateCategory',
+      tenantId: command.tenantId,
+      slug,
+    };
 
     if (providedSlug) {
       const existingCategory = await this.prisma.client.v2RentableItemCategory.findFirst({
@@ -31,9 +36,11 @@ export class CreateCategoryHandler implements ICommandHandler<
 
       if (existingCategory) {
         return err(
-          createCategoryApplicationError(
-            'CategorySlugAlreadyInUse',
+          createCategoryError(
+            'catalog.category_slug_already_in_use',
             'A category with the requested slug already exists.',
+            undefined,
+            context,
           ),
         );
       }
@@ -55,10 +62,11 @@ export class CreateCategoryHandler implements ICommandHandler<
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
         return err(
-          createCategoryApplicationError(
-            'CategorySlugAlreadyInUse',
+          createCategoryError(
+            'catalog.category_slug_already_in_use',
             'A category with the requested slug already exists.',
             error,
+            context,
           ),
         );
       }

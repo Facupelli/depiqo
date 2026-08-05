@@ -2,11 +2,12 @@ import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
 import { Result } from 'neverthrow';
 
+import { createProblemDetails, createProblemType, ProblemException } from 'src/core/problem-details';
+
 import { AuthUser } from '../../../tenant-management/auth/shared/auth.types';
 import { CurrentUser } from '../../../tenant-management/auth/shared/current-user/current-user.decorator';
-import { CreateCategoryApplicationError } from './create-category-application.error';
 import { CreateCategoryCommand } from './create-category.command';
-import { toCreateCategoryProblem } from './create-category-http-error.mapper';
+import { CreateCategoryError, CreateCategoryErrorCode } from './create-category.errors';
 import { CreateCategoryRequestDto } from './create-category.request.dto';
 import { CreateCategoryResponseDto } from './create-category.response.dto';
 import { CreateCategoryResult } from './create-category.handler';
@@ -23,7 +24,7 @@ export class CreateCategoryHttpController {
   ): Promise<CreateCategoryResponseDto> {
     const result = await this.commandBus.execute<
       CreateCategoryCommand,
-      Result<CreateCategoryResult, CreateCategoryApplicationError>
+      Result<CreateCategoryResult, CreateCategoryError>
     >(
       new CreateCategoryCommand({
         tenantId: user.tenantId,
@@ -41,3 +42,28 @@ export class CreateCategoryHttpController {
     return result.value;
   }
 }
+
+function toCreateCategoryProblem(error: CreateCategoryError): ProblemException {
+  const problem = createCategoryProblemMap[error.code];
+
+  return ProblemException.from({
+    problemDetails: createProblemDetails({
+      type: problem.type,
+      title: problem.title,
+      status: problem.status,
+      detail: problem.detail,
+      extensions: { code: error.code },
+    }),
+    applicationError: error,
+    cause: error.cause,
+  });
+}
+
+const createCategoryProblemMap = {
+  'catalog.category_slug_already_in_use': {
+    type: createProblemType('catalog.category_slug_already_in_use'),
+    title: 'Category slug already in use',
+    status: HttpStatus.CONFLICT,
+    detail: 'A category with the requested slug already exists.',
+  },
+} satisfies Record<CreateCategoryErrorCode, { type: string; title: string; status: HttpStatus; detail: string }>;

@@ -18,7 +18,7 @@ Canonical example: `src/modules/pricing/features/calculate-cart-price/`.
 ### Catalog
 
 - [x] `activate-rentable-item`
-- [ ] `create-category`
+- [x] `create-category`
 - [ ] `get-rentable-item-detail`
 
 ### Contracts
