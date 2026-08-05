@@ -6,8 +6,9 @@ export class ObjectStorageProviderError extends Error {
     public readonly operation: ObjectStorageOperation,
     public readonly target: string,
     message: string,
+    cause?: unknown,
   ) {
-    super(message);
+    super(message, cause === undefined ? undefined : { cause });
     this.name = 'ObjectStorageProviderError';
   }
 }

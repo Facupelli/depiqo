@@ -1,7 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
+import { PinoLogger } from 'nestjs-pino';
 
-import { AppLogger } from 'src/core/logger/app-logger.service';
 import { RentalConfirmedEvent } from 'src/modules/rental-commitment/public-api/events/rental-confirmed.event';
 import { RentalCommitmentPublicApi } from 'src/modules/rental-commitment/public-api/rental-commitment.public-api';
 import { TenantManagementPublicApi } from 'src/modules/tenant-management/public-api/tenant-management.public-api';
@@ -36,12 +36,16 @@ function formatDateTimeInTimezone(date: Date, timezone: string): FormattedDateTi
 
 @Injectable()
 export class SendRentalConfirmedConfirmationNotificationHandler {
+  private readonly logger = new Logger(SendRentalConfirmedConfirmationNotificationHandler.name);
+
   constructor(
     private readonly rentalCommitmentPublicApi: RentalCommitmentPublicApi,
     private readonly tenantManagementPublicApi: TenantManagementPublicApi,
     private readonly notificationOrchestrator: NotificationOrchestrator,
-    private readonly logger: AppLogger,
-  ) {}
+    private readonly structuredLogger: PinoLogger,
+  ) {
+    this.structuredLogger.setContext(SendRentalConfirmedConfirmationNotificationHandler.name);
+  }
 
   @OnEvent(RentalConfirmedEvent.name, { async: true })
   async handle(event: RentalConfirmedEvent): Promise<void> {
@@ -136,11 +140,13 @@ export class SendRentalConfirmedConfirmationNotificationHandler {
         idempotencyKey: `rental-confirmed-confirmation:${rental.rentalId}`,
       });
     } catch (error) {
-      const stack = error instanceof Error ? error.stack : undefined;
-      this.logger.error(
-        `Failed to handle ${RentalConfirmedEvent.name} for rental ${event.rentalId}.`,
-        stack,
-        SendRentalConfirmedConfirmationNotificationHandler.name,
+      this.structuredLogger.error(
+        {
+          err: error instanceof Error ? error : new Error('A non-Error value was thrown.', { cause: error }),
+          eventName: RentalConfirmedEvent.name,
+          rentalId: event.rentalId,
+        },
+        'Failed to handle rental confirmed event',
       );
     }
   }

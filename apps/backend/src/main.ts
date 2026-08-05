@@ -1,9 +1,11 @@
 import { NestFactory, Reflector } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module';
+import { ConfigService } from '@nestjs/config';
+import { Logger } from 'nestjs-pino';
 import { ZodValidationPipe } from 'nestjs-zod';
+import { Env } from './config/env.schema';
 import { ProblemDetailsFilter } from './core/problem-details';
-import { AppLogger } from './core/logger/app-logger.service';
 import { TransformInterceptor } from './core/response/transform.interceptor';
 import {
   SESSION_COOKIE_NAME,
@@ -24,10 +26,11 @@ async function bootstrap() {
     bufferLogs: true,
   });
 
-  const logger = app.get(AppLogger);
+  const logger = app.get(Logger);
   app.useLogger(logger);
 
-  const isProduction = process.env.NODE_ENV === 'production';
+  const config = app.get<ConfigService<Env, true>>(ConfigService);
+  const isProduction = config.get('NODE_ENV') === 'production';
   const sessionSecret = process.env.SESSION_SECRET;
   const databaseUrl = process.env.DATABASE_URL;
 
@@ -85,7 +88,7 @@ async function bootstrap() {
   app.use(passport.session());
 
   app.useGlobalPipes(new ZodValidationPipe());
-  app.useGlobalFilters(new ProblemDetailsFilter(logger));
+  app.useGlobalFilters(new ProblemDetailsFilter(isProduction));
   app.useGlobalInterceptors(new TransformInterceptor(new Reflector()));
 
   await app.listen(PORT);

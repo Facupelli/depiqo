@@ -14,7 +14,7 @@ Core principle:
 Expected failures return Result.
 Unexpected failures throw.
 HTTP mapping happens at the HTTP edge.
-Logging happens once at the global edge.
+pino-http logs once when the response completes.
 ```
 
 ## Runtime Flow
@@ -23,11 +23,12 @@ Expected failure flow:
 
 ```text
 HTTP request
+  -> pino-http starts request timing and assigns request id
   -> controller builds command/query
   -> handler returns Result<Success, FeatureError>
   -> controller maps Err to ProblemException
-  -> ProblemDetailsFilter serializes application/problem+json
-  -> ProblemDetailsFilter logs once
+  -> ProblemDetailsFilter enriches LogContext and serializes application/problem+json
+  -> pino-http emits one canonical completion log after the response finishes
 ```
 
 Unexpected failure flow:
@@ -35,8 +36,9 @@ Unexpected failure flow:
 ```text
 Unexpected thrown error
   -> bubbles to ProblemDetailsFilter
+  -> filter stores safe problem fields and attaches the Error to the response logger path
   -> filter returns safe generic 500 Problem Details
-  -> filter logs the real error/cause/stack
+  -> pino-http emits the canonical error completion log
 ```
 
 ## Repo Convention
@@ -49,7 +51,8 @@ Unexpected thrown error
 - Extract mapping to `<feature>.http-errors.ts` only when it becomes large or reused.
 - `src/core/problem-details` owns generic HTTP error mechanics only.
 - Core problem-details code must not contain feature or module-specific problem mappings.
-- `ProblemDetailsFilter` serializes `application/problem+json` and logs once at the global edge.
+- `ProblemDetailsFilter` serializes `application/problem+json` and enriches request logging context without emitting logs.
+- `pino-http` owns the single canonical HTTP completion log.
 - Validation errors are request-shape errors and are handled by global Problem Details infrastructure.
 - Current canonical example: `apps/backend/src/modules/pricing/features/calculate-cart-price/`.
 
@@ -159,7 +162,7 @@ Keep 5xx response details generic and safe.
 - Throw or rethrow unrecognized dependency failures.
 - Map `Result.Err` values to `ProblemException` at the controller/HTTP edge.
 - Return HTTP errors as `application/problem+json`.
-- Log once at the global edge.
+- Let `pino-http` log once when the HTTP response completes.
 - Keep 5xx responses generic and safe.
 
 ## Must Not Do
@@ -331,39 +334,39 @@ Validation errors should be handled by global Problem Details infrastructure, no
 
 ## Logging Policy
 
-Log once at the HTTP edge.
+Log once at HTTP completion. `pino-http` is the sole owner of the canonical completion event. Interceptors, filters, controllers, and `LogContext` must not emit or flush a second canonical event.
 
 Do not manually log expected application errors in every controller or use case. Domain code must not log.
 
-Canonical error logs should include request id, method, path, status, latency, tenant/user/customer context when available, problem fields, application error code/message/context, cause chain, stack trace for unexpected errors, and environment.
+Canonical error logs include request id, method, pathname without query values, status, duration, safe tenant/user context when available, DEPIQO database/cache/domain-event metrics, safe problem fields, and the root Error under `err`.
 
-Log level guidance:
+The status selects the actual Pino method and numeric `level` value:
 
 ```text
-400 validation                 debug/dev, usually no noisy prod app error
-401/403                        warn if suspicious/repeated, otherwise info/debug
-404                            debug or info depending context
-409 business conflict          info or warn
-422 business rule failure      info
-429 rate limit                 warn
-5xx unexpected                 error
-external dependency outage     error or warn depending impact
+1xx-3xx  info
+4xx      warn
+5xx      error
 ```
 
-The global `ProblemDetailsFilter` is responsible for:
+Do not add an application-defined root `level` field. In particular, `LOG_LEVEL=error` must still emit 5xx canonical completion logs.
+
+`ProblemDetailsFilter` is responsible for:
 
 ```text
-serializing application/problem+json
 handling ProblemException
 handling validation exceptions
 handling ordinary Nest HttpException
 handling unknown thrown errors
-emitting one canonical structured log
-hiding unsafe details in production
-showing useful debugging details in development
+storing safe problem fields in LogContext
+attaching one genuine logging Error for pino-http when needed
+serializing application/problem+json
 ```
 
-For unknown exceptions, it returns generic `500 Internal Server Error` Problem Details and logs the original error.
+The configured Pino `err` serializer includes only `type`, `message`, a safe primitive `code`, policy-allowed `stack`, and nested native Error causes. Cause traversal is limited to five levels and detects circular references by object identity. Arbitrary Error properties, arbitrary object causes, and `toJSON()` output are not serialized.
+
+Production HTTP 4xx errors omit stacks. Development errors and HTTP 5xx errors retain stacks. This status policy is applied before serialization.
+
+Causes, stacks, raw exceptions, application Error objects, and internal logging metadata must never be included in HTTP Problem Details responses. Unknown exceptions always receive generic `500 Internal Server Error` Problem Details while the original Error is retained only for logging.
 
 ## Examples
 

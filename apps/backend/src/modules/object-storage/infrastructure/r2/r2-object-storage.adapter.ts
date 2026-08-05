@@ -6,8 +6,6 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
 import { Env } from 'src/config/env.schema';
-import { AppLogger } from 'src/core/logger/app-logger.service';
-
 import { ObjectStorageProviderError } from '../../application/errors/object-storage-provider.error';
 import { GetObjectInput, ObjectStoragePort, PutObjectInput } from '../../application/ports/object-storage.port';
 
@@ -25,10 +23,7 @@ export class R2ObjectStorageAdapter extends ObjectStoragePort {
   private readonly bucketName: string;
   private readonly client: S3Client;
 
-  constructor(
-    private readonly configService: ConfigService<Env, true>,
-    private readonly logger: AppLogger,
-  ) {
+  constructor(private readonly configService: ConfigService<Env, true>) {
     super();
 
     const accountId = this.configService.get('R2_ACCOUNT_ID');
@@ -100,19 +95,13 @@ export class R2ObjectStorageAdapter extends ObjectStoragePort {
     error: unknown,
   ) {
     const message = error instanceof Error ? error.message : 'Unknown object storage provider error.';
-    const trace = error instanceof Error ? error.stack : undefined;
-
-    this.logger.error(
-      `${R2ObjectStorageAdapter.providerName} object storage ${operation} failed for bucket '${this.bucketName}' and key '${key}': ${message}`,
-      trace,
-      R2ObjectStorageAdapter.name,
-    );
 
     return new ObjectStorageProviderError(
       R2ObjectStorageAdapter.providerName,
       operation,
       `${this.bucketName}/${key}`,
       `${R2ObjectStorageAdapter.providerName} object storage ${operation} failed for '${this.bucketName}/${key}'. ${message}`,
+      error,
     );
   }
 

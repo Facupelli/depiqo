@@ -1,7 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
+import { PinoLogger } from 'nestjs-pino';
 
-import { AppLogger } from 'src/core/logger/app-logger.service';
 import { RentalCancelledEvent } from 'src/modules/rental-commitment/public-api/events/rental-cancelled.event';
 import { RentalCommitmentPublicApi } from 'src/modules/rental-commitment/public-api/rental-commitment.public-api';
 import { TenantManagementPublicApi } from 'src/modules/tenant-management/public-api/tenant-management.public-api';
@@ -11,12 +11,16 @@ import { NotificationOrchestrator } from '../notification-orchestrator.service';
 
 @Injectable()
 export class SendRentalCancelledNotificationHandler {
+  private readonly logger = new Logger(SendRentalCancelledNotificationHandler.name);
+
   constructor(
     private readonly rentalCommitmentPublicApi: RentalCommitmentPublicApi,
     private readonly tenantManagementPublicApi: TenantManagementPublicApi,
     private readonly notificationOrchestrator: NotificationOrchestrator,
-    private readonly logger: AppLogger,
-  ) {}
+    private readonly structuredLogger: PinoLogger,
+  ) {
+    this.structuredLogger.setContext(SendRentalCancelledNotificationHandler.name);
+  }
 
   @OnEvent(RentalCancelledEvent.name, { async: true })
   async handle(event: RentalCancelledEvent): Promise<void> {
@@ -89,11 +93,13 @@ export class SendRentalCancelledNotificationHandler {
         idempotencyKey: `rental-cancelled:${rental.rentalId}`,
       });
     } catch (error) {
-      const stack = error instanceof Error ? error.stack : undefined;
-      this.logger.error(
-        `Failed to handle ${RentalCancelledEvent.name} for rental ${event.rentalId}.`,
-        stack,
-        SendRentalCancelledNotificationHandler.name,
+      this.structuredLogger.error(
+        {
+          err: error instanceof Error ? error : new Error('A non-Error value was thrown.', { cause: error }),
+          eventName: RentalCancelledEvent.name,
+          rentalId: event.rentalId,
+        },
+        'Failed to handle rental cancelled event',
       );
     }
   }

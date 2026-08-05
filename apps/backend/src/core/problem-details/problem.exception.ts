@@ -62,6 +62,7 @@ export class ProblemException extends HttpException {
 
   getApplicationError(): ProblemExceptionApplicationError | undefined {
     if (!this.applicationError) return undefined;
+    if (this.applicationError instanceof Error) return this.applicationError;
 
     return {
       ...this.applicationError,

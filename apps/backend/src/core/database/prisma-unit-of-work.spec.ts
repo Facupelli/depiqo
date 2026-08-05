@@ -1,4 +1,4 @@
-import { AppLogger } from '../logger/app-logger.service';
+import { PinoLogger } from 'nestjs-pino';
 import { DomainEvent } from '../domain/events/domain-event';
 import { DomainEventPublisher } from '../domain/events/domain-event.publisher';
 import { PrismaUnitOfWork } from './prisma-unit-of-work';
@@ -8,10 +8,11 @@ class TestDomainEventPublisher extends DomainEventPublisher {
   publish = jest.fn(async (_events: DomainEvent[]) => undefined);
 }
 
-function makeLogger(): AppLogger {
+function makeLogger(): PinoLogger {
   return {
     error: jest.fn(),
-  } as unknown as AppLogger;
+    setContext: jest.fn(),
+  } as unknown as PinoLogger;
 }
 
 function makeEvent(overrides: Partial<DomainEvent> = {}): DomainEvent {

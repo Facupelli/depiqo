@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
+import { PinoLogger } from 'nestjs-pino';
 import { OnEvent } from '@nestjs/event-emitter';
 
 import { PrismaService } from 'src/core/database/prisma.service';
-import { AppLogger } from 'src/core/logger/app-logger.service';
 import { AssetCreatedEvent } from 'src/modules/asset-inventory/public-api/events/asset-created.event';
 import { Prisma, V2RentalAssetOwnershipKind } from 'src/generated/prisma/client';
 
@@ -10,8 +10,10 @@ import { Prisma, V2RentalAssetOwnershipKind } from 'src/generated/prisma/client'
 export class UpsertRentalAssetCandidateWhenAssetCreatedEventHandler {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly logger: AppLogger,
-  ) {}
+    private readonly logger: PinoLogger,
+  ) {
+    this.logger.setContext(UpsertRentalAssetCandidateWhenAssetCreatedEventHandler.name);
+  }
 
   @OnEvent(AssetCreatedEvent.name)
   async handle(event: AssetCreatedEvent): Promise<void> {
@@ -60,11 +62,13 @@ export class UpsertRentalAssetCandidateWhenAssetCreatedEventHandler {
         },
       });
     } catch (error) {
-      const stack = error instanceof Error ? error.stack : undefined;
       this.logger.error(
-        `Failed to upsert rental asset candidate for asset=${event.assetId} tenant=${event.tenantId}`,
-        stack,
-        UpsertRentalAssetCandidateWhenAssetCreatedEventHandler.name,
+        {
+          err: error instanceof Error ? error : new Error('A non-Error value was thrown.', { cause: error }),
+          assetId: event.assetId,
+          tenantId: event.tenantId,
+        },
+        'Failed to upsert rental asset candidate',
       );
     }
   }

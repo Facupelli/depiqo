@@ -3,7 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { DomainEventsCollector } from '../domain/events/domain-events.collector';
 import { DomainEventPublisher } from '../domain/events/domain-event.publisher';
 import { InMemoryDomainEventsCollector } from '../domain/events/in-memory-domain-events.collector';
-import { AppLogger } from '../logger/app-logger.service';
+import { PinoLogger } from 'nestjs-pino';
 
 import { PrismaService } from './prisma.service';
 
@@ -24,8 +24,10 @@ export class PrismaUnitOfWork {
   constructor(
     private readonly prisma: PrismaService,
     private readonly domainEventPublisher: DomainEventPublisher,
-    private readonly logger: AppLogger,
-  ) {}
+    private readonly logger: PinoLogger,
+  ) {
+    this.logger.setContext(PrismaUnitOfWork.name);
+  }
 
   async runInTransaction<T>(work: (context: PrismaTransactionContext) => Promise<T>): Promise<T> {
     const events = new InMemoryDomainEventsCollector();
@@ -42,14 +44,16 @@ export class PrismaUnitOfWork {
     try {
       await this.domainEventPublisher.publish(recordedEvents);
     } catch (error) {
-      const stack = error instanceof Error ? error.stack : undefined;
       this.logger.error(
-        `Domain event publication failed after transaction commit for ${recordedEvents.length} event(s)`,
-        stack,
-        PrismaUnitOfWork.name,
+        { err: toError(error), domainEventCount: recordedEvents.length },
+        'Domain event publication failed after transaction commit',
       );
     }
 
     return result;
   }
+}
+
+function toError(value: unknown): Error {
+  return value instanceof Error ? value : new Error('A non-Error value was thrown.', { cause: value });
 }
