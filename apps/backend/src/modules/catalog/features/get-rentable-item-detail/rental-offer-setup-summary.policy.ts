@@ -59,12 +59,7 @@ function isBranchAvailable(branch: BranchSetupFacts | null): boolean {
 }
 
 function isPricingValid(pricing: PricingSetupFacts | null): pricing is PricingSetupFacts {
-  return (
-    pricing !== null &&
-    pricing.isActive &&
-    pricing.ratePlan.isActive &&
-    pricing.ratePlan.tiers.length > 0
-  );
+  return pricing !== null && pricing.isActive && pricing.ratePlan.isActive && pricing.ratePlan.tiers.length > 0;
 }
 
 function determineSetupStatus(
@@ -116,10 +111,7 @@ function addOfferIssues(issues: SetupIssue[], offer: OfferSetupFacts): void {
   if (!offer.isVisible) issues.push('OFFER_NOT_VISIBLE');
 }
 
-function buildPriceSummary(
-  pricing: PricingSetupFacts | null,
-  pricingIsValid: boolean,
-): SetupSummary['priceSummary'] {
+function buildPriceSummary(pricing: PricingSetupFacts | null, pricingIsValid: boolean): SetupSummary['priceSummary'] {
   if (!pricing || !pricingIsValid) return null;
 
   const firstTier = pricing.ratePlan.tiers[0];

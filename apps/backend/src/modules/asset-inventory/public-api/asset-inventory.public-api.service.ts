@@ -106,10 +106,7 @@ export class AssetInventoryPublicApiService extends AssetInventoryPublicApi {
       _count: { _all: true },
     });
     const activeStockByEquipmentTypeAndBranch = new Map(
-      stockGroups.map((group) => [
-        `${group.equipmentTypeId}:${group.branchId}`,
-        group._count._all,
-      ]),
+      stockGroups.map((group) => [`${group.equipmentTypeId}:${group.branchId}`, group._count._all]),
     );
 
     for (const requirement of input.requirements) {

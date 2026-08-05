@@ -20,7 +20,7 @@ const notificationsMutedChannelsByEnvSchema = z.preprocess(
 );
 
 export const EnvSchema = z.object({
-  NODE_ENV: z.enum(['development', 'production', 'staging','test']).default('development'),
+  NODE_ENV: z.enum(['development', 'production', 'staging', 'test']).default('development'),
   PORT: z.coerce.number().default(3000),
 
   DATABASE_URL: z.url(),
