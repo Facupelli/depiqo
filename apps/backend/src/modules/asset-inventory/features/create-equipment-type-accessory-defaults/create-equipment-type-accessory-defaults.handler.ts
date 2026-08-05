@@ -6,19 +6,17 @@ import { PrismaService } from 'src/core/database/prisma.service';
 
 import { EquipmentTypeNotActiveError, EquipmentTypeNotFoundError } from '../../domain/errors/asset-inventory.errors';
 import { EquipmentTypeRepository } from '../../persistence/equipment-type.repository';
-import { CreateEquipmentTypeAccessoryDefaultsApplicationError } from './create-equipment-type-accessory-defaults-application.error';
 import { CreateEquipmentTypeAccessoryDefaultsCommand } from './create-equipment-type-accessory-defaults.command';
 import {
   AccessoryDefaultAlreadyExistsError,
+  createEquipmentTypeAccessoryDefaultsError,
+  CreateEquipmentTypeAccessoryDefaultsError,
   DuplicateAccessoryInRequestError,
   mapCreateEquipmentTypeAccessoryDefaultsError,
   SelfReferenceAccessoryDefaultError,
-} from './map-create-equipment-type-accessory-defaults-error';
+} from './create-equipment-type-accessory-defaults.errors';
 
-export type CreateEquipmentTypeAccessoryDefaultsServiceResult = Result<
-  void,
-  CreateEquipmentTypeAccessoryDefaultsApplicationError
->;
+export type CreateEquipmentTypeAccessoryDefaultsServiceResult = Result<void, CreateEquipmentTypeAccessoryDefaultsError>;
 
 @CommandHandler(CreateEquipmentTypeAccessoryDefaultsCommand)
 export class CreateEquipmentTypeAccessoryDefaultsHandler implements ICommandHandler<
@@ -127,11 +125,11 @@ export class CreateEquipmentTypeAccessoryDefaultsHandler implements ICommandHand
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
         return err(
-          mapCreateEquipmentTypeAccessoryDefaultsError(
-            new AccessoryDefaultAlreadyExistsError(
-              command.equipmentTypeId,
-              command.accessories[0].accessoryEquipmentTypeId,
-            ),
+          createEquipmentTypeAccessoryDefaultsError(
+            'asset_inventory.accessory_default_already_exists',
+            `An accessory default already exists for equipment type "${command.equipmentTypeId}".`,
+            error,
+            { equipmentTypeId: command.equipmentTypeId },
           ),
         );
       }
