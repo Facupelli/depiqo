@@ -13,11 +13,11 @@ import {
 } from '../../domain/errors/tenant-management.errors';
 import { CloudflareCustomHostnameService } from '../../infrastructure/cloudflare-custom-hostname.service';
 
-import { customDomainApplicationError, CustomDomainApplicationError } from '../custom-domain-application.error';
 import { toTenantDomainDto } from '../tenant-domain.presenter';
 import { RegisterCustomDomainCommand } from './register-custom-domain.command';
+import { RegisterCustomDomainError, registerCustomDomainError } from './register-custom-domain.errors';
 
-export type RegisterCustomDomainResult = Result<RegisterCustomDomainResponseDto, CustomDomainApplicationError>;
+export type RegisterCustomDomainResult = Result<RegisterCustomDomainResponseDto, RegisterCustomDomainError>;
 
 @Injectable()
 @CommandHandler(RegisterCustomDomainCommand)
@@ -36,20 +36,26 @@ export class RegisterCustomDomainHandler implements ICommandHandler<
   }
 
   async execute(command: RegisterCustomDomainCommand): Promise<RegisterCustomDomainResult> {
+    const context = {
+      useCase: 'RegisterCustomDomain',
+      tenantId: command.tenantId,
+    };
     const normalizedDomainResult = normalizeAndValidateCustomDomain(command.domain, this.rootDomain);
 
     if (normalizedDomainResult.isErr()) {
       const error = normalizedDomainResult.error;
 
       if (error instanceof UnsupportedApexCustomDomainError) {
-        return err(customDomainApplicationError('UnsupportedApexCustomDomain', error.message, error));
+        return err(
+          registerCustomDomainError('tenant_management.unsupported_apex_custom_domain', error.message, error, context),
+        );
       }
 
       if (error instanceof InvalidCustomDomainError) {
-        return err(customDomainApplicationError('InvalidCustomDomain', error.message, error));
+        return err(registerCustomDomainError('tenant_management.invalid_custom_domain', error.message, error, context));
       }
 
-      return err(customDomainApplicationError('Unexpected', 'An unexpected error occurred.', error));
+      throw error;
     }
 
     const normalizedDomain = normalizedDomainResult.value;
@@ -70,23 +76,34 @@ export class RegisterCustomDomainHandler implements ICommandHandler<
     ]);
 
     if (!tenant) {
-      return err(customDomainApplicationError('TenantNotFound', `Tenant "${command.tenantId}" was not found.`));
+      return err(
+        registerCustomDomainError(
+          'tenant_management.tenant_not_found',
+          `Tenant "${command.tenantId}" was not found.`,
+          undefined,
+          context,
+        ),
+      );
     }
 
     if (existingTenantDomain) {
       return err(
-        customDomainApplicationError(
-          'TenantAlreadyHasCustomDomain',
+        registerCustomDomainError(
+          'tenant_management.tenant_already_has_custom_domain',
           `Tenant "${command.tenantId}" already has a custom domain.`,
+          undefined,
+          context,
         ),
       );
     }
 
     if (existingDomainOwner && existingDomainOwner.tenantId !== command.tenantId) {
       return err(
-        customDomainApplicationError(
-          'CustomDomainAlreadyInUse',
+        registerCustomDomainError(
+          'tenant_management.custom_domain_already_in_use',
           `Custom domain "${normalizedDomain}" is already in use.`,
+          undefined,
+          context,
         ),
       );
     }
@@ -127,10 +144,11 @@ export class RegisterCustomDomainHandler implements ICommandHandler<
 
         if (target.includes('domain')) {
           return err(
-            customDomainApplicationError(
-              'CustomDomainAlreadyInUse',
+            registerCustomDomainError(
+              'tenant_management.custom_domain_already_in_use',
               `Custom domain "${normalizedDomain}" is already in use.`,
               error,
+              context,
             ),
           );
         }

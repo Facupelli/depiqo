@@ -9,13 +9,13 @@ import {
   CloudflareCustomHostnameService,
 } from '../../infrastructure/cloudflare-custom-hostname.service';
 
-import { customDomainApplicationError, CustomDomainApplicationError } from '../custom-domain-application.error';
 import { toTenantDomainDto } from '../tenant-domain.presenter';
 import { RefreshCustomDomainStatusCommand } from './refresh-custom-domain-status.command';
+import { RefreshCustomDomainStatusError, refreshCustomDomainStatusError } from './refresh-custom-domain-status.errors';
 
 export type RefreshCustomDomainStatusResult = Result<
   RefreshCustomDomainStatusResponseDto,
-  CustomDomainApplicationError
+  RefreshCustomDomainStatusError
 >;
 
 interface ProviderState {
@@ -35,6 +35,10 @@ export class RefreshCustomDomainStatusHandler implements ICommandHandler<
   ) {}
 
   async execute(command: RefreshCustomDomainStatusCommand): Promise<RefreshCustomDomainStatusResult> {
+    const context = {
+      useCase: 'RefreshCustomDomainStatus',
+      tenantId: command.tenantId,
+    };
     const customDomain = await this.prisma.client.v2TenantDomain.findFirst({
       where: { tenantId: command.tenantId, deletedAt: null },
       select: {
@@ -47,9 +51,11 @@ export class RefreshCustomDomainStatusHandler implements ICommandHandler<
 
     if (!customDomain) {
       return err(
-        customDomainApplicationError(
-          'CustomDomainNotFound',
+        refreshCustomDomainStatusError(
+          'tenant_management.custom_domain_not_found',
           `No custom domain was found for tenant "${command.tenantId}".`,
+          undefined,
+          context,
         ),
       );
     }
