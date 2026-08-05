@@ -5,16 +5,10 @@ import { err, ok, Result } from 'neverthrow';
 import { PrismaService } from 'src/core/database/prisma.service';
 
 import { TenantConfig, TenantConfigProps } from '../../domain/value-objects/tenant-config.value-object';
-import {
-  getPublicTenantConfigApplicationError,
-  GetPublicTenantConfigApplicationError,
-} from './get-public-tenant-config-application.error';
+import { GetPublicTenantConfigError, getPublicTenantConfigError } from './get-public-tenant-config.errors';
 import { GetPublicTenantConfigQuery } from './get-public-tenant-config.query';
 
-export type GetPublicTenantConfigResult = Result<
-  GetPublicTenantConfigResponseDto,
-  GetPublicTenantConfigApplicationError
->;
+export type GetPublicTenantConfigResult = Result<GetPublicTenantConfigResponseDto, GetPublicTenantConfigError>;
 
 @QueryHandler(GetPublicTenantConfigQuery)
 export class GetPublicTenantConfigHandler implements IQueryHandler<
@@ -24,6 +18,7 @@ export class GetPublicTenantConfigHandler implements IQueryHandler<
   constructor(private readonly prisma: PrismaService) {}
 
   async execute(query: GetPublicTenantConfigQuery): Promise<GetPublicTenantConfigResult> {
+    const context = { useCase: 'GetPublicTenantConfig', tenantId: query.tenantId };
     const tenant = await this.prisma.client.v2Tenant.findFirst({
       where: {
         id: query.tenantId,
@@ -35,17 +30,17 @@ export class GetPublicTenantConfigHandler implements IQueryHandler<
     });
 
     if (!tenant) {
-      return err(getPublicTenantConfigApplicationError('TenantNotFound', `Tenant "${query.tenantId}" was not found.`));
-    }
-
-    let config: TenantConfig;
-    try {
-      config = TenantConfig.reconstitute(tenant.config as unknown as TenantConfigProps);
-    } catch (error) {
       return err(
-        getPublicTenantConfigApplicationError('Unexpected', 'The tenant config could not be normalized.', error),
+        getPublicTenantConfigError(
+          'tenant_management.tenant_not_found',
+          `Tenant "${query.tenantId}" was not found.`,
+          undefined,
+          context,
+        ),
       );
     }
+
+    const config: TenantConfig = TenantConfig.reconstitute(tenant.config as unknown as TenantConfigProps);
 
     return ok({
       insuranceEnabled: config.pricing.insuranceEnabled,

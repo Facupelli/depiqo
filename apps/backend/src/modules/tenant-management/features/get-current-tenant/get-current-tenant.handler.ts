@@ -5,10 +5,7 @@ import { err, ok, Result } from 'neverthrow';
 import { PrismaService } from 'src/core/database/prisma.service';
 
 import { TenantConfig, TenantConfigProps } from '../../domain/value-objects/tenant-config.value-object';
-import {
-  getCurrentTenantApplicationError,
-  GetCurrentTenantApplicationError,
-} from './get-current-tenant-application.error';
+import { GetCurrentTenantError, getCurrentTenantError } from './get-current-tenant.errors';
 import { GetCurrentTenantQuery } from './get-current-tenant.query';
 
 export interface GetCurrentTenantReadModel {
@@ -21,13 +18,14 @@ export interface GetCurrentTenantReadModel {
   updatedAt: string;
 }
 
-export type GetCurrentTenantResult = Result<GetCurrentTenantReadModel, GetCurrentTenantApplicationError>;
+export type GetCurrentTenantResult = Result<GetCurrentTenantReadModel, GetCurrentTenantError>;
 
 @QueryHandler(GetCurrentTenantQuery)
 export class GetCurrentTenantHandler implements IQueryHandler<GetCurrentTenantQuery, GetCurrentTenantResult> {
   constructor(private readonly prisma: PrismaService) {}
 
   async execute(query: GetCurrentTenantQuery): Promise<GetCurrentTenantResult> {
+    const context = { useCase: 'GetCurrentTenant', tenantId: query.tenantId };
     const tenant = await this.prisma.client.v2Tenant.findFirst({
       where: {
         id: query.tenantId,
@@ -54,15 +52,19 @@ export class GetCurrentTenantHandler implements IQueryHandler<GetCurrentTenantQu
     });
 
     if (!tenant) {
-      return err(getCurrentTenantApplicationError('TenantNotFound', `Tenant "${query.tenantId}" was not found.`));
+      return err(
+        getCurrentTenantError(
+          'tenant_management.tenant_not_found',
+          `Tenant "${query.tenantId}" was not found.`,
+          undefined,
+          context,
+        ),
+      );
     }
 
-    let config: TenantConfigDto;
-    try {
-      config = TenantConfig.reconstitute(tenant.config as unknown as TenantConfigProps).toPlainObject();
-    } catch (error) {
-      return err(getCurrentTenantApplicationError('Unexpected', 'The tenant config could not be normalized.', error));
-    }
+    const config: TenantConfigDto = TenantConfig.reconstitute(
+      tenant.config as unknown as TenantConfigProps,
+    ).toPlainObject();
 
     return ok({
       id: tenant.id,

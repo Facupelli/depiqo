@@ -61,18 +61,18 @@ Canonical example: `src/modules/pricing/features/calculate-cart-price/`.
 - [x] `create-branch`
 - [x] `create-contract-signer`
 - [x] `get-branch-detail`
-- [ ] `get-current-tenant`
+- [x] `get-current-tenant`
 - [x] `get-customer-profile-detail`
 - [x] `get-customer-summary`
-- [ ] `get-public-tenant-config`
+- [x] `get-public-tenant-config`
 - [ ] `refresh-custom-domain-status`
 - [ ] `register-custom-domain`
 - [ ] `register-tenant-with-owner`
 - [x] `reject-submitted-customer-onboarding`
 - [x] `update-branch`
 - [x] `update-contract-signer`
-- [ ] `update-tenant-branding`
-- [ ] `update-tenant-config`
+- [x] `update-tenant-branding`
+- [x] `update-tenant-config`
 - [ ] `customer/get-current-rental-customer-profile`
 - [ ] `customer/submit-customer-profile`
 
