@@ -3,10 +3,7 @@ import { err, ok, Result } from 'neverthrow';
 
 import { PrismaService } from 'src/core/database/prisma.service';
 
-import {
-  GetRentableItemDetailApplicationError,
-  getRentableItemDetailApplicationError,
-} from './get-rentable-item-detail-application.error';
+import { GetRentableItemDetailError, getRentableItemDetailError } from './get-rentable-item-detail.errors';
 import { GetRentableItemDetailQuery } from './get-rentable-item-detail.query';
 import { buildRentalOfferSetupSummary } from './rental-offer-setup-summary.policy';
 
@@ -66,13 +63,13 @@ export interface GetRentableItemDetailReadModel {
 @QueryHandler(GetRentableItemDetailQuery)
 export class GetRentableItemDetailHandler implements IQueryHandler<
   GetRentableItemDetailQuery,
-  Result<GetRentableItemDetailReadModel, GetRentableItemDetailApplicationError>
+  Result<GetRentableItemDetailReadModel, GetRentableItemDetailError>
 > {
   constructor(private readonly prisma: PrismaService) {}
 
   async execute(
     query: GetRentableItemDetailQuery,
-  ): Promise<Result<GetRentableItemDetailReadModel, GetRentableItemDetailApplicationError>> {
+  ): Promise<Result<GetRentableItemDetailReadModel, GetRentableItemDetailError>> {
     const item = await this.prisma.client.v2RentableItem.findFirst({
       where: { id: query.rentableItemId, tenantId: query.tenantId, deletedAt: null },
       select: {
@@ -109,9 +106,15 @@ export class GetRentableItemDetailHandler implements IQueryHandler<
 
     if (!item) {
       return err(
-        getRentableItemDetailApplicationError(
-          'RentableItemNotFound',
-          'The requested rentable item could not be found.',
+        getRentableItemDetailError(
+          'catalog.rentable_item_not_found',
+          `Rentable item "${query.rentableItemId}" was not found.`,
+          undefined,
+          {
+            useCase: 'GetRentableItemDetail',
+            tenantId: query.tenantId,
+            rentableItemId: query.rentableItemId,
+          },
         ),
       );
     }

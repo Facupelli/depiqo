@@ -1,12 +1,13 @@
-import { Controller, Get, Param } from '@nestjs/common';
+import { Controller, Get, HttpStatus, Param } from '@nestjs/common';
 import { QueryBus } from '@nestjs/cqrs';
 import { Result } from 'neverthrow';
 
+import { createProblemDetails, createProblemType, ProblemException } from 'src/core/problem-details';
+
 import { AuthUser } from '../../../tenant-management/auth/shared/auth.types';
 import { CurrentUser } from '../../../tenant-management/auth/shared/current-user/current-user.decorator';
-import { GetRentableItemDetailApplicationError } from './get-rentable-item-detail-application.error';
+import { GetRentableItemDetailError, GetRentableItemDetailErrorCode } from './get-rentable-item-detail.errors';
 import type { GetRentableItemDetailReadModel } from './get-rentable-item-detail.handler';
-import { toGetRentableItemDetailProblem } from './get-rentable-item-detail-http-error.mapper';
 import { GetRentableItemDetailQuery } from './get-rentable-item-detail.query';
 import { GetRentableItemDetailRequestDto } from './get-rentable-item-detail.request.dto';
 import type { GetRentableItemDetailResponseDto } from './get-rentable-item-detail.response.dto';
@@ -22,7 +23,7 @@ export class GetRentableItemDetailHttpController {
   ): Promise<GetRentableItemDetailResponseDto> {
     const result = await this.queryBus.execute<
       GetRentableItemDetailQuery,
-      Result<GetRentableItemDetailReadModel, GetRentableItemDetailApplicationError>
+      Result<GetRentableItemDetailReadModel, GetRentableItemDetailError>
     >(new GetRentableItemDetailQuery(user.tenantId, params.rentableItemId));
 
     if (result.isErr()) {
@@ -32,3 +33,28 @@ export class GetRentableItemDetailHttpController {
     return result.value;
   }
 }
+
+function toGetRentableItemDetailProblem(error: GetRentableItemDetailError): ProblemException {
+  const problem = getRentableItemDetailProblemMap[error.code];
+
+  return ProblemException.from({
+    problemDetails: createProblemDetails({
+      type: problem.type,
+      title: problem.title,
+      status: problem.status,
+      detail: problem.detail,
+      extensions: { code: error.code },
+    }),
+    applicationError: error,
+    cause: error.cause,
+  });
+}
+
+const getRentableItemDetailProblemMap = {
+  'catalog.rentable_item_not_found': {
+    type: createProblemType('catalog.rentable_item_not_found'),
+    title: 'Rentable item not found',
+    status: HttpStatus.NOT_FOUND,
+    detail: 'The requested rentable item could not be found.',
+  },
+} satisfies Record<GetRentableItemDetailErrorCode, { type: string; title: string; status: HttpStatus; detail: string }>;
