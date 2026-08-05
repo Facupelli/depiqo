@@ -3,7 +3,7 @@ import { err, ok, Result } from 'neverthrow';
 
 import { PrismaService } from 'src/core/database/prisma.service';
 
-import { getOwnerDetailApplicationError, GetOwnerDetailApplicationError } from './get-owner-detail-application.error';
+import { getOwnerDetailError, GetOwnerDetailError } from './get-owner-detail.errors';
 import { GetOwnerDetailQuery } from './get-owner-detail.query';
 
 export interface GetOwnerDetailContractReadModel {
@@ -30,7 +30,7 @@ export interface GetOwnerDetailReadModel {
   contracts: GetOwnerDetailContractReadModel[];
 }
 
-export type GetOwnerDetailResult = Result<GetOwnerDetailReadModel, GetOwnerDetailApplicationError>;
+export type GetOwnerDetailResult = Result<GetOwnerDetailReadModel, GetOwnerDetailError>;
 
 function getNullableStringFromJson(value: unknown, key: string): string | null {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
@@ -78,7 +78,11 @@ export class GetOwnerDetailHandler implements IQueryHandler<GetOwnerDetailQuery,
     });
 
     if (!owner) {
-      return err(getOwnerDetailApplicationError('OwnerNotFound', `Owner "${query.ownerId}" was not found.`));
+      return err(
+        getOwnerDetailError('asset_inventory.owner_not_found', `Owner "${query.ownerId}" was not found.`, undefined, {
+          ownerId: query.ownerId,
+        }),
+      );
     }
 
     return ok({
