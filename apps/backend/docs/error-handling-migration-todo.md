@@ -62,8 +62,8 @@ Canonical example: `src/modules/pricing/features/calculate-cart-price/`.
 - [x] `create-contract-signer`
 - [x] `get-branch-detail`
 - [ ] `get-current-tenant`
-- [ ] `get-customer-profile-detail`
-- [ ] `get-customer-summary`
+- [x] `get-customer-profile-detail`
+- [x] `get-customer-summary`
 - [ ] `get-public-tenant-config`
 - [ ] `refresh-custom-domain-status`
 - [ ] `register-custom-domain`

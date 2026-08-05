@@ -3,10 +3,7 @@ import { err, ok, Result } from 'neverthrow';
 
 import { PrismaService } from 'src/core/database/prisma.service';
 
-import {
-  tenantManagementApplicationError,
-  TenantManagementApplicationError,
-} from '../tenant-management-application.error';
+import { GetCustomerSummaryError, getCustomerSummaryError } from './get-customer-summary.errors';
 import { GetCustomerSummaryQuery } from './get-customer-summary.query';
 
 export interface GetCustomerSummaryReadModel {
@@ -21,13 +18,18 @@ export interface GetCustomerSummaryReadModel {
   lastName: string;
 }
 
-export type GetCustomerSummaryResult = Result<GetCustomerSummaryReadModel, TenantManagementApplicationError>;
+export type GetCustomerSummaryResult = Result<GetCustomerSummaryReadModel, GetCustomerSummaryError>;
 
 @QueryHandler(GetCustomerSummaryQuery)
 export class GetCustomerSummaryHandler implements IQueryHandler<GetCustomerSummaryQuery, GetCustomerSummaryResult> {
   constructor(private readonly prisma: PrismaService) {}
 
   async execute(query: GetCustomerSummaryQuery): Promise<GetCustomerSummaryResult> {
+    const context = {
+      useCase: 'GetCustomerSummary',
+      tenantId: query.tenantId,
+      customerId: query.customerId,
+    };
     const customer = await this.prisma.client.v2RentalCustomer.findFirst({
       where: {
         id: query.customerId,
@@ -48,9 +50,11 @@ export class GetCustomerSummaryHandler implements IQueryHandler<GetCustomerSumma
 
     if (!customer) {
       return err(
-        tenantManagementApplicationError(
-          'RentalCustomerNotFound',
+        getCustomerSummaryError(
+          'tenant_management.rental_customer_not_found',
           `Rental customer "${query.customerId}" was not found.`,
+          undefined,
+          context,
         ),
       );
     }

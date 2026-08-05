@@ -3,10 +3,7 @@ import { err, ok, Result } from 'neverthrow';
 
 import { PrismaService } from 'src/core/database/prisma.service';
 
-import {
-  tenantManagementApplicationError,
-  TenantManagementApplicationError,
-} from '../tenant-management-application.error';
+import { GetCustomerProfileDetailError, getCustomerProfileDetailError } from './get-customer-profile-detail.errors';
 import { GetCustomerProfileDetailQuery } from './get-customer-profile-detail.query';
 
 export type GetCustomerProfileDetailResult = Result<
@@ -55,7 +52,7 @@ export type GetCustomerProfileDetailResult = Result<
       updatedAt: string;
     };
   },
-  TenantManagementApplicationError
+  GetCustomerProfileDetailError
 >;
 
 @QueryHandler(GetCustomerProfileDetailQuery)
@@ -66,6 +63,11 @@ export class GetCustomerProfileDetailHandler implements IQueryHandler<
   constructor(private readonly prisma: PrismaService) {}
 
   async execute(query: GetCustomerProfileDetailQuery): Promise<GetCustomerProfileDetailResult> {
+    const context = {
+      useCase: 'GetCustomerProfileDetail',
+      tenantId: query.tenantId,
+      customerId: query.customerId,
+    };
     const customer = await this.prisma.client.v2RentalCustomer.findFirst({
       where: {
         id: query.customerId,
@@ -123,18 +125,22 @@ export class GetCustomerProfileDetailHandler implements IQueryHandler<
 
     if (!customer) {
       return err(
-        tenantManagementApplicationError(
-          'RentalCustomerNotFound',
+        getCustomerProfileDetailError(
+          'tenant_management.rental_customer_not_found',
           `Rental customer "${query.customerId}" was not found.`,
+          undefined,
+          context,
         ),
       );
     }
 
     if (!customer.profile) {
       return err(
-        tenantManagementApplicationError(
-          'CustomerProfileNotFound',
+        getCustomerProfileDetailError(
+          'tenant_management.customer_profile_not_found',
           `Profile for rental customer "${query.customerId}" was not found.`,
+          undefined,
+          context,
         ),
       );
     }
