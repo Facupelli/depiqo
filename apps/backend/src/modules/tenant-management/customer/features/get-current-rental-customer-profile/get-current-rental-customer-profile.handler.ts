@@ -4,9 +4,9 @@ import { err, ok, Result } from 'neverthrow';
 import { PrismaService } from 'src/core/database/prisma.service';
 
 import {
-  tenantManagementApplicationError,
-  TenantManagementApplicationError,
-} from '../../../features/tenant-management-application.error';
+  GetCurrentRentalCustomerProfileError,
+  getCurrentRentalCustomerProfileError,
+} from './get-current-rental-customer-profile.errors';
 import { GetCurrentRentalCustomerProfileQuery } from './get-current-rental-customer-profile.query';
 
 export type GetCurrentRentalCustomerProfileResult = Result<
@@ -55,7 +55,7 @@ export type GetCurrentRentalCustomerProfileResult = Result<
       updatedAt: string;
     };
   },
-  TenantManagementApplicationError
+  GetCurrentRentalCustomerProfileError
 >;
 
 @QueryHandler(GetCurrentRentalCustomerProfileQuery)
@@ -66,6 +66,11 @@ export class GetCurrentRentalCustomerProfileHandler implements IQueryHandler<
   constructor(private readonly prisma: PrismaService) {}
 
   async execute(query: GetCurrentRentalCustomerProfileQuery): Promise<GetCurrentRentalCustomerProfileResult> {
+    const context = {
+      useCase: 'GetCurrentRentalCustomerProfile',
+      tenantId: query.tenantId,
+      customerId: query.customerId,
+    };
     const customer = await this.prisma.client.v2RentalCustomer.findFirst({
       where: {
         id: query.customerId,
@@ -123,18 +128,22 @@ export class GetCurrentRentalCustomerProfileHandler implements IQueryHandler<
 
     if (!customer) {
       return err(
-        tenantManagementApplicationError(
-          'RentalCustomerNotFound',
+        getCurrentRentalCustomerProfileError(
+          'tenant_management.rental_customer_not_found',
           `Rental customer "${query.customerId}" was not found.`,
+          undefined,
+          context,
         ),
       );
     }
 
     if (!customer.profile) {
       return err(
-        tenantManagementApplicationError(
-          'CustomerProfileNotFound',
+        getCurrentRentalCustomerProfileError(
+          'tenant_management.customer_profile_not_found',
           `Profile for rental customer "${query.customerId}" was not found.`,
+          undefined,
+          context,
         ),
       );
     }
