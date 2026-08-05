@@ -37,11 +37,11 @@ Canonical example: `src/modules/pricing/features/calculate-cart-price/`.
 
 ### Pricing
 
-- [ ] `attach-rate-plan-to-rental-offer`
+- [x] `attach-rate-plan-to-rental-offer`
 - [ ] `calculate-draft-rental-price`
 - [ ] `create-promotion`
-- [ ] `create-rate-plan`
-- [ ] `create-rate-plan-and-attach-to-rental-offer`
+- [x] `create-rate-plan`
+- [x] `create-rate-plan-and-attach-to-rental-offer`
 - [ ] `get-promotion-detail`
 - [ ] `update-promotion`
 

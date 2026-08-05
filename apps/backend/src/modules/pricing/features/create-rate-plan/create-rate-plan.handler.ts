@@ -2,9 +2,8 @@ import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { err, ok, Result } from 'neverthrow';
 
 import { CreateRatePlanOperation } from '../../application/operations/create-rate-plan.operation';
-import { CreateRatePlanApplicationError, createRatePlanApplicationError } from './create-rate-plan-application.error';
 import { CreateRatePlanCommand } from './create-rate-plan.command';
-import { mapCreateRatePlanError } from './map-create-rate-plan-error';
+import { CreateRatePlanError, createRatePlanError } from './create-rate-plan.errors';
 
 export interface CreateRatePlanResult {
   id: string;
@@ -13,19 +12,25 @@ export interface CreateRatePlanResult {
 @CommandHandler(CreateRatePlanCommand)
 export class CreateRatePlanHandler implements ICommandHandler<
   CreateRatePlanCommand,
-  Result<CreateRatePlanResult, CreateRatePlanApplicationError>
+  Result<CreateRatePlanResult, CreateRatePlanError>
 > {
   constructor(private readonly createRatePlanOperation: CreateRatePlanOperation) {}
 
-  async execute(command: CreateRatePlanCommand): Promise<Result<CreateRatePlanResult, CreateRatePlanApplicationError>> {
+  async execute(command: CreateRatePlanCommand): Promise<Result<CreateRatePlanResult, CreateRatePlanError>> {
     const result = await this.createRatePlanOperation.createRatePlan(command);
 
     if (result.isErr()) {
-      if (result.error.code === 'RatePlanNameAlreadyInUse') {
-        return err(createRatePlanApplicationError(result.error.code, result.error.message));
-      }
+      const errorCodeByOperationCode = {
+        RatePlanNameAlreadyInUse: 'pricing.rate_plan_name_already_in_use',
+        InvalidRatePlan: 'pricing.invalid_rate_plan',
+      } as const;
 
-      return err(mapCreateRatePlanError(result.error.cause));
+      return err(
+        createRatePlanError(errorCodeByOperationCode[result.error.code], result.error.message, result.error, {
+          useCase: 'CreateRatePlan',
+          tenantId: command.tenantId,
+        }),
+      );
     }
 
     return ok({ id: result.value.ratePlan.id });

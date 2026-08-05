@@ -1,16 +1,13 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { err, ok, Result } from 'neverthrow';
 
-import {
-  AttachRatePlanToRentalOfferOperation,
-  AttachRatePlanToRentalOfferOperationError,
-} from '../../application/operations/attach-rate-plan-to-rental-offer.operation';
+import { AttachRatePlanToRentalOfferOperation } from '../../application/operations/attach-rate-plan-to-rental-offer.operation';
 import { CreateRatePlanOperation } from '../../application/operations/create-rate-plan.operation';
-import {
-  CreateRatePlanAndAttachToRentalOfferApplicationError,
-  createRatePlanAndAttachToRentalOfferApplicationError,
-} from './create-rate-plan-and-attach-to-rental-offer-application.error';
 import { CreateRatePlanAndAttachToRentalOfferCommand } from './create-rate-plan-and-attach-to-rental-offer.command';
+import {
+  CreateRatePlanAndAttachToRentalOfferError,
+  createRatePlanAndAttachToRentalOfferError,
+} from './create-rate-plan-and-attach-to-rental-offer.errors';
 
 export interface CreateRatePlanAndAttachToRentalOfferResult {
   ratePlanId: string;
@@ -19,7 +16,7 @@ export interface CreateRatePlanAndAttachToRentalOfferResult {
 
 type CreateRatePlanAndAttachToRentalOfferHandlerResult = Result<
   CreateRatePlanAndAttachToRentalOfferResult,
-  CreateRatePlanAndAttachToRentalOfferApplicationError
+  CreateRatePlanAndAttachToRentalOfferError
 >;
 
 @CommandHandler(CreateRatePlanAndAttachToRentalOfferCommand)
@@ -38,11 +35,21 @@ export class CreateRatePlanAndAttachToRentalOfferHandler implements ICommandHand
     const createRatePlanResult = await this.createRatePlanOperation.createRatePlan({ ...command, isActive: true });
 
     if (createRatePlanResult.isErr()) {
+      const errorCodeByOperationCode = {
+        RatePlanNameAlreadyInUse: 'pricing.rate_plan_name_already_in_use',
+        InvalidRatePlan: 'pricing.invalid_rate_plan',
+      } as const;
+
       return err(
-        createRatePlanAndAttachToRentalOfferApplicationError(
-          createRatePlanResult.error.code,
+        createRatePlanAndAttachToRentalOfferError(
+          errorCodeByOperationCode[createRatePlanResult.error.code],
           createRatePlanResult.error.message,
-          'cause' in createRatePlanResult.error ? createRatePlanResult.error.cause : undefined,
+          createRatePlanResult.error,
+          {
+            useCase: 'CreateRatePlanAndAttachToRentalOffer',
+            tenantId: command.tenantId,
+            catalogRentalOfferId: command.catalogRentalOfferId,
+          },
         ),
       );
     }
@@ -55,26 +62,28 @@ export class CreateRatePlanAndAttachToRentalOfferHandler implements ICommandHand
     });
 
     if (attachRatePlanResult.isErr()) {
-      return err(this.mapAttachRatePlanError(attachRatePlanResult.error));
+      if (attachRatePlanResult.error.code !== 'RentalOfferNotFound') {
+        throw new Error('The newly created rate plan could not be attached.', { cause: attachRatePlanResult.error });
+      }
+
+      return err(
+        createRatePlanAndAttachToRentalOfferError(
+          'pricing.rental_offer_not_found',
+          attachRatePlanResult.error.message,
+          attachRatePlanResult.error,
+          {
+            useCase: 'CreateRatePlanAndAttachToRentalOffer',
+            tenantId: command.tenantId,
+            catalogRentalOfferId: command.catalogRentalOfferId,
+            ratePlanId,
+          },
+        ),
+      );
     }
 
     return ok({
       ratePlanId,
       rentalOfferPricingId: attachRatePlanResult.value.rentalOfferPricingId,
     });
-  }
-
-  private mapAttachRatePlanError(
-    error: AttachRatePlanToRentalOfferOperationError,
-  ): CreateRatePlanAndAttachToRentalOfferApplicationError {
-    if (error.code === 'RentalOfferNotFound') {
-      return createRatePlanAndAttachToRentalOfferApplicationError(error.code, error.message);
-    }
-
-    return createRatePlanAndAttachToRentalOfferApplicationError(
-      'Unexpected',
-      'Unable to attach the new rate plan.',
-      error,
-    );
   }
 }
