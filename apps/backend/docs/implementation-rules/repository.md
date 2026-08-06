@@ -4,7 +4,7 @@
 
 Use this rule when adding or changing command-side persistence for an aggregate root.
 
-Use `query.md` for read-model database access. Query Handlers normally inject `PrismaService` directly instead of using repositories.
+Use `query.md` for read-only use cases. Query Handlers and command-side handlers query read-model or supporting data directly with Prisma, provided the current module owns the accessed Prisma models.
 
 ## Role
 
@@ -19,9 +19,10 @@ Repositories sit on the command side. They encapsulate aggregate persistence con
 - Repositories are NestJS providers decorated with `@Injectable()`.
 - Command-side Application Services may depend on concrete Prisma-backed repositories.
 - This codebase does not introduce repository ports/interfaces by default.
-- Query Handlers usually bypass repositories and read directly with `PrismaService`.
+- Query Handlers and command-side supporting reads bypass repositories and read directly with `PrismaService` or the active Prisma transaction client.
 - Repositories use mappers for domain ↔ persistence translation.
-- Repositories may participate in Prisma transactions or a project transaction context when needed.
+- Repository methods may accept an optional Prisma transaction client or project transaction context.
+- Transaction participation does not change the operation's name. Use `findById(..., tx)` and `save(entity, tx)`, not `findByIdWithinTransaction()` or `saveWithinTransaction()`.
 
 Introduce a port/interface only when it provides concrete value, such as multiple implementations, external dependency isolation, an anti-corruption boundary, a stable public module contract, or a test seam that cannot be handled otherwise. The goal is aggregate persistence clarity, not database swapability theatre.
 
@@ -30,8 +31,9 @@ Introduce a port/interface only when it provides concrete value, such as multipl
 - Load aggregates as domain entities.
 - Save aggregates back to persistence.
 - Persist child entities through the aggregate root repository.
-- Use straightforward aggregate persistence methods such as `findById()`, `load()`, `save()`, or focused aggregate-loading helpers.
-- Add domain-shaped helper methods only when they genuinely help a command-side use case load the aggregate state it needs.
+- Use straightforward aggregate persistence methods such as `findById()`, `load()`, and `save()`.
+- A repository read must reconstitute an aggregate root or entity that the use case needs in order to invoke business behavior.
+- Load all children and Value Objects required to make that aggregate behaviorally complete.
 - Use mappers instead of inline persistence/domain translation.
 - Accept a Prisma transaction client or project transaction context when participating in an Application Service transaction.
 - Prefer persisted normalized columns and database constraints when uniqueness depends on normalized values such as trimmed/case-insensitive names or serial numbers.
@@ -40,11 +42,14 @@ Introduce a port/interface only when it provides concrete value, such as multipl
 
 - Do not create repositories for every child entity inside an aggregate.
 - Do not introduce `IRepository`, `OrderRepositoryPort`, or similar abstractions by default.
-- Do not use repositories as the default read-model path.
+- Do not use repositories for read models or command-supporting data that does not reconstitute an aggregate/entity for behavior.
+- Do not add repository methods for existence checks, uniqueness checks, impact analysis, affected-record IDs, counts, reporting, dropdown options, projections, or other scalar/partial-record reads. Query module-owned models directly through Prisma instead.
+- Do not use a repository to access models owned by another module (see `docs/architecture/overview.md` for full cross-module access rules).
 - Do not enforce domain rules inside repositories.
 - Do not make business decisions inside repositories.
 - Do not scatter persistence translation details into Application Services.
 - Do not load broad collections for high-cardinality uniqueness checks unless it is an explicit, temporary trade-off.
+- Do not encode transaction context in method names with suffixes such as `WithinTransaction`.
 
 ## Minimal Shape
 
@@ -61,36 +66,23 @@ import { BookingMapper } from './booking.mapper';
 export class BookingRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findById(id: string, tenantId: string): Promise<BookingEntity | null> {
-    const record = await this.prisma.booking.findFirst({
+  async findById(
+    id: string,
+    tenantId: string,
+    tx?: Prisma.TransactionClient,
+  ): Promise<BookingEntity | null> {
+    const db = tx ?? this.prisma;
+    const record = await db.booking.findFirst({
       where: { id, tenantId },
+      include: { lines: true },
     });
 
     return record ? BookingMapper.toDomain(record) : null;
   }
 
-  async findActiveForEquipment(tenantId: string, equipmentId: string): Promise<BookingEntity[]> {
-    const records = await this.prisma.booking.findMany({
-      where: {
-        tenantId,
-        equipmentId,
-        status: { not: 'CANCELLED' },
-      },
-    });
-
-    return records.map(BookingMapper.toDomain);
-  }
-
-  async save(entity: BookingEntity): Promise<void> {
-    await this.prisma.booking.upsert({
-      where: { id: entity.id },
-      create: BookingMapper.toPersistence(entity),
-      update: BookingMapper.toUpdateData(entity),
-    });
-  }
-
-  async saveWithinTransaction(entity: BookingEntity, tx: Prisma.TransactionClient): Promise<void> {
-    await tx.booking.upsert({
+  async save(entity: BookingEntity, tx?: Prisma.TransactionClient): Promise<void> {
+    const db = tx ?? this.prisma;
+    await db.booking.upsert({
       where: { id: entity.id },
       create: BookingMapper.toPersistence(entity),
       update: BookingMapper.toUpdateData(entity),
@@ -131,6 +123,37 @@ return OrderMapper.toDomain(record);
 const record = await this.prisma.order.findUniqueOrThrow({ where: { id } });
 const order = OrderEntity.reconstitute({ ...record });
 ```
+
+### Correct: supporting command read bypasses the repository
+
+```typescript
+await this.prisma.$transaction(async (tx) => {
+  const duplicate = await tx.ratePlan.findFirst({
+    where: { tenantId, normalizedName, id: { not: ratePlanId } },
+    select: { id: true },
+  });
+
+  const affectedOfferIds = await tx.rentalOfferRatePlan.findMany({
+    where: { ratePlanId },
+    select: { rentalOfferId: true },
+  });
+
+  const ratePlan = await this.ratePlanRepository.findById(ratePlanId, tenantId, tx);
+  ratePlan.correct(command.name, command.tiers);
+  await this.ratePlanRepository.save(ratePlan, tx);
+});
+```
+
+This is valid only when the current module owns all queried models (see `docs/architecture/overview.md` for cross-module access rules).
+
+### Wrong: repository methods for existence and impact reads
+
+```typescript
+await this.ratePlanRepository.findIdByName(tenantId, normalizedName, tx);
+await this.ratePlanRepository.findAffectedRentalOfferIds(ratePlanId, tx);
+```
+
+Neither method reconstitutes the RatePlan aggregate for behavior.
 
 ### Correct: Query Handler bypasses repository for a read model
 

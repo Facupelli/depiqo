@@ -23,9 +23,11 @@ Allowed cross-module patterns:
 
 Forbidden:
 
-- Importing from another module’s private `application/`, `domain/`, or `infrastructure/` folders.
+- Importing from another module's private `application/`, `domain/`, or `infrastructure/` folders.
 - Dispatching cross-module commands through private command classes.
 - Leaking repositories, handlers, persistence details, or implementation-specific types through public contracts.
+
+For detailed cross-module access rules, see `docs/architecture/overview.md`.
 
 ## Use case structure
 
@@ -46,7 +48,7 @@ Command -> Event -> Command
 
 PostgreSQL is the database. Prisma is the persistence tool.
 
-Command-side persistence uses concrete repositories plus mappers. Query-side code may use Prisma directly for read-model efficiency.
+Command-side persistence uses concrete repositories plus mappers. Query-side and supporting reads may use Prisma directly for efficiency. See `docs/implementation-rules/repository.md` and `docs/implementation-rules/query.md` for detailed rules.
 
 Repositories are concrete classes. The project intentionally does not add repository ports or interfaces on top of Prisma-backed repositories.
 
@@ -74,4 +76,4 @@ Each feature spec should break requirements into scenarios. Each scenario should
 6. refactor if needed
 7. commit
 
-Use `backend-testing-selection` to choose the smallest effective verification command.
+Choose the smallest effective backend command from `apps/backend/AGENTS.md`, starting with targeted tests when available.

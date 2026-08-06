@@ -23,9 +23,9 @@ Use these docs as the routing table.
 | Need | Read |
 | --- | --- |
 | Product mission / technical direction | `apps/backend/docs/constitution/` |
-| Architecture overview / module boundary rules | `apps/backend/docs/architecture/overview.md` |
+| Architecture overview / module boundary rules (cross-module read/write prohibitions) | `apps/backend/docs/architecture/overview.md` |
 | Architecture decisions | `apps/backend/docs/architecture/adr/` |
-| Implementation rules by artifact type | `apps/backend/docs/agent-rules/architecture.md` |
+| Implementation rules by artifact type (repository vs direct Prisma, transactions) | `apps/backend/docs/implementation-rules/README.md` |
 | Module-specific domain boundaries | `apps/backend/src/modules/*/README.md` |
 | Public cross-module contracts | `apps/backend/src/modules/**/*.public-api.ts` |
 
@@ -34,19 +34,14 @@ Use these docs as the routing table.
 Start with:
 
 ```text
-apps/backend/docs/agent-rules/architecture.md
+apps/backend/docs/implementation-rules/README.md
 ```
 
 Then load only the artifact-specific rule docs needed for the change, such as command, query, controller, repository, mapper, DTO, domain error, entity, aggregate, value object, domain service, domain event, or testing rules.
 
 ## Backend Skills
 
-Use existing backend skills for specialized workflows when available:
-
-- `backend-use-case-implementation` for backend command/query/controller/repository/use-case work
-- `prisma-domain-change-safely` for changes that cross Prisma, mappers, and domain entities
-- `module-boundary-review` for auditing cross-module interactions and public contracts
-- `backend-testing-selection` for choosing the smallest effective verification command
+Use `backend-use-case-implementation` for backend command/query/controller/repository/use-case work.
 
 ## Module Docs
 

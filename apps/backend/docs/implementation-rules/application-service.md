@@ -24,9 +24,10 @@ For HTTP-facing error flow, follow `error-handling-problem-details.md`.
 - Application Services own transaction boundaries.
 - Use the project unit-of-work abstraction when event collection/publication is involved.
 - Repositories or surrounding infrastructure handle aggregate persistence and Domain Event dispatch timing.
-- Public module APIs/facades are the preferred boundary for cross-module collaboration.
+- Public module APIs/facades or explicit integration events/projections are the only boundaries for cross-module collaboration.
 - Private same-module application helper/orchestration services are allowed when they keep a workflow readable and are not exposed as independent use cases.
-- Inject `PrismaService` directly only when the command-side use case genuinely needs direct persistence access beyond repository responsibilities.
+- Inject `PrismaService` directly for command-supporting reads such as existence, uniqueness, impact, affected-ID, count, or projection queries when the current module owns the accessed models (see `repository.md` for the repository-vs-direct-Prisma distinction).
+- Use repositories only to load aggregates/entities for behavior and persist them (see `repository.md`).
 
 ## Must Do
 
@@ -34,7 +35,7 @@ For HTTP-facing error flow, follow `error-handling-problem-details.md`.
 - Load aggregates through repositories.
 - Put aggregate-specific rules in entities, aggregates, and Value Objects.
 - Put rules spanning multiple aggregates in Domain Services.
-- Use public module APIs/facades or the CQRS bus for cross-module collaboration.
+- Use another module's public API/facade for synchronous cross-module collaboration. A CQRS command or query is valid across modules only when it is deliberately exported as part of that public API.
 - Return `err(featureError(...))` for expected failures.
 - Return `Result<T, FeatureError>` for expected HTTP-facing failures.
 - Map known domain errors into feature/application errors before returning from HTTP-facing use cases.
@@ -44,6 +45,8 @@ For HTTP-facing error flow, follow `error-handling-problem-details.md`.
 - Let infrastructure exceptions, programmer mistakes, and unknown failures propagate.
 - Use `prisma.$transaction()` or the project unit-of-work abstraction when multiple writes must succeed or fail together.
 - Keep transaction boundaries in the Application Service, even when repositories perform the actual persistence work inside that transaction.
+- Pass the active transaction client to normal repository methods (see `repository.md` for the canonical transaction pattern).
+- Verify model ownership before every direct Prisma call (see `docs/architecture/overview.md` for cross-module access rules).
 
 ## Must Not Do
 
@@ -52,6 +55,9 @@ For HTTP-facing error flow, follow `error-handling-problem-details.md`.
 - Do not throw Nest HTTP exceptions from Application Services.
 - Do not inject CQRS handlers into other CQRS handlers.
 - Do not import private internals from another module.
+- Do not query or mutate another module's owned Prisma models, including from a transaction callback (see `docs/architecture/overview.md`).
+- Do not add repository methods for read models or supporting reads that do not reconstitute an aggregate/entity for behavior (see `repository.md`).
+- Do not create repository method variants with transaction suffixes (see `repository.md` for the canonical transaction pattern).
 - Do not return raw Prisma records.
 - Do not create a generic `UnexpectedError` result just to avoid throwing.
 - Do not wrap unknown infrastructure failures as expected errors.
@@ -65,6 +71,8 @@ For HTTP-facing error flow, follow `error-handling-problem-details.md`.
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { err, ok, Result } from 'neverthrow';
 
+import { PrismaService } from 'src/core/database/prisma.service';
+
 import { CreateBookingCommand } from './create-booking.command';
 import { CreateBookingError, createBookingError } from './create-booking.errors';
 import { BookingEntity } from '../../domain/booking.entity';
@@ -77,6 +85,7 @@ type CreateBookingResult = Result<{ id: string }, CreateBookingError>;
 @CommandHandler(CreateBookingCommand)
 export class CreateBookingService implements ICommandHandler<CreateBookingCommand, CreateBookingResult> {
   constructor(
+    private readonly prisma: PrismaService,
     private readonly bookingRepository: BookingRepository,
     private readonly bookingAvailability: BookingAvailabilityService,
   ) {}
@@ -89,12 +98,18 @@ export class CreateBookingService implements ICommandHandler<CreateBookingComman
       customerId: command.customerId,
     };
 
-    const existingBookings = await this.bookingRepository.findActiveForEquipment(
-      command.tenantId,
-      command.equipmentId,
-    );
+    // Booking is owned by this module. This supporting read does not load an
+    // aggregate for behavior, so it belongs directly in Prisma, not a repository.
+    const occupiedPeriods = await this.prisma.booking.findMany({
+      where: {
+        tenantId: command.tenantId,
+        equipmentId: command.equipmentId,
+        status: { not: 'CANCELLED' },
+      },
+      select: { periodStart: true, periodEnd: true },
+    });
 
-    const availabilityResult = this.bookingAvailability.checkAvailability(command.period, existingBookings);
+    const availabilityResult = this.bookingAvailability.checkAvailability(command.period, occupiedPeriods);
     if (availabilityResult.isErr()) {
       return err(this.mapAvailabilityError(availabilityResult.error, context));
     }
@@ -125,7 +140,7 @@ export class CreateBookingService implements ICommandHandler<CreateBookingComman
 ### Correct: domain rule enforced inside entity/service, application service coordinates
 
 ```typescript
-const availabilityResult = this.bookingAvailability.checkAvailability(command.period, existingBookings);
+const availabilityResult = this.bookingAvailability.checkAvailability(command.period, occupiedPeriods);
 if (availabilityResult.isErr()) {
   return err(this.mapAvailabilityError(availabilityResult.error, context));
 }
@@ -175,10 +190,19 @@ try {
 
 ```typescript
 await this.prisma.$transaction(async (tx) => {
-  await this.bookingRepository.saveWithinTransaction(booking, tx);
-  await tx.equipmentAvailability.update({ ... });
+  const duplicate = await tx.booking.findFirst({
+    where: { tenantId: booking.tenantId, externalReference: booking.externalReference },
+    select: { id: true },
+  });
+
+  if (duplicate) return;
+
+  await this.bookingRepository.save(booking, tx);
+  await tx.bookingAuditEntry.create({ data: { bookingId: booking.id, action: 'CREATED' } });
 });
 ```
+
+The direct Prisma calls above are valid only if the current module owns both models (see `docs/architecture/overview.md` for cross-module access rules). For the canonical transaction and repository pattern, see `repository.md`.
 
 ## Canonical Example
 

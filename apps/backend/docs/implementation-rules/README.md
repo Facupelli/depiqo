@@ -13,11 +13,11 @@ We preserve the important boundaries:
 - Domain code is persistence-free and transport-free.
 - Application services/handlers orchestrate use cases.
 - Controllers own HTTP translation and Problem Details mapping.
-- Modules communicate through public APIs/facades or explicit events, not private internals.
+- Modules communicate through public APIs/facades or explicit events, not private internals (see `apps/backend/docs/architecture/overview.md` for cross-module access rules).
 - Commands and queries are separate.
 - Request/response DTOs are separate from commands, queries, and domain objects.
-- Command-side repositories persist aggregates/entities through mappers.
-- Query handlers may read directly from Prisma into read models.
+- Command-side repositories reconstitute aggregates/entities for behavior and persist them through mappers (see `repository.md`).
+- Query handlers and command-supporting reads query module-owned Prisma models directly into read models (see `query.md` and `repository.md`).
 
 We do not require ceremony by default:
 

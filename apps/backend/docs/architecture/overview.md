@@ -20,11 +20,13 @@ Some modules are orchestration or infrastructure modules. They coordinate work a
 
 Modules must protect their own domain rules and persistence details.
 
-Cross-module access must go through the owning module's public API contract. Other modules must not import its repositories, Prisma delegates, entities, internal services, or implementation-specific providers.
+Cross-module access must go through the owning module's public API contract or an explicit integration event/projection mechanism. Other modules must not import its repositories, Prisma delegates, entities, internal services, or implementation-specific providers.
 
-A module must not directly mutate another module's owned tables. Read access across module boundaries should be explicit, intentional, and documented.
+A module must never query or mutate another module's owned Prisma models directly. This prohibition applies to commands, queries, application services, repositories, background jobs, and transaction callbacks. There is no direct-read exception for convenience, performance, existence checks, or joining related records.
 
-Cross-module references do not transfer ownership. Foreign keys, IDs, snapshots, and projections may point at records owned elsewhere, but the referenced module remains the authority over its current source records.
+When a module needs current data owned elsewhere, it must call the owner's public API. When it needs locally queryable data, it may own a deliberate projection or historical snapshot synchronized through public contracts or integration events. The consuming module may query that local model directly because it owns the model, not because cross-module database access is allowed.
+
+Cross-module references do not transfer ownership. Foreign keys and IDs may point at records owned elsewhere, but the referenced module remains the authority over its current source records. Snapshots and projections are separate models owned by the module that deliberately maintains them.
 
 Module READMEs should explain ownership, boundaries, domain concepts, invariants, and common mistakes. They should not duplicate public API surfaces or Prisma schema details.
 
@@ -34,7 +36,7 @@ The Prisma schema is the source of truth for physical model, table, column, stat
 
 Architecture documentation should explain which module owns each table, what domain meaning the table has, which invariants matter, and which cross-module references are intentional.
 
-The global database map explains table ownership across modules, cross-module references, lifecycle-sensitive tables, snapshot tables, and persistence rules that agents must not accidentally break.
+The Prisma schema and module READMEs must be used together to determine model ownership before adding a database call. If ownership remains unclear, stop and clarify it before implementation.
 
 ## Historical Snapshot Rule
 
