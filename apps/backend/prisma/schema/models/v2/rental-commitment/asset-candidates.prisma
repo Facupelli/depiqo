@@ -16,6 +16,7 @@ model V2RentalAssetCandidate {
   assetStatus           V2AssetStatus              @map("asset_status")
   isActive              Boolean                    @map("is_active")
   isRentable            Boolean                    @map("is_rentable")
+  equipmentTypeIsActive Boolean                    @default(true) @map("equipment_type_is_active")
   ownershipKind         V2RentalAssetOwnershipKind @map("ownership_kind")
   ownerId               String?                    @map("owner_id")
   ownerContractSnapshot Json?                      @map("owner_contract_snapshot")

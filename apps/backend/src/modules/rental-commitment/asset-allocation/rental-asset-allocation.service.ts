@@ -117,6 +117,7 @@ export class RentalAssetAllocationService {
         assetStatus,
         isActive: row.isActive,
         isRentable: row.isRentable,
+        equipmentTypeIsActive: row.equipmentTypeIsActive,
         ownershipKind,
         ownerId: row.ownerId ?? undefined,
         ownerContractSnapshot: ownerContractSnapshot.value ?? undefined,

@@ -111,6 +111,7 @@ export class RentalAssetAllocationPolicy {
     return (
       candidate.isActive &&
       candidate.isRentable &&
+      candidate.equipmentTypeIsActive &&
       candidate.assetStatus === RentalAssetCandidateStatus.Active &&
       !reservedAssetIds.has(candidate.assetId)
     );

@@ -84,6 +84,7 @@ export class GetStorefrontRentalOfferAvailabilityHandler implements IQueryHandle
         equipmentTypeId: { in: [...params.equipmentTypeIds] },
         isActive: true,
         isRentable: true,
+        equipmentTypeIsActive: true,
         assetStatus: 'ACTIVE',
       },
       select: {

@@ -2,6 +2,12 @@ import { randomUUID } from 'node:crypto';
 
 import { err, ok, Result } from 'neverthrow';
 
+import { AggregateRootBase } from 'src/core/domain/aggregate-root.base';
+
+import {
+  EquipmentTypeDeactivatedIntegrationEvent,
+  EquipmentTypeReactivatedIntegrationEvent,
+} from '../public-api/events/equipment-type-lifecycle.events';
 import { AssetInventoryError, InvalidEquipmentTypeFieldError } from './errors/asset-inventory.errors';
 
 interface EquipmentTypeProps {
@@ -25,11 +31,12 @@ export interface ReconstituteEquipmentTypeProps extends EquipmentTypeProps {
   id: string;
 }
 
-export class EquipmentType {
+export class EquipmentType extends AggregateRootBase {
   readonly id: string;
   private readonly props: EquipmentTypeProps;
 
   private constructor(id: string, props: EquipmentTypeProps) {
+    super();
     this.id = id;
     this.props = props;
   }
@@ -81,6 +88,36 @@ export class EquipmentType {
       createdAt: props.createdAt,
       updatedAt: props.updatedAt,
     });
+  }
+
+  updateMetadata(input: { name?: string; description?: string | null }): Result<boolean, AssetInventoryError> {
+    const normalized = EquipmentType.normalizeCreateProps({
+      tenantId: this.tenantId,
+      name: input.name ?? this.name,
+      description: input.description === undefined ? this.description : input.description,
+    });
+    if (normalized.isErr()) return err(normalized.error);
+
+    const changed = normalized.value.name !== this.name || normalized.value.description !== this.description;
+    if (changed) {
+      this.props.name = normalized.value.name;
+      this.props.description = normalized.value.description;
+    }
+    return ok(changed);
+  }
+
+  deactivate(): boolean {
+    if (!this.isActive) return false;
+    this.props.isActive = false;
+    this.recordDomainEvent(new EquipmentTypeDeactivatedIntegrationEvent(this.tenantId, this.id));
+    return true;
+  }
+
+  reactivate(): boolean {
+    if (this.isActive) return false;
+    this.props.isActive = true;
+    this.recordDomainEvent(new EquipmentTypeReactivatedIntegrationEvent(this.tenantId, this.id));
+    return true;
   }
 
   static normalizeNameForComparison(name: string): string {

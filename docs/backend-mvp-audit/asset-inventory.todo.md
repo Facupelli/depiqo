@@ -6,10 +6,10 @@ Equipment types and batches of assets can be created, owners with contracts can 
 
 ## Missing or incomplete capabilities
 
-### [ ] Correct and deactivate/reactivate equipment types
+### [x] Correct and deactivate/reactivate equipment types
 
 - **Priority:** P0
-- **Status:** Missing
+- **Status:** Completed
 - **MVP scenario:** Staff corrects operational metadata or retires a type from future fulfillment.
 - **Current evidence:** `V2EquipmentType.isActive`, `deletedAt`, and update timestamps exist, but features expose create and queries only.
 - **Gap:** Equipment types cannot be corrected or removed from future setup/assignment safely.
@@ -19,6 +19,7 @@ Equipment types and batches of assets can be created, owners with contracts can 
 - **Dependencies:** Catalog validates type state; Rental Commitment candidate synchronization.
 - **Side effects:** Emit type lifecycle events; never rewrite demand snapshots.
 - **Acceptance criteria:** New setup and assignment reject inactive types while historical rental detail remains intact.
+- **Completion note:** Implemented metadata updates, explicit deactivate/reactivate endpoints, lifecycle events, and Rental Commitment candidate synchronization. Projection failures are currently logged and swallowed, so candidate synchronization is not guaranteed if an event handler update fails; durable delivery or retry handling remains a reliability follow-up.
 - **Suggested tests:** Domain/repository tests and E2E deactivate/reactivate across catalog setup and rental confirmation.
 
 ### [ ] Maintain asset status, branch, ownership, and metadata

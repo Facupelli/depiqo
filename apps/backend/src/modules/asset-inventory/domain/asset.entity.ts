@@ -27,6 +27,7 @@ export interface CreateAssetProps {
   tenantId: string;
   branchId: string;
   equipmentTypeId: string;
+  equipmentTypeIsActive: boolean;
   ownerId?: string | null;
   serialNumber?: string | null;
   notes?: string | null;
@@ -105,6 +106,7 @@ export class Asset extends AggregateRootBase {
         assetId: asset.id,
         branchId: asset.branchId,
         equipmentTypeId: asset.equipmentTypeId,
+        equipmentTypeIsActive: props.equipmentTypeIsActive,
         status: asset.status,
         ownerId: asset.ownerId,
         ownerContractSnapshot,

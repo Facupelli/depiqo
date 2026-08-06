@@ -73,6 +73,7 @@ export class AddAssetsToEquipmentTypeHandler implements ICommandHandler<
       const asset = Asset.create({
         tenantId: command.tenantId,
         equipmentTypeId: equipmentType.id,
+        equipmentTypeIsActive: equipmentType.isActive,
         branchId: assetInput.branchId,
         serialNumber: assetInput.serialNumber,
         notes: assetInput.notes,

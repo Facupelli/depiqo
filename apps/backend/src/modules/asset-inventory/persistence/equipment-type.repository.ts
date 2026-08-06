@@ -24,13 +24,21 @@ export class EquipmentTypeRepository {
   }
 
   async loadActiveByNameForTenant(input: { tenantId: string; name: string }): Promise<EquipmentType | null> {
+    return this.loadByNameForTenant(input);
+  }
+
+  async loadByNameForTenant(input: {
+    tenantId: string;
+    name: string;
+    excludeEquipmentTypeId?: string;
+  }): Promise<EquipmentType | null> {
     const normalizedName = EquipmentType.normalizeNameForComparison(input.name);
 
     const records = await this.prisma.client.v2EquipmentType.findMany({
       where: {
         tenantId: input.tenantId,
-        isActive: true,
         deletedAt: null,
+        id: input.excludeEquipmentTypeId ? { not: input.excludeEquipmentTypeId } : undefined,
       },
     });
 
@@ -44,8 +52,10 @@ export class EquipmentTypeRepository {
   async save(equipmentType: EquipmentType, tx?: TransactionClient): Promise<void> {
     const client = tx ?? this.prisma.client;
 
-    await client.v2EquipmentType.create({
-      data: EquipmentTypeMapper.toCreateData(equipmentType),
+    await client.v2EquipmentType.upsert({
+      where: { id: equipmentType.id },
+      create: EquipmentTypeMapper.toCreateData(equipmentType),
+      update: EquipmentTypeMapper.toUpdateData(equipmentType),
     });
   }
 }

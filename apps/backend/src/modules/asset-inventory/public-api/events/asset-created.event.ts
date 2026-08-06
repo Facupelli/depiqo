@@ -18,6 +18,7 @@ interface AssetCreatedEventProps {
   assetId: string;
   branchId: string;
   equipmentTypeId: string;
+  equipmentTypeIsActive: boolean;
   status: AssetCreatedStatus;
   ownerId: string | null;
   ownerContractSnapshot: AssetOwnerContractSnapshotPayload | null;
@@ -34,6 +35,7 @@ export class AssetCreatedEvent implements DomainEvent {
   readonly assetId: string;
   readonly branchId: string;
   readonly equipmentTypeId: string;
+  readonly equipmentTypeIsActive: boolean;
   readonly status: AssetCreatedStatus;
   readonly ownerId: string | null;
   readonly ownerContractSnapshot: AssetOwnerContractSnapshotPayload | null;
@@ -46,6 +48,7 @@ export class AssetCreatedEvent implements DomainEvent {
     this.assetId = props.assetId;
     this.branchId = props.branchId;
     this.equipmentTypeId = props.equipmentTypeId;
+    this.equipmentTypeIsActive = props.equipmentTypeIsActive;
     this.status = props.status;
     this.ownerId = props.ownerId;
     this.ownerContractSnapshot = props.ownerContractSnapshot;

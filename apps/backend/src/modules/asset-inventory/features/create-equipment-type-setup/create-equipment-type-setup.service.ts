@@ -62,6 +62,7 @@ export class CreateEquipmentTypeSetupService {
       const asset = Asset.create({
         tenantId: equipmentType.value.tenantId,
         equipmentTypeId: equipmentType.value.id,
+        equipmentTypeIsActive: equipmentType.value.isActive,
         branchId: assetInput.branchId,
         serialNumber: assetInput.serialNumber,
         notes: assetInput.notes,

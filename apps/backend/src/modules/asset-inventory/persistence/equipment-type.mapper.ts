@@ -35,4 +35,13 @@ export class EquipmentTypeMapper {
       deletedAt: equipmentType.deletedAt,
     };
   }
+
+  static toUpdateData(equipmentType: EquipmentType) {
+    return {
+      name: equipmentType.name,
+      description: equipmentType.description,
+      isActive: equipmentType.isActive,
+      deletedAt: equipmentType.deletedAt,
+    };
+  }
 }
