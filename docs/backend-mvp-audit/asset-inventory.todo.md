@@ -42,14 +42,16 @@ Equipment types and batches of assets can be created, owners with contracts can 
 - **Acceptance criteria:** Asset Inventory can distinguish a free asset from one with an unreleased current or future commitment without crossing persistence boundaries.
 - **Suggested tests:** Public API integration tests covering free, currently blocked, future-blocked, released, and cross-tenant assets.
 
-#### [ ] Correct asset serial number and notes
+#### [x] Correct asset serial number and notes
 
 - **Priority:** P0
+- **Status:** Completed
 - **Expected behavior:** Allow tenant-scoped correction of `serialNumber` and `notes`, including serial normalization and duplicate prevention.
 - **Lifecycle rules:** Metadata-only corrections do not require commitment handling and must not modify confirmed rental facts.
 - **Dependencies:** None.
 - **Side effects:** Do not publish projection events unless the projection later includes one of these fields.
 - **Acceptance criteria:** Staff can correct metadata, duplicate active serial numbers are rejected, and cross-tenant assets remain inaccessible.
+- **Completion note:** Added tenant-scoped asset metadata correction with normalization, no-op handling, conflict responses, and database-enforced uniqueness for non-deleted active/inactive serial numbers. Retired and soft-deleted assets release their serial numbers.
 - **Suggested tests:** Domain/repository tests and E2E correction, duplicate serial, no-op, not-found, and tenant-isolation cases.
 
 #### [ ] Maintain asset operational status

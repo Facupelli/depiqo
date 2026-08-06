@@ -10,4 +10,5 @@ export * from "./get-equipment-types.contract";
 export * from "./get-owner-detail.contract";
 export * from "./get-rental-accessory-defaults.contract";
 export * from "./get-owners.contract";
+export * from "./update-asset.contract";
 export * from "./update-equipment-type.contract";

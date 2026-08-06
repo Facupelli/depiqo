@@ -38,6 +38,11 @@ export interface ReconstituteAssetProps extends AssetProps {
   id: string;
 }
 
+export interface UpdateAssetMetadataProps {
+  serialNumber?: string | null;
+  notes?: string | null;
+}
+
 export class Asset extends AggregateRootBase {
   readonly id: string;
   private readonly props: AssetProps;
@@ -118,6 +123,20 @@ export class Asset extends AggregateRootBase {
 
   static reconstitute(props: ReconstituteAssetProps): Asset {
     return new Asset(props.id, { ...props });
+  }
+
+  updateMetadata(props: UpdateAssetMetadataProps): boolean {
+    const serialNumber =
+      props.serialNumber === undefined ? this.props.serialNumber : normalizeNullableString(props.serialNumber);
+    const notes = props.notes === undefined ? this.props.notes : normalizeNullableString(props.notes);
+
+    if (serialNumber === this.props.serialNumber && notes === this.props.notes) {
+      return false;
+    }
+
+    this.props.serialNumber = serialNumber;
+    this.props.notes = notes;
+    return true;
   }
 
   static normalizeSerialNumberForComparison(serialNumber: string): string {

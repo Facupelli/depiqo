@@ -35,6 +35,12 @@ export class AssetMapper {
     return {
       id: asset.id,
       tenantId: asset.tenantId,
+      ...this.toUpdateData(asset),
+    };
+  }
+
+  static toUpdateData(asset: Asset) {
+    return {
       branchId: asset.branchId,
       equipmentTypeId: asset.equipmentTypeId,
       ownerId: asset.ownerId,

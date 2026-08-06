@@ -81,7 +81,7 @@ export class CreateEquipmentTypeSetupService {
 
     await this.unitOfWork.runInTransaction(async ({ tx, events }) => {
       await this.equipmentTypeRepository.save(equipmentType.value, tx);
-      await this.assetRepository.save(assets, tx);
+      await this.assetRepository.createMany(assets, tx);
 
       for (const asset of assets) {
         events.collectFrom(asset);

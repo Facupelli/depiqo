@@ -91,7 +91,7 @@ export class AddAssetsToEquipmentTypeHandler implements ICommandHandler<
     }
 
     await this.unitOfWork.runInTransaction(async ({ tx, events }) => {
-      await this.assetRepository.save(assets, tx);
+      await this.assetRepository.createMany(assets, tx);
 
       for (const asset of assets) {
         events.collectFrom(asset);
