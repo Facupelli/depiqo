@@ -36,6 +36,32 @@ export class RatePlan {
     isActive: boolean;
     tiers: Array<{ fromUnit: number; toUnit?: number | null; pricePerUnit: string }>;
   }): Result<RatePlan, RatePlanDomainError> {
+    return RatePlan.build({ ...props, id: randomUUID() });
+  }
+
+  correct(props: {
+    name: string;
+    billingUnit: V2BillingUnit;
+    currency: string;
+    tiers: Array<{ fromUnit: number; toUnit?: number | null; pricePerUnit: string }>;
+  }): Result<RatePlan, RatePlanDomainError> {
+    return RatePlan.build({
+      ...props,
+      id: this.id,
+      tenantId: this.tenantId,
+      isActive: this.isActive,
+    });
+  }
+
+  private static build(props: {
+    id: string;
+    tenantId: string;
+    name: string;
+    billingUnit: V2BillingUnit;
+    currency: string;
+    isActive: boolean;
+    tiers: Array<{ fromUnit: number; toUnit?: number | null; pricePerUnit: string }>;
+  }): Result<RatePlan, RatePlanDomainError> {
     const name = props.name.trim();
     if (!name) {
       return err(new InvalidRatePlanNameError());
@@ -50,7 +76,6 @@ export class RatePlan {
       return err(new RatePlanMustHaveAtLeastOneTierError());
     }
 
-    const ratePlanId = randomUUID();
     const tiers: RatePlanTier[] = [];
     for (const tierInput of props.tiers) {
       const range = RatePlanTierRange.create({ fromUnit: tierInput.fromUnit, toUnit: tierInput.toUnit });
@@ -66,7 +91,7 @@ export class RatePlan {
       tiers.push(
         RatePlanTier.create({
           tenantId: props.tenantId,
-          ratePlanId,
+          ratePlanId: props.id,
           range: range.value,
           pricePerUnit: pricePerUnit.value,
         }),
@@ -78,7 +103,7 @@ export class RatePlan {
       return err(tierValidationError);
     }
 
-    return ok(new RatePlan(ratePlanId, props.tenantId, name, props.billingUnit, currency.value, props.isActive, tiers));
+    return ok(new RatePlan(props.id, props.tenantId, name, props.billingUnit, currency.value, props.isActive, tiers));
   }
 
   static reconstitute(props: {

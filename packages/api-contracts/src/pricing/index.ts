@@ -1,6 +1,7 @@
 export * from "./attach-rate-plan-to-rental-offer.contract";
 export * from "./calculate-cart-price.contract";
 export * from "./calculate-draft-rental-price.contract";
+export * from "./correct-rate-plan.contract";
 export * from "./create-promotion.contract";
 export * from "./create-rate-plan-and-attach-to-rental-offer.contract";
 export * from "./create-rate-plan.contract";
