@@ -10,6 +10,7 @@ import { AttachRatePlanToRentalOfferCommand } from './attach-rate-plan-to-rental
 
 export interface AttachRatePlanToRentalOfferResult {
   rentalOfferPricingId: string;
+  ratePlanId: string;
 }
 
 @CommandHandler(AttachRatePlanToRentalOfferCommand)

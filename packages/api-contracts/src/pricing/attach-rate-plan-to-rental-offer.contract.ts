@@ -9,6 +9,7 @@ export const AttachRatePlanToRentalOfferBodySchema = z.object({
 
 export const AttachRatePlanToRentalOfferResponseSchema = z.object({
   rentalOfferPricingId: z.string(),
+  ratePlanId: z.string(),
 });
 
 export type AttachRatePlanToRentalOfferBodyDto = z.infer<typeof AttachRatePlanToRentalOfferBodySchema>;

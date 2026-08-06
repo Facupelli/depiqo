@@ -16,6 +16,7 @@ export interface AttachRatePlanToRentalOfferOperationInput {
 
 export interface AttachRatePlanToRentalOfferOperationResult {
   rentalOfferPricingId: string;
+  ratePlanId: string;
 }
 
 @Injectable()
@@ -67,6 +68,6 @@ export class AttachRatePlanToRentalOfferOperation {
       select: { id: true },
     });
 
-    return ok({ rentalOfferPricingId: rentalOfferPricing.id });
+    return ok({ rentalOfferPricingId: rentalOfferPricing.id, ratePlanId: input.ratePlanId });
   }
 }
