@@ -52,6 +52,40 @@ The module creates categories, rentable-item offerings and branch offers, activa
 - **Acceptance criteria:** State changes are immediately reflected in storefront and selection resolution, and historical detail still resolves snapshots.
 - **Suggested tests:** E2E visibility/rentability matrix, archive/reactivate, cross-tenant denial, and existing-rental preservation.
 
+#### Decomposition
+
+##### [x] Update rental-offer visibility and rentability
+
+- Add one Catalog command/use case and authenticated backoffice endpoint that updates either or both of `isVisible` and `isRentable` for an offer owned by the current tenant, requiring at least one supplied field.
+- Treat visibility and rentability independently: visibility controls storefront discovery, while rentability controls direct selection and requests.
+- Expose rentability in storefront results so visible but non-rentable offers can be shown as unavailable; allow hidden but rentable offers through direct-ID selection flows.
+- Reject missing, cross-tenant, or archived offers and do not permit this command to change branch, rentable-item, or lifecycle identity.
+- Do not couple these Catalog controls to branch activity, pricing readiness, or physical availability, which remain separate downstream concerns.
+- Persist both supplied flags atomically and publish an offer-availability-changed event only after persistence commits so storefront/search caches can refresh.
+- Ensure storefront queries and selection resolution immediately honor the independent flags without changing confirmed rental selections, demand lines, pricing snapshots, or inventory records.
+
+##### [ ] Archive rental offer
+
+- Add one Catalog command/use case and authenticated backoffice endpoint that soft-archives an active offer by setting `deletedAt`, scoped by offer ID and current tenant.
+- Reject missing, cross-tenant, or already archived offers with explicit feature errors and preserve the offer's visibility and rentability values for a later reactivation.
+- Make the archived offer immediately unavailable to storefront/search and new selection resolution while retaining its ID, pricing relationships, audit history, and references from committed rentals.
+- Publish an offer-archived lifecycle event only after persistence commits; do not archive the parent rentable item, branch, pricing assignment, or historical rental data.
+
+##### [ ] Reactivate rental offer
+
+- Add one Catalog command/use case and authenticated backoffice endpoint that restores the same archived offer by clearing `deletedAt`, scoped by offer ID and current tenant.
+- Reject missing, cross-tenant, or non-archived offers, and reject reactivation when another non-archived offer already exists for the same tenant, branch, and rentable item.
+- Before restoration, validate that the parent rentable item is active, the branch is active and belongs to the same tenant through Tenant Management's public API, and pricing is assignment-ready through Pricing's public API when the restored offer is rentable.
+- Restore the offer with its previously persisted visibility and rentability controls, publish an offer-reactivated event only after persistence commits, and make it immediately eligible for storefront and selection behavior allowed by those controls.
+- Do not create a replacement offer or mutate committed rentals, demand lines, pricing snapshots, or inventory records.
+
+##### [ ] Add rental-offer management tests
+
+- Add domain transition tests for independent visibility/rentability changes, archive, reactivation, invalid transitions, and state preservation.
+- Add handler/controller coverage for tenant isolation, dependency-readiness failures, duplicate-active-offer conflicts, validation, and Problem Details mappings.
+- Add repository integration coverage for atomic flag updates and archive/reactivate persistence, including restoration of the same offer ID.
+- Add E2E coverage for the complete visibility/rentability matrix, immediate storefront and selection-resolution changes, archive/reactivate behavior, cross-tenant denial, and preservation of existing rental snapshots.
+
 ### [ ] Archive/deactivate and reactivate rentable items
 
 - **Priority:** P1

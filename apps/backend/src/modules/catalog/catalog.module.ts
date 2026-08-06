@@ -23,6 +23,8 @@ import { SearchRentalOffersHttpController } from './features/search-rental-offer
 import { SearchRentalOffersHandler } from './features/search-rental-offers/search-rental-offers.handler';
 import { UpdateRentableItemDefinitionHttpController } from './features/update-rentable-item-definition/update-rentable-item-definition.controller';
 import { UpdateRentableItemDefinitionHandler } from './features/update-rentable-item-definition/update-rentable-item-definition.handler';
+import { UpdateRentalOfferVisibilityAndRentabilityHttpController } from './features/update-rental-offer-visibility-and-rentability/update-rental-offer-visibility-and-rentability.controller';
+import { UpdateRentalOfferVisibilityAndRentabilityHandler } from './features/update-rental-offer-visibility-and-rentability/update-rental-offer-visibility-and-rentability.handler';
 import { PrismaRentableItemRepository } from './features/create-rentable-item-offering/prisma-rentable-item.repository';
 import { PrismaRentalOfferRepository } from './features/create-rentable-item-offering/prisma-rental-offer.repository';
 import { PrismaResolveSelectedRentalOffersReader } from './features/resolve-selected-rental-offers/prisma-resolve-selected-rental-offers.reader';
@@ -43,6 +45,7 @@ import { CatalogPublicApiService } from './public-api/catalog.public-api.service
     GetStorefrontRentalOffersHttpController,
     SearchRentalOffersHttpController,
     UpdateRentableItemDefinitionHttpController,
+    UpdateRentalOfferVisibilityAndRentabilityHttpController,
   ],
   providers: [
     { provide: CatalogPublicApi, useClass: CatalogPublicApiService },
@@ -58,6 +61,7 @@ import { CatalogPublicApiService } from './public-api/catalog.public-api.service
     GetStorefrontRentalOffersHandler,
     SearchRentalOffersHandler,
     UpdateRentableItemDefinitionHandler,
+    UpdateRentalOfferVisibilityAndRentabilityHandler,
     PrismaRentableItemRepository,
     PrismaRentalOfferRepository,
     ResolveSelectedRentalOffersService,

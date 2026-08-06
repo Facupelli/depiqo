@@ -12,6 +12,19 @@ type TransactionClient = Parameters<Parameters<PrismaService['client']['$transac
 export class PrismaRentalOfferRepository {
   constructor(private readonly prisma: PrismaService) {}
 
+  async load(tenantId: string, rentalOfferId: string, tx?: TransactionClient): Promise<RentalOffer | null> {
+    const client = tx ?? this.prisma.client;
+    const record = await client.v2RentalOffer.findFirst({
+      where: { id: rentalOfferId, tenantId },
+    });
+
+    return record ? RentalOfferMapper.toDomain(record) : null;
+  }
+
+  async save(rentalOffer: RentalOffer, tx?: TransactionClient): Promise<void> {
+    await this.saveMany([rentalOffer], tx);
+  }
+
   async saveMany(rentalOffers: RentalOffer[], tx?: TransactionClient): Promise<void> {
     if (rentalOffers.length === 0) {
       return;

@@ -162,6 +162,17 @@ selectedOffers: Array<{
 
 Rental Offer does not own price calculation or rate plans. Pricing owns the pricing assignment for a rental offer.
 
+Visibility and rentability are independent controls:
+
+| `isVisible` | `isRentable` | Meaning |
+| --- | --- | --- |
+| `true` | `true` | Shown in storefront discovery and selectable. |
+| `true` | `false` | Shown in storefront discovery as unavailable and not selectable. |
+| `false` | `true` | Hidden from storefront discovery but selectable through direct-ID flows. |
+| `false` | `false` | Hidden from storefront discovery and not selectable. |
+
+Storefront discovery uses `isVisible` and exposes `isRentable` so clients can render visible but disabled offers. Selection and request validation uses `isRentable`, not `isVisible`. Archived offers are neither discoverable nor selectable regardless of either flag.
+
 ### Fulfillment Requirement
 
 A fulfillment requirement defines the equipment type and quantity required to fulfill one unit of a rentable item.
@@ -205,7 +216,8 @@ Categories belong to Rental Catalog because they organize the rental catalog, no
 ```text
 Archived or deleted rentable items should not be selected for new rentals.
 Archived or deleted rental offers should not be selected for new rentals.
-A rental offer may be visible but not rentable.
+A rental offer may be visible but not rentable; storefront clients should show it as unavailable.
+A rental offer may be hidden but rentable; direct-ID selection flows may still select it.
 A rental offer may be rentable but still not bookable if Pricing has no active pricing assignment.
 A visible/rentable offer does not imply physical availability.
 Catalog changes affect future selections, not already confirmed rentals.

@@ -2,7 +2,10 @@ import { randomUUID } from 'node:crypto';
 
 import { err, ok, Result } from 'neverthrow';
 
-import { CatalogError, CatalogInvalidFieldError } from './errors/catalog.errors';
+import { AggregateRootBase } from 'src/core/domain/aggregate-root.base';
+
+import { RentalOfferVisibilityAndRentabilityChangedDomainEvent } from './events/rental-offer-visibility-and-rentability-changed.domain-event';
+import { CatalogError, CatalogInvalidFieldError, CatalogRentalOfferArchivedError } from './errors/catalog.errors';
 
 interface RentalOfferProps {
   tenantId: string;
@@ -26,11 +29,18 @@ export interface ReconstituteRentalOfferProps extends RentalOfferProps {
   id: string;
 }
 
-export class RentalOffer {
+export interface UpdateRentalOfferVisibilityAndRentabilityProps {
+  isVisible?: boolean;
+  isRentable?: boolean;
+}
+
+export class RentalOffer extends AggregateRootBase {
   private constructor(
     public readonly id: string,
     private readonly props: RentalOfferProps,
-  ) {}
+  ) {
+    super();
+  }
 
   static create(props: CreateRentalOfferProps): Result<RentalOffer, CatalogError> {
     const tenantId = props.tenantId?.trim();
@@ -62,6 +72,27 @@ export class RentalOffer {
 
   static reconstitute(props: ReconstituteRentalOfferProps): RentalOffer {
     return new RentalOffer(props.id, props);
+  }
+
+  updateVisibilityAndRentability(input: UpdateRentalOfferVisibilityAndRentabilityProps): Result<void, CatalogError> {
+    if (this.props.deletedAt) {
+      return err(new CatalogRentalOfferArchivedError(this.id));
+    }
+
+    const isVisible = input.isVisible ?? this.props.isVisible;
+    const isRentable = input.isRentable ?? this.props.isRentable;
+    const changed = isVisible !== this.props.isVisible || isRentable !== this.props.isRentable;
+
+    this.props.isVisible = isVisible;
+    this.props.isRentable = isRentable;
+
+    if (changed) {
+      this.recordDomainEvent(
+        new RentalOfferVisibilityAndRentabilityChangedDomainEvent(this.id, this.tenantId, isVisible, isRentable),
+      );
+    }
+
+    return ok(undefined);
   }
 
   get tenantId(): string {

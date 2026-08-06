@@ -32,6 +32,12 @@ export class CatalogRentableItemCannotBeActivatedFromStatusError extends Catalog
   }
 }
 
+export class CatalogRentalOfferArchivedError extends CatalogError {
+  constructor(public readonly rentalOfferId: string) {
+    super(`Rental offer "${rentalOfferId}" is archived.`);
+  }
+}
+
 export class CatalogRentalOfferAlreadyExistsError extends CatalogError {
   constructor(
     public readonly rentableItemId: string,

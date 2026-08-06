@@ -10,6 +10,7 @@ export interface GetStorefrontRentalOffersItemReadModel {
   name: string;
   image: string | null;
   description: string | null;
+  isRentable: boolean;
   requirements: Array<{
     equipmentTypeId: string;
     quantityPerItem: number;
@@ -34,7 +35,6 @@ export class GetStorefrontRentalOffersHandler implements IQueryHandler<
     const where: V2RentalOfferWhereInput = {
       tenantId: query.tenantId,
       branchId: query.branchId,
-      isRentable: true,
       isVisible: true,
       deletedAt: null,
       rentableItem: {
@@ -51,6 +51,7 @@ export class GetStorefrontRentalOffersHandler implements IQueryHandler<
         where,
         select: {
           id: true,
+          isRentable: true,
           rentableItem: {
             select: {
               name: true,
@@ -79,6 +80,7 @@ export class GetStorefrontRentalOffersHandler implements IQueryHandler<
         name: offer.rentableItem.name,
         image: offer.rentableItem.imageUrl,
         description: offer.rentableItem.description,
+        isRentable: offer.isRentable,
         requirements: offer.rentableItem.requirements.map((requirement) => ({
           equipmentTypeId: requirement.equipmentTypeId,
           quantityPerItem: requirement.quantityPerItem,

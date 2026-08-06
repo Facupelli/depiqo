@@ -47,7 +47,7 @@ export class ResolveSelectedRentalOffersService {
         return err(new RentalInvalidFieldError('rentalOfferId', `offer "${selection.rentalOfferId}" was not found`));
       }
 
-      if (!rentalOffer.isVisible || !rentalOffer.isRentable) {
+      if (!rentalOffer.isRentable) {
         return err(
           new RentalInvalidFieldError('rentalOfferId', `offer "${selection.rentalOfferId}" is not selectable`),
         );

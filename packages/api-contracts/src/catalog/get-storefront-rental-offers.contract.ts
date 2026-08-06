@@ -23,6 +23,7 @@ export const GetStorefrontRentalOffersItemSchema = z.object({
   name: z.string(),
   image: z.string().nullable(),
   description: z.string().nullable(),
+  isRentable: z.boolean(),
   requirements: z.array(GetStorefrontRentalOffersRequirementSchema),
 });
 
