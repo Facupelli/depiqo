@@ -21,6 +21,22 @@ The module creates categories, rentable-item offerings and branch offers, activa
 - **Acceptance criteria:** Subsequent resolutions use the new definition while old rentals retain their original selections and demand.
 - **Suggested tests:** Aggregate/unit validation, repository replacement transaction, and E2E historical-snapshot preservation.
 
+#### Decomposition
+
+##### [x] Update rentable-item definition
+
+- Add one Catalog command/use case and authenticated backoffice endpoint that atomically updates any supplied presentation fields, `kind`, and the complete requirements set.
+- Validate the final combined definition before persistence: non-blank name, supported kind, at least one requirement, exactly one requirement for `SINGLE`, unique non-blank equipment type IDs, and positive integer quantities.
+- When `categoryId` is provided, validate that it is an existing, non-deleted category owned by the same tenant. Allow `null` to remove the category.
+- Validate referenced equipment types through `AssetInventoryPublicApi.validateEquipmentType` when `kind` or requirements change, requiring same-tenant active equipment types.
+- Permit updates for `DRAFT` and `ACTIVE` items, reject archived items, and leave status changes to explicit lifecycle use cases.
+- Reuse the repository's transactional requirement replacement and publish a rentable-item-definition-updated event only after persistence commits.
+- Do not update offers, confirmed rental selections, demand lines, pricing snapshots, or inventory records.
+
+##### [ ] Add update rentable-item definition tests
+
+- Add aggregate validation, handler/controller tenant-isolation and error-mapping, repository atomicity, and E2E historical-snapshot preservation coverage as a separate task.
+
 ### [ ] Manage rental-offer visibility, rentability, and lifecycle
 
 - **Priority:** P0

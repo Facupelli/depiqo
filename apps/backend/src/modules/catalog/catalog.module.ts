@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 
+import { AssetInventoryModule } from '../asset-inventory/asset-inventory.module';
 import { ActivateRentableItemHttpController } from './features/activate-rentable-item/activate-rentable-item.controller';
 import { ActivateRentableItemHandler } from './features/activate-rentable-item/activate-rentable-item.handler';
 import { CreateCategoryHttpController } from './features/create-category/create-category.controller';
@@ -20,6 +21,8 @@ import { GetStorefrontRentalOffersHttpController } from './features/get-storefro
 import { GetStorefrontRentalOffersHandler } from './features/get-storefront-rental-offers/get-storefront-rental-offers.handler';
 import { SearchRentalOffersHttpController } from './features/search-rental-offers/search-rental-offers.controller';
 import { SearchRentalOffersHandler } from './features/search-rental-offers/search-rental-offers.handler';
+import { UpdateRentableItemDefinitionHttpController } from './features/update-rentable-item-definition/update-rentable-item-definition.controller';
+import { UpdateRentableItemDefinitionHandler } from './features/update-rentable-item-definition/update-rentable-item-definition.handler';
 import { PrismaRentableItemRepository } from './features/create-rentable-item-offering/prisma-rentable-item.repository';
 import { PrismaRentalOfferRepository } from './features/create-rentable-item-offering/prisma-rental-offer.repository';
 import { PrismaResolveSelectedRentalOffersReader } from './features/resolve-selected-rental-offers/prisma-resolve-selected-rental-offers.reader';
@@ -28,6 +31,7 @@ import { CatalogPublicApi } from './public-api/catalog.public-api';
 import { CatalogPublicApiService } from './public-api/catalog.public-api.service';
 
 @Module({
+  imports: [AssetInventoryModule],
   controllers: [
     ActivateRentableItemHttpController,
     CreateCategoryHttpController,
@@ -38,6 +42,7 @@ import { CatalogPublicApiService } from './public-api/catalog.public-api.service
     GetStorefrontCategoriesHttpController,
     GetStorefrontRentalOffersHttpController,
     SearchRentalOffersHttpController,
+    UpdateRentableItemDefinitionHttpController,
   ],
   providers: [
     { provide: CatalogPublicApi, useClass: CatalogPublicApiService },
@@ -52,6 +57,7 @@ import { CatalogPublicApiService } from './public-api/catalog.public-api.service
     GetStorefrontCategoriesHandler,
     GetStorefrontRentalOffersHandler,
     SearchRentalOffersHandler,
+    UpdateRentableItemDefinitionHandler,
     PrismaRentableItemRepository,
     PrismaRentalOfferRepository,
     ResolveSelectedRentalOffersService,

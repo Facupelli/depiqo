@@ -7,3 +7,4 @@ export * from "./get-rentable-items.contract";
 export * from "./get-storefront-categories.contract";
 export * from "./get-storefront-rental-offers.contract";
 export * from "./search-rental-offers.contract";
+export * from "./update-rentable-item-definition.contract";
