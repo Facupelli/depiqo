@@ -8,6 +8,8 @@ import { DeactivateEquipmentTypeHttpController } from './features/deactivate-equ
 import { DeactivateEquipmentTypeHandler } from './features/deactivate-equipment-type/deactivate-equipment-type.handler';
 import { ReactivateEquipmentTypeHttpController } from './features/reactivate-equipment-type/reactivate-equipment-type.controller';
 import { ReactivateEquipmentTypeHandler } from './features/reactivate-equipment-type/reactivate-equipment-type.handler';
+import { ReplaceEquipmentTypeAccessoryDefaultsHttpController } from './features/replace-equipment-type-accessory-defaults/replace-equipment-type-accessory-defaults.controller';
+import { ReplaceEquipmentTypeAccessoryDefaultsHandler } from './features/replace-equipment-type-accessory-defaults/replace-equipment-type-accessory-defaults.handler';
 import { UpdateAssetHttpController } from './features/update-asset/update-asset.controller';
 import { UpdateAssetHandler } from './features/update-asset/update-asset.handler';
 import { UpdateEquipmentTypeHttpController } from './features/update-equipment-type/update-equipment-type.controller';
@@ -44,6 +46,7 @@ import { AssetInventoryPublicApi } from './public-api/asset-inventory.public-api
     AddAssetsToEquipmentTypeHttpController,
     DeactivateEquipmentTypeHttpController,
     ReactivateEquipmentTypeHttpController,
+    ReplaceEquipmentTypeAccessoryDefaultsHttpController,
     UpdateAssetHttpController,
     UpdateEquipmentTypeHttpController,
     CreateEquipmentTypeAccessoryDefaultsHttpController,
@@ -61,6 +64,7 @@ import { AssetInventoryPublicApi } from './public-api/asset-inventory.public-api
     AddAssetsToEquipmentTypeHandler,
     DeactivateEquipmentTypeHandler,
     ReactivateEquipmentTypeHandler,
+    ReplaceEquipmentTypeAccessoryDefaultsHandler,
     UpdateAssetHandler,
     UpdateEquipmentTypeHandler,
     CreateEquipmentTypeAccessoryDefaultsHandler,

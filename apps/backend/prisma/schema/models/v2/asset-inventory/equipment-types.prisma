@@ -20,7 +20,6 @@ model V2EquipmentType {
   @@map("v2_equipment_types")
 }
 
-// TODO: add manual DB checks for positive quantities and no self-reference
 model V2EquipmentTypeAccessoryDefault {
   id                       String   @id @default(uuid())
   tenantId                 String   @map("tenant_id")

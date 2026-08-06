@@ -131,10 +131,10 @@ Equipment types and batches of assets can be created, owners with contracts can 
 - **Acceptance criteria:** Detail returns all maintained fields, ownership/contract summary, and correct not-found semantics without cross-tenant leakage.
 - **Suggested tests:** Query integration and authorization/tenant-isolation E2E tests.
 
-### [ ] Replace and remove accessory defaults
+### [x] Replace and remove accessory defaults
 
 - **Priority:** P1
-- **Status:** Partial
+- **Status:** Completed
 - **MVP scenario:** Staff corrects suggested accessories when the preparation standard changes.
 - **Current evidence:** Defaults can be created and queried; `V2EquipmentTypeAccessoryDefault` persists relationships, but no update/delete/replace capability exists.
 - **Gap:** Mistaken or obsolete defaults are permanent through the API.
@@ -144,6 +144,7 @@ Equipment types and batches of assets can be created, owners with contracts can 
 - **Dependencies:** None beyond own equipment types.
 - **Side effects:** Emit defaults-changed event only if a real consumer needs cache invalidation.
 - **Acceptance criteria:** Removed defaults disappear from future suggestions while existing prepared rentals remain unchanged.
+- **Completion note:** Added an atomic full-replacement endpoint with empty-set removal, tenant-scoped active equipment-type validation, duplicate and self-reference prevention, and database checks for positive quantities and self-reference. The existing additive endpoint remains available for backward compatibility. No event is emitted because there is no current cache or projection consumer.
 - **Suggested tests:** Constraint/unit tests and E2E replace/remove with historical rental accessories.
 
 ### [ ] Maintain owners and owner contracts
