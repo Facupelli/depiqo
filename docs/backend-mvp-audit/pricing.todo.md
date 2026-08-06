@@ -20,6 +20,13 @@ Pricing creates rate plans and tiers, attaches plans to rental offers, lists pla
 - **Side effects:** Pricing-readiness changes for affected offers; no historical mutation.
 - **Acceptance criteria:** Staff can safely replace future rates and all affected offers are explicit before activation.
 - **Suggested tests:** Tier invariant/unit tests, shared-plan impact integration test, and confirmed-snapshot E2E preservation.
+- **Decomposed tasks (one per use case, in recommended order):**
+  - [x] **Get rate plan detail and assignment impact:** Return the tenant-scoped plan, ordered tiers, lifecycle state, and every non-deleted rental-offer pricing assignment that references it so staff can see the affected offers before changing shared pricing.
+  - [ ] **Clone a rate plan:** Create an independent inactive copy with validated tiers and a tenant-unique staff-supplied name; do not copy offer assignments. This is the safe starting point when a change should affect only selected offers.
+  - [ ] **Correct a rate plan:** Atomically replace the plan's editable fields and complete tier set through the `RatePlan` invariants; reject missing/deleted/cross-tenant plans and invalid or conflicting tier ranges. Return the affected offer IDs (or require an impact acknowledgement) so a shared-plan change cannot be presented as isolated.
+  - [ ] **Deactivate a rate plan:** Mark a tenant-scoped active plan inactive and return its affected offer IDs; immediately exclude it from storefront pricing and new draft/confirmation pricing without changing confirmed snapshots or deleting assignments.
+  - [ ] **Reactivate a rate plan:** Activate a tenant-scoped inactive, non-deleted plan only after its complete tier set passes current invariants; return affected offer IDs and make eligible active assignments priceable again.
+- **Cross-use-case verification:** Cover shared-plan correction, clone isolation, deactivation/reactivation, invalid tiers, tenant isolation, and proof that an already confirmed rental retains its accepted pricing snapshot.
 
 ### [ ] Deactivate, replace, and detach offer pricing assignments
 
@@ -35,6 +42,12 @@ Pricing creates rate plans and tiers, attaches plans to rental offers, lists pla
 - **Side effects:** Bookability/readiness changes.
 - **Acceptance criteria:** Storefront price and rental confirmation immediately follow active assignment state.
 - **Suggested tests:** E2E replacement/deactivation/reactivation, race/uniqueness, and snapshot preservation.
+- **Decomposed tasks (one per use case, in recommended order):**
+  - [ ] **Replace an offer's rate plan:** Make the existing attach use case's replacement semantics explicit and atomic: validate the tenant-scoped, non-deleted offer and active plan, then upsert the offer's single assignment, reactivate it, and clear `deletedAt`. Preserve the assignment uniqueness guarantee under concurrent requests and return the resulting assignment ID and rate plan ID.
+  - [ ] **Deactivate offer pricing:** Temporarily mark the tenant-scoped active assignment inactive without deleting it; reject missing/deleted/cross-tenant assignments. Storefront pricing, cart/draft pricing, and confirmation must immediately treat the offer as unpriced while confirmed snapshots remain unchanged.
+  - [ ] **Reactivate offer pricing:** Reactivate a tenant-scoped inactive, non-deleted assignment only when both its offer and rate plan still satisfy lifecycle requirements; reject inactive/deleted/cross-tenant dependencies and make the offer priceable immediately.
+  - [ ] **Detach offer pricing:** Soft-delete and deactivate the tenant-scoped assignment so the offer intentionally has no pricing. A later attach/replace may restore the unique assignment row, but detachment itself must not remove or mutate the referenced rate plan or historical rental snapshots.
+- **Cross-use-case verification:** Cover replacement, deactivation, reactivation, detachment and reattachment, inactive dependencies, tenant isolation, competing replacements, storefront/confirmation rejection, and confirmed-snapshot preservation.
 
 ### [ ] Administer coupon lifecycle
 
