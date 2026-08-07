@@ -2,7 +2,6 @@ import { Module } from '@nestjs/common';
 
 import { ContractsModule } from '../contracts/contracts.module';
 import { NotificationsModule } from '../notifications/notifications.module';
-import { ObjectStorageModule } from '../object-storage/object-storage.module';
 import { TenantManagementModule } from '../tenant-management/tenant-management.module';
 
 import { AcceptPublicSigningSessionHttpController } from './features/accept-public-signing-session/accept-public-signing-session.http.controller';
@@ -15,15 +14,15 @@ import { GetLatestSignedOrderSigningRequestQueryHandler } from './features/get-l
 import { GetPublicSigningSessionHttpController } from './features/get-public-signing-session/get-public-signing-session.http.controller';
 import { ResolvePublicSigningSessionQueryHandler } from './features/resolve-public-signing-session/resolve-public-signing-session.query-handler';
 import { PublicSigningSessionLoader } from './application/public-signing-session.loader';
+import { PublicV2SigningSessionLoader } from './application/public-v2-signing-session.loader';
 import { SigningNotificationService } from './application/services/signing-notification.service';
-import { SigningRequestPdfStorageService } from './application/services/signing-request-pdf-storage.service';
 import { StreamPublicSignedDocumentService } from './features/stream-public-signed-document/stream-public-signed-document.service';
 import { StreamPublicUnsignedDocumentService } from './features/stream-public-unsigned-document/stream-public-unsigned-document.service';
 
 import { DocumentSigningRequestRepository } from './infrastructure/persistence/repositories/document-signing-request.repository';
 
 @Module({
-  imports: [ContractsModule, NotificationsModule, ObjectStorageModule, TenantManagementModule],
+  imports: [ContractsModule, NotificationsModule, TenantManagementModule],
   controllers: [
     SendSigningInvitationHttpController,
     GetPublicSigningSessionHttpController,
@@ -32,8 +31,8 @@ import { DocumentSigningRequestRepository } from './infrastructure/persistence/r
   providers: [
     DocumentSigningRequestRepository,
     PublicSigningSessionLoader,
+    PublicV2SigningSessionLoader,
     SigningNotificationService,
-    SigningRequestPdfStorageService,
     StreamPublicSignedDocumentService,
     ResolvePublicSigningSessionQueryHandler,
     GetLatestSignedOrderSigningRequestQueryHandler,

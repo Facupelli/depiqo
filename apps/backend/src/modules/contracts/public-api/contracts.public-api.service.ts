@@ -1,8 +1,16 @@
+import { createHash } from 'node:crypto';
+import { Readable } from 'node:stream';
+
 import { Injectable } from '@nestjs/common';
 import { QueryBus } from '@nestjs/cqrs';
 
 import { PrismaService } from 'src/core/database/prisma.service';
-import { V2ContractStatus, V2DocumentSigningRequestStatus } from 'src/generated/prisma/enums';
+import {
+  V2ContractArtifactStorageStatus,
+  V2ContractStatus,
+  V2DocumentSigningRequestStatus,
+} from 'src/generated/prisma/enums';
+import { ObjectStoragePort } from 'src/modules/object-storage/application/ports/object-storage.port';
 import { Result, err, ok } from 'neverthrow';
 
 import { RentalRemitoApplicationError } from '../application/rental-remito/rental-remito-application.error';
@@ -18,6 +26,8 @@ import {
   RentalContractStatus,
   MarkRentalRemitoSignedInput,
   MarkRentalRemitoSigningRequestedInput,
+  PublicRentalRemitoSigningSession,
+  PublicRentalRemitoSigningSessionError,
   PrepareRentalRemitoForSigningInput,
   RenderSignedRentalRemitoInput,
   RenderSignedRentalRemitoResult,
@@ -31,6 +41,7 @@ export class V2ContractsPublicApiService implements V2ContractsPublicApi {
     private readonly queryBus: QueryBus,
     private readonly contractStateService: RentalRemitoContractStateService,
     private readonly rentalRemitoDocumentService: RentalRemitoDocumentService,
+    private readonly objectStorage: ObjectStoragePort,
   ) {}
 
   async getRentalContractStatus(input: GetRentalContractStatusInput): Promise<RentalContractStatus | null> {
@@ -123,6 +134,36 @@ export class V2ContractsPublicApiService implements V2ContractsPublicApi {
     return ok(request);
   }
 
+  async resolvePublicRentalRemitoSigningSession(
+    rawToken: string,
+  ): Promise<Result<PublicRentalRemitoSigningSession, PublicRentalRemitoSigningSessionError>> {
+    const request = await this.loadActivePublicSigningRequest(rawToken);
+    if (request.isErr()) return err(request.error);
+
+    return ok({
+      requestId: request.value.id,
+      status: request.value.status,
+      expiresAt: request.value.expiresAt,
+      documentNumber: request.value.contract.documentNumber,
+      signerName: request.value.signerName,
+      unsignedArtifact: {
+        fileName: request.value.unsignedArtifact.fileName,
+        contentType: request.value.unsignedArtifact.contentType,
+        byteSize: request.value.unsignedArtifact.byteSize,
+        documentHash: request.value.unsignedArtifact.documentHash,
+      },
+    });
+  }
+
+  async streamPublicRentalRemitoUnsignedArtifact(
+    rawToken: string,
+  ): Promise<Result<Readable, PublicRentalRemitoSigningSessionError>> {
+    const request = await this.loadActivePublicSigningRequest(rawToken);
+    if (request.isErr()) return err(request.error);
+
+    return ok(await this.objectStorage.getObjectStream({ key: request.value.unsignedArtifact.storageKey }));
+  }
+
   markRentalRemitoSigningRequested(
     input: MarkRentalRemitoSigningRequestedInput,
   ): Promise<Result<void, RentalRemitoApplicationError>> {
@@ -157,5 +198,98 @@ export class V2ContractsPublicApiService implements V2ContractsPublicApi {
 
   markRentalRemitoSigned(input: MarkRentalRemitoSignedInput): Promise<Result<void, RentalRemitoApplicationError>> {
     return this.contractStateService.markSigned(input);
+  }
+
+  private async loadActivePublicSigningRequest(rawToken: string): Promise<
+    Result<
+      {
+        id: string;
+        status: 'PENDING' | 'SENT' | 'VIEWED';
+        expiresAt: Date;
+        signerName: string;
+        contract: { documentNumber: string };
+        unsignedArtifact: {
+          storageKey: string;
+          fileName: string;
+          contentType: string;
+          byteSize: number;
+          documentHash: string;
+        };
+      },
+      PublicRentalRemitoSigningSessionError
+    >
+  > {
+    const normalizedToken = rawToken.trim();
+    if (!normalizedToken) return err({ code: 'SigningTokenNotFound', message: 'Signing token was not found.' });
+
+    const request = await this.prisma.client.v2DocumentSigningRequest.findUnique({
+      where: { tokenHash: createHash('sha256').update(normalizedToken).digest('hex') },
+      select: {
+        id: true,
+        status: true,
+        expiresAt: true,
+        signerName: true,
+        contract: { select: { documentNumber: true } },
+        unsignedArtifact: {
+          select: {
+            storageKey: true,
+            fileName: true,
+            contentType: true,
+            byteSize: true,
+            documentHash: true,
+            storageStatus: true,
+          },
+        },
+      },
+    });
+
+    if (!request) return err({ code: 'SigningTokenNotFound', message: 'Signing token was not found.' });
+    if (!request.expiresAt || request.expiresAt <= new Date()) {
+      if (
+        request.status === V2DocumentSigningRequestStatus.PENDING ||
+        request.status === V2DocumentSigningRequestStatus.SENT ||
+        request.status === V2DocumentSigningRequestStatus.VIEWED
+      ) {
+        await this.prisma.client.v2DocumentSigningRequest.update({
+          where: { id: request.id },
+          data: { status: V2DocumentSigningRequestStatus.EXPIRED },
+        });
+      }
+      return err({ code: 'SigningRequestExpired', message: `Document signing request '${request.id}' has expired.` });
+    }
+    if (
+      request.status !== V2DocumentSigningRequestStatus.PENDING &&
+      request.status !== V2DocumentSigningRequestStatus.SENT &&
+      request.status !== V2DocumentSigningRequestStatus.VIEWED
+    ) {
+      return err({
+        code: 'SigningRequestUnavailable',
+        message: `Document signing request '${request.id}' is not available.`,
+      });
+    }
+    if (request.unsignedArtifact.storageStatus !== V2ContractArtifactStorageStatus.AVAILABLE) {
+      return err({
+        code: 'SigningRequestUnavailable',
+        message: `Document signing request '${request.id}' has no available unsigned artifact.`,
+      });
+    }
+    if (!request.contract.documentNumber) {
+      throw new Error(`Contract signing request '${request.id}' is missing its document number.`);
+    }
+
+    return ok({
+      id: request.id,
+      status: request.status,
+      expiresAt: request.expiresAt,
+      signerName: request.signerName,
+      contract: { documentNumber: request.contract.documentNumber },
+      unsignedArtifact: {
+        storageKey: request.unsignedArtifact.storageKey,
+        fileName: request.unsignedArtifact.fileName,
+        contentType: request.unsignedArtifact.contentType,
+        byteSize: request.unsignedArtifact.byteSize,
+        documentHash: request.unsignedArtifact.documentHash,
+      },
+    });
   }
 }

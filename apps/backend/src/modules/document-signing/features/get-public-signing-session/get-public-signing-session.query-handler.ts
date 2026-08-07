@@ -1,7 +1,7 @@
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { Result, err, ok } from 'neverthrow';
 
-import { PublicSigningSessionLoader } from '../../application/public-signing-session.loader';
+import { PublicV2SigningSessionLoader } from '../../application/public-v2-signing-session.loader';
 import { PublicSigningSessionError } from '../../application/public-signing-session.errors';
 import { PublicSigningSessionReadModel } from './get-public-signing-session.contract';
 import {
@@ -16,7 +16,7 @@ export class GetPublicSigningSessionQueryHandler implements IQueryHandler<
   GetPublicSigningSessionQuery,
   Result<PublicSigningSessionReadModel, GetPublicSigningSessionError>
 > {
-  constructor(private readonly publicSigningSessionLoader: PublicSigningSessionLoader) {}
+  constructor(private readonly publicSigningSessionLoader: PublicV2SigningSessionLoader) {}
 
   async execute(
     query: GetPublicSigningSessionQuery,
@@ -39,20 +39,20 @@ export class GetPublicSigningSessionQueryHandler implements IQueryHandler<
     const request = requestResult.value;
 
     return ok({
-      requestId: request.id,
-      documentType: request.documentType,
-      status: request.currentStatus,
-      expiresAt: request.expiresOn,
+      requestId: request.requestId,
+      documentType: 'RENTAL_AGREEMENT',
+      status: request.status,
+      expiresAt: request.expiresAt,
       document: {
         documentNumber: request.documentNumber,
-        displayFileName: request.currentPdfFileName,
-        contentType: request.currentPdfContentType,
-        byteSize: request.currentPdfByteSize,
-        sha256: request.documentHash,
+        displayFileName: request.unsignedArtifact.fileName,
+        contentType: request.unsignedArtifact.contentType,
+        byteSize: request.unsignedArtifact.byteSize,
+        sha256: request.unsignedArtifact.documentHash,
       },
       prefilledSigner: {
-        fullName: request.currentSignerFullName,
-        documentNumber: request.currentSignerDocumentNumber,
+        fullName: request.signerName,
+        documentNumber: null,
       },
     });
   }

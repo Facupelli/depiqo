@@ -1,3 +1,5 @@
+import { Readable } from 'node:stream';
+
 import { Result } from 'neverthrow';
 
 import { RentalRemitoApplicationError } from '../application/rental-remito/rental-remito-application.error';
@@ -28,6 +30,25 @@ export interface CreateRentalRemitoSigningRequestResult {
   requestId: string;
   expiresAt: Date;
   reusedExistingRequest: boolean;
+}
+
+export interface PublicRentalRemitoSigningSession {
+  requestId: string;
+  status: 'PENDING' | 'SENT' | 'VIEWED';
+  expiresAt: Date;
+  documentNumber: string;
+  signerName: string;
+  unsignedArtifact: {
+    fileName: string;
+    contentType: string;
+    byteSize: number;
+    documentHash: string;
+  };
+}
+
+export interface PublicRentalRemitoSigningSessionError {
+  code: 'SigningTokenNotFound' | 'SigningRequestExpired' | 'SigningRequestUnavailable';
+  message: string;
 }
 
 export interface MarkRentalRemitoSigningRequestedInput {
@@ -68,6 +89,14 @@ export abstract class V2ContractsPublicApi {
   abstract createRentalRemitoSigningRequest(
     input: CreateRentalRemitoSigningRequestInput,
   ): Promise<Result<CreateRentalRemitoSigningRequestResult, RentalRemitoApplicationError>>;
+
+  abstract resolvePublicRentalRemitoSigningSession(
+    rawToken: string,
+  ): Promise<Result<PublicRentalRemitoSigningSession, PublicRentalRemitoSigningSessionError>>;
+
+  abstract streamPublicRentalRemitoUnsignedArtifact(
+    rawToken: string,
+  ): Promise<Result<Readable, PublicRentalRemitoSigningSessionError>>;
 
   abstract markRentalRemitoSigningRequested(
     input: MarkRentalRemitoSigningRequestedInput,

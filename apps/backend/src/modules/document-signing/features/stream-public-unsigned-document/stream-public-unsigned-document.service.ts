@@ -1,32 +1,35 @@
 import { Injectable } from '@nestjs/common';
 import { Result, err, ok } from 'neverthrow';
 
+import { V2ContractsPublicApi } from 'src/modules/contracts/public-api/contracts.public-api';
+
 import { PublicSigningDocumentStream } from '../../application/document-signing-public-document-stream.contract';
 import { PublicSigningSessionError } from '../../application/public-signing-session.errors';
-import { PublicSigningSessionLoader } from '../../application/public-signing-session.loader';
-import { SigningRequestPdfStorageService } from '../../application/services/signing-request-pdf-storage.service';
+import {
+  PublicV2SigningSessionLoader,
+  toPublicSigningSessionError,
+} from '../../application/public-v2-signing-session.loader';
 
 @Injectable()
 export class StreamPublicUnsignedDocumentService {
   constructor(
-    private readonly publicSigningSessionLoader: PublicSigningSessionLoader,
-    private readonly signingRequestPdfStorageService: SigningRequestPdfStorageService,
+    private readonly publicSigningSessionLoader: PublicV2SigningSessionLoader,
+    private readonly contracts: V2ContractsPublicApi,
   ) {}
 
   async stream(rawToken: string): Promise<Result<PublicSigningDocumentStream, PublicSigningSessionError>> {
-    const requestResult = await this.publicSigningSessionLoader.loadRequiredPublicSession(rawToken);
-    if (requestResult.isErr()) {
-      return err(requestResult.error);
-    }
+    const sessionResult = await this.publicSigningSessionLoader.loadRequiredPublicSession(rawToken);
+    if (sessionResult.isErr()) return err(sessionResult.error);
 
-    const request = requestResult.value;
-    const stream = await this.signingRequestPdfStorageService.streamUnsignedPdf(request.currentPdfStorageKey);
+    const streamResult = await this.contracts.streamPublicRentalRemitoUnsignedArtifact(rawToken);
+    if (streamResult.isErr()) return err(toPublicSigningSessionError(streamResult.error));
 
+    const { unsignedArtifact } = sessionResult.value;
     return ok({
-      fileName: request.currentPdfFileName,
-      contentType: request.currentPdfContentType,
-      contentLength: request.currentPdfByteSize,
-      stream,
+      fileName: unsignedArtifact.fileName,
+      contentType: unsignedArtifact.contentType,
+      contentLength: unsignedArtifact.byteSize,
+      stream: streamResult.value,
     });
   }
 }

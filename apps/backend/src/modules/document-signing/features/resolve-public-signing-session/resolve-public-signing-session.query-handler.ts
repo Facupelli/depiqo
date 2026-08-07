@@ -1,7 +1,7 @@
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { Result, err, ok } from 'neverthrow';
 
-import { PublicSigningSessionLoader } from '../../application/public-signing-session.loader';
+import { PublicV2SigningSessionLoader } from '../../application/public-v2-signing-session.loader';
 import { PublicSigningSessionError } from '../../application/public-signing-session.errors';
 import { ResolvePublicSigningSessionQuery } from './resolve-public-signing-session.query';
 
@@ -10,7 +10,7 @@ export class ResolvePublicSigningSessionQueryHandler implements IQueryHandler<
   ResolvePublicSigningSessionQuery,
   Result<{ requestId: string }, PublicSigningSessionError>
 > {
-  constructor(private readonly publicSigningSessionLoader: PublicSigningSessionLoader) {}
+  constructor(private readonly publicSigningSessionLoader: PublicV2SigningSessionLoader) {}
 
   async execute(
     query: ResolvePublicSigningSessionQuery,
@@ -20,6 +20,6 @@ export class ResolvePublicSigningSessionQueryHandler implements IQueryHandler<
       return err(requestResult.error);
     }
 
-    return ok({ requestId: requestResult.value.id });
+    return ok({ requestId: requestResult.value.requestId });
   }
 }

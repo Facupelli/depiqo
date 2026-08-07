@@ -1,9 +1,9 @@
-import { DocumentSigningRequestStatus, SigningDocumentType } from 'src/generated/prisma/client';
+import { SigningDocumentType } from 'src/generated/prisma/client';
 
 export interface PublicSigningSessionReadModel {
   requestId: string;
   documentType: SigningDocumentType;
-  status: DocumentSigningRequestStatus;
+  status: 'PENDING' | 'SENT' | 'VIEWED';
   expiresAt: Date;
   document: {
     documentNumber: string;

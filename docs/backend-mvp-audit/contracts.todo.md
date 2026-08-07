@@ -43,12 +43,12 @@ The module renders rental remito PDFs, creates/updates a contract snapshot, expo
 - **Implementation:** `PrepareRentalRemitoForSigningHandler`, `RentalRemitoContractWriterService`, `ContractArtifactPersistenceService`, and `V2ContractsPublicApi`.
 - **Acceptance criteria:** A contract in `GENERATED` state has an unsigned artifact, and invitation creation receives its `unsignedArtifactId`.
 
-#### [ ] Create signing requests in the V2 Contracts model
+#### [x] Create signing requests in the V2 Contracts model
 
 - **Priority:** P0
-- **Goal:** Create `V2DocumentSigningRequest` records linked to `contractId` and `unsignedArtifactId`, then resolve tokens and stream unsigned PDFs through that relationship.
+- **Completed:** Signing invitations create `V2DocumentSigningRequest` records linked to the prepared contract and immutable unsigned artifact. Public session resolution and unsigned PDF streaming now use the V2 request-artifact relationship only.
 - **Rules:** New flows do not write `document_signing_requests`; each active request identifies the exact artifact the signer can review.
-- **Likely anchors:** `SendSigningInvitationService`, `PublicSigningSessionLoader`, `StreamPublicUnsignedDocumentService`, and `signing.prisma`.
+- **Implementation:** `SendSigningInvitationService`, `V2ContractsPublicApi`, `PublicV2SigningSessionLoader`, and `StreamPublicUnsignedDocumentService`.
 - **Acceptance criteria:** A public signing token resolves to a V2 request and streams the request's linked unsigned artifact.
 
 #### [ ] Persist acceptance evidence and the signed artifact
