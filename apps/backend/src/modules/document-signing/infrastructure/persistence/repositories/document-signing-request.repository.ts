@@ -93,5 +93,4 @@ export class DocumentSigningRequestRepository {
 
     return record ? DocumentSigningRequestMapper.toDomain(record) : null;
   }
-
 }
