@@ -1,4 +1,4 @@
-export type ObjectStorageOperation = 'putObject' | 'getObjectBuffer' | 'getObjectStream';
+export type ObjectStorageOperation = 'putObject' | 'getObjectBuffer' | 'getObjectStream' | 'deleteObject';
 
 export class ObjectStorageProviderError extends Error {
   constructor(

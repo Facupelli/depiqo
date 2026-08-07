@@ -1,13 +1,18 @@
 import { Readable } from 'node:stream';
 import { ReadableStream } from 'node:stream/web';
 
-import { GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
 import { Env } from 'src/config/env.schema';
 import { ObjectStorageProviderError } from '../../application/errors/object-storage-provider.error';
-import { GetObjectInput, ObjectStoragePort, PutObjectInput } from '../../application/ports/object-storage.port';
+import {
+  DeleteObjectInput,
+  GetObjectInput,
+  ObjectStoragePort,
+  PutObjectInput,
+} from '../../application/ports/object-storage.port';
 
 interface BodyWithByteArray {
   transformToByteArray(): Promise<Uint8Array>;
@@ -57,6 +62,19 @@ export class R2ObjectStorageAdapter extends ObjectStoragePort {
     }
   }
 
+  async deleteObject(input: DeleteObjectInput): Promise<void> {
+    try {
+      await this.client.send(
+        new DeleteObjectCommand({
+          Bucket: this.bucketName,
+          Key: input.key,
+        }),
+      );
+    } catch (error) {
+      throw this.wrapProviderError('deleteObject', input.key, error);
+    }
+  }
+
   async getObjectBuffer(input: GetObjectInput): Promise<Buffer> {
     let response;
     try {
@@ -90,7 +108,7 @@ export class R2ObjectStorageAdapter extends ObjectStoragePort {
   }
 
   private wrapProviderError(
-    operation: 'putObject' | 'getObjectBuffer' | 'getObjectStream',
+    operation: 'putObject' | 'getObjectBuffer' | 'getObjectStream' | 'deleteObject',
     key: string,
     error: unknown,
   ) {
