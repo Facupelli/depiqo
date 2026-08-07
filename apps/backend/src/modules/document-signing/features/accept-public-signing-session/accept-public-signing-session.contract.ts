@@ -11,7 +11,9 @@ export interface AcceptPublicSigningInput {
 export interface AcceptPublicSigningResult {
   requestId: string;
   status: typeof DocumentSigningRequestStatus.SIGNED;
-  signedAt: Date;
+  signedAt: string;
+  downloadUrl: string;
+  receiptTokenExpiresAt: string;
 }
 
 export type AcceptPublicSigningError = AcceptPublicSigningSessionError;

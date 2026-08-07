@@ -45,6 +45,18 @@ export const publicSigningSessionProblemMap = {
     status: HttpStatus.CONFLICT,
     detail: 'The signing request cannot be updated in its current state.',
   },
+  'document_signing.receipt_token_not_found': {
+    type: createProblemType('document-signing/receipt-token-not-found'),
+    title: 'Receipt token not found',
+    status: HttpStatus.NOT_FOUND,
+    detail: 'The signed document receipt could not be found for the provided token.',
+  },
+  'document_signing.receipt_token_expired': {
+    type: createProblemType('document-signing/receipt-token-expired'),
+    title: 'Receipt token expired',
+    status: HttpStatus.GONE,
+    detail: 'The signed document receipt token has expired.',
+  },
   'document_signing.signed_document_unavailable': {
     type: createProblemType('document-signing/signed-document-unavailable'),
     title: 'Signed document unavailable',

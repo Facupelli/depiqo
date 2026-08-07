@@ -2,7 +2,7 @@ import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import type { GetRentalContractSigningSummaryResponseDto } from '@repo/api-contracts';
 
 import { PrismaService } from 'src/core/database/prisma.service';
-import { V2ContractArtifactKind } from 'src/generated/prisma/enums';
+import { V2ContractArtifactKind, V2ContractArtifactStorageStatus } from 'src/generated/prisma/enums';
 
 import { GetRentalContractSigningSummaryQuery } from './get-rental-contract-signing-summary.query';
 
@@ -41,6 +41,14 @@ export class GetRentalContractSigningSummaryHandler implements IQueryHandler<
             expiresAt: true,
             cancelledAt: true,
             failedAt: true,
+            unsignedArtifact: {
+              select: {
+                id: true,
+                kind: true,
+                fileName: true,
+                createdAt: true,
+              },
+            },
           },
           orderBy: { createdAt: 'desc' },
           take: 1,
@@ -53,11 +61,28 @@ export class GetRentalContractSigningSummaryHandler implements IQueryHandler<
             acceptedAt: true,
             acceptedIpAddress: true,
             acceptanceTextVersion: true,
+            unsignedArtifact: {
+              select: {
+                id: true,
+                kind: true,
+                fileName: true,
+                createdAt: true,
+              },
+            },
+            signedArtifact: {
+              select: {
+                id: true,
+                kind: true,
+                fileName: true,
+                createdAt: true,
+              },
+            },
           },
           orderBy: { acceptedAt: 'desc' },
           take: 1,
         },
         artifacts: {
+          where: { storageStatus: V2ContractArtifactStorageStatus.AVAILABLE },
           select: {
             id: true,
             kind: true,
@@ -118,9 +143,23 @@ export class GetRentalContractSigningSummaryHandler implements IQueryHandler<
           }
         : null,
       artifacts: {
-        unsignedPdf: this.findLatestArtifact(contract.artifacts, V2ContractArtifactKind.UNSIGNED_PDF),
-        signedPdf: this.findLatestArtifact(contract.artifacts, V2ContractArtifactKind.SIGNED_PDF),
+        unsignedPdf:
+          this.toSummaryArtifact(acceptance?.unsignedArtifact ?? latestSigningRequest?.unsignedArtifact) ??
+          this.findLatestArtifact(contract.artifacts, V2ContractArtifactKind.UNSIGNED_PDF),
+        signedPdf: this.toSummaryArtifact(acceptance?.signedArtifact),
       },
+    };
+  }
+
+  private toSummaryArtifact(
+    artifact: { id: string; fileName: string; createdAt: Date } | null | undefined,
+  ): SummaryArtifact {
+    if (!artifact) return null;
+
+    return {
+      id: artifact.id,
+      fileName: artifact.fileName,
+      createdAt: artifact.createdAt.toISOString(),
     };
   }
 
@@ -130,14 +169,6 @@ export class GetRentalContractSigningSummaryHandler implements IQueryHandler<
   ): SummaryArtifact {
     const artifact = artifacts.find((candidate) => candidate.kind === kind);
 
-    if (!artifact) {
-      return null;
-    }
-
-    return {
-      id: artifact.id,
-      fileName: artifact.fileName,
-      createdAt: artifact.createdAt.toISOString(),
-    };
+    return this.toSummaryArtifact(artifact);
   }
 }

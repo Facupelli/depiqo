@@ -64,7 +64,9 @@ export class AcceptPublicSigningSessionService implements ICommandHandler<
     return ok({
       requestId: signResult.value.requestId,
       status: DocumentSigningRequestStatus.SIGNED,
-      signedAt: signResult.value.signedAt,
+      signedAt: signResult.value.signedAt.toISOString(),
+      downloadUrl: `/document-signing/public/receipts/signed-pdf?token=${encodeURIComponent(signResult.value.receiptToken)}`,
+      receiptTokenExpiresAt: signResult.value.receiptTokenExpiresAt.toISOString(),
     });
   }
 }

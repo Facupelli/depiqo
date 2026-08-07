@@ -16,6 +16,7 @@ import { ResolvePublicSigningSessionQueryHandler } from './features/resolve-publ
 import { PublicSigningSessionLoader } from './application/public-signing-session.loader';
 import { PublicV2SigningSessionLoader } from './application/public-v2-signing-session.loader';
 import { SigningNotificationService } from './application/services/signing-notification.service';
+import { StreamPublicSignedDocumentHttpController } from './features/stream-public-signed-document/stream-public-signed-document.controller';
 import { StreamPublicSignedDocumentService } from './features/stream-public-signed-document/stream-public-signed-document.service';
 import { StreamPublicUnsignedDocumentService } from './features/stream-public-unsigned-document/stream-public-unsigned-document.service';
 
@@ -27,6 +28,7 @@ import { DocumentSigningRequestRepository } from './infrastructure/persistence/r
     SendSigningInvitationHttpController,
     GetPublicSigningSessionHttpController,
     AcceptPublicSigningSessionHttpController,
+    StreamPublicSignedDocumentHttpController,
   ],
   providers: [
     DocumentSigningRequestRepository,

@@ -59,6 +59,18 @@ export interface PublicRentalRemitoSigningSessionError {
   message: string;
 }
 
+export interface PublicRentalRemitoReceiptError {
+  code: 'ReceiptTokenNotFound' | 'ReceiptTokenExpired' | 'ReceiptTokenUnavailable';
+  message: string;
+}
+
+export interface PublicRentalRemitoSignedArtifact {
+  fileName: string;
+  contentType: string;
+  byteSize: number;
+  stream: Readable;
+}
+
 export interface AcceptPublicRentalRemitoSigningInput {
   rawToken: string;
   signatureImageDataUrl: string;
@@ -71,34 +83,8 @@ export interface AcceptPublicRentalRemitoSigningResult {
   requestId: string;
   status: 'SIGNED';
   signedAt: Date;
-}
-
-export interface MarkRentalRemitoSigningRequestedInput {
-  tenantId: string;
-  contractId: string;
-  signingRequestId: string;
-}
-
-export interface RenderSignedRentalRemitoInput {
-  tenantId: string;
-  rentalId: string;
-  signatureImageDataUrl: string;
-  signerEmail: string | null;
-  signedAt: Date;
-  signingRequestId: string;
-}
-
-export interface RenderSignedRentalRemitoResult {
-  buffer: Buffer;
-  fileName: string;
-  documentNumber: string;
-}
-
-export interface MarkRentalRemitoSignedInput {
-  tenantId: string;
-  contractId: string;
-  signingRequestId: string;
-  signedAt: Date;
+  receiptToken: string;
+  receiptTokenExpiresAt: Date;
 }
 
 export abstract class V2ContractsPublicApi {
@@ -124,15 +110,7 @@ export abstract class V2ContractsPublicApi {
     input: AcceptPublicRentalRemitoSigningInput,
   ): Promise<Result<AcceptPublicRentalRemitoSigningResult, PublicRentalRemitoSigningSessionError>>;
 
-  abstract markRentalRemitoSigningRequested(
-    input: MarkRentalRemitoSigningRequestedInput,
-  ): Promise<Result<void, RentalRemitoApplicationError>>;
-
-  abstract renderSignedRentalRemito(
-    input: RenderSignedRentalRemitoInput,
-  ): Promise<Result<RenderSignedRentalRemitoResult, RentalRemitoApplicationError>>;
-
-  abstract markRentalRemitoSigned(
-    input: MarkRentalRemitoSignedInput,
-  ): Promise<Result<void, RentalRemitoApplicationError>>;
+  abstract streamPublicRentalRemitoSignedArtifact(
+    rawReceiptToken: string,
+  ): Promise<Result<PublicRentalRemitoSignedArtifact, PublicRentalRemitoReceiptError>>;
 }

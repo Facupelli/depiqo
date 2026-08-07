@@ -1,4 +1,8 @@
-import { createHash } from 'node:crypto';
+import { createHash, randomBytes } from 'node:crypto';
+
+import { ConfigService } from '@nestjs/config';
+
+import { Env } from 'src/config/env.schema';
 import { Readable } from 'node:stream';
 
 import { Injectable } from '@nestjs/common';
@@ -20,8 +24,6 @@ import {
   getRentalRemitoAcceptanceText,
   RENTAL_REMITO_ACCEPTANCE_TEXT_VERSION,
 } from '../application/rental-remito/rental-remito-acceptance-text.registry';
-import { RentalRemitoContractStateService } from '../application/rental-remito/rental-remito-contract-state.service';
-import { RentalRemitoDocumentService } from '../application/rental-remito/rental-remito-document.service';
 import { RentalRemitoSignedArtifactService } from '../application/rental-remito/rental-remito-signed-artifact.service';
 import { PrepareRentalRemitoForSigningResult } from '../features/prepare-rental-remito-for-signing/prepare-rental-remito-for-signing.handler';
 import { PrepareRentalRemitoForSigningQuery } from '../features/prepare-rental-remito-for-signing/prepare-rental-remito-for-signing.query';
@@ -33,13 +35,11 @@ import {
   CreateRentalRemitoSigningRequestResult,
   GetRentalContractStatusInput,
   RentalContractStatus,
-  MarkRentalRemitoSignedInput,
-  MarkRentalRemitoSigningRequestedInput,
   PublicRentalRemitoSigningSession,
+  PublicRentalRemitoReceiptError,
+  PublicRentalRemitoSignedArtifact,
   PublicRentalRemitoSigningSessionError,
   PrepareRentalRemitoForSigningInput,
-  RenderSignedRentalRemitoInput,
-  RenderSignedRentalRemitoResult,
   V2ContractsPublicApi,
 } from './contracts.public-api';
 
@@ -48,11 +48,10 @@ export class V2ContractsPublicApiService implements V2ContractsPublicApi {
   constructor(
     private readonly prisma: PrismaService,
     private readonly queryBus: QueryBus,
-    private readonly contractStateService: RentalRemitoContractStateService,
-    private readonly rentalRemitoDocumentService: RentalRemitoDocumentService,
     private readonly signedArtifactService: RentalRemitoSignedArtifactService,
     private readonly artifactPersistence: ContractArtifactPersistenceService,
     private readonly objectStorage: ObjectStoragePort,
+    private readonly config: ConfigService<Env, true>,
   ) {}
 
   async getRentalContractStatus(input: GetRentalContractStatusInput): Promise<RentalContractStatus | null> {
@@ -197,6 +196,10 @@ export class V2ContractsPublicApiService implements V2ContractsPublicApi {
 
     const unsignedPdf = await this.objectStorage.getObjectBuffer({ key: request.unsignedArtifact.storageKey });
     const signedAt = new Date();
+    const receiptToken = randomBytes(32).toString('hex');
+    const receiptTokenExpiresAt = new Date(
+      signedAt.getTime() + this.config.get('DOCUMENT_SIGNING_RECEIPT_TOKEN_TTL_SECONDS') * 1000,
+    );
     const signedPdf = await this.signedArtifactService.create({
       unsignedPdf,
       signatureImageDataUrl: input.signatureImageDataUrl,
@@ -258,6 +261,8 @@ export class V2ContractsPublicApiService implements V2ContractsPublicApi {
           signedArtifactId: artifactResult.value.id,
           unsignedDocumentHash: request.unsignedArtifact.documentHash,
           signedDocumentHash: artifactResult.value.documentHash,
+          receiptTokenHash: hashToken(receiptToken),
+          receiptTokenExpiresAt,
           acceptedAt: signedAt,
           acceptedIpAddress: input.acceptedIpAddress,
           acceptedUserAgent: input.acceptedUserAgent,
@@ -272,46 +277,62 @@ export class V2ContractsPublicApiService implements V2ContractsPublicApi {
         requestId: request.id,
         status: 'SIGNED',
         signedAt,
+        receiptToken,
+        receiptTokenExpiresAt,
       });
     });
 
     return transition;
   }
 
-  markRentalRemitoSigningRequested(
-    input: MarkRentalRemitoSigningRequestedInput,
-  ): Promise<Result<void, RentalRemitoApplicationError>> {
-    return this.contractStateService.markSigningRequested(input);
-  }
-
-  async renderSignedRentalRemito(
-    input: RenderSignedRentalRemitoInput,
-  ): Promise<Result<RenderSignedRentalRemitoResult, RentalRemitoApplicationError>> {
-    const renderResult = await this.rentalRemitoDocumentService.render({
-      tenantId: input.tenantId,
-      rentalId: input.rentalId,
-      purpose: 'signing',
-      signedSummary: {
-        signatureImageDataUrl: input.signatureImageDataUrl,
-        signerEmail: input.signerEmail,
-        signedAt: input.signedAt.toISOString(),
-        sessionReference: input.signingRequestId,
-      },
-    });
-
-    if (renderResult.isErr()) {
-      return renderResult;
+  async streamPublicRentalRemitoSignedArtifact(
+    rawReceiptToken: string,
+  ): Promise<Result<PublicRentalRemitoSignedArtifact, PublicRentalRemitoReceiptError>> {
+    const normalizedToken = rawReceiptToken.trim();
+    if (!normalizedToken) {
+      return err({ code: 'ReceiptTokenNotFound', message: 'Signed document receipt token was not found.' });
     }
 
-    return ok({
-      buffer: renderResult.value.buffer,
-      fileName: renderResult.value.fileName,
-      documentNumber: renderResult.value.documentNumber,
+    const acceptance = await this.prisma.client.v2DocumentSignatureAcceptance.findUnique({
+      where: { receiptTokenHash: hashToken(normalizedToken) },
+      select: {
+        id: true,
+        receiptTokenExpiresAt: true,
+        signedArtifact: {
+          select: {
+            storageKey: true,
+            fileName: true,
+            contentType: true,
+            byteSize: true,
+            storageStatus: true,
+          },
+        },
+      },
     });
-  }
+    if (!acceptance) {
+      return err({ code: 'ReceiptTokenNotFound', message: 'Signed document receipt token was not found.' });
+    }
+    if (!acceptance.receiptTokenExpiresAt || acceptance.receiptTokenExpiresAt <= new Date()) {
+      return err({ code: 'ReceiptTokenExpired', message: 'Signed document receipt token has expired.' });
+    }
+    if (
+      !acceptance.signedArtifact ||
+      acceptance.signedArtifact.storageStatus !== V2ContractArtifactStorageStatus.AVAILABLE
+    ) {
+      return err({ code: 'ReceiptTokenUnavailable', message: 'Signed document artifact is not available.' });
+    }
 
-  markRentalRemitoSigned(input: MarkRentalRemitoSignedInput): Promise<Result<void, RentalRemitoApplicationError>> {
-    return this.contractStateService.markSigned(input);
+    await this.prisma.client.v2DocumentSignatureAcceptance.update({
+      where: { id: acceptance.id },
+      data: { receiptDownloadedAt: new Date() },
+    });
+
+    return ok({
+      fileName: acceptance.signedArtifact.fileName,
+      contentType: acceptance.signedArtifact.contentType,
+      byteSize: acceptance.signedArtifact.byteSize,
+      stream: await this.objectStorage.getObjectStream({ key: acceptance.signedArtifact.storageKey }),
+    });
   }
 
   private async loadActivePublicSigningRequest(rawToken: string): Promise<
@@ -343,7 +364,7 @@ export class V2ContractsPublicApiService implements V2ContractsPublicApi {
     if (!normalizedToken) return err({ code: 'SigningTokenNotFound', message: 'Signing token was not found.' });
 
     const request = await this.prisma.client.v2DocumentSigningRequest.findUnique({
-      where: { tokenHash: createHash('sha256').update(normalizedToken).digest('hex') },
+      where: { tokenHash: hashToken(normalizedToken) },
       select: {
         id: true,
         tenantId: true,
@@ -428,6 +449,10 @@ export class V2ContractsPublicApiService implements V2ContractsPublicApi {
       },
     });
   }
+}
+
+function hashToken(value: string): string {
+  return createHash('sha256').update(value).digest('hex');
 }
 
 function toSignedFileName(unsignedFileName: string): string {

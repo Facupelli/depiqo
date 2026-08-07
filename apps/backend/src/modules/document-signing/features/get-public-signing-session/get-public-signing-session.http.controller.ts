@@ -8,7 +8,6 @@ import { createProblemDetails, createProblemType, ProblemException } from 'src/c
 import { extractBearerToken } from '../../application/document-signing-public-http.helper';
 import { PublicSigningSessionError } from '../../application/public-signing-session.errors';
 import { toPublicSigningSessionProblem } from '../../application/public-signing-session.http-errors';
-import { StreamPublicSignedDocumentService } from '../stream-public-signed-document/stream-public-signed-document.service';
 import { StreamPublicUnsignedDocumentService } from '../stream-public-unsigned-document/stream-public-unsigned-document.service';
 
 import { ResolvePublicSigningSessionQueryDto } from './get-public-signing-session.request.dto';
@@ -26,7 +25,6 @@ export class GetPublicSigningSessionHttpController {
   constructor(
     private readonly queryBus: QueryBus,
     private readonly streamPublicUnsignedDocumentService: StreamPublicUnsignedDocumentService,
-    private readonly streamPublicSignedDocumentService: StreamPublicSignedDocumentService,
   ) {}
 
   @Get('resolve')
@@ -72,27 +70,6 @@ export class GetPublicSigningSessionHttpController {
     res.set({
       'Content-Type': document.contentType,
       'Content-Disposition': `inline; filename="${document.fileName}"`,
-      'Content-Length': document.contentLength,
-    });
-
-    document.stream.pipe(res);
-  }
-
-  @Get('me/signed-pdf')
-  async streamSignedPdf(
-    @Headers('authorization') authorization: string | undefined,
-    @Res() res: Response,
-  ): Promise<void> {
-    const result = await this.streamPublicSignedDocumentService.stream(extractBearerToken(authorization));
-    if (result.isErr()) {
-      throw toPublicSigningSessionProblem(result.error);
-    }
-
-    const document = result.value;
-
-    res.set({
-      'Content-Type': document.contentType,
-      'Content-Disposition': `attachment; filename="${document.fileName}"`,
       'Content-Length': document.contentLength,
     });
 

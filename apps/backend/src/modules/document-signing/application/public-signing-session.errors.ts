@@ -5,6 +5,8 @@ export type PublicSigningSessionErrorCode =
   | 'document_signing.signing_request_expired'
   | 'document_signing.signing_request_unavailable'
   | 'document_signing.signing_request_conflict'
+  | 'document_signing.receipt_token_not_found'
+  | 'document_signing.receipt_token_expired'
   | 'document_signing.signed_document_unavailable'
   | 'document_signing.customer_profile_missing'
   | 'document_signing.order_not_found';

@@ -59,12 +59,12 @@ The module renders rental remito PDFs, creates/updates a contract snapshot, expo
 - **Implementation:** `AcceptPublicSigningSessionService`, `V2ContractsPublicApi`, `RentalRemitoSignedArtifactService`, `V2DocumentSignatureAcceptance`, and `V2ContractArtifact`.
 - **Acceptance criteria:** One acceptance traces from its signing request to immutable unsigned and signed artifacts with distinct hashes.
 
-#### [ ] Serve signing summaries and public downloads from persisted V2 artifacts
+#### [x] Serve signing summaries and public downloads from persisted V2 artifacts
 
 - **Priority:** P0
-- **Goal:** Make contract summaries and public unsigned/signed downloads read the V2 artifact chain rather than legacy request fields or a fresh render from current rental data.
-- **Rules:** A signed download must stream the stored signed artifact, even after source rental, tenant, or template data changes.
-- **Likely anchors:** `GetRentalContractSigningSummaryHandler`, `StreamPublicUnsignedDocumentService`, and `StreamPublicSignedDocumentService`.
+- **Completed:** Signing summaries now resolve artifacts through the V2 request and acceptance chain. Public signed downloads use a server-generated, expiring receipt token and stream the acceptance's persisted `SIGNED_PDF`; signing tokens remain limited to review and acceptance.
+- **Rules:** A signed download streams the stored signed artifact, even after source rental, tenant, or template data changes. The receipt token is stored only as a hash and remains usable for repeated downloads until expiry or revocation.
+- **Implementation:** `GetRentalContractSigningSummaryHandler`, `V2ContractsPublicApi`, `StreamPublicSignedDocumentService`, and the backoffice signed-PDF proxy.
 - **Acceptance criteria:** Summary data reflects the actual signing flow and downloads remain byte-stable after later source mutations.
 
 #### [ ] Cut over new writes and prove artifact traceability

@@ -31,28 +31,24 @@ export async function fetchPublicSigningSignedPdfResponse(token: string) {
 	const parsedQuery = StreamPublicSignedReceiptDocumentQuerySchema.parse({
 		token,
 	});
+	const headers = new Headers();
+	const cookie = getForwardedCookieHeader();
 
-	let response: Response;
+	if (cookie) {
+		headers.set("cookie", cookie);
+	}
+
+	const searchParams = new URLSearchParams({
+		token: parsedQuery.token ?? "",
+	});
+	const url = new URL(
+		streamPublicSignedReceiptDocumentContract.path,
+		getBackendApiBaseUrl(),
+	);
+	url.search = searchParams.toString();
 
 	try {
-		const headers = new Headers();
-		const cookie = getForwardedCookieHeader();
-
-		if (cookie) {
-			headers.set("cookie", cookie);
-		}
-
-		const searchParams = new URLSearchParams({
-			token: parsedQuery.token ?? "",
-		});
-
-		const url = new URL(
-			streamPublicSignedReceiptDocumentContract.path,
-			getBackendApiBaseUrl(),
-		);
-		url.search = searchParams.toString();
-
-		response = await fetch(url, {
+		return await fetch(url, {
 			method: streamPublicSignedReceiptDocumentContract.method,
 			headers,
 		});
@@ -64,24 +60,4 @@ export async function fetchPublicSigningSignedPdfResponse(token: string) {
 				: "No pudimos descargar el PDF firmado.",
 		);
 	}
-
-	if (!response.ok) {
-		const raw = await response.json().catch(() => null);
-		const detail =
-			raw &&
-			typeof raw === "object" &&
-			"detail" in raw &&
-			typeof raw.detail === "string"
-				? raw.detail
-				: raw &&
-						typeof raw === "object" &&
-						"message" in raw &&
-						typeof raw.message === "string"
-					? raw.message
-					: "No pudimos descargar el PDF firmado.";
-
-		throw createPdfProxyProblem(response.status, detail);
-	}
-
-	return response;
 }
