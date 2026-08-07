@@ -20,6 +20,60 @@ The module renders rental remito PDFs, creates/updates a contract snapshot, expo
 - **Side effects:** Artifact rows, hashes, and storage objects.
 - **Acceptance criteria:** A signing acceptance traces to one immutable unsigned hash and one signed artifact, downloadable after later regeneration.
 - **Suggested tests:** Integration traceability test and E2E generate-sign-regenerate-download flow.
+- **Decision recorded:** Contracts V2 is the sole legal/document source of truth for newly generated contracts. `document_signing_requests` is legacy operational storage, receives no new writes after cutover, and is not backfilled or migrated. See `apps/backend/src/modules/contracts/README.md`.
+
+#### [x] Document V2 ownership and legacy compatibility boundary
+
+- **Completed:** Defined the V2 Contracts tables as the authoritative legal-record model for newly generated contracts and defined the legacy table's no-backfill, no-new-writes cutover policy.
+- **Documentation:** `apps/backend/src/modules/contracts/README.md`.
+
+#### [ ] Add Contracts-owned immutable artifact persistence
+
+- **Priority:** P0
+- **Goal:** Store each unsigned or signed PDF in object storage and create an immutable `V2ContractArtifact` row containing storage metadata, SHA-256 hash, and artifact kind.
+- **Rules:** Preview PDFs are not persisted; existing artifacts are never updated; storage/database failure handling must leave no untraceable legal record or orphaned permanent object.
+- **Likely anchors:** `RentalRemitoContractWriterService`, `ObjectStoragePort`, and `contract-artifacts.prisma`.
+- **Acceptance criteria:** A persisted artifact can be streamed by its row's storage key and its recorded SHA-256 matches its bytes.
+
+#### [ ] Persist the unsigned artifact during signing preparation
+
+- **Priority:** P0
+- **Goal:** Make signing preparation create the contract snapshot and immutable unsigned artifact together, then return the contract and artifact identity to the invitation flow.
+- **Rules:** A resend reuses the current unsigned artifact instead of rerendering from mutable source data. Preview remains non-persistent.
+- **Likely anchors:** `PrepareRentalRemitoForSigningHandler`, `RentalRemitoDocumentService`, and `V2ContractsPublicApi`.
+- **Acceptance criteria:** A contract in `GENERATED` state has an unsigned artifact, and invitation creation receives its `unsignedArtifactId`.
+
+#### [ ] Create signing requests in the V2 Contracts model
+
+- **Priority:** P0
+- **Goal:** Create `V2DocumentSigningRequest` records linked to `contractId` and `unsignedArtifactId`, then resolve tokens and stream unsigned PDFs through that relationship.
+- **Rules:** New flows do not write `document_signing_requests`; each active request identifies the exact artifact the signer can review.
+- **Likely anchors:** `SendSigningInvitationService`, `PublicSigningSessionLoader`, `StreamPublicUnsignedDocumentService`, and `signing.prisma`.
+- **Acceptance criteria:** A public signing token resolves to a V2 request and streams the request's linked unsigned artifact.
+
+#### [ ] Persist acceptance evidence and the signed artifact
+
+- **Priority:** P0
+- **Goal:** On acceptance, preserve the exact unsigned artifact/hash and acceptance-text snapshot, create an immutable signed PDF artifact with its own hash, link both from `V2DocumentSignatureAcceptance`, and mark the request/contract signed.
+- **Rules:** Database lifecycle updates are transactional; object-storage failure handling follows the artifact-persistence policy; a signed PDF is never produced only in memory.
+- **Likely anchors:** `AcceptPublicSigningSessionService`, `RentalRemitoDocumentService`, `signature-acceptance.prisma`, and `contract-artifacts.prisma`.
+- **Acceptance criteria:** One acceptance traces from its signing request to immutable unsigned and signed artifacts with distinct hashes.
+
+#### [ ] Serve signing summaries and public downloads from persisted V2 artifacts
+
+- **Priority:** P0
+- **Goal:** Make contract summaries and public unsigned/signed downloads read the V2 artifact chain rather than legacy request fields or a fresh render from current rental data.
+- **Rules:** A signed download must stream the stored signed artifact, even after source rental, tenant, or template data changes.
+- **Likely anchors:** `GetRentalContractSigningSummaryHandler`, `StreamPublicUnsignedDocumentService`, and `StreamPublicSignedDocumentService`.
+- **Acceptance criteria:** Summary data reflects the actual signing flow and downloads remain byte-stable after later source mutations.
+
+#### [ ] Cut over new writes and prove artifact traceability
+
+- **Priority:** P0
+- **Goal:** Stop new-flow writes to legacy signing storage, leave pre-cutover records untouched, and cover the new legal-record chain with integration and E2E tests.
+- **Rules:** No legacy backfill or migration is required. Legacy behavior may be retired only in an explicit later change.
+- **Suggested tests:** Artifact hash/storage integration test; generate-send-sign-download E2E; source-mutation-after-signing regression; storage/database failure and concurrent acceptance tests.
+- **Acceptance criteria:** All newly generated contracts use only the V2 chain and accepted documents remain retrievable and unchanged.
 
 ### [ ] Regenerate contracts and mark re-signing required after relevant rental edits
 

@@ -77,6 +77,23 @@ Contracts may use tenant signer configuration from Tenant Management when genera
 
 Contracts may request Notifications to deliver signing links or receipts, but Notifications owns delivery concerns.
 
+## Authoritative Persistence and Compatibility
+
+For contracts generated after the artifact-persistence rollout, the Contracts V2 model is the sole legal/document source of truth:
+
+```text
+V2Contract
+  -> V2ContractArtifact (immutable unsigned and signed files)
+  -> V2DocumentSigningRequest (references the presented unsigned artifact)
+  -> V2DocumentSignatureAcceptance (references the accepted unsigned and produced signed artifacts)
+```
+
+`V2ContractArtifact`, `V2DocumentSigningRequest`, and `V2DocumentSignatureAcceptance` own the contract document metadata, hashes, signing lifecycle, and acceptance evidence. An artifact's bytes, storage key, metadata, and hash are immutable once recorded. A replacement document is a new artifact, never an update to an existing artifact.
+
+The existing `document_signing_requests` table is legacy operational storage. It is not a second legal-record model and must not receive new writes once the V2 signing path is available. Existing legacy records are outside this rollout: no backfill or migration is required. They may remain readable through legacy behavior until that behavior is explicitly retired.
+
+Document Signing may continue to host public signing-token HTTP endpoints and notification delivery orchestration, but it must obtain and mutate contract signing state through the Contracts public API. It must not independently persist unsigned/signed contract files, signing requests, or acceptance evidence.
+
 ## Dependencies
 
 Contracts may depend on Rental Commitment to read accepted rental facts needed to generate a contract document.
