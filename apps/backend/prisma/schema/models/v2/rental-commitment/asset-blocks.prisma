@@ -7,10 +7,11 @@ enum V2AssetBlockType {
   ACCESSORY
 }
 
-// TODO(v2-migration): add a PostgreSQL exclusion constraint for active blocks to
-// prevent concurrent confirmed rentals from double-booking the same asset:
-// EXCLUDE USING gist (tenant_id WITH =, asset_id WITH =, period WITH &&)
-// WHERE (released_at IS NULL).
+// PostgreSQL enforces the active-block invariant with the
+// v2_asset_blocks_active_asset_period_exclusion partial GiST exclusion constraint.
+// It rejects overlapping [start, end) periods for the same tenant and asset while
+// released_at is NULL; the migration is maintained as raw SQL because Prisma does
+// not model exclusion constraints.
 model V2AssetBlock {
   id         String                   @id @default(uuid())
   tenantId   String                   @map("tenant_id")

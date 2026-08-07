@@ -2,6 +2,7 @@ import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { err, ok, Result } from 'neverthrow';
 
 import { PrismaUnitOfWork } from 'src/core/database/prisma-unit-of-work';
+import { PostgresExclusionViolationError } from 'src/core/utils/postgres-error.mapper';
 import { V2AssetBlockType } from 'src/generated/prisma/enums';
 import { TenantManagementPublicApi } from 'src/modules/tenant-management/public-api/tenant-management.public-api';
 
@@ -157,12 +158,24 @@ export class ConfirmRentalHandler implements ICommandHandler<ConfirmRentalComman
       })),
     });
 
-    // TODO(rental-commitment): close the race between allocation planning and asset block insertion
-    // with transaction-level locking or an allocation+save repository method.
-    await this.unitOfWork.runInTransaction(async ({ tx, events }) => {
-      await this.rentalRepository.save(rental, { ownerSplits: splits, tx });
-      events.collectFrom(rental);
-    });
+    try {
+      await this.unitOfWork.runInTransaction(async ({ tx, events }) => {
+        await this.rentalRepository.save(rental, { ownerSplits: splits, tx });
+        events.collectFrom(rental);
+      });
+    } catch (error) {
+      if (error instanceof PostgresExclusionViolationError) {
+        return err(
+          confirmRentalError(
+            'rental_commitment.insufficient_asset_availability',
+            'The requested equipment is no longer available.',
+            error,
+            context,
+          ),
+        );
+      }
+      throw error;
+    }
 
     return ok(undefined);
   }

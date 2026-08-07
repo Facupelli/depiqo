@@ -76,13 +76,18 @@ Staff can create drafts, assign a customer, confirm, cancel, list/detail/calenda
 - **Priority:** P0
 - **Status:** Partial
 - **MVP scenario:** Two staff members confirm overlapping rentals for the last available asset.
-- **Current evidence:** `confirm-rental.handler.ts` explicitly notes a race between allocation planning and block insertion; `asset-blocks.prisma` notes the missing PostgreSQL exclusion constraint.
+- **Current evidence:** The PostgreSQL `v2_asset_blocks_active_asset_period_exclusion` partial GiST exclusion constraint prevents overlapping active blocks, and confirmation, replacement, and accessory-assignment flows translate recognized exclusion conflicts to stable availability errors.
 - **Gap:** Application-level availability checks do not prevent concurrent overlapping active blocks.
 - **Expected behavior:** Serialize allocation or enforce a PostgreSQL exclusion/locking invariant and map conflicts to a stable availability error.
 - **Lifecycle rules:** Released blocks do not conflict; equipment and accessory allocations both obey the invariant.
 - **Owning module:** Rental Commitment
 - **Dependencies:** Database migration and transaction design.
 - **Side effects:** None beyond atomic block persistence.
+- **Subtasks:**
+  - [x] Document the existing PostgreSQL partial GiST exclusion constraint in the Prisma model and remove stale missing-constraint comments.
+  - [x] Translate recognized active-block exclusion conflicts in confirmation, confirmed-asset replacement, and accessory assignment to their stable availability errors.
+  - [ ] Verify the exact Prisma raw-query representation of PostgreSQL `23P01` and make `mapPostgresError` recognize it without misclassifying unrelated database failures.
+  - [ ] Add real-PostgreSQL parallel confirmation and accessory-assignment integration tests that assert at most one success and complete transaction rollback for the loser.
 - **Acceptance criteria:** Parallel overlapping confirmations/assignments yield at most one success and no duplicate active commitment.
 - **Suggested tests:** Real-PostgreSQL concurrent confirmation and accessory allocation integration tests.
 

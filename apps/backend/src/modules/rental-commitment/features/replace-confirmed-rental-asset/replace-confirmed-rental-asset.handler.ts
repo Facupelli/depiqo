@@ -2,6 +2,7 @@ import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { err, ok, Result } from 'neverthrow';
 
 import { PrismaUnitOfWork } from 'src/core/database/prisma-unit-of-work';
+import { PostgresExclusionViolationError } from 'src/core/utils/postgres-error.mapper';
 import { V2AssetBlockType } from 'src/generated/prisma/enums';
 import { V2ContractsPublicApi } from 'src/modules/contracts/public-api/contracts.public-api';
 
@@ -77,131 +78,155 @@ export class ReplaceConfirmedRentalAssetHandler implements ICommandHandler<
       );
     }
 
-    return this.unitOfWork.runInTransaction(async ({ tx }) => {
-      const currentRental = await this.rentalRepository.findById(tenantId, rentalId, tx);
-      if (!currentRental) {
-        return err(
-          replaceConfirmedRentalAssetError(
-            'rental_commitment.rental_not_found',
-            `Rental "${rentalId}" was not found.`,
-            undefined,
-            context,
-          ),
-        );
-      }
-      if (!currentRental.updatedAt || currentRental.updatedAt.getTime() !== command.props.expectedUpdatedAt.getTime()) {
-        return err(
-          replaceConfirmedRentalAssetError(
-            'rental_commitment.rental_version_conflict',
-            `Rental "${rentalId}" was modified by another request.`,
-            undefined,
-            context,
-          ),
-        );
-      }
-      if (currentRental.status !== RentalStatus.Confirmed) {
-        return err(this.toApplicationError(new RentalCannotBeEditedFromStatusError(rentalId, currentRental.status), context));
-      }
-      if (new Date() >= currentRental.period.start) {
-        return err(this.toApplicationError(new ConfirmedRentalCannotBeEditedAfterPickupError(rentalId), context));
-      }
+    try {
+      return await this.unitOfWork.runInTransaction(async ({ tx }) => {
+        const currentRental = await this.rentalRepository.findById(tenantId, rentalId, tx);
+        if (!currentRental) {
+          return err(
+            replaceConfirmedRentalAssetError(
+              'rental_commitment.rental_not_found',
+              `Rental "${rentalId}" was not found.`,
+              undefined,
+              context,
+            ),
+          );
+        }
+        if (
+          !currentRental.updatedAt ||
+          currentRental.updatedAt.getTime() !== command.props.expectedUpdatedAt.getTime()
+        ) {
+          return err(
+            replaceConfirmedRentalAssetError(
+              'rental_commitment.rental_version_conflict',
+              `Rental "${rentalId}" was modified by another request.`,
+              undefined,
+              context,
+            ),
+          );
+        }
+        if (currentRental.status !== RentalStatus.Confirmed) {
+          return err(
+            this.toApplicationError(new RentalCannotBeEditedFromStatusError(rentalId, currentRental.status), context),
+          );
+        }
+        if (new Date() >= currentRental.period.start) {
+          return err(this.toApplicationError(new ConfirmedRentalCannotBeEditedAfterPickupError(rentalId), context));
+        }
 
-      const currentAssignment = currentRental.assignedAssets.find(
-        (assignment) => assignment.assetId === command.props.currentAssignedAssetId,
-      );
-      if (!currentAssignment) {
-        return err(
-          this.toApplicationError(
-            new RentalAssignedAssetNotFoundError(rentalId, command.props.currentAssignedAssetId),
-            context,
-          ),
+        const currentAssignment = currentRental.assignedAssets.find(
+          (assignment) => assignment.assetId === command.props.currentAssignedAssetId,
         );
-      }
-      if (currentRental.assignedAssets.some((assignment) => assignment.assetId === command.props.replacementAssetId)) {
+        if (!currentAssignment) {
+          return err(
+            this.toApplicationError(
+              new RentalAssignedAssetNotFoundError(rentalId, command.props.currentAssignedAssetId),
+              context,
+            ),
+          );
+        }
+        if (
+          currentRental.assignedAssets.some((assignment) => assignment.assetId === command.props.replacementAssetId)
+        ) {
+          return err(
+            replaceConfirmedRentalAssetError(
+              'rental_commitment.replacement_asset_unavailable',
+              `Replacement asset "${command.props.replacementAssetId}" is already assigned to this rental.`,
+              undefined,
+              context,
+            ),
+          );
+        }
+
+        const demandLine = currentRental.demandLines.find((line) => line.id === currentAssignment.rentalDemandLineId);
+        if (!demandLine) {
+          throw new Error(`Assigned asset "${currentAssignment.id}" references an unknown demand line.`);
+        }
+
+        const allocationPlan = await this.rentalAssetAllocation.planAllocations({
+          tenantId,
+          branchId: currentRental.branchId,
+          periodStart: currentRental.period.start,
+          periodEnd: currentRental.period.end,
+          demandLines: [
+            {
+              rentalDemandLineId: demandLine.id,
+              rentalSelectionId: demandLine.rentalSelectionId,
+              equipmentTypeId: demandLine.equipmentTypeId,
+              quantity: 1,
+            },
+          ],
+          ignoredBlockScope: { rentalId, blockType: V2AssetBlockType.EQUIPMENT },
+          preferredAssetIdsByDemandLineId: new Map([[demandLine.id, [command.props.replacementAssetId]]]),
+          tx,
+        });
+        if (allocationPlan.isErr()) return err(this.toApplicationError(allocationPlan.error, context));
+
+        const replacementAllocation = allocationPlan.value.allocations[0];
+        if (replacementAllocation.assetId !== command.props.replacementAssetId) {
+          return err(
+            replaceConfirmedRentalAssetError(
+              'rental_commitment.replacement_asset_unavailable',
+              `Replacement asset "${command.props.replacementAssetId}" is unavailable for this rental.`,
+              undefined,
+              context,
+            ),
+          );
+        }
+
+        const replacement = currentRental.replaceConfirmedAssignedAsset(
+          command.props.currentAssignedAssetId,
+          command.props.replacementAssetId,
+        );
+        if (replacement.isErr()) return err(this.toApplicationError(replacement.error, context));
+
+        const existingOwnerSplits = await tx.v2RentalOwnerSplit.findMany({ where: { tenantId, rentalId } });
+        const ownerSplitByAssignedAssetId = new Map(existingOwnerSplits.map((split) => [split.assignedAssetId, split]));
+        const ownerSplits = this.calculateOwnerSplits({
+          rental: currentRental,
+          replacementAllocation,
+          ownerSplitByAssignedAssetId,
+        });
+
+        const saved = await this.rentalRepository.save(currentRental, {
+          expectedUpdatedAt: command.props.expectedUpdatedAt,
+          ownerSplits,
+          tx,
+        });
+        if (!saved) {
+          return err(
+            replaceConfirmedRentalAssetError(
+              'rental_commitment.rental_version_conflict',
+              `Rental "${rentalId}" was modified by another request.`,
+              undefined,
+              context,
+            ),
+          );
+        }
+
+        return ok({ rentalId, updatedAt: saved.updatedAt });
+      });
+    } catch (error) {
+      if (error instanceof PostgresExclusionViolationError) {
         return err(
           replaceConfirmedRentalAssetError(
             'rental_commitment.replacement_asset_unavailable',
-            `Replacement asset "${command.props.replacementAssetId}" is already assigned to this rental.`,
-            undefined,
+            `Replacement asset "${command.props.replacementAssetId}" is no longer available for this rental.`,
+            error,
             context,
           ),
         );
       }
-
-      const demandLine = currentRental.demandLines.find((line) => line.id === currentAssignment.rentalDemandLineId);
-      if (!demandLine) {
-        throw new Error(`Assigned asset "${currentAssignment.id}" references an unknown demand line.`);
-      }
-
-      const allocationPlan = await this.rentalAssetAllocation.planAllocations({
-        tenantId,
-        branchId: currentRental.branchId,
-        periodStart: currentRental.period.start,
-        periodEnd: currentRental.period.end,
-        demandLines: [
-          {
-            rentalDemandLineId: demandLine.id,
-            rentalSelectionId: demandLine.rentalSelectionId,
-            equipmentTypeId: demandLine.equipmentTypeId,
-            quantity: 1,
-          },
-        ],
-        ignoredBlockScope: { rentalId, blockType: V2AssetBlockType.EQUIPMENT },
-        preferredAssetIdsByDemandLineId: new Map([[demandLine.id, [command.props.replacementAssetId]]]),
-        tx,
-      });
-      if (allocationPlan.isErr()) return err(this.toApplicationError(allocationPlan.error, context));
-
-      const replacementAllocation = allocationPlan.value.allocations[0];
-      if (replacementAllocation.assetId !== command.props.replacementAssetId) {
-        return err(
-          replaceConfirmedRentalAssetError(
-            'rental_commitment.replacement_asset_unavailable',
-            `Replacement asset "${command.props.replacementAssetId}" is unavailable for this rental.`,
-            undefined,
-            context,
-          ),
-        );
-      }
-
-      const replacement = currentRental.replaceConfirmedAssignedAsset(
-        command.props.currentAssignedAssetId,
-        command.props.replacementAssetId,
-      );
-      if (replacement.isErr()) return err(this.toApplicationError(replacement.error, context));
-
-      const existingOwnerSplits = await tx.v2RentalOwnerSplit.findMany({ where: { tenantId, rentalId } });
-      const ownerSplitByAssignedAssetId = new Map(existingOwnerSplits.map((split) => [split.assignedAssetId, split]));
-      const ownerSplits = this.calculateOwnerSplits({
-        rental: currentRental,
-        replacementAllocation,
-        ownerSplitByAssignedAssetId,
-      });
-
-      const saved = await this.rentalRepository.save(currentRental, {
-        expectedUpdatedAt: command.props.expectedUpdatedAt,
-        ownerSplits,
-        tx,
-      });
-      if (!saved) {
-        return err(
-          replaceConfirmedRentalAssetError(
-            'rental_commitment.rental_version_conflict',
-            `Rental "${rentalId}" was modified by another request.`,
-            undefined,
-            context,
-          ),
-        );
-      }
-
-      return ok({ rentalId, updatedAt: saved.updatedAt });
-    });
+      throw error;
+    }
   }
 
   private calculateOwnerSplits(params: {
     rental: Rental;
     replacementAllocation: RentalAssetAllocationPlanLine;
-    ownerSplitByAssignedAssetId: Map<string, { ownerId: string; contractId: string; basis: string; ownerShare: unknown }>;
+    ownerSplitByAssignedAssetId: Map<
+      string,
+      { ownerId: string; contractId: string; basis: string; ownerShare: unknown }
+    >;
   }): RentalOwnerSplitDraft[] {
     const { rental, replacementAllocation, ownerSplitByAssignedAssetId } = params;
     if (!rental) {
@@ -256,10 +281,7 @@ export class ReplaceConfirmedRentalAssetHandler implements ICommandHandler<
     }).splits;
   }
 
-  private toApplicationError(
-    error: unknown,
-    context: Record<string, unknown>,
-  ): ReplaceConfirmedRentalAssetError {
+  private toApplicationError(error: unknown, context: Record<string, unknown>): ReplaceConfirmedRentalAssetError {
     if (error instanceof RentalCannotBeEditedFromStatusError) {
       return replaceConfirmedRentalAssetError(
         'rental_commitment.rental_cannot_be_edited_from_status',
