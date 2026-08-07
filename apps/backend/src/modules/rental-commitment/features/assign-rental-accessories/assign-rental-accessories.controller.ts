@@ -84,6 +84,12 @@ const assignRentalAccessoriesProblemMap = {
     status: HttpStatus.CONFLICT,
     detail: 'Not enough accessory assets are available for the rental period.',
   },
+  'rental_commitment.rental_version_conflict': {
+    type: createProblemType('rental_commitment.rental_version_conflict'),
+    title: 'Rental was modified',
+    status: HttpStatus.CONFLICT,
+    detail: 'The rental was changed by another request. Refresh it and try again.',
+  },
   'rental_commitment.source_rental_demand_line_not_found': {
     type: createProblemType('rental_commitment.source_rental_demand_line_not_found'),
     title: 'Source rental demand line not found',

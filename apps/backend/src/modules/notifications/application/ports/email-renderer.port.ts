@@ -48,8 +48,11 @@ export interface RentalConfirmedConfirmationEmailPayload {
   returnTime: string;
 }
 
+export type ConfirmedRentalEditedEmailPayload = RentalConfirmedConfirmationEmailPayload;
+
 export interface NotificationEmailPayloadMap {
   [NotificationType.RENTAL_CONFIRMED_CONFIRMATION]: RentalConfirmedConfirmationEmailPayload;
+  [NotificationType.CONFIRMED_RENTAL_EDITED]: ConfirmedRentalEditedEmailPayload;
   [NotificationType.RENTAL_CREATED_BY_CUSTOMER]: RentalCreatedByCustomerEmailPayload;
   [NotificationType.RENTAL_CANCELLED]: RentalCancelledEmailPayload;
   [NotificationType.DOCUMENT_SIGNING_INVITATION]: DocumentSigningInvitationEmailPayload;

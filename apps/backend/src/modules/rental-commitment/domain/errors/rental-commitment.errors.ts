@@ -55,6 +55,18 @@ export class RentalCannotBeEditedFromStatusError extends RentalCommitmentError {
   }
 }
 
+export class RentalPeriodCannotStartInPastError extends RentalCommitmentError {
+  constructor() {
+    super('Rental period cannot start in the past.');
+  }
+}
+
+export class ConfirmedRentalCannotBeEditedAfterPickupError extends RentalCommitmentError {
+  constructor(rentalId: string) {
+    super(`Confirmed rental "${rentalId}" cannot be edited at or after its pickup time.`);
+  }
+}
+
 export class RentalContainsOperationalCommitmentsError extends RentalCommitmentError {
   constructor(rentalId: string) {
     super(`Rental "${rentalId}" contains assignments or asset blocks and cannot be edited while unconfirmed.`);

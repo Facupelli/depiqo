@@ -22,6 +22,7 @@ type RentalReadModel = {
   status: V2RentalStatus;
   periodStart: Date;
   periodEnd: Date;
+  updatedAt: Date;
 };
 
 type ExistingSelection = {
@@ -65,6 +66,7 @@ export class AssignRentalAccessoriesHandler implements ICommandHandler<
         status: true,
         periodStart: true,
         periodEnd: true,
+        updatedAt: true,
       },
     });
 
@@ -179,7 +181,17 @@ export class AssignRentalAccessoriesHandler implements ICommandHandler<
       selection.newAssetIds = newAssetIdsBySelectionId.get(selection.id) ?? [];
     }
 
-    await this.persistPlan(command, rental, existingSelections, plannedSelections);
+    const persisted = await this.persistPlan(command, rental, existingSelections, plannedSelections);
+    if (!persisted) {
+      return err(
+        assignRentalAccessoriesError(
+          'rental_commitment.rental_version_conflict',
+          `Rental "${command.rentalId}" was modified by another request.`,
+          undefined,
+          context,
+        ),
+      );
+    }
 
     return ok(undefined);
   }
@@ -258,7 +270,7 @@ export class AssignRentalAccessoriesHandler implements ICommandHandler<
     rental: RentalReadModel,
     existingSelections: ExistingSelection[],
     plannedSelections: PlannedSelection[],
-  ): Promise<void> {
+  ): Promise<boolean> {
     const plannedSelectionIds = new Set(plannedSelections.map((selection) => selection.id));
     const keptAssignmentIds = new Set(plannedSelections.flatMap((selection) => selection.keptAssignmentIds));
     const keptAssetIds = new Set(plannedSelections.flatMap((selection) => selection.keptAssetIds));
@@ -272,7 +284,13 @@ export class AssignRentalAccessoriesHandler implements ICommandHandler<
       .filter((assignment) => !keptAssetIds.has(assignment.assetId))
       .map((assignment) => assignment.assetId);
 
-    await this.prisma.client.$transaction(async (tx) => {
+    return this.prisma.client.$transaction(async (tx) => {
+      const claim = await tx.v2Rental.updateMany({
+        where: { id: rental.id, tenantId: rental.tenantId, updatedAt: rental.updatedAt },
+        data: { updatedAt: new Date() },
+      });
+      if (claim.count === 0) return false;
+
       if (removedAssignmentIds.length > 0) {
         await tx.v2RentalAccessoryAssetAssignment.deleteMany({
           where: { tenantId: command.tenantId, id: { in: removedAssignmentIds } },
@@ -353,6 +371,8 @@ export class AssignRentalAccessoriesHandler implements ICommandHandler<
           }
         }
       }
+
+      return true;
     });
   }
 

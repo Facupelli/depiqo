@@ -20,6 +20,7 @@ import {
 } from '../../domain/errors/rental-commitment.errors';
 import { FulfillmentMethod } from '../../domain/rental-status';
 import { AssetId, EquipmentTypeId } from '../../domain/types/rental-commitment-ids';
+import { getConfirmedPriceSnapshotForOwnerSplits } from '../../owner-split/confirmed-price-snapshot-for-owner-splits';
 import { RentalOwnerSplitDraft } from '../../owner-split/owner-split-calculator.types';
 import { RentalOwnerSplitCalculator } from '../../owner-split/rental-owner-split-calculator';
 import { RentalRepository } from '../../persistence/rental.repository';
@@ -27,16 +28,6 @@ import { ConfirmRentalCommand } from './confirm-rental.command';
 import { confirmRentalError, ConfirmRentalError } from './confirm-rental.errors';
 
 export type ConfirmRentalResult = Result<void, ConfirmRentalError>;
-
-interface ConfirmedPriceSnapshotForOwnerSplits {
-  calculated: {
-    currency: string;
-    lines: Array<{
-      rentalSelectionId: string;
-      total: string;
-    }>;
-  };
-}
 
 @CommandHandler(ConfirmRentalCommand)
 export class ConfirmRentalHandler implements ICommandHandler<ConfirmRentalCommand, ConfirmRentalResult> {
@@ -118,13 +109,11 @@ export class ConfirmRentalHandler implements ICommandHandler<ConfirmRentalComman
       return err(this.toApplicationError(confirmResult.error, context));
     }
 
-    const confirmedPriceSnapshot = rental.confirmedPriceSnapshot?.toJSON() as
-      | ConfirmedPriceSnapshotForOwnerSplits
-      | undefined;
-
-    if (!confirmedPriceSnapshot) {
+    if (!rental.confirmedPriceSnapshot) {
       return err(this.toApplicationError(new ConfirmedRentalRequiresPriceSnapshotError(rental.id), context));
     }
+
+    const confirmedPriceSnapshot = getConfirmedPriceSnapshotForOwnerSplits(rental.confirmedPriceSnapshot);
 
     const assignmentsByAssetAndDemandLine = new Map(
       rental.assignedAssets.map((assignment) => [

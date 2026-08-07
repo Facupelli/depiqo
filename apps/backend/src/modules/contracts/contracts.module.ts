@@ -14,7 +14,7 @@ import { RentalRemitoRendererPort } from './domain/ports/rental-remito-renderer.
 import { ReactPdfRentalRemitoRendererAdapter } from './infrastructure/pdf/react-pdf-rental-remito-renderer.adapter';
 import { RentalRemitoContractWriterService } from './application/rental-remito/rental-remito-contract-writer.service';
 import { V2ContractsPublicApi } from './public-api/contracts.public-api';
-import { V2V2ContractsPublicApiService } from './public-api/contracts.public-api.service';
+import { V2ContractsPublicApiService } from './public-api/contracts.public-api.service';
 import { RentalRemitoContractStateService } from './application/rental-remito/rental-remito-contract-state.service';
 
 @Module({
@@ -34,7 +34,7 @@ import { RentalRemitoContractStateService } from './application/rental-remito/re
     },
     {
       provide: V2ContractsPublicApi,
-      useClass: V2V2ContractsPublicApiService,
+      useClass: V2ContractsPublicApiService,
     },
   ],
   exports: [V2ContractsPublicApi],

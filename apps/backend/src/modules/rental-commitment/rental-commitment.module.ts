@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 
 import { CatalogModule } from '../catalog/catalog.module';
+import { ContractsModule } from '../contracts/contracts.module';
 import { PricingModule } from '../pricing/pricing.module';
 import { TenantManagementModule } from '../tenant-management/tenant-management.module';
 import { RentalAssetAllocationService } from './asset-allocation/rental-asset-allocation.service';
@@ -16,6 +17,8 @@ import { CreateConfirmedRentalHttpController } from './features/create-confirmed
 import { CreateConfirmedRentalService } from './features/create-confirmed-rental/create-confirmed-rental.handler';
 import { CreateDraftRentalHttpController } from './features/create-draft-rental/create-draft-rental.controller';
 import { CreateDraftRentalService } from './features/create-draft-rental/create-draft-rental.service';
+import { EditConfirmedRentalHttpController } from './features/edit-confirmed-rental/edit-confirmed-rental.controller';
+import { EditConfirmedRentalHandler } from './features/edit-confirmed-rental/edit-confirmed-rental.handler';
 import { EditUnconfirmedRentalHttpController } from './features/edit-unconfirmed-rental/edit-unconfirmed-rental.controller';
 import { EditUnconfirmedRentalHandler } from './features/edit-unconfirmed-rental/edit-unconfirmed-rental.handler';
 import { GetRentalDetailHttpController } from './features/get-rental-detail/get-rental-detail.controller';
@@ -39,7 +42,7 @@ import { RentalCommitmentPublicApiService } from './public-api/rental-commitment
 import { RentalCommitmentPublicApi } from './public-api/rental-commitment.public-api';
 
 @Module({
-  imports: [CatalogModule, PricingModule, TenantManagementModule],
+  imports: [CatalogModule, ContractsModule, PricingModule, TenantManagementModule],
   controllers: [
     AssignRentalAccessoriesHttpController,
     AssignCustomerToDraftRentalHttpController,
@@ -47,6 +50,7 @@ import { RentalCommitmentPublicApi } from './public-api/rental-commitment.public
     ConfirmRentalHttpController,
     CreateConfirmedRentalHttpController,
     CreateDraftRentalHttpController,
+    EditConfirmedRentalHttpController,
     EditUnconfirmedRentalHttpController,
     GetRentalsCalendarHttpController,
     GetRentalDetailHttpController,
@@ -64,6 +68,7 @@ import { RentalCommitmentPublicApi } from './public-api/rental-commitment.public
     ConfirmRentalHandler,
     CreateConfirmedRentalService,
     CreateDraftRentalService,
+    EditConfirmedRentalHandler,
     EditUnconfirmedRentalHandler,
     GetRentalDetailHandler,
     GetRentalsCalendarHandler,

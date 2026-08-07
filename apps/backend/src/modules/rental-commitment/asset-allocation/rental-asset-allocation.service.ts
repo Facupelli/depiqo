@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { err, ok, Result } from 'neverthrow';
 
 import { PrismaService } from 'src/core/database/prisma.service';
+import { PrismaTransactionClient } from 'src/core/database/prisma-unit-of-work';
 import { Prisma } from 'src/generated/prisma/client';
 import { V2AssetBlockType } from 'src/generated/prisma/enums';
 
@@ -19,6 +20,7 @@ import {
 } from '../domain/value-objects/owner-contract-snapshot.value-object';
 import { RentalPeriod } from '../domain/value-objects/rental-period.value-object';
 import { AssetId, EquipmentTypeId } from '../domain/types/rental-commitment-ids';
+import { RentalDemandLineId } from '../domain/ids/rental-demand-line-id';
 
 interface PlanAssetAllocationsParams {
   tenantId: string;
@@ -27,10 +29,12 @@ interface PlanAssetAllocationsParams {
   periodEnd: Date;
   demandLines: readonly RentalAssetAllocationDemandLine[];
   excludeAssetIds?: readonly AssetId[];
+  preferredAssetIdsByDemandLineId?: ReadonlyMap<RentalDemandLineId, readonly AssetId[]>;
   ignoredBlockScope?: {
     rentalId: string;
     blockType: V2AssetBlockType;
   };
+  tx?: PrismaTransactionClient;
 }
 
 interface ActiveAssetReservationRow {
@@ -55,6 +59,7 @@ export class RentalAssetAllocationService {
       tenantId: params.tenantId,
       branchId: params.branchId,
       equipmentTypeIds,
+      tx: params.tx,
     });
     if (candidates.isErr()) {
       return err(candidates.error);
@@ -66,6 +71,7 @@ export class RentalAssetAllocationService {
       periodStart: params.periodStart,
       periodEnd: params.periodEnd,
       ignoredBlockScope: params.ignoredBlockScope,
+      tx: params.tx,
     });
 
     return this.allocationPolicy.planAllocations({
@@ -75,6 +81,7 @@ export class RentalAssetAllocationService {
         ...overlappingReservedAssets,
         ...(params.excludeAssetIds ?? []).map((assetId) => ({ assetId })),
       ],
+      preferredAssetIdsByDemandLineId: params.preferredAssetIdsByDemandLineId,
     });
   }
 
@@ -82,8 +89,10 @@ export class RentalAssetAllocationService {
     tenantId: string;
     branchId: string;
     equipmentTypeIds: readonly EquipmentTypeId[];
+    tx?: PrismaTransactionClient;
   }): Promise<Result<AssetCandidate[], RentalCommitmentError>> {
-    const rows = await this.prisma.client.v2RentalAssetCandidate.findMany({
+    const db = params.tx ?? this.prisma.client;
+    const rows = await db.v2RentalAssetCandidate.findMany({
       where: {
         tenantId: params.tenantId,
         branchId: params.branchId,
@@ -136,6 +145,7 @@ export class RentalAssetAllocationService {
       rentalId: string;
       blockType: V2AssetBlockType;
     };
+    tx?: PrismaTransactionClient;
   }): Promise<OverlappingReservedAsset[]> {
     if (params.assetIds.length === 0) {
       return [];
@@ -154,7 +164,8 @@ export class RentalAssetAllocationService {
       `
       : Prisma.empty;
 
-    const rows = await this.prisma.client.$queryRaw<ActiveAssetReservationRow[]>(Prisma.sql`
+    const db = params.tx ?? this.prisma.client;
+    const rows = await db.$queryRaw<ActiveAssetReservationRow[]>(Prisma.sql`
       SELECT asset_id AS "assetId"
       FROM v2_asset_blocks
       WHERE tenant_id = ${params.tenantId}

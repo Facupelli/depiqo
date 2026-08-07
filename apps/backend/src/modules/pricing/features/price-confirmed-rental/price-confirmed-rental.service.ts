@@ -7,11 +7,13 @@ import { PricingInput } from '../../pricing-engine/final/pricing-input.types';
 import { RentalPricingService } from '../../pricing-engine/final/rental-pricing.service';
 import { PriceConfirmedRentalInput } from '../../public-api/pricing.public-api';
 import { RentalPriceSnapshotFactory } from '../../application/rental-price-snapshot.factory';
+import { ManualPricingAdjustmentApplier } from '../price-draft-rental/manual-adjustments/manual-pricing-adjustment-applier';
 
 @Injectable()
 export class PriceConfirmedRentalService {
   private readonly calculator = new RentalPricingService();
   private readonly snapshotFactory = new RentalPriceSnapshotFactory();
+  private readonly manualPricingAdjustmentApplier = new ManualPricingAdjustmentApplier();
 
   constructor(private readonly readService: PricingContextLoader) {}
 
@@ -50,14 +52,32 @@ export class PriceConfirmedRentalService {
         couponCode: input.couponCode,
         coupon: context.coupon,
       };
-      const result = this.calculator.calculate(pricingInput);
+      const calculatedPricing = this.calculator.calculate(pricingInput);
+
+      if (!input.manualPricingAdjustment) {
+        return ok(
+          this.snapshotFactory.create({
+            context: 'CONFIRMED',
+            calculatedAt: calculationDate,
+            calculated: calculatedPricing,
+            final: calculatedPricing,
+          }),
+        );
+      }
+
+      const adjusted = this.manualPricingAdjustmentApplier.apply({
+        pricingResult: calculatedPricing,
+        manualPricingAdjustment: input.manualPricingAdjustment,
+        appliedAt: calculationDate,
+      });
 
       return ok(
         this.snapshotFactory.create({
           context: 'CONFIRMED',
           calculatedAt: calculationDate,
-          calculated: result,
-          final: result,
+          calculated: calculatedPricing,
+          final: adjusted.pricingResult,
+          manualPricingAdjustment: adjusted.manualPricingAdjustment,
         }),
       );
     } catch (error) {
@@ -113,6 +133,10 @@ export class PriceConfirmedRentalService {
       if (!Number.isInteger(selection.quantity) || selection.quantity <= 0) {
         return new InvalidPricingInputError(`selections.${index}.quantity must be a positive integer.`);
       }
+    }
+
+    if (input.manualPricingAdjustment?.mode !== undefined && input.manualPricingAdjustment.mode !== 'TARGET_TOTAL') {
+      return new InvalidPricingInputError('manualPricingAdjustment.mode is invalid.');
     }
 
     return null;

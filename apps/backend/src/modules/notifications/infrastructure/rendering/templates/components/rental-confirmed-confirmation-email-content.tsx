@@ -13,6 +13,8 @@ type RentalConfirmedConfirmationEmailContentProps = {
   pickupTime: string;
   returnDate: string;
   returnTime: string;
+  introTitle?: string;
+  introText?: string;
 };
 
 const styles = {
@@ -96,14 +98,16 @@ export function RentalConfirmedConfirmationEmailContent({
   pickupTime,
   returnDate,
   returnTime,
+  introTitle = '¡Tu alquiler fue confirmado!',
+  introText = 'Gracias por elegirnos. Tu alquiler ya está confirmado y te avisaremos ante cualquier novedad.',
 }: RentalConfirmedConfirmationEmailContentProps) {
   return (
     <>
       <Heading as="h1" style={styles.introTitle}>
-        ¡Tu alquiler fue confirmado!
+        {introTitle}
       </Heading>
       <Text style={styles.introText}>
-        Gracias por elegirnos. Tu alquiler ya está confirmado y te avisaremos ante cualquier novedad.
+        {introText}
       </Text>
 
       <Section style={styles.card}>

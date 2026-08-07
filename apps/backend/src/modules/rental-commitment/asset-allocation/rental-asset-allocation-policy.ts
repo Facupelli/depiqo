@@ -39,6 +39,7 @@ export class RentalAssetAllocationPolicy {
     readonly demandLines: readonly RentalAssetAllocationDemandLine[];
     readonly candidates: readonly AssetCandidate[];
     readonly overlappingReservedAssets: readonly OverlappingReservedAsset[];
+    readonly preferredAssetIdsByDemandLineId?: ReadonlyMap<RentalDemandLineId, readonly AssetId[]>;
   }): Result<RentalAssetAllocationPlan, RentalCommitmentError> {
     const reservedAssetIds = new Set(params.overlappingReservedAssets.map((asset) => asset.assetId));
     const candidatesByEquipmentType = this.groupAllocatableCandidatesByEquipmentType(
@@ -49,8 +50,11 @@ export class RentalAssetAllocationPolicy {
     const allocations: RentalAssetAllocationPlanLine[] = [];
 
     for (const demandLine of params.demandLines) {
-      const availableCandidates = (candidatesByEquipmentType.get(demandLine.equipmentTypeId) ?? []).filter(
-        (candidate) => !usedAssetIds.has(candidate.assetId),
+      const availableCandidates = this.orderByDemandLinePreference(
+        (candidatesByEquipmentType.get(demandLine.equipmentTypeId) ?? []).filter(
+          (candidate) => !usedAssetIds.has(candidate.assetId),
+        ),
+        params.preferredAssetIdsByDemandLineId?.get(demandLine.rentalDemandLineId),
       );
 
       if (availableCandidates.length < demandLine.quantity) {
@@ -82,6 +86,25 @@ export class RentalAssetAllocationPolicy {
     }
 
     return ok({ allocations });
+  }
+
+  private orderByDemandLinePreference(
+    candidates: readonly AssetCandidate[],
+    preferredAssetIds: readonly AssetId[] | undefined,
+  ): AssetCandidate[] {
+    if (!preferredAssetIds?.length) {
+      return [...candidates];
+    }
+
+    const preferredOrder = new Map(preferredAssetIds.map((assetId, index) => [assetId, index]));
+    return [...candidates].sort((left, right) => {
+      const leftOrder = preferredOrder.get(left.assetId);
+      const rightOrder = preferredOrder.get(right.assetId);
+      if (leftOrder !== undefined && rightOrder !== undefined) return leftOrder - rightOrder;
+      if (leftOrder !== undefined) return -1;
+      if (rightOrder !== undefined) return 1;
+      return left.assetId.localeCompare(right.assetId);
+    });
   }
 
   private groupAllocatableCandidatesByEquipmentType(

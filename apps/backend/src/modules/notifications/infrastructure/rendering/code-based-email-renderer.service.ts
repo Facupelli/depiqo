@@ -7,6 +7,7 @@ import {
   RenderedEmail,
 } from '../../application/ports/email-renderer.port';
 import { NotificationType } from '../../domain/notification-type.enum';
+import { renderConfirmedRentalEditedEmailTemplate } from './templates/confirmed-rental-edited-email.template';
 import { renderDocumentSigningInvitationEmailTemplate } from './templates/document-signing-invitation-email.template';
 import { renderRentalCancelledEmailTemplate } from './templates/rental-cancelled-email.template';
 import { renderRentalConfirmedConfirmationEmailTemplate } from './templates/rental-confirmed-confirmation-email.template';
@@ -17,6 +18,7 @@ const emailTemplateRenderers: {
   [T in NotificationType]: (payload: NotificationEmailPayloadMap[T]) => Promise<RenderedEmail> | RenderedEmail;
 } = {
   [NotificationType.RENTAL_CONFIRMED_CONFIRMATION]: renderRentalConfirmedConfirmationEmailTemplate,
+  [NotificationType.CONFIRMED_RENTAL_EDITED]: renderConfirmedRentalEditedEmailTemplate,
   [NotificationType.RENTAL_CREATED_BY_CUSTOMER]: renderRentalCreatedByCustomerEmailTemplate,
   [NotificationType.RENTAL_CANCELLED]: renderRentalCancelledEmailTemplate,
   [NotificationType.DOCUMENT_SIGNING_INVITATION]: renderDocumentSigningInvitationEmailTemplate,

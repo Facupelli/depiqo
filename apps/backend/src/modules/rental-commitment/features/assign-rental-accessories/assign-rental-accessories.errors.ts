@@ -6,7 +6,8 @@ export type AssignRentalAccessoriesErrorCode =
   | 'rental_commitment.invalid_accessory_quantity'
   | 'rental_commitment.duplicate_accessory_selection'
   | 'rental_commitment.insufficient_asset_availability'
-  | 'rental_commitment.source_rental_demand_line_not_found';
+  | 'rental_commitment.source_rental_demand_line_not_found'
+  | 'rental_commitment.rental_version_conflict';
 
 export interface AssignRentalAccessoriesError extends ApplicationError {
   code: AssignRentalAccessoriesErrorCode;

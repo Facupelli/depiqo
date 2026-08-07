@@ -5,6 +5,7 @@ import { PricingError } from '../pricing-engine/errors/pricing.errors';
 import { RentalPriceSnapshotV1 } from './rental-price-snapshot.type';
 import { BasePricingInput } from '../pricing-engine/base/base-pricing-input.type';
 import { PriceDraftRentalInput } from '../features/price-draft-rental/price-draft-rental-input.type';
+import { ManualPricingAdjustmentInput } from '../features/price-draft-rental/manual-adjustments/manual-pricing-adjustment.types';
 
 export type PriceConfirmedRentalSelectionInput = Omit<BasePricingInput['selections'][number], 'ratePlan'>;
 
@@ -16,6 +17,7 @@ export type PriceConfirmedRentalInput = Pick<
   selections: PriceConfirmedRentalSelectionInput[];
   couponCode?: string;
   calculationDate?: Date;
+  manualPricingAdjustment?: ManualPricingAdjustmentInput;
 };
 
 export type PricingPublicApiErrorCode =

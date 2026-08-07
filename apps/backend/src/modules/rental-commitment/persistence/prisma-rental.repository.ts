@@ -1,3 +1,5 @@
+import { randomUUID } from 'node:crypto';
+
 import { Injectable } from '@nestjs/common';
 
 import { PrismaService } from 'src/core/database/prisma.service';
@@ -14,8 +16,9 @@ export class PrismaRentalRepository extends RentalRepository {
     super();
   }
 
-  async findById(tenantId: string, rentalId: string): Promise<Rental | null> {
-    const rental = await this.prisma.client.v2Rental.findFirst({
+  async findById(tenantId: string, rentalId: string, tx?: PrismaTransactionClient): Promise<Rental | null> {
+    const db = tx ?? this.prisma.client;
+    const rental = await db.v2Rental.findFirst({
       where: { id: rentalId, tenantId },
       include: {
         selections: true,
@@ -29,7 +32,7 @@ export class PrismaRentalRepository extends RentalRepository {
       return null;
     }
 
-    const assetBlocks = await this.findAssetBlocks({ tenantId, rentalId });
+    const assetBlocks = await this.findAssetBlocks({ tenantId, rentalId }, db);
 
     return RentalMapper.toDomain({
       ...rental,
@@ -90,10 +93,48 @@ export class PrismaRentalRepository extends RentalRepository {
       persistedUpdatedAt = persistedRental.updatedAt;
     }
 
+    if (options?.persistence === 'DETAILS') {
+      await tx.v2RentalDeliveryDetails.deleteMany({
+        where: {
+          tenantId: rental.tenantId,
+          rentalOrderId: rental.id,
+        },
+      });
+
+      const deliveryDetails = RentalMapper.toDeliveryDetailsCreateData(rental);
+      if (deliveryDetails) {
+        await tx.v2RentalDeliveryDetails.create({ data: deliveryDetails });
+      }
+
+      if (options.ownerSplits !== undefined) {
+        await tx.v2RentalOwnerSplit.deleteMany({ where: rentalWhere });
+        if (options.ownerSplits.length > 0) {
+          await tx.v2RentalOwnerSplit.createMany({
+            data: options.ownerSplits.map(RentalMapper.toOwnerSplitCreateData),
+          });
+        }
+      }
+
+      return { updatedAt: persistedUpdatedAt };
+    }
+
+    if (options?.replaceAccessories) {
+      await tx.v2RentalAccessoryAssetAssignment.deleteMany({
+        where: { tenantId: rental.tenantId, rentalOrderId: rental.id },
+      });
+      await tx.v2RentalAccessorySelection.deleteMany({
+        where: { tenantId: rental.tenantId, rentalOrderId: rental.id },
+      });
+    }
+
+    if (options?.ownerSplits !== undefined) {
+      await tx.v2RentalOwnerSplit.deleteMany({ where: rentalWhere });
+    }
+
     await tx.v2AssignedAsset.deleteMany({ where: rentalWhere });
+    await tx.v2AssetBlock.deleteMany({ where: rentalWhere });
     await tx.v2RentalDemandLine.deleteMany({ where: rentalWhere });
     await tx.v2RentalSelection.deleteMany({ where: rentalWhere });
-    await tx.v2AssetBlock.deleteMany({ where: rentalWhere });
 
     await tx.v2RentalDeliveryDetails.deleteMany({
       where: {
@@ -128,7 +169,9 @@ export class PrismaRentalRepository extends RentalRepository {
       });
     }
 
-    for (const block of rental.assetBlocks) {
+    for (const block of rental.assetBlocks.filter(
+      (block) => options?.accessoryAssetIds === undefined || block.blockType === 'EQUIPMENT',
+    )) {
       await tx.$executeRaw`
         INSERT INTO v2_asset_blocks (
           id,
@@ -152,14 +195,20 @@ export class PrismaRentalRepository extends RentalRepository {
       `;
     }
 
-    if (options?.ownerSplits !== undefined) {
-      await tx.v2RentalOwnerSplit.deleteMany({
-        where: {
-          tenantId: rental.tenantId,
-          rentalId: rental.id,
-        },
-      });
+    if (options?.accessoryAssetIds !== undefined) {
+      for (const assetId of options.accessoryAssetIds) {
+        await tx.$executeRaw`
+          INSERT INTO v2_asset_blocks (
+            id, tenant_id, rental_id, asset_id, period, block_type, created_at, released_at
+          ) VALUES (
+            ${randomUUID()}, ${rental.tenantId}, ${rental.id}, ${assetId},
+            ${rental.period.toPostgresRange()}::tstzrange, 'ACCESSORY', ${new Date()}, ${null}
+          )
+        `;
+      }
+    }
 
+    if (options?.ownerSplits !== undefined) {
       if (options.ownerSplits.length > 0) {
         await tx.v2RentalOwnerSplit.createMany({
           data: options.ownerSplits.map(RentalMapper.toOwnerSplitCreateData),
@@ -170,11 +219,11 @@ export class PrismaRentalRepository extends RentalRepository {
     return { updatedAt: persistedUpdatedAt };
   }
 
-  private async findAssetBlocks(params: {
-    tenantId: string;
-    rentalId: string;
-  }): Promise<AssetBlockPersistenceRecord[]> {
-    return this.prisma.client.$queryRaw<AssetBlockPersistenceRecord[]>`
+  private async findAssetBlocks(
+    params: { tenantId: string; rentalId: string },
+    db: PrismaTransactionClient | PrismaService['client'],
+  ): Promise<AssetBlockPersistenceRecord[]> {
+    return db.$queryRaw<AssetBlockPersistenceRecord[]>`
       SELECT
         id,
         tenant_id AS "tenantId",
