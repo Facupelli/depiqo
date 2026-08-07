@@ -44,6 +44,9 @@ export interface PersistedNotificationDelivery {
   id: string;
   channel: V2NotificationChannel;
   recipient: string;
+  status: V2NotificationDeliveryStatus;
+  lastErrorCode: string | null;
+  lastErrorMessage: string | null;
 }
 
 export interface CreateNotificationWithPendingDeliveriesResult {
@@ -112,6 +115,9 @@ export class NotificationPersistenceService {
                 id: true,
                 channel: true,
                 recipient: true,
+                status: true,
+                lastErrorCode: true,
+                lastErrorMessage: true,
               },
             },
           },
@@ -140,6 +146,9 @@ export class NotificationPersistenceService {
               id: true,
               channel: true,
               recipient: true,
+              status: true,
+              lastErrorCode: true,
+              lastErrorMessage: true,
             },
           },
         },

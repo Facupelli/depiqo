@@ -87,6 +87,12 @@ export class SendRentalCancelledNotificationHandler {
         payload: {
           tenantName: tenantResult.value.name,
         },
+        source: {
+          context: 'rental-commitment',
+          aggregateType: event.aggregateType,
+          aggregateId: event.aggregateId,
+          eventId: event.eventId,
+        },
         metadata: {
           rentalId: rental.rentalId,
         },

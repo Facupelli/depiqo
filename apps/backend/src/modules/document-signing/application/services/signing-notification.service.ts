@@ -63,6 +63,12 @@ export class SigningNotificationService {
         expiresAt: input.expiresAt,
         isReplacement: input.resend,
       },
+      source: {
+        context: 'document-signing',
+        aggregateType: 'SigningRequest',
+        aggregateId: input.requestId,
+      },
+      contentSnapshotRedactions: [signingUrl],
       metadata: {
         orderId: input.orderId,
         signingRequestId: input.requestId,

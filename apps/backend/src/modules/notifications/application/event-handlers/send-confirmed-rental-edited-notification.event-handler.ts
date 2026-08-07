@@ -134,6 +134,12 @@ export class SendConfirmedRentalEditedNotificationHandler {
           returnDate: returnAt.date,
           returnTime: returnAt.time,
         },
+        source: {
+          context: 'rental-commitment',
+          aggregateType: event.aggregateType,
+          aggregateId: event.aggregateId,
+          eventId: event.eventId,
+        },
         metadata: {
           rentalId: rental.rentalId,
         },
