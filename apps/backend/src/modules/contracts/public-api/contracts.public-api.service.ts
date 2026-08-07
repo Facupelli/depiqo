@@ -2,7 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { QueryBus } from '@nestjs/cqrs';
 
 import { PrismaService } from 'src/core/database/prisma.service';
-import { Result, ok } from 'neverthrow';
+import { V2ContractStatus, V2DocumentSigningRequestStatus } from 'src/generated/prisma/enums';
+import { Result, err, ok } from 'neverthrow';
 
 import { RentalRemitoApplicationError } from '../application/rental-remito/rental-remito-application.error';
 import { RentalRemitoContractStateService } from '../application/rental-remito/rental-remito-contract-state.service';
@@ -11,6 +12,8 @@ import { PrepareRentalRemitoForSigningResult } from '../features/prepare-rental-
 import { PrepareRentalRemitoForSigningQuery } from '../features/prepare-rental-remito-for-signing/prepare-rental-remito-for-signing.query';
 import { RentalRemitoForSigningReadModel } from '../features/prepare-rental-remito-for-signing/prepare-rental-remito-for-signing.read-model';
 import {
+  CreateRentalRemitoSigningRequestInput,
+  CreateRentalRemitoSigningRequestResult,
   GetRentalContractStatusInput,
   RentalContractStatus,
   MarkRentalRemitoSignedInput,
@@ -45,6 +48,79 @@ export class V2ContractsPublicApiService implements V2ContractsPublicApi {
     return this.queryBus.execute<PrepareRentalRemitoForSigningQuery, PrepareRentalRemitoForSigningResult>(
       new PrepareRentalRemitoForSigningQuery(input.tenantId, input.rentalId),
     );
+  }
+
+  async createRentalRemitoSigningRequest(
+    input: CreateRentalRemitoSigningRequestInput,
+  ): Promise<Result<CreateRentalRemitoSigningRequestResult, RentalRemitoApplicationError>> {
+    const artifact = await this.prisma.client.v2ContractArtifact.findFirst({
+      where: {
+        id: input.unsignedArtifactId,
+        contractId: input.contractId,
+        tenantId: input.tenantId,
+        storageStatus: 'AVAILABLE',
+        kind: 'UNSIGNED_PDF',
+      },
+      select: { id: true },
+    });
+    if (!artifact) return err({ code: 'RentalNotFound', message: 'Unsigned contract artifact was not found.' });
+    const request = await this.prisma.client.$transaction(async (tx) => {
+      const active = await tx.v2DocumentSigningRequest.findFirst({
+        where: {
+          tenantId: input.tenantId,
+          contractId: input.contractId,
+          unsignedArtifactId: input.unsignedArtifactId,
+          status: {
+            in: [
+              V2DocumentSigningRequestStatus.PENDING,
+              V2DocumentSigningRequestStatus.SENT,
+              V2DocumentSigningRequestStatus.VIEWED,
+            ],
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+      if (active && active.expiresAt && active.expiresAt > new Date()) {
+        const updated = await tx.v2DocumentSigningRequest.update({
+          where: { id: active.id },
+          data: {
+            signerEmail: input.recipientEmail,
+            tokenHash: input.tokenHash,
+            expiresAt: input.expiresAt,
+            status: V2DocumentSigningRequestStatus.PENDING,
+          },
+          select: { id: true, expiresAt: true },
+        });
+        return { requestId: updated.id, expiresAt: updated.expiresAt ?? input.expiresAt, reusedExistingRequest: true };
+      }
+      if (active)
+        await tx.v2DocumentSigningRequest.update({
+          where: { id: active.id },
+          data: { status: V2DocumentSigningRequestStatus.EXPIRED },
+        });
+      const created = await tx.v2DocumentSigningRequest.create({
+        data: {
+          tenantId: input.tenantId,
+          contractId: input.contractId,
+          rentalId: (
+            await tx.v2Contract.findUniqueOrThrow({ where: { id: input.contractId }, select: { rentalId: true } })
+          ).rentalId,
+          unsignedArtifactId: input.unsignedArtifactId,
+          signerName: input.recipientEmail,
+          signerEmail: input.recipientEmail,
+          tokenHash: input.tokenHash,
+          expiresAt: input.expiresAt,
+          status: V2DocumentSigningRequestStatus.SENT,
+        },
+        select: { id: true, expiresAt: true },
+      });
+      await tx.v2Contract.update({
+        where: { id: input.contractId },
+        data: { status: V2ContractStatus.SIGNING_REQUESTED },
+      });
+      return { requestId: created.id, expiresAt: created.expiresAt ?? input.expiresAt, reusedExistingRequest: false };
+    });
+    return ok(request);
   }
 
   markRentalRemitoSigningRequested(

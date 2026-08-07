@@ -48,9 +48,8 @@ export class RentalRemitoContractWriterService {
         data: {
           tenantId: input.tenantId,
           rentalId: input.rentalId,
-          status: V2ContractStatus.GENERATED,
+          status: V2ContractStatus.DRAFT,
           documentNumber: input.documentNumber,
-          generatedAt: new Date(),
           snapshot: input.snapshot,
         },
         select: {
@@ -77,15 +76,21 @@ export class RentalRemitoContractWriterService {
         id: existingContract.id,
       },
       data: {
-        status: V2ContractStatus.GENERATED,
+        status: V2ContractStatus.DRAFT,
         documentNumber: input.documentNumber,
-        generatedAt: new Date(),
         snapshot: input.snapshot,
       },
     });
 
     return ok({
       contractId: existingContract.id,
+    });
+  }
+
+  async markGenerated(tenantId: string, contractId: string): Promise<void> {
+    await this.prisma.client.v2Contract.updateMany({
+      where: { id: contractId, tenantId, status: V2ContractStatus.DRAFT },
+      data: { status: V2ContractStatus.GENERATED, generatedAt: new Date() },
     });
   }
 }

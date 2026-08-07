@@ -15,6 +15,21 @@ export interface PrepareRentalRemitoForSigningInput {
   rentalId: string;
 }
 
+export interface CreateRentalRemitoSigningRequestInput {
+  tenantId: string;
+  contractId: string;
+  unsignedArtifactId: string;
+  recipientEmail: string;
+  tokenHash: string;
+  expiresAt: Date;
+}
+
+export interface CreateRentalRemitoSigningRequestResult {
+  requestId: string;
+  expiresAt: Date;
+  reusedExistingRequest: boolean;
+}
+
 export interface MarkRentalRemitoSigningRequestedInput {
   tenantId: string;
   contractId: string;
@@ -49,6 +64,10 @@ export abstract class V2ContractsPublicApi {
   abstract prepareRentalRemitoForSigning(
     input: PrepareRentalRemitoForSigningInput,
   ): Promise<Result<RentalRemitoForSigningReadModel, RentalRemitoApplicationError>>;
+
+  abstract createRentalRemitoSigningRequest(
+    input: CreateRentalRemitoSigningRequestInput,
+  ): Promise<Result<CreateRentalRemitoSigningRequestResult, RentalRemitoApplicationError>>;
 
   abstract markRentalRemitoSigningRequested(
     input: MarkRentalRemitoSigningRequestedInput,

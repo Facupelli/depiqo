@@ -1,9 +1,10 @@
 export interface RentalRemitoForSigningReadModel {
   contractId: string;
+  unsignedArtifactId: string;
   rentalId: string;
   customerId: string | null;
   customerEmail: string | null;
-  buffer: Buffer;
+  documentHash: string;
   documentNumber: string;
   fileName: string;
 }

@@ -35,12 +35,12 @@ The module renders rental remito PDFs, creates/updates a contract snapshot, expo
 - **Implementation:** `ContractArtifactPersistenceService`, `ObjectStoragePort`, and `contract-artifacts.prisma`.
 - **Acceptance criteria:** A persisted artifact can be streamed by its row's storage key and its recorded SHA-256 matches its bytes.
 
-#### [ ] Persist the unsigned artifact during signing preparation
+#### [x] Persist the unsigned artifact during signing preparation
 
 - **Priority:** P0
-- **Goal:** Make signing preparation create the contract snapshot and immutable unsigned artifact together, then return the contract and artifact identity to the invitation flow.
-- **Rules:** A resend reuses the current unsigned artifact instead of rerendering from mutable source data. Preview remains non-persistent.
-- **Likely anchors:** `PrepareRentalRemitoForSigningHandler`, `RentalRemitoDocumentService`, and `V2ContractsPublicApi`.
+- **Completed:** Signing preparation now reuses an available `UNSIGNED_PDF` artifact on resend, otherwise persists the rendered unsigned PDF before transitioning the contract to `GENERATED`. It returns `unsignedArtifactId` and the immutable document hash to the invitation flow.
+- **Rules:** Preview remains non-persistent.
+- **Implementation:** `PrepareRentalRemitoForSigningHandler`, `RentalRemitoContractWriterService`, `ContractArtifactPersistenceService`, and `V2ContractsPublicApi`.
 - **Acceptance criteria:** A contract in `GENERATED` state has an unsigned artifact, and invitation creation receives its `unsignedArtifactId`.
 
 #### [ ] Create signing requests in the V2 Contracts model
