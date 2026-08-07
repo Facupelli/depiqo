@@ -1,126 +1,62 @@
 # Tenant Management Module
 
-## Purpose
-
 Tenant Management owns the platform account boundary.
 
-It answers which tenant is being accessed, which tenant user is acting inside that tenant, which branch/location is selected, which permissions apply, which tenant configuration is enabled, and how a request host, domain, or slug resolves into a trusted tenant context.
+It determines which tenant is being accessed, which tenant user is acting, which branch is selected, which permissions and tenant capabilities apply, and how a host, domain, or slug resolves into trusted tenant context.
+
+Tenant users are backoffice/admin actors belonging to a tenant. They are not rental customers.
 
 Public API: `tenant-management.public-api.ts`
 
-## Owns
-
-```text
-Tenant
-Tenant users
-Tenant-user authentication
-Tenant-scoped authorization
-Tenant roles and permissions
-Tenant configuration
-Tenant product mode / capabilities
-Branches / locations
-Branch schedules
-Pickup and return slot rules
-Tenant timezone / branch timezone rules
-Tenant branding
-Tenant custom domains
-Tenant context resolution
-Contract signer configuration
-```
-
-Tenant users are backoffice/admin actors that belong to a tenant. They are not rental customers.
-
-Tenant Management is the authority for tenant-scoped authentication and authorization unless that boundary is explicitly redesigned later.
-
-## Does Not Own
-
-```text
-Rentable catalog definitions
-Rental offers
-Equipment types
-Physical assets
-Asset blocks
-Rental lifecycle
-Rental selections
-Rental demand lines
-Assigned assets
-Price calculation
-Rate plans
-Promotions
-Coupons
-Contract document generation
-Document signing state
-Notification delivery
-```
-
-Tenant Management may validate tenant, branch, user, permission, and configuration rules for other modules, but it must not take ownership of their domain decisions.
-
-Examples:
-
-```text
-Tenant Management can say whether offering setup is enabled.
-Offering Setup, Asset Inventory, Rental Catalog, and Pricing own the setup records.
-
-Tenant Management can say whether a tenant user may confirm rentals.
-Rental Commitment owns rental confirmation rules.
-
-Tenant Management provides tenant contract signer configuration.
-Contracts owns generated documents, signing sessions, signature acceptance, and signed artifacts.
-```
-
-## Dependencies
-
-Tenant Management should have minimal domain dependencies.
-
-It may depend on infrastructure services for authentication, sessions, OAuth, email, file storage, custom domain verification, and similar platform concerns.
-
-Other modules depend on Tenant Management for validation, authorization, configuration, and trusted tenant context.
-
-## Key Domain Concepts
+## Domain Concepts
 
 ### Tenant
 
-A tenant is a business using the platform.
+A `Tenant` is a business using the platform.
 
-Tenant state controls whether tenant-scoped operations are allowed. A disabled or deleted tenant must not resolve as an active tenant context.
+Only active tenants may resolve into usable tenant context or perform new tenant-scoped operational work.
+
+Disabled or deleted tenants may remain referenced by historical data but must not resolve as active tenants.
 
 ### Tenant User
 
-A tenant user is a dashboard/backoffice actor that belongs to a tenant.
+A `TenantUser` is a dashboard/backoffice actor belonging to a tenant.
+
+Tenant users authenticate into the administrative product and receive permissions through roles or direct grants.
 
 A tenant user is not a rental customer.
 
-Tenant users authenticate into the admin/backoffice product and receive permissions through roles or direct grants.
-
 ### Tenant User Authentication
 
-Tenant Management owns authentication for tenant/backoffice users.
+Tenant Management owns tenant/backoffice authentication and tenant-scoped authorization.
 
-Auth users, credentials, sessions, OAuth identities, and tenant-user authorization belong here for now.
+This includes auth users, credentials, sessions, OAuth identities, tenant roles, permissions, and user-role relationships.
 
 ### Branch
 
-A branch is a tenant-owned operational location where rentals can be offered, picked up, returned, or fulfilled.
+A `Branch` is a tenant-owned operational location where rentals may be offered, picked up, returned, or fulfilled.
 
-Tenant Management owns the branch profile, active/inactive state, timezone, schedule, and pickup/return slot rules.
+Tenant Management owns its profile, active state, timezone, schedules, and pickup/return slot rules.
 
-A branch reference may appear in Rental Catalog, Asset Inventory, Pricing, or Rental Commitment, but Tenant Management remains the authority over the branch itself.
+Other modules may reference `branchId`, but Tenant Management remains authoritative over the branch.
+
+Disabled branches may remain visible in historical data but must not be accepted for new operational actions unless a specific historical/read workflow permits it.
 
 ### Tenant Configuration
 
-Tenant configuration defines tenant-level behavior, defaults, feature flags, product mode, and capabilities.
+Tenant configuration defines tenant-level defaults, feature flags, product mode, and platform capabilities.
 
-Configuration must not become a generic place for rules that belong to Catalog, Pricing, Asset Inventory, Rental Commitment, Contracts, or Notifications.
+It must not become a generic container for business rules owned by Rental Catalog, Asset Inventory, Pricing, Rental Commitment, Contracts, or Notifications.
 
-Configuration changes affect future operations, not historical confirmed rentals.
+Configuration changes affect future operations rather than historical confirmed rental facts.
 
 ### Tenant Branding
 
-Tenant branding owns the tenant's public visual identity.
+Tenant branding represents the tenant's public visual identity.
 
-Examples:
+It may include:
 
-```text
+```text id="v17n7q"
 logoUrl
 faviconUrl
 primaryColor
@@ -129,45 +65,80 @@ storefrontName
 tagline
 ```
 
-Branding belongs here because it describes the tenant's public/business identity, not catalog, pricing, inventory, or rental commitment.
+Branding belongs to Tenant Management rather than Rental Catalog.
 
 ### Tenant Domain
 
-Tenant domains represent custom domains used to resolve storefront or admin tenant context.
+A tenant domain represents a custom domain used to resolve storefront or administrative tenant context.
 
-A tenant may have multiple domain records over time. Domain verification state belongs to each domain record.
+A tenant may have multiple domain records over time.
+
+Verification and provider state belong to the individual domain record rather than directly to the tenant.
 
 ### Tenant Contract Signer
 
-Tenant contract signer data is the tenant-side legal/signer identity used when generating rental contracts.
+Tenant contract signer data represents the tenant-side legal/signing identity used for rental contracts.
 
-The signer may be linked to a tenant user, but it should be tenant-owned because the person whose data or signature appears on contracts is not necessarily the current logged-in user.
+A signer may reference a tenant user, but signer configuration belongs to the tenant because the person represented on a contract is not necessarily the currently authenticated user.
 
-Contracts must snapshot signer data when generating a contract document.
+Contracts must snapshot the signer data used when generating a contract.
 
-## Lifecycle / State Rules
+## Business Rules
 
-```text
-Only active tenants should resolve into usable tenant context.
-A disabled tenant must not allow new tenant-scoped operational work.
-A deleted or soft-deleted tenant must not resolve as active tenant context.
-Only active branches should be available for new branch-scoped operational work.
-```
+A tenant-scoped operation must validate tenant existence and active state before performing business work.
 
-A disabled branch may still appear in historical rentals, catalog records, or reports, but it should not be accepted for new operational actions unless a specific historical/read workflow allows it.
+A branch-scoped operation must validate that the branch belongs to the tenant and is active.
 
-## Persistence Ownership
+A tenant user must belong to the tenant before tenant-scoped permissions are evaluated.
 
-Tenant Management owns tables related to:
+Disabled users must not pass validation for new operational work.
 
-```text
+Custom domains must be active and verified before they may resolve trusted tenant context.
+
+Tenant context provided by the frontend must not be treated as authoritative. The backend must resolve and return trusted tenant context.
+
+`TenantDomain.cfHostnameId` is provider metadata for an individual domain record and must not live directly on the tenant.
+
+Tenant branding belongs to Tenant Management.
+
+Tenant contract signer configuration belongs to Tenant Management, while generated contracts preserve their own signer snapshot.
+
+Tenant configuration may define a default or allowed billing unit, but the billing unit used for an actual price calculation comes from Pricing through the `RatePlan`.
+
+Tenant configuration changes must not rewrite confirmed rental snapshots.
+
+## Boundaries
+
+Tenant Management may validate tenants, tenant users, permissions, branches, and tenant configuration for other modules without becoming the owner of their business decisions.
+
+Rental Catalog owns rentable items, rental offers, and catalog behavior.
+
+Asset Inventory owns equipment types and physical assets.
+
+Pricing owns pricing rules and calculations.
+
+Rental Commitment owns rental lifecycle, confirmation, assignments, blocks, and accepted rental snapshots.
+
+Contracts owns generated contract documents, signing requests, signature acceptance, artifacts, and signing state.
+
+Notifications owns notification delivery.
+
+For example, Tenant Management may determine whether a tenant user has permission to confirm a rental, while Rental Commitment determines whether that rental can actually be confirmed.
+
+Tenant Management may expose contract signer configuration, while Contracts owns the resulting legal document and signing lifecycle.
+
+Tenant Management should otherwise keep domain dependencies minimal.
+
+## Persistence
+
+Tenant Management owns persistence for:
+
+```text id="kapqus"
 tenants
 tenant users
-auth users / identities
-credentials
+authentication identities and credentials
 sessions
-roles
-permissions
+roles and permissions
 tenant user roles
 branches
 branch schedules
@@ -177,83 +148,18 @@ tenant domains
 tenant contract signers
 ```
 
-Examples of external references:
+Other modules may store references or historical snapshots of tenant-owned facts without becoming authoritative over their current values.
 
-```text
-Rental Catalog may reference branchId.
-Asset Inventory may reference branchId.
-Rental Commitment may snapshot branchId.
-Pricing may reference tenantId.
-Contracts may reference tenantId.
-```
+## External Integrations
 
-## Important Invariants
+Tenant Management may use infrastructure services for platform concerns such as authentication, OAuth, invitations, custom-domain verification, email, and file storage.
 
-A tenant-scoped operation must validate tenant existence and tenant active state before performing business work.
+Provider-specific state and behavior should remain inside Tenant Management or its infrastructure adapters.
 
-A branch-scoped operation must validate that the branch belongs to the tenant and is active.
+Examples include Cloudflare custom-hostname state, branding/signature object storage, email providers, and OAuth providers.
 
-A tenant user must belong to the tenant before permissions are evaluated.
+## References
 
-Custom domains must not resolve unless active and verified.
-
-The frontend must not be trusted as the authority for tenant context resolution.
-
-`TenantDomain.cfHostnameId` is provider metadata for one domain and must not live directly on the tenant.
-
-Tenant branding belongs to Tenant Management, not Rental Catalog.
-
-Tenant contract signer data belongs to Tenant Management, but generated contracts must snapshot signer data.
-
-Billing unit in tenant configuration is only a default or allowed option. The actual pricing billing unit belongs to Pricing through `RatePlan`.
-
-## Events / Side Effects
-
-Possible event categories include:
-
-```text
-Tenant lifecycle changes
-Tenant configuration changes
-Tenant user changes
-Tenant user permission changes
-Branch changes
-Branch schedule changes
-Tenant branding changes
-Tenant domain verification changes
-Tenant contract signer changes
-```
-
-Tenant Management may call external providers for infrastructure concerns such as:
-
-```text
-Cloudflare custom hostname creation/verification
-Object storage for branding/signature files
-Email provider for auth/invitation flows
-OAuth providers for login
-```
-
-Provider-specific details should stay inside Tenant Management or infrastructure adapters.
-
-## Common Mistakes
-
-Do not put catalog images, rentable item categories, rental offers, or pricing rules in Tenant Management.
-
-Do not make the frontend resolve tenant context only from hostname or pathname. The backend must return trusted tenant context.
-
-Do not treat `defaultBillingUnit` from tenant configuration as the final billing unit for price calculation.
-
-Do not store custom domain state directly on `V2Tenant` if domain verification, Cloudflare hostname IDs, primary domains, or multiple domains are needed.
-
-Do not make tenant contract signer data only user-profile data. It is tenant legal/signing configuration.
-
-Do not let tenant configuration changes rewrite confirmed rental snapshots.
-
-Do not let a disabled tenant, disabled branch, disabled user, or unverified domain pass validation for new operational work.
-
-## Related Docs
-
-```text
-apps/backend/docs/architecture/overview.md
-apps/backend/docs/architecture/adr/
-tenant-management.public-api.ts
-```
+* `tenant-management.public-api.ts`
+* `apps/backend/docs/architecture/overview.md`
+* `apps/backend/docs/architecture/adr/`

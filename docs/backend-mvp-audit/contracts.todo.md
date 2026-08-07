@@ -78,10 +78,10 @@ The module renders rental remito PDFs, creates/updates a contract snapshot, expo
 ### [ ] Regenerate contracts and mark re-signing required after relevant rental edits
 
 - **Priority:** P0
-- **Status:** Missing
+- **Status:** Decomposed - cross-module lifecycle change; do not implement as one change.
 - **MVP scenario:** Dates, customer, items, assets, accessories, delivery, or accepted price change after generation/signing.
-- **Current evidence:** `V2ContractStatus.RESIGN_REQUIRED` exists; writer rejects regeneration only when SIGNED and otherwise overwrites snapshot/status. No Rental Commitment edit event consumer or mark-resign capability exists.
-- **Gap:** Generated/signed documents can become stale with no lifecycle response.
+- **Current evidence:** `V2ContractStatus.RESIGN_REQUIRED` exists; writer rejects regeneration only when SIGNED and otherwise overwrites snapshot/status. No Rental Commitment edit event consumer or mark-resign capability exists. `EditConfirmedRentalHandler` and `ReplaceConfirmedRentalAssetHandler` currently reject edits when the contract is `GENERATED`, `SIGNING_REQUESTED`, or `SIGNED`; accessory assignment bypasses Contracts entirely. `ConfirmedRentalEditedEvent` has no change classification and is emitted only by the aggregate's two confirmed-edit paths.
+- **Gap:** Generated/signed documents can become stale with no lifecycle response. The current one-contract-per-rental schema and mutable `V2Contract.snapshot` also do not define a current version versus prior legal versions. An asynchronous post-commit event alone leaves a race in which an obsolete invitation could be accepted after the rental edit commits but before invalidation.
 - **Expected behavior:** Classify legally relevant rental changes, preserve old artifacts/acceptance, mark `RESIGN_REQUIRED`, invalidate obsolete active requests, and generate a new version on command.
 - **Lifecycle rules:** Signed state is never silently downgraded; non-relevant changes do not force re-signing.
 - **Owning module:** Contracts
@@ -89,6 +89,43 @@ The module renders rental remito PDFs, creates/updates a contract snapshot, expo
 - **Side effects:** Contract status/version, request cancellation, new artifact, signing notification.
 - **Acceptance criteria:** A relevant edit makes the old signed artifact preserved but no longer current and a replacement can be signed.
 - **Suggested tests:** E2E signed-contract edit and re-sign flow plus irrelevant-edit test.
+
+#### [ ] 1. Define the legal-change contract and versioning policy
+
+- Decide the canonical change categories emitted by Rental Commitment for every confirmed-rental mutation that can affect a remito: period, customer, selections/quantities, assigned assets, accessories, fulfillment/delivery, and accepted price. Explicitly decide whether notes, insurance, and branch are legal inputs.
+- Contracts owns the policy that maps those categories to `RESIGN_REQUIRED`; Rental Commitment continues to own edit validity.
+- Define the version model before coding: how the current generation is identified, how a generated snapshot/document number relates to its artifacts and requests, and how prior signed versions remain auditable despite the single `V2Contract` row and mutable snapshot.
+- Define the concurrency guarantee. A relevant rental edit must make its old active signing request impossible to accept before the edit command reports success, not merely eventually cancelled by an async listener.
+- **Exit criteria:** approved lifecycle and concurrency design, including status transitions from `GENERATED`, `SIGNING_REQUESTED`, `SIGNED`, and `RESIGN_REQUIRED`.
+
+#### [ ] 2. Publish complete, classified rental-change facts
+
+- Extend or replace `ConfirmedRentalEditedEvent` with stable change categories and the rental revision/version needed for idempotency and ordering.
+- Ensure all relevant confirmed-rental write paths publish it after a successful transaction: confirmed edit details, operational edit, assigned-asset replacement, and accessory changes. Customer changes currently have no confirmed-rental edit path, so add its event coverage only when that capability exists.
+- Remove the existing contract-status edit blocks only as part of the coordinated invalidation flow from subtask 3. Retain pickup-time, rental-version, availability, and other Rental Commitment rules.
+- **Exit criteria:** one public integration event accurately describes each legally relevant mutation and irrelevant mutations remain distinguishable.
+
+#### [ ] 3. Add Contracts re-sign invalidation with race-safe request revocation
+
+- Add a Contracts application capability and public API for a classified rental change. It must atomically record the new current/re-sign-required state and cancel every active V2 signing request for the obsolete artifact, clearing or otherwise invalidating signing capability as required by the approved concurrency design.
+- Make public session resolution and acceptance reject obsolete requests and prevent acceptance from moving `RESIGN_REQUIRED` back to `SIGNED`.
+- Preserve existing artifacts, signing requests, acceptance evidence, and receipt behavior. Never overwrite signed artifacts or mutate historical acceptance evidence.
+- Consume the Rental Commitment event for recovery/idempotency and observability, but do not rely on its asynchronous delivery for the pre-success invalidation guarantee.
+- **Exit criteria:** relevant edits are allowed and leave Contracts in `RESIGN_REQUIRED`; all obsolete signing links are unusable; duplicate/out-of-order notifications are safe.
+
+#### [ ] 4. Implement explicit regeneration and replacement signing
+
+- Change signing preparation/regeneration to generate a new immutable unsigned artifact from the accepted post-edit rental facts only when the contract is `RESIGN_REQUIRED`, while retaining ordinary resend behavior for the current unchanged artifact.
+- Persist the new current snapshot/version according to subtask 1. Do not reuse a prior artifact, overwrite the prior snapshot/version, or silently downgrade a signed legal version.
+- Allow a replacement invitation only for the regenerated current artifact. Existing send/resend behavior must not revive a cancelled obsolete request.
+- Update signing summaries and admin-facing status data so staff can see that re-signing is required and which version is current.
+- **Exit criteria:** a relevant edit followed by explicit regeneration and invitation produces a distinct artifact and can be signed, while the old signed artifact remains downloadable through its existing receipt token.
+
+#### [ ] 5. Prove the lifecycle end to end
+
+- Add focused unit/integration coverage for legal-change classification, status transitions, request cancellation, idempotency, and concurrent edit-versus-acceptance behavior.
+- Add E2E coverage for generated and signed contract edits across each supported relevant mutation path, regenerate-send-sign flow, old-artifact retention/download, and an irrelevant edit that keeps the current request valid.
+- **Exit criteria:** the acceptance criteria above pass without relying on timing-sensitive async event delivery.
 
 ### [ ] Replace expired, failed, or cancelled signing requests explicitly
 

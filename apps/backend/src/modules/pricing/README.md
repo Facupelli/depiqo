@@ -1,117 +1,39 @@
 # Pricing Module
 
-## Purpose
+Pricing owns the current rules used to calculate rental prices.
 
-Pricing owns rental price calculation rules.
+It determines what a proposed rental should cost, how that amount was calculated, which rate plan and tiers applied, and which promotions or coupons affected the result.
 
-It answers what a proposed rental should cost, why it costs that amount, which billing policy applies, which rate plan was used, which tiers applied, and which promotions or coupons affected the result.
-
-Pricing produces a price breakdown for a rental input. It does not own the rental lifecycle or the accepted historical price of a confirmed rental.
-
-Once a rental is confirmed, the accepted price belongs to Rental Commitment as a snapshot.
+Pricing does not own the accepted historical price of a confirmed rental. Rental Commitment preserves that as a snapshot.
 
 Public API: `pricing.public-api.ts`
 
-## Owns
-
-```text
-Rate plans
-Rate plan tiers
-Billing policies
-Billing units
-Rental-offer pricing assignments
-Promotion rules
-Promotion scopes
-Promotion exclusions
-Promotion effects
-Coupon rules
-Coupon validation
-Price calculation
-Price breakdown generation
-Price explanation
-```
-
-Examples of questions owned by Pricing:
-
-```text
-Which rate plan prices this rental offer?
-What billing unit applies?
-How many billable units are charged?
-Which tier applies for the charged duration or quantity?
-What is the base subtotal?
-Which promotions apply?
-Is this coupon valid?
-What is the discount total?
-What is the final total?
-Why did the calculation produce this result?
-```
-
-## Does Not Own
-
-```text
-Rental lifecycle
-Rental confirmation
-Draft/pending/confirmed rental status
-Rental selections after commitment
-Rental demand lines
-Assigned assets
-Asset availability
-Asset blocks
-Physical asset metadata
-Catalog visibility
-Catalog rentability
-Rentable item presentation
-Tenant permissions
-Branch schedules
-Contract generation
-Signing state
-Notification delivery
-Accepted historical rental price snapshots
-Owner payout snapshots for confirmed rentals
-```
-
-Pricing may reference catalog-owned entities such as `RentalOffer` or `RentableItem` for pricing scope, but Rental Catalog owns those source records.
-
-Pricing may calculate a price for selected commercial items, but it must not decide whether the required assets are physically available.
-
-## Dependencies
-
-Pricing may depend on Tenant Management for tenant-level validation, currency defaults, allowed billing units, product mode, or permission checks in admin pricing workflows.
-
-Pricing may reference Rental Catalog identifiers such as `rentalOfferId` or `rentableItemId`, but Pricing should not depend on Rental Catalog internals for calculation logic.
-
-Rental Commitment depends on Pricing to calculate or validate proposed rental prices before confirmation or price-affecting edits.
-
-Offering Setup may coordinate Pricing with Rental Catalog and Asset Inventory when creating rentable equipment, packages, offers, and pricing assignments.
-
-## Key Domain Concepts
+## Domain Concepts
 
 ### Rate Plan
 
-A rate plan is a reusable pricing policy.
+A `RatePlan` is a reusable pricing policy that defines how rental offers are priced.
 
-It defines how a rental offer is priced.
-
-A rate plan may include:
+It may define:
 
 ```text
 name
 currency
 billing unit
 daily billing policy
-active/inactive state
+active state
 tiers
 ```
 
-Rate plans are reusable. Multiple rental offers may use the same rate plan.
+Multiple rental offers may share the same rate plan.
 
-Because rate plans can be shared, editing an existing rate plan can affect multiple offers. Admin workflows should warn users when they are editing a shared rate plan.
+Because rate plans are reusable, editing one may affect multiple offers.
 
 ### Billing Unit
 
-The billing unit defines what unit the rate plan charges by.
+The billing unit defines what unit a rate plan charges by.
 
-Examples:
+Examples include:
 
 ```text
 day
@@ -120,15 +42,15 @@ week
 fixed rental period
 ```
 
-The actual billing unit used for a calculation belongs to Pricing through the rate plan.
+The billing unit used for a specific calculation comes from the rate plan.
 
-Tenant configuration may define defaults or allowed billing units, but it is not the final source of truth for a specific price calculation.
+Tenant configuration may provide defaults or allowed billing units, but it is not the source of truth for a specific calculation.
 
 ### Daily Billing Policy
 
-A daily billing policy defines how partial days are charged when the rate plan bills by day.
+A daily billing policy defines how partial days are charged for rate plans that bill by day.
 
-Examples:
+Supported policy concepts include:
 
 ```text
 Ignore partial day
@@ -136,11 +58,9 @@ Bill over half day
 Bill any partial day
 ```
 
-The policy belongs to the rate plan because it affects price calculation.
-
 ### Rate Plan Tier
 
-A tier defines how much a billing unit costs for a range of units.
+A tier defines the price of a billing unit for a range of units.
 
 Example:
 
@@ -152,70 +72,108 @@ Example:
 
 Tiers belong to a rate plan.
 
-Tier ranges must be coherent and should not overlap within the same rate plan.
+Tier ranges must be valid, positive, coherent, and non-overlapping within the same plan.
 
 ### Rental Offer Pricing
 
-Rental offer pricing connects a catalog-owned rental offer to a pricing-owned rate plan.
+Rental offer pricing connects a catalog-owned `RentalOffer` to a pricing-owned `RatePlan`.
 
-Rental Catalog owns the `RentalOffer`.
+Rental Catalog owns the offer.
 
-Pricing owns the pricing assignment for that offer.
+Pricing owns the pricing assignment.
 
-A rental offer may exist without active pricing during setup, but it should not be considered fully bookable until pricing is configured.
+An offer may exist without active pricing during setup, but it is not fully bookable until its pricing assignment and rate plan are active.
 
 ### Promotion
 
-A promotion is a pricing rule that modifies the calculated price.
+A promotion is a pricing rule that modifies a calculation.
 
-A promotion may apply to a rentable item, a rental offer, an order, a tenant, a date range, or another explicit scope supported by the current schema.
+It may apply to a rentable item, rental offer, order, tenant, date range, or another explicit scope supported by the current schema.
 
-Promotion effects should be explicit and queryable. Avoid hiding core pricing behavior in unstructured JSON unless the rule is intentionally flexible and well-contained.
+Promotion behavior with first-class domain meaning should remain explicit and queryable rather than being hidden inside opaque JSON.
 
 ### Coupon
 
-A coupon is a code or token that allows a customer or staff member to apply a pricing rule.
+A coupon is a code or token used to apply a pricing rule.
 
-Pricing owns coupon validation, expiration, usage constraints, and the effect of applying the coupon.
+Pricing owns coupon validation, expiration, usage constraints, and its pricing effect.
 
-Rental Commitment may snapshot the accepted coupon code and applied discount in the confirmed price snapshot.
+Rental Commitment may preserve the accepted coupon and discount in the confirmed price snapshot.
 
 ### Price Breakdown
 
-A price breakdown is the structured explanation of the calculation result.
+A price breakdown is the structured explanation of a pricing result.
 
-It should answer:
+It should preserve enough information to explain:
 
 ```text
-What was priced?
-Which rate plan was used?
-How many units were charged?
-Which tier applied?
-What was the subtotal?
-Which discounts applied?
-What was the total?
+what was priced
+which rate plan was used
+how many units were charged
+which tier applied
+the base subtotal
+applied promotions and coupons
+discount totals
+final total
 ```
 
-Pricing produces the breakdown. Rental Commitment stores the accepted breakdown as a confirmed price snapshot.
+Pricing produces the breakdown.
 
-## Lifecycle / State Rules
+Rental Commitment stores the accepted breakdown when the rental price becomes historical truth.
 
-```text
-Inactive rate plans should not be used for new rental confirmations.
-Deleted or archived rate plans should not be used for new rental confirmations.
-Inactive rental-offer pricing assignments should not make an offer bookable.
-Expired promotions should not apply to new calculations.
-Expired coupons should not validate for new calculations.
+## Business Rules
+
+Inactive, archived, or deleted rate plans must not be used for new rental confirmations.
+
+Inactive rental-offer pricing assignments must not make an offer bookable.
+
+Expired promotions must not apply to new calculations.
+
+Expired coupons must not validate for new calculations.
+
 Pricing changes affect future calculations, not confirmed rental price snapshots.
-```
 
-Rate plans can be shared. Editing shared pricing rules must be treated as a potentially broad change.
+A confirmed rental must not recalculate its accepted price from current pricing rules.
 
-If an admin wants a pricing change to apply only to one offer, prefer duplicating or creating a new rate plan instead of editing a shared one.
+Price calculation must return a structured breakdown rather than only a final total.
 
-## Persistence Ownership
+Applied promotions and coupons must be represented in that breakdown so the accepted calculation can be preserved.
 
-Pricing owns tables related to:
+Rate plans may be shared across offers. Editing a shared rate plan must therefore be treated as a potentially broad change.
+
+If an admin intends a pricing change to affect only one offer, prefer creating or duplicating a rate plan rather than modifying a shared one.
+
+A rental offer is not fully bookable unless it has both an active pricing assignment and an active rate plan.
+
+Rental Catalog visibility or rentability does not imply that active pricing exists.
+
+Pricing changes must not silently mutate confirmed rental snapshots, documents, or signed contracts.
+
+## Boundaries
+
+Rental Catalog owns `RentalOffer`, `RentableItem`, catalog visibility, rentability, and branch offer state.
+
+Pricing may reference catalog-owned identifiers for pricing scope and assignments but must not take ownership of those records.
+
+Pricing must not depend on Rental Catalog internals for calculation logic.
+
+Pricing does not determine physical availability. It must not inspect assets or rental-created asset blocks when calculating a price.
+
+Rental Commitment owns rental lifecycle and the accepted historical price snapshot.
+
+Rental Commitment may call Pricing to calculate or validate proposed prices before confirmation or price-affecting edits, but it must not reconstruct confirmed prices from current Pricing records.
+
+Tenant Management may provide tenant validation, currency defaults, allowed billing units, product mode, or permission context for admin pricing workflows.
+
+Offering Setup may coordinate Pricing with Rental Catalog and Asset Inventory when setting up rentable offerings.
+
+Pricing must not directly confirm rentals, assign assets, generate contracts, or send notifications.
+
+Owner payout truth does not belong to Pricing. When historical owner compensation matters, Rental Commitment preserves the corresponding snapshot.
+
+## Persistence
+
+Pricing owns persistence for:
 
 ```text
 rate plans
@@ -227,111 +185,16 @@ promotion exclusions
 promotion effects
 promotion conditions
 coupons
-coupon usage / redemption tracking when implemented
+coupon usage or redemption tracking when implemented
 ```
 
-Likely owned table concepts:
+Confirmed rental price snapshots and owner payout snapshots are persisted by Rental Commitment rather than Pricing.
 
-```text
-v2_rate_plans
-v2_rate_plan_tiers
-v2_rental_offer_pricings
-v2_promotions
-v2_promotion_scopes
-v2_promotion_exclusions
-v2_promotion_effects
-v2_coupons
-```
+## References
 
-Examples of external references:
-
-```text
-RentalOfferPricing may reference a RentalOffer owned by Rental Catalog.
-Promotion scope may reference a RentableItem owned by Rental Catalog.
-Promotion scope may reference a RentalOffer owned by Rental Catalog.
-Pricing records may reference tenantId owned by Tenant Management.
-Rental Commitment may snapshot pricing results when confirming rentals.
-```
-
-## Important Invariants
-
-Pricing owns current pricing rules, not accepted historical rental prices.
-
-Rental Commitment owns the confirmed price snapshot.
-
-A confirmed rental must not recalculate its accepted price from current pricing rules.
-
-Pricing must not inspect asset availability or asset blocks to calculate price.
-
-Pricing must not decide whether a rental can be physically fulfilled.
-
-Rental Catalog visibility does not imply active pricing.
-
-Rental Catalog rentability does not imply active pricing.
-
-A rental offer should not be considered fully bookable unless it has an active pricing assignment and an active rate plan.
-
-The billing unit used for calculation belongs to the rate plan, not to tenant configuration.
-
-Rate plan tiers must not overlap within the same rate plan.
-
-Rate plan tier ranges must be valid and positive.
-
-Price calculation should return a structured breakdown, not only a final total.
-
-Applied promotions and coupons must be represented in the price breakdown so Rental Commitment can snapshot what was accepted.
-
-Do not store durable order price state in Pricing.
-
-Do not calculate owner payouts from current pricing rules after confirmation. If owner payout matters, Rental Commitment must preserve owner split snapshots.
-
-## Events / Side Effects
-
-Possible event categories include:
-
-```text
-Rate plan changes
-Rate plan tier changes
-Rental-offer pricing assignment changes
-Promotion changes
-Coupon changes
-```
-
-Pricing changes should not automatically rewrite confirmed rentals.
-
-If a pricing change affects draft or pending rentals, the consuming workflow should explicitly decide whether to recalculate, warn, or preserve the previous quote.
-
-Pricing should not directly confirm rentals, assign assets, generate contracts, or send notifications.
-
-## Common Mistakes
-
-Do not store confirmed rental price snapshots in Pricing.
-
-Do not make Rental Commitment query Pricing tables to reconstruct confirmed prices.
-
-Do not make Pricing inspect Asset Inventory or Rental Commitment asset blocks for availability.
-
-Do not put catalog visibility, rentable item status, or branch offer state in Pricing.
-
-Do not move RentalOffer ownership into Pricing.
-
-Do not treat tenant `defaultBillingUnit` as the billing unit for a specific calculation.
-
-Do not edit shared rate plans without considering all rental offers that use them.
-
-Do not hide core promotion behavior inside opaque JSON when the rule has first-class domain meaning.
-
-Do not let pricing changes silently mutate confirmed rental documents, confirmed rental snapshots, or signed contracts.
-
-Do not put owner payout truth in Pricing unless the owner compensation boundary is explicitly redesigned.
-
-## Related Docs
-
-```text
-apps/backend/docs/architecture/overview.md
-apps/backend/docs/architecture/adr/
-apps/backend/src/modules/tenant-management/README.md
-apps/backend/src/modules/catalog/README.md
-apps/backend/src/modules/rental-commitment/README.md
-pricing.public-api.ts
-```
+* `pricing.public-api.ts`
+* `apps/backend/docs/architecture/overview.md`
+* `apps/backend/docs/architecture/adr/`
+* `apps/backend/src/modules/tenant-management/README.md`
+* `apps/backend/src/modules/catalog/README.md`
+* `apps/backend/src/modules/rental-commitment/README.md`
