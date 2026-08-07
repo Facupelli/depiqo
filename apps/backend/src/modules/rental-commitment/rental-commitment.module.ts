@@ -21,6 +21,8 @@ import { EditConfirmedRentalHttpController } from './features/edit-confirmed-ren
 import { EditConfirmedRentalHandler } from './features/edit-confirmed-rental/edit-confirmed-rental.handler';
 import { EditUnconfirmedRentalHttpController } from './features/edit-unconfirmed-rental/edit-unconfirmed-rental.controller';
 import { EditUnconfirmedRentalHandler } from './features/edit-unconfirmed-rental/edit-unconfirmed-rental.handler';
+import { ReplaceConfirmedRentalAssetHttpController } from './features/replace-confirmed-rental-asset/replace-confirmed-rental-asset.controller';
+import { ReplaceConfirmedRentalAssetHandler } from './features/replace-confirmed-rental-asset/replace-confirmed-rental-asset.handler';
 import { GetRentalDetailHttpController } from './features/get-rental-detail/get-rental-detail.controller';
 import { GetRentalDetailHandler } from './features/get-rental-detail/get-rental-detail.handler';
 import { GetRentalsCalendarHttpController } from './features/get-rentals-calendar/get-rentals-calendar.controller';
@@ -52,6 +54,7 @@ import { RentalCommitmentPublicApi } from './public-api/rental-commitment.public
     CreateDraftRentalHttpController,
     EditConfirmedRentalHttpController,
     EditUnconfirmedRentalHttpController,
+    ReplaceConfirmedRentalAssetHttpController,
     GetRentalsCalendarHttpController,
     GetRentalDetailHttpController,
     GetRentalsHttpController,
@@ -70,6 +73,7 @@ import { RentalCommitmentPublicApi } from './public-api/rental-commitment.public
     CreateDraftRentalService,
     EditConfirmedRentalHandler,
     EditUnconfirmedRentalHandler,
+    ReplaceConfirmedRentalAssetHandler,
     GetRentalDetailHandler,
     GetRentalsCalendarHandler,
     GetRentalsHandler,

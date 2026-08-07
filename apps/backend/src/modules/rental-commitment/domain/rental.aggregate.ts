@@ -22,6 +22,7 @@ import {
   ConfirmedRentalCannotBeEditedAfterPickupError,
   RentalPeriodCannotStartInPastError,
   RentalContainsOperationalCommitmentsError,
+  RentalAssignedAssetNotFoundError,
   RentalConfirmationRequiresCustomerError,
   RentalChildRentalMismatchError,
   RentalChildTenantMismatchError,
@@ -512,6 +513,87 @@ export class Rental extends AggregateRootBase {
     this.props = candidate.value.props;
     this.recordConfirmedRentalEditedEvent(now);
 
+    return ok(undefined);
+  }
+
+  replaceConfirmedAssignedAsset(
+    currentAssignedAssetId: AssetId,
+    replacementAssetId: AssetId,
+    now = new Date(),
+  ): Result<void, RentalCommitmentError> {
+    if (this.status !== RentalStatus.Confirmed) {
+      return err(new RentalCannotBeEditedFromStatusError(this.id, this.status));
+    }
+    if (now >= this.period.start) {
+      return err(new ConfirmedRentalCannotBeEditedAfterPickupError(this.id));
+    }
+    if (currentAssignedAssetId === replacementAssetId) {
+      return err(new RentalInvalidFieldError('replacementAssetId', 'must differ from currentAssignedAssetId'));
+    }
+
+    const currentAssignment = this.props.assignedAssets.find(
+      (assignment) => assignment.assetId === currentAssignedAssetId,
+    );
+    if (!currentAssignment) {
+      return err(new RentalAssignedAssetNotFoundError(this.id, currentAssignedAssetId));
+    }
+
+    const replacementAssignment = AssignedAsset.create({
+      tenantId: this.tenantId,
+      rentalId: this.id,
+      rentalDemandLineId: currentAssignment.rentalDemandLineId,
+      assetId: replacementAssetId,
+    });
+    if (replacementAssignment.isErr()) {
+      return err(replacementAssignment.error);
+    }
+
+    const replacementBlock = AssetBlock.create({
+      tenantId: this.tenantId,
+      rentalId: this.id,
+      assetId: replacementAssetId,
+      period: this.period,
+      blockType: AssetBlockType.Equipment,
+    });
+    if (replacementBlock.isErr()) {
+      return err(replacementBlock.error);
+    }
+
+    const candidate = Rental.createFromEntities(RentalStatus.Confirmed, {
+      id: this.id,
+      tenantId: this.tenantId,
+      branchId: this.branchId,
+      rentalCustomerId: this.rentalCustomerId,
+      period: this.period,
+      source: this.source,
+      fulfillmentMethod: this.fulfillmentMethod,
+      notes: this.notes,
+      insuranceSelected: this.insuranceSelected,
+      bookingSnapshot: this.bookingSnapshot,
+      deliveryDetails: this.deliveryDetails,
+      confirmedPriceSnapshot: this.confirmedPriceSnapshot,
+      selections: [...this.props.selections],
+      demandLines: [...this.props.demandLines],
+      assignedAssets: [
+        ...this.props.assignedAssets.filter((assignment) => assignment.id !== currentAssignment.id),
+        replacementAssignment.value,
+      ],
+      assetBlocks: [
+        ...this.props.assetBlocks.filter(
+          (block) => !(block.blockType === AssetBlockType.Equipment && block.assetId === currentAssignedAssetId),
+        ),
+        replacementBlock.value,
+      ],
+      createdAt: this.createdAt,
+      updatedAt: this.updatedAt,
+      cancelledAt: this.cancelledAt,
+      confirmedAt: this.confirmedAt,
+    });
+    if (candidate.isErr()) {
+      return err(candidate.error);
+    }
+
+    this.props = candidate.value.props;
     return ok(undefined);
   }
 

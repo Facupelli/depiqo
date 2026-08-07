@@ -161,6 +161,12 @@ export class AssignedAssetDemandMismatchError extends RentalCommitmentError {
   }
 }
 
+export class RentalAssignedAssetNotFoundError extends RentalCommitmentError {
+  constructor(rentalId: string, assetId: string) {
+    super(`Rental "${rentalId}" does not have an assignment for asset "${assetId}".`);
+  }
+}
+
 export class DuplicateAssignedAssetError extends RentalCommitmentError {
   constructor(rentalId: string, assetId: string) {
     super(`Rental "${rentalId}" assigns physical asset "${assetId}" more than once.`);

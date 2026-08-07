@@ -56,20 +56,20 @@ Staff can create drafts, assign a customer, confirm, cancel, list/detail/calenda
 - **Acceptance criteria:** Each supported edit either commits every consequence together or changes nothing.
 - **Suggested tests:** E2E date/item/customer/branch edits with conflict rollback, signed contract, and notification assertions.
 
-### [ ] Replace or unassign equipment assets safely
+### [ ] Manage confirmed equipment-asset assignments safely
 
 - **Priority:** P0
-- **Status:** Missing
 - **MVP scenario:** A prepared asset fails inspection and staff substitutes another unit.
 - **Current evidence:** Assets are auto-assigned only during confirmation; no assignment command exists after confirmation. `PrismaRentalRepository.save` rewrites all assignments/blocks.
-- **Gap:** Assignments cannot be corrected, manually selected, or released without cancelling the rental.
-- **Expected behavior:** Replace/unassign/reassign against demand compatibility and current eligibility, releasing and creating blocks atomically and refreshing owner splits.
-- **Lifecycle rules:** Required demand must remain complete in CONFIRMED/PREPARED; post-handover replacement requires a separately defined exceptional transition.
 - **Owning module:** Rental Commitment
 - **Dependencies:** Asset Inventory eligibility/current ownership.
-- **Side effects:** Equipment blocks, assignment history, owner splits, contract re-sign state where asset identity is legal content.
-- **Acceptance criteria:** Replacement cannot double-book, lose a block, or leave demand partially fulfilled.
-- **Suggested tests:** Concurrency integration tests and E2E replacement with third-party ownership and contract consequences.
+- **Lifecycle rule:** Required demand must remain complete in CONFIRMED/PREPARED; post-handover replacement requires a separately defined exceptional transition.
+- **Subtasks:**
+  - [x] **Replace one asset on a confirmed rental.** Provide a tenant-user-protected command that accepts the current assigned-asset ID, a replacement asset ID, and optimistic version. Allow only CONFIRMED rentals before pickup, reject generated/requested/signed contracts, require the replacement to satisfy the same demand line and current eligibility/availability, and atomically replace the assignment and equipment block while refreshing owner splits. This intentionally neither generates nor requests a contract signature.
+  - [ ] **Define manual unassign and reassign semantics.** Decide when demand may temporarily be incomplete, whether an explicit assignment is allowed without replacement, and the resulting readiness policy.
+  - [ ] **Preserve assignment and block history.** The current replacement persistence rewrites aggregate child rows; introduce a durable historical representation before assignment facts must be legally or operationally auditable.
+  - [ ] **Extend the lifecycle policy.** Define PREPARED and post-handover replacement permissions, exceptional transitions, and contract re-sign consequences.
+  - [ ] **Enforce database-level concurrent-booking prevention.** Add the PostgreSQL active-block exclusion constraint before claiming concurrent replacement cannot double-book an asset.
 
 ### [ ] Prevent concurrent double booking at the database boundary
 
