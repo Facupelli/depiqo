@@ -12,6 +12,7 @@ import { SendRentalConfirmedConfirmationNotificationHandler } from './applicatio
 import { SendRentalCreatedByCustomerNotificationHandler } from './application/event-handlers/send-rental-created-by-customer-notification.event-handler';
 import { NotificationChannelMutePolicy } from './application/notification-channel-mute-policy.service';
 import { NotificationOrchestrator } from './application/notification-orchestrator.service';
+import { NotificationPersistenceService } from './application/notification-persistence.service';
 import { NotificationChannelPolicyResolver } from './application/notification-channel-policy.resolver';
 import { TenantNotificationSuppressionPolicy } from './application/tenant-notification-suppression-policy.service';
 import { ResendEmailDeliveryAdapter } from './infrastructure/delivery/resend-email-delivery.adapter';
@@ -22,6 +23,7 @@ import { PlatformEmailSenderResolver } from './infrastructure/sender/platform-em
   imports: [RentalCommitmentModule, TenantManagementModule],
   providers: [
     NotificationOrchestrator,
+    NotificationPersistenceService,
     NotificationChannelPolicyResolver,
     NotificationChannelMutePolicy,
     TenantNotificationSuppressionPolicy,
