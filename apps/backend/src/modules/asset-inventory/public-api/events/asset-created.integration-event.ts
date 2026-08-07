@@ -1,8 +1,8 @@
 import { randomUUID } from 'node:crypto';
 
-import { DomainEvent } from 'src/core/domain/events/domain-event';
+import { IntegrationEvent } from 'src/core/domain/events/integration-event';
 
-type AssetCreatedStatus = 'ACTIVE' | 'INACTIVE' | 'RETIRED';
+export type AssetCreatedStatus = 'ACTIVE' | 'INACTIVE' | 'RETIRED';
 
 export interface AssetOwnerContractSnapshotPayload {
   ownerId: string;
@@ -12,7 +12,7 @@ export interface AssetOwnerContractSnapshotPayload {
   basis: 'GROSS' | 'NET';
 }
 
-interface AssetCreatedEventProps {
+export interface AssetCreatedIntegrationEventProps {
   eventId?: string;
   tenantId: string;
   assetId: string;
@@ -25,12 +25,13 @@ interface AssetCreatedEventProps {
   occurredAt?: Date;
 }
 
-export class AssetCreatedEvent implements DomainEvent {
+export class AssetCreatedIntegrationEvent implements IntegrationEvent {
   readonly eventId: string;
-  readonly eventName = AssetCreatedEvent.name;
+  readonly eventName = AssetCreatedIntegrationEvent.name;
   readonly aggregateId: string;
   readonly aggregateType = 'Asset';
   readonly occurredAt: Date;
+  readonly schemaVersion = 1;
   readonly tenantId: string;
   readonly assetId: string;
   readonly branchId: string;
@@ -40,7 +41,7 @@ export class AssetCreatedEvent implements DomainEvent {
   readonly ownerId: string | null;
   readonly ownerContractSnapshot: AssetOwnerContractSnapshotPayload | null;
 
-  constructor(props: AssetCreatedEventProps) {
+  constructor(props: AssetCreatedIntegrationEventProps) {
     this.eventId = props.eventId ?? randomUUID();
     this.aggregateId = props.assetId;
     this.occurredAt = props.occurredAt ?? new Date();

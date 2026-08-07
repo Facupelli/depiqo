@@ -10,7 +10,7 @@ import { SharedModule } from './modules/shared/shared.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { ObjectStorageModule } from './modules/object-storage/object-storage.module';
 import { HealthController } from './health/health.controller';
-import { DomainEventsModule } from './core/domain/events/domain-events.module';
+import { IntegrationEventsModule } from './core/domain/events/integration-events.module';
 import { TenantManagementModule } from './modules/tenant-management/tenant-management.module';
 import { CatalogModule } from './modules/catalog/catalog.module';
 import { OfferingSetupModule } from './modules/offering-setup/offering-setup.module';
@@ -27,7 +27,7 @@ import { DocumentSigningModule } from './modules/document-signing/document-signi
     AppConfigModule,
     DatabaseModule,
     EventEmitterModule.forRoot(),
-    DomainEventsModule,
+    IntegrationEventsModule,
     CqrsModule.forRoot(),
     NotificationsModule,
     ObjectStorageModule,

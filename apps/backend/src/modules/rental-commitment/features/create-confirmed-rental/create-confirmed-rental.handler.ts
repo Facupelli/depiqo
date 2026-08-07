@@ -6,6 +6,7 @@ import { CatalogPublicApi } from 'src/modules/catalog/public-api/catalog.public-
 import { PricingPublicApi } from 'src/modules/pricing/public-api/pricing.public-api';
 import { TenantManagementPublicApi } from 'src/modules/tenant-management/public-api/tenant-management.public-api';
 
+import { toRentalIntegrationEvents } from '../../application/rental-integration-event.mapper';
 import { CreateConfirmedRentalCommand } from './create-confirmed-rental.command';
 import { Rental } from '../../domain/rental.aggregate';
 import { FulfillmentMethod } from '../../domain/rental-status';
@@ -242,9 +243,9 @@ export class CreateConfirmedRentalService implements ICommandHandler<
 
     const { splits }: { splits: RentalOwnerSplitDraft[] } = this.rentalOwnerSplitCalculator.calculate(ownerSplitInput);
 
-    await this.unitOfWork.runInTransaction(async ({ tx, events }) => {
+    await this.unitOfWork.runInTransaction(async ({ tx, integrationEvents }) => {
       await this.rentalRepository.save(confirmedRental, { ownerSplits: splits, tx });
-      events.collectFrom(confirmedRental);
+      integrationEvents.collect(toRentalIntegrationEvents(confirmedRental.pullDomainEvents()));
     });
 
     return ok({ rentalId: confirmedRental.id });

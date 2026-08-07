@@ -9,7 +9,7 @@ import {
   AssetOwnerNotFoundError,
   MultipleActiveOwnerContractsError,
 } from '../../domain/errors/asset-inventory.errors';
-import { AssetOwnerContractSnapshotPayload } from '../../public-api/events/asset-created.event';
+import { AssetOwnerContractSnapshotPayload } from '../../public-api/events/asset-created.integration-event';
 
 export interface AssetCreationValidationAssetInput {
   ownerId?: string | null;

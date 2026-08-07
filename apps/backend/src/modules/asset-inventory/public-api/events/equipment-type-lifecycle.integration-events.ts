@@ -1,8 +1,8 @@
 import { randomUUID } from 'node:crypto';
 
-import { DomainEvent } from 'src/core/domain/events/domain-event';
+import { IntegrationEvent } from 'src/core/domain/events/integration-event';
 
-abstract class EquipmentTypeLifecycleEvent implements DomainEvent {
+abstract class EquipmentTypeLifecycleIntegrationEvent implements IntegrationEvent {
   readonly eventId: string;
   abstract readonly eventName: string;
   readonly aggregateId: string;
@@ -13,17 +13,19 @@ abstract class EquipmentTypeLifecycleEvent implements DomainEvent {
   constructor(
     public readonly tenantId: string,
     public readonly equipmentTypeId: string,
+    occurredAt?: Date,
+    eventId?: string,
   ) {
-    this.eventId = randomUUID();
+    this.eventId = eventId ?? randomUUID();
     this.aggregateId = equipmentTypeId;
-    this.occurredAt = new Date();
+    this.occurredAt = occurredAt ?? new Date();
   }
 }
 
-export class EquipmentTypeDeactivatedIntegrationEvent extends EquipmentTypeLifecycleEvent {
+export class EquipmentTypeDeactivatedIntegrationEvent extends EquipmentTypeLifecycleIntegrationEvent {
   readonly eventName = EquipmentTypeDeactivatedIntegrationEvent.name;
 }
 
-export class EquipmentTypeReactivatedIntegrationEvent extends EquipmentTypeLifecycleEvent {
+export class EquipmentTypeReactivatedIntegrationEvent extends EquipmentTypeLifecycleIntegrationEvent {
   readonly eventName = EquipmentTypeReactivatedIntegrationEvent.name;
 }

@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { PinoLogger } from 'nestjs-pino';
 
-import { RentalConfirmedEvent } from 'src/modules/rental-commitment/public-api/events/rental-confirmed.event';
+import { RentalConfirmedIntegrationEvent } from 'src/modules/rental-commitment/public-api/events/rental-lifecycle.integration-events';
 import { RentalCommitmentPublicApi } from 'src/modules/rental-commitment/public-api/rental-commitment.public-api';
 import { TenantManagementPublicApi } from 'src/modules/tenant-management/public-api/tenant-management.public-api';
 
@@ -47,8 +47,8 @@ export class SendRentalConfirmedConfirmationNotificationHandler {
     this.structuredLogger.setContext(SendRentalConfirmedConfirmationNotificationHandler.name);
   }
 
-  @OnEvent(RentalConfirmedEvent.name, { async: true })
-  async handle(event: RentalConfirmedEvent): Promise<void> {
+  @OnEvent(RentalConfirmedIntegrationEvent.name, { async: true })
+  async handle(event: RentalConfirmedIntegrationEvent): Promise<void> {
     try {
       const rentalResult = await this.rentalCommitmentPublicApi.getRentalNotificationContext({
         tenantId: event.tenantId,
@@ -143,7 +143,7 @@ export class SendRentalConfirmedConfirmationNotificationHandler {
       this.structuredLogger.error(
         {
           err: error instanceof Error ? error : new Error('A non-Error value was thrown.', { cause: error }),
-          eventName: RentalConfirmedEvent.name,
+          eventName: RentalConfirmedIntegrationEvent.name,
           rentalId: event.rentalId,
         },
         'Failed to handle rental confirmed event',

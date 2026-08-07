@@ -10,6 +10,7 @@ import { PricingPublicApi } from 'src/modules/pricing/public-api/pricing.public-
 import { RentalPriceSnapshotV1 } from 'src/modules/pricing/public-api/rental-price-snapshot.type';
 import { TenantManagementPublicApi } from 'src/modules/tenant-management/public-api/tenant-management.public-api';
 
+import { toRentalIntegrationEvents } from '../../application/rental-integration-event.mapper';
 import { RentalAssetAllocationService } from '../../asset-allocation/rental-asset-allocation.service';
 import {
   BranchUnavailableForRentalError,
@@ -196,7 +197,7 @@ export class EditConfirmedRentalHandler implements ICommandHandler<
     );
 
     try {
-      return await this.unitOfWork.runInTransaction(async ({ tx, events }) => {
+      return await this.unitOfWork.runInTransaction(async ({ tx, integrationEvents }) => {
         const accessorySelections = await tx.v2RentalAccessorySelection.findMany({
           where: { tenantId, rentalOrderId: rentalId },
           select: {
@@ -392,7 +393,7 @@ export class EditConfirmedRentalHandler implements ICommandHandler<
             ),
           );
 
-        events.collectFrom(rental);
+        integrationEvents.collect(toRentalIntegrationEvents(rental.pullDomainEvents()));
         return ok({ rentalId, updatedAt: saved.updatedAt });
       });
     } catch (error) {
@@ -479,7 +480,7 @@ export class EditConfirmedRentalHandler implements ICommandHandler<
     );
     if (edit.isErr()) return err(this.toApplicationError(edit.error, context));
 
-    return this.unitOfWork.runInTransaction(async ({ tx, events }) => {
+    return this.unitOfWork.runInTransaction(async ({ tx, integrationEvents }) => {
       let ownerSplits: RentalOwnerSplitDraft[] | undefined;
       if (confirmedPriceSnapshot) {
         const existingOwnerSplits = await tx.v2RentalOwnerSplit.findMany({
@@ -534,7 +535,7 @@ export class EditConfirmedRentalHandler implements ICommandHandler<
         );
       }
 
-      events.collectFrom(rental);
+      integrationEvents.collect(toRentalIntegrationEvents(rental.pullDomainEvents()));
       return ok({ rentalId, updatedAt: saved.updatedAt });
     });
   }

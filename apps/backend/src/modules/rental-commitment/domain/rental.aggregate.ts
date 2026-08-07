@@ -40,9 +40,11 @@ import { CreateRentalSelectionProps, RentalSelection } from './rental-selection.
 import { ConfirmedPriceSnapshot } from './value-objects/confirmed-price-snapshot.value-object';
 import { BookingSnapshot, JsonSnapshot, JsonValue } from './value-objects/json-snapshot.value-object';
 import { RentalPeriod } from './value-objects/rental-period.value-object';
-import { RentalCancelledEvent } from '../public-api/events/rental-cancelled.event';
-import { RentalConfirmedEvent } from '../public-api/events/rental-confirmed.event';
-import { ConfirmedRentalEditedEvent } from '../public-api/events/confirmed-rental-edited.event';
+import {
+  ConfirmedRentalEditedDomainEvent,
+  RentalCancelledDomainEvent,
+  RentalConfirmedDomainEvent,
+} from './events/rental-lifecycle.domain-events';
 
 export interface RentalDeliveryDetails {
   addressLine1: string;
@@ -767,14 +769,7 @@ export class Rental extends AggregateRootBase {
 
   private recordRentalCancelledEvent(cancelledAt: Date): void {
     this.recordDomainEvent(
-      new RentalCancelledEvent({
-        tenantId: this.tenantId,
-        rentalId: this.id,
-        rentalCustomerId: this.rentalCustomerId ?? null,
-        branchId: this.branchId,
-        cancelledAt,
-        occurredAt: cancelledAt,
-      }),
+      new RentalCancelledDomainEvent(this.tenantId, this.id, this.rentalCustomerId ?? null, this.branchId, cancelledAt),
     );
   }
 
@@ -784,15 +779,15 @@ export class Rental extends AggregateRootBase {
     }
 
     this.recordDomainEvent(
-      new ConfirmedRentalEditedEvent({
-        tenantId: this.tenantId,
-        rentalId: this.id,
-        rentalCustomerId: this.rentalCustomerId,
-        branchId: this.branchId,
-        status: RentalStatus.Confirmed,
-        fulfillmentMethod: this.fulfillmentMethod ?? FulfillmentMethod.Pickup,
+      new ConfirmedRentalEditedDomainEvent(
+        this.tenantId,
+        this.id,
+        this.rentalCustomerId,
+        this.branchId,
+        RentalStatus.Confirmed,
+        this.fulfillmentMethod ?? FulfillmentMethod.Pickup,
         occurredAt,
-      }),
+      ),
     );
   }
 
@@ -802,15 +797,15 @@ export class Rental extends AggregateRootBase {
     }
 
     this.recordDomainEvent(
-      new RentalConfirmedEvent({
-        tenantId: this.tenantId,
-        rentalId: this.id,
-        rentalCustomerId: this.rentalCustomerId,
-        branchId: this.branchId,
-        status: RentalStatus.Confirmed,
-        fulfillmentMethod: this.fulfillmentMethod ?? FulfillmentMethod.Pickup,
+      new RentalConfirmedDomainEvent(
+        this.tenantId,
+        this.id,
+        this.rentalCustomerId,
+        this.branchId,
+        RentalStatus.Confirmed,
+        this.fulfillmentMethod ?? FulfillmentMethod.Pickup,
         occurredAt,
-      }),
+      ),
     );
   }
 

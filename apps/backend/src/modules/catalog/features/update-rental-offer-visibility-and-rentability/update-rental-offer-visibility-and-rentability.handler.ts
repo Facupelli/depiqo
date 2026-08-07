@@ -57,9 +57,8 @@ export class UpdateRentalOfferVisibilityAndRentabilityHandler implements IComman
       throw updateResult.error;
     }
 
-    await this.unitOfWork.runInTransaction(async ({ tx, events }) => {
+    await this.unitOfWork.runInTransaction(async ({ tx }) => {
       await this.rentalOfferRepository.save(rentalOffer, tx);
-      events.collectFrom(rentalOffer);
     });
 
     return ok(undefined);

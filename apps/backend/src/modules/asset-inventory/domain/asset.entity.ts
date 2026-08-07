@@ -4,7 +4,7 @@ import { err, ok, Result } from 'neverthrow';
 
 import { AggregateRootBase } from 'src/core/domain/aggregate-root.base';
 
-import { AssetCreatedEvent, AssetOwnerContractSnapshotPayload } from '../public-api/events/asset-created.event';
+import { AssetCreatedDomainEvent, AssetOwnerContractSnapshotPayload } from './events/asset-created.domain-event';
 import { AssetInventoryError, InvalidAssetFieldError } from './errors/asset-inventory.errors';
 
 export type AssetStatus = 'ACTIVE' | 'INACTIVE' | 'RETIRED';
@@ -106,7 +106,7 @@ export class Asset extends AggregateRootBase {
     });
 
     asset.recordDomainEvent(
-      new AssetCreatedEvent({
+      new AssetCreatedDomainEvent({
         tenantId: asset.tenantId,
         assetId: asset.id,
         branchId: asset.branchId,

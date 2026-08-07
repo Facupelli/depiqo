@@ -6,6 +6,7 @@ import { PostgresExclusionViolationError } from 'src/core/utils/postgres-error.m
 import { V2AssetBlockType } from 'src/generated/prisma/enums';
 import { TenantManagementPublicApi } from 'src/modules/tenant-management/public-api/tenant-management.public-api';
 
+import { toRentalIntegrationEvents } from '../../application/rental-integration-event.mapper';
 import { RentalAssetAllocationService } from '../../asset-allocation/rental-asset-allocation.service';
 import {
   BranchUnavailableForRentalError,
@@ -159,9 +160,9 @@ export class ConfirmRentalHandler implements ICommandHandler<ConfirmRentalComman
     });
 
     try {
-      await this.unitOfWork.runInTransaction(async ({ tx, events }) => {
+      await this.unitOfWork.runInTransaction(async ({ tx, integrationEvents }) => {
         await this.rentalRepository.save(rental, { ownerSplits: splits, tx });
-        events.collectFrom(rental);
+        integrationEvents.collect(toRentalIntegrationEvents(rental.pullDomainEvents()));
       });
     } catch (error) {
       if (error instanceof PostgresExclusionViolationError) {

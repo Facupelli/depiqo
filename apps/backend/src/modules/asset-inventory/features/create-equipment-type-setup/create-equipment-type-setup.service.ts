@@ -3,6 +3,7 @@ import { err, ok, Result } from 'neverthrow';
 
 import { PrismaUnitOfWork } from 'src/core/database/prisma-unit-of-work';
 
+import { toAssetInventoryIntegrationEvents } from '../../application/asset-inventory-integration-event.mapper';
 import { AssetCreationValidatorService } from '../../application/services/asset-creation-validator.service';
 import { Asset } from '../../domain/asset.entity';
 import { EquipmentType } from '../../domain/equipment-type.entity';
@@ -78,12 +79,12 @@ export class CreateEquipmentTypeSetupService {
       assets.push(asset.value);
     }
 
-    await this.unitOfWork.runInTransaction(async ({ tx, events }) => {
+    await this.unitOfWork.runInTransaction(async ({ tx, integrationEvents }) => {
       await this.equipmentTypeRepository.save(equipmentType.value, tx);
       await this.assetRepository.createMany(assets, tx);
 
       for (const asset of assets) {
-        events.collectFrom(asset);
+        integrationEvents.collect(toAssetInventoryIntegrationEvents(asset.pullDomainEvents()));
       }
     });
 

@@ -1,11 +1,12 @@
 import { PinoLogger } from 'nestjs-pino';
-import { DomainEvent } from '../domain/events/domain-event';
-import { DomainEventPublisher } from '../domain/events/domain-event.publisher';
+
+import { IntegrationEvent } from '../domain/events/integration-event';
+import { IntegrationEventPublisher } from '../domain/events/integration-event.publisher';
 import { PrismaUnitOfWork } from './prisma-unit-of-work';
 import { PrismaService } from './prisma.service';
 
-class TestDomainEventPublisher extends DomainEventPublisher {
-  publish = jest.fn(async (_events: DomainEvent[]) => undefined);
+class TestIntegrationEventPublisher extends IntegrationEventPublisher {
+  publish = jest.fn(async (_events: readonly IntegrationEvent[]) => undefined);
 }
 
 function makeLogger(): PinoLogger {
@@ -15,13 +16,14 @@ function makeLogger(): PinoLogger {
   } as unknown as PinoLogger;
 }
 
-function makeEvent(overrides: Partial<DomainEvent> = {}): DomainEvent {
+function makeEvent(overrides: Partial<IntegrationEvent> = {}): IntegrationEvent {
   return {
     eventId: 'event-1',
-    eventName: 'TestEvent',
+    eventName: 'TestIntegrationEvent',
     aggregateId: 'aggregate-1',
     aggregateType: 'TestAggregate',
     occurredAt: new Date('2026-03-28T00:00:00.000Z'),
+    schemaVersion: 1,
     ...overrides,
   };
 }
@@ -31,7 +33,7 @@ describe('PrismaUnitOfWork', () => {
     jest.restoreAllMocks();
   });
 
-  it('publishes collected events after a successful transaction', async () => {
+  it('publishes collected integration events after a successful transaction', async () => {
     const markers: string[] = [];
     const tx = { label: 'tx' };
     const prisma = {
@@ -44,7 +46,7 @@ describe('PrismaUnitOfWork', () => {
         }),
       },
     } as unknown as PrismaService;
-    const publisher = new TestDomainEventPublisher();
+    const publisher = new TestIntegrationEventPublisher();
     const event = makeEvent();
 
     publisher.publish.mockImplementation(async (events) => {
@@ -53,10 +55,10 @@ describe('PrismaUnitOfWork', () => {
 
     const unitOfWork = new PrismaUnitOfWork(prisma, publisher, makeLogger());
 
-    const result = await unitOfWork.runInTransaction(async ({ tx: transaction, events }) => {
+    const result = await unitOfWork.runInTransaction(async ({ tx: transaction, integrationEvents }) => {
       expect(transaction).toBe(tx);
       markers.push('work');
-      events.collect([event]);
+      integrationEvents.collect([event]);
       return 'ok';
     });
 
@@ -68,17 +70,15 @@ describe('PrismaUnitOfWork', () => {
   it('does not publish when the transaction fails', async () => {
     const prisma = {
       client: {
-        $transaction: jest.fn(async (work: (tx: unknown) => Promise<unknown>) => {
-          return work({});
-        }),
+        $transaction: jest.fn(async (work: (tx: unknown) => Promise<unknown>) => work({})),
       },
     } as unknown as PrismaService;
-    const publisher = new TestDomainEventPublisher();
+    const publisher = new TestIntegrationEventPublisher();
     const unitOfWork = new PrismaUnitOfWork(prisma, publisher, makeLogger());
 
     await expect(
-      unitOfWork.runInTransaction(async ({ events }) => {
-        events.collect([makeEvent()]);
+      unitOfWork.runInTransaction(async ({ integrationEvents }) => {
+        integrationEvents.collect([makeEvent()]);
         throw new Error('boom');
       }),
     ).rejects.toThrow('boom');
@@ -89,18 +89,15 @@ describe('PrismaUnitOfWork', () => {
   it('swallows publisher failures after commit and keeps the result', async () => {
     const prisma = {
       client: {
-        $transaction: jest.fn(async (work: (tx: unknown) => Promise<unknown>) => {
-          return work({});
-        }),
+        $transaction: jest.fn(async (work: (tx: unknown) => Promise<unknown>) => work({})),
       },
     } as unknown as PrismaService;
-    const publisher = new TestDomainEventPublisher();
-
+    const publisher = new TestIntegrationEventPublisher();
     publisher.publish.mockRejectedValue(new Error('publish failed'));
 
     const unitOfWork = new PrismaUnitOfWork(prisma, publisher, makeLogger());
-    const result = await unitOfWork.runInTransaction(async ({ events }) => {
-      events.collect([makeEvent()]);
+    const result = await unitOfWork.runInTransaction(async ({ integrationEvents }) => {
+      integrationEvents.collect([makeEvent()]);
       return 'ok';
     });
 

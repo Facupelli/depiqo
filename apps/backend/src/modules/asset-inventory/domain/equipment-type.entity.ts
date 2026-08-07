@@ -5,9 +5,9 @@ import { err, ok, Result } from 'neverthrow';
 import { AggregateRootBase } from 'src/core/domain/aggregate-root.base';
 
 import {
-  EquipmentTypeDeactivatedIntegrationEvent,
-  EquipmentTypeReactivatedIntegrationEvent,
-} from '../public-api/events/equipment-type-lifecycle.events';
+  EquipmentTypeDeactivatedDomainEvent,
+  EquipmentTypeReactivatedDomainEvent,
+} from './events/equipment-type-lifecycle.domain-events';
 import { AssetInventoryError, InvalidEquipmentTypeFieldError } from './errors/asset-inventory.errors';
 
 interface EquipmentTypeProps {
@@ -109,14 +109,14 @@ export class EquipmentType extends AggregateRootBase {
   deactivate(): boolean {
     if (!this.isActive) return false;
     this.props.isActive = false;
-    this.recordDomainEvent(new EquipmentTypeDeactivatedIntegrationEvent(this.tenantId, this.id));
+    this.recordDomainEvent(new EquipmentTypeDeactivatedDomainEvent(this.tenantId, this.id));
     return true;
   }
 
   reactivate(): boolean {
     if (this.isActive) return false;
     this.props.isActive = true;
-    this.recordDomainEvent(new EquipmentTypeReactivatedIntegrationEvent(this.tenantId, this.id));
+    this.recordDomainEvent(new EquipmentTypeReactivatedDomainEvent(this.tenantId, this.id));
     return true;
   }
 

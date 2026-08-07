@@ -1,6 +1,7 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { err, ok, Result } from 'neverthrow';
 import { PrismaUnitOfWork } from 'src/core/database/prisma-unit-of-work';
+import { toAssetInventoryIntegrationEvents } from '../../application/asset-inventory-integration-event.mapper';
 import { EquipmentTypeRepository } from '../../persistence/equipment-type.repository';
 import { ReactivateEquipmentTypeCommand } from './reactivate-equipment-type.command';
 import { reactivateEquipmentTypeError, ReactivateEquipmentTypeError } from './reactivate-equipment-type.errors';
@@ -27,9 +28,9 @@ export class ReactivateEquipmentTypeHandler implements ICommandHandler<
         }),
       );
     if (!type.reactivate()) return ok(undefined);
-    await this.unitOfWork.runInTransaction(async ({ tx, events }) => {
+    await this.unitOfWork.runInTransaction(async ({ tx, integrationEvents }) => {
       await this.repository.save(type, tx);
-      events.collectFrom(type);
+      integrationEvents.collect(toAssetInventoryIntegrationEvents(type.pullDomainEvents()));
     });
     return ok(undefined);
   }

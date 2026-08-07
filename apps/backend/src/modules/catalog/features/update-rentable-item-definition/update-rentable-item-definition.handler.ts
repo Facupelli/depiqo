@@ -111,9 +111,8 @@ export class UpdateRentableItemDefinitionHandler implements ICommandHandler<
       throw updateResult.error;
     }
 
-    await this.unitOfWork.runInTransaction(async ({ tx, events }) => {
+    await this.unitOfWork.runInTransaction(async ({ tx }) => {
       await this.rentableItemRepository.save(rentableItem, tx);
-      events.collectFrom(rentableItem);
     });
 
     return ok(undefined);

@@ -3,6 +3,7 @@ import { err, ok, Result } from 'neverthrow';
 
 import { PrismaUnitOfWork } from 'src/core/database/prisma-unit-of-work';
 
+import { toRentalIntegrationEvents } from '../../application/rental-integration-event.mapper';
 import {
   RentalAlreadyCancelledError,
   RentalCannotBeCancelledFromStatusError,
@@ -57,9 +58,9 @@ export class CancelRentalHandler implements ICommandHandler<CancelRentalCommand,
       throw error;
     }
 
-    await this.unitOfWork.runInTransaction(async ({ tx, events }) => {
+    await this.unitOfWork.runInTransaction(async ({ tx, integrationEvents }) => {
       await this.rentalRepository.save(rental, { tx });
-      events.collectFrom(rental);
+      integrationEvents.collect(toRentalIntegrationEvents(rental.pullDomainEvents()));
     });
 
     return ok(undefined);

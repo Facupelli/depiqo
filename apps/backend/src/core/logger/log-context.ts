@@ -25,10 +25,9 @@ export interface RequestLogContext {
   dbDurationMs: number;
   cacheHits: number;
   cacheMisses: number;
-  domainEventsPublished?: number;
-  domainEventNames?: string[];
-  domainEventPublishFailures?: number;
-  domainEventHandlerFailures?: number;
+  integrationEventsPublished?: number;
+  integrationEventNames?: string[];
+  integrationEventPublishFailures?: number;
 
   problem?: ProblemLogContext;
 }
@@ -71,9 +70,8 @@ export class LogContext {
       | 'dbDurationMs'
       | 'cacheHits'
       | 'cacheMisses'
-      | 'domainEventsPublished'
-      | 'domainEventPublishFailures'
-      | 'domainEventHandlerFailures',
+      | 'integrationEventsPublished'
+      | 'integrationEventPublishFailures',
     by = 1,
   ): void {
     const log = store.getStore();

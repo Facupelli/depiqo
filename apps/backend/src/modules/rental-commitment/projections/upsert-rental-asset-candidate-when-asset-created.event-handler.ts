@@ -3,7 +3,7 @@ import { PinoLogger } from 'nestjs-pino';
 import { OnEvent } from '@nestjs/event-emitter';
 
 import { PrismaService } from 'src/core/database/prisma.service';
-import { AssetCreatedEvent } from 'src/modules/asset-inventory/public-api/events/asset-created.event';
+import { AssetCreatedIntegrationEvent } from 'src/modules/asset-inventory/public-api/events/asset-created.integration-event';
 import { Prisma, V2RentalAssetOwnershipKind } from 'src/generated/prisma/client';
 
 @Injectable()
@@ -15,8 +15,8 @@ export class UpsertRentalAssetCandidateWhenAssetCreatedEventHandler {
     this.logger.setContext(UpsertRentalAssetCandidateWhenAssetCreatedEventHandler.name);
   }
 
-  @OnEvent(AssetCreatedEvent.name)
-  async handle(event: AssetCreatedEvent): Promise<void> {
+  @OnEvent(AssetCreatedIntegrationEvent.name)
+  async handle(event: AssetCreatedIntegrationEvent): Promise<void> {
     try {
       const projectedAt = new Date();
       const ownershipKind = event.ownerId

@@ -29,10 +29,9 @@ export function buildCanonicalCompletion(
     dbDurationMs: context?.dbDurationMs,
     cacheHits: context?.cacheHits,
     cacheMisses: context?.cacheMisses,
-    domainEventsPublished: context?.domainEventsPublished,
-    domainEventNames: context?.domainEventNames,
-    domainEventPublishFailures: context?.domainEventPublishFailures,
-    domainEventHandlerFailures: context?.domainEventHandlerFailures,
+    integrationEventsPublished: context?.integrationEventsPublished,
+    integrationEventNames: context?.integrationEventNames,
+    integrationEventPublishFailures: context?.integrationEventPublishFailures,
 
     errorCode: context?.problem?.errorCode,
     problemKind: context?.problem?.kind,

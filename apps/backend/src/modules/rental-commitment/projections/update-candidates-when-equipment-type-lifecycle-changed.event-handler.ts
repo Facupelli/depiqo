@@ -5,7 +5,7 @@ import { PrismaService } from 'src/core/database/prisma.service';
 import {
   EquipmentTypeDeactivatedIntegrationEvent,
   EquipmentTypeReactivatedIntegrationEvent,
-} from 'src/modules/asset-inventory/public-api/events/equipment-type-lifecycle.events';
+} from 'src/modules/asset-inventory/public-api/events/equipment-type-lifecycle.integration-events';
 
 @Injectable()
 export class UpdateCandidatesWhenEquipmentTypeLifecycleChangedEventHandler {
