@@ -27,12 +27,12 @@ The module renders rental remito PDFs, creates/updates a contract snapshot, expo
 - **Completed:** Defined the V2 Contracts tables as the authoritative legal-record model for newly generated contracts and defined the legacy table's no-backfill, no-new-writes cutover policy.
 - **Documentation:** `apps/backend/src/modules/contracts/README.md`.
 
-#### [ ] Add Contracts-owned immutable artifact persistence
+#### [x] Add Contracts-owned immutable artifact persistence
 
 - **Priority:** P0
-- **Goal:** Store each unsigned or signed PDF in object storage and create an immutable `V2ContractArtifact` row containing storage metadata, SHA-256 hash, and artifact kind.
+- **Completed:** Added `ContractArtifactPersistenceService`, which writes a traceable `PENDING_UPLOAD` artifact row before storage upload, marks successful uploads `AVAILABLE`, and marks upload failures `UPLOAD_FAILED`. Artifact hashes are required SHA-256 values.
 - **Rules:** Preview PDFs are not persisted; existing artifacts are never updated; storage/database failure handling must leave no untraceable legal record or orphaned permanent object.
-- **Likely anchors:** `RentalRemitoContractWriterService`, `ObjectStoragePort`, and `contract-artifacts.prisma`.
+- **Implementation:** `ContractArtifactPersistenceService`, `ObjectStoragePort`, and `contract-artifacts.prisma`.
 - **Acceptance criteria:** A persisted artifact can be streamed by its row's storage key and its recorded SHA-256 matches its bytes.
 
 #### [ ] Persist the unsigned artifact during signing preparation

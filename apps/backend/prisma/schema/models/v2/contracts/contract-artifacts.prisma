@@ -8,26 +8,33 @@ enum V2ContractArtifactVisibility {
   PUBLIC
 }
 
-model V2ContractArtifact {
-  id         String                       @id @default(uuid())
-  tenantId   String                       @map("tenant_id")
-  contractId String                       @map("contract_id")
+enum V2ContractArtifactStorageStatus {
+  PENDING_UPLOAD
+  AVAILABLE
+  UPLOAD_FAILED
+}
 
-  kind       V2ContractArtifactKind
-  visibility V2ContractArtifactVisibility @default(INTERNAL)
+model V2ContractArtifact {
+  id         String @id @default(uuid())
+  tenantId   String @map("tenant_id")
+  contractId String @map("contract_id")
+
+  kind          V2ContractArtifactKind
+  visibility    V2ContractArtifactVisibility    @default(INTERNAL)
+  storageStatus V2ContractArtifactStorageStatus @default(PENDING_UPLOAD) @map("storage_status")
 
   storageKey  String @map("storage_key")
   fileName    String @map("file_name")
   contentType String @map("content_type")
   byteSize    Int    @map("byte_size")
 
-  hashAlgorithm String? @map("hash_algorithm") // e.g. SHA-256
-  documentHash  String? @map("document_hash")
+  hashAlgorithm String @map("hash_algorithm") // e.g. SHA-256
+  documentHash  String @map("document_hash")
 
   createdAt DateTime @default(now()) @map("created_at")
 
   contract V2Contract @relation(fields: [contractId], references: [id])
-  
+
   signingRequestsAsUnsigned V2DocumentSigningRequest[] @relation("SigningRequestUnsignedArtifact")
 
   acceptedAsUnsignedIn V2DocumentSignatureAcceptance[] @relation("UnsignedArtifactAccepted")

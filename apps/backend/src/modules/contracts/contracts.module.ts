@@ -16,6 +16,7 @@ import { RentalRemitoContractWriterService } from './application/rental-remito/r
 import { V2ContractsPublicApi } from './public-api/contracts.public-api';
 import { V2ContractsPublicApiService } from './public-api/contracts.public-api.service';
 import { RentalRemitoContractStateService } from './application/rental-remito/rental-remito-contract-state.service';
+import { ContractArtifactPersistenceService } from './application/contract-artifact-persistence.service';
 
 @Module({
   controllers: [GenerateRentalRemitoHttpController, GetRentalContractSigningSummaryHttpController],
@@ -28,6 +29,7 @@ import { RentalRemitoContractStateService } from './application/rental-remito/re
     RentalRemitoViewModelMapper,
     RentalRemitoContractWriterService,
     RentalRemitoContractStateService,
+    ContractArtifactPersistenceService,
     {
       provide: RentalRemitoRendererPort,
       useClass: ReactPdfRentalRemitoRendererAdapter,
