@@ -49,20 +49,22 @@ model V2Notification {
   subject String?
   body    String
 
-  sourceContext     String? @map("source_context")
-  sourceAggregateId String? @map("source_aggregate_id")
-  sourceEventId     String? @map("source_event_id")
+  sourceContext       String? @map("source_context")
+  sourceEventId       String? @map("source_event_id")
+  sourceAggregateType String? @map("source_aggregate_type")
+  sourceAggregateId   String? @map("source_aggregate_id")
 
-  deduplicationKey String? @map("deduplication_key")
+  idempotencyKey String? @map("idempotency_key")
 
-  metadata Json @default("{}")
+  metadata    Json    @default("{}")
+  contentHash String? @map("content_hash")
 
   createdAt DateTime @default(now()) @map("created_at")
 
   template   V2NotificationTemplate? @relation(fields: [templateId], references: [id])
   deliveries V2NotificationDelivery[]
 
-  @@unique([tenantId, deduplicationKey])
+  @@unique([tenantId, idempotencyKey])
   @@index([tenantId, createdAt])
   @@index([tenantId, sourceAggregateId])
   @@map("v2_notifications")
@@ -82,12 +84,15 @@ model V2NotificationDelivery {
 
   provider          String?
   providerMessageId String? @map("provider_message_id")
+  providerResult    Json?   @map("provider_result")
 
-  lastError String? @map("last_error")
+  lastErrorCode    String? @map("last_error_code")
+  lastErrorMessage String? @map("last_error_message")
 
-  sentAt      DateTime? @map("sent_at")
-  failedAt    DateTime? @map("failed_at")
-  cancelledAt DateTime? @map("cancelled_at")
+  lastAttemptAt DateTime? @map("last_attempt_at")
+  sentAt        DateTime? @map("sent_at")
+  failedAt      DateTime? @map("failed_at")
+  cancelledAt   DateTime? @map("cancelled_at")
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
