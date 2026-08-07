@@ -46,13 +46,13 @@ Equipment types and batches of assets can be created, owners with contracts can 
 
 - **Priority:** P0
 - **Status:** Completed
-- **Expected behavior:** Allow tenant-scoped correction of `serialNumber` and `notes`, including serial normalization and duplicate prevention.
+- **Expected behavior:** Allow tenant-scoped correction of `serialNumber` and `notes`, trimming stored metadata while permitting duplicate manufacturer serial numbers.
 - **Lifecycle rules:** Metadata-only corrections do not require commitment handling and must not modify confirmed rental facts.
 - **Dependencies:** None.
 - **Side effects:** Do not publish projection events unless the projection later includes one of these fields.
-- **Acceptance criteria:** Staff can correct metadata, duplicate active serial numbers are rejected, and cross-tenant assets remain inaccessible.
-- **Completion note:** Added tenant-scoped asset metadata correction with normalization, no-op handling, conflict responses, and database-enforced uniqueness for non-deleted active/inactive serial numbers. Retired and soft-deleted assets release their serial numbers.
-- **Suggested tests:** Domain/repository tests and E2E correction, duplicate serial, no-op, not-found, and tenant-isolation cases.
+- **Acceptance criteria:** Staff can correct metadata, duplicate manufacturer serial numbers remain valid, and cross-tenant assets remain inaccessible.
+- **Completion note:** Added tenant-scoped asset metadata correction with trimming and no-op handling. Manufacturer serial numbers are reference data rather than tenant-wide unique identifiers.
+- **Suggested tests:** Domain/repository tests and E2E correction, duplicate-serial acceptance, no-op, not-found, and tenant-isolation cases.
 
 #### [ ] Maintain asset operational status
 

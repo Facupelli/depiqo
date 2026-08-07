@@ -49,7 +49,6 @@ export class CreateEquipmentTypeSetupService {
 
     const assetCreationValidation = await this.assetCreationValidator.validateAssetsCanBeCreated({
       tenantId: equipmentType.value.tenantId,
-      equipmentTypeId: equipmentType.value.id,
       assets: command.assets,
     });
     if (assetCreationValidation.isErr()) {

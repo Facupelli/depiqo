@@ -35,7 +35,6 @@ function publicErrorExtensions(error: CreateEquipmentTypeError): Record<string, 
 
   const extensionByCode: Partial<Record<CreateEquipmentTypeErrorCode, string>> = {
     'asset_inventory.duplicate_equipment_type_name': 'name',
-    'asset_inventory.duplicate_asset_serial_number': 'serialNumber',
     'asset_inventory.asset_owner_not_found': 'ownerId',
     'asset_inventory.active_owner_contract_not_found': 'ownerId',
     'asset_inventory.multiple_active_owner_contracts': 'ownerId',
@@ -69,12 +68,6 @@ const createEquipmentTypeProblemMap = {
     title: 'Invalid asset field',
     status: HttpStatus.UNPROCESSABLE_ENTITY,
     detail: 'One of the provided asset fields is invalid.',
-  },
-  'asset_inventory.duplicate_asset_serial_number': {
-    type: createProblemType('asset_inventory.duplicate_asset_serial_number'),
-    title: 'Duplicate asset serial number',
-    status: HttpStatus.CONFLICT,
-    detail: 'An asset with the provided serial number already exists for this equipment type.',
   },
   'asset_inventory.asset_owner_not_found': {
     type: createProblemType('asset_inventory.asset_owner_not_found'),

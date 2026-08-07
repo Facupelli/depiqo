@@ -20,7 +20,7 @@ It is not the customer-selected catalog item. Rental Catalog owns `RentableItem`
 
 An `Asset` is an individual physical unit.
 
-An asset belongs to one tenant and satisfies one equipment type.
+An asset belongs to one tenant and satisfies one equipment type. Its `serialNumber` is manufacturer reference data, not a tenant-wide application identifier, and may repeat.
 
 Asset Inventory owns its current physical profile, including:
 

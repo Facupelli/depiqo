@@ -26,12 +26,6 @@ export class InvalidAssetFieldError extends AssetInventoryError {
   }
 }
 
-export class DuplicateAssetSerialNumberError extends AssetInventoryError {
-  constructor(public readonly serialNumber: string) {
-    super(`Asset serial number "${serialNumber}" already exists for this tenant.`);
-  }
-}
-
 export class AssetOwnerNotFoundError extends AssetInventoryError {
   constructor(public readonly ownerId: string) {
     super(`Asset owner "${ownerId}" was not found.`);

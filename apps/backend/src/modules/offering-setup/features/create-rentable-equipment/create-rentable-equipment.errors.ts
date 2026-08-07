@@ -5,7 +5,6 @@ export type CreateRentableEquipmentErrorCode =
   | 'offering_setup.branch_unavailable'
   | 'offering_setup.invalid_equipment'
   | 'offering_setup.duplicate_equipment_type_name'
-  | 'offering_setup.duplicate_asset_serial_number'
   | 'offering_setup.asset_owner_not_found'
   | 'offering_setup.active_owner_contract_not_found'
   | 'offering_setup.multiple_active_owner_contracts'

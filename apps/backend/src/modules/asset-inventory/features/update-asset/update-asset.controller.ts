@@ -30,12 +30,8 @@ export class UpdateAssetHttpController {
 
 function toProblem(error: UpdateAssetError): ProblemException {
   const problem = problems[error.code];
-  const extensions =
-    error.code === 'asset_inventory.duplicate_asset_serial_number'
-      ? { code: error.code, serialNumber: error.context?.serialNumber }
-      : { code: error.code };
   return ProblemException.from({
-    problemDetails: createProblemDetails({ ...problem, extensions }),
+    problemDetails: createProblemDetails({ ...problem, extensions: { code: error.code } }),
     applicationError: error,
     cause: error.cause,
   });
@@ -47,11 +43,5 @@ const problems = {
     title: 'Asset not found',
     status: HttpStatus.NOT_FOUND,
     detail: 'The requested asset could not be found.',
-  },
-  'asset_inventory.duplicate_asset_serial_number': {
-    type: createProblemType('asset_inventory.duplicate_asset_serial_number'),
-    title: 'Duplicate asset serial number',
-    status: HttpStatus.CONFLICT,
-    detail: 'An active asset with this serial number already exists.',
   },
 } satisfies Record<UpdateAssetErrorCode, { type: string; title: string; status: HttpStatus; detail: string }>;

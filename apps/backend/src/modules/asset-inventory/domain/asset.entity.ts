@@ -139,10 +139,6 @@ export class Asset extends AggregateRootBase {
     return true;
   }
 
-  static normalizeSerialNumberForComparison(serialNumber: string): string {
-    return serialNumber.trim().toLocaleLowerCase();
-  }
-
   private static normalizeCreateProps(
     props: CreateAssetProps,
   ): Result<Omit<AssetProps, 'status' | 'deletedAt' | 'createdAt' | 'updatedAt'>, AssetInventoryError> {

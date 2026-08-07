@@ -3,12 +3,10 @@ import { err, ok, Result } from 'neverthrow';
 
 import { PrismaService } from 'src/core/database/prisma.service';
 
-import { Asset } from '../../domain/asset.entity';
 import {
   ActiveOwnerContractNotFoundError,
   AssetInventoryError,
   AssetOwnerNotFoundError,
-  DuplicateAssetSerialNumberError,
   MultipleActiveOwnerContractsError,
 } from '../../domain/errors/asset-inventory.errors';
 import { AssetOwnerContractSnapshotPayload } from '../../public-api/events/asset-created.event';
@@ -28,81 +26,14 @@ export class AssetCreationValidatorService {
 
   async validateAssetsCanBeCreated(input: {
     tenantId: string;
-    equipmentTypeId: string;
     assets: AssetCreationValidationAssetInput[];
   }): Promise<Result<AssetCreationValidationResult, AssetInventoryError>> {
-    const duplicateSerialNumber = this.findDuplicateSerialNumber(input.assets);
-    if (duplicateSerialNumber) {
-      return err(new DuplicateAssetSerialNumberError(duplicateSerialNumber));
-    }
-
-    const existingSerialValidation = await this.validateSerialNumbersAreAvailable(input);
-    if (existingSerialValidation.isErr()) {
-      return err(existingSerialValidation.error);
-    }
-
     const ownerValidation = await this.validateOwnersAndResolveActiveContracts(input.tenantId, input.assets);
     if (ownerValidation.isErr()) {
       return err(ownerValidation.error);
     }
 
     return ok({ ownerContractSnapshotsByOwnerId: ownerValidation.value });
-  }
-
-  private findDuplicateSerialNumber(assets: AssetCreationValidationAssetInput[]): string | null {
-    const seen = new Set<string>();
-
-    for (const asset of assets) {
-      if (!asset.serialNumber) {
-        continue;
-      }
-
-      const normalizedSerialNumber = Asset.normalizeSerialNumberForComparison(asset.serialNumber);
-      if (seen.has(normalizedSerialNumber)) {
-        return asset.serialNumber;
-      }
-
-      seen.add(normalizedSerialNumber);
-    }
-
-    return null;
-  }
-
-  private async validateSerialNumbersAreAvailable(input: {
-    tenantId: string;
-    equipmentTypeId: string;
-    assets: AssetCreationValidationAssetInput[];
-  }): Promise<Result<void, AssetInventoryError>> {
-    const serialNumbers = input.assets.flatMap((asset) => (asset.serialNumber ? [asset.serialNumber] : []));
-    if (serialNumbers.length === 0) {
-      return ok(undefined);
-    }
-
-    const normalizedSerialNumbers = new Set(serialNumbers.map(Asset.normalizeSerialNumberForComparison));
-
-    const existingAssets = await this.prisma.client.v2Asset.findMany({
-      where: {
-        tenantId: input.tenantId,
-        equipmentTypeId: input.equipmentTypeId,
-        serialNumber: { not: null },
-        deletedAt: null,
-        status: { in: ['ACTIVE', 'INACTIVE'] },
-      },
-      select: { serialNumber: true },
-    });
-
-    const duplicate = existingAssets.find((asset) => {
-      if (!asset.serialNumber) {
-        return false;
-      }
-      return normalizedSerialNumbers.has(Asset.normalizeSerialNumberForComparison(asset.serialNumber));
-    });
-
-    if (duplicate?.serialNumber) {
-      return err(new DuplicateAssetSerialNumberError(duplicate.serialNumber));
-    }
-
-    return ok(undefined);
   }
 
   private async validateOwnersAndResolveActiveContracts(

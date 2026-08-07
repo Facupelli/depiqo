@@ -74,12 +74,6 @@ const createrentableequipmentProblemMap = {
     status: HttpStatus.CONFLICT,
     detail: 'An equipment type with this name already exists.',
   },
-  'offering_setup.duplicate_asset_serial_number': {
-    type: createProblemType('offering_setup.duplicate_asset_serial_number'),
-    title: 'Asset serial number already exists',
-    status: HttpStatus.CONFLICT,
-    detail: 'One or more asset serial numbers already exist.',
-  },
   'offering_setup.asset_owner_not_found': {
     type: createProblemType('offering_setup.asset_owner_not_found'),
     title: 'Asset owner not found',

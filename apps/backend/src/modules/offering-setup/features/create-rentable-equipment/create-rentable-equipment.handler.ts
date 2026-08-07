@@ -73,7 +73,6 @@ function mapAssetInventoryError(error: AssetInventoryPublicApiError): CreateRent
     InvalidEquipmentTypeField: 'offering_setup.invalid_equipment',
     InvalidAssetField: 'offering_setup.invalid_equipment',
     DuplicateEquipmentTypeName: 'offering_setup.duplicate_equipment_type_name',
-    DuplicateAssetSerialNumber: 'offering_setup.duplicate_asset_serial_number',
     AssetOwnerNotFound: 'offering_setup.asset_owner_not_found',
     ActiveOwnerContractNotFound: 'offering_setup.active_owner_contract_not_found',
     MultipleActiveOwnerContracts: 'offering_setup.multiple_active_owner_contracts',

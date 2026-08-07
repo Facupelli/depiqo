@@ -60,7 +60,6 @@ export class AddAssetsToEquipmentTypeHandler implements ICommandHandler<
 
     const assetCreationValidation = await this.assetCreationValidator.validateAssetsCanBeCreated({
       tenantId: command.tenantId,
-      equipmentTypeId: equipmentType.id,
       assets: command.assets,
     });
     if (assetCreationValidation.isErr()) {

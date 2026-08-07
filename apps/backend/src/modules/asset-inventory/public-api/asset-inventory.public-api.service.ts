@@ -9,7 +9,6 @@ import {
   ActiveOwnerContractNotFoundError,
   AssetInventoryError,
   AssetOwnerNotFoundError,
-  DuplicateAssetSerialNumberError,
   DuplicateEquipmentTypeNameError,
   EquipmentTypeNotActiveError,
   EquipmentTypeNotFoundError,
@@ -175,9 +174,6 @@ function mapAssetInventoryPublicApiError(error: AssetInventoryError): AssetInven
   }
   if (error instanceof InvalidAssetFieldError) {
     return publicError('InvalidAssetField', error, { field: error.field });
-  }
-  if (error instanceof DuplicateAssetSerialNumberError) {
-    return publicError('DuplicateAssetSerialNumber', error, { serialNumber: error.serialNumber });
   }
   if (error instanceof AssetOwnerNotFoundError) {
     return publicError('AssetOwnerNotFound', error, { ownerId: error.ownerId });

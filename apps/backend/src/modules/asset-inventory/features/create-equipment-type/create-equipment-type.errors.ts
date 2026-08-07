@@ -4,7 +4,6 @@ import {
   ActiveOwnerContractNotFoundError,
   AssetInventoryError,
   AssetOwnerNotFoundError,
-  DuplicateAssetSerialNumberError,
   DuplicateEquipmentTypeNameError,
   InvalidAssetFieldError,
   InvalidEquipmentTypeFieldError,
@@ -16,7 +15,6 @@ export type CreateEquipmentTypeErrorCode =
   | 'asset_inventory.invalid_equipment_type_field'
   | 'asset_inventory.duplicate_equipment_type_name'
   | 'asset_inventory.invalid_asset_field'
-  | 'asset_inventory.duplicate_asset_serial_number'
   | 'asset_inventory.asset_owner_not_found'
   | 'asset_inventory.active_owner_contract_not_found'
   | 'asset_inventory.multiple_active_owner_contracts';
@@ -60,12 +58,6 @@ export function mapAssetInventoryError(error: AssetInventoryError): CreateEquipm
     return createEquipmentTypeError('asset_inventory.invalid_asset_field', error.message, error, {
       field: error.field,
       reason: error.reason,
-    });
-  }
-
-  if (error instanceof DuplicateAssetSerialNumberError) {
-    return createEquipmentTypeError('asset_inventory.duplicate_asset_serial_number', error.message, error, {
-      serialNumber: error.serialNumber,
     });
   }
 

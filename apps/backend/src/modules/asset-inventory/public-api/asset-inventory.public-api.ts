@@ -40,7 +40,6 @@ export type AssetInventoryPublicApiErrorCode =
   | 'InvalidEquipmentTypeField'
   | 'DuplicateEquipmentTypeName'
   | 'InvalidAssetField'
-  | 'DuplicateAssetSerialNumber'
   | 'AssetOwnerNotFound'
   | 'ActiveOwnerContractNotFound'
   | 'MultipleActiveOwnerContracts'
