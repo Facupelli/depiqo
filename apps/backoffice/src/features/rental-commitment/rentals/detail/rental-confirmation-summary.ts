@@ -30,7 +30,7 @@ export type RentalConfirmationSummary = {
 export function buildRentalConfirmationSummary(
 	rental: GetRentalDetailViewResponseDto,
 ): RentalConfirmationSummary | null {
-	if (!rental.pricing) {
+	if (!rental.pricing || rental.pricing.kind === "LEGACY") {
 		return null;
 	}
 
