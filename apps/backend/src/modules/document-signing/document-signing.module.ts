@@ -13,7 +13,6 @@ import { GetOrderSigningSummaryQueryHandler } from './features/get-order-signing
 import { GetLatestSignedOrderSigningRequestQueryHandler } from './features/get-latest-signed-order-signing-request/get-latest-signed-order-signing-request.query-handler';
 import { GetPublicSigningSessionHttpController } from './features/get-public-signing-session/get-public-signing-session.http.controller';
 import { ResolvePublicSigningSessionQueryHandler } from './features/resolve-public-signing-session/resolve-public-signing-session.query-handler';
-import { PublicSigningSessionLoader } from './application/public-signing-session.loader';
 import { PublicV2SigningSessionLoader } from './application/public-v2-signing-session.loader';
 import { SigningNotificationService } from './application/services/signing-notification.service';
 import { StreamPublicSignedDocumentHttpController } from './features/stream-public-signed-document/stream-public-signed-document.controller';
@@ -32,7 +31,6 @@ import { DocumentSigningRequestRepository } from './infrastructure/persistence/r
   ],
   providers: [
     DocumentSigningRequestRepository,
-    PublicSigningSessionLoader,
     PublicV2SigningSessionLoader,
     SigningNotificationService,
     StreamPublicSignedDocumentService,

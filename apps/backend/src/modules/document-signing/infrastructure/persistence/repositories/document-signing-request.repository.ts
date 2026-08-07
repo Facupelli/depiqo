@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 
-import { DocumentSigningRequestStatus, Prisma, SigningDocumentType } from 'src/generated/prisma/client';
+import { DocumentSigningRequestStatus, SigningDocumentType } from 'src/generated/prisma/client';
 import { PrismaTransactionClient } from 'src/core/database/prisma-unit-of-work';
 import { PrismaService } from 'src/core/database/prisma.service';
 import { DocumentSigningRequest } from 'src/modules/document-signing/domain/entities/document-signing-request.entity';
@@ -94,16 +94,4 @@ export class DocumentSigningRequestRepository {
     return record ? DocumentSigningRequestMapper.toDomain(record) : null;
   }
 
-  async save(request: DocumentSigningRequest, tx?: PrismaTransactionClient): Promise<string> {
-    const client = tx ?? this.prisma.client;
-    const row = DocumentSigningRequestMapper.toPersistence(request);
-
-    await client.documentSigningRequest.upsert({
-      where: { id: request.id },
-      create: row,
-      update: row as Prisma.DocumentSigningRequestUncheckedUpdateInput,
-    });
-
-    return request.id;
-  }
 }

@@ -67,12 +67,12 @@ The module renders rental remito PDFs, creates/updates a contract snapshot, expo
 - **Implementation:** `GetRentalContractSigningSummaryHandler`, `V2ContractsPublicApi`, `StreamPublicSignedDocumentService`, and the backoffice signed-PDF proxy.
 - **Acceptance criteria:** Summary data reflects the actual signing flow and downloads remain byte-stable after later source mutations.
 
-#### [ ] Cut over new writes and prove artifact traceability
+#### [x] Cut over new writes and prove artifact traceability
 
 - **Priority:** P0
-- **Goal:** Stop new-flow writes to legacy signing storage, leave pre-cutover records untouched, and cover the new legal-record chain with integration and E2E tests.
+- **Completed:** The new rental-remito flow writes only the Contracts V2 chain: immutable artifacts, V2 signing requests, and V2 acceptance records. The unused legacy public-session loader and its legacy `document_signing_requests` upsert path were removed. Remaining legacy handlers are read-only compatibility code for pre-cutover records.
 - **Rules:** No legacy backfill or migration is required. Legacy behavior may be retired only in an explicit later change.
-- **Suggested tests:** Artifact hash/storage integration test; generate-send-sign-download E2E; source-mutation-after-signing regression; storage/database failure and concurrent acceptance tests.
+- **Testing:** Deferred by request. Suggested coverage remains artifact hash/storage integration; generate-send-sign-download E2E; source-mutation-after-signing regression; storage/database failure and concurrent acceptance tests.
 - **Acceptance criteria:** All newly generated contracts use only the V2 chain and accepted documents remain retrievable and unchanged.
 
 ### [ ] Regenerate contracts and mark re-signing required after relevant rental edits
