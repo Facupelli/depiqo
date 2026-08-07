@@ -5,7 +5,7 @@ import { PrismaTransactionClient } from 'src/core/database/prisma-unit-of-work';
 import { mapPostgresError } from 'src/core/utils/postgres-error.mapper';
 
 import { Rental } from '../domain/rental.aggregate';
-import { RentalRepository, SaveRentalOptions } from './rental.repository';
+import { RentalRepository, SaveRentalOptions, SaveRentalResult } from './rental.repository';
 import { AssetBlockPersistenceRecord, RentalMapper } from './rental.mapper';
 
 @Injectable()
@@ -37,16 +37,13 @@ export class PrismaRentalRepository extends RentalRepository {
     });
   }
 
-  async save(rental: Rental, options?: SaveRentalOptions): Promise<void> {
+  async save(rental: Rental, options?: SaveRentalOptions): Promise<SaveRentalResult | null> {
     try {
       if (options?.tx) {
-        await this.persistRental(options.tx, rental, options);
-        return;
+        return this.persistRental(options.tx, rental, options);
       }
 
-      await this.prisma.client.$transaction(async (tx) => {
-        await this.persistRental(tx, rental, options);
-      });
+      return await this.prisma.client.$transaction((tx) => this.persistRental(tx, rental, options));
     } catch (error) {
       mapPostgresError(error);
     }
@@ -56,17 +53,42 @@ export class PrismaRentalRepository extends RentalRepository {
     tx: PrismaTransactionClient,
     rental: Rental,
     options?: Omit<SaveRentalOptions, 'tx'>,
-  ): Promise<void> {
+  ): Promise<SaveRentalResult | null> {
     const rentalWhere = {
       tenantId: rental.tenantId,
       rentalId: rental.id,
     };
+    let persistedUpdatedAt: Date;
 
-    await tx.v2Rental.upsert({
-      where: { id: rental.id },
-      create: RentalMapper.toRentalCreateData(rental),
-      update: RentalMapper.toRentalUpdateData(rental),
-    });
+    if (options?.expectedUpdatedAt) {
+      const updatedAt = new Date();
+      const update = await tx.v2Rental.updateMany({
+        where: {
+          id: rental.id,
+          tenantId: rental.tenantId,
+          updatedAt: options.expectedUpdatedAt,
+        },
+        data: {
+          ...RentalMapper.toRentalUpdateData(rental),
+          updatedAt,
+        },
+      });
+
+      if (update.count === 0) {
+        return null;
+      }
+
+      persistedUpdatedAt = updatedAt;
+    } else {
+      const persistedRental = await tx.v2Rental.upsert({
+        where: { id: rental.id },
+        create: RentalMapper.toRentalCreateData(rental),
+        update: RentalMapper.toRentalUpdateData(rental),
+        select: { updatedAt: true },
+      });
+
+      persistedUpdatedAt = persistedRental.updatedAt;
+    }
 
     await tx.v2AssignedAsset.deleteMany({ where: rentalWhere });
     await tx.v2RentalDemandLine.deleteMany({ where: rentalWhere });
@@ -144,6 +166,8 @@ export class PrismaRentalRepository extends RentalRepository {
         });
       }
     }
+
+    return { updatedAt: persistedUpdatedAt };
   }
 
   private async findAssetBlocks(params: {

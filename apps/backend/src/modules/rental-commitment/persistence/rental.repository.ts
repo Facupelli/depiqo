@@ -5,10 +5,15 @@ import { RentalOwnerSplitDraft } from '../owner-split/owner-split-calculator.typ
 
 export interface SaveRentalOptions {
   ownerSplits?: RentalOwnerSplitDraft[];
+  expectedUpdatedAt?: Date;
   tx?: PrismaTransactionClient;
+}
+
+export interface SaveRentalResult {
+  updatedAt: Date;
 }
 
 export abstract class RentalRepository {
   abstract findById(tenantId: string, rentalId: string): Promise<Rental | null>;
-  abstract save(rental: Rental, options?: SaveRentalOptions): Promise<void>;
+  abstract save(rental: Rental, options?: SaveRentalOptions): Promise<SaveRentalResult | null>;
 }

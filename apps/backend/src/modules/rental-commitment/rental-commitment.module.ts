@@ -16,6 +16,8 @@ import { CreateConfirmedRentalHttpController } from './features/create-confirmed
 import { CreateConfirmedRentalService } from './features/create-confirmed-rental/create-confirmed-rental.handler';
 import { CreateDraftRentalHttpController } from './features/create-draft-rental/create-draft-rental.controller';
 import { CreateDraftRentalService } from './features/create-draft-rental/create-draft-rental.service';
+import { EditUnconfirmedRentalHttpController } from './features/edit-unconfirmed-rental/edit-unconfirmed-rental.controller';
+import { EditUnconfirmedRentalHandler } from './features/edit-unconfirmed-rental/edit-unconfirmed-rental.handler';
 import { GetRentalDetailHttpController } from './features/get-rental-detail/get-rental-detail.controller';
 import { GetRentalDetailHandler } from './features/get-rental-detail/get-rental-detail.handler';
 import { GetRentalsCalendarHttpController } from './features/get-rentals-calendar/get-rentals-calendar.controller';
@@ -45,6 +47,7 @@ import { RentalCommitmentPublicApi } from './public-api/rental-commitment.public
     ConfirmRentalHttpController,
     CreateConfirmedRentalHttpController,
     CreateDraftRentalHttpController,
+    EditUnconfirmedRentalHttpController,
     GetRentalsCalendarHttpController,
     GetRentalDetailHttpController,
     GetRentalsHttpController,
@@ -61,6 +64,7 @@ import { RentalCommitmentPublicApi } from './public-api/rental-commitment.public
     ConfirmRentalHandler,
     CreateConfirmedRentalService,
     CreateDraftRentalService,
+    EditUnconfirmedRentalHandler,
     GetRentalDetailHandler,
     GetRentalsCalendarHandler,
     GetRentalsHandler,
