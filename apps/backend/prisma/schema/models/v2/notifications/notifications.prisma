@@ -1,0 +1,101 @@
+enum V2NotificationChannel {
+  EMAIL
+  // Later:
+  // SMS
+  // WHATSAPP
+}
+
+enum V2NotificationDeliveryStatus {
+  PENDING
+  SENT
+  FAILED
+  CANCELLED
+}
+
+model V2NotificationTemplate {
+  id       String @id @default(cuid())
+  tenantId String @map("tenant_id")
+
+  key     String
+  channel V2NotificationChannel
+  locale  String @default("es")
+  version Int    @default(1)
+
+  subjectTemplate String? @map("subject_template")
+  bodyTemplate    String  @map("body_template")
+
+  isActive Boolean @default(true) @map("is_active")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  notifications V2Notification[]
+
+  @@unique([tenantId, key, channel, locale, version])
+  @@index([tenantId, key, channel, isActive])
+  @@map("v2_notification_templates")
+}
+
+model V2Notification {
+  id       String @id @default(cuid())
+  tenantId String @map("tenant_id")
+
+  type String
+
+  templateId      String? @map("template_id")
+  templateKey     String? @map("template_key")
+  templateVersion Int?    @map("template_version")
+
+  subject String?
+  body    String
+
+  sourceContext     String? @map("source_context")
+  sourceAggregateId String? @map("source_aggregate_id")
+  sourceEventId     String? @map("source_event_id")
+
+  deduplicationKey String? @map("deduplication_key")
+
+  metadata Json @default("{}")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  template   V2NotificationTemplate? @relation(fields: [templateId], references: [id])
+  deliveries V2NotificationDelivery[]
+
+  @@unique([tenantId, deduplicationKey])
+  @@index([tenantId, createdAt])
+  @@index([tenantId, sourceAggregateId])
+  @@map("v2_notifications")
+}
+
+model V2NotificationDelivery {
+  id             String @id @default(cuid())
+  tenantId       String @map("tenant_id")
+  notificationId String @map("notification_id")
+
+  channel   V2NotificationChannel
+  recipient String
+
+  status V2NotificationDeliveryStatus @default(PENDING)
+
+  attemptCount Int @default(0) @map("attempt_count")
+
+  provider          String?
+  providerMessageId String? @map("provider_message_id")
+
+  lastError String? @map("last_error")
+
+  sentAt      DateTime? @map("sent_at")
+  failedAt    DateTime? @map("failed_at")
+  cancelledAt DateTime? @map("cancelled_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  notification V2Notification @relation(fields: [notificationId], references: [id], onDelete: Restrict)
+
+  @@unique([notificationId, channel, recipient])
+  @@index([tenantId, status])
+  @@index([notificationId])
+  @@map("v2_notification_deliveries")
+}
