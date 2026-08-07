@@ -51,12 +51,12 @@ The module renders rental remito PDFs, creates/updates a contract snapshot, expo
 - **Implementation:** `SendSigningInvitationService`, `V2ContractsPublicApi`, `PublicV2SigningSessionLoader`, and `StreamPublicUnsignedDocumentService`.
 - **Acceptance criteria:** A public signing token resolves to a V2 request and streams the request's linked unsigned artifact.
 
-#### [ ] Persist acceptance evidence and the signed artifact
+#### [x] Persist acceptance evidence and the signed artifact
 
 - **Priority:** P0
-- **Goal:** On acceptance, preserve the exact unsigned artifact/hash and acceptance-text snapshot, create an immutable signed PDF artifact with its own hash, link both from `V2DocumentSignatureAcceptance`, and mark the request/contract signed.
-- **Rules:** Database lifecycle updates are transactional; object-storage failure handling follows the artifact-persistence policy; a signed PDF is never produced only in memory.
-- **Likely anchors:** `AcceptPublicSigningSessionService`, `RentalRemitoDocumentService`, `signature-acceptance.prisma`, and `contract-artifacts.prisma`.
+- **Completed:** Public acceptance now uses the V2 Contracts request-artifact chain only. It pins and verifies server-owned `rental-remito-v1` legal text, captures IP/user-agent evidence, persists the acceptance snapshot with both artifact IDs and hashes, and transactionally marks the request and contract signed.
+- **Rules:** The signed PDF is created by overlaying the submitted signature in the reserved customer-signature block of every stored unsigned-PDF page. It never re-renders current rental data. Object-storage persistence follows the artifact-persistence policy before the transactional lifecycle transition.
+- **Implementation:** `AcceptPublicSigningSessionService`, `V2ContractsPublicApi`, `RentalRemitoSignedArtifactService`, `V2DocumentSignatureAcceptance`, and `V2ContractArtifact`.
 - **Acceptance criteria:** One acceptance traces from its signing request to immutable unsigned and signed artifacts with distinct hashes.
 
 #### [ ] Serve signing summaries and public downloads from persisted V2 artifacts

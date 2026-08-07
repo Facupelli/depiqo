@@ -33,10 +33,7 @@ export class ReplaceConfirmedRentalAssetHttpController {
     @Body() dto: ReplaceConfirmedRentalAssetRequestDto,
     @CurrentUser() user: AuthUser,
   ): Promise<ReplaceConfirmedRentalAssetResponseDto> {
-    const result = await this.commandBus.execute<
-      ReplaceConfirmedRentalAssetCommand,
-      ReplaceConfirmedRentalAssetResult
-    >(
+    const result = await this.commandBus.execute<ReplaceConfirmedRentalAssetCommand, ReplaceConfirmedRentalAssetResult>(
       new ReplaceConfirmedRentalAssetCommand({
         tenantId: user.tenantId,
         tenantUserId: user.id,

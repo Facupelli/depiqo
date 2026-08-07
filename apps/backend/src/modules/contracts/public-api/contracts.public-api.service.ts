@@ -6,6 +6,7 @@ import { QueryBus } from '@nestjs/cqrs';
 
 import { PrismaService } from 'src/core/database/prisma.service';
 import {
+  V2ContractArtifactKind,
   V2ContractArtifactStorageStatus,
   V2ContractStatus,
   V2DocumentSigningRequestStatus,
@@ -14,12 +15,20 @@ import { ObjectStoragePort } from 'src/modules/object-storage/application/ports/
 import { Result, err, ok } from 'neverthrow';
 
 import { RentalRemitoApplicationError } from '../application/rental-remito/rental-remito-application.error';
+import { ContractArtifactPersistenceService } from '../application/contract-artifact-persistence.service';
+import {
+  getRentalRemitoAcceptanceText,
+  RENTAL_REMITO_ACCEPTANCE_TEXT_VERSION,
+} from '../application/rental-remito/rental-remito-acceptance-text.registry';
 import { RentalRemitoContractStateService } from '../application/rental-remito/rental-remito-contract-state.service';
 import { RentalRemitoDocumentService } from '../application/rental-remito/rental-remito-document.service';
+import { RentalRemitoSignedArtifactService } from '../application/rental-remito/rental-remito-signed-artifact.service';
 import { PrepareRentalRemitoForSigningResult } from '../features/prepare-rental-remito-for-signing/prepare-rental-remito-for-signing.handler';
 import { PrepareRentalRemitoForSigningQuery } from '../features/prepare-rental-remito-for-signing/prepare-rental-remito-for-signing.query';
 import { RentalRemitoForSigningReadModel } from '../features/prepare-rental-remito-for-signing/prepare-rental-remito-for-signing.read-model';
 import {
+  AcceptPublicRentalRemitoSigningInput,
+  AcceptPublicRentalRemitoSigningResult,
   CreateRentalRemitoSigningRequestInput,
   CreateRentalRemitoSigningRequestResult,
   GetRentalContractStatusInput,
@@ -41,6 +50,8 @@ export class V2ContractsPublicApiService implements V2ContractsPublicApi {
     private readonly queryBus: QueryBus,
     private readonly contractStateService: RentalRemitoContractStateService,
     private readonly rentalRemitoDocumentService: RentalRemitoDocumentService,
+    private readonly signedArtifactService: RentalRemitoSignedArtifactService,
+    private readonly artifactPersistence: ContractArtifactPersistenceService,
     private readonly objectStorage: ObjectStoragePort,
   ) {}
 
@@ -120,6 +131,7 @@ export class V2ContractsPublicApiService implements V2ContractsPublicApi {
           signerName: input.recipientEmail,
           signerEmail: input.recipientEmail,
           tokenHash: input.tokenHash,
+          acceptanceTextVersion: RENTAL_REMITO_ACCEPTANCE_TEXT_VERSION,
           expiresAt: input.expiresAt,
           status: V2DocumentSigningRequestStatus.SENT,
         },
@@ -145,13 +157,18 @@ export class V2ContractsPublicApiService implements V2ContractsPublicApi {
       status: request.value.status,
       expiresAt: request.value.expiresAt,
       documentNumber: request.value.contract.documentNumber,
-      signerName: request.value.signerName,
+      signer: {
+        name: request.value.signerName,
+        email: request.value.signerEmail,
+        phone: request.value.signerPhone,
+      },
       unsignedArtifact: {
         fileName: request.value.unsignedArtifact.fileName,
         contentType: request.value.unsignedArtifact.contentType,
         byteSize: request.value.unsignedArtifact.byteSize,
         documentHash: request.value.unsignedArtifact.documentHash,
       },
+      acceptanceText: request.value.acceptanceText,
     });
   }
 
@@ -162,6 +179,103 @@ export class V2ContractsPublicApiService implements V2ContractsPublicApi {
     if (request.isErr()) return err(request.error);
 
     return ok(await this.objectStorage.getObjectStream({ key: request.value.unsignedArtifact.storageKey }));
+  }
+
+  async acceptPublicRentalRemitoSigning(
+    input: AcceptPublicRentalRemitoSigningInput,
+  ): Promise<Result<AcceptPublicRentalRemitoSigningResult, PublicRentalRemitoSigningSessionError>> {
+    const requestResult = await this.loadActivePublicSigningRequest(input.rawToken);
+    if (requestResult.isErr()) return err(requestResult.error);
+
+    const request = requestResult.value;
+    if (request.acceptanceText.version !== input.acceptanceTextVersion.trim()) {
+      return err({
+        code: 'SigningRequestUnavailable',
+        message: `Document signing request '${request.id}' does not match the required acceptance text version.`,
+      });
+    }
+
+    const unsignedPdf = await this.objectStorage.getObjectBuffer({ key: request.unsignedArtifact.storageKey });
+    const signedAt = new Date();
+    const signedPdf = await this.signedArtifactService.create({
+      unsignedPdf,
+      signatureImageDataUrl: input.signatureImageDataUrl,
+    });
+    const artifactResult = await this.artifactPersistence.persist({
+      tenantId: request.tenantId,
+      contractId: request.contractId,
+      kind: V2ContractArtifactKind.SIGNED_PDF,
+      fileName: toSignedFileName(request.unsignedArtifact.fileName),
+      buffer: signedPdf,
+    });
+    if (artifactResult.isErr()) {
+      throw new Error(artifactResult.error.message);
+    }
+
+    const transition = await this.prisma.client.$transaction(async (tx) => {
+      const contract = await tx.v2Contract.findUnique({
+        where: { id: request.contractId },
+        select: { status: true },
+      });
+      if (!contract || contract.status === V2ContractStatus.VOID) {
+        return err<AcceptPublicRentalRemitoSigningResult, PublicRentalRemitoSigningSessionError>({
+          code: 'SigningRequestUnavailable',
+          message: `Document signing request '${request.id}' is not available.`,
+        });
+      }
+
+      const signedRequest = await tx.v2DocumentSigningRequest.updateMany({
+        where: {
+          id: request.id,
+          status: {
+            in: [
+              V2DocumentSigningRequestStatus.PENDING,
+              V2DocumentSigningRequestStatus.SENT,
+              V2DocumentSigningRequestStatus.VIEWED,
+            ],
+          },
+        },
+        data: { status: V2DocumentSigningRequestStatus.SIGNED, signedAt },
+      });
+      if (signedRequest.count !== 1) {
+        return err<AcceptPublicRentalRemitoSigningResult, PublicRentalRemitoSigningSessionError>({
+          code: 'SigningRequestUnavailable',
+          message: `Document signing request '${request.id}' is no longer available.`,
+        });
+      }
+
+      await tx.v2DocumentSignatureAcceptance.create({
+        data: {
+          tenantId: request.tenantId,
+          contractId: request.contractId,
+          signingRequestId: request.id,
+          signerName: request.signerName,
+          signerEmail: request.signerEmail,
+          signatureImageDataUrl: input.signatureImageDataUrl,
+          acceptanceTextVersion: request.acceptanceText.version,
+          acceptanceTextSnapshot: request.acceptanceText.text,
+          unsignedArtifactId: request.unsignedArtifact.id,
+          signedArtifactId: artifactResult.value.id,
+          unsignedDocumentHash: request.unsignedArtifact.documentHash,
+          signedDocumentHash: artifactResult.value.documentHash,
+          acceptedAt: signedAt,
+          acceptedIpAddress: input.acceptedIpAddress,
+          acceptedUserAgent: input.acceptedUserAgent,
+        },
+      });
+      await tx.v2Contract.update({
+        where: { id: request.contractId },
+        data: { status: V2ContractStatus.SIGNED, signedAt },
+      });
+
+      return ok<AcceptPublicRentalRemitoSigningResult, PublicRentalRemitoSigningSessionError>({
+        requestId: request.id,
+        status: 'SIGNED',
+        signedAt,
+      });
+    });
+
+    return transition;
   }
 
   markRentalRemitoSigningRequested(
@@ -204,11 +318,17 @@ export class V2ContractsPublicApiService implements V2ContractsPublicApi {
     Result<
       {
         id: string;
+        tenantId: string;
+        contractId: string;
         status: 'PENDING' | 'SENT' | 'VIEWED';
         expiresAt: Date;
         signerName: string;
+        signerEmail: string | null;
+        signerPhone: string | null;
+        acceptanceText: { version: string; text: string };
         contract: { documentNumber: string };
         unsignedArtifact: {
+          id: string;
           storageKey: string;
           fileName: string;
           contentType: string;
@@ -226,12 +346,18 @@ export class V2ContractsPublicApiService implements V2ContractsPublicApi {
       where: { tokenHash: createHash('sha256').update(normalizedToken).digest('hex') },
       select: {
         id: true,
+        tenantId: true,
+        contractId: true,
         status: true,
         expiresAt: true,
         signerName: true,
+        signerEmail: true,
+        signerPhone: true,
+        acceptanceTextVersion: true,
         contract: { select: { documentNumber: true } },
         unsignedArtifact: {
           select: {
+            id: true,
             storageKey: true,
             fileName: true,
             contentType: true,
@@ -276,14 +402,24 @@ export class V2ContractsPublicApiService implements V2ContractsPublicApi {
     if (!request.contract.documentNumber) {
       throw new Error(`Contract signing request '${request.id}' is missing its document number.`);
     }
+    const acceptanceText = getRentalRemitoAcceptanceText(request.acceptanceTextVersion);
+    if (!acceptanceText) {
+      throw new Error(`Contract signing request '${request.id}' has an unsupported acceptance text version.`);
+    }
 
     return ok({
       id: request.id,
+      tenantId: request.tenantId,
+      contractId: request.contractId,
       status: request.status,
       expiresAt: request.expiresAt,
       signerName: request.signerName,
+      signerEmail: request.signerEmail,
+      signerPhone: request.signerPhone,
+      acceptanceText,
       contract: { documentNumber: request.contract.documentNumber },
       unsignedArtifact: {
+        id: request.unsignedArtifact.id,
         storageKey: request.unsignedArtifact.storageKey,
         fileName: request.unsignedArtifact.fileName,
         contentType: request.unsignedArtifact.contentType,
@@ -292,4 +428,10 @@ export class V2ContractsPublicApiService implements V2ContractsPublicApi {
       },
     });
   }
+}
+
+function toSignedFileName(unsignedFileName: string): string {
+  return unsignedFileName.endsWith('.pdf')
+    ? `${unsignedFileName.slice(0, -'.pdf'.length)}-signed.pdf`
+    : `${unsignedFileName}-signed.pdf`;
 }

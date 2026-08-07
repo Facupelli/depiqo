@@ -42,17 +42,20 @@ export class GetPublicSigningSessionQueryHandler implements IQueryHandler<
       requestId: request.requestId,
       documentType: 'RENTAL_AGREEMENT',
       status: request.status,
-      expiresAt: request.expiresAt,
+      expiresAt: request.expiresAt.toISOString(),
+      signedAt: null,
       document: {
         documentNumber: request.documentNumber,
         displayFileName: request.unsignedArtifact.fileName,
         contentType: request.unsignedArtifact.contentType,
         byteSize: request.unsignedArtifact.byteSize,
         sha256: request.unsignedArtifact.documentHash,
+        hashAlgorithm: 'SHA-256',
       },
-      prefilledSigner: {
-        fullName: request.signerName,
-        documentNumber: null,
+      signer: request.signer,
+      acceptance: {
+        textVersion: request.acceptanceText.version,
+        textSnapshot: request.acceptanceText.text,
       },
     });
   }

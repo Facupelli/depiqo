@@ -1,7 +1,4 @@
-import {
-  ReplaceConfirmedRentalAssetBodySchema,
-  ReplaceConfirmedRentalAssetParamsSchema,
-} from '@repo/api-contracts';
+import { ReplaceConfirmedRentalAssetBodySchema, ReplaceConfirmedRentalAssetParamsSchema } from '@repo/api-contracts';
 import { createZodDto } from 'nestjs-zod';
 
 export class ReplaceConfirmedRentalAssetParamsDto extends createZodDto(ReplaceConfirmedRentalAssetParamsSchema) {}

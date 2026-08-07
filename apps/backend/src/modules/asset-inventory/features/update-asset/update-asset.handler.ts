@@ -4,11 +4,7 @@ import { Prisma } from 'src/generated/prisma/client';
 
 import { AssetRepository } from '../../persistence/asset.repository';
 import { UpdateAssetCommand } from './update-asset.command';
-import {
-  duplicateAssetSerialNumberError,
-  UpdateAssetError,
-  updateAssetError,
-} from './update-asset.errors';
+import { duplicateAssetSerialNumberError, UpdateAssetError, updateAssetError } from './update-asset.errors';
 
 export type UpdateAssetResult = Result<void, UpdateAssetError>;
 

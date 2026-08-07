@@ -1,6 +1,7 @@
-import { Body, Controller, Headers, HttpCode, HttpStatus, Post } from '@nestjs/common';
+import { Body, Controller, Headers, HttpCode, HttpStatus, Post, Req } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
 import { Result } from 'neverthrow';
+import { Request } from 'express';
 
 import { Public } from 'src/core/decorators/public.decorator';
 import { extractBearerToken } from '../../application/document-signing-public-http.helper';
@@ -20,6 +21,7 @@ export class AcceptPublicSigningSessionHttpController {
   async accept(
     @Headers('authorization') authorization: string | undefined,
     @Body() body: AcceptPublicSigningSessionBodyDto,
+    @Req() request: Request,
   ): Promise<AcceptPublicSigningSessionResponseDto> {
     const result = await this.commandBus.execute<
       AcceptPublicSigningSessionCommand,
@@ -30,6 +32,8 @@ export class AcceptPublicSigningSessionHttpController {
         body.signatureImageDataUrl,
         body.acceptanceTextVersion,
         body.accepted,
+        request.ip ?? null,
+        request.get('user-agent') ?? null,
       ),
     );
 

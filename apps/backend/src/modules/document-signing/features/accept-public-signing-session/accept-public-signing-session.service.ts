@@ -3,10 +3,7 @@ import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { DocumentSigningRequestStatus } from 'src/generated/prisma/client';
 import { Result, err, ok } from 'neverthrow';
 
-import { SigningAcceptanceIdentityRequiredError } from 'src/modules/document-signing/domain/errors/document-signing.errors';
-import { DocumentSigningRequestRepository } from 'src/modules/document-signing/infrastructure/persistence/repositories/document-signing-request.repository';
-
-import { PublicSigningSessionLoader } from '../../application/public-signing-session.loader';
+import { V2ContractsPublicApi } from 'src/modules/contracts/public-api/contracts.public-api';
 import { AcceptPublicSigningSessionCommand } from './accept-public-signing-session.command';
 import {
   AcceptPublicSigningError,
@@ -21,10 +18,7 @@ export class AcceptPublicSigningSessionService implements ICommandHandler<
   AcceptPublicSigningSessionCommand,
   Result<AcceptPublicSigningResult, AcceptPublicSigningError>
 > {
-  constructor(
-    private readonly publicSigningSessionLoader: PublicSigningSessionLoader,
-    private readonly documentSigningRequestRepository: DocumentSigningRequestRepository,
-  ) {}
+  constructor(private readonly contracts: V2ContractsPublicApi) {}
 
   async execute(
     command: AcceptPublicSigningSessionCommand,
@@ -49,58 +43,41 @@ export class AcceptPublicSigningSessionService implements ICommandHandler<
       );
     }
 
-    const requestResult = await this.publicSigningSessionLoader.loadRequiredPublicSession(input.rawToken);
-    if (requestResult.isErr()) {
+    const signResult = await this.contracts.acceptPublicRentalRemitoSigning({
+      rawToken: input.rawToken,
+      signatureImageDataUrl: input.signatureImageDataUrl,
+      acceptanceTextVersion: input.acceptanceTextVersion,
+      acceptedIpAddress: command.acceptedIpAddress,
+      acceptedUserAgent: command.acceptedUserAgent,
+    });
+    if (signResult.isErr()) {
       return err(
         acceptPublicSigningSessionError(
-          mapPublicSessionErrorCode(requestResult.error.code),
-          requestResult.error.message,
-          requestResult.error,
-          requestResult.error.context,
+          mapPublicSessionErrorCode(signResult.error.code),
+          signResult.error.message,
+          signResult.error,
+          context,
         ),
       );
     }
 
-    const request = requestResult.value;
-
-    const signedAt = new Date();
-    const signResult = request.markSigned({
-      signedAt,
-      signatureImageDataUrl: input.signatureImageDataUrl,
-      acceptanceTextVersion: input.acceptanceTextVersion,
-    });
-    if (signResult.isErr()) {
-      const code =
-        signResult.error instanceof SigningAcceptanceIdentityRequiredError
-          ? 'document_signing.signing_identity_required'
-          : 'document_signing.signing_request_conflict';
-
-      return err(
-        acceptPublicSigningSessionError(code, signResult.error.message, signResult.error, {
-          ...context,
-          requestId: request.id,
-        }),
-      );
-    }
-
-    await this.documentSigningRequestRepository.save(request);
-
     return ok({
-      requestId: request.id,
+      requestId: signResult.value.requestId,
       status: DocumentSigningRequestStatus.SIGNED,
-      signedAt,
+      signedAt: signResult.value.signedAt,
     });
   }
 }
 
-function mapPublicSessionErrorCode(code: string): AcceptPublicSigningError['code'] {
+function mapPublicSessionErrorCode(
+  code: 'SigningTokenNotFound' | 'SigningRequestExpired' | 'SigningRequestUnavailable',
+): AcceptPublicSigningError['code'] {
   switch (code) {
-    case 'document_signing.signing_token_not_found':
-    case 'document_signing.signing_request_expired':
-    case 'document_signing.signing_request_unavailable':
-    case 'document_signing.signing_request_conflict':
-      return code;
-    default:
-      throw new Error(`Unsupported accept public signing session error code: ${code}`);
+    case 'SigningTokenNotFound':
+      return 'document_signing.signing_token_not_found';
+    case 'SigningRequestExpired':
+      return 'document_signing.signing_request_expired';
+    case 'SigningRequestUnavailable':
+      return 'document_signing.signing_request_unavailable';
   }
 }

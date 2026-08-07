@@ -18,6 +18,7 @@ import { V2ContractsPublicApi } from './public-api/contracts.public-api';
 import { V2ContractsPublicApiService } from './public-api/contracts.public-api.service';
 import { RentalRemitoContractStateService } from './application/rental-remito/rental-remito-contract-state.service';
 import { ContractArtifactPersistenceService } from './application/contract-artifact-persistence.service';
+import { RentalRemitoSignedArtifactService } from './application/rental-remito/rental-remito-signed-artifact.service';
 
 @Module({
   imports: [ObjectStorageModule],
@@ -32,6 +33,7 @@ import { ContractArtifactPersistenceService } from './application/contract-artif
     RentalRemitoContractWriterService,
     RentalRemitoContractStateService,
     ContractArtifactPersistenceService,
+    RentalRemitoSignedArtifactService,
     {
       provide: RentalRemitoRendererPort,
       useClass: ReactPdfRentalRemitoRendererAdapter,

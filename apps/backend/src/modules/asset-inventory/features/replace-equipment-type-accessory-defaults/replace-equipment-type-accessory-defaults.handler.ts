@@ -13,10 +13,7 @@ import {
   SelfReferenceAccessoryReplacementError,
 } from './replace-equipment-type-accessory-defaults.errors';
 
-export type ReplaceEquipmentTypeAccessoryDefaultsResult = Result<
-  void,
-  ReplaceEquipmentTypeAccessoryDefaultsError
->;
+export type ReplaceEquipmentTypeAccessoryDefaultsResult = Result<void, ReplaceEquipmentTypeAccessoryDefaultsError>;
 
 @CommandHandler(ReplaceEquipmentTypeAccessoryDefaultsCommand)
 export class ReplaceEquipmentTypeAccessoryDefaultsHandler implements ICommandHandler<
@@ -37,7 +34,9 @@ export class ReplaceEquipmentTypeAccessoryDefaultsHandler implements ICommandHan
     });
 
     if (!equipmentType) {
-      return err(mapReplaceEquipmentTypeAccessoryDefaultsError(new EquipmentTypeNotFoundError(command.equipmentTypeId)));
+      return err(
+        mapReplaceEquipmentTypeAccessoryDefaultsError(new EquipmentTypeNotFoundError(command.equipmentTypeId)),
+      );
     }
     if (!equipmentType.isActive) {
       return err(

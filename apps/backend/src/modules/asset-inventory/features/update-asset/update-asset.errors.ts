@@ -1,9 +1,7 @@
 import { ApplicationError } from 'src/core/errors/application-error';
 import { DuplicateAssetSerialNumberError } from '../../domain/errors/asset-inventory.errors';
 
-export type UpdateAssetErrorCode =
-  | 'asset_inventory.asset_not_found'
-  | 'asset_inventory.duplicate_asset_serial_number';
+export type UpdateAssetErrorCode = 'asset_inventory.asset_not_found' | 'asset_inventory.duplicate_asset_serial_number';
 
 export interface UpdateAssetError extends ApplicationError {
   code: UpdateAssetErrorCode;

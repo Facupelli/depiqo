@@ -4,16 +4,23 @@ export interface PublicSigningSessionReadModel {
   requestId: string;
   documentType: SigningDocumentType;
   status: 'PENDING' | 'SENT' | 'VIEWED';
-  expiresAt: Date;
+  expiresAt: string;
+  signedAt: null;
   document: {
     documentNumber: string;
     displayFileName: string;
     contentType: string;
     byteSize: number;
     sha256: string;
+    hashAlgorithm: 'SHA-256';
   };
-  prefilledSigner: {
-    fullName: string | null;
-    documentNumber: string | null;
+  signer: {
+    name: string;
+    email: string | null;
+    phone: string | null;
+  };
+  acceptance: {
+    textVersion: string;
+    textSnapshot: string;
   };
 }

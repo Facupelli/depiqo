@@ -14,9 +14,10 @@ import {
 } from './update-rentable-item-definition.errors';
 
 @CommandHandler(UpdateRentableItemDefinitionCommand)
-export class UpdateRentableItemDefinitionHandler
-  implements ICommandHandler<UpdateRentableItemDefinitionCommand, Result<void, UpdateRentableItemDefinitionError>>
-{
+export class UpdateRentableItemDefinitionHandler implements ICommandHandler<
+  UpdateRentableItemDefinitionCommand,
+  Result<void, UpdateRentableItemDefinitionError>
+> {
   constructor(
     private readonly unitOfWork: PrismaUnitOfWork,
     private readonly prisma: PrismaService,

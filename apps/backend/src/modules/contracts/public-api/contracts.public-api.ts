@@ -37,18 +37,40 @@ export interface PublicRentalRemitoSigningSession {
   status: 'PENDING' | 'SENT' | 'VIEWED';
   expiresAt: Date;
   documentNumber: string;
-  signerName: string;
+  signer: {
+    name: string;
+    email: string | null;
+    phone: string | null;
+  };
   unsignedArtifact: {
     fileName: string;
     contentType: string;
     byteSize: number;
     documentHash: string;
   };
+  acceptanceText: {
+    version: string;
+    text: string;
+  };
 }
 
 export interface PublicRentalRemitoSigningSessionError {
   code: 'SigningTokenNotFound' | 'SigningRequestExpired' | 'SigningRequestUnavailable';
   message: string;
+}
+
+export interface AcceptPublicRentalRemitoSigningInput {
+  rawToken: string;
+  signatureImageDataUrl: string;
+  acceptanceTextVersion: string;
+  acceptedIpAddress: string | null;
+  acceptedUserAgent: string | null;
+}
+
+export interface AcceptPublicRentalRemitoSigningResult {
+  requestId: string;
+  status: 'SIGNED';
+  signedAt: Date;
 }
 
 export interface MarkRentalRemitoSigningRequestedInput {
@@ -97,6 +119,10 @@ export abstract class V2ContractsPublicApi {
   abstract streamPublicRentalRemitoUnsignedArtifact(
     rawToken: string,
   ): Promise<Result<Readable, PublicRentalRemitoSigningSessionError>>;
+
+  abstract acceptPublicRentalRemitoSigning(
+    input: AcceptPublicRentalRemitoSigningInput,
+  ): Promise<Result<AcceptPublicRentalRemitoSigningResult, PublicRentalRemitoSigningSessionError>>;
 
   abstract markRentalRemitoSigningRequested(
     input: MarkRentalRemitoSigningRequestedInput,

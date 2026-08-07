@@ -22,6 +22,8 @@ model V2DocumentSigningRequest {
 
   tokenHash String? @unique @map("token_hash")
 
+  acceptanceTextVersion String @default("rental-remito-v1") @map("acceptance_text_version")
+
   status V2DocumentSigningRequestStatus @default(PENDING)
 
   providerData Json @default("{}") @map("provider_data")

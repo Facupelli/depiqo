@@ -283,7 +283,9 @@ export class RentableItem extends AggregateRootBase {
     }
 
     if (kind === 'SINGLE' && requirements.length !== 1) {
-      return err(new CatalogInvalidFieldError('requirements', 'SINGLE rentable items must have exactly one requirement'));
+      return err(
+        new CatalogInvalidFieldError('requirements', 'SINGLE rentable items must have exactly one requirement'),
+      );
     }
 
     const normalizedRequirements: Array<{ equipmentTypeId: string; quantityPerItem: number }> = [];
