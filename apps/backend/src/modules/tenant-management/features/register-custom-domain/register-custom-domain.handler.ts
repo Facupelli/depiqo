@@ -11,7 +11,7 @@ import {
   InvalidCustomDomainError,
   UnsupportedApexCustomDomainError,
 } from '../../domain/errors/tenant-management.errors';
-import { CloudflareCustomHostnameService } from '../../infrastructure/cloudflare-custom-hostname.service';
+import { CustomHostnameProvider } from '../../application/ports/custom-hostname-provider.port';
 
 import { toTenantDomainDto } from '../tenant-domain.presenter';
 import { RegisterCustomDomainCommand } from './register-custom-domain.command';
@@ -30,7 +30,7 @@ export class RegisterCustomDomainHandler implements ICommandHandler<
   constructor(
     private readonly prisma: PrismaService,
     private readonly configService: ConfigService<Env, true>,
-    private readonly cloudflareCustomHostnameService: CloudflareCustomHostnameService,
+    private readonly customHostnameProvider: CustomHostnameProvider,
   ) {
     this.rootDomain = this.configService.get('ROOT_DOMAIN');
   }
@@ -108,7 +108,7 @@ export class RegisterCustomDomainHandler implements ICommandHandler<
       );
     }
 
-    const providerHostname = await this.cloudflareCustomHostnameService.createCustomHostname(normalizedDomain);
+    const providerHostname = await this.customHostnameProvider.createCustomHostname(normalizedDomain);
 
     try {
       const created = await this.prisma.client.v2TenantDomain.create({

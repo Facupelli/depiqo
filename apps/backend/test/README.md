@@ -108,6 +108,44 @@ afterAll(async () => {
 
 Make HTTP requests through `testApp.app.getHttpServer()`. The spec owns these hooks; the helper does not register Jest lifecycle hooks or share an application between spec files.
 
+### External Infrastructure Test Doubles
+
+Integration and E2E tests keep DEPIQO modules, application services, event handlers, policies, templates, repositories, and PostgreSQL real. Only outbound third-party boundaries use safe test implementations.
+
+`createE2ETestApp()` replaces the real Resend email, R2 object-storage, Cloudflare custom-hostname, and Google identity-verification providers with Nest-owned fakes. The fakes perform no network I/O, record calls, and can be configured with a deterministic next result or failure. The production application flow remains real until that boundary.
+
+The application is created once per E2E spec, so reset each fake a spec uses in that spec's `beforeEach` hook. Do not add a global fake-reset hook.
+
+```ts
+let testApp: E2ETestApp;
+
+beforeAll(async () => {
+  testApp = await createE2ETestApp();
+});
+
+beforeEach(() => {
+  testApp.externals.emailDelivery.reset();
+});
+
+afterAll(async () => {
+  await testApp.close();
+});
+
+it('records email delivery without contacting Resend', async () => {
+  testApp.externals.emailDelivery.setNextResult({
+    success: false,
+    provider: 'TEST_EMAIL',
+    reason: 'PROVIDER_ERROR',
+    message: 'Provider unavailable.',
+  });
+
+  // Exercise the real HTTP/application flow here.
+  expect(testApp.externals.emailDelivery.calls).toHaveLength(1);
+});
+```
+
+For an integration test that imports a module with an outbound provider, explicitly override that module's external port with the corresponding fake from `test/support/external-infrastructure`. Do not mock an internal DEPIQO application API.
+
 ### E2E HTTP Sessions
 
 Use `createE2ETestClient()` for an independent browser-like Supertest session. Each client retains only its own session cookie and CSRF token:

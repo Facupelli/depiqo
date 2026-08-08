@@ -4,27 +4,17 @@ import { createRemoteJWKSet, jwtVerify, JWTPayload } from 'jose';
 
 import { Env } from 'src/config/env.schema';
 
+import {
+  GoogleIdentityVerifier,
+  VerifiedGoogleIdentity,
+  VerifyGoogleAuthorizationCodeParams,
+} from './google-identity-verifier.port';
+
 const GOOGLE_ISSUERS = new Set(['https://accounts.google.com', 'accounts.google.com']);
 const GOOGLE_JWKS_URL = new URL('https://www.googleapis.com/oauth2/v3/certs');
 const GOOGLE_TOKEN_ENDPOINT = 'https://oauth2.googleapis.com/token';
 
 const googleJwks = createRemoteJWKSet(GOOGLE_JWKS_URL);
-
-export interface VerifyGoogleAuthorizationCodeParams {
-  code: string;
-  redirectUri: string;
-  codeVerifier?: string;
-}
-
-export interface VerifiedGoogleIdentity {
-  provider: 'GOOGLE';
-  providerSubject: string;
-  email: string;
-  emailVerified: boolean;
-  givenName: string | null;
-  familyName: string | null;
-  pictureUrl: string | null;
-}
 
 interface GoogleTokenResponse {
   access_token?: string;
@@ -59,8 +49,10 @@ export class GoogleIdentityVerificationError extends Error {
 }
 
 @Injectable()
-export class GoogleIdentityVerificationService {
-  constructor(private readonly configService: ConfigService<Env, true>) {}
+export class GoogleIdentityVerificationService extends GoogleIdentityVerifier {
+  constructor(private readonly configService: ConfigService<Env, true>) {
+    super();
+  }
 
   async verifyAuthorizationCode(params: VerifyGoogleAuthorizationCodeParams): Promise<VerifiedGoogleIdentity> {
     const tokenResponse = await this.exchangeAuthorizationCode(params);

@@ -4,10 +4,7 @@ import { RefreshCustomDomainStatusResponseDto } from '@repo/api-contracts';
 import { err, ok, Result } from 'neverthrow';
 import { PrismaService } from 'src/core/database/prisma.service';
 import { V2TenantDomainStatus } from 'src/generated/prisma/client';
-import {
-  CloudflareCustomHostname,
-  CloudflareCustomHostnameService,
-} from '../../infrastructure/cloudflare-custom-hostname.service';
+import { CustomHostname, CustomHostnameProvider } from '../../application/ports/custom-hostname-provider.port';
 
 import { toTenantDomainDto } from '../tenant-domain.presenter';
 import { RefreshCustomDomainStatusCommand } from './refresh-custom-domain-status.command';
@@ -31,7 +28,7 @@ export class RefreshCustomDomainStatusHandler implements ICommandHandler<
 > {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly cloudflareCustomHostnameService: CloudflareCustomHostnameService,
+    private readonly customHostnameProvider: CustomHostnameProvider,
   ) {}
 
   async execute(command: RefreshCustomDomainStatusCommand): Promise<RefreshCustomDomainStatusResult> {
@@ -64,7 +61,7 @@ export class RefreshCustomDomainStatusHandler implements ICommandHandler<
       throw new Error(`Custom domain '${customDomain.domain}' is missing a Cloudflare hostname id`);
     }
 
-    const providerHostname = await this.cloudflareCustomHostnameService.getCustomHostname(customDomain.cfHostnameId);
+    const providerHostname = await this.customHostnameProvider.getCustomHostname(customDomain.cfHostnameId);
     const providerState = this.mapProviderState(providerHostname);
     const checkedAt = new Date();
 
@@ -94,7 +91,7 @@ export class RefreshCustomDomainStatusHandler implements ICommandHandler<
     return ok(toTenantDomainDto(updated));
   }
 
-  private mapProviderState(providerHostname: CloudflareCustomHostname): ProviderState {
+  private mapProviderState(providerHostname: CustomHostname): ProviderState {
     const errors = [...providerHostname.validationErrors, ...providerHostname.ownershipVerificationErrors];
     const combinedError = errors.length > 0 ? errors.join('; ') : null;
     const providerStatus = providerHostname.status?.toLowerCase() ?? null;

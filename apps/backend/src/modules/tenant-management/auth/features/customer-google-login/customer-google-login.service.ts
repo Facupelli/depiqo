@@ -13,9 +13,8 @@ import {
 import {
   GoogleAuthorizationCodeExchangeError,
   GoogleIdentityVerificationError,
-  GoogleIdentityVerificationService,
-  VerifiedGoogleIdentity,
 } from '../../shared/google/google-identity-verification.service';
+import { GoogleIdentityVerifier, VerifiedGoogleIdentity } from '../../shared/google/google-identity-verifier.port';
 
 @Injectable()
 export class CustomerGoogleLoginService {
@@ -23,7 +22,7 @@ export class CustomerGoogleLoginService {
     private readonly prisma: PrismaService,
     private readonly configService: ConfigService<Env, true>,
     private readonly googleAuthStateService: GoogleAuthStateService,
-    private readonly googleIdentityVerificationService: GoogleIdentityVerificationService,
+    private readonly googleIdentityVerifier: GoogleIdentityVerifier,
     private readonly handoffTicketService: CustomerGoogleHandoffTicketService,
   ) {}
 
@@ -34,7 +33,7 @@ export class CustomerGoogleLoginService {
   }): Promise<{ ticket: string; portalOrigin: string; redirectPath: string }> {
     try {
       const verifiedState = this.googleAuthStateService.verifyState(input.state);
-      const googleIdentity = await this.googleIdentityVerificationService.verifyAuthorizationCode({
+      const googleIdentity = await this.googleIdentityVerifier.verifyAuthorizationCode({
         code: input.code,
         redirectUri: this.configService.get('GOOGLE_OAUTH_REDIRECT_URI'),
         codeVerifier: input.codeVerifier,

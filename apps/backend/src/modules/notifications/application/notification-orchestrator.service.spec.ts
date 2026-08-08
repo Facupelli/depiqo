@@ -1,10 +1,11 @@
 import { V2NotificationChannel, V2NotificationDeliveryStatus } from 'src/generated/prisma/client';
 
+import { FakeEmailDeliveryPort } from '../../../../test/support/external-infrastructure/fakes';
+
 import { NotificationChannelMutePolicy } from './notification-channel-mute-policy.service';
 import { NotificationChannelPolicyResolver } from './notification-channel-policy.resolver';
 import { NotificationOrchestrator } from './notification-orchestrator.service';
 import { NotificationPersistenceService } from './notification-persistence.service';
-import { EmailDeliveryPort } from './ports/email-delivery.port';
 import { EmailRenderer } from './ports/email-renderer.port';
 import { EmailSenderResolver } from './ports/email-sender.resolver';
 import { TenantNotificationSuppressionPolicy } from './tenant-notification-suppression-policy.service';
@@ -63,9 +64,7 @@ describe('NotificationOrchestrator', () => {
         text: 'Rental cancelled',
       }),
     } as unknown as EmailRenderer;
-    const emailDeliveryPort = {
-      send: jest.fn().mockResolvedValue({ success: true, provider: 'RESEND', providerMessageId: 'message-1' }),
-    } as unknown as EmailDeliveryPort;
+    const emailDeliveryPort = new FakeEmailDeliveryPort();
     const emailSenderResolver = {
       resolve: jest.fn().mockResolvedValue({ fromEmail: 'no-reply@example.com' }),
     } as unknown as EmailSenderResolver;
@@ -111,7 +110,7 @@ describe('NotificationOrchestrator', () => {
       failedChannels: [],
     });
     expect(notificationPersistence.createNotificationWithPendingDeliveries).not.toHaveBeenCalled();
-    expect(emailDeliveryPort.send).not.toHaveBeenCalled();
+    expect(emailDeliveryPort.calls).toHaveLength(0);
   });
 
   it('does not persist or send a muted notification', async () => {
@@ -131,7 +130,7 @@ describe('NotificationOrchestrator', () => {
       failedChannels: [],
     });
     expect(notificationPersistence.createNotificationWithPendingDeliveries).not.toHaveBeenCalled();
-    expect(emailDeliveryPort.send).not.toHaveBeenCalled();
+    expect(emailDeliveryPort.calls).toHaveLength(0);
   });
 
   it('persists each recipient before sending it through the provider', async () => {
@@ -180,29 +179,24 @@ describe('NotificationOrchestrator', () => {
         ],
       }),
     );
-    expect(emailDeliveryPort.send).toHaveBeenCalledTimes(2);
-    expect(emailDeliveryPort.send).toHaveBeenNthCalledWith(
-      1,
+    expect(emailDeliveryPort.calls).toEqual([
       expect.objectContaining({
         recipients: [{ email: 'first@example.com' }],
         idempotencyKey: `${request.idempotencyKey}:delivery-1`,
       }),
-    );
-    expect(emailDeliveryPort.send).toHaveBeenNthCalledWith(
-      2,
       expect.objectContaining({
         recipients: [{ email: 'second@example.com' }],
         idempotencyKey: `${request.idempotencyKey}:delivery-2`,
       }),
-    );
+    ]);
     expect(notificationPersistence.markDeliverySent).toHaveBeenCalledTimes(2);
   });
 
   it('marks a provider failure for its delivery and returns the channel failure', async () => {
     const { orchestrator, notificationPersistence, emailDeliveryPort } = createOrchestrator();
-    emailDeliveryPort.send = jest.fn().mockResolvedValue({
+    emailDeliveryPort.setNextResult({
       success: false,
-      provider: 'RESEND',
+      provider: 'TEST_EMAIL',
       reason: 'PROVIDER_ERROR',
       message: 'Resend rejected the message.',
     });
@@ -222,7 +216,7 @@ describe('NotificationOrchestrator', () => {
     expect(notificationPersistence.markDeliveryFailed).toHaveBeenCalledWith({
       tenantId: request.tenantId,
       deliveryId: 'delivery-1',
-      provider: 'RESEND',
+      provider: 'TEST_EMAIL',
       errorCode: 'PROVIDER_ERROR',
       errorMessage: 'Resend rejected the message.',
     });
@@ -257,7 +251,7 @@ describe('NotificationOrchestrator', () => {
         },
       ],
     });
-    expect(emailDeliveryPort.send).not.toHaveBeenCalled();
+    expect(emailDeliveryPort.calls).toHaveLength(0);
   });
 
   it('redacts sensitive values from the persisted HTML snapshot', async () => {

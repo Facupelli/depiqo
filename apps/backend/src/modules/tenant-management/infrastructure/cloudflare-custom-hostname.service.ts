@@ -3,14 +3,7 @@ import { ConfigService } from '@nestjs/config';
 
 import { Env } from 'src/config/env.schema';
 
-export interface CloudflareCustomHostname {
-  id: string;
-  hostname: string;
-  status: string | null;
-  sslStatus: string | null;
-  validationErrors: string[];
-  ownershipVerificationErrors: string[];
-}
+import { CustomHostname, CustomHostnameProvider } from '../application/ports/custom-hostname-provider.port';
 
 interface CloudflareApiResponse {
   success?: boolean;
@@ -19,17 +12,18 @@ interface CloudflareApiResponse {
 }
 
 @Injectable()
-export class CloudflareCustomHostnameService {
+export class CloudflareCustomHostnameService extends CustomHostnameProvider {
   private readonly apiToken: string;
   private readonly zoneId: string;
   private readonly baseUrl = 'https://api.cloudflare.com/client/v4';
 
   constructor(private readonly configService: ConfigService<Env, true>) {
+    super();
     this.apiToken = this.configService.get('CLOUDFLARE_API_TOKEN');
     this.zoneId = this.configService.get('CLOUDFLARE_ZONE_ID');
   }
 
-  async createCustomHostname(hostname: string): Promise<CloudflareCustomHostname> {
+  async createCustomHostname(hostname: string): Promise<CustomHostname> {
     return this.request(`/zones/${this.zoneId}/custom_hostnames`, {
       method: 'POST',
       body: JSON.stringify({
@@ -42,13 +36,13 @@ export class CloudflareCustomHostnameService {
     });
   }
 
-  async getCustomHostname(cfHostnameId: string): Promise<CloudflareCustomHostname> {
+  async getCustomHostname(cfHostnameId: string): Promise<CustomHostname> {
     return this.request(`/zones/${this.zoneId}/custom_hostnames/${cfHostnameId}`, {
       method: 'GET',
     });
   }
 
-  private async request(path: string, init: RequestInit): Promise<CloudflareCustomHostname> {
+  private async request(path: string, init: RequestInit): Promise<CustomHostname> {
     const response = await fetch(`${this.baseUrl}${path}`, {
       ...init,
       headers: {
@@ -70,7 +64,7 @@ export class CloudflareCustomHostnameService {
     return this.toCustomHostname(payload.result);
   }
 
-  private toCustomHostname(result: Record<string, unknown>): CloudflareCustomHostname {
+  private toCustomHostname(result: Record<string, unknown>): CustomHostname {
     const ssl = this.asRecord(result.ssl);
     const ownershipVerification = this.asRecord(result.ownership_verification);
 

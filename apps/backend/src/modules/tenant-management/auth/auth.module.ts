@@ -22,6 +22,7 @@ import { CsrfGuard } from './shared/csrf/csrf.guard';
 import { CsrfService } from './shared/csrf/csrf.service';
 import { GoogleAuthStateService } from './shared/google/google-auth-state.service';
 import { GoogleIdentityVerificationService } from './shared/google/google-identity-verification.service';
+import { GoogleIdentityVerifier } from './shared/google/google-identity-verifier.port';
 import { CustomerGoogleHandoffTicketService } from './shared/handoff/customer-google-handoff-ticket.service';
 import { PasswordService } from './shared/password/password.service';
 import { AuthSessionSerializer } from './shared/session/auth-session.serializer';
@@ -55,6 +56,7 @@ import { TenantUserSessionGuard } from './shared/session/tenant-user-session.gua
     CustomerGoogleHandoffTicketService,
     GoogleAuthStateService,
     GoogleIdentityVerificationService,
+    { provide: GoogleIdentityVerifier, useExisting: GoogleIdentityVerificationService },
     PasswordService,
     AuthAuditService,
     CsrfService,

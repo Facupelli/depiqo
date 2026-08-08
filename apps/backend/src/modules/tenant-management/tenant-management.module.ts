@@ -54,6 +54,7 @@ import { BranchRepository } from './infrastructure/persistence/repositories/bran
 import { TenantRepository } from './infrastructure/persistence/repositories/tenant.repository';
 import { TenantManagementPublicApi } from './public-api/tenant-management.public-api';
 import { TenantContextModule } from './tenant-context/tenant-context.module';
+import { CustomHostnameProvider } from './application/ports/custom-hostname-provider.port';
 import { CloudflareCustomHostnameService } from './infrastructure/cloudflare-custom-hostname.service';
 
 @Module({
@@ -88,6 +89,7 @@ import { CloudflareCustomHostnameService } from './infrastructure/cloudflare-cus
     BranchRepository,
     TenantRepository,
     CloudflareCustomHostnameService,
+    { provide: CustomHostnameProvider, useExisting: CloudflareCustomHostnameService },
     ApproveSubmittedCustomerOnboardingHandler,
     CreateBranchHandler,
     CreateContractSignerHandler,
