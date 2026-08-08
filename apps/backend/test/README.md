@@ -186,6 +186,16 @@ Use `runConcurrently([operationA, operationB])` to release independent operation
 
 Simultaneous start is useful, but does not prove operations reached the same internal critical database section. A concrete deterministic race test may need a deliberately scoped synchronization mechanism at its repository or transaction boundary, such as a test-specific provider override or PostgreSQL lock. Assert the resulting persisted invariant as well as operation outcomes - for example, that no asset has multiple active overlapping rental blocks - rather than relying only on HTTP status codes.
 
+## Cross-Cutting HTTP and Security Conventions
+
+Use `expectProblemResponse()` from `test/support/problem-response` for HTTP errors. Assert the endpoint's intended status, stable Problem Details `type`, and feature `code` when one is part of the public contract. The helper verifies the common Problem Details structure. Do not assert exact human-readable `title` or `detail` text unless a specific API contract explicitly guarantees it.
+
+Use `expectValidationProblem()` for global validation failures. Endpoint tests must still state which input is invalid and, where relevant, assert the applicable `invalid-params` names and reasons.
+
+For tenant-isolation tests, create equivalent real records for Tenant A and Tenant B, authenticate as A, and use B's real identifier. Do not use a random nonexistent identifier: it cannot detect a missing tenant scope. Assert the endpoint's intended non-disclosing response. For a mutating request, also verify that Tenant B's persisted state was not changed.
+
+Keep domain-specific assertions and invariants with their owning module's test support. Do not add them to global test support.
+
 ## Existing Time-Model Gaps
 
 The application commonly handles timestamps as UTC `Date` instants and serializes them as ISO strings, but most PostgreSQL timestamp columns are `TIMESTAMP(3)` without timezone. The intended persistence contract needs an architecture review before it is changed.
