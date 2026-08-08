@@ -6,6 +6,26 @@ This directory contains the backend integration and E2E test infrastructure.
 
 Use `createTestFixtures(prisma)` from `test/support/fixtures` to arrange low-level persisted prerequisites such as tenants, tenant users, rental customers, and branches. Factories are stateless, require explicit `tenantId` ownership for tenant-scoped records, and return login credentials for local-authentication actors. Use them for test arrangement rather than HTTP endpoints or production commands. They are not scenario builders.
 
+## Deterministic Time Data
+
+Use `test/support/time` for absolute timestamps used as test data:
+
+```ts
+import { dateInterval, oneMillisecondAfter, oneMillisecondBefore, utcDate } from '../support/time';
+
+const startAt = utcDate(2026, 6, 15, 10);
+const endAt = utcDate(2026, 6, 15, 12);
+const existingPeriod = dateInterval(startAt, endAt);
+const justBeforeEnd = oneMillisecondBefore(endAt);
+const justAfterEnd = oneMillisecondAfter(endAt);
+```
+
+`utcDate()` takes one-based UTC calendar components and rejects invalid values rather than normalizing them. Use it instead of timezone-less date strings or local-time constructors when representing an absolute timestamp. Do not use `new Date('2026-06-15 10:00')`, `new Date(2026, 5, 15, 10)`, or values relative to the machine clock.
+
+`dateInterval()` only groups `start` and `end` dates. It deliberately does not validate ordering or decide interval inclusivity, overlap, or rental eligibility. Those are domain-test concerns.
+
+Do not use Jest fake timers or replace `Date` globally. Where an API accepts an explicit timestamp or calculation date, pass `utcDate(...)` directly. Controlled system-time support will be introduced only with the first concrete endpoint that requires it.
+
 ## Test Commands
 
 Run commands from `apps/backend/`.
@@ -119,3 +139,9 @@ Before every individual integration and E2E test, Jest runs the database setup h
 This is database-reset isolation, not transaction-per-test isolation. Tests use real database connections and committed transactions, including E2E flows. Tests must not depend on execution order or on data created by another test.
 
 The database suites run with one Jest worker because all tests in an invocation share the same database reset hook. Reconsider the isolation design before enabling parallel database test workers.
+
+## Existing Time-Model Gaps
+
+The application commonly handles timestamps as UTC `Date` instants and serializes them as ISO strings, but most PostgreSQL timestamp columns are `TIMESTAMP(3)` without timezone. The intended persistence contract needs an architecture review before it is changed.
+
+Branches and tenant configuration have IANA timezones, while branch schedules store a calendar `DATE` and minutes-from-midnight. The current schedule-slot path constructs its date at UTC midnight and does not apply the branch timezone. The intended local-date and DST behavior needs product and architecture review.
