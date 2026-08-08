@@ -68,37 +68,50 @@ Do not recreate and destroy the complete application in `beforeEach` and `afterE
 
 `configureApp()` creates resources that are not managed automatically by Nest, including the `connect-pg-simple` session store.
 
-E2E tests must retain the resources returned by `configureApp()` and close both the Nest application and those resources:
+Use `createE2ETestApp()` to compile `AppModule`, configure and initialize the Nest Express application, and close both the application and resources created by `configureApp()`:
 
 ```ts
-let app: INestApplication;
-let closeAppResources: () => Promise<void>;
+let testApp: E2ETestApp;
 
 beforeAll(async () => {
-  const moduleRef = await Test.createTestingModule({
-    imports: [AppModule],
-  }).compile();
-
-  app = moduleRef.createNestApplication<NestExpressApplication>();
-
-  const resources = configureApp(app as NestExpressApplication);
-  closeAppResources = resources.close;
-
-  await app.init();
+  testApp = await createE2ETestApp();
 });
 
 afterAll(async () => {
-  await app.close();
-  await closeAppResources();
+  await testApp.close();
 });
 ```
+
+Make HTTP requests through `testApp.app.getHttpServer()`. The spec owns these hooks; the helper does not register Jest lifecycle hooks or share an application between spec files.
+
+### E2E HTTP Sessions
+
+Use `createE2ETestClient()` for an independent browser-like Supertest session. Each client retains only its own session cookie and CSRF token:
+
+```ts
+const client = createE2ETestClient(testApp.app);
+
+await client.getCsrfToken();
+await client.loginTenantUser({ email, password });
+
+const response = await client
+  .withCsrf(client.request().post('/some-route'))
+  .set('Host', 'tenant-a.localhost')
+  .expect(200);
+```
+
+`request()` exposes the session-retaining Supertest agent without a CSRF header. Apply the current session's token to an individual unsafe request with `withCsrf(...)`; use `request()` directly to test missing or invalid tokens. A successful tenant-user or tenant-customer login rotates and stores that client's CSRF token.
+
+Authenticated tenant-user context comes from the session actor. Storefront tenant context is separate and is supplied through the signed storefront-context mechanism. Tests retain full control of arbitrary request headers, including `Host`, on each request where they are relevant.
 
 Do not use Jest's `--forceExit` to hide shutdown problems.
 
 ## Test Isolation
 
-The application and database are shared by the tests within one Jest invocation.
+For each integration or E2E Jest invocation, the runner starts one disposable PostgreSQL container, creates one uniquely named database, and applies Prisma migrations once before Jest starts. That same migrated container and database are reused for the whole invocation.
 
-Tests must not depend on execution order or on data created by another test. Use unique fixture values or explicitly clean mutable data when isolation is required.
+Before every individual integration and E2E test, Jest runs the database setup hook. The hook truncates all application tables in the `public` schema, restarts identity sequences, and cascades dependent rows. It preserves `_prisma_migrations`, so migrations are not rerun between tests.
 
-The runner currently provides one database per suite invocation, not one database per test or Jest worker. Reconsider concurrency and database isolation before adding multiple spec files that mutate overlapping data.
+This is database-reset isolation, not transaction-per-test isolation. Tests use real database connections and committed transactions, including E2E flows. Tests must not depend on execution order or on data created by another test.
+
+The database suites run with one Jest worker because all tests in an invocation share the same database reset hook. Reconsider the isolation design before enabling parallel database test workers.
