@@ -2,6 +2,10 @@
 
 This directory contains the backend integration and E2E test infrastructure.
 
+## Database Fixtures
+
+Use `createTestFixtures(prisma)` from `test/support/fixtures` to arrange low-level persisted prerequisites such as tenants, tenant users, rental customers, and branches. Factories are stateless, require explicit `tenantId` ownership for tenant-scoped records, and return login credentials for local-authentication actors. Use them for test arrangement rather than HTTP endpoints or production commands. They are not scenario builders.
+
 ## Test Commands
 
 Run commands from `apps/backend/`.
