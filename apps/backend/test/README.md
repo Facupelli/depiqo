@@ -140,6 +140,14 @@ This is database-reset isolation, not transaction-per-test isolation. Tests use 
 
 The database suites run with one Jest worker because all tests in an invocation share the same database reset hook. Reconsider the isolation design before enabling parallel database test workers.
 
+## Concurrency Tests
+
+Use `createBarrier(participantCount)` from `test/support/concurrency` when test participants must wait at an explicit rendezvous point. Its finite timeout fails with the expected and arrived participant counts, and `abort(reason)` releases waiting participants with a failure when a test participant cannot continue.
+
+Use `runConcurrently([operationA, operationB])` to release independent operation closures from a common start gate. It returns `Promise.allSettled(...)` outcomes so tests can assert expected success and failure results themselves. For E2E tests, create independent `createE2ETestClient()` instances first and pass closures that use those clients. The concurrency helper does not own sessions, requests, Prisma transactions, or assertions.
+
+Simultaneous start is useful, but does not prove operations reached the same internal critical database section. A concrete deterministic race test may need a deliberately scoped synchronization mechanism at its repository or transaction boundary, such as a test-specific provider override or PostgreSQL lock. Assert the resulting persisted invariant as well as operation outcomes - for example, that no asset has multiple active overlapping rental blocks - rather than relying only on HTTP status codes.
+
 ## Existing Time-Model Gaps
 
 The application commonly handles timestamps as UTC `Date` instants and serializes them as ISO strings, but most PostgreSQL timestamp columns are `TIMESTAMP(3)` without timezone. The intended persistence contract needs an architecture review before it is changed.
