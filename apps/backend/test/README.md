@@ -196,6 +196,10 @@ For tenant-isolation tests, create equivalent real records for Tenant A and Tena
 
 Keep domain-specific assertions and invariants with their owning module's test support. Do not add them to global test support.
 
+## Testing Architecture Follow-up
+
+- TODO: Evaluate a narrower Nest testing composition for vertical-slice integration tests. Prefer explicit slice dependencies where practical, and reserve the complete `AppModule` graph primarily for E2E and intentional full-application integration coverage.
+
 ## Existing Time-Model Gaps
 
 The application commonly handles timestamps as UTC `Date` instants and serializes them as ISO strings, but most PostgreSQL timestamp columns are `TIMESTAMP(3)` without timezone. The intended persistence contract needs an architecture review before it is changed.

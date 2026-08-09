@@ -43,7 +43,7 @@ export class PrismaRentalRepository extends RentalRepository {
   async save(rental: Rental, options?: SaveRentalOptions): Promise<SaveRentalResult | null> {
     try {
       if (options?.tx) {
-        return this.persistRental(options.tx, rental, options);
+        return await this.persistRental(options.tx, rental, options);
       }
 
       return await this.prisma.client.$transaction((tx) => this.persistRental(tx, rental, options));

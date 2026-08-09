@@ -12,6 +12,7 @@ const config: Config.InitialOptions = {
     ...integrationConfig.moduleNameMapper,
     '^@generated/prisma$': '<rootDir>/src/generated/prisma',
     '^jose$': '<rootDir>/src/__mocks__/jose.ts',
+    '^@react-pdf/renderer$': '<rootDir>/test/support/mocks/react-pdf-renderer.ts',
   },
   transform: {
     '^.+\\.(t|j)sx?$': [
