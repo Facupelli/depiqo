@@ -16,11 +16,17 @@ import { RentalRepository } from '../../persistence/rental.repository';
 import {
   BranchUnavailableForRentalError,
   DuplicateRentalOfferSelectionError,
+  EquipmentTypeNotFoundError,
+  EquipmentTypeNotRentableError,
   InvalidCatalogSelectionQuantityError,
+  InvalidFulfillmentDefinitionError,
   PickupTimeOutsideBranchScheduleError,
   RentalCustomerUnavailableForRentalError,
   RentalInvalidFieldError,
   RentalMustContainSelectionError,
+  RentalOfferNotFoundError,
+  RentalOfferNotRentableError,
+  RentableItemNotActiveError,
   ReturnTimeOutsideBranchScheduleError,
   TenantUnavailableForRentalError,
   UnsupportedBranchFulfillmentMethodError,
@@ -173,6 +179,15 @@ export class CreateDraftRentalService implements ICommandHandler<
     if (error instanceof RentalMustContainSelectionError) {
       return createDraftRentalError('rental_commitment.rental_requires_selection', error.message, error, context);
     }
+    if (error instanceof RentalOfferNotFoundError) {
+      return createDraftRentalError('rental_commitment.rental_offer_not_found', error.message, error, context);
+    }
+    if (error instanceof RentalOfferNotRentableError || error instanceof RentableItemNotActiveError) {
+      return createDraftRentalError('rental_commitment.catalog_selection_unavailable', error.message, error, context);
+    }
+    if (error instanceof InvalidFulfillmentDefinitionError) {
+      return createDraftRentalError('rental_commitment.invalid_fulfillment_definition', error.message, error, context);
+    }
     if (error instanceof DuplicateRentalOfferSelectionError) {
       return createDraftRentalError('rental_commitment.duplicate_rental_offer_selection', error.message, error, {
         ...context,
@@ -187,6 +202,18 @@ export class CreateDraftRentalService implements ICommandHandler<
     }
     if (error instanceof RentalCustomerUnavailableForRentalError) {
       return createDraftRentalError('rental_commitment.customer_unavailable', error.message, error, context);
+    }
+    if (error instanceof EquipmentTypeNotFoundError) {
+      return createDraftRentalError('rental_commitment.equipment_type_not_found', error.message, error, {
+        ...context,
+        equipmentTypeId: error.equipmentTypeId,
+      });
+    }
+    if (error instanceof EquipmentTypeNotRentableError) {
+      return createDraftRentalError('rental_commitment.equipment_type_not_rentable', error.message, error, {
+        ...context,
+        equipmentTypeId: error.equipmentTypeId,
+      });
     }
     if (error instanceof UnsupportedBranchFulfillmentMethodError) {
       return createDraftRentalError(

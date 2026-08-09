@@ -89,6 +89,24 @@ const createDraftRentalProblemMap = {
     HttpStatus.UNPROCESSABLE_ENTITY,
     'A draft rental must include at least one selected offer.',
   ),
+  'rental_commitment.rental_offer_not_found': problem(
+    'rental_offer_not_found',
+    'Rental offer not found',
+    HttpStatus.NOT_FOUND,
+    'The selected rental offer could not be found.',
+  ),
+  'rental_commitment.catalog_selection_unavailable': problem(
+    'catalog_selection_unavailable',
+    'Catalog selection unavailable',
+    HttpStatus.UNPROCESSABLE_ENTITY,
+    'A selected rental offer is not currently available.',
+  ),
+  'rental_commitment.invalid_fulfillment_definition': problem(
+    'invalid_fulfillment_definition',
+    'Invalid fulfillment definition',
+    HttpStatus.UNPROCESSABLE_ENTITY,
+    'A selected rental offer does not have a valid fulfillment definition.',
+  ),
   'rental_commitment.duplicate_rental_offer_selection': problem(
     'duplicate_rental_offer_selection',
     'Duplicate rental offer selection',
@@ -112,6 +130,18 @@ const createDraftRentalProblemMap = {
     'Customer unavailable',
     HttpStatus.UNPROCESSABLE_ENTITY,
     'The selected customer is not available for draft rental creation.',
+  ),
+  'rental_commitment.equipment_type_not_found': problem(
+    'equipment_type_not_found',
+    'Equipment type not found',
+    HttpStatus.NOT_FOUND,
+    'A required equipment type could not be found.',
+  ),
+  'rental_commitment.equipment_type_not_rentable': problem(
+    'equipment_type_not_rentable',
+    'Equipment type not rentable',
+    HttpStatus.UNPROCESSABLE_ENTITY,
+    'A required equipment type is not rentable.',
   ),
   'rental_commitment.unsupported_branch_fulfillment_method': problem(
     'unsupported_branch_fulfillment_method',

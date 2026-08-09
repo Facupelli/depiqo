@@ -6,6 +6,7 @@ import { RentalPriceSnapshotFactory } from '../../application/rental-price-snaps
 import { InvalidPricingInputError, PricingError } from '../../pricing-engine/errors/pricing.errors';
 import { PricingInput } from '../../pricing-engine/final/pricing-input.types';
 import { RentalPricingService } from '../../pricing-engine/final/rental-pricing.service';
+import { Money } from '../../pricing-engine/money/money.value-object';
 import { RentalPriceSnapshotV1 } from '../../public-api/rental-price-snapshot.type';
 import { PriceDraftRentalInput } from './price-draft-rental-input.type';
 import { ManualPricingAdjustmentApplier } from './manual-adjustments/manual-pricing-adjustment-applier';
@@ -66,6 +67,18 @@ export class PriceDraftRentalService {
             final: calculatedPricing,
           }),
         );
+      }
+
+      let targetTotal: Money;
+      try {
+        targetTotal = Money.of(input.manualPricingAdjustment.targetTotal, calculatedPricing.currency);
+      } catch {
+        return err(
+          new InvalidPricingInputError('manualPricingAdjustment.targetTotal must be a valid positive amount.'),
+        );
+      }
+      if (targetTotal.isZero()) {
+        return err(new InvalidPricingInputError('manualPricingAdjustment.targetTotal must be greater than zero.'));
       }
 
       const adjusted = this.manualPricingAdjustmentApplier.apply({
