@@ -4,10 +4,13 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from 'src/core/database/prisma.service';
 import { ConfirmedRentalEditedIntegrationEvent } from 'src/modules/rental-commitment/public-api/events/rental-lifecycle.integration-events';
 import { createE2ETestApp, E2ETestApp } from '../../../../../test/support/create-e2e-test-app';
-import { runConcurrently } from '../../../../../test/support/concurrency';
+import { createBarrier, runConcurrently } from '../../../../../test/support/concurrency';
 import { createTestFixtures, TestFixtures } from '../../../../../test/support/fixtures';
 import { oneMillisecondAfter, utcDate } from '../../../../../test/support/time';
 import { RentalPeriod } from '../../domain/value-objects/rental-period.value-object';
+import { RentalRepository } from '../../persistence/rental.repository';
+import { CancelRentalCommand } from '../cancel-rental/cancel-rental.command';
+import { CancelRentalResult } from '../cancel-rental/cancel-rental.handler';
 import { ConfirmRentalCommand } from '../confirm-rental/confirm-rental.command';
 import { ConfirmRentalResult } from '../confirm-rental/confirm-rental.handler';
 import { EditConfirmedRentalCommand } from './edit-confirmed-rental.command';
@@ -70,6 +73,52 @@ describe('EditConfirmedRental integration', () => {
       }),
     );
   }
+
+  it('allows exactly one same-version cancellation or confirmed-rental edit without mixed state', async () => {
+    const setup = await scenario();
+    const repository = testApp.app.get(RentalRepository);
+    const originalFindById = repository.findById.bind(repository);
+    const loaded = createBarrier(2);
+    const findSpy = jest.spyOn(repository, 'findById').mockImplementation(async (tenantId, rentalId, tx) => {
+      const rental = await originalFindById(tenantId, rentalId, tx);
+      if (rentalId === setup.rental.rentalId && !tx) await loaded.wait();
+      return rental;
+    });
+
+    try {
+      const outcomes = await runConcurrently<CancelRentalResult | EditConfirmedRentalResult>([
+        () => commandBus.execute(new CancelRentalCommand(setup.tenant.id, setup.rental.rentalId)),
+        () =>
+          edit(setup, {
+            period: new RentalPeriod(utcDate(2030, 1, 1, 13), utcDate(2030, 1, 1, 15)),
+          }),
+      ]);
+      expect(outcomes.every((outcome) => outcome.status === 'fulfilled')).toBe(true);
+      const results = outcomes.map(
+        (outcome) => (outcome as PromiseFulfilledResult<CancelRentalResult | EditConfirmedRentalResult>).value,
+      );
+      expect(results.filter((result) => result.isOk())).toHaveLength(1);
+      expect(
+        results.filter((result) => result.isErr() && result.error.code === 'rental_commitment.rental_version_conflict'),
+      ).toHaveLength(1);
+    } finally {
+      findSpy.mockRestore();
+    }
+
+    const state = await fixtures.persistedState(setup.rental.rentalId);
+    const activeBlocks = state.blocks.filter((block) => block.releasedAt === null);
+    if (state.rental.status === 'CANCELLED') {
+      expect(activeBlocks).toHaveLength(0);
+      expect(state.rental.periodStart).toEqual(utcDate(2030, 1, 1, 10));
+    } else {
+      expect(state.rental.status).toBe('CONFIRMED');
+      expect(state.rental.periodStart).toEqual(utcDate(2030, 1, 1, 13));
+      expect(state.rental.periodEnd).toEqual(utcDate(2030, 1, 1, 15));
+      expect(state.rental.assignedAssets).toHaveLength(1);
+      expect(activeBlocks).toHaveLength(1);
+      expect(activeBlocks[0].period).toContain('2030-01-01 13:00:00+00');
+    }
+  });
 
   it('moves a confirmed rental to a free period and retains a valid assignment with matching blocks', async () => {
     const setup = await scenario();

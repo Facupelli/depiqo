@@ -40,6 +40,11 @@ export class CancelRentalHandler implements ICommandHandler<CancelRentalCommand,
       );
     }
 
+    const expectedUpdatedAt = rental.updatedAt;
+    if (!expectedUpdatedAt) {
+      throw new Error(`Persisted rental "${rental.id}" is missing its updatedAt concurrency token.`);
+    }
+
     const cancellation = rental.cancel();
 
     if (cancellation.isErr()) {
@@ -58,11 +63,21 @@ export class CancelRentalHandler implements ICommandHandler<CancelRentalCommand,
       throw error;
     }
 
-    await this.unitOfWork.runInTransaction(async ({ tx, integrationEvents }) => {
-      await this.rentalRepository.save(rental, { tx });
-      integrationEvents.collect(toRentalIntegrationEvents(rental.pullDomainEvents()));
-    });
+    return this.unitOfWork.runInTransaction(async ({ tx, integrationEvents }) => {
+      const saved = await this.rentalRepository.save(rental, { expectedUpdatedAt, tx });
+      if (!saved) {
+        return err(
+          cancelRentalError(
+            'rental_commitment.rental_version_conflict',
+            `Rental "${command.rentalId}" was modified by another request.`,
+            undefined,
+            context,
+          ),
+        );
+      }
 
-    return ok(undefined);
+      integrationEvents.collect(toRentalIntegrationEvents(rental.pullDomainEvents()));
+      return ok(undefined);
+    });
   }
 }

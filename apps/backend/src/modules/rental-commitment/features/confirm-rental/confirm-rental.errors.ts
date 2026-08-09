@@ -3,6 +3,7 @@ import { ApplicationError } from 'src/core/errors/application-error';
 export type ConfirmRentalErrorCode =
   | 'rental_commitment.rental_not_found'
   | 'rental_commitment.rental_cannot_be_confirmed_from_status'
+  | 'rental_commitment.rental_version_conflict'
   | 'rental_commitment.rental_confirmation_requires_customer'
   | 'rental_commitment.confirmed_rental_requires_price_snapshot'
   | 'rental_commitment.insufficient_asset_availability'

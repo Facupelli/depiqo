@@ -5,9 +5,10 @@ import { Prisma } from 'src/generated/prisma/client';
 import { V2RentalStatus } from 'src/generated/prisma/enums';
 import { createE2ETestApp, E2ETestApp } from '../../../../../test/support/create-e2e-test-app';
 import { createTestFixtures, TestFixtures } from '../../../../../test/support/fixtures';
-import { runConcurrently } from '../../../../../test/support/concurrency';
+import { createBarrier, runConcurrently } from '../../../../../test/support/concurrency';
 import { oneMillisecondAfter, oneMillisecondBefore, utcDate } from '../../../../../test/support/time';
 
+import { RentalRepository } from '../../persistence/rental.repository';
 import { ConfirmRentalCommand } from './confirm-rental.command';
 import { ConfirmRentalResult } from './confirm-rental.handler';
 import { ConfirmRentalFixtures, RentalPeriodFixture } from './testing/confirm-rental.fixtures';
@@ -397,18 +398,36 @@ describe('ConfirmRental integration', () => {
     expect(states.flatMap((state) => state.blocks).filter((block) => block.releasedAt === null)).toHaveLength(1);
   });
 
-  it('preserves stable final invariants under simultaneous duplicate confirmation attempts', async () => {
+  it('allows exactly one of two confirmations that evaluated the same rental version', async () => {
     const scenario = await base();
     await rentalFixtures.createCandidate({
       tenantId: scenario.tenant.id,
       branchId: scenario.branch.id,
       equipmentTypeId: scenario.rental.equipmentTypeIds[0],
     });
+    const repository = testApp.app.get(RentalRepository);
+    const originalFindById = repository.findById.bind(repository);
+    const loaded = createBarrier(2);
+    const findSpy = jest.spyOn(repository, 'findById').mockImplementation(async (tenantId, rentalId, tx) => {
+      const rental = await originalFindById(tenantId, rentalId, tx);
+      if (rentalId === scenario.rental.rentalId && !tx) await loaded.wait();
+      return rental;
+    });
 
-    await runConcurrently([
-      () => confirm(scenario.tenant.id, scenario.rental.rentalId),
-      () => confirm(scenario.tenant.id, scenario.rental.rentalId),
-    ]);
+    try {
+      const outcomes = await runConcurrently([
+        () => confirm(scenario.tenant.id, scenario.rental.rentalId),
+        () => confirm(scenario.tenant.id, scenario.rental.rentalId),
+      ]);
+      expect(outcomes.every((outcome) => outcome.status === 'fulfilled')).toBe(true);
+      const results = outcomes.map((outcome) => (outcome as PromiseFulfilledResult<ConfirmRentalResult>).value);
+      expect(results.filter((result) => result.isOk())).toHaveLength(1);
+      expect(
+        results.filter((result) => result.isErr() && result.error.code === 'rental_commitment.rental_version_conflict'),
+      ).toHaveLength(1);
+    } finally {
+      findSpy.mockRestore();
+    }
 
     const state = await persisted(scenario.rental.rentalId);
     expect(state.rental.status).toBe('CONFIRMED');

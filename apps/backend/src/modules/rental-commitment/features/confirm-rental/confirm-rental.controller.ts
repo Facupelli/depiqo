@@ -55,6 +55,12 @@ const confirmRentalProblemMap = {
     status: HttpStatus.CONFLICT,
     detail: 'The requested rental cannot be confirmed from its current status.',
   },
+  'rental_commitment.rental_version_conflict': {
+    type: createProblemType('rental_commitment.rental_version_conflict'),
+    title: 'Rental was modified',
+    status: HttpStatus.CONFLICT,
+    detail: 'The rental was changed by another request. Refresh it and try again.',
+  },
   'rental_commitment.rental_confirmation_requires_customer': {
     type: createProblemType('rental_commitment.rental_confirmation_requires_customer'),
     title: 'Rental confirmation requires customer',

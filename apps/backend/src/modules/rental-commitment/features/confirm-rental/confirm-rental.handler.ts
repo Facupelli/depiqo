@@ -60,6 +60,11 @@ export class ConfirmRentalHandler implements ICommandHandler<ConfirmRentalComman
       );
     }
 
+    const expectedUpdatedAt = rental.updatedAt;
+    if (!expectedUpdatedAt) {
+      throw new Error(`Persisted rental "${rental.id}" is missing its updatedAt concurrency token.`);
+    }
+
     if (!rental.rentalCustomerId) {
       const error = new RentalConfirmationRequiresCustomerError(rental.id);
       return err(this.toApplicationError(error, context));
@@ -160,10 +165,23 @@ export class ConfirmRentalHandler implements ICommandHandler<ConfirmRentalComman
     });
 
     try {
-      await this.unitOfWork.runInTransaction(async ({ tx, integrationEvents }) => {
-        await this.rentalRepository.save(rental, { ownerSplits: splits, tx });
+      const persistence = await this.unitOfWork.runInTransaction(async ({ tx, integrationEvents }) => {
+        const saved = await this.rentalRepository.save(rental, { expectedUpdatedAt, ownerSplits: splits, tx });
+        if (!saved) {
+          return err(
+            confirmRentalError(
+              'rental_commitment.rental_version_conflict',
+              `Rental "${command.rentalId}" was modified by another request.`,
+              undefined,
+              context,
+            ),
+          );
+        }
+
         integrationEvents.collect(toRentalIntegrationEvents(rental.pullDomainEvents()));
+        return ok(undefined);
       });
+      if (persistence.isErr()) return persistence;
     } catch (error) {
       if (error instanceof PostgresExclusionViolationError) {
         return err(

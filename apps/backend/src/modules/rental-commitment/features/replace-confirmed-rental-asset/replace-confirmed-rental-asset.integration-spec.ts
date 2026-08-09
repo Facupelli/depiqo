@@ -4,10 +4,13 @@ import { PrismaService } from 'src/core/database/prisma.service';
 import { Prisma } from 'src/generated/prisma/client';
 import { V2ContractStatus, V2RentalStatus } from 'src/generated/prisma/enums';
 import { createE2ETestApp, E2ETestApp } from '../../../../../test/support/create-e2e-test-app';
-import { runConcurrently } from '../../../../../test/support/concurrency';
+import { createBarrier, runConcurrently } from '../../../../../test/support/concurrency';
 import { createTestFixtures, TestFixtures } from '../../../../../test/support/fixtures';
 import { oneMillisecondAfter, utcDate } from '../../../../../test/support/time';
 import { RentalPeriod } from '../../domain/value-objects/rental-period.value-object';
+import { RentalRepository } from '../../persistence/rental.repository';
+import { CancelRentalCommand } from '../cancel-rental/cancel-rental.command';
+import { CancelRentalResult } from '../cancel-rental/cancel-rental.handler';
 import { ConfirmRentalCommand } from '../confirm-rental/confirm-rental.command';
 import { ConfirmRentalResult } from '../confirm-rental/confirm-rental.handler';
 import { ConfirmRentalFixtures } from '../confirm-rental/testing/confirm-rental.fixtures';
@@ -93,6 +96,48 @@ describe('ReplaceConfirmedRentalAsset integration', () => {
   function activeEquipmentBlocks(state: Awaited<ReturnType<EditConfirmedRentalFixtures['persistedState']>>) {
     return state.blocks.filter((block) => block.blockType === 'EQUIPMENT' && block.releasedAt === null);
   }
+
+  it('allows exactly one same-version cancellation or asset replacement without mixed blocks', async () => {
+    const setup = await scenario();
+    const replacementAssetId = await candidate(setup);
+    const expectedUpdatedAt = await version(setup.rental.rentalId);
+    const repository = testApp.app.get(RentalRepository);
+    const originalFindById = repository.findById.bind(repository);
+    const loaded = createBarrier(2);
+    const findSpy = jest.spyOn(repository, 'findById').mockImplementation(async (tenantId, rentalId, tx) => {
+      const rental = await originalFindById(tenantId, rentalId, tx);
+      if (rentalId === setup.rental.rentalId && !tx) await loaded.wait();
+      return rental;
+    });
+
+    try {
+      const outcomes = await runConcurrently<CancelRentalResult | ReplaceConfirmedRentalAssetResult>([
+        () => commandBus.execute(new CancelRentalCommand(setup.tenant.id, setup.rental.rentalId)),
+        () => replace({ setup, replacementAssetId, expectedUpdatedAt }),
+      ]);
+      expect(outcomes.every((outcome) => outcome.status === 'fulfilled')).toBe(true);
+      const results = outcomes.map(
+        (outcome) => (outcome as PromiseFulfilledResult<CancelRentalResult | ReplaceConfirmedRentalAssetResult>).value,
+      );
+      expect(results.filter((result) => result.isOk())).toHaveLength(1);
+      expect(
+        results.filter((result) => result.isErr() && result.error.code === 'rental_commitment.rental_version_conflict'),
+      ).toHaveLength(1);
+    } finally {
+      findSpy.mockRestore();
+    }
+
+    const state = await fixtures.persistedState(setup.rental.rentalId);
+    const activeBlocks = activeEquipmentBlocks(state);
+    if (state.rental.status === 'CANCELLED') {
+      expect(activeBlocks).toHaveLength(0);
+      expect(state.rental.assignedAssets[0].assetId).toBe(setup.rental.assetIds[0]);
+    } else {
+      expect(state.rental.status).toBe('CONFIRMED');
+      expect(state.rental.assignedAssets).toEqual([expect.objectContaining({ assetId: replacementAssetId })]);
+      expect(activeBlocks).toEqual([expect.objectContaining({ assetId: replacementAssetId })]);
+    }
+  });
 
   it('atomically replaces X with compatible free Y while preserving commercial truth', async () => {
     const setup = await scenario();

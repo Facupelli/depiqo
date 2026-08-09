@@ -61,4 +61,10 @@ const cancelRentalProblemMap = {
     status: HttpStatus.CONFLICT,
     detail: 'The requested rental cannot be cancelled from its current status.',
   },
+  'rental_commitment.rental_version_conflict': {
+    type: createProblemType('rental_commitment.rental_version_conflict'),
+    title: 'Rental was modified',
+    status: HttpStatus.CONFLICT,
+    detail: 'The rental was changed by another request. Refresh it and try again.',
+  },
 } satisfies Record<CancelRentalErrorCode, { type: string; title: string; status: HttpStatus; detail: string }>;
