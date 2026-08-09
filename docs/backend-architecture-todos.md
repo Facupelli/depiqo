@@ -2,22 +2,34 @@
 
 ## Data integrity
 
-- [ ] Add/justify DB-level tenant FK for `V2TenantUser.tenantId`.
-  - Current schema permits users referencing nonexistent tenants.
-  - Audit existing data before introducing constraint.
+- [ ] Add or justify a database FK for `V2TenantUser.tenantId`.
+  - The schema currently permits users referencing nonexistent tenants.
+  - Audit existing data before introducing the constraint, or document the intentional architectural reason for its absence.
+
+- [ ] Serialize concurrent confirmation of the same rental.
+  - Two concurrent requests can load the same DRAFT/PENDING rental and both report success.
+  - Ensure only one logical confirmation transition can succeed.
+
+- [ ] Make confirmation asset eligibility authoritative.
+  - Confirmation currently relies on `V2RentalAssetCandidate`, whose stale projection could permit an asset or equipment type that is no longer eligible.
+  - Add authoritative validation or guarantee projection freshness at confirmation time.
+
+## Rental confirmation
+
+- [ ] Emit `RentalConfirmedIntegrationEvent` from normal confirmation.
+  - Confirming an existing DRAFT/PENDING rental currently does not emit the intended integration event because `Rental.confirm()` does not record the corresponding domain event.
 
 ## Date and time model
 
 - [ ] Formalize timestamp semantics across backend.
   - Application generally treats rental timestamps as UTC instants.
   - Relevant columns currently use PostgreSQL `TIMESTAMP(3) WITHOUT TIME ZONE`.
-  - Decide which values are absolute instants versus tenant-local calendar values.
-  - Plan schema migration before changing types.
+  - Define the canonical model for absolute instants versus tenant-local calendar values and plan any schema migration.
 
 - [ ] Fix branch schedule-slot timezone semantics.
-  - Branch has IANA timezone with tenant fallback.
-  - Current slot construction uses UTC-midnight schedule dates rather than branch timezone.
-  - Define/test behavior across timezone boundaries and DST.
+  - Branch has an IANA timezone with tenant fallback.
+  - Current slot construction uses UTC-midnight schedule dates rather than branch-local dates/times.
+  - Cover non-UTC branches, timezone boundaries, and DST behavior.
 
 ## External infrastructure boundaries
 
@@ -31,7 +43,10 @@
 
 ## Clarifications
 
-- [ ] Document the invariant/purpose of `V2AuthIdentity` for local tenant-user accounts.
-  - Registration creates it.
-  - Local login apparently does not require it.
-  - Determine whether this is intentional before changing the model.
+- [ ] Clarify the `V2AuthIdentity` invariant for local accounts.
+  - Registration creates a `V2AuthIdentity`, but local authentication apparently does not require it.
+  - Define what this entity represents and when it must exist.
+
+- [ ] Review integration-test application composition.
+  - Some integration tests boot the complete `AppModule`, pulling unrelated modules such as Contracts/React PDF into slice tests.
+  - Evaluate a narrower composition while retaining real PostgreSQL and required internal dependencies.
