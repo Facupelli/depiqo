@@ -2,21 +2,26 @@ import { z } from "zod";
 
 import type { ApiContract } from "../api-contract";
 
-export const GetRentalOfferAvailabilityRequirementSchema = z.object({
-  equipmentTypeId: z.string().trim().min(1),
-  quantityPerItem: z.number().int().positive(),
-});
-
-export const GetRentalOfferAvailabilityOfferSchema = z.object({
-  rentalOfferId: z.string().trim().min(1),
-  requirements: z.array(GetRentalOfferAvailabilityRequirementSchema),
-});
-
 export const GetRentalOfferAvailabilityRequestSchema = z.object({
   branchId: z.string().trim().min(1),
   periodStart: z.coerce.date(),
   periodEnd: z.coerce.date(),
-  rentalOffers: z.array(GetRentalOfferAvailabilityOfferSchema),
+  rentalOfferIds: z
+    .array(z.string().trim().min(1))
+    .min(1)
+    .superRefine((ids, context) => {
+      const seen = new Set<string>();
+      ids.forEach((id, index) => {
+        if (seen.has(id)) {
+          context.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Rental offer IDs must be unique.",
+            path: [index],
+          });
+        }
+        seen.add(id);
+      });
+    }),
 });
 
 export const GetRentalOfferAvailabilityItemSchema = z.object({
@@ -24,12 +29,8 @@ export const GetRentalOfferAvailabilityItemSchema = z.object({
   availableCount: z.number().int().nonnegative(),
 });
 
-export const GetRentalOfferAvailabilityResponseSchema = z.object({
-  data: z.array(GetRentalOfferAvailabilityItemSchema),
-});
+export const GetRentalOfferAvailabilityResponseSchema = z.array(GetRentalOfferAvailabilityItemSchema);
 
-export type GetRentalOfferAvailabilityRequirementDto = z.infer<typeof GetRentalOfferAvailabilityRequirementSchema>;
-export type GetRentalOfferAvailabilityOfferDto = z.infer<typeof GetRentalOfferAvailabilityOfferSchema>;
 export type GetRentalOfferAvailabilityRequestDto = z.infer<typeof GetRentalOfferAvailabilityRequestSchema>;
 export type GetRentalOfferAvailabilityItemDto = z.infer<typeof GetRentalOfferAvailabilityItemSchema>;
 export type GetRentalOfferAvailabilityResponseDto = z.infer<typeof GetRentalOfferAvailabilityResponseSchema>;

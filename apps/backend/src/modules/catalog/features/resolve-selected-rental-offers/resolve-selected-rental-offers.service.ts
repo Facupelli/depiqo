@@ -5,11 +5,18 @@ import {
   EquipmentTypeNotFoundError,
   EquipmentTypeNotRentableError,
   InvalidCatalogSelectionQuantityError,
+  InvalidFulfillmentDefinitionError,
   RentalCommitmentError,
   RentalInvalidFieldError,
   RentalMustContainSelectionError,
+  RentalOfferNotFoundError,
+  RentalOfferNotRentableError,
+  RentableItemNotActiveError,
 } from '../../../rental-commitment/domain/errors/rental-commitment.errors';
 import {
+  ResolveRentalOffersForAvailabilityError,
+  ResolveRentalOffersForAvailabilityInput,
+  ResolveRentalOffersForAvailabilityResult,
   ResolveSelectedRentalOffersInput,
   ResolveSelectedRentalOffersResult,
   SelectedRentalOfferInput,
@@ -22,6 +29,31 @@ import {
 @Injectable()
 export class ResolveSelectedRentalOffersService {
   constructor(private readonly reader: PrismaResolveSelectedRentalOffersReader) {}
+
+  async executeForAvailability(
+    input: ResolveRentalOffersForAvailabilityInput,
+  ): Promise<Result<ResolveRentalOffersForAvailabilityResult, ResolveRentalOffersForAvailabilityError>> {
+    const resolved = await this.execute({
+      tenantId: input.tenantId,
+      branchId: input.branchId,
+      selectedOffers: input.rentalOfferIds.map((rentalOfferId) => ({ rentalOfferId, quantity: 1 })),
+    });
+
+    if (resolved.isErr()) {
+      return err(this.toAvailabilityError(resolved.error));
+    }
+
+    return ok({
+      resolvedOffers: resolved.value.resolvedOffers.map((offer) => ({
+        rentalOfferId: offer.rentalOfferId,
+        branchId: offer.branchId,
+        fulfillmentRequirements: offer.fulfillmentRequirements.map(({ equipmentTypeId, quantityPerItem }) => ({
+          equipmentTypeId,
+          quantityPerItem,
+        })),
+      })),
+    });
+  }
 
   async execute(
     input: ResolveSelectedRentalOffersInput,
@@ -44,13 +76,11 @@ export class ResolveSelectedRentalOffersService {
       const rentalOffer = rentalOffersById.get(selection.rentalOfferId);
 
       if (!rentalOffer) {
-        return err(new RentalInvalidFieldError('rentalOfferId', `offer "${selection.rentalOfferId}" was not found`));
+        return err(new RentalOfferNotFoundError(selection.rentalOfferId));
       }
 
       if (!rentalOffer.isRentable) {
-        return err(
-          new RentalInvalidFieldError('rentalOfferId', `offer "${selection.rentalOfferId}" is not selectable`),
-        );
+        return err(new RentalOfferNotRentableError(selection.rentalOfferId));
       }
     }
 
@@ -65,11 +95,11 @@ export class ResolveSelectedRentalOffersService {
       const rentableItem = rentableItemsById.get(offer.rentableItemId);
 
       if (!rentableItem) {
-        return err(new RentalInvalidFieldError('rentableItemId', `item "${offer.rentableItemId}" was not found`));
+        return err(new RentableItemNotActiveError(offer.rentableItemId));
       }
 
       if (rentableItem.status !== 'ACTIVE') {
-        return err(new RentalInvalidFieldError('rentableItemId', `item "${offer.rentableItemId}" is not active`));
+        return err(new RentableItemNotActiveError(offer.rentableItemId));
       }
     }
 
@@ -83,9 +113,7 @@ export class ResolveSelectedRentalOffersService {
       const itemRequirements = requirementsByRentableItemId.get(rentableItemId) ?? [];
 
       if (itemRequirements.length === 0) {
-        return err(
-          new RentalInvalidFieldError('fulfillmentRequirements', `item "${rentableItemId}" has no requirements`),
-        );
+        return err(new InvalidFulfillmentDefinitionError(rentableItemId));
       }
 
       for (const requirement of itemRequirements) {
@@ -143,6 +171,20 @@ export class ResolveSelectedRentalOffersService {
         };
       }),
     });
+  }
+
+  private toAvailabilityError(error: RentalCommitmentError): ResolveRentalOffersForAvailabilityError {
+    if (error instanceof RentalOfferNotFoundError) {
+      return { code: 'RentalOfferNotFound', message: error.message, cause: error };
+    }
+    if (error instanceof RentalOfferNotRentableError) {
+      return { code: 'RentalOfferNotRentable', message: error.message, cause: error };
+    }
+    if (error instanceof RentableItemNotActiveError) {
+      return { code: 'RentableItemNotActive', message: error.message, cause: error };
+    }
+
+    return { code: 'InvalidFulfillmentDefinition', message: error.message, cause: error };
   }
 
   private validateSelectionPayload(selections: SelectedRentalOfferInput[]): Result<void, RentalCommitmentError> {

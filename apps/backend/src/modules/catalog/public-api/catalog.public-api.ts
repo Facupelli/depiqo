@@ -37,6 +37,36 @@ export interface ResolveSelectedRentalOffersResult {
   resolvedOffers: ResolvedSelectedRentalOffer[];
 }
 
+export type ResolveRentalOffersForAvailabilityErrorCode =
+  | 'RentalOfferNotFound'
+  | 'RentalOfferNotRentable'
+  | 'RentableItemNotActive'
+  | 'InvalidFulfillmentDefinition';
+
+export interface ResolveRentalOffersForAvailabilityError {
+  code: ResolveRentalOffersForAvailabilityErrorCode;
+  message: string;
+  cause?: unknown;
+  context?: Record<string, unknown>;
+}
+
+export interface ResolveRentalOffersForAvailabilityInput {
+  tenantId: string;
+  branchId: string;
+  rentalOfferIds: string[];
+}
+
+export interface ResolveRentalOffersForAvailabilityResult {
+  resolvedOffers: Array<{
+    rentalOfferId: string;
+    branchId: string;
+    fulfillmentRequirements: Array<{
+      equipmentTypeId: string;
+      quantityPerItem: number;
+    }>;
+  }>;
+}
+
 export interface CreateRentableItemOfferingInput {
   tenantId: string;
   name: string;
@@ -86,6 +116,10 @@ export abstract class CatalogPublicApi {
   abstract resolveSelectedRentalOffers(
     input: ResolveSelectedRentalOffersInput,
   ): Promise<Result<ResolveSelectedRentalOffersResult, RentalCommitmentError>>;
+
+  abstract resolveRentalOffersForAvailability(
+    input: ResolveRentalOffersForAvailabilityInput,
+  ): Promise<Result<ResolveRentalOffersForAvailabilityResult, ResolveRentalOffersForAvailabilityError>>;
 
   abstract createRentableItemOffering(
     input: CreateRentableItemOfferingInput,

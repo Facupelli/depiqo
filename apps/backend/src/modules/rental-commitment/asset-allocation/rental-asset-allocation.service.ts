@@ -47,6 +47,31 @@ export class RentalAssetAllocationService {
 
   constructor(private readonly prisma: PrismaService) {}
 
+  async findEligibleAvailableCandidates(params: {
+    tenantId: string;
+    branchId: string;
+    equipmentTypeIds: readonly EquipmentTypeId[];
+    periodStart: Date;
+    periodEnd: Date;
+  }): Promise<Result<AssetCandidate[], RentalCommitmentError>> {
+    const candidates = await this.findAssetCandidates({
+      tenantId: params.tenantId,
+      branchId: params.branchId,
+      equipmentTypeIds: params.equipmentTypeIds,
+    });
+    if (candidates.isErr()) return err(candidates.error);
+
+    const reservations = await this.findActiveOverlappingReservations({
+      tenantId: params.tenantId,
+      assetIds: candidates.value.map((candidate) => candidate.assetId),
+      periodStart: params.periodStart,
+      periodEnd: params.periodEnd,
+    });
+    const reservedAssetIds = new Set(reservations.map((reservation) => reservation.assetId));
+
+    return ok(this.allocationPolicy.eligibleCandidates(candidates.value, reservedAssetIds));
+  }
+
   async planAllocations(
     params: PlanAssetAllocationsParams,
   ): Promise<Result<RentalAssetAllocationPlan, RentalCommitmentError>> {

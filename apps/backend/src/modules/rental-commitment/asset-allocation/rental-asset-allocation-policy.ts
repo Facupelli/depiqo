@@ -1,11 +1,7 @@
 import { err, ok, Result } from 'neverthrow';
 
 import { AssetCandidate, RentalAssetCandidateStatus, RentalAssetOwnershipKind } from './asset-candidate.projection';
-import {
-  InsufficientAssetAvailabilityError,
-  RentalCommitmentError,
-  ThirdPartyAssetRequiresOwnerContractSnapshotError,
-} from '../domain/errors/rental-commitment.errors';
+import { InsufficientAssetAvailabilityError, RentalCommitmentError } from '../domain/errors/rental-commitment.errors';
 import { OwnerContractSnapshot } from '../domain/value-objects/owner-contract-snapshot.value-object';
 import { AssetId, EquipmentTypeId, RentalSelectionId } from '../domain/types/rental-commitment-ids';
 import { RentalDemandLineId } from '../domain/ids/rental-demand-line-id';
@@ -69,10 +65,6 @@ export class RentalAssetAllocationPolicy {
       }
 
       for (const candidate of availableCandidates.slice(0, demandLine.quantity)) {
-        if (candidate.ownershipKind === RentalAssetOwnershipKind.ThirdParty && !candidate.ownerContractSnapshot) {
-          return err(new ThirdPartyAssetRequiresOwnerContractSnapshotError(candidate.assetId));
-        }
-
         usedAssetIds.add(candidate.assetId);
         allocations.push({
           rentalDemandLineId: demandLine.rentalDemandLineId,
@@ -107,6 +99,10 @@ export class RentalAssetAllocationPolicy {
     });
   }
 
+  eligibleCandidates(candidates: readonly AssetCandidate[], reservedAssetIds: ReadonlySet<AssetId>): AssetCandidate[] {
+    return candidates.filter((candidate) => this.isAllocatable(candidate, reservedAssetIds));
+  }
+
   private groupAllocatableCandidatesByEquipmentType(
     candidates: readonly AssetCandidate[],
     reservedAssetIds: ReadonlySet<AssetId>,
@@ -136,6 +132,7 @@ export class RentalAssetAllocationPolicy {
       candidate.isRentable &&
       candidate.equipmentTypeIsActive &&
       candidate.assetStatus === RentalAssetCandidateStatus.Active &&
+      (candidate.ownershipKind !== RentalAssetOwnershipKind.ThirdParty || Boolean(candidate.ownerContractSnapshot)) &&
       !reservedAssetIds.has(candidate.assetId)
     );
   }

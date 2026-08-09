@@ -13,6 +13,30 @@ export class RentalInvalidFieldError extends RentalCommitmentError {
   }
 }
 
+export class RentalOfferNotFoundError extends RentalInvalidFieldError {
+  constructor(public readonly rentalOfferId: string) {
+    super('rentalOfferId', `offer "${rentalOfferId}" was not found`);
+  }
+}
+
+export class RentalOfferNotRentableError extends RentalInvalidFieldError {
+  constructor(public readonly rentalOfferId: string) {
+    super('rentalOfferId', `offer "${rentalOfferId}" is not selectable`);
+  }
+}
+
+export class RentableItemNotActiveError extends RentalInvalidFieldError {
+  constructor(public readonly rentableItemId: string) {
+    super('rentableItemId', `item "${rentableItemId}" is not active`);
+  }
+}
+
+export class InvalidFulfillmentDefinitionError extends RentalInvalidFieldError {
+  constructor(public readonly rentableItemId: string) {
+    super('fulfillmentRequirements', `item "${rentableItemId}" has no requirements`);
+  }
+}
+
 export class RentalMustContainSelectionError extends RentalCommitmentError {
   constructor() {
     super('A rental must contain at least one rental selection.');

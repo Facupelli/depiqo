@@ -22,6 +22,7 @@ export interface GetStorefrontRentalOfferAvailabilityResult {
   data: StorefrontRentalOfferAvailabilityItemReadModel[];
 }
 
+// TODO: Resolve authoritative offer requirements through Catalog instead of accepting caller-controlled requirements.
 @QueryHandler(GetStorefrontRentalOfferAvailabilityQuery)
 export class GetStorefrontRentalOfferAvailabilityHandler implements IQueryHandler<
   GetStorefrontRentalOfferAvailabilityQuery,

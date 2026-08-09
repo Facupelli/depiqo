@@ -42,10 +42,7 @@ export async function searchDraftRentalOffers(
 					branchId: parsedInput.branchId,
 					periodStart: new Date(parsedInput.periodStart),
 					periodEnd: new Date(parsedInput.periodEnd),
-					rentalOffers: rentalOffersPage.data.map((rentalOffer) => ({
-						rentalOfferId: rentalOffer.id,
-						requirements: rentalOffer.requirements,
-					})),
+					rentalOfferIds,
 				})
 			: Promise.resolve(null),
 	]);
@@ -68,7 +65,7 @@ export async function searchDraftRentalOffers(
 		GetRentalOfferAvailabilityItemDto
 	>();
 
-	for (const availability of rentalOfferAvailability?.data ?? []) {
+	for (const availability of rentalOfferAvailability ?? []) {
 		availabilityByRentalOfferId.set(availability.rentalOfferId, availability);
 	}
 

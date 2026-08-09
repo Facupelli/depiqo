@@ -24,6 +24,9 @@ import {
   CreateRentalOfferForRentableItemResult,
   CreateRentableItemOfferingInput,
   CreateRentableItemOfferingResult,
+  ResolveRentalOffersForAvailabilityError,
+  ResolveRentalOffersForAvailabilityInput,
+  ResolveRentalOffersForAvailabilityResult,
   ResolveSelectedRentalOffersInput,
   ResolveSelectedRentalOffersResult,
 } from './catalog.public-api';
@@ -64,6 +67,12 @@ export class CatalogPublicApiService extends CatalogPublicApi {
     );
 
     return result.mapErr(mapCatalogPublicApiError);
+  }
+
+  async resolveRentalOffersForAvailability(
+    input: ResolveRentalOffersForAvailabilityInput,
+  ): Promise<Result<ResolveRentalOffersForAvailabilityResult, ResolveRentalOffersForAvailabilityError>> {
+    return this.resolveSelectedRentalOffersService.executeForAvailability(input);
   }
 
   async resolveSelectedRentalOffers(

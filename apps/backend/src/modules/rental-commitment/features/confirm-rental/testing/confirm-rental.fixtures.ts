@@ -29,6 +29,9 @@ export interface CandidateOverrides {
   isActive?: boolean;
   isRentable?: boolean;
   equipmentTypeIsActive?: boolean;
+  ownershipKind?: 'TENANT_OWNED' | 'THIRD_PARTY';
+  ownerId?: string | null;
+  ownerContractSnapshot?: Prisma.InputJsonValue | null;
 }
 
 export class ConfirmRentalFixtures {
@@ -110,7 +113,10 @@ export class ConfirmRentalFixtures {
         isActive: overrides.isActive ?? true,
         isRentable: overrides.isRentable ?? true,
         equipmentTypeIsActive: overrides.equipmentTypeIsActive ?? true,
-        ownershipKind: 'TENANT_OWNED',
+        ownershipKind: overrides.ownershipKind ?? 'TENANT_OWNED',
+        ownerId: overrides.ownerId,
+        ownerContractSnapshot:
+          overrides.ownerContractSnapshot === null ? Prisma.JsonNull : overrides.ownerContractSnapshot,
       },
     });
 
