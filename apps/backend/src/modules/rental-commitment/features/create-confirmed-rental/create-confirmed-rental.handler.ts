@@ -2,6 +2,7 @@ import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { err, ok, Result } from 'neverthrow';
 
 import { PrismaUnitOfWork } from 'src/core/database/prisma-unit-of-work';
+import { PostgresExclusionViolationError } from 'src/core/utils/postgres-error.mapper';
 import { CatalogPublicApi } from 'src/modules/catalog/public-api/catalog.public-api';
 import { PricingPublicApi } from 'src/modules/pricing/public-api/pricing.public-api';
 import { TenantManagementPublicApi } from 'src/modules/tenant-management/public-api/tenant-management.public-api';
@@ -26,7 +27,11 @@ import {
   EquipmentTypeNotRentableError,
   InsufficientAssetAvailabilityError,
   InvalidCatalogSelectionQuantityError,
+  InvalidFulfillmentDefinitionError,
   PickupTimeOutsideBranchScheduleError,
+  RentableItemNotActiveError,
+  RentalOfferNotFoundError,
+  RentalOfferNotRentableError,
   ProfessionalConfirmedRentalCreationDisabledError,
   RentalCustomerUnavailableForRentalError,
   RentalInvalidFieldError,
@@ -243,10 +248,24 @@ export class CreateConfirmedRentalService implements ICommandHandler<
 
     const { splits }: { splits: RentalOwnerSplitDraft[] } = this.rentalOwnerSplitCalculator.calculate(ownerSplitInput);
 
-    await this.unitOfWork.runInTransaction(async ({ tx, integrationEvents }) => {
-      await this.rentalRepository.save(confirmedRental, { ownerSplits: splits, tx });
-      integrationEvents.collect(toRentalIntegrationEvents(confirmedRental.pullDomainEvents()));
-    });
+    try {
+      await this.unitOfWork.runInTransaction(async ({ tx, integrationEvents }) => {
+        await this.rentalRepository.save(confirmedRental, { ownerSplits: splits, tx });
+        integrationEvents.collect(toRentalIntegrationEvents(confirmedRental.pullDomainEvents()));
+      });
+    } catch (error) {
+      if (error instanceof PostgresExclusionViolationError) {
+        return err(
+          createConfirmedRentalError(
+            'rental_commitment.insufficient_asset_availability',
+            'The requested equipment is no longer available.',
+            error,
+            context,
+          ),
+        );
+      }
+      throw error;
+    }
 
     return ok({ rentalId: confirmedRental.id });
   }
@@ -258,6 +277,25 @@ export class CreateConfirmedRentalService implements ICommandHandler<
   private toApplicationError(error: unknown, context: Record<string, unknown>): CreateConfirmedRentalError {
     if (error instanceof RentalMustContainSelectionError) {
       return createConfirmedRentalError('rental_commitment.rental_requires_selection', error.message, error, context);
+    }
+    if (error instanceof RentalOfferNotFoundError) {
+      return createConfirmedRentalError('rental_commitment.rental_offer_not_found', error.message, error, context);
+    }
+    if (error instanceof RentalOfferNotRentableError || error instanceof RentableItemNotActiveError) {
+      return createConfirmedRentalError(
+        'rental_commitment.catalog_selection_unavailable',
+        error.message,
+        error,
+        context,
+      );
+    }
+    if (error instanceof InvalidFulfillmentDefinitionError) {
+      return createConfirmedRentalError(
+        'rental_commitment.invalid_fulfillment_definition',
+        error.message,
+        error,
+        context,
+      );
     }
     if (error instanceof DuplicateRentalOfferSelectionError) {
       return createConfirmedRentalError('rental_commitment.duplicate_rental_offer_selection', error.message, error, {

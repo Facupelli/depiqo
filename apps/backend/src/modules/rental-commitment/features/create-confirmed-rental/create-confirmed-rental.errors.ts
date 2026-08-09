@@ -3,6 +3,9 @@ import { ApplicationError } from 'src/core/errors/application-error';
 export type CreateConfirmedRentalErrorCode =
   | 'rental_commitment.invalid_rental_period'
   | 'rental_commitment.rental_requires_selection'
+  | 'rental_commitment.rental_offer_not_found'
+  | 'rental_commitment.catalog_selection_unavailable'
+  | 'rental_commitment.invalid_fulfillment_definition'
   | 'rental_commitment.duplicate_rental_offer_selection'
   | 'rental_commitment.insufficient_asset_availability'
   | 'rental_commitment.confirmed_rental_creation_disabled'
