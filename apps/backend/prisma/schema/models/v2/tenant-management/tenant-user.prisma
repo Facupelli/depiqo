@@ -48,6 +48,7 @@ model V2TenantUser {
   passwordChangedAt DateTime? @map("password_changed_at")
   lastLoginAt       DateTime? @map("last_login_at")
 
+  tenant              V2Tenant               @relation(fields: [tenantId], references: [id], onDelete: Restrict)
   identities          V2AuthIdentity[]
   localCredential     V2LocalCredential?
   passwordResetTokens V2PasswordResetToken[]

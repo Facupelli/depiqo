@@ -26,6 +26,7 @@ model V2Tenant {
 
   branding        V2TenantBranding?
   contractSigners V2TenantContractSigner[]
+  tenantUsers     V2TenantUser[]
   branches        V2Branch[]
   rentalCustomers V2RentalCustomer[]
   domains         V2TenantDomain[]

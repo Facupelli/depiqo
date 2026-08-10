@@ -2,7 +2,7 @@
 
 ## Data integrity and concurrency
 
-- [ ] Add or explicitly justify the missing database FK for `V2TenantUser.tenantId`.
+- [x] Add or explicitly justify the missing database FK for `V2TenantUser.tenantId`.
   - Current fixtures must verify tenant existence because the database does not enforce the relationship.
   - Audit existing data before introducing the constraint, or document the intentional architectural reason for its absence.
 
