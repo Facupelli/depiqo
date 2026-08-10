@@ -198,6 +198,15 @@ describe('CreateDraftRental integration', () => {
     expect(persisted.rental.ownerSplits).toEqual([]);
   });
 
+  it('allows pickup and return times outside branch schedules', async () => {
+    const setup = await scenario();
+    const catalog = await offer(setup);
+    const result = await create({ ...setup, selectedOffers: [{ rentalOfferId: catalog.offer.id, quantity: 1 }] });
+
+    expect(result.isOk()).toBe(true);
+    expect(await prisma.client.v2BranchSchedule.count({ where: { branchId: setup.branchId } })).toBe(0);
+  });
+
   it('supports a customerless staff draft', async () => {
     const setup = await scenario();
     const catalog = await offer(setup);

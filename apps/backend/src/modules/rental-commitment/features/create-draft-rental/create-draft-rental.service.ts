@@ -20,14 +20,12 @@ import {
   EquipmentTypeNotRentableError,
   InvalidCatalogSelectionQuantityError,
   InvalidFulfillmentDefinitionError,
-  PickupTimeOutsideBranchScheduleError,
   RentalCustomerUnavailableForRentalError,
   RentalInvalidFieldError,
   RentalMustContainSelectionError,
   RentalOfferNotFoundError,
   RentalOfferNotRentableError,
   RentableItemNotActiveError,
-  ReturnTimeOutsideBranchScheduleError,
   TenantUnavailableForRentalError,
   UnsupportedBranchFulfillmentMethodError,
 } from '../../domain/errors/rental-commitment.errors';
@@ -257,22 +255,6 @@ export class CreateDraftRentalService implements ICommandHandler<
     if (error instanceof UnsupportedBranchFulfillmentMethodError) {
       return createDraftRentalError(
         'rental_commitment.unsupported_branch_fulfillment_method',
-        error.message,
-        error,
-        context,
-      );
-    }
-    if (error instanceof PickupTimeOutsideBranchScheduleError) {
-      return createDraftRentalError(
-        'rental_commitment.pickup_time_outside_branch_schedule',
-        error.message,
-        error,
-        context,
-      );
-    }
-    if (error instanceof ReturnTimeOutsideBranchScheduleError) {
-      return createDraftRentalError(
-        'rental_commitment.return_time_outside_branch_schedule',
         error.message,
         error,
         context,

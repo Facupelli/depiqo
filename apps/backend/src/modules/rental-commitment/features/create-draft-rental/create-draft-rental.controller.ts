@@ -149,18 +149,6 @@ const createDraftRentalProblemMap = {
     HttpStatus.UNPROCESSABLE_ENTITY,
     'The selected branch does not support the requested fulfillment method.',
   ),
-  'rental_commitment.pickup_time_outside_branch_schedule': problem(
-    'pickup_time_outside_branch_schedule',
-    'Pickup time outside branch schedule',
-    HttpStatus.UNPROCESSABLE_ENTITY,
-    'The requested pickup time is outside the branch schedule.',
-  ),
-  'rental_commitment.return_time_outside_branch_schedule': problem(
-    'return_time_outside_branch_schedule',
-    'Return time outside branch schedule',
-    HttpStatus.UNPROCESSABLE_ENTITY,
-    'The requested return time is outside the branch schedule.',
-  ),
   'rental_commitment.invalid_rental_field': problem(
     'invalid_rental_field',
     'Invalid rental field',

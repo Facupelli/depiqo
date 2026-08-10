@@ -93,9 +93,9 @@
   - Some feature contracts containing `data` are wrapped by the global envelope, producing responses such as `{ "data": { "data": [...] } }`.
   - Decide whether nested envelopes are intentional API design.
 
-- [ ] Remove or reconcile unreachable create-draft schedule error mappings.
-  - The draft controller maps pickup/return schedule errors, but `validateDraftRental()` does not perform schedule validation.
-  - If drafts are intentionally schedule-flexible, remove or document the dead mappings.
+- [x] Reconcile create-draft schedule validation semantics.
+  - Draft rentals are intentionally schedule-flexible. Pickup and return branch schedules are validated when creating a confirmed rental, not when creating a draft.
+  - Removed unreachable create-draft schedule error mappings.
 
 ## External infrastructure boundaries
 

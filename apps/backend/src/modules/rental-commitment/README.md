@@ -137,6 +137,8 @@ Typical rental lifecycle meanings:
 DRAFT
   Staff-created proposal or budget.
   Does not block assets.
+  May use pickup and return times outside branch schedule windows; those windows
+  are validated when a confirmed rental is created.
 
 PENDING
   Customer-created request requiring tenant review.
