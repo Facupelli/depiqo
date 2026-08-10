@@ -235,7 +235,7 @@ export class ReplaceConfirmedRentalAssetHandler implements ICommandHandler<
     return this.rentalOwnerSplitCalculator.calculate({
       tenantId: rental.tenantId,
       rentalId: rental.id,
-      currency: priceSnapshot.calculated.currency,
+      currency: priceSnapshot.currency,
       selections: rental.selections.map((selection) => ({ id: selection.id })),
       demandLines: rental.demandLines.map((line) => ({ id: line.id, sourceSelectionId: line.rentalSelectionId })),
       fulfilledAssets: rental.assignedAssets.map((assignment) => {
@@ -272,7 +272,7 @@ export class ReplaceConfirmedRentalAssetHandler implements ICommandHandler<
             : null,
         };
       }),
-      priceLines: priceSnapshot.calculated.lines.map((line) => ({
+      priceLines: priceSnapshot.lines.map((line) => ({
         rentalSelectionId: line.rentalSelectionId,
         netAmount: line.total,
       })),

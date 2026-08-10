@@ -235,6 +235,42 @@ describe('EditConfirmedRental integration', () => {
     expect(after.rental.ownerSplits).toEqual(before.rental.ownerSplits);
   });
 
+  it('recalculates an existing third-party owner split from accepted final pricing on details-only repricing', async () => {
+    const setup = await scenario();
+    const before = await fixtures.persistedState(setup.rental.rentalId);
+    const assignment = before.rental.assignedAssets[0];
+    const ownerId = 'owner-final-price';
+    const contractId = 'contract-final-price';
+    await prisma.client.v2RentalOwnerSplit.create({
+      data: {
+        tenantId: setup.tenant.id,
+        rentalId: setup.rental.rentalId,
+        rentalSelectionId: setup.rental.selectionIds[0],
+        rentalDemandLineId: setup.rental.demandLineIds[0],
+        assignedAssetId: assignment.id,
+        assetId: assignment.assetId,
+        ownerId,
+        contractId,
+        basis: 'NET',
+        ownerShare: '0.40',
+        basisAmount: '100.00',
+        ownerAmount: '40.00',
+        currency: 'USD',
+      },
+    });
+
+    const result = await edit(setup, {
+      manualPricingAdjustment: { mode: 'TARGET_TOTAL', targetTotal: '80.00', reason: 'Accepted correction' },
+    });
+
+    expect(result.isOk()).toBe(true);
+    const after = await fixtures.persistedState(setup.rental.rentalId);
+    expect(after.rental.ownerSplits).toHaveLength(1);
+    expect(after.rental.ownerSplits[0]).toMatchObject({ ownerId, contractId });
+    expect(after.rental.ownerSplits[0].basisAmount.toString()).toBe('80');
+    expect(after.rental.ownerSplits[0].ownerAmount.toString()).toBe('32');
+  });
+
   it('reprices an operational edit and accepts a non-null manual adjustment', async () => {
     const setup = await scenario();
     const before = await fixtures.persistedState(setup.rental.rentalId);

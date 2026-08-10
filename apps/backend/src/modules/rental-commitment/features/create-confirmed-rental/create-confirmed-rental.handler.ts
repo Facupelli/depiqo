@@ -208,7 +208,7 @@ export class CreateConfirmedRentalService implements ICommandHandler<
     const ownerSplitInput = {
       tenantId: confirmedRental.tenantId,
       rentalId: confirmedRental.id,
-      currency: pricingResult.value.calculated.currency,
+      currency: pricingResult.value.final.currency,
 
       selections: confirmedRental.selections.map((selection) => ({
         id: selection.id,
@@ -240,7 +240,7 @@ export class CreateConfirmedRentalService implements ICommandHandler<
         };
       }),
 
-      priceLines: pricingResult.value.calculated.lines.map((line) => ({
+      priceLines: pricingResult.value.final.lines.map((line) => ({
         rentalSelectionId: line.rentalSelectionId,
         netAmount: line.total,
       })),

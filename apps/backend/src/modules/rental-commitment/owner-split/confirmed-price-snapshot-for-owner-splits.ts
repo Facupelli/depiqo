@@ -1,10 +1,8 @@
 import { ConfirmedPriceSnapshot } from '../domain/value-objects/confirmed-price-snapshot.value-object';
 
 export interface ConfirmedPriceSnapshotForOwnerSplits {
-  calculated: {
-    currency: string;
-    lines: Array<{ rentalSelectionId: string; total: string }>;
-  };
+  currency: string;
+  lines: Array<{ rentalSelectionId: string; total: string }>;
 }
 
 export function getConfirmedPriceSnapshotForOwnerSplits(
@@ -15,17 +13,17 @@ export function getConfirmedPriceSnapshotForOwnerSplits(
     !value ||
     typeof value !== 'object' ||
     Array.isArray(value) ||
-    !('calculated' in value) ||
-    !value.calculated ||
-    typeof value.calculated !== 'object' ||
-    Array.isArray(value.calculated) ||
-    typeof value.calculated.currency !== 'string' ||
-    !Array.isArray(value.calculated.lines)
+    !('final' in value) ||
+    !value.final ||
+    typeof value.final !== 'object' ||
+    Array.isArray(value.final) ||
+    typeof value.final.currency !== 'string' ||
+    !Array.isArray(value.final.lines)
   ) {
     throw new Error('Confirmed price snapshot is invalid for owner split calculation.');
   }
 
-  const lines = value.calculated.lines.map((line) => {
+  const lines = value.final.lines.map((line) => {
     if (
       !line ||
       typeof line !== 'object' ||
@@ -39,5 +37,5 @@ export function getConfirmedPriceSnapshotForOwnerSplits(
     return { rentalSelectionId: line.rentalSelectionId, total: line.total };
   });
 
-  return { calculated: { currency: value.calculated.currency, lines } };
+  return { currency: value.final.currency, lines };
 }

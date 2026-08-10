@@ -343,7 +343,7 @@ export class EditConfirmedRentalHandler implements ICommandHandler<
         const { splits }: { splits: RentalOwnerSplitDraft[] } = this.rentalOwnerSplitCalculator.calculate({
           tenantId,
           rentalId,
-          currency: priceSnapshot.calculated.currency,
+          currency: priceSnapshot.currency,
           selections: rental.selections.map((selection) => ({ id: selection.id })),
           demandLines: rental.demandLines.map((line) => ({ id: line.id, sourceSelectionId: line.rentalSelectionId })),
           fulfilledAssets: allocationPlan.value.allocations.map((allocation) => {
@@ -369,7 +369,7 @@ export class EditConfirmedRentalHandler implements ICommandHandler<
                 : null,
             };
           }),
-          priceLines: priceSnapshot.calculated.lines.map((line) => ({
+          priceLines: priceSnapshot.lines.map((line) => ({
             rentalSelectionId: line.rentalSelectionId,
             netAmount: line.total,
           })),
@@ -491,7 +491,7 @@ export class EditConfirmedRentalHandler implements ICommandHandler<
         ownerSplits = this.rentalOwnerSplitCalculator.calculate({
           tenantId,
           rentalId,
-          currency: priceSnapshot.calculated.currency,
+          currency: priceSnapshot.currency,
           selections: rental.selections.map((selection) => ({ id: selection.id })),
           demandLines: rental.demandLines.map((line) => ({ id: line.id, sourceSelectionId: line.rentalSelectionId })),
           fulfilledAssets: rental.assignedAssets.map((assignment) => {
@@ -511,7 +511,7 @@ export class EditConfirmedRentalHandler implements ICommandHandler<
                 : null,
             };
           }),
-          priceLines: priceSnapshot.calculated.lines.map((line) => ({
+          priceLines: priceSnapshot.lines.map((line) => ({
             rentalSelectionId: line.rentalSelectionId,
             netAmount: line.total,
           })),

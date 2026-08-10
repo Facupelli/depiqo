@@ -1,3 +1,5 @@
+import { randomUUID } from 'node:crypto';
+
 import { CommandBus } from '@nestjs/cqrs';
 
 import { PrismaService } from 'src/core/database/prisma.service';
@@ -118,6 +120,73 @@ describe('ConfirmRental integration', () => {
       expect(state.rental.ownerSplits).toHaveLength(0);
     },
   );
+
+  it('persists third-party owner splits from accepted final pricing after a manual target-total adjustment', async () => {
+    const scenario = await base();
+    const calculated = {
+      currency: 'USD',
+      subtotal: '100.00',
+      discountTotal: '0.00',
+      total: '100.00',
+      chargedDays: 1,
+      lines: [{ rentalSelectionId: scenario.rental.selectionIds[0], total: '100.00' }],
+      appliedPromotions: [],
+      durationPolicySnapshot: { dailyBillingPolicy: 'CALENDAR_DAY' },
+    };
+    const final = {
+      ...calculated,
+      total: '80.00',
+      lines: [{ rentalSelectionId: scenario.rental.selectionIds[0], total: '80.00' }],
+    };
+    await prisma.client.v2Rental.update({
+      where: { id: scenario.rental.rentalId },
+      data: {
+        priceSnapshot: {
+          schema: 'v2.rental-price-snapshot',
+          version: 1,
+          calculatedAtIso: '2030-01-01T00:00:00.000Z',
+          context: 'DRAFT',
+          calculated,
+          final,
+          manualPricingAdjustment: {
+            mode: 'TARGET_TOTAL',
+            targetTotal: '80.00',
+            previousTotal: '100.00',
+            direction: 'DECREASE',
+            adjustmentTotal: '20.00',
+            setByTenantUserId: 'test-user',
+            setAtIso: '2030-01-01T00:00:00.000Z',
+          },
+        },
+      },
+    });
+
+    const ownerId = randomUUID();
+    const contractId = randomUUID();
+    await rentalFixtures.createCandidate({
+      tenantId: scenario.tenant.id,
+      branchId: scenario.branch.id,
+      equipmentTypeId: scenario.rental.equipmentTypeIds[0],
+      overrides: {
+        ownershipKind: 'THIRD_PARTY',
+        ownerId,
+        ownerContractSnapshot: { ownerId, contractId, ownerShare: 0.4, rentalShare: 0.6, basis: 'NET' },
+      },
+    });
+
+    expect((await confirm(scenario.tenant.id, scenario.rental.rentalId)).isOk()).toBe(true);
+
+    const state = await persisted(scenario.rental.rentalId);
+    expect(state.rental.ownerSplits).toHaveLength(1);
+    expect(state.rental.ownerSplits[0]).toMatchObject({ ownerId, contractId, currency: 'USD' });
+    expect(state.rental.ownerSplits[0].basisAmount.toString()).toBe('80');
+    expect(state.rental.ownerSplits[0].ownerAmount.toString()).toBe('32');
+    expect(
+      state.rental.ownerSplits
+        .reduce((total, split) => total.plus(split.basisAmount), new Prisma.Decimal(0))
+        .toString(),
+    ).toBe(final.lines[0].total.replace(/\.00$/, ''));
+  });
 
   it('fulfills a two-unit requirement with two distinct assets', async () => {
     const scenario = await base();

@@ -129,7 +129,7 @@ export class ConfirmRentalHandler implements ICommandHandler<ConfirmRentalComman
     const { splits }: { splits: RentalOwnerSplitDraft[] } = this.rentalOwnerSplitCalculator.calculate({
       tenantId: rental.tenantId,
       rentalId: rental.id,
-      currency: confirmedPriceSnapshot.calculated.currency,
+      currency: confirmedPriceSnapshot.currency,
       selections: rental.selections.map((selection) => ({ id: selection.id })),
       demandLines: rental.demandLines.map((demandLine) => ({
         id: demandLine.id,
@@ -155,7 +155,7 @@ export class ConfirmRentalHandler implements ICommandHandler<ConfirmRentalComman
             : null,
         };
       }),
-      priceLines: confirmedPriceSnapshot.calculated.lines.map((line) => ({
+      priceLines: confirmedPriceSnapshot.lines.map((line) => ({
         rentalSelectionId: line.rentalSelectionId,
         netAmount: line.total,
       })),

@@ -44,9 +44,9 @@
 
 ## Pricing and confirmed snapshots
 
-- [ ] Calculate owner splits from the accepted confirmed price.
-  - Owner splits currently use `confirmedPriceSnapshot.calculated.lines` instead of `final.lines`.
-  - Manual target-total adjustments can therefore produce owner amounts based on the pre-adjustment price.
+- [x] Calculate owner splits from the accepted confirmed price.
+  - Owner split calculation now uses the accepted `confirmedPriceSnapshot.final` currency and lines through the owner-split pricing helper.
+  - Manual target-total adjustments now produce owner amounts from the accepted final line totals.
 
 - [ ] Normalize confirmed price-snapshot context semantics.
   - Direct confirmed creation produces `context: CONFIRMED`, while draft-to-confirmation may preserve `context: DRAFT`.
