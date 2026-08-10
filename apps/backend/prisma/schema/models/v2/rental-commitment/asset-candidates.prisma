@@ -20,10 +20,10 @@ model V2RentalAssetCandidate {
   ownershipKind         V2RentalAssetOwnershipKind @map("ownership_kind")
   ownerId               String?                    @map("owner_id")
   ownerContractSnapshot Json?                      @map("owner_contract_snapshot")
-  projectedAt           DateTime                   @default(now()) @map("projected_at")
+  projectedAt           DateTime                   @default(now()) @map("projected_at") @db.Timestamptz(3)
   sourceVersion         String?                    @map("source_version")
-  createdAt             DateTime                   @default(now()) @map("created_at")
-  updatedAt             DateTime                   @updatedAt @map("updated_at")
+  createdAt             DateTime                   @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt             DateTime                   @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   @@unique([tenantId, assetId])
   @@index([tenantId, branchId, equipmentTypeId, isActive, isRentable], map: "v2_asset_candidates_rentable_idx")

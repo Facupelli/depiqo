@@ -8,9 +8,9 @@ model V2EquipmentType {
   name        String
   description String?
   isActive    Boolean   @default(true) @map("is_active")
-  deletedAt   DateTime? @map("deleted_at")
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at") @db.Timestamptz(3)
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   accessoryDefaults V2EquipmentTypeAccessoryDefault[] @relation("AccessoryDefaultsForEquipment")
   usedAsAccessoryIn V2EquipmentTypeAccessoryDefault[] @relation("EquipmentUsedAsAccessory")
@@ -26,8 +26,8 @@ model V2EquipmentTypeAccessoryDefault {
   equipmentTypeId          String   @map("equipment_type_id")
   accessoryEquipmentTypeId String   @map("accessory_equipment_type_id")
   quantity                 Int
-  createdAt                DateTime @default(now()) @map("created_at")
-  updatedAt                DateTime @updatedAt @map("updated_at")
+  createdAt                DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt                DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   equipmentType          V2EquipmentType @relation("AccessoryDefaultsForEquipment", fields: [equipmentTypeId], references: [id])
   accessoryEquipmentType V2EquipmentType @relation("EquipmentUsedAsAccessory", fields: [accessoryEquipmentTypeId], references: [id])

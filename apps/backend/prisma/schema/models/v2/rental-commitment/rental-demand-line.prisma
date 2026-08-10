@@ -10,7 +10,7 @@ model V2RentalDemandLine {
   equipmentTypeId           String   @map("equipment_type_id")
   equipmentTypeNameSnapshot String   @map("equipment_type_name_snapshot")
   quantity                  Int
-  createdAt                 DateTime @default(now()) @map("created_at")
+  createdAt                 DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
 
   rental              V2Rental                     @relation(fields: [rentalId], references: [id])
   rentalSelection     V2RentalSelection            @relation(fields: [rentalSelectionId], references: [id])

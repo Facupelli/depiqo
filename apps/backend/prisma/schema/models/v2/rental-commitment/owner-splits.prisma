@@ -22,8 +22,8 @@ model V2RentalOwnerSplit {
 
   currency String
 
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   rental V2Rental @relation(fields: [rentalId], references: [id])
 

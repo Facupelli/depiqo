@@ -17,9 +17,9 @@ model V2Asset {
   serialNumber    String?       @map("serial_number")
   notes           String?
   status          V2AssetStatus @default(ACTIVE)
-  deletedAt       DateTime?     @map("deleted_at")
-  createdAt       DateTime      @default(now()) @map("created_at")
-  updatedAt       DateTime      @updatedAt @map("updated_at")
+  deletedAt       DateTime?     @map("deleted_at") @db.Timestamptz(3)
+  createdAt       DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   equipmentType  V2EquipmentType   @relation(fields: [equipmentTypeId], references: [id])
   owner          V2AssetOwner?     @relation(fields: [ownerId], references: [id])

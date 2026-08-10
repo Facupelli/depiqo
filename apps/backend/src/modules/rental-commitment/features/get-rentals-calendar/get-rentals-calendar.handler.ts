@@ -56,18 +56,17 @@ export class GetRentalsCalendarHandler implements IQueryHandler<GetRentalsCalend
     const timezone = await this.resolveCalendarTimezone(query.tenantId, query.branchId);
 
     // Calendar request dates are inclusive branch-local dates. Convert their half-open
-    // [from midnight, day-after-to midnight) interval to the current UTC wall-clock
-    // representation before comparing it with scalar rental periods.
-    const rangeStart = Prisma.sql`(((${query.from}::date)::timestamp AT TIME ZONE ${timezone}) AT TIME ZONE 'UTC')`;
-    const rangeEnd = Prisma.sql`(((${query.to}::date + 1)::timestamp AT TIME ZONE ${timezone}) AT TIME ZONE 'UTC')`;
+    // [from midnight, day-after-to midnight) interval to absolute instants.
+    const rangeStart = Prisma.sql`(${query.from}::date)::timestamp AT TIME ZONE ${timezone}`;
+    const rangeEnd = Prisma.sql`(${query.to}::date + 1)::timestamp AT TIME ZONE ${timezone}`;
 
     const rentals = await this.prisma.client.$queryRaw<RawRentalCalendarRow[]>(Prisma.sql`
       SELECT
         r.id AS "id",
         r.status AS "status",
-        r.created_at AT TIME ZONE 'UTC' AS "createdAt",
-        r.period_start AT TIME ZONE 'UTC' AS "periodStart",
-        r.period_end AT TIME ZONE 'UTC' AS "periodEnd",
+        r.created_at AS "createdAt",
+        r.period_start AS "periodStart",
+        r.period_end AS "periodEnd",
         r.customer_id AS "customerId"
       FROM v2_rentals r
       WHERE r.tenant_id = ${query.tenantId}

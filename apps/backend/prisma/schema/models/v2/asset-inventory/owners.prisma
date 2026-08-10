@@ -12,8 +12,8 @@ model V2AssetOwner {
   tenantId    String   @map("tenant_id")
   name        String
   contactInfo Json     @default("{}") @map("contact_info")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   assets    V2Asset[]
   contracts V2OwnerContract[]
@@ -31,10 +31,10 @@ model V2OwnerContract {
   basis       V2OwnerContractBasis
   ownerShare  Decimal              @map("owner_share")
   rentalShare Decimal              @map("rental_share")
-  validFrom   DateTime             @map("valid_from")
-  validTo     DateTime?            @map("valid_to")
-  createdAt   DateTime             @default(now()) @map("created_at")
-  updatedAt   DateTime             @updatedAt @map("updated_at")
+  validFrom   DateTime             @map("valid_from") @db.Timestamptz(3)
+  validTo     DateTime?            @map("valid_to") @db.Timestamptz(3)
+  createdAt   DateTime             @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime             @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   owner V2AssetOwner @relation(fields: [ownerId], references: [id])
   asset V2Asset?     @relation(fields: [assetId], references: [id])

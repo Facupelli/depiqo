@@ -16,27 +16,27 @@ model V2DocumentSignatureAcceptance {
   acceptanceTextVersion  String @map("acceptance_text_version")
   acceptanceTextSnapshot String @map("acceptance_text_snapshot")
 
-  unsignedArtifactId String @map("unsigned_artifact_id")
+  unsignedArtifactId String  @map("unsigned_artifact_id")
   signedArtifactId   String? @map("signed_artifact_id")
 
   receiptTokenHash      String?   @unique @map("receipt_token_hash")
-  receiptTokenExpiresAt DateTime? @map("receipt_token_expires_at")
-  receiptDownloadedAt   DateTime? @map("receipt_downloaded_at")
+  receiptTokenExpiresAt DateTime? @map("receipt_token_expires_at") @db.Timestamptz(3)
+  receiptDownloadedAt   DateTime? @map("receipt_downloaded_at") @db.Timestamptz(3)
 
-  unsignedDocumentHash String @map("unsigned_document_hash")
+  unsignedDocumentHash String  @map("unsigned_document_hash")
   signedDocumentHash   String? @map("signed_document_hash")
-  hashAlgorithm        String @default("SHA-256") @map("hash_algorithm")
+  hashAlgorithm        String  @default("SHA-256") @map("hash_algorithm")
 
-  acceptedAt        DateTime @map("accepted_at")
+  acceptedAt        DateTime @map("accepted_at") @db.Timestamptz(3)
   acceptedIpAddress String?  @map("accepted_ip_address")
   acceptedUserAgent String?  @map("accepted_user_agent")
 
   evidence Json @default("{}")
 
-  createdAt DateTime @default(now()) @map("created_at")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
 
-  contract       V2Contract                @relation(fields: [contractId], references: [id])
-  signingRequest V2DocumentSigningRequest  @relation(fields: [signingRequestId], references: [id])
+  contract       V2Contract               @relation(fields: [contractId], references: [id])
+  signingRequest V2DocumentSigningRequest @relation(fields: [signingRequestId], references: [id])
 
   unsignedArtifact V2ContractArtifact  @relation("UnsignedArtifactAccepted", fields: [unsignedArtifactId], references: [id])
   signedArtifact   V2ContractArtifact? @relation("SignedArtifactProduced", fields: [signedArtifactId], references: [id])

@@ -17,19 +17,19 @@ model V2RentalCustomer {
   firstName        String                           @map("first_name")
   lastName         String                           @map("last_name")
   phone            String?
-  emailVerifiedAt  DateTime?                        @map("email_verified_at")
+  emailVerifiedAt  DateTime?                        @map("email_verified_at") @db.Timestamptz(3)
   avatarUrl        String?                          @map("avatar_url")
   sessionVersion   Int                              @default(1) @map("session_version")
-  lastLoginAt      DateTime?                        @map("last_login_at")
+  lastLoginAt      DateTime?                        @map("last_login_at") @db.Timestamptz(3)
   isCompany        Boolean                          @default(false) @map("is_company")
   companyName      String?                          @map("company_name")
   isActive         Boolean                          @default(true) @map("is_active")
   onboardingStatus V2RentalCustomerOnboardingStatus @default(NOT_STARTED) @map("onboarding_status")
   profileSnapshot  Json                             @default("{}") @map("profile_snapshot")
 
-  createdAt DateTime  @default(now()) @map("created_at")
-  updatedAt DateTime  @updatedAt @map("updated_at")
-  deletedAt DateTime? @map("deleted_at")
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(3)
 
   profile        V2CustomerProfile?
   tenant         V2Tenant                       @relation(fields: [tenantId], references: [id])
@@ -55,8 +55,8 @@ model V2RentalCustomerAuthIdentity {
   emailVerified Boolean @default(false) @map("email_verified")
   profile       Json?
 
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   @@unique([tenantId, provider, providerAccountId])
   @@unique([customerId, provider])
@@ -107,11 +107,11 @@ model V2CustomerProfile {
 
   // Review
   rejectionReason String?   @map("rejection_reason")
-  reviewedAt      DateTime? @map("reviewed_at")
+  reviewedAt      DateTime? @map("reviewed_at") @db.Timestamptz(3)
   reviewedById    String?   @map("reviewed_by_id")
 
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   customer V2RentalCustomer @relation(fields: [customerId], references: [id])
 

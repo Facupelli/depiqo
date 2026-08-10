@@ -22,9 +22,9 @@ model V2RentableItemCategory {
   slug      String
   sortOrder Int       @default(0) @map("sort_order")
   isActive  Boolean   @default(true) @map("is_active")
-  deletedAt DateTime? @map("deleted_at")
-  createdAt DateTime  @default(now()) @map("created_at")
-  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(3)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   rentableItems V2RentableItem[]
 
@@ -42,9 +42,9 @@ model V2RentableItem {
   categoryId  String?              @map("category_id")
   kind        V2RentableItemKind
   status      V2RentableItemStatus @default(DRAFT)
-  deletedAt   DateTime?            @map("deleted_at")
-  createdAt   DateTime             @default(now()) @map("created_at")
-  updatedAt   DateTime             @updatedAt @map("updated_at")
+  deletedAt   DateTime?            @map("deleted_at") @db.Timestamptz(3)
+  createdAt   DateTime             @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime             @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   category     V2RentableItemCategory?     @relation(fields: [categoryId], references: [id])
   rentalOffers V2RentalOffer[]
@@ -61,9 +61,9 @@ model V2RentalOffer {
   rentableItemId String    @map("rentable_item_id")
   isVisible      Boolean   @default(true) @map("is_visible")
   isRentable     Boolean   @default(true) @map("is_rentable")
-  deletedAt      DateTime? @map("deleted_at")
-  createdAt      DateTime  @default(now()) @map("created_at")
-  updatedAt      DateTime  @updatedAt @map("updated_at")
+  deletedAt      DateTime? @map("deleted_at") @db.Timestamptz(3)
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   rentableItem V2RentableItem @relation(fields: [rentableItemId], references: [id])
 
@@ -79,8 +79,8 @@ model V2RentableItemRequirement {
   rentableItemId  String   @map("rentable_item_id")
   equipmentTypeId String   @map("equipment_type_id")
   quantityPerItem Int      @map("quantity_per_item")
-  createdAt       DateTime @default(now()) @map("created_at")
-  updatedAt       DateTime @updatedAt @map("updated_at")
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   rentableItem V2RentableItem @relation(fields: [rentableItemId], references: [id])
 

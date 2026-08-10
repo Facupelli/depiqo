@@ -18,16 +18,16 @@ model V2NotificationTemplate {
 
   key     String
   channel V2NotificationChannel
-  locale  String @default("es")
-  version Int    @default(1)
+  locale  String                @default("es")
+  version Int                   @default(1)
 
   subjectTemplate String? @map("subject_template")
   bodyTemplate    String  @map("body_template")
 
   isActive Boolean @default(true) @map("is_active")
 
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   notifications V2Notification[]
 
@@ -59,9 +59,9 @@ model V2Notification {
   metadata    Json    @default("{}")
   contentHash String? @map("content_hash")
 
-  createdAt DateTime @default(now()) @map("created_at")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
 
-  template   V2NotificationTemplate? @relation(fields: [templateId], references: [id])
+  template   V2NotificationTemplate?  @relation(fields: [templateId], references: [id])
   deliveries V2NotificationDelivery[]
 
   @@unique([tenantId, idempotencyKey])
@@ -89,13 +89,13 @@ model V2NotificationDelivery {
   lastErrorCode    String? @map("last_error_code")
   lastErrorMessage String? @map("last_error_message")
 
-  lastAttemptAt DateTime? @map("last_attempt_at")
-  sentAt        DateTime? @map("sent_at")
-  failedAt      DateTime? @map("failed_at")
-  cancelledAt   DateTime? @map("cancelled_at")
+  lastAttemptAt DateTime? @map("last_attempt_at") @db.Timestamptz(3)
+  sentAt        DateTime? @map("sent_at") @db.Timestamptz(3)
+  failedAt      DateTime? @map("failed_at") @db.Timestamptz(3)
+  cancelledAt   DateTime? @map("cancelled_at") @db.Timestamptz(3)
 
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   notification V2Notification @relation(fields: [notificationId], references: [id], onDelete: Restrict)
 

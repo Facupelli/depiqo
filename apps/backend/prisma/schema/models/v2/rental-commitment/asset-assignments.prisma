@@ -8,7 +8,7 @@ model V2AssignedAsset {
   rentalId           String   @map("rental_id")
   rentalDemandLineId String   @map("rental_demand_line_id")
   assetId            String   @map("asset_id")
-  createdAt          DateTime @default(now()) @map("created_at")
+  createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
 
   rental           V2Rental           @relation(fields: [rentalId], references: [id])
   rentalDemandLine V2RentalDemandLine @relation(fields: [rentalDemandLineId], references: [id])
@@ -20,13 +20,13 @@ model V2AssignedAsset {
 }
 
 model V2RentalAccessoryAssetAssignment {
-  id                         String   @id @default(uuid())
-  tenantId                   String   @map("tenant_id")
-  rentalOrderId              String   @map("rental_order_id")
-  rentalAccessorySelectionId String   @map("rental_accessory_selection_id")
-  assetId                    String   @map("asset_id")
-  
-  createdAt                  DateTime @default(now()) @map("created_at")
+  id                         String @id @default(uuid())
+  tenantId                   String @map("tenant_id")
+  rentalOrderId              String @map("rental_order_id")
+  rentalAccessorySelectionId String @map("rental_accessory_selection_id")
+  assetId                    String @map("asset_id")
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
 
   rental                   V2Rental                   @relation(fields: [rentalOrderId], references: [id])
   rentalAccessorySelection V2RentalAccessorySelection @relation(fields: [rentalAccessorySelectionId], references: [id])

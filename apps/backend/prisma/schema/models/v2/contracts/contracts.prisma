@@ -8,20 +8,20 @@ enum V2ContractStatus {
 }
 
 model V2Contract {
-  id             String           @id @default(uuid())
-  tenantId       String           @map("tenant_id")
-  rentalId       String           @map("rental_id")
+  id       String @id @default(uuid())
+  tenantId String @map("tenant_id")
+  rentalId String @map("rental_id")
 
   documentNumber String?          @map("document_number")
   status         V2ContractStatus @default(DRAFT)
 
-  snapshot       Json             @default("{}")
+  snapshot Json @default("{}")
 
-  createdAt      DateTime         @default(now()) @map("created_at")
-  updatedAt      DateTime         @updatedAt @map("updated_at")
-  generatedAt    DateTime?        @map("generated_at")
-  signedAt       DateTime?        @map("signed_at")
-  voidedAt       DateTime?        @map("voided_at")
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  generatedAt DateTime? @map("generated_at") @db.Timestamptz(3)
+  signedAt    DateTime? @map("signed_at") @db.Timestamptz(3)
+  voidedAt    DateTime? @map("voided_at") @db.Timestamptz(3)
 
   artifacts       V2ContractArtifact[]
   signingRequests V2DocumentSigningRequest[]

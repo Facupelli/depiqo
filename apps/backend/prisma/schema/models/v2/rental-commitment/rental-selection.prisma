@@ -12,7 +12,7 @@ model V2RentalSelection {
   rentableItemKindSnapshot V2RentableItemKind @map("rentable_item_kind_snapshot")
   quantity                 Int
   priceSnapshot            Json?              @map("price_snapshot")
-  createdAt                DateTime           @default(now()) @map("created_at")
+  createdAt                DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
 
   rental      V2Rental             @relation(fields: [rentalId], references: [id])
   demandLines V2RentalDemandLine[]
@@ -24,19 +24,19 @@ model V2RentalSelection {
 }
 
 model V2RentalAccessorySelection {
-  id                        String   @id @default(uuid())
-  tenantId                  String   @map("tenant_id")
-  rentalOrderId             String   @map("rental_order_id")
-  sourceRentalDemandLineId  String?  @map("source_rental_demand_line_id")
+  id                       String  @id @default(uuid())
+  tenantId                 String  @map("tenant_id")
+  rentalOrderId            String  @map("rental_order_id")
+  sourceRentalDemandLineId String? @map("source_rental_demand_line_id")
 
-  equipmentTypeId           String   @map("equipment_type_id")
-  equipmentTypeNameSnapshot String   @map("equipment_type_name_snapshot")
+  equipmentTypeId           String @map("equipment_type_id")
+  equipmentTypeNameSnapshot String @map("equipment_type_name_snapshot")
   quantity                  Int
 
-  createdAt                 DateTime @default(now()) @map("created_at")
-  updatedAt                 DateTime @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  rental                 V2Rental            @relation(fields: [rentalOrderId], references: [id])
+  rental V2Rental @relation(fields: [rentalOrderId], references: [id])
 
   assignments V2RentalAccessoryAssetAssignment[]
   demandLines V2RentalDemandLine[]

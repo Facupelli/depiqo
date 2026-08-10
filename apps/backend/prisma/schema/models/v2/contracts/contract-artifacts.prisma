@@ -31,7 +31,7 @@ model V2ContractArtifact {
   hashAlgorithm String @map("hash_algorithm") // e.g. SHA-256
   documentHash  String @map("document_hash")
 
-  createdAt DateTime @default(now()) @map("created_at")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
 
   contract V2Contract @relation(fields: [contractId], references: [id])
 

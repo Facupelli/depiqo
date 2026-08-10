@@ -19,8 +19,8 @@ model V2AssetBlock {
   assetId    String                   @map("asset_id")
   period     Unsupported("tstzrange")
   blockType  V2AssetBlockType         @map("block_type")
-  createdAt  DateTime                 @default(now()) @map("created_at")
-  releasedAt DateTime?                @map("released_at")
+  createdAt  DateTime                 @default(now()) @map("created_at") @db.Timestamptz(3)
+  releasedAt DateTime?                @map("released_at") @db.Timestamptz(3)
 
   rental V2Rental @relation(fields: [rentalId], references: [id])
 
