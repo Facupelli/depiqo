@@ -2,7 +2,7 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from 'src/core/database/prisma.service';
 import { Env } from 'src/config/env.schema';
-import { Prisma } from 'src/generated/prisma/client';
+import { Prisma, V2RentalCustomer } from 'src/generated/prisma/client';
 import { V2AuthProvider } from 'src/generated/prisma/enums';
 import { AuthCustomer, normalizeEmail, toAuthCustomer } from '../../shared/auth.types';
 import { CustomerGoogleHandoffTicketService } from '../../shared/handoff/customer-google-handoff-ticket.service';
@@ -71,71 +71,163 @@ export class CustomerGoogleLoginService {
     googleIdentity: VerifiedGoogleIdentity;
   }): Promise<AuthCustomer> {
     const { tenantId, googleIdentity } = input;
-
-    const existingIdentity = await this.prisma.client.v2RentalCustomerAuthIdentity.findUnique({
-      where: {
-        tenantId_provider_providerAccountId: {
-          tenantId,
-          provider: V2AuthProvider.GOOGLE,
-          providerAccountId: googleIdentity.providerSubject,
-        },
-      },
-      include: {
-        customer: true,
-      },
-    });
+    const existingIdentity = await this.findGoogleIdentity(tenantId, googleIdentity.providerSubject);
 
     if (existingIdentity) {
-      const customer = existingIdentity.customer;
-
-      if (!customer.isActive || customer.deletedAt !== null) {
-        throw new UnauthorizedException('Customer is unavailable for authentication.');
-      }
-
-      const updatedCustomer = await this.updateCustomerAfterGoogleLogin(customer.id, googleIdentity);
-      return toAuthCustomer(updatedCustomer);
+      return this.resolveExistingGoogleIdentity(existingIdentity.customer, googleIdentity);
     }
 
     const email = normalizeEmail(googleIdentity.email);
     const matchingCustomer = await this.prisma.client.v2RentalCustomer.findUnique({
-      where: {
-        tenantId_email: {
-          tenantId,
-          email,
-        },
-      },
+      where: { tenantId_email: { tenantId, email } },
     });
 
-    if (matchingCustomer && (!matchingCustomer.isActive || matchingCustomer.deletedAt !== null)) {
-      throw new UnauthorizedException('Customer is unavailable for authentication.');
+    if (matchingCustomer) {
+      return this.linkExistingCustomer({ tenantId, email, customer: matchingCustomer, googleIdentity });
     }
 
-    const customer = matchingCustomer
-      ? await this.updateCustomerAfterGoogleLogin(matchingCustomer.id, googleIdentity)
-      : await this.prisma.client.v2RentalCustomer.create({
-          data: {
-            tenantId,
-            email,
-            firstName: this.resolveFirstName(googleIdentity.givenName, email),
-            lastName: this.resolveLastName(googleIdentity.familyName),
-            emailVerifiedAt: new Date(),
-            avatarUrl: googleIdentity.pictureUrl,
-            lastLoginAt: new Date(),
-          },
-        });
+    try {
+      const customer = await this.provisionNewCustomer({ tenantId, email, googleIdentity });
+      return this.recordSuccessfulGoogleLogin(customer.id, googleIdentity);
+    } catch (error) {
+      if (!isGoogleProvisioningUniqueConflict(error)) throw error;
 
-    await this.prisma.client.v2RentalCustomerAuthIdentity.create({
-      data: {
-        tenantId,
-        customerId: customer.id,
-        provider: V2AuthProvider.GOOGLE,
-        providerAccountId: googleIdentity.providerSubject,
-        email,
-        emailVerified: googleIdentity.emailVerified,
-        profile: this.toGoogleProfile(googleIdentity),
-      },
+      return this.reconcileNewCustomerProvisioningRace({ tenantId, email, googleIdentity });
+    }
+  }
+
+  private async linkExistingCustomer(input: {
+    tenantId: string;
+    email: string;
+    customer: V2RentalCustomer;
+    googleIdentity: VerifiedGoogleIdentity;
+  }): Promise<AuthCustomer> {
+    const { tenantId, email, customer, googleIdentity } = input;
+    if (!customer) throw new Error('A customer is required to link a Google identity.');
+
+    this.assertCustomerIsAvailable(customer);
+
+    try {
+      await this.prisma.client.v2RentalCustomerAuthIdentity.create({
+        data: this.googleIdentityCreateData({ tenantId, customerId: customer.id, email, googleIdentity }),
+      });
+    } catch (error) {
+      if (!isGoogleIdentityUniqueConflict(error)) throw error;
+
+      return this.reconcileExistingCustomerLinkRace({ tenantId, googleIdentity });
+    }
+
+    return this.recordSuccessfulGoogleLogin(customer.id, googleIdentity);
+  }
+
+  private async provisionNewCustomer(input: {
+    tenantId: string;
+    email: string;
+    googleIdentity: VerifiedGoogleIdentity;
+  }) {
+    const { tenantId, email, googleIdentity } = input;
+
+    return this.prisma.client.$transaction(async (tx) => {
+      const customer = await tx.v2RentalCustomer.create({
+        data: {
+          tenantId,
+          email,
+          firstName: this.resolveFirstName(googleIdentity.givenName, email),
+          lastName: this.resolveLastName(googleIdentity.familyName),
+        },
+      });
+
+      await tx.v2RentalCustomerAuthIdentity.create({
+        data: this.googleIdentityCreateData({ tenantId, customerId: customer.id, email, googleIdentity }),
+      });
+
+      return customer;
     });
+  }
 
+  private async reconcileNewCustomerProvisioningRace(input: {
+    tenantId: string;
+    email: string;
+    googleIdentity: VerifiedGoogleIdentity;
+  }): Promise<AuthCustomer> {
+    const { tenantId, email, googleIdentity } = input;
+    const existingIdentity = await this.findGoogleIdentity(tenantId, googleIdentity.providerSubject);
+    if (existingIdentity) {
+      return this.resolveExistingGoogleIdentity(existingIdentity.customer, googleIdentity);
+    }
+
+    const matchingCustomer = await this.prisma.client.v2RentalCustomer.findUnique({
+      where: { tenantId_email: { tenantId, email } },
+    });
+    if (!matchingCustomer) {
+      throw new UnauthorizedException('Customer Google identity could not be linked.');
+    }
+
+    return this.linkExistingCustomer({ tenantId, email, customer: matchingCustomer, googleIdentity });
+  }
+
+  private async reconcileExistingCustomerLinkRace(input: {
+    tenantId: string;
+    googleIdentity: VerifiedGoogleIdentity;
+  }): Promise<AuthCustomer> {
+    const identity = await this.findGoogleIdentity(input.tenantId, input.googleIdentity.providerSubject);
+    if (identity) {
+      return this.resolveExistingGoogleIdentity(identity.customer, input.googleIdentity);
+    }
+
+    throw new UnauthorizedException('Customer Google identity could not be linked.');
+  }
+
+  private async findGoogleIdentity(tenantId: string, providerSubject: string) {
+    return this.prisma.client.v2RentalCustomerAuthIdentity.findUnique({
+      where: {
+        tenantId_provider_providerAccountId: {
+          tenantId,
+          provider: V2AuthProvider.GOOGLE,
+          providerAccountId: providerSubject,
+        },
+      },
+      include: { customer: true },
+    });
+  }
+
+  private async resolveExistingGoogleIdentity(
+    customer: V2RentalCustomer,
+    googleIdentity: VerifiedGoogleIdentity,
+  ): Promise<AuthCustomer> {
+    this.assertCustomerIsAvailable(customer);
+    return this.recordSuccessfulGoogleLogin(customer.id, googleIdentity);
+  }
+
+  private assertCustomerIsAvailable(customer: { isActive: boolean; deletedAt: Date | null }): void {
+    if (!customer.isActive || customer.deletedAt !== null) {
+      throw new UnauthorizedException('Customer is unavailable for authentication.');
+    }
+  }
+
+  private googleIdentityCreateData(input: {
+    tenantId: string;
+    customerId: string;
+    email: string;
+    googleIdentity: VerifiedGoogleIdentity;
+  }) {
+    const { tenantId, customerId, email, googleIdentity } = input;
+    return {
+      tenantId,
+      customerId,
+      provider: V2AuthProvider.GOOGLE,
+      providerAccountId: googleIdentity.providerSubject,
+      email,
+      emailVerified: googleIdentity.emailVerified,
+      profile: this.toGoogleProfile(googleIdentity),
+    };
+  }
+
+  private async recordSuccessfulGoogleLogin(
+    customerId: string,
+    googleIdentity: VerifiedGoogleIdentity,
+  ): Promise<AuthCustomer> {
+    const customer = await this.updateCustomerAfterGoogleLogin(customerId, googleIdentity);
     return toAuthCustomer(customer);
   }
 
@@ -177,4 +269,50 @@ export class CustomerGoogleLoginService {
 
     return 'User';
   }
+}
+
+type PrismaUniqueConstraintError = {
+  code: 'P2002';
+  meta?: {
+    target?: unknown;
+    driverAdapterError?: { cause?: { constraint?: { fields?: unknown } } };
+  };
+};
+
+const CUSTOMER_EMAIL_UNIQUE_FIELDS = ['tenant_id', 'email'];
+const GOOGLE_SUBJECT_UNIQUE_FIELDS = ['tenant_id', 'provider', 'provider_account_id'];
+const CUSTOMER_GOOGLE_PROVIDER_UNIQUE_FIELDS = ['customer_id', 'provider'];
+
+function isGoogleProvisioningUniqueConflict(error: unknown): boolean {
+  return (
+    isUniqueConstraintError(error, CUSTOMER_EMAIL_UNIQUE_FIELDS) ||
+    isUniqueConstraintError(error, GOOGLE_SUBJECT_UNIQUE_FIELDS) ||
+    isUniqueConstraintError(error, CUSTOMER_GOOGLE_PROVIDER_UNIQUE_FIELDS)
+  );
+}
+
+function isGoogleIdentityUniqueConflict(error: unknown): boolean {
+  return (
+    isUniqueConstraintError(error, GOOGLE_SUBJECT_UNIQUE_FIELDS) ||
+    isUniqueConstraintError(error, CUSTOMER_GOOGLE_PROVIDER_UNIQUE_FIELDS)
+  );
+}
+
+function isUniqueConstraintError(error: unknown, expectedFields: readonly string[]): boolean {
+  if (!isPrismaUniqueConstraintError(error)) return false;
+
+  const target = error.meta?.target ?? error.meta?.driverAdapterError?.cause?.constraint?.fields;
+  const fields =
+    Array.isArray(target) && target.every((field): field is string => typeof field === 'string')
+      ? target.map(toDatabaseFieldName)
+      : [];
+  return fields.length === expectedFields.length && fields.every((field) => expectedFields.includes(field));
+}
+
+function toDatabaseFieldName(field: string): string {
+  return field.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`);
+}
+
+function isPrismaUniqueConstraintError(error: unknown): error is PrismaUniqueConstraintError {
+  return typeof error === 'object' && error !== null && 'code' in error && error.code === 'P2002';
 }

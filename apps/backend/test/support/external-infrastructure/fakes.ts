@@ -181,6 +181,7 @@ export class FakeGoogleIdentityVerifier extends GoogleIdentityVerifier {
 
   private nextIdentity: VerifiedGoogleIdentity | null = null;
   private nextError: Error | null = null;
+  private readonly identitiesByAuthorizationCode = new Map<string, VerifiedGoogleIdentity>();
 
   async verifyAuthorizationCode(params: VerifyGoogleAuthorizationCodeParams): Promise<VerifiedGoogleIdentity> {
     this.calls.push(params);
@@ -189,15 +190,16 @@ export class FakeGoogleIdentityVerifier extends GoogleIdentityVerifier {
     this.nextError = null;
     if (error) throw error;
 
-    const identity = this.nextIdentity ?? {
-      provider: 'GOOGLE' as const,
-      providerSubject: `test-google-subject-${this.calls.length}`,
-      email: `google-user-${this.calls.length}@example.test`,
-      emailVerified: true,
-      givenName: 'Test',
-      familyName: 'Google User',
-      pictureUrl: null,
-    };
+    const identity = this.identitiesByAuthorizationCode.get(params.code) ??
+      this.nextIdentity ?? {
+        provider: 'GOOGLE' as const,
+        providerSubject: `test-google-subject-${this.calls.length}`,
+        email: `google-user-${this.calls.length}@example.test`,
+        emailVerified: true,
+        givenName: 'Test',
+        familyName: 'Google User',
+        pictureUrl: null,
+      };
     this.nextIdentity = null;
 
     return identity;
@@ -205,6 +207,10 @@ export class FakeGoogleIdentityVerifier extends GoogleIdentityVerifier {
 
   setNextIdentity(identity: VerifiedGoogleIdentity): void {
     this.nextIdentity = identity;
+  }
+
+  setIdentityForAuthorizationCode(code: string, identity: VerifiedGoogleIdentity): void {
+    this.identitiesByAuthorizationCode.set(code, identity);
   }
 
   failNext(error: Error): void {
@@ -215,6 +221,7 @@ export class FakeGoogleIdentityVerifier extends GoogleIdentityVerifier {
     this.calls.length = 0;
     this.nextIdentity = null;
     this.nextError = null;
+    this.identitiesByAuthorizationCode.clear();
   }
 }
 

@@ -13,6 +13,7 @@ import { GoogleIdentityVerifier } from '../../src/modules/tenant-management/auth
 import { createE2ETestApp, E2ETestApp } from '../support/create-e2e-test-app';
 import { createE2ETestClient } from '../support/create-e2e-test-client';
 import { createTestFixtures } from '../support/fixtures';
+import { runConcurrently } from '../support/concurrency';
 
 describe('authenticated tenant HTTP flow', () => {
   let testApp!: E2ETestApp;
@@ -296,6 +297,220 @@ describe('authenticated tenant HTTP flow', () => {
     ).resolves.toBe(1);
   });
 
+  it('rolls back new Google customer provisioning when identity creation fails', async () => {
+    const prisma = testApp.app.get(PrismaService);
+    const fixtures = createTestFixtures(prisma);
+    const tenant = await fixtures.createTenant();
+    const googleIdentity = googleCustomerIdentity({
+      providerSubject: `rollback-subject-${randomUUID()}`,
+      email: `rollback-${randomUUID()}@example.test`,
+    });
+
+    await prisma.client.$executeRawUnsafe(`
+      CREATE FUNCTION fail_google_customer_identity_insert() RETURNS trigger AS $$
+      BEGIN
+        RAISE EXCEPTION 'forced Google identity insert failure';
+      END;
+      $$ LANGUAGE plpgsql;
+      CREATE TRIGGER fail_google_customer_identity_insert
+      BEFORE INSERT ON "v2_rental_customer_auth_identities"
+      FOR EACH ROW EXECUTE FUNCTION fail_google_customer_identity_insert();
+    `);
+
+    try {
+      testApp.externals.googleIdentity.setNextIdentity(googleIdentity);
+      const state = issueGoogleState(testApp, tenant.id, tenant.slug);
+      await request(testApp.app.getHttpServer())
+        .post('/auth/customer/google/handoff')
+        .send({ code: `rollback-code-${randomUUID()}`, state })
+        .expect(500);
+
+      await expect(prisma.client.v2RentalCustomer.count({ where: { tenantId: tenant.id } })).resolves.toBe(0);
+      await expect(prisma.client.v2RentalCustomerAuthIdentity.count({ where: { tenantId: tenant.id } })).resolves.toBe(
+        0,
+      );
+      await expect(prisma.client.authHandoffToken.count({ where: { tenantId: tenant.id } })).resolves.toBe(0);
+    } finally {
+      await prisma.client.$executeRawUnsafe(
+        'DROP TRIGGER IF EXISTS fail_google_customer_identity_insert ON "v2_rental_customer_auth_identities"; DROP FUNCTION IF EXISTS fail_google_customer_identity_insert();',
+      );
+    }
+  });
+
+  it('links an existing normalized-email customer before recording Google login metadata', async () => {
+    const prisma = testApp.app.get(PrismaService);
+    const client = createE2ETestClient(testApp.app);
+    const fixtures = createTestFixtures(prisma);
+    const tenant = await fixtures.createTenant();
+    const existing = await fixtures.createRentalCustomer({
+      tenantId: tenant.id,
+      overrides: { email: `existing-google-${randomUUID()}@example.test`, lastLoginAt: null, avatarUrl: null },
+    });
+    const googleIdentity = googleCustomerIdentity({
+      providerSubject: `existing-customer-subject-${randomUUID()}`,
+      email: existing.customer.email.toUpperCase(),
+      pictureUrl: 'https://example.test/avatar.png',
+    });
+
+    testApp.externals.googleIdentity.setNextIdentity(googleIdentity);
+    const ticket = await createCustomerGoogleHandoffTicket(
+      testApp,
+      tenant.id,
+      tenant.slug,
+      `existing-code-${randomUUID()}`,
+    );
+    await client.request().post('/auth/customer/google/finalize').send({ ticket }).expect(200);
+
+    await expect(
+      prisma.client.v2RentalCustomerAuthIdentity.findUnique({
+        where: {
+          tenantId_provider_providerAccountId: {
+            tenantId: tenant.id,
+            provider: 'GOOGLE',
+            providerAccountId: googleIdentity.providerSubject,
+          },
+        },
+      }),
+    ).resolves.toMatchObject({ customerId: existing.customer.id });
+    await expect(
+      prisma.client.v2RentalCustomer.findUnique({ where: { id: existing.customer.id } }),
+    ).resolves.toMatchObject({
+      lastLoginAt: expect.any(Date),
+      avatarUrl: googleIdentity.pictureUrl,
+    });
+  });
+
+  it('rejects a conflicting existing-customer Google link without recording a successful login', async () => {
+    const prisma = testApp.app.get(PrismaService);
+    const fixtures = createTestFixtures(prisma);
+    const tenant = await fixtures.createTenant();
+    const existing = await fixtures.createRentalCustomer({
+      tenantId: tenant.id,
+      overrides: { email: `conflicting-google-${randomUUID()}@example.test`, lastLoginAt: null, avatarUrl: null },
+    });
+    await prisma.client.v2RentalCustomerAuthIdentity.create({
+      data: {
+        tenantId: tenant.id,
+        customerId: existing.customer.id,
+        provider: 'GOOGLE',
+        providerAccountId: `winning-subject-${randomUUID()}`,
+      },
+    });
+    const losingIdentity = googleCustomerIdentity({
+      providerSubject: `losing-subject-${randomUUID()}`,
+      email: existing.customer.email,
+    });
+
+    testApp.externals.googleIdentity.setNextIdentity(losingIdentity);
+    const state = issueGoogleState(testApp, tenant.id, tenant.slug);
+    await request(testApp.app.getHttpServer())
+      .post('/auth/customer/google/handoff')
+      .send({ code: `losing-code-${randomUUID()}`, state })
+      .expect(401);
+
+    await expect(
+      prisma.client.v2RentalCustomer.findUnique({ where: { id: existing.customer.id } }),
+    ).resolves.toMatchObject({
+      lastLoginAt: null,
+      avatarUrl: null,
+    });
+    await expect(
+      prisma.client.v2RentalCustomerAuthIdentity.count({
+        where: { tenantId: tenant.id, customerId: existing.customer.id },
+      }),
+    ).resolves.toBe(1);
+    await expect(prisma.client.authHandoffToken.count({ where: { tenantId: tenant.id } })).resolves.toBe(0);
+  });
+
+  it('converges concurrent first Google logins for the same tenant-scoped subject', async () => {
+    const prisma = testApp.app.get(PrismaService);
+    const fixtures = createTestFixtures(prisma);
+    const tenant = await fixtures.createTenant();
+    const identity = googleCustomerIdentity({
+      providerSubject: `concurrent-subject-${randomUUID()}`,
+      email: `concurrent-${randomUUID()}@example.test`,
+    });
+    const firstCode = `concurrent-first-${randomUUID()}`;
+    const secondCode = `concurrent-second-${randomUUID()}`;
+    testApp.externals.googleIdentity.setIdentityForAuthorizationCode(firstCode, identity);
+    testApp.externals.googleIdentity.setIdentityForAuthorizationCode(secondCode, identity);
+
+    const results = await runConcurrently(
+      [firstCode, secondCode].map((code) => async () => {
+        const state = issueGoogleState(testApp, tenant.id, tenant.slug);
+        return request(testApp.app.getHttpServer()).post('/auth/customer/google/handoff').send({ code, state });
+      }),
+    );
+
+    expect(results).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ status: 'fulfilled', value: expect.objectContaining({ status: 200 }) }),
+        expect.objectContaining({ status: 'fulfilled', value: expect.objectContaining({ status: 200 }) }),
+      ]),
+    );
+    await expect(prisma.client.v2RentalCustomer.count({ where: { tenantId: tenant.id } })).resolves.toBe(1);
+    await expect(prisma.client.v2RentalCustomerAuthIdentity.count({ where: { tenantId: tenant.id } })).resolves.toBe(1);
+  });
+
+  it('allows only one concurrent Google subject to link a shared tenant email', async () => {
+    const prisma = testApp.app.get(PrismaService);
+    const fixtures = createTestFixtures(prisma);
+    const tenant = await fixtures.createTenant();
+    const email = `shared-google-${randomUUID()}@example.test`;
+    const firstCode = `shared-first-${randomUUID()}`;
+    const secondCode = `shared-second-${randomUUID()}`;
+    testApp.externals.googleIdentity.setIdentityForAuthorizationCode(
+      firstCode,
+      googleCustomerIdentity({ providerSubject: `shared-first-subject-${randomUUID()}`, email }),
+    );
+    testApp.externals.googleIdentity.setIdentityForAuthorizationCode(
+      secondCode,
+      googleCustomerIdentity({ providerSubject: `shared-second-subject-${randomUUID()}`, email: email.toUpperCase() }),
+    );
+
+    const results = await runConcurrently(
+      [firstCode, secondCode].map((code) => async () => {
+        const state = issueGoogleState(testApp, tenant.id, tenant.slug);
+        return request(testApp.app.getHttpServer()).post('/auth/customer/google/handoff').send({ code, state });
+      }),
+    );
+    const responses = results.map((result) => (result.status === 'fulfilled' ? result.value : undefined));
+
+    expect(responses.filter((response) => response?.status === 200)).toHaveLength(1);
+    expect(responses.filter((response) => response?.status === 401)).toHaveLength(1);
+    await expect(prisma.client.v2RentalCustomer.count({ where: { tenantId: tenant.id } })).resolves.toBe(1);
+    await expect(prisma.client.v2RentalCustomerAuthIdentity.count({ where: { tenantId: tenant.id } })).resolves.toBe(1);
+    await expect(prisma.client.authHandoffToken.count({ where: { tenantId: tenant.id } })).resolves.toBe(1);
+  });
+
+  it('converges same-subject Google observations with differing emails without an orphan customer', async () => {
+    const prisma = testApp.app.get(PrismaService);
+    const fixtures = createTestFixtures(prisma);
+    const tenant = await fixtures.createTenant();
+    const subject = `different-email-subject-${randomUUID()}`;
+    const firstCode = `different-email-first-${randomUUID()}`;
+    const secondCode = `different-email-second-${randomUUID()}`;
+    testApp.externals.googleIdentity.setIdentityForAuthorizationCode(
+      firstCode,
+      googleCustomerIdentity({ providerSubject: subject, email: `first-${randomUUID()}@example.test` }),
+    );
+    testApp.externals.googleIdentity.setIdentityForAuthorizationCode(
+      secondCode,
+      googleCustomerIdentity({ providerSubject: subject, email: `second-${randomUUID()}@example.test` }),
+    );
+
+    const results = await runConcurrently(
+      [firstCode, secondCode].map((code) => async () => {
+        const state = issueGoogleState(testApp, tenant.id, tenant.slug);
+        return request(testApp.app.getHttpServer()).post('/auth/customer/google/handoff').send({ code, state });
+      }),
+    );
+
+    expect(results.every((result) => result.status === 'fulfilled' && result.value.status === 200)).toBe(true);
+    await expect(prisma.client.v2RentalCustomer.count({ where: { tenantId: tenant.id } })).resolves.toBe(1);
+    await expect(prisma.client.v2RentalCustomerAuthIdentity.count({ where: { tenantId: tenant.id } })).resolves.toBe(1);
+  });
+
   it('authenticates a fixture-created rental customer', async () => {
     const client = createE2ETestClient(testApp.app);
     const fixtures = createTestFixtures(testApp.app.get(PrismaService));
@@ -312,18 +527,40 @@ describe('authenticated tenant HTTP flow', () => {
   });
 });
 
+function googleCustomerIdentity(
+  overrides: Partial<{
+    providerSubject: string;
+    email: string;
+    pictureUrl: string | null;
+  }> = {},
+) {
+  return {
+    provider: 'GOOGLE' as const,
+    providerSubject: `google-subject-${randomUUID()}`,
+    email: `google-${randomUUID()}@example.test`,
+    emailVerified: true,
+    givenName: 'Google',
+    familyName: 'Customer',
+    pictureUrl: null,
+    ...overrides,
+  };
+}
+
+function issueGoogleState(testApp: E2ETestApp, tenantId: string, tenantSlug: string): string {
+  return testApp.app.get(GoogleAuthStateService).issueState({
+    tenantId,
+    portalOrigin: `http://${tenantSlug}.localhost`,
+    redirectPath: '/account',
+  });
+}
+
 async function createCustomerGoogleHandoffTicket(
   testApp: E2ETestApp,
   tenantId: string,
   tenantSlug: string,
   code: string,
 ): Promise<string> {
-  const portalOrigin = `http://${tenantSlug}.localhost`;
-  const state = testApp.app.get(GoogleAuthStateService).issueState({
-    tenantId,
-    portalOrigin,
-    redirectPath: '/account',
-  });
+  const state = issueGoogleState(testApp, tenantId, tenantSlug);
 
   const handoffResponse = await request(testApp.app.getHttpServer())
     .post('/auth/customer/google/handoff')
