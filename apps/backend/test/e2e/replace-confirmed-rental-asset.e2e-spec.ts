@@ -43,7 +43,8 @@ describe('POST /rental-commitments/confirmed-rentals/:rentalId/assigned-assets/r
       branchId: branch.id,
       equipmentTypeId: commercial.equipmentType.id,
     });
-    return { tenant, branch, customer, user, commercial, rental, replacementAssetId };
+    const persisted = await prisma.client.v2Rental.findUniqueOrThrow({ where: { id: rental.rentalId } });
+    return { tenant, branch, customer, user, commercial, rental, replacementAssetId, persisted };
   }
 
   async function login(user: Awaited<ReturnType<TestFixtures['createTenantUser']>>): Promise<E2ETestClient> {
@@ -52,10 +53,9 @@ describe('POST /rental-commitments/confirmed-rentals/:rentalId/assigned-assets/r
     return client;
   }
 
-  async function body(setup: Awaited<ReturnType<typeof scenario>>, overrides: Record<string, unknown> = {}) {
-    const rental = await prisma.client.v2Rental.findUniqueOrThrow({ where: { id: setup.rental.rentalId } });
+  function body(setup: Awaited<ReturnType<typeof scenario>>, overrides: Record<string, unknown> = {}) {
     return {
-      expectedUpdatedAt: rental.updatedAt.toISOString(),
+      expectedVersion: setup.persisted.version,
       currentAssignedAssetId: setup.rental.assetIds[0],
       replacementAssetId: setup.replacementAssetId,
       ...overrides,
@@ -69,9 +69,11 @@ describe('POST /rental-commitments/confirmed-rentals/:rentalId/assigned-assets/r
       .withCsrf(
         client.request().post(`/rental-commitments/confirmed-rentals/${setup.rental.rentalId}/assigned-assets/replace`),
       )
-      .send(await body(setup))
+      .send(body(setup))
       .expect(201);
-    expect(response.body).toEqual({ data: { id: setup.rental.rentalId, updatedAt: expect.any(String) } });
+    expect(response.body).toEqual({
+      data: { id: setup.rental.rentalId, version: expect.any(Number), updatedAt: expect.any(String) },
+    });
     const state = await fixtures.persistedState(setup.rental.rentalId);
     expect(state.rental.status).toBe('CONFIRMED');
     expect(state.rental.assignedAssets).toEqual([expect.objectContaining({ assetId: setup.replacementAssetId })]);
@@ -99,7 +101,7 @@ describe('POST /rental-commitments/confirmed-rentals/:rentalId/assigned-assets/r
     let request = client
       .request()
       .post(`/rental-commitments/confirmed-rentals/${setup.rental.rentalId}/assigned-assets/replace`)
-      .send(await body(setup));
+      .send(body(setup));
     if (token) request = request.set('x-csrf-token', token);
     const response = await request;
     expectProblemResponse(response, { status: 403, type: PlatformProblemTypes.auth.forbidden });
@@ -107,15 +109,16 @@ describe('POST /rental-commitments/confirmed-rentals/:rentalId/assigned-assets/r
   });
 
   it.each([
-    ['missing expectedUpdatedAt', { expectedUpdatedAt: undefined }],
-    ['malformed expectedUpdatedAt', { expectedUpdatedAt: 'not-a-date' }],
+    ['missing expectedVersion', { expectedVersion: undefined }],
+    ['negative expectedVersion', { expectedVersion: -1 }],
+    ['non-integer expectedVersion', { expectedVersion: 1.5 }],
     ['blank currentAssignedAssetId', { currentAssignedAssetId: '   ' }],
     ['blank replacementAssetId', { replacementAssetId: '' }],
   ])('validates %s without mutation', async (_name, overrides) => {
     const setup = await scenario();
     const before = await fixtures.persistedState(setup.rental.rentalId);
-    const requestBody = await body(setup, overrides);
-    if (overrides.expectedUpdatedAt === undefined) delete (requestBody as Record<string, unknown>).expectedUpdatedAt;
+    const requestBody = body(setup, overrides);
+    if (overrides.expectedVersion === undefined) delete (requestBody as Record<string, unknown>).expectedVersion;
     const client = await login(setup.user);
     const response = await client
       .withCsrf(
@@ -139,7 +142,7 @@ describe('POST /rental-commitments/confirmed-rentals/:rentalId/assigned-assets/r
           .request()
           .post(`/rental-commitments/confirmed-rentals/${setupB.rental.rentalId}/assigned-assets/replace`),
       )
-      .send(await body(setupB));
+      .send(body(setupB));
     expectProblemResponse(response, {
       status: 404,
       type: createProblemType('rental_commitment.rental_not_found'),
@@ -160,7 +163,7 @@ describe('POST /rental-commitments/confirmed-rentals/:rentalId/assigned-assets/r
           .request()
           .post(`/rental-commitments/confirmed-rentals/${setupA.rental.rentalId}/assigned-assets/replace`),
       )
-      .send(await body(setupA, { replacementAssetId: setupB.replacementAssetId }));
+      .send(body(setupA, { replacementAssetId: setupB.replacementAssetId }));
     expectProblemResponse(response, {
       status: 409,
       type: createProblemType('rental_commitment.replacement_asset_unavailable'),
@@ -188,7 +191,7 @@ describe('POST /rental-commitments/confirmed-rentals/:rentalId/assigned-assets/r
       .withCsrf(
         client.request().post(`/rental-commitments/confirmed-rentals/${setup.rental.rentalId}/assigned-assets/replace`),
       )
-      .send(await body(setup));
+      .send(body(setup));
     expectProblemResponse(response, {
       status: 409,
       type: createProblemType('rental_commitment.replacement_asset_unavailable'),
@@ -196,5 +199,27 @@ describe('POST /rental-commitments/confirmed-rentals/:rentalId/assigned-assets/r
     });
     expect(await fixtures.persistedState(setup.rental.rentalId)).toEqual(beforeTarget);
     expect(await fixtures.persistedState(competing.rentalId)).toEqual(beforeCompeting);
+  });
+
+  it('returns the documented conflict without mutation for a stale expectedVersion', async () => {
+    const setup = await scenario();
+    await prisma.client.v2Rental.update({
+      where: { id: setup.rental.rentalId },
+      data: { notes: 'concurrent change', version: { increment: 1 } },
+    });
+    const before = await fixtures.persistedState(setup.rental.rentalId);
+    const client = await login(setup.user);
+    const response = await client
+      .withCsrf(
+        client.request().post(`/rental-commitments/confirmed-rentals/${setup.rental.rentalId}/assigned-assets/replace`),
+      )
+      .send(body(setup));
+    expectProblemResponse(response, {
+      status: 409,
+      type: createProblemType('rental_commitment.rental_version_conflict'),
+      code: 'rental_commitment.rental_version_conflict',
+    });
+    expect(response.body.title).toBe('Rental was modified');
+    expect(await fixtures.persistedState(setup.rental.rentalId)).toEqual(before);
   });
 });
