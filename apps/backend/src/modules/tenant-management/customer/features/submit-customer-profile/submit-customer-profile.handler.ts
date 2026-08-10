@@ -2,6 +2,7 @@ import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { err, ok, Result } from 'neverthrow';
 
 import { PrismaService } from 'src/core/database/prisma.service';
+import { localDateToPrismaDate } from 'src/core/temporal/local-date';
 import { V2RentalCustomerOnboardingStatus } from 'src/generated/prisma/enums';
 
 import { SubmitCustomerProfileCommand } from './submit-customer-profile.command';
@@ -78,7 +79,7 @@ export class SubmitCustomerProfileHandler implements ICommandHandler<
       const profileData = {
         fullName: command.profile.fullName,
         phone: command.profile.phone,
-        birthDate: command.profile.birthDate,
+        birthDate: localDateToPrismaDate(command.profile.birthDate),
         documentNumber: command.profile.documentNumber,
         identityDocumentPath: command.profile.identityDocumentPath,
         address: command.profile.address,

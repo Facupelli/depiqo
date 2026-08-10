@@ -1,7 +1,9 @@
+import type { LocalDate } from '@repo/api-contracts';
 import { Injectable } from '@nestjs/common';
 import { err, ok, Result } from 'neverthrow';
 
 import { PrismaService } from 'src/core/database/prisma.service';
+import { localDateDayOfWeek, localDateToPrismaDate, prismaDateToLocalDate } from 'src/core/temporal/local-date';
 import {
   BranchUnavailableForRentalError,
   PickupTimeOutsideBranchScheduleError,
@@ -45,7 +47,7 @@ import { BranchScheduleWindow } from '../domain/value-objects/branch-schedule-wi
 import { resolveEffectiveTimezone } from '../domain/utils/effective-timezone';
 
 type LocalDateTimeParts = {
-  dateKey: string;
+  dateKey: LocalDate;
   dayOfWeek: number;
   minuteOfDay: number;
 };
@@ -549,9 +551,9 @@ export class TenantManagementPublicApiService extends TenantManagementPublicApi 
     type: BranchScheduleSlotType,
     localDateTime: LocalDateTimeParts,
   ): Promise<boolean> {
-    const specificDate = new Date(`${localDateTime.dateKey}T00:00:00.000Z`);
+    const specificDate = localDateToPrismaDate(localDateTime.dateKey);
 
-    const rows = await this.prisma.client.v2BranchSchedule.findMany({
+    const rawRows = await this.prisma.client.v2BranchSchedule.findMany({
       where: {
         branchId,
         type,
@@ -563,6 +565,11 @@ export class TenantManagementPublicApiService extends TenantManagementPublicApi 
         closeTime: true,
       },
     });
+
+    const rows = rawRows.map((row) => ({
+      ...row,
+      specificDate: row.specificDate ? prismaDateToLocalDate(row.specificDate) : null,
+    }));
 
     if (rows.length === 0) {
       return false;
@@ -604,7 +611,7 @@ export class TenantManagementPublicApiService extends TenantManagementPublicApi 
 
     return {
       dateKey,
-      dayOfWeek: new Date(Date.UTC(year, month - 1, day)).getUTCDay(),
+      dayOfWeek: localDateDayOfWeek(dateKey),
       minuteOfDay: hour * 60 + minute,
     };
   }

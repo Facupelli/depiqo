@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import type { ApiContract } from "../api-contract";
+import { LocalDateSchema } from "../local-date.schema";
 
 export const GetStorefrontBranchScheduleSlotsParamsSchema = z.object({
   branchId: z.uuid(),
@@ -8,8 +9,8 @@ export const GetStorefrontBranchScheduleSlotsParamsSchema = z.object({
 
 export const GetStorefrontBranchScheduleSlotsQuerySchema = z
   .object({
-    periodStart: z.string().date().optional(),
-    periodEnd: z.string().date().optional(),
+    periodStart: LocalDateSchema.optional(),
+    periodEnd: LocalDateSchema.optional(),
   })
   .refine((query) => query.periodStart !== undefined || query.periodEnd !== undefined, {
     message: "At least one of periodStart or periodEnd is required.",

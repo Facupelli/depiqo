@@ -3,6 +3,7 @@ import { Calendar } from "@repo/ui/components/calendar";
 import { es } from "date-fns/locale";
 import type { DateRange } from "react-day-picker";
 import { useStorefrontBranchSchedules } from "@/modules/tenant-management/branches/branch-schedule.queries";
+import { localDateToDateParam } from "@/lib/dates/parse";
 
 type StorefrontBranchScheduleSlotType =
 	GetStorefrontBranchSchedulesResponseDto[number]["type"];
@@ -56,7 +57,7 @@ function isScheduleBoundaryDisabled(
 			return false;
 		}
 
-		return isSameCalendarDay(new Date(schedule.specificDate), date);
+		return schedule.specificDate === localDateToDateParam(date);
 	});
 
 	if (overrideSchedules.length > 0) {
@@ -65,18 +66,5 @@ function isScheduleBoundaryDisabled(
 
 	return !typedSchedules.some(
 		(schedule) => schedule.dayOfWeek === date.getDay(),
-	);
-}
-
-function isSameCalendarDay(left: Date, right: Date): boolean {
-	const leftDate = new Date(left);
-	const rightDate = new Date(right);
-
-	return (
-		!Number.isNaN(leftDate.getTime()) &&
-		!Number.isNaN(rightDate.getTime()) &&
-		leftDate.getFullYear() === rightDate.getFullYear() &&
-		leftDate.getMonth() === rightDate.getMonth() &&
-		leftDate.getDate() === rightDate.getDate()
 	);
 }

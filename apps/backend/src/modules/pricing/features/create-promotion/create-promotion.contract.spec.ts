@@ -10,7 +10,9 @@ describe('CreatePromotionBodySchema validity dates', () => {
   };
 
   it('accepts strict local dates', () => {
-    expect(CreatePromotionBodySchema.parse({ ...body, validFrom: '2026-08-10', validUntil: '2026-08-10' })).toMatchObject({
+    expect(
+      CreatePromotionBodySchema.parse({ ...body, validFrom: '2026-08-10', validUntil: '2026-08-10' }),
+    ).toMatchObject({
       validFrom: '2026-08-10',
       validUntil: '2026-08-10',
     });

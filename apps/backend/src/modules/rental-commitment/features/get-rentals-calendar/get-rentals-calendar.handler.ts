@@ -1,3 +1,4 @@
+import type { LocalDate } from '@repo/api-contracts';
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { Prisma } from 'src/generated/prisma/client';
 import { V2RentalStatus } from 'src/generated/prisma/enums';
@@ -29,8 +30,8 @@ export interface RentalsCalendarItemReadModel {
   createdAt: string;
   pickupAt: string;
   returnAt: string;
-  pickupDate: string;
-  returnDate: string;
+  pickupDate: LocalDate;
+  returnDate: LocalDate;
   customer: RentalsCalendarCustomerReadModel | null;
 }
 
@@ -159,7 +160,7 @@ export class GetRentalsCalendarHandler implements IQueryHandler<GetRentalsCalend
     return `${customer.firstName} ${customer.lastName}`.trim();
   }
 
-  private toDateKey(date: Date, timezone: string): string {
+  private toDateKey(date: Date, timezone: string): LocalDate {
     const parts = new Intl.DateTimeFormat('en-US', {
       timeZone: timezone,
       year: 'numeric',

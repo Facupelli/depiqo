@@ -1,11 +1,12 @@
 import { z } from "zod";
 
 import type { ApiContract } from "../api-contract";
+import { LocalDateSchema } from "../local-date.schema";
 
 export const SubmitCustomerProfileBodySchema = z.object({
   fullName: z.string().min(1),
   phone: z.string().min(1),
-  birthDate: z.coerce.date(),
+  birthDate: LocalDateSchema,
   documentNumber: z.string().min(1),
   identityDocumentPath: z.string().min(1),
 

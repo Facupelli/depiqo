@@ -2,11 +2,11 @@ import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { err, ok, Result } from 'neverthrow';
 
 import { PrismaService } from 'src/core/database/prisma.service';
+import { localDateToPrismaDate } from 'src/core/temporal/local-date';
 import { PromotionEffectType } from 'src/generated/prisma/client';
 
 import { updatePromotionError, UpdatePromotionError } from './update-promotion.errors';
 import { UpdatePromotionCommand } from './update-promotion.command';
-import { localDateToPrismaDate } from '../../pricing-engine/shared/local-date';
 
 export interface UpdatePromotionResult {
   id: string;

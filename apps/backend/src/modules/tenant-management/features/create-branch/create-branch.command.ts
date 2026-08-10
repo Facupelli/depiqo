@@ -1,9 +1,11 @@
+import type { LocalDate } from '@repo/api-contracts';
+
 import { BranchScheduleSlotType } from '../../domain/entities/branch-schedule.entity';
 
 export interface CreateBranchScheduleCommandProps {
   type: BranchScheduleSlotType;
   dayOfWeek: number | null;
-  specificDate: Date | null;
+  specificDate: LocalDate | null;
   openTime: number;
   closeTime: number;
   slotIntervalMinutes: number | null;

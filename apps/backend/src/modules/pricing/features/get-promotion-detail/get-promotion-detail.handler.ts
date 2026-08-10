@@ -3,10 +3,10 @@ import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { err, ok, Result } from 'neverthrow';
 
 import { PrismaService } from 'src/core/database/prisma.service';
+import { prismaDateToLocalDate } from 'src/core/temporal/local-date';
 
 import { getPromotionDetailError, GetPromotionDetailError } from './get-promotion-detail.errors';
 import { GetPromotionDetailQuery } from './get-promotion-detail.query';
-import { prismaDateToLocalDate } from '../../pricing-engine/shared/local-date';
 
 export type GetPromotionDetailResult = GetPromotionDetailResponseDto;
 

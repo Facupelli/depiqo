@@ -1,11 +1,12 @@
 import { z } from "zod";
 
 import type { ApiContract } from "../api-contract";
+import { LocalDateSchema } from "../local-date.schema";
 
 export const GetRentalsCalendarQuerySchema = z.object({
 	branchId: z.string().trim().min(1),
-	from: z.iso.date(),
-	to: z.iso.date(),
+	from: LocalDateSchema,
+	to: LocalDateSchema,
 });
 
 export const GetRentalsCalendarStatusSchema = z.enum([

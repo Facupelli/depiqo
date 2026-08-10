@@ -1,5 +1,7 @@
 import { Prisma, V2BranchSchedule as PrismaBranchSchedule } from 'src/generated/prisma/client';
 
+import { localDateToPrismaDate, prismaDateToLocalDate } from 'src/core/temporal/local-date';
+
 import { Branch } from '../../../domain/entities/branch.aggregate';
 import { BranchSchedule, BranchScheduleSlotType } from '../../../domain/entities/branch-schedule.entity';
 
@@ -69,7 +71,7 @@ export class BranchScheduleMapper {
       branchId: raw.branchId,
       type: raw.type as BranchScheduleSlotType,
       dayOfWeek: raw.dayOfWeek,
-      specificDate: raw.specificDate,
+      specificDate: raw.specificDate ? prismaDateToLocalDate(raw.specificDate) : null,
       window: {
         openTime: raw.openTime,
         closeTime: raw.closeTime,
@@ -84,7 +86,7 @@ export class BranchScheduleMapper {
       branchId: entity.branchId,
       type: entity.type,
       dayOfWeek: entity.dayOfWeek,
-      specificDate: entity.specificDate,
+      specificDate: entity.specificDate ? localDateToPrismaDate(entity.specificDate) : null,
       openTime: entity.getWindow().openTime,
       closeTime: entity.getWindow().closeTime,
       slotIntervalMinutes: entity.getWindow().slotIntervalMinutes,
@@ -96,7 +98,7 @@ export class BranchScheduleMapper {
       id: entity.id,
       type: entity.type,
       dayOfWeek: entity.dayOfWeek,
-      specificDate: entity.specificDate,
+      specificDate: entity.specificDate ? localDateToPrismaDate(entity.specificDate) : null,
       openTime: entity.getWindow().openTime,
       closeTime: entity.getWindow().closeTime,
       slotIntervalMinutes: entity.getWindow().slotIntervalMinutes,

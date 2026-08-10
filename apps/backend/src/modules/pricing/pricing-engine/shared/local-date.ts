@@ -15,22 +15,3 @@ export function toLocalDate(calculationDate: Date, timezone: string): LocalDate 
 
   return `${get('year')}-${get('month')}-${get('day')}`;
 }
-
-/**
- * Maps Prisma's DateTime representation for a PostgreSQL DATE to a local-date key.
- * PostgreSQL DATE contains no timezone. UTC components avoid machine-timezone conversion.
- */
-export function prismaDateToLocalDate(value: Date): LocalDate {
-  const year = String(value.getUTCFullYear()).padStart(4, '0');
-  const month = String(value.getUTCMonth() + 1).padStart(2, '0');
-  const day = String(value.getUTCDate()).padStart(2, '0');
-
-  return `${year}-${month}-${day}`;
-}
-
-/**
- * Prisma requires Date for DateTime @db.Date fields. This encoding is persistence-only.
- */
-export function localDateToPrismaDate(value: LocalDate): Date {
-  return new Date(`${value}T00:00:00.000Z`);
-}

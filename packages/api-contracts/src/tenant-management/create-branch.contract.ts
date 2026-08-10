@@ -1,13 +1,14 @@
 import { z } from "zod";
 
 import type { ApiContract } from "../api-contract";
+import { LocalDateSchema } from "../local-date.schema";
 
 export const CreateBranchScheduleSlotTypeSchema = z.enum(["PICKUP", "RETURN"]);
 
 export const CreateBranchScheduleBodySchema = z.object({
   type: CreateBranchScheduleSlotTypeSchema,
   dayOfWeek: z.number().int().min(0).max(6).nullable(),
-  specificDate: z.string().date().nullable(),
+  specificDate: LocalDateSchema.nullable(),
   openTime: z.number().int().min(0).max(1439),
   closeTime: z.number().int().min(0).max(1439),
   slotIntervalMinutes: z.number().int().positive().nullable(),

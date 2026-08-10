@@ -2,6 +2,7 @@ import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { err, ok, Result } from 'neverthrow';
 
 import { PrismaService } from 'src/core/database/prisma.service';
+import { prismaDateToLocalDate } from 'src/core/temporal/local-date';
 
 import {
   GetCurrentRentalCustomerProfileError,
@@ -164,7 +165,7 @@ export class GetCurrentRentalCustomerProfileHandler implements IQueryHandler<
         id: customer.profile.id,
         fullName: customer.profile.fullName,
         phone: customer.profile.phone,
-        birthDate: customer.profile.birthDate.toISOString().slice(0, 10),
+        birthDate: prismaDateToLocalDate(customer.profile.birthDate),
         documentNumber: customer.profile.documentNumber,
         identityDocumentPath: customer.profile.identityDocumentPath,
         address: customer.profile.address,

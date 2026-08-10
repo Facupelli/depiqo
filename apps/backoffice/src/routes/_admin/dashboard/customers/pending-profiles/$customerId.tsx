@@ -567,10 +567,6 @@ function CustomerProfileReviewActionsPanel({
 	);
 }
 
-const dateFormatter = new Intl.DateTimeFormat("es-AR", {
-	dateStyle: "medium",
-});
-
 const dateTimeFormatter = new Intl.DateTimeFormat("es-AR", {
 	dateStyle: "medium",
 	timeStyle: "short",
@@ -581,7 +577,8 @@ function formatReviewDate(value: string | null) {
 		return "-";
 	}
 
-	return dateFormatter.format(new Date(value));
+	const [year, month, day] = value.split("-");
+	return `${day}/${month}/${year}`;
 }
 
 function formatReviewDateTime(value: string | null) {

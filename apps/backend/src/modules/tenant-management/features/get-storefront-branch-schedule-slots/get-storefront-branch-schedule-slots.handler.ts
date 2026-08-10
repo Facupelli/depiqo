@@ -1,7 +1,9 @@
+import type { LocalDate } from '@repo/api-contracts';
 import { V2BranchScheduleSlotType } from 'src/generated/prisma/client';
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 
 import { PrismaService } from 'src/core/database/prisma.service';
+import { localDateDayOfWeek, localDateToPrismaDate, prismaDateToLocalDate } from 'src/core/temporal/local-date';
 
 import { GetStorefrontBranchScheduleSlotsQuery } from './get-storefront-branch-schedule-slots.query';
 
@@ -11,7 +13,7 @@ export interface GetStorefrontBranchScheduleSlotsResult {
 }
 
 interface BranchScheduleRow {
-  specificDate: Date | null;
+  specificDate: LocalDate | null;
   openTime: number;
   closeTime: number;
   slotIntervalMinutes: number | null;
@@ -40,11 +42,11 @@ export class GetStorefrontBranchScheduleSlotsHandler implements IQueryHandler<
 
   private async getSlots(
     query: GetStorefrontBranchScheduleSlotsQuery,
-    date: string,
+    date: LocalDate,
     type: V2BranchScheduleSlotType,
   ): Promise<number[]> {
-    const dayOfWeek = this.dayOfWeek(date);
-    const specificDate = new Date(`${date}T00:00:00.000Z`);
+    const dayOfWeek = localDateDayOfWeek(date);
+    const specificDate = localDateToPrismaDate(date);
 
     const rows = await this.prisma.client.v2BranchSchedule.findMany({
       where: {
@@ -64,7 +66,12 @@ export class GetStorefrontBranchScheduleSlotsHandler implements IQueryHandler<
       },
     });
 
-    return this.generateSlots(rows);
+    return this.generateSlots(
+      rows.map((row) => ({
+        ...row,
+        specificDate: row.specificDate ? prismaDateToLocalDate(row.specificDate) : null,
+      })),
+    );
   }
 
   private generateSlots(rows: BranchScheduleRow[]): number[] {
@@ -93,10 +100,5 @@ export class GetStorefrontBranchScheduleSlotsHandler implements IQueryHandler<
     });
 
     return [...new Set(allSlots)].sort((a, b) => a - b);
-  }
-
-  private dayOfWeek(dateKey: string): number {
-    const [year, month, day] = dateKey.split('-').map(Number);
-    return new Date(Date.UTC(year, month - 1, day)).getUTCDay();
   }
 }

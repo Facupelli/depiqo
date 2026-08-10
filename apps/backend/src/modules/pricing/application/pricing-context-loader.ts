@@ -1,13 +1,13 @@
 import { Injectable } from '@nestjs/common';
 
 import { PrismaService } from 'src/core/database/prisma.service';
+import { prismaDateToLocalDate } from 'src/core/temporal/local-date';
 import { Prisma } from 'src/generated/prisma/client';
 
 import { BasePricingRatePlanInput } from '../pricing-engine/base/base-pricing-input.type';
 import { CouponPricingInput } from '../pricing-engine/coupons/coupon-input.types';
 import { CouponNotApplicableError } from '../pricing-engine/errors/pricing.errors';
 import { PromotionPricingInput } from '../pricing-engine/promotions/promotion-input.types';
-import { prismaDateToLocalDate } from '../pricing-engine/shared/local-date';
 
 type PromotionRow = Prisma.V2PromotionGetPayload<{ include: { scopes: true; exclusions: true } }>;
 type CouponRow = Prisma.V2CouponGetPayload<{ include: { promotion: { include: { scopes: true; exclusions: true } } } }>;

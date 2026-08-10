@@ -38,7 +38,7 @@ export class UpdateBranchHttpController {
         schedules: (dto.schedules ?? []).map((schedule) => ({
           type: schedule.type,
           dayOfWeek: schedule.dayOfWeek,
-          specificDate: schedule.specificDate ? new Date(`${schedule.specificDate}T00:00:00.000Z`) : null,
+          specificDate: schedule.specificDate,
           openTime: schedule.openTime,
           closeTime: schedule.closeTime,
           slotIntervalMinutes: schedule.slotIntervalMinutes,

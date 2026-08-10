@@ -2,9 +2,9 @@ import { GetPromotionsResponseDto } from '@repo/api-contracts';
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 
 import { PrismaService } from 'src/core/database/prisma.service';
+import { prismaDateToLocalDate } from 'src/core/temporal/local-date';
 
 import { GetPromotionsQuery } from './get-promotions.query';
-import { prismaDateToLocalDate } from '../../pricing-engine/shared/local-date';
 
 export type GetPromotionsResult = GetPromotionsResponseDto;
 

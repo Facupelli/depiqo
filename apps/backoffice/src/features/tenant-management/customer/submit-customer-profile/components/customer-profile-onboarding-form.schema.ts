@@ -1,6 +1,7 @@
 import {
 	type CustomerProfileDetailProfileDto,
 	type SubmitCustomerProfileBodyDto,
+	LocalDateSchema,
 	SubmitCustomerProfileBodySchema,
 } from "@repo/api-contracts";
 import z from "zod";
@@ -22,7 +23,7 @@ const step1BaseSchema = z.object({
 			/^\+?[\d\s\-().]{7,20}$/,
 			"Formato inválido. Incluí el código de área",
 		),
-	birthDate: z.string().min(1, "Ingresá tu fecha de nacimiento"),
+	birthDate: LocalDateSchema,
 	documentNumber: z
 		.string()
 		.min(5, "Ingresá tu DNI o NIE")

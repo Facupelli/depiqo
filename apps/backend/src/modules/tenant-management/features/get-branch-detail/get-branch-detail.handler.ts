@@ -2,6 +2,7 @@ import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { err, ok, Result } from 'neverthrow';
 
 import { PrismaService } from 'src/core/database/prisma.service';
+import { prismaDateToLocalDate } from 'src/core/temporal/local-date';
 
 import { GetBranchDetailError, getBranchDetailError } from './get-branch-detail.errors';
 import { GetBranchDetailQuery } from './get-branch-detail.query';
@@ -108,7 +109,7 @@ export class GetBranchDetailHandler implements IQueryHandler<GetBranchDetailQuer
         id: schedule.id,
         type: schedule.type,
         dayOfWeek: schedule.dayOfWeek,
-        specificDate: schedule.specificDate ? schedule.specificDate.toISOString().slice(0, 10) : null,
+        specificDate: schedule.specificDate ? prismaDateToLocalDate(schedule.specificDate) : null,
         openTime: schedule.openTime,
         closeTime: schedule.closeTime,
         slotIntervalMinutes: schedule.slotIntervalMinutes,

@@ -4,6 +4,7 @@ import {
 	type CreatePromotionExclusionDto,
 	type CreatePromotionScopeDto,
 	type GetPromotionsPromotionDto,
+	LocalDateSchema,
 	type UpdatePromotionBodyDto,
 	UpdatePromotionBodySchema,
 } from "@repo/api-contracts";
@@ -20,6 +21,7 @@ const optionalDecimalInputSchema = z
 	.refine((value) => value === "" || /^\d+(?:\.\d+)?$/.test(value), {
 		message: "Ingresa un monto valido",
 	});
+const optionalLocalDateSchema = z.union([z.literal(""), LocalDateSchema]);
 const optionalPositiveIntegerInputSchema = z
 	.string()
 	.trim()
@@ -62,8 +64,8 @@ export const promotionFormSchema = z
 		priority: z.number().int().min(0, "La prioridad debe ser 0 o mayor"),
 		stackable: z.boolean(),
 		isActive: z.boolean(),
-		validFrom: z.string(),
-		validUntil: z.string(),
+		validFrom: optionalLocalDateSchema,
+		validUntil: optionalLocalDateSchema,
 		effectType: z.enum(["PERCENTAGE_OFF", "FIXED_AMOUNT_OFF"]),
 		effectValue: decimalInputSchema,
 		target: z.enum(["ORDER", "ELIGIBLE_LINES"]),

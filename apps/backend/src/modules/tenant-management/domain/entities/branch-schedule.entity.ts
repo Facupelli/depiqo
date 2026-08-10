@@ -1,4 +1,5 @@
 import { randomUUID } from 'crypto';
+import type { LocalDate } from '@repo/api-contracts';
 import { err, ok, Result } from 'neverthrow';
 
 import {
@@ -15,7 +16,7 @@ export interface CreateBranchScheduleProps {
   branchId: string;
   type: string;
   dayOfWeek: number | null;
-  specificDate: Date | null;
+  specificDate: LocalDate | null;
   window: BranchScheduleWindowProps;
 }
 
@@ -24,7 +25,7 @@ export interface ReconstituteBranchScheduleProps {
   branchId: string;
   type: BranchScheduleSlotType;
   dayOfWeek: number | null;
-  specificDate: Date | null;
+  specificDate: LocalDate | null;
   window: BranchScheduleWindowProps;
 }
 
@@ -34,7 +35,7 @@ export class BranchSchedule {
     public readonly branchId: string,
     public readonly type: BranchScheduleSlotType,
     public readonly dayOfWeek: number | null,
-    public readonly specificDate: Date | null,
+    public readonly specificDate: LocalDate | null,
     private readonly window: BranchScheduleWindow,
   ) {}
 
@@ -91,17 +92,13 @@ export class BranchSchedule {
     return this.window.overlapsWith(other.getWindow());
   }
 
-  private isSameDate(other: Date): boolean {
-    return (
-      this.specificDate!.getUTCFullYear() === other.getUTCFullYear() &&
-      this.specificDate!.getUTCMonth() === other.getUTCMonth() &&
-      this.specificDate!.getUTCDate() === other.getUTCDate()
-    );
+  private isSameDate(other: LocalDate): boolean {
+    return this.specificDate === other;
   }
 
   private static validateDaySpecification(
     dayOfWeek: number | null,
-    specificDate: Date | null,
+    specificDate: LocalDate | null,
   ): Result<void, InvalidBranchScheduleDaySpecificationError> {
     const hasDayOfWeek = dayOfWeek !== null;
     const hasSpecificDate = specificDate !== null;

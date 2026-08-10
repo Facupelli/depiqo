@@ -9,6 +9,7 @@ import {
   V2UserRole,
   V2UserStatus,
 } from "../../../generated/prisma/client";
+import { localDateToPrismaDate, prismaDateToLocalDate } from '../../../core/temporal/local-date';
 
 export type TenantV2MigrationContext = {
   prisma: PrismaClient;
@@ -240,7 +241,7 @@ async function migrateBranchSchedules(ctx: TenantV2MigrationContext) {
         branchId: schedule.locationId,
         type: schedule.type,
         dayOfWeek: schedule.dayOfWeek,
-        specificDate: schedule.specificDate,
+        specificDate: schedule.specificDate ? localDateToPrismaDate(prismaDateToLocalDate(schedule.specificDate)) : null,
         openTime: schedule.openTime,
         closeTime: schedule.closeTime,
         slotIntervalMinutes: schedule.slotIntervalMinutes,
@@ -250,7 +251,7 @@ async function migrateBranchSchedules(ctx: TenantV2MigrationContext) {
       update: {
         type: schedule.type,
         dayOfWeek: schedule.dayOfWeek,
-        specificDate: schedule.specificDate,
+        specificDate: schedule.specificDate ? localDateToPrismaDate(prismaDateToLocalDate(schedule.specificDate)) : null,
         openTime: schedule.openTime,
         closeTime: schedule.closeTime,
         slotIntervalMinutes: schedule.slotIntervalMinutes,
@@ -517,7 +518,7 @@ async function migrateCustomerProfiles(ctx: TenantV2MigrationContext) {
         customerId: profile.customerId,
         fullName: profile.fullName,
         phone: profile.phone,
-        birthDate: profile.birthDate,
+        birthDate: localDateToPrismaDate(prismaDateToLocalDate(profile.birthDate)),
         documentNumber: profile.documentNumber,
         identityDocumentPath: profile.identityDocumentPath,
         address: profile.address,
@@ -548,7 +549,7 @@ async function migrateCustomerProfiles(ctx: TenantV2MigrationContext) {
       update: {
         fullName: profile.fullName,
         phone: profile.phone,
-        birthDate: profile.birthDate,
+        birthDate: localDateToPrismaDate(prismaDateToLocalDate(profile.birthDate)),
         documentNumber: profile.documentNumber,
         identityDocumentPath: profile.identityDocumentPath,
         address: profile.address,

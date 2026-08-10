@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import type { ApiContract } from "../api-contract";
 import { RentalCustomerOnboardingStatusSchema } from "./get-rental-customers.contract";
+import { LocalDateSchema } from "../local-date.schema";
 
 export const GetCustomerProfileDetailParamsSchema = z.object({
   customerId: z.string().uuid(),
@@ -11,7 +12,7 @@ export const CustomerProfileDetailProfileSchema = z.object({
   id: z.string(),
   fullName: z.string(),
   phone: z.string(),
-  birthDate: z.string(),
+  birthDate: LocalDateSchema,
   documentNumber: z.string(),
   identityDocumentPath: z.string(),
   address: z.string(),

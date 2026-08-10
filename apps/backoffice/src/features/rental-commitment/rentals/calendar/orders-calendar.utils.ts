@@ -1,6 +1,7 @@
 import type { EventApi, EventInput } from "@fullcalendar/core";
 import type { ParsedRentalsCalendarItem } from "@/features/rental-commitment/rentals/rentals.queries";
 import dayjs from "@/lib/dates/dayjs";
+import { localDateToDateParam } from "@/lib/dates/parse";
 import { formatOrderNumber } from "@/shared/utils/formatters";
 
 export const ORDERS_CALENDAR_VIEWS = [
@@ -41,7 +42,7 @@ export function getDefaultOrdersCalendarDate(timezone: string): string {
 }
 
 export function getCalendarDateParamFromDate(date: Date): string {
-	return date.toISOString().slice(0, 10);
+	return localDateToDateParam(date);
 }
 
 export function toOrdersCalendarEvent(

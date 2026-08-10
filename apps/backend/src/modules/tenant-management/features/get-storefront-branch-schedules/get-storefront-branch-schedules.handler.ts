@@ -1,6 +1,8 @@
+import type { LocalDate } from '@repo/api-contracts';
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 
 import { PrismaService } from 'src/core/database/prisma.service';
+import { prismaDateToLocalDate } from 'src/core/temporal/local-date';
 
 import { GetStorefrontBranchSchedulesQuery } from './get-storefront-branch-schedules.query';
 
@@ -9,7 +11,7 @@ export interface GetStorefrontBranchScheduleReadModel {
   branchId: string;
   type: 'PICKUP' | 'RETURN';
   dayOfWeek: number | null;
-  specificDate: string | null;
+  specificDate: LocalDate | null;
   openTime: number;
   closeTime: number;
   slotIntervalMinutes: number | null;
@@ -52,7 +54,7 @@ export class GetStorefrontBranchSchedulesHandler implements IQueryHandler<
       branchId: schedule.branchId,
       type: schedule.type,
       dayOfWeek: schedule.dayOfWeek,
-      specificDate: schedule.specificDate ? schedule.specificDate.toISOString().slice(0, 10) : null,
+      specificDate: schedule.specificDate ? prismaDateToLocalDate(schedule.specificDate) : null,
       openTime: schedule.openTime,
       closeTime: schedule.closeTime,
       slotIntervalMinutes: schedule.slotIntervalMinutes,
