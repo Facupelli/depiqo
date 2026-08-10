@@ -1,13 +1,16 @@
 import { randomUUID } from 'node:crypto';
 
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { TestingModule } from '@nestjs/testing';
 import { CommandBus } from '@nestjs/cqrs';
 
 import { PrismaService } from 'src/core/database/prisma.service';
 import { Prisma } from 'src/generated/prisma/client';
 import { RentalConfirmedIntegrationEvent } from 'src/modules/rental-commitment/public-api/events/rental-lifecycle.integration-events';
-import { createE2ETestApp, E2ETestApp } from '../../../../../test/support/create-e2e-test-app';
-import { useIntegrationTestContext } from '../../../../../test/support/integration-test-context';
+import {
+  createRentalCommitmentIntegrationContext,
+  useIntegrationTestContext,
+} from '../../../../../test/support/integration-test-context';
 import { createTestFixtures, TestFixtures } from '../../../../../test/support/fixtures';
 import { runConcurrently } from '../../../../../test/support/concurrency';
 import { oneMillisecondAfter, utcDate } from '../../../../../test/support/time';
@@ -33,7 +36,7 @@ interface Scenario {
 const period = (start = utcDate(2030, 1, 7, 10), end = utcDate(2030, 1, 7, 12)) => new RentalPeriod(start, end);
 
 describe('CreateConfirmedRental integration', () => {
-  let testApp: E2ETestApp;
+  let moduleRef: TestingModule;
   let prisma: PrismaService;
   let commandBus: CommandBus;
   let emitter: EventEmitter2;
@@ -41,13 +44,13 @@ describe('CreateConfirmedRental integration', () => {
   let confirmationFixtures: ConfirmRentalFixtures;
 
   useIntegrationTestContext(async () => {
-    testApp = await createE2ETestApp({ databaseUrl: process.env.DATABASE_URL! });
-    prisma = testApp.app.get(PrismaService);
-    commandBus = testApp.app.get(CommandBus);
-    emitter = testApp.app.get(EventEmitter2);
+    moduleRef = await createRentalCommitmentIntegrationContext();
+    prisma = moduleRef.get(PrismaService);
+    commandBus = moduleRef.get(CommandBus);
+    emitter = moduleRef.get(EventEmitter2);
     core = createTestFixtures(prisma);
     confirmationFixtures = new ConfirmRentalFixtures(prisma);
-    return testApp;
+    return moduleRef;
   });
 
   async function scenario(overrides: { supportsDelivery?: boolean } = {}): Promise<Scenario> {

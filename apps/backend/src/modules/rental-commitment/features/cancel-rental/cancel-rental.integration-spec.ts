@@ -2,12 +2,15 @@ import { randomUUID } from 'node:crypto';
 
 import { CommandBus } from '@nestjs/cqrs';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { TestingModule } from '@nestjs/testing';
 
 import { PrismaService } from 'src/core/database/prisma.service';
 import { V2RentalStatus } from 'src/generated/prisma/enums';
 import { createBarrier, runConcurrently } from '../../../../../test/support/concurrency';
-import { createE2ETestApp, E2ETestApp } from '../../../../../test/support/create-e2e-test-app';
-import { useIntegrationTestContext } from '../../../../../test/support/integration-test-context';
+import {
+  createRentalCommitmentIntegrationContext,
+  useIntegrationTestContext,
+} from '../../../../../test/support/integration-test-context';
 import { createTestFixtures, TestFixtures } from '../../../../../test/support/fixtures';
 import { utcDate } from '../../../../../test/support/time';
 import { RentalRepository } from '../../persistence/rental.repository';
@@ -20,7 +23,7 @@ import { CancelRentalCommand } from './cancel-rental.command';
 import { CancelRentalResult } from './cancel-rental.handler';
 
 describe('CancelRental integration', () => {
-  let testApp: E2ETestApp;
+  let moduleRef: TestingModule;
   let prisma: PrismaService;
   let commandBus: CommandBus;
   let events: EventEmitter2;
@@ -31,14 +34,14 @@ describe('CancelRental integration', () => {
   const period = { start: utcDate(2030, 1, 1, 10), end: utcDate(2030, 1, 1, 12) };
 
   useIntegrationTestContext(async () => {
-    testApp = await createE2ETestApp({ databaseUrl: process.env.DATABASE_URL! });
-    prisma = testApp.app.get(PrismaService);
-    commandBus = testApp.app.get(CommandBus);
-    events = testApp.app.get(EventEmitter2);
+    moduleRef = await createRentalCommitmentIntegrationContext();
+    prisma = moduleRef.get(PrismaService);
+    commandBus = moduleRef.get(CommandBus);
+    events = moduleRef.get(EventEmitter2);
     core = createTestFixtures(prisma);
     rentals = new ConfirmRentalFixtures(prisma);
     confirmedRentals = new EditConfirmedRentalFixtures(prisma);
-    return testApp;
+    return moduleRef;
   });
 
   async function context() {
@@ -250,7 +253,7 @@ describe('CancelRental integration', () => {
   it('publishes no cancellation event when guarded persistence fails', async () => {
     const setup = await confirmed();
     const before = await confirmedRentals.persistedState(setup.rental.rentalId);
-    const repository = testApp.app.get(RentalRepository);
+    const repository = moduleRef.get(RentalRepository);
     const saveSpy = jest.spyOn(repository, 'save').mockRejectedValueOnce(new Error('forced persistence failure'));
     const published: RentalCancelledIntegrationEvent[] = [];
     const listener = (event: RentalCancelledIntegrationEvent) => published.push(event);
@@ -277,7 +280,7 @@ describe('CancelRental integration', () => {
 
   it('allows exactly one of two cancellations that evaluated the same version and publishes once', async () => {
     const setup = await confirmed();
-    const repository = testApp.app.get(RentalRepository);
+    const repository = moduleRef.get(RentalRepository);
     const originalFindById = repository.findById.bind(repository);
     const loaded = createBarrier(2);
     const findSpy = jest.spyOn(repository, 'findById').mockImplementation(async (tenantId, rentalId, tx) => {
@@ -319,7 +322,7 @@ describe('CancelRental integration', () => {
       branchId: setup.branch.id,
       equipmentTypeId: setup.rental.equipmentTypeIds[0],
     });
-    const repository = testApp.app.get(RentalRepository);
+    const repository = moduleRef.get(RentalRepository);
     const originalFindById = repository.findById.bind(repository);
     const loaded = createBarrier(2);
     const findSpy = jest.spyOn(repository, 'findById').mockImplementation(async (tenantId, rentalId, tx) => {

@@ -1,10 +1,13 @@
 import { CommandBus } from '@nestjs/cqrs';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { TestingModule } from '@nestjs/testing';
 
 import { PrismaService } from 'src/core/database/prisma.service';
 import { ConfirmedRentalEditedIntegrationEvent } from 'src/modules/rental-commitment/public-api/events/rental-lifecycle.integration-events';
-import { createE2ETestApp, E2ETestApp } from '../../../../../test/support/create-e2e-test-app';
-import { useIntegrationTestContext } from '../../../../../test/support/integration-test-context';
+import {
+  createRentalCommitmentIntegrationContext,
+  useIntegrationTestContext,
+} from '../../../../../test/support/integration-test-context';
 import { createBarrier, runConcurrently } from '../../../../../test/support/concurrency';
 import { createTestFixtures, TestFixtures } from '../../../../../test/support/fixtures';
 import { oneMillisecondAfter, utcDate } from '../../../../../test/support/time';
@@ -19,19 +22,19 @@ import { EditConfirmedRentalResult } from './edit-confirmed-rental.handler';
 import { EditConfirmedRentalFixtures } from './testing/edit-confirmed-rental.fixtures';
 
 describe('EditConfirmedRental integration', () => {
-  let testApp: E2ETestApp;
+  let moduleRef: TestingModule;
   let prisma: PrismaService;
   let commandBus: CommandBus;
   let core: TestFixtures;
   let fixtures: EditConfirmedRentalFixtures;
 
   useIntegrationTestContext(async () => {
-    testApp = await createE2ETestApp({ databaseUrl: process.env.DATABASE_URL! });
-    prisma = testApp.app.get(PrismaService);
-    commandBus = testApp.app.get(CommandBus);
+    moduleRef = await createRentalCommitmentIntegrationContext();
+    prisma = moduleRef.get(PrismaService);
+    commandBus = moduleRef.get(CommandBus);
     core = createTestFixtures(prisma);
     fixtures = new EditConfirmedRentalFixtures(prisma);
-    return testApp;
+    return moduleRef;
   });
 
   async function scenario(period = between(10, 12)) {
@@ -76,7 +79,7 @@ describe('EditConfirmedRental integration', () => {
 
   it('allows exactly one same-version cancellation or confirmed-rental edit without mixed state', async () => {
     const setup = await scenario();
-    const repository = testApp.app.get(RentalRepository);
+    const repository = moduleRef.get(RentalRepository);
     const originalFindById = repository.findById.bind(repository);
     const loaded = createBarrier(2);
     const findSpy = jest.spyOn(repository, 'findById').mockImplementation(async (tenantId, rentalId, tx) => {
@@ -331,7 +334,7 @@ describe('EditConfirmedRental integration', () => {
 
   it('accepts an exact repeat as a no-op without duplicate state or an edit event', async () => {
     const setup = await scenario();
-    const emitter = testApp.app.get(EventEmitter2);
+    const emitter = moduleRef.get(EventEmitter2);
     const events: ConfirmedRentalEditedIntegrationEvent[] = [];
     const listener = (event: ConfirmedRentalEditedIntegrationEvent) => events.push(event);
     emitter.on(ConfirmedRentalEditedIntegrationEvent.name, listener);
@@ -349,7 +352,7 @@ describe('EditConfirmedRental integration', () => {
 
   it('emits one edit event only after a changed edit persists', async () => {
     const setup = await scenario();
-    const emitter = testApp.app.get(EventEmitter2);
+    const emitter = moduleRef.get(EventEmitter2);
     const events: ConfirmedRentalEditedIntegrationEvent[] = [];
     const listener = (event: ConfirmedRentalEditedIntegrationEvent) => events.push(event);
     emitter.on(ConfirmedRentalEditedIntegrationEvent.name, listener);

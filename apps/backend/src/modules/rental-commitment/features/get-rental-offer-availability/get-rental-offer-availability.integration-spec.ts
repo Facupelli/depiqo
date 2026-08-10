@@ -1,9 +1,12 @@
 import { randomUUID } from 'node:crypto';
 import { QueryBus } from '@nestjs/cqrs';
+import { TestingModule } from '@nestjs/testing';
 
 import { PrismaService } from 'src/core/database/prisma.service';
-import { createE2ETestApp, E2ETestApp } from '../../../../../test/support/create-e2e-test-app';
-import { useIntegrationTestContext } from '../../../../../test/support/integration-test-context';
+import {
+  createRentalCommitmentIntegrationContext,
+  useIntegrationTestContext,
+} from '../../../../../test/support/integration-test-context';
 import { runConcurrently } from '../../../../../test/support/concurrency';
 import { createTestFixtures, TestFixtures } from '../../../../../test/support/fixtures';
 import { oneMillisecondAfter, oneMillisecondBefore, utcDate } from '../../../../../test/support/time';
@@ -15,19 +18,19 @@ import { GetRentalOfferAvailabilityResult } from './get-rental-offer-availabilit
 const requestedPeriod = { start: utcDate(2030, 1, 1, 10), end: utcDate(2030, 1, 1, 12) };
 
 describe('GetRentalOfferAvailability integration', () => {
-  let app: E2ETestApp;
+  let moduleRef: TestingModule;
   let prisma: PrismaService;
   let queryBus: QueryBus;
   let core: TestFixtures;
   let rentals: ConfirmRentalFixtures;
 
   useIntegrationTestContext(async () => {
-    app = await createE2ETestApp({ databaseUrl: process.env.DATABASE_URL! });
-    prisma = app.app.get(PrismaService);
-    queryBus = app.app.get(QueryBus);
+    moduleRef = await createRentalCommitmentIntegrationContext();
+    prisma = moduleRef.get(PrismaService);
+    queryBus = moduleRef.get(QueryBus);
     core = createTestFixtures(prisma);
     rentals = new ConfirmRentalFixtures(prisma);
-    return app;
+    return moduleRef;
   });
 
   async function setup() {

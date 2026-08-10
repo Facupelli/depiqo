@@ -1,10 +1,13 @@
 import { CommandBus } from '@nestjs/cqrs';
+import { TestingModule } from '@nestjs/testing';
 
 import { PrismaService } from 'src/core/database/prisma.service';
 import { Prisma } from 'src/generated/prisma/client';
 import { V2ContractStatus, V2RentalStatus } from 'src/generated/prisma/enums';
-import { createE2ETestApp, E2ETestApp } from '../../../../../test/support/create-e2e-test-app';
-import { useIntegrationTestContext } from '../../../../../test/support/integration-test-context';
+import {
+  createRentalCommitmentIntegrationContext,
+  useIntegrationTestContext,
+} from '../../../../../test/support/integration-test-context';
 import { createBarrier, runConcurrently } from '../../../../../test/support/concurrency';
 import { createTestFixtures, TestFixtures } from '../../../../../test/support/fixtures';
 import { oneMillisecondAfter, utcDate } from '../../../../../test/support/time';
@@ -22,7 +25,7 @@ import { ReplaceConfirmedRentalAssetCommand } from './replace-confirmed-rental-a
 import { ReplaceConfirmedRentalAssetResult } from './replace-confirmed-rental-asset.handler';
 
 describe('ReplaceConfirmedRentalAsset integration', () => {
-  let testApp: E2ETestApp;
+  let moduleRef: TestingModule;
   let prisma: PrismaService;
   let commandBus: CommandBus;
   let core: TestFixtures;
@@ -30,13 +33,13 @@ describe('ReplaceConfirmedRentalAsset integration', () => {
   let rentalFixtures: ConfirmRentalFixtures;
 
   useIntegrationTestContext(async () => {
-    testApp = await createE2ETestApp({ databaseUrl: process.env.DATABASE_URL! });
-    prisma = testApp.app.get(PrismaService);
-    commandBus = testApp.app.get(CommandBus);
+    moduleRef = await createRentalCommitmentIntegrationContext();
+    prisma = moduleRef.get(PrismaService);
+    commandBus = moduleRef.get(CommandBus);
     core = createTestFixtures(prisma);
     fixtures = new EditConfirmedRentalFixtures(prisma);
     rentalFixtures = new ConfirmRentalFixtures(prisma);
-    return testApp;
+    return moduleRef;
   });
 
   async function scenario(options: { status?: V2RentalStatus; quantity?: number } = {}) {
@@ -101,7 +104,7 @@ describe('ReplaceConfirmedRentalAsset integration', () => {
     const setup = await scenario();
     const replacementAssetId = await candidate(setup);
     const expectedVersion = await version(setup.rental.rentalId);
-    const repository = testApp.app.get(RentalRepository);
+    const repository = moduleRef.get(RentalRepository);
     const originalFindById = repository.findById.bind(repository);
     const loaded = createBarrier(2);
     const findSpy = jest.spyOn(repository, 'findById').mockImplementation(async (tenantId, rentalId, tx) => {

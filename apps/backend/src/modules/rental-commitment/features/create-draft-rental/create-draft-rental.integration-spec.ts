@@ -1,11 +1,14 @@
 import { randomUUID } from 'node:crypto';
 
 import { CommandBus } from '@nestjs/cqrs';
+import { TestingModule } from '@nestjs/testing';
 
 import { PrismaService } from 'src/core/database/prisma.service';
 import { Prisma } from 'src/generated/prisma/client';
-import { createE2ETestApp, E2ETestApp } from '../../../../../test/support/create-e2e-test-app';
-import { useIntegrationTestContext } from '../../../../../test/support/integration-test-context';
+import {
+  createRentalCommitmentIntegrationContext,
+  useIntegrationTestContext,
+} from '../../../../../test/support/integration-test-context';
 import { createTestFixtures, TestFixtures } from '../../../../../test/support/fixtures';
 import { utcDate } from '../../../../../test/support/time';
 
@@ -20,17 +23,17 @@ const period = () => new RentalPeriod(utcDate(2030, 1, 7, 10), utcDate(2030, 1, 
 type Scenario = { tenantId: string; branchId: string; customerId: string; tenantUserId: string };
 
 describe('CreateDraftRental integration', () => {
-  let app: E2ETestApp;
+  let moduleRef: TestingModule;
   let prisma: PrismaService;
   let commands: CommandBus;
   let core: TestFixtures;
 
   useIntegrationTestContext(async () => {
-    app = await createE2ETestApp({ databaseUrl: process.env.DATABASE_URL! });
-    prisma = app.app.get(PrismaService);
-    commands = app.app.get(CommandBus);
+    moduleRef = await createRentalCommitmentIntegrationContext();
+    prisma = moduleRef.get(PrismaService);
+    commands = moduleRef.get(CommandBus);
     core = createTestFixtures(prisma);
-    return app;
+    return moduleRef;
   });
 
   async function scenario(overrides: { supportsDelivery?: boolean } = {}): Promise<Scenario> {
