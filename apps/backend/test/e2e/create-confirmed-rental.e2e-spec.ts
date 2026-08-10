@@ -30,7 +30,10 @@ describe('POST /rental-commitments/confirmed-rentals', () => {
   async function scenario() {
     const tenant = await core.createTenant();
     const branch = await core.createBranch({ tenantId: tenant.id });
-    const customer = await core.createRentalCustomer({ tenantId: tenant.id });
+    const customer = await core.createRentalCustomer({
+      tenantId: tenant.id,
+      localCredential: {},
+    });
     await prisma.client.v2BranchSchedule.createMany({
       data: [
         { branchId: branch.id, type: 'PICKUP', dayOfWeek: 1, openTime: 0, closeTime: 1439 },

@@ -52,7 +52,7 @@ describe('database test fixtures', () => {
     ]);
 
     expect(tenantUser.user.tenantId).toBe(tenant.id);
-    expect(customer.customer.tenantId).toBe(tenant.id);
+    expect(customer.customer).toMatchObject({ tenantId: tenant.id, passwordHash: null });
     expect(branch.tenantId).toBe(tenant.id);
   });
 
@@ -66,7 +66,10 @@ describe('database test fixtures', () => {
     const tenant = await fixtures.createTenant();
     const [tenantUser, customer] = await Promise.all([
       fixtures.createTenantUser({ tenantId: tenant.id, password: 'tenant-user-password' }),
-      fixtures.createRentalCustomer({ tenantId: tenant.id, password: 'rental-customer-password' }),
+      fixtures.createRentalCustomer({
+        tenantId: tenant.id,
+        localCredential: { password: 'rental-customer-password' },
+      }),
     ]);
     const passwordService = new PasswordService();
 

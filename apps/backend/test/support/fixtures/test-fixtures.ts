@@ -16,7 +16,10 @@ type TenantOverrides = Partial<
 >;
 type TenantUserOverrides = Partial<Omit<Prisma.V2TenantUserUncheckedCreateInput, 'tenantId'>>;
 type RentalCustomerOverrides = Partial<
-  Omit<Prisma.V2RentalCustomerUncheckedCreateInput, 'tenantId' | 'authIdentities' | 'profile' | 'tenant'>
+  Omit<
+    Prisma.V2RentalCustomerUncheckedCreateInput,
+    'tenantId' | 'authIdentities' | 'profile' | 'tenant' | 'passwordHash'
+  >
 >;
 type BranchOverrides = Partial<Omit<Prisma.V2BranchUncheckedCreateInput, 'tenantId' | 'schedules' | 'tenant'>>;
 
@@ -28,8 +31,21 @@ export type CreateTenantUserInput = {
 
 export type CreateRentalCustomerInput = {
   tenantId: string;
-  password?: string;
   overrides?: RentalCustomerOverrides;
+};
+
+export type CreateRentalCustomerWithLocalCredentialInput = CreateRentalCustomerInput & {
+  localCredential: {
+    password?: string;
+  };
+};
+
+export type RentalCustomerFixture = {
+  customer: V2RentalCustomer;
+};
+
+export type RentalCustomerWithLocalCredentialFixture = RentalCustomerFixture & {
+  password: string;
 };
 
 export type CreateBranchInput = {
@@ -44,14 +60,40 @@ export type TestFixtures = {
     credential: V2LocalCredential;
     password: string;
   }>;
-  createRentalCustomer(input: CreateRentalCustomerInput): Promise<{
-    customer: V2RentalCustomer;
-    password: string;
-  }>;
+  createRentalCustomer(input: CreateRentalCustomerInput): Promise<RentalCustomerFixture>;
+  createRentalCustomer(
+    input: CreateRentalCustomerWithLocalCredentialInput,
+  ): Promise<RentalCustomerWithLocalCredentialFixture>;
   createBranch(input: CreateBranchInput): Promise<V2Branch>;
 };
 
 export function createTestFixtures(prisma: PrismaService, passwordService = new PasswordService()): TestFixtures {
+  async function createRentalCustomer(input: CreateRentalCustomerInput): Promise<RentalCustomerFixture>;
+  async function createRentalCustomer(
+    input: CreateRentalCustomerWithLocalCredentialInput,
+  ): Promise<RentalCustomerWithLocalCredentialFixture>;
+  async function createRentalCustomer(
+    input: CreateRentalCustomerInput | CreateRentalCustomerWithLocalCredentialInput,
+  ): Promise<RentalCustomerFixture | RentalCustomerWithLocalCredentialFixture> {
+    const { tenantId, overrides = {} } = input;
+    const localCredential = 'localCredential' in input ? input.localCredential : undefined;
+    const password = localCredential?.password ?? 'test-password';
+    const passwordData = localCredential ? await passwordService.hashPassword(password) : undefined;
+    const unique = randomUUID();
+    const customer = await prisma.client.v2RentalCustomer.create({
+      data: {
+        tenantId,
+        email: `customer-${unique}@test.local`,
+        firstName: 'Test',
+        lastName: `Customer ${unique}`,
+        passwordHash: passwordData?.hash ?? null,
+        ...overrides,
+      },
+    });
+
+    return passwordData ? { customer, password } : { customer };
+  }
+
   return {
     createTenant: (overrides = {}) => {
       const unique = randomUUID();
@@ -96,22 +138,7 @@ export function createTestFixtures(prisma: PrismaService, passwordService = new 
       });
     },
 
-    createRentalCustomer: async ({ tenantId, password = 'test-password', overrides = {} }) => {
-      const passwordData = await passwordService.hashPassword(password);
-      const unique = randomUUID();
-      const customer = await prisma.client.v2RentalCustomer.create({
-        data: {
-          tenantId,
-          email: `customer-${unique}@test.local`,
-          firstName: 'Test',
-          lastName: `Customer ${unique}`,
-          passwordHash: passwordData.hash,
-          ...overrides,
-        },
-      });
-
-      return { customer, password };
-    },
+    createRentalCustomer,
 
     createBranch: ({ tenantId, overrides = {} }) => {
       const unique = randomUUID();

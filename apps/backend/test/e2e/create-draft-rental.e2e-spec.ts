@@ -104,11 +104,15 @@ describe('POST /rental-commitments/draft-rentals', () => {
 
   it('forbids an authenticated tenant customer', async () => {
     const setup = await scenario();
+    const authenticatingCustomer = await core.createRentalCustomer({
+      tenantId: setup.tenant.id,
+      localCredential: {},
+    });
     const client = createE2ETestClient(app.app);
     await client.loginTenantCustomer({
       tenantId: setup.tenant.id,
-      email: setup.customer.customer.email,
-      password: setup.customer.password,
+      email: authenticatingCustomer.customer.email,
+      password: authenticatingCustomer.password,
     });
     const response = await client
       .withCsrf(client.request().post('/rental-commitments/draft-rentals'))

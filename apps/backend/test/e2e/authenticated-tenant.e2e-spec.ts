@@ -515,7 +515,10 @@ describe('authenticated tenant HTTP flow', () => {
     const client = createE2ETestClient(testApp.app);
     const fixtures = createTestFixtures(testApp.app.get(PrismaService));
     const tenant = await fixtures.createTenant();
-    const rentalCustomer = await fixtures.createRentalCustomer({ tenantId: tenant.id });
+    const rentalCustomer = await fixtures.createRentalCustomer({
+      tenantId: tenant.id,
+      localCredential: {},
+    });
 
     const login = await client.loginTenantCustomer({
       tenantId: tenant.id,
