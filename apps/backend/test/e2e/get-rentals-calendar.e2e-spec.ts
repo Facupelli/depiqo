@@ -108,6 +108,59 @@ describe(`GET ${path}`, () => {
     );
   });
 
+  it('uses 23-hour and 25-hour New York calendar days without changing half-open overlap semantics', async () => {
+    const tenant = await fixtures.createTenant();
+    const branch = await fixtures.createBranch({ tenantId: tenant.id, overrides: { timezone: 'America/New_York' } });
+    const springForwardRental = await createRental({
+      tenantId: tenant.id,
+      branchId: branch.id,
+      // March 8, 2026 is 23 hours in New York: [05:00Z, 04:00Z next day).
+      periodStart: '2026-03-08T05:00:00Z',
+      periodEnd: '2026-03-09T04:00:00Z',
+    });
+    const firstRepeatedHour = await createRental({
+      tenantId: tenant.id,
+      branchId: branch.id,
+      // These are the two distinct 01:30 local instants on November 1, 2026.
+      periodStart: '2026-11-01T05:30:00Z',
+      periodEnd: '2026-11-01T05:45:00Z',
+    });
+    const secondRepeatedHour = await createRental({
+      tenantId: tenant.id,
+      branchId: branch.id,
+      periodStart: '2026-11-01T06:30:00Z',
+      periodEnd: '2026-11-01T06:45:00Z',
+    });
+    const client = await login(tenant.id);
+
+    const spring = await client
+      .request()
+      .get(path)
+      .query({ branchId: branch.id, from: '2026-03-08', to: '2026-03-08' })
+      .expect(200);
+    expect(spring.body.data).toEqual(expect.arrayContaining([expect.objectContaining({ id: springForwardRental })]));
+
+    const fall = await client
+      .request()
+      .get(path)
+      .query({ branchId: branch.id, from: '2026-11-01', to: '2026-11-01' })
+      .expect(200);
+    expect(fall.body.data).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: firstRepeatedHour,
+          pickupAt: '2026-11-01T05:30:00.000Z',
+          pickupDate: '2026-11-01',
+        }),
+        expect.objectContaining({
+          id: secondRepeatedHour,
+          pickupAt: '2026-11-01T06:30:00.000Z',
+          pickupDate: '2026-11-01',
+        }),
+      ]),
+    );
+  });
+
   it('treats scalar timestamptz values and tstzrange values as the same instant', async () => {
     const tenant = await fixtures.createTenant();
     const branch = await fixtures.createBranch({ tenantId: tenant.id });

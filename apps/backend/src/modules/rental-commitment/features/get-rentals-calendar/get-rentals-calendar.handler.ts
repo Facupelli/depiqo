@@ -40,9 +40,9 @@ export type GetRentalsCalendarResult = RentalsCalendarItemReadModel[];
 type RawRentalCalendarRow = {
   id: string;
   status: RentalCalendarStatus;
-  createdAt: Date;
-  periodStart: Date;
-  periodEnd: Date;
+  createdAt: string;
+  periodStart: string;
+  periodEnd: string;
   customerId: string | null;
 };
 
@@ -65,9 +65,11 @@ export class GetRentalsCalendarHandler implements IQueryHandler<GetRentalsCalend
       SELECT
         r.id AS "id",
         r.status AS "status",
-        r.created_at AS "createdAt",
-        r.period_start AS "periodStart",
-        r.period_end AS "periodEnd",
+        -- Prisma's raw PostgreSQL Date decoding is session-timezone-sensitive for
+        -- timestamptz values. Emit canonical UTC strings instead of session-rendered values.
+        to_char(r.created_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS "createdAt",
+        to_char(r.period_start AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS "periodStart",
+        to_char(r.period_end AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS "periodEnd",
         r.customer_id AS "customerId"
       FROM v2_rentals r
       WHERE r.tenant_id = ${query.tenantId}
@@ -85,16 +87,19 @@ export class GetRentalsCalendarHandler implements IQueryHandler<GetRentalsCalend
 
     return rentals.map((rental) => {
       const customer = rental.customerId ? (customersById.get(rental.customerId) ?? null) : null;
+      const createdAt = new Date(rental.createdAt);
+      const periodStart = new Date(rental.periodStart);
+      const periodEnd = new Date(rental.periodEnd);
 
       return {
         id: rental.id,
         number: rental.id.slice(0, 4),
         status: rental.status as RentalCalendarStatus,
-        createdAt: rental.createdAt.toISOString(),
-        pickupAt: rental.periodStart.toISOString(),
-        returnAt: rental.periodEnd.toISOString(),
-        pickupDate: this.toDateKey(rental.periodStart, timezone),
-        returnDate: this.toDateKey(rental.periodEnd, timezone),
+        createdAt: createdAt.toISOString(),
+        pickupAt: periodStart.toISOString(),
+        returnAt: periodEnd.toISOString(),
+        pickupDate: this.toDateKey(periodStart, timezone),
+        returnDate: this.toDateKey(periodEnd, timezone),
         customer,
       };
     });

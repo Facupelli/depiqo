@@ -31,5 +31,14 @@ describe('ValidityWindowChecker', () => {
   it('supports open-ended local-date windows', () => {
     expect(checker.isWithinWindow({ localDate: '2026-08-10', validUntil: '2026-08-10' })).toBe(true);
     expect(checker.isWithinWindow({ localDate: '2026-08-11', validUntil: '2026-08-10' })).toBe(false);
+    expect(checker.isWithinWindow({ localDate: '2026-08-10', validFrom: '2026-08-10' })).toBe(true);
+    expect(checker.isWithinWindow({ localDate: '2026-08-09', validFrom: '2026-08-10' })).toBe(false);
   });
+
+  it.each(['2026-03-08', '2026-11-01'])(
+    'uses local calendar keys unchanged on New York DST transition dates: %s',
+    (localDate) => {
+      expect(checker.isWithinWindow({ localDate, validFrom: localDate, validUntil: localDate })).toBe(true);
+    },
+  );
 });

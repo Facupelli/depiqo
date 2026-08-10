@@ -1,4 +1,4 @@
-import { GetRentalsCalendarQuerySchema, LocalDateSchema } from '@repo/api-contracts';
+import { ExplicitOffsetInstantSchema, GetRentalsCalendarQuerySchema, LocalDateSchema } from '@repo/api-contracts';
 import { spawnSync } from 'child_process';
 import { join } from 'path';
 
@@ -14,6 +14,18 @@ describe('LocalDate', () => {
 
   it('accepts an ISO calendar date', () => {
     expect(LocalDateSchema.parse('2026-08-10')).toBe('2026-08-10');
+  });
+
+  it.each([
+    ['UTC', '2026-08-10T13:00:00Z', Date.parse('2026-08-10T13:00:00Z')],
+    ['negative offset', '2026-08-10T10:00:00-03:00', Date.parse('2026-08-10T13:00:00Z')],
+    ['positive offset', '2026-08-10T18:30:00+05:30', Date.parse('2026-08-10T13:00:00Z')],
+  ])('parses an explicit-offset instant: %s', (_description, value, expectedEpoch) => {
+    expect(ExplicitOffsetInstantSchema.parse(value).getTime()).toBe(expectedEpoch);
+  });
+
+  it.each(['2026-08-10T10:00:00', '2026-08-10'])('rejects an offset-less instant: %s', (value) => {
+    expect(() => ExplicitOffsetInstantSchema.parse(value)).toThrow();
   });
 
   it('round-trips a LocalDate through Prisma DATE transport without timezone interpretation', () => {
