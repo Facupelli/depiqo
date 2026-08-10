@@ -3,13 +3,7 @@ import { InputJsonValue } from '@prisma/client/runtime/client';
 import { err, ok, Result } from 'neverthrow';
 
 import { PrismaService } from 'src/core/database/prisma.service';
-import {
-  V2AuthAuditEventType,
-  V2AuthProvider,
-  V2TenantStatus,
-  V2UserRole,
-  V2UserStatus,
-} from 'src/generated/prisma/enums';
+import { V2AuthAuditEventType, V2TenantStatus, V2UserRole, V2UserStatus } from 'src/generated/prisma/enums';
 
 import { normalizeEmail } from '../../auth/shared/auth.types';
 import { PasswordService } from '../../auth/shared/password/password.service';
@@ -97,14 +91,6 @@ export class RegisterTenantWithOwnerService implements ICommandHandler<
           name: command.ownerName.trim(),
           role: V2UserRole.ADMIN,
           status: V2UserStatus.ACTIVE,
-          identities: {
-            create: {
-              provider: V2AuthProvider.LOCAL,
-              providerAccountId: `${createdTenant.id}:${email}`,
-              email,
-              emailVerified: false,
-            },
-          },
           localCredential: {
             create: {
               passwordHash: password.hash,
@@ -121,7 +107,7 @@ export class RegisterTenantWithOwnerService implements ICommandHandler<
           type: V2AuthAuditEventType.ACCOUNT_CREATED,
           metadata: {
             tenantId: createdTenant.id,
-            provider: V2AuthProvider.LOCAL,
+            provider: 'LOCAL',
             registration: true,
           },
         },

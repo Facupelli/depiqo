@@ -30,7 +30,7 @@ A tenant user is not a rental customer.
 
 Tenant Management owns tenant/backoffice authentication and tenant-scoped authorization.
 
-This includes auth users, credentials, sessions, OAuth identities, tenant roles, permissions, and user-role relationships.
+This includes tenant users, local credentials, sessions, tenant roles, permissions, and user-role relationships.
 
 ### Branch
 
@@ -87,6 +87,8 @@ Contracts must snapshot the signer data used when generating a contract.
 
 A tenant-scoped operation must validate tenant existence and active state before performing business work.
 
+Tenant-user authentication requires an active tenant that is not soft-deleted.
+
 A branch-scoped operation must validate that the branch belongs to the tenant and is active.
 
 A tenant user must belong to the tenant before tenant-scoped permissions are evaluated.
@@ -135,8 +137,8 @@ Tenant Management owns persistence for:
 
 ```text id="kapqus"
 tenants
-tenant users
-authentication identities and credentials
+tenant users and local credentials
+rental-customer authentication identities
 sessions
 roles and permissions
 tenant user roles

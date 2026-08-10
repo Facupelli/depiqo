@@ -1,7 +1,6 @@
 import {
   CustomDomainStatus,
   PrismaClient,
-  V2AuthProvider,
   V2PasswordAlgorithm,
   V2RentalCustomerOnboardingStatus,
   V2TenantDomainStatus,
@@ -322,26 +321,6 @@ async function migrateTenantUsers(ctx: TenantV2MigrationContext) {
       },
     });
 
-    await ctx.prisma.v2AuthIdentity.upsert({
-      where: {
-        userId_provider: {
-          userId: user.id,
-          provider: V2AuthProvider.LOCAL,
-        },
-      },
-      create: {
-        userId: user.id,
-        provider: V2AuthProvider.LOCAL,
-        providerAccountId: user.email,
-        email: user.email,
-        emailVerified: false,
-        profile: {},
-      },
-      update: {
-        providerAccountId: user.email,
-        email: user.email,
-      },
-    });
   }
 }
 

@@ -92,7 +92,6 @@ async function verifyTenantManagementStage(ctx: TenantV2MigrationContext) {
 		branchSchedules,
 		tenantUsers,
 		localCredentials,
-		authIdentities,
 		contractSigners,
 		rentalCustomers,
 		customerProfiles,
@@ -124,13 +123,6 @@ async function verifyTenantManagementStage(ctx: TenantV2MigrationContext) {
 				},
 			},
 		}),
-		ctx.prisma.v2AuthIdentity.count({
-			where: {
-				user: {
-					tenantId: ctx.v2TenantId,
-				},
-			},
-		}),
 		ctx.prisma.v2TenantContractSigner.count({
 			where: { tenantId: ctx.v2TenantId },
 		}),
@@ -154,7 +146,6 @@ async function verifyTenantManagementStage(ctx: TenantV2MigrationContext) {
 		branchSchedules,
 		tenantUsers,
 		localCredentials,
-		authIdentities,
 		contractSigners,
 		rentalCustomers,
 		customerProfiles,

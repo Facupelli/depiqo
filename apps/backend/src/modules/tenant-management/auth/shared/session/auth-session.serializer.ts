@@ -2,8 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { PassportSerializer } from '@nestjs/passport';
 import { AUTH_ACTOR_TYPES, AuthActor, toAuthCustomer, toAuthUser } from '../auth.types';
 import { PrismaService } from 'src/core/database/prisma.service';
-import { V2UserStatus } from 'src/generated/prisma/enums';
 import { AuthSessionPayload } from './session.type';
+import { isTenantUserAuthenticationEligible } from '../tenant-user-authentication-eligibility.policy';
 
 @Injectable()
 export class AuthSessionSerializer extends PassportSerializer {
@@ -41,13 +41,27 @@ export class AuthSessionSerializer extends PassportSerializer {
   private async deserializeTenantUser(payload: AuthSessionPayload): Promise<AuthActor | false> {
     const user = await this.prisma.client.v2TenantUser.findUnique({
       where: { id: payload.actorId },
+      include: {
+        tenant: {
+          select: {
+            status: true,
+            deletedAt: true,
+          },
+        },
+      },
     });
 
     if (!user) {
       return false;
     }
 
-    if (user.status !== V2UserStatus.ACTIVE) {
+    if (
+      !isTenantUserAuthenticationEligible({
+        userStatus: user.status,
+        tenantStatus: user.tenant.status,
+        tenantDeletedAt: user.tenant.deletedAt,
+      })
+    ) {
       return false;
     }
 

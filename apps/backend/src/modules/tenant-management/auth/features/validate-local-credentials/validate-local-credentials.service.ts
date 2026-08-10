@@ -5,6 +5,7 @@ import { V2AuthAuditEventType, V2UserStatus } from 'src/generated/prisma/enums';
 import { AuthAuditService } from '../../shared/audit/auth-audit.service';
 import { AuthRequestMetadata, AuthUser, normalizeEmail, toAuthUser } from '../../shared/auth.types';
 import { PasswordService } from '../../shared/password/password.service';
+import { isTenantUserAuthenticationEligible } from '../../shared/tenant-user-authentication-eligibility.policy';
 
 @Injectable()
 export class ValidateLocalCredentialsService {
@@ -27,6 +28,12 @@ export class ValidateLocalCredentialsService {
       where: { email },
       include: {
         localCredential: true,
+        tenant: {
+          select: {
+            status: true,
+            deletedAt: true,
+          },
+        },
       },
     });
 
@@ -65,10 +72,16 @@ export class ValidateLocalCredentialsService {
       throw this.invalidCredentialsError;
     }
 
-    if (user.status !== V2UserStatus.ACTIVE) {
+    if (
+      !isTenantUserAuthenticationEligible({
+        userStatus: user.status,
+        tenantStatus: user.tenant.status,
+        tenantDeletedAt: user.tenant.deletedAt,
+      })
+    ) {
       await this.recordLoginFailure({
         userId: user.id,
-        reason: 'USER_NOT_ACTIVE',
+        reason: user.status === V2UserStatus.ACTIVE ? 'TENANT_NOT_ELIGIBLE' : 'USER_NOT_ACTIVE',
         metadata: input.metadata,
       });
 

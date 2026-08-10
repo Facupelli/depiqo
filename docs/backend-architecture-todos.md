@@ -68,9 +68,9 @@
 
 ## Tenant and identity integrity
 
-- [ ] Clarify the `V2AuthIdentity` invariant for local accounts.
-  - Registration creates a `V2AuthIdentity`, but local authentication apparently does not require it.
-  - Define what this entity represents and when it must exist, including the model/database invariant.
+- [x] Clarify the local-account authentication invariant.
+  - `V2TenantUser` is the application account, and `V2LocalCredential` is its email/password authentication capability.
+  - Tenant-user `V2AuthIdentity` persistence was removed because it was not authentication authority.
 
 ## Date and time model
 

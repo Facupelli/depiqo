@@ -36,6 +36,7 @@ model V2RentalCustomer {
   authIdentities V2RentalCustomerAuthIdentity[]
 
   @@unique([tenantId, email])
+  @@unique([id, tenantId])
   @@index([tenantId, isActive, deletedAt])
   @@index([tenantId, isCompany])
   @@map("v2_rental_customers")
@@ -46,7 +47,7 @@ model V2RentalCustomerAuthIdentity {
 
   tenantId   String           @map("tenant_id")
   customerId String           @map("customer_id")
-  customer   V2RentalCustomer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  customer   V2RentalCustomer @relation(fields: [customerId, tenantId], references: [id, tenantId], onDelete: Cascade, onUpdate: Restrict)
 
   provider          V2AuthProvider
   providerAccountId String         @map("provider_account_id")
