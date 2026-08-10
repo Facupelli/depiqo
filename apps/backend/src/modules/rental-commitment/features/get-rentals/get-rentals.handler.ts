@@ -33,12 +33,13 @@ type RawCountRow = {
 
 const UPCOMING_EXCLUDED_STATUSES = [V2RentalStatus.COMPLETED, V2RentalStatus.CANCELLED] as const;
 
-// TODO: cross-bounded-context-read
-// Date lens filtering/sorting still depends on tenant-management timezone data.
-// Replace these joins with a rental-owned timezone snapshot or a public read model.
-const PICKUP_LOCAL_DATE_SQL = Prisma.sql`(r.period_start AT TIME ZONE COALESCE(b.timezone, t.config->>'timezone'))::date`;
-const RETURN_LOCAL_DATE_SQL = Prisma.sql`(r.period_end AT TIME ZONE COALESCE(b.timezone, t.config->>'timezone'))::date`;
-const TODAY_LOCAL_DATE_SQL = Prisma.sql`(CURRENT_TIMESTAMP AT TIME ZONE COALESCE(b.timezone, t.config->>'timezone'))::date`;
+// TODO(temporal-sql): Date lens filtering and sorting require per-row timezone resolution inside SQL,
+// so they cannot call TenantManagementPublicApi. Keep this expression aligned with the authoritative
+// branch -> tenant -> UTC rule until the raw SQL temporal semantics are redesigned.
+const EFFECTIVE_TIMEZONE_SQL = Prisma.sql`COALESCE(b.timezone, t.config->>'timezone', 'UTC')`;
+const PICKUP_LOCAL_DATE_SQL = Prisma.sql`(r.period_start AT TIME ZONE ${EFFECTIVE_TIMEZONE_SQL})::date`;
+const RETURN_LOCAL_DATE_SQL = Prisma.sql`(r.period_end AT TIME ZONE ${EFFECTIVE_TIMEZONE_SQL})::date`;
+const TODAY_LOCAL_DATE_SQL = Prisma.sql`(CURRENT_TIMESTAMP AT TIME ZONE ${EFFECTIVE_TIMEZONE_SQL})::date`;
 
 @QueryHandler(GetRentalsQuery)
 export class GetRentalsHandler implements IQueryHandler<GetRentalsQuery, GetRentalsResponseDto> {

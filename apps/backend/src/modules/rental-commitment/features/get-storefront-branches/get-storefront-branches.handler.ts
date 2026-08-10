@@ -1,6 +1,7 @@
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 
 import { PrismaService } from 'src/core/database/prisma.service';
+import { TenantManagementPublicApi } from 'src/modules/tenant-management/public-api/tenant-management.public-api';
 
 import { GetStorefrontBranchesQuery } from './get-storefront-branches.query';
 
@@ -24,7 +25,10 @@ export class GetStorefrontBranchesHandler implements IQueryHandler<
   GetStorefrontBranchesQuery,
   GetStorefrontBranchesResult
 > {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly tenantManagementApi: TenantManagementPublicApi,
+  ) {}
 
   async execute(query: GetStorefrontBranchesQuery): Promise<GetStorefrontBranchesResult> {
     const branches = await this.prisma.client.v2Branch.findMany({
@@ -36,41 +40,44 @@ export class GetStorefrontBranchesHandler implements IQueryHandler<
       select: {
         id: true,
         name: true,
-        timezone: true,
         supportsDelivery: true,
         deliveryDefaultCity: true,
         deliveryDefaultPostalCode: true,
         deliveryDefaultCountry: true,
         deliveryDefaultStateRegion: true,
-        tenant: {
-          select: {
-            config: true,
-          },
-        },
       },
       orderBy: { name: 'asc' },
     });
 
-    return branches.map((branch) => ({
-      id: branch.id,
-      name: branch.name,
-      timezone: branch.timezone ?? getTenantTimezone(branch.tenant.config),
-      supportsDelivery: branch.supportsDelivery,
-      deliveryDefaults: {
-        country: branch.deliveryDefaultCountry,
-        stateRegion: branch.deliveryDefaultStateRegion,
-        city: branch.deliveryDefaultCity,
-        postalCode: branch.deliveryDefaultPostalCode,
-      },
-    }));
-  }
-}
+    const contextsResult = await this.tenantManagementApi.getBranchContexts({
+      tenantId: query.tenantId,
+      branchIds: branches.map((branch) => branch.id),
+    });
 
-function getTenantTimezone(config: unknown): string {
-  if (typeof config !== 'object' || config === null || !('timezone' in config)) {
-    return 'UTC';
-  }
+    if (contextsResult.isErr()) {
+      throw new Error(contextsResult.error.message, { cause: contextsResult.error });
+    }
 
-  const timezone = (config as { timezone?: unknown }).timezone;
-  return typeof timezone === 'string' && timezone.trim().length > 0 ? timezone : 'UTC';
+    const timezoneByBranchId = new Map(contextsResult.value.map((context) => [context.id, context.effectiveTimezone]));
+
+    return branches.map((branch) => {
+      const timezone = timezoneByBranchId.get(branch.id);
+      if (!timezone) {
+        throw new Error(`Tenant Management omitted branch "${branch.id}" from a successful batch response.`);
+      }
+
+      return {
+        id: branch.id,
+        name: branch.name,
+        timezone,
+        supportsDelivery: branch.supportsDelivery,
+        deliveryDefaults: {
+          country: branch.deliveryDefaultCountry,
+          stateRegion: branch.deliveryDefaultStateRegion,
+          city: branch.deliveryDefaultCity,
+          postalCode: branch.deliveryDefaultPostalCode,
+        },
+      };
+    });
+  }
 }

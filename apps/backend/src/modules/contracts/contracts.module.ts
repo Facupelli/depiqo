@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 
 import { ObjectStorageModule } from '../object-storage/object-storage.module';
+import { TenantManagementModule } from '../tenant-management/tenant-management.module';
 import { GenerateRentalRemitoHttpController } from './features/generate-rental-remito/generate-rental-remito.controller';
 import { GenerateRentalRemitoHandler } from './features/generate-rental-remito/generate-rental-remito.handler';
 import { GetRentalContractSigningSummaryHttpController } from './features/get-rental-contract-signing-summary/get-rental-contract-signing-summary.controller';
@@ -21,7 +22,7 @@ import { ContractArtifactPersistenceService } from './application/contract-artif
 import { RentalRemitoSignedArtifactService } from './application/rental-remito/rental-remito-signed-artifact.service';
 
 @Module({
-  imports: [ObjectStorageModule],
+  imports: [ObjectStorageModule, TenantManagementModule],
   controllers: [GenerateRentalRemitoHttpController, GetRentalContractSigningSummaryHttpController],
   providers: [
     GenerateRentalRemitoHandler,

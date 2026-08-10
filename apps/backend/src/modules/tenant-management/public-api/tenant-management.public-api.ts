@@ -96,13 +96,20 @@ export interface GetBranchContextInput {
   branchId: string;
 }
 
+export interface GetBranchContextsInput {
+  tenantId: string;
+  branchIds: string[];
+}
+
 export interface BranchContext {
   id: string;
   supportsDelivery: boolean;
+  isActive: boolean;
+  isDeleted: boolean;
   effectiveTimezone: string;
   branchTimezone: string | null;
   tenantTimezone: string;
-  timezoneSource: 'BRANCH' | 'TENANT';
+  timezoneSource: 'BRANCH' | 'TENANT' | 'DEFAULT';
 }
 
 export interface GetTenantAdminNotificationRecipientsInput {
@@ -189,6 +196,10 @@ export abstract class TenantManagementPublicApi {
   abstract getBranchContext(
     input: GetBranchContextInput,
   ): Promise<Result<BranchContext, TenantManagementPublicApiError>>;
+
+  abstract getBranchContexts(
+    input: GetBranchContextsInput,
+  ): Promise<Result<BranchContext[], TenantManagementPublicApiError>>;
 
   abstract getTenantAdminNotificationRecipients(
     input: GetTenantAdminNotificationRecipientsInput,

@@ -2,10 +2,7 @@ import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { V2RentalStatus } from 'src/generated/prisma/enums';
 
 import { PrismaService } from 'src/core/database/prisma.service';
-import {
-  TenantConfig,
-  TenantConfigProps,
-} from 'src/modules/tenant-management/domain/value-objects/tenant-config.value-object';
+import { TenantManagementPublicApi } from 'src/modules/tenant-management/public-api/tenant-management.public-api';
 
 import { GetRentalsCalendarQuery } from './get-rentals-calendar.query';
 
@@ -40,7 +37,10 @@ export type GetRentalsCalendarResult = RentalsCalendarItemReadModel[];
 
 @QueryHandler(GetRentalsCalendarQuery)
 export class GetRentalsCalendarHandler implements IQueryHandler<GetRentalsCalendarQuery, GetRentalsCalendarResult> {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly tenantManagementApi: TenantManagementPublicApi,
+  ) {}
 
   async execute(query: GetRentalsCalendarQuery): Promise<GetRentalsCalendarResult> {
     const timezone = await this.resolveCalendarTimezone(query.tenantId, query.branchId);
@@ -87,35 +87,13 @@ export class GetRentalsCalendarHandler implements IQueryHandler<GetRentalsCalend
   }
 
   private async resolveCalendarTimezone(tenantId: string, branchId: string): Promise<string> {
-    const branch = await this.prisma.client.v2Branch.findFirst({
-      where: {
-        id: branchId,
-        tenantId,
-        deletedAt: null,
-      },
-      select: {
-        timezone: true,
-        tenant: {
-          select: {
-            config: true,
-          },
-        },
-      },
-    });
+    const branchContext = await this.tenantManagementApi.getBranchContext({ tenantId, branchId });
 
-    if (branch?.timezone) {
-      return branch.timezone;
+    if (branchContext.isErr()) {
+      throw new Error(branchContext.error.message, { cause: branchContext.error });
     }
 
-    return this.reconstituteTenantConfig(branch?.tenant.config)?.timezone ?? TenantConfig.default().timezone;
-  }
-
-  private reconstituteTenantConfig(config: unknown): TenantConfig | null {
-    try {
-      return TenantConfig.reconstitute(config as TenantConfigProps);
-    } catch {
-      return null;
-    }
+    return branchContext.value.effectiveTimezone;
   }
 
   private async getCustomersById(

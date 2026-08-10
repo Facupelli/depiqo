@@ -18,6 +18,7 @@ import {
   BranchContext,
   TenantContext,
   GetBranchContextInput,
+  GetBranchContextsInput,
   GetRentalCustomerNotificationRecipientInput,
   GetTenantAdminNotificationRecipientsInput,
   GetTenantConfigInput,
@@ -41,6 +42,7 @@ import {
 } from './tenant-management.public-api';
 import { TenantBookingMode, TenantConfig, TenantConfigProps } from '../domain/value-objects/tenant-config.value-object';
 import { BranchScheduleWindow } from '../domain/value-objects/branch-schedule-window.value-object';
+import { resolveEffectiveTimezone } from '../domain/utils/effective-timezone';
 
 type LocalDateTimeParts = {
   dateKey: string;
@@ -150,7 +152,7 @@ export class TenantManagementPublicApiService extends TenantManagementPublicApi 
       }
     }
 
-    const timezone = branch.timezone ?? tenantConfig.timezone;
+    const timezone = resolveEffectiveTimezone(branch.timezone, tenantConfig.timezone);
 
     return ok({
       pricingConfig: {
@@ -303,14 +305,56 @@ export class TenantManagementPublicApiService extends TenantManagementPublicApi 
   }
 
   async getBranchContext(input: GetBranchContextInput): Promise<Result<BranchContext, TenantManagementPublicApiError>> {
-    const branch = await this.prisma.client.v2Branch.findFirst({
+    const contexts = await this.loadBranchContexts(input.tenantId, [input.branchId]);
+    if (contexts.isErr()) {
+      return err(contexts.error);
+    }
+
+    const branch = contexts.value[0];
+    if (!branch) {
+      return err(tenantManagementPublicApiError('BranchNotFound', `Branch "${input.branchId}" was not found.`));
+    }
+
+    return ok(branch);
+  }
+
+  async getBranchContexts(
+    input: GetBranchContextsInput,
+  ): Promise<Result<BranchContext[], TenantManagementPublicApiError>> {
+    const branchIds = [...new Set(input.branchIds)];
+    const contexts = await this.loadBranchContexts(input.tenantId, branchIds);
+    if (contexts.isErr()) {
+      return err(contexts.error);
+    }
+
+    const foundBranchIds = new Set(contexts.value.map((branch) => branch.id));
+    const missingBranchId = branchIds.find((branchId) => !foundBranchIds.has(branchId));
+
+    if (missingBranchId) {
+      return err(tenantManagementPublicApiError('BranchNotFound', `Branch "${missingBranchId}" was not found.`));
+    }
+
+    return ok(contexts.value);
+  }
+
+  private async loadBranchContexts(
+    tenantId: string,
+    branchIds: string[],
+  ): Promise<Result<BranchContext[], TenantManagementPublicApiError>> {
+    if (branchIds.length === 0) {
+      return ok([]);
+    }
+
+    const branches = await this.prisma.client.v2Branch.findMany({
       where: {
-        id: input.branchId,
-        tenantId: input.tenantId,
+        tenantId,
+        id: { in: branchIds },
       },
       select: {
         id: true,
         supportsDelivery: true,
+        isActive: true,
+        deletedAt: true,
         timezone: true,
         tenant: {
           select: {
@@ -320,25 +364,43 @@ export class TenantManagementPublicApiService extends TenantManagementPublicApi 
       },
     });
 
-    if (!branch) {
-      return err(tenantManagementPublicApiError('BranchNotFound', `Branch "${input.branchId}" was not found.`));
+    if (branches.length === 0) {
+      return ok([]);
     }
 
-    const tenantConfig = this.reconstituteTenantConfig(branch.tenant.config);
+    const tenantConfig = this.reconstituteTenantConfig(branches[0].tenant.config);
     if (!tenantConfig) {
+      return err(tenantManagementPublicApiError('TenantConfigInvalid', `Tenant "${tenantId}" config is invalid.`));
+    }
+
+    try {
+      return ok(
+        branches.map((branch) => {
+          const effectiveTimezone = resolveEffectiveTimezone(branch.timezone, tenantConfig.timezone);
+
+          const timezoneSource = branch.timezone?.trim()
+            ? 'BRANCH'
+            : tenantConfig.timezone?.trim()
+              ? 'TENANT'
+              : 'DEFAULT';
+
+          return {
+            id: branch.id,
+            supportsDelivery: branch.supportsDelivery,
+            isActive: branch.isActive,
+            isDeleted: branch.deletedAt !== null,
+            effectiveTimezone,
+            branchTimezone: branch.timezone,
+            tenantTimezone: tenantConfig.timezone,
+            timezoneSource,
+          };
+        }),
+      );
+    } catch (error) {
       return err(
-        tenantManagementPublicApiError('TenantConfigInvalid', `Tenant "${input.tenantId}" config is invalid.`),
+        tenantManagementPublicApiError('TenantConfigInvalid', `Tenant "${tenantId}" config is invalid.`, error),
       );
     }
-
-    return ok({
-      id: branch.id,
-      supportsDelivery: branch.supportsDelivery,
-      effectiveTimezone: branch.timezone ?? tenantConfig.timezone,
-      branchTimezone: branch.timezone,
-      tenantTimezone: tenantConfig.timezone,
-      timezoneSource: branch.timezone ? 'BRANCH' : 'TENANT',
-    });
   }
 
   async getTenantAdminNotificationRecipients(
@@ -449,7 +511,7 @@ export class TenantManagementPublicApiService extends TenantManagementPublicApi 
       return err(new RentalCustomerUnavailableForRentalError(input.rentalCustomerId));
     }
 
-    const timezone = branch.timezone ?? tenantConfig.timezone;
+    const timezone = resolveEffectiveTimezone(branch.timezone, tenantConfig.timezone);
     const pickup = this.toLocalDateTimeParts(input.period.start, timezone);
     const returnAt = this.toLocalDateTimeParts(input.period.end, timezone);
 

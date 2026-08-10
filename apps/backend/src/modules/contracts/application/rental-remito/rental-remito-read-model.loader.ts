@@ -2,13 +2,17 @@ import { Injectable } from '@nestjs/common';
 import { err, ok, Result } from 'neverthrow';
 
 import { PrismaService } from 'src/core/database/prisma.service';
+import { TenantManagementPublicApi } from 'src/modules/tenant-management/public-api/tenant-management.public-api';
 
 import { rentalRemitoApplicationError, RentalRemitoApplicationError } from './rental-remito-application.error';
 import { RentalRemitoSourceReadModel } from './rental-remito-source-read-model';
 
 @Injectable()
 export class RentalRemitoReadModelLoader {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly tenantManagementApi: TenantManagementPublicApi,
+  ) {}
 
   async load(
     tenantId: string,
@@ -89,6 +93,17 @@ export class RentalRemitoReadModelLoader {
       );
     }
 
+    const branchContext = await this.tenantManagementApi.getBranchContext({
+      tenantId,
+      branchId: rental.branchId,
+    });
+
+    if (branchContext.isErr()) {
+      return err(
+        rentalRemitoApplicationError('BranchContextMissing', branchContext.error.message, branchContext.error),
+      );
+    }
+
     return ok({
       rental: {
         id: rental.id,
@@ -104,7 +119,10 @@ export class RentalRemitoReadModelLoader {
         confirmedAt: rental.confirmedAt,
       },
       tenant,
-      branch,
+      branch: {
+        ...branch,
+        timezone: branchContext.value.effectiveTimezone,
+      },
       customer,
       contractSigner,
       equipmentLines: rental.demandLines.map((line) => ({
@@ -158,7 +176,7 @@ export class RentalRemitoReadModelLoader {
     };
   }
 
-  private async loadBranch(tenantId: string, branchId: string): Promise<RentalRemitoSourceReadModel['branch'] | null> {
+  private async loadBranch(tenantId: string, branchId: string): Promise<{ id: string; name: string } | null> {
     // TODO(v2-contract-boundaries): Replace this cross-context Prisma read with a public read API/facade.
     const branch = await this.prisma.client.v2Branch.findFirst({
       where: {
@@ -169,7 +187,6 @@ export class RentalRemitoReadModelLoader {
       select: {
         id: true,
         name: true,
-        timezone: true,
       },
     });
 
@@ -180,7 +197,6 @@ export class RentalRemitoReadModelLoader {
     return {
       id: branch.id,
       name: branch.name,
-      timezone: branch.timezone,
     };
   }
 

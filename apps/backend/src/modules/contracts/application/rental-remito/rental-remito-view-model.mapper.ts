@@ -28,7 +28,7 @@ export class RentalRemitoViewModelMapper {
       );
     }
 
-    const timezone = source.branch.timezone ?? 'UTC';
+    const timezone = source.branch.timezone;
     const documentNumber = buildDocumentNumber(source);
 
     return ok({

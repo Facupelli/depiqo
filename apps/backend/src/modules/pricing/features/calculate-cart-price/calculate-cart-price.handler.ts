@@ -4,8 +4,6 @@ import Decimal from 'decimal.js';
 import { err, ok, Result } from 'neverthrow';
 
 import { InsuranceCalculationService } from 'src/core/domain/services/insurance-calculation.service';
-import { PrismaService } from 'src/core/database/prisma.service';
-
 import { PricingContextLoader } from '../../application/pricing-context-loader';
 import { CouponNotApplicableError, InvalidPricingInputError } from '../../pricing-engine/errors/pricing.errors';
 import { PricingInput } from '../../pricing-engine/final/pricing-input.types';
@@ -54,7 +52,6 @@ export class CalculateCartPriceHandler implements IQueryHandler<
   private readonly calculator = new RentalPricingService();
 
   constructor(
-    private readonly prisma: PrismaService,
     private readonly pricingContextLoader: PricingContextLoader,
     private readonly catalogApi: CatalogPublicApi,
     private readonly tenantManagementApi: TenantManagementPublicApi,
@@ -103,12 +100,34 @@ export class CalculateCartPriceHandler implements IQueryHandler<
       );
     }
 
-    const branch = await this.prisma.client.v2Branch.findFirst({
-      where: { id: query.branchId, tenantId: query.tenantId, deletedAt: null, isActive: true },
-      select: { id: true, timezone: true },
+    const branchContextResult = await this.tenantManagementApi.getBranchContext({
+      tenantId: query.tenantId,
+      branchId: query.branchId,
     });
 
-    if (!branch) {
+    if (branchContextResult.isErr()) {
+      if (branchContextResult.error.code === 'BranchNotFound') {
+        return err(
+          calculateCartPriceError(
+            'pricing.branch_not_found',
+            `Branch "${query.branchId}" was not found.`,
+            branchContextResult.error,
+            context,
+          ),
+        );
+      }
+
+      return err(
+        calculateCartPriceError(
+          'pricing.tenant_config_unavailable',
+          `Tenant pricing config for tenant "${query.tenantId}" is unavailable.`,
+          branchContextResult.error,
+          context,
+        ),
+      );
+    }
+
+    if (!branchContextResult.value.isActive || branchContextResult.value.isDeleted) {
       return err(
         calculateCartPriceError(
           'pricing.branch_not_found',
@@ -144,7 +163,7 @@ export class CalculateCartPriceHandler implements IQueryHandler<
       branchId: query.branchId,
       rentalPeriod: { start: query.rentalPeriodStart, end: query.rentalPeriodEnd },
       pricingConfig: {
-        timezone: branch.timezone ?? tenantPricingConfig.timezone,
+        timezone: branchContextResult.value.effectiveTimezone,
         dailyBillingPolicy: tenantPricingConfig.dailyBillingPolicy,
         minimumChargedDays: tenantPricingConfig.minimumChargedDays,
         halfDayThresholdMinutes: tenantPricingConfig.halfDayThresholdMinutes,

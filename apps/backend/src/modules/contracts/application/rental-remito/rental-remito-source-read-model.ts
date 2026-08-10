@@ -28,7 +28,7 @@ export interface RentalRemitoSourceReadModel {
   branch: {
     id: string;
     name: string;
-    timezone: string | null;
+    timezone: string;
   };
 
   customer: {

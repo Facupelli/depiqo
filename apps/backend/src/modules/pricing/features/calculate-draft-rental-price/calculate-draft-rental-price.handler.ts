@@ -4,7 +4,6 @@ import { Injectable } from '@nestjs/common';
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { err, ok, Result } from 'neverthrow';
 
-import { PrismaService } from 'src/core/database/prisma.service';
 import { CatalogPublicApi } from 'src/modules/catalog/public-api/catalog.public-api';
 import {
   InvalidCatalogSelectionQuantityError,
@@ -28,7 +27,6 @@ export class CalculateDraftRentalPriceHandler implements IQueryHandler<
   Result<CalculateDraftRentalPriceResult, CalculateDraftRentalPriceError>
 > {
   constructor(
-    private readonly prisma: PrismaService,
     private readonly catalogApi: CatalogPublicApi,
     private readonly tenantManagementApi: TenantManagementPublicApi,
     private readonly priceDraftRentalService: PriceDraftRentalService,
@@ -58,13 +56,34 @@ export class CalculateDraftRentalPriceHandler implements IQueryHandler<
     }
     const tenantPricingConfig = tenantPricingConfigResult.value;
 
-    // TODO: cross-module dependency
-    const branch = await this.prisma.client.v2Branch.findFirst({
-      where: { id: query.branchId, tenantId: query.tenantId, deletedAt: null, isActive: true },
-      select: { id: true, timezone: true },
+    const branchContextResult = await this.tenantManagementApi.getBranchContext({
+      tenantId: query.tenantId,
+      branchId: query.branchId,
     });
 
-    if (!branch) {
+    if (branchContextResult.isErr()) {
+      if (branchContextResult.error.code === 'BranchNotFound') {
+        return err(
+          calculateDraftRentalPriceError(
+            'pricing.branch_not_found',
+            `Branch "${query.branchId}" was not found.`,
+            branchContextResult.error,
+            context,
+          ),
+        );
+      }
+
+      return err(
+        calculateDraftRentalPriceError(
+          'pricing.tenant_config_unavailable',
+          `Tenant pricing config for tenant "${query.tenantId}" is unavailable.`,
+          branchContextResult.error,
+          context,
+        ),
+      );
+    }
+
+    if (!branchContextResult.value.isActive || branchContextResult.value.isDeleted) {
       return err(
         calculateDraftRentalPriceError(
           'pricing.branch_not_found',
@@ -97,7 +116,7 @@ export class CalculateDraftRentalPriceHandler implements IQueryHandler<
         end: query.rentalPeriodEnd,
       },
       pricingConfig: {
-        timezone: branch.timezone ?? tenantPricingConfig.timezone,
+        timezone: branchContextResult.value.effectiveTimezone,
         dailyBillingPolicy: tenantPricingConfig.dailyBillingPolicy,
         minimumChargedDays: tenantPricingConfig.minimumChargedDays,
         halfDayThresholdMinutes: tenantPricingConfig.halfDayThresholdMinutes,

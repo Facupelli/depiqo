@@ -225,6 +225,7 @@ export class GetRentableItemDetailHandler implements IQueryHandler<
           rentalOfferId: offer.id,
           branchId: offer.branchId,
           branchName: branch?.name ?? null,
+          // This administrative setup read model exposes the branch override configuration, not an effective timezone.
           timezone: branch?.timezone ?? null,
           supportsDelivery: branch?.supportsDelivery ?? null,
           isVisible: offer.isVisible,

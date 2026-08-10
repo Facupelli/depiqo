@@ -55,15 +55,6 @@ export class RentalRemitoDocumentService {
       );
     }
 
-    if (!source.branch.timezone) {
-      return err(
-        rentalRemitoApplicationError(
-          'BranchContextMissing',
-          `Rental "${input.rentalId}" branch does not have a timezone configured.`,
-        ),
-      );
-    }
-
     if (!source.customer?.displayName || !source.customer.documentNumber) {
       return err(
         rentalRemitoApplicationError(
