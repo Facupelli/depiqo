@@ -97,6 +97,24 @@
   - Draft rentals are intentionally schedule-flexible. Pickup and return branch schedules are validated when creating a confirmed rental, not when creating a draft.
   - Removed unreachable create-draft schedule error mappings.
 
+## Known infrastructure constraints
+
+- [x] Document the Prisma / `pg` interactive-transaction compatibility issue.
+  - Current stack: Prisma `7.8.0`, `@prisma/adapter-pg` `7.8.0`, and `pg` `8.20.0`.
+  - Known trigger: a Prisma relation `include` with multiple child relations executed through an interactive transaction client. This was reproduced in `PrismaRentalRepository.findById(..., tx)`.
+  - Observed behavior: Prisma issues sibling relation reads against the same transaction-bound `pg.Client`. `pg` logs: `Calling client.query() when the client is already executing a query is deprecated and will be removed in pg@9.0`.
+  - With `pg` `8.20.0`, the queries are still queued and execute successfully. Current integration and E2E behavior remains correct.
+  - Verified locally:
+    - `replace-confirmed-rental-asset.integration-spec.ts`: 31/31 passes with the current implementation.
+    - Loading the same relations explicitly and sequentially removes the warning while preserving 31/31 behavior.
+    - No application-level concurrent `tx` calls or `Promise.all()` caused the warning.
+  - Current decision: keep production code unchanged, accept the warning while remaining on the current Prisma / `pg` versions, and do not introduce a repository workaround only to suppress it.
+  - Revisit this issue before upgrading to `pg` 9. Prefer, in order:
+    1. an upstream Prisma fix;
+    2. a supported Prisma relation-loading solution;
+    3. the proven sequential relation-load workaround.
+  - Do not weaken transaction or concurrency semantics to work around this issue.
+
 ## External infrastructure boundaries
 
 - [ ] Put the custom-hostname provider behind an application port.
