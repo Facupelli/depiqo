@@ -3,7 +3,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { AppConfigModule } from '../../../src/config/config.module';
 import { PrismaService } from '../../../src/core/database/prisma.service';
 import { SharedModule } from '../../../src/modules/shared/shared.module';
-import { prismaDateToLocalDate } from '../../../src/modules/pricing/pricing-engine/shared/local-date';
+import { prismaDateToLocalDate } from '../../../src/core/temporal/local-date';
 
 describe('V2 promotion and coupon validity DATE persistence', () => {
   let moduleRef: TestingModule;

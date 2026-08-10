@@ -126,6 +126,8 @@ Provider-specific side effects should stay inside the owning module or infrastru
 
 Module details live near their implementations under `apps/backend/src/modules/*/README.md`.
 
+[Temporal semantics](./temporal-semantics.md) defines the required types, timezone ownership, API formats, and PostgreSQL mappings for active V2 temporal fields.
+
 Architecture decision records live in `docs/architecture/adr/`.
 
 Repository-level agent instructions live in `AGENTS.md`.

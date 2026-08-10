@@ -24,6 +24,7 @@ Use these docs as the routing table.
 | --- | --- |
 | Product mission / technical direction | `apps/backend/docs/constitution/` |
 | Architecture overview / module boundary rules (cross-module read/write prohibitions) | `apps/backend/docs/architecture/overview.md` |
+| Temporal field semantics, timezone ownership, and PostgreSQL mappings | `apps/backend/docs/architecture/temporal-semantics.md` |
 | Architecture decisions | `apps/backend/docs/architecture/adr/` |
 | Implementation rules by artifact type (repository vs direct Prisma, transactions) | `apps/backend/docs/implementation-rules/README.md` |
 | Module-specific domain boundaries | `apps/backend/src/modules/*/README.md` |

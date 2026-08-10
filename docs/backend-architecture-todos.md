@@ -74,9 +74,9 @@
 
 ## Date and time model
 
-- [ ] Formalize backend timestamp semantics.
-  - The application generally treats timestamps as UTC instants, while important PostgreSQL columns use `TIMESTAMP(3) WITHOUT TIME ZONE`.
-  - Define and enforce the canonical storage/domain convention for absolute instants versus tenant-local calendar values, including any schema migration.
+- [x] Formalize backend timestamp semantics.
+  - Active V2 absolute instants use `TIMESTAMPTZ`, while timezone-independent calendar values use `DATE` and local clock times use minutes from midnight.
+  - The canonical [temporal semantics](../apps/backend/docs/architecture/temporal-semantics.md) guide documents API, Prisma, timezone, DST, range, and PostgreSQL session rules.
 
 - [ ] Fix branch schedule-slot timezone and DST handling.
   - Slot construction risks interpreting dates at UTC midnight instead of applying the branch's IANA timezone and DST rules.

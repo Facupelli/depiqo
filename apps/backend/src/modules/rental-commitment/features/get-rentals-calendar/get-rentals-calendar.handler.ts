@@ -65,8 +65,9 @@ export class GetRentalsCalendarHandler implements IQueryHandler<GetRentalsCalend
       SELECT
         r.id AS "id",
         r.status AS "status",
-        -- Prisma's raw PostgreSQL Date decoding is session-timezone-sensitive for
-        -- timestamptz values. Emit canonical UTC strings instead of session-rendered values.
+        -- Local PrismaPg raw-query adapter workaround: its TIMESTAMPTZ decoding is
+        -- session-timezone-sensitive. Format canonical UTC API strings here. This
+        -- does not reinterpret storage: TIMESTAMPTZ already represents the instant.
         to_char(r.created_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS "createdAt",
         to_char(r.period_start AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS "periodStart",
         to_char(r.period_end AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS "periodEnd",

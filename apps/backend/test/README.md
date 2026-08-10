@@ -200,8 +200,6 @@ Keep domain-specific assertions and invariants with their owning module's test s
 
 - TODO: Evaluate a narrower Nest testing composition for vertical-slice integration tests. Prefer explicit slice dependencies where practical, and reserve the complete `AppModule` graph primarily for E2E and intentional full-application integration coverage.
 
-## Existing Time-Model Gaps
+## Temporal Semantics
 
-The application commonly handles timestamps as UTC `Date` instants and serializes them as ISO strings, but most PostgreSQL timestamp columns are `TIMESTAMP(3)` without timezone. The intended persistence contract needs an architecture review before it is changed.
-
-Branches and tenant configuration have IANA timezones, while branch schedules store a calendar `DATE` and minutes-from-midnight. The current schedule-slot path constructs its date at UTC midnight and does not apply the branch timezone. The intended local-date and DST behavior needs product and architecture review.
+Follow the canonical [temporal semantics](../docs/architecture/temporal-semantics.md) guide when creating timestamp, date, time, timezone, or range test data. Its local-date, timezone, DST, PostgreSQL-session, and `tstzrange` rules are covered by focused unit, integration, and E2E tests.

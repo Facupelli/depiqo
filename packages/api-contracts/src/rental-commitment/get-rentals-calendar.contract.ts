@@ -29,8 +29,8 @@ export const GetRentalsCalendarItemSchema = z.object({
 	createdAt: z.iso.datetime(),
 	pickupAt: z.iso.datetime(),
 	returnAt: z.iso.datetime(),
-	pickupDate: z.string(),
-	returnDate: z.string(),
+	pickupDate: LocalDateSchema,
+	returnDate: LocalDateSchema,
 	customer: GetRentalsCalendarCustomerSchema.nullable(),
 });
 
