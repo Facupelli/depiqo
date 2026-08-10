@@ -191,6 +191,28 @@ describe('CreateConfirmedRental integration', () => {
     return { rentals: rentals.length, selections, demand, assignments, splits, blocks };
   }
 
+  it('returns the dedicated duplicate-selection error without creating a commitment', async () => {
+    const setup = await scenario();
+    const catalog = await offer(setup);
+    const result = await create({
+      ...setup,
+      selectedOffers: [
+        { rentalOfferId: catalog.offer.id, quantity: 1 },
+        { rentalOfferId: catalog.offer.id, quantity: 1 },
+      ],
+    });
+
+    expect(result.isErr() && result.error.code).toBe('rental_commitment.duplicate_rental_offer_selection');
+    expect(await commitmentCounts(setup)).toEqual({
+      rentals: 0,
+      selections: 0,
+      demand: 0,
+      assignments: 0,
+      splits: 0,
+      blocks: 0,
+    });
+  });
+
   it('persists the complete confirmed commitment without an intermediate draft', async () => {
     const setup = await scenario();
     const catalog = await offer(setup);

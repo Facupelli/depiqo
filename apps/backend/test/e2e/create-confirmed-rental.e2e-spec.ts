@@ -68,6 +68,24 @@ describe('POST /rental-commitments/confirmed-rentals', () => {
     expect(rentals).toHaveLength(0);
   }
 
+  it('returns a dedicated semantic error for duplicate offer IDs', async () => {
+    const setup = await scenario();
+    const client = await login(setup);
+    const response = await client.withCsrf(client.request().post('/rental-commitments/confirmed-rentals')).send({
+      ...body(setup),
+      selectedOffers: [
+        { rentalOfferId: setup.catalog.offer.id, quantity: 1 },
+        { rentalOfferId: setup.catalog.offer.id, quantity: 1 },
+      ],
+    });
+    expectProblemResponse(response, {
+      status: 422,
+      type: createProblemType('rental_commitment.duplicate_rental_offer_selection'),
+      code: 'rental_commitment.duplicate_rental_offer_selection',
+    });
+    await expectNoCommitment(setup);
+  });
+
   it('creates a complete confirmed rental for an authenticated customer', async () => {
     const setup = await scenario();
     const assetId = await rentalFixtures.createCandidate({

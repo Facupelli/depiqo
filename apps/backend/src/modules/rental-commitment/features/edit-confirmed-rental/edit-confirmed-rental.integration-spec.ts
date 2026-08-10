@@ -286,6 +286,20 @@ describe('EditConfirmedRental integration', () => {
     );
   });
 
+  it('returns the dedicated duplicate-selection error without mutating the confirmed rental', async () => {
+    const setup = await scenario();
+    const before = await fixtures.persistedState(setup.rental.rentalId);
+    const result = await edit(setup, {
+      selectedOffers: [
+        { rentalOfferId: setup.commercial.offer.id, quantity: 1 },
+        { rentalOfferId: setup.commercial.offer.id, quantity: 1 },
+      ],
+    });
+
+    expect(result.isErr() && result.error.code).toBe('rental_commitment.duplicate_rental_offer_selection');
+    expect(await fixtures.persistedState(setup.rental.rentalId)).toEqual(before);
+  });
+
   it('accepts an exact repeat as a no-op without duplicate state or an edit event', async () => {
     const setup = await scenario();
     const emitter = testApp.app.get(EventEmitter2);

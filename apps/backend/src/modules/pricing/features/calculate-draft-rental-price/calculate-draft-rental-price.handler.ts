@@ -4,12 +4,7 @@ import { Injectable } from '@nestjs/common';
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { err, ok, Result } from 'neverthrow';
 
-import { CatalogPublicApi } from 'src/modules/catalog/public-api/catalog.public-api';
-import {
-  InvalidCatalogSelectionQuantityError,
-  RentalCommitmentError,
-  RentalInvalidFieldError,
-} from 'src/modules/rental-commitment/domain/errors/rental-commitment.errors';
+import { CatalogPublicApi, ResolveSelectedRentalOffersError } from 'src/modules/catalog/public-api/catalog.public-api';
 import { TenantManagementPublicApi } from 'src/modules/tenant-management/public-api/tenant-management.public-api';
 
 import { InvalidPricingInputError, PricingError } from '../../pricing-engine/errors/pricing.errors';
@@ -269,28 +264,20 @@ export class CalculateDraftRentalPriceHandler implements IQueryHandler<
   }
 
   private mapCatalogSelectionError(
-    error: RentalCommitmentError,
+    error: ResolveSelectedRentalOffersError,
     context: Record<string, unknown>,
   ): CalculateDraftRentalPriceError {
-    if (error instanceof InvalidCatalogSelectionQuantityError) {
-      return calculateDraftRentalPriceError('pricing.invalid_draft_rental_selection', error.message, error, context);
+    if (error.code === 'RentalOfferNotFound') {
+      return calculateDraftRentalPriceError('pricing.rental_offer_not_found', error.message, error, context);
+    }
+    if (error.code === 'RentalOfferNotRentable') {
+      return calculateDraftRentalPriceError('pricing.rental_offer_not_selectable', error.message, error, context);
+    }
+    if (error.code === 'RentableItemNotActive') {
+      return calculateDraftRentalPriceError('pricing.rentable_item_inactive', error.message, error, context);
     }
 
-    if (error instanceof RentalInvalidFieldError) {
-      if (error.field === 'rentalOfferId' && error.reason.includes('not found')) {
-        return calculateDraftRentalPriceError('pricing.rental_offer_not_found', error.message, error, context);
-      }
-      if (error.field === 'rentalOfferId' && error.reason.includes('not selectable')) {
-        return calculateDraftRentalPriceError('pricing.rental_offer_not_selectable', error.message, error, context);
-      }
-      if (error.field === 'rentableItemId' && error.reason.includes('not active')) {
-        return calculateDraftRentalPriceError('pricing.rentable_item_inactive', error.message, error, context);
-      }
-
-      return calculateDraftRentalPriceError('pricing.invalid_draft_rental_selection', error.message, error, context);
-    }
-
-    throw error;
+    return calculateDraftRentalPriceError('pricing.invalid_draft_rental_selection', error.message, error, context);
   }
 
   private toApplicationError(error: PricingError, context: Record<string, unknown>): CalculateDraftRentalPriceError {

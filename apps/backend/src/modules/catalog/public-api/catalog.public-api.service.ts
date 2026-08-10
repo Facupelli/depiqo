@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Result } from 'neverthrow';
 
-import { RentalCommitmentError } from '../../rental-commitment/domain/errors/rental-commitment.errors';
 import { CreateRentalOfferForRentableItemCommand } from '../features/create-rental-offer-for-rentable-item/create-rental-offer-for-rentable-item.command';
 import { CreateRentalOfferForRentableItemService } from '../features/create-rental-offer-for-rentable-item/create-rental-offer-for-rentable-item.service';
 import { CreateRentableItemOfferingCommand } from '../features/create-rentable-item-offering/create-rentable-item-offering.command';
@@ -27,6 +26,7 @@ import {
   ResolveRentalOffersForAvailabilityError,
   ResolveRentalOffersForAvailabilityInput,
   ResolveRentalOffersForAvailabilityResult,
+  ResolveSelectedRentalOffersError,
   ResolveSelectedRentalOffersInput,
   ResolveSelectedRentalOffersResult,
 } from './catalog.public-api';
@@ -77,7 +77,7 @@ export class CatalogPublicApiService extends CatalogPublicApi {
 
   async resolveSelectedRentalOffers(
     input: ResolveSelectedRentalOffersInput,
-  ): Promise<Result<ResolveSelectedRentalOffersResult, RentalCommitmentError>> {
+  ): Promise<Result<ResolveSelectedRentalOffersResult, ResolveSelectedRentalOffersError>> {
     return this.resolveSelectedRentalOffersService.execute(input);
   }
 }

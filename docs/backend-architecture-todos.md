@@ -85,9 +85,9 @@
 
 ## API consistency and cleanup
 
-- [ ] Clarify duplicate Rental Offer selection error semantics.
-  - Create-draft detects Catalog duplicates as generic invalid input (`422`), while Rental Commitment has a dedicated duplicate-selection `409` mapping that is unreachable.
-  - Choose one stable contract and remove the dead alternative.
+- [x] Clarify duplicate Rental Offer selection error semantics.
+  - Repeated `rentalOfferId` values are a semantic payload error exposed by every Rental Commitment create/edit flow as `rental_commitment.duplicate_rental_offer_selection` (`422`).
+  - Catalog validates the duplicate through its Catalog-owned public selection-resolution error, which Rental Commitment translates at its boundary.
 
 - [ ] Review response-envelope consistency.
   - Some feature contracts containing `data` are wrapped by the global envelope, producing responses such as `{ "data": { "data": [...] } }`.

@@ -1,6 +1,5 @@
 import { Result } from 'neverthrow';
 
-import { RentalCommitmentError } from '../../rental-commitment/domain/errors/rental-commitment.errors';
 import { RentableItemKind } from '../domain/rentable-item.aggregate';
 
 export type { RentableItemKind } from '../domain/rentable-item.aggregate';
@@ -35,6 +34,23 @@ export interface ResolvedSelectedRentalOffer {
 
 export interface ResolveSelectedRentalOffersResult {
   resolvedOffers: ResolvedSelectedRentalOffer[];
+}
+
+export type ResolveSelectedRentalOffersErrorCode =
+  | 'EmptySelection'
+  | 'InvalidSelectionQuantity'
+  | 'DuplicateRentalOfferSelection'
+  | 'RentalOfferNotFound'
+  | 'RentalOfferNotRentable'
+  | 'RentableItemNotActive'
+  | 'InvalidFulfillmentDefinition'
+  | 'EquipmentTypeNotFound'
+  | 'EquipmentTypeNotActive';
+
+export interface ResolveSelectedRentalOffersError {
+  code: ResolveSelectedRentalOffersErrorCode;
+  message: string;
+  context?: Record<string, unknown>;
 }
 
 export type ResolveRentalOffersForAvailabilityErrorCode =
@@ -115,7 +131,7 @@ export interface CatalogPublicApiError {
 export abstract class CatalogPublicApi {
   abstract resolveSelectedRentalOffers(
     input: ResolveSelectedRentalOffersInput,
-  ): Promise<Result<ResolveSelectedRentalOffersResult, RentalCommitmentError>>;
+  ): Promise<Result<ResolveSelectedRentalOffersResult, ResolveSelectedRentalOffersError>>;
 
   abstract resolveRentalOffersForAvailability(
     input: ResolveRentalOffersForAvailabilityInput,

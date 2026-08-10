@@ -9,6 +9,8 @@ import { createTestFixtures, TestFixtures } from '../../../../../test/support/fi
 import { utcDate } from '../../../../../test/support/time';
 
 import { RentalPeriod } from '../../domain/value-objects/rental-period.value-object';
+import { EditUnconfirmedRentalCommand } from '../edit-unconfirmed-rental/edit-unconfirmed-rental.command';
+import { EditUnconfirmedRentalResult } from '../edit-unconfirmed-rental/edit-unconfirmed-rental.handler';
 import { CreateDraftRentalCommand } from './create-draft-rental.command';
 import { CreateDraftRentalServiceResult } from './create-draft-rental.service';
 
@@ -325,8 +327,36 @@ describe('CreateDraftRental integration', () => {
         { rentalOfferId: catalog.offer.id, quantity: 1 },
       ],
     });
-    expect(result.isErr()).toBe(true);
+    expect(result.isErr() && result.error.code).toBe('rental_commitment.duplicate_rental_offer_selection');
     expect(await rentalCount(setup)).toBe(0);
+  });
+
+  it('returns the dedicated duplicate-selection error when editing an unconfirmed rental', async () => {
+    const setup = await scenario();
+    const catalog = await offer(setup);
+    const created = await create({ ...setup, selectedOffers: [{ rentalOfferId: catalog.offer.id, quantity: 1 }] });
+    expect(created.isOk()).toBe(true);
+    if (created.isErr()) return;
+
+    const existing = await state(created.value.rentalId);
+    const result = await commands.execute<EditUnconfirmedRentalCommand, EditUnconfirmedRentalResult>(
+      new EditUnconfirmedRentalCommand({
+        tenantId: setup.tenantId,
+        tenantUserId: setup.tenantUserId,
+        rentalId: created.value.rentalId,
+        expectedVersion: existing.rental.version,
+        branchId: setup.branchId,
+        period: period(),
+        selectedOffers: [
+          { rentalOfferId: catalog.offer.id, quantity: 1 },
+          { rentalOfferId: catalog.offer.id, quantity: 1 },
+        ],
+        fulfillmentMethod: 'PICKUP',
+      }),
+    );
+
+    expect(result.isErr() && result.error.code).toBe('rental_commitment.duplicate_rental_offer_selection');
+    expect(await state(created.value.rentalId)).toEqual(existing);
   });
 
   it.each([

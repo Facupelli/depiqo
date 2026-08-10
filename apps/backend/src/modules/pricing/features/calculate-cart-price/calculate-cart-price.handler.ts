@@ -11,17 +11,12 @@ import { PricingResult } from '../../pricing-engine/final/pricing-result.type';
 import { RentalPricingService } from '../../pricing-engine/final/rental-pricing.service';
 import { CalculateCartPriceError, calculateCartPriceError } from './calculate-cart-price.errors';
 import { CalculateCartPriceQuery } from './calculate-cart-price.query';
-import { CatalogPublicApi } from 'src/modules/catalog/public-api/catalog.public-api';
+import { CatalogPublicApi, ResolveSelectedRentalOffersError } from 'src/modules/catalog/public-api/catalog.public-api';
 import {
   GetTenantPricingConfigResult,
   TenantManagementPublicApi,
 } from 'src/modules/tenant-management/public-api/tenant-management.public-api';
 import { BasePricingSelectionInput } from '../../public-api/pricing.public-api';
-import {
-  InvalidCatalogSelectionQuantityError,
-  RentalCommitmentError,
-  RentalInvalidFieldError,
-} from 'src/modules/rental-commitment/domain/errors/rental-commitment.errors';
 
 type CalculateCartPriceResult = {
   currency: string | null;
@@ -340,30 +335,20 @@ export class CalculateCartPriceHandler implements IQueryHandler<
   }
 
   private mapCatalogSelectionError(
-    error: RentalCommitmentError,
+    error: ResolveSelectedRentalOffersError,
     context: Record<string, unknown>,
   ): CalculateCartPriceError {
-    if (error instanceof InvalidCatalogSelectionQuantityError) {
-      return calculateCartPriceError('pricing.invalid_cart_selection', error.message, error, context);
+    if (error.code === 'RentalOfferNotFound') {
+      return calculateCartPriceError('pricing.rental_offer_not_found', error.message, error, context);
+    }
+    if (error.code === 'RentalOfferNotRentable') {
+      return calculateCartPriceError('pricing.rental_offer_not_selectable', error.message, error, context);
+    }
+    if (error.code === 'RentableItemNotActive') {
+      return calculateCartPriceError('pricing.rentable_item_inactive', error.message, error, context);
     }
 
-    if (error instanceof RentalInvalidFieldError) {
-      if (error.field === 'rentalOfferId' && error.reason.includes('not found')) {
-        return calculateCartPriceError('pricing.rental_offer_not_found', error.message, error, context);
-      }
-
-      if (error.field === 'rentalOfferId' && error.reason.includes('not selectable')) {
-        return calculateCartPriceError('pricing.rental_offer_not_selectable', error.message, error, context);
-      }
-
-      if (error.field === 'rentableItemId' && error.reason.includes('not active')) {
-        return calculateCartPriceError('pricing.rentable_item_inactive', error.message, error, context);
-      }
-
-      return calculateCartPriceError('pricing.invalid_cart_selection', error.message, error, context);
-    }
-
-    throw error;
+    return calculateCartPriceError('pricing.invalid_cart_selection', error.message, error, context);
   }
 
   private mapCalculationError(

@@ -108,7 +108,7 @@ const createConfirmedRentalProblemMap = {
   'rental_commitment.duplicate_rental_offer_selection': problem(
     'duplicate_rental_offer_selection',
     'Duplicate rental offer selection',
-    HttpStatus.CONFLICT,
+    HttpStatus.UNPROCESSABLE_ENTITY,
     'The same rental offer cannot be selected more than once.',
   ),
   'rental_commitment.insufficient_asset_availability': problem(

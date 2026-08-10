@@ -44,7 +44,7 @@ describe('PUT /rental-commitments/confirmed-rentals/:rentalId', () => {
 
   function body(setup: Awaited<ReturnType<typeof scenario>>, overrides: Record<string, unknown> = {}) {
     return {
-      expectedUpdatedAt: setup.persisted.updatedAt.toISOString(),
+      expectedVersion: setup.persisted.version,
       branchId: setup.branch.id,
       period: { start: utcDate(2030, 1, 1, 13).toISOString(), end: utcDate(2030, 1, 1, 15).toISOString() },
       selectedOffers: [{ rentalOfferId: setup.commercial.offer.id, quantity: 1 }],
@@ -68,7 +68,7 @@ describe('PUT /rental-commitments/confirmed-rentals/:rentalId', () => {
       .send(body(setup))
       .expect(200);
     expect(response.body).toEqual({
-      data: { id: setup.rental.rentalId, updatedAt: expect.any(String) },
+      data: { id: setup.rental.rentalId, version: expect.any(Number), updatedAt: expect.any(String) },
     });
     const state = await fixtures.persistedState(setup.rental.rentalId);
     expect(state.rental.periodStart).toEqual(utcDate(2030, 1, 1, 13));
@@ -105,10 +105,10 @@ describe('PUT /rental-commitments/confirmed-rentals/:rentalId', () => {
 
   it.each([
     [
-      'missing expectedUpdatedAt',
+      'missing expectedVersion',
       (setup: Awaited<ReturnType<typeof scenario>>) => {
         const value = body(setup) as Record<string, unknown>;
-        delete value.expectedUpdatedAt;
+        delete value.expectedVersion;
         return value;
       },
       400,
@@ -136,6 +136,28 @@ describe('PUT /rental-commitments/confirmed-rentals/:rentalId', () => {
       .send(requestBody(setup));
     expect(response.status).toBe(status);
     expect(response.headers['content-type']).toContain('application/problem+json');
+    expect(await fixtures.persistedState(setup.rental.rentalId)).toEqual(before);
+  });
+
+  it('returns a dedicated semantic error for duplicate offer IDs without mutation', async () => {
+    const setup = await scenario();
+    const before = await fixtures.persistedState(setup.rental.rentalId);
+    const client = await login(setup.user);
+    const response = await client
+      .withCsrf(client.request().put(`/rental-commitments/confirmed-rentals/${setup.rental.rentalId}`))
+      .send(
+        body(setup, {
+          selectedOffers: [
+            { rentalOfferId: setup.commercial.offer.id, quantity: 1 },
+            { rentalOfferId: setup.commercial.offer.id, quantity: 1 },
+          ],
+        }),
+      );
+    expectProblemResponse(response, {
+      status: 422,
+      type: createProblemType('rental_commitment.duplicate_rental_offer_selection'),
+      code: 'rental_commitment.duplicate_rental_offer_selection',
+    });
     expect(await fixtures.persistedState(setup.rental.rentalId)).toEqual(before);
   });
 

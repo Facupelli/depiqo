@@ -4,7 +4,7 @@ import { err, ok, Result } from 'neverthrow';
 import { PrismaUnitOfWork } from 'src/core/database/prisma-unit-of-work';
 import { PostgresExclusionViolationError } from 'src/core/utils/postgres-error.mapper';
 import { V2AssetBlockType } from 'src/generated/prisma/enums';
-import { CatalogPublicApi } from 'src/modules/catalog/public-api/catalog.public-api';
+import { CatalogPublicApi, ResolveSelectedRentalOffersError } from 'src/modules/catalog/public-api/catalog.public-api';
 import { V2ContractsPublicApi } from 'src/modules/contracts/public-api/contracts.public-api';
 import { PricingPublicApi } from 'src/modules/pricing/public-api/pricing.public-api';
 import { RentalPriceSnapshotV1 } from 'src/modules/pricing/public-api/rental-price-snapshot.type';
@@ -545,6 +545,11 @@ export class EditConfirmedRentalHandler implements ICommandHandler<
   }
 
   private toApplicationError(error: unknown, context: Record<string, unknown>): EditConfirmedRentalError {
+    if (isDuplicateRentalOfferSelection(error))
+      return editConfirmedRentalError('rental_commitment.duplicate_rental_offer_selection', error.message, error, {
+        ...context,
+        rentalOfferId: error.context?.rentalOfferId,
+      });
     if (error instanceof RentalCannotBeEditedFromStatusError)
       return editConfirmedRentalError(
         'rental_commitment.rental_cannot_be_edited_from_status',
@@ -620,6 +625,12 @@ export class EditConfirmedRentalHandler implements ICommandHandler<
       return editConfirmedRentalError('rental_commitment.invalid_pricing_input', error.message, error, context);
     throw error;
   }
+}
+
+function isDuplicateRentalOfferSelection(error: unknown): error is ResolveSelectedRentalOffersError {
+  return (
+    typeof error === 'object' && error !== null && 'code' in error && error.code === 'DuplicateRentalOfferSelection'
+  );
 }
 
 function isErrorWithCode(error: unknown, code: string): error is Error & { code: string } {

@@ -2,7 +2,7 @@ import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { err, ok, Result } from 'neverthrow';
 
 import { PrismaService } from 'src/core/database/prisma.service';
-import { CatalogPublicApi } from 'src/modules/catalog/public-api/catalog.public-api';
+import { CatalogPublicApi, ResolveSelectedRentalOffersError } from 'src/modules/catalog/public-api/catalog.public-api';
 import { PricingPublicApi } from 'src/modules/pricing/public-api/pricing.public-api';
 import { TenantManagementPublicApi } from 'src/modules/tenant-management/public-api/tenant-management.public-api';
 
@@ -211,6 +211,12 @@ export class EditUnconfirmedRentalHandler implements ICommandHandler<
   }
 
   private toApplicationError(error: unknown, context: Record<string, unknown>): EditUnconfirmedRentalError {
+    if (isDuplicateRentalOfferSelection(error)) {
+      return editUnconfirmedRentalError('rental_commitment.duplicate_rental_offer_selection', error.message, error, {
+        ...context,
+        rentalOfferId: error.context?.rentalOfferId,
+      });
+    }
     if (error instanceof RentalCannotBeEditedFromStatusError) {
       return editUnconfirmedRentalError(
         'rental_commitment.rental_cannot_be_edited_from_status',
@@ -288,6 +294,12 @@ export class EditUnconfirmedRentalHandler implements ICommandHandler<
 
     throw error;
   }
+}
+
+function isDuplicateRentalOfferSelection(error: unknown): error is ResolveSelectedRentalOffersError {
+  return (
+    typeof error === 'object' && error !== null && 'code' in error && error.code === 'DuplicateRentalOfferSelection'
+  );
 }
 
 function isErrorWithCode(error: unknown, code: string): error is Error & { code: string } {

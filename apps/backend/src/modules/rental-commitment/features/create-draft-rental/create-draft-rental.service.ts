@@ -1,7 +1,7 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { err, ok, Result } from 'neverthrow';
 
-import { CatalogPublicApi } from 'src/modules/catalog/public-api/catalog.public-api';
+import { CatalogPublicApi, ResolveSelectedRentalOffersError } from 'src/modules/catalog/public-api/catalog.public-api';
 import { PricingPublicApi } from 'src/modules/pricing/public-api/pricing.public-api';
 import { TenantManagementPublicApi } from 'src/modules/tenant-management/public-api/tenant-management.public-api';
 
@@ -176,6 +176,45 @@ export class CreateDraftRentalService implements ICommandHandler<
   }
 
   private toApplicationError(error: unknown, context: Record<string, unknown>): CreateDraftRentalError {
+    if (isCatalogSelectionError(error)) {
+      switch (error.code) {
+        case 'EmptySelection':
+          return createDraftRentalError('rental_commitment.rental_requires_selection', error.message, error, context);
+        case 'InvalidSelectionQuantity':
+          return createDraftRentalError(
+            'rental_commitment.invalid_catalog_selection_quantity',
+            error.message,
+            error,
+            context,
+          );
+        case 'DuplicateRentalOfferSelection':
+          return createDraftRentalError('rental_commitment.duplicate_rental_offer_selection', error.message, error, {
+            ...context,
+            rentalOfferId: error.context?.rentalOfferId,
+          });
+        case 'RentalOfferNotFound':
+          return createDraftRentalError('rental_commitment.rental_offer_not_found', error.message, error, context);
+        case 'RentalOfferNotRentable':
+        case 'RentableItemNotActive':
+          return createDraftRentalError(
+            'rental_commitment.catalog_selection_unavailable',
+            error.message,
+            error,
+            context,
+          );
+        case 'InvalidFulfillmentDefinition':
+          return createDraftRentalError(
+            'rental_commitment.invalid_fulfillment_definition',
+            error.message,
+            error,
+            context,
+          );
+        case 'EquipmentTypeNotFound':
+          return createDraftRentalError('rental_commitment.equipment_type_not_found', error.message, error, context);
+        case 'EquipmentTypeNotActive':
+          return createDraftRentalError('rental_commitment.equipment_type_not_rentable', error.message, error, context);
+      }
+    }
     if (error instanceof RentalMustContainSelectionError) {
       return createDraftRentalError('rental_commitment.rental_requires_selection', error.message, error, context);
     }
@@ -258,6 +297,10 @@ export class CreateDraftRentalService implements ICommandHandler<
 
     throw error;
   }
+}
+
+function isCatalogSelectionError(error: unknown): error is ResolveSelectedRentalOffersError {
+  return typeof error === 'object' && error !== null && 'code' in error && 'message' in error;
 }
 
 function isErrorWithCode(error: unknown, code: string): error is Error & { code: string } {

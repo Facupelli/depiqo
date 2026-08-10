@@ -2,21 +2,10 @@ import { Injectable } from '@nestjs/common';
 import { err, ok, Result } from 'neverthrow';
 
 import {
-  EquipmentTypeNotFoundError,
-  EquipmentTypeNotRentableError,
-  InvalidCatalogSelectionQuantityError,
-  InvalidFulfillmentDefinitionError,
-  RentalCommitmentError,
-  RentalInvalidFieldError,
-  RentalMustContainSelectionError,
-  RentalOfferNotFoundError,
-  RentalOfferNotRentableError,
-  RentableItemNotActiveError,
-} from '../../../rental-commitment/domain/errors/rental-commitment.errors';
-import {
   ResolveRentalOffersForAvailabilityError,
   ResolveRentalOffersForAvailabilityInput,
   ResolveRentalOffersForAvailabilityResult,
+  ResolveSelectedRentalOffersError,
   ResolveSelectedRentalOffersInput,
   ResolveSelectedRentalOffersResult,
   SelectedRentalOfferInput,
@@ -57,7 +46,7 @@ export class ResolveSelectedRentalOffersService {
 
   async execute(
     input: ResolveSelectedRentalOffersInput,
-  ): Promise<Result<ResolveSelectedRentalOffersResult, RentalCommitmentError>> {
+  ): Promise<Result<ResolveSelectedRentalOffersResult, ResolveSelectedRentalOffersError>> {
     const payloadValidation = this.validateSelectionPayload(input.selectedOffers);
 
     if (payloadValidation.isErr()) {
@@ -76,11 +65,15 @@ export class ResolveSelectedRentalOffersService {
       const rentalOffer = rentalOffersById.get(selection.rentalOfferId);
 
       if (!rentalOffer) {
-        return err(new RentalOfferNotFoundError(selection.rentalOfferId));
+        return err(
+          catalogSelectionError('RentalOfferNotFound', `Rental offer "${selection.rentalOfferId}" was not found.`),
+        );
       }
 
       if (!rentalOffer.isRentable) {
-        return err(new RentalOfferNotRentableError(selection.rentalOfferId));
+        return err(
+          catalogSelectionError('RentalOfferNotRentable', `Rental offer "${selection.rentalOfferId}" is not rentable.`),
+        );
       }
     }
 
@@ -95,11 +88,15 @@ export class ResolveSelectedRentalOffersService {
       const rentableItem = rentableItemsById.get(offer.rentableItemId);
 
       if (!rentableItem) {
-        return err(new RentableItemNotActiveError(offer.rentableItemId));
+        return err(
+          catalogSelectionError('RentableItemNotActive', `Rentable item "${offer.rentableItemId}" is not active.`),
+        );
       }
 
       if (rentableItem.status !== 'ACTIVE') {
-        return err(new RentableItemNotActiveError(offer.rentableItemId));
+        return err(
+          catalogSelectionError('RentableItemNotActive', `Rentable item "${offer.rentableItemId}" is not active.`),
+        );
       }
     }
 
@@ -113,15 +110,20 @@ export class ResolveSelectedRentalOffersService {
       const itemRequirements = requirementsByRentableItemId.get(rentableItemId) ?? [];
 
       if (itemRequirements.length === 0) {
-        return err(new InvalidFulfillmentDefinitionError(rentableItemId));
+        return err(
+          catalogSelectionError(
+            'InvalidFulfillmentDefinition',
+            `Rentable item "${rentableItemId}" has no fulfillment requirements.`,
+          ),
+        );
       }
 
       for (const requirement of itemRequirements) {
         if (!Number.isInteger(requirement.quantityPerItem) || requirement.quantityPerItem <= 0) {
           return err(
-            new InvalidCatalogSelectionQuantityError(
-              'fulfillmentRequirements.quantityPerItem',
-              requirement.quantityPerItem,
+            catalogSelectionError(
+              'InvalidFulfillmentDefinition',
+              `Fulfillment requirement quantity "${requirement.quantityPerItem}" must be a positive integer.`,
             ),
           );
         }
@@ -139,11 +141,15 @@ export class ResolveSelectedRentalOffersService {
       const equipmentType = equipmentTypesById.get(equipmentTypeId);
 
       if (!equipmentType) {
-        return err(new EquipmentTypeNotFoundError(equipmentTypeId));
+        return err(
+          catalogSelectionError('EquipmentTypeNotFound', `Equipment type "${equipmentTypeId}" was not found.`),
+        );
       }
 
       if (!equipmentType.isActive) {
-        return err(new EquipmentTypeNotRentableError(equipmentTypeId));
+        return err(
+          catalogSelectionError('EquipmentTypeNotActive', `Equipment type "${equipmentTypeId}" is not active.`),
+        );
       }
     }
 
@@ -173,37 +179,39 @@ export class ResolveSelectedRentalOffersService {
     });
   }
 
-  private toAvailabilityError(error: RentalCommitmentError): ResolveRentalOffersForAvailabilityError {
-    if (error instanceof RentalOfferNotFoundError) {
+  private toAvailabilityError(error: ResolveSelectedRentalOffersError): ResolveRentalOffersForAvailabilityError {
+    if (error.code === 'RentalOfferNotFound')
       return { code: 'RentalOfferNotFound', message: error.message, cause: error };
-    }
-    if (error instanceof RentalOfferNotRentableError) {
+    if (error.code === 'RentalOfferNotRentable')
       return { code: 'RentalOfferNotRentable', message: error.message, cause: error };
-    }
-    if (error instanceof RentableItemNotActiveError) {
+    if (error.code === 'RentableItemNotActive')
       return { code: 'RentableItemNotActive', message: error.message, cause: error };
-    }
 
     return { code: 'InvalidFulfillmentDefinition', message: error.message, cause: error };
   }
 
-  private validateSelectionPayload(selections: SelectedRentalOfferInput[]): Result<void, RentalCommitmentError> {
+  private validateSelectionPayload(
+    selections: SelectedRentalOfferInput[],
+  ): Result<void, ResolveSelectedRentalOffersError> {
     if (selections.length === 0) {
-      return err(new RentalMustContainSelectionError());
+      return err(catalogSelectionError('EmptySelection', 'At least one rental offer must be selected.'));
     }
 
     const seenRentalOfferIds = new Set<string>();
 
     for (const selection of selections) {
       if (!Number.isInteger(selection.quantity) || selection.quantity <= 0) {
-        return err(new InvalidCatalogSelectionQuantityError('selectedOffers.quantity', selection.quantity));
+        return err(
+          catalogSelectionError('InvalidSelectionQuantity', 'Rental offer quantity must be a positive integer.'),
+        );
       }
 
       if (seenRentalOfferIds.has(selection.rentalOfferId)) {
         return err(
-          new RentalInvalidFieldError(
-            'rentalOfferId',
-            `offer "${selection.rentalOfferId}" was selected more than once`,
+          catalogSelectionError(
+            'DuplicateRentalOfferSelection',
+            `Rental offer "${selection.rentalOfferId}" was selected more than once.`,
+            { rentalOfferId: selection.rentalOfferId },
           ),
         );
       }
@@ -231,4 +239,12 @@ export class ResolveSelectedRentalOffersService {
 
     return grouped;
   }
+}
+
+function catalogSelectionError(
+  code: ResolveSelectedRentalOffersError['code'],
+  message: string,
+  context?: Record<string, unknown>,
+): ResolveSelectedRentalOffersError {
+  return { code, message, context };
 }

@@ -172,6 +172,24 @@ describe('POST /rental-commitments/draft-rentals', () => {
     await expectNoDraft(setup);
   });
 
+  it('returns a dedicated semantic error for duplicate offer IDs', async () => {
+    const setup = await scenario();
+    const client = await tenantUserClient(setup);
+    const response = await client.withCsrf(client.request().post('/rental-commitments/draft-rentals')).send({
+      ...body(setup),
+      selectedOffers: [
+        { rentalOfferId: setup.offer.offer.id, quantity: 1 },
+        { rentalOfferId: setup.offer.offer.id, quantity: 1 },
+      ],
+    });
+    expectProblemResponse(response, {
+      status: 422,
+      type: createProblemType('rental_commitment.duplicate_rental_offer_selection'),
+      code: 'rental_commitment.duplicate_rental_offer_selection',
+    });
+    await expectNoDraft(setup);
+  });
+
   it('does not disclose a real foreign customer', async () => {
     const setup = await scenario();
     const foreign = await scenario();
