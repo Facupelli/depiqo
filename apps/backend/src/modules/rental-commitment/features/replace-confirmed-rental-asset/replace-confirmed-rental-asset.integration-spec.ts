@@ -4,6 +4,7 @@ import { PrismaService } from 'src/core/database/prisma.service';
 import { Prisma } from 'src/generated/prisma/client';
 import { V2ContractStatus, V2RentalStatus } from 'src/generated/prisma/enums';
 import { createE2ETestApp, E2ETestApp } from '../../../../../test/support/create-e2e-test-app';
+import { useIntegrationTestContext } from '../../../../../test/support/integration-test-context';
 import { createBarrier, runConcurrently } from '../../../../../test/support/concurrency';
 import { createTestFixtures, TestFixtures } from '../../../../../test/support/fixtures';
 import { oneMillisecondAfter, utcDate } from '../../../../../test/support/time';
@@ -28,16 +29,15 @@ describe('ReplaceConfirmedRentalAsset integration', () => {
   let fixtures: EditConfirmedRentalFixtures;
   let rentalFixtures: ConfirmRentalFixtures;
 
-  beforeAll(async () => {
-    testApp = await createE2ETestApp();
+  useIntegrationTestContext(async () => {
+    testApp = await createE2ETestApp({ databaseUrl: process.env.DATABASE_URL! });
     prisma = testApp.app.get(PrismaService);
     commandBus = testApp.app.get(CommandBus);
     core = createTestFixtures(prisma);
     fixtures = new EditConfirmedRentalFixtures(prisma);
     rentalFixtures = new ConfirmRentalFixtures(prisma);
+    return testApp;
   });
-
-  afterAll(async () => testApp?.close());
 
   async function scenario(options: { status?: V2RentalStatus; quantity?: number } = {}) {
     const tenant = await core.createTenant();

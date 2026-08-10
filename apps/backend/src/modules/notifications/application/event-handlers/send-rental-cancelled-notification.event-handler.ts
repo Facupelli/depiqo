@@ -22,7 +22,7 @@ export class SendRentalCancelledNotificationHandler {
     this.structuredLogger.setContext(SendRentalCancelledNotificationHandler.name);
   }
 
-  @OnEvent(RentalCancelledIntegrationEvent.name, { async: true })
+  @OnEvent(RentalCancelledIntegrationEvent.name)
   async handle(event: RentalCancelledIntegrationEvent): Promise<void> {
     try {
       const rentalResult = await this.rentalCommitmentPublicApi.getRentalNotificationContext({

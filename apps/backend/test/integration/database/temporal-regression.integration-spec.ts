@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 
 import { Test, TestingModule } from '@nestjs/testing';
+import { integrationConfigServiceProvider, useIntegrationTestContext } from '../../support/integration-test-context';
 import { Prisma } from 'src/generated/prisma/client';
 
 import { AppConfigModule } from '../../../src/config/config.module';
@@ -15,17 +16,16 @@ describe('temporal PostgreSQL regression coverage', () => {
   let prisma: PrismaService;
   let fixtures: TestFixtures;
 
-  beforeEach(async () => {
+  useIntegrationTestContext(async () => {
     moduleRef = await Test.createTestingModule({
       imports: [AppConfigModule, SharedModule],
-      providers: [PrismaService],
+      providers: [integrationConfigServiceProvider(), PrismaService],
     }).compile();
     await moduleRef.init();
     prisma = moduleRef.get(PrismaService);
     fixtures = createTestFixtures(prisma);
+    return moduleRef;
   });
-
-  afterEach(async () => moduleRef.close());
 
   it('preserves absolute instants through Prisma TIMESTAMPTZ columns and matching asset-block bounds', async () => {
     const tenant = await fixtures.createTenant();

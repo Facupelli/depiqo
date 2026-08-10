@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { integrationConfigServiceProvider, useIntegrationTestContext } from '../../support/integration-test-context';
 
 import { AppConfigModule } from '../../../src/config/config.module';
 import { PrismaService } from '../../../src/core/database/prisma.service';
@@ -12,19 +13,16 @@ describe('database test fixtures', () => {
   let prisma: PrismaService;
   let fixtures: TestFixtures;
 
-  beforeEach(async () => {
+  useIntegrationTestContext(async () => {
     moduleRef = await Test.createTestingModule({
       imports: [AppConfigModule, SharedModule],
-      providers: [PrismaService],
+      providers: [integrationConfigServiceProvider(), PrismaService],
     }).compile();
     await moduleRef.init();
 
     prisma = moduleRef.get(PrismaService);
     fixtures = createTestFixtures(prisma);
-  });
-
-  afterEach(async () => {
-    await moduleRef.close();
+    return moduleRef;
   });
 
   it('generates unique defaults for entities with unique fields', async () => {

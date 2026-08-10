@@ -7,6 +7,7 @@ import { PrismaService } from 'src/core/database/prisma.service';
 import { V2RentalStatus } from 'src/generated/prisma/enums';
 import { createBarrier, runConcurrently } from '../../../../../test/support/concurrency';
 import { createE2ETestApp, E2ETestApp } from '../../../../../test/support/create-e2e-test-app';
+import { useIntegrationTestContext } from '../../../../../test/support/integration-test-context';
 import { createTestFixtures, TestFixtures } from '../../../../../test/support/fixtures';
 import { utcDate } from '../../../../../test/support/time';
 import { RentalRepository } from '../../persistence/rental.repository';
@@ -29,17 +30,16 @@ describe('CancelRental integration', () => {
 
   const period = { start: utcDate(2030, 1, 1, 10), end: utcDate(2030, 1, 1, 12) };
 
-  beforeAll(async () => {
-    testApp = await createE2ETestApp();
+  useIntegrationTestContext(async () => {
+    testApp = await createE2ETestApp({ databaseUrl: process.env.DATABASE_URL! });
     prisma = testApp.app.get(PrismaService);
     commandBus = testApp.app.get(CommandBus);
     events = testApp.app.get(EventEmitter2);
     core = createTestFixtures(prisma);
     rentals = new ConfirmRentalFixtures(prisma);
     confirmedRentals = new EditConfirmedRentalFixtures(prisma);
+    return testApp;
   });
-
-  afterAll(async () => testApp?.close());
 
   async function context() {
     const tenant = await core.createTenant();

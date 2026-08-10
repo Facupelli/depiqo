@@ -5,6 +5,7 @@ import { CommandBus } from '@nestjs/cqrs';
 import { PrismaService } from 'src/core/database/prisma.service';
 import { Prisma } from 'src/generated/prisma/client';
 import { createE2ETestApp, E2ETestApp } from '../../../../../test/support/create-e2e-test-app';
+import { useIntegrationTestContext } from '../../../../../test/support/integration-test-context';
 import { createTestFixtures, TestFixtures } from '../../../../../test/support/fixtures';
 import { utcDate } from '../../../../../test/support/time';
 
@@ -24,14 +25,13 @@ describe('CreateDraftRental integration', () => {
   let commands: CommandBus;
   let core: TestFixtures;
 
-  beforeAll(async () => {
-    app = await createE2ETestApp();
+  useIntegrationTestContext(async () => {
+    app = await createE2ETestApp({ databaseUrl: process.env.DATABASE_URL! });
     prisma = app.app.get(PrismaService);
     commands = app.app.get(CommandBus);
     core = createTestFixtures(prisma);
+    return app;
   });
-
-  afterAll(async () => app?.close());
 
   async function scenario(overrides: { supportsDelivery?: boolean } = {}): Promise<Scenario> {
     const tenant = await core.createTenant();

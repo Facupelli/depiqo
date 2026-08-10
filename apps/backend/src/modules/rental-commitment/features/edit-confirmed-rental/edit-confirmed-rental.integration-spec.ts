@@ -4,6 +4,7 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from 'src/core/database/prisma.service';
 import { ConfirmedRentalEditedIntegrationEvent } from 'src/modules/rental-commitment/public-api/events/rental-lifecycle.integration-events';
 import { createE2ETestApp, E2ETestApp } from '../../../../../test/support/create-e2e-test-app';
+import { useIntegrationTestContext } from '../../../../../test/support/integration-test-context';
 import { createBarrier, runConcurrently } from '../../../../../test/support/concurrency';
 import { createTestFixtures, TestFixtures } from '../../../../../test/support/fixtures';
 import { oneMillisecondAfter, utcDate } from '../../../../../test/support/time';
@@ -24,15 +25,14 @@ describe('EditConfirmedRental integration', () => {
   let core: TestFixtures;
   let fixtures: EditConfirmedRentalFixtures;
 
-  beforeAll(async () => {
-    testApp = await createE2ETestApp();
+  useIntegrationTestContext(async () => {
+    testApp = await createE2ETestApp({ databaseUrl: process.env.DATABASE_URL! });
     prisma = testApp.app.get(PrismaService);
     commandBus = testApp.app.get(CommandBus);
     core = createTestFixtures(prisma);
     fixtures = new EditConfirmedRentalFixtures(prisma);
+    return testApp;
   });
-
-  afterAll(async () => testApp?.close());
 
   async function scenario(period = between(10, 12)) {
     const tenant = await core.createTenant();

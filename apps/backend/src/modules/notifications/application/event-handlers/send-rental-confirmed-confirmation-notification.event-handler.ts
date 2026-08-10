@@ -47,7 +47,7 @@ export class SendRentalConfirmedConfirmationNotificationHandler {
     this.structuredLogger.setContext(SendRentalConfirmedConfirmationNotificationHandler.name);
   }
 
-  @OnEvent(RentalConfirmedIntegrationEvent.name, { async: true })
+  @OnEvent(RentalConfirmedIntegrationEvent.name)
   async handle(event: RentalConfirmedIntegrationEvent): Promise<void> {
     try {
       const rentalResult = await this.rentalCommitmentPublicApi.getRentalNotificationContext({

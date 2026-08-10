@@ -6,6 +6,7 @@ import { PrismaService } from 'src/core/database/prisma.service';
 import { Prisma } from 'src/generated/prisma/client';
 import { V2RentalStatus } from 'src/generated/prisma/enums';
 import { createE2ETestApp, E2ETestApp } from '../../../../../test/support/create-e2e-test-app';
+import { useIntegrationTestContext } from '../../../../../test/support/integration-test-context';
 import { createTestFixtures, TestFixtures } from '../../../../../test/support/fixtures';
 import { createBarrier, runConcurrently } from '../../../../../test/support/concurrency';
 import { oneMillisecondAfter, oneMillisecondBefore, utcDate } from '../../../../../test/support/time';
@@ -22,15 +23,14 @@ describe('ConfirmRental integration', () => {
   let coreFixtures: TestFixtures;
   let rentalFixtures: ConfirmRentalFixtures;
 
-  beforeAll(async () => {
-    testApp = await createE2ETestApp();
+  useIntegrationTestContext(async () => {
+    testApp = await createE2ETestApp({ databaseUrl: process.env.DATABASE_URL! });
     prisma = testApp.app.get(PrismaService);
     commandBus = testApp.app.get(CommandBus);
     coreFixtures = createTestFixtures(prisma);
     rentalFixtures = new ConfirmRentalFixtures(prisma);
+    return testApp;
   });
-
-  afterAll(async () => testApp?.close());
 
   async function base(status: V2RentalStatus = 'DRAFT', period = periodBetween(10, 12)) {
     const tenant = await coreFixtures.createTenant();

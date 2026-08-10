@@ -1,8 +1,16 @@
 import { PostgreSqlContainer } from '@testcontainers/postgresql';
 import { spawn, spawnSync } from 'node:child_process';
-import { randomUUID } from 'node:crypto';
 import { createRequire } from 'node:module';
+import { Client } from 'pg';
 import { resolve } from 'node:path';
+
+import {
+  assertDatabaseOwnedByRun,
+  assertTemplateOwnedByRun,
+  createIntegrationRunId,
+  integrationRunDatabaseName,
+  integrationTemplateDatabaseName,
+} from './integration-database-names';
 
 const projectRequire = createRequire(resolve(process.cwd(), 'package.json'));
 const jestExecutable = projectRequire.resolve('jest/bin/jest');
@@ -11,20 +19,34 @@ async function main(): Promise<void> {
   const configPath = process.argv[2];
   if (!configPath) throw new Error('Expected a Jest config path.');
 
-  const databaseName = `depiqo_test_${randomUUID().replaceAll('-', '')}`;
+  const isIntegrationRun = configPath.endsWith('jest.config.integration.ts');
+  const runId = createIntegrationRunId();
+  const databaseName = integrationRunDatabaseName(runId);
+  const templateName = integrationTemplateDatabaseName(runId);
   const container = await new PostgreSqlContainer('postgres:16-alpine')
-    .withDatabase(databaseName)
+    .withDatabase('postgres')
     .withUsername('test')
     .withPassword('test')
     .start();
+  const adminUrl = container.getConnectionUri();
+  const databaseUrl = isIntegrationRun
+    ? databaseUrlFor(adminUrl, templateName)
+    : databaseUrlFor(adminUrl, databaseName);
 
   const env: NodeJS.ProcessEnv = {
     ...process.env,
     NODE_ENV: 'test',
     NODE_OPTIONS: [process.env.NODE_OPTIONS, '--experimental-vm-modules'].filter(Boolean).join(' '),
     LOG_LEVEL: 'silent',
-    DATABASE_URL: container.getConnectionUri(),
+    DATABASE_URL: databaseUrl,
     TEST_DATABASE_NAME: databaseName,
+    ...(isIntegrationRun
+      ? {
+          TEST_DATABASE_ADMIN_URL: adminUrl,
+          TEST_DATABASE_TEMPLATE_NAME: templateName,
+          TEST_DATABASE_RUN_ID: runId,
+        }
+      : {}),
     CORS_ALLOWED_ORIGINS: 'http://localhost',
     BFF_INTERNAL_TOKEN: 'test-bff-token',
     STOREFRONT_TENANT_JWT_SECRET: 'test-storefront-secret',
@@ -53,7 +75,14 @@ async function main(): Promise<void> {
   let cleanupError: unknown;
 
   try {
+    const createdDatabaseName = isIntegrationRun ? templateName : databaseName;
+    if (isIntegrationRun) assertTemplateOwnedByRun(createdDatabaseName, runId);
+    else assertDatabaseOwnedByRun(createdDatabaseName, runId);
+    await createDatabase(adminUrl, createdDatabaseName);
     run('pnpm', ['exec', 'prisma', 'migrate', 'deploy'], env);
+    if (isIntegrationRun) {
+      await clearApplicationTables(databaseUrl);
+    }
 
     const jestArgs = process.argv.slice(3).filter((argument) => argument !== '--');
 
@@ -179,6 +208,51 @@ function startJest(args: string[], env: NodeJS.ProcessEnv): JestRun {
       }
     },
   };
+}
+
+async function createDatabase(adminUrl: string, databaseName: string): Promise<void> {
+  if (!databaseName.startsWith('depiqo_test_') || databaseName === 'postgres') {
+    throw new Error('Refusing to create a database outside the test namespace.');
+  }
+
+  const client = new Client({ connectionString: adminUrl });
+  await client.connect();
+  try {
+    await client.query(`CREATE DATABASE ${quoteIdentifier(databaseName)}`);
+  } finally {
+    await client.end();
+  }
+}
+
+async function clearApplicationTables(databaseUrl: string): Promise<void> {
+  const client = new Client({ connectionString: databaseUrl });
+  await client.connect();
+  try {
+    const tables = await client.query<{ table_name: string }>(`
+      SELECT table_name
+      FROM information_schema.tables
+      WHERE table_schema = 'public'
+        AND table_type = 'BASE TABLE'
+        AND table_name <> '_prisma_migrations'
+      ORDER BY table_name
+    `);
+    if (tables.rows.length === 0) return;
+
+    const identifiers = tables.rows.map(({ table_name }) => `"public".${quoteIdentifier(table_name)}`).join(', ');
+    await client.query(`TRUNCATE TABLE ${identifiers} RESTART IDENTITY CASCADE`);
+  } finally {
+    await client.end();
+  }
+}
+
+function databaseUrlFor(adminUrl: string, databaseName: string): string {
+  const url = new URL(adminUrl);
+  url.pathname = `/${encodeURIComponent(databaseName)}`;
+  return url.toString();
+}
+
+function quoteIdentifier(value: string): string {
+  return `"${value.replaceAll('"', '""')}"`;
 }
 
 function run(command: string, args: string[], commandEnv: NodeJS.ProcessEnv): void {

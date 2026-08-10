@@ -5,7 +5,7 @@ const config: Config.InitialOptions = {
   ...e2eConfig,
   rootDir: '.',
   moduleFileExtensions: ['js', 'json', 'ts', 'tsx'],
-  setupFilesAfterEnv: ['<rootDir>/test/setup/database-test-setup.ts'],
+  setupFilesAfterEnv: ['<rootDir>/test/setup/e2e-database-test-setup.ts'],
   testPathIgnorePatterns: ['/node_modules/', '/dist/'],
   modulePathIgnorePatterns: ['<rootDir>/dist/'],
   moduleNameMapper: {

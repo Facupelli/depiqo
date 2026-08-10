@@ -5,7 +5,6 @@ const config: Config.InitialOptions = {
   ...integrationConfig,
   rootDir: '.',
   moduleFileExtensions: ['js', 'json', 'ts', 'tsx'],
-  setupFilesAfterEnv: ['<rootDir>/test/setup/database-test-setup.ts'],
   testPathIgnorePatterns: ['/node_modules/', '/dist/'],
   modulePathIgnorePatterns: ['<rootDir>/dist/'],
   moduleNameMapper: {

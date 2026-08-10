@@ -3,6 +3,7 @@ import { QueryBus } from '@nestjs/cqrs';
 
 import { PrismaService } from 'src/core/database/prisma.service';
 import { createE2ETestApp, E2ETestApp } from '../../../../../test/support/create-e2e-test-app';
+import { useIntegrationTestContext } from '../../../../../test/support/integration-test-context';
 import { runConcurrently } from '../../../../../test/support/concurrency';
 import { createTestFixtures, TestFixtures } from '../../../../../test/support/fixtures';
 import { oneMillisecondAfter, oneMillisecondBefore, utcDate } from '../../../../../test/support/time';
@@ -20,15 +21,14 @@ describe('GetRentalOfferAvailability integration', () => {
   let core: TestFixtures;
   let rentals: ConfirmRentalFixtures;
 
-  beforeAll(async () => {
-    app = await createE2ETestApp();
+  useIntegrationTestContext(async () => {
+    app = await createE2ETestApp({ databaseUrl: process.env.DATABASE_URL! });
     prisma = app.app.get(PrismaService);
     queryBus = app.app.get(QueryBus);
     core = createTestFixtures(prisma);
     rentals = new ConfirmRentalFixtures(prisma);
+    return app;
   });
-
-  afterAll(async () => app?.close());
 
   async function setup() {
     const tenant = await core.createTenant();

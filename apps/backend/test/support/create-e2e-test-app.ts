@@ -1,4 +1,5 @@
 import { INestApplication } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { Test } from '@nestjs/testing';
 
@@ -28,14 +29,22 @@ export type E2ETestApp = {
   close(): Promise<void>;
 };
 
-export async function createE2ETestApp(): Promise<E2ETestApp> {
+export async function createE2ETestApp(options: { databaseUrl?: string } = {}): Promise<E2ETestApp> {
   const externals: E2ETestExternals = {
     emailDelivery: new FakeEmailDeliveryPort(),
     objectStorage: new FakeObjectStoragePort(),
     customHostname: new FakeCustomHostnameProvider(),
     googleIdentity: new FakeGoogleIdentityVerifier(),
   };
-  const moduleRef = await Test.createTestingModule({ imports: [AppModule] })
+  let builder = Test.createTestingModule({ imports: [AppModule] });
+  if (options.databaseUrl) {
+    const values = { ...process.env, DATABASE_URL: options.databaseUrl };
+    builder = builder.overrideProvider(ConfigService).useValue({
+      get: (key: string, defaultValue?: unknown) => values[key] ?? defaultValue,
+    });
+  }
+
+  const moduleRef = await builder
     .overrideProvider(EmailDeliveryPort)
     .useValue(externals.emailDelivery)
     .overrideProvider(ObjectStoragePort)

@@ -1,205 +1,143 @@
 # Backend Testing
 
-This directory contains the backend integration and E2E test infrastructure.
+This document defines the intended backend testing architecture. Run all commands from
+`apps/backend/`.
 
-## Database Fixtures
+## Test types
 
-Use `createTestFixtures(prisma)` from `test/support/fixtures` to arrange low-level persisted prerequisites such as tenants, tenant users, rental customers, and branches. Factories are stateless, require explicit `tenantId` ownership for tenant-scoped records, and return login credentials for local-authentication actors. Use them for test arrangement rather than HTTP endpoints or production commands. They are not scenario builders.
+### Unit
 
-## Deterministic Time Data
+Unit tests exercise domain and application behavior in isolation.
 
-Use `test/support/time` for absolute timestamps used as test data:
+- Do not connect to a real database.
+- Use fakes or mocks for persistence and other boundaries where appropriate.
+- Keep the subject and composition as small as practical.
 
-```ts
-import { dateInterval, oneMillisecondAfter, oneMillisecondBefore, utcDate } from '../support/time';
+### Integration
 
-const startAt = utcDate(2026, 6, 15, 10);
-const endAt = utcDate(2026, 6, 15, 12);
-const existingPeriod = dateInterval(startAt, endAt);
-const justBeforeEnd = oneMillisecondBefore(endAt);
-const justAfterEnd = oneMillisecondAfter(endAt);
+Integration tests exercise real backend behavior through Prisma and PostgreSQL.
+They cover use cases, repositories, Unit of Work behavior, transactions, database
+constraints, and concurrency.
+
+Use the smallest sensible Nest or application composition. A CommandBus, service,
+use case, or repository is a valid entry point. Do not boot the full HTTP application
+by default, and do not include Express, Passport, sessions, CORS, or other HTTP
+infrastructure unless the behavior under test requires it.
+
+### E2E
+
+E2E tests boot the full `AppModule`, apply the production `configureApp()` lifecycle,
+and send real HTTP requests through Supertest. They cover controllers, middleware,
+authentication, sessions, pipes, filters, interceptors, serialization, application
+behavior, and PostgreSQL persistence.
+
+Outbound network providers remain replaced by deterministic fakes. Internal modules,
+application services, event handlers, policies, repositories, and PostgreSQL remain real.
+
+## Choosing the test type
+
+Choose Integration when the important path is:
+
+```text
+use case / CommandBus / service
+  -> real persistence
+  -> PostgreSQL
 ```
 
-`utcDate()` takes one-based UTC calendar components and rejects invalid values rather than normalizing them. Use it instead of timezone-less date strings or local-time constructors when representing an absolute timestamp. Do not use `new Date('2026-06-15 10:00')`, `new Date(2026, 5, 15, 10)`, or values relative to the machine clock.
+Choose E2E when the important path is:
 
-`dateInterval()` only groups `start` and `end` dates. It deliberately does not validate ordering or decide interval inclusivity, overlap, or rental eligibility. Those are domain-test concerns.
+```text
+HTTP
+  -> middleware/auth/session/controller
+  -> application
+  -> PostgreSQL
+  -> HTTP response
+```
 
-Do not use Jest fake timers or replace `Date` globally. Where an API accepts an explicit timestamp or calculation date, pass `utcDate(...)` directly. Controlled system-time support will be introduced only with the first concrete endpoint that requires it.
+## Database lifecycle
 
-## Test Commands
+Both Integration and E2E commands use this outer lifecycle:
 
-Run commands from `apps/backend/`.
+```text
+outer test runner
+  -> start one disposable PostgreSQL Testcontainer
+  -> run prisma migrate deploy once
+  -> run Jest serially
+  -> stop the container in finally
+```
+
+Jest does not own the Testcontainer lifecycle. The container must use the same
+PostgreSQL major version as production. Database-backed tests must never target a
+persistent development database.
+
+## Isolation
+
+The default isolation model is:
+
+```text
+one disposable database per test command
++
+unique scenario data per test
+```
+
+A physically empty database before every `it()` is not required. Each test creates
+its own tenant or root data graph and uses generated unique IDs, emails, slugs,
+rentals, assets, and other identifying values.
+
+Tests must not depend on execution order or globally empty tables unless global
+emptiness is the behavior under test. Do not use full-schema `TRUNCATE` before every
+test as the default, clone one database per `it()`, or wrap all tests in an outer
+rollback transaction.
+
+## Fixtures
+
+Scenario data belongs in fixtures or builders invoked by the test. Avoid large global
+seeds. Keep expensive setup opt-in. For example, hash a rental-customer password only
+when authentication is part of the scenario.
+
+Use deterministic, explicit test values. For absolute timestamps, use the helpers in
+`test/support/time` and follow `docs/architecture/temporal-semantics.md`.
+
+## Application lifecycle
+
+For Integration specs, normally create the application context once per spec, create
+fixtures per test, and close the context once after the spec.
+
+For E2E specs, normally create the full Nest application once per spec with
+`createE2ETestApp()`, create fixtures per test, and close the application and its
+resources once after the spec.
+
+Do not recreate `AppModule` per `it()` merely to obtain database isolation.
+
+## Transactions and concurrency
+
+Production transaction behavior must remain real. Rental Commitment tests may run
+concurrent commands against the same PostgreSQL database to exercise actual constraints
+and transaction races. Do not alter production transaction architecture to simplify tests.
+
+Async event handlers must complete according to their production contract before teardown.
+
+## Resource ownership
+
+Every long-lived resource has one explicit owner:
+
+- Prisma and Nest providers: Nest lifecycle
+- `configureApp()` middleware resources, including session storage: application resource cleanup
+- Direct `pg` clients or pools: the helper or test that created them
+- PostgreSQL Testcontainer: outer test runner
+
+Close resources through their owner. Do not rely on Jest `--forceExit`.
+
+## Execution model
+
+Keep database-backed suites serial for now. If parallel execution becomes necessary,
+prefer an isolated database per Jest worker, not per test case.
+
+## Commands
 
 ```bash
-pnpm run test
-pnpm run test:integration
-pnpm run test:e2e
-pnpm run test:db:ci
+pnpm run test              # unit tests
+pnpm run test:integration  # integration tests
+pnpm run test:e2e          # E2E tests
+pnpm run test:db:ci        # integration, then E2E
 ```
-
-`test` runs tests that do not require the database test runner.
-
-`test:integration` and `test:e2e` run through:
-
-```text
-test/support/run-db-tests.ts
-```
-
-`test:db:ci` runs the integration suite followed by the E2E suite.
-
-## Database Test Environment
-
-Database-backed tests use Testcontainers rather than the persistent development database or a Docker Compose test service.
-
-For each Jest invocation, `run-db-tests.ts`:
-
-1. Starts a fresh PostgreSQL 16 container.
-2. Creates a uniquely named test database.
-3. Applies all Prisma migrations with `prisma migrate deploy`.
-4. Provides the generated connection URL through `DATABASE_URL`.
-5. Runs the selected Jest configuration.
-6. Stops the PostgreSQL container before reproducing Jest's exit code or termination signal.
-
-The integration and E2E suites are separate runner invocations, so each receives its own container and database.
-
-Do not configure these tests to use the local development database.
-
-## Integration Tests
-
-Integration tests are selected by:
-
-```text
-jest.config.integration.ts
-```
-
-They exercise real backend components against Prisma and PostgreSQL without requiring a complete HTTP application flow.
-
-## Backend E2E Tests
-
-E2E tests are selected by:
-
-```text
-jest.config.e2e.ts
-```
-
-They boot the complete Nest application and exercise it through HTTP, including middleware, Passport, sessions, controllers, and persistence.
-
-Create the application once per spec suite with `beforeAll` and close it once with `afterAll`.
-
-Do not recreate and destroy the complete application in `beforeEach` and `afterEach`. Repeated application startup and shutdown caused Jest to report delayed open handles in this project, even though the resources were eventually closed.
-
-## Application Resource Cleanup
-
-`configureApp()` creates resources that are not managed automatically by Nest, including the `connect-pg-simple` session store.
-
-Use `createE2ETestApp()` to compile `AppModule`, configure and initialize the Nest Express application, and close both the application and resources created by `configureApp()`:
-
-```ts
-let testApp: E2ETestApp;
-
-beforeAll(async () => {
-  testApp = await createE2ETestApp();
-});
-
-afterAll(async () => {
-  await testApp.close();
-});
-```
-
-Make HTTP requests through `testApp.app.getHttpServer()`. The spec owns these hooks; the helper does not register Jest lifecycle hooks or share an application between spec files.
-
-### External Infrastructure Test Doubles
-
-Integration and E2E tests keep DEPIQO modules, application services, event handlers, policies, templates, repositories, and PostgreSQL real. Only outbound third-party boundaries use safe test implementations.
-
-`createE2ETestApp()` replaces the real Resend email, R2 object-storage, Cloudflare custom-hostname, and Google identity-verification providers with Nest-owned fakes. The fakes perform no network I/O, record calls, and can be configured with a deterministic next result or failure. The production application flow remains real until that boundary.
-
-The application is created once per E2E spec, so reset each fake a spec uses in that spec's `beforeEach` hook. Do not add a global fake-reset hook.
-
-```ts
-let testApp: E2ETestApp;
-
-beforeAll(async () => {
-  testApp = await createE2ETestApp();
-});
-
-beforeEach(() => {
-  testApp.externals.emailDelivery.reset();
-});
-
-afterAll(async () => {
-  await testApp.close();
-});
-
-it('records email delivery without contacting Resend', async () => {
-  testApp.externals.emailDelivery.setNextResult({
-    success: false,
-    provider: 'TEST_EMAIL',
-    reason: 'PROVIDER_ERROR',
-    message: 'Provider unavailable.',
-  });
-
-  // Exercise the real HTTP/application flow here.
-  expect(testApp.externals.emailDelivery.calls).toHaveLength(1);
-});
-```
-
-For an integration test that imports a module with an outbound provider, explicitly override that module's external port with the corresponding fake from `test/support/external-infrastructure`. Do not mock an internal DEPIQO application API.
-
-### E2E HTTP Sessions
-
-Use `createE2ETestClient()` for an independent browser-like Supertest session. Each client retains only its own session cookie and CSRF token:
-
-```ts
-const client = createE2ETestClient(testApp.app);
-
-await client.getCsrfToken();
-await client.loginTenantUser({ email, password });
-
-const response = await client
-  .withCsrf(client.request().post('/some-route'))
-  .set('Host', 'tenant-a.localhost')
-  .expect(200);
-```
-
-`request()` exposes the session-retaining Supertest agent without a CSRF header. Apply the current session's token to an individual unsafe request with `withCsrf(...)`; use `request()` directly to test missing or invalid tokens. A successful tenant-user or tenant-customer login rotates and stores that client's CSRF token.
-
-Authenticated tenant-user context comes from the session actor. Storefront tenant context is separate and is supplied through the signed storefront-context mechanism. Tests retain full control of arbitrary request headers, including `Host`, on each request where they are relevant.
-
-Do not use Jest's `--forceExit` to hide shutdown problems.
-
-## Test Isolation
-
-For each integration or E2E Jest invocation, the runner starts one disposable PostgreSQL container, creates one uniquely named database, and applies Prisma migrations once before Jest starts. That same migrated container and database are reused for the whole invocation.
-
-Before every individual integration and E2E test, Jest runs the database setup hook. The hook truncates all application tables in the `public` schema, restarts identity sequences, and cascades dependent rows. It preserves `_prisma_migrations`, so migrations are not rerun between tests.
-
-This is database-reset isolation, not transaction-per-test isolation. Tests use real database connections and committed transactions, including E2E flows. Tests must not depend on execution order or on data created by another test.
-
-The database suites run with one Jest worker because all tests in an invocation share the same database reset hook. Reconsider the isolation design before enabling parallel database test workers.
-
-## Concurrency Tests
-
-Use `createBarrier(participantCount)` from `test/support/concurrency` when test participants must wait at an explicit rendezvous point. Its finite timeout fails with the expected and arrived participant counts, and `abort(reason)` releases waiting participants with a failure when a test participant cannot continue.
-
-Use `runConcurrently([operationA, operationB])` to release independent operation closures from a common start gate. It returns `Promise.allSettled(...)` outcomes so tests can assert expected success and failure results themselves. For E2E tests, create independent `createE2ETestClient()` instances first and pass closures that use those clients. The concurrency helper does not own sessions, requests, Prisma transactions, or assertions.
-
-Simultaneous start is useful, but does not prove operations reached the same internal critical database section. A concrete deterministic race test may need a deliberately scoped synchronization mechanism at its repository or transaction boundary, such as a test-specific provider override or PostgreSQL lock. Assert the resulting persisted invariant as well as operation outcomes - for example, that no asset has multiple active overlapping rental blocks - rather than relying only on HTTP status codes.
-
-## Cross-Cutting HTTP and Security Conventions
-
-Use `expectProblemResponse()` from `test/support/problem-response` for HTTP errors. Assert the endpoint's intended status, stable Problem Details `type`, and feature `code` when one is part of the public contract. The helper verifies the common Problem Details structure. Do not assert exact human-readable `title` or `detail` text unless a specific API contract explicitly guarantees it.
-
-Use `expectValidationProblem()` for global validation failures. Endpoint tests must still state which input is invalid and, where relevant, assert the applicable `invalid-params` names and reasons.
-
-For tenant-isolation tests, create equivalent real records for Tenant A and Tenant B, authenticate as A, and use B's real identifier. Do not use a random nonexistent identifier: it cannot detect a missing tenant scope. Assert the endpoint's intended non-disclosing response. For a mutating request, also verify that Tenant B's persisted state was not changed.
-
-Keep domain-specific assertions and invariants with their owning module's test support. Do not add them to global test support.
-
-## Testing Architecture Follow-up
-
-- TODO: Evaluate a narrower Nest testing composition for vertical-slice integration tests. Prefer explicit slice dependencies where practical, and reserve the complete `AppModule` graph primarily for E2E and intentional full-application integration coverage.
-
-## Temporal Semantics
-
-Follow the canonical [temporal semantics](../docs/architecture/temporal-semantics.md) guide when creating timestamp, date, time, timezone, or range test data. Its local-date, timezone, DST, PostgreSQL-session, and `tstzrange` rules are covered by focused unit, integration, and E2E tests.
