@@ -22,8 +22,8 @@ model V2Promotion {
   stackable  Boolean             @default(false)
   isActive   Boolean             @default(true) @map("is_active")
 
-  validFrom  DateTime? @map("valid_from")
-  validUntil DateTime? @map("valid_until")
+  validFrom  DateTime? @map("valid_from") @db.Date
+  validUntil DateTime? @map("valid_until") @db.Date
 
   effectType  PromotionEffectType        @map("effect_type")
   effectValue Decimal                    @map("effect_value")

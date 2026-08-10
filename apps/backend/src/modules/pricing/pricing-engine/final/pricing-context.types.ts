@@ -1,3 +1,5 @@
+import type { LocalDate } from '@repo/api-contracts';
+
 import { Money } from '../money/money.value-object';
 import { DurationPolicySnapshot } from '../base/base-pricing-result.type';
 import { PricingAdjustmentType } from '../promotions/promotion.types';
@@ -13,6 +15,7 @@ export type PricingContext = {
   total: Money;
   chargedDays: number;
   calculationDate: Date;
+  calculationLocalDate: LocalDate;
   durationPolicySnapshot: DurationPolicySnapshot;
   lines: PricingContextLine[];
 };

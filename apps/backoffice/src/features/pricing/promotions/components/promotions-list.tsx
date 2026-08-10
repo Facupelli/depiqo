@@ -1,4 +1,13 @@
 import type { GetPromotionsPromotionDto } from "@repo/api-contracts";
+import { Badge } from "@repo/ui/components/badge";
+import { Button } from "@repo/ui/components/button";
+import { Card, CardContent } from "@repo/ui/components/card";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+} from "@repo/ui/components/dropdown-menu";
 import {
 	CalendarDays,
 	Layers,
@@ -9,15 +18,6 @@ import {
 	Trash2,
 	Zap,
 } from "lucide-react";
-import { Badge } from "@repo/ui/components/badge";
-import { Button } from "@repo/ui/components/button";
-import { Card, CardContent } from "@repo/ui/components/card";
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuTrigger,
-} from "@repo/ui/components/dropdown-menu";
 
 interface PromotionsListProps {
 	promotions: GetPromotionsPromotionDto[];
@@ -211,14 +211,19 @@ function formatValidity(promotion: GetPromotionsPromotionDto) {
 	}
 
 	const from = promotion.validFrom
-		? new Date(promotion.validFrom).toLocaleDateString("es-ES")
+		? formatLocalDate(promotion.validFrom)
 		: "Siempre";
 
 	const until = promotion.validUntil
-		? new Date(promotion.validUntil).toLocaleDateString("es-ES")
+		? formatLocalDate(promotion.validUntil)
 		: "Sin fin";
 
 	return `${from} - ${until}`;
+}
+
+function formatLocalDate(value: string): string {
+	const [year, month, day] = value.split("-");
+	return `${day}/${month}/${year}`;
 }
 
 function formatDecimal(value: string): string {

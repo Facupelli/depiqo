@@ -1,3 +1,5 @@
+import type { LocalDate } from '@repo/api-contracts';
+
 import { PromotionActivation, PromotionApplicationTarget, PromotionEffectType } from './promotion.types';
 
 export type PromotionPricingInput = {
@@ -8,8 +10,8 @@ export type PromotionPricingInput = {
   priority: number;
   stackable: boolean;
   isActive: boolean;
-  validFrom?: Date | null;
-  validUntil?: Date | null;
+  validFrom?: LocalDate | null;
+  validUntil?: LocalDate | null;
   effectType: PromotionEffectType;
   effectValue: string;
   target: PromotionApplicationTarget;

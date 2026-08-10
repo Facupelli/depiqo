@@ -1,3 +1,5 @@
+import type { LocalDate } from '@repo/api-contracts';
+
 import { PromotionPricingInput } from '../promotions/promotion-input.types';
 
 export type CouponPricingInput = {
@@ -6,8 +8,8 @@ export type CouponPricingInput = {
   promotionId: string;
   code: string;
   isActive: boolean;
-  validFrom?: Date | null;
-  validUntil?: Date | null;
+  validFrom?: LocalDate | null;
+  validUntil?: LocalDate | null;
   maxUses?: number | null;
   maxUsesPerCustomer?: number | null;
   restrictedToCustomerId?: string | null;

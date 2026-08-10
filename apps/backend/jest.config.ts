@@ -4,6 +4,7 @@ import type { Config } from '@jest/types';
 const config: Config.InitialOptions = {
   ...unitConfig,
   rootDir: '.',
+  modulePathIgnorePatterns: ['<rootDir>/dist/'],
   moduleNameMapper: {
     ...unitConfig.moduleNameMapper,
     '^@generated/prisma$': '<rootDir>/src/generated/prisma',

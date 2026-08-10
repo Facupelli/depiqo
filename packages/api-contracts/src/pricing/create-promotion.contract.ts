@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import type { ApiContract } from "../api-contract";
+import { LocalDateSchema } from "../local-date.schema";
 
 const PositiveDecimalSchema = z
   .union([z.string().trim().regex(/^\d+(?:\.\d+)?$/), z.number().positive()])
@@ -25,8 +26,8 @@ export const CreatePromotionBodySchema = z.object({
   priority: z.number().int().min(0).default(0),
   stackable: z.boolean().default(false),
   isActive: z.boolean().default(true),
-  validFrom: z.string().datetime().optional(),
-  validUntil: z.string().datetime().optional(),
+  validFrom: LocalDateSchema.optional(),
+  validUntil: LocalDateSchema.optional(),
   effectType: z.enum(["PERCENTAGE_OFF", "FIXED_AMOUNT_OFF"]),
   effectValue: PositiveDecimalSchema,
   target: z.enum(["ORDER", "ELIGIBLE_LINES"]).default("ORDER"),

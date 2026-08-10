@@ -6,6 +6,7 @@ import { PrismaService } from 'src/core/database/prisma.service';
 
 import { getPromotionDetailError, GetPromotionDetailError } from './get-promotion-detail.errors';
 import { GetPromotionDetailQuery } from './get-promotion-detail.query';
+import { prismaDateToLocalDate } from '../../pricing-engine/shared/local-date';
 
 export type GetPromotionDetailResult = GetPromotionDetailResponseDto;
 
@@ -77,8 +78,8 @@ export class GetPromotionDetailHandler implements IQueryHandler<
       priority: promotion.priority,
       stackable: promotion.stackable,
       isActive: promotion.isActive,
-      validFrom: promotion.validFrom?.toISOString() ?? null,
-      validUntil: promotion.validUntil?.toISOString() ?? null,
+      validFrom: promotion.validFrom ? prismaDateToLocalDate(promotion.validFrom) : null,
+      validUntil: promotion.validUntil ? prismaDateToLocalDate(promotion.validUntil) : null,
       effectType: promotion.effectType,
       effectValue: promotion.effectValue.toString(),
       target: promotion.target,

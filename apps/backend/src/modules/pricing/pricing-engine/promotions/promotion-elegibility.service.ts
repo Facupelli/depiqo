@@ -69,7 +69,7 @@ export class PromotionEligibilityService {
 
     if (
       !this.validityWindowChecker.isWithinWindow({
-        date: context.calculationDate,
+        localDate: context.calculationLocalDate,
         validFrom: promotion.validFrom,
         validUntil: promotion.validUntil,
       })

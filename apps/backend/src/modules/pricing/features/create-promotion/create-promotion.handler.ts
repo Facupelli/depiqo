@@ -6,6 +6,7 @@ import { PromotionEffectType } from 'src/generated/prisma/client';
 
 import { CreatePromotionError, createPromotionError } from './create-promotion.errors';
 import { CreatePromotionCommand } from './create-promotion.command';
+import { localDateToPrismaDate } from '../../pricing-engine/shared/local-date';
 
 export interface CreatePromotionResult {
   id: string;
@@ -37,8 +38,8 @@ export class CreatePromotionHandler implements ICommandHandler<
           priority: command.priority,
           stackable: command.stackable,
           isActive: command.isActive,
-          validFrom: command.validFrom ? new Date(command.validFrom) : null,
-          validUntil: command.validUntil ? new Date(command.validUntil) : null,
+          validFrom: command.validFrom ? localDateToPrismaDate(command.validFrom) : null,
+          validUntil: command.validUntil ? localDateToPrismaDate(command.validUntil) : null,
           effectType: command.effectType,
           effectValue: command.effectValue,
           target: command.target,
@@ -90,8 +91,8 @@ function validatePromotion(
     return promotionError('pricing.invalid_promotion_configuration', 'A promotion must have at least one scope.');
   }
 
-  if (command.validFrom && command.validUntil && new Date(command.validUntil) <= new Date(command.validFrom)) {
-    return promotionError('pricing.invalid_promotion_configuration', 'validUntil must be after validFrom.');
+  if (command.validFrom && command.validUntil && command.validUntil < command.validFrom) {
+    return promotionError('pricing.invalid_promotion_configuration', 'validUntil must be on or after validFrom.');
   }
 
   const effectValue = Number(command.effectValue);

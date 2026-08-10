@@ -44,7 +44,7 @@ export class CouponValidationService {
 
     if (
       !this.validityWindowChecker.isWithinWindow({
-        date: context.calculationDate,
+        localDate: context.calculationLocalDate,
         validFrom: coupon.validFrom,
         validUntil: coupon.validUntil,
       })

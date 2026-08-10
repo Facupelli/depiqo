@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import type { ApiContract } from "../api-contract";
+import { LocalDateSchema } from "../local-date.schema";
 import { CreatePromotionExclusionSchema, CreatePromotionScopeSchema } from "./create-promotion.contract";
 
 const OptionalBooleanQuerySchema = z.preprocess((value) => {
@@ -25,8 +26,8 @@ export const GetPromotionsPromotionSchema = z.object({
   priority: z.number().int(),
   stackable: z.boolean(),
   isActive: z.boolean(),
-  validFrom: z.string().datetime().nullable(),
-  validUntil: z.string().datetime().nullable(),
+  validFrom: LocalDateSchema.nullable(),
+  validUntil: LocalDateSchema.nullable(),
   effectType: z.enum(["PERCENTAGE_OFF", "FIXED_AMOUNT_OFF"]),
   effectValue: z.string(),
   target: z.enum(["ORDER", "ELIGIBLE_LINES"]),

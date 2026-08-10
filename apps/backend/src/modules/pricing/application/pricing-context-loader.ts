@@ -7,6 +7,7 @@ import { BasePricingRatePlanInput } from '../pricing-engine/base/base-pricing-in
 import { CouponPricingInput } from '../pricing-engine/coupons/coupon-input.types';
 import { CouponNotApplicableError } from '../pricing-engine/errors/pricing.errors';
 import { PromotionPricingInput } from '../pricing-engine/promotions/promotion-input.types';
+import { prismaDateToLocalDate } from '../pricing-engine/shared/local-date';
 
 type PromotionRow = Prisma.V2PromotionGetPayload<{ include: { scopes: true; exclusions: true } }>;
 type CouponRow = Prisma.V2CouponGetPayload<{ include: { promotion: { include: { scopes: true; exclusions: true } } } }>;
@@ -126,8 +127,8 @@ export class PricingContextLoader {
       promotionId: coupon.promotionId,
       code: coupon.code,
       isActive: coupon.isActive,
-      validFrom: coupon.validFrom,
-      validUntil: coupon.validUntil,
+      validFrom: coupon.validFrom ? prismaDateToLocalDate(coupon.validFrom) : null,
+      validUntil: coupon.validUntil ? prismaDateToLocalDate(coupon.validUntil) : null,
       maxUses: coupon.maxUses,
       maxUsesPerCustomer: coupon.maxUsesPerCustomer,
       restrictedToCustomerId: coupon.restrictedToCustomerId,
@@ -147,8 +148,8 @@ function mapPromotion(row: PromotionRow): PromotionPricingInput {
     priority: row.priority,
     stackable: row.stackable,
     isActive: row.isActive,
-    validFrom: row.validFrom,
-    validUntil: row.validUntil,
+    validFrom: row.validFrom ? prismaDateToLocalDate(row.validFrom) : null,
+    validUntil: row.validUntil ? prismaDateToLocalDate(row.validUntil) : null,
     effectType: row.effectType,
     effectValue: String(row.effectValue),
     target: row.target,

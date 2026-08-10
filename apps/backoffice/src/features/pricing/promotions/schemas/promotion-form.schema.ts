@@ -76,15 +76,11 @@ export const promotionFormSchema = z
 		exclusions: z.array(promotionExclusionFormSchema),
 	})
 	.superRefine((data, ctx) => {
-		if (
-			data.validFrom &&
-			data.validUntil &&
-			data.validFrom >= data.validUntil
-		) {
+		if (data.validFrom && data.validUntil && data.validFrom > data.validUntil) {
 			ctx.addIssue({
 				code: z.ZodIssueCode.custom,
 				path: ["validUntil"],
-				message: "La fecha hasta debe ser posterior a la fecha desde",
+				message: "La fecha hasta debe ser igual o posterior a la fecha desde",
 			});
 		}
 
@@ -181,8 +177,8 @@ export function promotionToFormValues(
 		priority: promotion.priority,
 		stackable: promotion.stackable,
 		isActive: promotion.isActive,
-		validFrom: toDateInputValue(promotion.validFrom),
-		validUntil: toDateInputValue(promotion.validUntil),
+		validFrom: promotion.validFrom ?? "",
+		validUntil: promotion.validUntil ?? "",
 		effectType: promotion.effectType,
 		effectValue: promotion.effectValue,
 		target: promotion.target,
@@ -201,8 +197,8 @@ function toPromotionBody(values: PromotionFormValues) {
 		priority: values.priority,
 		stackable: values.stackable,
 		isActive: values.isActive,
-		validFrom: toOptionalDateTime(values.validFrom),
-		validUntil: toOptionalDateTime(values.validUntil),
+		validFrom: emptyToUndefined(values.validFrom),
+		validUntil: emptyToUndefined(values.validUntil),
 		effectType: values.effectType,
 		effectValue: values.effectValue.trim(),
 		target: values.target,
@@ -222,22 +218,6 @@ function emptyToUndefined(value: string): string | undefined {
 function stringToOptionalNumber(value: string): number | undefined {
 	const trimmed = value.trim();
 	return trimmed === "" ? undefined : Number(trimmed);
-}
-
-function toOptionalDateTime(value: string): string | undefined {
-	if (!value.trim()) {
-		return undefined;
-	}
-
-	return new Date(value).toISOString();
-}
-
-function toDateInputValue(value: string | null): string {
-	if (!value) {
-		return "";
-	}
-
-	return new Date(value).toISOString().slice(0, 10);
 }
 
 function assertNever(value: never): never {

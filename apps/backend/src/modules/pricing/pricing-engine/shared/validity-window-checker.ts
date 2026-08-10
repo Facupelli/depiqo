@@ -1,12 +1,18 @@
-export class ValidityWindowChecker {
-  isWithinWindow(input: { date: Date; validFrom?: Date | null; validUntil?: Date | null }): boolean {
-    const { date, validFrom, validUntil } = input;
+import type { LocalDate } from '@repo/api-contracts';
 
-    if (validFrom && date < validFrom) {
+export class ValidityWindowChecker {
+  isWithinWindow(input: {
+    localDate: LocalDate;
+    validFrom?: LocalDate | null;
+    validUntil?: LocalDate | null;
+  }): boolean {
+    const { localDate, validFrom, validUntil } = input;
+
+    if (validFrom && localDate < validFrom) {
       return false;
     }
 
-    if (validUntil && date > validUntil) {
+    if (validUntil && localDate > validUntil) {
       return false;
     }
 

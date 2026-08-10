@@ -4,6 +4,7 @@ import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { PrismaService } from 'src/core/database/prisma.service';
 
 import { GetPromotionsQuery } from './get-promotions.query';
+import { prismaDateToLocalDate } from '../../pricing-engine/shared/local-date';
 
 export type GetPromotionsResult = GetPromotionsResponseDto;
 
@@ -67,8 +68,8 @@ export class GetPromotionsHandler implements IQueryHandler<GetPromotionsQuery, G
       priority: promotion.priority,
       stackable: promotion.stackable,
       isActive: promotion.isActive,
-      validFrom: promotion.validFrom?.toISOString() ?? null,
-      validUntil: promotion.validUntil?.toISOString() ?? null,
+      validFrom: promotion.validFrom ? prismaDateToLocalDate(promotion.validFrom) : null,
+      validUntil: promotion.validUntil ? prismaDateToLocalDate(promotion.validUntil) : null,
       effectType: promotion.effectType,
       effectValue: promotion.effectValue.toString(),
       target: promotion.target,
