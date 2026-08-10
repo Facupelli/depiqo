@@ -30,7 +30,11 @@ export const EditConfirmedRentalBodySchema = z
     notes: z.string().optional(),
     insuranceSelected: z.boolean().optional(),
     manualPricingAdjustment:
-      CreateDraftRentalManualPricingAdjustmentSchema.nullable().default(null),
+      CreateDraftRentalManualPricingAdjustmentSchema.nullable()
+        .default(null)
+        .describe(
+          "Applies a new manual adjustment when present. Null applies no manual adjustment if this edit recalculates pricing; details-only edits retain the existing accepted price snapshot.",
+        ),
   })
   .transform((value) => ({
     ...value,

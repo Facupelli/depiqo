@@ -52,9 +52,9 @@
   - Direct confirmed creation produces `context: CONFIRMED`, while draft-to-confirmation may preserve `context: DRAFT`.
   - Define whether context means when pricing was calculated or which lifecycle owns the accepted snapshot.
 
-- [ ] Clarify `manualPricingAdjustment: null` semantics on confirmed edits.
-  - Details-only edits with `null` preserve the existing adjustment, while operational edits with `null` reprice without it.
-  - Decide whether `null` consistently means leave unchanged or no adjustment.
+- [x] Clarify `manualPricingAdjustment: null` semantics on confirmed edits.
+  - `null` applies no manual adjustment when an operational edit recalculates pricing.
+  - Details-only edits do not recalculate pricing and preserve the accepted snapshot, including any existing adjustment.
 
 ## Historical and audit persistence
 

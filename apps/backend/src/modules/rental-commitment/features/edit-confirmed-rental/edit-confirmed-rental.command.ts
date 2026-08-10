@@ -27,7 +27,7 @@ export class EditConfirmedRentalCommand {
       deliveryDetails?: RentalDeliveryDetails;
       notes?: string;
       insuranceSelected?: boolean;
-      // null explicitly retains the accepted price. A value creates a new manual adjustment.
+      // null applies no manual adjustment when this edit recalculates pricing. Details-only edits do not recalculate pricing.
       manualPricingAdjustment: EditConfirmedRentalManualPricingAdjustmentCommand | null;
     },
   ) {}

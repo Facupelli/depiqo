@@ -235,6 +235,35 @@ describe('EditConfirmedRental integration', () => {
     expect(after.rental.ownerSplits).toEqual(before.rental.ownerSplits);
   });
 
+  it('preserves an existing manual adjustment for a details-only edit with null', async () => {
+    const setup = await scenario();
+    const adjustment = { mode: 'TARGET_TOTAL' as const, targetTotal: '80.00', reason: 'Accepted correction' };
+    expect((await edit(setup, { manualPricingAdjustment: adjustment })).isOk()).toBe(true);
+    const adjustedSnapshot = (await fixtures.persistedState(setup.rental.rentalId)).rental.priceSnapshot;
+
+    const result = await edit(setup, { notes: 'Updated handling note', manualPricingAdjustment: null });
+
+    expect(result.isOk()).toBe(true);
+    expect((await fixtures.persistedState(setup.rental.rentalId)).rental.priceSnapshot).toEqual(adjustedSnapshot);
+  });
+
+  it('reprices an operational edit without an existing manual adjustment when manualPricingAdjustment is null', async () => {
+    const setup = await scenario();
+    const adjustment = { mode: 'TARGET_TOTAL' as const, targetTotal: '80.00', reason: 'Accepted correction' };
+    expect((await edit(setup, { manualPricingAdjustment: adjustment })).isOk()).toBe(true);
+    const adjustedSnapshot = (await fixtures.persistedState(setup.rental.rentalId)).rental.priceSnapshot;
+
+    const result = await edit(setup, {
+      period: new RentalPeriod(utcDate(2030, 1, 2, 10), utcDate(2030, 1, 4, 10)),
+      manualPricingAdjustment: null,
+    });
+
+    expect(result.isOk()).toBe(true);
+    const repricedSnapshot = (await fixtures.persistedState(setup.rental.rentalId)).rental.priceSnapshot;
+    expect(repricedSnapshot).not.toEqual(adjustedSnapshot);
+    expect(repricedSnapshot).not.toHaveProperty('manualPricingAdjustment');
+  });
+
   it('recalculates an existing third-party owner split from accepted final pricing on details-only repricing', async () => {
     const setup = await scenario();
     const before = await fixtures.persistedState(setup.rental.rentalId);
