@@ -1,4 +1,7 @@
-import type { CalculateCartPriceResponseDto } from "@repo/api-contracts";
+import type {
+	BranchScheduleSlotDto,
+	CalculateCartPriceResponseDto,
+} from "@repo/api-contracts";
 import type { Dayjs } from "dayjs";
 import type { V2RentalCartItem } from "../v2-rental-cart.types";
 
@@ -69,10 +72,10 @@ export type PricingSlice = {
 };
 
 export type TimesSlice = {
-	pickupTime: number | undefined;
-	returnTime: number | undefined;
-	onPickupTimeChange: (value: number) => void;
-	onReturnTimeChange: (value: number) => void;
+	pickupSlot: BranchScheduleSlotDto | undefined;
+	returnSlot: BranchScheduleSlotDto | undefined;
+	onPickupSlotChange: (value: BranchScheduleSlotDto) => void;
+	onReturnSlotChange: (value: BranchScheduleSlotDto) => void;
 	isTimesRequired: boolean;
 };
 

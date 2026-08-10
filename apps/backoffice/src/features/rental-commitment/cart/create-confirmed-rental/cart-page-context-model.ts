@@ -26,13 +26,7 @@ type BuildCartPageContextValueParams = {
 		couponCode: string;
 		onCouponCodeChange: (value: string) => void;
 
-		times: {
-			pickupTime: number | undefined;
-			returnTime: number | undefined;
-			onPickupTimeChange: (value: number) => void;
-			onReturnTimeChange: (value: number) => void;
-			isTimesRequired: boolean;
-		};
+		times: CartPageContextValue["times"];
 
 		delivery: {
 			supportsDelivery: boolean;
@@ -95,13 +89,7 @@ export function buildCartPageContextValue({
 			isPriceLoading: pricePreview.isPriceLoading,
 			isPriceError: pricePreview.isPriceError,
 		},
-		times: {
-			pickupTime: draft.times.pickupTime,
-			returnTime: draft.times.returnTime,
-			onPickupTimeChange: draft.times.onPickupTimeChange,
-			onReturnTimeChange: draft.times.onReturnTimeChange,
-			isTimesRequired: draft.times.isTimesRequired,
-		},
+		times: draft.times,
 		delivery: {
 			supportsDelivery: draft.delivery.supportsDelivery,
 			fulfillmentMethod: draft.delivery.fulfillmentMethod,

@@ -1,30 +1,35 @@
+import type { BranchScheduleSlotDto } from "@repo/api-contracts";
 import { useState } from "react";
 
 export function useCartCheckoutTimes() {
-	const [pickupTime, setPickupTime] = useState<number | undefined>(undefined);
-	const [returnTime, setReturnTime] = useState<number | undefined>(undefined);
+	const [pickupSlot, setPickupSlot] = useState<
+		BranchScheduleSlotDto | undefined
+	>(undefined);
+	const [returnSlot, setReturnSlot] = useState<
+		BranchScheduleSlotDto | undefined
+	>(undefined);
 	const [isTimesRequired, setIsTimesRequired] = useState(false);
 
-	const onPickupTimeChange = (value: number) => {
-		setPickupTime(value);
-		if (value && returnTime) {
+	const onPickupSlotChange = (value: BranchScheduleSlotDto) => {
+		setPickupSlot(value);
+		if (returnSlot) {
 			setIsTimesRequired(false);
 		}
 	};
 
-	const onReturnTimeChange = (value: number) => {
-		setReturnTime(value);
-		if (pickupTime && value) {
+	const onReturnSlotChange = (value: BranchScheduleSlotDto) => {
+		setReturnSlot(value);
+		if (pickupSlot) {
 			setIsTimesRequired(false);
 		}
 	};
 
 	return {
-		pickupTime,
-		returnTime,
+		pickupSlot,
+		returnSlot,
 		isTimesRequired,
-		onPickupTimeChange,
-		onReturnTimeChange,
+		onPickupSlotChange,
+		onReturnSlotChange,
 		requireTimes: () => setIsTimesRequired(true),
 	};
 }

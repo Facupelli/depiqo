@@ -29,9 +29,14 @@ export const GetStorefrontBranchScheduleSlotsQuerySchema = z
     },
   );
 
+export const BranchScheduleSlotSchema = z.object({
+  minuteOfDay: z.number().int().min(0).max(1439),
+  instant: z.iso.datetime({ offset: true }),
+});
+
 export const GetStorefrontBranchScheduleSlotsResponseSchema = z.object({
-  pickupSlots: z.array(z.number().int().min(0).max(1439)).optional(),
-  returnSlots: z.array(z.number().int().min(0).max(1439)).optional(),
+  pickupSlots: z.array(BranchScheduleSlotSchema).optional(),
+  returnSlots: z.array(BranchScheduleSlotSchema).optional(),
 });
 
 export type GetStorefrontBranchScheduleSlotsParamsDto = z.infer<
@@ -40,6 +45,8 @@ export type GetStorefrontBranchScheduleSlotsParamsDto = z.infer<
 export type GetStorefrontBranchScheduleSlotsQueryDto = z.infer<
   typeof GetStorefrontBranchScheduleSlotsQuerySchema
 >;
+export type BranchScheduleSlotDto = z.infer<typeof BranchScheduleSlotSchema>;
+
 export type GetStorefrontBranchScheduleSlotsResponseDto = z.infer<
   typeof GetStorefrontBranchScheduleSlotsResponseSchema
 >;

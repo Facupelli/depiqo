@@ -3,7 +3,7 @@ import type {
 	CreateConfirmedRentalBodyDto,
 	CreateConfirmedRentalDeliveryDetailsDto,
 } from "@repo/api-contracts";
-import dayjs from "@/lib/dates/dayjs";
+import { resolveLocalDateTime } from "@repo/temporal";
 import type { V2RentalCartItem } from "../v2-rental-cart.types";
 import type { CartCheckoutPeriod } from "./cart-checkout.types";
 
@@ -13,6 +13,8 @@ type BuildCartRentalPeriodParams = {
 	timezone: string;
 	pickupTime?: number;
 	returnTime?: number;
+	pickupInstant?: string;
+	returnInstant?: string;
 };
 
 type BuildCartSelectedOffersParams = {
@@ -42,11 +44,19 @@ export function toRentalPeriodDateTime(
 	minuteOfDay: number | undefined,
 	timezone: string,
 ): Date {
-	return dayjs
-		.tz(date, timezone)
-		.startOf("day")
-		.add(minuteOfDay ?? 0, "minute")
-		.toDate();
+	const resolution = resolveLocalDateTime({
+		localDate: date,
+		minuteOfDay: minuteOfDay ?? 0,
+		timeZone: timezone,
+	});
+
+	if (resolution.kind === "nonexistent") {
+		throw new RangeError(
+			"The selected local time does not exist in the branch timezone.",
+		);
+	}
+
+	return resolution.instant;
 }
 
 export function buildCartRentalPeriod({
@@ -55,14 +65,16 @@ export function buildCartRentalPeriod({
 	timezone,
 	pickupTime,
 	returnTime,
+	pickupInstant,
+	returnInstant,
 }: BuildCartRentalPeriodParams): CartCheckoutPeriod {
 	return {
-		start: toRentalPeriodDateTime(
-			periodStart,
-			pickupTime,
-			timezone,
-		).toISOString(),
-		end: toRentalPeriodDateTime(periodEnd, returnTime, timezone).toISOString(),
+		start:
+			pickupInstant ??
+			toRentalPeriodDateTime(periodStart, pickupTime, timezone).toISOString(),
+		end:
+			returnInstant ??
+			toRentalPeriodDateTime(periodEnd, returnTime, timezone).toISOString(),
 	};
 }
 

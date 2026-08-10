@@ -78,9 +78,10 @@
   - Active V2 absolute instants use `TIMESTAMPTZ`, while timezone-independent calendar values use `DATE` and local clock times use minutes from midnight.
   - The canonical [temporal semantics](../apps/backend/docs/architecture/temporal-semantics.md) guide documents API, Prisma, timezone, DST, range, and PostgreSQL session rules.
 
-- [ ] Fix branch schedule-slot timezone and DST handling.
-  - Slot construction risks interpreting dates at UTC midnight instead of applying the branch's IANA timezone and DST rules.
-  - Cover non-UTC branches and timezone boundaries.
+- [x] Fix branch schedule-slot timezone and DST handling.
+  - Schedule slots resolve `LocalDate + minuteOfDay` through the branch's effective IANA timezone.
+  - Nonexistent spring-forward local times are omitted; ambiguous fall-back times resolve to the earlier occurrence.
+  - Clients submit the server-provided slot instant rather than constructing one from elapsed minutes after midnight.
 
 ## API consistency and cleanup
 

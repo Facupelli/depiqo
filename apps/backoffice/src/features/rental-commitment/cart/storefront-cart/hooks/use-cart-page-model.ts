@@ -40,8 +40,8 @@ export function useCartPageModel(params: UseCartPageModelParams) {
 		periodStart,
 		periodEnd,
 		timezone: branch.timezone,
-		pickupTime: draft.times.pickupTime,
-		returnTime: draft.times.returnTime,
+		pickupInstant: draft.times.pickupSlot?.instant,
+		returnInstant: draft.times.returnSlot?.instant,
 	});
 
 	const pricePreview = useCartPricePreview({
@@ -63,8 +63,8 @@ export function useCartPageModel(params: UseCartPageModelParams) {
 		cartItems,
 		isAuthenticated: Boolean(customer),
 
-		pickupTime: draft.times.pickupTime,
-		returnTime: draft.times.returnTime,
+		pickupSlot: draft.times.pickupSlot,
+		returnSlot: draft.times.returnSlot,
 		requireTimes: draft.times.requireTimes,
 
 		fulfillmentMethod: draft.delivery.fulfillmentMethod,

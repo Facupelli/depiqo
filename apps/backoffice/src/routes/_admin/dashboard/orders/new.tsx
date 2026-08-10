@@ -37,7 +37,7 @@ function NewDraftOrderPage() {
 
 	const selectedBranch =
 		branches?.find((branch) => branch.id === locationId) ?? null;
-	const timezone = tenant?.config.timezone ?? "UTC";
+	const timezone = selectedBranch?.timezone ?? tenant?.config.timezone ?? "UTC";
 	const createDraftRental = useCreateDraftRental();
 
 	const form = useAppForm({

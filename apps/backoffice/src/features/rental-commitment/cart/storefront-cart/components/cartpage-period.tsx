@@ -1,3 +1,4 @@
+import type { BranchScheduleSlotDto } from "@repo/api-contracts";
 import type { Dayjs } from "dayjs";
 import { AlertTriangle, Calendar, Clock } from "lucide-react";
 import { useStorefrontBranchScheduleSlots } from "@/features/tenant-management/branch/branch.queries";
@@ -31,10 +32,10 @@ export function CartPagePeriod() {
 	const { preview } = useCartPricingContext();
 	const {
 		isTimesRequired,
-		onPickupTimeChange,
-		onReturnTimeChange,
-		pickupTime,
-		returnTime,
+		onPickupSlotChange,
+		onReturnSlotChange,
+		pickupSlot,
+		returnSlot,
 	} = useCartTimesContext();
 
 	const startDate = period.start;
@@ -88,16 +89,16 @@ export function CartPagePeriod() {
 						label="Hora de Retiro"
 						slots={slots?.pickupSlots}
 						isLoading={isLoading}
-						value={pickupTime}
-						onChange={onPickupTimeChange}
+						value={pickupSlot}
+						onChange={onPickupSlotChange}
 					/>
 
 					<TimeSelectCell
 						label="Hora de Devolución"
 						slots={slots?.returnSlots}
 						isLoading={isLoading}
-						value={returnTime}
-						onChange={onReturnTimeChange}
+						value={returnSlot}
+						onChange={onReturnSlotChange}
 					/>
 
 					<PeriodCell
@@ -162,15 +163,15 @@ export function CartPagePeriod() {
 							label="Hora de Retiro"
 							slots={slots?.pickupSlots}
 							isLoading={isLoading}
-							value={pickupTime}
-							onChange={onPickupTimeChange}
+							value={pickupSlot}
+							onChange={onPickupSlotChange}
 						/>
 						<TimeSelectCell
 							label="Hora de Devolución"
 							slots={slots?.returnSlots}
 							isLoading={isLoading}
-							value={returnTime}
-							onChange={onReturnTimeChange}
+							value={returnSlot}
+							onChange={onReturnSlotChange}
 						/>
 					</div>
 
@@ -238,10 +239,10 @@ function PeriodCell({
 
 type TimeSelectCellProps = {
 	label: string;
-	slots: number[] | undefined;
-	value: number | undefined;
+	slots: BranchScheduleSlotDto[] | undefined;
+	value: BranchScheduleSlotDto | undefined;
 	isLoading: boolean;
-	onChange: (value: number) => void;
+	onChange: (value: BranchScheduleSlotDto) => void;
 };
 
 export function TimeSelectCell({
@@ -268,16 +269,21 @@ export function TimeSelectCell({
 			) : (
 				<select
 					disabled={isLoading}
-					value={value ?? ""}
-					onChange={(e) => onChange(Number(e.target.value))}
+					value={value?.instant ?? ""}
+					onChange={(event) => {
+						const slot = slots?.find(
+							(candidate) => candidate.instant === event.target.value,
+						);
+						if (slot) onChange(slot);
+					}}
 					className="w-full bg-transparent text-sm font-semibold text-black focus:outline-none disabled:text-neutral-300"
 				>
 					<option value="" disabled>
 						{isLoading ? "Cargando…" : "Seleccionar"}
 					</option>
 					{(slots ?? []).map((slot) => (
-						<option key={slot} value={slot}>
-							{formatSlot(slot)}
+						<option key={slot.instant} value={slot.instant}>
+							{formatSlot(slot.minuteOfDay)}
 						</option>
 					))}
 				</select>

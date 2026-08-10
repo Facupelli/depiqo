@@ -17,6 +17,7 @@
   "dependencies": {
     "@repo/api-contracts": "workspace:*",
     "@repo/schemas": "workspace:*",
+    "@repo/temporal": "workspace:*",
     "@repo/ui": "workspace:*",
     "@tailwindcss/vite": "^4.3.0",
     "@tanstack/react-devtools": "^0.7.0",

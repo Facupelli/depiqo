@@ -1,3 +1,4 @@
+import type { BranchScheduleSlotDto } from "@repo/api-contracts";
 import { CalendarDays, Clock } from "lucide-react";
 import { useStorefrontBranchScheduleSlots } from "@/modules/tenant-management/branches/branch-schedule.queries";
 import { useCartPeriodContext } from "../cart-page.context";
@@ -7,10 +8,10 @@ export function CartPagePeriod() {
 		branch,
 		periodStart,
 		periodEnd,
-		pickupTime,
-		returnTime,
-		setPickupTime,
-		setReturnTime,
+		pickupSlot,
+		returnSlot,
+		setPickupSlot,
+		setReturnSlot,
 		isPeriodInvalid,
 	} = useCartPeriodContext();
 	const { data: slots, isLoading } = useStorefrontBranchScheduleSlots(
@@ -31,17 +32,17 @@ export function CartPagePeriod() {
 				</InfoCell>
 				<TimeCell
 					label="Hora de retiro"
-					value={pickupTime}
+					value={pickupSlot}
 					slots={slots?.pickupSlots}
 					loading={isLoading}
-					onChange={setPickupTime}
+					onChange={setPickupSlot}
 				/>
 				<TimeCell
 					label="Hora de devolución"
-					value={returnTime}
+					value={returnSlot}
 					slots={slots?.returnSlots}
 					loading={isLoading}
-					onChange={setReturnTime}
+					onChange={setReturnSlot}
 				/>
 			</section>
 			{isPeriodInvalid && (
@@ -81,10 +82,10 @@ function TimeCell({
 	onChange,
 }: {
 	label: string;
-	value?: number;
-	slots?: number[];
+	value?: BranchScheduleSlotDto;
+	slots?: BranchScheduleSlotDto[];
 	loading: boolean;
-	onChange: (value: number) => void;
+	onChange: (value: BranchScheduleSlotDto) => void;
 }) {
 	return (
 		<InfoCell label={label} icon={<Clock />}>
@@ -94,15 +95,20 @@ function TimeCell({
 				<select
 					className="w-full bg-transparent font-semibold outline-none"
 					disabled={loading}
-					value={value ?? ""}
-					onChange={(event) => onChange(Number(event.target.value))}
+					value={value?.instant ?? ""}
+					onChange={(event) => {
+						const slot = slots?.find(
+							(candidate) => candidate.instant === event.target.value,
+						);
+						if (slot) onChange(slot);
+					}}
 				>
 					<option value="" disabled>
 						{loading ? "Cargando..." : "Seleccionar"}
 					</option>
 					{slots?.map((slot) => (
-						<option key={slot} value={slot}>
-							{formatMinutes(slot)}
+						<option key={slot.instant} value={slot.instant}>
+							{formatMinutes(slot.minuteOfDay)}
 						</option>
 					))}
 				</select>

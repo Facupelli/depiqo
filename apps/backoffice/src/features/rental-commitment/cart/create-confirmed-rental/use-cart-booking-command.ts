@@ -1,4 +1,7 @@
-import type { CreateConfirmedRentalDeliveryDetailsDto } from "@repo/api-contracts";
+import type {
+	BranchScheduleSlotDto,
+	CreateConfirmedRentalDeliveryDetailsDto,
+} from "@repo/api-contracts";
 import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import dayjs from "@/lib/dates/dayjs";
@@ -27,8 +30,8 @@ type UseCartBookingCommandParams = {
 
 	isAuthenticated: boolean;
 
-	pickupTime: number | undefined;
-	returnTime: number | undefined;
+	pickupSlot: BranchScheduleSlotDto | undefined;
+	returnSlot: BranchScheduleSlotDto | undefined;
 	requireTimes: () => void;
 
 	fulfillmentMethod: "PICKUP" | "DELIVERY";
@@ -47,8 +50,8 @@ export function useCartBookingCommand({
 	rentalPeriod,
 	cartItems,
 	isAuthenticated,
-	pickupTime,
-	returnTime,
+	pickupSlot,
+	returnSlot,
 	requireTimes,
 	fulfillmentMethod,
 	normalizedDeliveryRequest,
@@ -81,7 +84,7 @@ export function useCartBookingCommand({
 			return;
 		}
 
-		if (pickupTime === undefined || returnTime === undefined) {
+		if (pickupSlot === undefined || returnSlot === undefined) {
 			requireTimes();
 			return;
 		}
@@ -114,7 +117,7 @@ export function useCartBookingCommand({
 					fulfillmentMethod,
 					pickupDate: periodStart,
 					pickupLocation: branch.name,
-					pickupTime: formatSlot(pickupTime),
+					pickupTime: formatSlot(pickupSlot.minuteOfDay),
 					deliveryAddress:
 						fulfillmentMethod === "DELIVERY" && normalizedDeliveryRequest
 							? [

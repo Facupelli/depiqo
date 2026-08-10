@@ -1,10 +1,10 @@
 import type {
+	BranchScheduleSlotDto,
 	CalculateCartPriceResponseDto,
 	GetPublicTenantConfigResponseDto,
 	GetStorefrontBranchDto,
 } from "@repo/api-contracts";
 import { createContext, useContext, useMemo, useState } from "react";
-import dayjs from "@/lib/dates/dayjs";
 import { toCalculateCartPriceBody } from "@/modules/pricing/calculate-cart-price/calculate-cart-price.mapper";
 import { useCalculatedCartPrice } from "@/modules/pricing/calculate-cart-price/calculate-cart-price.queries";
 import { useRentalCartActions, useRentalCartItems } from "../rental-cart.hooks";
@@ -28,10 +28,10 @@ type RentalPeriodSlice = {
 	branch: GetStorefrontBranchDto;
 	periodStart: string;
 	periodEnd: string;
-	pickupTime?: number;
-	returnTime?: number;
-	setPickupTime: (value: number) => void;
-	setReturnTime: (value: number) => void;
+	pickupSlot?: BranchScheduleSlotDto;
+	returnSlot?: BranchScheduleSlotDto;
+	setPickupSlot: (value: BranchScheduleSlotDto) => void;
+	setReturnSlot: (value: BranchScheduleSlotDto) => void;
 	isPricingReady: boolean;
 	isPeriodInvalid: boolean;
 };
@@ -95,8 +95,8 @@ export function CartPageProvider({
 }) {
 	const items = useRentalCartItems();
 	const actions = useRentalCartActions();
-	const [pickupTime, setPickupTime] = useState<number>();
-	const [returnTime, setReturnTime] = useState<number>();
+	const [pickupSlot, setPickupSlot] = useState<BranchScheduleSlotDto>();
+	const [returnSlot, setReturnSlot] = useState<BranchScheduleSlotDto>();
 	const [insuranceSelected, setInsuranceSelected] = useState(
 		config.insuranceEnabled,
 	);
@@ -110,21 +110,9 @@ export function CartPageProvider({
 	const [isDeliverySheetOpen, setIsDeliverySheetOpen] = useState(false);
 	const [showDeliveryError, setShowDeliveryError] = useState(false);
 
-	const hasBothTimes = pickupTime !== undefined && returnTime !== undefined;
-	const start = hasBothTimes
-		? dayjs
-				.tz(periodStart, branch.timezone)
-				.startOf("day")
-				.add(pickupTime, "minute")
-				.toDate()
-		: null;
-	const end = hasBothTimes
-		? dayjs
-				.tz(periodEnd, branch.timezone)
-				.startOf("day")
-				.add(returnTime, "minute")
-				.toDate()
-		: null;
+	const hasBothTimes = pickupSlot !== undefined && returnSlot !== undefined;
+	const start = pickupSlot ? new Date(pickupSlot.instant) : null;
+	const end = returnSlot ? new Date(returnSlot.instant) : null;
 	const isPeriodInvalid = Boolean(start && end && end <= start);
 	const isPricingReady = hasBothTimes && !isPeriodInvalid;
 	const body = toCalculateCartPriceBody({
@@ -154,10 +142,10 @@ export function CartPageProvider({
 				branch,
 				periodStart,
 				periodEnd,
-				pickupTime,
-				returnTime,
-				setPickupTime,
-				setReturnTime,
+				pickupSlot,
+				returnSlot,
+				setPickupSlot,
+				setReturnSlot,
 				isPricingReady,
 				isPeriodInvalid,
 			},
@@ -230,8 +218,8 @@ export function CartPageProvider({
 			config,
 			periodStart,
 			periodEnd,
-			pickupTime,
-			returnTime,
+			pickupSlot,
+			returnSlot,
 			isPricingReady,
 			isPeriodInvalid,
 			priceQuery.data,
