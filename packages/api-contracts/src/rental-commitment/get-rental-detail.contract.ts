@@ -213,6 +213,7 @@ export const GetRentalDetailResponseSchema = z.object({
 	notes: z.string().nullable(),
 	insuranceSelected: z.boolean(),
 	createdAt: z.string().datetime(),
+	version: z.number().int().nonnegative(),
 	updatedAt: z.string().datetime(),
 	cancelledAt: z.string().datetime().nullable(),
 	confirmedAt: z.string().datetime().nullable(),

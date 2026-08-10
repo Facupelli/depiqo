@@ -61,19 +61,19 @@ export class PrismaRentalRepository extends RentalRepository {
       tenantId: rental.tenantId,
       rentalId: rental.id,
     };
+    let persistedVersion: number;
     let persistedUpdatedAt: Date;
 
-    if (options?.expectedUpdatedAt) {
-      const updatedAt = new Date();
+    if (options?.expectedVersion !== undefined) {
       const update = await tx.v2Rental.updateMany({
         where: {
           id: rental.id,
           tenantId: rental.tenantId,
-          updatedAt: options.expectedUpdatedAt,
+          version: options.expectedVersion,
         },
         data: {
           ...RentalMapper.toRentalUpdateData(rental),
-          updatedAt,
+          version: { increment: 1 },
         },
       });
 
@@ -81,15 +81,21 @@ export class PrismaRentalRepository extends RentalRepository {
         return null;
       }
 
-      persistedUpdatedAt = updatedAt;
+      const persistedRental = await tx.v2Rental.findUniqueOrThrow({
+        where: { id: rental.id },
+        select: { version: true, updatedAt: true },
+      });
+      persistedVersion = persistedRental.version;
+      persistedUpdatedAt = persistedRental.updatedAt;
     } else {
       const persistedRental = await tx.v2Rental.upsert({
         where: { id: rental.id },
         create: RentalMapper.toRentalCreateData(rental),
         update: RentalMapper.toRentalUpdateData(rental),
-        select: { updatedAt: true },
+        select: { version: true, updatedAt: true },
       });
 
+      persistedVersion = persistedRental.version;
       persistedUpdatedAt = persistedRental.updatedAt;
     }
 
@@ -115,7 +121,7 @@ export class PrismaRentalRepository extends RentalRepository {
         }
       }
 
-      return { updatedAt: persistedUpdatedAt };
+      return { version: persistedVersion, updatedAt: persistedUpdatedAt };
     }
 
     if (options?.replaceAccessories) {
@@ -216,7 +222,7 @@ export class PrismaRentalRepository extends RentalRepository {
       }
     }
 
-    return { updatedAt: persistedUpdatedAt };
+    return { version: persistedVersion, updatedAt: persistedUpdatedAt };
   }
 
   private async findAssetBlocks(

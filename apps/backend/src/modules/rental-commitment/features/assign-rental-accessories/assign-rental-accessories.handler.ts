@@ -23,7 +23,7 @@ type RentalReadModel = {
   status: V2RentalStatus;
   periodStart: Date;
   periodEnd: Date;
-  updatedAt: Date;
+  version: number;
 };
 
 type ExistingSelection = {
@@ -67,7 +67,7 @@ export class AssignRentalAccessoriesHandler implements ICommandHandler<
         status: true,
         periodStart: true,
         periodEnd: true,
-        updatedAt: true,
+        version: true,
       },
     });
 
@@ -304,8 +304,8 @@ export class AssignRentalAccessoriesHandler implements ICommandHandler<
     try {
       return await this.prisma.client.$transaction(async (tx) => {
         const claim = await tx.v2Rental.updateMany({
-          where: { id: rental.id, tenantId: rental.tenantId, updatedAt: rental.updatedAt },
-          data: { updatedAt: new Date() },
+          where: { id: rental.id, tenantId: rental.tenantId, version: rental.version },
+          data: { version: { increment: 1 } },
         });
         if (claim.count === 0) return false;
 

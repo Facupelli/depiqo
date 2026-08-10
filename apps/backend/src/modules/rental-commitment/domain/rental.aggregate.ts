@@ -77,6 +77,7 @@ interface RentalProps {
   assignedAssets: AssignedAsset[];
   assetBlocks: AssetBlock[];
   createdAt?: Date;
+  version?: number;
   updatedAt?: Date;
   cancelledAt?: Date;
   confirmedAt?: Date;
@@ -164,6 +165,7 @@ export interface ReconstituteRentalProps {
   assignedAssets: AssignedAsset[];
   assetBlocks: AssetBlock[];
   createdAt?: Date;
+  version?: number;
   updatedAt?: Date;
   cancelledAt?: Date;
   confirmedAt?: Date;
@@ -188,6 +190,7 @@ interface CreateRentalFromEntitiesProps {
   assignedAssets: AssignedAsset[];
   assetBlocks: AssetBlock[];
   createdAt?: Date;
+  version?: number;
   updatedAt?: Date;
   cancelledAt?: Date;
   confirmedAt?: Date;
@@ -273,6 +276,10 @@ export class Rental extends AggregateRootBase {
 
   get createdAt(): Date | undefined {
     return this.props.createdAt ? new Date(this.props.createdAt) : undefined;
+  }
+
+  get version(): number {
+    return this.props.version ?? 0;
   }
 
   get updatedAt(): Date | undefined {
@@ -414,6 +421,7 @@ export class Rental extends AggregateRootBase {
       assignedAssets: [...props.assignedAssets],
       assetBlocks: [...props.assetBlocks],
       createdAt: props.createdAt ? new Date(props.createdAt) : undefined,
+      version: props.version ?? 0,
       updatedAt: props.updatedAt ? new Date(props.updatedAt) : undefined,
       cancelledAt: props.cancelledAt ? new Date(props.cancelledAt) : undefined,
       confirmedAt: props.confirmedAt ? new Date(props.confirmedAt) : undefined,
@@ -457,6 +465,7 @@ export class Rental extends AggregateRootBase {
       assignedAssets: [...this.props.assignedAssets],
       assetBlocks: [...this.props.assetBlocks],
       createdAt: this.createdAt,
+      version: this.version,
       updatedAt: this.updatedAt,
       cancelledAt: this.cancelledAt,
       confirmedAt: this.confirmedAt,
@@ -504,6 +513,7 @@ export class Rental extends AggregateRootBase {
       assignedAssets: [...this.props.assignedAssets],
       assetBlocks: [...this.props.assetBlocks],
       createdAt: this.createdAt,
+      version: this.version,
       updatedAt: this.updatedAt,
       cancelledAt: this.cancelledAt,
       confirmedAt: this.confirmedAt,
@@ -587,6 +597,7 @@ export class Rental extends AggregateRootBase {
         replacementBlock.value,
       ],
       createdAt: this.createdAt,
+      version: this.version,
       updatedAt: this.updatedAt,
       cancelledAt: this.cancelledAt,
       confirmedAt: this.confirmedAt,
@@ -659,6 +670,7 @@ export class Rental extends AggregateRootBase {
       assignedAssets: assignedAssets.value,
       assetBlocks: assetBlocks.value,
       createdAt: this.createdAt,
+      version: this.version,
       updatedAt: this.updatedAt,
       cancelledAt: this.cancelledAt,
       confirmedAt: this.confirmedAt,
@@ -1115,6 +1127,7 @@ export class Rental extends AggregateRootBase {
       assignedAssets: [...props.assignedAssets],
       assetBlocks: [...props.assetBlocks],
       createdAt: props.createdAt ? new Date(props.createdAt) : undefined,
+      version: props.version ?? 0,
       updatedAt: props.updatedAt ? new Date(props.updatedAt) : undefined,
       cancelledAt: props.cancelledAt ? new Date(props.cancelledAt) : undefined,
       confirmedAt: props.confirmedAt ? new Date(props.confirmedAt) : undefined,

@@ -19,7 +19,7 @@ export class EditConfirmedRentalCommand {
       tenantId: string;
       tenantUserId: string;
       rentalId: string;
-      expectedUpdatedAt: Date;
+      expectedVersion: number;
       branchId: string;
       period: RentalPeriod;
       selectedOffers: EditConfirmedRentalOfferSelectionCommand[];

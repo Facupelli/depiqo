@@ -43,6 +43,7 @@ import { editConfirmedRentalError, EditConfirmedRentalError } from './edit-confi
 
 export interface EditConfirmedRentalResultValue {
   rentalId: string;
+  version: number;
   updatedAt: Date;
 }
 
@@ -111,8 +112,7 @@ export class EditConfirmedRentalHandler implements ICommandHandler<
 
     const impact = classifyConfirmedRentalEdit(rental, command.props);
     if (impact === 'NONE') {
-      const updatedAt = rental.updatedAt;
-      if (!updatedAt || updatedAt.getTime() !== command.props.expectedUpdatedAt.getTime()) {
+      if (rental.version !== command.props.expectedVersion) {
         return err(
           editConfirmedRentalError(
             'rental_commitment.rental_version_conflict',
@@ -122,7 +122,7 @@ export class EditConfirmedRentalHandler implements ICommandHandler<
           ),
         );
       }
-      return ok({ rentalId, updatedAt });
+      return ok({ rentalId, version: rental.version, updatedAt: rental.updatedAt! });
     }
 
     if (impact === 'DETAILS') {
@@ -376,7 +376,7 @@ export class EditConfirmedRentalHandler implements ICommandHandler<
         });
 
         const saved = await this.rentalRepository.save(rental, {
-          expectedUpdatedAt: command.props.expectedUpdatedAt,
+          expectedVersion: command.props.expectedVersion,
           ownerSplits: splits,
           accessoryAssetIds: accessorySelections.flatMap((selection) =>
             selection.assignments.map((assignment) => assignment.assetId as AssetId),
@@ -394,7 +394,7 @@ export class EditConfirmedRentalHandler implements ICommandHandler<
           );
 
         integrationEvents.collect(toRentalIntegrationEvents(rental.pullDomainEvents()));
-        return ok({ rentalId, updatedAt: saved.updatedAt });
+        return ok({ rentalId, version: saved.version, updatedAt: saved.updatedAt });
       });
     } catch (error) {
       if (error instanceof PostgresExclusionViolationError) {
@@ -520,7 +520,7 @@ export class EditConfirmedRentalHandler implements ICommandHandler<
 
       const saved = await this.rentalRepository.save(rental, {
         persistence: 'DETAILS',
-        expectedUpdatedAt: command.props.expectedUpdatedAt,
+        expectedVersion: command.props.expectedVersion,
         ownerSplits,
         tx,
       });
@@ -536,7 +536,7 @@ export class EditConfirmedRentalHandler implements ICommandHandler<
       }
 
       integrationEvents.collect(toRentalIntegrationEvents(rental.pullDomainEvents()));
-      return ok({ rentalId, updatedAt: saved.updatedAt });
+      return ok({ rentalId, version: saved.version, updatedAt: saved.updatedAt });
     });
   }
 

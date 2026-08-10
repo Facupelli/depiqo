@@ -45,7 +45,7 @@ export class EditConfirmedRentalHttpController {
         tenantId: user.tenantId,
         tenantUserId: user.id,
         rentalId: params.rentalId,
-        expectedUpdatedAt: new Date(dto.expectedUpdatedAt),
+        expectedVersion: dto.expectedVersion,
         branchId: dto.branchId,
         period,
         selectedOffers: dto.selectedOffers,
@@ -58,7 +58,11 @@ export class EditConfirmedRentalHttpController {
     );
     if (result.isErr()) throw toProblem(result.error);
 
-    return { id: result.value.rentalId, updatedAt: result.value.updatedAt.toISOString() };
+    return {
+      id: result.value.rentalId,
+      version: result.value.version,
+      updatedAt: result.value.updatedAt.toISOString(),
+    };
   }
 }
 

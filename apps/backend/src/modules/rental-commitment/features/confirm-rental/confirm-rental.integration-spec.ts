@@ -390,7 +390,9 @@ describe('ConfirmRental integration', () => {
 
     const states = await Promise.all([persisted(first.rental.rentalId), persisted(second.rentalId)]);
     expect(states.filter((state) => state.rental.status === 'CONFIRMED')).toHaveLength(1);
+    expect(states.find((state) => state.rental.status === 'CONFIRMED')!.rental.version).toBe(1);
     const loser = states.find((state) => state.rental.status === 'DRAFT')!;
+    expect(loser.rental.version).toBe(0);
     expect(loser.rental.confirmedAt).toBeNull();
     expect(loser.rental.assignedAssets).toHaveLength(0);
     expect(loser.blocks).toHaveLength(0);
@@ -431,6 +433,7 @@ describe('ConfirmRental integration', () => {
 
     const state = await persisted(scenario.rental.rentalId);
     expect(state.rental.status).toBe('CONFIRMED');
+    expect(state.rental.version).toBe(1);
     expect(state.rental.priceSnapshot).not.toBeNull();
     expect(new Set(state.rental.assignedAssets.map((assignment) => assignment.assetId)).size).toBe(1);
     expect(state.rental.assignedAssets).toHaveLength(1);

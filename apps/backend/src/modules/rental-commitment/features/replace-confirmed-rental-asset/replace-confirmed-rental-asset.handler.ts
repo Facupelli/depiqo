@@ -29,6 +29,7 @@ import {
 
 export interface ReplaceConfirmedRentalAssetResultValue {
   rentalId: string;
+  version: number;
   updatedAt: Date;
 }
 
@@ -91,10 +92,7 @@ export class ReplaceConfirmedRentalAssetHandler implements ICommandHandler<
             ),
           );
         }
-        if (
-          !currentRental.updatedAt ||
-          currentRental.updatedAt.getTime() !== command.props.expectedUpdatedAt.getTime()
-        ) {
+        if (currentRental.version !== command.props.expectedVersion) {
           return err(
             replaceConfirmedRentalAssetError(
               'rental_commitment.rental_version_conflict',
@@ -188,7 +186,7 @@ export class ReplaceConfirmedRentalAssetHandler implements ICommandHandler<
         });
 
         const saved = await this.rentalRepository.save(currentRental, {
-          expectedUpdatedAt: command.props.expectedUpdatedAt,
+          expectedVersion: command.props.expectedVersion,
           ownerSplits,
           tx,
         });
@@ -203,7 +201,7 @@ export class ReplaceConfirmedRentalAssetHandler implements ICommandHandler<
           );
         }
 
-        return ok({ rentalId, updatedAt: saved.updatedAt });
+        return ok({ rentalId, version: saved.version, updatedAt: saved.updatedAt });
       });
     } catch (error) {
       if (error instanceof PostgresExclusionViolationError) {

@@ -70,20 +70,20 @@ describe('ReplaceConfirmedRentalAsset integration', () => {
   }
 
   async function version(rentalId: string) {
-    return (await prisma.client.v2Rental.findUniqueOrThrow({ where: { id: rentalId } })).updatedAt;
+    return (await prisma.client.v2Rental.findUniqueOrThrow({ where: { id: rentalId } })).version;
   }
 
   function replaceCommand(params: {
     setup: Awaited<ReturnType<typeof scenario>>;
     replacementAssetId: string;
     currentAssetId?: string;
-    expectedUpdatedAt: Date;
+    expectedVersion: number;
   }) {
     return new ReplaceConfirmedRentalAssetCommand({
       tenantId: params.setup.tenant.id,
       tenantUserId: params.setup.user.id,
       rentalId: params.setup.rental.rentalId,
-      expectedUpdatedAt: params.expectedUpdatedAt,
+      expectedVersion: params.expectedVersion,
       currentAssignedAssetId: (params.currentAssetId ?? params.setup.rental.assetIds[0]) as never,
       replacementAssetId: params.replacementAssetId as never,
     });
@@ -100,7 +100,7 @@ describe('ReplaceConfirmedRentalAsset integration', () => {
   it('allows exactly one same-version cancellation or asset replacement without mixed blocks', async () => {
     const setup = await scenario();
     const replacementAssetId = await candidate(setup);
-    const expectedUpdatedAt = await version(setup.rental.rentalId);
+    const expectedVersion = await version(setup.rental.rentalId);
     const repository = testApp.app.get(RentalRepository);
     const originalFindById = repository.findById.bind(repository);
     const loaded = createBarrier(2);
@@ -113,7 +113,7 @@ describe('ReplaceConfirmedRentalAsset integration', () => {
     try {
       const outcomes = await runConcurrently<CancelRentalResult | ReplaceConfirmedRentalAssetResult>([
         () => commandBus.execute(new CancelRentalCommand(setup.tenant.id, setup.rental.rentalId)),
-        () => replace({ setup, replacementAssetId, expectedUpdatedAt }),
+        () => replace({ setup, replacementAssetId, expectedVersion }),
       ]);
       expect(outcomes.every((outcome) => outcome.status === 'fulfilled')).toBe(true);
       const results = outcomes.map(
@@ -144,9 +144,7 @@ describe('ReplaceConfirmedRentalAsset integration', () => {
     const replacementAssetId = await candidate(setup);
     const before = await fixtures.persistedState(setup.rental.rentalId);
 
-    expect((await replace({ setup, replacementAssetId, expectedUpdatedAt: before.rental.updatedAt })).isOk()).toBe(
-      true,
-    );
+    expect((await replace({ setup, replacementAssetId, expectedVersion: before.rental.version })).isOk()).toBe(true);
 
     const after = await fixtures.persistedState(setup.rental.rentalId);
     expect(after.rental.status).toBe('CONFIRMED');
@@ -187,7 +185,7 @@ describe('ReplaceConfirmedRentalAsset integration', () => {
     const setup = await scenario();
     const replacementAssetId = await candidate(setup, overrides);
     const before = await fixtures.persistedState(setup.rental.rentalId);
-    const result = await replace({ setup, replacementAssetId, expectedUpdatedAt: before.rental.updatedAt });
+    const result = await replace({ setup, replacementAssetId, expectedVersion: before.rental.version });
     expect(result.isErr() && result.error.code).toBe('rental_commitment.replacement_asset_unavailable');
     expect(await fixtures.persistedState(setup.rental.rentalId)).toEqual(before);
   });
@@ -201,7 +199,7 @@ describe('ReplaceConfirmedRentalAsset integration', () => {
     const result = await replace({
       setup: setupA,
       replacementAssetId: foreignAssetId,
-      expectedUpdatedAt: beforeA.rental.updatedAt,
+      expectedVersion: beforeA.rental.version,
     });
     expect(result.isErr()).toBe(true);
     expect(await fixtures.persistedState(setupA.rental.rentalId)).toEqual(beforeA);
@@ -235,7 +233,7 @@ describe('ReplaceConfirmedRentalAsset integration', () => {
       period: blockedPeriod,
     });
     const before = await fixtures.persistedState(setup.rental.rentalId);
-    const result = await replace({ setup, replacementAssetId, expectedUpdatedAt: before.rental.updatedAt });
+    const result = await replace({ setup, replacementAssetId, expectedVersion: before.rental.version });
     expect(result.isOk()).toBe(succeeds);
     if (!succeeds) expect(await fixtures.persistedState(setup.rental.rentalId)).toEqual(before);
   });
@@ -258,7 +256,7 @@ describe('ReplaceConfirmedRentalAsset integration', () => {
       releasedAt: utcDate(2029, 12, 1),
     });
     expect(
-      (await replace({ setup, replacementAssetId, expectedUpdatedAt: await version(setup.rental.rentalId) })).isOk(),
+      (await replace({ setup, replacementAssetId, expectedVersion: await version(setup.rental.rentalId) })).isOk(),
     ).toBe(true);
   });
 
@@ -270,7 +268,7 @@ describe('ReplaceConfirmedRentalAsset integration', () => {
         await replace({
           setup,
           replacementAssetId: setup.rental.assetIds[0],
-          expectedUpdatedAt: before.rental.updatedAt,
+          expectedVersion: before.rental.version,
         })
       ).isErr(),
     ).toBe(true);
@@ -284,7 +282,7 @@ describe('ReplaceConfirmedRentalAsset integration', () => {
       setup,
       currentAssetId: setup.rental.assetIds[0],
       replacementAssetId: setup.rental.assetIds[1],
-      expectedUpdatedAt: before.rental.updatedAt,
+      expectedVersion: before.rental.version,
     });
     expect(result.isErr()).toBe(true);
     expect(await fixtures.persistedState(setup.rental.rentalId)).toEqual(before);
@@ -294,7 +292,7 @@ describe('ReplaceConfirmedRentalAsset integration', () => {
     const setup = await scenario({ status });
     const replacementAssetId = await candidate(setup);
     const before = await fixtures.persistedState(setup.rental.rentalId);
-    const result = await replace({ setup, replacementAssetId, expectedUpdatedAt: before.rental.updatedAt });
+    const result = await replace({ setup, replacementAssetId, expectedVersion: before.rental.version });
     expect(result.isErr() && result.error.code).toBe('rental_commitment.rental_cannot_be_edited_from_status');
     expect(await fixtures.persistedState(setup.rental.rentalId)).toEqual(before);
   });
@@ -308,19 +306,22 @@ describe('ReplaceConfirmedRentalAsset integration', () => {
         data: { tenantId: setup.tenant.id, rentalId: setup.rental.rentalId, status },
       });
       const before = await fixtures.persistedState(setup.rental.rentalId);
-      const result = await replace({ setup, replacementAssetId, expectedUpdatedAt: before.rental.updatedAt });
+      const result = await replace({ setup, replacementAssetId, expectedVersion: before.rental.version });
       expect(result.isErr() && result.error.code).toBe('rental_commitment.rental_contract_prevents_editing');
       expect(await fixtures.persistedState(setup.rental.rentalId)).toEqual(before);
     },
   );
 
-  it('preserves complete state on a stale expectedUpdatedAt retry', async () => {
+  it('preserves complete state on a stale expectedVersion retry', async () => {
     const setup = await scenario();
     const replacementAssetId = await candidate(setup);
     const stale = await version(setup.rental.rentalId);
-    await prisma.client.v2Rental.update({ where: { id: setup.rental.rentalId }, data: { notes: 'concurrent change' } });
+    await prisma.client.v2Rental.update({
+      where: { id: setup.rental.rentalId },
+      data: { notes: 'concurrent change', version: { increment: 1 } },
+    });
     const before = await fixtures.persistedState(setup.rental.rentalId);
-    const result = await replace({ setup, replacementAssetId, expectedUpdatedAt: stale });
+    const result = await replace({ setup, replacementAssetId, expectedVersion: stale });
     expect(result.isErr() && result.error.code).toBe('rental_commitment.rental_version_conflict');
     expect(await fixtures.persistedState(setup.rental.rentalId)).toEqual(before);
   });
@@ -364,9 +365,7 @@ describe('ReplaceConfirmedRentalAsset integration', () => {
           : {},
       );
       const before = await fixtures.persistedState(setup.rental.rentalId);
-      expect((await replace({ setup, replacementAssetId, expectedUpdatedAt: before.rental.updatedAt })).isOk()).toBe(
-        true,
-      );
+      expect((await replace({ setup, replacementAssetId, expectedVersion: before.rental.version })).isOk()).toBe(true);
       const after = await fixtures.persistedState(setup.rental.rentalId);
       expect(after.rental.priceSnapshot).toEqual(before.rental.priceSnapshot);
       expect(commercialRows(after.rental.selections)).toEqual(commercialRows(before.rental.selections));
@@ -402,8 +401,8 @@ describe('ReplaceConfirmedRentalAsset integration', () => {
     const secondBefore = await fixtures.persistedState(secondRental.rentalId);
     const secondSetup = { ...first, rental: secondRental };
     const outcomes = await runConcurrently([
-      () => replace({ setup: first, replacementAssetId, expectedUpdatedAt: firstBefore.rental.updatedAt }),
-      () => replace({ setup: secondSetup, replacementAssetId, expectedUpdatedAt: secondBefore.rental.updatedAt }),
+      () => replace({ setup: first, replacementAssetId, expectedVersion: firstBefore.rental.version }),
+      () => replace({ setup: secondSetup, replacementAssetId, expectedVersion: secondBefore.rental.version }),
     ]);
     const results = outcomes.map(
       (outcome) => (outcome as PromiseFulfilledResult<ReplaceConfirmedRentalAssetResult>).value,
@@ -433,7 +432,7 @@ describe('ReplaceConfirmedRentalAsset integration', () => {
     });
     const before = await fixtures.persistedState(target.rental.rentalId);
     await runConcurrently([
-      () => replace({ setup: target, replacementAssetId, expectedUpdatedAt: before.rental.updatedAt }),
+      () => replace({ setup: target, replacementAssetId, expectedVersion: before.rental.version }),
       () =>
         commandBus.execute<ConfirmRentalCommand, ConfirmRentalResult>(
           new ConfirmRentalCommand(target.tenant.id, draft.rentalId),
@@ -461,8 +460,8 @@ describe('ReplaceConfirmedRentalAsset integration', () => {
     const [y, z] = await Promise.all([candidate(setup), candidate(setup)]);
     const before = await fixtures.persistedState(setup.rental.rentalId);
     const outcomes = await runConcurrently([
-      () => replace({ setup, replacementAssetId: y, expectedUpdatedAt: before.rental.updatedAt }),
-      () => replace({ setup, replacementAssetId: z, expectedUpdatedAt: before.rental.updatedAt }),
+      () => replace({ setup, replacementAssetId: y, expectedVersion: before.rental.version }),
+      () => replace({ setup, replacementAssetId: z, expectedVersion: before.rental.version }),
     ]);
     const results = outcomes.map(
       (outcome) => (outcome as PromiseFulfilledResult<ReplaceConfirmedRentalAssetResult>).value,
@@ -486,7 +485,7 @@ describe('ReplaceConfirmedRentalAsset integration', () => {
       tenantId: setup.tenant.id,
       tenantUserId: setup.user.id,
       rentalId: setup.rental.rentalId,
-      expectedUpdatedAt: before.rental.updatedAt,
+      expectedVersion: before.rental.version,
       branchId: setup.branch.id,
       period: new RentalPeriod(before.rental.periodStart, before.rental.periodEnd),
       selectedOffers: [{ rentalOfferId: setup.commercial.offer.id, quantity: 1 }],
@@ -496,7 +495,7 @@ describe('ReplaceConfirmedRentalAsset integration', () => {
       manualPricingAdjustment: null,
     });
     const outcomes = await runConcurrently([
-      () => replace({ setup, replacementAssetId, expectedUpdatedAt: before.rental.updatedAt }),
+      () => replace({ setup, replacementAssetId, expectedVersion: before.rental.version }),
       () => commandBus.execute<EditConfirmedRentalCommand, EditConfirmedRentalResult>(editCommand),
     ]);
     const results = outcomes.map(

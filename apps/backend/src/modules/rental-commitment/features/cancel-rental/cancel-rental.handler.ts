@@ -40,10 +40,7 @@ export class CancelRentalHandler implements ICommandHandler<CancelRentalCommand,
       );
     }
 
-    const expectedUpdatedAt = rental.updatedAt;
-    if (!expectedUpdatedAt) {
-      throw new Error(`Persisted rental "${rental.id}" is missing its updatedAt concurrency token.`);
-    }
+    const expectedVersion = rental.version;
 
     const cancellation = rental.cancel();
 
@@ -64,7 +61,7 @@ export class CancelRentalHandler implements ICommandHandler<CancelRentalCommand,
     }
 
     return this.unitOfWork.runInTransaction(async ({ tx, integrationEvents }) => {
-      const saved = await this.rentalRepository.save(rental, { expectedUpdatedAt, tx });
+      const saved = await this.rentalRepository.save(rental, { expectedVersion, tx });
       if (!saved) {
         return err(
           cancelRentalError(

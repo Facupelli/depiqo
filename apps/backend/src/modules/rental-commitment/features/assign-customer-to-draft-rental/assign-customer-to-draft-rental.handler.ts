@@ -65,7 +65,17 @@ export class AssignCustomerToDraftRentalHandler implements ICommandHandler<
       return err(this.toApplicationError(assignedRental.error, context));
     }
 
-    await this.rentalRepository.save(rental);
+    const saved = await this.rentalRepository.save(rental, { expectedVersion: rental.version });
+    if (!saved) {
+      return err(
+        assignCustomerToDraftRentalError(
+          'rental_commitment.rental_version_conflict',
+          `Rental "${command.rentalId}" was modified by another request.`,
+          undefined,
+          context,
+        ),
+      );
+    }
 
     return ok(undefined);
   }

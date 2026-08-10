@@ -6,9 +6,12 @@
   - Current fixtures must verify tenant existence because the database does not enforce the relationship.
   - Audit existing data before introducing the constraint, or document the intentional architectural reason for its absence.
 
-- [ ] Serialize concurrent confirmation of the same rental.
-  - Two concurrent requests can load the same DRAFT/PENDING rental and both report success.
-  - Ensure only one logical confirmation transition can succeed.
+- [x] Serialize concurrent confirmation of the same rental.
+  - Added a monotonic numeric `V2Rental.version` concurrency token.
+  - Guarded Rental Commitment lifecycle writes now use `WHERE version = N` with an atomic database increment.
+  - Confirmation, cancellation, editing, replacement, accessory assignment, and draft customer assignment no longer use `updatedAt` as a concurrency token.
+  - Concurrent commands based on the same rental version allow exactly one persistence attempt to succeed; the loser returns `rental_commitment.rental_version_conflict`.
+  - Cross-rental asset exclusivity continues to be enforced by the PostgreSQL active `AssetBlock` exclusion constraint.
 
 - [ ] Make final asset eligibility authoritative before creating a commitment.
   - Confirmation, direct confirmed creation, editing, and replacement still rely on `V2RentalAssetCandidate`, whose stale projection could permit an asset or equipment type that Asset Inventory no longer considers eligible.
@@ -18,9 +21,10 @@
   - Replacement checks contract state before entering the rental transaction.
   - A contract can become `GENERATED`, `SIGNING_REQUESTED`, or `SIGNED` after that check but before replacement commits.
 
-- [ ] Make the Rental concurrency token strictly monotonic.
-  - `updatedAt` protects confirmation, cancellation, editing, and replacement, but persistence generates it with millisecond-precision `new Date()`.
-  - Use a numeric version or otherwise guarantee monotonic tokens.
+- [x] Make the Rental concurrency token strictly monotonic.
+  - Replaced `updatedAt` with the numeric `V2Rental.version` token.
+  - Guarded writes compare `version = N` and atomically increment it in the database.
+  - `updatedAt` remains audit metadata only.
 
 ## Rental and contract lifecycle
 

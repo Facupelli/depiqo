@@ -30,6 +30,7 @@ import { editUnconfirmedRentalError, EditUnconfirmedRentalError } from './edit-u
 
 export interface EditUnconfirmedRentalResultValue {
   rentalId: string;
+  version: number;
   updatedAt: Date;
 }
 
@@ -53,7 +54,7 @@ export class EditUnconfirmedRentalHandler implements ICommandHandler<
       tenantId,
       tenantUserId,
       rentalId,
-      expectedUpdatedAt,
+      expectedVersion,
       branchId,
       period,
       selectedOffers,
@@ -194,7 +195,7 @@ export class EditUnconfirmedRentalHandler implements ICommandHandler<
       return err(this.toApplicationError(editResult.error, context));
     }
 
-    const saved = await this.rentalRepository.save(rental, { expectedUpdatedAt });
+    const saved = await this.rentalRepository.save(rental, { expectedVersion });
     if (!saved) {
       return err(
         editUnconfirmedRentalError(
@@ -206,7 +207,7 @@ export class EditUnconfirmedRentalHandler implements ICommandHandler<
       );
     }
 
-    return ok({ rentalId: rental.id, updatedAt: saved.updatedAt });
+    return ok({ rentalId: rental.id, version: saved.version, updatedAt: saved.updatedAt });
   }
 
   private toApplicationError(error: unknown, context: Record<string, unknown>): EditUnconfirmedRentalError {

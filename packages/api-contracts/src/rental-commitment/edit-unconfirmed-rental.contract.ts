@@ -14,7 +14,7 @@ export const EditUnconfirmedRentalParamsSchema = z.object({
 
 export const EditUnconfirmedRentalBodySchema = z
   .object({
-    expectedUpdatedAt: z.string().datetime(),
+    expectedVersion: z.number().int().nonnegative(),
     branchId: z.string().trim().min(1),
     period: z.object({
       start: z.coerce.date(),
@@ -41,6 +41,7 @@ export const EditUnconfirmedRentalBodySchema = z
 
 export const EditUnconfirmedRentalResponseSchema = z.object({
   id: z.string(),
+  version: z.number().int().nonnegative(),
   updatedAt: z.string().datetime(),
 });
 

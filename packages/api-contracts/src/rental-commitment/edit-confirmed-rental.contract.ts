@@ -14,7 +14,7 @@ export const EditConfirmedRentalParamsSchema = z.object({
 
 export const EditConfirmedRentalBodySchema = z
   .object({
-    expectedUpdatedAt: z.string().datetime(),
+    expectedVersion: z.number().int().nonnegative(),
     branchId: z.string().trim().min(1),
     period: z.object({
       start: z.coerce.date(),
@@ -34,6 +34,7 @@ export const EditConfirmedRentalBodySchema = z
 
 export const EditConfirmedRentalResponseSchema = z.object({
   id: z.string(),
+  version: z.number().int().nonnegative(),
   updatedAt: z.string().datetime(),
 });
 

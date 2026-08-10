@@ -9,11 +9,12 @@ export interface SaveRentalOptions {
   ownerSplits?: RentalOwnerSplitDraft[];
   replaceAccessories?: boolean;
   accessoryAssetIds?: AssetId[];
-  expectedUpdatedAt?: Date;
+  expectedVersion?: number;
   tx?: PrismaTransactionClient;
 }
 
 export interface SaveRentalResult {
+  version: number;
   updatedAt: Date;
 }
 

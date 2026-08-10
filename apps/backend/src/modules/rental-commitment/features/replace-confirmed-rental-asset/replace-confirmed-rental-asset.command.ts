@@ -6,7 +6,7 @@ export class ReplaceConfirmedRentalAssetCommand {
       tenantId: string;
       tenantUserId: string;
       rentalId: string;
-      expectedUpdatedAt: Date;
+      expectedVersion: number;
       currentAssignedAssetId: AssetId;
       replacementAssetId: AssetId;
     },

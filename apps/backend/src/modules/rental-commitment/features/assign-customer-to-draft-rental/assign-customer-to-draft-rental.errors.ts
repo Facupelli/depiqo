@@ -3,6 +3,7 @@ import { ApplicationError } from 'src/core/errors/application-error';
 export type AssignCustomerToDraftRentalErrorCode =
   | 'rental_commitment.rental_not_found'
   | 'rental_commitment.rental_must_be_draft'
+  | 'rental_commitment.rental_version_conflict'
   | 'rental_commitment.customer_not_found_or_outside_tenant'
   | 'rental_commitment.customer_deleted'
   | 'rental_commitment.customer_inactive'

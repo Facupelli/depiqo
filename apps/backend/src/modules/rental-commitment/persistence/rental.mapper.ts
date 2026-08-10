@@ -34,6 +34,7 @@ export interface RentalPersistenceRecord {
   periodEnd: Date;
   priceSnapshot: Prisma.JsonValue | null;
   source: string | null;
+  version: number;
   createdAt: Date;
   updatedAt: Date;
   cancelledAt: Date | null;
@@ -173,6 +174,7 @@ export class RentalMapper {
           releasedAt: block.releasedAt ?? undefined,
         });
       }),
+      version: record.version,
       createdAt: record.createdAt,
       updatedAt: record.updatedAt,
       cancelledAt: record.cancelledAt ?? undefined,

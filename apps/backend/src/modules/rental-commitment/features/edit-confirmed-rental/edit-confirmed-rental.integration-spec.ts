@@ -61,7 +61,7 @@ describe('EditConfirmedRental integration', () => {
         tenantId: setup.tenant.id,
         tenantUserId: setup.user.id,
         rentalId: setup.rental.rentalId,
-        expectedUpdatedAt: current.updatedAt,
+        expectedVersion: current.version,
         branchId: setup.branch.id,
         period: new RentalPeriod(current.periodStart, current.periodEnd),
         selectedOffers: [{ rentalOfferId: setup.commercial.offer.id, quantity: 1 }],
@@ -282,7 +282,7 @@ describe('EditConfirmedRental integration', () => {
     }
   });
 
-  it('allows exactly one of two edits based on the same updatedAt and persists one complete state', async () => {
+  it('allows exactly one of two edits based on the same version and persists one complete state', async () => {
     const setup = await scenario();
     const current = await prisma.client.v2Rental.findUniqueOrThrow({ where: { id: setup.rental.rentalId } });
     const makeCommand = (startHour: number, endHour: number) =>
@@ -290,7 +290,7 @@ describe('EditConfirmedRental integration', () => {
         tenantId: setup.tenant.id,
         tenantUserId: setup.user.id,
         rentalId: setup.rental.rentalId,
-        expectedUpdatedAt: current.updatedAt,
+        expectedVersion: current.version,
         branchId: setup.branch.id,
         period: new RentalPeriod(utcDate(2030, 1, 1, startHour), utcDate(2030, 1, 1, endHour)),
         selectedOffers: [{ rentalOfferId: setup.commercial.offer.id, quantity: 1 }],
@@ -308,6 +308,7 @@ describe('EditConfirmedRental integration', () => {
       results.filter((result) => result.isErr() && result.error.code === 'rental_commitment.rental_version_conflict'),
     ).toHaveLength(1);
     const state = await fixtures.persistedState(setup.rental.rentalId);
+    expect(state.rental.version).toBe(current.version + 1);
     expect([
       [13, 15],
       [16, 18],

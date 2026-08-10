@@ -346,6 +346,7 @@ describe('CancelRental integration', () => {
 
     const state = await confirmedRentals.persistedState(setup.rental.rentalId);
     const activeBlocks = state.blocks.filter((block) => block.releasedAt === null);
+    expect(state.rental.version).toBe(1);
     if (state.rental.status === 'CANCELLED') {
       expect(state.rental.assignedAssets).toHaveLength(0);
       expect(activeBlocks).toHaveLength(0);
@@ -356,11 +357,11 @@ describe('CancelRental integration', () => {
     }
   });
 
-  it('advances updatedAt after each successful guarded lifecycle update', async () => {
+  it('increments version after a successful guarded lifecycle update', async () => {
     const setup = await unconfirmed();
     const before = await prisma.client.v2Rental.findUniqueOrThrow({ where: { id: setup.rental.rentalId } });
     expect((await cancel(setup.tenant.id, setup.rental.rentalId)).isOk()).toBe(true);
     const after = await prisma.client.v2Rental.findUniqueOrThrow({ where: { id: setup.rental.rentalId } });
-    expect(after.updatedAt.getTime()).toBeGreaterThan(before.updatedAt.getTime());
+    expect(after.version).toBe(before.version + 1);
   });
 });

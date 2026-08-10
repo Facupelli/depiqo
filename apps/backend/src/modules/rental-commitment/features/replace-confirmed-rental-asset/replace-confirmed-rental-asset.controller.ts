@@ -38,14 +38,18 @@ export class ReplaceConfirmedRentalAssetHttpController {
         tenantId: user.tenantId,
         tenantUserId: user.id,
         rentalId: params.rentalId,
-        expectedUpdatedAt: new Date(dto.expectedUpdatedAt),
+        expectedVersion: dto.expectedVersion,
         currentAssignedAssetId: dto.currentAssignedAssetId as AssetId,
         replacementAssetId: dto.replacementAssetId as AssetId,
       }),
     );
     if (result.isErr()) throw toProblem(result.error);
 
-    return { id: result.value.rentalId, updatedAt: result.value.updatedAt.toISOString() };
+    return {
+      id: result.value.rentalId,
+      version: result.value.version,
+      updatedAt: result.value.updatedAt.toISOString(),
+    };
   }
 }
 

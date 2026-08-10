@@ -7,13 +7,14 @@ export const ReplaceConfirmedRentalAssetParamsSchema = z.object({
 });
 
 export const ReplaceConfirmedRentalAssetBodySchema = z.object({
-  expectedUpdatedAt: z.string().datetime(),
+  expectedVersion: z.number().int().nonnegative(),
   currentAssignedAssetId: z.string().trim().min(1),
   replacementAssetId: z.string().trim().min(1),
 });
 
 export const ReplaceConfirmedRentalAssetResponseSchema = z.object({
   id: z.string(),
+  version: z.number().int().nonnegative(),
   updatedAt: z.string().datetime(),
 });
 

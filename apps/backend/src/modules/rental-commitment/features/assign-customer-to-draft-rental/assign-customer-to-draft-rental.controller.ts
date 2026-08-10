@@ -63,6 +63,12 @@ const assignCustomerToDraftRentalProblemMap = {
     status: HttpStatus.NOT_FOUND,
     detail: 'The requested rental could not be found.',
   },
+  'rental_commitment.rental_version_conflict': {
+    type: createProblemType('rental_commitment.rental_version_conflict'),
+    title: 'Rental was modified',
+    status: HttpStatus.CONFLICT,
+    detail: 'The rental was changed by another request. Refresh it and try again.',
+  },
   'rental_commitment.rental_must_be_draft': {
     type: createProblemType('rental_commitment.rental_must_be_draft'),
     title: 'Rental must be draft',
