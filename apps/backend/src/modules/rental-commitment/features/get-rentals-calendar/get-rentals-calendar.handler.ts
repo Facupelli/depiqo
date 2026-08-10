@@ -1,4 +1,5 @@
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
+import { Prisma } from 'src/generated/prisma/client';
 import { V2RentalStatus } from 'src/generated/prisma/enums';
 
 import { PrismaService } from 'src/core/database/prisma.service';
@@ -35,6 +36,15 @@ export interface RentalsCalendarItemReadModel {
 
 export type GetRentalsCalendarResult = RentalsCalendarItemReadModel[];
 
+type RawRentalCalendarRow = {
+  id: string;
+  status: RentalCalendarStatus;
+  createdAt: Date;
+  periodStart: Date;
+  periodEnd: Date;
+  customerId: string | null;
+};
+
 @QueryHandler(GetRentalsCalendarQuery)
 export class GetRentalsCalendarHandler implements IQueryHandler<GetRentalsCalendarQuery, GetRentalsCalendarResult> {
   constructor(
@@ -45,24 +55,28 @@ export class GetRentalsCalendarHandler implements IQueryHandler<GetRentalsCalend
   async execute(query: GetRentalsCalendarQuery): Promise<GetRentalsCalendarResult> {
     const timezone = await this.resolveCalendarTimezone(query.tenantId, query.branchId);
 
-    const rentals = await this.prisma.client.v2Rental.findMany({
-      where: {
-        tenantId: query.tenantId,
-        branchId: query.branchId,
-        status: { in: [...RENTAL_CALENDAR_STATUSES] },
-        periodStart: { lt: query.to },
-        periodEnd: { gt: query.from },
-      },
-      select: {
-        id: true,
-        status: true,
-        createdAt: true,
-        periodStart: true,
-        periodEnd: true,
-        customerId: true,
-      },
-      orderBy: [{ periodStart: 'asc' }, { periodEnd: 'asc' }, { createdAt: 'desc' }, { id: 'asc' }],
-    });
+    // Calendar request dates are inclusive branch-local dates. Convert their half-open
+    // [from midnight, day-after-to midnight) interval to the current UTC wall-clock
+    // representation before comparing it with scalar rental periods.
+    const rangeStart = Prisma.sql`(((${query.from}::date)::timestamp AT TIME ZONE ${timezone}) AT TIME ZONE 'UTC')`;
+    const rangeEnd = Prisma.sql`(((${query.to}::date + 1)::timestamp AT TIME ZONE ${timezone}) AT TIME ZONE 'UTC')`;
+
+    const rentals = await this.prisma.client.$queryRaw<RawRentalCalendarRow[]>(Prisma.sql`
+      SELECT
+        r.id AS "id",
+        r.status AS "status",
+        r.created_at AT TIME ZONE 'UTC' AS "createdAt",
+        r.period_start AT TIME ZONE 'UTC' AS "periodStart",
+        r.period_end AT TIME ZONE 'UTC' AS "periodEnd",
+        r.customer_id AS "customerId"
+      FROM v2_rentals r
+      WHERE r.tenant_id = ${query.tenantId}
+        AND r.branch_id = ${query.branchId}
+        AND r.status IN (${Prisma.join(RENTAL_CALENDAR_STATUSES)})
+        AND r.period_start < ${rangeEnd}
+        AND r.period_end > ${rangeStart}
+      ORDER BY r.period_start ASC, r.period_end ASC, r.created_at DESC, r.id ASC
+    `);
 
     const customersById = await this.getCustomersById(
       query.tenantId,

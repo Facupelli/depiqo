@@ -5,6 +5,7 @@ import { err, ok, Result } from 'neverthrow';
 
 import { PrismaService } from 'src/core/database/prisma.service';
 import { mapPostgresError, PostgresExclusionViolationError } from 'src/core/utils/postgres-error.mapper';
+import { Prisma } from 'src/generated/prisma/client';
 import { V2AssetBlockType, V2RentalStatus } from 'src/generated/prisma/enums';
 
 import { RentalAssetAllocationService } from '../../asset-allocation/rental-asset-allocation.service';
@@ -15,6 +16,10 @@ import { AssignRentalAccessoriesCommand } from './assign-rental-accessories.comm
 import { assignRentalAccessoriesError, AssignRentalAccessoriesError } from './assign-rental-accessories.errors';
 
 export type AssignRentalAccessoriesResult = Result<void, AssignRentalAccessoriesError>;
+
+function utcInstantToStoredTimestamp(date: Date): Prisma.Sql {
+  return Prisma.sql`(${date.toISOString()}::timestamptz AT TIME ZONE 'UTC')`;
+}
 
 type RentalReadModel = {
   id: string;
@@ -382,8 +387,8 @@ export class AssignRentalAccessoriesHandler implements ICommandHandler<
                 ${assetId},
                 ${this.toPostgresRange(rental.periodStart, rental.periodEnd)}::tstzrange,
                 ${V2AssetBlockType.ACCESSORY},
-                ${new Date()},
-                ${null}
+                ${utcInstantToStoredTimestamp(new Date())},
+                ${Prisma.sql`NULL`}
               )
             `;
             }

@@ -33,12 +33,14 @@ type RawCountRow = {
 
 const UPCOMING_EXCLUDED_STATUSES = [V2RentalStatus.COMPLETED, V2RentalStatus.CANCELLED] as const;
 
-// TODO(temporal-sql): Date lens filtering and sorting require per-row timezone resolution inside SQL,
-// so they cannot call TenantManagementPublicApi. Keep this expression aligned with the authoritative
-// branch -> tenant -> UTC rule until the raw SQL temporal semantics are redesigned.
-const EFFECTIVE_TIMEZONE_SQL = Prisma.sql`COALESCE(b.timezone, t.config->>'timezone', 'UTC')`;
-const PICKUP_LOCAL_DATE_SQL = Prisma.sql`(r.period_start AT TIME ZONE ${EFFECTIVE_TIMEZONE_SQL})::date`;
-const RETURN_LOCAL_DATE_SQL = Prisma.sql`(r.period_end AT TIME ZONE ${EFFECTIVE_TIMEZONE_SQL})::date`;
+// Date lens filtering and sorting need a timezone for each joined branch, so a single
+// TenantManagementPublicApi branch-context lookup cannot compose this set-based read. This mirrors
+// Tenant Management's authoritative trimmed branch -> tenant -> UTC resolution exactly.
+const EFFECTIVE_TIMEZONE_SQL = Prisma.sql`COALESCE(NULLIF(BTRIM(b.timezone), ''), NULLIF(BTRIM(t.config->>'timezone'), ''), 'UTC')`;
+// period_start and period_end are pre-Task-5 UTC wall-clock timestamps. Interpret them as UTC
+// instants before rendering their dates in the effective branch timezone.
+const PICKUP_LOCAL_DATE_SQL = Prisma.sql`((r.period_start AT TIME ZONE 'UTC') AT TIME ZONE ${EFFECTIVE_TIMEZONE_SQL})::date`;
+const RETURN_LOCAL_DATE_SQL = Prisma.sql`((r.period_end AT TIME ZONE 'UTC') AT TIME ZONE ${EFFECTIVE_TIMEZONE_SQL})::date`;
 const TODAY_LOCAL_DATE_SQL = Prisma.sql`(CURRENT_TIMESTAMP AT TIME ZONE ${EFFECTIVE_TIMEZONE_SQL})::date`;
 
 @QueryHandler(GetRentalsQuery)
@@ -56,9 +58,9 @@ export class GetRentalsHandler implements IQueryHandler<GetRentalsQuery, GetRent
           r.id AS "id",
           r.status AS "status",
           r.fulfillment_method AS "fulfillmentMethod",
-          r.created_at AS "createdAt",
-          r.period_start AS "pickupAt",
-          r.period_end AS "returnAt",
+          r.created_at AT TIME ZONE 'UTC' AS "createdAt",
+          r.period_start AT TIME ZONE 'UTC' AS "pickupAt",
+          r.period_end AT TIME ZONE 'UTC' AS "returnAt",
           c.id AS "customerId",
           c.first_name AS "customerFirstName",
           c.last_name AS "customerLastName",

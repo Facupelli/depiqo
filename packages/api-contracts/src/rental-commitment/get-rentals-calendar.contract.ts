@@ -4,8 +4,8 @@ import type { ApiContract } from "../api-contract";
 
 export const GetRentalsCalendarQuerySchema = z.object({
 	branchId: z.string().trim().min(1),
-	from: z.coerce.date(),
-	to: z.coerce.date(),
+	from: z.iso.date(),
+	to: z.iso.date(),
 });
 
 export const GetRentalsCalendarStatusSchema = z.enum([

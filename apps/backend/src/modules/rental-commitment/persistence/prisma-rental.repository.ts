@@ -3,12 +3,17 @@ import { randomUUID } from 'node:crypto';
 import { Injectable } from '@nestjs/common';
 
 import { PrismaService } from 'src/core/database/prisma.service';
+import { Prisma } from 'src/generated/prisma/client';
 import { PrismaTransactionClient } from 'src/core/database/prisma-unit-of-work';
 import { mapPostgresError } from 'src/core/utils/postgres-error.mapper';
 
 import { Rental } from '../domain/rental.aggregate';
 import { RentalRepository, SaveRentalOptions, SaveRentalResult } from './rental.repository';
 import { AssetBlockPersistenceRecord, RentalMapper } from './rental.mapper';
+
+function utcInstantToStoredTimestamp(date: Date | null | undefined): Prisma.Sql {
+  return date == null ? Prisma.sql`NULL` : Prisma.sql`(${date.toISOString()}::timestamptz AT TIME ZONE 'UTC')`;
+}
 
 @Injectable()
 export class PrismaRentalRepository extends RentalRepository {
@@ -195,8 +200,8 @@ export class PrismaRentalRepository extends RentalRepository {
           ${block.assetId},
           ${block.period.toPostgresRange()}::tstzrange,
           ${block.blockType},
-          ${block.createdAt ?? new Date()},
-          ${block.releasedAt ?? null}
+          ${utcInstantToStoredTimestamp(block.createdAt ?? new Date())},
+          ${utcInstantToStoredTimestamp(block.releasedAt)}
         )
       `;
     }
@@ -208,7 +213,7 @@ export class PrismaRentalRepository extends RentalRepository {
             id, tenant_id, rental_id, asset_id, period, block_type, created_at, released_at
           ) VALUES (
             ${randomUUID()}, ${rental.tenantId}, ${rental.id}, ${assetId},
-            ${rental.period.toPostgresRange()}::tstzrange, 'ACCESSORY', ${new Date()}, ${null}
+            ${rental.period.toPostgresRange()}::tstzrange, 'ACCESSORY', ${utcInstantToStoredTimestamp(new Date())}, ${utcInstantToStoredTimestamp(null)}
           )
         `;
       }
