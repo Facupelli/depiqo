@@ -26,8 +26,8 @@ export class CreateOwnerWithContractHttpController {
         basis: dto.contract.basis,
         ownerShare: dto.contract.ownerShare,
         rentalShare: dto.contract.rentalShare,
-        validFrom: new Date(dto.contract.validFrom),
-        validTo: dto.contract.validTo ? new Date(dto.contract.validTo) : null,
+        validFrom: dto.contract.validFrom,
+        validTo: dto.contract.validTo ?? null,
       }),
     );
   }

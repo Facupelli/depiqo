@@ -40,8 +40,8 @@ export async function searchDraftRentalOffers(
 		rentalOffersPage.data.length > 0
 			? getRentalOfferAvailability({
 					branchId: parsedInput.branchId,
-					periodStart: new Date(parsedInput.periodStart),
-					periodEnd: new Date(parsedInput.periodEnd),
+					periodStart: parsedInput.periodStart,
+					periodEnd: parsedInput.periodEnd,
 					rentalOfferIds,
 				})
 			: Promise.resolve(null),

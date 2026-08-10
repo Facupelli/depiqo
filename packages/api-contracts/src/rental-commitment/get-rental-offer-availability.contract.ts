@@ -1,11 +1,12 @@
 import { z } from "zod";
 
 import type { ApiContract } from "../api-contract";
+import { ExplicitOffsetInstantSchema } from "../explicit-offset-instant.schema";
 
 export const GetRentalOfferAvailabilityRequestSchema = z.object({
   branchId: z.string().trim().min(1),
-  periodStart: z.coerce.date(),
-  periodEnd: z.coerce.date(),
+  periodStart: ExplicitOffsetInstantSchema,
+  periodEnd: ExplicitOffsetInstantSchema,
   rentalOfferIds: z
     .array(z.string().trim().min(1))
     .min(1)
@@ -29,11 +30,19 @@ export const GetRentalOfferAvailabilityItemSchema = z.object({
   availableCount: z.number().int().nonnegative(),
 });
 
-export const GetRentalOfferAvailabilityResponseSchema = z.array(GetRentalOfferAvailabilityItemSchema);
+export const GetRentalOfferAvailabilityResponseSchema = z.array(
+  GetRentalOfferAvailabilityItemSchema,
+);
 
-export type GetRentalOfferAvailabilityRequestDto = z.infer<typeof GetRentalOfferAvailabilityRequestSchema>;
-export type GetRentalOfferAvailabilityItemDto = z.infer<typeof GetRentalOfferAvailabilityItemSchema>;
-export type GetRentalOfferAvailabilityResponseDto = z.infer<typeof GetRentalOfferAvailabilityResponseSchema>;
+export type GetRentalOfferAvailabilityRequestDto = z.input<
+  typeof GetRentalOfferAvailabilityRequestSchema
+>;
+export type GetRentalOfferAvailabilityItemDto = z.infer<
+  typeof GetRentalOfferAvailabilityItemSchema
+>;
+export type GetRentalOfferAvailabilityResponseDto = z.infer<
+  typeof GetRentalOfferAvailabilityResponseSchema
+>;
 
 export const getRentalOfferAvailabilityContract = {
   method: "POST",

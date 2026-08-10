@@ -109,10 +109,7 @@ export function buildCreateConfirmedRentalBody({
 }: BuildCreateConfirmedRentalBodyParams): CreateConfirmedRentalBodyDto {
 	return {
 		branchId,
-		period: {
-			start: new Date(rentalPeriod.start),
-			end: new Date(rentalPeriod.end),
-		},
+		period: rentalPeriod,
 		selectedOffers: buildCartSelectedOffers({ cartItems }),
 		fulfillmentMethod,
 		deliveryDetails:

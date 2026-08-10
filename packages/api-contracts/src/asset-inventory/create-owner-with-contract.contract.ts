@@ -1,12 +1,16 @@
 import { z } from "zod";
 
 import type { ApiContract } from "../api-contract";
+import { ExplicitOffsetInstantSchema } from "../explicit-offset-instant.schema";
 
 const ShareSchema = z
   .string()
   .trim()
   .regex(/^\d+(?:\.\d+)?$/, "Share must be a decimal string.")
-  .refine((value) => Number(value) >= 0 && Number(value) <= 1, "Share must be between 0 and 1.");
+  .refine(
+    (value) => Number(value) >= 0 && Number(value) <= 1,
+    "Share must be between 0 and 1.",
+  );
 
 export const CreateOwnerWithContractBodySchema = z
   .object({
@@ -17,12 +21,14 @@ export const CreateOwnerWithContractBodySchema = z
       basis: z.enum(["GROSS", "NET"]),
       ownerShare: ShareSchema,
       rentalShare: ShareSchema,
-      validFrom: z.string().datetime(),
-      validTo: z.string().datetime().optional().nullable(),
+      validFrom: ExplicitOffsetInstantSchema,
+      validTo: ExplicitOffsetInstantSchema.optional().nullable(),
     }),
   })
   .refine(
-    ({ contract }) => Math.abs(Number(contract.ownerShare) + Number(contract.rentalShare) - 1) < 1e-10,
+    ({ contract }) =>
+      Math.abs(Number(contract.ownerShare) + Number(contract.rentalShare) - 1) <
+      1e-10,
     {
       message: "ownerShare and rentalShare must sum to exactly 1.",
       path: ["contract", "rentalShare"],
@@ -32,7 +38,7 @@ export const CreateOwnerWithContractBodySchema = z
     ({ contract }) =>
       contract.validTo === undefined ||
       contract.validTo === null ||
-      Date.parse(contract.validTo) > Date.parse(contract.validFrom),
+      contract.validTo > contract.validFrom,
     {
       message: "validTo must be after validFrom.",
       path: ["contract", "validTo"],
@@ -44,8 +50,12 @@ export const CreateOwnerWithContractResponseSchema = z.object({
   contractId: z.string(),
 });
 
-export type CreateOwnerWithContractBodyDto = z.infer<typeof CreateOwnerWithContractBodySchema>;
-export type CreateOwnerWithContractResponseDto = z.infer<typeof CreateOwnerWithContractResponseSchema>;
+export type CreateOwnerWithContractBodyDto = z.input<
+  typeof CreateOwnerWithContractBodySchema
+>;
+export type CreateOwnerWithContractResponseDto = z.infer<
+  typeof CreateOwnerWithContractResponseSchema
+>;
 
 export const createOwnerWithContractContract = {
   method: "POST",

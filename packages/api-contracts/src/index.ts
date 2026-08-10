@@ -3,6 +3,7 @@ export * from "./asset-inventory";
 export * from "./catalog";
 export * from "./contracts";
 export * from "./document-signing";
+export * from "./explicit-offset-instant.schema";
 export * from "./offering-setup";
 export * from "./pricing";
 export * from "./rental-commitment";

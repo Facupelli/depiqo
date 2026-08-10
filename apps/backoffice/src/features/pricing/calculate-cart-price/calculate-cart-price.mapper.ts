@@ -40,7 +40,7 @@ export function toCalculateCartPriceBody(
 
 	const parsed = CalculateCartPriceBodySchema.safeParse(body);
 
-	return parsed.success ? parsed.data : null;
+	return parsed.success ? body : null;
 }
 
 function toIsoDateTimeString(

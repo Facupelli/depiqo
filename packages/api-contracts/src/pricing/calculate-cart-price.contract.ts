@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import type { ApiContract } from "../api-contract";
+import { ExplicitOffsetInstantSchema } from "../explicit-offset-instant.schema";
 
 const DecimalStringSchema = z.string();
 
@@ -12,8 +13,8 @@ export const CalculateCartPriceSelectedOfferSchema = z.object({
 export const CalculateCartPriceBodySchema = z.object({
   branchId: z.string(),
   rentalPeriod: z.object({
-    start: z.iso.datetime(),
-    end: z.iso.datetime(),
+    start: ExplicitOffsetInstantSchema,
+    end: ExplicitOffsetInstantSchema,
   }),
   selectedOffers: z.array(CalculateCartPriceSelectedOfferSchema),
   insuranceSelected: z.boolean().default(false),
@@ -23,7 +24,11 @@ export const CalculateCartPriceBodySchema = z.object({
 
 export const CalculateCartPriceDurationPolicySnapshotSchema = z.object({
   timezone: z.string(),
-  dailyBillingPolicy: z.enum(["IGNORE_PARTIAL_DAY", "BILL_OVER_HALF_DAY", "BILL_ANY_PARTIAL_DAY"]),
+  dailyBillingPolicy: z.enum([
+    "IGNORE_PARTIAL_DAY",
+    "BILL_OVER_HALF_DAY",
+    "BILL_ANY_PARTIAL_DAY",
+  ]),
   minimumChargedDays: z.number().int(),
   halfDayThresholdMinutes: z.number().int().optional(),
 });
@@ -86,18 +91,29 @@ export const CalculateCartPriceResponseSchema = z.object({
   chargedDays: z.number().int().nonnegative(),
   insurance: CalculateCartPriceInsuranceSchema,
   total: DecimalStringSchema,
-  durationPolicySnapshot: CalculateCartPriceDurationPolicySnapshotSchema.nullable(),
+  durationPolicySnapshot:
+    CalculateCartPriceDurationPolicySnapshotSchema.nullable(),
   lines: z.array(CalculateCartPriceLineSchema),
   appliedPromotions: z.array(CalculateCartPriceAppliedPromotionSchema),
   appliedCoupon: CalculateCartPriceAppliedCouponSchema.nullable(),
 });
 
-export type CalculateCartPriceBodyDto = z.infer<typeof CalculateCartPriceBodySchema>;
-export type CalculateCartPriceResponseDto = z.infer<typeof CalculateCartPriceResponseSchema>;
+export type CalculateCartPriceBodyDto = z.input<
+  typeof CalculateCartPriceBodySchema
+>;
+export type CalculateCartPriceResponseDto = z.infer<
+  typeof CalculateCartPriceResponseSchema
+>;
 
 export const calculateCartPriceContract = {
   method: "POST",
   path: "/storefront/pricing/cart/price",
   body: CalculateCartPriceBodySchema,
   response: CalculateCartPriceResponseSchema,
-} satisfies ApiContract<undefined, undefined, undefined, typeof CalculateCartPriceBodySchema, typeof CalculateCartPriceResponseSchema>;
+} satisfies ApiContract<
+  undefined,
+  undefined,
+  undefined,
+  typeof CalculateCartPriceBodySchema,
+  typeof CalculateCartPriceResponseSchema
+>;

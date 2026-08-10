@@ -87,5 +87,7 @@ export function toCreateOwnerWithContractDto(
 		},
 	};
 
-	return CreateOwnerWithContractBodySchema.parse(dto);
+	CreateOwnerWithContractBodySchema.parse(dto);
+
+	return dto;
 }

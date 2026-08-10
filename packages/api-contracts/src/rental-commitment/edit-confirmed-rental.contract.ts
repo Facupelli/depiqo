@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import type { ApiContract } from "../api-contract";
+import { ExplicitOffsetInstantSchema } from "../explicit-offset-instant.schema";
 import {
   CreateConfirmedRentalDeliveryDetailsSchema,
   CreateConfirmedRentalFulfillmentMethodSchema,
@@ -17,19 +18,26 @@ export const EditConfirmedRentalBodySchema = z
     expectedVersion: z.number().int().nonnegative(),
     branchId: z.string().trim().min(1),
     period: z.object({
-      start: z.coerce.date(),
-      end: z.coerce.date(),
+      start: ExplicitOffsetInstantSchema,
+      end: ExplicitOffsetInstantSchema,
     }),
-    selectedOffers: z.array(CreateConfirmedRentalSelectedOfferSchema).default([]),
-    fulfillmentMethod: CreateConfirmedRentalFulfillmentMethodSchema.default("PICKUP"),
+    selectedOffers: z
+      .array(CreateConfirmedRentalSelectedOfferSchema)
+      .default([]),
+    fulfillmentMethod:
+      CreateConfirmedRentalFulfillmentMethodSchema.default("PICKUP"),
     deliveryDetails: CreateConfirmedRentalDeliveryDetailsSchema.optional(),
     notes: z.string().optional(),
     insuranceSelected: z.boolean().optional(),
-    manualPricingAdjustment: CreateDraftRentalManualPricingAdjustmentSchema.nullable().default(null),
+    manualPricingAdjustment:
+      CreateDraftRentalManualPricingAdjustmentSchema.nullable().default(null),
   })
   .transform((value) => ({
     ...value,
-    deliveryDetails: value.fulfillmentMethod === "DELIVERY" ? value.deliveryDetails : undefined,
+    deliveryDetails:
+      value.fulfillmentMethod === "DELIVERY"
+        ? value.deliveryDetails
+        : undefined,
   }));
 
 export const EditConfirmedRentalResponseSchema = z.object({
@@ -38,9 +46,15 @@ export const EditConfirmedRentalResponseSchema = z.object({
   updatedAt: z.string().datetime(),
 });
 
-export type EditConfirmedRentalParamsDto = z.infer<typeof EditConfirmedRentalParamsSchema>;
-export type EditConfirmedRentalBodyDto = z.infer<typeof EditConfirmedRentalBodySchema>;
-export type EditConfirmedRentalResponseDto = z.infer<typeof EditConfirmedRentalResponseSchema>;
+export type EditConfirmedRentalParamsDto = z.infer<
+  typeof EditConfirmedRentalParamsSchema
+>;
+export type EditConfirmedRentalBodyDto = z.input<
+  typeof EditConfirmedRentalBodySchema
+>;
+export type EditConfirmedRentalResponseDto = z.infer<
+  typeof EditConfirmedRentalResponseSchema
+>;
 
 export const editConfirmedRentalContract = {
   method: "PUT",

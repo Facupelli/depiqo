@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import type { ApiContract } from "../api-contract";
+import { ExplicitOffsetInstantSchema } from "../explicit-offset-instant.schema";
 
 export const GetStorefrontRentalOfferAvailabilityRequirementSchema = z.object({
   equipmentTypeId: z.string().trim().min(1),
@@ -14,8 +15,8 @@ export const GetStorefrontRentalOfferAvailabilityOfferSchema = z.object({
 
 export const GetStorefrontRentalOfferAvailabilityRequestSchema = z.object({
   branchId: z.string().trim().min(1),
-  periodStart: z.coerce.date(),
-  periodEnd: z.coerce.date(),
+  periodStart: ExplicitOffsetInstantSchema,
+  periodEnd: ExplicitOffsetInstantSchema,
   rentalOffers: z.array(GetStorefrontRentalOfferAvailabilityOfferSchema),
 });
 
@@ -34,7 +35,7 @@ export type GetStorefrontRentalOfferAvailabilityRequirementDto = z.infer<
 export type GetStorefrontRentalOfferAvailabilityOfferDto = z.infer<
   typeof GetStorefrontRentalOfferAvailabilityOfferSchema
 >;
-export type GetStorefrontRentalOfferAvailabilityRequestDto = z.infer<
+export type GetStorefrontRentalOfferAvailabilityRequestDto = z.input<
   typeof GetStorefrontRentalOfferAvailabilityRequestSchema
 >;
 export type GetStorefrontRentalOfferAvailabilityItemDto = z.infer<

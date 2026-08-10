@@ -142,12 +142,12 @@ export function buildDraftRentalPeriod(
 			values.periodStartDate,
 			values.periodStartTime,
 			timezone,
-		),
+		).toISOString(),
 		end: toRentalPeriodDateTime(
 			values.periodEndDate,
 			values.periodEndTime,
 			timezone,
-		),
+		).toISOString(),
 	};
 }
 
@@ -176,13 +176,17 @@ export function toCalculateDraftRentalPriceDto(
 	values: DraftRentalComposerFormValues,
 	timezone: string,
 ): CalculateDraftRentalPriceBodyDto {
-	return CalculateDraftRentalPriceBodySchema.parse({
+	const dto = {
 		branchId: values.branchId,
 		rentalCustomerId: emptyToUndefined(values.rentalCustomerId),
 		period: buildDraftRentalPeriod(values, timezone),
 		selectedOffers: selectedOffers(values),
 		manualPricingAdjustment: manualPricingAdjustment(values),
-	});
+	};
+
+	CalculateDraftRentalPriceBodySchema.parse(dto);
+
+	return dto;
 }
 
 export function toCreateDraftRentalDto(
@@ -190,8 +194,7 @@ export function toCreateDraftRentalDto(
 	timezone: string,
 ): CreateDraftRentalBodyDto {
 	const deliveryDetails = values.deliveryDetails;
-
-	return CreateDraftRentalBodySchema.parse({
+	const dto = {
 		branchId: values.branchId,
 		rentalCustomerId: emptyToUndefined(values.rentalCustomerId),
 		period: buildDraftRentalPeriod(values, timezone),
@@ -213,5 +216,9 @@ export function toCreateDraftRentalDto(
 				: undefined,
 		insuranceSelected: values.insuranceSelected,
 		manualPricingAdjustment: manualPricingAdjustment(values),
-	});
+	};
+
+	CreateDraftRentalBodySchema.parse(dto);
+
+	return dto;
 }

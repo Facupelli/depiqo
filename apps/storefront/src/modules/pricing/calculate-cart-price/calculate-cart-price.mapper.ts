@@ -33,5 +33,16 @@ export function toCalculateCartPriceBody(
 		insuranceSelected: input.insuranceSelected,
 		couponCode: input.couponCode.trim() || undefined,
 	});
-	return result.success ? result.data : null;
+	return result.success
+		? {
+				branchId: input.branchId,
+				rentalPeriod: {
+					start: input.periodStart.toISOString(),
+					end: input.periodEnd.toISOString(),
+				},
+				selectedOffers: input.selectedOffers,
+				insuranceSelected: input.insuranceSelected,
+				couponCode: input.couponCode.trim() || undefined,
+			}
+		: null;
 }

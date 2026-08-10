@@ -35,8 +35,8 @@ export class CalculateCartPriceHttpController {
       new CalculateCartPriceQuery(
         tenant.tenantId,
         dto.branchId,
-        new Date(dto.rentalPeriod.start),
-        new Date(dto.rentalPeriod.end),
+        dto.rentalPeriod.start,
+        dto.rentalPeriod.end,
         dto.selectedOffers,
         dto.insuranceSelected,
         dto.customerId,

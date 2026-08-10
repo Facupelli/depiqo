@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import type { ApiContract } from "../api-contract";
+import { ExplicitOffsetInstantSchema } from "../explicit-offset-instant.schema";
 import {
   CreateConfirmedRentalDeliveryDetailsSchema,
   CreateConfirmedRentalFulfillmentMethodSchema,
@@ -17,8 +18,8 @@ export const EditUnconfirmedRentalBodySchema = z
     expectedVersion: z.number().int().nonnegative(),
     branchId: z.string().trim().min(1),
     period: z.object({
-      start: z.coerce.date(),
-      end: z.coerce.date(),
+      start: ExplicitOffsetInstantSchema,
+      end: ExplicitOffsetInstantSchema,
     }),
     selectedOffers: z
       .array(CreateConfirmedRentalSelectedOfferSchema)
@@ -48,7 +49,7 @@ export const EditUnconfirmedRentalResponseSchema = z.object({
 export type EditUnconfirmedRentalParamsDto = z.infer<
   typeof EditUnconfirmedRentalParamsSchema
 >;
-export type EditUnconfirmedRentalBodyDto = z.infer<
+export type EditUnconfirmedRentalBodyDto = z.input<
   typeof EditUnconfirmedRentalBodySchema
 >;
 export type EditUnconfirmedRentalResponseDto = z.infer<

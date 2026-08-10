@@ -49,8 +49,8 @@ export async function getStorefrontRentalOfferListView(
 		parsedInput.periodStart && parsedInput.periodEnd && rentalOffers.length > 0
 			? getStorefrontRentalOfferAvailability({
 					branchId: parsedInput.branchId,
-					periodStart: new Date(parsedInput.periodStart),
-					periodEnd: new Date(parsedInput.periodEnd),
+					periodStart: parsedInput.periodStart,
+					periodEnd: parsedInput.periodEnd,
 					rentalOffers: rentalOffers.map((rentalOffer) => ({
 						rentalOfferId: rentalOffer.id,
 						requirements: rentalOffer.requirements,
