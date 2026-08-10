@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { integrationConfigServiceProvider, useIntegrationTestContext } from '../../support/integration-test-context';
+import { useIntegrationTestContext } from '../../support/integration-test-context';
 
 import { AppConfigModule } from '../../../src/config/config.module';
 import { PrismaService } from '../../../src/core/database/prisma.service';
@@ -15,7 +15,7 @@ describe('rental customer authentication identity tenant integrity', () => {
   useIntegrationTestContext(async () => {
     moduleRef = await Test.createTestingModule({
       imports: [AppConfigModule, SharedModule],
-      providers: [integrationConfigServiceProvider(), PrismaService],
+      providers: [PrismaService],
     }).compile();
     await moduleRef.init();
 

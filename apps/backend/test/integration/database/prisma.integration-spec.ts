@@ -1,35 +1,33 @@
-import { Test } from '@nestjs/testing';
+import { randomUUID } from 'node:crypto';
 
-import { AppConfigModule } from '../../../src/config/config.module';
-import { PrismaService } from '../../../src/core/database/prisma.service';
-import { SharedModule } from '../../../src/modules/shared/shared.module';
-import { integrationConfigServiceProvider, useIntegrationTestContext } from '../../support/integration-test-context';
+import { createDirectDatabaseTestContext, DirectDatabaseTestContext } from '../../support/direct-database-test-context';
+import { useIntegrationTestContext } from '../../support/integration-test-context';
 
 describe('Prisma database integration', () => {
-  let prisma: PrismaService;
+  let database: DirectDatabaseTestContext;
 
   useIntegrationTestContext(async () => {
-    const moduleRef = await Test.createTestingModule({
-      imports: [AppConfigModule, SharedModule],
-      providers: [integrationConfigServiceProvider(), PrismaService],
-    }).compile();
-    await moduleRef.init();
-    prisma = moduleRef.get(PrismaService);
-    return moduleRef;
+    database = await createDirectDatabaseTestContext();
+    return database;
   });
 
-  it('persists and reads data through the real Prisma provider', async () => {
-    const created = await prisma.client.billingUnit.create({
-      data: { label: 'Day', durationMinutes: 1440, sortOrder: 1 },
+  it('persists and reads data through Prisma against real PostgreSQL', async () => {
+    const created = await database.prisma.billingUnit.create({
+      data: { label: `Day ${randomUUID()}`, durationMinutes: 1440, sortOrder: 1 },
     });
 
-    await expect(prisma.client.billingUnit.findUnique({ where: { id: created.id } })).resolves.toMatchObject({
-      label: 'Day',
+    await expect(database.prisma.billingUnit.findUnique({ where: { id: created.id } })).resolves.toMatchObject({
+      label: created.label,
       durationMinutes: 1440,
     });
   });
 
-  it('starts with data from the previous test removed', async () => {
-    await expect(prisma.client.billingUnit.count()).resolves.toBe(0);
+  it('enforces database uniqueness without requiring an empty database', async () => {
+    const label = `Unique billing unit ${randomUUID()}`;
+    await database.prisma.billingUnit.create({ data: { label, durationMinutes: 60, sortOrder: 2 } });
+
+    await expect(
+      database.prisma.billingUnit.create({ data: { label, durationMinutes: 30, sortOrder: 3 } }),
+    ).rejects.toMatchObject({ code: 'P2002' });
   });
 });

@@ -1,12 +1,15 @@
 import { randomUUID } from 'node:crypto';
 
 import { CommandBus } from '@nestjs/cqrs';
+import { TestingModule } from '@nestjs/testing';
 
 import { PrismaService } from 'src/core/database/prisma.service';
 import { Prisma } from 'src/generated/prisma/client';
 import { V2RentalStatus } from 'src/generated/prisma/enums';
-import { createE2ETestApp, E2ETestApp } from '../../../../../test/support/create-e2e-test-app';
-import { useIntegrationTestContext } from '../../../../../test/support/integration-test-context';
+import {
+  createRentalCommitmentIntegrationContext,
+  useIntegrationTestContext,
+} from '../../../../../test/support/integration-test-context';
 import { createTestFixtures, TestFixtures } from '../../../../../test/support/fixtures';
 import { createBarrier, runConcurrently } from '../../../../../test/support/concurrency';
 import { oneMillisecondAfter, oneMillisecondBefore, utcDate } from '../../../../../test/support/time';
@@ -17,19 +20,19 @@ import { ConfirmRentalResult } from './confirm-rental.handler';
 import { ConfirmRentalFixtures, RentalPeriodFixture } from './testing/confirm-rental.fixtures';
 
 describe('ConfirmRental integration', () => {
-  let testApp: E2ETestApp;
+  let moduleRef: TestingModule;
   let prisma: PrismaService;
   let commandBus: CommandBus;
   let coreFixtures: TestFixtures;
   let rentalFixtures: ConfirmRentalFixtures;
 
   useIntegrationTestContext(async () => {
-    testApp = await createE2ETestApp({ databaseUrl: process.env.DATABASE_URL! });
-    prisma = testApp.app.get(PrismaService);
-    commandBus = testApp.app.get(CommandBus);
+    moduleRef = await createRentalCommitmentIntegrationContext();
+    prisma = moduleRef.get(PrismaService);
+    commandBus = moduleRef.get(CommandBus);
     coreFixtures = createTestFixtures(prisma);
     rentalFixtures = new ConfirmRentalFixtures(prisma);
-    return testApp;
+    return moduleRef;
   });
 
   async function base(status: V2RentalStatus = 'DRAFT', period = periodBetween(10, 12)) {
@@ -476,7 +479,7 @@ describe('ConfirmRental integration', () => {
       branchId: scenario.branch.id,
       equipmentTypeId: scenario.rental.equipmentTypeIds[0],
     });
-    const repository = testApp.app.get(RentalRepository);
+    const repository = moduleRef.get(RentalRepository);
     const originalFindById = repository.findById.bind(repository);
     const loaded = createBarrier(2);
     const findSpy = jest.spyOn(repository, 'findById').mockImplementation(async (tenantId, rentalId, tx) => {
