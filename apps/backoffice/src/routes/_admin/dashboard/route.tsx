@@ -48,7 +48,7 @@ export const Route = createFileRoute("/_admin/dashboard")({
 
 		if (!context.user) {
 			throw redirect({
-				to: "/admin/login",
+				to: "/login",
 				search: { redirectTo },
 			});
 		}

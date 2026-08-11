@@ -1,4 +1,3 @@
-import type { PublicTenantContext } from "@repo/api-contracts";
 import { MutationCache, QueryClient } from "@tanstack/react-query";
 import { createRouter as createTanStackRouter } from "@tanstack/react-router";
 import { setupRouterSsrQueryIntegration } from "@tanstack/react-router-ssr-query";
@@ -63,7 +62,6 @@ export function getRouter() {
 		routeTree,
 		context: {
 			queryClient,
-			tenantContext: undefined as unknown as PublicTenantContext,
 			user: null,
 		},
 		scrollRestoration: true,

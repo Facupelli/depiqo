@@ -1,9 +1,3 @@
-import { createFileRoute, notFound } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 
-export const Route = createFileRoute("/_admin")({
-	beforeLoad: ({ context }) => {
-		if (context.tenantContext.face !== "admin") {
-			throw notFound();
-		}
-	},
-});
+export const Route = createFileRoute("/_admin")({});

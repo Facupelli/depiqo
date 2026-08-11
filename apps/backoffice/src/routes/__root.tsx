@@ -5,21 +5,17 @@ import type { QueryClient } from "@tanstack/react-query";
 import {
 	createRootRouteWithContext,
 	HeadContent,
-	notFound,
 	Scripts,
 } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 import { NotFoundPage } from "@/components/not-found-page";
 import { ServiceUnavailablePage } from "@/components/service-unavailable-page";
 import { getCurrentUser } from "@/features/tenant-management/auth/get-current-user/get-current-user.api";
-import { getPublicTenantContext } from "@/features/tenant-management/tenant-context/get-public-tenant-context.api";
-import type { PublicTenantContext } from "@/features/tenant-management/tenant-context/types";
 import TanStackQueryDevtools from "../integrations/tanstack-query/devtools";
 import appCss from "../styles.css?url";
 
 export interface RouterContext {
 	queryClient: QueryClient;
-	tenantContext: PublicTenantContext;
 	user: AuthActorDto | null;
 }
 
@@ -28,28 +24,12 @@ const isDevEnv = import.meta.env.DEV;
 export const Route = createRootRouteWithContext<RouterContext>()({
 	beforeLoad: async () => {
 		try {
-			const tenantContext = await getPublicTenantContext();
-			let user: AuthActorDto | null = null;
-
-			try {
-				user = await getCurrentUser();
-			} catch (error) {
-				if (!isUnauthorizedProblemDetailsError(error)) {
-					throw error;
-				}
-			}
-
-			return { tenantContext, user };
+			return { user: await getCurrentUser() };
 		} catch (error) {
-			// NestJS returned 404 — unknown hostname
-			if (
-				error !== null &&
-				typeof error === "object" &&
-				"isNotFound" in error
-			) {
-				throw notFound();
+			if (isUnauthorizedProblemDetailsError(error)) {
+				return { user: null };
 			}
-			// Any other error (5xx, network failure) — let it bubble as 500
+
 			throw error;
 		}
 	},

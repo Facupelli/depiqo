@@ -30,11 +30,10 @@ import {
 } from "@/shared/auth/auth-redirect";
 import { isAuthError, ProblemDetailsError } from "@/shared/errors";
 
-export const Route = createFileRoute("/_admin/admin/login")({
+export const Route = createFileRoute("/login")({
 	validateSearch: authRedirectSearchSchema,
 	beforeLoad: async ({ context }) => {
-		// TODO: if tenant-customer user redirect to /rental instead
-		if (context.user) {
+		if (context.user?.actorType === "TENANT_USER") {
 			throw redirect({
 				to: "/dashboard",
 			});

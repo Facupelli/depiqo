@@ -4,7 +4,7 @@
 
 Storefront currently owns tenant resolution and the tenant BFF, landing pages, the catalog, availability, cart persistence, schedule-slot selection, delivery details, and price preview.
 
-Backoffice retains the complete admin application, but it also retains the prior public portal implementation. Storefront is therefore incomplete and Backoffice has duplicated, stale public code.
+Backoffice retains the complete admin application. Storefront owns the public portal implementation, and the duplicated Backoffice public code has been removed. Automated E2E coverage remains deferred to Section 8.
 
 ## 1. Define and enforce frontend application ownership
 
@@ -153,13 +153,13 @@ It does not change backend bounded-context ownership.
 
 ## 6. Remove Storefront duplication from Backoffice
 
-After the equivalent Storefront routes pass E2E verification:
+Automated E2E verification is deferred to Section 8.
 
-- [ ] Delete Backoffice `_portal` routes, public Google routes, and `/signing`.
-- [ ] Delete duplicated catalog, branches, pricing-preview, cart, tenant-landing, and public tenant-config modules from Backoffice.
-- [ ] Delete unused Backoffice storefront transport helpers: `storefrontApiFetch`, signed storefront-token helpers, and public storefront server functions.
-- [ ] Reduce the Backoffice root context to the minimum needed for the admin host and authenticated tenant users.
-- [ ] Retain Backoffice `/backend/$`, admin contract and remito endpoints, catalog and branding uploads, and staff-only customer-document access.
+- [x] Delete Backoffice `_portal` routes, public Google routes, and `/signing`.
+- [x] Delete duplicated catalog, branches, pricing-preview, cart, tenant-landing, and public tenant-config modules from Backoffice.
+- [x] Delete unused Backoffice storefront transport helpers: `storefrontApiFetch`, signed storefront-token helpers, and public storefront server functions.
+- [x] Reduce the Backoffice root context to the minimum needed for the admin host and authenticated tenant users.
+- [x] Retain Backoffice `/backend/$`, admin contract and remito endpoints, catalog and branding uploads, and staff-only customer-document access.
 
 ## 7. Finish deployment and documentation
 

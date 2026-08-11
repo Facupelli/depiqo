@@ -23,7 +23,7 @@ export function useLogout(options?: LogoutOptions) {
 		onSuccess: async () => {
 			queryClient.removeQueries({ queryKey: v2AuthKeys.all() });
 			await router.invalidate();
-			await router.navigate({ to: "/admin/login", replace: true });
+			await router.navigate({ to: "/login", replace: true });
 		},
 	});
 }

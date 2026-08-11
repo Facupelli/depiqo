@@ -256,7 +256,7 @@ function RegisterPage() {
 						<div>
 							<p className="text-center text-sm text-muted-foreground">
 								¿Ya tienes una cuenta?{" "}
-								<Link to="/admin/login" className="underline">
+								<Link to="/login" className="underline">
 									Inicia sesión
 								</Link>
 							</p>

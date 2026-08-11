@@ -11,11 +11,11 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteRouteImport } from './routes/_admin/route'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as AdminDashboardRouteRouteImport } from './routes/_admin/dashboard/route'
 import { Route as ApiBrandingUploadRouteImport } from './routes/api/branding-upload'
 import { Route as ApiUploadRouteImport } from './routes/api/upload'
 import { Route as BackendSplatRouteImport } from './routes/backend/$'
-import { Route as AdminAdminLoginRouteImport } from './routes/_admin/admin/login'
 import { Route as AdminAdminRegisterRouteImport } from './routes/_admin/admin/register'
 import { Route as AdminDashboardIndexRouteImport } from './routes/_admin/dashboard/index'
 import { Route as AdminDashboardBranchesIndexRouteImport } from './routes/_admin/dashboard/branches/index'
@@ -56,6 +56,11 @@ const AdminRouteRoute = AdminRouteRouteImport.update({
   id: '/_admin',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminDashboardRouteRoute = AdminDashboardRouteRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -75,11 +80,6 @@ const BackendSplatRoute = BackendSplatRouteImport.update({
   id: '/backend/$',
   path: '/backend/$',
   getParentRoute: () => rootRouteImport,
-} as any)
-const AdminAdminLoginRoute = AdminAdminLoginRouteImport.update({
-  id: '/admin/login',
-  path: '/admin/login',
-  getParentRoute: () => AdminRouteRoute,
 } as any)
 const AdminAdminRegisterRoute = AdminAdminRegisterRouteImport.update({
   id: '/admin/register',
@@ -261,11 +261,11 @@ const ApiOrdersOrderIdContractSignedDownloadRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
   '/dashboard': typeof AdminDashboardRouteRouteWithChildren
   '/api/branding-upload': typeof ApiBrandingUploadRoute
   '/api/upload': typeof ApiUploadRoute
   '/backend/$': typeof BackendSplatRoute
-  '/admin/login': typeof AdminAdminLoginRoute
   '/admin/register': typeof AdminAdminRegisterRoute
   '/dashboard/': typeof AdminDashboardIndexRoute
   '/dashboard/branches/new': typeof AdminDashboardBranchesNewRoute
@@ -299,10 +299,10 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
   '/api/branding-upload': typeof ApiBrandingUploadRoute
   '/api/upload': typeof ApiUploadRoute
   '/backend/$': typeof BackendSplatRoute
-  '/admin/login': typeof AdminAdminLoginRoute
   '/admin/register': typeof AdminAdminRegisterRoute
   '/dashboard': typeof AdminDashboardIndexRoute
   '/dashboard/branches/new': typeof AdminDashboardBranchesNewRoute
@@ -338,11 +338,11 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_admin': typeof AdminRouteRouteWithChildren
+  '/login': typeof LoginRoute
   '/_admin/dashboard': typeof AdminDashboardRouteRouteWithChildren
   '/api/branding-upload': typeof ApiBrandingUploadRoute
   '/api/upload': typeof ApiUploadRoute
   '/backend/$': typeof BackendSplatRoute
-  '/_admin/admin/login': typeof AdminAdminLoginRoute
   '/_admin/admin/register': typeof AdminAdminRegisterRoute
   '/_admin/dashboard/': typeof AdminDashboardIndexRoute
   '/_admin/dashboard/branches/new': typeof AdminDashboardBranchesNewRoute
@@ -378,11 +378,11 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/login'
     | '/dashboard'
     | '/api/branding-upload'
     | '/api/upload'
     | '/backend/$'
-    | '/admin/login'
     | '/admin/register'
     | '/dashboard/'
     | '/dashboard/branches/new'
@@ -416,10 +416,10 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/login'
     | '/api/branding-upload'
     | '/api/upload'
     | '/backend/$'
-    | '/admin/login'
     | '/admin/register'
     | '/dashboard'
     | '/dashboard/branches/new'
@@ -454,11 +454,11 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/_admin'
+    | '/login'
     | '/_admin/dashboard'
     | '/api/branding-upload'
     | '/api/upload'
     | '/backend/$'
-    | '/_admin/admin/login'
     | '/_admin/admin/register'
     | '/_admin/dashboard/'
     | '/_admin/dashboard/branches/new'
@@ -494,6 +494,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRouteRoute: typeof AdminRouteRouteWithChildren
+  LoginRoute: typeof LoginRoute
   ApiBrandingUploadRoute: typeof ApiBrandingUploadRoute
   ApiUploadRoute: typeof ApiUploadRoute
   BackendSplatRoute: typeof BackendSplatRoute
@@ -515,6 +516,13 @@ declare module '@tanstack/react-router' {
       path: ''
       fullPath: '/'
       preLoaderRoute: typeof AdminRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_admin/dashboard': {
@@ -544,13 +552,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/backend/$'
       preLoaderRoute: typeof BackendSplatRouteImport
       parentRoute: typeof rootRouteImport
-    }
-    '/_admin/admin/login': {
-      id: '/_admin/admin/login'
-      path: '/admin/login'
-      fullPath: '/admin/login'
-      preLoaderRoute: typeof AdminAdminLoginRouteImport
-      parentRoute: typeof AdminRouteRoute
     }
     '/_admin/admin/register': {
       id: '/_admin/admin/register'
@@ -832,13 +833,11 @@ const AdminDashboardRouteRouteWithChildren =
 
 interface AdminRouteRouteChildren {
   AdminDashboardRouteRoute: typeof AdminDashboardRouteRouteWithChildren
-  AdminAdminLoginRoute: typeof AdminAdminLoginRoute
   AdminAdminRegisterRoute: typeof AdminAdminRegisterRoute
 }
 
 const AdminRouteRouteChildren: AdminRouteRouteChildren = {
   AdminDashboardRouteRoute: AdminDashboardRouteRouteWithChildren,
-  AdminAdminLoginRoute: AdminAdminLoginRoute,
   AdminAdminRegisterRoute: AdminAdminRegisterRoute,
 }
 
@@ -882,6 +881,7 @@ const ApiOrdersOrderIdContractRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRouteRoute: AdminRouteRouteWithChildren,
+  LoginRoute: LoginRoute,
   ApiBrandingUploadRoute: ApiBrandingUploadRoute,
   ApiUploadRoute: ApiUploadRoute,
   BackendSplatRoute: BackendSplatRoute,
