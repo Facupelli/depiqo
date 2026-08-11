@@ -6,33 +6,20 @@ Storefront currently owns tenant resolution and the tenant BFF, landing pages, t
 
 Backoffice retains the complete admin application. Storefront owns the public portal implementation, and the duplicated Backoffice public code has been removed. Automated E2E coverage remains deferred to Section 8.
 
-## 1. Define and enforce frontend application ownership
+## 1. Public URL and legacy route cleanup
 
-App ownership describes which TanStack Start application serves a user-facing route.
-It does not change backend bounded-context ownership.
-
-- [x] Backoffice owns tenant-admin/internal experiences:
-      tenant-user auth, dashboard, inventory, catalog setup,
-      branches, owners, pricing/promotions, rental operations,
-      customer approvals, tenant settings, internal contract/document
-      operations, and admin uploads.
-
-- [x] Storefront owns customer/public experiences:
-      tenant landing, catalog, cart, checkout, customer portal,
-      customer auth/onboarding, public contract signing,
-      and public document downloads.
-
-- [ ] Define the canonical public URL map for Backoffice,
+- [x] Define the canonical public URL map for Backoffice,
       Storefront tenant domains/custom domains, authentication,
       OAuth callbacks, signing links, and public document links.
 
-- [ ] Audit legacy public routes:
-      /order-confirmation
-      /order-created-whatsapp
-      /order-created-contact-team
+- [x] Audit legacy public routes:
+      `/order-confirmation`,
+      `/order-created-whatsapp`,
+      `/order-created-contact-team`.
 
-      Delete them if unused and externally irrelevant.
-      Otherwise preserve only the required compatibility redirect/page.
+      `/order-confirmation` is obsolete.
+      The WhatsApp/contact-team routes are already removed, but exposed an
+      unresolved product decision around request-to-book and WHATSAPP tenant modes.
 
 ## 2. Add an authenticated Storefront backend boundary
 

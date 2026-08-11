@@ -42,6 +42,22 @@
   - Events are collected transactionally but published in-process after commit.
   - Publication failure is logged and swallowed, allowing committed state without guaranteed event delivery.
 
+- [ ] Decide the product semantics for tenant `request-to-book` and `WHATSAPP`
+      communication modes.
+
+      If retained:
+      - implement a real pending-rental flow;
+      - define Storefront request-to-book UX;
+      - generate the tenant WhatsApp destination;
+      - provide a contact fallback;
+      - use one Storefront terminal experience;
+      - do not restore the legacy Backoffice URLs.
+
+      If retired:
+      - remove the corresponding tenant configuration options;
+      - remove the orphaned `create-pending-rental` backend code;
+      - remove the unused WhatsApp-style pending-rental validation capability.
+
 ## Pricing and confirmed snapshots
 
 - [x] Calculate owner splits from the accepted confirmed price.
