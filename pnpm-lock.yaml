@@ -448,6 +448,9 @@ importers:
 
   apps/storefront:
     dependencies:
+      '@better-upload/server':
+        specifier: ^3.0.19
+        version: 3.0.19
       '@repo/api-contracts':
         specifier: workspace:*
         version: link:../../packages/api-contracts

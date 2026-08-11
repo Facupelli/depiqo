@@ -59,7 +59,7 @@ It does not change backend bounded-context ownership.
 
   Use the existing session-aware Storefront BFF, extend its allowlist narrowly for these operations, reuse the existing API contracts, and preserve backend `ProblemDetailsError` responses.
 
-- [ ] Move the customer identity-document upload flow to Storefront:
+- [x] Move the customer identity-document upload flow to Storefront:
   - add the Storefront Better Upload endpoint;
   - authenticate with the customer session;
   - preserve the existing customer ID validation;

@@ -14,6 +14,7 @@ import { Route as ConfirmedRentalSuccessRouteImport } from './routes/confirmed-r
 import { Route as HealthRouteImport } from './routes/health'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as RegisterRouteImport } from './routes/register'
+import { Route as ApiCustomerUploadRouteImport } from './routes/api/customer-upload'
 import { Route as CartIndexRouteImport } from './routes/cart/index'
 import { Route as RentalIndexRouteImport } from './routes/rental/index'
 import { Route as SessionSplatRouteImport } from './routes/session/$'
@@ -44,6 +45,11 @@ const LoginRoute = LoginRouteImport.update({
 const RegisterRoute = RegisterRouteImport.update({
   id: '/register',
   path: '/register',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiCustomerUploadRoute = ApiCustomerUploadRouteImport.update({
+  id: '/api/customer-upload',
+  path: '/api/customer-upload',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CartIndexRoute = CartIndexRouteImport.update({
@@ -83,6 +89,7 @@ export interface FileRoutesByFullPath {
   '/health': typeof HealthRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/api/customer-upload': typeof ApiCustomerUploadRoute
   '/session/$': typeof SessionSplatRoute
   '/cart/': typeof CartIndexRoute
   '/rental/': typeof RentalIndexRoute
@@ -96,6 +103,7 @@ export interface FileRoutesByTo {
   '/health': typeof HealthRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/api/customer-upload': typeof ApiCustomerUploadRoute
   '/session/$': typeof SessionSplatRoute
   '/cart': typeof CartIndexRoute
   '/rental': typeof RentalIndexRoute
@@ -110,6 +118,7 @@ export interface FileRoutesById {
   '/health': typeof HealthRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/api/customer-upload': typeof ApiCustomerUploadRoute
   '/session/$': typeof SessionSplatRoute
   '/cart/': typeof CartIndexRoute
   '/rental/': typeof RentalIndexRoute
@@ -125,6 +134,7 @@ export interface FileRouteTypes {
     | '/health'
     | '/login'
     | '/register'
+    | '/api/customer-upload'
     | '/session/$'
     | '/cart/'
     | '/rental/'
@@ -138,6 +148,7 @@ export interface FileRouteTypes {
     | '/health'
     | '/login'
     | '/register'
+    | '/api/customer-upload'
     | '/session/$'
     | '/cart'
     | '/rental'
@@ -151,6 +162,7 @@ export interface FileRouteTypes {
     | '/health'
     | '/login'
     | '/register'
+    | '/api/customer-upload'
     | '/session/$'
     | '/cart/'
     | '/rental/'
@@ -165,6 +177,7 @@ export interface RootRouteChildren {
   HealthRoute: typeof HealthRoute
   LoginRoute: typeof LoginRoute
   RegisterRoute: typeof RegisterRoute
+  ApiCustomerUploadRoute: typeof ApiCustomerUploadRoute
   SessionSplatRoute: typeof SessionSplatRoute
   CartIndexRoute: typeof CartIndexRoute
   RentalIndexRoute: typeof RentalIndexRoute
@@ -208,6 +221,13 @@ declare module '@tanstack/react-router' {
       path: '/register'
       fullPath: '/register'
       preLoaderRoute: typeof RegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/customer-upload': {
+      id: '/api/customer-upload'
+      path: '/api/customer-upload'
+      fullPath: '/api/customer-upload'
+      preLoaderRoute: typeof ApiCustomerUploadRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/cart/': {
@@ -261,6 +281,7 @@ const rootRouteChildren: RootRouteChildren = {
   HealthRoute: HealthRoute,
   LoginRoute: LoginRoute,
   RegisterRoute: RegisterRoute,
+  ApiCustomerUploadRoute: ApiCustomerUploadRoute,
   SessionSplatRoute: SessionSplatRoute,
   CartIndexRoute: CartIndexRoute,
   RentalIndexRoute: RentalIndexRoute,

@@ -19,6 +19,10 @@ const serverEnvSchema = z.object({
 	STOREFRONT_TENANT_JWT_SECRET: z.string().min(1),
 	STOREFRONT_TENANT_JWT_ISSUER: z.string().min(1),
 	STOREFRONT_TENANT_JWT_AUDIENCE: z.string().min(1),
+	CLOUDFLARE_ACCOUNT_ID: z.string().min(1),
+	R2_CUSTOMERS_ACCESS_KEY_ID: z.string().min(1),
+	R2_CUSTOMERS_SECRET_ACCESS_KEY: z.string().min(1),
+	R2_CUSTOMERS_BUCKET_NAME: z.string().min(1),
 });
 
 export type ServerEnvironment = z.infer<typeof serverEnvSchema>;
