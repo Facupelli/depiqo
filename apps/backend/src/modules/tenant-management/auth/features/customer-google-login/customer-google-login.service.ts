@@ -52,10 +52,7 @@ export class CustomerGoogleLoginService {
         canonicalHost: transaction.canonicalHost,
       };
     } catch (error) {
-      if (
-        error instanceof GoogleAuthorizationCodeExchangeError ||
-        error instanceof GoogleIdentityVerificationError
-      ) {
+      if (error instanceof GoogleAuthorizationCodeExchangeError || error instanceof GoogleIdentityVerificationError) {
         throw new UnauthorizedException(error.message);
       }
 

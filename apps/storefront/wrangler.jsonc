@@ -19,6 +19,11 @@
   },
   "routes": [
     {
+      "pattern": "sign.depiqo.com",
+      "zone_name": "depiqo.com",
+      "custom_domain": true,
+    },
+    {
       "pattern": "auth.depiqo.com",
       "zone_name": "depiqo.com",
       "custom_domain": true,

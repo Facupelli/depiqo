@@ -98,12 +98,15 @@ It does not change backend bounded-context ownership.
 
 ## 5. Migrate public document signing
 
-- [ ] Establish the canonical public signing host, preferably
-      `sign.depiqo.com`, and update signing invitations to generate
-      platform-host URLs.
+- [x] Establish `sign.depiqo.com` as the canonical public-signing host:
+      route it to Storefront and classify it as a platform/non-tenant host.
 
       Public signing must not depend on a customer session, tenant subdomain,
       custom tenant domain, or Storefront tenant context.
+
+- [ ] After the Storefront `/signing` surface and public-token transport are
+      deployed and verified on `sign.depiqo.com`, update signing invitations
+      to generate platform-host URLs.
 
 - [ ] Add the Storefront platform-host `/signing?token=` route and a separate
       same-origin public-token BFF.

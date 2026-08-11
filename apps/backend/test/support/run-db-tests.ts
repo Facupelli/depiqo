@@ -37,6 +37,7 @@ async function main(): Promise<void> {
     R2_BUCKET_NAME: 'test-r2-bucket',
     R2_ACCESS_KEY_ID: 'test-r2-access-key',
     R2_SECRET_ACCESS_KEY: 'test-r2-secret-key',
+    PUBLIC_SIGNING_ORIGIN: 'https://sign.example.test',
     RESEND_API_KEY: 're_test',
     NOTIFICATIONS_EMAIL_FROM: 'test@example.com',
     NOTIFICATIONS_MUTED_CHANNELS_BY_ENV: '{"test":["EMAIL"]}',

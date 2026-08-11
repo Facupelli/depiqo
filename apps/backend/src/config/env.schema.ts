@@ -50,6 +50,7 @@ export const EnvSchema = z.object({
   R2_SECRET_ACCESS_KEY: z.string(),
   DOCUMENT_SIGNING_SESSION_TTL_SECONDS: z.coerce.number().default(604800),
   DOCUMENT_SIGNING_RECEIPT_TOKEN_TTL_SECONDS: z.coerce.number().default(604800),
+  PUBLIC_SIGNING_ORIGIN: z.url(),
 
   RESEND_API_KEY: z.string(),
   NOTIFICATIONS_EMAIL_FROM: z.string(),

@@ -23,10 +23,17 @@ export class TenantContextResolverService {
     private readonly prisma: PrismaService,
   ) {
     const rootDomain = this.configService.get('ROOT_DOMAIN');
+    const publicSigningHostname = new URL(this.configService.get('PUBLIC_SIGNING_ORIGIN')).hostname;
 
     this.rootDomain = rootDomain;
     this.adminHostname = `app.${rootDomain}`;
-    this.platformHostnames = new Set([rootDomain, `www.${rootDomain}`, `auth.${rootDomain}`, 'localhost']);
+    this.platformHostnames = new Set([
+      rootDomain,
+      `www.${rootDomain}`,
+      `auth.${rootDomain}`,
+      publicSigningHostname,
+      'localhost',
+    ]);
   }
 
   async resolveByHostname(hostname: string): Promise<TrustedTenantContext> {

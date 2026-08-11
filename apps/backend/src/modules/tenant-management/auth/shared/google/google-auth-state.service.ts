@@ -27,9 +27,7 @@ export class GoogleAuthStateService {
 
   async issueState(params: IssueGoogleAuthStateParams): Promise<string> {
     const state = randomUUID();
-    const expiresAt = new Date(
-      Date.now() + this.configService.get('GOOGLE_AUTH_STATE_EXPIRATION_TIME_SECONDS') * 1000,
-    );
+    const expiresAt = new Date(Date.now() + this.configService.get('GOOGLE_AUTH_STATE_EXPIRATION_TIME_SECONDS') * 1000);
 
     await this.prisma.client.customerGoogleOAuthTransaction.create({
       data: {
