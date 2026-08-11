@@ -15,8 +15,10 @@ import { Route as HealthRouteImport } from './routes/health'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as OnboardRouteImport } from './routes/onboard'
 import { Route as RegisterRouteImport } from './routes/register'
+import { Route as SigningRouteImport } from './routes/signing'
 import { Route as ApiCustomerUploadRouteImport } from './routes/api/customer-upload'
 import { Route as CartIndexRouteImport } from './routes/cart/index'
+import { Route as PublicSigningSplatRouteImport } from './routes/public-signing/$'
 import { Route as RentalIndexRouteImport } from './routes/rental/index'
 import { Route as SessionSplatRouteImport } from './routes/session/$'
 import { Route as AuthGoogleCallbackRouteImport } from './routes/auth/google/callback'
@@ -53,6 +55,11 @@ const RegisterRoute = RegisterRouteImport.update({
   path: '/register',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SigningRoute = SigningRouteImport.update({
+  id: '/signing',
+  path: '/signing',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiCustomerUploadRoute = ApiCustomerUploadRouteImport.update({
   id: '/api/customer-upload',
   path: '/api/customer-upload',
@@ -61,6 +68,11 @@ const ApiCustomerUploadRoute = ApiCustomerUploadRouteImport.update({
 const CartIndexRoute = CartIndexRouteImport.update({
   id: '/cart/',
   path: '/cart/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PublicSigningSplatRoute = PublicSigningSplatRouteImport.update({
+  id: '/public-signing/$',
+  path: '/public-signing/$',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RentalIndexRoute = RentalIndexRouteImport.update({
@@ -96,7 +108,9 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/onboard': typeof OnboardRoute
   '/register': typeof RegisterRoute
+  '/signing': typeof SigningRoute
   '/api/customer-upload': typeof ApiCustomerUploadRoute
+  '/public-signing/$': typeof PublicSigningSplatRoute
   '/session/$': typeof SessionSplatRoute
   '/cart/': typeof CartIndexRoute
   '/rental/': typeof RentalIndexRoute
@@ -111,7 +125,9 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/onboard': typeof OnboardRoute
   '/register': typeof RegisterRoute
+  '/signing': typeof SigningRoute
   '/api/customer-upload': typeof ApiCustomerUploadRoute
+  '/public-signing/$': typeof PublicSigningSplatRoute
   '/session/$': typeof SessionSplatRoute
   '/cart': typeof CartIndexRoute
   '/rental': typeof RentalIndexRoute
@@ -127,7 +143,9 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/onboard': typeof OnboardRoute
   '/register': typeof RegisterRoute
+  '/signing': typeof SigningRoute
   '/api/customer-upload': typeof ApiCustomerUploadRoute
+  '/public-signing/$': typeof PublicSigningSplatRoute
   '/session/$': typeof SessionSplatRoute
   '/cart/': typeof CartIndexRoute
   '/rental/': typeof RentalIndexRoute
@@ -144,7 +162,9 @@ export interface FileRouteTypes {
     | '/login'
     | '/onboard'
     | '/register'
+    | '/signing'
     | '/api/customer-upload'
+    | '/public-signing/$'
     | '/session/$'
     | '/cart/'
     | '/rental/'
@@ -159,7 +179,9 @@ export interface FileRouteTypes {
     | '/login'
     | '/onboard'
     | '/register'
+    | '/signing'
     | '/api/customer-upload'
+    | '/public-signing/$'
     | '/session/$'
     | '/cart'
     | '/rental'
@@ -174,7 +196,9 @@ export interface FileRouteTypes {
     | '/login'
     | '/onboard'
     | '/register'
+    | '/signing'
     | '/api/customer-upload'
+    | '/public-signing/$'
     | '/session/$'
     | '/cart/'
     | '/rental/'
@@ -190,7 +214,9 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   OnboardRoute: typeof OnboardRoute
   RegisterRoute: typeof RegisterRoute
+  SigningRoute: typeof SigningRoute
   ApiCustomerUploadRoute: typeof ApiCustomerUploadRoute
+  PublicSigningSplatRoute: typeof PublicSigningSplatRoute
   SessionSplatRoute: typeof SessionSplatRoute
   CartIndexRoute: typeof CartIndexRoute
   RentalIndexRoute: typeof RentalIndexRoute
@@ -243,6 +269,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RegisterRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/signing': {
+      id: '/signing'
+      path: '/signing'
+      fullPath: '/signing'
+      preLoaderRoute: typeof SigningRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/customer-upload': {
       id: '/api/customer-upload'
       path: '/api/customer-upload'
@@ -255,6 +288,13 @@ declare module '@tanstack/react-router' {
       path: '/cart'
       fullPath: '/cart/'
       preLoaderRoute: typeof CartIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/public-signing/$': {
+      id: '/public-signing/$'
+      path: '/public-signing/$'
+      fullPath: '/public-signing/$'
+      preLoaderRoute: typeof PublicSigningSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/rental/': {
@@ -302,7 +342,9 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   OnboardRoute: OnboardRoute,
   RegisterRoute: RegisterRoute,
+  SigningRoute: SigningRoute,
   ApiCustomerUploadRoute: ApiCustomerUploadRoute,
+  PublicSigningSplatRoute: PublicSigningSplatRoute,
   SessionSplatRoute: SessionSplatRoute,
   CartIndexRoute: CartIndexRoute,
   RentalIndexRoute: RentalIndexRoute,

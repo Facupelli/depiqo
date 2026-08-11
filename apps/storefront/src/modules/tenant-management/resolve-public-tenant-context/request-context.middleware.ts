@@ -1,5 +1,6 @@
 import { createMiddleware } from "@tanstack/react-start";
 import { logStorefrontServerEvent } from "@/shared/server/logging/storefront-server-logger.server";
+import { getPublicSigningHostname } from "@/shared/server/public-signing-browser-bff/public-signing-host.server";
 import { normalizeRequestHostname } from "./hostname";
 import {
 	resolveTrustedTenantContext,
@@ -51,6 +52,19 @@ export const storefrontRequestContextMiddleware = createMiddleware().server(
 			hostname: hostnameResult.hostname,
 			requestId,
 		} satisfies StorefrontRequestContext;
+
+		if (storefrontRequest.hostname === getPublicSigningHostname()) {
+			if (!isPublicSigningPath(new URL(request.url).pathname)) {
+				return tenantResolutionFailureResponse(
+					new TenantResolverFailure("unknown-host", 404),
+					requestId,
+				);
+			}
+
+			const response = await next({ context: { storefrontRequest } });
+			response.response.headers.set(REQUEST_ID_HEADER, requestId);
+			return response;
+		}
 
 		try {
 			const tenantContext =
@@ -123,6 +137,16 @@ function tenantResolutionFailureResponse(
 				[REQUEST_ID_HEADER]: requestId,
 			},
 		},
+	);
+}
+
+function isPublicSigningPath(pathname: string): boolean {
+	return (
+		pathname === "/signing" ||
+		pathname.startsWith("/public-signing/") ||
+		pathname.startsWith("/assets/") ||
+		pathname.startsWith("/_build/") ||
+		pathname === "/favicon.svg"
 	);
 }
 

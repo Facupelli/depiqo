@@ -108,15 +108,17 @@ It does not change backend bounded-context ownership.
       deployed and verified on `sign.depiqo.com`, update signing invitations
       to generate platform-host URLs.
 
-- [ ] Add the Storefront platform-host `/signing?token=` route and a separate
-      same-origin public-token BFF.
+- [x] Add the Storefront platform-host `/signing?token=` route and a separate
+      same-origin public-token BFF for signing-session inspection and acceptance.
 
-      The public-token transport must:
-      - forward signing tokens as backend Bearer credentials;
-      - support the existing CSRF requirement for acceptance;
-      - forward receipt tokens for signed-document downloads;
-      - never attach customer-session or signed tenant-context credentials;
-      - expose only explicitly allowlisted public signing operations.
+      The public-token transport:
+      - forwards signing tokens as backend Bearer credentials;
+      - supports the existing CSRF requirement for acceptance;
+      - never attaches customer-session or signed tenant-context credentials;
+      - exposes only explicitly allowlisted public signing operations.
+
+      Receipt-token forwarding and signed-document downloads remain deferred to
+      the streaming-proxy task below.
 
 - [ ] Port the valid public signer experience to Storefront:
       - signing-session loading;

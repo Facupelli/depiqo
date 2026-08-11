@@ -15,6 +15,7 @@ const backendOriginSchema = z.url().refine((value) => {
 
 const serverEnvSchema = z.object({
 	BACKEND_URL: backendOriginSchema,
+	PUBLIC_SIGNING_ORIGIN: z.url(),
 	BFF_INTERNAL_TOKEN: z.string().min(1),
 	STOREFRONT_TENANT_JWT_SECRET: z.string().min(1),
 	STOREFRONT_TENANT_JWT_ISSUER: z.string().min(1),

@@ -37,6 +37,14 @@ export const Route = createRootRouteWithContext<StorefrontRouterContext>()({
 			throw notFound();
 		}
 
+		if (
+			resolution.surface === "public-signing" &&
+			location.pathname !== "/signing" &&
+			!location.pathname.startsWith("/public-signing/")
+		) {
+			throw notFound();
+		}
+
 		if (resolution.context.face === "platform") {
 			const sharedAuthHostname = new URL(clientEnv.VITE_SHARED_AUTH_ORIGIN)
 				.hostname;
