@@ -29,13 +29,13 @@ export type SigningInvitationDeliveryResult =
 
 @Injectable()
 export class SigningNotificationService {
-  private readonly rootDomain: string;
+  private readonly publicSigningOrigin: string;
 
   constructor(
     private readonly notificationOrchestrator: NotificationOrchestrator,
     private readonly configService: ConfigService<Env, true>,
   ) {
-    this.rootDomain = this.configService.get('ROOT_DOMAIN');
+    this.publicSigningOrigin = this.configService.get('PUBLIC_SIGNING_ORIGIN');
   }
 
   async sendInvitation(input: {
@@ -50,7 +50,7 @@ export class SigningNotificationService {
     expiresAt: Date;
     resend: boolean;
   }): Promise<SigningInvitationDeliveryResult> {
-    const signingUrl = this.buildPortalSigningUrl(input.tenant, input.rawToken);
+    const signingUrl = this.buildPublicSigningUrl(input.rawToken);
     const dispatchResult = await this.notificationOrchestrator.dispatch({
       tenantId: input.tenant.id,
       notificationType: NotificationType.DOCUMENT_SIGNING_INVITATION,
@@ -120,9 +120,10 @@ export class SigningNotificationService {
     };
   }
 
-  private buildPortalSigningUrl(tenant: TenantContext, rawToken: string): string {
-    const hostname = tenant.customDomain ?? `${tenant.slug}.${this.rootDomain}`;
-    return `https://${hostname}/signing?token=${encodeURIComponent(rawToken)}`;
+  private buildPublicSigningUrl(rawToken: string): string {
+    const signingUrl = new URL('/signing', this.publicSigningOrigin);
+    signingUrl.searchParams.set('token', rawToken);
+    return signingUrl.toString();
   }
 
   private getSigningDocumentLabel(documentType: SigningDocumentType): string {

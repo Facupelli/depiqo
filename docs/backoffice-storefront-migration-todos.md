@@ -104,9 +104,10 @@ It does not change backend bounded-context ownership.
       Public signing must not depend on a customer session, tenant subdomain,
       custom tenant domain, or Storefront tenant context.
 
-- [ ] After the Storefront `/signing` surface and public-token transport are
+- [x] After the Storefront `/signing` surface and public-token transport are
       deployed and verified on `sign.depiqo.com`, update signing invitations
-      to generate platform-host URLs.
+      to generate platform-host URLs. Preserve existing tenant/custom-domain
+      signing links by redirecting them to the canonical signing host.
 
 - [x] Add the Storefront platform-host `/signing?token=` route and a separate
       same-origin public-token BFF for signing-session inspection and acceptance.

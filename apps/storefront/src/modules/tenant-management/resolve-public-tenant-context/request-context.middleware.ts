@@ -1,4 +1,5 @@
 import { createMiddleware } from "@tanstack/react-start";
+import { getServerEnvironment } from "@/config/server-env";
 import { logStorefrontServerEvent } from "@/shared/server/logging/storefront-server-logger.server";
 import { getPublicSigningHostname } from "@/shared/server/public-signing-browser-bff/public-signing-host.server";
 import { normalizeRequestHostname } from "./hostname";
@@ -71,6 +72,12 @@ export const storefrontRequestContextMiddleware = createMiddleware().server(
 				await resolveTrustedTenantContext(storefrontRequest);
 			if (
 				tenantContext.face === "storefront" &&
+				new URL(request.url).pathname === "/signing"
+			) {
+				return redirectToPublicSigningHost(request, requestId);
+			}
+			if (
+				tenantContext.face === "storefront" &&
 				tenantContext.host !== tenantContext.canonicalHost
 			) {
 				return redirectToCanonicalHost(
@@ -105,6 +112,24 @@ function redirectToCanonicalHost(
 	location.hostname = canonicalHost;
 	location.port = "";
 
+	return redirectResponse(location, requestId);
+}
+
+function redirectToPublicSigningHost(
+	request: Request,
+	requestId: string,
+): Response {
+	const incomingUrl = new URL(request.url);
+	const location = new URL(
+		"/signing",
+		getServerEnvironment().PUBLIC_SIGNING_ORIGIN,
+	);
+	location.search = incomingUrl.search;
+
+	return redirectResponse(location, requestId);
+}
+
+function redirectResponse(location: URL, requestId: string): Response {
 	return new Response(null, {
 		status: 308,
 		headers: {
