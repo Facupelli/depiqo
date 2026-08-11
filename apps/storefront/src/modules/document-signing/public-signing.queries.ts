@@ -1,6 +1,5 @@
 import type {
 	AcceptPublicSigningSessionBodyDto,
-	AcceptPublicSigningSessionResponseDto,
 	GetPublicSigningSessionResponseDto,
 } from "@repo/api-contracts";
 import {
@@ -13,13 +12,17 @@ import type { ProblemDetailsError } from "@/shared/errors";
 import {
 	acceptPublicSigningSession,
 	getPublicSigningSession,
+	type PublicSigningAcceptanceResult,
 } from "./public-signing.api";
+import { fetchUnsignedSigningDocument } from "./public-signing-document.api";
 import type { PublicSigningToken } from "./public-signing-token";
 
 export const publicSigningKeys = {
 	all: () => ["storefront", "document-signing", "public"] as const,
 	session: (token: PublicSigningToken) =>
 		[...publicSigningKeys.all(), "session", fingerprintToken(token)] as const,
+	unsignedDocument: (requestId: string) =>
+		[...publicSigningKeys.all(), "unsigned-document", requestId] as const,
 };
 
 type PublicSigningSessionQueryOptions<
@@ -47,6 +50,14 @@ export const publicSigningQueries = {
 			queryFn: () => getPublicSigningSession(token),
 			...overrides,
 		}),
+	unsignedDocument: (token: PublicSigningToken, requestId?: string) =>
+		queryOptions<Blob, ProblemDetailsError>({
+			queryKey: publicSigningKeys.unsignedDocument(requestId ?? "pending"),
+			queryFn: ({ signal }) => fetchUnsignedSigningDocument(token, signal),
+			enabled: Boolean(requestId),
+			gcTime: 0,
+			retry: false,
+		}),
 };
 
 export function usePublicSigningSession(
@@ -56,9 +67,16 @@ export function usePublicSigningSession(
 	return useQuery(publicSigningQueries.session(token, overrides));
 }
 
+export function useUnsignedSigningDocument(
+	token: PublicSigningToken,
+	requestId?: string,
+) {
+	return useQuery(publicSigningQueries.unsignedDocument(token, requestId));
+}
+
 export function useAcceptPublicSigningSession() {
 	return useMutation<
-		AcceptPublicSigningSessionResponseDto,
+		PublicSigningAcceptanceResult,
 		ProblemDetailsError,
 		{
 			token: PublicSigningToken;

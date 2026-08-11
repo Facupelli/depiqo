@@ -1,7 +1,7 @@
-import type { AcceptPublicSigningSessionResponseDto } from "@repo/api-contracts";
 import { FileCheck2, FileSearch, Link2Off, ShieldAlert } from "lucide-react";
 import { useId, useState } from "react";
 import { getProblemDetailsStatus, ProblemDetailsError } from "@/shared/errors";
+import type { PublicSigningAcceptanceResult } from "../public-signing.api";
 import {
 	useAcceptPublicSigningSession,
 	usePublicSigningSession,
@@ -12,8 +12,11 @@ import {
 	type PublicSigningFormValues,
 	toAcceptPublicSigningSessionDto,
 } from "./public-signing-form.schema";
+import { PublicSigningPdfViewer } from "./public-signing-pdf-viewer";
 import { PublicSigningSessionDetails } from "./public-signing-session-details";
+import { PublicSigningSignedReceiptDownload } from "./public-signing-signed-receipt-download";
 import { PublicSigningTerminalState } from "./public-signing-terminal-state";
+import { useUnsignedSigningDocument } from "./use-unsigned-signing-document";
 
 type PublicSigningPageProps = {
 	token: PublicSigningToken;
@@ -25,8 +28,12 @@ export function PublicSigningPage({ token }: PublicSigningPageProps) {
 	const [terminalStatus, setTerminalStatus] = useState<number | null>(null);
 	const [unexpectedError, setUnexpectedError] = useState<string | null>(null);
 	const [acceptanceResult, setAcceptanceResult] =
-		useState<AcceptPublicSigningSessionResponseDto | null>(null);
+		useState<PublicSigningAcceptanceResult | null>(null);
 	const sessionQuery = usePublicSigningSession(token, { retry: false });
+	const unsignedDocument = useUnsignedSigningDocument(
+		token,
+		sessionQuery.data?.requestId,
+	);
 	const acceptMutation = useAcceptPublicSigningSession();
 
 	async function handleSubmit(values: PublicSigningFormValues) {
@@ -70,6 +77,12 @@ export function PublicSigningPage({ token }: PublicSigningPageProps) {
 				title="Contrato firmado correctamente"
 				description="Tu firma quedó registrada correctamente."
 				detail={`Firmado el ${formatDateTime(acceptanceResult.signedAt)}.`}
+				action={
+					<PublicSigningSignedReceiptDownload
+						receiptToken={acceptanceResult.receiptToken}
+						receiptTokenExpiresAt={acceptanceResult.receiptTokenExpiresAt}
+					/>
+				}
 			/>
 		);
 	}
@@ -79,13 +92,7 @@ export function PublicSigningPage({ token }: PublicSigningPageProps) {
 	}
 
 	if (sessionQuery.isPending) {
-		return (
-			<main className="grid min-h-svh place-items-center bg-neutral-100 px-4 py-10">
-				<p className="rounded-lg border border-neutral-200 bg-white px-5 py-4 text-sm text-neutral-600 shadow-sm">
-					Cargando contrato para firma...
-				</p>
-			</main>
-		);
+		return <PublicSigningLoadingState />;
 	}
 
 	if (sessionQuery.isError) {
@@ -95,10 +102,27 @@ export function PublicSigningPage({ token }: PublicSigningPageProps) {
 		);
 	}
 
+	if (unsignedDocument.isPending) {
+		return <PublicSigningLoadingState />;
+	}
+
+	if (unsignedDocument.isError) {
+		return renderDocumentUnavailableState(unsignedDocument.error);
+	}
+
+	if (!unsignedDocument.objectUrl) {
+		return <PublicSigningLoadingState />;
+	}
+
 	return (
 		<main className="min-h-svh bg-neutral-100 px-4 py-8 sm:px-6 sm:py-12">
 			<div className="mx-auto grid w-full max-w-3xl gap-8">
 				<PublicSigningSessionDetails session={sessionQuery.data} />
+				<PublicSigningPdfViewer
+					objectUrl={unsignedDocument.objectUrl}
+					documentName={sessionQuery.data.document.displayFileName}
+					documentNumber={sessionQuery.data.document.documentNumber}
+				/>
 				<section
 					aria-labelledby={signatureHeadingId}
 					className="rounded-xl border border-neutral-200 bg-white p-5 shadow-sm sm:p-7"
@@ -119,6 +143,16 @@ export function PublicSigningPage({ token }: PublicSigningPageProps) {
 					/>
 				</section>
 			</div>
+		</main>
+	);
+}
+
+function PublicSigningLoadingState() {
+	return (
+		<main className="grid min-h-svh place-items-center bg-neutral-100 px-4 py-10">
+			<p className="rounded-lg border border-neutral-200 bg-white px-5 py-4 text-sm text-neutral-600 shadow-sm">
+				Cargando contrato para firma...
+			</p>
 		</main>
 	);
 }
@@ -172,6 +206,22 @@ function renderTerminalState(status: number | null, detail: string | null) {
 				/>
 			);
 	}
+}
+
+function renderDocumentUnavailableState(error: unknown) {
+	const status = getProblemDetailsStatus(error) ?? null;
+	if ([404, 409, 410].includes(status ?? -1)) {
+		return renderTerminalState(status, getProblemDetailsMessage(error));
+	}
+
+	return (
+		<PublicSigningTerminalState
+			icon={FileSearch}
+			title="Documento para firma no disponible"
+			description="No pudimos recuperar el contrato que debes revisar. No es posible completar la firma sin el documento."
+			detail={getProblemDetailsMessage(error) ?? undefined}
+		/>
+	);
 }
 
 function getProblemDetailsMessage(error: unknown): string | null {

@@ -1,5 +1,6 @@
 import { getCsrfTokenContract } from "@repo/api-contracts";
 import { getServerEnvironment } from "@/config/server-env";
+import { PublicSigningReceiptTokenSchema } from "@/modules/document-signing/public-signing-receipt-token";
 import { PublicSigningTokenSchema } from "@/modules/document-signing/public-signing-token";
 import { getPublicSigningHostname } from "./public-signing-host.server";
 
@@ -8,9 +9,23 @@ const BACKEND_SESSION_COOKIE_NAME = "sid";
 const BODYLESS_STATUSES = new Set([101, 204, 205, 304]);
 
 const OPERATIONS = {
-	"document-signing/public/sessions/me": { method: "GET" },
-	"document-signing/public/sessions/me/accept": { method: "POST" },
-	csrf: { method: "GET" },
+	"document-signing/public/sessions/me": {
+		method: "GET",
+		capability: "signing",
+	},
+	"document-signing/public/sessions/me/accept": {
+		method: "POST",
+		capability: "signing",
+	},
+	"document-signing/public/sessions/me/unsigned-pdf": {
+		method: "GET",
+		capability: "signing",
+	},
+	"document-signing/public/receipts/signed-pdf": {
+		method: "GET",
+		capability: "receipt",
+	},
+	csrf: { method: "GET", capability: "none" },
 } as const;
 
 type PublicSigningOperation = keyof typeof OPERATIONS;
@@ -56,22 +71,31 @@ export async function proxyPublicSigningBrowserBffRequest(
 
 	if (splat === "csrf") return bootstrapCsrfSession(requestId);
 
-	const token = getSigningToken(request.headers.get("authorization"));
-	if (!token) {
+	const operation = OPERATIONS[splat];
+	const capability = getCapability(
+		request.headers.get("authorization"),
+		operation.capability,
+	);
+	if (!capability) {
 		return problemResponse(
 			400,
-			"Malformed signing token",
-			"Authorization must contain a valid Bearer signing token.",
+			"Malformed document capability",
+			"Authorization must contain a valid Bearer document capability.",
 			requestId,
 		);
 	}
 
 	const upstreamUrl = new URL(`/${splat}`, getServerEnvironment().BACKEND_URL);
+	if (operation.capability === "receipt") {
+		upstreamUrl.searchParams.set("token", capability);
+	}
 	const headers = new Headers({
 		accept: request.headers.get("accept") ?? "application/json",
-		authorization: `Bearer ${token}`,
 		"x-request-id": requestId,
 	});
+	if (operation.capability === "signing") {
+		headers.set("authorization", `Bearer ${capability}`);
+	}
 	const contentType = request.headers.get("content-type");
 	if (contentType) headers.set("content-type", contentType);
 	const userAgent = request.headers.get("user-agent");
@@ -173,11 +197,18 @@ function isPublicSigningOperation(
 	return operation?.method === method.toUpperCase();
 }
 
-function getSigningToken(authorization: string | null): string | null {
+function getCapability(
+	authorization: string | null,
+	type: "signing" | "receipt" | "none",
+): string | null {
 	const match = authorization?.trim().match(/^Bearer\s+(.+)$/i);
-	if (!match) return null;
+	if (!match || type === "none") return null;
 
-	const parsed = PublicSigningTokenSchema.safeParse(match[1]);
+	const schema =
+		type === "signing"
+			? PublicSigningTokenSchema
+			: PublicSigningReceiptTokenSchema;
+	const parsed = schema.safeParse(match[1]);
 	return parsed.success ? parsed.data : null;
 }
 
@@ -238,11 +269,18 @@ function relayUpstreamResponse(
 	requestId: string,
 ): Response {
 	const headers = new Headers();
-	for (const name of ["content-type", "location", "x-request-id"]) {
+	for (const name of [
+		"content-type",
+		"content-disposition",
+		"content-length",
+		"location",
+		"x-request-id",
+	]) {
 		const value = upstream.headers.get(name);
 		if (value) headers.set(name, value);
 	}
-	headers.set("cache-control", "no-store");
+	headers.set("cache-control", "private, no-store");
+	headers.set("x-content-type-options", "nosniff");
 	headers.set("x-request-id", requestId);
 
 	return new Response(
@@ -263,7 +301,11 @@ function problemResponse(
 		{ type: "about:blank", title, status, detail, requestId },
 		{
 			status,
-			headers: { "cache-control": "no-store", "x-request-id": requestId },
+			headers: {
+				"cache-control": "private, no-store",
+				"x-content-type-options": "nosniff",
+				"x-request-id": requestId,
+			},
 		},
 	);
 }

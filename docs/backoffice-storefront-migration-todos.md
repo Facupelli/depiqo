@@ -128,10 +128,10 @@ It does not change backend bounded-context ownership.
       - invalid, expired, unavailable, and signed terminal states.
 
       Preserve the backend signature-size limit and current acceptance contract.
-      Unsigned contract viewing/download and signed receipt download remain
-      deferred until the streaming proxies below are available.
+      The signing flow includes unsigned contract viewing/download and signed
+      receipt download through the Storefront public-token transport.
 
-- [ ] Add Storefront streaming proxies for:
+- [x] Add Storefront streaming proxies for:
       - `GET /document-signing/public/sessions/me/unsigned-pdf`
       - `GET /document-signing/public/receipts/signed-pdf?token=`
 

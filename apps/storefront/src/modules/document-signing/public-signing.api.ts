@@ -12,7 +12,18 @@ import {
 import { problemDetailsSchema } from "@repo/schemas";
 import { z } from "zod";
 import { ProblemDetailsError } from "@/shared/errors";
+import {
+	type PublicSigningReceiptToken,
+	PublicSigningReceiptTokenSchema,
+} from "./public-signing-receipt-token";
 import type { PublicSigningToken } from "./public-signing-token";
+
+export type PublicSigningAcceptanceResult = Omit<
+	AcceptPublicSigningSessionResponseDto,
+	"downloadUrl"
+> & {
+	receiptToken: PublicSigningReceiptToken;
+};
 
 const PUBLIC_SIGNING_BFF_PREFIX = "/public-signing";
 const envelopeSchema = z.object({ data: z.unknown() });
@@ -37,7 +48,7 @@ export async function acceptPublicSigningSession({
 }: {
 	token: PublicSigningToken;
 	body: AcceptPublicSigningSessionBodyDto;
-}): Promise<AcceptPublicSigningSessionResponseDto> {
+}): Promise<PublicSigningAcceptanceResult> {
 	const csrfToken = await getPublicSigningCsrfToken();
 	const response = await publicSigningApiFetch(
 		acceptPublicSigningSessionContract.path,
@@ -52,7 +63,45 @@ export async function acceptPublicSigningSession({
 		},
 	);
 
-	return AcceptPublicSigningSessionResponseSchema.parse(response);
+	return toPublicSigningAcceptanceResult(
+		AcceptPublicSigningSessionResponseSchema.parse(response),
+	);
+}
+
+function toPublicSigningAcceptanceResult(
+	response: AcceptPublicSigningSessionResponseDto,
+): PublicSigningAcceptanceResult {
+	let url: URL;
+	try {
+		url = new URL(response.downloadUrl, "https://backend.invalid");
+	} catch {
+		throw invalidReceiptDownloadUrlError();
+	}
+
+	const tokenEntries = [...url.searchParams.entries()];
+	const token =
+		response.downloadUrl.startsWith("/") &&
+		url.origin === "https://backend.invalid" &&
+		url.pathname === "/document-signing/public/receipts/signed-pdf" &&
+		url.hash === "" &&
+		tokenEntries.length === 1 &&
+		tokenEntries[0]?.[0] === "token"
+			? PublicSigningReceiptTokenSchema.safeParse(tokenEntries[0][1])
+			: null;
+
+	if (!token?.success) throw invalidReceiptDownloadUrlError();
+
+	const { downloadUrl: _downloadUrl, ...result } = response;
+	return { ...result, receiptToken: token.data };
+}
+
+function invalidReceiptDownloadUrlError(): ProblemDetailsError {
+	return new ProblemDetailsError({
+		type: "about:blank",
+		title: "Invalid receipt download URL",
+		status: 502,
+		detail: "The signing service returned an invalid receipt download URL.",
+	});
 }
 
 async function getPublicSigningCsrfToken(): Promise<string> {
