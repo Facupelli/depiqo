@@ -33,8 +33,8 @@ export function OrdersCalendarPage({
 		selectedBranch && visibleRange
 			? {
 					branchId: selectedBranch.id,
-					from: new Date(visibleRange.rangeStart),
-					to: new Date(visibleRange.rangeEnd),
+					from: visibleRange.from,
+					to: visibleRange.to,
 				}
 			: undefined;
 

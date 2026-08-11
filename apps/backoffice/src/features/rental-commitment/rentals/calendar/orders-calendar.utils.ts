@@ -17,8 +17,8 @@ export type OrdersCalendarSearch = {
 };
 
 export type OrdersCalendarRange = {
-	rangeStart: string;
-	rangeEnd: string;
+	from: string;
+	to: string;
 	title: string;
 	view: OrdersCalendarView;
 	date: string;
@@ -38,6 +38,19 @@ export const ORDERS_CALENDAR_VIEW_LABELS: Record<OrdersCalendarView, string> = {
 
 export function getDefaultOrdersCalendarDate(timezone: string): string {
 	return dayjs().tz(timezone).format("YYYY-MM-DD");
+}
+
+export function getInclusiveCalendarRange(
+	startStr: string,
+	exclusiveEndStr: string,
+): Pick<OrdersCalendarRange, "from" | "to"> {
+	return {
+		from: startStr.slice(0, 10),
+		to: dayjs
+			.utc(exclusiveEndStr.slice(0, 10))
+			.subtract(1, "day")
+			.format("YYYY-MM-DD"),
+	};
 }
 
 export function toOrdersCalendarEvent(

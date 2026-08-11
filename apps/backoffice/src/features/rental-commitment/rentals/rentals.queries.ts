@@ -84,8 +84,8 @@ function parseRentalsCalendarResponse(
 	return response.map((rental) => ({
 		...rental,
 		createdAt: dayjs.utc(rental.createdAt),
-		pickupDate: dayjs.utc(rental.pickupAt).startOf("day"),
-		returnDate: dayjs.utc(rental.returnAt).startOf("day"),
+		pickupDate: dayjs.utc(rental.pickupDate),
+		returnDate: dayjs.utc(rental.returnDate),
 		pickupAt: dayjs.utc(rental.pickupAt),
 		returnAt: dayjs.utc(rental.returnAt),
 	}));

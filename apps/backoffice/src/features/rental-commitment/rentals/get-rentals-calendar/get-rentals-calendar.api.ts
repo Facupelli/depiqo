@@ -13,8 +13,8 @@ export async function getRentalsCalendar(
 	const parsedQuery = GetRentalsCalendarQuerySchema.parse(query);
 	const searchParams = new URLSearchParams({
 		branchId: parsedQuery.branchId,
-		from: parsedQuery.from.toISOString(),
-		to: parsedQuery.to.toISOString(),
+		from: parsedQuery.from,
+		to: parsedQuery.to,
 	});
 
 	const response = await apiFetch(

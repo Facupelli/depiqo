@@ -33,6 +33,7 @@ import { cn } from "@/lib/utils";
 import { formatOrderNumber } from "@/shared/utils/formatters";
 import {
 	formatOrdersCalendarTooltipDateTime,
+	getInclusiveCalendarRange,
 	getOrdersCalendarEventOrder,
 	ORDERS_CALENDAR_VIEW_LABELS,
 	type OrdersCalendarRange,
@@ -170,18 +171,14 @@ export function OrdersCalendar({
 	}
 
 	function handleDatesSet(arg: DatesSetArg) {
-		const calendarApi = calendarRef.current?.getApi();
-		if (!calendarApi) {
-			return;
-		}
-
+		const calendarApi = arg.view.calendar;
 		const anchorDate = calendarApi.getDate();
+
 		setTitle(arg.view.title);
 		onRangeChange({
 			view: arg.view.type as OrdersCalendarView,
 			date: calendarApi.formatIso(anchorDate, true),
-			rangeStart: arg.startStr,
-			rangeEnd: arg.endStr,
+			...getInclusiveCalendarRange(arg.startStr, arg.endStr),
 			title: arg.view.title,
 		});
 	}
