@@ -21,6 +21,7 @@ import {
   TenantContext,
   GetBranchContextInput,
   GetBranchContextsInput,
+  GetRentalBudgetDocumentContextInput,
   GetRentalCustomerNotificationRecipientInput,
   GetTenantAdminNotificationRecipientsInput,
   GetTenantConfigInput,
@@ -28,6 +29,7 @@ import {
   GetTenantInput,
   GetTenantPricingConfigInput,
   GetTenantPricingConfigResult,
+  RentalBudgetDocumentContext,
   RentalCustomerNotificationRecipient,
   TenantAdminNotificationRecipient,
   TenantManagementPublicApi,
@@ -304,6 +306,55 @@ export class TenantManagementPublicApiService extends TenantManagementPublicApi 
     }
 
     return ok(customer);
+  }
+
+  async getRentalBudgetDocumentContext(
+    input: GetRentalBudgetDocumentContextInput,
+  ): Promise<Result<RentalBudgetDocumentContext, TenantManagementPublicApiError>> {
+    const [tenant, branchContext, customer] = await Promise.all([
+      this.prisma.client.v2Tenant.findFirst({
+        where: { id: input.tenantId, status: 'ACTIVE', deletedAt: null },
+        select: { slug: true, branding: { select: { logoUrl: true } } },
+      }),
+      this.getBranchContext({ tenantId: input.tenantId, branchId: input.branchId }),
+      input.customerId
+        ? this.prisma.client.v2RentalCustomer.findFirst({
+            where: { id: input.customerId, tenantId: input.tenantId, deletedAt: null },
+            select: {
+              firstName: true,
+              lastName: true,
+              isCompany: true,
+              companyName: true,
+              profile: {
+                select: { fullName: true, businessName: true, documentNumber: true, address: true, phone: true },
+              },
+            },
+          })
+        : Promise.resolve(null),
+    ]);
+
+    if (!tenant) {
+      return err(tenantManagementPublicApiError('TenantNotFound', `Tenant "${input.tenantId}" was not found.`));
+    }
+    if (branchContext.isErr()) return err(branchContext.error);
+
+    return ok({
+      tenant: { slug: tenant.slug, logoUrl: tenant.branding?.logoUrl ?? null },
+      branch: { timezone: branchContext.value.effectiveTimezone },
+      customer: customer
+        ? {
+            fullName: customer.isCompany
+              ? (customer.profile?.businessName ??
+                customer.companyName ??
+                customer.profile?.fullName ??
+                `${customer.firstName} ${customer.lastName}`.trim())
+              : (customer.profile?.fullName ?? `${customer.firstName} ${customer.lastName}`.trim()),
+            documentNumber: customer.profile?.documentNumber ?? null,
+            address: customer.profile?.address ?? null,
+            phone: customer.profile?.phone ?? null,
+          }
+        : null,
+    });
   }
 
   async getBranchContext(input: GetBranchContextInput): Promise<Result<BranchContext, TenantManagementPublicApiError>> {

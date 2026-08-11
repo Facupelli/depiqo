@@ -3,12 +3,15 @@ import { Module } from '@nestjs/common';
 import { ObjectStorageModule } from '../object-storage/object-storage.module';
 import { RentalCommitmentModule } from '../rental-commitment/rental-commitment.module';
 import { TenantManagementModule } from '../tenant-management/tenant-management.module';
+import { GenerateRentalBudgetHttpController } from './features/generate-rental-budget/generate-rental-budget.controller';
+import { GenerateRentalBudgetHandler } from './features/generate-rental-budget/generate-rental-budget.handler';
 import { GenerateRentalRemitoHttpController } from './features/generate-rental-remito/generate-rental-remito.controller';
 import { GenerateRentalRemitoHandler } from './features/generate-rental-remito/generate-rental-remito.handler';
 import { GetRentalContractSigningSummaryHttpController } from './features/get-rental-contract-signing-summary/get-rental-contract-signing-summary.controller';
 import { GetRentalContractSigningSummaryHandler } from './features/get-rental-contract-signing-summary/get-rental-contract-signing-summary.handler';
 import { PrepareRentalRemitoForSigningHandler } from './features/prepare-rental-remito-for-signing/prepare-rental-remito-for-signing.handler';
 
+import { RentalBudgetDocumentService } from './application/rental-budget/rental-budget-document.service';
 import { RentalRemitoDocumentService } from './application/rental-remito/rental-remito-document.service';
 import { RentalRemitoReadModelLoader } from './application/rental-remito/rental-remito-read-model.loader';
 import { RentalRemitoViewModelMapper } from './application/rental-remito/rental-remito-view-model.mapper';
@@ -25,11 +28,17 @@ import { HandleConfirmedRentalEditedEventHandler } from './application/event-han
 
 @Module({
   imports: [ObjectStorageModule, RentalCommitmentModule, TenantManagementModule],
-  controllers: [GenerateRentalRemitoHttpController, GetRentalContractSigningSummaryHttpController],
+  controllers: [
+    GenerateRentalBudgetHttpController,
+    GenerateRentalRemitoHttpController,
+    GetRentalContractSigningSummaryHttpController,
+  ],
   providers: [
+    GenerateRentalBudgetHandler,
     GenerateRentalRemitoHandler,
     GetRentalContractSigningSummaryHandler,
     PrepareRentalRemitoForSigningHandler,
+    RentalBudgetDocumentService,
     RentalRemitoDocumentService,
     RentalRemitoReadModelLoader,
     RentalRemitoViewModelMapper,

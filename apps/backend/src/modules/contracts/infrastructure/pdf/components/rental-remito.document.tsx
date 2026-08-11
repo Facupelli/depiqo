@@ -33,12 +33,14 @@ export function createRentalRemitoDocument({
       {continuationPages.map((columns, index) => (
         <RemitoPage key={`continuation-${index}`} data={data} columns={columns} isContinuation />
       ))}
-      <LegalAnnexPage
-        logoUrl={data.document.logoUrl}
-        rentalSignatureUrl={data.document.rentalSignatureUrl}
-        showRentalSignatureBlock={data.document.showRentalSignatureBlock}
-        signedSummary={data.document.signedSummary}
-      />
+      {data.document.presentation.includeLegalAnnex && (
+        <LegalAnnexPage
+          logoUrl={data.document.logoUrl}
+          rentalSignatureUrl={data.document.rentalSignatureUrl}
+          showRentalSignatureBlock={data.document.presentation.showRentalSignatureBlock}
+          signedSummary={data.document.signedSummary}
+        />
+      )}
     </Document>
   );
 }

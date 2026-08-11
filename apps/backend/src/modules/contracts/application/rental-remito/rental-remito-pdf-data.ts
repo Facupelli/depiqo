@@ -1,6 +1,6 @@
 export type RentalRemitoPdfData = {
   document: {
-    label: 'REMITO';
+    label: 'REMITO' | 'PRESUPUESTO';
     number: string;
     equipmentTitle: string;
     pickupDate: string;
@@ -9,7 +9,10 @@ export type RentalRemitoPdfData = {
     agreedPrice: string;
     logoUrl: string | null;
     rentalSignatureUrl: string | null;
-    showRentalSignatureBlock: boolean;
+    presentation: {
+      includeLegalAnnex: boolean;
+      showRentalSignatureBlock: boolean;
+    };
     landlord: ContractPartyData;
     tenant: ContractPartyData;
     signedSummary?: SignedContractSummary;

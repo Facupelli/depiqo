@@ -30,7 +30,10 @@ export class RentalRemitoViewModelMapper {
         agreedPrice: formatAcceptedPricingForRentalRemito(source.rental.acceptedPricing),
         logoUrl: source.tenant.branding?.logoUrl ?? null,
         rentalSignatureUrl: source.contractSigner?.signatureUrl ?? null,
-        showRentalSignatureBlock: true,
+        presentation: {
+          includeLegalAnnex: true,
+          showRentalSignatureBlock: true,
+        },
         landlord: {
           fullName: source.contractSigner?.fullName ?? '',
           documentNumber: source.contractSigner?.documentNumber ?? '',

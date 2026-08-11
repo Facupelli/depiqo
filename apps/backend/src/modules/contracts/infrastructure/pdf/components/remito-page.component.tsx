@@ -240,7 +240,7 @@ export function RemitoPage({ data, columns, isContinuation = false }: RemitoPage
               <EmptyCustomerSignatureBlock />
             )}
 
-            {document.showRentalSignatureBlock && (
+            {document.presentation.showRentalSignatureBlock && (
               <RentalSignatureBlock rentalSignatureUrl={document.rentalSignatureUrl} />
             )}
           </View>

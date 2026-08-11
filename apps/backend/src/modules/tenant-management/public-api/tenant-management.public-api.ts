@@ -96,6 +96,28 @@ export interface GetBranchContextInput {
   branchId: string;
 }
 
+export interface GetRentalBudgetDocumentContextInput {
+  tenantId: string;
+  branchId: string;
+  customerId: string | null;
+}
+
+export interface RentalBudgetDocumentContext {
+  tenant: {
+    slug: string;
+    logoUrl: string | null;
+  };
+  branch: {
+    timezone: string;
+  };
+  customer: {
+    fullName: string;
+    documentNumber: string | null;
+    address: string | null;
+    phone: string | null;
+  } | null;
+}
+
 export interface GetBranchContextsInput {
   tenantId: string;
   branchIds: string[];
@@ -196,6 +218,10 @@ export abstract class TenantManagementPublicApi {
   abstract getBranchContext(
     input: GetBranchContextInput,
   ): Promise<Result<BranchContext, TenantManagementPublicApiError>>;
+
+  abstract getRentalBudgetDocumentContext(
+    input: GetRentalBudgetDocumentContextInput,
+  ): Promise<Result<RentalBudgetDocumentContext, TenantManagementPublicApiError>>;
 
   abstract getBranchContexts(
     input: GetBranchContextsInput,

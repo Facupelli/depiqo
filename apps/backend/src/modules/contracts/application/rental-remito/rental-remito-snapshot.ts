@@ -67,7 +67,7 @@ export function toRentalRemitoSnapshot(
     },
     document: {
       number: pdfData.document.number,
-      label: pdfData.document.label,
+      label: 'REMITO',
     },
     customer: source.customer,
     tenantSigner: source.contractSigner,

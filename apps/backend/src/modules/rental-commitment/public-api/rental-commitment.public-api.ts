@@ -12,6 +12,25 @@ export interface GetAcceptedPricingForDocumentsInput {
   rentalId: string;
 }
 
+export interface GetRentalBudgetDocumentFactsInput {
+  tenantId: string;
+  rentalId: string;
+}
+
+export interface RentalBudgetDocumentFacts {
+  rentalId: string;
+  branchId: string;
+  customerId: string | null;
+  status: RentalStatus;
+  periodStart: Date;
+  periodEnd: Date;
+  pricing: RentalAcceptedPricingForDocuments;
+  selections: Array<{
+    name: string;
+    quantity: number;
+  }>;
+}
+
 export type RentalAcceptedPricingBillingUnit = 'HOUR' | 'DAY' | 'WEEK';
 
 export interface RentalAcceptedPricingMoney {
@@ -57,4 +76,8 @@ export abstract class RentalCommitmentPublicApi {
   abstract getAcceptedPricingForDocuments(
     input: GetAcceptedPricingForDocumentsInput,
   ): Promise<Result<RentalAcceptedPricingForDocuments, RentalCommitmentPublicApiError>>;
+
+  abstract getRentalBudgetDocumentFacts(
+    input: GetRentalBudgetDocumentFactsInput,
+  ): Promise<Result<RentalBudgetDocumentFacts, RentalCommitmentPublicApiError>>;
 }
