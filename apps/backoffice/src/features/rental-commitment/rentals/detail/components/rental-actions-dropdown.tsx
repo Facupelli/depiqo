@@ -22,8 +22,10 @@ export type RentalActionsDropdownProps = {
 	canCancelRental: boolean;
 	isCancelling: boolean;
 	isOpeningRemito: boolean;
+	isOpeningBudget: boolean;
 	onOpenConfirmDialog: () => void;
 	onOpenRemito: () => void;
+	onOpenBudget: () => void;
 	onOpenSigningDialog: () => void;
 	onOpenCancelDialog: () => void;
 };
@@ -37,8 +39,10 @@ export function RentalActionsDropdown({
 	canCancelRental,
 	isCancelling,
 	isOpeningRemito,
+	isOpeningBudget,
 	onOpenConfirmDialog,
 	onOpenRemito,
+	onOpenBudget,
 	onOpenSigningDialog,
 	onOpenCancelDialog,
 }: RentalActionsDropdownProps) {
@@ -63,17 +67,26 @@ export function RentalActionsDropdown({
 						{isConfirming ? "Confirmando..." : "Confirmar alquiler"}
 					</DropdownMenuItem>
 				) : null}
-				<DropdownMenuItem onClick={onOpenRemito} disabled={isOpeningRemito}>
-					<FileText className="mr-2 h-4 w-4" />
-					{isOpeningRemito ? "Abriendo remito..." : "Ver remito"}
-				</DropdownMenuItem>
-				<DropdownMenuItem
-					onClick={onOpenSigningDialog}
-					disabled={!canSendSigningInvitation || isSendingSigningInvitation}
-				>
-					<Send className="mr-2 h-4 w-4" />
-					Enviar remito a firmar
-				</DropdownMenuItem>
+				{isDraftRental ? (
+					<DropdownMenuItem onClick={onOpenBudget} disabled={isOpeningBudget}>
+						<FileText className="mr-2 h-4 w-4" />
+						{isOpeningBudget ? "Abriendo presupuesto..." : "Ver presupuesto"}
+					</DropdownMenuItem>
+				) : (
+					<>
+						<DropdownMenuItem onClick={onOpenRemito} disabled={isOpeningRemito}>
+							<FileText className="mr-2 h-4 w-4" />
+							{isOpeningRemito ? "Abriendo remito..." : "Ver remito"}
+						</DropdownMenuItem>
+						<DropdownMenuItem
+							onClick={onOpenSigningDialog}
+							disabled={!canSendSigningInvitation || isSendingSigningInvitation}
+						>
+							<Send className="mr-2 h-4 w-4" />
+							Enviar remito a firmar
+						</DropdownMenuItem>
+					</>
+				)}
 				<DropdownMenuItem
 					onClick={onOpenCancelDialog}
 					disabled={!canCancelRental || isCancelling}

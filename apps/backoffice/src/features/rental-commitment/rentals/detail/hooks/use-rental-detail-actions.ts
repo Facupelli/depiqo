@@ -1,7 +1,12 @@
 import { useState } from "react";
 import { useCancelRental } from "../../cancel-rental/cancel-rental.mutation";
 import { useConfirmRental } from "../../confirm-rental/confirm-rental.mutation";
+import {
+	type RentalBudgetCustomerFormValues,
+	toGenerateRentalBudgetDto,
+} from "../rental-budget-customer.schema";
 import { useRentalDetailContext } from "../rental-detail.context";
+import { useRentalBudgetActions } from "./use-rental-budget-actions";
 import { useRentalRemitoActions } from "./use-rental-remito-actions";
 import { useRentalSigningInvitationActions } from "./use-rental-signing-invitation-actions";
 
@@ -13,6 +18,7 @@ export function useRentalDetailActions() {
 	const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
 	const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
 
+	const budget = useRentalBudgetActions(rental.id, rental.customerId !== null);
 	const remito = useRentalRemitoActions(rental.id);
 	const signing = useRentalSigningInvitationActions(rental);
 	const confirmRental = useConfirmRental({
@@ -34,6 +40,12 @@ export function useRentalDetailActions() {
 			CONFIRM_RENTAL_FALLBACK_ERROR)
 		: null;
 
+	async function submitRentalBudgetCustomer(
+		values: RentalBudgetCustomerFormValues,
+	) {
+		await budget.submitCustomerDetails(toGenerateRentalBudgetDto(values));
+	}
+
 	function setConfirmDialogOpen(open: boolean) {
 		setIsConfirmDialogOpen(open);
 
@@ -52,10 +64,18 @@ export function useRentalDetailActions() {
 			canCancelRental,
 			isCancelling: cancelRental.isPending,
 			isOpeningRemito: remito.isOpening,
+			isOpeningBudget: budget.isOpening,
 			onOpenConfirmDialog: () => setConfirmDialogOpen(true),
 			onOpenRemito: remito.openRemito,
+			onOpenBudget: budget.openBudget,
 			onOpenSigningDialog: signing.openSendDialog,
 			onOpenCancelDialog: () => setIsCancelDialogOpen(true),
+		},
+		budgetCustomerDialogProps: {
+			open: budget.isCustomerDialogOpen,
+			onOpenChange: budget.setIsCustomerDialogOpen,
+			isPending: budget.isOpening,
+			onSubmit: submitRentalBudgetCustomer,
 		},
 		confirmDialogProps: {
 			open: isConfirmDialogOpen,
