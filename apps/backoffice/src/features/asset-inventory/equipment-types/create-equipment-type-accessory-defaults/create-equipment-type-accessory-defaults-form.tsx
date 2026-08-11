@@ -1,7 +1,4 @@
 import type { GetEquipmentTypesItemDto } from "@repo/api-contracts";
-import { useForm } from "@tanstack/react-form";
-import { Plus, Search, Trash2 } from "lucide-react";
-import { useState } from "react";
 import { Button } from "@repo/ui/components/button";
 import { Field, FieldError, FieldLabel } from "@repo/ui/components/field";
 import { Input } from "@repo/ui/components/input";
@@ -13,6 +10,9 @@ import {
 	TableHeader,
 	TableRow,
 } from "@repo/ui/components/table";
+import { useForm } from "@tanstack/react-form";
+import { Plus, Search, Trash2 } from "lucide-react";
+import { useState } from "react";
 import useDebounce from "@/shared/hooks/use-debounce";
 import { useEquipmentTypes } from "../equipment-types.queries";
 import {

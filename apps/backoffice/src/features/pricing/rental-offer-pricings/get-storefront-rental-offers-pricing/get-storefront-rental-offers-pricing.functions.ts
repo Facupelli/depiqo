@@ -5,7 +5,5 @@ import { getStorefrontRentalOffersPricing } from "./get-storefront-rental-offers
 export const getStorefrontRentalOffersPricingFn = createServerFn({
 	method: "GET",
 })
-	.validator((data) =>
-		GetStorefrontRentalOffersPricingQuerySchema.parse(data),
-	)
+	.validator((data) => GetStorefrontRentalOffersPricingQuerySchema.parse(data))
 	.handler(async ({ data }) => getStorefrontRentalOffersPricing(data));

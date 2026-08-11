@@ -3,17 +3,6 @@ import type {
 	GetRentalCustomersQueryDto,
 	RentalCustomerOnboardingStatusDto,
 } from "@repo/api-contracts";
-import { keepPreviousData } from "@tanstack/react-query";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import {
-	type ColumnDef,
-	flexRender,
-	getCoreRowModel,
-	type Table as TanStackTable,
-	useReactTable,
-} from "@tanstack/react-table";
-import { ChevronLeft, ChevronRight, X } from "lucide-react";
-import { useMemo, useState } from "react";
 import { Badge } from "@repo/ui/components/badge";
 import { Button } from "@repo/ui/components/button";
 import { Input } from "@repo/ui/components/input";
@@ -33,6 +22,17 @@ import {
 	TableHeader,
 	TableRow,
 } from "@repo/ui/components/table";
+import { keepPreviousData } from "@tanstack/react-query";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import {
+	type ColumnDef,
+	flexRender,
+	getCoreRowModel,
+	type Table as TanStackTable,
+	useReactTable,
+} from "@tanstack/react-table";
+import { ChevronLeft, ChevronRight, X } from "lucide-react";
+import { useMemo, useState } from "react";
 import { useRentalCustomers } from "@/features/tenant-management/customer/rental-customer.queries";
 import { AdminRouteError } from "@/shared/components/admin-route-error";
 import useDebounce from "@/shared/hooks/use-debounce";

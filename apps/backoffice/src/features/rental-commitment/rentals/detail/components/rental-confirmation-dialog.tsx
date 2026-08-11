@@ -1,5 +1,3 @@
-import { AlertCircle, CalendarDays, Package, ReceiptText } from "lucide-react";
-import type { ReactNode } from "react";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -10,6 +8,8 @@ import {
 	AlertDialogHeader,
 	AlertDialogTitle,
 } from "@repo/ui/components/alert-dialog";
+import { AlertCircle, CalendarDays, Package, ReceiptText } from "lucide-react";
+import type { ReactNode } from "react";
 import { formatMoney } from "@/shared/utils/formatters";
 import { buildRentalConfirmationSummary } from "../rental-confirmation-summary";
 import { useRentalDetailContext } from "../rental-detail.context";

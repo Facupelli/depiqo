@@ -1,6 +1,3 @@
-import { useForm } from "@tanstack/react-form";
-import { Minus, Plus } from "lucide-react";
-import { type ReactNode, useId, useState } from "react";
 import { Button } from "@repo/ui/components/button";
 import { Checkbox } from "@repo/ui/components/checkbox";
 import {
@@ -18,6 +15,9 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@repo/ui/components/select";
+import { useForm } from "@tanstack/react-form";
+import { Minus, Plus } from "lucide-react";
+import { type ReactNode, useId, useState } from "react";
 import { useCreatePromotion } from "@/features/pricing/promotions/create-promotion/create-promotion.mutation";
 import {
 	createEmptyExclusion,

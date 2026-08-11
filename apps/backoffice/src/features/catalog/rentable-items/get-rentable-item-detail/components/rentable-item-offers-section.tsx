@@ -1,4 +1,14 @@
 import type { GetRentableItemDetailResponseDto } from "@repo/api-contracts";
+import { Badge } from "@repo/ui/components/badge";
+import { Button } from "@repo/ui/components/button";
+import { Card, CardContent } from "@repo/ui/components/card";
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogHeader,
+	DialogTitle,
+} from "@repo/ui/components/dialog";
 import {
 	Building2,
 	CheckCircle2,
@@ -11,16 +21,6 @@ import {
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { useId, useState } from "react";
-import { Badge } from "@repo/ui/components/badge";
-import { Button } from "@repo/ui/components/button";
-import { Card, CardContent } from "@repo/ui/components/card";
-import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogHeader,
-	DialogTitle,
-} from "@repo/ui/components/dialog";
 import { useAttachRatePlanToRentalOffer } from "@/features/pricing/rental-offer-pricings/attach-rate-plan-to-rental-offer/attach-rate-plan-to-rental-offer.mutation";
 import { toAttachRatePlanToRentalOfferDto } from "@/features/pricing/rental-offer-pricings/attach-rate-plan-to-rental-offer/attach-rate-plan-to-rental-offer.schema";
 import { AttachRatePlanToRentalOfferForm } from "@/features/pricing/rental-offer-pricings/attach-rate-plan-to-rental-offer/attach-rate-plan-to-rental-offer-form";

@@ -1,5 +1,3 @@
-import { Plus } from "lucide-react";
-import { useState } from "react";
 import { Button } from "@repo/ui/components/button";
 import {
 	Dialog,
@@ -9,6 +7,8 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from "@repo/ui/components/dialog";
+import { Plus } from "lucide-react";
+import { useState } from "react";
 import { useCreateCategory } from "./create-category.mutation";
 import { CreateCategoryForm } from "./create-category-form";
 import { toCreateCategoryDto } from "./create-category-form.schema";

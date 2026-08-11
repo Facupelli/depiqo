@@ -1,6 +1,4 @@
 import type { GetPromotionsPromotionDto } from "@repo/api-contracts";
-import { useNavigate } from "@tanstack/react-router";
-import { Search } from "lucide-react";
 import { Input } from "@repo/ui/components/input";
 import {
 	Select,
@@ -10,6 +8,8 @@ import {
 	SelectValue,
 } from "@repo/ui/components/select";
 import { Skeleton } from "@repo/ui/components/skeleton";
+import { useNavigate } from "@tanstack/react-router";
+import { Search } from "lucide-react";
 import { Route } from "@/routes/_admin/dashboard/promotions";
 import { usePromotionsTab } from "../hooks/use-promotions-tab";
 import { PromotionsList } from "./promotions-list";

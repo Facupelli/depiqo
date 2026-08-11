@@ -1,7 +1,7 @@
 import {
 	resolveInternalTenantContextContract,
-	TrustedTenantContextSchema,
 	type TrustedTenantContext,
+	TrustedTenantContextSchema,
 } from "@repo/api-contracts";
 import { getRequestHeader } from "@tanstack/react-start/server";
 import { z } from "zod";

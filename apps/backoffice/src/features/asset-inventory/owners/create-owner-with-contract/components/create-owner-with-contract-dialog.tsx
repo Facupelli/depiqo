@@ -1,5 +1,3 @@
-import { Plus } from "lucide-react";
-import { useState } from "react";
 import { Button } from "@repo/ui/components/button";
 import {
 	Dialog,
@@ -9,6 +7,8 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from "@repo/ui/components/dialog";
+import { Plus } from "lucide-react";
+import { useState } from "react";
 import { useCreateOwnerWithContract } from "../create-owner-with-contract.mutation";
 import { CreateOwnerWithContractForm } from "./create-owner-with-contract-form";
 import { toCreateOwnerWithContractDto } from "./create-owner-with-contract-form.schema";

@@ -1,5 +1,4 @@
 import type { GetBranchesBranchDto } from "@repo/api-contracts";
-import { Pencil } from "lucide-react";
 import { Badge } from "@repo/ui/components/badge";
 import { Button } from "@repo/ui/components/button";
 import {
@@ -10,6 +9,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@repo/ui/components/table";
+import { Pencil } from "lucide-react";
 
 interface BranchesTableProps {
 	branches: GetBranchesBranchDto[];

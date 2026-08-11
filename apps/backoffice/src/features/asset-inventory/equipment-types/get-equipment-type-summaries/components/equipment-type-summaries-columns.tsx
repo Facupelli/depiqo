@@ -1,7 +1,7 @@
 import type { GetEquipmentTypeSummariesItemDto } from "@repo/api-contracts";
+import { Badge } from "@repo/ui/components/badge";
 import { Link } from "@tanstack/react-router";
 import type { ColumnDef } from "@tanstack/react-table";
-import { Badge } from "@repo/ui/components/badge";
 
 export const equipmentTypeSummariesColumns: ColumnDef<GetEquipmentTypeSummariesItemDto>[] =
 	[

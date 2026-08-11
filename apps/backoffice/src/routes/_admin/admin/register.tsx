@@ -1,6 +1,3 @@
-import { useForm } from "@tanstack/react-form";
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
 import { Button } from "@repo/ui/components/button";
 import {
 	Card,
@@ -17,6 +14,9 @@ import {
 	FieldLabel,
 } from "@repo/ui/components/field";
 import { Input } from "@repo/ui/components/input";
+import { useForm } from "@tanstack/react-form";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useState } from "react";
 import { useRegisterTenantWithOwner } from "@/features/tenant-management/tenant/register-tenant-with-owner/register-tenant-with-owner.mutation";
 import {
 	registerFormDefaults,
@@ -104,9 +104,8 @@ function RegisterPage() {
 							className="space-y-4"
 						>
 							<FieldGroup>
-								<form.Field
-									name="tenantName"
-									children={(field) => {
+								<form.Field name="tenantName">
+									{(field) => {
 										const isInvalid =
 											field.state.meta.isTouched && !field.state.meta.isValid;
 										return (
@@ -129,14 +128,13 @@ function RegisterPage() {
 											</Field>
 										);
 									}}
-								/>
+								</form.Field>
 							</FieldGroup>
 
 							<FieldGroup>
 								<div className="flex items-center gap-x-4">
-									<form.Field
-										name="firstName"
-										children={(field) => {
+									<form.Field name="firstName">
+										{(field) => {
 											const isInvalid =
 												field.state.meta.isTouched && !field.state.meta.isValid;
 											return (
@@ -158,10 +156,9 @@ function RegisterPage() {
 												</Field>
 											);
 										}}
-									/>
-									<form.Field
-										name="lastName"
-										children={(field) => {
+									</form.Field>
+									<form.Field name="lastName">
+										{(field) => {
 											const isInvalid =
 												field.state.meta.isTouched && !field.state.meta.isValid;
 											return (
@@ -183,11 +180,10 @@ function RegisterPage() {
 												</Field>
 											);
 										}}
-									/>
+									</form.Field>
 								</div>
-								<form.Field
-									name="email"
-									children={(field) => {
+								<form.Field name="email">
+									{(field) => {
 										const isInvalid =
 											field.state.meta.isTouched && !field.state.meta.isValid;
 										return (
@@ -211,10 +207,9 @@ function RegisterPage() {
 											</Field>
 										);
 									}}
-								/>
-								<form.Field
-									name="password"
-									children={(field) => {
+								</form.Field>
+								<form.Field name="password">
+									{(field) => {
 										const isInvalid =
 											field.state.meta.isTouched && !field.state.meta.isValid;
 										return (
@@ -236,14 +231,15 @@ function RegisterPage() {
 											</Field>
 										);
 									}}
-								/>
+								</form.Field>
 							</FieldGroup>
 						</form>
 					</CardContent>
 					<CardFooter className="grid gap-y-4">
 						<form.Subscribe
 							selector={(state) => [state.canSubmit, state.isSubmitting]}
-							children={([canSubmit, isSubmitting]) => (
+						>
+							{([canSubmit, isSubmitting]) => (
 								<Field orientation="horizontal">
 									<Button
 										className="uppercase w-full py-5"
@@ -255,7 +251,7 @@ function RegisterPage() {
 									</Button>
 								</Field>
 							)}
-						/>
+						</form.Subscribe>
 
 						<div>
 							<p className="text-center text-sm text-muted-foreground">

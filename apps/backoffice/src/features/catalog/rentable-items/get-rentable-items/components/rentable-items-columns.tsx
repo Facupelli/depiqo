@@ -1,8 +1,8 @@
 import type { GetRentableItemsItemDto } from "@repo/api-contracts";
+import { Badge } from "@repo/ui/components/badge";
 import { Link } from "@tanstack/react-router";
 import type { ColumnDef } from "@tanstack/react-table";
 import { PackageOpen } from "lucide-react";
-import { Badge } from "@repo/ui/components/badge";
 import { buildR2PublicUrl } from "@/lib/r2-public-url";
 
 const kindLabels = {

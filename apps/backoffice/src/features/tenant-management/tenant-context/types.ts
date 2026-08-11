@@ -1,7 +1,7 @@
 import {
-	PublicTenantContextSchema,
 	type PublicStorefrontTenantContext,
 	type PublicTenantContext,
+	PublicTenantContextSchema,
 	type TrustedTenantContext,
 } from "@repo/api-contracts";
 

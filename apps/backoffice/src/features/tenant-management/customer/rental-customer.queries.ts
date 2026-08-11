@@ -101,7 +101,6 @@ export const rentalCustomerQueries = {
 		}),
 };
 
-
 export function useRentalCustomers<TData = GetRentalCustomersResponseDto>(
 	query?: GetRentalCustomersQueryDto,
 	overrides?: RentalCustomersQueryOverrides<TData>,

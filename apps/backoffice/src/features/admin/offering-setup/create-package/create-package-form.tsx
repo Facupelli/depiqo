@@ -1,6 +1,3 @@
-import { useForm } from "@tanstack/react-form";
-import { Trash2 } from "lucide-react";
-import { useId } from "react";
 import { Button } from "@repo/ui/components/button";
 import { Checkbox } from "@repo/ui/components/checkbox";
 import {
@@ -26,6 +23,9 @@ import {
 	TableRow,
 } from "@repo/ui/components/table";
 import { Textarea } from "@repo/ui/components/textarea";
+import { useForm } from "@tanstack/react-form";
+import { Trash2 } from "lucide-react";
+import { useId } from "react";
 import { CatalogImageUploader } from "@/shared/components/catalog-image-uploader";
 import {
 	type CreatePackageFormValues,

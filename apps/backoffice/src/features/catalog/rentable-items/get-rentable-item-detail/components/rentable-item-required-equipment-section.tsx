@@ -1,5 +1,4 @@
 import type { GetRentableItemDetailResponseDto } from "@repo/api-contracts";
-import type { ReactNode } from "react";
 import {
 	Table,
 	TableBody,
@@ -8,6 +7,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@repo/ui/components/table";
+import type { ReactNode } from "react";
 
 export function RentableItemRequiredEquipmentSection({
 	item,

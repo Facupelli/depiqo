@@ -1,5 +1,3 @@
-import { useForm } from "@tanstack/react-form";
-import { Plus, Trash2 } from "lucide-react";
 import { Button } from "@repo/ui/components/button";
 import {
 	Field,
@@ -24,6 +22,8 @@ import {
 	TableRow,
 } from "@repo/ui/components/table";
 import { Textarea } from "@repo/ui/components/textarea";
+import { useForm } from "@tanstack/react-form";
+import { Plus, Trash2 } from "lucide-react";
 import {
 	type CreateEquipmentTypeFormValues,
 	createEmptyEquipmentTypeAsset,

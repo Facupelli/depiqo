@@ -1,6 +1,4 @@
 import type { GetRentalCustomersItemDto } from "@repo/api-contracts";
-import { Check, Search, X } from "lucide-react";
-import { useState } from "react";
 import { Badge } from "@repo/ui/components/badge";
 import { Button } from "@repo/ui/components/button";
 import { Input } from "@repo/ui/components/input";
@@ -9,6 +7,8 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 } from "@repo/ui/components/popover";
+import { Check, Search, X } from "lucide-react";
+import { useState } from "react";
 import useDebounce from "@/shared/hooks/use-debounce";
 import { useRentalCustomers } from "../rental-customer.queries";
 

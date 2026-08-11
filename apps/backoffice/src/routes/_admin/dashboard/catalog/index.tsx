@@ -1,9 +1,9 @@
+import { Button } from "@repo/ui/components/button";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import type { PaginationState } from "@tanstack/react-table";
 import { Plus } from "lucide-react";
 import { startTransition, useEffect, useMemo, useState } from "react";
 import { z } from "zod";
-import { Button } from "@repo/ui/components/button";
 import { useCategories } from "@/features/catalog/categories/categories.queries";
 import { RentableItemsFilters } from "@/features/catalog/rentable-items/get-rentable-items/components/rentable-items-filters";
 import { RentableItemsTable } from "@/features/catalog/rentable-items/get-rentable-items/components/rentable-items-table";

@@ -1,5 +1,5 @@
-import { PageBreadcrumb } from "@/components/detail-id-breadcrumb";
 import { Skeleton } from "@repo/ui/components/skeleton";
+import { PageBreadcrumb } from "@/components/detail-id-breadcrumb";
 
 export function RentalDetailPageSkeleton() {
 	return (

@@ -1,8 +1,3 @@
-import { useForm } from "@tanstack/react-form";
-import { useSuspenseQuery } from "@tanstack/react-query";
-import { CircleHelp } from "lucide-react";
-import { useState } from "react";
-import { toast } from "sonner";
 import { Button } from "@repo/ui/components/button";
 import { Field, FieldError, FieldLabel } from "@repo/ui/components/field";
 import { Input } from "@repo/ui/components/input";
@@ -22,6 +17,11 @@ import {
 	SelectValue,
 } from "@repo/ui/components/select";
 import { Switch } from "@repo/ui/components/switch";
+import { useForm } from "@tanstack/react-form";
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { CircleHelp } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
 import { ProblemDetailsError } from "@/shared/errors";
 import { tenantQueries } from "../../tenant.queries";
 import { useUpdateTenantConfig } from "../update-tenant-config.mutation";

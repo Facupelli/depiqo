@@ -2,7 +2,6 @@ import type {
 	GetRentalsDateLensDto,
 	GetRentalsStatusDto,
 } from "@repo/api-contracts";
-import { ChevronDown, X } from "lucide-react";
 import { Button } from "@repo/ui/components/button";
 import { Checkbox } from "@repo/ui/components/checkbox";
 import {
@@ -17,6 +16,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@repo/ui/components/select";
+import { ChevronDown, X } from "lucide-react";
 import {
 	getRentalOrderStatusLabel,
 	RENTAL_ORDER_STATUS_OPTIONS,

@@ -1,10 +1,3 @@
-import {
-	CheckCircle2,
-	ChevronDown,
-	FileText,
-	Send,
-	Trash2,
-} from "lucide-react";
 import { Button } from "@repo/ui/components/button";
 import {
 	DropdownMenu,
@@ -12,6 +5,13 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@repo/ui/components/dropdown-menu";
+import {
+	CheckCircle2,
+	ChevronDown,
+	FileText,
+	Send,
+	Trash2,
+} from "lucide-react";
 
 export type RentalActionsDropdownProps = {
 	isDraftRental: boolean;

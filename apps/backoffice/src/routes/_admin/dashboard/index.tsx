@@ -1,3 +1,12 @@
+import { Badge } from "@repo/ui/components/badge";
+import { Button } from "@repo/ui/components/button";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@repo/ui/components/card";
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import clsx from "clsx";
 import {
@@ -12,15 +21,6 @@ import {
 	Warehouse,
 } from "lucide-react";
 import { useState } from "react";
-import { Badge } from "@repo/ui/components/badge";
-import { Button } from "@repo/ui/components/button";
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "@repo/ui/components/card";
 
 export const Route = createFileRoute("/_admin/dashboard/")({
 	beforeLoad: async () => {

@@ -1,6 +1,6 @@
-import { UploadDropzone } from "@/components/ui/upload-dropzone";
 import type { useUploadFile } from "@better-upload/client";
 import { Button } from "@repo/ui/components/button";
+import { UploadDropzone } from "@/components/ui/upload-dropzone";
 
 type ImageUploadFieldProps = {
 	uploader: ReturnType<typeof useUploadFile>;

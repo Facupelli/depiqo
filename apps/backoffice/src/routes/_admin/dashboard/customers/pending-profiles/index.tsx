@@ -1,5 +1,4 @@
 import type { GetRentalCustomersItemDto } from "@repo/api-contracts";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Badge } from "@repo/ui/components/badge";
 import { Button } from "@repo/ui/components/button";
 import { Skeleton } from "@repo/ui/components/skeleton";
@@ -11,6 +10,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@repo/ui/components/table";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useRentalCustomers } from "@/features/tenant-management/customer/rental-customer.queries";
 import { AdminRouteError } from "@/shared/components/admin-route-error";
 

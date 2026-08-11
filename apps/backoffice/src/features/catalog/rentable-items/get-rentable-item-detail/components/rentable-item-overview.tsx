@@ -1,4 +1,5 @@
 import type { GetRentableItemDetailResponseDto } from "@repo/api-contracts";
+import { Card, CardContent } from "@repo/ui/components/card";
 import {
 	Building2,
 	CheckCircle2,
@@ -8,7 +9,6 @@ import {
 	Pencil,
 	Tag,
 } from "lucide-react";
-import { Card, CardContent } from "@repo/ui/components/card";
 import { cn } from "@/lib/utils";
 import { getKindLabel } from "../rentable-item-detail.utils";
 

@@ -1,4 +1,3 @@
-import { Link } from "@tanstack/react-router";
 import {
 	Breadcrumb,
 	BreadcrumbItem,
@@ -7,6 +6,7 @@ import {
 	BreadcrumbPage,
 	BreadcrumbSeparator,
 } from "@repo/ui/components/breadcrumb";
+import { Link } from "@tanstack/react-router";
 
 interface PageBreadcrumbProps {
 	parent: {

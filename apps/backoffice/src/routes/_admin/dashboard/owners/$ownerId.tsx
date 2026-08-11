@@ -1,4 +1,8 @@
 import type { GetOwnerDetailResponseDto } from "@repo/api-contracts";
+import { Badge } from "@repo/ui/components/badge";
+import { Button } from "@repo/ui/components/button";
+import { Card, CardContent, CardHeader } from "@repo/ui/components/card";
+import { Skeleton } from "@repo/ui/components/skeleton";
 import { createFileRoute } from "@tanstack/react-router";
 import {
 	AlertTriangle,
@@ -9,10 +13,6 @@ import {
 } from "lucide-react";
 import { ErrorBoundary, type FallbackProps } from "react-error-boundary";
 import { PageBreadcrumb } from "@/components/detail-id-breadcrumb";
-import { Badge } from "@repo/ui/components/badge";
-import { Button } from "@repo/ui/components/button";
-import { Card, CardContent, CardHeader } from "@repo/ui/components/card";
-import { Skeleton } from "@repo/ui/components/skeleton";
 import {
 	ownerQueries,
 	useOwnerDetail,

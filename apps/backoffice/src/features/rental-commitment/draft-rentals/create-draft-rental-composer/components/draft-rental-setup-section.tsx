@@ -1,6 +1,9 @@
-import { useStore } from "@tanstack/react-form";
-import { CalendarIcon, Truck, Warehouse } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@repo/ui/components/card";
+import {
+	Card,
+	CardContent,
+	CardHeader,
+	CardTitle,
+} from "@repo/ui/components/card";
 import { Checkbox } from "@repo/ui/components/checkbox";
 import { Field, FieldError, FieldLabel } from "@repo/ui/components/field";
 import { Input } from "@repo/ui/components/input";
@@ -8,6 +11,8 @@ import {
 	NativeSelect,
 	NativeSelectOption,
 } from "@repo/ui/components/native-select";
+import { useStore } from "@tanstack/react-form";
+import { CalendarIcon, Truck, Warehouse } from "lucide-react";
 import { withForm } from "@/shared/contexts/form.context";
 import { useDraftRentalComposer } from "../create-draft-rental-composer.context";
 import { createDraftRentalComposerDefaultValues } from "../create-draft-rental-composer.schema";
@@ -168,8 +173,12 @@ export const DraftRentalSetupSection = withForm({
 						<form.Field name="insuranceSelected">
 							{(field) => (
 								<Field className="justify-end">
-									<label className="flex h-9 items-center gap-2 rounded-md border px-3 text-sm">
+									<label
+										htmlFor={field.name}
+										className="flex h-9 items-center gap-2 rounded-md border px-3 text-sm"
+									>
 										<Checkbox
+											id={field.name}
 											checked={field.state.value}
 											onCheckedChange={(checked) =>
 												field.handleChange(checked === true)

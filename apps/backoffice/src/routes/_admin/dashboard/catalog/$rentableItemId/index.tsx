@@ -1,9 +1,4 @@
 import type { GetRentableItemDetailResponseDto } from "@repo/api-contracts";
-import { useSuspenseQuery } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
-import { Building2, CheckCircle2, PackageOpen, Pencil } from "lucide-react";
-import { useState } from "react";
-import { PageBreadcrumb } from "@/components/detail-id-breadcrumb";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -17,7 +12,17 @@ import {
 } from "@repo/ui/components/alert-dialog";
 import { Badge } from "@repo/ui/components/badge";
 import { Button } from "@repo/ui/components/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@repo/ui/components/tabs";
+import {
+	Tabs,
+	TabsContent,
+	TabsList,
+	TabsTrigger,
+} from "@repo/ui/components/tabs";
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { createFileRoute } from "@tanstack/react-router";
+import { Building2, CheckCircle2, PackageOpen, Pencil } from "lucide-react";
+import { useState } from "react";
+import { PageBreadcrumb } from "@/components/detail-id-breadcrumb";
 import { CreateRentalOfferWithPricingDialog } from "@/features/admin/offering-setup/create-rental-offer-with-pricing/create-rental-offer-with-pricing-dialog";
 import { getActivateRentableItemErrorMessage } from "@/features/catalog/rentable-items/activate-rentable-item/activate-rentable-item.errors";
 import { useActivateRentableItem } from "@/features/catalog/rentable-items/activate-rentable-item/activate-rentable-item.mutation";

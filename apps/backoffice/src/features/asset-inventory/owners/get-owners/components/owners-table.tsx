@@ -1,3 +1,13 @@
+import { Button } from "@repo/ui/components/button";
+import { Input } from "@repo/ui/components/input";
+import {
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
+} from "@repo/ui/components/table";
 import {
 	type ColumnDef,
 	type ColumnFiltersState,
@@ -11,16 +21,6 @@ import {
 } from "@tanstack/react-table";
 import clsx from "clsx";
 import { useState } from "react";
-import { Button } from "@repo/ui/components/button";
-import { Input } from "@repo/ui/components/input";
-import {
-	Table,
-	TableBody,
-	TableCell,
-	TableHead,
-	TableHeader,
-	TableRow,
-} from "@repo/ui/components/table";
 
 interface OwnersDataTableProps<TData, TValue> {
 	columns: ColumnDef<TData, TValue>[];

@@ -1,8 +1,8 @@
+import { Card, CardContent } from "@repo/ui/components/card";
 import { useStore } from "@tanstack/react-form";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { AlertCircle } from "lucide-react";
 import { PageBreadcrumb } from "@/components/detail-id-breadcrumb";
-import { Card, CardContent } from "@repo/ui/components/card";
 import { useCalculatedDraftRentalPrice } from "@/features/pricing/calculate-draft-rental-price/calculate-draft-rental-price.queries";
 import { useCreateDraftRental } from "@/features/rental-commitment/draft-rentals/create-draft-rental/create-draft-rental.mutation";
 import { DraftRentalOfferSearchSection } from "@/features/rental-commitment/draft-rentals/create-draft-rental-composer/components/draft-rental-offer-search-section";

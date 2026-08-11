@@ -1,6 +1,6 @@
+import { Button } from "@repo/ui/components/button";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Plus } from "lucide-react";
-import { Button } from "@repo/ui/components/button";
 import { useBranches } from "@/features/tenant-management/branch/branch.queries";
 import { BranchesTable } from "@/features/tenant-management/branch/get-branches/components/branches-table";
 import { AdminRouteError } from "@/shared/components/admin-route-error";

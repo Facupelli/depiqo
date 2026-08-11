@@ -1,3 +1,15 @@
+import {
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+} from "@repo/ui/components/popover";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@repo/ui/components/select";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import {
 	createFileRoute,
@@ -21,18 +33,6 @@ import {
 	Users,
 	Warehouse,
 } from "lucide-react";
-import {
-	Popover,
-	PopoverContent,
-	PopoverTrigger,
-} from "@repo/ui/components/popover";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@repo/ui/components/select";
 import { useLogout } from "@/features/tenant-management/auth/logout/logout.mutation";
 import { branchQueries } from "@/features/tenant-management/branch/branch.queries";
 import { tenantQueries } from "@/features/tenant-management/tenant/tenant.queries";

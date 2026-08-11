@@ -1,5 +1,3 @@
-import { useForm } from "@tanstack/react-form";
-import { Loader2 } from "lucide-react";
 import { Button } from "@repo/ui/components/button";
 import {
 	Field,
@@ -8,6 +6,8 @@ import {
 	FieldLabel,
 } from "@repo/ui/components/field";
 import { Input } from "@repo/ui/components/input";
+import { useForm } from "@tanstack/react-form";
+import { Loader2 } from "lucide-react";
 import {
 	type CreateCategoryFormValues,
 	createCategoryFormDefaults,

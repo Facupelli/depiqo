@@ -1,11 +1,4 @@
 import type { GetEquipmentTypeSummariesItemDto } from "@repo/api-contracts";
-import {
-	flexRender,
-	getCoreRowModel,
-	type PaginationState,
-	useReactTable,
-} from "@tanstack/react-table";
-import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@repo/ui/components/button";
 import {
 	Table,
@@ -15,6 +8,13 @@ import {
 	TableHeader,
 	TableRow,
 } from "@repo/ui/components/table";
+import {
+	flexRender,
+	getCoreRowModel,
+	type PaginationState,
+	useReactTable,
+} from "@tanstack/react-table";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { equipmentTypeSummariesColumns } from "./equipment-type-summaries-columns";
 
 interface EquipmentTypeSummariesTableProps {

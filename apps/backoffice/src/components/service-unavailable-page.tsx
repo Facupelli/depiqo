@@ -35,6 +35,7 @@ export function ServiceUnavailablePage() {
 
 				<div className="flex items-center gap-4">
 					<button
+						type="button"
 						onClick={() => window.location.reload()}
 						className="bg-neutral-900 px-6 py-2.5 text-xs font-medium tracking-[0.15em] text-white uppercase transition-colors hover:bg-neutral-700"
 					>

@@ -71,7 +71,6 @@ export function useCurrentTenant<TData = GetCurrentTenantResponseDto>(
 	return useQuery(tenantQueries.current(overrides));
 }
 
-
 export function useCustomDomain<TData = GetCustomDomainResponseDto>(
 	overrides?: CustomDomainQueryOverrides<TData>,
 ) {

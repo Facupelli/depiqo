@@ -140,7 +140,7 @@ It does not change backend bounded-context ownership.
       responses correctly, and add `Cache-Control: private, no-store` and
       `X-Content-Type-Options: nosniff`.
 
-- [ ] After the Storefront signing flow is functionally verified, remove only
+- [x] After the Storefront signing flow is functionally verified, remove only
       Backoffice public-signing code:
       - `/signing`;
       - public PDF proxy routes;

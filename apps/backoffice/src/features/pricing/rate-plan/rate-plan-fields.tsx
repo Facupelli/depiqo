@@ -1,4 +1,3 @@
-import { Plus, Trash2 } from "lucide-react";
 import { Button } from "@repo/ui/components/button";
 import {
 	Field,
@@ -22,6 +21,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@repo/ui/components/table";
+import { Plus, Trash2 } from "lucide-react";
 import { withForm } from "@/shared/contexts/form.context";
 import {
 	createEmptyRatePlanTier,

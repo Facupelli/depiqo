@@ -11,7 +11,6 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteRouteImport } from './routes/_admin/route'
-import { Route as SigningRouteImport } from './routes/signing'
 import { Route as AdminDashboardRouteRouteImport } from './routes/_admin/dashboard/route'
 import { Route as ApiBrandingUploadRouteImport } from './routes/api/branding-upload'
 import { Route as ApiUploadRouteImport } from './routes/api/upload'
@@ -33,8 +32,6 @@ import { Route as AdminDashboardPromotionsIndexRouteImport } from './routes/_adm
 import { Route as AdminDashboardPromotionsNewRouteImport } from './routes/_admin/dashboard/promotions/new'
 import { Route as AdminDashboardSettingsIndexRouteImport } from './routes/_admin/dashboard/settings/index'
 import { Route as ApiCustomerProfilesCustomerProfileIdIdentityDocumentRouteImport } from './routes/api/customer-profiles/$customerProfileId/identity-document'
-import { Route as ApiDocumentSigningPublicSignedPdfRouteImport } from './routes/api/document-signing/public/signed-pdf'
-import { Route as ApiDocumentSigningPublicUnsignedPdfRouteImport } from './routes/api/document-signing/public/unsigned-pdf'
 import { Route as ApiOrdersOrderIdContractRouteImport } from './routes/api/orders/$orderId/contract'
 import { Route as AdminDashboardBranchesBranchIdEditRouteImport } from './routes/_admin/dashboard/branches/$branchId/edit'
 import { Route as AdminDashboardCatalogRentableItemIdIndexRouteImport } from './routes/_admin/dashboard/catalog/$rentableItemId/index'
@@ -57,11 +54,6 @@ const IndexRoute = IndexRouteImport.update({
 } as any)
 const AdminRouteRoute = AdminRouteRouteImport.update({
   id: '/_admin',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SigningRoute = SigningRouteImport.update({
-  id: '/signing',
-  path: '/signing',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminDashboardRouteRoute = AdminDashboardRouteRouteImport.update({
@@ -182,18 +174,6 @@ const ApiCustomerProfilesCustomerProfileIdIdentityDocumentRoute =
     path: '/api/customer-profiles/$customerProfileId/identity-document',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiDocumentSigningPublicSignedPdfRoute =
-  ApiDocumentSigningPublicSignedPdfRouteImport.update({
-    id: '/api/document-signing/public/signed-pdf',
-    path: '/api/document-signing/public/signed-pdf',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiDocumentSigningPublicUnsignedPdfRoute =
-  ApiDocumentSigningPublicUnsignedPdfRouteImport.update({
-    id: '/api/document-signing/public/unsigned-pdf',
-    path: '/api/document-signing/public/unsigned-pdf',
-    getParentRoute: () => rootRouteImport,
-  } as any)
 const ApiOrdersOrderIdContractRoute =
   ApiOrdersOrderIdContractRouteImport.update({
     id: '/api/orders/$orderId/contract',
@@ -281,7 +261,6 @@ const ApiOrdersOrderIdContractSignedDownloadRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/signing': typeof SigningRoute
   '/dashboard': typeof AdminDashboardRouteRouteWithChildren
   '/api/branding-upload': typeof ApiBrandingUploadRoute
   '/api/upload': typeof ApiUploadRoute
@@ -295,8 +274,6 @@ export interface FileRoutesByFullPath {
   '/dashboard/owners/$ownerId': typeof AdminDashboardOwnersOwnerIdRoute
   '/dashboard/promotions/new': typeof AdminDashboardPromotionsNewRoute
   '/api/customer-profiles/$customerProfileId/identity-document': typeof ApiCustomerProfilesCustomerProfileIdIdentityDocumentRoute
-  '/api/document-signing/public/signed-pdf': typeof ApiDocumentSigningPublicSignedPdfRoute
-  '/api/document-signing/public/unsigned-pdf': typeof ApiDocumentSigningPublicUnsignedPdfRoute
   '/api/orders/$orderId/contract': typeof ApiOrdersOrderIdContractRouteWithChildren
   '/dashboard/branches/': typeof AdminDashboardBranchesIndexRoute
   '/dashboard/calendar/': typeof AdminDashboardCalendarIndexRoute
@@ -322,7 +299,6 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/signing': typeof SigningRoute
   '/api/branding-upload': typeof ApiBrandingUploadRoute
   '/api/upload': typeof ApiUploadRoute
   '/backend/$': typeof BackendSplatRoute
@@ -335,8 +311,6 @@ export interface FileRoutesByTo {
   '/dashboard/owners/$ownerId': typeof AdminDashboardOwnersOwnerIdRoute
   '/dashboard/promotions/new': typeof AdminDashboardPromotionsNewRoute
   '/api/customer-profiles/$customerProfileId/identity-document': typeof ApiCustomerProfilesCustomerProfileIdIdentityDocumentRoute
-  '/api/document-signing/public/signed-pdf': typeof ApiDocumentSigningPublicSignedPdfRoute
-  '/api/document-signing/public/unsigned-pdf': typeof ApiDocumentSigningPublicUnsignedPdfRoute
   '/api/orders/$orderId/contract': typeof ApiOrdersOrderIdContractRouteWithChildren
   '/dashboard/branches': typeof AdminDashboardBranchesIndexRoute
   '/dashboard/calendar': typeof AdminDashboardCalendarIndexRoute
@@ -364,7 +338,6 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_admin': typeof AdminRouteRouteWithChildren
-  '/signing': typeof SigningRoute
   '/_admin/dashboard': typeof AdminDashboardRouteRouteWithChildren
   '/api/branding-upload': typeof ApiBrandingUploadRoute
   '/api/upload': typeof ApiUploadRoute
@@ -378,8 +351,6 @@ export interface FileRoutesById {
   '/_admin/dashboard/owners/$ownerId': typeof AdminDashboardOwnersOwnerIdRoute
   '/_admin/dashboard/promotions/new': typeof AdminDashboardPromotionsNewRoute
   '/api/customer-profiles/$customerProfileId/identity-document': typeof ApiCustomerProfilesCustomerProfileIdIdentityDocumentRoute
-  '/api/document-signing/public/signed-pdf': typeof ApiDocumentSigningPublicSignedPdfRoute
-  '/api/document-signing/public/unsigned-pdf': typeof ApiDocumentSigningPublicUnsignedPdfRoute
   '/api/orders/$orderId/contract': typeof ApiOrdersOrderIdContractRouteWithChildren
   '/_admin/dashboard/branches/': typeof AdminDashboardBranchesIndexRoute
   '/_admin/dashboard/calendar/': typeof AdminDashboardCalendarIndexRoute
@@ -407,7 +378,6 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/signing'
     | '/dashboard'
     | '/api/branding-upload'
     | '/api/upload'
@@ -421,8 +391,6 @@ export interface FileRouteTypes {
     | '/dashboard/owners/$ownerId'
     | '/dashboard/promotions/new'
     | '/api/customer-profiles/$customerProfileId/identity-document'
-    | '/api/document-signing/public/signed-pdf'
-    | '/api/document-signing/public/unsigned-pdf'
     | '/api/orders/$orderId/contract'
     | '/dashboard/branches/'
     | '/dashboard/calendar/'
@@ -448,7 +416,6 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/signing'
     | '/api/branding-upload'
     | '/api/upload'
     | '/backend/$'
@@ -461,8 +428,6 @@ export interface FileRouteTypes {
     | '/dashboard/owners/$ownerId'
     | '/dashboard/promotions/new'
     | '/api/customer-profiles/$customerProfileId/identity-document'
-    | '/api/document-signing/public/signed-pdf'
-    | '/api/document-signing/public/unsigned-pdf'
     | '/api/orders/$orderId/contract'
     | '/dashboard/branches'
     | '/dashboard/calendar'
@@ -489,7 +454,6 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/_admin'
-    | '/signing'
     | '/_admin/dashboard'
     | '/api/branding-upload'
     | '/api/upload'
@@ -503,8 +467,6 @@ export interface FileRouteTypes {
     | '/_admin/dashboard/owners/$ownerId'
     | '/_admin/dashboard/promotions/new'
     | '/api/customer-profiles/$customerProfileId/identity-document'
-    | '/api/document-signing/public/signed-pdf'
-    | '/api/document-signing/public/unsigned-pdf'
     | '/api/orders/$orderId/contract'
     | '/_admin/dashboard/branches/'
     | '/_admin/dashboard/calendar/'
@@ -532,13 +494,10 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRouteRoute: typeof AdminRouteRouteWithChildren
-  SigningRoute: typeof SigningRoute
   ApiBrandingUploadRoute: typeof ApiBrandingUploadRoute
   ApiUploadRoute: typeof ApiUploadRoute
   BackendSplatRoute: typeof BackendSplatRoute
   ApiCustomerProfilesCustomerProfileIdIdentityDocumentRoute: typeof ApiCustomerProfilesCustomerProfileIdIdentityDocumentRoute
-  ApiDocumentSigningPublicSignedPdfRoute: typeof ApiDocumentSigningPublicSignedPdfRoute
-  ApiDocumentSigningPublicUnsignedPdfRoute: typeof ApiDocumentSigningPublicUnsignedPdfRoute
   ApiOrdersOrderIdContractRoute: typeof ApiOrdersOrderIdContractRouteWithChildren
 }
 
@@ -556,13 +515,6 @@ declare module '@tanstack/react-router' {
       path: ''
       fullPath: '/'
       preLoaderRoute: typeof AdminRouteRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/signing': {
-      id: '/signing'
-      path: '/signing'
-      fullPath: '/signing'
-      preLoaderRoute: typeof SigningRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_admin/dashboard': {
@@ -710,20 +662,6 @@ declare module '@tanstack/react-router' {
       path: '/api/customer-profiles/$customerProfileId/identity-document'
       fullPath: '/api/customer-profiles/$customerProfileId/identity-document'
       preLoaderRoute: typeof ApiCustomerProfilesCustomerProfileIdIdentityDocumentRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/document-signing/public/signed-pdf': {
-      id: '/api/document-signing/public/signed-pdf'
-      path: '/api/document-signing/public/signed-pdf'
-      fullPath: '/api/document-signing/public/signed-pdf'
-      preLoaderRoute: typeof ApiDocumentSigningPublicSignedPdfRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/document-signing/public/unsigned-pdf': {
-      id: '/api/document-signing/public/unsigned-pdf'
-      path: '/api/document-signing/public/unsigned-pdf'
-      fullPath: '/api/document-signing/public/unsigned-pdf'
-      preLoaderRoute: typeof ApiDocumentSigningPublicUnsignedPdfRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/orders/$orderId/contract': {
@@ -944,16 +882,11 @@ const ApiOrdersOrderIdContractRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRouteRoute: AdminRouteRouteWithChildren,
-  SigningRoute: SigningRoute,
   ApiBrandingUploadRoute: ApiBrandingUploadRoute,
   ApiUploadRoute: ApiUploadRoute,
   BackendSplatRoute: BackendSplatRoute,
   ApiCustomerProfilesCustomerProfileIdIdentityDocumentRoute:
     ApiCustomerProfilesCustomerProfileIdIdentityDocumentRoute,
-  ApiDocumentSigningPublicSignedPdfRoute:
-    ApiDocumentSigningPublicSignedPdfRoute,
-  ApiDocumentSigningPublicUnsignedPdfRoute:
-    ApiDocumentSigningPublicUnsignedPdfRoute,
   ApiOrdersOrderIdContractRoute: ApiOrdersOrderIdContractRouteWithChildren,
 }
 export const routeTree = rootRouteImport

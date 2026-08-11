@@ -6,7 +6,6 @@ export function getInstagramProfileUrl(username: string | null) {
 	return `https://www.instagram.com/${username.trim()}/`;
 }
 
-
 export function getDocumentFileName(identityDocumentPath: string) {
 	const segments = identityDocumentPath.split("/").filter(Boolean);
 	return segments.at(-1) ?? identityDocumentPath;

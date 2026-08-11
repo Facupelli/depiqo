@@ -1,10 +1,15 @@
-import { useStore } from "@tanstack/react-form";
-import { Loader2 } from "lucide-react";
 import { Button } from "@repo/ui/components/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@repo/ui/components/card";
+import {
+	Card,
+	CardContent,
+	CardHeader,
+	CardTitle,
+} from "@repo/ui/components/card";
 import { Field, FieldError, FieldLabel } from "@repo/ui/components/field";
 import { Input } from "@repo/ui/components/input";
 import { Textarea } from "@repo/ui/components/textarea";
+import { useStore } from "@tanstack/react-form";
+import { Loader2 } from "lucide-react";
 import { withForm } from "@/shared/contexts/form.context";
 import { formatMoney } from "@/shared/utils/formatters";
 import { useDraftRentalComposer } from "../create-draft-rental-composer.context";
@@ -76,7 +81,7 @@ export const DraftRentalReviewPanel = withForm({
 					</div>
 
 					<form.Field name="targetTotal">
-						{(field: any) => (
+						{(field) => (
 							<Field data-invalid={!field.state.meta.isValid}>
 								<FieldLabel htmlFor={field.name}>
 									Precio final deseado
@@ -97,7 +102,7 @@ export const DraftRentalReviewPanel = withForm({
 					</form.Field>
 
 					<form.Field name="adjustmentReason">
-						{(field: any) => (
+						{(field) => (
 							<Field>
 								<FieldLabel htmlFor={field.name}>Motivo del ajuste</FieldLabel>
 								<Textarea

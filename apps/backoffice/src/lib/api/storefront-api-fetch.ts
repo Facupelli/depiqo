@@ -36,9 +36,8 @@ export async function storefrontApiFetch<T = unknown>(
 		});
 	}
 
-	const tenantContextToken = await signStorefrontTenantToken(
-		trustedTenantContext,
-	);
+	const tenantContextToken =
+		await signStorefrontTenantToken(trustedTenantContext);
 
 	const method = (options.method ?? "GET").toUpperCase();
 	const headers = new Headers(options.headers);

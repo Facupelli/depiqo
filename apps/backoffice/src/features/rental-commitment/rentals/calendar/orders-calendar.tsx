@@ -10,6 +10,8 @@ import esLocale from "@fullcalendar/core/locales/es";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import FullCalendar from "@fullcalendar/react";
+import { Button } from "@repo/ui/components/button";
+import { Popover, PopoverContent } from "@repo/ui/components/popover";
 import {
 	AlertCircle,
 	CalendarDays,
@@ -18,8 +20,6 @@ import {
 	CircleUserRound,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { Button } from "@repo/ui/components/button";
-import { Popover, PopoverContent } from "@repo/ui/components/popover";
 import {
 	getRentalOrderStatusPresentation,
 	RENTAL_ORDER_STATUS_LEGEND_ITEMS,

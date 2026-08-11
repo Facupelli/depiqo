@@ -1,8 +1,8 @@
 import type { SendSigningInvitationResponseDto } from "@repo/api-contracts";
 import type { MutationOptions } from "@tanstack/react-query";
 import { useMutation } from "@tanstack/react-query";
+import { contractKeys } from "@/features/contracts/contracts.queries";
 import type { ProblemDetailsError } from "@/shared/errors";
-import { documentSigningKeys } from "../document-signing.queries";
 import {
 	type SendSigningInvitationVariables,
 	sendSigningInvitation,
@@ -29,7 +29,7 @@ export function useSendSigningInvitation(
 		mutationFn: sendSigningInvitation,
 		meta: {
 			invalidates: (variables: SendSigningInvitationVariables) =>
-				documentSigningKeys.sessions(variables.orderId),
+				contractKeys.rentalSigningSummary(variables.orderId),
 			...options?.meta,
 		},
 	});

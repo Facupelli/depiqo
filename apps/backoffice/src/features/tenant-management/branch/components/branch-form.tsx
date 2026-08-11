@@ -1,8 +1,10 @@
-import { useForm, useStore } from "@tanstack/react-form";
-import { Loader2 } from "lucide-react";
-import type { ReactNode } from "react";
 import { Button } from "@repo/ui/components/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@repo/ui/components/card";
+import {
+	Card,
+	CardContent,
+	CardHeader,
+	CardTitle,
+} from "@repo/ui/components/card";
 import {
 	Field,
 	FieldDescription,
@@ -16,6 +18,9 @@ import {
 	NativeSelectOption,
 } from "@repo/ui/components/native-select";
 import { Switch } from "@repo/ui/components/switch";
+import { useForm, useStore } from "@tanstack/react-form";
+import { Loader2 } from "lucide-react";
+import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import {
 	type BranchFormValues,

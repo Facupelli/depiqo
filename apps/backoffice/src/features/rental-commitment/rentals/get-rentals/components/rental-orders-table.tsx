@@ -2,6 +2,17 @@ import type {
 	GetRentalsSortByDto,
 	GetRentalsSortDirectionDto,
 } from "@repo/api-contracts";
+import { Badge } from "@repo/ui/components/badge";
+import { Button } from "@repo/ui/components/button";
+import { Skeleton } from "@repo/ui/components/skeleton";
+import {
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
+} from "@repo/ui/components/table";
 import type { ColumnDef } from "@tanstack/react-table";
 import {
 	flexRender,
@@ -20,17 +31,6 @@ import {
 	ChevronRight,
 	User,
 } from "lucide-react";
-import { Badge } from "@repo/ui/components/badge";
-import { Button } from "@repo/ui/components/button";
-import { Skeleton } from "@repo/ui/components/skeleton";
-import {
-	Table,
-	TableBody,
-	TableCell,
-	TableHead,
-	TableHeader,
-	TableRow,
-} from "@repo/ui/components/table";
 import { getRentalOrderStatusPresentation } from "@/features/rental-commitment/rentals/rental-order-status";
 import type { ParsedRentalListItem } from "@/features/rental-commitment/rentals/rentals.queries";
 import dayjs from "@/lib/dates/dayjs";

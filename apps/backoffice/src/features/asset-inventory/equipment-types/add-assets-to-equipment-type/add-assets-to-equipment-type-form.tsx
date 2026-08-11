@@ -1,5 +1,3 @@
-import { useForm } from "@tanstack/react-form";
-import { Plus, Trash2 } from "lucide-react";
 import { Button } from "@repo/ui/components/button";
 import { Field, FieldError, FieldLabel } from "@repo/ui/components/field";
 import { Input } from "@repo/ui/components/input";
@@ -18,6 +16,8 @@ import {
 	TableHeader,
 	TableRow,
 } from "@repo/ui/components/table";
+import { useForm } from "@tanstack/react-form";
+import { Plus, Trash2 } from "lucide-react";
 import {
 	type AddAssetsToEquipmentTypeFormValues,
 	addAssetsToEquipmentTypeFormDefaultValues,

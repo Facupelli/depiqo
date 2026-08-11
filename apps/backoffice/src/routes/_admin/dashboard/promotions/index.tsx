@@ -1,7 +1,12 @@
+import { Button } from "@repo/ui/components/button";
+import {
+	Tabs,
+	TabsContent,
+	TabsList,
+	TabsTrigger,
+} from "@repo/ui/components/tabs";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import z from "zod";
-import { Button } from "@repo/ui/components/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@repo/ui/components/tabs";
 import { PromotionsTab } from "@/features/pricing/promotions/components/promotions-tab";
 import { AdminRouteError } from "@/shared/components/admin-route-error";
 

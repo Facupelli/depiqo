@@ -1,7 +1,4 @@
 import type { GetEquipmentTypeDetailResponseDto } from "@repo/api-contracts";
-import { useSuspenseQuery } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
-import { type ReactNode, useId, useState } from "react";
 import { Badge } from "@repo/ui/components/badge";
 import { Button } from "@repo/ui/components/button";
 import {
@@ -19,7 +16,15 @@ import {
 	TableHeader,
 	TableRow,
 } from "@repo/ui/components/table";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@repo/ui/components/tabs";
+import {
+	Tabs,
+	TabsContent,
+	TabsList,
+	TabsTrigger,
+} from "@repo/ui/components/tabs";
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { createFileRoute } from "@tanstack/react-router";
+import { type ReactNode, useId, useState } from "react";
 import { useAddAssetsToEquipmentType } from "@/features/asset-inventory/equipment-types/add-assets-to-equipment-type/add-assets-to-equipment-type.mutation";
 import { toAddAssetsToEquipmentTypeDto } from "@/features/asset-inventory/equipment-types/add-assets-to-equipment-type/add-assets-to-equipment-type.schema";
 import { AddAssetsToEquipmentTypeForm } from "@/features/asset-inventory/equipment-types/add-assets-to-equipment-type/add-assets-to-equipment-type-form";

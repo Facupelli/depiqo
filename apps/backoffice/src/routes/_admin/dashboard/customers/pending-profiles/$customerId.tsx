@@ -2,6 +2,16 @@ import type {
 	GetCustomerProfileDetailResponseDto,
 	RentalCustomerOnboardingStatusDto,
 } from "@repo/api-contracts";
+import { Badge } from "@repo/ui/components/badge";
+import { Button, buttonVariants } from "@repo/ui/components/button";
+import {
+	Card,
+	CardContent,
+	CardHeader,
+	CardTitle,
+} from "@repo/ui/components/card";
+import { Skeleton } from "@repo/ui/components/skeleton";
+import { Textarea } from "@repo/ui/components/textarea";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import {
 	BriefcaseBusiness,
@@ -14,11 +24,6 @@ import {
 } from "lucide-react";
 import { type ElementType, type ReactNode, useState } from "react";
 import { PageBreadcrumb } from "@/components/detail-id-breadcrumb";
-import { Badge } from "@repo/ui/components/badge";
-import { Button, buttonVariants } from "@repo/ui/components/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@repo/ui/components/card";
-import { Skeleton } from "@repo/ui/components/skeleton";
-import { Textarea } from "@repo/ui/components/textarea";
 import { useApproveSubmittedCustomerOnboarding } from "@/features/tenant-management/customer/approve-submitted-customer-onboarding/approve-submitted-customer-onboarding.mutation";
 import {
 	getDocumentFileName,
@@ -280,7 +285,6 @@ function CustomerProfileReviewView({
 									value={getSafeValue(profile.businessName)}
 								/>
 							</div>
-
 						</div>
 					</ReviewSectionCard>
 

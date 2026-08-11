@@ -2,8 +2,6 @@ import type {
 	GetBranchesBranchDto,
 	GetEquipmentTypeSummariesQueryDto,
 } from "@repo/api-contracts";
-import { Search, X } from "lucide-react";
-import { useId } from "react";
 import { Input } from "@repo/ui/components/input";
 import {
 	Select,
@@ -12,6 +10,8 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@repo/ui/components/select";
+import { Search, X } from "lucide-react";
+import { useId } from "react";
 
 export interface EquipmentTypeSummariesFilterValue {
 	search?: string;

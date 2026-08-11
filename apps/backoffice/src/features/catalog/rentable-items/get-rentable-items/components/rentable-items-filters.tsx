@@ -3,8 +3,6 @@ import type {
 	GetBranchesBranchDto,
 	GetRentableItemsQueryDto,
 } from "@repo/api-contracts";
-import { Search, SlidersHorizontal, X } from "lucide-react";
-import { useId } from "react";
 import { Button } from "@repo/ui/components/button";
 import { Input } from "@repo/ui/components/input";
 import {
@@ -14,6 +12,8 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@repo/ui/components/select";
+import { Search, SlidersHorizontal, X } from "lucide-react";
+import { useId } from "react";
 
 type RentableItemKind = NonNullable<GetRentableItemsQueryDto["kind"]>;
 type RentableItemStatus = NonNullable<GetRentableItemsQueryDto["status"]>;
