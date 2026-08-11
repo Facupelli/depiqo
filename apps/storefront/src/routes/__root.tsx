@@ -10,7 +10,7 @@ import {
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 import { NotFoundPage } from "@/components/not-found-page";
 import { ServiceUnavailablePage } from "@/components/service-unavailable-page";
-import "@/config/client-env";
+import { clientEnv } from "@/config/client-env";
 import TanStackQueryDevtools from "@/integrations/tanstack-query/devtools";
 import { resolvePublicTenantContext } from "@/modules/tenant-management/resolve-public-tenant-context/resolve-public-tenant-context.function";
 import appCss from "../styles.css?url";
@@ -35,6 +35,18 @@ export const Route = createRootRouteWithContext<StorefrontRouterContext>()({
 			resolution.context.face === "admin"
 		) {
 			throw notFound();
+		}
+
+		if (resolution.context.face === "platform") {
+			const sharedAuthHostname = new URL(clientEnv.VITE_SHARED_AUTH_ORIGIN)
+				.hostname;
+			const isSharedAuthRoute = [
+				"/auth/google/start",
+				"/auth/google/callback",
+			].includes(location.pathname);
+			if (resolution.hostname === sharedAuthHostname && !isSharedAuthRoute) {
+				throw notFound();
+			}
 		}
 
 		return { tenantContext: resolution.context };

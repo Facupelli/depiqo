@@ -1,7 +1,7 @@
 import {
 	type GetCurrentCustomerResponseDto,
-	getCurrentCustomerContract,
 	GetCurrentCustomerResponseSchema,
+	getCurrentCustomerContract,
 } from "@repo/api-contracts";
 import { createServerFn } from "@tanstack/react-start";
 import { getRequestHeader } from "@tanstack/react-start/server";
@@ -13,25 +13,28 @@ export const getCurrentCustomerForStorefront = createServerFn({
 	method: "GET",
 })
 	.middleware([storefrontFunctionRequestContextMiddleware])
-	.handler(async ({ context }): Promise<GetCurrentCustomerResponseDto | null> => {
-		try {
-			const customer = await storefrontApiFetch<GetCurrentCustomerResponseDto>(
-				context.storefrontRequest,
-				{
-					path: getCurrentCustomerContract.path,
-					method: getCurrentCustomerContract.method,
-					headers: customerSessionHeaders(),
-				},
-			);
-			return GetCurrentCustomerResponseSchema.parse(customer);
-		} catch (error) {
-			if ([401, 403].includes(getProblemDetailsStatus(error) ?? 0)) {
-				return null;
-			}
+	.handler(
+		async ({ context }): Promise<GetCurrentCustomerResponseDto | null> => {
+			try {
+				const customer =
+					await storefrontApiFetch<GetCurrentCustomerResponseDto>(
+						context.storefrontRequest,
+						{
+							path: getCurrentCustomerContract.path,
+							method: getCurrentCustomerContract.method,
+							headers: customerSessionHeaders(),
+						},
+					);
+				return GetCurrentCustomerResponseSchema.parse(customer);
+			} catch (error) {
+				if ([401, 403].includes(getProblemDetailsStatus(error) ?? 0)) {
+					return null;
+				}
 
-			throw error;
-		}
-	});
+				throw error;
+			}
+		},
+	);
 
 function customerSessionHeaders(): HeadersInit | undefined {
 	const cookie = getRequestHeader("cookie");

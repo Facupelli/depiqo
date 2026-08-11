@@ -3,8 +3,7 @@ import { z } from "zod";
 import type { ApiContract } from "../../api-contract";
 
 export const CustomerGoogleStateBodySchema = z.object({
-  portalOrigin: z.string().url(),
-  redirectPath: z.string().min(1),
+  redirectPath: z.string().min(1).startsWith("/").refine((value) => !value.startsWith("//")),
 });
 
 export const CustomerGoogleStateResponseSchema = z.object({

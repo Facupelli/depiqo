@@ -2,8 +2,8 @@ import type { GetStorefrontBranchSchedulesResponseDto } from "@repo/api-contract
 import { Calendar } from "@repo/ui/components/calendar";
 import { es } from "date-fns/locale";
 import type { DateRange } from "react-day-picker";
-import { useStorefrontBranchSchedules } from "@/modules/tenant-management/branches/branch-schedule.queries";
 import { localDateToDateParam } from "@/lib/dates/parse";
+import { useStorefrontBranchSchedules } from "@/modules/tenant-management/branches/branch-schedule.queries";
 
 type StorefrontBranchScheduleSlotType =
 	GetStorefrontBranchSchedulesResponseDto[number]["type"];

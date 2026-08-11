@@ -10,8 +10,7 @@ export const CustomerGoogleHandoffBodySchema = z.object({
 
 export const CustomerGoogleHandoffResponseSchema = z.object({
   ticket: z.string().min(1),
-  portalOrigin: z.string().url(),
-  redirectPath: z.string().min(1),
+  canonicalHost: z.string().min(1),
 });
 
 export type CustomerGoogleHandoffBodyDto = z.infer<typeof CustomerGoogleHandoffBodySchema>;

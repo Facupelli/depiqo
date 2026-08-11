@@ -17,13 +17,15 @@ import {
 import { useState } from "react";
 import { z } from "zod";
 import { useCustomerLogin } from "@/modules/tenant-management/auth/customer-auth.queries";
-import { resolveCustomerReturnTo } from "@/modules/tenant-management/auth/customer-return-to";
-import { getCurrentCustomerForStorefront } from "@/modules/tenant-management/auth/get-current-customer.function";
+import { useCreateCustomerGoogleState } from "@/modules/tenant-management/auth/customer-google/customer-google.mutation";
+import { buildCustomerGoogleStartUrl } from "@/modules/tenant-management/auth/customer-google/customer-google.redirect";
 import {
 	createCustomerLoginFormDefaults,
 	customerLoginFormSchema,
 	toCustomerLoginDto,
 } from "@/modules/tenant-management/auth/customer-login-form.schema";
+import { resolveCustomerReturnTo } from "@/modules/tenant-management/auth/customer-return-to";
+import { getCurrentCustomerForStorefront } from "@/modules/tenant-management/auth/get-current-customer.function";
 import { getTenantBranding } from "@/modules/tenant-management/tenant-branding/tenant-branding";
 import { isAuthError } from "@/shared/errors";
 
@@ -47,7 +49,20 @@ function CustomerLoginPage() {
 	const branding = getTenantBranding(storefrontTenant.tenant);
 	const router = useRouter();
 	const login = useCustomerLogin();
+	const createGoogleState = useCreateCustomerGoogleState();
 	const [serverError, setServerError] = useState<string | null>(null);
+	async function startGoogleLogin() {
+		setServerError(null);
+		try {
+			const { state } = await createGoogleState.mutateAsync({
+				redirectPath: returnTo,
+			});
+			window.location.assign(buildCustomerGoogleStartUrl(state));
+		} catch {
+			setServerError("No pudimos iniciar el acceso con Google.");
+		}
+	}
+
 	const form = useForm({
 		defaultValues: createCustomerLoginFormDefaults(),
 		validators: { onSubmit: customerLoginFormSchema },
@@ -161,6 +176,25 @@ function CustomerLoginPage() {
 						</form.Subscribe>
 					</FieldGroup>
 				</form>
+				<div className="relative">
+					<div className="absolute inset-0 flex items-center">
+						<span className="w-full border-t" />
+					</div>
+					<div className="relative flex justify-center text-xs uppercase">
+						<span className="bg-white px-2 text-muted-foreground">o</span>
+					</div>
+				</div>
+				<Button
+					type="button"
+					variant="outline"
+					className="w-full"
+					disabled={createGoogleState.isPending}
+					onClick={startGoogleLogin}
+				>
+					{createGoogleState.isPending
+						? "Redirigiendo a Google..."
+						: "Continuar con Google"}
+				</Button>
 				<p className="text-center text-sm text-muted-foreground">
 					¿No tienes una cuenta?{" "}
 					<Link

@@ -8,5 +8,6 @@ export type {
 export type StorefrontTenantContext = {
   tenantId: string;
   host: string;
+  canonicalHost: string;
   scope: 'public-storefront';
 };

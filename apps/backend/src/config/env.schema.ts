@@ -38,7 +38,6 @@ export const EnvSchema = z.object({
   GOOGLE_CLIENT_ID: z.string(),
   GOOGLE_CLIENT_SECRET: z.string(),
   GOOGLE_OAUTH_REDIRECT_URI: z.url(),
-  GOOGLE_AUTH_STATE_SECRET: z.string(),
   GOOGLE_AUTH_STATE_EXPIRATION_TIME_SECONDS: z.coerce.number().default(600),
   GOOGLE_AUTH_HANDOFF_EXPIRATION_TIME_SECONDS: z.coerce.number().default(300),
 

@@ -31,7 +31,6 @@ async function main(): Promise<void> {
     GOOGLE_CLIENT_ID: 'test-google-client',
     GOOGLE_CLIENT_SECRET: 'test-google-secret',
     GOOGLE_OAUTH_REDIRECT_URI: 'http://localhost/auth/callback',
-    GOOGLE_AUTH_STATE_SECRET: 'test-google-state-secret',
     CLOUDFLARE_API_TOKEN: 'test-cloudflare-token',
     CLOUDFLARE_ZONE_ID: 'test-cloudflare-zone',
     R2_ACCOUNT_ID: 'test-r2-account',

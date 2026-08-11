@@ -1,10 +1,10 @@
 import { createMiddleware } from "@tanstack/react-start";
 import { logStorefrontServerEvent } from "@/shared/server/logging/storefront-server-logger.server";
+import { normalizeRequestHostname } from "./hostname";
 import {
 	resolveTrustedTenantContext,
 	TenantResolverFailure,
 } from "./resolve-trusted-tenant-context.server";
-import { normalizeRequestHostname } from "./hostname";
 
 const REQUEST_ID_HEADER = "x-request-id";
 const REQUEST_ID_PATTERN = /^[A-Za-z0-9._:-]{1,128}$/;
@@ -53,7 +53,8 @@ export const storefrontRequestContextMiddleware = createMiddleware().server(
 		} satisfies StorefrontRequestContext;
 
 		try {
-			const tenantContext = await resolveTrustedTenantContext(storefrontRequest);
+			const tenantContext =
+				await resolveTrustedTenantContext(storefrontRequest);
 			if (
 				tenantContext.face === "storefront" &&
 				tenantContext.host !== tenantContext.canonicalHost

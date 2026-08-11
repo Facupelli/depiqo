@@ -34,6 +34,8 @@ Copy `.env.example` to `.env.local` for local development and provide:
 - `VITE_GOOGLE_CLIENT_ID`
 - `VITE_SHARED_AUTH_ORIGIN`
 
+Google OAuth is centralized at `${VITE_SHARED_AUTH_ORIGIN}/auth/google/callback`. Production must set `VITE_SHARED_AUTH_ORIGIN` to `https://auth.depiqo.com`; the Google Console and backend `GOOGLE_OAUTH_REDIRECT_URI` must both use exactly `https://auth.depiqo.com/auth/google/callback`.
+
 Server and client variables are validated independently. `BACKEND_URL` must contain only a scheme, hostname, and optional port. `BFF_INTERNAL_TOKEN` and `STOREFRONT_TENANT_JWT_SECRET` are server-only credentials and must be configured as Cloudflare Worker secrets, never as Wrangler variables or `VITE_` variables. The JWT issuer and audience are regular server-only variables.
 
 For a deployed Worker, provision credentials outside source control:

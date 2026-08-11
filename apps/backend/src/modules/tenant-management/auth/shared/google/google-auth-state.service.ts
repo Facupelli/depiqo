@@ -1,82 +1,84 @@
-import { randomUUID } from 'crypto';
+import { createHash, randomUUID } from 'crypto';
 
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { JwtService } from '@nestjs/jwt';
 
 import { Env } from 'src/config/env.schema';
+import { PrismaService } from 'src/core/database/prisma.service';
 
 export interface IssueGoogleAuthStateParams {
   tenantId: string;
-  portalOrigin: string;
+  canonicalHost: string;
   redirectPath: string;
 }
 
-export interface VerifiedGoogleAuthState {
+export interface ConsumedGoogleAuthState {
   tenantId: string;
-  portalOrigin: string;
+  canonicalHost: string;
   redirectPath: string;
-  nonce: string;
-}
-
-interface GoogleAuthStatePayload extends VerifiedGoogleAuthState {
-  typ: 'v2-rental-customer-google-auth-state';
-}
-
-export class GoogleAuthStateVerificationError extends Error {
-  constructor(message = 'Failed to verify Google auth state.') {
-    super(message);
-  }
 }
 
 @Injectable()
 export class GoogleAuthStateService {
   constructor(
+    private readonly prisma: PrismaService,
     private readonly configService: ConfigService<Env, true>,
-    private readonly jwtService: JwtService,
   ) {}
 
-  issueState(params: IssueGoogleAuthStateParams): string {
-    const payload: GoogleAuthStatePayload = {
-      typ: 'v2-rental-customer-google-auth-state',
-      tenantId: params.tenantId,
-      portalOrigin: params.portalOrigin,
-      redirectPath: params.redirectPath,
-      nonce: randomUUID(),
-    };
+  async issueState(params: IssueGoogleAuthStateParams): Promise<string> {
+    const state = randomUUID();
+    const expiresAt = new Date(
+      Date.now() + this.configService.get('GOOGLE_AUTH_STATE_EXPIRATION_TIME_SECONDS') * 1000,
+    );
 
-    return this.jwtService.sign(payload, {
-      secret: this.configService.get('GOOGLE_AUTH_STATE_SECRET'),
-      expiresIn: this.configService.get('GOOGLE_AUTH_STATE_EXPIRATION_TIME_SECONDS'),
+    await this.prisma.client.customerGoogleOAuthTransaction.create({
+      data: {
+        stateHash: GoogleAuthStateService.hashState(state),
+        tenantId: params.tenantId,
+        canonicalHost: params.canonicalHost,
+        redirectPath: params.redirectPath,
+        expiresAt,
+      },
     });
+
+    return state;
   }
 
-  verifyState(state: string): VerifiedGoogleAuthState {
-    try {
-      const payload = this.jwtService.verify<GoogleAuthStatePayload>(state, {
-        secret: this.configService.get('GOOGLE_AUTH_STATE_SECRET'),
+  async consumeState(state: string): Promise<ConsumedGoogleAuthState> {
+    const stateHash = GoogleAuthStateService.hashState(state);
+    const now = new Date();
+
+    return this.prisma.client.$transaction(async (tx) => {
+      const transaction = await tx.customerGoogleOAuthTransaction.findUnique({
+        where: { stateHash },
       });
 
-      if (payload.typ !== 'v2-rental-customer-google-auth-state') {
-        throw new GoogleAuthStateVerificationError('Unexpected state type.');
+      if (!transaction || transaction.usedAt !== null || transaction.expiresAt <= now) {
+        throw new UnauthorizedException('Google authentication state is invalid or expired.');
       }
 
-      if (!payload.tenantId || !payload.portalOrigin || !payload.redirectPath || !payload.nonce) {
-        throw new GoogleAuthStateVerificationError('Required state fields are missing.');
+      const consumed = await tx.customerGoogleOAuthTransaction.updateMany({
+        where: {
+          id: transaction.id,
+          usedAt: null,
+          expiresAt: { gt: now },
+        },
+        data: { usedAt: now },
+      });
+
+      if (consumed.count !== 1) {
+        throw new UnauthorizedException('Google authentication state is invalid or expired.');
       }
 
       return {
-        tenantId: payload.tenantId,
-        portalOrigin: payload.portalOrigin,
-        redirectPath: payload.redirectPath,
-        nonce: payload.nonce,
+        tenantId: transaction.tenantId,
+        canonicalHost: transaction.canonicalHost,
+        redirectPath: transaction.redirectPath,
       };
-    } catch (error) {
-      if (error instanceof GoogleAuthStateVerificationError) {
-        throw error;
-      }
+    });
+  }
 
-      throw new GoogleAuthStateVerificationError('State signature or expiry is invalid.');
-    }
+  private static hashState(state: string): string {
+    return createHash('sha256').update(state).digest('hex');
   }
 }

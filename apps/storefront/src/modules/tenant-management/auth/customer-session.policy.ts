@@ -1,7 +1,7 @@
 import type { GetCurrentCustomerResponseDto } from "@repo/api-contracts";
 import { redirect } from "@tanstack/react-router";
-import { getCurrentCustomerForStorefront } from "./get-current-customer.function";
 import { resolveCustomerReturnTo } from "./customer-return-to";
+import { getCurrentCustomerForStorefront } from "./get-current-customer.function";
 
 export async function requireStorefrontCustomerSession(
 	returnTo: unknown,

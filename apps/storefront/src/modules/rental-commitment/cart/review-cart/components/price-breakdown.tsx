@@ -142,7 +142,6 @@ export function PriceBreakdown() {
 					El precio todavía no está disponible.
 				</p>
 			)}
-			
 		</section>
 	);
 }

@@ -17,8 +17,6 @@
     "CLOUDFLARE_R2_BUCKET_NAME": "equipment",
     "VITE_R2_PUBLIC_URL": "https://equipment.depiqo.com",
     "VITE_BRANDING_R2_PUBLIC_URL": "https://branding.depiqo.com",
-		"VITE_GOOGLE_CLIENT_ID": "95835950658-d0n7ngg3kb1a582345erhldulp89m2e2.apps.googleusercontent.com",
-		"VITE_SHARED_AUTH_ORIGIN": "https://auth.depiqo.com",
     "NODE_ENV": "production",
   },
   "routes": [

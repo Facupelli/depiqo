@@ -15,7 +15,7 @@ export class CustomerGoogleLoginController {
   @HttpCode(200)
   async createHandoff(
     @Body() dto: CustomerGoogleLoginRequestDto,
-  ): Promise<{ ticket: string; portalOrigin: string; redirectPath: string }> {
+  ): Promise<{ ticket: string; canonicalHost: string }> {
     return this.customerGoogleLoginService.createHandoff(dto);
   }
 }

@@ -11,7 +11,7 @@ import {
 } from "./resolve-trusted-tenant-context.server";
 
 export type PublicTenantResolution =
-	| { status: "resolved"; context: PublicTenantContext }
+	| { status: "resolved"; context: PublicTenantContext; hostname: string }
 	| { status: "invalid-host" | "unknown-host" };
 
 export const resolvePublicTenantContext = createServerFn({
@@ -27,6 +27,7 @@ export const resolvePublicTenantContext = createServerFn({
 			return {
 				status: "resolved",
 				context: toPublicTenantContext(trustedContext),
+				hostname: trustedContext.host,
 			};
 		} catch (error) {
 			if (error instanceof TenantResolverFailure) {

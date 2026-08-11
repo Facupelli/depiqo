@@ -10,6 +10,7 @@ export const CustomerGoogleFinalizeBodySchema = z.object({
 export const CustomerGoogleFinalizeResponseSchema = z.object({
   customer: AuthCustomerSchema,
   csrfToken: z.string().min(1),
+  redirectPath: z.string().min(1).startsWith("/").refine((value) => !value.startsWith("//")),
 });
 
 export type CustomerGoogleFinalizeBodyDto = z.infer<typeof CustomerGoogleFinalizeBodySchema>;

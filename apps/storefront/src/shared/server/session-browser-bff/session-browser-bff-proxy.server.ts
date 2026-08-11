@@ -13,6 +13,7 @@ import { signStorefrontTenantToken } from "@/shared/server/storefront-transport/
 const ALLOWED_PATHS = new Set([
 	"auth/csrf",
 	"auth/customer/login",
+	"auth/customer/google/finalize",
 	"auth/customer/logout",
 	"auth/customer/me",
 ]);
@@ -72,6 +73,20 @@ export async function proxySessionBrowserBffRequest(
 
 	if (tenantContext.face !== "storefront") {
 		return problemResponse(404, "Storefront tenant not found", requestId);
+	}
+
+	if (tenantContext.host !== tenantContext.canonicalHost) {
+		const location = new URL(request.url);
+		location.hostname = tenantContext.canonicalHost;
+		location.port = "";
+		return new Response(null, {
+			status: 308,
+			headers: {
+				location: location.toString(),
+				"cache-control": "no-store",
+				"x-request-id": requestId,
+			},
+		});
 	}
 
 	const token = await signStorefrontTenantToken(tenantContext);

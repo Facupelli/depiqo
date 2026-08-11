@@ -1,8 +1,11 @@
-import { Body, Controller, HttpCode, Post, Req } from '@nestjs/common';
+import { Body, Controller, HttpCode, Post, Req, UseGuards } from '@nestjs/common';
 import { Request } from 'express';
 
 import { Public } from 'src/core/decorators/public.decorator';
 import { AuthCustomer } from '../../shared/auth.types';
+import { CurrentStorefrontTenant } from '../../../tenant-context/decorators/current-storefront-tenant.decorator';
+import { StorefrontTenantContext } from '../../../tenant-context/tenant-context.contract';
+import { StorefrontTenantContextGuard } from '../../../tenant-context/guards/storefront-tenant-context.guard';
 import { CsrfService } from '../../shared/csrf/csrf.service';
 import { SkipCsrf } from '../../shared/csrf/skip-csrf.decorator';
 import { CustomerGoogleHandoffTicketService } from '../../shared/handoff/customer-google-handoff-ticket.service';
@@ -21,20 +24,27 @@ export class CustomerGoogleFinalizeController {
 
   @Post('finalize')
   @HttpCode(200)
+  @UseGuards(StorefrontTenantContextGuard)
   async finalize(
     @Body() dto: CustomerGoogleFinalizeRequestDto,
     @Req() req: Request,
-  ): Promise<{ customer: AuthCustomer; csrfToken: string }> {
-    const customer = await this.handoffTicketService.consumeCustomerTicket(dto.ticket);
+    @CurrentStorefrontTenant() storefrontTenant: StorefrontTenantContext,
+  ): Promise<{ customer: AuthCustomer; csrfToken: string; redirectPath: string }> {
+    const handoff = await this.handoffTicketService.consumeCustomerTicket({
+      ticket: dto.ticket,
+      tenantId: storefrontTenant.tenantId,
+      canonicalHost: storefrontTenant.canonicalHost,
+    });
 
     await this.sessionRegenerator.regenerate(req);
-    await this.loginWithPassport(req, customer);
+    await this.loginWithPassport(req, handoff.customer);
 
     const csrfToken = this.csrfService.rotateToken(req);
 
     return {
-      customer,
+      customer: handoff.customer,
       csrfToken,
+      redirectPath: handoff.redirectPath,
     };
   }
 

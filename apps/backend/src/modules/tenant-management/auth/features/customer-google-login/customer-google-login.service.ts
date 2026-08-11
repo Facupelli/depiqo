@@ -6,10 +6,7 @@ import { Prisma, V2RentalCustomer } from 'src/generated/prisma/client';
 import { V2AuthProvider } from 'src/generated/prisma/enums';
 import { AuthCustomer, normalizeEmail, toAuthCustomer } from '../../shared/auth.types';
 import { CustomerGoogleHandoffTicketService } from '../../shared/handoff/customer-google-handoff-ticket.service';
-import {
-  GoogleAuthStateService,
-  GoogleAuthStateVerificationError,
-} from '../../shared/google/google-auth-state.service';
+import { GoogleAuthStateService } from '../../shared/google/google-auth-state.service';
 import {
   GoogleAuthorizationCodeExchangeError,
   GoogleIdentityVerificationError,
@@ -30,9 +27,9 @@ export class CustomerGoogleLoginService {
     code: string;
     state: string;
     codeVerifier?: string;
-  }): Promise<{ ticket: string; portalOrigin: string; redirectPath: string }> {
+  }): Promise<{ ticket: string; canonicalHost: string }> {
     try {
-      const verifiedState = this.googleAuthStateService.verifyState(input.state);
+      const transaction = await this.googleAuthStateService.consumeState(input.state);
       const googleIdentity = await this.googleIdentityVerifier.verifyAuthorizationCode({
         code: input.code,
         redirectUri: this.configService.get('GOOGLE_OAUTH_REDIRECT_URI'),
@@ -40,22 +37,22 @@ export class CustomerGoogleLoginService {
       });
 
       const customer = await this.resolveOrCreateCustomer({
-        tenantId: verifiedState.tenantId,
+        tenantId: transaction.tenantId,
         googleIdentity,
       });
       const ticket = await this.handoffTicketService.issueTicket({
         tenantId: customer.tenantId,
+        canonicalHost: transaction.canonicalHost,
+        redirectPath: transaction.redirectPath,
         customerId: customer.id,
       });
 
       return {
         ticket,
-        portalOrigin: verifiedState.portalOrigin,
-        redirectPath: verifiedState.redirectPath,
+        canonicalHost: transaction.canonicalHost,
       };
     } catch (error) {
       if (
-        error instanceof GoogleAuthStateVerificationError ||
         error instanceof GoogleAuthorizationCodeExchangeError ||
         error instanceof GoogleIdentityVerificationError
       ) {

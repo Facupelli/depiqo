@@ -21,8 +21,6 @@ import { Route as BackendSplatRouteImport } from './routes/backend/$'
 import { Route as AdminAdminLoginRouteImport } from './routes/_admin/admin/login'
 import { Route as AdminAdminRegisterRouteImport } from './routes/_admin/admin/register'
 import { Route as AdminDashboardIndexRouteImport } from './routes/_admin/dashboard/index'
-import { Route as AuthGoogleCallbackRouteImport } from './routes/auth/google/callback'
-import { Route as AuthGoogleStartRouteImport } from './routes/auth/google/start'
 import { Route as AdminDashboardBranchesIndexRouteImport } from './routes/_admin/dashboard/branches/index'
 import { Route as AdminDashboardBranchesNewRouteImport } from './routes/_admin/dashboard/branches/new'
 import { Route as AdminDashboardCalendarIndexRouteImport } from './routes/_admin/dashboard/calendar/index'
@@ -43,7 +41,6 @@ import { Route as PortalTenantOrderConfirmationIndexRouteImport } from './routes
 import { Route as PortalTenantOrderCreatedContactTeamIndexRouteImport } from './routes/_portal/_tenant/order-created-contact-team/index'
 import { Route as PortalTenantOrderCreatedWhatsappIndexRouteImport } from './routes/_portal/_tenant/order-created-whatsapp/index'
 import { Route as PortalTenantRentalIndexRouteImport } from './routes/_portal/_tenant/rental/index'
-import { Route as PortalAuthGoogleFinalizeRouteImport } from './routes/_portal/auth/google/finalize'
 import { Route as ApiCustomerProfilesCustomerProfileIdIdentityDocumentRouteImport } from './routes/api/customer-profiles/$customerProfileId/identity-document'
 import { Route as ApiDocumentSigningPublicSignedPdfRouteImport } from './routes/api/document-signing/public/signed-pdf'
 import { Route as ApiDocumentSigningPublicUnsignedPdfRouteImport } from './routes/api/document-signing/public/unsigned-pdf'
@@ -119,16 +116,6 @@ const AdminDashboardIndexRoute = AdminDashboardIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AdminDashboardRouteRoute,
-} as any)
-const AuthGoogleCallbackRoute = AuthGoogleCallbackRouteImport.update({
-  id: '/auth/google/callback',
-  path: '/auth/google/callback',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthGoogleStartRoute = AuthGoogleStartRouteImport.update({
-  id: '/auth/google/start',
-  path: '/auth/google/start',
-  getParentRoute: () => rootRouteImport,
 } as any)
 const AdminDashboardBranchesIndexRoute =
   AdminDashboardBranchesIndexRouteImport.update({
@@ -247,12 +234,6 @@ const PortalTenantRentalIndexRoute = PortalTenantRentalIndexRouteImport.update({
   path: '/rental/',
   getParentRoute: () => PortalRouteRoute,
 } as any)
-const PortalAuthGoogleFinalizeRoute =
-  PortalAuthGoogleFinalizeRouteImport.update({
-    id: '/auth/google/finalize',
-    path: '/auth/google/finalize',
-    getParentRoute: () => PortalRouteRoute,
-  } as any)
 const ApiCustomerProfilesCustomerProfileIdIdentityDocumentRoute =
   ApiCustomerProfilesCustomerProfileIdIdentityDocumentRouteImport.update({
     id: '/api/customer-profiles/$customerProfileId/identity-document',
@@ -366,15 +347,12 @@ export interface FileRoutesByFullPath {
   '/backend/$': typeof BackendSplatRoute
   '/admin/login': typeof AdminAdminLoginRoute
   '/admin/register': typeof AdminAdminRegisterRoute
-  '/auth/google/callback': typeof AuthGoogleCallbackRoute
-  '/auth/google/start': typeof AuthGoogleStartRoute
   '/dashboard/': typeof AdminDashboardIndexRoute
   '/dashboard/branches/new': typeof AdminDashboardBranchesNewRoute
   '/dashboard/catalog/new': typeof AdminDashboardCatalogNewRoute
   '/dashboard/orders/new': typeof AdminDashboardOrdersNewRoute
   '/dashboard/owners/$ownerId': typeof AdminDashboardOwnersOwnerIdRoute
   '/dashboard/promotions/new': typeof AdminDashboardPromotionsNewRoute
-  '/auth/google/finalize': typeof PortalAuthGoogleFinalizeRoute
   '/api/customer-profiles/$customerProfileId/identity-document': typeof ApiCustomerProfilesCustomerProfileIdIdentityDocumentRoute
   '/api/document-signing/public/signed-pdf': typeof ApiDocumentSigningPublicSignedPdfRoute
   '/api/document-signing/public/unsigned-pdf': typeof ApiDocumentSigningPublicUnsignedPdfRoute
@@ -417,15 +395,12 @@ export interface FileRoutesByTo {
   '/backend/$': typeof BackendSplatRoute
   '/admin/login': typeof AdminAdminLoginRoute
   '/admin/register': typeof AdminAdminRegisterRoute
-  '/auth/google/callback': typeof AuthGoogleCallbackRoute
-  '/auth/google/start': typeof AuthGoogleStartRoute
   '/dashboard': typeof AdminDashboardIndexRoute
   '/dashboard/branches/new': typeof AdminDashboardBranchesNewRoute
   '/dashboard/catalog/new': typeof AdminDashboardCatalogNewRoute
   '/dashboard/orders/new': typeof AdminDashboardOrdersNewRoute
   '/dashboard/owners/$ownerId': typeof AdminDashboardOwnersOwnerIdRoute
   '/dashboard/promotions/new': typeof AdminDashboardPromotionsNewRoute
-  '/auth/google/finalize': typeof PortalAuthGoogleFinalizeRoute
   '/api/customer-profiles/$customerProfileId/identity-document': typeof ApiCustomerProfilesCustomerProfileIdIdentityDocumentRoute
   '/api/document-signing/public/signed-pdf': typeof ApiDocumentSigningPublicSignedPdfRoute
   '/api/document-signing/public/unsigned-pdf': typeof ApiDocumentSigningPublicUnsignedPdfRoute
@@ -472,15 +447,12 @@ export interface FileRoutesById {
   '/backend/$': typeof BackendSplatRoute
   '/_admin/admin/login': typeof AdminAdminLoginRoute
   '/_admin/admin/register': typeof AdminAdminRegisterRoute
-  '/auth/google/callback': typeof AuthGoogleCallbackRoute
-  '/auth/google/start': typeof AuthGoogleStartRoute
   '/_admin/dashboard/': typeof AdminDashboardIndexRoute
   '/_admin/dashboard/branches/new': typeof AdminDashboardBranchesNewRoute
   '/_admin/dashboard/catalog/new': typeof AdminDashboardCatalogNewRoute
   '/_admin/dashboard/orders/new': typeof AdminDashboardOrdersNewRoute
   '/_admin/dashboard/owners/$ownerId': typeof AdminDashboardOwnersOwnerIdRoute
   '/_admin/dashboard/promotions/new': typeof AdminDashboardPromotionsNewRoute
-  '/_portal/auth/google/finalize': typeof PortalAuthGoogleFinalizeRoute
   '/api/customer-profiles/$customerProfileId/identity-document': typeof ApiCustomerProfilesCustomerProfileIdIdentityDocumentRoute
   '/api/document-signing/public/signed-pdf': typeof ApiDocumentSigningPublicSignedPdfRoute
   '/api/document-signing/public/unsigned-pdf': typeof ApiDocumentSigningPublicUnsignedPdfRoute
@@ -526,15 +498,12 @@ export interface FileRouteTypes {
     | '/backend/$'
     | '/admin/login'
     | '/admin/register'
-    | '/auth/google/callback'
-    | '/auth/google/start'
     | '/dashboard/'
     | '/dashboard/branches/new'
     | '/dashboard/catalog/new'
     | '/dashboard/orders/new'
     | '/dashboard/owners/$ownerId'
     | '/dashboard/promotions/new'
-    | '/auth/google/finalize'
     | '/api/customer-profiles/$customerProfileId/identity-document'
     | '/api/document-signing/public/signed-pdf'
     | '/api/document-signing/public/unsigned-pdf'
@@ -577,15 +546,12 @@ export interface FileRouteTypes {
     | '/backend/$'
     | '/admin/login'
     | '/admin/register'
-    | '/auth/google/callback'
-    | '/auth/google/start'
     | '/dashboard'
     | '/dashboard/branches/new'
     | '/dashboard/catalog/new'
     | '/dashboard/orders/new'
     | '/dashboard/owners/$ownerId'
     | '/dashboard/promotions/new'
-    | '/auth/google/finalize'
     | '/api/customer-profiles/$customerProfileId/identity-document'
     | '/api/document-signing/public/signed-pdf'
     | '/api/document-signing/public/unsigned-pdf'
@@ -631,15 +597,12 @@ export interface FileRouteTypes {
     | '/backend/$'
     | '/_admin/admin/login'
     | '/_admin/admin/register'
-    | '/auth/google/callback'
-    | '/auth/google/start'
     | '/_admin/dashboard/'
     | '/_admin/dashboard/branches/new'
     | '/_admin/dashboard/catalog/new'
     | '/_admin/dashboard/orders/new'
     | '/_admin/dashboard/owners/$ownerId'
     | '/_admin/dashboard/promotions/new'
-    | '/_portal/auth/google/finalize'
     | '/api/customer-profiles/$customerProfileId/identity-document'
     | '/api/document-signing/public/signed-pdf'
     | '/api/document-signing/public/unsigned-pdf'
@@ -683,8 +646,6 @@ export interface RootRouteChildren {
   ApiCustomerUploadRoute: typeof ApiCustomerUploadRoute
   ApiUploadRoute: typeof ApiUploadRoute
   BackendSplatRoute: typeof BackendSplatRoute
-  AuthGoogleCallbackRoute: typeof AuthGoogleCallbackRoute
-  AuthGoogleStartRoute: typeof AuthGoogleStartRoute
   ApiCustomerProfilesCustomerProfileIdIdentityDocumentRoute: typeof ApiCustomerProfilesCustomerProfileIdIdentityDocumentRoute
   ApiDocumentSigningPublicSignedPdfRoute: typeof ApiDocumentSigningPublicSignedPdfRoute
   ApiDocumentSigningPublicUnsignedPdfRoute: typeof ApiDocumentSigningPublicUnsignedPdfRoute
@@ -776,20 +737,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/dashboard/'
       preLoaderRoute: typeof AdminDashboardIndexRouteImport
       parentRoute: typeof AdminDashboardRouteRoute
-    }
-    '/auth/google/callback': {
-      id: '/auth/google/callback'
-      path: '/auth/google/callback'
-      fullPath: '/auth/google/callback'
-      preLoaderRoute: typeof AuthGoogleCallbackRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/auth/google/start': {
-      id: '/auth/google/start'
-      path: '/auth/google/start'
-      fullPath: '/auth/google/start'
-      preLoaderRoute: typeof AuthGoogleStartRouteImport
-      parentRoute: typeof rootRouteImport
     }
     '/_admin/dashboard/branches/': {
       id: '/_admin/dashboard/branches/'
@@ -929,13 +876,6 @@ declare module '@tanstack/react-router' {
       path: '/rental'
       fullPath: '/rental/'
       preLoaderRoute: typeof PortalTenantRentalIndexRouteImport
-      parentRoute: typeof PortalRouteRoute
-    }
-    '/_portal/auth/google/finalize': {
-      id: '/_portal/auth/google/finalize'
-      path: '/auth/google/finalize'
-      fullPath: '/auth/google/finalize'
-      preLoaderRoute: typeof PortalAuthGoogleFinalizeRouteImport
       parentRoute: typeof PortalRouteRoute
     }
     '/api/customer-profiles/$customerProfileId/identity-document': {
@@ -1142,7 +1082,6 @@ const AdminRouteRouteWithChildren = AdminRouteRoute._addFileChildren(
 )
 
 interface PortalRouteRouteChildren {
-  PortalAuthGoogleFinalizeRoute: typeof PortalAuthGoogleFinalizeRoute
   PortalTenantCartIndexRoute: typeof PortalTenantCartIndexRoute
   PortalTenantConfirmedRentalSuccessIndexRoute: typeof PortalTenantConfirmedRentalSuccessIndexRoute
   PortalTenantOnboardIndexRoute: typeof PortalTenantOnboardIndexRoute
@@ -1153,7 +1092,6 @@ interface PortalRouteRouteChildren {
 }
 
 const PortalRouteRouteChildren: PortalRouteRouteChildren = {
-  PortalAuthGoogleFinalizeRoute: PortalAuthGoogleFinalizeRoute,
   PortalTenantCartIndexRoute: PortalTenantCartIndexRoute,
   PortalTenantConfirmedRentalSuccessIndexRoute:
     PortalTenantConfirmedRentalSuccessIndexRoute,
@@ -1213,8 +1151,6 @@ const rootRouteChildren: RootRouteChildren = {
   ApiCustomerUploadRoute: ApiCustomerUploadRoute,
   ApiUploadRoute: ApiUploadRoute,
   BackendSplatRoute: BackendSplatRoute,
-  AuthGoogleCallbackRoute: AuthGoogleCallbackRoute,
-  AuthGoogleStartRoute: AuthGoogleStartRoute,
   ApiCustomerProfilesCustomerProfileIdIdentityDocumentRoute:
     ApiCustomerProfilesCustomerProfileIdIdentityDocumentRoute,
   ApiDocumentSigningPublicSignedPdfRoute:

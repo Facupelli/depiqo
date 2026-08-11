@@ -16,6 +16,9 @@ import { Route as RegisterRouteImport } from './routes/register'
 import { Route as CartIndexRouteImport } from './routes/cart/index'
 import { Route as RentalIndexRouteImport } from './routes/rental/index'
 import { Route as SessionSplatRouteImport } from './routes/session/$'
+import { Route as AuthGoogleCallbackRouteImport } from './routes/auth/google/callback'
+import { Route as AuthGoogleFinalizeRouteImport } from './routes/auth/google/finalize'
+import { Route as AuthGoogleStartRouteImport } from './routes/auth/google/start'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -52,6 +55,21 @@ const SessionSplatRoute = SessionSplatRouteImport.update({
   path: '/session/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthGoogleCallbackRoute = AuthGoogleCallbackRouteImport.update({
+  id: '/auth/google/callback',
+  path: '/auth/google/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthGoogleFinalizeRoute = AuthGoogleFinalizeRouteImport.update({
+  id: '/auth/google/finalize',
+  path: '/auth/google/finalize',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthGoogleStartRoute = AuthGoogleStartRouteImport.update({
+  id: '/auth/google/start',
+  path: '/auth/google/start',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -61,6 +79,9 @@ export interface FileRoutesByFullPath {
   '/session/$': typeof SessionSplatRoute
   '/cart/': typeof CartIndexRoute
   '/rental/': typeof RentalIndexRoute
+  '/auth/google/callback': typeof AuthGoogleCallbackRoute
+  '/auth/google/finalize': typeof AuthGoogleFinalizeRoute
+  '/auth/google/start': typeof AuthGoogleStartRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -70,6 +91,9 @@ export interface FileRoutesByTo {
   '/session/$': typeof SessionSplatRoute
   '/cart': typeof CartIndexRoute
   '/rental': typeof RentalIndexRoute
+  '/auth/google/callback': typeof AuthGoogleCallbackRoute
+  '/auth/google/finalize': typeof AuthGoogleFinalizeRoute
+  '/auth/google/start': typeof AuthGoogleStartRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -80,6 +104,9 @@ export interface FileRoutesById {
   '/session/$': typeof SessionSplatRoute
   '/cart/': typeof CartIndexRoute
   '/rental/': typeof RentalIndexRoute
+  '/auth/google/callback': typeof AuthGoogleCallbackRoute
+  '/auth/google/finalize': typeof AuthGoogleFinalizeRoute
+  '/auth/google/start': typeof AuthGoogleStartRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -91,6 +118,9 @@ export interface FileRouteTypes {
     | '/session/$'
     | '/cart/'
     | '/rental/'
+    | '/auth/google/callback'
+    | '/auth/google/finalize'
+    | '/auth/google/start'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -100,6 +130,9 @@ export interface FileRouteTypes {
     | '/session/$'
     | '/cart'
     | '/rental'
+    | '/auth/google/callback'
+    | '/auth/google/finalize'
+    | '/auth/google/start'
   id:
     | '__root__'
     | '/'
@@ -109,6 +142,9 @@ export interface FileRouteTypes {
     | '/session/$'
     | '/cart/'
     | '/rental/'
+    | '/auth/google/callback'
+    | '/auth/google/finalize'
+    | '/auth/google/start'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -119,6 +155,9 @@ export interface RootRouteChildren {
   SessionSplatRoute: typeof SessionSplatRoute
   CartIndexRoute: typeof CartIndexRoute
   RentalIndexRoute: typeof RentalIndexRoute
+  AuthGoogleCallbackRoute: typeof AuthGoogleCallbackRoute
+  AuthGoogleFinalizeRoute: typeof AuthGoogleFinalizeRoute
+  AuthGoogleStartRoute: typeof AuthGoogleStartRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -172,6 +211,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SessionSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/auth/google/callback': {
+      id: '/auth/google/callback'
+      path: '/auth/google/callback'
+      fullPath: '/auth/google/callback'
+      preLoaderRoute: typeof AuthGoogleCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/google/finalize': {
+      id: '/auth/google/finalize'
+      path: '/auth/google/finalize'
+      fullPath: '/auth/google/finalize'
+      preLoaderRoute: typeof AuthGoogleFinalizeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/google/start': {
+      id: '/auth/google/start'
+      path: '/auth/google/start'
+      fullPath: '/auth/google/start'
+      preLoaderRoute: typeof AuthGoogleStartRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -183,6 +243,9 @@ const rootRouteChildren: RootRouteChildren = {
   SessionSplatRoute: SessionSplatRoute,
   CartIndexRoute: CartIndexRoute,
   RentalIndexRoute: RentalIndexRoute,
+  AuthGoogleCallbackRoute: AuthGoogleCallbackRoute,
+  AuthGoogleFinalizeRoute: AuthGoogleFinalizeRoute,
+  AuthGoogleStartRoute: AuthGoogleStartRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

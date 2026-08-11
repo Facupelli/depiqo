@@ -36,11 +36,11 @@ It does not change backend bounded-context ownership.
 
 ## 2. Add an authenticated Storefront backend boundary
 
-- [ ] Design a same-origin Storefront BFF or proxy for customer-authenticated requests.
-- [ ] Forward customer session cookies and CSRF data, preserve backend `Set-Cookie` responses, and attach trusted tenant context server-side.
-- [ ] Keep the existing signed tenant transport for anonymous tenant-scoped reads.
+- [x] Design a same-origin Storefront BFF or proxy for customer-authenticated requests.
+- [x] Forward customer session cookies and CSRF data, preserve backend `Set-Cookie` responses, and attach trusted tenant context server-side.
+- [x] Keep the existing signed tenant transport for anonymous tenant-scoped reads.
 - [ ] Add a separate public-token transport for signing links, which must work on the platform host without a customer session or tenant hostname.
-- [ ] Do not copy Backoffice `apiFetch` unchanged. It depends on Backoffice `/backend/$`; Storefront currently has no equivalent and its existing BFF deliberately does not forward cookies.
+- [x] Do not copy Backoffice `apiFetch` unchanged.
 
 ## 3. Complete checkout in Storefront
 
@@ -58,7 +58,7 @@ It does not change backend bounded-context ownership.
 - [ ] Port customer profile submission and resubmission, including all five onboarding steps.
 - [ ] Move the customer identity-document upload endpoint and its Better Upload and R2 server dependencies to Storefront.
 - [ ] Split customer query code so Storefront receives only customer self-service APIs, while Backoffice retains approval, review, and staff customer-management APIs.
-- [ ] Verify Google handoff across tenant hosts and `VITE_SHARED_AUTH_ORIGIN`.
+- [ ] Verify the centralized Google handoff across tenant slug and verified custom canonical hosts, including one-time transaction and ticket consumption, canonical-host rejection, and host-only session cookies.
 
 ## 5. Migrate public document signing
 
@@ -91,7 +91,7 @@ After the equivalent Storefront routes pass E2E verification:
 Neither app currently contains app-level test files.
 
 - [ ] Add browser E2E coverage for host resolution, tenant catalog, branch and date selection, cart persistence, and price preview.
-- [ ] Cover customer login, Google handoff, onboarding, and document upload.
+- [ ] Cover customer login, centralized Google handoff, onboarding, and document upload. Google coverage must include one-time transaction and ticket consumption, canonical-host binding, host-only session cookies, and verified custom domains.
 - [ ] Cover customer-auth tenant isolation: unknown hosts, disabled/unverified custom domains, rejected browser-supplied `tenantId`, host-scoped cookie attributes, cross-host cookie presentation, and trusted-tenant/session-tenant mismatches.
 - [ ] Cover pickup and delivery checkout, backend conflicts, cart clearing, and success states.
 - [ ] Cover signing link, PDF, acceptance, and terminal states.

@@ -22,6 +22,7 @@ export const signStorefrontTenantToken = createServerOnlyFn(
 			scope: "public-storefront",
 			tenant_id: context.tenantId,
 			host: context.host,
+			canonical_host: context.canonicalHost,
 		})
 			.setProtectedHeader({ alg: "HS256", typ: "JWT" })
 			.setIssuer(environment.STOREFRONT_TENANT_JWT_ISSUER)

@@ -10,7 +10,14 @@ import { AuthCustomer, toAuthCustomer } from '../auth.types';
 
 export interface IssueCustomerGoogleHandoffTicketParams {
   tenantId: string;
+  canonicalHost: string;
+  redirectPath: string;
   customerId: string;
+}
+
+export interface ConsumedCustomerGoogleHandoffTicket {
+  customer: AuthCustomer;
+  redirectPath: string;
 }
 
 @Injectable()
@@ -30,6 +37,8 @@ export class CustomerGoogleHandoffTicketService {
       data: {
         tokenHash: CustomerGoogleHandoffTicketService.hashToken(rawTicket),
         tenantId: params.tenantId,
+        canonicalHost: params.canonicalHost,
+        redirectPath: params.redirectPath,
         actorType: ActorType.CUSTOMER,
         actorId: params.customerId,
         expiresAt,
@@ -39,8 +48,12 @@ export class CustomerGoogleHandoffTicketService {
     return rawTicket;
   }
 
-  async consumeCustomerTicket(rawTicket: string): Promise<AuthCustomer> {
-    const tokenHash = CustomerGoogleHandoffTicketService.hashToken(rawTicket);
+  async consumeCustomerTicket(input: {
+    ticket: string;
+    tenantId: string;
+    canonicalHost: string;
+  }): Promise<ConsumedCustomerGoogleHandoffTicket> {
+    const tokenHash = CustomerGoogleHandoffTicketService.hashToken(input.ticket);
     const now = new Date();
 
     return this.prisma.client.$transaction(async (tx) => {
@@ -48,16 +61,17 @@ export class CustomerGoogleHandoffTicketService {
         where: { tokenHash },
       });
 
-      if (!ticket || ticket.actorType !== ActorType.CUSTOMER) {
+      if (
+        !ticket ||
+        ticket.actorType !== ActorType.CUSTOMER ||
+        ticket.tenantId !== input.tenantId ||
+        ticket.canonicalHost !== input.canonicalHost
+      ) {
         throw new UnauthorizedException('Authentication handoff ticket is invalid.');
       }
 
-      if (ticket.usedAt !== null) {
-        throw new UnauthorizedException('Authentication handoff ticket has already been used.');
-      }
-
-      if (ticket.expiresAt <= now) {
-        throw new UnauthorizedException('Authentication handoff ticket has expired.');
+      if (ticket.usedAt !== null || ticket.expiresAt <= now) {
+        throw new UnauthorizedException('Authentication handoff ticket is invalid or expired.');
       }
 
       const consumeResult = await tx.authHandoffToken.updateMany({
@@ -83,7 +97,10 @@ export class CustomerGoogleHandoffTicketService {
         throw new UnauthorizedException('Customer is unavailable for authentication.');
       }
 
-      return toAuthCustomer(customer);
+      return {
+        customer: toAuthCustomer(customer),
+        redirectPath: ticket.redirectPath,
+      };
     });
   }
 

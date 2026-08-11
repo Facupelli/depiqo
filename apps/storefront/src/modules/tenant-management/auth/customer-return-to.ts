@@ -14,7 +14,10 @@ export function resolveCustomerReturnTo(value: unknown): string {
 
 	try {
 		const url = new URL(value, LOCAL_ORIGIN);
-		if (url.origin !== LOCAL_ORIGIN || DISALLOWED_RETURN_PATHS.has(url.pathname)) {
+		if (
+			url.origin !== LOCAL_ORIGIN ||
+			DISALLOWED_RETURN_PATHS.has(url.pathname)
+		) {
 			return CUSTOMER_AUTH_FALLBACK_PATH;
 		}
 
