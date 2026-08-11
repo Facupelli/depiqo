@@ -98,10 +98,52 @@ It does not change backend bounded-context ownership.
 
 ## 5. Migrate public document signing
 
-- [ ] Move `/signing`, public signing queries and mutation, signature-pad dependencies, and terminal-state UI to Storefront.
-- [ ] Move `/api/document-signing/public/unsigned-pdf` and `/api/document-signing/public/signed-pdf` to Storefront.
-- [ ] Preserve token validation, no-store PDF headers, signed-PDF download behavior, and expired, already-signed, and error states.
-- [ ] Keep Backoffice-only signing invitation and rental-detail actions in Backoffice.
+- [ ] Establish the canonical public signing host, preferably
+      `sign.depiqo.com`, and update signing invitations to generate
+      platform-host URLs.
+
+      Public signing must not depend on a customer session, tenant subdomain,
+      custom tenant domain, or Storefront tenant context.
+
+- [ ] Add the Storefront platform-host `/signing?token=` route and a separate
+      same-origin public-token BFF.
+
+      The public-token transport must:
+      - forward signing tokens as backend Bearer credentials;
+      - support the existing CSRF requirement for acceptance;
+      - forward receipt tokens for signed-document downloads;
+      - never attach customer-session or signed tenant-context credentials;
+      - expose only explicitly allowlisted public signing operations.
+
+- [ ] Port the valid public signer experience to Storefront:
+      - signing-session loading;
+      - unsigned contract viewer/download;
+      - PNG signature capture;
+      - explicit acceptance;
+      - submission/pending state;
+      - invalid, expired, and unavailable terminal states;
+      - signed receipt download.
+
+      Preserve the backend signature-size limit and current acceptance contract.
+
+- [ ] Add Storefront streaming proxies for:
+      - `GET /document-signing/public/sessions/me/unsigned-pdf`
+      - `GET /document-signing/public/receipts/signed-pdf?token=`
+
+      Preserve content type and disposition, propagate backend 404/409/410
+      responses correctly, and add `Cache-Control: private, no-store` and
+      `X-Content-Type-Options: nosniff`.
+
+- [ ] After the Storefront signing flow is functionally verified, remove only
+      Backoffice public-signing code:
+      - `/signing`;
+      - public PDF proxy routes;
+      - public signing API/query/mutation code;
+      - signature pad, signer form, PDF viewer, and terminal-state UI.
+
+      Retain Backoffice contract generation, signing invitation/reissue,
+      rental signing summary/status, rental-detail actions, and internal
+      artifact access.
 
 ## 6. Remove Storefront duplication from Backoffice
 

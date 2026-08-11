@@ -125,6 +125,16 @@
   - Cloudflare
   - Google OAuth
 
+## Contracts / signing follow-ups
+
+- [ ] Decide whether opening a signing request should persist `VIEWED`.
+- [ ] Correct or define invitation `SENT` / `sentAt` semantics.
+- [ ] Define cancellation behavior if signing-request cancellation is required.
+- [ ] Define `FAILED` transition semantics or remove the unused lifecycle state.
+- [ ] Define public behavior for `RESIGN_REQUIRED`.
+- [ ] Decide whether signed receipt tokens require explicit revocation.
+- [ ] Decide whether the signing-token hash should be cleared after successful signing.
+
 ## Testing architecture
 
 - [ ] Review integration-test application composition.
