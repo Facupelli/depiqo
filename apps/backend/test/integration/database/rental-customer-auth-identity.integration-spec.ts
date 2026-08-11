@@ -7,6 +7,8 @@ import { V2AuthProvider } from '../../../src/generated/prisma/enums';
 import { SharedModule } from '../../../src/modules/shared/shared.module';
 import { createTestFixtures, TestFixtures } from '../../support/fixtures';
 
+const tenantScopedCustomerForeignKey = 'v2_rental_customer_auth_identities_customer_id_tenant_id_fkey';
+
 describe('rental customer authentication identity tenant integrity', () => {
   let moduleRef: TestingModule;
   let prisma: PrismaService;
@@ -77,7 +79,7 @@ describe('rental customer authentication identity tenant integrity', () => {
         where: { id: customer.id },
         data: { tenantId: otherTenant.id },
       }),
-    ).rejects.toMatchObject({ code: 'P2003' });
+    ).rejects.toThrow(tenantScopedCustomerForeignKey);
   });
 
   it('rejects an identity whose tenant differs from its customer tenant', async () => {
@@ -94,6 +96,6 @@ describe('rental customer authentication identity tenant integrity', () => {
           providerAccountId: 'cross-tenant-google-subject',
         },
       }),
-    ).rejects.toMatchObject({ code: 'P2003' });
+    ).rejects.toThrow(tenantScopedCustomerForeignKey);
   });
 });

@@ -10,7 +10,7 @@ async function main(): Promise<void> {
   const configPath = process.argv[2];
   if (!configPath) throw new Error('Expected a Jest config path.');
 
-  const container = await new PostgreSqlContainer('postgres:16-alpine')
+  const container = await new PostgreSqlContainer('postgres:18-alpine')
     .withDatabase('depiqo_test')
     .withUsername('test')
     .withPassword('test')
