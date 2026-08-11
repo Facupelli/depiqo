@@ -1,6 +1,8 @@
 # Agent Context
 
-Frontend app for the equipment rental platform built with TanStack Start, React 19, TypeScript, Tailwind CSS v4, Vitest, and Biome.
+Backoffice application for tenant administrators and staff of the equipment rental platform. It owns internal operations and administration.
+
+Built with TanStack Start, React 19, TypeScript, Tailwind CSS v4, Vitest, and Biome.
 
 Run commands from `apps/backoffice/` unless there is a clear reason to do otherwise.
 
