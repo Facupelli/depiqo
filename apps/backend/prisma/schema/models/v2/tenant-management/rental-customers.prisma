@@ -89,10 +89,6 @@ model V2CustomerProfile {
   taxId        String? @map("tax_id")
   businessName String? @map("business_name")
 
-  // Bank
-  bankName      String @map("bank_name")
-  accountNumber String @map("account_number")
-
   // Acquisition
   instagram             String?
   knowsExistingCustomer Boolean @default(false) @map("knows_existing_customer")

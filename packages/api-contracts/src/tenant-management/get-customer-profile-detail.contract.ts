@@ -23,8 +23,6 @@ export const CustomerProfileDetailProfileSchema = z.object({
   company: z.string().nullable(),
   taxId: z.string().nullable(),
   businessName: z.string().nullable(),
-  bankName: z.string(),
-  accountNumber: z.string(),
   instagram: z.string().nullable(),
   knowsExistingCustomer: z.boolean(),
   knownCustomerName: z.string().nullable(),

@@ -38,8 +38,6 @@ export type GetCurrentRentalCustomerProfileResult = Result<
       company: string | null;
       taxId: string | null;
       businessName: string | null;
-      bankName: string;
-      accountNumber: string;
       instagram: string | null;
       knowsExistingCustomer: boolean;
       knownCustomerName: string | null;
@@ -106,8 +104,6 @@ export class GetCurrentRentalCustomerProfileHandler implements IQueryHandler<
             company: true,
             taxId: true,
             businessName: true,
-            bankName: true,
-            accountNumber: true,
             instagram: true,
             knowsExistingCustomer: true,
             knownCustomerName: true,
@@ -176,8 +172,6 @@ export class GetCurrentRentalCustomerProfileHandler implements IQueryHandler<
         company: customer.profile.company,
         taxId: customer.profile.taxId,
         businessName: customer.profile.businessName,
-        bankName: customer.profile.bankName,
-        accountNumber: customer.profile.accountNumber,
         instagram: customer.profile.instagram,
         knowsExistingCustomer: customer.profile.knowsExistingCustomer,
         knownCustomerName: customer.profile.knownCustomerName,

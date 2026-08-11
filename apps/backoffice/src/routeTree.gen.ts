@@ -14,7 +14,6 @@ import { Route as AdminRouteRouteImport } from './routes/_admin/route'
 import { Route as SigningRouteImport } from './routes/signing'
 import { Route as AdminDashboardRouteRouteImport } from './routes/_admin/dashboard/route'
 import { Route as ApiBrandingUploadRouteImport } from './routes/api/branding-upload'
-import { Route as ApiCustomerUploadRouteImport } from './routes/api/customer-upload'
 import { Route as ApiUploadRouteImport } from './routes/api/upload'
 import { Route as BackendSplatRouteImport } from './routes/backend/$'
 import { Route as AdminAdminLoginRouteImport } from './routes/_admin/admin/login'
@@ -73,11 +72,6 @@ const AdminDashboardRouteRoute = AdminDashboardRouteRouteImport.update({
 const ApiBrandingUploadRoute = ApiBrandingUploadRouteImport.update({
   id: '/api/branding-upload',
   path: '/api/branding-upload',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiCustomerUploadRoute = ApiCustomerUploadRouteImport.update({
-  id: '/api/customer-upload',
-  path: '/api/customer-upload',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiUploadRoute = ApiUploadRouteImport.update({
@@ -290,7 +284,6 @@ export interface FileRoutesByFullPath {
   '/signing': typeof SigningRoute
   '/dashboard': typeof AdminDashboardRouteRouteWithChildren
   '/api/branding-upload': typeof ApiBrandingUploadRoute
-  '/api/customer-upload': typeof ApiCustomerUploadRoute
   '/api/upload': typeof ApiUploadRoute
   '/backend/$': typeof BackendSplatRoute
   '/admin/login': typeof AdminAdminLoginRoute
@@ -331,7 +324,6 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/signing': typeof SigningRoute
   '/api/branding-upload': typeof ApiBrandingUploadRoute
-  '/api/customer-upload': typeof ApiCustomerUploadRoute
   '/api/upload': typeof ApiUploadRoute
   '/backend/$': typeof BackendSplatRoute
   '/admin/login': typeof AdminAdminLoginRoute
@@ -375,7 +367,6 @@ export interface FileRoutesById {
   '/signing': typeof SigningRoute
   '/_admin/dashboard': typeof AdminDashboardRouteRouteWithChildren
   '/api/branding-upload': typeof ApiBrandingUploadRoute
-  '/api/customer-upload': typeof ApiCustomerUploadRoute
   '/api/upload': typeof ApiUploadRoute
   '/backend/$': typeof BackendSplatRoute
   '/_admin/admin/login': typeof AdminAdminLoginRoute
@@ -419,7 +410,6 @@ export interface FileRouteTypes {
     | '/signing'
     | '/dashboard'
     | '/api/branding-upload'
-    | '/api/customer-upload'
     | '/api/upload'
     | '/backend/$'
     | '/admin/login'
@@ -460,7 +450,6 @@ export interface FileRouteTypes {
     | '/'
     | '/signing'
     | '/api/branding-upload'
-    | '/api/customer-upload'
     | '/api/upload'
     | '/backend/$'
     | '/admin/login'
@@ -503,7 +492,6 @@ export interface FileRouteTypes {
     | '/signing'
     | '/_admin/dashboard'
     | '/api/branding-upload'
-    | '/api/customer-upload'
     | '/api/upload'
     | '/backend/$'
     | '/_admin/admin/login'
@@ -546,7 +534,6 @@ export interface RootRouteChildren {
   AdminRouteRoute: typeof AdminRouteRouteWithChildren
   SigningRoute: typeof SigningRoute
   ApiBrandingUploadRoute: typeof ApiBrandingUploadRoute
-  ApiCustomerUploadRoute: typeof ApiCustomerUploadRoute
   ApiUploadRoute: typeof ApiUploadRoute
   BackendSplatRoute: typeof BackendSplatRoute
   ApiCustomerProfilesCustomerProfileIdIdentityDocumentRoute: typeof ApiCustomerProfilesCustomerProfileIdIdentityDocumentRoute
@@ -590,13 +577,6 @@ declare module '@tanstack/react-router' {
       path: '/api/branding-upload'
       fullPath: '/api/branding-upload'
       preLoaderRoute: typeof ApiBrandingUploadRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/customer-upload': {
-      id: '/api/customer-upload'
-      path: '/api/customer-upload'
-      fullPath: '/api/customer-upload'
-      preLoaderRoute: typeof ApiCustomerUploadRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/upload': {
@@ -966,7 +946,6 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRouteRoute: AdminRouteRouteWithChildren,
   SigningRoute: SigningRoute,
   ApiBrandingUploadRoute: ApiBrandingUploadRoute,
-  ApiCustomerUploadRoute: ApiCustomerUploadRoute,
   ApiUploadRoute: ApiUploadRoute,
   BackendSplatRoute: BackendSplatRoute,
   ApiCustomerProfilesCustomerProfileIdIdentityDocumentRoute:

@@ -15,6 +15,7 @@
     "deploy": "pnpm run build:production && wrangler deploy"
   },
   "dependencies": {
+    "@better-upload/client": "^3.0.19",
     "@better-upload/server": "^3.0.19",
     "@repo/api-contracts": "workspace:*",
     "@repo/schemas": "workspace:*",

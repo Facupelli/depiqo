@@ -20,8 +20,6 @@ export const SubmitCustomerProfileBodySchema = z.object({
   taxId: z.string().min(1).optional(),
   businessName: z.string().min(1).optional(),
 
-  bankName: z.string(),
-  accountNumber: z.string(),
 
   instagram: z.string().min(1).optional(),
   knowsExistingCustomer: z.boolean().optional(),

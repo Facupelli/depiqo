@@ -134,8 +134,6 @@ describe('temporal PostgreSQL regression coverage', () => {
         stateRegion: 'Test',
         country: 'Test',
         occupation: 'Test',
-        bankName: 'Test',
-        accountNumber: '123',
         contact1Name: 'One',
         contact1Relationship: 'Friend',
         contact2Name: 'Two',

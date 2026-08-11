@@ -90,8 +90,6 @@ export class SubmitCustomerProfileHandler implements ICommandHandler<
         company: command.profile.company ?? null,
         taxId: command.profile.taxId ?? null,
         businessName: command.profile.businessName ?? null,
-        bankName: command.profile.bankName,
-        accountNumber: command.profile.accountNumber,
         instagram: command.profile.instagram ?? null,
         knowsExistingCustomer: command.profile.knowsExistingCustomer ?? false,
         knownCustomerName: command.profile.knownCustomerName ?? null,

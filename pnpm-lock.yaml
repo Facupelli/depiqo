@@ -448,6 +448,9 @@ importers:
 
   apps/storefront:
     dependencies:
+      '@better-upload/client':
+        specifier: ^3.0.19
+        version: 3.0.19(react@19.2.6)
       '@better-upload/server':
         specifier: ^3.0.19
         version: 3.0.19

@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ConfirmedRentalSuccessRouteImport } from './routes/confirmed-rental-success'
 import { Route as HealthRouteImport } from './routes/health'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as OnboardRouteImport } from './routes/onboard'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as ApiCustomerUploadRouteImport } from './routes/api/customer-upload'
 import { Route as CartIndexRouteImport } from './routes/cart/index'
@@ -40,6 +41,11 @@ const HealthRoute = HealthRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OnboardRoute = OnboardRouteImport.update({
+  id: '/onboard',
+  path: '/onboard',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RegisterRoute = RegisterRouteImport.update({
@@ -88,6 +94,7 @@ export interface FileRoutesByFullPath {
   '/confirmed-rental-success': typeof ConfirmedRentalSuccessRoute
   '/health': typeof HealthRoute
   '/login': typeof LoginRoute
+  '/onboard': typeof OnboardRoute
   '/register': typeof RegisterRoute
   '/api/customer-upload': typeof ApiCustomerUploadRoute
   '/session/$': typeof SessionSplatRoute
@@ -102,6 +109,7 @@ export interface FileRoutesByTo {
   '/confirmed-rental-success': typeof ConfirmedRentalSuccessRoute
   '/health': typeof HealthRoute
   '/login': typeof LoginRoute
+  '/onboard': typeof OnboardRoute
   '/register': typeof RegisterRoute
   '/api/customer-upload': typeof ApiCustomerUploadRoute
   '/session/$': typeof SessionSplatRoute
@@ -117,6 +125,7 @@ export interface FileRoutesById {
   '/confirmed-rental-success': typeof ConfirmedRentalSuccessRoute
   '/health': typeof HealthRoute
   '/login': typeof LoginRoute
+  '/onboard': typeof OnboardRoute
   '/register': typeof RegisterRoute
   '/api/customer-upload': typeof ApiCustomerUploadRoute
   '/session/$': typeof SessionSplatRoute
@@ -133,6 +142,7 @@ export interface FileRouteTypes {
     | '/confirmed-rental-success'
     | '/health'
     | '/login'
+    | '/onboard'
     | '/register'
     | '/api/customer-upload'
     | '/session/$'
@@ -147,6 +157,7 @@ export interface FileRouteTypes {
     | '/confirmed-rental-success'
     | '/health'
     | '/login'
+    | '/onboard'
     | '/register'
     | '/api/customer-upload'
     | '/session/$'
@@ -161,6 +172,7 @@ export interface FileRouteTypes {
     | '/confirmed-rental-success'
     | '/health'
     | '/login'
+    | '/onboard'
     | '/register'
     | '/api/customer-upload'
     | '/session/$'
@@ -176,6 +188,7 @@ export interface RootRouteChildren {
   ConfirmedRentalSuccessRoute: typeof ConfirmedRentalSuccessRoute
   HealthRoute: typeof HealthRoute
   LoginRoute: typeof LoginRoute
+  OnboardRoute: typeof OnboardRoute
   RegisterRoute: typeof RegisterRoute
   ApiCustomerUploadRoute: typeof ApiCustomerUploadRoute
   SessionSplatRoute: typeof SessionSplatRoute
@@ -214,6 +227,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/onboard': {
+      id: '/onboard'
+      path: '/onboard'
+      fullPath: '/onboard'
+      preLoaderRoute: typeof OnboardRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/register': {
@@ -280,6 +300,7 @@ const rootRouteChildren: RootRouteChildren = {
   ConfirmedRentalSuccessRoute: ConfirmedRentalSuccessRoute,
   HealthRoute: HealthRoute,
   LoginRoute: LoginRoute,
+  OnboardRoute: OnboardRoute,
   RegisterRoute: RegisterRoute,
   ApiCustomerUploadRoute: ApiCustomerUploadRoute,
   SessionSplatRoute: SessionSplatRoute,

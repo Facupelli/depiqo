@@ -7,7 +7,6 @@ import {
 	BriefcaseBusiness,
 	CircleCheck,
 	FileText,
-	Landmark,
 	MapPin,
 	User,
 	Users,
@@ -25,7 +24,6 @@ import {
 	getDocumentFileName,
 	getDocumentPreviewType,
 	getInstagramProfileUrl,
-	maskAccountNumber,
 } from "@/features/tenant-management/customer/components/review/customer-profile-review.utils";
 import { useRejectSubmittedCustomerOnboarding } from "@/features/tenant-management/customer/reject-submitted-customer-onboarding/reject-submitted-customer-onboarding.mutation";
 import {
@@ -107,8 +105,6 @@ function toCustomerProfileReviewViewModel(
 		company: profile.company,
 		taxId: profile.taxId,
 		businessName: profile.businessName,
-		bankName: profile.bankName,
-		accountNumber: profile.accountNumber,
 		instagram: profile.instagram,
 		knowsExistingCustomer: profile.knowsExistingCustomer,
 		knownCustomerName: profile.knownCustomerName,
@@ -285,17 +281,6 @@ function CustomerProfileReviewView({
 								/>
 							</div>
 
-							<div className="space-y-6 rounded-lg border bg-muted/20 p-4">
-								<div className="flex items-center gap-2 text-sm font-medium text-foreground">
-									<Landmark className="h-4 w-4 text-muted-foreground" />
-									Datos bancarios
-								</div>
-								<ReviewField label="Banco" value={profile.bankName} />
-								<ReviewField
-									label="Numero de cuenta"
-									value={maskAccountNumber(profile.accountNumber)}
-								/>
-							</div>
 						</div>
 					</ReviewSectionCard>
 

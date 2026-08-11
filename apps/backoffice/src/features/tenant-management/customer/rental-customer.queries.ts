@@ -1,5 +1,4 @@
 import type {
-	GetCurrentRentalCustomerProfileResponseDto,
 	GetCustomerProfileDetailResponseDto,
 	GetCustomerSummaryResponseDto,
 	GetRentalCustomersQueryDto,
@@ -11,7 +10,6 @@ import {
 	useQuery,
 } from "@tanstack/react-query";
 import type { ProblemDetailsError } from "@/shared/errors";
-import { getCurrentRentalCustomerProfile } from "./get-current-rental-customer-profile/get-current-rental-customer-profile.api";
 import { getCustomerProfileDetail } from "./get-customer-profile-detail/get-customer-profile-detail.api";
 import { getCustomerSummary } from "./get-customer-summary/get-customer-summary.api";
 import { getRentalCustomers } from "./get-rental-customers/get-rental-customers.api";
@@ -20,17 +18,6 @@ export type RentalCustomersQueryOverrides<
 	TData = GetRentalCustomersResponseDto,
 > = Omit<
 	UseQueryOptions<GetRentalCustomersResponseDto, ProblemDetailsError, TData>,
-	"queryKey" | "queryFn"
->;
-
-export type CurrentRentalCustomerProfileQueryOverrides<
-	TData = GetCurrentRentalCustomerProfileResponseDto,
-> = Omit<
-	UseQueryOptions<
-		GetCurrentRentalCustomerProfileResponseDto,
-		ProblemDetailsError,
-		TData
-	>,
 	"queryKey" | "queryFn"
 >;
 
@@ -58,8 +45,6 @@ export const rentalCustomerKeys = {
 	list: (query?: GetRentalCustomersQueryDto) =>
 		[...rentalCustomerKeys.lists(), query ?? {}] as const,
 	details: () => [...rentalCustomerKeys.all(), "detail"] as const,
-	currentProfile: () =>
-		[...rentalCustomerKeys.details(), "me", "profile"] as const,
 	profileDetail: (customerId?: string) =>
 		[...rentalCustomerKeys.details(), customerId, "profile"] as const,
 	summary: (customerId?: string) =>
@@ -67,18 +52,6 @@ export const rentalCustomerKeys = {
 };
 
 export const rentalCustomerQueries = {
-	currentProfile: <TData = GetCurrentRentalCustomerProfileResponseDto>(
-		overrides?: CurrentRentalCustomerProfileQueryOverrides<TData>,
-	) =>
-		queryOptions<
-			GetCurrentRentalCustomerProfileResponseDto,
-			ProblemDetailsError,
-			TData
-		>({
-			queryKey: rentalCustomerKeys.currentProfile(),
-			queryFn: getCurrentRentalCustomerProfile,
-			...overrides,
-		}),
 	list: <TData = GetRentalCustomersResponseDto>(
 		query?: GetRentalCustomersQueryDto,
 		overrides?: RentalCustomersQueryOverrides<TData>,
@@ -128,11 +101,6 @@ export const rentalCustomerQueries = {
 		}),
 };
 
-export function useCurrentRentalCustomerProfile<
-	TData = GetCurrentRentalCustomerProfileResponseDto,
->(overrides?: CurrentRentalCustomerProfileQueryOverrides<TData>) {
-	return useQuery(rentalCustomerQueries.currentProfile(overrides));
-}
 
 export function useRentalCustomers<TData = GetRentalCustomersResponseDto>(
 	query?: GetRentalCustomersQueryDto,

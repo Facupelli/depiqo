@@ -67,7 +67,7 @@ It does not change backend bounded-context ownership.
 
   Keep Backoffice's staff-only identity-document reader and review flow unchanged.
 
-- [ ] Add the customer-guarded Storefront `/onboard` route and profile-status experience:
+- [x] Add the customer-guarded Storefront `/onboard` route and profile-status experience:
   - no profile -> show the five-step onboarding form;
   - `REJECTED` -> show rejection reason and allow editing/resubmission;
   - `PENDING` -> show pending-review status;
@@ -75,7 +75,7 @@ It does not change backend bounded-context ownership.
 
   Preserve the existing five onboarding steps and backend profile lifecycle rules. Do not add customer self-registration.
 
-- [ ] Remove superseded Backoffice customer self-service code after the Storefront onboarding flow is functionally verified:
+- [x] Remove superseded Backoffice customer self-service code after the Storefront onboarding flow is functionally verified:
   - onboarding form;
   - profile submit mutation/API;
   - current-customer-profile query/API;
