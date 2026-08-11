@@ -16,6 +16,7 @@ const ALLOWED_PATHS = new Set([
 	"auth/customer/google/finalize",
 	"auth/customer/logout",
 	"auth/customer/me",
+	"rental-commitments/confirmed-rentals",
 ]);
 const UNSAFE_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 const BODYLESS_STATUSES = new Set([101, 204, 205, 304]);
