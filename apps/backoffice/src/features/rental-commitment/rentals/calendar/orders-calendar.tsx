@@ -29,12 +29,10 @@ import type {
 	ParsedRentalsCalendarItem,
 } from "@/features/rental-commitment/rentals/rentals.queries";
 import dayjs from "@/lib/dates/dayjs";
-import { fromDate, toISOString } from "@/lib/dates/parse";
 import { cn } from "@/lib/utils";
 import { formatOrderNumber } from "@/shared/utils/formatters";
 import {
 	formatOrdersCalendarTooltipDateTime,
-	getCalendarDateParamFromDate,
 	getOrdersCalendarEventOrder,
 	ORDERS_CALENDAR_VIEW_LABELS,
 	type OrdersCalendarRange,
@@ -173,14 +171,17 @@ export function OrdersCalendar({
 
 	function handleDatesSet(arg: DatesSetArg) {
 		const calendarApi = calendarRef.current?.getApi();
-		const anchorDate = calendarApi?.getDate() ?? arg.view.currentStart;
+		if (!calendarApi) {
+			return;
+		}
 
+		const anchorDate = calendarApi.getDate();
 		setTitle(arg.view.title);
 		onRangeChange({
 			view: arg.view.type as OrdersCalendarView,
-			date: getCalendarDateParamFromDate(anchorDate),
-			rangeStart: toISOString(fromDate(arg.start)),
-			rangeEnd: toISOString(fromDate(arg.end)),
+			date: calendarApi.formatIso(anchorDate, true),
+			rangeStart: arg.startStr,
+			rangeEnd: arg.endStr,
 			title: arg.view.title,
 		});
 	}
