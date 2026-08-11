@@ -1,4 +1,5 @@
 import { V2RentalStatus } from 'src/generated/prisma/enums';
+import { RentalAcceptedPricingForDocuments } from 'src/modules/rental-commitment/public-api/rental-commitment.public-api';
 
 export interface RentalRemitoSourceReadModel {
   rental: {
@@ -9,7 +10,7 @@ export interface RentalRemitoSourceReadModel {
     status: V2RentalStatus;
     periodStart: Date;
     periodEnd: Date;
-    priceSnapshot: unknown;
+    acceptedPricing: RentalAcceptedPricingForDocuments;
     bookingSnapshot: unknown;
     insuranceSelected: boolean;
     confirmedAt: Date | null;

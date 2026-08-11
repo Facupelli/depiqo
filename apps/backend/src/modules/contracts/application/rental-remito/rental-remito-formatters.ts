@@ -1,8 +1,4 @@
-import {
-  RENTAL_PRICE_SNAPSHOT_SCHEMA,
-  RENTAL_PRICE_SNAPSHOT_VERSION,
-  RentalPriceSnapshotV1,
-} from 'src/modules/pricing/public-api/rental-price-snapshot.type';
+import { RentalAcceptedPricingForDocuments } from 'src/modules/rental-commitment/public-api/rental-commitment.public-api';
 
 export function formatLocalDate(date: Date, timezone: string): string {
   const parts = new Intl.DateTimeFormat('en-GB', {
@@ -34,51 +30,8 @@ export function formatSignedTimestamp(date: Date, timezone: string): string {
   return `${get('day')}/${get('month')}/${get('year')} ${get('hour')}:${get('minute')}:${get('second')}`;
 }
 
-export type RentalRemitoPricingView = {
-  currency: string;
-  total: string;
-  chargedDays: number;
-  formattedTotal: string;
-};
-
-export function resolveRentalRemitoPricingFromSnapshot(priceSnapshot: unknown): RentalRemitoPricingView | null {
-  if (!isConfirmedRentalPriceSnapshot(priceSnapshot)) {
-    return null;
-  }
-
-  const amount = Number(priceSnapshot.final.total);
-  const currency = priceSnapshot.final.currency;
-
-  if (!Number.isFinite(amount)) {
-    return null;
-  }
-
-  return {
-    currency,
-    total: priceSnapshot.final.total,
-    chargedDays: priceSnapshot.final.chargedDays,
-    formattedTotal: formatCurrency(amount, currency),
-  };
-}
-
-function isConfirmedRentalPriceSnapshot(value: unknown): value is RentalPriceSnapshotV1 {
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    'schema' in value &&
-    value.schema === RENTAL_PRICE_SNAPSHOT_SCHEMA &&
-    'version' in value &&
-    value.version === RENTAL_PRICE_SNAPSHOT_VERSION &&
-    'final' in value &&
-    typeof value.final === 'object' &&
-    value.final !== null &&
-    'currency' in value.final &&
-    typeof value.final.currency === 'string' &&
-    'total' in value.final &&
-    typeof value.final.total === 'string' &&
-    'chargedDays' in value.final &&
-    typeof value.final.chargedDays === 'number'
-  );
+export function formatAcceptedPricingForRentalRemito(pricing: RentalAcceptedPricingForDocuments): string {
+  return formatCurrency(Number(pricing.total.amount), pricing.total.currency);
 }
 
 function formatCurrency(amount: number, currency: string): string {
@@ -94,17 +47,9 @@ function formatCurrency(amount: number, currency: string): string {
 }
 
 function resolveLocaleForCurrency(currency: string): string {
-  if (currency === 'ARS') {
-    return 'es-AR';
-  }
-
-  if (currency === 'EUR') {
-    return 'es-ES';
-  }
-
-  if (currency === 'USD') {
-    return 'en-US';
-  }
+  if (currency === 'ARS') return 'es-AR';
+  if (currency === 'EUR') return 'es-ES';
+  if (currency === 'USD') return 'en-US';
 
   return 'es-AR';
 }

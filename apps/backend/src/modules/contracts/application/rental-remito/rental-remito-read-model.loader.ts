@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { err, ok, Result } from 'neverthrow';
 
 import { PrismaService } from 'src/core/database/prisma.service';
+import { RentalCommitmentPublicApi } from 'src/modules/rental-commitment/public-api/rental-commitment.public-api';
 import { TenantManagementPublicApi } from 'src/modules/tenant-management/public-api/tenant-management.public-api';
 
 import { rentalRemitoApplicationError, RentalRemitoApplicationError } from './rental-remito-application.error';
@@ -11,6 +12,7 @@ import { RentalRemitoSourceReadModel } from './rental-remito-source-read-model';
 export class RentalRemitoReadModelLoader {
   constructor(
     private readonly prisma: PrismaService,
+    private readonly rentalCommitmentApi: RentalCommitmentPublicApi,
     private readonly tenantManagementApi: TenantManagementPublicApi,
   ) {}
 
@@ -32,7 +34,6 @@ export class RentalRemitoReadModelLoader {
         status: true,
         periodStart: true,
         periodEnd: true,
-        priceSnapshot: true,
         bookingSnapshot: true,
         insuranceSelected: true,
         confirmedAt: true,
@@ -68,11 +69,12 @@ export class RentalRemitoReadModelLoader {
       );
     }
 
-    const [tenant, branch, customer, contractSigner] = await Promise.all([
+    const [tenant, branch, customer, contractSigner, acceptedPricing] = await Promise.all([
       this.loadTenant(tenantId),
       this.loadBranch(tenantId, rental.branchId),
       rental.customerId ? this.loadCustomer(tenantId, rental.customerId) : Promise.resolve(null),
       this.loadDefaultContractSigner(tenantId),
+      this.rentalCommitmentApi.getAcceptedPricingForDocuments({ tenantId, rentalId }),
     ]);
 
     if (!tenant) {
@@ -82,6 +84,14 @@ export class RentalRemitoReadModelLoader {
           `Tenant "${tenantId}" was not found while loading rental remito read model.`,
         ),
       );
+    }
+
+    if (acceptedPricing.isErr()) {
+      if (acceptedPricing.error.code === 'RentalNotFound') {
+        return err(rentalRemitoApplicationError('RentalNotFound', acceptedPricing.error.message, acceptedPricing.error));
+      }
+
+      return err(rentalRemitoApplicationError('PriceSnapshotInvalid', acceptedPricing.error.message, acceptedPricing.error));
     }
 
     if (!branch) {
@@ -113,7 +123,7 @@ export class RentalRemitoReadModelLoader {
         status: rental.status,
         periodStart: rental.periodStart,
         periodEnd: rental.periodEnd,
-        priceSnapshot: rental.priceSnapshot,
+        acceptedPricing: acceptedPricing.value,
         bookingSnapshot: rental.bookingSnapshot,
         insuranceSelected: rental.insuranceSelected,
         confirmedAt: rental.confirmedAt,

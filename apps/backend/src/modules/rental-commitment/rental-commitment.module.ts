@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common';
 
 import { CatalogModule } from '../catalog/catalog.module';
-import { ContractsModule } from '../contracts/contracts.module';
 import { PricingModule } from '../pricing/pricing.module';
 import { TenantManagementModule } from '../tenant-management/tenant-management.module';
 import { RentalAssetAllocationService } from './asset-allocation/rental-asset-allocation.service';
@@ -44,7 +43,7 @@ import { RentalCommitmentPublicApiService } from './public-api/rental-commitment
 import { RentalCommitmentPublicApi } from './public-api/rental-commitment.public-api';
 
 @Module({
-  imports: [CatalogModule, ContractsModule, PricingModule, TenantManagementModule],
+  imports: [CatalogModule, PricingModule, TenantManagementModule],
   controllers: [
     AssignRentalAccessoriesHttpController,
     AssignCustomerToDraftRentalHttpController,

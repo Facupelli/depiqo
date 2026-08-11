@@ -40,9 +40,6 @@ export type RentalRemitoSnapshot = {
   pricing: {
     agreedPrice: string;
     jornadas: number;
-    sourceSnapshotSchema: 'v2.rental-price-snapshot';
-    sourceSnapshotVersion: 1;
-    sourcePriceMode: 'final';
   };
   equipmentLines: RentalRemitoPdfData['equipmentLines'];
 };
@@ -77,9 +74,6 @@ export function toRentalRemitoSnapshot(
     pricing: {
       agreedPrice: pdfData.document.agreedPrice,
       jornadas: pdfData.document.jornadas,
-      sourceSnapshotSchema: 'v2.rental-price-snapshot',
-      sourceSnapshotVersion: 1,
-      sourcePriceMode: 'final',
     },
     equipmentLines: pdfData.equipmentLines,
   };

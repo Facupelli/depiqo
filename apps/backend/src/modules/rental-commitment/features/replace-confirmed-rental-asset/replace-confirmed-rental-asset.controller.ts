@@ -89,12 +89,6 @@ const problemMap = {
     HttpStatus.CONFLICT,
     'A rental cannot have equipment assets replaced at or after its pickup time.',
   ),
-  'rental_commitment.rental_contract_prevents_editing': problem(
-    'rental_contract_prevents_editing',
-    'Rental contract prevents editing',
-    HttpStatus.CONFLICT,
-    'A rental with generated, signing, or signed contract terms cannot be edited.',
-  ),
   'rental_commitment.rental_asset_assignment_not_found': problem(
     'rental_asset_assignment_not_found',
     'Rental asset assignment not found',

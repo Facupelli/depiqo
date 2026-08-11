@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 
 import { ObjectStorageModule } from '../object-storage/object-storage.module';
+import { RentalCommitmentModule } from '../rental-commitment/rental-commitment.module';
 import { TenantManagementModule } from '../tenant-management/tenant-management.module';
 import { GenerateRentalRemitoHttpController } from './features/generate-rental-remito/generate-rental-remito.controller';
 import { GenerateRentalRemitoHandler } from './features/generate-rental-remito/generate-rental-remito.handler';
@@ -20,9 +21,10 @@ import { V2ContractsPublicApiService } from './public-api/contracts.public-api.s
 import { RentalRemitoContractStateService } from './application/rental-remito/rental-remito-contract-state.service';
 import { ContractArtifactPersistenceService } from './application/contract-artifact-persistence.service';
 import { RentalRemitoSignedArtifactService } from './application/rental-remito/rental-remito-signed-artifact.service';
+import { HandleConfirmedRentalEditedEventHandler } from './application/event-handlers/handle-confirmed-rental-edited.event-handler';
 
 @Module({
-  imports: [ObjectStorageModule, TenantManagementModule],
+  imports: [ObjectStorageModule, RentalCommitmentModule, TenantManagementModule],
   controllers: [GenerateRentalRemitoHttpController, GetRentalContractSigningSummaryHttpController],
   providers: [
     GenerateRentalRemitoHandler,
@@ -35,6 +37,7 @@ import { RentalRemitoSignedArtifactService } from './application/rental-remito/r
     RentalRemitoContractStateService,
     ContractArtifactPersistenceService,
     RentalRemitoSignedArtifactService,
+    HandleConfirmedRentalEditedEventHandler,
     {
       provide: RentalRemitoRendererPort,
       useClass: ReactPdfRentalRemitoRendererAdapter,

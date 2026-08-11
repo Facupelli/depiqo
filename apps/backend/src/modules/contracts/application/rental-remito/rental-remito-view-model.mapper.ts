@@ -1,14 +1,13 @@
 import { Injectable } from '@nestjs/common';
-import { err, ok, Result } from 'neverthrow';
+import { ok, Result } from 'neverthrow';
 
-import { rentalRemitoApplicationError, RentalRemitoApplicationError } from './rental-remito-application.error';
-import { formatLocalDate, resolveRentalRemitoPricingFromSnapshot } from './rental-remito-formatters';
+import { RentalRemitoApplicationError } from './rental-remito-application.error';
+import { formatAcceptedPricingForRentalRemito, formatLocalDate } from './rental-remito-formatters';
 import { RentalRemitoPdfData, RentalRemitoEquipmentLine, SignedContractSummary } from './rental-remito-pdf-data';
 import { RentalRemitoSourceReadModel } from './rental-remito-source-read-model';
 
 export interface MapRentalRemitoViewModelOptions {
   signedSummary?: SignedContractSummary;
-  requireValidPriceSnapshot: boolean;
 }
 
 @Injectable()
@@ -17,17 +16,6 @@ export class RentalRemitoViewModelMapper {
     source: RentalRemitoSourceReadModel,
     options: MapRentalRemitoViewModelOptions,
   ): Result<RentalRemitoPdfData, RentalRemitoApplicationError> {
-    const pricing = resolveRentalRemitoPricingFromSnapshot(source.rental.priceSnapshot);
-
-    if (options.requireValidPriceSnapshot && !pricing) {
-      return err(
-        rentalRemitoApplicationError(
-          'PriceSnapshotInvalid',
-          `Rental "${source.rental.id}" has an invalid or missing confirmed price snapshot.`,
-        ),
-      );
-    }
-
     const timezone = source.branch.timezone;
     const documentNumber = buildDocumentNumber(source);
 
@@ -38,8 +26,8 @@ export class RentalRemitoViewModelMapper {
         equipmentTitle: 'LISTA DE EQUIPOS RETIRADOS',
         pickupDate: formatLocalDate(source.rental.periodStart, timezone),
         returnDate: formatLocalDate(source.rental.periodEnd, timezone),
-        jornadas: pricing?.chargedDays ?? 0,
-        agreedPrice: pricing?.formattedTotal ?? '',
+        jornadas: source.rental.acceptedPricing.chargedUnits,
+        agreedPrice: formatAcceptedPricingForRentalRemito(source.rental.acceptedPricing),
         logoUrl: source.tenant.branding?.logoUrl ?? null,
         rentalSignatureUrl: source.contractSigner?.signatureUrl ?? null,
         showRentalSignatureBlock: true,

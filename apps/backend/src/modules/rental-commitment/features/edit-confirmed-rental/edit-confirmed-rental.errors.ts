@@ -5,7 +5,6 @@ export type EditConfirmedRentalErrorCode =
   | 'rental_commitment.rental_not_found'
   | 'rental_commitment.rental_cannot_be_edited_from_status'
   | 'rental_commitment.rental_cannot_be_edited_after_pickup'
-  | 'rental_commitment.rental_contract_prevents_editing'
   | 'rental_commitment.rental_version_conflict'
   | 'rental_commitment.rental_accessories_require_removal'
   | 'rental_commitment.rental_requires_selection'

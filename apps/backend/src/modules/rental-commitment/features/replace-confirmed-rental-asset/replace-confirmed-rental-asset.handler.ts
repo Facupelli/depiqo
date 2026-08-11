@@ -4,8 +4,8 @@ import { err, ok, Result } from 'neverthrow';
 import { PrismaUnitOfWork } from 'src/core/database/prisma-unit-of-work';
 import { PostgresExclusionViolationError } from 'src/core/utils/postgres-error.mapper';
 import { V2AssetBlockType } from 'src/generated/prisma/enums';
-import { V2ContractsPublicApi } from 'src/modules/contracts/public-api/contracts.public-api';
 
+import { toRentalIntegrationEvents } from '../../application/rental-integration-event.mapper';
 import { RentalAssetAllocationService } from '../../asset-allocation/rental-asset-allocation.service';
 import { RentalAssetAllocationPlanLine } from '../../asset-allocation/rental-asset-allocation-policy';
 import {
@@ -45,7 +45,6 @@ export class ReplaceConfirmedRentalAssetHandler implements ICommandHandler<
 > {
   constructor(
     private readonly rentalRepository: RentalRepository,
-    private readonly contractsApi: V2ContractsPublicApi,
     private readonly rentalAssetAllocation: RentalAssetAllocationService,
     private readonly rentalOwnerSplitCalculator: RentalOwnerSplitCalculator,
     private readonly unitOfWork: PrismaUnitOfWork,
@@ -67,20 +66,8 @@ export class ReplaceConfirmedRentalAssetHandler implements ICommandHandler<
       );
     }
 
-    const contractStatus = await this.contractsApi.getRentalContractStatus({ tenantId, rentalId });
-    if (contractStatus === 'GENERATED' || contractStatus === 'SIGNING_REQUESTED' || contractStatus === 'SIGNED') {
-      return err(
-        replaceConfirmedRentalAssetError(
-          'rental_commitment.rental_contract_prevents_editing',
-          `Rental "${rentalId}" has a ${contractStatus.toLowerCase()} contract.`,
-          undefined,
-          { ...context, contractStatus },
-        ),
-      );
-    }
-
     try {
-      return await this.unitOfWork.runInTransaction(async ({ tx }) => {
+      return await this.unitOfWork.runInTransaction(async ({ tx, integrationEvents }) => {
         const currentRental = await this.rentalRepository.findById(tenantId, rentalId, tx);
         if (!currentRental) {
           return err(
@@ -201,6 +188,7 @@ export class ReplaceConfirmedRentalAssetHandler implements ICommandHandler<
           );
         }
 
+        integrationEvents.collect(toRentalIntegrationEvents(currentRental.pullDomainEvents()));
         return ok({ rentalId, version: saved.version, updatedAt: saved.updatedAt });
       });
     } catch (error) {

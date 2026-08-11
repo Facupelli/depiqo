@@ -108,12 +108,6 @@ const problemMap = {
     HttpStatus.CONFLICT,
     'A rental cannot be edited at or after its pickup time.',
   ),
-  'rental_commitment.rental_contract_prevents_editing': problem(
-    'rental_contract_prevents_editing',
-    'Rental contract prevents editing',
-    HttpStatus.CONFLICT,
-    'A rental with generated, signing, or signed contract terms cannot be edited.',
-  ),
   'rental_commitment.rental_accessories_require_removal': problem(
     'rental_accessories_require_removal',
     'Accessories require removal',

@@ -3,9 +3,12 @@ import { err, ok, Result } from 'neverthrow';
 
 import { PrismaService } from 'src/core/database/prisma.service';
 
+import { decodeAcceptedPricingForDocuments } from '../application/accepted-pricing/accepted-pricing-snapshot.decoder';
 import { FulfillmentMethod, RentalStatus } from '../domain/rental-status';
 import {
+  GetAcceptedPricingForDocumentsInput,
   GetRentalNotificationContextInput,
+  RentalAcceptedPricingForDocuments,
   RentalCommitmentPublicApi,
   RentalCommitmentPublicApiError,
   RentalNotificationContext,
@@ -65,5 +68,44 @@ export class RentalCommitmentPublicApiService extends RentalCommitmentPublicApi 
       periodStart: rental.periodStart,
       periodEnd: rental.periodEnd,
     });
+  }
+
+  async getAcceptedPricingForDocuments(
+    input: GetAcceptedPricingForDocumentsInput,
+  ): Promise<Result<RentalAcceptedPricingForDocuments, RentalCommitmentPublicApiError>> {
+    const rental = await this.prisma.client.v2Rental.findFirst({
+      where: {
+        id: input.rentalId,
+        tenantId: input.tenantId,
+      },
+      select: {
+        priceSnapshot: true,
+        selections: {
+          select: {
+            priceSnapshot: true,
+          },
+        },
+      },
+    });
+
+    if (!rental) {
+      return err(
+        rentalCommitmentPublicApiError(
+          'RentalNotFound',
+          `Rental "${input.rentalId}" was not found for tenant "${input.tenantId}".`,
+        ),
+      );
+    }
+
+    const pricing = decodeAcceptedPricingForDocuments(
+      rental.priceSnapshot,
+      rental.selections.map((selection) => selection.priceSnapshot),
+    );
+
+    if (pricing.isErr()) {
+      return err(rentalCommitmentPublicApiError(pricing.error.code, pricing.error.message, pricing.error));
+    }
+
+    return ok(pricing.value);
   }
 }

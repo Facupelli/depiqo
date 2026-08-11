@@ -5,7 +5,6 @@ import { PrismaUnitOfWork } from 'src/core/database/prisma-unit-of-work';
 import { PostgresExclusionViolationError } from 'src/core/utils/postgres-error.mapper';
 import { V2AssetBlockType } from 'src/generated/prisma/enums';
 import { CatalogPublicApi, ResolveSelectedRentalOffersError } from 'src/modules/catalog/public-api/catalog.public-api';
-import { V2ContractsPublicApi } from 'src/modules/contracts/public-api/contracts.public-api';
 import { PricingPublicApi } from 'src/modules/pricing/public-api/pricing.public-api';
 import { RentalPriceSnapshotV1 } from 'src/modules/pricing/public-api/rental-price-snapshot.type';
 import { TenantManagementPublicApi } from 'src/modules/tenant-management/public-api/tenant-management.public-api';
@@ -59,7 +58,6 @@ export class EditConfirmedRentalHandler implements ICommandHandler<
     private readonly tenantManagementApi: TenantManagementPublicApi,
     private readonly catalogApi: CatalogPublicApi,
     private readonly pricingApi: PricingPublicApi,
-    private readonly contractsApi: V2ContractsPublicApi,
     private readonly rentalAssetAllocation: RentalAssetAllocationService,
     private readonly rentalOwnerSplitCalculator: RentalOwnerSplitCalculator,
     private readonly unitOfWork: PrismaUnitOfWork,
@@ -87,18 +85,6 @@ export class EditConfirmedRentalHandler implements ICommandHandler<
     if (now >= rental.period.start) {
       return err(this.toApplicationError(new ConfirmedRentalCannotBeEditedAfterPickupError(rental.id), context));
     }
-    const contractStatus = await this.contractsApi.getRentalContractStatus({ tenantId, rentalId });
-    if (contractStatus === 'GENERATED' || contractStatus === 'SIGNING_REQUESTED' || contractStatus === 'SIGNED') {
-      return err(
-        editConfirmedRentalError(
-          'rental_commitment.rental_contract_prevents_editing',
-          `Rental "${rentalId}" has a ${contractStatus.toLowerCase()} contract.`,
-          undefined,
-          { ...context, contractStatus },
-        ),
-      );
-    }
-
     if (now >= period.start) {
       return err(
         editConfirmedRentalError(

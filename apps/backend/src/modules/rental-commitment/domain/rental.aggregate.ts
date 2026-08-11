@@ -607,6 +607,7 @@ export class Rental extends AggregateRootBase {
     }
 
     this.props = candidate.value.props;
+    this.recordConfirmedRentalEditedEvent(now);
     return ok(undefined);
   }
 

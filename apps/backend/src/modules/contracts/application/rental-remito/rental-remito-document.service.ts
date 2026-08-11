@@ -84,7 +84,6 @@ export class RentalRemitoDocumentService {
 
     const pdfDataResult = this.viewModelMapper.map(source, {
       signedSummary: input.signedSummary,
-      requireValidPriceSnapshot: true,
     });
 
     if (pdfDataResult.isErr()) {
