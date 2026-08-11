@@ -90,7 +90,7 @@ const useRentalCartStoreBase = create<RentalCartState>()(
 			},
 		}),
 		{
-			name: "v2-rental-cart",
+			name: "rental-cart",
 			partialize: ({ branchId, items }) => ({ branchId, items }),
 			onRehydrateStorage: () => (state) => {
 				state?.actions.markHydrated();

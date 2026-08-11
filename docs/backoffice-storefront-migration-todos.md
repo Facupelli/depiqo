@@ -44,12 +44,12 @@ It does not change backend bounded-context ownership.
 
 ## 3. Complete checkout in Storefront
 
-- [ ] Port the confirmed-rental command from `apps/backoffice/src/features/rental-commitment/confirmed-rentals/create-confirmed-rental`.
-- [ ] Port the checkout state machine from Backoffice `cart/create-confirmed-rental`: selected pickup and return slots, insurance, delivery validation, request-body mapping, and backend error mapping.
-- [ ] Add the booking CTA, pending state, authentication redirect, availability-conflict handling, delivery fallback, idempotency errors, cart clearing, and post-success navigation.
-- [ ] Preserve the DST-safe slot semantics added after the split.
-- [ ] Port `/confirmed-rental-success` and wire it to the new checkout command.
-- [ ] Reconcile the cart implementations before porting more code. Storefront uses `rental-cart`; Backoffice still has both `v2-rental-cart` and route-backed `storefront-cart`. Retire obsolete variants rather than maintaining three carts.
+- [x] Port the confirmed-rental command from `apps/backoffice/src/features/rental-commitment/confirmed-rentals/create-confirmed-rental`.
+- [x] Port the checkout state machine from Backoffice `cart/create-confirmed-rental`: selected pickup and return slots, insurance, delivery validation, request-body mapping, and backend error mapping.
+- [x] Add the booking CTA, pending state, authentication redirect, availability-conflict handling, delivery fallback, idempotency errors, cart clearing, and post-success navigation.
+- [x] Preserve the DST-safe slot semantics added after the split.
+- [x] Port `/confirmed-rental-success` and wire it to the new checkout command.
+- [x] Reconcile the cart implementations before porting more code. Storefront uses `rental-cart`; Backoffice still has both `v2-rental-cart` and route-backed `storefront-cart`. Retire obsolete variants rather than maintaining three carts.
 
 ## 4. Migrate customer account and onboarding
 

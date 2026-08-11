@@ -4,8 +4,28 @@ import {
 	type CreateDraftRentalBodyDto,
 	CreateDraftRentalBodySchema,
 } from "@repo/api-contracts";
+import { resolveLocalDateTime } from "@repo/temporal";
 import { z } from "zod";
-import { toRentalPeriodDateTime } from "@/features/rental-commitment/cart/create-confirmed-rental/cart-checkout-model";
+
+function toRentalPeriodDateTime(
+	date: string,
+	minuteOfDay: number,
+	timezone: string,
+): Date {
+	const resolution = resolveLocalDateTime({
+		localDate: date,
+		minuteOfDay,
+		timeZone: timezone,
+	});
+
+	if (resolution.kind === "nonexistent") {
+		throw new RangeError(
+			"The selected local time does not exist in the branch timezone.",
+		);
+	}
+
+	return resolution.instant;
+}
 
 export const draftRentalSelectedOfferFormSchema = z.object({
 	rentalOfferId: z.string().min(1),

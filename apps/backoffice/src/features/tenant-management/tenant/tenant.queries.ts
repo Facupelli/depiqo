@@ -2,7 +2,6 @@ import type {
 	GetContractSignerResponseDto,
 	GetCurrentTenantResponseDto,
 	GetCustomDomainResponseDto,
-	GetPublicTenantConfigResponseDto,
 } from "@repo/api-contracts";
 import {
 	queryOptions,
@@ -13,20 +12,12 @@ import type { ProblemDetailsError } from "@/shared/errors";
 import { getContractSigner } from "./contract-signer/get-contract-signer/get-contract-signer.api";
 import { getCustomDomain } from "./custom-domain/get-custom-domain.api";
 import { getCurrentTenant } from "./get-current-tenant/get-current-tenant.api";
-import { getPublicTenantConfigFn } from "./get-public-tenant-config/get-public-tenant-config.functions";
 
 export type CurrentTenantQueryOverrides<TData = GetCurrentTenantResponseDto> =
 	Omit<
 		UseQueryOptions<GetCurrentTenantResponseDto, ProblemDetailsError, TData>,
 		"queryKey" | "queryFn"
 	>;
-
-export type PublicTenantConfigQueryOverrides<
-	TData = GetPublicTenantConfigResponseDto,
-> = Omit<
-	UseQueryOptions<GetPublicTenantConfigResponseDto, ProblemDetailsError, TData>,
-	"queryKey" | "queryFn"
->;
 
 export type CustomDomainQueryOverrides<TData = GetCustomDomainResponseDto> =
 	Omit<
@@ -45,7 +36,6 @@ export const tenantKeys = {
 	current: () => [...tenantKeys.all(), "current"] as const,
 	contractSigner: () => [...tenantKeys.all(), "contract-signer"] as const,
 	customDomain: () => [...tenantKeys.all(), "custom-domain"] as const,
-	publicConfig: () => [...tenantKeys.all(), "public-config"] as const,
 };
 
 export const tenantQueries = {
@@ -55,14 +45,6 @@ export const tenantQueries = {
 		queryOptions<GetCurrentTenantResponseDto, ProblemDetailsError, TData>({
 			queryKey: tenantKeys.current(),
 			queryFn: getCurrentTenant,
-			...overrides,
-		}),
-	publicConfig: <TData = GetPublicTenantConfigResponseDto>(
-		overrides?: PublicTenantConfigQueryOverrides<TData>,
-	) =>
-		queryOptions<GetPublicTenantConfigResponseDto, ProblemDetailsError, TData>({
-			queryKey: tenantKeys.publicConfig(),
-			queryFn: () => getPublicTenantConfigFn(),
 			...overrides,
 		}),
 	customDomain: <TData = GetCustomDomainResponseDto>(
@@ -89,11 +71,6 @@ export function useCurrentTenant<TData = GetCurrentTenantResponseDto>(
 	return useQuery(tenantQueries.current(overrides));
 }
 
-export function usePublicTenantConfig<TData = GetPublicTenantConfigResponseDto>(
-	overrides?: PublicTenantConfigQueryOverrides<TData>,
-) {
-	return useQuery(tenantQueries.publicConfig(overrides));
-}
 
 export function useCustomDomain<TData = GetCustomDomainResponseDto>(
 	overrides?: CustomDomainQueryOverrides<TData>,

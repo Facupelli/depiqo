@@ -1,7 +1,5 @@
-import { createFileRoute, notFound, redirect } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { DepiqoLandingPage } from "@/features/marketing/pages/depiqo-landing";
-import { tenantLandingRegistry } from "@/features/storefront/tenant-landings/tenant-landing-registry";
-import { getResolvedTenantBranding } from "@/features/tenant-management/tenant-context/tenant-branding";
 
 const platformSeo = {
 	title: "Depiqo | Software para alquiler de equipos",
@@ -13,26 +11,7 @@ const platformSeo = {
 };
 
 export const Route = createFileRoute("/")({
-	loader: ({ context: { tenantContext } }) => {
-		if (tenantContext.face === "platform") {
-			return { seo: platformSeo, branding: null };
-		}
-
-		if (tenantContext.face === "admin") {
-			return { seo: platformSeo, branding: null };
-		}
-
-		const landing = tenantLandingRegistry[tenantContext.tenant.slug];
-
-		if (!landing) {
-			throw notFound();
-		}
-
-		return {
-			seo: landing.seo,
-			branding: getResolvedTenantBranding(tenantContext),
-		};
-	},
+	loader: () => ({ seo: platformSeo }),
 	head: ({ loaderData }) => {
 		const seo = loaderData?.seo ?? platformSeo;
 
@@ -59,15 +38,6 @@ export const Route = createFileRoute("/")({
 					content: seo.ogDescription ?? seo.description,
 				},
 			],
-			links: loaderData?.branding?.faviconHref
-				? [
-						{
-							rel: "icon",
-							type: "image/png",
-							href: loaderData.branding.faviconHref,
-						},
-					]
-				: undefined,
 		};
 	},
 	component: HomePage,
@@ -84,13 +54,5 @@ function HomePage() {
 		throw redirect({ to: "/dashboard" });
 	}
 
-	const landing = tenantLandingRegistry[tenantContext.tenant.slug];
-
-	if (!landing) {
-		throw notFound();
-	}
-
-	const LandingPage = landing.component;
-
-	return <LandingPage />;
+	throw redirect({ to: "/dashboard" });
 }

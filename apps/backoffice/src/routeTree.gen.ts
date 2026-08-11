@@ -11,7 +11,6 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteRouteImport } from './routes/_admin/route'
-import { Route as PortalRouteRouteImport } from './routes/_portal/route'
 import { Route as SigningRouteImport } from './routes/signing'
 import { Route as AdminDashboardRouteRouteImport } from './routes/_admin/dashboard/route'
 import { Route as ApiBrandingUploadRouteImport } from './routes/api/branding-upload'
@@ -34,13 +33,6 @@ import { Route as AdminDashboardOwnersOwnerIdRouteImport } from './routes/_admin
 import { Route as AdminDashboardPromotionsIndexRouteImport } from './routes/_admin/dashboard/promotions/index'
 import { Route as AdminDashboardPromotionsNewRouteImport } from './routes/_admin/dashboard/promotions/new'
 import { Route as AdminDashboardSettingsIndexRouteImport } from './routes/_admin/dashboard/settings/index'
-import { Route as PortalTenantCartIndexRouteImport } from './routes/_portal/_tenant/cart/index'
-import { Route as PortalTenantConfirmedRentalSuccessIndexRouteImport } from './routes/_portal/_tenant/confirmed-rental-success/index'
-import { Route as PortalTenantOnboardIndexRouteImport } from './routes/_portal/_tenant/onboard/index'
-import { Route as PortalTenantOrderConfirmationIndexRouteImport } from './routes/_portal/_tenant/order-confirmation/index'
-import { Route as PortalTenantOrderCreatedContactTeamIndexRouteImport } from './routes/_portal/_tenant/order-created-contact-team/index'
-import { Route as PortalTenantOrderCreatedWhatsappIndexRouteImport } from './routes/_portal/_tenant/order-created-whatsapp/index'
-import { Route as PortalTenantRentalIndexRouteImport } from './routes/_portal/_tenant/rental/index'
 import { Route as ApiCustomerProfilesCustomerProfileIdIdentityDocumentRouteImport } from './routes/api/customer-profiles/$customerProfileId/identity-document'
 import { Route as ApiDocumentSigningPublicSignedPdfRouteImport } from './routes/api/document-signing/public/signed-pdf'
 import { Route as ApiDocumentSigningPublicUnsignedPdfRouteImport } from './routes/api/document-signing/public/unsigned-pdf'
@@ -66,10 +58,6 @@ const IndexRoute = IndexRouteImport.update({
 } as any)
 const AdminRouteRoute = AdminRouteRouteImport.update({
   id: '/_admin',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PortalRouteRoute = PortalRouteRouteImport.update({
-  id: '/_portal',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SigningRoute = SigningRouteImport.update({
@@ -194,46 +182,6 @@ const AdminDashboardSettingsIndexRoute =
     path: '/settings/',
     getParentRoute: () => AdminDashboardRouteRoute,
   } as any)
-const PortalTenantCartIndexRoute = PortalTenantCartIndexRouteImport.update({
-  id: '/_tenant/cart/',
-  path: '/cart/',
-  getParentRoute: () => PortalRouteRoute,
-} as any)
-const PortalTenantConfirmedRentalSuccessIndexRoute =
-  PortalTenantConfirmedRentalSuccessIndexRouteImport.update({
-    id: '/_tenant/confirmed-rental-success/',
-    path: '/confirmed-rental-success/',
-    getParentRoute: () => PortalRouteRoute,
-  } as any)
-const PortalTenantOnboardIndexRoute =
-  PortalTenantOnboardIndexRouteImport.update({
-    id: '/_tenant/onboard/',
-    path: '/onboard/',
-    getParentRoute: () => PortalRouteRoute,
-  } as any)
-const PortalTenantOrderConfirmationIndexRoute =
-  PortalTenantOrderConfirmationIndexRouteImport.update({
-    id: '/_tenant/order-confirmation/',
-    path: '/order-confirmation/',
-    getParentRoute: () => PortalRouteRoute,
-  } as any)
-const PortalTenantOrderCreatedContactTeamIndexRoute =
-  PortalTenantOrderCreatedContactTeamIndexRouteImport.update({
-    id: '/_tenant/order-created-contact-team/',
-    path: '/order-created-contact-team/',
-    getParentRoute: () => PortalRouteRoute,
-  } as any)
-const PortalTenantOrderCreatedWhatsappIndexRoute =
-  PortalTenantOrderCreatedWhatsappIndexRouteImport.update({
-    id: '/_tenant/order-created-whatsapp/',
-    path: '/order-created-whatsapp/',
-    getParentRoute: () => PortalRouteRoute,
-  } as any)
-const PortalTenantRentalIndexRoute = PortalTenantRentalIndexRouteImport.update({
-  id: '/_tenant/rental/',
-  path: '/rental/',
-  getParentRoute: () => PortalRouteRoute,
-} as any)
 const ApiCustomerProfilesCustomerProfileIdIdentityDocumentRoute =
   ApiCustomerProfilesCustomerProfileIdIdentityDocumentRouteImport.update({
     id: '/api/customer-profiles/$customerProfileId/identity-document',
@@ -365,13 +313,6 @@ export interface FileRoutesByFullPath {
   '/dashboard/owners/': typeof AdminDashboardOwnersIndexRoute
   '/dashboard/promotions/': typeof AdminDashboardPromotionsIndexRoute
   '/dashboard/settings/': typeof AdminDashboardSettingsIndexRoute
-  '/cart/': typeof PortalTenantCartIndexRoute
-  '/confirmed-rental-success/': typeof PortalTenantConfirmedRentalSuccessIndexRoute
-  '/onboard/': typeof PortalTenantOnboardIndexRoute
-  '/order-confirmation/': typeof PortalTenantOrderConfirmationIndexRoute
-  '/order-created-contact-team/': typeof PortalTenantOrderCreatedContactTeamIndexRoute
-  '/order-created-whatsapp/': typeof PortalTenantOrderCreatedWhatsappIndexRoute
-  '/rental/': typeof PortalTenantRentalIndexRoute
   '/dashboard/branches/$branchId/edit': typeof AdminDashboardBranchesBranchIdEditRoute
   '/dashboard/catalog/packages/new': typeof AdminDashboardCatalogPackagesNewRoute
   '/dashboard/customers/pending-profiles/$customerId': typeof AdminDashboardCustomersPendingProfilesCustomerIdRoute
@@ -413,13 +354,6 @@ export interface FileRoutesByTo {
   '/dashboard/owners': typeof AdminDashboardOwnersIndexRoute
   '/dashboard/promotions': typeof AdminDashboardPromotionsIndexRoute
   '/dashboard/settings': typeof AdminDashboardSettingsIndexRoute
-  '/cart': typeof PortalTenantCartIndexRoute
-  '/confirmed-rental-success': typeof PortalTenantConfirmedRentalSuccessIndexRoute
-  '/onboard': typeof PortalTenantOnboardIndexRoute
-  '/order-confirmation': typeof PortalTenantOrderConfirmationIndexRoute
-  '/order-created-contact-team': typeof PortalTenantOrderCreatedContactTeamIndexRoute
-  '/order-created-whatsapp': typeof PortalTenantOrderCreatedWhatsappIndexRoute
-  '/rental': typeof PortalTenantRentalIndexRoute
   '/dashboard/branches/$branchId/edit': typeof AdminDashboardBranchesBranchIdEditRoute
   '/dashboard/catalog/packages/new': typeof AdminDashboardCatalogPackagesNewRoute
   '/dashboard/customers/pending-profiles/$customerId': typeof AdminDashboardCustomersPendingProfilesCustomerIdRoute
@@ -438,7 +372,6 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_admin': typeof AdminRouteRouteWithChildren
-  '/_portal': typeof PortalRouteRouteWithChildren
   '/signing': typeof SigningRoute
   '/_admin/dashboard': typeof AdminDashboardRouteRouteWithChildren
   '/api/branding-upload': typeof ApiBrandingUploadRoute
@@ -465,13 +398,6 @@ export interface FileRoutesById {
   '/_admin/dashboard/owners/': typeof AdminDashboardOwnersIndexRoute
   '/_admin/dashboard/promotions/': typeof AdminDashboardPromotionsIndexRoute
   '/_admin/dashboard/settings/': typeof AdminDashboardSettingsIndexRoute
-  '/_portal/_tenant/cart/': typeof PortalTenantCartIndexRoute
-  '/_portal/_tenant/confirmed-rental-success/': typeof PortalTenantConfirmedRentalSuccessIndexRoute
-  '/_portal/_tenant/onboard/': typeof PortalTenantOnboardIndexRoute
-  '/_portal/_tenant/order-confirmation/': typeof PortalTenantOrderConfirmationIndexRoute
-  '/_portal/_tenant/order-created-contact-team/': typeof PortalTenantOrderCreatedContactTeamIndexRoute
-  '/_portal/_tenant/order-created-whatsapp/': typeof PortalTenantOrderCreatedWhatsappIndexRoute
-  '/_portal/_tenant/rental/': typeof PortalTenantRentalIndexRoute
   '/_admin/dashboard/branches/$branchId/edit': typeof AdminDashboardBranchesBranchIdEditRoute
   '/_admin/dashboard/catalog/packages/new': typeof AdminDashboardCatalogPackagesNewRoute
   '/_admin/dashboard/customers/pending-profiles/$customerId': typeof AdminDashboardCustomersPendingProfilesCustomerIdRoute
@@ -516,13 +442,6 @@ export interface FileRouteTypes {
     | '/dashboard/owners/'
     | '/dashboard/promotions/'
     | '/dashboard/settings/'
-    | '/cart/'
-    | '/confirmed-rental-success/'
-    | '/onboard/'
-    | '/order-confirmation/'
-    | '/order-created-contact-team/'
-    | '/order-created-whatsapp/'
-    | '/rental/'
     | '/dashboard/branches/$branchId/edit'
     | '/dashboard/catalog/packages/new'
     | '/dashboard/customers/pending-profiles/$customerId'
@@ -564,13 +483,6 @@ export interface FileRouteTypes {
     | '/dashboard/owners'
     | '/dashboard/promotions'
     | '/dashboard/settings'
-    | '/cart'
-    | '/confirmed-rental-success'
-    | '/onboard'
-    | '/order-confirmation'
-    | '/order-created-contact-team'
-    | '/order-created-whatsapp'
-    | '/rental'
     | '/dashboard/branches/$branchId/edit'
     | '/dashboard/catalog/packages/new'
     | '/dashboard/customers/pending-profiles/$customerId'
@@ -588,7 +500,6 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/_admin'
-    | '/_portal'
     | '/signing'
     | '/_admin/dashboard'
     | '/api/branding-upload'
@@ -615,13 +526,6 @@ export interface FileRouteTypes {
     | '/_admin/dashboard/owners/'
     | '/_admin/dashboard/promotions/'
     | '/_admin/dashboard/settings/'
-    | '/_portal/_tenant/cart/'
-    | '/_portal/_tenant/confirmed-rental-success/'
-    | '/_portal/_tenant/onboard/'
-    | '/_portal/_tenant/order-confirmation/'
-    | '/_portal/_tenant/order-created-contact-team/'
-    | '/_portal/_tenant/order-created-whatsapp/'
-    | '/_portal/_tenant/rental/'
     | '/_admin/dashboard/branches/$branchId/edit'
     | '/_admin/dashboard/catalog/packages/new'
     | '/_admin/dashboard/customers/pending-profiles/$customerId'
@@ -640,7 +544,6 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRouteRoute: typeof AdminRouteRouteWithChildren
-  PortalRouteRoute: typeof PortalRouteRouteWithChildren
   SigningRoute: typeof SigningRoute
   ApiBrandingUploadRoute: typeof ApiBrandingUploadRoute
   ApiCustomerUploadRoute: typeof ApiCustomerUploadRoute
@@ -666,13 +569,6 @@ declare module '@tanstack/react-router' {
       path: ''
       fullPath: '/'
       preLoaderRoute: typeof AdminRouteRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_portal': {
-      id: '/_portal'
-      path: ''
-      fullPath: '/'
-      preLoaderRoute: typeof PortalRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/signing': {
@@ -828,55 +724,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/dashboard/settings/'
       preLoaderRoute: typeof AdminDashboardSettingsIndexRouteImport
       parentRoute: typeof AdminDashboardRouteRoute
-    }
-    '/_portal/_tenant/cart/': {
-      id: '/_portal/_tenant/cart/'
-      path: '/cart'
-      fullPath: '/cart/'
-      preLoaderRoute: typeof PortalTenantCartIndexRouteImport
-      parentRoute: typeof PortalRouteRoute
-    }
-    '/_portal/_tenant/confirmed-rental-success/': {
-      id: '/_portal/_tenant/confirmed-rental-success/'
-      path: '/confirmed-rental-success'
-      fullPath: '/confirmed-rental-success/'
-      preLoaderRoute: typeof PortalTenantConfirmedRentalSuccessIndexRouteImport
-      parentRoute: typeof PortalRouteRoute
-    }
-    '/_portal/_tenant/onboard/': {
-      id: '/_portal/_tenant/onboard/'
-      path: '/onboard'
-      fullPath: '/onboard/'
-      preLoaderRoute: typeof PortalTenantOnboardIndexRouteImport
-      parentRoute: typeof PortalRouteRoute
-    }
-    '/_portal/_tenant/order-confirmation/': {
-      id: '/_portal/_tenant/order-confirmation/'
-      path: '/order-confirmation'
-      fullPath: '/order-confirmation/'
-      preLoaderRoute: typeof PortalTenantOrderConfirmationIndexRouteImport
-      parentRoute: typeof PortalRouteRoute
-    }
-    '/_portal/_tenant/order-created-contact-team/': {
-      id: '/_portal/_tenant/order-created-contact-team/'
-      path: '/order-created-contact-team'
-      fullPath: '/order-created-contact-team/'
-      preLoaderRoute: typeof PortalTenantOrderCreatedContactTeamIndexRouteImport
-      parentRoute: typeof PortalRouteRoute
-    }
-    '/_portal/_tenant/order-created-whatsapp/': {
-      id: '/_portal/_tenant/order-created-whatsapp/'
-      path: '/order-created-whatsapp'
-      fullPath: '/order-created-whatsapp/'
-      preLoaderRoute: typeof PortalTenantOrderCreatedWhatsappIndexRouteImport
-      parentRoute: typeof PortalRouteRoute
-    }
-    '/_portal/_tenant/rental/': {
-      id: '/_portal/_tenant/rental/'
-      path: '/rental'
-      fullPath: '/rental/'
-      preLoaderRoute: typeof PortalTenantRentalIndexRouteImport
-      parentRoute: typeof PortalRouteRoute
     }
     '/api/customer-profiles/$customerProfileId/identity-document': {
       id: '/api/customer-profiles/$customerProfileId/identity-document'
@@ -1081,34 +928,6 @@ const AdminRouteRouteWithChildren = AdminRouteRoute._addFileChildren(
   AdminRouteRouteChildren,
 )
 
-interface PortalRouteRouteChildren {
-  PortalTenantCartIndexRoute: typeof PortalTenantCartIndexRoute
-  PortalTenantConfirmedRentalSuccessIndexRoute: typeof PortalTenantConfirmedRentalSuccessIndexRoute
-  PortalTenantOnboardIndexRoute: typeof PortalTenantOnboardIndexRoute
-  PortalTenantOrderConfirmationIndexRoute: typeof PortalTenantOrderConfirmationIndexRoute
-  PortalTenantOrderCreatedContactTeamIndexRoute: typeof PortalTenantOrderCreatedContactTeamIndexRoute
-  PortalTenantOrderCreatedWhatsappIndexRoute: typeof PortalTenantOrderCreatedWhatsappIndexRoute
-  PortalTenantRentalIndexRoute: typeof PortalTenantRentalIndexRoute
-}
-
-const PortalRouteRouteChildren: PortalRouteRouteChildren = {
-  PortalTenantCartIndexRoute: PortalTenantCartIndexRoute,
-  PortalTenantConfirmedRentalSuccessIndexRoute:
-    PortalTenantConfirmedRentalSuccessIndexRoute,
-  PortalTenantOnboardIndexRoute: PortalTenantOnboardIndexRoute,
-  PortalTenantOrderConfirmationIndexRoute:
-    PortalTenantOrderConfirmationIndexRoute,
-  PortalTenantOrderCreatedContactTeamIndexRoute:
-    PortalTenantOrderCreatedContactTeamIndexRoute,
-  PortalTenantOrderCreatedWhatsappIndexRoute:
-    PortalTenantOrderCreatedWhatsappIndexRoute,
-  PortalTenantRentalIndexRoute: PortalTenantRentalIndexRoute,
-}
-
-const PortalRouteRouteWithChildren = PortalRouteRoute._addFileChildren(
-  PortalRouteRouteChildren,
-)
-
 interface ApiOrdersOrderIdContractSignedRouteChildren {
   ApiOrdersOrderIdContractSignedDownloadRoute: typeof ApiOrdersOrderIdContractSignedDownloadRoute
 }
@@ -1145,7 +964,6 @@ const ApiOrdersOrderIdContractRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRouteRoute: AdminRouteRouteWithChildren,
-  PortalRouteRoute: PortalRouteRouteWithChildren,
   SigningRoute: SigningRoute,
   ApiBrandingUploadRoute: ApiBrandingUploadRoute,
   ApiCustomerUploadRoute: ApiCustomerUploadRoute,
