@@ -134,7 +134,6 @@ export function CartPageProvider({
 	const hasConfirmedDeliveryAddress = isDeliveryRequestComplete(
 		normalizedDeliveryRequest,
 	);
-
 	const value = useMemo<CartPageValue>(
 		() => ({
 			cart: { items, actions },

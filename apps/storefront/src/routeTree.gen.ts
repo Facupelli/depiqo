@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ConfirmedRentalSuccessRouteImport } from './routes/confirmed-rental-success'
 import { Route as HealthRouteImport } from './routes/health'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as RegisterRouteImport } from './routes/register'
@@ -23,6 +24,11 @@ import { Route as AuthGoogleStartRouteImport } from './routes/auth/google/start'
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConfirmedRentalSuccessRoute = ConfirmedRentalSuccessRouteImport.update({
+  id: '/confirmed-rental-success',
+  path: '/confirmed-rental-success',
   getParentRoute: () => rootRouteImport,
 } as any)
 const HealthRoute = HealthRouteImport.update({
@@ -73,6 +79,7 @@ const AuthGoogleStartRoute = AuthGoogleStartRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/confirmed-rental-success': typeof ConfirmedRentalSuccessRoute
   '/health': typeof HealthRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
@@ -85,6 +92,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/confirmed-rental-success': typeof ConfirmedRentalSuccessRoute
   '/health': typeof HealthRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
@@ -98,6 +106,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/confirmed-rental-success': typeof ConfirmedRentalSuccessRoute
   '/health': typeof HealthRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
@@ -112,6 +121,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/confirmed-rental-success'
     | '/health'
     | '/login'
     | '/register'
@@ -124,6 +134,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/confirmed-rental-success'
     | '/health'
     | '/login'
     | '/register'
@@ -136,6 +147,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/confirmed-rental-success'
     | '/health'
     | '/login'
     | '/register'
@@ -149,6 +161,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ConfirmedRentalSuccessRoute: typeof ConfirmedRentalSuccessRoute
   HealthRoute: typeof HealthRoute
   LoginRoute: typeof LoginRoute
   RegisterRoute: typeof RegisterRoute
@@ -167,6 +180,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/confirmed-rental-success': {
+      id: '/confirmed-rental-success'
+      path: '/confirmed-rental-success'
+      fullPath: '/confirmed-rental-success'
+      preLoaderRoute: typeof ConfirmedRentalSuccessRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/health': {
@@ -237,6 +257,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ConfirmedRentalSuccessRoute: ConfirmedRentalSuccessRoute,
   HealthRoute: HealthRoute,
   LoginRoute: LoginRoute,
   RegisterRoute: RegisterRoute,

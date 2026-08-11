@@ -3,6 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { PackageOpen } from "lucide-react";
 import { useCartContext, useCartPeriodContext } from "./cart-page.context";
 import { CartItemList } from "./components/cart-item-list";
+import { BookingCta } from "./components/booking-cta";
 import { CartPagePeriod } from "./components/cart-page-period";
 import { FulfillmentForm } from "./components/fulfillment-form";
 import { PriceBreakdown } from "./components/price-breakdown";
@@ -36,6 +37,7 @@ export function CartPage() {
 				<aside className="space-y-5 lg:sticky lg:top-24">
 					<PriceBreakdown />
 					<FulfillmentForm />
+					<BookingCta />
 				</aside>
 			</div>
 		</main>
