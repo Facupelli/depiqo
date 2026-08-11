@@ -7,17 +7,17 @@ import { useCurrentCustomer } from "@/modules/tenant-management/auth/customer-au
 import { resolveCustomerReturnTo } from "@/modules/tenant-management/auth/customer-return-to";
 import { ProblemDetailsError } from "@/shared/errors";
 import { useRentalCartActions } from "../../rental-cart.hooks";
-import {
-	classifyConfirmedRentalError,
-	type ConfirmedRentalErrorKind,
-} from "../confirmed-rental-error";
-import type { ConfirmedRentalRequestFailure } from "../confirmed-rental-request";
+import { formatDeliveryAddressSummary } from "../cart-checkout.utils";
 import {
 	useCartFulfillmentContext,
 	useCartPeriodContext,
 } from "../cart-page.context";
+import {
+	type ConfirmedRentalErrorKind,
+	classifyConfirmedRentalError,
+} from "../confirmed-rental-error";
+import type { ConfirmedRentalRequestFailure } from "../confirmed-rental-request";
 import { useConfirmedRentalRequest } from "../use-confirmed-rental-request";
-import { formatDeliveryAddressSummary } from "../cart-checkout.utils";
 
 export function BookingCta() {
 	const booking = useCartBookingCommand();

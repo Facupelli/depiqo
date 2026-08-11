@@ -1,3 +1,4 @@
+import { normalizeDeliveryRequest } from "./cart-checkout.utils";
 import {
 	useCartContext,
 	useCartFulfillmentContext,
@@ -8,7 +9,6 @@ import {
 	buildConfirmedRentalRequest,
 	type ConfirmedRentalRequestResult,
 } from "./confirmed-rental-request";
-import { normalizeDeliveryRequest } from "./cart-checkout.utils";
 
 export function useConfirmedRentalRequest(): ConfirmedRentalRequestResult {
 	const { items } = useCartContext();

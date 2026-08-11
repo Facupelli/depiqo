@@ -15,14 +15,17 @@ export type CreateConfirmedRentalVariables = {
 export async function createConfirmedRental({
 	body,
 }: CreateConfirmedRentalVariables): Promise<CreateConfirmedRentalResponseDto> {
-	const data = await sessionBrowserApiFetch(createConfirmedRentalContract.path, {
-		method: createConfirmedRentalContract.method,
-		headers: {
-			"content-type": "application/json",
-			"x-csrf-token": await getCustomerCsrfToken(),
+	const data = await sessionBrowserApiFetch(
+		createConfirmedRentalContract.path,
+		{
+			method: createConfirmedRentalContract.method,
+			headers: {
+				"content-type": "application/json",
+				"x-csrf-token": await getCustomerCsrfToken(),
+			},
+			body: JSON.stringify(CreateConfirmedRentalBodySchema.parse(body)),
 		},
-		body: JSON.stringify(CreateConfirmedRentalBodySchema.parse(body)),
-	});
+	);
 
 	return CreateConfirmedRentalResponseSchema.parse(data);
 }

@@ -51,14 +51,50 @@ It does not change backend bounded-context ownership.
 - [x] Port `/confirmed-rental-success` and wire it to the new checkout command.
 - [x] Reconcile the cart implementations before porting more code. Storefront uses `rental-cart`; Backoffice still has both `v2-rental-cart` and route-backed `storefront-cart`. Retire obsolete variants rather than maintaining three carts.
 
-## 4. Migrate customer account and onboarding
+## 4. Complete customer onboarding and self-service migration
 
-- [ ] Port customer login, logout, current-user query, CSRF state, header account action, safe redirect utilities, and portal forms.
-- [ ] Add Storefront routes for `/login`, `/register`, `/onboard`, Google start, callback, finalize, and their route guards.
-- [ ] Port customer profile submission and resubmission, including all five onboarding steps.
-- [ ] Move the customer identity-document upload endpoint and its Better Upload and R2 server dependencies to Storefront.
-- [ ] Split customer query code so Storefront receives only customer self-service APIs, while Backoffice retains approval, review, and staff customer-management APIs.
-- [ ] Verify the centralized Google handoff across tenant slug and verified custom canonical hosts, including one-time transaction and ticket consumption, canonical-host rejection, and host-only session cookies.
+- [x] Add the Storefront customer self-service API boundary for:
+  - `GET /tenant-management/rental-customers/me/profile`
+  - `POST /tenant-management/customer/profile/submit`
+
+  Use the existing session-aware Storefront BFF, extend its allowlist narrowly for these operations, reuse the existing API contracts, and preserve backend `ProblemDetailsError` responses.
+
+- [ ] Move the customer identity-document upload flow to Storefront:
+  - add the Storefront Better Upload endpoint;
+  - authenticate with the customer session;
+  - preserve the existing customer ID validation;
+  - reuse the existing customer R2 bucket and object-key model.
+
+  Keep Backoffice's staff-only identity-document reader and review flow unchanged.
+
+- [ ] Add the customer-guarded Storefront `/onboard` route and profile-status experience:
+  - no profile -> show the five-step onboarding form;
+  - `REJECTED` -> show rejection reason and allow editing/resubmission;
+  - `PENDING` -> show pending-review status;
+  - `APPROVED` -> show approved status.
+
+  Preserve the existing five onboarding steps and backend profile lifecycle rules. Do not add customer self-registration.
+
+- [ ] Remove superseded Backoffice customer self-service code after the Storefront onboarding flow is functionally verified:
+  - onboarding form;
+  - profile submit mutation/API;
+  - current-customer-profile query/API;
+  - customer upload route.
+
+  Retain:
+  - customer list/search;
+  - profile detail;
+  - approval/rejection;
+  - staff customer selection;
+  - staff identity-document reader.
+
+  Automated E2E coverage remains deferred to Section 8.
+
+- [ ] Manually verify centralized Google OAuth on:
+  - a tenant-slug canonical host;
+  - a verified custom canonical host.
+
+  Verify canonical-host redirects/rejection, one-time OAuth transaction consumption, one-time handoff-ticket consumption, and host-only customer session cookies. Automated coverage remains deferred to Section 8.
 
 ## 5. Migrate public document signing
 

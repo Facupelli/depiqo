@@ -16,6 +16,8 @@ const ALLOWED_PATHS = new Set([
 	"auth/customer/google/finalize",
 	"auth/customer/logout",
 	"auth/customer/me",
+	"tenant-management/rental-customers/me/profile",
+	"tenant-management/customer/profile/submit",
 	"rental-commitments/confirmed-rentals",
 ]);
 const UNSAFE_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
