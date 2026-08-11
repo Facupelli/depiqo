@@ -10,7 +10,7 @@
     "build": "vite build",
     "build:production": "vite build --mode production",
     "preview": "vite preview",
-    "cf-typegen": "wrangler types",
+    "cf-typegen": "wrangler types worker-configuration.d.ts --env-file .wrangler-types.env",
     "deploy": "pnpm run build:production && wrangler deploy",
     "test": "vitest run",
     "format": "biome format",

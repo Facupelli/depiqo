@@ -163,12 +163,26 @@ Automated E2E verification is deferred to Section 8.
 
 ## 7. Finish deployment and documentation
 
-- [ ] Update `apps/storefront/README.md`, which still says storefront routes will migrate later.
-- [ ] Replace the generated-template `apps/backoffice/README.md`.
-- [ ] Add the missing `apps/storefront/AGENTS.md`, referenced by the root instructions.
-- [ ] Audit Worker names and routes. Backoffice is still deployed as `repo-web`; decide whether it should become `repo-backoffice`.
-- [ ] Remove Storefront-only secrets and R2 credentials from Backoffice after the moved endpoints are verified.
-- [ ] Verify Cloudflare route precedence so `app.depiqo.com` cannot serve Storefront routes.
+- [x] Update `apps/storefront/README.md` to reflect the current Storefront ownership, routing, environment, and deployment model.
+
+- [x] Replace the generated-template `apps/backoffice/README.md` with Backoffice-specific documentation.
+
+- [x] Add `apps/storefront/AGENTS.md` with Storefront-local architecture, conventions, and validation commands.
+
+- [x] Rename the Backoffice Worker configuration from `repo-web` to `repo-backoffice`.
+
+- [x] Remove repository-side Backoffice configuration that was only needed by the migrated customer-upload flow.
+
+- [ ] Migrate production Cloudflare from the legacy single `repo-web` Worker to separate:
+  - `repo-backoffice`
+  - `repo-storefront`
+
+- [ ] Verify live route ownership after migration:
+  - `app.depiqo.com` -> `repo-backoffice`
+  - `sign.depiqo.com` -> `repo-storefront`
+  - tenant/default/custom Storefront hosts -> `repo-storefront`
+
+- [ ] After verification, retire the legacy `repo-web` routing and remove obsolete production secrets/bindings that are no longer used.
 
 ## 8. Add migration acceptance coverage
 

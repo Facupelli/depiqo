@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "repo-web",
+  "name": "repo-backoffice",
   "compatibility_date": "2025-09-02",
   "compatibility_flags": ["nodejs_compat"],
   "main": "@tanstack/react-start/server-entry",
@@ -19,6 +19,7 @@
     "VITE_BRANDING_R2_PUBLIC_URL": "https://branding.depiqo.com",
     "NODE_ENV": "production",
   },
+  // Intended production ownership: app.depiqo.com -> repo-backoffice.
   "routes": [
     {
       "pattern": "app.depiqo.com",

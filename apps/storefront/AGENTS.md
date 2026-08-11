@@ -1,49 +1,29 @@
 # Agent Context
 
-Customer-facing, multi-tenant storefront application for the equipment rental platform. It owns tenant landing pages, the rental catalog, cart and checkout, customer authentication and onboarding, and public document signing.
+Storefront is the customer-facing TanStack Start application for the equipment rental platform. It owns public tenant experiences, customer authentication and self-service, checkout, and public document signing.
 
-Built with TanStack Start, React 19, TypeScript, Tailwind CSS v4, Vitest, and Biome.
+Run commands from `apps/storefront/` using `pnpm`.
 
-Run commands from `apps/storefront/` and use `pnpm`.
+## Validation
 
-Common commands:
-
-- `pnpm dev`
 - `pnpm typecheck`
-- `pnpm test`
 - `pnpm lint`
 - `pnpm check`
+- `pnpm test`
 - `pnpm build`
 
-Use local config and nearby code as the primary source of truth:
+Run the narrowest relevant commands for the change. Do not deploy or mutate Cloudflare resources unless the user explicitly authorizes it.
 
-- `package.json`
-- `biome.json`
-- `tsconfig.json`
-- `vite.config.ts`
-- `wrangler.jsonc`
+## Architecture
 
-Architecture:
+- Keep route files in `src/routes/` focused on route composition.
+- Keep business capabilities in `src/modules/` with colocated UI, API, schema, and mapping code.
+- Use the existing Storefront BFF boundaries for backend access. Do not expose server credentials to the client.
+- Preserve host resolution and trusted tenant-context boundaries. Browser-supplied tenant identity is not trusted.
+- Public signing uses the dedicated public-token transport and must not depend on customer sessions or tenant host resolution.
 
-- `src/routes/` contains route files and route-level composition.
-- `src/modules/` contains storefront-owned domain modules.
-- `src/components/` contains reusable app-level components.
-- `src/shared/` contains cross-cutting code with no domain ownership.
-- `src/shared/server/` contains Storefront server transport and infrastructure.
-- `src/integrations/` contains framework integrations.
+## Worker configuration
 
-Tenant and security boundaries:
+`wrangler.jsonc` expresses the intended topology: `app.depiqo.com` belongs to Backoffice, while public signing and Storefront tenant hosts belong to Storefront. Cloudflare route changes are operational work and must be explicitly authorized.
 
-- Preserve trusted server-side tenant resolution and signed tenant-context transport.
-- Do not expose backend credentials, BFF credentials, or tenant-token signing secrets to browser code.
-- Keep tenant-scoped backend access inside Storefront server boundaries.
-- Treat customer session cookies and CSRF handling as an explicit security boundary.
-- Do not hand-edit generated files such as `src/routeTree.gen.ts` unless the task explicitly requires it.
-
-Use existing skills for specialized workflows:
-
-- `react-modular-architecture` for substantial React feature work
-- `tanstack-query` for TanStack Query and server-state patterns
-- `react-use-effect-guard` for React component and hook work
-- `css-layout-guide` for layout and Tailwind structure decisions
-- `zustand-store-design` for Zustand store design or review
+Do not hand-edit generated files such as `src/routeTree.gen.ts`. Regenerate `worker-configuration.d.ts` with `pnpm exec wrangler types` after changing Worker configuration.

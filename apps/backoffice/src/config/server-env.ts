@@ -23,10 +23,6 @@ const serverEnvSchema = z.object({
 	CLOUDFLARE_R2_BRANDING_BUCKET_NAME: z.string().min(1),
 	R2_BRANDING_ACCESS_KEY_ID: z.string().min(1),
 	R2_BRANDING_SECRET_ACCESS_KEY: z.string().min(1),
-	// Customer identity-document uploads
-	R2_CUSTOMERS_BUCKET_NAME: z.string().min(1),
-	R2_CUSTOMERS_ACCESS_KEY_ID: z.string().min(1),
-	R2_CUSTOMERS_SECRET_ACCESS_KEY: z.string().min(1),
 	//
 	INTERNAL_API_TOKEN: z.string(),
 	ROOT_DOMAIN: z.string(),

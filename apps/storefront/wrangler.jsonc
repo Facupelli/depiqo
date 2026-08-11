@@ -34,6 +34,9 @@
       "zone_name": "depiqo.com",
       "custom_domain": true,
     },
+    // Intended production ownership: tenant, default, and verified custom
+    // Storefront hosts -> repo-storefront. The production migration must retain
+    // an explicit, higher-precedence app.depiqo.com route for repo-backoffice.
     {
       "pattern": "*/*",
       "zone_name": "depiqo.com",
