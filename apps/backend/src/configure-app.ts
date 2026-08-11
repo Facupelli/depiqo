@@ -63,6 +63,7 @@ export function configureApp(app: NestExpressApplication, options: ConfigureAppO
         secure: isProduction,
         sameSite: 'lax',
         path: '/',
+        domain: undefined,
         maxAge: SESSION_MAX_AGE_MS,
       },
     }),

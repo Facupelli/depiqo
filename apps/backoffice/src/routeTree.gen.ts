@@ -14,8 +14,6 @@ import { Route as AdminRouteRouteImport } from './routes/_admin/route'
 import { Route as PortalRouteRouteImport } from './routes/_portal/route'
 import { Route as SigningRouteImport } from './routes/signing'
 import { Route as AdminDashboardRouteRouteImport } from './routes/_admin/dashboard/route'
-import { Route as PortalLoginRouteImport } from './routes/_portal/login'
-import { Route as PortalRegisterRouteImport } from './routes/_portal/register'
 import { Route as ApiBrandingUploadRouteImport } from './routes/api/branding-upload'
 import { Route as ApiCustomerUploadRouteImport } from './routes/api/customer-upload'
 import { Route as ApiUploadRouteImport } from './routes/api/upload'
@@ -86,16 +84,6 @@ const AdminDashboardRouteRoute = AdminDashboardRouteRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
   getParentRoute: () => AdminRouteRoute,
-} as any)
-const PortalLoginRoute = PortalLoginRouteImport.update({
-  id: '/login',
-  path: '/login',
-  getParentRoute: () => PortalRouteRoute,
-} as any)
-const PortalRegisterRoute = PortalRegisterRouteImport.update({
-  id: '/register',
-  path: '/register',
-  getParentRoute: () => PortalRouteRoute,
 } as any)
 const ApiBrandingUploadRoute = ApiBrandingUploadRouteImport.update({
   id: '/api/branding-upload',
@@ -372,8 +360,6 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/signing': typeof SigningRoute
   '/dashboard': typeof AdminDashboardRouteRouteWithChildren
-  '/login': typeof PortalLoginRoute
-  '/register': typeof PortalRegisterRoute
   '/api/branding-upload': typeof ApiBrandingUploadRoute
   '/api/customer-upload': typeof ApiCustomerUploadRoute
   '/api/upload': typeof ApiUploadRoute
@@ -425,8 +411,6 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/signing': typeof SigningRoute
-  '/login': typeof PortalLoginRoute
-  '/register': typeof PortalRegisterRoute
   '/api/branding-upload': typeof ApiBrandingUploadRoute
   '/api/customer-upload': typeof ApiCustomerUploadRoute
   '/api/upload': typeof ApiUploadRoute
@@ -482,8 +466,6 @@ export interface FileRoutesById {
   '/_portal': typeof PortalRouteRouteWithChildren
   '/signing': typeof SigningRoute
   '/_admin/dashboard': typeof AdminDashboardRouteRouteWithChildren
-  '/_portal/login': typeof PortalLoginRoute
-  '/_portal/register': typeof PortalRegisterRoute
   '/api/branding-upload': typeof ApiBrandingUploadRoute
   '/api/customer-upload': typeof ApiCustomerUploadRoute
   '/api/upload': typeof ApiUploadRoute
@@ -538,8 +520,6 @@ export interface FileRouteTypes {
     | '/'
     | '/signing'
     | '/dashboard'
-    | '/login'
-    | '/register'
     | '/api/branding-upload'
     | '/api/customer-upload'
     | '/api/upload'
@@ -591,8 +571,6 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/signing'
-    | '/login'
-    | '/register'
     | '/api/branding-upload'
     | '/api/customer-upload'
     | '/api/upload'
@@ -647,8 +625,6 @@ export interface FileRouteTypes {
     | '/_portal'
     | '/signing'
     | '/_admin/dashboard'
-    | '/_portal/login'
-    | '/_portal/register'
     | '/api/branding-upload'
     | '/api/customer-upload'
     | '/api/upload'
@@ -751,20 +727,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/dashboard'
       preLoaderRoute: typeof AdminDashboardRouteRouteImport
       parentRoute: typeof AdminRouteRoute
-    }
-    '/_portal/login': {
-      id: '/_portal/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof PortalLoginRouteImport
-      parentRoute: typeof PortalRouteRoute
-    }
-    '/_portal/register': {
-      id: '/_portal/register'
-      path: '/register'
-      fullPath: '/register'
-      preLoaderRoute: typeof PortalRegisterRouteImport
-      parentRoute: typeof PortalRouteRoute
     }
     '/api/branding-upload': {
       id: '/api/branding-upload'
@@ -1180,8 +1142,6 @@ const AdminRouteRouteWithChildren = AdminRouteRoute._addFileChildren(
 )
 
 interface PortalRouteRouteChildren {
-  PortalLoginRoute: typeof PortalLoginRoute
-  PortalRegisterRoute: typeof PortalRegisterRoute
   PortalAuthGoogleFinalizeRoute: typeof PortalAuthGoogleFinalizeRoute
   PortalTenantCartIndexRoute: typeof PortalTenantCartIndexRoute
   PortalTenantConfirmedRentalSuccessIndexRoute: typeof PortalTenantConfirmedRentalSuccessIndexRoute
@@ -1193,8 +1153,6 @@ interface PortalRouteRouteChildren {
 }
 
 const PortalRouteRouteChildren: PortalRouteRouteChildren = {
-  PortalLoginRoute: PortalLoginRoute,
-  PortalRegisterRoute: PortalRegisterRoute,
   PortalAuthGoogleFinalizeRoute: PortalAuthGoogleFinalizeRoute,
   PortalTenantCartIndexRoute: PortalTenantCartIndexRoute,
   PortalTenantConfirmedRentalSuccessIndexRoute:

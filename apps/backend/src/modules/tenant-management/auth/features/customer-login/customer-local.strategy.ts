@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { Strategy } from 'passport-local';
 import { Request } from 'express';
+import { StorefrontTenantRequest } from '../../../tenant-context/guards/storefront-tenant-context.guard';
 import { AuthCustomer } from '../../shared/auth.types';
 import { ValidateCustomerLocalCredentialsService } from '../validate-customer-local-credentials/validate-customer-local-credentials.service';
 
@@ -16,10 +17,10 @@ export class CustomerLocalStrategy extends PassportStrategy(Strategy, 'customer-
   }
 
   async validate(req: Request, email: string, password: string): Promise<AuthCustomer> {
-    const tenantId = this.getTenantId(req);
+    const storefrontRequest = req as StorefrontTenantRequest;
 
     return this.validateCustomerLocalCredentialsService.validateCustomerLocalCredentials({
-      tenantId,
+      tenantId: storefrontRequest.storefrontTenantContext.tenantId,
       email,
       password,
       metadata: {
@@ -27,15 +28,5 @@ export class CustomerLocalStrategy extends PassportStrategy(Strategy, 'customer-
         userAgent: req.get('user-agent'),
       },
     });
-  }
-
-  private getTenantId(req: Request): string {
-    const body = req.body as { tenantId?: unknown } | undefined;
-
-    if (typeof body?.tenantId === 'string') {
-      return body.tenantId;
-    }
-
-    return '';
   }
 }

@@ -21,6 +21,7 @@
     "@repo/ui": "workspace:*",
     "@tailwindcss/vite": "^4.3.0",
     "@tanstack/react-devtools": "^0.7.0",
+    "@tanstack/react-form": "^1.32.0",
     "@tanstack/react-query": "^5.100.10",
     "@tanstack/react-query-devtools": "^5.100.10",
     "@tanstack/react-router": "^1.169.2",

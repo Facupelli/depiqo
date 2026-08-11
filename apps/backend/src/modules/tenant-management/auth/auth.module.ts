@@ -7,6 +7,7 @@ import { CustomerGoogleLoginController } from './features/customer-google-login/
 import { CustomerGoogleLoginService } from './features/customer-google-login/customer-google-login.service';
 import { CustomerGoogleStateController } from './features/customer-google-state/customer-google-state.controller';
 import { CustomerLoginController } from './features/customer-login/customer-login.controller';
+import { CustomerSessionController } from './features/customer-session/customer-session.controller';
 import { CustomerLocalAuthGuard } from './features/customer-login/customer-local-auth.guard';
 import { CustomerLocalStrategy } from './features/customer-login/customer-local.strategy';
 import { GetCsrfTokenController } from './features/get-csrf-token/get-csrf-token.controller';
@@ -30,6 +31,8 @@ import { SessionAuthGuard } from './shared/session/session-auth.guard';
 import { AuthActorAccessGuard } from './shared/session/auth-actor-access.guard';
 import { SessionRegeneratorService } from './shared/session/session-regenerator.service';
 import { TenantCustomerSessionGuard } from './shared/session/tenant-customer-session.guard';
+import { StorefrontTenantCustomerSessionGuard } from './shared/session/storefront-tenant-customer-session.guard';
+import { StorefrontTenantContextGuard } from '../tenant-context/guards/storefront-tenant-context.guard';
 import { TenantUserSessionGuard } from './shared/session/tenant-user-session.guard';
 
 @Module({
@@ -44,6 +47,7 @@ import { TenantUserSessionGuard } from './shared/session/tenant-user-session.gua
     CustomerGoogleLoginController,
     CustomerGoogleStateController,
     CustomerLoginController,
+    CustomerSessionController,
     GetCsrfTokenController,
     GetCurrentUserController,
     LoginController,
@@ -67,6 +71,8 @@ import { TenantUserSessionGuard } from './shared/session/tenant-user-session.gua
     SessionAuthGuard,
     TenantUserSessionGuard,
     TenantCustomerSessionGuard,
+    StorefrontTenantContextGuard,
+    StorefrontTenantCustomerSessionGuard,
     AuthSessionSerializer,
     SessionRegeneratorService,
     {
@@ -78,6 +84,6 @@ import { TenantUserSessionGuard } from './shared/session/tenant-user-session.gua
       useClass: AuthActorAccessGuard,
     },
   ],
-  exports: [PasswordService],
+  exports: [PasswordService, SessionAuthGuard, StorefrontTenantContextGuard, StorefrontTenantCustomerSessionGuard],
 })
 export class AuthModule {}

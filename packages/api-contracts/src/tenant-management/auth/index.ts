@@ -3,6 +3,7 @@ export * from "./customer-google-handoff.contract";
 export * from "./customer-google-login.contract";
 export * from "./customer-google-state.contract";
 export * from "./customer-login.contract";
+export * from "./customer-session.contract";
 export * from "./get-csrf-token.contract";
 export * from "./get-current-user.contract";
 export * from "./login.contract";

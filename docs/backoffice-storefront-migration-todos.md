@@ -71,6 +71,7 @@ Neither app currently contains app-level test files.
 
 - [ ] Add browser E2E coverage for host resolution, tenant catalog, branch and date selection, cart persistence, and price preview.
 - [ ] Cover customer login, Google handoff, onboarding, and document upload.
+- [ ] Cover customer-auth tenant isolation: unknown hosts, disabled/unverified custom domains, rejected browser-supplied `tenantId`, host-scoped cookie attributes, cross-host cookie presentation, and trusted-tenant/session-tenant mismatches.
 - [ ] Cover pickup and delivery checkout, backend conflicts, cart clearing, and success states.
 - [ ] Cover signing link, PDF, acceptance, and terminal states.
 - [ ] Cover Backoffice admin access and verify removed public paths no longer resolve there.

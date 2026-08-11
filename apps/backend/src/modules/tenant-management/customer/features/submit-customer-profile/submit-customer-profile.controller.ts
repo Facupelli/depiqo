@@ -6,7 +6,8 @@ import { AUTH_ACTOR_TYPES, AuthCustomer } from 'src/modules/tenant-management/au
 import { CurrentUser } from 'src/modules/tenant-management/auth/shared/current-user/current-user.decorator';
 import { AllowAuthActors } from 'src/modules/tenant-management/auth/shared/session/auth-actor-access.decorator';
 import { SessionAuthGuard } from 'src/modules/tenant-management/auth/shared/session/session-auth.guard';
-import { TenantCustomerSessionGuard } from 'src/modules/tenant-management/auth/shared/session/tenant-customer-session.guard';
+import { StorefrontTenantCustomerSessionGuard } from 'src/modules/tenant-management/auth/shared/session/storefront-tenant-customer-session.guard';
+import { StorefrontTenantContextGuard } from 'src/modules/tenant-management/tenant-context/guards/storefront-tenant-context.guard';
 
 import { SubmitCustomerProfileCommand } from './submit-customer-profile.command';
 import { SubmitCustomerProfileError, SubmitCustomerProfileErrorCode } from './submit-customer-profile.errors';
@@ -21,7 +22,7 @@ export class SubmitCustomerProfileHttpController {
   @Post('submit')
   @HttpCode(HttpStatus.CREATED)
   @AllowAuthActors(AUTH_ACTOR_TYPES.TENANT_CUSTOMER)
-  @UseGuards(SessionAuthGuard, TenantCustomerSessionGuard)
+  @UseGuards(StorefrontTenantContextGuard, SessionAuthGuard, StorefrontTenantCustomerSessionGuard)
   async submit(
     @Body() dto: SubmitCustomerProfileRequestDto,
     @CurrentUser() user: AuthCustomer,

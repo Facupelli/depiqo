@@ -4,7 +4,6 @@ import type { ApiContract } from "../../api-contract";
 import { AuthCustomerSchema } from "./login.contract";
 
 export const CustomerLoginBodySchema = z.object({
-  tenantId: z.string().min(1),
   email: z.email(),
   password: z.string().min(1),
 });

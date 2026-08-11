@@ -23,6 +23,7 @@ import {
 } from "@/modules/catalog/rental-catalog-search";
 import { storefrontRentalOfferListViewQueries } from "@/modules/catalog/storefront-rental-offer-list-view.queries";
 import { CartPopover } from "@/modules/rental-commitment/cart/view-cart/cart-popover";
+import { CustomerAccountAction } from "@/modules/tenant-management/auth/components/customer-account-action";
 import { storefrontBranchQueries } from "@/modules/tenant-management/branches/branches.queries";
 import { getTenantBranding } from "@/modules/tenant-management/tenant-branding/tenant-branding";
 
@@ -110,10 +111,11 @@ function RentalPage() {
 							{loaderData.branding.tenantName}
 						</span>
 					)}
-					<div className="ml-auto">
+					<div className="ml-auto flex items-center gap-3">
 						{loaderData.mode === "catalog" && (
 							<CartPopover search={loaderData.search} />
 						)}
+						<CustomerAccountAction />
 					</div>
 				</div>
 			</header>

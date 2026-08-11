@@ -1,0 +1,163 @@
+import { Button } from "@repo/ui/components/button";
+import {
+	Field,
+	FieldError,
+	FieldGroup,
+	FieldLabel,
+} from "@repo/ui/components/field";
+import { Input } from "@repo/ui/components/input";
+import { useForm } from "@tanstack/react-form";
+import {
+	createFileRoute,
+	Link,
+	notFound,
+	useRouter,
+} from "@tanstack/react-router";
+import { useState } from "react";
+import { useCustomerLogin } from "@/modules/tenant-management/auth/customer-auth.queries";
+import {
+	createCustomerLoginFormDefaults,
+	customerLoginFormSchema,
+	toCustomerLoginDto,
+} from "@/modules/tenant-management/auth/customer-login-form.schema";
+import { getTenantBranding } from "@/modules/tenant-management/tenant-branding/tenant-branding";
+import { isAuthError } from "@/shared/errors";
+
+export const Route = createFileRoute("/login")({
+	beforeLoad: ({ context }) => {
+		if (!context.tenantContext || context.tenantContext.face !== "storefront")
+			throw notFound();
+		return { storefrontTenant: context.tenantContext };
+	},
+	component: CustomerLoginPage,
+});
+
+function CustomerLoginPage() {
+	const { storefrontTenant } = Route.useRouteContext();
+	const branding = getTenantBranding(storefrontTenant.tenant);
+	const router = useRouter();
+	const login = useCustomerLogin();
+	const [serverError, setServerError] = useState<string | null>(null);
+	const form = useForm({
+		defaultValues: createCustomerLoginFormDefaults(),
+		validators: { onSubmit: customerLoginFormSchema },
+		onSubmit: async ({ value }) => {
+			setServerError(null);
+			try {
+				await login.mutateAsync(toCustomerLoginDto(value));
+				await router.navigate({ to: "/rental" });
+			} catch (error) {
+				setServerError(
+					isAuthError(error)
+						? "Correo o contraseña inválidos."
+						: "No pudimos iniciar sesión.",
+				);
+			}
+		},
+	});
+
+	return (
+		<main className="grid min-h-svh place-items-center bg-neutral-100 px-4 py-12">
+			<section className="w-full max-w-md space-y-6 rounded-xl border bg-white p-6 shadow-sm">
+				{branding.logoSrc ? (
+					<img
+						src={branding.logoSrc}
+						alt={branding.tenantName}
+						className="mx-auto size-24 object-contain"
+					/>
+				) : null}
+				<div className="space-y-1">
+					<h1 className="text-2xl font-bold">Iniciar sesión</h1>
+					<p className="text-sm text-muted-foreground">
+						Accede a tu cuenta de {branding.tenantName}.
+					</p>
+				</div>
+				<form
+					onSubmit={(event) => {
+						event.preventDefault();
+						event.stopPropagation();
+						form.handleSubmit();
+					}}
+					noValidate
+				>
+					<FieldGroup>
+						<form.Field name="email">
+							{(field) => (
+								<Field
+									data-invalid={
+										field.state.meta.isTouched && !field.state.meta.isValid
+									}
+								>
+									<FieldLabel htmlFor={field.name}>
+										Correo electrónico
+									</FieldLabel>
+									<Input
+										id={field.name}
+										name={field.name}
+										type="email"
+										autoComplete="email"
+										value={field.state.value}
+										onBlur={field.handleBlur}
+										onChange={(event) => field.handleChange(event.target.value)}
+									/>
+									{field.state.meta.isTouched && !field.state.meta.isValid ? (
+										<FieldError errors={field.state.meta.errors} />
+									) : null}
+								</Field>
+							)}
+						</form.Field>
+						<form.Field name="password">
+							{(field) => (
+								<Field
+									data-invalid={
+										field.state.meta.isTouched && !field.state.meta.isValid
+									}
+								>
+									<FieldLabel htmlFor={field.name}>Contraseña</FieldLabel>
+									<Input
+										id={field.name}
+										name={field.name}
+										type="password"
+										autoComplete="current-password"
+										value={field.state.value}
+										onBlur={field.handleBlur}
+										onChange={(event) => field.handleChange(event.target.value)}
+									/>
+									{field.state.meta.isTouched && !field.state.meta.isValid ? (
+										<FieldError errors={field.state.meta.errors} />
+									) : null}
+								</Field>
+							)}
+						</form.Field>
+						<form.Subscribe
+							selector={(state) => [state.canSubmit, state.isSubmitting]}
+						>
+							{([canSubmit, isSubmitting]) => (
+								<Field data-invalid={!!serverError}>
+									<Button
+										type="submit"
+										className="w-full"
+										disabled={!canSubmit || login.isPending}
+									>
+										{isSubmitting || login.isPending
+											? "Iniciando..."
+											: "Iniciar sesión"}
+									</Button>
+									{serverError ? (
+										<FieldError errors={[{ message: serverError }]} />
+									) : null}
+								</Field>
+							)}
+						</form.Subscribe>
+					</FieldGroup>
+				</form>
+				<p className="text-center text-sm text-muted-foreground">
+					¿No tienes una cuenta?{" "}
+					<Link to="/register" className="font-semibold underline">
+						Ver opciones de registro
+					</Link>
+				</p>
+			</section>
+		</main>
+	);
+}

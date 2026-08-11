@@ -5,6 +5,7 @@ import { AuthCustomer } from '../../shared/auth.types';
 import { CsrfService } from '../../shared/csrf/csrf.service';
 import { SkipCsrf } from '../../shared/csrf/skip-csrf.decorator';
 import { SessionRegeneratorService } from '../../shared/session/session-regenerator.service';
+import { StorefrontTenantContextGuard } from '../../../tenant-context/guards/storefront-tenant-context.guard';
 import { CustomerLocalAuthGuard } from './customer-local-auth.guard';
 import { CustomerLoginRequestDto } from './customer-login.request.dto';
 
@@ -23,7 +24,7 @@ export class CustomerLoginController {
 
   @Post('login')
   @HttpCode(200)
-  @UseGuards(CustomerLocalAuthGuard)
+  @UseGuards(StorefrontTenantContextGuard, CustomerLocalAuthGuard)
   async login(
     @Body() _dto: CustomerLoginRequestDto,
     @Req() req: CustomerLoginRequest,

@@ -6,7 +6,8 @@ import { AUTH_ACTOR_TYPES, AuthCustomer } from 'src/modules/tenant-management/au
 import { CurrentUser } from 'src/modules/tenant-management/auth/shared/current-user/current-user.decorator';
 import { AllowAuthActors } from 'src/modules/tenant-management/auth/shared/session/auth-actor-access.decorator';
 import { SessionAuthGuard } from 'src/modules/tenant-management/auth/shared/session/session-auth.guard';
-import { TenantCustomerSessionGuard } from 'src/modules/tenant-management/auth/shared/session/tenant-customer-session.guard';
+import { StorefrontTenantCustomerSessionGuard } from 'src/modules/tenant-management/auth/shared/session/storefront-tenant-customer-session.guard';
+import { StorefrontTenantContextGuard } from 'src/modules/tenant-management/tenant-context/guards/storefront-tenant-context.guard';
 
 import {
   GetCurrentRentalCustomerProfileError,
@@ -22,7 +23,7 @@ export class GetCurrentRentalCustomerProfileHttpController {
 
   @Get('me/profile')
   @AllowAuthActors(AUTH_ACTOR_TYPES.TENANT_CUSTOMER)
-  @UseGuards(SessionAuthGuard, TenantCustomerSessionGuard)
+  @UseGuards(StorefrontTenantContextGuard, SessionAuthGuard, StorefrontTenantCustomerSessionGuard)
   async getCurrentRentalCustomerProfile(
     @CurrentUser() user: AuthCustomer,
   ): Promise<GetCurrentRentalCustomerProfileResponseDto> {

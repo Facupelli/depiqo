@@ -11,8 +11,11 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as HealthRouteImport } from './routes/health'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as RegisterRouteImport } from './routes/register'
 import { Route as CartIndexRouteImport } from './routes/cart/index'
 import { Route as RentalIndexRouteImport } from './routes/rental/index'
+import { Route as SessionSplatRouteImport } from './routes/session/$'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -22,6 +25,16 @@ const IndexRoute = IndexRouteImport.update({
 const HealthRoute = HealthRouteImport.update({
   id: '/health',
   path: '/health',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RegisterRoute = RegisterRouteImport.update({
+  id: '/register',
+  path: '/register',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CartIndexRoute = CartIndexRouteImport.update({
@@ -34,16 +47,27 @@ const RentalIndexRoute = RentalIndexRouteImport.update({
   path: '/rental/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SessionSplatRoute = SessionSplatRouteImport.update({
+  id: '/session/$',
+  path: '/session/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/health': typeof HealthRoute
+  '/login': typeof LoginRoute
+  '/register': typeof RegisterRoute
+  '/session/$': typeof SessionSplatRoute
   '/cart/': typeof CartIndexRoute
   '/rental/': typeof RentalIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/health': typeof HealthRoute
+  '/login': typeof LoginRoute
+  '/register': typeof RegisterRoute
+  '/session/$': typeof SessionSplatRoute
   '/cart': typeof CartIndexRoute
   '/rental': typeof RentalIndexRoute
 }
@@ -51,20 +75,48 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/health': typeof HealthRoute
+  '/login': typeof LoginRoute
+  '/register': typeof RegisterRoute
+  '/session/$': typeof SessionSplatRoute
   '/cart/': typeof CartIndexRoute
   '/rental/': typeof RentalIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/health' | '/cart/' | '/rental/'
+  fullPaths:
+    | '/'
+    | '/health'
+    | '/login'
+    | '/register'
+    | '/session/$'
+    | '/cart/'
+    | '/rental/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/health' | '/cart' | '/rental'
-  id: '__root__' | '/' | '/health' | '/cart/' | '/rental/'
+  to:
+    | '/'
+    | '/health'
+    | '/login'
+    | '/register'
+    | '/session/$'
+    | '/cart'
+    | '/rental'
+  id:
+    | '__root__'
+    | '/'
+    | '/health'
+    | '/login'
+    | '/register'
+    | '/session/$'
+    | '/cart/'
+    | '/rental/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   HealthRoute: typeof HealthRoute
+  LoginRoute: typeof LoginRoute
+  RegisterRoute: typeof RegisterRoute
+  SessionSplatRoute: typeof SessionSplatRoute
   CartIndexRoute: typeof CartIndexRoute
   RentalIndexRoute: typeof RentalIndexRoute
 }
@@ -85,6 +137,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof HealthRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/register': {
+      id: '/register'
+      path: '/register'
+      fullPath: '/register'
+      preLoaderRoute: typeof RegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/cart/': {
       id: '/cart/'
       path: '/cart'
@@ -99,12 +165,22 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RentalIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/session/$': {
+      id: '/session/$'
+      path: '/session/$'
+      fullPath: '/session/$'
+      preLoaderRoute: typeof SessionSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   HealthRoute: HealthRoute,
+  LoginRoute: LoginRoute,
+  RegisterRoute: RegisterRoute,
+  SessionSplatRoute: SessionSplatRoute,
   CartIndexRoute: CartIndexRoute,
   RentalIndexRoute: RentalIndexRoute,
 }
