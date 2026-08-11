@@ -6,12 +6,33 @@ Storefront currently owns tenant resolution and the tenant BFF, landing pages, t
 
 Backoffice retains the complete admin application, but it also retains the prior public portal implementation. Storefront is therefore incomplete and Backoffice has duplicated, stale public code.
 
-## 1. Define and enforce app ownership
+## 1. Define and enforce frontend application ownership
 
-- [ ] Declare Backoffice ownership: admin auth, dashboard, inventory, catalog setup, branches, owners, pricing and promotions, rental operations, customer approvals, tenant settings, internal document actions, and admin uploads.
-- [ ] Declare Storefront ownership: tenant landing, catalog, cart, checkout, customer portal and auth, onboarding, public signing, and public document downloads.
-- [ ] Define final public URLs, including `auth.depiqo.com`, tenant domains, the platform domain, and signing links.
-- [ ] Decide the fate of legacy public routes: `/order-confirmation`, `/order-created-whatsapp`, and `/order-created-contact-team`. They remain in Backoffice but have no active caller in the current checkout flow.
+App ownership describes which TanStack Start application serves a user-facing route.
+It does not change backend bounded-context ownership.
+
+- [x] Backoffice owns tenant-admin/internal experiences:
+      tenant-user auth, dashboard, inventory, catalog setup,
+      branches, owners, pricing/promotions, rental operations,
+      customer approvals, tenant settings, internal contract/document
+      operations, and admin uploads.
+
+- [x] Storefront owns customer/public experiences:
+      tenant landing, catalog, cart, checkout, customer portal,
+      customer auth/onboarding, public contract signing,
+      and public document downloads.
+
+- [ ] Define the canonical public URL map for Backoffice,
+      Storefront tenant domains/custom domains, authentication,
+      OAuth callbacks, signing links, and public document links.
+
+- [ ] Audit legacy public routes:
+      /order-confirmation
+      /order-created-whatsapp
+      /order-created-contact-team
+
+      Delete them if unused and externally irrelevant.
+      Otherwise preserve only the required compatibility redirect/page.
 
 ## 2. Add an authenticated Storefront backend boundary
 
