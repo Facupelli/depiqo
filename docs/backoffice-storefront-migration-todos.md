@@ -120,16 +120,16 @@ It does not change backend bounded-context ownership.
       Receipt-token forwarding and signed-document downloads remain deferred to
       the streaming-proxy task below.
 
-- [ ] Port the valid public signer experience to Storefront:
-      - signing-session loading;
-      - unsigned contract viewer/download;
+- [x] Port the valid public signer experience to Storefront:
+      - signing-session loading and signer/document information;
       - PNG signature capture;
       - explicit acceptance;
       - submission/pending state;
-      - invalid, expired, and unavailable terminal states;
-      - signed receipt download.
+      - invalid, expired, unavailable, and signed terminal states.
 
       Preserve the backend signature-size limit and current acceptance contract.
+      Unsigned contract viewing/download and signed receipt download remain
+      deferred until the streaming proxies below are available.
 
 - [ ] Add Storefront streaming proxies for:
       - `GET /document-signing/public/sessions/me/unsigned-pdf`
