@@ -84,9 +84,16 @@ export class RentalBudgetDocumentService {
         jornadas: facts.value.pricing.chargedUnits,
         agreedPrice: formatAcceptedPricingForRentalRemito(facts.value.pricing),
         logoUrl: context.value.tenant.logoUrl,
-        rentalSignatureUrl: null,
+        rentalSignatureUrl: context.value.contractSigner?.signatureUrl ?? null,
         presentation: { includeLegalAnnex: false, showRentalSignatureBlock: false },
-        landlord: emptyParty(),
+        landlord: context.value.contractSigner
+          ? {
+              fullName: context.value.contractSigner.fullName,
+              documentNumber: context.value.contractSigner.documentNumber,
+              address: context.value.contractSigner.address ?? '',
+              phone: context.value.contractSigner.phone ?? '',
+            }
+          : emptyParty(),
         tenant: customer,
       },
       equipmentLines: facts.value.selections.map((selection) => ({

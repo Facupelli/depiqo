@@ -110,6 +110,13 @@ export interface RentalBudgetDocumentContext {
   branch: {
     timezone: string;
   };
+  contractSigner: {
+    fullName: string;
+    documentNumber: string;
+    address: string | null;
+    phone: string | null;
+    signatureUrl: string | null;
+  } | null;
   customer: {
     fullName: string;
     documentNumber: string | null;

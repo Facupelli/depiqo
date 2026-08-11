@@ -311,7 +311,7 @@ export class TenantManagementPublicApiService extends TenantManagementPublicApi 
   async getRentalBudgetDocumentContext(
     input: GetRentalBudgetDocumentContextInput,
   ): Promise<Result<RentalBudgetDocumentContext, TenantManagementPublicApiError>> {
-    const [tenant, branchContext, customer] = await Promise.all([
+    const [tenant, branchContext, customer, contractSigner] = await Promise.all([
       this.prisma.client.v2Tenant.findFirst({
         where: { id: input.tenantId, status: 'ACTIVE', deletedAt: null },
         select: { slug: true, branding: { select: { logoUrl: true } } },
@@ -331,6 +331,21 @@ export class TenantManagementPublicApiService extends TenantManagementPublicApi 
             },
           })
         : Promise.resolve(null),
+      this.prisma.client.v2TenantContractSigner.findFirst({
+        where: {
+          tenantId: input.tenantId,
+          isActive: true,
+          deletedAt: null,
+        },
+        select: {
+          fullName: true,
+          documentNumber: true,
+          address: true,
+          phone: true,
+          signatureUrl: true,
+        },
+        orderBy: [{ isDefault: 'desc' }, { createdAt: 'asc' }],
+      }),
     ]);
 
     if (!tenant) {
@@ -341,6 +356,15 @@ export class TenantManagementPublicApiService extends TenantManagementPublicApi 
     return ok({
       tenant: { slug: tenant.slug, logoUrl: tenant.branding?.logoUrl ?? null },
       branch: { timezone: branchContext.value.effectiveTimezone },
+      contractSigner: contractSigner
+        ? {
+            fullName: contractSigner.fullName,
+            documentNumber: contractSigner.documentNumber,
+            address: contractSigner.address,
+            phone: contractSigner.phone,
+            signatureUrl: contractSigner.signatureUrl,
+          }
+        : null,
       customer: customer
         ? {
             fullName: customer.isCompany
