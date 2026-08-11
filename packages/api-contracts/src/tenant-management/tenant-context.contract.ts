@@ -43,6 +43,7 @@ export const TrustedTenantContextSchema = z.discriminatedUnion("face", [
   z.object({
     face: z.literal("storefront"),
     host: z.string().min(1),
+    canonicalHost: z.string().min(1),
     tenantId: z.string().min(1),
     slug: z.string().min(1),
     scope: StorefrontTenantScopeSchema,

@@ -8,6 +8,7 @@ import { PrismaService } from 'src/core/database/prisma.service';
 type ResolvedStorefrontTenant = {
   tenantId: string;
   slug: string;
+  canonicalHost: string;
   publicTenant: PublicStorefrontTenantContext;
 };
 
@@ -163,6 +164,7 @@ export class TenantContextResolverService {
     return {
       face: 'storefront',
       host: hostname,
+      canonicalHost: tenant.canonicalHost,
       tenantId: tenant.tenantId,
       slug: tenant.slug,
       scope: 'public-storefront',
@@ -182,6 +184,7 @@ export class TenantContextResolverService {
     return {
       tenantId: tenant.id,
       slug: tenant.slug,
+      canonicalHost: tenant.domains[0]?.domain ?? `${tenant.slug}.${this.rootDomain}`,
       publicTenant: {
         slug: tenant.slug,
         name: tenant.name,

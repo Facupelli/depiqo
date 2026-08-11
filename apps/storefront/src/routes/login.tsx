@@ -11,10 +11,14 @@ import {
 	createFileRoute,
 	Link,
 	notFound,
+	redirect,
 	useRouter,
 } from "@tanstack/react-router";
 import { useState } from "react";
+import { z } from "zod";
 import { useCustomerLogin } from "@/modules/tenant-management/auth/customer-auth.queries";
+import { resolveCustomerReturnTo } from "@/modules/tenant-management/auth/customer-return-to";
+import { getCurrentCustomerForStorefront } from "@/modules/tenant-management/auth/get-current-customer.function";
 import {
 	createCustomerLoginFormDefaults,
 	customerLoginFormSchema,
@@ -24,16 +28,22 @@ import { getTenantBranding } from "@/modules/tenant-management/tenant-branding/t
 import { isAuthError } from "@/shared/errors";
 
 export const Route = createFileRoute("/login")({
-	beforeLoad: ({ context }) => {
+	validateSearch: z.object({ returnTo: z.unknown().optional() }),
+	beforeLoad: async ({ context, search }) => {
 		if (!context.tenantContext || context.tenantContext.face !== "storefront")
 			throw notFound();
-		return { storefrontTenant: context.tenantContext };
+
+		const returnTo = resolveCustomerReturnTo(search.returnTo);
+		const customer = await getCurrentCustomerForStorefront();
+		if (customer) throw redirect({ href: returnTo, replace: true });
+
+		return { storefrontTenant: context.tenantContext, returnTo };
 	},
 	component: CustomerLoginPage,
 });
 
 function CustomerLoginPage() {
-	const { storefrontTenant } = Route.useRouteContext();
+	const { storefrontTenant, returnTo } = Route.useRouteContext();
 	const branding = getTenantBranding(storefrontTenant.tenant);
 	const router = useRouter();
 	const login = useCustomerLogin();
@@ -45,7 +55,7 @@ function CustomerLoginPage() {
 			setServerError(null);
 			try {
 				await login.mutateAsync(toCustomerLoginDto(value));
-				await router.navigate({ to: "/rental" });
+				await router.navigate({ href: returnTo, replace: true });
 			} catch (error) {
 				setServerError(
 					isAuthError(error)
@@ -153,7 +163,11 @@ function CustomerLoginPage() {
 				</form>
 				<p className="text-center text-sm text-muted-foreground">
 					¿No tienes una cuenta?{" "}
-					<Link to="/register" className="font-semibold underline">
+					<Link
+						to="/register"
+						search={{ returnTo }}
+						className="font-semibold underline"
+					>
 						Ver opciones de registro
 					</Link>
 				</p>
