@@ -1,4 +1,5 @@
 import { createMiddleware } from "@tanstack/react-start";
+import { setResponseHeader } from "@tanstack/react-start/server";
 import { getServerEnvironment } from "@/config/server-env";
 import { logStorefrontServerEvent } from "@/shared/server/logging/storefront-server-logger.server";
 import { getPublicSigningHostname } from "@/shared/server/public-signing-browser-bff/public-signing-host.server";
@@ -63,9 +64,8 @@ export const storefrontRequestContextMiddleware = createMiddleware().server(
 				);
 			}
 
-			const response = await next({ context: { storefrontRequest } });
-			response.response.headers.set(REQUEST_ID_HEADER, requestId);
-			return response;
+			setResponseHeader(REQUEST_ID_HEADER, requestId);
+			return next({ context: { storefrontRequest } });
 		}
 
 		try {
@@ -95,12 +95,8 @@ export const storefrontRequestContextMiddleware = createMiddleware().server(
 			throw error;
 		}
 
-		const response = await next({
-			context: { storefrontRequest },
-		});
-
-		response.response.headers.set(REQUEST_ID_HEADER, requestId);
-		return response;
+		setResponseHeader(REQUEST_ID_HEADER, requestId);
+		return next({ context: { storefrontRequest } });
 	},
 );
 

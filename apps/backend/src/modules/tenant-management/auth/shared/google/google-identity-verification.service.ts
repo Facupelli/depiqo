@@ -17,14 +17,29 @@ const GOOGLE_TOKEN_ENDPOINT = 'https://oauth2.googleapis.com/token';
 const googleJwks = createRemoteJWKSet(GOOGLE_JWKS_URL);
 
 interface GoogleTokenResponse {
-  access_token?: string;
-  expires_in?: number;
-  id_token?: string;
-  refresh_token?: string;
-  scope?: string;
-  token_type?: string;
   error?: string;
   error_description?: string;
+  id_token?: string;
+}
+
+function parseGoogleTokenResponse(payload: unknown): GoogleTokenResponse {
+  if (!isRecord(payload)) {
+    throw new TypeError('Google token response must be a JSON object.');
+  }
+
+  return {
+    error: stringValue(payload.error),
+    error_description: stringValue(payload.error_description),
+    id_token: stringValue(payload.id_token),
+  };
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function stringValue(value: unknown): string | undefined {
+  return typeof value === 'string' ? value : undefined;
 }
 
 interface GoogleIdTokenClaims extends JWTPayload {
@@ -36,9 +51,27 @@ interface GoogleIdTokenClaims extends JWTPayload {
   picture?: string;
 }
 
+type GoogleAuthorizationCodeExchangeErrorMetadata = {
+  cause?: unknown;
+  googleError?: string;
+  googleErrorDescription?: string;
+  googleStatus?: number;
+};
+
 export class GoogleAuthorizationCodeExchangeError extends Error {
-  constructor(message = 'Failed to exchange Google authorization code.') {
-    super(message);
+  readonly googleError?: string;
+  readonly googleErrorDescription?: string;
+  readonly googleStatus?: number;
+
+  constructor(
+    message = 'Failed to exchange Google authorization code.',
+    metadata: GoogleAuthorizationCodeExchangeErrorMetadata = {},
+  ) {
+    super(message, { cause: metadata.cause });
+    this.name = GoogleAuthorizationCodeExchangeError.name;
+    this.googleError = metadata.googleError;
+    this.googleErrorDescription = metadata.googleErrorDescription;
+    this.googleStatus = metadata.googleStatus;
   }
 }
 
@@ -81,26 +114,46 @@ export class GoogleIdentityVerificationService extends GoogleIdentityVerifier {
       body.set('code_verifier', params.codeVerifier);
     }
 
+    let response: Response;
     try {
-      const response = await fetch(GOOGLE_TOKEN_ENDPOINT, {
+      response = await fetch(GOOGLE_TOKEN_ENDPOINT, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
         body,
       });
+    } catch (error) {
+      throw new GoogleAuthorizationCodeExchangeError('Google token endpoint returned an invalid response.', {
+        cause: error,
+      });
+    }
 
-      const payload = (await response.json()) as GoogleTokenResponse;
+    let payload: GoogleTokenResponse;
+    try {
+      payload = parseGoogleTokenResponse(await response.json());
+    } catch (error) {
+      throw new GoogleAuthorizationCodeExchangeError('Google token endpoint returned an invalid response.', {
+        cause: error,
+        googleStatus: response.status,
+      });
+    }
 
-      if (!response.ok) {
-        const reason = payload.error_description ?? payload.error ?? 'Google rejected the authorization code.';
-        throw new GoogleAuthorizationCodeExchangeError(reason);
+    if (!response.ok) {
+      if (!payload.error) {
+        throw new GoogleAuthorizationCodeExchangeError('Google token endpoint returned an invalid response.', {
+          googleStatus: response.status,
+        });
       }
 
-      return payload;
-    } catch {
-      throw new GoogleAuthorizationCodeExchangeError('Google token endpoint returned an invalid response.');
+      throw new GoogleAuthorizationCodeExchangeError('Google rejected the authorization code.', {
+        googleError: payload.error,
+        googleErrorDescription: payload.error_description,
+        googleStatus: response.status,
+      });
     }
+
+    return payload;
   }
 
   private async verifyIdToken(idToken: string): Promise<VerifiedGoogleIdentity> {

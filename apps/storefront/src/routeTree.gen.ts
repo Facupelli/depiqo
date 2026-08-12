@@ -9,45 +9,25 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as ConfirmedRentalSuccessRouteImport } from './routes/confirmed-rental-success'
-import { Route as HealthRouteImport } from './routes/health'
-import { Route as LoginRouteImport } from './routes/login'
-import { Route as OnboardRouteImport } from './routes/onboard'
-import { Route as RegisterRouteImport } from './routes/register'
 import { Route as SigningRouteImport } from './routes/signing'
-import { Route as ApiCustomerUploadRouteImport } from './routes/api/customer-upload'
-import { Route as CartIndexRouteImport } from './routes/cart/index'
-import { Route as PublicSigningSplatRouteImport } from './routes/public-signing/$'
+import { Route as RegisterRouteImport } from './routes/register'
+import { Route as OnboardRouteImport } from './routes/onboard'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as HealthRouteImport } from './routes/health'
+import { Route as ConfirmedRentalSuccessRouteImport } from './routes/confirmed-rental-success'
+import { Route as IndexRouteImport } from './routes/index'
 import { Route as RentalIndexRouteImport } from './routes/rental/index'
+import { Route as CartIndexRouteImport } from './routes/cart/index'
 import { Route as SessionSplatRouteImport } from './routes/session/$'
-import { Route as AuthGoogleCallbackRouteImport } from './routes/auth/google/callback'
-import { Route as AuthGoogleFinalizeRouteImport } from './routes/auth/google/finalize'
+import { Route as PublicSigningSplatRouteImport } from './routes/public-signing/$'
+import { Route as ApiCustomerUploadRouteImport } from './routes/api/customer-upload'
 import { Route as AuthGoogleStartRouteImport } from './routes/auth/google/start'
+import { Route as AuthGoogleFinalizeRouteImport } from './routes/auth/google/finalize'
+import { Route as AuthGoogleCallbackRouteImport } from './routes/auth/google/callback'
 
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ConfirmedRentalSuccessRoute = ConfirmedRentalSuccessRouteImport.update({
-  id: '/confirmed-rental-success',
-  path: '/confirmed-rental-success',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const HealthRoute = HealthRouteImport.update({
-  id: '/health',
-  path: '/health',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LoginRoute = LoginRouteImport.update({
-  id: '/login',
-  path: '/login',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const OnboardRoute = OnboardRouteImport.update({
-  id: '/onboard',
-  path: '/onboard',
+const SigningRoute = SigningRouteImport.update({
+  id: '/signing',
+  path: '/signing',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RegisterRoute = RegisterRouteImport.update({
@@ -55,24 +35,29 @@ const RegisterRoute = RegisterRouteImport.update({
   path: '/register',
   getParentRoute: () => rootRouteImport,
 } as any)
-const SigningRoute = SigningRouteImport.update({
-  id: '/signing',
-  path: '/signing',
+const OnboardRoute = OnboardRouteImport.update({
+  id: '/onboard',
+  path: '/onboard',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiCustomerUploadRoute = ApiCustomerUploadRouteImport.update({
-  id: '/api/customer-upload',
-  path: '/api/customer-upload',
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CartIndexRoute = CartIndexRouteImport.update({
-  id: '/cart/',
-  path: '/cart/',
+const HealthRoute = HealthRouteImport.update({
+  id: '/health',
+  path: '/health',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PublicSigningSplatRoute = PublicSigningSplatRouteImport.update({
-  id: '/public-signing/$',
-  path: '/public-signing/$',
+const ConfirmedRentalSuccessRoute = ConfirmedRentalSuccessRouteImport.update({
+  id: '/confirmed-rental-success',
+  path: '/confirmed-rental-success',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RentalIndexRoute = RentalIndexRouteImport.update({
@@ -80,14 +65,29 @@ const RentalIndexRoute = RentalIndexRouteImport.update({
   path: '/rental/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CartIndexRoute = CartIndexRouteImport.update({
+  id: '/cart/',
+  path: '/cart/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SessionSplatRoute = SessionSplatRouteImport.update({
   id: '/session/$',
   path: '/session/$',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthGoogleCallbackRoute = AuthGoogleCallbackRouteImport.update({
-  id: '/auth/google/callback',
-  path: '/auth/google/callback',
+const PublicSigningSplatRoute = PublicSigningSplatRouteImport.update({
+  id: '/public-signing/$',
+  path: '/public-signing/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiCustomerUploadRoute = ApiCustomerUploadRouteImport.update({
+  id: '/api/customer-upload',
+  path: '/api/customer-upload',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthGoogleStartRoute = AuthGoogleStartRouteImport.update({
+  id: '/auth/google/start',
+  path: '/auth/google/start',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthGoogleFinalizeRoute = AuthGoogleFinalizeRouteImport.update({
@@ -95,9 +95,9 @@ const AuthGoogleFinalizeRoute = AuthGoogleFinalizeRouteImport.update({
   path: '/auth/google/finalize',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthGoogleStartRoute = AuthGoogleStartRouteImport.update({
-  id: '/auth/google/start',
-  path: '/auth/google/start',
+const AuthGoogleCallbackRoute = AuthGoogleCallbackRouteImport.update({
+  id: '/auth/google/callback',
+  path: '/auth/google/callback',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -227,39 +227,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/confirmed-rental-success': {
-      id: '/confirmed-rental-success'
-      path: '/confirmed-rental-success'
-      fullPath: '/confirmed-rental-success'
-      preLoaderRoute: typeof ConfirmedRentalSuccessRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/health': {
-      id: '/health'
-      path: '/health'
-      fullPath: '/health'
-      preLoaderRoute: typeof HealthRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/login': {
-      id: '/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof LoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/onboard': {
-      id: '/onboard'
-      path: '/onboard'
-      fullPath: '/onboard'
-      preLoaderRoute: typeof OnboardRouteImport
+    '/signing': {
+      id: '/signing'
+      path: '/signing'
+      fullPath: '/signing'
+      preLoaderRoute: typeof SigningRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/register': {
@@ -269,32 +241,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RegisterRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/signing': {
-      id: '/signing'
-      path: '/signing'
-      fullPath: '/signing'
-      preLoaderRoute: typeof SigningRouteImport
+    '/onboard': {
+      id: '/onboard'
+      path: '/onboard'
+      fullPath: '/onboard'
+      preLoaderRoute: typeof OnboardRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/customer-upload': {
-      id: '/api/customer-upload'
-      path: '/api/customer-upload'
-      fullPath: '/api/customer-upload'
-      preLoaderRoute: typeof ApiCustomerUploadRouteImport
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/cart/': {
-      id: '/cart/'
-      path: '/cart'
-      fullPath: '/cart/'
-      preLoaderRoute: typeof CartIndexRouteImport
+    '/health': {
+      id: '/health'
+      path: '/health'
+      fullPath: '/health'
+      preLoaderRoute: typeof HealthRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/public-signing/$': {
-      id: '/public-signing/$'
-      path: '/public-signing/$'
-      fullPath: '/public-signing/$'
-      preLoaderRoute: typeof PublicSigningSplatRouteImport
+    '/confirmed-rental-success': {
+      id: '/confirmed-rental-success'
+      path: '/confirmed-rental-success'
+      fullPath: '/confirmed-rental-success'
+      preLoaderRoute: typeof ConfirmedRentalSuccessRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/rental/': {
@@ -304,6 +283,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RentalIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/cart/': {
+      id: '/cart/'
+      path: '/cart'
+      fullPath: '/cart/'
+      preLoaderRoute: typeof CartIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/session/$': {
       id: '/session/$'
       path: '/session/$'
@@ -311,11 +297,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SessionSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/auth/google/callback': {
-      id: '/auth/google/callback'
-      path: '/auth/google/callback'
-      fullPath: '/auth/google/callback'
-      preLoaderRoute: typeof AuthGoogleCallbackRouteImport
+    '/public-signing/$': {
+      id: '/public-signing/$'
+      path: '/public-signing/$'
+      fullPath: '/public-signing/$'
+      preLoaderRoute: typeof PublicSigningSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/customer-upload': {
+      id: '/api/customer-upload'
+      path: '/api/customer-upload'
+      fullPath: '/api/customer-upload'
+      preLoaderRoute: typeof ApiCustomerUploadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/google/start': {
+      id: '/auth/google/start'
+      path: '/auth/google/start'
+      fullPath: '/auth/google/start'
+      preLoaderRoute: typeof AuthGoogleStartRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth/google/finalize': {
@@ -325,11 +325,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthGoogleFinalizeRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/auth/google/start': {
-      id: '/auth/google/start'
-      path: '/auth/google/start'
-      fullPath: '/auth/google/start'
-      preLoaderRoute: typeof AuthGoogleStartRouteImport
+    '/auth/google/callback': {
+      id: '/auth/google/callback'
+      path: '/auth/google/callback'
+      fullPath: '/auth/google/callback'
+      preLoaderRoute: typeof AuthGoogleCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
   }

@@ -9,71 +9,56 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as AdminRouteRouteImport } from './routes/_admin/route'
 import { Route as LoginRouteImport } from './routes/login'
-import { Route as AdminDashboardRouteRouteImport } from './routes/_admin/dashboard/route'
-import { Route as ApiBrandingUploadRouteImport } from './routes/api/branding-upload'
-import { Route as ApiUploadRouteImport } from './routes/api/upload'
+import { Route as AdminRouteRouteImport } from './routes/_admin/route'
+import { Route as IndexRouteImport } from './routes/index'
 import { Route as BackendSplatRouteImport } from './routes/backend/$'
-import { Route as AdminAdminRegisterRouteImport } from './routes/_admin/admin/register'
+import { Route as ApiUploadRouteImport } from './routes/api/upload'
+import { Route as ApiBrandingUploadRouteImport } from './routes/api/branding-upload'
+import { Route as AdminDashboardRouteRouteImport } from './routes/_admin/dashboard/route'
 import { Route as AdminDashboardIndexRouteImport } from './routes/_admin/dashboard/index'
-import { Route as AdminDashboardBranchesIndexRouteImport } from './routes/_admin/dashboard/branches/index'
-import { Route as AdminDashboardBranchesNewRouteImport } from './routes/_admin/dashboard/branches/new'
-import { Route as AdminDashboardCalendarIndexRouteImport } from './routes/_admin/dashboard/calendar/index'
-import { Route as AdminDashboardCatalogIndexRouteImport } from './routes/_admin/dashboard/catalog/index'
-import { Route as AdminDashboardCatalogNewRouteImport } from './routes/_admin/dashboard/catalog/new'
-import { Route as AdminDashboardCustomersIndexRouteImport } from './routes/_admin/dashboard/customers/index'
-import { Route as AdminDashboardOrdersIndexRouteImport } from './routes/_admin/dashboard/orders/index'
-import { Route as AdminDashboardOrdersNewRouteImport } from './routes/_admin/dashboard/orders/new'
-import { Route as AdminDashboardOwnersIndexRouteImport } from './routes/_admin/dashboard/owners/index'
-import { Route as AdminDashboardOwnersOwnerIdRouteImport } from './routes/_admin/dashboard/owners/$ownerId'
-import { Route as AdminDashboardPromotionsIndexRouteImport } from './routes/_admin/dashboard/promotions/index'
-import { Route as AdminDashboardPromotionsNewRouteImport } from './routes/_admin/dashboard/promotions/new'
+import { Route as AdminAdminRegisterRouteImport } from './routes/_admin/admin/register'
 import { Route as AdminDashboardSettingsIndexRouteImport } from './routes/_admin/dashboard/settings/index'
-import { Route as ApiCustomerProfilesCustomerProfileIdIdentityDocumentRouteImport } from './routes/api/customer-profiles/$customerProfileId/identity-document'
+import { Route as AdminDashboardPromotionsIndexRouteImport } from './routes/_admin/dashboard/promotions/index'
+import { Route as AdminDashboardOwnersIndexRouteImport } from './routes/_admin/dashboard/owners/index'
+import { Route as AdminDashboardOrdersIndexRouteImport } from './routes/_admin/dashboard/orders/index'
+import { Route as AdminDashboardCustomersIndexRouteImport } from './routes/_admin/dashboard/customers/index'
+import { Route as AdminDashboardCatalogIndexRouteImport } from './routes/_admin/dashboard/catalog/index'
+import { Route as AdminDashboardCalendarIndexRouteImport } from './routes/_admin/dashboard/calendar/index'
+import { Route as AdminDashboardBranchesIndexRouteImport } from './routes/_admin/dashboard/branches/index'
 import { Route as ApiOrdersOrderIdContractRouteImport } from './routes/api/orders/$orderId/contract'
-import { Route as AdminDashboardBranchesBranchIdEditRouteImport } from './routes/_admin/dashboard/branches/$branchId/edit'
-import { Route as AdminDashboardCatalogRentableItemIdIndexRouteImport } from './routes/_admin/dashboard/catalog/$rentableItemId/index'
-import { Route as AdminDashboardCatalogCategoriesIndexRouteImport } from './routes/_admin/dashboard/catalog/categories/index'
-import { Route as AdminDashboardCatalogPackagesNewRouteImport } from './routes/_admin/dashboard/catalog/packages/new'
-import { Route as AdminDashboardCustomersPendingProfilesIndexRouteImport } from './routes/_admin/dashboard/customers/pending-profiles/index'
-import { Route as AdminDashboardCustomersPendingProfilesCustomerIdRouteImport } from './routes/_admin/dashboard/customers/pending-profiles/$customerId'
-import { Route as AdminDashboardInventoryEquipmentTypesIndexRouteImport } from './routes/_admin/dashboard/inventory/equipment-types/index'
-import { Route as AdminDashboardInventoryEquipmentTypesEquipmentTypeIdRouteImport } from './routes/_admin/dashboard/inventory/equipment-types/$equipmentTypeId'
+import { Route as ApiCustomerProfilesCustomerProfileIdIdentityDocumentRouteImport } from './routes/api/customer-profiles/$customerProfileId/identity-document'
+import { Route as AdminDashboardPromotionsNewRouteImport } from './routes/_admin/dashboard/promotions/new'
+import { Route as AdminDashboardOwnersOwnerIdRouteImport } from './routes/_admin/dashboard/owners/$ownerId'
+import { Route as AdminDashboardOrdersNewRouteImport } from './routes/_admin/dashboard/orders/new'
+import { Route as AdminDashboardCatalogNewRouteImport } from './routes/_admin/dashboard/catalog/new'
+import { Route as AdminDashboardBranchesNewRouteImport } from './routes/_admin/dashboard/branches/new'
 import { Route as AdminDashboardOrdersOrderIdIndexRouteImport } from './routes/_admin/dashboard/orders/$orderId/index'
-import { Route as AdminDashboardPromotionsPromotionIdEditRouteImport } from './routes/_admin/dashboard/promotions/$promotionId/edit'
-import { Route as ApiOrdersOrderIdContractDownloadRouteImport } from './routes/api/orders/$orderId/contract/download'
+import { Route as AdminDashboardInventoryEquipmentTypesIndexRouteImport } from './routes/_admin/dashboard/inventory/equipment-types/index'
+import { Route as AdminDashboardCustomersPendingProfilesIndexRouteImport } from './routes/_admin/dashboard/customers/pending-profiles/index'
+import { Route as AdminDashboardCatalogCategoriesIndexRouteImport } from './routes/_admin/dashboard/catalog/categories/index'
+import { Route as AdminDashboardCatalogRentableItemIdIndexRouteImport } from './routes/_admin/dashboard/catalog/$rentableItemId/index'
 import { Route as ApiOrdersOrderIdContractSignedRouteImport } from './routes/api/orders/$orderId/contract/signed'
+import { Route as ApiOrdersOrderIdContractDownloadRouteImport } from './routes/api/orders/$orderId/contract/download'
+import { Route as AdminDashboardPromotionsPromotionIdEditRouteImport } from './routes/_admin/dashboard/promotions/$promotionId/edit'
+import { Route as AdminDashboardInventoryEquipmentTypesEquipmentTypeIdRouteImport } from './routes/_admin/dashboard/inventory/equipment-types/$equipmentTypeId'
+import { Route as AdminDashboardCustomersPendingProfilesCustomerIdRouteImport } from './routes/_admin/dashboard/customers/pending-profiles/$customerId'
+import { Route as AdminDashboardCatalogPackagesNewRouteImport } from './routes/_admin/dashboard/catalog/packages/new'
+import { Route as AdminDashboardBranchesBranchIdEditRouteImport } from './routes/_admin/dashboard/branches/$branchId/edit'
 import { Route as ApiOrdersOrderIdContractSignedDownloadRouteImport } from './routes/api/orders/$orderId/contract/signed/download'
 
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminRouteRoute = AdminRouteRouteImport.update({
   id: '/_admin',
   getParentRoute: () => rootRouteImport,
 } as any)
-const LoginRoute = LoginRouteImport.update({
-  id: '/login',
-  path: '/login',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminDashboardRouteRoute = AdminDashboardRouteRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
-  getParentRoute: () => AdminRouteRoute,
-} as any)
-const ApiBrandingUploadRoute = ApiBrandingUploadRouteImport.update({
-  id: '/api/branding-upload',
-  path: '/api/branding-upload',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiUploadRoute = ApiUploadRouteImport.update({
-  id: '/api/upload',
-  path: '/api/upload',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BackendSplatRoute = BackendSplatRouteImport.update({
@@ -81,9 +66,19 @@ const BackendSplatRoute = BackendSplatRouteImport.update({
   path: '/backend/$',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AdminAdminRegisterRoute = AdminAdminRegisterRouteImport.update({
-  id: '/admin/register',
-  path: '/admin/register',
+const ApiUploadRoute = ApiUploadRouteImport.update({
+  id: '/api/upload',
+  path: '/api/upload',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiBrandingUploadRoute = ApiBrandingUploadRouteImport.update({
+  id: '/api/branding-upload',
+  path: '/api/branding-upload',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminDashboardRouteRoute = AdminDashboardRouteRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
   getParentRoute: () => AdminRouteRoute,
 } as any)
 const AdminDashboardIndexRoute = AdminDashboardIndexRouteImport.update({
@@ -91,63 +86,15 @@ const AdminDashboardIndexRoute = AdminDashboardIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AdminDashboardRouteRoute,
 } as any)
-const AdminDashboardBranchesIndexRoute =
-  AdminDashboardBranchesIndexRouteImport.update({
-    id: '/branches/',
-    path: '/branches/',
-    getParentRoute: () => AdminDashboardRouteRoute,
-  } as any)
-const AdminDashboardBranchesNewRoute =
-  AdminDashboardBranchesNewRouteImport.update({
-    id: '/branches/new',
-    path: '/branches/new',
-    getParentRoute: () => AdminDashboardRouteRoute,
-  } as any)
-const AdminDashboardCalendarIndexRoute =
-  AdminDashboardCalendarIndexRouteImport.update({
-    id: '/calendar/',
-    path: '/calendar/',
-    getParentRoute: () => AdminDashboardRouteRoute,
-  } as any)
-const AdminDashboardCatalogIndexRoute =
-  AdminDashboardCatalogIndexRouteImport.update({
-    id: '/catalog/',
-    path: '/catalog/',
-    getParentRoute: () => AdminDashboardRouteRoute,
-  } as any)
-const AdminDashboardCatalogNewRoute =
-  AdminDashboardCatalogNewRouteImport.update({
-    id: '/catalog/new',
-    path: '/catalog/new',
-    getParentRoute: () => AdminDashboardRouteRoute,
-  } as any)
-const AdminDashboardCustomersIndexRoute =
-  AdminDashboardCustomersIndexRouteImport.update({
-    id: '/customers/',
-    path: '/customers/',
-    getParentRoute: () => AdminDashboardRouteRoute,
-  } as any)
-const AdminDashboardOrdersIndexRoute =
-  AdminDashboardOrdersIndexRouteImport.update({
-    id: '/orders/',
-    path: '/orders/',
-    getParentRoute: () => AdminDashboardRouteRoute,
-  } as any)
-const AdminDashboardOrdersNewRoute = AdminDashboardOrdersNewRouteImport.update({
-  id: '/orders/new',
-  path: '/orders/new',
-  getParentRoute: () => AdminDashboardRouteRoute,
+const AdminAdminRegisterRoute = AdminAdminRegisterRouteImport.update({
+  id: '/admin/register',
+  path: '/admin/register',
+  getParentRoute: () => AdminRouteRoute,
 } as any)
-const AdminDashboardOwnersIndexRoute =
-  AdminDashboardOwnersIndexRouteImport.update({
-    id: '/owners/',
-    path: '/owners/',
-    getParentRoute: () => AdminDashboardRouteRoute,
-  } as any)
-const AdminDashboardOwnersOwnerIdRoute =
-  AdminDashboardOwnersOwnerIdRouteImport.update({
-    id: '/owners/$ownerId',
-    path: '/owners/$ownerId',
+const AdminDashboardSettingsIndexRoute =
+  AdminDashboardSettingsIndexRouteImport.update({
+    id: '/settings/',
+    path: '/settings/',
     getParentRoute: () => AdminDashboardRouteRoute,
   } as any)
 const AdminDashboardPromotionsIndexRoute =
@@ -156,23 +103,41 @@ const AdminDashboardPromotionsIndexRoute =
     path: '/promotions/',
     getParentRoute: () => AdminDashboardRouteRoute,
   } as any)
-const AdminDashboardPromotionsNewRoute =
-  AdminDashboardPromotionsNewRouteImport.update({
-    id: '/promotions/new',
-    path: '/promotions/new',
+const AdminDashboardOwnersIndexRoute =
+  AdminDashboardOwnersIndexRouteImport.update({
+    id: '/owners/',
+    path: '/owners/',
     getParentRoute: () => AdminDashboardRouteRoute,
   } as any)
-const AdminDashboardSettingsIndexRoute =
-  AdminDashboardSettingsIndexRouteImport.update({
-    id: '/settings/',
-    path: '/settings/',
+const AdminDashboardOrdersIndexRoute =
+  AdminDashboardOrdersIndexRouteImport.update({
+    id: '/orders/',
+    path: '/orders/',
     getParentRoute: () => AdminDashboardRouteRoute,
   } as any)
-const ApiCustomerProfilesCustomerProfileIdIdentityDocumentRoute =
-  ApiCustomerProfilesCustomerProfileIdIdentityDocumentRouteImport.update({
-    id: '/api/customer-profiles/$customerProfileId/identity-document',
-    path: '/api/customer-profiles/$customerProfileId/identity-document',
-    getParentRoute: () => rootRouteImport,
+const AdminDashboardCustomersIndexRoute =
+  AdminDashboardCustomersIndexRouteImport.update({
+    id: '/customers/',
+    path: '/customers/',
+    getParentRoute: () => AdminDashboardRouteRoute,
+  } as any)
+const AdminDashboardCatalogIndexRoute =
+  AdminDashboardCatalogIndexRouteImport.update({
+    id: '/catalog/',
+    path: '/catalog/',
+    getParentRoute: () => AdminDashboardRouteRoute,
+  } as any)
+const AdminDashboardCalendarIndexRoute =
+  AdminDashboardCalendarIndexRouteImport.update({
+    id: '/calendar/',
+    path: '/calendar/',
+    getParentRoute: () => AdminDashboardRouteRoute,
+  } as any)
+const AdminDashboardBranchesIndexRoute =
+  AdminDashboardBranchesIndexRouteImport.update({
+    id: '/branches/',
+    path: '/branches/',
+    getParentRoute: () => AdminDashboardRouteRoute,
   } as any)
 const ApiOrdersOrderIdContractRoute =
   ApiOrdersOrderIdContractRouteImport.update({
@@ -180,52 +145,39 @@ const ApiOrdersOrderIdContractRoute =
     path: '/api/orders/$orderId/contract',
     getParentRoute: () => rootRouteImport,
   } as any)
-const AdminDashboardBranchesBranchIdEditRoute =
-  AdminDashboardBranchesBranchIdEditRouteImport.update({
-    id: '/branches/$branchId/edit',
-    path: '/branches/$branchId/edit',
+const ApiCustomerProfilesCustomerProfileIdIdentityDocumentRoute =
+  ApiCustomerProfilesCustomerProfileIdIdentityDocumentRouteImport.update({
+    id: '/api/customer-profiles/$customerProfileId/identity-document',
+    path: '/api/customer-profiles/$customerProfileId/identity-document',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const AdminDashboardPromotionsNewRoute =
+  AdminDashboardPromotionsNewRouteImport.update({
+    id: '/promotions/new',
+    path: '/promotions/new',
     getParentRoute: () => AdminDashboardRouteRoute,
   } as any)
-const AdminDashboardCatalogRentableItemIdIndexRoute =
-  AdminDashboardCatalogRentableItemIdIndexRouteImport.update({
-    id: '/catalog/$rentableItemId/',
-    path: '/catalog/$rentableItemId/',
+const AdminDashboardOwnersOwnerIdRoute =
+  AdminDashboardOwnersOwnerIdRouteImport.update({
+    id: '/owners/$ownerId',
+    path: '/owners/$ownerId',
     getParentRoute: () => AdminDashboardRouteRoute,
   } as any)
-const AdminDashboardCatalogCategoriesIndexRoute =
-  AdminDashboardCatalogCategoriesIndexRouteImport.update({
-    id: '/catalog/categories/',
-    path: '/catalog/categories/',
+const AdminDashboardOrdersNewRoute = AdminDashboardOrdersNewRouteImport.update({
+  id: '/orders/new',
+  path: '/orders/new',
+  getParentRoute: () => AdminDashboardRouteRoute,
+} as any)
+const AdminDashboardCatalogNewRoute =
+  AdminDashboardCatalogNewRouteImport.update({
+    id: '/catalog/new',
+    path: '/catalog/new',
     getParentRoute: () => AdminDashboardRouteRoute,
   } as any)
-const AdminDashboardCatalogPackagesNewRoute =
-  AdminDashboardCatalogPackagesNewRouteImport.update({
-    id: '/catalog/packages/new',
-    path: '/catalog/packages/new',
-    getParentRoute: () => AdminDashboardRouteRoute,
-  } as any)
-const AdminDashboardCustomersPendingProfilesIndexRoute =
-  AdminDashboardCustomersPendingProfilesIndexRouteImport.update({
-    id: '/customers/pending-profiles/',
-    path: '/customers/pending-profiles/',
-    getParentRoute: () => AdminDashboardRouteRoute,
-  } as any)
-const AdminDashboardCustomersPendingProfilesCustomerIdRoute =
-  AdminDashboardCustomersPendingProfilesCustomerIdRouteImport.update({
-    id: '/customers/pending-profiles/$customerId',
-    path: '/customers/pending-profiles/$customerId',
-    getParentRoute: () => AdminDashboardRouteRoute,
-  } as any)
-const AdminDashboardInventoryEquipmentTypesIndexRoute =
-  AdminDashboardInventoryEquipmentTypesIndexRouteImport.update({
-    id: '/inventory/equipment-types/',
-    path: '/inventory/equipment-types/',
-    getParentRoute: () => AdminDashboardRouteRoute,
-  } as any)
-const AdminDashboardInventoryEquipmentTypesEquipmentTypeIdRoute =
-  AdminDashboardInventoryEquipmentTypesEquipmentTypeIdRouteImport.update({
-    id: '/inventory/equipment-types/$equipmentTypeId',
-    path: '/inventory/equipment-types/$equipmentTypeId',
+const AdminDashboardBranchesNewRoute =
+  AdminDashboardBranchesNewRouteImport.update({
+    id: '/branches/new',
+    path: '/branches/new',
     getParentRoute: () => AdminDashboardRouteRoute,
   } as any)
 const AdminDashboardOrdersOrderIdIndexRoute =
@@ -234,11 +186,35 @@ const AdminDashboardOrdersOrderIdIndexRoute =
     path: '/orders/$orderId/',
     getParentRoute: () => AdminDashboardRouteRoute,
   } as any)
-const AdminDashboardPromotionsPromotionIdEditRoute =
-  AdminDashboardPromotionsPromotionIdEditRouteImport.update({
-    id: '/promotions/$promotionId/edit',
-    path: '/promotions/$promotionId/edit',
+const AdminDashboardInventoryEquipmentTypesIndexRoute =
+  AdminDashboardInventoryEquipmentTypesIndexRouteImport.update({
+    id: '/inventory/equipment-types/',
+    path: '/inventory/equipment-types/',
     getParentRoute: () => AdminDashboardRouteRoute,
+  } as any)
+const AdminDashboardCustomersPendingProfilesIndexRoute =
+  AdminDashboardCustomersPendingProfilesIndexRouteImport.update({
+    id: '/customers/pending-profiles/',
+    path: '/customers/pending-profiles/',
+    getParentRoute: () => AdminDashboardRouteRoute,
+  } as any)
+const AdminDashboardCatalogCategoriesIndexRoute =
+  AdminDashboardCatalogCategoriesIndexRouteImport.update({
+    id: '/catalog/categories/',
+    path: '/catalog/categories/',
+    getParentRoute: () => AdminDashboardRouteRoute,
+  } as any)
+const AdminDashboardCatalogRentableItemIdIndexRoute =
+  AdminDashboardCatalogRentableItemIdIndexRouteImport.update({
+    id: '/catalog/$rentableItemId/',
+    path: '/catalog/$rentableItemId/',
+    getParentRoute: () => AdminDashboardRouteRoute,
+  } as any)
+const ApiOrdersOrderIdContractSignedRoute =
+  ApiOrdersOrderIdContractSignedRouteImport.update({
+    id: '/signed',
+    path: '/signed',
+    getParentRoute: () => ApiOrdersOrderIdContractRoute,
   } as any)
 const ApiOrdersOrderIdContractDownloadRoute =
   ApiOrdersOrderIdContractDownloadRouteImport.update({
@@ -246,11 +222,35 @@ const ApiOrdersOrderIdContractDownloadRoute =
     path: '/download',
     getParentRoute: () => ApiOrdersOrderIdContractRoute,
   } as any)
-const ApiOrdersOrderIdContractSignedRoute =
-  ApiOrdersOrderIdContractSignedRouteImport.update({
-    id: '/signed',
-    path: '/signed',
-    getParentRoute: () => ApiOrdersOrderIdContractRoute,
+const AdminDashboardPromotionsPromotionIdEditRoute =
+  AdminDashboardPromotionsPromotionIdEditRouteImport.update({
+    id: '/promotions/$promotionId/edit',
+    path: '/promotions/$promotionId/edit',
+    getParentRoute: () => AdminDashboardRouteRoute,
+  } as any)
+const AdminDashboardInventoryEquipmentTypesEquipmentTypeIdRoute =
+  AdminDashboardInventoryEquipmentTypesEquipmentTypeIdRouteImport.update({
+    id: '/inventory/equipment-types/$equipmentTypeId',
+    path: '/inventory/equipment-types/$equipmentTypeId',
+    getParentRoute: () => AdminDashboardRouteRoute,
+  } as any)
+const AdminDashboardCustomersPendingProfilesCustomerIdRoute =
+  AdminDashboardCustomersPendingProfilesCustomerIdRouteImport.update({
+    id: '/customers/pending-profiles/$customerId',
+    path: '/customers/pending-profiles/$customerId',
+    getParentRoute: () => AdminDashboardRouteRoute,
+  } as any)
+const AdminDashboardCatalogPackagesNewRoute =
+  AdminDashboardCatalogPackagesNewRouteImport.update({
+    id: '/catalog/packages/new',
+    path: '/catalog/packages/new',
+    getParentRoute: () => AdminDashboardRouteRoute,
+  } as any)
+const AdminDashboardBranchesBranchIdEditRoute =
+  AdminDashboardBranchesBranchIdEditRouteImport.update({
+    id: '/branches/$branchId/edit',
+    path: '/branches/$branchId/edit',
+    getParentRoute: () => AdminDashboardRouteRoute,
   } as any)
 const ApiOrdersOrderIdContractSignedDownloadRoute =
   ApiOrdersOrderIdContractSignedDownloadRouteImport.update({
@@ -504,11 +504,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_admin': {
@@ -518,32 +518,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/login': {
-      id: '/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof LoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_admin/dashboard': {
-      id: '/_admin/dashboard'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof AdminDashboardRouteRouteImport
-      parentRoute: typeof AdminRouteRoute
-    }
-    '/api/branding-upload': {
-      id: '/api/branding-upload'
-      path: '/api/branding-upload'
-      fullPath: '/api/branding-upload'
-      preLoaderRoute: typeof ApiBrandingUploadRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/upload': {
-      id: '/api/upload'
-      path: '/api/upload'
-      fullPath: '/api/upload'
-      preLoaderRoute: typeof ApiUploadRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/backend/$': {
@@ -553,11 +532,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BackendSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_admin/admin/register': {
-      id: '/_admin/admin/register'
-      path: '/admin/register'
-      fullPath: '/admin/register'
-      preLoaderRoute: typeof AdminAdminRegisterRouteImport
+    '/api/upload': {
+      id: '/api/upload'
+      path: '/api/upload'
+      fullPath: '/api/upload'
+      preLoaderRoute: typeof ApiUploadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/branding-upload': {
+      id: '/api/branding-upload'
+      path: '/api/branding-upload'
+      fullPath: '/api/branding-upload'
+      preLoaderRoute: typeof ApiBrandingUploadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_admin/dashboard': {
+      id: '/_admin/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof AdminDashboardRouteRouteImport
       parentRoute: typeof AdminRouteRoute
     }
     '/_admin/dashboard/': {
@@ -567,74 +560,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminDashboardIndexRouteImport
       parentRoute: typeof AdminDashboardRouteRoute
     }
-    '/_admin/dashboard/branches/': {
-      id: '/_admin/dashboard/branches/'
-      path: '/branches'
-      fullPath: '/dashboard/branches/'
-      preLoaderRoute: typeof AdminDashboardBranchesIndexRouteImport
-      parentRoute: typeof AdminDashboardRouteRoute
+    '/_admin/admin/register': {
+      id: '/_admin/admin/register'
+      path: '/admin/register'
+      fullPath: '/admin/register'
+      preLoaderRoute: typeof AdminAdminRegisterRouteImport
+      parentRoute: typeof AdminRouteRoute
     }
-    '/_admin/dashboard/branches/new': {
-      id: '/_admin/dashboard/branches/new'
-      path: '/branches/new'
-      fullPath: '/dashboard/branches/new'
-      preLoaderRoute: typeof AdminDashboardBranchesNewRouteImport
-      parentRoute: typeof AdminDashboardRouteRoute
-    }
-    '/_admin/dashboard/calendar/': {
-      id: '/_admin/dashboard/calendar/'
-      path: '/calendar'
-      fullPath: '/dashboard/calendar/'
-      preLoaderRoute: typeof AdminDashboardCalendarIndexRouteImport
-      parentRoute: typeof AdminDashboardRouteRoute
-    }
-    '/_admin/dashboard/catalog/': {
-      id: '/_admin/dashboard/catalog/'
-      path: '/catalog'
-      fullPath: '/dashboard/catalog/'
-      preLoaderRoute: typeof AdminDashboardCatalogIndexRouteImport
-      parentRoute: typeof AdminDashboardRouteRoute
-    }
-    '/_admin/dashboard/catalog/new': {
-      id: '/_admin/dashboard/catalog/new'
-      path: '/catalog/new'
-      fullPath: '/dashboard/catalog/new'
-      preLoaderRoute: typeof AdminDashboardCatalogNewRouteImport
-      parentRoute: typeof AdminDashboardRouteRoute
-    }
-    '/_admin/dashboard/customers/': {
-      id: '/_admin/dashboard/customers/'
-      path: '/customers'
-      fullPath: '/dashboard/customers/'
-      preLoaderRoute: typeof AdminDashboardCustomersIndexRouteImport
-      parentRoute: typeof AdminDashboardRouteRoute
-    }
-    '/_admin/dashboard/orders/': {
-      id: '/_admin/dashboard/orders/'
-      path: '/orders'
-      fullPath: '/dashboard/orders/'
-      preLoaderRoute: typeof AdminDashboardOrdersIndexRouteImport
-      parentRoute: typeof AdminDashboardRouteRoute
-    }
-    '/_admin/dashboard/orders/new': {
-      id: '/_admin/dashboard/orders/new'
-      path: '/orders/new'
-      fullPath: '/dashboard/orders/new'
-      preLoaderRoute: typeof AdminDashboardOrdersNewRouteImport
-      parentRoute: typeof AdminDashboardRouteRoute
-    }
-    '/_admin/dashboard/owners/': {
-      id: '/_admin/dashboard/owners/'
-      path: '/owners'
-      fullPath: '/dashboard/owners/'
-      preLoaderRoute: typeof AdminDashboardOwnersIndexRouteImport
-      parentRoute: typeof AdminDashboardRouteRoute
-    }
-    '/_admin/dashboard/owners/$ownerId': {
-      id: '/_admin/dashboard/owners/$ownerId'
-      path: '/owners/$ownerId'
-      fullPath: '/dashboard/owners/$ownerId'
-      preLoaderRoute: typeof AdminDashboardOwnersOwnerIdRouteImport
+    '/_admin/dashboard/settings/': {
+      id: '/_admin/dashboard/settings/'
+      path: '/settings'
+      fullPath: '/dashboard/settings/'
+      preLoaderRoute: typeof AdminDashboardSettingsIndexRouteImport
       parentRoute: typeof AdminDashboardRouteRoute
     }
     '/_admin/dashboard/promotions/': {
@@ -644,26 +581,47 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminDashboardPromotionsIndexRouteImport
       parentRoute: typeof AdminDashboardRouteRoute
     }
-    '/_admin/dashboard/promotions/new': {
-      id: '/_admin/dashboard/promotions/new'
-      path: '/promotions/new'
-      fullPath: '/dashboard/promotions/new'
-      preLoaderRoute: typeof AdminDashboardPromotionsNewRouteImport
+    '/_admin/dashboard/owners/': {
+      id: '/_admin/dashboard/owners/'
+      path: '/owners'
+      fullPath: '/dashboard/owners/'
+      preLoaderRoute: typeof AdminDashboardOwnersIndexRouteImport
       parentRoute: typeof AdminDashboardRouteRoute
     }
-    '/_admin/dashboard/settings/': {
-      id: '/_admin/dashboard/settings/'
-      path: '/settings'
-      fullPath: '/dashboard/settings/'
-      preLoaderRoute: typeof AdminDashboardSettingsIndexRouteImport
+    '/_admin/dashboard/orders/': {
+      id: '/_admin/dashboard/orders/'
+      path: '/orders'
+      fullPath: '/dashboard/orders/'
+      preLoaderRoute: typeof AdminDashboardOrdersIndexRouteImport
       parentRoute: typeof AdminDashboardRouteRoute
     }
-    '/api/customer-profiles/$customerProfileId/identity-document': {
-      id: '/api/customer-profiles/$customerProfileId/identity-document'
-      path: '/api/customer-profiles/$customerProfileId/identity-document'
-      fullPath: '/api/customer-profiles/$customerProfileId/identity-document'
-      preLoaderRoute: typeof ApiCustomerProfilesCustomerProfileIdIdentityDocumentRouteImport
-      parentRoute: typeof rootRouteImport
+    '/_admin/dashboard/customers/': {
+      id: '/_admin/dashboard/customers/'
+      path: '/customers'
+      fullPath: '/dashboard/customers/'
+      preLoaderRoute: typeof AdminDashboardCustomersIndexRouteImport
+      parentRoute: typeof AdminDashboardRouteRoute
+    }
+    '/_admin/dashboard/catalog/': {
+      id: '/_admin/dashboard/catalog/'
+      path: '/catalog'
+      fullPath: '/dashboard/catalog/'
+      preLoaderRoute: typeof AdminDashboardCatalogIndexRouteImport
+      parentRoute: typeof AdminDashboardRouteRoute
+    }
+    '/_admin/dashboard/calendar/': {
+      id: '/_admin/dashboard/calendar/'
+      path: '/calendar'
+      fullPath: '/dashboard/calendar/'
+      preLoaderRoute: typeof AdminDashboardCalendarIndexRouteImport
+      parentRoute: typeof AdminDashboardRouteRoute
+    }
+    '/_admin/dashboard/branches/': {
+      id: '/_admin/dashboard/branches/'
+      path: '/branches'
+      fullPath: '/dashboard/branches/'
+      preLoaderRoute: typeof AdminDashboardBranchesIndexRouteImport
+      parentRoute: typeof AdminDashboardRouteRoute
     }
     '/api/orders/$orderId/contract': {
       id: '/api/orders/$orderId/contract'
@@ -672,60 +630,46 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiOrdersOrderIdContractRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_admin/dashboard/branches/$branchId/edit': {
-      id: '/_admin/dashboard/branches/$branchId/edit'
-      path: '/branches/$branchId/edit'
-      fullPath: '/dashboard/branches/$branchId/edit'
-      preLoaderRoute: typeof AdminDashboardBranchesBranchIdEditRouteImport
+    '/api/customer-profiles/$customerProfileId/identity-document': {
+      id: '/api/customer-profiles/$customerProfileId/identity-document'
+      path: '/api/customer-profiles/$customerProfileId/identity-document'
+      fullPath: '/api/customer-profiles/$customerProfileId/identity-document'
+      preLoaderRoute: typeof ApiCustomerProfilesCustomerProfileIdIdentityDocumentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_admin/dashboard/promotions/new': {
+      id: '/_admin/dashboard/promotions/new'
+      path: '/promotions/new'
+      fullPath: '/dashboard/promotions/new'
+      preLoaderRoute: typeof AdminDashboardPromotionsNewRouteImport
       parentRoute: typeof AdminDashboardRouteRoute
     }
-    '/_admin/dashboard/catalog/$rentableItemId/': {
-      id: '/_admin/dashboard/catalog/$rentableItemId/'
-      path: '/catalog/$rentableItemId'
-      fullPath: '/dashboard/catalog/$rentableItemId/'
-      preLoaderRoute: typeof AdminDashboardCatalogRentableItemIdIndexRouteImport
+    '/_admin/dashboard/owners/$ownerId': {
+      id: '/_admin/dashboard/owners/$ownerId'
+      path: '/owners/$ownerId'
+      fullPath: '/dashboard/owners/$ownerId'
+      preLoaderRoute: typeof AdminDashboardOwnersOwnerIdRouteImport
       parentRoute: typeof AdminDashboardRouteRoute
     }
-    '/_admin/dashboard/catalog/categories/': {
-      id: '/_admin/dashboard/catalog/categories/'
-      path: '/catalog/categories'
-      fullPath: '/dashboard/catalog/categories/'
-      preLoaderRoute: typeof AdminDashboardCatalogCategoriesIndexRouteImport
+    '/_admin/dashboard/orders/new': {
+      id: '/_admin/dashboard/orders/new'
+      path: '/orders/new'
+      fullPath: '/dashboard/orders/new'
+      preLoaderRoute: typeof AdminDashboardOrdersNewRouteImport
       parentRoute: typeof AdminDashboardRouteRoute
     }
-    '/_admin/dashboard/catalog/packages/new': {
-      id: '/_admin/dashboard/catalog/packages/new'
-      path: '/catalog/packages/new'
-      fullPath: '/dashboard/catalog/packages/new'
-      preLoaderRoute: typeof AdminDashboardCatalogPackagesNewRouteImport
+    '/_admin/dashboard/catalog/new': {
+      id: '/_admin/dashboard/catalog/new'
+      path: '/catalog/new'
+      fullPath: '/dashboard/catalog/new'
+      preLoaderRoute: typeof AdminDashboardCatalogNewRouteImport
       parentRoute: typeof AdminDashboardRouteRoute
     }
-    '/_admin/dashboard/customers/pending-profiles/': {
-      id: '/_admin/dashboard/customers/pending-profiles/'
-      path: '/customers/pending-profiles'
-      fullPath: '/dashboard/customers/pending-profiles/'
-      preLoaderRoute: typeof AdminDashboardCustomersPendingProfilesIndexRouteImport
-      parentRoute: typeof AdminDashboardRouteRoute
-    }
-    '/_admin/dashboard/customers/pending-profiles/$customerId': {
-      id: '/_admin/dashboard/customers/pending-profiles/$customerId'
-      path: '/customers/pending-profiles/$customerId'
-      fullPath: '/dashboard/customers/pending-profiles/$customerId'
-      preLoaderRoute: typeof AdminDashboardCustomersPendingProfilesCustomerIdRouteImport
-      parentRoute: typeof AdminDashboardRouteRoute
-    }
-    '/_admin/dashboard/inventory/equipment-types/': {
-      id: '/_admin/dashboard/inventory/equipment-types/'
-      path: '/inventory/equipment-types'
-      fullPath: '/dashboard/inventory/equipment-types/'
-      preLoaderRoute: typeof AdminDashboardInventoryEquipmentTypesIndexRouteImport
-      parentRoute: typeof AdminDashboardRouteRoute
-    }
-    '/_admin/dashboard/inventory/equipment-types/$equipmentTypeId': {
-      id: '/_admin/dashboard/inventory/equipment-types/$equipmentTypeId'
-      path: '/inventory/equipment-types/$equipmentTypeId'
-      fullPath: '/dashboard/inventory/equipment-types/$equipmentTypeId'
-      preLoaderRoute: typeof AdminDashboardInventoryEquipmentTypesEquipmentTypeIdRouteImport
+    '/_admin/dashboard/branches/new': {
+      id: '/_admin/dashboard/branches/new'
+      path: '/branches/new'
+      fullPath: '/dashboard/branches/new'
+      preLoaderRoute: typeof AdminDashboardBranchesNewRouteImport
       parentRoute: typeof AdminDashboardRouteRoute
     }
     '/_admin/dashboard/orders/$orderId/': {
@@ -735,12 +679,40 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminDashboardOrdersOrderIdIndexRouteImport
       parentRoute: typeof AdminDashboardRouteRoute
     }
-    '/_admin/dashboard/promotions/$promotionId/edit': {
-      id: '/_admin/dashboard/promotions/$promotionId/edit'
-      path: '/promotions/$promotionId/edit'
-      fullPath: '/dashboard/promotions/$promotionId/edit'
-      preLoaderRoute: typeof AdminDashboardPromotionsPromotionIdEditRouteImport
+    '/_admin/dashboard/inventory/equipment-types/': {
+      id: '/_admin/dashboard/inventory/equipment-types/'
+      path: '/inventory/equipment-types'
+      fullPath: '/dashboard/inventory/equipment-types/'
+      preLoaderRoute: typeof AdminDashboardInventoryEquipmentTypesIndexRouteImport
       parentRoute: typeof AdminDashboardRouteRoute
+    }
+    '/_admin/dashboard/customers/pending-profiles/': {
+      id: '/_admin/dashboard/customers/pending-profiles/'
+      path: '/customers/pending-profiles'
+      fullPath: '/dashboard/customers/pending-profiles/'
+      preLoaderRoute: typeof AdminDashboardCustomersPendingProfilesIndexRouteImport
+      parentRoute: typeof AdminDashboardRouteRoute
+    }
+    '/_admin/dashboard/catalog/categories/': {
+      id: '/_admin/dashboard/catalog/categories/'
+      path: '/catalog/categories'
+      fullPath: '/dashboard/catalog/categories/'
+      preLoaderRoute: typeof AdminDashboardCatalogCategoriesIndexRouteImport
+      parentRoute: typeof AdminDashboardRouteRoute
+    }
+    '/_admin/dashboard/catalog/$rentableItemId/': {
+      id: '/_admin/dashboard/catalog/$rentableItemId/'
+      path: '/catalog/$rentableItemId'
+      fullPath: '/dashboard/catalog/$rentableItemId/'
+      preLoaderRoute: typeof AdminDashboardCatalogRentableItemIdIndexRouteImport
+      parentRoute: typeof AdminDashboardRouteRoute
+    }
+    '/api/orders/$orderId/contract/signed': {
+      id: '/api/orders/$orderId/contract/signed'
+      path: '/signed'
+      fullPath: '/api/orders/$orderId/contract/signed'
+      preLoaderRoute: typeof ApiOrdersOrderIdContractSignedRouteImport
+      parentRoute: typeof ApiOrdersOrderIdContractRoute
     }
     '/api/orders/$orderId/contract/download': {
       id: '/api/orders/$orderId/contract/download'
@@ -749,12 +721,40 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiOrdersOrderIdContractDownloadRouteImport
       parentRoute: typeof ApiOrdersOrderIdContractRoute
     }
-    '/api/orders/$orderId/contract/signed': {
-      id: '/api/orders/$orderId/contract/signed'
-      path: '/signed'
-      fullPath: '/api/orders/$orderId/contract/signed'
-      preLoaderRoute: typeof ApiOrdersOrderIdContractSignedRouteImport
-      parentRoute: typeof ApiOrdersOrderIdContractRoute
+    '/_admin/dashboard/promotions/$promotionId/edit': {
+      id: '/_admin/dashboard/promotions/$promotionId/edit'
+      path: '/promotions/$promotionId/edit'
+      fullPath: '/dashboard/promotions/$promotionId/edit'
+      preLoaderRoute: typeof AdminDashboardPromotionsPromotionIdEditRouteImport
+      parentRoute: typeof AdminDashboardRouteRoute
+    }
+    '/_admin/dashboard/inventory/equipment-types/$equipmentTypeId': {
+      id: '/_admin/dashboard/inventory/equipment-types/$equipmentTypeId'
+      path: '/inventory/equipment-types/$equipmentTypeId'
+      fullPath: '/dashboard/inventory/equipment-types/$equipmentTypeId'
+      preLoaderRoute: typeof AdminDashboardInventoryEquipmentTypesEquipmentTypeIdRouteImport
+      parentRoute: typeof AdminDashboardRouteRoute
+    }
+    '/_admin/dashboard/customers/pending-profiles/$customerId': {
+      id: '/_admin/dashboard/customers/pending-profiles/$customerId'
+      path: '/customers/pending-profiles/$customerId'
+      fullPath: '/dashboard/customers/pending-profiles/$customerId'
+      preLoaderRoute: typeof AdminDashboardCustomersPendingProfilesCustomerIdRouteImport
+      parentRoute: typeof AdminDashboardRouteRoute
+    }
+    '/_admin/dashboard/catalog/packages/new': {
+      id: '/_admin/dashboard/catalog/packages/new'
+      path: '/catalog/packages/new'
+      fullPath: '/dashboard/catalog/packages/new'
+      preLoaderRoute: typeof AdminDashboardCatalogPackagesNewRouteImport
+      parentRoute: typeof AdminDashboardRouteRoute
+    }
+    '/_admin/dashboard/branches/$branchId/edit': {
+      id: '/_admin/dashboard/branches/$branchId/edit'
+      path: '/branches/$branchId/edit'
+      fullPath: '/dashboard/branches/$branchId/edit'
+      preLoaderRoute: typeof AdminDashboardBranchesBranchIdEditRouteImport
+      parentRoute: typeof AdminDashboardRouteRoute
     }
     '/api/orders/$orderId/contract/signed/download': {
       id: '/api/orders/$orderId/contract/signed/download'
