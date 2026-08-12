@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import type { ApiContract } from "../api-contract";
-import { ExplicitOffsetInstantSchema } from "../explicit-offset-instant.schema";
+import { ExplicitOffsetInstantWireSchema } from "../explicit-offset-instant.schema";
 
 const DecimalStringSchema = z.string();
 
@@ -13,8 +13,8 @@ export const CalculateCartPriceSelectedOfferSchema = z.object({
 export const CalculateCartPriceBodySchema = z.object({
   branchId: z.string(),
   rentalPeriod: z.object({
-    start: ExplicitOffsetInstantSchema,
-    end: ExplicitOffsetInstantSchema,
+    start: ExplicitOffsetInstantWireSchema,
+    end: ExplicitOffsetInstantWireSchema,
   }),
   selectedOffers: z.array(CalculateCartPriceSelectedOfferSchema),
   insuranceSelected: z.boolean().default(false),

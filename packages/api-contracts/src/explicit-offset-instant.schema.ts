@@ -6,6 +6,7 @@ import { z } from "zod";
  * The input must include either `Z` or an RFC3339 numeric UTC offset. The
  * validated value is converted to a JavaScript Date for application use.
  */
-export const ExplicitOffsetInstantSchema = z.iso
-  .datetime({ offset: true })
-  .transform((value) => new Date(value));
+export const ExplicitOffsetInstantWireSchema = z.iso.datetime({ offset: true });
+
+export const ExplicitOffsetInstantSchema =
+  ExplicitOffsetInstantWireSchema.transform((value) => new Date(value));
