@@ -35,6 +35,7 @@ export class StorefrontTenantContextGuard implements CanActivate {
       tenantId: payload.tenant_id,
       host: payload.host,
       canonicalHost: payload.canonical_host,
+      returnHost: payload.return_host,
       scope: 'public-storefront',
     };
 

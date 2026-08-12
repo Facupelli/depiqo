@@ -11,6 +11,7 @@ export const CustomerGoogleHandoffBodySchema = z.object({
 export const CustomerGoogleHandoffResponseSchema = z.object({
   ticket: z.string().min(1),
   canonicalHost: z.string().min(1),
+  returnHost: z.string().min(1).optional(),
 });
 
 export type CustomerGoogleHandoffBodyDto = z.infer<typeof CustomerGoogleHandoffBodySchema>;

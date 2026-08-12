@@ -27,7 +27,7 @@ export class CustomerGoogleLoginService {
     code: string;
     state: string;
     codeVerifier?: string;
-  }): Promise<{ ticket: string; canonicalHost: string }> {
+  }): Promise<{ ticket: string; canonicalHost: string; returnHost?: string }> {
     try {
       const transaction = await this.googleAuthStateService.consumeState(input.state);
       const googleIdentity = await this.googleIdentityVerifier.verifyAuthorizationCode({
@@ -43,6 +43,7 @@ export class CustomerGoogleLoginService {
       const ticket = await this.handoffTicketService.issueTicket({
         tenantId: customer.tenantId,
         canonicalHost: transaction.canonicalHost,
+        returnHost: transaction.returnHost,
         redirectPath: transaction.redirectPath,
         customerId: customer.id,
       });
@@ -50,6 +51,7 @@ export class CustomerGoogleLoginService {
       return {
         ticket,
         canonicalHost: transaction.canonicalHost,
+        returnHost: transaction.returnHost,
       };
     } catch (error) {
       if (error instanceof GoogleAuthorizationCodeExchangeError || error instanceof GoogleIdentityVerificationError) {

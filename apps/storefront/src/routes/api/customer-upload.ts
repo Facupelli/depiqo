@@ -12,6 +12,7 @@ import {
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { getServerEnvironment } from "@/config/server-env";
+import { requiresCanonicalStorefrontRedirect } from "@/modules/tenant-management/resolve-public-tenant-context/canonical-storefront-host";
 import { normalizeRequestHostname } from "@/modules/tenant-management/resolve-public-tenant-context/hostname";
 import type { StorefrontRequestContext } from "@/modules/tenant-management/resolve-public-tenant-context/request-context.middleware";
 import {
@@ -155,7 +156,7 @@ async function resolveCanonicalStorefrontRequest(
 			};
 		}
 
-		if (tenantContext.host !== tenantContext.canonicalHost) {
+		if (requiresCanonicalStorefrontRedirect(tenantContext)) {
 			return {
 				success: false,
 				status: 308,

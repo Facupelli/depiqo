@@ -5,7 +5,8 @@ import {
 	GetStorefrontRentalOffersResponseSchema,
 	getStorefrontRentalOffersContract,
 } from "@repo/api-contracts";
-import { storefrontApiFetch } from "@/lib/api/storefront-api-fetch";
+import type { StorefrontRequestContext } from "@/modules/tenant-management/resolve-public-tenant-context/request-context.middleware";
+import { storefrontApiFetch } from "@/shared/server/storefront-transport/storefront-api-fetch.server";
 
 const GET_STOREFRONT_RENTAL_OFFERS_QUERY_PARAM_KEYS = [
 	"branchId",
@@ -38,9 +39,10 @@ function buildGetStorefrontRentalOffersQuery(
 }
 
 export async function getStorefrontRentalOffers(
+	requestContext: StorefrontRequestContext,
 	query: GetStorefrontRentalOffersQueryDto,
 ): Promise<GetStorefrontRentalOffersResponseDto> {
-	const response = await storefrontApiFetch({
+	const response = await storefrontApiFetch(requestContext, {
 		path: getStorefrontRentalOffersContract.path as `/storefront/${string}`,
 		method: getStorefrontRentalOffersContract.method,
 		query: buildGetStorefrontRentalOffersQuery(query),

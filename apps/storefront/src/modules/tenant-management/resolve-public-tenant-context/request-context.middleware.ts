@@ -2,6 +2,7 @@ import { createMiddleware } from "@tanstack/react-start";
 import { getServerEnvironment } from "@/config/server-env";
 import { logStorefrontServerEvent } from "@/shared/server/logging/storefront-server-logger.server";
 import { getPublicSigningHostname } from "@/shared/server/public-signing-browser-bff/public-signing-host.server";
+import { requiresCanonicalStorefrontRedirect } from "./canonical-storefront-host";
 import { normalizeRequestHostname } from "./hostname";
 import {
 	resolveTrustedTenantContext,
@@ -78,7 +79,7 @@ export const storefrontRequestContextMiddleware = createMiddleware().server(
 			}
 			if (
 				tenantContext.face === "storefront" &&
-				tenantContext.host !== tenantContext.canonicalHost
+				requiresCanonicalStorefrontRedirect(tenantContext)
 			) {
 				return redirectToCanonicalHost(
 					request,

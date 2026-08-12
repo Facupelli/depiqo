@@ -7,6 +7,7 @@ import type {
 import { getStorefrontRentalOfferAvailability } from "@/modules/catalog/get-storefront-rental-offer-availability/get-storefront-rental-offer-availability.api";
 import { getStorefrontRentalOffers } from "@/modules/catalog/rental-offers/get-storefront-rental-offers/get-storefront-rental-offers.api";
 import { getStorefrontRentalOffersPricing } from "@/modules/pricing/rental-offer-pricings/get-storefront-rental-offers-pricing/get-storefront-rental-offers-pricing.api";
+import type { StorefrontRequestContext } from "@/modules/tenant-management/resolve-public-tenant-context/request-context.middleware";
 import type {
 	GetStorefrontRentalOfferListViewInputDto,
 	GetStorefrontRentalOfferListViewResponseDto,
@@ -18,18 +19,19 @@ import {
 } from "./get-storefront-rental-offer-list-view.schema";
 
 export async function getStorefrontRentalOfferListView(
+	requestContext: StorefrontRequestContext,
 	input: GetStorefrontRentalOfferListViewInputDto,
 ): Promise<GetStorefrontRentalOfferListViewResponseDto> {
 	const parsedInput = GetStorefrontRentalOfferListViewInputSchema.parse(input);
 
 	const [packagesPage, singlesPage] = await Promise.all([
-		getStorefrontRentalOffers({
+		getStorefrontRentalOffers(requestContext, {
 			branchId: parsedInput.branchId,
 			kind: "PACKAGE",
 			page: 1,
 			pageSize: 30,
 		}),
-		getStorefrontRentalOffers({
+		getStorefrontRentalOffers(requestContext, {
 			branchId: parsedInput.branchId,
 			kind: "SINGLE",
 			categoryId: parsedInput.categoryId,
@@ -44,10 +46,10 @@ export async function getStorefrontRentalOfferListView(
 
 	const [rentalOfferPricing, rentalOfferAvailability] = await Promise.all([
 		rentalOfferIds.length > 0
-			? getStorefrontRentalOffersPricing({ rentalOfferIds })
+			? getStorefrontRentalOffersPricing(requestContext, { rentalOfferIds })
 			: Promise.resolve({ data: [] }),
 		parsedInput.periodStart && parsedInput.periodEnd && rentalOffers.length > 0
-			? getStorefrontRentalOfferAvailability({
+			? getStorefrontRentalOfferAvailability(requestContext, {
 					branchId: parsedInput.branchId,
 					periodStart: parsedInput.periodStart,
 					periodEnd: parsedInput.periodEnd,

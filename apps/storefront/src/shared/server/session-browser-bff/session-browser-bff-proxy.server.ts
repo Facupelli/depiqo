@@ -3,6 +3,7 @@ import {
 	type TrustedTenantContext,
 } from "@repo/api-contracts";
 import { getServerEnvironment } from "@/config/server-env";
+import { requiresCanonicalStorefrontRedirect } from "@/modules/tenant-management/resolve-public-tenant-context/canonical-storefront-host";
 import { normalizeRequestHostname } from "@/modules/tenant-management/resolve-public-tenant-context/hostname";
 import {
 	resolveTrustedTenantContext,
@@ -78,7 +79,7 @@ export async function proxySessionBrowserBffRequest(
 		return problemResponse(404, "Storefront tenant not found", requestId);
 	}
 
-	if (tenantContext.host !== tenantContext.canonicalHost) {
+	if (requiresCanonicalStorefrontRedirect(tenantContext)) {
 		const location = new URL(request.url);
 		location.hostname = tenantContext.canonicalHost;
 		location.port = "";

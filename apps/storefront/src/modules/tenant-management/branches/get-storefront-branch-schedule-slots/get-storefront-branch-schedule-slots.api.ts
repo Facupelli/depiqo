@@ -5,9 +5,11 @@ import {
 	GetStorefrontBranchScheduleSlotsResponseSchema,
 	getStorefrontBranchScheduleSlotsContract,
 } from "@repo/api-contracts";
-import { storefrontApiFetch } from "@/lib/api/storefront-api-fetch";
+import type { StorefrontRequestContext } from "@/modules/tenant-management/resolve-public-tenant-context/request-context.middleware";
+import { storefrontApiFetch } from "@/shared/server/storefront-transport/storefront-api-fetch.server";
 
 export async function getStorefrontBranchScheduleSlots(
+	requestContext: StorefrontRequestContext,
 	branchId: string,
 	query: GetStorefrontBranchScheduleSlotsQueryDto,
 ): Promise<GetStorefrontBranchScheduleSlotsResponseDto> {
@@ -17,7 +19,7 @@ export async function getStorefrontBranchScheduleSlots(
 		encodeURIComponent(branchId),
 	) as `/storefront/${string}`;
 
-	const response = await storefrontApiFetch({
+	const response = await storefrontApiFetch(requestContext, {
 		path,
 		method: getStorefrontBranchScheduleSlotsContract.method,
 		query: parsedQuery,

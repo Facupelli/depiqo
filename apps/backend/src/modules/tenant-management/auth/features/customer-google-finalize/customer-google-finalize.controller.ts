@@ -34,6 +34,7 @@ export class CustomerGoogleFinalizeController {
       ticket: dto.ticket,
       tenantId: storefrontTenant.tenantId,
       canonicalHost: storefrontTenant.canonicalHost,
+      returnHost: storefrontTenant.returnHost,
     });
 
     await this.sessionRegenerator.regenerate(req);

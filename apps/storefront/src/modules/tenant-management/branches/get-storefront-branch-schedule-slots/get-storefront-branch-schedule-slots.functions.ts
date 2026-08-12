@@ -4,6 +4,7 @@ import {
 } from "@repo/api-contracts";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { storefrontFunctionRequestContextMiddleware } from "@/modules/tenant-management/resolve-public-tenant-context/function-request-context.middleware";
 import { getStorefrontBranchScheduleSlots } from "./get-storefront-branch-schedule-slots.api";
 
 const GetStorefrontBranchScheduleSlotsInputSchema = z.object({
@@ -14,7 +15,12 @@ const GetStorefrontBranchScheduleSlotsInputSchema = z.object({
 export const getStorefrontBranchScheduleSlotsFn = createServerFn({
 	method: "GET",
 })
+	.middleware([storefrontFunctionRequestContextMiddleware])
 	.validator((data) => GetStorefrontBranchScheduleSlotsInputSchema.parse(data))
-	.handler(async ({ data }) =>
-		getStorefrontBranchScheduleSlots(data.params.branchId, data.query),
+	.handler(async ({ data, context }) =>
+		getStorefrontBranchScheduleSlots(
+			context.storefrontRequest,
+			data.params.branchId,
+			data.query,
+		),
 	);

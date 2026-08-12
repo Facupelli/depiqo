@@ -2,6 +2,7 @@ import type { TrustedTenantContext } from "@repo/api-contracts";
 import { createServerOnlyFn } from "@tanstack/react-start";
 import { SignJWT } from "jose";
 import { getServerEnvironment } from "@/config/server-env";
+import { getStorefrontReturnHost } from "@/modules/tenant-management/resolve-public-tenant-context/canonical-storefront-host";
 
 const TOKEN_TTL_SECONDS = 60;
 
@@ -18,11 +19,14 @@ export const signStorefrontTenantToken = createServerOnlyFn(
 		);
 		const now = Math.floor(Date.now() / 1000);
 
+		const returnHost = getStorefrontReturnHost(context);
+
 		return new SignJWT({
 			scope: "public-storefront",
 			tenant_id: context.tenantId,
 			host: context.host,
 			canonical_host: context.canonicalHost,
+			...(returnHost ? { return_host: returnHost } : {}),
 		})
 			.setProtectedHeader({ alg: "HS256", typ: "JWT" })
 			.setIssuer(environment.STOREFRONT_TENANT_JWT_ISSUER)

@@ -60,6 +60,7 @@ export const StorefrontTenantTokenPayloadSchema = z.object({
   tenant_id: z.string().min(1),
   host: z.string().min(1),
   canonical_host: z.string().min(1),
+  return_host: z.string().min(1).optional(),
   iat: z.number().int(),
   exp: z.number().int(),
 });

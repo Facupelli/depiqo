@@ -9,6 +9,7 @@ import type { StorefrontRequestContext } from "./request-context.middleware";
 const REQUEST_ID_HEADER = "x-request-id";
 const REQUEST_ID_PATTERN = /^[A-Za-z0-9._:-]{1,128}$/;
 
+// See @/shared/server/storefront-transport/README.md for the request-context boundary.
 export const storefrontFunctionRequestContextMiddleware = createMiddleware({
 	type: "function",
 }).server(async ({ next }) => {

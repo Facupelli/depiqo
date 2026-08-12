@@ -9,12 +9,14 @@ import { PrismaService } from 'src/core/database/prisma.service';
 export interface IssueGoogleAuthStateParams {
   tenantId: string;
   canonicalHost: string;
+  returnHost?: string;
   redirectPath: string;
 }
 
 export interface ConsumedGoogleAuthState {
   tenantId: string;
   canonicalHost: string;
+  returnHost?: string;
   redirectPath: string;
 }
 
@@ -34,6 +36,7 @@ export class GoogleAuthStateService {
         stateHash: GoogleAuthStateService.hashState(state),
         tenantId: params.tenantId,
         canonicalHost: params.canonicalHost,
+        returnHost: params.returnHost,
         redirectPath: params.redirectPath,
         expiresAt,
       },
@@ -71,6 +74,7 @@ export class GoogleAuthStateService {
       return {
         tenantId: transaction.tenantId,
         canonicalHost: transaction.canonicalHost,
+        returnHost: transaction.returnHost ?? undefined,
         redirectPath: transaction.redirectPath,
       };
     });

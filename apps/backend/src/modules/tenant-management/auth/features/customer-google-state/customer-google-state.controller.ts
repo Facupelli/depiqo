@@ -25,6 +25,7 @@ export class CustomerGoogleStateController {
       state: await this.googleAuthStateService.issueState({
         tenantId: storefrontTenant.tenantId,
         canonicalHost: storefrontTenant.canonicalHost,
+        returnHost: storefrontTenant.returnHost,
         redirectPath: dto.redirectPath,
       }),
     };

@@ -5,6 +5,7 @@ import {
 import { z } from "zod";
 import { clientEnv } from "@/config/client-env";
 import { getServerEnvironment } from "@/config/server-env";
+import { isLocalStorefrontHostname } from "../../resolve-public-tenant-context/canonical-storefront-host";
 import { normalizeRequestHostname } from "../../resolve-public-tenant-context/hostname";
 
 const callbackSearchSchema = z.object({
@@ -95,12 +96,29 @@ export async function handleGoogleCallback(
 			status: 502,
 		});
 
-	const finalizeUrl = new URL(
-		"/auth/google/finalize",
-		`https://${handoff.data.canonicalHost}`,
-	);
+	if (
+		handoff.data.returnHost &&
+		!isLocalStorefrontHostname(handoff.data.returnHost)
+	) {
+		return new Response("Google authentication could not be completed.", {
+			status: 502,
+		});
+	}
+
+	const finalizeUrl = handoff.data.returnHost
+		? buildLocalFinalizeUrl(request, handoff.data.returnHost)
+		: new URL("/auth/google/finalize", `https://${handoff.data.canonicalHost}`);
 	finalizeUrl.searchParams.set("ticket", handoff.data.ticket);
 	return Response.redirect(finalizeUrl, 303);
+}
+
+function buildLocalFinalizeUrl(request: Request, returnHost: string): URL {
+	const callbackUrl = new URL(request.url);
+	callbackUrl.pathname = "/auth/google/finalize";
+	callbackUrl.search = "";
+	callbackUrl.hash = "";
+	callbackUrl.hostname = returnHost;
+	return callbackUrl;
 }
 
 function getGoogleCallbackUri(): string {

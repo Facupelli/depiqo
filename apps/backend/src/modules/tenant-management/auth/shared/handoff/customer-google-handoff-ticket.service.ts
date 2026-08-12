@@ -11,6 +11,7 @@ import { AuthCustomer, toAuthCustomer } from '../auth.types';
 export interface IssueCustomerGoogleHandoffTicketParams {
   tenantId: string;
   canonicalHost: string;
+  returnHost?: string;
   redirectPath: string;
   customerId: string;
 }
@@ -38,6 +39,7 @@ export class CustomerGoogleHandoffTicketService {
         tokenHash: CustomerGoogleHandoffTicketService.hashToken(rawTicket),
         tenantId: params.tenantId,
         canonicalHost: params.canonicalHost,
+        returnHost: params.returnHost,
         redirectPath: params.redirectPath,
         actorType: ActorType.CUSTOMER,
         actorId: params.customerId,
@@ -52,6 +54,7 @@ export class CustomerGoogleHandoffTicketService {
     ticket: string;
     tenantId: string;
     canonicalHost: string;
+    returnHost?: string;
   }): Promise<ConsumedCustomerGoogleHandoffTicket> {
     const tokenHash = CustomerGoogleHandoffTicketService.hashToken(input.ticket);
     const now = new Date();
@@ -65,7 +68,8 @@ export class CustomerGoogleHandoffTicketService {
         !ticket ||
         ticket.actorType !== ActorType.CUSTOMER ||
         ticket.tenantId !== input.tenantId ||
-        ticket.canonicalHost !== input.canonicalHost
+        ticket.canonicalHost !== input.canonicalHost ||
+        ticket.returnHost !== (input.returnHost ?? null)
       ) {
         throw new UnauthorizedException('Authentication handoff ticket is invalid.');
       }
