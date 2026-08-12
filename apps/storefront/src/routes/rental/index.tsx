@@ -1,7 +1,7 @@
 import {
 	createFileRoute,
 	notFound,
-	redirect,
+	stripSearchParams,
 	useNavigate,
 } from "@tanstack/react-router";
 import { Suspense } from "react";
@@ -19,6 +19,7 @@ import { useRentalPageSearch } from "@/modules/catalog/hooks/use-catalog-page-se
 import { resolveRentalBranch } from "@/modules/catalog/rental-branch-resolution";
 import {
 	type RentalCatalogSearch,
+	rentalCatalogSearchDefaults,
 	rentalCatalogSearchSchema,
 } from "@/modules/catalog/rental-catalog-search";
 import { storefrontRentalOfferListViewQueries } from "@/modules/catalog/storefront-rental-offer-list-view.queries";
@@ -29,6 +30,9 @@ import { getTenantBranding } from "@/modules/tenant-management/tenant-branding/t
 
 export const Route = createFileRoute("/rental/")({
 	validateSearch: rentalCatalogSearchSchema,
+	search: {
+		middlewares: [stripSearchParams(rentalCatalogSearchDefaults)],
+	},
 	loaderDeps: ({ search }) => search,
 	loader: async ({ context: { queryClient, tenantContext }, deps }) => {
 		if (!tenantContext || tenantContext.face !== "storefront") {
@@ -40,14 +44,6 @@ export const Route = createFileRoute("/rental/")({
 		);
 		const resolution = resolveRentalBranch(deps.branchId, branches);
 		const branding = getTenantBranding(tenantContext.tenant);
-
-		if (resolution.kind === "redirect") {
-			throw redirect({
-				to: "/rental",
-				search: { ...deps, branchId: resolution.branchId },
-				replace: true,
-			});
-		}
 
 		if (resolution.kind === "catalog") {
 			const search: RentalCatalogSearch = {
