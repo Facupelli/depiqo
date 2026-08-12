@@ -7,7 +7,9 @@ export const getStorefrontRentalOffersPricingFn = createServerFn({
 	method: "GET",
 })
 	.middleware([storefrontFunctionRequestContextMiddleware])
-	.validator((data) => GetStorefrontRentalOffersPricingQuerySchema.parse(data))
+	.inputValidator((data) =>
+		GetStorefrontRentalOffersPricingQuerySchema.parse(data),
+	)
 	.handler(async ({ data, context }) =>
 		getStorefrontRentalOffersPricing(context.storefrontRequest, data),
 	);

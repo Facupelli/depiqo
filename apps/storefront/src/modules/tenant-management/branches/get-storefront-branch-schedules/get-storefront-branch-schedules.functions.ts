@@ -12,7 +12,7 @@ export const getStorefrontBranchSchedulesFn = createServerFn({
 	method: "GET",
 })
 	.middleware([storefrontFunctionRequestContextMiddleware])
-	.validator((data) => GetStorefrontBranchSchedulesInputSchema.parse(data))
+	.inputValidator((data) => GetStorefrontBranchSchedulesInputSchema.parse(data))
 	.handler(async ({ data, context }) =>
 		getStorefrontBranchSchedules(
 			context.storefrontRequest,

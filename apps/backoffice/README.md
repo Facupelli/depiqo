@@ -20,6 +20,14 @@ pnpm deploy
 
 The development server listens on `http://localhost:3001`.
 
+## TanStack dependency maintenance
+
+TanStack Start/Router packages are intentionally pinned to exact, coordinated versions. Do not upgrade these packages independently. The current versions avoid a known SSR query-stream regression in newer Router core versions that can leave responses hanging when using `react-router-ssr-query` with loader-prefetched TanStack Query data.
+
+Upgrade the TanStack Start/Router set only as a coordinated group and revalidate Storefront SSR routes such as `/rental`.
+
+Upstream references: TanStack Router issue #7529 and PR #7591.
+
 ## Environment
 
 Server configuration is validated in `src/config/server-env.ts`. The application requires backend proxy configuration, equipment-upload credentials, branding-upload credentials, and `INTERNAL_API_TOKEN`.

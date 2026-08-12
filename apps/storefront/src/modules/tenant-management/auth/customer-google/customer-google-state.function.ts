@@ -11,7 +11,7 @@ export const createCustomerGoogleState = createServerFn({
 	method: "POST",
 })
 	.middleware([storefrontFunctionRequestContextMiddleware])
-	.validator((data) => CustomerGoogleStateBodySchema.parse(data))
+	.inputValidator((data) => CustomerGoogleStateBodySchema.parse(data))
 	.handler(async ({ context, data }) => {
 		const response = await storefrontApiFetch(context.storefrontRequest, {
 			path: customerGoogleStateContract.path,
