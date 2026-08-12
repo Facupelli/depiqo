@@ -5,6 +5,7 @@ import type {
 	EventClickArg,
 	EventContentArg,
 	EventHoveringArg,
+	EventMountArg,
 } from "@fullcalendar/core";
 import esLocale from "@fullcalendar/core/locales/es";
 import dayGridPlugin from "@fullcalendar/daygrid";
@@ -40,6 +41,7 @@ import {
 	type OrdersCalendarView,
 	toOrdersCalendarEvent,
 } from "./orders-calendar.utils";
+import { useOrdersCalendarDayGridGeometry } from "./use-orders-calendar-daygrid-geometry";
 
 type OrdersCalendarProps = {
 	currentDate: string;
@@ -56,13 +58,6 @@ type OrdersCalendarProps = {
 type ActivePopover = {
 	eventId: string;
 	anchorEl: HTMLElement;
-};
-
-type EventElementArg = {
-	el: HTMLElement;
-	event: {
-		id: string;
-	};
 };
 
 export function OrdersCalendar({
@@ -89,6 +84,8 @@ export function OrdersCalendar({
 	);
 	const [isPopoverPinned, setIsPopoverPinned] = useState(false);
 	const [title, setTitle] = useState("");
+	const { calendarShellRef, registerEventSegment, unregisterEventSegment } =
+		useOrdersCalendarDayGridGeometry({ timezone });
 
 	const ordersById = new Map(orders.map((order) => [order.id, order]));
 	const activeOrder = activePopover
@@ -206,7 +203,7 @@ export function OrdersCalendar({
 		openPinnedPopover(arg.event.id, arg.el as HTMLElement);
 	}
 
-	function handleEventDidMount(arg: EventElementArg) {
+	function handleEventDidMount(arg: EventMountArg) {
 		arg.el.tabIndex = 0;
 		arg.el.setAttribute("role", "button");
 		arg.el.setAttribute("aria-haspopup", "dialog");
@@ -255,12 +252,14 @@ export function OrdersCalendar({
 			arg.el.removeEventListener("blur", handleBlur);
 			arg.el.removeEventListener("keydown", handleKeyDown);
 		});
+		registerEventSegment(arg);
 	}
 
-	function handleEventWillUnmount(arg: EventElementArg) {
+	function handleEventWillUnmount(arg: EventMountArg) {
 		const cleanup = eventCleanupRef.current.get(arg.el);
 		cleanup?.();
 		eventCleanupRef.current.delete(arg.el);
+		unregisterEventSegment(arg);
 
 		setActivePopover((current) =>
 			current?.anchorEl === arg.el ? null : current,
@@ -299,7 +298,7 @@ export function OrdersCalendar({
 		shouldFocusPopoverRef.current = false;
 	}, [visibleActivePopover, visibleIsPopoverPinned]);
 
-	const events = orders.map(toOrdersCalendarEvent);
+	const events = orders.map((order) => toOrdersCalendarEvent(order, timezone));
 
 	return (
 		<div className="space-y-5">
@@ -365,7 +364,10 @@ export function OrdersCalendar({
 					No pudimos cargar los pedidos de este rango.
 				</div>
 			) : (
-				<div className="orders-calendar-shell relative overflow-hidden rounded-2xl border border-neutral-200 bg-white">
+				<div
+					ref={calendarShellRef}
+					className="orders-calendar-shell relative overflow-hidden rounded-2xl border border-neutral-200 bg-white"
+				>
 					{isFetching || isLoading ? (
 						<div className="pointer-events-none absolute inset-x-0 top-0 z-20 h-1 overflow-hidden bg-transparent">
 							<div className="h-full w-full animate-pulse bg-neutral-900/70" />
