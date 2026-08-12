@@ -11,7 +11,11 @@ export const rentalCatalogSearchSchema = z.object({
 		.trim()
 		.optional()
 		.transform((value) => value || undefined),
-	page: z.coerce.number().int().positive().default(rentalCatalogSearchDefaults.page),
+	page: z.coerce
+		.number()
+		.int()
+		.positive()
+		.default(rentalCatalogSearchDefaults.page),
 	pageSize: z.coerce
 		.number()
 		.int()

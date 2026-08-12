@@ -18,9 +18,9 @@ Use a local date for a birth date, branch schedule override date, and promotion 
 
 Use local time for a rule such as "the branch opens at 09:00". Store it as minutes from midnight. It is not an instant until it is evaluated with a particular local date and IANA timezone.
 
-## API Rules
+## API Rules and Request Boundary
 
-An instant identifies one exact moment. API inputs must include `Z` or a numeric UTC offset:
+An instant identifies one exact moment. HTTP inputs must include `Z` or a numeric UTC offset:
 
 ```text
 Valid:   2026-08-10T13:00:00Z
@@ -28,7 +28,22 @@ Valid:   2026-08-10T10:00:00-03:00
 Invalid: 2026-08-10T10:00:00
 ```
 
-Use `ExplicitOffsetInstantSchema` from `@repo/api-contracts` for instant inputs. It validates the offset and produces a `Date` for application use. Responses serialize instants as ISO-8601 datetimes with an explicit offset, normally canonical `Z` strings.
+The temporal boundary is intentionally split:
+
+```text
+HTTP / browser / BFF -> explicit-offset ISO string
+shared API contract -> ExplicitOffsetInstantWireSchema -> string
+Nest request boundary -> ExplicitOffsetInstantSchema -> Date
+application and domain -> Date
+```
+
+- `LocalDate` represents a business calendar date with no timezone. Its wire value is `YYYY-MM-DD`.
+- `ExplicitOffsetInstantWireSchema` validates an HTTP/API ISO datetime with an explicit offset and preserves the string.
+- `ExplicitOffsetInstantSchema` is for backend/application parsing only. It validates the same representation and converts it to `Date`; it must not appear in shared `*.contract.ts` files.
+- Shared `packages/api-contracts/src/**/*.contract.ts` request schemas must use `ExplicitOffsetInstantWireSchema`, never the transforming application parser.
+- Each Nest endpoint with instant-bearing input must convert the relevant wire strings once in its endpoint-specific application-input schema used by `createZodDto`. Controllers, commands, handlers, domain objects, and services receive `Date` values and must not repeat parsing.
+
+Responses serialize instants as ISO-8601 datetimes with an explicit offset, normally canonical `Z` strings.
 
 A local date has no time or timezone component:
 
@@ -98,7 +113,7 @@ Rental calendar filters are inclusive local dates. Convert them to this half-ope
 [from local midnight, day-after-to local midnight)
 ```
 
-Rental periods and asset reservation ranges are also half-open:
+Rental periods and asset reservation ranges are also half-open exact-instant ranges. `RentalPeriod` uses `Date` instants, never local dates or wire strings:
 
 ```text
 [periodStart, periodEnd)

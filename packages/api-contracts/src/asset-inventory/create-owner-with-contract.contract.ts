@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import type { ApiContract } from "../api-contract";
-import { ExplicitOffsetInstantSchema } from "../explicit-offset-instant.schema";
+import { ExplicitOffsetInstantWireSchema } from "../explicit-offset-instant.schema";
 
 const ShareSchema = z
   .string()
@@ -21,8 +21,8 @@ export const CreateOwnerWithContractBodySchema = z
       basis: z.enum(["GROSS", "NET"]),
       ownerShare: ShareSchema,
       rentalShare: ShareSchema,
-      validFrom: ExplicitOffsetInstantSchema,
-      validTo: ExplicitOffsetInstantSchema.optional().nullable(),
+      validFrom: ExplicitOffsetInstantWireSchema,
+      validTo: ExplicitOffsetInstantWireSchema.optional().nullable(),
     }),
   })
   .refine(
@@ -32,16 +32,6 @@ export const CreateOwnerWithContractBodySchema = z
     {
       message: "ownerShare and rentalShare must sum to exactly 1.",
       path: ["contract", "rentalShare"],
-    },
-  )
-  .refine(
-    ({ contract }) =>
-      contract.validTo === undefined ||
-      contract.validTo === null ||
-      contract.validTo > contract.validFrom,
-    {
-      message: "validTo must be after validFrom.",
-      path: ["contract", "validTo"],
     },
   );
 

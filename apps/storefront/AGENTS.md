@@ -16,6 +16,8 @@ Run the narrowest relevant commands for the change. Do not deploy or mutate Clou
 
 ## Architecture
 
+For date, time, schedule-slot, calendar, pricing, cart, or rental-request changes, read `docs/architecture/temporal-semantics.md`.
+
 - Keep route files in `src/routes/` focused on route composition.
 - Keep business capabilities in `src/modules/` with colocated UI, API, schema, and mapping code.
 - Use the existing Storefront BFF boundaries for backend access. Do not expose server credentials to the client.

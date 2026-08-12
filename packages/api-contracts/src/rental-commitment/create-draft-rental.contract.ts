@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import type { ApiContract } from "../api-contract";
-import { ExplicitOffsetInstantSchema } from "../explicit-offset-instant.schema";
+import { ExplicitOffsetInstantWireSchema } from "../explicit-offset-instant.schema";
 import {
   CreateConfirmedRentalDeliveryDetailsSchema,
   CreateConfirmedRentalFulfillmentMethodSchema,
@@ -19,8 +19,8 @@ export const CreateDraftRentalBodySchema = z
     branchId: z.string().trim().min(1),
     rentalCustomerId: z.string().trim().min(1).optional(),
     period: z.object({
-      start: ExplicitOffsetInstantSchema,
-      end: ExplicitOffsetInstantSchema,
+      start: ExplicitOffsetInstantWireSchema,
+      end: ExplicitOffsetInstantWireSchema,
     }),
     selectedOffers: z
       .array(CreateConfirmedRentalSelectedOfferSchema)
