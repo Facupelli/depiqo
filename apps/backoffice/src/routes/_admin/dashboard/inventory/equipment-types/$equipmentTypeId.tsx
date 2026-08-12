@@ -34,7 +34,9 @@ import { CreateEquipmentTypeAccessoryDefaultsForm } from "@/features/asset-inven
 import { equipmentTypeQueries } from "@/features/asset-inventory/equipment-types/equipment-types.queries";
 import { useOwners } from "@/features/asset-inventory/owners/owners.queries";
 import { useBranches } from "@/features/tenant-management/branch/branch.queries";
+import { formatTimestampInTimezone } from "@/lib/dates/format";
 import { AdminRouteError } from "@/shared/components/admin-route-error";
+import { useTenantTimezone } from "@/shared/timezone/operational-timezone.hooks";
 
 export const Route = createFileRoute(
 	"/_admin/dashboard/inventory/equipment-types/$equipmentTypeId",
@@ -58,6 +60,7 @@ function EquipmentTypeDetailPage() {
 	const { data: equipmentType } = useSuspenseQuery(
 		equipmentTypeQueries.detail(equipmentTypeId),
 	);
+	const timezone = useTenantTimezone();
 
 	return (
 		<div className="space-y-6 p-8">
@@ -73,7 +76,10 @@ function EquipmentTypeDetailPage() {
 				</p>
 			</header>
 
-			<EquipmentTypeInfoCard equipmentType={equipmentType} />
+			<EquipmentTypeInfoCard
+				equipmentType={equipmentType}
+				timezone={timezone}
+			/>
 
 			<Tabs defaultValue="assets" className="flex flex-col gap-y-4">
 				<div className="flex items-center justify-between gap-4 border-b">
@@ -110,8 +116,10 @@ function EquipmentTypeDetailPage() {
 
 function EquipmentTypeInfoCard({
 	equipmentType,
+	timezone,
 }: {
 	equipmentType: GetEquipmentTypeDetailResponseDto;
+	timezone: string;
 }) {
 	return (
 		<section className="overflow-hidden rounded-lg border bg-background shadow-sm">
@@ -130,11 +138,19 @@ function EquipmentTypeInfoCard({
 			<div className="grid divide-y border-t sm:grid-cols-2 sm:divide-x sm:divide-y-0">
 				<InfoItem
 					label="Creado"
-					value={formatDateTime(equipmentType.createdAt)}
+					value={formatTimestampInTimezone(
+						equipmentType.createdAt,
+						timezone,
+						"DD MMM, YYYY · HH:mm",
+					)}
 				/>
 				<InfoItem
 					label="Actualizado"
-					value={formatDateTime(equipmentType.updatedAt)}
+					value={formatTimestampInTimezone(
+						equipmentType.updatedAt,
+						timezone,
+						"DD MMM, YYYY · HH:mm",
+					)}
 				/>
 			</div>
 		</section>

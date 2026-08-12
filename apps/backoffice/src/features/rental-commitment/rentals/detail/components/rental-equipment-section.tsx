@@ -3,6 +3,7 @@ import { Clock, Package, User2Icon } from "lucide-react";
 import { useState } from "react";
 import { buildR2PublicUrl } from "@/lib/r2-public-url";
 import { cn } from "@/lib/utils";
+import { useTenantTimezone } from "@/shared/timezone/operational-timezone.hooks";
 import type {
 	GetRentalDetailViewResponseDto,
 	RentalDetailViewDemandLineDto,
@@ -499,6 +500,7 @@ function getMissingAssetIds(
 
 function ActivityLog() {
 	const { rental } = useRentalDetailContext();
+	const timezone = useTenantTimezone();
 	return (
 		<section>
 			<div className="flex items-center gap-2 mb-5">
@@ -509,18 +511,18 @@ function ActivityLog() {
 			</div>
 			<ActivityEntry
 				label="Pedido creado"
-				timestamp={formatRentalDetailDateTime(rental.createdAt)}
+				timestamp={formatRentalDetailDateTime(rental.createdAt, timezone)}
 			/>
 			{rental.confirmedAt ? (
 				<ActivityEntry
 					label="Pedido confirmado"
-					timestamp={formatRentalDetailDateTime(rental.confirmedAt)}
+					timestamp={formatRentalDetailDateTime(rental.confirmedAt, timezone)}
 				/>
 			) : null}
 			{rental.cancelledAt ? (
 				<ActivityEntry
 					label="Pedido cancelado"
-					timestamp={formatRentalDetailDateTime(rental.cancelledAt)}
+					timestamp={formatRentalDetailDateTime(rental.cancelledAt, timezone)}
 				/>
 			) : null}
 		</section>

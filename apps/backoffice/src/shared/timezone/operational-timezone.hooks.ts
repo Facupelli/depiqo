@@ -2,7 +2,21 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { branchQueries } from "@/features/tenant-management/branch/branch.queries";
 import { tenantQueries } from "@/features/tenant-management/tenant/tenant.queries";
 import { useLocationId } from "@/shared/contexts/location/location.hooks";
-import { resolveOperationalTimezone } from "./operational-timezone";
+import {
+	resolveOperationalTimezone,
+	resolveTenantTimezone,
+} from "./operational-timezone";
+
+/**
+ * Resolves the timezone for tenant-level administrative timestamps.
+ *
+ * Dashboard routes preload the tenant query consumed here.
+ */
+export function useTenantTimezone(): string {
+	const { data: tenant } = useSuspenseQuery(tenantQueries.current());
+
+	return resolveTenantTimezone(tenant.config.timezone);
+}
 
 /**
  * Resolves the timezone for timestamps operationally owned by a branch.

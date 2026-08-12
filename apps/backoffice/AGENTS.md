@@ -27,6 +27,8 @@ Use local config and nearby code as the primary source of truth:
 
 Use `docs/agent-rules/` for app-specific implementation rules and workflows.
 
+For date, time, timezone, calendar, scheduling, or timestamp work, read `docs/agent-rules/dates-and-timezones.md`.
+
 Always start with `docs/agent-rules/architecture.md`, then load any additional relevant documents from `docs/agent-rules/` based on the area you are changing.
 
 Use existing skills for specialized workflows:

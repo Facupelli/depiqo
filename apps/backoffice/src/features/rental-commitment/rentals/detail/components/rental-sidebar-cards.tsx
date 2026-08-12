@@ -14,7 +14,10 @@ import {
 import { type ReactNode, useState } from "react";
 import { useRentalContractSigningSummary } from "@/features/contracts/contracts.queries";
 import { useBranchDetail } from "@/features/tenant-management/branch/branch.queries";
-import { useBranchTimezone } from "@/shared/timezone/operational-timezone.hooks";
+import {
+	useBranchTimezone,
+	useTenantTimezone,
+} from "@/shared/timezone/operational-timezone.hooks";
 import { formatMoney } from "@/shared/utils/formatters";
 import { AssignCustomerToDraftRentalDialog } from "../../assign-customer-to-draft-rental/assign-customer-to-draft-rental-dialog";
 import type { GetRentalDetailViewResponseDto } from "../get-rental-detail-view/get-rental-detail-view.schema";
@@ -123,6 +126,7 @@ function RentalClientCard() {
 
 function RentalContractSigningCard() {
 	const { rental } = useRentalDetailContext();
+	const timezone = useTenantTimezone();
 	const { data: summary, isLoading } = useRentalContractSigningSummary(
 		rental.id,
 	);
@@ -200,7 +204,7 @@ function RentalContractSigningCard() {
 						Actividad
 					</p>
 					<p className="text-sm font-semibold text-neutral-950">
-						{formatRentalContractSigningDate(state.activityAt)}
+						{formatRentalContractSigningDate(state.activityAt, timezone)}
 					</p>
 				</div>
 			) : null}
@@ -214,32 +218,50 @@ function RentalContractSigningCard() {
 							<SigningDetailRow label="Teléfono" value={request.signerPhone} />
 							<SigningDetailRow
 								label="Enviado"
-								value={formatRentalContractSigningDate(request.sentAt)}
+								value={formatRentalContractSigningDate(
+									request.sentAt,
+									timezone,
+								)}
 							/>
 							<SigningDetailRow
 								label="Visto"
-								value={formatRentalContractSigningDate(request.viewedAt)}
+								value={formatRentalContractSigningDate(
+									request.viewedAt,
+									timezone,
+								)}
 							/>
 							<SigningDetailRow
 								label="Firmado"
-								value={formatRentalContractSigningDate(request.signedAt)}
+								value={formatRentalContractSigningDate(
+									request.signedAt,
+									timezone,
+								)}
 							/>
 							{!isSigned ? (
 								<SigningDetailRow
 									label="Vence"
-									value={formatRentalContractSigningDate(request.expiresAt)}
+									value={formatRentalContractSigningDate(
+										request.expiresAt,
+										timezone,
+									)}
 								/>
 							) : null}
 							{request.cancelledAt ? (
 								<SigningDetailRow
 									label="Cancelado"
-									value={formatRentalContractSigningDate(request.cancelledAt)}
+									value={formatRentalContractSigningDate(
+										request.cancelledAt,
+										timezone,
+									)}
 								/>
 							) : null}
 							{request.failedAt ? (
 								<SigningDetailRow
 									label="Fallido"
-									value={formatRentalContractSigningDate(request.failedAt)}
+									value={formatRentalContractSigningDate(
+										request.failedAt,
+										timezone,
+									)}
 								/>
 							) : null}
 						</>

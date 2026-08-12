@@ -1,5 +1,6 @@
 import type { Dayjs } from "dayjs";
 import { countNights } from "./compute";
+import dayjs from "./dayjs";
 
 /**
  * "Mar 15 – Mar 22, 2025" — daily booking range
@@ -33,8 +34,22 @@ export function formatDate(date: Dayjs | null): string {
 }
 
 /**
+ * Formats an absolute timestamp in the supplied IANA timezone.
+ *
+ * Timezone selection belongs to shared/timezone; this utility only converts and
+ * formats the value it receives.
+ */
+export function formatTimestampInTimezone(
+	value: string | Date | Dayjs,
+	timezone: string,
+	format: string,
+): string {
+	return dayjs.utc(value).tz(timezone).format(format);
+}
+
+/**
  * Human-readable rental duration between two daily bounds.
- * Builds on countNights from compute.ts — no raw date math here.
+ * Builds on countNights from compute.ts - no raw date math here.
  *
  * Examples: "3 Days" | "2 Weeks" | "2 Weeks, 1 Day"
  */

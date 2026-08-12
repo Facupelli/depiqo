@@ -34,8 +34,10 @@ import {
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useRentalCustomers } from "@/features/tenant-management/customer/rental-customer.queries";
+import { formatTimestampInTimezone } from "@/lib/dates/format";
 import { AdminRouteError } from "@/shared/components/admin-route-error";
 import useDebounce from "@/shared/hooks/use-debounce";
+import { useTenantTimezone } from "@/shared/timezone/operational-timezone.hooks";
 
 export const Route = createFileRoute("/_admin/dashboard/customers/")({
 	errorComponent: ({ error }) => {
@@ -93,61 +95,63 @@ const ONBOARDING_STATUS_VARIANT: Record<
 	REJECTED: "destructive",
 };
 
-const customersColumns: ColumnDef<GetRentalCustomersItemDto>[] = [
-	{
-		id: "name",
-		header: "Nombre",
-		accessorFn: (row) => `${row.firstName} ${row.lastName}`,
-		cell: ({ row }) => {
-			const { firstName, lastName } = row.original;
-			return (
-				<span className="font-medium leading-snug">
-					{firstName} {lastName}
+function createCustomersColumns(
+	timezone: string,
+): ColumnDef<GetRentalCustomersItemDto>[] {
+	return [
+		{
+			id: "name",
+			header: "Nombre",
+			accessorFn: (row) => `${row.firstName} ${row.lastName}`,
+			cell: ({ row }) => {
+				const { firstName, lastName } = row.original;
+				return (
+					<span className="font-medium leading-snug">
+						{firstName} {lastName}
+					</span>
+				);
+			},
+		},
+		{
+			accessorKey: "email",
+			header: "Email",
+			cell: ({ getValue }) => (
+				<span className="text-sm text-muted-foreground">
+					{getValue<string>()}
 				</span>
-			);
+			),
 		},
-	},
-	{
-		accessorKey: "email",
-		header: "Email",
-		cell: ({ getValue }) => (
-			<span className="text-sm text-muted-foreground">
-				{getValue<string>()}
-			</span>
-		),
-	},
-	{
-		accessorKey: "status",
-		header: "Onboarding",
-		cell: ({ getValue }) => {
-			const status = getValue<RentalCustomerOnboardingStatusDto>();
-			return (
-				<Badge variant={ONBOARDING_STATUS_VARIANT[status]}>
-					{ONBOARDING_STATUS_LABELS[status]}
-				</Badge>
-			);
+		{
+			accessorKey: "status",
+			header: "Onboarding",
+			cell: ({ getValue }) => {
+				const status = getValue<RentalCustomerOnboardingStatusDto>();
+				return (
+					<Badge variant={ONBOARDING_STATUS_VARIANT[status]}>
+						{ONBOARDING_STATUS_LABELS[status]}
+					</Badge>
+				);
+			},
 		},
-	},
-	{
-		accessorKey: "createdAt",
-		header: "Creado",
-		cell: ({ getValue }) => {
-			const date = getValue<string>();
-			return (
+		{
+			accessorKey: "createdAt",
+			header: "Creado",
+			cell: ({ getValue }) => (
 				<span className="text-sm text-muted-foreground tabular-nums">
-					{new Intl.DateTimeFormat("en-GB", {
-						day: "2-digit",
-						month: "short",
-						year: "numeric",
-					}).format(new Date(date))}
+					{formatTimestampInTimezone(
+						getValue<string>(),
+						timezone,
+						"DD MMM, YYYY",
+					)}
 				</span>
-			);
+			),
 		},
-	},
-];
+	];
+}
 
 function CustomersPage() {
 	const navigate = useNavigate();
+	const timezone = useTenantTimezone();
 	const [filters, setFilters] = useState<FiltersState>(DEFAULT_FILTERS);
 	const debouncedSearch = useDebounce(filters.search, 300);
 
@@ -189,7 +193,7 @@ function CustomersPage() {
 
 	const table = useReactTable({
 		data: customers,
-		columns: customersColumns,
+		columns: createCustomersColumns(timezone),
 		getCoreRowModel: getCoreRowModel(),
 		manualPagination: true,
 		pageCount: totalPages,

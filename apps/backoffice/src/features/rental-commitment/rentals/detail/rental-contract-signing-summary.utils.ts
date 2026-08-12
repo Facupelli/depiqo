@@ -1,5 +1,5 @@
 import type { GetRentalContractSigningSummaryResponseDto } from "@repo/api-contracts";
-import dayjs from "dayjs";
+import { formatTimestampInTimezone } from "@/lib/dates/format";
 
 export type RentalContractSigningStateTone =
 	| "neutral"
@@ -139,6 +139,11 @@ export function getRentalContractSigningToneClasses(
 	}
 }
 
-export function formatRentalContractSigningDate(value: string | null) {
-	return value ? dayjs(value).format("DD MMM, YYYY · HH:mm") : "Sin registro";
+export function formatRentalContractSigningDate(
+	value: string | null,
+	timezone: string,
+) {
+	return value
+		? formatTimestampInTimezone(value, timezone, "DD MMM, YYYY · HH:mm")
+		: "Sin registro";
 }

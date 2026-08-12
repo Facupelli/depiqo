@@ -1,9 +1,17 @@
-export const DEFAULT_OPERATIONAL_TIMEZONE = "UTC";
+export const DEFAULT_TENANT_TIMEZONE = "UTC";
+export const DEFAULT_OPERATIONAL_TIMEZONE = DEFAULT_TENANT_TIMEZONE;
 
 type ResolveOperationalTimezoneInput = {
 	branchTimezone?: string | null;
 	tenantTimezone?: string | null;
 };
+
+/** Resolves the timezone for tenant-level administrative timestamps. */
+export function resolveTenantTimezone(
+	tenantTimezone: string | null | undefined,
+): string {
+	return tenantTimezone ?? DEFAULT_TENANT_TIMEZONE;
+}
 
 /**
  * Resolves the timezone for branch-operational timestamps.
@@ -14,5 +22,5 @@ export function resolveOperationalTimezone({
 	branchTimezone,
 	tenantTimezone,
 }: ResolveOperationalTimezoneInput): string {
-	return branchTimezone ?? tenantTimezone ?? DEFAULT_OPERATIONAL_TIMEZONE;
+	return branchTimezone ?? resolveTenantTimezone(tenantTimezone);
 }

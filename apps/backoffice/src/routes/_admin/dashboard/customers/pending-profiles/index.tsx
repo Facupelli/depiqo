@@ -12,7 +12,9 @@ import {
 } from "@repo/ui/components/table";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useRentalCustomers } from "@/features/tenant-management/customer/rental-customer.queries";
+import { formatTimestampInTimezone } from "@/lib/dates/format";
 import { AdminRouteError } from "@/shared/components/admin-route-error";
+import { useTenantTimezone } from "@/shared/timezone/operational-timezone.hooks";
 
 export const Route = createFileRoute(
 	"/_admin/dashboard/customers/pending-profiles/",
@@ -28,13 +30,9 @@ export const Route = createFileRoute(
 	component: PendingProfilesPage,
 });
 
-const submittedAtFormatter = new Intl.DateTimeFormat("es-AR", {
-	dateStyle: "medium",
-	timeStyle: "short",
-});
-
 function PendingProfilesPage() {
 	const navigate = useNavigate();
+	const timezone = useTenantTimezone();
 
 	const { data: pendingProfiles, isLoading } = useRentalCustomers({
 		page: 1,
@@ -91,6 +89,7 @@ function PendingProfilesPage() {
 									<PendingProfileRow
 										key={profile.id}
 										profile={profile}
+										timezone={timezone}
 										onOpen={() =>
 											navigate({
 												to: "/dashboard/customers/pending-profiles/$customerId",
@@ -110,9 +109,11 @@ function PendingProfilesPage() {
 
 function PendingProfileRow({
 	profile,
+	timezone,
 	onOpen,
 }: {
 	profile: GetRentalCustomersItemDto;
+	timezone: string;
 	onOpen: () => void;
 }) {
 	return (
@@ -121,7 +122,11 @@ function PendingProfileRow({
 				{profile.firstName} {profile.lastName}
 			</TableCell>
 			<TableCell>
-				{submittedAtFormatter.format(new Date(profile.createdAt))}
+				{formatTimestampInTimezone(
+					profile.createdAt,
+					timezone,
+					"DD MMM, YYYY · HH:mm",
+				)}
 			</TableCell>
 			<TableCell>
 				<Badge

@@ -3,6 +3,7 @@ import { useCategories } from "@/features/catalog/categories/categories.queries"
 import { CategoriesTable } from "@/features/catalog/categories/components/categories-table";
 import { CreateCategoryDialog } from "@/features/catalog/categories/create-category/create-category-dialog";
 import { AdminRouteError } from "@/shared/components/admin-route-error";
+import { useTenantTimezone } from "@/shared/timezone/operational-timezone.hooks";
 
 export const Route = createFileRoute("/_admin/dashboard/catalog/categories/")({
 	errorComponent: ({ error }) => {
@@ -19,6 +20,7 @@ export const Route = createFileRoute("/_admin/dashboard/catalog/categories/")({
 
 function CategoriesPage() {
 	const { data: categories = [], isFetching, isError } = useCategories();
+	const timezone = useTenantTimezone();
 
 	return (
 		<div className="space-y-6 p-8">
@@ -38,7 +40,11 @@ function CategoriesPage() {
 					No pudimos cargar las categorías. Inténtalo nuevamente.
 				</p>
 			) : (
-				<CategoriesTable categories={categories} isLoading={isFetching} />
+				<CategoriesTable
+					categories={categories}
+					isLoading={isFetching}
+					timezone={timezone}
+				/>
 			)}
 		</div>
 	);

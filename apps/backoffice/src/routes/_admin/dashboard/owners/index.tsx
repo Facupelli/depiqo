@@ -1,10 +1,11 @@
 import type { GetOwnersItemDto } from "@repo/api-contracts";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { CreateOwnerWithContractDialog } from "@/features/asset-inventory/owners/create-owner-with-contract/components/create-owner-with-contract-dialog";
-import { ownerColumns } from "@/features/asset-inventory/owners/get-owners/components/owners-columns";
+import { createOwnerColumns } from "@/features/asset-inventory/owners/get-owners/components/owners-columns";
 import { OwnersDataTable } from "@/features/asset-inventory/owners/get-owners/components/owners-table";
 import { useOwners } from "@/features/asset-inventory/owners/owners.queries";
 import { AdminRouteError } from "@/shared/components/admin-route-error";
+import { useTenantTimezone } from "@/shared/timezone/operational-timezone.hooks";
 
 export const Route = createFileRoute("/_admin/dashboard/owners/")({
 	errorComponent: ({ error }) => {
@@ -55,6 +56,7 @@ function OwnersTable({
 	handleRowClick: (owner: GetOwnersItemDto) => void;
 }) {
 	const { data: owners = [], isPending, isError } = useOwners();
+	const timezone = useTenantTimezone();
 
 	if (isError) {
 		return (
@@ -70,7 +72,7 @@ function OwnersTable({
 
 	return (
 		<OwnersDataTable
-			columns={ownerColumns}
+			columns={createOwnerColumns(timezone)}
 			data={owners}
 			searchColumn="name"
 			searchPlaceholder="Buscar propietarios..."

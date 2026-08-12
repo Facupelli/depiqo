@@ -34,7 +34,9 @@ import {
 import { getRentalOrderStatusPresentation } from "@/features/rental-commitment/rentals/rental-order-status";
 import type { ParsedRentalListItem } from "@/features/rental-commitment/rentals/rentals.queries";
 import dayjs from "@/lib/dates/dayjs";
+import { formatTimestampInTimezone } from "@/lib/dates/format";
 import { cn } from "@/lib/utils";
+import { useTenantTimezone } from "@/shared/timezone/operational-timezone.hooks";
 import {
 	formatOrderNumber,
 	getRelativeOrderDateContext,
@@ -60,11 +62,13 @@ export function RentalOrdersTable() {
 		getOperationalTimezone,
 	} = useRentalOrdersList();
 	const currentSort = getEffectiveRentalOrdersSort(search);
+	const tenantTimezone = useTenantTimezone();
 	const columns = createRentalOrdersColumns({
 		currentSort,
 		onSortChange: setSort,
 		getBranchName,
 		getOperationalTimezone,
+		tenantTimezone,
 	});
 	const table = useReactTable({
 		data: rentals,
@@ -154,6 +158,7 @@ function createRentalOrdersColumns({
 	onSortChange,
 	getBranchName,
 	getOperationalTimezone,
+	tenantTimezone,
 }: {
 	currentSort: RentalOrdersListSort;
 	onSortChange: (
@@ -162,6 +167,7 @@ function createRentalOrdersColumns({
 	) => void;
 	getBranchName: (branchId: string) => string | undefined;
 	getOperationalTimezone: (branchId: string) => string;
+	tenantTimezone: string;
 }): ColumnDef<ParsedRentalListItem>[] {
 	return [
 		{
@@ -283,7 +289,11 @@ function createRentalOrdersColumns({
 			),
 			cell: ({ row }) => (
 				<p className="text-xs text-muted-foreground tabular-nums">
-					{row.original.createdAt.format("MMM D, YYYY")}
+					{formatTimestampInTimezone(
+						row.original.createdAt,
+						tenantTimezone,
+						"MMM D, YYYY",
+					)}
 				</p>
 			),
 			meta: { align: "right" },

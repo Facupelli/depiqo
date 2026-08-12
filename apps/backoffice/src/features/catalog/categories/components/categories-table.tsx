@@ -8,15 +8,18 @@ import {
 	TableHeader,
 	TableRow,
 } from "@repo/ui/components/table";
+import { formatTimestampInTimezone } from "@/lib/dates/format";
 
 interface CategoriesTableProps {
 	categories: CategoryDto[];
 	isLoading?: boolean;
+	timezone: string;
 }
 
 export function CategoriesTable({
 	categories,
 	isLoading = false,
+	timezone,
 }: CategoriesTableProps) {
 	const skeletonRowKeys = [
 		"category-loading-row-1",
@@ -61,7 +64,13 @@ export function CategoriesTable({
 								<TableCell>
 									<CategoryStatusBadge isActive={category.isActive} />
 								</TableCell>
-								<TableCell>{formatDate(category.createdAt)}</TableCell>
+								<TableCell>
+									{formatTimestampInTimezone(
+										category.createdAt,
+										timezone,
+										"DD MMM, YYYY · HH:mm",
+									)}
+								</TableCell>
 							</TableRow>
 						))
 					) : (
@@ -86,11 +95,4 @@ function CategoryStatusBadge({ isActive }: { isActive: boolean }) {
 	}
 
 	return <Badge variant="secondary">Inactiva</Badge>;
-}
-
-function formatDate(value: string) {
-	return new Intl.DateTimeFormat("es-AR", {
-		dateStyle: "medium",
-		timeStyle: "short",
-	}).format(new Date(value));
 }

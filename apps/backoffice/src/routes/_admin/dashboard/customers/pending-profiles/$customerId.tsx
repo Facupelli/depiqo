@@ -35,9 +35,11 @@ import {
 	rentalCustomerQueries,
 	useCustomerProfileDetail,
 } from "@/features/tenant-management/customer/rental-customer.queries";
+import { formatTimestampInTimezone } from "@/lib/dates/format";
 import { cn } from "@/lib/utils";
 import { AdminRouteError } from "@/shared/components/admin-route-error";
 import { ProblemDetailsError } from "@/shared/errors";
+import { useTenantTimezone } from "@/shared/timezone/operational-timezone.hooks";
 
 export const Route = createFileRoute(
 	"/_admin/dashboard/customers/pending-profiles/$customerId",
@@ -133,6 +135,7 @@ function CustomerProfileReviewView({
 	customer: GetCustomerProfileDetailResponseDto;
 }) {
 	const profile = toCustomerProfileReviewViewModel(customer);
+	const timezone = useTenantTimezone();
 	const encodedObjectPath = encodeURIComponent(profile.identityDocumentPath);
 	const documentUrl = `/api/customer-profiles/${profile.customerId}/identity-document?objectPath=${encodedObjectPath}`;
 	const documentPreviewType = getDocumentPreviewType(
@@ -187,7 +190,7 @@ function CustomerProfileReviewView({
 
 	return (
 		<div className="space-y-6 px-6 pb-6">
-			<CustomerProfileReviewHeader profile={profile} />
+			<CustomerProfileReviewHeader profile={profile} timezone={timezone} />
 
 			<div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
 				<div className="space-y-6">
@@ -343,6 +346,7 @@ function CustomerProfileReviewView({
 
 				<CustomerProfileReviewActionsPanel
 					profile={profile}
+					timezone={timezone}
 					auditorNotes={auditorNotes}
 					errorMessage={reviewError}
 					isSubmitting={isSubmitting}
@@ -357,8 +361,10 @@ function CustomerProfileReviewView({
 
 function CustomerProfileReviewHeader({
 	profile,
+	timezone,
 }: {
 	profile: CustomerProfileReviewViewModel;
+	timezone: string;
 }) {
 	return (
 		<div className="border-b border-border pb-4">
@@ -376,7 +382,8 @@ function CustomerProfileReviewHeader({
 						{profile.fullName}
 					</h1>
 					<p className="text-sm text-muted-foreground">
-						Perfil enviado el {formatReviewDateTime(profile.submittedAt)}
+						Perfil enviado el{" "}
+						{formatReviewDateTime(profile.submittedAt, timezone)}
 					</p>
 				</div>
 
@@ -460,6 +467,7 @@ function ReferenceContactCard({
 
 function CustomerProfileReviewActionsPanel({
 	profile,
+	timezone,
 	auditorNotes,
 	errorMessage,
 	isSubmitting,
@@ -468,6 +476,7 @@ function CustomerProfileReviewActionsPanel({
 	onReject,
 }: {
 	profile: CustomerProfileReviewViewModel;
+	timezone: string;
 	auditorNotes: string;
 	errorMessage: string | null;
 	isSubmitting: boolean;
@@ -535,11 +544,11 @@ function CustomerProfileReviewActionsPanel({
 						/>
 						<ReviewField
 							label="Fecha de envio"
-							value={formatReviewDateTime(profile.submittedAt)}
+							value={formatReviewDateTime(profile.submittedAt, timezone)}
 						/>
 						<ReviewField
 							label="Revisado el"
-							value={formatReviewDateTime(profile.reviewedAt)}
+							value={formatReviewDateTime(profile.reviewedAt, timezone)}
 						/>
 						<ReviewField
 							label="Revisado por"
@@ -556,11 +565,6 @@ function CustomerProfileReviewActionsPanel({
 	);
 }
 
-const dateTimeFormatter = new Intl.DateTimeFormat("es-AR", {
-	dateStyle: "medium",
-	timeStyle: "short",
-});
-
 function formatReviewDate(value: string | null) {
 	if (!value) {
 		return "-";
@@ -570,12 +574,10 @@ function formatReviewDate(value: string | null) {
 	return `${day}/${month}/${year}`;
 }
 
-function formatReviewDateTime(value: string | null) {
-	if (!value) {
-		return "-";
-	}
-
-	return dateTimeFormatter.format(new Date(value));
+function formatReviewDateTime(value: string | null, timezone: string) {
+	return value
+		? formatTimestampInTimezone(value, timezone, "DD MMM, YYYY · HH:mm")
+		: "-";
 }
 
 function getReviewStatusLabel(status: RentalCustomerOnboardingStatusDto) {

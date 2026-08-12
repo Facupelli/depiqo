@@ -1,7 +1,8 @@
 import dayjs from "@/lib/dates/dayjs";
+import { formatTimestampInTimezone } from "@/lib/dates/format";
 
-export function formatRentalDetailDateTime(value: string) {
-	return dayjs(value).format("DD MMM, YYYY · HH:mm A");
+export function formatRentalDetailDateTime(value: string, timezone: string) {
+	return formatTimestampInTimezone(value, timezone, "DD MMM, YYYY · HH:mm");
 }
 
 export function formatRentalDetailDateBlock(value: string, timezone: string) {

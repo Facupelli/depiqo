@@ -1,3 +1,4 @@
+import { useTenantTimezone } from "@/shared/timezone/operational-timezone.hooks";
 import { formatOrderNumber } from "@/shared/utils/formatters";
 import { RENTAL_STATUS_CONFIG } from "../../rental-status.config";
 import { useRentalDetailContext } from "../rental-detail.context";
@@ -6,6 +7,7 @@ import { RentalDetailActionsMenu } from "./rental-detail-actions-menu";
 
 export function RentalDetailHeader() {
 	const { rental } = useRentalDetailContext();
+	const timezone = useTenantTimezone();
 
 	return (
 		<header className="border-b border-neutral-200 pb-8">
@@ -19,7 +21,7 @@ export function RentalDetailHeader() {
 							<RentalStatusBadge />
 						</div>
 						<p className="text-sm text-neutral-400 mt-2">
-							Creado el {formatRentalDetailDateTime(rental.createdAt)}
+							Creado el {formatRentalDetailDateTime(rental.createdAt, timezone)}
 						</p>
 					</div>
 					<div className="flex justify-start xl:justify-end">
