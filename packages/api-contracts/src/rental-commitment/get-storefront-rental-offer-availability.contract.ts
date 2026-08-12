@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import type { ApiContract } from "../api-contract";
-import { ExplicitOffsetInstantSchema } from "../explicit-offset-instant.schema";
+import { LocalDateSchema } from "../local-date.schema";
 
 export const GetStorefrontRentalOfferAvailabilityRequirementSchema = z.object({
   equipmentTypeId: z.string().trim().min(1),
@@ -15,8 +15,8 @@ export const GetStorefrontRentalOfferAvailabilityOfferSchema = z.object({
 
 export const GetStorefrontRentalOfferAvailabilityRequestSchema = z.object({
   branchId: z.string().trim().min(1),
-  periodStart: ExplicitOffsetInstantSchema,
-  periodEnd: ExplicitOffsetInstantSchema,
+  periodStart: LocalDateSchema,
+  periodEnd: LocalDateSchema,
   rentalOffers: z.array(GetStorefrontRentalOfferAvailabilityOfferSchema),
 });
 

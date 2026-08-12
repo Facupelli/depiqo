@@ -10,6 +10,14 @@ export type LocalDateTimeResolution =
   | { kind: 'resolved'; instant: Date }
   | { kind: 'nonexistent' };
 
+export function addDaysToLocalDate(localDate: string, days: number): string {
+  if (!Number.isInteger(days)) {
+    throw new RangeError('days must be an integer.');
+  }
+
+  return Temporal.PlainDate.from(localDate).add({ days }).toString();
+}
+
 /**
  * Resolves a wall-clock time using IANA timezone rules.
  *
