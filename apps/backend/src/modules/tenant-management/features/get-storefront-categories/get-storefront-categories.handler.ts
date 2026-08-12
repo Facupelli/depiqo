@@ -19,7 +19,7 @@ export class GetStorefrontCategoriesHandler implements IQueryHandler<
   constructor(private readonly prisma: PrismaService) {}
 
   async execute(query: GetStorefrontCategoriesQuery): Promise<GetStorefrontCategoriesResult> {
-    return this.prisma.client.v2RentableItemCategory.findMany({
+    return this.prisma.client.v2Category.findMany({
       where: {
         tenantId: query.tenantId,
         isActive: true,

@@ -13,6 +13,7 @@ export const createEquipmentTypeAssetFormSchema = z.object({
 });
 
 export const createEquipmentTypeFormSchema = z.object({
+	categoryId: z.string(),
 	name: z.string().min(1, "El nombre es obligatorio"),
 	description: z.string(),
 	assets: z.array(createEquipmentTypeAssetFormSchema),
@@ -36,6 +37,7 @@ export function createEmptyEquipmentTypeAsset(): CreateEquipmentTypeAssetFormVal
 
 export function createEquipmentTypeFormDefaultValues(): CreateEquipmentTypeFormValues {
 	return {
+		categoryId: "",
 		name: "",
 		description: "",
 		assets: [],
@@ -47,6 +49,7 @@ export function toCreateEquipmentTypeDto(
 ): CreateEquipmentTypeBodyDto {
 	const dto = {
 		name: values.name.trim(),
+		categoryId: emptyToNull(values.categoryId),
 		description: emptyToNull(values.description),
 		assets: values.assets.map((asset) => ({
 			branchId: asset.branchId,

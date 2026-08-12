@@ -26,3 +26,7 @@ export * from "./update-branch.contract";
 export * from "./update-contract-signer.contract";
 export * from "./update-tenant-branding.contract";
 export * from "./update-tenant-config.contract";
+
+export * from "./create-category.contract";
+export * from "./get-categories.contract";
+export * from "./get-storefront-categories.contract";

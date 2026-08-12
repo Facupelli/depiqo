@@ -35,6 +35,8 @@ import {
   TenantManagementPublicApi,
   TenantManagementPublicApiError,
   ValidateCustomerForStaffDraftRentalInput,
+  ValidateCategoryAssignmentError,
+  ValidateCategoryAssignmentInput,
   ValidateCustomerForStaffDraftRentalResult,
   ValidateDraftRentalInput,
   ValidateDraftRentalResult,
@@ -71,6 +73,31 @@ function tenantManagementPublicApiError(
 export class TenantManagementPublicApiService extends TenantManagementPublicApi {
   constructor(private readonly prisma: PrismaService) {
     super();
+  }
+
+  async validateCategoryAssignment(
+    input: ValidateCategoryAssignmentInput,
+  ): Promise<Result<void, ValidateCategoryAssignmentError>> {
+    const category = await this.prisma.client.v2Category.findFirst({
+      where: { id: input.categoryId, tenantId: input.tenantId, deletedAt: null },
+      select: { isActive: true },
+    });
+
+    if (!category) {
+      return err({
+        code: 'CategoryNotFound',
+        message: `Category "${input.categoryId}" was not found.`,
+        context: { categoryId: input.categoryId },
+      });
+    }
+    if (!category.isActive) {
+      return err({
+        code: 'CategoryInactive',
+        message: `Category "${input.categoryId}" is inactive.`,
+        context: { categoryId: input.categoryId },
+      });
+    }
+    return ok(undefined);
   }
 
   async validateWhatsAppStylePendingRental(

@@ -48,6 +48,7 @@ interface CreateEquipmentTypeFormProps {
 	defaultValues?: CreateEquipmentTypeFormValues;
 	branches: SelectOption[];
 	owners?: SelectOption[];
+	categories?: SelectOption[];
 	isPending: boolean;
 	submitLabel?: string;
 	pendingLabel?: string;
@@ -61,6 +62,7 @@ export function CreateEquipmentTypeForm({
 	defaultValues = createEquipmentTypeFormDefaultValues(),
 	branches,
 	owners = [],
+	categories = [],
 	isPending,
 	submitLabel = "Crear equipo",
 	pendingLabel = "Creando...",
@@ -86,6 +88,10 @@ export function CreateEquipmentTypeForm({
 		value: owner.id,
 		label: owner.name,
 	}));
+	const categoryItems: SelectItemOption[] = categories.map((category) => ({
+		value: category.id,
+		label: category.name,
+	}));
 
 	return (
 		<>
@@ -100,6 +106,25 @@ export function CreateEquipmentTypeForm({
 			>
 				<section className="space-y-5">
 					<FieldGroup className="grid gap-5">
+						<form.Field name="categoryId">
+							{(field) => (
+								<Field>
+									<FieldLabel>Categoría <span className="text-muted-foreground text-xs">(opcional)</span></FieldLabel>
+									<Select
+										items={categoryItems}
+										value={field.state.value || NO_CATEGORY_VALUE}
+										onValueChange={(value) => field.handleChange(value === NO_CATEGORY_VALUE || value == null ? "" : value)}
+									>
+										<SelectTrigger><SelectValue placeholder="Sin categoría" /></SelectTrigger>
+										<SelectContent>
+											<SelectItem value={NO_CATEGORY_VALUE}>Sin categoría</SelectItem>
+											{categoryItems.map((item) => <SelectItem key={item.value} value={item.value}>{item.label}</SelectItem>)}
+										</SelectContent>
+									</Select>
+								</Field>
+							)}
+						</form.Field>
+
 						<form.Field name="name">
 							{(field) => {
 								const isInvalid =

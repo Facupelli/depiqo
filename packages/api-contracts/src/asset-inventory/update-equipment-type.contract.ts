@@ -7,8 +7,9 @@ export const UpdateEquipmentTypeBodySchema = z
   .object({
     name: z.string().optional(),
     description: z.string().nullable().optional(),
+    categoryId: z.string().nullable().optional(),
   })
-  .refine((value) => value.name !== undefined || value.description !== undefined, {
+  .refine((value) => value.name !== undefined || value.description !== undefined || value.categoryId !== undefined, {
     message: "At least one metadata field must be provided.",
   });
 export const UpdateEquipmentTypeResponseSchema = z.void();

@@ -7,6 +7,7 @@ import { GetEquipmentTypesQuery } from './get-equipment-types.query';
 export interface GetEquipmentTypesItemReadModel {
   id: string;
   name: string;
+  categoryId: string | null;
 }
 
 export type GetEquipmentTypesResult = GetEquipmentTypesItemReadModel[];
@@ -33,6 +34,7 @@ export class GetEquipmentTypesHandler implements IQueryHandler<GetEquipmentTypes
       select: {
         id: true,
         name: true,
+        categoryId: true,
       },
       orderBy: { name: 'asc' },
       ...(query.limit ? { take: query.limit } : {}),

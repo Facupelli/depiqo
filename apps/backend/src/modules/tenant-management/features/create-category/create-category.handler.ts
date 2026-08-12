@@ -29,7 +29,7 @@ export class CreateCategoryHandler implements ICommandHandler<
     };
 
     if (providedSlug) {
-      const existingCategory = await this.prisma.client.v2RentableItemCategory.findFirst({
+      const existingCategory = await this.prisma.client.v2Category.findFirst({
         where: { tenantId: command.tenantId, slug: providedSlug, deletedAt: null },
         select: { id: true },
       });
@@ -37,7 +37,7 @@ export class CreateCategoryHandler implements ICommandHandler<
       if (existingCategory) {
         return err(
           createCategoryError(
-            'catalog.category_slug_already_in_use',
+            'tenant_management.category_slug_already_in_use',
             'A category with the requested slug already exists.',
             undefined,
             context,
@@ -47,7 +47,7 @@ export class CreateCategoryHandler implements ICommandHandler<
     }
 
     try {
-      const category = await this.prisma.client.v2RentableItemCategory.create({
+      const category = await this.prisma.client.v2Category.create({
         data: {
           tenantId: command.tenantId,
           name,
@@ -63,7 +63,7 @@ export class CreateCategoryHandler implements ICommandHandler<
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
         return err(
           createCategoryError(
-            'catalog.category_slug_already_in_use',
+            'tenant_management.category_slug_already_in_use',
             'A category with the requested slug already exists.',
             error,
             context,
@@ -76,7 +76,7 @@ export class CreateCategoryHandler implements ICommandHandler<
   }
 
   private async createAvailableSlug(tenantId: string, baseSlug: string): Promise<string> {
-    const existingCategories = await this.prisma.client.v2RentableItemCategory.findMany({
+    const existingCategories = await this.prisma.client.v2Category.findMany({
       where: {
         tenantId,
         deletedAt: null,

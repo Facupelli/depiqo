@@ -14,6 +14,7 @@ interface EquipmentTypeProps {
   tenantId: string;
   name: string;
   description: string | null;
+  categoryId: string | null;
   isActive: boolean;
   deletedAt: Date | null;
   createdAt?: Date;
@@ -25,6 +26,7 @@ export interface CreateEquipmentTypeProps {
   tenantId: string;
   name: string;
   description?: string | null;
+  categoryId?: string | null;
 }
 
 export interface ReconstituteEquipmentTypeProps extends EquipmentTypeProps {
@@ -50,6 +52,9 @@ export class EquipmentType extends AggregateRootBase {
   get description(): string | null {
     return this.props.description;
   }
+  get categoryId(): string | null {
+    return this.props.categoryId;
+  }
   get isActive(): boolean {
     return this.props.isActive;
   }
@@ -72,6 +77,7 @@ export class EquipmentType extends AggregateRootBase {
     return ok(
       new EquipmentType(props.id ?? randomUUID(), {
         ...normalized.value,
+        categoryId: props.categoryId?.trim() || null,
         isActive: true,
         deletedAt: null,
       }),
@@ -83,6 +89,7 @@ export class EquipmentType extends AggregateRootBase {
       tenantId: props.tenantId,
       name: props.name,
       description: props.description,
+      categoryId: props.categoryId,
       isActive: props.isActive,
       deletedAt: props.deletedAt,
       createdAt: props.createdAt,
@@ -90,18 +97,20 @@ export class EquipmentType extends AggregateRootBase {
     });
   }
 
-  updateMetadata(input: { name?: string; description?: string | null }): Result<boolean, AssetInventoryError> {
+  updateMetadata(input: { name?: string; description?: string | null; categoryId?: string | null }): Result<boolean, AssetInventoryError> {
     const normalized = EquipmentType.normalizeCreateProps({
       tenantId: this.tenantId,
       name: input.name ?? this.name,
       description: input.description === undefined ? this.description : input.description,
+      categoryId: input.categoryId === undefined ? this.categoryId : input.categoryId,
     });
     if (normalized.isErr()) return err(normalized.error);
 
-    const changed = normalized.value.name !== this.name || normalized.value.description !== this.description;
+    const changed = normalized.value.name !== this.name || normalized.value.description !== this.description || normalized.value.categoryId !== this.categoryId;
     if (changed) {
       this.props.name = normalized.value.name;
       this.props.description = normalized.value.description;
+      this.props.categoryId = normalized.value.categoryId;
     }
     return ok(changed);
   }
@@ -126,7 +135,7 @@ export class EquipmentType extends AggregateRootBase {
 
   private static normalizeCreateProps(
     props: CreateEquipmentTypeProps,
-  ): Result<Pick<EquipmentTypeProps, 'tenantId' | 'name' | 'description'>, AssetInventoryError> {
+  ): Result<Pick<EquipmentTypeProps, 'tenantId' | 'name' | 'description' | 'categoryId'>, AssetInventoryError> {
     const tenantId = props.tenantId.trim();
     if (tenantId.length === 0) {
       return err(new InvalidEquipmentTypeFieldError('tenantId', 'must not be blank'));
@@ -138,11 +147,13 @@ export class EquipmentType extends AggregateRootBase {
     }
 
     const description = props.description?.trim();
+    const categoryId = props.categoryId?.trim() || null;
 
     return ok({
       tenantId,
       name,
       description: description && description.length > 0 ? description : null,
+      categoryId,
     });
   }
 }

@@ -56,10 +56,19 @@ import { TenantManagementPublicApi } from './public-api/tenant-management.public
 import { TenantContextModule } from './tenant-context/tenant-context.module';
 import { CustomHostnameProvider } from './application/ports/custom-hostname-provider.port';
 import { CloudflareCustomHostnameService } from './infrastructure/cloudflare-custom-hostname.service';
+import { CreateCategoryHttpController } from './features/create-category/create-category.controller';
+import { CreateCategoryHandler } from './features/create-category/create-category.handler';
+import { GetCategoriesHttpController } from './features/get-categories/get-categories.controller';
+import { GetCategoriesHandler } from './features/get-categories/get-categories.handler';
+import { GetStorefrontCategoriesHttpController } from './features/get-storefront-categories/get-storefront-categories.controller';
+import { GetStorefrontCategoriesHandler } from './features/get-storefront-categories/get-storefront-categories.handler';
 
 @Module({
   imports: [AuthModule, TenantContextModule],
   controllers: [
+    CreateCategoryHttpController,
+    GetCategoriesHttpController,
+    GetStorefrontCategoriesHttpController,
     ApproveSubmittedCustomerOnboardingHttpController,
     CreateBranchHttpController,
     CreateContractSignerHttpController,
@@ -86,6 +95,9 @@ import { CloudflareCustomHostnameService } from './infrastructure/cloudflare-cus
     UpdateTenantConfigHttpController,
   ],
   providers: [
+    CreateCategoryHandler,
+    GetCategoriesHandler,
+    GetStorefrontCategoriesHandler,
     BranchRepository,
     TenantRepository,
     CloudflareCustomHostnameService,

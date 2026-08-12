@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { err, ok, Result } from 'neverthrow';
 
 import { PrismaService } from 'src/core/database/prisma.service';
+import { TenantManagementPublicApi } from 'src/modules/tenant-management/public-api/tenant-management.public-api';
 
 import { CreateEquipmentTypeSetupCommand } from '../features/create-equipment-type-setup/create-equipment-type-setup.command';
 import { CreateEquipmentTypeSetupService } from '../features/create-equipment-type-setup/create-equipment-type-setup.service';
@@ -34,6 +35,7 @@ export class AssetInventoryPublicApiService extends AssetInventoryPublicApi {
   constructor(
     private readonly createEquipmentTypeSetupService: CreateEquipmentTypeSetupService,
     private readonly prisma: PrismaService,
+    private readonly tenantManagement: TenantManagementPublicApi,
   ) {
     super();
   }
@@ -41,11 +43,26 @@ export class AssetInventoryPublicApiService extends AssetInventoryPublicApi {
   async createEquipmentTypeSetup(
     input: CreateEquipmentTypeSetupInput,
   ): Promise<Result<CreateEquipmentTypeSetupResult, AssetInventoryPublicApiError>> {
+    if (input.equipmentType.categoryId) {
+      const categoryValidation = await this.tenantManagement.validateCategoryAssignment({
+        tenantId: input.tenantId,
+        categoryId: input.equipmentType.categoryId,
+      });
+      if (categoryValidation.isErr()) {
+        return err({
+          code: categoryValidation.error.code === 'CategoryInactive' ? 'CategoryInactive' : 'CategoryNotFound',
+          message: categoryValidation.error.message,
+          cause: categoryValidation.error,
+          context: categoryValidation.error.context,
+        });
+      }
+    }
     const result = await this.createEquipmentTypeSetupService.execute(
       new CreateEquipmentTypeSetupCommand({
         tenantId: input.tenantId,
         name: input.equipmentType.name,
         description: input.equipmentType.description,
+        categoryId: input.equipmentType.categoryId,
         assets: input.assets,
       }),
     );

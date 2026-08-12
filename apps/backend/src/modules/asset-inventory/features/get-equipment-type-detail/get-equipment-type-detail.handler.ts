@@ -28,6 +28,7 @@ export interface GetEquipmentTypeDetailReadModel {
   id: string;
   name: string;
   description: string | null;
+  categoryId: string | null;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -55,6 +56,7 @@ export class GetEquipmentTypeDetailHandler implements IQueryHandler<
         id: true,
         name: true,
         description: true,
+        categoryId: true,
         isActive: true,
         createdAt: true,
         updatedAt: true,
@@ -112,6 +114,7 @@ export class GetEquipmentTypeDetailHandler implements IQueryHandler<
       id: equipmentType.id,
       name: equipmentType.name,
       description: equipmentType.description,
+      categoryId: equipmentType.categoryId,
       isActive: equipmentType.isActive,
       createdAt: equipmentType.createdAt.toISOString(),
       updatedAt: equipmentType.updatedAt.toISOString(),

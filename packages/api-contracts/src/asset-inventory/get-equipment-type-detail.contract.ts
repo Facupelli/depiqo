@@ -28,6 +28,7 @@ export const GetEquipmentTypeDetailResponseSchema = z.object({
   id: z.string(),
   name: z.string(),
   description: z.string().nullable(),
+  categoryId: z.string().nullable(),
   isActive: z.boolean(),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),

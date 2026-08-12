@@ -39,7 +39,11 @@ export class CreateRentableEquipmentHandler implements ICommandHandler<
 
     const equipmentSetup = await this.assetInventory.createEquipmentTypeSetup({
       tenantId: command.tenantId,
-      equipmentType: { name: command.name, description: command.description },
+      equipmentType: {
+        name: command.name,
+        description: command.description,
+        categoryId: command.categoryId,
+      },
       assets: command.assets,
     });
     if (equipmentSetup.isErr()) return err(mapAssetInventoryError(equipmentSetup.error));
@@ -49,6 +53,8 @@ export class CreateRentableEquipmentHandler implements ICommandHandler<
       name: command.name,
       description: command.description,
       imageUrl: command.imageUrl,
+      // This workflow has one category choice. It is stored on the EquipmentType
+      // and reused for its standalone RentableItem rather than selected twice.
       categoryId: command.categoryId,
       kind: command.kind,
       requirements: [
@@ -76,6 +82,8 @@ function mapAssetInventoryError(error: AssetInventoryPublicApiError): CreateRent
     AssetOwnerNotFound: 'offering_setup.asset_owner_not_found',
     ActiveOwnerContractNotFound: 'offering_setup.active_owner_contract_not_found',
     MultipleActiveOwnerContracts: 'offering_setup.multiple_active_owner_contracts',
+    CategoryNotFound: 'offering_setup.invalid_equipment',
+    CategoryInactive: 'offering_setup.invalid_equipment',
   } as const;
   const code = codes[error.code as keyof typeof codes];
   if (!code) throw error;

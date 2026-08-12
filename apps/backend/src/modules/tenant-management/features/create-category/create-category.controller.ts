@@ -12,7 +12,7 @@ import { CreateCategoryRequestDto } from './create-category.request.dto';
 import { CreateCategoryResponseDto } from './create-category.response.dto';
 import { CreateCategoryResult } from './create-category.handler';
 
-@Controller('catalog/categories')
+@Controller('tenant-management/categories')
 export class CreateCategoryHttpController {
   constructor(private readonly commandBus: CommandBus) {}
 
@@ -60,8 +60,8 @@ function toCreateCategoryProblem(error: CreateCategoryError): ProblemException {
 }
 
 const createCategoryProblemMap = {
-  'catalog.category_slug_already_in_use': {
-    type: createProblemType('catalog.category_slug_already_in_use'),
+  'tenant_management.category_slug_already_in_use': {
+    type: createProblemType('tenant_management.category_slug_already_in_use'),
     title: 'Category slug already in use',
     status: HttpStatus.CONFLICT,
     detail: 'A category with the requested slug already exists.',

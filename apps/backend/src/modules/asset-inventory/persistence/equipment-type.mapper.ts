@@ -5,6 +5,7 @@ type EquipmentTypePersistenceRecord = {
   tenantId: string;
   name: string;
   description: string | null;
+  categoryId: string | null;
   isActive: boolean;
   deletedAt: Date | null;
   createdAt: Date;
@@ -18,6 +19,7 @@ export class EquipmentTypeMapper {
       tenantId: record.tenantId,
       name: record.name,
       description: record.description,
+      categoryId: record.categoryId,
       isActive: record.isActive,
       deletedAt: record.deletedAt,
       createdAt: record.createdAt,
@@ -31,6 +33,7 @@ export class EquipmentTypeMapper {
       tenantId: equipmentType.tenantId,
       name: equipmentType.name,
       description: equipmentType.description,
+      categoryId: equipmentType.categoryId,
       isActive: equipmentType.isActive,
       deletedAt: equipmentType.deletedAt,
     };
@@ -40,6 +43,7 @@ export class EquipmentTypeMapper {
     return {
       name: equipmentType.name,
       description: equipmentType.description,
+      categoryId: equipmentType.categoryId,
       isActive: equipmentType.isActive,
       deletedAt: equipmentType.deletedAt,
     };

@@ -2,7 +2,7 @@ import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { err, ok, Result } from 'neverthrow';
 
 import { PrismaUnitOfWork } from 'src/core/database/prisma-unit-of-work';
-import { PrismaService } from 'src/core/database/prisma.service';
+import { TenantManagementPublicApi } from 'src/modules/tenant-management/public-api/tenant-management.public-api';
 import { AssetInventoryPublicApi } from 'src/modules/asset-inventory/public-api/asset-inventory.public-api';
 
 import { CatalogInvalidFieldError, CatalogRentableItemArchivedError } from '../../domain/errors/catalog.errors';
@@ -20,9 +20,9 @@ export class UpdateRentableItemDefinitionHandler implements ICommandHandler<
 > {
   constructor(
     private readonly unitOfWork: PrismaUnitOfWork,
-    private readonly prisma: PrismaService,
     private readonly rentableItemRepository: PrismaRentableItemRepository,
     private readonly assetInventoryPublicApi: AssetInventoryPublicApi,
+    private readonly tenantManagement: TenantManagementPublicApi,
   ) {}
 
   async execute(
@@ -47,14 +47,19 @@ export class UpdateRentableItemDefinitionHandler implements ICommandHandler<
     }
 
     if (command.props.categoryId) {
-      const categoryExists = await this.categoryExists(command.tenantId, command.props.categoryId);
-      if (!categoryExists) {
+      const categoryValidation = await this.tenantManagement.validateCategoryAssignment({
+        tenantId: command.tenantId,
+        categoryId: command.props.categoryId,
+      });
+      if (categoryValidation.isErr()) {
         return err(
           updateRentableItemDefinitionError(
-            'catalog.category_not_found',
-            `Category "${command.props.categoryId}" was not found.`,
-            undefined,
-            { ...context, categoryId: command.props.categoryId },
+            categoryValidation.error.code === 'CategoryInactive'
+              ? 'catalog.category_inactive'
+              : 'catalog.category_not_found',
+            categoryValidation.error.message,
+            categoryValidation.error,
+            { ...context, ...categoryValidation.error.context },
           ),
         );
       }
@@ -118,11 +123,4 @@ export class UpdateRentableItemDefinitionHandler implements ICommandHandler<
     return ok(undefined);
   }
 
-  private async categoryExists(tenantId: string, categoryId: string): Promise<boolean> {
-    const category = await this.prisma.client.v2RentableItemCategory.findFirst({
-      where: { id: categoryId, tenantId, deletedAt: null },
-      select: { id: true },
-    });
-    return Boolean(category);
-  }
 }

@@ -100,7 +100,7 @@ Rental Commitment owns historical owner split snapshots for confirmed rentals. A
 
 Rental Catalog owns rentable catalog identity, offers, catalog presentation, and fulfillment requirements. Those requirements may reference an `equipmentTypeId`.
 
-Tenant Management owns branches, including their active state, schedules, and timezone rules. Asset Inventory may reference a branch and validate that it belongs to the tenant.
+Tenant Management owns branches and the shared tenant category taxonomy. Asset Inventory may reference a branch and may assign only an active tenant category through Tenant Management public capabilities. Inactive categories preserve existing references but cannot be newly assigned; physical category deletion clears references.
 
 Offering Setup may coordinate Asset Inventory with Rental Catalog and Pricing, but does not own inventory data.
 

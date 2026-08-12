@@ -27,6 +27,7 @@ export interface CreateEquipmentTypeSetupInput {
   equipmentType: {
     name: string;
     description?: string | null;
+    categoryId?: string | null;
   };
   assets?: Array<{
     branchId: string;
@@ -42,6 +43,8 @@ export interface CreateEquipmentTypeSetupResult {
 }
 
 export type AssetInventoryPublicApiErrorCode =
+  | 'CategoryNotFound'
+  | 'CategoryInactive'
   | 'InvalidEquipmentTypeField'
   | 'DuplicateEquipmentTypeName'
   | 'InvalidAssetField'

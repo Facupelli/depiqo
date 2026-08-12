@@ -20,7 +20,7 @@ export type GetStorefrontCategoriesResponseDto = z.infer<
 
 export const getStorefrontCategoriesContract = {
   method: "GET",
-  path: "/storefront/catalog/categories",
+  path: "/storefront/categories",
   response: GetStorefrontCategoriesResponseSchema,
 } satisfies ApiContract<
   undefined,

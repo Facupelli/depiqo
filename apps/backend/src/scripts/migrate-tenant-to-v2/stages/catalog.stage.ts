@@ -32,14 +32,14 @@ async function migrateRentableItemCategories(ctx: TenantV2MigrationContext) {
 		orderBy: { createdAt: "asc" },
 	});
 
-	ctx.log(`Migrating rentable item categories: ${categories.length}`);
+	ctx.log(`Migrating shared categories: ${categories.length}`);
 
 	if (ctx.dryRun) return;
 
 	let sortOrder = 0;
 
 	for (const category of categories) {
-		await ctx.prisma.v2RentableItemCategory.upsert({
+		await ctx.prisma.v2Category.upsert({
 			where: { id: category.id },
 			create: {
 				id: category.id,

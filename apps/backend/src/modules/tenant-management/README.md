@@ -148,6 +148,7 @@ tenant configuration
 tenant branding
 tenant domains
 tenant contract signers
+shared tenant categories
 ```
 
 Other modules may store references or historical snapshots of tenant-owned facts without becoming authoritative over their current values.
@@ -165,3 +166,9 @@ Examples include Cloudflare custom-hostname state, branding/signature object sto
 * `tenant-management.public-api.ts`
 * `apps/backend/docs/architecture/overview.md`
 * `apps/backend/docs/architecture/adr/`
+
+## Shared Category Taxonomy
+
+Tenant Management owns `V2Category`, the tenant-scoped taxonomy shared by Rental Catalog and Asset Inventory. A category can be assigned only while active. Inactive categories keep existing `V2RentableItem` and `V2EquipmentType` references but are unavailable for new assignment and selectable lists. Soft-deleted categories follow the same unavailable rule; physical deletion uses `ON DELETE SET NULL` for both references.
+
+Rental Catalog and Asset Inventory consume category validation through `TenantManagementPublicApi`; neither module reads or mutates category persistence directly.

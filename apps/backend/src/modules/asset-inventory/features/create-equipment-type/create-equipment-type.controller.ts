@@ -25,6 +25,7 @@ export class CreateEquipmentTypeHttpController {
         tenantId: user.tenantId,
         name: dto.name,
         description: dto.description,
+        categoryId: dto.categoryId,
         assets: dto.assets,
       }),
     );

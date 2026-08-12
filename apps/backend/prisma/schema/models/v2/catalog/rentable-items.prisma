@@ -15,24 +15,6 @@ enum V2RentableItemStatus {
   ARCHIVED
 }
 
-model V2RentableItemCategory {
-  id        String    @id @default(uuid())
-  tenantId  String    @map("tenant_id")
-  name      String
-  slug      String
-  sortOrder Int       @default(0) @map("sort_order")
-  isActive  Boolean   @default(true) @map("is_active")
-  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(3)
-  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
-
-  rentableItems V2RentableItem[]
-
-  @@unique([tenantId, slug, deletedAt])
-  @@index([tenantId, isActive, deletedAt])
-  @@map("rentable_item_categories")
-}
-
 model V2RentableItem {
   id          String               @id @default(uuid())
   tenantId    String               @map("tenant_id")
@@ -46,7 +28,7 @@ model V2RentableItem {
   createdAt   DateTime             @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt   DateTime             @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  category     V2RentableItemCategory?     @relation(fields: [categoryId], references: [id])
+  category     V2Category?     @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   rentalOffers V2RentalOffer[]
   requirements V2RentableItemRequirement[]
 

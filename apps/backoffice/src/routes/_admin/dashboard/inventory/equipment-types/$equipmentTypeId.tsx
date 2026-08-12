@@ -134,6 +134,7 @@ function EquipmentTypeInfoCard({
 					label="Estado"
 					value={equipmentType.isActive ? "Activo" : "Inactivo"}
 				/>
+				<InfoItem label="Categoría" value={equipmentType.categoryId ?? "Sin categoría"} />
 			</div>
 			<div className="grid divide-y border-t sm:grid-cols-2 sm:divide-x sm:divide-y-0">
 				<InfoItem

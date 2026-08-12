@@ -177,6 +177,20 @@ export interface ValidateProfessionalConfirmedRentalCreationResult {
   pricingConfig: RentalPricingValidationConfig;
 }
 
+export interface ValidateCategoryAssignmentInput {
+  tenantId: string;
+  categoryId: string;
+}
+
+export type ValidateCategoryAssignmentErrorCode = 'CategoryNotFound' | 'CategoryInactive';
+
+export interface ValidateCategoryAssignmentError {
+  code: ValidateCategoryAssignmentErrorCode;
+  message: string;
+  cause?: unknown;
+  context?: Record<string, unknown>;
+}
+
 export type TenantManagementPublicApiErrorCode =
   | 'TenantNotFound'
   | 'TenantConfigInvalid'
@@ -203,6 +217,10 @@ export abstract class TenantManagementPublicApi {
   ): Promise<Result<ValidateProfessionalConfirmedRentalCreationResult, RentalCommitmentError>>;
 
   abstract validateOfferingSetup(input: ValidateOfferingSetupInput): Promise<Result<void, ValidateOfferingSetupError>>;
+
+  abstract validateCategoryAssignment(
+    input: ValidateCategoryAssignmentInput,
+  ): Promise<Result<void, ValidateCategoryAssignmentError>>;
 
   abstract getTenant(input: GetTenantInput): Promise<Result<TenantContext, TenantManagementPublicApiError>>;
 

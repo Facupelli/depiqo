@@ -10,6 +10,7 @@ import {
 import { CreateEquipmentTypeCommand } from './create-equipment-type.command';
 import {
   CreateEquipmentTypeError,
+  createEquipmentTypeError,
   mapAssetInventoryError,
   mapTenantValidationError,
 } from './create-equipment-type.errors';
@@ -29,6 +30,25 @@ export class CreateEquipmentTypeHandler implements ICommandHandler<
   async execute(command: CreateEquipmentTypeCommand): Promise<CreateEquipmentTypeServiceResult> {
     const branchIds = [...new Set(command.assets.map((asset) => asset.branchId))];
 
+    if (command.categoryId) {
+      const categoryValidation = await this.tenantManagement.validateCategoryAssignment({
+        tenantId: command.tenantId,
+        categoryId: command.categoryId,
+      });
+      if (categoryValidation.isErr()) {
+        return err(
+          createEquipmentTypeError(
+            categoryValidation.error.code === 'CategoryInactive'
+              ? 'asset_inventory.category_inactive'
+              : 'asset_inventory.category_not_found',
+            categoryValidation.error.message,
+            categoryValidation.error,
+            categoryValidation.error.context,
+          ),
+        );
+      }
+    }
+
     const tenantValidation = await this.tenantManagement.validateOfferingSetup({
       tenantId: command.tenantId,
       branchIds,
@@ -42,6 +62,7 @@ export class CreateEquipmentTypeHandler implements ICommandHandler<
         tenantId: command.tenantId,
         name: command.name,
         description: command.description,
+        categoryId: command.categoryId,
         assets: command.assets,
       }),
     );

@@ -11,6 +11,8 @@ import {
 } from '../../domain/errors/asset-inventory.errors';
 
 export type CreateEquipmentTypeErrorCode =
+  | 'asset_inventory.category_not_found'
+  | 'asset_inventory.category_inactive'
   | 'asset_inventory.tenant_validation_failed'
   | 'asset_inventory.invalid_equipment_type_field'
   | 'asset_inventory.duplicate_equipment_type_name'

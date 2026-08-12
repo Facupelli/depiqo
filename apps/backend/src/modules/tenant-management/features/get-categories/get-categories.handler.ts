@@ -20,7 +20,7 @@ export class GetCategoriesHandler implements IQueryHandler<GetCategoriesQuery, G
   constructor(private readonly prisma: PrismaService) {}
 
   async execute(query: GetCategoriesQuery): Promise<GetCategoriesResult> {
-    const categories = await this.prisma.client.v2RentableItemCategory.findMany({
+    const categories = await this.prisma.client.v2Category.findMany({
       where: { tenantId: query.tenantId, deletedAt: null },
       select: {
         id: true,

@@ -7,6 +7,8 @@ import {
 
 export type UpdateEquipmentTypeErrorCode =
   | 'asset_inventory.equipment_type_not_found'
+  | 'asset_inventory.category_not_found'
+  | 'asset_inventory.category_inactive'
   | 'asset_inventory.invalid_equipment_type_field'
   | 'asset_inventory.duplicate_equipment_type_name';
 export interface UpdateEquipmentTypeError extends ApplicationError {

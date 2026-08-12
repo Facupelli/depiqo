@@ -73,6 +73,9 @@ const updateRentableItemDefinitionProblemMap = {
     status: HttpStatus.UNPROCESSABLE_ENTITY,
     detail: 'The rentable item definition is invalid.',
   },
+  'catalog.category_inactive': {
+    type: createProblemType('catalog.category_inactive'), title: 'Category inactive', status: HttpStatus.UNPROCESSABLE_ENTITY, detail: 'Inactive categories cannot be assigned.',
+  },
   'catalog.category_not_found': {
     type: createProblemType('catalog.category_not_found'),
     title: 'Category not found',

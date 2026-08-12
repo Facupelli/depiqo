@@ -13,7 +13,7 @@ export type CategoriesQueryOverrides<TData = GetCategoriesResponseDto> = Omit<
 >;
 
 export const categoryKeys = {
-	all: () => ["v2", "catalog", "categories"] as const,
+	all: () => ["v2", "tenant-management", "categories"] as const,
 	lists: () => [...categoryKeys.all(), "list"] as const,
 	list: () => [...categoryKeys.lists()] as const,
 };

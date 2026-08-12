@@ -5,6 +5,7 @@ export type UpdateRentableItemDefinitionErrorCode =
   | 'catalog.rentable_item_archived'
   | 'catalog.rentable_item_invalid_definition'
   | 'catalog.category_not_found'
+  | 'catalog.category_inactive'
   | 'catalog.equipment_type_not_found'
   | 'catalog.equipment_type_not_active';
 

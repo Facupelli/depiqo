@@ -23,7 +23,7 @@ export type CreateCategoryResponseDto = z.infer<typeof CreateCategoryResponseSch
 
 export const createCategoryContract = {
   method: "POST",
-  path: "/catalog/categories",
+  path: "/tenant-management/categories",
   body: CreateCategoryBodySchema,
   response: CreateCategoryResponseSchema,
 } satisfies ApiContract<undefined, undefined, undefined, typeof CreateCategoryBodySchema, typeof CreateCategoryResponseSchema>;

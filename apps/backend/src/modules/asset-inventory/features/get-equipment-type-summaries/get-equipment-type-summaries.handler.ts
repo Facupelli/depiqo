@@ -13,6 +13,7 @@ export interface EquipmentTypeStockPerBranchReadModel {
 export interface EquipmentTypeSummaryReadModel {
   id: string;
   name: string;
+  categoryId: string | null;
   isActive: boolean;
   assetsQuantity: number;
   usedAsAccessory: boolean;
@@ -60,6 +61,7 @@ export class GetEquipmentTypeSummariesHandler implements IQueryHandler<
         select: {
           id: true,
           name: true,
+          categoryId: true,
           isActive: true,
         },
         orderBy: { name: 'asc' },
@@ -163,6 +165,7 @@ export class GetEquipmentTypeSummariesHandler implements IQueryHandler<
       data: equipmentTypes.map((equipmentType) => ({
         id: equipmentType.id,
         name: equipmentType.name,
+        categoryId: equipmentType.categoryId,
         isActive: equipmentType.isActive,
         assetsQuantity: assetsQuantityByEquipmentTypeId.get(equipmentType.id) ?? 0,
         usedAsAccessory: usedAsAccessoryIds.has(equipmentType.id),

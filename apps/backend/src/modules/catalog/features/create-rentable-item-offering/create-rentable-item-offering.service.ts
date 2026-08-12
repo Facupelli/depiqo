@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { err, ok, Result } from 'neverthrow';
 
 import { PrismaService } from 'src/core/database/prisma.service';
+import { TenantManagementPublicApi } from 'src/modules/tenant-management/public-api/tenant-management.public-api';
 import { mapPostgresError } from 'src/core/utils/postgres-error.mapper';
 
 import { CatalogError, CatalogInvalidFieldError } from '../../domain/errors/catalog.errors';
@@ -20,6 +21,7 @@ export interface CreateRentableItemOfferingResult {
 export class CreateRentableItemOfferingService {
   constructor(
     private readonly prisma: PrismaService,
+    private readonly tenantManagement: TenantManagementPublicApi,
     private readonly rentableItemRepository: PrismaRentableItemRepository,
     private readonly rentalOfferRepository: PrismaRentalOfferRepository,
   ) {}
@@ -30,6 +32,23 @@ export class CreateRentableItemOfferingService {
     const branchIdsValidation = this.validateBranchIds(command.props.branchIds);
     if (branchIdsValidation.isErr()) {
       return err(branchIdsValidation.error);
+    }
+
+    if (command.props.categoryId) {
+      const categoryValidation = await this.tenantManagement.validateCategoryAssignment({
+        tenantId: command.tenantId,
+        categoryId: command.props.categoryId,
+      });
+      if (categoryValidation.isErr()) {
+        return err(
+          new CatalogInvalidFieldError(
+            'categoryId',
+            categoryValidation.error.code === 'CategoryInactive'
+              ? 'must reference an active category'
+              : 'must reference a category belonging to the tenant',
+          ),
+        );
+      }
     }
 
     const rentableItemResult = RentableItem.createWithRequirements({

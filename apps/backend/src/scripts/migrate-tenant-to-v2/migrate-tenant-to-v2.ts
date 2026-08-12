@@ -201,7 +201,7 @@ export async function verifyCatalogStage(ctx: TenantV2MigrationContext) {
 		rentalOffers,
 		activeOffers,
 	] = await Promise.all([
-		ctx.prisma.v2RentableItemCategory.count({
+		ctx.prisma.v2Category.count({
 			where: { tenantId: ctx.v2TenantId },
 		}),
 		ctx.prisma.v2RentableItem.count({

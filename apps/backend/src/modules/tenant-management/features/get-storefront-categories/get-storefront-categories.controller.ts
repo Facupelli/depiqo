@@ -12,7 +12,7 @@ import type { GetStorefrontCategoriesResponseDto } from './get-storefront-catego
 
 @Public()
 @SkipCsrf()
-@Controller('storefront/catalog/categories')
+@Controller('storefront/categories')
 @UseGuards(StorefrontTenantContextGuard)
 export class GetStorefrontCategoriesHttpController {
   constructor(private readonly queryBus: QueryBus) {}

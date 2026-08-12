@@ -1,6 +1,6 @@
 # Rental Catalog Module
 
-Rental Catalog owns what a tenant offers for rent: rentable items, branch-specific rental offers, catalog presentation, visibility, rentability, categories, and fulfillment requirements.
+Rental Catalog owns what a tenant offers for rent: rentable items, branch-specific rental offers, catalog presentation, visibility, rentability, and fulfillment requirements. It uses the shared tenant category taxonomy for catalog presentation.
 
 It separates what customers or staff select from the physical assets eventually used to fulfill the rental.
 
@@ -93,9 +93,7 @@ They define equipment demand but do not assign physical assets.
 
 ### Category
 
-A category groups rentable items for catalog browsing and presentation.
-
-Categories belong to Rental Catalog rather than physical inventory.
+A category groups tenant-facing equipment and rentable items. The shared taxonomy is owned by Tenant Management; Rental Catalog references it for browsing and presentation.
 
 ## Business Rules
 
@@ -161,7 +159,6 @@ Rental Catalog owns persistence for:
 
 ```text
 rentable items
-rentable item categories
 rental offers
 fulfillment requirements
 ```

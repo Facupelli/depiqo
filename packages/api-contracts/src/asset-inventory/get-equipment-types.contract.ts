@@ -22,6 +22,7 @@ export const GetEquipmentTypesQuerySchema = z.object({
 export const GetEquipmentTypesItemSchema = z.object({
   id: z.string(),
   name: z.string(),
+  categoryId: z.string().nullable(),
 });
 
 export const GetEquipmentTypesResponseSchema = z.array(GetEquipmentTypesItemSchema);

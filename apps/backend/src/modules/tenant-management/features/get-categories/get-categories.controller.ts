@@ -7,7 +7,7 @@ import { GetCategoriesResult } from './get-categories.handler';
 import { GetCategoriesQuery } from './get-categories.query';
 import type { GetCategoriesResponseDto } from './get-categories.response.dto';
 
-@Controller('catalog/categories')
+@Controller('tenant-management/categories')
 export class GetCategoriesHttpController {
   constructor(private readonly queryBus: QueryBus) {}
 

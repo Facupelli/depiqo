@@ -10,6 +10,7 @@ import {
 import { useNavigate } from "@tanstack/react-router";
 import { Plus } from "lucide-react";
 import { useId, useState } from "react";
+import { useCategories } from "@/features/tenant-management/categories/categories.queries";
 import { useOwners } from "@/features/asset-inventory/owners/owners.queries";
 import { useBranches } from "@/features/tenant-management/branch/branch.queries";
 import { useCreateEquipmentType } from "./create-equipment-type.mutation";
@@ -22,6 +23,7 @@ export function CreateEquipmentTypeDialog() {
 	const navigate = useNavigate();
 	const { data: branches = [] } = useBranches({ isActive: true });
 	const { data: owners = [] } = useOwners();
+	const { data: categories = [] } = useCategories();
 	const { mutateAsync: createEquipmentType, isPending } =
 		useCreateEquipmentType();
 
@@ -49,6 +51,7 @@ export function CreateEquipmentTypeDialog() {
 						formId={formId}
 						branches={branches}
 						owners={owners}
+						categories={categories.filter((category) => category.isActive)}
 						isPending={isPending}
 						onCancel={() => setOpen(false)}
 						onSubmit={async (values) => {
