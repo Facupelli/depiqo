@@ -22,6 +22,20 @@ export interface AssetDisplayFact {
   serialNumber: string | null;
 }
 
+export interface EquipmentTypeDisplayFact {
+  equipmentTypeId: string;
+  name: string;
+  category: {
+    id: string;
+    name: string;
+  } | null;
+}
+
+export interface GetEquipmentTypeDisplayFactsInput {
+  tenantId: string;
+  equipmentTypeIds: string[];
+}
+
 export interface CreateEquipmentTypeSetupInput {
   tenantId: string;
   equipmentType: {
@@ -92,6 +106,8 @@ export abstract class AssetInventoryPublicApi {
   }): Promise<AssetReadModel[]>;
 
   abstract getAssetDisplayFacts(input: { tenantId: string; assetIds: string[] }): Promise<AssetDisplayFact[]>;
+
+  abstract getEquipmentTypeDisplayFacts(input: GetEquipmentTypeDisplayFactsInput): Promise<EquipmentTypeDisplayFact[]>;
 
   abstract validateEquipmentType(
     input: ValidateEquipmentTypeInput,

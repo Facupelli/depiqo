@@ -177,6 +177,16 @@ export interface ValidateProfessionalConfirmedRentalCreationResult {
   pricingConfig: RentalPricingValidationConfig;
 }
 
+export interface CategoryDisplayFact {
+  id: string;
+  name: string;
+}
+
+export interface GetCategoryDisplayFactsInput {
+  tenantId: string;
+  categoryIds: string[];
+}
+
 export interface ValidateCategoryAssignmentInput {
   tenantId: string;
   categoryId: string;
@@ -217,6 +227,8 @@ export abstract class TenantManagementPublicApi {
   ): Promise<Result<ValidateProfessionalConfirmedRentalCreationResult, RentalCommitmentError>>;
 
   abstract validateOfferingSetup(input: ValidateOfferingSetupInput): Promise<Result<void, ValidateOfferingSetupError>>;
+
+  abstract getCategoryDisplayFacts(input: GetCategoryDisplayFactsInput): Promise<CategoryDisplayFact[]>;
 
   abstract validateCategoryAssignment(
     input: ValidateCategoryAssignmentInput,

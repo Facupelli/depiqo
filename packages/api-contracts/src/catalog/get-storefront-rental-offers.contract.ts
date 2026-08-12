@@ -18,6 +18,18 @@ export const GetStorefrontRentalOffersRequirementSchema = z.object({
   quantityPerItem: z.number().int().positive(),
 });
 
+export const GetStorefrontRentalOffersPackageCompositionItemSchema = z.object({
+  equipmentTypeId: z.string(),
+  equipmentTypeName: z.string(),
+  category: z
+    .object({
+      id: z.string(),
+      name: z.string(),
+    })
+    .nullable(),
+  quantityPerItem: z.number().int().positive(),
+});
+
 export const GetStorefrontRentalOffersItemSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -25,6 +37,7 @@ export const GetStorefrontRentalOffersItemSchema = z.object({
   description: z.string().nullable(),
   isRentable: z.boolean(),
   requirements: z.array(GetStorefrontRentalOffersRequirementSchema),
+  packageComposition: z.array(GetStorefrontRentalOffersPackageCompositionItemSchema).optional(),
 });
 
 export const GetStorefrontRentalOffersResponseSchema = z.object({
@@ -37,6 +50,9 @@ export const GetStorefrontRentalOffersResponseSchema = z.object({
 export type GetStorefrontRentalOffersKindDto = z.infer<typeof GetStorefrontRentalOffersKindSchema>;
 export type GetStorefrontRentalOffersQueryDto = z.infer<typeof GetStorefrontRentalOffersQuerySchema>;
 export type GetStorefrontRentalOffersRequirementDto = z.infer<typeof GetStorefrontRentalOffersRequirementSchema>;
+export type GetStorefrontRentalOffersPackageCompositionItemDto = z.infer<
+  typeof GetStorefrontRentalOffersPackageCompositionItemSchema
+>;
 export type GetStorefrontRentalOffersItemDto = z.infer<typeof GetStorefrontRentalOffersItemSchema>;
 export type GetStorefrontRentalOffersResponseDto = z.infer<typeof GetStorefrontRentalOffersResponseSchema>;
 

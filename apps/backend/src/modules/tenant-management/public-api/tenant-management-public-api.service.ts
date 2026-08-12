@@ -18,6 +18,8 @@ import { FulfillmentMethod } from 'src/modules/rental-commitment/domain/rental-s
 
 import {
   BranchContext,
+  CategoryDisplayFact,
+  GetCategoryDisplayFactsInput,
   TenantContext,
   GetBranchContextInput,
   GetBranchContextsInput,
@@ -73,6 +75,20 @@ function tenantManagementPublicApiError(
 export class TenantManagementPublicApiService extends TenantManagementPublicApi {
   constructor(private readonly prisma: PrismaService) {
     super();
+  }
+
+  async getCategoryDisplayFacts(input: GetCategoryDisplayFactsInput): Promise<CategoryDisplayFact[]> {
+    const categoryIds = [...new Set(input.categoryIds)];
+    if (categoryIds.length === 0) return [];
+
+    return this.prisma.client.v2Category.findMany({
+      where: {
+        id: { in: categoryIds },
+        tenantId: input.tenantId,
+        deletedAt: null,
+      },
+      select: { id: true, name: true },
+    });
   }
 
   async validateCategoryAssignment(

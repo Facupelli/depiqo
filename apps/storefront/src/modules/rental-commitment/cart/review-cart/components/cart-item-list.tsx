@@ -1,8 +1,15 @@
+import { Badge } from "@repo/ui/components/badge";
 import { Button } from "@repo/ui/components/button";
 import { Minus, Plus, Trash2 } from "lucide-react";
 import { buildR2PublicUrl } from "@/lib/r2-public-url";
+import { groupCartPackageComposition } from "../../package-composition/cart-package-composition.utils";
+import type { RentalCartItem } from "../../rental-cart.types";
 import { formatCartMoney } from "../cart-money.utils";
 import { useCartContext, useCartPricingContext } from "../cart-page.context";
+
+type CartPriceLine = NonNullable<
+	ReturnType<typeof useCartPricingContext>["pricing"]
+>["lines"][number];
 
 export function CartItemList() {
 	const { items, actions } = useCartContext();
@@ -18,70 +25,181 @@ export function CartItemList() {
 					const line = pricing?.lines.find(
 						(candidate) => candidate.rentalOfferId === item.rentalOfferId,
 					);
-					return (
-						<article
+
+					return item.packageComposition?.length ? (
+						<CartPackageItem
 							key={item.rentalOfferId}
-							className="grid grid-cols-[72px_minmax(0,1fr)] gap-4 p-4 sm:grid-cols-[96px_minmax(0,1fr)_auto] sm:items-center"
-						>
-							<div className="aspect-square overflow-hidden rounded-lg bg-muted">
-								{item.image && (
-									<img
-										className="size-full object-contain"
-										src={buildR2PublicUrl(item.image, "catalog") ?? undefined}
-										alt=""
-									/>
-								)}
-							</div>
-							<div className="min-w-0">
-								<h3 className="truncate font-semibold">{item.name}</h3>
-								<p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
-									{item.description}
-								</p>
-								{line && pricing?.currency && (
-									<p className="mt-2 text-sm font-bold">
-										{formatCartMoney(
-											line.total,
-											pricing.currency,
-											pricing.locale,
-										)}
-									</p>
-								)}
-							</div>
-							<div className="col-start-2 flex items-center gap-1 sm:col-start-auto">
-								<Button
-									variant="ghost"
-									size="icon-sm"
-									aria-label={item.quantity === 1 ? "Quitar" : "Disminuir"}
-									onClick={() =>
-										item.quantity === 1
-											? actions.removeRentalOffer(item.rentalOfferId)
-											: actions.decrementRentalOffer(item.rentalOfferId)
-									}
-								>
-									{item.quantity === 1 ? <Trash2 /> : <Minus />}
-								</Button>
-								<span className="w-8 text-center font-bold">
-									{item.quantity}
-								</span>
-								<Button
-									variant="ghost"
-									size="icon-sm"
-									aria-label="Aumentar"
-									disabled={
-										item.availableCount !== null &&
-										item.quantity >= item.availableCount
-									}
-									onClick={() =>
-										actions.incrementRentalOffer(item.rentalOfferId)
-									}
-								>
-									<Plus />
-								</Button>
-							</div>
-						</article>
+							item={item}
+							line={line}
+							actions={actions}
+						/>
+					) : (
+						<CartSingleItem
+							key={item.rentalOfferId}
+							item={item}
+							line={line}
+							actions={actions}
+						/>
 					);
 				})}
 			</div>
 		</section>
+	);
+}
+
+function CartSingleItem({
+	item,
+	line,
+	actions,
+}: {
+	item: RentalCartItem;
+	line?: CartPriceLine;
+	actions: ReturnType<typeof useCartContext>["actions"];
+}) {
+	const { pricing } = useCartPricingContext();
+
+	return (
+		<article className="grid grid-cols-[72px_minmax(0,1fr)] gap-4 p-4 sm:grid-cols-[96px_minmax(0,1fr)_auto] sm:items-center">
+			<ItemImage image={item.image} />
+			<div className="min-w-0">
+				<h3 className="truncate font-semibold">{item.name}</h3>
+				<p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
+					{item.description}
+				</p>
+				{line && pricing?.currency && (
+					<p className="mt-2 text-sm font-bold">
+						{formatCartMoney(line.total, pricing.currency, pricing.locale)}
+					</p>
+				)}
+			</div>
+			<QuantityControls
+				item={item}
+				actions={actions}
+				className="col-start-2 sm:col-start-auto"
+			/>
+		</article>
+	);
+}
+
+function CartPackageItem({
+	item,
+	line,
+	actions,
+}: {
+	item: RentalCartItem;
+	line?: CartPriceLine;
+	actions: ReturnType<typeof useCartContext>["actions"];
+}) {
+	const { pricing } = useCartPricingContext();
+	const groups = groupCartPackageComposition(item.packageComposition ?? []);
+
+	return (
+		<article>
+			<header className="grid grid-cols-[72px_minmax(0,1fr)] gap-4 border-b p-4 sm:grid-cols-[96px_minmax(0,1fr)_auto] sm:items-center sm:p-5">
+				<ItemImage image={item.image} />
+				<div className="min-w-0">
+					<div className="flex flex-wrap items-center gap-2">
+						<h3 className="text-lg font-bold">{item.name}</h3>
+						<Badge variant="secondary">Combo</Badge>
+					</div>
+					{item.description && (
+						<p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
+							{item.description}
+						</p>
+					)}
+					{line && pricing?.currency && (
+						<p className="mt-2 text-sm font-bold">
+							{formatCartMoney(line.total, pricing.currency, pricing.locale)}
+						</p>
+					)}
+				</div>
+				<QuantityControls
+					item={item}
+					actions={actions}
+					className="col-start-2 sm:col-start-auto"
+				/>
+			</header>
+			<div className="bg-muted/40 p-4 sm:p-5">
+				<div className="space-y-5">
+					{groups.map((group) => (
+						<section key={group.categoryId ?? "uncategorized"}>
+							<h4 className="mb-3 text-xs font-bold uppercase text-muted-foreground">
+								{group.categoryName}
+							</h4>
+							<div className="divide-y border bg-card">
+								{group.requirements.map((requirement) => (
+									<div
+										key={requirement.equipmentTypeId}
+										className="grid grid-cols-[minmax(0,1fr)_56px] gap-x-4 gap-y-1 px-4 py-3 sm:grid-cols-[minmax(0,1fr)_76px] sm:items-center"
+									>
+										<p className="self-center text-sm">
+											{requirement.equipmentTypeName}
+										</p>
+										<div className="col-start-2 text-sm text-muted-foreground sm:col-start-auto sm:text-right">
+											<p className="mt-1 text-xs font-medium">
+												x{requirement.quantityPerItem * item.quantity}
+											</p>
+										</div>
+									</div>
+								))}
+							</div>
+						</section>
+					))}
+				</div>
+			</div>
+		</article>
+	);
+}
+
+function ItemImage({ image }: { image: string | null }) {
+	return (
+		<div className="aspect-square overflow-hidden rounded-lg bg-muted">
+			{image && (
+				<img
+					className="size-full object-contain"
+					src={buildR2PublicUrl(image, "catalog") ?? undefined}
+					alt=""
+				/>
+			)}
+		</div>
+	);
+}
+
+function QuantityControls({
+	item,
+	actions,
+	className,
+}: {
+	item: RentalCartItem;
+	actions: ReturnType<typeof useCartContext>["actions"];
+	className?: string;
+}) {
+	return (
+		<div className={`flex items-center gap-1 ${className ?? ""}`}>
+			<Button
+				variant="ghost"
+				size="icon-sm"
+				aria-label={item.quantity === 1 ? "Quitar" : "Disminuir"}
+				onClick={() =>
+					item.quantity === 1
+						? actions.removeRentalOffer(item.rentalOfferId)
+						: actions.decrementRentalOffer(item.rentalOfferId)
+				}
+			>
+				{item.quantity === 1 ? <Trash2 /> : <Minus />}
+			</Button>
+			<span className="w-8 text-center font-bold">{item.quantity}</span>
+			<Button
+				variant="ghost"
+				size="icon-sm"
+				aria-label="Aumentar"
+				disabled={
+					item.availableCount !== null && item.quantity >= item.availableCount
+				}
+				onClick={() => actions.incrementRentalOffer(item.rentalOfferId)}
+			>
+				<Plus />
+			</Button>
+		</div>
 	);
 }

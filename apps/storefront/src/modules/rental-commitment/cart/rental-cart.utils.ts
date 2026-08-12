@@ -10,6 +10,7 @@ export function toRentalCartItem(
 		quantity: 1,
 		image: offer.image,
 		description: offer.description,
+		packageComposition: offer.packageComposition,
 		pricing: offer.pricing,
 		availableCount: offer.availableCount,
 	};

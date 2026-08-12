@@ -6,6 +6,7 @@ export type RentalCartItem = {
 	quantity: number;
 	image: string | null;
 	description: string | null;
+	packageComposition: StorefrontRentalOfferListViewItemDto["packageComposition"];
 	pricing: StorefrontRentalOfferListViewItemDto["pricing"];
 	availableCount: number | null;
 };

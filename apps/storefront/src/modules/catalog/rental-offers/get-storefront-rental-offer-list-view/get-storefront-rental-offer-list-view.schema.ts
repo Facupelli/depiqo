@@ -1,4 +1,7 @@
-import { GetStorefrontRentalOffersPricingItemSchema } from "@repo/api-contracts";
+import {
+	GetStorefrontRentalOffersPackageCompositionItemSchema,
+	GetStorefrontRentalOffersPricingItemSchema,
+} from "@repo/api-contracts";
 import { z } from "zod";
 
 export const GetStorefrontRentalOfferListViewInputSchema = z.object({
@@ -20,6 +23,9 @@ export const StorefrontRentalOfferListViewItemSchema = z.object({
 	name: z.string(),
 	image: z.string().nullable(),
 	description: z.string().nullable(),
+	packageComposition: z
+		.array(GetStorefrontRentalOffersPackageCompositionItemSchema)
+		.optional(),
 	pricing: GetStorefrontRentalOffersPricingItemSchema.nullable(),
 	availableCount: z.number().int().nonnegative().nullable(),
 });

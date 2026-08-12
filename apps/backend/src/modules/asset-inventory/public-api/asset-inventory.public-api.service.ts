@@ -20,6 +20,8 @@ import {
 } from '../domain/errors/asset-inventory.errors';
 import {
   AssetDisplayFact,
+  EquipmentTypeDisplayFact,
+  GetEquipmentTypeDisplayFactsInput,
   AssetInventoryPublicApi,
   AssetInventoryPublicApiError,
   AssetReadModel,
@@ -68,6 +70,37 @@ export class AssetInventoryPublicApiService extends AssetInventoryPublicApi {
     );
 
     return result.mapErr(mapAssetInventoryPublicApiError);
+  }
+
+  async getEquipmentTypeDisplayFacts(input: GetEquipmentTypeDisplayFactsInput): Promise<EquipmentTypeDisplayFact[]> {
+    const equipmentTypeIds = [...new Set(input.equipmentTypeIds)];
+    if (equipmentTypeIds.length === 0) return [];
+
+    const equipmentTypes = await this.prisma.client.v2EquipmentType.findMany({
+      where: {
+        id: { in: equipmentTypeIds },
+        tenantId: input.tenantId,
+        deletedAt: null,
+      },
+      select: {
+        id: true,
+        name: true,
+        categoryId: true,
+      },
+    });
+    const categories = await this.tenantManagement.getCategoryDisplayFacts({
+      tenantId: input.tenantId,
+      categoryIds: equipmentTypes.flatMap((equipmentType) =>
+        equipmentType.categoryId ? [equipmentType.categoryId] : [],
+      ),
+    });
+    const categoriesById = new Map(categories.map((category) => [category.id, category]));
+
+    return equipmentTypes.map((equipmentType) => ({
+      equipmentTypeId: equipmentType.id,
+      name: equipmentType.name,
+      category: equipmentType.categoryId ? (categoriesById.get(equipmentType.categoryId) ?? null) : null,
+    }));
   }
 
   async validateEquipmentType(

@@ -1,6 +1,7 @@
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 
 import { PrismaService } from 'src/core/database/prisma.service';
+import { AssetInventoryPublicApi } from 'src/modules/asset-inventory/public-api/asset-inventory.public-api';
 
 import { GetStorefrontRentalOffersQuery } from './get-storefront-rental-offers.query';
 import { V2RentalOfferWhereInput } from 'src/generated/prisma/models';
@@ -13,6 +14,12 @@ export interface GetStorefrontRentalOffersItemReadModel {
   isRentable: boolean;
   requirements: Array<{
     equipmentTypeId: string;
+    quantityPerItem: number;
+  }>;
+  packageComposition?: Array<{
+    equipmentTypeId: string;
+    equipmentTypeName: string;
+    category: { id: string; name: string } | null;
     quantityPerItem: number;
   }>;
 }
@@ -29,7 +36,10 @@ export class GetStorefrontRentalOffersHandler implements IQueryHandler<
   GetStorefrontRentalOffersQuery,
   GetStorefrontRentalOffersResult
 > {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly assetInventoryApi: AssetInventoryPublicApi,
+  ) {}
 
   async execute(query: GetStorefrontRentalOffersQuery): Promise<GetStorefrontRentalOffersResult> {
     const where: V2RentalOfferWhereInput = {
@@ -55,6 +65,7 @@ export class GetStorefrontRentalOffersHandler implements IQueryHandler<
           rentableItem: {
             select: {
               name: true,
+              kind: true,
               imageUrl: true,
               description: true,
               requirements: {
@@ -74,21 +85,67 @@ export class GetStorefrontRentalOffersHandler implements IQueryHandler<
       this.prisma.client.v2RentalOffer.count({ where }),
     ]);
 
+    const equipmentTypes = await this.assetInventoryApi.getEquipmentTypeDisplayFacts({
+      tenantId: query.tenantId,
+      equipmentTypeIds: offers.flatMap((offer) =>
+        offer.rentableItem.kind === 'PACKAGE'
+          ? offer.rentableItem.requirements.map((requirement) => requirement.equipmentTypeId)
+          : [],
+      ),
+    });
+    const equipmentTypesById = new Map(
+      equipmentTypes.map((equipmentType) => [equipmentType.equipmentTypeId, equipmentType]),
+    );
+
     return {
-      data: offers.map((offer) => ({
-        id: offer.id,
-        name: offer.rentableItem.name,
-        image: offer.rentableItem.imageUrl,
-        description: offer.rentableItem.description,
-        isRentable: offer.isRentable,
-        requirements: offer.rentableItem.requirements.map((requirement) => ({
+      data: offers.map((offer) => {
+        const requirements = offer.rentableItem.requirements.map((requirement) => ({
           equipmentTypeId: requirement.equipmentTypeId,
           quantityPerItem: requirement.quantityPerItem,
-        })),
-      })),
+        }));
+        const packageComposition =
+          offer.rentableItem.kind === 'PACKAGE'
+            ? requirements.flatMap((requirement) => {
+                const equipmentType = equipmentTypesById.get(requirement.equipmentTypeId);
+                return equipmentType
+                  ? [
+                      {
+                        ...requirement,
+                        equipmentTypeName: equipmentType.name,
+                        category: equipmentType.category,
+                      },
+                    ]
+                  : [];
+              })
+            : undefined;
+
+        return {
+          id: offer.id,
+          name: offer.rentableItem.name,
+          image: offer.rentableItem.imageUrl,
+          description: offer.rentableItem.description,
+          isRentable: offer.isRentable,
+          requirements,
+          ...(packageComposition && packageComposition.length === requirements.length
+            ? { packageComposition: packageComposition.sort(comparePackageComposition) }
+            : {}),
+        };
+      }),
       total,
       page: query.page,
       pageSize: query.pageSize,
     };
   }
+}
+
+function comparePackageComposition(
+  left: NonNullable<GetStorefrontRentalOffersItemReadModel['packageComposition']>[number],
+  right: NonNullable<GetStorefrontRentalOffersItemReadModel['packageComposition']>[number],
+): number {
+  return (
+    (left.category?.name ?? '\uffff').localeCompare(right.category?.name ?? '\uffff') ||
+    (left.category?.id ?? '\uffff').localeCompare(right.category?.id ?? '\uffff') ||
+    left.equipmentTypeName.localeCompare(right.equipmentTypeName) ||
+    left.equipmentTypeId.localeCompare(right.equipmentTypeId)
+  );
 }
