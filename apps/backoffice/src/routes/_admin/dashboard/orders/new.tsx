@@ -20,9 +20,9 @@ import {
 	toCreateDraftRentalDto,
 } from "@/features/rental-commitment/draft-rentals/create-draft-rental-composer/create-draft-rental-composer.schema";
 import { useBranches } from "@/features/tenant-management/branch/branch.queries";
-import { useCurrentTenant } from "@/features/tenant-management/tenant/tenant.queries";
 import { useAppForm } from "@/shared/contexts/form.context";
 import { useLocationId } from "@/shared/contexts/location/location.hooks";
+import { useSelectedBranchTimezone } from "@/shared/timezone/operational-timezone.hooks";
 
 export const Route = createFileRoute("/_admin/dashboard/orders/new")({
 	component: NewDraftOrderPage,
@@ -32,12 +32,10 @@ function NewDraftOrderPage() {
 	const navigate = useNavigate();
 	const locationId = useLocationId();
 
-	const { data: tenant } = useCurrentTenant();
 	const { data: branches } = useBranches();
-
 	const selectedBranch =
 		branches?.find((branch) => branch.id === locationId) ?? null;
-	const timezone = selectedBranch?.timezone ?? tenant?.config.timezone ?? "UTC";
+	const timezone = useSelectedBranchTimezone();
 	const createDraftRental = useCreateDraftRental();
 
 	const form = useAppForm({

@@ -14,6 +14,7 @@ import {
 import { type ReactNode, useState } from "react";
 import { useRentalContractSigningSummary } from "@/features/contracts/contracts.queries";
 import { useBranchDetail } from "@/features/tenant-management/branch/branch.queries";
+import { useBranchTimezone } from "@/shared/timezone/operational-timezone.hooks";
 import { formatMoney } from "@/shared/utils/formatters";
 import { AssignCustomerToDraftRentalDialog } from "../../assign-customer-to-draft-rental/assign-customer-to-draft-rental-dialog";
 import type { GetRentalDetailViewResponseDto } from "../get-rental-detail-view/get-rental-detail-view.schema";
@@ -259,12 +260,12 @@ function RentalContractSigningCard() {
 }
 
 function RentalLogisticsCard() {
-	const { rental, tenantTimezone } = useRentalDetailContext();
+	const { rental } = useRentalDetailContext();
 	const delivery = rental.fulfillment.deliveryDetails;
 	const { data: branch, isLoading: isBranchLoading } = useBranchDetail(
 		rental.branchId,
 	);
-	const timezone = branch?.timezone ?? tenantTimezone ?? "UTC";
+	const timezone = useBranchTimezone(rental.branchId);
 
 	return (
 		<SidebarCard icon={<Truck className="size-4" />} title="Logística">

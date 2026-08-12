@@ -10,6 +10,7 @@ import {
 } from "@repo/ui/components/alert-dialog";
 import { AlertCircle, CalendarDays, Package, ReceiptText } from "lucide-react";
 import type { ReactNode } from "react";
+import { useBranchTimezone } from "@/shared/timezone/operational-timezone.hooks";
 import { formatMoney } from "@/shared/utils/formatters";
 import { buildRentalConfirmationSummary } from "../rental-confirmation-summary";
 import { useRentalDetailContext } from "../rental-detail.context";
@@ -33,7 +34,8 @@ export function RentalConfirmationDialog({
 	onConfirm,
 }: RentalConfirmationDialogProps) {
 	const { rental } = useRentalDetailContext();
-	const summary = buildRentalConfirmationSummary(rental);
+	const timezone = useBranchTimezone(rental.branchId);
+	const summary = buildRentalConfirmationSummary(rental, timezone);
 
 	return (
 		<AlertDialog open={open} onOpenChange={onOpenChange}>

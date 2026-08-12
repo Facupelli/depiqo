@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useRentalsCalendar } from "@/features/rental-commitment/rentals/rentals.queries";
 import { useBranches } from "@/features/tenant-management/branch/branch.queries";
 import { useSelectedLocation } from "@/shared/contexts/location/location.hooks";
+import { useSelectedBranchTimezone } from "@/shared/timezone/operational-timezone.hooks";
 import { OrdersCalendar } from "./orders-calendar";
 import {
 	DEFAULT_ORDERS_CALENDAR_VIEW,
@@ -23,7 +24,7 @@ export function OrdersCalendarPage({
 	const navigate = useNavigate();
 	const { data: branches } = useBranches();
 	const selectedBranch = useSelectedLocation(branches ?? []);
-	const timezone = selectedBranch?.timezone ?? "UTC";
+	const timezone = useSelectedBranchTimezone();
 	const currentView = search.view ?? DEFAULT_ORDERS_CALENDAR_VIEW;
 	const currentDate = search.date ?? getDefaultOrdersCalendarDate(timezone);
 	const [visibleRange, setVisibleRange] = useState<OrdersCalendarRange | null>(

@@ -57,14 +57,14 @@ export function RentalOrdersTable() {
 		setSort,
 		openRentalOrder,
 		getBranchName,
-		getBranchTimezone,
+		getOperationalTimezone,
 	} = useRentalOrdersList();
 	const currentSort = getEffectiveRentalOrdersSort(search);
 	const columns = createRentalOrdersColumns({
 		currentSort,
 		onSortChange: setSort,
 		getBranchName,
-		getBranchTimezone,
+		getOperationalTimezone,
 	});
 	const table = useReactTable({
 		data: rentals,
@@ -130,7 +130,7 @@ export function RentalOrdersTable() {
 							isError={isError}
 							pageLimit={search.limit}
 							onRowClick={openRentalOrder}
-							getBranchTimezone={getBranchTimezone}
+							getOperationalTimezone={getOperationalTimezone}
 						/>
 					</TableBody>
 				</Table>
@@ -153,7 +153,7 @@ function createRentalOrdersColumns({
 	currentSort,
 	onSortChange,
 	getBranchName,
-	getBranchTimezone,
+	getOperationalTimezone,
 }: {
 	currentSort: RentalOrdersListSort;
 	onSortChange: (
@@ -161,7 +161,7 @@ function createRentalOrdersColumns({
 		nextDirection?: GetRentalsSortDirectionDto,
 	) => void;
 	getBranchName: (branchId: string) => string | undefined;
-	getBranchTimezone: (branchId: string) => string | undefined;
+	getOperationalTimezone: (branchId: string) => string;
 }): ColumnDef<ParsedRentalListItem>[] {
 	return [
 		{
@@ -244,7 +244,7 @@ function createRentalOrdersColumns({
 			cell: ({ row }) => (
 				<RentalOrderDateCell
 					value={row.original.pickupAt}
-					timezone={getBranchTimezone(row.original.branchId) ?? "UTC"}
+					timezone={getOperationalTimezone(row.original.branchId)}
 					emphasis="primary"
 				/>
 			),
@@ -264,7 +264,7 @@ function createRentalOrdersColumns({
 			cell: ({ row }) => (
 				<RentalOrderDateCell
 					value={row.original.returnAt}
-					timezone={getBranchTimezone(row.original.branchId) ?? "UTC"}
+					timezone={getOperationalTimezone(row.original.branchId)}
 					emphasis="secondary"
 				/>
 			),
@@ -398,14 +398,14 @@ function TableBodyContent({
 	isError,
 	pageLimit,
 	onRowClick,
-	getBranchTimezone,
+	getOperationalTimezone,
 }: {
 	table: TanStackTable<ParsedRentalListItem>;
 	isLoading: boolean;
 	isError: boolean;
 	pageLimit: number;
 	onRowClick: (rental: ParsedRentalListItem) => void;
-	getBranchTimezone: (branchId: string) => string | undefined;
+	getOperationalTimezone: (branchId: string) => string;
 }) {
 	const colSpan = table.getAllColumns().length;
 	const referenceDate = dayjs();
@@ -446,7 +446,7 @@ function TableBodyContent({
 				hasRentalOrderTodayEvent(
 					row.original,
 					referenceDate,
-					getBranchTimezone(row.original.branchId) ?? "UTC",
+					getOperationalTimezone(row.original.branchId),
 				) && "bg-amber-50/60 hover:bg-amber-100/60",
 			)}
 			onClick={() => onRowClick(row.original)}

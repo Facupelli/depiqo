@@ -29,6 +29,7 @@ export type RentalConfirmationSummary = {
 
 export function buildRentalConfirmationSummary(
 	rental: GetRentalDetailViewResponseDto,
+	timezone: string,
 ): RentalConfirmationSummary | null {
 	if (!rental.pricing || rental.pricing.kind === "LEGACY") {
 		return null;
@@ -38,7 +39,7 @@ export function buildRentalConfirmationSummary(
 		period: {
 			start: rental.period.start,
 			end: rental.period.end,
-			timezone: rental.pricing.durationPolicySnapshot.timezone,
+			timezone,
 		},
 		equipment: rental.selections.map((selection) => ({
 			id: selection.id,

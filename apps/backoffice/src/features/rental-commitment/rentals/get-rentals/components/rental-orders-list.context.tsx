@@ -13,7 +13,9 @@ import {
 	useRentals,
 } from "@/features/rental-commitment/rentals/rentals.queries";
 import { useBranches } from "@/features/tenant-management/branch/branch.queries";
+import { useCurrentTenant } from "@/features/tenant-management/tenant/tenant.queries";
 import { Route } from "@/routes/_admin/dashboard/orders";
+import { resolveOperationalTimezone } from "@/shared/timezone/operational-timezone";
 
 export type RentalOrdersListSearch = GetRentalsQueryDto;
 export type RentalOrdersListSort = {
@@ -31,7 +33,7 @@ type RentalOrdersListContextValue = {
 	isError: boolean;
 	hasActiveFilters: boolean;
 	getBranchName: (branchId: string) => string | undefined;
-	getBranchTimezone: (branchId: string) => string | undefined;
+	getOperationalTimezone: (branchId: string) => string;
 	setDateLens: (dateLens?: GetRentalsDateLensDto) => void;
 	setStatuses: (statuses?: GetRentalsStatusDto[]) => void;
 	setBranch: (branchId?: string) => void;
@@ -79,6 +81,7 @@ function useRentalOrdersListPage(): RentalOrdersListContextValue {
 	const search = Route.useSearch();
 	const { data, isLoading, isError } = useRentals(search);
 	const { data: branches = [], isLoading: isBranchesLoading } = useBranches();
+	const { data: tenant } = useCurrentTenant();
 
 	const rentals = data?.data ?? [];
 	const meta = {
@@ -120,8 +123,12 @@ function useRentalOrdersListPage(): RentalOrdersListContextValue {
 		hasActiveFilters,
 		getBranchName: (branchId: string) =>
 			branches.find((branch) => branch.id === branchId)?.name,
-		getBranchTimezone: (branchId: string) =>
-			branches.find((branch) => branch.id === branchId)?.timezone ?? undefined,
+		getOperationalTimezone: (branchId: string) =>
+			resolveOperationalTimezone({
+				branchTimezone: branches.find((branch) => branch.id === branchId)
+					?.timezone,
+				tenantTimezone: tenant?.config.timezone,
+			}),
 		setDateLens: (dateLens?: GetRentalsDateLensDto) =>
 			updateSearch((prev) => {
 				const next = resetToFirstPage({ ...prev, dateLens });
