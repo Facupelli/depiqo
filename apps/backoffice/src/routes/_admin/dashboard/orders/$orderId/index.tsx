@@ -9,6 +9,7 @@ import { RentalDetailProvider } from "@/features/rental-commitment/rentals/detai
 import { rentalDetailViewQueries } from "@/features/rental-commitment/rentals/detail/rental-detail-view.queries";
 import { ordersListSearchSchema } from "@/features/rental-commitment/rentals/get-rentals/orders-list.search";
 import { rentalCustomerQueries } from "@/features/tenant-management/customer/rental-customer.queries";
+import { useCurrentTenant } from "@/features/tenant-management/tenant/tenant.queries";
 import { AdminRouteError } from "@/shared/components/admin-route-error";
 import { formatOrderNumber } from "@/shared/utils/formatters";
 
@@ -51,6 +52,7 @@ function RouteComponent() {
 		isLoading: isCustomerSummaryLoading,
 		isError: isCustomerSummaryError,
 	} = useQuery(rentalCustomerQueries.summary(rental.customerId ?? undefined));
+	const { data: tenant } = useCurrentTenant();
 
 	return (
 		<div className="min-h-screen bg-neutral-50 text-neutral-950 px-8">
@@ -64,6 +66,7 @@ function RouteComponent() {
 				customerSummary={customerSummary}
 				isCustomerSummaryLoading={isCustomerSummaryLoading}
 				isCustomerSummaryError={isCustomerSummaryError}
+				tenantTimezone={tenant?.config.timezone}
 			>
 				<RentalDetailHeader />
 				<div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] py-10 gap-20">

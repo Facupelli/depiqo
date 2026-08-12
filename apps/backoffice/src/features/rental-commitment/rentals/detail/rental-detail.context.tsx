@@ -7,6 +7,7 @@ type RentalDetailContextValue = {
 	customerSummary: GetCustomerSummaryResponseDto | null;
 	isCustomerSummaryLoading: boolean;
 	isCustomerSummaryError: boolean;
+	tenantTimezone: string | undefined;
 };
 
 const RentalDetailContext = createContext<RentalDetailContextValue | null>(
@@ -18,12 +19,14 @@ export function RentalDetailProvider({
 	customerSummary,
 	isCustomerSummaryLoading = false,
 	isCustomerSummaryError = false,
+	tenantTimezone,
 	children,
 }: {
 	rental: GetRentalDetailViewResponseDto;
 	customerSummary: GetCustomerSummaryResponseDto | null;
 	isCustomerSummaryLoading?: boolean;
 	isCustomerSummaryError?: boolean;
+	tenantTimezone: string | undefined;
 	children: ReactNode;
 }) {
 	return (
@@ -33,6 +36,7 @@ export function RentalDetailProvider({
 				customerSummary,
 				isCustomerSummaryLoading,
 				isCustomerSummaryError,
+				tenantTimezone,
 			}}
 		>
 			{children}

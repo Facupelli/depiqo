@@ -259,12 +259,12 @@ function RentalContractSigningCard() {
 }
 
 function RentalLogisticsCard() {
-	const { rental } = useRentalDetailContext();
+	const { rental, tenantTimezone } = useRentalDetailContext();
 	const delivery = rental.fulfillment.deliveryDetails;
 	const { data: branch, isLoading: isBranchLoading } = useBranchDetail(
 		rental.branchId,
 	);
-	const timezone = branch?.timezone ?? "UTC";
+	const timezone = branch?.timezone ?? tenantTimezone ?? "UTC";
 
 	return (
 		<SidebarCard icon={<Truck className="size-4" />} title="Logística">
