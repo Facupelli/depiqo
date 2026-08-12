@@ -74,6 +74,7 @@ export class RentalRemitoViewModelMapper {
       name: line.name,
       quantity: line.quantity,
       includedItems: accessoriesByDemandLineId.get(line.id) ?? [],
+      serialNumbers: line.serialNumbers,
     }));
   }
 }

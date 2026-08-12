@@ -57,6 +57,7 @@ export interface RentalRemitoSourceEquipmentLine {
   id: string;
   name: string;
   quantity: number;
+  serialNumbers: string[];
 }
 
 export interface RentalRemitoSourceAccessoryLine {

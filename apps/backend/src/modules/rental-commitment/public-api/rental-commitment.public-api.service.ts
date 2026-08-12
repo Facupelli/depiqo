@@ -9,8 +9,10 @@ import {
   GetAcceptedPricingForDocumentsInput,
   GetRentalNotificationContextInput,
   GetRentalBudgetDocumentFactsInput,
+  GetRentalRemitoEquipmentFactsInput,
   RentalAcceptedPricingForDocuments,
   RentalBudgetDocumentFacts,
+  RentalRemitoEquipmentFacts,
   RentalCommitmentPublicApi,
   RentalCommitmentPublicApiError,
   RentalNotificationContext,
@@ -98,6 +100,17 @@ export class RentalCommitmentPublicApiService extends RentalCommitmentPublicApi 
             createdAt: 'asc',
           },
         },
+        demandLines: {
+          select: {
+            id: true,
+            equipmentTypeId: true,
+            equipmentTypeNameSnapshot: true,
+            quantity: true,
+          },
+          orderBy: {
+            createdAt: 'asc',
+          },
+        },
       },
     });
 
@@ -129,6 +142,63 @@ export class RentalCommitmentPublicApiService extends RentalCommitmentPublicApi 
       selections: rental.selections.map((selection) => ({
         name: selection.rentableItemNameSnapshot,
         quantity: selection.quantity,
+      })),
+      demandLines: rental.demandLines.map((line) => ({
+        demandLineId: line.id,
+        equipmentTypeId: line.equipmentTypeId,
+        name: line.equipmentTypeNameSnapshot,
+        quantity: line.quantity,
+      })),
+    });
+  }
+
+  async getRentalRemitoEquipmentFacts(
+    input: GetRentalRemitoEquipmentFactsInput,
+  ): Promise<Result<RentalRemitoEquipmentFacts, RentalCommitmentPublicApiError>> {
+    const rental = await this.prisma.client.v2Rental.findFirst({
+      where: {
+        id: input.rentalId,
+        tenantId: input.tenantId,
+      },
+      select: {
+        demandLines: {
+          select: {
+            id: true,
+            equipmentTypeId: true,
+            equipmentTypeNameSnapshot: true,
+            quantity: true,
+            assignedAssets: {
+              select: {
+                assetId: true,
+              },
+              orderBy: {
+                createdAt: 'asc',
+              },
+            },
+          },
+          orderBy: {
+            createdAt: 'asc',
+          },
+        },
+      },
+    });
+
+    if (!rental) {
+      return err(
+        rentalCommitmentPublicApiError(
+          'RentalNotFound',
+          `Rental "${input.rentalId}" was not found for tenant "${input.tenantId}".`,
+        ),
+      );
+    }
+
+    return ok({
+      demandLines: rental.demandLines.map((line) => ({
+        demandLineId: line.id,
+        equipmentTypeId: line.equipmentTypeId,
+        name: line.equipmentTypeNameSnapshot,
+        quantity: line.quantity,
+        assignedAssetIds: line.assignedAssets.map((assignment) => assignment.assetId),
       })),
     });
   }

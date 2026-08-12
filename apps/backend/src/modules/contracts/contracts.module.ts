@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 
+import { AssetInventoryModule } from '../asset-inventory/asset-inventory.module';
 import { ObjectStorageModule } from '../object-storage/object-storage.module';
 import { RentalCommitmentModule } from '../rental-commitment/rental-commitment.module';
 import { TenantManagementModule } from '../tenant-management/tenant-management.module';
@@ -27,7 +28,7 @@ import { RentalRemitoSignedArtifactService } from './application/rental-remito/r
 import { HandleConfirmedRentalEditedEventHandler } from './application/event-handlers/handle-confirmed-rental-edited.event-handler';
 
 @Module({
-  imports: [ObjectStorageModule, RentalCommitmentModule, TenantManagementModule],
+  imports: [AssetInventoryModule, ObjectStorageModule, RentalCommitmentModule, TenantManagementModule],
   controllers: [
     GenerateRentalBudgetHttpController,
     GenerateRentalRemitoHttpController,

@@ -118,6 +118,11 @@ const s = StyleSheet.create({
     lineHeight: 1.25,
     marginBottom: 2,
   },
+  equipmentSerialNumbers: {
+    fontSize: 8.8,
+    color: '#111111',
+    lineHeight: 1.35,
+  },
   equipmentAccessories: {
     fontSize: 8.8,
     color: '#111111',
@@ -253,6 +258,7 @@ export function RemitoPage({ data, columns, isContinuation = false }: RemitoPage
 }
 
 function EquipmentLineItem({ line }: { line: RentalRemitoEquipmentLine }) {
+  const serialNumbersText = line.serialNumbers.join(' · ');
   const accessoryText = line.includedItems.map(formatAccessoryText).join(', ');
 
   return (
@@ -260,6 +266,7 @@ function EquipmentLineItem({ line }: { line: RentalRemitoEquipmentLine }) {
       <Text style={s.equipmentName}>
         x{line.quantity} {line.name}
       </Text>
+      {serialNumbersText.length > 0 && <Text style={s.equipmentSerialNumbers}>{serialNumbersText}</Text>}
       {accessoryText.length > 0 && <Text style={s.equipmentAccessories}>Con {accessoryText}</Text>}
     </View>
   );

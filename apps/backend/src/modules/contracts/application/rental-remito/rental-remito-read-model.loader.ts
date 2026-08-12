@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { err, ok, Result } from 'neverthrow';
 
 import { PrismaService } from 'src/core/database/prisma.service';
+import { AssetInventoryPublicApi } from 'src/modules/asset-inventory/public-api/asset-inventory.public-api';
 import { RentalCommitmentPublicApi } from 'src/modules/rental-commitment/public-api/rental-commitment.public-api';
 import { TenantManagementPublicApi } from 'src/modules/tenant-management/public-api/tenant-management.public-api';
 
@@ -12,6 +13,7 @@ import { RentalRemitoSourceReadModel } from './rental-remito-source-read-model';
 export class RentalRemitoReadModelLoader {
   constructor(
     private readonly prisma: PrismaService,
+    private readonly assetInventoryApi: AssetInventoryPublicApi,
     private readonly rentalCommitmentApi: RentalCommitmentPublicApi,
     private readonly tenantManagementApi: TenantManagementPublicApi,
   ) {}
@@ -37,17 +39,6 @@ export class RentalRemitoReadModelLoader {
         bookingSnapshot: true,
         insuranceSelected: true,
         confirmedAt: true,
-        demandLines: {
-          select: {
-            id: true,
-            equipmentTypeNameSnapshot: true,
-            quantity: true,
-            createdAt: true,
-          },
-          orderBy: {
-            createdAt: 'asc',
-          },
-        },
         accessorySelections: {
           select: {
             id: true,
@@ -69,12 +60,13 @@ export class RentalRemitoReadModelLoader {
       );
     }
 
-    const [tenant, branch, customer, contractSigner, acceptedPricing] = await Promise.all([
+    const [tenant, branch, customer, contractSigner, acceptedPricing, equipmentFacts] = await Promise.all([
       this.loadTenant(tenantId),
       this.loadBranch(tenantId, rental.branchId),
       rental.customerId ? this.loadCustomer(tenantId, rental.customerId) : Promise.resolve(null),
       this.loadDefaultContractSigner(tenantId),
       this.rentalCommitmentApi.getAcceptedPricingForDocuments({ tenantId, rentalId }),
+      this.rentalCommitmentApi.getRentalRemitoEquipmentFacts({ tenantId, rentalId }),
     ]);
 
     if (!tenant) {
@@ -93,6 +85,20 @@ export class RentalRemitoReadModelLoader {
 
       return err(rentalRemitoApplicationError('PriceSnapshotInvalid', acceptedPricing.error.message, acceptedPricing.error));
     }
+
+    if (equipmentFacts.isErr()) {
+      if (equipmentFacts.error.code === 'RentalNotFound') {
+        return err(rentalRemitoApplicationError('RentalNotFound', equipmentFacts.error.message, equipmentFacts.error));
+      }
+
+      throw new Error(equipmentFacts.error.message, { cause: equipmentFacts.error.cause });
+    }
+
+    const assetDisplayFacts = await this.assetInventoryApi.getAssetDisplayFacts({
+      tenantId,
+      assetIds: equipmentFacts.value.demandLines.flatMap((line) => line.assignedAssetIds),
+    });
+    const serialNumberByAssetId = new Map(assetDisplayFacts.map((asset) => [asset.assetId, asset.serialNumber]));
 
     if (!branch) {
       return err(
@@ -135,10 +141,13 @@ export class RentalRemitoReadModelLoader {
       },
       customer,
       contractSigner,
-      equipmentLines: rental.demandLines.map((line) => ({
-        id: line.id,
-        name: line.equipmentTypeNameSnapshot,
+      equipmentLines: equipmentFacts.value.demandLines.map((line) => ({
+        id: line.demandLineId,
+        name: line.name,
         quantity: line.quantity,
+        serialNumbers: line.assignedAssetIds
+          .map((assetId) => serialNumberByAssetId.get(assetId)?.trim())
+          .filter((serialNumber): serialNumber is string => Boolean(serialNumber)),
       })),
       accessoryLines: rental.accessorySelections.map((selection) => ({
         id: selection.id,

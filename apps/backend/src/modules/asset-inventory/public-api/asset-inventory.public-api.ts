@@ -17,6 +17,11 @@ export interface AssetReadModel {
   status: 'ACTIVE' | 'INACTIVE' | 'RETIRED';
 }
 
+export interface AssetDisplayFact {
+  assetId: string;
+  serialNumber: string | null;
+}
+
 export interface CreateEquipmentTypeSetupInput {
   tenantId: string;
   equipmentType: {
@@ -82,6 +87,8 @@ export abstract class AssetInventoryPublicApi {
     equipmentTypeId: string;
     branchId: string;
   }): Promise<AssetReadModel[]>;
+
+  abstract getAssetDisplayFacts(input: { tenantId: string; assetIds: string[] }): Promise<AssetDisplayFact[]>;
 
   abstract validateEquipmentType(
     input: ValidateEquipmentTypeInput,

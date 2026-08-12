@@ -96,10 +96,11 @@ export class RentalBudgetDocumentService {
           : emptyParty(),
         tenant: customer,
       },
-      equipmentLines: facts.value.selections.map((selection) => ({
-        name: selection.name,
-        quantity: selection.quantity,
+      equipmentLines: facts.value.demandLines.map((line) => ({
+        name: line.name,
+        quantity: line.quantity,
         includedItems: [],
+        serialNumbers: [],
       })),
     };
 

@@ -18,6 +18,7 @@ import {
   MultipleActiveOwnerContractsError,
 } from '../domain/errors/asset-inventory.errors';
 import {
+  AssetDisplayFact,
   AssetInventoryPublicApi,
   AssetInventoryPublicApiError,
   AssetReadModel,
@@ -139,6 +140,26 @@ export class AssetInventoryPublicApiService extends AssetInventoryPublicApi {
     }
 
     return ok(undefined);
+  }
+
+  async getAssetDisplayFacts(input: { tenantId: string; assetIds: string[] }): Promise<AssetDisplayFact[]> {
+    const assetIds = [...new Set(input.assetIds)];
+    if (assetIds.length === 0) {
+      return [];
+    }
+
+    const assets = await this.prisma.client.v2Asset.findMany({
+      where: {
+        id: { in: assetIds },
+        tenantId: input.tenantId,
+      },
+      select: {
+        id: true,
+        serialNumber: true,
+      },
+    });
+
+    return assets.map((asset) => ({ assetId: asset.id, serialNumber: asset.serialNumber }));
   }
 
   async listAssetsByEquipmentTypeAndBranch(input: {

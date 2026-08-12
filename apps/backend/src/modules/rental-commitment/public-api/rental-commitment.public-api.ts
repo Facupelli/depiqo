@@ -17,6 +17,11 @@ export interface GetRentalBudgetDocumentFactsInput {
   rentalId: string;
 }
 
+export interface GetRentalRemitoEquipmentFactsInput {
+  tenantId: string;
+  rentalId: string;
+}
+
 export interface RentalBudgetDocumentFacts {
   rentalId: string;
   branchId: string;
@@ -28,6 +33,22 @@ export interface RentalBudgetDocumentFacts {
   selections: Array<{
     name: string;
     quantity: number;
+  }>;
+  demandLines: Array<{
+    demandLineId: string;
+    equipmentTypeId: string;
+    name: string;
+    quantity: number;
+  }>;
+}
+
+export interface RentalRemitoEquipmentFacts {
+  demandLines: Array<{
+    demandLineId: string;
+    equipmentTypeId: string;
+    name: string;
+    quantity: number;
+    assignedAssetIds: string[];
   }>;
 }
 
@@ -80,4 +101,8 @@ export abstract class RentalCommitmentPublicApi {
   abstract getRentalBudgetDocumentFacts(
     input: GetRentalBudgetDocumentFactsInput,
   ): Promise<Result<RentalBudgetDocumentFacts, RentalCommitmentPublicApiError>>;
+
+  abstract getRentalRemitoEquipmentFacts(
+    input: GetRentalRemitoEquipmentFactsInput,
+  ): Promise<Result<RentalRemitoEquipmentFacts, RentalCommitmentPublicApiError>>;
 }

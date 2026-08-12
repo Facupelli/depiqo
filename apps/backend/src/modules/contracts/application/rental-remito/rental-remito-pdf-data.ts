@@ -31,6 +31,7 @@ export type RentalRemitoEquipmentLine = {
   name: string;
   quantity: number;
   includedItems: RentalRemitoIncludedItem[];
+  serialNumbers: string[];
 };
 
 export type RentalRemitoIncludedItem = {
