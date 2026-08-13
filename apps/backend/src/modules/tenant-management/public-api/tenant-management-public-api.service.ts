@@ -9,8 +9,6 @@ import {
   GetRentalBudgetDocumentContextInput,
   GetRentalCustomerNotificationRecipientInput,
   GetTenantAdminNotificationRecipientsInput,
-  GetTenantConfigInput,
-  GetTenantConfigResult,
   GetTenantInput,
   GetTenantPricingConfigInput,
   GetTenantPricingConfigResult,
@@ -135,28 +133,6 @@ export class TenantManagementPublicApiService extends TenantManagementPublicApi 
     });
   }
 
-  async getTenantConfig(
-    input: GetTenantConfigInput,
-  ): Promise<Result<GetTenantConfigResult, TenantManagementPublicApiError>> {
-    const tenant = await this.prisma.client.v2Tenant.findFirst({
-      where: { id: input.tenantId, status: 'ACTIVE', deletedAt: null },
-      select: { id: true, config: true },
-    });
-
-    if (!tenant) {
-      return err(tenantManagementPublicApiError('TenantNotFound', `Tenant "${input.tenantId}" was not found.`));
-    }
-
-    const tenantConfig = this.reconstituteTenantConfig(tenant.config);
-    if (!tenantConfig) {
-      return err(
-        tenantManagementPublicApiError('TenantConfigInvalid', `Tenant "${input.tenantId}" config is invalid.`),
-      );
-    }
-
-    return ok(tenantConfig.toPlainObject());
-  }
-
   async getRentalCustomerNotificationRecipient(
     input: GetRentalCustomerNotificationRecipientInput,
   ): Promise<Result<RentalCustomerNotificationRecipient, TenantManagementPublicApiError>> {
@@ -259,7 +235,10 @@ export class TenantManagementPublicApiService extends TenantManagementPublicApi 
     });
   }
 
-  private async getBranchContextForBudgetDocument(input: { tenantId: string; branchId: string }): Promise<Result<BudgetDocumentBranchContext, TenantManagementPublicApiError>> {
+  private async getBranchContextForBudgetDocument(input: {
+    tenantId: string;
+    branchId: string;
+  }): Promise<Result<BudgetDocumentBranchContext, TenantManagementPublicApiError>> {
     const contexts = await this.loadBranchContexts(input.tenantId, [input.branchId]);
     if (contexts.isErr()) {
       return err(contexts.error);
@@ -377,7 +356,9 @@ export class TenantManagementPublicApiService extends TenantManagementPublicApi 
 
     const tenantConfig = this.reconstituteTenantConfig(tenant.config);
     if (!tenantConfig) {
-      return err(tenantManagementPublicApiError('TenantConfigInvalid', `Tenant "${input.tenantId}" config is invalid.`));
+      return err(
+        tenantManagementPublicApiError('TenantConfigInvalid', `Tenant "${input.tenantId}" config is invalid.`),
+      );
     }
 
     return ok({
@@ -398,5 +379,4 @@ export class TenantManagementPublicApiService extends TenantManagementPublicApi 
       return null;
     }
   }
-
 }

@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 
 import { TenantManagementPublicApiService } from './public-api/tenant-management-public-api.service';
+import { TenantNotificationPreferencesService } from './public-api/tenant-notification-preferences.service';
 import { BranchFactsService } from './public-api/branch-facts.service';
 import { BranchFacts } from './public-api/branch-facts.public-api';
 import { BranchScheduleEligibilityService } from './public-api/branch-schedule-eligibility.service';
@@ -61,6 +62,7 @@ import { UpdateTenantConfigHandler } from './features/update-tenant-config/updat
 import { BranchRepository } from './infrastructure/persistence/repositories/branch.repository';
 import { TenantRepository } from './infrastructure/persistence/repositories/tenant.repository';
 import { TenantManagementPublicApi } from './public-api/tenant-management.public-api';
+import { TenantNotificationPreferences } from './public-api/tenant-notification-preferences.public-api';
 import { TenantContextModule } from './tenant-context/tenant-context.module';
 import { CustomHostnameProvider } from './application/ports/custom-hostname-provider.port';
 import { CloudflareCustomHostnameService } from './infrastructure/cloudflare-custom-hostname.service';
@@ -135,6 +137,7 @@ import { GetStorefrontCategoriesHandler } from './features/get-storefront-catego
     UpdateTenantBrandingHandler,
     UpdateTenantConfigHandler,
     { provide: TenantManagementPublicApi, useClass: TenantManagementPublicApiService },
+    { provide: TenantNotificationPreferences, useClass: TenantNotificationPreferencesService },
     { provide: TenantOperationalFacts, useClass: TenantOperationalFactsService },
     { provide: BranchFacts, useClass: BranchFactsService },
     { provide: BranchScheduleEligibility, useClass: BranchScheduleEligibilityService },
@@ -142,6 +145,7 @@ import { GetStorefrontCategoriesHandler } from './features/get-storefront-catego
   ],
   exports: [
     TenantManagementPublicApi,
+    TenantNotificationPreferences,
     TenantOperationalFacts,
     BranchFacts,
     BranchScheduleEligibility,

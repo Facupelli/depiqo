@@ -1,7 +1,9 @@
 import { Injectable } from '@nestjs/common';
 
-import { TenantOrderCommunicationMode } from 'src/modules/tenant-management/domain/value-objects/tenant-config.value-object';
-import { TenantManagementPublicApi } from 'src/modules/tenant-management/public-api/tenant-management.public-api';
+import {
+  TenantNotificationPreferences,
+  TenantOrderCommunicationMode,
+} from 'src/modules/tenant-management/public-api/tenant-notification-preferences.public-api';
 
 import { NotificationDispatchSkipReason } from './types/notification-dispatch-skip-reason.enum';
 import { getNotificationTypeCategory } from '../domain/notification-type-category-registry';
@@ -20,26 +22,26 @@ export type NotificationSuppressionDecision =
 
 @Injectable()
 export class TenantNotificationSuppressionPolicy {
-  constructor(private readonly tenantManagementPublicApi: TenantManagementPublicApi) {}
+  constructor(private readonly tenantNotificationPreferences: TenantNotificationPreferences) {}
 
   async evaluate(tenantId: string, notificationType: NotificationType): Promise<NotificationSuppressionDecision> {
     if (getNotificationTypeCategory(notificationType) !== NotificationTypeCategory.TENANT_WORKFLOW) {
       return { suppressed: false };
     }
 
-    let tenantConfigResult: Awaited<ReturnType<TenantManagementPublicApi['getTenantConfig']>>;
+    let tenantPreferencesResult: Awaited<ReturnType<TenantNotificationPreferences['getTenantNotificationPreferences']>>;
 
     try {
-      tenantConfigResult = await this.tenantManagementPublicApi.getTenantConfig({ tenantId });
+      tenantPreferencesResult = await this.tenantNotificationPreferences.getTenantNotificationPreferences({ tenantId });
     } catch {
       return { suppressed: false };
     }
 
-    if (tenantConfigResult.isErr()) {
+    if (tenantPreferencesResult.isErr()) {
       return { suppressed: false };
     }
 
-    if (tenantConfigResult.value.communication.orderCommunicationMode !== TenantOrderCommunicationMode.WHATSAPP) {
+    if (tenantPreferencesResult.value.orderCommunicationMode !== TenantOrderCommunicationMode.WHATSAPP) {
       return { suppressed: false };
     }
 

@@ -1,7 +1,5 @@
 import { Result } from 'neverthrow';
 
-import { TenantConfigProps } from '../domain/value-objects/tenant-config.value-object';
-
 export interface GetTenantInput {
   tenantId: string;
 }
@@ -14,10 +12,6 @@ export interface TenantContext {
   logoUrl: string | null;
   faviconUrl: string | null;
   primaryColor: string | null;
-}
-
-export interface GetTenantConfigInput {
-  tenantId: string;
 }
 
 export interface GetTenantPricingConfigInput {
@@ -75,8 +69,6 @@ export interface TenantAdminNotificationRecipient {
   name?: string;
 }
 
-export type GetTenantConfigResult = TenantConfigProps;
-
 export interface GetTenantPricingConfigResult {
   timezone: string;
   locale: string;
@@ -131,10 +123,6 @@ export abstract class TenantManagementPublicApi {
   ): Promise<Result<void, ValidateCategoryAssignmentError>>;
 
   abstract getTenant(input: GetTenantInput): Promise<Result<TenantContext, TenantManagementPublicApiError>>;
-
-  abstract getTenantConfig(
-    input: GetTenantConfigInput,
-  ): Promise<Result<GetTenantConfigResult, TenantManagementPublicApiError>>;
 
   abstract getTenantPricingConfig(
     input: GetTenantPricingConfigInput,

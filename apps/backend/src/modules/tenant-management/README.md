@@ -14,8 +14,9 @@ Tenant Management publishes focused provider-owned operational capabilities unde
 - `BranchFacts` provides tenant-scoped current branch facts, including lifecycle state, delivery support, and effective timezone resolution.
 - `BranchScheduleEligibility` evaluates a pickup or return instant against a branch schedule.
 - `RentalCustomerOperationalEligibility` provides current rental-customer eligibility.
+- `TenantNotificationPreferences` provides current enabled notification delivery channels and order communication mode.
 
-`tenant-management.public-api.ts` remains temporarily for unrelated tenant, configuration, category, notification, and document-context capabilities that have not yet been extracted.
+`tenant-management.public-api.ts` remains temporarily for legacy tenant context, pricing configuration, category, notification-recipient, and rental-budget document-context capabilities.
 
 ## Domain Concepts
 
