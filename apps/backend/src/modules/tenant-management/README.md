@@ -11,6 +11,10 @@ Tenant users are backoffice/admin actors belonging to a tenant. They are not ren
 Tenant Management publishes focused provider-owned operational capabilities under `public-api/`:
 
 - `TenantOperationalFacts` provides current operational tenant availability and booking mode.
+- `TenantIdentityFacts` provides current active, non-deleted tenant ID, name, and slug.
+- `TenantBrandingFacts` provides the current active, non-deleted tenant logo URL.
+- `TenantContractSignerFacts` provides the selected active tenant contract signer, if one exists.
+- `RentalCustomerProfileFacts` provides the current tenant-scoped customer profile, including Tenant Management's display/legal name resolution; deleted or missing customers are not readable, while inactive customers remain readable.
 - `BranchFacts` provides tenant-scoped current branch facts, including lifecycle state, delivery support, and effective timezone resolution.
 - `BranchScheduleEligibility` evaluates a pickup or return instant against a branch schedule.
 - `RentalCustomerOperationalEligibility` provides current rental-customer eligibility.
@@ -20,7 +24,7 @@ Tenant Management publishes focused provider-owned operational capabilities unde
 - `TenantPresentationPreferences` provides locale metadata where current response presentation requires it.
 - `TenantCategoryTaxonomy` provides tenant-scoped Category display facts and current Category assignment validation.
 
-`tenant-management.public-api.ts` remains temporarily for legacy tenant context, notification-recipient, and rental-budget document-context capabilities.
+`tenant-management.public-api.ts` remains temporarily for notification-recipient capabilities that have not yet been migrated.
 
 ## Domain Concepts
 
@@ -177,7 +181,7 @@ Examples include Cloudflare custom-hostname state, branding/signature object sto
 
 ## References
 
-* `tenant-management.public-api.ts`
+* `public-api/`
 * `apps/backend/docs/architecture/overview.md`
 * `apps/backend/docs/architecture/adr/`
 

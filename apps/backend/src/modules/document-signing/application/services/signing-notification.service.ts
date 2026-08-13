@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { TenantContext } from 'src/modules/tenant-management/public-api/tenant-management.public-api';
+import { TenantIdentityFact } from 'src/modules/tenant-management/public-api/tenant-identity-facts.public-api';
 
 import { Env } from 'src/config/env.schema';
 import { SigningDocumentType } from 'src/generated/prisma/client';
@@ -39,7 +39,7 @@ export class SigningNotificationService {
   }
 
   async sendInvitation(input: {
-    tenant: TenantContext;
+    tenant: TenantIdentityFact;
     requestId: string;
     orderId: string;
     documentType: SigningDocumentType;
@@ -52,7 +52,7 @@ export class SigningNotificationService {
   }): Promise<SigningInvitationDeliveryResult> {
     const signingUrl = this.buildPublicSigningUrl(input.rawToken);
     const dispatchResult = await this.notificationOrchestrator.dispatch({
-      tenantId: input.tenant.id,
+      tenantId: input.tenant.tenantId,
       notificationType: NotificationType.DOCUMENT_SIGNING_INVITATION,
       emailRecipients: [{ email: input.recipientEmail }],
       payload: {

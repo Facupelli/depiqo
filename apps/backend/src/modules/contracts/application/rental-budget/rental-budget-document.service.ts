@@ -3,7 +3,11 @@ import { err, ok, Result } from 'neverthrow';
 
 import { RentalStatus } from 'src/modules/rental-commitment/domain/rental-status';
 import { RentalCommitmentPublicApi } from 'src/modules/rental-commitment/public-api/rental-commitment.public-api';
-import { TenantManagementPublicApi } from 'src/modules/tenant-management/public-api/tenant-management.public-api';
+import { BranchFacts } from 'src/modules/tenant-management/public-api/branch-facts.public-api';
+import { RentalCustomerProfileFacts } from 'src/modules/tenant-management/public-api/rental-customer-profile-facts.public-api';
+import { TenantBrandingFacts } from 'src/modules/tenant-management/public-api/tenant-branding-facts.public-api';
+import { TenantContractSignerFacts } from 'src/modules/tenant-management/public-api/tenant-contract-signer-facts.public-api';
+import { TenantIdentityFacts } from 'src/modules/tenant-management/public-api/tenant-identity-facts.public-api';
 
 import { RentalRemitoRendererPort } from '../../domain/ports/rental-remito-renderer.port';
 import { formatAcceptedPricingForRentalRemito, formatLocalDate } from '../rental-remito/rental-remito-formatters';
@@ -46,7 +50,11 @@ export type RenderRentalBudgetUseCaseResult = Result<RenderRentalBudgetResult, R
 export class RentalBudgetDocumentService {
   constructor(
     private readonly rentalCommitmentApi: RentalCommitmentPublicApi,
-    private readonly tenantManagementApi: TenantManagementPublicApi,
+    private readonly tenantIdentityFacts: TenantIdentityFacts,
+    private readonly tenantBrandingFacts: TenantBrandingFacts,
+    private readonly branchFacts: BranchFacts,
+    private readonly tenantContractSignerFacts: TenantContractSignerFacts,
+    private readonly rentalCustomerProfileFacts: RentalCustomerProfileFacts,
     private readonly renderer: RentalRemitoRendererPort,
   ) {}
 
@@ -61,16 +69,30 @@ export class RentalBudgetDocumentService {
       return err({ code: 'RentalNotDraft', message: `Rental "${input.rentalId}" must be DRAFT to generate a budget.` });
     }
 
-    const context = await this.tenantManagementApi.getRentalBudgetDocumentContext({
-      tenantId: input.tenantId,
-      branchId: facts.value.branchId,
-      customerId: facts.value.customerId,
-    });
-    if (context.isErr()) {
-      return err({ code: 'ContextMissing', message: context.error.message, cause: context.error });
+    const [tenantIdentity, tenantBranding, branch, contractSigner, customerProfile] = await Promise.all([
+      this.tenantIdentityFacts.getTenantIdentityFacts({ tenantId: input.tenantId }),
+      this.tenantBrandingFacts.getTenantBrandingFacts({ tenantId: input.tenantId }),
+      this.branchFacts.getBranchFacts({ tenantId: input.tenantId, branchId: facts.value.branchId }),
+      this.tenantContractSignerFacts.getSelectedTenantContractSignerFacts({ tenantId: input.tenantId }),
+      facts.value.customerId
+        ? this.rentalCustomerProfileFacts.getRentalCustomerProfileFacts({
+            tenantId: input.tenantId,
+            rentalCustomerId: facts.value.customerId,
+          })
+        : Promise.resolve(null),
+    ]);
+
+    if (tenantIdentity.isErr()) {
+      return err({ code: 'ContextMissing', message: tenantIdentity.error.message, cause: tenantIdentity.error });
+    }
+    if (tenantBranding.isErr()) {
+      return err({ code: 'ContextMissing', message: tenantBranding.error.message, cause: tenantBranding.error });
+    }
+    if (branch.isErr()) {
+      return err({ code: 'ContextMissing', message: branch.error.message, cause: branch.error });
     }
 
-    const customer = resolveCustomer(input.customer, context.value.customer);
+    const customer = resolveCustomer(input.customer, customerProfile);
     if (!customer.fullName) {
       return err({
         code: 'CustomerNameMissing',
@@ -78,25 +100,25 @@ export class RentalBudgetDocumentService {
       });
     }
 
-    const documentNumber = `${context.value.tenant.slug}-${facts.value.rentalId.slice(0, 8)}`.toUpperCase();
+    const documentNumber = `${tenantIdentity.value.slug}-${facts.value.rentalId.slice(0, 8)}`.toUpperCase();
     const data: RentalRemitoPdfData = {
       document: {
         label: 'PRESUPUESTO',
         number: documentNumber,
         equipmentTitle: 'LISTA DE EQUIPOS PRESUPUESTADOS',
-        pickupDate: formatLocalDate(facts.value.periodStart, context.value.branch.timezone),
-        returnDate: formatLocalDate(facts.value.periodEnd, context.value.branch.timezone),
+        pickupDate: formatLocalDate(facts.value.periodStart, branch.value.effectiveTimezone),
+        returnDate: formatLocalDate(facts.value.periodEnd, branch.value.effectiveTimezone),
         jornadas: facts.value.pricing.chargedUnits,
         agreedPrice: formatAcceptedPricingForRentalRemito(facts.value.pricing),
-        logoUrl: context.value.tenant.logoUrl,
-        rentalSignatureUrl: context.value.contractSigner?.signatureUrl ?? null,
+        logoUrl: tenantBranding.value.logoUrl,
+        rentalSignatureUrl: contractSigner?.signatureUrl ?? null,
         presentation: { includeLegalAnnex: false, showRentalSignatureBlock: false },
-        landlord: context.value.contractSigner
+        landlord: contractSigner
           ? {
-              fullName: context.value.contractSigner.fullName,
-              documentNumber: context.value.contractSigner.documentNumber,
-              address: context.value.contractSigner.address ?? '',
-              phone: context.value.contractSigner.phone ?? '',
+              fullName: contractSigner.fullName,
+              documentNumber: contractSigner.documentNumber,
+              address: contractSigner.address ?? '',
+              phone: contractSigner.phone ?? '',
             }
           : emptyParty(),
         tenant: customer,

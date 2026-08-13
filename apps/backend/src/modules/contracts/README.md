@@ -179,7 +179,7 @@ Contracts reads those accepted facts to generate documents but does not become t
 
 Contracts must not use live Pricing calculations or current Asset Inventory data when accepted rental snapshots already contain the facts required for the document.
 
-Tenant Management owns current tenant configuration, branding, signer configuration, permissions, and branch concerns. Contracts may read those values while preparing a contract, but generated contracts snapshot the signer data they use.
+Tenant Management owns current tenant configuration, branding, signer configuration, permissions, branch concerns, and customer profiles. Contracts composes the individual published current facts it needs while preparing a document, but generated contracts snapshot the signer data they use.
 
 Notifications owns message delivery and retry behavior. Contracts may request delivery of signing links or signed-document messages while remaining authoritative over signing state.
 

@@ -5,6 +5,7 @@ import { PinoLogger } from 'nestjs-pino';
 import { ConfirmedRentalEditedIntegrationEvent } from 'src/modules/rental-commitment/public-api/events/rental-lifecycle.integration-events';
 import { RentalCommitmentPublicApi } from 'src/modules/rental-commitment/public-api/rental-commitment.public-api';
 import { TenantManagementPublicApi } from 'src/modules/tenant-management/public-api/tenant-management.public-api';
+import { TenantIdentityFacts } from 'src/modules/tenant-management/public-api/tenant-identity-facts.public-api';
 import { BranchFacts } from 'src/modules/tenant-management/public-api/branch-facts.public-api';
 
 import { NotificationType } from '../../domain/notification-type.enum';
@@ -42,6 +43,7 @@ export class SendConfirmedRentalEditedNotificationHandler {
   constructor(
     private readonly rentalCommitmentPublicApi: RentalCommitmentPublicApi,
     private readonly tenantManagementPublicApi: TenantManagementPublicApi,
+    private readonly tenantIdentityFacts: TenantIdentityFacts,
     private readonly branchFacts: BranchFacts,
     private readonly notificationOrchestrator: NotificationOrchestrator,
     private readonly structuredLogger: PinoLogger,
@@ -75,7 +77,7 @@ export class SendConfirmedRentalEditedNotificationHandler {
       }
 
       const [tenantResult, customerResult, branchContextResult] = await Promise.all([
-        this.tenantManagementPublicApi.getTenant({ tenantId: rental.tenantId }),
+        this.tenantIdentityFacts.getTenantIdentityFacts({ tenantId: rental.tenantId }),
         this.tenantManagementPublicApi.getRentalCustomerNotificationRecipient({
           tenantId: rental.tenantId,
           rentalCustomerId: rental.rentalCustomerId,

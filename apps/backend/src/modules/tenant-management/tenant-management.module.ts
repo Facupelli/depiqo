@@ -2,6 +2,10 @@ import { Module } from '@nestjs/common';
 
 import { TenantCategoryTaxonomyService } from './public-api/tenant-category-taxonomy.service';
 import { TenantManagementPublicApiService } from './public-api/tenant-management-public-api.service';
+import { TenantIdentityFactsService } from './public-api/tenant-identity-facts.service';
+import { TenantBrandingFactsService } from './public-api/tenant-branding-facts.service';
+import { TenantContractSignerFactsService } from './public-api/tenant-contract-signer-facts.service';
+import { RentalCustomerProfileFactsService } from './public-api/rental-customer-profile-facts.service';
 import { TenantNotificationPreferencesService } from './public-api/tenant-notification-preferences.service';
 import { TenantBillingPreferencesService } from './public-api/tenant-billing-preferences.service';
 import { TenantInsuranceOfferingTermsService } from './public-api/tenant-insurance-offering-terms.service';
@@ -14,6 +18,10 @@ import { RentalCustomerOperationalEligibilityService } from './public-api/rental
 import { RentalCustomerOperationalEligibility } from './public-api/rental-customer-operational-eligibility.public-api';
 import { TenantOperationalFactsService } from './public-api/tenant-operational-facts.service';
 import { TenantOperationalFacts } from './public-api/tenant-operational-facts.public-api';
+import { TenantIdentityFacts } from './public-api/tenant-identity-facts.public-api';
+import { TenantBrandingFacts } from './public-api/tenant-branding-facts.public-api';
+import { TenantContractSignerFacts } from './public-api/tenant-contract-signer-facts.public-api';
+import { RentalCustomerProfileFacts } from './public-api/rental-customer-profile-facts.public-api';
 import { AuthModule } from './auth/auth.module';
 import { ApproveSubmittedCustomerOnboardingHttpController } from './features/approve-submitted-customer-onboarding/approve-submitted-customer-onboarding.controller';
 import { ApproveSubmittedCustomerOnboardingHandler } from './features/approve-submitted-customer-onboarding/approve-submitted-customer-onboarding.handler';
@@ -145,6 +153,10 @@ import { GetStorefrontCategoriesHandler } from './features/get-storefront-catego
     UpdateTenantBrandingHandler,
     UpdateTenantConfigHandler,
     { provide: TenantManagementPublicApi, useClass: TenantManagementPublicApiService },
+    { provide: TenantIdentityFacts, useClass: TenantIdentityFactsService },
+    { provide: TenantBrandingFacts, useClass: TenantBrandingFactsService },
+    { provide: TenantContractSignerFacts, useClass: TenantContractSignerFactsService },
+    { provide: RentalCustomerProfileFacts, useClass: RentalCustomerProfileFactsService },
     { provide: TenantCategoryTaxonomy, useClass: TenantCategoryTaxonomyService },
     { provide: TenantNotificationPreferences, useClass: TenantNotificationPreferencesService },
     { provide: TenantBillingPreferences, useClass: TenantBillingPreferencesService },
@@ -157,6 +169,10 @@ import { GetStorefrontCategoriesHandler } from './features/get-storefront-catego
   ],
   exports: [
     TenantManagementPublicApi,
+    TenantIdentityFacts,
+    TenantBrandingFacts,
+    TenantContractSignerFacts,
+    RentalCustomerProfileFacts,
     TenantCategoryTaxonomy,
     TenantNotificationPreferences,
     TenantBillingPreferences,

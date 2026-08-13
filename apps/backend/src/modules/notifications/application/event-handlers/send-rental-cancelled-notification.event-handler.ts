@@ -5,6 +5,7 @@ import { PinoLogger } from 'nestjs-pino';
 import { RentalCancelledIntegrationEvent } from 'src/modules/rental-commitment/public-api/events/rental-lifecycle.integration-events';
 import { RentalCommitmentPublicApi } from 'src/modules/rental-commitment/public-api/rental-commitment.public-api';
 import { TenantManagementPublicApi } from 'src/modules/tenant-management/public-api/tenant-management.public-api';
+import { TenantIdentityFacts } from 'src/modules/tenant-management/public-api/tenant-identity-facts.public-api';
 
 import { NotificationType } from '../../domain/notification-type.enum';
 import { NotificationOrchestrator } from '../notification-orchestrator.service';
@@ -16,6 +17,7 @@ export class SendRentalCancelledNotificationHandler {
   constructor(
     private readonly rentalCommitmentPublicApi: RentalCommitmentPublicApi,
     private readonly tenantManagementPublicApi: TenantManagementPublicApi,
+    private readonly tenantIdentityFacts: TenantIdentityFacts,
     private readonly notificationOrchestrator: NotificationOrchestrator,
     private readonly structuredLogger: PinoLogger,
   ) {
@@ -48,7 +50,7 @@ export class SendRentalCancelledNotificationHandler {
       }
 
       const [tenantResult, customerResult] = await Promise.all([
-        this.tenantManagementPublicApi.getTenant({ tenantId: rental.tenantId }),
+        this.tenantIdentityFacts.getTenantIdentityFacts({ tenantId: rental.tenantId }),
         this.tenantManagementPublicApi.getRentalCustomerNotificationRecipient({
           tenantId: rental.tenantId,
           rentalCustomerId: rental.rentalCustomerId,

@@ -7,7 +7,7 @@ import { Result, err, ok } from 'neverthrow';
 
 import { Env } from 'src/config/env.schema';
 import { V2ContractsPublicApi } from 'src/modules/contracts/public-api/contracts.public-api';
-import { TenantManagementPublicApi } from 'src/modules/tenant-management/public-api/tenant-management.public-api';
+import { TenantIdentityFacts } from 'src/modules/tenant-management/public-api/tenant-identity-facts.public-api';
 import { SigningNotificationService } from '../../application/services/signing-notification.service';
 import { SendSigningInvitationCommand } from './send-signing-invitation.command';
 import { SendSigningInvitationInput, SendSigningInvitationResult } from './send-signing-invitation.contract';
@@ -24,7 +24,7 @@ export class SendSigningInvitationService implements ICommandHandler<
   constructor(
     private readonly signingNotificationService: SigningNotificationService,
     private readonly contracts: V2ContractsPublicApi,
-    private readonly tenants: TenantManagementPublicApi,
+    private readonly tenantIdentityFacts: TenantIdentityFacts,
     private readonly config: ConfigService<Env, true>,
   ) {}
 
@@ -57,7 +57,7 @@ export class SendSigningInvitationService implements ICommandHandler<
     });
     if (request.isErr())
       return err(sendSigningInvitationError('document_signing.order_not_ready', request.error.message, request.error));
-    const tenant = await this.tenants.getTenant({ tenantId: input.tenantId });
+    const tenant = await this.tenantIdentityFacts.getTenantIdentityFacts({ tenantId: input.tenantId });
     if (tenant.isErr()) throw new Error(`Tenant '${input.tenantId}' was not found.`);
     const delivery = await this.signingNotificationService.sendInvitation({
       tenant: tenant.value,
