@@ -82,6 +82,7 @@ async function buildLegacyPricingGroups(
 			bundle: {
 				include: {
 					billingUnit: true,
+					components: { include: { productType: true } },
 				},
 			},
 			location: true,
@@ -110,6 +111,13 @@ async function buildLegacyPricingGroups(
 				productTypeId: tier.productTypeId,
 				bundleId: tier.bundleId,
 			});
+			continue;
+		}
+
+		if (
+			(tier.productType && (tier.productType.deletedAt || tier.productType.retiredAt)) ||
+			(tier.bundle && (tier.bundle.retiredAt || tier.bundle.components.some((component) => component.productType.deletedAt || component.productType.retiredAt)))
+		) {
 			continue;
 		}
 
@@ -293,12 +301,13 @@ async function migrateRentalOfferPricings(
 		}
 
 		for (const branch of branches) {
-			const rentalOffer = await ctx.prisma.v2RentalOffer.findFirst({
+			const rentalOffer = await ctx.prisma.v2RentalOffer.findUnique({
 				where: {
-					tenantId: ctx.v2TenantId,
-					branchId: branch.id,
-					rentableItemId: group.rentableItemId,
-					deletedAt: null,
+					tenantId_branchId_rentableItemId: {
+						tenantId: ctx.v2TenantId,
+						branchId: branch.id,
+						rentableItemId: group.rentableItemId,
+					},
 				},
 			});
 

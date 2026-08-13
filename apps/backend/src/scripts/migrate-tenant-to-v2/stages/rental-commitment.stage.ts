@@ -142,7 +142,6 @@ async function migrateRentalSelections(ctx: TenantV2MigrationContext) {
 				tenantId: orderItem.order.tenantId,
 				branchId: orderItem.order.locationId,
 				rentableItemId,
-				deletedAt: null,
 			},
 		});
 

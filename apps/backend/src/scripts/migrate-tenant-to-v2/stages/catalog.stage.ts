@@ -1,4 +1,5 @@
 import {
+	OrderItemType,
 	PrismaClient,
 	V2RentableItemKind,
 	V2RentableItemStatus,
@@ -13,10 +14,59 @@ export type TenantV2MigrationContext = {
 	log: (message: string, data?: unknown) => void;
 };
 
+export async function assertNoHistoricalRentalsReferenceOmittedCatalogItems(
+	ctx: TenantV2MigrationContext,
+) {
+	const affectedOrderItems = await ctx.prisma.orderItem.findMany({
+		where: {
+			order: { tenantId: ctx.legacyTenantId, deletedAt: null },
+			OR: [
+				{
+					type: OrderItemType.PRODUCT,
+					productType: {
+						OR: [{ deletedAt: { not: null } }, { retiredAt: { not: null } }],
+					},
+				},
+				{
+					type: OrderItemType.BUNDLE,
+					bundle: {
+						OR: [
+							{ retiredAt: { not: null } },
+							{
+								components: {
+									some: {
+										productType: {
+											OR: [
+												{ deletedAt: { not: null } },
+												{ retiredAt: { not: null } },
+											],
+										},
+									},
+								},
+							},
+						],
+					},
+				},
+			],
+		},
+		select: { id: true, type: true, orderId: true, productTypeId: true, bundleId: true },
+	});
+
+	if (affectedOrderItems.length === 0) return;
+
+	ctx.log("Historical rentals reference catalog items omitted by V2 migration", {
+		affectedOrderItems: affectedOrderItems.length,
+		examples: affectedOrderItems.slice(0, 10),
+	});
+
+	throw new Error(
+		`Cannot migrate tenant: ${affectedOrderItems.length} non-deleted order item(s) reference retired or deleted catalog items.`,
+	);
+}
+
 export async function migrateCatalogStage(ctx: TenantV2MigrationContext) {
 	ctx.log("Starting Stage 3: Rental Catalog");
 
-	await migrateRentableItemCategories(ctx);
 	await migrateSingleRentableItems(ctx);
 	await migrateSingleRentableItemRequirements(ctx);
 	await migrateBundleRentableItems(ctx);
@@ -26,7 +76,8 @@ export async function migrateCatalogStage(ctx: TenantV2MigrationContext) {
 	ctx.log("Finished Stage 3: Rental Catalog");
 }
 
-async function migrateRentableItemCategories(ctx: TenantV2MigrationContext) {
+export async function migrateCategoriesStage(ctx: TenantV2MigrationContext) {
+	ctx.log("Starting Stage 1.5: Shared Categories");
 	const categories = await ctx.prisma.productCategory.findMany({
 		where: { tenantId: ctx.legacyTenantId },
 		orderBy: { createdAt: "asc" },
@@ -62,6 +113,8 @@ async function migrateRentableItemCategories(ctx: TenantV2MigrationContext) {
 			},
 		});
 	}
+
+	ctx.log("Finished Stage 1.5: Shared Categories");
 }
 
 async function migrateSingleRentableItems(ctx: TenantV2MigrationContext) {
@@ -74,7 +127,7 @@ async function migrateSingleRentableItems(ctx: TenantV2MigrationContext) {
 	if (ctx.dryRun) return;
 
 	for (const productType of productTypes) {
-		if (productType.deletedAt || productType.retiredAt) continue;
+		if (!isEligibleProductType(productType)) continue;
 
 		await ctx.prisma.v2RentableItem.upsert({
 			where: { id: productType.id },
@@ -116,6 +169,8 @@ async function migrateSingleRentableItemRequirements(
 	if (ctx.dryRun) return;
 
 	for (const productType of productTypes) {
+		if (!isEligibleProductType(productType)) continue;
+
 		await ctx.prisma.v2RentableItemRequirement.upsert({
 			where: {
 				rentableItemId_equipmentTypeId: {
@@ -142,6 +197,7 @@ async function migrateSingleRentableItemRequirements(
 async function migrateBundleRentableItems(ctx: TenantV2MigrationContext) {
 	const bundles = await ctx.prisma.bundle.findMany({
 		where: { tenantId: ctx.legacyTenantId },
+		include: { components: { include: { productType: true } } },
 	});
 
 	ctx.log(`Migrating bundle rentable items: ${bundles.length}`);
@@ -149,7 +205,7 @@ async function migrateBundleRentableItems(ctx: TenantV2MigrationContext) {
 	if (ctx.dryRun) return;
 
 	for (const bundle of bundles) {
-		if (bundle.retiredAt) continue;
+		if (!isEligibleBundle(bundle)) continue;
 
 		await ctx.prisma.v2RentableItem.upsert({
 			where: { id: bundle.id },
@@ -187,7 +243,8 @@ async function migrateBundleRentableItemRequirements(
 			},
 		},
 		include: {
-			bundle: true,
+			bundle: { include: { components: { include: { productType: true } } } },
+			productType: true,
 		},
 	});
 
@@ -198,6 +255,8 @@ async function migrateBundleRentableItemRequirements(
 	if (ctx.dryRun) return;
 
 	for (const component of bundleComponents) {
+		if (!isEligibleBundle(component.bundle) || !isEligibleProductType(component.productType)) continue;
+
 		await ctx.prisma.v2RentableItemRequirement.upsert({
 			where: {
 				rentableItemId_equipmentTypeId: {
@@ -262,11 +321,13 @@ async function migrateRentalOffers(ctx: TenantV2MigrationContext) {
 			const isAvailableForCatalog =
 				item.status === V2RentableItemStatus.ACTIVE;
 
-			const existingOffer = await ctx.prisma.v2RentalOffer.findFirst({
+			const existingOffer = await ctx.prisma.v2RentalOffer.findUnique({
 				where: {
-					tenantId: item.tenantId,
-					branchId: branch.id,
-					rentableItemId: item.id,
+					tenantId_branchId_rentableItemId: {
+						tenantId: item.tenantId,
+						branchId: branch.id,
+						rentableItemId: item.id,
+					},
 				},
 			});
 
@@ -296,6 +357,20 @@ async function migrateRentalOffers(ctx: TenantV2MigrationContext) {
 			});
 		}
 	}
+}
+
+function isEligibleProductType(productType: {
+	retiredAt: Date | null;
+	deletedAt: Date | null;
+}): boolean {
+	return !productType.deletedAt && !productType.retiredAt;
+}
+
+function isEligibleBundle(bundle: {
+	retiredAt: Date | null;
+	components?: Array<{ productType: { deletedAt: Date | null; retiredAt: Date | null } }>;
+}): boolean {
+	return !bundle.retiredAt && (bundle.components?.every((component) => isEligibleProductType(component.productType)) ?? true);
 }
 
 function mapProductTypeStatus(productType: {

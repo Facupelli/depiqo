@@ -88,12 +88,14 @@ async function migrateEquipmentTypes(ctx: TenantV2MigrationContext) {
 				tenantId: productType.tenantId,
 				name: productType.name,
 				description: productType.description,
+				categoryId: productType.categoryId,
 				createdAt: productType.createdAt,
 				updatedAt: productType.updatedAt,
 			},
 			update: {
 				name: productType.name,
 				description: productType.description,
+				categoryId: productType.categoryId,
 				updatedAt: productType.updatedAt,
 			},
 		});
@@ -107,6 +109,7 @@ async function migrateAssets(ctx: TenantV2MigrationContext) {
 				tenantId: ctx.legacyTenantId,
 			},
 		},
+		include: { productType: true },
 	});
 
 	ctx.log(`Migrating assets: ${assets.length}`);
@@ -114,7 +117,7 @@ async function migrateAssets(ctx: TenantV2MigrationContext) {
 	if (ctx.dryRun) return;
 
 	for (const asset of assets) {
-		if (asset.deletedAt) continue;
+		if (asset.deletedAt || asset.productType.deletedAt || asset.productType.retiredAt) continue;
 
 		await ctx.prisma.v2Asset.upsert({
 			where: { id: asset.id },
@@ -155,6 +158,7 @@ function mapLegacyAssetStatus(asset: {
 async function migrateOwnerContracts(ctx: TenantV2MigrationContext) {
 	const contracts = await ctx.prisma.ownerContract.findMany({
 		where: { tenantId: ctx.legacyTenantId },
+		include: { asset: { include: { productType: true } } },
 	});
 
 	ctx.log(`Migrating owner contracts: ${contracts.length}`);
@@ -162,6 +166,8 @@ async function migrateOwnerContracts(ctx: TenantV2MigrationContext) {
 	if (ctx.dryRun) return;
 
 	for (const contract of contracts) {
+		if (contract.asset?.deletedAt || contract.asset?.productType.deletedAt || contract.asset?.productType.retiredAt) continue;
+
 		await ctx.prisma.v2OwnerContract.upsert({
 			where: { id: contract.id },
 			create: {
@@ -217,6 +223,7 @@ async function migrateEquipmentTypeAccessoryDefaults(
 ) {
 	const accessoryLinks = await ctx.prisma.accessoryLink.findMany({
 		where: { tenantId: ctx.legacyTenantId },
+		include: { primaryRentalItem: true, accessoryRentalItem: true },
 	});
 
 	const defaultLinks = accessoryLinks.filter((link) => link.isDefaultIncluded);
@@ -231,6 +238,13 @@ async function migrateEquipmentTypeAccessoryDefaults(
 	if (ctx.dryRun) return;
 
 	for (const link of defaultLinks) {
+		if (
+			link.primaryRentalItem.deletedAt ||
+			link.primaryRentalItem.retiredAt ||
+			link.accessoryRentalItem.deletedAt ||
+			link.accessoryRentalItem.retiredAt
+		) continue;
+
 		if (link.defaultQuantity <= 0) {
 			ctx.log("Skipping accessory link with invalid quantity", {
 				accessoryLinkId: link.id,

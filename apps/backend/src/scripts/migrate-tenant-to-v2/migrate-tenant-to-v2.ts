@@ -5,7 +5,11 @@ import { PrismaClient, V2RentableItemKind } from "../../generated/prisma/client"
 import { migrateTenantManagementStage } from "./stages/tenant-management.stage";
 import { TenantV2MigrationContext } from "./migration-context";
 import { migrateInventoryStage } from "./stages/inventory.stage";
-import { migrateCatalogStage } from "./stages/catalog.stage";
+import {
+	assertNoHistoricalRentalsReferenceOmittedCatalogItems,
+	migrateCatalogStage,
+	migrateCategoriesStage,
+} from "./stages/catalog.stage";
 import { migratePricingStage } from "./stages/pricing.stage";
 import { migrateRentalCommitmentStage, verifyRentalCommitmentStage } from "./stages/rental-commitment.stage";
 import { verifyV2MigrationIntegrity } from "./stages/integrity-checks.stage";
@@ -55,7 +59,9 @@ async function main() {
 
 		ctx.log("Starting migration", { tenantId, dryRun });
 
+		await assertNoHistoricalRentalsReferenceOmittedCatalogItems(ctx);
 		await migrateTenantManagementStage(ctx);
+		await migrateCategoriesStage(ctx);
     await migrateInventoryStage(ctx);
     await migrateCatalogStage(ctx);
     await migratePricingStage(ctx);
