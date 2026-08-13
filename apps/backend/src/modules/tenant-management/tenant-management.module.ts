@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 
 import { TenantCategoryTaxonomyService } from './public-api/tenant-category-taxonomy.service';
-import { TenantManagementPublicApiService } from './public-api/tenant-management-public-api.service';
+import { RentalCustomerContactFactsService } from './public-api/rental-customer-contact-facts.service';
 import { TenantIdentityFactsService } from './public-api/tenant-identity-facts.service';
 import { TenantBrandingFactsService } from './public-api/tenant-branding-facts.service';
 import { TenantContractSignerFactsService } from './public-api/tenant-contract-signer-facts.service';
@@ -74,7 +74,7 @@ import { UpdateTenantConfigHandler } from './features/update-tenant-config/updat
 import { BranchRepository } from './infrastructure/persistence/repositories/branch.repository';
 import { TenantRepository } from './infrastructure/persistence/repositories/tenant.repository';
 import { TenantCategoryTaxonomy } from './public-api/tenant-category-taxonomy.public-api';
-import { TenantManagementPublicApi } from './public-api/tenant-management.public-api';
+import { RentalCustomerContactFacts } from './public-api/rental-customer-contact-facts.public-api';
 import { TenantNotificationPreferences } from './public-api/tenant-notification-preferences.public-api';
 import { TenantBillingPreferences } from './public-api/tenant-billing-preferences.public-api';
 import { TenantInsuranceOfferingTerms } from './public-api/tenant-insurance-offering-terms.public-api';
@@ -152,7 +152,7 @@ import { GetStorefrontCategoriesHandler } from './features/get-storefront-catego
     UpdateContractSignerHandler,
     UpdateTenantBrandingHandler,
     UpdateTenantConfigHandler,
-    { provide: TenantManagementPublicApi, useClass: TenantManagementPublicApiService },
+    { provide: RentalCustomerContactFacts, useClass: RentalCustomerContactFactsService },
     { provide: TenantIdentityFacts, useClass: TenantIdentityFactsService },
     { provide: TenantBrandingFacts, useClass: TenantBrandingFactsService },
     { provide: TenantContractSignerFacts, useClass: TenantContractSignerFactsService },
@@ -168,7 +168,7 @@ import { GetStorefrontCategoriesHandler } from './features/get-storefront-catego
     { provide: RentalCustomerOperationalEligibility, useClass: RentalCustomerOperationalEligibilityService },
   ],
   exports: [
-    TenantManagementPublicApi,
+    RentalCustomerContactFacts,
     TenantIdentityFacts,
     TenantBrandingFacts,
     TenantContractSignerFacts,

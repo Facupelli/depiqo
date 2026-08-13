@@ -4,7 +4,7 @@ import { PinoLogger } from 'nestjs-pino';
 
 import { RentalConfirmedIntegrationEvent } from 'src/modules/rental-commitment/public-api/events/rental-lifecycle.integration-events';
 import { RentalCommitmentPublicApi } from 'src/modules/rental-commitment/public-api/rental-commitment.public-api';
-import { TenantManagementPublicApi } from 'src/modules/tenant-management/public-api/tenant-management.public-api';
+import { RentalCustomerContactFacts } from 'src/modules/tenant-management/public-api/rental-customer-contact-facts.public-api';
 import { TenantIdentityFacts } from 'src/modules/tenant-management/public-api/tenant-identity-facts.public-api';
 import { BranchFacts } from 'src/modules/tenant-management/public-api/branch-facts.public-api';
 
@@ -42,7 +42,7 @@ export class SendRentalConfirmedConfirmationNotificationHandler {
 
   constructor(
     private readonly rentalCommitmentPublicApi: RentalCommitmentPublicApi,
-    private readonly tenantManagementPublicApi: TenantManagementPublicApi,
+    private readonly rentalCustomerContactFacts: RentalCustomerContactFacts,
     private readonly tenantIdentityFacts: TenantIdentityFacts,
     private readonly branchFacts: BranchFacts,
     private readonly notificationOrchestrator: NotificationOrchestrator,
@@ -78,7 +78,7 @@ export class SendRentalConfirmedConfirmationNotificationHandler {
 
       const [tenantResult, customerResult, branchContextResult] = await Promise.all([
         this.tenantIdentityFacts.getTenantIdentityFacts({ tenantId: rental.tenantId }),
-        this.tenantManagementPublicApi.getRentalCustomerNotificationRecipient({
+        this.rentalCustomerContactFacts.getRentalCustomerContactFacts({
           tenantId: rental.tenantId,
           rentalCustomerId: rental.rentalCustomerId,
         }),
@@ -96,18 +96,18 @@ export class SendRentalConfirmedConfirmationNotificationHandler {
         return;
       }
 
-      if (customerResult.isErr()) {
+      const customer = customerResult;
+      if (!customer) {
         this.logger.warn(
-          `Skipping rental confirmed notification for rental ${event.rentalId}: ${customerResult.error.message}`,
+          `Skipping rental confirmed notification for rental ${event.rentalId}: Rental customer "${rental.rentalCustomerId}" was not found.`,
           SendRentalConfirmedConfirmationNotificationHandler.name,
         );
         return;
       }
 
-      const customer = customerResult.value;
-      if (customer.deletedAt || !customer.isActive) {
+      if (customer.isDeleted || !customer.isActive) {
         this.logger.warn(
-          `Skipping rental confirmed notification for rental ${event.rentalId}: rental customer ${customer.id} is inactive or deleted.`,
+          `Skipping rental confirmed notification for rental ${event.rentalId}: rental customer ${customer.rentalCustomerId} is inactive or deleted.`,
           SendRentalConfirmedConfirmationNotificationHandler.name,
         );
         return;

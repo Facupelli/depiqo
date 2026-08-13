@@ -34,7 +34,7 @@ type RawCountRow = {
 const UPCOMING_EXCLUDED_STATUSES = [V2RentalStatus.COMPLETED, V2RentalStatus.CANCELLED] as const;
 
 // Date lens filtering and sorting need a timezone for each joined branch, so a single
-// TenantManagementPublicApi branch-context lookup cannot compose this set-based read. This mirrors
+// A Tenant Management branch-context capability cannot compose this set-based read. This mirrors
 // Tenant Management's authoritative trimmed branch -> tenant -> UTC resolution exactly.
 const EFFECTIVE_TIMEZONE_SQL = Prisma.sql`COALESCE(NULLIF(BTRIM(b.timezone), ''), NULLIF(BTRIM(t.config->>'timezone'), ''), 'UTC')`;
 const PICKUP_LOCAL_DATE_SQL = Prisma.sql`(r.period_start AT TIME ZONE ${EFFECTIVE_TIMEZONE_SQL})::date`;

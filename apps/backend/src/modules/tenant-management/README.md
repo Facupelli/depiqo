@@ -15,6 +15,7 @@ Tenant Management publishes focused provider-owned operational capabilities unde
 - `TenantBrandingFacts` provides the current active, non-deleted tenant logo URL.
 - `TenantContractSignerFacts` provides the selected active tenant contract signer, if one exists.
 - `RentalCustomerProfileFacts` provides the current tenant-scoped customer profile, including Tenant Management's display/legal name resolution; deleted or missing customers are not readable, while inactive customers remain readable.
+- `RentalCustomerContactFacts` provides current tenant-scoped customer email contact and lifecycle facts; missing or out-of-tenant customers are not readable, while inactive and deleted customers remain observable as lifecycle facts.
 - `BranchFacts` provides tenant-scoped current branch facts, including lifecycle state, delivery support, and effective timezone resolution.
 - `BranchScheduleEligibility` evaluates a pickup or return instant against a branch schedule.
 - `RentalCustomerOperationalEligibility` provides current rental-customer eligibility.
@@ -24,7 +25,6 @@ Tenant Management publishes focused provider-owned operational capabilities unde
 - `TenantPresentationPreferences` provides locale metadata where current response presentation requires it.
 - `TenantCategoryTaxonomy` provides tenant-scoped Category display facts and current Category assignment validation.
 
-`tenant-management.public-api.ts` remains temporarily for notification-recipient capabilities that have not yet been migrated.
 
 ## Domain Concepts
 
