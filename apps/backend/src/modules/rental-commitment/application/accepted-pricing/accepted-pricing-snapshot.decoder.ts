@@ -7,9 +7,9 @@ import { err, ok, Result } from 'neverthrow';
 import { z } from 'zod';
 
 import type {
-  RentalAcceptedPricingBillingUnit,
-  RentalAcceptedPricingForDocuments,
-} from '../../public-api/rental-commitment.public-api';
+  AcceptedRentalPricing,
+  AcceptedRentalPricingBillingUnit,
+} from '../../public-api/accepted-rental-pricing-facts.public-api';
 import {
   ACCEPTED_RENTAL_PRICING_SNAPSHOT_SCHEMA,
   ACCEPTED_RENTAL_PRICING_SNAPSHOT_VERSION,
@@ -148,10 +148,10 @@ export function parseLegacyRentalDetailPricingLine(
   return snapshot.success ? snapshot.data : null;
 }
 
-export function decodeAcceptedPricingForDocuments(
+export function decodeAcceptedRentalPricing(
   priceSnapshot: unknown,
   selectionPriceSnapshots: readonly unknown[],
-): Result<RentalAcceptedPricingForDocuments, RentalAcceptedPricingDecodingError> {
+): Result<AcceptedRentalPricing, RentalAcceptedPricingDecodingError> {
   const v2Snapshot = V2RentalPriceSnapshotSchema.safeParse(priceSnapshot);
   if (v2Snapshot.success) {
     const total = resolveAcceptedPricingTotal(v2Snapshot.data.final.total, v2Snapshot.data.final.currency);
@@ -189,7 +189,7 @@ export function decodeAcceptedPricingForDocuments(
 function resolveAcceptedPricingTotal(
   amount: string,
   currency: string,
-): Result<RentalAcceptedPricingForDocuments['total'], RentalAcceptedPricingDecodingError> {
+): Result<AcceptedRentalPricing['total'], RentalAcceptedPricingDecodingError> {
   if (!Number.isFinite(Number(amount)) || currency.trim().length === 0) {
     return err({
       code: 'AcceptedPricingSnapshotInvalid',
@@ -201,8 +201,8 @@ function resolveAcceptedPricingTotal(
 }
 
 function resolveV2BillingUnit(
-  lines: Array<{ billingUnit: RentalAcceptedPricingBillingUnit }>,
-): RentalAcceptedPricingBillingUnit | undefined {
+  lines: Array<{ billingUnit: AcceptedRentalPricingBillingUnit }>,
+): AcceptedRentalPricingBillingUnit | undefined {
   const billingUnits = new Set(lines.map((line) => line.billingUnit));
   return billingUnits.size === 1 ? [...billingUnits][0] : undefined;
 }

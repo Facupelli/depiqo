@@ -1,11 +1,7 @@
 import { Result } from 'neverthrow';
 
 import { RentalStatus } from '../domain/rental-status';
-
-export interface GetAcceptedPricingForDocumentsInput {
-  tenantId: string;
-  rentalId: string;
-}
+import { AcceptedRentalPricing } from './accepted-rental-pricing-facts.public-api';
 
 export interface GetRentalBudgetDocumentFactsInput {
   tenantId: string;
@@ -24,7 +20,7 @@ export interface RentalBudgetDocumentFacts {
   status: RentalStatus;
   periodStart: Date;
   periodEnd: Date;
-  pricing: RentalAcceptedPricingForDocuments;
+  pricing: AcceptedRentalPricing;
   selections: Array<{
     name: string;
     quantity: number;
@@ -47,19 +43,6 @@ export interface RentalRemitoEquipmentFacts {
   }>;
 }
 
-export type RentalAcceptedPricingBillingUnit = 'HOUR' | 'DAY' | 'WEEK';
-
-export interface RentalAcceptedPricingMoney {
-  amount: string;
-  currency: string;
-}
-
-export interface RentalAcceptedPricingForDocuments {
-  total: RentalAcceptedPricingMoney;
-  chargedUnits: number;
-  billingUnit?: RentalAcceptedPricingBillingUnit;
-}
-
 export type RentalCommitmentPublicApiErrorCode =
   | 'RentalNotFound'
   | 'AcceptedPricingSnapshotInvalid'
@@ -68,14 +51,9 @@ export type RentalCommitmentPublicApiErrorCode =
 export interface RentalCommitmentPublicApiError {
   code: RentalCommitmentPublicApiErrorCode;
   message: string;
-  cause?: unknown;
 }
 
 export abstract class RentalCommitmentPublicApi {
-  abstract getAcceptedPricingForDocuments(
-    input: GetAcceptedPricingForDocumentsInput,
-  ): Promise<Result<RentalAcceptedPricingForDocuments, RentalCommitmentPublicApiError>>;
-
   abstract getRentalBudgetDocumentFacts(
     input: GetRentalBudgetDocumentFactsInput,
   ): Promise<Result<RentalBudgetDocumentFacts, RentalCommitmentPublicApiError>>;

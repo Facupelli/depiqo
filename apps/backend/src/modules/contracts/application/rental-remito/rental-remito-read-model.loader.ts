@@ -3,6 +3,7 @@ import { err, ok, Result } from 'neverthrow';
 
 import { PrismaService } from 'src/core/database/prisma.service';
 import { AssetInventoryDisplayFacts } from 'src/modules/asset-inventory/public-api/asset-inventory-display-facts.public-api';
+import { AcceptedRentalPricingFacts } from 'src/modules/rental-commitment/public-api/accepted-rental-pricing-facts.public-api';
 import { RentalCommitmentPublicApi } from 'src/modules/rental-commitment/public-api/rental-commitment.public-api';
 import { BranchFacts } from 'src/modules/tenant-management/public-api/branch-facts.public-api';
 
@@ -14,6 +15,7 @@ export class RentalRemitoReadModelLoader {
   constructor(
     private readonly prisma: PrismaService,
     private readonly assetInventoryDisplayFacts: AssetInventoryDisplayFacts,
+    private readonly acceptedRentalPricingFacts: AcceptedRentalPricingFacts,
     private readonly rentalCommitmentApi: RentalCommitmentPublicApi,
     private readonly branchFacts: BranchFacts,
   ) {}
@@ -65,7 +67,7 @@ export class RentalRemitoReadModelLoader {
       this.loadBranch(tenantId, rental.branchId),
       rental.customerId ? this.loadCustomer(tenantId, rental.customerId) : Promise.resolve(null),
       this.loadDefaultContractSigner(tenantId),
-      this.rentalCommitmentApi.getAcceptedPricingForDocuments({ tenantId, rentalId }),
+      this.acceptedRentalPricingFacts.getAcceptedRentalPricingFacts({ tenantId, rentalId }),
       this.rentalCommitmentApi.getRentalRemitoEquipmentFacts({ tenantId, rentalId }),
     ]);
 
@@ -95,7 +97,7 @@ export class RentalRemitoReadModelLoader {
         return err(rentalRemitoApplicationError('RentalNotFound', equipmentFacts.error.message, equipmentFacts.error));
       }
 
-      throw new Error(equipmentFacts.error.message, { cause: equipmentFacts.error.cause });
+      throw new Error(equipmentFacts.error.message, { cause: equipmentFacts.error });
     }
 
     const assetDisplayFacts = await this.assetInventoryDisplayFacts.getAssetDisplayFacts({

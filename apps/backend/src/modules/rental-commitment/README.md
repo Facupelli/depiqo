@@ -6,7 +6,7 @@ It preserves what was selected, the operational equipment demand produced by tho
 
 Confirmed rentals own accepted historical facts rather than depending on the current definitions of other modules.
 
-Public API: `rental-commitment.public-api.ts`
+Published capabilities: `accepted-rental-pricing-facts.public-api.ts` and the temporary broad `rental-commitment.public-api.ts`.
 
 ## Domain Concepts
 
@@ -228,7 +228,7 @@ Rental Commitment resolves those definitions when creating or changing a rental,
 
 Pricing owns current pricing rules and proposed price calculations.
 
-Rental Commitment owns the confirmed price snapshot and must not query Pricing tables later to reconstruct an accepted price.
+Rental Commitment owns the confirmed price snapshot and must not query Pricing tables later to reconstruct an accepted price. Its `AcceptedRentalPricingFacts` capability publishes only accepted total money, charged units, and an optional common billing unit from that persisted snapshot. Consumers must not use it to recalculate pricing or depend on Pricing internals.
 
 Asset Inventory owns equipment types and the current physical profile, condition, ownership, location, and assignment-relevant facts of assets.
 

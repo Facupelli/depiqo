@@ -1,4 +1,4 @@
-import { RentalAcceptedPricingForDocuments } from 'src/modules/rental-commitment/public-api/rental-commitment.public-api';
+import { AcceptedRentalPricing } from 'src/modules/rental-commitment/public-api/accepted-rental-pricing-facts.public-api';
 
 export function formatLocalDate(date: Date, timezone: string): string {
   const parts = new Intl.DateTimeFormat('en-GB', {
@@ -30,7 +30,7 @@ export function formatSignedTimestamp(date: Date, timezone: string): string {
   return `${get('day')}/${get('month')}/${get('year')} ${get('hour')}:${get('minute')}:${get('second')}`;
 }
 
-export function formatAcceptedPricingForRentalRemito(pricing: RentalAcceptedPricingForDocuments): string {
+export function formatAcceptedPricingForRentalRemito(pricing: AcceptedRentalPricing): string {
   return formatCurrency(Number(pricing.total.amount), pricing.total.currency);
 }
 

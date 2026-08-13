@@ -3,13 +3,11 @@ import { err, ok, Result } from 'neverthrow';
 
 import { PrismaService } from 'src/core/database/prisma.service';
 
-import { decodeAcceptedPricingForDocuments } from '../application/accepted-pricing/accepted-pricing-snapshot.decoder';
+import { decodeAcceptedRentalPricing } from '../application/accepted-pricing/accepted-pricing-snapshot.decoder';
 import { RentalStatus } from '../domain/rental-status';
 import {
-  GetAcceptedPricingForDocumentsInput,
   GetRentalBudgetDocumentFactsInput,
   GetRentalRemitoEquipmentFactsInput,
-  RentalAcceptedPricingForDocuments,
   RentalBudgetDocumentFacts,
   RentalRemitoEquipmentFacts,
   RentalCommitmentPublicApi,
@@ -19,9 +17,8 @@ import {
 function rentalCommitmentPublicApiError(
   code: RentalCommitmentPublicApiError['code'],
   message: string,
-  cause?: unknown,
 ): RentalCommitmentPublicApiError {
-  return { code, message, cause };
+  return { code, message };
 }
 
 @Injectable()
@@ -79,12 +76,12 @@ export class RentalCommitmentPublicApiService extends RentalCommitmentPublicApi 
       );
     }
 
-    const pricing = decodeAcceptedPricingForDocuments(
+    const pricing = decodeAcceptedRentalPricing(
       rental.priceSnapshot,
       rental.selections.map((selection) => selection.priceSnapshot),
     );
     if (pricing.isErr()) {
-      return err(rentalCommitmentPublicApiError(pricing.error.code, pricing.error.message, pricing.error));
+      return err(rentalCommitmentPublicApiError(pricing.error.code, pricing.error.message));
     }
 
     return ok({
@@ -157,44 +154,5 @@ export class RentalCommitmentPublicApiService extends RentalCommitmentPublicApi 
         assignedAssetIds: line.assignedAssets.map((assignment) => assignment.assetId),
       })),
     });
-  }
-
-  async getAcceptedPricingForDocuments(
-    input: GetAcceptedPricingForDocumentsInput,
-  ): Promise<Result<RentalAcceptedPricingForDocuments, RentalCommitmentPublicApiError>> {
-    const rental = await this.prisma.client.v2Rental.findFirst({
-      where: {
-        id: input.rentalId,
-        tenantId: input.tenantId,
-      },
-      select: {
-        priceSnapshot: true,
-        selections: {
-          select: {
-            priceSnapshot: true,
-          },
-        },
-      },
-    });
-
-    if (!rental) {
-      return err(
-        rentalCommitmentPublicApiError(
-          'RentalNotFound',
-          `Rental "${input.rentalId}" was not found for tenant "${input.tenantId}".`,
-        ),
-      );
-    }
-
-    const pricing = decodeAcceptedPricingForDocuments(
-      rental.priceSnapshot,
-      rental.selections.map((selection) => selection.priceSnapshot),
-    );
-
-    if (pricing.isErr()) {
-      return err(rentalCommitmentPublicApiError(pricing.error.code, pricing.error.message, pricing.error));
-    }
-
-    return ok(pricing.value);
   }
 }

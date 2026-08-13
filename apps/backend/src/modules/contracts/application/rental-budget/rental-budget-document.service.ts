@@ -138,12 +138,12 @@ export class RentalBudgetDocumentService {
     });
   }
 
-  private mapRentalError(error: { code: string; message: string; cause?: unknown }): RentalBudgetDocumentError {
+  private mapRentalError(error: { code: string; message: string }): RentalBudgetDocumentError {
     if (error.code === 'RentalNotFound') return { code: 'RentalNotFound', message: error.message, cause: error };
     if (error.code === 'AcceptedPricingSnapshotInvalid' || error.code === 'AcceptedPricingUnitsIncomplete') {
       return { code: 'PriceSnapshotInvalid', message: error.message, cause: error };
     }
-    throw new Error(error.message, { cause: error.cause });
+    throw new Error(error.message, { cause: error });
   }
 }
 
