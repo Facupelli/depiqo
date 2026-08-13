@@ -3,7 +3,7 @@ import { err, ok, Result } from 'neverthrow';
 
 import { PrismaService } from 'src/core/database/prisma.service';
 import { EquipmentTypeReferenceAuthority } from 'src/modules/asset-inventory/public-api/equipment-type-reference-authority.public-api';
-import { TenantManagementPublicApi } from 'src/modules/tenant-management/public-api/tenant-management.public-api';
+import { TenantCategoryTaxonomy } from 'src/modules/tenant-management/public-api/tenant-category-taxonomy.public-api';
 import { BranchFacts } from 'src/modules/tenant-management/public-api/branch-facts.public-api';
 import { mapPostgresError } from 'src/core/utils/postgres-error.mapper';
 
@@ -32,7 +32,7 @@ export class CreateRentableItemOfferingService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly equipmentTypeReferenceAuthority: EquipmentTypeReferenceAuthority,
-    private readonly tenantManagement: TenantManagementPublicApi,
+    private readonly tenantCategoryTaxonomy: TenantCategoryTaxonomy,
     private readonly branchFacts: BranchFacts,
     private readonly rentableItemRepository: PrismaRentableItemRepository,
     private readonly rentalOfferRepository: PrismaRentalOfferRepository,
@@ -74,7 +74,7 @@ export class CreateRentableItemOfferingService {
     }
 
     if (rentableItem.categoryId) {
-      const categoryValidation = await this.tenantManagement.validateCategoryAssignment({
+      const categoryValidation = await this.tenantCategoryTaxonomy.validateCategoryAssignment({
         tenantId: rentableItem.tenantId,
         categoryId: rentableItem.categoryId,
       });

@@ -4,8 +4,6 @@ import { err, ok, Result } from 'neverthrow';
 import { PrismaService } from 'src/core/database/prisma.service';
 
 import {
-  CategoryDisplayFact,
-  GetCategoryDisplayFactsInput,
   GetRentalBudgetDocumentContextInput,
   GetRentalCustomerNotificationRecipientInput,
   GetTenantAdminNotificationRecipientsInput,
@@ -16,8 +14,6 @@ import {
   TenantContext,
   TenantManagementPublicApi,
   TenantManagementPublicApiError,
-  ValidateCategoryAssignmentError,
-  ValidateCategoryAssignmentInput,
 } from './tenant-management.public-api';
 import { TenantConfig, TenantConfigProps } from '../domain/value-objects/tenant-config.value-object';
 import { resolveEffectiveTimezone } from '../domain/utils/effective-timezone';
@@ -45,45 +41,6 @@ function tenantManagementPublicApiError(
 export class TenantManagementPublicApiService extends TenantManagementPublicApi {
   constructor(private readonly prisma: PrismaService) {
     super();
-  }
-
-  async getCategoryDisplayFacts(input: GetCategoryDisplayFactsInput): Promise<CategoryDisplayFact[]> {
-    const categoryIds = [...new Set(input.categoryIds)];
-    if (categoryIds.length === 0) return [];
-
-    return this.prisma.client.v2Category.findMany({
-      where: {
-        id: { in: categoryIds },
-        tenantId: input.tenantId,
-        deletedAt: null,
-      },
-      select: { id: true, name: true },
-    });
-  }
-
-  async validateCategoryAssignment(
-    input: ValidateCategoryAssignmentInput,
-  ): Promise<Result<void, ValidateCategoryAssignmentError>> {
-    const category = await this.prisma.client.v2Category.findFirst({
-      where: { id: input.categoryId, tenantId: input.tenantId, deletedAt: null },
-      select: { isActive: true },
-    });
-
-    if (!category) {
-      return err({
-        code: 'CategoryNotFound',
-        message: `Category "${input.categoryId}" was not found.`,
-        context: { categoryId: input.categoryId },
-      });
-    }
-    if (!category.isActive) {
-      return err({
-        code: 'CategoryInactive',
-        message: `Category "${input.categoryId}" is inactive.`,
-        context: { categoryId: input.categoryId },
-      });
-    }
-    return ok(undefined);
   }
 
   async getTenant(input: GetTenantInput): Promise<Result<TenantContext, TenantManagementPublicApiError>> {

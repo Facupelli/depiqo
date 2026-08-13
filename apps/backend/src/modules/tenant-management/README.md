@@ -18,8 +18,9 @@ Tenant Management publishes focused provider-owned operational capabilities unde
 - `TenantBillingPreferences` provides the tenant-selected daily billing policy.
 - `TenantInsuranceOfferingTerms` provides the tenant-configured insurance offering availability and rate.
 - `TenantPresentationPreferences` provides locale metadata where current response presentation requires it.
+- `TenantCategoryTaxonomy` provides tenant-scoped Category display facts and current Category assignment validation.
 
-`tenant-management.public-api.ts` remains temporarily for legacy tenant context, category, notification-recipient, and rental-budget document-context capabilities.
+`tenant-management.public-api.ts` remains temporarily for legacy tenant context, notification-recipient, and rental-budget document-context capabilities.
 
 ## Domain Concepts
 
@@ -184,4 +185,4 @@ Examples include Cloudflare custom-hostname state, branding/signature object sto
 
 Tenant Management owns `V2Category`, the tenant-scoped taxonomy shared by Rental Catalog and Asset Inventory. A category can be assigned only while active. Inactive categories keep existing `V2RentableItem` and `V2EquipmentType` references but are unavailable for new assignment and selectable lists. Soft-deleted categories follow the same unavailable rule; physical deletion uses `ON DELETE SET NULL` for both references.
 
-Rental Catalog and Asset Inventory consume category validation through `TenantManagementPublicApi`; neither module reads or mutates category persistence directly.
+Rental Catalog and Asset Inventory consume Category display and assignment semantics through `TenantCategoryTaxonomy`; neither module reads or mutates category persistence directly.

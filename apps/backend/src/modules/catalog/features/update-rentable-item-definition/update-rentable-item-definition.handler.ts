@@ -2,7 +2,7 @@ import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { err, ok, Result } from 'neverthrow';
 
 import { PrismaUnitOfWork } from 'src/core/database/prisma-unit-of-work';
-import { TenantManagementPublicApi } from 'src/modules/tenant-management/public-api/tenant-management.public-api';
+import { TenantCategoryTaxonomy } from 'src/modules/tenant-management/public-api/tenant-category-taxonomy.public-api';
 import { EquipmentTypeReferenceAuthority } from 'src/modules/asset-inventory/public-api/equipment-type-reference-authority.public-api';
 
 import { CatalogInvalidFieldError, CatalogRentableItemArchivedError } from '../../domain/errors/catalog.errors';
@@ -22,7 +22,7 @@ export class UpdateRentableItemDefinitionHandler implements ICommandHandler<
     private readonly unitOfWork: PrismaUnitOfWork,
     private readonly rentableItemRepository: PrismaRentableItemRepository,
     private readonly equipmentTypeReferenceAuthority: EquipmentTypeReferenceAuthority,
-    private readonly tenantManagement: TenantManagementPublicApi,
+    private readonly tenantCategoryTaxonomy: TenantCategoryTaxonomy,
   ) {}
 
   async execute(
@@ -47,7 +47,7 @@ export class UpdateRentableItemDefinitionHandler implements ICommandHandler<
     }
 
     if (command.props.categoryId) {
-      const categoryValidation = await this.tenantManagement.validateCategoryAssignment({
+      const categoryValidation = await this.tenantCategoryTaxonomy.validateCategoryAssignment({
         tenantId: command.tenantId,
         categoryId: command.props.categoryId,
       });
@@ -59,7 +59,7 @@ export class UpdateRentableItemDefinitionHandler implements ICommandHandler<
               : 'catalog.category_not_found',
             categoryValidation.error.message,
             categoryValidation.error,
-            { ...context, ...categoryValidation.error.context },
+            { ...context, categoryId: command.props.categoryId },
           ),
         );
       }

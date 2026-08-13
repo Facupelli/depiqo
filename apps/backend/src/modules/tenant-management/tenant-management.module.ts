@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 
+import { TenantCategoryTaxonomyService } from './public-api/tenant-category-taxonomy.service';
 import { TenantManagementPublicApiService } from './public-api/tenant-management-public-api.service';
 import { TenantNotificationPreferencesService } from './public-api/tenant-notification-preferences.service';
 import { TenantBillingPreferencesService } from './public-api/tenant-billing-preferences.service';
@@ -64,6 +65,7 @@ import { UpdateTenantConfigHttpController } from './features/update-tenant-confi
 import { UpdateTenantConfigHandler } from './features/update-tenant-config/update-tenant-config.handler';
 import { BranchRepository } from './infrastructure/persistence/repositories/branch.repository';
 import { TenantRepository } from './infrastructure/persistence/repositories/tenant.repository';
+import { TenantCategoryTaxonomy } from './public-api/tenant-category-taxonomy.public-api';
 import { TenantManagementPublicApi } from './public-api/tenant-management.public-api';
 import { TenantNotificationPreferences } from './public-api/tenant-notification-preferences.public-api';
 import { TenantBillingPreferences } from './public-api/tenant-billing-preferences.public-api';
@@ -143,6 +145,7 @@ import { GetStorefrontCategoriesHandler } from './features/get-storefront-catego
     UpdateTenantBrandingHandler,
     UpdateTenantConfigHandler,
     { provide: TenantManagementPublicApi, useClass: TenantManagementPublicApiService },
+    { provide: TenantCategoryTaxonomy, useClass: TenantCategoryTaxonomyService },
     { provide: TenantNotificationPreferences, useClass: TenantNotificationPreferencesService },
     { provide: TenantBillingPreferences, useClass: TenantBillingPreferencesService },
     { provide: TenantInsuranceOfferingTerms, useClass: TenantInsuranceOfferingTermsService },
@@ -154,6 +157,7 @@ import { GetStorefrontCategoriesHandler } from './features/get-storefront-catego
   ],
   exports: [
     TenantManagementPublicApi,
+    TenantCategoryTaxonomy,
     TenantNotificationPreferences,
     TenantBillingPreferences,
     TenantInsuranceOfferingTerms,

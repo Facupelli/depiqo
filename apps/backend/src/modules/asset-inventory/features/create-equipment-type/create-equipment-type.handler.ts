@@ -1,7 +1,7 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { err, ok, Result } from 'neverthrow';
 
-import { TenantManagementPublicApi } from '../../../tenant-management/public-api/tenant-management.public-api';
+import { TenantCategoryTaxonomy } from '../../../tenant-management/public-api/tenant-category-taxonomy.public-api';
 import { BranchFacts } from 'src/modules/tenant-management/public-api/branch-facts.public-api';
 import { TenantOperationalFacts } from 'src/modules/tenant-management/public-api/tenant-operational-facts.public-api';
 import { AssetBranchReferenceValidatorService } from '../../application/services/asset-branch-reference-validator.service';
@@ -37,7 +37,7 @@ export class CreateEquipmentTypeHandler implements ICommandHandler<
   CreateEquipmentTypeServiceResult
 > {
   constructor(
-    private readonly tenantManagement: TenantManagementPublicApi,
+    private readonly tenantCategoryTaxonomy: TenantCategoryTaxonomy,
     private readonly tenantOperationalFacts: TenantOperationalFacts,
     private readonly branchFacts: BranchFacts,
     private readonly assetBranchReferenceValidator: AssetBranchReferenceValidatorService,
@@ -48,7 +48,7 @@ export class CreateEquipmentTypeHandler implements ICommandHandler<
     const branchIds = [...new Set(command.assets.map((asset) => asset.branchId))];
 
     if (command.categoryId) {
-      const categoryValidation = await this.tenantManagement.validateCategoryAssignment({
+      const categoryValidation = await this.tenantCategoryTaxonomy.validateCategoryAssignment({
         tenantId: command.tenantId,
         categoryId: command.categoryId,
       });
@@ -60,7 +60,7 @@ export class CreateEquipmentTypeHandler implements ICommandHandler<
               : 'asset_inventory.category_not_found',
             categoryValidation.error.message,
             categoryValidation.error,
-            categoryValidation.error.context,
+            { categoryId: command.categoryId },
           ),
         );
       }

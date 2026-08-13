@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { err, Result } from 'neverthrow';
 
-import { TenantManagementPublicApi } from 'src/modules/tenant-management/public-api/tenant-management.public-api';
+import { TenantCategoryTaxonomy } from 'src/modules/tenant-management/public-api/tenant-category-taxonomy.public-api';
 
 import { AssetBranchReferenceValidatorService } from '../application/services/asset-branch-reference-validator.service';
 import { CreateEquipmentTypeSetupCommand } from '../features/create-equipment-type-setup/create-equipment-type-setup.command';
@@ -27,7 +27,7 @@ export class AssetInventoryAuthoringService extends AssetInventoryAuthoring {
   constructor(
     private readonly createEquipmentTypeSetupService: CreateEquipmentTypeSetupService,
     private readonly assetBranchReferenceValidator: AssetBranchReferenceValidatorService,
-    private readonly tenantManagement: TenantManagementPublicApi,
+    private readonly tenantCategoryTaxonomy: TenantCategoryTaxonomy,
   ) {
     super();
   }
@@ -36,7 +36,7 @@ export class AssetInventoryAuthoringService extends AssetInventoryAuthoring {
     input: CreateEquipmentTypeWithInitialAssetsInput,
   ): Promise<Result<CreateEquipmentTypeWithInitialAssetsResult, AssetInventoryAuthoringError>> {
     if (input.equipmentType.categoryId) {
-      const categoryValidation = await this.tenantManagement.validateCategoryAssignment({
+      const categoryValidation = await this.tenantCategoryTaxonomy.validateCategoryAssignment({
         tenantId: input.tenantId,
         categoryId: input.equipmentType.categoryId,
       });

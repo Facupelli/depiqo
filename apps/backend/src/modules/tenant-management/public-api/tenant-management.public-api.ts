@@ -65,30 +65,6 @@ export interface TenantAdminNotificationRecipient {
   name?: string;
 }
 
-export interface CategoryDisplayFact {
-  id: string;
-  name: string;
-}
-
-export interface GetCategoryDisplayFactsInput {
-  tenantId: string;
-  categoryIds: string[];
-}
-
-export interface ValidateCategoryAssignmentInput {
-  tenantId: string;
-  categoryId: string;
-}
-
-export type ValidateCategoryAssignmentErrorCode = 'CategoryNotFound' | 'CategoryInactive';
-
-export interface ValidateCategoryAssignmentError {
-  code: ValidateCategoryAssignmentErrorCode;
-  message: string;
-  cause?: unknown;
-  context?: Record<string, unknown>;
-}
-
 export type TenantManagementPublicApiErrorCode =
   | 'TenantNotFound'
   | 'TenantConfigInvalid'
@@ -102,12 +78,6 @@ export interface TenantManagementPublicApiError {
 }
 
 export abstract class TenantManagementPublicApi {
-  abstract getCategoryDisplayFacts(input: GetCategoryDisplayFactsInput): Promise<CategoryDisplayFact[]>;
-
-  abstract validateCategoryAssignment(
-    input: ValidateCategoryAssignmentInput,
-  ): Promise<Result<void, ValidateCategoryAssignmentError>>;
-
   abstract getTenant(input: GetTenantInput): Promise<Result<TenantContext, TenantManagementPublicApiError>>;
 
   abstract getRentalCustomerNotificationRecipient(

@@ -1,6 +1,6 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { err, ok, Result } from 'neverthrow';
-import { TenantManagementPublicApi } from '../../../tenant-management/public-api/tenant-management.public-api';
+import { TenantCategoryTaxonomy } from '../../../tenant-management/public-api/tenant-category-taxonomy.public-api';
 import { DuplicateEquipmentTypeNameError } from '../../domain/errors/asset-inventory.errors';
 import { EquipmentTypeRepository } from '../../persistence/equipment-type.repository';
 import { UpdateEquipmentTypeCommand } from './update-equipment-type.command';
@@ -18,7 +18,7 @@ export class UpdateEquipmentTypeHandler implements ICommandHandler<
 > {
   constructor(
     private readonly repository: EquipmentTypeRepository,
-    private readonly tenantManagement: TenantManagementPublicApi,
+    private readonly tenantCategoryTaxonomy: TenantCategoryTaxonomy,
   ) {}
   async execute(command: UpdateEquipmentTypeCommand): Promise<UpdateEquipmentTypeResult> {
     const equipmentType = await this.repository.loadByIdForTenant({
@@ -32,7 +32,7 @@ export class UpdateEquipmentTypeHandler implements ICommandHandler<
         }),
       );
     if (command.categoryId) {
-      const categoryValidation = await this.tenantManagement.validateCategoryAssignment({
+      const categoryValidation = await this.tenantCategoryTaxonomy.validateCategoryAssignment({
         tenantId: command.tenantId,
         categoryId: command.categoryId,
       });
@@ -44,7 +44,7 @@ export class UpdateEquipmentTypeHandler implements ICommandHandler<
               : 'asset_inventory.category_not_found',
             categoryValidation.error.message,
             categoryValidation.error,
-            categoryValidation.error.context,
+            { categoryId: command.categoryId },
           ),
         );
       }

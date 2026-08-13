@@ -2,7 +2,7 @@ import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 
 import { PrismaService } from 'src/core/database/prisma.service';
 import { AssetInventoryDisplayFacts } from 'src/modules/asset-inventory/public-api/asset-inventory-display-facts.public-api';
-import { TenantManagementPublicApi } from 'src/modules/tenant-management/public-api/tenant-management.public-api';
+import { TenantCategoryTaxonomy } from 'src/modules/tenant-management/public-api/tenant-category-taxonomy.public-api';
 
 import { GetStorefrontRentalOffersQuery } from './get-storefront-rental-offers.query';
 import { V2RentalOfferWhereInput } from 'src/generated/prisma/models';
@@ -40,7 +40,7 @@ export class GetStorefrontRentalOffersHandler implements IQueryHandler<
   constructor(
     private readonly prisma: PrismaService,
     private readonly assetInventoryDisplayFacts: AssetInventoryDisplayFacts,
-    private readonly tenantManagement: TenantManagementPublicApi,
+    private readonly tenantCategoryTaxonomy: TenantCategoryTaxonomy,
   ) {}
 
   async execute(query: GetStorefrontRentalOffersQuery): Promise<GetStorefrontRentalOffersResult> {
@@ -93,7 +93,7 @@ export class GetStorefrontRentalOffersHandler implements IQueryHandler<
           : [],
       ),
     });
-    const categories = await this.tenantManagement.getCategoryDisplayFacts({
+    const categories = await this.tenantCategoryTaxonomy.getCategoryDisplayFacts({
       tenantId: query.tenantId,
       categoryIds: equipmentTypes.flatMap((equipmentType) =>
         equipmentType.categoryId ? [equipmentType.categoryId] : [],
