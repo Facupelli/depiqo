@@ -5,7 +5,6 @@ import request from 'supertest';
 import { PrismaService } from '../../src/core/database/prisma.service';
 import { V2TenantStatus, V2UserStatus } from '../../src/generated/prisma/enums';
 import { PasswordService } from '../../src/modules/tenant-management/auth/shared/password/password.service';
-import { GoogleAuthStateService } from '../../src/modules/tenant-management/auth/shared/google/google-auth-state.service';
 import { EmailDeliveryPort } from '../../src/modules/notifications/application/ports/email-delivery.port';
 import { ObjectStoragePort } from '../../src/modules/object-storage/application/ports/object-storage.port';
 import { CustomHostnameProvider } from '../../src/modules/tenant-management/application/ports/custom-hostname-provider.port';
@@ -256,11 +255,9 @@ describe('authenticated tenant HTTP flow', () => {
 
     testApp.externals.googleIdentity.setNextIdentity(googleIdentity);
     const firstTicket = await createCustomerGoogleHandoffTicket(testApp, tenant.id, tenant.slug, 'first-google-code');
-    const firstLogin = await client
-      .request()
-      .post('/auth/customer/google/finalize')
-      .send({ ticket: firstTicket })
-      .expect(200);
+    const firstLoginRequest = client.request().post('/auth/customer/google/finalize');
+    await client.withStorefrontTenantContext(firstLoginRequest, storefrontTenantContext(tenant));
+    const firstLogin = await firstLoginRequest.send({ ticket: firstTicket }).expect(200);
     const firstCustomer = firstLogin.body.data.customer as { id: string; tenantId: string; email: string };
 
     expect(firstCustomer).toMatchObject({ tenantId: tenant.id, email: googleIdentity.email });
@@ -279,11 +276,9 @@ describe('authenticated tenant HTTP flow', () => {
 
     testApp.externals.googleIdentity.setNextIdentity(googleIdentity);
     const secondTicket = await createCustomerGoogleHandoffTicket(testApp, tenant.id, tenant.slug, 'second-google-code');
-    const secondLogin = await client
-      .request()
-      .post('/auth/customer/google/finalize')
-      .send({ ticket: secondTicket })
-      .expect(200);
+    const secondLoginRequest = client.request().post('/auth/customer/google/finalize');
+    await client.withStorefrontTenantContext(secondLoginRequest, storefrontTenantContext(tenant));
+    const secondLogin = await secondLoginRequest.send({ ticket: secondTicket }).expect(200);
 
     expect(secondLogin.body.data.customer).toMatchObject({ id: firstCustomer.id, tenantId: tenant.id });
     await expect(
@@ -319,7 +314,7 @@ describe('authenticated tenant HTTP flow', () => {
 
     try {
       testApp.externals.googleIdentity.setNextIdentity(googleIdentity);
-      const state = issueGoogleState(testApp, tenant.id, tenant.slug);
+      const state = await issueGoogleState(testApp, tenant.id, tenant.slug);
       await request(testApp.app.getHttpServer())
         .post('/auth/customer/google/handoff')
         .send({ code: `rollback-code-${randomUUID()}`, state })
@@ -359,7 +354,9 @@ describe('authenticated tenant HTTP flow', () => {
       tenant.slug,
       `existing-code-${randomUUID()}`,
     );
-    await client.request().post('/auth/customer/google/finalize').send({ ticket }).expect(200);
+    const finalizeRequest = client.request().post('/auth/customer/google/finalize');
+    await client.withStorefrontTenantContext(finalizeRequest, storefrontTenantContext(tenant));
+    await finalizeRequest.send({ ticket }).expect(200);
 
     await expect(
       prisma.client.v2RentalCustomerAuthIdentity.findUnique({
@@ -402,7 +399,7 @@ describe('authenticated tenant HTTP flow', () => {
     });
 
     testApp.externals.googleIdentity.setNextIdentity(losingIdentity);
-    const state = issueGoogleState(testApp, tenant.id, tenant.slug);
+    const state = await issueGoogleState(testApp, tenant.id, tenant.slug);
     await request(testApp.app.getHttpServer())
       .post('/auth/customer/google/handoff')
       .send({ code: `losing-code-${randomUUID()}`, state })
@@ -437,7 +434,7 @@ describe('authenticated tenant HTTP flow', () => {
 
     const results = await runConcurrently(
       [firstCode, secondCode].map((code) => async () => {
-        const state = issueGoogleState(testApp, tenant.id, tenant.slug);
+        const state = await issueGoogleState(testApp, tenant.id, tenant.slug);
         return request(testApp.app.getHttpServer()).post('/auth/customer/google/handoff').send({ code, state });
       }),
     );
@@ -470,7 +467,7 @@ describe('authenticated tenant HTTP flow', () => {
 
     const results = await runConcurrently(
       [firstCode, secondCode].map((code) => async () => {
-        const state = issueGoogleState(testApp, tenant.id, tenant.slug);
+        const state = await issueGoogleState(testApp, tenant.id, tenant.slug);
         return request(testApp.app.getHttpServer()).post('/auth/customer/google/handoff').send({ code, state });
       }),
     );
@@ -501,7 +498,7 @@ describe('authenticated tenant HTTP flow', () => {
 
     const results = await runConcurrently(
       [firstCode, secondCode].map((code) => async () => {
-        const state = issueGoogleState(testApp, tenant.id, tenant.slug);
+        const state = await issueGoogleState(testApp, tenant.id, tenant.slug);
         return request(testApp.app.getHttpServer()).post('/auth/customer/google/handoff').send({ code, state });
       }),
     );
@@ -520,11 +517,13 @@ describe('authenticated tenant HTTP flow', () => {
       localCredential: {},
     });
 
-    const login = await client.loginTenantCustomer({
-      tenantId: tenant.id,
-      email: rentalCustomer.customer.email,
-      password: rentalCustomer.password,
-    });
+    const login = await client.loginTenantCustomer(
+      {
+        email: rentalCustomer.customer.email,
+        password: rentalCustomer.password,
+      },
+      storefrontTenantContext(tenant),
+    );
 
     expect(login.body.data.customer).toMatchObject({ email: rentalCustomer.customer.email });
   });
@@ -549,12 +548,16 @@ function googleCustomerIdentity(
   };
 }
 
-function issueGoogleState(testApp: E2ETestApp, tenantId: string, tenantSlug: string): string {
-  return testApp.app.get(GoogleAuthStateService).issueState({
+async function issueGoogleState(testApp: E2ETestApp, tenantId: string, tenantSlug: string): Promise<string> {
+  const client = createE2ETestClient(testApp.app);
+  const stateRequest = client.request().post('/auth/customer/google/state');
+  await client.withStorefrontTenantContext(stateRequest, {
     tenantId,
-    portalOrigin: `http://${tenantSlug}.localhost`,
-    redirectPath: '/account',
+    canonicalHost: `${tenantSlug}.localhost`,
   });
+  const response = await stateRequest.send({ redirectPath: '/account' }).expect(200);
+
+  return (response.body.data as { state: string }).state;
 }
 
 async function createCustomerGoogleHandoffTicket(
@@ -563,7 +566,7 @@ async function createCustomerGoogleHandoffTicket(
   tenantSlug: string,
   code: string,
 ): Promise<string> {
-  const state = issueGoogleState(testApp, tenantId, tenantSlug);
+  const state = await issueGoogleState(testApp, tenantId, tenantSlug);
 
   const handoffResponse = await request(testApp.app.getHttpServer())
     .post('/auth/customer/google/handoff')
@@ -571,4 +574,10 @@ async function createCustomerGoogleHandoffTicket(
     .expect(200);
 
   return (handoffResponse.body.data as { ticket: string }).ticket;
+}
+
+function storefrontTenantContext(tenant: { id: string; slug: string }) {
+  const canonicalHost = `${tenant.slug}.localhost`;
+
+  return { tenantId: tenant.id, canonicalHost };
 }

@@ -109,11 +109,13 @@ describe('POST /rental-commitments/draft-rentals', () => {
       localCredential: {},
     });
     const client = createE2ETestClient(app.app);
-    await client.loginTenantCustomer({
-      tenantId: setup.tenant.id,
-      email: authenticatingCustomer.customer.email,
-      password: authenticatingCustomer.password,
-    });
+    await client.loginTenantCustomer(
+      {
+        email: authenticatingCustomer.customer.email,
+        password: authenticatingCustomer.password,
+      },
+      storefrontTenantContext(setup.tenant),
+    );
     const response = await client
       .withCsrf(client.request().post('/rental-commitments/draft-rentals'))
       .send(body(setup));
@@ -293,3 +295,9 @@ describe('POST /rental-commitments/draft-rentals', () => {
     await expectNoDraft(setup);
   });
 });
+
+function storefrontTenantContext(tenant: { id: string; slug: string }) {
+  const canonicalHost = `${tenant.slug}.localhost`;
+
+  return { tenantId: tenant.id, canonicalHost };
+}

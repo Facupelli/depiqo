@@ -46,11 +46,13 @@ describe('POST /rental-commitments/confirmed-rentals', () => {
 
   async function login(setup: Awaited<ReturnType<typeof scenario>>): Promise<E2ETestClient> {
     const client = createE2ETestClient(testApp.app);
-    await client.loginTenantCustomer({
-      tenantId: setup.tenant.id,
-      email: setup.customer.customer.email,
-      password: setup.customer.password,
-    });
+    await client.loginTenantCustomer(
+      {
+        email: setup.customer.customer.email,
+        password: setup.customer.password,
+      },
+      storefrontTenantContext(setup.tenant),
+    );
     return client;
   }
 
@@ -209,3 +211,9 @@ describe('POST /rental-commitments/confirmed-rentals', () => {
     });
   });
 });
+
+function storefrontTenantContext(tenant: { id: string; slug: string }) {
+  const canonicalHost = `${tenant.slug}.localhost`;
+
+  return { tenantId: tenant.id, canonicalHost };
+}

@@ -8,7 +8,7 @@ const config: Config.InitialOptions = {
   moduleNameMapper: {
     ...unitConfig.moduleNameMapper,
     '^@generated/prisma$': '<rootDir>/src/generated/prisma',
-    '^jose$': '<rootDir>/src/__mocks__/jose.ts',
+    '^jose$': '<rootDir>/test/support/mocks/jose.ts',
   },
   transform: {
     '^.+\\.(t|j)s$': [

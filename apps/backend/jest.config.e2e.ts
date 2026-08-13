@@ -10,7 +10,7 @@ const config: Config.InitialOptions = {
   moduleNameMapper: {
     ...e2eConfig.moduleNameMapper,
     '^@generated/prisma$': '<rootDir>/src/generated/prisma',
-    '^jose$': '<rootDir>/src/__mocks__/jose.ts',
+    '^jose$': '<rootDir>/test/support/mocks/jose.ts',
     '^@react-pdf/renderer$': '<rootDir>/test/support/mocks/react-pdf-renderer.ts',
   },
   transform: {
