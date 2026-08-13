@@ -41,7 +41,7 @@ export class CalculateDraftRentalPriceHttpController {
         dto.period.start,
         dto.period.end,
         dto.selectedOffers,
-        dto.manualPricingAdjustment,
+        dto.targetTotalAdjustment,
         dto.rentalCustomerId,
       ),
     );

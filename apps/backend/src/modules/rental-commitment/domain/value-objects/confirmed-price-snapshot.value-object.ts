@@ -1,9 +1,9 @@
 import { err, ok, Result } from 'neverthrow';
 
 import {
-  RENTAL_PRICE_SNAPSHOT_SCHEMA,
-  RENTAL_PRICE_SNAPSHOT_VERSION,
-} from 'src/modules/pricing/public-api/rental-price-snapshot.type';
+  ACCEPTED_RENTAL_PRICING_SNAPSHOT_SCHEMA,
+  ACCEPTED_RENTAL_PRICING_SNAPSHOT_VERSION,
+} from './accepted-pricing-snapshot.type';
 
 import { RentalCommitmentError, RentalInvalidFieldError } from '../errors/rental-commitment.errors';
 import { JsonSnapshot, JsonValue } from './json-snapshot.value-object';
@@ -41,11 +41,13 @@ export class ConfirmedPriceSnapshot extends JsonSnapshot {
     const schema = snapshot.schema;
     const version = snapshot.version;
 
-    if (schema !== RENTAL_PRICE_SNAPSHOT_SCHEMA) {
-      return err(new RentalInvalidFieldError('priceSnapshot.schema', `must be ${RENTAL_PRICE_SNAPSHOT_SCHEMA}`));
+    if (schema !== ACCEPTED_RENTAL_PRICING_SNAPSHOT_SCHEMA) {
+      return err(
+        new RentalInvalidFieldError('priceSnapshot.schema', `must be ${ACCEPTED_RENTAL_PRICING_SNAPSHOT_SCHEMA}`),
+      );
     }
 
-    if (version !== RENTAL_PRICE_SNAPSHOT_VERSION) {
+    if (version !== ACCEPTED_RENTAL_PRICING_SNAPSHOT_VERSION) {
       return err(new RentalInvalidFieldError('priceSnapshot.version', 'must be 1'));
     }
 

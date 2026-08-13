@@ -89,7 +89,7 @@ Other modules must not create or mutate them directly.
 
 The confirmed price snapshot is the accepted pricing result for a rental.
 
-Pricing calculates proposed price breakdowns. Rental Commitment owns the accepted result once the rental is confirmed.
+Pricing calculates proposed price breakdowns. Rental Commitment translates a proposed calculation at its application boundary and owns the accepted durable snapshot once the rental is confirmed, including its schema identifier, versioning, lifecycle context, manual-adjustment actor/reason audit metadata, validation, and historical decoding.
 
 The snapshot must preserve enough information to explain the accepted price after rate plans, promotions, coupons, or tenant settings change.
 

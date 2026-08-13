@@ -1,4 +1,4 @@
-import { LineManualPricingAdjustmentSnapshot } from '../../features/price-draft-rental/manual-adjustments/manual-pricing-adjustment.types';
+import { LineTargetTotalAllocation } from '../../features/price-draft-rental/manual-adjustments/manual-pricing-adjustment.types';
 import { BasePricingResult, BasePricingResultLine } from '../base/base-pricing-result.type';
 import {
   PricingAdjustmentType,
@@ -15,7 +15,7 @@ export type PricingResult = Omit<BasePricingResult, 'lines'> & {
 
 export type PricingResultLine = BasePricingResultLine & {
   appliedAdjustments: PricingLineAdjustmentSnapshot[];
-  manualPricingAdjustment?: LineManualPricingAdjustmentSnapshot;
+  targetTotalAllocation?: LineTargetTotalAllocation;
 };
 
 export type PricingLineAdjustmentSnapshot = {

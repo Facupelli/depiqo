@@ -1,4 +1,4 @@
-import { ManualPricingAdjustmentDirection } from './manual-pricing-adjustment.types';
+import { TargetTotalAdjustmentDirection } from './manual-pricing-adjustment.types';
 
 export type TargetTotalAllocationInput = {
   currency: string;
@@ -15,7 +15,7 @@ export type TargetTotalAllocationResult = {
   currency: string;
   currentTotal: string;
   targetTotal: string;
-  direction: ManualPricingAdjustmentDirection;
+  direction: TargetTotalAdjustmentDirection;
   adjustmentTotal: string;
   lines: TargetTotalAllocationLineResult[];
 };
@@ -25,7 +25,7 @@ export type TargetTotalAllocationLineResult = {
   previousTotal: string;
   finalTotal: string;
   adjustment: {
-    direction: ManualPricingAdjustmentDirection;
+    direction: TargetTotalAdjustmentDirection;
     amount: string;
   };
 };

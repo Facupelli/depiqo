@@ -10,13 +10,17 @@ import {
 } from 'src/modules/catalog/public-api/catalog-selection-resolution.public-api';
 import { TenantManagementPublicApi } from 'src/modules/tenant-management/public-api/tenant-management.public-api';
 
-import { InvalidPricingInputError, PricingError } from '../../pricing-engine/errors/pricing.errors';
-import { RentalPriceSnapshotV1 } from '../../public-api/rental-price-snapshot.type';
-import { PriceDraftRentalService } from '../price-draft-rental/price-draft-rental.service';
+import {
+  PricingCalculation,
+  PricingCalculationError,
+  PricingCalculationResult,
+} from '../../public-api/pricing-calculation.public-api';
 import { CalculateDraftRentalPriceError, calculateDraftRentalPriceError } from './calculate-draft-rental-price.errors';
 import { CalculateDraftRentalPriceQuery } from './calculate-draft-rental-price.query';
 
-export type CalculateDraftRentalPriceResult = RentalPriceSnapshotV1;
+export type CalculateDraftRentalPriceResult = Omit<PricingCalculationResult, 'calculatedAt'> & {
+  calculatedAtIso: string;
+};
 
 @Injectable()
 @QueryHandler(CalculateDraftRentalPriceQuery)
@@ -27,7 +31,7 @@ export class CalculateDraftRentalPriceHandler implements IQueryHandler<
   constructor(
     private readonly catalogSelectionResolution: CatalogSelectionResolution,
     private readonly tenantManagementApi: TenantManagementPublicApi,
-    private readonly priceDraftRentalService: PriceDraftRentalService,
+    private readonly pricingCalculation: PricingCalculation,
   ) {}
 
   async execute(
@@ -105,34 +109,28 @@ export class CalculateDraftRentalPriceHandler implements IQueryHandler<
       return err(this.mapCatalogSelectionError(resolvedCatalogSelections.error, context));
     }
 
-    const pricingResult = await this.priceDraftRentalService.price({
+    const pricingResult = await this.pricingCalculation.calculateProposedPrice({
       tenantId: query.tenantId,
-      branchId: query.branchId,
       customerId: query.rentalCustomerId,
       rentalPeriod: {
         start: query.rentalPeriodStart,
         end: query.rentalPeriodEnd,
       },
-      pricingConfig: {
+      durationPolicy: {
         timezone: branchContextResult.value.effectiveTimezone,
         dailyBillingPolicy: tenantPricingConfig.dailyBillingPolicy,
         minimumChargedDays: tenantPricingConfig.minimumChargedDays,
         halfDayThresholdMinutes: tenantPricingConfig.halfDayThresholdMinutes,
       },
-      selections: resolvedCatalogSelections.value.resolvedOffers.map((offer) => ({
-        rentalSelectionId: randomUUID(),
+      lines: resolvedCatalogSelections.value.resolvedOffers.map((offer) => ({
+        lineReference: randomUUID(),
         rentalOfferId: offer.rentalOfferId,
         rentableItemId: offer.rentableItem.id,
-        rentableItemName: offer.rentableItem.name,
-        rentableItemKind: offer.rentableItem.kind,
         categoryId: offer.rentableItem.categoryId ?? undefined,
         quantity: offer.quantity,
       })),
-      manualPricingAdjustment: query.manualPricingAdjustment
-        ? {
-            ...query.manualPricingAdjustment,
-            setByTenantUserId: query.tenantUserId,
-          }
+      targetTotalAdjustment: query.targetTotalAdjustment
+        ? { targetTotal: query.targetTotalAdjustment.targetTotal }
         : undefined,
     });
 
@@ -140,7 +138,10 @@ export class CalculateDraftRentalPriceHandler implements IQueryHandler<
       return err(this.toApplicationError(pricingResult.error, context));
     }
 
-    return ok(pricingResult.value);
+    return ok({
+      ...pricingResult.value,
+      calculatedAtIso: pricingResult.value.calculatedAt.toISOString(),
+    });
   }
 
   private errorContext(query: CalculateDraftRentalPriceQuery): Record<string, unknown> {
@@ -151,7 +152,7 @@ export class CalculateDraftRentalPriceHandler implements IQueryHandler<
       branchId: query.branchId,
       rentalCustomerId: query.rentalCustomerId,
       selectedOfferCount: query.selectedOffers.length,
-      hasManualPricingAdjustment: Boolean(query.manualPricingAdjustment),
+      hasTargetTotalAdjustment: Boolean(query.targetTotalAdjustment),
     };
   }
 
@@ -215,19 +216,19 @@ export class CalculateDraftRentalPriceHandler implements IQueryHandler<
         context,
       );
     }
-    if (query.manualPricingAdjustment) {
-      if (query.manualPricingAdjustment.mode !== 'TARGET_TOTAL') {
+    if (query.targetTotalAdjustment) {
+      if (query.targetTotalAdjustment.mode !== 'TARGET_TOTAL') {
         return calculateDraftRentalPriceError(
           'pricing.invalid_draft_rental_selection',
-          'manualPricingAdjustment.mode is invalid.',
+          'targetTotalAdjustment.mode is invalid.',
           undefined,
           context,
         );
       }
-      if (!query.manualPricingAdjustment.targetTotal.trim()) {
+      if (!query.targetTotalAdjustment.targetTotal.trim()) {
         return calculateDraftRentalPriceError(
           'pricing.invalid_draft_rental_selection',
-          'manualPricingAdjustment.targetTotal is required.',
+          'targetTotalAdjustment.targetTotal is required.',
           undefined,
           context,
         );
@@ -283,15 +284,18 @@ export class CalculateDraftRentalPriceHandler implements IQueryHandler<
     return calculateDraftRentalPriceError('pricing.invalid_draft_rental_selection', error.message, error, context);
   }
 
-  private toApplicationError(error: PricingError, context: Record<string, unknown>): CalculateDraftRentalPriceError {
-    if (error instanceof InvalidPricingInputError && error.message.includes('no active pricing')) {
-      return calculateDraftRentalPriceError('pricing.missing_active_pricing', error.message, error, context);
+  private toApplicationError(
+    error: PricingCalculationError,
+    context: Record<string, unknown>,
+  ): CalculateDraftRentalPriceError {
+    if (error.code === 'pricing_calculation.invalid_request') {
+      return calculateDraftRentalPriceError('pricing.invalid_draft_rental_selection', error.message, error, context);
     }
 
-    if (error instanceof PricingError) {
+    if (error.code === 'pricing_calculation.coupon_not_applicable') {
       return calculateDraftRentalPriceError('pricing.invalid_pricing_configuration', error.message, error, context);
     }
 
-    throw error;
+    return calculateDraftRentalPriceError('pricing.invalid_pricing_configuration', error.message, error, context);
   }
 }

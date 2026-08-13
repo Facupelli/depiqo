@@ -31,7 +31,6 @@ import { GetStorefrontRentalOffersPricingHttpController } from './features/get-s
 import { GetStorefrontRentalOffersPricingHandler } from './features/get-storefront-rental-offers-pricing/get-storefront-rental-offers-pricing.handler';
 import { UpdatePromotionHttpController } from './features/update-promotion/update-promotion.controller';
 import { UpdatePromotionHandler } from './features/update-promotion/update-promotion.handler';
-import { PriceDraftRentalService } from './features/price-draft-rental/price-draft-rental.service';
 import { RatePlanRepository } from './persistence/rate-plan.repository';
 import { PricingCalculationService } from './application/pricing-calculation.service';
 import { PricingCalculation } from './public-api/pricing-calculation.public-api';
@@ -77,7 +76,6 @@ import { TenantManagementModule } from '../tenant-management/tenant-management.m
     GetRentalOffersPricingHandler,
     GetStorefrontRentalOffersPricingHandler,
     PricingContextLoader,
-    PriceDraftRentalService,
     RatePlanRepository,
     UpdatePromotionHandler,
     { provide: PricingCalculation, useClass: PricingCalculationService },

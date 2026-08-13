@@ -10,10 +10,9 @@ export const CalculateDraftRentalPriceSelectedOfferSchema = z.object({
   quantity: z.number().int().positive(),
 });
 
-export const CalculateDraftRentalPriceManualPricingAdjustmentSchema = z.object({
+export const CalculateDraftRentalPriceTargetTotalAdjustmentSchema = z.object({
   mode: z.literal("TARGET_TOTAL"),
   targetTotal: z.string().trim().min(1),
-  reason: z.string().trim().optional(),
 });
 
 export const CalculateDraftRentalPriceBodySchema = z.object({
@@ -24,11 +23,11 @@ export const CalculateDraftRentalPriceBodySchema = z.object({
     end: ExplicitOffsetInstantWireSchema,
   }),
   selectedOffers: z.array(CalculateDraftRentalPriceSelectedOfferSchema).min(1),
-  manualPricingAdjustment:
-    CalculateDraftRentalPriceManualPricingAdjustmentSchema.optional(),
+  targetTotalAdjustment:
+    CalculateDraftRentalPriceTargetTotalAdjustmentSchema.optional(),
 });
 
-export const CalculateDraftRentalPriceDurationPolicySnapshotSchema = z.object({
+export const CalculateDraftRentalPriceDurationPolicySchema = z.object({
   timezone: z.string(),
   dailyBillingPolicy: z.enum([
     "IGNORE_PARTIAL_DAY",
@@ -39,18 +38,8 @@ export const CalculateDraftRentalPriceDurationPolicySnapshotSchema = z.object({
   halfDayThresholdMinutes: z.number().int().optional(),
 });
 
-export const CalculateDraftRentalPriceLineManualPricingAdjustmentSchema =
-  z.object({
-    mode: z.literal("TARGET_TOTAL_ALLOCATION"),
-    direction: z.enum(["INCREASE", "DECREASE", "NONE"]),
-    amount: DecimalStringSchema,
-    setByTenantUserId: z.string(),
-    setAtIso: z.string().datetime(),
-    reason: z.string().optional(),
-  });
-
 export const CalculateDraftRentalPriceLineAdjustmentSchema = z.object({
-  type: z.enum(["PROMOTION", "COUPON"]),
+  type: z.string(),
   promotionId: z.string(),
   couponId: z.string().optional(),
   name: z.string(),
@@ -58,23 +47,30 @@ export const CalculateDraftRentalPriceLineAdjustmentSchema = z.object({
 });
 
 export const CalculateDraftRentalPriceLineSchema = z.object({
-  rentalSelectionId: z.string(),
+  lineReference: z.string(),
   rentalOfferId: z.string(),
   rentableItemId: z.string(),
-  rentableItemName: z.string(),
   categoryId: z.string().optional(),
   quantity: z.number().int().positive(),
   chargedUnits: z.number().int().positive(),
   billingUnit: z.enum(["HOUR", "DAY", "WEEK"]),
   ratePlanId: z.string(),
-  appliedTierId: z.string(),
-  pricePerUnit: DecimalStringSchema,
+  appliedTier: z.object({
+    tierId: z.string(),
+    fromUnit: z.number().int(),
+    toUnit: z.number().int().nullable(),
+    pricePerUnit: DecimalStringSchema,
+  }),
   subtotal: DecimalStringSchema,
   discountTotal: DecimalStringSchema,
   total: DecimalStringSchema,
   appliedAdjustments: z.array(CalculateDraftRentalPriceLineAdjustmentSchema),
-  manualPricingAdjustment:
-    CalculateDraftRentalPriceLineManualPricingAdjustmentSchema.optional(),
+  targetTotalAllocation: z
+    .object({
+      direction: z.enum(["INCREASE", "DECREASE", "NONE"]),
+      amount: DecimalStringSchema,
+    })
+    .optional(),
 });
 
 export const CalculateDraftRentalPriceAppliedPromotionSchema = z.object({
@@ -94,46 +90,38 @@ export const CalculateDraftRentalPriceAppliedCouponSchema = z.object({
   amount: DecimalStringSchema,
 });
 
-export const CalculateDraftRentalPricePricingResultSchema = z.object({
+export const CalculateDraftRentalPriceBreakdownSchema = z.object({
   currency: z.string(),
   subtotal: DecimalStringSchema,
   discountTotal: DecimalStringSchema,
   total: DecimalStringSchema,
   chargedDays: z.number().int().nonnegative(),
   lines: z.array(CalculateDraftRentalPriceLineSchema),
-  durationPolicySnapshot: CalculateDraftRentalPriceDurationPolicySnapshotSchema,
+  durationPolicy: CalculateDraftRentalPriceDurationPolicySchema,
   appliedPromotions: z.array(CalculateDraftRentalPriceAppliedPromotionSchema),
   appliedCoupon: CalculateDraftRentalPriceAppliedCouponSchema.optional(),
 });
 
-export const CalculateDraftRentalPriceManualPricingAdjustmentSnapshotSchema =
-  z.object({
-    mode: z.literal("TARGET_TOTAL"),
-    targetTotal: DecimalStringSchema,
-    previousTotal: DecimalStringSchema,
-    direction: z.enum(["INCREASE", "DECREASE", "NONE"]),
-    adjustmentTotal: DecimalStringSchema,
-    setByTenantUserId: z.string(),
-    setAtIso: z.string().datetime(),
-    reason: z.string().optional(),
-  });
+export const CalculateDraftRentalPriceTargetTotalAdjustmentResultSchema = z.object({
+  targetTotal: DecimalStringSchema,
+  previousTotal: DecimalStringSchema,
+  direction: z.enum(["INCREASE", "DECREASE", "NONE"]),
+  adjustmentTotal: DecimalStringSchema,
+});
 
 export const CalculateDraftRentalPriceResponseSchema = z.object({
-  schema: z.literal("v2.rental-price-snapshot"),
-  version: z.literal(1),
   calculatedAtIso: z.string().datetime(),
-  context: z.enum(["DRAFT", "CONFIRMED", "CONFIRM_DRAFT", "REPRICE"]),
-  calculated: CalculateDraftRentalPricePricingResultSchema,
-  final: CalculateDraftRentalPricePricingResultSchema,
-  manualPricingAdjustment:
-    CalculateDraftRentalPriceManualPricingAdjustmentSnapshotSchema.optional(),
+  calculated: CalculateDraftRentalPriceBreakdownSchema,
+  final: CalculateDraftRentalPriceBreakdownSchema,
+  targetTotalAdjustment:
+    CalculateDraftRentalPriceTargetTotalAdjustmentResultSchema.optional()
 });
 
 export type CalculateDraftRentalPriceSelectedOfferDto = z.infer<
   typeof CalculateDraftRentalPriceSelectedOfferSchema
 >;
-export type CalculateDraftRentalPriceManualPricingAdjustmentDto = z.infer<
-  typeof CalculateDraftRentalPriceManualPricingAdjustmentSchema
+export type CalculateDraftRentalPriceTargetTotalAdjustmentDto = z.infer<
+  typeof CalculateDraftRentalPriceTargetTotalAdjustmentSchema
 >;
 export type CalculateDraftRentalPriceBodyDto = z.input<
   typeof CalculateDraftRentalPriceBodySchema

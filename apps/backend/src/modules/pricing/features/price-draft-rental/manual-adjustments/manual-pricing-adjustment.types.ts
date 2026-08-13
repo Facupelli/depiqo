@@ -1,30 +1,17 @@
-export type ManualPricingAdjustmentMode = 'TARGET_TOTAL';
+export type TargetTotalAdjustmentDirection = 'INCREASE' | 'DECREASE' | 'NONE';
 
-export type ManualPricingAdjustmentDirection = 'INCREASE' | 'DECREASE' | 'NONE';
-
-export type ManualPricingAdjustmentInput = {
-  mode: ManualPricingAdjustmentMode;
+export type TargetTotalAdjustmentInput = {
   targetTotal: string;
-  setByTenantUserId: string;
-  reason?: string;
 };
 
-export type ManualPricingAdjustmentSnapshot = {
-  mode: ManualPricingAdjustmentMode;
+export type TargetTotalAdjustmentResult = {
   targetTotal: string;
   previousTotal: string;
-  direction: ManualPricingAdjustmentDirection;
+  direction: TargetTotalAdjustmentDirection;
   adjustmentTotal: string;
-  setByTenantUserId: string;
-  setAtIso: string;
-  reason?: string;
 };
 
-export type LineManualPricingAdjustmentSnapshot = {
-  mode: 'TARGET_TOTAL_ALLOCATION';
-  direction: ManualPricingAdjustmentDirection;
+export type LineTargetTotalAllocation = {
+  direction: TargetTotalAdjustmentDirection;
   amount: string;
-  setByTenantUserId: string;
-  setAtIso: string;
-  reason?: string;
 };

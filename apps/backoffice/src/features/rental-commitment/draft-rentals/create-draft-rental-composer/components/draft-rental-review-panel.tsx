@@ -30,8 +30,8 @@ export const DraftRentalReviewPanel = withForm({
 		const finalTotal =
 			pricePreview?.final.total ?? (values.targetTotal || calculatedTotal);
 		const currency = pricePreview?.final.currency ?? "USD";
-		const difference = pricePreview?.manualPricingAdjustment?.adjustmentTotal;
-		const direction = pricePreview?.manualPricingAdjustment?.direction;
+		const difference = pricePreview?.targetTotalAdjustment?.adjustmentTotal;
+		const direction = pricePreview?.targetTotalAdjustment?.direction;
 		const canSubmit =
 			!branchMissing &&
 			values.branchId.length > 0 &&

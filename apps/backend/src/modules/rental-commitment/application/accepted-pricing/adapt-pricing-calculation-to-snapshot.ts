@@ -1,17 +1,24 @@
 import { PricingCalculationResult } from 'src/modules/pricing/public-api/pricing-calculation.public-api';
-import { RentalPriceSnapshotV1 } from 'src/modules/pricing/public-api/rental-price-snapshot.type';
+
+import {
+  ACCEPTED_RENTAL_PRICING_SNAPSHOT_SCHEMA,
+  ACCEPTED_RENTAL_PRICING_SNAPSHOT_VERSION,
+  AcceptedRentalPricingBreakdownV1,
+  AcceptedRentalPricingContext,
+  AcceptedRentalPricingSnapshotV1,
+} from '../../domain/value-objects/accepted-pricing-snapshot.type';
 
 type RentalManualPricingAdjustment = { targetTotal: string; setByTenantUserId: string; reason?: string };
 
 export function adaptPricingCalculationToSnapshot(input: {
   result: PricingCalculationResult;
-  context: RentalPriceSnapshotV1['context'];
+  context: AcceptedRentalPricingContext;
   manualPricingAdjustment?: RentalManualPricingAdjustment;
   lineDisplayNames?: Record<string, string>;
-}): RentalPriceSnapshotV1 {
+}): AcceptedRentalPricingSnapshotV1 {
   return {
-    schema: 'v2.rental-price-snapshot',
-    version: 1,
+    schema: ACCEPTED_RENTAL_PRICING_SNAPSHOT_SCHEMA,
+    version: ACCEPTED_RENTAL_PRICING_SNAPSHOT_VERSION,
     calculatedAtIso: input.result.calculatedAt.toISOString(),
     context: input.context,
     calculated: toPersistedBreakdown(input.result.calculated, undefined, undefined, input.lineDisplayNames),
@@ -32,7 +39,7 @@ export function adaptPricingCalculationToSnapshot(input: {
           },
         }
       : {}),
-  } as unknown as RentalPriceSnapshotV1;
+  };
 }
 
 function toPersistedBreakdown(
@@ -40,7 +47,7 @@ function toPersistedBreakdown(
   adjustment?: RentalManualPricingAdjustment,
   appliedAt?: Date,
   lineDisplayNames?: Record<string, string>,
-) {
+): AcceptedRentalPricingBreakdownV1 {
   return {
     currency: breakdown.currency,
     subtotal: breakdown.subtotal,
@@ -79,5 +86,5 @@ function toPersistedBreakdown(
     })),
     appliedPromotions: breakdown.appliedPromotions,
     ...(breakdown.appliedCoupon ? { appliedCoupon: breakdown.appliedCoupon } : {}),
-  } as unknown as RentalPriceSnapshotV1['calculated'];
+  };
 }

@@ -3,10 +3,9 @@ export type CalculateDraftRentalPriceSelectedOffer = {
   quantity: number;
 };
 
-export type CalculateDraftRentalPriceManualPricingAdjustment = {
+export type CalculateDraftRentalPriceTargetTotalAdjustment = {
   mode: 'TARGET_TOTAL';
   targetTotal: string;
-  reason?: string;
 };
 
 export class CalculateDraftRentalPriceQuery {
@@ -17,7 +16,7 @@ export class CalculateDraftRentalPriceQuery {
     public readonly rentalPeriodStart: Date,
     public readonly rentalPeriodEnd: Date,
     public readonly selectedOffers: CalculateDraftRentalPriceSelectedOffer[],
-    public readonly manualPricingAdjustment?: CalculateDraftRentalPriceManualPricingAdjustment,
+    public readonly targetTotalAdjustment?: CalculateDraftRentalPriceTargetTotalAdjustment,
     public readonly rentalCustomerId?: string,
   ) {}
 }

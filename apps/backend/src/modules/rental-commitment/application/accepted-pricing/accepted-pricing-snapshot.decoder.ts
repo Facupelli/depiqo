@@ -10,6 +10,10 @@ import type {
   RentalAcceptedPricingBillingUnit,
   RentalAcceptedPricingForDocuments,
 } from '../../public-api/rental-commitment.public-api';
+import {
+  ACCEPTED_RENTAL_PRICING_SNAPSHOT_SCHEMA,
+  ACCEPTED_RENTAL_PRICING_SNAPSHOT_VERSION,
+} from '../../domain/value-objects/accepted-pricing-snapshot.type';
 
 type V2Pricing = Extract<NonNullable<GetRentalDetailResponseDto['pricing']>, { kind: 'V2' }>;
 type LegacyPricing = Extract<NonNullable<GetRentalDetailResponseDto['pricing']>, { kind: 'LEGACY' }>;
@@ -62,8 +66,8 @@ const V2PersistedPricingResultSchema = z.object({
 });
 
 const V2RentalPriceSnapshotSchema = z.object({
-  schema: z.literal('v2.rental-price-snapshot'),
-  version: z.literal(1),
+  schema: z.literal(ACCEPTED_RENTAL_PRICING_SNAPSHOT_SCHEMA),
+  version: z.literal(ACCEPTED_RENTAL_PRICING_SNAPSHOT_VERSION),
   calculated: V2PersistedPricingResultSchema,
   final: V2PersistedPricingResultSchema,
   manualPricingAdjustment: GetRentalDetailV2PricingSchema.shape.manualPricingAdjustment.optional(),

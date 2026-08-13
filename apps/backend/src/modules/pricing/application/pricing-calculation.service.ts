@@ -99,22 +99,17 @@ export class PricingCalculationService extends PricingCalculation {
         );
       const adjusted = this.adjustmentApplier.apply({
         pricingResult: calculated,
-        manualPricingAdjustment: {
-          mode: 'TARGET_TOTAL',
-          targetTotal: input.targetTotalAdjustment.targetTotal,
-          setByTenantUserId: '',
-        },
-        appliedAt: calculatedAt,
+        targetTotalAdjustment: { targetTotal: input.targetTotalAdjustment.targetTotal },
       });
       return ok({
         calculatedAt,
         calculated: this.toBreakdown(calculated, selections as PricingInput['selections']),
         final: this.toBreakdown(adjusted.pricingResult, selections as PricingInput['selections']),
         targetTotalAdjustment: {
-          targetTotal: adjusted.manualPricingAdjustment.targetTotal,
-          previousTotal: adjusted.manualPricingAdjustment.previousTotal,
-          direction: adjusted.manualPricingAdjustment.direction,
-          adjustmentTotal: adjusted.manualPricingAdjustment.adjustmentTotal,
+          targetTotal: adjusted.targetTotalAdjustment.targetTotal,
+          previousTotal: adjusted.targetTotalAdjustment.previousTotal,
+          direction: adjusted.targetTotalAdjustment.direction,
+          adjustmentTotal: adjusted.targetTotalAdjustment.adjustmentTotal,
         },
       });
     } catch (error) {
@@ -204,14 +199,7 @@ export class PricingCalculationService extends PricingCalculation {
           discountTotal: line.discountTotal,
           total: line.total,
           appliedAdjustments: line.appliedAdjustments,
-          ...(line.manualPricingAdjustment
-            ? {
-                targetTotalAllocation: {
-                  direction: line.manualPricingAdjustment.direction,
-                  amount: line.manualPricingAdjustment.amount,
-                },
-              }
-            : {}),
+          ...(line.targetTotalAllocation ? { targetTotalAllocation: line.targetTotalAllocation } : {}),
         };
       }),
       appliedPromotions: result.appliedPromotions,

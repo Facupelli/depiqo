@@ -13,7 +13,7 @@ import {
   PricingCalculation,
   PricingCalculationError,
 } from 'src/modules/pricing/public-api/pricing-calculation.public-api';
-import { RentalPriceSnapshotV1 } from 'src/modules/pricing/public-api/rental-price-snapshot.type';
+import { AcceptedRentalPricingSnapshotV1 } from '../../domain/value-objects/accepted-pricing-snapshot.type';
 import { TenantManagementPublicApi } from 'src/modules/tenant-management/public-api/tenant-management.public-api';
 
 import { adaptPricingCalculationToSnapshot } from '../../application/accepted-pricing/adapt-pricing-calculation-to-snapshot';
@@ -439,7 +439,7 @@ export class EditConfirmedRentalHandler implements ICommandHandler<
     });
     if (tenantValidation.isErr()) return err(this.toApplicationError(tenantValidation.error, context));
 
-    let confirmedPriceSnapshot: RentalPriceSnapshotV1 | undefined;
+    let confirmedPriceSnapshot: AcceptedRentalPricingSnapshotV1 | undefined;
 
     if (command.props.manualPricingAdjustment !== null) {
       const resolvedCatalogSelections = await this.catalogSelectionResolution.resolveSelectedRentalOffers({

@@ -196,12 +196,18 @@ export function toCalculateDraftRentalPriceDto(
 	values: DraftRentalComposerFormValues,
 	timezone: string,
 ): CalculateDraftRentalPriceBodyDto {
+	const adjustment = manualPricingAdjustment(values);
 	const dto = {
 		branchId: values.branchId,
 		rentalCustomerId: emptyToUndefined(values.rentalCustomerId),
 		period: buildDraftRentalPeriod(values, timezone),
 		selectedOffers: selectedOffers(values),
-		manualPricingAdjustment: manualPricingAdjustment(values),
+		targetTotalAdjustment: adjustment
+			? {
+					mode: "TARGET_TOTAL" as const,
+					targetTotal: adjustment.targetTotal,
+				}
+			: undefined,
 	};
 
 	CalculateDraftRentalPriceBodySchema.parse(dto);
