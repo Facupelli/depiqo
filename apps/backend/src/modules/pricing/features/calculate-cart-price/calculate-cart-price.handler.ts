@@ -11,7 +11,10 @@ import { PricingResult } from '../../pricing-engine/final/pricing-result.type';
 import { RentalPricingService } from '../../pricing-engine/final/rental-pricing.service';
 import { CalculateCartPriceError, calculateCartPriceError } from './calculate-cart-price.errors';
 import { CalculateCartPriceQuery } from './calculate-cart-price.query';
-import { CatalogPublicApi, ResolveSelectedRentalOffersError } from 'src/modules/catalog/public-api/catalog.public-api';
+import {
+  CatalogSelectionResolution,
+  CatalogSelectionResolutionError,
+} from 'src/modules/catalog/public-api/catalog-selection-resolution.public-api';
 import {
   GetTenantPricingConfigResult,
   TenantManagementPublicApi,
@@ -48,7 +51,7 @@ export class CalculateCartPriceHandler implements IQueryHandler<
 
   constructor(
     private readonly pricingContextLoader: PricingContextLoader,
-    private readonly catalogApi: CatalogPublicApi,
+    private readonly catalogSelectionResolution: CatalogSelectionResolution,
     private readonly tenantManagementApi: TenantManagementPublicApi,
   ) {}
 
@@ -133,7 +136,7 @@ export class CalculateCartPriceHandler implements IQueryHandler<
       );
     }
 
-    const resolvedCatalogSelections = await this.catalogApi.resolveSelectedRentalOffers({
+    const resolvedCatalogSelections = await this.catalogSelectionResolution.resolveSelectedRentalOffers({
       tenantId: query.tenantId,
       branchId: query.branchId,
       selectedOffers: query.selectedOffers.map((selection) => ({
@@ -335,7 +338,7 @@ export class CalculateCartPriceHandler implements IQueryHandler<
   }
 
   private mapCatalogSelectionError(
-    error: ResolveSelectedRentalOffersError,
+    error: CatalogSelectionResolutionError,
     context: Record<string, unknown>,
   ): CalculateCartPriceError {
     if (error.code === 'RentalOfferNotFound') {

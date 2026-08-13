@@ -3,10 +3,16 @@ import { err, ok, Result } from 'neverthrow';
 
 import { PrismaUnitOfWork } from 'src/core/database/prisma-unit-of-work';
 import { PostgresExclusionViolationError } from 'src/core/utils/postgres-error.mapper';
-import { CatalogPublicApi, ResolveSelectedRentalOffersError } from 'src/modules/catalog/public-api/catalog.public-api';
+import {
+  CatalogSelectionResolution,
+  CatalogSelectionResolutionError,
+} from 'src/modules/catalog/public-api/catalog-selection-resolution.public-api';
+import { AssetInventoryPublicApi } from 'src/modules/asset-inventory/public-api/asset-inventory.public-api';
 import { PricingPublicApi } from 'src/modules/pricing/public-api/pricing.public-api';
 import { TenantManagementPublicApi } from 'src/modules/tenant-management/public-api/tenant-management.public-api';
 
+import { toRentalSelectionKind } from '../../application/catalog-selection-kind.mapper';
+import { resolveEquipmentTypeNames } from '../../application/equipment-type-display-facts';
 import { toRentalIntegrationEvents } from '../../application/rental-integration-event.mapper';
 import { CreateConfirmedRentalCommand } from './create-confirmed-rental.command';
 import { Rental } from '../../domain/rental.aggregate';
@@ -55,7 +61,8 @@ export class CreateConfirmedRentalService implements ICommandHandler<
   constructor(
     private readonly rentalRepository: RentalRepository,
     private readonly tenantManagementApi: TenantManagementPublicApi,
-    private readonly catalogApi: CatalogPublicApi,
+    private readonly catalogSelectionResolution: CatalogSelectionResolution,
+    private readonly assetInventoryApi: AssetInventoryPublicApi,
     private readonly pricingApi: PricingPublicApi,
     private readonly rentalAssetAllocation: RentalAssetAllocationService,
     private readonly rentalOwnerSplitCalculator: RentalOwnerSplitCalculator,
@@ -81,7 +88,7 @@ export class CreateConfirmedRentalService implements ICommandHandler<
       return err(this.toApplicationError(tenantValidation.error, context));
     }
 
-    const resolvedCatalogSelections = await this.catalogApi.resolveSelectedRentalOffers({
+    const resolvedCatalogSelections = await this.catalogSelectionResolution.resolveSelectedRentalOffers({
       tenantId: command.tenantId,
       branchId: command.branchId,
       selectedOffers: command.selectedOffers.map((selection) => ({
@@ -94,12 +101,19 @@ export class CreateConfirmedRentalService implements ICommandHandler<
       return err(this.toApplicationError(resolvedCatalogSelections.error, context));
     }
 
+    const equipmentTypeNames = await resolveEquipmentTypeNames(this.assetInventoryApi, {
+      tenantId: command.tenantId,
+      equipmentTypeIds: resolvedCatalogSelections.value.resolvedOffers.flatMap((offer) =>
+        offer.fulfillmentRequirements.map((requirement) => requirement.equipmentTypeId),
+      ),
+    });
+
     const rentalSelectionsDraft = resolvedCatalogSelections.value.resolvedOffers.map((offer) => ({
       rentalSelectionId: RentalSelectionId.create(),
       rentalOfferId: offer.rentalOfferId,
       rentableItemId: offer.rentableItem.id,
       rentableItemNameSnapshot: offer.rentableItem.name,
-      rentableItemKindSnapshot: offer.rentableItem.kind,
+      rentableItemKindSnapshot: toRentalSelectionKind(offer.rentableItem.kind),
       categoryId: offer.rentableItem.categoryId,
       quantity: offer.quantity,
       fulfillmentRequirements: offer.fulfillmentRequirements,
@@ -134,7 +148,7 @@ export class CreateConfirmedRentalService implements ICommandHandler<
         rentalDemandLineId: RentalDemandLineId.create(),
         rentalSelectionId: selection.rentalSelectionId,
         equipmentTypeId: requirement.equipmentTypeId,
-        equipmentNameSnapshot: requirement.equipmentTypeName ?? requirement.equipmentTypeId,
+        equipmentNameSnapshot: equipmentTypeNames.get(requirement.equipmentTypeId) ?? requirement.equipmentTypeId,
         quantity: selection.quantity * requirement.quantityPerItem,
       })),
     );
@@ -330,13 +344,6 @@ export class CreateConfirmedRentalService implements ICommandHandler<
             error,
             context,
           );
-        case 'EquipmentTypeNotFound':
-          return createConfirmedRentalError(
-            'rental_commitment.equipment_type_not_found',
-            error.message,
-            error,
-            context,
-          );
       }
     }
     if (error instanceof RentalMustContainSelectionError) {
@@ -453,8 +460,8 @@ export class CreateConfirmedRentalService implements ICommandHandler<
   }
 }
 
-function isCatalogSelectionError(error: unknown): error is ResolveSelectedRentalOffersError {
-  return typeof error === 'object' && error !== null && 'code' in error && 'message' in error;
+function isCatalogSelectionError(error: unknown): error is CatalogSelectionResolutionError {
+  return error instanceof CatalogSelectionResolutionError;
 }
 
 function isErrorWithCode(error: unknown, code: string): error is Error & { code: string } {

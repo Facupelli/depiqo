@@ -419,13 +419,28 @@ describe('CreateDraftRental integration', () => {
     expect(await rentalCount(setup)).toBe(0);
   });
 
-  it('maps a missing requirement equipment type and leaves zero state', async () => {
+  it('trusts a stored requirement reference and preserves its ID when its display fact is unavailable', async () => {
     const setup = await scenario();
     const catalog = await offer(setup);
     await prisma.client.v2EquipmentType.delete({ where: { id: catalog.equipmentTypes[0].id } });
+
     const result = await create({ ...setup, selectedOffers: [{ rentalOfferId: catalog.offer.id, quantity: 1 }] });
-    expect(result.isErr() && result.error.code).toBe('rental_commitment.equipment_type_not_found');
-    expect(await rentalCount(setup)).toBe(0);
+
+    expect(result.isOk()).toBe(true);
+    if (result.isErr()) throw result.error;
+    expect(await rentalCount(setup)).toBe(1);
+    const rental = await prisma.client.v2Rental.findUniqueOrThrow({
+      where: { id: result.value.rentalId },
+      include: { demandLines: true },
+    });
+    expect(rental.demandLines).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          equipmentTypeId: catalog.equipmentTypes[0].id,
+          equipmentTypeNameSnapshot: catalog.equipmentTypes[0].id,
+        }),
+      ]),
+    );
   });
 
   it('rejects an inactive branch, foreign customer, missing pricing, and unsupported delivery without writes', async () => {

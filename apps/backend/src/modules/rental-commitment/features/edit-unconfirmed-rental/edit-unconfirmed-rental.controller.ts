@@ -123,6 +123,24 @@ const editUnconfirmedRentalProblemMap = {
     HttpStatus.UNPROCESSABLE_ENTITY,
     'The same rental offer cannot be selected more than once.',
   ),
+  'rental_commitment.rental_offer_not_found': problem(
+    'rental_offer_not_found',
+    'Rental offer not found',
+    HttpStatus.NOT_FOUND,
+    'The selected rental offer was not found.',
+  ),
+  'rental_commitment.catalog_selection_unavailable': problem(
+    'catalog_selection_unavailable',
+    'Catalog selection unavailable',
+    HttpStatus.UNPROCESSABLE_ENTITY,
+    'The selected rental offer is not currently available for selection.',
+  ),
+  'rental_commitment.invalid_fulfillment_definition': problem(
+    'invalid_fulfillment_definition',
+    'Invalid fulfillment definition',
+    HttpStatus.UNPROCESSABLE_ENTITY,
+    'The selected rental offer has an invalid fulfillment definition.',
+  ),
   'rental_commitment.tenant_unavailable': problem(
     'tenant_unavailable',
     'Tenant unavailable',

@@ -24,6 +24,8 @@ import { PrismaRentableItemRepository } from './features/create-rentable-item-of
 import { PrismaRentalOfferRepository } from './features/create-rentable-item-offering/prisma-rental-offer.repository';
 import { PrismaResolveSelectedRentalOffersReader } from './features/resolve-selected-rental-offers/prisma-resolve-selected-rental-offers.reader';
 import { ResolveSelectedRentalOffersService } from './features/resolve-selected-rental-offers/resolve-selected-rental-offers.service';
+import { CatalogSelectionResolution } from './public-api/catalog-selection-resolution.public-api';
+import { CatalogSelectionResolutionService } from './public-api/catalog-selection-resolution.service';
 import { CatalogPublicApi } from './public-api/catalog.public-api';
 import { CatalogPublicApiService } from './public-api/catalog.public-api.service';
 
@@ -41,6 +43,7 @@ import { CatalogPublicApiService } from './public-api/catalog.public-api.service
   ],
   providers: [
     { provide: CatalogPublicApi, useClass: CatalogPublicApiService },
+    { provide: CatalogSelectionResolution, useClass: CatalogSelectionResolutionService },
     ActivateRentableItemHandler,
     CreateRentalOfferForRentableItemService,
     CreateRentableItemOfferingService,
@@ -56,6 +59,6 @@ import { CatalogPublicApiService } from './public-api/catalog.public-api.service
     ResolveSelectedRentalOffersService,
     PrismaResolveSelectedRentalOffersReader,
   ],
-  exports: [CatalogPublicApi],
+  exports: [CatalogPublicApi, CatalogSelectionResolution],
 })
 export class CatalogModule {}

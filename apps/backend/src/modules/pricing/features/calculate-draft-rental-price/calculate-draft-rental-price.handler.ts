@@ -4,7 +4,10 @@ import { Injectable } from '@nestjs/common';
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { err, ok, Result } from 'neverthrow';
 
-import { CatalogPublicApi, ResolveSelectedRentalOffersError } from 'src/modules/catalog/public-api/catalog.public-api';
+import {
+  CatalogSelectionResolution,
+  CatalogSelectionResolutionError,
+} from 'src/modules/catalog/public-api/catalog-selection-resolution.public-api';
 import { TenantManagementPublicApi } from 'src/modules/tenant-management/public-api/tenant-management.public-api';
 
 import { InvalidPricingInputError, PricingError } from '../../pricing-engine/errors/pricing.errors';
@@ -22,7 +25,7 @@ export class CalculateDraftRentalPriceHandler implements IQueryHandler<
   Result<CalculateDraftRentalPriceResult, CalculateDraftRentalPriceError>
 > {
   constructor(
-    private readonly catalogApi: CatalogPublicApi,
+    private readonly catalogSelectionResolution: CatalogSelectionResolution,
     private readonly tenantManagementApi: TenantManagementPublicApi,
     private readonly priceDraftRentalService: PriceDraftRentalService,
   ) {}
@@ -89,7 +92,7 @@ export class CalculateDraftRentalPriceHandler implements IQueryHandler<
       );
     }
 
-    const resolvedCatalogSelections = await this.catalogApi.resolveSelectedRentalOffers({
+    const resolvedCatalogSelections = await this.catalogSelectionResolution.resolveSelectedRentalOffers({
       tenantId: query.tenantId,
       branchId: query.branchId,
       selectedOffers: query.selectedOffers.map((selection) => ({
@@ -264,7 +267,7 @@ export class CalculateDraftRentalPriceHandler implements IQueryHandler<
   }
 
   private mapCatalogSelectionError(
-    error: ResolveSelectedRentalOffersError,
+    error: CatalogSelectionResolutionError,
     context: Record<string, unknown>,
   ): CalculateDraftRentalPriceError {
     if (error.code === 'RentalOfferNotFound') {

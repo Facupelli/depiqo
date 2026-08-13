@@ -5,7 +5,6 @@ import { CreateRentalOfferForRentableItemCommand } from '../features/create-rent
 import { CreateRentalOfferForRentableItemService } from '../features/create-rental-offer-for-rentable-item/create-rental-offer-for-rentable-item.service';
 import { CreateRentableItemOfferingCommand } from '../features/create-rentable-item-offering/create-rentable-item-offering.command';
 import { CreateRentableItemOfferingService } from '../features/create-rentable-item-offering/create-rentable-item-offering.service';
-import { ResolveSelectedRentalOffersService } from '../features/resolve-selected-rental-offers/resolve-selected-rental-offers.service';
 import {
   CatalogEquipmentTypeNotFoundError,
   CatalogError,
@@ -22,12 +21,6 @@ import {
   CreateRentalOfferForRentableItemResult,
   CreateRentableItemOfferingInput,
   CreateRentableItemOfferingResult,
-  ResolveRentalOffersForAvailabilityError,
-  ResolveRentalOffersForAvailabilityInput,
-  ResolveRentalOffersForAvailabilityResult,
-  ResolveSelectedRentalOffersError,
-  ResolveSelectedRentalOffersInput,
-  ResolveSelectedRentalOffersResult,
 } from './catalog.public-api';
 
 @Injectable()
@@ -35,7 +28,6 @@ export class CatalogPublicApiService extends CatalogPublicApi {
   constructor(
     private readonly createRentableItemOfferingService: CreateRentableItemOfferingService,
     private readonly createRentalOfferForRentableItemService: CreateRentalOfferForRentableItemService,
-    private readonly resolveSelectedRentalOffersService: ResolveSelectedRentalOffersService,
   ) {
     super();
   }
@@ -66,18 +58,6 @@ export class CatalogPublicApiService extends CatalogPublicApi {
     );
 
     return result.mapErr(mapCatalogPublicApiError);
-  }
-
-  async resolveRentalOffersForAvailability(
-    input: ResolveRentalOffersForAvailabilityInput,
-  ): Promise<Result<ResolveRentalOffersForAvailabilityResult, ResolveRentalOffersForAvailabilityError>> {
-    return this.resolveSelectedRentalOffersService.executeForAvailability(input);
-  }
-
-  async resolveSelectedRentalOffers(
-    input: ResolveSelectedRentalOffersInput,
-  ): Promise<Result<ResolveSelectedRentalOffersResult, ResolveSelectedRentalOffersError>> {
-    return this.resolveSelectedRentalOffersService.execute(input);
   }
 }
 

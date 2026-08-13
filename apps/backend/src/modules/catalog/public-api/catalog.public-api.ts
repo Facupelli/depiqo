@@ -1,86 +1,6 @@
 import { Result } from 'neverthrow';
 
-import { RentableItemKind } from '../domain/rentable-item.aggregate';
-
-export type { RentableItemKind } from '../domain/rentable-item.aggregate';
-
-export interface SelectedRentalOfferInput {
-  rentalOfferId: string;
-  quantity: number;
-}
-
-export interface ResolveSelectedRentalOffersInput {
-  tenantId: string;
-  branchId: string;
-  selectedOffers: SelectedRentalOfferInput[];
-}
-
-export interface ResolvedSelectedRentalOffer {
-  rentalOfferId: string;
-  rentableItem: {
-    id: string;
-    name: string;
-    kind: RentableItemKind;
-    categoryId?: string;
-  };
-  branchId: string;
-  quantity: number;
-  fulfillmentRequirements: Array<{
-    equipmentTypeId: string;
-    equipmentTypeName?: string;
-    quantityPerItem: number;
-  }>;
-}
-
-export interface ResolveSelectedRentalOffersResult {
-  resolvedOffers: ResolvedSelectedRentalOffer[];
-}
-
-export type ResolveSelectedRentalOffersErrorCode =
-  | 'EmptySelection'
-  | 'InvalidSelectionQuantity'
-  | 'DuplicateRentalOfferSelection'
-  | 'RentalOfferNotFound'
-  | 'RentalOfferNotRentable'
-  | 'RentableItemNotActive'
-  | 'InvalidFulfillmentDefinition'
-  | 'EquipmentTypeNotFound';
-
-export interface ResolveSelectedRentalOffersError {
-  code: ResolveSelectedRentalOffersErrorCode;
-  message: string;
-  context?: Record<string, unknown>;
-}
-
-export type ResolveRentalOffersForAvailabilityErrorCode =
-  | 'RentalOfferNotFound'
-  | 'RentalOfferNotRentable'
-  | 'RentableItemNotActive'
-  | 'InvalidFulfillmentDefinition';
-
-export interface ResolveRentalOffersForAvailabilityError {
-  code: ResolveRentalOffersForAvailabilityErrorCode;
-  message: string;
-  cause?: unknown;
-  context?: Record<string, unknown>;
-}
-
-export interface ResolveRentalOffersForAvailabilityInput {
-  tenantId: string;
-  branchId: string;
-  rentalOfferIds: string[];
-}
-
-export interface ResolveRentalOffersForAvailabilityResult {
-  resolvedOffers: Array<{
-    rentalOfferId: string;
-    branchId: string;
-    fulfillmentRequirements: Array<{
-      equipmentTypeId: string;
-      quantityPerItem: number;
-    }>;
-  }>;
-}
+export type RentableItemKind = 'SINGLE' | 'PACKAGE' | 'KIT' | 'BUNDLE';
 
 export interface CreateRentableItemOfferingInput {
   tenantId: string;
@@ -127,14 +47,6 @@ export interface CatalogPublicApiError {
 }
 
 export abstract class CatalogPublicApi {
-  abstract resolveSelectedRentalOffers(
-    input: ResolveSelectedRentalOffersInput,
-  ): Promise<Result<ResolveSelectedRentalOffersResult, ResolveSelectedRentalOffersError>>;
-
-  abstract resolveRentalOffersForAvailability(
-    input: ResolveRentalOffersForAvailabilityInput,
-  ): Promise<Result<ResolveRentalOffersForAvailabilityResult, ResolveRentalOffersForAvailabilityError>>;
-
   abstract createRentableItemOffering(
     input: CreateRentableItemOfferingInput,
   ): Promise<Result<CreateRentableItemOfferingResult, CatalogPublicApiError>>;

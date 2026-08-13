@@ -7,8 +7,8 @@ import {
 } from './errors/rental-commitment.errors';
 import { RentalSelectionId } from './ids/rental-selection-id';
 import { JsonSnapshot, JsonValue } from './value-objects/json-snapshot.value-object';
+import { RentableItemKind } from './rental-status';
 import { RentalQuantity } from './value-objects/rental-quantity.value-object';
-import { RentableItemKind, RENTABLE_ITEM_KINDS } from '../../catalog/domain/rentable-item.aggregate';
 
 interface RentalSelectionProps {
   tenantId: string;
@@ -143,7 +143,7 @@ export class RentalSelection {
       }
     }
 
-    if (!Object.values(RENTABLE_ITEM_KINDS).includes(props.rentableItemKindSnapshot)) {
+    if (!Object.values(RentableItemKind).includes(props.rentableItemKindSnapshot)) {
       return err(new RentalInvalidFieldError('rentableItemKindSnapshot', 'must be a valid rentable item kind'));
     }
 

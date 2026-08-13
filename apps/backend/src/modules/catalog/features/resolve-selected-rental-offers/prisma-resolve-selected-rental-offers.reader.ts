@@ -28,12 +28,6 @@ export interface FulfillmentRequirementReadModel {
   quantityPerItem: number;
 }
 
-export interface EquipmentTypeReadModel {
-  id: string;
-  tenantId: string;
-  name: string;
-}
-
 @Injectable()
 export class PrismaResolveSelectedRentalOffersReader {
   constructor(private readonly prisma: PrismaService) {}
@@ -90,20 +84,6 @@ export class PrismaResolveSelectedRentalOffersReader {
         rentableItemId: true,
         equipmentTypeId: true,
         quantityPerItem: true,
-      },
-    });
-  }
-
-  async findEquipmentTypes(input: { tenantId: string; equipmentTypeIds: string[] }): Promise<EquipmentTypeReadModel[]> {
-    return this.prisma.client.v2EquipmentType.findMany({
-      where: {
-        id: { in: input.equipmentTypeIds },
-        tenantId: input.tenantId,
-      },
-      select: {
-        id: true,
-        tenantId: true,
-        name: true,
       },
     });
   }

@@ -2,9 +2,9 @@ import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { err, ok, Result } from 'neverthrow';
 
 import {
-  CatalogPublicApi,
-  ResolveRentalOffersForAvailabilityError,
-} from 'src/modules/catalog/public-api/catalog.public-api';
+  CatalogSelectionResolution,
+  CatalogSelectionResolutionError,
+} from 'src/modules/catalog/public-api/catalog-selection-resolution.public-api';
 
 import { RentalAssetAllocationService } from '../../asset-allocation/rental-asset-allocation.service';
 import { EquipmentTypeId } from '../../domain/types/rental-commitment-ids';
@@ -32,15 +32,15 @@ export class GetRentalOfferAvailabilityHandler implements IQueryHandler<
   GetRentalOfferAvailabilityResult
 > {
   constructor(
-    private readonly catalogApi: CatalogPublicApi,
+    private readonly catalogSelectionResolution: CatalogSelectionResolution,
     private readonly rentalAssetAllocation: RentalAssetAllocationService,
   ) {}
 
   async execute(query: GetRentalOfferAvailabilityQuery): Promise<GetRentalOfferAvailabilityResult> {
-    const resolved = await this.catalogApi.resolveRentalOffersForAvailability({
+    const resolved = await this.catalogSelectionResolution.resolveSelectedRentalOffers({
       tenantId: query.tenantId,
       branchId: query.branchId,
-      rentalOfferIds: [...query.rentalOfferIds],
+      selectedOffers: [...query.rentalOfferIds].map((rentalOfferId) => ({ rentalOfferId, quantity: 1 })),
     });
     if (resolved.isErr()) return err(this.mapCatalogError(resolved.error));
 
@@ -93,14 +93,23 @@ export class GetRentalOfferAvailabilityHandler implements IQueryHandler<
     );
   }
 
-  private mapCatalogError(error: ResolveRentalOffersForAvailabilityError): GetRentalOfferAvailabilityError {
-    const codeByCatalogError = {
-      RentalOfferNotFound: 'rental_commitment.rental_offer_not_found',
-      RentalOfferNotRentable: 'rental_commitment.rental_offer_not_rentable',
-      RentableItemNotActive: 'rental_commitment.rentable_item_not_active',
-      InvalidFulfillmentDefinition: 'rental_commitment.invalid_fulfillment_definition',
-    } as const;
-
-    return getRentalOfferAvailabilityError(codeByCatalogError[error.code], error.message, error);
+  private mapCatalogError(error: CatalogSelectionResolutionError): GetRentalOfferAvailabilityError {
+    switch (error.code) {
+      case 'RentalOfferNotFound':
+        return getRentalOfferAvailabilityError('rental_commitment.rental_offer_not_found', error.message, error);
+      case 'RentalOfferNotRentable':
+        return getRentalOfferAvailabilityError('rental_commitment.rental_offer_not_rentable', error.message, error);
+      case 'RentableItemNotActive':
+        return getRentalOfferAvailabilityError('rental_commitment.rentable_item_not_active', error.message, error);
+      case 'EmptySelection':
+      case 'InvalidSelectionQuantity':
+      case 'DuplicateRentalOfferSelection':
+      case 'InvalidFulfillmentDefinition':
+        return getRentalOfferAvailabilityError(
+          'rental_commitment.invalid_fulfillment_definition',
+          error.message,
+          error,
+        );
+    }
   }
 }

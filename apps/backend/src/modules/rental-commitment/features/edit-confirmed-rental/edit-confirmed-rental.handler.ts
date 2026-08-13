@@ -4,11 +4,17 @@ import { err, ok, Result } from 'neverthrow';
 import { PrismaUnitOfWork } from 'src/core/database/prisma-unit-of-work';
 import { PostgresExclusionViolationError } from 'src/core/utils/postgres-error.mapper';
 import { V2AssetBlockType } from 'src/generated/prisma/enums';
-import { CatalogPublicApi, ResolveSelectedRentalOffersError } from 'src/modules/catalog/public-api/catalog.public-api';
+import {
+  CatalogSelectionResolution,
+  CatalogSelectionResolutionError,
+} from 'src/modules/catalog/public-api/catalog-selection-resolution.public-api';
+import { AssetInventoryPublicApi } from 'src/modules/asset-inventory/public-api/asset-inventory.public-api';
 import { PricingPublicApi } from 'src/modules/pricing/public-api/pricing.public-api';
 import { RentalPriceSnapshotV1 } from 'src/modules/pricing/public-api/rental-price-snapshot.type';
 import { TenantManagementPublicApi } from 'src/modules/tenant-management/public-api/tenant-management.public-api';
 
+import { toRentalSelectionKind } from '../../application/catalog-selection-kind.mapper';
+import { resolveEquipmentTypeNames } from '../../application/equipment-type-display-facts';
 import { toRentalIntegrationEvents } from '../../application/rental-integration-event.mapper';
 import { RentalAssetAllocationService } from '../../asset-allocation/rental-asset-allocation.service';
 import {
@@ -56,7 +62,8 @@ export class EditConfirmedRentalHandler implements ICommandHandler<
   constructor(
     private readonly rentalRepository: RentalRepository,
     private readonly tenantManagementApi: TenantManagementPublicApi,
-    private readonly catalogApi: CatalogPublicApi,
+    private readonly catalogSelectionResolution: CatalogSelectionResolution,
+    private readonly assetInventoryApi: AssetInventoryPublicApi,
     private readonly pricingApi: PricingPublicApi,
     private readonly rentalAssetAllocation: RentalAssetAllocationService,
     private readonly rentalOwnerSplitCalculator: RentalOwnerSplitCalculator,
@@ -124,7 +131,7 @@ export class EditConfirmedRentalHandler implements ICommandHandler<
     });
     if (tenantValidation.isErr()) return err(this.toApplicationError(tenantValidation.error, context));
 
-    const resolvedCatalogSelections = await this.catalogApi.resolveSelectedRentalOffers({
+    const resolvedCatalogSelections = await this.catalogSelectionResolution.resolveSelectedRentalOffers({
       tenantId,
       branchId,
       selectedOffers,
@@ -135,12 +142,19 @@ export class EditConfirmedRentalHandler implements ICommandHandler<
     const existingSelectionIdByOfferId = new Map(
       rental.selections.map((selection) => [selection.rentalOfferId, selection.id]),
     );
+    const equipmentTypeNames = await resolveEquipmentTypeNames(this.assetInventoryApi, {
+      tenantId,
+      equipmentTypeIds: resolvedCatalogSelections.value.resolvedOffers.flatMap((offer) =>
+        offer.fulfillmentRequirements.map((requirement) => requirement.equipmentTypeId),
+      ),
+    });
+
     const selections = resolvedCatalogSelections.value.resolvedOffers.map((offer) => ({
       id: existingSelectionIdByOfferId.get(offer.rentalOfferId) ?? RentalSelectionId.create(),
       rentalOfferId: offer.rentalOfferId,
       rentableItemId: offer.rentableItem.id,
       rentableItemNameSnapshot: offer.rentableItem.name,
-      rentableItemKindSnapshot: offer.rentableItem.kind,
+      rentableItemKindSnapshot: toRentalSelectionKind(offer.rentableItem.kind),
       categoryId: offer.rentableItem.categoryId,
       quantity: offer.quantity,
       fulfillmentRequirements: offer.fulfillmentRequirements,
@@ -177,7 +191,7 @@ export class EditConfirmedRentalHandler implements ICommandHandler<
           RentalDemandLineId.create(),
         rentalSelectionId: selection.id,
         equipmentTypeId: requirement.equipmentTypeId as EquipmentTypeId,
-        equipmentTypeNameSnapshot: requirement.equipmentTypeName ?? requirement.equipmentTypeId,
+        equipmentTypeNameSnapshot: equipmentTypeNames.get(requirement.equipmentTypeId) ?? requirement.equipmentTypeId,
         quantity: selection.quantity * requirement.quantityPerItem,
       })),
     );
@@ -418,7 +432,7 @@ export class EditConfirmedRentalHandler implements ICommandHandler<
     let confirmedPriceSnapshot: RentalPriceSnapshotV1 | undefined;
 
     if (command.props.manualPricingAdjustment !== null) {
-      const resolvedCatalogSelections = await this.catalogApi.resolveSelectedRentalOffers({
+      const resolvedCatalogSelections = await this.catalogSelectionResolution.resolveSelectedRentalOffers({
         tenantId,
         branchId,
         selectedOffers,
@@ -531,11 +545,41 @@ export class EditConfirmedRentalHandler implements ICommandHandler<
   }
 
   private toApplicationError(error: unknown, context: Record<string, unknown>): EditConfirmedRentalError {
-    if (isDuplicateRentalOfferSelection(error))
-      return editConfirmedRentalError('rental_commitment.duplicate_rental_offer_selection', error.message, error, {
-        ...context,
-        rentalOfferId: error.context?.rentalOfferId,
-      });
+    if (isCatalogSelectionError(error)) {
+      switch (error.code) {
+        case 'EmptySelection':
+          return editConfirmedRentalError('rental_commitment.rental_requires_selection', error.message, error, context);
+        case 'InvalidSelectionQuantity':
+          return editConfirmedRentalError(
+            'rental_commitment.invalid_catalog_selection_quantity',
+            error.message,
+            error,
+            context,
+          );
+        case 'DuplicateRentalOfferSelection':
+          return editConfirmedRentalError('rental_commitment.duplicate_rental_offer_selection', error.message, error, {
+            ...context,
+            rentalOfferId: error.context?.rentalOfferId,
+          });
+        case 'RentalOfferNotFound':
+          return editConfirmedRentalError('rental_commitment.rental_offer_not_found', error.message, error, context);
+        case 'RentalOfferNotRentable':
+        case 'RentableItemNotActive':
+          return editConfirmedRentalError(
+            'rental_commitment.catalog_selection_unavailable',
+            error.message,
+            error,
+            context,
+          );
+        case 'InvalidFulfillmentDefinition':
+          return editConfirmedRentalError(
+            'rental_commitment.invalid_fulfillment_definition',
+            error.message,
+            error,
+            context,
+          );
+      }
+    }
     if (error instanceof RentalCannotBeEditedFromStatusError)
       return editConfirmedRentalError(
         'rental_commitment.rental_cannot_be_edited_from_status',
@@ -613,10 +657,8 @@ export class EditConfirmedRentalHandler implements ICommandHandler<
   }
 }
 
-function isDuplicateRentalOfferSelection(error: unknown): error is ResolveSelectedRentalOffersError {
-  return (
-    typeof error === 'object' && error !== null && 'code' in error && error.code === 'DuplicateRentalOfferSelection'
-  );
+function isCatalogSelectionError(error: unknown): error is CatalogSelectionResolutionError {
+  return error instanceof CatalogSelectionResolutionError;
 }
 
 function isErrorWithCode(error: unknown, code: string): error is Error & { code: string } {

@@ -2,14 +2,11 @@ import { Injectable } from '@nestjs/common';
 import { err, ok, Result } from 'neverthrow';
 
 import {
-  ResolveRentalOffersForAvailabilityError,
-  ResolveRentalOffersForAvailabilityInput,
-  ResolveRentalOffersForAvailabilityResult,
-  ResolveSelectedRentalOffersError,
+  CatalogSelectionResolutionError,
   ResolveSelectedRentalOffersInput,
   ResolveSelectedRentalOffersResult,
   SelectedRentalOfferInput,
-} from '../../public-api/catalog.public-api';
+} from '../../public-api/catalog-selection-resolution.public-api';
 import {
   FulfillmentRequirementReadModel,
   PrismaResolveSelectedRentalOffersReader,
@@ -19,34 +16,9 @@ import {
 export class ResolveSelectedRentalOffersService {
   constructor(private readonly reader: PrismaResolveSelectedRentalOffersReader) {}
 
-  async executeForAvailability(
-    input: ResolveRentalOffersForAvailabilityInput,
-  ): Promise<Result<ResolveRentalOffersForAvailabilityResult, ResolveRentalOffersForAvailabilityError>> {
-    const resolved = await this.execute({
-      tenantId: input.tenantId,
-      branchId: input.branchId,
-      selectedOffers: input.rentalOfferIds.map((rentalOfferId) => ({ rentalOfferId, quantity: 1 })),
-    });
-
-    if (resolved.isErr()) {
-      return err(this.toAvailabilityError(resolved.error));
-    }
-
-    return ok({
-      resolvedOffers: resolved.value.resolvedOffers.map((offer) => ({
-        rentalOfferId: offer.rentalOfferId,
-        branchId: offer.branchId,
-        fulfillmentRequirements: offer.fulfillmentRequirements.map(({ equipmentTypeId, quantityPerItem }) => ({
-          equipmentTypeId,
-          quantityPerItem,
-        })),
-      })),
-    });
-  }
-
   async execute(
     input: ResolveSelectedRentalOffersInput,
-  ): Promise<Result<ResolveSelectedRentalOffersResult, ResolveSelectedRentalOffersError>> {
+  ): Promise<Result<ResolveSelectedRentalOffersResult, CatalogSelectionResolutionError>> {
     const payloadValidation = this.validateSelectionPayload(input.selectedOffers);
 
     if (payloadValidation.isErr()) {
@@ -130,23 +102,6 @@ export class ResolveSelectedRentalOffersService {
       }
     }
 
-    const equipmentTypeIds = [...new Set(requirements.map((requirement) => requirement.equipmentTypeId))];
-    const equipmentTypes = await this.reader.findEquipmentTypes({
-      tenantId: input.tenantId,
-      equipmentTypeIds,
-    });
-    const equipmentTypesById = this.indexById(equipmentTypes);
-
-    for (const equipmentTypeId of equipmentTypeIds) {
-      const equipmentType = equipmentTypesById.get(equipmentTypeId);
-
-      if (!equipmentType) {
-        return err(
-          catalogSelectionError('EquipmentTypeNotFound', `Equipment type "${equipmentTypeId}" was not found.`),
-        );
-      }
-    }
-
     return ok({
       resolvedOffers: input.selectedOffers.map((selection) => {
         const rentalOffer = rentalOffersById.get(selection.rentalOfferId)!;
@@ -165,7 +120,6 @@ export class ResolveSelectedRentalOffersService {
           quantity: selection.quantity,
           fulfillmentRequirements: itemRequirements.map((requirement) => ({
             equipmentTypeId: requirement.equipmentTypeId,
-            equipmentTypeName: equipmentTypesById.get(requirement.equipmentTypeId)?.name,
             quantityPerItem: requirement.quantityPerItem,
           })),
         };
@@ -173,20 +127,9 @@ export class ResolveSelectedRentalOffersService {
     });
   }
 
-  private toAvailabilityError(error: ResolveSelectedRentalOffersError): ResolveRentalOffersForAvailabilityError {
-    if (error.code === 'RentalOfferNotFound')
-      return { code: 'RentalOfferNotFound', message: error.message, cause: error };
-    if (error.code === 'RentalOfferNotRentable')
-      return { code: 'RentalOfferNotRentable', message: error.message, cause: error };
-    if (error.code === 'RentableItemNotActive')
-      return { code: 'RentableItemNotActive', message: error.message, cause: error };
-
-    return { code: 'InvalidFulfillmentDefinition', message: error.message, cause: error };
-  }
-
   private validateSelectionPayload(
     selections: SelectedRentalOfferInput[],
-  ): Result<void, ResolveSelectedRentalOffersError> {
+  ): Result<void, CatalogSelectionResolutionError> {
     if (selections.length === 0) {
       return err(catalogSelectionError('EmptySelection', 'At least one rental offer must be selected.'));
     }
@@ -236,9 +179,9 @@ export class ResolveSelectedRentalOffersService {
 }
 
 function catalogSelectionError(
-  code: ResolveSelectedRentalOffersError['code'],
+  code: CatalogSelectionResolutionError['code'],
   message: string,
   context?: Record<string, unknown>,
-): ResolveSelectedRentalOffersError {
-  return { code, message, context };
+): CatalogSelectionResolutionError {
+  return new CatalogSelectionResolutionError(code, message, context);
 }
