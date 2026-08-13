@@ -8,9 +8,13 @@ import {
   CatalogSelectionResolutionError,
 } from 'src/modules/catalog/public-api/catalog-selection-resolution.public-api';
 import { AssetInventoryPublicApi } from 'src/modules/asset-inventory/public-api/asset-inventory.public-api';
-import { PricingPublicApi } from 'src/modules/pricing/public-api/pricing.public-api';
+import {
+  PricingCalculation,
+  PricingCalculationError,
+} from 'src/modules/pricing/public-api/pricing-calculation.public-api';
 import { TenantManagementPublicApi } from 'src/modules/tenant-management/public-api/tenant-management.public-api';
 
+import { adaptPricingCalculationToSnapshot } from '../../application/accepted-pricing/adapt-pricing-calculation-to-snapshot';
 import { toRentalSelectionKind } from '../../application/catalog-selection-kind.mapper';
 import { resolveEquipmentTypeNames } from '../../application/equipment-type-display-facts';
 import { toRentalIntegrationEvents } from '../../application/rental-integration-event.mapper';
@@ -63,7 +67,7 @@ export class CreateConfirmedRentalService implements ICommandHandler<
     private readonly tenantManagementApi: TenantManagementPublicApi,
     private readonly catalogSelectionResolution: CatalogSelectionResolution,
     private readonly assetInventoryApi: AssetInventoryPublicApi,
-    private readonly pricingApi: PricingPublicApi,
+    private readonly pricingCalculation: PricingCalculation,
     private readonly rentalAssetAllocation: RentalAssetAllocationService,
     private readonly rentalOwnerSplitCalculator: RentalOwnerSplitCalculator,
     private readonly unitOfWork: PrismaUnitOfWork,
@@ -119,21 +123,18 @@ export class CreateConfirmedRentalService implements ICommandHandler<
       fulfillmentRequirements: offer.fulfillmentRequirements,
     }));
 
-    const pricingResult = await this.pricingApi.priceConfirmedRental({
+    const pricingResult = await this.pricingCalculation.calculateProposedPrice({
       tenantId: command.tenantId,
-      branchId: command.branchId,
       customerId: command.rentalCustomerId,
       rentalPeriod: {
         start: command.period.start,
         end: command.period.end,
       },
-      pricingConfig: tenantValidation.value.pricingConfig,
-      selections: rentalSelectionsDraft.map((selection) => ({
-        rentalSelectionId: selection.rentalSelectionId,
+      durationPolicy: tenantValidation.value.pricingConfig,
+      lines: rentalSelectionsDraft.map((selection) => ({
+        lineReference: selection.rentalSelectionId,
         rentalOfferId: selection.rentalOfferId,
         rentableItemId: selection.rentableItemId,
-        rentableItemName: selection.rentableItemNameSnapshot,
-        rentableItemKind: selection.rentableItemKindSnapshot,
         categoryId: selection.categoryId,
         quantity: selection.quantity,
       })),
@@ -191,7 +192,13 @@ export class CreateConfirmedRentalService implements ICommandHandler<
       insuranceSelected: command.insuranceSelected,
       bookingSnapshot: command.bookingSnapshot,
       deliveryDetails: command.fulfillmentMethod === FulfillmentMethod.Delivery ? command.deliveryDetails : undefined,
-      confirmedPriceSnapshot: pricingResult.value,
+      confirmedPriceSnapshot: adaptPricingCalculationToSnapshot({
+        result: pricingResult.value,
+        context: 'CONFIRMED',
+        lineDisplayNames: Object.fromEntries(
+          rentalSelectionsDraft.map((selection) => [selection.rentalSelectionId, selection.rentableItemNameSnapshot]),
+        ),
+      }),
       period: command.period,
 
       selections: rentalSelectionsDraft.map((selection) => ({
@@ -267,7 +274,7 @@ export class CreateConfirmedRentalService implements ICommandHandler<
       }),
 
       priceLines: pricingResult.value.final.lines.map((line) => ({
-        rentalSelectionId: line.rentalSelectionId,
+        rentalSelectionId: line.lineReference,
         netAmount: line.total,
       })),
     };
@@ -449,7 +456,7 @@ export class CreateConfirmedRentalService implements ICommandHandler<
         quantity: error.quantity,
       });
     }
-    if (isErrorWithCode(error, 'INVALID_PRICING_INPUT')) {
+    if (error instanceof PricingCalculationError || isErrorWithCode(error, 'INVALID_PRICING_INPUT')) {
       return createConfirmedRentalError('rental_commitment.invalid_pricing_input', error.message, error, context);
     }
     if (error instanceof DuplicateAssignedAssetError) {

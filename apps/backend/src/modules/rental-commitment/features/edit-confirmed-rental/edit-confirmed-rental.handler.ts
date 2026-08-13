@@ -9,10 +9,14 @@ import {
   CatalogSelectionResolutionError,
 } from 'src/modules/catalog/public-api/catalog-selection-resolution.public-api';
 import { AssetInventoryPublicApi } from 'src/modules/asset-inventory/public-api/asset-inventory.public-api';
-import { PricingPublicApi } from 'src/modules/pricing/public-api/pricing.public-api';
+import {
+  PricingCalculation,
+  PricingCalculationError,
+} from 'src/modules/pricing/public-api/pricing-calculation.public-api';
 import { RentalPriceSnapshotV1 } from 'src/modules/pricing/public-api/rental-price-snapshot.type';
 import { TenantManagementPublicApi } from 'src/modules/tenant-management/public-api/tenant-management.public-api';
 
+import { adaptPricingCalculationToSnapshot } from '../../application/accepted-pricing/adapt-pricing-calculation-to-snapshot';
 import { toRentalSelectionKind } from '../../application/catalog-selection-kind.mapper';
 import { resolveEquipmentTypeNames } from '../../application/equipment-type-display-facts';
 import { toRentalIntegrationEvents } from '../../application/rental-integration-event.mapper';
@@ -64,7 +68,7 @@ export class EditConfirmedRentalHandler implements ICommandHandler<
     private readonly tenantManagementApi: TenantManagementPublicApi,
     private readonly catalogSelectionResolution: CatalogSelectionResolution,
     private readonly assetInventoryApi: AssetInventoryPublicApi,
-    private readonly pricingApi: PricingPublicApi,
+    private readonly pricingCalculation: PricingCalculation,
     private readonly rentalAssetAllocation: RentalAssetAllocationService,
     private readonly rentalOwnerSplitCalculator: RentalOwnerSplitCalculator,
     private readonly unitOfWork: PrismaUnitOfWork,
@@ -160,23 +164,20 @@ export class EditConfirmedRentalHandler implements ICommandHandler<
       fulfillmentRequirements: offer.fulfillmentRequirements,
     }));
 
-    const pricingResult = await this.pricingApi.priceConfirmedRental({
+    const pricingResult = await this.pricingCalculation.calculateProposedPrice({
       tenantId,
-      branchId,
       customerId: rental.rentalCustomerId!,
       rentalPeriod: { start: period.start, end: period.end },
-      pricingConfig: tenantValidation.value.pricingConfig,
-      selections: selections.map((selection) => ({
-        rentalSelectionId: selection.id,
+      durationPolicy: tenantValidation.value.pricingConfig,
+      lines: selections.map((selection) => ({
+        lineReference: selection.id,
         rentalOfferId: selection.rentalOfferId,
         rentableItemId: selection.rentableItemId,
-        rentableItemName: selection.rentableItemNameSnapshot,
-        rentableItemKind: selection.rentableItemKindSnapshot,
         categoryId: selection.categoryId,
         quantity: selection.quantity,
       })),
-      manualPricingAdjustment: command.props.manualPricingAdjustment
-        ? { ...command.props.manualPricingAdjustment, setByTenantUserId: tenantUserId }
+      targetTotalAdjustment: command.props.manualPricingAdjustment
+        ? { targetTotal: command.props.manualPricingAdjustment.targetTotal }
         : undefined,
     });
     if (pricingResult.isErr()) return err(this.toApplicationError(pricingResult.error, context));
@@ -314,7 +315,16 @@ export class EditConfirmedRentalHandler implements ICommandHandler<
           deliveryDetails: command.props.deliveryDetails,
           notes: command.props.notes,
           insuranceSelected: command.props.insuranceSelected,
-          confirmedPriceSnapshot: pricingResult.value,
+          confirmedPriceSnapshot: adaptPricingCalculationToSnapshot({
+            result: pricingResult.value,
+            context: 'CONFIRMED',
+            lineDisplayNames: Object.fromEntries(
+              selections.map((selection) => [selection.id, selection.rentableItemNameSnapshot]),
+            ),
+            manualPricingAdjustment: command.props.manualPricingAdjustment
+              ? { ...command.props.manualPricingAdjustment, setByTenantUserId: tenantUserId }
+              : undefined,
+          }),
           selections: selections.map(
             ({ id, rentalOfferId, rentableItemId, rentableItemNameSnapshot, rentableItemKindSnapshot, quantity }) => ({
               id,
@@ -444,28 +454,34 @@ export class EditConfirmedRentalHandler implements ICommandHandler<
       const selectionIdByOfferId = new Map(
         rental.selections.map((selection) => [selection.rentalOfferId, selection.id]),
       );
-      const pricingResult = await this.pricingApi.priceConfirmedRental({
+      const pricingResult = await this.pricingCalculation.calculateProposedPrice({
         tenantId,
-        branchId,
         customerId: rental.rentalCustomerId!,
         rentalPeriod: { start: period.start, end: period.end },
-        pricingConfig: tenantValidation.value.pricingConfig,
-        selections: resolvedCatalogSelections.value.resolvedOffers.map((offer) => ({
-          rentalSelectionId: selectionIdByOfferId.get(offer.rentalOfferId)!,
+        durationPolicy: tenantValidation.value.pricingConfig,
+        lines: resolvedCatalogSelections.value.resolvedOffers.map((offer) => ({
+          lineReference: selectionIdByOfferId.get(offer.rentalOfferId)!,
           rentalOfferId: offer.rentalOfferId,
           rentableItemId: offer.rentableItem.id,
-          rentableItemName: offer.rentableItem.name,
-          rentableItemKind: offer.rentableItem.kind,
           categoryId: offer.rentableItem.categoryId,
           quantity: offer.quantity,
         })),
-        manualPricingAdjustment: {
-          ...command.props.manualPricingAdjustment,
-          setByTenantUserId: tenantUserId,
-        },
+        targetTotalAdjustment: { targetTotal: command.props.manualPricingAdjustment.targetTotal },
       });
       if (pricingResult.isErr()) return err(this.toApplicationError(pricingResult.error, context));
-      confirmedPriceSnapshot = pricingResult.value;
+      confirmedPriceSnapshot = adaptPricingCalculationToSnapshot({
+        result: pricingResult.value,
+        context: 'CONFIRMED',
+        lineDisplayNames: Object.fromEntries(
+          resolvedCatalogSelections.value.resolvedOffers.map((offer) => [
+            selectionIdByOfferId.get(offer.rentalOfferId)!,
+            offer.rentableItem.name,
+          ]),
+        ),
+        manualPricingAdjustment: command.props.manualPricingAdjustment
+          ? { ...command.props.manualPricingAdjustment, setByTenantUserId: tenantUserId }
+          : undefined,
+      });
     }
 
     const edit = rental.editConfirmedDetails(
@@ -651,7 +667,7 @@ export class EditConfirmedRentalHandler implements ICommandHandler<
         error,
         context,
       );
-    if (isErrorWithCode(error, 'INVALID_PRICING_INPUT'))
+    if (error instanceof PricingCalculationError || isErrorWithCode(error, 'INVALID_PRICING_INPUT'))
       return editConfirmedRentalError('rental_commitment.invalid_pricing_input', error.message, error, context);
     throw error;
   }

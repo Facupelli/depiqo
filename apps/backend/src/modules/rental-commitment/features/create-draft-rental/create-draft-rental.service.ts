@@ -6,9 +6,13 @@ import {
   CatalogSelectionResolutionError,
 } from 'src/modules/catalog/public-api/catalog-selection-resolution.public-api';
 import { AssetInventoryPublicApi } from 'src/modules/asset-inventory/public-api/asset-inventory.public-api';
-import { PricingPublicApi } from 'src/modules/pricing/public-api/pricing.public-api';
+import {
+  PricingCalculation,
+  PricingCalculationError,
+} from 'src/modules/pricing/public-api/pricing-calculation.public-api';
 import { TenantManagementPublicApi } from 'src/modules/tenant-management/public-api/tenant-management.public-api';
 
+import { adaptPricingCalculationToSnapshot } from '../../application/accepted-pricing/adapt-pricing-calculation-to-snapshot';
 import { toRentalSelectionKind } from '../../application/catalog-selection-kind.mapper';
 import { resolveEquipmentTypeNames } from '../../application/equipment-type-display-facts';
 import { CreateDraftRentalCommand } from './create-draft-rental.command';
@@ -52,7 +56,7 @@ export class CreateDraftRentalService implements ICommandHandler<
     private readonly tenantManagementApi: TenantManagementPublicApi,
     private readonly catalogSelectionResolution: CatalogSelectionResolution,
     private readonly assetInventoryApi: AssetInventoryPublicApi,
-    private readonly pricingApi: PricingPublicApi,
+    private readonly pricingCalculation: PricingCalculation,
   ) {}
 
   async execute(command: CreateDraftRentalCommand): Promise<CreateDraftRentalServiceResult> {
@@ -107,29 +111,23 @@ export class CreateDraftRentalService implements ICommandHandler<
       fulfillmentRequirements: offer.fulfillmentRequirements,
     }));
 
-    const pricingResult = await this.pricingApi.priceDraftRental({
+    const pricingResult = await this.pricingCalculation.calculateProposedPrice({
       tenantId: command.tenantId,
-      branchId: command.branchId,
       customerId: command.rentalCustomerId,
       rentalPeriod: {
         start: command.period.start,
         end: command.period.end,
       },
-      pricingConfig: tenantValidation.value.pricingConfig,
-      selections: rentalSelectionsDraft.map((selection) => ({
-        rentalSelectionId: selection.rentalSelectionId,
+      durationPolicy: tenantValidation.value.pricingConfig,
+      lines: rentalSelectionsDraft.map((selection) => ({
+        lineReference: selection.rentalSelectionId,
         rentalOfferId: selection.rentalOfferId,
         rentableItemId: selection.rentableItemId,
-        rentableItemName: selection.rentableItemNameSnapshot,
-        rentableItemKind: selection.rentableItemKindSnapshot,
         categoryId: selection.categoryId,
         quantity: selection.quantity,
       })),
-      manualPricingAdjustment: command.manualPricingAdjustment
-        ? {
-            ...command.manualPricingAdjustment,
-            setByTenantUserId: command.tenantUserId,
-          }
+      targetTotalAdjustment: command.manualPricingAdjustment
+        ? { targetTotal: command.manualPricingAdjustment.targetTotal }
         : undefined,
     });
 
@@ -157,7 +155,16 @@ export class CreateDraftRentalService implements ICommandHandler<
       insuranceSelected: command.insuranceSelected,
       bookingSnapshot: command.bookingSnapshot,
       deliveryDetails: fulfillmentMethod === FulfillmentMethod.Delivery ? command.deliveryDetails : undefined,
-      priceSnapshot: pricingResult.value,
+      priceSnapshot: adaptPricingCalculationToSnapshot({
+        result: pricingResult.value,
+        context: 'DRAFT',
+        lineDisplayNames: Object.fromEntries(
+          rentalSelectionsDraft.map((selection) => [selection.rentalSelectionId, selection.rentableItemNameSnapshot]),
+        ),
+        manualPricingAdjustment: command.manualPricingAdjustment
+          ? { ...command.manualPricingAdjustment, setByTenantUserId: command.tenantUserId }
+          : undefined,
+      }),
       period: command.period,
 
       selections: rentalSelectionsDraft.map((selection) => ({
@@ -283,7 +290,7 @@ export class CreateDraftRentalService implements ICommandHandler<
         quantity: error.quantity,
       });
     }
-    if (isErrorWithCode(error, 'INVALID_PRICING_INPUT')) {
+    if (error instanceof PricingCalculationError || isErrorWithCode(error, 'INVALID_PRICING_INPUT')) {
       return createDraftRentalError('rental_commitment.invalid_pricing_input', error.message, error, context);
     }
 

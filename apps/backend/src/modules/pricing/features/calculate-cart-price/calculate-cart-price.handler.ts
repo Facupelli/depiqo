@@ -19,7 +19,7 @@ import {
   GetTenantPricingConfigResult,
   TenantManagementPublicApi,
 } from 'src/modules/tenant-management/public-api/tenant-management.public-api';
-import { BasePricingSelectionInput } from '../../public-api/pricing.public-api';
+import { BasePricingSelectionInput } from '../../pricing-engine/base/base-pricing-input.type';
 
 type CalculateCartPriceResult = {
   currency: string | null;
@@ -158,7 +158,6 @@ export class CalculateCartPriceHandler implements IQueryHandler<
 
     const pricingInput: PricingInput = {
       tenantId: query.tenantId,
-      branchId: query.branchId,
       rentalPeriod: { start: query.rentalPeriodStart, end: query.rentalPeriodEnd },
       pricingConfig: {
         timezone: branchContextResult.value.effectiveTimezone,

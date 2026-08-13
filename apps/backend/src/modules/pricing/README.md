@@ -12,7 +12,7 @@ Pricing publishes cohesive synchronous capabilities for other modules:
 
 - `PricingRatePlanAuthoring` creates reusable Rate Plans.
 - `PricingRentalOfferPricingAssignment` assigns an active Pricing Rate Plan to a Catalog Rental Offer reference.
-- `PricingPublicApi` remains the temporary calculation boundary for Rental Commitment. Its calculation operations are unchanged by the authoring boundary.
+- `PricingCalculation.calculateProposedPrice` calculates a current proposed price from Pricing-owned assignments, rate plans, promotions, coupons, duration policy, and optional target-total math. Rental Commitment adapts the result into its existing persisted accepted-price snapshot format; that persisted snapshot migration remains deferred.
 
 The authoring capabilities publish Pricing-owned inputs, result IDs, error vocabularies, and billing-unit values. They do not expose Prisma, persistence, domain, or feature-local types.
 
@@ -203,7 +203,7 @@ Confirmed rental price snapshots and owner payout snapshots are persisted by Ren
 
 ## References
 
-* `pricing.public-api.ts`
+* `public-api/pricing-calculation.public-api.ts
 * `apps/backend/docs/architecture/overview.md`
 * `apps/backend/docs/architecture/adr/`
 * `apps/backend/src/modules/tenant-management/README.md`

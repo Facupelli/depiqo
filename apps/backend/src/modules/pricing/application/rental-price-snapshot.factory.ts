@@ -1,5 +1,5 @@
 import { RentalPriceSnapshotContext, RentalPriceSnapshotV1 } from '../public-api/rental-price-snapshot.type';
-import { PricingResult } from '../public-api/pricing.public-api';
+import { PricingResult } from '../pricing-engine/final/pricing-result.type';
 import { ManualPricingAdjustmentSnapshot } from '../features/price-draft-rental/manual-adjustments/manual-pricing-adjustment.types';
 
 type RentalPriceSnapshotFactoryInput = {

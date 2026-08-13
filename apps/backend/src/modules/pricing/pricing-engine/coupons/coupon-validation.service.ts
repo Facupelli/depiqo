@@ -56,6 +56,10 @@ export class CouponValidationService {
       throw new CouponNotApplicableError(`Coupon "${couponCode}" is restricted to another customer.`);
     }
 
+    if (coupon.maxUsesPerCustomer != null && !context.customerId) {
+      throw new CouponNotApplicableError(`Coupon "${couponCode}" requires customer information.`);
+    }
+
     if (coupon.maxUses != null && coupon.currentTotalRedemptions >= coupon.maxUses) {
       throw new CouponNotApplicableError(`Coupon "${couponCode}" has reached its maximum usage limit.`);
     }

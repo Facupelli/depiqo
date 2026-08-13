@@ -5,10 +5,8 @@ import { ManualPricingAdjustmentInput } from './manual-adjustments/manual-pricin
 
 export type PriceDraftRentalSelectionInput = Omit<BasePricingInput['selections'][number], 'ratePlan'>;
 
-export type PriceDraftRentalInput = Pick<
-  BasePricingInput,
-  'tenantId' | 'branchId' | 'rentalPeriod' | 'pricingConfig'
-> & {
+export type PriceDraftRentalInput = Pick<BasePricingInput, 'tenantId' | 'rentalPeriod' | 'pricingConfig'> & {
+  branchId: string;
   selections: PriceDraftRentalSelectionInput[];
   customerId?: string;
   calculationDate?: Date;

@@ -31,11 +31,10 @@ import { GetStorefrontRentalOffersPricingHttpController } from './features/get-s
 import { GetStorefrontRentalOffersPricingHandler } from './features/get-storefront-rental-offers-pricing/get-storefront-rental-offers-pricing.handler';
 import { UpdatePromotionHttpController } from './features/update-promotion/update-promotion.controller';
 import { UpdatePromotionHandler } from './features/update-promotion/update-promotion.handler';
-import { PriceConfirmedRentalService } from './features/price-confirmed-rental/price-confirmed-rental.service';
 import { PriceDraftRentalService } from './features/price-draft-rental/price-draft-rental.service';
 import { RatePlanRepository } from './persistence/rate-plan.repository';
-import { PricingPublicApiService } from './public-api/pricing-public-api.service';
-import { PricingPublicApi } from './public-api/pricing.public-api';
+import { PricingCalculationService } from './application/pricing-calculation.service';
+import { PricingCalculation } from './public-api/pricing-calculation.public-api';
 import { PricingRatePlanAuthoringService } from './public-api/pricing-rate-plan-authoring.service';
 import { PricingRatePlanAuthoring } from './public-api/pricing-rate-plan-authoring.public-api';
 import { PricingRentalOfferPricingAssignmentService } from './public-api/pricing-rental-offer-pricing-assignment.service';
@@ -78,14 +77,13 @@ import { TenantManagementModule } from '../tenant-management/tenant-management.m
     GetRentalOffersPricingHandler,
     GetStorefrontRentalOffersPricingHandler,
     PricingContextLoader,
-    PriceConfirmedRentalService,
     PriceDraftRentalService,
     RatePlanRepository,
     UpdatePromotionHandler,
-    { provide: PricingPublicApi, useClass: PricingPublicApiService },
+    { provide: PricingCalculation, useClass: PricingCalculationService },
     { provide: PricingRatePlanAuthoring, useClass: PricingRatePlanAuthoringService },
     { provide: PricingRentalOfferPricingAssignment, useClass: PricingRentalOfferPricingAssignmentService },
   ],
-  exports: [PricingPublicApi, PricingRatePlanAuthoring, PricingRentalOfferPricingAssignment],
+  exports: [PricingCalculation, PricingRatePlanAuthoring, PricingRentalOfferPricingAssignment],
 })
 export class PricingModule {}

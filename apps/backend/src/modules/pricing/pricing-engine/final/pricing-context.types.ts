@@ -7,7 +7,6 @@ import { BillingUnit } from '../shared/billing-unit.type';
 
 export type PricingContext = {
   tenantId: string;
-  branchId: string;
   customerId?: string;
   currency: string;
   subtotal: Money;

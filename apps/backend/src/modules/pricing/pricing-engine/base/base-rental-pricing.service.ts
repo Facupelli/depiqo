@@ -57,10 +57,6 @@ export class BaseRentalPricingService {
       throw new InvalidPricingInputError('Tenant id is required.');
     }
 
-    if (!input.branchId.trim()) {
-      throw new InvalidPricingInputError('Branch id is required.');
-    }
-
     if (!this.isValidDate(input.rentalPeriod.start)) {
       throw new InvalidPricingInputError('Rental period start must be a valid Date.');
     }

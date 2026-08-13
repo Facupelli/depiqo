@@ -43,7 +43,6 @@ export class PricingContextFactory {
 
     return {
       tenantId: pricingInput.tenantId,
-      branchId: pricingInput.branchId,
       customerId: pricingInput.customerId,
       currency: baseResult.currency,
       subtotal: Money.of(baseResult.subtotal, baseResult.currency),

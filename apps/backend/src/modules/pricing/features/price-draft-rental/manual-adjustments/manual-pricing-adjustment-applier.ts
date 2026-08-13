@@ -1,5 +1,5 @@
 import { Money } from '../../../pricing-engine/money/money.value-object';
-import { PricingResult, PricingResultLine } from '../../../public-api/pricing.public-api';
+import { PricingResult, PricingResultLine } from '../../../pricing-engine/final/pricing-result.type';
 import { ManualPricingAdjustmentInput, ManualPricingAdjustmentSnapshot } from './manual-pricing-adjustment.types';
 import { TargetTotalAllocationService } from './target-total-allocation.service';
 import { TargetTotalAllocationLineResult } from './target-total-allocation.types';

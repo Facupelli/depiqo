@@ -45,7 +45,6 @@ export class PriceDraftRentalService {
 
       const pricingInput: PricingInput = {
         tenantId: input.tenantId,
-        branchId: input.branchId,
         rentalPeriod: input.rentalPeriod,
         pricingConfig: input.pricingConfig,
         selections: selections as PricingInput['selections'],

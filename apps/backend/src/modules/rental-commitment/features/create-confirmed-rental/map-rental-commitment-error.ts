@@ -1,3 +1,4 @@
+import { PricingCalculationError } from 'src/modules/pricing/public-api/pricing-calculation.public-api';
 import {
   BranchUnavailableForRentalError,
   DuplicateAssignedAssetError,
@@ -82,7 +83,7 @@ export function toRentalCommitmentApplicationError(error: unknown): RentalCommit
     return rentalCommitmentApplicationError('ReturnTimeOutsideBranchSchedule', error.message, error);
   }
 
-  if (isPricingErrorCode(error, 'INVALID_PRICING_INPUT')) {
+  if (error instanceof PricingCalculationError || isPricingErrorCode(error, 'INVALID_PRICING_INPUT')) {
     return rentalCommitmentApplicationError('InvalidPricingInput', error.message, error);
   }
 

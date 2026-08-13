@@ -3,7 +3,6 @@ import { DailyBillingPolicy } from '../shared/daily-billing-unit-policy.type';
 
 export type BasePricingInput = {
   tenantId: string;
-  branchId: string;
   rentalPeriod: {
     start: Date;
     end: Date;
