@@ -9,12 +9,14 @@ import { ProblemDetailsError } from "@/shared/errors";
 import { useRentalCartActions } from "../../rental-cart.hooks";
 import { formatDeliveryAddressSummary } from "../cart-checkout.utils";
 import {
+	useCartBookingFeedbackContext,
 	useCartFulfillmentContext,
 	useCartPeriodContext,
 } from "../cart-page.context";
 import {
 	type ConfirmedRentalErrorKind,
 	classifyConfirmedRentalError,
+	getUnavailableRentalOfferIds,
 } from "../confirmed-rental-error";
 import type { ConfirmedRentalRequestFailure } from "../confirmed-rental-request";
 import { useConfirmedRentalRequest } from "../use-confirmed-rental-request";
@@ -57,6 +59,8 @@ function useCartBookingCommand() {
 	const { clearCart } = useRentalCartActions();
 	const confirmedRentalRequest = useConfirmedRentalRequest();
 	const { periodStart, branch, pickupSlot } = useCartPeriodContext();
+	const { setUnavailableRentalOfferIds, clearUnavailableRentalOfferIds } =
+		useCartBookingFeedbackContext();
 	const { fulfillmentMethod, deliveryRequest, selectFulfillmentMethod } =
 		useCartFulfillmentContext();
 	const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -65,6 +69,7 @@ function useCartBookingCommand() {
 		if (isPending) return;
 
 		setErrorMessage(null);
+		clearUnavailableRentalOfferIds();
 
 		if (isCustomerPending) return;
 
@@ -107,10 +112,11 @@ function useCartBookingCommand() {
 				replace: true,
 			});
 		} catch (error) {
-			const kind =
-				error instanceof ProblemDetailsError
-					? classifyConfirmedRentalError(error)
-					: "OTHER";
+			const problemDetailsError =
+				error instanceof ProblemDetailsError ? error : null;
+			const kind = problemDetailsError
+				? classifyConfirmedRentalError(problemDetailsError)
+				: "OTHER";
 			if (kind === "UNAUTHENTICATED") {
 				await navigate({
 					to: "/login",
@@ -120,6 +126,11 @@ function useCartBookingCommand() {
 			}
 			if (kind === "DELIVERY_NOT_SUPPORTED") {
 				selectFulfillmentMethod("PICKUP");
+			}
+			if (kind === "AVAILABILITY_CONFLICT" && problemDetailsError) {
+				setUnavailableRentalOfferIds(
+					getUnavailableRentalOfferIds(problemDetailsError),
+				);
 			}
 			setErrorMessage(getSubmissionErrorMessage(kind));
 		}

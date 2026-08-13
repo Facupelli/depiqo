@@ -1,11 +1,15 @@
 import { Badge } from "@repo/ui/components/badge";
 import { Button } from "@repo/ui/components/button";
-import { Minus, Plus, Trash2 } from "lucide-react";
+import { AlertTriangle, Minus, Plus, Trash2 } from "lucide-react";
 import { buildR2PublicUrl } from "@/lib/r2-public-url";
 import { groupCartPackageComposition } from "../../package-composition/cart-package-composition.utils";
 import type { RentalCartItem } from "../../rental-cart.types";
 import { formatCartMoney } from "../cart-money.utils";
-import { useCartContext, useCartPricingContext } from "../cart-page.context";
+import {
+	useCartBookingFeedbackContext,
+	useCartContext,
+	useCartPricingContext,
+} from "../cart-page.context";
 
 type CartPriceLine = NonNullable<
 	ReturnType<typeof useCartPricingContext>["pricing"]
@@ -13,6 +17,7 @@ type CartPriceLine = NonNullable<
 
 export function CartItemList() {
 	const { items, actions } = useCartContext();
+	const { unavailableRentalOfferIds } = useCartBookingFeedbackContext();
 	const { pricing } = useCartPricingContext();
 
 	return (
@@ -31,6 +36,9 @@ export function CartItemList() {
 							key={item.rentalOfferId}
 							item={item}
 							line={line}
+							isUnavailable={unavailableRentalOfferIds.includes(
+								item.rentalOfferId,
+							)}
 							actions={actions}
 						/>
 					) : (
@@ -38,6 +46,9 @@ export function CartItemList() {
 							key={item.rentalOfferId}
 							item={item}
 							line={line}
+							isUnavailable={unavailableRentalOfferIds.includes(
+								item.rentalOfferId,
+							)}
 							actions={actions}
 						/>
 					);
@@ -50,16 +61,24 @@ export function CartItemList() {
 function CartSingleItem({
 	item,
 	line,
+	isUnavailable,
 	actions,
 }: {
 	item: RentalCartItem;
 	line?: CartPriceLine;
+	isUnavailable: boolean;
 	actions: ReturnType<typeof useCartContext>["actions"];
 }) {
 	const { pricing } = useCartPricingContext();
 
 	return (
-		<article className="grid grid-cols-[72px_minmax(0,1fr)] gap-4 p-4 sm:grid-cols-[96px_minmax(0,1fr)_auto] sm:items-center">
+		<article
+			className={`grid grid-cols-[72px_minmax(0,1fr)] gap-4 p-4 sm:grid-cols-[96px_minmax(0,1fr)_auto] sm:items-center ${
+				isUnavailable
+					? "bg-destructive/5 ring-1 ring-inset ring-destructive/30"
+					: ""
+			}`}
+		>
 			<ItemImage image={item.image} />
 			<div className="min-w-0">
 				<h3 className="truncate font-semibold">{item.name}</h3>
@@ -71,6 +90,7 @@ function CartSingleItem({
 						{formatCartMoney(line.total, pricing.currency, pricing.locale)}
 					</p>
 				)}
+				{isUnavailable ? <AvailabilityNotice /> : null}
 			</div>
 			<QuantityControls
 				item={item}
@@ -84,17 +104,25 @@ function CartSingleItem({
 function CartPackageItem({
 	item,
 	line,
+	isUnavailable,
 	actions,
 }: {
 	item: RentalCartItem;
 	line?: CartPriceLine;
+	isUnavailable: boolean;
 	actions: ReturnType<typeof useCartContext>["actions"];
 }) {
 	const { pricing } = useCartPricingContext();
 	const groups = groupCartPackageComposition(item.packageComposition ?? []);
 
 	return (
-		<article>
+		<article
+			className={
+				isUnavailable
+					? "bg-destructive/5 ring-1 ring-inset ring-destructive/30"
+					: ""
+			}
+		>
 			<header className="grid grid-cols-[72px_minmax(0,1fr)] gap-4 border-b p-4 sm:grid-cols-[96px_minmax(0,1fr)_auto] sm:items-center sm:p-5">
 				<ItemImage image={item.image} />
 				<div className="min-w-0">
@@ -112,6 +140,7 @@ function CartPackageItem({
 							{formatCartMoney(line.total, pricing.currency, pricing.locale)}
 						</p>
 					)}
+					{isUnavailable ? <AvailabilityNotice /> : null}
 				</div>
 				<QuantityControls
 					item={item}
@@ -151,6 +180,15 @@ function CartPackageItem({
 	);
 }
 
+function AvailabilityNotice() {
+	return (
+		<p className="mt-3 flex items-center gap-1.5 text-sm font-medium text-destructive">
+			<AlertTriangle className="size-4 shrink-0" aria-hidden="true" />
+			No disponible para el período seleccionado
+		</p>
+	);
+}
+
 function ItemImage({ image }: { image: string | null }) {
 	return (
 		<div className="aspect-square overflow-hidden rounded-lg bg-muted">
@@ -174,17 +212,20 @@ function QuantityControls({
 	actions: ReturnType<typeof useCartContext>["actions"];
 	className?: string;
 }) {
+	const { clearUnavailableRentalOfferIds } = useCartBookingFeedbackContext();
+
 	return (
 		<div className={`flex items-center gap-1 ${className ?? ""}`}>
 			<Button
 				variant="ghost"
 				size="icon-sm"
 				aria-label={item.quantity === 1 ? "Quitar" : "Disminuir"}
-				onClick={() =>
+				onClick={() => {
+					clearUnavailableRentalOfferIds();
 					item.quantity === 1
 						? actions.removeRentalOffer(item.rentalOfferId)
-						: actions.decrementRentalOffer(item.rentalOfferId)
-				}
+						: actions.decrementRentalOffer(item.rentalOfferId);
+				}}
 			>
 				{item.quantity === 1 ? <Trash2 /> : <Minus />}
 			</Button>
@@ -196,7 +237,10 @@ function QuantityControls({
 				disabled={
 					item.availableCount !== null && item.quantity >= item.availableCount
 				}
-				onClick={() => actions.incrementRentalOffer(item.rentalOfferId)}
+				onClick={() => {
+					clearUnavailableRentalOfferIds();
+					actions.incrementRentalOffer(item.rentalOfferId);
+				}}
 			>
 				<Plus />
 			</Button>

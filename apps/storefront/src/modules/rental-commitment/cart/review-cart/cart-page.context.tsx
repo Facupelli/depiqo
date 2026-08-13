@@ -45,6 +45,12 @@ type PricingSlice = {
 	setInsuranceSelected: (value: boolean) => void;
 };
 
+type BookingFeedbackSlice = {
+	unavailableRentalOfferIds: string[];
+	setUnavailableRentalOfferIds: (rentalOfferIds: string[]) => void;
+	clearUnavailableRentalOfferIds: () => void;
+};
+
 type FulfillmentSlice = {
 	branch: GetStorefrontBranchDto;
 	fulfillmentMethod: FulfillmentMethod;
@@ -63,6 +69,7 @@ type CartPageValue = {
 	cart: CartSlice;
 	period: RentalPeriodSlice;
 	pricing: PricingSlice;
+	bookingFeedback: BookingFeedbackSlice;
 	fulfillment: FulfillmentSlice;
 };
 
@@ -78,6 +85,8 @@ function useCartPageValue(): CartPageValue {
 export const useCartContext = () => useCartPageValue().cart;
 export const useCartPeriodContext = () => useCartPageValue().period;
 export const useCartPricingContext = () => useCartPageValue().pricing;
+export const useCartBookingFeedbackContext = () =>
+	useCartPageValue().bookingFeedback;
 export const useCartFulfillmentContext = () => useCartPageValue().fulfillment;
 
 export function CartPageProvider({
@@ -100,6 +109,9 @@ export function CartPageProvider({
 	const [insuranceSelected, setInsuranceSelected] = useState(
 		config.insuranceEnabled,
 	);
+	const [unavailableRentalOfferIds, setUnavailableRentalOfferIds] = useState<
+		string[]
+	>([]);
 	const [fulfillmentMethod, setFulfillmentMethod] =
 		useState<FulfillmentMethod>("PICKUP");
 	const [deliveryRequest, setDeliveryRequest] = useState(() =>
@@ -143,8 +155,14 @@ export function CartPageProvider({
 				periodEnd,
 				pickupSlot,
 				returnSlot,
-				setPickupSlot,
-				setReturnSlot,
+				setPickupSlot: (slot) => {
+					setPickupSlot(slot);
+					setUnavailableRentalOfferIds([]);
+				},
+				setReturnSlot: (slot) => {
+					setReturnSlot(slot);
+					setUnavailableRentalOfferIds([]);
+				},
 				isPricingReady,
 				isPeriodInvalid,
 			},
@@ -155,6 +173,11 @@ export function CartPageProvider({
 				isPriceError: priceQuery.isError,
 				insuranceSelected,
 				setInsuranceSelected,
+			},
+			bookingFeedback: {
+				unavailableRentalOfferIds,
+				setUnavailableRentalOfferIds,
+				clearUnavailableRentalOfferIds: () => setUnavailableRentalOfferIds([]),
 			},
 			fulfillment: {
 				branch,
@@ -225,6 +248,7 @@ export function CartPageProvider({
 			priceQuery.isFetching,
 			priceQuery.isError,
 			insuranceSelected,
+			unavailableRentalOfferIds,
 			fulfillmentMethod,
 			deliveryRequest,
 			draftDeliveryRequest,

@@ -153,7 +153,19 @@ export class CreateConfirmedRentalService implements ICommandHandler<
     });
 
     if (assetAssignmentPlan.isErr()) {
-      return err(this.toApplicationError(assetAssignmentPlan.error, context));
+      const availabilityError = assetAssignmentPlan.error;
+      const failedSelection =
+        availabilityError instanceof InsufficientAssetAvailabilityError
+          ? rentalSelectionsDraft.find(
+              (selection) => selection.rentalSelectionId === availabilityError.rentalSelectionId,
+            )
+          : undefined;
+      return err(
+        this.toApplicationError(availabilityError, {
+          ...context,
+          ...(failedSelection ? { rentalOfferId: failedSelection.rentalOfferId } : {}),
+        }),
+      );
     }
 
     const rental = Rental.createConfirmed({

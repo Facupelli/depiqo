@@ -68,7 +68,13 @@ export class CreateConfirmedRentalHttpController {
 function toCreateConfirmedRentalProblem(error: CreateConfirmedRentalError): ProblemException {
   const problem = createConfirmedRentalProblemMap[error.code];
   return ProblemException.from({
-    problemDetails: createProblemDetails({ ...problem, extensions: { code: error.code } }),
+    problemDetails: createProblemDetails({
+      ...problem,
+      extensions: {
+        code: error.code,
+        ...availabilityProblemExtensions(error),
+      },
+    }),
     applicationError: error,
     cause: error.cause,
   });
@@ -198,6 +204,13 @@ const createConfirmedRentalProblemMap = {
 } satisfies Record<CreateConfirmedRentalErrorCode, ProblemDefinition>;
 
 type ProblemDefinition = { type: string; title: string; status: HttpStatus; detail: string };
+
+function availabilityProblemExtensions(error: CreateConfirmedRentalError): Record<string, string> {
+  if (error.code !== 'rental_commitment.insufficient_asset_availability') return {};
+
+  const rentalOfferId = error.context?.rentalOfferId;
+  return typeof rentalOfferId === 'string' ? { rentalOfferId } : {};
+}
 
 function problem(slug: string, title: string, status: HttpStatus, detail: string): ProblemDefinition {
   return { type: createProblemType(`rental_commitment.${slug}`), title, status, detail };
