@@ -4,25 +4,25 @@ import { err, ok, Result } from 'neverthrow';
 import { PrismaService } from 'src/core/database/prisma.service';
 
 import {
-  GetRentalRemitoEquipmentFactsInput,
-  RentalCommitmentPublicApi,
-  RentalCommitmentPublicApiError,
-  RentalRemitoEquipmentFacts,
-} from './rental-commitment.public-api';
+  GetRentalPhysicalAssignmentsInput,
+  RentalPhysicalAssignments,
+  RentalPhysicalAssignmentsError,
+  RentalPhysicalAssignmentsResult,
+} from './rental-physical-assignments.public-api';
 
-function rentalCommitmentPublicApiError(message: string): RentalCommitmentPublicApiError {
+function rentalPhysicalAssignmentsError(message: string): RentalPhysicalAssignmentsError {
   return { code: 'RentalNotFound', message };
 }
 
 @Injectable()
-export class RentalCommitmentPublicApiService extends RentalCommitmentPublicApi {
+export class RentalPhysicalAssignmentsService extends RentalPhysicalAssignments {
   constructor(private readonly prisma: PrismaService) {
     super();
   }
 
-  async getRentalRemitoEquipmentFacts(
-    input: GetRentalRemitoEquipmentFactsInput,
-  ): Promise<Result<RentalRemitoEquipmentFacts, RentalCommitmentPublicApiError>> {
+  async getRentalPhysicalAssignments(
+    input: GetRentalPhysicalAssignmentsInput,
+  ): Promise<Result<RentalPhysicalAssignmentsResult, RentalPhysicalAssignmentsError>> {
     const rental = await this.prisma.client.v2Rental.findFirst({
       where: {
         id: input.rentalId,
@@ -32,9 +32,6 @@ export class RentalCommitmentPublicApiService extends RentalCommitmentPublicApi 
         demandLines: {
           select: {
             id: true,
-            equipmentTypeId: true,
-            equipmentTypeNameSnapshot: true,
-            quantity: true,
             assignedAssets: {
               select: {
                 assetId: true,
@@ -53,16 +50,13 @@ export class RentalCommitmentPublicApiService extends RentalCommitmentPublicApi 
 
     if (!rental) {
       return err(
-        rentalCommitmentPublicApiError(`Rental "${input.rentalId}" was not found for tenant "${input.tenantId}".`),
+        rentalPhysicalAssignmentsError(`Rental "${input.rentalId}" was not found for tenant "${input.tenantId}".`),
       );
     }
 
     return ok({
-      demandLines: rental.demandLines.map((line) => ({
+      demandAssignments: rental.demandLines.map((line) => ({
         demandLineId: line.id,
-        equipmentTypeId: line.equipmentTypeId,
-        name: line.equipmentTypeNameSnapshot,
-        quantity: line.quantity,
         assignedAssetIds: line.assignedAssets.map((assignment) => assignment.assetId),
       })),
     });

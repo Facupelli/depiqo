@@ -6,7 +6,7 @@ It preserves what was selected, the operational equipment demand produced by tho
 
 Confirmed rentals own accepted historical facts rather than depending on the current definitions of other modules.
 
-Published capabilities: `rental-lifecycle-facts.public-api.ts`, `committed-rental-selections-and-demand.public-api.ts`, and `accepted-rental-pricing-facts.public-api.ts`. The temporary `rental-commitment.public-api.ts` remains only for Remito equipment facts until the separate physical-assignment migration.
+Published capabilities: `rental-lifecycle-facts.public-api.ts`, `committed-rental-selections-and-demand.public-api.ts`, `rental-physical-assignments.public-api.ts`, and `accepted-rental-pricing-facts.public-api.ts`. Published lifecycle Integration Events are `RentalConfirmedIntegrationEvent`, `ConfirmedRentalEditedIntegrationEvent`, and `RentalCancelledIntegrationEvent`.
 
 ## Domain Concepts
 
@@ -234,6 +234,8 @@ Pricing owns current pricing rules and proposed price calculations.
 
 Rental Commitment owns the confirmed price snapshot and must not query Pricing tables later to reconstruct an accepted price. Its `AcceptedRentalPricingFacts` capability publishes only accepted total money, charged units, and an optional common billing unit from that persisted snapshot. Consumers must not use it to recalculate pricing or depend on Pricing internals.
 
+`RentalPhysicalAssignments` publishes the current Rental Commitment assignment relationship between each demand line and its ordered assigned Asset references. It publishes neither demand presentation facts nor Asset Inventory profile facts. Accessory physical assignments remain a deferred extension: their distinct accessory-selection target is not published by this capability, and they do not appear on Remitos.
+
 Asset Inventory owns equipment types and the current physical profile, condition, ownership, location, and assignment-relevant facts of assets.
 
 Rental Commitment owns rental-specific assignment decisions, assigned asset references, rental availability projections, and all rental-created asset blocks.
@@ -284,14 +286,15 @@ Projection handlers must be idempotent and may update only Rental Commitment's d
 
 ## References
 
-* `rental-lifecycle-facts.public-api.ts`
-* `committed-rental-selections-and-demand.public-api.ts`
-* `accepted-rental-pricing-facts.public-api.ts`
-* `rental-commitment.public-api.ts` for the remaining Remito equipment facts only
-* `apps/backend/docs/architecture/overview.md`
-* `apps/backend/docs/architecture/adr/`
-* `apps/backend/src/modules/tenant-management/README.md`
-* `apps/backend/src/modules/catalog/README.md`
-* `apps/backend/src/modules/asset-inventory/README.md`
-* `apps/backend/src/modules/pricing/README.md`
-* `apps/backend/src/modules/contracts/README.md`
+- `rental-lifecycle-facts.public-api.ts`
+- `committed-rental-selections-and-demand.public-api.ts`
+- `accepted-rental-pricing-facts.public-api.ts`
+- `rental-physical-assignments.public-api.ts`
+- `public-api/events/rental-lifecycle.integration-events.ts`
+- `apps/backend/docs/architecture/overview.md`
+- `apps/backend/docs/architecture/adr/`
+- `apps/backend/src/modules/tenant-management/README.md`
+- `apps/backend/src/modules/catalog/README.md`
+- `apps/backend/src/modules/asset-inventory/README.md`
+- `apps/backend/src/modules/pricing/README.md`
+- `apps/backend/src/modules/contracts/README.md`

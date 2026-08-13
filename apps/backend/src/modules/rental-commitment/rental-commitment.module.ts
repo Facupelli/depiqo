@@ -44,8 +44,8 @@ import { AcceptedRentalPricingFacts } from './public-api/accepted-rental-pricing
 import { AcceptedRentalPricingFactsService } from './public-api/accepted-rental-pricing-facts.service';
 import { CommittedRentalSelectionsAndDemand } from './public-api/committed-rental-selections-and-demand.public-api';
 import { CommittedRentalSelectionsAndDemandService } from './public-api/committed-rental-selections-and-demand.service';
-import { RentalCommitmentPublicApiService } from './public-api/rental-commitment.public-api.service';
-import { RentalCommitmentPublicApi } from './public-api/rental-commitment.public-api';
+import { RentalPhysicalAssignments } from './public-api/rental-physical-assignments.public-api';
+import { RentalPhysicalAssignmentsService } from './public-api/rental-physical-assignments.service';
 import { RentalLifecycleFacts } from './public-api/rental-lifecycle-facts.public-api';
 import { RentalLifecycleFactsService } from './public-api/rental-lifecycle-facts.service';
 
@@ -92,13 +92,13 @@ import { RentalLifecycleFactsService } from './public-api/rental-lifecycle-facts
     { provide: AcceptedRentalPricingFacts, useClass: AcceptedRentalPricingFactsService },
     { provide: CommittedRentalSelectionsAndDemand, useClass: CommittedRentalSelectionsAndDemandService },
     { provide: RentalLifecycleFacts, useClass: RentalLifecycleFactsService },
-    { provide: RentalCommitmentPublicApi, useClass: RentalCommitmentPublicApiService },
+    { provide: RentalPhysicalAssignments, useClass: RentalPhysicalAssignmentsService },
   ],
   exports: [
     AcceptedRentalPricingFacts,
     CommittedRentalSelectionsAndDemand,
     RentalLifecycleFacts,
-    RentalCommitmentPublicApi,
+    RentalPhysicalAssignments,
   ],
 })
 export class RentalCommitmentModule {}

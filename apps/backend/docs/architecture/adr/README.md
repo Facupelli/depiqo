@@ -252,7 +252,7 @@ Examples:
 - `docs/architecture/overview.md`
 - `docs/modules/rental-commitment.md`
 - `docs/modules/asset-inventory.md`
-- `rental-commitment.public-api.ts`
+- `rental-physical-assignments.public-api.ts`
 ```
 
 ## Writing Rules
