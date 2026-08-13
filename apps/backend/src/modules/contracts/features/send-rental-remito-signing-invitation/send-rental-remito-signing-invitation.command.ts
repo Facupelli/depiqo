@@ -1,6 +1,6 @@
 import { SigningDocumentType } from 'src/generated/prisma/client';
 
-export class SendSigningInvitationCommand {
+export class SendRentalRemitoSigningInvitationCommand {
   constructor(
     public readonly tenantId: string,
     public readonly orderId: string,

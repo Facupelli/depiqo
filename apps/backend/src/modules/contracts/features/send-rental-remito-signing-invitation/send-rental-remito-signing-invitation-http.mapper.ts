@@ -2,10 +2,15 @@ import { HttpStatus } from '@nestjs/common';
 
 import { createProblemDetails, createProblemType, ProblemException } from 'src/core/problem-details';
 
-import { SendSigningInvitationError, SendSigningInvitationErrorCode } from './send-signing-invitation.errors';
+import {
+  SendRentalRemitoSigningInvitationError,
+  SendRentalRemitoSigningInvitationErrorCode,
+} from './send-rental-remito-signing-invitation.errors';
 
-export function mapSendSigningInvitationHttpError(error: SendSigningInvitationError): ProblemException {
-  const problem = sendSigningInvitationProblemMap[error.code];
+export function mapSendRentalRemitoSigningInvitationHttpError(
+  error: SendRentalRemitoSigningInvitationError,
+): ProblemException {
+  const problem = sendRentalRemitoSigningInvitationProblemMap[error.code];
 
   return ProblemException.from({
     problemDetails: createProblemDetails({
@@ -20,7 +25,7 @@ export function mapSendSigningInvitationHttpError(error: SendSigningInvitationEr
   });
 }
 
-const sendSigningInvitationProblemMap = {
+const sendRentalRemitoSigningInvitationProblemMap = {
   'document_signing.order_not_found': {
     type: createProblemType('document-signing/order-not-found'),
     title: 'Order not found',
@@ -57,4 +62,7 @@ const sendSigningInvitationProblemMap = {
     status: HttpStatus.CONFLICT,
     detail: 'The signing request cannot be updated in its current state.',
   },
-} satisfies Record<SendSigningInvitationErrorCode, { type: string; title: string; status: HttpStatus; detail: string }>;
+} satisfies Record<
+  SendRentalRemitoSigningInvitationErrorCode,
+  { type: string; title: string; status: HttpStatus; detail: string }
+>;

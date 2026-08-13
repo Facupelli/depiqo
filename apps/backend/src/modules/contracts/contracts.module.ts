@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 
 import { AssetInventoryModule } from '../asset-inventory/asset-inventory.module';
+import { NotificationsModule } from '../notifications/notifications.module';
 import { ObjectStorageModule } from '../object-storage/object-storage.module';
 import { RentalCommitmentModule } from '../rental-commitment/rental-commitment.module';
 import { TenantManagementModule } from '../tenant-management/tenant-management.module';
@@ -20,19 +21,31 @@ import { RentalRemitoViewModelMapper } from './application/rental-remito/rental-
 import { RentalRemitoRendererPort } from './domain/ports/rental-remito-renderer.port';
 import { ReactPdfRentalRemitoRendererAdapter } from './infrastructure/pdf/react-pdf-rental-remito-renderer.adapter';
 import { RentalRemitoContractWriterService } from './application/rental-remito/rental-remito-contract-writer.service';
-import { V2ContractsPublicApi } from './public-api/contracts.public-api';
-import { V2ContractsPublicApiService } from './public-api/contracts.public-api.service';
 import { RentalRemitoContractStateService } from './application/rental-remito/rental-remito-contract-state.service';
 import { ContractArtifactPersistenceService } from './application/contract-artifact-persistence.service';
 import { RentalRemitoSignedArtifactService } from './application/rental-remito/rental-remito-signed-artifact.service';
+import { RentalRemitoSigningNotificationService } from './application/rental-remito/rental-remito-signing-notification.service';
+import { RentalRemitoSigningRequestService } from './application/rental-remito/rental-remito-signing-request.service';
 import { HandleConfirmedRentalEditedEventHandler } from './application/event-handlers/handle-confirmed-rental-edited.event-handler';
+import { PublicRentalRemitoSigningHttpController } from './features/public-rental-remito-signing/public-rental-remito-signing.controller';
+import { PublicRentalRemitoSigningService } from './features/public-rental-remito-signing/public-rental-remito-signing.service';
+import { SendRentalRemitoSigningInvitationHttpController } from './features/send-rental-remito-signing-invitation/send-rental-remito-signing-invitation.http.controller';
+import { SendRentalRemitoSigningInvitationService } from './features/send-rental-remito-signing-invitation/send-rental-remito-signing-invitation.service';
 
 @Module({
-  imports: [AssetInventoryModule, ObjectStorageModule, RentalCommitmentModule, TenantManagementModule],
+  imports: [
+    AssetInventoryModule,
+    NotificationsModule,
+    ObjectStorageModule,
+    RentalCommitmentModule,
+    TenantManagementModule,
+  ],
   controllers: [
     GenerateRentalBudgetHttpController,
     GenerateRentalRemitoHttpController,
     GetRentalContractSigningSummaryHttpController,
+    PublicRentalRemitoSigningHttpController,
+    SendRentalRemitoSigningInvitationHttpController,
   ],
   providers: [
     GenerateRentalBudgetHandler,
@@ -47,16 +60,15 @@ import { HandleConfirmedRentalEditedEventHandler } from './application/event-han
     RentalRemitoContractStateService,
     ContractArtifactPersistenceService,
     RentalRemitoSignedArtifactService,
+    RentalRemitoSigningNotificationService,
+    RentalRemitoSigningRequestService,
     HandleConfirmedRentalEditedEventHandler,
+    PublicRentalRemitoSigningService,
+    SendRentalRemitoSigningInvitationService,
     {
       provide: RentalRemitoRendererPort,
       useClass: ReactPdfRentalRemitoRendererAdapter,
     },
-    {
-      provide: V2ContractsPublicApi,
-      useClass: V2ContractsPublicApiService,
-    },
   ],
-  exports: [V2ContractsPublicApi],
 })
 export class ContractsModule {}

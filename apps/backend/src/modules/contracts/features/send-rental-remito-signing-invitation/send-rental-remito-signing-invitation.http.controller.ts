@@ -8,15 +8,19 @@ import { CurrentUser } from 'src/modules/tenant-management/auth/shared/current-u
 import { AllowAuthActors } from 'src/modules/tenant-management/auth/shared/session/auth-actor-access.decorator';
 import { SessionAuthGuard } from 'src/modules/tenant-management/auth/shared/session/session-auth.guard';
 import { TenantUserSessionGuard } from 'src/modules/tenant-management/auth/shared/session/tenant-user-session.guard';
-import { mapSendSigningInvitationHttpError } from './send-signing-invitation-http.mapper';
-import { SendSigningInvitationCommand } from './send-signing-invitation.command';
-import { SendSigningInvitationResult } from './send-signing-invitation.contract';
-import { SendSigningInvitationBodyDto, SendSigningInvitationParamDto } from './send-signing-invitation.request.dto';
-import { SendSigningInvitationResponseDto } from './send-signing-invitation.response.dto';
-import { SendSigningInvitationCommandError } from './send-signing-invitation.service';
+
+import { mapSendRentalRemitoSigningInvitationHttpError } from './send-rental-remito-signing-invitation-http.mapper';
+import { SendRentalRemitoSigningInvitationCommand } from './send-rental-remito-signing-invitation.command';
+import { SendRentalRemitoSigningInvitationResult } from './send-rental-remito-signing-invitation.contract';
+import {
+  SendRentalRemitoSigningInvitationBodyDto,
+  SendRentalRemitoSigningInvitationParamDto,
+} from './send-rental-remito-signing-invitation.request.dto';
+import { SendRentalRemitoSigningInvitationResponseDto } from './send-rental-remito-signing-invitation.response.dto';
+import { SendRentalRemitoSigningInvitationCommandError } from './send-rental-remito-signing-invitation.service';
 
 @Controller('document-signing/orders/:orderId/sessions')
-export class SendSigningInvitationHttpController {
+export class SendRentalRemitoSigningInvitationHttpController {
   constructor(private readonly commandBus: CommandBus) {}
 
   @Post()
@@ -24,15 +28,15 @@ export class SendSigningInvitationHttpController {
   @AllowAuthActors(AUTH_ACTOR_TYPES.TENANT_USER)
   @UseGuards(SessionAuthGuard, TenantUserSessionGuard)
   async sendInvitation(
-    @Param() params: SendSigningInvitationParamDto,
+    @Param() params: SendRentalRemitoSigningInvitationParamDto,
     @CurrentUser() user: AuthUser,
-    @Body() body: SendSigningInvitationBodyDto,
-  ): Promise<SendSigningInvitationResponseDto> {
+    @Body() body: SendRentalRemitoSigningInvitationBodyDto,
+  ): Promise<SendRentalRemitoSigningInvitationResponseDto> {
     const result = await this.commandBus.execute<
-      SendSigningInvitationCommand,
-      Result<SendSigningInvitationResult, SendSigningInvitationCommandError>
+      SendRentalRemitoSigningInvitationCommand,
+      Result<SendRentalRemitoSigningInvitationResult, SendRentalRemitoSigningInvitationCommandError>
     >(
-      new SendSigningInvitationCommand(
+      new SendRentalRemitoSigningInvitationCommand(
         user.tenantId,
         params.orderId,
         SigningDocumentType.RENTAL_AGREEMENT,
@@ -41,7 +45,7 @@ export class SendSigningInvitationHttpController {
     );
 
     if (result.isErr()) {
-      throw mapSendSigningInvitationHttpError(result.error);
+      throw mapSendRentalRemitoSigningInvitationHttpError(result.error);
     }
 
     return result.value;

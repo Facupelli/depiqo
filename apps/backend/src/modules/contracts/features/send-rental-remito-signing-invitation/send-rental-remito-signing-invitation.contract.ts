@@ -1,13 +1,13 @@
 import { SigningDocumentType } from 'src/generated/prisma/client';
 
-export interface SendSigningInvitationInput {
+export interface SendRentalRemitoSigningInvitationInput {
   tenantId: string;
   orderId: string;
   documentType: SigningDocumentType;
   recipientEmail?: string | null;
 }
 
-export interface SendSigningInvitationResult {
+export interface SendRentalRemitoSigningInvitationResult {
   requestId: string;
   documentNumber: string;
   recipientEmail: string;

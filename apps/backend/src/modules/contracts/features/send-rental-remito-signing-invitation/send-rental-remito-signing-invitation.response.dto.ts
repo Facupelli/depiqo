@@ -1,7 +1,7 @@
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
 
-export const SendSigningInvitationResponseSchema = z.object({
+export const SendRentalRemitoSigningInvitationResponseSchema = z.object({
   requestId: z.string().uuid(),
   documentNumber: z.string().min(1),
   recipientEmail: z.string().email(),
@@ -10,4 +10,6 @@ export const SendSigningInvitationResponseSchema = z.object({
   reusedExistingRequest: z.boolean(),
 });
 
-export class SendSigningInvitationResponseDto extends createZodDto(SendSigningInvitationResponseSchema) {}
+export class SendRentalRemitoSigningInvitationResponseDto extends createZodDto(
+  SendRentalRemitoSigningInvitationResponseSchema,
+) {}

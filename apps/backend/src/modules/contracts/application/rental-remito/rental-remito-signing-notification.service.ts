@@ -9,9 +9,9 @@ import { NotificationDispatchSkipReason } from 'src/modules/notifications/applic
 import { NotificationChannel } from 'src/modules/notifications/domain/notification-channel.enum';
 import { NotificationType } from 'src/modules/notifications/domain/notification-type.enum';
 
-import { SigningInvitationEmailDeliveryFailedError } from '../../domain/errors/document-signing.errors';
+export class RentalRemitoSigningInvitationDeliveryFailedError extends Error {}
 
-export type SigningInvitationDeliveryResult =
+export type RentalRemitoSigningInvitationDeliveryResult =
   | {
       signingUrl: string;
       delivered: true;
@@ -24,11 +24,11 @@ export type SigningInvitationDeliveryResult =
       delivered: false;
       failureReason: string;
       failureMessage: string;
-      deliveryError: SigningInvitationEmailDeliveryFailedError;
+      deliveryError: RentalRemitoSigningInvitationDeliveryFailedError;
     };
 
 @Injectable()
-export class SigningNotificationService {
+export class RentalRemitoSigningNotificationService {
   private readonly publicSigningOrigin: string;
 
   constructor(
@@ -49,7 +49,7 @@ export class SigningNotificationService {
     recipientEmail: string;
     expiresAt: Date;
     resend: boolean;
-  }): Promise<SigningInvitationDeliveryResult> {
+  }): Promise<RentalRemitoSigningInvitationDeliveryResult> {
     const signingUrl = this.buildPublicSigningUrl(input.rawToken);
     const dispatchResult = await this.notificationOrchestrator.dispatch({
       tenantId: input.tenant.tenantId,
@@ -116,7 +116,7 @@ export class SigningNotificationService {
       delivered: false,
       failureReason,
       failureMessage,
-      deliveryError: new SigningInvitationEmailDeliveryFailedError(message),
+      deliveryError: new RentalRemitoSigningInvitationDeliveryFailedError(message),
     };
   }
 

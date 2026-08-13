@@ -1,10 +1,10 @@
 # Contracts Module
 
-Contracts owns rental contract document generation and the legal/document truth around signing: contract records, generated artifacts, signing requests, signature acceptance, public receipt/download access, and re-signing state.
+Contracts owns the complete V2 rental contract signing lifecycle: Remito preparation, unsigned artifact generation, signing-request creation, invitation orchestration, public signing sessions, signature acceptance, signed artifacts, public receipt/download access, and re-signing state.
 
 Contracts derives documents from accepted rental facts owned by Rental Commitment and preserves the document and signing facts that must survive later changes.
 
-Public API: `contracts.public-api.ts`
+Contracts currently exposes no module-to-module public capability. Its V2 invitation and public signing routes are Contracts-owned application behavior, implemented directly by Contracts use cases.
 
 ## Domain Concepts
 
@@ -187,7 +187,7 @@ Object storage infrastructure owns storage mechanics. Contracts owns the artifac
 
 Contracts does not control Rental Commitment state transitions. Any interaction between signing state and rental workflow must happen explicitly through public APIs or events.
 
-Document Signing may continue to host public signing-token HTTP endpoints and notification orchestration, but it must read and mutate contract signing state through the Contracts public API.
+Document Signing retains legacy signing persistence and legacy query behavior. Contracts owns V2 Remito preparation, signing-request creation, invitation orchestration, public signing-session HTTP use cases, acceptance, signed artifacts, and receipts.
 
 ## Persistence / Compatibility
 
@@ -212,7 +212,6 @@ Contracts owns persistence for contract records, artifacts, signing requests, si
 
 ## References
 
-- `contracts.public-api.ts`
 - `apps/backend/docs/architecture/overview.md`
 - `apps/backend/docs/architecture/adr/`
 - `apps/backend/src/modules/tenant-management/README.md`
