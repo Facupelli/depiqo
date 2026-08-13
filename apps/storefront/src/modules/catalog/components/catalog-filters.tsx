@@ -51,30 +51,36 @@ export function RentalFilters({
 							<p className="text-[11px] font-semibold tracking-widest text-muted-foreground uppercase">
 								Ubicación del rental
 							</p>
-							<Select
-								value={search.branchId}
-								onValueChange={(value: string | null) => {
-									if (value) onBranchChange(value);
-								}}
-								items={branches?.map((branch) => ({
-									label: branch.name,
-									value: branch.id,
-								}))}
-							>
-								<SelectTrigger
-									className="h-10! w-72 rounded-xl border-border bg-muted! hover:bg-muted/80! text-foreground"
-									aria-label="Ubicacion del rental"
+							{branches?.length === 1 ? (
+								<p className="flex h-10 w-72 items-center rounded-xl border border-border bg-muted px-3 text-foreground">
+									{branches[0].name}
+								</p>
+							) : (
+								<Select
+									value={search.branchId}
+									onValueChange={(value: string | null) => {
+										if (value) onBranchChange(value);
+									}}
+									items={branches?.map((branch) => ({
+										label: branch.name,
+										value: branch.id,
+									}))}
 								>
-									<SelectValue placeholder="Seleccionar ubicación" />
-								</SelectTrigger>
-								<SelectContent>
-									{branches?.map((branch) => (
-										<SelectItem key={branch.id} value={branch.id}>
-											{branch.name}
-										</SelectItem>
-									))}
-								</SelectContent>
-							</Select>
+									<SelectTrigger
+										className="h-10! w-72 rounded-xl border-border bg-muted! hover:bg-muted/80! text-foreground"
+										aria-label="Ubicacion del rental"
+									>
+										<SelectValue placeholder="Seleccionar ubicación" />
+									</SelectTrigger>
+									<SelectContent>
+										{branches?.map((branch) => (
+											<SelectItem key={branch.id} value={branch.id}>
+												{branch.name}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+							)}
 						</div>
 
 						{/* Date range */}
@@ -105,32 +111,38 @@ export function RentalFilters({
 			</div>
 
 			<div className="flex items-center gap-3 md:hidden">
-				<Select
-					value={search.branchId}
-					onValueChange={(value: string | null) => {
-						if (value) {
-							onBranchChange(value);
-						}
-					}}
-					items={branches?.map((branch) => ({
-						label: branch.name,
-						value: branch.id,
-					}))}
-				>
-					<SelectTrigger
-						className="h-11 min-w-0 flex-1"
-						aria-label="Ubicacion del rental"
+				{branches?.length === 1 ? (
+					<p className="flex h-11 min-w-0 flex-1 items-center rounded-md border px-3">
+						{branches[0].name}
+					</p>
+				) : (
+					<Select
+						value={search.branchId}
+						onValueChange={(value: string | null) => {
+							if (value) {
+								onBranchChange(value);
+							}
+						}}
+						items={branches?.map((branch) => ({
+							label: branch.name,
+							value: branch.id,
+						}))}
 					>
-						<SelectValue placeholder="Seleccionar ubicacion" />
-					</SelectTrigger>
-					<SelectContent>
-						{branches?.map((branch) => (
-							<SelectItem key={branch.id} value={branch.id}>
-								{branch.name}
-							</SelectItem>
-						))}
-					</SelectContent>
-				</Select>
+						<SelectTrigger
+							className="h-11 min-w-0 flex-1"
+							aria-label="Ubicacion del rental"
+						>
+							<SelectValue placeholder="Seleccionar ubicacion" />
+						</SelectTrigger>
+						<SelectContent>
+							{branches?.map((branch) => (
+								<SelectItem key={branch.id} value={branch.id}>
+									{branch.name}
+								</SelectItem>
+							))}
+						</SelectContent>
+					</Select>
+				)}
 
 				{/* ── Filters sheet button — mobile only ── */}
 				{isMobile && (
