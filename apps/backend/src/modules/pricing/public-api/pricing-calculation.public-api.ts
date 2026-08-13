@@ -1,6 +1,6 @@
 import { Result } from 'neverthrow';
 
-export type PricingCalculationDurationPolicy = {
+export type PricingDurationPolicySnapshot = {
   timezone: string;
   dailyBillingPolicy: 'IGNORE_PARTIAL_DAY' | 'BILL_OVER_HALF_DAY' | 'BILL_ANY_PARTIAL_DAY';
   minimumChargedDays: number;
@@ -10,7 +10,10 @@ export type PricingCalculationDurationPolicy = {
 export type PricingCalculationRequest = {
   tenantId: string;
   rentalPeriod: { start: Date; end: Date };
-  durationPolicy: PricingCalculationDurationPolicy;
+  calculationFacts: {
+    effectiveTimezone: string;
+    dailyBillingPolicy: 'IGNORE_PARTIAL_DAY' | 'BILL_OVER_HALF_DAY' | 'BILL_ANY_PARTIAL_DAY';
+  };
   lines: Array<{
     lineReference: string;
     rentalOfferId: string;
@@ -47,7 +50,7 @@ export type PricingCalculationBreakdown = {
   discountTotal: string;
   total: string;
   chargedDays: number;
-  durationPolicy: PricingCalculationDurationPolicy;
+  durationPolicy: PricingDurationPolicySnapshot;
   lines: PricingCalculationLine[];
   appliedPromotions: Array<{
     promotionId: string;

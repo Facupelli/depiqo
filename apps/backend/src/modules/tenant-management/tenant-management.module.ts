@@ -2,6 +2,9 @@ import { Module } from '@nestjs/common';
 
 import { TenantManagementPublicApiService } from './public-api/tenant-management-public-api.service';
 import { TenantNotificationPreferencesService } from './public-api/tenant-notification-preferences.service';
+import { TenantBillingPreferencesService } from './public-api/tenant-billing-preferences.service';
+import { TenantInsuranceOfferingTermsService } from './public-api/tenant-insurance-offering-terms.service';
+import { TenantPresentationPreferencesService } from './public-api/tenant-presentation-preferences.service';
 import { BranchFactsService } from './public-api/branch-facts.service';
 import { BranchFacts } from './public-api/branch-facts.public-api';
 import { BranchScheduleEligibilityService } from './public-api/branch-schedule-eligibility.service';
@@ -63,6 +66,9 @@ import { BranchRepository } from './infrastructure/persistence/repositories/bran
 import { TenantRepository } from './infrastructure/persistence/repositories/tenant.repository';
 import { TenantManagementPublicApi } from './public-api/tenant-management.public-api';
 import { TenantNotificationPreferences } from './public-api/tenant-notification-preferences.public-api';
+import { TenantBillingPreferences } from './public-api/tenant-billing-preferences.public-api';
+import { TenantInsuranceOfferingTerms } from './public-api/tenant-insurance-offering-terms.public-api';
+import { TenantPresentationPreferences } from './public-api/tenant-presentation-preferences.public-api';
 import { TenantContextModule } from './tenant-context/tenant-context.module';
 import { CustomHostnameProvider } from './application/ports/custom-hostname-provider.port';
 import { CloudflareCustomHostnameService } from './infrastructure/cloudflare-custom-hostname.service';
@@ -138,6 +144,9 @@ import { GetStorefrontCategoriesHandler } from './features/get-storefront-catego
     UpdateTenantConfigHandler,
     { provide: TenantManagementPublicApi, useClass: TenantManagementPublicApiService },
     { provide: TenantNotificationPreferences, useClass: TenantNotificationPreferencesService },
+    { provide: TenantBillingPreferences, useClass: TenantBillingPreferencesService },
+    { provide: TenantInsuranceOfferingTerms, useClass: TenantInsuranceOfferingTermsService },
+    { provide: TenantPresentationPreferences, useClass: TenantPresentationPreferencesService },
     { provide: TenantOperationalFacts, useClass: TenantOperationalFactsService },
     { provide: BranchFacts, useClass: BranchFactsService },
     { provide: BranchScheduleEligibility, useClass: BranchScheduleEligibilityService },
@@ -146,6 +155,9 @@ import { GetStorefrontCategoriesHandler } from './features/get-storefront-catego
   exports: [
     TenantManagementPublicApi,
     TenantNotificationPreferences,
+    TenantBillingPreferences,
+    TenantInsuranceOfferingTerms,
+    TenantPresentationPreferences,
     TenantOperationalFacts,
     BranchFacts,
     BranchScheduleEligibility,

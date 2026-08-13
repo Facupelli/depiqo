@@ -5,6 +5,7 @@ import { err, ok, Result } from 'neverthrow';
 
 import { InsuranceCalculationService } from 'src/core/domain/services/insurance-calculation.service';
 import { PricingContextLoader } from '../../application/pricing-context-loader';
+import { createPricingDurationPolicy } from '../../application/pricing-duration-policy';
 import { CouponNotApplicableError, InvalidPricingInputError } from '../../pricing-engine/errors/pricing.errors';
 import { PricingInput } from '../../pricing-engine/final/pricing-input.types';
 import { PricingResult } from '../../pricing-engine/final/pricing-result.type';
@@ -16,10 +17,9 @@ import {
   CatalogSelectionResolutionError,
 } from 'src/modules/catalog/public-api/catalog-selection-resolution.public-api';
 import { BranchFacts } from 'src/modules/tenant-management/public-api/branch-facts.public-api';
-import {
-  GetTenantPricingConfigResult,
-  TenantManagementPublicApi,
-} from 'src/modules/tenant-management/public-api/tenant-management.public-api';
+import { TenantBillingPreferences } from 'src/modules/tenant-management/public-api/tenant-billing-preferences.public-api';
+import { TenantInsuranceOfferingTerms } from 'src/modules/tenant-management/public-api/tenant-insurance-offering-terms.public-api';
+import { TenantPresentationPreferences } from 'src/modules/tenant-management/public-api/tenant-presentation-preferences.public-api';
 import { BasePricingSelectionInput } from '../../pricing-engine/base/base-pricing-input.type';
 
 type CalculateCartPriceResult = {
@@ -53,7 +53,9 @@ export class CalculateCartPriceHandler implements IQueryHandler<
   constructor(
     private readonly pricingContextLoader: PricingContextLoader,
     private readonly catalogSelectionResolution: CatalogSelectionResolution,
-    private readonly tenantManagementApi: TenantManagementPublicApi,
+    private readonly tenantBillingPreferences: TenantBillingPreferences,
+    private readonly tenantInsuranceOfferingTerms: TenantInsuranceOfferingTerms,
+    private readonly tenantPresentationPreferences: TenantPresentationPreferences,
     private readonly branchFacts: BranchFacts,
   ) {}
 
@@ -64,27 +66,51 @@ export class CalculateCartPriceHandler implements IQueryHandler<
       return err(validationError);
     }
 
-    const tenantPricingConfigResult = await this.tenantManagementApi.getTenantPricingConfig({
-      tenantId: query.tenantId,
-    });
-    if (tenantPricingConfigResult.isErr()) {
+    const [billingPreferencesResult, insuranceOfferingTermsResult, presentationPreferencesResult] = await Promise.all([
+      this.tenantBillingPreferences.getTenantBillingPreferences({ tenantId: query.tenantId }),
+      this.tenantInsuranceOfferingTerms.getTenantInsuranceOfferingTerms({ tenantId: query.tenantId }),
+      this.tenantPresentationPreferences.getTenantPresentationPreferences({ tenantId: query.tenantId }),
+    ]);
+    if (billingPreferencesResult.isErr()) {
       return err(
         calculateCartPriceError(
           'pricing.tenant_config_unavailable',
           `Tenant pricing config for tenant "${query.tenantId}" is unavailable.`,
-          tenantPricingConfigResult.error,
+          billingPreferencesResult.error,
           context,
         ),
       );
     }
-    const tenantPricingConfig = tenantPricingConfigResult.value;
+    if (insuranceOfferingTermsResult.isErr()) {
+      return err(
+        calculateCartPriceError(
+          'pricing.tenant_config_unavailable',
+          `Tenant pricing config for tenant "${query.tenantId}" is unavailable.`,
+          insuranceOfferingTermsResult.error,
+          context,
+        ),
+      );
+    }
+    if (presentationPreferencesResult.isErr()) {
+      return err(
+        calculateCartPriceError(
+          'pricing.tenant_config_unavailable',
+          `Tenant pricing config for tenant "${query.tenantId}" is unavailable.`,
+          presentationPreferencesResult.error,
+          context,
+        ),
+      );
+    }
+    const billingPreferences = billingPreferencesResult.value;
+    const insuranceOfferingTerms = insuranceOfferingTermsResult.value;
+    const presentationPreferences = presentationPreferencesResult.value;
 
     if (query.selectedOffers.length === 0) {
       return ok(
         this.buildEmptyResult({
           insuranceSelected: query.insuranceSelected,
-          locale: tenantPricingConfig.locale,
-          insuranceRatePercent: tenantPricingConfig.insuranceRatePercent,
+          locale: presentationPreferences.locale,
+          insuranceRatePercent: insuranceOfferingTerms.insuranceRatePercent,
         }),
       );
     }
@@ -161,12 +187,10 @@ export class CalculateCartPriceHandler implements IQueryHandler<
     const pricingInput: PricingInput = {
       tenantId: query.tenantId,
       rentalPeriod: { start: query.rentalPeriodStart, end: query.rentalPeriodEnd },
-      pricingConfig: {
-        timezone: branchContextResult.value.effectiveTimezone,
-        dailyBillingPolicy: tenantPricingConfig.dailyBillingPolicy,
-        minimumChargedDays: tenantPricingConfig.minimumChargedDays,
-        halfDayThresholdMinutes: tenantPricingConfig.halfDayThresholdMinutes,
-      },
+      pricingConfig: createPricingDurationPolicy({
+        effectiveTimezone: branchContextResult.value.effectiveTimezone,
+        dailyBillingPolicy: billingPreferences.dailyBillingPolicy,
+      }),
       selections: resolvedCatalogSelections.value.resolvedOffers.map((offer) => ({
         rentalOfferId: offer.rentalOfferId,
         rentableItemId: offer.rentableItem.id,
@@ -193,7 +217,8 @@ export class CalculateCartPriceHandler implements IQueryHandler<
       this.buildResult({
         pricingResult,
         insuranceSelected: query.insuranceSelected,
-        tenantPricingConfig,
+        insuranceOfferingTerms,
+        presentationPreferences,
       }),
     );
   }
@@ -305,12 +330,13 @@ export class CalculateCartPriceHandler implements IQueryHandler<
   private buildResult(input: {
     pricingResult: PricingResult;
     insuranceSelected: boolean;
-    tenantPricingConfig: GetTenantPricingConfigResult;
+    insuranceOfferingTerms: { insuranceEnabled: boolean; insuranceRatePercent: number };
+    presentationPreferences: { locale: string };
   }): CalculateCartPriceResult {
     const insuranceTerms = InsuranceCalculationService.resolveTerms(
       {
-        insuranceEnabled: input.tenantPricingConfig.insuranceEnabled,
-        insuranceRatePercent: input.tenantPricingConfig.insuranceRatePercent,
+        insuranceEnabled: input.insuranceOfferingTerms.insuranceEnabled,
+        insuranceRatePercent: input.insuranceOfferingTerms.insuranceRatePercent,
       },
       input.insuranceSelected,
     );
@@ -319,7 +345,7 @@ export class CalculateCartPriceHandler implements IQueryHandler<
 
     return {
       currency: input.pricingResult.currency,
-      locale: input.tenantPricingConfig.locale,
+      locale: input.presentationPreferences.locale,
       subtotal: input.pricingResult.subtotal,
       discountTotal: input.pricingResult.discountTotal,
       totalBeforeInsurance: input.pricingResult.total,

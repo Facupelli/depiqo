@@ -9,7 +9,7 @@ import {
   CatalogSelectionResolutionError,
 } from 'src/modules/catalog/public-api/catalog-selection-resolution.public-api';
 import { BranchFacts } from 'src/modules/tenant-management/public-api/branch-facts.public-api';
-import { TenantManagementPublicApi } from 'src/modules/tenant-management/public-api/tenant-management.public-api';
+import { TenantBillingPreferences } from 'src/modules/tenant-management/public-api/tenant-billing-preferences.public-api';
 
 import {
   PricingCalculation,
@@ -31,7 +31,7 @@ export class CalculateDraftRentalPriceHandler implements IQueryHandler<
 > {
   constructor(
     private readonly catalogSelectionResolution: CatalogSelectionResolution,
-    private readonly tenantManagementApi: TenantManagementPublicApi,
+    private readonly tenantBillingPreferences: TenantBillingPreferences,
     private readonly branchFacts: BranchFacts,
     private readonly pricingCalculation: PricingCalculation,
   ) {}
@@ -45,20 +45,20 @@ export class CalculateDraftRentalPriceHandler implements IQueryHandler<
       return err(validationError);
     }
 
-    const tenantPricingConfigResult = await this.tenantManagementApi.getTenantPricingConfig({
+    const billingPreferencesResult = await this.tenantBillingPreferences.getTenantBillingPreferences({
       tenantId: query.tenantId,
     });
-    if (tenantPricingConfigResult.isErr()) {
+    if (billingPreferencesResult.isErr()) {
       return err(
         calculateDraftRentalPriceError(
           'pricing.tenant_config_unavailable',
           `Tenant pricing config for tenant "${query.tenantId}" is unavailable.`,
-          tenantPricingConfigResult.error,
+          billingPreferencesResult.error,
           context,
         ),
       );
     }
-    const tenantPricingConfig = tenantPricingConfigResult.value;
+    const billingPreferences = billingPreferencesResult.value;
 
     const branchContextResult = await this.branchFacts.getBranchFacts({
       tenantId: query.tenantId,
@@ -118,11 +118,9 @@ export class CalculateDraftRentalPriceHandler implements IQueryHandler<
         start: query.rentalPeriodStart,
         end: query.rentalPeriodEnd,
       },
-      durationPolicy: {
-        timezone: branchContextResult.value.effectiveTimezone,
-        dailyBillingPolicy: tenantPricingConfig.dailyBillingPolicy,
-        minimumChargedDays: tenantPricingConfig.minimumChargedDays,
-        halfDayThresholdMinutes: tenantPricingConfig.halfDayThresholdMinutes,
+      calculationFacts: {
+        effectiveTimezone: branchContextResult.value.effectiveTimezone,
+        dailyBillingPolicy: billingPreferences.dailyBillingPolicy,
       },
       lines: resolvedCatalogSelections.value.resolvedOffers.map((offer) => ({
         lineReference: randomUUID(),

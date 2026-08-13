@@ -15,8 +15,11 @@ Tenant Management publishes focused provider-owned operational capabilities unde
 - `BranchScheduleEligibility` evaluates a pickup or return instant against a branch schedule.
 - `RentalCustomerOperationalEligibility` provides current rental-customer eligibility.
 - `TenantNotificationPreferences` provides current enabled notification delivery channels and order communication mode.
+- `TenantBillingPreferences` provides the tenant-selected daily billing policy.
+- `TenantInsuranceOfferingTerms` provides the tenant-configured insurance offering availability and rate.
+- `TenantPresentationPreferences` provides locale metadata where current response presentation requires it.
 
-`tenant-management.public-api.ts` remains temporarily for legacy tenant context, pricing configuration, category, notification-recipient, and rental-budget document-context capabilities.
+`tenant-management.public-api.ts` remains temporarily for legacy tenant context, category, notification-recipient, and rental-budget document-context capabilities.
 
 ## Domain Concepts
 

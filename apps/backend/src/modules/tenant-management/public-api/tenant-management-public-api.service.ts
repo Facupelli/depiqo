@@ -10,8 +10,6 @@ import {
   GetRentalCustomerNotificationRecipientInput,
   GetTenantAdminNotificationRecipientsInput,
   GetTenantInput,
-  GetTenantPricingConfigInput,
-  GetTenantPricingConfigResult,
   RentalBudgetDocumentContext,
   RentalCustomerNotificationRecipient,
   TenantAdminNotificationRecipient,
@@ -23,9 +21,6 @@ import {
 } from './tenant-management.public-api';
 import { TenantConfig, TenantConfigProps } from '../domain/value-objects/tenant-config.value-object';
 import { resolveEffectiveTimezone } from '../domain/utils/effective-timezone';
-
-const DEFAULT_MINIMUM_CHARGED_DAYS = 1;
-const DEFAULT_HALF_DAY_THRESHOLD_MINUTES = 720;
 
 type BudgetDocumentBranchContext = {
   id: string;
@@ -340,36 +335,6 @@ export class TenantManagementPublicApiService extends TenantManagementPublicApi 
         name: user.name ?? undefined,
       })),
     );
-  }
-
-  async getTenantPricingConfig(
-    input: GetTenantPricingConfigInput,
-  ): Promise<Result<GetTenantPricingConfigResult, TenantManagementPublicApiError>> {
-    const tenant = await this.prisma.client.v2Tenant.findFirst({
-      where: { id: input.tenantId, status: 'ACTIVE', deletedAt: null },
-      select: { id: true, config: true },
-    });
-
-    if (!tenant) {
-      return err(tenantManagementPublicApiError('TenantNotFound', `Tenant "${input.tenantId}" was not found.`));
-    }
-
-    const tenantConfig = this.reconstituteTenantConfig(tenant.config);
-    if (!tenantConfig) {
-      return err(
-        tenantManagementPublicApiError('TenantConfigInvalid', `Tenant "${input.tenantId}" config is invalid.`),
-      );
-    }
-
-    return ok({
-      timezone: tenantConfig.timezone,
-      locale: tenantConfig.pricing.locale,
-      dailyBillingPolicy: tenantConfig.pricing.roundingRule,
-      minimumChargedDays: DEFAULT_MINIMUM_CHARGED_DAYS,
-      halfDayThresholdMinutes: DEFAULT_HALF_DAY_THRESHOLD_MINUTES,
-      insuranceEnabled: tenantConfig.pricing.insuranceEnabled,
-      insuranceRatePercent: tenantConfig.pricing.insuranceRatePercent,
-    });
   }
 
   private reconstituteTenantConfig(config: unknown): TenantConfig | null {

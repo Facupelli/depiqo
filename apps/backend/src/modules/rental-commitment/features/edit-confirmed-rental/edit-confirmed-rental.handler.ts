@@ -14,7 +14,8 @@ import {
   PricingCalculationError,
 } from 'src/modules/pricing/public-api/pricing-calculation.public-api';
 import { AcceptedRentalPricingSnapshotV1 } from '../../domain/value-objects/accepted-pricing-snapshot.type';
-import { TenantManagementPublicApi } from 'src/modules/tenant-management/public-api/tenant-management.public-api';
+import { BranchFacts } from 'src/modules/tenant-management/public-api/branch-facts.public-api';
+import { TenantBillingPreferences } from 'src/modules/tenant-management/public-api/tenant-billing-preferences.public-api';
 
 import { RentalOperationalFactsValidatorService } from '../../application/rental-operational-facts-validator.service';
 
@@ -67,7 +68,8 @@ export class EditConfirmedRentalHandler implements ICommandHandler<
 > {
   constructor(
     private readonly rentalRepository: RentalRepository,
-    private readonly tenantManagementApi: TenantManagementPublicApi,
+    private readonly tenantBillingPreferences: TenantBillingPreferences,
+    private readonly branchFacts: BranchFacts,
     private readonly rentalOperationalFacts: RentalOperationalFactsValidatorService,
     private readonly catalogSelectionResolution: CatalogSelectionResolution,
     private readonly assetInventoryDisplayFacts: AssetInventoryDisplayFacts,
@@ -137,8 +139,14 @@ export class EditConfirmedRentalHandler implements ICommandHandler<
     });
     if (tenantValidation.isErr()) return err(this.toApplicationError(tenantValidation.error, context));
 
-    const tenantPricingConfig = await this.tenantManagementApi.getTenantPricingConfig({ tenantId });
-    if (tenantPricingConfig.isErr()) return err(this.toApplicationError(new TenantUnavailableForRentalError(tenantId), context));
+    const [billingPreferences, branchFacts] = await Promise.all([
+      this.tenantBillingPreferences.getTenantBillingPreferences({ tenantId }),
+      this.branchFacts.getBranchFacts({ tenantId, branchId }),
+    ]);
+    if (billingPreferences.isErr())
+      return err(this.toApplicationError(new TenantUnavailableForRentalError(tenantId), context));
+    if (branchFacts.isErr())
+      return err(this.toApplicationError(new BranchUnavailableForRentalError(branchId), context));
 
     const resolvedCatalogSelections = await this.catalogSelectionResolution.resolveSelectedRentalOffers({
       tenantId,
@@ -173,7 +181,10 @@ export class EditConfirmedRentalHandler implements ICommandHandler<
       tenantId,
       customerId: rental.rentalCustomerId!,
       rentalPeriod: { start: period.start, end: period.end },
-      durationPolicy: tenantPricingConfig.value,
+      calculationFacts: {
+        effectiveTimezone: branchFacts.value.effectiveTimezone,
+        dailyBillingPolicy: billingPreferences.value.dailyBillingPolicy,
+      },
       lines: selections.map((selection) => ({
         lineReference: selection.id,
         rentalOfferId: selection.rentalOfferId,
@@ -315,7 +326,7 @@ export class EditConfirmedRentalHandler implements ICommandHandler<
 
         const edit = rental.editConfirmed({
           branchId,
-              period,
+          period,
           fulfillmentMethod,
           deliveryDetails: command.props.deliveryDetails,
           notes: command.props.notes,
@@ -443,8 +454,14 @@ export class EditConfirmedRentalHandler implements ICommandHandler<
     });
     if (tenantValidation.isErr()) return err(this.toApplicationError(tenantValidation.error, context));
 
-    const tenantPricingConfig = await this.tenantManagementApi.getTenantPricingConfig({ tenantId });
-    if (tenantPricingConfig.isErr()) return err(this.toApplicationError(new TenantUnavailableForRentalError(tenantId), context));
+    const [billingPreferences, branchFacts] = await Promise.all([
+      this.tenantBillingPreferences.getTenantBillingPreferences({ tenantId }),
+      this.branchFacts.getBranchFacts({ tenantId, branchId }),
+    ]);
+    if (billingPreferences.isErr())
+      return err(this.toApplicationError(new TenantUnavailableForRentalError(tenantId), context));
+    if (branchFacts.isErr())
+      return err(this.toApplicationError(new BranchUnavailableForRentalError(branchId), context));
 
     let confirmedPriceSnapshot: AcceptedRentalPricingSnapshotV1 | undefined;
 
@@ -465,7 +482,10 @@ export class EditConfirmedRentalHandler implements ICommandHandler<
         tenantId,
         customerId: rental.rentalCustomerId!,
         rentalPeriod: { start: period.start, end: period.end },
-        durationPolicy: tenantPricingConfig.value,
+        calculationFacts: {
+          effectiveTimezone: branchFacts.value.effectiveTimezone,
+          dailyBillingPolicy: billingPreferences.value.dailyBillingPolicy,
+        },
         lines: resolvedCatalogSelections.value.resolvedOffers.map((offer) => ({
           lineReference: selectionIdByOfferId.get(offer.rentalOfferId)!,
           rentalOfferId: offer.rentalOfferId,

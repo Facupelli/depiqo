@@ -14,10 +14,6 @@ export interface TenantContext {
   primaryColor: string | null;
 }
 
-export interface GetTenantPricingConfigInput {
-  tenantId: string;
-}
-
 export interface GetRentalCustomerNotificationRecipientInput {
   tenantId: string;
   rentalCustomerId: string;
@@ -69,16 +65,6 @@ export interface TenantAdminNotificationRecipient {
   name?: string;
 }
 
-export interface GetTenantPricingConfigResult {
-  timezone: string;
-  locale: string;
-  dailyBillingPolicy: 'IGNORE_PARTIAL_DAY' | 'BILL_OVER_HALF_DAY' | 'BILL_ANY_PARTIAL_DAY';
-  minimumChargedDays: number;
-  halfDayThresholdMinutes: number;
-  insuranceEnabled: boolean;
-  insuranceRatePercent: number;
-}
-
 export interface CategoryDisplayFact {
   id: string;
   name: string;
@@ -123,10 +109,6 @@ export abstract class TenantManagementPublicApi {
   ): Promise<Result<void, ValidateCategoryAssignmentError>>;
 
   abstract getTenant(input: GetTenantInput): Promise<Result<TenantContext, TenantManagementPublicApiError>>;
-
-  abstract getTenantPricingConfig(
-    input: GetTenantPricingConfigInput,
-  ): Promise<Result<GetTenantPricingConfigResult, TenantManagementPublicApiError>>;
 
   abstract getRentalCustomerNotificationRecipient(
     input: GetRentalCustomerNotificationRecipientInput,

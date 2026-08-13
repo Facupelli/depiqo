@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { err, ok, Result } from 'neverthrow';
 
 import { PricingContextLoader } from './pricing-context-loader';
+import { createPricingDurationPolicy } from './pricing-duration-policy';
 import {
   PricingCalculation,
   PricingCalculationBreakdown,
@@ -64,7 +65,7 @@ export class PricingCalculationService extends PricingCalculation {
       const calculated = this.calculator.calculate({
         tenantId: input.tenantId,
         rentalPeriod: input.rentalPeriod,
-        pricingConfig: input.durationPolicy,
+        pricingConfig: createPricingDurationPolicy(input.calculationFacts),
         selections: selections as PricingInput['selections'],
         customerId: input.customerId,
         calculationDate: calculatedAt,
@@ -138,9 +139,7 @@ export class PricingCalculationService extends PricingCalculation {
       !input.rentalPeriod?.start ||
       !input.rentalPeriod?.end ||
       input.rentalPeriod.end <= input.rentalPeriod.start ||
-      !input.durationPolicy?.timezone?.trim() ||
-      !Number.isInteger(input.durationPolicy.minimumChargedDays) ||
-      input.durationPolicy.minimumChargedDays < 0 ||
+      !input.calculationFacts?.effectiveTimezone?.trim() ||
       !input.lines?.length
     )
       return new PricingCalculationError(
