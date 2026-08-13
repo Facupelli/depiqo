@@ -6,7 +6,16 @@ It determines what a proposed rental should cost, how that amount was calculated
 
 Pricing does not own the accepted historical price of a confirmed rental. Rental Commitment preserves that as a snapshot.
 
-Public API: `pricing.public-api.ts`
+## Published Capabilities
+
+Pricing publishes cohesive synchronous capabilities for other modules:
+
+- `PricingRatePlanAuthoring` creates reusable Rate Plans.
+- `PricingRentalOfferPricingAssignment` assigns an active Pricing Rate Plan to a Catalog Rental Offer reference.
+- `PricingPublicApi` remains the temporary calculation boundary for Rental Commitment. Its calculation operations are unchanged by the authoring boundary.
+
+The authoring capabilities publish Pricing-owned inputs, result IDs, error vocabularies, and billing-unit values. They do not expose Prisma, persistence, domain, or feature-local types.
+
 
 ## Domain Concepts
 
@@ -154,6 +163,8 @@ Pricing changes must not silently mutate confirmed rental snapshots, documents, 
 Rental Catalog owns `RentalOffer`, `RentableItem`, catalog visibility, rentability, and branch offer state.
 
 Pricing may reference catalog-owned identifiers for pricing scope and assignments but must not take ownership of those records.
+
+The current rental-offer pricing-assignment implementation directly reads Catalog-owned `v2RentalOffer` persistence to validate the reference. This is an existing deferred cross-module boundary violation. It remains intentionally unchanged while public module boundaries are cleaned up and must be addressed separately through the appropriate Catalog collaboration mechanism.
 
 Pricing must not depend on Rental Catalog internals for calculation logic.
 

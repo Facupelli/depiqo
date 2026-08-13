@@ -8,6 +8,8 @@ import { IntegrationEventsModule } from '../../src/core/domain/events/integratio
 import { LoggerModule } from '../../src/core/logger/logger.module';
 import { CatalogModule } from '../../src/modules/catalog/catalog.module';
 import { RentalCommitmentModule } from '../../src/modules/rental-commitment/rental-commitment.module';
+import { OfferingSetupModule } from '../../src/modules/offering-setup/offering-setup.module';
+import { PricingModule } from '../../src/modules/pricing/pricing.module';
 import { SharedModule } from '../../src/modules/shared/shared.module';
 
 type Closable = { close(): Promise<void> };
@@ -40,6 +42,42 @@ export async function createCatalogIntegrationContext(): Promise<TestingModule> 
       IntegrationEventsModule,
       CqrsModule.forRoot(),
       CatalogModule,
+    ],
+  }).compile();
+
+  await moduleRef.init();
+  return moduleRef;
+}
+
+export async function createPricingIntegrationContext(): Promise<TestingModule> {
+  const moduleRef = await Test.createTestingModule({
+    imports: [
+      SharedModule,
+      LoggerModule,
+      AppConfigModule,
+      DatabaseModule,
+      EventEmitterModule.forRoot(),
+      IntegrationEventsModule,
+      CqrsModule.forRoot(),
+      PricingModule,
+    ],
+  }).compile();
+
+  await moduleRef.init();
+  return moduleRef;
+}
+
+export async function createOfferingSetupIntegrationContext(): Promise<TestingModule> {
+  const moduleRef = await Test.createTestingModule({
+    imports: [
+      SharedModule,
+      LoggerModule,
+      AppConfigModule,
+      DatabaseModule,
+      EventEmitterModule.forRoot(),
+      IntegrationEventsModule,
+      CqrsModule.forRoot(),
+      OfferingSetupModule,
     ],
   }).compile();
 

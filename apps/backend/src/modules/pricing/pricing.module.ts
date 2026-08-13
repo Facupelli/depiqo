@@ -15,8 +15,6 @@ import { DetachOfferPricingHttpController } from './features/detach-offer-pricin
 import { DetachOfferPricingHandler } from './features/detach-offer-pricing/detach-offer-pricing.handler';
 import { CreatePromotionHttpController } from './features/create-promotion/create-promotion.controller';
 import { CreatePromotionHandler } from './features/create-promotion/create-promotion.handler';
-import { CreateRatePlanAndAttachToRentalOfferHttpController } from './features/create-rate-plan-and-attach-to-rental-offer/create-rate-plan-and-attach-to-rental-offer.controller';
-import { CreateRatePlanAndAttachToRentalOfferHandler } from './features/create-rate-plan-and-attach-to-rental-offer/create-rate-plan-and-attach-to-rental-offer.handler';
 import { CreateRatePlanHttpController } from './features/create-rate-plan/create-rate-plan.controller';
 import { CreateRatePlanHandler } from './features/create-rate-plan/create-rate-plan.handler';
 import { GetPromotionDetailHttpController } from './features/get-promotion-detail/get-promotion-detail.controller';
@@ -38,6 +36,10 @@ import { PriceDraftRentalService } from './features/price-draft-rental/price-dra
 import { RatePlanRepository } from './persistence/rate-plan.repository';
 import { PricingPublicApiService } from './public-api/pricing-public-api.service';
 import { PricingPublicApi } from './public-api/pricing.public-api';
+import { PricingRatePlanAuthoringService } from './public-api/pricing-rate-plan-authoring.service';
+import { PricingRatePlanAuthoring } from './public-api/pricing-rate-plan-authoring.public-api';
+import { PricingRentalOfferPricingAssignmentService } from './public-api/pricing-rental-offer-pricing-assignment.service';
+import { PricingRentalOfferPricingAssignment } from './public-api/pricing-rental-offer-pricing-assignment.public-api';
 import { CatalogModule } from '../catalog/catalog.module';
 import { TenantManagementModule } from '../tenant-management/tenant-management.module';
 
@@ -50,7 +52,6 @@ import { TenantManagementModule } from '../tenant-management/tenant-management.m
     CorrectRatePlanHttpController,
     DetachOfferPricingHttpController,
     CreatePromotionHttpController,
-    CreateRatePlanAndAttachToRentalOfferHttpController,
     CreateRatePlanHttpController,
     GetPromotionDetailHttpController,
     GetPromotionsHttpController,
@@ -69,7 +70,6 @@ import { TenantManagementModule } from '../tenant-management/tenant-management.m
     AttachRatePlanToRentalOfferHandler,
     CreateRatePlanOperation,
     CreatePromotionHandler,
-    CreateRatePlanAndAttachToRentalOfferHandler,
     CreateRatePlanHandler,
     GetPromotionDetailHandler,
     GetPromotionsHandler,
@@ -83,7 +83,9 @@ import { TenantManagementModule } from '../tenant-management/tenant-management.m
     RatePlanRepository,
     UpdatePromotionHandler,
     { provide: PricingPublicApi, useClass: PricingPublicApiService },
+    { provide: PricingRatePlanAuthoring, useClass: PricingRatePlanAuthoringService },
+    { provide: PricingRentalOfferPricingAssignment, useClass: PricingRentalOfferPricingAssignmentService },
   ],
-  exports: [PricingPublicApi],
+  exports: [PricingPublicApi, PricingRatePlanAuthoring, PricingRentalOfferPricingAssignment],
 })
 export class PricingModule {}

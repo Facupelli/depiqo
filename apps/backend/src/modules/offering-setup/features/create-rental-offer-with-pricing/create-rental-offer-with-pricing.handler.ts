@@ -5,7 +5,14 @@ import {
   CatalogOfferingAuthoring,
   CatalogOfferingAuthoringError,
 } from '../../../catalog/public-api/catalog-offering-authoring.public-api';
-import { PricingPublicApi, PricingPublicApiError } from '../../../pricing/public-api/pricing.public-api';
+import {
+  PricingRatePlanAuthoring,
+  PricingRatePlanAuthoringError,
+} from '../../../pricing/public-api/pricing-rate-plan-authoring.public-api';
+import {
+  PricingRentalOfferPricingAssignment,
+  PricingRentalOfferPricingAssignmentError,
+} from '../../../pricing/public-api/pricing-rental-offer-pricing-assignment.public-api';
 import {
   TenantManagementPublicApi,
   ValidateOfferingSetupError,
@@ -29,7 +36,8 @@ export class CreateRentalOfferWithPricingHandler implements ICommandHandler<
   constructor(
     private readonly tenantManagement: TenantManagementPublicApi,
     private readonly catalog: CatalogOfferingAuthoring,
-    private readonly pricing: PricingPublicApi,
+    private readonly ratePlanAuthoring: PricingRatePlanAuthoring,
+    private readonly rentalOfferPricingAssignment: PricingRentalOfferPricingAssignment,
   ) {}
 
   async execute(command: CreateRentalOfferWithPricingCommand): Promise<CreateRentalOfferWithPricingServiceResult> {
@@ -46,21 +54,32 @@ export class CreateRentalOfferWithPricingHandler implements ICommandHandler<
     });
     if (rentalOffer.isErr()) return err(mapCatalogError(rentalOffer.error));
 
-    const pricingResult =
-      command.pricing.mode === 'CREATE_RATE_PLAN'
-        ? await this.pricing.createRatePlanAndAttachToRentalOffer({
-            tenantId: command.tenantId,
-            catalogRentalOfferId: rentalOffer.value.rentalOfferId,
-            ...command.pricing.ratePlan,
-          })
-        : await this.pricing.attachRatePlanToRentalOffer({
-            tenantId: command.tenantId,
-            catalogRentalOfferId: rentalOffer.value.rentalOfferId,
-            ratePlanId: command.pricing.ratePlanId,
-          });
-    if (pricingResult.isErr()) return err(mapPricingError(pricingResult.error));
+    if (command.pricing.mode === 'CREATE_RATE_PLAN') {
+      const ratePlan = await this.ratePlanAuthoring.createRatePlan({
+        tenantId: command.tenantId,
+        ...command.pricing.ratePlan,
+        isActive: true,
+      });
+      if (ratePlan.isErr()) return err(mapRatePlanAuthoringError(ratePlan.error));
 
-    return ok({ rentalOfferId: rentalOffer.value.rentalOfferId, ...pricingResult.value });
+      const assignment = await this.rentalOfferPricingAssignment.assignRatePlanToRentalOffer({
+        tenantId: command.tenantId,
+        catalogRentalOfferId: rentalOffer.value.rentalOfferId,
+        ratePlanId: ratePlan.value.ratePlanId,
+      });
+      if (assignment.isErr()) return err(mapRentalOfferPricingAssignmentError(assignment.error));
+
+      return ok({ rentalOfferId: rentalOffer.value.rentalOfferId, ...assignment.value });
+    }
+
+    const assignment = await this.rentalOfferPricingAssignment.assignRatePlanToRentalOffer({
+      tenantId: command.tenantId,
+      catalogRentalOfferId: rentalOffer.value.rentalOfferId,
+      ratePlanId: command.pricing.ratePlanId,
+    });
+    if (assignment.isErr()) return err(mapRentalOfferPricingAssignmentError(assignment.error));
+
+    return ok({ rentalOfferId: rentalOffer.value.rentalOfferId, ...assignment.value });
   }
 }
 
@@ -86,12 +105,20 @@ function mapCatalogError(error: CatalogOfferingAuthoringError): CreateRentalOffe
   return createRentalOfferWithPricingError(code, error.message, error);
 }
 
-function mapPricingError(error: PricingPublicApiError): CreateRentalOfferWithPricingError {
+function mapRatePlanAuthoringError(error: PricingRatePlanAuthoringError): CreateRentalOfferWithPricingError {
+  const codes = {
+    RatePlanNameAlreadyInUse: 'offering_setup.rate_plan_name_already_in_use',
+    InvalidRatePlan: 'offering_setup.invalid_rate_plan',
+  } as const;
+  return createRentalOfferWithPricingError(codes[error.code], error.message, error);
+}
+
+function mapRentalOfferPricingAssignmentError(
+  error: PricingRentalOfferPricingAssignmentError,
+): CreateRentalOfferWithPricingError {
   const codes = {
     RatePlanNotFound: 'offering_setup.rate_plan_not_found',
     RatePlanInactive: 'offering_setup.rate_plan_inactive',
-    RatePlanNameAlreadyInUse: 'offering_setup.rate_plan_name_already_in_use',
-    InvalidRatePlan: 'offering_setup.invalid_rate_plan',
   } as const;
   const code = codes[error.code as keyof typeof codes];
   if (!code) throw error;

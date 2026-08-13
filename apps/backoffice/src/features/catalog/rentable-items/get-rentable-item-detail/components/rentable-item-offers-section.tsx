@@ -21,12 +21,12 @@ import {
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { useId, useState } from "react";
+import { useCreateRatePlan } from "@/features/pricing/create-rate-plan/create-rate-plan.mutation";
+import { toCreateRatePlanDto } from "@/features/pricing/create-rate-plan/create-rate-plan.schema";
+import { CreateRatePlanForm } from "@/features/pricing/create-rate-plan/create-rate-plan-form";
 import { useAttachRatePlanToRentalOffer } from "@/features/pricing/rental-offer-pricings/attach-rate-plan-to-rental-offer/attach-rate-plan-to-rental-offer.mutation";
 import { toAttachRatePlanToRentalOfferDto } from "@/features/pricing/rental-offer-pricings/attach-rate-plan-to-rental-offer/attach-rate-plan-to-rental-offer.schema";
 import { AttachRatePlanToRentalOfferForm } from "@/features/pricing/rental-offer-pricings/attach-rate-plan-to-rental-offer/attach-rate-plan-to-rental-offer-form";
-import { useCreateRatePlanAndAttachToRentalOffer } from "@/features/pricing/rental-offer-pricings/create-rate-plan-and-attach-to-rental-offer/create-rate-plan-and-attach-to-rental-offer.mutation";
-import { toCreateRatePlanAndAttachToRentalOfferDto } from "@/features/pricing/rental-offer-pricings/create-rate-plan-and-attach-to-rental-offer/create-rate-plan-and-attach-to-rental-offer.schema";
-import { CreateRatePlanAndAttachForm } from "@/features/pricing/rental-offer-pricings/create-rate-plan-and-attach-to-rental-offer/create-rate-plan-and-attach-to-rental-offer-form";
 import {
 	formatPriceSummary,
 	type OfferMetrics,
@@ -273,7 +273,7 @@ function ConfigureRentalOfferPriceAction({
 	const [open, setOpen] = useState(false);
 	const [step, setStep] = useState<PriceAssignmentStep>("choose");
 	const attachMutation = useAttachRatePlanToRentalOffer();
-	const createMutation = useCreateRatePlanAndAttachToRentalOffer();
+	const createRatePlanMutation = useCreateRatePlan();
 	const branchLabel = offer.branchName ?? offer.branchId;
 	const canAssign =
 		offer.setupSummary.availableActions.includes("ASSIGN_PRICE");
@@ -347,18 +347,25 @@ function ConfigureRentalOfferPriceAction({
 					/>
 				) : null}
 				{step === "create" ? (
-					<CreateRatePlanAndAttachForm
+					<CreateRatePlanForm
 						formId={createFormId}
-						catalogRentalOfferId={offer.rentalOfferId}
-						isPending={createMutation.isPending}
+						isPending={
+							createRatePlanMutation.isPending || attachMutation.isPending
+						}
 						submitLabel="Crear y asignar plan"
 						pendingLabel="Creando y asignando..."
-						onSubmit={async (values, context) => {
-							const body = toCreateRatePlanAndAttachToRentalOfferDto(
-								values,
-								context,
+						onSubmit={async (values) => {
+							const ratePlan = await createRatePlanMutation.mutateAsync(
+								toCreateRatePlanDto({ ...values, isActive: true }),
 							);
-							await createMutation.mutateAsync({ body });
+							await attachMutation.mutateAsync({
+								body: toAttachRatePlanToRentalOfferDto(
+									{ ratePlanId: ratePlan.id },
+									{
+										catalogRentalOfferId: offer.rentalOfferId,
+									},
+								),
+							});
 							handleOpenChange(false);
 						}}
 						onCancel={() => setStep("choose")}

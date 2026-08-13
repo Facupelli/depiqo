@@ -1,46 +1,38 @@
 import { Button } from "@repo/ui/components/button";
 import type React from "react";
 import { useAppForm } from "@/shared/contexts/form.context";
-import { RatePlanFields } from "../../rate-plan/rate-plan-fields";
+import { RatePlanFields } from "../rate-plan/rate-plan-fields";
 import {
-	type CreateRatePlanAndAttachToRentalOfferFormValues,
-	createRatePlanAndAttachToRentalOfferFormDefaultValues,
-	createRatePlanAndAttachToRentalOfferFormSchema,
-} from "./create-rate-plan-and-attach-to-rental-offer.schema";
+	type CreateRatePlanBaseFormValues,
+	createRatePlanBaseFormDefaultValues,
+	createRatePlanBaseFormSchema,
+} from "./create-rate-plan.schema";
 
-type CreateRatePlanAndAttachFormProps = {
+type CreateRatePlanFormProps = {
 	formId: string;
 	isPending: boolean;
-	catalogRentalOfferId: string;
-	defaultValues?: CreateRatePlanAndAttachToRentalOfferFormValues;
+	defaultValues?: CreateRatePlanBaseFormValues;
 	submitLabel?: string;
 	pendingLabel?: string;
 	cancelLabel?: string;
-	onSubmit: (
-		values: CreateRatePlanAndAttachToRentalOfferFormValues,
-		context: { catalogRentalOfferId: string },
-	) => Promise<void> | void;
+	onSubmit: (values: CreateRatePlanBaseFormValues) => Promise<void> | void;
 	onCancel: () => void;
 };
 
-export function CreateRatePlanAndAttachForm({
+export function CreateRatePlanForm({
 	formId,
 	isPending,
-	catalogRentalOfferId,
 	defaultValues,
-	submitLabel = "Crear y vincular plan",
+	submitLabel = "Crear plan",
 	pendingLabel = "Creando...",
 	cancelLabel = "Cancelar",
 	onSubmit,
 	onCancel,
-}: CreateRatePlanAndAttachFormProps): React.JSX.Element {
+}: CreateRatePlanFormProps): React.JSX.Element {
 	const form = useAppForm({
-		defaultValues:
-			defaultValues ?? createRatePlanAndAttachToRentalOfferFormDefaultValues(),
-		validators: { onSubmit: createRatePlanAndAttachToRentalOfferFormSchema },
-		onSubmit: async ({ value }) => {
-			await onSubmit(value, { catalogRentalOfferId });
-		},
+		defaultValues: defaultValues ?? createRatePlanBaseFormDefaultValues(),
+		validators: { onSubmit: createRatePlanBaseFormSchema },
+		onSubmit: async ({ value }) => onSubmit(value),
 	});
 
 	return (
@@ -56,7 +48,6 @@ export function CreateRatePlanAndAttachForm({
 			>
 				<RatePlanFields form={form} />
 			</form>
-
 			<div className="mt-8 flex justify-end gap-3 border-t pt-4">
 				<Button
 					type="button"

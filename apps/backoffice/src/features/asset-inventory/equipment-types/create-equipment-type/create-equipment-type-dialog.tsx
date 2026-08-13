@@ -10,9 +10,9 @@ import {
 import { useNavigate } from "@tanstack/react-router";
 import { Plus } from "lucide-react";
 import { useId, useState } from "react";
-import { useCategories } from "@/features/tenant-management/categories/categories.queries";
 import { useOwners } from "@/features/asset-inventory/owners/owners.queries";
 import { useBranches } from "@/features/tenant-management/branch/branch.queries";
+import { useCategories } from "@/features/tenant-management/categories/categories.queries";
 import { useCreateEquipmentType } from "./create-equipment-type.mutation";
 import { toCreateEquipmentTypeDto } from "./create-equipment-type.schema";
 import { CreateEquipmentTypeForm } from "./create-equipment-type-form";

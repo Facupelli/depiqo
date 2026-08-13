@@ -109,16 +109,35 @@ export function CreateEquipmentTypeForm({
 						<form.Field name="categoryId">
 							{(field) => (
 								<Field>
-									<FieldLabel>Categoría <span className="text-muted-foreground text-xs">(opcional)</span></FieldLabel>
+									<FieldLabel>
+										Categoría{" "}
+										<span className="text-muted-foreground text-xs">
+											(opcional)
+										</span>
+									</FieldLabel>
 									<Select
 										items={categoryItems}
 										value={field.state.value || NO_CATEGORY_VALUE}
-										onValueChange={(value) => field.handleChange(value === NO_CATEGORY_VALUE || value == null ? "" : value)}
+										onValueChange={(value) =>
+											field.handleChange(
+												value === NO_CATEGORY_VALUE || value == null
+													? ""
+													: value,
+											)
+										}
 									>
-										<SelectTrigger><SelectValue placeholder="Sin categoría" /></SelectTrigger>
+										<SelectTrigger>
+											<SelectValue placeholder="Sin categoría" />
+										</SelectTrigger>
 										<SelectContent>
-											<SelectItem value={NO_CATEGORY_VALUE}>Sin categoría</SelectItem>
-											{categoryItems.map((item) => <SelectItem key={item.value} value={item.value}>{item.label}</SelectItem>)}
+											<SelectItem value={NO_CATEGORY_VALUE}>
+												Sin categoría
+											</SelectItem>
+											{categoryItems.map((item) => (
+												<SelectItem key={item.value} value={item.value}>
+													{item.label}
+												</SelectItem>
+											))}
 										</SelectContent>
 									</Select>
 								</Field>

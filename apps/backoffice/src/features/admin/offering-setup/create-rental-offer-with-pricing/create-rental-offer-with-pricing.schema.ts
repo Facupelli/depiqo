@@ -46,7 +46,7 @@ export function toCreateRentalOfferWithAttachedRatePlanDto(
 		rentableItemId: context.rentableItemId.trim(),
 		branchId: context.branchId.trim(),
 		pricing: {
-			mode: "ATTACH_EXISTING_RATE_PLAN" as const,
+			mode: "REUSE_RATE_PLAN" as const,
 			ratePlanId: parsedValues.ratePlanId.trim(),
 		},
 	};

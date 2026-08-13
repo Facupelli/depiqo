@@ -4,8 +4,8 @@ import { useCreatePackage } from "@/features/admin/offering-setup/create-package
 import { toCreatePackageDto } from "@/features/admin/offering-setup/create-package/create-package.schema";
 import { CreatePackageForm } from "@/features/admin/offering-setup/create-package/create-package-form";
 import { useEquipmentTypeSummaries } from "@/features/asset-inventory/equipment-types/equipment-types.queries";
-import { useCategories } from "@/features/tenant-management/categories/categories.queries";
 import { useBranches } from "@/features/tenant-management/branch/branch.queries";
+import { useCategories } from "@/features/tenant-management/categories/categories.queries";
 import { AdminRouteError } from "@/shared/components/admin-route-error";
 
 export const Route = createFileRoute("/_admin/dashboard/catalog/packages/new")({

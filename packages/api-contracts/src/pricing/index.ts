@@ -4,7 +4,6 @@ export * from "./calculate-draft-rental-price.contract";
 export * from "./correct-rate-plan.contract";
 export * from "./detach-offer-pricing.contract";
 export * from "./create-promotion.contract";
-export * from "./create-rate-plan-and-attach-to-rental-offer.contract";
 export * from "./create-rate-plan.contract";
 export * from "./get-promotion-detail.contract";
 export * from "./get-promotions.contract";

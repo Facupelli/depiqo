@@ -4,11 +4,11 @@ import type { PaginationState } from "@tanstack/react-table";
 import { Plus } from "lucide-react";
 import { startTransition, useEffect, useMemo, useState } from "react";
 import { z } from "zod";
-import { useCategories } from "@/features/tenant-management/categories/categories.queries";
 import { RentableItemsFilters } from "@/features/catalog/rentable-items/get-rentable-items/components/rentable-items-filters";
 import { RentableItemsTable } from "@/features/catalog/rentable-items/get-rentable-items/components/rentable-items-table";
 import { useRentableItems } from "@/features/catalog/rentable-items/rentable-items.queries";
 import { useBranches } from "@/features/tenant-management/branch/branch.queries";
+import { useCategories } from "@/features/tenant-management/categories/categories.queries";
 import { AdminRouteError } from "@/shared/components/admin-route-error";
 import useDebounce from "@/shared/hooks/use-debounce";
 

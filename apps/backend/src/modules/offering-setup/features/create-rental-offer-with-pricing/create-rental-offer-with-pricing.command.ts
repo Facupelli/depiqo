@@ -1,17 +1,17 @@
-import { V2BillingUnit } from 'src/generated/prisma/client';
+import { PricingRatePlanBillingUnit } from '../../../pricing/public-api/pricing-rate-plan-authoring.public-api';
 
 export type CreateRentalOfferWithPricingInput =
   | {
       mode: 'CREATE_RATE_PLAN';
       ratePlan: {
         name: string;
-        billingUnit: V2BillingUnit;
+        billingUnit: PricingRatePlanBillingUnit;
         currency: string;
         tiers: Array<{ fromUnit: number; toUnit?: number | null; pricePerUnit: string }>;
       };
     }
   | {
-      mode: 'ATTACH_EXISTING_RATE_PLAN';
+      mode: 'REUSE_RATE_PLAN';
       ratePlanId: string;
     };
 

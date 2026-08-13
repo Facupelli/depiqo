@@ -3,8 +3,8 @@ import { useCreateRentableEquipment } from "@/features/admin/offering-setup/crea
 import { toCreateRentableEquipmentDto } from "@/features/admin/offering-setup/create-rentable-equipment/create-rentable-equipment.schema";
 import { CreateRentableEquipmentForm } from "@/features/admin/offering-setup/create-rentable-equipment/create-rentable-equipment-form";
 import { useOwners } from "@/features/asset-inventory/owners/owners.queries";
-import { useCategories } from "@/features/tenant-management/categories/categories.queries";
 import { useBranches } from "@/features/tenant-management/branch/branch.queries";
+import { useCategories } from "@/features/tenant-management/categories/categories.queries";
 import { AdminRouteError } from "@/shared/components/admin-route-error";
 
 export const Route = createFileRoute("/_admin/dashboard/catalog/new")({

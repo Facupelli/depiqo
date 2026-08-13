@@ -12,7 +12,7 @@ export const CreateRentalOfferWithPricingBodySchema = z.object({
       ratePlan: CreateRatePlanBodySchema.omit({ isActive: true }),
     }),
     z.object({
-      mode: z.literal("ATTACH_EXISTING_RATE_PLAN"),
+      mode: z.literal("REUSE_RATE_PLAN"),
       ratePlanId: z.string().trim().min(1),
     }),
   ]),
