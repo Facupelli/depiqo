@@ -15,7 +15,14 @@ FulfillmentRequirement
   = the equipment type and quantity required to fulfill it
 ```
 
-Public API: `rental-catalog.public-api.ts`
+## Published Capabilities
+
+Rental Catalog publishes cohesive provider-owned capabilities under `public-api/`:
+
+- `CatalogSelectionResolution` resolves selected rental offers and their fulfillment requirements for rental workflows.
+- `CatalogOfferingAuthoring` creates rentable item offerings and adds an existing rentable item to another branch.
+
+Consumers use these capabilities rather than Catalog persistence or internal application services.
 
 ## Domain Concepts
 
@@ -167,10 +174,11 @@ Pricing assignments, rental selections, demand lines, assignments, blocks, and c
 
 ## References
 
-* `rental-catalog.public-api.ts`
-* `apps/backend/docs/architecture/overview.md`
-* `apps/backend/docs/architecture/adr/`
-* `apps/backend/src/modules/tenant-management/README.md`
-* `apps/backend/src/modules/asset-inventory/README.md`
-* `apps/backend/src/modules/pricing/README.md`
-* `apps/backend/src/modules/rental-commitment/README.md`
+- `public-api/catalog-selection-resolution.public-api.ts`
+- `public-api/catalog-offering-authoring.public-api.ts`
+- `apps/backend/docs/architecture/overview.md`
+- `apps/backend/docs/architecture/adr/`
+- `apps/backend/src/modules/tenant-management/README.md`
+- `apps/backend/src/modules/asset-inventory/README.md`
+- `apps/backend/src/modules/pricing/README.md`
+- `apps/backend/src/modules/rental-commitment/README.md`

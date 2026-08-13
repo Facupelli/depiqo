@@ -24,10 +24,10 @@ import { PrismaRentableItemRepository } from './features/create-rentable-item-of
 import { PrismaRentalOfferRepository } from './features/create-rentable-item-offering/prisma-rental-offer.repository';
 import { PrismaResolveSelectedRentalOffersReader } from './features/resolve-selected-rental-offers/prisma-resolve-selected-rental-offers.reader';
 import { ResolveSelectedRentalOffersService } from './features/resolve-selected-rental-offers/resolve-selected-rental-offers.service';
+import { CatalogOfferingAuthoring } from './public-api/catalog-offering-authoring.public-api';
+import { CatalogOfferingAuthoringService } from './public-api/catalog-offering-authoring.service';
 import { CatalogSelectionResolution } from './public-api/catalog-selection-resolution.public-api';
 import { CatalogSelectionResolutionService } from './public-api/catalog-selection-resolution.service';
-import { CatalogPublicApi } from './public-api/catalog.public-api';
-import { CatalogPublicApiService } from './public-api/catalog.public-api.service';
 
 @Module({
   imports: [AssetInventoryModule, TenantManagementModule],
@@ -42,7 +42,7 @@ import { CatalogPublicApiService } from './public-api/catalog.public-api.service
     UpdateRentalOfferVisibilityAndRentabilityHttpController,
   ],
   providers: [
-    { provide: CatalogPublicApi, useClass: CatalogPublicApiService },
+    { provide: CatalogOfferingAuthoring, useClass: CatalogOfferingAuthoringService },
     { provide: CatalogSelectionResolution, useClass: CatalogSelectionResolutionService },
     ActivateRentableItemHandler,
     CreateRentalOfferForRentableItemService,
@@ -59,6 +59,6 @@ import { CatalogPublicApiService } from './public-api/catalog.public-api.service
     ResolveSelectedRentalOffersService,
     PrismaResolveSelectedRentalOffersReader,
   ],
-  exports: [CatalogPublicApi, CatalogSelectionResolution],
+  exports: [CatalogOfferingAuthoring, CatalogSelectionResolution],
 })
 export class CatalogModule {}

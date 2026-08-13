@@ -1,7 +1,10 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { err, ok, Result } from 'neverthrow';
 
-import { CatalogPublicApi, CatalogPublicApiError } from '../../../catalog/public-api/catalog.public-api';
+import {
+  CatalogOfferingAuthoring,
+  CatalogOfferingAuthoringError,
+} from '../../../catalog/public-api/catalog-offering-authoring.public-api';
 import { PricingPublicApi, PricingPublicApiError } from '../../../pricing/public-api/pricing.public-api';
 import {
   TenantManagementPublicApi,
@@ -25,7 +28,7 @@ export class CreateRentalOfferWithPricingHandler implements ICommandHandler<
 > {
   constructor(
     private readonly tenantManagement: TenantManagementPublicApi,
-    private readonly catalog: CatalogPublicApi,
+    private readonly catalog: CatalogOfferingAuthoring,
     private readonly pricing: PricingPublicApi,
   ) {}
 
@@ -67,16 +70,20 @@ function mapTenantError(error: ValidateOfferingSetupError): CreateRentalOfferWit
   return createRentalOfferWithPricingError(code, error.message, error, error.context);
 }
 
-function mapCatalogError(error: CatalogPublicApiError): CreateRentalOfferWithPricingError {
+function mapCatalogError(error: CatalogOfferingAuthoringError): CreateRentalOfferWithPricingError {
   const codes = {
     InvalidField: 'offering_setup.invalid_rental_offer',
     RentableItemNotFound: 'offering_setup.rentable_item_not_found',
     RentableItemArchived: 'offering_setup.rentable_item_archived',
     RentalOfferAlreadyExists: 'offering_setup.rental_offer_already_exists',
+    BranchNotFound: 'offering_setup.branch_unavailable',
+    BranchInactive: 'offering_setup.branch_unavailable',
+    BranchDeleted: 'offering_setup.branch_unavailable',
+    BranchContextUnavailable: 'offering_setup.branch_unavailable',
   } as const;
   const code = codes[error.code as keyof typeof codes];
   if (!code) throw error;
-  return createRentalOfferWithPricingError(code, error.message, error, error.context);
+  return createRentalOfferWithPricingError(code, error.message, error);
 }
 
 function mapPricingError(error: PricingPublicApiError): CreateRentalOfferWithPricingError {

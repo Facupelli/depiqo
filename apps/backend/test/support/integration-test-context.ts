@@ -6,6 +6,7 @@ import { AppConfigModule } from '../../src/config/config.module';
 import { DatabaseModule } from '../../src/core/database/database.module';
 import { IntegrationEventsModule } from '../../src/core/domain/events/integration-events.module';
 import { LoggerModule } from '../../src/core/logger/logger.module';
+import { CatalogModule } from '../../src/modules/catalog/catalog.module';
 import { RentalCommitmentModule } from '../../src/modules/rental-commitment/rental-commitment.module';
 import { SharedModule } from '../../src/modules/shared/shared.module';
 
@@ -28,6 +29,24 @@ export function useIntegrationTestContext<T extends Closable>(createContext: () 
  * Compiles the real Rental Commitment module graph without creating an HTTP
  * application or running configureApp().
  */
+export async function createCatalogIntegrationContext(): Promise<TestingModule> {
+  const moduleRef = await Test.createTestingModule({
+    imports: [
+      SharedModule,
+      LoggerModule,
+      AppConfigModule,
+      DatabaseModule,
+      EventEmitterModule.forRoot(),
+      IntegrationEventsModule,
+      CqrsModule.forRoot(),
+      CatalogModule,
+    ],
+  }).compile();
+
+  await moduleRef.init();
+  return moduleRef;
+}
+
 export async function createRentalCommitmentIntegrationContext(): Promise<TestingModule> {
   const moduleRef = await Test.createTestingModule({
     imports: [

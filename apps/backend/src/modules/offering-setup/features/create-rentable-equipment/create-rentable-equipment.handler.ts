@@ -5,7 +5,10 @@ import {
   AssetInventoryPublicApi,
   AssetInventoryPublicApiError,
 } from '../../../asset-inventory/public-api/asset-inventory.public-api';
-import { CatalogPublicApi, CatalogPublicApiError } from '../../../catalog/public-api/catalog.public-api';
+import {
+  CatalogOfferingAuthoring,
+  CatalogOfferingAuthoringError,
+} from '../../../catalog/public-api/catalog-offering-authoring.public-api';
 import {
   TenantManagementPublicApi,
   ValidateOfferingSetupError,
@@ -26,7 +29,7 @@ export class CreateRentableEquipmentHandler implements ICommandHandler<
   constructor(
     private readonly tenantManagement: TenantManagementPublicApi,
     private readonly assetInventory: AssetInventoryPublicApi,
-    private readonly catalog: CatalogPublicApi,
+    private readonly catalog: CatalogOfferingAuthoring,
   ) {}
 
   async execute(command: CreateRentableEquipmentCommand): Promise<CreateRentableEquipmentServiceResult> {
@@ -90,7 +93,20 @@ function mapAssetInventoryError(error: AssetInventoryPublicApiError): CreateRent
   return createRentableEquipmentError(code, error.message, error, error.context);
 }
 
-function mapCatalogError(error: CatalogPublicApiError): CreateRentableEquipmentError {
-  if (error.code !== 'InvalidField') throw error;
-  return createRentableEquipmentError('offering_setup.invalid_rentable_item', error.message, error, error.context);
+function mapCatalogError(error: CatalogOfferingAuthoringError): CreateRentableEquipmentError {
+  if (error.code === 'InvalidField') {
+    return createRentableEquipmentError('offering_setup.invalid_rentable_item', error.message, error);
+  }
+  if (error.code === 'EquipmentTypeNotFound') {
+    return createRentableEquipmentError('offering_setup.invalid_equipment', error.message, error);
+  }
+  if (
+    error.code === 'BranchNotFound' ||
+    error.code === 'BranchInactive' ||
+    error.code === 'BranchDeleted' ||
+    error.code === 'BranchContextUnavailable'
+  ) {
+    return createRentableEquipmentError('offering_setup.branch_unavailable', error.message, error);
+  }
+  throw error;
 }

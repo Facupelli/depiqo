@@ -6,6 +6,10 @@ import { CreateRentalOfferForRentableItemService } from '../features/create-rent
 import { CreateRentableItemOfferingCommand } from '../features/create-rentable-item-offering/create-rentable-item-offering.command';
 import { CreateRentableItemOfferingService } from '../features/create-rentable-item-offering/create-rentable-item-offering.service';
 import {
+  CatalogBranchContextUnavailableError,
+  CatalogBranchDeletedError,
+  CatalogBranchInactiveError,
+  CatalogBranchNotFoundError,
   CatalogEquipmentTypeNotFoundError,
   CatalogError,
   CatalogInvalidFieldError,
@@ -15,16 +19,16 @@ import {
   CatalogRentableItemRequirementAlreadyExistsError,
 } from '../domain/errors/catalog.errors';
 import {
-  CatalogPublicApi,
-  CatalogPublicApiError,
+  CatalogOfferingAuthoring,
+  CatalogOfferingAuthoringError,
   CreateRentalOfferForRentableItemInput,
   CreateRentalOfferForRentableItemResult,
   CreateRentableItemOfferingInput,
   CreateRentableItemOfferingResult,
-} from './catalog.public-api';
+} from './catalog-offering-authoring.public-api';
 
 @Injectable()
-export class CatalogPublicApiService extends CatalogPublicApi {
+export class CatalogOfferingAuthoringService extends CatalogOfferingAuthoring {
   constructor(
     private readonly createRentableItemOfferingService: CreateRentableItemOfferingService,
     private readonly createRentalOfferForRentableItemService: CreateRentalOfferForRentableItemService,
@@ -34,7 +38,7 @@ export class CatalogPublicApiService extends CatalogPublicApi {
 
   async createRentableItemOffering(
     input: CreateRentableItemOfferingInput,
-  ): Promise<Result<CreateRentableItemOfferingResult, CatalogPublicApiError>> {
+  ): Promise<Result<CreateRentableItemOfferingResult, CatalogOfferingAuthoringError>> {
     const result = await this.createRentableItemOfferingService.execute(
       new CreateRentableItemOfferingCommand(input.tenantId, {
         name: input.name,
@@ -47,53 +51,69 @@ export class CatalogPublicApiService extends CatalogPublicApi {
       }),
     );
 
-    return result.mapErr(mapCatalogPublicApiError);
+    return result.mapErr(mapCatalogOfferingAuthoringError);
   }
 
   async createRentalOfferForRentableItem(
     input: CreateRentalOfferForRentableItemInput,
-  ): Promise<Result<CreateRentalOfferForRentableItemResult, CatalogPublicApiError>> {
+  ): Promise<Result<CreateRentalOfferForRentableItemResult, CatalogOfferingAuthoringError>> {
     const result = await this.createRentalOfferForRentableItemService.execute(
       new CreateRentalOfferForRentableItemCommand(input),
     );
 
-    return result.mapErr(mapCatalogPublicApiError);
+    return result.mapErr(mapCatalogOfferingAuthoringError);
   }
 }
 
-function mapCatalogPublicApiError(error: CatalogError): CatalogPublicApiError {
+function mapCatalogOfferingAuthoringError(error: CatalogError): CatalogOfferingAuthoringError {
   if (error instanceof CatalogInvalidFieldError) {
-    return publicError('InvalidField', error, { field: error.field });
+    return publicError('InvalidField', error.message, { field: error.field });
   }
   if (error instanceof CatalogRentableItemNotFoundError) {
-    return publicError('RentableItemNotFound', error, { rentableItemId: error.rentableItemId });
+    return publicError('RentableItemNotFound', error.message, { rentableItemId: error.rentableItemId });
   }
   if (error instanceof CatalogRentableItemArchivedError) {
-    return publicError('RentableItemArchived', error, { rentableItemId: error.rentableItemId });
+    return publicError('RentableItemArchived', error.message, { rentableItemId: error.rentableItemId });
   }
   if (error instanceof CatalogRentalOfferAlreadyExistsError) {
-    return publicError('RentalOfferAlreadyExists', error, {
+    return publicError('RentalOfferAlreadyExists', error.message, {
       rentableItemId: error.rentableItemId,
       branchId: error.branchId,
     });
   }
   if (error instanceof CatalogEquipmentTypeNotFoundError) {
-    return publicError('EquipmentTypeNotFound', error, { equipmentTypeId: error.equipmentTypeId });
+    return publicError(
+      'EquipmentTypeNotFound',
+      error.message,
+      error.equipmentTypeId ? { equipmentTypeId: error.equipmentTypeId } : undefined,
+    );
   }
   if (error instanceof CatalogRentableItemRequirementAlreadyExistsError) {
-    return publicError('RentableItemRequirementAlreadyExists', error, {
+    return publicError('RentableItemRequirementAlreadyExists', error.message, {
       rentableItemId: error.rentableItemId,
       equipmentTypeId: error.equipmentTypeId,
     });
+  }
+  if (error instanceof CatalogBranchNotFoundError) {
+    return publicError('BranchNotFound', error.message, error.branchId ? { branchId: error.branchId } : undefined);
+  }
+  if (error instanceof CatalogBranchInactiveError) {
+    return publicError('BranchInactive', error.message, { branchId: error.branchId });
+  }
+  if (error instanceof CatalogBranchDeletedError) {
+    return publicError('BranchDeleted', error.message, { branchId: error.branchId });
+  }
+  if (error instanceof CatalogBranchContextUnavailableError) {
+    return publicError('BranchContextUnavailable', error.message);
   }
 
   throw error;
 }
 
 function publicError(
-  code: CatalogPublicApiError['code'],
-  cause: CatalogError,
-  context?: Record<string, unknown>,
-): CatalogPublicApiError {
-  return { code, message: cause.message, cause, context };
+  code: CatalogOfferingAuthoringError['code'],
+  message: string,
+  details?: CatalogOfferingAuthoringError['details'],
+): CatalogOfferingAuthoringError {
+  return new CatalogOfferingAuthoringError(code, message, details);
 }

@@ -1,4 +1,4 @@
-import { RentableItemKind } from '../../../catalog/public-api/catalog.public-api';
+import { CatalogOfferingAuthoringRentableItemKind } from '../../../catalog/public-api/catalog-offering-authoring.public-api';
 
 export interface CreateRentableEquipmentAssetInput {
   branchId: string;
@@ -13,7 +13,7 @@ export class CreateRentableEquipmentCommand {
   public readonly description?: string | null;
   public readonly imageUrl?: string | null;
   public readonly categoryId?: string | null;
-  public readonly kind: RentableItemKind;
+  public readonly kind: CatalogOfferingAuthoringRentableItemKind;
   public readonly quantityPerItem: number;
   public readonly assets: CreateRentableEquipmentAssetInput[];
 
@@ -23,7 +23,7 @@ export class CreateRentableEquipmentCommand {
     description?: string | null;
     imageUrl?: string | null;
     categoryId?: string | null;
-    kind: RentableItemKind;
+    kind: CatalogOfferingAuthoringRentableItemKind;
     quantityPerItem: number;
     assets?: CreateRentableEquipmentAssetInput[];
   }) {

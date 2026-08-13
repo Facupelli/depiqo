@@ -2,7 +2,12 @@ import { Injectable } from '@nestjs/common';
 import { err, ok, Result } from 'neverthrow';
 
 import { PrismaService } from 'src/core/database/prisma.service';
+import { TenantManagementPublicApi } from 'src/modules/tenant-management/public-api/tenant-management.public-api';
 import {
+  CatalogBranchContextUnavailableError,
+  CatalogBranchDeletedError,
+  CatalogBranchInactiveError,
+  CatalogBranchNotFoundError,
   CatalogError,
   CatalogInvalidFieldError,
   CatalogRentalOfferAlreadyExistsError,
@@ -21,6 +26,7 @@ export interface CreateRentalOfferForRentableItemResult {
 export class CreateRentalOfferForRentableItemService {
   constructor(
     private readonly prisma: PrismaService,
+    private readonly tenantManagement: TenantManagementPublicApi,
     private readonly rentalOfferRepository: PrismaRentalOfferRepository,
   ) {}
 
@@ -65,6 +71,11 @@ export class CreateRentalOfferForRentableItemService {
       return err(new CatalogRentalOfferAlreadyExistsError(rentableItemId, branchId));
     }
 
+    const branchValidation = await this.validateBranch(tenantId, branchId);
+    if (branchValidation.isErr()) {
+      return err(branchValidation.error);
+    }
+
     const rentalOffer = RentalOffer.create({ tenantId, branchId, rentableItemId });
 
     if (rentalOffer.isErr()) {
@@ -74,5 +85,23 @@ export class CreateRentalOfferForRentableItemService {
     await this.rentalOfferRepository.saveMany([rentalOffer.value]);
 
     return ok({ rentalOfferId: rentalOffer.value.id });
+  }
+
+  private async validateBranch(tenantId: string, branchId: string): Promise<Result<void, CatalogError>> {
+    const branchContext = await this.tenantManagement.getBranchContext({ tenantId, branchId });
+    if (branchContext.isErr()) {
+      if (branchContext.error.code === 'BranchNotFound') {
+        return err(new CatalogBranchNotFoundError(branchId));
+      }
+      return err(new CatalogBranchContextUnavailableError());
+    }
+    if (branchContext.value.isDeleted) {
+      return err(new CatalogBranchDeletedError(branchId));
+    }
+    if (!branchContext.value.isActive) {
+      return err(new CatalogBranchInactiveError(branchId));
+    }
+
+    return ok(undefined);
   }
 }

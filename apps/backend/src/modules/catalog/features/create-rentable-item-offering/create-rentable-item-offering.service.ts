@@ -2,10 +2,19 @@ import { Injectable } from '@nestjs/common';
 import { err, ok, Result } from 'neverthrow';
 
 import { PrismaService } from 'src/core/database/prisma.service';
+import { AssetInventoryPublicApi } from 'src/modules/asset-inventory/public-api/asset-inventory.public-api';
 import { TenantManagementPublicApi } from 'src/modules/tenant-management/public-api/tenant-management.public-api';
 import { mapPostgresError } from 'src/core/utils/postgres-error.mapper';
 
-import { CatalogError, CatalogInvalidFieldError } from '../../domain/errors/catalog.errors';
+import {
+  CatalogBranchContextUnavailableError,
+  CatalogBranchDeletedError,
+  CatalogBranchInactiveError,
+  CatalogBranchNotFoundError,
+  CatalogEquipmentTypeNotFoundError,
+  CatalogError,
+  CatalogInvalidFieldError,
+} from '../../domain/errors/catalog.errors';
 import { RentalOffer } from '../../domain/rental-offer.entity';
 import { RentableItem } from '../../domain/rentable-item.aggregate';
 import { CreateRentableItemOfferingCommand } from './create-rentable-item-offering.command';
@@ -21,6 +30,7 @@ export interface CreateRentableItemOfferingResult {
 export class CreateRentableItemOfferingService {
   constructor(
     private readonly prisma: PrismaService,
+    private readonly assetInventory: AssetInventoryPublicApi,
     private readonly tenantManagement: TenantManagementPublicApi,
     private readonly rentableItemRepository: PrismaRentableItemRepository,
     private readonly rentalOfferRepository: PrismaRentalOfferRepository,
@@ -32,23 +42,6 @@ export class CreateRentableItemOfferingService {
     const branchIdsValidation = this.validateBranchIds(command.props.branchIds);
     if (branchIdsValidation.isErr()) {
       return err(branchIdsValidation.error);
-    }
-
-    if (command.props.categoryId) {
-      const categoryValidation = await this.tenantManagement.validateCategoryAssignment({
-        tenantId: command.tenantId,
-        categoryId: command.props.categoryId,
-      });
-      if (categoryValidation.isErr()) {
-        return err(
-          new CatalogInvalidFieldError(
-            'categoryId',
-            categoryValidation.error.code === 'CategoryInactive'
-              ? 'must reference an active category'
-              : 'must reference a category belonging to the tenant',
-          ),
-        );
-      }
     }
 
     const rentableItemResult = RentableItem.createWithRequirements({
@@ -66,6 +59,40 @@ export class CreateRentableItemOfferingService {
     }
 
     const rentableItem = rentableItemResult.value;
+
+    const equipmentTypeValidation = await this.assetInventory.validateEquipmentType({
+      tenantId: rentableItem.tenantId,
+      equipmentIds: rentableItem.requirements.map((requirement) => requirement.equipmentTypeId),
+    });
+    if (equipmentTypeValidation.isErr()) {
+      if (equipmentTypeValidation.error.code === 'EquipmentTypeNotFound') {
+        return err(new CatalogEquipmentTypeNotFoundError());
+      }
+      throw equipmentTypeValidation.error;
+    }
+
+    if (rentableItem.categoryId) {
+      const categoryValidation = await this.tenantManagement.validateCategoryAssignment({
+        tenantId: rentableItem.tenantId,
+        categoryId: rentableItem.categoryId,
+      });
+      if (categoryValidation.isErr()) {
+        return err(
+          new CatalogInvalidFieldError(
+            'categoryId',
+            categoryValidation.error.code === 'CategoryInactive'
+              ? 'must reference an active category'
+              : 'must reference a category belonging to the tenant',
+          ),
+        );
+      }
+    }
+
+    const branchValidation = await this.validateBranches(rentableItem.tenantId, branchIdsValidation.value);
+    if (branchValidation.isErr()) {
+      return err(branchValidation.error);
+    }
+
     const rentalOffers: RentalOffer[] = [];
 
     for (const branchId of branchIdsValidation.value) {
@@ -82,8 +109,6 @@ export class CreateRentableItemOfferingService {
       rentalOffers.push(rentalOfferResult.value);
     }
 
-    // TODO: Validate equipment type existence/activity through the Asset Inventory module public API.
-    // TODO: Validate branch existence/availability through the Tenant Management module public API.
     try {
       await this.prisma.client.$transaction(async (tx) => {
         await this.rentableItemRepository.save(rentableItem, tx);
@@ -97,6 +122,31 @@ export class CreateRentableItemOfferingService {
       rentableItemId: rentableItem.id,
       rentalOfferIds: rentalOffers.map((offer) => offer.id),
     });
+  }
+
+  private async validateBranches(tenantId: string, branchIds: string[]): Promise<Result<void, CatalogError>> {
+    const branchContexts = await this.tenantManagement.getBranchContexts({ tenantId, branchIds });
+    if (branchContexts.isErr()) {
+      if (branchContexts.error.code === 'BranchNotFound') {
+        return err(new CatalogBranchNotFoundError());
+      }
+      return err(new CatalogBranchContextUnavailableError());
+    }
+
+    for (const branchId of branchIds) {
+      const branch = branchContexts.value.find((context) => context.id === branchId);
+      if (!branch) {
+        return err(new CatalogBranchNotFoundError(branchId));
+      }
+      if (branch.isDeleted) {
+        return err(new CatalogBranchDeletedError(branchId));
+      }
+      if (!branch.isActive) {
+        return err(new CatalogBranchInactiveError(branchId));
+      }
+    }
+
+    return ok(undefined);
   }
 
   private validateBranchIds(branchIds: string[]): Result<string[], CatalogError> {

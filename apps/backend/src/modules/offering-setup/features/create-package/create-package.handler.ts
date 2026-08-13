@@ -5,7 +5,10 @@ import {
   AssetInventoryPublicApi,
   AssetInventoryPublicApiError,
 } from '../../../asset-inventory/public-api/asset-inventory.public-api';
-import { CatalogPublicApi, CatalogPublicApiError } from '../../../catalog/public-api/catalog.public-api';
+import {
+  CatalogOfferingAuthoring,
+  CatalogOfferingAuthoringError,
+} from '../../../catalog/public-api/catalog-offering-authoring.public-api';
 import {
   TenantManagementPublicApi,
   ValidateOfferingSetupError,
@@ -23,7 +26,7 @@ export class CreatePackageHandler implements ICommandHandler<CreatePackageComman
   constructor(
     private readonly tenantManagement: TenantManagementPublicApi,
     private readonly assetInventory: AssetInventoryPublicApi,
-    private readonly catalog: CatalogPublicApi,
+    private readonly catalog: CatalogOfferingAuthoring,
   ) {}
 
   async execute(command: CreatePackageCommand): Promise<CreatePackageServiceResult> {
@@ -76,7 +79,20 @@ function mapAssetInventoryError(error: AssetInventoryPublicApiError): CreatePack
   return createPackageError(code, error.message, error, error.context);
 }
 
-function mapCatalogError(error: CatalogPublicApiError): CreatePackageError {
-  if (error.code !== 'InvalidField') throw error;
-  return createPackageError('offering_setup.invalid_package', error.message, error, error.context);
+function mapCatalogError(error: CatalogOfferingAuthoringError): CreatePackageError {
+  if (error.code === 'InvalidField') {
+    return createPackageError('offering_setup.invalid_package', error.message, error);
+  }
+  if (error.code === 'EquipmentTypeNotFound') {
+    return createPackageError('offering_setup.equipment_type_not_found', error.message, error);
+  }
+  if (
+    error.code === 'BranchNotFound' ||
+    error.code === 'BranchInactive' ||
+    error.code === 'BranchDeleted' ||
+    error.code === 'BranchContextUnavailable'
+  ) {
+    return createPackageError('offering_setup.branch_unavailable', error.message, error);
+  }
+  throw error;
 }

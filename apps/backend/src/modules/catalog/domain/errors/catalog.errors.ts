@@ -48,8 +48,36 @@ export class CatalogRentalOfferAlreadyExistsError extends CatalogError {
 }
 
 export class CatalogEquipmentTypeNotFoundError extends CatalogError {
-  constructor(public readonly equipmentTypeId: string) {
-    super(`Equipment type "${equipmentTypeId}" was not found.`);
+  constructor(public readonly equipmentTypeId?: string) {
+    super(
+      equipmentTypeId
+        ? `Equipment type "${equipmentTypeId}" was not found.`
+        : 'A referenced equipment type was not found.',
+    );
+  }
+}
+
+export class CatalogBranchNotFoundError extends CatalogError {
+  constructor(public readonly branchId?: string) {
+    super(branchId ? `Branch "${branchId}" was not found.` : 'A referenced branch was not found.');
+  }
+}
+
+export class CatalogBranchInactiveError extends CatalogError {
+  constructor(public readonly branchId: string) {
+    super(`Branch "${branchId}" is inactive.`);
+  }
+}
+
+export class CatalogBranchDeletedError extends CatalogError {
+  constructor(public readonly branchId: string) {
+    super(`Branch "${branchId}" is deleted.`);
+  }
+}
+
+export class CatalogBranchContextUnavailableError extends CatalogError {
+  constructor() {
+    super('Branch context is unavailable.');
   }
 }
 
