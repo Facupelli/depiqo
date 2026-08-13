@@ -3,7 +3,7 @@ import { err, ok, Result } from 'neverthrow';
 
 import { PrismaUnitOfWork } from 'src/core/database/prisma-unit-of-work';
 import { TenantManagementPublicApi } from 'src/modules/tenant-management/public-api/tenant-management.public-api';
-import { AssetInventoryPublicApi } from 'src/modules/asset-inventory/public-api/asset-inventory.public-api';
+import { EquipmentTypeReferenceAuthority } from 'src/modules/asset-inventory/public-api/equipment-type-reference-authority.public-api';
 
 import { CatalogInvalidFieldError, CatalogRentableItemArchivedError } from '../../domain/errors/catalog.errors';
 import { PrismaRentableItemRepository } from '../create-rentable-item-offering/prisma-rentable-item.repository';
@@ -21,7 +21,7 @@ export class UpdateRentableItemDefinitionHandler implements ICommandHandler<
   constructor(
     private readonly unitOfWork: PrismaUnitOfWork,
     private readonly rentableItemRepository: PrismaRentableItemRepository,
-    private readonly assetInventoryPublicApi: AssetInventoryPublicApi,
+    private readonly equipmentTypeReferenceAuthority: EquipmentTypeReferenceAuthority,
     private readonly tenantManagement: TenantManagementPublicApi,
   ) {}
 
@@ -68,24 +68,24 @@ export class UpdateRentableItemDefinitionHandler implements ICommandHandler<
     const shouldValidateEquipment = command.props.requirements !== undefined || command.props.kind !== undefined;
     if (shouldValidateEquipment) {
       const requirements = command.props.requirements ?? rentableItem.requirements;
-      const validation = await this.assetInventoryPublicApi.validateEquipmentType({
+      const validation = await this.equipmentTypeReferenceAuthority.validateEquipmentTypeReferences({
         tenantId: command.tenantId,
-        equipmentIds: requirements.map((requirement) => requirement.equipmentTypeId),
+        equipmentTypeIds: requirements.map((requirement) => requirement.equipmentTypeId),
       });
 
       if (validation.isErr()) {
         const code = validation.error.code;
-        if (code === 'EquipmentTypeNotFound') {
+        if (code === 'EquipmentTypeReferenceNotFound') {
           return err(
             updateRentableItemDefinitionError(
               'catalog.equipment_type_not_found',
               validation.error.message,
               validation.error,
-              { ...context, equipmentTypeId: validation.error.context?.equipmentTypeId },
+              { ...context, equipmentTypeId: validation.error.equipmentTypeId },
             ),
           );
         }
-        throw validation.error.cause ?? validation.error;
+        throw validation.error;
       }
     }
 

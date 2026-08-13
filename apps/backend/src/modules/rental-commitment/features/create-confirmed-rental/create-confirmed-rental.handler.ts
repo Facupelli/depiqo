@@ -7,7 +7,7 @@ import {
   CatalogSelectionResolution,
   CatalogSelectionResolutionError,
 } from 'src/modules/catalog/public-api/catalog-selection-resolution.public-api';
-import { AssetInventoryPublicApi } from 'src/modules/asset-inventory/public-api/asset-inventory.public-api';
+import { AssetInventoryDisplayFacts } from 'src/modules/asset-inventory/public-api/asset-inventory-display-facts.public-api';
 import {
   PricingCalculation,
   PricingCalculationError,
@@ -66,7 +66,7 @@ export class CreateConfirmedRentalService implements ICommandHandler<
     private readonly rentalRepository: RentalRepository,
     private readonly tenantManagementApi: TenantManagementPublicApi,
     private readonly catalogSelectionResolution: CatalogSelectionResolution,
-    private readonly assetInventoryApi: AssetInventoryPublicApi,
+    private readonly assetInventoryDisplayFacts: AssetInventoryDisplayFacts,
     private readonly pricingCalculation: PricingCalculation,
     private readonly rentalAssetAllocation: RentalAssetAllocationService,
     private readonly rentalOwnerSplitCalculator: RentalOwnerSplitCalculator,
@@ -105,7 +105,7 @@ export class CreateConfirmedRentalService implements ICommandHandler<
       return err(this.toApplicationError(resolvedCatalogSelections.error, context));
     }
 
-    const equipmentTypeNames = await resolveEquipmentTypeNames(this.assetInventoryApi, {
+    const equipmentTypeNames = await resolveEquipmentTypeNames(this.assetInventoryDisplayFacts, {
       tenantId: command.tenantId,
       equipmentTypeIds: resolvedCatalogSelections.value.resolvedOffers.flatMap((offer) =>
         offer.fulfillmentRequirements.map((requirement) => requirement.equipmentTypeId),

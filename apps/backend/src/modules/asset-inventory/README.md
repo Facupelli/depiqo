@@ -4,7 +4,14 @@ Asset Inventory owns the current physical truth about equipment: equipment types
 
 It does not own rental assignments or rental availability state.
 
-Public API: `asset-inventory.public-api.ts`
+## Published Capabilities
+
+Asset Inventory publishes provider-owned capabilities under `public-api/`:
+
+- `EquipmentTypeReferenceAuthority` validates that requested Equipment Type references exist within a supplied tenant. It does not validate lifecycle, stock, branch, rental availability, assignment eligibility, or fulfillment readiness.
+- `AssetInventoryDisplayFacts` provides current Equipment Type facts (`equipmentTypeId`, `name`, `categoryId`) and Asset facts (`assetId`, `serialNumber`). Category display names remain owned by Tenant Management.
+- `AssetInventoryPublicApi` is a temporary surface containing only `createEquipmentTypeSetup` and `validatePackageRequirementsForBranches`; authoring and stock-sufficiency migration is not complete.
+
 
 ## Domain Concepts
 
@@ -121,7 +128,9 @@ Rental-specific assignments, blocks, selections, pricing snapshots, and owner sp
 
 ## References
 
-* `asset-inventory.public-api.ts`
+* `public-api/equipment-type-reference-authority.public-api.ts`
+* `public-api/asset-inventory-display-facts.public-api.ts`
+* `public-api/asset-inventory.public-api.ts`
 * `apps/backend/docs/architecture/overview.md`
 * `apps/backend/docs/architecture/adr/`
 * `apps/backend/src/modules/tenant-management/README.md`

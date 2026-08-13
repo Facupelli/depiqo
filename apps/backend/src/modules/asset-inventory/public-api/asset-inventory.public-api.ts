@@ -1,40 +1,5 @@
 import { Result } from 'neverthrow';
 
-export interface EquipmentTypeReadModel {
-  id: string;
-  tenantId: string;
-  name: string;
-  description?: string | null;
-}
-
-export interface AssetReadModel {
-  id: string;
-  tenantId: string;
-  equipmentTypeId: string;
-  branchId: string;
-  serialNumber?: string | null;
-  status: 'ACTIVE' | 'INACTIVE' | 'RETIRED';
-}
-
-export interface AssetDisplayFact {
-  assetId: string;
-  serialNumber: string | null;
-}
-
-export interface EquipmentTypeDisplayFact {
-  equipmentTypeId: string;
-  name: string;
-  category: {
-    id: string;
-    name: string;
-  } | null;
-}
-
-export interface GetEquipmentTypeDisplayFactsInput {
-  tenantId: string;
-  equipmentTypeIds: string[];
-}
-
 export interface CreateEquipmentTypeSetupInput {
   tenantId: string;
   equipmentType: {
@@ -74,15 +39,6 @@ export interface AssetInventoryPublicApiError {
   context?: Record<string, unknown>;
 }
 
-export interface ValidateEquipmentTypeInput {
-  tenantId: string;
-  equipmentIds: string[];
-}
-
-export interface ValidateEquipmentTypeResult {
-  equipmentIds: string[];
-}
-
 export interface ValidatePackageRequirementsForBranchesInput {
   tenantId: string;
   branchIds: string[];
@@ -96,20 +52,6 @@ export abstract class AssetInventoryPublicApi {
   abstract createEquipmentTypeSetup(
     input: CreateEquipmentTypeSetupInput,
   ): Promise<Result<CreateEquipmentTypeSetupResult, AssetInventoryPublicApiError>>;
-
-  abstract listAssetsByEquipmentTypeAndBranch(input: {
-    tenantId: string;
-    equipmentTypeId: string;
-    branchId: string;
-  }): Promise<AssetReadModel[]>;
-
-  abstract getAssetDisplayFacts(input: { tenantId: string; assetIds: string[] }): Promise<AssetDisplayFact[]>;
-
-  abstract getEquipmentTypeDisplayFacts(input: GetEquipmentTypeDisplayFactsInput): Promise<EquipmentTypeDisplayFact[]>;
-
-  abstract validateEquipmentType(
-    input: ValidateEquipmentTypeInput,
-  ): Promise<Result<ValidateEquipmentTypeResult, AssetInventoryPublicApiError>>;
 
   abstract validatePackageRequirementsForBranches(
     input: ValidatePackageRequirementsForBranchesInput,

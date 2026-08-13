@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { err, ok, Result } from 'neverthrow';
 
 import { PrismaService } from 'src/core/database/prisma.service';
-import { AssetInventoryPublicApi } from 'src/modules/asset-inventory/public-api/asset-inventory.public-api';
+import { EquipmentTypeReferenceAuthority } from 'src/modules/asset-inventory/public-api/equipment-type-reference-authority.public-api';
 import { TenantManagementPublicApi } from 'src/modules/tenant-management/public-api/tenant-management.public-api';
 import { mapPostgresError } from 'src/core/utils/postgres-error.mapper';
 
@@ -30,7 +30,7 @@ export interface CreateRentableItemOfferingResult {
 export class CreateRentableItemOfferingService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly assetInventory: AssetInventoryPublicApi,
+    private readonly equipmentTypeReferenceAuthority: EquipmentTypeReferenceAuthority,
     private readonly tenantManagement: TenantManagementPublicApi,
     private readonly rentableItemRepository: PrismaRentableItemRepository,
     private readonly rentalOfferRepository: PrismaRentalOfferRepository,
@@ -60,12 +60,12 @@ export class CreateRentableItemOfferingService {
 
     const rentableItem = rentableItemResult.value;
 
-    const equipmentTypeValidation = await this.assetInventory.validateEquipmentType({
+    const equipmentTypeValidation = await this.equipmentTypeReferenceAuthority.validateEquipmentTypeReferences({
       tenantId: rentableItem.tenantId,
-      equipmentIds: rentableItem.requirements.map((requirement) => requirement.equipmentTypeId),
+      equipmentTypeIds: rentableItem.requirements.map((requirement) => requirement.equipmentTypeId),
     });
     if (equipmentTypeValidation.isErr()) {
-      if (equipmentTypeValidation.error.code === 'EquipmentTypeNotFound') {
+      if (equipmentTypeValidation.error.code === 'EquipmentTypeReferenceNotFound') {
         return err(new CatalogEquipmentTypeNotFoundError());
       }
       throw equipmentTypeValidation.error;

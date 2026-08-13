@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { err, ok, Result } from 'neverthrow';
 
 import { PrismaService } from 'src/core/database/prisma.service';
-import { AssetInventoryPublicApi } from 'src/modules/asset-inventory/public-api/asset-inventory.public-api';
+import { AssetInventoryDisplayFacts } from 'src/modules/asset-inventory/public-api/asset-inventory-display-facts.public-api';
 import { RentalCommitmentPublicApi } from 'src/modules/rental-commitment/public-api/rental-commitment.public-api';
 import { TenantManagementPublicApi } from 'src/modules/tenant-management/public-api/tenant-management.public-api';
 
@@ -13,7 +13,7 @@ import { RentalRemitoSourceReadModel } from './rental-remito-source-read-model';
 export class RentalRemitoReadModelLoader {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly assetInventoryApi: AssetInventoryPublicApi,
+    private readonly assetInventoryDisplayFacts: AssetInventoryDisplayFacts,
     private readonly rentalCommitmentApi: RentalCommitmentPublicApi,
     private readonly tenantManagementApi: TenantManagementPublicApi,
   ) {}
@@ -98,7 +98,7 @@ export class RentalRemitoReadModelLoader {
       throw new Error(equipmentFacts.error.message, { cause: equipmentFacts.error.cause });
     }
 
-    const assetDisplayFacts = await this.assetInventoryApi.getAssetDisplayFacts({
+    const assetDisplayFacts = await this.assetInventoryDisplayFacts.getAssetDisplayFacts({
       tenantId,
       assetIds: equipmentFacts.value.demandLines.flatMap((line) => line.assignedAssetIds),
     });

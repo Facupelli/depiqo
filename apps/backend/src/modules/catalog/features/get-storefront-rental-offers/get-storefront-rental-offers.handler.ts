@@ -1,7 +1,8 @@
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 
 import { PrismaService } from 'src/core/database/prisma.service';
-import { AssetInventoryPublicApi } from 'src/modules/asset-inventory/public-api/asset-inventory.public-api';
+import { AssetInventoryDisplayFacts } from 'src/modules/asset-inventory/public-api/asset-inventory-display-facts.public-api';
+import { TenantManagementPublicApi } from 'src/modules/tenant-management/public-api/tenant-management.public-api';
 
 import { GetStorefrontRentalOffersQuery } from './get-storefront-rental-offers.query';
 import { V2RentalOfferWhereInput } from 'src/generated/prisma/models';
@@ -38,7 +39,8 @@ export class GetStorefrontRentalOffersHandler implements IQueryHandler<
 > {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly assetInventoryApi: AssetInventoryPublicApi,
+    private readonly assetInventoryDisplayFacts: AssetInventoryDisplayFacts,
+    private readonly tenantManagement: TenantManagementPublicApi,
   ) {}
 
   async execute(query: GetStorefrontRentalOffersQuery): Promise<GetStorefrontRentalOffersResult> {
@@ -83,7 +85,7 @@ export class GetStorefrontRentalOffersHandler implements IQueryHandler<
       this.prisma.client.v2RentalOffer.count({ where }),
     ]);
 
-    const equipmentTypes = await this.assetInventoryApi.getEquipmentTypeDisplayFacts({
+    const equipmentTypes = await this.assetInventoryDisplayFacts.getEquipmentTypeDisplayFacts({
       tenantId: query.tenantId,
       equipmentTypeIds: offers.flatMap((offer) =>
         offer.rentableItem.kind === 'PACKAGE'
@@ -91,6 +93,13 @@ export class GetStorefrontRentalOffersHandler implements IQueryHandler<
           : [],
       ),
     });
+    const categories = await this.tenantManagement.getCategoryDisplayFacts({
+      tenantId: query.tenantId,
+      categoryIds: equipmentTypes.flatMap((equipmentType) =>
+        equipmentType.categoryId ? [equipmentType.categoryId] : [],
+      ),
+    });
+    const categoriesById = new Map(categories.map((category) => [category.id, category]));
     const equipmentTypesById = new Map(
       equipmentTypes.map((equipmentType) => [equipmentType.equipmentTypeId, equipmentType]),
     );
@@ -110,7 +119,9 @@ export class GetStorefrontRentalOffersHandler implements IQueryHandler<
                       {
                         ...requirement,
                         equipmentTypeName: equipmentType.name,
-                        category: equipmentType.category,
+                        category: equipmentType.categoryId
+                          ? (categoriesById.get(equipmentType.categoryId) ?? null)
+                          : null,
                       },
                     ]
                   : [];

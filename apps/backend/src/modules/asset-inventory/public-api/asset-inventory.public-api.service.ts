@@ -18,16 +18,10 @@ import {
   MultipleActiveOwnerContractsError,
 } from '../domain/errors/asset-inventory.errors';
 import {
-  AssetDisplayFact,
-  EquipmentTypeDisplayFact,
-  GetEquipmentTypeDisplayFactsInput,
   AssetInventoryPublicApi,
   AssetInventoryPublicApiError,
-  AssetReadModel,
   CreateEquipmentTypeSetupInput,
   CreateEquipmentTypeSetupResult,
-  ValidateEquipmentTypeInput,
-  ValidateEquipmentTypeResult,
   ValidatePackageRequirementsForBranchesInput,
 } from './asset-inventory.public-api';
 
@@ -71,81 +65,50 @@ export class AssetInventoryPublicApiService extends AssetInventoryPublicApi {
     return result.mapErr(mapAssetInventoryPublicApiError);
   }
 
-  async getEquipmentTypeDisplayFacts(input: GetEquipmentTypeDisplayFactsInput): Promise<EquipmentTypeDisplayFact[]> {
-    const equipmentTypeIds = [...new Set(input.equipmentTypeIds)];
-    if (equipmentTypeIds.length === 0) return [];
+  private async validateEquipmentTypeReferencesForStock(
+    tenantId: string,
+    requestedEquipmentTypeIds: string[],
+  ): Promise<Result<string[], AssetInventoryPublicApiError>> {
+    const equipmentTypeIds = [...new Set(requestedEquipmentTypeIds)];
+
+    if (equipmentTypeIds.length === 0) {
+      return ok(equipmentTypeIds);
+    }
 
     const equipmentTypes = await this.prisma.client.v2EquipmentType.findMany({
       where: {
         id: { in: equipmentTypeIds },
-        tenantId: input.tenantId,
-      },
-      select: {
-        id: true,
-        name: true,
-        categoryId: true,
-      },
-    });
-    const categories = await this.tenantManagement.getCategoryDisplayFacts({
-      tenantId: input.tenantId,
-      categoryIds: equipmentTypes.flatMap((equipmentType) =>
-        equipmentType.categoryId ? [equipmentType.categoryId] : [],
-      ),
-    });
-    const categoriesById = new Map(categories.map((category) => [category.id, category]));
-
-    return equipmentTypes.map((equipmentType) => ({
-      equipmentTypeId: equipmentType.id,
-      name: equipmentType.name,
-      category: equipmentType.categoryId ? (categoriesById.get(equipmentType.categoryId) ?? null) : null,
-    }));
-  }
-
-  async validateEquipmentType(
-    input: ValidateEquipmentTypeInput,
-  ): Promise<Result<ValidateEquipmentTypeResult, AssetInventoryPublicApiError>> {
-    const equipmentIds = [...new Set(input.equipmentIds)];
-
-    if (equipmentIds.length === 0) {
-      return ok({ equipmentIds });
-    }
-
-    const equipmentTypes = await this.prisma.client.v2EquipmentType.findMany({
-      where: {
-        id: { in: equipmentIds },
-        tenantId: input.tenantId,
+        tenantId,
       },
       select: {
         id: true,
       },
     });
-    const equipmentTypesById = new Map(equipmentTypes.map((equipmentType) => [equipmentType.id, equipmentType]));
+    const foundEquipmentTypeIds = new Set(equipmentTypes.map((equipmentType) => equipmentType.id));
 
-    for (const equipmentTypeId of equipmentIds) {
-      const equipmentType = equipmentTypesById.get(equipmentTypeId);
-
-      if (!equipmentType) {
+    for (const equipmentTypeId of equipmentTypeIds) {
+      if (!foundEquipmentTypeIds.has(equipmentTypeId)) {
         return err(mapAssetInventoryPublicApiError(new EquipmentTypeNotFoundError(equipmentTypeId)));
       }
     }
 
-    return ok({ equipmentIds });
+    return ok(equipmentTypeIds);
   }
 
   async validatePackageRequirementsForBranches(
     input: ValidatePackageRequirementsForBranchesInput,
   ): Promise<Result<void, AssetInventoryPublicApiError>> {
-    const equipmentTypeValidation = await this.validateEquipmentType({
-      tenantId: input.tenantId,
-      equipmentIds: input.requirements.map((requirement) => requirement.equipmentTypeId),
-    });
+    const equipmentTypeValidation = await this.validateEquipmentTypeReferencesForStock(
+      input.tenantId,
+      input.requirements.map((requirement) => requirement.equipmentTypeId),
+    );
 
     if (equipmentTypeValidation.isErr()) {
       return err(equipmentTypeValidation.error);
     }
 
     const branchIds = [...new Set(input.branchIds)];
-    const equipmentTypeIds = equipmentTypeValidation.value.equipmentIds;
+    const equipmentTypeIds = equipmentTypeValidation.value;
     const stockGroups = await this.prisma.client.v2Asset.groupBy({
       by: ['equipmentTypeId', 'branchId'],
       where: {
@@ -181,48 +144,6 @@ export class AssetInventoryPublicApiService extends AssetInventoryPublicApi {
     }
 
     return ok(undefined);
-  }
-
-  async getAssetDisplayFacts(input: { tenantId: string; assetIds: string[] }): Promise<AssetDisplayFact[]> {
-    const assetIds = [...new Set(input.assetIds)];
-    if (assetIds.length === 0) {
-      return [];
-    }
-
-    const assets = await this.prisma.client.v2Asset.findMany({
-      where: {
-        id: { in: assetIds },
-        tenantId: input.tenantId,
-      },
-      select: {
-        id: true,
-        serialNumber: true,
-      },
-    });
-
-    return assets.map((asset) => ({ assetId: asset.id, serialNumber: asset.serialNumber }));
-  }
-
-  async listAssetsByEquipmentTypeAndBranch(input: {
-    tenantId: string;
-    equipmentTypeId: string;
-    branchId: string;
-  }): Promise<AssetReadModel[]> {
-    return this.prisma.client.v2Asset.findMany({
-      where: {
-        tenantId: input.tenantId,
-        equipmentTypeId: input.equipmentTypeId,
-        branchId: input.branchId,
-      },
-      select: {
-        id: true,
-        tenantId: true,
-        equipmentTypeId: true,
-        branchId: true,
-        serialNumber: true,
-        status: true,
-      },
-    });
   }
 }
 

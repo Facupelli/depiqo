@@ -1,7 +1,7 @@
-import { AssetInventoryPublicApi } from 'src/modules/asset-inventory/public-api/asset-inventory.public-api';
+import { AssetInventoryDisplayFacts } from 'src/modules/asset-inventory/public-api/asset-inventory-display-facts.public-api';
 
 export async function resolveEquipmentTypeNames(
-  assetInventory: AssetInventoryPublicApi,
+  assetInventory: AssetInventoryDisplayFacts,
   input: { tenantId: string; equipmentTypeIds: readonly string[] },
 ): Promise<ReadonlyMap<string, string>> {
   const displayFacts = await assetInventory.getEquipmentTypeDisplayFacts({

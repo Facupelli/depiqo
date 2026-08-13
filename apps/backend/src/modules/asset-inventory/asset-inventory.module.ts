@@ -33,8 +33,12 @@ import { GetOwnersHttpController } from './features/get-owners/get-owners.contro
 import { GetOwnersHandler } from './features/get-owners/get-owners.handler';
 import { AssetRepository } from './persistence/asset.repository';
 import { EquipmentTypeRepository } from './persistence/equipment-type.repository';
+import { AssetInventoryDisplayFactsService } from './public-api/asset-inventory-display-facts.public-api.service';
+import { AssetInventoryDisplayFacts } from './public-api/asset-inventory-display-facts.public-api';
 import { AssetInventoryPublicApiService } from './public-api/asset-inventory.public-api.service';
 import { AssetInventoryPublicApi } from './public-api/asset-inventory.public-api';
+import { EquipmentTypeReferenceAuthorityService } from './public-api/equipment-type-reference-authority.public-api.service';
+import { EquipmentTypeReferenceAuthority } from './public-api/equipment-type-reference-authority.public-api';
 
 @Module({
   imports: [TenantManagementModule],
@@ -74,7 +78,9 @@ import { AssetInventoryPublicApi } from './public-api/asset-inventory.public-api
     AssetRepository,
     EquipmentTypeRepository,
     { provide: AssetInventoryPublicApi, useClass: AssetInventoryPublicApiService },
+    { provide: EquipmentTypeReferenceAuthority, useClass: EquipmentTypeReferenceAuthorityService },
+    { provide: AssetInventoryDisplayFacts, useClass: AssetInventoryDisplayFactsService },
   ],
-  exports: [AssetInventoryPublicApi],
+  exports: [AssetInventoryPublicApi, EquipmentTypeReferenceAuthority, AssetInventoryDisplayFacts],
 })
 export class AssetInventoryModule {}
