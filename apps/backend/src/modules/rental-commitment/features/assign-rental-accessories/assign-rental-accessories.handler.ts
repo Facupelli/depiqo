@@ -5,6 +5,7 @@ import { err, ok, Result } from 'neverthrow';
 
 import { PrismaService } from 'src/core/database/prisma.service';
 import { mapPostgresError, PostgresExclusionViolationError } from 'src/core/utils/postgres-error.mapper';
+import { AssetInventoryDisplayFacts } from 'src/modules/asset-inventory/public-api/asset-inventory-display-facts.public-api';
 import { V2AssetBlockType, V2RentalStatus } from 'src/generated/prisma/enums';
 
 import { RentalAssetAllocationService } from '../../asset-allocation/rental-asset-allocation.service';
@@ -54,6 +55,7 @@ export class AssignRentalAccessoriesHandler implements ICommandHandler<
   constructor(
     private readonly prisma: PrismaService,
     private readonly rentalAssetAllocation: RentalAssetAllocationService,
+    private readonly assetInventoryDisplayFacts: AssetInventoryDisplayFacts,
   ) {}
 
   async execute(command: AssignRentalAccessoriesCommand): Promise<AssignRentalAccessoriesResult> {
@@ -108,10 +110,32 @@ export class AssignRentalAccessoriesHandler implements ICommandHandler<
     });
 
     const existingByKey = new Map(existingSelections.map((selection) => [this.selectionKey(selection), selection]));
-    const equipmentTypeNames = await this.getEquipmentTypeNames(
-      command.tenantId,
-      command.accessories.map((accessory) => accessory.equipmentTypeId),
+    const requestedEquipmentTypeIds = [...new Set(command.accessories.map((accessory) => accessory.equipmentTypeId))];
+    const equipmentTypeDisplayFacts = await this.assetInventoryDisplayFacts.getEquipmentTypeDisplayFacts({
+      tenantId: command.tenantId,
+      equipmentTypeIds: requestedEquipmentTypeIds,
+    });
+    const equipmentTypeNames = new Map(equipmentTypeDisplayFacts.map((fact) => [fact.equipmentTypeId, fact.name]));
+    const missingAccessory = command.accessories.find(
+      (accessory) => !equipmentTypeNames.has(accessory.equipmentTypeId),
     );
+
+    if (missingAccessory) {
+      const availabilityError = new InsufficientAssetAvailabilityError(
+        missingAccessory.equipmentTypeId,
+        existingByKey.get(this.selectionKey(missingAccessory))?.id ?? '',
+        missingAccessory.quantity,
+        0,
+      );
+      return err(
+        assignRentalAccessoriesError(
+          'rental_commitment.insufficient_asset_availability',
+          availabilityError.message,
+          availabilityError,
+          context,
+        ),
+      );
+    }
 
     const plannedSelections: PlannedSelection[] = [];
     const keptAssetIds: string[] = [];
@@ -395,18 +419,6 @@ export class AssignRentalAccessoriesHandler implements ICommandHandler<
     } catch (error) {
       mapPostgresError(error);
     }
-  }
-
-  private async getEquipmentTypeNames(tenantId: string, equipmentTypeIds: string[]): Promise<Map<string, string>> {
-    const uniqueIds = [...new Set(equipmentTypeIds)];
-    if (uniqueIds.length === 0) return new Map();
-
-    const rows = await this.prisma.client.v2EquipmentType.findMany({
-      where: { tenantId, id: { in: uniqueIds } },
-      select: { id: true, name: true },
-    });
-
-    return new Map(rows.map((row) => [row.id, row.name]));
   }
 
   private selectionKey(selection: { sourceRentalDemandLineId?: string | null; equipmentTypeId: string }): string {
