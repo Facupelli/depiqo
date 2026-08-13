@@ -6,7 +6,7 @@ It preserves what was selected, the operational equipment demand produced by tho
 
 Confirmed rentals own accepted historical facts rather than depending on the current definitions of other modules.
 
-Published capabilities: `accepted-rental-pricing-facts.public-api.ts` and the temporary broad `rental-commitment.public-api.ts`.
+Published capabilities: `rental-lifecycle-facts.public-api.ts`, `committed-rental-selections-and-demand.public-api.ts`, and `accepted-rental-pricing-facts.public-api.ts`. The temporary `rental-commitment.public-api.ts` remains only for Remito equipment facts until the separate physical-assignment migration.
 
 ## Domain Concepts
 
@@ -228,6 +228,10 @@ Rental Commitment resolves those definitions when creating or changing a rental,
 
 Pricing owns current pricing rules and proposed price calculations.
 
+`RentalLifecycleFacts` publishes current Rental Commitment identity and lifecycle state: rental, branch, and Rental Customer references; current status; and rental period. It publishes stable Rental Commitment literals and no Tenant, Branch, or Customer profile data.
+
+`CommittedRentalSelectionsAndDemand` publishes accepted Rental-owned commercial selections and derived operational demand. Selections retain their offer and rentable-item references, accepted item name/kind snapshots, and quantities. Demand lines retain their source selection relationship, equipment-type references, accepted Equipment Type name snapshots, and quantities. It does not refresh those names from Catalog or Asset Inventory and does not currently publish accessory selections.
+
 Rental Commitment owns the confirmed price snapshot and must not query Pricing tables later to reconstruct an accepted price. Its `AcceptedRentalPricingFacts` capability publishes only accepted total money, charged units, and an optional common billing unit from that persisted snapshot. Consumers must not use it to recalculate pricing or depend on Pricing internals.
 
 Asset Inventory owns equipment types and the current physical profile, condition, ownership, location, and assignment-relevant facts of assets.
@@ -280,7 +284,10 @@ Projection handlers must be idempotent and may update only Rental Commitment's d
 
 ## References
 
-* `rental-commitment.public-api.ts`
+* `rental-lifecycle-facts.public-api.ts`
+* `committed-rental-selections-and-demand.public-api.ts`
+* `accepted-rental-pricing-facts.public-api.ts`
+* `rental-commitment.public-api.ts` for the remaining Remito equipment facts only
 * `apps/backend/docs/architecture/overview.md`
 * `apps/backend/docs/architecture/adr/`
 * `apps/backend/src/modules/tenant-management/README.md`

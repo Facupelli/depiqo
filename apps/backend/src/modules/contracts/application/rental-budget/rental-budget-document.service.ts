@@ -1,8 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { err, ok, Result } from 'neverthrow';
 
-import { RentalStatus } from 'src/modules/rental-commitment/domain/rental-status';
-import { RentalCommitmentPublicApi } from 'src/modules/rental-commitment/public-api/rental-commitment.public-api';
+import { AcceptedRentalPricingFacts } from 'src/modules/rental-commitment/public-api/accepted-rental-pricing-facts.public-api';
+import { CommittedRentalSelectionsAndDemand } from 'src/modules/rental-commitment/public-api/committed-rental-selections-and-demand.public-api';
+import { RentalLifecycleFacts } from 'src/modules/rental-commitment/public-api/rental-lifecycle-facts.public-api';
 import { BranchFacts } from 'src/modules/tenant-management/public-api/branch-facts.public-api';
 import { RentalCustomerProfileFacts } from 'src/modules/tenant-management/public-api/rental-customer-profile-facts.public-api';
 import { TenantBrandingFacts } from 'src/modules/tenant-management/public-api/tenant-branding-facts.public-api';
@@ -49,7 +50,9 @@ export type RenderRentalBudgetUseCaseResult = Result<RenderRentalBudgetResult, R
 @Injectable()
 export class RentalBudgetDocumentService {
   constructor(
-    private readonly rentalCommitmentApi: RentalCommitmentPublicApi,
+    private readonly rentalLifecycleFacts: RentalLifecycleFacts,
+    private readonly acceptedRentalPricingFacts: AcceptedRentalPricingFacts,
+    private readonly committedRentalSelectionsAndDemand: CommittedRentalSelectionsAndDemand,
     private readonly tenantIdentityFacts: TenantIdentityFacts,
     private readonly tenantBrandingFacts: TenantBrandingFacts,
     private readonly branchFacts: BranchFacts,
@@ -59,25 +62,39 @@ export class RentalBudgetDocumentService {
   ) {}
 
   async render(input: RenderRentalBudgetInput): Promise<RenderRentalBudgetUseCaseResult> {
-    const facts = await this.rentalCommitmentApi.getRentalBudgetDocumentFacts({
+    const lifecycle = await this.rentalLifecycleFacts.getRentalLifecycleFacts({
       tenantId: input.tenantId,
       rentalId: input.rentalId,
     });
-    if (facts.isErr()) return err(this.mapRentalError(facts.error));
+    if (lifecycle.isErr()) return err(this.mapRentalError(lifecycle.error));
 
-    if (facts.value.status !== RentalStatus.Draft) {
+    const [acceptedPricing, selectionsAndDemand] = await Promise.all([
+      this.acceptedRentalPricingFacts.getAcceptedRentalPricingFacts({
+        tenantId: input.tenantId,
+        rentalId: input.rentalId,
+      }),
+      this.committedRentalSelectionsAndDemand.getCommittedRentalSelectionsAndDemand({
+        tenantId: input.tenantId,
+        rentalId: input.rentalId,
+      }),
+    ]);
+
+    if (acceptedPricing.isErr()) return err(this.mapRentalError(acceptedPricing.error));
+    if (selectionsAndDemand.isErr()) return err(this.mapRentalError(selectionsAndDemand.error));
+
+    if (lifecycle.value.status !== 'DRAFT') {
       return err({ code: 'RentalNotDraft', message: `Rental "${input.rentalId}" must be DRAFT to generate a budget.` });
     }
 
     const [tenantIdentity, tenantBranding, branch, contractSigner, customerProfile] = await Promise.all([
       this.tenantIdentityFacts.getTenantIdentityFacts({ tenantId: input.tenantId }),
       this.tenantBrandingFacts.getTenantBrandingFacts({ tenantId: input.tenantId }),
-      this.branchFacts.getBranchFacts({ tenantId: input.tenantId, branchId: facts.value.branchId }),
+      this.branchFacts.getBranchFacts({ tenantId: input.tenantId, branchId: lifecycle.value.branchId }),
       this.tenantContractSignerFacts.getSelectedTenantContractSignerFacts({ tenantId: input.tenantId }),
-      facts.value.customerId
+      lifecycle.value.rentalCustomerId
         ? this.rentalCustomerProfileFacts.getRentalCustomerProfileFacts({
             tenantId: input.tenantId,
-            rentalCustomerId: facts.value.customerId,
+            rentalCustomerId: lifecycle.value.rentalCustomerId,
           })
         : Promise.resolve(null),
     ]);
@@ -100,16 +117,16 @@ export class RentalBudgetDocumentService {
       });
     }
 
-    const documentNumber = `${tenantIdentity.value.slug}-${facts.value.rentalId.slice(0, 8)}`.toUpperCase();
+    const documentNumber = `${tenantIdentity.value.slug}-${lifecycle.value.rentalId.slice(0, 8)}`.toUpperCase();
     const data: RentalRemitoPdfData = {
       document: {
         label: 'PRESUPUESTO',
         number: documentNumber,
         equipmentTitle: 'LISTA DE EQUIPOS PRESUPUESTADOS',
-        pickupDate: formatLocalDate(facts.value.periodStart, branch.value.effectiveTimezone),
-        returnDate: formatLocalDate(facts.value.periodEnd, branch.value.effectiveTimezone),
-        jornadas: facts.value.pricing.chargedUnits,
-        agreedPrice: formatAcceptedPricingForRentalRemito(facts.value.pricing),
+        pickupDate: formatLocalDate(lifecycle.value.periodStart, branch.value.effectiveTimezone),
+        returnDate: formatLocalDate(lifecycle.value.periodEnd, branch.value.effectiveTimezone),
+        jornadas: acceptedPricing.value.chargedUnits,
+        agreedPrice: formatAcceptedPricingForRentalRemito(acceptedPricing.value),
         logoUrl: tenantBranding.value.logoUrl,
         rentalSignatureUrl: contractSigner?.signatureUrl ?? null,
         presentation: { includeLegalAnnex: false, showRentalSignatureBlock: false },
@@ -123,8 +140,8 @@ export class RentalBudgetDocumentService {
           : emptyParty(),
         tenant: customer,
       },
-      equipmentLines: facts.value.demandLines.map((line) => ({
-        name: line.name,
+      equipmentLines: selectionsAndDemand.value.demandLines.map((line) => ({
+        name: line.equipmentTypeNameSnapshot,
         quantity: line.quantity,
         includedItems: [],
         serialNumbers: [],
@@ -134,7 +151,7 @@ export class RentalBudgetDocumentService {
     const buffer = await this.renderer.render(data);
     return ok({
       buffer,
-      fileName: `presupuesto-${normalizeFileNameSegment(customer.fullName)}-${facts.value.rentalId.slice(0, 8)}.pdf`,
+      fileName: `presupuesto-${normalizeFileNameSegment(customer.fullName)}-${lifecycle.value.rentalId.slice(0, 8)}.pdf`,
     });
   }
 

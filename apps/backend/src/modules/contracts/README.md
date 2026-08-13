@@ -175,7 +175,7 @@ Notification delivery failure must not change contract signing truth unless the 
 
 Rental Commitment owns rental lifecycle, confirmation, selections, demand lines, assignments, blocks, and accepted rental snapshots.
 
-Contracts reads those accepted facts to generate documents but does not become their owner.
+Contracts composes the provider-owned Rental Commitment capabilities it needs to generate documents, including current lifecycle facts, accepted pricing facts, and committed selections/demand. It does not become their owner.
 
 Contracts must not use live Pricing calculations or current Asset Inventory data when accepted rental snapshots already contain the facts required for the document.
 

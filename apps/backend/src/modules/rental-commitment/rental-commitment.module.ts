@@ -42,8 +42,12 @@ import { UpsertRentalAssetCandidateWhenAssetCreatedEventHandler } from './projec
 import { RentalOwnerSplitCalculator } from './owner-split/rental-owner-split-calculator';
 import { AcceptedRentalPricingFacts } from './public-api/accepted-rental-pricing-facts.public-api';
 import { AcceptedRentalPricingFactsService } from './public-api/accepted-rental-pricing-facts.service';
+import { CommittedRentalSelectionsAndDemand } from './public-api/committed-rental-selections-and-demand.public-api';
+import { CommittedRentalSelectionsAndDemandService } from './public-api/committed-rental-selections-and-demand.service';
 import { RentalCommitmentPublicApiService } from './public-api/rental-commitment.public-api.service';
 import { RentalCommitmentPublicApi } from './public-api/rental-commitment.public-api';
+import { RentalLifecycleFacts } from './public-api/rental-lifecycle-facts.public-api';
+import { RentalLifecycleFactsService } from './public-api/rental-lifecycle-facts.service';
 
 @Module({
   imports: [AssetInventoryModule, CatalogModule, PricingModule, TenantManagementModule],
@@ -86,8 +90,15 @@ import { RentalCommitmentPublicApi } from './public-api/rental-commitment.public
     UpsertRentalAssetCandidateWhenAssetCreatedEventHandler,
     RentalOwnerSplitCalculator,
     { provide: AcceptedRentalPricingFacts, useClass: AcceptedRentalPricingFactsService },
+    { provide: CommittedRentalSelectionsAndDemand, useClass: CommittedRentalSelectionsAndDemandService },
+    { provide: RentalLifecycleFacts, useClass: RentalLifecycleFactsService },
     { provide: RentalCommitmentPublicApi, useClass: RentalCommitmentPublicApiService },
   ],
-  exports: [AcceptedRentalPricingFacts, RentalCommitmentPublicApi],
+  exports: [
+    AcceptedRentalPricingFacts,
+    CommittedRentalSelectionsAndDemand,
+    RentalLifecycleFacts,
+    RentalCommitmentPublicApi,
+  ],
 })
 export class RentalCommitmentModule {}
