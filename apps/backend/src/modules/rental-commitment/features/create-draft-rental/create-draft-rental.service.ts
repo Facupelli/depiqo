@@ -12,6 +12,8 @@ import {
 } from 'src/modules/pricing/public-api/pricing-calculation.public-api';
 import { TenantManagementPublicApi } from 'src/modules/tenant-management/public-api/tenant-management.public-api';
 
+import { RentalOperationalFactsValidatorService } from '../../application/rental-operational-facts-validator.service';
+
 import { adaptPricingCalculationToSnapshot } from '../../application/accepted-pricing/adapt-pricing-calculation-to-snapshot';
 import { toRentalSelectionKind } from '../../application/catalog-selection-kind.mapper';
 import { resolveEquipmentTypeNames } from '../../application/equipment-type-display-facts';
@@ -54,6 +56,7 @@ export class CreateDraftRentalService implements ICommandHandler<
   constructor(
     private readonly rentalRepository: RentalRepository,
     private readonly tenantManagementApi: TenantManagementPublicApi,
+    private readonly rentalOperationalFacts: RentalOperationalFactsValidatorService,
     private readonly catalogSelectionResolution: CatalogSelectionResolution,
     private readonly assetInventoryDisplayFacts: AssetInventoryDisplayFacts,
     private readonly pricingCalculation: PricingCalculation,
@@ -69,16 +72,18 @@ export class CreateDraftRentalService implements ICommandHandler<
     };
     const fulfillmentMethod = command.fulfillmentMethod ?? FulfillmentMethod.Pickup;
 
-    const tenantValidation = await this.tenantManagementApi.validateDraftRental({
+    const tenantValidation = await this.rentalOperationalFacts.validateDraftFacts({
       tenantId: command.tenantId,
       branchId: command.branchId,
       rentalCustomerId: command.rentalCustomerId,
-      period: command.period,
       fulfillmentMethod,
     });
     if (tenantValidation.isErr()) {
       return err(this.toApplicationError(tenantValidation.error, context));
     }
+
+    const tenantPricingConfig = await this.tenantManagementApi.getTenantPricingConfig({ tenantId: command.tenantId });
+    if (tenantPricingConfig.isErr()) return err(this.toApplicationError(new TenantUnavailableForRentalError(command.tenantId), context));
 
     const resolvedCatalogSelections = await this.catalogSelectionResolution.resolveSelectedRentalOffers({
       tenantId: command.tenantId,
@@ -118,7 +123,7 @@ export class CreateDraftRentalService implements ICommandHandler<
         start: command.period.start,
         end: command.period.end,
       },
-      durationPolicy: tenantValidation.value.pricingConfig,
+      durationPolicy: tenantPricingConfig.value,
       lines: rentalSelectionsDraft.map((selection) => ({
         lineReference: selection.rentalSelectionId,
         rentalOfferId: selection.rentalOfferId,
@@ -155,6 +160,7 @@ export class CreateDraftRentalService implements ICommandHandler<
       insuranceSelected: command.insuranceSelected,
       bookingSnapshot: command.bookingSnapshot,
       deliveryDetails: fulfillmentMethod === FulfillmentMethod.Delivery ? command.deliveryDetails : undefined,
+      period: command.period,
       priceSnapshot: adaptPricingCalculationToSnapshot({
         result: pricingResult.value,
         context: 'DRAFT',
@@ -165,7 +171,6 @@ export class CreateDraftRentalService implements ICommandHandler<
           ? { ...command.manualPricingAdjustment, setByTenantUserId: command.tenantUserId }
           : undefined,
       }),
-      period: command.period,
 
       selections: rentalSelectionsDraft.map((selection) => ({
         id: selection.rentalSelectionId,

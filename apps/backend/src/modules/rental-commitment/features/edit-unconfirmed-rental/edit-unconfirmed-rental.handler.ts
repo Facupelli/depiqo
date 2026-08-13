@@ -13,6 +13,8 @@ import {
 } from 'src/modules/pricing/public-api/pricing-calculation.public-api';
 import { TenantManagementPublicApi } from 'src/modules/tenant-management/public-api/tenant-management.public-api';
 
+import { RentalOperationalFactsValidatorService } from '../../application/rental-operational-facts-validator.service';
+
 import { adaptPricingCalculationToSnapshot } from '../../application/accepted-pricing/adapt-pricing-calculation-to-snapshot';
 import { toRentalSelectionKind } from '../../application/catalog-selection-kind.mapper';
 import { resolveEquipmentTypeNames } from '../../application/equipment-type-display-facts';
@@ -55,6 +57,7 @@ export class EditUnconfirmedRentalHandler implements ICommandHandler<
     private readonly prisma: PrismaService,
     private readonly rentalRepository: RentalRepository,
     private readonly tenantManagementApi: TenantManagementPublicApi,
+    private readonly rentalOperationalFacts: RentalOperationalFactsValidatorService,
     private readonly catalogSelectionResolution: CatalogSelectionResolution,
     private readonly assetInventoryDisplayFacts: AssetInventoryDisplayFacts,
     private readonly pricingCalculation: PricingCalculation,
@@ -67,8 +70,8 @@ export class EditUnconfirmedRentalHandler implements ICommandHandler<
       rentalId,
       expectedVersion,
       branchId,
-      period,
       selectedOffers,
+      period,
       fulfillmentMethod,
       deliveryDetails,
       notes,
@@ -120,16 +123,18 @@ export class EditUnconfirmedRentalHandler implements ICommandHandler<
       return err(this.toApplicationError(new RentalCannotBeEditedFromStatusError(rental.id, rental.status), context));
     }
 
-    const tenantValidation = await this.tenantManagementApi.validateDraftRental({
+    const tenantValidation = await this.rentalOperationalFacts.validateDraftFacts({
       tenantId,
       branchId,
       rentalCustomerId: rental.rentalCustomerId,
-      period,
       fulfillmentMethod,
     });
     if (tenantValidation.isErr()) {
       return err(this.toApplicationError(tenantValidation.error, context));
     }
+
+    const tenantPricingConfig = await this.tenantManagementApi.getTenantPricingConfig({ tenantId });
+    if (tenantPricingConfig.isErr()) return err(this.toApplicationError(new TenantUnavailableForRentalError(tenantId), context));
 
     const resolvedCatalogSelections = await this.catalogSelectionResolution.resolveSelectedRentalOffers({
       tenantId,
@@ -162,7 +167,7 @@ export class EditUnconfirmedRentalHandler implements ICommandHandler<
       tenantId,
       customerId: rental.rentalCustomerId,
       rentalPeriod: { start: period.start, end: period.end },
-      durationPolicy: tenantValidation.value.pricingConfig,
+      durationPolicy: tenantPricingConfig.value,
       lines: selections.map((selection) => ({
         lineReference: selection.id,
         rentalOfferId: selection.rentalOfferId,

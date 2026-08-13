@@ -13,10 +13,8 @@ import {
   PricingRentalOfferPricingAssignment,
   PricingRentalOfferPricingAssignmentError,
 } from '../../../pricing/public-api/pricing-rental-offer-pricing-assignment.public-api';
-import {
-  TenantManagementPublicApi,
-  ValidateOfferingSetupError,
-} from '../../../tenant-management/public-api/tenant-management.public-api';
+import { BranchFacts } from 'src/modules/tenant-management/public-api/branch-facts.public-api';
+import { TenantOperationalFacts } from 'src/modules/tenant-management/public-api/tenant-operational-facts.public-api';
 import { CreateRentalOfferWithPricingCommand } from './create-rental-offer-with-pricing.command';
 import {
   CreateRentalOfferWithPricingError,
@@ -34,17 +32,15 @@ export class CreateRentalOfferWithPricingHandler implements ICommandHandler<
   CreateRentalOfferWithPricingServiceResult
 > {
   constructor(
-    private readonly tenantManagement: TenantManagementPublicApi,
+    private readonly tenantOperationalFacts: TenantOperationalFacts,
+    private readonly branchFacts: BranchFacts,
     private readonly catalog: CatalogOfferingAuthoring,
     private readonly ratePlanAuthoring: PricingRatePlanAuthoring,
     private readonly rentalOfferPricingAssignment: PricingRentalOfferPricingAssignment,
   ) {}
 
   async execute(command: CreateRentalOfferWithPricingCommand): Promise<CreateRentalOfferWithPricingServiceResult> {
-    const tenantValidation = await this.tenantManagement.validateOfferingSetup({
-      tenantId: command.tenantId,
-      branchIds: [command.branchId],
-    });
+    const tenantValidation = await validateOperationalSetup(this.tenantOperationalFacts, this.branchFacts, command.tenantId, [command.branchId]);
     if (tenantValidation.isErr()) return err(mapTenantError(tenantValidation.error));
 
     const rentalOffer = await this.catalog.createRentalOfferForRentableItem({
@@ -83,10 +79,21 @@ export class CreateRentalOfferWithPricingHandler implements ICommandHandler<
   }
 }
 
-function mapTenantError(error: ValidateOfferingSetupError): CreateRentalOfferWithPricingError {
+type OperationalSetupValidationError = { code: 'TenantUnavailable' | 'BranchUnavailable'; message: string };
+
+async function validateOperationalSetup(tenantOperationalFacts: TenantOperationalFacts, branchFacts: BranchFacts, tenantId: string, branchIds: string[]): Promise<Result<void, OperationalSetupValidationError>> {
+  const tenant = await tenantOperationalFacts.getTenantOperationalFacts({ tenantId });
+  if (tenant.isErr()) return err({ code: 'TenantUnavailable', message: tenant.error.message });
+  const branches = await branchFacts.getBranchFactsBatch({ tenantId, branchIds });
+  if (branches.isErr()) return err({ code: 'BranchUnavailable', message: branches.error.message });
+  const unavailable = branches.value.find((branch) => !branch.isActive || branch.isDeleted);
+  return unavailable ? err({ code: 'BranchUnavailable', message: `Branch "${unavailable.branchId}" is unavailable.` }) : ok(undefined);
+}
+
+function mapTenantError(error: OperationalSetupValidationError): CreateRentalOfferWithPricingError {
   const code =
     error.code === 'TenantUnavailable' ? 'offering_setup.tenant_unavailable' : 'offering_setup.branch_unavailable';
-  return createRentalOfferWithPricingError(code, error.message, error, error.context);
+  return createRentalOfferWithPricingError(code, error.message, error);
 }
 
 function mapCatalogError(error: CatalogOfferingAuthoringError): CreateRentalOfferWithPricingError {

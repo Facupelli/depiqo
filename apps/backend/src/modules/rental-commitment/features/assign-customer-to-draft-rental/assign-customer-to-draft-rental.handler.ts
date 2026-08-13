@@ -2,9 +2,9 @@ import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { err, ok, Result } from 'neverthrow';
 
 import {
-  StaffDraftRentalCustomerEligibilityReason,
-  TenantManagementPublicApi,
-} from 'src/modules/tenant-management/public-api/tenant-management.public-api';
+  RentalCustomerOperationalEligibility,
+  RentalCustomerOperationalEligibilityResult,
+} from 'src/modules/tenant-management/public-api/rental-customer-operational-eligibility.public-api';
 
 import {
   RentalInvalidFieldError,
@@ -26,7 +26,7 @@ export class AssignCustomerToDraftRentalHandler implements ICommandHandler<
 > {
   constructor(
     private readonly rentalRepository: RentalRepository,
-    private readonly tenantManagementApi: TenantManagementPublicApi,
+    private readonly rentalCustomerEligibility: RentalCustomerOperationalEligibility,
   ) {}
 
   async execute(command: AssignCustomerToDraftRentalCommand): Promise<AssignCustomerToDraftRentalResult> {
@@ -44,9 +44,9 @@ export class AssignCustomerToDraftRentalHandler implements ICommandHandler<
       );
     }
 
-    const customerValidation = await this.tenantManagementApi.validateCustomerForStaffDraftRental({
+    const customerValidation = await this.rentalCustomerEligibility.evaluateRentalCustomerOperationalEligibility({
       tenantId: command.tenantId,
-      customerId: command.customerId,
+      rentalCustomerId: command.customerId,
     });
 
     if (!customerValidation.eligible) {
@@ -90,14 +90,14 @@ export class AssignCustomerToDraftRentalHandler implements ICommandHandler<
   }
 
   private customerEligibilityErrorCode(
-    reason: StaffDraftRentalCustomerEligibilityReason,
+    reason: Extract<RentalCustomerOperationalEligibilityResult, { eligible: false }>['reason'],
   ): AssignCustomerToDraftRentalError['code'] {
     switch (reason) {
-      case 'CustomerNotFoundOrOutsideTenant':
+      case 'RentalCustomerNotFoundOrOutsideTenant':
         return 'rental_commitment.customer_not_found_or_outside_tenant';
-      case 'CustomerDeleted':
+      case 'RentalCustomerDeleted':
         return 'rental_commitment.customer_deleted';
-      case 'CustomerInactive':
+      case 'RentalCustomerInactive':
         return 'rental_commitment.customer_inactive';
     }
   }

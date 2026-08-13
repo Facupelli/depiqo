@@ -1,7 +1,7 @@
 import { TenantConfig } from '../domain/value-objects/tenant-config.value-object';
-import { TenantManagementPublicApiService } from './tenant-management-public-api.service';
+import { BranchFactsService } from './branch-facts.service';
 
-describe('TenantManagementPublicApiService timezone resolution', () => {
+describe('BranchFactsService timezone resolution', () => {
   const tenantConfig = TenantConfig.default().toPlainObject();
 
   function createService(
@@ -18,7 +18,7 @@ describe('TenantManagementPublicApiService timezone resolution', () => {
     );
 
     return {
-      service: new TenantManagementPublicApiService({ client: { v2Branch: { findMany } } } as never),
+      service: new BranchFactsService({ client: { v2Branch: { findMany } } } as never),
       findMany,
     };
   }
@@ -26,7 +26,7 @@ describe('TenantManagementPublicApiService timezone resolution', () => {
   it('uses the branch timezone when present', async () => {
     const { service } = createService([{ id: 'branch-a', timezone: 'America/New_York' }]);
 
-    const result = await service.getBranchContext({ tenantId: 'tenant-1', branchId: 'branch-a' });
+    const result = await service.getBranchFacts({ tenantId: 'tenant-1', branchId: 'branch-a' });
 
     expect(result.isOk()).toBe(true);
     expect(result._unsafeUnwrap().effectiveTimezone).toBe('America/New_York');
@@ -37,7 +37,7 @@ describe('TenantManagementPublicApiService timezone resolution', () => {
     const config = { ...tenantConfig, timezone: 'Europe/Madrid' };
     const { service } = createService([{ id: 'branch-a', timezone: null }], config);
 
-    const result = await service.getBranchContext({ tenantId: 'tenant-1', branchId: 'branch-a' });
+    const result = await service.getBranchFacts({ tenantId: 'tenant-1', branchId: 'branch-a' });
 
     expect(result.isOk()).toBe(true);
     expect(result._unsafeUnwrap().effectiveTimezone).toBe('Europe/Madrid');
@@ -48,7 +48,7 @@ describe('TenantManagementPublicApiService timezone resolution', () => {
     const config = { ...tenantConfig, timezone: '' };
     const { service } = createService([{ id: 'branch-a', timezone: null }], config);
 
-    const result = await service.getBranchContext({ tenantId: 'tenant-1', branchId: 'branch-a' });
+    const result = await service.getBranchFacts({ tenantId: 'tenant-1', branchId: 'branch-a' });
 
     expect(result.isOk()).toBe(true);
     expect(result._unsafeUnwrap().effectiveTimezone).toBe('UTC');
@@ -60,7 +60,7 @@ describe('TenantManagementPublicApiService timezone resolution', () => {
       { id: 'branch-b', timezone: 'Asia/Tokyo' },
     ]);
 
-    const result = await service.getBranchContexts({
+    const result = await service.getBranchFactsBatch({
       tenantId: 'tenant-1',
       branchIds: ['branch-a', 'branch-b'],
     });
@@ -77,9 +77,9 @@ describe('TenantManagementPublicApiService timezone resolution', () => {
     const config = { ...tenantConfig, timezone: 'Not/A_Timezone' };
     const { service } = createService([{ id: 'branch-a', timezone: null }], config);
 
-    const result = await service.getBranchContext({ tenantId: 'tenant-1', branchId: 'branch-a' });
+    const result = await service.getBranchFacts({ tenantId: 'tenant-1', branchId: 'branch-a' });
 
     expect(result.isErr()).toBe(true);
-    expect(result._unsafeUnwrapErr().code).toBe('TenantConfigInvalid');
+    expect(result._unsafeUnwrapErr().code).toBe('TenantConfigurationInvalid');
   });
 });

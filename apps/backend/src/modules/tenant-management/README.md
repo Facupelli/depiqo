@@ -6,7 +6,16 @@ It determines which tenant is being accessed, which tenant user is acting, which
 
 Tenant users are backoffice/admin actors belonging to a tenant. They are not rental customers.
 
-Public API: `tenant-management.public-api.ts`
+## Published Capabilities
+
+Tenant Management publishes focused provider-owned operational capabilities under `public-api/`:
+
+- `TenantOperationalFacts` provides current operational tenant availability and booking mode.
+- `BranchFacts` provides tenant-scoped current branch facts, including lifecycle state, delivery support, and effective timezone resolution.
+- `BranchScheduleEligibility` evaluates a pickup or return instant against a branch schedule.
+- `RentalCustomerOperationalEligibility` provides current rental-customer eligibility.
+
+`tenant-management.public-api.ts` remains temporarily for unrelated tenant, configuration, category, notification, and document-context capabilities that have not yet been extracted.
 
 ## Domain Concepts
 

@@ -1,6 +1,14 @@
 import { Module } from '@nestjs/common';
 
 import { TenantManagementPublicApiService } from './public-api/tenant-management-public-api.service';
+import { BranchFactsService } from './public-api/branch-facts.service';
+import { BranchFacts } from './public-api/branch-facts.public-api';
+import { BranchScheduleEligibilityService } from './public-api/branch-schedule-eligibility.service';
+import { BranchScheduleEligibility } from './public-api/branch-schedule-eligibility.public-api';
+import { RentalCustomerOperationalEligibilityService } from './public-api/rental-customer-operational-eligibility.service';
+import { RentalCustomerOperationalEligibility } from './public-api/rental-customer-operational-eligibility.public-api';
+import { TenantOperationalFactsService } from './public-api/tenant-operational-facts.service';
+import { TenantOperationalFacts } from './public-api/tenant-operational-facts.public-api';
 import { AuthModule } from './auth/auth.module';
 import { ApproveSubmittedCustomerOnboardingHttpController } from './features/approve-submitted-customer-onboarding/approve-submitted-customer-onboarding.controller';
 import { ApproveSubmittedCustomerOnboardingHandler } from './features/approve-submitted-customer-onboarding/approve-submitted-customer-onboarding.handler';
@@ -127,7 +135,17 @@ import { GetStorefrontCategoriesHandler } from './features/get-storefront-catego
     UpdateTenantBrandingHandler,
     UpdateTenantConfigHandler,
     { provide: TenantManagementPublicApi, useClass: TenantManagementPublicApiService },
+    { provide: TenantOperationalFacts, useClass: TenantOperationalFactsService },
+    { provide: BranchFacts, useClass: BranchFactsService },
+    { provide: BranchScheduleEligibility, useClass: BranchScheduleEligibilityService },
+    { provide: RentalCustomerOperationalEligibility, useClass: RentalCustomerOperationalEligibilityService },
   ],
-  exports: [TenantManagementPublicApi],
+  exports: [
+    TenantManagementPublicApi,
+    TenantOperationalFacts,
+    BranchFacts,
+    BranchScheduleEligibility,
+    RentalCustomerOperationalEligibility,
+  ],
 })
 export class TenantManagementModule {}

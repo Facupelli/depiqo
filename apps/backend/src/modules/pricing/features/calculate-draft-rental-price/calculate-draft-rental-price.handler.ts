@@ -8,6 +8,7 @@ import {
   CatalogSelectionResolution,
   CatalogSelectionResolutionError,
 } from 'src/modules/catalog/public-api/catalog-selection-resolution.public-api';
+import { BranchFacts } from 'src/modules/tenant-management/public-api/branch-facts.public-api';
 import { TenantManagementPublicApi } from 'src/modules/tenant-management/public-api/tenant-management.public-api';
 
 import {
@@ -31,6 +32,7 @@ export class CalculateDraftRentalPriceHandler implements IQueryHandler<
   constructor(
     private readonly catalogSelectionResolution: CatalogSelectionResolution,
     private readonly tenantManagementApi: TenantManagementPublicApi,
+    private readonly branchFacts: BranchFacts,
     private readonly pricingCalculation: PricingCalculation,
   ) {}
 
@@ -58,7 +60,7 @@ export class CalculateDraftRentalPriceHandler implements IQueryHandler<
     }
     const tenantPricingConfig = tenantPricingConfigResult.value;
 
-    const branchContextResult = await this.tenantManagementApi.getBranchContext({
+    const branchContextResult = await this.branchFacts.getBranchFacts({
       tenantId: query.tenantId,
       branchId: query.branchId,
     });

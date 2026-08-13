@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { err, ok, Result } from 'neverthrow';
 
-import { TenantManagementPublicApi } from 'src/modules/tenant-management/public-api/tenant-management.public-api';
+import { BranchFacts } from 'src/modules/tenant-management/public-api/branch-facts.public-api';
 
 export type AssetBranchReferenceValidationError =
   | { code: 'BranchNotFound'; branchId?: string }
@@ -11,7 +11,7 @@ export type AssetBranchReferenceValidationError =
 
 @Injectable()
 export class AssetBranchReferenceValidatorService {
-  constructor(private readonly tenantManagement: TenantManagementPublicApi) {}
+  constructor(private readonly tenantManagement: BranchFacts) {}
 
   async validateOperationalBranches(input: {
     tenantId: string;
@@ -22,7 +22,7 @@ export class AssetBranchReferenceValidatorService {
       return ok(undefined);
     }
 
-    const branchContexts = await this.tenantManagement.getBranchContexts({
+    const branchContexts = await this.tenantManagement.getBranchFactsBatch({
       tenantId: input.tenantId,
       branchIds,
     });
@@ -34,7 +34,7 @@ export class AssetBranchReferenceValidatorService {
       );
     }
 
-    const branchesById = new Map(branchContexts.value.map((branch) => [branch.id, branch]));
+    const branchesById = new Map(branchContexts.value.map((branch) => [branch.branchId, branch]));
     for (const branchId of branchIds) {
       const branch = branchesById.get(branchId);
       if (!branch) {

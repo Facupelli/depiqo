@@ -4,7 +4,7 @@ import { Prisma } from 'src/generated/prisma/client';
 import { V2RentalStatus } from 'src/generated/prisma/enums';
 
 import { PrismaService } from 'src/core/database/prisma.service';
-import { TenantManagementPublicApi } from 'src/modules/tenant-management/public-api/tenant-management.public-api';
+import { BranchFacts } from 'src/modules/tenant-management/public-api/branch-facts.public-api';
 
 import { GetRentalsCalendarQuery } from './get-rentals-calendar.query';
 
@@ -50,7 +50,7 @@ type RawRentalCalendarRow = {
 export class GetRentalsCalendarHandler implements IQueryHandler<GetRentalsCalendarQuery, GetRentalsCalendarResult> {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly tenantManagementApi: TenantManagementPublicApi,
+    private readonly tenantManagementApi: BranchFacts,
   ) {}
 
   async execute(query: GetRentalsCalendarQuery): Promise<GetRentalsCalendarResult> {
@@ -107,7 +107,7 @@ export class GetRentalsCalendarHandler implements IQueryHandler<GetRentalsCalend
   }
 
   private async resolveCalendarTimezone(tenantId: string, branchId: string): Promise<string> {
-    const branchContext = await this.tenantManagementApi.getBranchContext({ tenantId, branchId });
+    const branchContext = await this.tenantManagementApi.getBranchFacts({ tenantId, branchId });
 
     if (branchContext.isErr()) {
       throw new Error(branchContext.error.message, { cause: branchContext.error });

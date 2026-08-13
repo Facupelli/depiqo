@@ -9,10 +9,8 @@ import {
   CatalogOfferingAuthoring,
   CatalogOfferingAuthoringError,
 } from '../../../catalog/public-api/catalog-offering-authoring.public-api';
-import {
-  TenantManagementPublicApi,
-  ValidateOfferingSetupError,
-} from '../../../tenant-management/public-api/tenant-management.public-api';
+import { BranchFacts } from 'src/modules/tenant-management/public-api/branch-facts.public-api';
+import { TenantOperationalFacts } from 'src/modules/tenant-management/public-api/tenant-operational-facts.public-api';
 import { CreateRentableEquipmentCommand } from './create-rentable-equipment.command';
 import { CreateRentableEquipmentError, createRentableEquipmentError } from './create-rentable-equipment.errors';
 
@@ -27,17 +25,15 @@ export class CreateRentableEquipmentHandler implements ICommandHandler<
   CreateRentableEquipmentServiceResult
 > {
   constructor(
-    private readonly tenantManagement: TenantManagementPublicApi,
+    private readonly tenantOperationalFacts: TenantOperationalFacts,
+    private readonly branchFacts: BranchFacts,
     private readonly assetInventoryAuthoring: AssetInventoryAuthoring,
     private readonly catalog: CatalogOfferingAuthoring,
   ) {}
 
   async execute(command: CreateRentableEquipmentCommand): Promise<CreateRentableEquipmentServiceResult> {
     const branchIds = [...new Set(command.assets.map((asset) => asset.branchId))];
-    const tenantValidation = await this.tenantManagement.validateOfferingSetup({
-      tenantId: command.tenantId,
-      branchIds,
-    });
+    const tenantValidation = await validateOperationalSetup(this.tenantOperationalFacts, this.branchFacts, command.tenantId, branchIds);
     if (tenantValidation.isErr()) return err(mapTenantError(tenantValidation.error));
 
     const equipmentSetup = await this.assetInventoryAuthoring.createEquipmentTypeWithInitialAssets({
@@ -71,10 +67,21 @@ export class CreateRentableEquipmentHandler implements ICommandHandler<
   }
 }
 
-function mapTenantError(error: ValidateOfferingSetupError): CreateRentableEquipmentError {
+type OperationalSetupValidationError = { code: 'TenantUnavailable' | 'BranchUnavailable'; message: string };
+
+async function validateOperationalSetup(tenantOperationalFacts: TenantOperationalFacts, branchFacts: BranchFacts, tenantId: string, branchIds: string[]): Promise<Result<void, OperationalSetupValidationError>> {
+  const tenant = await tenantOperationalFacts.getTenantOperationalFacts({ tenantId });
+  if (tenant.isErr()) return err({ code: 'TenantUnavailable', message: tenant.error.message });
+  const branches = await branchFacts.getBranchFactsBatch({ tenantId, branchIds });
+  if (branches.isErr()) return err({ code: 'BranchUnavailable', message: branches.error.message });
+  const unavailable = branches.value.find((branch) => !branch.isActive || branch.isDeleted);
+  return unavailable ? err({ code: 'BranchUnavailable', message: `Branch "${unavailable.branchId}" is unavailable.` }) : ok(undefined);
+}
+
+function mapTenantError(error: OperationalSetupValidationError): CreateRentableEquipmentError {
   const code =
     error.code === 'TenantUnavailable' ? 'offering_setup.tenant_unavailable' : 'offering_setup.branch_unavailable';
-  return createRentableEquipmentError(code, error.message, error, error.context);
+  return createRentableEquipmentError(code, error.message, error);
 }
 
 function mapAssetInventoryError(error: AssetInventoryAuthoringError): CreateRentableEquipmentError {

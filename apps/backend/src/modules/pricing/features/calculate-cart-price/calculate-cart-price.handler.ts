@@ -15,6 +15,7 @@ import {
   CatalogSelectionResolution,
   CatalogSelectionResolutionError,
 } from 'src/modules/catalog/public-api/catalog-selection-resolution.public-api';
+import { BranchFacts } from 'src/modules/tenant-management/public-api/branch-facts.public-api';
 import {
   GetTenantPricingConfigResult,
   TenantManagementPublicApi,
@@ -53,6 +54,7 @@ export class CalculateCartPriceHandler implements IQueryHandler<
     private readonly pricingContextLoader: PricingContextLoader,
     private readonly catalogSelectionResolution: CatalogSelectionResolution,
     private readonly tenantManagementApi: TenantManagementPublicApi,
+    private readonly branchFacts: BranchFacts,
   ) {}
 
   async execute(query: CalculateCartPriceQuery): Promise<Result<CalculateCartPriceResult, CalculateCartPriceError>> {
@@ -98,7 +100,7 @@ export class CalculateCartPriceHandler implements IQueryHandler<
       );
     }
 
-    const branchContextResult = await this.tenantManagementApi.getBranchContext({
+    const branchContextResult = await this.branchFacts.getBranchFacts({
       tenantId: query.tenantId,
       branchId: query.branchId,
     });

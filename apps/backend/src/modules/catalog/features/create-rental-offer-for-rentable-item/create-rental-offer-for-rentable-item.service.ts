@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { err, ok, Result } from 'neverthrow';
 
 import { PrismaService } from 'src/core/database/prisma.service';
-import { TenantManagementPublicApi } from 'src/modules/tenant-management/public-api/tenant-management.public-api';
+import { BranchFacts } from 'src/modules/tenant-management/public-api/branch-facts.public-api';
 import {
   CatalogBranchContextUnavailableError,
   CatalogBranchDeletedError,
@@ -26,7 +26,7 @@ export interface CreateRentalOfferForRentableItemResult {
 export class CreateRentalOfferForRentableItemService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly tenantManagement: TenantManagementPublicApi,
+    private readonly tenantManagement: BranchFacts,
     private readonly rentalOfferRepository: PrismaRentalOfferRepository,
   ) {}
 
@@ -88,7 +88,7 @@ export class CreateRentalOfferForRentableItemService {
   }
 
   private async validateBranch(tenantId: string, branchId: string): Promise<Result<void, CatalogError>> {
-    const branchContext = await this.tenantManagement.getBranchContext({ tenantId, branchId });
+    const branchContext = await this.tenantManagement.getBranchFacts({ tenantId, branchId });
     if (branchContext.isErr()) {
       if (branchContext.error.code === 'BranchNotFound') {
         return err(new CatalogBranchNotFoundError(branchId));

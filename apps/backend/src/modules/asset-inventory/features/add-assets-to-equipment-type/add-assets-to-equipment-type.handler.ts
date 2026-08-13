@@ -9,7 +9,8 @@ import { Asset } from '../../domain/asset.entity';
 import { EquipmentTypeNotFoundError } from '../../domain/errors/asset-inventory.errors';
 import { AssetRepository } from '../../persistence/asset.repository';
 import { EquipmentTypeRepository } from '../../persistence/equipment-type.repository';
-import { TenantManagementPublicApi } from '../../../tenant-management/public-api/tenant-management.public-api';
+import { BranchFacts } from 'src/modules/tenant-management/public-api/branch-facts.public-api';
+import { TenantOperationalFacts } from 'src/modules/tenant-management/public-api/tenant-operational-facts.public-api';
 import { AssetBranchReferenceValidatorService } from '../../application/services/asset-branch-reference-validator.service';
 import { AddAssetsToEquipmentTypeCommand } from './add-assets-to-equipment-type.command';
 import {
@@ -17,6 +18,17 @@ import {
   mapAssetInventoryError,
   mapTenantValidationError,
 } from './add-assets-to-equipment-type.errors';
+
+type OperationalSetupValidationError = { code: 'TenantUnavailable' | 'BranchUnavailable'; message: string };
+
+async function validateOperationalSetup(tenantOperationalFacts: TenantOperationalFacts, branchFacts: BranchFacts, tenantId: string, branchIds: string[]): Promise<Result<void, OperationalSetupValidationError>> {
+  const tenant = await tenantOperationalFacts.getTenantOperationalFacts({ tenantId });
+  if (tenant.isErr()) return err({ code: 'TenantUnavailable', message: tenant.error.message });
+  const branches = await branchFacts.getBranchFactsBatch({ tenantId, branchIds });
+  if (branches.isErr()) return err({ code: 'BranchUnavailable', message: branches.error.message });
+  const unavailable = branches.value.find((branch) => !branch.isActive || branch.isDeleted);
+  return unavailable ? err({ code: 'BranchUnavailable', message: `Branch "${unavailable.branchId}" is unavailable.` }) : ok(undefined);
+}
 
 export type AddAssetsToEquipmentTypeServiceResult = Result<
   {
@@ -31,7 +43,8 @@ export class AddAssetsToEquipmentTypeHandler implements ICommandHandler<
   AddAssetsToEquipmentTypeServiceResult
 > {
   constructor(
-    private readonly tenantManagement: TenantManagementPublicApi,
+    private readonly tenantOperationalFacts: TenantOperationalFacts,
+    private readonly branchFacts: BranchFacts,
     private readonly assetBranchReferenceValidator: AssetBranchReferenceValidatorService,
     private readonly equipmentTypeRepository: EquipmentTypeRepository,
     private readonly assetRepository: AssetRepository,
@@ -42,10 +55,7 @@ export class AddAssetsToEquipmentTypeHandler implements ICommandHandler<
   async execute(command: AddAssetsToEquipmentTypeCommand): Promise<AddAssetsToEquipmentTypeServiceResult> {
     const branchIds = [...new Set(command.assets.map((asset) => asset.branchId))];
 
-    const tenantValidation = await this.tenantManagement.validateOfferingSetup({
-      tenantId: command.tenantId,
-      branchIds,
-    });
+    const tenantValidation = await validateOperationalSetup(this.tenantOperationalFacts, this.branchFacts, command.tenantId, branchIds);
     if (tenantValidation.isErr()) {
       return err(mapTenantValidationError(tenantValidation.error));
     }

@@ -4,7 +4,7 @@ import { err, ok, Result } from 'neverthrow';
 import { PrismaService } from 'src/core/database/prisma.service';
 import { AssetInventoryDisplayFacts } from 'src/modules/asset-inventory/public-api/asset-inventory-display-facts.public-api';
 import { RentalCommitmentPublicApi } from 'src/modules/rental-commitment/public-api/rental-commitment.public-api';
-import { TenantManagementPublicApi } from 'src/modules/tenant-management/public-api/tenant-management.public-api';
+import { BranchFacts } from 'src/modules/tenant-management/public-api/branch-facts.public-api';
 
 import { rentalRemitoApplicationError, RentalRemitoApplicationError } from './rental-remito-application.error';
 import { RentalRemitoSourceReadModel } from './rental-remito-source-read-model';
@@ -15,7 +15,7 @@ export class RentalRemitoReadModelLoader {
     private readonly prisma: PrismaService,
     private readonly assetInventoryDisplayFacts: AssetInventoryDisplayFacts,
     private readonly rentalCommitmentApi: RentalCommitmentPublicApi,
-    private readonly tenantManagementApi: TenantManagementPublicApi,
+    private readonly branchFacts: BranchFacts,
   ) {}
 
   async load(
@@ -113,7 +113,7 @@ export class RentalRemitoReadModelLoader {
       );
     }
 
-    const branchContext = await this.tenantManagementApi.getBranchContext({
+    const branchContext = await this.branchFacts.getBranchFacts({
       tenantId,
       branchId: rental.branchId,
     });

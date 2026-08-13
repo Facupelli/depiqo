@@ -16,6 +16,8 @@ import {
 import { AcceptedRentalPricingSnapshotV1 } from '../../domain/value-objects/accepted-pricing-snapshot.type';
 import { TenantManagementPublicApi } from 'src/modules/tenant-management/public-api/tenant-management.public-api';
 
+import { RentalOperationalFactsValidatorService } from '../../application/rental-operational-facts-validator.service';
+
 import { adaptPricingCalculationToSnapshot } from '../../application/accepted-pricing/adapt-pricing-calculation-to-snapshot';
 import { toRentalSelectionKind } from '../../application/catalog-selection-kind.mapper';
 import { resolveEquipmentTypeNames } from '../../application/equipment-type-display-facts';
@@ -66,6 +68,7 @@ export class EditConfirmedRentalHandler implements ICommandHandler<
   constructor(
     private readonly rentalRepository: RentalRepository,
     private readonly tenantManagementApi: TenantManagementPublicApi,
+    private readonly rentalOperationalFacts: RentalOperationalFactsValidatorService,
     private readonly catalogSelectionResolution: CatalogSelectionResolution,
     private readonly assetInventoryDisplayFacts: AssetInventoryDisplayFacts,
     private readonly pricingCalculation: PricingCalculation,
@@ -126,14 +129,16 @@ export class EditConfirmedRentalHandler implements ICommandHandler<
       return this.editDetails({ rental, command, context, now });
     }
 
-    const tenantValidation = await this.tenantManagementApi.validateDraftRental({
+    const tenantValidation = await this.rentalOperationalFacts.validateDraftFacts({
       tenantId,
       branchId,
       rentalCustomerId: rental.rentalCustomerId,
-      period,
       fulfillmentMethod,
     });
     if (tenantValidation.isErr()) return err(this.toApplicationError(tenantValidation.error, context));
+
+    const tenantPricingConfig = await this.tenantManagementApi.getTenantPricingConfig({ tenantId });
+    if (tenantPricingConfig.isErr()) return err(this.toApplicationError(new TenantUnavailableForRentalError(tenantId), context));
 
     const resolvedCatalogSelections = await this.catalogSelectionResolution.resolveSelectedRentalOffers({
       tenantId,
@@ -168,7 +173,7 @@ export class EditConfirmedRentalHandler implements ICommandHandler<
       tenantId,
       customerId: rental.rentalCustomerId!,
       rentalPeriod: { start: period.start, end: period.end },
-      durationPolicy: tenantValidation.value.pricingConfig,
+      durationPolicy: tenantPricingConfig.value,
       lines: selections.map((selection) => ({
         lineReference: selection.id,
         rentalOfferId: selection.rentalOfferId,
@@ -310,7 +315,7 @@ export class EditConfirmedRentalHandler implements ICommandHandler<
 
         const edit = rental.editConfirmed({
           branchId,
-          period,
+              period,
           fulfillmentMethod,
           deliveryDetails: command.props.deliveryDetails,
           notes: command.props.notes,
@@ -430,14 +435,16 @@ export class EditConfirmedRentalHandler implements ICommandHandler<
     const { rental, command, context, now } = params;
     const { tenantId, tenantUserId, rentalId, branchId, period, selectedOffers, fulfillmentMethod } = command.props;
 
-    const tenantValidation = await this.tenantManagementApi.validateDraftRental({
+    const tenantValidation = await this.rentalOperationalFacts.validateDraftFacts({
       tenantId,
       branchId,
       rentalCustomerId: rental.rentalCustomerId,
-      period,
       fulfillmentMethod,
     });
     if (tenantValidation.isErr()) return err(this.toApplicationError(tenantValidation.error, context));
+
+    const tenantPricingConfig = await this.tenantManagementApi.getTenantPricingConfig({ tenantId });
+    if (tenantPricingConfig.isErr()) return err(this.toApplicationError(new TenantUnavailableForRentalError(tenantId), context));
 
     let confirmedPriceSnapshot: AcceptedRentalPricingSnapshotV1 | undefined;
 
@@ -458,7 +465,7 @@ export class EditConfirmedRentalHandler implements ICommandHandler<
         tenantId,
         customerId: rental.rentalCustomerId!,
         rentalPeriod: { start: period.start, end: period.end },
-        durationPolicy: tenantValidation.value.pricingConfig,
+        durationPolicy: tenantPricingConfig.value,
         lines: resolvedCatalogSelections.value.resolvedOffers.map((offer) => ({
           lineReference: selectionIdByOfferId.get(offer.rentalOfferId)!,
           rentalOfferId: offer.rentalOfferId,

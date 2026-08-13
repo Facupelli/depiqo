@@ -7,6 +7,7 @@ import { TenantManagementModule } from '../tenant-management/tenant-management.m
 import { RentalAssetAllocationService } from './asset-allocation/rental-asset-allocation.service';
 import { AssignRentalAccessoriesHttpController } from './features/assign-rental-accessories/assign-rental-accessories.controller';
 import { AssignRentalAccessoriesHandler } from './features/assign-rental-accessories/assign-rental-accessories.handler';
+import { RentalOperationalFactsValidatorService } from './application/rental-operational-facts-validator.service';
 import { AssignCustomerToDraftRentalHttpController } from './features/assign-customer-to-draft-rental/assign-customer-to-draft-rental.controller';
 import { AssignCustomerToDraftRentalHandler } from './features/assign-customer-to-draft-rental/assign-customer-to-draft-rental.handler';
 import { CancelRentalHttpController } from './features/cancel-rental/cancel-rental.controller';
@@ -62,6 +63,7 @@ import { RentalCommitmentPublicApi } from './public-api/rental-commitment.public
     GetStorefrontRentalOfferAvailabilityHttpController,
   ],
   providers: [
+    RentalOperationalFactsValidatorService,
     { provide: RentalRepository, useClass: PrismaRentalRepository },
     RentalAssetAllocationService,
     AssignRentalAccessoriesHandler,

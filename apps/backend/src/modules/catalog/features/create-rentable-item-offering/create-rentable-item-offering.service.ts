@@ -4,6 +4,7 @@ import { err, ok, Result } from 'neverthrow';
 import { PrismaService } from 'src/core/database/prisma.service';
 import { EquipmentTypeReferenceAuthority } from 'src/modules/asset-inventory/public-api/equipment-type-reference-authority.public-api';
 import { TenantManagementPublicApi } from 'src/modules/tenant-management/public-api/tenant-management.public-api';
+import { BranchFacts } from 'src/modules/tenant-management/public-api/branch-facts.public-api';
 import { mapPostgresError } from 'src/core/utils/postgres-error.mapper';
 
 import {
@@ -32,6 +33,7 @@ export class CreateRentableItemOfferingService {
     private readonly prisma: PrismaService,
     private readonly equipmentTypeReferenceAuthority: EquipmentTypeReferenceAuthority,
     private readonly tenantManagement: TenantManagementPublicApi,
+    private readonly branchFacts: BranchFacts,
     private readonly rentableItemRepository: PrismaRentableItemRepository,
     private readonly rentalOfferRepository: PrismaRentalOfferRepository,
   ) {}
@@ -125,7 +127,7 @@ export class CreateRentableItemOfferingService {
   }
 
   private async validateBranches(tenantId: string, branchIds: string[]): Promise<Result<void, CatalogError>> {
-    const branchContexts = await this.tenantManagement.getBranchContexts({ tenantId, branchIds });
+    const branchContexts = await this.branchFacts.getBranchFactsBatch({ tenantId, branchIds });
     if (branchContexts.isErr()) {
       if (branchContexts.error.code === 'BranchNotFound') {
         return err(new CatalogBranchNotFoundError());
@@ -134,7 +136,7 @@ export class CreateRentableItemOfferingService {
     }
 
     for (const branchId of branchIds) {
-      const branch = branchContexts.value.find((context) => context.id === branchId);
+      const branch = branchContexts.value.find((context) => context.branchId === branchId);
       if (!branch) {
         return err(new CatalogBranchNotFoundError(branchId));
       }

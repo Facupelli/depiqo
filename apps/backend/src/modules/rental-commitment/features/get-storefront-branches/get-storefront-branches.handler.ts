@@ -1,7 +1,7 @@
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 
 import { PrismaService } from 'src/core/database/prisma.service';
-import { TenantManagementPublicApi } from 'src/modules/tenant-management/public-api/tenant-management.public-api';
+import { BranchFacts } from 'src/modules/tenant-management/public-api/branch-facts.public-api';
 
 import { GetStorefrontBranchesQuery } from './get-storefront-branches.query';
 
@@ -27,7 +27,7 @@ export class GetStorefrontBranchesHandler implements IQueryHandler<
 > {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly tenantManagementApi: TenantManagementPublicApi,
+    private readonly tenantManagementApi: BranchFacts,
   ) {}
 
   async execute(query: GetStorefrontBranchesQuery): Promise<GetStorefrontBranchesResult> {
@@ -49,7 +49,7 @@ export class GetStorefrontBranchesHandler implements IQueryHandler<
       orderBy: { name: 'asc' },
     });
 
-    const contextsResult = await this.tenantManagementApi.getBranchContexts({
+    const contextsResult = await this.tenantManagementApi.getBranchFactsBatch({
       tenantId: query.tenantId,
       branchIds: branches.map((branch) => branch.id),
     });
@@ -58,7 +58,7 @@ export class GetStorefrontBranchesHandler implements IQueryHandler<
       throw new Error(contextsResult.error.message, { cause: contextsResult.error });
     }
 
-    const timezoneByBranchId = new Map(contextsResult.value.map((context) => [context.id, context.effectiveTimezone]));
+    const timezoneByBranchId = new Map(contextsResult.value.map((context) => [context.branchId, context.effectiveTimezone]));
 
     return branches.map((branch) => {
       const timezone = timezoneByBranchId.get(branch.id);

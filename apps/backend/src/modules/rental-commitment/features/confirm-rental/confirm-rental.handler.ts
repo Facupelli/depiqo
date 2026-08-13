@@ -4,7 +4,7 @@ import { err, ok, Result } from 'neverthrow';
 import { PrismaUnitOfWork } from 'src/core/database/prisma-unit-of-work';
 import { PostgresExclusionViolationError } from 'src/core/utils/postgres-error.mapper';
 import { V2AssetBlockType } from 'src/generated/prisma/enums';
-import { TenantManagementPublicApi } from 'src/modules/tenant-management/public-api/tenant-management.public-api';
+import { RentalOperationalFactsValidatorService } from '../../application/rental-operational-facts-validator.service';
 
 import { toRentalIntegrationEvents } from '../../application/rental-integration-event.mapper';
 import { RentalAssetAllocationService } from '../../asset-allocation/rental-asset-allocation.service';
@@ -35,7 +35,7 @@ export type ConfirmRentalResult = Result<void, ConfirmRentalError>;
 export class ConfirmRentalHandler implements ICommandHandler<ConfirmRentalCommand, ConfirmRentalResult> {
   constructor(
     private readonly rentalRepository: RentalRepository,
-    private readonly tenantManagementApi: TenantManagementPublicApi,
+    private readonly rentalOperationalFacts: RentalOperationalFactsValidatorService,
     private readonly rentalAssetAllocation: RentalAssetAllocationService,
     private readonly rentalOwnerSplitCalculator: RentalOwnerSplitCalculator,
     private readonly unitOfWork: PrismaUnitOfWork,
@@ -69,11 +69,10 @@ export class ConfirmRentalHandler implements ICommandHandler<ConfirmRentalComman
 
     const fulfillmentMethod = rental.fulfillmentMethod ?? FulfillmentMethod.Pickup;
 
-    const tenantValidation = await this.tenantManagementApi.validateDraftRental({
+    const tenantValidation = await this.rentalOperationalFacts.validateDraftFacts({
       tenantId: rental.tenantId,
       branchId: rental.branchId,
       rentalCustomerId: rental.rentalCustomerId,
-      period: rental.period,
       fulfillmentMethod,
     });
 
