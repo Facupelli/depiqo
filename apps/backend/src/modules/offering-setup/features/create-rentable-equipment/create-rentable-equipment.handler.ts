@@ -2,9 +2,9 @@ import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { err, ok, Result } from 'neverthrow';
 
 import {
-  AssetInventoryPublicApi,
-  AssetInventoryPublicApiError,
-} from '../../../asset-inventory/public-api/asset-inventory.public-api';
+  AssetInventoryAuthoring,
+  AssetInventoryAuthoringError,
+} from '../../../asset-inventory/public-api/asset-inventory-authoring.public-api';
 import {
   CatalogOfferingAuthoring,
   CatalogOfferingAuthoringError,
@@ -28,7 +28,7 @@ export class CreateRentableEquipmentHandler implements ICommandHandler<
 > {
   constructor(
     private readonly tenantManagement: TenantManagementPublicApi,
-    private readonly assetInventory: AssetInventoryPublicApi,
+    private readonly assetInventoryAuthoring: AssetInventoryAuthoring,
     private readonly catalog: CatalogOfferingAuthoring,
   ) {}
 
@@ -40,14 +40,14 @@ export class CreateRentableEquipmentHandler implements ICommandHandler<
     });
     if (tenantValidation.isErr()) return err(mapTenantError(tenantValidation.error));
 
-    const equipmentSetup = await this.assetInventory.createEquipmentTypeSetup({
+    const equipmentSetup = await this.assetInventoryAuthoring.createEquipmentTypeWithInitialAssets({
       tenantId: command.tenantId,
       equipmentType: {
         name: command.name,
         description: command.description,
         categoryId: command.categoryId,
       },
-      assets: command.assets,
+      initialAssets: command.assets,
     });
     if (equipmentSetup.isErr()) return err(mapAssetInventoryError(equipmentSetup.error));
 
@@ -77,7 +77,7 @@ function mapTenantError(error: ValidateOfferingSetupError): CreateRentableEquipm
   return createRentableEquipmentError(code, error.message, error, error.context);
 }
 
-function mapAssetInventoryError(error: AssetInventoryPublicApiError): CreateRentableEquipmentError {
+function mapAssetInventoryError(error: AssetInventoryAuthoringError): CreateRentableEquipmentError {
   const codes = {
     InvalidEquipmentTypeField: 'offering_setup.invalid_equipment',
     InvalidAssetField: 'offering_setup.invalid_equipment',
@@ -87,10 +87,14 @@ function mapAssetInventoryError(error: AssetInventoryPublicApiError): CreateRent
     MultipleActiveOwnerContracts: 'offering_setup.multiple_active_owner_contracts',
     CategoryNotFound: 'offering_setup.invalid_equipment',
     CategoryInactive: 'offering_setup.invalid_equipment',
+    BranchNotFound: 'offering_setup.branch_unavailable',
+    BranchInactive: 'offering_setup.branch_unavailable',
+    BranchDeleted: 'offering_setup.branch_unavailable',
+    BranchReferenceUnavailable: 'offering_setup.branch_unavailable',
   } as const;
   const code = codes[error.code as keyof typeof codes];
   if (!code) throw error;
-  return createRentableEquipmentError(code, error.message, error, error.context);
+  return createRentableEquipmentError(code, error.message, error, error.details);
 }
 
 function mapCatalogError(error: CatalogOfferingAuthoringError): CreateRentableEquipmentError {

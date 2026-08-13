@@ -10,7 +10,8 @@ Asset Inventory publishes provider-owned capabilities under `public-api/`:
 
 - `EquipmentTypeReferenceAuthority` validates that requested Equipment Type references exist within a supplied tenant. It does not validate lifecycle, stock, branch, rental availability, assignment eligibility, or fulfillment readiness.
 - `AssetInventoryDisplayFacts` provides current Equipment Type facts (`equipmentTypeId`, `name`, `categoryId`) and Asset facts (`assetId`, `serialNumber`). Category display names remain owned by Tenant Management.
-- `AssetInventoryPublicApi` is a temporary surface containing only `createEquipmentTypeSetup` and `validatePackageRequirementsForBranches`; authoring and stock-sufficiency migration is not complete.
+- `AssetInventoryAuthoring` creates an Equipment Type and optional initial physical Assets atomically. It validates Category assignment and initial Asset branch references through Tenant Management before Inventory records are persisted.
+- `PhysicalStockSufficiency` determines whether the current count of `ACTIVE` physical Assets meets requested Equipment Type quantities at requested branches. It is a current-stock check only, not rental-period availability, assignment eligibility, or guaranteed future availability.
 
 
 ## Domain Concepts
@@ -130,7 +131,8 @@ Rental-specific assignments, blocks, selections, pricing snapshots, and owner sp
 
 * `public-api/equipment-type-reference-authority.public-api.ts`
 * `public-api/asset-inventory-display-facts.public-api.ts`
-* `public-api/asset-inventory.public-api.ts`
+* `public-api/asset-inventory-authoring.public-api.ts`
+* `public-api/physical-stock-sufficiency.public-api.ts`
 * `apps/backend/docs/architecture/overview.md`
 * `apps/backend/docs/architecture/adr/`
 * `apps/backend/src/modules/tenant-management/README.md`

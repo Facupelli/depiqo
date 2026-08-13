@@ -2,9 +2,9 @@ import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { err, ok, Result } from 'neverthrow';
 
 import {
-  AssetInventoryPublicApi,
-  AssetInventoryPublicApiError,
-} from '../../../asset-inventory/public-api/asset-inventory.public-api';
+  PhysicalStockSufficiency,
+  PhysicalStockSufficiencyError,
+} from '../../../asset-inventory/public-api/physical-stock-sufficiency.public-api';
 import {
   CatalogOfferingAuthoring,
   CatalogOfferingAuthoringError,
@@ -25,7 +25,7 @@ export type CreatePackageServiceResult = Result<
 export class CreatePackageHandler implements ICommandHandler<CreatePackageCommand, CreatePackageServiceResult> {
   constructor(
     private readonly tenantManagement: TenantManagementPublicApi,
-    private readonly assetInventory: AssetInventoryPublicApi,
+    private readonly physicalStockSufficiency: PhysicalStockSufficiency,
     private readonly catalog: CatalogOfferingAuthoring,
   ) {}
 
@@ -36,10 +36,13 @@ export class CreatePackageHandler implements ICommandHandler<CreatePackageComman
     });
     if (tenantValidation.isErr()) return err(mapTenantError(tenantValidation.error));
 
-    const equipmentValidation = await this.assetInventory.validatePackageRequirementsForBranches({
+    const equipmentValidation = await this.physicalStockSufficiency.validateActiveStockSufficiency({
       tenantId: command.tenantId,
       branchIds: command.branchIds,
-      requirements: command.requirements,
+      requirements: command.requirements.map((requirement) => ({
+        equipmentTypeId: requirement.equipmentTypeId,
+        requiredQuantity: requirement.quantityPerItem,
+      })),
     });
     if (equipmentValidation.isErr()) return err(mapAssetInventoryError(equipmentValidation.error));
 
@@ -69,14 +72,21 @@ function mapTenantError(error: ValidateOfferingSetupError): CreatePackageError {
   throw error;
 }
 
-function mapAssetInventoryError(error: AssetInventoryPublicApiError): CreatePackageError {
-  const codes = {
-    EquipmentTypeNotFound: 'offering_setup.equipment_type_not_found',
-    InsufficientActiveEquipmentStock: 'offering_setup.insufficient_active_equipment_stock',
-  } as const;
-  const code = codes[error.code as keyof typeof codes];
-  if (!code) throw error;
-  return createPackageError(code, error.message, error, error.context);
+function mapAssetInventoryError(error: PhysicalStockSufficiencyError): CreatePackageError {
+  if (error.code === 'EquipmentTypeNotFound') {
+    return createPackageError('offering_setup.equipment_type_not_found', error.message, error, {
+      equipmentTypeId: error.equipmentTypeId,
+    });
+  }
+  if (error.code === 'InsufficientActivePhysicalStock') {
+    return createPackageError('offering_setup.insufficient_active_equipment_stock', error.message, error, {
+      equipmentTypeId: error.equipmentTypeId,
+      branchId: error.branchId,
+      requiredQuantity: error.requiredQuantity,
+      activeAssetCount: error.activeAssetCount,
+    });
+  }
+  throw error;
 }
 
 function mapCatalogError(error: CatalogOfferingAuthoringError): CreatePackageError {

@@ -2,6 +2,7 @@ import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { err, ok, Result } from 'neverthrow';
 
 import { TenantManagementPublicApi } from '../../../tenant-management/public-api/tenant-management.public-api';
+import { AssetBranchReferenceValidatorService } from '../../application/services/asset-branch-reference-validator.service';
 import { CreateEquipmentTypeSetupCommand } from '../create-equipment-type-setup/create-equipment-type-setup.command';
 import {
   CreateEquipmentTypeSetupResult,
@@ -24,6 +25,7 @@ export class CreateEquipmentTypeHandler implements ICommandHandler<
 > {
   constructor(
     private readonly tenantManagement: TenantManagementPublicApi,
+    private readonly assetBranchReferenceValidator: AssetBranchReferenceValidatorService,
     private readonly createEquipmentTypeSetupService: CreateEquipmentTypeSetupService,
   ) {}
 
@@ -55,6 +57,14 @@ export class CreateEquipmentTypeHandler implements ICommandHandler<
     });
     if (tenantValidation.isErr()) {
       return err(mapTenantValidationError(tenantValidation.error));
+    }
+
+    const branchValidation = await this.assetBranchReferenceValidator.validateOperationalBranches({
+      tenantId: command.tenantId,
+      branchIds,
+    });
+    if (branchValidation.isErr()) {
+      return err(mapTenantValidationError(branchValidation.error));
     }
 
     const equipmentTypeSetup = await this.createEquipmentTypeSetupService.execute(

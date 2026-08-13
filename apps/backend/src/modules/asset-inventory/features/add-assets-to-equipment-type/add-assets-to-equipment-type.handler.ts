@@ -10,6 +10,7 @@ import { EquipmentTypeNotFoundError } from '../../domain/errors/asset-inventory.
 import { AssetRepository } from '../../persistence/asset.repository';
 import { EquipmentTypeRepository } from '../../persistence/equipment-type.repository';
 import { TenantManagementPublicApi } from '../../../tenant-management/public-api/tenant-management.public-api';
+import { AssetBranchReferenceValidatorService } from '../../application/services/asset-branch-reference-validator.service';
 import { AddAssetsToEquipmentTypeCommand } from './add-assets-to-equipment-type.command';
 import {
   AddAssetsToEquipmentTypeError,
@@ -31,6 +32,7 @@ export class AddAssetsToEquipmentTypeHandler implements ICommandHandler<
 > {
   constructor(
     private readonly tenantManagement: TenantManagementPublicApi,
+    private readonly assetBranchReferenceValidator: AssetBranchReferenceValidatorService,
     private readonly equipmentTypeRepository: EquipmentTypeRepository,
     private readonly assetRepository: AssetRepository,
     private readonly assetCreationValidator: AssetCreationValidatorService,
@@ -46,6 +48,14 @@ export class AddAssetsToEquipmentTypeHandler implements ICommandHandler<
     });
     if (tenantValidation.isErr()) {
       return err(mapTenantValidationError(tenantValidation.error));
+    }
+
+    const branchValidation = await this.assetBranchReferenceValidator.validateOperationalBranches({
+      tenantId: command.tenantId,
+      branchIds,
+    });
+    if (branchValidation.isErr()) {
+      return err(mapTenantValidationError(branchValidation.error));
     }
 
     const equipmentType = await this.equipmentTypeRepository.loadByIdForTenant({

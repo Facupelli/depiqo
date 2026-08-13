@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 
 import { TenantManagementModule } from '../tenant-management/tenant-management.module';
+import { AssetBranchReferenceValidatorService } from './application/services/asset-branch-reference-validator.service';
 import { AssetCreationValidatorService } from './application/services/asset-creation-validator.service';
 import { AddAssetsToEquipmentTypeHttpController } from './features/add-assets-to-equipment-type/add-assets-to-equipment-type.controller';
 import { AddAssetsToEquipmentTypeHandler } from './features/add-assets-to-equipment-type/add-assets-to-equipment-type.handler';
@@ -35,8 +36,10 @@ import { AssetRepository } from './persistence/asset.repository';
 import { EquipmentTypeRepository } from './persistence/equipment-type.repository';
 import { AssetInventoryDisplayFactsService } from './public-api/asset-inventory-display-facts.public-api.service';
 import { AssetInventoryDisplayFacts } from './public-api/asset-inventory-display-facts.public-api';
-import { AssetInventoryPublicApiService } from './public-api/asset-inventory.public-api.service';
-import { AssetInventoryPublicApi } from './public-api/asset-inventory.public-api';
+import { AssetInventoryAuthoringService } from './public-api/asset-inventory-authoring.public-api.service';
+import { AssetInventoryAuthoring } from './public-api/asset-inventory-authoring.public-api';
+import { PhysicalStockSufficiencyService } from './public-api/physical-stock-sufficiency.public-api.service';
+import { PhysicalStockSufficiency } from './public-api/physical-stock-sufficiency.public-api';
 import { EquipmentTypeReferenceAuthorityService } from './public-api/equipment-type-reference-authority.public-api.service';
 import { EquipmentTypeReferenceAuthority } from './public-api/equipment-type-reference-authority.public-api';
 
@@ -74,13 +77,20 @@ import { EquipmentTypeReferenceAuthority } from './public-api/equipment-type-ref
     GetOwnersHandler,
     GetRentalAccessoryDefaultsHandler,
     CreateEquipmentTypeSetupService,
+    AssetBranchReferenceValidatorService,
     AssetCreationValidatorService,
     AssetRepository,
     EquipmentTypeRepository,
-    { provide: AssetInventoryPublicApi, useClass: AssetInventoryPublicApiService },
+    { provide: AssetInventoryAuthoring, useClass: AssetInventoryAuthoringService },
+    { provide: PhysicalStockSufficiency, useClass: PhysicalStockSufficiencyService },
     { provide: EquipmentTypeReferenceAuthority, useClass: EquipmentTypeReferenceAuthorityService },
     { provide: AssetInventoryDisplayFacts, useClass: AssetInventoryDisplayFactsService },
   ],
-  exports: [AssetInventoryPublicApi, EquipmentTypeReferenceAuthority, AssetInventoryDisplayFacts],
+  exports: [
+    AssetInventoryAuthoring,
+    PhysicalStockSufficiency,
+    EquipmentTypeReferenceAuthority,
+    AssetInventoryDisplayFacts,
+  ],
 })
 export class AssetInventoryModule {}
