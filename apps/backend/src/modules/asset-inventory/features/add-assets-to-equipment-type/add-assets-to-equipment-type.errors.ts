@@ -4,7 +4,6 @@ import {
   ActiveOwnerContractNotFoundError,
   AssetInventoryError,
   AssetOwnerNotFoundError,
-  EquipmentTypeNotActiveError,
   EquipmentTypeNotFoundError,
   InvalidAssetFieldError,
   MultipleActiveOwnerContractsError,
@@ -13,7 +12,6 @@ import {
 export type AddAssetsToEquipmentTypeErrorCode =
   | 'asset_inventory.tenant_validation_failed'
   | 'asset_inventory.equipment_type_not_found'
-  | 'asset_inventory.equipment_type_not_active'
   | 'asset_inventory.invalid_asset_field'
   | 'asset_inventory.asset_owner_not_found'
   | 'asset_inventory.active_owner_contract_not_found'
@@ -43,12 +41,6 @@ export function mapTenantValidationError(error: unknown): AddAssetsToEquipmentTy
 export function mapAssetInventoryError(error: AssetInventoryError): AddAssetsToEquipmentTypeError {
   if (error instanceof EquipmentTypeNotFoundError) {
     return addAssetsToEquipmentTypeError('asset_inventory.equipment_type_not_found', error.message, error, {
-      equipmentTypeId: error.equipmentTypeId,
-    });
-  }
-
-  if (error instanceof EquipmentTypeNotActiveError) {
-    return addAssetsToEquipmentTypeError('asset_inventory.equipment_type_not_active', error.message, error, {
       equipmentTypeId: error.equipmentTypeId,
     });
   }

@@ -44,7 +44,6 @@ export interface GetRentableItemsResult {
 }
 
 type RentalOfferFilter = {
-  deletedAt: null;
   branchId?: string;
   isVisible?: boolean;
   isRentable?: boolean;
@@ -72,7 +71,6 @@ export class GetRentableItemsHandler implements IQueryHandler<GetRentableItemsQu
     const offerFilter = this.buildOfferFilter(query, activePricedOfferIds);
     const where = {
       tenantId: query.tenantId,
-      deletedAt: null,
       ...(query.status ? { status: query.status } : {}),
       ...(query.search ? { name: { contains: query.search, mode: 'insensitive' as const } } : {}),
       ...(query.kind ? { kind: query.kind } : {}),
@@ -126,11 +124,11 @@ export class GetRentableItemsHandler implements IQueryHandler<GetRentableItemsQu
     // Pricing, Tenant Management, and Asset Inventory public read APIs stabilize.
     const [branches, equipmentTypes, pricings] = await this.prisma.client.$transaction([
       this.prisma.client.v2Branch.findMany({
-        where: { tenantId: query.tenantId, id: { in: branchIds }, deletedAt: null },
+        where: { tenantId: query.tenantId, id: { in: branchIds } },
         select: { id: true, name: true },
       }),
       this.prisma.client.v2EquipmentType.findMany({
-        where: { tenantId: query.tenantId, id: { in: equipmentTypeIds }, deletedAt: null },
+        where: { tenantId: query.tenantId, id: { in: equipmentTypeIds } },
         select: { id: true, name: true },
       }),
       this.prisma.client.v2RentalOfferPricing.findMany({
@@ -138,8 +136,7 @@ export class GetRentableItemsHandler implements IQueryHandler<GetRentableItemsQu
           tenantId: query.tenantId,
           catalogRentalOfferId: { in: offerIds },
           isActive: true,
-          deletedAt: null,
-          ratePlan: { isActive: true, deletedAt: null },
+          ratePlan: { isActive: true },
         },
         select: {
           catalogRentalOfferId: true,
@@ -223,8 +220,7 @@ export class GetRentableItemsHandler implements IQueryHandler<GetRentableItemsQu
       where: {
         tenantId: query.tenantId,
         isActive: true,
-        deletedAt: null,
-        ratePlan: { isActive: true, deletedAt: null, tiers: { some: {} } },
+        ratePlan: { isActive: true, tiers: { some: {} } },
       },
       select: { catalogRentalOfferId: true },
     });
@@ -234,7 +230,6 @@ export class GetRentableItemsHandler implements IQueryHandler<GetRentableItemsQu
 
   private buildOfferFilter(query: GetRentableItemsQuery, activePricedOfferIds: string[]): RentalOfferFilter {
     return {
-      deletedAt: null,
       ...(query.branchId ? { branchId: query.branchId } : {}),
       ...(query.isVisible === undefined ? {} : { isVisible: query.isVisible }),
       ...(query.isRentable === undefined ? {} : { isRentable: query.isRentable }),

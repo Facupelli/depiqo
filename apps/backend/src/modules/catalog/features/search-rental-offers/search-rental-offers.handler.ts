@@ -33,9 +33,7 @@ export class SearchRentalOffersHandler implements IQueryHandler<SearchRentalOffe
       tenantId: query.tenantId,
       branchId: query.branchId,
       isRentable: true,
-      deletedAt: null,
       rentableItem: {
-        deletedAt: null,
         status: 'ACTIVE',
         ...(query.search ? { name: { contains: query.search, mode: 'insensitive' } } : {}),
       },

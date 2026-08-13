@@ -325,13 +325,6 @@ export class CreateConfirmedRentalService implements ICommandHandler<
             error,
             context,
           );
-        case 'EquipmentTypeNotActive':
-          return createConfirmedRentalError(
-            'rental_commitment.equipment_type_not_rentable',
-            error.message,
-            error,
-            context,
-          );
       }
     }
     if (error instanceof RentalMustContainSelectionError) {

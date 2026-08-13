@@ -9,7 +9,6 @@ type AssetPersistenceRecord = {
   serialNumber: string | null;
   notes: string | null;
   status: 'ACTIVE' | 'INACTIVE' | 'RETIRED';
-  deletedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -25,7 +24,6 @@ export class AssetMapper {
       serialNumber: record.serialNumber,
       notes: record.notes,
       status: record.status,
-      deletedAt: record.deletedAt,
       createdAt: record.createdAt,
       updatedAt: record.updatedAt,
     });
@@ -47,7 +45,6 @@ export class AssetMapper {
       serialNumber: asset.serialNumber,
       notes: asset.notes,
       status: asset.status,
-      deletedAt: asset.deletedAt,
     };
   }
 }

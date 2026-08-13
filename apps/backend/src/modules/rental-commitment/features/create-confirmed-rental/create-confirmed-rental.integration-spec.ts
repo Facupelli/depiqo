@@ -79,7 +79,7 @@ describe('CreateConfirmedRental integration', () => {
           return prisma.client.v2EquipmentType.findUniqueOrThrow({ where: { id: requirement.equipmentTypeId } });
         }
         return prisma.client.v2EquipmentType.create({
-          data: { tenantId: input.tenantId, name: `Equipment ${randomUUID()}`, isActive: true },
+          data: { tenantId: input.tenantId, name: `Equipment ${randomUUID()}` },
         });
       }),
     );
@@ -296,7 +296,7 @@ describe('CreateConfirmedRental integration', () => {
   it('allocates multiple offers collectively and leaves zero residue when combined inventory is insufficient', async () => {
     const setup = await scenario();
     const equipmentType = await prisma.client.v2EquipmentType.create({
-      data: { tenantId: setup.tenantId, name: `Shared ${randomUUID()}`, isActive: true },
+      data: { tenantId: setup.tenantId, name: `Shared ${randomUUID()}` },
     });
     const first = await offer({ ...setup, requirements: [{ equipmentTypeId: equipmentType.id }] });
     const second = await offer({ ...setup, requirements: [{ equipmentTypeId: equipmentType.id }] });
@@ -382,10 +382,7 @@ describe('CreateConfirmedRental integration', () => {
   });
 
   it.each([
-    ['inactive projection', { isActive: false }],
-    ['non-rentable projection', { isRentable: false }],
     ['inactive asset status projection', { assetStatus: 'INACTIVE' as const }],
-    ['inactive equipment type projection', { equipmentTypeIsActive: false }],
     ['wrong branch projection', { branchId: randomUUID() }],
     ['third-party projection without owner contract', { ownershipKind: 'THIRD_PARTY' as const, ownerId: randomUUID() }],
   ])('enforces V2RentalAssetCandidate projection-policy eligibility: %s', async (_name, overrides) => {

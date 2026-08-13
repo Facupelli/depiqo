@@ -75,12 +75,10 @@ export class UpdateRentableItemDefinitionHandler implements ICommandHandler<
 
       if (validation.isErr()) {
         const code = validation.error.code;
-        if (code === 'EquipmentTypeNotFound' || code === 'EquipmentTypeNotActive') {
+        if (code === 'EquipmentTypeNotFound') {
           return err(
             updateRentableItemDefinitionError(
-              code === 'EquipmentTypeNotFound'
-                ? 'catalog.equipment_type_not_found'
-                : 'catalog.equipment_type_not_active',
+              'catalog.equipment_type_not_found',
               validation.error.message,
               validation.error,
               { ...context, equipmentTypeId: validation.error.context?.equipmentTypeId },
@@ -122,5 +120,4 @@ export class UpdateRentableItemDefinitionHandler implements ICommandHandler<
 
     return ok(undefined);
   }
-
 }

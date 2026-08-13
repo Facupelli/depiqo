@@ -32,7 +32,6 @@ export class GetRentableItemSummariesHandler implements IQueryHandler<
       where: {
         tenantId: query.tenantId,
         id: { in: ids },
-        deletedAt: null,
       },
       select: {
         id: true,

@@ -29,7 +29,6 @@ export interface GetEquipmentTypeDetailReadModel {
   name: string;
   description: string | null;
   categoryId: string | null;
-  isActive: boolean;
   createdAt: string;
   updatedAt: string;
   accessoryDefaults: GetEquipmentTypeDetailAccessoryDefaultReadModel[];
@@ -50,14 +49,12 @@ export class GetEquipmentTypeDetailHandler implements IQueryHandler<
       where: {
         id: query.equipmentTypeId,
         tenantId: query.tenantId,
-        deletedAt: null,
       },
       select: {
         id: true,
         name: true,
         description: true,
         categoryId: true,
-        isActive: true,
         createdAt: true,
         updatedAt: true,
         accessoryDefaults: {
@@ -74,7 +71,6 @@ export class GetEquipmentTypeDetailHandler implements IQueryHandler<
         assets: {
           where: {
             tenantId: query.tenantId,
-            deletedAt: null,
           },
           select: {
             id: true,
@@ -115,7 +111,6 @@ export class GetEquipmentTypeDetailHandler implements IQueryHandler<
       name: equipmentType.name,
       description: equipmentType.description,
       categoryId: equipmentType.categoryId,
-      isActive: equipmentType.isActive,
       createdAt: equipmentType.createdAt.toISOString(),
       updatedAt: equipmentType.updatedAt.toISOString(),
       accessoryDefaults: equipmentType.accessoryDefaults.map((accessoryDefault) => ({

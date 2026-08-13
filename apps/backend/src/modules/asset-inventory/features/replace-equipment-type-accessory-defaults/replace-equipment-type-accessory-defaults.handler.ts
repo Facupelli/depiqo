@@ -3,7 +3,7 @@ import { err, ok, Result } from 'neverthrow';
 
 import { PrismaService } from 'src/core/database/prisma.service';
 
-import { EquipmentTypeNotActiveError, EquipmentTypeNotFoundError } from '../../domain/errors/asset-inventory.errors';
+import { EquipmentTypeNotFoundError } from '../../domain/errors/asset-inventory.errors';
 import { EquipmentTypeRepository } from '../../persistence/equipment-type.repository';
 import { ReplaceEquipmentTypeAccessoryDefaultsCommand } from './replace-equipment-type-accessory-defaults.command';
 import {
@@ -38,11 +38,6 @@ export class ReplaceEquipmentTypeAccessoryDefaultsHandler implements ICommandHan
         mapReplaceEquipmentTypeAccessoryDefaultsError(new EquipmentTypeNotFoundError(command.equipmentTypeId)),
       );
     }
-    if (!equipmentType.isActive) {
-      return err(
-        mapReplaceEquipmentTypeAccessoryDefaultsError(new EquipmentTypeNotActiveError(command.equipmentTypeId)),
-      );
-    }
 
     const uniqueAccessoryEquipmentTypeIds = new Set<string>();
     for (const accessory of command.accessories) {
@@ -69,9 +64,8 @@ export class ReplaceEquipmentTypeAccessoryDefaultsHandler implements ICommandHan
       where: {
         tenantId: command.tenantId,
         id: { in: [...uniqueAccessoryEquipmentTypeIds] },
-        deletedAt: null,
       },
-      select: { id: true, isActive: true },
+      select: { id: true },
     });
     const accessoryEquipmentTypesById = new Map(
       accessoryEquipmentTypes.map((accessoryEquipmentType) => [accessoryEquipmentType.id, accessoryEquipmentType]),
@@ -83,14 +77,6 @@ export class ReplaceEquipmentTypeAccessoryDefaultsHandler implements ICommandHan
         return err(
           mapReplaceEquipmentTypeAccessoryDefaultsError(
             new EquipmentTypeNotFoundError(accessoryEquipmentTypeId),
-            'accessoryEquipmentType',
-          ),
-        );
-      }
-      if (!accessoryEquipmentType.isActive) {
-        return err(
-          mapReplaceEquipmentTypeAccessoryDefaultsError(
-            new EquipmentTypeNotActiveError(accessoryEquipmentTypeId),
             'accessoryEquipmentType',
           ),
         );

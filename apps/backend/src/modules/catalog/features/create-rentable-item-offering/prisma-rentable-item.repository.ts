@@ -17,7 +17,6 @@ export class PrismaRentableItemRepository {
       where: {
         id: rentableItemId,
         tenantId,
-        deletedAt: null,
       },
       include: {
         requirements: true,

@@ -86,7 +86,4 @@ const generateRentalBudgetProblemMap = {
     status: HttpStatus.CONFLICT,
     detail: 'The rental does not have a valid price snapshot.',
   },
-} satisfies Record<
-  GenerateRentalBudgetErrorCode,
-  { type: string; title: string; status: HttpStatus; detail: string }
->;
+} satisfies Record<GenerateRentalBudgetErrorCode, { type: string; title: string; status: HttpStatus; detail: string }>;

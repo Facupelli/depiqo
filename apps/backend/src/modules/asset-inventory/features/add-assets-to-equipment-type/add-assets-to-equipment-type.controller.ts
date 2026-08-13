@@ -75,7 +75,6 @@ function publicErrorExtensions(error: AddAssetsToEquipmentTypeError): Record<str
 
   const extensionByCode: Partial<Record<AddAssetsToEquipmentTypeErrorCode, string>> = {
     'asset_inventory.equipment_type_not_found': 'equipmentTypeId',
-    'asset_inventory.equipment_type_not_active': 'equipmentTypeId',
     'asset_inventory.asset_owner_not_found': 'ownerId',
     'asset_inventory.active_owner_contract_not_found': 'ownerId',
     'asset_inventory.multiple_active_owner_contracts': 'ownerId',
@@ -97,12 +96,6 @@ const addAssetsToEquipmentTypeProblemMap = {
     title: 'Equipment type not found',
     status: HttpStatus.NOT_FOUND,
     detail: 'The requested equipment type could not be found.',
-  },
-  'asset_inventory.equipment_type_not_active': {
-    type: createProblemType('asset_inventory.equipment_type_not_active'),
-    title: 'Equipment type not active',
-    status: HttpStatus.UNPROCESSABLE_ENTITY,
-    detail: 'The requested equipment type is not active.',
   },
   'asset_inventory.invalid_asset_field': {
     type: createProblemType('asset_inventory.invalid_asset_field'),

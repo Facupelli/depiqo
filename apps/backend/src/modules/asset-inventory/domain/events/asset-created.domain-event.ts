@@ -17,7 +17,6 @@ export interface AssetCreatedDomainEventProps {
   assetId: string;
   branchId: string;
   equipmentTypeId: string;
-  equipmentTypeIsActive: boolean;
   status: AssetCreatedStatus;
   ownerId: string | null;
   ownerContractSnapshot: AssetOwnerContractSnapshotPayload | null;

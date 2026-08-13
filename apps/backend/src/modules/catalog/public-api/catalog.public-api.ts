@@ -44,8 +44,7 @@ export type ResolveSelectedRentalOffersErrorCode =
   | 'RentalOfferNotRentable'
   | 'RentableItemNotActive'
   | 'InvalidFulfillmentDefinition'
-  | 'EquipmentTypeNotFound'
-  | 'EquipmentTypeNotActive';
+  | 'EquipmentTypeNotFound';
 
 export interface ResolveSelectedRentalOffersError {
   code: ResolveSelectedRentalOffersErrorCode;
@@ -118,7 +117,6 @@ export type CatalogPublicApiErrorCode =
   | 'RentableItemArchived'
   | 'RentalOfferAlreadyExists'
   | 'EquipmentTypeNotFound'
-  | 'EquipmentTypeNotActive'
   | 'RentableItemRequirementAlreadyExists';
 
 export interface CatalogPublicApiError {

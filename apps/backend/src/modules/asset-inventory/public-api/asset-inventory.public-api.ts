@@ -5,7 +5,6 @@ export interface EquipmentTypeReadModel {
   tenantId: string;
   name: string;
   description?: string | null;
-  isActive: boolean;
 }
 
 export interface AssetReadModel {
@@ -66,7 +65,6 @@ export type AssetInventoryPublicApiErrorCode =
   | 'ActiveOwnerContractNotFound'
   | 'MultipleActiveOwnerContracts'
   | 'EquipmentTypeNotFound'
-  | 'EquipmentTypeNotActive'
   | 'InsufficientActiveEquipmentStock';
 
 export interface AssetInventoryPublicApiError {

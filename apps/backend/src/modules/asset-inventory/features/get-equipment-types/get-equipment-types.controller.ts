@@ -18,7 +18,7 @@ export class GetEquipmentTypesHttpController {
     @CurrentUser() user: AuthUser,
   ): Promise<GetEquipmentTypesResponseDto> {
     return this.queryBus.execute<GetEquipmentTypesQuery, GetEquipmentTypesResult>(
-      new GetEquipmentTypesQuery(user.tenantId, dto.isActive, dto.search, dto.limit),
+      new GetEquipmentTypesQuery(user.tenantId, dto.search, dto.limit),
     );
   }
 }

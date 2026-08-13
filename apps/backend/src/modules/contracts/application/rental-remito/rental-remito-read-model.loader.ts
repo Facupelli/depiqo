@@ -80,10 +80,14 @@ export class RentalRemitoReadModelLoader {
 
     if (acceptedPricing.isErr()) {
       if (acceptedPricing.error.code === 'RentalNotFound') {
-        return err(rentalRemitoApplicationError('RentalNotFound', acceptedPricing.error.message, acceptedPricing.error));
+        return err(
+          rentalRemitoApplicationError('RentalNotFound', acceptedPricing.error.message, acceptedPricing.error),
+        );
       }
 
-      return err(rentalRemitoApplicationError('PriceSnapshotInvalid', acceptedPricing.error.message, acceptedPricing.error));
+      return err(
+        rentalRemitoApplicationError('PriceSnapshotInvalid', acceptedPricing.error.message, acceptedPricing.error),
+      );
     }
 
     if (equipmentFacts.isErr()) {

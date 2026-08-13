@@ -20,8 +20,6 @@ export class GetEquipmentTypesHandler implements IQueryHandler<GetEquipmentTypes
     return this.prisma.client.v2EquipmentType.findMany({
       where: {
         tenantId: query.tenantId,
-        deletedAt: null,
-        isActive: query.isActive ?? true,
         ...(query.search
           ? {
               name: {

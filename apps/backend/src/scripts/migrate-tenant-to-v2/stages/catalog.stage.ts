@@ -74,6 +74,8 @@ async function migrateSingleRentableItems(ctx: TenantV2MigrationContext) {
 	if (ctx.dryRun) return;
 
 	for (const productType of productTypes) {
+		if (productType.deletedAt || productType.retiredAt) continue;
+
 		await ctx.prisma.v2RentableItem.upsert({
 			where: { id: productType.id },
 			create: {
@@ -85,7 +87,6 @@ async function migrateSingleRentableItems(ctx: TenantV2MigrationContext) {
 				categoryId: productType.categoryId,
 				kind: V2RentableItemKind.SINGLE,
 				status: mapProductTypeStatus(productType),
-				deletedAt: productType.deletedAt ?? productType.retiredAt,
 				createdAt: productType.createdAt,
 				updatedAt: productType.updatedAt,
 			},
@@ -95,7 +96,6 @@ async function migrateSingleRentableItems(ctx: TenantV2MigrationContext) {
 				imageUrl: productType.imageUrl,
 				categoryId: productType.categoryId,
 				status: mapProductTypeStatus(productType),
-				deletedAt: productType.deletedAt ?? productType.retiredAt,
 				updatedAt: productType.updatedAt,
 			},
 		});
@@ -149,6 +149,8 @@ async function migrateBundleRentableItems(ctx: TenantV2MigrationContext) {
 	if (ctx.dryRun) return;
 
 	for (const bundle of bundles) {
+		if (bundle.retiredAt) continue;
+
 		await ctx.prisma.v2RentableItem.upsert({
 			where: { id: bundle.id },
 			create: {
@@ -160,7 +162,6 @@ async function migrateBundleRentableItems(ctx: TenantV2MigrationContext) {
 				categoryId: null,
 				kind: V2RentableItemKind.PACKAGE,
 				status: mapBundleStatus(bundle),
-				deletedAt: bundle.retiredAt,
 				createdAt: bundle.createdAt,
 				updatedAt: bundle.updatedAt,
 			},
@@ -170,7 +171,6 @@ async function migrateBundleRentableItems(ctx: TenantV2MigrationContext) {
 				imageUrl: bundle.imageUrl,
 				categoryId: null,
 				status: mapBundleStatus(bundle),
-				deletedAt: bundle.retiredAt,
 				updatedAt: bundle.updatedAt,
 			},
 		});
@@ -267,7 +267,6 @@ async function migrateRentalOffers(ctx: TenantV2MigrationContext) {
 					tenantId: item.tenantId,
 					branchId: branch.id,
 					rentableItemId: item.id,
-					deletedAt: null,
 				},
 			});
 
@@ -291,7 +290,6 @@ async function migrateRentalOffers(ctx: TenantV2MigrationContext) {
 					rentableItemId: item.id,
 					isVisible: isAvailableForCatalog,
 					isRentable: isAvailableForCatalog,
-					deletedAt: null,
 					createdAt: item.createdAt,
 					updatedAt: item.updatedAt,
 				},

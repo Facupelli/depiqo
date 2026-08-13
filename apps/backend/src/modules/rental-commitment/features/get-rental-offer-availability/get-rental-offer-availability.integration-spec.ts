@@ -39,9 +39,9 @@ describe('GetRentalOfferAvailability integration', () => {
     return { tenant, branch };
   }
 
-  async function equipmentType(tenantId: string, active = true) {
+  async function equipmentType(tenantId: string) {
     return prisma.client.v2EquipmentType.create({
-      data: { tenantId, name: `Equipment ${randomUUID()}`, isActive: active },
+      data: { tenantId, name: `Equipment ${randomUUID()}` },
     });
   }
 
@@ -52,7 +52,6 @@ describe('GetRentalOfferAvailability integration', () => {
     isVisible?: boolean;
     isRentable?: boolean;
     itemStatus?: 'DRAFT' | 'ACTIVE' | 'ARCHIVED';
-    deletedAt?: Date;
   }) {
     const item = await prisma.client.v2RentableItem.create({
       data: {
@@ -72,7 +71,6 @@ describe('GetRentalOfferAvailability integration', () => {
         rentableItemId: item.id,
         isVisible: params.isVisible ?? true,
         isRentable: params.isRentable ?? true,
-        deletedAt: params.deletedAt,
       },
     });
   }
@@ -240,12 +238,7 @@ describe('GetRentalOfferAvailability integration', () => {
     await rentals.createCandidate({ tenantId: s.tenant.id, branchId: s.branch.id, equipmentTypeId: type.id });
     await rentals.createCandidate({ tenantId: s.tenant.id, branchId: otherBranch.id, equipmentTypeId: type.id });
     await rentals.createCandidate({ tenantId: otherTenant.id, branchId: s.branch.id, equipmentTypeId: type.id });
-    for (const overrides of [
-      { isActive: false },
-      { isRentable: false },
-      { equipmentTypeIsActive: false },
-      { assetStatus: 'INACTIVE' as const },
-    ]) {
+    for (const overrides of [{ assetStatus: 'INACTIVE' as const }]) {
       await rentals.createCandidate({
         tenantId: s.tenant.id,
         branchId: s.branch.id,
@@ -301,7 +294,7 @@ describe('GetRentalOfferAvailability integration', () => {
     expect((await value(s.tenant.id, s.branch.id, [rentalOffer.id]))[0].availableCount).toBe(1);
   });
 
-  it.each(['foreign', 'wrong branch', 'deleted'] as const)('does not disclose a %s offer', async (kind) => {
+  it.each(['foreign', 'wrong branch'] as const)('does not disclose a %s offer', async (kind) => {
     const s = await setup();
     const foreign = await setup();
     const otherBranch = await core.createBranch({ tenantId: s.tenant.id });
@@ -311,7 +304,6 @@ describe('GetRentalOfferAvailability integration', () => {
       tenantId: owner.tenant.id,
       branchId: kind === 'wrong branch' ? otherBranch.id : owner.branch.id,
       requirements: [{ equipmentTypeId: type.id, quantityPerItem: 1 }],
-      deletedAt: kind === 'deleted' ? utcDate(2029, 1, 1) : undefined,
     });
     const result = await availability(s.tenant.id, s.branch.id, [rentalOffer.id]);
     expect(result.isErr() && result.error.code).toBe('rental_commitment.rental_offer_not_found');

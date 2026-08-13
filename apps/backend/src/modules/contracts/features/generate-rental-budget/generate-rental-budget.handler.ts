@@ -16,7 +16,10 @@ import { GenerateRentalBudgetQuery } from './generate-rental-budget.query';
 export type GenerateRentalBudgetResult = Result<RenderRentalBudgetResult, GenerateRentalBudgetError>;
 
 @QueryHandler(GenerateRentalBudgetQuery)
-export class GenerateRentalBudgetHandler implements IQueryHandler<GenerateRentalBudgetQuery, GenerateRentalBudgetResult> {
+export class GenerateRentalBudgetHandler implements IQueryHandler<
+  GenerateRentalBudgetQuery,
+  GenerateRentalBudgetResult
+> {
   constructor(private readonly documentService: RentalBudgetDocumentService) {}
 
   async execute(query: GenerateRentalBudgetQuery): Promise<GenerateRentalBudgetResult> {

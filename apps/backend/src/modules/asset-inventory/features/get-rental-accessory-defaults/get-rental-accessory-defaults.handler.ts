@@ -150,8 +150,6 @@ export class GetRentalAccessoryDefaultsHandler implements IQueryHandler<
         tenantId: params.tenantId,
         branchId: params.branchId,
         equipmentTypeId: { in: [...params.equipmentTypeIds] },
-        isActive: true,
-        isRentable: true,
         assetStatus: 'ACTIVE',
       },
       select: {

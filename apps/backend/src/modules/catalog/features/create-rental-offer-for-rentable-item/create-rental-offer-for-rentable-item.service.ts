@@ -44,7 +44,7 @@ export class CreateRentalOfferForRentableItemService {
     }
 
     const rentableItem = await this.prisma.client.v2RentableItem.findFirst({
-      where: { id: rentableItemId, tenantId, deletedAt: null },
+      where: { id: rentableItemId, tenantId },
       select: { id: true, status: true },
     });
 
@@ -57,7 +57,7 @@ export class CreateRentalOfferForRentableItemService {
     }
 
     const existingRentalOffer = await this.prisma.client.v2RentalOffer.findFirst({
-      where: { tenantId, branchId, rentableItemId, deletedAt: null },
+      where: { tenantId, branchId, rentableItemId },
       select: { id: true },
     });
 

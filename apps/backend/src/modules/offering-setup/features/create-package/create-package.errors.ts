@@ -4,7 +4,6 @@ export type CreatePackageErrorCode =
   | 'offering_setup.tenant_unavailable'
   | 'offering_setup.branch_unavailable'
   | 'offering_setup.equipment_type_not_found'
-  | 'offering_setup.equipment_type_inactive'
   | 'offering_setup.insufficient_active_equipment_stock'
   | 'offering_setup.invalid_package';
 

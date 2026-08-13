@@ -21,7 +21,6 @@ export const GetRatePlanDetailRentalOfferSchema = z.object({
   rentableItemName: z.string(),
   isVisible: z.boolean(),
   isRentable: z.boolean(),
-  isDeleted: z.boolean(),
 });
 
 export const GetRatePlanDetailAssignmentSchema = z.object({

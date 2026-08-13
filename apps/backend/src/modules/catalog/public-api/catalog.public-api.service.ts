@@ -7,7 +7,6 @@ import { CreateRentableItemOfferingCommand } from '../features/create-rentable-i
 import { CreateRentableItemOfferingService } from '../features/create-rentable-item-offering/create-rentable-item-offering.service';
 import { ResolveSelectedRentalOffersService } from '../features/resolve-selected-rental-offers/resolve-selected-rental-offers.service';
 import {
-  CatalogEquipmentTypeNotActiveError,
   CatalogEquipmentTypeNotFoundError,
   CatalogError,
   CatalogInvalidFieldError,
@@ -100,9 +99,6 @@ function mapCatalogPublicApiError(error: CatalogError): CatalogPublicApiError {
   }
   if (error instanceof CatalogEquipmentTypeNotFoundError) {
     return publicError('EquipmentTypeNotFound', error, { equipmentTypeId: error.equipmentTypeId });
-  }
-  if (error instanceof CatalogEquipmentTypeNotActiveError) {
-    return publicError('EquipmentTypeNotActive', error, { equipmentTypeId: error.equipmentTypeId });
   }
   if (error instanceof CatalogRentableItemRequirementAlreadyExistsError) {
     return publicError('RentableItemRequirementAlreadyExists', error, {

@@ -24,7 +24,6 @@ model V2RentableItem {
   categoryId  String?              @map("category_id")
   kind        V2RentableItemKind
   status      V2RentableItemStatus @default(DRAFT)
-  deletedAt   DateTime?            @map("deleted_at") @db.Timestamptz(3)
   createdAt   DateTime             @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt   DateTime             @updatedAt @map("updated_at") @db.Timestamptz(3)
 
@@ -32,7 +31,7 @@ model V2RentableItem {
   rentalOffers V2RentalOffer[]
   requirements V2RentableItemRequirement[]
 
-  @@index([tenantId, status, deletedAt, categoryId])
+  @@index([tenantId, status, categoryId])
   @@map("v2_rentable_items")
 }
 
@@ -43,14 +42,13 @@ model V2RentalOffer {
   rentableItemId String    @map("rentable_item_id")
   isVisible      Boolean   @default(true) @map("is_visible")
   isRentable     Boolean   @default(true) @map("is_rentable")
-  deletedAt      DateTime? @map("deleted_at") @db.Timestamptz(3)
   createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   rentableItem V2RentableItem @relation(fields: [rentableItemId], references: [id])
 
-  @@unique([tenantId, branchId, rentableItemId, deletedAt])
-  @@index([tenantId, branchId, isVisible, isRentable, deletedAt])
+  @@unique([tenantId, branchId, rentableItemId], map: "v2_rental_offers_tenant_branch_item_key")
+  @@index([tenantId, branchId, isVisible, isRentable])
   @@index([rentableItemId])
   @@map("v2_rental_offers")
 }

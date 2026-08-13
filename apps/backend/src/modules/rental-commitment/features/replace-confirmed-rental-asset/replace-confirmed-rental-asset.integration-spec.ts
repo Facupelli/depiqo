@@ -3,7 +3,7 @@ import { TestingModule } from '@nestjs/testing';
 
 import { PrismaService } from 'src/core/database/prisma.service';
 import { Prisma } from 'src/generated/prisma/client';
-import { V2ContractStatus, V2RentalStatus } from 'src/generated/prisma/enums';
+import { V2RentalStatus } from 'src/generated/prisma/enums';
 import {
   createRentalCommitmentIntegrationContext,
   useIntegrationTestContext,
@@ -174,11 +174,8 @@ describe('ReplaceConfirmedRentalAsset integration', () => {
 
   it.each([
     ['wrong equipment type', { equipmentTypeId: 'different-equipment-type' }],
-    ['inactive candidate', { isActive: false }],
-    ['non-rentable candidate', { isRentable: false }],
     ['inactive asset status', { assetStatus: 'INACTIVE' }],
     ['retired asset status', { assetStatus: 'RETIRED' }],
-    ['inactive equipment type', { equipmentTypeIsActive: false }],
     ['wrong branch', { branchId: 'different-branch' }],
     [
       'third-party candidate without owner contract snapshot',
@@ -299,21 +296,6 @@ describe('ReplaceConfirmedRentalAsset integration', () => {
     expect(result.isErr() && result.error.code).toBe('rental_commitment.rental_cannot_be_edited_from_status');
     expect(await fixtures.persistedState(setup.rental.rentalId)).toEqual(before);
   });
-
-  it.each(['GENERATED', 'SIGNING_REQUESTED', 'SIGNED'] as V2ContractStatus[])(
-    'rejects contract status %s without mutation',
-    async (status) => {
-      const setup = await scenario();
-      const replacementAssetId = await candidate(setup);
-      await prisma.client.v2Contract.create({
-        data: { tenantId: setup.tenant.id, rentalId: setup.rental.rentalId, status },
-      });
-      const before = await fixtures.persistedState(setup.rental.rentalId);
-      const result = await replace({ setup, replacementAssetId, expectedVersion: before.rental.version });
-      expect(result.isErr() && result.error.code).toBe('rental_commitment.rental_contract_prevents_editing');
-      expect(await fixtures.persistedState(setup.rental.rentalId)).toEqual(before);
-    },
-  );
 
   it('preserves complete state on a stale expectedVersion retry', async () => {
     const setup = await scenario();

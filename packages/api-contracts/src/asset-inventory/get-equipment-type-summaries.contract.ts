@@ -2,22 +2,8 @@ import { z } from "zod";
 
 import type { ApiContract } from "../api-contract";
 
-const BooleanQueryParamSchema = z.preprocess((value) => {
-  if (value === undefined || value === null || value === "") {
-    return undefined;
-  }
-  if (value === true || value === "true") {
-    return true;
-  }
-  if (value === false || value === "false") {
-    return false;
-  }
-  return value;
-}, z.boolean().optional());
-
 export const GetEquipmentTypeSummariesQuerySchema = z.object({
   search: z.string().trim().min(1).optional(),
-  isActive: BooleanQueryParamSchema,
   branchId: z.string().trim().min(1).optional(),
   page: z.coerce.number().int().positive().default(1),
   pageSize: z.coerce.number().int().positive().max(100).default(20),
@@ -33,7 +19,6 @@ export const GetEquipmentTypeSummariesItemSchema = z.object({
   id: z.string(),
   name: z.string(),
   categoryId: z.string().nullable(),
-  isActive: z.boolean(),
   assetsQuantity: z.number().int().nonnegative(),
   usedAsAccessory: z.boolean(),
   rentableItem: z.boolean(),

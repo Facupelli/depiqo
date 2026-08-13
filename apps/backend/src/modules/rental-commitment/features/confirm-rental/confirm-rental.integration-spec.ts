@@ -276,11 +276,8 @@ describe('ConfirmRental integration', () => {
   });
 
   it.each([
-    ['inactive asset flag', { isActive: false }],
-    ['non-rentable asset flag', { isRentable: false }],
     ['inactive asset status', { assetStatus: 'INACTIVE' as const }],
     ['retired asset status', { assetStatus: 'RETIRED' as const }],
-    ['inactive equipment type projection', { equipmentTypeIsActive: false }],
     ['wrong equipment type projection', { equipmentTypeId: 'wrong-equipment-type' }],
     ['wrong branch projection', { branchId: 'wrong-branch' }],
   ])('enforces the V2RentalAssetCandidate eligibility contract: %s', async (_name, overrides) => {

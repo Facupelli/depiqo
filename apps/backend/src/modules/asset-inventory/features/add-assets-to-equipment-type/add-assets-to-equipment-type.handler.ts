@@ -6,7 +6,7 @@ import { PrismaUnitOfWork } from 'src/core/database/prisma-unit-of-work';
 import { toAssetInventoryIntegrationEvents } from '../../application/asset-inventory-integration-event.mapper';
 import { AssetCreationValidatorService } from '../../application/services/asset-creation-validator.service';
 import { Asset } from '../../domain/asset.entity';
-import { EquipmentTypeNotActiveError, EquipmentTypeNotFoundError } from '../../domain/errors/asset-inventory.errors';
+import { EquipmentTypeNotFoundError } from '../../domain/errors/asset-inventory.errors';
 import { AssetRepository } from '../../persistence/asset.repository';
 import { EquipmentTypeRepository } from '../../persistence/equipment-type.repository';
 import { TenantManagementPublicApi } from '../../../tenant-management/public-api/tenant-management.public-api';
@@ -55,9 +55,6 @@ export class AddAssetsToEquipmentTypeHandler implements ICommandHandler<
     if (!equipmentType) {
       return err(mapAssetInventoryError(new EquipmentTypeNotFoundError(command.equipmentTypeId)));
     }
-    if (!equipmentType.isActive) {
-      return err(mapAssetInventoryError(new EquipmentTypeNotActiveError(command.equipmentTypeId)));
-    }
 
     const assetCreationValidation = await this.assetCreationValidator.validateAssetsCanBeCreated({
       tenantId: command.tenantId,
@@ -73,7 +70,6 @@ export class AddAssetsToEquipmentTypeHandler implements ICommandHandler<
       const asset = Asset.create({
         tenantId: command.tenantId,
         equipmentTypeId: equipmentType.id,
-        equipmentTypeIsActive: equipmentType.isActive,
         branchId: assetInput.branchId,
         serialNumber: assetInput.serialNumber,
         notes: assetInput.notes,

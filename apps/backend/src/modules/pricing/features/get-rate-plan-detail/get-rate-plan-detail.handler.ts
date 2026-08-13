@@ -68,7 +68,6 @@ export class GetRatePlanDetailHandler implements IQueryHandler<
         rentableItemId: true,
         isVisible: true,
         isRentable: true,
-        deletedAt: true,
         rentableItem: { select: { name: true } },
       },
     });
@@ -88,7 +87,6 @@ export class GetRatePlanDetailHandler implements IQueryHandler<
               rentableItemName: rentalOffer.rentableItem.name,
               isVisible: rentalOffer.isVisible,
               isRentable: rentalOffer.isRentable,
-              isDeleted: rentalOffer.deletedAt !== null,
             }
           : null,
       };

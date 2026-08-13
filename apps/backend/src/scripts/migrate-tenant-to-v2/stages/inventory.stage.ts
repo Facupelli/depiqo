@@ -79,7 +79,7 @@ async function migrateEquipmentTypes(ctx: TenantV2MigrationContext) {
 	if (ctx.dryRun) return;
 
 	for (const productType of productTypes) {
-		const isActive = productType.deletedAt === null && productType.retiredAt === null;
+		if (productType.deletedAt || productType.retiredAt) continue;
 
 		await ctx.prisma.v2EquipmentType.upsert({
 			where: { id: productType.id },
@@ -88,16 +88,12 @@ async function migrateEquipmentTypes(ctx: TenantV2MigrationContext) {
 				tenantId: productType.tenantId,
 				name: productType.name,
 				description: productType.description,
-				isActive,
-				deletedAt: productType.deletedAt,
 				createdAt: productType.createdAt,
 				updatedAt: productType.updatedAt,
 			},
 			update: {
 				name: productType.name,
 				description: productType.description,
-				isActive,
-				deletedAt: productType.deletedAt,
 				updatedAt: productType.updatedAt,
 			},
 		});
@@ -118,6 +114,8 @@ async function migrateAssets(ctx: TenantV2MigrationContext) {
 	if (ctx.dryRun) return;
 
 	for (const asset of assets) {
+		if (asset.deletedAt) continue;
+
 		await ctx.prisma.v2Asset.upsert({
 			where: { id: asset.id },
 			create: {
@@ -129,7 +127,6 @@ async function migrateAssets(ctx: TenantV2MigrationContext) {
 				serialNumber: asset.serialNumber,
 				notes: asset.notes,
 				status: mapLegacyAssetStatus(asset),
-				deletedAt: asset.deletedAt,
 				createdAt: asset.createdAt,
 				updatedAt: asset.updatedAt,
 			},
@@ -140,7 +137,6 @@ async function migrateAssets(ctx: TenantV2MigrationContext) {
 				serialNumber: asset.serialNumber,
 				notes: asset.notes,
 				status: mapLegacyAssetStatus(asset),
-				deletedAt: asset.deletedAt,
 				updatedAt: asset.updatedAt,
 			},
 		});
@@ -305,7 +301,6 @@ async function migrateRentalAssetCandidates(ctx: TenantV2MigrationContext) {
 				})
 			: null;
 
-		const isActive = asset.status === V2AssetStatus.ACTIVE && asset.deletedAt === null;
 
 		await ctx.prisma.v2RentalAssetCandidate.upsert({
 			where: {
@@ -320,8 +315,6 @@ async function migrateRentalAssetCandidates(ctx: TenantV2MigrationContext) {
 				branchId: asset.branchId,
 				equipmentTypeId: asset.equipmentTypeId,
 				assetStatus: asset.status,
-				isActive,
-				isRentable: isActive,
 				ownershipKind: asset.ownerId
 					? V2RentalAssetOwnershipKind.THIRD_PARTY
 					: V2RentalAssetOwnershipKind.TENANT_OWNED,
@@ -334,8 +327,6 @@ async function migrateRentalAssetCandidates(ctx: TenantV2MigrationContext) {
 				branchId: asset.branchId,
 				equipmentTypeId: asset.equipmentTypeId,
 				assetStatus: asset.status,
-				isActive,
-				isRentable: isActive,
 				ownershipKind: asset.ownerId
 					? V2RentalAssetOwnershipKind.THIRD_PARTY
 					: V2RentalAssetOwnershipKind.TENANT_OWNED,

@@ -18,7 +18,7 @@ export class GetEquipmentTypeSummariesHttpController {
     @CurrentUser() user: AuthUser,
   ): Promise<GetEquipmentTypeSummariesResponseDto> {
     return this.queryBus.execute<GetEquipmentTypeSummariesQuery, GetEquipmentTypeSummariesResult>(
-      new GetEquipmentTypeSummariesQuery(user.tenantId, dto.isActive, dto.search, dto.branchId, dto.page, dto.pageSize),
+      new GetEquipmentTypeSummariesQuery(user.tenantId, dto.search, dto.branchId, dto.page, dto.pageSize),
     );
   }
 }

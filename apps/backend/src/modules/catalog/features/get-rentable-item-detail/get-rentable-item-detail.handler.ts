@@ -71,7 +71,7 @@ export class GetRentableItemDetailHandler implements IQueryHandler<
     query: GetRentableItemDetailQuery,
   ): Promise<Result<GetRentableItemDetailReadModel, GetRentableItemDetailError>> {
     const item = await this.prisma.client.v2RentableItem.findFirst({
-      where: { id: query.rentableItemId, tenantId: query.tenantId, deletedAt: null },
+      where: { id: query.rentableItemId, tenantId: query.tenantId },
       select: {
         id: true,
         name: true,
@@ -84,7 +84,6 @@ export class GetRentableItemDetailHandler implements IQueryHandler<
         updatedAt: true,
         category: { select: { name: true } },
         rentalOffers: {
-          where: { deletedAt: null },
           select: {
             id: true,
             branchId: true,
@@ -128,18 +127,17 @@ export class GetRentableItemDetailHandler implements IQueryHandler<
     // Pricing, Tenant Management, and Asset Inventory public read APIs stabilize.
     const [branches, equipmentTypes, pricings] = await this.prisma.client.$transaction([
       this.prisma.client.v2Branch.findMany({
-        where: { tenantId: query.tenantId, id: { in: branchIds }, deletedAt: null },
+        where: { tenantId: query.tenantId, id: { in: branchIds } },
         select: { id: true, name: true, timezone: true, supportsDelivery: true, isActive: true },
       }),
       this.prisma.client.v2EquipmentType.findMany({
-        where: { tenantId: query.tenantId, id: { in: equipmentTypeIds }, deletedAt: null },
-        select: { id: true, name: true, description: true, isActive: true },
+        where: { tenantId: query.tenantId, id: { in: equipmentTypeIds } },
+        select: { id: true, name: true, description: true },
       }),
       this.prisma.client.v2RentalOfferPricing.findMany({
         where: {
           tenantId: query.tenantId,
           catalogRentalOfferId: { in: offerIds },
-          deletedAt: null,
         },
         select: {
           id: true,
@@ -187,7 +185,7 @@ export class GetRentableItemDetailHandler implements IQueryHandler<
           equipmentTypeDescription: equipmentType?.description ?? null,
           quantityPerItem: requirement.quantityPerItem,
           notes: null,
-          isActive: equipmentType?.isActive ?? null,
+          isActive: equipmentType !== undefined,
         };
       }),
       offers: item.rentalOffers.map((offer) => {

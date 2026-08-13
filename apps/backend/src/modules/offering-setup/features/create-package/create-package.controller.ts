@@ -64,12 +64,6 @@ const createpackageProblemMap = {
     status: HttpStatus.NOT_FOUND,
     detail: 'A required equipment type was not found.',
   },
-  'offering_setup.equipment_type_inactive': {
-    type: createProblemType('offering_setup.equipment_type_inactive'),
-    title: 'Equipment type inactive',
-    status: HttpStatus.CONFLICT,
-    detail: 'A required equipment type is inactive.',
-  },
   'offering_setup.insufficient_active_equipment_stock': {
     type: createProblemType('offering_setup.insufficient_active_equipment_stock'),
     title: 'Insufficient equipment stock',

@@ -37,7 +37,6 @@ import { GetStorefrontRentalOfferAvailabilityHandler } from './features/get-stor
 import { PrismaRentalRepository } from './persistence/prisma-rental.repository';
 import { RentalRepository } from './persistence/rental.repository';
 import { UpsertRentalAssetCandidateWhenAssetCreatedEventHandler } from './projections/upsert-rental-asset-candidate-when-asset-created.event-handler';
-import { UpdateCandidatesWhenEquipmentTypeLifecycleChangedEventHandler } from './projections/update-candidates-when-equipment-type-lifecycle-changed.event-handler';
 import { RentalOwnerSplitCalculator } from './owner-split/rental-owner-split-calculator';
 import { RentalCommitmentPublicApiService } from './public-api/rental-commitment.public-api.service';
 import { RentalCommitmentPublicApi } from './public-api/rental-commitment.public-api';
@@ -80,7 +79,6 @@ import { RentalCommitmentPublicApi } from './public-api/rental-commitment.public
     GetStorefrontBranchesHandler,
     GetStorefrontRentalOfferAvailabilityHandler,
     UpsertRentalAssetCandidateWhenAssetCreatedEventHandler,
-    UpdateCandidatesWhenEquipmentTypeLifecycleChangedEventHandler,
     RentalOwnerSplitCalculator,
     { provide: RentalCommitmentPublicApi, useClass: RentalCommitmentPublicApiService },
   ],

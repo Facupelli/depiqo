@@ -11,7 +11,6 @@ import {
   AssetInventoryError,
   AssetOwnerNotFoundError,
   DuplicateEquipmentTypeNameError,
-  EquipmentTypeNotActiveError,
   EquipmentTypeNotFoundError,
   InsufficientActiveEquipmentStockError,
   InvalidAssetFieldError,
@@ -80,7 +79,6 @@ export class AssetInventoryPublicApiService extends AssetInventoryPublicApi {
       where: {
         id: { in: equipmentTypeIds },
         tenantId: input.tenantId,
-        deletedAt: null,
       },
       select: {
         id: true,
@@ -116,11 +114,9 @@ export class AssetInventoryPublicApiService extends AssetInventoryPublicApi {
       where: {
         id: { in: equipmentIds },
         tenantId: input.tenantId,
-        deletedAt: null,
       },
       select: {
         id: true,
-        isActive: true,
       },
     });
     const equipmentTypesById = new Map(equipmentTypes.map((equipmentType) => [equipmentType.id, equipmentType]));
@@ -130,10 +126,6 @@ export class AssetInventoryPublicApiService extends AssetInventoryPublicApi {
 
       if (!equipmentType) {
         return err(mapAssetInventoryPublicApiError(new EquipmentTypeNotFoundError(equipmentTypeId)));
-      }
-
-      if (!equipmentType.isActive) {
-        return err(mapAssetInventoryPublicApiError(new EquipmentTypeNotActiveError(equipmentTypeId)));
       }
     }
 
@@ -161,7 +153,6 @@ export class AssetInventoryPublicApiService extends AssetInventoryPublicApi {
         branchId: { in: branchIds },
         equipmentTypeId: { in: equipmentTypeIds },
         status: 'ACTIVE',
-        deletedAt: null,
       },
       _count: { _all: true },
     });
@@ -222,7 +213,6 @@ export class AssetInventoryPublicApiService extends AssetInventoryPublicApi {
         tenantId: input.tenantId,
         equipmentTypeId: input.equipmentTypeId,
         branchId: input.branchId,
-        deletedAt: null,
       },
       select: {
         id: true,
@@ -257,9 +247,6 @@ function mapAssetInventoryPublicApiError(error: AssetInventoryError): AssetInven
   }
   if (error instanceof EquipmentTypeNotFoundError) {
     return publicError('EquipmentTypeNotFound', error, { equipmentTypeId: error.equipmentTypeId });
-  }
-  if (error instanceof EquipmentTypeNotActiveError) {
-    return publicError('EquipmentTypeNotActive', error, { equipmentTypeId: error.equipmentTypeId });
   }
   if (error instanceof InsufficientActiveEquipmentStockError) {
     return publicError('InsufficientActiveEquipmentStock', error, {

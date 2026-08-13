@@ -46,9 +46,7 @@ export class GetStorefrontRentalOffersHandler implements IQueryHandler<
       tenantId: query.tenantId,
       branchId: query.branchId,
       isVisible: true,
-      deletedAt: null,
       rentableItem: {
-        deletedAt: null,
         status: 'ACTIVE',
         ...(query.kind ? { kind: query.kind } : {}),
         ...(query.categoryId ? { categoryId: query.categoryId } : {}),

@@ -69,7 +69,6 @@ function mapTenantError(error: ValidateOfferingSetupError): CreatePackageError {
 function mapAssetInventoryError(error: AssetInventoryPublicApiError): CreatePackageError {
   const codes = {
     EquipmentTypeNotFound: 'offering_setup.equipment_type_not_found',
-    EquipmentTypeNotActive: 'offering_setup.equipment_type_inactive',
     InsufficientActiveEquipmentStock: 'offering_setup.insufficient_active_equipment_stock',
   } as const;
   const code = codes[error.code as keyof typeof codes];

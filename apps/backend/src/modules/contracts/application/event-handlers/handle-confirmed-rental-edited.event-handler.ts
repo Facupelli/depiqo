@@ -2,10 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 
 import { PrismaService } from 'src/core/database/prisma.service';
-import {
-  V2ContractStatus,
-  V2DocumentSigningRequestStatus,
-} from 'src/generated/prisma/enums';
+import { V2ContractStatus, V2DocumentSigningRequestStatus } from 'src/generated/prisma/enums';
 import { ConfirmedRentalEditedIntegrationEvent } from 'src/modules/rental-commitment/public-api/events/rental-lifecycle.integration-events';
 
 @Injectable()

@@ -16,7 +16,6 @@ export class EquipmentTypeRepository {
       where: {
         id: input.equipmentTypeId,
         tenantId: input.tenantId,
-        deletedAt: null,
       },
     });
 
@@ -37,7 +36,6 @@ export class EquipmentTypeRepository {
     const records = await this.prisma.client.v2EquipmentType.findMany({
       where: {
         tenantId: input.tenantId,
-        deletedAt: null,
         id: input.excludeEquipmentTypeId ? { not: input.excludeEquipmentTypeId } : undefined,
       },
     });

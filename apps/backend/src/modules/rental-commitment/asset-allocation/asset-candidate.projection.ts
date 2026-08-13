@@ -18,9 +18,6 @@ export interface AssetCandidate {
   readonly branchId: string;
   readonly equipmentTypeId: EquipmentTypeId;
   readonly assetStatus: RentalAssetCandidateStatus;
-  readonly isActive: boolean;
-  readonly isRentable: boolean;
-  readonly equipmentTypeIsActive: boolean;
   readonly ownershipKind: RentalAssetOwnershipKind;
   readonly ownerId?: string;
   readonly ownerContractSnapshot?: OwnerContractSnapshot;

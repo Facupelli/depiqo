@@ -230,7 +230,6 @@ export async function verifyCatalogStage(ctx: TenantV2MigrationContext) {
 				tenantId: ctx.v2TenantId,
 				isVisible: true,
 				isRentable: true,
-				deletedAt: null,
 			},
 		}),
 	]);
@@ -262,8 +261,7 @@ export async function verifyPricingStage(ctx: TenantV2MigrationContext) {
 				where: {
 					tenantId: ctx.v2TenantId,
 					isActive: true,
-					deletedAt: null,
-				},
+					},
 			}),
 		]);
 

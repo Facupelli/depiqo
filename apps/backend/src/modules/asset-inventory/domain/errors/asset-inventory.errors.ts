@@ -50,12 +50,6 @@ export class EquipmentTypeNotFoundError extends AssetInventoryError {
   }
 }
 
-export class EquipmentTypeNotActiveError extends AssetInventoryError {
-  constructor(public readonly equipmentTypeId: string) {
-    super(`Equipment type "${equipmentTypeId}" is not active.`);
-  }
-}
-
 export class InsufficientActiveEquipmentStockError extends AssetInventoryError {
   constructor(
     public readonly branchId: string,

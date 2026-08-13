@@ -27,7 +27,12 @@ export interface RenderRentalBudgetResult {
   fileName: string;
 }
 
-export type RentalBudgetDocumentErrorCode = 'RentalNotFound' | 'RentalNotDraft' | 'CustomerNameMissing' | 'ContextMissing' | 'PriceSnapshotInvalid';
+export type RentalBudgetDocumentErrorCode =
+  | 'RentalNotFound'
+  | 'RentalNotDraft'
+  | 'CustomerNameMissing'
+  | 'ContextMissing'
+  | 'PriceSnapshotInvalid';
 
 export interface RentalBudgetDocumentError {
   code: RentalBudgetDocumentErrorCode;

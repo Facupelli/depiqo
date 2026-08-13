@@ -4,7 +4,7 @@ import { Prisma } from 'src/generated/prisma/client';
 
 import { PrismaService } from 'src/core/database/prisma.service';
 
-import { EquipmentTypeNotActiveError, EquipmentTypeNotFoundError } from '../../domain/errors/asset-inventory.errors';
+import { EquipmentTypeNotFoundError } from '../../domain/errors/asset-inventory.errors';
 import { EquipmentTypeRepository } from '../../persistence/equipment-type.repository';
 import { CreateEquipmentTypeAccessoryDefaultsCommand } from './create-equipment-type-accessory-defaults.command';
 import {
@@ -39,11 +39,6 @@ export class CreateEquipmentTypeAccessoryDefaultsHandler implements ICommandHand
     if (!equipmentType) {
       return err(mapCreateEquipmentTypeAccessoryDefaultsError(new EquipmentTypeNotFoundError(command.equipmentTypeId)));
     }
-    if (!equipmentType.isActive) {
-      return err(
-        mapCreateEquipmentTypeAccessoryDefaultsError(new EquipmentTypeNotActiveError(command.equipmentTypeId)),
-      );
-    }
 
     const accessoryEquipmentTypeIds = command.accessories.map((accessory) => accessory.accessoryEquipmentTypeId);
     const uniqueAccessoryEquipmentTypeIds = new Set<string>();
@@ -67,9 +62,8 @@ export class CreateEquipmentTypeAccessoryDefaultsHandler implements ICommandHand
       where: {
         tenantId: command.tenantId,
         id: { in: [...uniqueAccessoryEquipmentTypeIds] },
-        deletedAt: null,
       },
-      select: { id: true, isActive: true },
+      select: { id: true },
     });
     const accessoryEquipmentTypesById = new Map(
       accessoryEquipmentTypes.map((accessoryEquipmentType) => [accessoryEquipmentType.id, accessoryEquipmentType]),
@@ -81,14 +75,6 @@ export class CreateEquipmentTypeAccessoryDefaultsHandler implements ICommandHand
         return err(
           mapCreateEquipmentTypeAccessoryDefaultsError(
             new EquipmentTypeNotFoundError(accessoryEquipmentTypeId),
-            'accessoryEquipmentType',
-          ),
-        );
-      }
-      if (!accessoryEquipmentType.isActive) {
-        return err(
-          mapCreateEquipmentTypeAccessoryDefaultsError(
-            new EquipmentTypeNotActiveError(accessoryEquipmentTypeId),
             'accessoryEquipmentType',
           ),
         );

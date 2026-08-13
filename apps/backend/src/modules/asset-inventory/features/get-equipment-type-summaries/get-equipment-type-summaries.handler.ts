@@ -14,7 +14,6 @@ export interface EquipmentTypeSummaryReadModel {
   id: string;
   name: string;
   categoryId: string | null;
-  isActive: boolean;
   assetsQuantity: number;
   usedAsAccessory: boolean;
   rentableItem: boolean;
@@ -38,8 +37,6 @@ export class GetEquipmentTypeSummariesHandler implements IQueryHandler<
   async execute(query: GetEquipmentTypeSummariesQuery): Promise<GetEquipmentTypeSummariesResult> {
     const where = {
       tenantId: query.tenantId,
-      deletedAt: null,
-      ...(query.isActive === undefined ? {} : { isActive: query.isActive }),
       ...(query.search ? { name: { contains: query.search, mode: 'insensitive' as const } } : {}),
       ...(query.branchId
         ? {
@@ -48,7 +45,6 @@ export class GetEquipmentTypeSummariesHandler implements IQueryHandler<
                 tenantId: query.tenantId,
                 branchId: query.branchId,
                 status: 'ACTIVE' as const,
-                deletedAt: null,
               },
             },
           }
@@ -62,7 +58,6 @@ export class GetEquipmentTypeSummariesHandler implements IQueryHandler<
           id: true,
           name: true,
           categoryId: true,
-          isActive: true,
         },
         orderBy: { name: 'asc' },
         skip: (query.page - 1) * query.pageSize,
@@ -84,7 +79,6 @@ export class GetEquipmentTypeSummariesHandler implements IQueryHandler<
           tenantId: query.tenantId,
           equipmentTypeId: { in: equipmentTypeIds },
           status: 'ACTIVE',
-          deletedAt: null,
         },
         _count: { _all: true },
       }),
@@ -100,12 +94,10 @@ export class GetEquipmentTypeSummariesHandler implements IQueryHandler<
         where: {
           tenantId: query.tenantId,
           status: 'ACTIVE',
-          deletedAt: null,
           rentalOffers: {
             some: {
               tenantId: query.tenantId,
               isRentable: true,
-              deletedAt: null,
             },
           },
           requirements: {
@@ -166,7 +158,6 @@ export class GetEquipmentTypeSummariesHandler implements IQueryHandler<
         id: equipmentType.id,
         name: equipmentType.name,
         categoryId: equipmentType.categoryId,
-        isActive: equipmentType.isActive,
         assetsQuantity: assetsQuantityByEquipmentTypeId.get(equipmentType.id) ?? 0,
         usedAsAccessory: usedAsAccessoryIds.has(equipmentType.id),
         rentableItem: rentableEquipmentTypeIds.has(equipmentType.id),

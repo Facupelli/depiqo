@@ -95,7 +95,6 @@ async function verifyActiveOffersHavePricing(ctx: TenantV2MigrationContext) {
 			tenantId: ctx.v2TenantId,
 			isVisible: true,
 			isRentable: true,
-			deletedAt: null,
 		},
 		select: {
 			id: true,
@@ -108,7 +107,6 @@ async function verifyActiveOffersHavePricing(ctx: TenantV2MigrationContext) {
 		where: {
 			tenantId: ctx.v2TenantId,
 			isActive: true,
-			deletedAt: null,
 		},
 		select: {
 			catalogRentalOfferId: true,
@@ -189,7 +187,6 @@ async function verifyNoDuplicateActiveRentalOffers(ctx: TenantV2MigrationContext
 	const activeOffers = await ctx.prisma.v2RentalOffer.findMany({
 		where: {
 			tenantId: ctx.v2TenantId,
-			deletedAt: null,
 		},
 		select: {
 			id: true,

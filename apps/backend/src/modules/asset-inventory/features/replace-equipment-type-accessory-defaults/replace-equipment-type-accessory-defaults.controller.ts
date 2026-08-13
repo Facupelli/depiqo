@@ -50,9 +50,7 @@ function toReplaceEquipmentTypeAccessoryDefaultsProblem(
   const problem = replaceEquipmentTypeAccessoryDefaultsProblemMap[error.code];
   const contextKeyByCode: Partial<Record<ReplaceEquipmentTypeAccessoryDefaultsErrorCode, string>> = {
     'asset_inventory.equipment_type_not_found': 'equipmentTypeId',
-    'asset_inventory.equipment_type_not_active': 'equipmentTypeId',
     'asset_inventory.accessory_equipment_type_not_found': 'accessoryEquipmentTypeId',
-    'asset_inventory.accessory_equipment_type_not_active': 'accessoryEquipmentTypeId',
     'asset_inventory.duplicate_accessory_default_in_request': 'accessoryEquipmentTypeId',
     'asset_inventory.accessory_default_self_reference_not_allowed': 'equipmentTypeId',
   };
@@ -81,23 +79,11 @@ const replaceEquipmentTypeAccessoryDefaultsProblemMap = {
     status: HttpStatus.NOT_FOUND,
     detail: 'The requested equipment type could not be found.',
   },
-  'asset_inventory.equipment_type_not_active': {
-    type: createProblemType('asset_inventory.equipment_type_not_active'),
-    title: 'Equipment type not active',
-    status: HttpStatus.UNPROCESSABLE_ENTITY,
-    detail: 'The requested equipment type is not active.',
-  },
   'asset_inventory.accessory_equipment_type_not_found': {
     type: createProblemType('asset_inventory.accessory_equipment_type_not_found'),
     title: 'Accessory equipment type not found',
     status: HttpStatus.NOT_FOUND,
     detail: 'One of the requested accessory equipment types could not be found.',
-  },
-  'asset_inventory.accessory_equipment_type_not_active': {
-    type: createProblemType('asset_inventory.accessory_equipment_type_not_active'),
-    title: 'Accessory equipment type not active',
-    status: HttpStatus.UNPROCESSABLE_ENTITY,
-    detail: 'One of the requested accessory equipment types is not active.',
   },
   'asset_inventory.duplicate_accessory_default_in_request': {
     type: createProblemType('asset_inventory.duplicate_accessory_default_in_request'),

@@ -17,7 +17,6 @@ interface AssetProps {
   serialNumber: string | null;
   notes: string | null;
   status: AssetStatus;
-  deletedAt: Date | null;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -27,7 +26,6 @@ export interface CreateAssetProps {
   tenantId: string;
   branchId: string;
   equipmentTypeId: string;
-  equipmentTypeIsActive: boolean;
   ownerId?: string | null;
   serialNumber?: string | null;
   notes?: string | null;
@@ -81,10 +79,6 @@ export class Asset extends AggregateRootBase {
     return this.props.status;
   }
 
-  get deletedAt(): Date | null {
-    return this.props.deletedAt;
-  }
-
   static create(props: CreateAssetProps): Result<Asset, AssetInventoryError> {
     const normalized = this.normalizeCreateProps(props);
     if (normalized.isErr()) {
@@ -102,7 +96,6 @@ export class Asset extends AggregateRootBase {
     const asset = new Asset(props.id ?? randomUUID(), {
       ...normalized.value,
       status: 'ACTIVE',
-      deletedAt: null,
     });
 
     asset.recordDomainEvent(
@@ -111,7 +104,6 @@ export class Asset extends AggregateRootBase {
         assetId: asset.id,
         branchId: asset.branchId,
         equipmentTypeId: asset.equipmentTypeId,
-        equipmentTypeIsActive: props.equipmentTypeIsActive,
         status: asset.status,
         ownerId: asset.ownerId,
         ownerContractSnapshot,
@@ -141,7 +133,7 @@ export class Asset extends AggregateRootBase {
 
   private static normalizeCreateProps(
     props: CreateAssetProps,
-  ): Result<Omit<AssetProps, 'status' | 'deletedAt' | 'createdAt' | 'updatedAt'>, AssetInventoryError> {
+  ): Result<Omit<AssetProps, 'status' | 'createdAt' | 'updatedAt'>, AssetInventoryError> {
     const tenantId = props.tenantId.trim();
     if (tenantId.length === 0) {
       return err(new InvalidAssetFieldError('tenantId', 'must not be blank'));

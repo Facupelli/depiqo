@@ -209,8 +209,6 @@ export class CreateDraftRentalService implements ICommandHandler<
           );
         case 'EquipmentTypeNotFound':
           return createDraftRentalError('rental_commitment.equipment_type_not_found', error.message, error, context);
-        case 'EquipmentTypeNotActive':
-          return createDraftRentalError('rental_commitment.equipment_type_not_rentable', error.message, error, context);
       }
     }
     if (error instanceof RentalMustContainSelectionError) {

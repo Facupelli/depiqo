@@ -128,9 +128,6 @@ export class RentalAssetAllocationPolicy {
 
   private isAllocatable(candidate: AssetCandidate, reservedAssetIds: ReadonlySet<AssetId>): boolean {
     return (
-      candidate.isActive &&
-      candidate.isRentable &&
-      candidate.equipmentTypeIsActive &&
       candidate.assetStatus === RentalAssetCandidateStatus.Active &&
       (candidate.ownershipKind !== RentalAssetOwnershipKind.ThirdParty || Boolean(candidate.ownerContractSnapshot)) &&
       !reservedAssetIds.has(candidate.assetId)

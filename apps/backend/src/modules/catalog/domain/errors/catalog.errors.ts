@@ -53,12 +53,6 @@ export class CatalogEquipmentTypeNotFoundError extends CatalogError {
   }
 }
 
-export class CatalogEquipmentTypeNotActiveError extends CatalogError {
-  constructor(public readonly equipmentTypeId: string) {
-    super(`Equipment type "${equipmentTypeId}" is not active.`);
-  }
-}
-
 export class CatalogRentableItemRequirementAlreadyExistsError extends CatalogError {
   constructor(
     public readonly rentableItemId: string,

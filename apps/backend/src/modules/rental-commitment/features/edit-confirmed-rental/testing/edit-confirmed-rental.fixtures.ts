@@ -22,7 +22,7 @@ export class EditConfirmedRentalFixtures {
     const equipmentType = params.equipmentTypeId
       ? await this.prisma.client.v2EquipmentType.findUniqueOrThrow({ where: { id: params.equipmentTypeId } })
       : await this.prisma.client.v2EquipmentType.create({
-          data: { tenantId: params.tenantId, name: `Equipment ${randomUUID()}`, isActive: true },
+          data: { tenantId: params.tenantId, name: `Equipment ${randomUUID()}` },
         });
     const item = await this.prisma.client.v2RentableItem.create({
       data: {

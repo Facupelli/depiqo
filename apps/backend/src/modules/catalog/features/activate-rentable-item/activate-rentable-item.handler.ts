@@ -75,13 +75,12 @@ export class ActivateRentableItemHandler implements ICommandHandler<
   ): Promise<Result<void, ActivateRentableItemError>> {
     const context = { useCase: 'ActivateRentableItem', tenantId, rentableItemId };
     const item = await this.prisma.client.v2RentableItem.findFirst({
-      where: { id: rentableItemId, tenantId, deletedAt: null },
+      where: { id: rentableItemId, tenantId },
       select: {
         requirements: {
           select: { equipmentTypeId: true, quantityPerItem: true },
         },
         rentalOffers: {
-          where: { deletedAt: null },
           select: { id: true, branchId: true },
         },
       },
@@ -126,10 +125,8 @@ export class ActivateRentableItemHandler implements ICommandHandler<
         tenantId,
         catalogRentalOfferId: { in: offerIds },
         isActive: true,
-        deletedAt: null,
         ratePlan: {
           isActive: true,
-          deletedAt: null,
           tiers: { some: {} },
         },
       },
@@ -186,7 +183,6 @@ export class ActivateRentableItemHandler implements ICommandHandler<
           branchId,
           equipmentTypeId: requirement.equipmentTypeId,
           status: 'ACTIVE',
-          deletedAt: null,
         },
       });
 

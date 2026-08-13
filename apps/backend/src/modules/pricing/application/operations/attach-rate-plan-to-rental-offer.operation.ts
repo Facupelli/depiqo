@@ -28,11 +28,11 @@ export class AttachRatePlanToRentalOfferOperation {
   ): Promise<Result<AttachRatePlanToRentalOfferOperationResult, AttachRatePlanToRentalOfferOperationError>> {
     const [rentalOffer, ratePlan] = await Promise.all([
       this.prisma.client.v2RentalOffer.findFirst({
-        where: { id: input.catalogRentalOfferId, tenantId: input.tenantId, deletedAt: null },
+        where: { id: input.catalogRentalOfferId, tenantId: input.tenantId },
         select: { id: true },
       }),
       this.prisma.client.v2RatePlan.findFirst({
-        where: { id: input.ratePlanId, tenantId: input.tenantId, deletedAt: null },
+        where: { id: input.ratePlanId, tenantId: input.tenantId },
         select: { id: true, isActive: true },
       }),
     ]);
@@ -63,7 +63,6 @@ export class AttachRatePlanToRentalOfferOperation {
       update: {
         ratePlanId: input.ratePlanId,
         isActive: true,
-        deletedAt: null,
       },
       select: { id: true },
     });

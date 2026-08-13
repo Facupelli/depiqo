@@ -145,12 +145,6 @@ export class ResolveSelectedRentalOffersService {
           catalogSelectionError('EquipmentTypeNotFound', `Equipment type "${equipmentTypeId}" was not found.`),
         );
       }
-
-      if (!equipmentType.isActive) {
-        return err(
-          catalogSelectionError('EquipmentTypeNotActive', `Equipment type "${equipmentTypeId}" is not active.`),
-        );
-      }
     }
 
     return ok({

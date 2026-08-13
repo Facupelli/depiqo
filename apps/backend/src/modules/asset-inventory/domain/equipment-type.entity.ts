@@ -4,10 +4,6 @@ import { err, ok, Result } from 'neverthrow';
 
 import { AggregateRootBase } from 'src/core/domain/aggregate-root.base';
 
-import {
-  EquipmentTypeDeactivatedDomainEvent,
-  EquipmentTypeReactivatedDomainEvent,
-} from './events/equipment-type-lifecycle.domain-events';
 import { AssetInventoryError, InvalidEquipmentTypeFieldError } from './errors/asset-inventory.errors';
 
 interface EquipmentTypeProps {
@@ -15,8 +11,6 @@ interface EquipmentTypeProps {
   name: string;
   description: string | null;
   categoryId: string | null;
-  isActive: boolean;
-  deletedAt: Date | null;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -55,12 +49,6 @@ export class EquipmentType extends AggregateRootBase {
   get categoryId(): string | null {
     return this.props.categoryId;
   }
-  get isActive(): boolean {
-    return this.props.isActive;
-  }
-  get deletedAt(): Date | null {
-    return this.props.deletedAt;
-  }
   get createdAt(): Date | undefined {
     return this.props.createdAt;
   }
@@ -78,8 +66,6 @@ export class EquipmentType extends AggregateRootBase {
       new EquipmentType(props.id ?? randomUUID(), {
         ...normalized.value,
         categoryId: props.categoryId?.trim() || null,
-        isActive: true,
-        deletedAt: null,
       }),
     );
   }
@@ -90,14 +76,16 @@ export class EquipmentType extends AggregateRootBase {
       name: props.name,
       description: props.description,
       categoryId: props.categoryId,
-      isActive: props.isActive,
-      deletedAt: props.deletedAt,
       createdAt: props.createdAt,
       updatedAt: props.updatedAt,
     });
   }
 
-  updateMetadata(input: { name?: string; description?: string | null; categoryId?: string | null }): Result<boolean, AssetInventoryError> {
+  updateMetadata(input: {
+    name?: string;
+    description?: string | null;
+    categoryId?: string | null;
+  }): Result<boolean, AssetInventoryError> {
     const normalized = EquipmentType.normalizeCreateProps({
       tenantId: this.tenantId,
       name: input.name ?? this.name,
@@ -106,27 +94,16 @@ export class EquipmentType extends AggregateRootBase {
     });
     if (normalized.isErr()) return err(normalized.error);
 
-    const changed = normalized.value.name !== this.name || normalized.value.description !== this.description || normalized.value.categoryId !== this.categoryId;
+    const changed =
+      normalized.value.name !== this.name ||
+      normalized.value.description !== this.description ||
+      normalized.value.categoryId !== this.categoryId;
     if (changed) {
       this.props.name = normalized.value.name;
       this.props.description = normalized.value.description;
       this.props.categoryId = normalized.value.categoryId;
     }
     return ok(changed);
-  }
-
-  deactivate(): boolean {
-    if (!this.isActive) return false;
-    this.props.isActive = false;
-    this.recordDomainEvent(new EquipmentTypeDeactivatedDomainEvent(this.tenantId, this.id));
-    return true;
-  }
-
-  reactivate(): boolean {
-    if (this.isActive) return false;
-    this.props.isActive = true;
-    this.recordDomainEvent(new EquipmentTypeReactivatedDomainEvent(this.tenantId, this.id));
-    return true;
   }
 
   static normalizeNameForComparison(name: string): string {

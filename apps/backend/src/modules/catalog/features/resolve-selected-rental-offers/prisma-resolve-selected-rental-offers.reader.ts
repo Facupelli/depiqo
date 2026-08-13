@@ -32,7 +32,6 @@ export interface EquipmentTypeReadModel {
   id: string;
   tenantId: string;
   name: string;
-  isActive: boolean;
 }
 
 @Injectable()
@@ -49,7 +48,6 @@ export class PrismaResolveSelectedRentalOffersReader {
         id: { in: input.rentalOfferIds },
         tenantId: input.tenantId,
         branchId: input.branchId,
-        deletedAt: null,
       },
       select: {
         id: true,
@@ -67,7 +65,6 @@ export class PrismaResolveSelectedRentalOffersReader {
       where: {
         id: { in: input.rentableItemIds },
         tenantId: input.tenantId,
-        deletedAt: null,
       },
       select: {
         id: true,
@@ -102,13 +99,11 @@ export class PrismaResolveSelectedRentalOffersReader {
       where: {
         id: { in: input.equipmentTypeIds },
         tenantId: input.tenantId,
-        deletedAt: null,
       },
       select: {
         id: true,
         tenantId: true,
         name: true,
-        isActive: true,
       },
     });
   }

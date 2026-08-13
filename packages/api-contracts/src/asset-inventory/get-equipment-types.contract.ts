@@ -3,18 +3,6 @@ import { z } from "zod";
 import type { ApiContract } from "../api-contract";
 
 export const GetEquipmentTypesQuerySchema = z.object({
-  isActive: z.preprocess((value) => {
-    if (value === undefined || value === null || value === "") {
-      return undefined;
-    }
-    if (value === true || value === "true") {
-      return true;
-    }
-    if (value === false || value === "false") {
-      return false;
-    }
-    return value;
-  }, z.boolean().optional()),
   search: z.string().trim().min(1).optional(),
   limit: z.coerce.number().int().positive().max(50).optional(),
 });

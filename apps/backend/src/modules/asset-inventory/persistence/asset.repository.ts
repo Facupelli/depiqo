@@ -13,7 +13,7 @@ export class AssetRepository {
 
   async loadByIdForTenant(input: { tenantId: string; assetId: string }): Promise<Asset | null> {
     const record = await this.prisma.client.v2Asset.findFirst({
-      where: { id: input.assetId, tenantId: input.tenantId, deletedAt: null },
+      where: { id: input.assetId, tenantId: input.tenantId },
     });
 
     return record ? AssetMapper.toDomain(record) : null;

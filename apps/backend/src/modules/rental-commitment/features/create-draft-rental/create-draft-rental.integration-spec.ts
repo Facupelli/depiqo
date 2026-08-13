@@ -62,7 +62,7 @@ describe('CreateDraftRental integration', () => {
         input.equipmentTypeIds?.[index]
           ? prisma.client.v2EquipmentType.findUniqueOrThrow({ where: { id: input.equipmentTypeIds[index] } })
           : prisma.client.v2EquipmentType.create({
-              data: { tenantId: input.tenantId, name: `Equipment ${randomUUID()}`, isActive: true },
+              data: { tenantId: input.tenantId, name: `Equipment ${randomUUID()}` },
             }),
       ),
     );
@@ -225,7 +225,7 @@ describe('CreateDraftRental integration', () => {
   it('keeps same-equipment demand separate by source selection and does not consult inventory', async () => {
     const setup = await scenario();
     const equipment = await prisma.client.v2EquipmentType.create({
-      data: { tenantId: setup.tenantId, name: `Shared ${randomUUID()}`, isActive: true },
+      data: { tenantId: setup.tenantId, name: `Shared ${randomUUID()}` },
     });
     const first = await offer({ ...setup, equipmentTypeIds: [equipment.id], quantitiesPerItem: [2] });
     const second = await offer({ ...setup, equipmentTypeIds: [equipment.id], quantitiesPerItem: [3] });
@@ -419,20 +419,12 @@ describe('CreateDraftRental integration', () => {
     expect(await rentalCount(setup)).toBe(0);
   });
 
-  it.each([
-    ['missing', false, 'rental_commitment.equipment_type_not_found'],
-    ['inactive', true, 'rental_commitment.equipment_type_not_rentable'],
-  ])('maps a %s requirement equipment type and leaves zero state', async (_name, retain, code) => {
+  it('maps a missing requirement equipment type and leaves zero state', async () => {
     const setup = await scenario();
     const catalog = await offer(setup);
-    if (retain)
-      await prisma.client.v2EquipmentType.update({
-        where: { id: catalog.equipmentTypes[0].id },
-        data: { isActive: false },
-      });
-    else await prisma.client.v2EquipmentType.delete({ where: { id: catalog.equipmentTypes[0].id } });
+    await prisma.client.v2EquipmentType.delete({ where: { id: catalog.equipmentTypes[0].id } });
     const result = await create({ ...setup, selectedOffers: [{ rentalOfferId: catalog.offer.id, quantity: 1 }] });
-    expect(result.isErr() && result.error.code).toBe(code);
+    expect(result.isErr() && result.error.code).toBe('rental_commitment.equipment_type_not_found');
     expect(await rentalCount(setup)).toBe(0);
   });
 

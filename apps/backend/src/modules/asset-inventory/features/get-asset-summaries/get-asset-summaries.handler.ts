@@ -35,7 +35,6 @@ export class GetAssetSummariesHandler implements IQueryHandler<GetAssetSummaries
       where: {
         tenantId: query.tenantId,
         id: { in: ids },
-        deletedAt: null,
       },
       select: {
         id: true,

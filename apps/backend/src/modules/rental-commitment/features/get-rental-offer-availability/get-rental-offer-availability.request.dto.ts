@@ -9,4 +9,6 @@ export const GetRentalOfferAvailabilityApplicationInputSchema = GetRentalOfferAv
   }),
 );
 
-export class GetRentalOfferAvailabilityRequestDto extends createZodDto(GetRentalOfferAvailabilityApplicationInputSchema) {}
+export class GetRentalOfferAvailabilityRequestDto extends createZodDto(
+  GetRentalOfferAvailabilityApplicationInputSchema,
+) {}

@@ -34,10 +34,16 @@ function toProblem(error: UpdateEquipmentTypeError): ProblemException {
 }
 const problems = {
   'asset_inventory.category_not_found': {
-    type: createProblemType('asset_inventory.category_not_found'), title: 'Category not found', status: HttpStatus.NOT_FOUND, detail: 'The selected category could not be found.',
+    type: createProblemType('asset_inventory.category_not_found'),
+    title: 'Category not found',
+    status: HttpStatus.NOT_FOUND,
+    detail: 'The selected category could not be found.',
   },
   'asset_inventory.category_inactive': {
-    type: createProblemType('asset_inventory.category_inactive'), title: 'Category inactive', status: HttpStatus.UNPROCESSABLE_ENTITY, detail: 'Inactive categories cannot be assigned.',
+    type: createProblemType('asset_inventory.category_inactive'),
+    title: 'Category inactive',
+    status: HttpStatus.UNPROCESSABLE_ENTITY,
+    detail: 'Inactive categories cannot be assigned.',
   },
   'asset_inventory.equipment_type_not_found': {
     type: createProblemType('asset_inventory.equipment_type_not_found'),

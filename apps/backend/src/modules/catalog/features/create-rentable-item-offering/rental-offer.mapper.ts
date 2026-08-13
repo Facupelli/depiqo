@@ -11,7 +11,6 @@ export class RentalOfferMapper {
       rentableItemId: record.rentableItemId,
       isVisible: record.isVisible,
       isRentable: record.isRentable,
-      deletedAt: record.deletedAt,
       createdAt: record.createdAt,
       updatedAt: record.updatedAt,
     });
@@ -25,7 +24,6 @@ export class RentalOfferMapper {
       rentableItemId: rentalOffer.rentableItemId,
       isVisible: rentalOffer.isVisible,
       isRentable: rentalOffer.isRentable,
-      deletedAt: rentalOffer.deletedAt,
     };
   }
 
@@ -37,7 +35,6 @@ export class RentalOfferMapper {
     return {
       isVisible: rentalOffer.isVisible,
       isRentable: rentalOffer.isRentable,
-      deletedAt: rentalOffer.deletedAt,
     };
   }
 }

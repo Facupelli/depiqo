@@ -26,9 +26,6 @@ export interface CandidateOverrides {
   branchId?: string;
   equipmentTypeId?: string;
   assetStatus?: 'ACTIVE' | 'INACTIVE' | 'RETIRED';
-  isActive?: boolean;
-  isRentable?: boolean;
-  equipmentTypeIsActive?: boolean;
   ownershipKind?: 'TENANT_OWNED' | 'THIRD_PARTY';
   ownerId?: string | null;
   ownerContractSnapshot?: Prisma.InputJsonValue | null;
@@ -110,9 +107,6 @@ export class ConfirmRentalFixtures {
         branchId: overrides.branchId ?? params.branchId,
         equipmentTypeId: overrides.equipmentTypeId ?? params.equipmentTypeId,
         assetStatus: overrides.assetStatus ?? 'ACTIVE',
-        isActive: overrides.isActive ?? true,
-        isRentable: overrides.isRentable ?? true,
-        equipmentTypeIsActive: overrides.equipmentTypeIsActive ?? true,
         ownershipKind: overrides.ownershipKind ?? 'TENANT_OWNED',
         ownerId: overrides.ownerId,
         ownerContractSnapshot:

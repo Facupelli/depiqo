@@ -74,7 +74,10 @@ const updateRentableItemDefinitionProblemMap = {
     detail: 'The rentable item definition is invalid.',
   },
   'catalog.category_inactive': {
-    type: createProblemType('catalog.category_inactive'), title: 'Category inactive', status: HttpStatus.UNPROCESSABLE_ENTITY, detail: 'Inactive categories cannot be assigned.',
+    type: createProblemType('catalog.category_inactive'),
+    title: 'Category inactive',
+    status: HttpStatus.UNPROCESSABLE_ENTITY,
+    detail: 'Inactive categories cannot be assigned.',
   },
   'catalog.category_not_found': {
     type: createProblemType('catalog.category_not_found'),
@@ -87,12 +90,6 @@ const updateRentableItemDefinitionProblemMap = {
     title: 'Equipment type not found',
     status: HttpStatus.UNPROCESSABLE_ENTITY,
     detail: 'A referenced equipment type could not be found.',
-  },
-  'catalog.equipment_type_not_active': {
-    type: createProblemType('catalog.equipment_type_not_active'),
-    title: 'Equipment type is not active',
-    status: HttpStatus.UNPROCESSABLE_ENTITY,
-    detail: 'A referenced equipment type is not active.',
   },
 } satisfies Record<
   UpdateRentableItemDefinitionErrorCode,

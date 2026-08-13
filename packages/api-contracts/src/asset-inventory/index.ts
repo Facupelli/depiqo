@@ -2,7 +2,6 @@ export * from "./add-assets-to-equipment-type.contract";
 export * from "./create-equipment-type-accessory-defaults.contract";
 export * from "./create-equipment-type.contract";
 export * from "./create-owner-with-contract.contract";
-export * from "./change-equipment-type-lifecycle.contract";
 export * from "./get-asset-summaries.contract";
 export * from "./get-equipment-type-detail.contract";
 export * from "./get-equipment-type-summaries.contract";

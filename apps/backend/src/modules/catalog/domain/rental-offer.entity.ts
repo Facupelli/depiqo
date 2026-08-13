@@ -5,7 +5,7 @@ import { err, ok, Result } from 'neverthrow';
 import { AggregateRootBase } from 'src/core/domain/aggregate-root.base';
 
 import { RentalOfferVisibilityAndRentabilityChangedDomainEvent } from './events/rental-offer-visibility-and-rentability-changed.domain-event';
-import { CatalogError, CatalogInvalidFieldError, CatalogRentalOfferArchivedError } from './errors/catalog.errors';
+import { CatalogError, CatalogInvalidFieldError } from './errors/catalog.errors';
 
 interface RentalOfferProps {
   tenantId: string;
@@ -13,7 +13,6 @@ interface RentalOfferProps {
   rentableItemId: string;
   isVisible: boolean;
   isRentable: boolean;
-  deletedAt: Date | null;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -65,7 +64,6 @@ export class RentalOffer extends AggregateRootBase {
         rentableItemId,
         isVisible: true,
         isRentable: true,
-        deletedAt: null,
       }),
     );
   }
@@ -75,10 +73,6 @@ export class RentalOffer extends AggregateRootBase {
   }
 
   updateVisibilityAndRentability(input: UpdateRentalOfferVisibilityAndRentabilityProps): Result<void, CatalogError> {
-    if (this.props.deletedAt) {
-      return err(new CatalogRentalOfferArchivedError(this.id));
-    }
-
     const isVisible = input.isVisible ?? this.props.isVisible;
     const isRentable = input.isRentable ?? this.props.isRentable;
     const changed = isVisible !== this.props.isVisible || isRentable !== this.props.isRentable;
@@ -113,10 +107,6 @@ export class RentalOffer extends AggregateRootBase {
 
   get isRentable(): boolean {
     return this.props.isRentable;
-  }
-
-  get deletedAt(): Date | null {
-    return this.props.deletedAt;
   }
 
   get createdAt(): Date | undefined {

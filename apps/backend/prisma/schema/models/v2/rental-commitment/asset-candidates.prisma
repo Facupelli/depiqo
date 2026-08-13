@@ -14,9 +14,6 @@ model V2RentalAssetCandidate {
   branchId              String                     @map("branch_id")
   equipmentTypeId       String                     @map("equipment_type_id")
   assetStatus           V2AssetStatus              @map("asset_status")
-  isActive              Boolean                    @map("is_active")
-  isRentable            Boolean                    @map("is_rentable")
-  equipmentTypeIsActive Boolean                    @default(true) @map("equipment_type_is_active")
   ownershipKind         V2RentalAssetOwnershipKind @map("ownership_kind")
   ownerId               String?                    @map("owner_id")
   ownerContractSnapshot Json?                      @map("owner_contract_snapshot")
@@ -26,8 +23,6 @@ model V2RentalAssetCandidate {
   updatedAt             DateTime                   @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   @@unique([tenantId, assetId])
-  @@index([tenantId, branchId, equipmentTypeId, isActive, isRentable], map: "v2_asset_candidates_rentable_idx")
   @@index([tenantId, branchId, equipmentTypeId, assetStatus], map: "v2_asset_candidates_status_idx")
-  @@index([tenantId, assetId])
   @@map("v2_rental_asset_candidates")
 }
