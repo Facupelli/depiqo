@@ -13,7 +13,7 @@ We preserve the important boundaries:
 - Domain code is persistence-free and transport-free.
 - Application services/handlers orchestrate use cases.
 - Controllers own HTTP translation and Problem Details mapping.
-- Modules communicate through public APIs/facades or explicit events, not private internals (see `apps/backend/docs/architecture/overview.md` for cross-module access rules).
+- Modules communicate through provider-owned synchronous public capabilities, Integration Events, or consumer-owned projections, not private internals. Choose synchronous capability for an answer or operation needed now, Integration Event for independently reactable completed facts, and projection for repeated foreign facts where justified eventual consistency is beneficial. See `apps/backend/docs/architecture/overview.md` and `integration-event.md` for the full rules.
 - Commands and queries are separate.
 - Request/response DTOs are separate from commands, queries, and domain objects.
 - Command-side repositories reconstitute aggregates/entities for behavior and persist them through mappers (see `repository.md`).

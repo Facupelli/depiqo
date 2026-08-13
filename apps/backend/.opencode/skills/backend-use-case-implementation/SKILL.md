@@ -91,7 +91,10 @@ For expected HTTP-facing failures:
 
 - Put vertical-slice use cases under `apps/backend/src/modules/<bounded-context>/features/<use-case>/` unless nearby code says otherwise.
 - Respect bounded-context ownership from planning docs and existing module layout.
-- Follow the cross-module access rules in `apps/backend/docs/architecture/overview.md`.
+- Choose the collaboration mechanism from `apps/backend/docs/architecture/overview.md`: use a provider-owned synchronous public capability for an authoritative answer or operation needed now, an Integration Event for independently reactable completed facts, or a consumer-owned projection only when repeated foreign facts justify eventual consistency and synchronization complexity.
+- A provider may publish multiple small, cohesive capabilities. Design them in the provider's vocabulary and semantics, not as consumer-purpose `forX` variants unless those represent genuinely different provider semantics.
+- The provider owns its published contract. Consumers translate provider concepts into their own domain concepts.
+- Public contracts must use stable published types and must not leak Prisma-generated types, persistence records, internal repositories/services/engines, or domain types/errors owned by another bounded context.
 - Do not import private domain errors, repositories, or entities from another module.
 
 ## Module Wiring

@@ -18,17 +18,29 @@ Some modules are orchestration or infrastructure modules. They coordinate work a
 
 ## Module Boundary Rules
 
-Modules must protect their own domain rules and persistence details.
+Modules must protect their own domain rules and persistence details. Each bounded context is authoritative for its own business rules and data.
 
-Cross-module access must go through the owning module's public API contract or an explicit integration event/projection mechanism. Other modules must not import its repositories, Prisma delegates, entities, internal services, or implementation-specific providers.
+Cross-module access must use the owning module's published/public boundary, an Integration Event, or a consumer-owned projection. Other modules must not import its repositories, Prisma delegates, entities, internal services, engines, or implementation-specific providers.
+
+A public boundary may expose multiple small, cohesive capabilities. It does not need one growing module-wide `*PublicApi`. A capability expresses a responsibility in the owning bounded context's vocabulary and semantics. Do not create consumer-purpose variants such as `forAvailability`, `forPricing`, `forDocuments`, or `forCart` merely because consumers need different DTOs. Separate capabilities only when the provider genuinely owns different semantics.
+
+The provider owns its published contract. Consumers translate provider concepts into their own domain concepts. Public contracts must use stable published types and must not leak Prisma-generated types, persistence records, internal repositories, services, or engines, or domain types or errors owned by another bounded context.
 
 A module must never query or mutate another module's owned Prisma models directly. This prohibition applies to commands, queries, application services, repositories, background jobs, and transaction callbacks. There is no direct-read exception for convenience, performance, existence checks, or joining related records.
 
-When a module needs current data owned elsewhere, it must call the owner's public API. When it needs locally queryable data, it may own a deliberate projection or historical snapshot synchronized through public contracts or integration events. The consuming module may query that local model directly because it owns the model, not because cross-module database access is allowed.
+### Cross-Module Collaboration Decision
+
+Choose the collaboration mechanism by the required business semantics, not by a universal preference:
+
+- Use a **synchronous public capability** when a use case needs an authoritative answer or operation now before it can complete. Design check: "If this bounded context were owned by another team, would this still be a natural capability to ask it for?"
+- Use an **Integration Event** when a completed business fact may be reacted to independently. It is not asynchronous request/response or command chaining for work whose result the initiating operation requires.
+- Use a **consumer-owned local projection or copy** when foreign-owned facts are needed repeatedly and accepting eventual consistency provides a concrete benefit that justifies the synchronization complexity. The consumer owns the projection and its synchronization; the provider remains authoritative for the source facts.
+
+When a module needs current data owned elsewhere, it must use the owner's synchronous public capability. The consuming module may query its own deliberate projection directly because it owns that model, not because cross-module database access is allowed.
 
 Cross-module references do not transfer ownership. Foreign keys and IDs may point at records owned elsewhere, but the referenced module remains the authority over its current source records. Snapshots and projections are separate models owned by the module that deliberately maintains them.
 
-Module READMEs should explain ownership, boundaries, domain concepts, invariants, and common mistakes. They should not duplicate public API surfaces or Prisma schema details.
+Module READMEs should explain ownership, boundaries, domain concepts, invariants, and common mistakes. They should not duplicate published capability surfaces or Prisma schema details.
 
 ## Persistence and Source-of-Truth Rules
 

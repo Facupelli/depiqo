@@ -4,7 +4,7 @@
 
 Use this rule when a committed business fact must be visible outside the producing bounded context/module.
 
-Use an Integration Event for facts intended for:
+Use an Integration Event for completed facts that may be reacted to independently by:
 
 - another bounded context/module
 - a background worker
@@ -15,13 +15,15 @@ Use an Integration Event for facts intended for:
 - future microservices
 - any must-not-couple async side effect
 
+Do not use an Integration Event as asynchronous request/response or command chaining when the initiating use case needs an authoritative answer or operation before it can complete. Use the owning module's synchronous public capability instead. See `apps/backend/docs/architecture/overview.md` for the canonical collaboration decision.
+
 Use `domain-event.md` for private same-module domain facts.
 
 ## Role
 
-An Integration Event is an immutable public record that a committed business fact should be propagated outside the producing bounded context.
+An Integration Event is an immutable public record of a completed business fact that can be propagated outside the producing bounded context.
 
-Integration Events are boundary contracts. They are intended for other modules/bounded contexts, async workers, notification flows, external systems, queues, webhooks, or future microservices.
+Integration Events are boundary contracts for independent reactions by other modules/bounded contexts, async workers, notification flows, external systems, queues, webhooks, or future microservices. They do not carry a request for another module to complete the producer's primary workflow.
 
 Use this concept even in the current modular monolith. The physical transport can start simple, but the semantic boundary must be explicit.
 
@@ -55,7 +57,7 @@ Use this concept even in the current modular monolith. The physical transport ca
 - Do not include secrets, tokens, payment data, sensitive documents, large request bodies, or data copied only because it was convenient.
 - Do not consume another module's private Domain Event.
 - Do not import from another module's private `domain/events` path.
-- Do not use Integration Events to hide the main workflow.
+- Do not use Integration Events to hide the main workflow, as asynchronous request/response, or as command chaining when the initiating use case requires the result.
 - Do not publish technical or persistence facts such as `RowInsertedIntegrationEvent` or `PrismaModelUpdatedIntegrationEvent`.
 - Do not assume exactly-once delivery.
 - Do not use an in-process event as durable integration messaging when losing the message is not acceptable.

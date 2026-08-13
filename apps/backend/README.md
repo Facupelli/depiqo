@@ -77,13 +77,17 @@ For active V2 fields, use the canonical [temporal semantics](./docs/architecture
 
 ---
 
-## 7. Communication Pattern: Hybrid Event-Driven
+## 7. Cross-Module Collaboration
 
-**Decision:** Use Synchronous calls for the critical path (Booking creation) and Asynchronous Domain Events (NestJS EventEmitter) for side effects.
-**Why:**
+**Decision:** Choose cross-module collaboration by the business semantics required by the use case.
 
-- **Decoupling:** Modules like Notifications, Analytics, and Invoicing should not block the user's "Booking Confirmed" response.
-- **Responsibility Segregation:** If the email service fails, the booking remains valid. The system retries the notification later via BullMQ, preventing cascading failures.
+- Use a provider-owned synchronous public capability when another module needs an authoritative answer or operation now to complete its use case.
+- Use an Integration Event for a completed business fact that other modules, workers, or external integrations may react to independently.
+- Use a consumer-owned local projection only when foreign-owned facts are needed repeatedly and eventual consistency provides a concrete benefit that justifies synchronization complexity.
+
+A bounded context may publish multiple small, cohesive capabilities rather than one growing module-wide API. The provider owns each published contract and expresses it in its own vocabulary and semantics. Consumers translate those concepts into their own domain. Public contracts use stable published types and do not leak persistence records, Prisma-generated types, internal implementation types, or domain types or errors owned by another bounded context.
+
+Domain Events remain module-internal facts. Integration Events are the public post-commit events that cross module boundaries. Events do not replace a synchronous capability when the initiating use case requires the result.
 
 ---
 
@@ -284,18 +288,19 @@ abstract class RentalBundleQueryPort {
 
 ---
 
-## 11. Cross-Module Port Pattern
+## 11. Published Capability Pattern
 
-**Decision:** When one module needs read access to an aggregate owned by another module, it defines its own focused port (abstract class) and the owning module's repository implements it.
+**Decision:** The owning bounded context defines and owns its published contracts. A published boundary may contain multiple small, cohesive synchronous capabilities and public Integration Events; it is not required to be one module-wide port or API.
 
 **Why:**
 
-- **Interface Segregation:** Each consuming module only sees the methods it needs. `RentalModule` importing `RentalProductQueryPort` does not get access to `InventoryModule`'s full `ProductRepositoryPort`.
-- **Abstract classes over interfaces:** NestJS's DI container requires runtime tokens. TypeScript interfaces are erased at compile time and cannot serve as injection tokens. Abstract classes survive compilation and serve as both the type contract and the DI token.
-- **Single implementation:** The concrete repository (e.g., `PrismaProductRepository`) lives in the owning module's infrastructure layer and implements multiple ports. No duplication of queries.
+- **Ownership clarity:** The authoritative context defines capabilities around its own business responsibilities rather than consumer-specific convenience.
+- **Contract stability:** Provider-owned contracts use stable published types and protect persistence, internal services, engines, and foreign domain types from consumers.
+- **Independent evolution:** Consumers translate provider concepts into their own domain, allowing both contexts to evolve without sharing internals.
 
-**Example:**
-`RentalModule` defines `RentalProductQueryPort` with `findById` and `findAvailableItemId`. `PrismaProductRepository` in `InventoryModule` implements both `ProductRepositoryPort` and `RentalProductQueryPort`. `RentalModule` binds `RentalProductQueryPort` to `PrismaProductRepository` in its NestJS module wiring — never importing the concrete class directly.
+**Design check:** If this bounded context were owned by another team, would this still be a natural capability to ask it for?
+
+A consumer that needs an authoritative result now calls the provider's synchronous capability. A consumer that can react independently to a completed fact consumes an Integration Event. A consumer may maintain its own projection when repeated foreign facts justify eventual consistency and its synchronization complexity. The provider remains authoritative in all cases.
 
 ---
 

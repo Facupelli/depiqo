@@ -28,7 +28,7 @@ Use these docs as the routing table.
 | Architecture decisions | `apps/backend/docs/architecture/adr/` |
 | Implementation rules by artifact type (repository vs direct Prisma, transactions) | `apps/backend/docs/implementation-rules/README.md` |
 | Module-specific domain boundaries | `apps/backend/src/modules/*/README.md` |
-| Public cross-module contracts | `apps/backend/src/modules/**/*.public-api.ts` |
+| Cross-module collaboration and published boundaries | `apps/backend/docs/architecture/overview.md`, then the owning module's `public-api/` boundary |
 
 ## Implementation Rule Navigation
 
@@ -39,6 +39,10 @@ apps/backend/docs/implementation-rules/README.md
 ```
 
 Then load only the artifact-specific rule docs needed for the change, such as command, query, controller, repository, mapper, DTO, domain error, entity, aggregate, value object, domain service, domain event, or testing rules.
+
+## Cross-Module Work
+
+Design cross-module work using the decision in `docs/architecture/overview.md`: use a synchronous published capability for an authoritative result needed now, an Integration Event for independently reactable completed facts, or a consumer-owned projection for repeated foreign facts where justified eventual consistency provides a concrete benefit. Do not require a new method on one module-wide `*.public-api.ts`; use the owning module's published/public boundary.
 
 ## Backend Skills
 

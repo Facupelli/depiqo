@@ -24,7 +24,7 @@ For HTTP-facing error flow, follow `error-handling-problem-details.md`.
 - Application Services own transaction boundaries.
 - Use the project unit-of-work abstraction when event collection/publication is involved.
 - Repositories or surrounding infrastructure handle aggregate persistence and Domain Event dispatch timing.
-- Public module APIs/facades or explicit integration events/projections are the only boundaries for cross-module collaboration.
+- Provider-owned synchronous public capabilities, Integration Events, or consumer-owned projections are the only boundaries for cross-module collaboration. Choose according to `docs/architecture/overview.md`.
 - Private same-module application helper/orchestration services are allowed when they keep a workflow readable and are not exposed as independent use cases.
 - Inject `PrismaService` directly for command-supporting reads such as existence, uniqueness, impact, affected-ID, count, or projection queries when the current module owns the accessed models (see `repository.md` for the repository-vs-direct-Prisma distinction).
 - Use repositories only to load aggregates/entities for behavior and persist them (see `repository.md`).
@@ -35,7 +35,7 @@ For HTTP-facing error flow, follow `error-handling-problem-details.md`.
 - Load aggregates through repositories.
 - Put aggregate-specific rules in entities, aggregates, and Value Objects.
 - Put rules spanning multiple aggregates in Domain Services.
-- Use another module's public API/facade for synchronous cross-module collaboration. A CQRS command or query is valid across modules only when it is deliberately exported as part of that public API.
+- Use another module's provider-owned, cohesive synchronous public capability when this use case needs its authoritative answer or operation before it can complete. A CQRS command or query is valid across modules only when deliberately published as that capability.
 - Return `err(featureError(...))` for expected failures.
 - Return `Result<T, FeatureError>` for expected HTTP-facing failures.
 - Map known domain errors into feature/application errors before returning from HTTP-facing use cases.
