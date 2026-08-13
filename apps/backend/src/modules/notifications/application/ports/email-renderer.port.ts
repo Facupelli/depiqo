@@ -1,4 +1,5 @@
-import { FulfillmentMethod, RentalStatus } from 'src/modules/rental-commitment/domain/rental-status';
+export type RentalEmailStatus = 'PENDING' | 'DRAFT' | 'CONFIRMED' | 'PREPARED' | 'CANCELLED' | 'COMPLETED';
+export type RentalEmailFulfillmentMethod = 'PICKUP' | 'DELIVERY';
 
 import { NotificationType } from '../../domain/notification-type.enum';
 
@@ -27,8 +28,8 @@ export interface RentalCreatedByCustomerEmailPayload {
   tenantName?: string;
   rentalNumber: number | string;
   customerEmail: string;
-  status: RentalStatus;
-  fulfillmentMethod: FulfillmentMethod;
+  status: RentalEmailStatus;
+  fulfillmentMethod: RentalEmailFulfillmentMethod;
   pickupDate: string;
   pickupTime: string;
   returnDate: string;
@@ -40,8 +41,8 @@ export interface RentalCreatedByCustomerEmailPayload {
 export interface RentalConfirmedConfirmationEmailPayload {
   tenantName?: string;
   rentalNumber: number | string;
-  status: RentalStatus;
-  fulfillmentMethod: FulfillmentMethod;
+  status: RentalEmailStatus;
+  fulfillmentMethod: RentalEmailFulfillmentMethod;
   pickupDate: string;
   pickupTime: string;
   returnDate: string;

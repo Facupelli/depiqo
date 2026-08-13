@@ -31,10 +31,12 @@ export class RentalConfirmedDomainEvent extends RentalLifecycleDomainEvent {
   constructor(
     tenantId: string,
     rentalId: string,
-    rentalCustomerId: string,
+    public readonly rentalCustomerId: string,
     branchId: string,
     public readonly status: RentalStatus.Confirmed,
     public readonly fulfillmentMethod: FulfillmentMethod,
+    public readonly periodStart: Date,
+    public readonly periodEnd: Date,
     occurredAt?: Date,
   ) {
     super(tenantId, rentalId, rentalCustomerId, branchId, occurredAt);
@@ -47,10 +49,12 @@ export class ConfirmedRentalEditedDomainEvent extends RentalLifecycleDomainEvent
   constructor(
     tenantId: string,
     rentalId: string,
-    rentalCustomerId: string,
+    public readonly rentalCustomerId: string,
     branchId: string,
     public readonly status: RentalStatus.Confirmed,
     public readonly fulfillmentMethod: FulfillmentMethod,
+    public readonly periodStart: Date,
+    public readonly periodEnd: Date,
     occurredAt?: Date,
   ) {
     super(tenantId, rentalId, rentalCustomerId, branchId, occurredAt);

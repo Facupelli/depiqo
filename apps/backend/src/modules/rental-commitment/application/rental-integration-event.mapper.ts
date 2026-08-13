@@ -15,15 +15,41 @@ import {
 export function toRentalIntegrationEvents(domainEvents: readonly DomainEvent[]): IntegrationEvent[] {
   return domainEvents.flatMap<IntegrationEvent>((event) => {
     if (event instanceof RentalConfirmedDomainEvent) {
-      return [new RentalConfirmedIntegrationEvent(event.tenantId, event.rentalId, event.occurredAt)];
+      return [
+        new RentalConfirmedIntegrationEvent(
+          event.tenantId,
+          event.rentalId,
+          event.rentalCustomerId,
+          event.branchId,
+          event.status,
+          event.fulfillmentMethod,
+          event.periodStart,
+          event.periodEnd,
+          event.occurredAt,
+        ),
+      ];
     }
 
     if (event instanceof ConfirmedRentalEditedDomainEvent) {
-      return [new ConfirmedRentalEditedIntegrationEvent(event.tenantId, event.rentalId, event.occurredAt)];
+      return [
+        new ConfirmedRentalEditedIntegrationEvent(
+          event.tenantId,
+          event.rentalId,
+          event.rentalCustomerId,
+          event.branchId,
+          event.status,
+          event.fulfillmentMethod,
+          event.periodStart,
+          event.periodEnd,
+          event.occurredAt,
+        ),
+      ];
     }
 
     if (event instanceof RentalCancelledDomainEvent) {
-      return [new RentalCancelledIntegrationEvent(event.tenantId, event.rentalId, event.occurredAt)];
+      return [
+        new RentalCancelledIntegrationEvent(event.tenantId, event.rentalId, event.rentalCustomerId, event.occurredAt),
+      ];
     }
 
     return [];

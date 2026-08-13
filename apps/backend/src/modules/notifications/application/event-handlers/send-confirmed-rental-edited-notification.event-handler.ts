@@ -3,7 +3,6 @@ import { OnEvent } from '@nestjs/event-emitter';
 import { PinoLogger } from 'nestjs-pino';
 
 import { ConfirmedRentalEditedIntegrationEvent } from 'src/modules/rental-commitment/public-api/events/rental-lifecycle.integration-events';
-import { RentalCommitmentPublicApi } from 'src/modules/rental-commitment/public-api/rental-commitment.public-api';
 import { RentalCustomerContactFacts } from 'src/modules/tenant-management/public-api/rental-customer-contact-facts.public-api';
 import { TenantIdentityFacts } from 'src/modules/tenant-management/public-api/tenant-identity-facts.public-api';
 import { BranchFacts } from 'src/modules/tenant-management/public-api/branch-facts.public-api';
@@ -41,7 +40,6 @@ export class SendConfirmedRentalEditedNotificationHandler {
   private readonly logger = new Logger(SendConfirmedRentalEditedNotificationHandler.name);
 
   constructor(
-    private readonly rentalCommitmentPublicApi: RentalCommitmentPublicApi,
     private readonly rentalCustomerContactFacts: RentalCustomerContactFacts,
     private readonly tenantIdentityFacts: TenantIdentityFacts,
     private readonly branchFacts: BranchFacts,
@@ -54,21 +52,7 @@ export class SendConfirmedRentalEditedNotificationHandler {
   @OnEvent(ConfirmedRentalEditedIntegrationEvent.name)
   async handle(event: ConfirmedRentalEditedIntegrationEvent): Promise<void> {
     try {
-      const rentalResult = await this.rentalCommitmentPublicApi.getRentalNotificationContext({
-        tenantId: event.tenantId,
-        rentalId: event.rentalId,
-      });
-
-      if (rentalResult.isErr()) {
-        this.logger.warn(
-          `Skipping confirmed rental edited notification for rental ${event.rentalId}: ${rentalResult.error.message}`,
-          SendConfirmedRentalEditedNotificationHandler.name,
-        );
-        return;
-      }
-
-      const rental = rentalResult.value;
-      if (!rental.rentalCustomerId) {
+      if (!event.rentalCustomerId) {
         this.logger.warn(
           `Skipping confirmed rental edited notification for rental ${event.rentalId}: rental has no customer.`,
           SendConfirmedRentalEditedNotificationHandler.name,
@@ -77,14 +61,14 @@ export class SendConfirmedRentalEditedNotificationHandler {
       }
 
       const [tenantResult, customerResult, branchContextResult] = await Promise.all([
-        this.tenantIdentityFacts.getTenantIdentityFacts({ tenantId: rental.tenantId }),
+        this.tenantIdentityFacts.getTenantIdentityFacts({ tenantId: event.tenantId }),
         this.rentalCustomerContactFacts.getRentalCustomerContactFacts({
-          tenantId: rental.tenantId,
-          rentalCustomerId: rental.rentalCustomerId,
+          tenantId: event.tenantId,
+          rentalCustomerId: event.rentalCustomerId,
         }),
         this.branchFacts.getBranchFacts({
-          tenantId: rental.tenantId,
-          branchId: rental.branchId,
+          tenantId: event.tenantId,
+          branchId: event.branchId,
         }),
       ]);
 
@@ -99,7 +83,7 @@ export class SendConfirmedRentalEditedNotificationHandler {
       const customer = customerResult;
       if (!customer) {
         this.logger.warn(
-          `Skipping confirmed rental edited notification for rental ${event.rentalId}: Rental customer "${rental.rentalCustomerId}" was not found.`,
+          `Skipping confirmed rental edited notification for rental ${event.rentalId}: Rental customer "${event.rentalCustomerId}" was not found.`,
           SendConfirmedRentalEditedNotificationHandler.name,
         );
         return;
@@ -121,18 +105,18 @@ export class SendConfirmedRentalEditedNotificationHandler {
         return;
       }
 
-      const pickup = formatDateTimeInTimezone(rental.periodStart, branchContextResult.value.effectiveTimezone);
-      const returnAt = formatDateTimeInTimezone(rental.periodEnd, branchContextResult.value.effectiveTimezone);
+      const pickup = formatDateTimeInTimezone(event.periodStart, branchContextResult.value.effectiveTimezone);
+      const returnAt = formatDateTimeInTimezone(event.periodEnd, branchContextResult.value.effectiveTimezone);
 
       await this.notificationOrchestrator.dispatch({
-        tenantId: rental.tenantId,
+        tenantId: event.tenantId,
         notificationType: NotificationType.CONFIRMED_RENTAL_EDITED,
         emailRecipients: [{ email: customer.email }],
         payload: {
           tenantName: tenantResult.value.name,
-          rentalNumber: rental.rentalNumber,
-          status: rental.status,
-          fulfillmentMethod: rental.fulfillmentMethod,
+          rentalNumber: event.rentalId.slice(0, 4),
+          status: event.status,
+          fulfillmentMethod: event.fulfillmentMethod,
           pickupDate: pickup.date,
           pickupTime: pickup.time,
           returnDate: returnAt.date,
@@ -145,7 +129,7 @@ export class SendConfirmedRentalEditedNotificationHandler {
           eventId: event.eventId,
         },
         metadata: {
-          rentalId: rental.rentalId,
+          rentalId: event.rentalId,
         },
         idempotencyKey: `confirmed-rental-edited:${event.eventId}`,
       });

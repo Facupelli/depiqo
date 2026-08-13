@@ -799,6 +799,8 @@ export class Rental extends AggregateRootBase {
         this.branchId,
         RentalStatus.Confirmed,
         this.fulfillmentMethod ?? FulfillmentMethod.Pickup,
+        this.period.start,
+        this.period.end,
         occurredAt,
       ),
     );
@@ -817,6 +819,8 @@ export class Rental extends AggregateRootBase {
         this.branchId,
         RentalStatus.Confirmed,
         this.fulfillmentMethod ?? FulfillmentMethod.Pickup,
+        this.period.start,
+        this.period.end,
         occurredAt,
       ),
     );

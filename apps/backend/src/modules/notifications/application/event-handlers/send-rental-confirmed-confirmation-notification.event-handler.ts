@@ -3,7 +3,6 @@ import { OnEvent } from '@nestjs/event-emitter';
 import { PinoLogger } from 'nestjs-pino';
 
 import { RentalConfirmedIntegrationEvent } from 'src/modules/rental-commitment/public-api/events/rental-lifecycle.integration-events';
-import { RentalCommitmentPublicApi } from 'src/modules/rental-commitment/public-api/rental-commitment.public-api';
 import { RentalCustomerContactFacts } from 'src/modules/tenant-management/public-api/rental-customer-contact-facts.public-api';
 import { TenantIdentityFacts } from 'src/modules/tenant-management/public-api/tenant-identity-facts.public-api';
 import { BranchFacts } from 'src/modules/tenant-management/public-api/branch-facts.public-api';
@@ -41,7 +40,6 @@ export class SendRentalConfirmedConfirmationNotificationHandler {
   private readonly logger = new Logger(SendRentalConfirmedConfirmationNotificationHandler.name);
 
   constructor(
-    private readonly rentalCommitmentPublicApi: RentalCommitmentPublicApi,
     private readonly rentalCustomerContactFacts: RentalCustomerContactFacts,
     private readonly tenantIdentityFacts: TenantIdentityFacts,
     private readonly branchFacts: BranchFacts,
@@ -54,21 +52,7 @@ export class SendRentalConfirmedConfirmationNotificationHandler {
   @OnEvent(RentalConfirmedIntegrationEvent.name)
   async handle(event: RentalConfirmedIntegrationEvent): Promise<void> {
     try {
-      const rentalResult = await this.rentalCommitmentPublicApi.getRentalNotificationContext({
-        tenantId: event.tenantId,
-        rentalId: event.rentalId,
-      });
-
-      if (rentalResult.isErr()) {
-        this.logger.warn(
-          `Skipping rental confirmed notification for rental ${event.rentalId}: ${rentalResult.error.message}`,
-          SendRentalConfirmedConfirmationNotificationHandler.name,
-        );
-        return;
-      }
-
-      const rental = rentalResult.value;
-      if (!rental.rentalCustomerId) {
+      if (!event.rentalCustomerId) {
         this.logger.warn(
           `Skipping rental confirmed notification for rental ${event.rentalId}: rental has no customer.`,
           SendRentalConfirmedConfirmationNotificationHandler.name,
@@ -77,14 +61,14 @@ export class SendRentalConfirmedConfirmationNotificationHandler {
       }
 
       const [tenantResult, customerResult, branchContextResult] = await Promise.all([
-        this.tenantIdentityFacts.getTenantIdentityFacts({ tenantId: rental.tenantId }),
+        this.tenantIdentityFacts.getTenantIdentityFacts({ tenantId: event.tenantId }),
         this.rentalCustomerContactFacts.getRentalCustomerContactFacts({
-          tenantId: rental.tenantId,
-          rentalCustomerId: rental.rentalCustomerId,
+          tenantId: event.tenantId,
+          rentalCustomerId: event.rentalCustomerId,
         }),
         this.branchFacts.getBranchFacts({
-          tenantId: rental.tenantId,
-          branchId: rental.branchId,
+          tenantId: event.tenantId,
+          branchId: event.branchId,
         }),
       ]);
 
@@ -99,7 +83,7 @@ export class SendRentalConfirmedConfirmationNotificationHandler {
       const customer = customerResult;
       if (!customer) {
         this.logger.warn(
-          `Skipping rental confirmed notification for rental ${event.rentalId}: Rental customer "${rental.rentalCustomerId}" was not found.`,
+          `Skipping rental confirmed notification for rental ${event.rentalId}: Rental customer "${event.rentalCustomerId}" was not found.`,
           SendRentalConfirmedConfirmationNotificationHandler.name,
         );
         return;
@@ -121,18 +105,18 @@ export class SendRentalConfirmedConfirmationNotificationHandler {
         return;
       }
 
-      const pickup = formatDateTimeInTimezone(rental.periodStart, branchContextResult.value.effectiveTimezone);
-      const returnAt = formatDateTimeInTimezone(rental.periodEnd, branchContextResult.value.effectiveTimezone);
+      const pickup = formatDateTimeInTimezone(event.periodStart, branchContextResult.value.effectiveTimezone);
+      const returnAt = formatDateTimeInTimezone(event.periodEnd, branchContextResult.value.effectiveTimezone);
 
       await this.notificationOrchestrator.dispatch({
-        tenantId: rental.tenantId,
+        tenantId: event.tenantId,
         notificationType: NotificationType.RENTAL_CONFIRMED_CONFIRMATION,
         emailRecipients: [{ email: customer.email }],
         payload: {
           tenantName: tenantResult.value.name,
-          rentalNumber: rental.rentalNumber,
-          status: rental.status,
-          fulfillmentMethod: rental.fulfillmentMethod,
+          rentalNumber: event.rentalId.slice(0, 4),
+          status: event.status,
+          fulfillmentMethod: event.fulfillmentMethod,
           pickupDate: pickup.date,
           pickupTime: pickup.time,
           returnDate: returnAt.date,
@@ -145,9 +129,9 @@ export class SendRentalConfirmedConfirmationNotificationHandler {
           eventId: event.eventId,
         },
         metadata: {
-          rentalId: rental.rentalId,
+          rentalId: event.rentalId,
         },
-        idempotencyKey: `rental-confirmed-confirmation:${rental.rentalId}`,
+        idempotencyKey: `rental-confirmed-confirmation:${event.rentalId}`,
       });
     } catch (error) {
       this.structuredLogger.error(

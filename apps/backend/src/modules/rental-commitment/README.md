@@ -272,7 +272,7 @@ The underlying physical asset remains owned by Asset Inventory.
 
 Rental Commitment may emit events for meaningful rental lifecycle and commitment changes, including confirmation, editing, cancellation, block creation/release, preparation, fulfillment, completion, and owner split snapshotting.
 
-Contracts and Notifications may react to appropriate rental events.
+Contracts and Notifications may react to appropriate rental events. The version 2 confirmed and confirmed-edited lifecycle Integration Events publish the transition-time customer reference, branch, `CONFIRMED` status, fulfillment method, and rental period. The version 2 cancellation event publishes its transition-time customer reference. Notifications resolves current tenant identity, customer contact state, and effective branch timezone from Tenant Management; it does not read Rental Commitment after these lifecycle events.
 
 Rental Commitment may consume Asset Inventory asset changes to maintain its candidate projection.
 

@@ -4,10 +4,9 @@ import { err, ok, Result } from 'neverthrow';
 import { PrismaService } from 'src/core/database/prisma.service';
 
 import { decodeAcceptedPricingForDocuments } from '../application/accepted-pricing/accepted-pricing-snapshot.decoder';
-import { FulfillmentMethod, RentalStatus } from '../domain/rental-status';
+import { RentalStatus } from '../domain/rental-status';
 import {
   GetAcceptedPricingForDocumentsInput,
-  GetRentalNotificationContextInput,
   GetRentalBudgetDocumentFactsInput,
   GetRentalRemitoEquipmentFactsInput,
   RentalAcceptedPricingForDocuments,
@@ -15,7 +14,6 @@ import {
   RentalRemitoEquipmentFacts,
   RentalCommitmentPublicApi,
   RentalCommitmentPublicApiError,
-  RentalNotificationContext,
 } from './rental-commitment.public-api';
 
 function rentalCommitmentPublicApiError(
@@ -30,48 +28,6 @@ function rentalCommitmentPublicApiError(
 export class RentalCommitmentPublicApiService extends RentalCommitmentPublicApi {
   constructor(private readonly prisma: PrismaService) {
     super();
-  }
-
-  async getRentalNotificationContext(
-    input: GetRentalNotificationContextInput,
-  ): Promise<Result<RentalNotificationContext, RentalCommitmentPublicApiError>> {
-    const rental = await this.prisma.client.v2Rental.findFirst({
-      where: {
-        id: input.rentalId,
-        tenantId: input.tenantId,
-      },
-      select: {
-        id: true,
-        tenantId: true,
-        branchId: true,
-        customerId: true,
-        status: true,
-        fulfillmentMethod: true,
-        periodStart: true,
-        periodEnd: true,
-      },
-    });
-
-    if (!rental) {
-      return err(
-        rentalCommitmentPublicApiError(
-          'RentalNotFound',
-          `Rental "${input.rentalId}" was not found for tenant "${input.tenantId}".`,
-        ),
-      );
-    }
-
-    return ok({
-      rentalId: rental.id,
-      rentalNumber: rental.id.slice(0, 4),
-      tenantId: rental.tenantId,
-      branchId: rental.branchId,
-      rentalCustomerId: rental.customerId,
-      status: rental.status as RentalStatus,
-      fulfillmentMethod: (rental.fulfillmentMethod as FulfillmentMethod | null) ?? FulfillmentMethod.Pickup,
-      periodStart: rental.periodStart,
-      periodEnd: rental.periodEnd,
-    });
   }
 
   async getRentalBudgetDocumentFacts(

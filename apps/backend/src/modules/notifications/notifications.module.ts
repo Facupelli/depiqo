@@ -1,6 +1,5 @@
 import { Module } from '@nestjs/common';
 
-import { RentalCommitmentModule } from 'src/modules/rental-commitment/rental-commitment.module';
 import { TenantManagementModule } from 'src/modules/tenant-management/tenant-management.module';
 
 import { EmailDeliveryPort } from './application/ports/email-delivery.port';
@@ -20,7 +19,7 @@ import { CodeBasedEmailRendererService } from './infrastructure/rendering/code-b
 import { PlatformEmailSenderResolver } from './infrastructure/sender/platform-email-sender.resolver';
 
 @Module({
-  imports: [RentalCommitmentModule, TenantManagementModule],
+  imports: [TenantManagementModule],
   providers: [
     NotificationOrchestrator,
     NotificationPersistenceService,

@@ -1,11 +1,6 @@
 import { Result } from 'neverthrow';
 
-import { FulfillmentMethod, RentalStatus } from '../domain/rental-status';
-
-export interface GetRentalNotificationContextInput {
-  tenantId: string;
-  rentalId: string;
-}
+import { RentalStatus } from '../domain/rental-status';
 
 export interface GetAcceptedPricingForDocumentsInput {
   tenantId: string;
@@ -65,21 +60,8 @@ export interface RentalAcceptedPricingForDocuments {
   billingUnit?: RentalAcceptedPricingBillingUnit;
 }
 
-export interface RentalNotificationContext {
-  rentalId: string;
-  rentalNumber: number | string;
-  tenantId: string;
-  branchId: string;
-  rentalCustomerId: string | null;
-  status: RentalStatus;
-  fulfillmentMethod: FulfillmentMethod;
-  periodStart: Date;
-  periodEnd: Date;
-}
-
 export type RentalCommitmentPublicApiErrorCode =
   | 'RentalNotFound'
-  | 'RentalNotificationContextIncomplete'
   | 'AcceptedPricingSnapshotInvalid'
   | 'AcceptedPricingUnitsIncomplete';
 
@@ -90,10 +72,6 @@ export interface RentalCommitmentPublicApiError {
 }
 
 export abstract class RentalCommitmentPublicApi {
-  abstract getRentalNotificationContext(
-    input: GetRentalNotificationContextInput,
-  ): Promise<Result<RentalNotificationContext, RentalCommitmentPublicApiError>>;
-
   abstract getAcceptedPricingForDocuments(
     input: GetAcceptedPricingForDocumentsInput,
   ): Promise<Result<RentalAcceptedPricingForDocuments, RentalCommitmentPublicApiError>>;

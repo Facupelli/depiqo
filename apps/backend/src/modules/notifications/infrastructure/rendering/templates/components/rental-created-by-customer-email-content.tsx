@@ -1,15 +1,15 @@
 import { Column, Heading, Row, Section, Text } from 'react-email';
 import * as React from 'react';
 
-import { FulfillmentMethod, RentalStatus } from 'src/modules/rental-commitment/domain/rental-status';
+import { RentalEmailFulfillmentMethod, RentalEmailStatus } from '../../../../application/ports/email-renderer.port';
 
 import { emailTheme } from '../../react-email/email-theme';
 
 type RentalCreatedByCustomerEmailContentProps = {
   rentalNumber: number | string;
   customerEmail: string;
-  status: RentalStatus;
-  fulfillmentMethod: FulfillmentMethod;
+  status: RentalEmailStatus;
+  fulfillmentMethod: RentalEmailFulfillmentMethod;
   pickupDate: string;
   pickupTime: string;
   returnDate: string;
@@ -172,32 +172,28 @@ function DetailRow({ label, value, secondaryValue, accent = false }: DetailRowPr
   );
 }
 
-function formatRentalStatus(status: RentalStatus): string {
+function formatRentalStatus(status: RentalEmailStatus): string {
   switch (status) {
-    case RentalStatus.Pending:
+    case 'PENDING':
       return 'Pendiente';
-    case RentalStatus.Draft:
+    case 'DRAFT':
       return 'Borrador';
-    case RentalStatus.Confirmed:
+    case 'CONFIRMED':
       return 'Confirmado';
-    case RentalStatus.Prepared:
+    case 'PREPARED':
       return 'Preparado';
-    case RentalStatus.Cancelled:
+    case 'CANCELLED':
       return 'Cancelado';
-    case RentalStatus.Completed:
+    case 'COMPLETED':
       return 'Completado';
-    default:
-      return status;
   }
 }
 
-function formatFulfillmentMethod(method: FulfillmentMethod): string {
+function formatFulfillmentMethod(method: RentalEmailFulfillmentMethod): string {
   switch (method) {
-    case FulfillmentMethod.Pickup:
+    case 'PICKUP':
       return 'Retiro en sucursal';
-    case FulfillmentMethod.Delivery:
+    case 'DELIVERY':
       return 'Entrega a domicilio';
-    default:
-      return method;
   }
 }

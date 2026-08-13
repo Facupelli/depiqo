@@ -3,7 +3,6 @@ import { OnEvent } from '@nestjs/event-emitter';
 import { PinoLogger } from 'nestjs-pino';
 
 import { RentalCancelledIntegrationEvent } from 'src/modules/rental-commitment/public-api/events/rental-lifecycle.integration-events';
-import { RentalCommitmentPublicApi } from 'src/modules/rental-commitment/public-api/rental-commitment.public-api';
 import { RentalCustomerContactFacts } from 'src/modules/tenant-management/public-api/rental-customer-contact-facts.public-api';
 import { TenantIdentityFacts } from 'src/modules/tenant-management/public-api/tenant-identity-facts.public-api';
 
@@ -15,7 +14,6 @@ export class SendRentalCancelledNotificationHandler {
   private readonly logger = new Logger(SendRentalCancelledNotificationHandler.name);
 
   constructor(
-    private readonly rentalCommitmentPublicApi: RentalCommitmentPublicApi,
     private readonly rentalCustomerContactFacts: RentalCustomerContactFacts,
     private readonly tenantIdentityFacts: TenantIdentityFacts,
     private readonly notificationOrchestrator: NotificationOrchestrator,
@@ -27,21 +25,7 @@ export class SendRentalCancelledNotificationHandler {
   @OnEvent(RentalCancelledIntegrationEvent.name)
   async handle(event: RentalCancelledIntegrationEvent): Promise<void> {
     try {
-      const rentalResult = await this.rentalCommitmentPublicApi.getRentalNotificationContext({
-        tenantId: event.tenantId,
-        rentalId: event.rentalId,
-      });
-
-      if (rentalResult.isErr()) {
-        this.logger.warn(
-          `Skipping rental cancelled notification for rental ${event.rentalId}: ${rentalResult.error.message}`,
-          SendRentalCancelledNotificationHandler.name,
-        );
-        return;
-      }
-
-      const rental = rentalResult.value;
-      if (!rental.rentalCustomerId) {
+      if (!event.rentalCustomerId) {
         this.logger.warn(
           `Skipping rental cancelled notification for rental ${event.rentalId}: rental has no customer.`,
           SendRentalCancelledNotificationHandler.name,
@@ -50,10 +34,10 @@ export class SendRentalCancelledNotificationHandler {
       }
 
       const [tenantResult, customerResult] = await Promise.all([
-        this.tenantIdentityFacts.getTenantIdentityFacts({ tenantId: rental.tenantId }),
+        this.tenantIdentityFacts.getTenantIdentityFacts({ tenantId: event.tenantId }),
         this.rentalCustomerContactFacts.getRentalCustomerContactFacts({
-          tenantId: rental.tenantId,
-          rentalCustomerId: rental.rentalCustomerId,
+          tenantId: event.tenantId,
+          rentalCustomerId: event.rentalCustomerId,
         }),
       ]);
 
@@ -68,7 +52,7 @@ export class SendRentalCancelledNotificationHandler {
       const customer = customerResult;
       if (!customer) {
         this.logger.warn(
-          `Skipping rental cancelled notification for rental ${event.rentalId}: Rental customer "${rental.rentalCustomerId}" was not found.`,
+          `Skipping rental cancelled notification for rental ${event.rentalId}: Rental customer "${event.rentalCustomerId}" was not found.`,
           SendRentalCancelledNotificationHandler.name,
         );
         return;
@@ -83,7 +67,7 @@ export class SendRentalCancelledNotificationHandler {
       }
 
       await this.notificationOrchestrator.dispatch({
-        tenantId: rental.tenantId,
+        tenantId: event.tenantId,
         notificationType: NotificationType.RENTAL_CANCELLED,
         emailRecipients: [{ email: customer.email }],
         payload: {
@@ -96,9 +80,9 @@ export class SendRentalCancelledNotificationHandler {
           eventId: event.eventId,
         },
         metadata: {
-          rentalId: rental.rentalId,
+          rentalId: event.rentalId,
         },
-        idempotencyKey: `rental-cancelled:${rental.rentalId}`,
+        idempotencyKey: `rental-cancelled:${event.rentalId}`,
       });
     } catch (error) {
       this.structuredLogger.error(
