@@ -1,6 +1,6 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { branchQueries } from "@/features/tenant-management/branch/branch.queries";
 import { tenantQueries } from "@/features/tenant-management/tenant/tenant.queries";
+import { branchQueries } from "@/modules/settings/branches/branches.queries";
 import { useLocationId } from "@/shared/contexts/location/location.hooks";
 import {
 	resolveOperationalTimezone,

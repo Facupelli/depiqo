@@ -12,7 +12,7 @@ import {
 	branchFormSchema,
 	minutesToTimeString,
 	timeStringToMinutes,
-} from "../components/branch-form.schema";
+} from "../branch-form.schema";
 
 export const updateBranchFormSchema = branchFormSchema;
 export type UpdateBranchFormValues = BranchFormValues;

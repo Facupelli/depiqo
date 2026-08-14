@@ -34,8 +34,8 @@ import {
 	Warehouse,
 } from "lucide-react";
 import { useLogout } from "@/features/tenant-management/auth/logout/logout.mutation";
-import { branchQueries } from "@/features/tenant-management/branch/branch.queries";
 import { tenantQueries } from "@/features/tenant-management/tenant/tenant.queries";
+import { branchQueries } from "@/modules/settings/branches/branches.queries";
 import { LocationStoreProvider as BranchStoreProvider } from "@/shared/contexts/location/location.context";
 import {
 	useLocationActions as useBranchActions,

@@ -12,8 +12,8 @@ import {
 	type ParsedRentalListItem,
 	useRentals,
 } from "@/features/rental-commitment/rentals/rentals.queries";
-import { useBranches } from "@/features/tenant-management/branch/branch.queries";
 import { useCurrentTenant } from "@/features/tenant-management/tenant/tenant.queries";
+import { useBranches } from "@/modules/settings/branches/branches.queries";
 import { Route } from "@/routes/_admin/dashboard/orders";
 import { resolveOperationalTimezone } from "@/shared/timezone/operational-timezone";
 

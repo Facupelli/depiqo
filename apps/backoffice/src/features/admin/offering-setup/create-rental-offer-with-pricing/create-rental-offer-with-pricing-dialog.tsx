@@ -25,7 +25,7 @@ import { ArrowLeft, CircleDollarSign, Plus } from "lucide-react";
 import { useId, useState } from "react";
 import type { AttachRatePlanToRentalOfferRatePlanOption } from "@/features/pricing/rental-offer-pricings/attach-rate-plan-to-rental-offer/attach-rate-plan-to-rental-offer-form";
 import { AttachRatePlanToRentalOfferForm } from "@/features/pricing/rental-offer-pricings/attach-rate-plan-to-rental-offer/attach-rate-plan-to-rental-offer-form";
-import { useBranches } from "@/features/tenant-management/branch/branch.queries";
+import { useBranches } from "@/modules/settings/branches/branches.queries";
 import { CreateRentalOfferWithCreatedRatePlanForm } from "./create-rental-offer-with-created-rate-plan-form";
 import { useCreateRentalOfferWithPricing } from "./create-rental-offer-with-pricing.mutation";
 import {

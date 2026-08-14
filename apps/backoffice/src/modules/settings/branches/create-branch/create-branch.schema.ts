@@ -11,7 +11,7 @@ import {
 	branchFormDefaults,
 	branchFormSchema,
 	timeStringToMinutes,
-} from "../../components/branch-form.schema";
+} from "../branch-form.schema";
 
 export const createBranchFormSchema = branchFormSchema;
 export const createBranchFormDefaults = branchFormDefaults;

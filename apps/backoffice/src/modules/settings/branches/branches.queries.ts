@@ -9,8 +9,8 @@ import {
 	useQuery,
 } from "@tanstack/react-query";
 import type { ProblemDetailsError } from "@/shared/errors";
-import { getBranchDetail } from "./get-branch-detail/get-branch-detail.api";
-import { getBranches } from "./get-branches/get-branches.api";
+import { getBranchDetail } from "./edit-branch/branch-detail.api";
+import { getBranches } from "./list-branches/list-branches.api";
 
 export type BranchesQueryOverrides<TData = GetBranchesResponseDto> = Omit<
 	UseQueryOptions<GetBranchesResponseDto, ProblemDetailsError, TData>,

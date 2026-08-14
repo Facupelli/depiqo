@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { type ReactNode, useState } from "react";
 import { useRentalContractSigningSummary } from "@/features/contracts/contracts.queries";
-import { useBranchDetail } from "@/features/tenant-management/branch/branch.queries";
+import { useBranchDetail } from "@/modules/settings/branches/branches.queries";
 import {
 	useBranchTimezone,
 	useTenantTimezone,

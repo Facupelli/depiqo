@@ -19,7 +19,7 @@ import {
 	toCalculateDraftRentalPriceDto,
 	toCreateDraftRentalDto,
 } from "@/features/rental-commitment/draft-rentals/create-draft-rental-composer/create-draft-rental-composer.schema";
-import { useBranches } from "@/features/tenant-management/branch/branch.queries";
+import { useBranches } from "@/modules/settings/branches/branches.queries";
 import { useAppForm } from "@/shared/contexts/form.context";
 import { useLocationId } from "@/shared/contexts/location/location.hooks";
 import { useSelectedBranchTimezone } from "@/shared/timezone/operational-timezone.hooks";

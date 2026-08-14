@@ -33,8 +33,8 @@ import { toCreateEquipmentTypeAccessoryDefaultsDto } from "@/features/asset-inve
 import { CreateEquipmentTypeAccessoryDefaultsForm } from "@/features/asset-inventory/equipment-types/create-equipment-type-accessory-defaults/create-equipment-type-accessory-defaults-form";
 import { equipmentTypeQueries } from "@/features/asset-inventory/equipment-types/equipment-types.queries";
 import { useOwners } from "@/features/asset-inventory/owners/owners.queries";
-import { useBranches } from "@/features/tenant-management/branch/branch.queries";
 import { formatTimestampInTimezone } from "@/lib/dates/format";
+import { useBranches } from "@/modules/settings/branches/branches.queries";
 import { AdminRouteError } from "@/shared/components/admin-route-error";
 import { useTenantTimezone } from "@/shared/timezone/operational-timezone.hooks";
 

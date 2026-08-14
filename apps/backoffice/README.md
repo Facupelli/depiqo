@@ -74,3 +74,4 @@ The legacy single `repo-web` production Worker migration is still pending. The c
 
 Run `pnpm check` and `pnpm build` after Backoffice changes. Run `pnpm run cf-typegen` after changing `wrangler.jsonc` and commit the regenerated `worker-configuration.d.ts`. The command intentionally ignores local environment files so generated types reflect checked-in Worker configuration only.
 
+
