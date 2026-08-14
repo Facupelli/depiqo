@@ -40,7 +40,12 @@ export class CreateRentalOfferWithPricingHandler implements ICommandHandler<
   ) {}
 
   async execute(command: CreateRentalOfferWithPricingCommand): Promise<CreateRentalOfferWithPricingServiceResult> {
-    const tenantValidation = await validateOperationalSetup(this.tenantOperationalFacts, this.branchFacts, command.tenantId, [command.branchId]);
+    const tenantValidation = await validateOperationalSetup(
+      this.tenantOperationalFacts,
+      this.branchFacts,
+      command.tenantId,
+      [command.branchId],
+    );
     if (tenantValidation.isErr()) return err(mapTenantError(tenantValidation.error));
 
     const rentalOffer = await this.catalog.createRentalOfferForRentableItem({
@@ -81,13 +86,20 @@ export class CreateRentalOfferWithPricingHandler implements ICommandHandler<
 
 type OperationalSetupValidationError = { code: 'TenantUnavailable' | 'BranchUnavailable'; message: string };
 
-async function validateOperationalSetup(tenantOperationalFacts: TenantOperationalFacts, branchFacts: BranchFacts, tenantId: string, branchIds: string[]): Promise<Result<void, OperationalSetupValidationError>> {
+async function validateOperationalSetup(
+  tenantOperationalFacts: TenantOperationalFacts,
+  branchFacts: BranchFacts,
+  tenantId: string,
+  branchIds: string[],
+): Promise<Result<void, OperationalSetupValidationError>> {
   const tenant = await tenantOperationalFacts.getTenantOperationalFacts({ tenantId });
   if (tenant.isErr()) return err({ code: 'TenantUnavailable', message: tenant.error.message });
   const branches = await branchFacts.getBranchFactsBatch({ tenantId, branchIds });
   if (branches.isErr()) return err({ code: 'BranchUnavailable', message: branches.error.message });
   const unavailable = branches.value.find((branch) => !branch.isActive || branch.isDeleted);
-  return unavailable ? err({ code: 'BranchUnavailable', message: `Branch "${unavailable.branchId}" is unavailable.` }) : ok(undefined);
+  return unavailable
+    ? err({ code: 'BranchUnavailable', message: `Branch "${unavailable.branchId}" is unavailable.` })
+    : ok(undefined);
 }
 
 function mapTenantError(error: OperationalSetupValidationError): CreateRentalOfferWithPricingError {

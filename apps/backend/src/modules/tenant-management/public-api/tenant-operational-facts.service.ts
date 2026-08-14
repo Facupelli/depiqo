@@ -17,7 +17,9 @@ export class TenantOperationalFactsService extends TenantOperationalFacts {
     super();
   }
 
-  async getTenantOperationalFacts(input: { tenantId: string }): Promise<Result<TenantOperationalFact, TenantOperationalFactsError>> {
+  async getTenantOperationalFacts(input: {
+    tenantId: string;
+  }): Promise<Result<TenantOperationalFact, TenantOperationalFactsError>> {
     const tenant = await this.prisma.client.v2Tenant.findUnique({
       where: { id: input.tenantId },
       select: { id: true, status: true, deletedAt: true, config: true },
@@ -25,7 +27,8 @@ export class TenantOperationalFactsService extends TenantOperationalFacts {
 
     if (!tenant) return err({ code: 'TenantNotFound', message: `Tenant "${input.tenantId}" was not found.` });
     if (tenant.deletedAt) return err({ code: 'TenantDeleted', message: `Tenant "${input.tenantId}" is deleted.` });
-    if (tenant.status !== 'ACTIVE') return err({ code: 'TenantInactive', message: `Tenant "${input.tenantId}" is inactive.` });
+    if (tenant.status !== 'ACTIVE')
+      return err({ code: 'TenantInactive', message: `Tenant "${input.tenantId}" is inactive.` });
 
     const config = this.reconstituteTenantConfig(tenant.config);
     if (!config) {

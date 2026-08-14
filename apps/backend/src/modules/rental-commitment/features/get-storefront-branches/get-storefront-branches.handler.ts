@@ -58,7 +58,9 @@ export class GetStorefrontBranchesHandler implements IQueryHandler<
       throw new Error(contextsResult.error.message, { cause: contextsResult.error });
     }
 
-    const timezoneByBranchId = new Map(contextsResult.value.map((context) => [context.branchId, context.effectiveTimezone]));
+    const timezoneByBranchId = new Map(
+      contextsResult.value.map((context) => [context.branchId, context.effectiveTimezone]),
+    );
 
     return branches.map((branch) => {
       const timezone = timezoneByBranchId.get(branch.id);

@@ -22,7 +22,10 @@ export class BranchFactsService extends BranchFacts {
     return ok(branch);
   }
 
-  async getBranchFactsBatch(input: { tenantId: string; branchIds: string[] }): Promise<Result<BranchFact[], BranchFactsError>> {
+  async getBranchFactsBatch(input: {
+    tenantId: string;
+    branchIds: string[];
+  }): Promise<Result<BranchFact[], BranchFactsError>> {
     const branchIds = [...new Set(input.branchIds)];
     if (branchIds.length === 0) return ok([]);
 

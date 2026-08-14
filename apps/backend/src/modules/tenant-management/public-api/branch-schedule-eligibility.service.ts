@@ -75,7 +75,8 @@ export class BranchScheduleEligibilityService extends BranchScheduleEligibility 
     }).formatToParts(date);
     const get = (type: string): number => Number(parts.find((part) => part.type === type)?.value ?? '0');
     const hour = get('hour') === 24 ? 0 : get('hour');
-    const dateKey = `${String(get('year')).padStart(4, '0')}-${String(get('month')).padStart(2, '0')}-${String(get('day')).padStart(2, '0')}` as LocalDate;
+    const dateKey =
+      `${String(get('year')).padStart(4, '0')}-${String(get('month')).padStart(2, '0')}-${String(get('day')).padStart(2, '0')}` as LocalDate;
 
     return { dateKey, dayOfWeek: localDateDayOfWeek(dateKey), minuteOfDay: hour * 60 + get('minute') };
   }

@@ -20,13 +20,20 @@ import {
 
 type OperationalSetupValidationError = { code: 'TenantUnavailable' | 'BranchUnavailable'; message: string };
 
-async function validateOperationalSetup(tenantOperationalFacts: TenantOperationalFacts, branchFacts: BranchFacts, tenantId: string, branchIds: string[]): Promise<Result<void, OperationalSetupValidationError>> {
+async function validateOperationalSetup(
+  tenantOperationalFacts: TenantOperationalFacts,
+  branchFacts: BranchFacts,
+  tenantId: string,
+  branchIds: string[],
+): Promise<Result<void, OperationalSetupValidationError>> {
   const tenant = await tenantOperationalFacts.getTenantOperationalFacts({ tenantId });
   if (tenant.isErr()) return err({ code: 'TenantUnavailable', message: tenant.error.message });
   const branches = await branchFacts.getBranchFactsBatch({ tenantId, branchIds });
   if (branches.isErr()) return err({ code: 'BranchUnavailable', message: branches.error.message });
   const unavailable = branches.value.find((branch) => !branch.isActive || branch.isDeleted);
-  return unavailable ? err({ code: 'BranchUnavailable', message: `Branch "${unavailable.branchId}" is unavailable.` }) : ok(undefined);
+  return unavailable
+    ? err({ code: 'BranchUnavailable', message: `Branch "${unavailable.branchId}" is unavailable.` })
+    : ok(undefined);
 }
 
 export type CreateEquipmentTypeServiceResult = Result<CreateEquipmentTypeSetupResult, CreateEquipmentTypeError>;
@@ -66,7 +73,12 @@ export class CreateEquipmentTypeHandler implements ICommandHandler<
       }
     }
 
-    const tenantValidation = await validateOperationalSetup(this.tenantOperationalFacts, this.branchFacts, command.tenantId, branchIds);
+    const tenantValidation = await validateOperationalSetup(
+      this.tenantOperationalFacts,
+      this.branchFacts,
+      command.tenantId,
+      branchIds,
+    );
     if (tenantValidation.isErr()) {
       return err(mapTenantValidationError(tenantValidation.error));
     }
