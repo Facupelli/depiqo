@@ -2,7 +2,7 @@ import type { CreateOwnerWithContractResponseDto } from "@repo/api-contracts";
 import type { MutationOptions } from "@tanstack/react-query";
 import { useMutation } from "@tanstack/react-query";
 import type { ProblemDetailsError } from "@/shared/errors";
-import { ownerKeys } from "../owners.queries";
+import { ownerOptionKeys } from "../owner-options.queries";
 import {
 	type CreateOwnerWithContractVariables,
 	createOwnerWithContract,
@@ -28,7 +28,7 @@ export function useCreateOwnerWithContract(
 		...options,
 		mutationFn: createOwnerWithContract,
 		meta: {
-			invalidates: ownerKeys.all(),
+			invalidates: ownerOptionKeys.all(),
 			...options?.meta,
 		},
 	});
