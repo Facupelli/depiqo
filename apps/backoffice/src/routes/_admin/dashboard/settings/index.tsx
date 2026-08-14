@@ -2,9 +2,9 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import z from "zod";
 import { TenantContractSignerSettingsSection } from "@/features/tenant-management/tenant/contract-signer/components/tenant-contract-signer-settings-section";
 import { CustomDomainSection } from "@/features/tenant-management/tenant/custom-domain/components/custom-domain-section";
-import { TenantBrandingSection } from "@/features/tenant-management/tenant/update-tenant-branding/components/tenant-branding-section";
 import { TenantConfigSettingsSection } from "@/features/tenant-management/tenant/update-tenant-config/components/tenant-config-form";
 import { cn } from "@/lib/utils";
+import { BrandingSection } from "@/modules/settings/branding/update-branding/BrandingSection";
 import { AdminRouteError } from "@/shared/components/admin-route-error";
 
 const SETTINGS_SECTIONS = [
@@ -207,7 +207,7 @@ function SettingsPanel({ section }: { section: SettingsSection }) {
 		case "general":
 			return <TenantConfigSettingsSection section="general" />;
 		case "branding":
-			return <TenantBrandingSection />;
+			return <BrandingSection />;
 		case "owner-profile":
 			return <TenantContractSignerSettingsSection />;
 		case "domain":
