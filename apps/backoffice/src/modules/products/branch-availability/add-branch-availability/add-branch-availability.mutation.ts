@@ -5,9 +5,10 @@ import type {
 import type { MutationOptions } from "@tanstack/react-query";
 import { useMutation } from "@tanstack/react-query";
 import { rentalOfferPricingKeys } from "@/features/pricing/rental-offer-pricings/rental-offer-pricings.queries";
+import { pricePlanKeys } from "@/modules/pricing/price-plans/public";
 import { productKeys } from "@/modules/products/products.queries";
 import type { ProblemDetailsError } from "@/shared/errors";
-import { createRentalOfferWithPricing } from "./create-rental-offer-with-pricing.api";
+import { createRentalOfferWithPricing } from "./add-branch-availability.api";
 
 type CreateRentalOfferWithPricingOptions = Omit<
 	MutationOptions<
@@ -29,7 +30,11 @@ export function useCreateRentalOfferWithPricing(
 		...options,
 		mutationFn: createRentalOfferWithPricing,
 		meta: {
-			invalidates: [productKeys.all(), rentalOfferPricingKeys.all()],
+			invalidates: [
+				productKeys.all(),
+				rentalOfferPricingKeys.all(),
+				pricePlanKeys.all(),
+			],
 			...options?.meta,
 		},
 	});

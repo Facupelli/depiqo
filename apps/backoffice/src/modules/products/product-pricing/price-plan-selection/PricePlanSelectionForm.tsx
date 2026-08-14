@@ -15,35 +15,33 @@ import {
 import { useForm } from "@tanstack/react-form";
 import type React from "react";
 import {
-	type AttachRatePlanToRentalOfferFormValues,
-	attachRatePlanToRentalOfferFormDefaultValues,
-	attachRatePlanToRentalOfferFormSchema,
-} from "./attach-rate-plan-to-rental-offer.schema";
+	type PricePlanSelectionFormValues,
+	pricePlanSelectionFormDefaultValues,
+	pricePlanSelectionFormSchema,
+} from "./price-plan-selection.schema";
 
-export interface AttachRatePlanToRentalOfferRatePlanOption {
+export interface PricePlanOption {
 	id: string;
 	name: string;
 }
 
-interface AttachRatePlanToRentalOfferFormProps {
+interface PricePlanSelectionFormProps {
 	formId: string;
-	ratePlanOptions: AttachRatePlanToRentalOfferRatePlanOption[];
-	defaultValues?: AttachRatePlanToRentalOfferFormValues;
+	ratePlanOptions: PricePlanOption[];
+	defaultValues?: PricePlanSelectionFormValues;
 	isPending: boolean;
 	submitLabel?: string;
 	pendingLabel?: string;
 	cancelLabel?: string;
 	secondaryAction?: React.ReactNode;
-	onSubmit: (
-		values: AttachRatePlanToRentalOfferFormValues,
-	) => Promise<void> | void;
+	onSubmit: (values: PricePlanSelectionFormValues) => Promise<void> | void;
 	onCancel: () => void;
 }
 
-export function AttachRatePlanToRentalOfferForm({
+export function PricePlanSelectionForm({
 	formId,
 	ratePlanOptions,
-	defaultValues = attachRatePlanToRentalOfferFormDefaultValues(),
+	defaultValues = pricePlanSelectionFormDefaultValues(),
 	isPending,
 	submitLabel = "Asociar plan",
 	pendingLabel = "Asociando...",
@@ -51,11 +49,11 @@ export function AttachRatePlanToRentalOfferForm({
 	secondaryAction,
 	onSubmit,
 	onCancel,
-}: AttachRatePlanToRentalOfferFormProps) {
+}: PricePlanSelectionFormProps) {
 	const form = useForm({
 		defaultValues,
 		validators: {
-			onSubmit: attachRatePlanToRentalOfferFormSchema,
+			onSubmit: pricePlanSelectionFormSchema,
 		},
 		onSubmit: async ({ value }) => {
 			await onSubmit(value);

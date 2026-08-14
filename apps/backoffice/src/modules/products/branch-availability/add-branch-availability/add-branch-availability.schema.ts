@@ -4,14 +4,14 @@ import {
 } from "@repo/api-contracts";
 import { z } from "zod";
 import {
-	type AttachRatePlanToRentalOfferFormValues,
-	attachRatePlanToRentalOfferFormSchema,
-} from "@/features/pricing/rental-offer-pricings/attach-rate-plan-to-rental-offer/attach-rate-plan-to-rental-offer.schema";
-import {
 	type CreatePricePlanBaseFormValues,
 	createPricePlanBaseFormDefaultValues,
 	createPricePlanBaseFormSchema,
 } from "@/modules/pricing/price-plans/public";
+import {
+	type PricePlanSelectionFormValues,
+	pricePlanSelectionFormSchema,
+} from "@/modules/products/product-pricing/price-plan-selection/price-plan-selection.schema";
 
 export const createRentalOfferWithPricingBranchFormSchema = z.object({
 	branchId: z.string().trim().min(1, "La sucursal es obligatoria"),
@@ -27,21 +27,21 @@ export function createRentalOfferWithPricingBranchFormDefaultValues(): CreateRen
 	};
 }
 
-export const createRentalOfferWithCreatedRatePlanFormSchema =
+export const createBranchAvailabilityWithNewPricePlanFormSchema =
 	createPricePlanBaseFormSchema;
 
-export type CreateRentalOfferWithCreatedRatePlanFormValues =
+export type CreateBranchAvailabilityWithNewPricePlanFormValues =
 	CreatePricePlanBaseFormValues;
 
-export function createRentalOfferWithCreatedRatePlanFormDefaultValues(): CreateRentalOfferWithCreatedRatePlanFormValues {
+export function createBranchAvailabilityWithNewPricePlanFormDefaultValues(): CreateBranchAvailabilityWithNewPricePlanFormValues {
 	return createPricePlanBaseFormDefaultValues();
 }
 
 export function toCreateRentalOfferWithAttachedRatePlanDto(
-	values: AttachRatePlanToRentalOfferFormValues,
+	values: PricePlanSelectionFormValues,
 	context: { rentableItemId: string; branchId: string },
 ): CreateRentalOfferWithPricingBodyDto {
-	const parsedValues = attachRatePlanToRentalOfferFormSchema.parse(values);
+	const parsedValues = pricePlanSelectionFormSchema.parse(values);
 	const dto = {
 		rentableItemId: context.rentableItemId.trim(),
 		branchId: context.branchId.trim(),
@@ -55,11 +55,11 @@ export function toCreateRentalOfferWithAttachedRatePlanDto(
 }
 
 export function toCreateRentalOfferWithCreatedRatePlanDto(
-	values: CreateRentalOfferWithCreatedRatePlanFormValues,
+	values: CreateBranchAvailabilityWithNewPricePlanFormValues,
 	context: { rentableItemId: string; branchId: string },
 ): CreateRentalOfferWithPricingBodyDto {
 	const parsedValues =
-		createRentalOfferWithCreatedRatePlanFormSchema.parse(values);
+		createBranchAvailabilityWithNewPricePlanFormSchema.parse(values);
 	const dto = {
 		rentableItemId: context.rentableItemId.trim(),
 		branchId: context.branchId.trim(),

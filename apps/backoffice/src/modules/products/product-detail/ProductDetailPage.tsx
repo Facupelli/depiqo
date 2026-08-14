@@ -9,13 +9,13 @@ import {
 } from "@repo/ui/components/tabs";
 import { Building2, PackageOpen, Pencil } from "lucide-react";
 import { PageBreadcrumb } from "@/components/detail-id-breadcrumb";
-import { CreateRentalOfferWithPricingDialog } from "@/features/admin/offering-setup/create-rental-offer-with-pricing/create-rental-offer-with-pricing-dialog";
 import { buildR2PublicUrl } from "@/lib/r2-public-url";
 import { ActivateProductAction } from "@/modules/products/activate-product/ActivateProductAction";
+import { AddBranchAvailabilityDialog } from "@/modules/products/branch-availability/add-branch-availability/AddBranchAvailabilityDialog";
+import type { PricePlanOption } from "@/modules/products/product-pricing/price-plan-selection/PricePlanSelectionForm";
 import {
 	ProductAvailabilitySection,
 	ProductAvailabilityStatusSummary,
-	type RatePlanOption,
 } from "./ProductAvailabilitySection";
 import { ProductOverview } from "./ProductOverview";
 import { getOfferMetrics, getStartingPrice } from "./product-detail.utils";
@@ -23,7 +23,7 @@ import { RequiredEquipmentSection } from "./RequiredEquipmentSection";
 
 type ProductDetailPageProps = {
 	product: GetRentableItemDetailResponseDto;
-	ratePlanOptions: RatePlanOption[];
+	ratePlanOptions: PricePlanOption[];
 };
 
 const statusPresentation = {
@@ -98,7 +98,7 @@ export function ProductDetailPage({
 				<ProductAvailabilityStatusSummary
 					metrics={metrics}
 					action={
-						<CreateRentalOfferWithPricingDialog
+						<AddBranchAvailabilityDialog
 							item={product}
 							ratePlanOptions={ratePlanOptions}
 						/>

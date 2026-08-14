@@ -23,17 +23,19 @@ import {
 import { useForm } from "@tanstack/react-form";
 import { ArrowLeft, CircleDollarSign, Plus } from "lucide-react";
 import { useId, useState } from "react";
-import type { AttachRatePlanToRentalOfferRatePlanOption } from "@/features/pricing/rental-offer-pricings/attach-rate-plan-to-rental-offer/attach-rate-plan-to-rental-offer-form";
-import { AttachRatePlanToRentalOfferForm } from "@/features/pricing/rental-offer-pricings/attach-rate-plan-to-rental-offer/attach-rate-plan-to-rental-offer-form";
+import {
+	type PricePlanOption,
+	PricePlanSelectionForm,
+} from "@/modules/products/product-pricing/price-plan-selection/PricePlanSelectionForm";
 import { useBranches } from "@/modules/settings/branches/branches.queries";
-import { CreateRentalOfferWithCreatedRatePlanForm } from "./create-rental-offer-with-created-rate-plan-form";
-import { useCreateRentalOfferWithPricing } from "./create-rental-offer-with-pricing.mutation";
+import { useCreateRentalOfferWithPricing } from "./add-branch-availability.mutation";
 import {
 	createRentalOfferWithPricingBranchFormDefaultValues,
 	createRentalOfferWithPricingBranchFormSchema,
 	toCreateRentalOfferWithAttachedRatePlanDto,
 	toCreateRentalOfferWithCreatedRatePlanDto,
-} from "./create-rental-offer-with-pricing.schema";
+} from "./add-branch-availability.schema";
+import { CreateBranchAvailabilityWithNewPricePlanForm } from "./CreateBranchAvailabilityWithNewPricePlanForm";
 
 type AddOfferDialogStep =
 	| "choose-action"
@@ -45,15 +47,15 @@ type BranchOption = {
 	name: string;
 };
 
-type CreateRentalOfferWithPricingDialogProps = {
+type AddBranchAvailabilityDialogProps = {
 	item: GetRentableItemDetailResponseDto;
-	ratePlanOptions: AttachRatePlanToRentalOfferRatePlanOption[];
+	ratePlanOptions: PricePlanOption[];
 };
 
-export function CreateRentalOfferWithPricingDialog({
+export function AddBranchAvailabilityDialog({
 	item,
 	ratePlanOptions,
-}: CreateRentalOfferWithPricingDialogProps) {
+}: AddBranchAvailabilityDialogProps) {
 	const attachFormId = useId();
 	const createFormId = useId();
 	const [open, setOpen] = useState(false);
@@ -124,7 +126,7 @@ export function CreateRentalOfferWithPricingDialog({
 						) : null}
 
 						{step === "attach-rate-plan" ? (
-							<AttachRatePlanToRentalOfferForm
+							<PricePlanSelectionForm
 								formId={attachFormId}
 								ratePlanOptions={ratePlanOptions}
 								isPending={mutation.isPending}
@@ -148,7 +150,7 @@ export function CreateRentalOfferWithPricingDialog({
 						) : null}
 
 						{step === "create-rate-plan" ? (
-							<CreateRentalOfferWithCreatedRatePlanForm
+							<CreateBranchAvailabilityWithNewPricePlanForm
 								formId={createFormId}
 								isPending={mutation.isPending}
 								submitLabel="Crear oferta y plan"

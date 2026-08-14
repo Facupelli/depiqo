@@ -1,13 +1,13 @@
 import type { AttachRatePlanToRentalOfferResponseDto } from "@repo/api-contracts";
 import type { MutationOptions } from "@tanstack/react-query";
 import { useMutation } from "@tanstack/react-query";
+import { rentalOfferPricingKeys } from "@/features/pricing/rental-offer-pricings/rental-offer-pricings.queries";
 import { productKeys } from "@/modules/products/products.queries";
 import type { ProblemDetailsError } from "@/shared/errors";
-import { rentalOfferPricingKeys } from "../rental-offer-pricings.queries";
 import {
 	type AttachRatePlanToRentalOfferVariables,
 	attachRatePlanToRentalOffer,
-} from "./attach-rate-plan-to-rental-offer.api";
+} from "./set-price-plan.api";
 
 type AttachRatePlanToRentalOfferOptions = Omit<
 	MutationOptions<

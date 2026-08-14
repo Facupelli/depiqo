@@ -14,22 +14,22 @@ import {
 	toCreatePricePlanDto,
 	useCreatePricePlan,
 } from "@/modules/pricing/price-plans/public";
-import { useAttachRatePlanToRentalOffer } from "./attach-rate-plan-to-rental-offer.mutation";
-import { toAttachRatePlanToRentalOfferDto } from "./attach-rate-plan-to-rental-offer.schema";
 import {
-	AttachRatePlanToRentalOfferForm,
-	type AttachRatePlanToRentalOfferRatePlanOption,
-} from "./attach-rate-plan-to-rental-offer-form";
+	type PricePlanOption,
+	PricePlanSelectionForm,
+} from "../price-plan-selection/PricePlanSelectionForm";
+import { useAttachRatePlanToRentalOffer } from "./set-price-plan.mutation";
+import { toAttachRatePlanToRentalOfferDto } from "./set-price-plan.schema";
 
 type PriceAssignmentStep = "choose" | "existing" | "create";
 type RentalOffer = GetRentableItemDetailResponseDto["offers"][number];
 
-export function ConfigureRentalOfferPriceAction({
+export function SetPricePlanAction({
 	offer,
 	ratePlanOptions,
 }: {
 	offer: RentalOffer;
-	ratePlanOptions: AttachRatePlanToRentalOfferRatePlanOption[];
+	ratePlanOptions: PricePlanOption[];
 }) {
 	const attachFormId = useId();
 	const createFormId = useId();
@@ -93,7 +93,7 @@ export function ConfigureRentalOfferPriceAction({
 					</div>
 				) : null}
 				{step === "existing" ? (
-					<AttachRatePlanToRentalOfferForm
+					<PricePlanSelectionForm
 						formId={attachFormId}
 						ratePlanOptions={ratePlanOptions}
 						isPending={attachMutation.isPending}

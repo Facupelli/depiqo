@@ -3,26 +3,26 @@ import type React from "react";
 import { PricePlanFields } from "@/modules/pricing/price-plans/public";
 import { useAppForm } from "@/shared/contexts/form.context";
 import {
-	type CreateRentalOfferWithCreatedRatePlanFormValues,
-	createRentalOfferWithCreatedRatePlanFormDefaultValues,
-	createRentalOfferWithCreatedRatePlanFormSchema,
-} from "./create-rental-offer-with-pricing.schema";
+	type CreateBranchAvailabilityWithNewPricePlanFormValues,
+	createBranchAvailabilityWithNewPricePlanFormDefaultValues,
+	createBranchAvailabilityWithNewPricePlanFormSchema,
+} from "./add-branch-availability.schema";
 
-type CreateRentalOfferWithCreatedRatePlanFormProps = {
+type CreateBranchAvailabilityWithNewPricePlanFormProps = {
 	formId: string;
 	isPending: boolean;
-	defaultValues?: CreateRentalOfferWithCreatedRatePlanFormValues;
+	defaultValues?: CreateBranchAvailabilityWithNewPricePlanFormValues;
 	submitLabel?: string;
 	pendingLabel?: string;
 	cancelLabel?: string;
 	secondaryAction?: React.ReactNode;
 	onSubmit: (
-		values: CreateRentalOfferWithCreatedRatePlanFormValues,
+		values: CreateBranchAvailabilityWithNewPricePlanFormValues,
 	) => Promise<void> | void;
 	onCancel: () => void;
 };
 
-export function CreateRentalOfferWithCreatedRatePlanForm({
+export function CreateBranchAvailabilityWithNewPricePlanForm({
 	formId,
 	isPending,
 	defaultValues,
@@ -32,11 +32,14 @@ export function CreateRentalOfferWithCreatedRatePlanForm({
 	secondaryAction,
 	onSubmit,
 	onCancel,
-}: CreateRentalOfferWithCreatedRatePlanFormProps): React.JSX.Element {
+}: CreateBranchAvailabilityWithNewPricePlanFormProps): React.JSX.Element {
 	const form = useAppForm({
 		defaultValues:
-			defaultValues ?? createRentalOfferWithCreatedRatePlanFormDefaultValues(),
-		validators: { onSubmit: createRentalOfferWithCreatedRatePlanFormSchema },
+			defaultValues ??
+			createBranchAvailabilityWithNewPricePlanFormDefaultValues(),
+		validators: {
+			onSubmit: createBranchAvailabilityWithNewPricePlanFormSchema,
+		},
 		onSubmit: async ({ value }) => {
 			await onSubmit(value);
 		},

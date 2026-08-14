@@ -13,10 +13,10 @@ import {
 	Tag,
 } from "lucide-react";
 import type { ReactNode } from "react";
-import { ConfigureRentalOfferPriceAction } from "@/features/pricing/rental-offer-pricings/attach-rate-plan-to-rental-offer/configure-rental-offer-price-action";
+import type { PricePlanOption } from "@/modules/products/product-pricing/price-plan-selection/PricePlanSelectionForm";
+import { SetPricePlanAction } from "@/modules/products/product-pricing/set-price-plan/SetPricePlanAction";
 import { formatPriceSummary, type OfferMetrics } from "./product-detail.utils";
 
-export type RatePlanOption = { id: string; name: string };
 type RentalOffer = GetRentableItemDetailResponseDto["offers"][number];
 
 const setupIssueLabels = {
@@ -79,7 +79,7 @@ export function ProductAvailabilitySection({
 	ratePlanOptions,
 }: {
 	product: GetRentableItemDetailResponseDto;
-	ratePlanOptions: RatePlanOption[];
+	ratePlanOptions: PricePlanOption[];
 }) {
 	return (
 		<section className="rounded-2xl border bg-background p-5 shadow-sm">
@@ -147,7 +147,7 @@ function BranchOfferCard({
 	ratePlanOptions,
 }: {
 	offer: RentalOffer;
-	ratePlanOptions: RatePlanOption[];
+	ratePlanOptions: PricePlanOption[];
 }) {
 	const presentation = getOfferPresentation(offer);
 	return (
@@ -196,10 +196,7 @@ function BranchOfferCard({
 				<p>{presentation.description}</p>
 			</OfferCardSection>
 			<div className="flex flex-col justify-center gap-2 border-t p-4 lg:border-t-0 lg:border-l">
-				<ConfigureRentalOfferPriceAction
-					offer={offer}
-					ratePlanOptions={ratePlanOptions}
-				/>
+				<SetPricePlanAction offer={offer} ratePlanOptions={ratePlanOptions} />
 				{!offer.isVisible ? (
 					<Button type="button" variant="outline" onClick={() => undefined}>
 						<Eye className="mr-2 size-4" />
