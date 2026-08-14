@@ -95,7 +95,13 @@ export class TenantContextResolverService {
         id: true,
         slug: true,
         name: true,
-        config: true,
+        branding: {
+          select: {
+            logoUrl: true,
+            faviconUrl: true,
+            primaryColor: true,
+          },
+        },
         domains: {
           where: {
             isPrimary: true,
@@ -140,7 +146,13 @@ export class TenantContextResolverService {
             id: true,
             slug: true,
             name: true,
-            config: true,
+            branding: {
+              select: {
+                logoUrl: true,
+                faviconUrl: true,
+                primaryColor: true,
+              },
+            },
             domains: {
               where: {
                 isPrimary: true,
@@ -183,11 +195,13 @@ export class TenantContextResolverService {
     id: string;
     slug: string;
     name: string;
-    config: unknown;
+    branding: {
+      logoUrl: string | null;
+      faviconUrl: string | null;
+      primaryColor: string | null;
+    } | null;
     domains: Array<{ domain: string }>;
   }): ResolvedStorefrontTenant {
-    const config = parseTenantPublicConfig(tenant.config);
-
     return {
       tenantId: tenant.id,
       slug: tenant.slug,
@@ -196,32 +210,10 @@ export class TenantContextResolverService {
         slug: tenant.slug,
         name: tenant.name,
         customDomain: tenant.domains[0]?.domain ?? null,
-        logoUrl: config.logoUrl,
-        faviconUrl: config.faviconUrl,
-        primaryColor: config.primaryColor,
+        logoUrl: tenant.branding?.logoUrl ?? null,
+        faviconUrl: tenant.branding?.faviconUrl ?? null,
+        primaryColor: tenant.branding?.primaryColor ?? null,
       },
     };
   }
-}
-
-function parseTenantPublicConfig(config: unknown): {
-  logoUrl: string | null;
-  faviconUrl: string | null;
-  primaryColor: string | null;
-} {
-  if (!config || typeof config !== 'object' || Array.isArray(config)) {
-    return {
-      logoUrl: null,
-      faviconUrl: null,
-      primaryColor: null,
-    };
-  }
-
-  const value = config as Record<string, unknown>;
-
-  return {
-    logoUrl: typeof value.logoUrl === 'string' ? value.logoUrl : null,
-    faviconUrl: typeof value.faviconUrl === 'string' ? value.faviconUrl : null,
-    primaryColor: typeof value.primaryColor === 'string' ? value.primaryColor : null,
-  };
 }

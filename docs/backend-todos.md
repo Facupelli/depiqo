@@ -157,18 +157,6 @@ Current behavior uses live serial numbers when rendering and Contracts snapshots
 
 ---
 
-# Tenant Management / branding
-
-* [ ] Resolve Tenant branding source inconsistency.
-
-  * `V2TenantBranding` is used by the new branding capability.
-  * `TenantContextResolverService` reportedly still reads branding-shaped values from `V2Tenant.config`.
-  * Establish one authoritative source.
-
----
-
----
-
 # Testing deferred until cleanup is complete
 
 * [ ] Run the comprehensive backend test pass after phase-2/TODO cleanup.
