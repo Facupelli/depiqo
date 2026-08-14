@@ -15,14 +15,14 @@ import {
 import { Search, SlidersHorizontal, X } from "lucide-react";
 import { useId } from "react";
 
-type RentableItemKind = NonNullable<GetRentableItemsQueryDto["kind"]>;
-type RentableItemStatus = NonNullable<GetRentableItemsQueryDto["status"]>;
+type ProductKind = NonNullable<GetRentableItemsQueryDto["kind"]>;
+type ProductStatus = NonNullable<GetRentableItemsQueryDto["status"]>;
 type BooleanFilterValue = boolean | undefined;
 
-export interface RentableItemsFilterValue {
+export interface ProductListFilterValue {
 	search?: string;
-	kind?: Extract<RentableItemKind, "SINGLE" | "PACKAGE">;
-	status?: RentableItemStatus;
+	kind?: Extract<ProductKind, "SINGLE" | "PACKAGE">;
+	status?: ProductStatus;
 	categoryId?: string;
 	branchId?: string;
 	isVisible?: boolean;
@@ -30,26 +30,26 @@ export interface RentableItemsFilterValue {
 	hasActivePricing?: boolean;
 }
 
-interface RentableItemsFiltersProps {
-	filters: RentableItemsFilterValue;
+interface ProductListFiltersProps {
+	filters: ProductListFilterValue;
 	searchValue: string;
 	categories: CategoryDto[];
 	branches: GetBranchesBranchDto[];
 	isAdvancedOpen: boolean;
 	onSearchChange: (value: string) => void;
-	onFilterChange: (filters: Partial<RentableItemsFilterValue>) => void;
+	onFilterChange: (filters: Partial<ProductListFilterValue>) => void;
 	onToggleAdvanced: () => void;
 	onClearFilters: () => void;
 }
 
-const STATUS_LABELS: Record<RentableItemStatus, string> = {
+const STATUS_LABELS: Record<ProductStatus, string> = {
 	ACTIVE: "Active",
 	DRAFT: "Draft",
 	ARCHIVED: "Archived",
 };
 
 const KIND_LABELS: Record<
-	Extract<RentableItemKind, "SINGLE" | "PACKAGE">,
+	Extract<ProductKind, "SINGLE" | "PACKAGE">,
 	string
 > = {
 	SINGLE: "Equipment",
@@ -71,7 +71,7 @@ const BOOLEAN_FILTER_LABELS = {
 	},
 } as const;
 
-export function RentableItemsFilters({
+export function ProductListFilters({
 	filters,
 	searchValue,
 	categories,
@@ -81,7 +81,7 @@ export function RentableItemsFilters({
 	onFilterChange,
 	onToggleAdvanced,
 	onClearFilters,
-}: RentableItemsFiltersProps) {
+}: ProductListFiltersProps) {
 	const searchInputId = useId();
 	const activeChips = buildActiveChips(filters, categories, branches);
 
@@ -379,14 +379,13 @@ function ActiveFilterChip({
 }
 
 function buildActiveChips(
-	filters: RentableItemsFilterValue,
+	filters: ProductListFilterValue,
 	categories: CategoryDto[],
 	branches: GetBranchesBranchDto[],
-): Array<{ key: keyof RentableItemsFilterValue; label: string }> {
+): Array<{ key: keyof ProductListFilterValue; label: string }> {
 	const category = categories.find((item) => item.id === filters.categoryId);
 	const branch = branches.find((item) => item.id === filters.branchId);
-	const chips: Array<{ key: keyof RentableItemsFilterValue; label: string }> =
-		[];
+	const chips: Array<{ key: keyof ProductListFilterValue; label: string }> = [];
 
 	if (filters.search) {
 		chips.push({ key: "search", label: `Search: ${filters.search}` });
@@ -434,7 +433,7 @@ function buildActiveChips(
 	return chips;
 }
 
-function isAllViewActive(filters: RentableItemsFilterValue) {
+function isAllViewActive(filters: ProductListFilterValue) {
 	return (
 		filters.kind === undefined &&
 		filters.status === undefined &&

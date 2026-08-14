@@ -6,7 +6,7 @@ import {
 } from "@repo/api-contracts";
 import { apiFetch } from "@/lib/api/api-fetch";
 
-export async function getRentableItemDetail(
+export async function getProductDetail(
 	rentableItemId: string,
 ): Promise<GetRentableItemDetailResponseDto> {
 	const parsedParams = GetRentableItemDetailParamsSchema.parse({

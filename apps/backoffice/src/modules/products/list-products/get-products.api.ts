@@ -7,7 +7,7 @@ import {
 } from "@repo/api-contracts";
 import { apiFetch } from "@/lib/api/api-fetch";
 
-const GET_RENTABLE_ITEMS_QUERY_PARAM_KEYS = [
+const GET_PRODUCTS_QUERY_PARAM_KEYS = [
 	"search",
 	"kind",
 	"status",
@@ -20,11 +20,11 @@ const GET_RENTABLE_ITEMS_QUERY_PARAM_KEYS = [
 	"pageSize",
 ] as const satisfies readonly (keyof GetRentableItemsQueryDto)[];
 
-function buildGetRentableItemsPath(query?: GetRentableItemsQueryDto) {
+function buildGetProductsPath(query?: GetRentableItemsQueryDto) {
 	const parsedQuery = GetRentableItemsQuerySchema.parse(query ?? {});
 	const searchParams = new URLSearchParams();
 
-	for (const key of GET_RENTABLE_ITEMS_QUERY_PARAM_KEYS) {
+	for (const key of GET_PRODUCTS_QUERY_PARAM_KEYS) {
 		if (query?.[key] === undefined) {
 			continue;
 		}
@@ -41,10 +41,10 @@ function buildGetRentableItemsPath(query?: GetRentableItemsQueryDto) {
 		: getRentableItemsContract.path;
 }
 
-export async function getRentableItems(
+export async function getProducts(
 	query?: GetRentableItemsQueryDto,
 ): Promise<GetRentableItemsResponseDto> {
-	const response = await apiFetch(buildGetRentableItemsPath(query), {
+	const response = await apiFetch(buildGetProductsPath(query), {
 		method: getRentableItemsContract.method,
 	});
 

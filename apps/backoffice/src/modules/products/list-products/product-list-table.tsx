@@ -15,9 +15,9 @@ import {
 	useReactTable,
 } from "@tanstack/react-table";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { createRentableItemsColumns } from "./rentable-items-columns";
+import { createProductListColumns } from "./product-list-columns";
 
-interface RentableItemsTableProps {
+interface ProductListTableProps {
 	items: GetRentableItemsItemDto[];
 	total: number;
 	pagination: PaginationState;
@@ -27,7 +27,7 @@ interface RentableItemsTableProps {
 	isLoading?: boolean;
 }
 
-export function RentableItemsTable({
+export function ProductListTable({
 	items,
 	total,
 	pagination,
@@ -35,9 +35,9 @@ export function RentableItemsTable({
 	onRowClick,
 	categoryNameById,
 	isLoading = false,
-}: RentableItemsTableProps) {
+}: ProductListTableProps) {
 	const pageCount = Math.max(1, Math.ceil(total / pagination.pageSize));
-	const columns = createRentableItemsColumns({ categoryNameById });
+	const columns = createProductListColumns({ categoryNameById });
 	const table = useReactTable({
 		data: items,
 		columns,

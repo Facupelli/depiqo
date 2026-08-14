@@ -31,7 +31,7 @@ const billingUnitLabels: NonNullable<
 	WEEK: "semana",
 };
 
-export function createRentableItemsColumns({
+export function createProductListColumns({
 	categoryNameById,
 }: {
 	categoryNameById: Map<string, string>;
@@ -117,9 +117,7 @@ export function createRentableItemsColumns({
 			id: "status",
 			accessorKey: "status",
 			header: "Estado",
-			cell: ({ row }) => (
-				<RentableItemStatusBadge status={row.original.status} />
-			),
+			cell: ({ row }) => <ProductStatusBadge status={row.original.status} />,
 		},
 		{
 			id: "startingPrice",
@@ -145,7 +143,7 @@ export function createRentableItemsColumns({
 	];
 }
 
-function RentableItemStatusBadge({
+function ProductStatusBadge({
 	status,
 }: {
 	status: GetRentableItemsItemDto["status"];

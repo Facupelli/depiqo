@@ -9,17 +9,17 @@ import {
 } from "@repo/ui/components/table";
 import type { ReactNode } from "react";
 
-export function RentableItemRequiredEquipmentSection({
-	item,
+export function RequiredEquipmentSection({
+	product,
 }: {
-	item: GetRentableItemDetailResponseDto;
+	product: GetRentableItemDetailResponseDto;
 }) {
 	return (
 		<DetailTable
 			title="Equipo requerido"
 			description="Equipos necesarios para poder cumplir el alquiler de este ítem."
 			colSpan={3}
-			isEmpty={item.requiredEquipment.length === 0}
+			isEmpty={product.requiredEquipment.length === 0}
 			emptyMessage="No hay equipo requerido."
 		>
 			<TableHeader className="bg-muted/50">
@@ -30,7 +30,7 @@ export function RentableItemRequiredEquipmentSection({
 				</TableRow>
 			</TableHeader>
 			<TableBody>
-				{item.requiredEquipment.map((equipment) => (
+				{product.requiredEquipment.map((equipment) => (
 					<TableRow key={equipment.equipmentTypeId}>
 						<TableCell className="font-medium">
 							{equipment.equipmentTypeName ?? equipment.equipmentTypeId}

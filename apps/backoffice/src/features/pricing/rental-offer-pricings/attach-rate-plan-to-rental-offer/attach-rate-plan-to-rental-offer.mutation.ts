@@ -1,7 +1,7 @@
 import type { AttachRatePlanToRentalOfferResponseDto } from "@repo/api-contracts";
 import type { MutationOptions } from "@tanstack/react-query";
 import { useMutation } from "@tanstack/react-query";
-import { rentableItemKeys } from "@/features/catalog/rentable-items/rentable-items.queries";
+import { productKeys } from "@/modules/products/products.queries";
 import type { ProblemDetailsError } from "@/shared/errors";
 import { rentalOfferPricingKeys } from "../rental-offer-pricings.queries";
 import {
@@ -29,7 +29,7 @@ export function useAttachRatePlanToRentalOffer(
 		...options,
 		mutationFn: attachRatePlanToRentalOffer,
 		meta: {
-			invalidates: [rentalOfferPricingKeys.all(), rentableItemKeys.all()],
+			invalidates: [rentalOfferPricingKeys.all(), productKeys.all()],
 			...options?.meta,
 		},
 	});

@@ -6,12 +6,12 @@ import {
 } from "@repo/api-contracts";
 import { apiFetch } from "@/lib/api/api-fetch";
 
-export interface ActivateRentableItemVariables {
+export interface ActivateProductVariables {
 	rentableItemId: string;
 }
 
-export async function activateRentableItem(
-	variables: ActivateRentableItemVariables,
+export async function activateProduct(
+	variables: ActivateProductVariables,
 ): Promise<ActivateRentableItemResponseDto> {
 	const parsedParams = ActivateRentableItemParamsSchema.parse(variables);
 	const path = activateRentableItemContract.path.replace(

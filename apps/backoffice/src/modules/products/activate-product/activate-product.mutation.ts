@@ -1,32 +1,32 @@
 import type { ActivateRentableItemResponseDto } from "@repo/api-contracts";
 import type { MutationOptions } from "@tanstack/react-query";
 import { useMutation } from "@tanstack/react-query";
+import { productKeys } from "@/modules/products/products.queries";
 import type { ProblemDetailsError } from "@/shared/errors";
-import { rentableItemKeys } from "../rentable-items.queries";
 import {
-	type ActivateRentableItemVariables,
-	activateRentableItem,
-} from "./activate-rentable-item.api";
+	type ActivateProductVariables,
+	activateProduct,
+} from "./activate-product.api";
 
-type ActivateRentableItemOptions = Omit<
+type ActivateProductOptions = Omit<
 	MutationOptions<
 		ActivateRentableItemResponseDto,
 		ProblemDetailsError,
-		ActivateRentableItemVariables
+		ActivateProductVariables
 	>,
 	"mutationFn" | "mutationKey"
 >;
 
-export function useActivateRentableItem(options?: ActivateRentableItemOptions) {
+export function useActivateProduct(options?: ActivateProductOptions) {
 	return useMutation<
 		ActivateRentableItemResponseDto,
 		ProblemDetailsError,
-		ActivateRentableItemVariables
+		ActivateProductVariables
 	>({
 		...options,
-		mutationFn: activateRentableItem,
+		mutationFn: activateProduct,
 		meta: {
-			invalidates: rentableItemKeys.all(),
+			invalidates: productKeys.all(),
 			...options?.meta,
 		},
 	});

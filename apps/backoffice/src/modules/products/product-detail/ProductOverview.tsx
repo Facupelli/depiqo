@@ -10,21 +10,21 @@ import {
 	Tag,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { getKindLabel } from "../rentable-item-detail.utils";
+import { getKindLabel } from "./product-detail.utils";
 
-interface RentableItemOverviewProps {
-	item: GetRentableItemDetailResponseDto;
+interface ProductOverviewProps {
+	product: GetRentableItemDetailResponseDto;
 	imageUrl: string | null;
 	startingPrice: string | null;
 	readyOfferCount: number;
 }
 
-export function RentableItemOverview({
-	item,
+export function ProductOverview({
+	product,
 	imageUrl,
 	startingPrice,
 	readyOfferCount,
-}: RentableItemOverviewProps) {
+}: ProductOverviewProps) {
 	return (
 		<Card className="overflow-hidden rounded-2xl py-0 shadow-sm">
 			<CardContent className="grid p-0 lg:grid-cols-[300px_minmax(0,1fr)]">
@@ -32,7 +32,7 @@ export function RentableItemOverview({
 					{imageUrl ? (
 						<img
 							src={imageUrl}
-							alt={item.name}
+							alt={product.name}
 							className="max-h-48 max-w-55 object-contain"
 						/>
 					) : (
@@ -45,17 +45,17 @@ export function RentableItemOverview({
 						<OverviewFact
 							icon={PackageOpen}
 							label="Tipo"
-							value={getKindLabel(item.kind)}
+							value={getKindLabel(product.kind)}
 						/>
 						<OverviewFact
 							icon={Tag}
 							label="Categoría"
-							value={item.categoryName ?? "Sin categoría"}
+							value={product.categoryName ?? "Sin categoría"}
 						/>
 						<OverviewFact
 							icon={Pencil}
 							label="Descripción"
-							value={item.description ?? "Sin descripción"}
+							value={product.description ?? "Sin descripción"}
 							multiline
 						/>
 					</div>
@@ -64,12 +64,12 @@ export function RentableItemOverview({
 						<OverviewFact
 							icon={Building2}
 							label="Disponible en"
-							value={`${item.offers.length} ${item.offers.length === 1 ? "sucursal" : "sucursales"}`}
+							value={`${product.offers.length} ${product.offers.length === 1 ? "sucursal" : "sucursales"}`}
 						/>
 						<OverviewFact
 							icon={CheckCircle2}
 							label="Ofertas listas"
-							value={`${readyOfferCount} de ${item.offers.length}`}
+							value={`${readyOfferCount} de ${product.offers.length}`}
 						/>
 						<OverviewFact
 							icon={CircleDollarSign}

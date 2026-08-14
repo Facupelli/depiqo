@@ -7,13 +7,13 @@ const activationErrorMessages = {
 	[`${PROBLEM_TYPE_BASE_URI}/catalog/rentable-item-not-found`]:
 		"No encontramos el ítem rentable que querés activar.",
 	[`${PROBLEM_TYPE_BASE_URI}/catalog/rentable-item-not-in-draft-status`]:
-		"Solo se pueden activar ítems que están en borrador.",
+		"Solo se pueden activar productos que están en borrador.",
 	[`${PROBLEM_TYPE_BASE_URI}/catalog/rentable-item-has-no-requirements`]:
-		"Agregá al menos un equipo requerido antes de activar el ítem.",
+		"Agregá al menos un equipo requerido antes de activar el producto.",
 	[`${PROBLEM_TYPE_BASE_URI}/catalog/rentable-item-has-no-rental-offers`]:
-		"Agregá al menos una oferta por sucursal antes de activar el ítem.",
+		"Agregá al menos una oferta por sucursal antes de activar el producto.",
 	[`${PROBLEM_TYPE_BASE_URI}/catalog/rentable-item-has-no-active-pricing`]:
-		"Asigná un plan de precios activo a una oferta antes de activar el ítem.",
+		"Asigná un plan de precios activo a una oferta antes de activar el producto.",
 } as const;
 
 const insufficientActiveAssetsProblemType = `${PROBLEM_TYPE_BASE_URI}/catalog/rentable-item-has-insufficient-active-assets`;
@@ -24,35 +24,35 @@ type ActivationErrorContext = {
 	activeAssetCount: number;
 };
 
-export function getActivateRentableItemErrorMessage(
+export function getActivateProductErrorMessage(
 	error: unknown,
-	item: GetRentableItemDetailResponseDto,
+	product: GetRentableItemDetailResponseDto,
 ): string {
 	if (!(error instanceof ProblemDetailsError)) {
-		return "Ocurrió un error al activar el ítem rentable.";
+		return "Ocurrió un error al activar el producto.";
 	}
 
 	if (error.problemDetails.type === insufficientActiveAssetsProblemType) {
 		const context = getInsufficientActiveAssetsContext(error.problemDetails);
 
 		if (context) {
-			const equipment = item.requiredEquipment.find(
+			const equipment = product.requiredEquipment.find(
 				(requirement) =>
 					requirement.equipmentTypeId === context.equipmentTypeId,
 			);
 			const equipmentName =
 				equipment?.equipmentTypeName ?? "este tipo de equipo";
 
-			return `No se puede activar el ítem porque no hay suficientes equipos activos de ${equipmentName}: se requieren ${context.requiredQuantity} y hay ${context.activeAssetCount}.`;
+			return `No se puede activar el producto porque no hay suficientes equipos activos de ${equipmentName}: se requieren ${context.requiredQuantity} y hay ${context.activeAssetCount}.`;
 		}
 
-		return "No se puede activar el ítem porque no hay suficientes equipos activos para completar sus requisitos.";
+		return "No se puede activar el producto porque no hay suficientes equipos activos para completar sus requisitos.";
 	}
 
 	return (
 		activationErrorMessages[
 			error.problemDetails.type as keyof typeof activationErrorMessages
-		] ?? "No pudimos activar el ítem rentable."
+		] ?? "No pudimos activar el producto."
 	);
 }
 

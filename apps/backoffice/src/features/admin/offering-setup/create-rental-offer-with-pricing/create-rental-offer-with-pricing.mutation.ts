@@ -4,8 +4,8 @@ import type {
 } from "@repo/api-contracts";
 import type { MutationOptions } from "@tanstack/react-query";
 import { useMutation } from "@tanstack/react-query";
-import { rentableItemKeys } from "@/features/catalog/rentable-items/rentable-items.queries";
 import { rentalOfferPricingKeys } from "@/features/pricing/rental-offer-pricings/rental-offer-pricings.queries";
+import { productKeys } from "@/modules/products/products.queries";
 import type { ProblemDetailsError } from "@/shared/errors";
 import { createRentalOfferWithPricing } from "./create-rental-offer-with-pricing.api";
 
@@ -29,7 +29,7 @@ export function useCreateRentalOfferWithPricing(
 		...options,
 		mutationFn: createRentalOfferWithPricing,
 		meta: {
-			invalidates: [rentableItemKeys.all(), rentalOfferPricingKeys.all()],
+			invalidates: [productKeys.all(), rentalOfferPricingKeys.all()],
 			...options?.meta,
 		},
 	});
