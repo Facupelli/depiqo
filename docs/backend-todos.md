@@ -157,23 +157,6 @@ Current behavior uses live serial numbers when rendering and Contracts snapshots
 
 ---
 
-# Document Signing / Contracts legacy overlap
-
-* [ ] Audit the legacy `document_signing_requests` model and remaining legacy reads.
-
-* [ ] Clarify the long-term role of the Document Signing module.
-
-  * V2 legal/signing truth now belongs to Contracts.
-  * Document Signing still contains legacy entity/repository/query behavior.
-
-* [ ] Determine whether legacy signing summary/latest-signed queries are still required for any active V2 behavior.
-
-* [ ] Remove/deprecate legacy overlap when safe.
-
-  * Do not migrate blindly: existing production behavior must be identified first.
-
----
-
 # Tenant Management / branding
 
 * [ ] Resolve Tenant branding source inconsistency.
