@@ -25,7 +25,7 @@ export interface RentalsCalendarCustomerReadModel {
 
 export interface RentalsCalendarItemReadModel {
   id: string;
-  number: string;
+  rentalNumber: number;
   status: RentalCalendarStatus;
   createdAt: string;
   pickupAt: string;
@@ -39,6 +39,7 @@ export type GetRentalsCalendarResult = RentalsCalendarItemReadModel[];
 
 type RawRentalCalendarRow = {
   id: string;
+  rentalNumber: number;
   status: RentalCalendarStatus;
   createdAt: string;
   periodStart: string;
@@ -64,6 +65,7 @@ export class GetRentalsCalendarHandler implements IQueryHandler<GetRentalsCalend
     const rentals = await this.prisma.client.$queryRaw<RawRentalCalendarRow[]>(Prisma.sql`
       SELECT
         r.id AS "id",
+        r.rental_number AS "rentalNumber",
         r.status AS "status",
         -- Local PrismaPg raw-query adapter workaround: its TIMESTAMPTZ decoding is
         -- session-timezone-sensitive. Format canonical UTC API strings here. This
@@ -94,7 +96,7 @@ export class GetRentalsCalendarHandler implements IQueryHandler<GetRentalsCalend
 
       return {
         id: rental.id,
-        number: rental.id.slice(0, 4),
+        rentalNumber: rental.rentalNumber,
         status: rental.status as RentalCalendarStatus,
         createdAt: createdAt.toISOString(),
         pickupAt: periodStart.toISOString(),

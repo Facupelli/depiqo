@@ -18,10 +18,11 @@ enum V2RentalSource {
 }
 
 model V2Rental {
-  id         String  @id @default(uuid())
-  tenantId   String  @map("tenant_id")
-  branchId   String  @map("branch_id")
-  customerId String? @map("customer_id")
+  id           String  @id @default(uuid())
+  tenantId     String  @map("tenant_id")
+  rentalNumber Int     @map("rental_number")
+  branchId     String  @map("branch_id")
+  customerId   String? @map("customer_id")
 
   status            V2RentalStatus       @default(PENDING)
   fulfillmentMethod V2FulfillmentMethod? @map("fulfillment_method")
@@ -49,6 +50,7 @@ model V2Rental {
   accessorySelections       V2RentalAccessorySelection[]
   accessoryAssetAssignments V2RentalAccessoryAssetAssignment[]
 
+  @@unique([tenantId, rentalNumber])
   @@index([tenantId, branchId, status, createdAt(sort: Desc)])
   @@index([tenantId, branchId, periodStart, periodEnd])
   @@index([tenantId, customerId])

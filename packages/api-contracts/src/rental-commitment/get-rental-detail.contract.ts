@@ -207,7 +207,7 @@ export const GetRentalDetailPricingSchema = z.discriminatedUnion("kind", [
 
 export const GetRentalDetailResponseSchema = z.object({
 	id: z.string(),
-	number: z.string(),
+	rentalNumber: z.number().int().positive(),
 	status: GetRentalsStatusSchema,
 	source: z.enum(["STAFF", "WHATSAPP_FLOW", "FORMAL"]).nullable(),
 	notes: z.string().nullable(),

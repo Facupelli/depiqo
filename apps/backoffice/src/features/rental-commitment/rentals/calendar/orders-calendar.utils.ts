@@ -118,8 +118,8 @@ export function getOrdersCalendarEventTitle(
 ): string {
 	const label = order.customer?.displayName?.trim();
 	return label
-		? `#${formatOrderNumber(order.number)} ${label}`
-		: `#${formatOrderNumber(order.number)}`;
+		? `#${formatOrderNumber(order.rentalNumber)} ${label}`
+		: `#${formatOrderNumber(order.rentalNumber)}`;
 }
 
 export function formatOrdersCalendarTooltipDateTime(

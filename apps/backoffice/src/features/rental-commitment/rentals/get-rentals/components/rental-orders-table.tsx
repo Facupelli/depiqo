@@ -171,12 +171,12 @@ function createRentalOrdersColumns({
 }): ColumnDef<ParsedRentalListItem>[] {
 	return [
 		{
-			accessorKey: "number",
+			accessorKey: "rentalNumber",
 			header: "Pedido",
 			cell: ({ row }) => (
 				<div className="space-y-1">
 					<p className="font-medium text-foreground">
-						#{formatOrderNumber(row.original.number)}
+						#{formatOrderNumber(row.original.rentalNumber)}
 					</p>
 					<p className="font-mono text-[11px] text-muted-foreground/80">
 						{row.original.id}

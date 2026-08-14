@@ -36,6 +36,7 @@ import { GetStorefrontBranchesHttpController } from './features/get-storefront-b
 import { GetStorefrontBranchesHandler } from './features/get-storefront-branches/get-storefront-branches.handler';
 import { GetStorefrontRentalOfferAvailabilityHttpController } from './features/get-storefront-rental-offer-availability/get-storefront-rental-offer-availability.controller';
 import { GetStorefrontRentalOfferAvailabilityHandler } from './features/get-storefront-rental-offer-availability/get-storefront-rental-offer-availability.handler';
+import { RentalNumberAllocator } from './persistence/rental-number.allocator';
 import { PrismaRentalRepository } from './persistence/prisma-rental.repository';
 import { RentalRepository } from './persistence/rental.repository';
 import { UpsertRentalAssetCandidateWhenAssetCreatedEventHandler } from './projections/upsert-rental-asset-candidate-when-asset-created.event-handler';
@@ -70,6 +71,7 @@ import { RentalLifecycleFactsService } from './public-api/rental-lifecycle-facts
   ],
   providers: [
     RentalOperationalFactsValidatorService,
+    RentalNumberAllocator,
     { provide: RentalRepository, useClass: PrismaRentalRepository },
     RentalAssetAllocationService,
     AssignRentalAccessoriesHandler,

@@ -1,0 +1,7 @@
+model V2RentalNumberCounter {
+  tenantId         String   @id @map("tenant_id")
+  lastIssuedNumber Int      @default(0) @map("last_issued_number")
+  updatedAt        DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@map("v2_rental_number_counters")
+}

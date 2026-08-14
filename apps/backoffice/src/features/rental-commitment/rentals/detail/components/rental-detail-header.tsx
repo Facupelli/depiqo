@@ -16,7 +16,7 @@ export function RentalDetailHeader() {
 					<div>
 						<div className="flex flex-wrap items-center gap-3 mb-1.5">
 							<h1 className="text-3xl font-bold tracking-tight leading-none">
-								#{formatOrderNumber(rental.number)}
+								#{formatOrderNumber(rental.rentalNumber)}
 							</h1>
 							<RentalStatusBadge />
 						</div>

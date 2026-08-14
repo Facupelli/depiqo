@@ -467,7 +467,7 @@ function CalendarEventContent({ arg }: { arg: EventContentArg }) {
 	return (
 		<div className="min-w-0 px-1.5 py-1">
 			<p className="truncate font-mono text-[11px] uppercase tracking-[0.08em] opacity-70">
-				#{formatOrderNumber(order.number)}
+				#{formatOrderNumber(order.rentalNumber)}
 			</p>
 			<p className="truncate text-sm font-medium">
 				{order.customer?.displayName ?? "Pedido"}
@@ -537,7 +537,7 @@ function OrdersCalendarPopover({
 								statusPresentation.headingClassName,
 							)}
 						>
-							#{formatOrderNumber(order.number)}
+							#{formatOrderNumber(order.rentalNumber)}
 						</p>
 						<div className="flex items-center gap-2 text-[15px] text-neutral-800">
 							<CircleUserRound className="size-4 text-neutral-400" />

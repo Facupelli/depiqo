@@ -23,6 +23,7 @@ import { RentalOwnerSplitDraft } from '../owner-split/owner-split-calculator.typ
 export interface RentalPersistenceRecord {
   id: string;
   tenantId: string;
+  rentalNumber: number;
   branchId: string;
   customerId: string | null;
   status: string;
@@ -107,6 +108,7 @@ export class RentalMapper {
     const result = Rental.reconstitute({
       id: record.id as RentalId,
       tenantId: record.tenantId,
+      rentalNumber: record.rentalNumber,
       branchId: record.branchId,
       rentalCustomerId: record.customerId ?? undefined,
       status: record.status as RentalStatus,
@@ -192,6 +194,7 @@ export class RentalMapper {
     return {
       id: rental.id,
       tenantId: rental.tenantId,
+      rentalNumber: rental.rentalNumber,
       branchId: rental.branchId,
       customerId: rental.rentalCustomerId,
       status: rental.status,

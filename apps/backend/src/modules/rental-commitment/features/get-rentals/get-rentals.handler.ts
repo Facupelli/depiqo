@@ -14,6 +14,7 @@ import { GetRentalsQuery } from './get-rentals.query';
 
 type RawRentalRow = {
   id: string;
+  rentalNumber: number;
   status: V2RentalStatus;
   fulfillmentMethod: V2FulfillmentMethod | null;
   createdAt: Date;
@@ -54,6 +55,7 @@ export class GetRentalsHandler implements IQueryHandler<GetRentalsQuery, GetRent
       this.prisma.client.$queryRaw<RawRentalRow[]>(Prisma.sql`
         SELECT
           r.id AS "id",
+          r.rental_number AS "rentalNumber",
           r.status AS "status",
           r.fulfillment_method AS "fulfillmentMethod",
           r.created_at AS "createdAt",
@@ -87,7 +89,7 @@ export class GetRentalsHandler implements IQueryHandler<GetRentalsQuery, GetRent
     return {
       data: rows.map((row) => ({
         id: row.id,
-        number: row.id.slice(0, 4),
+        rentalNumber: row.rentalNumber,
         status: row.status,
         fulfillmentMethod: row.fulfillmentMethod,
         createdAt: row.createdAt.toISOString(),

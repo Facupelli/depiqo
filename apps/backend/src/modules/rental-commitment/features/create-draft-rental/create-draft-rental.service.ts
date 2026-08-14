@@ -1,6 +1,8 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { err, ok, Result } from 'neverthrow';
 
+import { PrismaUnitOfWork } from 'src/core/database/prisma-unit-of-work';
+
 import {
   CatalogSelectionResolution,
   CatalogSelectionResolutionError,
@@ -25,6 +27,7 @@ import { RentalDemandLineId } from '../../domain/ids/rental-demand-line-id';
 import { RentalSelectionId } from '../../domain/ids/rental-selection-id';
 import { EquipmentTypeId } from '../../domain/types/rental-commitment-ids';
 import { FulfillmentMethod, RentalSource } from '../../domain/rental-status';
+import { RentalNumberAllocator } from '../../persistence/rental-number.allocator';
 import { RentalRepository } from '../../persistence/rental.repository';
 import {
   BranchUnavailableForRentalError,
@@ -62,6 +65,8 @@ export class CreateDraftRentalService implements ICommandHandler<
     private readonly catalogSelectionResolution: CatalogSelectionResolution,
     private readonly assetInventoryDisplayFacts: AssetInventoryDisplayFacts,
     private readonly pricingCalculation: PricingCalculation,
+    private readonly rentalNumberAllocator: RentalNumberAllocator,
+    private readonly unitOfWork: PrismaUnitOfWork,
   ) {}
 
   async execute(command: CreateDraftRentalCommand): Promise<CreateDraftRentalServiceResult> {
@@ -161,53 +166,63 @@ export class CreateDraftRentalService implements ICommandHandler<
       })),
     );
 
-    const rental = Rental.createDraft({
-      tenantId: command.tenantId,
-      branchId: command.branchId,
-      rentalCustomerId: command.rentalCustomerId,
-      source: RentalSource.Staff,
-      fulfillmentMethod,
-      notes: command.notes,
-      insuranceSelected: command.insuranceSelected,
-      bookingSnapshot: command.bookingSnapshot,
-      deliveryDetails: fulfillmentMethod === FulfillmentMethod.Delivery ? command.deliveryDetails : undefined,
-      period: command.period,
-      priceSnapshot: adaptPricingCalculationToSnapshot({
-        result: pricingResult.value,
-        context: 'DRAFT',
-        lineDisplayNames: Object.fromEntries(
-          rentalSelectionsDraft.map((selection) => [selection.rentalSelectionId, selection.rentableItemNameSnapshot]),
-        ),
-        manualPricingAdjustment: command.manualPricingAdjustment
-          ? { ...command.manualPricingAdjustment, setByTenantUserId: command.tenantUserId }
-          : undefined,
-      }),
+    try {
+      return await this.unitOfWork.runInTransaction(async ({ tx }) => {
+        const rental = Rental.createDraft({
+          tenantId: command.tenantId,
+          rentalNumber: await this.rentalNumberAllocator.allocate(command.tenantId, tx),
+          branchId: command.branchId,
+          rentalCustomerId: command.rentalCustomerId,
+          source: RentalSource.Staff,
+          fulfillmentMethod,
+          notes: command.notes,
+          insuranceSelected: command.insuranceSelected,
+          bookingSnapshot: command.bookingSnapshot,
+          deliveryDetails: fulfillmentMethod === FulfillmentMethod.Delivery ? command.deliveryDetails : undefined,
+          period: command.period,
+          priceSnapshot: adaptPricingCalculationToSnapshot({
+            result: pricingResult.value,
+            context: 'DRAFT',
+            lineDisplayNames: Object.fromEntries(
+              rentalSelectionsDraft.map((selection) => [
+                selection.rentalSelectionId,
+                selection.rentableItemNameSnapshot,
+              ]),
+            ),
+            manualPricingAdjustment: command.manualPricingAdjustment
+              ? { ...command.manualPricingAdjustment, setByTenantUserId: command.tenantUserId }
+              : undefined,
+          }),
 
-      selections: rentalSelectionsDraft.map((selection) => ({
-        id: selection.rentalSelectionId,
-        rentalOfferId: selection.rentalOfferId,
-        rentableItemId: selection.rentableItemId,
-        rentableItemNameSnapshot: selection.rentableItemNameSnapshot,
-        rentableItemKindSnapshot: selection.rentableItemKindSnapshot,
-        quantity: selection.quantity,
-      })),
+          selections: rentalSelectionsDraft.map((selection) => ({
+            id: selection.rentalSelectionId,
+            rentalOfferId: selection.rentalOfferId,
+            rentableItemId: selection.rentableItemId,
+            rentableItemNameSnapshot: selection.rentableItemNameSnapshot,
+            rentableItemKindSnapshot: selection.rentableItemKindSnapshot,
+            quantity: selection.quantity,
+          })),
 
-      demandLines: equipmentDemandLines.map((line) => ({
-        id: line.rentalDemandLineId,
-        rentalSelectionId: line.rentalSelectionId,
-        equipmentTypeId: line.equipmentTypeId as EquipmentTypeId,
-        equipmentTypeNameSnapshot: line.equipmentNameSnapshot,
-        quantity: line.quantity,
-      })),
-    });
+          demandLines: equipmentDemandLines.map((line) => ({
+            id: line.rentalDemandLineId,
+            rentalSelectionId: line.rentalSelectionId,
+            equipmentTypeId: line.equipmentTypeId as EquipmentTypeId,
+            equipmentTypeNameSnapshot: line.equipmentNameSnapshot,
+            quantity: line.quantity,
+          })),
+        });
 
-    if (rental.isErr()) {
-      return err(this.toApplicationError(rental.error, context));
+        if (rental.isErr()) {
+          throw rental.error;
+        }
+
+        await this.rentalRepository.save(rental.value, { tx });
+
+        return ok({ rentalId: rental.value.id });
+      });
+    } catch (error) {
+      return err(this.toApplicationError(error, context));
     }
-
-    await this.rentalRepository.save(rental.value);
-
-    return ok({ rentalId: rental.value.id });
   }
 
   private toApplicationError(error: unknown, context: Record<string, unknown>): CreateDraftRentalError {

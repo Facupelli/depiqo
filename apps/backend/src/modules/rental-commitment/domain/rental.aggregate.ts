@@ -60,6 +60,7 @@ export interface RentalDeliveryDetails {
 
 interface RentalProps {
   tenantId: string;
+  rentalNumber: number;
   branchId: string;
   rentalCustomerId?: string;
   status: RentalStatus;
@@ -117,6 +118,7 @@ export interface EditConfirmedRentalDetailsProps {
 export interface CreateRentalBaseProps {
   id?: RentalId;
   tenantId: string;
+  rentalNumber: number;
   branchId: string;
   rentalCustomerId?: string;
   period: RentalPeriod;
@@ -148,6 +150,7 @@ export interface CreateConfirmedRentalProps extends Omit<CreateRentalBaseProps, 
 export interface ReconstituteRentalProps {
   id: RentalId;
   tenantId: string;
+  rentalNumber: number;
   branchId: string;
   rentalCustomerId?: string;
   status: RentalStatus;
@@ -174,6 +177,7 @@ export interface ReconstituteRentalProps {
 interface CreateRentalFromEntitiesProps {
   id?: RentalId;
   tenantId: string;
+  rentalNumber: number;
   branchId: string;
   rentalCustomerId?: string;
   period: RentalPeriod;
@@ -208,6 +212,10 @@ export class Rental extends AggregateRootBase {
 
   get tenantId(): string {
     return this.props.tenantId;
+  }
+
+  get rentalNumber(): number {
+    return this.props.rentalNumber;
   }
 
   get branchId(): string {
@@ -450,6 +458,7 @@ export class Rental extends AggregateRootBase {
     const candidate = Rental.createFromEntities(this.status, {
       id: this.id,
       tenantId: this.tenantId,
+      rentalNumber: this.rentalNumber,
       branchId: params.branchId,
       rentalCustomerId: this.rentalCustomerId,
       period: params.period,
@@ -498,6 +507,7 @@ export class Rental extends AggregateRootBase {
     const candidate = Rental.createFromEntities(RentalStatus.Confirmed, {
       id: this.id,
       tenantId: this.tenantId,
+      rentalNumber: this.rentalNumber,
       branchId: this.branchId,
       rentalCustomerId: this.rentalCustomerId,
       period: this.period,
@@ -574,6 +584,7 @@ export class Rental extends AggregateRootBase {
     const candidate = Rental.createFromEntities(RentalStatus.Confirmed, {
       id: this.id,
       tenantId: this.tenantId,
+      rentalNumber: this.rentalNumber,
       branchId: this.branchId,
       rentalCustomerId: this.rentalCustomerId,
       period: this.period,
@@ -656,6 +667,7 @@ export class Rental extends AggregateRootBase {
     const candidate = Rental.createFromEntities(RentalStatus.Confirmed, {
       id: this.id,
       tenantId: this.tenantId,
+      rentalNumber: this.rentalNumber,
       branchId: params.branchId,
       rentalCustomerId: this.rentalCustomerId,
       period: params.period,
@@ -1115,6 +1127,7 @@ export class Rental extends AggregateRootBase {
 
     const rental = new Rental(id, {
       tenantId: props.tenantId,
+      rentalNumber: props.rentalNumber,
       branchId: props.branchId,
       rentalCustomerId: props.rentalCustomerId,
       status,
@@ -1246,7 +1259,7 @@ export class Rental extends AggregateRootBase {
   }
 
   private static validateRequiredFields(
-    props: Pick<CreateRentalFromEntitiesProps, 'tenantId' | 'branchId'>,
+    props: Pick<CreateRentalFromEntitiesProps, 'tenantId' | 'rentalNumber' | 'branchId'>,
   ): Result<void, RentalCommitmentError> {
     for (const [field, value] of [
       ['tenantId', props.tenantId],
@@ -1255,6 +1268,10 @@ export class Rental extends AggregateRootBase {
       if (value.trim().length === 0) {
         return err(new RentalInvalidFieldError(field, 'must not be blank'));
       }
+    }
+
+    if (!Number.isInteger(props.rentalNumber) || props.rentalNumber <= 0) {
+      return err(new RentalInvalidFieldError('rentalNumber', 'must be a positive integer'));
     }
 
     return ok(undefined);

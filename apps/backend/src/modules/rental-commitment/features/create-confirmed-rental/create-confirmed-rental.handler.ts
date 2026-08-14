@@ -25,6 +25,7 @@ import { CreateConfirmedRentalCommand } from './create-confirmed-rental.command'
 import { Rental } from '../../domain/rental.aggregate';
 import { FulfillmentMethod } from '../../domain/rental-status';
 import { createConfirmedRentalError, CreateConfirmedRentalError } from './create-confirmed-rental.errors';
+import { RentalNumberAllocator } from '../../persistence/rental-number.allocator';
 import { RentalRepository } from '../../persistence/rental.repository';
 import { RentalAssetAllocationService } from '../../asset-allocation/rental-asset-allocation.service';
 import { RentalSelectionId } from '../../domain/ids/rental-selection-id';
@@ -75,6 +76,7 @@ export class CreateConfirmedRentalService implements ICommandHandler<
     private readonly pricingCalculation: PricingCalculation,
     private readonly rentalAssetAllocation: RentalAssetAllocationService,
     private readonly rentalOwnerSplitCalculator: RentalOwnerSplitCalculator,
+    private readonly rentalNumberAllocator: RentalNumberAllocator,
     private readonly unitOfWork: PrismaUnitOfWork,
   ) {}
 
@@ -201,108 +203,116 @@ export class CreateConfirmedRentalService implements ICommandHandler<
       );
     }
 
-    const rental = Rental.createConfirmed({
-      tenantId: command.tenantId,
-      branchId: command.branchId,
-      rentalCustomerId: command.rentalCustomerId,
-      fulfillmentMethod: command.fulfillmentMethod ?? FulfillmentMethod.Pickup,
-      notes: command.notes,
-      insuranceSelected: command.insuranceSelected,
-      bookingSnapshot: command.bookingSnapshot,
-      deliveryDetails: command.fulfillmentMethod === FulfillmentMethod.Delivery ? command.deliveryDetails : undefined,
-      confirmedPriceSnapshot: adaptPricingCalculationToSnapshot({
-        result: pricingResult.value,
-        context: 'CONFIRMED',
-        lineDisplayNames: Object.fromEntries(
-          rentalSelectionsDraft.map((selection) => [selection.rentalSelectionId, selection.rentableItemNameSnapshot]),
-        ),
-      }),
-      period: command.period,
+    try {
+      return await this.unitOfWork.runInTransaction(async ({ tx, integrationEvents }) => {
+        const rental = Rental.createConfirmed({
+          tenantId: command.tenantId,
+          rentalNumber: await this.rentalNumberAllocator.allocate(command.tenantId, tx),
+          branchId: command.branchId,
+          rentalCustomerId: command.rentalCustomerId,
+          fulfillmentMethod: command.fulfillmentMethod ?? FulfillmentMethod.Pickup,
+          notes: command.notes,
+          insuranceSelected: command.insuranceSelected,
+          bookingSnapshot: command.bookingSnapshot,
+          deliveryDetails:
+            command.fulfillmentMethod === FulfillmentMethod.Delivery ? command.deliveryDetails : undefined,
+          confirmedPriceSnapshot: adaptPricingCalculationToSnapshot({
+            result: pricingResult.value,
+            context: 'CONFIRMED',
+            lineDisplayNames: Object.fromEntries(
+              rentalSelectionsDraft.map((selection) => [
+                selection.rentalSelectionId,
+                selection.rentableItemNameSnapshot,
+              ]),
+            ),
+          }),
+          period: command.period,
 
-      selections: rentalSelectionsDraft.map((selection) => ({
-        id: selection.rentalSelectionId,
-        rentalOfferId: selection.rentalOfferId,
-        rentableItemId: selection.rentableItemId,
-        rentableItemNameSnapshot: selection.rentableItemNameSnapshot,
-        rentableItemKindSnapshot: selection.rentableItemKindSnapshot,
-        quantity: selection.quantity,
-      })),
+          selections: rentalSelectionsDraft.map((selection) => ({
+            id: selection.rentalSelectionId,
+            rentalOfferId: selection.rentalOfferId,
+            rentableItemId: selection.rentableItemId,
+            rentableItemNameSnapshot: selection.rentableItemNameSnapshot,
+            rentableItemKindSnapshot: selection.rentableItemKindSnapshot,
+            quantity: selection.quantity,
+          })),
 
-      demandLines: equipmentDemandLines.map((line) => ({
-        id: line.rentalDemandLineId,
-        rentalSelectionId: line.rentalSelectionId,
-        equipmentTypeId: line.equipmentTypeId as EquipmentTypeId,
-        equipmentTypeNameSnapshot: line.equipmentNameSnapshot,
-        quantity: line.quantity,
-      })),
+          demandLines: equipmentDemandLines.map((line) => ({
+            id: line.rentalDemandLineId,
+            rentalSelectionId: line.rentalSelectionId,
+            equipmentTypeId: line.equipmentTypeId as EquipmentTypeId,
+            equipmentTypeNameSnapshot: line.equipmentNameSnapshot,
+            quantity: line.quantity,
+          })),
 
-      assignedAssets: assetAssignmentPlan.value.allocations.map((allocation) => ({
-        rentalDemandLineId: allocation.rentalDemandLineId,
-        assetId: allocation.assetId,
-      })),
-    });
+          assignedAssets: assetAssignmentPlan.value.allocations.map((allocation) => ({
+            rentalDemandLineId: allocation.rentalDemandLineId,
+            assetId: allocation.assetId,
+          })),
+        });
 
-    if (rental.isErr()) {
-      return err(this.toApplicationError(rental.error, context));
-    }
+        if (rental.isErr()) {
+          throw rental.error;
+        }
 
-    const confirmedRental = rental.value;
+        const confirmedRental = rental.value;
 
-    const assignmentsByAssetAndDemandLine = new Map(
-      confirmedRental.assignedAssets.map((assignment) => [
-        this.assignmentKey(assignment.assetId, assignment.rentalDemandLineId),
-        assignment,
-      ]),
-    );
-
-    // TODO: make part of Rental Aggregate
-    const ownerSplitInput = {
-      tenantId: confirmedRental.tenantId,
-      rentalId: confirmedRental.id,
-      currency: pricingResult.value.final.currency,
-
-      selections: confirmedRental.selections.map((selection) => ({
-        id: selection.id,
-      })),
-
-      demandLines: confirmedRental.demandLines.map((demandLine) => ({
-        id: demandLine.id,
-        sourceSelectionId: demandLine.rentalSelectionId,
-      })),
-
-      fulfilledAssets: assetAssignmentPlan.value.allocations.map((allocation) => {
-        const assignment = assignmentsByAssetAndDemandLine.get(
-          this.assignmentKey(allocation.assetId, allocation.rentalDemandLineId),
+        const assignmentsByAssetAndDemandLine = new Map(
+          confirmedRental.assignedAssets.map((assignment) => [
+            this.assignmentKey(assignment.assetId, assignment.rentalDemandLineId),
+            assignment,
+          ]),
         );
 
-        return {
-          id: assignment?.id ?? allocation.assetId,
-          rentalDemandLineId: allocation.rentalDemandLineId,
-          assetId: allocation.assetId,
-          ownershipKind: allocation.ownershipKind,
-          ownerId: allocation.ownerId ?? null,
-          ownerContractSnapshot: allocation.ownerContractSnapshot
-            ? {
-                contractId: allocation.ownerContractSnapshot.contractId,
-                basis: allocation.ownerContractSnapshot.basis,
-                ownerShare: String(allocation.ownerContractSnapshot.ownerShare),
-              }
-            : null,
+        // TODO: make part of Rental Aggregate
+        const ownerSplitInput = {
+          tenantId: confirmedRental.tenantId,
+          rentalId: confirmedRental.id,
+          currency: pricingResult.value.final.currency,
+
+          selections: confirmedRental.selections.map((selection) => ({
+            id: selection.id,
+          })),
+
+          demandLines: confirmedRental.demandLines.map((demandLine) => ({
+            id: demandLine.id,
+            sourceSelectionId: demandLine.rentalSelectionId,
+          })),
+
+          fulfilledAssets: assetAssignmentPlan.value.allocations.map((allocation) => {
+            const assignment = assignmentsByAssetAndDemandLine.get(
+              this.assignmentKey(allocation.assetId, allocation.rentalDemandLineId),
+            );
+
+            return {
+              id: assignment?.id ?? allocation.assetId,
+              rentalDemandLineId: allocation.rentalDemandLineId,
+              assetId: allocation.assetId,
+              ownershipKind: allocation.ownershipKind,
+              ownerId: allocation.ownerId ?? null,
+              ownerContractSnapshot: allocation.ownerContractSnapshot
+                ? {
+                    contractId: allocation.ownerContractSnapshot.contractId,
+                    basis: allocation.ownerContractSnapshot.basis,
+                    ownerShare: String(allocation.ownerContractSnapshot.ownerShare),
+                  }
+                : null,
+            };
+          }),
+
+          priceLines: pricingResult.value.final.lines.map((line) => ({
+            rentalSelectionId: line.lineReference,
+            netAmount: line.total,
+          })),
         };
-      }),
 
-      priceLines: pricingResult.value.final.lines.map((line) => ({
-        rentalSelectionId: line.lineReference,
-        netAmount: line.total,
-      })),
-    };
+        const { splits }: { splits: RentalOwnerSplitDraft[] } =
+          this.rentalOwnerSplitCalculator.calculate(ownerSplitInput);
 
-    const { splits }: { splits: RentalOwnerSplitDraft[] } = this.rentalOwnerSplitCalculator.calculate(ownerSplitInput);
-
-    try {
-      await this.unitOfWork.runInTransaction(async ({ tx, integrationEvents }) => {
         await this.rentalRepository.save(confirmedRental, { ownerSplits: splits, tx });
         integrationEvents.collect(toRentalIntegrationEvents(confirmedRental.pullDomainEvents()));
+
+        return ok({ rentalId: confirmedRental.id });
       });
     } catch (error) {
       if (error instanceof PostgresExclusionViolationError) {
@@ -315,10 +325,8 @@ export class CreateConfirmedRentalService implements ICommandHandler<
           ),
         );
       }
-      throw error;
+      return err(this.toApplicationError(error, context));
     }
-
-    return ok({ rentalId: confirmedRental.id });
   }
 
   private assignmentKey(assetId: string, rentalDemandLineId: string): string {

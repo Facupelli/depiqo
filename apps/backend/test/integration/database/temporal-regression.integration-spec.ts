@@ -33,16 +33,26 @@ describe('temporal PostgreSQL regression coverage', () => {
     const periodStart = new Date('2026-08-10T13:00:00.000Z');
     const periodEnd = new Date('2026-08-10T16:45:00.000Z');
     const confirmedAt = new Date('2026-08-10T13:05:00.000Z');
-    const rental = await prisma.client.v2Rental.create({
-      data: {
-        tenantId: tenant.id,
-        branchId: branch.id,
-        status: 'CONFIRMED',
-        periodStart,
-        periodEnd,
-        confirmedAt,
-        cancelledAt: null,
-      },
+    const rental = await prisma.client.$transaction(async (tx) => {
+      const counter = await tx.v2RentalNumberCounter.upsert({
+        where: { tenantId: tenant.id },
+        create: { tenantId: tenant.id, lastIssuedNumber: 1 },
+        update: { lastIssuedNumber: { increment: 1 } },
+        select: { lastIssuedNumber: true },
+      });
+
+      return tx.v2Rental.create({
+        data: {
+          tenantId: tenant.id,
+          rentalNumber: counter.lastIssuedNumber,
+          branchId: branch.id,
+          status: 'CONFIRMED',
+          periodStart,
+          periodEnd,
+          confirmedAt,
+          cancelledAt: null,
+        },
+      });
     });
 
     const read = await prisma.client.v2Rental.findUniqueOrThrow({ where: { id: rental.id } });
@@ -77,15 +87,25 @@ describe('temporal PostgreSQL regression coverage', () => {
       const start = new Date('2026-11-01T05:30:00.000Z');
       const end = new Date('2026-11-01T06:30:00.000Z');
       const confirmedAt = new Date('2026-11-01T05:45:00.000Z');
-      const rental = await prisma.client.v2Rental.create({
-        data: {
-          tenantId: tenant.id,
-          branchId: branch.id,
-          status: 'CONFIRMED',
-          periodStart: start,
-          periodEnd: end,
-          confirmedAt,
-        },
+      const rental = await prisma.client.$transaction(async (tx) => {
+        const counter = await tx.v2RentalNumberCounter.upsert({
+          where: { tenantId: tenant.id },
+          create: { tenantId: tenant.id, lastIssuedNumber: 1 },
+          update: { lastIssuedNumber: { increment: 1 } },
+          select: { lastIssuedNumber: true },
+        });
+
+        return tx.v2Rental.create({
+          data: {
+            tenantId: tenant.id,
+            rentalNumber: counter.lastIssuedNumber,
+            branchId: branch.id,
+            status: 'CONFIRMED',
+            periodStart: start,
+            periodEnd: end,
+            confirmedAt,
+          },
+        });
       });
       await prisma.client.$executeRaw(Prisma.sql`
         INSERT INTO v2_asset_blocks (id, tenant_id, rental_id, asset_id, period, block_type, created_at)

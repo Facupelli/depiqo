@@ -25,6 +25,7 @@ export class GetRentalDetailHandler implements IQueryHandler<GetRentalDetailQuer
       },
       select: {
         id: true,
+        rentalNumber: true,
         status: true,
         source: true,
         notes: true,
@@ -103,7 +104,7 @@ export class GetRentalDetailHandler implements IQueryHandler<GetRentalDetailQuer
 
     return ok({
       id: rental.id,
-      number: rental.id.slice(0, 4),
+      rentalNumber: rental.rentalNumber,
       status: rental.status,
       source: rental.source,
       notes: rental.notes,

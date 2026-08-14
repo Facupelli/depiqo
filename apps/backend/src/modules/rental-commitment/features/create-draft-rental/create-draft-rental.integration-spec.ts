@@ -250,15 +250,26 @@ describe('CreateDraftRental integration', () => {
   it('ignores an existing overlapping block and creates no reservation', async () => {
     const setup = await scenario();
     const catalog = await offer(setup);
-    const otherRental = await prisma.client.v2Rental.create({
-      data: {
-        tenantId: setup.tenantId,
-        branchId: setup.branchId,
-        status: 'DRAFT',
-        periodStart: period().start,
-        periodEnd: period().end,
-      },
+    const otherRental = await prisma.client.$transaction(async (tx) => {
+      const counter = await tx.v2RentalNumberCounter.upsert({
+        where: { tenantId: setup.tenantId },
+        create: { tenantId: setup.tenantId, lastIssuedNumber: 1 },
+        update: { lastIssuedNumber: { increment: 1 } },
+        select: { lastIssuedNumber: true },
+      });
+
+      return tx.v2Rental.create({
+        data: {
+          tenantId: setup.tenantId,
+          rentalNumber: counter.lastIssuedNumber,
+          branchId: setup.branchId,
+          status: 'DRAFT',
+          periodStart: period().start,
+          periodEnd: period().end,
+        },
+      });
     });
+
     const assetId = randomUUID();
     await prisma.client.$executeRaw`
       INSERT INTO v2_asset_blocks (id, tenant_id, rental_id, asset_id, period, block_type, created_at)

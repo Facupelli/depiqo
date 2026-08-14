@@ -51,40 +51,50 @@ export class ConfirmRentalFixtures {
     const priceSnapshot = params.priceSnapshot === undefined ? this.priceSnapshot(selectionIds) : params.priceSnapshot;
     const persistedPriceSnapshot = priceSnapshot === null ? Prisma.JsonNull : priceSnapshot;
 
-    await this.prisma.client.v2Rental.create({
-      data: {
-        id: rentalId,
-        tenantId: params.tenantId,
-        branchId: params.branchId,
-        customerId: params.customerId,
-        status: params.status ?? 'DRAFT',
-        fulfillmentMethod: 'PICKUP',
-        periodStart: params.period.start,
-        periodEnd: params.period.end,
-        priceSnapshot: persistedPriceSnapshot,
-        source: 'STAFF',
-        selections: {
-          create: selectionIds.map((id, index) => ({
-            id,
-            tenantId: params.tenantId,
-            rentalOfferId: randomUUID(),
-            rentableItemId: randomUUID(),
-            rentableItemNameSnapshot: `Rental item ${index + 1}`,
-            rentableItemKindSnapshot: 'SINGLE',
-            quantity: 1,
-          })),
+    await this.prisma.client.$transaction(async (tx) => {
+      const counter = await tx.v2RentalNumberCounter.upsert({
+        where: { tenantId: params.tenantId },
+        create: { tenantId: params.tenantId, lastIssuedNumber: 1 },
+        update: { lastIssuedNumber: { increment: 1 } },
+        select: { lastIssuedNumber: true },
+      });
+
+      await tx.v2Rental.create({
+        data: {
+          id: rentalId,
+          tenantId: params.tenantId,
+          rentalNumber: counter.lastIssuedNumber,
+          branchId: params.branchId,
+          customerId: params.customerId,
+          status: params.status ?? 'DRAFT',
+          fulfillmentMethod: 'PICKUP',
+          periodStart: params.period.start,
+          periodEnd: params.period.end,
+          priceSnapshot: persistedPriceSnapshot,
+          source: 'STAFF',
+          selections: {
+            create: selectionIds.map((id, index) => ({
+              id,
+              tenantId: params.tenantId,
+              rentalOfferId: randomUUID(),
+              rentableItemId: randomUUID(),
+              rentableItemNameSnapshot: `Rental item ${index + 1}`,
+              rentableItemKindSnapshot: 'SINGLE',
+              quantity: 1,
+            })),
+          },
+          demandLines: {
+            create: demandLineIds.map((id, index) => ({
+              id,
+              tenantId: params.tenantId,
+              rentalSelectionId: selectionIds[index],
+              equipmentTypeId: equipmentTypeIds[index],
+              equipmentTypeNameSnapshot: `Equipment type ${index + 1}`,
+              quantity: demands[index].quantity ?? 1,
+            })),
+          },
         },
-        demandLines: {
-          create: demandLineIds.map((id, index) => ({
-            id,
-            tenantId: params.tenantId,
-            rentalSelectionId: selectionIds[index],
-            equipmentTypeId: equipmentTypeIds[index],
-            equipmentTypeNameSnapshot: `Equipment type ${index + 1}`,
-            quantity: demands[index].quantity ?? 1,
-          })),
-        },
-      },
+      });
     });
 
     return { rentalId, selectionIds, demandLineIds, equipmentTypeIds, priceSnapshot: priceSnapshot! };

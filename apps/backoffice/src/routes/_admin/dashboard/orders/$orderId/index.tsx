@@ -55,7 +55,7 @@ function RouteComponent() {
 		<div className="min-h-screen bg-neutral-50 text-neutral-950 px-8">
 			<PageBreadcrumb
 				parent={{ label: "Pedidos", to: "/dashboard/orders", search }}
-				current={formatOrderNumber(rental.number)}
+				current={formatOrderNumber(rental.rentalNumber)}
 			/>
 
 			<RentalDetailProvider

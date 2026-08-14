@@ -49,7 +49,7 @@ export const GetRentalsCustomerSchema = z.object({
 
 export const GetRentalsItemSchema = z.object({
   id: z.string(),
-  number: z.string(),
+  rentalNumber: z.number().int().positive(),
   status: GetRentalsStatusSchema,
   fulfillmentMethod: GetRentalsFulfillmentMethodSchema.nullable(),
   createdAt: z.iso.datetime(),

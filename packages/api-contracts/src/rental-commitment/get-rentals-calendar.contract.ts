@@ -24,7 +24,7 @@ export const GetRentalsCalendarCustomerSchema = z.object({
 
 export const GetRentalsCalendarItemSchema = z.object({
 	id: z.string(),
-	number: z.string(),
+	rentalNumber: z.number().int().positive(),
 	status: GetRentalsCalendarStatusSchema,
 	createdAt: z.iso.datetime(),
 	pickupAt: z.iso.datetime(),
