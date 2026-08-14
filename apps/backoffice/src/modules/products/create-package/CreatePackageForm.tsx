@@ -31,7 +31,7 @@ import {
 	type CreatePackageFormValues,
 	createPackageFormDefaultValues,
 	createPackageFormSchema,
-	type PackageEquipmentOption,
+	type PackageEquipmentTypeOption,
 } from "./create-package.schema";
 
 interface SelectOption {
@@ -49,7 +49,7 @@ interface CreatePackageFormProps {
 	defaultValues?: CreatePackageFormValues;
 	categories: SelectOption[];
 	branches: SelectOption[];
-	equipmentTypes: PackageEquipmentOption[];
+	equipmentTypes: PackageEquipmentTypeOption[];
 	equipmentSearch: string;
 	isPending: boolean;
 	submitLabel?: string;
@@ -68,7 +68,7 @@ export function CreatePackageForm({
 	equipmentTypes,
 	equipmentSearch,
 	isPending,
-	submitLabel = "Crear combo",
+	submitLabel = "Crear paquete",
 	pendingLabel = "Creando...",
 	cancelLabel = "Cancelar",
 	onEquipmentSearchChange,
@@ -119,7 +119,7 @@ export function CreatePackageForm({
 									return (
 										<Field data-invalid={isInvalid}>
 											<FieldLabel htmlFor={field.name}>
-												Nombre del combo
+												Nombre del paquete
 											</FieldLabel>
 											<Input
 												id={field.name}
@@ -131,7 +131,7 @@ export function CreatePackageForm({
 													field.handleChange(event.target.value)
 												}
 												aria-invalid={isInvalid}
-												placeholder="Ej. Combo producción audiovisual"
+												placeholder="Ej. Paquete de producción audiovisual"
 											/>
 											{isInvalid && (
 												<FieldError errors={field.state.meta.errors} />
@@ -201,7 +201,7 @@ export function CreatePackageForm({
 													field.handleChange(event.target.value)
 												}
 												aria-invalid={isInvalid}
-												placeholder="Qué incluye este combo y para qué tipo de alquiler sirve."
+												placeholder="Qué incluye este paquete y para qué tipo de alquiler sirve."
 												className="min-h-16"
 											/>
 											{isInvalid && (
@@ -222,7 +222,7 @@ export function CreatePackageForm({
 							return (
 								<Field data-invalid={isInvalid} className="self-start">
 									<div>
-										<FieldLabel>Imagen del combo</FieldLabel>
+										<FieldLabel>Imagen del paquete</FieldLabel>
 										<p className="mt-1 text-muted-foreground text-sm">
 											Usa una imagen que represente el conjunto completo.
 										</p>
@@ -244,8 +244,8 @@ export function CreatePackageForm({
 							Sucursales disponibles
 						</p>
 						<p className="mt-1 max-w-2xl text-muted-foreground text-sm">
-							Selecciona las sucursales donde este combo estará disponible para
-							alquilar.
+							Selecciona las sucursales donde este paquete estará disponible
+							para alquilar.
 						</p>
 					</div>
 					<form.Field name="branchIds">
@@ -294,11 +294,11 @@ export function CreatePackageForm({
 				<section className="space-y-5 border-t pt-8">
 					<div>
 						<p className="font-medium text-foreground text-sm">
-							Equipos incluidos
+							Equipo requerido
 						</p>
 						<p className="mt-1 max-w-2xl text-muted-foreground text-sm">
-							Busca el equipo que quieres incluir. Si necesitas más unidades del
-							mismo equipo, aumenta la cantidad.
+							Busca el equipo requerido para este paquete. Si necesitas más
+							unidades del mismo equipo, aumenta la cantidad.
 						</p>
 					</div>
 
@@ -367,7 +367,7 @@ export function CreatePackageForm({
 																placeholder={
 																	selectedBranchIds.length === 0
 																		? "Selecciona una sucursal primero"
-																		: "Agregar equipo al combo"
+																		: "Agregar equipo al paquete"
 																}
 															/>
 														</SelectTrigger>
@@ -391,8 +391,8 @@ export function CreatePackageForm({
 														Todavía no agregaste equipos.
 													</p>
 													<p className="mt-1 text-muted-foreground">
-														Busca y agrega al menos un equipo para crear el
-														combo.
+														Busca y agrega al menos un equipo requerido para
+														crear el paquete.
 													</p>
 												</div>
 											) : (

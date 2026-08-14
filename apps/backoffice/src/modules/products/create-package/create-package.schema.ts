@@ -5,7 +5,7 @@ import {
 import { z } from "zod";
 import { emptyToNull } from "@/shared/utils/form.utils";
 
-export interface PackageEquipmentOption {
+export interface PackageEquipmentTypeOption {
 	id: string;
 	name: string;
 }
@@ -29,7 +29,7 @@ export const createPackageFormSchema = z.object({
 		.min(1, "Selecciona al menos una sucursal"),
 	requirements: z
 		.array(createPackageRequirementFormSchema)
-		.min(1, "Agrega al menos un equipo al combo")
+		.min(1, "Agrega al menos un equipo requerido al paquete")
 		.refine(
 			(requirements) =>
 				new Set(requirements.map((requirement) => requirement.equipmentTypeId))
@@ -38,7 +38,7 @@ export const createPackageFormSchema = z.object({
 		),
 });
 
-export type CreatePackageRequirementFormValues = z.infer<
+export type PackageEquipmentFormValues = z.infer<
 	typeof createPackageRequirementFormSchema
 >;
 export type CreatePackageFormValues = z.infer<typeof createPackageFormSchema>;
