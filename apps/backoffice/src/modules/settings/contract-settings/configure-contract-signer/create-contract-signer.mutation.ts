@@ -2,7 +2,7 @@ import type { CreateContractSignerResponseDto } from "@repo/api-contracts";
 import type { MutationOptions } from "@tanstack/react-query";
 import { useMutation } from "@tanstack/react-query";
 import type { ProblemDetailsError } from "@/shared/errors";
-import { tenantKeys } from "../../tenant.queries";
+import { contractSignerKeys } from "./contract-signer.queries";
 import {
 	type CreateContractSignerVariables,
 	createContractSigner,
@@ -26,7 +26,7 @@ export function useCreateContractSigner(options?: CreateContractSignerOptions) {
 		...options,
 		mutationFn: createContractSigner,
 		meta: {
-			invalidates: tenantKeys.contractSigner(),
+			invalidates: contractSignerKeys.all(),
 			...options?.meta,
 		},
 	});

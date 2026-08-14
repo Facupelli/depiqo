@@ -1,9 +1,9 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import z from "zod";
-import { TenantContractSignerSettingsSection } from "@/features/tenant-management/tenant/contract-signer/components/tenant-contract-signer-settings-section";
 import { TenantConfigSettingsSection } from "@/features/tenant-management/tenant/update-tenant-config/components/tenant-config-form";
 import { cn } from "@/lib/utils";
 import { BrandingSection } from "@/modules/settings/branding/update-branding/BrandingSection";
+import { ContractSignerSettingsSection } from "@/modules/settings/contract-settings/configure-contract-signer/ContractSignerSettingsSection";
 import { CustomDomainSection } from "@/modules/settings/domains/custom-domain/CustomDomainSection";
 import { AdminRouteError } from "@/shared/components/admin-route-error";
 
@@ -48,8 +48,9 @@ const settingsNavGroups: Array<{
 			},
 			{
 				key: "owner-profile",
-				label: "Remito",
-				description: "Datos legales y firma del titular del rental.",
+				label: "Configuración de contratos",
+				description:
+					"Datos legales y firma usados para futuros contratos de alquiler.",
 			},
 			{
 				key: "domain",
@@ -209,7 +210,7 @@ function SettingsPanel({ section }: { section: SettingsSection }) {
 		case "branding":
 			return <BrandingSection />;
 		case "owner-profile":
-			return <TenantContractSignerSettingsSection />;
+			return <ContractSignerSettingsSection />;
 		case "domain":
 			return <CustomDomainSection />;
 		case "pricing":

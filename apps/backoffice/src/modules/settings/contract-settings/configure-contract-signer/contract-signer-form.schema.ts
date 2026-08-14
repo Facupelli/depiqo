@@ -13,7 +13,7 @@ const signatureFileSchema = z.custom<File | null>(
 		(typeof File !== "undefined" && value instanceof File),
 );
 
-export const tenantContractSignerFormSchema = z.object({
+export const contractSignerFormSchema = z.object({
 	fullName: z.string().trim().min(1, "El nombre completo es obligatorio."),
 	documentNumber: z
 		.string()
@@ -25,11 +25,9 @@ export const tenantContractSignerFormSchema = z.object({
 	signatureFile: signatureFileSchema,
 });
 
-export type TenantContractSignerFormValues = z.infer<
-	typeof tenantContractSignerFormSchema
->;
+export type ContractSignerFormValues = z.infer<typeof contractSignerFormSchema>;
 
-export function createTenantContractSignerFormDefaultValues(): TenantContractSignerFormValues {
+export function createContractSignerFormDefaultValues(): ContractSignerFormValues {
 	return {
 		fullName: "",
 		documentNumber: "",
@@ -40,9 +38,9 @@ export function createTenantContractSignerFormDefaultValues(): TenantContractSig
 	};
 }
 
-export function tenantContractSignerToFormValues(
+export function contractSignerToFormValues(
 	contractSigner?: ContractSignerDto | null,
-): TenantContractSignerFormValues {
+): ContractSignerFormValues {
 	return {
 		fullName: contractSigner?.fullName ?? "",
 		documentNumber: contractSigner?.documentNumber ?? "",
@@ -54,7 +52,7 @@ export function tenantContractSignerToFormValues(
 }
 
 export function toContractSignerBodyDto(
-	values: TenantContractSignerFormValues,
+	values: ContractSignerFormValues,
 ): ContractSignerBodyDto {
 	return ContractSignerBodySchema.parse({
 		fullName: values.fullName.trim(),

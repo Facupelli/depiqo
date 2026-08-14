@@ -8,17 +8,17 @@ import {
 import { useState } from "react";
 import { buildR2PublicUrl } from "@/lib/r2-public-url";
 import { ProblemDetailsError } from "@/shared/errors";
-import { useContractSigner } from "../../tenant.queries";
-import { useCreateContractSigner } from "../create-contract-signer/create-contract-signer.mutation";
-import { useUpdateContractSigner } from "../update-contract-signer/update-contract-signer.mutation";
-import { TenantContractSignerForm } from "./tenant-contract-signer-form";
+import { ContractSignerForm } from "./ContractSignerForm";
+import { useContractSigner } from "./contract-signer.queries";
 import {
-	type TenantContractSignerFormValues,
-	tenantContractSignerToFormValues,
+	type ContractSignerFormValues,
+	contractSignerToFormValues,
 	toContractSignerBodyDto,
-} from "./tenant-contract-signer-form.schema";
+} from "./contract-signer-form.schema";
+import { useCreateContractSigner } from "./create-contract-signer.mutation";
+import { useUpdateContractSigner } from "./update-contract-signer.mutation";
 
-export function TenantContractSignerSettingsSection() {
+export function ContractSignerSettingsSection() {
 	const contractSignerQuery = useContractSigner();
 	const { mutateAsync: createContractSigner, isPending: isCreating } =
 		useCreateContractSigner();
@@ -61,9 +61,7 @@ export function TenantContractSignerSettingsSection() {
 	}
 
 	const mode = contractSignerQuery.data ? "update" : "create";
-	const defaultValues = tenantContractSignerToFormValues(
-		contractSignerQuery.data,
-	);
+	const defaultValues = contractSignerToFormValues(contractSignerQuery.data);
 	const formKey = JSON.stringify({
 		mode,
 		fullName: defaultValues.fullName,
@@ -74,7 +72,7 @@ export function TenantContractSignerSettingsSection() {
 	});
 
 	return (
-		<TenantContractSignerForm
+		<ContractSignerForm
 			key={formKey}
 			defaultValues={defaultValues}
 			mode={mode}
@@ -106,7 +104,7 @@ async function handleSubmit({
 	setErrorMessage,
 }: {
 	mode: "create" | "update";
-	values: TenantContractSignerFormValues;
+	values: ContractSignerFormValues;
 	createContractSigner: (
 		variables: ReturnType<typeof toContractSignerBodyDto>,
 	) => Promise<unknown>;

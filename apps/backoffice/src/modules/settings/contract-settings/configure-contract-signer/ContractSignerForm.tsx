@@ -18,35 +18,34 @@ import { useForm } from "@tanstack/react-form";
 import type { ReactNode } from "react";
 import { buildR2PublicUrl } from "@/lib/r2-public-url";
 import {
-	createTenantContractSignerFormDefaultValues,
-	type TenantContractSignerFormValues,
-	tenantContractSignerFormSchema,
-} from "./tenant-contract-signer-form.schema";
+	type ContractSignerFormValues,
+	contractSignerFormSchema,
+	createContractSignerFormDefaultValues,
+} from "./contract-signer-form.schema";
 
-interface TenantContractSignerFormProps {
-	defaultValues?: TenantContractSignerFormValues;
+interface ContractSignerFormProps {
+	defaultValues?: ContractSignerFormValues;
 	mode: "create" | "update";
 	isPending: boolean;
-	onSubmit: (values: TenantContractSignerFormValues) => Promise<void> | void;
+	onSubmit: (values: ContractSignerFormValues) => Promise<void> | void;
 	feedbackMessage?: ReactNode;
 	errorMessage?: ReactNode;
 }
 
 const formId = "tenant-contract-signer-settings-form";
 
-export function TenantContractSignerForm({
+export function ContractSignerForm({
 	defaultValues,
 	mode,
 	isPending,
 	onSubmit,
 	feedbackMessage,
 	errorMessage,
-}: TenantContractSignerFormProps) {
+}: ContractSignerFormProps) {
 	const form = useForm({
-		defaultValues:
-			defaultValues ?? createTenantContractSignerFormDefaultValues(),
+		defaultValues: defaultValues ?? createContractSignerFormDefaultValues(),
 		validators: {
-			onSubmit: tenantContractSignerFormSchema,
+			onSubmit: contractSignerFormSchema,
 		},
 		onSubmit: async ({ value }) => {
 			await onSubmit(value);
@@ -58,8 +57,8 @@ export function TenantContractSignerForm({
 			<CardHeader>
 				<CardTitle>Firmante de contratos</CardTitle>
 				<CardDescription>
-					Define los datos y la firma que el sistema usara para generar los
-					contratos del rental.
+					Define los datos y la firma que el sistema usara para futuros
+					contratos de alquiler.
 				</CardDescription>
 			</CardHeader>
 			<CardContent className="space-y-6">
