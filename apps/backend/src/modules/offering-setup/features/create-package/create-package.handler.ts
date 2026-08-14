@@ -2,10 +2,6 @@ import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { err, ok, Result } from 'neverthrow';
 
 import {
-  PhysicalStockSufficiency,
-  PhysicalStockSufficiencyError,
-} from '../../../asset-inventory/public-api/physical-stock-sufficiency.public-api';
-import {
   CatalogOfferingAuthoring,
   CatalogOfferingAuthoringError,
 } from '../../../catalog/public-api/catalog-offering-authoring.public-api';
@@ -24,7 +20,6 @@ export class CreatePackageHandler implements ICommandHandler<CreatePackageComman
   constructor(
     private readonly tenantOperationalFacts: TenantOperationalFacts,
     private readonly branchFacts: BranchFacts,
-    private readonly physicalStockSufficiency: PhysicalStockSufficiency,
     private readonly catalog: CatalogOfferingAuthoring,
   ) {}
 
@@ -36,16 +31,6 @@ export class CreatePackageHandler implements ICommandHandler<CreatePackageComman
       command.branchIds,
     );
     if (tenantValidation.isErr()) return err(mapTenantError(tenantValidation.error));
-
-    const equipmentValidation = await this.physicalStockSufficiency.validateActiveStockSufficiency({
-      tenantId: command.tenantId,
-      branchIds: command.branchIds,
-      requirements: command.requirements.map((requirement) => ({
-        equipmentTypeId: requirement.equipmentTypeId,
-        requiredQuantity: requirement.quantityPerItem,
-      })),
-    });
-    if (equipmentValidation.isErr()) return err(mapAssetInventoryError(equipmentValidation.error));
 
     const rentableItem = await this.catalog.createRentableItemOffering({
       tenantId: command.tenantId,
@@ -87,23 +72,6 @@ function mapTenantError(error: OperationalSetupValidationError): CreatePackageEr
   }
   if (error.code === 'BranchUnavailable') {
     return createPackageError('offering_setup.branch_unavailable', error.message, error);
-  }
-  throw error;
-}
-
-function mapAssetInventoryError(error: PhysicalStockSufficiencyError): CreatePackageError {
-  if (error.code === 'EquipmentTypeNotFound') {
-    return createPackageError('offering_setup.equipment_type_not_found', error.message, error, {
-      equipmentTypeId: error.equipmentTypeId,
-    });
-  }
-  if (error.code === 'InsufficientActivePhysicalStock') {
-    return createPackageError('offering_setup.insufficient_active_equipment_stock', error.message, error, {
-      equipmentTypeId: error.equipmentTypeId,
-      branchId: error.branchId,
-      requiredQuantity: error.requiredQuantity,
-      activeAssetCount: error.activeAssetCount,
-    });
   }
   throw error;
 }

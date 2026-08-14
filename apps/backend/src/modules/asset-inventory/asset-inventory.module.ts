@@ -38,8 +38,6 @@ import { AssetInventoryDisplayFactsService } from './public-api/asset-inventory-
 import { AssetInventoryDisplayFacts } from './public-api/asset-inventory-display-facts.public-api';
 import { AssetInventoryAuthoringService } from './public-api/asset-inventory-authoring.public-api.service';
 import { AssetInventoryAuthoring } from './public-api/asset-inventory-authoring.public-api';
-import { PhysicalStockSufficiencyService } from './public-api/physical-stock-sufficiency.public-api.service';
-import { PhysicalStockSufficiency } from './public-api/physical-stock-sufficiency.public-api';
 import { EquipmentTypeReferenceAuthorityService } from './public-api/equipment-type-reference-authority.public-api.service';
 import { EquipmentTypeReferenceAuthority } from './public-api/equipment-type-reference-authority.public-api';
 
@@ -82,15 +80,9 @@ import { EquipmentTypeReferenceAuthority } from './public-api/equipment-type-ref
     AssetRepository,
     EquipmentTypeRepository,
     { provide: AssetInventoryAuthoring, useClass: AssetInventoryAuthoringService },
-    { provide: PhysicalStockSufficiency, useClass: PhysicalStockSufficiencyService },
     { provide: EquipmentTypeReferenceAuthority, useClass: EquipmentTypeReferenceAuthorityService },
     { provide: AssetInventoryDisplayFacts, useClass: AssetInventoryDisplayFactsService },
   ],
-  exports: [
-    AssetInventoryAuthoring,
-    PhysicalStockSufficiency,
-    EquipmentTypeReferenceAuthority,
-    AssetInventoryDisplayFacts,
-  ],
+  exports: [AssetInventoryAuthoring, EquipmentTypeReferenceAuthority, AssetInventoryDisplayFacts],
 })
 export class AssetInventoryModule {}
