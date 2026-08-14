@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useCreatePackage } from "@/features/admin/offering-setup/create-package/create-package.mutation";
 import { toCreatePackageDto } from "@/features/admin/offering-setup/create-package/create-package.schema";
 import { CreatePackageForm } from "@/features/admin/offering-setup/create-package/create-package-form";
-import { useEquipmentTypeSummaries } from "@/features/asset-inventory/equipment-types/equipment-types.queries";
+import { useEquipmentTypes } from "@/features/asset-inventory/equipment-types/equipment-types.queries";
 import { useBranches } from "@/features/tenant-management/branch/branch.queries";
 import { useCategories } from "@/features/tenant-management/categories/categories.queries";
 import { AdminRouteError } from "@/shared/components/admin-route-error";
@@ -29,24 +29,11 @@ function CreatePackagePage() {
 	const [equipmentSearch, setEquipmentSearch] = useState("");
 	const { data: categories = [] } = useCategories();
 	const { data: branches = [] } = useBranches();
-	const { data: equipmentTypeSummaries } = useEquipmentTypeSummaries({
-		isActive: true,
+	const { data: equipmentTypes = [] } = useEquipmentTypes({
 		search: equipmentSearch.trim() || undefined,
-		page: 1,
-		pageSize: EQUIPMENT_TYPE_SEARCH_LIMIT,
+		limit: EQUIPMENT_TYPE_SEARCH_LIMIT,
 	});
-	const equipmentTypes = (equipmentTypeSummaries?.data ?? []).map(
-		(equipmentType) => ({
-			id: equipmentType.id,
-			name: equipmentType.name,
-			activeStockByBranch: Object.fromEntries(
-				equipmentType.stockPerBranch.map((stock) => [
-					stock.branchId,
-					stock.quantity,
-				]),
-			),
-		}),
-	);
+
 	const { mutateAsync: createPackage, isPending } = useCreatePackage();
 
 	return (

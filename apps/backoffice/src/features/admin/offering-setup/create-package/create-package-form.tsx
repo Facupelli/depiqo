@@ -248,73 +248,47 @@ export function CreatePackageForm({
 							alquilar.
 						</p>
 					</div>
-					<form.Subscribe selector={(state) => state.values.requirements}>
-						{(requirements) => (
-							<form.Field name="branchIds">
-								{(field) => {
-									const isInvalid =
-										field.state.meta.isTouched && !field.state.meta.isValid;
+					<form.Field name="branchIds">
+						{(field) => {
+							const isInvalid =
+								field.state.meta.isTouched && !field.state.meta.isValid;
 
-									return (
-										<Field data-invalid={isInvalid}>
-											<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-												{branchItems.map((branch) => {
-													const isChecked = field.state.value.includes(
-														branch.value,
-													);
-													const incompatibleRequirements = requirements.filter(
-														(requirement) =>
-															requirement.quantityPerItem >
-															(requirement.activeStockByBranch[branch.value] ??
-																0),
-													);
-													const isDisabled =
-														!isChecked && incompatibleRequirements.length > 0;
-
-													return (
-														<div
-															key={branch.value}
-															className="rounded-lg border p-3 text-sm"
-														>
-															<div className="flex items-center gap-3">
-																<Checkbox
-																	checked={isChecked}
-																	disabled={isDisabled}
-																	onCheckedChange={(checked) => {
-																		field.handleChange(
-																			checked
-																				? [...field.state.value, branch.value]
-																				: field.state.value.filter(
-																						(id) => id !== branch.value,
-																					),
-																		);
-																	}}
-																/>
-																<span>{branch.label}</span>
-															</div>
-															{isDisabled && (
-																<p className="mt-2 text-muted-foreground text-xs">
-																	Stock insuficiente para{" "}
-																	{
-																		incompatibleRequirements[0]
-																			.equipmentTypeName
-																	}
-																	.
-																</p>
-															)}
-														</div>
-													);
-												})}
-											</div>
-											{isInvalid && (
-												<FieldError errors={field.state.meta.errors} />
-											)}
-										</Field>
-									);
-								}}
-							</form.Field>
-						)}
-					</form.Subscribe>
+							return (
+								<Field data-invalid={isInvalid}>
+									<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+										{branchItems.map((branch) => {
+											const isChecked = field.state.value.includes(
+												branch.value,
+											);
+											return (
+												<div
+													key={branch.value}
+													className="rounded-lg border p-3 text-sm"
+												>
+													<div className="flex items-center gap-3">
+														<Checkbox
+															checked={isChecked}
+															onCheckedChange={(checked) => {
+																field.handleChange(
+																	checked
+																		? [...field.state.value, branch.value]
+																		: field.state.value.filter(
+																				(id) => id !== branch.value,
+																			),
+																);
+															}}
+														/>
+														<span>{branch.label}</span>
+													</div>
+												</div>
+											);
+										})}
+									</div>
+									{isInvalid && <FieldError errors={field.state.meta.errors} />}
+								</Field>
+							);
+						}}
+					</form.Field>
 				</section>
 
 				<section className="space-y-5 border-t pt-8">
@@ -338,12 +312,7 @@ export function CreatePackageForm({
 										),
 									);
 									const availableEquipmentTypes = equipmentTypes.filter(
-										(equipmentType) =>
-											!selectedIds.has(equipmentType.id) &&
-											getMaximumActiveStock(
-												equipmentType.activeStockByBranch,
-												selectedBranchIds,
-											) > 0,
+										(equipmentType) => !selectedIds.has(equipmentType.id),
 									);
 									const availableEquipmentItems = availableEquipmentTypes.map(
 										(equipmentType) => ({
@@ -390,8 +359,6 @@ export function CreatePackageForm({
 																equipmentTypeId: value,
 																equipmentTypeName: equipmentType.name,
 																quantityPerItem: 1,
-																activeStockByBranch:
-																	equipmentType.activeStockByBranch,
 															});
 														}}
 													>
@@ -405,21 +372,14 @@ export function CreatePackageForm({
 															/>
 														</SelectTrigger>
 														<SelectContent>
-															{availableEquipmentTypes.map((equipmentType) => {
-																const maximum = getMaximumActiveStock(
-																	equipmentType.activeStockByBranch,
-																	selectedBranchIds,
-																);
-
-																return (
-																	<SelectItem
-																		key={equipmentType.id}
-																		value={equipmentType.id}
-																	>
-																		{equipmentType.name} ({maximum} disponibles)
-																	</SelectItem>
-																);
-															})}
+															{availableEquipmentTypes.map((equipmentType) => (
+																<SelectItem
+																	key={equipmentType.id}
+																	value={equipmentType.id}
+																>
+																	{equipmentType.name}
+																</SelectItem>
+															))}
 														</SelectContent>
 													</Select>
 												</Field>
@@ -459,17 +419,12 @@ export function CreatePackageForm({
 																				const subFieldInvalid =
 																					subField.state.meta.isTouched &&
 																					!subField.state.meta.isValid;
-																				const maximum = getMaximumActiveStock(
-																					requirement.activeStockByBranch,
-																					selectedBranchIds,
-																				);
 
 																				return (
 																					<Field data-invalid={subFieldInvalid}>
 																						<Input
 																							type="number"
 																							min={1}
-																							max={maximum}
 																							step={1}
 																							value={subField.state.value}
 																							onBlur={subField.handleBlur}
@@ -479,14 +434,11 @@ export function CreatePackageForm({
 																								subField.handleChange(
 																									Number.isNaN(nextValue)
 																										? 1
-																										: Math.min(
-																												maximum,
-																												Math.max(1, nextValue),
-																											),
+																										: Math.max(1, nextValue),
 																								);
 																							}}
 																							aria-invalid={subFieldInvalid}
-																							aria-label={`Cantidad de ${requirement.equipmentTypeName}, máximo ${maximum}`}
+																							aria-label={`Cantidad de ${requirement.equipmentTypeName}`}
 																						/>
 																						{subFieldInvalid && (
 																							<FieldError
@@ -555,16 +507,5 @@ export function CreatePackageForm({
 				</form.Subscribe>
 			</div>
 		</>
-	);
-}
-
-function getMaximumActiveStock(
-	activeStockByBranch: Record<string, number>,
-	selectedBranchIds: string[],
-): number {
-	if (selectedBranchIds.length === 0) return 0;
-
-	return Math.min(
-		...selectedBranchIds.map((branchId) => activeStockByBranch[branchId] ?? 0),
 	);
 }

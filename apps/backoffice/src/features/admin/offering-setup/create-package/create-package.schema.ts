@@ -8,7 +8,6 @@ import { emptyToNull } from "@/shared/utils/form.utils";
 export interface PackageEquipmentOption {
 	id: string;
 	name: string;
-	activeStockByBranch: Record<string, number>;
 }
 
 export const createPackageRequirementFormSchema = z.object({
@@ -18,45 +17,26 @@ export const createPackageRequirementFormSchema = z.object({
 		.number()
 		.int("Debe ser un número entero")
 		.positive("Debe ser mayor o igual a 1"),
-	activeStockByBranch: z.record(z.string(), z.number().int().nonnegative()),
 });
 
-export const createPackageFormSchema = z
-	.object({
-		categoryId: z.string(),
-		name: z.string().min(1, "El nombre es obligatorio"),
-		imageUrl: z.string(),
-		description: z.string(),
-		branchIds: z
-			.array(z.string().min(1))
-			.min(1, "Selecciona al menos una sucursal"),
-		requirements: z
-			.array(createPackageRequirementFormSchema)
-			.min(1, "Agrega al menos un equipo al combo")
-			.refine(
-				(requirements) =>
-					new Set(
-						requirements.map((requirement) => requirement.equipmentTypeId),
-					).size === requirements.length,
-				"Cada equipo puede agregarse una sola vez",
-			),
-	})
-	.superRefine((values, context) => {
-		values.requirements.forEach((requirement, requirementIndex) => {
-			for (const branchId of values.branchIds) {
-				const activeStock = requirement.activeStockByBranch[branchId] ?? 0;
-
-				if (requirement.quantityPerItem > activeStock) {
-					context.addIssue({
-						code: "custom",
-						path: ["requirements", requirementIndex, "quantityPerItem"],
-						message: `Solo hay ${activeStock} unidades activas en una de las sucursales seleccionadas`,
-					});
-					break;
-				}
-			}
-		});
-	});
+export const createPackageFormSchema = z.object({
+	categoryId: z.string(),
+	name: z.string().min(1, "El nombre es obligatorio"),
+	imageUrl: z.string(),
+	description: z.string(),
+	branchIds: z
+		.array(z.string().min(1))
+		.min(1, "Selecciona al menos una sucursal"),
+	requirements: z
+		.array(createPackageRequirementFormSchema)
+		.min(1, "Agrega al menos un equipo al combo")
+		.refine(
+			(requirements) =>
+				new Set(requirements.map((requirement) => requirement.equipmentTypeId))
+					.size === requirements.length,
+			"Cada equipo puede agregarse una sola vez",
+		),
+});
 
 export type CreatePackageRequirementFormValues = z.infer<
 	typeof createPackageRequirementFormSchema
