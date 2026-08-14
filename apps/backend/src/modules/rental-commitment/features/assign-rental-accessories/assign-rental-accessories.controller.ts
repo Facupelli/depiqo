@@ -78,6 +78,12 @@ const assignRentalAccessoriesProblemMap = {
     status: HttpStatus.UNPROCESSABLE_ENTITY,
     detail: 'Each source demand line and equipment type pair can only be requested once.',
   },
+  'rental_commitment.equipment_type_not_found': {
+    type: createProblemType('rental_commitment.equipment_type_not_found'),
+    title: 'Equipment type not found',
+    status: HttpStatus.NOT_FOUND,
+    detail: 'A required equipment type could not be found.',
+  },
   'rental_commitment.insufficient_asset_availability': {
     type: createProblemType('rental_commitment.insufficient_asset_availability'),
     title: 'Insufficient asset availability',

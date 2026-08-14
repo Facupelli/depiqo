@@ -142,6 +142,28 @@ describe('EditConfirmedRental integration', () => {
     expect(state.blocks[0].period).toContain('2030-01-01 15:00:00+00');
   });
 
+  it('preserves retained demand-line name snapshots when an operational edit follows an Equipment Type rename', async () => {
+    const setup = await scenario();
+    const before = await fixtures.persistedState(setup.rental.rentalId);
+    await prisma.client.v2EquipmentType.update({
+      where: { id: setup.commercial.equipmentType.id },
+      data: { name: 'Renamed equipment type' },
+    });
+
+    const result = await edit(setup, { period: new RentalPeriod(utcDate(2030, 1, 1, 13), utcDate(2030, 1, 1, 15)) });
+
+    expect(result.isOk()).toBe(true);
+    const after = await fixtures.persistedState(setup.rental.rentalId);
+    expect(after.rental.demandLines).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: before.rental.demandLines[0].id,
+          equipmentTypeNameSnapshot: before.rental.demandLines[0].equipmentTypeNameSnapshot,
+        }),
+      ]),
+    );
+  });
+
   it('leaves the complete confirmed state unchanged when the target period is unavailable', async () => {
     const setup = await scenario();
     const blocker = await fixtures.createConfirmedRental({

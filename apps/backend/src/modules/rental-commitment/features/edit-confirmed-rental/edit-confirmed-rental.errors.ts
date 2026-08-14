@@ -12,6 +12,7 @@ export type EditConfirmedRentalErrorCode =
   | 'rental_commitment.rental_offer_not_found'
   | 'rental_commitment.catalog_selection_unavailable'
   | 'rental_commitment.invalid_fulfillment_definition'
+  | 'rental_commitment.equipment_type_not_found'
   | 'rental_commitment.insufficient_asset_availability'
   | 'rental_commitment.tenant_unavailable'
   | 'rental_commitment.branch_unavailable'

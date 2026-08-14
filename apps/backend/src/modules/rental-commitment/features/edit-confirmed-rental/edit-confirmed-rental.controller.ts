@@ -150,6 +150,12 @@ const problemMap = {
     HttpStatus.UNPROCESSABLE_ENTITY,
     'The selected rental offer has an invalid fulfillment definition.',
   ),
+  'rental_commitment.equipment_type_not_found': problem(
+    'equipment_type_not_found',
+    'Equipment type not found',
+    HttpStatus.NOT_FOUND,
+    'A required equipment type could not be found.',
+  ),
   'rental_commitment.insufficient_asset_availability': problem(
     'insufficient_asset_availability',
     'Insufficient asset availability',

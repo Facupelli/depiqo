@@ -28,6 +28,7 @@ import {
   BranchUnavailableForRentalError,
   ConfirmedRentalCannotBeEditedAfterPickupError,
   DuplicateRentalOfferSelectionError,
+  EquipmentTypeNotFoundError,
   InsufficientAssetAvailabilityError,
   InvalidCatalogSelectionQuantityError,
   PickupTimeOutsideBranchScheduleError,
@@ -159,12 +160,6 @@ export class EditConfirmedRentalHandler implements ICommandHandler<
     const existingSelectionIdByOfferId = new Map(
       rental.selections.map((selection) => [selection.rentalOfferId, selection.id]),
     );
-    const equipmentTypeNames = await resolveEquipmentTypeNames(this.assetInventoryDisplayFacts, {
-      tenantId,
-      equipmentTypeIds: resolvedCatalogSelections.value.resolvedOffers.flatMap((offer) =>
-        offer.fulfillmentRequirements.map((requirement) => requirement.equipmentTypeId),
-      ),
-    });
 
     const selections = resolvedCatalogSelections.value.resolvedOffers.map((offer) => ({
       id: existingSelectionIdByOfferId.get(offer.rentalOfferId) ?? RentalSelectionId.create(),
@@ -198,19 +193,37 @@ export class EditConfirmedRentalHandler implements ICommandHandler<
     });
     if (pricingResult.isErr()) return err(this.toApplicationError(pricingResult.error, context));
 
-    const existingDemandLineIdBySelectionAndEquipmentType = new Map(
-      rental.demandLines.map((line) => [`${line.rentalSelectionId}:${line.equipmentTypeId}`, line.id]),
+    const existingDemandLineBySelectionAndEquipmentType = new Map(
+      rental.demandLines.map((line) => [`${line.rentalSelectionId}:${line.equipmentTypeId}`, line]),
     );
+    const newEquipmentTypeIds = selections.flatMap((selection) =>
+      selection.fulfillmentRequirements
+        .filter(
+          (requirement) =>
+            !existingDemandLineBySelectionAndEquipmentType.has(`${selection.id}:${requirement.equipmentTypeId}`),
+        )
+        .map((requirement) => requirement.equipmentTypeId),
+    );
+    const equipmentTypeNames = await resolveEquipmentTypeNames(this.assetInventoryDisplayFacts, {
+      tenantId,
+      equipmentTypeIds: newEquipmentTypeIds,
+    });
+    if (equipmentTypeNames.isErr()) return err(this.toApplicationError(equipmentTypeNames.error, context));
+
     const demandLines = selections.flatMap((selection) =>
-      selection.fulfillmentRequirements.map((requirement) => ({
-        id:
-          existingDemandLineIdBySelectionAndEquipmentType.get(`${selection.id}:${requirement.equipmentTypeId}`) ??
-          RentalDemandLineId.create(),
-        rentalSelectionId: selection.id,
-        equipmentTypeId: requirement.equipmentTypeId as EquipmentTypeId,
-        equipmentTypeNameSnapshot: equipmentTypeNames.get(requirement.equipmentTypeId) ?? requirement.equipmentTypeId,
-        quantity: selection.quantity * requirement.quantityPerItem,
-      })),
+      selection.fulfillmentRequirements.map((requirement) => {
+        const existing = existingDemandLineBySelectionAndEquipmentType.get(
+          `${selection.id}:${requirement.equipmentTypeId}`,
+        );
+        return {
+          id: existing?.id ?? RentalDemandLineId.create(),
+          rentalSelectionId: selection.id,
+          equipmentTypeId: requirement.equipmentTypeId as EquipmentTypeId,
+          equipmentTypeNameSnapshot:
+            existing?.equipmentTypeNameSnapshot ?? equipmentTypeNames.value.get(requirement.equipmentTypeId),
+          quantity: selection.quantity * requirement.quantityPerItem,
+        };
+      }),
     );
 
     try {
@@ -648,6 +661,11 @@ export class EditConfirmedRentalHandler implements ICommandHandler<
         error,
         context,
       );
+    if (error instanceof EquipmentTypeNotFoundError)
+      return editConfirmedRentalError('rental_commitment.equipment_type_not_found', error.message, error, {
+        ...context,
+        equipmentTypeId: error.equipmentTypeId,
+      });
     if (error instanceof InsufficientAssetAvailabilityError)
       return editConfirmedRentalError(
         'rental_commitment.insufficient_asset_availability',

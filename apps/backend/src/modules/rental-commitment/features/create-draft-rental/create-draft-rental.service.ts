@@ -117,6 +117,7 @@ export class CreateDraftRentalService implements ICommandHandler<
         offer.fulfillmentRequirements.map((requirement) => requirement.equipmentTypeId),
       ),
     });
+    if (equipmentTypeNames.isErr()) return err(this.toApplicationError(equipmentTypeNames.error, context));
 
     const rentalSelectionsDraft = resolvedCatalogSelections.value.resolvedOffers.map((offer) => ({
       rentalSelectionId: RentalSelectionId.create(),
@@ -161,7 +162,7 @@ export class CreateDraftRentalService implements ICommandHandler<
         rentalDemandLineId: RentalDemandLineId.create(),
         rentalSelectionId: selection.rentalSelectionId,
         equipmentTypeId: requirement.equipmentTypeId,
-        equipmentNameSnapshot: equipmentTypeNames.get(requirement.equipmentTypeId) ?? requirement.equipmentTypeId,
+        equipmentNameSnapshot: equipmentTypeNames.value.get(requirement.equipmentTypeId),
         quantity: selection.quantity * requirement.quantityPerItem,
       })),
     );

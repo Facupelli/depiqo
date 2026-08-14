@@ -22,6 +22,7 @@ import { resolveEquipmentTypeNames } from '../../application/equipment-type-disp
 import {
   BranchUnavailableForRentalError,
   DuplicateRentalOfferSelectionError,
+  EquipmentTypeNotFoundError,
   InvalidCatalogSelectionQuantityError,
   PickupTimeOutsideBranchScheduleError,
   RentalCannotBeEditedFromStatusError,
@@ -160,6 +161,8 @@ export class EditUnconfirmedRentalHandler implements ICommandHandler<
       ),
     });
 
+    if (equipmentTypeNames.isErr()) return err(this.toApplicationError(equipmentTypeNames.error, context));
+
     const selections = resolvedCatalogSelections.value.resolvedOffers.map((offer) => ({
       id: RentalSelectionId.create(),
       rentalOfferId: offer.rentalOfferId,
@@ -224,7 +227,7 @@ export class EditUnconfirmedRentalHandler implements ICommandHandler<
           id: RentalDemandLineId.create(),
           rentalSelectionId: selection.id,
           equipmentTypeId: requirement.equipmentTypeId as EquipmentTypeId,
-          equipmentTypeNameSnapshot: equipmentTypeNames.get(requirement.equipmentTypeId) ?? requirement.equipmentTypeId,
+          equipmentTypeNameSnapshot: equipmentTypeNames.value.get(requirement.equipmentTypeId),
           quantity: selection.quantity * requirement.quantityPerItem,
         })),
       ),
@@ -327,6 +330,12 @@ export class EditUnconfirmedRentalHandler implements ICommandHandler<
     }
     if (error instanceof RentalCustomerUnavailableForRentalError) {
       return editUnconfirmedRentalError('rental_commitment.customer_unavailable', error.message, error, context);
+    }
+    if (error instanceof EquipmentTypeNotFoundError) {
+      return editUnconfirmedRentalError('rental_commitment.equipment_type_not_found', error.message, error, {
+        ...context,
+        equipmentTypeId: error.equipmentTypeId,
+      });
     }
     if (error instanceof UnsupportedBranchFulfillmentMethodError) {
       return editUnconfirmedRentalError(

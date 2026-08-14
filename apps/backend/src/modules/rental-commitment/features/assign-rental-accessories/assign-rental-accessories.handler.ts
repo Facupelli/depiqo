@@ -8,6 +8,7 @@ import { mapPostgresError, PostgresExclusionViolationError } from 'src/core/util
 import { AssetInventoryDisplayFacts } from 'src/modules/asset-inventory/public-api/asset-inventory-display-facts.public-api';
 import { V2AssetBlockType, V2RentalStatus } from 'src/generated/prisma/enums';
 
+import { resolveEquipmentTypeNames } from '../../application/equipment-type-display-facts';
 import { RentalAssetAllocationService } from '../../asset-allocation/rental-asset-allocation.service';
 import { InsufficientAssetAvailabilityError } from '../../domain/errors/rental-commitment.errors';
 import { RentalDemandLineId } from '../../domain/ids/rental-demand-line-id';
@@ -31,6 +32,7 @@ type ExistingSelection = {
   id: string;
   sourceRentalDemandLineId: string | null;
   equipmentTypeId: string;
+  equipmentTypeNameSnapshot: string;
   assignments: Array<{ id: string; assetId: string }>;
 };
 
@@ -104,35 +106,27 @@ export class AssignRentalAccessoriesHandler implements ICommandHandler<
         id: true,
         sourceRentalDemandLineId: true,
         equipmentTypeId: true,
+        equipmentTypeNameSnapshot: true,
         assignments: { select: { id: true, assetId: true }, orderBy: { createdAt: 'asc' } },
       },
       orderBy: { createdAt: 'asc' },
     });
 
     const existingByKey = new Map(existingSelections.map((selection) => [this.selectionKey(selection), selection]));
-    const requestedEquipmentTypeIds = [...new Set(command.accessories.map((accessory) => accessory.equipmentTypeId))];
-    const equipmentTypeDisplayFacts = await this.assetInventoryDisplayFacts.getEquipmentTypeDisplayFacts({
+    const newEquipmentTypeIds = command.accessories
+      .filter((accessory) => !existingByKey.has(this.selectionKey(accessory)))
+      .map((accessory) => accessory.equipmentTypeId);
+    const equipmentTypeNames = await resolveEquipmentTypeNames(this.assetInventoryDisplayFacts, {
       tenantId: command.tenantId,
-      equipmentTypeIds: requestedEquipmentTypeIds,
+      equipmentTypeIds: newEquipmentTypeIds,
     });
-    const equipmentTypeNames = new Map(equipmentTypeDisplayFacts.map((fact) => [fact.equipmentTypeId, fact.name]));
-    const missingAccessory = command.accessories.find(
-      (accessory) => !equipmentTypeNames.has(accessory.equipmentTypeId),
-    );
-
-    if (missingAccessory) {
-      const availabilityError = new InsufficientAssetAvailabilityError(
-        missingAccessory.equipmentTypeId,
-        existingByKey.get(this.selectionKey(missingAccessory))?.id ?? '',
-        missingAccessory.quantity,
-        0,
-      );
+    if (equipmentTypeNames.isErr()) {
       return err(
         assignRentalAccessoriesError(
-          'rental_commitment.insufficient_asset_availability',
-          availabilityError.message,
-          availabilityError,
-          context,
+          'rental_commitment.equipment_type_not_found',
+          equipmentTypeNames.error.message,
+          equipmentTypeNames.error,
+          { ...context, equipmentTypeId: equipmentTypeNames.error.equipmentTypeId },
         ),
       );
     }
@@ -150,7 +144,8 @@ export class AssignRentalAccessoriesHandler implements ICommandHandler<
         id: selectionId,
         sourceRentalDemandLineId: accessory.sourceRentalDemandLineId,
         equipmentTypeId: accessory.equipmentTypeId,
-        equipmentTypeNameSnapshot: equipmentTypeNames.get(accessory.equipmentTypeId) ?? accessory.equipmentTypeId,
+        equipmentTypeNameSnapshot:
+          existing?.equipmentTypeNameSnapshot ?? equipmentTypeNames.value.get(accessory.equipmentTypeId),
         quantity: accessory.quantity,
         keptAssignmentIds: keptAssignments.map((assignment) => assignment.id),
         keptAssetIds: keptAssignments.map((assignment) => assignment.assetId),

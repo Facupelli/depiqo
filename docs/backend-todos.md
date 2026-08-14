@@ -87,18 +87,10 @@
 
 # Rental Commitment domain/event TODOs
 
-* [ ] Decide whether the current UUID-prefix display value (`rentalId.slice(0, 4)`) is intentionally the durable rental/order number.
-
-  * If not, define a real Rental Commitment-owned reference/order number.
-
 * [ ] Decide accepted-pricing revision semantics.
 
   * Can confirmed edits replace the accepted pricing snapshot?
   * If yes, do downstream artifacts need an accepted-price revision/version check?
-
-* [ ] Decide behavior when an Equipment Type display fact needed for a historical snapshot is missing.
-
-  * Do not silently treat `equipmentTypeId` as a permanent human-readable name fallback.
 
 ---
 
