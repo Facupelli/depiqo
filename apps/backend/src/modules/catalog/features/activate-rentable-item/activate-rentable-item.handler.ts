@@ -78,10 +78,10 @@ export class ActivateRentableItemHandler implements ICommandHandler<
       where: { id: rentableItemId, tenantId },
       select: {
         requirements: {
-          select: { equipmentTypeId: true, quantityPerItem: true },
+          select: { id: true },
         },
         rentalOffers: {
-          select: { id: true, branchId: true },
+          select: { id: true },
         },
       },
     });
@@ -147,55 +147,6 @@ export class ActivateRentableItemHandler implements ICommandHandler<
       );
     }
 
-    for (const offer of pricedOffers) {
-      const insufficientContext = await this.findInsufficientRequirementForBranch(
-        tenantId,
-        offer.branchId,
-        item.requirements,
-      );
-
-      if (insufficientContext) {
-        return err(
-          activateRentableItemError(
-            'catalog.rentable_item_has_insufficient_active_assets',
-            'Every priced branch offer must have enough active assets to fulfill the rentable item requirements.',
-            undefined,
-            { ...context, ...insufficientContext },
-          ),
-        );
-      }
-    }
-
     return ok(undefined);
-  }
-
-  private async findInsufficientRequirementForBranch(
-    tenantId: string,
-    branchId: string,
-    requirements: Array<{ equipmentTypeId: string; quantityPerItem: number }>,
-  ): Promise<
-    { branchId: string; equipmentTypeId: string; requiredQuantity: number; activeAssetCount: number } | undefined
-  > {
-    for (const requirement of requirements) {
-      const activeAssetCount = await this.prisma.client.v2Asset.count({
-        where: {
-          tenantId,
-          branchId,
-          equipmentTypeId: requirement.equipmentTypeId,
-          status: 'ACTIVE',
-        },
-      });
-
-      if (activeAssetCount < requirement.quantityPerItem) {
-        return {
-          branchId,
-          equipmentTypeId: requirement.equipmentTypeId,
-          requiredQuantity: requirement.quantityPerItem,
-          activeAssetCount,
-        };
-      }
-    }
-
-    return undefined;
   }
 }

@@ -39,17 +39,7 @@ function toActivateRentableItemProblem(error: ActivateRentableItemError): Proble
       title: problem.title,
       status: problem.status,
       detail: problem.detail,
-      extensions: {
-        code: error.code,
-        ...(error.code === 'catalog.rentable_item_has_insufficient_active_assets'
-          ? {
-              branchId: error.context?.branchId,
-              equipmentTypeId: error.context?.equipmentTypeId,
-              requiredQuantity: error.context?.requiredQuantity,
-              activeAssetCount: error.context?.activeAssetCount,
-            }
-          : {}),
-      },
+      extensions: { code: error.code },
     }),
     applicationError: error,
     cause: error.cause,
@@ -86,11 +76,5 @@ const activateRentableItemProblemMap = {
     title: 'Rentable item has no active pricing',
     status: HttpStatus.UNPROCESSABLE_ENTITY,
     detail: 'At least one rental offer must have active pricing before the rentable item can be activated.',
-  },
-  'catalog.rentable_item_has_insufficient_active_assets': {
-    type: createProblemType('catalog.rentable_item_has_insufficient_active_assets'),
-    title: 'Rentable item has insufficient active assets',
-    status: HttpStatus.UNPROCESSABLE_ENTITY,
-    detail: 'Every priced branch offer must have enough active assets to fulfill the rentable item requirements.',
   },
 } satisfies Record<ActivateRentableItemErrorCode, { type: string; title: string; status: HttpStatus; detail: string }>;
