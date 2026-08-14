@@ -1,8 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
-import { getCustomerProfileDetail } from "@/features/tenant-management/customer/get-customer-profile-detail/get-customer-profile-detail.api";
 import { requireV2TenantUser } from "@/lib/auth/route-auth.server";
 import { getCustomerDocument } from "@/lib/object-storage/r2-customer-document-storage.server";
+import { getCustomerProfileDetail } from "@/modules/customers/review-customer-onboarding/customer-onboarding-profile.api";
 import { ProblemDetailsError, WrongActorError } from "@/shared/errors";
 
 const customerProfileParamsSchema = z.object({

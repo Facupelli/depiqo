@@ -2,11 +2,11 @@ import type { ApproveSubmittedCustomerOnboardingResponseDto } from "@repo/api-co
 import type { MutationOptions } from "@tanstack/react-query";
 import { useMutation } from "@tanstack/react-query";
 import type { ProblemDetailsError } from "@/shared/errors";
-import { rentalCustomerKeys } from "../rental-customer.queries";
+import { customerKeys } from "../customer.query-keys";
 import {
 	type ApproveSubmittedCustomerOnboardingVariables,
 	approveSubmittedCustomerOnboarding,
-} from "./approve-submitted-customer-onboarding.api";
+} from "./approve-customer-onboarding.api";
 
 type ApproveSubmittedCustomerOnboardingOptions = Omit<
 	MutationOptions<
@@ -28,7 +28,7 @@ export function useApproveSubmittedCustomerOnboarding(
 		...options,
 		mutationFn: approveSubmittedCustomerOnboarding,
 		meta: {
-			invalidates: rentalCustomerKeys.all(),
+			invalidates: customerKeys.all(),
 			...options?.meta,
 		},
 	});
