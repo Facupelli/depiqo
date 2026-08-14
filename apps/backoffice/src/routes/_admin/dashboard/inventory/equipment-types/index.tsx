@@ -11,24 +11,10 @@ import { useBranches } from "@/features/tenant-management/branch/branch.queries"
 import { AdminRouteError } from "@/shared/components/admin-route-error";
 import useDebounce from "@/shared/hooks/use-debounce";
 
-const BooleanSearchParamSchema = z.preprocess((value) => {
-	if (value === undefined || value === null || value === "") {
-		return undefined;
-	}
-	if (value === true || value === "true") {
-		return true;
-	}
-	if (value === false || value === "false") {
-		return false;
-	}
-	return value;
-}, z.boolean().optional());
-
 const equipmentTypesSearchSchema = z.object({
 	page: z.coerce.number().int().positive().default(1),
 	pageSize: z.coerce.number().int().positive().max(100).default(20),
 	search: z.string().trim().min(1).optional(),
-	isActive: BooleanSearchParamSchema,
 	branchId: z.string().trim().min(1).optional(),
 });
 

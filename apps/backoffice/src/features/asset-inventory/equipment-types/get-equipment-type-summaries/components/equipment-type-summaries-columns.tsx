@@ -35,14 +35,6 @@ export const equipmentTypeSummariesColumns: ColumnDef<GetEquipmentTypeSummariesI
 				formatQuantity(row.original.assetsQuantity, "asset", "assets"),
 		},
 		{
-			id: "status",
-			accessorKey: "isActive",
-			header: "Estado",
-			cell: ({ row }) => (
-				<EquipmentTypeStatusBadge isActive={row.original.isActive} />
-			),
-		},
-		{
 			id: "commercialUse",
 			accessorKey: "rentableItem",
 			header: "Uso comercial",
@@ -80,14 +72,6 @@ export const equipmentTypeSummariesColumns: ColumnDef<GetEquipmentTypeSummariesI
 			},
 		},
 	];
-
-function EquipmentTypeStatusBadge({ isActive }: { isActive: boolean }) {
-	return isActive ? (
-		<Badge className="bg-emerald-600 text-white">Activo</Badge>
-	) : (
-		<Badge variant="secondary">Inactivo</Badge>
-	);
-}
 
 function formatQuantity(quantity: number, singular: string, plural: string) {
 	return quantity === 1 ? `1 ${singular}` : `${quantity} ${plural}`;

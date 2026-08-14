@@ -9,7 +9,6 @@ import { apiFetch } from "@/lib/api/api-fetch";
 
 const GET_EQUIPMENT_TYPE_SUMMARIES_QUERY_PARAM_KEYS = [
 	"search",
-	"isActive",
 	"branchId",
 	"page",
 	"pageSize",

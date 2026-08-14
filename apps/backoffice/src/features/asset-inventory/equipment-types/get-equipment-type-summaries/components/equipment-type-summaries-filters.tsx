@@ -15,7 +15,6 @@ import { useId } from "react";
 
 export interface EquipmentTypeSummariesFilterValue {
 	search?: string;
-	isActive?: boolean;
 	branchId?: string;
 }
 
@@ -27,13 +26,6 @@ interface EquipmentTypeSummariesFiltersProps {
 	onFilterChange: (filters: Partial<GetEquipmentTypeSummariesQueryDto>) => void;
 	onClearFilters: () => void;
 }
-
-const BOOLEAN_FILTER_LABELS = {
-	isActive: {
-		true: "Activo",
-		false: "Inactivo",
-	},
-} as const;
 
 export function EquipmentTypeSummariesFilters({
 	filters,
@@ -48,25 +40,7 @@ export function EquipmentTypeSummariesFilters({
 
 	return (
 		<section className="rounded-sm border border-border/70 bg-background px-4 py-3 shadow-xs">
-			<div className="flex flex-wrap gap-2">
-				<SavedViewPill
-					label="Todos"
-					isActive={filters.isActive === undefined}
-					onClick={() => onFilterChange({ isActive: undefined })}
-				/>
-				<SavedViewPill
-					label="Activos"
-					isActive={filters.isActive === true}
-					onClick={() => onFilterChange({ isActive: true })}
-				/>
-				<SavedViewPill
-					label="Inactivos"
-					isActive={filters.isActive === false}
-					onClick={() => onFilterChange({ isActive: false })}
-				/>
-			</div>
-
-			<div className="mt-3 grid gap-2 lg:grid-cols-[minmax(280px,1fr)_180px_auto] lg:items-center">
+			<div className="grid gap-2 lg:grid-cols-[minmax(280px,1fr)_180px_auto] lg:items-center">
 				<div className="relative">
 					<Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
 					<Input
@@ -154,30 +128,6 @@ function CompactSelect({
 	);
 }
 
-function SavedViewPill({
-	label,
-	isActive,
-	onClick,
-}: {
-	label: string;
-	isActive: boolean;
-	onClick: () => void;
-}) {
-	return (
-		<button
-			type="button"
-			className={
-				isActive
-					? "rounded-sm bg-foreground px-3 py-1.5 font-medium text-background text-xs shadow-sm"
-					: "rounded-sm border border-border/70 bg-muted/20 px-3 py-1.5 font-medium text-foreground/75 text-xs transition-colors hover:border-foreground/20 hover:bg-muted/60 hover:text-foreground"
-			}
-			onClick={onClick}
-		>
-			{label}
-		</button>
-	);
-}
-
 function ActiveFilterChip({
 	label,
 	onRemove,
@@ -212,15 +162,6 @@ function buildActiveChips(
 
 	if (filters.search) {
 		chips.push({ key: "search", label: `Búsqueda: ${filters.search}` });
-	}
-	if (filters.isActive !== undefined) {
-		chips.push({
-			key: "isActive",
-			label:
-				BOOLEAN_FILTER_LABELS.isActive[
-					String(filters.isActive) as "true" | "false"
-				],
-		});
 	}
 	if (branch) {
 		chips.push({ key: "branchId", label: branch.name });
