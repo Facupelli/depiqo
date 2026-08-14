@@ -94,27 +94,6 @@
 
 ---
 
-# Contracts / document semantics
-
-Current behavior uses live serial numbers when rendering and Contracts snapshots the resulting rendered equipment lines.
-
-* [ ] Decide explicit policy for generating a new document after the Rental Customer has been soft-deleted.
-
-  * Current document-profile reads exclude deleted customers.
-  * Inactive customers remain readable.
-
-* [ ] Decide whether multiple active/default Tenant Contract Signers are intentional future functionality.
-
-  * Schema permits it.
-  * Current normal create/update flows effectively assume one active signer.
-
-* [ ] Determine whether `bookingSnapshot` is genuinely part of Contracts legal/document data.
-
-  * Remito loader reads it.
-  * Audit found it was not actually used in the rendered/persisted Remito output.
-
----
-
 # Contracts signing workflow
 
 * [ ] Decide whether signing-request persistence and invitation delivery need compensation/retry semantics.

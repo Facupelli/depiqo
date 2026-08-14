@@ -11,7 +11,6 @@ export interface RentalRemitoSourceReadModel {
     periodStart: Date;
     periodEnd: Date;
     acceptedPricing: AcceptedRentalPricing;
-    bookingSnapshot: unknown;
     insuranceSelected: boolean;
     confirmedAt: Date | null;
   };

@@ -44,7 +44,6 @@ export class RentalRemitoReadModelLoader {
         status: true,
         periodStart: true,
         periodEnd: true,
-        bookingSnapshot: true,
         insuranceSelected: true,
         confirmedAt: true,
         accessorySelections: {
@@ -164,7 +163,6 @@ export class RentalRemitoReadModelLoader {
         periodStart: rental.periodStart,
         periodEnd: rental.periodEnd,
         acceptedPricing: acceptedPricing.value,
-        bookingSnapshot: rental.bookingSnapshot,
         insuranceSelected: rental.insuranceSelected,
         confirmedAt: rental.confirmedAt,
       },
