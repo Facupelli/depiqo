@@ -65,12 +65,9 @@ function EquipmentTypeDetailPage() {
 	return (
 		<div className="space-y-6 p-8">
 			<header className="space-y-2">
-				<div className="flex flex-wrap items-center gap-3">
-					<h1 className="font-semibold text-2xl tracking-tight">
-						{equipmentType.name}
-					</h1>
-					<EquipmentTypeStatusBadge isActive={equipmentType.isActive} />
-				</div>
+				<h1 className="font-semibold text-2xl tracking-tight">
+					{equipmentType.name}
+				</h1>
 				<p className="max-w-3xl text-muted-foreground text-sm">
 					{equipmentType.description ?? "Sin descripción."}
 				</p>
@@ -129,10 +126,6 @@ function EquipmentTypeInfoCard({
 				<InfoItem
 					label="Accessory defaults"
 					value={String(equipmentType.accessoryDefaults.length)}
-				/>
-				<InfoItem
-					label="Estado"
-					value={equipmentType.isActive ? "Activo" : "Inactivo"}
 				/>
 				<InfoItem
 					label="Categoría"
@@ -380,14 +373,6 @@ function DetailTable({
 				) : null}
 			</Table>
 		</section>
-	);
-}
-
-function EquipmentTypeStatusBadge({ isActive }: { isActive: boolean }) {
-	return isActive ? (
-		<Badge className="bg-emerald-600 text-white">Activo</Badge>
-	) : (
-		<Badge variant="secondary">Inactivo</Badge>
 	);
 }
 
