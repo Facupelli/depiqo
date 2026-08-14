@@ -33,7 +33,6 @@ model Tenant {
   owners              Owner[]
   users               User[]
   customers           Customer[]
-  signingRequests     DocumentSigningRequest[]
   roles               Role[]
   invitations         Invitation[]
   TenantOrderSequence TenantOrderSequence[]

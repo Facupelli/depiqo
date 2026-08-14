@@ -62,7 +62,6 @@ model Order {
   coupon                Coupon?                     @relation(fields: [couponId], references: [id])
   couponRedemption      CouponRedemption?
   deliveryRequest       OrderDeliveryRequest?
-  signingRequests       DocumentSigningRequest[]
   createIdempotencyKeys OrderCreateIdempotencyKey[]
 
   @@unique([tenantId, orderNumber])

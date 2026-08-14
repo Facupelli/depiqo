@@ -187,7 +187,7 @@ Object storage infrastructure owns storage mechanics. Contracts owns the artifac
 
 Contracts does not control Rental Commitment state transitions. Any interaction between signing state and rental workflow must happen explicitly through public APIs or events.
 
-Document Signing retains legacy signing persistence and legacy query behavior. Contracts owns V2 Remito preparation, signing-request creation, invitation orchestration, public signing-session HTTP use cases, acceptance, signed artifacts, and receipts.
+Contracts owns Remito preparation, signing-request creation, invitation orchestration, public signing-session HTTP use cases, acceptance, signed artifacts, and receipts.
 
 ## Persistence / Compatibility
 
@@ -201,12 +201,6 @@ V2Contract
 ```
 
 `V2ContractArtifact`, `V2DocumentSigningRequest`, and `V2DocumentSignatureAcceptance` own document metadata, hashes, signing lifecycle, and acceptance evidence.
-
-The existing `document_signing_requests` table is legacy operational storage. It is not a second legal-record model and must not receive new writes once the V2 signing path is available.
-
-Existing legacy records do not require backfill or migration and may remain readable through legacy behavior until that behavior is explicitly retired.
-
-Document Signing must not independently persist unsigned or signed contract files, signing requests, or signature acceptance evidence.
 
 Contracts owns persistence for contract records, artifacts, signing requests, signature acceptances, public contract access tokens, document numbers, and signing status.
 
