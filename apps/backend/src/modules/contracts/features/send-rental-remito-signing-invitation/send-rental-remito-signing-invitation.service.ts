@@ -94,7 +94,6 @@ export class SendRentalRemitoSigningInvitationService implements ICommandHandler
       tenant: tenant.value,
       requestId: request.value.requestId,
       orderId: input.orderId,
-      documentType: input.documentType,
       documentNumber: prepared.value.documentNumber,
       rawToken,
       tokenHash,

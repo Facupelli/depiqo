@@ -3,11 +3,13 @@ import { ConfigService } from '@nestjs/config';
 import { TenantIdentityFact } from 'src/modules/tenant-management/public-api/tenant-identity-facts.public-api';
 
 import { Env } from 'src/config/env.schema';
-import { SigningDocumentType } from 'src/generated/prisma/client';
 import { NotificationOrchestrator } from 'src/modules/notifications/application/notification-orchestrator.service';
 import { NotificationDispatchSkipReason } from 'src/modules/notifications/application/types/notification-dispatch-skip-reason.enum';
 import { NotificationChannel } from 'src/modules/notifications/domain/notification-channel.enum';
 import { NotificationType } from 'src/modules/notifications/domain/notification-type.enum';
+
+const RENTAL_REMITO_DOCUMENT_LABEL = 'acuerdo de alquiler';
+const RENTAL_REMITO_DOCUMENT_TYPE = 'RENTAL_AGREEMENT';
 
 export class RentalRemitoSigningInvitationDeliveryFailedError extends Error {}
 
@@ -42,7 +44,6 @@ export class RentalRemitoSigningNotificationService {
     tenant: TenantIdentityFact;
     requestId: string;
     orderId: string;
-    documentType: SigningDocumentType;
     documentNumber: string;
     rawToken: string;
     tokenHash: string;
@@ -57,7 +58,7 @@ export class RentalRemitoSigningNotificationService {
       emailRecipients: [{ email: input.recipientEmail }],
       payload: {
         tenantName: input.tenant.name,
-        documentLabel: this.getSigningDocumentLabel(input.documentType),
+        documentLabel: RENTAL_REMITO_DOCUMENT_LABEL,
         documentNumber: input.documentNumber,
         signingUrl,
         expiresAt: input.expiresAt,
@@ -72,7 +73,7 @@ export class RentalRemitoSigningNotificationService {
       metadata: {
         orderId: input.orderId,
         signingRequestId: input.requestId,
-        documentType: input.documentType,
+        documentType: RENTAL_REMITO_DOCUMENT_TYPE,
       },
       idempotencyKey: `signing-invitation:${input.requestId}:${input.tokenHash}`,
     });
@@ -124,14 +125,5 @@ export class RentalRemitoSigningNotificationService {
     const signingUrl = new URL('/signing', this.publicSigningOrigin);
     signingUrl.searchParams.set('token', rawToken);
     return signingUrl.toString();
-  }
-
-  private getSigningDocumentLabel(documentType: SigningDocumentType): string {
-    switch (documentType) {
-      case SigningDocumentType.RENTAL_AGREEMENT:
-        return 'acuerdo de alquiler';
-      default:
-        return 'documento';
-    }
   }
 }

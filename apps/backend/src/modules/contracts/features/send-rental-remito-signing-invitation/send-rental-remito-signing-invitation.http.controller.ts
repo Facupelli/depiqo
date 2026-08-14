@@ -2,7 +2,6 @@ import { Body, Controller, HttpCode, HttpStatus, Param, Post, UseGuards } from '
 import { CommandBus } from '@nestjs/cqrs';
 import { Result } from 'neverthrow';
 
-import { SigningDocumentType } from 'src/generated/prisma/client';
 import { AUTH_ACTOR_TYPES, AuthUser } from 'src/modules/tenant-management/auth/shared/auth.types';
 import { CurrentUser } from 'src/modules/tenant-management/auth/shared/current-user/current-user.decorator';
 import { AllowAuthActors } from 'src/modules/tenant-management/auth/shared/session/auth-actor-access.decorator';
@@ -35,14 +34,7 @@ export class SendRentalRemitoSigningInvitationHttpController {
     const result = await this.commandBus.execute<
       SendRentalRemitoSigningInvitationCommand,
       Result<SendRentalRemitoSigningInvitationResult, SendRentalRemitoSigningInvitationCommandError>
-    >(
-      new SendRentalRemitoSigningInvitationCommand(
-        user.tenantId,
-        params.orderId,
-        SigningDocumentType.RENTAL_AGREEMENT,
-        body.recipientEmail,
-      ),
-    );
+    >(new SendRentalRemitoSigningInvitationCommand(user.tenantId, params.orderId, body.recipientEmail));
 
     if (result.isErr()) {
       throw mapSendRentalRemitoSigningInvitationHttpError(result.error);
