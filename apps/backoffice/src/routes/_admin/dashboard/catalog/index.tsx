@@ -7,8 +7,8 @@ import { z } from "zod";
 import { RentableItemsFilters } from "@/features/catalog/rentable-items/get-rentable-items/components/rentable-items-filters";
 import { RentableItemsTable } from "@/features/catalog/rentable-items/get-rentable-items/components/rentable-items-table";
 import { useRentableItems } from "@/features/catalog/rentable-items/rentable-items.queries";
-import { useCategories } from "@/features/tenant-management/categories/categories.queries";
 import { useBranches } from "@/modules/settings/branches/branches.queries";
+import { useCategories } from "@/modules/settings/categories/categories.queries";
 import { AdminRouteError } from "@/shared/components/admin-route-error";
 import useDebounce from "@/shared/hooks/use-debounce";
 
