@@ -167,14 +167,6 @@ Current behavior uses live serial numbers when rendering and Contracts snapshots
 
 ---
 
-# Asset Inventory / Equipment Type product decisions
-
-* [ ] Decide whether active physical stock is truly a hard precondition for Catalog package creation/activation or only a setup-readiness signal.
-
-* [ ] Reconcile documentation referring to inactive Equipment Types with the current model.
-
-  * Current schema/domain apparently has no Equipment Type lifecycle/status.
-
 ---
 
 # Testing deferred until cleanup is complete

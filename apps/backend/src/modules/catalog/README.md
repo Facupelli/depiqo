@@ -124,7 +124,9 @@ A rental offer may be hidden but rentable and still be selected through direct-I
 
 A rental offer may be rentable but not bookable if Pricing has no active pricing assignment.
 
-Visible or rentable catalog state does not imply physical availability.
+Catalog lifecycle is independent of current physical stock. A package may be created and a rentable item may be activated without current physical stock.
+
+Visible or rentable catalog state does not imply physical availability. Rental Commitment determines whether demand can be fulfilled at rental time.
 
 Catalog changes affect future selections, not already confirmed rentals.
 
