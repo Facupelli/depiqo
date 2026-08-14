@@ -30,9 +30,9 @@ export const equipmentTypeSummariesColumns: ColumnDef<GetEquipmentTypeSummariesI
 		{
 			id: "assetsQuantity",
 			accessorKey: "assetsQuantity",
-			header: "Assets",
+			header: "Unidades",
 			cell: ({ row }) =>
-				formatQuantity(row.original.assetsQuantity, "asset", "assets"),
+				formatQuantity(row.original.assetsQuantity, "unidad", "unidades"),
 		},
 		{
 			id: "commercialUse",

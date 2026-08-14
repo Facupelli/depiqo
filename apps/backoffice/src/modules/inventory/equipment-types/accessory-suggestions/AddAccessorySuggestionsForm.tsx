@@ -14,45 +14,43 @@ import { useForm } from "@tanstack/react-form";
 import { Plus, Search, Trash2 } from "lucide-react";
 import { useState } from "react";
 import useDebounce from "@/shared/hooks/use-debounce";
-import { useEquipmentTypes } from "../equipment-types.queries";
+import { useEquipmentTypeOptions } from "../equipment-type-options.queries";
 import {
-	type CreateEquipmentTypeAccessoryDefaultsFormValues,
-	createEquipmentTypeAccessoryDefaultItem,
-	createEquipmentTypeAccessoryDefaultsFormDefaultValues,
-	createEquipmentTypeAccessoryDefaultsFormSchema,
-} from "./create-equipment-type-accessory-defaults.schema";
+	type AddAccessorySuggestionsFormValues,
+	addAccessorySuggestionsFormDefaultValues,
+	addAccessorySuggestionsFormSchema,
+	createAccessorySuggestionItem,
+} from "./add-accessory-suggestions.schema";
 
-interface CreateEquipmentTypeAccessoryDefaultsFormProps {
+interface AddAccessorySuggestionsFormProps {
 	formId: string;
 	equipmentTypeId: string;
 	existingAccessoryEquipmentTypeIds: string[];
-	defaultValues?: CreateEquipmentTypeAccessoryDefaultsFormValues;
+	defaultValues?: AddAccessorySuggestionsFormValues;
 	isPending: boolean;
 	submitLabel?: string;
 	pendingLabel?: string;
 	cancelLabel?: string;
-	onSubmit: (
-		values: CreateEquipmentTypeAccessoryDefaultsFormValues,
-	) => Promise<void> | void;
+	onSubmit: (values: AddAccessorySuggestionsFormValues) => Promise<void> | void;
 	onCancel: () => void;
 }
 
-export function CreateEquipmentTypeAccessoryDefaultsForm({
+export function AddAccessorySuggestionsForm({
 	formId,
 	equipmentTypeId,
 	existingAccessoryEquipmentTypeIds,
-	defaultValues = createEquipmentTypeAccessoryDefaultsFormDefaultValues(),
+	defaultValues = addAccessorySuggestionsFormDefaultValues(),
 	isPending,
 	submitLabel = "Agregar accesorios",
 	pendingLabel = "Agregando...",
 	cancelLabel = "Cancelar",
 	onSubmit,
 	onCancel,
-}: CreateEquipmentTypeAccessoryDefaultsFormProps) {
+}: AddAccessorySuggestionsFormProps) {
 	const [search, setSearch] = useState("");
 	const debouncedSearch = useDebounce(search, 300);
 	const normalizedSearch = debouncedSearch.trim();
-	const { data: equipmentTypes = [], isFetching } = useEquipmentTypes({
+	const { data: equipmentTypes = [], isFetching } = useEquipmentTypeOptions({
 		limit: 10,
 		...(normalizedSearch ? { search: normalizedSearch } : {}),
 	});
@@ -60,7 +58,7 @@ export function CreateEquipmentTypeAccessoryDefaultsForm({
 	const form = useForm({
 		defaultValues,
 		validators: {
-			onSubmit: createEquipmentTypeAccessoryDefaultsFormSchema,
+			onSubmit: addAccessorySuggestionsFormSchema,
 		},
 		onSubmit: async ({ value }) => {
 			await onSubmit(value);
@@ -103,7 +101,7 @@ export function CreateEquipmentTypeAccessoryDefaultsForm({
 								onSelect={(equipmentType) => {
 									form.pushFieldValue(
 										"accessories",
-										createEquipmentTypeAccessoryDefaultItem(
+										createAccessorySuggestionItem(
 											equipmentType.id,
 											equipmentType.name,
 										),

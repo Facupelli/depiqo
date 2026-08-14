@@ -2,11 +2,12 @@ import type { CreateEquipmentTypeAccessoryDefaultsResponseDto } from "@repo/api-
 import type { MutationOptions } from "@tanstack/react-query";
 import { useMutation } from "@tanstack/react-query";
 import type { ProblemDetailsError } from "@/shared/errors";
-import { equipmentTypeKeys } from "../equipment-types.queries";
+import { equipmentTypeDetailKeys } from "../equipment-type-detail/equipment-type-detail.queries";
+import { equipmentTypeSummaryKeys } from "../list-equipment-types/equipment-type-summaries.queries";
 import {
+	addAccessorySuggestions,
 	type CreateEquipmentTypeAccessoryDefaultsVariables,
-	createEquipmentTypeAccessoryDefaults,
-} from "./create-equipment-type-accessory-defaults.api";
+} from "./add-accessory-suggestions.api";
 
 type CreateEquipmentTypeAccessoryDefaultsOptions = Omit<
 	MutationOptions<
@@ -17,7 +18,7 @@ type CreateEquipmentTypeAccessoryDefaultsOptions = Omit<
 	"mutationFn" | "mutationKey"
 >;
 
-export function useCreateEquipmentTypeAccessoryDefaults(
+export function useAddAccessorySuggestions(
 	options?: CreateEquipmentTypeAccessoryDefaultsOptions,
 ) {
 	return useMutation<
@@ -26,13 +27,13 @@ export function useCreateEquipmentTypeAccessoryDefaults(
 		CreateEquipmentTypeAccessoryDefaultsVariables
 	>({
 		...options,
-		mutationFn: createEquipmentTypeAccessoryDefaults,
+		mutationFn: addAccessorySuggestions,
 		meta: {
 			invalidates: (
 				variables: CreateEquipmentTypeAccessoryDefaultsVariables,
 			) => [
-				equipmentTypeKeys.detail(variables.equipmentTypeId),
-				equipmentTypeKeys.lists(),
+				equipmentTypeDetailKeys.detail(variables.equipmentTypeId),
+				equipmentTypeSummaryKeys.all(),
 			],
 			...options?.meta,
 		},

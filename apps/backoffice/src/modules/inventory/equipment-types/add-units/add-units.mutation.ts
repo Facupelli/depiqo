@@ -2,13 +2,14 @@ import type { AddAssetsToEquipmentTypeResponseDto } from "@repo/api-contracts";
 import type { MutationOptions } from "@tanstack/react-query";
 import { useMutation } from "@tanstack/react-query";
 import type { ProblemDetailsError } from "@/shared/errors";
-import { equipmentTypeKeys } from "../equipment-types.queries";
+import { equipmentTypeDetailKeys } from "../equipment-type-detail/equipment-type-detail.queries";
+import { equipmentTypeSummaryKeys } from "../list-equipment-types/equipment-type-summaries.queries";
 import {
 	type AddAssetsToEquipmentTypeVariables,
 	addAssetsToEquipmentType,
-} from "./add-assets-to-equipment-type.api";
+} from "./add-units.api";
 
-type AddAssetsToEquipmentTypeOptions = Omit<
+type AddUnitsOptions = Omit<
 	MutationOptions<
 		AddAssetsToEquipmentTypeResponseDto,
 		ProblemDetailsError,
@@ -17,9 +18,7 @@ type AddAssetsToEquipmentTypeOptions = Omit<
 	"mutationFn" | "mutationKey"
 >;
 
-export function useAddAssetsToEquipmentType(
-	options?: AddAssetsToEquipmentTypeOptions,
-) {
+export function useAddUnitsToEquipmentType(options?: AddUnitsOptions) {
 	return useMutation<
 		AddAssetsToEquipmentTypeResponseDto,
 		ProblemDetailsError,
@@ -29,8 +28,8 @@ export function useAddAssetsToEquipmentType(
 		mutationFn: addAssetsToEquipmentType,
 		meta: {
 			invalidates: (variables: AddAssetsToEquipmentTypeVariables) => [
-				equipmentTypeKeys.detail(variables.equipmentTypeId),
-				equipmentTypeKeys.lists(),
+				equipmentTypeDetailKeys.detail(variables.equipmentTypeId),
+				equipmentTypeSummaryKeys.all(),
 			],
 			...options?.meta,
 		},

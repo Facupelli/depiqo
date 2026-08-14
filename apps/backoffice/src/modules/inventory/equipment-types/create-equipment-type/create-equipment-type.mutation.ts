@@ -2,7 +2,8 @@ import type { CreateEquipmentTypeResponseDto } from "@repo/api-contracts";
 import type { MutationOptions } from "@tanstack/react-query";
 import { useMutation } from "@tanstack/react-query";
 import type { ProblemDetailsError } from "@/shared/errors";
-import { equipmentTypeKeys } from "../equipment-types.queries";
+import { equipmentTypeOptionKeys } from "../equipment-type-options.queries";
+import { equipmentTypeSummaryKeys } from "../list-equipment-types/equipment-type-summaries.queries";
 import {
 	type CreateEquipmentTypeVariables,
 	createEquipmentType,
@@ -26,7 +27,10 @@ export function useCreateEquipmentType(options?: CreateEquipmentTypeOptions) {
 		...options,
 		mutationFn: createEquipmentType,
 		meta: {
-			invalidates: [equipmentTypeKeys.lists(), equipmentTypeKeys.options()],
+			invalidates: [
+				equipmentTypeSummaryKeys.all(),
+				equipmentTypeOptionKeys.all(),
+			],
 			...options?.meta,
 		},
 	});

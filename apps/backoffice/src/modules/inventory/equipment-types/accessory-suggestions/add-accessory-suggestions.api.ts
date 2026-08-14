@@ -13,7 +13,7 @@ export type CreateEquipmentTypeAccessoryDefaultsVariables = {
 	body: CreateEquipmentTypeAccessoryDefaultsBodyDto;
 };
 
-export async function createEquipmentTypeAccessoryDefaults({
+export async function addAccessorySuggestions({
 	body,
 	equipmentTypeId,
 }: CreateEquipmentTypeAccessoryDefaultsVariables): Promise<CreateEquipmentTypeAccessoryDefaultsResponseDto> {

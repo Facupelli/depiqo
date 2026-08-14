@@ -10,7 +10,7 @@ import {
 import { useNavigate } from "@tanstack/react-router";
 import { Plus } from "lucide-react";
 import { useId, useState } from "react";
-import { useOwners } from "@/features/asset-inventory/owners/owners.queries";
+import { useOwnerOptions } from "@/modules/inventory/ownership/owner-options.queries";
 import { useBranches } from "@/modules/settings/branches/branches.queries";
 import { useCategories } from "@/modules/settings/categories/categories.queries";
 import { useCreateEquipmentType } from "./create-equipment-type.mutation";
@@ -22,7 +22,7 @@ export function CreateEquipmentTypeDialog() {
 	const formId = useId();
 	const navigate = useNavigate();
 	const { data: branches = [] } = useBranches({ isActive: true });
-	const { data: owners = [] } = useOwners();
+	const { data: owners = [] } = useOwnerOptions();
 	const { data: categories = [] } = useCategories();
 	const { mutateAsync: createEquipmentType, isPending } =
 		useCreateEquipmentType();
@@ -41,7 +41,7 @@ export function CreateEquipmentTypeDialog() {
 				<DialogHeader>
 					<DialogTitle>Crear equipo</DialogTitle>
 					<DialogDescription>
-						Registra un tipo de equipo y, opcionalmente, carga sus activos
+						Registra un tipo de equipo y, opcionalmente, carga sus unidades
 						iniciales.
 					</DialogDescription>
 				</DialogHeader>

@@ -19,11 +19,11 @@ import {
 import { useForm } from "@tanstack/react-form";
 import { Plus, Trash2 } from "lucide-react";
 import {
-	type AddAssetsToEquipmentTypeFormValues,
-	addAssetsToEquipmentTypeFormDefaultValues,
-	addAssetsToEquipmentTypeFormSchema,
-	createEmptyEquipmentTypeAsset,
-} from "./add-assets-to-equipment-type.schema";
+	type AddUnitsFormValues,
+	addUnitsFormDefaultValues,
+	addUnitsFormSchema,
+	createEmptyEquipmentUnit,
+} from "./add-units.schema";
 
 interface SelectOption {
 	id: string;
@@ -32,37 +32,35 @@ interface SelectOption {
 
 const TENANT_OWNER_VALUE = "tenant-owned";
 
-interface AddAssetsToEquipmentTypeFormProps {
+interface AddUnitsFormProps {
 	formId: string;
 	branches: SelectOption[];
 	owners: SelectOption[];
-	defaultValues?: AddAssetsToEquipmentTypeFormValues;
+	defaultValues?: AddUnitsFormValues;
 	isPending: boolean;
 	submitLabel?: string;
 	pendingLabel?: string;
 	cancelLabel?: string;
-	onSubmit: (
-		values: AddAssetsToEquipmentTypeFormValues,
-	) => Promise<void> | void;
+	onSubmit: (values: AddUnitsFormValues) => Promise<void> | void;
 	onCancel: () => void;
 }
 
-export function AddAssetsToEquipmentTypeForm({
+export function AddUnitsForm({
 	formId,
 	branches,
 	owners,
-	defaultValues = addAssetsToEquipmentTypeFormDefaultValues(),
+	defaultValues = addUnitsFormDefaultValues(),
 	isPending,
-	submitLabel = "Agregar assets",
+	submitLabel = "Agregar unidades",
 	pendingLabel = "Agregando...",
 	cancelLabel = "Cancelar",
 	onSubmit,
 	onCancel,
-}: AddAssetsToEquipmentTypeFormProps) {
+}: AddUnitsFormProps) {
 	const form = useForm({
 		defaultValues,
 		validators: {
-			onSubmit: addAssetsToEquipmentTypeFormSchema,
+			onSubmit: addUnitsFormSchema,
 		},
 		onSubmit: async ({ value }) => {
 			await onSubmit(value);
@@ -89,13 +87,13 @@ export function AddAssetsToEquipmentTypeForm({
 				}}
 				className="space-y-5"
 			>
-				<form.Field name="assets" mode="array">
+				<form.Field name="units" mode="array">
 					{(field) => (
 						<div className="flex justify-end">
 							<Button
 								type="button"
 								variant="outline"
-								onClick={() => field.pushValue(createEmptyEquipmentTypeAsset())}
+								onClick={() => field.pushValue(createEmptyEquipmentUnit())}
 							>
 								<Plus className="mr-2 h-4 w-4" />
 								Agregar otra fila
@@ -104,7 +102,7 @@ export function AddAssetsToEquipmentTypeForm({
 					)}
 				</form.Field>
 
-				<form.Field name="assets" mode="array">
+				<form.Field name="units" mode="array">
 					{(field) => (
 						<div className="overflow-hidden rounded-md border">
 							<Table>
@@ -118,12 +116,12 @@ export function AddAssetsToEquipmentTypeForm({
 									</TableRow>
 								</TableHeader>
 								<TableBody>
-									{field.state.value.map((asset, index) => (
+									{field.state.value.map((unit, index) => (
 										<TableRow
-											key={`${asset.branchId}-${asset.serialNumber}-${index}`}
+											key={`${unit.branchId}-${unit.serialNumber}-${index}`}
 										>
 											<TableCell>
-												<form.Field name={`assets[${index}].branchId`}>
+												<form.Field name={`units[${index}].branchId`}>
 													{(subField) => {
 														const isInvalid =
 															subField.state.meta.isTouched &&
@@ -167,7 +165,7 @@ export function AddAssetsToEquipmentTypeForm({
 											</TableCell>
 
 											<TableCell>
-												<form.Field name={`assets[${index}].ownerId`}>
+												<form.Field name={`units[${index}].ownerId`}>
 													{(subField) => {
 														const isInvalid =
 															subField.state.meta.isTouched &&
@@ -221,7 +219,7 @@ export function AddAssetsToEquipmentTypeForm({
 											</TableCell>
 
 											<TableCell>
-												<form.Field name={`assets[${index}].serialNumber`}>
+												<form.Field name={`units[${index}].serialNumber`}>
 													{(subField) => (
 														<Input
 															type="text"
@@ -237,7 +235,7 @@ export function AddAssetsToEquipmentTypeForm({
 											</TableCell>
 
 											<TableCell>
-												<form.Field name={`assets[${index}].notes`}>
+												<form.Field name={`units[${index}].notes`}>
 													{(subField) => (
 														<Input
 															type="text"
@@ -259,7 +257,7 @@ export function AddAssetsToEquipmentTypeForm({
 													size="icon"
 													onClick={() => field.removeValue(index)}
 													disabled={field.state.value.length <= 1}
-													aria-label={`Eliminar asset ${index + 1}`}
+													aria-label={`Eliminar unit ${index + 1}`}
 												>
 													<Trash2 className="h-4 w-4" />
 												</Button>

@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useCreateRentableEquipment } from "@/features/admin/offering-setup/create-rentable-equipment/create-rentable-equipment.mutation";
 import { toCreateRentableEquipmentDto } from "@/features/admin/offering-setup/create-rentable-equipment/create-rentable-equipment.schema";
 import { CreateRentableEquipmentForm } from "@/features/admin/offering-setup/create-rentable-equipment/create-rentable-equipment-form";
-import { useOwners } from "@/features/asset-inventory/owners/owners.queries";
+import { useOwnerOptions } from "@/modules/inventory/ownership/owner-options.queries";
 import { useBranches } from "@/modules/settings/branches/branches.queries";
 import { useCategories } from "@/modules/settings/categories/categories.queries";
 import { AdminRouteError } from "@/shared/components/admin-route-error";
@@ -26,7 +26,7 @@ function CreateRentableEquipmentPage() {
 	const navigate = useNavigate();
 	const { data: categories = [] } = useCategories();
 	const { data: branches = [] } = useBranches();
-	const { data: owners = [] } = useOwners();
+	const { data: owners = [] } = useOwnerOptions();
 	const { mutateAsync: createRentableEquipment, isPending } =
 		useCreateRentableEquipment();
 

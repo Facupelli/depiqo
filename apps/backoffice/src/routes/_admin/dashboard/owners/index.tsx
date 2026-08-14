@@ -3,7 +3,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { CreateOwnerWithContractDialog } from "@/features/asset-inventory/owners/create-owner-with-contract/components/create-owner-with-contract-dialog";
 import { createOwnerColumns } from "@/features/asset-inventory/owners/get-owners/components/owners-columns";
 import { OwnersDataTable } from "@/features/asset-inventory/owners/get-owners/components/owners-table";
-import { useOwners } from "@/features/asset-inventory/owners/owners.queries";
+import { useOwnerOptions } from "@/modules/inventory/ownership/owner-options.queries";
 import { AdminRouteError } from "@/shared/components/admin-route-error";
 import { useTenantTimezone } from "@/shared/timezone/operational-timezone.hooks";
 
@@ -55,7 +55,7 @@ function OwnersTable({
 }: {
 	handleRowClick: (owner: GetOwnersItemDto) => void;
 }) {
-	const { data: owners = [], isPending, isError } = useOwners();
+	const { data: owners = [], isPending, isError } = useOwnerOptions();
 	const timezone = useTenantTimezone();
 
 	if (isError) {

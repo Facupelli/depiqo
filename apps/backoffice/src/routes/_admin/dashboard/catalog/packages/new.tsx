@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useCreatePackage } from "@/features/admin/offering-setup/create-package/create-package.mutation";
 import { toCreatePackageDto } from "@/features/admin/offering-setup/create-package/create-package.schema";
 import { CreatePackageForm } from "@/features/admin/offering-setup/create-package/create-package-form";
-import { useEquipmentTypes } from "@/features/asset-inventory/equipment-types/equipment-types.queries";
+import { useEquipmentTypeOptions } from "@/modules/inventory/equipment-types/equipment-type-options.queries";
 import { useBranches } from "@/modules/settings/branches/branches.queries";
 import { useCategories } from "@/modules/settings/categories/categories.queries";
 import { AdminRouteError } from "@/shared/components/admin-route-error";
@@ -29,7 +29,7 @@ function CreatePackagePage() {
 	const [equipmentSearch, setEquipmentSearch] = useState("");
 	const { data: categories = [] } = useCategories();
 	const { data: branches = [] } = useBranches();
-	const { data: equipmentTypes = [] } = useEquipmentTypes({
+	const { data: equipmentTypes = [] } = useEquipmentTypeOptions({
 		search: equipmentSearch.trim() || undefined,
 		limit: EQUIPMENT_TYPE_SEARCH_LIMIT,
 	});

@@ -26,7 +26,7 @@ import { useForm } from "@tanstack/react-form";
 import { Plus, Trash2 } from "lucide-react";
 import {
 	type CreateEquipmentTypeFormValues,
-	createEmptyEquipmentTypeAsset,
+	createEmptyEquipmentUnit,
 	createEquipmentTypeFormDefaultValues,
 	createEquipmentTypeFormSchema,
 } from "./create-equipment-type.schema";
@@ -213,36 +213,34 @@ export function CreateEquipmentTypeForm({
 					<div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
 						<div>
 							<p className="font-medium text-foreground text-sm">
-								Activos iniciales
+								Unidades iniciales
 							</p>
 							<p className="mt-1 max-w-2xl text-muted-foreground text-sm">
 								Puedes crear el tipo de equipo ahora y cargar las unidades
-								físicas más tarde. Si agregas activos, indica al menos su
+								físicas más tarde. Si agregas unidades, indica al menos su
 								sucursal.
 							</p>
 						</div>
-						<form.Field name="assets" mode="array">
+						<form.Field name="units" mode="array">
 							{(field) => (
 								<Button
 									type="button"
 									variant="outline"
-									onClick={() =>
-										field.pushValue(createEmptyEquipmentTypeAsset())
-									}
+									onClick={() => field.pushValue(createEmptyEquipmentUnit())}
 								>
 									<Plus className="mr-2 h-4 w-4" />
-									Agregar activo
+									Agregar unidad
 								</Button>
 							)}
 						</form.Field>
 					</div>
 
-					<form.Field name="assets" mode="array">
+					<form.Field name="units" mode="array">
 						{(field) =>
 							field.state.value.length === 0 ? (
 								<div className="rounded-xl border border-dashed p-6 text-sm">
 									<p className="font-medium text-foreground">
-										No agregaste activos todavía.
+										No agregaste unidades todavía.
 									</p>
 									<p className="mt-1 text-muted-foreground">
 										Podrás cargar unidades físicas después de crear el equipo.
@@ -263,12 +261,12 @@ export function CreateEquipmentTypeForm({
 											</TableRow>
 										</TableHeader>
 										<TableBody>
-											{field.state.value.map((asset, index) => (
+											{field.state.value.map((unit, index) => (
 												<TableRow
-													key={`${asset.branchId}-${asset.serialNumber}-${index}`}
+													key={`${unit.branchId}-${unit.serialNumber}-${index}`}
 												>
 													<TableCell>
-														<form.Field name={`assets[${index}].branchId`}>
+														<form.Field name={`units[${index}].branchId`}>
 															{(subField) => {
 																const isInvalid =
 																	subField.state.meta.isTouched &&
@@ -312,7 +310,7 @@ export function CreateEquipmentTypeForm({
 													</TableCell>
 
 													<TableCell>
-														<form.Field name={`assets[${index}].ownerId`}>
+														<form.Field name={`units[${index}].ownerId`}>
 															{(subField) => (
 																<Select
 																	items={ownerItems}
@@ -350,7 +348,7 @@ export function CreateEquipmentTypeForm({
 													</TableCell>
 
 													<TableCell>
-														<form.Field name={`assets[${index}].serialNumber`}>
+														<form.Field name={`units[${index}].serialNumber`}>
 															{(subField) => (
 																<Input
 																	type="text"
@@ -366,7 +364,7 @@ export function CreateEquipmentTypeForm({
 													</TableCell>
 
 													<TableCell>
-														<form.Field name={`assets[${index}].notes`}>
+														<form.Field name={`units[${index}].notes`}>
 															{(subField) => (
 																<Input
 																	type="text"
@@ -387,7 +385,7 @@ export function CreateEquipmentTypeForm({
 															variant="ghost"
 															size="icon"
 															onClick={() => field.removeValue(index)}
-															aria-label={`Eliminar activo ${index + 1}`}
+															aria-label={`Eliminar unidad ${index + 1}`}
 														>
 															<Trash2 className="h-4 w-4" />
 														</Button>

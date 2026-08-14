@@ -5,7 +5,7 @@ import {
 import { z } from "zod";
 import { emptyToNull } from "@/shared/utils/form.utils";
 
-export const createEquipmentTypeAssetFormSchema = z.object({
+export const createEquipmentUnitFormSchema = z.object({
 	branchId: z.string().min(1, "La sucursal es obligatoria"),
 	ownerId: z.string(),
 	serialNumber: z.string(),
@@ -16,17 +16,17 @@ export const createEquipmentTypeFormSchema = z.object({
 	categoryId: z.string(),
 	name: z.string().min(1, "El nombre es obligatorio"),
 	description: z.string(),
-	assets: z.array(createEquipmentTypeAssetFormSchema),
+	units: z.array(createEquipmentUnitFormSchema),
 });
 
-export type CreateEquipmentTypeAssetFormValues = z.infer<
-	typeof createEquipmentTypeAssetFormSchema
+export type CreateEquipmentUnitFormValues = z.infer<
+	typeof createEquipmentUnitFormSchema
 >;
 export type CreateEquipmentTypeFormValues = z.infer<
 	typeof createEquipmentTypeFormSchema
 >;
 
-export function createEmptyEquipmentTypeAsset(): CreateEquipmentTypeAssetFormValues {
+export function createEmptyEquipmentUnit(): CreateEquipmentUnitFormValues {
 	return {
 		branchId: "",
 		ownerId: "",
@@ -40,7 +40,7 @@ export function createEquipmentTypeFormDefaultValues(): CreateEquipmentTypeFormV
 		categoryId: "",
 		name: "",
 		description: "",
-		assets: [],
+		units: [],
 	};
 }
 
@@ -51,11 +51,11 @@ export function toCreateEquipmentTypeDto(
 		name: values.name.trim(),
 		categoryId: emptyToNull(values.categoryId),
 		description: emptyToNull(values.description),
-		assets: values.assets.map((asset) => ({
-			branchId: asset.branchId,
-			ownerId: emptyToNull(asset.ownerId),
-			serialNumber: emptyToNull(asset.serialNumber),
-			notes: emptyToNull(asset.notes),
+		assets: values.units.map((unit) => ({
+			branchId: unit.branchId,
+			ownerId: emptyToNull(unit.ownerId),
+			serialNumber: emptyToNull(unit.serialNumber),
+			notes: emptyToNull(unit.notes),
 		})),
 	};
 

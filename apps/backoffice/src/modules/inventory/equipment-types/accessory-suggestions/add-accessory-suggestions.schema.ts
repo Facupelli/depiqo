@@ -4,7 +4,7 @@ import {
 } from "@repo/api-contracts";
 import { z } from "zod";
 
-export const createEquipmentTypeAccessoryDefaultItemFormSchema = z.object({
+export const createAccessorySuggestionItemFormSchema = z.object({
 	accessoryEquipmentTypeId: z
 		.string()
 		.uuid("Selecciona un tipo de equipo válido"),
@@ -15,26 +15,26 @@ export const createEquipmentTypeAccessoryDefaultItemFormSchema = z.object({
 		.positive("La cantidad debe ser mayor a cero"),
 });
 
-export const createEquipmentTypeAccessoryDefaultsFormSchema = z.object({
+export const addAccessorySuggestionsFormSchema = z.object({
 	accessories: z
-		.array(createEquipmentTypeAccessoryDefaultItemFormSchema)
+		.array(createAccessorySuggestionItemFormSchema)
 		.min(1, "Agrega al menos un accesorio por defecto"),
 });
 
 export type CreateEquipmentTypeAccessoryDefaultItemFormValues = z.infer<
-	typeof createEquipmentTypeAccessoryDefaultItemFormSchema
+	typeof createAccessorySuggestionItemFormSchema
 >;
-export type CreateEquipmentTypeAccessoryDefaultsFormValues = z.infer<
-	typeof createEquipmentTypeAccessoryDefaultsFormSchema
+export type AddAccessorySuggestionsFormValues = z.infer<
+	typeof addAccessorySuggestionsFormSchema
 >;
 
-export function createEquipmentTypeAccessoryDefaultsFormDefaultValues(): CreateEquipmentTypeAccessoryDefaultsFormValues {
+export function addAccessorySuggestionsFormDefaultValues(): AddAccessorySuggestionsFormValues {
 	return {
 		accessories: [],
 	};
 }
 
-export function createEquipmentTypeAccessoryDefaultItem(
+export function createAccessorySuggestionItem(
 	accessoryEquipmentTypeId: string,
 	accessoryEquipmentTypeName: string,
 ): CreateEquipmentTypeAccessoryDefaultItemFormValues {
@@ -45,8 +45,8 @@ export function createEquipmentTypeAccessoryDefaultItem(
 	};
 }
 
-export function toCreateEquipmentTypeAccessoryDefaultsDto(
-	values: CreateEquipmentTypeAccessoryDefaultsFormValues,
+export function toAddAccessorySuggestionsDto(
+	values: AddAccessorySuggestionsFormValues,
 ): CreateEquipmentTypeAccessoryDefaultsBodyDto {
 	const dto = {
 		accessories: values.accessories.map((accessory) => ({
