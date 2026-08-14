@@ -21,12 +21,14 @@ import {
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { useId, useState } from "react";
-import { useCreateRatePlan } from "@/features/pricing/create-rate-plan/create-rate-plan.mutation";
-import { toCreateRatePlanDto } from "@/features/pricing/create-rate-plan/create-rate-plan.schema";
-import { CreateRatePlanForm } from "@/features/pricing/create-rate-plan/create-rate-plan-form";
 import { useAttachRatePlanToRentalOffer } from "@/features/pricing/rental-offer-pricings/attach-rate-plan-to-rental-offer/attach-rate-plan-to-rental-offer.mutation";
 import { toAttachRatePlanToRentalOfferDto } from "@/features/pricing/rental-offer-pricings/attach-rate-plan-to-rental-offer/attach-rate-plan-to-rental-offer.schema";
 import { AttachRatePlanToRentalOfferForm } from "@/features/pricing/rental-offer-pricings/attach-rate-plan-to-rental-offer/attach-rate-plan-to-rental-offer-form";
+import {
+	CreatePricePlanForm,
+	toCreatePricePlanDto,
+	useCreatePricePlan,
+} from "@/modules/pricing/price-plans/public";
 import {
 	formatPriceSummary,
 	type OfferMetrics,
@@ -273,7 +275,7 @@ function ConfigureRentalOfferPriceAction({
 	const [open, setOpen] = useState(false);
 	const [step, setStep] = useState<PriceAssignmentStep>("choose");
 	const attachMutation = useAttachRatePlanToRentalOffer();
-	const createRatePlanMutation = useCreateRatePlan();
+	const createRatePlanMutation = useCreatePricePlan();
 	const branchLabel = offer.branchName ?? offer.branchId;
 	const canAssign =
 		offer.setupSummary.availableActions.includes("ASSIGN_PRICE");
@@ -347,7 +349,7 @@ function ConfigureRentalOfferPriceAction({
 					/>
 				) : null}
 				{step === "create" ? (
-					<CreateRatePlanForm
+					<CreatePricePlanForm
 						formId={createFormId}
 						isPending={
 							createRatePlanMutation.isPending || attachMutation.isPending
@@ -356,7 +358,7 @@ function ConfigureRentalOfferPriceAction({
 						pendingLabel="Creando y asignando..."
 						onSubmit={async (values) => {
 							const ratePlan = await createRatePlanMutation.mutateAsync(
-								toCreateRatePlanDto({ ...values, isActive: true }),
+								toCreatePricePlanDto({ ...values, isActive: true }),
 							);
 							await attachMutation.mutateAsync({
 								body: toAttachRatePlanToRentalOfferDto(

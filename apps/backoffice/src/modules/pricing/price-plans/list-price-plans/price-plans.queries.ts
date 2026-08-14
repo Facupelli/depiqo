@@ -8,35 +8,35 @@ import {
 	useQuery,
 } from "@tanstack/react-query";
 import type { ProblemDetailsError } from "@/shared/errors";
-import { getRatePlans } from "./get-rate-plans.api";
+import { getPricePlans } from "./get-price-plans.api";
 
-export type RatePlansQueryOverrides<TData = GetRatePlansResponseDto> = Omit<
+export type PricePlansQueryOverrides<TData = GetRatePlansResponseDto> = Omit<
 	UseQueryOptions<GetRatePlansResponseDto, ProblemDetailsError, TData>,
 	"queryKey" | "queryFn"
 >;
 
-export const ratePlanKeys = {
+export const pricePlanKeys = {
 	all: () => ["v2", "pricing", "rate-plans"] as const,
-	lists: () => [...ratePlanKeys.all(), "list"] as const,
+	lists: () => [...pricePlanKeys.all(), "list"] as const,
 	list: (query?: GetRatePlansQueryDto) =>
-		[...ratePlanKeys.lists(), query ?? {}] as const,
+		[...pricePlanKeys.lists(), query ?? {}] as const,
 };
 
-export const ratePlanQueries = {
+export const pricePlanQueries = {
 	list: <TData = GetRatePlansResponseDto>(
 		query?: GetRatePlansQueryDto,
-		overrides?: RatePlansQueryOverrides<TData>,
+		overrides?: PricePlansQueryOverrides<TData>,
 	) =>
 		queryOptions<GetRatePlansResponseDto, ProblemDetailsError, TData>({
-			queryKey: ratePlanKeys.list(query),
-			queryFn: () => getRatePlans(query),
+			queryKey: pricePlanKeys.list(query),
+			queryFn: () => getPricePlans(query),
 			...overrides,
 		}),
 };
 
-export function useRatePlans<TData = GetRatePlansResponseDto>(
+export function usePricePlans<TData = GetRatePlansResponseDto>(
 	query?: GetRatePlansQueryDto,
-	overrides?: RatePlansQueryOverrides<TData>,
+	overrides?: PricePlansQueryOverrides<TData>,
 ) {
-	return useQuery(ratePlanQueries.list(query, overrides));
+	return useQuery(pricePlanQueries.list(query, overrides));
 }

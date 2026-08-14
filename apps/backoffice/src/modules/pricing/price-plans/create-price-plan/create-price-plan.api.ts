@@ -7,7 +7,7 @@ import {
 } from "@repo/api-contracts";
 import { apiFetch } from "@/lib/api/api-fetch";
 
-export async function createRatePlan(
+export async function createPricePlan(
 	body: CreateRatePlanBodyDto,
 ): Promise<CreateRatePlanResponseDto> {
 	const parsedBody = CreateRatePlanBodySchema.parse(body);

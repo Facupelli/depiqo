@@ -7,7 +7,7 @@ import {
 } from "@repo/api-contracts";
 import { apiFetch } from "@/lib/api/api-fetch";
 
-export async function getRatePlans(
+export async function getPricePlans(
 	query?: GetRatePlansQueryDto,
 ): Promise<GetRatePlansResponseDto> {
 	const parsedQuery = GetRatePlansQuerySchema.parse(query ?? {});

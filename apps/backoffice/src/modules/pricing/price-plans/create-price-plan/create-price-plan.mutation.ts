@@ -1,23 +1,23 @@
 import type { CreateRatePlanResponseDto } from "@repo/api-contracts";
 import type { MutationOptions } from "@tanstack/react-query";
 import { useMutation } from "@tanstack/react-query";
-import { ratePlanKeys } from "@/features/pricing/rate-plans/rate-plans.queries";
 import type { ProblemDetailsError } from "@/shared/errors";
-import { createRatePlan } from "./create-rate-plan.api";
+import { pricePlanKeys } from "../list-price-plans/price-plans.queries";
+import { createPricePlan } from "./create-price-plan.api";
 
-export function useCreateRatePlan(
+export function useCreatePricePlan(
 	options?: Omit<
 		MutationOptions<
 			CreateRatePlanResponseDto,
 			ProblemDetailsError,
-			Parameters<typeof createRatePlan>[0]
+			Parameters<typeof createPricePlan>[0]
 		>,
 		"mutationFn" | "mutationKey"
 	>,
 ) {
 	return useMutation({
 		...options,
-		mutationFn: createRatePlan,
-		meta: { invalidates: [ratePlanKeys.all()], ...options?.meta },
+		mutationFn: createPricePlan,
+		meta: { invalidates: [pricePlanKeys.all()], ...options?.meta },
 	});
 }

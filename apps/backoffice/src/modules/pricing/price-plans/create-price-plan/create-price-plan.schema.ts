@@ -4,7 +4,7 @@ import {
 } from "@repo/api-contracts";
 import { z } from "zod";
 
-export const createRatePlanTierFormSchema = z
+export const createPricePlanTierFormSchema = z
 	.object({
 		fromUnit: z
 			.number()
@@ -26,7 +26,7 @@ export const createRatePlanTierFormSchema = z
 		path: ["toUnit"],
 	});
 
-export const createRatePlanBaseFormSchema = z.object({
+export const createPricePlanBaseFormSchema = z.object({
 	name: z.string().trim().min(1, "El nombre es obligatorio"),
 	billingUnit: z.enum(["HOUR", "DAY", "WEEK"]),
 	currency: z
@@ -35,23 +35,25 @@ export const createRatePlanBaseFormSchema = z.object({
 		.min(1, "La moneda es obligatoria")
 		.regex(/^[A-Za-z]{3}$/, "Usa un código ISO de 3 letras"),
 	tiers: z
-		.array(createRatePlanTierFormSchema)
+		.array(createPricePlanTierFormSchema)
 		.min(1, "Agrega al menos un tramo de precio"),
 });
 
-export const createRatePlanFormSchema = createRatePlanBaseFormSchema.extend({
+export const createPricePlanFormSchema = createPricePlanBaseFormSchema.extend({
 	isActive: z.boolean(),
 });
 
-export type CreateRatePlanTierFormValues = z.infer<
-	typeof createRatePlanTierFormSchema
+export type CreatePricePlanTierFormValues = z.infer<
+	typeof createPricePlanTierFormSchema
 >;
-export type CreateRatePlanBaseFormValues = z.infer<
-	typeof createRatePlanBaseFormSchema
+export type CreatePricePlanBaseFormValues = z.infer<
+	typeof createPricePlanBaseFormSchema
 >;
-export type CreateRatePlanFormValues = z.infer<typeof createRatePlanFormSchema>;
+export type CreatePricePlanFormValues = z.infer<
+	typeof createPricePlanFormSchema
+>;
 
-export function createEmptyRatePlanTier(): CreateRatePlanTierFormValues {
+export function createEmptyPricePlanTier(): CreatePricePlanTierFormValues {
 	return {
 		fromUnit: 1,
 		toUnit: null,
@@ -59,24 +61,24 @@ export function createEmptyRatePlanTier(): CreateRatePlanTierFormValues {
 	};
 }
 
-export function createRatePlanBaseFormDefaultValues(): CreateRatePlanBaseFormValues {
+export function createPricePlanBaseFormDefaultValues(): CreatePricePlanBaseFormValues {
 	return {
 		name: "",
 		billingUnit: "DAY",
 		currency: "ARS",
-		tiers: [createEmptyRatePlanTier()],
+		tiers: [createEmptyPricePlanTier()],
 	};
 }
 
-export function createRatePlanFormDefaultValues(): CreateRatePlanFormValues {
+export function createPricePlanFormDefaultValues(): CreatePricePlanFormValues {
 	return {
-		...createRatePlanBaseFormDefaultValues(),
+		...createPricePlanBaseFormDefaultValues(),
 		isActive: true,
 	};
 }
 
-export function toCreateRatePlanDto(
-	values: CreateRatePlanFormValues,
+export function toCreatePricePlanDto(
+	values: CreatePricePlanFormValues,
 ): CreateRatePlanBodyDto {
 	const dto = {
 		name: values.name.trim(),

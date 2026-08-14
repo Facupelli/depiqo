@@ -24,9 +24,9 @@ import {
 import { Plus, Trash2 } from "lucide-react";
 import { withForm } from "@/shared/contexts/form.context";
 import {
-	createEmptyRatePlanTier,
-	createRatePlanBaseFormDefaultValues,
-} from "../create-rate-plan/create-rate-plan.schema";
+	createEmptyPricePlanTier,
+	createPricePlanBaseFormDefaultValues,
+} from "./create-price-plan.schema";
 
 const BILLING_UNIT_ITEMS = [
 	{ value: "HOUR", label: "Hora" },
@@ -34,8 +34,8 @@ const BILLING_UNIT_ITEMS = [
 	{ value: "WEEK", label: "Semana" },
 ] as const;
 
-export const RatePlanFields = withForm({
-	defaultValues: createRatePlanBaseFormDefaultValues(),
+export const PricePlanFields = withForm({
+	defaultValues: createPricePlanBaseFormDefaultValues(),
 	render: function Render({ form }) {
 		return (
 			<>
@@ -280,7 +280,7 @@ export const RatePlanFields = withForm({
 									<Button
 										type="button"
 										variant="outline"
-										onClick={() => field.pushValue(createEmptyRatePlanTier())}
+										onClick={() => field.pushValue(createEmptyPricePlanTier())}
 									>
 										<Plus className="mr-2 h-4 w-4" />
 										Agregar tramo

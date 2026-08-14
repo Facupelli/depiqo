@@ -1,6 +1,6 @@
 import { Button } from "@repo/ui/components/button";
 import type React from "react";
-import { RatePlanFields } from "@/features/pricing/rate-plan/rate-plan-fields";
+import { PricePlanFields } from "@/modules/pricing/price-plans/public";
 import { useAppForm } from "@/shared/contexts/form.context";
 import {
 	type CreateRentalOfferWithCreatedRatePlanFormValues,
@@ -53,7 +53,7 @@ export function CreateRentalOfferWithCreatedRatePlanForm({
 				}}
 				className="space-y-8"
 			>
-				<RatePlanFields form={form} />
+				<PricePlanFields form={form} />
 			</form>
 
 			<div className="mt-8 flex justify-end gap-3 border-t pt-4">

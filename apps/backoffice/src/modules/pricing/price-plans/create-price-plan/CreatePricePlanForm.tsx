@@ -1,25 +1,25 @@
 import { Button } from "@repo/ui/components/button";
 import type React from "react";
 import { useAppForm } from "@/shared/contexts/form.context";
-import { RatePlanFields } from "../rate-plan/rate-plan-fields";
 import {
-	type CreateRatePlanBaseFormValues,
-	createRatePlanBaseFormDefaultValues,
-	createRatePlanBaseFormSchema,
-} from "./create-rate-plan.schema";
+	type CreatePricePlanBaseFormValues,
+	createPricePlanBaseFormDefaultValues,
+	createPricePlanBaseFormSchema,
+} from "./create-price-plan.schema";
+import { PricePlanFields } from "./PricePlanFields";
 
-type CreateRatePlanFormProps = {
+type CreatePricePlanFormProps = {
 	formId: string;
 	isPending: boolean;
-	defaultValues?: CreateRatePlanBaseFormValues;
+	defaultValues?: CreatePricePlanBaseFormValues;
 	submitLabel?: string;
 	pendingLabel?: string;
 	cancelLabel?: string;
-	onSubmit: (values: CreateRatePlanBaseFormValues) => Promise<void> | void;
+	onSubmit: (values: CreatePricePlanBaseFormValues) => Promise<void> | void;
 	onCancel: () => void;
 };
 
-export function CreateRatePlanForm({
+export function CreatePricePlanForm({
 	formId,
 	isPending,
 	defaultValues,
@@ -28,10 +28,10 @@ export function CreateRatePlanForm({
 	cancelLabel = "Cancelar",
 	onSubmit,
 	onCancel,
-}: CreateRatePlanFormProps): React.JSX.Element {
+}: CreatePricePlanFormProps): React.JSX.Element {
 	const form = useAppForm({
-		defaultValues: defaultValues ?? createRatePlanBaseFormDefaultValues(),
-		validators: { onSubmit: createRatePlanBaseFormSchema },
+		defaultValues: defaultValues ?? createPricePlanBaseFormDefaultValues(),
+		validators: { onSubmit: createPricePlanBaseFormSchema },
 		onSubmit: async ({ value }) => onSubmit(value),
 	});
 
@@ -46,7 +46,7 @@ export function CreateRatePlanForm({
 				}}
 				className="space-y-8"
 			>
-				<RatePlanFields form={form} />
+				<PricePlanFields form={form} />
 			</form>
 			<div className="mt-8 flex justify-end gap-3 border-t pt-4">
 				<Button

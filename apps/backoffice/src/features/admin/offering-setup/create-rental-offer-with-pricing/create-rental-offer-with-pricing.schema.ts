@@ -4,14 +4,14 @@ import {
 } from "@repo/api-contracts";
 import { z } from "zod";
 import {
-	type CreateRatePlanBaseFormValues,
-	createRatePlanBaseFormDefaultValues,
-	createRatePlanBaseFormSchema,
-} from "@/features/pricing/create-rate-plan/create-rate-plan.schema";
-import {
 	type AttachRatePlanToRentalOfferFormValues,
 	attachRatePlanToRentalOfferFormSchema,
 } from "@/features/pricing/rental-offer-pricings/attach-rate-plan-to-rental-offer/attach-rate-plan-to-rental-offer.schema";
+import {
+	type CreatePricePlanBaseFormValues,
+	createPricePlanBaseFormDefaultValues,
+	createPricePlanBaseFormSchema,
+} from "@/modules/pricing/price-plans/public";
 
 export const createRentalOfferWithPricingBranchFormSchema = z.object({
 	branchId: z.string().trim().min(1, "La sucursal es obligatoria"),
@@ -28,13 +28,13 @@ export function createRentalOfferWithPricingBranchFormDefaultValues(): CreateRen
 }
 
 export const createRentalOfferWithCreatedRatePlanFormSchema =
-	createRatePlanBaseFormSchema;
+	createPricePlanBaseFormSchema;
 
 export type CreateRentalOfferWithCreatedRatePlanFormValues =
-	CreateRatePlanBaseFormValues;
+	CreatePricePlanBaseFormValues;
 
 export function createRentalOfferWithCreatedRatePlanFormDefaultValues(): CreateRentalOfferWithCreatedRatePlanFormValues {
-	return createRatePlanBaseFormDefaultValues();
+	return createPricePlanBaseFormDefaultValues();
 }
 
 export function toCreateRentalOfferWithAttachedRatePlanDto(

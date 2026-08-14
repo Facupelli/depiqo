@@ -38,8 +38,8 @@ import {
 	getStartingPrice,
 } from "@/features/catalog/rentable-items/get-rentable-item-detail/rentable-item-detail.utils";
 import { rentableItemQueries } from "@/features/catalog/rentable-items/rentable-items.queries";
-import { useRatePlans } from "@/features/pricing/rate-plans/rate-plans.queries";
 import { buildR2PublicUrl } from "@/lib/r2-public-url";
+import { usePricePlans } from "@/modules/pricing/price-plans/public";
 import { AdminRouteError } from "@/shared/components/admin-route-error";
 
 export const Route = createFileRoute(
@@ -62,7 +62,7 @@ function RouteComponent() {
 	const { data: item } = useSuspenseQuery(
 		rentableItemQueries.detail(rentableItemId),
 	);
-	const { data: ratePlans = [] } = useRatePlans({ isActive: true });
+	const { data: ratePlans = [] } = usePricePlans({ isActive: true });
 	const ratePlanOptions = ratePlans
 		.filter((plan) => plan.tierCount > 0)
 		.map((plan) => ({ id: plan.id, name: plan.name }));
