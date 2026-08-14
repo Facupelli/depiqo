@@ -7,6 +7,8 @@ import { AcceptedRentalPricingFacts } from 'src/modules/rental-commitment/public
 import { CommittedRentalSelectionsAndDemand } from 'src/modules/rental-commitment/public-api/committed-rental-selections-and-demand.public-api';
 import { RentalPhysicalAssignments } from 'src/modules/rental-commitment/public-api/rental-physical-assignments.public-api';
 import { BranchFacts } from 'src/modules/tenant-management/public-api/branch-facts.public-api';
+import { RentalCustomerContactFacts } from 'src/modules/tenant-management/public-api/rental-customer-contact-facts.public-api';
+import { RetainedRentalCustomerProfileFacts } from 'src/modules/tenant-management/public-api/retained-rental-customer-profile-facts.public-api';
 
 import { rentalRemitoApplicationError, RentalRemitoApplicationError } from './rental-remito-application.error';
 import { RentalRemitoSourceReadModel } from './rental-remito-source-read-model';
@@ -20,6 +22,8 @@ export class RentalRemitoReadModelLoader {
     private readonly committedRentalSelectionsAndDemand: CommittedRentalSelectionsAndDemand,
     private readonly rentalPhysicalAssignments: RentalPhysicalAssignments,
     private readonly branchFacts: BranchFacts,
+    private readonly retainedRentalCustomerProfileFacts: RetainedRentalCustomerProfileFacts,
+    private readonly rentalCustomerContactFacts: RentalCustomerContactFacts,
   ) {}
 
   async load(
@@ -263,46 +267,28 @@ export class RentalRemitoReadModelLoader {
     tenantId: string,
     customerId: string,
   ): Promise<RentalRemitoSourceReadModel['customer'] | null> {
-    // TODO(v2-contract-boundaries): Replace this cross-context Prisma read with a public read API/facade.
-    const customer = await this.prisma.client.v2RentalCustomer.findFirst({
-      where: {
-        id: customerId,
+    const [profile, contact] = await Promise.all([
+      this.retainedRentalCustomerProfileFacts.getRetainedRentalCustomerProfileFacts({
         tenantId,
-        deletedAt: null,
-      },
-      select: {
-        id: true,
-        email: true,
-        firstName: true,
-        lastName: true,
-        phone: true,
-        isCompany: true,
-        companyName: true,
-        profile: {
-          select: {
-            fullName: true,
-            phone: true,
-            documentNumber: true,
-            address: true,
-            businessName: true,
-          },
-        },
-      },
-    });
+        rentalCustomerId: customerId,
+      }),
+      this.rentalCustomerContactFacts.getRentalCustomerContactFacts({
+        tenantId,
+        rentalCustomerId: customerId,
+      }),
+    ]);
 
-    if (!customer) {
+    if (!profile || !contact) {
       return null;
     }
 
-    const displayName = this.resolveCustomerDisplayName(customer);
-
     return {
-      id: customer.id,
-      email: customer.email,
-      displayName,
-      phone: customer.profile?.phone ?? customer.phone,
-      documentNumber: customer.profile?.documentNumber ?? null,
-      address: customer.profile?.address ?? null,
+      id: profile.rentalCustomerId,
+      email: contact.email,
+      displayName: profile.fullName,
+      phone: profile.phone ?? contact.phone,
+      documentNumber: profile.documentNumber,
+      address: profile.address,
     };
   }
 
@@ -344,27 +330,5 @@ export class RentalRemitoReadModelLoader {
       address: signer.address,
       signatureUrl: signer.signatureUrl,
     };
-  }
-
-  private resolveCustomerDisplayName(customer: {
-    firstName: string;
-    lastName: string;
-    isCompany: boolean;
-    companyName: string | null;
-    profile: {
-      fullName: string;
-      businessName: string | null;
-    } | null;
-  }): string {
-    if (customer.isCompany) {
-      return (
-        customer.profile?.businessName ??
-        customer.companyName ??
-        customer.profile?.fullName ??
-        `${customer.firstName} ${customer.lastName}`.trim()
-      );
-    }
-
-    return customer.profile?.fullName ?? `${customer.firstName} ${customer.lastName}`.trim();
   }
 }

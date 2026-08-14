@@ -5,7 +5,7 @@ import { AcceptedRentalPricingFacts } from 'src/modules/rental-commitment/public
 import { CommittedRentalSelectionsAndDemand } from 'src/modules/rental-commitment/public-api/committed-rental-selections-and-demand.public-api';
 import { RentalLifecycleFacts } from 'src/modules/rental-commitment/public-api/rental-lifecycle-facts.public-api';
 import { BranchFacts } from 'src/modules/tenant-management/public-api/branch-facts.public-api';
-import { RentalCustomerProfileFacts } from 'src/modules/tenant-management/public-api/rental-customer-profile-facts.public-api';
+import { RetainedRentalCustomerProfileFacts } from 'src/modules/tenant-management/public-api/retained-rental-customer-profile-facts.public-api';
 import { TenantBrandingFacts } from 'src/modules/tenant-management/public-api/tenant-branding-facts.public-api';
 import { TenantContractSignerFacts } from 'src/modules/tenant-management/public-api/tenant-contract-signer-facts.public-api';
 import { TenantIdentityFacts } from 'src/modules/tenant-management/public-api/tenant-identity-facts.public-api';
@@ -57,7 +57,7 @@ export class RentalBudgetDocumentService {
     private readonly tenantBrandingFacts: TenantBrandingFacts,
     private readonly branchFacts: BranchFacts,
     private readonly tenantContractSignerFacts: TenantContractSignerFacts,
-    private readonly rentalCustomerProfileFacts: RentalCustomerProfileFacts,
+    private readonly retainedRentalCustomerProfileFacts: RetainedRentalCustomerProfileFacts,
     private readonly renderer: RentalRemitoRendererPort,
   ) {}
 
@@ -92,7 +92,7 @@ export class RentalBudgetDocumentService {
       this.branchFacts.getBranchFacts({ tenantId: input.tenantId, branchId: lifecycle.value.branchId }),
       this.tenantContractSignerFacts.getSelectedTenantContractSignerFacts({ tenantId: input.tenantId }),
       lifecycle.value.rentalCustomerId
-        ? this.rentalCustomerProfileFacts.getRentalCustomerProfileFacts({
+        ? this.retainedRentalCustomerProfileFacts.getRetainedRentalCustomerProfileFacts({
             tenantId: input.tenantId,
             rentalCustomerId: lifecycle.value.rentalCustomerId,
           })

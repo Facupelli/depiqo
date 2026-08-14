@@ -98,11 +98,6 @@
 
 Current behavior uses live serial numbers when rendering and Contracts snapshots the resulting rendered equipment lines.
 
-* [ ] Decide whether Budget PDFs require a durable Contracts-owned historical snapshot.
-
-  * Remitos snapshot consumed legal facts.
-  * Budget currently renders a buffer without an equivalent durable snapshot.
-
 * [ ] Decide explicit policy for generating a new document after the Rental Customer has been soft-deleted.
 
   * Current document-profile reads exclude deleted customers.

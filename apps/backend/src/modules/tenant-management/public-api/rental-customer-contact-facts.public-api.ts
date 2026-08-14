@@ -6,6 +6,7 @@ export interface GetRentalCustomerContactFactsInput {
 export interface RentalCustomerContactFact {
   rentalCustomerId: string;
   email: string;
+  phone: string | null;
   isActive: boolean;
   isDeleted: boolean;
 }

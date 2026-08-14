@@ -22,6 +22,7 @@ export class RentalCustomerContactFactsService extends RentalCustomerContactFact
       select: {
         id: true,
         email: true,
+        phone: true,
         isActive: true,
         deletedAt: true,
       },
@@ -32,6 +33,7 @@ export class RentalCustomerContactFactsService extends RentalCustomerContactFact
     return {
       rentalCustomerId: customer.id,
       email: customer.email,
+      phone: customer.phone,
       isActive: customer.isActive,
       isDeleted: customer.deletedAt !== null,
     };

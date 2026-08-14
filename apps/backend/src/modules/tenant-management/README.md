@@ -15,6 +15,7 @@ Tenant Management publishes focused provider-owned operational capabilities unde
 - `TenantBrandingFacts` provides the current active, non-deleted tenant logo URL.
 - `TenantContractSignerFacts` provides the selected active tenant contract signer, if one exists.
 - `RentalCustomerProfileFacts` provides the current tenant-scoped customer profile, including Tenant Management's display/legal name resolution; deleted or missing customers are not readable, while inactive customers remain readable.
+- `RetainedRentalCustomerProfileFacts` provides legal/profile facts for a tenant-scoped customer reference already retained by another bounded context. It includes active, inactive, and soft-deleted customers for historical document composition, but is not a general lookup, selection, or operational-eligibility capability.
 - `RentalCustomerContactFacts` provides current tenant-scoped customer email contact and lifecycle facts; missing or out-of-tenant customers are not readable, while inactive and deleted customers remain observable as lifecycle facts.
 - `BranchFacts` provides tenant-scoped current branch facts, including lifecycle state, delivery support, and effective timezone resolution.
 - `BranchScheduleEligibility` evaluates a pickup or return instant against a branch schedule.
