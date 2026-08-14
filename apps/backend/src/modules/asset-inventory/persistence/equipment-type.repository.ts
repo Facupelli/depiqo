@@ -22,10 +22,6 @@ export class EquipmentTypeRepository {
     return record ? EquipmentTypeMapper.toDomain(record) : null;
   }
 
-  async loadActiveByNameForTenant(input: { tenantId: string; name: string }): Promise<EquipmentType | null> {
-    return this.loadByNameForTenant(input);
-  }
-
   async loadByNameForTenant(input: {
     tenantId: string;
     name: string;

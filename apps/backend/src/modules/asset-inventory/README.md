@@ -1,6 +1,6 @@
 # Asset Inventory Module
 
-Asset Inventory owns the current physical truth about equipment: equipment types, physical assets, their condition, location, ownership, active state, and facts used to determine whether they can be considered for rental assignment.
+Asset Inventory owns equipment types and the current physical truth about physical assets, including their condition, location, ownership, active state, and facts used to determine whether they can be considered for rental assignment.
 
 It does not own rental assignments or rental availability state.
 
@@ -8,7 +8,7 @@ It does not own rental assignments or rental availability state.
 
 Asset Inventory publishes provider-owned capabilities under `public-api/`:
 
-- `EquipmentTypeReferenceAuthority` validates that requested Equipment Type references exist within a supplied tenant. It does not validate lifecycle, stock, branch, rental availability, assignment eligibility, or fulfillment readiness.
+- `EquipmentTypeReferenceAuthority` validates that requested Equipment Type references exist within a supplied tenant. It does not validate stock, branch, rental availability, assignment eligibility, or fulfillment readiness.
 - `AssetInventoryDisplayFacts` provides current Equipment Type facts (`equipmentTypeId`, `name`, `categoryId`) and Asset facts (`assetId`, `serialNumber`). Category display names remain owned by Tenant Management.
 - `AssetInventoryAuthoring` creates an Equipment Type and optional initial physical Assets atomically. It validates Category assignment and initial Asset branch references through Tenant Management before Inventory records are persisted.
 
@@ -66,8 +66,6 @@ Accessory defaults may be used when preparing rental-specific accessories, but t
 `Asset` is the physical unit, not the rental assignment.
 
 Inactive or deleted assets must not be assigned to new rentals.
-
-Inactive equipment types must not be used for new operational setup unless a workflow explicitly allows it for historical reads or migration.
 
 Condition and branch/location changes affect future assignment eligibility.
 

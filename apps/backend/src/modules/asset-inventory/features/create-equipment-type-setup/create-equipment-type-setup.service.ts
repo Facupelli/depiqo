@@ -40,7 +40,7 @@ export class CreateEquipmentTypeSetupService {
       return err(equipmentType.error);
     }
 
-    const existing = await this.equipmentTypeRepository.loadActiveByNameForTenant({
+    const existing = await this.equipmentTypeRepository.loadByNameForTenant({
       tenantId: equipmentType.value.tenantId,
       name: equipmentType.value.name,
     });
