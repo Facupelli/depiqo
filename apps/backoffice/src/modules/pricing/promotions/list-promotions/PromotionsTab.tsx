@@ -11,8 +11,8 @@ import { Skeleton } from "@repo/ui/components/skeleton";
 import { useNavigate } from "@tanstack/react-router";
 import { Search } from "lucide-react";
 import { Route } from "@/routes/_admin/dashboard/promotions";
-import { usePromotionsTab } from "../hooks/use-promotions-tab";
-import { PromotionsList } from "./promotions-list";
+import { PromotionsList } from "./PromotionsList";
+import { usePromotionsTab } from "./use-promotions-tab";
 
 const TABLE_SKELETON_KEYS = [
 	"promotion-skeleton-1",

@@ -18,7 +18,6 @@ import {
 import { useForm } from "@tanstack/react-form";
 import { Minus, Plus } from "lucide-react";
 import { type ReactNode, useId, useState } from "react";
-import { useCreatePromotion } from "@/features/pricing/promotions/create-promotion/create-promotion.mutation";
 import {
 	createEmptyExclusion,
 	createEmptyScope,
@@ -29,8 +28,7 @@ import {
 	type PromotionScopeFormValues,
 	type PromotionScopeType,
 	promotionFormSchema,
-	toCreatePromotionDto,
-} from "../../schemas/promotion-form.schema";
+} from "./promotion-form.schema";
 
 const activationItems = [
 	{ value: "AUTOMATIC", label: "Automática" },
@@ -266,29 +264,6 @@ export function PromotionForm({
 				</form.Subscribe>
 			</div>
 		</form>
-	);
-}
-
-export function CreatePromotionForm({
-	onCancel,
-	onSuccess,
-}: {
-	onCancel: () => void;
-	onSuccess: () => void | Promise<void>;
-}) {
-	const { mutateAsync: createPromotion, isPending } = useCreatePromotion();
-
-	return (
-		<PromotionForm
-			onCancel={onCancel}
-			onSubmit={async (values) => {
-				await createPromotion({ body: toCreatePromotionDto(values) });
-				await onSuccess();
-			}}
-			isPending={isPending}
-			submitLabel="Crear promoción"
-			pendingLabel="Creando..."
-		/>
 	);
 }
 

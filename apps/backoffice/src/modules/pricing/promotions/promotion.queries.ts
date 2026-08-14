@@ -7,10 +7,11 @@ import {
 	queryOptions,
 	type UseQueryOptions,
 	useQuery,
+	useSuspenseQuery,
 } from "@tanstack/react-query";
 import type { ProblemDetailsError } from "@/shared/errors";
-import { getPromotionDetail } from "./get-promotion-detail/get-promotion-detail.api";
-import { getPromotions } from "./get-promotions/get-promotions.api";
+import { getPromotionDetail } from "./edit-promotion/get-promotion-detail.api";
+import { getPromotions } from "./list-promotions/get-promotions.api";
 
 export type PromotionsQueryOverrides<TData = GetPromotionsResponseDto> = Omit<
 	UseQueryOptions<GetPromotionsResponseDto, ProblemDetailsError, TData>,
@@ -66,4 +67,11 @@ export function usePromotion<TData = GetPromotionDetailResponseDto>(
 	overrides?: PromotionQueryOverrides<TData>,
 ) {
 	return useQuery(promotionQueries.detail(promotionId, overrides));
+}
+
+export function useSuspensePromotion<TData = GetPromotionDetailResponseDto>(
+	promotionId: string,
+	overrides?: PromotionQueryOverrides<TData>,
+) {
+	return useSuspenseQuery(promotionQueries.detail(promotionId, overrides));
 }

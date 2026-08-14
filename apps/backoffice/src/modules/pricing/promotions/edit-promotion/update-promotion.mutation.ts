@@ -2,7 +2,7 @@ import type { UpdatePromotionResponseDto } from "@repo/api-contracts";
 import type { MutationOptions } from "@tanstack/react-query";
 import { useMutation } from "@tanstack/react-query";
 import type { ProblemDetailsError } from "@/shared/errors";
-import { promotionKeys } from "../promotions.queries";
+import { promotionKeys } from "../promotion.queries";
 import {
 	type UpdatePromotionVariables,
 	updatePromotion,

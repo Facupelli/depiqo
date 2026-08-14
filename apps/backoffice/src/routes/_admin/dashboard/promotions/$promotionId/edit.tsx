@@ -1,13 +1,7 @@
-import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import z from "zod";
-import { PromotionForm } from "@/features/pricing/promotions/create-promotion/components/create-promotion-form";
-import { promotionQueries } from "@/features/pricing/promotions/promotions.queries";
-import {
-	promotionToFormValues,
-	toUpdatePromotionDto,
-} from "@/features/pricing/promotions/schemas/promotion-form.schema";
-import { useUpdatePromotion } from "@/features/pricing/promotions/update-promotion/update-promotion.mutation";
+import { EditPromotionPage } from "@/modules/pricing/promotions/edit-promotion/EditPromotionPage";
+import { promotionQueries } from "@/modules/pricing/promotions/promotion.queries";
 
 const promotionsSearchSchema = z.object({
 	tab: z.enum(["coupons", "promotions"]).default("promotions"),
@@ -15,26 +9,19 @@ const promotionsSearchSchema = z.object({
 	activation: z.enum(["AUTOMATIC", "COUPON_REQUIRED"]).optional(),
 });
 
-const formId = "edit-promotion";
-
 export const Route = createFileRoute(
 	"/_admin/dashboard/promotions/$promotionId/edit",
 )({
 	validateSearch: promotionsSearchSchema,
 	loader: ({ context: { queryClient }, params: { promotionId } }) =>
 		queryClient.ensureQueryData(promotionQueries.detail(promotionId)),
-	component: EditPromotionPage,
+	component: RouteComponent,
 });
 
-function EditPromotionPage() {
+function RouteComponent() {
 	const { promotionId } = Route.useParams();
 	const search = Route.useSearch();
 	const navigate = useNavigate();
-	const { data: promotion } = useSuspenseQuery(
-		promotionQueries.detail(promotionId),
-	);
-	const { mutateAsync: updatePromotion, isPending } = useUpdatePromotion();
-
 	function goBack() {
 		navigate({
 			to: "/dashboard/promotions",
@@ -54,21 +41,10 @@ function EditPromotionPage() {
 				</p>
 			</header>
 
-			<PromotionForm
-				key={promotion.id}
-				formId={formId}
-				defaultValues={promotionToFormValues(promotion)}
+			<EditPromotionPage
+				promotionId={promotionId}
 				onCancel={goBack}
-				onSubmit={async (values) => {
-					await updatePromotion({
-						params: { promotionId: promotion.id },
-						body: toUpdatePromotionDto(values),
-					});
-					goBack();
-				}}
-				isPending={isPending}
-				submitLabel="Guardar cambios"
-				pendingLabel="Guardando..."
+				onSuccess={goBack}
 			/>
 		</div>
 	);

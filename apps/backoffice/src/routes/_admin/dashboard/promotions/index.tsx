@@ -7,7 +7,7 @@ import {
 } from "@repo/ui/components/tabs";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import z from "zod";
-import { PromotionsTab } from "@/features/pricing/promotions/components/promotions-tab";
+import { PromotionsTab } from "@/modules/pricing/promotions/list-promotions/PromotionsTab";
 import { AdminRouteError } from "@/shared/components/admin-route-error";
 
 const promotionsSearchSchema = z.object({

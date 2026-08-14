@@ -1,6 +1,6 @@
 import { useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { usePromotions } from "@/features/pricing/promotions/promotions.queries";
+import { usePromotions } from "@/modules/pricing/promotions/promotion.queries";
 import { Route } from "@/routes/_admin/dashboard/promotions";
 import useDebounce from "@/shared/hooks/use-debounce";
 
