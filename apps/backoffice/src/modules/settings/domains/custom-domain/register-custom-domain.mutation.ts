@@ -2,7 +2,7 @@ import type { RegisterCustomDomainResponseDto } from "@repo/api-contracts";
 import type { MutationOptions } from "@tanstack/react-query";
 import { useMutation } from "@tanstack/react-query";
 import type { ProblemDetailsError } from "@/shared/errors";
-import { tenantKeys } from "../tenant.queries";
+import { customDomainKeys } from "./custom-domain.queries";
 import {
 	type RegisterCustomDomainVariables,
 	registerCustomDomain,
@@ -26,7 +26,7 @@ export function useRegisterCustomDomain(options?: RegisterCustomDomainOptions) {
 		...options,
 		mutationFn: registerCustomDomain,
 		meta: {
-			invalidates: tenantKeys.all(),
+			invalidates: customDomainKeys.all(),
 			...options?.meta,
 		},
 	});

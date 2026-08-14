@@ -10,17 +10,17 @@ import { useForm } from "@tanstack/react-form";
 import { format } from "date-fns";
 import { Globe, RefreshCw } from "lucide-react";
 import { useState } from "react";
-import { useRefreshCustomDomainStatus } from "@/features/tenant-management/tenant/custom-domain/refresh-custom-domain-status.mutation";
-import { useRegisterCustomDomain } from "@/features/tenant-management/tenant/custom-domain/register-custom-domain.mutation";
-import { useCustomDomain } from "@/features/tenant-management/tenant/tenant.queries";
 import { cn } from "@/lib/utils";
 import { ProblemDetailsError } from "@/shared/errors";
+import { useCustomDomain } from "./custom-domain.queries";
 import {
 	type CustomDomainFormValues,
 	createCustomDomainFormDefaultValues,
 	customDomainFormSchema,
 	toRegisterCustomDomainDto,
-} from "../schemas/custom-domain-form.schema";
+} from "./custom-domain.schema";
+import { useRefreshCustomDomainStatus } from "./refresh-custom-domain-status.mutation";
+import { useRegisterCustomDomain } from "./register-custom-domain.mutation";
 
 export function CustomDomainSection() {
 	const [registrationResult, setRegistrationResult] =

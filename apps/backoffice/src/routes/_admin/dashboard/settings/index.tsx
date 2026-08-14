@@ -1,10 +1,10 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import z from "zod";
 import { TenantContractSignerSettingsSection } from "@/features/tenant-management/tenant/contract-signer/components/tenant-contract-signer-settings-section";
-import { CustomDomainSection } from "@/features/tenant-management/tenant/custom-domain/components/custom-domain-section";
 import { TenantConfigSettingsSection } from "@/features/tenant-management/tenant/update-tenant-config/components/tenant-config-form";
 import { cn } from "@/lib/utils";
 import { BrandingSection } from "@/modules/settings/branding/update-branding/BrandingSection";
+import { CustomDomainSection } from "@/modules/settings/domains/custom-domain/CustomDomainSection";
 import { AdminRouteError } from "@/shared/components/admin-route-error";
 
 const SETTINGS_SECTIONS = [
