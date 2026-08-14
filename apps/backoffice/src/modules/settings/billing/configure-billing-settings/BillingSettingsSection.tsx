@@ -22,9 +22,9 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { CircleHelp } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { tenantQueries } from "@/features/tenant-management/tenant/tenant.queries";
+import { useUpdateTenantConfig } from "@/modules/settings/business-configuration/update-tenant-config.mutation";
 import { ProblemDetailsError } from "@/shared/errors";
-import { tenantQueries } from "../../tenant.queries";
-import { useUpdateTenantConfig } from "../update-tenant-config.mutation";
 import {
 	createTenantConfigFormDefaultValues,
 	TENANT_CONFIG_VALUES,
@@ -32,17 +32,12 @@ import {
 	tenantConfigFormSchema,
 	tenantConfigToFormValues,
 	toUpdateTenantConfigDto,
-} from "./tenant-config-form.schema";
+} from "./billing-settings.schema";
 
 export type TenantConfigSection = "pricing" | "general" | "insurance";
 
-interface TenantConfigSettingsSectionProps {
-	section: TenantConfigSection;
-}
-
-export function TenantConfigSettingsSection({
-	section,
-}: TenantConfigSettingsSectionProps) {
+export function BillingSettingsSection() {
+	const section: TenantConfigSection = "pricing";
 	const { data: tenant } = useSuspenseQuery(tenantQueries.current());
 	const { mutateAsync: updateConfig, isPending } = useUpdateTenantConfig();
 	const [submitErrorMessage, setSubmitErrorMessage] = useState<string | null>(

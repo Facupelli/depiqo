@@ -1,10 +1,12 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import z from "zod";
-import { TenantConfigSettingsSection } from "@/features/tenant-management/tenant/update-tenant-config/components/tenant-config-form";
 import { cn } from "@/lib/utils";
+import { BillingSettingsSection } from "@/modules/settings/billing/configure-billing-settings/BillingSettingsSection";
 import { BrandingSection } from "@/modules/settings/branding/update-branding/BrandingSection";
 import { ContractSignerSettingsSection } from "@/modules/settings/contract-settings/configure-contract-signer/ContractSignerSettingsSection";
 import { CustomDomainSection } from "@/modules/settings/domains/custom-domain/CustomDomainSection";
+import { InsuranceSettingsSection } from "@/modules/settings/insurance/configure-insurance-settings/InsuranceSettingsSection";
+import { TenantConfigSettingsSection } from "@/modules/settings/rental-settings/configure-rental-settings/RentalSettingsSection";
 import { AdminRouteError } from "@/shared/components/admin-route-error";
 
 const SETTINGS_SECTIONS = [
@@ -214,8 +216,8 @@ function SettingsPanel({ section }: { section: SettingsSection }) {
 		case "domain":
 			return <CustomDomainSection />;
 		case "pricing":
-			return <TenantConfigSettingsSection section="pricing" />;
+			return <BillingSettingsSection />;
 		case "insurance":
-			return <TenantConfigSettingsSection section="insurance" />;
+			return <InsuranceSettingsSection />;
 	}
 }

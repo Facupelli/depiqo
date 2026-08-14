@@ -1,8 +1,8 @@
 import type { UpdateTenantConfigResponseDto } from "@repo/api-contracts";
 import type { MutationOptions } from "@tanstack/react-query";
 import { useMutation } from "@tanstack/react-query";
+import { tenantKeys } from "@/features/tenant-management/tenant/tenant.queries";
 import type { ProblemDetailsError } from "@/shared/errors";
-import { tenantKeys } from "../tenant.queries";
 import {
 	type UpdateTenantConfigVariables,
 	updateTenantConfig,
