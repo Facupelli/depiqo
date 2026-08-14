@@ -27,11 +27,12 @@ abstract class RentalLifecycleIntegrationEvent implements IntegrationEvent {
 
 export class RentalConfirmedIntegrationEvent extends RentalLifecycleIntegrationEvent {
   readonly eventName = RentalConfirmedIntegrationEvent.name;
-  readonly schemaVersion = 2;
+  readonly schemaVersion = 3;
 
   constructor(
     tenantId: string,
     rentalId: string,
+    public readonly rentalNumber: number,
     public readonly rentalCustomerId: string,
     public readonly branchId: string,
     public readonly status: RentalLifecycleEventStatus,

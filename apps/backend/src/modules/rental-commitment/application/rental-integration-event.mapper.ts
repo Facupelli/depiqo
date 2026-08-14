@@ -19,6 +19,7 @@ export function toRentalIntegrationEvents(domainEvents: readonly DomainEvent[]):
         new RentalConfirmedIntegrationEvent(
           event.tenantId,
           event.rentalId,
+          event.rentalNumber,
           event.rentalCustomerId,
           event.branchId,
           event.status,

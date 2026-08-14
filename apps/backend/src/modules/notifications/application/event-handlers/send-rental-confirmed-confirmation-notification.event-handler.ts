@@ -114,7 +114,7 @@ export class SendRentalConfirmedConfirmationNotificationHandler {
         emailRecipients: [{ email: customer.email }],
         payload: {
           tenantName: tenantResult.value.name,
-          rentalNumber: event.rentalId.slice(0, 4),
+          rentalNumber: event.rentalNumber,
           status: event.status,
           fulfillmentMethod: event.fulfillmentMethod,
           pickupDate: pickup.date,

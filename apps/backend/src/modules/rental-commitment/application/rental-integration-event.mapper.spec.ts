@@ -21,6 +21,7 @@ describe('toRentalIntegrationEvents', () => {
       new RentalConfirmedDomainEvent(
         'tenant-1',
         'rental-1',
+        42,
         'customer-1',
         'branch-1',
         RentalStatus.Confirmed,
@@ -46,9 +47,10 @@ describe('toRentalIntegrationEvents', () => {
     expect(events).toEqual([
       expect.objectContaining({
         eventName: RentalConfirmedIntegrationEvent.name,
-        schemaVersion: 2,
+        schemaVersion: 3,
         tenantId: 'tenant-1',
         rentalId: 'rental-1',
+        rentalNumber: 42,
         rentalCustomerId: 'customer-1',
         branchId: 'branch-1',
         status: 'CONFIRMED',

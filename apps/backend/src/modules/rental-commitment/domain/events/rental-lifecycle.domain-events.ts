@@ -31,6 +31,7 @@ export class RentalConfirmedDomainEvent extends RentalLifecycleDomainEvent {
   constructor(
     tenantId: string,
     rentalId: string,
+    public readonly rentalNumber: number,
     public readonly rentalCustomerId: string,
     branchId: string,
     public readonly status: RentalStatus.Confirmed,

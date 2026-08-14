@@ -1,11 +1,13 @@
 import { randomUUID } from 'node:crypto';
 
 import { CommandBus } from '@nestjs/cqrs';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { TestingModule } from '@nestjs/testing';
 
 import { PrismaService } from 'src/core/database/prisma.service';
 import { Prisma } from 'src/generated/prisma/client';
 import { V2RentalStatus } from 'src/generated/prisma/enums';
+import { RentalConfirmedIntegrationEvent } from 'src/modules/rental-commitment/public-api/events/rental-lifecycle.integration-events';
 import {
   createRentalCommitmentIntegrationContext,
   useIntegrationTestContext,
@@ -23,6 +25,7 @@ describe('ConfirmRental integration', () => {
   let moduleRef: TestingModule;
   let prisma: PrismaService;
   let commandBus: CommandBus;
+  let emitter: EventEmitter2;
   let coreFixtures: TestFixtures;
   let rentalFixtures: ConfirmRentalFixtures;
 
@@ -30,6 +33,7 @@ describe('ConfirmRental integration', () => {
     moduleRef = await createRentalCommitmentIntegrationContext();
     prisma = moduleRef.get(PrismaService);
     commandBus = moduleRef.get(CommandBus);
+    emitter = moduleRef.get(EventEmitter2);
     coreFixtures = createTestFixtures(prisma);
     rentalFixtures = new ConfirmRentalFixtures(prisma);
     return moduleRef;
@@ -121,6 +125,50 @@ describe('ConfirmRental integration', () => {
       expect(state.blocks[0].period).toContain('2030-01-01 10:00:00+00');
       expect(state.blocks[0].period).toContain('2030-01-01 12:00:00+00');
       expect(state.rental.ownerSplits).toHaveLength(0);
+    },
+  );
+
+  it.each(['DRAFT', 'PENDING'] as const)(
+    'publishes one confirmation event when a %s rental transitions to CONFIRMED',
+    async (status) => {
+      const scenario = await base(status);
+      await rentalFixtures.createCandidate({
+        tenantId: scenario.tenant.id,
+        branchId: scenario.branch.id,
+        equipmentTypeId: scenario.rental.equipmentTypeIds[0],
+      });
+      const events: RentalConfirmedIntegrationEvent[] = [];
+      const listener = (event: RentalConfirmedIntegrationEvent) => events.push(event);
+      emitter.on(RentalConfirmedIntegrationEvent.name, listener);
+
+      try {
+        expect((await confirm(scenario.tenant.id, scenario.rental.rentalId)).isOk()).toBe(true);
+
+        const state = await persisted(scenario.rental.rentalId);
+        expect(events).toEqual([
+          expect.objectContaining({
+            schemaVersion: 3,
+            tenantId: scenario.tenant.id,
+            rentalId: scenario.rental.rentalId,
+            rentalNumber: state.rental.rentalNumber,
+            rentalCustomerId: scenario.customer.id,
+            branchId: scenario.branch.id,
+            status: 'CONFIRMED',
+            fulfillmentMethod: 'PICKUP',
+            periodStart: state.rental.periodStart,
+            periodEnd: state.rental.periodEnd,
+            occurredAt: state.rental.confirmedAt,
+          }),
+        ]);
+
+        const repeated = await confirm(scenario.tenant.id, scenario.rental.rentalId);
+        expect(repeated.isErr() && repeated.error.code).toBe(
+          'rental_commitment.rental_cannot_be_confirmed_from_status',
+        );
+        expect(events).toHaveLength(1);
+      } finally {
+        emitter.off(RentalConfirmedIntegrationEvent.name, listener);
+      }
     },
   );
 

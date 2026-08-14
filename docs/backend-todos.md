@@ -87,12 +87,6 @@
 
 # Rental Commitment domain/event TODOs
 
-* [ ] Emit `RentalConfirmedIntegrationEvent` from normal DRAFT/PENDING confirmation.
-
-  * Direct confirmed creation emits it.
-  * `Rental.confirm()` currently does not publish the equivalent integration event.
-  * This was deliberately **not** fixed during notification-boundary cleanup.
-
 * [ ] Decide whether the current UUID-prefix display value (`rentalId.slice(0, 4)`) is intentionally the durable rental/order number.
 
   * If not, define a real Rental Commitment-owned reference/order number.
@@ -109,11 +103,6 @@
 ---
 
 # Contracts / document semantics
-
-* [ ] Decide whether Remito serial numbers should be:
-
-  * live Asset Inventory values at document-generation time; or
-  * historical values snapshotted earlier.
 
 Current behavior uses live serial numbers when rendering and Contracts snapshots the resulting rendered equipment lines.
 

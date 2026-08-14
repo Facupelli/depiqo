@@ -495,7 +495,16 @@ describe('CreateConfirmedRental integration', () => {
       const succeeded = await create({ ...setup, selectedOffers: [{ rentalOfferId: catalog.offer.id, quantity: 1 }] });
       expect(succeeded.isOk()).toBe(true);
       expect(events).toHaveLength(1);
-      if (succeeded.isOk()) expect(events[0].rentalId).toBe(succeeded.value.rentalId);
+      if (succeeded.isOk()) {
+        const state = await persisted(succeeded.value.rentalId);
+        expect(events[0]).toEqual(
+          expect.objectContaining({
+            schemaVersion: 3,
+            rentalId: succeeded.value.rentalId,
+            rentalNumber: state.rental.rentalNumber,
+          }),
+        );
+      }
     } finally {
       emitter.off(RentalConfirmedIntegrationEvent.name, listener);
     }

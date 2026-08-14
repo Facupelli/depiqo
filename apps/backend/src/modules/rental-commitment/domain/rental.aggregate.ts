@@ -787,7 +787,9 @@ export class Rental extends AggregateRootBase {
     this.props.confirmedPriceSnapshot = confirmedPriceSnapshot.value;
     this.props.assignedAssets = assignedAssets.value;
     this.props.assetBlocks = assetBlocks.value;
-    this.props.confirmedAt = params.confirmedAt ? new Date(params.confirmedAt) : new Date();
+    const confirmedAt = params.confirmedAt ? new Date(params.confirmedAt) : new Date();
+    this.props.confirmedAt = confirmedAt;
+    this.recordRentalConfirmedEvent(confirmedAt);
 
     return ok(undefined);
   }
@@ -827,6 +829,7 @@ export class Rental extends AggregateRootBase {
       new RentalConfirmedDomainEvent(
         this.tenantId,
         this.id,
+        this.rentalNumber,
         this.rentalCustomerId,
         this.branchId,
         RentalStatus.Confirmed,
