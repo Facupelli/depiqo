@@ -5,30 +5,28 @@ import {
 import { z } from "zod";
 import { emptyToNull } from "@/shared/utils/form.utils";
 
-export const createRentableEquipmentAssetFormSchema = z.object({
+export const createProductUnitFormSchema = z.object({
 	branchId: z.string().min(1, "La sucursal es obligatoria"),
 	serialNumber: z.string(),
 	notes: z.string(),
 	ownerId: z.string(),
 });
 
-export const createRentableEquipmentFormSchema = z.object({
+export const createProductFormSchema = z.object({
 	categoryId: z.string(),
 	name: z.string().min(1, "El nombre es obligatorio"),
 	imageUrl: z.string(),
 	description: z.string(),
 	quantityPerItem: z.number().int().positive("Debe ser mayor o igual a 1"),
-	assets: z.array(createRentableEquipmentAssetFormSchema),
+	units: z.array(createProductUnitFormSchema),
 });
 
-export type CreateRentableEquipmentAssetFormValues = z.infer<
-	typeof createRentableEquipmentAssetFormSchema
+export type CreateProductUnitFormValues = z.infer<
+	typeof createProductUnitFormSchema
 >;
-export type CreateRentableEquipmentFormValues = z.infer<
-	typeof createRentableEquipmentFormSchema
->;
+export type CreateProductFormValues = z.infer<typeof createProductFormSchema>;
 
-export function createEmptyRentableEquipmentAsset(): CreateRentableEquipmentAssetFormValues {
+export function createEmptyProductUnit(): CreateProductUnitFormValues {
 	return {
 		branchId: "",
 		serialNumber: "",
@@ -37,19 +35,19 @@ export function createEmptyRentableEquipmentAsset(): CreateRentableEquipmentAsse
 	};
 }
 
-export function createRentableEquipmentFormDefaultValues(): CreateRentableEquipmentFormValues {
+export function createProductFormDefaultValues(): CreateProductFormValues {
 	return {
 		categoryId: "",
 		name: "",
 		imageUrl: "",
 		description: "",
 		quantityPerItem: 1,
-		assets: [],
+		units: [],
 	};
 }
 
-export function toCreateRentableEquipmentDto(
-	values: CreateRentableEquipmentFormValues,
+export function toCreateProductDto(
+	values: CreateProductFormValues,
 ): CreateRentableEquipmentBodyDto {
 	const dto = {
 		name: values.name.trim(),
@@ -58,11 +56,11 @@ export function toCreateRentableEquipmentDto(
 		categoryId: emptyToNull(values.categoryId),
 		kind: "SINGLE" as const,
 		quantityPerItem: 1,
-		assets: values.assets.map((asset) => ({
-			branchId: asset.branchId,
-			serialNumber: emptyToNull(asset.serialNumber),
-			notes: emptyToNull(asset.notes),
-			ownerId: emptyToNull(asset.ownerId),
+		assets: values.units.map((unit) => ({
+			branchId: unit.branchId,
+			serialNumber: emptyToNull(unit.serialNumber),
+			notes: emptyToNull(unit.notes),
+			ownerId: emptyToNull(unit.ownerId),
 		})),
 	};
 

@@ -6,9 +6,9 @@ import type { MutationOptions } from "@tanstack/react-query";
 import { useMutation } from "@tanstack/react-query";
 import { productKeys } from "@/modules/products/products.queries";
 import type { ProblemDetailsError } from "@/shared/errors";
-import { createRentableEquipment } from "./create-rentable-equipment.api";
+import { createRentableEquipment } from "./create-product.api";
 
-type CreateRentableEquipmentOptions = Omit<
+type CreateProductOptions = Omit<
 	MutationOptions<
 		CreateRentableEquipmentResponseDto,
 		ProblemDetailsError,
@@ -17,9 +17,7 @@ type CreateRentableEquipmentOptions = Omit<
 	"mutationFn" | "mutationKey"
 >;
 
-export function useCreateRentableEquipment(
-	options?: CreateRentableEquipmentOptions,
-) {
+export function useCreateProduct(options?: CreateProductOptions) {
 	return useMutation<
 		CreateRentableEquipmentResponseDto,
 		ProblemDetailsError,

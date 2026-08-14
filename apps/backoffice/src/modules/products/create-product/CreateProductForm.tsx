@@ -26,11 +26,11 @@ import { useForm } from "@tanstack/react-form";
 import { Plus, Trash2 } from "lucide-react";
 import { CatalogImageUploader } from "@/shared/components/catalog-image-uploader";
 import {
-	type CreateRentableEquipmentFormValues,
-	createEmptyRentableEquipmentAsset,
-	createRentableEquipmentFormDefaultValues,
-	createRentableEquipmentFormSchema,
-} from "./create-rentable-equipment.schema";
+	type CreateProductFormValues,
+	createEmptyProductUnit,
+	createProductFormDefaultValues,
+	createProductFormSchema,
+} from "./create-product.schema";
 
 interface SelectOption {
 	id: string;
@@ -44,9 +44,9 @@ interface SelectItemOption {
 
 const TENANT_OWNER_VALUE = "tenant-owned";
 
-interface CreateRentableEquipmentFormProps {
+interface CreateProductFormProps {
 	formId: string;
-	defaultValues?: CreateRentableEquipmentFormValues;
+	defaultValues?: CreateProductFormValues;
 	categories: SelectOption[];
 	branches: SelectOption[];
 	owners?: SelectOption[];
@@ -54,27 +54,27 @@ interface CreateRentableEquipmentFormProps {
 	submitLabel?: string;
 	pendingLabel?: string;
 	cancelLabel?: string;
-	onSubmit: (values: CreateRentableEquipmentFormValues) => Promise<void> | void;
+	onSubmit: (values: CreateProductFormValues) => Promise<void> | void;
 	onCancel: () => void;
 }
 
-export function CreateRentableEquipmentForm({
+export function CreateProductForm({
 	formId,
-	defaultValues = createRentableEquipmentFormDefaultValues(),
+	defaultValues = createProductFormDefaultValues(),
 	categories,
 	branches,
 	owners = [],
 	isPending,
-	submitLabel = "Crear equipo",
+	submitLabel = "Crear producto",
 	pendingLabel = "Creando...",
 	cancelLabel = "Cancelar",
 	onSubmit,
 	onCancel,
-}: CreateRentableEquipmentFormProps) {
+}: CreateProductFormProps) {
 	const form = useForm({
 		defaultValues,
 		validators: {
-			onSubmit: createRentableEquipmentFormSchema,
+			onSubmit: createProductFormSchema,
 		},
 		onSubmit: async ({ value }) => {
 			await onSubmit(value);
@@ -120,7 +120,7 @@ export function CreateRentableEquipmentForm({
 									return (
 										<Field data-invalid={isInvalid}>
 											<FieldLabel htmlFor={field.name}>
-												Nombre del equipo
+												Nombre del producto
 											</FieldLabel>
 											<Input
 												id={field.name}
@@ -202,7 +202,7 @@ export function CreateRentableEquipmentForm({
 													field.handleChange(event.target.value)
 												}
 												aria-invalid={isInvalid}
-												placeholder="Información corta para identificar el equipo."
+												placeholder="Información corta para identificar el producto."
 												className="min-h-16"
 											/>
 											{isInvalid && (
@@ -223,10 +223,10 @@ export function CreateRentableEquipmentForm({
 							return (
 								<Field data-invalid={isInvalid} className="self-start">
 									<div>
-										<FieldLabel>Imagen del equipo</FieldLabel>
+										<FieldLabel>Imagen del producto</FieldLabel>
 										<p className="mt-1 text-muted-foreground text-sm">
-											La imagen es clave para que el equipo se reconozca rápido
-											en el catálogo.
+											La imagen es clave para que el producto se reconozca
+											rápido en el catálogo.
 										</p>
 									</div>
 									<CatalogImageUploader
@@ -244,39 +244,37 @@ export function CreateRentableEquipmentForm({
 					<div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
 						<div>
 							<p className="font-medium text-foreground text-sm">
-								Activos iniciales
+								Unidades de equipo iniciales
 							</p>
 							<p className="mt-1 max-w-2xl text-muted-foreground text-sm">
-								Puedes crear el equipo ahora y cargar las unidades físicas más
-								tarde. Si agregas activos, sus sucursales definirán dónde
-								quedará disponible este equipo inicialmente.
+								Puedes crear el producto ahora y cargar las unidades físicas más
+								tarde. Si agregas unidades, sus sucursales definirán dónde
+								quedará disponible este producto inicialmente.
 							</p>
 						</div>
-						<form.Field name="assets" mode="array">
+						<form.Field name="units" mode="array">
 							{(field) => (
 								<Button
 									type="button"
 									variant="outline"
-									onClick={() =>
-										field.pushValue(createEmptyRentableEquipmentAsset())
-									}
+									onClick={() => field.pushValue(createEmptyProductUnit())}
 								>
 									<Plus className="mr-2 h-4 w-4" />
-									Agregar activo
+									Agregar unidad
 								</Button>
 							)}
 						</form.Field>
 					</div>
 
-					<form.Field name="assets" mode="array">
+					<form.Field name="units" mode="array">
 						{(field) =>
 							field.state.value.length === 0 ? (
 								<div className="rounded-xl border border-dashed p-6 text-sm">
 									<p className="font-medium text-foreground">
-										No agregaste activos todavía.
+										No agregaste unidades todavía.
 									</p>
 									<p className="mt-1 text-muted-foreground">
-										Podrás cargar unidades físicas después de crear el equipo.
+										Podrás cargar unidades físicas después de crear el producto.
 									</p>
 								</div>
 							) : (
@@ -296,12 +294,12 @@ export function CreateRentableEquipmentForm({
 											</TableRow>
 										</TableHeader>
 										<TableBody>
-											{field.state.value.map((asset, index) => (
+											{field.state.value.map((unit, index) => (
 												<TableRow
-													key={`${asset.branchId}-${asset.serialNumber}-${index}`}
+													key={`${unit.branchId}-${unit.serialNumber}-${index}`}
 												>
 													<TableCell>
-														<form.Field name={`assets[${index}].branchId`}>
+														<form.Field name={`units[${index}].branchId`}>
 															{(subField) => {
 																const isInvalid =
 																	subField.state.meta.isTouched &&
@@ -342,7 +340,7 @@ export function CreateRentableEquipmentForm({
 													</TableCell>
 
 													<TableCell>
-														<form.Field name={`assets[${index}].serialNumber`}>
+														<form.Field name={`units[${index}].serialNumber`}>
 															{(subField) => (
 																<Input
 																	type="text"
@@ -359,7 +357,7 @@ export function CreateRentableEquipmentForm({
 
 													{shouldShowOwnerColumn && (
 														<TableCell>
-															<form.Field name={`assets[${index}].ownerId`}>
+															<form.Field name={`units[${index}].ownerId`}>
 																{(subField) => (
 																	<Select
 																		items={ownerItems}
@@ -398,7 +396,7 @@ export function CreateRentableEquipmentForm({
 													)}
 
 													<TableCell>
-														<form.Field name={`assets[${index}].notes`}>
+														<form.Field name={`units[${index}].notes`}>
 															{(subField) => (
 																<Input
 																	type="text"
@@ -419,7 +417,7 @@ export function CreateRentableEquipmentForm({
 															variant="ghost"
 															size="icon"
 															onClick={() => field.removeValue(index)}
-															aria-label={`Eliminar activo ${index + 1}`}
+															aria-label={`Eliminar unidad ${index + 1}`}
 														>
 															<Trash2 className="h-4 w-4" />
 														</Button>
