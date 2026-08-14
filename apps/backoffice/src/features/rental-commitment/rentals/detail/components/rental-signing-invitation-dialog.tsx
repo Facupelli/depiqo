@@ -1,0 +1,70 @@
+import { Alert, AlertDescription } from "@repo/ui/components/alert";
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogHeader,
+	DialogTitle,
+} from "@repo/ui/components/dialog";
+import type { RentalSigningDialogIntent } from "../hooks/use-rental-signing-invitation-actions";
+import { createRentalSigningInvitationFormDefaults } from "../rental-signing-invitation.schema";
+import { RentalSigningInvitationForm } from "./rental-signing-invitation-form";
+
+interface RentalSigningInvitationDialogProps {
+	open: boolean;
+	onOpenChange: (open: boolean) => void;
+	defaultEmail: string | null | undefined;
+	dialogIntent: RentalSigningDialogIntent;
+	submitError: string | null;
+	isPending: boolean;
+	onSubmit: Parameters<typeof RentalSigningInvitationForm>[0]["onSubmit"];
+}
+
+export function RentalSigningInvitationDialog({
+	open,
+	onOpenChange,
+	defaultEmail,
+	dialogIntent,
+	submitError,
+	isPending,
+	onSubmit,
+}: RentalSigningInvitationDialogProps) {
+	const isResend = dialogIntent === "resend";
+
+	return (
+		<Dialog open={open} onOpenChange={onOpenChange}>
+			<DialogContent className="sm:max-w-lg">
+				<DialogHeader>
+					<DialogTitle>
+						{isResend ? "Reenviar remito a firmar" : "Enviar remito a firmar"}
+					</DialogTitle>
+					<DialogDescription>
+						Se enviará un enlace seguro por email para revisar y firmar el
+						remito del alquiler.
+					</DialogDescription>
+				</DialogHeader>
+
+				{open ? (
+					<div className="space-y-6">
+						{submitError ? (
+							<Alert variant="destructive">
+								<AlertDescription>{submitError}</AlertDescription>
+							</Alert>
+						) : null}
+
+						<RentalSigningInvitationForm
+							key={defaultEmail ?? ""}
+							defaultValues={createRentalSigningInvitationFormDefaults(
+								defaultEmail,
+							)}
+							isPending={isPending}
+							isResend={isResend}
+							onSubmit={onSubmit}
+							onCancel={() => onOpenChange(false)}
+						/>
+					</div>
+				) : null}
+			</DialogContent>
+		</Dialog>
+	);
+}

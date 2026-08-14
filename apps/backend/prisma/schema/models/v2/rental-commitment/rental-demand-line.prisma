@@ -1,0 +1,24 @@
+// ---------------------------------------------------------------------------
+// V2 RENTAL COMMITMENT - RENTAL DEMAND LINES
+// ---------------------------------------------------------------------------
+
+model V2RentalDemandLine {
+  id                        String   @id @default(uuid())
+  tenantId                  String   @map("tenant_id")
+  rentalId                  String   @map("rental_id")
+  rentalSelectionId         String   @map("rental_selection_id")
+  equipmentTypeId           String   @map("equipment_type_id")
+  equipmentTypeNameSnapshot String   @map("equipment_type_name_snapshot")
+  quantity                  Int
+  createdAt                 DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  rental              V2Rental                     @relation(fields: [rentalId], references: [id])
+  rentalSelection     V2RentalSelection            @relation(fields: [rentalSelectionId], references: [id])
+  assignedAssets      V2AssignedAsset[]
+  accessorySelections V2RentalAccessorySelection[]
+
+  @@index([tenantId, rentalId])
+  @@index([tenantId, equipmentTypeId])
+  @@index([rentalSelectionId])
+  @@map("v2_rental_demand_lines")
+}

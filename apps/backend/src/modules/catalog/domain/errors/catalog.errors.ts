@@ -2,178 +2,90 @@ import { DomainError } from 'src/core/exceptions/domain.error';
 
 export class CatalogError extends DomainError {}
 
-export class ProductTypeNotFoundError extends CatalogError {
-  constructor(productTypeId: string) {
-    super(`Product type '${productTypeId}' was not found.`);
+export class CatalogInvalidFieldError extends CatalogError {
+  constructor(
+    public readonly field: string,
+    public readonly reason: string,
+  ) {
+    super(`Invalid catalog field "${field}": ${reason}.`);
   }
 }
 
-export class ProductCategoryNotFoundError extends CatalogError {
-  constructor(productCategoryId: string) {
-    super(`Product category '${productCategoryId}' was not found.`);
+export class CatalogRentableItemNotFoundError extends CatalogError {
+  constructor(public readonly rentableItemId: string) {
+    super(`Rentable item "${rentableItemId}" was not found.`);
   }
 }
 
-export class ProductCategoryHasAssignedProductTypesError extends CatalogError {
-  constructor(productCategoryId: string) {
-    super(`Product category '${productCategoryId}' cannot be deleted because it still has assigned product types.`);
+export class CatalogRentableItemArchivedError extends CatalogError {
+  constructor(public readonly rentableItemId: string) {
+    super(`Rentable item "${rentableItemId}" is archived.`);
   }
 }
 
-export class ReferencedProductTypeNotFoundError extends CatalogError {
-  constructor(productTypeId: string) {
-    super(`Referenced product type '${productTypeId}' was not found.`);
+export class CatalogRentableItemCannotBeActivatedFromStatusError extends CatalogError {
+  constructor(
+    public readonly rentableItemId: string,
+    public readonly status: string,
+  ) {
+    super(`Rentable item "${rentableItemId}" cannot be activated from status "${status}".`);
   }
 }
 
-export class BundleNotFoundError extends CatalogError {
-  constructor(bundleId: string) {
-    super(`Bundle '${bundleId}' was not found.`);
+export class CatalogRentalOfferArchivedError extends CatalogError {
+  constructor(public readonly rentalOfferId: string) {
+    super(`Rental offer "${rentalOfferId}" is archived.`);
   }
 }
 
-export class InvalidProductTypeNameError extends CatalogError {
-  constructor() {
-    super('Product type name cannot be empty.');
+export class CatalogRentalOfferAlreadyExistsError extends CatalogError {
+  constructor(
+    public readonly rentableItemId: string,
+    public readonly branchId: string,
+  ) {
+    super(`Rentable item "${rentableItemId}" is already offered in branch "${branchId}".`);
   }
 }
 
-export class ProductTypeAlreadyRetiredError extends CatalogError {
-  constructor() {
-    super('This product type is already retired.');
-  }
-}
-
-export class ProductTypeAlreadyPublishedError extends CatalogError {
-  constructor() {
-    super('This product type is already published.');
-  }
-}
-
-export class ProductTypeCannotBePublishedWithoutPricingTiersError extends CatalogError {
-  constructor(productTypeId: string) {
-    super(`Product type '${productTypeId}' cannot be published without at least one pricing tier.`);
-  }
-}
-
-export class AccessoryProductTypeCannotBePublishedError extends CatalogError {
-  constructor(productTypeId: string) {
-    super(`Accessory product type '${productTypeId}' cannot be published.`);
-  }
-}
-
-export class AccessoryLinkPrimaryMustBePrimaryError extends CatalogError {
-  constructor(productTypeId: string) {
-    super(`Product type '${productTypeId}' must be a primary rental item to have accessory links.`);
-  }
-}
-
-export class AccessoryLinkAccessoryMustBeAccessoryError extends CatalogError {
-  constructor(productTypeId: string) {
-    super(`Product type '${productTypeId}' must be an accessory rental item to be linked as an accessory.`);
-  }
-}
-
-export class AccessoryLinkCrossTenantError extends CatalogError {
-  constructor(productTypeId: string) {
-    super(`Accessory product type '${productTypeId}' does not belong to the same tenant as the primary rental item.`);
-  }
-}
-
-export class InvalidAccessoryLinkDefaultQuantityError extends CatalogError {
-  constructor() {
-    super('Accessory link default quantity must be greater than zero.');
-  }
-}
-
-export class AccessoryLinkDefaultQuantityExceedsAssetCountError extends CatalogError {
-  constructor(productTypeId: string, requestedQuantity: number, assetCount: number) {
+export class CatalogEquipmentTypeNotFoundError extends CatalogError {
+  constructor(public readonly equipmentTypeId?: string) {
     super(
-      `Accessory product type '${productTypeId}' has ${assetCount} active assets, but default quantity ${requestedQuantity} was requested.`,
+      equipmentTypeId
+        ? `Equipment type "${equipmentTypeId}" was not found.`
+        : 'A referenced equipment type was not found.',
     );
   }
 }
 
-export class DuplicateAccessoryLinkError extends CatalogError {
-  constructor(productTypeId: string) {
-    super(`Accessory product type '${productTypeId}' appears more than once in the accessory link list.`);
+export class CatalogBranchNotFoundError extends CatalogError {
+  constructor(public readonly branchId?: string) {
+    super(branchId ? `Branch "${branchId}" was not found.` : 'A referenced branch was not found.');
   }
 }
 
-export class ProductTypeCannotBePublishedWithoutAssetsError extends CatalogError {
-  constructor(productTypeId: string) {
-    super(`Product type '${productTypeId}' cannot be published without active assets.`);
+export class CatalogBranchInactiveError extends CatalogError {
+  constructor(public readonly branchId: string) {
+    super(`Branch "${branchId}" is inactive.`);
   }
 }
 
-export class ProductTypeCannotBePublishedWithoutActiveOwnerContractsError extends CatalogError {
-  constructor(productTypeId: string, assetId: string, ownerId: string) {
-    super(
-      `Product type '${productTypeId}' cannot be published because asset '${assetId}' from owner '${ownerId}' has no active owner contract.`,
-    );
+export class CatalogBranchDeletedError extends CatalogError {
+  constructor(public readonly branchId: string) {
+    super(`Branch "${branchId}" is deleted.`);
   }
 }
 
-export class InvalidProductCategoryNameError extends CatalogError {
+export class CatalogBranchContextUnavailableError extends CatalogError {
   constructor() {
-    super('Product category name cannot be empty.');
+    super('Branch context is unavailable.');
   }
 }
 
-export class InvalidBundleNameError extends CatalogError {
-  constructor() {
-    super('Bundle name cannot be empty.');
-  }
-}
-
-export class InvalidBundleComponentQuantityError extends CatalogError {
-  constructor() {
-    super('Bundle component quantity must be greater than zero.');
-  }
-}
-
-export class DuplicateBundleComponentError extends CatalogError {
-  constructor(productTypeId: string) {
-    super(`A component for product type '${productTypeId}' already exists in this bundle.`);
-  }
-}
-
-export class BundleComponentNotFoundError extends CatalogError {
-  constructor(productTypeId: string) {
-    super(`No component for product type '${productTypeId}' found in this bundle.`);
-  }
-}
-
-export class BundleAlreadyRetiredError extends CatalogError {
-  constructor() {
-    super('This bundle is already retired.');
-  }
-}
-
-export class BundleAlreadyPublishedError extends CatalogError {
-  constructor() {
-    super('This bundle is already published.');
-  }
-}
-
-export class BundleCannotBePublishedWithoutPricingTiersError extends CatalogError {
-  constructor(bundleId: string) {
-    super(`Bundle '${bundleId}' cannot be published without at least one pricing tier.`);
-  }
-}
-
-export class BundleCannotBePublishedBecauseAComponentHasNoAssetsError extends CatalogError {
-  constructor(bundleId: string, productTypeId: string) {
-    super(
-      `Bundle '${bundleId}' cannot be published because component product type '${productTypeId}' has no active assets.`,
-    );
-  }
-}
-
-export class BundleCannotBePublishedBecauseAComponentLacksActiveOwnerContractsError extends CatalogError {
-  constructor(bundleId: string, productTypeId: string) {
-    super(
-      `Bundle '${bundleId}' cannot be published because component product type '${productTypeId}' only has external assets without active owner contracts.`,
-    );
+export class CatalogRentableItemRequirementAlreadyExistsError extends CatalogError {
+  constructor(
+    public readonly rentableItemId: string,
+    public readonly equipmentTypeId: string,
+  ) {
+    super(`Rentable item "${rentableItemId}" already requires equipment type "${equipmentTypeId}".`);
   }
 }

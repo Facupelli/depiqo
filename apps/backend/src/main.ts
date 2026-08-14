@@ -1,25 +1,50 @@
-import { NestFactory, Reflector } from '@nestjs/core';
-import { AppModule } from './app.module';
-import { ZodValidationPipe } from 'nestjs-zod';
-import { ProblemDetailsFilter } from './core/exceptions/problem-detail.filter';
-import { AppLogger } from './core/logger/app-logger.service';
-import { TransformInterceptor } from './core/response/transform.interceptor';
+import { ConfigService } from '@nestjs/config';
+import { NestFactory } from '@nestjs/core';
+import { NestExpressApplication } from '@nestjs/platform-express';
+import { Logger } from 'nestjs-pino';
 
-const PORT = process.env.PORT ?? 3000;
+import { AppModule } from './app.module';
+import { Env } from './config/env.schema';
+import { configureApp } from './configure-app';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, {
-    bufferLogs: true,
-  });
-
-  const logger = app.get(AppLogger);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, { bufferLogs: true });
+  const logger = app.get(Logger);
   app.useLogger(logger);
 
-  app.useGlobalPipes(new ZodValidationPipe());
-  app.useGlobalFilters(new ProblemDetailsFilter());
-  app.useGlobalInterceptors(new TransformInterceptor(new Reflector()));
+  const config = app.get<ConfigService<Env, true>>(ConfigService);
+  if (config.get('NODE_ENV') === 'production') app.set('trust proxy', 1);
 
-  await app.listen(PORT);
-  logger.log(`Application started on port ${PORT}`, 'Bootstrap');
+  const resources = configureApp(app, {
+    allowedOrigins: getAllowedOrigins(config.get('CORS_ALLOWED_ORIGINS')),
+  });
+  registerShutdownSignals(app, resources.close);
+
+  const port = config.get('PORT');
+  await app.listen(port);
+  logger.log(`Application started on port ${port}`, 'Bootstrap');
 }
-bootstrap();
+
+void bootstrap();
+
+function registerShutdownSignals(app: NestExpressApplication, closeResources: () => Promise<void>): void {
+  let shuttingDown = false;
+  const shutdown = async () => {
+    if (shuttingDown) return;
+    shuttingDown = true;
+    await app.close();
+    await closeResources();
+  };
+
+  process.once('SIGINT', () => void shutdown());
+  process.once('SIGTERM', () => void shutdown());
+}
+
+function getAllowedOrigins(rawOrigins: string): Set<string> {
+  return new Set(
+    rawOrigins
+      .split(',')
+      .map((origin) => origin.trim())
+      .filter(Boolean),
+  );
+}

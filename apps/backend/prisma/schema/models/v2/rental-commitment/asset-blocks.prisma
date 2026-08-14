@@ -1,0 +1,31 @@
+// ---------------------------------------------------------------------------
+// V2 RENTAL COMMITMENT - ASSET BLOCKS
+// ---------------------------------------------------------------------------
+
+enum V2AssetBlockType {
+  EQUIPMENT
+  ACCESSORY
+}
+
+// PostgreSQL enforces the active-block invariant with the
+// v2_asset_blocks_active_asset_period_exclusion partial GiST exclusion constraint.
+// It rejects overlapping [start, end) periods for the same tenant and asset while
+// released_at is NULL; the migration is maintained as raw SQL because Prisma does
+// not model exclusion constraints.
+model V2AssetBlock {
+  id         String                   @id @default(uuid())
+  tenantId   String                   @map("tenant_id")
+  rentalId   String                   @map("rental_id")
+  assetId    String                   @map("asset_id")
+  period     Unsupported("tstzrange")
+  blockType  V2AssetBlockType         @map("block_type")
+  createdAt  DateTime                 @default(now()) @map("created_at") @db.Timestamptz(3)
+  releasedAt DateTime?                @map("released_at") @db.Timestamptz(3)
+
+  rental V2Rental @relation(fields: [rentalId], references: [id])
+
+  @@index([tenantId, rentalId])
+  @@index([assetId])
+  @@index([tenantId, assetId, releasedAt])
+  @@map("v2_asset_blocks")
+}

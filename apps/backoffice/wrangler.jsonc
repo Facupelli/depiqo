@@ -1,0 +1,32 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "repo-backoffice",
+  "compatibility_date": "2025-09-02",
+  "compatibility_flags": ["nodejs_compat"],
+  "main": "@tanstack/react-start/server-entry",
+  "observability": {
+    "enabled": true,
+  },
+  "r2_buckets": [
+    {
+      "binding": "CUSTOMERS_BUCKET",
+      "bucket_name": "customers",
+    },
+  ],
+  "vars": {
+    "CLOUDFLARE_R2_BUCKET_NAME": "equipment",
+    "VITE_R2_PUBLIC_URL": "https://equipment.depiqo.com",
+    "VITE_BRANDING_R2_PUBLIC_URL": "https://branding.depiqo.com",
+    "NODE_ENV": "production",
+  },
+  // Intended production ownership: app.depiqo.com -> repo-backoffice.
+  "routes": [
+    {
+      "pattern": "app.depiqo.com",
+      "zone_name": "depiqo.com",
+      "custom_domain": true,
+    },
+  ],
+  "workers_dev": true,
+  "preview_urls": true,
+}

@@ -1,8 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { QueryBus } from '@nestjs/cqrs';
-import { TenantConfig } from '@repo/schemas';
-import { OrderCommunicationMode } from '@repo/types';
-import { GetTenantConfigQuery } from 'src/modules/tenant/public/queries/get-tenant-config.query';
+
+import {
+  TenantNotificationPreferences,
+  TenantOrderCommunicationMode,
+} from 'src/modules/tenant-management/public-api/tenant-notification-preferences.public-api';
 
 import { NotificationDispatchSkipReason } from './types/notification-dispatch-skip-reason.enum';
 import { getNotificationTypeCategory } from '../domain/notification-type-category-registry';
@@ -21,28 +22,26 @@ export type NotificationSuppressionDecision =
 
 @Injectable()
 export class TenantNotificationSuppressionPolicy {
-  constructor(private readonly queryBus: QueryBus) {}
+  constructor(private readonly tenantNotificationPreferences: TenantNotificationPreferences) {}
 
   async evaluate(tenantId: string, notificationType: NotificationType): Promise<NotificationSuppressionDecision> {
     if (getNotificationTypeCategory(notificationType) !== NotificationTypeCategory.TENANT_WORKFLOW) {
       return { suppressed: false };
     }
 
-    let tenantConfig: TenantConfig | null;
+    let tenantPreferencesResult: Awaited<ReturnType<TenantNotificationPreferences['getTenantNotificationPreferences']>>;
 
     try {
-      tenantConfig = await this.queryBus.execute<GetTenantConfigQuery, TenantConfig | null>(
-        new GetTenantConfigQuery(tenantId),
-      );
+      tenantPreferencesResult = await this.tenantNotificationPreferences.getTenantNotificationPreferences({ tenantId });
     } catch {
       return { suppressed: false };
     }
 
-    if (!tenantConfig) {
+    if (tenantPreferencesResult.isErr()) {
       return { suppressed: false };
     }
 
-    if (tenantConfig.communication.orderCommunicationMode !== OrderCommunicationMode.WHATSAPP) {
+    if (tenantPreferencesResult.value.orderCommunicationMode !== TenantOrderCommunicationMode.WHATSAPP) {
       return { suppressed: false };
     }
 

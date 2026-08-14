@@ -1,94 +1,87 @@
 import { Module } from '@nestjs/common';
+
+import { PricingContextLoader } from './application/pricing-context-loader';
+import { AttachRatePlanToRentalOfferOperation } from './application/operations/attach-rate-plan-to-rental-offer.operation';
+import { CreateRatePlanOperation } from './application/operations/create-rate-plan.operation';
+import { AttachRatePlanToRentalOfferHttpController } from './features/attach-rate-plan-to-rental-offer/attach-rate-plan-to-rental-offer.controller';
+import { AttachRatePlanToRentalOfferHandler } from './features/attach-rate-plan-to-rental-offer/attach-rate-plan-to-rental-offer.handler';
+import { CalculateCartPriceHttpController } from './features/calculate-cart-price/calculate-cart-price.controller';
+import { CalculateCartPriceHandler } from './features/calculate-cart-price/calculate-cart-price.handler';
+import { CalculateDraftRentalPriceHttpController } from './features/calculate-draft-rental-price/calculate-draft-rental-price.controller';
+import { CalculateDraftRentalPriceHandler } from './features/calculate-draft-rental-price/calculate-draft-rental-price.handler';
+import { CorrectRatePlanHttpController } from './features/correct-rate-plan/correct-rate-plan.controller';
+import { CorrectRatePlanHandler } from './features/correct-rate-plan/correct-rate-plan.handler';
+import { DetachOfferPricingHttpController } from './features/detach-offer-pricing/detach-offer-pricing.controller';
+import { DetachOfferPricingHandler } from './features/detach-offer-pricing/detach-offer-pricing.handler';
+import { CreatePromotionHttpController } from './features/create-promotion/create-promotion.controller';
+import { CreatePromotionHandler } from './features/create-promotion/create-promotion.handler';
+import { CreateRatePlanHttpController } from './features/create-rate-plan/create-rate-plan.controller';
+import { CreateRatePlanHandler } from './features/create-rate-plan/create-rate-plan.handler';
+import { GetPromotionDetailHttpController } from './features/get-promotion-detail/get-promotion-detail.controller';
+import { GetPromotionDetailHandler } from './features/get-promotion-detail/get-promotion-detail.handler';
+import { GetPromotionsHttpController } from './features/get-promotions/get-promotions.controller';
+import { GetPromotionsHandler } from './features/get-promotions/get-promotions.handler';
+import { GetRatePlanDetailHttpController } from './features/get-rate-plan-detail/get-rate-plan-detail.controller';
+import { GetRatePlanDetailHandler } from './features/get-rate-plan-detail/get-rate-plan-detail.handler';
+import { GetRatePlansHttpController } from './features/get-rate-plans/get-rate-plans.controller';
+import { GetRatePlansHandler } from './features/get-rate-plans/get-rate-plans.handler';
+import { GetRentalOffersPricingHttpController } from './features/get-rental-offers-pricing/get-rental-offers-pricing.controller';
+import { GetRentalOffersPricingHandler } from './features/get-rental-offers-pricing/get-rental-offers-pricing.handler';
+import { GetStorefrontRentalOffersPricingHttpController } from './features/get-storefront-rental-offers-pricing/get-storefront-rental-offers-pricing.controller';
+import { GetStorefrontRentalOffersPricingHandler } from './features/get-storefront-rental-offers-pricing/get-storefront-rental-offers-pricing.handler';
+import { UpdatePromotionHttpController } from './features/update-promotion/update-promotion.controller';
+import { UpdatePromotionHandler } from './features/update-promotion/update-promotion.handler';
+import { RatePlanRepository } from './persistence/rate-plan.repository';
+import { PricingCalculationService } from './application/pricing-calculation.service';
+import { PricingCalculation } from './public-api/pricing-calculation.public-api';
+import { PricingRatePlanAuthoringService } from './public-api/pricing-rate-plan-authoring.service';
+import { PricingRatePlanAuthoring } from './public-api/pricing-rate-plan-authoring.public-api';
+import { PricingRentalOfferPricingAssignmentService } from './public-api/pricing-rental-offer-pricing-assignment.service';
+import { PricingRentalOfferPricingAssignment } from './public-api/pricing-rental-offer-pricing-assignment.public-api';
 import { CatalogModule } from '../catalog/catalog.module';
-import { TenantModule } from '../tenant/tenant.module';
-import { PricingApplicationService } from './application/pricing.application-service';
-import { PricingPublicApi } from './pricing.public-api';
-import { CreateCouponHttpController } from './application/commands/create-coupon/create-coupon.http.controller';
-import { CreateCouponService } from './application/commands/create-coupon/create-coupon.service';
-import { CreatePromotionHttpController } from './application/commands/create-promotion/create-promotion.http.controller';
-import { CreatePromotionService } from './application/commands/create-promotion/create-promotion.service';
-import { ActivatePromotionHttpController } from './application/commands/activate-promotion/activate-promotion.http.controller';
-import { ActivatePromotionService } from './application/commands/activate-promotion/activate-promotion.service';
-import { UpdateCouponHttpController } from './application/commands/update-coupon/update-coupon.http.controller';
-import { UpdateCouponService } from './application/commands/update-coupon/update-coupon.service';
-import { ActivateCouponHttpController } from './application/commands/activate-coupon/activate-coupon.http.controller';
-import { ActivateCouponService } from './application/commands/activate-coupon/activate-coupon.service';
-import { DeactivateCouponHttpController } from './application/commands/deactivate-coupon/deactivate-coupon.http.controller';
-import { DeactivateCouponService } from './application/commands/deactivate-coupon/deactivate-coupon.service';
-import { DeactivatePromotionHttpController } from './application/commands/deactivate-promotion/deactivate-promotion.http.controller';
-import { DeactivatePromotionService } from './application/commands/deactivate-promotion/deactivate-promotion.service';
-import { DeleteCouponHttpController } from './application/commands/delete-coupon/delete-coupon.http.controller';
-import { DeleteCouponService } from './application/commands/delete-coupon/delete-coupon.service';
-import { DeletePromotionHttpController } from './application/commands/delete-promotion/delete-promotion.http.controller';
-import { DeletePromotionService } from './application/commands/delete-promotion/delete-promotion.service';
-import { SetPricingTiersHttpController } from './application/commands/set-pricing-tiers/set-pricing-tiers.http.controller';
-import { SetPricingTiersService } from './application/commands/set-pricing-tiers/set-pricing-tiers.service';
-import { UpdatePromotionHttpController } from './application/commands/update-promotion/update-promotion.http.controller';
-import { UpdatePromotionService } from './application/commands/update-promotion/update-promotion.service';
-import { CalculateCartPricesHttpController } from './application/queries/calculate-cart-prices/calculate-cart-prices.http.controller';
-import { CalculateCartPricesQueryHandler } from './application/queries/calculate-cart-prices/calculate-cart-prices.query-handler';
-import { GetPromotionByIdHttpController } from './application/queries/get-promotion-by-id/get-promotion-by-id.http.controller';
-import { GetPromotionByIdQueryHandler } from './application/queries/get-promotion-by-id/get-promotion-by-id.query-handler';
-import { ListCouponsHttpController } from './application/queries/list-coupons/list-coupons.http.controller';
-import { ListCouponsHandler } from './application/queries/list-coupons/list-coupons.query-handler';
-import { ListPromotionsHttpController } from './application/queries/list-promotions/list-promotions.http.controller';
-import { ListPromotionsHandler } from './application/queries/list-promotions/list-promotions.query-handler';
-import { RedeemCouponService } from './application/services/redeem-coupon.service';
-import { ResolveCouponForPricingService } from './application/services/resolve-coupon-for-pricing.service';
-import { ValidateCouponAccessService } from './application/services/validate-coupon-access.service';
-import { VoidCouponRedemptionService } from './application/services/void-coupon-redemption.service';
-import { PricingComputationReadService } from './infrastructure/read-services/pricing-computation-read.service';
-import { CouponRedemptionRepository } from './infrastructure/repositories/coupon-redemption.repository';
-import { CouponRepository } from './infrastructure/repositories/coupon.repository';
-import { PricingConfigurationRepository } from './infrastructure/repositories/pricing-config.repository';
-import { PromotionRepository } from './infrastructure/repositories/promotion.repository';
+import { TenantManagementModule } from '../tenant-management/tenant-management.module';
 
 @Module({
-  imports: [CatalogModule, TenantModule],
+  imports: [CatalogModule, TenantManagementModule],
   controllers: [
-    CreateCouponHttpController,
+    AttachRatePlanToRentalOfferHttpController,
+    CalculateCartPriceHttpController,
+    CalculateDraftRentalPriceHttpController,
+    CorrectRatePlanHttpController,
+    DetachOfferPricingHttpController,
     CreatePromotionHttpController,
-    ActivatePromotionHttpController,
-    UpdateCouponHttpController,
-    ActivateCouponHttpController,
-    DeactivateCouponHttpController,
-    DeactivatePromotionHttpController,
-    DeleteCouponHttpController,
-    DeletePromotionHttpController,
-    SetPricingTiersHttpController,
+    CreateRatePlanHttpController,
+    GetPromotionDetailHttpController,
+    GetPromotionsHttpController,
+    GetRatePlanDetailHttpController,
+    GetRatePlansHttpController,
+    GetRentalOffersPricingHttpController,
+    GetStorefrontRentalOffersPricingHttpController,
     UpdatePromotionHttpController,
-    CalculateCartPricesHttpController,
-    GetPromotionByIdHttpController,
-    ListCouponsHttpController,
-    ListPromotionsHttpController,
   ],
   providers: [
-    PricingConfigurationRepository,
-    PromotionRepository,
-    CouponRepository,
-    CouponRedemptionRepository,
-    PricingComputationReadService,
-    ValidateCouponAccessService,
-    ResolveCouponForPricingService,
-    RedeemCouponService,
-    VoidCouponRedemptionService,
-    { provide: PricingPublicApi, useClass: PricingApplicationService },
-    SetPricingTiersService,
-    CreatePromotionService,
-    UpdatePromotionService,
-    ActivatePromotionService,
-    DeactivatePromotionService,
-    DeletePromotionService,
-    CreateCouponService,
-    UpdateCouponService,
-    ActivateCouponService,
-    DeactivateCouponService,
-    DeleteCouponService,
-    CalculateCartPricesQueryHandler,
-    ListCouponsHandler,
-    ListPromotionsHandler,
-    GetPromotionByIdQueryHandler,
+    AttachRatePlanToRentalOfferOperation,
+    CalculateCartPriceHandler,
+    CalculateDraftRentalPriceHandler,
+    CorrectRatePlanHandler,
+    DetachOfferPricingHandler,
+    AttachRatePlanToRentalOfferHandler,
+    CreateRatePlanOperation,
+    CreatePromotionHandler,
+    CreateRatePlanHandler,
+    GetPromotionDetailHandler,
+    GetPromotionsHandler,
+    GetRatePlanDetailHandler,
+    GetRatePlansHandler,
+    GetRentalOffersPricingHandler,
+    GetStorefrontRentalOffersPricingHandler,
+    PricingContextLoader,
+    RatePlanRepository,
+    UpdatePromotionHandler,
+    { provide: PricingCalculation, useClass: PricingCalculationService },
+    { provide: PricingRatePlanAuthoring, useClass: PricingRatePlanAuthoringService },
+    { provide: PricingRentalOfferPricingAssignment, useClass: PricingRentalOfferPricingAssignmentService },
   ],
-  exports: [PricingPublicApi, ResolveCouponForPricingService, RedeemCouponService, VoidCouponRedemptionService],
+  exports: [PricingCalculation, PricingRatePlanAuthoring, PricingRentalOfferPricingAssignment],
 })
 export class PricingModule {}

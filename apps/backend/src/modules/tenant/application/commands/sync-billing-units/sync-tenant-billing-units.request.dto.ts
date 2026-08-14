@@ -1,4 +1,0 @@
-import { syncTenantBillingUnitsSchema } from '@repo/schemas';
-import { createZodDto } from 'nestjs-zod';
-
-export class SyncTenantBillingUnitsDto extends createZodDto(syncTenantBillingUnitsSchema) {}

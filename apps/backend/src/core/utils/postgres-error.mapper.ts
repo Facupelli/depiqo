@@ -1,5 +1,6 @@
 // Postgres error code for exclusion constraint violation (gist overlap)
 const PG_EXCLUSION_VIOLATION = '23P01';
+const PRISMA_RAW_QUERY_FAILED = 'P2010';
 const PG_FOREIGN_KEY_VIOLATION = 'P2003';
 
 /**
@@ -7,22 +8,43 @@ const PG_FOREIGN_KEY_VIOLATION = 'P2003';
  * Callers catch this specifically — it is not a generic DB error.
  */
 export class PostgresExclusionViolationError extends Error {
-  constructor() {
-    super('A database exclusion constraint was violated.');
+  constructor(cause: unknown) {
+    super('A database exclusion constraint was violated.', { cause });
     this.name = 'PostgresExclusionViolationError';
   }
 }
 
 export function isForeignKeyConstraintError(error: unknown): boolean {
-  return isPostgresError(error) && error.code === PG_FOREIGN_KEY_VIOLATION;
+  return isErrorWithCode(error) && error.code === PG_FOREIGN_KEY_VIOLATION;
 }
 
-type PostgresError = {
+type ErrorWithCode = {
   code: string;
 };
 
-function isPostgresError(error: unknown): error is PostgresError {
-  return typeof error === 'object' && error !== null && 'code' in error;
+function isErrorWithCode(error: unknown): error is ErrorWithCode {
+  return isRecord(error) && typeof error.code === 'string';
+}
+
+function isPrismaWrappedPostgresExclusionViolation(error: unknown): boolean {
+  if (!isRecord(error) || error.code !== PRISMA_RAW_QUERY_FAILED || !isRecord(error.meta)) {
+    return false;
+  }
+
+  const driverAdapterError = error.meta.driverAdapterError;
+  if (!isRecord(driverAdapterError) || !isRecord(driverAdapterError.cause)) {
+    return false;
+  }
+
+  const adapterCause = driverAdapterError.cause;
+  return (
+    adapterCause.kind === 'postgres' &&
+    (adapterCause.code === PG_EXCLUSION_VIOLATION || adapterCause.originalCode === PG_EXCLUSION_VIOLATION)
+  );
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
 }
 
 /**
@@ -37,8 +59,11 @@ function isPostgresError(error: unknown): error is PostgresError {
  *   }
  */
 export function mapPostgresError(error: unknown): never {
-  if (isPostgresError(error) && error.code === PG_EXCLUSION_VIOLATION) {
-    throw new PostgresExclusionViolationError();
+  if (
+    (isErrorWithCode(error) && error.code === PG_EXCLUSION_VIOLATION) ||
+    isPrismaWrappedPostgresExclusionViolation(error)
+  ) {
+    throw new PostgresExclusionViolationError(error);
   }
   throw error;
 }

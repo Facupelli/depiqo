@@ -5,8 +5,12 @@
       "path": "apps/backend",
     },
     {
-      "name": "Frontend",
-      "path": "apps/web",
+     "name": "Backoffice",
+     "path": "apps/backoffice"
+    },
+    {
+     "name": "Storefront",
+     "path": "apps/storefront"
     },
     {
       "name": "Packages",

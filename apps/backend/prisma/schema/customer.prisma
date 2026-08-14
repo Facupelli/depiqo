@@ -45,7 +45,6 @@ model Customer {
   profile            CustomerProfile?
   tenant             Tenant                   @relation(fields: [tenantId], references: [id])
   orders             Order[]
-  signingRequests    DocumentSigningRequest[]
   restrictedCoupons  Coupon[]
   couponRedemptions  CouponRedemption[]
   externalIdentities ExternalIdentity[]
@@ -79,10 +78,6 @@ model CustomerProfile {
   company      String?
   taxId        String? @map("tax_id")
   businessName String? @map("business_name")
-
-  // Bank
-  bankName      String @map("bank_name")
-  accountNumber String @map("account_number")
 
   // Acquisition
   instagram             String?

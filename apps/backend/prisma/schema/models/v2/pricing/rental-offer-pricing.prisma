@@ -1,0 +1,16 @@
+model V2RentalOfferPricing {
+  id                   String    @id @default(uuid())
+  tenantId             String    @map("tenant_id")
+  catalogRentalOfferId String    @unique @map("catalog_rental_offer_id")
+  ratePlanId           String    @map("rate_plan_id")
+  isActive             Boolean   @default(true) @map("is_active")
+  deletedAt            DateTime? @map("deleted_at") @db.Timestamptz(3)
+  createdAt            DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt            DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  ratePlan V2RatePlan @relation(fields: [ratePlanId], references: [id])
+
+  @@index([tenantId, isActive, deletedAt])
+  @@index([ratePlanId])
+  @@map("v2_rental_offer_pricings")
+}

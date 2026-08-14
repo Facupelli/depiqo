@@ -6,34 +6,53 @@ Run commands from `apps/backend/` unless there is a clear reason to run from the
 
 Use `pnpm`.
 
-Common backend commands:
+## Commands
 
-- `pnpm build`
-- `pnpm lint`
-- `pnpm test`
-- `pnpm test:integration`
-- `pnpm test:e2e`
+Backend-local:
 
-Workspace commands:
+- `pnpm run build`
+- `pnpm run lint`
+- `pnpm run test`
+- `pnpm run test:integration`
+- `pnpm run test:e2e`
 
-- `pnpm build`
-- `pnpm lint`
+## Documentation Map
 
-Use `docs/constitution/` as the source of truth for project mission, technical direction, and architectural decisions.
+Use these docs as the routing table.
 
-Use `docs/agent-rules/` as the source of truth for implementation rules, invariants, and examples.
+| Need | Read |
+| --- | --- |
+| Product mission / technical direction | `apps/backend/docs/constitution/` |
+| Architecture overview / module boundary rules (cross-module read/write prohibitions) | `apps/backend/docs/architecture/overview.md` |
+| Temporal field semantics, timezone ownership, and PostgreSQL mappings | `apps/backend/docs/architecture/temporal-semantics.md` |
+| Architecture decisions | `apps/backend/docs/architecture/adr/` |
+| Implementation rules by artifact type (repository vs direct Prisma, transactions) | `apps/backend/docs/implementation-rules/README.md` |
+| Module-specific domain boundaries | `apps/backend/src/modules/*/README.md` |
+| Cross-module collaboration and published boundaries | `apps/backend/docs/architecture/overview.md`, then the owning module's `public-api/` boundary |
 
-Start with `docs/agent-rules/architecture.md` only when you need implementation-rule navigation. Then load any additional artifact-specific rule documents from `docs/agent-rules/` as needed for the code you are changing.
+## Implementation Rule Navigation
 
-Use existing backend skills for specialized workflows:
+Start with:
 
-- `backend-use-case-implementation` for command/query/controller/repository use-case work
-- `prisma-domain-change-safely` for changes that cross Prisma, mappers, and domain entities
-- `module-boundary-review` for auditing cross-module interactions and public contracts
-- `backend-testing-selection` for choosing the smallest effective verification command
+```text
+apps/backend/docs/implementation-rules/README.md
+```
 
-Use `docs/system-explanations/` for subsystem behavior and architecture references when working in a specific area of the product.
+Then load only the artifact-specific rule docs needed for the change, such as command, query, controller, repository, mapper, DTO, domain error, entity, aggregate, value object, domain service, domain event, or testing rules.
 
-Use `docs/system-explanations/rental-domain-model.md` as the overview for rental-domain concepts, then load the linked focused docs as needed.
+## Cross-Module Work
 
-`AGENTS.md` is only an entrypoint and routing guide. Do not duplicate detailed rules here if they already exist in the docs.
+Design cross-module work using the decision in `docs/architecture/overview.md`: use a synchronous published capability for an authoritative result needed now, an Integration Event for independently reactable completed facts, or a consumer-owned projection for repeated foreign facts where justified eventual consistency provides a concrete benefit. Do not require a new method on one module-wide `*.public-api.ts`; use the owning module's published/public boundary.
+
+## Backend Skills
+
+Use `backend-use-case-implementation` for backend command/query/controller/repository/use-case work.
+
+## Module Docs
+
+When working inside a module, read that module's README first:
+
+```text
+apps/backend/src/modules/<module>/README.md
+```
+

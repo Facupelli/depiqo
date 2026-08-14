@@ -1,0 +1,2 @@
+ALTER TABLE "v2_rentals"
+ADD COLUMN "version" INTEGER NOT NULL DEFAULT 0;

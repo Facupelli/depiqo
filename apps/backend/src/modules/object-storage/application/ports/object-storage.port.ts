@@ -11,8 +11,13 @@ export interface GetObjectInput {
   key: string;
 }
 
+export interface DeleteObjectInput {
+  key: string;
+}
+
 export abstract class ObjectStoragePort {
   abstract putObject(input: PutObjectInput): Promise<void>;
   abstract getObjectBuffer(input: GetObjectInput): Promise<Buffer>;
   abstract getObjectStream(input: GetObjectInput): Promise<Readable>;
+  abstract deleteObject(input: DeleteObjectInput): Promise<void>;
 }

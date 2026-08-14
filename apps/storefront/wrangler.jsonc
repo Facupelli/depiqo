@@ -1,0 +1,47 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "repo-storefront",
+  "compatibility_date": "2025-09-02",
+  "compatibility_flags": ["nodejs_compat"],
+  "main": "@tanstack/react-start/server-entry",
+  "observability": {
+    "enabled": true,
+  },
+  "vars": {
+    "BACKEND_URL": "https://api.depiqo.com",
+    "PUBLIC_SIGNING_ORIGIN": "https://sign.depiqo.com",
+    "STOREFRONT_TENANT_JWT_ISSUER": "storefront-bff",
+    "STOREFRONT_TENANT_JWT_AUDIENCE": "nestjs-api",
+    "VITE_R2_PUBLIC_URL": "https://equipment.depiqo.com",
+    "VITE_BRANDING_R2_PUBLIC_URL": "https://branding.depiqo.com",
+    "VITE_GOOGLE_CLIENT_ID": "95835950658-d0n7ngg3kb1a582345erhldulp89m2e2.apps.googleusercontent.com",
+    "VITE_SHARED_AUTH_ORIGIN": "https://auth.depiqo.com",
+    "NODE_ENV": "production",
+  },
+  "routes": [
+    {
+      "pattern": "sign.depiqo.com",
+      "zone_name": "depiqo.com",
+      "custom_domain": true,
+    },
+    {
+      "pattern": "auth.depiqo.com",
+      "zone_name": "depiqo.com",
+      "custom_domain": true,
+    },
+    {
+      "pattern": "depiqo.com",
+      "zone_name": "depiqo.com",
+      "custom_domain": true,
+    },
+    // Intended production ownership: tenant, default, and verified custom
+    // Storefront hosts -> repo-storefront. The production migration must retain
+    // an explicit, higher-precedence app.depiqo.com route for repo-backoffice.
+    {
+      "pattern": "*/*",
+      "zone_name": "depiqo.com",
+    },
+  ],
+  "workers_dev": true,
+  "preview_urls": true,
+}

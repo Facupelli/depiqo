@@ -1,0 +1,36 @@
+import type { AssignRentalAccessoriesResponseDto } from "@repo/api-contracts";
+import type { MutationOptions } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
+import type { ProblemDetailsError } from "@/shared/errors";
+import { rentalKeys } from "../rentals.queries";
+import {
+	type AssignRentalAccessoriesVariables,
+	assignRentalAccessories,
+} from "./assign-rental-accessories.api";
+
+type AssignRentalAccessoriesOptions = Omit<
+	MutationOptions<
+		AssignRentalAccessoriesResponseDto,
+		ProblemDetailsError,
+		AssignRentalAccessoriesVariables
+	>,
+	"mutationFn" | "mutationKey"
+>;
+
+export function useAssignRentalAccessories(
+	options?: AssignRentalAccessoriesOptions,
+) {
+	return useMutation<
+		AssignRentalAccessoriesResponseDto,
+		ProblemDetailsError,
+		AssignRentalAccessoriesVariables
+	>({
+		...options,
+		mutationFn: assignRentalAccessories,
+		meta: {
+			invalidates: (variables: AssignRentalAccessoriesVariables) =>
+				rentalKeys.detail(variables.rentalId),
+			...options?.meta,
+		},
+	});
+}

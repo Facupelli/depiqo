@@ -1,0 +1,131 @@
+import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
+import { err, ok, Result } from 'neverthrow';
+
+import { PrismaUnitOfWork } from 'src/core/database/prisma-unit-of-work';
+
+import { toAssetInventoryIntegrationEvents } from '../../application/asset-inventory-integration-event.mapper';
+import { AssetCreationValidatorService } from '../../application/services/asset-creation-validator.service';
+import { Asset } from '../../domain/asset.entity';
+import { EquipmentTypeNotFoundError } from '../../domain/errors/asset-inventory.errors';
+import { AssetRepository } from '../../persistence/asset.repository';
+import { EquipmentTypeRepository } from '../../persistence/equipment-type.repository';
+import { BranchFacts } from 'src/modules/tenant-management/public-api/branch-facts.public-api';
+import { TenantOperationalFacts } from 'src/modules/tenant-management/public-api/tenant-operational-facts.public-api';
+import { AssetBranchReferenceValidatorService } from '../../application/services/asset-branch-reference-validator.service';
+import { AddAssetsToEquipmentTypeCommand } from './add-assets-to-equipment-type.command';
+import {
+  AddAssetsToEquipmentTypeError,
+  mapAssetInventoryError,
+  mapTenantValidationError,
+} from './add-assets-to-equipment-type.errors';
+
+type OperationalSetupValidationError = { code: 'TenantUnavailable' | 'BranchUnavailable'; message: string };
+
+async function validateOperationalSetup(
+  tenantOperationalFacts: TenantOperationalFacts,
+  branchFacts: BranchFacts,
+  tenantId: string,
+  branchIds: string[],
+): Promise<Result<void, OperationalSetupValidationError>> {
+  const tenant = await tenantOperationalFacts.getTenantOperationalFacts({ tenantId });
+  if (tenant.isErr()) return err({ code: 'TenantUnavailable', message: tenant.error.message });
+  const branches = await branchFacts.getBranchFactsBatch({ tenantId, branchIds });
+  if (branches.isErr()) return err({ code: 'BranchUnavailable', message: branches.error.message });
+  const unavailable = branches.value.find((branch) => !branch.isActive || branch.isDeleted);
+  return unavailable
+    ? err({ code: 'BranchUnavailable', message: `Branch "${unavailable.branchId}" is unavailable.` })
+    : ok(undefined);
+}
+
+export type AddAssetsToEquipmentTypeServiceResult = Result<
+  {
+    assetIds: string[];
+  },
+  AddAssetsToEquipmentTypeError
+>;
+
+@CommandHandler(AddAssetsToEquipmentTypeCommand)
+export class AddAssetsToEquipmentTypeHandler implements ICommandHandler<
+  AddAssetsToEquipmentTypeCommand,
+  AddAssetsToEquipmentTypeServiceResult
+> {
+  constructor(
+    private readonly tenantOperationalFacts: TenantOperationalFacts,
+    private readonly branchFacts: BranchFacts,
+    private readonly assetBranchReferenceValidator: AssetBranchReferenceValidatorService,
+    private readonly equipmentTypeRepository: EquipmentTypeRepository,
+    private readonly assetRepository: AssetRepository,
+    private readonly assetCreationValidator: AssetCreationValidatorService,
+    private readonly unitOfWork: PrismaUnitOfWork,
+  ) {}
+
+  async execute(command: AddAssetsToEquipmentTypeCommand): Promise<AddAssetsToEquipmentTypeServiceResult> {
+    const branchIds = [...new Set(command.assets.map((asset) => asset.branchId))];
+
+    const tenantValidation = await validateOperationalSetup(
+      this.tenantOperationalFacts,
+      this.branchFacts,
+      command.tenantId,
+      branchIds,
+    );
+    if (tenantValidation.isErr()) {
+      return err(mapTenantValidationError(tenantValidation.error));
+    }
+
+    const branchValidation = await this.assetBranchReferenceValidator.validateOperationalBranches({
+      tenantId: command.tenantId,
+      branchIds,
+    });
+    if (branchValidation.isErr()) {
+      return err(mapTenantValidationError(branchValidation.error));
+    }
+
+    const equipmentType = await this.equipmentTypeRepository.loadByIdForTenant({
+      tenantId: command.tenantId,
+      equipmentTypeId: command.equipmentTypeId,
+    });
+    if (!equipmentType) {
+      return err(mapAssetInventoryError(new EquipmentTypeNotFoundError(command.equipmentTypeId)));
+    }
+
+    const assetCreationValidation = await this.assetCreationValidator.validateAssetsCanBeCreated({
+      tenantId: command.tenantId,
+      assets: command.assets,
+    });
+    if (assetCreationValidation.isErr()) {
+      return err(mapAssetInventoryError(assetCreationValidation.error));
+    }
+
+    const assets: Asset[] = [];
+    for (const assetInput of command.assets) {
+      const ownerId = assetInput.ownerId?.trim() || null;
+      const asset = Asset.create({
+        tenantId: command.tenantId,
+        equipmentTypeId: equipmentType.id,
+        branchId: assetInput.branchId,
+        serialNumber: assetInput.serialNumber,
+        notes: assetInput.notes,
+        ownerId,
+        ownerContractSnapshot: ownerId
+          ? assetCreationValidation.value.ownerContractSnapshotsByOwnerId.get(ownerId)
+          : null,
+      });
+
+      if (asset.isErr()) {
+        return err(mapAssetInventoryError(asset.error));
+      }
+
+      assets.push(asset.value);
+    }
+
+    await this.unitOfWork.runInTransaction(async ({ tx, integrationEvents }) => {
+      await this.assetRepository.createMany(assets, tx);
+
+      for (const asset of assets) {
+        integrationEvents.collect(toAssetInventoryIntegrationEvents(asset.pullDomainEvents()));
+      }
+    });
+
+    return ok({ assetIds: assets.map((asset) => asset.id) });
+  }
+}

@@ -1,8 +1,9 @@
 import { Injectable } from '@nestjs/common';
+import { PinoLogger } from 'nestjs-pino';
 
-import { DomainEventsCollector } from '../domain/events/domain-events.collector';
-import { DomainEventPublisher } from '../domain/events/domain-event.publisher';
-import { InMemoryDomainEventsCollector } from '../domain/events/in-memory-domain-events.collector';
+import { InMemoryIntegrationEventsCollector } from '../domain/events/in-memory-integration-events.collector';
+import { IntegrationEventPublisher } from '../domain/events/integration-event.publisher';
+import { IntegrationEventsCollector } from '../domain/events/integration-events.collector';
 
 import { PrismaService } from './prisma.service';
 
@@ -15,32 +16,44 @@ export type PrismaTransactionClient = Parameters<PrismaService['client']['$trans
 
 export interface PrismaTransactionContext {
   tx: PrismaTransactionClient;
-  events: DomainEventsCollector;
+  integrationEvents: IntegrationEventsCollector;
 }
 
 @Injectable()
 export class PrismaUnitOfWork {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly domainEventPublisher: DomainEventPublisher,
-  ) {}
+    private readonly integrationEventPublisher: IntegrationEventPublisher,
+    private readonly logger: PinoLogger,
+  ) {
+    this.logger.setContext(PrismaUnitOfWork.name);
+  }
 
   async runInTransaction<T>(work: (context: PrismaTransactionContext) => Promise<T>): Promise<T> {
-    const events = new InMemoryDomainEventsCollector();
+    const integrationEvents = new InMemoryIntegrationEventsCollector();
 
     const result = await this.prisma.client.$transaction(async (tx) => {
-      return work({ tx, events });
+      return work({ tx, integrationEvents });
     });
 
-    const recordedEvents = events.drain();
-    if (recordedEvents.length === 0) {
+    const recordedIntegrationEvents = integrationEvents.drain();
+    if (recordedIntegrationEvents.length === 0) {
       return result;
     }
 
     try {
-      await this.domainEventPublisher.publish(recordedEvents);
-    } catch {}
+      await this.integrationEventPublisher.publish(recordedIntegrationEvents);
+    } catch (error) {
+      this.logger.error(
+        { err: toError(error), integrationEventCount: recordedIntegrationEvents.length },
+        'Integration event publication failed after transaction commit',
+      );
+    }
 
     return result;
   }
+}
+
+function toError(value: unknown): Error {
+  return value instanceof Error ? value : new Error('A non-Error value was thrown.', { cause: value });
 }
