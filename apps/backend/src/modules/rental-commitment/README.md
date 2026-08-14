@@ -234,7 +234,7 @@ Pricing owns current pricing rules and proposed price calculations.
 
 Rental Commitment owns the confirmed price snapshot and must not query Pricing tables later to reconstruct an accepted price. Its `AcceptedRentalPricingFacts` capability publishes only accepted total money, charged units, and an optional common billing unit from that persisted snapshot. Consumers must not use it to recalculate pricing or depend on Pricing internals.
 
-`RentalPhysicalAssignments` publishes the current Rental Commitment assignment relationship between each demand line and its ordered assigned Asset references. It publishes neither demand presentation facts nor Asset Inventory profile facts. Accessory physical assignments remain a deferred extension: their distinct accessory-selection target is not published by this capability, and they do not appear on Remitos.
+`RentalPhysicalAssignments` publishes the current Rental Commitment assignment relationship between each demand line or accessory selection and its ordered assigned Asset references. It publishes neither demand presentation facts nor Asset Inventory profile facts. Consumers resolve current physical display facts, such as serial numbers, through Asset Inventory's display-facts capability.
 
 Asset Inventory owns equipment types and the current physical profile, condition, ownership, location, and assignment-relevant facts of assets.
 

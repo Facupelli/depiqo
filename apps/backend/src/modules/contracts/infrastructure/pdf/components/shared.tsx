@@ -1,10 +1,7 @@
 import React from 'react';
 import { Image, StyleSheet, Text, View } from '@react-pdf/renderer';
 
-import {
-  RentalRemitoIncludedItem,
-  SignedContractSummary,
-} from '../../../application/rental-remito/rental-remito-pdf-data';
+import { SignedContractSummary } from '../../../application/rental-remito/rental-remito-pdf-data';
 
 export const A4_PAGE_SIZE = { width: 595.28, height: 841.89 } as const;
 
@@ -135,10 +132,6 @@ export const sharedStyles = StyleSheet.create({
     justifyContent: 'space-between',
   },
 });
-
-export function formatAccessoryText(item: RentalRemitoIncludedItem): string {
-  return `x${item.quantity} ${item.name}`;
-}
 
 export function HeaderLogo({ logoUrl }: { logoUrl: string | null }) {
   if (!logoUrl) {

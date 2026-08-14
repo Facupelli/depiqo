@@ -45,6 +45,22 @@ export class RentalPhysicalAssignmentsService extends RentalPhysicalAssignments 
             createdAt: 'asc',
           },
         },
+        accessorySelections: {
+          select: {
+            id: true,
+            assignments: {
+              select: {
+                assetId: true,
+              },
+              orderBy: {
+                createdAt: 'asc',
+              },
+            },
+          },
+          orderBy: {
+            createdAt: 'asc',
+          },
+        },
       },
     });
 
@@ -58,6 +74,10 @@ export class RentalPhysicalAssignmentsService extends RentalPhysicalAssignments 
       demandAssignments: rental.demandLines.map((line) => ({
         demandLineId: line.id,
         assignedAssetIds: line.assignedAssets.map((assignment) => assignment.assetId),
+      })),
+      accessoryAssignments: rental.accessorySelections.map((selection) => ({
+        accessorySelectionId: selection.id,
+        assignedAssetIds: selection.assignments.map((assignment) => assignment.assetId),
       })),
     });
   }

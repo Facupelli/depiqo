@@ -143,7 +143,6 @@ export class RentalBudgetDocumentService {
       equipmentLines: selectionsAndDemand.value.demandLines.map((line) => ({
         name: line.equipmentTypeNameSnapshot,
         quantity: line.quantity,
-        includedItems: [],
         serialNumbers: [],
       })),
     };

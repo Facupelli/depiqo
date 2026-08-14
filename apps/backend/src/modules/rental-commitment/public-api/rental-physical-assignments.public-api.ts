@@ -10,8 +10,14 @@ export interface RentalDemandPhysicalAssignment {
   assignedAssetIds: string[];
 }
 
+export interface RentalAccessoryPhysicalAssignment {
+  accessorySelectionId: string;
+  assignedAssetIds: string[];
+}
+
 export interface RentalPhysicalAssignmentsResult {
   demandAssignments: RentalDemandPhysicalAssignment[];
+  accessoryAssignments: RentalAccessoryPhysicalAssignment[];
 }
 
 export interface RentalPhysicalAssignmentsError {

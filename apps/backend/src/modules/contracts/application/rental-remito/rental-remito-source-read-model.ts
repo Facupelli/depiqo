@@ -62,7 +62,7 @@ export interface RentalRemitoSourceEquipmentLine {
 
 export interface RentalRemitoSourceAccessoryLine {
   id: string;
-  sourceRentalDemandLineId: string | null;
   name: string;
   quantity: number;
+  serialNumbers: string[];
 }

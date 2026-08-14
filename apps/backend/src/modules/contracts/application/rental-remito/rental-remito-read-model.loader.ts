@@ -46,7 +46,6 @@ export class RentalRemitoReadModelLoader {
         accessorySelections: {
           select: {
             id: true,
-            sourceRentalDemandLineId: true,
             equipmentTypeNameSnapshot: true,
             quantity: true,
             createdAt: true,
@@ -114,9 +113,20 @@ export class RentalRemitoReadModelLoader {
         assignment.assignedAssetIds,
       ]),
     );
+    const assignedAssetIdsByAccessorySelectionId = new Map(
+      physicalAssignments.value.accessoryAssignments.map((assignment) => [
+        assignment.accessorySelectionId,
+        assignment.assignedAssetIds,
+      ]),
+    );
     const assetDisplayFacts = await this.assetInventoryDisplayFacts.getAssetDisplayFacts({
       tenantId,
-      assetIds: physicalAssignments.value.demandAssignments.flatMap((assignment) => assignment.assignedAssetIds),
+      assetIds: [
+        ...new Set([
+          ...physicalAssignments.value.demandAssignments.flatMap((assignment) => assignment.assignedAssetIds),
+          ...physicalAssignments.value.accessoryAssignments.flatMap((assignment) => assignment.assignedAssetIds),
+        ]),
+      ],
     });
     const serialNumberByAssetId = new Map(assetDisplayFacts.map((asset) => [asset.assetId, asset.serialNumber]));
 
@@ -173,12 +183,18 @@ export class RentalRemitoReadModelLoader {
             .filter((serialNumber): serialNumber is string => Boolean(serialNumber)),
         };
       }),
-      accessoryLines: rental.accessorySelections.map((selection) => ({
-        id: selection.id,
-        sourceRentalDemandLineId: selection.sourceRentalDemandLineId,
-        name: selection.equipmentTypeNameSnapshot,
-        quantity: selection.quantity,
-      })),
+      accessoryLines: rental.accessorySelections.map((selection) => {
+        const assignedAssetIds = assignedAssetIdsByAccessorySelectionId.get(selection.id) ?? [];
+
+        return {
+          id: selection.id,
+          name: selection.equipmentTypeNameSnapshot,
+          quantity: selection.quantity,
+          serialNumbers: assignedAssetIds
+            .map((assetId) => serialNumberByAssetId.get(assetId)?.trim())
+            .filter((serialNumber): serialNumber is string => Boolean(serialNumber)),
+        };
+      }),
     });
   }
 

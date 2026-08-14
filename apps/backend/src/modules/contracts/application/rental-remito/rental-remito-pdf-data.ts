@@ -30,13 +30,7 @@ export type ContractPartyData = {
 export type RentalRemitoEquipmentLine = {
   name: string;
   quantity: number;
-  includedItems: RentalRemitoIncludedItem[];
   serialNumbers: string[];
-};
-
-export type RentalRemitoIncludedItem = {
-  name: string;
-  quantity: number;
 };
 
 export type SignedContractSummary = {

@@ -10,7 +10,6 @@ import {
   A4_PAGE_SIZE,
   ElectronicAcceptanceBlock,
   EmptyCustomerSignatureBlock,
-  formatAccessoryText,
   PageFooter,
   RentalSignatureBlock,
   sharedStyles,
@@ -119,11 +118,6 @@ const s = StyleSheet.create({
     marginBottom: 2,
   },
   equipmentSerialNumbers: {
-    fontSize: 8.8,
-    color: '#111111',
-    lineHeight: 1.35,
-  },
-  equipmentAccessories: {
     fontSize: 8.8,
     color: '#111111',
     lineHeight: 1.35,
@@ -259,7 +253,6 @@ export function RemitoPage({ data, columns, isContinuation = false }: RemitoPage
 
 function EquipmentLineItem({ line }: { line: RentalRemitoEquipmentLine }) {
   const serialNumbersText = line.serialNumbers.join(' · ');
-  const accessoryText = line.includedItems.map(formatAccessoryText).join(', ');
 
   return (
     <View style={s.equipmentItem} wrap={false}>
@@ -267,7 +260,6 @@ function EquipmentLineItem({ line }: { line: RentalRemitoEquipmentLine }) {
         x{line.quantity} {line.name}
       </Text>
       {serialNumbersText.length > 0 && <Text style={s.equipmentSerialNumbers}>{serialNumbersText}</Text>}
-      {accessoryText.length > 0 && <Text style={s.equipmentAccessories}>Con {accessoryText}</Text>}
     </View>
   );
 }

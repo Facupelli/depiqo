@@ -98,11 +98,6 @@
 
 Current behavior uses live serial numbers when rendering and Contracts snapshots the resulting rendered equipment lines.
 
-* [ ] Decide whether accessory physical assignments should appear on Remitos.
-
-  * Rental Commitment supports accessory assignments.
-  * Current Remito output does not render their serials/assets.
-
 * [ ] Decide whether Budget PDFs require a durable Contracts-owned historical snapshot.
 
   * Remitos snapshot consumed legal facts.

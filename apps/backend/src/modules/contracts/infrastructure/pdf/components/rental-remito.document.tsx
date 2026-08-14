@@ -5,7 +5,6 @@ import {
   RentalRemitoEquipmentLine,
   RentalRemitoPdfData,
 } from '../../../application/rental-remito/rental-remito-pdf-data';
-import { formatAccessoryText } from './shared';
 import { LegalAnnexPage } from './legal-annex-page.component';
 import { RemitoPage } from './remito-page.component';
 
@@ -13,10 +12,8 @@ const FIRST_PAGE_CONTENT_HEIGHT = 600;
 const CONTINUATION_PAGE_CONTENT_HEIGHT = 700;
 const ITEM_BASE_HEIGHT = 18;
 const ITEM_NAME_LINE_HEIGHT = 14;
-const ITEM_ACCESSORY_LINE_HEIGHT = 12;
 const ITEM_SERIAL_NUMBER_LINE_HEIGHT = 12;
 const COLUMN_CHAR_WIDTH = 33;
-const ACCESSORY_CHAR_WIDTH = 50;
 const SERIAL_NUMBER_CHAR_WIDTH = 50;
 const ITEM_VERTICAL_GAP = 11;
 
@@ -90,7 +87,6 @@ function createEmptyPage() {
 
 function estimateItemHeight(line: RentalRemitoEquipmentLine): number {
   const serialNumbersText = line.serialNumbers.join(' · ');
-  const accessoriesText = line.includedItems.map(formatAccessoryText).join(', ');
   const nameText = `x${line.quantity} ${line.name}`;
 
   const nameLines = Math.max(1, Math.ceil(nameText.length / COLUMN_CHAR_WIDTH));
@@ -98,14 +94,10 @@ function estimateItemHeight(line: RentalRemitoEquipmentLine): number {
     serialNumbersText.length > 0
       ? Math.max(1, Math.ceil(serialNumbersText.length / SERIAL_NUMBER_CHAR_WIDTH))
       : 0;
-  const accessoryLines =
-    accessoriesText.length > 0 ? Math.max(1, Math.ceil(`Con ${accessoriesText}`.length / ACCESSORY_CHAR_WIDTH)) : 0;
-
   return (
     ITEM_BASE_HEIGHT +
     nameLines * ITEM_NAME_LINE_HEIGHT +
     serialNumberLines * ITEM_SERIAL_NUMBER_LINE_HEIGHT +
-    accessoryLines * ITEM_ACCESSORY_LINE_HEIGHT +
     ITEM_VERTICAL_GAP
   );
 }

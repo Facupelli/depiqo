@@ -175,7 +175,7 @@ Notification delivery failure must not change contract signing truth unless the 
 
 Rental Commitment owns rental lifecycle, confirmation, selections, demand lines, assignments, blocks, and accepted rental snapshots.
 
-Contracts composes the provider-owned Rental Commitment capabilities it needs to generate documents, including current lifecycle facts, accepted pricing facts, committed selections/demand, and physical assignments. Remito composition joins committed demand snapshots with assigned Asset references, then obtains current serial numbers from Asset Inventory display facts. It does not become their owner.
+Contracts composes the provider-owned Rental Commitment capabilities it needs to generate documents, including current lifecycle facts, accepted pricing facts, committed selections/demand, and physical assignments. Remito composition joins committed demand and accessory-selection snapshots with their assigned Asset references, then obtains current serial numbers from Asset Inventory display facts. It does not become their owner.
 
 Contracts must not use live Pricing calculations or current Asset Inventory data when accepted rental snapshots already contain the facts required for the document.
 

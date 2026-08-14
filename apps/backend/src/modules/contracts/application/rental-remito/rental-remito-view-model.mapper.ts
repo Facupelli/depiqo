@@ -53,29 +53,18 @@ export class RentalRemitoViewModelMapper {
   }
 
   private mapEquipmentLines(source: RentalRemitoSourceReadModel): RentalRemitoEquipmentLine[] {
-    const accessoriesByDemandLineId = new Map<string, RentalRemitoEquipmentLine['includedItems']>();
-
-    for (const accessory of source.accessoryLines) {
-      if (!accessory.sourceRentalDemandLineId) {
-        continue;
-      }
-
-      const existing = accessoriesByDemandLineId.get(accessory.sourceRentalDemandLineId) ?? [];
-
-      existing.push({
+    return [
+      ...source.equipmentLines.map((line) => ({
+        name: line.name,
+        quantity: line.quantity,
+        serialNumbers: line.serialNumbers,
+      })),
+      ...source.accessoryLines.map((accessory) => ({
         name: accessory.name,
         quantity: accessory.quantity,
-      });
-
-      accessoriesByDemandLineId.set(accessory.sourceRentalDemandLineId, existing);
-    }
-
-    return source.equipmentLines.map((line) => ({
-      name: line.name,
-      quantity: line.quantity,
-      includedItems: accessoriesByDemandLineId.get(line.id) ?? [],
-      serialNumbers: line.serialNumbers,
-    }));
+        serialNumbers: accessory.serialNumbers,
+      })),
+    ];
   }
 }
 
