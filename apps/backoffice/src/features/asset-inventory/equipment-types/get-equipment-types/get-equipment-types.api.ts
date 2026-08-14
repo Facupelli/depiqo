@@ -13,10 +13,6 @@ export async function getEquipmentTypes(
 	const parsedQuery = GetEquipmentTypesQuerySchema.parse(query ?? {});
 	const searchParams = new URLSearchParams();
 
-	if (parsedQuery.isActive !== undefined) {
-		searchParams.set("isActive", String(parsedQuery.isActive));
-	}
-
 	if (parsedQuery.search !== undefined) {
 		searchParams.set("search", parsedQuery.search);
 	}

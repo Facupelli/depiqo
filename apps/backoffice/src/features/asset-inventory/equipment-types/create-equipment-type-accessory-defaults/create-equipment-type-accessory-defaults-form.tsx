@@ -53,7 +53,6 @@ export function CreateEquipmentTypeAccessoryDefaultsForm({
 	const debouncedSearch = useDebounce(search, 300);
 	const normalizedSearch = debouncedSearch.trim();
 	const { data: equipmentTypes = [], isFetching } = useEquipmentTypes({
-		isActive: true,
 		limit: 10,
 		...(normalizedSearch ? { search: normalizedSearch } : {}),
 	});
