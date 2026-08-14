@@ -13,7 +13,6 @@ export interface GetRentableItemDetailRequiredEquipmentReadModel {
   equipmentTypeDescription: string | null;
   quantityPerItem: number;
   notes: string | null;
-  isActive: boolean | null;
 }
 
 export interface GetRentableItemDetailRatePlanTierReadModel {
@@ -185,7 +184,6 @@ export class GetRentableItemDetailHandler implements IQueryHandler<
           equipmentTypeDescription: equipmentType?.description ?? null,
           quantityPerItem: requirement.quantityPerItem,
           notes: null,
-          isActive: equipmentType !== undefined,
         };
       }),
       offers: item.rentalOffers.map((offer) => {

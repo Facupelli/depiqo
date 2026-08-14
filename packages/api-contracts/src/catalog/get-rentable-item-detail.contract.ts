@@ -17,7 +17,6 @@ export const GetRentableItemDetailRequiredEquipmentSchema = z.object({
   equipmentTypeDescription: z.string().nullable(),
   quantityPerItem: z.number().int().positive(),
   notes: z.string().nullable(),
-  isActive: z.boolean().nullable(),
 });
 
 export const GetRentableItemDetailRatePlanTierSchema = z.object({
