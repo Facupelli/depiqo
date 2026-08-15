@@ -8,13 +8,12 @@ import type {
 } from "@repo/api-contracts";
 import { useNavigate } from "@tanstack/react-router";
 import { createContext, type ReactNode, useContext } from "react";
+import { useCurrentTenant } from "@/features/tenant-management/tenant/tenant.queries";
 import {
 	type ParsedRentalListItem,
 	useRentals,
-} from "@/features/rental-commitment/rentals/rentals.queries";
-import { useCurrentTenant } from "@/features/tenant-management/tenant/tenant.queries";
+} from "@/modules/rentals/rental.queries";
 import { useBranches } from "@/modules/settings/branches/branches.queries";
-import { Route } from "@/routes/_admin/dashboard/orders";
 import { resolveOperationalTimezone } from "@/shared/timezone/operational-timezone";
 
 export type RentalOrdersListSearch = GetRentalsQueryDto;
@@ -52,10 +51,16 @@ const RentalOrdersListContext = createContext<
 
 export function RentalOrdersListProvider({
 	children,
+	search,
+	onSearchChange,
 }: {
 	children: ReactNode;
+	search: RentalOrdersListSearch;
+	onSearchChange: (
+		updater: (previous: RentalOrdersListSearch) => RentalOrdersListSearch,
+	) => void;
 }) {
-	const value = useRentalOrdersListPage();
+	const value = useRentalOrdersListPage(search, onSearchChange);
 
 	return (
 		<RentalOrdersListContext.Provider value={value}>
@@ -76,9 +81,13 @@ export function useRentalOrdersList() {
 	return context;
 }
 
-function useRentalOrdersListPage(): RentalOrdersListContextValue {
+function useRentalOrdersListPage(
+	search: RentalOrdersListSearch,
+	onSearchChange: (
+		updater: (previous: RentalOrdersListSearch) => RentalOrdersListSearch,
+	) => void,
+): RentalOrdersListContextValue {
 	const navigate = useNavigate();
-	const search = Route.useSearch();
 	const { data, isLoading, isError } = useRentals(search);
 	const { data: branches = [], isLoading: isBranchesLoading } = useBranches();
 	const { data: tenant } = useCurrentTenant();
@@ -91,13 +100,9 @@ function useRentalOrdersListPage(): RentalOrdersListContextValue {
 	const hasActiveFilters = hasActiveRentalOrdersFilters(search);
 
 	function updateSearch(
-		updater: (prev: RentalOrdersListSearch) => RentalOrdersListSearch,
+		updater: (previous: RentalOrdersListSearch) => RentalOrdersListSearch,
 	) {
-		navigate({
-			from: Route.fullPath,
-			to: ".",
-			search: (prev) => updater(prev),
-		});
+		onSearchChange(updater);
 	}
 
 	function resetToFirstPage(

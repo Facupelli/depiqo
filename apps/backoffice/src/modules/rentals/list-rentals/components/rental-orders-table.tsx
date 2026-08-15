@@ -31,11 +31,11 @@ import {
 	ChevronRight,
 	User,
 } from "lucide-react";
-import { getRentalOrderStatusPresentation } from "@/features/rental-commitment/rentals/rental-order-status";
-import type { ParsedRentalListItem } from "@/features/rental-commitment/rentals/rentals.queries";
 import dayjs from "@/lib/dates/dayjs";
 import { formatTimestampInTimezone } from "@/lib/dates/format";
 import { cn } from "@/lib/utils";
+import type { ParsedRentalListItem } from "@/modules/rentals/rental.queries";
+import { getRentalOrderStatusPresentation } from "@/modules/rentals/shared/rental-order-status";
 import { useTenantTimezone } from "@/shared/timezone/operational-timezone.hooks";
 import {
 	formatOrderNumber,

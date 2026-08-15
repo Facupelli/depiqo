@@ -21,16 +21,16 @@ import {
 	CircleUserRound,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import {
-	getRentalOrderStatusPresentation,
-	RENTAL_ORDER_STATUS_LEGEND_ITEMS,
-} from "@/features/rental-commitment/rentals/rental-order-status";
+import dayjs from "@/lib/dates/dayjs";
+import { cn } from "@/lib/utils";
 import type {
 	ParsedGetRentalsCalendarResponse,
 	ParsedRentalsCalendarItem,
-} from "@/features/rental-commitment/rentals/rentals.queries";
-import dayjs from "@/lib/dates/dayjs";
-import { cn } from "@/lib/utils";
+} from "@/modules/rentals/rental.queries";
+import {
+	getRentalOrderStatusPresentation,
+	RENTAL_ORDER_STATUS_LEGEND_ITEMS,
+} from "@/modules/rentals/shared/rental-order-status";
 import { formatOrderNumber } from "@/shared/utils/formatters";
 import {
 	formatOrdersCalendarTooltipDateTime,

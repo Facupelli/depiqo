@@ -1,8 +1,8 @@
 import type { AssignCustomerToDraftRentalResponseDto } from "@repo/api-contracts";
 import type { MutationOptions } from "@tanstack/react-query";
 import { useMutation } from "@tanstack/react-query";
+import { rentalKeys } from "@/modules/rentals/rental.queries";
 import type { ProblemDetailsError } from "@/shared/errors";
-import { rentalKeys } from "../rentals.queries";
 import {
 	type AssignCustomerToDraftRentalVariables,
 	assignCustomerToDraftRental,

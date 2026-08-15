@@ -7,8 +7,8 @@ import { RentalEquipmentSection } from "@/features/rental-commitment/rentals/det
 import { RentalSidebarCards } from "@/features/rental-commitment/rentals/detail/components/rental-sidebar-cards";
 import { RentalDetailProvider } from "@/features/rental-commitment/rentals/detail/rental-detail.context";
 import { rentalDetailViewQueries } from "@/features/rental-commitment/rentals/detail/rental-detail-view.queries";
-import { ordersListSearchSchema } from "@/features/rental-commitment/rentals/get-rentals/orders-list.search";
 import { rentalCustomerQueries } from "@/features/tenant-management/customer/rental-customer.queries";
+import { ordersListSearchSchema } from "@/modules/rentals/list-rentals/rentals-list.search";
 import { AdminRouteError } from "@/shared/components/admin-route-error";
 import { formatOrderNumber } from "@/shared/utils/formatters";
 

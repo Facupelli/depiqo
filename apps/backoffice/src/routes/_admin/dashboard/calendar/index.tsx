@@ -1,8 +1,8 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useCallback } from "react";
 import { z } from "zod";
-import type { OrdersCalendarSearch } from "@/features/rental-commitment/rentals/calendar/orders-calendar.utils";
-import { OrdersCalendarPage } from "@/features/rental-commitment/rentals/calendar/orders-calendar-page";
+import type { OrdersCalendarSearch } from "@/modules/rentals/rental-calendar/orders-calendar.utils";
+import { OrdersCalendarPage } from "@/modules/rentals/rental-calendar/orders-calendar-page";
 import { AdminRouteError } from "@/shared/components/admin-route-error";
 
 const ordersCalendarSearchSchema = z.object({

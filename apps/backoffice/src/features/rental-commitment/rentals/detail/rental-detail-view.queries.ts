@@ -3,8 +3,8 @@ import {
 	type UseQueryOptions,
 	useSuspenseQuery,
 } from "@tanstack/react-query";
+import { rentalKeys } from "@/modules/rentals/rental.queries";
 import type { ProblemDetailsError } from "@/shared/errors";
-import { rentalKeys } from "../rentals.queries";
 import { getRentalDetailViewFn } from "./get-rental-detail-view/get-rental-detail-view.functions";
 import type { GetRentalDetailViewResponseDto } from "./get-rental-detail-view/get-rental-detail-view.schema";
 

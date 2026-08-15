@@ -20,7 +20,7 @@ import { ChevronDown, X } from "lucide-react";
 import {
 	getRentalOrderStatusLabel,
 	RENTAL_ORDER_STATUS_OPTIONS,
-} from "../../rental-order-status";
+} from "@/modules/rentals/shared/rental-order-status";
 import { useRentalOrdersList } from "./rental-orders-list.context";
 
 const ALL_VALUE = "__ALL__";

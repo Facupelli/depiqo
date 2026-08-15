@@ -1,6 +1,6 @@
+import { RENTAL_STATUS_CONFIG } from "@/modules/rentals/shared/rental-status.config";
 import { useTenantTimezone } from "@/shared/timezone/operational-timezone.hooks";
 import { formatOrderNumber } from "@/shared/utils/formatters";
-import { RENTAL_STATUS_CONFIG } from "../../rental-status.config";
 import { useRentalDetailContext } from "../rental-detail.context";
 import { formatRentalDetailDateTime } from "../rental-detail.utils";
 import { RentalDetailActionsMenu } from "./rental-detail-actions-menu";

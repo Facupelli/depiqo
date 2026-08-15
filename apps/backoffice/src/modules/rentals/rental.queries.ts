@@ -14,11 +14,11 @@ import {
 	useQuery,
 } from "@tanstack/react-query";
 import type { Dayjs } from "dayjs";
+import { getRentalDetail } from "@/features/rental-commitment/rentals/detail/get-rental-detail/get-rental-detail.api";
 import dayjs from "@/lib/dates/dayjs";
 import type { ProblemDetailsError } from "@/shared/errors";
-import { getRentalDetail } from "./detail/get-rental-detail/get-rental-detail.api";
-import { getRentals } from "./get-rentals/get-rentals.api";
-import { getRentalsCalendar } from "./get-rentals-calendar/get-rentals-calendar.api";
+import { getRentals } from "./list-rentals/get-rentals.api";
+import { getRentalsCalendar } from "./rental-calendar/get-rentals-calendar.api";
 
 export type ParsedRentalListItem = Omit<
 	GetRentalsItemDto,

@@ -1,6 +1,6 @@
 import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { useRentalsCalendar } from "@/features/rental-commitment/rentals/rentals.queries";
+import { useRentalsCalendar } from "@/modules/rentals/rental.queries";
 import { useBranches } from "@/modules/settings/branches/branches.queries";
 import { useSelectedLocation } from "@/shared/contexts/location/location.hooks";
 import { useSelectedBranchTimezone } from "@/shared/timezone/operational-timezone.hooks";
