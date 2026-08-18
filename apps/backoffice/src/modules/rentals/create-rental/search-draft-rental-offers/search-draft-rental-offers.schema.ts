@@ -37,10 +37,6 @@ export const SearchDraftRentalOffersResponseSchema = z.object({
 	pageSize: z.number().int(),
 });
 
-export type DraftRentalOfferSearchRequirementDto = z.infer<
-	typeof DraftRentalOfferSearchRequirementSchema
->;
-
 export type DraftRentalOfferSearchItemDto = z.infer<
 	typeof DraftRentalOfferSearchItemSchema
 >;

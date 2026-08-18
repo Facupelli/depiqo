@@ -1,9 +1,5 @@
 import type { GetEquipmentTypeDetailResponseDto } from "@repo/api-contracts";
-import {
-	queryOptions,
-	type UseQueryOptions,
-	useQuery,
-} from "@tanstack/react-query";
+import { queryOptions, type UseQueryOptions } from "@tanstack/react-query";
 import type { ProblemDetailsError } from "@/shared/errors";
 import { getEquipmentTypeDetail } from "./get-equipment-type-detail.api";
 
@@ -46,14 +42,3 @@ export const equipmentTypeDetailQueries = {
 			},
 		),
 };
-
-export function useEquipmentTypeDetail<
-	TData = GetEquipmentTypeDetailResponseDto,
->(
-	equipmentTypeId?: string,
-	overrides?: EquipmentTypeDetailQueryOverrides<TData>,
-) {
-	return useQuery(
-		equipmentTypeDetailQueries.detail(equipmentTypeId, overrides),
-	);
-}

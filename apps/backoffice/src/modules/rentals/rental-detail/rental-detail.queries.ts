@@ -1,8 +1,4 @@
-import {
-	queryOptions,
-	type UseQueryOptions,
-	useSuspenseQuery,
-} from "@tanstack/react-query";
+import { queryOptions, type UseQueryOptions } from "@tanstack/react-query";
 import { rentalKeys } from "@/modules/rentals/rental.queries";
 import type { ProblemDetailsError } from "@/shared/errors";
 import { getRentalDetailViewFn } from "./get-rental-detail-view/get-rental-detail-view.functions";
@@ -32,10 +28,3 @@ export const rentalDetailViewQueries = {
 			...overrides,
 		}),
 };
-
-export function useRentalDetailView<TData = GetRentalDetailViewResponseDto>(
-	rentalId: string,
-	overrides?: RentalDetailViewQueryOverrides<TData>,
-) {
-	return useSuspenseQuery(rentalDetailViewQueries.detail(rentalId, overrides));
-}

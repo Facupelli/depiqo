@@ -38,9 +38,6 @@ export const createPackageFormSchema = z.object({
 		),
 });
 
-export type PackageEquipmentFormValues = z.infer<
-	typeof createPackageRequirementFormSchema
->;
 export type CreatePackageFormValues = z.infer<typeof createPackageFormSchema>;
 
 export function createPackageFormDefaultValues(): CreatePackageFormValues {

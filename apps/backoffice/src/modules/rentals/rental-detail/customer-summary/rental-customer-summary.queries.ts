@@ -1,9 +1,5 @@
 import type { GetCustomerSummaryResponseDto } from "@repo/api-contracts";
-import {
-	queryOptions,
-	type UseQueryOptions,
-	useQuery,
-} from "@tanstack/react-query";
+import { queryOptions, type UseQueryOptions } from "@tanstack/react-query";
 import type { ProblemDetailsError } from "@/shared/errors";
 import { getCustomerSummary } from "./get-rental-customer-summary.api";
 
@@ -38,10 +34,3 @@ export const rentalCustomerQueries = {
 			...overrides,
 		}),
 };
-
-export function useCustomerSummary<TData = GetCustomerSummaryResponseDto>(
-	customerId?: string,
-	overrides?: CustomerSummaryQueryOverrides<TData>,
-) {
-	return useQuery(rentalCustomerQueries.summary(customerId, overrides));
-}

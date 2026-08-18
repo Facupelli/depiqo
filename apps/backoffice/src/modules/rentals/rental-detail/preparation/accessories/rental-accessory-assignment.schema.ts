@@ -31,9 +31,6 @@ export const rentalAccessoryAssignmentFormSchema = z.object({
 	groups: z.array(accessoryAssignmentGroupSchema),
 });
 
-export type RentalAccessoryAssignmentItemFormValues = z.infer<
-	typeof accessoryAssignmentItemSchema
->;
 export type RentalAccessoryAssignmentGroupFormValues = z.infer<
 	typeof accessoryAssignmentGroupSchema
 >;

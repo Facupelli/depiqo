@@ -62,13 +62,6 @@ export function usePromotions<TData = GetPromotionsResponseDto>(
 	return useQuery(promotionQueries.list(query, overrides));
 }
 
-export function usePromotion<TData = GetPromotionDetailResponseDto>(
-	promotionId: string,
-	overrides?: PromotionQueryOverrides<TData>,
-) {
-	return useQuery(promotionQueries.detail(promotionId, overrides));
-}
-
 export function useSuspensePromotion<TData = GetPromotionDetailResponseDto>(
 	promotionId: string,
 	overrides?: PromotionQueryOverrides<TData>,

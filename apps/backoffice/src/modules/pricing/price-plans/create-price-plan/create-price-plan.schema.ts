@@ -70,13 +70,6 @@ export function createPricePlanBaseFormDefaultValues(): CreatePricePlanBaseFormV
 	};
 }
 
-export function createPricePlanFormDefaultValues(): CreatePricePlanFormValues {
-	return {
-		...createPricePlanBaseFormDefaultValues(),
-		isActive: true,
-	};
-}
-
 export function toCreatePricePlanDto(
 	values: CreatePricePlanFormValues,
 ): CreateRatePlanBodyDto {

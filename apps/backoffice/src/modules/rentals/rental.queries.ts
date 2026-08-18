@@ -157,13 +157,6 @@ export function useRentals<TData = ParsedGetRentalsResponse>(
 	return useQuery(rentalQueries.list(query, overrides));
 }
 
-export function useRentalDetail<TData = GetRentalDetailResponseDto>(
-	rentalId: string,
-	overrides?: RentalDetailQueryOverrides<TData>,
-) {
-	return useQuery(rentalQueries.detail(rentalId, overrides));
-}
-
 export function useRentalsCalendar<TData = ParsedGetRentalsCalendarResponse>(
 	query?: GetRentalsCalendarQueryDto,
 	overrides?: RentalsCalendarQueryOverrides<TData>,

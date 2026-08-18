@@ -8,13 +8,11 @@ import { emptyToNull } from "@/shared/utils/form.utils";
 import {
 	type BranchFormValues,
 	type BranchScheduleWindowFormValues,
-	branchFormDefaults,
 	branchFormSchema,
 	timeStringToMinutes,
 } from "../branch-form.schema";
 
 export const createBranchFormSchema = branchFormSchema;
-export const createBranchFormDefaults = branchFormDefaults;
 export type CreateBranchFormValues = BranchFormValues;
 
 export function toCreateBranchBodyDto(

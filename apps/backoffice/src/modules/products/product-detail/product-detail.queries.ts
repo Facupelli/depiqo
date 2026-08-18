@@ -1,9 +1,5 @@
 import type { GetRentableItemDetailResponseDto } from "@repo/api-contracts";
-import {
-	queryOptions,
-	type UseQueryOptions,
-	useQuery,
-} from "@tanstack/react-query";
+import { queryOptions, type UseQueryOptions } from "@tanstack/react-query";
 import type { ProblemDetailsError } from "@/shared/errors";
 import { productKeys } from "../products.queries";
 import { getProductDetail } from "./get-product-detail.api";
@@ -35,10 +31,3 @@ export const productDetailQueries = {
 			...overrides,
 		}),
 };
-
-export function useProductDetail<TData = GetRentableItemDetailResponseDto>(
-	rentableItemId?: string,
-	overrides?: ProductDetailQueryOverrides<TData>,
-) {
-	return useQuery(productDetailQueries.detail(rentableItemId, overrides));
-}

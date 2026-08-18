@@ -54,9 +54,6 @@ export type RentalDetailViewDemandLineDto = z.infer<
 export type RentalDetailViewSelectionDto = z.infer<
 	typeof RentalDetailViewSelectionSchema
 >;
-export type RentalDetailViewAccessoryDto = z.infer<
-	typeof RentalDetailViewAccessorySchema
->;
 export type GetRentalDetailViewResponseDto = z.infer<
 	typeof GetRentalDetailViewResponseSchema
 >;
