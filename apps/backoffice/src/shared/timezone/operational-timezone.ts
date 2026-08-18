@@ -1,5 +1,4 @@
 export const DEFAULT_TENANT_TIMEZONE = "UTC";
-export const DEFAULT_OPERATIONAL_TIMEZONE = DEFAULT_TENANT_TIMEZONE;
 
 type ResolveOperationalTimezoneInput = {
 	branchTimezone?: string | null;

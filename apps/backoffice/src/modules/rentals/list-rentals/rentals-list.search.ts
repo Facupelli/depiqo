@@ -29,22 +29,3 @@ export function getDefaultOrdersSort(
 			return { sortBy: "createdAt", sortDirection: "desc" };
 	}
 }
-
-export function hasExplicitOrdersSort(search: GetRentalsQueryDto): boolean {
-	return Boolean(search.sortBy || search.sortDirection);
-}
-
-export function getEffectiveOrdersSort(
-	search: OrdersListSearch,
-): OrdersListSort {
-	const fallback = getDefaultOrdersSort(search.dateLens);
-
-	if (!search.sortBy && !search.sortDirection) {
-		return fallback;
-	}
-
-	return {
-		sortBy: search.sortBy ?? fallback.sortBy,
-		sortDirection: search.sortDirection ?? fallback.sortDirection,
-	};
-}
