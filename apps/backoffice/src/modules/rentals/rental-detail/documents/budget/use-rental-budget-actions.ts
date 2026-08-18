@@ -1,8 +1,8 @@
 import type { GenerateRentalBudgetBodyDto } from "@repo/api-contracts";
 import { useState } from "react";
 import { toast } from "sonner";
-import { generateRentalBudget } from "@/features/contracts/rental-budget/generate-rental-budget/generate-rental-budget.api";
 import { ProblemDetailsError } from "@/shared/errors";
+import { generateRentalBudget } from "./generate-rental-budget.api";
 
 export function useRentalBudgetActions(
 	rentalId: string,

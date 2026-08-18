@@ -1,13 +1,13 @@
 import { useState } from "react";
-import { useRentalBudgetActions } from "@/features/rental-commitment/rentals/detail/hooks/use-rental-budget-actions";
-import { useRentalRemitoActions } from "@/features/rental-commitment/rentals/detail/hooks/use-rental-remito-actions";
-import { useRentalSigningInvitationActions } from "@/features/rental-commitment/rentals/detail/hooks/use-rental-signing-invitation-actions";
+import { useCancelRental } from "../cancel-rental/cancel-rental.mutation";
+import { useConfirmRental } from "../confirm-rental/confirm-rental.mutation";
 import {
 	type RentalBudgetCustomerFormValues,
 	toGenerateRentalBudgetDto,
-} from "@/features/rental-commitment/rentals/detail/rental-budget-customer.schema";
-import { useCancelRental } from "../cancel-rental/cancel-rental.mutation";
-import { useConfirmRental } from "../confirm-rental/confirm-rental.mutation";
+} from "../documents/budget/rental-budget-customer.schema";
+import { useRentalBudgetActions } from "../documents/budget/use-rental-budget-actions";
+import { useRentalRemitoActions } from "../documents/remito/use-rental-remito-actions";
+import { useRentalSigningInvitationActions } from "../documents/signing/use-rental-signing-invitation-actions";
 import { useRentalDetailContext } from "../rental-detail.context";
 
 const CONFIRM_RENTAL_FALLBACK_ERROR =

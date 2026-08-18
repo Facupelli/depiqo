@@ -1,12 +1,12 @@
 import type { SendSigningInvitationResponseDto } from "@repo/api-contracts";
 import type { MutationOptions } from "@tanstack/react-query";
 import { useMutation } from "@tanstack/react-query";
-import { contractKeys } from "@/features/contracts/contracts.queries";
 import type { ProblemDetailsError } from "@/shared/errors";
+import { contractKeys } from "./rental-contract-signing.queries";
 import {
 	type SendSigningInvitationVariables,
 	sendSigningInvitation,
-} from "./send-signing-invitation.api";
+} from "./send-rental-signing-invitation.api";
 
 type SendSigningInvitationOptions = Omit<
 	MutationOptions<

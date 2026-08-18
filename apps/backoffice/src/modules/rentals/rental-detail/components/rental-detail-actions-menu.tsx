@@ -1,5 +1,5 @@
-import { RentalBudgetCustomerDialog } from "@/features/rental-commitment/rentals/detail/components/rental-budget-customer-dialog";
-import { RentalSigningInvitationDialog } from "@/features/rental-commitment/rentals/detail/components/rental-signing-invitation-dialog";
+import { RentalBudgetCustomerDialog } from "../documents/budget/rental-budget-customer-dialog";
+import { RentalSigningInvitationDialog } from "../documents/signing/rental-signing-invitation-dialog";
 import { useRentalDetailActions } from "../hooks/use-rental-detail-actions";
 import { RentalActionsDropdown } from "./rental-actions-dropdown";
 import { RentalCancellationDialog } from "./rental-cancellation-dialog";

@@ -5,7 +5,7 @@ import {
 	useQuery,
 } from "@tanstack/react-query";
 import type { ProblemDetailsError } from "@/shared/errors";
-import { getRentalContractSigningSummary } from "./rental-contract-signing-summary/get-rental-contract-signing-summary.api";
+import { getRentalContractSigningSummary } from "./get-rental-contract-signing-summary.api";
 
 export type RentalContractSigningSummaryQueryOverrides<
 	TData = GetRentalContractSigningSummaryResponseDto,

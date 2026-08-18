@@ -10,11 +10,11 @@ import {
 	User2Icon,
 } from "lucide-react";
 import { type ReactNode, useState } from "react";
-import { RentalContractSigningCard } from "@/features/rental-commitment/rentals/detail/components/rental-contract-signing-card";
 import { useBranchDetail } from "@/modules/settings/branches/branches.queries";
 import { useBranchTimezone } from "@/shared/timezone/operational-timezone.hooks";
 import { formatMoney } from "@/shared/utils/formatters";
 import { AssignCustomerToDraftRentalDialog } from "../assign-customer/assign-customer-to-draft-rental-dialog";
+import { RentalContractSigningCard } from "../documents/signing/rental-contract-signing-card";
 import type { GetRentalDetailViewResponseDto } from "../get-rental-detail-view/get-rental-detail-view.schema";
 import { useRentalDetailContext } from "../rental-detail.context";
 import {

@@ -1,13 +1,13 @@
 import { CheckCircle2, ChevronDown, FileSignature } from "lucide-react";
 import { useState } from "react";
-import { useRentalContractSigningSummary } from "@/features/contracts/contracts.queries";
 import { useRentalDetailContext } from "@/modules/rentals/rental-detail/rental-detail.context";
 import { useTenantTimezone } from "@/shared/timezone/operational-timezone.hooks";
+import { useRentalContractSigningSummary } from "./rental-contract-signing.queries";
 import {
 	formatRentalContractSigningDate,
 	getRentalContractSigningState,
 	getRentalContractSigningToneClasses,
-} from "../rental-contract-signing-summary.utils";
+} from "./rental-contract-signing-summary.utils";
 
 export function RentalContractSigningCard() {
 	const { rental } = useRentalDetailContext();

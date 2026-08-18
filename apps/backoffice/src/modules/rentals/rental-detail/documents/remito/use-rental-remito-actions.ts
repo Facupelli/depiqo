@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { toast } from "sonner";
-import { generateRentalRemito } from "@/features/contracts/rental-remito/generate-rental-remito/generate-rental-remito.api";
 import { ProblemDetailsError } from "@/shared/errors";
+import { generateRentalRemito } from "./generate-rental-remito.api";
 
 export function useRentalRemitoActions(rentalId: string) {
 	const [isOpening, setIsOpening] = useState(false);

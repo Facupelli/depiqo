@@ -12,7 +12,7 @@ import {
 	createRentalSigningInvitationFormDefaults,
 	type RentalSigningInvitationFormValues,
 	rentalSigningInvitationFormSchema,
-} from "../rental-signing-invitation.schema";
+} from "./rental-signing-invitation.schema";
 
 interface RentalSigningInvitationFormProps {
 	defaultValues?: RentalSigningInvitationFormValues;

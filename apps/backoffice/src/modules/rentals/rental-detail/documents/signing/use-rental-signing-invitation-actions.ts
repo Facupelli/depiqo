@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { toast } from "sonner";
-import { useSendSigningInvitation } from "@/features/document-signing/send-signing-invitation/send-signing-invitation.mutation";
 import type { GetRentalDetailViewResponseDto } from "@/modules/rentals/rental-detail/get-rental-detail-view/get-rental-detail-view.schema";
 import { ProblemDetailsError } from "@/shared/errors";
 import {
 	type RentalSigningInvitationFormValues,
 	toRentalSigningInvitationDto,
-} from "../rental-signing-invitation.schema";
+} from "./rental-signing-invitation.schema";
+import { useSendSigningInvitation } from "./send-rental-signing-invitation.mutation";
 
 export type RentalSigningDialogIntent = "send" | "resend";
 

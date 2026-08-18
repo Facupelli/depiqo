@@ -12,7 +12,7 @@ import {
 	createRentalBudgetCustomerFormDefaults,
 	type RentalBudgetCustomerFormValues,
 	rentalBudgetCustomerFormSchema,
-} from "../rental-budget-customer.schema";
+} from "./rental-budget-customer.schema";
 
 interface RentalBudgetCustomerFormProps {
 	isPending: boolean;

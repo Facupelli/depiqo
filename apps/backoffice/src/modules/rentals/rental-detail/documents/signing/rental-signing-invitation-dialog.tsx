@@ -6,9 +6,9 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@repo/ui/components/dialog";
-import type { RentalSigningDialogIntent } from "../hooks/use-rental-signing-invitation-actions";
-import { createRentalSigningInvitationFormDefaults } from "../rental-signing-invitation.schema";
+import { createRentalSigningInvitationFormDefaults } from "./rental-signing-invitation.schema";
 import { RentalSigningInvitationForm } from "./rental-signing-invitation-form";
+import type { RentalSigningDialogIntent } from "./use-rental-signing-invitation-actions";
 
 interface RentalSigningInvitationDialogProps {
 	open: boolean;
