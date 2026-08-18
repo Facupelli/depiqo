@@ -4,30 +4,32 @@ import {
 } from "@repo/api-contracts";
 import { z } from "zod";
 
-export const registerFormSchema = z.object({
-	tenantName: z.string().min(1, "Tenant name is required"),
+export const registerBusinessFormSchema = z.object({
+	businessName: z.string().min(1, "Tenant name is required"),
 	email: z.email("Invalid email"),
 	password: z.string().min(8, "Password must be at least 8 characters"),
 	firstName: z.string().min(1, "First name is required"),
 	lastName: z.string().min(1, "Last name is required"),
 });
 
-export type RegisterFormValues = z.infer<typeof registerFormSchema>;
+export type RegisterBusinessFormValues = z.infer<
+	typeof registerBusinessFormSchema
+>;
 
-export const registerFormDefaults: RegisterFormValues = {
-	tenantName: "",
+export const registerBusinessFormDefaults: RegisterBusinessFormValues = {
+	businessName: "",
 	email: "",
 	password: "",
 	firstName: "",
 	lastName: "",
 };
 
-export function toRegisterDto(
-	values: RegisterFormValues,
+export function toRegisterBusinessDto(
+	values: RegisterBusinessFormValues,
 ): RegisterTenantWithOwnerBodyDto {
 	const dto = {
 		tenant: {
-			name: values.tenantName.trim(),
+			name: values.businessName.trim(),
 		},
 		owner: {
 			name: `${values.firstName.trim()} ${values.lastName.trim()}`,

@@ -7,13 +7,13 @@ import {
 } from "@repo/api-contracts";
 import { apiFetch } from "@/lib/api/api-fetch";
 
-export type RegisterTenantWithOwnerVariables = {
+export type RegisterBusinessVariables = {
 	body: RegisterTenantWithOwnerBodyDto;
 };
 
-export async function registerTenantWithOwner({
+export async function registerBusiness({
 	body,
-}: RegisterTenantWithOwnerVariables): Promise<RegisterTenantWithOwnerResponseDto> {
+}: RegisterBusinessVariables): Promise<RegisterTenantWithOwnerResponseDto> {
 	const parsedBody = RegisterTenantWithOwnerBodySchema.parse(body);
 
 	const response = await apiFetch(registerTenantWithOwnerContract.path, {

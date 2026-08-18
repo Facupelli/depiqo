@@ -4,29 +4,27 @@ import { useMutation } from "@tanstack/react-query";
 import { v2AuthKeys } from "@/auth/auth.queries";
 import type { ProblemDetailsError } from "@/shared/errors";
 import {
-	type RegisterTenantWithOwnerVariables,
-	registerTenantWithOwner,
-} from "./register-tenant-with-owner.api";
+	type RegisterBusinessVariables,
+	registerBusiness,
+} from "./register-business.api";
 
-type RegisterTenantWithOwnerOptions = Omit<
+type RegisterBusinessOptions = Omit<
 	MutationOptions<
 		RegisterTenantWithOwnerResponseDto,
 		ProblemDetailsError,
-		RegisterTenantWithOwnerVariables
+		RegisterBusinessVariables
 	>,
 	"mutationFn" | "mutationKey"
 >;
 
-export function useRegisterTenantWithOwner(
-	options?: RegisterTenantWithOwnerOptions,
-) {
+export function useRegisterBusiness(options?: RegisterBusinessOptions) {
 	return useMutation<
 		RegisterTenantWithOwnerResponseDto,
 		ProblemDetailsError,
-		RegisterTenantWithOwnerVariables
+		RegisterBusinessVariables
 	>({
 		...options,
-		mutationFn: registerTenantWithOwner,
+		mutationFn: registerBusiness,
 		meta: {
 			invalidates: v2AuthKeys.all(),
 			...options?.meta,
