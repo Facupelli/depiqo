@@ -27,7 +27,7 @@ import {
 	type PricePlanOption,
 	PricePlanSelectionForm,
 } from "@/modules/products/product-pricing/price-plan-selection/PricePlanSelectionForm";
-import { useBranches } from "@/modules/settings/branches/branches.queries";
+import { useBranches } from "@/modules/settings/branches/public";
 import { useCreateRentalOfferWithPricing } from "./add-branch-availability.mutation";
 import {
 	createRentalOfferWithPricingBranchFormDefaultValues,

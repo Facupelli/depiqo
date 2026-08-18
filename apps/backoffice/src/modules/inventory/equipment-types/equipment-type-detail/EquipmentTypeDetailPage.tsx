@@ -26,7 +26,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { type ReactNode, useId, useState } from "react";
 import { formatTimestampInTimezone } from "@/lib/dates/format";
 import { useOwnerOptions } from "@/modules/inventory/ownership/owner-options.queries";
-import { useBranches } from "@/modules/settings/branches/branches.queries";
+import { useBranches } from "@/modules/settings/branches/public";
 import { useTenantTimezone } from "@/shared/timezone/operational-timezone.hooks";
 import { AddAccessorySuggestionsForm } from "../accessory-suggestions/AddAccessorySuggestionsForm";
 import { useAddAccessorySuggestions } from "../accessory-suggestions/add-accessory-suggestions.mutation";

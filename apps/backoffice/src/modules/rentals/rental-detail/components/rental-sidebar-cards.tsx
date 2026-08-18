@@ -10,7 +10,7 @@ import {
 	User2Icon,
 } from "lucide-react";
 import { type ReactNode, useState } from "react";
-import { useBranchDetail } from "@/modules/settings/branches/branches.queries";
+import { useBranchDetail } from "@/modules/settings/branches/public";
 import { useBranchTimezone } from "@/shared/timezone/operational-timezone.hooks";
 import { formatMoney } from "@/shared/utils/formatters";
 import { AssignCustomerToDraftRentalDialog } from "../assign-customer/assign-customer-to-draft-rental-dialog";

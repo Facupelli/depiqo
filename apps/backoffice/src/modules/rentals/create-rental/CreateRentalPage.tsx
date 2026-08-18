@@ -4,7 +4,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { AlertCircle } from "lucide-react";
 import { useCurrentBranchId } from "@/application/current-branch/current-branch.hooks";
 import { PageBreadcrumb } from "@/components/detail-id-breadcrumb";
-import { useBranches } from "@/modules/settings/branches/branches.queries";
+import { useBranches } from "@/modules/settings/branches/public";
 import { useAppForm } from "@/shared/contexts/form.context";
 import { useSelectedBranchTimezone } from "@/shared/timezone/operational-timezone.hooks";
 import { useCalculatedDraftRentalPrice } from "./calculate-draft-rental-price.queries";

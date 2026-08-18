@@ -40,7 +40,7 @@ import {
 } from "@/application/current-branch/current-branch.hooks";
 import { currentBusinessQueries } from "@/application/current-business/current-business.queries";
 import { useLogout } from "@/auth/logout/logout.mutation";
-import { branchQueries } from "@/modules/settings/branches/branches.queries";
+import { branchQueries } from "@/modules/settings/branches/public";
 
 export const Route = createFileRoute("/_admin/dashboard")({
 	beforeLoad: async ({ context, location }) => {

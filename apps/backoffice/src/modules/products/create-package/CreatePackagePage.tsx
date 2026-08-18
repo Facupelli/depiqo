@@ -1,8 +1,8 @@
 import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { useEquipmentTypeOptions } from "@/modules/inventory/equipment-types/equipment-type-options.queries";
-import { useBranches } from "@/modules/settings/branches/branches.queries";
-import { useCategories } from "@/modules/settings/categories/categories.queries";
+import { useBranches } from "@/modules/settings/branches/public";
+import { useCategories } from "@/modules/settings/categories/public";
 import { CreatePackageForm } from "./CreatePackageForm";
 import { useCreatePackage } from "./create-package.mutation";
 import { toCreatePackageDto } from "./create-package.schema";

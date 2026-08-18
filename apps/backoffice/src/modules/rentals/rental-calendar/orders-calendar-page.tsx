@@ -2,7 +2,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { useSelectedBranch } from "@/application/current-branch/current-branch.hooks";
 import { useRentalsCalendar } from "@/modules/rentals/rental.queries";
-import { useBranches } from "@/modules/settings/branches/branches.queries";
+import { useBranches } from "@/modules/settings/branches/public";
 import { useSelectedBranchTimezone } from "@/shared/timezone/operational-timezone.hooks";
 import { OrdersCalendar } from "./orders-calendar";
 import {

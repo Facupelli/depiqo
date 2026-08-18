@@ -1,7 +1,7 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useCurrentBranchId } from "@/application/current-branch/current-branch.hooks";
 import { currentBusinessQueries } from "@/application/current-business/current-business.queries";
-import { branchQueries } from "@/modules/settings/branches/branches.queries";
+import { branchQueries } from "@/modules/settings/branches/public";
 import {
 	resolveOperationalTimezone,
 	resolveTenantTimezone,

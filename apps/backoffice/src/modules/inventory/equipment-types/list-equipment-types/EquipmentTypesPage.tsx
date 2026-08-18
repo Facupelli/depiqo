@@ -1,7 +1,7 @@
 import type { GetEquipmentTypeSummariesItemDto } from "@repo/api-contracts";
 import type { PaginationState } from "@tanstack/react-table";
 import { startTransition, useEffect, useState } from "react";
-import { useBranches } from "@/modules/settings/branches/branches.queries";
+import { useBranches } from "@/modules/settings/branches/public";
 import useDebounce from "@/shared/hooks/use-debounce";
 import { CreateEquipmentTypeDialog } from "../create-equipment-type/create-equipment-type-dialog";
 import { useEquipmentTypeSummaries } from "./equipment-type-summaries.queries";

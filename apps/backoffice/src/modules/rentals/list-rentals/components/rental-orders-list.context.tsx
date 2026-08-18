@@ -13,7 +13,7 @@ import {
 	type ParsedRentalListItem,
 	useRentals,
 } from "@/modules/rentals/rental.queries";
-import { useBranches } from "@/modules/settings/branches/branches.queries";
+import { useBranches } from "@/modules/settings/branches/public";
 import { resolveOperationalTimezone } from "@/shared/timezone/operational-timezone";
 
 export type RentalOrdersListSearch = GetRentalsQueryDto;

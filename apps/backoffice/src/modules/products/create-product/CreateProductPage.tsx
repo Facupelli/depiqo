@@ -1,7 +1,7 @@
 import { useNavigate } from "@tanstack/react-router";
 import { useOwnerOptions } from "@/modules/inventory/ownership/owner-options.queries";
-import { useBranches } from "@/modules/settings/branches/branches.queries";
-import { useCategories } from "@/modules/settings/categories/categories.queries";
+import { useBranches } from "@/modules/settings/branches/public";
+import { useCategories } from "@/modules/settings/categories/public";
 import { CreateProductForm } from "./CreateProductForm";
 import { useCreateProduct } from "./create-product.mutation";
 import { toCreateProductDto } from "./create-product.schema";
