@@ -12,14 +12,14 @@ import { Loader2, Plus, Search } from "lucide-react";
 import { useState } from "react";
 import { withForm } from "@/shared/contexts/form.context";
 import useDebounce from "@/shared/hooks/use-debounce";
-import { useDraftRentalOfferSearch } from "../../draft-rental-offers.queries";
-import type { DraftRentalOfferSearchItemDto } from "../../search-draft-rental-offers/search-draft-rental-offers.schema";
 import { useDraftRentalComposer } from "../create-draft-rental-composer.context";
 import {
 	createDraftRentalComposerDefaultValues,
 	createDraftRentalSelectedOffer,
 	type DraftRentalSelectedOfferFormValues,
 } from "../create-draft-rental-composer.schema";
+import { useDraftRentalOfferSearch } from "../draft-rental-offers.queries";
+import type { DraftRentalOfferSearchItemDto } from "../search-draft-rental-offers/search-draft-rental-offers.schema";
 
 export const DraftRentalOfferSearchSection = withForm({
 	defaultValues: createDraftRentalComposerDefaultValues(),

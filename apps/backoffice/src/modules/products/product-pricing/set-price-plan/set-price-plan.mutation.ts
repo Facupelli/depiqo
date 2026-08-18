@@ -1,8 +1,8 @@
 import type { AttachRatePlanToRentalOfferResponseDto } from "@repo/api-contracts";
 import type { MutationOptions } from "@tanstack/react-query";
 import { useMutation } from "@tanstack/react-query";
-import { rentalOfferPricingKeys } from "@/features/pricing/rental-offer-pricings/rental-offer-pricings.queries";
 import { productKeys } from "@/modules/products/products.queries";
+import { rentalOfferPricingKeys } from "@/modules/products/rental-offer-pricing.keys";
 import type { ProblemDetailsError } from "@/shared/errors";
 import {
 	type AttachRatePlanToRentalOfferVariables,

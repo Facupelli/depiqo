@@ -10,7 +10,7 @@ import {
 import { Check, Search, X } from "lucide-react";
 import { useState } from "react";
 import useDebounce from "@/shared/hooks/use-debounce";
-import { useRentalCustomers } from "../rental-customer.queries";
+import { useRentalCustomers } from "./rental-customer-selection.queries";
 
 type RentalCustomerSelectorProps = {
 	value: string;
