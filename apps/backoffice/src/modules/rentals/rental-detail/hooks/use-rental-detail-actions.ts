@@ -96,7 +96,6 @@ export function useRentalDetailActions() {
 			open: signing.isInvitationDialogOpen,
 			onOpenChange: signing.setIsInvitationDialogOpen,
 			defaultEmail: customerSummary?.email,
-			dialogIntent: signing.dialogIntent,
 			submitError: signing.submitError,
 			isPending: signing.isPending,
 			onSubmit: signing.submitInvitation,

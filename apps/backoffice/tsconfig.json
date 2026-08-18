@@ -1,10 +1,6 @@
 {
   "extends": "@repo/typescript-config/base.json",
-  "include": [
-    "**/*.ts",
-    "**/*.tsx",
-    "src/features/customer/components/onboard-form"
-  ],
+  "include": ["**/*.ts", "**/*.tsx"],
   "compilerOptions": {
     "target": "ES2022",
     "jsx": "react-jsx",

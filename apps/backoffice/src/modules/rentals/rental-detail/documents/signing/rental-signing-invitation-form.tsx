@@ -17,7 +17,6 @@ import {
 interface RentalSigningInvitationFormProps {
 	defaultValues?: RentalSigningInvitationFormValues;
 	isPending: boolean;
-	isResend?: boolean;
 	onSubmit: (values: RentalSigningInvitationFormValues) => Promise<void>;
 	onCancel: () => void;
 }
@@ -25,7 +24,6 @@ interface RentalSigningInvitationFormProps {
 export function RentalSigningInvitationForm({
 	defaultValues,
 	isPending,
-	isResend = false,
 	onSubmit,
 	onCancel,
 }: RentalSigningInvitationFormProps) {
@@ -103,12 +101,8 @@ export function RentalSigningInvitationForm({
 							disabled={!canSubmit || isSubmitting || isPending}
 						>
 							{isSubmitting || isPending
-								? isResend
-									? "Reenviando invitación..."
-									: "Enviando invitación..."
-								: isResend
-									? "Reenviar invitación"
-									: "Enviar invitación"}
+								? "Enviando invitación..."
+								: "Enviar invitación"}
 						</Button>
 					)}
 				</form.Subscribe>

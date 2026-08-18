@@ -8,13 +8,11 @@ import {
 } from "@repo/ui/components/dialog";
 import { createRentalSigningInvitationFormDefaults } from "./rental-signing-invitation.schema";
 import { RentalSigningInvitationForm } from "./rental-signing-invitation-form";
-import type { RentalSigningDialogIntent } from "./use-rental-signing-invitation-actions";
 
 interface RentalSigningInvitationDialogProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	defaultEmail: string | null | undefined;
-	dialogIntent: RentalSigningDialogIntent;
 	submitError: string | null;
 	isPending: boolean;
 	onSubmit: Parameters<typeof RentalSigningInvitationForm>[0]["onSubmit"];
@@ -24,20 +22,15 @@ export function RentalSigningInvitationDialog({
 	open,
 	onOpenChange,
 	defaultEmail,
-	dialogIntent,
 	submitError,
 	isPending,
 	onSubmit,
 }: RentalSigningInvitationDialogProps) {
-	const isResend = dialogIntent === "resend";
-
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
 			<DialogContent className="sm:max-w-lg">
 				<DialogHeader>
-					<DialogTitle>
-						{isResend ? "Reenviar remito a firmar" : "Enviar remito a firmar"}
-					</DialogTitle>
+					<DialogTitle>Enviar remito a firmar</DialogTitle>
 					<DialogDescription>
 						Se enviará un enlace seguro por email para revisar y firmar el
 						remito del alquiler.
@@ -58,7 +51,6 @@ export function RentalSigningInvitationDialog({
 								defaultEmail,
 							)}
 							isPending={isPending}
-							isResend={isResend}
 							onSubmit={onSubmit}
 							onCancel={() => onOpenChange(false)}
 						/>

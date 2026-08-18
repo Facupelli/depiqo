@@ -1,5 +1,4 @@
 import {
-	downloadRentalRemitoContract,
 	GenerateRentalRemitoParamsSchema,
 	type GenerateRentalRemitoResponseDto,
 	GenerateRentalRemitoResponseSchema,
@@ -90,13 +89,5 @@ export function generateRentalRemito(
 ): Promise<RentalRemitoPdfResponse> {
 	return fetchRentalRemitoPdf(
 		rentalRemitoPath(generateRentalRemitoContract.path, rentalId),
-	);
-}
-
-export function downloadRentalRemito(
-	rentalId: string,
-): Promise<RentalRemitoPdfResponse> {
-	return fetchRentalRemitoPdf(
-		rentalRemitoPath(downloadRentalRemitoContract.path, rentalId),
 	);
 }

@@ -8,25 +8,14 @@ import {
 } from "./rental-signing-invitation.schema";
 import { useSendSigningInvitation } from "./send-rental-signing-invitation.mutation";
 
-export type RentalSigningDialogIntent = "send" | "resend";
-
 export function useRentalSigningInvitationActions(
 	rental: GetRentalDetailViewResponseDto,
 ) {
 	const [isInvitationDialogOpen, setIsInvitationDialogOpen] = useState(false);
-	const [dialogIntent, setDialogIntent] =
-		useState<RentalSigningDialogIntent>("send");
 	const [submitError, setSubmitError] = useState<string | null>(null);
 	const sendInvitationMutation = useSendSigningInvitation();
 
 	function openSendDialog() {
-		setDialogIntent("send");
-		setSubmitError(null);
-		setIsInvitationDialogOpen(true);
-	}
-
-	function openResendDialog() {
-		setDialogIntent("resend");
 		setSubmitError(null);
 		setIsInvitationDialogOpen(true);
 	}
@@ -49,13 +38,9 @@ export function useRentalSigningInvitationActions(
 			});
 
 			toast.success(
-				dialogIntent === "send"
-					? result.reusedExistingRequest
-						? "La invitación ya estaba activa y fue reenviada."
-						: "Invitación de firma enviada."
-					: result.reusedExistingRequest
-						? "Invitación de firma reenviada."
-						: "Se generó una nueva invitación de firma.",
+				result.reusedExistingRequest
+					? "La invitación ya estaba activa y fue reenviada."
+					: "Invitación de firma enviada.",
 			);
 
 			setIsInvitationDialogOpen(false);
@@ -67,11 +52,9 @@ export function useRentalSigningInvitationActions(
 	return {
 		isInvitationDialogOpen,
 		setIsInvitationDialogOpen: handleInvitationDialogOpenChange,
-		dialogIntent,
 		submitError,
 		isPending: sendInvitationMutation.isPending,
 		openSendDialog,
-		openResendDialog,
 		submitInvitation,
 	};
 }
