@@ -9,7 +9,7 @@ import {
 } from "@repo/ui/components/dialog";
 import { UserPlus } from "lucide-react";
 import { useState } from "react";
-import { useRentalDetailContext } from "../detail/rental-detail.context";
+import { useRentalDetailContext } from "../rental-detail.context";
 import { getAssignCustomerToDraftRentalErrorMessage } from "./assign-customer-to-draft-rental.errors";
 import { useAssignCustomerToDraftRental } from "./assign-customer-to-draft-rental.mutation";
 import {

@@ -1,9 +1,9 @@
+import { RentalBudgetCustomerDialog } from "@/features/rental-commitment/rentals/detail/components/rental-budget-customer-dialog";
+import { RentalSigningInvitationDialog } from "@/features/rental-commitment/rentals/detail/components/rental-signing-invitation-dialog";
 import { useRentalDetailActions } from "../hooks/use-rental-detail-actions";
 import { RentalActionsDropdown } from "./rental-actions-dropdown";
-import { RentalBudgetCustomerDialog } from "./rental-budget-customer-dialog";
 import { RentalCancellationDialog } from "./rental-cancellation-dialog";
 import { RentalConfirmationDialog } from "./rental-confirmation-dialog";
-import { RentalSigningInvitationDialog } from "./rental-signing-invitation-dialog";
 
 export function RentalDetailActionsMenu() {
 	const actions = useRentalDetailActions();

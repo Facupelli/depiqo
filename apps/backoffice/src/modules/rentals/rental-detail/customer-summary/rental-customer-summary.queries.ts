@@ -5,7 +5,7 @@ import {
 	useQuery,
 } from "@tanstack/react-query";
 import type { ProblemDetailsError } from "@/shared/errors";
-import { getCustomerSummary } from "./get-customer-summary/get-customer-summary.api";
+import { getCustomerSummary } from "./get-rental-customer-summary.api";
 
 export type CustomerSummaryQueryOverrides<
 	TData = GetCustomerSummaryResponseDto,

@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { useSendSigningInvitation } from "@/features/document-signing/send-signing-invitation/send-signing-invitation.mutation";
+import type { GetRentalDetailViewResponseDto } from "@/modules/rentals/rental-detail/get-rental-detail-view/get-rental-detail-view.schema";
 import { ProblemDetailsError } from "@/shared/errors";
-import type { GetRentalDetailViewResponseDto } from "../get-rental-detail-view/get-rental-detail-view.schema";
 import {
 	type RentalSigningInvitationFormValues,
 	toRentalSigningInvitationDto,

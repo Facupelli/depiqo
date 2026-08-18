@@ -14,8 +14,8 @@ import {
 	useQuery,
 } from "@tanstack/react-query";
 import type { Dayjs } from "dayjs";
-import { getRentalDetail } from "@/features/rental-commitment/rentals/detail/get-rental-detail/get-rental-detail.api";
 import dayjs from "@/lib/dates/dayjs";
+import { getRentalDetail } from "@/modules/rentals/rental-detail/get-rental-detail/get-rental-detail.api";
 import type { ProblemDetailsError } from "@/shared/errors";
 import { getRentals } from "./list-rentals/get-rentals.api";
 import { getRentalsCalendar } from "./rental-calendar/get-rentals-calendar.api";

@@ -2,8 +2,8 @@ import type {
 	AssetSummaryDto,
 	RentableItemSummaryDto,
 } from "@repo/api-contracts";
-import { getAssetSummaries } from "@/features/asset-inventory/assets/get-asset-summaries/get-asset-summaries.api";
-import { getRentableItemSummaries } from "@/features/catalog/rentable-items/get-rentable-item-summaries/get-rentable-item-summaries.api";
+import { getAssetSummaries } from "@/modules/rentals/rental-detail/equipment-summary/get-rental-equipment-summaries.api";
+import { getRentableItemSummaries } from "@/modules/rentals/rental-detail/product-summary/get-rental-product-summaries.api";
 import { getRentalDetail } from "../get-rental-detail/get-rental-detail.api";
 import type {
 	GetRentalDetailViewInputDto,

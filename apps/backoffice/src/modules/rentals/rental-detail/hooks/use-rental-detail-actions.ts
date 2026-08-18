@@ -1,14 +1,14 @@
 import { useState } from "react";
-import { useCancelRental } from "../../cancel-rental/cancel-rental.mutation";
-import { useConfirmRental } from "../../confirm-rental/confirm-rental.mutation";
+import { useRentalBudgetActions } from "@/features/rental-commitment/rentals/detail/hooks/use-rental-budget-actions";
+import { useRentalRemitoActions } from "@/features/rental-commitment/rentals/detail/hooks/use-rental-remito-actions";
+import { useRentalSigningInvitationActions } from "@/features/rental-commitment/rentals/detail/hooks/use-rental-signing-invitation-actions";
 import {
 	type RentalBudgetCustomerFormValues,
 	toGenerateRentalBudgetDto,
-} from "../rental-budget-customer.schema";
+} from "@/features/rental-commitment/rentals/detail/rental-budget-customer.schema";
+import { useCancelRental } from "../cancel-rental/cancel-rental.mutation";
+import { useConfirmRental } from "../confirm-rental/confirm-rental.mutation";
 import { useRentalDetailContext } from "../rental-detail.context";
-import { useRentalBudgetActions } from "./use-rental-budget-actions";
-import { useRentalRemitoActions } from "./use-rental-remito-actions";
-import { useRentalSigningInvitationActions } from "./use-rental-signing-invitation-actions";
 
 const CONFIRM_RENTAL_FALLBACK_ERROR =
 	"No pudimos confirmar el alquiler. Revisá que tenga cliente, precio calculado y equipos disponibles para el período.";

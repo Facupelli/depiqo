@@ -1,16 +1,10 @@
-import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { PageBreadcrumb } from "@/components/detail-id-breadcrumb";
-import { RentalDetailHeader } from "@/features/rental-commitment/rentals/detail/components/rental-detail-header";
-import { RentalDetailPageSkeleton } from "@/features/rental-commitment/rentals/detail/components/rental-detail-page-skeleton";
-import { RentalEquipmentSection } from "@/features/rental-commitment/rentals/detail/components/rental-equipment-section";
-import { RentalSidebarCards } from "@/features/rental-commitment/rentals/detail/components/rental-sidebar-cards";
-import { RentalDetailProvider } from "@/features/rental-commitment/rentals/detail/rental-detail.context";
-import { rentalDetailViewQueries } from "@/features/rental-commitment/rentals/detail/rental-detail-view.queries";
-import { rentalCustomerQueries } from "@/features/tenant-management/customer/rental-customer.queries";
 import { ordersListSearchSchema } from "@/modules/rentals/list-rentals/rentals-list.search";
+import { RentalDetailPageSkeleton } from "@/modules/rentals/rental-detail/components/rental-detail-page-skeleton";
+import { rentalCustomerQueries } from "@/modules/rentals/rental-detail/customer-summary/rental-customer-summary.queries";
+import { RentalDetailPage } from "@/modules/rentals/rental-detail/RentalDetailPage";
+import { rentalDetailViewQueries } from "@/modules/rentals/rental-detail/rental-detail.queries";
 import { AdminRouteError } from "@/shared/components/admin-route-error";
-import { formatOrderNumber } from "@/shared/utils/formatters";
 
 export const Route = createFileRoute("/_admin/dashboard/orders/$orderId/")({
 	validateSearch: ordersListSearchSchema,
@@ -43,35 +37,6 @@ export const Route = createFileRoute("/_admin/dashboard/orders/$orderId/")({
 function RouteComponent() {
 	const { orderId } = Route.useParams();
 	const search = Route.useSearch();
-	const { data: rental } = useSuspenseQuery(
-		rentalDetailViewQueries.detail(orderId),
-	);
-	const {
-		data: customerSummary = null,
-		isLoading: isCustomerSummaryLoading,
-		isError: isCustomerSummaryError,
-	} = useQuery(rentalCustomerQueries.summary(rental.customerId ?? undefined));
-	return (
-		<div className="min-h-screen bg-neutral-50 text-neutral-950 px-8">
-			<PageBreadcrumb
-				parent={{ label: "Pedidos", to: "/dashboard/orders", search }}
-				current={formatOrderNumber(rental.rentalNumber)}
-			/>
 
-			<RentalDetailProvider
-				rental={rental}
-				customerSummary={customerSummary}
-				isCustomerSummaryLoading={isCustomerSummaryLoading}
-				isCustomerSummaryError={isCustomerSummaryError}
-			>
-				<RentalDetailHeader />
-				<div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] py-10 gap-20">
-					<div>
-						<RentalEquipmentSection />
-					</div>
-					<RentalSidebarCards />
-				</div>
-			</RentalDetailProvider>
-		</div>
-	);
+	return <RentalDetailPage orderId={orderId} ordersSearch={search} />;
 }
