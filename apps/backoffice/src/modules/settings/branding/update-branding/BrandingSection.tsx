@@ -3,12 +3,12 @@ import { Button } from "@repo/ui/components/button";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { ImageOff, LoaderCircle, Trash2, Upload } from "lucide-react";
 import { useState } from "react";
-import { tenantQueries } from "@/features/tenant-management/tenant/tenant.queries";
+import { currentBusinessQueries } from "@/application/current-business/current-business.queries";
 import { buildR2PublicUrl } from "@/lib/r2-public-url";
 import { useUpdateTenantBranding } from "./update-branding.mutation";
 
 export function BrandingSection() {
-	const { data: tenant } = useSuspenseQuery(tenantQueries.current());
+	const { data: business } = useSuspenseQuery(currentBusinessQueries.current());
 	const [failedLogoPath, setFailedLogoPath] = useState<string | null>(null);
 	const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
 	const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -16,8 +16,8 @@ export function BrandingSection() {
 	const { mutateAsync: updateTenantBranding, isPending: isSaving } =
 		useUpdateTenantBranding();
 
-	const logoUrl = tenant.branding.logoUrl;
-	const faviconUrl = tenant.branding.faviconUrl;
+	const logoUrl = business.branding.logoUrl;
+	const faviconUrl = business.branding.faviconUrl;
 	const previewUrl = buildR2PublicUrl(logoUrl, "branding");
 	const showPreview = Boolean(previewUrl && failedLogoPath !== logoUrl);
 
@@ -102,7 +102,7 @@ export function BrandingSection() {
 								<img
 									key={logoUrl ?? "empty-logo"}
 									src={previewUrl ?? undefined}
-									alt={`${tenant.name} logo`}
+									alt={`${business.name} logo`}
 									className="h-full w-full object-contain"
 									onError={() => {
 										if (logoUrl) {

@@ -22,7 +22,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { CircleHelp } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
-import { tenantQueries } from "@/features/tenant-management/tenant/tenant.queries";
+import { currentBusinessQueries } from "@/application/current-business/current-business.queries";
 import { useUpdateTenantConfig } from "@/modules/settings/business-configuration/update-tenant-config.mutation";
 import { ProblemDetailsError } from "@/shared/errors";
 import {
@@ -38,7 +38,7 @@ export type TenantConfigSection = "pricing" | "general" | "insurance";
 
 export function InsuranceSettingsSection() {
 	const section: TenantConfigSection = "insurance";
-	const { data: tenant } = useSuspenseQuery(tenantQueries.current());
+	const { data: business } = useSuspenseQuery(currentBusinessQueries.current());
 	const { mutateAsync: updateConfig, isPending } = useUpdateTenantConfig();
 	const [submitErrorMessage, setSubmitErrorMessage] = useState<string | null>(
 		null,
@@ -65,9 +65,9 @@ export function InsuranceSettingsSection() {
 
 	return (
 		<TenantConfigForm
-			key={tenant.id}
+			key={business.id}
 			section={section}
-			defaultValues={tenantConfigToFormValues(tenant.config)}
+			defaultValues={tenantConfigToFormValues(business.config)}
 			onSubmit={handleSubmit}
 			isPending={isPending}
 			submitErrorMessage={submitErrorMessage}

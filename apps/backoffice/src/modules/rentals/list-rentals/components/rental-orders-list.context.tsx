@@ -8,7 +8,7 @@ import type {
 } from "@repo/api-contracts";
 import { useNavigate } from "@tanstack/react-router";
 import { createContext, type ReactNode, useContext } from "react";
-import { useCurrentTenant } from "@/features/tenant-management/tenant/tenant.queries";
+import { useCurrentBusiness } from "@/application/current-business/current-business.queries";
 import {
 	type ParsedRentalListItem,
 	useRentals,
@@ -90,7 +90,7 @@ function useRentalOrdersListPage(
 	const navigate = useNavigate();
 	const { data, isLoading, isError } = useRentals(search);
 	const { data: branches = [], isLoading: isBranchesLoading } = useBranches();
-	const { data: tenant } = useCurrentTenant();
+	const { data: business } = useCurrentBusiness();
 
 	const rentals = data?.data ?? [];
 	const meta = {
@@ -132,7 +132,7 @@ function useRentalOrdersListPage(
 			resolveOperationalTimezone({
 				branchTimezone: branches.find((branch) => branch.id === branchId)
 					?.timezone,
-				tenantTimezone: tenant?.config.timezone,
+				tenantTimezone: business?.config.timezone,
 			}),
 		setDateLens: (dateLens?: GetRentalsDateLensDto) =>
 			updateSearch((prev) => {

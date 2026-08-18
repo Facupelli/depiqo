@@ -1,5 +1,5 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { tenantQueries } from "@/features/tenant-management/tenant/tenant.queries";
+import { currentBusinessQueries } from "@/application/current-business/current-business.queries";
 import { branchQueries } from "@/modules/settings/branches/branches.queries";
 import { useLocationId } from "@/shared/contexts/location/location.hooks";
 import {
@@ -13,9 +13,9 @@ import {
  * Dashboard routes preload the tenant query consumed here.
  */
 export function useTenantTimezone(): string {
-	const { data: tenant } = useSuspenseQuery(tenantQueries.current());
+	const { data: business } = useSuspenseQuery(currentBusinessQueries.current());
 
-	return resolveTenantTimezone(tenant.config.timezone);
+	return resolveTenantTimezone(business.config.timezone);
 }
 
 /**
@@ -24,13 +24,13 @@ export function useTenantTimezone(): string {
  * Dashboard routes preload the tenant and branch-list queries consumed here.
  */
 export function useBranchTimezone(branchId: string | null | undefined): string {
-	const { data: tenant } = useSuspenseQuery(tenantQueries.current());
+	const { data: business } = useSuspenseQuery(currentBusinessQueries.current());
 	const { data: branches } = useSuspenseQuery(branchQueries.list());
 	const branch = branches.find((candidate) => candidate.id === branchId);
 
 	return resolveOperationalTimezone({
 		branchTimezone: branch?.timezone,
-		tenantTimezone: tenant.config.timezone,
+		tenantTimezone: business.config.timezone,
 	});
 }
 

@@ -33,8 +33,8 @@ import {
 	Users,
 	Warehouse,
 } from "lucide-react";
+import { currentBusinessQueries } from "@/application/current-business/current-business.queries";
 import { useLogout } from "@/auth/logout/logout.mutation";
-import { tenantQueries } from "@/features/tenant-management/tenant/tenant.queries";
 import { branchQueries } from "@/modules/settings/branches/branches.queries";
 import { LocationStoreProvider as BranchStoreProvider } from "@/shared/contexts/location/location.context";
 import {
@@ -64,7 +64,7 @@ export const Route = createFileRoute("/_admin/dashboard")({
 	loader: async ({ context: { queryClient } }) => {
 		await Promise.all([
 			queryClient.ensureQueryData(branchQueries.list()),
-			queryClient.ensureQueryData(tenantQueries.current()),
+			queryClient.ensureQueryData(currentBusinessQueries.current()),
 			// queryClient.ensureQueryData(tenantQueries.me()),
 		]);
 	},
@@ -132,7 +132,7 @@ const sidebarItems: SidebarItem[] = [
 
 function DashboardLayout() {
 	const { user } = Route.useRouteContext();
-	const { data: tenant } = useSuspenseQuery(tenantQueries.current());
+	const { data: business } = useSuspenseQuery(currentBusinessQueries.current());
 	const { data: branches } = useSuspenseQuery(branchQueries.list());
 
 	const branchSelectorData = branches.map((branch) => ({
@@ -146,7 +146,7 @@ function DashboardLayout() {
 				<aside className="sticky top-0 flex h-svh flex-col border-r border-gray-200 bg-neutral-900 p-4 text-white overflow-y-auto">
 					{/* Tenant header */}
 					<div>
-						<p className="font-bold">{tenant.name}</p>
+						<p className="font-bold">{business.name}</p>
 					</div>
 
 					{/* Branch selector */}

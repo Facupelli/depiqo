@@ -5,7 +5,7 @@ import {
 } from "@repo/api-contracts";
 import { apiFetch } from "@/lib/api/api-fetch";
 
-export async function getCurrentTenant(): Promise<GetCurrentTenantResponseDto> {
+export async function getCurrentBusiness(): Promise<GetCurrentTenantResponseDto> {
 	const response = await apiFetch(getCurrentTenantContract.path, {
 		method: getCurrentTenantContract.method,
 	});

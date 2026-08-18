@@ -1,7 +1,7 @@
 import type { UpdateTenantBrandingResponseDto } from "@repo/api-contracts";
 import type { MutationOptions } from "@tanstack/react-query";
 import { useMutation } from "@tanstack/react-query";
-import { tenantKeys } from "@/features/tenant-management/tenant/tenant.queries";
+import { currentBusinessKeys } from "@/application/current-business/current-business.queries";
 import type { ProblemDetailsError } from "@/shared/errors";
 import {
 	type UpdateTenantBrandingVariables,
@@ -26,7 +26,7 @@ export function useUpdateTenantBranding(options?: UpdateTenantBrandingOptions) {
 		...options,
 		mutationFn: updateTenantBranding,
 		meta: {
-			invalidates: tenantKeys.all(),
+			invalidates: currentBusinessKeys.all(),
 			...options?.meta,
 		},
 	});
