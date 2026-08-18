@@ -6,7 +6,7 @@ import {
 	loginContract,
 } from "@repo/api-contracts";
 import { apiFetch } from "@/lib/api/api-fetch";
-import { setCsrfToken } from "../csrf-token";
+import { setCsrfToken } from "@/lib/api/csrf-token";
 
 export type LoginVariables = {
 	body: LoginBodyDto;

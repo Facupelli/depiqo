@@ -7,7 +7,7 @@ import {
 	type UseQueryOptions,
 	useQuery,
 } from "@tanstack/react-query";
-import { getCsrfToken } from "@/features/tenant-management/auth/csrf-token";
+import { getCsrfToken } from "@/lib/api/csrf-token";
 import type { ProblemDetailsError } from "@/shared/errors";
 import { calculateDraftRentalPrice } from "./calculate-draft-rental-price.api";
 

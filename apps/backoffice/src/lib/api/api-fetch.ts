@@ -1,5 +1,5 @@
 import { problemDetailsSchema } from "@repo/schemas";
-import { getCsrfToken } from "@/features/tenant-management/auth/csrf-token";
+import { getCsrfToken } from "@/lib/api/csrf-token";
 import { ProblemDetailsError } from "@/shared/errors";
 import { getBackendApiBaseUrl } from "./backend-api-url";
 import {

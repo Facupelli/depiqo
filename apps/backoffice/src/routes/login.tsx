@@ -22,8 +22,8 @@ import {
 	useRouter,
 } from "@tanstack/react-router";
 import { useState } from "react";
-import { useLogin } from "@/features/tenant-management/auth/login/login.mutation";
-import { loginSchema } from "@/features/tenant-management/auth/login/login-form.schema";
+import { useLogin } from "@/auth/login/login.mutation";
+import { loginSchema } from "@/auth/login/login-form.schema";
 import {
 	authRedirectSearchSchema,
 	normalizeSafeRedirectTo,

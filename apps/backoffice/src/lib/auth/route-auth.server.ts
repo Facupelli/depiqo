@@ -1,5 +1,5 @@
 import type { AuthCustomerDto, AuthUserDto } from "@repo/api-contracts";
-import { getCurrentUser } from "@/features/tenant-management/auth/get-current-user/get-current-user.api";
+import { getCurrentUser } from "@/auth/get-current-user/get-current-user.api";
 import { AuthRequiredError, WrongActorError } from "@/shared/errors";
 
 export async function requireV2TenantUser(): Promise<AuthUserDto> {

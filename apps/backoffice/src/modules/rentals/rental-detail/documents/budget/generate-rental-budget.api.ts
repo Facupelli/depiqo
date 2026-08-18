@@ -7,8 +7,8 @@ import {
 	generateRentalBudgetContract,
 } from "@repo/api-contracts";
 import { problemDetailsSchema } from "@repo/schemas";
-import { getCsrfToken } from "@/features/tenant-management/auth/csrf-token";
 import { getBackendApiBaseUrl } from "@/lib/api/backend-api-url";
+import { getCsrfToken } from "@/lib/api/csrf-token";
 import {
 	getForwardedCookieHeader,
 	getForwardedCsrfHeader,
