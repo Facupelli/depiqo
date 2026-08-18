@@ -6,7 +6,7 @@ import { useId } from "react";
 import {
 	type RentalAccessoryAssignmentFormValues,
 	rentalAccessoryAssignmentFormSchema,
-} from "../rental-accessory-assignment.schema";
+} from "./rental-accessory-assignment.schema";
 
 interface RentalAccessoryAssignmentFormProps {
 	defaultValues: RentalAccessoryAssignmentFormValues;

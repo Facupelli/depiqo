@@ -5,7 +5,7 @@ import {
 	useQuery,
 } from "@tanstack/react-query";
 import type { ProblemDetailsError } from "@/shared/errors";
-import { getRentalAccessoryDefaults } from "./get-rental-accessory-defaults/get-rental-accessory-defaults.api";
+import { getRentalAccessoryDefaults } from "./get-rental-accessory-defaults.api";
 
 export type RentalAccessoryDefaultsQueryOverrides<
 	TData = GetRentalAccessoryDefaultsResponseDto,

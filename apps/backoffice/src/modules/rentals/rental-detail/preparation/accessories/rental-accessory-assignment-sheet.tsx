@@ -6,15 +6,15 @@ import {
 	SheetTitle,
 } from "@repo/ui/components/sheet";
 import { AlertCircle, PackagePlus } from "lucide-react";
-import { useRentalAccessoryDefaults } from "@/features/asset-inventory/rental-accessory-defaults/rental-accessory-defaults.queries";
 import { useRentalDetailContext } from "@/modules/rentals/rental-detail/rental-detail.context";
-import { useAssignRentalAccessories } from "../../assign-rental-accessories/assign-rental-accessories.mutation";
+import { useAssignRentalAccessories } from "./assign-rental-accessories.mutation";
 import {
 	createRentalAccessoryAssignmentFormDefaultValues,
 	type RentalAccessoryAssignmentFormValues,
 	toAssignRentalAccessoriesDto,
-} from "../rental-accessory-assignment.schema";
+} from "./rental-accessory-assignment.schema";
 import { RentalAccessoryAssignmentForm } from "./rental-accessory-assignment-form";
+import { useRentalAccessoryDefaults } from "./rental-accessory-defaults.queries";
 
 interface RentalAccessoryAssignmentSheetProps {
 	open: boolean;
