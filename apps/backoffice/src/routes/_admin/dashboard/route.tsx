@@ -33,14 +33,14 @@ import {
 	Users,
 	Warehouse,
 } from "lucide-react";
+import { CurrentBranchProvider } from "@/application/current-branch/current-branch.context";
+import {
+	useCurrentBranchActions,
+	useCurrentBranchId,
+} from "@/application/current-branch/current-branch.hooks";
 import { currentBusinessQueries } from "@/application/current-business/current-business.queries";
 import { useLogout } from "@/auth/logout/logout.mutation";
 import { branchQueries } from "@/modules/settings/branches/branches.queries";
-import { LocationStoreProvider as BranchStoreProvider } from "@/shared/contexts/location/location.context";
-import {
-	useLocationActions as useBranchActions,
-	useLocationId as useBranchId,
-} from "@/shared/contexts/location/location.hooks";
 
 export const Route = createFileRoute("/_admin/dashboard")({
 	beforeLoad: async ({ context, location }) => {
@@ -141,7 +141,7 @@ function DashboardLayout() {
 	}));
 
 	return (
-		<BranchStoreProvider branches={branches}>
+		<CurrentBranchProvider branches={branches}>
 			<div className="grid h-full grid-cols-[280px_1fr]">
 				<aside className="sticky top-0 flex h-svh flex-col border-r border-gray-200 bg-neutral-900 p-4 text-white overflow-y-auto">
 					{/* Tenant header */}
@@ -208,7 +208,7 @@ function DashboardLayout() {
 					<Outlet />
 				</div>
 			</div>
-		</BranchStoreProvider>
+		</CurrentBranchProvider>
 	);
 }
 
@@ -217,13 +217,13 @@ function BranchSelector({
 }: {
 	branches: { name: string; id: string }[];
 }) {
-	const branchId = useBranchId();
-	const { setLocation: setBranch } = useBranchActions();
+	const branchId = useCurrentBranchId();
+	const { setCurrentBranch } = useCurrentBranchActions();
 
 	return (
 		<Select
 			value={branchId ?? ""}
-			onValueChange={(value) => value && setBranch(value)}
+			onValueChange={(value) => value && setCurrentBranch(value)}
 			items={branches.map((branch) => ({
 				label: branch.name,
 				value: branch.id,

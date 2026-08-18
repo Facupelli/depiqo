@@ -2,10 +2,10 @@ import { Card, CardContent } from "@repo/ui/components/card";
 import { useStore } from "@tanstack/react-form";
 import { useNavigate } from "@tanstack/react-router";
 import { AlertCircle } from "lucide-react";
+import { useCurrentBranchId } from "@/application/current-branch/current-branch.hooks";
 import { PageBreadcrumb } from "@/components/detail-id-breadcrumb";
 import { useBranches } from "@/modules/settings/branches/branches.queries";
 import { useAppForm } from "@/shared/contexts/form.context";
-import { useLocationId } from "@/shared/contexts/location/location.hooks";
 import { useSelectedBranchTimezone } from "@/shared/timezone/operational-timezone.hooks";
 import { useCalculatedDraftRentalPrice } from "./calculate-draft-rental-price.queries";
 import { DraftRentalOfferSearchSection } from "./components/draft-rental-offer-search-section";
@@ -26,16 +26,18 @@ import {
 
 export function CreateRentalPage() {
 	const navigate = useNavigate();
-	const locationId = useLocationId();
+	const currentBranchId = useCurrentBranchId();
 
 	const { data: branches } = useBranches();
 	const selectedBranch =
-		branches?.find((branch) => branch.id === locationId) ?? null;
+		branches?.find((branch) => branch.id === currentBranchId) ?? null;
 	const timezone = useSelectedBranchTimezone();
 	const createDraftRental = useCreateDraftRental();
 
 	const form = useAppForm({
-		defaultValues: createDraftRentalComposerDefaultValues(locationId ?? ""),
+		defaultValues: createDraftRentalComposerDefaultValues(
+			currentBranchId ?? "",
+		),
 		validators: {
 			onSubmit: draftRentalComposerFormSchema,
 		},
@@ -58,7 +60,7 @@ export function CreateRentalPage() {
 
 	const contextValue: DraftRentalComposerContextValue = {
 		selectedBranchName: selectedBranch?.name ?? null,
-		branchMissing: !locationId,
+		branchMissing: !currentBranchId,
 		timezone,
 		pricePreview: priceQuery.data,
 		isPriceLoading: priceQuery.isFetching,
@@ -80,7 +82,7 @@ export function CreateRentalPage() {
 			</div>
 
 			<DraftRentalComposerProvider value={contextValue}>
-				{!locationId ? <MissingBranchNotice /> : null}
+				{!currentBranchId ? <MissingBranchNotice /> : null}
 				<div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
 					<div className="space-y-4">
 						<DraftRentalSetupSection form={form} />

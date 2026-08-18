@@ -1,7 +1,7 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
+import { useCurrentBranchId } from "@/application/current-branch/current-branch.hooks";
 import { currentBusinessQueries } from "@/application/current-business/current-business.queries";
 import { branchQueries } from "@/modules/settings/branches/branches.queries";
-import { useLocationId } from "@/shared/contexts/location/location.hooks";
 import {
 	resolveOperationalTimezone,
 	resolveTenantTimezone,
@@ -36,5 +36,5 @@ export function useBranchTimezone(branchId: string | null | undefined): string {
 
 /** Resolves the operational timezone of the branch selected in the dashboard. */
 export function useSelectedBranchTimezone(): string {
-	return useBranchTimezone(useLocationId());
+	return useBranchTimezone(useCurrentBranchId());
 }

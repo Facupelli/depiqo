@@ -1,8 +1,8 @@
 import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
+import { useSelectedBranch } from "@/application/current-branch/current-branch.hooks";
 import { useRentalsCalendar } from "@/modules/rentals/rental.queries";
 import { useBranches } from "@/modules/settings/branches/branches.queries";
-import { useSelectedLocation } from "@/shared/contexts/location/location.hooks";
 import { useSelectedBranchTimezone } from "@/shared/timezone/operational-timezone.hooks";
 import { OrdersCalendar } from "./orders-calendar";
 import {
@@ -23,7 +23,7 @@ export function OrdersCalendarPage({
 }: OrdersCalendarPageProps) {
 	const navigate = useNavigate();
 	const { data: branches } = useBranches();
-	const selectedBranch = useSelectedLocation(branches ?? []);
+	const selectedBranch = useSelectedBranch(branches ?? []);
 	const timezone = useSelectedBranchTimezone();
 	const currentView = search.view ?? DEFAULT_ORDERS_CALENDAR_VIEW;
 	const currentDate = search.date ?? getDefaultOrdersCalendarDate(timezone);
