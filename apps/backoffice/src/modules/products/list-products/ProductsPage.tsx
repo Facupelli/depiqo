@@ -1,5 +1,11 @@
 import type { GetRentableItemsQueryDto } from "@repo/api-contracts";
 import { Button } from "@repo/ui/components/button";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+} from "@repo/ui/components/dropdown-menu";
 import { useNavigate } from "@tanstack/react-router";
 import type { PaginationState } from "@tanstack/react-table";
 import { Plus } from "lucide-react";
@@ -84,22 +90,33 @@ export function ProductsPage({ search }: { search: ProductListSearch }) {
 				<div>
 					<h1 className="text-2xl font-semibold tracking-tight">Productos</h1>
 					<p className="text-sm text-muted-foreground">
-						Gestiona lo que ofreces para alquilar.
+						Gestiona lo que tus clientes pueden alquilar
 					</p>
 				</div>
-				<div className="flex flex-wrap justify-end gap-2">
-					<Button
-						variant="outline"
-						onClick={() => navigate({ to: "/dashboard/catalog/packages/new" })}
-					>
-						<Plus className="mr-2 h-4 w-4" />
-						Crear paquete
-					</Button>
-					<Button onClick={() => navigate({ to: "/dashboard/catalog/new" })}>
-						<Plus className="mr-2 h-4 w-4" />
-						Crear producto
-					</Button>
-				</div>
+				<DropdownMenu>
+					<DropdownMenuTrigger
+						render={
+							<Button>
+								<Plus className="mr-2 h-4 w-4" />
+								Nuevo producto
+							</Button>
+						}
+					/>
+					<DropdownMenuContent align="end">
+						<DropdownMenuItem
+							onClick={() => navigate({ to: "/dashboard/catalog/new" })}
+						>
+							Individual
+						</DropdownMenuItem>
+						<DropdownMenuItem
+							onClick={() =>
+								navigate({ to: "/dashboard/catalog/packages/new" })
+							}
+						>
+							Combo
+						</DropdownMenuItem>
+					</DropdownMenuContent>
+				</DropdownMenu>
 			</div>
 
 			<ProductListFilters

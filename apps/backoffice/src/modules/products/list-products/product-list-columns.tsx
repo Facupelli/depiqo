@@ -7,7 +7,7 @@ import { buildR2PublicUrl } from "@/lib/r2-public-url";
 
 const kindLabels = {
 	SINGLE: "Individual",
-	PACKAGE: "Paquete",
+	PACKAGE: "Combo",
 	KIT: "Kit",
 } satisfies Partial<Record<GetRentableItemsItemDto["kind"], string>>;
 
@@ -40,7 +40,7 @@ export function createProductListColumns({
 		{
 			id: "item",
 			accessorKey: "name",
-			header: "Ítem",
+			header: "Producto",
 			cell: ({ row }) => {
 				const item = row.original;
 				const imageUrl = buildR2PublicUrl(item.imageUrl, "catalog");
@@ -51,10 +51,10 @@ export function createProductListColumns({
 							<img
 								src={imageUrl}
 								alt={item.name}
-								className="h-11 w-11 rounded-lg border object-cover"
+								className="h-12 w-12 rounded-lg border object-cover"
 							/>
 						) : (
-							<div className="flex h-11 w-11 items-center justify-center rounded-lg border bg-muted text-muted-foreground">
+							<div className="flex h-12 w-12 items-center justify-center rounded-lg border bg-muted text-muted-foreground">
 								<PackageOpen className="h-5 w-5" />
 							</div>
 						)}
@@ -69,7 +69,7 @@ export function createProductListColumns({
 								{item.name}
 							</Link>
 							<p className="truncate text-xs text-muted-foreground">
-								{item.id}
+								{getKindLabel(item.kind)}
 							</p>
 						</div>
 					</div>
@@ -77,10 +77,10 @@ export function createProductListColumns({
 			},
 		},
 		{
-			id: "kind",
-			accessorKey: "kind",
-			header: "Tipo",
-			cell: ({ row }) => getKindLabel(row.original.kind),
+			id: "status",
+			accessorKey: "status",
+			header: "Estado",
+			cell: ({ row }) => <ProductStatusBadge status={row.original.status} />,
 		},
 		{
 			id: "category",
@@ -98,7 +98,7 @@ export function createProductListColumns({
 		},
 		{
 			id: "offers",
-			header: "Disponible en sucursales",
+			header: "Sucursales",
 			cell: ({ row }) => {
 				const branchNames = Array.from(
 					new Set(
@@ -114,14 +114,8 @@ export function createProductListColumns({
 			},
 		},
 		{
-			id: "status",
-			accessorKey: "status",
-			header: "Estado",
-			cell: ({ row }) => <ProductStatusBadge status={row.original.status} />,
-		},
-		{
 			id: "startingPrice",
-			header: "Precio inicial",
+			header: "Precio",
 			cell: ({ row }) => {
 				const { startingPrice } = row.original;
 
@@ -134,7 +128,7 @@ export function createProductListColumns({
 		},
 		{
 			id: "requiredEquipment",
-			header: "Equipo requerido",
+			header: "Equipo",
 			cell: ({ row }) => {
 				const count = row.original.requiredEquipment.length;
 				return count === 1 ? "1 equipo" : `${count} equipos`;
