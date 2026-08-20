@@ -88,6 +88,7 @@ async function migrateEquipmentTypes(ctx: TenantV2MigrationContext) {
 				tenantId: productType.tenantId,
 				name: productType.name,
 				description: productType.description,
+				imageUrl: productType.imageUrl,
 				categoryId: productType.categoryId,
 				createdAt: productType.createdAt,
 				updatedAt: productType.updatedAt,
@@ -95,6 +96,7 @@ async function migrateEquipmentTypes(ctx: TenantV2MigrationContext) {
 			update: {
 				name: productType.name,
 				description: productType.description,
+				imageUrl: productType.imageUrl,
 				categoryId: productType.categoryId,
 				updatedAt: productType.updatedAt,
 			},
