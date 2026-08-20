@@ -29,3 +29,12 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Backend lint
+        run: pnpm --filter @repo/backend run lint:check
+
+      - name: Backend build
+        run: pnpm --filter @repo/backend run build
+
+      - name: Backend unit tests
+        run: pnpm --filter @repo/backend run test
