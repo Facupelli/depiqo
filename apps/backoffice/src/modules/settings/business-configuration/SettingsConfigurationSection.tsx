@@ -1,8 +1,5 @@
-// biome-ignore-all lint/suspicious/noExplicitAny: TanStack Form field types vary across the independent settings forms.
 import type { UpdateTenantConfigBodyDto } from "@repo/api-contracts";
-import { Button } from "@repo/ui/components/button";
 import { Field, FieldError, FieldLabel } from "@repo/ui/components/field";
-import { Input } from "@repo/ui/components/input";
 import {
 	Select,
 	SelectContent,
@@ -10,13 +7,16 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@repo/ui/components/select";
-import { Switch } from "@repo/ui/components/switch";
-import { useForm } from "@tanstack/react-form";
+import { formOptions } from "@tanstack/react-form";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import type { ReactNode } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { currentBusinessQueries } from "@/application/current-business/current-business.queries";
+import {
+	SettingsRow,
+	useSettingsForm,
+	withSettingsForm,
+} from "./settings-form";
 import { useUpdateTenantConfig } from "./update-tenant-config.mutation";
 
 export type SettingsConfigurationSection =
@@ -52,367 +52,492 @@ const schemas = {
 	}),
 };
 
+type BusinessConfigurationValues = z.infer<typeof schemas.business>;
+type RentalPoliciesConfigurationValues = z.infer<
+	(typeof schemas)["rental-policies"]
+>;
+type CustomerCommunicationConfigurationValues = z.infer<
+	(typeof schemas)["customer-communication"]
+>;
+type StorefrontConfigurationValues = z.infer<typeof schemas.storefront>;
+
+const businessFormDefaults: BusinessConfigurationValues = {
+	currency: "",
+	locale: "",
+	timezone: "",
+};
+const rentalPoliciesFormDefaults: RentalPoliciesConfigurationValues = {
+	bookingMode: "instant-book",
+	weekendCountsAsOne: false,
+	roundingRule: "IGNORE_PARTIAL_DAY",
+	insuranceEnabled: false,
+	insuranceRatePercent: 0,
+};
+const customerCommunicationFormDefaults: CustomerCommunicationConfigurationValues =
+	{
+		orderCommunicationMode: "FORMAL",
+		whatsAppNumber: "",
+	};
+const storefrontFormDefaults: StorefrontConfigurationValues = {
+	newArrivalsWindowDays: 1,
+	showFloatingWhatsAppButton: false,
+};
+
+const businessFormOptions = formOptions({
+	defaultValues: businessFormDefaults,
+	validators: { onSubmit: schemas.business },
+});
+const rentalPoliciesFormOptions = formOptions({
+	defaultValues: rentalPoliciesFormDefaults,
+	validators: { onSubmit: schemas["rental-policies"] },
+});
+const customerCommunicationFormOptions = formOptions({
+	defaultValues: customerCommunicationFormDefaults,
+	validators: { onSubmit: schemas["customer-communication"] },
+});
+const storefrontFormOptions = formOptions({
+	defaultValues: storefrontFormDefaults,
+	validators: { onSubmit: schemas.storefront },
+});
+
 export function SettingsConfigurationSection({
 	section,
 }: {
 	section: SettingsConfigurationSection;
 }) {
+	switch (section) {
+		case "business":
+			return <BusinessConfigurationForm />;
+		case "rental-policies":
+			return <RentalPoliciesConfigurationForm />;
+		case "customer-communication":
+			return <CustomerCommunicationConfigurationForm />;
+		case "storefront":
+			return <StorefrontConfigurationForm />;
+	}
+}
+
+function BusinessConfigurationForm() {
 	const { data: business } = useSuspenseQuery(currentBusinessQueries.current());
 	const { mutateAsync: updateConfig, isPending } = useUpdateTenantConfig();
-	const defaultValues = defaultsFor(section, business.config);
-	const form = useForm({
-		defaultValues,
-		validators: { onSubmit: schemas[section] as any },
+	const form = useSettingsForm({
+		...businessFormOptions,
+		defaultValues: {
+			currency: business.config.pricing.currency,
+			locale: business.config.pricing.locale,
+			timezone: business.config.timezone,
+		},
 		onSubmit: async ({ value }) => {
-			await updateConfig(toDto(section, value));
+			await updateConfig(toBusinessDto(value));
 			toast.success("Configuración guardada");
 		},
 	});
-
 	return (
-		<form
-			onSubmit={(event) => {
-				event.preventDefault();
-				void form.handleSubmit();
-			}}
-			className="space-y-6"
-		>
-			{section === "business" ? <BusinessFields form={form} /> : null}
-			{section === "rental-policies" ? (
+		<form.AppForm>
+			<form.SettingsForm isPending={isPending}>
+				<BusinessFields form={form} />
+			</form.SettingsForm>
+		</form.AppForm>
+	);
+}
+
+function RentalPoliciesConfigurationForm() {
+	const { data: business } = useSuspenseQuery(currentBusinessQueries.current());
+	const { mutateAsync: updateConfig, isPending } = useUpdateTenantConfig();
+	const form = useSettingsForm({
+		...rentalPoliciesFormOptions,
+		defaultValues: {
+			bookingMode: business.config.bookingMode,
+			weekendCountsAsOne: business.config.pricing.weekendCountsAsOne,
+			roundingRule: business.config.pricing.roundingRule,
+			insuranceEnabled: business.config.pricing.insuranceEnabled,
+			insuranceRatePercent: business.config.pricing.insuranceRatePercent,
+		},
+		onSubmit: async ({ value }) => {
+			await updateConfig(toRentalPoliciesDto(value));
+			toast.success("Configuración guardada");
+		},
+	});
+	return (
+		<form.AppForm>
+			<form.SettingsForm isPending={isPending}>
 				<RentalPolicyFields form={form} />
-			) : null}
-			{section === "customer-communication" ? (
+			</form.SettingsForm>
+		</form.AppForm>
+	);
+}
+
+function CustomerCommunicationConfigurationForm() {
+	const { data: business } = useSuspenseQuery(currentBusinessQueries.current());
+	const { mutateAsync: updateConfig, isPending } = useUpdateTenantConfig();
+	const form = useSettingsForm({
+		...customerCommunicationFormOptions,
+		defaultValues: {
+			orderCommunicationMode:
+				business.config.communication.orderCommunicationMode,
+			whatsAppNumber: business.config.communication.whatsAppNumber ?? "",
+		},
+		onSubmit: async ({ value }) => {
+			await updateConfig(toCustomerCommunicationDto(value));
+			toast.success("Configuración guardada");
+		},
+	});
+	return (
+		<form.AppForm>
+			<form.SettingsForm isPending={isPending}>
 				<CommunicationFields form={form} />
-			) : null}
-			{section === "storefront" ? <StorefrontFields form={form} /> : null}
-			<div className="flex justify-end">
-				<form.Subscribe
-					selector={(state) => [
-						state.canSubmit,
-						state.isDirty,
-						state.isSubmitting,
-					]}
-				>
-					{([canSubmit, isDirty, isSubmitting]) => (
-						<Button
-							type="submit"
-							disabled={!canSubmit || !isDirty || isPending || isSubmitting}
-						>
-							{isPending || isSubmitting ? "Guardando..." : "Guardar cambios"}
-						</Button>
-					)}
-				</form.Subscribe>
-			</div>
-		</form>
+			</form.SettingsForm>
+		</form.AppForm>
 	);
 }
 
-function BusinessFields({ form }: { form: any }) {
+function StorefrontConfigurationForm() {
+	const { data: business } = useSuspenseQuery(currentBusinessQueries.current());
+	const { mutateAsync: updateConfig, isPending } = useUpdateTenantConfig();
+	const form = useSettingsForm({
+		...storefrontFormOptions,
+		defaultValues: {
+			newArrivalsWindowDays: business.config.newArrivalsWindowDays,
+			showFloatingWhatsAppButton:
+				business.config.communication.showFloatingWhatsAppButton,
+		},
+		onSubmit: async ({ value }) => {
+			await updateConfig(toStorefrontDto(value));
+			toast.success("Configuración guardada");
+		},
+	});
 	return (
+		<form.AppForm>
+			<form.SettingsForm isPending={isPending}>
+				<StorefrontFields form={form} />
+			</form.SettingsForm>
+		</form.AppForm>
+	);
+}
+
+const BusinessFields = withSettingsForm({
+	...businessFormOptions,
+	render: ({ form }) => (
 		<>
-			<TextRow
-				form={form}
-				name="currency"
-				label="Moneda"
-				description="Se usa para mostrar los precios en DEPIQO."
-				transform={(value: string) => value.toUpperCase()}
-			/>
-			<SelectRow
-				form={form}
-				name="locale"
-				label="Idioma"
-				items={[
-					{ value: "es-ES", label: "Español (España)" },
-					{ value: "es-AR", label: "Español (Argentina)" },
-					{ value: "en-US", label: "Inglés (Estados Unidos)" },
-				]}
-			/>
-			<TextRow
-				form={form}
-				name="timezone"
-				label="Zona horaria"
-				description="Se usa para las fechas y horas de tus alquileres."
-			/>
-		</>
-	);
-}
-
-function RentalPolicyFields({ form }: { form: any }) {
-	return (
-		<>
-			<SelectRow
-				form={form}
-				name="bookingMode"
-				label="Modo de reserva"
-				items={[
-					{ value: "instant-book", label: "Reserva inmediata" },
-					{ value: "request-to-book", label: "Solicitud de reserva" },
-				]}
-			/>
-			<SwitchRow
-				form={form}
-				name="weekendCountsAsOne"
-				label="Sistema day/weekend"
-				description="Sábado y domingo cuentan como una sola unidad de facturación."
-			/>
-			<SelectRow
-				form={form}
-				name="roundingRule"
-				label="Comportamiento de cobro diario"
-				items={[
-					{
-						value: "IGNORE_PARTIAL_DAY",
-						label: "No cobrar la fracción restante",
-					},
-					{
-						value: "BILL_OVER_HALF_DAY",
-						label: "Cobrar desde media jornada extra",
-					},
-					{
-						value: "BILL_ANY_PARTIAL_DAY",
-						label: "Cobrar cualquier fracción extra",
-					},
-				]}
-			/>
-			<SwitchRow
-				form={form}
-				name="insuranceEnabled"
-				label="Ofrecer seguro"
-				description="Muestra el seguro de equipos durante la reserva."
-			/>
-			<NumberRow
-				form={form}
-				name="insuranceRatePercent"
-				label="Porcentaje"
-				suffix="%"
-			/>
-		</>
-	);
-}
-
-function CommunicationFields({ form }: { form: any }) {
-	return (
-		<>
-			<SelectRow
-				form={form}
-				name="orderCommunicationMode"
-				label="Modo de comunicación"
-				items={[
-					{ value: "FORMAL", label: "Formal" },
-					{ value: "WHATSAPP", label: "WhatsApp" },
-				]}
-			/>
-			<TextRow
-				form={form}
-				name="whatsAppNumber"
-				label="Número"
-				description="Incluye el prefijo internacional."
-			/>
-		</>
-	);
-}
-
-function StorefrontFields({ form }: { form: any }) {
-	return (
-		<>
-			<NumberRow
-				form={form}
-				name="newArrivalsWindowDays"
-				label={'Mostrar productos como "Nuevos" durante'}
-				suffix="días"
-			/>
-			<SwitchRow
-				form={form}
-				name="showFloatingWhatsAppButton"
-				label="Mostrar botón de WhatsApp"
-				description="Muestra un acceso directo a WhatsApp en la tienda."
-			/>
-		</>
-	);
-}
-
-function TextRow({ form, name, label, description, transform }: any) {
-	return (
-		<form.Field name={name}>
-			{(field: any) => (
-				<Row label={label} description={description}>
-					<Field>
-						<FieldLabel className="sr-only" htmlFor={name}>
-							{label}
-						</FieldLabel>
-						<Input
-							id={name}
-							value={field.state.value}
-							onBlur={field.handleBlur}
-							onChange={(event) =>
-								field.handleChange(
-									transform
-										? transform(event.target.value)
-										: event.target.value,
-								)
-							}
-							className="w-56 text-right"
-						/>
-						<FieldError errors={field.state.meta.errors} />
-					</Field>
-				</Row>
-			)}
-		</form.Field>
-	);
-}
-
-function NumberRow({ form, name, label, suffix }: any) {
-	return (
-		<form.Field name={name}>
-			{(field: any) => (
-				<Row label={label}>
-					<div className="flex items-center gap-2">
-						<Input
-							type="number"
-							min={0}
-							value={field.state.value}
-							onBlur={field.handleBlur}
-							onChange={(event) =>
-								field.handleChange(Number(event.target.value))
-							}
-							className="w-24 text-right"
-						/>
-						<span className="text-sm text-muted-foreground">{suffix}</span>
-					</div>
-				</Row>
-			)}
-		</form.Field>
-	);
-}
-
-function SelectRow({ form, name, label, items }: any) {
-	return (
-		<form.Field name={name}>
-			{(field: any) => (
-				<Row label={label}>
-					<Select
-						value={field.state.value}
-						onValueChange={field.handleChange}
-						items={items}
-					>
-						<SelectTrigger className="w-64">
-							<SelectValue />
-						</SelectTrigger>
-						<SelectContent>
-							{items.map((item: { value: string; label: string }) => (
-								<SelectItem key={item.value} value={item.value}>
-									{item.label}
-								</SelectItem>
-							))}
-						</SelectContent>
-					</Select>
-				</Row>
-			)}
-		</form.Field>
-	);
-}
-
-function SwitchRow({ form, name, label, description }: any) {
-	return (
-		<form.Field name={name}>
-			{(field: any) => (
-				<Row label={label} description={description}>
-					<Switch
-						checked={field.state.value}
-						onCheckedChange={field.handleChange}
-						aria-label={label}
+			<form.AppField name="currency">
+				{(field) => (
+					<field.SettingsTextField
+						label="Moneda"
+						description="Se usa para mostrar los precios en DEPIQO."
+						transform={(value) => value.toUpperCase()}
 					/>
-				</Row>
-			)}
-		</form.Field>
-	);
-}
+				)}
+			</form.AppField>
+			<form.AppField name="locale">
+				{(field) => (
+					<SettingsRow label="Idioma">
+						<Field
+							data-invalid={
+								field.state.meta.isTouched && !field.state.meta.isValid
+							}
+						>
+							<FieldLabel className="sr-only" htmlFor={field.name}>
+								Idioma
+							</FieldLabel>
+							<Select
+								value={field.state.value}
+								onValueChange={(value) => {
+									if (value !== null) field.handleChange(value);
+								}}
+								items={[
+									{ value: "es-ES", label: "Español (España)" },
+									{ value: "es-AR", label: "Español (Argentina)" },
+									{ value: "en-US", label: "Inglés (Estados Unidos)" },
+								]}
+							>
+								<SelectTrigger
+									id={field.name}
+									aria-invalid={
+										field.state.meta.isTouched && !field.state.meta.isValid
+									}
+									className="w-64"
+								>
+									<SelectValue />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value="es-ES">Español (España)</SelectItem>
+									<SelectItem value="es-AR">Español (Argentina)</SelectItem>
+									<SelectItem value="en-US">Inglés (Estados Unidos)</SelectItem>
+								</SelectContent>
+							</Select>
+							<FieldError errors={field.state.meta.errors} />
+						</Field>
+					</SettingsRow>
+				)}
+			</form.AppField>
+			<form.AppField name="timezone">
+				{(field) => (
+					<field.SettingsTextField
+						label="Zona horaria"
+						description="Se usa para las fechas y horas de tus alquileres."
+					/>
+				)}
+			</form.AppField>
+		</>
+	),
+});
 
-function Row({
-	label,
-	description,
-	children,
-}: {
-	label: string;
-	description?: string;
-	children: ReactNode;
-}) {
-	return (
-		<div className="grid gap-3 px-5 py-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:gap-8">
-			<div>
-				<p className="text-sm font-semibold">{label}</p>
-				{description ? (
-					<p className="mt-0.5 text-xs text-muted-foreground">{description}</p>
-				) : null}
-			</div>
-			{children}
-		</div>
-	);
-}
+const RentalPolicyFields = withSettingsForm({
+	...rentalPoliciesFormOptions,
+	render: ({ form }) => (
+		<>
+			<form.AppField name="bookingMode">
+				{(field) => (
+					<SettingsRow label="Modo de reserva">
+						<Field
+							data-invalid={
+								field.state.meta.isTouched && !field.state.meta.isValid
+							}
+						>
+							<FieldLabel className="sr-only" htmlFor={field.name}>
+								Modo de reserva
+							</FieldLabel>
+							<Select
+								value={field.state.value}
+								onValueChange={(value) => {
+									if (value === "instant-book" || value === "request-to-book") {
+										field.handleChange(value);
+									}
+								}}
+								items={[
+									{ value: "instant-book", label: "Reserva inmediata" },
+									{ value: "request-to-book", label: "Solicitud de reserva" },
+								]}
+							>
+								<SelectTrigger
+									id={field.name}
+									aria-invalid={
+										field.state.meta.isTouched && !field.state.meta.isValid
+									}
+									className="w-64"
+								>
+									<SelectValue />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value="instant-book">
+										Reserva inmediata
+									</SelectItem>
+									<SelectItem value="request-to-book">
+										Solicitud de reserva
+									</SelectItem>
+								</SelectContent>
+							</Select>
+							<FieldError errors={field.state.meta.errors} />
+						</Field>
+					</SettingsRow>
+				)}
+			</form.AppField>
+			<form.AppField name="weekendCountsAsOne">
+				{(field) => (
+					<field.SettingsSwitchField
+						label="Sistema day/weekend"
+						description="Sábado y domingo cuentan como una sola unidad de facturación."
+					/>
+				)}
+			</form.AppField>
+			<form.AppField name="roundingRule">
+				{(field) => (
+					<SettingsRow label="Comportamiento de cobro diario">
+						<Field
+							data-invalid={
+								field.state.meta.isTouched && !field.state.meta.isValid
+							}
+						>
+							<FieldLabel className="sr-only" htmlFor={field.name}>
+								Comportamiento de cobro diario
+							</FieldLabel>
+							<Select
+								value={field.state.value}
+								onValueChange={(value) => {
+									if (
+										value === "IGNORE_PARTIAL_DAY" ||
+										value === "BILL_OVER_HALF_DAY" ||
+										value === "BILL_ANY_PARTIAL_DAY"
+									) {
+										field.handleChange(value);
+									}
+								}}
+								items={[
+									{
+										value: "IGNORE_PARTIAL_DAY",
+										label: "No cobrar la fracción restante",
+									},
+									{
+										value: "BILL_OVER_HALF_DAY",
+										label: "Cobrar desde media jornada extra",
+									},
+									{
+										value: "BILL_ANY_PARTIAL_DAY",
+										label: "Cobrar cualquier fracción extra",
+									},
+								]}
+							>
+								<SelectTrigger
+									id={field.name}
+									aria-invalid={
+										field.state.meta.isTouched && !field.state.meta.isValid
+									}
+									className="w-64"
+								>
+									<SelectValue />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value="IGNORE_PARTIAL_DAY">
+										No cobrar la fracción restante
+									</SelectItem>
+									<SelectItem value="BILL_OVER_HALF_DAY">
+										Cobrar desde media jornada extra
+									</SelectItem>
+									<SelectItem value="BILL_ANY_PARTIAL_DAY">
+										Cobrar cualquier fracción extra
+									</SelectItem>
+								</SelectContent>
+							</Select>
+							<FieldError errors={field.state.meta.errors} />
+						</Field>
+					</SettingsRow>
+				)}
+			</form.AppField>
+			<form.AppField name="insuranceEnabled">
+				{(field) => (
+					<field.SettingsSwitchField
+						label="Ofrecer seguro"
+						description="Muestra el seguro de equipos durante la reserva."
+					/>
+				)}
+			</form.AppField>
+			<form.AppField name="insuranceRatePercent">
+				{(field) => <field.SettingsNumberField label="Porcentaje" suffix="%" />}
+			</form.AppField>
+		</>
+	),
+});
 
-function defaultsFor(section: SettingsConfigurationSection, config: any) {
-	switch (section) {
-		case "business":
-			return {
-				currency: config.pricing.currency,
-				locale: config.pricing.locale,
-				timezone: config.timezone,
-			};
-		case "rental-policies":
-			return {
-				bookingMode: config.bookingMode,
-				weekendCountsAsOne: config.pricing.weekendCountsAsOne,
-				roundingRule: config.pricing.roundingRule,
-				insuranceEnabled: config.pricing.insuranceEnabled,
-				insuranceRatePercent: config.pricing.insuranceRatePercent,
-			};
-		case "customer-communication":
-			return {
-				orderCommunicationMode: config.communication.orderCommunicationMode,
-				whatsAppNumber: config.communication.whatsAppNumber ?? "",
-			};
-		case "storefront":
-			return {
-				newArrivalsWindowDays: config.newArrivalsWindowDays,
-				showFloatingWhatsAppButton:
-					config.communication.showFloatingWhatsAppButton,
-			};
-	}
-}
+const CommunicationFields = withSettingsForm({
+	...customerCommunicationFormOptions,
+	render: ({ form }) => (
+		<>
+			<form.AppField name="orderCommunicationMode">
+				{(field) => (
+					<SettingsRow label="Modo de comunicación">
+						<Field
+							data-invalid={
+								field.state.meta.isTouched && !field.state.meta.isValid
+							}
+						>
+							<FieldLabel className="sr-only" htmlFor={field.name}>
+								Modo de comunicación
+							</FieldLabel>
+							<Select
+								value={field.state.value}
+								onValueChange={(value) => {
+									if (value === "FORMAL" || value === "WHATSAPP") {
+										field.handleChange(value);
+									}
+								}}
+								items={[
+									{ value: "FORMAL", label: "Formal" },
+									{ value: "WHATSAPP", label: "WhatsApp" },
+								]}
+							>
+								<SelectTrigger
+									id={field.name}
+									aria-invalid={
+										field.state.meta.isTouched && !field.state.meta.isValid
+									}
+									className="w-64"
+								>
+									<SelectValue />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value="FORMAL">Formal</SelectItem>
+									<SelectItem value="WHATSAPP">WhatsApp</SelectItem>
+								</SelectContent>
+							</Select>
+							<FieldError errors={field.state.meta.errors} />
+						</Field>
+					</SettingsRow>
+				)}
+			</form.AppField>
+			<form.AppField name="whatsAppNumber">
+				{(field) => (
+					<field.SettingsTextField
+						label="Número"
+						description="Incluye el prefijo internacional."
+					/>
+				)}
+			</form.AppField>
+		</>
+	),
+});
 
-function toDto(
-	section: SettingsConfigurationSection,
-	value: any,
+const StorefrontFields = withSettingsForm({
+	...storefrontFormOptions,
+	render: ({ form }) => (
+		<>
+			<form.AppField name="newArrivalsWindowDays">
+				{(field) => (
+					<field.SettingsNumberField
+						label={'Mostrar productos como "Nuevos" durante'}
+						suffix="días"
+					/>
+				)}
+			</form.AppField>
+			<form.AppField name="showFloatingWhatsAppButton">
+				{(field) => (
+					<field.SettingsSwitchField
+						label="Mostrar botón de WhatsApp"
+						description="Muestra un acceso directo a WhatsApp en la tienda."
+					/>
+				)}
+			</form.AppField>
+		</>
+	),
+});
+
+function toBusinessDto(
+	value: BusinessConfigurationValues,
 ): UpdateTenantConfigBodyDto {
-	switch (section) {
-		case "business":
-			return {
-				pricing: { currency: value.currency, locale: value.locale },
-				timezone: value.timezone,
-			};
-		case "rental-policies":
-			return {
-				bookingMode: value.bookingMode,
-				pricing: {
-					weekendCountsAsOne: value.weekendCountsAsOne,
-					roundingRule: value.roundingRule,
-					insuranceEnabled: value.insuranceEnabled,
-					insuranceRatePercent: value.insuranceRatePercent,
-				},
-			};
-		case "customer-communication":
-			return {
-				communication: {
-					orderCommunicationMode: value.orderCommunicationMode,
-					whatsAppNumber: value.whatsAppNumber.trim() || undefined,
-				},
-			};
-		case "storefront":
-			return {
-				newArrivalsWindowDays: value.newArrivalsWindowDays,
-				communication: {
-					showFloatingWhatsAppButton: value.showFloatingWhatsAppButton,
-				},
-			};
-	}
+	return {
+		pricing: { currency: value.currency, locale: value.locale },
+		timezone: value.timezone,
+	};
+}
+function toRentalPoliciesDto(
+	value: RentalPoliciesConfigurationValues,
+): UpdateTenantConfigBodyDto {
+	return {
+		bookingMode: value.bookingMode,
+		pricing: {
+			weekendCountsAsOne: value.weekendCountsAsOne,
+			roundingRule: value.roundingRule,
+			insuranceEnabled: value.insuranceEnabled,
+			insuranceRatePercent: value.insuranceRatePercent,
+		},
+	};
+}
+function toCustomerCommunicationDto(
+	value: CustomerCommunicationConfigurationValues,
+): UpdateTenantConfigBodyDto {
+	return {
+		communication: {
+			orderCommunicationMode: value.orderCommunicationMode,
+			whatsAppNumber: value.whatsAppNumber.trim() || undefined,
+		},
+	};
+}
+function toStorefrontDto(
+	value: StorefrontConfigurationValues,
+): UpdateTenantConfigBodyDto {
+	return {
+		newArrivalsWindowDays: value.newArrivalsWindowDays,
+		communication: {
+			showFloatingWhatsAppButton: value.showFloatingWhatsAppButton,
+		},
+	};
 }
