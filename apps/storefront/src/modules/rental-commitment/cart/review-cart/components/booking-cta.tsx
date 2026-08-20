@@ -102,7 +102,7 @@ function useCartBookingCommand() {
 			await navigate({
 				to: "/confirmed-rental-success",
 				search: {
-					rentalId: rental.id,
+					rentalNumber: rental.rentalNumber,
 					fulfillmentMethod,
 					pickupDate: periodStart,
 					pickupLocation: branch.name,

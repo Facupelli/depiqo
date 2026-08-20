@@ -61,7 +61,7 @@ export class CreateConfirmedRentalHttpController {
 
     if (result.isErr()) throw toCreateConfirmedRentalProblem(result.error);
 
-    return { id: result.value.rentalId };
+    return { rentalNumber: result.value.rentalNumber };
   }
 }
 

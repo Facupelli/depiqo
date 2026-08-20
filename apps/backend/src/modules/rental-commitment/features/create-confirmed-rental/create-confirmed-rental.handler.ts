@@ -57,6 +57,7 @@ import {
 
 export interface CreateConfirmedRentalResult {
   rentalId: string;
+  rentalNumber: number;
 }
 
 export type CreateConfirmedRentalServiceResult = Result<CreateConfirmedRentalResult, CreateConfirmedRentalError>;
@@ -313,7 +314,10 @@ export class CreateConfirmedRentalService implements ICommandHandler<
         await this.rentalRepository.save(confirmedRental, { ownerSplits: splits, tx });
         integrationEvents.collect(toRentalIntegrationEvents(confirmedRental.pullDomainEvents()));
 
-        return ok({ rentalId: confirmedRental.id });
+        return ok({
+          rentalId: confirmedRental.id,
+          rentalNumber: confirmedRental.rentalNumber,
+        });
       });
     } catch (error) {
       if (error instanceof PostgresExclusionViolationError) {

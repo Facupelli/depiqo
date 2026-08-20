@@ -112,7 +112,9 @@ describe('instant-bearing request boundaries', () => {
   });
 
   it('passes Date-backed periods from the controller into rental commands', async () => {
-    const commandBus = { execute: jest.fn().mockResolvedValue(ok({ rentalId: 'rental-1' })) } as unknown as CommandBus;
+    const commandBus = {
+      execute: jest.fn().mockResolvedValue(ok({ rentalId: 'rental-1', rentalNumber: 1 })),
+    } as unknown as CommandBus;
     const controller = new CreateConfirmedRentalHttpController(commandBus);
     const dto = CreateConfirmedRentalApplicationInputSchema.parse(wireCases[2][2]);
 

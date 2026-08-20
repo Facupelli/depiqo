@@ -104,10 +104,14 @@ describe('POST /rental-commitments/confirmed-rentals', () => {
       .withCsrf(client.request().post('/rental-commitments/confirmed-rentals'))
       .send(body(setup))
       .expect(201);
-    expect(response.body).toEqual({ data: { id: expect.any(String) } });
+    expect(response.body).toEqual({ data: { rentalNumber: expect.any(Number) } });
+    expect(response.body.data.rentalNumber).toBeGreaterThan(0);
 
-    const rental = await prisma.client.v2Rental.findUniqueOrThrow({
-      where: { id: response.body.data.id as string },
+    const rental = await prisma.client.v2Rental.findFirstOrThrow({
+      where: {
+        tenantId: setup.tenant.id,
+        rentalNumber: response.body.data.rentalNumber as number,
+      },
       include: { selections: true, demandLines: true, assignedAssets: true, ownerSplits: true },
     });
     expect(rental.status).toBe('CONFIRMED');

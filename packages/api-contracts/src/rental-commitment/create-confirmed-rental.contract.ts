@@ -50,7 +50,7 @@ export const CreateConfirmedRentalBodySchema = z
   }));
 
 export const CreateConfirmedRentalResponseSchema = z.object({
-  id: z.string(),
+  rentalNumber: z.number().int().positive(),
 });
 
 export type CreateConfirmedRentalSelectedOfferDto = z.infer<

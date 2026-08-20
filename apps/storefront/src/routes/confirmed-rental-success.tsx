@@ -4,7 +4,7 @@ import { CalendarCheck, CheckCircle2, Mail } from "lucide-react";
 import { z } from "zod";
 
 const confirmedRentalSuccessSearchSchema = z.object({
-	rentalId: z.string().min(1),
+	rentalNumber: z.coerce.number().int().positive(),
 	fulfillmentMethod: z.enum(["PICKUP", "DELIVERY"]),
 	pickupDate: z.iso.date(),
 	pickupLocation: z.string().trim().min(1),
@@ -23,7 +23,7 @@ export const Route = createFileRoute("/confirmed-rental-success")({
 
 function ConfirmedRentalSuccessPage() {
 	const {
-		rentalId,
+		rentalNumber,
 		fulfillmentMethod,
 		pickupDate,
 		pickupLocation,
@@ -49,7 +49,7 @@ function ConfirmedRentalSuccessPage() {
 					</p>
 					<p className="mt-3 text-xs text-muted-foreground">
 						Número de reserva:{" "}
-						<span className="font-medium text-foreground">{rentalId}</span>
+						<span className="font-medium text-foreground">{rentalNumber}</span>
 					</p>
 				</div>
 
