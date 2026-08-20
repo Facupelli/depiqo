@@ -13,18 +13,15 @@ General rules:
 Package roles:
 
 - `@repo/api-contracts` holds backend/web API contracts, DTO schemas, and shared contract enums.
-- `@repo/schemas` holds shared Zod schemas and response/request contract definitions.
 - `@repo/typescript-config` holds shared TypeScript compiler config.
 - `@repo/jest-config` holds reusable Jest configuration presets.
 
 Validation guidance:
 
 - For package-only changes, run the package's own build or lint command when available.
-- For changes to `api-contracts` or `schemas`, also validate the affected consumer app or run workspace validation because these packages are consumed across the repo.
+- For changes to `api-contracts`, also validate the affected consumer app or run workspace validation because it is consumed across the repo.
 - Prefer workspace `pnpm build` or `pnpm lint` when a package change has likely app-level impact.
 
 Representative examples:
 
 - shared contract entrypoint: `packages/api-contracts/src/index.ts`
-- shared schema entrypoint: `packages/schemas/src/index.ts`
-- shared response schema shape: `packages/schemas/src/order/get-order-by-id-response.schema.ts`

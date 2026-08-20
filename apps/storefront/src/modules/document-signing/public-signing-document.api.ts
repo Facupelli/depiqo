@@ -1,4 +1,4 @@
-import { problemDetailsSchema } from "@repo/schemas";
+import { problemDetailsSchema } from "@repo/api-contracts";
 import { ProblemDetailsError } from "@/shared/errors";
 import type { PublicSigningReceiptToken } from "./public-signing-receipt-token";
 import type { PublicSigningToken } from "./public-signing-token";

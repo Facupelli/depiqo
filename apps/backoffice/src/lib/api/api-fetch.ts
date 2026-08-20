@@ -1,4 +1,4 @@
-import { problemDetailsSchema } from "@repo/schemas";
+import { problemDetailsSchema } from "@repo/api-contracts";
 import { getCsrfToken } from "@/lib/api/csrf-token";
 import { ProblemDetailsError } from "@/shared/errors";
 import { getBackendApiBaseUrl } from "./backend-api-url";

@@ -1,4 +1,4 @@
-import type { ProblemDetails } from "@repo/schemas";
+import type { ProblemDetails } from "@repo/api-contracts";
 
 export class ProblemDetailsError extends Error {
 	public readonly problemDetails: ProblemDetails;

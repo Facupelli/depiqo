@@ -19,7 +19,7 @@ Focused Vitest examples:
 
 Use focused tests when behavior changes are local. Run `pnpm build` when route registration, SSR behavior, generated framework artifacts, or app configuration may be affected.
 
-If a change touches `@repo/api-contracts` or `@repo/schemas`, treat it as a cross-workspace change and validate the affected shared package plus the web app consumer path.
+If a change touches `@repo/api-contracts`, treat it as a cross-workspace change and validate the affected shared package plus the web app consumer path.
 
 ## Authenticated Browser Verification
 

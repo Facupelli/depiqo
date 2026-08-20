@@ -7,5 +7,6 @@ export * from "./explicit-offset-instant.schema";
 export * from "./local-date.schema";
 export * from "./offering-setup";
 export * from "./pricing";
+export * from "./problem-details.schema";
 export * from "./rental-commitment";
 export * from "./tenant-management";

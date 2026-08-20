@@ -4,7 +4,7 @@ import {
 	GenerateRentalRemitoResponseSchema,
 	generateRentalRemitoContract,
 } from "@repo/api-contracts";
-import { problemDetailsSchema } from "@repo/schemas";
+import { problemDetailsSchema } from "@repo/api-contracts";
 import { getBackendApiBaseUrl } from "@/lib/api/backend-api-url";
 import { getForwardedCookieHeader } from "@/lib/api/request-context";
 import { ProblemDetailsError } from "@/shared/errors";

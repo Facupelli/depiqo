@@ -7,17 +7,9 @@ export const problemDetailsSchema = z
     status: z.number(),
     detail: z.string(),
     instance: z.string().optional(),
+    requestId: z.string().optional(),
+    traceId: z.string().optional(),
   })
-  .catchall(z.any());
+  .catchall(z.unknown());
 
 export type ProblemDetails = z.infer<typeof problemDetailsSchema>;
-
-export type PaginatedDto<T> = {
-  data: T[];
-  meta: {
-    total: number;
-    page: number;
-    limit: number;
-    totalPages: number;
-  };
-};

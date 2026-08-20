@@ -6,7 +6,7 @@ import {
 	GenerateRentalBudgetResponseSchema,
 	generateRentalBudgetContract,
 } from "@repo/api-contracts";
-import { problemDetailsSchema } from "@repo/schemas";
+import { problemDetailsSchema } from "@repo/api-contracts";
 import { getBackendApiBaseUrl } from "@/lib/api/backend-api-url";
 import { getCsrfToken } from "@/lib/api/csrf-token";
 import {

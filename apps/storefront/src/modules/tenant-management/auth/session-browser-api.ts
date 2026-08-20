@@ -1,4 +1,4 @@
-import { problemDetailsSchema } from "@repo/schemas";
+import { problemDetailsSchema } from "@repo/api-contracts";
 import { z } from "zod";
 import { ProblemDetailsError } from "@/shared/errors";
 

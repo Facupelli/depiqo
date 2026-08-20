@@ -33,7 +33,7 @@ equipment-rental-2/
 │   └── web/         # TanStack Start frontend (port 3000)
 ├── packages/
 │   ├── types/       # Shared TypeScript interfaces
-│   ├── schemas/     # Zod schemas
+│   ├── api-contracts/ # Shared API contracts and Zod schemas
 │   └── ...
 ```
 
