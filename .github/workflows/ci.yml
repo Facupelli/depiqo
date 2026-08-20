@@ -41,3 +41,6 @@ jobs:
 
       - name: Backend unit tests
         run: pnpm --filter @repo/backend run test
+
+      - name: Backend database tests
+        run: pnpm --filter @repo/backend run test:db:ci
