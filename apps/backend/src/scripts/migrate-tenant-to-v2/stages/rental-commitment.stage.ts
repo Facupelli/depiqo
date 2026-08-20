@@ -16,6 +16,11 @@ import { v5 as uuidv5 } from "uuid";
 
 const MIGRATION_UUID_NAMESPACE = "a45fc5e2-ec5e-4d89-8cb8-c35c66d4f830";
 
+const LEGACY_FINANCIAL_SNAPSHOT_CURRENCY_OVERRIDES: Readonly<Record<string, string>> = {
+	// This tenant's legacy order snapshots were incorrectly written as USD.
+	"e545d3d3-c6bb-43fb-afa6-cdf734cbdf0a": "EUR",
+};
+
 export type TenantV2MigrationContext = {
 	prisma: PrismaClient;
 	legacyTenantId: string;
@@ -72,6 +77,10 @@ async function migrateRentals(ctx: TenantV2MigrationContext) {
 
 	for (const order of orders) {
 		const status = mapOrderStatusToV2(order.status);
+		const priceSnapshot = migrateLegacyFinancialSnapshot({
+			tenantId: order.tenantId,
+			financialSnapshot: order.financialSnapshot,
+		});
 
 		await ctx.prisma.v2Rental.upsert({
 			where: { id: order.id },
@@ -87,7 +96,7 @@ async function migrateRentals(ctx: TenantV2MigrationContext) {
 				notes: order.notes,
 				insuranceSelected: order.insuranceSelected,
 				bookingSnapshot: order.bookingSnapshot,
-				priceSnapshot: order.financialSnapshot,
+				priceSnapshot,
 				source: V2RentalSource.FORMAL,
 
 				periodStart: order.periodStart,
@@ -108,7 +117,7 @@ async function migrateRentals(ctx: TenantV2MigrationContext) {
 				notes: order.notes,
 				insuranceSelected: order.insuranceSelected,
 				bookingSnapshot: order.bookingSnapshot,
-				priceSnapshot: order.financialSnapshot,
+				priceSnapshot,
 				source: V2RentalSource.FORMAL,
 
 				periodStart: order.periodStart,
@@ -120,6 +129,33 @@ async function migrateRentals(ctx: TenantV2MigrationContext) {
 			},
 		});
 	}
+}
+
+function migrateLegacyFinancialSnapshot(input: {
+	tenantId: string;
+	financialSnapshot: Prisma.JsonValue;
+}): Prisma.JsonValue {
+	const currencyOverride =
+		LEGACY_FINANCIAL_SNAPSHOT_CURRENCY_OVERRIDES[input.tenantId];
+
+	if (!currencyOverride) {
+		return input.financialSnapshot;
+	}
+
+	if (
+		!isPrismaJsonObject(input.financialSnapshot) ||
+		typeof input.financialSnapshot.currency !== "string"
+	) {
+		throw new Error(
+			`Cannot apply the financial snapshot currency override for tenant ${input.tenantId}: snapshot currency is missing or invalid.`,
+		);
+	}
+
+	return { ...input.financialSnapshot, currency: currencyOverride };
+}
+
+function isPrismaJsonObject(value: Prisma.JsonValue): value is Prisma.JsonObject {
+	return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 async function migrateRentalNumberCounter(ctx: TenantV2MigrationContext) {

@@ -40,15 +40,19 @@ type LegacyPricingGroup = {
 export async function migratePricingStage(ctx: TenantV2MigrationContext) {
 	ctx.log("Starting Stage 4: Pricing");
 
-	const groups = await buildLegacyPricingGroups(ctx);
+	const [groups, currency] = await Promise.all([
+		buildLegacyPricingGroups(ctx),
+		resolveLegacyTenantCurrency(ctx, "EUR"),
+	]);
 
 	ctx.log("Migrating pricing groups", {
 		groups: groups.length,
+		currency,
 		ratePlans: groups.length,
 		ratePlanTiers: groups.reduce((sum, group) => sum + group.tiers.length, 0),
 	});
 
-	await migrateRatePlans(ctx, groups);
+	await migrateRatePlans(ctx, groups, currency);
 	await migrateRatePlanTiers(ctx, groups);
 	await migrateRentalOfferPricings(ctx, groups);
 
@@ -196,6 +200,7 @@ async function buildLegacyPricingGroups(
 async function migrateRatePlans(
 	ctx: TenantV2MigrationContext,
 	groups: LegacyPricingGroup[],
+	currency: string,
 ) {
 	ctx.log(`Migrating rate plans: ${groups.length}`);
 
@@ -211,7 +216,7 @@ async function migrateRatePlans(
 				tenantId: group.tenantId,
 				name: group.name,
 				billingUnit: mapLegacyBillingUnitToV2(group.billingUnit),
-				currency: resolveCurrencyFromTenantConfig(ctx, "ARS"),
+				currency,
 				isActive: true,
 				deletedAt: null,
 				createdAt: getEarliestCreatedAt(group),
@@ -220,7 +225,7 @@ async function migrateRatePlans(
 			update: {
 				name: group.name,
 				billingUnit: mapLegacyBillingUnitToV2(group.billingUnit),
-				currency: resolveCurrencyFromTenantConfig(ctx, "ARS"),
+				currency,
 				isActive: true,
 				deletedAt: null,
 				updatedAt: getLatestUpdatedAt(group),
@@ -426,11 +431,42 @@ function getLatestUpdatedAt(group: LegacyPricingGroup): Date {
 	}, group.tiers[0]?.updatedAt ?? new Date());
 }
 
-function resolveCurrencyFromTenantConfig(
+async function resolveLegacyTenantCurrency(
 	ctx: TenantV2MigrationContext,
 	fallback: string,
-): string {
-	// For now we use fallback because this function does not have tenant config loaded.
-	// If you want, we can load tenant config once in buildLegacyPricingGroups and pass currency into each group.
-	return fallback;
+): Promise<string> {
+	const tenant = await ctx.prisma.tenant.findUniqueOrThrow({
+		where: { id: ctx.legacyTenantId },
+		select: { config: true },
+	});
+
+	const currency = readPricingCurrency(tenant.config);
+
+	if (currency === undefined) {
+		return fallback;
+	}
+
+	const normalizedCurrency = currency.trim().toUpperCase();
+
+	if (!/^[A-Z]{3}$/.test(normalizedCurrency)) {
+		throw new Error(
+			`Invalid legacy tenant pricing currency "${currency}" for tenant ${ctx.legacyTenantId}`,
+		);
+	}
+
+	return normalizedCurrency;
+}
+
+function readPricingCurrency(config: unknown): string | undefined {
+	if (!config || typeof config !== "object" || !("pricing" in config)) {
+		return undefined;
+	}
+
+	const pricing = config.pricing;
+
+	if (!pricing || typeof pricing !== "object" || !("currency" in pricing)) {
+		return undefined;
+	}
+
+	return typeof pricing.currency === "string" ? pricing.currency : undefined;
 }
