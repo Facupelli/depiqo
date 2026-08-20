@@ -1,4 +1,5 @@
 import { Body, Controller, HttpCode, HttpStatus, Param, Put, UseGuards } from '@nestjs/common';
+import { AssignRentalAccessoriesAvailabilityProblemExtensionsSchema } from '@repo/api-contracts';
 import { CommandBus } from '@nestjs/cqrs';
 
 import { createProblemDetails, createProblemType, ProblemException } from 'src/core/problem-details';
@@ -47,7 +48,10 @@ function toAssignRentalAccessoriesProblem(error: AssignRentalAccessoriesError): 
   const problem = assignRentalAccessoriesProblemMap[error.code];
 
   return ProblemException.from({
-    problemDetails: createProblemDetails({ ...problem, extensions: { code: error.code } }),
+    problemDetails: createProblemDetails({
+      ...problem,
+      extensions: { code: error.code, ...availabilityProblemExtensions(error) },
+    }),
     applicationError: error,
     cause: error.cause,
   });
@@ -90,6 +94,12 @@ const assignRentalAccessoriesProblemMap = {
     status: HttpStatus.CONFLICT,
     detail: 'Not enough accessory assets are available for the rental period.',
   },
+  'rental_commitment.asset_availability_changed': {
+    type: createProblemType('rental_commitment.asset_availability_changed'),
+    title: 'Asset availability changed',
+    status: HttpStatus.CONFLICT,
+    detail: 'Accessory availability changed while the assignment was being saved.',
+  },
   'rental_commitment.rental_version_conflict': {
     type: createProblemType('rental_commitment.rental_version_conflict'),
     title: 'Rental was modified',
@@ -106,3 +116,15 @@ const assignRentalAccessoriesProblemMap = {
   AssignRentalAccessoriesErrorCode,
   { type: string; title: string; status: HttpStatus; detail: string }
 >;
+
+function availabilityProblemExtensions(error: AssignRentalAccessoriesError): Record<string, unknown> {
+  if (error.code !== 'rental_commitment.insufficient_asset_availability') {
+    return {};
+  }
+
+  const parsed = AssignRentalAccessoriesAvailabilityProblemExtensionsSchema.safeParse({
+    availability: error.context?.availability,
+  });
+
+  return parsed.success ? parsed.data : {};
+}

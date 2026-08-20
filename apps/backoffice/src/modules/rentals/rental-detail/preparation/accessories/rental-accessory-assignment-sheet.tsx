@@ -5,16 +5,27 @@ import {
 	SheetHeader,
 	SheetTitle,
 } from "@repo/ui/components/sheet";
+import { useQueryClient } from "@tanstack/react-query";
 import { AlertCircle, PackagePlus } from "lucide-react";
+import { useState } from "react";
 import { useRentalDetailContext } from "@/modules/rentals/rental-detail/rental-detail.context";
+import { rentalDetailViewQueries } from "@/modules/rentals/rental-detail/rental-detail.queries";
+import {
+	type AssignRentalAccessoriesUiError,
+	toAssignRentalAccessoriesUiError,
+} from "./assign-rental-accessories.errors";
 import { useAssignRentalAccessories } from "./assign-rental-accessories.mutation";
 import {
 	createRentalAccessoryAssignmentFormDefaultValues,
 	type RentalAccessoryAssignmentFormValues,
 	toAssignRentalAccessoriesDto,
 } from "./rental-accessory-assignment.schema";
+import { createSharedAccessoryCapacityByEquipmentType } from "./rental-accessory-assignment.utils";
 import { RentalAccessoryAssignmentForm } from "./rental-accessory-assignment-form";
-import { useRentalAccessoryDefaults } from "./rental-accessory-defaults.queries";
+import {
+	rentalAccessoryDefaultQueries,
+	useRentalAccessoryDefaults,
+} from "./rental-accessory-defaults.queries";
 
 interface RentalAccessoryAssignmentSheetProps {
 	open: boolean;
@@ -47,6 +58,9 @@ function RentalAccessoryAssignmentSheetBody({
 	onClose: () => void;
 }) {
 	const { rental } = useRentalDetailContext();
+	const queryClient = useQueryClient();
+	const [assignmentError, setAssignmentError] =
+		useState<AssignRentalAccessoriesUiError>();
 	const {
 		data: defaults,
 		isPending,
@@ -55,9 +69,25 @@ function RentalAccessoryAssignmentSheetBody({
 	const assignAccessories = useAssignRentalAccessories();
 
 	async function handleSubmit(values: RentalAccessoryAssignmentFormValues) {
-		const body = toAssignRentalAccessoriesDto(values);
-		await assignAccessories.mutateAsync({ rentalId: rental.id, body });
-		onClose();
+		setAssignmentError(undefined);
+
+		try {
+			const body = toAssignRentalAccessoriesDto(values);
+			await assignAccessories.mutateAsync({ rentalId: rental.id, body });
+			onClose();
+		} catch (error) {
+			const uiError = toAssignRentalAccessoriesUiError(error);
+			setAssignmentError(uiError);
+
+			if (uiError.shouldRefreshAvailability) {
+				await Promise.all([
+					queryClient.fetchQuery(
+						rentalAccessoryDefaultQueries.detail(rental.id),
+					),
+					queryClient.fetchQuery(rentalDetailViewQueries.detail(rental.id)),
+				]).catch(() => undefined);
+			}
+		}
 	}
 
 	if (isPending) {
@@ -114,6 +144,8 @@ function RentalAccessoryAssignmentSheetBody({
 		defaults,
 		existingAccessories: rental.accessories,
 	});
+	const sharedCapacityByEquipmentType =
+		createSharedAccessoryCapacityByEquipmentType(defaults);
 
 	return (
 		<div className="flex min-h-0 flex-1 flex-col">
@@ -121,9 +153,12 @@ function RentalAccessoryAssignmentSheetBody({
 				<RentalAccessoryAssignmentForm
 					key={defaults.rentalOrderId}
 					defaultValues={defaultValues}
+					sharedCapacityByEquipmentType={sharedCapacityByEquipmentType}
 					isPending={assignAccessories.isPending}
+					error={assignmentError}
 					onSubmit={handleSubmit}
 					onCancel={onClose}
+					onAccessoryQuantityChange={() => setAssignmentError(undefined)}
 				/>
 			</div>
 		</div>

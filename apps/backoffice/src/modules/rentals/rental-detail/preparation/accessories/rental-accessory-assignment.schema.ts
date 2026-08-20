@@ -5,19 +5,14 @@ import {
 	type GetRentalDetailResponseDto,
 } from "@repo/api-contracts";
 import { z } from "zod";
+import { createRentalAccessoryAssignmentKey } from "./rental-accessory-assignment.utils";
 
-const accessoryAssignmentItemSchema = z
-	.object({
-		equipmentTypeId: z.string().min(1),
-		equipmentTypeName: z.string().min(1),
-		recommendedQuantity: z.number().int().nonnegative(),
-		availableCount: z.number().int().nonnegative(),
-		quantity: z.number().int().nonnegative(),
-	})
-	.refine((value) => value.quantity <= value.availableCount, {
-		message: "La cantidad no puede superar el stock disponible",
-		path: ["quantity"],
-	});
+const accessoryAssignmentItemSchema = z.object({
+	equipmentTypeId: z.string().min(1),
+	equipmentTypeName: z.string().min(1),
+	recommendedQuantity: z.number().int().nonnegative(),
+	quantity: z.number().int().nonnegative(),
+});
 
 const accessoryAssignmentGroupSchema = z.object({
 	sourceRentalDemandLineId: z.string().min(1),
@@ -53,10 +48,10 @@ export function createRentalAccessoryAssignmentFormDefaultValues({
 		}
 
 		existingQuantityBySourceAndEquipment.set(
-			createAssignmentKey(
-				accessory.sourceRentalDemandLineId,
-				accessory.equipmentTypeId,
-			),
+			createRentalAccessoryAssignmentKey({
+				sourceRentalDemandLineId: accessory.sourceRentalDemandLineId,
+				equipmentTypeId: accessory.equipmentTypeId,
+			}),
 			accessory.quantity,
 		);
 	}
@@ -65,6 +60,29 @@ export function createRentalAccessoryAssignmentFormDefaultValues({
 		string,
 		RentalAccessoryAssignmentGroupFormValues
 	>();
+	const rowsWithoutExistingQuantity: Array<{
+		accessory: RentalAccessoryAssignmentGroupFormValues["accessories"][number];
+		equipmentTypeId: string;
+	}> = [];
+	const remainingCapacityByEquipmentType = new Map<string, number>();
+
+	for (const suggestion of defaults.suggestions) {
+		const currentCapacity = remainingCapacityByEquipmentType.get(
+			suggestion.accessoryEquipmentTypeId,
+		);
+		if (
+			currentCapacity !== undefined &&
+			currentCapacity !== suggestion.availableCount
+		) {
+			throw new Error(
+				`Accessory equipment type "${suggestion.accessoryEquipmentTypeId}" returned inconsistent shared availability.`,
+			);
+		}
+		remainingCapacityByEquipmentType.set(
+			suggestion.accessoryEquipmentTypeId,
+			suggestion.availableCount,
+		);
+	}
 
 	for (const suggestion of defaults.suggestions) {
 		const group = groupsByDemandLine.get(
@@ -78,23 +96,51 @@ export function createRentalAccessoryAssignmentFormDefaultValues({
 		};
 
 		const existingQuantity = existingQuantityBySourceAndEquipment.get(
-			createAssignmentKey(
-				suggestion.sourceRentalDemandLineId,
-				suggestion.accessoryEquipmentTypeId,
-			),
+			createRentalAccessoryAssignmentKey({
+				sourceRentalDemandLineId: suggestion.sourceRentalDemandLineId,
+				equipmentTypeId: suggestion.accessoryEquipmentTypeId,
+			}),
 		);
 
-		group.accessories.push({
+		const accessory = {
 			equipmentTypeId: suggestion.accessoryEquipmentTypeId,
 			equipmentTypeName: suggestion.accessoryEquipmentTypeName,
 			recommendedQuantity: suggestion.recommendedQuantity,
-			availableCount: suggestion.availableCount,
-			quantity:
-				existingQuantity ??
-				Math.min(suggestion.recommendedQuantity, suggestion.availableCount),
-		});
+			quantity: existingQuantity ?? 0,
+		};
+		group.accessories.push(accessory);
+
+		if (existingQuantity === undefined) {
+			rowsWithoutExistingQuantity.push({
+				accessory,
+				equipmentTypeId: suggestion.accessoryEquipmentTypeId,
+			});
+		} else {
+			remainingCapacityByEquipmentType.set(
+				suggestion.accessoryEquipmentTypeId,
+				(remainingCapacityByEquipmentType.get(
+					suggestion.accessoryEquipmentTypeId,
+				) ?? 0) - existingQuantity,
+			);
+		}
 
 		groupsByDemandLine.set(suggestion.sourceRentalDemandLineId, group);
+	}
+
+	for (const row of rowsWithoutExistingQuantity) {
+		const remainingCapacity = Math.max(
+			0,
+			remainingCapacityByEquipmentType.get(row.equipmentTypeId) ?? 0,
+		);
+		const quantity = Math.min(
+			row.accessory.recommendedQuantity,
+			remainingCapacity,
+		);
+		row.accessory.quantity = quantity;
+		remainingCapacityByEquipmentType.set(
+			row.equipmentTypeId,
+			remainingCapacity - quantity,
+		);
 	}
 
 	return { groups: Array.from(groupsByDemandLine.values()) };
@@ -116,11 +162,4 @@ export function toAssignRentalAccessoriesDto(
 	};
 
 	return AssignRentalAccessoriesBodySchema.parse(dto);
-}
-
-function createAssignmentKey(
-	sourceRentalDemandLineId: string,
-	equipmentTypeId: string,
-) {
-	return `${sourceRentalDemandLineId}:${equipmentTypeId}`;
 }

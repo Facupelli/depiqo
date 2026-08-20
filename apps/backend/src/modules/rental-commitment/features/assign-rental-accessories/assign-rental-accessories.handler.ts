@@ -177,12 +177,26 @@ export class AssignRentalAccessoriesHandler implements ICommandHandler<
 
     if (allocationPlan.isErr()) {
       if (allocationPlan.error instanceof InsufficientAssetAvailabilityError) {
+        const availabilityError = allocationPlan.error as InsufficientAssetAvailabilityError;
+        const selection = plannedSelections.find((candidate) => candidate.id === availabilityError.rentalSelectionId);
+        if (!selection) {
+          throw allocationPlan.error;
+        }
+
         return err(
           assignRentalAccessoriesError(
             'rental_commitment.insufficient_asset_availability',
-            allocationPlan.error.message,
-            allocationPlan.error,
-            context,
+            availabilityError.message,
+            availabilityError,
+            {
+              ...context,
+              availability: {
+                sourceRentalDemandLineId: selection.sourceRentalDemandLineId ?? null,
+                equipmentTypeId: selection.equipmentTypeId,
+                requestedQuantity: selection.quantity,
+                availableQuantity: selection.keptAssetIds.length + availabilityError.availableQuantity,
+              },
+            },
           ),
         );
       }
@@ -208,8 +222,8 @@ export class AssignRentalAccessoriesHandler implements ICommandHandler<
       if (error instanceof PostgresExclusionViolationError) {
         return err(
           assignRentalAccessoriesError(
-            'rental_commitment.insufficient_asset_availability',
-            'The requested accessory assets are no longer available.',
+            'rental_commitment.asset_availability_changed',
+            'Accessory availability changed while the assignment was being saved.',
             error,
             context,
           ),

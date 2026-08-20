@@ -27,6 +27,8 @@ type DemandLine = {
 type AvailabilityCandidate = {
   assetId: string;
   equipmentTypeId: string;
+  ownershipKind: 'TENANT_OWNED' | 'THIRD_PARTY';
+  ownerContractSnapshot: Prisma.JsonValue | null;
 };
 
 type ActiveAssetBlockRow = {
@@ -155,6 +157,8 @@ export class GetRentalAccessoryDefaultsHandler implements IQueryHandler<
       select: {
         assetId: true,
         equipmentTypeId: true,
+        ownershipKind: true,
+        ownerContractSnapshot: true,
       },
     });
 
@@ -167,7 +171,7 @@ export class GetRentalAccessoryDefaultsHandler implements IQueryHandler<
 
     const counts = new Map<string, number>();
     for (const candidate of candidates satisfies AvailabilityCandidate[]) {
-      if (blockedAssetIds.has(candidate.assetId)) {
+      if (blockedAssetIds.has(candidate.assetId) || !this.isOwnershipEligible(candidate)) {
         continue;
       }
 
@@ -175,6 +179,13 @@ export class GetRentalAccessoryDefaultsHandler implements IQueryHandler<
     }
 
     return counts;
+  }
+
+  private isOwnershipEligible(candidate: AvailabilityCandidate): boolean {
+    return (
+      candidate.ownershipKind === 'TENANT_OWNED' ||
+      (candidate.ownershipKind === 'THIRD_PARTY' && candidate.ownerContractSnapshot !== null)
+    );
   }
 
   private async findBlockedAssetIds(params: {

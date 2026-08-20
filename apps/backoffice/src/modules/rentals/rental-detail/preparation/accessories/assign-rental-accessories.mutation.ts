@@ -7,6 +7,7 @@ import {
 	type AssignRentalAccessoriesVariables,
 	assignRentalAccessories,
 } from "./assign-rental-accessories.api";
+import { rentalAccessoryDefaultKeys } from "./rental-accessory-defaults.queries";
 
 type AssignRentalAccessoriesOptions = Omit<
 	MutationOptions<
@@ -28,8 +29,10 @@ export function useAssignRentalAccessories(
 		...options,
 		mutationFn: assignRentalAccessories,
 		meta: {
-			invalidates: (variables: AssignRentalAccessoriesVariables) =>
+			invalidates: (variables: AssignRentalAccessoriesVariables) => [
 				rentalKeys.detail(variables.rentalId),
+				rentalAccessoryDefaultKeys.detail(variables.rentalId),
+			],
 			...options?.meta,
 		},
 	});

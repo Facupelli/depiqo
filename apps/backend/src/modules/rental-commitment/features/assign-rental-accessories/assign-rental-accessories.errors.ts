@@ -7,6 +7,7 @@ export type AssignRentalAccessoriesErrorCode =
   | 'rental_commitment.duplicate_accessory_selection'
   | 'rental_commitment.equipment_type_not_found'
   | 'rental_commitment.insufficient_asset_availability'
+  | 'rental_commitment.asset_availability_changed'
   | 'rental_commitment.source_rental_demand_line_not_found'
   | 'rental_commitment.rental_version_conflict';
 
