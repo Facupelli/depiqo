@@ -20,7 +20,8 @@ export const Route = createFileRoute(
 function EditBranchRoute() {
 	const { branchId } = Route.useParams();
 	const navigate = useNavigate();
-	const goBackToBranches = () => navigate({ to: "/dashboard/branches" });
+	const goBackToBranches = () =>
+		navigate({ to: "/dashboard/settings", search: { section: "branches" } });
 
 	return (
 		<EditBranchPage
