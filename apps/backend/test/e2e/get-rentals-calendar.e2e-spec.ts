@@ -13,6 +13,7 @@ describe(`GET ${path}`, () => {
   let app: E2ETestApp;
   let prisma: PrismaService;
   let fixtures: TestFixtures;
+  let nextRentalNumber = 1;
 
   beforeAll(async () => {
     app = await createE2ETestApp();
@@ -32,9 +33,9 @@ describe(`GET ${path}`, () => {
 
     await prisma.client.$executeRaw(Prisma.sql`
       INSERT INTO v2_rentals (
-        id, tenant_id, branch_id, status, period_start, period_end, created_at, updated_at
+        id, tenant_id, rental_number, branch_id, status, period_start, period_end, created_at, updated_at
       ) VALUES (
-        ${id}, ${params.tenantId}, ${params.branchId}, 'CONFIRMED'::"V2RentalStatus",
+        ${id}, ${params.tenantId}, ${nextRentalNumber++}, ${params.branchId}, 'CONFIRMED'::"V2RentalStatus",
         ${params.periodStart}::timestamptz, ${params.periodEnd}::timestamptz,
         '2026-08-01T00:00:00Z'::timestamptz, '2026-08-01T00:00:00Z'::timestamptz
       )
