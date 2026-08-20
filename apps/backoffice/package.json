@@ -13,6 +13,7 @@
     "cf-typegen": "wrangler types worker-configuration.d.ts --env-file .wrangler-types.env",
     "deploy": "pnpm run build:production && wrangler deploy",
     "test": "vitest run",
+    "typecheck": "tsc --noEmit",
     "format": "biome format",
     "lint": "biome lint",
     "check": "biome check",

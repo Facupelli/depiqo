@@ -1,7 +1,5 @@
-import { Link } from "@tanstack/react-router";
 import {
 	ChevronDown,
-	ExternalLink,
 	Mail,
 	MapPin,
 	Phone,
@@ -48,18 +46,7 @@ function RentalClientCard() {
 		<SidebarCard
 			icon={<User2Icon className="size-4" />}
 			title="Información del cliente"
-			action={
-				customer ? (
-					<Link
-						to="/dashboard/customers/$customerId"
-						params={{ customerId: customer.id }}
-						className="flex items-center gap-1 text-xs font-medium text-neutral-500 hover:text-neutral-950 transition-colors"
-					>
-						Ver Perfil
-						<ExternalLink className="w-3 h-3" />
-					</Link>
-				) : null
-			}
+
 		>
 			{customer ? (
 				<>
@@ -228,7 +215,6 @@ function RentalFinancialsCard() {
 	const [showItems, setShowItems] = useState(false);
 
 	const pricing = rental.pricing;
-	const manualAdjustment = pricing?.manualPricingAdjustment ?? null;
 
 	if (!pricing) {
 		return (
@@ -244,6 +230,8 @@ function RentalFinancialsCard() {
 	if (pricing.kind === "LEGACY") {
 		return <RentalLegacyFinancialsCard pricing={pricing} />;
 	}
+
+	const manualAdjustment = pricing.manualPricingAdjustment ?? null;
 
 	return (
 		<section className="bg-white border border-neutral-200 rounded-lg p-5">

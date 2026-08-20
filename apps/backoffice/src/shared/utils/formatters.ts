@@ -1,6 +1,6 @@
 import type { Dayjs } from "dayjs";
 
-export function formatOrderNumber(orderNumber: string): string {
+export function formatOrderNumber(orderNumber: string | number): string {
 	return `ORD-${String(orderNumber).padStart(5, "0")}`;
 }
 

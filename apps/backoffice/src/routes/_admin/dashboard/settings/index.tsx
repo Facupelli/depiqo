@@ -92,19 +92,13 @@ const settingsGroups = [
 	}>;
 }>;
 
-const settingsMeta = Object.fromEntries(
-	settingsGroups.flatMap((group) =>
-		group.items.map((item) => [item.key, { ...item, groupTitle: group.title }]),
-	),
-) as Record<
-	SettingsSection,
-	{
-		label: string;
-		description: string;
-		groupTitle: string;
-		icon: typeof Building2;
-	}
->;
+function findSettingsMetadata(section: SettingsSection) {
+	return settingsGroups
+		.flatMap((group) =>
+			group.items.map((item) => ({ ...item, groupTitle: group.title })),
+		)
+		.find((item) => item.key === section);
+}
 
 export const Route = createFileRoute("/_admin/dashboard/settings/")({
 	validateSearch: settingsSearchSchema,
@@ -130,7 +124,11 @@ function SettingsRoute() {
 		return <SettingsLanding onSelect={selectSection} />;
 	}
 
-	const active = settingsMeta[section];
+	const active = findSettingsMetadata(section);
+	if (!active) {
+		return null;
+	}
+
 	return (
 		<div className="space-y-8 p-8">
 			<div>

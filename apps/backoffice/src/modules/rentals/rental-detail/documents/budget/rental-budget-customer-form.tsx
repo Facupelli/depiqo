@@ -48,34 +48,114 @@ export function RentalBudgetCustomerForm({
 				className="space-y-6"
 			>
 				<FieldGroup>
-					<CustomerTextField
-						form={form}
-						name="fullName"
-						label="Nombre completo"
-						placeholder="Nombre y apellido"
-						disabled={isPending}
-					/>
-					<CustomerTextField
-						form={form}
-						name="documentNumber"
-						label="Documento"
-						placeholder="DNI, CUIT o documento"
-						disabled={isPending}
-					/>
-					<CustomerTextField
-						form={form}
-						name="address"
-						label="Dirección"
-						placeholder="Calle, número y localidad"
-						disabled={isPending}
-					/>
-					<CustomerTextField
-						form={form}
-						name="phone"
-						label="Teléfono"
-						placeholder="+54 11 1234-5678"
-						disabled={isPending}
-					/>
+					<form.Field name="fullName">
+						{(field) => {
+							const isInvalid =
+								field.state.meta.isTouched && !field.state.meta.isValid;
+
+							return (
+								<Field data-invalid={isInvalid}>
+									<FieldLabel htmlFor={field.name}>Nombre completo</FieldLabel>
+									<Input
+										id={field.name}
+										name={field.name}
+										value={field.state.value}
+										onBlur={field.handleBlur}
+										onChange={(event) =>
+											field.handleChange(event.target.value)
+										}
+										placeholder="Nombre y apellido"
+										aria-invalid={isInvalid}
+										disabled={isPending}
+									/>
+									{isInvalid ? (
+										<FieldError errors={field.state.meta.errors} />
+									) : null}
+								</Field>
+							);
+						}}
+					</form.Field>
+					<form.Field name="documentNumber">
+						{(field) => {
+							const isInvalid =
+								field.state.meta.isTouched && !field.state.meta.isValid;
+
+							return (
+								<Field data-invalid={isInvalid}>
+									<FieldLabel htmlFor={field.name}>Documento</FieldLabel>
+									<Input
+										id={field.name}
+										name={field.name}
+										value={field.state.value}
+										onBlur={field.handleBlur}
+										onChange={(event) =>
+											field.handleChange(event.target.value)
+										}
+										placeholder="DNI, CUIT o documento"
+										aria-invalid={isInvalid}
+										disabled={isPending}
+									/>
+									{isInvalid ? (
+										<FieldError errors={field.state.meta.errors} />
+									) : null}
+								</Field>
+							);
+						}}
+					</form.Field>
+					<form.Field name="address">
+						{(field) => {
+							const isInvalid =
+								field.state.meta.isTouched && !field.state.meta.isValid;
+
+							return (
+								<Field data-invalid={isInvalid}>
+									<FieldLabel htmlFor={field.name}>Dirección</FieldLabel>
+									<Input
+										id={field.name}
+										name={field.name}
+										value={field.state.value}
+										onBlur={field.handleBlur}
+										onChange={(event) =>
+											field.handleChange(event.target.value)
+										}
+										placeholder="Calle, número y localidad"
+										aria-invalid={isInvalid}
+										disabled={isPending}
+									/>
+									{isInvalid ? (
+										<FieldError errors={field.state.meta.errors} />
+									) : null}
+								</Field>
+							);
+						}}
+					</form.Field>
+					<form.Field name="phone">
+						{(field) => {
+							const isInvalid =
+								field.state.meta.isTouched && !field.state.meta.isValid;
+
+							return (
+								<Field data-invalid={isInvalid}>
+									<FieldLabel htmlFor={field.name}>Teléfono</FieldLabel>
+									<Input
+										id={field.name}
+										name={field.name}
+										value={field.state.value}
+										onBlur={field.handleBlur}
+										onChange={(event) =>
+											field.handleChange(event.target.value)
+										}
+										placeholder="+54 11 1234-5678"
+										aria-invalid={isInvalid}
+										disabled={isPending}
+									/>
+									{isInvalid ? (
+										<FieldError errors={field.state.meta.errors} />
+									) : null}
+								</Field>
+							);
+						}}
+					</form.Field>
 				</FieldGroup>
 			</form>
 
@@ -105,45 +185,5 @@ export function RentalBudgetCustomerForm({
 				</form.Subscribe>
 			</div>
 		</>
-	);
-}
-
-function CustomerTextField({
-	form,
-	name,
-	label,
-	placeholder,
-	disabled,
-}: {
-	form: ReturnType<typeof useForm>;
-	name: keyof RentalBudgetCustomerFormValues;
-	label: string;
-	placeholder: string;
-	disabled: boolean;
-}) {
-	return (
-		<form.Field name={name}>
-			{(field) => {
-				const isInvalid =
-					field.state.meta.isTouched && !field.state.meta.isValid;
-
-				return (
-					<Field data-invalid={isInvalid}>
-						<FieldLabel htmlFor={field.name}>{label}</FieldLabel>
-						<Input
-							id={field.name}
-							name={field.name}
-							value={field.state.value}
-							onBlur={field.handleBlur}
-							onChange={(event) => field.handleChange(event.target.value)}
-							placeholder={placeholder}
-							aria-invalid={isInvalid}
-							disabled={disabled}
-						/>
-						{isInvalid ? <FieldError errors={field.state.meta.errors} /> : null}
-					</Field>
-				);
-			}}
-		</form.Field>
 	);
 }

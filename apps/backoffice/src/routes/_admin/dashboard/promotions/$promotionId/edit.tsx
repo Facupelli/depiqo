@@ -4,7 +4,7 @@ import { EditPromotionPage } from "@/modules/pricing/promotions/edit-promotion/E
 import { promotionQueries } from "@/modules/pricing/promotions/promotion.queries";
 
 const promotionsSearchSchema = z.object({
-	tab: z.enum(["coupons", "promotions"]).default("promotions"),
+	tab: z.enum(["promotions"]).default("promotions"),
 	search: z.string().optional(),
 	activation: z.enum(["AUTOMATIC", "COUPON_REQUIRED"]).optional(),
 });

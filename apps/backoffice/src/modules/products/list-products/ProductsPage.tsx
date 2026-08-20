@@ -17,9 +17,10 @@ import { useProducts } from "./product-list.queries";
 import { ProductListFilters } from "./product-list-filters";
 import { ProductListTable } from "./product-list-table";
 
-type ProductListSearch = GetRentableItemsQueryDto & {
+type ProductListSearch = Omit<GetRentableItemsQueryDto, "kind"> & {
 	page: number;
 	pageSize: number;
+	kind?: Extract<GetRentableItemsQueryDto["kind"], "SINGLE" | "PACKAGE">;
 };
 
 export function ProductsPage({ search }: { search: ProductListSearch }) {

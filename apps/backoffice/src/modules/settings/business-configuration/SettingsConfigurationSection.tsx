@@ -62,7 +62,7 @@ export function SettingsConfigurationSection({
 	const defaultValues = defaultsFor(section, business.config);
 	const form = useForm({
 		defaultValues,
-		validators: { onSubmit: schemas[section] },
+		validators: { onSubmit: schemas[section] as any },
 		onSubmit: async ({ value }) => {
 			await updateConfig(toDto(section, value));
 			toast.success("Configuración guardada");

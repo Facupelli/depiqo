@@ -17,7 +17,8 @@ export const Route = createFileRoute("/_admin/dashboard/branches/new")({
 
 function CreateBranchRoute() {
 	const navigate = useNavigate();
-	const goBackToBranches = () => navigate({ to: "/dashboard/branches" });
+	const goBackToBranches = () =>
+		navigate({ to: "/dashboard/settings", search: { section: "branches" } });
 
 	return (
 		<CreateBranchPage onBack={goBackToBranches} onCreated={goBackToBranches} />
