@@ -8,11 +8,11 @@ export function RentalDetailPageSkeleton() {
 			className="min-h-screen bg-neutral-50 px-8 text-neutral-950"
 		>
 			<span aria-live="polite" className="sr-only">
-				Cargando detalle del pedido
+				Cargando detalle del alquiler
 			</span>
 			<PageBreadcrumb
-				parent={{ label: "Pedidos", to: "/dashboard/orders" }}
-				current="Cargando pedido..."
+				parent={{ label: "Alquileres", to: "/dashboard/orders" }}
+				current="Cargando alquiler..."
 			/>
 
 			<header className="border-neutral-200 border-b pb-8">

@@ -88,7 +88,7 @@ const sidebarItems: SidebarItem[] = [
 		href: "/dashboard/calendar",
 	},
 	{
-		name: "Pedidos",
+		name: "Alquileres",
 		icon: ShoppingBag,
 		href: "/dashboard/orders",
 		// children: [

@@ -212,13 +212,12 @@ function createRentalOrdersColumns({
 
 				return (
 					<div className="flex items-center gap-2">
-						<Badge variant="outline" className="gap-1 rounded-full px-2 py-0.5">
+						<Badge variant="outline" className="gap-1 px-1 rounded-full py-0.5">
 							{customer.isCompany ? (
 								<Building2 className="h-3 w-3" />
 							) : (
 								<User className="h-3 w-3" />
 							)}
-							{customer.isCompany ? "Empresa" : "Persona"}
 						</Badge>
 						<span className="text-sm text-foreground">
 							{customer.displayName}

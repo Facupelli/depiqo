@@ -588,7 +588,7 @@ function OrdersCalendarPopover({
 							onOrderClick();
 						}}
 					>
-						<span>Ver detalle del pedido</span>
+						<span>Ver detalle del alquiler</span>
 						<ChevronRight className="size-4 text-neutral-400" />
 					</button>
 				</div>

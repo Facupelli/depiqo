@@ -30,7 +30,7 @@ export function RentalDetailPage({
 		<div className="min-h-screen bg-neutral-50 text-neutral-950 px-8">
 			<PageBreadcrumb
 				parent={{
-					label: "Pedidos",
+					label: "Alquileres",
 					to: "/dashboard/orders",
 					search: ordersSearch,
 				}}
