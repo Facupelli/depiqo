@@ -5,6 +5,7 @@ export interface CreateEquipmentTypeWithInitialAssetsInput {
   equipmentType: {
     name: string;
     description?: string | null;
+    imageUrl?: string | null;
     categoryId?: string | null;
   };
   initialAssets?: Array<{

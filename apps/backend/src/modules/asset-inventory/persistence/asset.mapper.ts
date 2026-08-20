@@ -33,7 +33,7 @@ export class AssetMapper {
     return {
       id: asset.id,
       tenantId: asset.tenantId,
-      ...this.toUpdateData(asset),
+      ...AssetMapper.toUpdateData(asset),
     };
   }
 

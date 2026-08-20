@@ -66,6 +66,7 @@ export class AssetInventoryAuthoringService extends AssetInventoryAuthoring {
         tenantId: input.tenantId,
         name: input.equipmentType.name,
         description: input.equipmentType.description,
+        imageUrl: input.equipmentType.imageUrl,
         categoryId: input.equipmentType.categoryId,
         assets: initialAssets,
       }),

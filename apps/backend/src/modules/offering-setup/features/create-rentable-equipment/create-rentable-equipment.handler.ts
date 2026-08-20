@@ -46,6 +46,7 @@ export class CreateRentableEquipmentHandler implements ICommandHandler<
       equipmentType: {
         name: command.name,
         description: command.description,
+        imageUrl: command.imageUrl,
         categoryId: command.categoryId,
       },
       initialAssets: command.assets,
