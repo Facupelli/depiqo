@@ -1,5 +1,7 @@
 import { uploadFile } from "@better-upload/client";
 import { Button } from "@repo/ui/components/button";
+import { Input } from "@repo/ui/components/input";
+import { useForm } from "@tanstack/react-form";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { ImageOff, LoaderCircle, Trash2, Upload } from "lucide-react";
 import { useState } from "react";
@@ -21,27 +23,40 @@ export function BrandingSection() {
 	const previewUrl = buildR2PublicUrl(logoUrl, "branding");
 	const showPreview = Boolean(previewUrl && failedLogoPath !== logoUrl);
 
-	async function persistBranding(branding: {
-		logoUrl: string | null;
-		faviconUrl: string | null;
-	}) {
+	async function persistBranding(
+		branding: Partial<{
+			logoUrl: string | null;
+			faviconUrl: string | null;
+			primaryColor: string | null;
+			accentColor: string | null;
+			storefrontName: string | null;
+		}>,
+		feedback = "Identidad guardada correctamente.",
+	) {
 		setErrorMessage(null);
 		setFeedbackMessage(null);
 
 		try {
 			await updateTenantBranding({
-				...branding,
-				accentColor: null,
-				primaryColor: null,
-				storefrontName: null,
-				tagline: null,
+				logoUrl: branding.logoUrl === undefined ? logoUrl : branding.logoUrl,
+				faviconUrl:
+					branding.faviconUrl === undefined ? faviconUrl : branding.faviconUrl,
+				primaryColor:
+					branding.primaryColor === undefined
+						? business.branding.primaryColor
+						: branding.primaryColor,
+				accentColor:
+					branding.accentColor === undefined
+						? business.branding.accentColor
+						: branding.accentColor,
+				storefrontName:
+					branding.storefrontName === undefined
+						? business.branding.storefrontName
+						: branding.storefrontName,
+				tagline: business.branding.tagline,
 			});
 			setFailedLogoPath(null);
-			setFeedbackMessage(
-				branding.logoUrl
-					? "Logo guardado correctamente."
-					: "Logo eliminado correctamente.",
-			);
+			setFeedbackMessage(feedback);
 		} catch (error) {
 			setErrorMessage(getMutationErrorMessage(error));
 		}
@@ -93,6 +108,25 @@ export function BrandingSection() {
 					Sube el logo que quieres mostrar en la experiencia del cliente.
 				</p>
 			</div>
+
+			<BrandingDetailsForm
+				defaultValues={{
+					storefrontName: business.branding.storefrontName ?? "",
+					primaryColor: business.branding.primaryColor ?? "",
+					accentColor: business.branding.accentColor ?? "",
+				}}
+				isPending={isBusy}
+				onSubmit={(values) =>
+					persistBranding(
+						{
+							storefrontName: values.storefrontName.trim() || null,
+							primaryColor: values.primaryColor.trim() || null,
+							accentColor: values.accentColor.trim() || null,
+						},
+						"Identidad de la tienda guardada correctamente.",
+					)
+				}
+			/>
 
 			<div className="rounded-xl border border-border bg-card p-5">
 				<div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
@@ -175,6 +209,94 @@ export function BrandingSection() {
 				</div>
 			</div>
 		</section>
+	);
+}
+
+function BrandingDetailsForm({
+	defaultValues,
+	isPending,
+	onSubmit,
+}: {
+	defaultValues: {
+		storefrontName: string;
+		primaryColor: string;
+		accentColor: string;
+	};
+	isPending: boolean;
+	onSubmit: (values: {
+		storefrontName: string;
+		primaryColor: string;
+		accentColor: string;
+	}) => Promise<void>;
+}) {
+	const form = useForm({
+		defaultValues,
+		onSubmit: async ({ value }) => onSubmit(value),
+	});
+
+	return (
+		<form
+			onSubmit={(event) => {
+				event.preventDefault();
+				void form.handleSubmit();
+			}}
+			className="space-y-4 rounded-xl border border-border bg-card p-5"
+		>
+			<div>
+				<h3 className="text-sm font-semibold">Nombre y colores</h3>
+				<p className="mt-1 text-sm text-muted-foreground">
+					Define el nombre público y los colores de tu tienda.
+				</p>
+			</div>
+			<div className="grid gap-4 sm:grid-cols-3">
+				<form.Field name="storefrontName">
+					{(field) => (
+						<div className="space-y-1.5 text-sm font-medium">
+							<label htmlFor={field.name}>Nombre público</label>
+							<Input
+								id={field.name}
+								value={field.state.value}
+								onBlur={field.handleBlur}
+								onChange={(event) => field.handleChange(event.target.value)}
+							/>
+						</div>
+					)}
+				</form.Field>
+				<form.Field name="primaryColor">
+					{(field) => (
+						<div className="space-y-1.5 text-sm font-medium">
+							<label htmlFor={field.name}>Color principal</label>
+							<Input
+								id={field.name}
+								placeholder="#0f172a"
+								value={field.state.value}
+								onBlur={field.handleBlur}
+								onChange={(event) => field.handleChange(event.target.value)}
+							/>
+						</div>
+					)}
+				</form.Field>
+				<form.Field name="accentColor">
+					{(field) => (
+						<div className="space-y-1.5 text-sm font-medium">
+							<label htmlFor={field.name}>Color de acento</label>
+							<Input
+								id={field.name}
+								placeholder="#f97316"
+								value={field.state.value}
+								onBlur={field.handleBlur}
+								onChange={(event) => field.handleChange(event.target.value)}
+							/>
+						</div>
+					)}
+				</form.Field>
+			</div>
+			<div className="flex justify-end">
+				<Button type="submit" disabled={isPending}>
+					{isPending ? "Guardando..." : "Guardar identidad"}
+				</Button>
+			</div>
+		</form>
 	);
 }
 

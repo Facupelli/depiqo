@@ -36,7 +36,6 @@ const formId = "tenant-contract-signer-settings-form";
 
 export function ContractSignerForm({
 	defaultValues,
-	mode,
 	isPending,
 	onSubmit,
 	feedbackMessage,
@@ -55,10 +54,9 @@ export function ContractSignerForm({
 	return (
 		<Card>
 			<CardHeader>
-				<CardTitle>Firmante de contratos</CardTitle>
+				<CardTitle>Firmante del negocio</CardTitle>
 				<CardDescription>
-					Define los datos y la firma que el sistema usara para futuros
-					contratos de alquiler.
+					Estos datos se usarán en los futuros contratos de alquiler.
 				</CardDescription>
 			</CardHeader>
 			<CardContent className="space-y-6">
@@ -190,6 +188,13 @@ export function ContractSignerForm({
 							}}
 						</form.Field>
 
+						<div className="border-t pt-6">
+							<h3 className="text-sm font-semibold">Firma</h3>
+							<p className="mt-1 text-sm text-muted-foreground">
+								La firma se incluirá en los futuros contratos de alquiler.
+							</p>
+						</div>
+
 						<form.Field name="signatureUrl">
 							{(field) => {
 								const isInvalid =
@@ -199,11 +204,7 @@ export function ContractSignerForm({
 								return (
 									<Field data-invalid={isInvalid} className="space-y-3">
 										<div className="space-y-1">
-											<FieldLabel>Firma</FieldLabel>
-											<p className="text-sm text-muted-foreground">
-												Subi la firma del firmante para incluirla en el
-												contrato.
-											</p>
+											<FieldLabel>Vista previa</FieldLabel>
 										</div>
 
 										<div className="flex min-h-36 items-center justify-center rounded-xl border border-dashed bg-muted/30 px-4 py-6">
@@ -273,21 +274,21 @@ export function ContractSignerForm({
 
 					<div className="flex justify-end">
 						<form.Subscribe
-							selector={(state) => [state.canSubmit, state.isSubmitting]}
+							selector={(state) => [
+								state.canSubmit,
+								state.isDirty,
+								state.isSubmitting,
+							]}
 						>
-							{([canSubmit, isSubmitting]) => (
+							{([canSubmit, isDirty, isSubmitting]) => (
 								<Button
 									type="submit"
 									form={formId}
-									disabled={!canSubmit || isPending}
+									disabled={!canSubmit || !isDirty || isPending}
 								>
 									{isSubmitting || isPending
-										? mode === "create"
-											? "Guardando..."
-											: "Actualizando..."
-										: mode === "create"
-											? "Guardar firmante"
-											: "Actualizar firmante"}
+										? "Guardando..."
+										: "Guardar cambios"}
 								</Button>
 							)}
 						</form.Subscribe>

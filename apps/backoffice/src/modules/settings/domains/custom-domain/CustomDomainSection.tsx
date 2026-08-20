@@ -8,7 +8,7 @@ import { Field, FieldError, FieldLabel } from "@repo/ui/components/field";
 import { Input } from "@repo/ui/components/input";
 import { useForm } from "@tanstack/react-form";
 import { format } from "date-fns";
-import { Globe, RefreshCw } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { ProblemDetailsError } from "@/shared/errors";
@@ -64,34 +64,8 @@ export function CustomDomainSection() {
 
 	return (
 		<section className="space-y-4">
-			<div>
-				<h2 className="text-xl font-bold">Custom Domain</h2>
-				<p className="mt-1 text-sm text-muted-foreground">
-					Register one branded subdomain for your portal. Runtime routing is
-					enabled only after a manual refresh confirms the hostname is active.
-				</p>
-			</div>
-
-			<div className="rounded-xl border border-dashed border-border/70 bg-muted/20 px-5 py-4">
-				<div className="flex items-start gap-3">
-					<div className="flex size-9 items-center justify-center rounded-lg bg-background text-muted-foreground">
-						<Globe className="size-4" />
-					</div>
-					<div className="space-y-1 text-sm text-muted-foreground">
-						<p className="font-medium text-foreground">Phase 1 behavior</p>
-						<p>
-							Once a domain is registered, this UI becomes read-only. Use the
-							refresh action to re-check Cloudflare and promote the domain to
-							live routing only when it becomes active.
-						</p>
-					</div>
-				</div>
-			</div>
-
 			{customDomainQuery.isLoading ? (
-				<p className="text-sm text-muted-foreground">
-					Loading custom domain...
-				</p>
+				<p className="text-sm text-muted-foreground">Cargando dominio...</p>
 			) : customDomainQuery.isError ? (
 				<p className="text-sm text-destructive">
 					{getProblemDetail(customDomainQuery.error)}
@@ -115,7 +89,7 @@ export function CustomDomainSection() {
 							<RefreshCw
 								className={cn("size-4", isRefreshing && "animate-spin")}
 							/>
-							{isRefreshing ? "Refreshing..." : "Refresh status"}
+							{isRefreshing ? "Comprobando..." : "Comprobar estado"}
 						</Button>
 					</div>
 				</>
@@ -137,19 +111,18 @@ const STATUS_COPY: Record<
 	PENDING: {
 		label: "Pendiente",
 		description:
-			"Provisioning started. Add the DNS record, then refresh the status.",
+			"Configura el registro DNS indicado y vuelve a comprobar el estado.",
 		badgeClassName: "border-amber-200 bg-amber-50 text-amber-700",
 	},
 	DISABLED: {
 		label: "Deshabilitado",
 		description:
-			"Provisioning failed. Review the latest error and fix DNS before refreshing.",
+			"No pudimos verificar el dominio. Revisa la configuración DNS e inténtalo de nuevo.",
 		badgeClassName: "border-destructive/30 bg-destructive/10 text-destructive",
 	},
 	VERIFIED: {
 		label: "Verificado",
-		description:
-			"The domain is verified and can now be used for runtime routing.",
+		description: "Tu dominio está listo para usarse en la tienda online.",
 		badgeClassName: "border-emerald-200 bg-emerald-50 text-emerald-700",
 	},
 };
@@ -180,7 +153,7 @@ function CustomDomainDetails({
 			<div className="grid gap-4 px-5 py-4 sm:grid-cols-2">
 				<div className="space-y-1">
 					<p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-						Verified at
+						Verificado el
 					</p>
 					<p className="text-sm text-foreground">
 						{formatVerifiedAt(customDomain.verifiedAt)}
@@ -189,17 +162,17 @@ function CustomDomainDetails({
 
 				<div className="space-y-1">
 					<p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-						Last provider error
+						Problema de verificación
 					</p>
 					<p className="text-sm text-foreground">
-						{customDomain.failureReason ?? "No provider errors reported"}
+						{customDomain.failureReason ?? "No hay problemas informados"}
 					</p>
 				</div>
 
 				{cnameTarget ? (
 					<div className="space-y-1 sm:col-span-2">
 						<p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-							CNAME target
+							Destino CNAME
 						</p>
 						<p className="rounded-md bg-muted px-3 py-2 font-mono text-sm text-foreground">
 							{cnameTarget}
@@ -250,7 +223,9 @@ function CustomDomainRegistrationForm({
 
 					return (
 						<Field data-invalid={isInvalid}>
-							<FieldLabel htmlFor={field.name}>Custom subdomain</FieldLabel>
+							<FieldLabel htmlFor={field.name}>
+								Dominio personalizado
+							</FieldLabel>
 							<Input
 								id={field.name}
 								name={field.name}
@@ -259,7 +234,7 @@ function CustomDomainRegistrationForm({
 								onChange={(event) =>
 									field.handleChange(event.target.value.toLowerCase())
 								}
-								placeholder="www.yourbrand.com"
+								placeholder="www.tunegocio.com"
 								aria-invalid={isInvalid}
 								disabled={isPending}
 							/>
@@ -280,7 +255,7 @@ function CustomDomainRegistrationForm({
 				>
 					{([canSubmit, isSubmitting]) => (
 						<Button type="submit" disabled={!canSubmit || isPending}>
-							{isSubmitting || isPending ? "Registering..." : "Register domain"}
+							{isSubmitting || isPending ? "Guardando..." : "Guardar dominio"}
 						</Button>
 					)}
 				</form.Subscribe>
@@ -294,14 +269,12 @@ function getProblemDetail(error: unknown): string {
 		return error.problemDetails.detail ?? error.problemDetails.title;
 	}
 
-	return error instanceof Error
-		? error.message
-		: "An unexpected error occurred";
+	return error instanceof Error ? error.message : "Ocurrió un error inesperado";
 }
 
 function formatVerifiedAt(value: string | null): string {
 	if (!value) {
-		return "Not verified yet";
+		return "Aún no verificado";
 	}
 
 	return format(new Date(value), "PPP p");

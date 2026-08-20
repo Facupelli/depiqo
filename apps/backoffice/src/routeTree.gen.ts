@@ -25,7 +25,6 @@ import { Route as AdminDashboardOrdersIndexRouteImport } from './routes/_admin/d
 import { Route as AdminDashboardCustomersIndexRouteImport } from './routes/_admin/dashboard/customers/index'
 import { Route as AdminDashboardCatalogIndexRouteImport } from './routes/_admin/dashboard/catalog/index'
 import { Route as AdminDashboardCalendarIndexRouteImport } from './routes/_admin/dashboard/calendar/index'
-import { Route as AdminDashboardBranchesIndexRouteImport } from './routes/_admin/dashboard/branches/index'
 import { Route as ApiCustomerProfilesCustomerProfileIdIdentityDocumentRouteImport } from './routes/api/customer-profiles/$customerProfileId/identity-document'
 import { Route as AdminDashboardPromotionsNewRouteImport } from './routes/_admin/dashboard/promotions/new'
 import { Route as AdminDashboardOwnersOwnerIdRouteImport } from './routes/_admin/dashboard/owners/$ownerId'
@@ -127,12 +126,6 @@ const AdminDashboardCalendarIndexRoute =
   AdminDashboardCalendarIndexRouteImport.update({
     id: '/calendar/',
     path: '/calendar/',
-    getParentRoute: () => AdminDashboardRouteRoute,
-  } as any)
-const AdminDashboardBranchesIndexRoute =
-  AdminDashboardBranchesIndexRouteImport.update({
-    id: '/branches/',
-    path: '/branches/',
     getParentRoute: () => AdminDashboardRouteRoute,
   } as any)
 const ApiCustomerProfilesCustomerProfileIdIdentityDocumentRoute =
@@ -246,7 +239,6 @@ export interface FileRoutesByFullPath {
   '/dashboard/owners/$ownerId': typeof AdminDashboardOwnersOwnerIdRoute
   '/dashboard/promotions/new': typeof AdminDashboardPromotionsNewRoute
   '/api/customer-profiles/$customerProfileId/identity-document': typeof ApiCustomerProfilesCustomerProfileIdIdentityDocumentRoute
-  '/dashboard/branches/': typeof AdminDashboardBranchesIndexRoute
   '/dashboard/calendar/': typeof AdminDashboardCalendarIndexRoute
   '/dashboard/catalog/': typeof AdminDashboardCatalogIndexRoute
   '/dashboard/customers/': typeof AdminDashboardCustomersIndexRoute
@@ -279,7 +271,6 @@ export interface FileRoutesByTo {
   '/dashboard/owners/$ownerId': typeof AdminDashboardOwnersOwnerIdRoute
   '/dashboard/promotions/new': typeof AdminDashboardPromotionsNewRoute
   '/api/customer-profiles/$customerProfileId/identity-document': typeof ApiCustomerProfilesCustomerProfileIdIdentityDocumentRoute
-  '/dashboard/branches': typeof AdminDashboardBranchesIndexRoute
   '/dashboard/calendar': typeof AdminDashboardCalendarIndexRoute
   '/dashboard/catalog': typeof AdminDashboardCatalogIndexRoute
   '/dashboard/customers': typeof AdminDashboardCustomersIndexRoute
@@ -315,7 +306,6 @@ export interface FileRoutesById {
   '/_admin/dashboard/owners/$ownerId': typeof AdminDashboardOwnersOwnerIdRoute
   '/_admin/dashboard/promotions/new': typeof AdminDashboardPromotionsNewRoute
   '/api/customer-profiles/$customerProfileId/identity-document': typeof ApiCustomerProfilesCustomerProfileIdIdentityDocumentRoute
-  '/_admin/dashboard/branches/': typeof AdminDashboardBranchesIndexRoute
   '/_admin/dashboard/calendar/': typeof AdminDashboardCalendarIndexRoute
   '/_admin/dashboard/catalog/': typeof AdminDashboardCatalogIndexRoute
   '/_admin/dashboard/customers/': typeof AdminDashboardCustomersIndexRoute
@@ -351,7 +341,6 @@ export interface FileRouteTypes {
     | '/dashboard/owners/$ownerId'
     | '/dashboard/promotions/new'
     | '/api/customer-profiles/$customerProfileId/identity-document'
-    | '/dashboard/branches/'
     | '/dashboard/calendar/'
     | '/dashboard/catalog/'
     | '/dashboard/customers/'
@@ -384,7 +373,6 @@ export interface FileRouteTypes {
     | '/dashboard/owners/$ownerId'
     | '/dashboard/promotions/new'
     | '/api/customer-profiles/$customerProfileId/identity-document'
-    | '/dashboard/branches'
     | '/dashboard/calendar'
     | '/dashboard/catalog'
     | '/dashboard/customers'
@@ -419,7 +407,6 @@ export interface FileRouteTypes {
     | '/_admin/dashboard/owners/$ownerId'
     | '/_admin/dashboard/promotions/new'
     | '/api/customer-profiles/$customerProfileId/identity-document'
-    | '/_admin/dashboard/branches/'
     | '/_admin/dashboard/calendar/'
     | '/_admin/dashboard/catalog/'
     | '/_admin/dashboard/customers/'
@@ -563,13 +550,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminDashboardCalendarIndexRouteImport
       parentRoute: typeof AdminDashboardRouteRoute
     }
-    '/_admin/dashboard/branches/': {
-      id: '/_admin/dashboard/branches/'
-      path: '/branches'
-      fullPath: '/dashboard/branches/'
-      preLoaderRoute: typeof AdminDashboardBranchesIndexRouteImport
-      parentRoute: typeof AdminDashboardRouteRoute
-    }
     '/api/customer-profiles/$customerProfileId/identity-document': {
       id: '/api/customer-profiles/$customerProfileId/identity-document'
       path: '/api/customer-profiles/$customerProfileId/identity-document'
@@ -692,7 +672,6 @@ interface AdminDashboardRouteRouteChildren {
   AdminDashboardOrdersNewRoute: typeof AdminDashboardOrdersNewRoute
   AdminDashboardOwnersOwnerIdRoute: typeof AdminDashboardOwnersOwnerIdRoute
   AdminDashboardPromotionsNewRoute: typeof AdminDashboardPromotionsNewRoute
-  AdminDashboardBranchesIndexRoute: typeof AdminDashboardBranchesIndexRoute
   AdminDashboardCalendarIndexRoute: typeof AdminDashboardCalendarIndexRoute
   AdminDashboardCatalogIndexRoute: typeof AdminDashboardCatalogIndexRoute
   AdminDashboardCustomersIndexRoute: typeof AdminDashboardCustomersIndexRoute
@@ -719,7 +698,6 @@ const AdminDashboardRouteRouteChildren: AdminDashboardRouteRouteChildren = {
   AdminDashboardOrdersNewRoute: AdminDashboardOrdersNewRoute,
   AdminDashboardOwnersOwnerIdRoute: AdminDashboardOwnersOwnerIdRoute,
   AdminDashboardPromotionsNewRoute: AdminDashboardPromotionsNewRoute,
-  AdminDashboardBranchesIndexRoute: AdminDashboardBranchesIndexRoute,
   AdminDashboardCalendarIndexRoute: AdminDashboardCalendarIndexRoute,
   AdminDashboardCatalogIndexRoute: AdminDashboardCatalogIndexRoute,
   AdminDashboardCustomersIndexRoute: AdminDashboardCustomersIndexRoute,

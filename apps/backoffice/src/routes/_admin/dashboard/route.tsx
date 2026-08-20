@@ -28,7 +28,6 @@ import {
 	LogOut,
 	Settings,
 	ShoppingBag,
-	Store,
 	User,
 	Users,
 	Warehouse,
@@ -113,7 +112,6 @@ const sidebarItems: SidebarItem[] = [
 		icon: Warehouse,
 		href: "/dashboard/inventory/equipment-types",
 	},
-	{ name: "Sucursales", icon: Store, href: "/dashboard/branches" },
 	{
 		name: "Clientes",
 		icon: Users,

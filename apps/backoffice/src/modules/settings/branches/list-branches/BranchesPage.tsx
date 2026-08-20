@@ -4,24 +4,33 @@ import { useBranches } from "../branches.queries";
 import { BranchesTable } from "./BranchesTable";
 
 type BranchesPageProps = {
+	compact?: boolean;
 	onCreateBranch: () => void;
 	onEditBranch: (branchId: string) => void;
 };
 
 export function BranchesPage({
+	compact = false,
 	onCreateBranch,
 	onEditBranch,
 }: BranchesPageProps) {
 	return (
-		<div className="space-y-6 p-8">
+		<div className={compact ? "space-y-6" : "space-y-6 p-8"}>
 			<div className="flex items-start justify-between">
-				<div>
-					<h1 className="text-2xl font-semibold tracking-tight">Sucursales</h1>
-					<p className="text-sm text-muted-foreground">
-						Gestiona los puntos operativos donde administras tu inventario.
-					</p>
-				</div>
-				<Button onClick={onCreateBranch}>
+				{compact ? null : (
+					<div>
+						<h1 className="text-2xl font-semibold tracking-tight">
+							Sucursales
+						</h1>
+						<p className="text-sm text-muted-foreground">
+							Gestiona los puntos operativos donde administras tu inventario.
+						</p>
+					</div>
+				)}
+				<Button
+					className={compact ? "ml-auto" : undefined}
+					onClick={onCreateBranch}
+				>
 					<Plus className="mr-2 h-4 w-4" />
 					Agregar sucursal
 				</Button>
