@@ -1,29 +1,66 @@
 import type { GetRentableItemDetailResponseDto } from "@repo/api-contracts";
+import { Badge } from "@repo/ui/components/badge";
+import { Button } from "@repo/ui/components/button";
 import { Card, CardContent } from "@repo/ui/components/card";
 import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+} from "@repo/ui/components/dropdown-menu";
+import {
 	Building2,
-	CheckCircle2,
 	CircleDollarSign,
-	type LucideIcon,
+	Ellipsis,
 	PackageOpen,
 	Pencil,
-	Tag,
+	Plus,
+	Wrench,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { ActivateProductAction } from "@/modules/products/activate-product/ActivateProductAction";
+import { AddBranchAvailabilityDialog } from "@/modules/products/branch-availability/add-branch-availability/AddBranchAvailabilityDialog";
+import type { PricePlanOption } from "@/modules/products/product-pricing/price-plan-selection/PricePlanSelectionForm";
 import { getKindLabel } from "./product-detail.utils";
 
 interface ProductOverviewProps {
 	product: GetRentableItemDetailResponseDto;
 	imageUrl: string | null;
 	startingPrice: string | null;
-	readyOfferCount: number;
+	physicalStockCapacity: number;
+	ratePlanOptions: PricePlanOption[];
 }
+
+const statusPresentation = {
+	DRAFT: {
+		label: "Borrador",
+		variant: "secondary",
+		className: "",
+	},
+	ACTIVE: {
+		label: "Activo",
+		variant: "default",
+		className: "bg-emerald-600 text-white",
+	},
+	ARCHIVED: {
+		label: "Archivado",
+		variant: "outline",
+		className: "",
+	},
+} satisfies Record<
+	GetRentableItemDetailResponseDto["status"],
+	{
+		label: string;
+		variant: "default" | "secondary" | "outline";
+		className: string;
+	}
+>;
 
 export function ProductOverview({
 	product,
 	imageUrl,
 	startingPrice,
-	readyOfferCount,
+	physicalStockCapacity,
+	ratePlanOptions,
 }: ProductOverviewProps) {
 	return (
 		<Card className="overflow-hidden rounded-2xl py-0 shadow-sm">
@@ -40,41 +77,44 @@ export function ProductOverview({
 					)}
 				</div>
 
-				<div className="grid divide-y lg:grid-cols-2 lg:divide-x lg:divide-y-0">
-					<div className="flex flex-col justify-center divide-y py-5">
-						<OverviewFact
-							icon={PackageOpen}
-							label="Tipo"
-							value={getKindLabel(product.kind)}
-						/>
-						<OverviewFact
-							icon={Tag}
-							label="Categoría"
-							value={product.categoryName ?? "Sin categoría"}
-						/>
-						<OverviewFact
-							icon={Pencil}
-							label="Descripción"
-							value={product.description ?? "Sin descripción"}
-							multiline
+				<div className="flex min-w-0 flex-col p-5 lg:p-6">
+					<div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+						<div className="min-w-0">
+							<h1 className="truncate text-3xl font-semibold tracking-tight">
+								{product.name}
+							</h1>
+							<p className="mt-1 text-muted-foreground text-sm">
+								{product.categoryName ?? "Sin categoría"} ·{" "}
+								{getKindLabel(product.kind)}
+							</p>
+							<ProductStatus status={product.status} />
+						</div>
+						<ProductActions
+							product={product}
+							ratePlanOptions={ratePlanOptions}
 						/>
 					</div>
 
-					<div className="flex flex-col justify-center divide-y py-5">
-						<OverviewFact
+					<div className="mt-8 grid grid-cols-2 divide-x divide-y border sm:grid-cols-4 sm:divide-y-0">
+						<OverviewMetric
 							icon={Building2}
-							label="Disponible en"
-							value={`${product.offers.length} ${product.offers.length === 1 ? "sucursal" : "sucursales"}`}
+							label="Sucursales"
+							value={String(product.offers.length)}
 						/>
-						<OverviewFact
-							icon={CheckCircle2}
-							label="Ofertas listas"
-							value={`${readyOfferCount} de ${product.offers.length}`}
-						/>
-						<OverviewFact
+						<OverviewMetric
 							icon={CircleDollarSign}
-							label="Precio desde"
-							value={startingPrice ?? "Sin precio configurado"}
+							label="Precio"
+							value={startingPrice ?? "Sin configurar"}
+						/>
+						<OverviewMetric
+							icon={Wrench}
+							label="Equipo requerido"
+							value={String(product.requiredEquipment.length)}
+						/>
+						<OverviewMetric
+							icon={PackageOpen}
+							label="Capacidad de alquiler"
+							value={String(physicalStockCapacity)}
 						/>
 					</div>
 				</div>
@@ -83,34 +123,85 @@ export function ProductOverview({
 	);
 }
 
-function OverviewFact({
+function ProductActions({
+	product,
+	ratePlanOptions,
+}: {
+	product: GetRentableItemDetailResponseDto;
+	ratePlanOptions: PricePlanOption[];
+}) {
+	return (
+		<div className="flex shrink-0 items-center gap-2">
+			{product.status === "DRAFT" ? (
+				<ActivateProductAction product={product} />
+			) : null}
+			<Button size="lg" onClick={() => undefined}>
+				<Pencil className="mr-2 size-4" />
+				Editar producto
+			</Button>
+			<DropdownMenu>
+				<DropdownMenuTrigger
+					render={
+						<Button
+							variant="outline"
+							size="icon"
+							aria-label="Abrir acciones del producto"
+						>
+							<Ellipsis className="size-4" />
+						</Button>
+					}
+				/>
+				<DropdownMenuContent align="end" className="min-w-fit">
+					<AddBranchAvailabilityDialog
+						item={product}
+						ratePlanOptions={ratePlanOptions}
+						trigger={
+							<DropdownMenuItem>
+								<Plus className="size-4" />
+								Ofrecer en otra sucursal
+							</DropdownMenuItem>
+						}
+					/>
+				</DropdownMenuContent>
+			</DropdownMenu>
+		</div>
+	);
+}
+
+function ProductStatus({
+	status,
+}: {
+	status: GetRentableItemDetailResponseDto["status"];
+}) {
+	const presentation = statusPresentation[status];
+	return (
+		<Badge
+			variant={presentation.variant}
+			className={`mt-3 ${presentation.className}`}
+		>
+			{presentation.label}
+		</Badge>
+	);
+}
+
+function OverviewMetric({
 	icon: Icon,
 	label,
 	value,
-	multiline = false,
 }: {
-	icon: LucideIcon;
+	icon: typeof Building2;
 	label: string;
 	value: string;
-	multiline?: boolean;
 }) {
 	return (
-		<div
-			className={cn(
-				"grid min-h-20 grid-cols-[20px_minmax(0,1fr)] gap-x-2 gap-y-1 px-4 py-4 sm:grid-cols-[24px_160px_minmax(0,1fr)] lg:px-6",
-				multiline ? "items-start" : "items-center",
-			)}
-		>
-			<Icon
-				className={cn(
-					"size-5 shrink-0 text-muted-foreground",
-					multiline && "mt-0.5",
-				)}
-			/>
-			<span className="font-medium text-foreground">{label}</span>
-			<span className="col-start-2 text-muted-foreground sm:col-start-3">
+		<div className="min-w-0 p-4 first:border-l-0 sm:p-5">
+			<div className="flex items-center gap-2 text-muted-foreground">
+				<Icon className="size-4" />
+				<span className="truncate text-xs font-medium">{label}</span>
+			</div>
+			<p className="mt-3 truncate font-semibold text-sm" title={value}>
 				{value}
-			</span>
+			</p>
 		</div>
 	);
 }

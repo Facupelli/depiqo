@@ -34,6 +34,8 @@ import { GetOwnersHttpController } from './features/get-owners/get-owners.contro
 import { GetOwnersHandler } from './features/get-owners/get-owners.handler';
 import { AssetRepository } from './persistence/asset.repository';
 import { EquipmentTypeRepository } from './persistence/equipment-type.repository';
+import { ActivePhysicalStockFactsService } from './public-api/active-physical-stock-facts.public-api.service';
+import { ActivePhysicalStockFacts } from './public-api/active-physical-stock-facts.public-api';
 import { AssetInventoryDisplayFactsService } from './public-api/asset-inventory-display-facts.public-api.service';
 import { AssetInventoryDisplayFacts } from './public-api/asset-inventory-display-facts.public-api';
 import { AssetInventoryAuthoringService } from './public-api/asset-inventory-authoring.public-api.service';
@@ -79,10 +81,16 @@ import { EquipmentTypeReferenceAuthority } from './public-api/equipment-type-ref
     AssetCreationValidatorService,
     AssetRepository,
     EquipmentTypeRepository,
+    { provide: ActivePhysicalStockFacts, useClass: ActivePhysicalStockFactsService },
     { provide: AssetInventoryAuthoring, useClass: AssetInventoryAuthoringService },
     { provide: EquipmentTypeReferenceAuthority, useClass: EquipmentTypeReferenceAuthorityService },
     { provide: AssetInventoryDisplayFacts, useClass: AssetInventoryDisplayFactsService },
   ],
-  exports: [AssetInventoryAuthoring, EquipmentTypeReferenceAuthority, AssetInventoryDisplayFacts],
+  exports: [
+    ActivePhysicalStockFacts,
+    AssetInventoryAuthoring,
+    EquipmentTypeReferenceAuthority,
+    AssetInventoryDisplayFacts,
+  ],
 })
 export class AssetInventoryModule {}

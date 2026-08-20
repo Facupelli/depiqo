@@ -83,6 +83,7 @@ export const GetRentableItemDetailOfferSchema = z.object({
   updatedAt: z.string().datetime(),
   activeRatePlan: GetRentableItemDetailActiveRatePlanSchema.nullable(),
   setupSummary: GetRentableItemDetailOfferSetupSummarySchema,
+  physicalStockCapacity: z.number().int().nonnegative(),
 });
 
 export const GetRentableItemDetailResponseSchema = z.object({

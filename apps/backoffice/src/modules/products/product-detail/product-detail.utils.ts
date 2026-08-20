@@ -12,32 +12,18 @@ const billingUnitLabels: Record<"HOUR" | "DAY" | "WEEK", string> = {
 	WEEK: "semana",
 };
 
-export type OfferMetrics = {
-	total: number;
-	ready: number;
-	missingPricing: number;
-	hidden: number;
-};
-
 export function getKindLabel(
 	kind: GetRentableItemDetailResponseDto["kind"],
 ): string {
 	return kindLabels[kind as keyof typeof kindLabels] ?? kind;
 }
 
-export function getOfferMetrics(
+export function getTotalPhysicalStockCapacity(
 	offers: GetRentableItemDetailResponseDto["offers"],
-): OfferMetrics {
-	return offers.reduce<OfferMetrics>(
-		(metrics, offer) => ({
-			total: metrics.total + 1,
-			ready: metrics.ready + (offer.setupSummary.status === "READY" ? 1 : 0),
-			missingPricing:
-				metrics.missingPricing +
-				(offer.setupSummary.issues.includes("MISSING_PRICING") ? 1 : 0),
-			hidden: metrics.hidden + (!offer.isVisible ? 1 : 0),
-		}),
-		{ total: 0, ready: 0, missingPricing: 0, hidden: 0 },
+) {
+	return offers.reduce(
+		(totalCapacity, offer) => totalCapacity + offer.physicalStockCapacity,
+		0,
 	);
 }
 

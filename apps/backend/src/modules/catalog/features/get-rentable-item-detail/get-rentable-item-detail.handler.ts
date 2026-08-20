@@ -2,6 +2,7 @@ import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { err, ok, Result } from 'neverthrow';
 
 import { PrismaService } from 'src/core/database/prisma.service';
+import { ActivePhysicalStockFacts } from 'src/modules/asset-inventory/public-api/active-physical-stock-facts.public-api';
 
 import { GetRentableItemDetailError, getRentableItemDetailError } from './get-rentable-item-detail.errors';
 import { GetRentableItemDetailQuery } from './get-rentable-item-detail.query';
@@ -42,6 +43,7 @@ export interface GetRentableItemDetailOfferReadModel {
   updatedAt: string;
   activeRatePlan: GetRentableItemDetailActiveRatePlanReadModel | null;
   setupSummary: import('@repo/api-contracts').GetRentableItemDetailOfferSetupSummaryDto;
+  physicalStockCapacity: number;
 }
 
 export interface GetRentableItemDetailReadModel {
@@ -64,7 +66,10 @@ export class GetRentableItemDetailHandler implements IQueryHandler<
   GetRentableItemDetailQuery,
   Result<GetRentableItemDetailReadModel, GetRentableItemDetailError>
 > {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly activePhysicalStockFacts: ActivePhysicalStockFacts,
+  ) {}
 
   async execute(
     query: GetRentableItemDetailQuery,
@@ -160,6 +165,16 @@ export class GetRentableItemDetailHandler implements IQueryHandler<
       }),
     ]);
 
+    const activePhysicalStockCounts = await this.activePhysicalStockFacts.getActivePhysicalStockCounts({
+      tenantId: query.tenantId,
+      branches: item.rentalOffers.map((offer) => ({
+        branchId: offer.branchId,
+        equipmentTypeIds,
+      })),
+    });
+    const activeAssetCountByBranchAndEquipmentType = new Map(
+      activePhysicalStockCounts.map((count) => [`${count.branchId}:${count.equipmentTypeId}`, count.activeAssetCount]),
+    );
     const branchById = new Map(branches.map((branch) => [branch.id, branch]));
     const equipmentTypeById = new Map(equipmentTypes.map((equipmentType) => [equipmentType.id, equipmentType]));
     const activePricingByOfferId = new Map(pricings.map((pricing) => [pricing.catalogRentalOfferId, pricing]));
@@ -243,8 +258,34 @@ export class GetRentableItemDetailHandler implements IQueryHandler<
               }
             : null,
           setupSummary,
+          physicalStockCapacity: getPhysicalStockCapacity({
+            branchId: offer.branchId,
+            requirements: item.requirements,
+            activeAssetCountByBranchAndEquipmentType,
+          }),
         };
       }),
     });
   }
+}
+
+function getPhysicalStockCapacity({
+  branchId,
+  requirements,
+  activeAssetCountByBranchAndEquipmentType,
+}: {
+  branchId: string;
+  requirements: Array<{ equipmentTypeId: string; quantityPerItem: number }>;
+  activeAssetCountByBranchAndEquipmentType: Map<string, number>;
+}): number {
+  if (requirements.length === 0) return 0;
+
+  return Math.min(
+    ...requirements.map((requirement) =>
+      Math.floor(
+        (activeAssetCountByBranchAndEquipmentType.get(`${branchId}:${requirement.equipmentTypeId}`) ?? 0) /
+          requirement.quantityPerItem,
+      ),
+    ),
+  );
 }

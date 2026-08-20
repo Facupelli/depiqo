@@ -1,7 +1,6 @@
 import type { GetRentableItemDetailResponseDto } from "@repo/api-contracts";
 import { Badge } from "@repo/ui/components/badge";
 import { Button } from "@repo/ui/components/button";
-import { Card, CardContent } from "@repo/ui/components/card";
 import {
 	Building2,
 	CheckCircle2,
@@ -15,7 +14,7 @@ import {
 import type { ReactNode } from "react";
 import type { PricePlanOption } from "@/modules/products/product-pricing/price-plan-selection/PricePlanSelectionForm";
 import { SetPricePlanAction } from "@/modules/products/product-pricing/set-price-plan/SetPricePlanAction";
-import { formatPriceSummary, type OfferMetrics } from "./product-detail.utils";
+import { formatPriceSummary } from "./product-detail.utils";
 
 type RentalOffer = GetRentableItemDetailResponseDto["offers"][number];
 
@@ -29,50 +28,6 @@ const setupIssueLabels = {
 	OFFER_NOT_RENTABLE: "El alquiler está deshabilitado",
 	OFFER_NOT_VISIBLE: "La oferta no es visible en el catálogo",
 } satisfies Record<RentalOffer["setupSummary"]["issues"][number], string>;
-
-export function ProductAvailabilityStatusSummary({
-	metrics,
-	action,
-}: {
-	metrics: OfferMetrics;
-	action: ReactNode;
-}) {
-	return (
-		<Card className="rounded-2xl py-0 shadow-sm">
-			<CardContent className="grid items-center gap-5 p-5 xl:grid-cols-[minmax(230px,1.2fr)_repeat(3,minmax(150px,0.8fr))_auto]">
-				<div>
-					<h2 className="font-semibold text-lg tracking-tight">
-						Estado de las ofertas
-					</h2>
-					<p className="mt-1 text-sm text-muted-foreground">
-						Configuración de este ítem en sus sucursales.
-					</p>
-				</div>
-				<OfferMetric
-					icon={CheckCircle2}
-					label="listas para alquilar"
-					value={`${metrics.ready} de ${metrics.total}`}
-					tone="ready"
-				/>
-				<OfferMetric
-					icon={CircleDollarSign}
-					label="sin precio configurado"
-					value={String(metrics.missingPricing)}
-					tone="warning"
-				/>
-				<OfferMetric
-					icon={EyeOff}
-					label="ocultas en el catálogo"
-					value={String(metrics.hidden)}
-					tone="muted"
-				/>
-				<div className="border-t pt-4 xl:border-t-0 xl:border-l xl:pl-5 xl:pt-0">
-					{action}
-				</div>
-			</CardContent>
-		</Card>
-	);
-}
 
 export function ProductAvailabilitySection({
 	product,
@@ -108,37 +63,6 @@ export function ProductAvailabilitySection({
 				</div>
 			)}
 		</section>
-	);
-}
-
-function OfferMetric({
-	icon: Icon,
-	label,
-	value,
-	tone,
-}: {
-	icon: LucideIcon;
-	label: string;
-	value: string;
-	tone: "ready" | "warning" | "muted";
-}) {
-	const toneClassNames = {
-		ready: "border-emerald-200 bg-emerald-50 text-emerald-600",
-		warning: "border-amber-200 bg-amber-50 text-amber-600",
-		muted: "border-muted bg-muted text-muted-foreground",
-	};
-	return (
-		<div className="flex items-center gap-3 border-t pt-4 xl:border-t-0 xl:border-l xl:pl-5 xl:pt-0">
-			<div
-				className={`flex size-12 shrink-0 items-center justify-center rounded-2xl border ${toneClassNames[tone]}`}
-			>
-				<Icon className="size-6" />
-			</div>
-			<div>
-				<p className="font-semibold text-xl leading-none">{value}</p>
-				<p className="mt-1 text-sm text-muted-foreground">{label}</p>
-			</div>
-		</div>
 	);
 }
 

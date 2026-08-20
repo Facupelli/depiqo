@@ -6,6 +6,7 @@ import {
 	DialogDescription,
 	DialogHeader,
 	DialogTitle,
+	DialogTrigger,
 } from "@repo/ui/components/dialog";
 import {
 	Field,
@@ -22,7 +23,7 @@ import {
 } from "@repo/ui/components/select";
 import { useForm } from "@tanstack/react-form";
 import { ArrowLeft, CircleDollarSign, Plus } from "lucide-react";
-import { useId, useState } from "react";
+import { type ReactElement, useId, useState } from "react";
 import {
 	type PricePlanOption,
 	PricePlanSelectionForm,
@@ -50,11 +51,13 @@ type BranchOption = {
 type AddBranchAvailabilityDialogProps = {
 	item: GetRentableItemDetailResponseDto;
 	ratePlanOptions: PricePlanOption[];
+	trigger?: ReactElement;
 };
 
 export function AddBranchAvailabilityDialog({
 	item,
 	ratePlanOptions,
+	trigger,
 }: AddBranchAvailabilityDialogProps) {
 	const attachFormId = useId();
 	const createFormId = useId();
@@ -98,10 +101,16 @@ export function AddBranchAvailabilityDialog({
 
 	return (
 		<Dialog open={open} onOpenChange={handleOpenChange}>
-			<Button type="button" onClick={() => setOpen(true)}>
-				<Plus className="mr-2 size-4" />
-				Ofrecer en otra sucursal
-			</Button>
+			<DialogTrigger
+				render={
+					trigger ?? (
+						<Button type="button">
+							<Plus className="mr-2 size-4" />
+							Ofrecer en otra sucursal
+						</Button>
+					)
+				}
+			/>
 
 			<DialogContent className={getDialogContentClassName(step)}>
 				{open ? (
