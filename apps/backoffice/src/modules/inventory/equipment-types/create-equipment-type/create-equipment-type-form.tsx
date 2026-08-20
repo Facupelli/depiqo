@@ -41,6 +41,7 @@ interface SelectItemOption {
 	label: string;
 }
 
+const NO_CATEGORY_VALUE = "no-category";
 const TENANT_OWNER_VALUE = "tenant-owned";
 
 interface CreateEquipmentTypeFormProps {
