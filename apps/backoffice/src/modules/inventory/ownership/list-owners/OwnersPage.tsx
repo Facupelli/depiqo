@@ -15,11 +15,10 @@ export function OwnersPage({ onOwnerSelect }: OwnersPageProps) {
 			<div className="flex items-start justify-between">
 				<div>
 					<h1 className="text-2xl font-semibold tracking-tight">
-						Propietarios de Activos
+						Propietarios de equipos
 					</h1>
 					<p className="text-sm text-muted-foreground">
-						Gestiona las entidades externas propietarias del inventario de
-						alquiler.
+						Gestiona las personas o empresas externas propietarias de equipos de tu inventario.
 					</p>
 				</div>
 				<CreateOwnerWithContractDialog triggerLabel="Agregar Propietario" />

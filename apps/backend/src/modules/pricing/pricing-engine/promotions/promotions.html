@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Promotion Engine</title>
+  <style>
+    :root { color-scheme: light; font-family: Inter, ui-sans-serif, system-ui, sans-serif; color: #172033; background: #f5f7fb; }
+    body { margin: 0; line-height: 1.5; }
+    main { max-width: 880px; margin: 0 auto; padding: 48px 24px 72px; }
+    header { margin-bottom: 32px; }
+    h1, h2, h3 { color: #101828; line-height: 1.2; }
+    h1 { margin: 0 0 10px; font-size: clamp(2rem, 6vw, 3rem); }
+    h2 { margin: 36px 0 12px; font-size: 1.35rem; }
+    h3 { margin: 0 0 8px; font-size: 1rem; }
+    p { margin: 8px 0; }
+    .lede { max-width: 680px; color: #475467; font-size: 1.1rem; }
+    .card, .callout { margin: 14px 0; padding: 18px; border: 1px solid #d9e0ec; border-radius: 12px; background: #fff; }
+    .callout { border-left: 4px solid #2563eb; background: #eff6ff; }
+    .flow { display: grid; gap: 8px; margin: 14px 0; }
+    .step { padding: 10px 14px; border-radius: 8px; background: #eaf0fb; font-weight: 600; }
+    .step::after { content: "↓"; float: right; color: #667085; }
+    .step:last-child::after { content: ""; }
+    table { width: 100%; border-collapse: collapse; margin: 12px 0; background: #fff; }
+    th, td { padding: 10px; text-align: left; vertical-align: top; border: 1px solid #d9e0ec; }
+    th { background: #eef3fb; }
+    ul { padding-left: 22px; }
+    code { padding: 1px 5px; border-radius: 4px; background: #edf1f7; color: #253858; }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>Promotion Engine</h1>
+      <p class="lede">Use a promotion to reduce a proposed rental price. A promotion says when it can apply, what it can discount, and whether another promotion can follow it.</p>
+    </header>
+
+    <h2>Build a promotion from an intent</h2>
+    <table>
+      <thead><tr><th>Intent</th><th>Configuration</th></tr></thead>
+      <tbody>
+        <tr><td>Summer sale for every rental</td><td>Automatic, percentage or fixed amount, scope: all items.</td></tr>
+        <tr><td>Discount with a code</td><td>Coupon-required promotion plus a coupon. The coupon can have dates, limits, and a customer restriction.</td></tr>
+        <tr><td>Discount selected equipment</td><td>Scope by rentable item, rental offer, or category. Add exclusions when needed.</td></tr>
+        <tr><td>Reward longer rentals</td><td>Set minimum charged units. Charged units use the rate plan billing unit.</td></tr>
+        <tr><td>Reward orders above a value</td><td>Set a minimum order subtotal.</td></tr>
+        <tr><td>Combine campaigns</td><td>Set priorities. Mark earlier promotions stackable. A non-stackable promotion stops later ones.</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Understand the two discount targets</h2>
+    <div class="card">
+      <h3>Eligible lines</h3>
+      <p>The engine calculates and allocates the discount only on the lines that match the promotion scope.</p>
+    </div>
+    <div class="card">
+      <h3>Whole order</h3>
+      <p>The engine calculates from, and allocates across, all order lines. The scope still matters: one matching line makes the promotion eligible.</p>
+    </div>
+    <aside class="callout">
+      <strong>Important:</strong> A category-scoped promotion with target <code>ORDER</code> discounts the full order if one line is in that category. Use <code>ELIGIBLE_LINES</code> when only that category must receive the discount.
+    </aside>
+
+    <h2>Follow one calculation</h2>
+    <p>An order has a camera for 100 and a tripod for 50. A 20% camera promotion has target <code>ELIGIBLE_LINES</code>. A 10% order promotion has target <code>ORDER</code>.</p>
+    <ol>
+      <li>The camera promotion reduces the camera from 100 to 80.</li>
+      <li>The order promotion calculates from the new total: 130, not 150.</li>
+      <li>Its 13 discount is allocated across both current line totals.</li>
+    </ol>
+    <p>Each new discount uses the current totals. No line and no order total can become negative.</p>
+
+    <h2>How the engine works</h2>
+    <div class="flow">
+      <div class="step">Price the base rental lines</div>
+      <div class="step">Find eligible automatic promotions</div>
+      <div class="step">Validate the submitted coupon and its promotion</div>
+      <div class="step">Sort all candidates by highest priority</div>
+      <div class="step">Apply discounts in order and stop after a non-stackable one</div>
+      <div class="step">Save line adjustments and the final promotion breakdown</div>
+    </div>
+    <p>Dates are inclusive local dates. A promotion must be active, belong to the tenant, meet its conditions, and match at least one non-excluded line.</p>
+
+    <h2>Know the limits</h2>
+    <p>The engine supports percentage and fixed discounts, scopes, exclusions, order thresholds, rental-duration limits, coupons, priorities, and stacking.</p>
+    <p>It does not support buy-X-get-Y, free units, bundles, customer segments on promotions, tiered campaign rules, or arbitrary formulas. Add these as explicit domain behavior, not JSON rules.</p>
+
+    <h2>Read the result</h2>
+    <p>The result records every line adjustment. It also records each applied promotion and the applied coupon. Consumers can preserve this breakdown when a rental price becomes historical truth.</p>
+  </main>
+</body>
+</html>
