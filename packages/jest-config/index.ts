@@ -36,8 +36,8 @@ export const unitConfig: Config.InitialOptions = {
 
 /**
  * Integration test preset.
- * Runs sequentially — test files share a real DB instance
- * and rely on per-test cleanup, not parallel isolation.
+ * Runs sequentially - test files share one disposable database per command
+ * and isolate scenarios with unique data, not parallel workers or full-table cleanup.
  */
 export const integrationConfig: Config.InitialOptions = {
   ...base,
