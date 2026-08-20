@@ -31,6 +31,7 @@ export async function migrateRentalCommitmentStage(
 	ctx.log("Starting Stage 5A: Rental Commitment structure");
 
 	await migrateRentals(ctx);
+	await migrateRentalNumberCounter(ctx);
 	await migrateRentalSelections(ctx);
 	await migrateRentalDemandLines(ctx);
 	await migrateRentalDeliveryDetails(ctx);
@@ -60,6 +61,13 @@ async function migrateRentals(ctx: TenantV2MigrationContext) {
 
 	ctx.log(`Migrating rentals from orders: ${orders.length}`);
 
+	const invalidOrder = orders.find((order) => order.orderNumber <= 0);
+	if (invalidOrder) {
+		throw new Error(
+			`Cannot migrate order ${invalidOrder.id}: orderNumber must be a positive integer.`,
+		);
+	}
+
 	if (ctx.dryRun) return;
 
 	for (const order of orders) {
@@ -70,6 +78,7 @@ async function migrateRentals(ctx: TenantV2MigrationContext) {
 			create: {
 				id: order.id,
 				tenantId: order.tenantId,
+				rentalNumber: order.orderNumber,
 				branchId: order.locationId,
 				customerId: order.customerId,
 
@@ -90,6 +99,7 @@ async function migrateRentals(ctx: TenantV2MigrationContext) {
 				cancelledAt: getCancelledAt(order),
 			},
 			update: {
+				rentalNumber: order.orderNumber,
 				branchId: order.locationId,
 				customerId: order.customerId,
 
@@ -110,6 +120,30 @@ async function migrateRentals(ctx: TenantV2MigrationContext) {
 			},
 		});
 	}
+}
+
+async function migrateRentalNumberCounter(ctx: TenantV2MigrationContext) {
+	const { _max: { orderNumber: lastOrderNumber } } =
+		await ctx.prisma.order.aggregate({
+			where: { tenantId: ctx.legacyTenantId },
+			_max: { orderNumber: true },
+		});
+
+	const lastIssuedNumber = lastOrderNumber ?? 0;
+	ctx.log("Synchronizing rental number counter", { lastIssuedNumber });
+
+	if (ctx.dryRun) return;
+
+	await ctx.prisma.$executeRaw`
+		INSERT INTO v2_rental_number_counters (tenant_id, last_issued_number)
+		VALUES (${ctx.v2TenantId}, ${lastIssuedNumber})
+		ON CONFLICT (tenant_id) DO UPDATE
+		SET last_issued_number = GREATEST(
+			v2_rental_number_counters.last_issued_number,
+			EXCLUDED.last_issued_number
+		),
+		updated_at = CURRENT_TIMESTAMP
+	`;
 }
 
 async function migrateRentalSelections(ctx: TenantV2MigrationContext) {
@@ -936,6 +970,7 @@ export async function verifyRentalCommitmentStage(ctx: TenantV2MigrationContext)
 		accessorySelections,
 		accessoryAssetAssignments,
 		ownerSplits,
+		rentalNumberCounter,
 	] = await Promise.all([
 		ctx.prisma.v2Rental.count({
 			where: { tenantId: ctx.v2TenantId },
@@ -970,6 +1005,10 @@ export async function verifyRentalCommitmentStage(ctx: TenantV2MigrationContext)
 		ctx.prisma.v2RentalOwnerSplit.count({
 			where: { tenantId: ctx.v2TenantId },
 		}),
+		ctx.prisma.v2RentalNumberCounter.findUnique({
+			where: { tenantId: ctx.v2TenantId },
+			select: { lastIssuedNumber: true },
+		}),
 	]);
 
 	ctx.log("Stage 5 verification", {
@@ -983,5 +1022,6 @@ export async function verifyRentalCommitmentStage(ctx: TenantV2MigrationContext)
 		accessorySelections,
 		accessoryAssetAssignments,
 		ownerSplits,
+		lastIssuedRentalNumber: rentalNumberCounter?.lastIssuedNumber ?? null,
 	});
 }
