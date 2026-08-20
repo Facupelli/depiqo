@@ -37,7 +37,7 @@ jobs:
         run: pnpm --filter @repo/backend run lint:check
 
       - name: Backend build
-        run: pnpm --filter @repo/backend run build
+        run: pnpm turbo run build --filter=@repo/backend
 
       - name: Backend unit tests
         run: pnpm --filter @repo/backend run test
