@@ -1,6 +1,11 @@
+import { addDaysToLocalDate, localDateStartInstant } from '@repo/temporal';
+
+import { localDateDayOfWeek } from 'src/core/temporal/local-date';
+
 import { InvalidPricingInputError } from '../errors/pricing.errors';
 import { BillingUnit } from '../shared/billing-unit.type';
 import { DailyBillingPolicy } from '../shared/daily-billing-unit-policy.type';
+import { toLocalDate } from '../shared/local-date';
 
 type RentalDurationCalculatorInput = {
   start: Date;
@@ -9,6 +14,8 @@ type RentalDurationCalculatorInput = {
   dailyBillingPolicy: DailyBillingPolicy;
   minimumChargedDays: number;
   halfDayThresholdMinutes?: number;
+  timezone: string;
+  weekendCountsAsOne: boolean;
 };
 
 const MINUTES_PER_HOUR = 60;
@@ -31,6 +38,10 @@ export class RentalDurationCalculator {
           dailyBillingPolicy: input.dailyBillingPolicy,
           minimumChargedDays: input.minimumChargedDays,
           halfDayThresholdMinutes: input.halfDayThresholdMinutes,
+          start: input.start,
+          end: input.end,
+          timezone: input.timezone,
+          weekendCountsAsOne: input.weekendCountsAsOne,
         });
 
       case 'WEEK':
@@ -51,6 +62,10 @@ export class RentalDurationCalculator {
       dailyBillingPolicy: input.dailyBillingPolicy,
       minimumChargedDays: input.minimumChargedDays,
       halfDayThresholdMinutes: input.halfDayThresholdMinutes,
+      start: input.start,
+      end: input.end,
+      timezone: input.timezone,
+      weekendCountsAsOne: input.weekendCountsAsOne,
     });
   }
 
@@ -73,6 +88,10 @@ export class RentalDurationCalculator {
     dailyBillingPolicy: DailyBillingPolicy;
     minimumChargedDays: number;
     halfDayThresholdMinutes?: number;
+    start: Date;
+    end: Date;
+    timezone: string;
+    weekendCountsAsOne: boolean;
   }): number {
     const fullDays = Math.floor(input.durationMinutes / MINUTES_PER_DAY);
     const remainingMinutes = input.durationMinutes % MINUTES_PER_DAY;
@@ -100,7 +119,46 @@ export class RentalDurationCalculator {
         return this.assertNever(input.dailyBillingPolicy);
     }
 
-    return Math.max(input.minimumChargedDays, chargedDays);
+    const normalChargedDays = Math.max(input.minimumChargedDays, chargedDays);
+    if (!input.weekendCountsAsOne) return normalChargedDays;
+
+    return Math.max(input.minimumChargedDays, normalChargedDays - this.countQualifyingWeekendPairs(input));
+  }
+
+  /**
+   * Calendar dates identify an adjustment only. Daily units remain calculated
+   * from elapsed duration and the selected daily billing policy.
+   */
+  private countQualifyingWeekendPairs(input: { start: Date; end: Date; timezone: string }): number {
+    const firstLocalDate = toLocalDate(input.start, input.timezone);
+    const lastLocalDate = toLocalDate(input.end, input.timezone);
+    let candidateDate = firstLocalDate;
+    let count = 0;
+
+    while (candidateDate <= lastLocalDate) {
+      if (localDateDayOfWeek(candidateDate) === 6) {
+        const sunday = addDaysToLocalDate(candidateDate, 1);
+        if (
+          this.hasPositiveOverlapWithLocalDay(input, candidateDate) &&
+          this.hasPositiveOverlapWithLocalDay(input, sunday)
+        ) {
+          count += 1;
+        }
+      }
+      candidateDate = addDaysToLocalDate(candidateDate, 1);
+    }
+
+    return count;
+  }
+
+  private hasPositiveOverlapWithLocalDay(
+    input: { start: Date; end: Date; timezone: string },
+    localDate: string,
+  ): boolean {
+    const dayStart = localDateStartInstant(localDate, input.timezone);
+    const nextDayStart = localDateStartInstant(addDaysToLocalDate(localDate, 1), input.timezone);
+
+    return input.start < nextDayStart && input.end > dayStart;
   }
 
   private calculateBillOverHalfDayUnits(input: {
@@ -134,6 +192,10 @@ export class RentalDurationCalculator {
 
     if (!Number.isInteger(input.minimumChargedDays) || input.minimumChargedDays < 1) {
       throw new InvalidPricingInputError('Minimum charged days must be an integer greater than or equal to 1.');
+    }
+
+    if (!input.timezone.trim()) {
+      throw new InvalidPricingInputError('Pricing timezone is required.');
     }
 
     if (input.dailyBillingPolicy === 'BILL_OVER_HALF_DAY') {

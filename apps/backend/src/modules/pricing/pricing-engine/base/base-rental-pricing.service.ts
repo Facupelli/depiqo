@@ -32,6 +32,8 @@ export class BaseRentalPricingService {
       start: input.rentalPeriod.start,
       end: input.rentalPeriod.end,
       dailyBillingPolicy: input.pricingConfig.dailyBillingPolicy,
+      weekendCountsAsOne: input.pricingConfig.weekendCountsAsOne,
+      timezone: input.pricingConfig.timezone,
       minimumChargedDays: input.pricingConfig.minimumChargedDays,
       halfDayThresholdMinutes: input.pricingConfig.halfDayThresholdMinutes,
     });
@@ -46,6 +48,7 @@ export class BaseRentalPricingService {
       durationPolicySnapshot: {
         timezone: input.pricingConfig.timezone,
         dailyBillingPolicy: input.pricingConfig.dailyBillingPolicy,
+        weekendCountsAsOne: input.pricingConfig.weekendCountsAsOne,
         minimumChargedDays: input.pricingConfig.minimumChargedDays,
         halfDayThresholdMinutes: input.pricingConfig.halfDayThresholdMinutes,
       },

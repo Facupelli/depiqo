@@ -111,7 +111,7 @@ Domain Events remain module-internal facts. Integration Events are the public po
 Calendar Rules → Unit Decomposition → Tier Resolution → Amount Calculation
 ```
 
-**Stage 1 — Calendar Rules:** Computes raw duration in hours from `startDate`/`endDate`. Applies tenant config rules (e.g., `weekendCountsAsOne`: Saturday + Sunday together = 1 billable day). Produces `billableHours` and a `calendarAdjustments[]` log.
+**Stage 1 - Duration and Weekend Adjustment:** For `DAY` billing, computes charged units from elapsed duration and the tenant's daily rounding policy. When `weekendCountsAsOne` is enabled, the effective branch timezone identifies Saturday-Sunday pairs with positive overlap on both local dates; each pair reduces the resulting charged days by one, never below the minimum. The adjustment does not attach elapsed units to calendar dates and does not affect `HOUR` or `WEEK` billing.
 
 **Stage 2 — Unit Decomposition:** Decomposes `billableHours` into tenant-defined `BillingUnit`s (e.g., `half_day = 12h`, `full_day = 24h`, `week = 168h`) using a greedy largest-first algorithm. For daily rentals, applies the tenant's daily billing behavior through `RoundingRule`.
 

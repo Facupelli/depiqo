@@ -10,6 +10,7 @@ const baseResult = {
   durationPolicySnapshot: {
     timezone: 'UTC',
     dailyBillingPolicy: 'BILL_ANY_PARTIAL_DAY' as const,
+    weekendCountsAsOne: false,
     minimumChargedDays: 1,
   },
   lines: [
@@ -39,7 +40,12 @@ describe('PricingContextFactory', () => {
         branchId: 'branch-1',
         customerId: 'customer-1',
         calculationDate,
-        pricingConfig: { timezone, dailyBillingPolicy: 'BILL_ANY_PARTIAL_DAY', minimumChargedDays: 1 },
+        pricingConfig: {
+          timezone,
+          dailyBillingPolicy: 'BILL_ANY_PARTIAL_DAY',
+          weekendCountsAsOne: false,
+          minimumChargedDays: 1,
+        },
         rentalPeriod: { start: new Date('2026-08-11T10:00:00.000Z'), end: new Date('2026-08-12T10:00:00.000Z') },
         selections: [],
       },

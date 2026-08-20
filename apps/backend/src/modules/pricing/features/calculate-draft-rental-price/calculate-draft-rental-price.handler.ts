@@ -121,6 +121,7 @@ export class CalculateDraftRentalPriceHandler implements IQueryHandler<
       calculationFacts: {
         effectiveTimezone: branchContextResult.value.effectiveTimezone,
         dailyBillingPolicy: billingPreferences.dailyBillingPolicy,
+        weekendCountsAsOne: billingPreferences.weekendCountsAsOne,
       },
       lines: resolvedCatalogSelections.value.resolvedOffers.map((offer) => ({
         lineReference: randomUUID(),

@@ -140,6 +140,7 @@ export class CreateDraftRentalService implements ICommandHandler<
       calculationFacts: {
         effectiveTimezone: branchFacts.value.effectiveTimezone,
         dailyBillingPolicy: billingPreferences.value.dailyBillingPolicy,
+        weekendCountsAsOne: billingPreferences.value.weekendCountsAsOne,
       },
       lines: rentalSelectionsDraft.map((selection) => ({
         lineReference: selection.rentalSelectionId,

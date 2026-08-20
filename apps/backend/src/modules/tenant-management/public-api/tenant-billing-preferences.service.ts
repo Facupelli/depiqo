@@ -40,7 +40,10 @@ export class TenantBillingPreferencesService extends TenantBillingPreferences {
       });
     }
 
-    return ok({ dailyBillingPolicy: this.toDailyBillingPolicy(config.pricing.roundingRule) });
+    return ok({
+      dailyBillingPolicy: this.toDailyBillingPolicy(config.pricing.roundingRule),
+      weekendCountsAsOne: config.pricing.weekendCountsAsOne,
+    });
   }
 
   private toDailyBillingPolicy(roundingRule: TenantRoundingRule): TenantDailyBillingPolicy {

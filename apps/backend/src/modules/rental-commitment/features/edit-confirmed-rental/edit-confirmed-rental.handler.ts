@@ -179,6 +179,7 @@ export class EditConfirmedRentalHandler implements ICommandHandler<
       calculationFacts: {
         effectiveTimezone: branchFacts.value.effectiveTimezone,
         dailyBillingPolicy: billingPreferences.value.dailyBillingPolicy,
+        weekendCountsAsOne: billingPreferences.value.weekendCountsAsOne,
       },
       lines: selections.map((selection) => ({
         lineReference: selection.id,
@@ -498,6 +499,7 @@ export class EditConfirmedRentalHandler implements ICommandHandler<
         calculationFacts: {
           effectiveTimezone: branchFacts.value.effectiveTimezone,
           dailyBillingPolicy: billingPreferences.value.dailyBillingPolicy,
+          weekendCountsAsOne: billingPreferences.value.weekendCountsAsOne,
         },
         lines: resolvedCatalogSelections.value.resolvedOffers.map((offer) => ({
           lineReference: selectionIdByOfferId.get(offer.rentalOfferId)!,

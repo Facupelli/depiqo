@@ -29,6 +29,7 @@ export const CalculateCartPriceDurationPolicySnapshotSchema = z.object({
     "BILL_OVER_HALF_DAY",
     "BILL_ANY_PARTIAL_DAY",
   ]),
+  weekendCountsAsOne: z.boolean(),
   minimumChargedDays: z.number().int(),
   halfDayThresholdMinutes: z.number().int().optional(),
 });

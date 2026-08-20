@@ -19,6 +19,7 @@ function context(calculationLocalDate: string): PricingContext {
     durationPolicySnapshot: {
       timezone: 'America/Argentina/Buenos_Aires',
       dailyBillingPolicy: 'BILL_ANY_PARTIAL_DAY',
+      weekendCountsAsOne: false,
       minimumChargedDays: 1,
     },
     lines: [

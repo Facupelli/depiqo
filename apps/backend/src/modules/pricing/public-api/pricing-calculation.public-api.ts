@@ -3,6 +3,7 @@ import { Result } from 'neverthrow';
 export type PricingDurationPolicySnapshot = {
   timezone: string;
   dailyBillingPolicy: 'IGNORE_PARTIAL_DAY' | 'BILL_OVER_HALF_DAY' | 'BILL_ANY_PARTIAL_DAY';
+  weekendCountsAsOne: boolean;
   minimumChargedDays: number;
   halfDayThresholdMinutes?: number;
 };
@@ -13,6 +14,7 @@ export type PricingCalculationRequest = {
   calculationFacts: {
     effectiveTimezone: string;
     dailyBillingPolicy: 'IGNORE_PARTIAL_DAY' | 'BILL_OVER_HALF_DAY' | 'BILL_ANY_PARTIAL_DAY';
+    weekendCountsAsOne: boolean;
   };
   lines: Array<{
     lineReference: string;

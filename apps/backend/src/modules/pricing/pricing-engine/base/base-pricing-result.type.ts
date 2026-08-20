@@ -31,6 +31,7 @@ export type BasePricingResultLine = {
 export type DurationPolicySnapshot = {
   timezone: string;
   dailyBillingPolicy: DailyBillingPolicy;
+  weekendCountsAsOne: boolean;
   minimumChargedDays: number;
   halfDayThresholdMinutes?: number;
 };

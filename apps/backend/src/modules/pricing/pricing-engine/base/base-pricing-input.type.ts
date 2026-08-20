@@ -10,6 +10,7 @@ export type BasePricingInput = {
   pricingConfig: {
     timezone: string;
     dailyBillingPolicy: DailyBillingPolicy;
+    weekendCountsAsOne: boolean;
     minimumChargedDays: number;
     halfDayThresholdMinutes?: number;
   };

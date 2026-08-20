@@ -8,15 +8,18 @@ export const PRICING_DURATION_DEFAULTS = {
 export function createPricingDurationPolicy(input: {
   effectiveTimezone: string;
   dailyBillingPolicy: DailyBillingPolicy;
+  weekendCountsAsOne: boolean;
 }): {
   timezone: string;
   dailyBillingPolicy: DailyBillingPolicy;
+  weekendCountsAsOne: boolean;
   minimumChargedDays: number;
   halfDayThresholdMinutes: number;
 } {
   return {
     timezone: input.effectiveTimezone,
     dailyBillingPolicy: input.dailyBillingPolicy,
+    weekendCountsAsOne: input.weekendCountsAsOne,
     ...PRICING_DURATION_DEFAULTS,
   };
 }

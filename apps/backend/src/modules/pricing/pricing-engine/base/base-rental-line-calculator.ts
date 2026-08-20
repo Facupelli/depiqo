@@ -24,6 +24,8 @@ export class BaseRentalLineCalculator {
       end: rentalPeriod.end,
       billingUnit: selection.ratePlan.billingUnit,
       dailyBillingPolicy: pricingConfig.dailyBillingPolicy,
+      weekendCountsAsOne: pricingConfig.weekendCountsAsOne,
+      timezone: pricingConfig.timezone,
       minimumChargedDays: pricingConfig.minimumChargedDays,
       halfDayThresholdMinutes: pricingConfig.halfDayThresholdMinutes,
     });

@@ -18,6 +18,16 @@ export function addDaysToLocalDate(localDate: string, days: number): string {
   return Temporal.PlainDate.from(localDate).add({ days }).toString();
 }
 
+/** Returns the exact instant at the start of a local calendar date in an IANA timezone. */
+export function localDateStartInstant(localDate: string, timeZone: string): Date {
+  const zonedDateTime = Temporal.PlainDate.from(localDate).toZonedDateTime({
+    timeZone,
+    plainTime: Temporal.PlainTime.from('00:00'),
+  });
+
+  return new Date(zonedDateTime.epochMilliseconds);
+}
+
 /**
  * Resolves a wall-clock time using IANA timezone rules.
  *

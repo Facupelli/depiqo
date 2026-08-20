@@ -13,6 +13,7 @@ export interface GetTenantBillingPreferencesInput {
 
 export interface TenantBillingPreferencesFact {
   dailyBillingPolicy: TenantDailyBillingPolicy;
+  weekendCountsAsOne: boolean;
 }
 
 export type TenantBillingPreferencesError =

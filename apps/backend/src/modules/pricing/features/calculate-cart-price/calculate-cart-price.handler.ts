@@ -190,6 +190,7 @@ export class CalculateCartPriceHandler implements IQueryHandler<
       pricingConfig: createPricingDurationPolicy({
         effectiveTimezone: branchContextResult.value.effectiveTimezone,
         dailyBillingPolicy: billingPreferences.dailyBillingPolicy,
+        weekendCountsAsOne: billingPreferences.weekendCountsAsOne,
       }),
       selections: resolvedCatalogSelections.value.resolvedOffers.map((offer) => ({
         rentalOfferId: offer.rentalOfferId,

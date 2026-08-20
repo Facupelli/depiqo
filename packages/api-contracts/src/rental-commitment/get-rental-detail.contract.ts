@@ -86,6 +86,7 @@ export const GetRentalDetailPromotionApplicationTargetSchema = z.enum([
 export const GetRentalDetailDurationPolicySnapshotSchema = z.object({
 	timezone: z.string(),
 	dailyBillingPolicy: GetRentalDetailDailyBillingPolicySchema,
+	weekendCountsAsOne: z.boolean(),
 	minimumChargedDays: z.number(),
 	halfDayThresholdMinutes: z.number().optional(),
 });

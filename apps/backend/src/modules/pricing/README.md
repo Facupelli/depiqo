@@ -67,6 +67,17 @@ Bill over half day
 Bill any partial day
 ```
 
+Daily billing remains elapsed-duration based. When the tenant enables `weekendCountsAsOne`, Pricing uses the effective branch timezone only to find Saturday-Sunday pairs with positive rental-interval overlap on both local dates. Each qualifying pair reduces the normally calculated day charge by one, never below the minimum charged days. It does not attach elapsed 24-hour units to calendar dates or change the partial-day policy. This adjustment applies only to `DAY` rate plans. `HOUR` and `WEEK` rate plans remain unchanged.
+
+With `BILL_ANY_PARTIAL_DAY` and weekend mode enabled:
+
+```text
+Sat 10:00 -> Sun 18:00 = 1 charged day
+Sat 10:00 -> Sun 10:00 = 1 charged day
+Sat 10:00 -> Mon 10:00 = 1 charged day
+Fri 10:00 -> Mon 10:00 = 2 charged days
+```
+
 ### Rate Plan Tier
 
 A tier defines the price of a billing unit for a range of units.
