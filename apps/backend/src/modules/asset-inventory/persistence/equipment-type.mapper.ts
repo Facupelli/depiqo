@@ -5,6 +5,7 @@ type EquipmentTypePersistenceRecord = {
   tenantId: string;
   name: string;
   description: string | null;
+  imageUrl: string | null;
   categoryId: string | null;
   createdAt: Date;
   updatedAt: Date;
@@ -17,6 +18,7 @@ export class EquipmentTypeMapper {
       tenantId: record.tenantId,
       name: record.name,
       description: record.description,
+      imageUrl: record.imageUrl,
       categoryId: record.categoryId,
       createdAt: record.createdAt,
       updatedAt: record.updatedAt,
@@ -35,6 +37,7 @@ export class EquipmentTypeMapper {
     return {
       name: equipmentType.name,
       description: equipmentType.description,
+      imageUrl: equipmentType.imageUrl,
       categoryId: equipmentType.categoryId,
     };
   }

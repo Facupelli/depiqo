@@ -12,6 +12,7 @@ export const CreateEquipmentTypeAssetBodySchema = z.object({
 export const CreateEquipmentTypeBodySchema = z.object({
   name: z.string().min(1),
   description: z.string().optional().nullable(),
+  imageUrl: z.string().url().optional().nullable(),
   categoryId: z.string().optional().nullable(),
   assets: z.array(CreateEquipmentTypeAssetBodySchema).optional().default([]),
 });
@@ -21,12 +22,22 @@ export const CreateEquipmentTypeResponseSchema = z.object({
   assetIds: z.array(z.string()),
 });
 
-export type CreateEquipmentTypeBodyDto = z.infer<typeof CreateEquipmentTypeBodySchema>;
-export type CreateEquipmentTypeResponseDto = z.infer<typeof CreateEquipmentTypeResponseSchema>;
+export type CreateEquipmentTypeBodyDto = z.infer<
+  typeof CreateEquipmentTypeBodySchema
+>;
+export type CreateEquipmentTypeResponseDto = z.infer<
+  typeof CreateEquipmentTypeResponseSchema
+>;
 
 export const createEquipmentTypeContract = {
   method: "POST",
   path: "/asset-inventory/equipment-types",
   body: CreateEquipmentTypeBodySchema,
   response: CreateEquipmentTypeResponseSchema,
-} satisfies ApiContract<undefined, undefined, undefined, typeof CreateEquipmentTypeBodySchema, typeof CreateEquipmentTypeResponseSchema>;
+} satisfies ApiContract<
+  undefined,
+  undefined,
+  undefined,
+  typeof CreateEquipmentTypeBodySchema,
+  typeof CreateEquipmentTypeResponseSchema
+>;

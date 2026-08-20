@@ -33,6 +33,7 @@ export class CreateEquipmentTypeSetupService {
       tenantId: command.tenantId,
       name: command.name,
       description: command.description,
+      imageUrl: command.imageUrl,
       categoryId: command.categoryId,
     });
 

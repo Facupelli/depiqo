@@ -19,7 +19,14 @@ export class UpdateEquipmentTypeHttpController {
     @CurrentUser() user: AuthUser,
   ): Promise<void> {
     const result = await this.commandBus.execute<UpdateEquipmentTypeCommand, UpdateEquipmentTypeResult>(
-      new UpdateEquipmentTypeCommand(user.tenantId, params.equipmentTypeId, dto.name, dto.description, dto.categoryId),
+      new UpdateEquipmentTypeCommand(
+        user.tenantId,
+        params.equipmentTypeId,
+        dto.name,
+        dto.description,
+        dto.imageUrl,
+        dto.categoryId,
+      ),
     );
     if (result.isErr()) throw toProblem(result.error);
   }

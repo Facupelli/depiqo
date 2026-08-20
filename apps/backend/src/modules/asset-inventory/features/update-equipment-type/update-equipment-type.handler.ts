@@ -60,6 +60,7 @@ export class UpdateEquipmentTypeHandler implements ICommandHandler<
     const result = equipmentType.updateMetadata({
       name: command.name,
       description: command.description,
+      imageUrl: command.imageUrl,
       categoryId: command.categoryId,
     });
     if (result.isErr()) return err(mapUpdateEquipmentTypeError(result.error));

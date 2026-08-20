@@ -9,6 +9,7 @@ export class CreateEquipmentTypeSetupCommand {
   public readonly tenantId: string;
   public readonly name: string;
   public readonly description?: string | null;
+  public readonly imageUrl?: string | null;
   public readonly categoryId?: string | null;
   public readonly assets: CreateEquipmentTypeSetupAssetInput[];
 
@@ -16,12 +17,14 @@ export class CreateEquipmentTypeSetupCommand {
     tenantId: string;
     name: string;
     description?: string | null;
+    imageUrl?: string | null;
     categoryId?: string | null;
     assets?: CreateEquipmentTypeSetupAssetInput[];
   }) {
     this.tenantId = props.tenantId;
     this.name = props.name;
     this.description = props.description;
+    this.imageUrl = props.imageUrl;
     this.categoryId = props.categoryId;
     this.assets = props.assets ?? [];
   }

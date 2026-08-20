@@ -96,6 +96,7 @@ export class CreateEquipmentTypeHandler implements ICommandHandler<
         tenantId: command.tenantId,
         name: command.name,
         description: command.description,
+        imageUrl: command.imageUrl,
         categoryId: command.categoryId,
         assets: command.assets,
       }),
