@@ -44,3 +44,21 @@ jobs:
 
       - name: Backend database tests
         run: pnpm --filter @repo/backend run test:db:ci
+
+      - name: Backoffice lint
+        run: pnpm --filter @repo/backoffice run lint
+
+      - name: Backoffice typecheck
+        run: pnpm --filter @repo/backoffice run typecheck
+
+      - name: Backoffice build
+        run: pnpm turbo run build --filter=@repo/backoffice
+
+      - name: Storefront lint
+        run: pnpm --filter @repo/storefront run lint
+
+      - name: Storefront typecheck
+        run: pnpm --filter @repo/storefront run typecheck
+
+      - name: Storefront build
+        run: pnpm turbo run build --filter=@repo/storefront
