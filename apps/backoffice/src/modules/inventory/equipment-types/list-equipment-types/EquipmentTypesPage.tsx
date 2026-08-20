@@ -4,6 +4,7 @@ import { startTransition, useEffect, useState } from "react";
 import { useBranches } from "@/modules/settings/branches/public";
 import useDebounce from "@/shared/hooks/use-debounce";
 import { CreateEquipmentTypeDialog } from "../create-equipment-type/create-equipment-type-dialog";
+import { useEquipmentTypeProductUsages } from "./equipment-type-product-usages.queries";
 import { useEquipmentTypeSummaries } from "./equipment-type-summaries.queries";
 import { EquipmentTypeSummariesFilters } from "./equipment-type-summaries-filters";
 import { EquipmentTypeSummariesTable } from "./equipment-type-summaries-table";
@@ -33,7 +34,20 @@ export function EquipmentTypesPage({
 	const [searchInput, setSearchInput] = useState(search.search ?? "");
 	const debouncedSearch = useDebounce(searchInput, 300);
 	const { data, isFetching, isError } = useEquipmentTypeSummaries(search);
+	const equipmentTypeIds =
+		data?.data.map((equipmentType) => equipmentType.id) ?? [];
+	const {
+		data: productUsages,
+		isFetching: isFetchingProductUsages,
+		isError: isProductUsagesError,
+	} = useEquipmentTypeProductUsages(equipmentTypeIds);
 	const { data: branches = [] } = useBranches({ isActive: true });
+	const productsByEquipmentTypeId = new Map(
+		(productUsages ?? []).map((usage) => [
+			usage.equipmentTypeId,
+			usage.products,
+		]),
+	);
 
 	const pagination: PaginationState = {
 		pageIndex: search.page - 1,
@@ -88,10 +102,10 @@ export function EquipmentTypesPage({
 			<div className="flex items-start justify-between">
 				<div>
 					<h1 className="font-semibold text-2xl tracking-tight">
-						Tipos de equipo
+						Inventario
 					</h1>
 					<p className="text-muted-foreground text-sm">
-						Consulta los tipos de equipo operativos y sus unidades por sucursal.
+						Gestiona el equipamiento físico que tiene tu negocio.
 					</p>
 				</div>
 				<CreateEquipmentTypeDialog />
@@ -106,7 +120,7 @@ export function EquipmentTypesPage({
 				onClearFilters={handleClearFilters}
 			/>
 
-			{isError ? (
+			{isError || isProductUsagesError ? (
 				<p className="text-destructive text-sm">
 					No pudimos cargar el inventario de equipos. Inténtalo nuevamente.
 				</p>
@@ -117,7 +131,8 @@ export function EquipmentTypesPage({
 					pagination={pagination}
 					onPaginationChange={handlePaginationChange}
 					onRowClick={onEquipmentTypeClick}
-					isLoading={isFetching}
+					productsByEquipmentTypeId={productsByEquipmentTypeId}
+					isLoading={isFetching || isFetchingProductUsages}
 				/>
 			)}
 		</div>

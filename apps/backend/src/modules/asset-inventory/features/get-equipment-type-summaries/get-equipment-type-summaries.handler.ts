@@ -18,8 +18,6 @@ export interface EquipmentTypeSummaryReadModel {
   categoryId: string | null;
   categoryName: string | null;
   assetsQuantity: number;
-  usedAsAccessory: boolean;
-  rentableItem: boolean;
   stockPerBranch: EquipmentTypeStockPerBranchReadModel[];
 }
 
@@ -79,48 +77,15 @@ export class GetEquipmentTypeSummariesHandler implements IQueryHandler<
       return { data: [], total, page: query.page, pageSize: query.pageSize };
     }
 
-    const [assetGroups, accessoryDefaults, rentableItems] = await this.prisma.client.$transaction([
-      this.prisma.client.v2Asset.groupBy({
-        by: ['equipmentTypeId', 'branchId'],
-        where: {
-          tenantId: query.tenantId,
-          equipmentTypeId: { in: equipmentTypeIds },
-          status: 'ACTIVE',
-        },
-        _count: { _all: true },
-      }),
-      this.prisma.client.v2EquipmentTypeAccessoryDefault.findMany({
-        where: {
-          tenantId: query.tenantId,
-          accessoryEquipmentTypeId: { in: equipmentTypeIds },
-        },
-        select: { accessoryEquipmentTypeId: true },
-        distinct: ['accessoryEquipmentTypeId'],
-      }),
-      this.prisma.client.v2RentableItem.findMany({
-        where: {
-          tenantId: query.tenantId,
-          status: 'ACTIVE',
-          rentalOffers: {
-            some: {
-              tenantId: query.tenantId,
-              isRentable: true,
-            },
-          },
-          requirements: {
-            some: {
-              tenantId: query.tenantId,
-              equipmentTypeId: { in: equipmentTypeIds },
-            },
-          },
-        },
-        select: {
-          requirements: {
-            select: { equipmentTypeId: true },
-          },
-        },
-      }),
-    ]);
+    const assetGroups = await this.prisma.client.v2Asset.groupBy({
+      by: ['equipmentTypeId', 'branchId'],
+      where: {
+        tenantId: query.tenantId,
+        equipmentTypeId: { in: equipmentTypeIds },
+        status: 'ACTIVE',
+      },
+      _count: { _all: true },
+    });
 
     const branchIds = [...new Set(assetGroups.map((group) => group.branchId))];
     const categoryIds = equipmentTypes.flatMap((equipmentType) =>
@@ -139,21 +104,8 @@ export class GetEquipmentTypeSummariesHandler implements IQueryHandler<
 
     const branchNameById = new Map(branches.map((branch) => [branch.id, branch.name]));
     const categoryNameById = new Map(categories.map((category) => [category.id, category.name]));
-    const usedAsAccessoryIds = new Set(accessoryDefaults.map((item) => item.accessoryEquipmentTypeId));
-    const rentableEquipmentTypeIds = new Set<string>();
     const stockByEquipmentTypeId = new Map<string, EquipmentTypeStockPerBranchReadModel[]>();
     const assetsQuantityByEquipmentTypeId = new Map<string, number>();
-
-    for (const rentableItem of rentableItems) {
-      if (rentableItem.requirements.length !== 1) {
-        continue;
-      }
-
-      const [requirement] = rentableItem.requirements;
-      if (equipmentTypeIds.includes(requirement.equipmentTypeId)) {
-        rentableEquipmentTypeIds.add(requirement.equipmentTypeId);
-      }
-    }
 
     for (const group of assetGroups) {
       const quantity = group._count._all;
@@ -176,12 +128,8 @@ export class GetEquipmentTypeSummariesHandler implements IQueryHandler<
         name: equipmentType.name,
         imageUrl: equipmentType.imageUrl,
         categoryId: equipmentType.categoryId,
-        categoryName: equipmentType.categoryId
-          ? (categoryNameById.get(equipmentType.categoryId) ?? null)
-          : null,
+        categoryName: equipmentType.categoryId ? (categoryNameById.get(equipmentType.categoryId) ?? null) : null,
         assetsQuantity: assetsQuantityByEquipmentTypeId.get(equipmentType.id) ?? 0,
-        usedAsAccessory: usedAsAccessoryIds.has(equipmentType.id),
-        rentableItem: rentableEquipmentTypeIds.has(equipmentType.id),
         stockPerBranch: (stockByEquipmentTypeId.get(equipmentType.id) ?? []).sort((left, right) =>
           (left.branchName ?? left.branchId).localeCompare(right.branchName ?? right.branchId),
         ),

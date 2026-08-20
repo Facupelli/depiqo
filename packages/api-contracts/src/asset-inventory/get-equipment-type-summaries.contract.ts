@@ -22,8 +22,6 @@ export const GetEquipmentTypeSummariesItemSchema = z.object({
   categoryId: z.string().nullable(),
   categoryName: z.string().nullable(),
   assetsQuantity: z.number().int().nonnegative(),
-  usedAsAccessory: z.boolean(),
-  rentableItem: z.boolean(),
   stockPerBranch: z.array(GetEquipmentTypeSummariesStockPerBranchSchema),
 });
 

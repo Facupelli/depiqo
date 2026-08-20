@@ -1,4 +1,7 @@
-import type { GetEquipmentTypeSummariesItemDto } from "@repo/api-contracts";
+import type {
+	EquipmentTypeProductUsageProductDto,
+	GetEquipmentTypeSummariesItemDto,
+} from "@repo/api-contracts";
 import { Button } from "@repo/ui/components/button";
 import {
 	Table,
@@ -15,10 +18,14 @@ import {
 	useReactTable,
 } from "@tanstack/react-table";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { equipmentTypeSummariesColumns } from "./equipment-type-summaries-columns";
+import { createEquipmentTypeSummariesColumns } from "./equipment-type-summaries-columns";
 
 interface EquipmentTypeSummariesTableProps {
 	equipmentTypes: GetEquipmentTypeSummariesItemDto[];
+	productsByEquipmentTypeId: ReadonlyMap<
+		string,
+		EquipmentTypeProductUsageProductDto[]
+	>;
 	total: number;
 	pagination: PaginationState;
 	onPaginationChange: (pagination: PaginationState) => void;
@@ -28,16 +35,20 @@ interface EquipmentTypeSummariesTableProps {
 
 export function EquipmentTypeSummariesTable({
 	equipmentTypes,
+	productsByEquipmentTypeId,
 	total,
 	pagination,
 	onPaginationChange,
 	onRowClick,
 	isLoading = false,
 }: EquipmentTypeSummariesTableProps) {
+	const columns = createEquipmentTypeSummariesColumns({
+		productsByEquipmentTypeId,
+	});
 	const pageCount = Math.max(1, Math.ceil(total / pagination.pageSize));
 	const table = useReactTable({
 		data: equipmentTypes,
-		columns: equipmentTypeSummariesColumns,
+		columns,
 		state: { pagination },
 		pageCount,
 		manualPagination: true,
@@ -84,7 +95,7 @@ export function EquipmentTypeSummariesTable({
 						{isLoading ? (
 							skeletonRowKeys.map((rowKey) => (
 								<TableRow key={rowKey}>
-									{equipmentTypeSummariesColumns.map((column) => (
+									{columns.map((column) => (
 										<TableCell key={`${column.id}-${rowKey}`}>
 											<div className="h-4 w-full animate-pulse rounded bg-muted" />
 										</TableCell>
@@ -115,7 +126,7 @@ export function EquipmentTypeSummariesTable({
 						) : (
 							<TableRow>
 								<TableCell
-									colSpan={equipmentTypeSummariesColumns.length}
+									colSpan={columns.length}
 									className="h-24 text-center text-muted-foreground"
 								>
 									No se encontraron equipos.
