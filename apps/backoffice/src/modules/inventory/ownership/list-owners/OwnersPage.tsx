@@ -18,7 +18,8 @@ export function OwnersPage({ onOwnerSelect }: OwnersPageProps) {
 						Propietarios de equipos
 					</h1>
 					<p className="text-sm text-muted-foreground">
-						Gestiona las personas o empresas externas propietarias de equipos de tu inventario.
+						Gestiona las personas o empresas externas propietarias de equipos de
+						tu inventario.
 					</p>
 				</div>
 				<CreateOwnerWithContractDialog triggerLabel="Agregar Propietario" />

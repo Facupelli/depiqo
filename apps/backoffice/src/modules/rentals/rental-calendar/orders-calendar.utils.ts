@@ -122,13 +122,6 @@ export function getOrdersCalendarEventTitle(
 		: `#${formatOrderNumber(order.rentalNumber)}`;
 }
 
-export function formatOrdersCalendarTooltipDateTime(
-	value: ParsedRentalsCalendarItem["pickupAt"],
-	timezone: string,
-): string {
-	return value.tz(timezone).format("ddd D MMM, HH:mm");
-}
-
 const MINUTES_PER_DAY = 24 * 60;
 
 function getLocalClockMinutes(

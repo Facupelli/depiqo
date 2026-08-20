@@ -75,19 +75,19 @@
 }
 
 .orders-calendar-shell .orders-calendar-event {
-	border-radius: 0.5rem;
+	cursor: pointer;
+	border-radius: 0.375rem;
 	border-width: 1px;
 	border-style: solid;
-	padding: 0 0.5rem;
+	padding: 0;
 	box-shadow: none;
 	overflow: hidden;
-	transition:
-		transform 120ms ease,
-		box-shadow 120ms ease;
 }
 
-.orders-calendar-shell .orders-calendar-event:hover {
-	box-shadow: 0 10px 24px rgba(23, 23, 23, 0.1);
+.orders-calendar-shell .orders-calendar-event:focus-visible {
+	outline: 2px solid #171717;
+	outline-offset: 2px;
+	box-shadow: 0 0 0 4px rgba(23, 23, 23, 0.12);
 }
 
 .orders-calendar-shell .orders-calendar-event--draft {
@@ -201,22 +201,4 @@
 
 .orders-calendar-shell .fc-popover-body {
 	padding: 0.35rem;
-}
-
-.orders-calendar-popover {
-	position: relative;
-	overflow: visible;
-}
-
-.orders-calendar-popover::before {
-	content: "";
-	position: absolute;
-	top: -0.45rem;
-	left: 50%;
-	height: 0.9rem;
-	width: 0.9rem;
-	transform: translateX(-50%) rotate(45deg);
-	border-top: 1px solid #e5e5e5;
-	border-left: 1px solid #e5e5e5;
-	background: #ffffff;
 }
