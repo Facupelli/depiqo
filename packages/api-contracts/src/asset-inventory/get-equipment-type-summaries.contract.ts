@@ -18,7 +18,9 @@ export const GetEquipmentTypeSummariesStockPerBranchSchema = z.object({
 export const GetEquipmentTypeSummariesItemSchema = z.object({
   id: z.string(),
   name: z.string(),
+  imageUrl: z.string().nullable(),
   categoryId: z.string().nullable(),
+  categoryName: z.string().nullable(),
   assetsQuantity: z.number().int().nonnegative(),
   usedAsAccessory: z.boolean(),
   rentableItem: z.boolean(),

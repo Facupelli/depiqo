@@ -1,6 +1,7 @@
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 
 import { PrismaService } from 'src/core/database/prisma.service';
+import { TenantCategoryTaxonomy } from 'src/modules/tenant-management/public-api/tenant-category-taxonomy.public-api';
 
 import { GetEquipmentTypeSummariesQuery } from './get-equipment-type-summaries.query';
 
@@ -13,7 +14,9 @@ export interface EquipmentTypeStockPerBranchReadModel {
 export interface EquipmentTypeSummaryReadModel {
   id: string;
   name: string;
+  imageUrl: string | null;
   categoryId: string | null;
+  categoryName: string | null;
   assetsQuantity: number;
   usedAsAccessory: boolean;
   rentableItem: boolean;
@@ -32,7 +35,10 @@ export class GetEquipmentTypeSummariesHandler implements IQueryHandler<
   GetEquipmentTypeSummariesQuery,
   GetEquipmentTypeSummariesResult
 > {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly tenantCategoryTaxonomy: TenantCategoryTaxonomy,
+  ) {}
 
   async execute(query: GetEquipmentTypeSummariesQuery): Promise<GetEquipmentTypeSummariesResult> {
     const where = {
@@ -57,6 +63,7 @@ export class GetEquipmentTypeSummariesHandler implements IQueryHandler<
         select: {
           id: true,
           name: true,
+          imageUrl: true,
           categoryId: true,
         },
         orderBy: { name: 'asc' },
@@ -116,12 +123,22 @@ export class GetEquipmentTypeSummariesHandler implements IQueryHandler<
     ]);
 
     const branchIds = [...new Set(assetGroups.map((group) => group.branchId))];
-    const branches = await this.prisma.client.v2Branch.findMany({
-      where: { tenantId: query.tenantId, id: { in: branchIds }, deletedAt: null },
-      select: { id: true, name: true },
-    });
+    const categoryIds = equipmentTypes.flatMap((equipmentType) =>
+      equipmentType.categoryId ? [equipmentType.categoryId] : [],
+    );
+    const [branches, categories] = await Promise.all([
+      this.prisma.client.v2Branch.findMany({
+        where: { tenantId: query.tenantId, id: { in: branchIds }, deletedAt: null },
+        select: { id: true, name: true },
+      }),
+      this.tenantCategoryTaxonomy.getCategoryDisplayFacts({
+        tenantId: query.tenantId,
+        categoryIds,
+      }),
+    ]);
 
     const branchNameById = new Map(branches.map((branch) => [branch.id, branch.name]));
+    const categoryNameById = new Map(categories.map((category) => [category.id, category.name]));
     const usedAsAccessoryIds = new Set(accessoryDefaults.map((item) => item.accessoryEquipmentTypeId));
     const rentableEquipmentTypeIds = new Set<string>();
     const stockByEquipmentTypeId = new Map<string, EquipmentTypeStockPerBranchReadModel[]>();
@@ -157,7 +174,11 @@ export class GetEquipmentTypeSummariesHandler implements IQueryHandler<
       data: equipmentTypes.map((equipmentType) => ({
         id: equipmentType.id,
         name: equipmentType.name,
+        imageUrl: equipmentType.imageUrl,
         categoryId: equipmentType.categoryId,
+        categoryName: equipmentType.categoryId
+          ? (categoryNameById.get(equipmentType.categoryId) ?? null)
+          : null,
         assetsQuantity: assetsQuantityByEquipmentTypeId.get(equipmentType.id) ?? 0,
         usedAsAccessory: usedAsAccessoryIds.has(equipmentType.id),
         rentableItem: rentableEquipmentTypeIds.has(equipmentType.id),
