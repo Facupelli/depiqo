@@ -19,6 +19,7 @@ export const GetEquipmentTypeProductUsagesQuerySchema = z.object({
 export const EquipmentTypeProductUsageProductSchema = z.object({
 	rentableItemId: z.string(),
 	name: z.string(),
+	quantityPerItem: z.number().int().positive(),
 });
 
 export const EquipmentTypeProductUsageSchema = z.object({

@@ -7,6 +7,7 @@ import { GetEquipmentTypeProductUsagesQuery } from './get-equipment-type-product
 export interface EquipmentTypeProductUsageProductReadModel {
   rentableItemId: string;
   name: string;
+  quantityPerItem: number;
 }
 
 export interface EquipmentTypeProductUsageReadModel {
@@ -33,6 +34,7 @@ export class GetEquipmentTypeProductUsagesHandler implements IQueryHandler<
       },
       select: {
         equipmentTypeId: true,
+        quantityPerItem: true,
         rentableItem: {
           select: {
             id: true,
@@ -50,6 +52,7 @@ export class GetEquipmentTypeProductUsagesHandler implements IQueryHandler<
       products.push({
         rentableItemId: requirement.rentableItem.id,
         name: requirement.rentableItem.name,
+        quantityPerItem: requirement.quantityPerItem,
       });
       productsByEquipmentTypeId.set(requirement.equipmentTypeId, products);
     }

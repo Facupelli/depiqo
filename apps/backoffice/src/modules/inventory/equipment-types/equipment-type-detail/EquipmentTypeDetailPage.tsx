@@ -16,24 +16,21 @@ import {
 	TableHeader,
 	TableRow,
 } from "@repo/ui/components/table";
-import {
-	Tabs,
-	TabsContent,
-	TabsList,
-	TabsTrigger,
-} from "@repo/ui/components/tabs";
 import { useSuspenseQuery } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
+import { Box, MapPin, PackageOpen, ShoppingBag } from "lucide-react";
 import { type ReactNode, useId, useState } from "react";
-import { formatTimestampInTimezone } from "@/lib/dates/format";
+import { PageBreadcrumb } from "@/components/detail-id-breadcrumb";
+import { buildR2PublicUrl } from "@/lib/r2-public-url";
 import { useOwnerOptions } from "@/modules/inventory/ownership/owner-options.queries";
 import { useBranches } from "@/modules/settings/branches/public";
-import { useTenantTimezone } from "@/shared/timezone/operational-timezone.hooks";
 import { AddAccessorySuggestionsForm } from "../accessory-suggestions/AddAccessorySuggestionsForm";
 import { useAddAccessorySuggestions } from "../accessory-suggestions/add-accessory-suggestions.mutation";
 import { toAddAccessorySuggestionsDto } from "../accessory-suggestions/add-accessory-suggestions.schema";
 import { AddUnitsForm } from "../add-units/AddUnitsForm";
 import { useAddUnitsToEquipmentType } from "../add-units/add-units.mutation";
 import { toAddUnitsToEquipmentTypeDto } from "../add-units/add-units.schema";
+import { equipmentTypeProductUsageQueries } from "../product-usages/equipment-type-product-usages.queries";
 import { equipmentTypeDetailQueries } from "./equipment-type-detail.queries";
 
 export function EquipmentTypeDetailPage({
@@ -44,111 +41,126 @@ export function EquipmentTypeDetailPage({
 	const { data: equipmentType } = useSuspenseQuery(
 		equipmentTypeDetailQueries.detail(equipmentTypeId),
 	);
-	const timezone = useTenantTimezone();
+	const { data: productUsages } = useSuspenseQuery(
+		equipmentTypeProductUsageQueries.list([equipmentTypeId]),
+	);
+	const products = productUsages[0]?.products ?? [];
+	const branchCount = new Set(
+		equipmentType.assets.map((asset) => asset.branchId),
+	).size;
+	const imageUrl = buildR2PublicUrl(equipmentType.imageUrl, "catalog");
 
 	return (
-		<div className="space-y-6 p-8">
-			<header className="space-y-2">
-				<h1 className="font-semibold text-2xl tracking-tight">
-					{equipmentType.name}
-				</h1>
-				<p className="max-w-3xl text-muted-foreground text-sm">
-					{equipmentType.description ?? "Sin descripción."}
-				</p>
-			</header>
-
-			<EquipmentTypeInfoCard
-				equipmentType={equipmentType}
-				timezone={timezone}
+		<div className="px-6 pb-8">
+			<PageBreadcrumb
+				parent={{
+					label: "Inventario",
+					to: "/dashboard/inventory/equipment-types",
+				}}
+				current={`Equipo / ${equipmentType.name}`}
 			/>
 
-			<Tabs defaultValue="units" className="flex flex-col gap-y-4">
-				<div className="flex items-center justify-between gap-4 border-b">
-					<TabsList
-						variant="line"
-						className="h-auto justify-start rounded-none border-b-0 bg-transparent p-0"
-					>
-						<TabsTrigger
-							value="units"
-							className="gap-2 rounded-none border-b-2 border-transparent px-5 py-3 text-sm font-medium text-muted-foreground shadow-none transition-none focus-visible:ring-0 [&::after]:hidden data-active:border-b-primary data-active:border-t-transparent data-active:border-l-transparent data-active:border-r-transparent data-active:bg-transparent data-active:font-semibold data-active:text-primary data-active:shadow-none"
-						>
-							Unidades
-						</TabsTrigger>
-						<TabsTrigger
-							value="accessory-defaults"
-							className="gap-2 rounded-none border-b-2 border-transparent px-5 py-3 text-sm font-medium text-muted-foreground shadow-none transition-none focus-visible:ring-0 [&::after]:hidden data-active:border-b-primary data-active:border-t-transparent data-active:border-l-transparent data-active:border-r-transparent data-active:bg-transparent data-active:font-semibold data-active:text-primary data-active:shadow-none"
-						>
-							Accesorios sugeridos
-						</TabsTrigger>
-					</TabsList>
+			<div className="space-y-5">
+				<EquipmentTypeHeader
+					equipmentType={equipmentType}
+					imageUrl={imageUrl}
+				/>
+
+				<div className="grid gap-4 sm:grid-cols-3">
+					<OverviewMetric
+						icon={Box}
+						label="Unidades"
+						value={equipmentType.assets.length}
+					/>
+					<OverviewMetric
+						icon={MapPin}
+						label="Ubicaciones"
+						value={branchCount}
+						description="sucursal"
+					/>
+					<OverviewMetric
+						icon={ShoppingBag}
+						label="Usado por"
+						value={products.length}
+						description="productos"
+					/>
 				</div>
 
-				<TabsContent value="units" className="mt-0">
+				<div className="grid gap-5 lg:grid-cols-[minmax(0,2fr)_minmax(20rem,1fr)]">
 					<EquipmentUnitsTable equipmentType={equipmentType} />
-				</TabsContent>
-
-				<TabsContent value="accessory-defaults" className="mt-0">
-					<AccessoryDefaultsTable equipmentType={equipmentType} />
-				</TabsContent>
-			</Tabs>
+					<div className="space-y-5">
+						<ProductUsageList products={products} />
+						<AccessoryDefaultsTable equipmentType={equipmentType} />
+					</div>
+				</div>
+			</div>
 		</div>
 	);
 }
 
-function EquipmentTypeInfoCard({
+function EquipmentTypeHeader({
 	equipmentType,
-	timezone,
+	imageUrl,
 }: {
 	equipmentType: GetEquipmentTypeDetailResponseDto;
-	timezone: string;
+	imageUrl: string | null;
 }) {
 	return (
-		<section className="overflow-hidden rounded-lg border bg-background shadow-sm">
-			<div className="grid divide-y sm:grid-cols-2 sm:divide-x sm:divide-y-0 lg:grid-cols-4">
-				<InfoItem label="ID" value={equipmentType.id} />
-				<InfoItem
-					label="Unidades"
-					value={String(equipmentType.assets.length)}
-				/>
-				<InfoItem
-					label="Accesorios sugeridos"
-					value={String(equipmentType.accessoryDefaults.length)}
-				/>
-				<InfoItem
-					label="Categoría"
-					value={equipmentType.categoryId ?? "Sin categoría"}
-				/>
+		<section className="flex items-start gap-5">
+			<div className="flex size-24 shrink-0 items-center justify-center overflow-hidden rounded-xl border bg-muted/20 sm:size-32">
+				{imageUrl ? (
+					<img
+						src={imageUrl}
+						alt={equipmentType.name}
+						className="size-full object-contain p-2"
+					/>
+				) : (
+					<PackageOpen className="size-10 text-muted-foreground" />
+				)}
 			</div>
-			<div className="grid divide-y border-t sm:grid-cols-2 sm:divide-x sm:divide-y-0">
-				<InfoItem
-					label="Creado"
-					value={formatTimestampInTimezone(
-						equipmentType.createdAt,
-						timezone,
-						"DD MMM, YYYY · HH:mm",
-					)}
-				/>
-				<InfoItem
-					label="Actualizado"
-					value={formatTimestampInTimezone(
-						equipmentType.updatedAt,
-						timezone,
-						"DD MMM, YYYY · HH:mm",
-					)}
-				/>
+			<div className="min-w-0 py-2">
+				<h1 className="truncate text-3xl font-semibold tracking-tight">
+					{equipmentType.name}
+				</h1>
+				<p className="pt-2 text-blue-600 text-sm">
+					{equipmentType.categoryName ?? "Sin categoría"}
+				</p>
+				{equipmentType.description ? (
+					<p className="mt-2 text-muted-foreground text-sm">
+						{equipmentType.description}
+					</p>
+				) : null}
 			</div>
 		</section>
 	);
 }
 
-function InfoItem({ label, value }: { label: string; value: string }) {
+function OverviewMetric({
+	icon: Icon,
+	label,
+	value,
+	description,
+}: {
+	icon: typeof Box;
+	label: string;
+	value: number;
+	description?: string;
+}) {
 	return (
-		<div className="min-w-0 p-4">
-			<p className="text-muted-foreground text-xs uppercase tracking-wide">
-				{label}
-			</p>
-			<p className="mt-1 truncate font-medium text-sm">{value}</p>
-		</div>
+		<section className="rounded-xl border bg-card p-5 shadow-xs flex gap-4 items-center">
+			<div className="flex items-center p-3 bg-blue-100 rounded-md">
+				<Icon className="size-6 text-blue-700" />
+			</div>
+			<div>
+				<h2 className="font-medium text-sm">{label}</h2>
+				<p className="font-semibold text-2xl tracking-tight">
+					{value}{" "}
+					{description && (
+						<span className="font-normal text-base">{description}</span>
+					)}
+				</p>
+			</div>
+		</section>
 	);
 }
 
@@ -160,7 +172,7 @@ function EquipmentUnitsTable({
 	return (
 		<DetailTable
 			title="Unidades"
-			colSpan={5}
+			colSpan={4}
 			isEmpty={equipmentType.assets.length === 0}
 			emptyMessage="No hay unidades para este equipo."
 			actions={<AddUnitsDialog equipmentTypeId={equipmentType.id} />}
@@ -171,7 +183,6 @@ function EquipmentUnitsTable({
 					<TableHead>Sucursal</TableHead>
 					<TableHead>Estado</TableHead>
 					<TableHead>Dueño</TableHead>
-					<TableHead>Última actualización</TableHead>
 				</TableRow>
 			</TableHeader>
 			<TableBody>
@@ -184,14 +195,58 @@ function EquipmentUnitsTable({
 						<TableCell>
 							<EquipmentUnitStatusBadge status={unit.status} />
 						</TableCell>
-						<TableCell>{unit.ownerName ?? unit.ownerId ?? "—"}</TableCell>
-						<TableCell className="text-muted-foreground">
-							{formatDateTime(unit.lastUpdate)}
-						</TableCell>
+						<TableCell>{unit.ownerName ?? unit.ownerId ?? "-"}</TableCell>
 					</TableRow>
 				))}
 			</TableBody>
 		</DetailTable>
+	);
+}
+
+function ProductUsageList({
+	products,
+}: {
+	products: Array<{
+		rentableItemId: string;
+		name: string;
+		quantityPerItem: number;
+	}>;
+}) {
+	return (
+		<section className="overflow-hidden rounded-lg border bg-background shadow-sm">
+			<div className="px-4 py-3">
+				<h2 className="font-semibold text-base tracking-tight">
+					Usado por productos
+				</h2>
+			</div>
+			<div className="px-4 pb-4">
+				{products.length === 0 ? (
+					<p className="p-4 text-muted-foreground text-sm">
+						Este equipo no se usa en ningún producto.
+					</p>
+				) : (
+					<ul className="divide-y border rounded-md">
+						{products.map((product) => (
+							<li
+								key={product.rentableItemId}
+								className="flex items-center justify-between gap-4 px-4 py-3"
+							>
+								<Link
+									to="/dashboard/catalog/$rentableItemId"
+									params={{ rentableItemId: product.rentableItemId }}
+									className="min-w-0 truncate rounded-sm text-sm hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+								>
+									{product.name}
+								</Link>
+								<span className="shrink-0 text-muted-foreground text-sm">
+									x{product.quantityPerItem}
+								</span>
+							</li>
+						))}
+					</ul>
+				)}
+			</div>
+		</section>
 	);
 }
 
@@ -203,10 +258,10 @@ function AccessoryDefaultsTable({
 	return (
 		<DetailTable
 			title="Accesorios sugeridos"
-			colSpan={3}
+			colSpan={2}
 			isEmpty={equipmentType.accessoryDefaults.length === 0}
 			emptyMessage="No hay accesorios sugeridos definidos."
-			actions={<AddAccessorySuggestionsDialog equipmentType={equipmentType} />}
+			footer={<AddAccessorySuggestionsDialog equipmentType={equipmentType} />}
 		>
 			<TableHeader>
 				<TableRow className="bg-muted/80">
@@ -242,8 +297,9 @@ function AddAccessorySuggestionsDialog({
 		<Dialog open={open} onOpenChange={setOpen}>
 			<Button
 				type="button"
+				variant="link"
 				size="sm"
-				variant="outline"
+				className="h-auto px-0 text-blue-700"
 				onClick={() => setOpen(true)}
 			>
 				Agregar accesorios sugeridos
@@ -294,11 +350,11 @@ function AddUnitsDialog({ equipmentTypeId }: { equipmentTypeId: string }) {
 				variant="outline"
 				onClick={() => setOpen(true)}
 			>
-				Agregar unit
+				Agregar unidad
 			</Button>
 			<DialogContent className="max-h-[calc(100vh-2rem)] overflow-y-auto sm:max-w-5xl">
 				<DialogHeader>
-					<DialogTitle>Agregar unidads</DialogTitle>
+					<DialogTitle>Agregar unidades</DialogTitle>
 					<DialogDescription>
 						Carga una o más unidades físicas para este tipo de equipo.
 					</DialogDescription>
@@ -330,6 +386,7 @@ function DetailTable({
 	emptyMessage,
 	title,
 	actions,
+	footer,
 }: {
 	children: ReactNode;
 	colSpan: number;
@@ -337,10 +394,11 @@ function DetailTable({
 	emptyMessage: string;
 	title: string;
 	actions?: ReactNode;
+	footer?: ReactNode;
 }) {
 	return (
 		<section className="overflow-hidden rounded-lg border bg-background shadow-sm">
-			<div className="flex justify-between items-start border-b px-4 py-3">
+			<div className="flex items-start justify-between gap-4 border-b px-4 py-3">
 				<h2 className="font-semibold text-base tracking-tight">{title}</h2>
 				{actions}
 			</div>
@@ -359,6 +417,7 @@ function DetailTable({
 					</TableBody>
 				) : null}
 			</Table>
+			{footer ? <div className="border-t px-4 py-3">{footer}</div> : null}
 		</section>
 	);
 }
@@ -375,11 +434,4 @@ function EquipmentUnitStatusBadge({
 		return <Badge variant="secondary">Inactivo</Badge>;
 	}
 	return <Badge variant="outline">Retirado</Badge>;
-}
-
-function formatDateTime(value: string) {
-	return new Intl.DateTimeFormat("es-AR", {
-		dateStyle: "medium",
-		timeStyle: "short",
-	}).format(new Date(value));
 }

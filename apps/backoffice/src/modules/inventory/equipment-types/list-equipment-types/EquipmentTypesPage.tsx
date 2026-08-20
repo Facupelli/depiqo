@@ -4,7 +4,7 @@ import { startTransition, useEffect, useState } from "react";
 import { useBranches } from "@/modules/settings/branches/public";
 import useDebounce from "@/shared/hooks/use-debounce";
 import { CreateEquipmentTypeDialog } from "../create-equipment-type/create-equipment-type-dialog";
-import { useEquipmentTypeProductUsages } from "./equipment-type-product-usages.queries";
+import { useEquipmentTypeProductUsages } from "../product-usages/equipment-type-product-usages.queries";
 import { useEquipmentTypeSummaries } from "./equipment-type-summaries.queries";
 import { EquipmentTypeSummariesFilters } from "./equipment-type-summaries-filters";
 import { EquipmentTypeSummariesTable } from "./equipment-type-summaries-table";
@@ -101,9 +101,7 @@ export function EquipmentTypesPage({
 		<div className="space-y-6 p-8">
 			<div className="flex items-start justify-between">
 				<div>
-					<h1 className="font-semibold text-2xl tracking-tight">
-						Inventario
-					</h1>
+					<h1 className="font-semibold text-2xl tracking-tight">Inventario</h1>
 					<p className="text-muted-foreground text-sm">
 						Gestiona el equipamiento físico que tiene tu negocio.
 					</p>
