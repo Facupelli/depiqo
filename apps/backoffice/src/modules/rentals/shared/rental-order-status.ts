@@ -105,9 +105,7 @@ export const RENTAL_ORDER_STATUS_PRESENTATION: Record<
 
 const RENTAL_ORDER_LEGEND_STATUSES = [
 	"DRAFT",
-	"PENDING",
 	"CONFIRMED",
-	"PREPARED",
 	"IN_PROGRESS",
 	"FINISHED",
 ] as const satisfies readonly RentalOrderEffectiveStatus[];

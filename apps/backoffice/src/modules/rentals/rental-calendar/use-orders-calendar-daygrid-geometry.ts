@@ -97,13 +97,10 @@ export function useOrdersCalendarDayGridGeometry({
 			cancelAnimationFrame(geometryFrameRef.current);
 		}
 
-		// FullCalendar completes DayGrid segment placement after mount hooks run.
-		// Defer two frames so lane rectangles and segment widths are final.
+		// Reconcile after FullCalendar completes any remaining DayGrid layout work.
 		geometryFrameRef.current = requestAnimationFrame(() => {
-			geometryFrameRef.current = requestAnimationFrame(() => {
-				geometryFrameRef.current = null;
-				applyEventGeometry();
-			});
+			geometryFrameRef.current = null;
+			applyEventGeometry();
 		});
 	}, [applyEventGeometry]);
 
@@ -136,9 +133,10 @@ export function useOrdersCalendarDayGridGeometry({
 				isStart: arg.isStart,
 				isEnd: arg.isEnd,
 			});
+			applyEventGeometry();
 			scheduleEventGeometry();
 		},
-		[scheduleEventGeometry],
+		[applyEventGeometry, scheduleEventGeometry],
 	);
 
 	const unregisterEventSegment = useCallback(
@@ -149,10 +147,6 @@ export function useOrdersCalendarDayGridGeometry({
 		},
 		[clearEventGeometry, scheduleEventGeometry],
 	);
-
-	// Run after every render so a changed operational timezone recomputes the
-	// mounted segments. Scheduling coalesces this with other layout invalidations.
-	useEffect(scheduleEventGeometry);
 
 	useEffect(() => {
 		return () => {

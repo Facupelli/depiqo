@@ -41,7 +41,7 @@ export type OrdersCalendarEventGeometryInput = Pick<
 	"pickupAt" | "returnAt" | "pickupDate" | "returnDate"
 >;
 
-export const DEFAULT_ORDERS_CALENDAR_VIEW: OrdersCalendarView = "dayGridWeek";
+export const DEFAULT_ORDERS_CALENDAR_VIEW: OrdersCalendarView = "dayGridMonth";
 
 export const ORDERS_CALENDAR_VIEW_LABELS: Record<OrdersCalendarView, string> = {
 	dayGridDay: "Dia",
