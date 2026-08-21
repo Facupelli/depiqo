@@ -1,17 +1,15 @@
 import type { GetRentableItemDetailResponseDto } from "@repo/api-contracts";
 import { Badge } from "@repo/ui/components/badge";
-import { Button } from "@repo/ui/components/button";
 import {
 	Building2,
 	CheckCircle2,
 	CircleDollarSign,
-	Eye,
 	EyeOff,
 	type LucideIcon,
-	Pencil,
 	Tag,
 } from "lucide-react";
 import type { ReactNode } from "react";
+import { EditBranchAvailabilityDialog } from "@/modules/products/branch-availability/edit-branch-availability/EditBranchAvailabilityDialog";
 import type { PricePlanOption } from "@/modules/products/product-pricing/price-plan-selection/PricePlanSelectionForm";
 import { SetPricePlanAction } from "@/modules/products/product-pricing/set-price-plan/SetPricePlanAction";
 import { formatPriceSummary } from "./product-detail.utils";
@@ -121,16 +119,7 @@ function BranchOfferCard({
 			</OfferCardSection>
 			<div className="flex flex-col justify-center gap-2 border-t p-4 lg:border-t-0 lg:border-l">
 				<SetPricePlanAction offer={offer} ratePlanOptions={ratePlanOptions} />
-				{!offer.isVisible ? (
-					<Button type="button" variant="outline" onClick={() => undefined}>
-						<Eye className="mr-2 size-4" />
-						Hacer visible
-					</Button>
-				) : null}
-				<Button type="button" variant="outline" onClick={() => undefined}>
-					<Pencil className="mr-2 size-4" />
-					Editar oferta
-				</Button>
+				<EditBranchAvailabilityDialog offer={offer} />
 			</div>
 		</article>
 	);
