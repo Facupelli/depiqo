@@ -24,7 +24,6 @@ import {
 	BookOpen,
 	CalendarDays,
 	ChevronsUpDown,
-	Handshake,
 	LogOut,
 	Settings,
 	ShoppingBag,
@@ -111,6 +110,7 @@ const sidebarItems: SidebarItem[] = [
 		name: "Inventario",
 		icon: Warehouse,
 		href: "/dashboard/inventory/equipment-types",
+		children: [{ name: "Dueños de Equipo", href: "/dashboard/owners" }],
 	},
 	{
 		name: "Clientes",
@@ -124,7 +124,6 @@ const sidebarItems: SidebarItem[] = [
 		],
 	},
 	{ name: "Promociones", icon: BadgePercent, href: "/dashboard/promotions" },
-	{ name: "Dueños de Equipo", icon: Handshake, href: "/dashboard/owners" },
 	{ name: "Ajustes", icon: Settings, href: "/dashboard/settings" },
 ];
 
