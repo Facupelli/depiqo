@@ -14,6 +14,10 @@ Run commands from `apps/storefront/` using `pnpm`.
 
 Run the narrowest relevant commands for the change. Do not deploy or mutate Cloudflare resources unless the user explicitly authorizes it.
 
+## Naming
+
+Use kebab-case for all filenames in the project (for example `branch-selector.tsx`, `rental-summary-screen.tsx`).
+
 ## Architecture
 
 For date, time, schedule-slot, calendar, pricing, cart, or rental-request changes, read `docs/architecture/temporal-semantics.md`.

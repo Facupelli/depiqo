@@ -18,6 +18,10 @@ Common app commands:
 
 For authenticated browser verification with `chrome-devtools-axi`, follow `docs/agent-rules/testing.md`, including its credential-handling instructions.
 
+## Naming
+
+Use kebab-case for all filenames in the project (for example `branch-selector.tsx`, `settings-secondary-nav.tsx`).
+
 Use local config and nearby code as the primary source of truth:
 
 - `package.json`
