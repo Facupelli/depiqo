@@ -53,10 +53,12 @@ function SettingsNumberField({
 	label,
 	suffix,
 	align,
+	disabled,
 }: {
 	label: string;
 	suffix: string;
 	align?: SettingsRowAlign;
+	disabled?: boolean;
 }) {
 	const field = useFieldContext<number>();
 	const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
@@ -76,6 +78,7 @@ function SettingsNumberField({
 						onBlur={field.handleBlur}
 						onChange={(event) => field.handleChange(Number(event.target.value))}
 						aria-invalid={isInvalid}
+						disabled={disabled}
 						className="w-24 text-right"
 					/>
 					<span className="text-sm text-muted-foreground">{suffix}</span>

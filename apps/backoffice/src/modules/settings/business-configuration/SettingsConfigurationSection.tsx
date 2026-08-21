@@ -9,6 +9,7 @@ import {
 } from "@repo/ui/components/select";
 import { formOptions } from "@tanstack/react-form";
 import { useSuspenseQuery } from "@tanstack/react-query";
+import type { ReactNode } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { currentBusinessQueries } from "@/application/current-business/current-business.queries";
@@ -284,138 +285,194 @@ const BusinessFields = withSettingsForm({
 	),
 });
 
+function SettingsFieldset({
+	title,
+	description,
+	children,
+}: {
+	title: string;
+	description: string;
+	children: ReactNode;
+}) {
+	return (
+		<section className="space-y-3">
+			<div>
+				<h3 className="text-lg font-semibold">{title}</h3>
+				<p className="text-sm text-muted-foreground">{description}</p>
+			</div>
+			<div className="divide-y overflow-hidden rounded-xl border bg-card">
+				{children}
+			</div>
+		</section>
+	);
+}
+
 const RentalPolicyFields = withSettingsForm({
 	...rentalPoliciesFormOptions,
 	render: ({ form }) => (
 		<>
-			<form.AppField name="bookingMode">
-				{(field) => (
-					<SettingsRow label="Modo de reserva">
-						<Field
-							data-invalid={
-								field.state.meta.isTouched && !field.state.meta.isValid
-							}
+			<SettingsFieldset
+				title="Reservas"
+				description="Cómo se crean y confirman los alquileres."
+			>
+				<form.AppField name="bookingMode">
+					{(field) => (
+						<SettingsRow
+							label="Modo de reserva"
+							description="Define si una reserva se confirma inmediatamente o requiere revisión."
 						>
-							<FieldLabel className="sr-only" htmlFor={field.name}>
-								Modo de reserva
-							</FieldLabel>
-							<Select
-								value={field.state.value}
-								onValueChange={(value) => {
-									if (value === "instant-book" || value === "request-to-book") {
-										field.handleChange(value);
-									}
-								}}
-								items={[
-									{ value: "instant-book", label: "Reserva inmediata" },
-									{ value: "request-to-book", label: "Solicitud de reserva" },
-								]}
+							<Field
+								data-invalid={
+									field.state.meta.isTouched && !field.state.meta.isValid
+								}
 							>
-								<SelectTrigger
-									id={field.name}
-									aria-invalid={
-										field.state.meta.isTouched && !field.state.meta.isValid
-									}
-									className="w-64"
+								<FieldLabel className="sr-only" htmlFor={field.name}>
+									Modo de reserva
+								</FieldLabel>
+								<Select
+									value={field.state.value}
+									onValueChange={(value) => {
+										if (
+											value === "instant-book" ||
+											value === "request-to-book"
+										) {
+											field.handleChange(value);
+										}
+									}}
+									items={[
+										{ value: "instant-book", label: "Reserva inmediata" },
+										{ value: "request-to-book", label: "Solicitud de reserva" },
+									]}
 								>
-									<SelectValue />
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem value="instant-book">
-										Reserva inmediata
-									</SelectItem>
-									<SelectItem value="request-to-book">
-										Solicitud de reserva
-									</SelectItem>
-								</SelectContent>
-							</Select>
-							<FieldError errors={field.state.meta.errors} />
-						</Field>
-					</SettingsRow>
-				)}
-			</form.AppField>
-			<form.AppField name="weekendCountsAsOne">
-				{(field) => (
-					<field.SettingsSwitchField
-						label="Sistema day/weekend"
-						description="Sábado y domingo cuentan como una sola unidad de facturación."
-					/>
-				)}
-			</form.AppField>
-			<form.AppField name="roundingRule">
-				{(field) => (
-					<SettingsRow label="Comportamiento de cobro diario">
-						<Field
-							data-invalid={
-								field.state.meta.isTouched && !field.state.meta.isValid
-							}
+									<SelectTrigger
+										id={field.name}
+										aria-invalid={
+											field.state.meta.isTouched && !field.state.meta.isValid
+										}
+										className="w-64"
+									>
+										<SelectValue />
+									</SelectTrigger>
+									<SelectContent>
+										<SelectItem value="instant-book">
+											Reserva inmediata
+										</SelectItem>
+										<SelectItem value="request-to-book">
+											Solicitud de reserva
+										</SelectItem>
+									</SelectContent>
+								</Select>
+								<FieldError errors={field.state.meta.errors} />
+							</Field>
+						</SettingsRow>
+					)}
+				</form.AppField>
+			</SettingsFieldset>
+			<SettingsFieldset
+				title="Facturación del alquiler"
+				description="Cómo se calcula el tiempo facturable."
+			>
+				<form.AppField name="weekendCountsAsOne">
+					{(field) => (
+						<field.SettingsSwitchField
+							label="Fin de semana como una sola unidad"
+							description="Sábado y domingo cuentan juntos como una unidad de facturación."
+						/>
+					)}
+				</form.AppField>
+				<form.AppField name="roundingRule">
+					{(field) => (
+						<SettingsRow
+							label="Comportamiento de cobro diario"
+							description="Define cuándo comienza a cobrarse una jornada adicional."
 						>
-							<FieldLabel className="sr-only" htmlFor={field.name}>
-								Comportamiento de cobro diario
-							</FieldLabel>
-							<Select
-								value={field.state.value}
-								onValueChange={(value) => {
-									if (
-										value === "IGNORE_PARTIAL_DAY" ||
-										value === "BILL_OVER_HALF_DAY" ||
-										value === "BILL_ANY_PARTIAL_DAY"
-									) {
-										field.handleChange(value);
-									}
-								}}
-								items={[
-									{
-										value: "IGNORE_PARTIAL_DAY",
-										label: "No cobrar la fracción restante",
-									},
-									{
-										value: "BILL_OVER_HALF_DAY",
-										label: "Cobrar desde media jornada extra",
-									},
-									{
-										value: "BILL_ANY_PARTIAL_DAY",
-										label: "Cobrar cualquier fracción extra",
-									},
-								]}
+							<Field
+								data-invalid={
+									field.state.meta.isTouched && !field.state.meta.isValid
+								}
 							>
-								<SelectTrigger
-									id={field.name}
-									aria-invalid={
-										field.state.meta.isTouched && !field.state.meta.isValid
-									}
-									className="w-64"
+								<FieldLabel className="sr-only" htmlFor={field.name}>
+									Comportamiento de cobro diario
+								</FieldLabel>
+								<Select
+									value={field.state.value}
+									onValueChange={(value) => {
+										if (
+											value === "IGNORE_PARTIAL_DAY" ||
+											value === "BILL_OVER_HALF_DAY" ||
+											value === "BILL_ANY_PARTIAL_DAY"
+										) {
+											field.handleChange(value);
+										}
+									}}
+									items={[
+										{
+											value: "IGNORE_PARTIAL_DAY",
+											label: "No cobrar la fracción restante",
+										},
+										{
+											value: "BILL_OVER_HALF_DAY",
+											label: "Cobrar desde media jornada extra",
+										},
+										{
+											value: "BILL_ANY_PARTIAL_DAY",
+											label: "Cobrar cualquier fracción extra",
+										},
+									]}
 								>
-									<SelectValue />
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem value="IGNORE_PARTIAL_DAY">
-										No cobrar la fracción restante
-									</SelectItem>
-									<SelectItem value="BILL_OVER_HALF_DAY">
-										Cobrar desde media jornada extra
-									</SelectItem>
-									<SelectItem value="BILL_ANY_PARTIAL_DAY">
-										Cobrar cualquier fracción extra
-									</SelectItem>
-								</SelectContent>
-							</Select>
-							<FieldError errors={field.state.meta.errors} />
-						</Field>
-					</SettingsRow>
-				)}
-			</form.AppField>
-			<form.AppField name="insuranceEnabled">
-				{(field) => (
-					<field.SettingsSwitchField
-						label="Ofrecer seguro"
-						description="Muestra el seguro de equipos durante la reserva."
-					/>
-				)}
-			</form.AppField>
-			<form.AppField name="insuranceRatePercent">
-				{(field) => <field.SettingsNumberField label="Porcentaje" suffix="%" />}
-			</form.AppField>
+									<SelectTrigger
+										id={field.name}
+										aria-invalid={
+											field.state.meta.isTouched && !field.state.meta.isValid
+										}
+										className="w-64"
+									>
+										<SelectValue />
+									</SelectTrigger>
+									<SelectContent>
+										<SelectItem value="IGNORE_PARTIAL_DAY">
+											No cobrar la fracción restante
+										</SelectItem>
+										<SelectItem value="BILL_OVER_HALF_DAY">
+											Cobrar desde media jornada extra
+										</SelectItem>
+										<SelectItem value="BILL_ANY_PARTIAL_DAY">
+											Cobrar cualquier fracción extra
+										</SelectItem>
+									</SelectContent>
+								</Select>
+								<FieldError errors={field.state.meta.errors} />
+							</Field>
+						</SettingsRow>
+					)}
+				</form.AppField>
+			</SettingsFieldset>
+			<SettingsFieldset
+				title="Seguro"
+				description="Configura si ofreces seguro en los alquileres."
+			>
+				<form.AppField name="insuranceEnabled">
+					{(field) => (
+						<field.SettingsSwitchField
+							label="Ofrecer seguro de equipos"
+							description="Permite añadir seguro durante la reserva."
+						/>
+					)}
+				</form.AppField>
+				<form.AppField name="insuranceRatePercent">
+					{(field) => (
+						<form.Subscribe selector={(state) => state.values.insuranceEnabled}>
+							{(insuranceEnabled) => (
+								<field.SettingsNumberField
+									label="Porcentaje del seguro"
+									suffix="%"
+									disabled={!insuranceEnabled}
+								/>
+							)}
+						</form.Subscribe>
+					)}
+				</form.AppField>
+			</SettingsFieldset>
 		</>
 	),
 });

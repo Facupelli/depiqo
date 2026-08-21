@@ -52,7 +52,8 @@ export const settingsNavGroups: SettingsNavGroup[] = [
 			{
 				to: "/dashboard/settings/rental-policies",
 				label: "Políticas de alquiler",
-				description: "¿Qué reglas generales aplica DEPIQO a mis alquileres?",
+				description:
+					"Define las reglas generales que se aplican a tus alquileres.",
 				icon: Shield,
 			},
 			{
