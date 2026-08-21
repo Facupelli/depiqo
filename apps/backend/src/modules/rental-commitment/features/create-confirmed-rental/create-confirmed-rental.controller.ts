@@ -205,8 +205,13 @@ const createConfirmedRentalProblemMap = {
 
 type ProblemDefinition = { type: string; title: string; status: HttpStatus; detail: string };
 
+const rentalOfferIdProblemCodes: ReadonlySet<CreateConfirmedRentalErrorCode> = new Set([
+  'rental_commitment.insufficient_asset_availability',
+  'rental_commitment.catalog_selection_unavailable',
+]);
+
 function availabilityProblemExtensions(error: CreateConfirmedRentalError): Record<string, string> {
-  if (error.code !== 'rental_commitment.insufficient_asset_availability') return {};
+  if (!rentalOfferIdProblemCodes.has(error.code)) return {};
 
   const rentalOfferId = error.context?.rentalOfferId;
   return typeof rentalOfferId === 'string' ? { rentalOfferId } : {};

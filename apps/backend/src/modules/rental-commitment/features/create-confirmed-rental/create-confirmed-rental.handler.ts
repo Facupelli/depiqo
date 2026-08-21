@@ -370,12 +370,10 @@ export class CreateConfirmedRentalService implements ICommandHandler<
           return createConfirmedRentalError('rental_commitment.rental_offer_not_found', error.message, error, context);
         case 'RentalOfferNotRentable':
         case 'RentableItemNotActive':
-          return createConfirmedRentalError(
-            'rental_commitment.catalog_selection_unavailable',
-            error.message,
-            error,
-            context,
-          );
+          return createConfirmedRentalError('rental_commitment.catalog_selection_unavailable', error.message, error, {
+            ...context,
+            rentalOfferId: error.context?.rentalOfferId,
+          });
         case 'InvalidFulfillmentDefinition':
           return createConfirmedRentalError(
             'rental_commitment.invalid_fulfillment_definition',
@@ -392,12 +390,10 @@ export class CreateConfirmedRentalService implements ICommandHandler<
       return createConfirmedRentalError('rental_commitment.rental_offer_not_found', error.message, error, context);
     }
     if (error instanceof RentalOfferNotRentableError || error instanceof RentableItemNotActiveError) {
-      return createConfirmedRentalError(
-        'rental_commitment.catalog_selection_unavailable',
-        error.message,
-        error,
-        context,
-      );
+      return createConfirmedRentalError('rental_commitment.catalog_selection_unavailable', error.message, error, {
+        ...context,
+        rentalOfferId: error instanceof RentalOfferNotRentableError ? error.rentalOfferId : undefined,
+      });
     }
     if (error instanceof InvalidFulfillmentDefinitionError) {
       return createConfirmedRentalError(

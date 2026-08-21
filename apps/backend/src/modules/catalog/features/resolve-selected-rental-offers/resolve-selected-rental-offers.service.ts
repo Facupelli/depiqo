@@ -38,13 +38,19 @@ export class ResolveSelectedRentalOffersService {
 
       if (!rentalOffer) {
         return err(
-          catalogSelectionError('RentalOfferNotFound', `Rental offer "${selection.rentalOfferId}" was not found.`),
+          catalogSelectionError('RentalOfferNotFound', `Rental offer "${selection.rentalOfferId}" was not found.`, {
+            rentalOfferId: selection.rentalOfferId,
+          }),
         );
       }
 
       if (!rentalOffer.isRentable) {
         return err(
-          catalogSelectionError('RentalOfferNotRentable', `Rental offer "${selection.rentalOfferId}" is not rentable.`),
+          catalogSelectionError(
+            'RentalOfferNotRentable',
+            `Rental offer "${selection.rentalOfferId}" is not rentable.`,
+            { rentalOfferId: selection.rentalOfferId },
+          ),
         );
       }
     }
@@ -61,13 +67,17 @@ export class ResolveSelectedRentalOffersService {
 
       if (!rentableItem) {
         return err(
-          catalogSelectionError('RentableItemNotActive', `Rentable item "${offer.rentableItemId}" is not active.`),
+          catalogSelectionError('RentableItemNotActive', `Rentable item "${offer.rentableItemId}" is not active.`, {
+            rentalOfferId: offer.id,
+          }),
         );
       }
 
       if (rentableItem.status !== 'ACTIVE') {
         return err(
-          catalogSelectionError('RentableItemNotActive', `Rentable item "${offer.rentableItemId}" is not active.`),
+          catalogSelectionError('RentableItemNotActive', `Rentable item "${offer.rentableItemId}" is not active.`, {
+            rentalOfferId: offer.id,
+          }),
         );
       }
     }

@@ -127,7 +127,11 @@ function useCartBookingCommand() {
 			if (kind === "DELIVERY_NOT_SUPPORTED") {
 				selectFulfillmentMethod("PICKUP");
 			}
-			if (kind === "AVAILABILITY_CONFLICT" && problemDetailsError) {
+			if (
+				(kind === "AVAILABILITY_CONFLICT" ||
+					kind === "CATALOG_SELECTION_UNAVAILABLE") &&
+				problemDetailsError
+			) {
 				setUnavailableRentalOfferIds(
 					getUnavailableRentalOfferIds(problemDetailsError),
 				);
@@ -173,6 +177,8 @@ function getSubmissionErrorMessage(kind: ConfirmedRentalErrorKind): string {
 	switch (kind) {
 		case "AVAILABILITY_CONFLICT":
 			return "Algunos equipos ya no están disponibles para este período. Ajustá el carrito y volvé a intentarlo.";
+		case "CATALOG_SELECTION_UNAVAILABLE":
+			return "Uno de los equipos del carrito ya no está disponible para reservar. Ajustá el carrito y volvé a intentarlo.";
 		case "DELIVERY_NOT_SUPPORTED":
 			return "Esta sucursal solo permite retiro en el local.";
 		case "IDEMPOTENCY_IN_PROGRESS":
