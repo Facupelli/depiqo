@@ -1,11 +1,5 @@
 import { useUploadFile } from "@better-upload/client";
-import {
-	Card,
-	CardContent,
-	CardHeader,
-	CardTitle,
-} from "@repo/ui/components/card";
-import { useState } from "react";
+import { toast } from "sonner";
 import { buildR2PublicUrl } from "@/lib/r2-public-url";
 import { ProblemDetailsError } from "@/shared/errors";
 import { ContractSignerForm } from "./ContractSignerForm";
@@ -28,35 +22,22 @@ export function ContractSignerSettingsSection() {
 		api: "/api/branding-upload",
 		route: "userSignature",
 	});
-	const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
-	const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
 	if (contractSignerQuery.isPending) {
 		return (
-			<Card>
-				<CardContent>
-					<p className="text-sm text-muted-foreground">
-						Cargando firmante de contratos...
-					</p>
-				</CardContent>
-			</Card>
+			<p className="rounded-xl border bg-card px-5 py-4 text-sm text-muted-foreground">
+				Cargando firmante de contratos...
+			</p>
 		);
 	}
 
 	if (contractSignerQuery.isError) {
 		return (
-			<Card>
-				<CardHeader>
-					<CardTitle>No pudimos cargar el firmante</CardTitle>
-				</CardHeader>
-				<CardContent>
-					<p className="text-sm text-destructive">
-						{contractSignerQuery.error instanceof ProblemDetailsError
-							? contractSignerQuery.error.problemDetails.detail
-							: "Ocurrio un error cargando el firmante de contratos."}
-					</p>
-				</CardContent>
-			</Card>
+			<p className="rounded-xl border bg-card px-5 py-4 text-sm text-destructive">
+				{contractSignerQuery.error instanceof ProblemDetailsError
+					? contractSignerQuery.error.problemDetails.detail
+					: "Ocurrio un error cargando el firmante de contratos."}
+			</p>
 		);
 	}
 
@@ -75,10 +56,7 @@ export function ContractSignerSettingsSection() {
 		<ContractSignerForm
 			key={formKey}
 			defaultValues={defaultValues}
-			mode={mode}
 			isPending={isCreating || isUpdating || signatureUploader.isPending}
-			feedbackMessage={feedbackMessage}
-			errorMessage={errorMessage}
 			onSubmit={async (values) => {
 				await handleSubmit({
 					mode,
@@ -86,8 +64,6 @@ export function ContractSignerSettingsSection() {
 					createContractSigner,
 					updateContractSigner,
 					signatureUploader,
-					setFeedbackMessage,
-					setErrorMessage,
 				});
 			}}
 		/>
@@ -100,8 +76,6 @@ async function handleSubmit({
 	createContractSigner,
 	updateContractSigner,
 	signatureUploader,
-	setFeedbackMessage,
-	setErrorMessage,
 }: {
 	mode: "create" | "update";
 	values: ContractSignerFormValues;
@@ -112,12 +86,7 @@ async function handleSubmit({
 		variables: ReturnType<typeof toContractSignerBodyDto>,
 	) => Promise<unknown>;
 	signatureUploader: ReturnType<typeof useUploadFile>;
-	setFeedbackMessage: (message: string | null) => void;
-	setErrorMessage: (message: string | null) => void;
 }) {
-	setFeedbackMessage(null);
-	setErrorMessage(null);
-
 	try {
 		let signatureUrl = values.signatureUrl;
 
@@ -146,19 +115,19 @@ async function handleSubmit({
 
 		if (mode === "create") {
 			await createContractSigner(dto);
-			setFeedbackMessage("Firmante guardado correctamente.");
+			toast.success("Firmante guardado correctamente.");
 			return;
 		}
 
 		await updateContractSigner(dto);
-		setFeedbackMessage("Firmante actualizado correctamente.");
+		toast.success("Firmante actualizado correctamente.");
 	} catch (error) {
 		if (error instanceof ProblemDetailsError) {
-			setErrorMessage(error.problemDetails.detail);
+			toast.error(error.problemDetails.detail ?? error.problemDetails.title);
 			return;
 		}
 
-		setErrorMessage(
+		toast.error(
 			error instanceof Error
 				? error.message
 				: "No pudimos guardar el firmante de contratos.",

@@ -185,7 +185,7 @@ function CustomerCommunicationConfigurationForm() {
 	});
 	return (
 		<form.AppForm>
-			<form.SettingsForm isPending={isPending}>
+			<form.SettingsForm isPending={isPending} framed>
 				<CommunicationFields form={form} />
 			</form.SettingsForm>
 		</form.AppForm>
@@ -209,7 +209,7 @@ function StorefrontConfigurationForm() {
 	});
 	return (
 		<form.AppForm>
-			<form.SettingsForm isPending={isPending}>
+			<form.SettingsForm isPending={isPending} framed>
 				<StorefrontFields form={form} />
 			</form.SettingsForm>
 		</form.AppForm>
@@ -483,7 +483,10 @@ const CommunicationFields = withSettingsForm({
 		<>
 			<form.AppField name="orderCommunicationMode">
 				{(field) => (
-					<SettingsRow label="Modo de comunicación">
+					<SettingsRow
+						label="Modo de comunicación"
+						description="Define cómo se comunican los pedidos con tus clientes."
+					>
 						<Field
 							data-invalid={
 								field.state.meta.isTouched && !field.state.meta.isValid
@@ -543,10 +546,11 @@ const StorefrontFields = withSettingsForm({
 				{(field) => (
 					<field.SettingsNumberField
 						label={'Mostrar productos como "Nuevos" durante'}
+						description="Define cuántos días un producto se muestra como nuevo."
 						suffix="días"
 					/>
 				)}
-			</form.AppField>
+			</form.AppField>{" "}
 			<form.AppField name="showFloatingWhatsAppButton">
 				{(field) => (
 					<field.SettingsSwitchField

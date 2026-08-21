@@ -21,6 +21,16 @@ export function StorefrontSettingsScreen() {
 			</section>
 			<section className="space-y-4">
 				<div>
+					<h3 className="text-lg font-semibold">Presentación y contacto</h3>
+					<p className="text-sm text-muted-foreground">
+						Configura cómo se destacan tus productos y cómo se comunican los
+						clientes contigo.
+					</p>
+				</div>
+				<SettingsConfigurationSection section="storefront" />
+			</section>
+			<section className="space-y-4">
+				<div>
 					<h3 className="text-lg font-semibold">Dominio</h3>
 					<p className="text-sm text-muted-foreground">
 						Elige cómo encuentran los clientes tu tienda online.
@@ -34,7 +44,6 @@ export function StorefrontSettingsScreen() {
 				</div>
 				<CustomDomainSection />
 			</section>
-			<SettingsConfigurationSection section="storefront" />
 		</div>
 	);
 }

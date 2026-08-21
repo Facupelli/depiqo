@@ -2,6 +2,7 @@ import { Button } from "@repo/ui/components/button";
 import { Field, FieldError, FieldLabel } from "@repo/ui/components/field";
 import { Input } from "@repo/ui/components/input";
 import { Switch } from "@repo/ui/components/switch";
+import { Textarea } from "@repo/ui/components/textarea";
 import { createFormHook } from "@tanstack/react-form";
 import type { ReactNode } from "react";
 import {
@@ -14,11 +15,13 @@ import {
 function SettingsTextField({
 	label,
 	description,
+	placeholder,
 	transform,
 	align,
 }: {
 	label: string;
 	description?: string;
+	placeholder?: string;
 	transform?: (value: string) => string;
 	align?: SettingsRowAlign;
 }) {
@@ -41,7 +44,43 @@ function SettingsTextField({
 						)
 					}
 					aria-invalid={isInvalid}
+					placeholder={placeholder}
 					className={align === "start" ? "w-64" : "w-56 text-right"}
+				/>
+				<FieldError errors={field.state.meta.errors} />
+			</Field>
+		</SettingsRow>
+	);
+}
+
+function SettingsTextareaField({
+	label,
+	description,
+	placeholder,
+	align,
+}: {
+	label: string;
+	description?: string;
+	placeholder?: string;
+	align?: SettingsRowAlign;
+}) {
+	const field = useFieldContext<string>();
+	const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+	return (
+		<SettingsRow label={label} description={description} align={align}>
+			<Field data-invalid={isInvalid}>
+				<FieldLabel className="sr-only" htmlFor={field.name}>
+					{label}
+				</FieldLabel>
+				<Textarea
+					id={field.name}
+					name={field.name}
+					value={field.state.value}
+					onBlur={field.handleBlur}
+					onChange={(event) => field.handleChange(event.target.value)}
+					aria-invalid={isInvalid}
+					placeholder={placeholder}
+					className="w-72"
 				/>
 				<FieldError errors={field.state.meta.errors} />
 			</Field>
@@ -51,11 +90,13 @@ function SettingsTextField({
 
 function SettingsNumberField({
 	label,
+	description,
 	suffix,
 	align,
 	disabled,
 }: {
 	label: string;
+	description?: string;
 	suffix: string;
 	align?: SettingsRowAlign;
 	disabled?: boolean;
@@ -63,7 +104,7 @@ function SettingsNumberField({
 	const field = useFieldContext<number>();
 	const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
 	return (
-		<SettingsRow label={label} align={align}>
+		<SettingsRow label={label} description={description} align={align}>
 			<Field data-invalid={isInvalid}>
 				<FieldLabel className="sr-only" htmlFor={field.name}>
 					{label}
@@ -196,6 +237,7 @@ export const { useAppForm: useSettingsForm, withForm: withSettingsForm } =
 		formContext,
 		fieldComponents: {
 			SettingsTextField,
+			SettingsTextareaField,
 			SettingsNumberField,
 			SettingsSwitchField,
 		},

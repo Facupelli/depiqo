@@ -41,7 +41,7 @@ export const settingsNavGroups: SettingsNavGroup[] = [
 			{
 				to: "/dashboard/settings/storefront",
 				label: "Tienda online",
-				description: "¿Cómo se ve y se presenta mi negocio a los clientes?",
+				description: "Personaliza cómo se ve y opera tu tienda online.",
 				icon: Globe2,
 			},
 		],
@@ -59,14 +59,14 @@ export const settingsNavGroups: SettingsNavGroup[] = [
 			{
 				to: "/dashboard/settings/customer-communication",
 				label: "Comunicación con clientes",
-				description: "¿Cómo continúa DEPIQO la comunicación con mis clientes?",
+				description:
+					"Configura cómo se comunican los pedidos y el contacto con tus clientes.",
 				icon: Bell,
 			},
 			{
 				to: "/dashboard/settings/contracts",
 				label: "Contratos",
-				description:
-					"¿Quién representa a mi negocio en los contratos de alquiler?",
+				description: "Define quién firma los contratos de alquiler.",
 				icon: FileText,
 			},
 		],

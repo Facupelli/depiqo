@@ -1,5 +1,5 @@
 import { uploadFile } from "@better-upload/client";
-import { Button } from "@repo/ui/components/button";
+import { Button, buttonVariants } from "@repo/ui/components/button";
 import { Input } from "@repo/ui/components/input";
 import { useForm } from "@tanstack/react-form";
 import { useSuspenseQuery } from "@tanstack/react-query";
@@ -7,6 +7,7 @@ import { ImageOff, LoaderCircle, Trash2, Upload } from "lucide-react";
 import { useState } from "react";
 import { currentBusinessQueries } from "@/application/current-business/current-business.queries";
 import { buildR2PublicUrl } from "@/lib/r2-public-url";
+import { cn } from "@/lib/utils";
 import { useUpdateTenantBranding } from "./update-branding.mutation";
 
 export function BrandingSection() {
@@ -101,14 +102,7 @@ export function BrandingSection() {
 	const isBusy = isUploading || isSaving;
 
 	return (
-		<section className="space-y-4">
-			<div>
-				<h2 className="text-xl font-bold">Branding</h2>
-				<p className="mt-1 text-sm text-muted-foreground">
-					Sube el logo que quieres mostrar en la experiencia del cliente.
-				</p>
-			</div>
-
+		<div className="space-y-4">
 			<BrandingDetailsForm
 				defaultValues={{
 					storefrontName: business.branding.storefrontName ?? "",
@@ -128,7 +122,7 @@ export function BrandingSection() {
 				}
 			/>
 
-			<div className="rounded-xl border border-border bg-card p-5">
+			<div className="rounded-xl border bg-card p-5">
 				<div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
 					<div className="space-y-4">
 						<div className="flex h-28 w-28 items-center justify-center overflow-hidden rounded-xl border border-dashed border-border bg-muted/40">
@@ -165,11 +159,16 @@ export function BrandingSection() {
 					</div>
 
 					<div className="flex flex-col gap-3 md:items-end">
-						<label className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-md border px-4 py-2 text-sm font-medium transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50">
+						<label
+							className={cn(
+								buttonVariants({ variant: "outline" }),
+								"cursor-pointer",
+							)}
+						>
 							<input
 								type="file"
 								accept="image/*"
-								className="absolute inset-0 size-0 opacity-0"
+								className="sr-only"
 								disabled={isBusy}
 								onChange={(event) => {
 									const file = event.target.files?.[0];
@@ -208,7 +207,7 @@ export function BrandingSection() {
 					</div>
 				</div>
 			</div>
-		</section>
+		</div>
 	);
 }
 
@@ -240,7 +239,7 @@ function BrandingDetailsForm({
 				event.preventDefault();
 				void form.handleSubmit();
 			}}
-			className="space-y-4 rounded-xl border border-border bg-card p-5"
+			className="space-y-4 rounded-xl border bg-card p-5"
 		>
 			<div>
 				<h3 className="text-sm font-semibold">Nombre y colores</h3>
