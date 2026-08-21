@@ -1,6 +1,5 @@
 import type { GetBranchesBranchDto } from "@repo/api-contracts";
-import { Badge } from "@repo/ui/components/badge";
-import { MapPin } from "lucide-react";
+import { ChevronRight, MapPin } from "lucide-react";
 
 interface BranchesTableProps {
 	branches: GetBranchesBranchDto[];
@@ -17,15 +16,15 @@ export function BranchesTable({ branches, onEditBranch }: BranchesTableProps) {
 	}
 
 	return (
-		<div className="divide-y overflow-hidden rounded-xl border bg-card">
+		<div className="space-y-3">
 			{branches.map((branch) => (
 				<button
 					key={branch.id}
 					type="button"
 					onClick={() => onEditBranch(branch.id)}
-					className="flex w-full items-center gap-4 px-5 py-4 text-left transition-colors hover:bg-muted/60"
+					className="flex w-full items-center gap-4 rounded-xl border bg-card px-5 py-4 text-left transition-colors hover:bg-muted/60"
 				>
-					<span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+					<span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
 						<MapPin className="size-5" />
 					</span>
 					<span className="min-w-0 flex-1">
@@ -36,11 +35,18 @@ export function BranchesTable({ branches, onEditBranch }: BranchesTableProps) {
 							{branch.address || "Sin dirección configurada"}
 						</span>
 					</span>
-					{!branch.isActive ? (
-						<Badge variant="outline" className="shrink-0 text-muted-foreground">
-							Inactiva
-						</Badge>
-					) : null}
+					<span className="flex shrink-0 items-center gap-2 text-sm text-muted-foreground">
+						<span
+							className={
+								branch.isActive
+									? "size-2 rounded-full bg-emerald-500"
+									: "size-2 rounded-full bg-amber-500"
+							}
+							aria-hidden
+						/>
+						{branch.isActive ? "Disponible" : "Inactiva"}
+						<ChevronRight className="size-4" />
+					</span>
 				</button>
 			))}
 		</div>

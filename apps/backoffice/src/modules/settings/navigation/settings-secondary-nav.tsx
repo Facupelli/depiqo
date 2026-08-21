@@ -35,7 +35,7 @@ export const settingsNavGroups: SettingsNavGroup[] = [
 			{
 				to: "/dashboard/settings/branches",
 				label: "Sucursales",
-				description: "¿Dónde opera mi negocio?",
+				description: "Gestiona las ubicaciones donde opera tu negocio.",
 				icon: MapPin,
 			},
 			{
