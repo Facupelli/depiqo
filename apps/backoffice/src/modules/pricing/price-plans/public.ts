@@ -7,6 +7,7 @@ export {
 	toCreatePricePlanDto,
 } from "./create-price-plan/create-price-plan.schema";
 export { PricePlanFields } from "./create-price-plan/PricePlanFields";
+export { EditPricePlanDialog } from "./edit-price-plan/EditPricePlanDialog";
 export {
 	pricePlanKeys,
 	usePricePlans,

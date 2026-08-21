@@ -101,9 +101,11 @@ function BranchOfferCard({
 			<OfferCardSection icon={Tag} title="Precio">
 				{offer.setupSummary.priceSummary ? (
 					<>
-						<p>Plan: {offer.setupSummary.priceSummary.ratePlanName}</p>
-						<p className="mt-1">
+						<p className="font-semibold text-lg text-foreground">
 							{formatPriceSummary(offer.setupSummary.priceSummary)}
+						</p>
+						<p className="mt-1 text-xs text-muted-foreground">
+							Plan: {offer.setupSummary.priceSummary.ratePlanName}
 						</p>
 					</>
 				) : (
