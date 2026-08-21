@@ -1,4 +1,7 @@
-import type { GetOwnerDetailResponseDto } from "@repo/api-contracts";
+import type {
+	GetAssetsResponseDto,
+	GetOwnerDetailResponseDto,
+} from "@repo/api-contracts";
 import { Badge } from "@repo/ui/components/badge";
 import { Button } from "@repo/ui/components/button";
 import { Card, CardContent, CardHeader } from "@repo/ui/components/card";
@@ -12,6 +15,7 @@ import {
 } from "lucide-react";
 import { ErrorBoundary, type FallbackProps } from "react-error-boundary";
 import { PageBreadcrumb } from "@/components/detail-id-breadcrumb";
+import { useAssets } from "@/modules/inventory/assets/public";
 import { useOwnerDetail } from "./owner-detail.queries";
 
 interface OwnerDetailPageProps {
@@ -28,6 +32,9 @@ export function OwnerDetailPage({ ownerId }: OwnerDetailPageProps) {
 
 function OwnerDetailContent({ ownerId }: OwnerDetailPageProps) {
 	const { data: owner, isPending, isError, error } = useOwnerDetail(ownerId);
+	const { data: assets = [], isPending: assetsPending } = useAssets({
+		ownerId,
+	});
 
 	if (isPending) {
 		return <OwnerDetailSkeleton />;
@@ -38,12 +45,6 @@ function OwnerDetailContent({ ownerId }: OwnerDetailPageProps) {
 	}
 
 	const activeContract = owner.contracts.find(isActiveContract) ?? null;
-	const pastContracts = owner.contracts
-		.filter((contract) => contract.id !== activeContract?.id)
-		.sort(
-			(a, b) =>
-				new Date(b.validFrom).getTime() - new Date(a.validFrom).getTime(),
-		);
 
 	return (
 		<div className="min-h-screen bg-neutral-50">
@@ -71,18 +72,23 @@ function OwnerDetailContent({ ownerId }: OwnerDetailPageProps) {
 					<ActiveContractCard contract={activeContract} />
 				</div>
 
-				{/* Contract history */}
+				{/* Equipment units */}
 				<div className="mt-6 rounded-lg border border-neutral-200 bg-white">
 					<div className="flex items-center justify-between border-b border-neutral-100 px-6 py-4">
 						<h2 className="text-sm font-semibold uppercase tracking-wider text-neutral-500">
-							Otros Contratos
+							Equipos
 						</h2>
 						<span className="font-mono text-xs text-neutral-400">
-							{pastContracts.length}{" "}
-							{pastContracts.length === 1 ? "registro" : "registros"}
+							{assets.length} {assets.length === 1 ? "equipo" : "equipos"}
 						</span>
 					</div>
-					<ContractList contracts={pastContracts} />
+					{assetsPending ? (
+						<div className="flex items-center justify-center py-12 text-sm text-neutral-400">
+							Cargando equipos...
+						</div>
+					) : (
+						<AssetList assets={assets} />
+					)}
 				</div>
 			</div>
 		</div>
@@ -105,7 +111,7 @@ function OwnerCard({ owner, isActive }: OwnerCardProps) {
 	return (
 		<Card className="border-neutral-200 bg-white shadow-none">
 			<CardContent>
-				<div className="flex items-start gap-4">
+				<div className="flex items-center gap-4">
 					{/* Avatar */}
 					<div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-neutral-900 font-mono text-lg font-semibold tracking-tight text-white">
 						{initials}
@@ -123,9 +129,6 @@ function OwnerCard({ owner, isActive }: OwnerCardProps) {
 								</Badge>
 							)}
 						</div>
-						<p className="mt-0.5 font-mono text-xs text-neutral-400 tracking-wider uppercase">
-							{owner.id.slice(0, 8).toUpperCase()}
-						</p>
 					</div>
 				</div>
 
@@ -261,46 +264,54 @@ function ActiveContractCard({ contract }: ActiveContractCardProps) {
 	);
 }
 
-function ContractList({ contracts }: { contracts: OwnerContract[] }) {
-	if (contracts.length === 0) {
+function AssetList({ assets }: { assets: GetAssetsResponseDto }) {
+	if (assets.length === 0) {
 		return (
 			<div className="flex items-center justify-center py-12 text-sm text-neutral-400">
-				Sin contratos adicionales.
+				Sin equipos.
 			</div>
 		);
 	}
 
 	return (
 		<div className="divide-y divide-neutral-100 px-6">
-			{contracts.map((contract) => {
-				const ownerPct = formatShare(contract.ownerShare);
-				const rentalPct = formatShare(contract.rentalShare);
-
-				return (
-					<div
-						key={contract.id}
-						className="grid gap-4 py-4 md:grid-cols-[1fr_auto_auto] md:items-center"
-					>
-						<div>
-							<p className="font-mono text-xs text-neutral-400">
-								{contract.id.slice(0, 8).toUpperCase()}
-							</p>
-							<p className="mt-1 text-sm text-neutral-600">
-								{formatDate(contract.validFrom)} —{" "}
-								{contract.validTo ? formatDate(contract.validTo) : "Indefinido"}
-							</p>
-						</div>
-						<div className="font-mono text-sm font-medium text-neutral-800">
-							{ownerPct}/{rentalPct}
-						</div>
-						<Badge variant="outline" className="w-fit text-xs font-medium">
-							{contract.basis}
-						</Badge>
+			{assets.map((asset) => (
+				<div
+					key={asset.id}
+					className="grid gap-4 py-4 md:grid-cols-[1fr_auto_auto] md:items-center"
+				>
+					<div>
+						<p className="text-sm font-medium text-neutral-800">
+							{asset.serialNumber ?? "-"}
+						</p>
+						<p className="mt-1 text-xs text-neutral-500">
+							{asset.equipmentTypeName}
+						</p>
 					</div>
-				);
-			})}
+					<div className="text-sm text-neutral-600">
+						{asset.branchName ?? "-"}
+					</div>
+					<AssetStatusBadge status={asset.status} />
+				</div>
+			))}
 		</div>
 	);
+}
+
+function AssetStatusBadge({
+	status,
+}: {
+	status: GetAssetsResponseDto[number]["status"];
+}) {
+	if (status === "ACTIVE") {
+		return <Badge className="bg-emerald-600 text-white">Activo</Badge>;
+	}
+
+	if (status === "INACTIVE") {
+		return <Badge variant="secondary">Inactivo</Badge>;
+	}
+
+	return <Badge variant="outline">Retirado</Badge>;
 }
 
 function OwnerDetailSkeleton() {

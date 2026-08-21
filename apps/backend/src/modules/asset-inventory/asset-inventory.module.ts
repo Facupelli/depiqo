@@ -20,6 +20,8 @@ import { CreateOwnerWithContractHttpController } from './features/create-owner-w
 import { CreateOwnerWithContractHandler } from './features/create-owner-with-contract/create-owner-with-contract.handler';
 import { GetAssetSummariesHttpController } from './features/get-asset-summaries/get-asset-summaries.controller';
 import { GetAssetSummariesHandler } from './features/get-asset-summaries/get-asset-summaries.handler';
+import { GetAssetsHttpController } from './features/get-assets/get-assets.controller';
+import { GetAssetsHandler } from './features/get-assets/get-assets.handler';
 import { GetEquipmentTypeDetailHttpController } from './features/get-equipment-type-detail/get-equipment-type-detail.controller';
 import { GetEquipmentTypeDetailHandler } from './features/get-equipment-type-detail/get-equipment-type-detail.handler';
 import { GetEquipmentTypeSummariesHttpController } from './features/get-equipment-type-summaries/get-equipment-type-summaries.controller';
@@ -54,6 +56,7 @@ import { EquipmentTypeReferenceAuthority } from './public-api/equipment-type-ref
     CreateEquipmentTypeHttpController,
     CreateOwnerWithContractHttpController,
     GetAssetSummariesHttpController,
+    GetAssetsHttpController,
     GetEquipmentTypeDetailHttpController,
     GetEquipmentTypeSummariesHttpController,
     GetEquipmentTypesHttpController,
@@ -70,6 +73,7 @@ import { EquipmentTypeReferenceAuthority } from './public-api/equipment-type-ref
     CreateEquipmentTypeHandler,
     CreateOwnerWithContractHandler,
     GetAssetSummariesHandler,
+    GetAssetsHandler,
     GetEquipmentTypeDetailHandler,
     GetEquipmentTypeSummariesHandler,
     GetEquipmentTypesHandler,

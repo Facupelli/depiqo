@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import type { ApiContract } from "../api-contract";
+import { AssetStatusSchema } from "./asset.schemas";
 
 export const GetAssetSummariesQuerySchema = z.object({
   ids: z
@@ -21,7 +22,7 @@ export const AssetSummarySchema = z.object({
   equipmentTypeId: z.string(),
   branchId: z.string(),
   serialNumber: z.string().nullable(),
-  status: z.enum(["ACTIVE", "INACTIVE", "RETIRED"]),
+  status: AssetStatusSchema,
   owner: AssetSummaryOwnerSchema.nullable(),
 });
 

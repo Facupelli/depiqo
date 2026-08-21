@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import type { ApiContract } from "../api-contract";
+import { AssetStatusSchema } from "./asset.schemas";
 
 export const GetEquipmentTypeDetailParamsSchema = z.object({
   equipmentTypeId: z.string().min(1),
@@ -18,7 +19,7 @@ export const GetEquipmentTypeDetailAssetSchema = z.object({
   serialNumber: z.string().nullable(),
   branchId: z.string(),
   branchName: z.string().nullable(),
-  status: z.enum(["ACTIVE", "INACTIVE", "RETIRED"]),
+  status: AssetStatusSchema,
   ownerId: z.string().nullable(),
   ownerName: z.string().nullable(),
   lastUpdate: z.string().datetime(),
