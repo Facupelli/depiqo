@@ -134,7 +134,7 @@ function BusinessConfigurationForm() {
 	});
 	return (
 		<form.AppForm>
-			<form.SettingsForm isPending={isPending}>
+			<form.SettingsForm isPending={isPending} framed>
 				<BusinessFields form={form} />
 			</form.SettingsForm>
 		</form.AppForm>
@@ -225,12 +225,13 @@ const BusinessFields = withSettingsForm({
 						label="Moneda"
 						description="Se usa para mostrar los precios en DEPIQO."
 						transform={(value) => value.toUpperCase()}
+						align="start"
 					/>
 				)}
 			</form.AppField>
 			<form.AppField name="locale">
 				{(field) => (
-					<SettingsRow label="Idioma">
+					<SettingsRow label="Idioma" align="start">
 						<Field
 							data-invalid={
 								field.state.meta.isTouched && !field.state.meta.isValid
@@ -275,6 +276,7 @@ const BusinessFields = withSettingsForm({
 					<field.SettingsTextField
 						label="Zona horaria"
 						description="Se usa para las fechas y horas de tus alquileres."
+						align="start"
 					/>
 				)}
 			</form.AppField>

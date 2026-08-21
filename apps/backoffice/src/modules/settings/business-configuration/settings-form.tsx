@@ -15,15 +15,17 @@ function SettingsTextField({
 	label,
 	description,
 	transform,
+	align,
 }: {
 	label: string;
 	description?: string;
 	transform?: (value: string) => string;
+	align?: SettingsRowAlign;
 }) {
 	const field = useFieldContext<string>();
 	const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
 	return (
-		<SettingsRow label={label} description={description}>
+		<SettingsRow label={label} description={description} align={align}>
 			<Field data-invalid={isInvalid}>
 				<FieldLabel className="sr-only" htmlFor={field.name}>
 					{label}
@@ -39,7 +41,7 @@ function SettingsTextField({
 						)
 					}
 					aria-invalid={isInvalid}
-					className="w-56 text-right"
+					className={align === "start" ? "w-64" : "w-56 text-right"}
 				/>
 				<FieldError errors={field.state.meta.errors} />
 			</Field>
@@ -50,14 +52,16 @@ function SettingsTextField({
 function SettingsNumberField({
 	label,
 	suffix,
+	align,
 }: {
 	label: string;
 	suffix: string;
+	align?: SettingsRowAlign;
 }) {
 	const field = useFieldContext<number>();
 	const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
 	return (
-		<SettingsRow label={label}>
+		<SettingsRow label={label} align={align}>
 			<Field data-invalid={isInvalid}>
 				<FieldLabel className="sr-only" htmlFor={field.name}>
 					{label}
@@ -85,13 +89,15 @@ function SettingsNumberField({
 function SettingsSwitchField({
 	label,
 	description,
+	align,
 }: {
 	label: string;
 	description?: string;
+	align?: SettingsRowAlign;
 }) {
 	const field = useFieldContext<boolean>();
 	return (
-		<SettingsRow label={label} description={description}>
+		<SettingsRow label={label} description={description} align={align}>
 			<Switch
 				name={field.name}
 				checked={field.state.value}
@@ -105,9 +111,11 @@ function SettingsSwitchField({
 function SettingsForm({
 	isPending,
 	children,
+	framed = false,
 }: {
 	isPending: boolean;
 	children: ReactNode;
+	framed?: boolean;
 }) {
 	const form = useFormContext();
 	return (
@@ -118,7 +126,13 @@ function SettingsForm({
 			}}
 			className="space-y-6"
 		>
-			{children}
+			{framed ? (
+				<div className="divide-y overflow-hidden rounded-xl border bg-card">
+					{children}
+				</div>
+			) : (
+				children
+			)}
 			<div className="flex justify-end">
 				<form.Subscribe
 					selector={(state) => [
@@ -141,17 +155,27 @@ function SettingsForm({
 	);
 }
 
+export type SettingsRowAlign = "end" | "start";
+
 export function SettingsRow({
 	label,
 	description,
 	children,
+	align = "end",
 }: {
 	label: string;
 	description?: string;
 	children: ReactNode;
+	align?: SettingsRowAlign;
 }) {
 	return (
-		<div className="grid gap-3 px-5 py-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:gap-8">
+		<div
+			className={
+				align === "start"
+					? "grid gap-3 px-5 py-4 sm:grid-cols-[minmax(0,20rem)_minmax(0,1fr)] sm:items-center sm:gap-8"
+					: "grid gap-3 px-5 py-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:gap-8"
+			}
+		>
 			<div>
 				<p className="text-sm font-semibold">{label}</p>
 				{description ? (
