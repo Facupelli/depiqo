@@ -8,6 +8,7 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@repo/ui/components/dropdown-menu";
+import { Link } from "@tanstack/react-router";
 import {
 	Building2,
 	CircleDollarSign,
@@ -135,7 +136,15 @@ function ProductActions({
 			{product.status === "DRAFT" ? (
 				<ActivateProductAction product={product} />
 			) : null}
-			<Button size="lg" onClick={() => undefined}>
+			<Button
+				size="lg"
+				render={
+					<Link
+						to="/dashboard/catalog/$rentableItemId/edit"
+						params={{ rentableItemId: product.id }}
+					/>
+				}
+			>
 				<Pencil className="mr-2 size-4" />
 				Editar producto
 			</Button>

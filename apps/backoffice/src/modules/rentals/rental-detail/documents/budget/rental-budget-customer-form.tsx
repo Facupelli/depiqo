@@ -61,9 +61,7 @@ export function RentalBudgetCustomerForm({
 										name={field.name}
 										value={field.state.value}
 										onBlur={field.handleBlur}
-										onChange={(event) =>
-											field.handleChange(event.target.value)
-										}
+										onChange={(event) => field.handleChange(event.target.value)}
 										placeholder="Nombre y apellido"
 										aria-invalid={isInvalid}
 										disabled={isPending}
@@ -88,9 +86,7 @@ export function RentalBudgetCustomerForm({
 										name={field.name}
 										value={field.state.value}
 										onBlur={field.handleBlur}
-										onChange={(event) =>
-											field.handleChange(event.target.value)
-										}
+										onChange={(event) => field.handleChange(event.target.value)}
 										placeholder="DNI, CUIT o documento"
 										aria-invalid={isInvalid}
 										disabled={isPending}
@@ -115,9 +111,7 @@ export function RentalBudgetCustomerForm({
 										name={field.name}
 										value={field.state.value}
 										onBlur={field.handleBlur}
-										onChange={(event) =>
-											field.handleChange(event.target.value)
-										}
+										onChange={(event) => field.handleChange(event.target.value)}
 										placeholder="Calle, número y localidad"
 										aria-invalid={isInvalid}
 										disabled={isPending}
@@ -142,9 +136,7 @@ export function RentalBudgetCustomerForm({
 										name={field.name}
 										value={field.state.value}
 										onBlur={field.handleBlur}
-										onChange={(event) =>
-											field.handleChange(event.target.value)
-										}
+										onChange={(event) => field.handleChange(event.target.value)}
 										placeholder="+54 11 1234-5678"
 										aria-invalid={isInvalid}
 										disabled={isPending}

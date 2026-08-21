@@ -202,7 +202,7 @@ export function CreatePackageForm({
 												}
 												aria-invalid={isInvalid}
 												placeholder="Qué incluye este paquete y para qué tipo de alquiler sirve."
-												className="min-h-16"
+												className="min-h-16 bg-white"
 											/>
 											{isInvalid && (
 												<FieldError errors={field.state.meta.errors} />

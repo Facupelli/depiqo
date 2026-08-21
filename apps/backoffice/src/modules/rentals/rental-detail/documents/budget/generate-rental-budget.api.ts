@@ -5,8 +5,8 @@ import {
 	type GenerateRentalBudgetResponseDto,
 	GenerateRentalBudgetResponseSchema,
 	generateRentalBudgetContract,
+	problemDetailsSchema,
 } from "@repo/api-contracts";
-import { problemDetailsSchema } from "@repo/api-contracts";
 import { getBackendApiBaseUrl } from "@/lib/api/backend-api-url";
 import { getCsrfToken } from "@/lib/api/csrf-token";
 import {

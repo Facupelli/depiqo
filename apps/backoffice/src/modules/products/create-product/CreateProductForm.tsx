@@ -203,7 +203,7 @@ export function CreateProductForm({
 												}
 												aria-invalid={isInvalid}
 												placeholder="Información corta para identificar el producto."
-												className="min-h-16"
+												className="min-h-16 bg-white"
 											/>
 											{isInvalid && (
 												<FieldError errors={field.state.meta.errors} />

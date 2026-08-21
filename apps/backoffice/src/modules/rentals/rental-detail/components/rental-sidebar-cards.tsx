@@ -46,7 +46,6 @@ function RentalClientCard() {
 		<SidebarCard
 			icon={<User2Icon className="size-4" />}
 			title="Información del cliente"
-
 		>
 			{customer ? (
 				<>
