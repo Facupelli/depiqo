@@ -9,6 +9,7 @@ import {
 } from '../../../../test/support/integration-test-context';
 import { createTestFixtures, TestFixtures } from '../../../../test/support/fixtures';
 
+import { PrismaRentalOfferRepository } from '../features/create-rentable-item-offering/prisma-rental-offer.repository';
 import { CatalogOfferingAuthoring } from './catalog-offering-authoring.public-api';
 
 describe('CatalogOfferingAuthoring integration', () => {
@@ -186,5 +187,77 @@ describe('CatalogOfferingAuthoring integration', () => {
         where: { tenantId: current.tenant.id, rentableItemId: created.value.rentableItemId },
       }),
     ).toBe(1);
+  });
+
+  it('maps a database unique conflict to RentalOfferAlreadyExists when the pre-check misses it', async () => {
+    const current = await setup();
+    const created = await createOffering({
+      tenantId: current.tenant.id,
+      equipmentTypeId: current.equipmentType.id,
+      branchIds: [current.branch.id],
+    });
+    if (created.isErr()) throw created.error;
+
+    // Deterministic race simulation: force the application duplicate pre-check
+    // to miss so the real upsert reaches the
+    // v2_rental_offers_tenant_branch_item_key unique index.
+    const findFirstSpy = jest.spyOn(prisma.client.v2RentalOffer, 'findFirst').mockResolvedValue(null);
+
+    let result: Awaited<ReturnType<typeof authoring.createRentalOfferForRentableItem>>;
+    try {
+      result = await authoring.createRentalOfferForRentableItem({
+        tenantId: current.tenant.id,
+        rentableItemId: created.value.rentableItemId,
+        branchId: current.branch.id,
+      });
+    } finally {
+      findFirstSpy.mockRestore();
+    }
+
+    expect(result.isErr() && result.error.code).toBe('RentalOfferAlreadyExists');
+    expect(
+      await prisma.client.v2RentalOffer.count({
+        where: { tenantId: current.tenant.id, rentableItemId: created.value.rentableItemId },
+      }),
+    ).toBe(1);
+  });
+
+  it.each([
+    ['an infrastructure failure', (): Error => new Error('connection terminated unexpectedly')],
+    [
+      'a unique violation on an unrelated constraint',
+      (): { code: string; meta: { target: string[] } } => ({
+        code: 'P2002',
+        meta: { target: ['tenantId', 'email'] },
+      }),
+    ],
+  ] as const)('rethrows %s instead of mapping it', async (_name, createRejection) => {
+    const current = await setup();
+    const created = await createOffering({
+      tenantId: current.tenant.id,
+      equipmentTypeId: current.equipmentType.id,
+      branchIds: [current.branch.id],
+    });
+    if (created.isErr()) throw created.error;
+
+    const repository = moduleRef.get(PrismaRentalOfferRepository);
+    const rejection = createRejection();
+    const saveManySpy = jest.spyOn(repository, 'saveMany').mockRejectedValueOnce(rejection);
+
+    try {
+      // A fresh branch keeps the duplicate pre-check happy so the flow reaches
+      // the repository write.
+      const additionalBranch = await fixtures.createBranch({ tenantId: current.tenant.id });
+
+      await expect(
+        authoring.createRentalOfferForRentableItem({
+          tenantId: current.tenant.id,
+          rentableItemId: created.value.rentableItemId,
+          branchId: additionalBranch.id,
+        }),
+      ).rejects.toBe(rejection);
+    } finally {
+      saveManySpy.mockRestore();
+    }
   });
 });

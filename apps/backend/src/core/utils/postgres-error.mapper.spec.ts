@@ -1,4 +1,8 @@
-import { mapPostgresError, PostgresExclusionViolationError } from './postgres-error.mapper';
+import {
+  isUniqueConstraintViolation,
+  mapPostgresError,
+  PostgresExclusionViolationError,
+} from './postgres-error.mapper';
 
 describe('mapPostgresError', () => {
   it('maps a direct PostgreSQL exclusion violation and preserves its cause', () => {
@@ -35,6 +39,48 @@ describe('mapPostgresError', () => {
     } catch (thrownError) {
       expect(thrownError).toBe(error);
     }
+  });
+});
+
+const RENTAL_OFFER_UNIQUE_COLUMNS = ['tenant_id', 'branch_id', 'rentable_item_id'];
+
+describe('isUniqueConstraintViolation', () => {
+  it('matches a standard meta.target with camelCase field names', () => {
+    const error = { code: 'P2002', meta: { target: ['tenantId', 'branchId', 'rentableItemId'] } };
+
+    expect(isUniqueConstraintViolation(error, RENTAL_OFFER_UNIQUE_COLUMNS)).toBe(true);
+  });
+
+  it('matches the driver-adapter shape with database column names', () => {
+    const error = {
+      code: 'P2002',
+      meta: {
+        driverAdapterError: {
+          cause: {
+            kind: 'postgres',
+            code: '23505',
+            constraint: { fields: ['tenant_id', 'branch_id', 'rentable_item_id'] },
+          },
+        },
+      },
+    };
+
+    expect(isUniqueConstraintViolation(error, RENTAL_OFFER_UNIQUE_COLUMNS)).toBe(true);
+  });
+
+  it('does not match a violation on different columns', () => {
+    const error = { code: 'P2002', meta: { target: ['tenantId', 'email'] } };
+
+    expect(isUniqueConstraintViolation(error, RENTAL_OFFER_UNIQUE_COLUMNS)).toBe(false);
+  });
+
+  it.each([
+    ['a non-P2002 error', { code: 'P2003', meta: { target: ['tenantId', 'branchId', 'rentableItemId'] } }],
+    ['missing metadata', { code: 'P2002' }],
+    ['malformed metadata', { code: 'P2002', meta: { target: null, driverAdapterError: { cause: null } } }],
+    ['non-string constraint fields', { code: 'P2002', meta: { target: [1, 2, 3] } }],
+  ])('rejects %s', (_name, error) => {
+    expect(isUniqueConstraintViolation(error, RENTAL_OFFER_UNIQUE_COLUMNS)).toBe(false);
   });
 });
 

@@ -3,6 +3,7 @@ import { err, ok, Result } from 'neverthrow';
 
 import { PrismaService } from 'src/core/database/prisma.service';
 import { PrismaUnitOfWork } from 'src/core/database/prisma-unit-of-work';
+import { isUniqueConstraintViolation } from 'src/core/utils/postgres-error.mapper';
 import { BranchFacts } from 'src/modules/tenant-management/public-api/branch-facts.public-api';
 import {
   CatalogBranchContextUnavailableError,
@@ -86,9 +87,19 @@ export class CreateRentalOfferForRentableItemService {
 
     // Joins the caller's ambient transaction when one is active (e.g. Offering
     // Setup coordination); standalone calls open their own transaction.
-    await this.unitOfWork.runInTransaction(async ({ tx }) => {
-      await this.rentalOfferRepository.saveMany([rentalOffer.value], tx);
-    });
+    try {
+      await this.unitOfWork.runInTransaction(async ({ tx }) => {
+        await this.rentalOfferRepository.saveMany([rentalOffer.value], tx);
+      });
+    } catch (error) {
+      // Race backstop for the duplicate-offer pre-check above: the database is
+      // enforcing the same Catalog invariant, so a concurrent insert surfaces as
+      // a typed conflict instead of an infrastructure failure.
+      if (isUniqueConstraintViolation(error, ['tenant_id', 'branch_id', 'rentable_item_id'])) {
+        return err(new CatalogRentalOfferAlreadyExistsError(rentableItemId, branchId));
+      }
+      throw error;
+    }
 
     return ok({ rentalOfferId: rentalOffer.value.id });
   }

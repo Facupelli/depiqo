@@ -1,7 +1,10 @@
-// Postgres error code for exclusion constraint violation (gist overlap)
+// PostgreSQL SQLSTATE codes
 const PG_EXCLUSION_VIOLATION = '23P01';
+
+// Prisma error codes
 const PRISMA_RAW_QUERY_FAILED = 'P2010';
-const PG_FOREIGN_KEY_VIOLATION = 'P2003';
+const PRISMA_UNIQUE_CONSTRAINT_VIOLATION = 'P2002';
+const PRISMA_FOREIGN_KEY_VIOLATION = 'P2003';
 
 /**
  * Typed error thrown when a Postgres EXCLUDE constraint fires.
@@ -15,7 +18,68 @@ export class PostgresExclusionViolationError extends Error {
 }
 
 export function isForeignKeyConstraintError(error: unknown): boolean {
-  return isErrorWithCode(error) && error.code === PG_FOREIGN_KEY_VIOLATION;
+  return isErrorWithCode(error) && error.code === PRISMA_FOREIGN_KEY_VIOLATION;
+}
+
+/**
+ * Detects a Prisma unique constraint violation (P2002) on a specific set of
+ * database columns. Callers use this as a race backstop after an application
+ * pre-check, so the expected columns must match the violated constraint exactly.
+ *
+ * Handles both the standard `meta.target` shape and the driver-adapter shape
+ * (`meta.driverAdapterError.cause.constraint.fields`). Field names are
+ * normalized to their database (snake_case) form before comparison.
+ */
+export function isUniqueConstraintViolation(error: unknown, expectedColumns: readonly string[]): boolean {
+  if (!isRecord(error) || error.code !== PRISMA_UNIQUE_CONSTRAINT_VIOLATION || !isRecord(error.meta)) {
+    return false;
+  }
+
+  const violatedColumns = violatedUniqueConstraintColumns(error.meta);
+  return (
+    violatedColumns.length === expectedColumns.length &&
+    violatedColumns.every((column) => expectedColumns.includes(column))
+  );
+}
+
+/**
+ * Reads the columns of the violated unique constraint from either metadata
+ * shape and normalizes them to database (snake_case) column names.
+ */
+function violatedUniqueConstraintColumns(meta: Record<string, unknown>): string[] {
+  const fields = uniqueConstraintFields(meta);
+  if (!Array.isArray(fields)) {
+    return [];
+  }
+
+  return fields.filter((field): field is string => typeof field === 'string').map(toDatabaseColumnName);
+}
+
+function uniqueConstraintFields(meta: Record<string, unknown>): unknown {
+  const target = meta.target;
+  if (target !== undefined && target !== null) {
+    return target;
+  }
+
+  // Driver-adapter shape: meta.driverAdapterError.cause.constraint.fields
+  const adapterError = meta.driverAdapterError;
+  if (!isRecord(adapterError)) {
+    return undefined;
+  }
+  const adapterCause = adapterError.cause;
+  if (!isRecord(adapterCause)) {
+    return undefined;
+  }
+  const constraint = adapterCause.constraint;
+  if (!isRecord(constraint)) {
+    return undefined;
+  }
+
+  return constraint.fields;
+}
+
+function toDatabaseColumnName(field: string): string {
+  return field.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`);
 }
 
 type ErrorWithCode = {
