@@ -102,7 +102,6 @@ const sidebarItems: SidebarItem[] = [
 		icon: BookOpen,
 		href: "/dashboard/catalog",
 		children: [
-			{ name: "Items", href: "/dashboard/catalog" },
 			{ name: "Categorías", href: "/dashboard/catalog/categories" },
 		],
 	},

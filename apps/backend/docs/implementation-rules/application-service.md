@@ -46,6 +46,20 @@ For HTTP-facing error flow, follow `error-handling-problem-details.md`.
 - Use `prisma.$transaction()` or the project unit-of-work abstraction when multiple writes must succeed or fail together.
 - Keep transaction boundaries in the Application Service, even when repositories perform the actual persistence work inside that transaction.
 - Pass the active transaction client to normal repository methods (see `repository.md` for the canonical transaction pattern).
+
+## Transaction Convention
+
+Transactional application services use `PrismaUnitOfWork`. It provides ambient REQUIRED propagation: nested transactional work joins the active transaction in the current async execution context; otherwise a new Prisma transaction is created. Only the outermost transaction owns post-commit integration-event publication.
+
+For `Result`-based workflows, use `runResultInTransaction` as the outer application transaction boundary:
+
+```text
+Ok    -> commit
+Err   -> rollback and remain Err
+throw -> rollback and remain thrown
+```
+
+`runResultInTransaction` must not be nested inside an active transaction; it throws an infrastructure invariant error before running any work. Use `runInTransaction` for nested transactional work.
 - Verify model ownership before every direct Prisma call (see `docs/architecture/overview.md` for cross-module access rules).
 
 ## Must Not Do

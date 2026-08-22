@@ -23,7 +23,7 @@ If a change touches `@repo/api-contracts`, treat it as a cross-workspace change 
 
 ## Authenticated Browser Verification
 
-Use `chrome-devtools-axi` for end-to-end browser verification. Protected backoffice routes redirect unauthenticated users to `/admin/login`.
+Use `chrome-devtools-axi` for end-to-end browser verification. Protected backoffice routes redirect unauthenticated users to `/login`.
 
 Local credentials are stored in the ignored `apps/backoffice/.env.agent.local` file:
 
