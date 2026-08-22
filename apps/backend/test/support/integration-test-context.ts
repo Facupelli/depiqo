@@ -14,6 +14,11 @@ import { SharedModule } from '../../src/modules/shared/shared.module';
 
 type Closable = { close(): Promise<void> };
 
+export interface ProviderOverride {
+  provide: unknown;
+  useValue: unknown;
+}
+
 /** Registers one shared integration context for the enclosing spec. */
 export function useIntegrationTestContext<T extends Closable>(createContext: () => Promise<T>): void {
   let context: T | undefined;
@@ -67,8 +72,10 @@ export async function createPricingIntegrationContext(): Promise<TestingModule> 
   return moduleRef;
 }
 
-export async function createOfferingSetupIntegrationContext(): Promise<TestingModule> {
-  const moduleRef = await Test.createTestingModule({
+export async function createOfferingSetupIntegrationContext(
+  overrides: ProviderOverride[] = [],
+): Promise<TestingModule> {
+  let builder = Test.createTestingModule({
     imports: [
       SharedModule,
       LoggerModule,
@@ -79,7 +86,13 @@ export async function createOfferingSetupIntegrationContext(): Promise<TestingMo
       CqrsModule.forRoot(),
       OfferingSetupModule,
     ],
-  }).compile();
+  });
+
+  for (const override of overrides) {
+    builder = builder.overrideProvider(override.provide as any).useValue(override.useValue);
+  }
+
+  const moduleRef = await builder.compile();
 
   await moduleRef.init();
   return moduleRef;

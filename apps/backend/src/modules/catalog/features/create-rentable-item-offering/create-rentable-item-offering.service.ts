@@ -1,11 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { err, ok, Result } from 'neverthrow';
 
-import { PrismaService } from 'src/core/database/prisma.service';
+import { PrismaUnitOfWork } from 'src/core/database/prisma-unit-of-work';
 import { EquipmentTypeReferenceAuthority } from 'src/modules/asset-inventory/public-api/equipment-type-reference-authority.public-api';
 import { TenantCategoryTaxonomy } from 'src/modules/tenant-management/public-api/tenant-category-taxonomy.public-api';
 import { BranchFacts } from 'src/modules/tenant-management/public-api/branch-facts.public-api';
-import { mapPostgresError } from 'src/core/utils/postgres-error.mapper';
 
 import {
   CatalogBranchContextUnavailableError,
@@ -30,7 +29,7 @@ export interface CreateRentableItemOfferingResult {
 @Injectable()
 export class CreateRentableItemOfferingService {
   constructor(
-    private readonly prisma: PrismaService,
+    private readonly unitOfWork: PrismaUnitOfWork,
     private readonly equipmentTypeReferenceAuthority: EquipmentTypeReferenceAuthority,
     private readonly tenantCategoryTaxonomy: TenantCategoryTaxonomy,
     private readonly branchFacts: BranchFacts,
@@ -111,14 +110,12 @@ export class CreateRentableItemOfferingService {
       rentalOffers.push(rentalOfferResult.value);
     }
 
-    try {
-      await this.prisma.client.$transaction(async (tx) => {
-        await this.rentableItemRepository.save(rentableItem, tx);
-        await this.rentalOfferRepository.saveMany(rentalOffers, tx);
-      });
-    } catch (error) {
-      mapPostgresError(error);
-    }
+    // Joins the caller's ambient transaction when one is active (e.g. Offering
+    // Setup coordination); standalone calls open their own transaction.
+    await this.unitOfWork.runInTransaction(async ({ tx }) => {
+      await this.rentableItemRepository.save(rentableItem, tx);
+      await this.rentalOfferRepository.saveMany(rentalOffers, tx);
+    });
 
     return ok({
       rentableItemId: rentableItem.id,

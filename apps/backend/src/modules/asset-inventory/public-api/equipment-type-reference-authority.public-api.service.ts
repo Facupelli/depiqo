@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { err, ok, Result } from 'neverthrow';
 
-import { PrismaService } from 'src/core/database/prisma.service';
+import { PrismaUnitOfWork } from 'src/core/database/prisma-unit-of-work';
 
 import {
   EquipmentTypeReferenceAuthority,
@@ -11,7 +11,7 @@ import {
 
 @Injectable()
 export class EquipmentTypeReferenceAuthorityService extends EquipmentTypeReferenceAuthority {
-  constructor(private readonly prisma: PrismaService) {
+  constructor(private readonly unitOfWork: PrismaUnitOfWork) {
     super();
   }
 
@@ -23,13 +23,19 @@ export class EquipmentTypeReferenceAuthorityService extends EquipmentTypeReferen
       return ok(undefined);
     }
 
-    const equipmentTypes = await this.prisma.client.v2EquipmentType.findMany({
-      where: {
-        id: { in: equipmentTypeIds },
-        tenantId: input.tenantId,
-      },
-      select: { id: true },
-    });
+    // Reading through runInTransaction keeps this validation consistent with
+    // uncommitted writes when called inside a caller's ambient transaction
+    // (e.g. Offering Setup coordination); standalone it opens a short read
+    // transaction.
+    const equipmentTypes = await this.unitOfWork.runInTransaction(({ tx }) =>
+      tx.v2EquipmentType.findMany({
+        where: {
+          id: { in: equipmentTypeIds },
+          tenantId: input.tenantId,
+        },
+        select: { id: true },
+      }),
+    );
     const foundEquipmentTypeIds = new Set(equipmentTypes.map((equipmentType) => equipmentType.id));
 
     for (const equipmentTypeId of equipmentTypeIds) {

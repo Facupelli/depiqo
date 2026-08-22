@@ -9,6 +9,7 @@ import {
   CatalogOfferingAuthoring,
   CatalogOfferingAuthoringError,
 } from '../../../catalog/public-api/catalog-offering-authoring.public-api';
+import { PrismaUnitOfWork } from 'src/core/database/prisma-unit-of-work';
 import { BranchFacts } from 'src/modules/tenant-management/public-api/branch-facts.public-api';
 import { TenantOperationalFacts } from 'src/modules/tenant-management/public-api/tenant-operational-facts.public-api';
 import { CreateRentableEquipmentCommand } from './create-rentable-equipment.command';
@@ -29,6 +30,7 @@ export class CreateRentableEquipmentHandler implements ICommandHandler<
     private readonly branchFacts: BranchFacts,
     private readonly assetInventoryAuthoring: AssetInventoryAuthoring,
     private readonly catalog: CatalogOfferingAuthoring,
+    private readonly unitOfWork: PrismaUnitOfWork,
   ) {}
 
   async execute(command: CreateRentableEquipmentCommand): Promise<CreateRentableEquipmentServiceResult> {
@@ -41,35 +43,40 @@ export class CreateRentableEquipmentHandler implements ICommandHandler<
     );
     if (tenantValidation.isErr()) return err(mapTenantError(tenantValidation.error));
 
-    const equipmentSetup = await this.assetInventoryAuthoring.createEquipmentTypeWithInitialAssets({
-      tenantId: command.tenantId,
-      equipmentType: {
+    // Offering Setup owns the outer transaction for this workflow. Asset
+    // Inventory and Catalog join it through their own transactional
+    // boundaries, so a Catalog failure rolls back the Inventory writes too.
+    return this.unitOfWork.runResultInTransaction(async () => {
+      const equipmentSetup = await this.assetInventoryAuthoring.createEquipmentTypeWithInitialAssets({
+        tenantId: command.tenantId,
+        equipmentType: {
+          name: command.name,
+          description: command.description,
+          imageUrl: command.imageUrl,
+          categoryId: command.categoryId,
+        },
+        initialAssets: command.assets,
+      });
+      if (equipmentSetup.isErr()) return err(mapAssetInventoryError(equipmentSetup.error));
+
+      const rentableItem = await this.catalog.createRentableItemOffering({
+        tenantId: command.tenantId,
         name: command.name,
         description: command.description,
         imageUrl: command.imageUrl,
+        // This workflow has one category choice. It is stored on the EquipmentType
+        // and reused for its standalone RentableItem rather than selected twice.
         categoryId: command.categoryId,
-      },
-      initialAssets: command.assets,
-    });
-    if (equipmentSetup.isErr()) return err(mapAssetInventoryError(equipmentSetup.error));
+        kind: command.kind,
+        requirements: [
+          { equipmentTypeId: equipmentSetup.value.equipmentTypeId, quantityPerItem: command.quantityPerItem },
+        ],
+        branchIds,
+      });
+      if (rentableItem.isErr()) return err(mapCatalogError(rentableItem.error));
 
-    const rentableItem = await this.catalog.createRentableItemOffering({
-      tenantId: command.tenantId,
-      name: command.name,
-      description: command.description,
-      imageUrl: command.imageUrl,
-      // This workflow has one category choice. It is stored on the EquipmentType
-      // and reused for its standalone RentableItem rather than selected twice.
-      categoryId: command.categoryId,
-      kind: command.kind,
-      requirements: [
-        { equipmentTypeId: equipmentSetup.value.equipmentTypeId, quantityPerItem: command.quantityPerItem },
-      ],
-      branchIds,
+      return ok({ ...equipmentSetup.value, ...rentableItem.value });
     });
-    if (rentableItem.isErr()) return err(mapCatalogError(rentableItem.error));
-
-    return ok({ ...equipmentSetup.value, ...rentableItem.value });
   }
 }
 
