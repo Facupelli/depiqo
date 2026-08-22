@@ -13,6 +13,7 @@ import {
   PricingRentalOfferPricingAssignment,
   PricingRentalOfferPricingAssignmentError,
 } from '../../../pricing/public-api/pricing-rental-offer-pricing-assignment.public-api';
+import { PrismaUnitOfWork } from 'src/core/database/prisma-unit-of-work';
 import { BranchFacts } from 'src/modules/tenant-management/public-api/branch-facts.public-api';
 import { TenantOperationalFacts } from 'src/modules/tenant-management/public-api/tenant-operational-facts.public-api';
 import { CreateRentalOfferWithPricingCommand } from './create-rental-offer-with-pricing.command';
@@ -37,6 +38,7 @@ export class CreateRentalOfferWithPricingHandler implements ICommandHandler<
     private readonly catalog: CatalogOfferingAuthoring,
     private readonly ratePlanAuthoring: PricingRatePlanAuthoring,
     private readonly rentalOfferPricingAssignment: PricingRentalOfferPricingAssignment,
+    private readonly unitOfWork: PrismaUnitOfWork,
   ) {}
 
   async execute(command: CreateRentalOfferWithPricingCommand): Promise<CreateRentalOfferWithPricingServiceResult> {
@@ -48,39 +50,44 @@ export class CreateRentalOfferWithPricingHandler implements ICommandHandler<
     );
     if (tenantValidation.isErr()) return err(mapTenantError(tenantValidation.error));
 
-    const rentalOffer = await this.catalog.createRentalOfferForRentableItem({
-      tenantId: command.tenantId,
-      rentableItemId: command.rentableItemId,
-      branchId: command.branchId,
-    });
-    if (rentalOffer.isErr()) return err(mapCatalogError(rentalOffer.error));
-
-    if (command.pricing.mode === 'CREATE_RATE_PLAN') {
-      const ratePlan = await this.ratePlanAuthoring.createRatePlan({
+    // Offering Setup owns the outer transaction for this workflow. Catalog and
+    // Pricing join it through their own transactional boundaries, so a Pricing
+    // failure rolls back the Catalog write too.
+    return this.unitOfWork.runResultInTransaction(async () => {
+      const rentalOffer = await this.catalog.createRentalOfferForRentableItem({
         tenantId: command.tenantId,
-        ...command.pricing.ratePlan,
-        isActive: true,
+        rentableItemId: command.rentableItemId,
+        branchId: command.branchId,
       });
-      if (ratePlan.isErr()) return err(mapRatePlanAuthoringError(ratePlan.error));
+      if (rentalOffer.isErr()) return err(mapCatalogError(rentalOffer.error));
+
+      if (command.pricing.mode === 'CREATE_RATE_PLAN') {
+        const ratePlan = await this.ratePlanAuthoring.createRatePlan({
+          tenantId: command.tenantId,
+          ...command.pricing.ratePlan,
+          isActive: true,
+        });
+        if (ratePlan.isErr()) return err(mapRatePlanAuthoringError(ratePlan.error));
+
+        const assignment = await this.rentalOfferPricingAssignment.assignRatePlanToRentalOffer({
+          tenantId: command.tenantId,
+          catalogRentalOfferId: rentalOffer.value.rentalOfferId,
+          ratePlanId: ratePlan.value.ratePlanId,
+        });
+        if (assignment.isErr()) return err(mapRentalOfferPricingAssignmentError(assignment.error));
+
+        return ok({ rentalOfferId: rentalOffer.value.rentalOfferId, ...assignment.value });
+      }
 
       const assignment = await this.rentalOfferPricingAssignment.assignRatePlanToRentalOffer({
         tenantId: command.tenantId,
         catalogRentalOfferId: rentalOffer.value.rentalOfferId,
-        ratePlanId: ratePlan.value.ratePlanId,
+        ratePlanId: command.pricing.ratePlanId,
       });
       if (assignment.isErr()) return err(mapRentalOfferPricingAssignmentError(assignment.error));
 
       return ok({ rentalOfferId: rentalOffer.value.rentalOfferId, ...assignment.value });
-    }
-
-    const assignment = await this.rentalOfferPricingAssignment.assignRatePlanToRentalOffer({
-      tenantId: command.tenantId,
-      catalogRentalOfferId: rentalOffer.value.rentalOfferId,
-      ratePlanId: command.pricing.ratePlanId,
     });
-    if (assignment.isErr()) return err(mapRentalOfferPricingAssignmentError(assignment.error));
-
-    return ok({ rentalOfferId: rentalOffer.value.rentalOfferId, ...assignment.value });
   }
 }
 

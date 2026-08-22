@@ -77,6 +77,13 @@ describe('CreateRentalOfferWithPricing integration', () => {
       ratePlanId: expect.any(String),
       rentalOfferPricingId: expect.any(String),
     });
+    // The real assignment capability validated and linked rows created earlier
+    // in this same workflow, proving ambient transaction read visibility.
+    await expect(prisma.client.v2RentalOffer.count({ where: { id: result.value.rentalOfferId } })).resolves.toBe(1);
+    await expect(prisma.client.v2RatePlan.count({ where: { id: result.value.ratePlanId } })).resolves.toBe(1);
+    await expect(prisma.client.v2RatePlanTier.count({ where: { ratePlanId: result.value.ratePlanId } })).resolves.toBe(
+      1,
+    );
     await expect(
       prisma.client.v2RentalOfferPricing.findUniqueOrThrow({ where: { id: result.value.rentalOfferPricingId } }),
     ).resolves.toEqual(
@@ -102,6 +109,12 @@ describe('CreateRentalOfferWithPricing integration', () => {
     );
 
     expect(result.isOk() && result.value.ratePlanId).toBe(ratePlan.ratePlanId);
+    await expect(prisma.client.v2RentalOffer.count({ where: { id: result.value.rentalOfferId } })).resolves.toBe(1);
+    await expect(
+      prisma.client.v2RentalOfferPricing.count({
+        where: { catalogRentalOfferId: result.value.rentalOfferId, ratePlanId: ratePlan.ratePlanId },
+      }),
+    ).resolves.toBe(1);
   });
 
   it('preserves Offering Setup translation for an inactive existing Rate Plan', async () => {

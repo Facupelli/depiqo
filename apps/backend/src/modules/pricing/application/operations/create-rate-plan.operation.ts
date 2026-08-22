@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { err, ok, Result } from 'neverthrow';
 
 import { PrismaService } from 'src/core/database/prisma.service';
+import { PrismaUnitOfWork } from 'src/core/database/prisma-unit-of-work';
 import { V2BillingUnit } from 'src/generated/prisma/client';
 
 import { RatePlanDomainError } from '../../domain/errors/rate-plan.errors';
@@ -27,7 +28,10 @@ export interface CreateRatePlanOperationResult {
 
 @Injectable()
 export class CreateRatePlanOperation {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly unitOfWork: PrismaUnitOfWork,
+  ) {}
 
   async createRatePlan(
     input: CreateRatePlanOperationInput,
@@ -59,7 +63,11 @@ export class CreateRatePlanOperation {
       return err({ code: 'InvalidRatePlan', message: ratePlan.error.message, cause: ratePlan.error });
     }
 
-    await this.prisma.client.v2RatePlan.create({ data: RatePlanMapper.toCreateData(ratePlan.value) });
+    // Joins the caller's ambient transaction when one is active (e.g. Offering
+    // Setup coordination); standalone calls open their own transaction.
+    await this.unitOfWork.runInTransaction(async ({ tx }) => {
+      await tx.v2RatePlan.create({ data: RatePlanMapper.toCreateData(ratePlan.value) });
+    });
 
     return ok({ ratePlan: ratePlan.value });
   }

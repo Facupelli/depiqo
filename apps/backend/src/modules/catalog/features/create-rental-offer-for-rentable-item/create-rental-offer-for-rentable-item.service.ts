@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { err, ok, Result } from 'neverthrow';
 
 import { PrismaService } from 'src/core/database/prisma.service';
+import { PrismaUnitOfWork } from 'src/core/database/prisma-unit-of-work';
 import { BranchFacts } from 'src/modules/tenant-management/public-api/branch-facts.public-api';
 import {
   CatalogBranchContextUnavailableError,
@@ -28,6 +29,7 @@ export class CreateRentalOfferForRentableItemService {
     private readonly prisma: PrismaService,
     private readonly tenantManagement: BranchFacts,
     private readonly rentalOfferRepository: PrismaRentalOfferRepository,
+    private readonly unitOfWork: PrismaUnitOfWork,
   ) {}
 
   async execute(
@@ -82,7 +84,11 @@ export class CreateRentalOfferForRentableItemService {
       return err(rentalOffer.error);
     }
 
-    await this.rentalOfferRepository.saveMany([rentalOffer.value]);
+    // Joins the caller's ambient transaction when one is active (e.g. Offering
+    // Setup coordination); standalone calls open their own transaction.
+    await this.unitOfWork.runInTransaction(async ({ tx }) => {
+      await this.rentalOfferRepository.saveMany([rentalOffer.value], tx);
+    });
 
     return ok({ rentalOfferId: rentalOffer.value.id });
   }
