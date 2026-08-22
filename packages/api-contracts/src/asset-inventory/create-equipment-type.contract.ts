@@ -12,7 +12,7 @@ export const CreateEquipmentTypeAssetBodySchema = z.object({
 export const CreateEquipmentTypeBodySchema = z.object({
   name: z.string().min(1),
   description: z.string().optional().nullable(),
-  imageUrl: z.string().url().optional().nullable(),
+  imageUrl: z.string().min(1).optional().nullable(),
   categoryId: z.string().optional().nullable(),
   assets: z.array(CreateEquipmentTypeAssetBodySchema).optional().default([]),
 });

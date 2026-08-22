@@ -9,7 +9,7 @@ export const UpdateEquipmentTypeBodySchema = z
   .object({
     name: z.string().optional(),
     description: z.string().nullable().optional(),
-    imageUrl: z.string().url().nullable().optional(),
+    imageUrl: z.string().min(1).nullable().optional(),
     categoryId: z.string().nullable().optional(),
   })
   .refine(

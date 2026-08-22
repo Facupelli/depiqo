@@ -12,7 +12,7 @@ export const CreateRentableEquipmentAssetBodySchema = z.object({
 export const CreateRentableEquipmentBodySchema = z.object({
   name: z.string().min(1),
   description: z.string().optional().nullable(),
-  imageUrl: z.string().url().optional().nullable(),
+  imageUrl: z.string().min(1).optional().nullable(),
   categoryId: z.string().optional().nullable(),
   kind: z.enum(["SINGLE", "PACKAGE", "KIT", "BUNDLE"]).default("SINGLE"),
   quantityPerItem: z.coerce.number().int().positive().default(1),
