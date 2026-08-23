@@ -104,6 +104,7 @@ export async function proxySessionBrowserBffRequest(
 		"cookie",
 		"x-csrf-token",
 		"user-agent",
+		"idempotency-key",
 	]) {
 		const value = request.headers.get(name);
 		if (value) headers.set(name, value);

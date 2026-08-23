@@ -19,6 +19,7 @@ export class CreateConfirmedRentalCommand {
   public readonly insuranceSelected?: boolean;
   public readonly bookingSnapshot?: BookingSnapshot;
   public readonly deliveryDetails?: RentalDeliveryDetails;
+  public readonly confirmationOperationId: string;
 
   constructor(props: {
     tenantId: string;
@@ -31,6 +32,7 @@ export class CreateConfirmedRentalCommand {
     insuranceSelected?: boolean;
     bookingSnapshot?: BookingSnapshot;
     deliveryDetails?: RentalDeliveryDetails;
+    confirmationOperationId: string;
   }) {
     this.tenantId = props.tenantId;
     this.branchId = props.branchId;
@@ -42,5 +44,6 @@ export class CreateConfirmedRentalCommand {
     this.insuranceSelected = props.insuranceSelected;
     this.bookingSnapshot = props.bookingSnapshot;
     this.deliveryDetails = props.deliveryDetails;
+    this.confirmationOperationId = props.confirmationOperationId;
   }
 }

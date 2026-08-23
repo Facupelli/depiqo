@@ -2,7 +2,8 @@ import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { err, ok, Result } from 'neverthrow';
 
 import { PrismaUnitOfWork } from 'src/core/database/prisma-unit-of-work';
-import { PostgresExclusionViolationError } from 'src/core/utils/postgres-error.mapper';
+import { PrismaService } from 'src/core/database/prisma.service';
+import { PostgresExclusionViolationError, isUniqueConstraintViolation } from 'src/core/utils/postgres-error.mapper';
 import {
   CatalogSelectionResolution,
   CatalogSelectionResolutionError,
@@ -21,7 +22,9 @@ import { adaptPricingCalculationToSnapshot } from '../../application/accepted-pr
 import { toRentalSelectionKind } from '../../application/catalog-selection-kind.mapper';
 import { resolveEquipmentTypeNames } from '../../application/equipment-type-display-facts';
 import { toRentalIntegrationEvents } from '../../application/rental-integration-event.mapper';
+import { buildConfirmationFingerprint } from './confirmation-operation-fingerprint';
 import { CreateConfirmedRentalCommand } from './create-confirmed-rental.command';
+import { ConfirmationOperationPersistence } from '../../persistence/rental.repository';
 import { Rental } from '../../domain/rental.aggregate';
 import { FulfillmentMethod } from '../../domain/rental-status';
 import { createConfirmedRentalError, CreateConfirmedRentalError } from './create-confirmed-rental.errors';
@@ -69,6 +72,7 @@ export class CreateConfirmedRentalService implements ICommandHandler<
 > {
   constructor(
     private readonly rentalRepository: RentalRepository,
+    private readonly prisma: PrismaService,
     private readonly tenantBillingPreferences: TenantBillingPreferences,
     private readonly branchFacts: BranchFacts,
     private readonly rentalOperationalFacts: RentalOperationalFactsValidatorService,
@@ -88,6 +92,16 @@ export class CreateConfirmedRentalService implements ICommandHandler<
       branchId: command.branchId,
       rentalCustomerId: command.rentalCustomerId,
     };
+    const confirmationOperation: ConfirmationOperationPersistence = {
+      operationId: command.confirmationOperationId,
+      fingerprint: buildConfirmationFingerprint(command),
+    };
+
+    const replay = await this.findCommittedRentalByOperation(command.tenantId, confirmationOperation.operationId);
+    if (replay) {
+      return this.resolveReplayResult(replay, confirmationOperation, context);
+    }
+
     const tenantValidation = await this.rentalOperationalFacts.validateDirectConfirmedFacts({
       tenantId: command.tenantId,
       branchId: command.branchId,
@@ -312,7 +326,7 @@ export class CreateConfirmedRentalService implements ICommandHandler<
         const { splits }: { splits: RentalOwnerSplitDraft[] } =
           this.rentalOwnerSplitCalculator.calculate(ownerSplitInput);
 
-        await this.rentalRepository.save(confirmedRental, { ownerSplits: splits, tx });
+        await this.rentalRepository.save(confirmedRental, { ownerSplits: splits, confirmationOperation, tx });
         integrationEvents.collect(toRentalIntegrationEvents(confirmedRental.pullDomainEvents()));
 
         return ok({
@@ -331,8 +345,46 @@ export class CreateConfirmedRentalService implements ICommandHandler<
           ),
         );
       }
+      if (isUniqueConstraintViolation(error, ['tenant_id', 'confirmation_operation_id'])) {
+        // A concurrent confirmation with the same operation identity won the race.
+        // The losing transaction has already rolled back, so resolve against the
+        // committed rental outside the failed transaction.
+        const replay = await this.findCommittedRentalByOperation(command.tenantId, confirmationOperation.operationId);
+        if (replay) {
+          return this.resolveReplayResult(replay, confirmationOperation, context);
+        }
+      }
       return err(this.toApplicationError(error, context));
     }
+  }
+
+  private async findCommittedRentalByOperation(
+    tenantId: string,
+    operationId: string,
+  ): Promise<{ id: string; rentalNumber: number; confirmationFingerprint: string | null } | null> {
+    return this.prisma.client.v2Rental.findFirst({
+      where: { tenantId, confirmationOperationId: operationId },
+      select: { id: true, rentalNumber: true, confirmationFingerprint: true },
+    });
+  }
+
+  private resolveReplayResult(
+    replay: { id: string; rentalNumber: number; confirmationFingerprint: string | null },
+    operation: ConfirmationOperationPersistence,
+    context: Record<string, unknown>,
+  ): CreateConfirmedRentalServiceResult {
+    if (replay.confirmationFingerprint !== operation.fingerprint) {
+      return err(
+        createConfirmedRentalError(
+          'rental_commitment.idempotency_key_reused_with_different_input',
+          'The idempotency key was already used for a different confirmation request.',
+          undefined,
+          context,
+        ),
+      );
+    }
+
+    return ok({ rentalId: replay.id, rentalNumber: replay.rentalNumber });
   }
 
   private assignmentKey(assetId: string, rentalDemandLineId: string): string {

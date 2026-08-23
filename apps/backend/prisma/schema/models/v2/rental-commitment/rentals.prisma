@@ -30,6 +30,9 @@ model V2Rental {
   insuranceSelected Boolean              @default(false) @map("insurance_selected")
   bookingSnapshot   Json?                @map("booking_snapshot")
 
+  confirmationOperationId String? @map("confirmation_operation_id")
+  confirmationFingerprint String? @map("confirmation_fingerprint")
+
   periodStart   DateTime        @map("period_start") @db.Timestamptz(3)
   periodEnd     DateTime        @map("period_end") @db.Timestamptz(3)
   priceSnapshot Json?           @map("price_snapshot")
@@ -51,6 +54,7 @@ model V2Rental {
   accessoryAssetAssignments V2RentalAccessoryAssetAssignment[]
 
   @@unique([tenantId, rentalNumber])
+  @@unique([tenantId, confirmationOperationId])
   @@index([tenantId, branchId, status, createdAt(sort: Desc)])
   @@index([tenantId, branchId, periodStart, periodEnd])
   @@index([tenantId, customerId])

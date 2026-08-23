@@ -4,9 +4,15 @@ import { Rental } from '../domain/rental.aggregate';
 import { AssetId } from '../domain/types/rental-commitment-ids';
 import { RentalOwnerSplitDraft } from '../owner-split/owner-split-calculator.types';
 
+export interface ConfirmationOperationPersistence {
+  operationId: string;
+  fingerprint: string;
+}
+
 export interface SaveRentalOptions {
   persistence?: 'DETAILS' | 'OPERATIONAL';
   ownerSplits?: RentalOwnerSplitDraft[];
+  confirmationOperation?: ConfirmationOperationPersistence;
   replaceAccessories?: boolean;
   accessoryAssetIds?: AssetId[];
   expectedVersion?: number;

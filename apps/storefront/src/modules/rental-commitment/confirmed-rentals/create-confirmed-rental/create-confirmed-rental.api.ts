@@ -10,10 +10,12 @@ import { sessionBrowserApiFetch } from "@/modules/tenant-management/auth/session
 
 export type CreateConfirmedRentalVariables = {
 	body: CreateConfirmedRentalBodyDto;
+	idempotencyKey: string;
 };
 
 export async function createConfirmedRental({
 	body,
+	idempotencyKey,
 }: CreateConfirmedRentalVariables): Promise<CreateConfirmedRentalResponseDto> {
 	const data = await sessionBrowserApiFetch(
 		createConfirmedRentalContract.path,
@@ -22,6 +24,7 @@ export async function createConfirmedRental({
 			headers: {
 				"content-type": "application/json",
 				"x-csrf-token": await getCustomerCsrfToken(),
+				"idempotency-key": idempotencyKey,
 			},
 			body: JSON.stringify(CreateConfirmedRentalBodySchema.parse(body)),
 		},

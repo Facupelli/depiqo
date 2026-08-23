@@ -65,6 +65,12 @@ describe('POST /rental-commitments/confirmed-rentals', () => {
     };
   }
 
+  function post(client: E2ETestClient) {
+    return client
+      .withCsrf(client.request().post('/rental-commitments/confirmed-rentals'))
+      .set('idempotency-key', randomUUID());
+  }
+
   async function expectNoCommitment(setup: Awaited<ReturnType<typeof scenario>>) {
     const rentals = await prisma.client.v2Rental.findMany({
       where: { tenantId: setup.tenant.id, branchId: setup.branch.id, customerId: setup.customer.customer.id },
@@ -76,7 +82,7 @@ describe('POST /rental-commitments/confirmed-rentals', () => {
   it('returns a dedicated semantic error for duplicate offer IDs', async () => {
     const setup = await scenario();
     const client = await login(setup);
-    const response = await client.withCsrf(client.request().post('/rental-commitments/confirmed-rentals')).send({
+    const response = await post(client).send({
       ...body(setup),
       selectedOffers: [
         { rentalOfferId: setup.catalog.offer.id, quantity: 1 },
@@ -100,10 +106,7 @@ describe('POST /rental-commitments/confirmed-rentals', () => {
     });
     const client = await login(setup);
 
-    const response = await client
-      .withCsrf(client.request().post('/rental-commitments/confirmed-rentals'))
-      .send(body(setup))
-      .expect(201);
+    const response = await post(client).send(body(setup)).expect(201);
     expect(response.body).toEqual({ data: { rentalNumber: expect.any(Number) } });
     expect(response.body.data.rentalNumber).toBeGreaterThan(0);
 
@@ -125,9 +128,7 @@ describe('POST /rental-commitments/confirmed-rentals', () => {
     const setup = await scenario();
     const client = createE2ETestClient(testApp.app);
     await client.getCsrfToken();
-    const response = await client
-      .withCsrf(client.request().post('/rental-commitments/confirmed-rentals'))
-      .send(body(setup));
+    const response = await post(client).send(body(setup));
     expectProblemResponse(response, { status: 401, type: PlatformProblemTypes.auth.unauthorized });
     await expectNoCommitment(setup);
   });
@@ -138,7 +139,11 @@ describe('POST /rental-commitments/confirmed-rentals', () => {
   ])('rejects an authenticated request with a %s CSRF token', async (_name, token) => {
     const setup = await scenario();
     const client = await login(setup);
-    let request = client.request().post('/rental-commitments/confirmed-rentals').send(body(setup));
+    let request = client
+      .request()
+      .post('/rental-commitments/confirmed-rentals')
+      .set('idempotency-key', randomUUID())
+      .send(body(setup));
     if (token) request = request.set('x-csrf-token', token);
     const response = await request;
     expectProblemResponse(response, { status: 403, type: PlatformProblemTypes.auth.forbidden });
@@ -148,9 +153,10 @@ describe('POST /rental-commitments/confirmed-rentals', () => {
   it('returns request validation Problem Details for malformed input', async () => {
     const setup = await scenario();
     const client = await login(setup);
-    const response = await client
-      .withCsrf(client.request().post('/rental-commitments/confirmed-rentals'))
-      .send({ ...body(setup), selectedOffers: [{ rentalOfferId: setup.catalog.offer.id, quantity: 0 }] });
+    const response = await post(client).send({
+      ...body(setup),
+      selectedOffers: [{ rentalOfferId: setup.catalog.offer.id, quantity: 0 }],
+    });
     expectProblemResponse(response, { status: 400, type: PlatformProblemTypes.request.validationFailed });
     await expectNoCommitment(setup);
   });
@@ -159,9 +165,7 @@ describe('POST /rental-commitments/confirmed-rentals', () => {
     const setupA = await scenario();
     const setupB = await scenario();
     const client = await login(setupA);
-    const response = await client
-      .withCsrf(client.request().post('/rental-commitments/confirmed-rentals'))
-      .send(body(setupA, setupB.catalog.offer.id));
+    const response = await post(client).send(body(setupA, setupB.catalog.offer.id));
     expectProblemResponse(response, {
       status: 404,
       type: createProblemType('rental_commitment.rental_offer_not_found'),
@@ -175,9 +179,7 @@ describe('POST /rental-commitments/confirmed-rentals', () => {
     const otherBranch = await core.createBranch({ tenantId: setup.tenant.id });
     const wrongBranchOffer = await catalogFixtures.createOffer({ tenantId: setup.tenant.id, branchId: otherBranch.id });
     const client = await login(setup);
-    const response = await client
-      .withCsrf(client.request().post('/rental-commitments/confirmed-rentals'))
-      .send(body(setup, wrongBranchOffer.offer.id));
+    const response = await post(client).send(body(setup, wrongBranchOffer.offer.id));
     expectProblemResponse(response, {
       status: 404,
       type: createProblemType('rental_commitment.rental_offer_not_found'),
@@ -189,9 +191,7 @@ describe('POST /rental-commitments/confirmed-rentals', () => {
   it('returns an availability conflict and leaves no partial state', async () => {
     const setup = await scenario();
     const client = await login(setup);
-    const response = await client
-      .withCsrf(client.request().post('/rental-commitments/confirmed-rentals'))
-      .send(body(setup));
+    const response = await post(client).send(body(setup));
     expectProblemResponse(response, {
       status: 409,
       type: createProblemType('rental_commitment.insufficient_asset_availability'),
@@ -205,13 +205,88 @@ describe('POST /rental-commitments/confirmed-rentals', () => {
   it('does not disclose a random unknown offer', async () => {
     const setup = await scenario();
     const client = await login(setup);
-    const response = await client
-      .withCsrf(client.request().post('/rental-commitments/confirmed-rentals'))
-      .send(body(setup, randomUUID()));
+    const response = await post(client).send(body(setup, randomUUID()));
     expectProblemResponse(response, {
       status: 404,
       type: createProblemType('rental_commitment.rental_offer_not_found'),
       code: 'rental_commitment.rental_offer_not_found',
+    });
+  });
+
+  describe('idempotency key', () => {
+    it('rejects a missing Idempotency-Key header with Problem Details', async () => {
+      const setup = await scenario();
+      const client = await login(setup);
+      const response = await client
+        .withCsrf(client.request().post('/rental-commitments/confirmed-rentals'))
+        .send(body(setup));
+      expectProblemResponse(response, {
+        status: 400,
+        type: createProblemType('rental_commitment.invalid_idempotency_key'),
+        code: 'rental_commitment.invalid_idempotency_key',
+      });
+      await expectNoCommitment(setup);
+    });
+
+    it('rejects a malformed Idempotency-Key header with Problem Details', async () => {
+      const setup = await scenario();
+      const client = await login(setup);
+      const response = await post(client).set('idempotency-key', 'not-a-uuid').send(body(setup));
+      expectProblemResponse(response, {
+        status: 400,
+        type: createProblemType('rental_commitment.invalid_idempotency_key'),
+        code: 'rental_commitment.invalid_idempotency_key',
+      });
+      await expectNoCommitment(setup);
+    });
+
+    it('returns the same rental for a retry with the same key and body', async () => {
+      const setup = await scenario();
+      await rentalFixtures.createCandidate({
+        tenantId: setup.tenant.id,
+        branchId: setup.branch.id,
+        equipmentTypeId: setup.catalog.equipmentType.id,
+      });
+      const client = await login(setup);
+      const idempotencyKey = randomUUID();
+
+      const first = await post(client).set('idempotency-key', idempotencyKey).send(body(setup)).expect(201);
+      const second = await post(client).set('idempotency-key', idempotencyKey).send(body(setup)).expect(201);
+
+      expect(second.body).toEqual(first.body);
+      const rentals = await prisma.client.v2Rental.findMany({
+        where: { tenantId: setup.tenant.id, confirmationOperationId: idempotencyKey },
+      });
+      expect(rentals).toHaveLength(1);
+      expect(rentals[0].rentalNumber).toBe(first.body.data.rentalNumber);
+    });
+
+    it('conflicts when the same key is reused with a different body', async () => {
+      const setup = await scenario();
+      await rentalFixtures.createCandidate({
+        tenantId: setup.tenant.id,
+        branchId: setup.branch.id,
+        equipmentTypeId: setup.catalog.equipmentType.id,
+      });
+      const client = await login(setup);
+      const idempotencyKey = randomUUID();
+
+      await post(client).set('idempotency-key', idempotencyKey).send(body(setup)).expect(201);
+      const conflict = await post(client)
+        .set('idempotency-key', idempotencyKey)
+        .send({ ...body(setup), insuranceSelected: true })
+        .expect(409);
+
+      expectProblemResponse(conflict, {
+        status: 409,
+        type: createProblemType('rental_commitment.idempotency_key_reused_with_different_input'),
+        code: 'rental_commitment.idempotency_key_reused_with_different_input',
+      });
+      expect(
+        await prisma.client.v2Rental.count({
+          where: { tenantId: setup.tenant.id, confirmationOperationId: idempotencyKey },
+        }),
+      ).toBe(1);
     });
   });
 });

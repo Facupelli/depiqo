@@ -1,8 +1,8 @@
 import {
+	problemDetailsSchema,
 	STOREFRONT_TENANT_CONTEXT_HEADER_NAME,
 	type TrustedTenantContext,
 } from "@repo/api-contracts";
-import { problemDetailsSchema } from "@repo/api-contracts";
 import { createServerOnlyFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { getServerEnvironment } from "@/config/server-env";

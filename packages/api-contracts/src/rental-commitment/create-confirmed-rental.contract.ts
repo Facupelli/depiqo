@@ -49,6 +49,10 @@ export const CreateConfirmedRentalBodySchema = z
         : undefined,
   }));
 
+export const CreateConfirmedRentalHeadersSchema = z.object({
+  "idempotency-key": z.string().uuid(),
+});
+
 export const CreateConfirmedRentalResponseSchema = z.object({
   rentalNumber: z.number().int().positive(),
 });
@@ -72,12 +76,13 @@ export type CreateConfirmedRentalResponseDto = z.infer<
 export const createConfirmedRentalContract = {
   method: "POST",
   path: "/rental-commitments/confirmed-rentals",
+  headers: CreateConfirmedRentalHeadersSchema,
   body: CreateConfirmedRentalBodySchema,
   response: CreateConfirmedRentalResponseSchema,
 } satisfies ApiContract<
   undefined,
   undefined,
-  undefined,
+  typeof CreateConfirmedRentalHeadersSchema,
   typeof CreateConfirmedRentalBodySchema,
   typeof CreateConfirmedRentalResponseSchema
 >;

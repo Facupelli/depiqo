@@ -90,7 +90,7 @@ export class PrismaRentalRepository extends RentalRepository {
     } else {
       const persistedRental = await tx.v2Rental.upsert({
         where: { id: rental.id },
-        create: RentalMapper.toRentalCreateData(rental),
+        create: RentalMapper.toRentalCreateData(rental, options?.confirmationOperation),
         update: RentalMapper.toRentalUpdateData(rental),
         select: { version: true, updatedAt: true },
       });

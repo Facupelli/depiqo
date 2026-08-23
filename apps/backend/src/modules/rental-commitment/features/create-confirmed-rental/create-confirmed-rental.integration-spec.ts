@@ -144,6 +144,7 @@ describe('CreateConfirmedRental integration', () => {
       rentalPeriod?: RentalPeriod;
       fulfillmentMethod?: 'PICKUP' | 'DELIVERY';
       deliveryDetails?: { addressLine1: string; city: string };
+      confirmationOperationId?: string;
     },
   ): Promise<CreateConfirmedRentalServiceResult> {
     return commandBus.execute(
@@ -155,6 +156,7 @@ describe('CreateConfirmedRental integration', () => {
         selectedOffers: input.selectedOffers,
         fulfillmentMethod: input.fulfillmentMethod,
         deliveryDetails: input.deliveryDetails,
+        confirmationOperationId: input.confirmationOperationId ?? randomUUID(),
       }),
     );
   }
@@ -570,5 +572,145 @@ describe('CreateConfirmedRental integration', () => {
       expect(loserDraft.assignedAssets).toHaveLength(0);
       expect(loserDraft.ownerSplits).toHaveLength(0);
     }
+  });
+
+  describe('idempotent confirmation', () => {
+    function collectConfirmationEvents(): RentalConfirmedIntegrationEvent[] {
+      const events: RentalConfirmedIntegrationEvent[] = [];
+      emitter.on(RentalConfirmedIntegrationEvent.name, (event: RentalConfirmedIntegrationEvent) => events.push(event));
+      return events;
+    }
+
+    it('creates exactly one confirmed rental for a new operation key', async () => {
+      const setup = await scenario();
+      const catalog = await offer(setup);
+      await candidate({ ...setup, equipmentTypeId: catalog.equipmentTypes[0].id });
+      const events = collectConfirmationEvents();
+
+      const result = await create({
+        ...setup,
+        selectedOffers: [{ rentalOfferId: catalog.offer.id, quantity: 1 }],
+        confirmationOperationId: randomUUID(),
+      });
+
+      expect(result.isOk()).toBe(true);
+      expect(await commitmentCounts(setup)).toMatchObject({ rentals: 1 });
+      expect(events).toHaveLength(1);
+    });
+
+    it('resolves a sequential retry to the existing rental without re-creating anything', async () => {
+      const setup = await scenario();
+      const catalog = await offer(setup);
+      await candidate({ ...setup, equipmentTypeId: catalog.equipmentTypes[0].id });
+      const operationId = randomUUID();
+      const events = collectConfirmationEvents();
+      const input = {
+        ...setup,
+        selectedOffers: [{ rentalOfferId: catalog.offer.id, quantity: 1 }],
+        confirmationOperationId: operationId,
+      };
+
+      const first = await create(input);
+      const second = await create(input);
+
+      expect(first.isOk()).toBe(true);
+      expect(second.isOk()).toBe(true);
+      if (first.isErr() || second.isErr()) return;
+      expect(second.value.rentalId).toBe(first.value.rentalId);
+      expect(second.value.rentalNumber).toBe(first.value.rentalNumber);
+      expect(events).toHaveLength(1);
+      expect(await commitmentCounts(setup)).toEqual({
+        rentals: 1,
+        selections: 1,
+        demand: 1,
+        assignments: 1,
+        splits: 0,
+        blocks: 1,
+      });
+    });
+
+    it('resolves both concurrent duplicates to the single committed rental', async () => {
+      const setup = await scenario();
+      const catalog = await offer(setup);
+      const assetId = await candidate({ ...setup, equipmentTypeId: catalog.equipmentTypes[0].id });
+      const events = collectConfirmationEvents();
+      const input = {
+        ...setup,
+        selectedOffers: [{ rentalOfferId: catalog.offer.id, quantity: 1 }],
+        confirmationOperationId: randomUUID(),
+      };
+
+      const outcomes = await runConcurrently([() => create(input), () => create(input)]);
+
+      expect(outcomes.every((outcome) => outcome.status === 'fulfilled')).toBe(true);
+      const results = outcomes.map(
+        (outcome) => (outcome as PromiseFulfilledResult<CreateConfirmedRentalServiceResult>).value,
+      );
+      expect(results.filter((result) => result.isOk())).toHaveLength(2);
+      if (results.some((result) => result.isErr())) return;
+      const [rentalId, otherRentalId] = results.map(
+        (result) => (result as { value: { rentalId: string } }).value.rentalId,
+      );
+      expect(otherRentalId).toBe(rentalId);
+      expect(await commitmentCounts(setup)).toEqual({
+        rentals: 1,
+        selections: 1,
+        demand: 1,
+        assignments: 1,
+        splits: 0,
+        blocks: 1,
+      });
+      const persistedState = await persisted(rentalId);
+      expect(persistedState.rental.assignedAssets).toEqual([expect.objectContaining({ assetId })]);
+      expect(events).toHaveLength(1);
+    });
+
+    it('rejects reuse of the same key with materially different intent', async () => {
+      const setup = await scenario();
+      const catalog = await offer(setup);
+      await candidate({ ...setup, equipmentTypeId: catalog.equipmentTypes[0].id });
+      const operationId = randomUUID();
+
+      const first = await create({
+        ...setup,
+        selectedOffers: [{ rentalOfferId: catalog.offer.id, quantity: 1 }],
+        confirmationOperationId: operationId,
+      });
+      expect(first.isOk()).toBe(true);
+
+      const mismatched = await create({
+        ...setup,
+        selectedOffers: [{ rentalOfferId: catalog.offer.id, quantity: 1 }],
+        rentalPeriod: period(utcDate(2030, 1, 8, 10), utcDate(2030, 1, 8, 12)),
+        confirmationOperationId: operationId,
+      });
+
+      expect(mismatched.isErr() && mismatched.error.code).toBe(
+        'rental_commitment.idempotency_key_reused_with_different_input',
+      );
+      expect(await commitmentCounts(setup)).toMatchObject({ rentals: 1 });
+    });
+
+    it('does not consume the key when the first attempt fails transactionally', async () => {
+      const setup = await scenario();
+      const catalog = await offer(setup);
+      const operationId = randomUUID();
+      const input = {
+        ...setup,
+        selectedOffers: [{ rentalOfferId: catalog.offer.id, quantity: 1 }],
+        confirmationOperationId: operationId,
+      };
+
+      const failed = await create(input);
+      expect(failed.isErr() && failed.error.code).toBe('rental_commitment.insufficient_asset_availability');
+
+      await candidate({ ...setup, equipmentTypeId: catalog.equipmentTypes[0].id });
+      const retry = await create(input);
+
+      expect(retry.isOk()).toBe(true);
+      if (retry.isErr()) return;
+      expect(retry.value.rentalNumber).toBeGreaterThan(0);
+      expect(await commitmentCounts(setup)).toMatchObject({ rentals: 1 });
+    });
   });
 });

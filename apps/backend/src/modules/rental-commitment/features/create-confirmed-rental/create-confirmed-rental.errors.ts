@@ -20,7 +20,9 @@ export type CreateConfirmedRentalErrorCode =
   | 'rental_commitment.invalid_rental_field'
   | 'rental_commitment.invalid_catalog_selection_quantity'
   | 'rental_commitment.invalid_pricing_input'
-  | 'rental_commitment.duplicate_assigned_asset';
+  | 'rental_commitment.duplicate_assigned_asset'
+  | 'rental_commitment.invalid_idempotency_key'
+  | 'rental_commitment.idempotency_key_reused_with_different_input';
 
 export interface CreateConfirmedRentalError extends ApplicationError {
   code: CreateConfirmedRentalErrorCode;

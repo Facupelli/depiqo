@@ -1,4 +1,5 @@
 import { CommandBus } from '@nestjs/cqrs';
+import { randomUUID } from 'node:crypto';
 import { ok } from 'neverthrow';
 
 import {
@@ -118,7 +119,7 @@ describe('instant-bearing request boundaries', () => {
     const controller = new CreateConfirmedRentalHttpController(commandBus);
     const dto = CreateConfirmedRentalApplicationInputSchema.parse(wireCases[2][2]);
 
-    await controller.create(dto, { tenantId: 'tenant-1', id: 'customer-1' } as never);
+    await controller.create(randomUUID(), dto, { tenantId: 'tenant-1', id: 'customer-1' } as never);
 
     const command = (commandBus.execute as jest.Mock).mock.calls[0][0] as CreateConfirmedRentalCommand;
     expect(command.period.start).toBeInstanceOf(Date);

@@ -14,6 +14,10 @@ import {
 	useCartPeriodContext,
 } from "../cart-page.context";
 import {
+	clearConfirmationAttemptKey,
+	ensureConfirmationAttemptKey,
+} from "../confirmation-attempt-key";
+import {
 	type ConfirmedRentalErrorKind,
 	classifyConfirmedRentalError,
 	getUnavailableRentalOfferIds,
@@ -89,6 +93,7 @@ function useCartBookingCommand() {
 		try {
 			const rental = await createConfirmedRental({
 				body: confirmedRentalRequest.body,
+				idempotencyKey: ensureConfirmationAttemptKey(),
 			});
 			const pickupTime = pickupSlot
 				? formatSlotMinuteOfDay(pickupSlot.minuteOfDay)
@@ -99,6 +104,7 @@ function useCartBookingCommand() {
 					: undefined;
 
 			clearCart();
+			clearConfirmationAttemptKey();
 			await navigate({
 				to: "/confirmed-rental-success",
 				search: {
@@ -126,6 +132,11 @@ function useCartBookingCommand() {
 			}
 			if (kind === "DELIVERY_NOT_SUPPORTED") {
 				selectFulfillmentMethod("PICKUP");
+			}
+			if (kind === "IDEMPOTENCY_CONFLICT") {
+				// The stale attempt key no longer matches the current intent; start a
+				// fresh confirmation attempt on the next submit.
+				clearConfirmationAttemptKey();
 			}
 			if (
 				(kind === "AVAILABILITY_CONFLICT" ||
@@ -181,8 +192,6 @@ function getSubmissionErrorMessage(kind: ConfirmedRentalErrorKind): string {
 			return "Uno de los equipos del carrito ya no está disponible para reservar. Ajustá el carrito y volvé a intentarlo.";
 		case "DELIVERY_NOT_SUPPORTED":
 			return "Esta sucursal solo permite retiro en el local.";
-		case "IDEMPOTENCY_IN_PROGRESS":
-			return "Tu reserva todavía se está procesando. Esperá unos segundos y volvé a intentarlo.";
 		case "IDEMPOTENCY_CONFLICT":
 			return "Los datos de la reserva cambiaron durante el envío. Revisá la reserva y volvé a confirmarla.";
 		case "OTHER":

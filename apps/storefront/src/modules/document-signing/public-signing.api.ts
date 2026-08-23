@@ -8,8 +8,8 @@ import {
 	type GetPublicSigningSessionResponseDto,
 	GetPublicSigningSessionResponseSchema,
 	getPublicSigningSessionContract,
+	problemDetailsSchema,
 } from "@repo/api-contracts";
-import { problemDetailsSchema } from "@repo/api-contracts";
 import { z } from "zod";
 import { ProblemDetailsError } from "@/shared/errors";
 import {

@@ -9,15 +9,15 @@ const CATALOG_SELECTION_UNAVAILABLE_CODE =
 	"rental_commitment.catalog_selection_unavailable";
 const UNSUPPORTED_BRANCH_FULFILLMENT_METHOD_TYPE = `${PROBLEM_TYPE_BASE_URL}/rental-commitment/unsupported-branch-fulfillment-method`;
 const UNAUTHORIZED_TYPE = `${PROBLEM_TYPE_BASE_URL}/auth/unauthorized`;
-const IDEMPOTENCY_IN_PROGRESS_TYPE = "errors://idempotency-key-in-progress";
-const IDEMPOTENCY_CONFLICT_TYPE = "errors://idempotency-key-conflict";
+const IDEMPOTENCY_KEY_CONFLICT_TYPE = `${PROBLEM_TYPE_BASE_URL}/rental_commitment.idempotency_key_reused_with_different_input`;
+const IDEMPOTENCY_KEY_CONFLICT_CODE =
+	"rental_commitment.idempotency_key_reused_with_different_input";
 
 export type ConfirmedRentalErrorKind =
 	| "AVAILABILITY_CONFLICT"
 	| "CATALOG_SELECTION_UNAVAILABLE"
 	| "DELIVERY_NOT_SUPPORTED"
 	| "UNAUTHENTICATED"
-	| "IDEMPOTENCY_IN_PROGRESS"
 	| "IDEMPOTENCY_CONFLICT"
 	| "OTHER";
 
@@ -38,15 +38,18 @@ export function classifyConfirmedRentalError(
 		return "CATALOG_SELECTION_UNAVAILABLE";
 	}
 
+	if (
+		error.problemDetails.type === IDEMPOTENCY_KEY_CONFLICT_TYPE ||
+		error.problemDetails.code === IDEMPOTENCY_KEY_CONFLICT_CODE
+	) {
+		return "IDEMPOTENCY_CONFLICT";
+	}
+
 	switch (error.problemDetails.type) {
 		case UNSUPPORTED_BRANCH_FULFILLMENT_METHOD_TYPE:
 			return "DELIVERY_NOT_SUPPORTED";
 		case UNAUTHORIZED_TYPE:
 			return "UNAUTHENTICATED";
-		case IDEMPOTENCY_IN_PROGRESS_TYPE:
-			return "IDEMPOTENCY_IN_PROGRESS";
-		case IDEMPOTENCY_CONFLICT_TYPE:
-			return "IDEMPOTENCY_CONFLICT";
 		default:
 			return "OTHER";
 	}
@@ -56,7 +59,10 @@ export function getUnavailableRentalOfferIds(
 	error: ProblemDetailsError,
 ): string[] {
 	const kind = classifyConfirmedRentalError(error);
-	if (kind !== "AVAILABILITY_CONFLICT" && kind !== "CATALOG_SELECTION_UNAVAILABLE") {
+	if (
+		kind !== "AVAILABILITY_CONFLICT" &&
+		kind !== "CATALOG_SELECTION_UNAVAILABLE"
+	) {
 		return [];
 	}
 

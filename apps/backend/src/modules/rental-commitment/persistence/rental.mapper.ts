@@ -19,6 +19,7 @@ import { AssetId, EquipmentTypeId, RentalId } from '../domain/types/rental-commi
 import { BookingSnapshot, JsonValue } from '../domain/value-objects/json-snapshot.value-object';
 import { RentalPeriod } from '../domain/value-objects/rental-period.value-object';
 import { RentalOwnerSplitDraft } from '../owner-split/owner-split-calculator.types';
+import { ConfirmationOperationPersistence } from './rental.repository';
 
 export interface RentalPersistenceRecord {
   id: string;
@@ -190,7 +191,10 @@ export class RentalMapper {
     return result.value;
   }
 
-  static toRentalCreateData(rental: Rental): Prisma.V2RentalUncheckedCreateInput {
+  static toRentalCreateData(
+    rental: Rental,
+    confirmationOperation?: ConfirmationOperationPersistence,
+  ): Prisma.V2RentalUncheckedCreateInput {
     return {
       id: rental.id,
       tenantId: rental.tenantId,
@@ -208,6 +212,8 @@ export class RentalMapper {
       source: rental.source,
       cancelledAt: rental.cancelledAt,
       confirmedAt: rental.confirmedAt,
+      confirmationOperationId: confirmationOperation?.operationId,
+      confirmationFingerprint: confirmationOperation?.fingerprint,
     };
   }
 

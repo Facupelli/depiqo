@@ -1,5 +1,6 @@
-import { Body, Controller, HttpCode, HttpStatus, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Headers, HttpCode, HttpStatus, Post, UseGuards } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
+import { z } from 'zod';
 
 import { createProblemDetails, createProblemType, ProblemException } from 'src/core/problem-details';
 import { AUTH_ACTOR_TYPES, AuthCustomer } from 'src/modules/tenant-management/auth/shared/auth.types';
@@ -29,9 +30,11 @@ export class CreateConfirmedRentalHttpController {
   @AllowAuthActors(AUTH_ACTOR_TYPES.TENANT_CUSTOMER)
   @UseGuards(SessionAuthGuard, TenantCustomerSessionGuard)
   async create(
+    @Headers('idempotency-key') idempotencyKey: string | undefined,
     @Body() dto: CreateConfirmedRentalRequestDto,
     @CurrentUser() user: AuthCustomer,
   ): Promise<CreateConfirmedRentalResponseDto> {
+    const confirmationOperationId = parseIdempotencyKeyHeader(idempotencyKey, user.tenantId);
     let period: RentalPeriod;
 
     try {
@@ -56,6 +59,7 @@ export class CreateConfirmedRentalHttpController {
         deliveryDetails: dto.fulfillmentMethod === 'DELIVERY' ? dto.deliveryDetails : undefined,
         notes: dto.notes,
         insuranceSelected: dto.insuranceSelected,
+        confirmationOperationId,
       }),
     );
 
@@ -201,6 +205,18 @@ const createConfirmedRentalProblemMap = {
     HttpStatus.CONFLICT,
     'The same physical asset cannot be assigned more than once.',
   ),
+  'rental_commitment.invalid_idempotency_key': problem(
+    'invalid_idempotency_key',
+    'Invalid idempotency key',
+    HttpStatus.BAD_REQUEST,
+    'A valid Idempotency-Key header containing a UUID is required.',
+  ),
+  'rental_commitment.idempotency_key_reused_with_different_input': problem(
+    'idempotency_key_reused_with_different_input',
+    'Idempotency key reuse',
+    HttpStatus.CONFLICT,
+    'The Idempotency-Key was already used with a different confirmation request.',
+  ),
 } satisfies Record<CreateConfirmedRentalErrorCode, ProblemDefinition>;
 
 type ProblemDefinition = { type: string; title: string; status: HttpStatus; detail: string };
@@ -219,4 +235,22 @@ function availabilityProblemExtensions(error: CreateConfirmedRentalError): Recor
 
 function problem(slug: string, title: string, status: HttpStatus, detail: string): ProblemDefinition {
   return { type: createProblemType(`rental_commitment.${slug}`), title, status, detail };
+}
+
+const IdempotencyKeyHeaderSchema = z.string().uuid();
+
+function parseIdempotencyKeyHeader(value: string | undefined, tenantId: string): string {
+  const parsed = IdempotencyKeyHeaderSchema.safeParse(value);
+  if (parsed.success) {
+    return parsed.data;
+  }
+
+  throw toCreateConfirmedRentalProblem(
+    createConfirmedRentalError(
+      'rental_commitment.invalid_idempotency_key',
+      'The Idempotency-Key header must be a UUID.',
+      undefined,
+      { useCase: 'CreateConfirmedRental', tenantId },
+    ),
+  );
 }
