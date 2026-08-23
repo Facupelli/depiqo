@@ -1,4 +1,4 @@
-import { Button } from "@repo/ui/components/button";
+import { buttonVariants } from "@repo/ui/components/button";
 import { Link } from "@tanstack/react-router";
 import type { RentalOrdersListSearch } from "./components/rental-orders-list.context";
 import { RentalOrdersListProvider } from "./components/rental-orders-list.context";
@@ -40,7 +40,12 @@ function RentalsListPageHeader() {
 				</p>
 			</div>
 
-			<Button render={<Link to="/dashboard/orders/new">Nuevo borrador</Link>} />
+			<Link
+				to="/dashboard/orders/new"
+				className={buttonVariants({ className: "shrink-0" })}
+			>
+				Nuevo borrador
+			</Link>
 		</div>
 	);
 }

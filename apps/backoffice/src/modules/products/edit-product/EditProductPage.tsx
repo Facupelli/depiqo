@@ -19,7 +19,8 @@ export function EditProductPage({
 }) {
 	const navigate = useNavigate();
 	const [equipmentSearch, setEquipmentSearch] = useState("");
-	const { data: categories = [] } = useCategories();
+	const { data: categories = [], isPending: isCategoriesPending } =
+		useCategories();
 	const { data: equipmentTypes = [] } = useEquipmentTypeOptions({
 		search: equipmentSearch.trim() || undefined,
 		limit: equipmentTypeSearchLimit,
@@ -44,6 +45,7 @@ export function EditProductPage({
 				formId={`edit-product-${product.id}`}
 				defaultValues={defaultValues}
 				categories={categories.filter((category) => category.isActive)}
+				isCategoriesLoading={isCategoriesPending}
 				equipmentTypes={equipmentTypes}
 				equipmentSearch={equipmentSearch}
 				onEquipmentSearchChange={setEquipmentSearch}

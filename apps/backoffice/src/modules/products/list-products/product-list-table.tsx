@@ -127,9 +127,11 @@ export function ProductListTable({
 
 			<div className="flex items-center justify-between text-sm text-muted-foreground">
 				<span>
-					{total > 0
-						? `${firstItem}–${lastItem} de ${total} ítems`
-						: "No hay ítems"}
+					{isLoading
+						? "Cargando..."
+						: total > 0
+							? `${firstItem}–${lastItem} de ${total} ítems`
+							: "No hay ítems"}
 				</span>
 				<div className="flex items-center gap-2">
 					<Button

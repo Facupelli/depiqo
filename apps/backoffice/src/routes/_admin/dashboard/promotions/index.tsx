@@ -1,4 +1,4 @@
-import { Button } from "@repo/ui/components/button";
+import { buttonVariants } from "@repo/ui/components/button";
 import {
 	Tabs,
 	TabsContent,
@@ -58,10 +58,12 @@ function RouteComponent() {
 					</p>
 				</div>
 				{tab === "promotions" && (
-					<Button
-						className="shrink-0 gap-2"
-						render={<Link to="/dashboard/promotions/new">Nueva promocion</Link>}
-					/>
+					<Link
+						to="/dashboard/promotions/new"
+						className={buttonVariants({ className: "shrink-0 gap-2" })}
+					>
+						Nueva promocion
+					</Link>
 				)}
 				{/* TODO: Restore the coupon creation dialog after it is migrated to v2 promotion queries. */}
 			</div>

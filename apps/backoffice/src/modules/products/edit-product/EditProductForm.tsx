@@ -13,6 +13,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@repo/ui/components/select";
+import { Skeleton } from "@repo/ui/components/skeleton";
 import {
 	Table,
 	TableBody,
@@ -40,6 +41,7 @@ interface EditProductFormProps {
 	formId: string;
 	defaultValues: EditProductFormValues;
 	categories: SelectOption[];
+	isCategoriesLoading?: boolean;
 	equipmentTypes: SelectOption[];
 	equipmentSearch: string;
 	isPending: boolean;
@@ -52,6 +54,7 @@ export function EditProductForm({
 	formId,
 	defaultValues,
 	categories,
+	isCategoriesLoading = false,
 	equipmentTypes,
 	equipmentSearch,
 	isPending,
@@ -122,28 +125,32 @@ export function EditProductForm({
 								{(field) => (
 									<Field>
 										<FieldLabel>Categoría</FieldLabel>
-										<Select
-											items={categoryItems}
-											value={field.state.value || "sin-categoria"}
-											onValueChange={(value) =>
-												field.handleChange(
-													value === "sin-categoria" || value == null
-														? ""
-														: value,
-												)
-											}
-										>
-											<SelectTrigger>
-												<SelectValue placeholder="Selecciona una categoría" />
-											</SelectTrigger>
-											<SelectContent>
-												{categoryItems.map((item) => (
-													<SelectItem key={item.value} value={item.value}>
-														{item.label}
-													</SelectItem>
-												))}
-											</SelectContent>
-										</Select>
+										{isCategoriesLoading ? (
+											<Skeleton className="h-9 w-full" />
+										) : (
+											<Select
+												items={categoryItems}
+												value={field.state.value || "sin-categoria"}
+												onValueChange={(value) =>
+													field.handleChange(
+														value === "sin-categoria" || value == null
+															? ""
+															: value,
+													)
+												}
+											>
+												<SelectTrigger>
+													<SelectValue placeholder="Selecciona una categoría" />
+												</SelectTrigger>
+												<SelectContent>
+													{categoryItems.map((item) => (
+														<SelectItem key={item.value} value={item.value}>
+															{item.label}
+														</SelectItem>
+													))}
+												</SelectContent>
+											</Select>
+										)}
 									</Field>
 								)}
 							</form.Field>

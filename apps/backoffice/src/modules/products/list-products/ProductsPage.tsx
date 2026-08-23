@@ -6,6 +6,7 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@repo/ui/components/dropdown-menu";
+import { keepPreviousData } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import type { PaginationState } from "@tanstack/react-table";
 import { Plus } from "lucide-react";
@@ -29,7 +30,9 @@ export function ProductsPage({ search }: { search: ProductListSearch }) {
 	const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
 	const debouncedSearch = useDebounce(searchInput, 300);
 
-	const { data, isFetching, isError } = useProducts(search);
+	const { data, isLoading, isError } = useProducts(search, {
+		placeholderData: keepPreviousData,
+	});
 	const { data: categories = [] } = useCategories();
 	const { data: branches = [] } = useBranches({ isActive: true });
 	const activeCategories = categories.filter((category) => category.isActive);
@@ -149,7 +152,7 @@ export function ProductsPage({ search }: { search: ProductListSearch }) {
 						})
 					}
 					categoryNameById={categoryNameById}
-					isLoading={isFetching}
+					isLoading={isLoading}
 				/>
 			)}
 		</div>
