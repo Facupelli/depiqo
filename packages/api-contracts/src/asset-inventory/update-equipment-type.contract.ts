@@ -22,13 +22,16 @@ export const UpdateEquipmentTypeBodySchema = z
       message: "At least one metadata field must be provided.",
     },
   );
-export const UpdateEquipmentTypeResponseSchema = z.void();
+export const UpdateEquipmentTypeResponseSchema = z.null();
 
 export type UpdateEquipmentTypeParamsDto = z.infer<
   typeof UpdateEquipmentTypeParamsSchema
 >;
 export type UpdateEquipmentTypeBodyDto = z.infer<
   typeof UpdateEquipmentTypeBodySchema
+>;
+export type UpdateEquipmentTypeResponseDto = z.infer<
+  typeof UpdateEquipmentTypeResponseSchema
 >;
 
 export const updateEquipmentTypeContract = {

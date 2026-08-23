@@ -18,7 +18,7 @@ import {
 } from "@repo/ui/components/table";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { Box, MapPin, PackageOpen, ShoppingBag } from "lucide-react";
+import { Box, MapPin, PackageOpen, Pencil, ShoppingBag } from "lucide-react";
 import { type ReactNode, useId, useState } from "react";
 import { PageBreadcrumb } from "@/components/detail-id-breadcrumb";
 import { buildR2PublicUrl } from "@/lib/r2-public-url";
@@ -30,6 +30,7 @@ import { toAddAccessorySuggestionsDto } from "../accessory-suggestions/add-acces
 import { AddUnitsForm } from "../add-units/AddUnitsForm";
 import { useAddUnitsToEquipmentType } from "../add-units/add-units.mutation";
 import { toAddUnitsToEquipmentTypeDto } from "../add-units/add-units.schema";
+import { EditEquipmentTypeDialog } from "../edit-equipment-type/edit-equipment-type-dialog";
 import { equipmentTypeProductUsageQueries } from "../product-usages/equipment-type-product-usages.queries";
 import { equipmentTypeDetailQueries } from "./equipment-type-detail.queries";
 
@@ -105,6 +106,8 @@ function EquipmentTypeHeader({
 	equipmentType: GetEquipmentTypeDetailResponseDto;
 	imageUrl: string | null;
 }) {
+	const [editOpen, setEditOpen] = useState(false);
+
 	return (
 		<section className="flex items-start gap-5">
 			<div className="flex size-24 shrink-0 items-center justify-center overflow-hidden rounded-xl border bg-muted/20 sm:size-32">
@@ -118,7 +121,7 @@ function EquipmentTypeHeader({
 					<PackageOpen className="size-10 text-muted-foreground" />
 				)}
 			</div>
-			<div className="min-w-0 py-2">
+			<div className="min-w-0 flex-1 py-2">
 				<h1 className="truncate text-3xl font-semibold tracking-tight">
 					{equipmentType.name}
 				</h1>
@@ -131,6 +134,22 @@ function EquipmentTypeHeader({
 					</p>
 				) : null}
 			</div>
+			<div className="py-2">
+				<Button
+					type="button"
+					variant="outline"
+					size="sm"
+					onClick={() => setEditOpen(true)}
+				>
+					<Pencil className="mr-2 h-4 w-4" />
+					Editar
+				</Button>
+			</div>
+			<EditEquipmentTypeDialog
+				open={editOpen}
+				onOpenChange={setEditOpen}
+				equipmentType={equipmentType}
+			/>
 		</section>
 	);
 }
