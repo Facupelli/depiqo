@@ -4,6 +4,8 @@ import { AssetInventoryModule } from '../asset-inventory/asset-inventory.module'
 import { TenantManagementModule } from '../tenant-management/tenant-management.module';
 import { ActivateRentableItemHttpController } from './features/activate-rentable-item/activate-rentable-item.controller';
 import { ActivateRentableItemHandler } from './features/activate-rentable-item/activate-rentable-item.handler';
+import { ArchiveRentableItemHttpController } from './features/archive-rentable-item/archive-rentable-item.controller';
+import { ArchiveRentableItemHandler } from './features/archive-rentable-item/archive-rentable-item.handler';
 import { CreateRentalOfferForRentableItemService } from './features/create-rental-offer-for-rentable-item/create-rental-offer-for-rentable-item.service';
 import { CreateRentableItemOfferingService } from './features/create-rentable-item-offering/create-rentable-item-offering.service';
 import { GetEquipmentTypeProductUsagesHttpController } from './features/get-equipment-type-product-usages/get-equipment-type-product-usages.controller';
@@ -35,6 +37,7 @@ import { CatalogSelectionResolutionService } from './public-api/catalog-selectio
   imports: [AssetInventoryModule, TenantManagementModule],
   controllers: [
     ActivateRentableItemHttpController,
+    ArchiveRentableItemHttpController,
     GetEquipmentTypeProductUsagesHttpController,
     GetRentableItemDetailHttpController,
     GetRentableItemSummariesHttpController,
@@ -48,6 +51,7 @@ import { CatalogSelectionResolutionService } from './public-api/catalog-selectio
     { provide: CatalogOfferingAuthoring, useClass: CatalogOfferingAuthoringService },
     { provide: CatalogSelectionResolution, useClass: CatalogSelectionResolutionService },
     ActivateRentableItemHandler,
+    ArchiveRentableItemHandler,
     GetEquipmentTypeProductUsagesHandler,
     CreateRentalOfferForRentableItemService,
     CreateRentableItemOfferingService,

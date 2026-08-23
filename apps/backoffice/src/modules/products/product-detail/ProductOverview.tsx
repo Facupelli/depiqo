@@ -10,6 +10,7 @@ import {
 } from "@repo/ui/components/dropdown-menu";
 import { Link } from "@tanstack/react-router";
 import {
+	Archive,
 	Building2,
 	CircleDollarSign,
 	Ellipsis,
@@ -18,7 +19,9 @@ import {
 	Plus,
 	Wrench,
 } from "lucide-react";
+import { useState } from "react";
 import { ActivateProductAction } from "@/modules/products/activate-product/ActivateProductAction";
+import { ArchiveProductAction } from "@/modules/products/archive-product/ArchiveProductAction";
 import { AddBranchAvailabilityDialog } from "@/modules/products/branch-availability/add-branch-availability/AddBranchAvailabilityDialog";
 import type { PricePlanOption } from "@/modules/products/product-pricing/price-plan-selection/PricePlanSelectionForm";
 import { getKindLabel } from "./product-detail.utils";
@@ -131,6 +134,9 @@ function ProductActions({
 	product: GetRentableItemDetailResponseDto;
 	ratePlanOptions: PricePlanOption[];
 }) {
+	const [addOfferOpen, setAddOfferOpen] = useState(false);
+	const [archiveOpen, setArchiveOpen] = useState(false);
+
 	return (
 		<div className="flex shrink-0 items-center gap-2">
 			{product.status === "DRAFT" ? (
@@ -161,18 +167,34 @@ function ProductActions({
 					}
 				/>
 				<DropdownMenuContent align="end" className="min-w-fit">
-					<AddBranchAvailabilityDialog
-						item={product}
-						ratePlanOptions={ratePlanOptions}
-						trigger={
-							<DropdownMenuItem>
-								<Plus className="size-4" />
-								Ofrecer en otra sucursal
-							</DropdownMenuItem>
-						}
-					/>
+					<DropdownMenuItem onClick={() => setAddOfferOpen(true)}>
+						<Plus className="size-4" />
+						Ofrecer en otra sucursal
+					</DropdownMenuItem>
+					{product.status !== "ARCHIVED" ? (
+						<DropdownMenuItem
+							variant="destructive"
+							onClick={() => setArchiveOpen(true)}
+						>
+							<Archive className="size-4" />
+							Archivar
+						</DropdownMenuItem>
+					) : null}
 				</DropdownMenuContent>
 			</DropdownMenu>
+			<AddBranchAvailabilityDialog
+				item={product}
+				ratePlanOptions={ratePlanOptions}
+				open={addOfferOpen}
+				onOpenChange={setAddOfferOpen}
+			/>
+			{product.status !== "ARCHIVED" ? (
+				<ArchiveProductAction
+					product={product}
+					open={archiveOpen}
+					onOpenChange={setArchiveOpen}
+				/>
+			) : null}
 		</div>
 	);
 }

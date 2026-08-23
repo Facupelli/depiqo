@@ -128,6 +128,20 @@ export class RentableItem extends AggregateRootBase {
     return ok(undefined);
   }
 
+  /**
+   * Transitions the item to ARCHIVED. Allowed from DRAFT and ACTIVE.
+   * Archiving an already archived item is an idempotent no-op.
+   * Returns whether a transition occurred (false means it was already archived).
+   */
+  archive(): Result<boolean, CatalogError> {
+    if (this.props.status === 'ARCHIVED') {
+      return ok(false);
+    }
+
+    this.props.status = 'ARCHIVED';
+    return ok(true);
+  }
+
   updateDefinition(input: UpdateRentableItemDefinitionProps): Result<void, CatalogError> {
     if (this.props.status === 'ARCHIVED') {
       return err(new CatalogRentableItemArchivedError(this.id));
