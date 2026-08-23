@@ -10,7 +10,7 @@ export const CreatePackageRequirementBodySchema = z.object({
 export const CreatePackageBodySchema = z.object({
   name: z.string().min(1),
   description: z.string().optional().nullable(),
-  imageUrl: z.string().url().optional().nullable(),
+  imageUrl: z.string().min(1).optional().nullable(),
   categoryId: z.string().optional().nullable(),
   branchIds: z.array(z.string().min(1)).min(1),
   requirements: z.array(CreatePackageRequirementBodySchema).min(1),

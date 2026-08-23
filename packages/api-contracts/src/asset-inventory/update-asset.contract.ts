@@ -11,10 +11,11 @@ export const UpdateAssetBodySchema = z
   .refine((value) => value.serialNumber !== undefined || value.notes !== undefined, {
     message: "At least one metadata field must be provided.",
   });
-export const UpdateAssetResponseSchema = z.void();
+export const UpdateAssetResponseSchema = z.null();
 
 export type UpdateAssetParamsDto = z.infer<typeof UpdateAssetParamsSchema>;
 export type UpdateAssetBodyDto = z.infer<typeof UpdateAssetBodySchema>;
+export type UpdateAssetResponseDto = z.infer<typeof UpdateAssetResponseSchema>;
 
 export const updateAssetContract = {
   method: "PATCH",
