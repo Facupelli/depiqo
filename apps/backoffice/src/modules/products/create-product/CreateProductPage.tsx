@@ -1,8 +1,13 @@
 import { useNavigate } from "@tanstack/react-router";
+import { useState } from "react";
 import { useOwnerOptions } from "@/modules/inventory/ownership/public";
 import { useBranches } from "@/modules/settings/branches/public";
 import { useCategories } from "@/modules/settings/categories/public";
 import { CreateProductForm } from "./CreateProductForm";
+import {
+	type CreateProductSubmissionError,
+	mapCreateProductError,
+} from "./create-product.errors";
 import { useCreateProduct } from "./create-product.mutation";
 import { toCreateProductDto } from "./create-product.schema";
 
@@ -14,6 +19,8 @@ export function CreateProductPage() {
 	const { data: branches = [] } = useBranches();
 	const { data: owners = [] } = useOwnerOptions();
 	const { mutateAsync: createProduct, isPending } = useCreateProduct();
+	const [submitError, setSubmitError] =
+		useState<CreateProductSubmissionError | null>(null);
 
 	return (
 		<div className="mx-auto w-full max-w-6xl px-6 py-10">
@@ -33,10 +40,17 @@ export function CreateProductPage() {
 				branches={branches}
 				owners={owners}
 				isPending={isPending}
+				submitError={submitError}
+				onClearSubmitError={() => setSubmitError(null)}
 				onCancel={() => navigate({ to: "/dashboard/catalog" })}
 				onSubmit={async (values) => {
-					await createProduct(toCreateProductDto(values));
-					navigate({ to: "/dashboard/catalog" });
+					setSubmitError(null);
+					try {
+						await createProduct(toCreateProductDto(values));
+						navigate({ to: "/dashboard/catalog" });
+					} catch (error) {
+						setSubmitError(mapCreateProductError(error));
+					}
 				}}
 			/>
 		</div>

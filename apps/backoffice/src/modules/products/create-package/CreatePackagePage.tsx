@@ -4,6 +4,10 @@ import { useEquipmentTypeOptions } from "@/modules/inventory/equipment-types/pub
 import { useBranches } from "@/modules/settings/branches/public";
 import { useCategories } from "@/modules/settings/categories/public";
 import { CreatePackageForm } from "./CreatePackageForm";
+import {
+	type CreatePackageSubmissionError,
+	mapCreatePackageError,
+} from "./create-package.errors";
 import { useCreatePackage } from "./create-package.mutation";
 import { toCreatePackageDto } from "./create-package.schema";
 
@@ -20,6 +24,8 @@ export function CreatePackagePage() {
 		limit: equipmentTypeSearchLimit,
 	});
 	const { mutateAsync: createPackage, isPending } = useCreatePackage();
+	const [submitError, setSubmitError] =
+		useState<CreatePackageSubmissionError | null>(null);
 
 	return (
 		<div className="mx-auto w-full max-w-6xl px-6 py-10">
@@ -42,13 +48,19 @@ export function CreatePackagePage() {
 				equipmentSearch={equipmentSearch}
 				onEquipmentSearchChange={setEquipmentSearch}
 				isPending={isPending}
+				submitError={submitError}
 				submitLabel="Crear paquete"
 				pendingLabel="Creando..."
 				cancelLabel="Cancelar"
 				onCancel={() => navigate({ to: "/dashboard/catalog" })}
 				onSubmit={async (values) => {
-					await createPackage(toCreatePackageDto(values));
-					navigate({ to: "/dashboard/catalog" });
+					setSubmitError(null);
+					try {
+						await createPackage(toCreatePackageDto(values));
+						navigate({ to: "/dashboard/catalog" });
+					} catch (error) {
+						setSubmitError(mapCreatePackageError(error));
+					}
 				}}
 			/>
 		</div>

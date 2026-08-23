@@ -27,6 +27,7 @@ import { useForm } from "@tanstack/react-form";
 import { Trash2 } from "lucide-react";
 import { useId } from "react";
 import { CatalogImageUploader } from "@/shared/components/catalog-image-uploader";
+import type { CreatePackageSubmissionError } from "./create-package.errors";
 import {
 	type CreatePackageFormValues,
 	createPackageFormDefaultValues,
@@ -52,6 +53,7 @@ interface CreatePackageFormProps {
 	equipmentTypes: PackageEquipmentTypeOption[];
 	equipmentSearch: string;
 	isPending: boolean;
+	submitError?: CreatePackageSubmissionError | null;
 	submitLabel?: string;
 	pendingLabel?: string;
 	cancelLabel?: string;
@@ -68,6 +70,7 @@ export function CreatePackageForm({
 	equipmentTypes,
 	equipmentSearch,
 	isPending,
+	submitError,
 	submitLabel = "Crear paquete",
 	pendingLabel = "Creando...",
 	cancelLabel = "Cancelar",
@@ -482,6 +485,11 @@ export function CreatePackageForm({
 			</form>
 
 			<div className="sticky bottom-0 mt-10 flex justify-end gap-4 border-t bg-background/95 py-4 backdrop-blur supports-backdrop-filter:bg-background/80">
+				{submitError && (
+					<p className="mr-auto self-center text-sm text-destructive">
+						{submitError.message}
+					</p>
+				)}
 				<Button type="button" variant="outline" onClick={onCancel}>
 					{cancelLabel}
 				</Button>

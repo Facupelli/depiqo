@@ -25,6 +25,7 @@ import { Textarea } from "@repo/ui/components/textarea";
 import { useForm } from "@tanstack/react-form";
 import { Plus, Trash2 } from "lucide-react";
 import { CatalogImageUploader } from "@/shared/components/catalog-image-uploader";
+import type { CreateProductSubmissionError } from "./create-product.errors";
 import {
 	type CreateProductFormValues,
 	createEmptyProductUnit,
@@ -51,6 +52,8 @@ interface CreateProductFormProps {
 	branches: SelectOption[];
 	owners?: SelectOption[];
 	isPending: boolean;
+	submitError?: CreateProductSubmissionError | null;
+	onClearSubmitError?: () => void;
 	submitLabel?: string;
 	pendingLabel?: string;
 	cancelLabel?: string;
@@ -65,6 +68,8 @@ export function CreateProductForm({
 	branches,
 	owners = [],
 	isPending,
+	submitError,
+	onClearSubmitError,
 	submitLabel = "Crear producto",
 	pendingLabel = "Creando...",
 	cancelLabel = "Cancelar",
@@ -116,9 +121,14 @@ export function CreateProductForm({
 								{(field) => {
 									const isInvalid =
 										field.state.meta.isTouched && !field.state.meta.isValid;
+									const nameServerError =
+										submitError?.kind === "field" &&
+										submitError.field === "name"
+											? submitError.message
+											: null;
 
 									return (
-										<Field data-invalid={isInvalid}>
+										<Field data-invalid={isInvalid || nameServerError != null}>
 											<FieldLabel htmlFor={field.name}>
 												Nombre del producto
 											</FieldLabel>
@@ -128,15 +138,22 @@ export function CreateProductForm({
 												type="text"
 												value={field.state.value}
 												onBlur={field.handleBlur}
-												onChange={(event) =>
-													field.handleChange(event.target.value)
-												}
-												aria-invalid={isInvalid}
+												onChange={(event) => {
+													if (nameServerError) {
+														onClearSubmitError?.();
+													}
+													field.handleChange(event.target.value);
+												}}
+												aria-invalid={isInvalid || nameServerError != null}
 												placeholder="Ej. Cámara Sony FX3"
 											/>
-											{isInvalid && (
+											{isInvalid ? (
 												<FieldError errors={field.state.meta.errors} />
-											)}
+											) : nameServerError ? (
+												<p className="text-sm text-destructive">
+													{nameServerError}
+												</p>
+											) : null}
 										</Field>
 									);
 								}}
@@ -434,6 +451,11 @@ export function CreateProductForm({
 			</form>
 
 			<div className="sticky bottom-0 mt-10 flex justify-end gap-4 border-t bg-background/95 py-4 backdrop-blur supports-backdrop-filter:bg-background/80">
+				{submitError?.kind === "form" && (
+					<p className="mr-auto self-center text-sm text-destructive">
+						{submitError.message}
+					</p>
+				)}
 				<Button type="button" variant="outline" onClick={onCancel}>
 					{cancelLabel}
 				</Button>
