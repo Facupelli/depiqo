@@ -17,6 +17,7 @@ export const GetEquipmentTypeDetailAccessoryDefaultSchema = z.object({
 export const GetEquipmentTypeDetailAssetSchema = z.object({
   id: z.string(),
   serialNumber: z.string().nullable(),
+  notes: z.string().nullable(),
   branchId: z.string(),
   branchName: z.string().nullable(),
   status: AssetStatusSchema,

@@ -22,8 +22,12 @@ import { Box, MapPin, PackageOpen, Pencil, ShoppingBag } from "lucide-react";
 import { type ReactNode, useId, useState } from "react";
 import { PageBreadcrumb } from "@/components/detail-id-breadcrumb";
 import { buildR2PublicUrl } from "@/lib/r2-public-url";
+import { EditAssetDialog } from "@/modules/inventory/assets/edit-asset/edit-asset-dialog";
+import { useRetireAsset } from "@/modules/inventory/assets/retire-asset/retire-asset.mutation";
+import { RetireAssetAlertDialog } from "@/modules/inventory/assets/retire-asset/retire-asset-alert-dialog";
 import { useOwnerOptions } from "@/modules/inventory/ownership/owner-options.queries";
 import { useBranches } from "@/modules/settings/branches/public";
+import { ProblemDetailsError } from "@/shared/errors";
 import { AddAccessorySuggestionsForm } from "../accessory-suggestions/AddAccessorySuggestionsForm";
 import { useAddAccessorySuggestions } from "../accessory-suggestions/add-accessory-suggestions.mutation";
 import { toAddAccessorySuggestionsDto } from "../accessory-suggestions/add-accessory-suggestions.schema";
@@ -33,6 +37,7 @@ import { toAddUnitsToEquipmentTypeDto } from "../add-units/add-units.schema";
 import { EditEquipmentTypeDialog } from "../edit-equipment-type/edit-equipment-type-dialog";
 import { equipmentTypeProductUsageQueries } from "../product-usages/equipment-type-product-usages.queries";
 import { equipmentTypeDetailQueries } from "./equipment-type-detail.queries";
+import { UnitRowActionsMenu } from "./unit-row-actions-menu";
 
 export function EquipmentTypeDetailPage({
 	equipmentTypeId,
@@ -183,42 +188,125 @@ function OverviewMetric({
 	);
 }
 
+type EquipmentUnit = GetEquipmentTypeDetailResponseDto["assets"][number];
+
 function EquipmentUnitsTable({
 	equipmentType,
 }: {
 	equipmentType: GetEquipmentTypeDetailResponseDto;
 }) {
+	const [editingUnit, setEditingUnit] = useState<EquipmentUnit | null>(null);
+	const [retiringUnit, setRetiringUnit] = useState<EquipmentUnit | null>(null);
+	const [retireErrorMessage, setRetireErrorMessage] = useState<string | null>(
+		null,
+	);
+	const { mutateAsync: retireAsset, isPending: isRetiring } = useRetireAsset();
+
+	async function handleRetireConfirm() {
+		if (!retiringUnit) {
+			return;
+		}
+
+		try {
+			setRetireErrorMessage(null);
+			await retireAsset({
+				equipmentTypeId: equipmentType.id,
+				assetId: retiringUnit.id,
+			});
+			setRetiringUnit(null);
+		} catch (error) {
+			if (error instanceof ProblemDetailsError) {
+				setRetireErrorMessage(
+					error.problemDetails.detail ?? error.problemDetails.title,
+				);
+			} else {
+				setRetireErrorMessage("No se pudo marcar la unidad como retirada.");
+			}
+		}
+	}
+
 	return (
-		<DetailTable
-			title="Unidades"
-			colSpan={4}
-			isEmpty={equipmentType.assets.length === 0}
-			emptyMessage="No hay unidades para este equipo."
-			actions={<AddUnitsDialog equipmentTypeId={equipmentType.id} />}
-		>
-			<TableHeader>
-				<TableRow className="bg-muted/80">
-					<TableHead className="pl-4">N° de serie</TableHead>
-					<TableHead>Sucursal</TableHead>
-					<TableHead>Estado</TableHead>
-					<TableHead>Dueño</TableHead>
-				</TableRow>
-			</TableHeader>
-			<TableBody>
-				{equipmentType.assets.map((unit) => (
-					<TableRow key={unit.id}>
-						<TableCell className="font-medium pl-4">
-							{unit.serialNumber ?? "-"}
-						</TableCell>
-						<TableCell>{unit.branchName ?? unit.branchId}</TableCell>
-						<TableCell>
-							<EquipmentUnitStatusBadge status={unit.status} />
-						</TableCell>
-						<TableCell>{unit.ownerName ?? unit.ownerId ?? "-"}</TableCell>
+		<>
+			<DetailTable
+				title="Unidades"
+				colSpan={5}
+				isEmpty={equipmentType.assets.length === 0}
+				emptyMessage="No hay unidades para este equipo."
+				actions={<AddUnitsDialog equipmentTypeId={equipmentType.id} />}
+			>
+				<TableHeader>
+					<TableRow className="bg-muted/80">
+						<TableHead className="pl-4">N° de serie</TableHead>
+						<TableHead>Sucursal</TableHead>
+						<TableHead>Estado</TableHead>
+						<TableHead>Dueño</TableHead>
+						<TableHead className="w-12" />
 					</TableRow>
-				))}
-			</TableBody>
-		</DetailTable>
+				</TableHeader>
+				<TableBody>
+					{equipmentType.assets.map((unit) => (
+						<TableRow key={unit.id}>
+							<TableCell className="pl-4">
+								<div className="min-w-0">
+									<p className="font-medium">{unit.serialNumber ?? "-"}</p>
+									{unit.notes ? (
+										<p
+											className="max-w-56 truncate text-muted-foreground text-xs"
+											title={unit.notes}
+										>
+											{unit.notes}
+										</p>
+									) : null}
+								</div>
+							</TableCell>
+							<TableCell>{unit.branchName ?? unit.branchId}</TableCell>
+							<TableCell>
+								<EquipmentUnitStatusBadge status={unit.status} />
+							</TableCell>
+							<TableCell>{unit.ownerName ?? unit.ownerId ?? "-"}</TableCell>
+							<TableCell>
+								<UnitRowActionsMenu
+									unit={unit}
+									onEdit={setEditingUnit}
+									onRetire={(target) => {
+										setRetireErrorMessage(null);
+										setRetiringUnit(target);
+									}}
+								/>
+							</TableCell>
+						</TableRow>
+					))}
+				</TableBody>
+			</DetailTable>
+
+			{editingUnit ? (
+				<EditAssetDialog
+					open
+					onOpenChange={(open) => {
+						if (!open) {
+							setEditingUnit(null);
+						}
+					}}
+					equipmentTypeId={equipmentType.id}
+					unit={editingUnit}
+				/>
+			) : null}
+
+			{retiringUnit ? (
+				<RetireAssetAlertDialog
+					open
+					onOpenChange={(open) => {
+						if (!open) {
+							setRetiringUnit(null);
+						}
+					}}
+					unit={retiringUnit}
+					isPending={isRetiring}
+					errorMessage={retireErrorMessage}
+					onConfirm={handleRetireConfirm}
+				/>
+			) : null}
+		</>
 	);
 }
 

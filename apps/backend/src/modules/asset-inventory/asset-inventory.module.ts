@@ -7,6 +7,8 @@ import { AddAssetsToEquipmentTypeHttpController } from './features/add-assets-to
 import { AddAssetsToEquipmentTypeHandler } from './features/add-assets-to-equipment-type/add-assets-to-equipment-type.handler';
 import { ReplaceEquipmentTypeAccessoryDefaultsHttpController } from './features/replace-equipment-type-accessory-defaults/replace-equipment-type-accessory-defaults.controller';
 import { ReplaceEquipmentTypeAccessoryDefaultsHandler } from './features/replace-equipment-type-accessory-defaults/replace-equipment-type-accessory-defaults.handler';
+import { RetireAssetHttpController } from './features/retire-asset/retire-asset.controller';
+import { RetireAssetHandler } from './features/retire-asset/retire-asset.handler';
 import { UpdateAssetHttpController } from './features/update-asset/update-asset.controller';
 import { UpdateAssetHandler } from './features/update-asset/update-asset.handler';
 import { UpdateEquipmentTypeHttpController } from './features/update-equipment-type/update-equipment-type.controller';
@@ -50,6 +52,7 @@ import { EquipmentTypeReferenceAuthority } from './public-api/equipment-type-ref
   controllers: [
     AddAssetsToEquipmentTypeHttpController,
     ReplaceEquipmentTypeAccessoryDefaultsHttpController,
+    RetireAssetHttpController,
     UpdateAssetHttpController,
     UpdateEquipmentTypeHttpController,
     CreateEquipmentTypeAccessoryDefaultsHttpController,
@@ -67,6 +70,7 @@ import { EquipmentTypeReferenceAuthority } from './public-api/equipment-type-ref
   providers: [
     AddAssetsToEquipmentTypeHandler,
     ReplaceEquipmentTypeAccessoryDefaultsHandler,
+    RetireAssetHandler,
     UpdateAssetHandler,
     UpdateEquipmentTypeHandler,
     CreateEquipmentTypeAccessoryDefaultsHandler,

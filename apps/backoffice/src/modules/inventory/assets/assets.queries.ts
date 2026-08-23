@@ -15,7 +15,7 @@ export type AssetsQueryOverrides<TData = GetAssetsResponseDto> = Omit<
 	"queryKey" | "queryFn"
 >;
 
-const assetKeys = {
+export const assetKeys = {
 	all: () => ["v2", "asset-inventory", "assets"] as const,
 	list: (filters?: GetAssetsQueryDto) =>
 		[...assetKeys.all(), filters ?? {}] as const,

@@ -17,6 +17,7 @@ export interface GetEquipmentTypeDetailAccessoryDefaultReadModel {
 export interface GetEquipmentTypeDetailAssetReadModel {
   id: string;
   serialNumber: string | null;
+  notes: string | null;
   branchId: string;
   branchName: string | null;
   status: 'ACTIVE' | 'INACTIVE' | 'RETIRED';
@@ -82,6 +83,7 @@ export class GetEquipmentTypeDetailHandler implements IQueryHandler<
           select: {
             id: true,
             serialNumber: true,
+            notes: true,
             branchId: true,
             status: true,
             ownerId: true,
@@ -138,6 +140,7 @@ export class GetEquipmentTypeDetailHandler implements IQueryHandler<
       assets: equipmentType.assets.map((asset) => ({
         id: asset.id,
         serialNumber: asset.serialNumber,
+        notes: asset.notes,
         branchId: asset.branchId,
         branchName: branchNameById.get(asset.branchId) ?? null,
         status: asset.status,

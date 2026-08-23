@@ -5,6 +5,7 @@ import { err, ok, Result } from 'neverthrow';
 import { AggregateRootBase } from 'src/core/domain/aggregate-root.base';
 
 import { AssetCreatedDomainEvent, AssetOwnerContractSnapshotPayload } from './events/asset-created.domain-event';
+import { AssetRetiredDomainEvent } from './events/asset-retired.domain-event';
 import { AssetInventoryError, InvalidAssetFieldError } from './errors/asset-inventory.errors';
 
 export type AssetStatus = 'ACTIVE' | 'INACTIVE' | 'RETIRED';
@@ -128,6 +129,26 @@ export class Asset extends AggregateRootBase {
 
     this.props.serialNumber = serialNumber;
     this.props.notes = notes;
+    return true;
+  }
+
+  /**
+   * RETIRED is terminal. Retiring an already-retired asset is an idempotent
+   * no-op and returns false without recording a domain event.
+   */
+  retire(): boolean {
+    if (this.props.status === 'RETIRED') {
+      return false;
+    }
+
+    this.props.status = 'RETIRED';
+    this.recordDomainEvent(
+      new AssetRetiredDomainEvent({
+        tenantId: this.tenantId,
+        assetId: this.id,
+      }),
+    );
+
     return true;
   }
 
