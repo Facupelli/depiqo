@@ -20,6 +20,7 @@ import {
 	addAccessorySuggestionsFormDefaultValues,
 	addAccessorySuggestionsFormSchema,
 	createAccessorySuggestionItem,
+	editAccessorySuggestionsFormSchema,
 } from "./add-accessory-suggestions.schema";
 
 interface AddAccessorySuggestionsFormProps {
@@ -27,6 +28,7 @@ interface AddAccessorySuggestionsFormProps {
 	equipmentTypeId: string;
 	existingAccessoryEquipmentTypeIds: string[];
 	defaultValues?: AddAccessorySuggestionsFormValues;
+	allowEmpty?: boolean;
 	isPending: boolean;
 	submitLabel?: string;
 	pendingLabel?: string;
@@ -40,6 +42,7 @@ export function AddAccessorySuggestionsForm({
 	equipmentTypeId,
 	existingAccessoryEquipmentTypeIds,
 	defaultValues = addAccessorySuggestionsFormDefaultValues(),
+	allowEmpty = false,
 	isPending,
 	submitLabel = "Agregar accesorios",
 	pendingLabel = "Agregando...",
@@ -58,7 +61,9 @@ export function AddAccessorySuggestionsForm({
 	const form = useForm({
 		defaultValues,
 		validators: {
-			onSubmit: addAccessorySuggestionsFormSchema,
+			onSubmit: allowEmpty
+				? editAccessorySuggestionsFormSchema
+				: addAccessorySuggestionsFormSchema,
 		},
 		onSubmit: async ({ value }) => {
 			await onSubmit(value);
@@ -136,7 +141,9 @@ export function AddAccessorySuggestionsForm({
 														colSpan={3}
 														className="h-24 text-center text-muted-foreground"
 													>
-														Selecciona al menos un accesorio por defecto.
+														{allowEmpty
+															? "Sin accesorios sugeridos. Agrega uno o guarda para quitarlos todos."
+															: "Selecciona al menos un accesorio por defecto."}
 													</TableCell>
 												</TableRow>
 											) : null}
@@ -223,7 +230,9 @@ export function AddAccessorySuggestionsForm({
 						<Button
 							type="submit"
 							form={formId}
-							disabled={!canSubmit || accessoryCount === 0 || isPending}
+							disabled={
+								!canSubmit || (!allowEmpty && accessoryCount === 0) || isPending
+							}
 						>
 							{isSubmitting || isPending ? pendingLabel : submitLabel}
 						</Button>

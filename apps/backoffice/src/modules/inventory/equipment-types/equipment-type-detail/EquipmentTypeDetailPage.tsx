@@ -29,8 +29,11 @@ import { useOwnerOptions } from "@/modules/inventory/ownership/owner-options.que
 import { useBranches } from "@/modules/settings/branches/public";
 import { ProblemDetailsError } from "@/shared/errors";
 import { AddAccessorySuggestionsForm } from "../accessory-suggestions/AddAccessorySuggestionsForm";
-import { useAddAccessorySuggestions } from "../accessory-suggestions/add-accessory-suggestions.mutation";
-import { toAddAccessorySuggestionsDto } from "../accessory-suggestions/add-accessory-suggestions.schema";
+import {
+	fromAccessoryDefaultsToEditFormValues,
+	toReplaceAccessoryDefaultsDto,
+} from "../accessory-suggestions/add-accessory-suggestions.schema";
+import { useReplaceAccessoryDefaults } from "../accessory-suggestions/replace-accessory-defaults.mutation";
 import { AddUnitsForm } from "../add-units/AddUnitsForm";
 import { useAddUnitsToEquipmentType } from "../add-units/add-units.mutation";
 import { toAddUnitsToEquipmentTypeDto } from "../add-units/add-units.schema";
@@ -397,8 +400,9 @@ function AddAccessorySuggestionsDialog({
 }) {
 	const [open, setOpen] = useState(false);
 	const formId = useId();
-	const { mutateAsync: addAccessorySuggestions, isPending } =
-		useAddAccessorySuggestions();
+	const hasDefaults = equipmentType.accessoryDefaults.length > 0;
+	const { mutateAsync: replaceAccessoryDefaults, isPending } =
+		useReplaceAccessoryDefaults();
 
 	return (
 		<Dialog open={open} onOpenChange={setOpen}>
@@ -409,11 +413,17 @@ function AddAccessorySuggestionsDialog({
 				className="h-auto px-0 text-blue-700"
 				onClick={() => setOpen(true)}
 			>
-				Agregar accesorios sugeridos
+				{hasDefaults
+					? "Editar accesorios sugeridos"
+					: "Agregar accesorios sugeridos"}
 			</Button>
 			<DialogContent className="max-h-[calc(100vh-2rem)] overflow-y-auto sm:max-w-4xl">
 				<DialogHeader>
-					<DialogTitle>Agregar accesorios sugeridos</DialogTitle>
+					<DialogTitle>
+						{hasDefaults
+							? "Editar accesorios sugeridos"
+							: "Agregar accesorios sugeridos"}
+					</DialogTitle>
 					<DialogDescription>
 						Selecciona uno o más tipos de equipo sugeridos para
 						{` ${equipmentType.name}`}.
@@ -426,12 +436,22 @@ function AddAccessorySuggestionsDialog({
 					existingAccessoryEquipmentTypeIds={equipmentType.accessoryDefaults.map(
 						(accessoryDefault) => accessoryDefault.accessoryEquipmentTypeId,
 					)}
+					defaultValues={
+						hasDefaults
+							? fromAccessoryDefaultsToEditFormValues(
+									equipmentType.accessoryDefaults,
+								)
+							: undefined
+					}
+					allowEmpty={hasDefaults}
+					submitLabel="Guardar cambios"
+					pendingLabel="Guardando..."
 					isPending={isPending}
 					onCancel={() => setOpen(false)}
 					onSubmit={async (values) => {
-						await addAccessorySuggestions({
+						await replaceAccessoryDefaults({
 							equipmentTypeId: equipmentType.id,
-							body: toAddAccessorySuggestionsDto(values),
+							body: toReplaceAccessoryDefaultsDto(values),
 						});
 						setOpen(false);
 					}}

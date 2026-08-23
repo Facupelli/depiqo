@@ -1,6 +1,8 @@
 import {
 	type CreateEquipmentTypeAccessoryDefaultsBodyDto,
 	CreateEquipmentTypeAccessoryDefaultsBodySchema,
+	type ReplaceEquipmentTypeAccessoryDefaultsBodyDto,
+	ReplaceEquipmentTypeAccessoryDefaultsBodySchema,
 } from "@repo/api-contracts";
 import { z } from "zod";
 
@@ -24,6 +26,10 @@ export const addAccessorySuggestionsFormSchema = z.object({
 export type CreateEquipmentTypeAccessoryDefaultItemFormValues = z.infer<
 	typeof createAccessorySuggestionItemFormSchema
 >;
+export const editAccessorySuggestionsFormSchema = z.object({
+	accessories: z.array(createAccessorySuggestionItemFormSchema),
+});
+
 export type AddAccessorySuggestionsFormValues = z.infer<
 	typeof addAccessorySuggestionsFormSchema
 >;
@@ -56,4 +62,35 @@ export function toAddAccessorySuggestionsDto(
 	};
 
 	return CreateEquipmentTypeAccessoryDefaultsBodySchema.parse(dto);
+}
+
+type AccessoryDefaultLike = {
+	accessoryEquipmentTypeId: string;
+	accessoryEquipmentTypeName: string;
+	quantity: number;
+};
+
+export function fromAccessoryDefaultsToEditFormValues(
+	accessoryDefaults: AccessoryDefaultLike[],
+): AddAccessorySuggestionsFormValues {
+	return {
+		accessories: accessoryDefaults.map((accessoryDefault) => ({
+			accessoryEquipmentTypeId: accessoryDefault.accessoryEquipmentTypeId,
+			accessoryEquipmentTypeName: accessoryDefault.accessoryEquipmentTypeName,
+			quantity: accessoryDefault.quantity,
+		})),
+	};
+}
+
+export function toReplaceAccessoryDefaultsDto(
+	values: AddAccessorySuggestionsFormValues,
+): ReplaceEquipmentTypeAccessoryDefaultsBodyDto {
+	const dto = {
+		accessories: values.accessories.map((accessory) => ({
+			accessoryEquipmentTypeId: accessory.accessoryEquipmentTypeId,
+			quantity: accessory.quantity,
+		})),
+	};
+
+	return ReplaceEquipmentTypeAccessoryDefaultsBodySchema.parse(dto);
 }
