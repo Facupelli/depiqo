@@ -1,5 +1,5 @@
 import { AssignRentalAccessoriesAvailabilityProblemExtensionsSchema } from "@repo/api-contracts";
-import { ProblemDetailsError } from "@/shared/errors";
+import { getProblemDetailsCode, ProblemDetailsError } from "@/shared/errors";
 export type AssignRentalAccessoriesUiError = {
 	message: string;
 	shouldRefreshAvailability: boolean;
@@ -17,7 +17,7 @@ export function toAssignRentalAccessoriesUiError(
 		};
 	}
 
-	const code = error.problemDetails.code;
+	const code = getProblemDetailsCode(error);
 
 	if (code === "rental_commitment.insufficient_asset_availability") {
 		const parsed =

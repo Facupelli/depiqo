@@ -68,6 +68,16 @@ const EXCEPTION_STATUS_MAP: Record<string, number> = {
 	WrongActorError: 403,
 };
 
+export function getProblemDetailsCode(error: unknown): string | undefined {
+	if (!(error instanceof ProblemDetailsError)) {
+		return undefined;
+	}
+
+	const { code } = error.problemDetails;
+
+	return typeof code === "string" ? code : undefined;
+}
+
 export function getProblemDetailsStatus(error: unknown): number | undefined {
 	if (error instanceof ProblemDetailsError) {
 		return error.problemDetails.status;

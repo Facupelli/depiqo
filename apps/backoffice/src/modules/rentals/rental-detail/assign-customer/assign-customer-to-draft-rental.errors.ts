@@ -1,32 +1,32 @@
-import { ProblemDetailsError } from "@/shared/errors";
+import { getProblemDetailsCode, ProblemDetailsError } from "@/shared/errors";
 
-const PROBLEM_TYPE_BASE_URI = "https://api.depiqo.com/problems";
+const GENERIC_ASSIGN_ERROR_MESSAGE = "No pudimos asignar el cliente al pedido.";
 
 const assignmentErrorMessages = {
-	[`${PROBLEM_TYPE_BASE_URI}/rental-commitment/rental-not-found`]:
+	"rental_commitment.rental_not_found":
 		"No encontramos el pedido al que querés asignar el cliente.",
-	[`${PROBLEM_TYPE_BASE_URI}/rental-commitment/rental-must-be-draft`]:
+	"rental_commitment.rental_must_be_draft":
 		"Solo se puede asignar un cliente a un pedido en borrador.",
-	[`${PROBLEM_TYPE_BASE_URI}/rental-commitment/customer-not-assignable-to-draft-rental`]:
+	"rental_commitment.customer_not_found_or_outside_tenant":
 		"Este cliente ya no está disponible para asignarlo al pedido.",
-	[`${PROBLEM_TYPE_BASE_URI}/rental-commitment/customer-deleted`]:
+	"rental_commitment.customer_deleted":
 		"Este cliente fue eliminado y ya no está disponible para asignarlo al pedido.",
-	[`${PROBLEM_TYPE_BASE_URI}/rental-commitment/customer-inactive`]:
+	"rental_commitment.customer_inactive":
 		"Este cliente está inactivo y no se puede asignar al pedido.",
-	[`${PROBLEM_TYPE_BASE_URI}/rental-commitment/invalid-customer`]:
-		"El cliente seleccionado no es válido.",
-} as const;
+} satisfies Record<string, string>;
 
 export function getAssignCustomerToDraftRentalErrorMessage(
 	error: unknown,
 ): string {
 	if (!(error instanceof ProblemDetailsError)) {
-		return "No pudimos asignar el cliente al pedido.";
+		return GENERIC_ASSIGN_ERROR_MESSAGE;
 	}
 
-	return (
-		assignmentErrorMessages[
-			error.problemDetails.type as keyof typeof assignmentErrorMessages
-		] ?? "No pudimos asignar el cliente al pedido."
-	);
+	const code = getProblemDetailsCode(error);
+
+	if (!code || !(code in assignmentErrorMessages)) {
+		return GENERIC_ASSIGN_ERROR_MESSAGE;
+	}
+
+	return assignmentErrorMessages[code as keyof typeof assignmentErrorMessages];
 }

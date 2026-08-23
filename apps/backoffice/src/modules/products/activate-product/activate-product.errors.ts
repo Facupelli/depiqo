@@ -1,78 +1,49 @@
-import type { GetRentableItemDetailResponseDto } from "@repo/api-contracts";
-import { ProblemDetailsError } from "@/shared/errors";
+import { getProblemDetailsCode, ProblemDetailsError } from "@/shared/errors";
 
-const PROBLEM_TYPE_BASE_URI = "https://api.depiqo.com/problems";
-
-const activationErrorMessages = {
-	[`${PROBLEM_TYPE_BASE_URI}/catalog/rentable-item-not-found`]:
-		"No encontramos el ítem rentable que querés activar.",
-	[`${PROBLEM_TYPE_BASE_URI}/catalog/rentable-item-not-in-draft-status`]:
-		"Solo se pueden activar productos que están en borrador.",
-	[`${PROBLEM_TYPE_BASE_URI}/catalog/rentable-item-has-no-requirements`]:
-		"Agregá al menos un equipo requerido antes de activar el producto.",
-	[`${PROBLEM_TYPE_BASE_URI}/catalog/rentable-item-has-no-rental-offers`]:
-		"Agregá al menos una oferta por sucursal antes de activar el producto.",
-	[`${PROBLEM_TYPE_BASE_URI}/catalog/rentable-item-has-no-active-pricing`]:
-		"Asigná un plan de precios activo a una oferta antes de activar el producto.",
-} as const;
-
-const insufficientActiveAssetsProblemType = `${PROBLEM_TYPE_BASE_URI}/catalog/rentable-item-has-insufficient-active-assets`;
-
-type ActivationErrorContext = {
-	equipmentTypeId: string;
-	requiredQuantity: number;
-	activeAssetCount: number;
+export type ActivateProductUiError = {
+	message: string;
+	action?: "configure-pricing";
 };
 
-export function getActivateProductErrorMessage(
+const NETWORK_ERROR_MESSAGE = "Ocurrió un error al activar el producto.";
+
+const GENERIC_ACTIVATE_ERROR_MESSAGE = "No pudimos activar el producto.";
+
+const PRICING_BLOCKER_CODE = "catalog.rentable_item_has_no_active_pricing";
+
+const activationErrorMessages = {
+	"catalog.rentable_item_not_found":
+		"No encontramos este producto. Actualizá la página e intentá de nuevo.",
+	"catalog.rentable_item_not_in_draft_status":
+		"Solo se pueden activar productos que están en borrador.",
+	"catalog.rentable_item_has_no_requirements":
+		"Agregá al menos un equipo requerido antes de activar el producto.",
+	"catalog.rentable_item_has_no_rental_offers":
+		"Agregá al menos una oferta por sucursal antes de activar el producto.",
+} satisfies Record<string, string>;
+
+export function getActivateProductError(
 	error: unknown,
-	product: GetRentableItemDetailResponseDto,
-): string {
+): ActivateProductUiError {
 	if (!(error instanceof ProblemDetailsError)) {
-		return "Ocurrió un error al activar el producto.";
+		return { message: NETWORK_ERROR_MESSAGE };
 	}
 
-	if (error.problemDetails.type === insufficientActiveAssetsProblemType) {
-		const context = getInsufficientActiveAssetsContext(error.problemDetails);
+	const code = getProblemDetailsCode(error);
 
-		if (context) {
-			const equipment = product.requiredEquipment.find(
-				(requirement) =>
-					requirement.equipmentTypeId === context.equipmentTypeId,
-			);
-			const equipmentName =
-				equipment?.equipmentTypeName ?? "este tipo de equipo";
-
-			return `No se puede activar el producto porque no hay suficientes equipos activos de ${equipmentName}: se requieren ${context.requiredQuantity} y hay ${context.activeAssetCount}.`;
-		}
-
-		return "No se puede activar el producto porque no hay suficientes equipos activos para completar sus requisitos.";
+	if (code === PRICING_BLOCKER_CODE) {
+		return {
+			message: "Asigná un precio antes de activar este producto.",
+			action: "configure-pricing",
+		};
 	}
 
-	return (
-		activationErrorMessages[
-			error.problemDetails.type as keyof typeof activationErrorMessages
-		] ?? "No pudimos activar el producto."
-	);
-}
-
-function getInsufficientActiveAssetsContext(
-	problemDetails: Record<string, unknown>,
-): ActivationErrorContext | null {
-	const { equipmentTypeId, requiredQuantity, activeAssetCount } =
-		problemDetails;
-
-	if (
-		typeof equipmentTypeId !== "string" ||
-		!isNonNegativeInteger(requiredQuantity) ||
-		!isNonNegativeInteger(activeAssetCount)
-	) {
-		return null;
+	if (!code || !(code in activationErrorMessages)) {
+		return { message: GENERIC_ACTIVATE_ERROR_MESSAGE };
 	}
 
-	return { equipmentTypeId, requiredQuantity, activeAssetCount };
-}
-
-function isNonNegativeInteger(value: unknown): value is number {
-	return typeof value === "number" && Number.isInteger(value) && value >= 0;
+	return {
+		message:
+			activationErrorMessages[code as keyof typeof activationErrorMessages],
+	};
 }

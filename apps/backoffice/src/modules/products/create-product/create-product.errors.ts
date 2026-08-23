@@ -1,24 +1,22 @@
-import { ProblemDetailsError } from "@/shared/errors";
-
-const PROBLEM_TYPE_BASE_URI = "https://api.depiqo.com/problems";
+import { getProblemDetailsCode, ProblemDetailsError } from "@/shared/errors";
 
 const GENERIC_CREATE_ERROR_MESSAGE =
 	"No pudimos crear el producto. Intentá de nuevo.";
 
-const duplicateNameProblemType = `${PROBLEM_TYPE_BASE_URI}/offering_setup.duplicate_equipment_type_name`;
+const DUPLICATE_NAME_CODE = "offering_setup.duplicate_equipment_type_name";
 
 const formErrorMessages = {
-	[`${PROBLEM_TYPE_BASE_URI}/offering_setup.branch_unavailable`]:
+	"offering_setup.branch_unavailable":
 		"Una o más sucursales seleccionadas ya no están disponibles. Revisá las unidades del producto.",
-	[`${PROBLEM_TYPE_BASE_URI}/offering_setup.asset_owner_not_found`]:
+	"offering_setup.asset_owner_not_found":
 		"Uno o más dueños seleccionados ya no existen. Revisá las unidades del producto.",
-	[`${PROBLEM_TYPE_BASE_URI}/offering_setup.active_owner_contract_not_found`]:
+	"offering_setup.active_owner_contract_not_found":
 		"Un dueño seleccionado no tiene contrato activo. Revisá las unidades del producto.",
-	[`${PROBLEM_TYPE_BASE_URI}/offering_setup.multiple_active_owner_contracts`]:
+	"offering_setup.multiple_active_owner_contracts":
 		"Un dueño seleccionado tiene múltiples contratos activos. Revisá las unidades del producto.",
-	[`${PROBLEM_TYPE_BASE_URI}/offering_setup.tenant_unavailable`]:
+	"offering_setup.tenant_unavailable":
 		"No pudimos crear el producto. Intentá de nuevo en unos minutos.",
-} as const;
+} satisfies Record<string, string>;
 
 export type CreateProductSubmissionError =
 	| { kind: "field"; field: "name"; message: string }
@@ -31,7 +29,9 @@ export function mapCreateProductError(
 		return { kind: "form", message: GENERIC_CREATE_ERROR_MESSAGE };
 	}
 
-	if (error.problemDetails.type === duplicateNameProblemType) {
+	const code = getProblemDetailsCode(error);
+
+	if (code === DUPLICATE_NAME_CODE) {
 		return {
 			kind: "field",
 			field: "name",
@@ -42,8 +42,8 @@ export function mapCreateProductError(
 	return {
 		kind: "form",
 		message:
-			formErrorMessages[
-				error.problemDetails.type as keyof typeof formErrorMessages
-			] ?? GENERIC_CREATE_ERROR_MESSAGE,
+			code && code in formErrorMessages
+				? formErrorMessages[code as keyof typeof formErrorMessages]
+				: GENERIC_CREATE_ERROR_MESSAGE,
 	};
 }

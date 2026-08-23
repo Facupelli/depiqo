@@ -16,6 +16,8 @@ import { formatPriceSummary } from "./product-detail.utils";
 
 type RentalOffer = GetRentableItemDetailResponseDto["offers"][number];
 
+export const PRODUCT_AVAILABILITY_SECTION_ID = "product-availability";
+
 const setupIssueLabels = {
 	BRANCH_INACTIVE: "La sucursal está inactiva",
 	BRANCH_UNAVAILABLE: "La sucursal ya no está disponible",
@@ -35,7 +37,10 @@ export function ProductAvailabilitySection({
 	ratePlanOptions: PricePlanOption[];
 }) {
 	return (
-		<section className="rounded-2xl border bg-background p-5 shadow-sm">
+		<section
+			id={PRODUCT_AVAILABILITY_SECTION_ID}
+			className="scroll-mt-6 rounded-2xl border bg-background p-5 shadow-sm"
+		>
 			<div className="mb-4">
 				<h2 className="font-semibold text-lg tracking-tight">
 					Ofertas por sucursal

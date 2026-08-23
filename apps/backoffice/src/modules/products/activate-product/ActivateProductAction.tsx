@@ -11,9 +11,13 @@ import {
 	AlertDialogTrigger,
 } from "@repo/ui/components/alert-dialog";
 import { Button } from "@repo/ui/components/button";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, CircleDollarSign } from "lucide-react";
 import { useState } from "react";
-import { getActivateProductErrorMessage } from "./activate-product.errors";
+import { PRODUCT_AVAILABILITY_SECTION_ID } from "@/modules/products/product-detail/ProductAvailabilitySection";
+import {
+	type ActivateProductUiError,
+	getActivateProductError,
+} from "./activate-product.errors";
 import { useActivateProduct } from "./activate-product.mutation";
 
 export function ActivateProductAction({
@@ -22,17 +26,26 @@ export function ActivateProductAction({
 	product: GetRentableItemDetailResponseDto;
 }) {
 	const [open, setOpen] = useState(false);
-	const [errorMessage, setErrorMessage] = useState<string | null>(null);
+	const [error, setError] = useState<ActivateProductUiError | null>(null);
 	const activateMutation = useActivateProduct();
 
 	async function handleActivate() {
-		setErrorMessage(null);
+		setError(null);
 		try {
 			await activateMutation.mutateAsync({ rentableItemId: product.id });
 			setOpen(false);
-		} catch (error) {
-			setErrorMessage(getActivateProductErrorMessage(error, product));
+		} catch (mutationError) {
+			setError(getActivateProductError(mutationError));
 		}
+	}
+
+	function handleConfigurePricing() {
+		setOpen(false);
+		requestAnimationFrame(() => {
+			document
+				.getElementById(PRODUCT_AVAILABILITY_SECTION_ID)
+				?.scrollIntoView({ behavior: "smooth", block: "start" });
+		});
 	}
 
 	return (
@@ -40,7 +53,7 @@ export function ActivateProductAction({
 			open={open}
 			onOpenChange={(nextOpen) => {
 				setOpen(nextOpen);
-				if (!nextOpen) setErrorMessage(null);
+				if (!nextOpen) setError(null);
 			}}
 		>
 			<AlertDialogTrigger
@@ -64,8 +77,21 @@ export function ActivateProductAction({
 						que tus clientes puedan verlo y solicitarlo.
 					</AlertDialogDescription>
 				</AlertDialogHeader>
-				{errorMessage ? (
-					<p className="text-sm text-destructive">{errorMessage}</p>
+				{error ? (
+					<div className="flex flex-col items-start gap-2">
+						<p className="text-sm text-destructive">{error.message}</p>
+						{error.action === "configure-pricing" ? (
+							<Button
+								type="button"
+								variant="outline"
+								size="sm"
+								onClick={handleConfigurePricing}
+							>
+								<CircleDollarSign className="mr-2 size-4" />
+								Configurar precio
+							</Button>
+						) : null}
+					</div>
 				) : null}
 				<AlertDialogFooter>
 					<AlertDialogCancel disabled={activateMutation.isPending}>
