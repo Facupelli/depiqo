@@ -144,6 +144,7 @@ export function RentalOrdersTable() {
 				page={search.page}
 				totalPages={meta.totalPages}
 				total={meta.total}
+				isLoading={isLoading}
 				canPrevious={table.getCanPreviousPage()}
 				canNext={table.getCanNextPage()}
 				onPrevious={() => table.previousPage()}
@@ -502,6 +503,7 @@ function PaginationFooter({
 	page,
 	totalPages,
 	total,
+	isLoading,
 	canPrevious,
 	canNext,
 	onPrevious,
@@ -510,6 +512,7 @@ function PaginationFooter({
 	page: number;
 	totalPages: number;
 	total: number;
+	isLoading: boolean;
 	canPrevious: boolean;
 	canNext: boolean;
 	onPrevious: () => void;
@@ -517,9 +520,13 @@ function PaginationFooter({
 }) {
 	return (
 		<div className="flex items-center justify-between px-1 py-2">
-			<p className="text-sm text-muted-foreground">
-				{total} pedido{total !== 1 ? "s" : ""} total
-			</p>
+			{isLoading ? (
+				<Skeleton className="h-4 w-28" />
+			) : (
+				<p className="text-sm text-muted-foreground">
+					{total} pedido{total !== 1 ? "s" : ""} total
+				</p>
+			)}
 
 			<div className="flex items-center gap-2">
 				<span className="text-sm text-muted-foreground tabular-nums">

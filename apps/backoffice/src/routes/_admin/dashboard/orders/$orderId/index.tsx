@@ -1,5 +1,4 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { ordersListSearchSchema } from "@/modules/rentals/list-rentals/rentals-list.search";
 import { RentalDetailPageSkeleton } from "@/modules/rentals/rental-detail/components/rental-detail-page-skeleton";
 import { rentalCustomerQueries } from "@/modules/rentals/rental-detail/customer-summary/rental-customer-summary.queries";
 import { RentalDetailPage } from "@/modules/rentals/rental-detail/RentalDetailPage";
@@ -7,7 +6,6 @@ import { rentalDetailViewQueries } from "@/modules/rentals/rental-detail/rental-
 import { AdminRouteError } from "@/shared/components/admin-route-error";
 
 export const Route = createFileRoute("/_admin/dashboard/orders/$orderId/")({
-	validateSearch: ordersListSearchSchema,
 	loader: async ({ context: { queryClient }, params: { orderId } }) => {
 		const rental = await queryClient.ensureQueryData(
 			rentalDetailViewQueries.detail(orderId),
@@ -36,7 +34,6 @@ export const Route = createFileRoute("/_admin/dashboard/orders/$orderId/")({
 
 function RouteComponent() {
 	const { orderId } = Route.useParams();
-	const search = Route.useSearch();
 
-	return <RentalDetailPage orderId={orderId} ordersSearch={search} />;
+	return <RentalDetailPage orderId={orderId} />;
 }

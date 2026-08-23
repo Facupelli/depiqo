@@ -10,13 +10,9 @@ import { rentalDetailViewQueries } from "./rental-detail.queries";
 
 type RentalDetailPageProps = {
 	orderId: string;
-	ordersSearch: Record<string, unknown>;
 };
 
-export function RentalDetailPage({
-	orderId,
-	ordersSearch,
-}: RentalDetailPageProps) {
+export function RentalDetailPage({ orderId }: RentalDetailPageProps) {
 	const { data: rental } = useSuspenseQuery(
 		rentalDetailViewQueries.detail(orderId),
 	);
@@ -32,7 +28,6 @@ export function RentalDetailPage({
 				parent={{
 					label: "Alquileres",
 					to: "/dashboard/orders",
-					search: ordersSearch,
 				}}
 				current={formatOrderNumber(rental.rentalNumber)}
 			/>
