@@ -1,6 +1,5 @@
 import type { BranchScheduleSlotDto } from "@repo/api-contracts";
 import { CalendarDays, Clock } from "lucide-react";
-import { useStorefrontBranchScheduleSlots } from "@/modules/tenant-management/branches/branch-schedule.queries";
 import { useCartPeriodContext } from "../cart-page.context";
 
 export function CartPagePeriod() {
@@ -12,12 +11,11 @@ export function CartPagePeriod() {
 		returnSlot,
 		setPickupSlot,
 		setReturnSlot,
+		pickupSlots,
+		returnSlots,
+		areSlotsLoading,
 		isPeriodInvalid,
 	} = useCartPeriodContext();
-	const { data: slots, isLoading } = useStorefrontBranchScheduleSlots(
-		branch.id,
-		{ periodStart, periodEnd },
-	);
 
 	return (
 		<div className="space-y-3">
@@ -33,15 +31,15 @@ export function CartPagePeriod() {
 				<TimeCell
 					label="Hora de retiro"
 					value={pickupSlot}
-					slots={slots?.pickupSlots}
-					loading={isLoading}
+					slots={pickupSlots}
+					loading={areSlotsLoading}
 					onChange={setPickupSlot}
 				/>
 				<TimeCell
 					label="Hora de devolución"
 					value={returnSlot}
-					slots={slots?.returnSlots}
-					loading={isLoading}
+					slots={returnSlots}
+					loading={areSlotsLoading}
 					onChange={setReturnSlot}
 				/>
 			</section>

@@ -4,9 +4,11 @@ import type {
 	GetPublicTenantConfigResponseDto,
 	GetStorefrontBranchDto,
 } from "@repo/api-contracts";
+import { useNavigate } from "@tanstack/react-router";
 import { createContext, useContext, useMemo, useState } from "react";
 import { toCalculateCartPriceBody } from "@/modules/pricing/calculate-cart-price/calculate-cart-price.mapper";
 import { useCalculatedCartPrice } from "@/modules/pricing/calculate-cart-price/calculate-cart-price.queries";
+import { useStorefrontBranchScheduleSlots } from "@/modules/tenant-management/branches/branch-schedule.queries";
 import { useRentalCartActions, useRentalCartItems } from "../rental-cart.hooks";
 import type {
 	DeliveryRequestField,
@@ -32,6 +34,9 @@ type RentalPeriodSlice = {
 	returnSlot?: BranchScheduleSlotDto;
 	setPickupSlot: (value: BranchScheduleSlotDto) => void;
 	setReturnSlot: (value: BranchScheduleSlotDto) => void;
+	pickupSlots?: BranchScheduleSlotDto[];
+	returnSlots?: BranchScheduleSlotDto[];
+	areSlotsLoading: boolean;
 	isPricingReady: boolean;
 	isPeriodInvalid: boolean;
 };
@@ -95,23 +100,39 @@ export function CartPageProvider({
 	config,
 	periodStart,
 	periodEnd,
+	pickupInstant,
+	returnInstant,
 }: {
 	children: React.ReactNode;
 	branch: GetStorefrontBranchDto;
 	config: GetPublicTenantConfigResponseDto;
 	periodStart: string;
 	periodEnd: string;
+	pickupInstant?: string;
+	returnInstant?: string;
 }) {
+	const navigate = useNavigate();
 	const items = useRentalCartItems();
 	const actions = useRentalCartActions();
-	const [pickupSlot, setPickupSlot] = useState<BranchScheduleSlotDto>();
-	const [returnSlot, setReturnSlot] = useState<BranchScheduleSlotDto>();
+	const { data: slots, isLoading: areSlotsLoading } =
+		useStorefrontBranchScheduleSlots(branch.id, {
+			periodStart,
+			periodEnd,
+		});
+	const pickupSlot = slots?.pickupSlots?.find(
+		(slot) => slot.instant === pickupInstant,
+	);
+	const returnSlot = slots?.returnSlots?.find(
+		(slot) => slot.instant === returnInstant,
+	);
 	const [insuranceSelected, setInsuranceSelected] = useState(
 		config.insuranceEnabled,
 	);
 	const [unavailableRentalOfferIds, setUnavailableRentalOfferIds] = useState<
 		string[]
 	>([]);
+	// TODO(persistence): fulfillment state is lost across navigation (e.g. login
+	// round-trips). Track as a separate task.
 	const [fulfillmentMethod, setFulfillmentMethod] =
 		useState<FulfillmentMethod>("PICKUP");
 	const [deliveryRequest, setDeliveryRequest] = useState(() =>
@@ -156,13 +177,24 @@ export function CartPageProvider({
 				pickupSlot,
 				returnSlot,
 				setPickupSlot: (slot) => {
-					setPickupSlot(slot);
 					setUnavailableRentalOfferIds([]);
+					void navigate({
+						to: "/cart",
+						search: (prev) => ({ ...prev, pickupInstant: slot.instant }),
+						replace: true,
+					});
 				},
 				setReturnSlot: (slot) => {
-					setReturnSlot(slot);
 					setUnavailableRentalOfferIds([]);
+					void navigate({
+						to: "/cart",
+						search: (prev) => ({ ...prev, returnInstant: slot.instant }),
+						replace: true,
+					});
 				},
+				pickupSlots: slots?.pickupSlots,
+				returnSlots: slots?.returnSlots,
+				areSlotsLoading,
 				isPricingReady,
 				isPeriodInvalid,
 			},
@@ -236,10 +268,13 @@ export function CartPageProvider({
 		[
 			items,
 			actions,
+			navigate,
 			branch,
 			config,
 			periodStart,
 			periodEnd,
+			slots,
+			areSlotsLoading,
 			pickupSlot,
 			returnSlot,
 			isPricingReady,
