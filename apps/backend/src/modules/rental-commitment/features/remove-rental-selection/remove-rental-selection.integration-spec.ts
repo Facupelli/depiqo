@@ -103,4 +103,112 @@ describe('RemoveRentalSelection integration', () => {
     expect(after.rental.ownerSplits.every((split) => split.rentalSelectionId !== target.id)).toBe(true);
     expect(events).toHaveLength(1);
   });
+
+  it('drops a pre-start plan and re-adds the same offer with new commercial IDs', async () => {
+    const tenant = await core.createTenant();
+    const branch = await core.createBranch({ tenantId: tenant.id });
+    const { customer } = await core.createRentalCustomer({ tenantId: tenant.id });
+    const { user } = await core.createTenantUser({ tenantId: tenant.id });
+    const first = await fixtures.createOffer({ tenantId: tenant.id, branchId: branch.id, pricePerDay: '100.00' });
+    const targetOffer = await fixtures.createOffer({
+      tenantId: tenant.id,
+      branchId: branch.id,
+      pricePerDay: '50.00',
+    });
+    const now = Date.now();
+    const rental = await fixtures.createConfirmedRental({
+      tenantId: tenant.id,
+      branchId: branch.id,
+      customerId: customer.id,
+      period: { start: new Date(now + 3_600_000), end: new Date(now + 7_200_000) },
+      offerId: first.offer.id,
+      equipmentTypeId: first.equipmentType.id,
+    });
+    await fixtures.createCandidate({
+      tenantId: tenant.id,
+      branchId: branch.id,
+      equipmentTypeId: targetOffer.equipmentType.id,
+    });
+
+    let persisted = await prisma.client.v2Rental.findUniqueOrThrow({ where: { id: rental.rentalId } });
+    expect(
+      (
+        await bus.execute(
+          new AddRentalSelectionCommand({
+            tenantId: tenant.id,
+            tenantUserId: user.id,
+            rentalId: rental.rentalId,
+            expectedVersion: persisted.version,
+            rentalOfferId: targetOffer.offer.id,
+            quantity: 1,
+          }),
+        )
+      ).isOk(),
+    ).toBe(true);
+
+    const beforeRemoval = await fixtures.persistedState(rental.rentalId);
+    const oldSelection = beforeRemoval.rental.selections.find(
+      (selection) => selection.rentalOfferId === targetOffer.offer.id,
+    )!;
+    const oldDemand = beforeRemoval.rental.demandLines.find((line) => line.rentalSelectionId === oldSelection.id)!;
+    const oldAssignment = beforeRemoval.rental.assignedAssets.find(
+      (assignment) => assignment.rentalDemandLineId === oldDemand.id,
+    )!;
+    expect(beforeRemoval.blocks.some((block) => block.assetId === oldAssignment.assetId)).toBe(true);
+
+    persisted = await prisma.client.v2Rental.findUniqueOrThrow({ where: { id: rental.rentalId } });
+    expect(
+      (
+        await bus.execute(
+          new RemoveRentalSelectionCommand({
+            tenantId: tenant.id,
+            tenantUserId: user.id,
+            rentalId: rental.rentalId,
+            selectionId: oldSelection.id,
+            expectedVersion: persisted.version,
+          }),
+        )
+      ).isOk(),
+    ).toBe(true);
+
+    const afterRemoval = await fixtures.persistedState(rental.rentalId);
+    const tombstonedSelection = afterRemoval.rental.selections.find((item) => item.id === oldSelection.id)!;
+    const tombstonedDemand = afterRemoval.rental.demandLines.find((item) => item.id === oldDemand.id)!;
+    expect(tombstonedSelection.removedAt).toEqual(expect.any(Date));
+    expect(tombstonedDemand.removedAt).toEqual(tombstonedSelection.removedAt);
+    expect(afterRemoval.rental.assignedAssets.some((assignment) => assignment.id === oldAssignment.id)).toBe(false);
+    expect(afterRemoval.blocks.some((block) => block.assetId === oldAssignment.assetId)).toBe(false);
+
+    persisted = await prisma.client.v2Rental.findUniqueOrThrow({ where: { id: rental.rentalId } });
+    expect(
+      (
+        await bus.execute(
+          new AddRentalSelectionCommand({
+            tenantId: tenant.id,
+            tenantUserId: user.id,
+            rentalId: rental.rentalId,
+            expectedVersion: persisted.version,
+            rentalOfferId: targetOffer.offer.id,
+            quantity: 1,
+          }),
+        )
+      ).isOk(),
+    ).toBe(true);
+
+    const afterReAdd = await fixtures.persistedState(rental.rentalId);
+    const readdedSelection = afterReAdd.rental.selections.find(
+      (selection) => selection.rentalOfferId === targetOffer.offer.id && selection.removedAt === null,
+    )!;
+    const readdedDemand = afterReAdd.rental.demandLines.find(
+      (line) => line.rentalSelectionId === readdedSelection.id && line.removedAt === null,
+    )!;
+    expect(readdedSelection.id).not.toBe(oldSelection.id);
+    expect(readdedDemand.id).not.toBe(oldDemand.id);
+    expect(afterReAdd.rental.selections.find((item) => item.id === oldSelection.id)?.removedAt).toEqual(
+      tombstonedSelection.removedAt,
+    );
+    expect(afterReAdd.rental.demandLines.find((item) => item.id === oldDemand.id)?.removedAt).toEqual(
+      tombstonedDemand.removedAt,
+    );
+  });
 });
