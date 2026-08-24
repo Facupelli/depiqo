@@ -77,6 +77,8 @@ An `AssignedAsset` is a temporal, rental-owned fulfillment participation recordi
 
 `effectiveFrom` is the instant when the asset begins fulfilling the demand. `effectiveUntil` is the instant when it stops; a null `effectiveUntil` means the assignment is current/open. Closed assignments are preserved as rental history, while current fulfillment counts only open assignments.
 
+Each assignment preserves the ownership and owner-contract payout terms accepted for that participation. Tenant-owned assignments record only that ownership kind. Third-party assignments preserve the owner, contract, payout basis, and owner share, so their history does not depend on later Asset Inventory ownership or owner-contract changes. This snapshot stores payout terms, not a calculated payout amount.
+
 Each current assignment is paired with exactly one active rental-owned equipment Asset Block for `[effectiveFrom, rental period end)`. Historical assignments do not require an active block.
 
 Assignment history is not pickup or return tracking. Rental Commitment does not claim that these timestamps represent actual physical possession, pickup, delivery, or return times. Asset Inventory remains authoritative over the asset's current physical profile.
@@ -131,7 +133,7 @@ An owner split snapshot preserves financial ownership or payout facts for a comm
 
 Asset Inventory owns current asset ownership, which may later change.
 
-When third-party ownership affects payout or audit history, Rental Commitment preserves the relevant owner split facts at confirmation or when the payout becomes committed.
+When third-party ownership affects payout or audit history, Rental Commitment preserves the accepted terms on the assignment. `V2RentalOwnerSplit` remains the current calculated payout projection for current/open assignments and the current accepted price. Closed assignment history is not yet used for time-based or prorated payout calculation.
 
 ## Lifecycle
 

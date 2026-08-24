@@ -118,6 +118,7 @@ export class EditConfirmedRentalFixtures {
           rentalId: rental.rentalId,
           rentalDemandLineId: rental.demandLineIds[0],
           assetId,
+          ownershipSnapshot: { kind: 'TENANT_OWNED' },
           effectiveFrom: params.period.start,
         },
       });

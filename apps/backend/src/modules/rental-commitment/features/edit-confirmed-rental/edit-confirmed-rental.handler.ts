@@ -369,46 +369,24 @@ export class EditConfirmedRentalHandler implements ICommandHandler<
           assignedAssets: allocationPlan.value.allocations.map((allocation) => ({
             rentalDemandLineId: allocation.rentalDemandLineId,
             assetId: allocation.assetId,
+            ownershipSnapshot: allocation.ownershipSnapshot,
           })),
         });
         if (edit.isErr()) return err(this.toApplicationError(edit.error, context));
 
         const priceSnapshot = getConfirmedPriceSnapshotForOwnerSplits(rental.confirmedPriceSnapshot);
-        const assignments = new Map(
-          rental.currentAssignedAssets.map((assignment) => [
-            this.assignmentKey(assignment.assetId, assignment.rentalDemandLineId),
-            assignment,
-          ]),
-        );
         const { splits }: { splits: RentalOwnerSplitDraft[] } = this.rentalOwnerSplitCalculator.calculate({
           tenantId,
           rentalId,
           currency: priceSnapshot.currency,
           selections: rental.selections.map((selection) => ({ id: selection.id })),
           demandLines: rental.demandLines.map((line) => ({ id: line.id, sourceSelectionId: line.rentalSelectionId })),
-          fulfilledAssets: allocationPlan.value.allocations.map((allocation) => {
-            const assignment = assignments.get(this.assignmentKey(allocation.assetId, allocation.rentalDemandLineId));
-            if (!assignment) {
-              throw new Error(
-                `Missing assignment for asset "${allocation.assetId}" and demand line "${allocation.rentalDemandLineId}".`,
-              );
-            }
-
-            return {
-              id: assignment.id,
-              rentalDemandLineId: allocation.rentalDemandLineId,
-              assetId: allocation.assetId,
-              ownershipKind: allocation.ownershipKind,
-              ownerId: allocation.ownerId ?? null,
-              ownerContractSnapshot: allocation.ownerContractSnapshot
-                ? {
-                    contractId: allocation.ownerContractSnapshot.contractId,
-                    basis: allocation.ownerContractSnapshot.basis,
-                    ownerShare: String(allocation.ownerContractSnapshot.ownerShare),
-                  }
-                : null,
-            };
-          }),
+          fulfilledAssets: rental.currentAssignedAssets.map((assignment) => ({
+            id: assignment.id,
+            rentalDemandLineId: assignment.rentalDemandLineId,
+            assetId: assignment.assetId,
+            ownershipSnapshot: assignment.ownershipSnapshot.toJSON(),
+          })),
           priceLines: priceSnapshot.lines.map((line) => ({
             rentalSelectionId: line.rentalSelectionId,
             netAmount: line.total,
@@ -541,10 +519,6 @@ export class EditConfirmedRentalHandler implements ICommandHandler<
     return this.unitOfWork.runInTransaction(async ({ tx, integrationEvents }) => {
       let ownerSplits: RentalOwnerSplitDraft[] | undefined;
       if (confirmedPriceSnapshot) {
-        const existingOwnerSplits = await tx.v2RentalOwnerSplit.findMany({
-          where: { tenantId, rentalId },
-        });
-        const ownerSplitByAssignedAssetId = new Map(existingOwnerSplits.map((split) => [split.assignedAssetId, split]));
         const priceSnapshot = getConfirmedPriceSnapshotForOwnerSplits(rental.confirmedPriceSnapshot);
         ownerSplits = this.rentalOwnerSplitCalculator.calculate({
           tenantId,
@@ -552,23 +526,12 @@ export class EditConfirmedRentalHandler implements ICommandHandler<
           currency: priceSnapshot.currency,
           selections: rental.selections.map((selection) => ({ id: selection.id })),
           demandLines: rental.demandLines.map((line) => ({ id: line.id, sourceSelectionId: line.rentalSelectionId })),
-          fulfilledAssets: rental.currentAssignedAssets.map((assignment) => {
-            const existingSplit = ownerSplitByAssignedAssetId.get(assignment.id);
-            return {
-              id: assignment.id,
-              rentalDemandLineId: assignment.rentalDemandLineId,
-              assetId: assignment.assetId,
-              ownershipKind: existingSplit ? ('THIRD_PARTY' as const) : ('TENANT_OWNED' as const),
-              ownerId: existingSplit?.ownerId ?? null,
-              ownerContractSnapshot: existingSplit
-                ? {
-                    contractId: existingSplit.contractId,
-                    basis: existingSplit.basis as 'NET',
-                    ownerShare: String(existingSplit.ownerShare),
-                  }
-                : null,
-            };
-          }),
+          fulfilledAssets: rental.currentAssignedAssets.map((assignment) => ({
+            id: assignment.id,
+            rentalDemandLineId: assignment.rentalDemandLineId,
+            assetId: assignment.assetId,
+            ownershipSnapshot: assignment.ownershipSnapshot.toJSON(),
+          })),
           priceLines: priceSnapshot.lines.map((line) => ({
             rentalSelectionId: line.rentalSelectionId,
             netAmount: line.total,
@@ -596,10 +559,6 @@ export class EditConfirmedRentalHandler implements ICommandHandler<
       integrationEvents.collect(toRentalIntegrationEvents(rental.pullDomainEvents()));
       return ok({ rentalId, version: saved.version, updatedAt: saved.updatedAt });
     });
-  }
-
-  private assignmentKey(assetId: AssetId, demandLineId: string): string {
-    return `${demandLineId}:${assetId}`;
   }
 
   private toApplicationError(error: unknown, context: Record<string, unknown>): EditConfirmedRentalError {

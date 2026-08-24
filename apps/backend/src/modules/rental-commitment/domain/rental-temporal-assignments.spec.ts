@@ -6,8 +6,10 @@ import { RentalSelectionId } from './ids/rental-selection-id';
 import { AssetBlockType, FulfillmentMethod, RentalStatus, RentableItemKind } from './rental-status';
 import { Rental } from './rental.aggregate';
 import { AssetId, EquipmentTypeId, RentalId } from './types/rental-commitment-ids';
+import { AssignedAssetOwnershipSnapshot } from './value-objects/assigned-asset-ownership-snapshot.value-object';
 import { RentalPeriod } from './value-objects/rental-period.value-object';
 
+const tenantOwnedSnapshot = AssignedAssetOwnershipSnapshot.create({ kind: 'TENANT_OWNED' })._unsafeUnwrap();
 const start = new Date('2030-01-01T10:00:00.000Z');
 const handoff = new Date('2030-01-01T11:00:00.000Z');
 const end = new Date('2030-01-01T14:00:00.000Z');
@@ -37,6 +39,7 @@ function assignment(params: { id: string; assetId: string; effectiveFrom: Date; 
     rentalId: 'rental-1',
     rentalDemandLineId: 'demand-1' as RentalDemandLineId,
     assetId: params.assetId as AssetId,
+    ownershipSnapshot: tenantOwnedSnapshot,
     effectiveFrom: params.effectiveFrom,
     effectiveUntil: params.effectiveUntil,
     createdAt: start,
@@ -72,7 +75,13 @@ function reconstituteWith(assignments: AssignedAsset[], blockStart = handoff) {
         quantity: 1,
       },
     ],
-    assignedAssets: [{ rentalDemandLineId: 'demand-1' as RentalDemandLineId, assetId: 'seed' as AssetId }],
+    assignedAssets: [
+      {
+        rentalDemandLineId: 'demand-1' as RentalDemandLineId,
+        assetId: 'seed' as AssetId,
+        ownershipSnapshot: tenantOwnedSnapshot,
+      },
+    ],
   });
   if (seedResult.isErr()) throw seedResult.error;
   const seed = seedResult.value;

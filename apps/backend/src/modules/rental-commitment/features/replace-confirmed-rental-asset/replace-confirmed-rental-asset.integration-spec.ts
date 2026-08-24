@@ -321,6 +321,18 @@ describe('ReplaceConfirmedRentalAsset integration', () => {
       const setup = await scenario();
       const initialAssignment = (await fixtures.persistedState(setup.rental.rentalId)).rental.assignedAssets[0];
       if (initialKind === 'THIRD_PARTY') {
+        await prisma.client.v2AssignedAsset.update({
+          where: { id: initialAssignment.id },
+          data: {
+            ownershipSnapshot: {
+              kind: 'THIRD_PARTY',
+              ownerId: 'owner-a',
+              contractId: 'contract-a',
+              basis: 'NET',
+              ownerShare: '0.25',
+            },
+          },
+        });
         await prisma.client.v2RentalOwnerSplit.create({
           data: {
             tenantId: setup.tenant.id,
@@ -355,6 +367,18 @@ describe('ReplaceConfirmedRentalAsset integration', () => {
       expect(after.rental.priceSnapshot).toEqual(before.rental.priceSnapshot);
       expect(commercialRows(after.rental.selections)).toEqual(commercialRows(before.rental.selections));
       expect(commercialRows(after.rental.demandLines)).toEqual(commercialRows(before.rental.demandLines));
+      expect(after.rental.assignedAssets).toHaveLength(1);
+      expect(after.rental.assignedAssets[0].ownershipSnapshot).toEqual(
+        replacementOwner
+          ? {
+              kind: 'THIRD_PARTY',
+              ownerId: replacementOwner,
+              contractId: `contract-${replacementOwner}`,
+              basis: 'NET',
+              ownerShare: '0.4',
+            }
+          : { kind: 'TENANT_OWNED' },
+      );
       if (!replacementOwner) expect(after.rental.ownerSplits).toEqual([]);
       else {
         expect(after.rental.ownerSplits).toEqual([

@@ -8,6 +8,7 @@ model V2AssignedAsset {
   rentalId           String   @map("rental_id")
   rentalDemandLineId String   @map("rental_demand_line_id")
   assetId            String   @map("asset_id")
+  ownershipSnapshot  Json     @map("ownership_snapshot")
   effectiveFrom      DateTime @map("effective_from") @db.Timestamptz(3)
   effectiveUntil     DateTime? @map("effective_until") @db.Timestamptz(3)
   createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz(3)

@@ -1,7 +1,12 @@
 import { err, ok, Result } from 'neverthrow';
 
 import { AssetCandidate, RentalAssetCandidateStatus, RentalAssetOwnershipKind } from './asset-candidate.projection';
-import { InsufficientAssetAvailabilityError, RentalCommitmentError } from '../domain/errors/rental-commitment.errors';
+import {
+  InsufficientAssetAvailabilityError,
+  RentalCommitmentError,
+  ThirdPartyAssetRequiresOwnerContractSnapshotError,
+} from '../domain/errors/rental-commitment.errors';
+import { AssignedAssetOwnershipSnapshot } from '../domain/value-objects/assigned-asset-ownership-snapshot.value-object';
 import { OwnerContractSnapshot } from '../domain/value-objects/owner-contract-snapshot.value-object';
 import { AssetId, EquipmentTypeId, RentalSelectionId } from '../domain/types/rental-commitment-ids';
 import { RentalDemandLineId } from '../domain/ids/rental-demand-line-id';
@@ -24,6 +29,7 @@ export interface RentalAssetAllocationPlanLine {
   readonly ownerId: string | undefined;
   readonly ownershipKind: RentalAssetOwnershipKind;
   readonly ownerContractSnapshot: OwnerContractSnapshot | null;
+  readonly ownershipSnapshot: AssignedAssetOwnershipSnapshot;
 }
 
 export interface RentalAssetAllocationPlan {
@@ -65,6 +71,9 @@ export class RentalAssetAllocationPolicy {
       }
 
       for (const candidate of availableCandidates.slice(0, demandLine.quantity)) {
+        const ownershipSnapshot = this.createOwnershipSnapshot(candidate);
+        if (ownershipSnapshot.isErr()) return err(ownershipSnapshot.error);
+
         usedAssetIds.add(candidate.assetId);
         allocations.push({
           rentalDemandLineId: demandLine.rentalDemandLineId,
@@ -73,11 +82,33 @@ export class RentalAssetAllocationPolicy {
           ownerId: candidate.ownerId,
           ownershipKind: candidate.ownershipKind,
           ownerContractSnapshot: candidate.ownerContractSnapshot ?? null,
+          ownershipSnapshot: ownershipSnapshot.value,
         });
       }
     }
 
     return ok({ allocations });
+  }
+
+  private createOwnershipSnapshot(
+    candidate: AssetCandidate,
+  ): Result<AssignedAssetOwnershipSnapshot, RentalCommitmentError> {
+    if (candidate.ownershipKind === RentalAssetOwnershipKind.TenantOwned) {
+      return AssignedAssetOwnershipSnapshot.create({ kind: 'TENANT_OWNED' });
+    }
+
+    const contract = candidate.ownerContractSnapshot;
+    if (!contract) {
+      return err(new ThirdPartyAssetRequiresOwnerContractSnapshotError(candidate.assetId));
+    }
+
+    return AssignedAssetOwnershipSnapshot.create({
+      kind: 'THIRD_PARTY',
+      ownerId: candidate.ownerId ?? '',
+      contractId: contract.contractId,
+      basis: contract.basis,
+      ownerShare: String(contract.ownerShare),
+    });
   }
 
   private orderByDemandLinePreference(

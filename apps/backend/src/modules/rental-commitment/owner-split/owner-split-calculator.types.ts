@@ -1,12 +1,14 @@
 export type OwnerContractBasis = 'NET' | 'GROSS';
 
-export type RentalAssetOwnershipKind = 'TENANT_OWNED' | 'THIRD_PARTY';
-
-export type OwnerContractSnapshotInput = {
-  contractId: string;
-  basis: OwnerContractBasis;
-  ownerShare: string;
-};
+export type AssignedAssetOwnershipSnapshotInput =
+  | { kind: 'TENANT_OWNED' }
+  | {
+      kind: 'THIRD_PARTY';
+      ownerId: string;
+      contractId: string;
+      basis: OwnerContractBasis;
+      ownerShare: string;
+    };
 
 export type CalculateRentalOwnerSplitsInput = {
   tenantId: string;
@@ -38,9 +40,7 @@ export type RentalOwnerSplitFulfilledAssetInput = {
   id: string;
   rentalDemandLineId: string;
   assetId: string;
-  ownershipKind: RentalAssetOwnershipKind;
-  ownerId: string | null;
-  ownerContractSnapshot: OwnerContractSnapshotInput | null;
+  ownershipSnapshot: AssignedAssetOwnershipSnapshotInput;
 };
 
 export type RentalOwnerSplitPriceLineInput = {

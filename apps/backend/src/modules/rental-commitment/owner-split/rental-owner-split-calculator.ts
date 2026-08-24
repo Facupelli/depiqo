@@ -57,7 +57,7 @@ export class RentalOwnerSplitCalculator {
       });
 
       for (const assignedAsset of sortedFulfilledAssets) {
-        if (assignedAsset.ownershipKind === 'TENANT_OWNED') {
+        if (assignedAsset.ownershipSnapshot.kind === 'TENANT_OWNED') {
           continue;
         }
 
@@ -145,44 +145,35 @@ export class RentalOwnerSplitCalculator {
   }): RentalOwnerSplitDraft {
     const { assignedAsset } = params;
 
-    if (!assignedAsset.ownerId) {
+    const ownershipSnapshot = assignedAsset.ownershipSnapshot;
+    if (ownershipSnapshot.kind !== 'THIRD_PARTY') {
       throw new RentalOwnerSplitCalculationError(
         'INVALID_THIRD_PARTY_ASSET_OWNER',
-        `Third-party assigned asset ${assignedAsset.id} has no ownerId.`,
+        `Assigned asset ${assignedAsset.id} is not third-party owned.`,
         { assignedAssetId: assignedAsset.id, assetId: assignedAsset.assetId },
       );
     }
 
-    const contract = assignedAsset.ownerContractSnapshot;
-
-    if (!contract) {
-      throw new RentalOwnerSplitCalculationError(
-        'MISSING_OWNER_CONTRACT_SNAPSHOT',
-        `Third-party assigned asset ${assignedAsset.id} has no owner contract snapshot.`,
-        { assignedAssetId: assignedAsset.id, assetId: assignedAsset.assetId },
-      );
-    }
-
-    if (contract.basis !== 'NET') {
+    if (ownershipSnapshot.basis !== 'NET') {
       throw new RentalOwnerSplitCalculationError(
         'UNSUPPORTED_OWNER_CONTRACT_BASIS',
-        `Owner contract basis ${contract.basis} is not supported in V1.`,
+        `Owner contract basis ${ownershipSnapshot.basis} is not supported in V1.`,
         {
           assignedAssetId: assignedAsset.id,
           assetId: assignedAsset.assetId,
-          contractId: contract.contractId,
-          basis: contract.basis,
+          contractId: ownershipSnapshot.contractId,
+          basis: ownershipSnapshot.basis,
         },
       );
     }
 
-    this.assertValidOwnerShare(contract.ownerShare, {
+    this.assertValidOwnerShare(ownershipSnapshot.ownerShare, {
       assignedAssetId: assignedAsset.id,
-      contractId: contract.contractId,
+      contractId: ownershipSnapshot.contractId,
     });
 
     const ownerAmount = new Decimal(params.basisAmount)
-      .mul(contract.ownerShare)
+      .mul(ownershipSnapshot.ownerShare)
       .toDecimalPlaces(params.moneyScale, Decimal.ROUND_HALF_UP)
       .toFixed(params.moneyScale);
 
@@ -195,11 +186,11 @@ export class RentalOwnerSplitCalculator {
       assignedAssetId: assignedAsset.id,
       assetId: assignedAsset.assetId,
 
-      ownerId: assignedAsset.ownerId,
-      contractId: contract.contractId,
+      ownerId: ownershipSnapshot.ownerId,
+      contractId: ownershipSnapshot.contractId,
 
       basis: 'NET',
-      ownerShare: contract.ownerShare,
+      ownerShare: ownershipSnapshot.ownerShare,
       basisAmount: params.basisAmount,
       ownerAmount,
 

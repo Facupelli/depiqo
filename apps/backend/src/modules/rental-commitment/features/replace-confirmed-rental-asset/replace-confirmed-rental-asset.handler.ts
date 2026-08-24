@@ -7,7 +7,6 @@ import { V2AssetBlockType } from 'src/generated/prisma/enums';
 
 import { toRentalIntegrationEvents } from '../../application/rental-integration-event.mapper';
 import { RentalAssetAllocationService } from '../../asset-allocation/rental-asset-allocation.service';
-import { RentalAssetAllocationPlanLine } from '../../asset-allocation/rental-asset-allocation-policy';
 import {
   ConfirmedRentalCannotBeEditedAfterPickupError,
   InsufficientAssetAvailabilityError,
@@ -163,16 +162,11 @@ export class ReplaceConfirmedRentalAssetHandler implements ICommandHandler<
         const replacement = currentRental.replaceConfirmedAssignedAsset(
           command.props.currentAssignedAssetId,
           command.props.replacementAssetId,
+          replacementAllocation.ownershipSnapshot,
         );
         if (replacement.isErr()) return err(this.toApplicationError(replacement.error, context));
 
-        const existingOwnerSplits = await tx.v2RentalOwnerSplit.findMany({ where: { tenantId, rentalId } });
-        const ownerSplitByAssignedAssetId = new Map(existingOwnerSplits.map((split) => [split.assignedAssetId, split]));
-        const ownerSplits = this.calculateOwnerSplits({
-          rental: currentRental,
-          replacementAllocation,
-          ownerSplitByAssignedAssetId,
-        });
+        const ownerSplits = this.calculateOwnerSplits(currentRental);
 
         const saved = await this.rentalRepository.save(currentRental, {
           expectedVersion: command.props.expectedVersion,
@@ -208,18 +202,7 @@ export class ReplaceConfirmedRentalAssetHandler implements ICommandHandler<
     }
   }
 
-  private calculateOwnerSplits(params: {
-    rental: Rental;
-    replacementAllocation: RentalAssetAllocationPlanLine;
-    ownerSplitByAssignedAssetId: Map<
-      string,
-      { ownerId: string; contractId: string; basis: string; ownerShare: unknown }
-    >;
-  }): RentalOwnerSplitDraft[] {
-    const { rental, replacementAllocation, ownerSplitByAssignedAssetId } = params;
-    if (!rental) {
-      throw new Error('Rental is required to calculate owner splits.');
-    }
+  private calculateOwnerSplits(rental: Rental): RentalOwnerSplitDraft[] {
     const priceSnapshot = getConfirmedPriceSnapshotForOwnerSplits(rental.confirmedPriceSnapshot);
 
     return this.rentalOwnerSplitCalculator.calculate({
@@ -228,40 +211,12 @@ export class ReplaceConfirmedRentalAssetHandler implements ICommandHandler<
       currency: priceSnapshot.currency,
       selections: rental.selections.map((selection) => ({ id: selection.id })),
       demandLines: rental.demandLines.map((line) => ({ id: line.id, sourceSelectionId: line.rentalSelectionId })),
-      fulfilledAssets: rental.currentAssignedAssets.map((assignment) => {
-        if (assignment.assetId === replacementAllocation.assetId) {
-          return {
-            id: assignment.id,
-            rentalDemandLineId: assignment.rentalDemandLineId,
-            assetId: assignment.assetId,
-            ownershipKind: replacementAllocation.ownershipKind,
-            ownerId: replacementAllocation.ownerId ?? null,
-            ownerContractSnapshot: replacementAllocation.ownerContractSnapshot
-              ? {
-                  contractId: replacementAllocation.ownerContractSnapshot.contractId,
-                  basis: replacementAllocation.ownerContractSnapshot.basis,
-                  ownerShare: String(replacementAllocation.ownerContractSnapshot.ownerShare),
-                }
-              : null,
-          };
-        }
-
-        const existingSplit = ownerSplitByAssignedAssetId.get(assignment.id);
-        return {
-          id: assignment.id,
-          rentalDemandLineId: assignment.rentalDemandLineId,
-          assetId: assignment.assetId,
-          ownershipKind: existingSplit ? ('THIRD_PARTY' as const) : ('TENANT_OWNED' as const),
-          ownerId: existingSplit?.ownerId ?? null,
-          ownerContractSnapshot: existingSplit
-            ? {
-                contractId: existingSplit.contractId,
-                basis: existingSplit.basis as 'NET',
-                ownerShare: String(existingSplit.ownerShare),
-              }
-            : null,
-        };
-      }),
+      fulfilledAssets: rental.currentAssignedAssets.map((assignment) => ({
+        id: assignment.id,
+        rentalDemandLineId: assignment.rentalDemandLineId,
+        assetId: assignment.assetId,
+        ownershipSnapshot: assignment.ownershipSnapshot.toJSON(),
+      })),
       priceLines: priceSnapshot.lines.map((line) => ({
         rentalSelectionId: line.rentalSelectionId,
         netAmount: line.total,

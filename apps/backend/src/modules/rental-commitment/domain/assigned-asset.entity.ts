@@ -5,6 +5,7 @@ import { err, ok, Result } from 'neverthrow';
 import { RentalCommitmentError, RentalInvalidFieldError } from './errors/rental-commitment.errors';
 import { RentalDemandLineId } from './ids/rental-demand-line-id';
 import { AssetId } from './types/rental-commitment-ids';
+import { AssignedAssetOwnershipSnapshot } from './value-objects/assigned-asset-ownership-snapshot.value-object';
 
 export type AssignedAssetId = string & {
   readonly __brand: 'AssignedAssetId';
@@ -15,6 +16,7 @@ interface AssignedAssetProps {
   rentalId: string;
   rentalDemandLineId: RentalDemandLineId;
   assetId: AssetId;
+  ownershipSnapshot: AssignedAssetOwnershipSnapshot;
   effectiveFrom: Date;
   effectiveUntil?: Date;
   createdAt?: Date;
@@ -53,6 +55,10 @@ export class AssignedAsset {
     return this.props.assetId;
   }
 
+  get ownershipSnapshot(): AssignedAssetOwnershipSnapshot {
+    return this.props.ownershipSnapshot;
+  }
+
   get effectiveFrom(): Date {
     return new Date(this.props.effectiveFrom);
   }
@@ -82,6 +88,7 @@ export class AssignedAsset {
         rentalId: props.rentalId,
         rentalDemandLineId: props.rentalDemandLineId,
         assetId: props.assetId,
+        ownershipSnapshot: props.ownershipSnapshot,
         effectiveFrom: new Date(props.effectiveFrom),
         effectiveUntil: props.effectiveUntil ? new Date(props.effectiveUntil) : undefined,
         createdAt: props.createdAt ? new Date(props.createdAt) : undefined,
@@ -100,6 +107,7 @@ export class AssignedAsset {
       rentalId: props.rentalId,
       rentalDemandLineId: props.rentalDemandLineId,
       assetId: props.assetId,
+      ownershipSnapshot: props.ownershipSnapshot,
       effectiveFrom: new Date(props.effectiveFrom),
       effectiveUntil: props.effectiveUntil ? new Date(props.effectiveUntil) : undefined,
       createdAt: props.createdAt ? new Date(props.createdAt) : undefined,

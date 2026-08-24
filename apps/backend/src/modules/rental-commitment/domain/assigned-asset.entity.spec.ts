@@ -1,6 +1,8 @@
 import { AssignedAsset, AssignedAssetId } from './assigned-asset.entity';
 import { RentalDemandLineId } from './ids/rental-demand-line-id';
 import { AssetId } from './types/rental-commitment-ids';
+import { AssignedAssetOwnershipSnapshot } from './value-objects/assigned-asset-ownership-snapshot.value-object';
+import { OwnerContractBasis } from './value-objects/owner-contract-snapshot.value-object';
 
 describe('AssignedAsset', () => {
   const baseProps = {
@@ -8,6 +10,7 @@ describe('AssignedAsset', () => {
     rentalId: 'rental-1',
     rentalDemandLineId: 'demand-1' as RentalDemandLineId,
     assetId: 'asset-1' as AssetId,
+    ownershipSnapshot: AssignedAssetOwnershipSnapshot.create({ kind: 'TENANT_OWNED' })._unsafeUnwrap(),
     effectiveFrom: new Date('2026-08-25T10:00:00.000Z'),
   };
 
@@ -38,6 +41,18 @@ describe('AssignedAsset', () => {
   it('rejects invalid temporal timestamps', () => {
     expect(AssignedAsset.create({ ...baseProps, effectiveFrom: new Date(Number.NaN) }).isErr()).toBe(true);
     expect(AssignedAsset.create({ ...baseProps, effectiveUntil: new Date(Number.NaN) }).isErr()).toBe(true);
+  });
+
+  it('rejects an invalid third-party ownership share', () => {
+    const snapshot = AssignedAssetOwnershipSnapshot.create({
+      kind: 'THIRD_PARTY',
+      ownerId: 'owner-1',
+      contractId: 'contract-1',
+      basis: OwnerContractBasis.Net,
+      ownerShare: '1.01',
+    });
+
+    expect(snapshot.isErr()).toBe(true);
   });
 
   it('preserves identity, temporal fields, and createdAt during reconstitution', () => {

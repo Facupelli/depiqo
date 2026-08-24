@@ -295,23 +295,13 @@ describe('EditConfirmedRental integration', () => {
     const assignment = before.rental.assignedAssets[0];
     const ownerId = 'owner-final-price';
     const contractId = 'contract-final-price';
-    await prisma.client.v2RentalOwnerSplit.create({
+    await prisma.client.v2AssignedAsset.update({
+      where: { id: assignment.id },
       data: {
-        tenantId: setup.tenant.id,
-        rentalId: setup.rental.rentalId,
-        rentalSelectionId: setup.rental.selectionIds[0],
-        rentalDemandLineId: setup.rental.demandLineIds[0],
-        assignedAssetId: assignment.id,
-        assetId: assignment.assetId,
-        ownerId,
-        contractId,
-        basis: 'NET',
-        ownerShare: '0.40',
-        basisAmount: '100.00',
-        ownerAmount: '40.00',
-        currency: 'USD',
+        ownershipSnapshot: { kind: 'THIRD_PARTY', ownerId, contractId, basis: 'NET', ownerShare: '0.4' },
       },
     });
+    expect(before.rental.ownerSplits).toEqual([]);
 
     const result = await edit(setup, {
       manualPricingAdjustment: { mode: 'TARGET_TOTAL', targetTotal: '80.00', reason: 'Accepted correction' },

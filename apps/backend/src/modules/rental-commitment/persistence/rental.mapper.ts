@@ -16,6 +16,10 @@ import { Rental, RentalDeliveryDetails } from '../domain/rental.aggregate';
 import { RentalDemandLineId } from '../domain/ids/rental-demand-line-id';
 import { RentalSelectionId } from '../domain/ids/rental-selection-id';
 import { AssetId, EquipmentTypeId, RentalId } from '../domain/types/rental-commitment-ids';
+import {
+  AssignedAssetOwnershipSnapshot,
+  AssignedAssetOwnershipSnapshotData,
+} from '../domain/value-objects/assigned-asset-ownership-snapshot.value-object';
 import { BookingSnapshot, JsonValue } from '../domain/value-objects/json-snapshot.value-object';
 import { RentalPeriod } from '../domain/value-objects/rental-period.value-object';
 import { RentalOwnerSplitDraft } from '../owner-split/owner-split-calculator.types';
@@ -90,6 +94,7 @@ interface AssignedAssetPersistenceRecord {
   rentalId: string;
   rentalDemandLineId: string;
   assetId: string;
+  ownershipSnapshot: Prisma.JsonValue;
   effectiveFrom: Date;
   effectiveUntil: Date | null;
   createdAt: Date;
@@ -161,6 +166,9 @@ export class RentalMapper {
           rentalId: assignment.rentalId,
           rentalDemandLineId: assignment.rentalDemandLineId as RentalDemandLineId,
           assetId: assignment.assetId as AssetId,
+          ownershipSnapshot: AssignedAssetOwnershipSnapshot.reconstitute(
+            assignment.ownershipSnapshot as AssignedAssetOwnershipSnapshotData,
+          ),
           effectiveFrom: assignment.effectiveFrom,
           effectiveUntil: assignment.effectiveUntil ?? undefined,
           createdAt: assignment.createdAt,
@@ -305,6 +313,7 @@ export class RentalMapper {
       rentalId: assignment.rentalId,
       rentalDemandLineId: assignment.rentalDemandLineId,
       assetId: assignment.assetId,
+      ownershipSnapshot: assignment.ownershipSnapshot.toJSON(),
       effectiveFrom: assignment.effectiveFrom,
       effectiveUntil: assignment.effectiveUntil,
       createdAt: assignment.createdAt,

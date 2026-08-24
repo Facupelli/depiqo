@@ -37,6 +37,7 @@ import { AssetId, RentalId } from './types/rental-commitment-ids';
 import { CreateRentalDemandLineProps, RentalDemandLine } from './rental-demand-line.entity';
 import { AssetBlockType, FulfillmentMethod, RentalSource, RentalStatus } from './rental-status';
 import { CreateRentalSelectionProps, RentalSelection } from './rental-selection.entity';
+import { AssignedAssetOwnershipSnapshot } from './value-objects/assigned-asset-ownership-snapshot.value-object';
 import { ConfirmedPriceSnapshot } from './value-objects/confirmed-price-snapshot.value-object';
 import { BookingSnapshot, JsonSnapshot, JsonValue } from './value-objects/json-snapshot.value-object';
 import { RentalPeriod } from './value-objects/rental-period.value-object';
@@ -553,6 +554,7 @@ export class Rental extends AggregateRootBase {
   replaceConfirmedAssignedAsset(
     currentAssignedAssetId: AssetId,
     replacementAssetId: AssetId,
+    ownershipSnapshot: AssignedAssetOwnershipSnapshot,
     now = new Date(),
   ): Result<void, RentalCommitmentError> {
     if (this.status !== RentalStatus.Confirmed) {
@@ -577,6 +579,7 @@ export class Rental extends AggregateRootBase {
       rentalId: this.id,
       rentalDemandLineId: currentAssignment.rentalDemandLineId,
       assetId: replacementAssetId,
+      ownershipSnapshot,
       effectiveFrom: this.period.start,
     });
     if (replacementAssignment.isErr()) {

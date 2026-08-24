@@ -265,6 +265,7 @@ export class CreateConfirmedRentalService implements ICommandHandler<
           assignedAssets: assetAssignmentPlan.value.allocations.map((allocation) => ({
             rentalDemandLineId: allocation.rentalDemandLineId,
             assetId: allocation.assetId,
+            ownershipSnapshot: allocation.ownershipSnapshot,
           })),
         });
 
@@ -273,13 +274,6 @@ export class CreateConfirmedRentalService implements ICommandHandler<
         }
 
         const confirmedRental = rental.value;
-
-        const assignmentsByAssetAndDemandLine = new Map(
-          confirmedRental.currentAssignedAssets.map((assignment) => [
-            this.assignmentKey(assignment.assetId, assignment.rentalDemandLineId),
-            assignment,
-          ]),
-        );
 
         // TODO: make part of Rental Aggregate
         const ownerSplitInput = {
@@ -296,26 +290,12 @@ export class CreateConfirmedRentalService implements ICommandHandler<
             sourceSelectionId: demandLine.rentalSelectionId,
           })),
 
-          fulfilledAssets: assetAssignmentPlan.value.allocations.map((allocation) => {
-            const assignment = assignmentsByAssetAndDemandLine.get(
-              this.assignmentKey(allocation.assetId, allocation.rentalDemandLineId),
-            );
-
-            return {
-              id: assignment?.id ?? allocation.assetId,
-              rentalDemandLineId: allocation.rentalDemandLineId,
-              assetId: allocation.assetId,
-              ownershipKind: allocation.ownershipKind,
-              ownerId: allocation.ownerId ?? null,
-              ownerContractSnapshot: allocation.ownerContractSnapshot
-                ? {
-                    contractId: allocation.ownerContractSnapshot.contractId,
-                    basis: allocation.ownerContractSnapshot.basis,
-                    ownerShare: String(allocation.ownerContractSnapshot.ownerShare),
-                  }
-                : null,
-            };
-          }),
+          fulfilledAssets: confirmedRental.currentAssignedAssets.map((assignment) => ({
+            id: assignment.id,
+            rentalDemandLineId: assignment.rentalDemandLineId,
+            assetId: assignment.assetId,
+            ownershipSnapshot: assignment.ownershipSnapshot.toJSON(),
+          })),
 
           priceLines: pricingResult.value.final.lines.map((line) => ({
             rentalSelectionId: line.lineReference,
@@ -385,10 +365,6 @@ export class CreateConfirmedRentalService implements ICommandHandler<
     }
 
     return ok({ rentalId: replay.id, rentalNumber: replay.rentalNumber });
-  }
-
-  private assignmentKey(assetId: string, rentalDemandLineId: string): string {
-    return `${rentalDemandLineId}:${assetId}`;
   }
 
   private toApplicationError(error: unknown, context: Record<string, unknown>): CreateConfirmedRentalError {

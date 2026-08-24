@@ -414,6 +414,14 @@ describe('CreateConfirmedRental integration', () => {
     expect(result.isOk()).toBe(true);
     if (result.isErr()) return;
     const state = await persisted(result.value.rentalId);
+    expect(state.rental.assignedAssets).toHaveLength(1);
+    expect(state.rental.assignedAssets[0].ownershipSnapshot).toEqual({
+      kind: 'THIRD_PARTY',
+      ownerId,
+      contractId,
+      basis: 'NET',
+      ownerShare: '0.4',
+    });
     expect(state.rental.ownerSplits).toHaveLength(1);
     expect(state.rental.ownerSplits[0]).toMatchObject({ assetId, ownerId, contractId, currency: 'USD' });
     expect(state.rental.ownerSplits[0].basisAmount.toString()).toBe('100');
