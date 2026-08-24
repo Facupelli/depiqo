@@ -39,6 +39,7 @@ import { AssetId, RentalId } from './types/rental-commitment-ids';
 import { CreateRentalDemandLineProps, RentalDemandLine } from './rental-demand-line.entity';
 import { AssetBlockType, FulfillmentMethod, RentalSource, RentalStatus } from './rental-status';
 import { CreateRentalSelectionProps, RentalSelection } from './rental-selection.entity';
+import { releaseAssignmentParticipation } from './release-assignment-participation';
 import { AssignedAssetOwnershipSnapshot } from './value-objects/assigned-asset-ownership-snapshot.value-object';
 import { ConfirmedPriceSnapshot } from './value-objects/confirmed-price-snapshot.value-object';
 import { BookingSnapshot, JsonSnapshot, JsonValue } from './value-objects/json-snapshot.value-object';
@@ -704,40 +705,16 @@ export class Rental extends AggregateRootBase {
           candidate.assetId === assignment.assetId,
       );
       if (!block) return err(new ConfirmedRentalRequiresActiveBlocksError(this.id, assignment.assetId));
-      if (effectiveAt <= assignment.effectiveFrom) {
-        nextAssignedAssets = nextAssignedAssets.filter((candidate) => candidate.id !== assignment.id);
-        nextAssetBlocks = nextAssetBlocks.filter((candidate) => candidate.id !== block.id);
-        continue;
-      }
-      const assignmentCopy = AssignedAsset.reconstitute({
-        id: assignment.id,
-        tenantId: assignment.tenantId,
-        rentalId: assignment.rentalId,
-        rentalDemandLineId: assignment.rentalDemandLineId,
-        assetId: assignment.assetId,
-        ownershipSnapshot: assignment.ownershipSnapshot,
-        effectiveFrom: assignment.effectiveFrom,
-        effectiveUntil: assignment.effectiveUntil,
-        createdAt: assignment.createdAt,
-      });
-      const blockCopy = AssetBlock.reconstitute({
-        id: block.id,
-        tenantId: block.tenantId,
-        rentalId: block.rentalId,
-        assetId: block.assetId,
-        period: block.period,
-        blockType: block.blockType,
-        createdAt: block.createdAt,
-        releasedAt: block.releasedAt,
-      });
-      const closed = assignmentCopy.close(params.operationTime);
-      if (closed.isErr()) return err(closed.error);
-      const released = blockCopy.truncateAndRelease(params.operationTime);
-      if (released.isErr()) return err(released.error);
-      nextAssignedAssets = nextAssignedAssets.map((candidate) =>
-        candidate.id === assignment.id ? assignmentCopy : candidate,
-      );
-      nextAssetBlocks = nextAssetBlocks.map((candidate) => (candidate.id === block.id ? blockCopy : candidate));
+      const releasedParticipation = releaseAssignmentParticipation({ assignment, block, effectiveAt });
+      if (releasedParticipation.isErr()) return err(releasedParticipation.error);
+
+      const { assignment: releasedAssignment, block: releasedBlock } = releasedParticipation.value;
+      nextAssignedAssets = releasedAssignment
+        ? nextAssignedAssets.map((candidate) => (candidate.id === assignment.id ? releasedAssignment : candidate))
+        : nextAssignedAssets.filter((candidate) => candidate.id !== assignment.id);
+      nextAssetBlocks = releasedBlock
+        ? nextAssetBlocks.map((candidate) => (candidate.id === block.id ? releasedBlock : candidate))
+        : nextAssetBlocks.filter((candidate) => candidate.id !== block.id);
     }
 
     const price = ConfirmedPriceSnapshot.create(params.confirmedPriceSnapshot);
@@ -865,42 +842,20 @@ export class Rental extends AggregateRootBase {
             block.isActive && block.blockType === AssetBlockType.Equipment && block.assetId === assignment.assetId,
         );
         if (!currentBlock) return err(new ConfirmedRentalRequiresActiveBlocksError(this.id, assignment.assetId));
-        if (effectiveAt <= assignment.effectiveFrom) {
-          nextAssignedAssets = nextAssignedAssets.filter((candidate) => candidate.id !== assignment.id);
-          nextAssetBlocks = nextAssetBlocks.filter((candidate) => candidate.id !== currentBlock.id);
-          continue;
-        }
-        const assignmentCopy = AssignedAsset.reconstitute({
-          id: assignment.id,
-          tenantId: assignment.tenantId,
-          rentalId: assignment.rentalId,
-          rentalDemandLineId: assignment.rentalDemandLineId,
-          assetId: assignment.assetId,
-          ownershipSnapshot: assignment.ownershipSnapshot,
-          effectiveFrom: assignment.effectiveFrom,
-          effectiveUntil: assignment.effectiveUntil,
-          createdAt: assignment.createdAt,
+        const releasedParticipation = releaseAssignmentParticipation({
+          assignment,
+          block: currentBlock,
+          effectiveAt,
         });
-        const blockCopy = AssetBlock.reconstitute({
-          id: currentBlock.id,
-          tenantId: currentBlock.tenantId,
-          rentalId: currentBlock.rentalId,
-          assetId: currentBlock.assetId,
-          period: currentBlock.period,
-          blockType: currentBlock.blockType,
-          createdAt: currentBlock.createdAt,
-          releasedAt: currentBlock.releasedAt,
-        });
-        const closed = assignmentCopy.close(params.operationTime);
-        if (closed.isErr()) return err(closed.error);
-        const released = blockCopy.truncateAndRelease(params.operationTime);
-        if (released.isErr()) return err(released.error);
-        nextAssignedAssets = nextAssignedAssets.map((candidate) =>
-          candidate.id === assignment.id ? assignmentCopy : candidate,
-        );
-        nextAssetBlocks = nextAssetBlocks.map((candidate) =>
-          candidate.id === currentBlock.id ? blockCopy : candidate,
-        );
+        if (releasedParticipation.isErr()) return err(releasedParticipation.error);
+
+        const { assignment: releasedAssignment, block: releasedBlock } = releasedParticipation.value;
+        nextAssignedAssets = releasedAssignment
+          ? nextAssignedAssets.map((candidate) => (candidate.id === assignment.id ? releasedAssignment : candidate))
+          : nextAssignedAssets.filter((candidate) => candidate.id !== assignment.id);
+        nextAssetBlocks = releasedBlock
+          ? nextAssetBlocks.map((candidate) => (candidate.id === currentBlock.id ? releasedBlock : candidate))
+          : nextAssetBlocks.filter((candidate) => candidate.id !== currentBlock.id);
       }
     }
 
@@ -1088,76 +1043,33 @@ export class Rental extends AggregateRootBase {
     });
     if (replacementBlock.isErr()) return err(replacementBlock.error);
 
-    const isPlannedReplacement = effectiveAt <= currentAssignment.effectiveFrom;
-    let nextAssignedAssets: AssignedAsset[];
-    let nextAssetBlocks: AssetBlock[];
-
-    if (isPlannedReplacement) {
-      nextAssignedAssets = [
-        ...this.props.assignedAssets.filter((assignment) => assignment.id !== currentAssignment.id),
-        replacementAssignment.value,
-      ];
-      nextAssetBlocks = [
-        ...this.props.assetBlocks.filter(
-          (block) =>
-            !(
-              block.isActive &&
-              block.blockType === AssetBlockType.Equipment &&
-              block.assetId === params.currentAssignedAssetId
-            ),
-        ),
-        replacementBlock.value,
-      ];
-    } else {
-      const historicalAssignment = AssignedAsset.create({
-        id: currentAssignment.id,
-        tenantId: currentAssignment.tenantId,
-        rentalId: currentAssignment.rentalId,
-        rentalDemandLineId: currentAssignment.rentalDemandLineId,
-        assetId: currentAssignment.assetId,
-        ownershipSnapshot: currentAssignment.ownershipSnapshot,
-        effectiveFrom: currentAssignment.effectiveFrom,
-        createdAt: currentAssignment.createdAt,
-      });
-      if (historicalAssignment.isErr()) return err(historicalAssignment.error);
-
-      const currentBlock = this.props.assetBlocks.find(
-        (block) =>
-          block.isActive &&
-          block.blockType === AssetBlockType.Equipment &&
-          block.assetId === params.currentAssignedAssetId,
-      );
-      if (!currentBlock) {
-        return err(new ConfirmedRentalRequiresActiveBlocksError(this.id, params.currentAssignedAssetId));
-      }
-
-      const historicalBlock = AssetBlock.create({
-        id: currentBlock.id,
-        tenantId: currentBlock.tenantId,
-        rentalId: currentBlock.rentalId,
-        assetId: currentBlock.assetId,
-        period: currentBlock.period,
-        blockType: currentBlock.blockType,
-        createdAt: currentBlock.createdAt,
-      });
-      if (historicalBlock.isErr()) return err(historicalBlock.error);
-
-      const closeAssignment = historicalAssignment.value.close(effectiveAt);
-      if (closeAssignment.isErr()) return err(closeAssignment.error);
-      const truncateBlock = historicalBlock.value.truncateAndRelease(effectiveAt);
-      if (truncateBlock.isErr()) return err(truncateBlock.error);
-
-      nextAssignedAssets = [
-        ...this.props.assignedAssets.filter((assignment) => assignment.id !== currentAssignment.id),
-        historicalAssignment.value,
-        replacementAssignment.value,
-      ];
-      nextAssetBlocks = [
-        ...this.props.assetBlocks.filter((block) => block.id !== currentBlock.id),
-        historicalBlock.value,
-        replacementBlock.value,
-      ];
+    const currentBlock = this.props.assetBlocks.find(
+      (block) =>
+        block.isActive &&
+        block.blockType === AssetBlockType.Equipment &&
+        block.assetId === params.currentAssignedAssetId,
+    );
+    if (!currentBlock) {
+      return err(new ConfirmedRentalRequiresActiveBlocksError(this.id, params.currentAssignedAssetId));
     }
+
+    const releasedParticipation = releaseAssignmentParticipation({
+      assignment: currentAssignment,
+      block: currentBlock,
+      effectiveAt,
+    });
+    if (releasedParticipation.isErr()) return err(releasedParticipation.error);
+
+    const nextAssignedAssets = [
+      ...this.props.assignedAssets.filter((assignment) => assignment.id !== currentAssignment.id),
+      ...(releasedParticipation.value.assignment ? [releasedParticipation.value.assignment] : []),
+      replacementAssignment.value,
+    ];
+    const nextAssetBlocks = [
+      ...this.props.assetBlocks.filter((block) => block.id !== currentBlock.id),
+      ...(releasedParticipation.value.block ? [releasedParticipation.value.block] : []),
+      replacementBlock.value,
+    ];
 
     const candidate = Rental.createFromEntities(RentalStatus.Confirmed, {
       id: this.id,
