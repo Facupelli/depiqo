@@ -53,6 +53,7 @@ export class GetRentalAccessoryDefaultsHandler implements IQueryHandler<
         periodStart: true,
         periodEnd: true,
         demandLines: {
+          where: { removedAt: null },
           select: {
             id: true,
             equipmentTypeId: true,

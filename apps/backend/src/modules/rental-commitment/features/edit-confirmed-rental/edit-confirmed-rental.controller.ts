@@ -114,6 +114,12 @@ const problemMap = {
     HttpStatus.CONFLICT,
     'Remove or reassign the affected accessories before editing this rental.',
   ),
+  'rental_commitment.operational_edit_blocked_by_removal_history': problem(
+    'operational_edit_blocked_by_removal_history',
+    'Operational edit unavailable',
+    HttpStatus.CONFLICT,
+    'This rental contains selection removal history and cannot be changed with the broad operational editor.',
+  ),
   'rental_commitment.rental_version_conflict': problem(
     'rental_version_conflict',
     'Rental was modified',

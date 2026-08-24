@@ -28,6 +28,8 @@ import { EditUnconfirmedRentalHttpController } from './features/edit-unconfirmed
 import { EditUnconfirmedRentalHandler } from './features/edit-unconfirmed-rental/edit-unconfirmed-rental.handler';
 import { ReplaceConfirmedRentalAssetHttpController } from './features/replace-confirmed-rental-asset/replace-confirmed-rental-asset.controller';
 import { ReplaceConfirmedRentalAssetHandler } from './features/replace-confirmed-rental-asset/replace-confirmed-rental-asset.handler';
+import { RemoveRentalSelectionHttpController } from './features/remove-rental-selection/remove-rental-selection.controller';
+import { RemoveRentalSelectionHandler } from './features/remove-rental-selection/remove-rental-selection.handler';
 import { GetRentalDetailHttpController } from './features/get-rental-detail/get-rental-detail.controller';
 import { GetRentalDetailHandler } from './features/get-rental-detail/get-rental-detail.handler';
 import { GetRentalsCalendarHttpController } from './features/get-rentals-calendar/get-rentals-calendar.controller';
@@ -69,6 +71,7 @@ import { RentalLifecycleFactsService } from './public-api/rental-lifecycle-facts
     EditConfirmedRentalHttpController,
     EditUnconfirmedRentalHttpController,
     ReplaceConfirmedRentalAssetHttpController,
+    RemoveRentalSelectionHttpController,
     GetRentalsCalendarHttpController,
     GetRentalDetailHttpController,
     GetRentalsHttpController,
@@ -92,6 +95,7 @@ import { RentalLifecycleFactsService } from './public-api/rental-lifecycle-facts
     EditConfirmedRentalHandler,
     EditUnconfirmedRentalHandler,
     ReplaceConfirmedRentalAssetHandler,
+    RemoveRentalSelectionHandler,
     GetRentalDetailHandler,
     GetRentalsCalendarHandler,
     GetRentalsHandler,

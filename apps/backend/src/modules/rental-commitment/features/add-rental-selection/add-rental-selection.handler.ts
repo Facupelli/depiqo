@@ -79,7 +79,7 @@ export class AddRentalSelectionHandler implements ICommandHandler<AddRentalSelec
     if (rental.status !== RentalStatus.Confirmed) {
       return err(this.toApplicationError(new RentalCannotBeEditedFromStatusError(rentalId, rental.status), context));
     }
-    if (rental.selections.some((selection) => selection.rentalOfferId === rentalOfferId)) {
+    if (rental.currentSelections.some((selection) => selection.rentalOfferId === rentalOfferId)) {
       return err(this.toApplicationError(new DuplicateRentalOfferSelectionError(rentalOfferId), context));
     }
 
@@ -146,7 +146,7 @@ export class AddRentalSelectionHandler implements ICommandHandler<AddRentalSelec
         weekendCountsAsOne: billingPreferences.value.weekendCountsAsOne,
       },
       lines: [
-        ...rental.selections.map((existing) => ({
+        ...rental.currentSelections.map((existing) => ({
           lineReference: existing.id,
           rentalOfferId: existing.rentalOfferId,
           rentableItemId: existing.rentableItemId,
@@ -168,7 +168,7 @@ export class AddRentalSelectionHandler implements ICommandHandler<AddRentalSelec
       result: pricingResult.value,
       context: 'CONFIRMED',
       lineDisplayNames: Object.fromEntries([
-        ...rental.selections.map((existing) => [existing.id, existing.rentableItemNameSnapshot] as const),
+        ...rental.currentSelections.map((existing) => [existing.id, existing.rentableItemNameSnapshot] as const),
         [selectionId, selection.rentableItemNameSnapshot],
       ]),
     });
@@ -192,7 +192,7 @@ export class AddRentalSelectionHandler implements ICommandHandler<AddRentalSelec
             this.toApplicationError(new RentalCannotBeEditedFromStatusError(rentalId, currentRental.status), context),
           );
         }
-        if (currentRental.selections.some((existing) => existing.rentalOfferId === rentalOfferId)) {
+        if (currentRental.currentSelections.some((existing) => existing.rentalOfferId === rentalOfferId)) {
           return err(this.toApplicationError(new DuplicateRentalOfferSelectionError(rentalOfferId), context));
         }
 
@@ -272,8 +272,11 @@ export class AddRentalSelectionHandler implements ICommandHandler<AddRentalSelec
       tenantId: rental.tenantId,
       rentalId: rental.id,
       currency: priceSnapshot.currency,
-      selections: rental.selections.map((selection) => ({ id: selection.id })),
-      demandLines: rental.demandLines.map((line) => ({ id: line.id, sourceSelectionId: line.rentalSelectionId })),
+      selections: rental.currentSelections.map((selection) => ({ id: selection.id })),
+      demandLines: rental.currentDemandLines.map((line) => ({
+        id: line.id,
+        sourceSelectionId: line.rentalSelectionId,
+      })),
       fulfilledAssets: rental.currentAssignedAssets.map((assignment) => ({
         id: assignment.id,
         rentalDemandLineId: assignment.rentalDemandLineId,

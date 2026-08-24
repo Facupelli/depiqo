@@ -132,6 +132,21 @@ export class EditConfirmedRentalHandler implements ICommandHandler<
       return this.editDetails({ rental, command, context, now });
     }
 
+    // TODO: Remove this temporary safeguard with the broad confirmed editor.
+    if (
+      rental.selections.some((selection) => !selection.isCurrent) ||
+      rental.demandLines.some((line) => !line.isCurrent)
+    ) {
+      return err(
+        editConfirmedRentalError(
+          'rental_commitment.operational_edit_blocked_by_removal_history',
+          'Operational broad edits cannot rebuild a rental that contains removal history.',
+          undefined,
+          context,
+        ),
+      );
+    }
+
     const tenantValidation = await this.rentalOperationalFacts.validateDraftFacts({
       tenantId,
       branchId,
@@ -158,7 +173,7 @@ export class EditConfirmedRentalHandler implements ICommandHandler<
       return err(this.toApplicationError(resolvedCatalogSelections.error, context));
 
     const existingSelectionIdByOfferId = new Map(
-      rental.selections.map((selection) => [selection.rentalOfferId, selection.id]),
+      rental.currentSelections.map((selection) => [selection.rentalOfferId, selection.id]),
     );
 
     const selections = resolvedCatalogSelections.value.resolvedOffers.map((offer) => ({
@@ -195,7 +210,7 @@ export class EditConfirmedRentalHandler implements ICommandHandler<
     if (pricingResult.isErr()) return err(this.toApplicationError(pricingResult.error, context));
 
     const existingDemandLineBySelectionAndEquipmentType = new Map(
-      rental.demandLines.map((line) => [`${line.rentalSelectionId}:${line.equipmentTypeId}`, line]),
+      rental.currentDemandLines.map((line) => [`${line.rentalSelectionId}:${line.equipmentTypeId}`, line]),
     );
     const newEquipmentTypeIds = selections.flatMap((selection) =>
       selection.fulfillmentRequirements
@@ -313,7 +328,7 @@ export class EditConfirmedRentalHandler implements ICommandHandler<
             line.id,
             rental.currentAssignedAssets
               .filter((assignment) => {
-                const previousDemandLine = rental.demandLines.find(
+                const previousDemandLine = rental.currentDemandLines.find(
                   (existing) => existing.id === assignment.rentalDemandLineId,
                 );
                 return previousDemandLine?.equipmentTypeId === line.equipmentTypeId;
@@ -379,8 +394,11 @@ export class EditConfirmedRentalHandler implements ICommandHandler<
           tenantId,
           rentalId,
           currency: priceSnapshot.currency,
-          selections: rental.selections.map((selection) => ({ id: selection.id })),
-          demandLines: rental.demandLines.map((line) => ({ id: line.id, sourceSelectionId: line.rentalSelectionId })),
+          selections: rental.currentSelections.map((selection) => ({ id: selection.id })),
+          demandLines: rental.currentDemandLines.map((line) => ({
+            id: line.id,
+            sourceSelectionId: line.rentalSelectionId,
+          })),
           fulfilledAssets: rental.currentAssignedAssets.map((assignment) => ({
             id: assignment.id,
             rentalDemandLineId: assignment.rentalDemandLineId,
@@ -468,7 +486,7 @@ export class EditConfirmedRentalHandler implements ICommandHandler<
       }
 
       const selectionIdByOfferId = new Map(
-        rental.selections.map((selection) => [selection.rentalOfferId, selection.id]),
+        rental.currentSelections.map((selection) => [selection.rentalOfferId, selection.id]),
       );
       const pricingResult = await this.pricingCalculation.calculateProposedPrice({
         tenantId,
@@ -524,8 +542,11 @@ export class EditConfirmedRentalHandler implements ICommandHandler<
           tenantId,
           rentalId,
           currency: priceSnapshot.currency,
-          selections: rental.selections.map((selection) => ({ id: selection.id })),
-          demandLines: rental.demandLines.map((line) => ({ id: line.id, sourceSelectionId: line.rentalSelectionId })),
+          selections: rental.currentSelections.map((selection) => ({ id: selection.id })),
+          demandLines: rental.currentDemandLines.map((line) => ({
+            id: line.id,
+            sourceSelectionId: line.rentalSelectionId,
+          })),
           fulfilledAssets: rental.currentAssignedAssets.map((assignment) => ({
             id: assignment.id,
             rentalDemandLineId: assignment.rentalDemandLineId,

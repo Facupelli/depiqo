@@ -7,6 +7,7 @@ export type EditConfirmedRentalErrorCode =
   | 'rental_commitment.rental_cannot_be_edited_after_pickup'
   | 'rental_commitment.rental_version_conflict'
   | 'rental_commitment.rental_accessories_require_removal'
+  | 'rental_commitment.operational_edit_blocked_by_removal_history'
   | 'rental_commitment.rental_requires_selection'
   | 'rental_commitment.duplicate_rental_offer_selection'
   | 'rental_commitment.rental_offer_not_found'

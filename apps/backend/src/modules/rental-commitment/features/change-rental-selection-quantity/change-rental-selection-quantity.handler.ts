@@ -58,7 +58,7 @@ export class ChangeRentalSelectionQuantityHandler implements ICommandHandler<
     const rental = await this.rentalRepository.findById(tenantId, rentalId);
     if (!rental)
       return err(this.error('rental_commitment.rental_not_found', `Rental "${rentalId}" was not found.`, context));
-    const initialSelection = rental.selections.find((selection) => selection.id === selectionId);
+    const initialSelection = rental.currentSelections.find((selection) => selection.id === selectionId);
     if (!initialSelection) return err(this.map(new RentalSelectionNotFoundError(rentalId, selectionId), context));
     if (rental.status !== RentalStatus.Confirmed)
       return err(this.map(new RentalCannotBeEditedFromStatusError(rentalId, rental.status), context));
@@ -84,7 +84,7 @@ export class ChangeRentalSelectionQuantityHandler implements ICommandHandler<
           dailyBillingPolicy: billing.value.dailyBillingPolicy,
           weekendCountsAsOne: billing.value.weekendCountsAsOne,
         },
-        lines: rental.selections.map((selection) => ({
+        lines: rental.currentSelections.map((selection) => ({
           lineReference: selection.id,
           rentalOfferId: selection.rentalOfferId,
           rentableItemId: selection.rentableItemId,
@@ -97,7 +97,7 @@ export class ChangeRentalSelectionQuantityHandler implements ICommandHandler<
         result: calculated.value,
         context: 'CONFIRMED',
         lineDisplayNames: Object.fromEntries(
-          rental.selections.map((selection) => [selection.id, selection.rentableItemNameSnapshot]),
+          rental.currentSelections.map((selection) => [selection.id, selection.rentableItemNameSnapshot]),
         ),
       });
     }
@@ -115,7 +115,7 @@ export class ChangeRentalSelectionQuantityHandler implements ICommandHandler<
               context,
             ),
           );
-        const selection = current.selections.find((candidate) => candidate.id === selectionId);
+        const selection = current.currentSelections.find((candidate) => candidate.id === selectionId);
         if (!selection) return err(this.map(new RentalSelectionNotFoundError(rentalId, selectionId), context));
         if (current.status !== RentalStatus.Confirmed)
           return err(this.map(new RentalCannotBeEditedFromStatusError(rentalId, current.status), context));
@@ -134,7 +134,7 @@ export class ChangeRentalSelectionQuantityHandler implements ICommandHandler<
         const effectiveAt = operationTime < current.period.start ? current.period.start : operationTime;
         if (effectiveAt >= current.period.end) return err(this.map(new RentalPeriodHasEndedError(rentalId), context));
 
-        const targetLines = current.demandLines.filter((line) => line.rentalSelectionId === selection.id);
+        const targetLines = current.currentDemandLines.filter((line) => line.rentalSelectionId === selection.id);
         if (targetLines.length === 0) {
           return err(
             this.map(
@@ -206,8 +206,11 @@ export class ChangeRentalSelectionQuantityHandler implements ICommandHandler<
           tenantId,
           rentalId,
           currency: snapshot.currency,
-          selections: current.selections.map(({ id }) => ({ id })),
-          demandLines: current.demandLines.map((line) => ({ id: line.id, sourceSelectionId: line.rentalSelectionId })),
+          selections: current.currentSelections.map(({ id }) => ({ id })),
+          demandLines: current.currentDemandLines.map((line) => ({
+            id: line.id,
+            sourceSelectionId: line.rentalSelectionId,
+          })),
           fulfilledAssets: current.currentAssignedAssets.map((assignment) => ({
             id: assignment.id,
             rentalDemandLineId: assignment.rentalDemandLineId,

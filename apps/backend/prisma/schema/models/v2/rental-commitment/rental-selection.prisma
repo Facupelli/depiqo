@@ -13,6 +13,7 @@ model V2RentalSelection {
   quantity                 Int
   priceSnapshot            Json?              @map("price_snapshot")
   createdAt                DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
+  removedAt                DateTime?          @map("removed_at") @db.Timestamptz(3)
 
   rental      V2Rental             @relation(fields: [rentalId], references: [id])
   demandLines V2RentalDemandLine[]

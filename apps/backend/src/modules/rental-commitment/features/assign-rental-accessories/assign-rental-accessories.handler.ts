@@ -289,6 +289,7 @@ export class AssignRentalAccessoriesHandler implements ICommandHandler<
           tenantId: command.tenantId,
           rentalId: command.rentalId,
           id: { in: [...sourceDemandLineIds] },
+          removedAt: null,
         },
       });
 

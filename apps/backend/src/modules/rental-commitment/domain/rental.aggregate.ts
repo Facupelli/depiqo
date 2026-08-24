@@ -129,6 +129,12 @@ export interface AddConfirmedRentalSelectionProps {
   operationTime: Date;
 }
 
+export interface RemoveConfirmedSelectionProps {
+  selectionId: string;
+  confirmedPriceSnapshot: JsonValue;
+  operationTime: Date;
+}
+
 export interface ChangeConfirmedSelectionQuantityProps {
   selectionId: string;
   newQuantity: number;
@@ -293,8 +299,16 @@ export class Rental extends AggregateRootBase {
     return [...this.props.selections];
   }
 
+  get currentSelections(): readonly RentalSelection[] {
+    return this.props.selections.filter((selection) => selection.isCurrent);
+  }
+
   get demandLines(): readonly RentalDemandLine[] {
     return [...this.props.demandLines];
+  }
+
+  get currentDemandLines(): readonly RentalDemandLine[] {
+    return this.props.demandLines.filter((line) => line.isCurrent);
   }
 
   get assignedAssets(): readonly AssignedAsset[] {
@@ -645,10 +659,129 @@ export class Rental extends AggregateRootBase {
     return ok(undefined);
   }
 
+  removeConfirmedSelection(params: RemoveConfirmedSelectionProps): Result<void, RentalCommitmentError> {
+    if (this.status !== RentalStatus.Confirmed) {
+      return err(new RentalCannotBeEditedFromStatusError(this.id, this.status));
+    }
+    const selection = this.currentSelections.find((candidate) => candidate.id === params.selectionId);
+    if (!selection) return err(new RentalSelectionNotFoundError(this.id, params.selectionId));
+    if (this.currentSelections.length === 1) return err(new RentalMustContainSelectionError());
+
+    const effectiveAt = params.operationTime < this.period.start ? this.period.start : params.operationTime;
+    if (effectiveAt >= this.period.end) return err(new RentalPeriodHasEndedError(this.id));
+
+    const targetDemandLines = this.currentDemandLines.filter((line) => line.rentalSelectionId === selection.id);
+    if (targetDemandLines.length === 0) {
+      return err(new RentalInvalidFieldError('demandLines', 'target selection must have persisted current demand'));
+    }
+    const targetDemandLineIds = new Set(targetDemandLines.map((line) => line.id));
+
+    const removedSelection = RentalSelection.create({
+      id: selection.id,
+      tenantId: selection.tenantId,
+      rentalId: selection.rentalId,
+      rentalOfferId: selection.rentalOfferId,
+      rentableItemId: selection.rentableItemId,
+      rentableItemNameSnapshot: selection.rentableItemNameSnapshot,
+      rentableItemKindSnapshot: selection.rentableItemKindSnapshot,
+      quantity: selection.quantity,
+      priceSnapshot: selection.priceSnapshot?.toJSON(),
+      createdAt: selection.createdAt,
+      removedAt: params.operationTime,
+    });
+    if (removedSelection.isErr()) return err(removedSelection.error);
+
+    const nextDemandLines: RentalDemandLine[] = [];
+    for (const line of this.props.demandLines) {
+      if (!targetDemandLineIds.has(line.id)) {
+        nextDemandLines.push(line);
+        continue;
+      }
+      const removedLine = RentalDemandLine.create({
+        id: line.id,
+        tenantId: line.tenantId,
+        rentalId: line.rentalId,
+        rentalSelectionId: line.rentalSelectionId,
+        equipmentTypeId: line.equipmentTypeId,
+        equipmentTypeNameSnapshot: line.equipmentTypeNameSnapshot,
+        quantity: line.quantity,
+        createdAt: line.createdAt,
+        removedAt: params.operationTime,
+      });
+      if (removedLine.isErr()) return err(removedLine.error);
+      nextDemandLines.push(removedLine.value);
+    }
+
+    let nextAssignedAssets = [...this.props.assignedAssets];
+    let nextAssetBlocks = [...this.props.assetBlocks];
+    const assignmentsToRelease = this.currentAssignedAssets.filter((assignment) =>
+      targetDemandLineIds.has(assignment.rentalDemandLineId),
+    );
+    for (const assignment of assignmentsToRelease) {
+      const block = nextAssetBlocks.find(
+        (candidate) =>
+          candidate.isActive &&
+          candidate.blockType === AssetBlockType.Equipment &&
+          candidate.assetId === assignment.assetId,
+      );
+      if (!block) return err(new ConfirmedRentalRequiresActiveBlocksError(this.id, assignment.assetId));
+      if (effectiveAt <= assignment.effectiveFrom) {
+        nextAssignedAssets = nextAssignedAssets.filter((candidate) => candidate.id !== assignment.id);
+        nextAssetBlocks = nextAssetBlocks.filter((candidate) => candidate.id !== block.id);
+        continue;
+      }
+      const assignmentCopy = AssignedAsset.reconstitute({
+        id: assignment.id,
+        tenantId: assignment.tenantId,
+        rentalId: assignment.rentalId,
+        rentalDemandLineId: assignment.rentalDemandLineId,
+        assetId: assignment.assetId,
+        ownershipSnapshot: assignment.ownershipSnapshot,
+        effectiveFrom: assignment.effectiveFrom,
+        effectiveUntil: assignment.effectiveUntil,
+        createdAt: assignment.createdAt,
+      });
+      const blockCopy = AssetBlock.reconstitute({
+        id: block.id,
+        tenantId: block.tenantId,
+        rentalId: block.rentalId,
+        assetId: block.assetId,
+        period: block.period,
+        blockType: block.blockType,
+        createdAt: block.createdAt,
+        releasedAt: block.releasedAt,
+      });
+      const closed = assignmentCopy.close(params.operationTime);
+      if (closed.isErr()) return err(closed.error);
+      const released = blockCopy.truncateAndRelease(params.operationTime);
+      if (released.isErr()) return err(released.error);
+      nextAssignedAssets = nextAssignedAssets.map((candidate) =>
+        candidate.id === assignment.id ? assignmentCopy : candidate,
+      );
+      nextAssetBlocks = nextAssetBlocks.map((candidate) => (candidate.id === block.id ? blockCopy : candidate));
+    }
+
+    const price = ConfirmedPriceSnapshot.create(params.confirmedPriceSnapshot);
+    if (price.isErr()) return err(price.error);
+    const candidate = Rental.createFromEntities(RentalStatus.Confirmed, {
+      ...this.props,
+      id: this.id,
+      confirmedPriceSnapshot: price.value,
+      selections: this.props.selections.map((item) => (item.id === selection.id ? removedSelection.value : item)),
+      demandLines: nextDemandLines,
+      assignedAssets: nextAssignedAssets,
+      assetBlocks: nextAssetBlocks,
+    });
+    if (candidate.isErr()) return err(candidate.error);
+    this.props = candidate.value.props;
+    this.recordConfirmedRentalEditedEvent(params.operationTime);
+    return ok(undefined);
+  }
+
   changeConfirmedSelectionQuantity(params: ChangeConfirmedSelectionQuantityProps): Result<void, RentalCommitmentError> {
     if (this.status !== RentalStatus.Confirmed)
       return err(new RentalCannotBeEditedFromStatusError(this.id, this.status));
-    const selection = this.props.selections.find((candidate) => candidate.id === params.selectionId);
+    const selection = this.currentSelections.find((candidate) => candidate.id === params.selectionId);
     if (!selection) return err(new RentalSelectionNotFoundError(this.id, params.selectionId));
     if (!Number.isInteger(params.newQuantity) || params.newQuantity <= 0)
       return err(new RentalInvalidFieldError('quantity', 'must be a positive integer'));
@@ -657,7 +790,7 @@ export class Rental extends AggregateRootBase {
 
     const effectiveAt = params.operationTime < this.period.start ? this.period.start : params.operationTime;
     if (effectiveAt >= this.period.end) return err(new RentalPeriodHasEndedError(this.id));
-    const targetDemandLines = this.props.demandLines.filter((line) => line.rentalSelectionId === selection.id);
+    const targetDemandLines = this.currentDemandLines.filter((line) => line.rentalSelectionId === selection.id);
     if (targetDemandLines.length === 0) {
       return err(new RentalInvalidFieldError('demandLines', 'target selection must have persisted demand'));
     }
@@ -1277,11 +1410,11 @@ export class Rental extends AggregateRootBase {
   }
 
   private validateBaseInvariants(): Result<void, RentalCommitmentError> {
-    if (this.props.selections.length === 0) {
+    if (this.currentSelections.length === 0) {
       return err(new RentalMustContainSelectionError());
     }
 
-    const duplicateSelectionValidation = RentalSelection.ensureNoDuplicateOffers(this.props.selections);
+    const duplicateSelectionValidation = RentalSelection.ensureNoDuplicateOffers(this.currentSelections);
     if (duplicateSelectionValidation.isErr()) {
       return err(duplicateSelectionValidation.error);
     }
@@ -1311,7 +1444,7 @@ export class Rental extends AggregateRootBase {
   private validateConfirmedInvariants(): Result<void, RentalCommitmentError> {
     return this.validateConfirmedState({
       confirmedPriceSnapshot: this.props.confirmedPriceSnapshot,
-      demandLines: this.props.demandLines,
+      demandLines: this.currentDemandLines,
       assignedAssets: this.props.assignedAssets,
       assetBlocks: this.props.assetBlocks,
       period: this.period,
@@ -1407,9 +1540,19 @@ export class Rental extends AggregateRootBase {
       }
     }
 
+    const selectionById = new Map(this.props.selections.map((selection) => [selection.id, selection]));
     for (const demandLine of this.props.demandLines) {
       if (!selectionIds.has(demandLine.rentalSelectionId)) {
         return err(new DemandLineSelectionMismatchError(this.id, demandLine.id));
+      }
+      const selection = selectionById.get(demandLine.rentalSelectionId)!;
+      if (selection.removedAt?.getTime() !== demandLine.removedAt?.getTime()) {
+        return err(
+          new RentalInvalidFieldError(
+            'removedAt',
+            `demand line "${demandLine.id}" must match its source selection tombstone`,
+          ),
+        );
       }
     }
 

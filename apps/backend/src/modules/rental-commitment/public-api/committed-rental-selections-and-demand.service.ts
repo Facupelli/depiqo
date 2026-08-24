@@ -31,6 +31,7 @@ export class CommittedRentalSelectionsAndDemandService extends CommittedRentalSe
       },
       select: {
         selections: {
+          where: { removedAt: null },
           select: {
             id: true,
             rentalOfferId: true,
@@ -44,6 +45,7 @@ export class CommittedRentalSelectionsAndDemandService extends CommittedRentalSe
           },
         },
         demandLines: {
+          where: { removedAt: null },
           select: {
             id: true,
             rentalSelectionId: true,

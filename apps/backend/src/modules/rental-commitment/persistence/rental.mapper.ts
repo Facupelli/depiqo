@@ -75,6 +75,7 @@ interface RentalSelectionPersistenceRecord {
   quantity: number;
   priceSnapshot: Prisma.JsonValue | null;
   createdAt: Date;
+  removedAt: Date | null;
 }
 
 interface RentalDemandLinePersistenceRecord {
@@ -86,6 +87,7 @@ interface RentalDemandLinePersistenceRecord {
   equipmentTypeNameSnapshot: string;
   quantity: number;
   createdAt: Date;
+  removedAt: Date | null;
 }
 
 interface AssignedAssetPersistenceRecord {
@@ -145,6 +147,7 @@ export class RentalMapper {
           quantity: selection.quantity,
           priceSnapshot: (selection.priceSnapshot as JsonValue | null) ?? undefined,
           createdAt: selection.createdAt,
+          removedAt: selection.removedAt ?? undefined,
         }),
       ),
       demandLines: record.demandLines.map((line) =>
@@ -157,6 +160,7 @@ export class RentalMapper {
           equipmentTypeNameSnapshot: line.equipmentTypeNameSnapshot,
           quantity: line.quantity,
           createdAt: line.createdAt,
+          removedAt: line.removedAt ?? undefined,
         }),
       ),
       assignedAssets: record.assignedAssets.map((assignment) =>
@@ -257,6 +261,7 @@ export class RentalMapper {
       quantity: selection.quantity,
       priceSnapshot: toPrismaJsonInput(selection.priceSnapshot?.toJSON()),
       createdAt: selection.createdAt,
+      removedAt: selection.removedAt,
     };
   }
 
@@ -270,6 +275,7 @@ export class RentalMapper {
       equipmentTypeNameSnapshot: line.equipmentTypeNameSnapshot,
       quantity: line.quantity,
       createdAt: line.createdAt,
+      removedAt: line.removedAt,
     };
   }
 

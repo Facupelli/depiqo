@@ -20,6 +20,7 @@ interface RentalSelectionProps {
   quantity: RentalQuantity;
   priceSnapshot?: JsonSnapshot;
   createdAt?: Date;
+  removedAt?: Date;
 }
 
 export interface CreateRentalSelectionProps {
@@ -33,6 +34,7 @@ export interface CreateRentalSelectionProps {
   quantity: number;
   priceSnapshot?: JsonValue;
   createdAt?: Date;
+  removedAt?: Date;
 }
 
 export interface ReconstituteRentalSelectionProps extends Omit<CreateRentalSelectionProps, 'id'> {
@@ -75,6 +77,12 @@ export class RentalSelection {
   get createdAt(): Date | undefined {
     return this.props.createdAt ? new Date(this.props.createdAt) : undefined;
   }
+  get removedAt(): Date | undefined {
+    return this.props.removedAt ? new Date(this.props.removedAt) : undefined;
+  }
+  get isCurrent(): boolean {
+    return this.props.removedAt === undefined;
+  }
   hasSameRentalOffer(other: RentalSelection): boolean {
     return this.rentalOfferId === other.rentalOfferId;
   }
@@ -96,6 +104,7 @@ export class RentalSelection {
         quantity: quantity.value,
         priceSnapshot: props.priceSnapshot === undefined ? undefined : new JsonSnapshot(props.priceSnapshot),
         createdAt: props.createdAt ? new Date(props.createdAt) : undefined,
+        removedAt: props.removedAt ? new Date(props.removedAt) : undefined,
       }),
     );
   }
@@ -106,6 +115,7 @@ export class RentalSelection {
       quantity: RentalQuantity.reconstitute(props.quantity),
       priceSnapshot: props.priceSnapshot === undefined ? undefined : new JsonSnapshot(props.priceSnapshot),
       createdAt: props.createdAt ? new Date(props.createdAt) : undefined,
+      removedAt: props.removedAt ? new Date(props.removedAt) : undefined,
     });
   }
 

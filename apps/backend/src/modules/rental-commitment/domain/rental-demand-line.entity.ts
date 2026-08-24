@@ -14,6 +14,7 @@ interface RentalDemandLineProps {
   equipmentTypeNameSnapshot: string;
   quantity: RentalQuantity;
   createdAt?: Date;
+  removedAt?: Date;
 }
 
 export interface CreateRentalDemandLineProps {
@@ -25,6 +26,7 @@ export interface CreateRentalDemandLineProps {
   equipmentTypeNameSnapshot: string;
   quantity: number;
   createdAt?: Date;
+  removedAt?: Date;
 }
 
 export interface ReconstituteRentalDemandLineProps extends Omit<CreateRentalDemandLineProps, 'id'> {
@@ -61,6 +63,12 @@ export class RentalDemandLine {
   get createdAt(): Date | undefined {
     return this.props.createdAt ? new Date(this.props.createdAt) : undefined;
   }
+  get removedAt(): Date | undefined {
+    return this.props.removedAt ? new Date(this.props.removedAt) : undefined;
+  }
+  get isCurrent(): boolean {
+    return this.props.removedAt === undefined;
+  }
 
   static create(props: CreateRentalDemandLineProps): Result<RentalDemandLine, RentalCommitmentError> {
     const validation = this.validatePrimitiveFields(props);
@@ -78,6 +86,7 @@ export class RentalDemandLine {
         ...props,
         quantity: quantity.value,
         createdAt: props.createdAt ? new Date(props.createdAt) : undefined,
+        removedAt: props.removedAt ? new Date(props.removedAt) : undefined,
       }),
     );
   }
@@ -87,6 +96,7 @@ export class RentalDemandLine {
       ...props,
       quantity: RentalQuantity.reconstitute(props.quantity),
       createdAt: props.createdAt ? new Date(props.createdAt) : undefined,
+      removedAt: props.removedAt ? new Date(props.removedAt) : undefined,
     });
   }
 

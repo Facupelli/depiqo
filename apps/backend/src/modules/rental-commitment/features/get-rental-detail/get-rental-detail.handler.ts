@@ -55,6 +55,7 @@ export class GetRentalDetailHandler implements IQueryHandler<GetRentalDetailQuer
           },
         },
         selections: {
+          where: { removedAt: null },
           select: {
             id: true,
             rentalOfferId: true,
@@ -64,6 +65,7 @@ export class GetRentalDetailHandler implements IQueryHandler<GetRentalDetailQuer
             quantity: true,
             priceSnapshot: true,
             demandLines: {
+              where: { removedAt: null },
               select: {
                 id: true,
                 rentalSelectionId: true,

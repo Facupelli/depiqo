@@ -30,6 +30,7 @@ export class RentalPhysicalAssignmentsService extends RentalPhysicalAssignments 
       },
       select: {
         demandLines: {
+          where: { removedAt: null },
           select: {
             id: true,
             assignedAssets: {

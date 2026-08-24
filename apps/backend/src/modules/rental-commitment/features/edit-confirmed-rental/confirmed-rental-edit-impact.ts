@@ -30,7 +30,9 @@ export function classifyConfirmedRentalEdit(
 }
 
 function hasSameOfferQuantities(rental: Rental, props: EditConfirmedRentalCommand['props']): boolean {
-  const existing = rental.selections.map((selection) => `${selection.rentalOfferId}:${selection.quantity}`).sort();
+  const existing = rental.currentSelections
+    .map((selection) => `${selection.rentalOfferId}:${selection.quantity}`)
+    .sort();
   const submitted = props.selectedOffers.map((selection) => `${selection.rentalOfferId}:${selection.quantity}`).sort();
 
   return existing.length === submitted.length && existing.every((value, index) => value === submitted[index]);

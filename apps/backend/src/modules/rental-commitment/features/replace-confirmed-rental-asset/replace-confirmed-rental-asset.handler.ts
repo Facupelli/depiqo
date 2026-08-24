@@ -126,7 +126,9 @@ export class ReplaceConfirmedRentalAssetHandler implements ICommandHandler<
           );
         }
 
-        const demandLine = currentRental.demandLines.find((line) => line.id === currentAssignment.rentalDemandLineId);
+        const demandLine = currentRental.currentDemandLines.find(
+          (line) => line.id === currentAssignment.rentalDemandLineId,
+        );
         if (!demandLine) {
           throw new Error(`Assigned asset "${currentAssignment.id}" references an unknown demand line.`);
         }
@@ -213,8 +215,11 @@ export class ReplaceConfirmedRentalAssetHandler implements ICommandHandler<
       tenantId: rental.tenantId,
       rentalId: rental.id,
       currency: priceSnapshot.currency,
-      selections: rental.selections.map((selection) => ({ id: selection.id })),
-      demandLines: rental.demandLines.map((line) => ({ id: line.id, sourceSelectionId: line.rentalSelectionId })),
+      selections: rental.currentSelections.map((selection) => ({ id: selection.id })),
+      demandLines: rental.currentDemandLines.map((line) => ({
+        id: line.id,
+        sourceSelectionId: line.rentalSelectionId,
+      })),
       fulfilledAssets: rental.currentAssignedAssets.map((assignment) => ({
         id: assignment.id,
         rentalDemandLineId: assignment.rentalDemandLineId,

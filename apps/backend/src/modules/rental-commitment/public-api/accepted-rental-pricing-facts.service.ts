@@ -35,6 +35,7 @@ export class AcceptedRentalPricingFactsService extends AcceptedRentalPricingFact
       select: {
         priceSnapshot: true,
         selections: {
+          where: { removedAt: null },
           select: {
             priceSnapshot: true,
           },
