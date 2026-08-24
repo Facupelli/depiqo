@@ -122,12 +122,10 @@ export class RentalMapper {
       bookingSnapshot:
         record.bookingSnapshot === null ? undefined : new BookingSnapshot(record.bookingSnapshot as JsonValue),
       deliveryDetails: record.deliveryDetails ? this.toDeliveryDetailsDomain(record.deliveryDetails) : undefined,
-      priceSnapshot: [RentalStatus.Confirmed, RentalStatus.Prepared].includes(record.status as RentalStatus)
-        ? undefined
-        : ((record.priceSnapshot as JsonValue | null) ?? undefined),
-      confirmedPriceSnapshot: [RentalStatus.Confirmed, RentalStatus.Prepared].includes(record.status as RentalStatus)
-        ? ((record.priceSnapshot as JsonValue | null) ?? undefined)
-        : undefined,
+      priceSnapshot:
+        record.status === 'CONFIRMED' ? undefined : ((record.priceSnapshot as JsonValue | null) ?? undefined),
+      confirmedPriceSnapshot:
+        record.status === 'CONFIRMED' ? ((record.priceSnapshot as JsonValue | null) ?? undefined) : undefined,
       selections: record.selections.map((selection) =>
         RentalSelection.reconstitute({
           id: selection.id as RentalSelectionId,

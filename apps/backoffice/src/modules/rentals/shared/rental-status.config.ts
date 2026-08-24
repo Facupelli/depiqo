@@ -18,10 +18,6 @@ export const RENTAL_STATUS_CONFIG: Record<
 		label: "Confirmado",
 		className: "bg-blue-50 text-blue-700 ring-1 ring-blue-200",
 	},
-	PREPARED: {
-		label: "Preparado",
-		className: "bg-sky-50 text-sky-700 ring-1 ring-sky-200",
-	},
 	COMPLETED: {
 		label: "Completado",
 		className: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200",

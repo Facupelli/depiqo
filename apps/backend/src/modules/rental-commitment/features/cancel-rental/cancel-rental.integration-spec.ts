@@ -63,7 +63,7 @@ describe('CancelRental integration', () => {
     return { ...setup, rental };
   }
 
-  async function confirmed(status: V2RentalStatus = 'CONFIRMED') {
+  async function confirmed() {
     const setup = await context();
     const offer = await confirmedRentals.createOffer({ tenantId: setup.tenant.id, branchId: setup.branch.id });
     const rental = await confirmedRentals.createConfirmedRental({
@@ -74,9 +74,6 @@ describe('CancelRental integration', () => {
       offerId: offer.offer.id,
       equipmentTypeId: offer.equipmentType.id,
     });
-    if (status !== 'CONFIRMED') {
-      await prisma.client.v2Rental.update({ where: { id: rental.rentalId }, data: { status } });
-    }
     return { ...setup, offer, rental };
   }
 
@@ -169,8 +166,8 @@ describe('CancelRental integration', () => {
     expect(await confirmedRentals.persistedState(unrelated.rental.rentalId)).toEqual(unrelatedBefore);
   });
 
-  it('preserves prepared accessory facts while releasing accessory and equipment blocks', async () => {
-    const setup = await confirmed('PREPARED');
+  it('preserves accessory facts while releasing accessory and equipment blocks', async () => {
+    const setup = await confirmed();
     const accessoryAssetId = await confirmedRentals.createCandidate({
       tenantId: setup.tenant.id,
       branchId: setup.branch.id,

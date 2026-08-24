@@ -8,12 +8,7 @@ import { BranchFacts } from 'src/modules/tenant-management/public-api/branch-fac
 
 import { GetRentalsCalendarQuery } from './get-rentals-calendar.query';
 
-const RENTAL_CALENDAR_STATUSES = [
-  V2RentalStatus.PENDING,
-  V2RentalStatus.DRAFT,
-  V2RentalStatus.CONFIRMED,
-  V2RentalStatus.PREPARED,
-] as const;
+const RENTAL_CALENDAR_STATUSES = [V2RentalStatus.PENDING, V2RentalStatus.DRAFT, V2RentalStatus.CONFIRMED] as const;
 
 type RentalCalendarStatus = (typeof RENTAL_CALENDAR_STATUSES)[number];
 

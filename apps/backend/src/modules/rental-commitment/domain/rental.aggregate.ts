@@ -874,7 +874,7 @@ export class Rental extends AggregateRootBase {
   }
 
   private isOperationallyCommitted(): boolean {
-    return this.status === RentalStatus.Confirmed || this.status === RentalStatus.Prepared;
+    return this.status === RentalStatus.Confirmed;
   }
 
   private validateInvariants(): Result<void, RentalCommitmentError> {

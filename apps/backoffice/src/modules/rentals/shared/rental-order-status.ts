@@ -5,7 +5,6 @@ export const RENTAL_ORDER_STATUS_OPTIONS = [
 	"DRAFT",
 	"PENDING",
 	"CONFIRMED",
-	"PREPARED",
 	"CANCELLED",
 	"COMPLETED",
 ] as const satisfies readonly GetRentalsStatusDto[];
@@ -55,15 +54,6 @@ export const RENTAL_ORDER_STATUS_PRESENTATION: Record<
 		dotClassName: "bg-blue-500",
 		headingClassName: "text-blue-800",
 		legendDotClassName: "bg-blue-500",
-	},
-	PREPARED: {
-		status: "PREPARED",
-		label: "Preparado",
-		badgeClassName: "bg-cyan-100 text-cyan-800 ring-1 ring-cyan-300",
-		calendarEventClassName: "orders-calendar-event--prepared",
-		dotClassName: "bg-cyan-500",
-		headingClassName: "text-cyan-800",
-		legendDotClassName: "bg-cyan-500",
 	},
 	IN_PROGRESS: {
 		status: "IN_PROGRESS",
@@ -152,7 +142,7 @@ type RentalOrderPeriodAware = {
 };
 
 function isRentalOrderPeriodAwareStatus(status: GetRentalsStatusDto): boolean {
-	return status === "CONFIRMED" || status === "PREPARED";
+	return status === "CONFIRMED";
 }
 
 function isRentalOrderInProgress(

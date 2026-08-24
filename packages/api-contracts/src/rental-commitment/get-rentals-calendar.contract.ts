@@ -13,7 +13,6 @@ export const GetRentalsCalendarStatusSchema = z.enum([
 	"PENDING",
 	"DRAFT",
 	"CONFIRMED",
-	"PREPARED",
 ]);
 
 export const GetRentalsCalendarCustomerSchema = z.object({

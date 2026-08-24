@@ -1,4 +1,4 @@
-export type RentalEmailStatus = 'PENDING' | 'DRAFT' | 'CONFIRMED' | 'PREPARED' | 'CANCELLED' | 'COMPLETED';
+export type RentalEmailStatus = 'PENDING' | 'DRAFT' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED';
 export type RentalEmailFulfillmentMethod = 'PICKUP' | 'DELIVERY';
 
 import { NotificationType } from '../../domain/notification-type.enum';

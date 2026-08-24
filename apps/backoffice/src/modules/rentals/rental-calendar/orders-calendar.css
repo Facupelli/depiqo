@@ -120,16 +120,6 @@
 	color: #1e3a8a; /* blue-900 */
 }
 
-.orders-calendar-shell .orders-calendar-event--prepared {
-	border-color: #67e8f9; /* cyan-300 */
-	background: #cffafe; /* cyan-100 */
-	color: #155e75; /* cyan-800 */
-}
-
-.orders-calendar-shell .orders-calendar-event--prepared .fc-event-main {
-	color: #164e63; /* cyan-900 */
-}
-
 .orders-calendar-shell .orders-calendar-event--in-progress {
 	border-color: #c4b5fd; /* violet-300 */
 	background: #ede9fe; /* violet-100 */

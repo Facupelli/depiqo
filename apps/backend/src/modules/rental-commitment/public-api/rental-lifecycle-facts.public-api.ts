@@ -5,7 +5,7 @@ export interface GetRentalLifecycleFactsInput {
   rentalId: string;
 }
 
-export type RentalLifecycleStatus = 'PENDING' | 'DRAFT' | 'CONFIRMED' | 'PREPARED' | 'CANCELLED' | 'COMPLETED';
+export type RentalLifecycleStatus = 'PENDING' | 'DRAFT' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED';
 
 export interface RentalLifecycleFactsResult {
   rentalId: string;

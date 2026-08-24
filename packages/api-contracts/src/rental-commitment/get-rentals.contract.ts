@@ -9,7 +9,6 @@ export const GetRentalsStatusSchema = z.enum([
   "PENDING",
   "DRAFT",
   "CONFIRMED",
-  "PREPARED",
   "CANCELLED",
   "COMPLETED",
 ]);

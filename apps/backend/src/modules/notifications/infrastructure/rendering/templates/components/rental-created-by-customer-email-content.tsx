@@ -180,8 +180,6 @@ function formatRentalStatus(status: RentalEmailStatus): string {
       return 'Borrador';
     case 'CONFIRMED':
       return 'Confirmado';
-    case 'PREPARED':
-      return 'Preparado';
     case 'CANCELLED':
       return 'Cancelado';
     case 'COMPLETED':

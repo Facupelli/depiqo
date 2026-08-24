@@ -131,7 +131,7 @@ When third-party ownership affects payout or audit history, Rental Commitment pr
 
 ## Lifecycle
 
-Typical rental lifecycle meanings:
+Implemented rental lifecycle statuses:
 
 ```text
 DRAFT
@@ -147,20 +147,18 @@ PENDING
 CONFIRMED
   Accepted operational commitment.
   Required equipment assets are assigned and blocked.
-
-PREPARED
-  Confirmed rental whose accessory or preparation decisions were reviewed.
-
-PICKED_UP / DELIVERED
-  Rental has entered fulfillment.
-
-RETURNED / COMPLETED
-  Rental has been returned and closed.
+  This status does not imply that physical pickup or delivery has been
+  separately tracked.
 
 CANCELLED
   Rental was cancelled.
   Active rental blocks are released according to cancellation rules.
+
+COMPLETED
+  Terminal state reserved for closed rentals.
 ```
+
+There is no separate preparation, pickup, delivery, or returned lifecycle status in the implemented model. Physical fulfillment progress is not tracked through rental statuses.
 
 Confirmation must be atomic. A rental must not be left partially confirmed.
 
@@ -246,7 +244,7 @@ Tenant Management owns tenants, permissions, branches, schedules, timezones, pro
 
 Contracts owns contract generation, signing requests, signature acceptance, artifacts, and signing status.
 
-Contracts may consume confirmed or prepared rental facts, but Rental Commitment does not depend on Contracts for confirmation, assignment, blocking, pricing snapshots, delivery, accessory preparation, or owner split decisions.
+Contracts may consume confirmed rental facts, but Rental Commitment does not depend on Contracts for confirmation, assignment, blocking, pricing snapshots, delivery, accessory preparation, or owner split decisions.
 
 Notifications may react to rental events, but notification delivery is not part of rental truth.
 

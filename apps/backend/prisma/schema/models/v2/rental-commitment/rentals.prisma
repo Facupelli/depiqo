@@ -6,7 +6,6 @@ enum V2RentalStatus {
   PENDING
   DRAFT
   CONFIRMED
-  PREPARED
   CANCELLED
   COMPLETED
 }

@@ -24,7 +24,7 @@ import {
 import { useRentalOrdersList } from "./rental-orders-list.context";
 
 const ALL_VALUE = "__ALL__";
-const OPERATIONALLY_ACTIVE_STATUSES = ["CONFIRMED", "PREPARED"] as const;
+const OPERATIONALLY_ACTIVE_STATUSES = ["CONFIRMED"] as const;
 const DATE_LENS_OPTIONS: Array<{
 	value: GetRentalsDateLensDto;
 	label: string;
