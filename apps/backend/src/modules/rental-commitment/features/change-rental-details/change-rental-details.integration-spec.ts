@@ -11,7 +11,7 @@ import {
 import { createTestFixtures, TestFixtures } from '../../../../../test/support/fixtures';
 import { ChangeRentalDetailsCommand, ChangeRentalDetailsPatch } from './change-rental-details.command';
 import { ChangeRentalDetailsResult } from './change-rental-details.handler';
-import { EditConfirmedRentalFixtures } from '../edit-confirmed-rental/testing/edit-confirmed-rental.fixtures';
+import { ConfirmedRentalFixtures } from '../../testing/confirmed-rental.fixtures';
 
 const delivery = {
   addressLine1: '123 Rental Street',
@@ -26,14 +26,14 @@ describe('ChangeRentalDetails integration', () => {
   let prisma: PrismaService;
   let bus: CommandBus;
   let core: TestFixtures;
-  let fixtures: EditConfirmedRentalFixtures;
+  let fixtures: ConfirmedRentalFixtures;
 
   useIntegrationTestContext(async () => {
     moduleRef = await createRentalCommitmentIntegrationContext();
     prisma = moduleRef.get(PrismaService);
     bus = moduleRef.get(CommandBus);
     core = createTestFixtures(prisma);
-    fixtures = new EditConfirmedRentalFixtures(prisma);
+    fixtures = new ConfirmedRentalFixtures(prisma);
     return moduleRef;
   });
 

@@ -18,7 +18,7 @@ import { RentalCancelledIntegrationEvent } from '../../public-api/events/rental-
 import { ConfirmRentalCommand } from '../confirm-rental/confirm-rental.command';
 import { ConfirmRentalResult } from '../confirm-rental/confirm-rental.handler';
 import { ConfirmRentalFixtures } from '../confirm-rental/testing/confirm-rental.fixtures';
-import { EditConfirmedRentalFixtures } from '../edit-confirmed-rental/testing/edit-confirmed-rental.fixtures';
+import { ConfirmedRentalFixtures } from '../../testing/confirmed-rental.fixtures';
 import { CancelRentalCommand } from './cancel-rental.command';
 import { CancelRentalResult } from './cancel-rental.handler';
 
@@ -29,7 +29,7 @@ describe('CancelRental integration', () => {
   let events: EventEmitter2;
   let core: TestFixtures;
   let rentals: ConfirmRentalFixtures;
-  let confirmedRentals: EditConfirmedRentalFixtures;
+  let confirmedRentals: ConfirmedRentalFixtures;
 
   const period = { start: utcDate(2030, 1, 1, 10), end: utcDate(2030, 1, 1, 12) };
 
@@ -40,7 +40,7 @@ describe('CancelRental integration', () => {
     events = moduleRef.get(EventEmitter2);
     core = createTestFixtures(prisma);
     rentals = new ConfirmRentalFixtures(prisma);
-    confirmedRentals = new EditConfirmedRentalFixtures(prisma);
+    confirmedRentals = new ConfirmedRentalFixtures(prisma);
     return moduleRef;
   });
 

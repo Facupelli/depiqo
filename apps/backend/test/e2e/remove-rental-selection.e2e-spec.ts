@@ -1,5 +1,5 @@
 import { PrismaService } from '../../src/core/database/prisma.service';
-import { EditConfirmedRentalFixtures } from '../../src/modules/rental-commitment/features/edit-confirmed-rental/testing/edit-confirmed-rental.fixtures';
+import { ConfirmedRentalFixtures } from '../../src/modules/rental-commitment/testing/confirmed-rental.fixtures';
 import { createE2ETestApp, E2ETestApp } from '../support/create-e2e-test-app';
 import { createE2ETestClient } from '../support/create-e2e-test-client';
 import { createTestFixtures, TestFixtures } from '../support/fixtures';
@@ -8,13 +8,13 @@ describe('DELETE /rental-commitments/confirmed-rentals/:rentalId/selections/:sel
   let testApp: E2ETestApp;
   let prisma: PrismaService;
   let core: TestFixtures;
-  let fixtures: EditConfirmedRentalFixtures;
+  let fixtures: ConfirmedRentalFixtures;
 
   beforeAll(async () => {
     testApp = await createE2ETestApp();
     prisma = testApp.app.get(PrismaService);
     core = createTestFixtures(prisma);
-    fixtures = new EditConfirmedRentalFixtures(prisma);
+    fixtures = new ConfirmedRentalFixtures(prisma);
   });
 
   afterAll(async () => testApp?.close());

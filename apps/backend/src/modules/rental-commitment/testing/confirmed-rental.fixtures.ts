@@ -3,9 +3,9 @@ import { randomUUID } from 'node:crypto';
 import { PrismaService } from 'src/core/database/prisma.service';
 import { Prisma } from 'src/generated/prisma/client';
 
-import { ConfirmRentalFixtures, RentalPeriodFixture } from '../../confirm-rental/testing/confirm-rental.fixtures';
+import { ConfirmRentalFixtures, RentalPeriodFixture } from '../features/confirm-rental/testing/confirm-rental.fixtures';
 
-export class EditConfirmedRentalFixtures {
+export class ConfirmedRentalFixtures {
   private readonly rentals: ConfirmRentalFixtures;
 
   constructor(private readonly prisma: PrismaService) {

@@ -10,7 +10,7 @@ import {
 import { createTestFixtures, TestFixtures } from '../../../../../test/support/fixtures';
 import { ConfirmedRentalEditedIntegrationEvent } from '../../public-api/events/rental-lifecycle.integration-events';
 import { AddRentalSelectionCommand } from '../add-rental-selection/add-rental-selection.command';
-import { EditConfirmedRentalFixtures } from '../edit-confirmed-rental/testing/edit-confirmed-rental.fixtures';
+import { ConfirmedRentalFixtures } from '../../testing/confirmed-rental.fixtures';
 import { RemoveRentalSelectionCommand } from './remove-rental-selection.command';
 
 describe('RemoveRentalSelection integration', () => {
@@ -19,7 +19,7 @@ describe('RemoveRentalSelection integration', () => {
   let bus: CommandBus;
   let emitter: EventEmitter2;
   let core: TestFixtures;
-  let fixtures: EditConfirmedRentalFixtures;
+  let fixtures: ConfirmedRentalFixtures;
 
   useIntegrationTestContext(async () => {
     moduleRef = await createRentalCommitmentIntegrationContext();
@@ -27,7 +27,7 @@ describe('RemoveRentalSelection integration', () => {
     bus = moduleRef.get(CommandBus);
     emitter = moduleRef.get(EventEmitter2);
     core = createTestFixtures(prisma);
-    fixtures = new EditConfirmedRentalFixtures(prisma);
+    fixtures = new ConfirmedRentalFixtures(prisma);
     return moduleRef;
   });
 

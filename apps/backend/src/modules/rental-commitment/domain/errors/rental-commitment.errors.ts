@@ -85,12 +85,6 @@ export class RentalPeriodCannotStartInPastError extends RentalCommitmentError {
   }
 }
 
-export class ConfirmedRentalCannotBeEditedAfterPickupError extends RentalCommitmentError {
-  constructor(rentalId: string) {
-    super(`Confirmed rental "${rentalId}" cannot be edited at or after its pickup time.`);
-  }
-}
-
 export class RentalPeriodHasEndedError extends RentalCommitmentError {
   constructor(rentalId: string) {
     super(`Confirmed rental "${rentalId}" cannot be changed because its rental period has ended.`);

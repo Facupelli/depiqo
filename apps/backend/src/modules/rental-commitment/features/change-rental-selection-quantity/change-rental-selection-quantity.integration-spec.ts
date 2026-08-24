@@ -9,7 +9,7 @@ import {
   useIntegrationTestContext,
 } from '../../../../../test/support/integration-test-context';
 import { createTestFixtures, TestFixtures } from '../../../../../test/support/fixtures';
-import { EditConfirmedRentalFixtures } from '../edit-confirmed-rental/testing/edit-confirmed-rental.fixtures';
+import { ConfirmedRentalFixtures } from '../../testing/confirmed-rental.fixtures';
 import { ChangeRentalSelectionQuantityCommand } from './change-rental-selection-quantity.command';
 
 describe('ChangeRentalSelectionQuantity integration', () => {
@@ -18,14 +18,14 @@ describe('ChangeRentalSelectionQuantity integration', () => {
   let bus: CommandBus;
   let emitter: EventEmitter2;
   let core: TestFixtures;
-  let fixtures: EditConfirmedRentalFixtures;
+  let fixtures: ConfirmedRentalFixtures;
   useIntegrationTestContext(async () => {
     moduleRef = await createRentalCommitmentIntegrationContext();
     prisma = moduleRef.get(PrismaService);
     bus = moduleRef.get(CommandBus);
     emitter = moduleRef.get(EventEmitter2);
     core = createTestFixtures(prisma);
-    fixtures = new EditConfirmedRentalFixtures(prisma);
+    fixtures = new ConfirmedRentalFixtures(prisma);
     return moduleRef;
   });
 

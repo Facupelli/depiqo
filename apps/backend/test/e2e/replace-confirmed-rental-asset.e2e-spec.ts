@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 
 import { PrismaService } from '../../src/core/database/prisma.service';
 import { PlatformProblemTypes, createProblemType } from '../../src/core/problem-details';
-import { EditConfirmedRentalFixtures } from '../../src/modules/rental-commitment/features/edit-confirmed-rental/testing/edit-confirmed-rental.fixtures';
+import { ConfirmedRentalFixtures } from '../../src/modules/rental-commitment/testing/confirmed-rental.fixtures';
 import { createE2ETestApp, E2ETestApp } from '../support/create-e2e-test-app';
 import { createE2ETestClient, E2ETestClient } from '../support/create-e2e-test-client';
 import { createTestFixtures, TestFixtures } from '../support/fixtures';
@@ -13,13 +13,13 @@ describe('POST /rental-commitments/confirmed-rentals/:rentalId/assigned-assets/r
   let testApp: E2ETestApp;
   let prisma: PrismaService;
   let core: TestFixtures;
-  let fixtures: EditConfirmedRentalFixtures;
+  let fixtures: ConfirmedRentalFixtures;
 
   beforeAll(async () => {
     testApp = await createE2ETestApp();
     prisma = testApp.app.get(PrismaService);
     core = createTestFixtures(prisma);
-    fixtures = new EditConfirmedRentalFixtures(prisma);
+    fixtures = new ConfirmedRentalFixtures(prisma);
   });
 
   afterAll(async () => testApp?.close());

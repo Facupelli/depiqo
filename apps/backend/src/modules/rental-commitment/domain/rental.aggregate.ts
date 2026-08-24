@@ -19,7 +19,6 @@ import {
   RentalCannotBeCancelledFromStatusError,
   RentalCannotBeConfirmedFromStatusError,
   RentalCannotBeEditedFromStatusError,
-  ConfirmedRentalCannotBeEditedAfterPickupError,
   RentalPeriodCannotStartInPastError,
   RentalPeriodHasEndedError,
   RentalSelectionNotFoundError,
@@ -108,20 +107,12 @@ export interface EditUnconfirmedRentalProps {
   demandLines: CreateRentalDemandLineInput[];
 }
 
-export interface EditConfirmedRentalProps extends Omit<EditUnconfirmedRentalProps, 'priceSnapshot'> {
-  confirmedPriceSnapshot: JsonValue;
-  assignedAssets: CreateAssignedAssetInput[];
-}
-
-export interface EditConfirmedRentalDetailsProps {
+export interface ChangeConfirmedRentalDetailsProps {
   fulfillmentMethod: FulfillmentMethod;
   deliveryDetails?: RentalDeliveryDetails;
   notes?: string;
   insuranceSelected?: boolean;
   confirmedPriceSnapshot?: JsonValue;
-}
-
-export interface ChangeConfirmedRentalDetailsProps extends EditConfirmedRentalDetailsProps {
   operationTime: Date;
 }
 
@@ -541,55 +532,6 @@ export class Rental extends AggregateRootBase {
     }
 
     this.props = candidate.value.props;
-
-    return ok(undefined);
-  }
-
-  editConfirmedDetails(params: EditConfirmedRentalDetailsProps, now = new Date()): Result<void, RentalCommitmentError> {
-    if (this.status !== RentalStatus.Confirmed) {
-      return err(new RentalCannotBeEditedFromStatusError(this.id, this.status));
-    }
-    if (now >= this.period.start) {
-      return err(new ConfirmedRentalCannotBeEditedAfterPickupError(this.id));
-    }
-
-    const confirmedPriceSnapshot = params.confirmedPriceSnapshot
-      ? ConfirmedPriceSnapshot.create(params.confirmedPriceSnapshot)
-      : ok(this.confirmedPriceSnapshot);
-    if (confirmedPriceSnapshot.isErr()) {
-      return err(confirmedPriceSnapshot.error);
-    }
-
-    const candidate = Rental.createFromEntities(RentalStatus.Confirmed, {
-      id: this.id,
-      tenantId: this.tenantId,
-      rentalNumber: this.rentalNumber,
-      branchId: this.branchId,
-      rentalCustomerId: this.rentalCustomerId,
-      period: this.period,
-      source: this.source,
-      fulfillmentMethod: params.fulfillmentMethod,
-      notes: params.notes,
-      insuranceSelected: params.insuranceSelected,
-      bookingSnapshot: this.bookingSnapshot,
-      deliveryDetails: params.deliveryDetails,
-      confirmedPriceSnapshot: confirmedPriceSnapshot.value,
-      selections: [...this.props.selections],
-      demandLines: [...this.props.demandLines],
-      assignedAssets: [...this.props.assignedAssets],
-      assetBlocks: [...this.props.assetBlocks],
-      createdAt: this.createdAt,
-      version: this.version,
-      updatedAt: this.updatedAt,
-      cancelledAt: this.cancelledAt,
-      confirmedAt: this.confirmedAt,
-    });
-    if (candidate.isErr()) {
-      return err(candidate.error);
-    }
-
-    this.props = candidate.value.props;
-    this.recordConfirmedRentalEditedEvent(now);
 
     return ok(undefined);
   }
@@ -1294,87 +1236,6 @@ export class Rental extends AggregateRootBase {
 
     this.props = candidate.value.props;
     this.recordConfirmedRentalEditedEvent(params.operationTime);
-    return ok(undefined);
-  }
-
-  editConfirmed(params: EditConfirmedRentalProps, now = new Date()): Result<void, RentalCommitmentError> {
-    if (this.status !== RentalStatus.Confirmed) {
-      return err(new RentalCannotBeEditedFromStatusError(this.id, this.status));
-    }
-
-    if (now >= this.period.start) {
-      return err(new ConfirmedRentalCannotBeEditedAfterPickupError(this.id));
-    }
-    if (now >= params.period.start) {
-      return err(new RentalPeriodCannotStartInPastError());
-    }
-
-    const confirmedPriceSnapshot = ConfirmedPriceSnapshot.create(params.confirmedPriceSnapshot);
-    if (confirmedPriceSnapshot.isErr()) {
-      return err(confirmedPriceSnapshot.error);
-    }
-
-    const selections = Rental.createSelections(this.id, this.tenantId, params.selections);
-    if (selections.isErr()) {
-      return err(selections.error);
-    }
-
-    const demandLines = Rental.createDemandLines(this.id, this.tenantId, params.demandLines);
-    if (demandLines.isErr()) {
-      return err(demandLines.error);
-    }
-
-    const assignedAssets = Rental.createAssignedAssets(
-      this.id,
-      this.tenantId,
-      params.period.start,
-      params.assignedAssets,
-    );
-    if (assignedAssets.isErr()) {
-      return err(assignedAssets.error);
-    }
-
-    const assetBlocks = Rental.createEquipmentBlocksForAssignedAssets({
-      tenantId: this.tenantId,
-      rentalId: this.id,
-      period: params.period,
-      assignedAssets: assignedAssets.value,
-    });
-    if (assetBlocks.isErr()) {
-      return err(assetBlocks.error);
-    }
-
-    const candidate = Rental.createFromEntities(RentalStatus.Confirmed, {
-      id: this.id,
-      tenantId: this.tenantId,
-      rentalNumber: this.rentalNumber,
-      branchId: params.branchId,
-      rentalCustomerId: this.rentalCustomerId,
-      period: params.period,
-      source: this.source,
-      fulfillmentMethod: params.fulfillmentMethod,
-      notes: params.notes,
-      insuranceSelected: params.insuranceSelected,
-      bookingSnapshot: this.bookingSnapshot,
-      deliveryDetails: params.deliveryDetails,
-      confirmedPriceSnapshot: confirmedPriceSnapshot.value,
-      selections: selections.value,
-      demandLines: demandLines.value,
-      assignedAssets: assignedAssets.value,
-      assetBlocks: assetBlocks.value,
-      createdAt: this.createdAt,
-      version: this.version,
-      updatedAt: this.updatedAt,
-      cancelledAt: this.cancelledAt,
-      confirmedAt: this.confirmedAt,
-    });
-    if (candidate.isErr()) {
-      return err(candidate.error);
-    }
-
-    this.props = candidate.value.props;
-    this.recordConfirmedRentalEditedEvent(now);
-
     return ok(undefined);
   }
 

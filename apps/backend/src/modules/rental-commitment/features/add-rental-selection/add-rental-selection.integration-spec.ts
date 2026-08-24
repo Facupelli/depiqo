@@ -11,7 +11,7 @@ import {
 } from '../../../../../test/support/integration-test-context';
 import { createTestFixtures, TestFixtures } from '../../../../../test/support/fixtures';
 import { utcDate } from '../../../../../test/support/time';
-import { EditConfirmedRentalFixtures } from '../edit-confirmed-rental/testing/edit-confirmed-rental.fixtures';
+import { ConfirmedRentalFixtures } from '../../testing/confirmed-rental.fixtures';
 import { AddRentalSelectionCommand } from './add-rental-selection.command';
 import { AddRentalSelectionResult } from './add-rental-selection.handler';
 
@@ -21,7 +21,7 @@ describe('AddRentalSelection integration', () => {
   let commandBus: CommandBus;
   let emitter: EventEmitter2;
   let core: TestFixtures;
-  let fixtures: EditConfirmedRentalFixtures;
+  let fixtures: ConfirmedRentalFixtures;
 
   useIntegrationTestContext(async () => {
     moduleRef = await createRentalCommitmentIntegrationContext();
@@ -29,7 +29,7 @@ describe('AddRentalSelection integration', () => {
     commandBus = moduleRef.get(CommandBus);
     emitter = moduleRef.get(EventEmitter2);
     core = createTestFixtures(prisma);
-    fixtures = new EditConfirmedRentalFixtures(prisma);
+    fixtures = new ConfirmedRentalFixtures(prisma);
     return moduleRef;
   });
 

@@ -13,7 +13,6 @@ import {
 import { createBarrier, runConcurrently } from '../../../../../test/support/concurrency';
 import { createTestFixtures, TestFixtures } from '../../../../../test/support/fixtures';
 import { oneMillisecondAfter, utcDate } from '../../../../../test/support/time';
-import { RentalPeriod } from '../../domain/value-objects/rental-period.value-object';
 import { RentalRepository } from '../../persistence/rental.repository';
 import { ConfirmedRentalEditedIntegrationEvent } from '../../public-api/events/rental-lifecycle.integration-events';
 import { CancelRentalCommand } from '../cancel-rental/cancel-rental.command';
@@ -21,9 +20,9 @@ import { CancelRentalResult } from '../cancel-rental/cancel-rental.handler';
 import { ConfirmRentalCommand } from '../confirm-rental/confirm-rental.command';
 import { ConfirmRentalResult } from '../confirm-rental/confirm-rental.handler';
 import { ConfirmRentalFixtures } from '../confirm-rental/testing/confirm-rental.fixtures';
-import { EditConfirmedRentalCommand } from '../edit-confirmed-rental/edit-confirmed-rental.command';
-import { EditConfirmedRentalResult } from '../edit-confirmed-rental/edit-confirmed-rental.handler';
-import { EditConfirmedRentalFixtures } from '../edit-confirmed-rental/testing/edit-confirmed-rental.fixtures';
+import { ConfirmedRentalFixtures } from '../../testing/confirmed-rental.fixtures';
+import { ChangeRentalDetailsCommand } from '../change-rental-details/change-rental-details.command';
+import { ChangeRentalDetailsResult } from '../change-rental-details/change-rental-details.handler';
 import { ReplaceConfirmedRentalAssetCommand } from './replace-confirmed-rental-asset.command';
 import { ReplaceConfirmedRentalAssetResult } from './replace-confirmed-rental-asset.handler';
 
@@ -32,7 +31,7 @@ describe('ReplaceConfirmedRentalAsset integration', () => {
   let prisma: PrismaService;
   let commandBus: CommandBus;
   let core: TestFixtures;
-  let fixtures: EditConfirmedRentalFixtures;
+  let fixtures: ConfirmedRentalFixtures;
   let rentalFixtures: ConfirmRentalFixtures;
 
   useIntegrationTestContext(async () => {
@@ -40,7 +39,7 @@ describe('ReplaceConfirmedRentalAsset integration', () => {
     prisma = moduleRef.get(PrismaService);
     commandBus = moduleRef.get(CommandBus);
     core = createTestFixtures(prisma);
-    fixtures = new EditConfirmedRentalFixtures(prisma);
+    fixtures = new ConfirmedRentalFixtures(prisma);
     rentalFixtures = new ConfirmRentalFixtures(prisma);
     return moduleRef;
   });
@@ -101,7 +100,7 @@ describe('ReplaceConfirmedRentalAsset integration', () => {
     return commandBus.execute(replaceCommand(params));
   }
 
-  function activeEquipmentBlocks(state: Awaited<ReturnType<EditConfirmedRentalFixtures['persistedState']>>) {
+  function activeEquipmentBlocks(state: Awaited<ReturnType<ConfirmedRentalFixtures['persistedState']>>) {
     return state.blocks.filter((block) => block.blockType === 'EQUIPMENT' && block.releasedAt === null);
   }
 
@@ -602,30 +601,26 @@ describe('ReplaceConfirmedRentalAsset integration', () => {
     ]);
   });
 
-  it('serializes replacement against a same-version confirmed-rental edit without mixed children', async () => {
+  it('serializes replacement against a same-version confirmed details change', async () => {
     const setup = await scenario();
     const replacementAssetId = await candidate(setup);
     const before = await fixtures.persistedState(setup.rental.rentalId);
-    const editCommand = new EditConfirmedRentalCommand({
-      tenantId: setup.tenant.id,
-      tenantUserId: setup.user.id,
-      rentalId: setup.rental.rentalId,
-      expectedVersion: before.rental.version,
-      branchId: setup.branch.id,
-      period: new RentalPeriod(before.rental.periodStart, before.rental.periodEnd),
-      selectedOffers: [{ rentalOfferId: setup.commercial.offer.id, quantity: 1 }],
-      fulfillmentMethod: 'PICKUP',
-      notes: 'concurrent edit won',
-      insuranceSelected: before.rental.insuranceSelected,
-      manualPricingAdjustment: null,
-    });
     const outcomes = await runConcurrently([
       () => replace({ setup, replacementAssetId, expectedVersion: before.rental.version }),
-      () => commandBus.execute<EditConfirmedRentalCommand, EditConfirmedRentalResult>(editCommand),
+      () =>
+        commandBus.execute<ChangeRentalDetailsCommand, ChangeRentalDetailsResult>(
+          new ChangeRentalDetailsCommand({
+            tenantId: setup.tenant.id,
+            tenantUserId: setup.user.id,
+            rentalId: setup.rental.rentalId,
+            expectedVersion: before.rental.version,
+            patch: { notes: 'concurrent details change won' },
+          }),
+        ),
     ]);
     const results = outcomes.map(
       (outcome) =>
-        (outcome as PromiseFulfilledResult<ReplaceConfirmedRentalAssetResult | EditConfirmedRentalResult>).value,
+        (outcome as PromiseFulfilledResult<ReplaceConfirmedRentalAssetResult | ChangeRentalDetailsResult>).value,
     );
     expect(results.filter((result) => result.isOk())).toHaveLength(1);
     expect(
@@ -633,7 +628,7 @@ describe('ReplaceConfirmedRentalAsset integration', () => {
     ).toHaveLength(1);
     const after = await fixtures.persistedState(setup.rental.rentalId);
     const replacementWon = after.rental.assignedAssets[0].assetId === replacementAssetId;
-    expect(after.rental.notes).toBe(replacementWon ? before.rental.notes : 'concurrent edit won');
+    expect(after.rental.notes).toBe(replacementWon ? before.rental.notes : 'concurrent details change won');
     expect(activeEquipmentBlocks(after)).toEqual([
       expect.objectContaining({ assetId: after.rental.assignedAssets[0].assetId }),
     ]);

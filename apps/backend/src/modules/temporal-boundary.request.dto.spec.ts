@@ -4,10 +4,10 @@ import { ok } from 'neverthrow';
 
 import {
   CalculateDraftRentalPriceBodySchema,
+  ChangeRentalPeriodBodySchema,
   CreateConfirmedRentalBodySchema,
   CreateDraftRentalBodySchema,
   CreateOwnerWithContractBodySchema,
-  EditConfirmedRentalBodySchema,
   EditUnconfirmedRentalBodySchema,
   GetRentalOfferAvailabilityRequestSchema,
 } from '@repo/api-contracts';
@@ -16,7 +16,7 @@ import { CreateOwnerWithContractApplicationInputSchema } from './asset-inventory
 import { CalculateDraftRentalPriceApplicationInputSchema } from './pricing/features/calculate-draft-rental-price/calculate-draft-rental-price.request.dto';
 import { CreateConfirmedRentalApplicationInputSchema } from './rental-commitment/features/create-confirmed-rental/create-confirmed-rental.request.dto';
 import { CreateDraftRentalApplicationInputSchema } from './rental-commitment/features/create-draft-rental/create-draft-rental.request.dto';
-import { EditConfirmedRentalApplicationInputSchema } from './rental-commitment/features/edit-confirmed-rental/edit-confirmed-rental.request.dto';
+import { ChangeRentalPeriodApplicationInputSchema } from './rental-commitment/features/change-rental-period/change-rental-period.request.dto';
 import { EditUnconfirmedRentalApplicationInputSchema } from './rental-commitment/features/edit-unconfirmed-rental/edit-unconfirmed-rental.request.dto';
 import { GetRentalOfferAvailabilityApplicationInputSchema } from './rental-commitment/features/get-rental-offer-availability/get-rental-offer-availability.request.dto';
 import { CreateConfirmedRentalCommand } from './rental-commitment/features/create-confirmed-rental/create-confirmed-rental.command';
@@ -55,10 +55,10 @@ const wireCases = [
     (body: { period: { start: string } }) => body.period.start,
   ],
   [
-    'edit confirmed rental',
-    EditConfirmedRentalBodySchema,
-    { expectedVersion: 0, branchId: 'branch-1', period, selectedOffers },
-    (body: { period: { start: string } }) => body.period.start,
+    'change confirmed rental period',
+    ChangeRentalPeriodBodySchema,
+    { expectedVersion: 0, start: period.start, end: period.end },
+    (body: { start: string }) => body.start,
   ],
   [
     'edit unconfirmed rental',
@@ -88,28 +88,39 @@ describe('instant-bearing request boundaries', () => {
     if ('period' in offsetless) (offsetless.period as Record<string, string>).start = '2026-08-10T13:00:00';
     else if ('contract' in offsetless)
       (offsetless.contract as Record<string, string>).validFrom = '2026-08-10T13:00:00';
-    else (offsetless as Record<string, string>).periodStart = '2026-08-10T13:00:00';
+    else if ('periodStart' in offsetless) offsetless.periodStart = '2026-08-10T13:00:00';
+    else (offsetless as Record<string, string>).start = '2026-08-10T13:00:00';
     expect(schema.safeParse(offsetless).success).toBe(false);
   });
 
   it('converts instant fields to Dates at every backend application boundary', () => {
-    const applicationInputs = [
-      CreateOwnerWithContractApplicationInputSchema.parse(wireCases[0][2]),
-      CalculateDraftRentalPriceApplicationInputSchema.parse(wireCases[1][2]),
-      CreateConfirmedRentalApplicationInputSchema.parse(wireCases[2][2]),
-      CreateDraftRentalApplicationInputSchema.parse(wireCases[3][2]),
-      EditConfirmedRentalApplicationInputSchema.parse(wireCases[4][2]),
-      EditUnconfirmedRentalApplicationInputSchema.parse(wireCases[5][2]),
-      GetRentalOfferAvailabilityApplicationInputSchema.parse(wireCases[6][2]),
-    ];
+    const ownerInput = CreateOwnerWithContractApplicationInputSchema.parse(wireCases[0][2]);
+    const calculateDraftRentalPriceInput = CalculateDraftRentalPriceApplicationInputSchema.parse(wireCases[1][2]);
+    const createConfirmedRentalInput = CreateConfirmedRentalApplicationInputSchema.parse(wireCases[2][2]);
+    const createDraftRentalInput = CreateDraftRentalApplicationInputSchema.parse(wireCases[3][2]);
+    const changeRentalPeriodInput = ChangeRentalPeriodApplicationInputSchema.parse(wireCases[4][2]);
+    const editUnconfirmedRentalInput = EditUnconfirmedRentalApplicationInputSchema.parse(wireCases[5][2]);
+    const offerAvailabilityInput = GetRentalOfferAvailabilityApplicationInputSchema.parse(wireCases[6][2]);
 
-    expect(applicationInputs[0].contract.validFrom).toBeInstanceOf(Date);
-    for (const input of applicationInputs.slice(1, 6)) {
-      expect(input.period.start).toBeInstanceOf(Date);
-      expect(() => new RentalPeriod(input.period.start, input.period.end)).not.toThrow();
+    expect(ownerInput.contract.validFrom).toBeInstanceOf(Date);
+    expect(calculateDraftRentalPriceInput.period.start).toBeInstanceOf(Date);
+    expect(createConfirmedRentalInput.period.start).toBeInstanceOf(Date);
+    expect(createDraftRentalInput.period.start).toBeInstanceOf(Date);
+    expect(changeRentalPeriodInput.start).toBeInstanceOf(Date);
+    expect(editUnconfirmedRentalInput.period.start).toBeInstanceOf(Date);
+    expect(offerAvailabilityInput.periodStart).toBeInstanceOf(Date);
+
+    const periods = [
+      [calculateDraftRentalPriceInput.period.start, calculateDraftRentalPriceInput.period.end],
+      [createConfirmedRentalInput.period.start, createConfirmedRentalInput.period.end],
+      [createDraftRentalInput.period.start, createDraftRentalInput.period.end],
+      [changeRentalPeriodInput.start, changeRentalPeriodInput.end],
+      [editUnconfirmedRentalInput.period.start, editUnconfirmedRentalInput.period.end],
+      [offerAvailabilityInput.periodStart, offerAvailabilityInput.periodEnd],
+    ] as const;
+    for (const [start, end] of periods) {
+      expect(() => new RentalPeriod(start, end)).not.toThrow();
     }
-    expect(applicationInputs[6].periodStart).toBeInstanceOf(Date);
-    expect(() => new RentalPeriod(applicationInputs[6].periodStart, applicationInputs[6].periodEnd)).not.toThrow();
   });
 
   it('passes Date-backed periods from the controller into rental commands', async () => {
