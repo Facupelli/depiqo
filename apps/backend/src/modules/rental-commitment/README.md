@@ -83,6 +83,8 @@ Each current assignment is paired with exactly one active rental-owned equipment
 
 A confirmed rental's current assigned equipment asset may be replaced before or during its rental period. Before the period starts, replacement changes the future plan: the replaced assignment and its active block are removed because they never became effective. During the period, replacement preserves the previous assignment and block as history by closing both at the replacement effective time, then creates the replacement assignment and block from that instant through the rental end. Replacement availability is evaluated only for that remaining effective interval. Replacement does not change customer pricing. Current owner-split projection is recalculated from current/open assignments and the accepted price, while closed assignments retain their original ownership and contract terms. This does not create time-prorated owner payouts.
 
+A confirmed rental may also add a new commercial selection before or during its rental period. Adding is strictly additive: existing selections, demand lines, assignments, assignment history, and blocks are preserved and existing assignments are never replanned. Physical availability for only the new demand is evaluated over `[effectiveAt, rentalEnd)`, where `effectiveAt` is the later of the rental start and the operation time. New assignments and blocks begin at that same instant. Customer pricing is recalculated for the complete resulting commercial rental over the original rental period, not only the remaining physical interval. Because the commercial composition changed, any previous manual price adjustment is cleared and current standard pricing is accepted. Current owner splits are then recalculated from the resulting accepted price and current/open assignments.
+
 Assignment history is not pickup or return tracking. Rental Commitment does not claim that these timestamps represent actual physical possession, pickup, delivery, or return times. Asset Inventory remains authoritative over the asset's current physical profile.
 
 ### Asset Block
@@ -172,7 +174,7 @@ Confirmation must be atomic. A rental must not be left partially confirmed.
 
 Confirming a rental must consistently preserve its selections, expanded demand, assignments, asset blocks, and accepted price snapshot.
 
-Editing a confirmed rental must revalidate affected facts when changing period, branch, items, quantities, assignments, price, fulfillment method, delivery details, or blocks.
+Confirmed rental changes use focused operations where implemented, including additive selection and temporal asset replacement. The broad confirmed editor remains available for its existing pre-start behavior and must revalidate affected facts when changing period, branch, items, quantities, assignments, price, fulfillment method, delivery details, or blocks.
 
 Accessory preparation may create rental accessory selections, accessory assignments, and accessory blocks.
 
@@ -282,7 +284,7 @@ The underlying physical asset remains owned by Asset Inventory.
 
 ## Events / Side Effects
 
-Rental Commitment may emit events for meaningful rental lifecycle and commitment changes, including confirmation, editing, cancellation, block creation/release, preparation, fulfillment, completion, and owner split snapshotting.
+Rental Commitment may emit events for meaningful rental lifecycle and commitment changes, including confirmation, editing, cancellation, block creation/release, preparation, fulfillment, completion, and owner split snapshotting. Adding a confirmed selection emits the existing confirmed-rental-edited event, so generated or pending contracts become stale/draft and signed contracts require re-signing through the existing Contracts reaction.
 
 Contracts and Notifications may react to appropriate rental events. The version 2 confirmed and confirmed-edited lifecycle Integration Events publish the transition-time customer reference, branch, `CONFIRMED` status, fulfillment method, and rental period. The version 2 cancellation event publishes its transition-time customer reference. Notifications resolves current tenant identity, customer contact state, and effective branch timezone from Tenant Management; it does not read Rental Commitment after these lifecycle events.
 

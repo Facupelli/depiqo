@@ -93,7 +93,7 @@ export class ConfirmedRentalCannotBeEditedAfterPickupError extends RentalCommitm
 
 export class RentalPeriodHasEndedError extends RentalCommitmentError {
   constructor(rentalId: string) {
-    super(`Confirmed rental "${rentalId}" cannot have an asset replaced because its rental period has ended.`);
+    super(`Confirmed rental "${rentalId}" cannot be changed because its rental period has ended.`);
   }
 }
 

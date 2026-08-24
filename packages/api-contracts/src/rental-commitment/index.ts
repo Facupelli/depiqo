@@ -12,4 +12,5 @@ export * from "./get-rentals.contract";
 export * from "./get-rental-offer-availability.contract";
 export * from "./get-storefront-branches.contract";
 export * from "./get-storefront-rental-offer-availability.contract";
+export * from "./add-rental-selection.contract";
 export * from "./replace-confirmed-rental-asset.contract";

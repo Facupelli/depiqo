@@ -120,6 +120,14 @@ export interface EditConfirmedRentalDetailsProps {
   confirmedPriceSnapshot?: JsonValue;
 }
 
+export interface AddConfirmedRentalSelectionProps {
+  selection: CreateRentalSelectionInput;
+  demandLines: CreateRentalDemandLineInput[];
+  assignedAssets: CreateAssignedAssetInput[];
+  confirmedPriceSnapshot: JsonValue;
+  operationTime: Date;
+}
+
 export interface CreateRentalBaseProps {
   id?: RentalId;
   tenantId: string;
@@ -549,6 +557,81 @@ export class Rental extends AggregateRootBase {
     this.props = candidate.value.props;
     this.recordConfirmedRentalEditedEvent(now);
 
+    return ok(undefined);
+  }
+
+  addConfirmedSelection(params: AddConfirmedRentalSelectionProps): Result<void, RentalCommitmentError> {
+    if (this.status !== RentalStatus.Confirmed) {
+      return err(new RentalCannotBeEditedFromStatusError(this.id, this.status));
+    }
+
+    const effectiveAt = params.operationTime < this.period.start ? this.period.start : params.operationTime;
+    if (effectiveAt >= this.period.end) {
+      return err(new RentalPeriodHasEndedError(this.id));
+    }
+
+    const selection = RentalSelection.create({
+      ...params.selection,
+      tenantId: this.tenantId,
+      rentalId: this.id,
+      createdAt: params.operationTime,
+    });
+    if (selection.isErr()) return err(selection.error);
+
+    const demandLines = Rental.createDemandLines(
+      this.id,
+      this.tenantId,
+      params.demandLines.map((line) => ({ ...line, createdAt: params.operationTime })),
+    );
+    if (demandLines.isErr()) return err(demandLines.error);
+
+    const assignedAssets = Rental.createAssignedAssets(
+      this.id,
+      this.tenantId,
+      effectiveAt,
+      params.assignedAssets.map((assignment) => ({ ...assignment, createdAt: params.operationTime })),
+    );
+    if (assignedAssets.isErr()) return err(assignedAssets.error);
+
+    const assetBlocks = Rental.createEquipmentBlocksForAssignedAssets({
+      tenantId: this.tenantId,
+      rentalId: this.id,
+      period: new RentalPeriod(effectiveAt, this.period.end),
+      assignedAssets: assignedAssets.value,
+    });
+    if (assetBlocks.isErr()) return err(assetBlocks.error);
+
+    const confirmedPriceSnapshot = ConfirmedPriceSnapshot.create(params.confirmedPriceSnapshot);
+    if (confirmedPriceSnapshot.isErr()) return err(confirmedPriceSnapshot.error);
+
+    const candidate = Rental.createFromEntities(RentalStatus.Confirmed, {
+      id: this.id,
+      tenantId: this.tenantId,
+      rentalNumber: this.rentalNumber,
+      branchId: this.branchId,
+      rentalCustomerId: this.rentalCustomerId,
+      period: this.period,
+      source: this.source,
+      fulfillmentMethod: this.fulfillmentMethod,
+      notes: this.notes,
+      insuranceSelected: this.insuranceSelected,
+      bookingSnapshot: this.bookingSnapshot,
+      deliveryDetails: this.deliveryDetails,
+      confirmedPriceSnapshot: confirmedPriceSnapshot.value,
+      selections: [...this.props.selections, selection.value],
+      demandLines: [...this.props.demandLines, ...demandLines.value],
+      assignedAssets: [...this.props.assignedAssets, ...assignedAssets.value],
+      assetBlocks: [...this.props.assetBlocks, ...assetBlocks.value],
+      createdAt: this.createdAt,
+      version: this.version,
+      updatedAt: this.updatedAt,
+      cancelledAt: this.cancelledAt,
+      confirmedAt: this.confirmedAt,
+    });
+    if (candidate.isErr()) return err(candidate.error);
+
+    this.props = candidate.value.props;
+    this.recordConfirmedRentalEditedEvent(params.operationTime);
     return ok(undefined);
   }
 
@@ -1345,6 +1428,7 @@ export class Rental extends AggregateRootBase {
         assetId: assignment.assetId,
         period: new RentalPeriod(assignment.effectiveFrom, params.period.end),
         blockType: AssetBlockType.Equipment,
+        createdAt: assignment.createdAt,
       });
 
       if (assetBlock.isErr()) {

@@ -256,6 +256,7 @@ export class RentalMapper {
       rentableItemKindSnapshot: selection.rentableItemKindSnapshot,
       quantity: selection.quantity,
       priceSnapshot: toPrismaJsonInput(selection.priceSnapshot?.toJSON()),
+      createdAt: selection.createdAt,
     };
   }
 
@@ -268,6 +269,7 @@ export class RentalMapper {
       equipmentTypeId: line.equipmentTypeId,
       equipmentTypeNameSnapshot: line.equipmentTypeNameSnapshot,
       quantity: line.quantity,
+      createdAt: line.createdAt,
     };
   }
 

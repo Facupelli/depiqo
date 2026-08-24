@@ -5,6 +5,8 @@ import { CatalogModule } from '../catalog/catalog.module';
 import { PricingModule } from '../pricing/pricing.module';
 import { TenantManagementModule } from '../tenant-management/tenant-management.module';
 import { RentalAssetAllocationService } from './asset-allocation/rental-asset-allocation.service';
+import { AddRentalSelectionHttpController } from './features/add-rental-selection/add-rental-selection.controller';
+import { AddRentalSelectionHandler } from './features/add-rental-selection/add-rental-selection.handler';
 import { AssignRentalAccessoriesHttpController } from './features/assign-rental-accessories/assign-rental-accessories.controller';
 import { AssignRentalAccessoriesHandler } from './features/assign-rental-accessories/assign-rental-accessories.handler';
 import { RentalOperationalFactsValidatorService } from './application/rental-operational-facts-validator.service';
@@ -54,6 +56,7 @@ import { RentalLifecycleFactsService } from './public-api/rental-lifecycle-facts
 @Module({
   imports: [AssetInventoryModule, CatalogModule, PricingModule, TenantManagementModule],
   controllers: [
+    AddRentalSelectionHttpController,
     AssignRentalAccessoriesHttpController,
     AssignCustomerToDraftRentalHttpController,
     CancelRentalHttpController,
@@ -75,6 +78,7 @@ import { RentalLifecycleFactsService } from './public-api/rental-lifecycle-facts
     RentalNumberAllocator,
     { provide: RentalRepository, useClass: PrismaRentalRepository },
     RentalAssetAllocationService,
+    AddRentalSelectionHandler,
     AssignRentalAccessoriesHandler,
     AssignCustomerToDraftRentalHandler,
     CancelRentalHandler,
