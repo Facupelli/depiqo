@@ -121,6 +121,10 @@ export interface EditConfirmedRentalDetailsProps {
   confirmedPriceSnapshot?: JsonValue;
 }
 
+export interface ChangeConfirmedRentalDetailsProps extends EditConfirmedRentalDetailsProps {
+  operationTime: Date;
+}
+
 export interface AddConfirmedRentalSelectionProps {
   selection: CreateRentalSelectionInput;
   demandLines: CreateRentalDemandLineInput[];
@@ -587,6 +591,62 @@ export class Rental extends AggregateRootBase {
     this.props = candidate.value.props;
     this.recordConfirmedRentalEditedEvent(now);
 
+    return ok(undefined);
+  }
+
+  changeConfirmedDetails(params: ChangeConfirmedRentalDetailsProps): Result<void, RentalCommitmentError> {
+    if (this.status !== RentalStatus.Confirmed) {
+      return err(new RentalCannotBeEditedFromStatusError(this.id, this.status));
+    }
+    if (params.operationTime >= this.period.end) {
+      return err(new RentalPeriodHasEndedError(this.id));
+    }
+    if (
+      params.operationTime >= this.period.start &&
+      (params.fulfillmentMethod !== this.fulfillmentMethod ||
+        !sameDeliveryDetails(params.deliveryDetails, this.deliveryDetails))
+    ) {
+      return err(
+        new RentalInvalidFieldError(
+          'fulfillmentMethod',
+          'fulfillment method and delivery details cannot change after the rental starts',
+        ),
+      );
+    }
+
+    const confirmedPriceSnapshot = params.confirmedPriceSnapshot
+      ? ConfirmedPriceSnapshot.create(params.confirmedPriceSnapshot)
+      : ok(this.confirmedPriceSnapshot);
+    if (confirmedPriceSnapshot.isErr()) return err(confirmedPriceSnapshot.error);
+
+    const candidate = Rental.createFromEntities(RentalStatus.Confirmed, {
+      id: this.id,
+      tenantId: this.tenantId,
+      rentalNumber: this.rentalNumber,
+      branchId: this.branchId,
+      rentalCustomerId: this.rentalCustomerId,
+      period: this.period,
+      source: this.source,
+      fulfillmentMethod: params.fulfillmentMethod,
+      notes: params.notes,
+      insuranceSelected: params.insuranceSelected,
+      bookingSnapshot: this.bookingSnapshot,
+      deliveryDetails: params.deliveryDetails,
+      confirmedPriceSnapshot: confirmedPriceSnapshot.value,
+      selections: [...this.props.selections],
+      demandLines: [...this.props.demandLines],
+      assignedAssets: [...this.props.assignedAssets],
+      assetBlocks: [...this.props.assetBlocks],
+      createdAt: this.createdAt,
+      version: this.version,
+      updatedAt: this.updatedAt,
+      cancelledAt: this.cancelledAt,
+      confirmedAt: this.confirmedAt,
+    });
+    if (candidate.isErr()) return err(candidate.error);
+
+    this.props = candidate.value.props;
+    this.recordConfirmedRentalEditedEvent(params.operationTime);
     return ok(undefined);
   }
 
@@ -1923,4 +1983,18 @@ export class Rental extends AggregateRootBase {
 
     return ok(undefined);
   }
+}
+
+function sameDeliveryDetails(left?: RentalDeliveryDetails, right?: RentalDeliveryDetails): boolean {
+  return (
+    left?.addressLine1 === right?.addressLine1 &&
+    left?.addressLine2 === right?.addressLine2 &&
+    left?.city === right?.city &&
+    left?.state === right?.state &&
+    left?.postalCode === right?.postalCode &&
+    left?.country === right?.country &&
+    left?.contactName === right?.contactName &&
+    left?.contactPhone === right?.contactPhone &&
+    left?.notes === right?.notes
+  );
 }
