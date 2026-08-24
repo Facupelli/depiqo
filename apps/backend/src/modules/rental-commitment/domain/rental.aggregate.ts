@@ -144,6 +144,12 @@ export interface ChangeConfirmedSelectionQuantityProps {
   operationTime: Date;
 }
 
+export interface ChangeConfirmedPeriodProps {
+  newPeriod: { start: Date; end: Date };
+  confirmedPriceSnapshot: JsonValue;
+  operationTime: Date;
+}
+
 export interface CreateRentalBaseProps {
   id?: RentalId;
   tenantId: string;
@@ -974,6 +980,110 @@ export class Rental extends AggregateRootBase {
       confirmedAt: this.confirmedAt,
     });
     if (candidate.isErr()) return err(candidate.error);
+    this.props = candidate.value.props;
+    this.recordConfirmedRentalEditedEvent(params.operationTime);
+    return ok(undefined);
+  }
+
+  changeConfirmedPeriod(params: ChangeConfirmedPeriodProps): Result<void, RentalCommitmentError> {
+    if (this.status !== RentalStatus.Confirmed) {
+      return err(new RentalCannotBeEditedFromStatusError(this.id, this.status));
+    }
+
+    const samePeriod =
+      params.newPeriod.start.getTime() === this.period.start.getTime() &&
+      params.newPeriod.end.getTime() === this.period.end.getTime();
+    if (samePeriod) return ok(undefined);
+
+    if (params.operationTime >= this.period.end) return err(new RentalPeriodHasEndedError(this.id));
+
+    const started = params.operationTime >= this.period.start;
+    if (started && params.newPeriod.start.getTime() !== this.period.start.getTime()) {
+      return err(new RentalInvalidFieldError('start', 'must equal the existing start after the rental has started'));
+    }
+    if (!started && params.newPeriod.start <= params.operationTime) {
+      return err(new RentalPeriodCannotStartInPastError());
+    }
+
+    let newPeriod: RentalPeriod;
+    try {
+      newPeriod = new RentalPeriod(params.newPeriod.start, params.newPeriod.end);
+    } catch {
+      return err(new RentalInvalidFieldError('period', 'end must be after start'));
+    }
+    if (started && newPeriod.end <= params.operationTime) {
+      return err(new RentalInvalidFieldError('end', 'must be after the operation time'));
+    }
+
+    const price = ConfirmedPriceSnapshot.create(params.confirmedPriceSnapshot);
+    if (price.isErr()) return err(price.error);
+
+    const activeAssignmentIds = new Set(this.currentAssignedAssets.map((assignment) => assignment.id));
+    const nextAssignedAssets: AssignedAsset[] = [];
+    for (const assignment of this.props.assignedAssets) {
+      if (!activeAssignmentIds.has(assignment.id)) {
+        nextAssignedAssets.push(assignment);
+        continue;
+      }
+      if (!started && assignment.effectiveFrom.getTime() !== this.period.start.getTime()) {
+        return err(
+          new RentalInvalidFieldError(
+            'assignedAssets',
+            'all current assignments must start at the current rental start before moving the period',
+          ),
+        );
+      }
+      nextAssignedAssets.push(
+        AssignedAsset.reconstitute({
+          id: assignment.id,
+          tenantId: assignment.tenantId,
+          rentalId: assignment.rentalId,
+          rentalDemandLineId: assignment.rentalDemandLineId,
+          assetId: assignment.assetId,
+          ownershipSnapshot: assignment.ownershipSnapshot,
+          effectiveFrom: started ? assignment.effectiveFrom : newPeriod.start,
+          effectiveUntil: assignment.effectiveUntil,
+          createdAt: assignment.createdAt,
+        }),
+      );
+    }
+
+    const currentAssignmentByAssetId = new Map(
+      nextAssignedAssets
+        .filter((assignment) => assignment.isActive)
+        .map((assignment) => [assignment.assetId, assignment]),
+    );
+    const nextAssetBlocks: AssetBlock[] = [];
+    for (const block of this.props.assetBlocks) {
+      if (!block.isActive || block.blockType !== AssetBlockType.Equipment) {
+        nextAssetBlocks.push(block);
+        continue;
+      }
+      const assignment = currentAssignmentByAssetId.get(block.assetId);
+      if (!assignment) return err(new UnexpectedActiveAssetBlockError(this.id, block.id));
+      nextAssetBlocks.push(
+        AssetBlock.reconstitute({
+          id: block.id,
+          tenantId: block.tenantId,
+          rentalId: block.rentalId,
+          assetId: block.assetId,
+          period: new RentalPeriod(assignment.effectiveFrom, newPeriod.end),
+          blockType: block.blockType,
+          createdAt: block.createdAt,
+        }),
+      );
+    }
+
+    const candidate = Rental.createFromEntities(RentalStatus.Confirmed, {
+      ...this.props,
+      id: this.id,
+      period: newPeriod,
+      confirmedPriceSnapshot: price.value,
+      assignedAssets: nextAssignedAssets,
+      assetBlocks: nextAssetBlocks,
+    });
+    if (candidate.isErr()) return err(candidate.error);
+
     this.props = candidate.value.props;
     this.recordConfirmedRentalEditedEvent(params.operationTime);
     return ok(undefined);
