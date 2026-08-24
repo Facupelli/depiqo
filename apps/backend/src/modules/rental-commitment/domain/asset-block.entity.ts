@@ -107,6 +107,19 @@ export class AssetBlock {
     });
   }
 
+  resizePeriod(period: RentalPeriod): AssetBlock {
+    return AssetBlock.reconstitute({
+      id: this.id,
+      tenantId: this.tenantId,
+      rentalId: this.rentalId,
+      assetId: this.assetId,
+      period,
+      blockType: this.blockType,
+      createdAt: this.createdAt,
+      releasedAt: this.releasedAt,
+    });
+  }
+
   covers(period: RentalPeriod): boolean {
     return this.props.period.equals(period);
   }

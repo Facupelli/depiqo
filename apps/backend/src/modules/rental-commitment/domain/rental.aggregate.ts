@@ -20,7 +20,6 @@ import {
   RentalCannotBeCancelledFromStatusError,
   RentalCannotBeConfirmedFromStatusError,
   RentalCannotBeEditedFromStatusError,
-  RentalPeriodCannotStartInPastError,
   RentalPeriodHasEndedError,
   RentalSelectionNotFoundError,
   RentalContainsOperationalCommitmentsError,
@@ -36,6 +35,7 @@ import {
 } from './errors/rental-commitment.errors';
 import { RentalDemandLineId } from './ids/rental-demand-line-id';
 import { deriveConfirmedSelectionQuantityChange } from './confirmed-selection-quantity-change';
+import { deriveConfirmedRentalPeriodTransition } from './confirmed-rental-period-transition';
 import { AssetId, RentalId } from './types/rental-commitment-ids';
 import { CreateRentalDemandLineProps, RentalDemandLine } from './rental-demand-line.entity';
 import { AssetBlockType, FulfillmentMethod, RentalSource, RentalStatus } from './rental-status';
@@ -841,95 +841,25 @@ export class Rental extends AggregateRootBase {
       return err(new RentalCannotBeEditedFromStatusError(this.id, this.status));
     }
 
-    const samePeriod =
-      params.newPeriod.start.getTime() === this.period.start.getTime() &&
-      params.newPeriod.end.getTime() === this.period.end.getTime();
-    if (samePeriod) return ok(undefined);
-
-    if (params.operationTime >= this.period.end) return err(new RentalPeriodHasEndedError(this.id));
-
-    const started = params.operationTime >= this.period.start;
-    if (started && params.newPeriod.start.getTime() !== this.period.start.getTime()) {
-      return err(new RentalInvalidFieldError('start', 'must equal the existing start after the rental has started'));
-    }
-    if (!started && params.newPeriod.start <= params.operationTime) {
-      return err(new RentalPeriodCannotStartInPastError());
-    }
-
-    let newPeriod: RentalPeriod;
-    try {
-      newPeriod = new RentalPeriod(params.newPeriod.start, params.newPeriod.end);
-    } catch {
-      return err(new RentalInvalidFieldError('period', 'end must be after start'));
-    }
-    if (started && newPeriod.end <= params.operationTime) {
-      return err(new RentalInvalidFieldError('end', 'must be after the operation time'));
-    }
+    const periodTransition = deriveConfirmedRentalPeriodTransition({
+      rentalId: this.id,
+      currentPeriod: this.period,
+      requestedPeriod: params.newPeriod,
+      operationTime: params.operationTime,
+      assignedAssets: this.props.assignedAssets,
+      assetBlocks: this.props.assetBlocks,
+    });
+    if (periodTransition.isErr()) return err(periodTransition.error);
+    if (!periodTransition.value.changed) return ok(undefined);
 
     const price = ConfirmedPriceSnapshot.create(params.confirmedPriceSnapshot);
     if (price.isErr()) return err(price.error);
 
-    const activeAssignmentIds = new Set(this.currentAssignedAssets.map((assignment) => assignment.id));
-    const nextAssignedAssets: AssignedAsset[] = [];
-    for (const assignment of this.props.assignedAssets) {
-      if (!activeAssignmentIds.has(assignment.id)) {
-        nextAssignedAssets.push(assignment);
-        continue;
-      }
-      if (!started && assignment.effectiveFrom.getTime() !== this.period.start.getTime()) {
-        return err(
-          new RentalInvalidFieldError(
-            'assignedAssets',
-            'all current assignments must start at the current rental start before moving the period',
-          ),
-        );
-      }
-      nextAssignedAssets.push(
-        AssignedAsset.reconstitute({
-          id: assignment.id,
-          tenantId: assignment.tenantId,
-          rentalId: assignment.rentalId,
-          rentalDemandLineId: assignment.rentalDemandLineId,
-          assetId: assignment.assetId,
-          ownershipSnapshot: assignment.ownershipSnapshot,
-          effectiveFrom: started ? assignment.effectiveFrom : newPeriod.start,
-          effectiveUntil: assignment.effectiveUntil,
-          createdAt: assignment.createdAt,
-        }),
-      );
-    }
-
-    const currentAssignmentByAssetId = new Map(
-      nextAssignedAssets
-        .filter((assignment) => assignment.isActive)
-        .map((assignment) => [assignment.assetId, assignment]),
-    );
-    const nextAssetBlocks: AssetBlock[] = [];
-    for (const block of this.props.assetBlocks) {
-      if (!block.isActive || block.blockType !== AssetBlockType.Equipment) {
-        nextAssetBlocks.push(block);
-        continue;
-      }
-      const assignment = currentAssignmentByAssetId.get(block.assetId);
-      if (!assignment) return err(new UnexpectedActiveAssetBlockError(this.id, block.id));
-      nextAssetBlocks.push(
-        AssetBlock.reconstitute({
-          id: block.id,
-          tenantId: block.tenantId,
-          rentalId: block.rentalId,
-          assetId: block.assetId,
-          period: new RentalPeriod(assignment.effectiveFrom, newPeriod.end),
-          blockType: block.blockType,
-          createdAt: block.createdAt,
-        }),
-      );
-    }
-
     const transition = this.applyConfirmedStateChanges({
-      period: newPeriod,
+      period: periodTransition.value.period,
       confirmedPriceSnapshot: price.value,
-      assignedAssets: nextAssignedAssets,
-      assetBlocks: nextAssetBlocks,
+      assignedAssets: periodTransition.value.assignedAssets,
+      assetBlocks: periodTransition.value.assetBlocks,
     });
     if (transition.isErr()) return err(transition.error);
 

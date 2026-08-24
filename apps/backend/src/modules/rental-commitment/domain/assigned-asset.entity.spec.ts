@@ -55,6 +55,30 @@ describe('AssignedAsset', () => {
     expect(snapshot.isErr()).toBe(true);
   });
 
+  it('returns an identity-preserving copy when moving effectiveFrom', () => {
+    const createdAt = new Date('2026-08-20T09:00:00.000Z');
+    const assignment = AssignedAsset.reconstitute({
+      ...baseProps,
+      id: 'assignment-1' as AssignedAssetId,
+      createdAt,
+    });
+    const newEffectiveFrom = new Date('2026-08-26T10:00:00.000Z');
+
+    const moved = assignment.moveEffectiveFrom(newEffectiveFrom);
+
+    expect(moved).not.toBe(assignment);
+    expect(moved.id).toBe(assignment.id);
+    expect(moved.tenantId).toBe(assignment.tenantId);
+    expect(moved.rentalId).toBe(assignment.rentalId);
+    expect(moved.rentalDemandLineId).toBe(assignment.rentalDemandLineId);
+    expect(moved.assetId).toBe(assignment.assetId);
+    expect(moved.ownershipSnapshot).toBe(assignment.ownershipSnapshot);
+    expect(moved.effectiveFrom).toEqual(newEffectiveFrom);
+    expect(moved.effectiveUntil).toBeUndefined();
+    expect(moved.createdAt).toEqual(createdAt);
+    expect(assignment.effectiveFrom).toEqual(baseProps.effectiveFrom);
+  });
+
   it('preserves identity, temporal fields, and createdAt during reconstitution', () => {
     const createdAt = new Date('2026-08-20T09:00:00.000Z');
     const effectiveUntil = new Date('2026-08-25T11:00:00.000Z');

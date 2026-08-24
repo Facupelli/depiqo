@@ -75,6 +75,20 @@ export class AssignedAsset {
     return this.props.createdAt ? new Date(this.props.createdAt) : undefined;
   }
 
+  moveEffectiveFrom(effectiveFrom: Date): AssignedAsset {
+    return AssignedAsset.reconstitute({
+      id: this.id,
+      tenantId: this.tenantId,
+      rentalId: this.rentalId,
+      rentalDemandLineId: this.rentalDemandLineId,
+      assetId: this.assetId,
+      ownershipSnapshot: this.ownershipSnapshot,
+      effectiveFrom,
+      effectiveUntil: this.effectiveUntil,
+      createdAt: this.createdAt,
+    });
+  }
+
   close(effectiveUntil: Date): Result<void, RentalCommitmentError> {
     if (!this.isActive) {
       return err(new RentalInvalidFieldError('effectiveUntil', 'cannot close an already closed assignment'));
