@@ -133,13 +133,14 @@ export class ConfirmRentalFixtures {
     assetId: string;
     period: RentalPeriodFixture;
     releasedAt?: Date;
+    blockType?: 'EQUIPMENT' | 'ACCESSORY';
   }): Promise<string> {
     const id = randomUUID();
     const range = `[${params.period.start.toISOString()},${params.period.end.toISOString()})`;
 
     await this.prisma.client.$executeRaw`
       INSERT INTO v2_asset_blocks (id, tenant_id, rental_id, asset_id, period, block_type, released_at)
-      VALUES (${id}, ${params.tenantId}, ${params.rentalId}, ${params.assetId}, ${range}::tstzrange, 'EQUIPMENT', ${params.releasedAt ?? null})
+      VALUES (${id}, ${params.tenantId}, ${params.rentalId}, ${params.assetId}, ${range}::tstzrange, ${params.blockType ?? 'EQUIPMENT'}, ${params.releasedAt ?? null})
     `;
 
     return id;

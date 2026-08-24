@@ -69,6 +69,15 @@ describe('RemoveRentalSelection integration', () => {
     const targetDemand = before.rental.demandLines.find((line) => line.rentalSelectionId === target.id)!;
     const targetAssignment = before.rental.assignedAssets.find((item) => item.rentalDemandLineId === targetDemand.id)!;
     const unrelatedAssignment = before.rental.assignedAssets.find((item) => item.id !== targetAssignment.id)!;
+    const sourceDemand = before.rental.demandLines.find((line) => line.id !== targetDemand.id)!;
+    await fixtures.createAccessoryState({
+      tenantId: tenant.id,
+      branchId: branch.id,
+      rentalId: rental.rentalId,
+      sourceRentalDemandLineId: sourceDemand.id,
+      period: { start: before.rental.periodStart, end: before.rental.periodEnd },
+    });
+    const accessoryBefore = await fixtures.accessoryState(rental.rentalId);
     const events: ConfirmedRentalEditedIntegrationEvent[] = [];
     const listener = (event: ConfirmedRentalEditedIntegrationEvent) => events.push(event);
     emitter.on(ConfirmedRentalEditedIntegrationEvent.name, listener);
@@ -103,7 +112,75 @@ describe('RemoveRentalSelection integration', () => {
     expect(price.final.lines.map((line) => line.rentalSelectionId)).not.toContain(target.id);
     expect(price.manualAdjustment).toBeUndefined();
     expect(after.rental.ownerSplits.every((split) => split.rentalSelectionId !== target.id)).toBe(true);
+    expect(await fixtures.accessoryState(rental.rentalId)).toEqual(accessoryBefore);
     expect(events).toHaveLength(1);
+  });
+
+  it('rejects removing a selection whose demand is referenced by an accessory', async () => {
+    const tenant = await core.createTenant();
+    const branch = await core.createBranch({ tenantId: tenant.id });
+    const { customer } = await core.createRentalCustomer({ tenantId: tenant.id });
+    const { user } = await core.createTenantUser({ tenantId: tenant.id });
+    const first = await fixtures.createOffer({ tenantId: tenant.id, branchId: branch.id });
+    const second = await fixtures.createOffer({ tenantId: tenant.id, branchId: branch.id });
+    const period = { start: new Date(Date.now() + 3_600_000), end: new Date(Date.now() + 7_200_000) };
+    const rental = await fixtures.createConfirmedRental({
+      tenantId: tenant.id,
+      branchId: branch.id,
+      customerId: customer.id,
+      period,
+      offerId: first.offer.id,
+      equipmentTypeId: first.equipmentType.id,
+    });
+    await fixtures.createCandidate({
+      tenantId: tenant.id,
+      branchId: branch.id,
+      equipmentTypeId: second.equipmentType.id,
+    });
+    let persisted = await prisma.client.v2Rental.findUniqueOrThrow({ where: { id: rental.rentalId } });
+    expect(
+      (
+        await bus.execute(
+          new AddRentalSelectionCommand({
+            tenantId: tenant.id,
+            tenantUserId: user.id,
+            rentalId: rental.rentalId,
+            expectedVersion: persisted.version,
+            rentalOfferId: second.offer.id,
+            quantity: 1,
+          }),
+        )
+      ).isOk(),
+    ).toBe(true);
+    const state = await fixtures.persistedState(rental.rentalId);
+    const referencedSelection = state.rental.selections.find(
+      (selection) => selection.rentalOfferId === first.offer.id,
+    )!;
+    const sourceDemand = state.rental.demandLines.find((line) => line.rentalSelectionId === referencedSelection.id)!;
+    await fixtures.createAccessoryState({
+      tenantId: tenant.id,
+      branchId: branch.id,
+      rentalId: rental.rentalId,
+      sourceRentalDemandLineId: sourceDemand.id,
+      period,
+    });
+
+    persisted = await prisma.client.v2Rental.findUniqueOrThrow({ where: { id: rental.rentalId } });
+    const result = await bus.execute(
+      new RemoveRentalSelectionCommand({
+        tenantId: tenant.id,
+        tenantUserId: user.id,
+        rentalId: rental.rentalId,
+        selectionId: referencedSelection.id,
+        expectedVersion: persisted.version,
+      }),
+    );
+
+    expect(result.isErr()).toBe(true);
+    if (result.isErr()) {
+      expect(result.error.code).toBe('rental_commitment.rental_selection_referenced_by_accessory');
+    }
+    expect((await fixtures.persistedState(rental.rentalId)).rental.version).toBe(persisted.version);
   });
 
   it('drops a pre-start plan and re-adds the same offer with new commercial IDs', async () => {

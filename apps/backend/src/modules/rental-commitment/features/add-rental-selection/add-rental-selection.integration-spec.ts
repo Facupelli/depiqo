@@ -90,6 +90,14 @@ describe('AddRentalSelection integration', () => {
       },
     });
     const before = await fixtures.persistedState(setup.rental.rentalId);
+    await fixtures.createAccessoryState({
+      tenantId: setup.tenant.id,
+      branchId: setup.branch.id,
+      rentalId: setup.rental.rentalId,
+      sourceRentalDemandLineId: before.rental.demandLines[0].id,
+      period: { start: before.rental.periodStart, end: before.rental.periodEnd },
+    });
+    const accessoryBefore = await fixtures.accessoryState(setup.rental.rentalId);
     const oldSnapshot = before.rental.priceSnapshot as Record<string, unknown>;
     await prisma.client.v2Rental.update({
       where: { id: setup.rental.rentalId },
@@ -157,6 +165,7 @@ describe('AddRentalSelection integration', () => {
     );
     expect(priceSnapshot.final.lines[0].chargedUnits).toBe(priceSnapshot.final.lines[1].chargedUnits);
     expect(priceSnapshot).not.toHaveProperty('manualPricingAdjustment');
+    expect(await fixtures.accessoryState(setup.rental.rentalId)).toEqual(accessoryBefore);
     expect(after.rental.ownerSplits).toEqual([
       expect.objectContaining({
         rentalSelectionId: lightSelection.id,

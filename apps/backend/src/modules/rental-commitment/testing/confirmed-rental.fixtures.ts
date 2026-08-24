@@ -140,6 +140,62 @@ export class ConfirmedRentalFixtures {
     return this.rentals.createActiveBlock(params);
   }
 
+  async createAccessoryState(params: {
+    tenantId: string;
+    branchId: string;
+    rentalId: string;
+    sourceRentalDemandLineId: string;
+    period: RentalPeriodFixture;
+  }) {
+    const equipmentType = await this.prisma.client.v2EquipmentType.create({
+      data: { tenantId: params.tenantId, name: `Accessory ${randomUUID()}` },
+    });
+    const assetId = await this.rentals.createCandidate({
+      tenantId: params.tenantId,
+      branchId: params.branchId,
+      equipmentTypeId: equipmentType.id,
+    });
+    const selection = await this.prisma.client.v2RentalAccessorySelection.create({
+      data: {
+        tenantId: params.tenantId,
+        rentalOrderId: params.rentalId,
+        sourceRentalDemandLineId: params.sourceRentalDemandLineId,
+        equipmentTypeId: equipmentType.id,
+        equipmentTypeNameSnapshot: equipmentType.name,
+        quantity: 1,
+      },
+    });
+    const assignment = await this.prisma.client.v2RentalAccessoryAssetAssignment.create({
+      data: {
+        tenantId: params.tenantId,
+        rentalOrderId: params.rentalId,
+        rentalAccessorySelectionId: selection.id,
+        assetId,
+      },
+    });
+    const blockId = await this.rentals.createActiveBlock({
+      tenantId: params.tenantId,
+      rentalId: params.rentalId,
+      assetId,
+      period: params.period,
+      blockType: 'ACCESSORY',
+    });
+    return { selectionId: selection.id, assignmentId: assignment.id, assetId, blockId };
+  }
+
+  async accessoryState(rentalId: string) {
+    const selections = await this.prisma.client.v2RentalAccessorySelection.findMany({
+      where: { rentalOrderId: rentalId },
+      orderBy: { id: 'asc' },
+    });
+    const assignments = await this.prisma.client.v2RentalAccessoryAssetAssignment.findMany({
+      where: { rentalOrderId: rentalId },
+      orderBy: { id: 'asc' },
+    });
+    const { blocks } = await this.persistedState(rentalId);
+    return { selections, assignments, blocks: blocks.filter((block) => block.blockType === 'ACCESSORY') };
+  }
+
   async persistedState(rentalId: string) {
     const rental = await this.prisma.client.v2Rental.findUniqueOrThrow({
       where: { id: rentalId },

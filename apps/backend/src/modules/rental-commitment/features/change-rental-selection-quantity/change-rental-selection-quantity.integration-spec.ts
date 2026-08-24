@@ -79,6 +79,14 @@ describe('ChangeRentalSelectionQuantity integration', () => {
       equipmentTypeId: setup.offer.equipmentType.id,
     });
     const before = await fixtures.persistedState(setup.rental.rentalId);
+    await fixtures.createAccessoryState({
+      tenantId: setup.tenant.id,
+      branchId: setup.branch.id,
+      rentalId: setup.rental.rentalId,
+      sourceRentalDemandLineId: before.rental.demandLines[0].id,
+      period: { start: before.rental.periodStart, end: before.rental.periodEnd },
+    });
+    const accessoryBefore = await fixtures.accessoryState(setup.rental.rentalId);
     const events: ConfirmedRentalEditedIntegrationEvent[] = [];
     const listener = (event: ConfirmedRentalEditedIntegrationEvent) => events.push(event);
     emitter.on(ConfirmedRentalEditedIntegrationEvent.name, listener);
@@ -109,6 +117,7 @@ describe('ChangeRentalSelectionQuantity integration', () => {
     expect(
       (after.rental.priceSnapshot as { final: { lines: Array<{ quantity: number }> } }).final.lines[0].quantity,
     ).toBe(3);
+    expect(await fixtures.accessoryState(setup.rental.rentalId)).toEqual(accessoryBefore);
     expect(events).toHaveLength(1);
     expect(events[0].occurredAt).toEqual(additions[0].effectiveFrom);
   });

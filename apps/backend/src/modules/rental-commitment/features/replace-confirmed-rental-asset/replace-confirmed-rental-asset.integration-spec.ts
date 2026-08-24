@@ -150,6 +150,14 @@ describe('ReplaceConfirmedRentalAsset integration', () => {
     const setup = await scenario();
     const replacementAssetId = await candidate(setup);
     const before = await fixtures.persistedState(setup.rental.rentalId);
+    await fixtures.createAccessoryState({
+      tenantId: setup.tenant.id,
+      branchId: setup.branch.id,
+      rentalId: setup.rental.rentalId,
+      sourceRentalDemandLineId: before.rental.demandLines[0].id,
+      period: { start: before.rental.periodStart, end: before.rental.periodEnd },
+    });
+    const accessoryBefore = await fixtures.accessoryState(setup.rental.rentalId);
     const emitter = moduleRef.get(EventEmitter2);
     const events: ConfirmedRentalEditedIntegrationEvent[] = [];
     const listener = (event: ConfirmedRentalEditedIntegrationEvent) => events.push(event);
@@ -181,6 +189,7 @@ describe('ReplaceConfirmedRentalAsset integration', () => {
     expect(after.rental.branchId).toBe(before.rental.branchId);
     expect(after.rental.customerId).toBe(before.rental.customerId);
     expect(after.rental.ownerSplits).toEqual([]);
+    expect(await fixtures.accessoryState(setup.rental.rentalId)).toEqual(accessoryBefore);
     expect(events).toEqual([expect.objectContaining({ tenantId: setup.tenant.id, rentalId: setup.rental.rentalId })]);
   });
 
