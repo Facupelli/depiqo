@@ -8,11 +8,11 @@ import { V2AssetBlockType } from 'src/generated/prisma/enums';
 import { toRentalIntegrationEvents } from '../../application/rental-integration-event.mapper';
 import { RentalAssetAllocationService } from '../../asset-allocation/rental-asset-allocation.service';
 import {
-  ConfirmedRentalCannotBeEditedAfterPickupError,
   InsufficientAssetAvailabilityError,
   RentalAssignedAssetNotFoundError,
   RentalCannotBeEditedFromStatusError,
   RentalInvalidFieldError,
+  RentalPeriodHasEndedError,
 } from '../../domain/errors/rental-commitment.errors';
 import { RentalStatus } from '../../domain/rental-status';
 import { Rental } from '../../domain/rental.aggregate';
@@ -93,8 +93,11 @@ export class ReplaceConfirmedRentalAssetHandler implements ICommandHandler<
             this.toApplicationError(new RentalCannotBeEditedFromStatusError(rentalId, currentRental.status), context),
           );
         }
-        if (new Date() >= currentRental.period.start) {
-          return err(this.toApplicationError(new ConfirmedRentalCannotBeEditedAfterPickupError(rentalId), context));
+
+        const operationTime = new Date();
+        const effectiveAt = operationTime < currentRental.period.start ? currentRental.period.start : operationTime;
+        if (effectiveAt >= currentRental.period.end) {
+          return err(this.toApplicationError(new RentalPeriodHasEndedError(rentalId), context));
         }
 
         const currentAssignment = currentRental.currentAssignedAssets.find(
@@ -131,7 +134,7 @@ export class ReplaceConfirmedRentalAssetHandler implements ICommandHandler<
         const allocationPlan = await this.rentalAssetAllocation.planAllocations({
           tenantId,
           branchId: currentRental.branchId,
-          periodStart: currentRental.period.start,
+          periodStart: effectiveAt,
           periodEnd: currentRental.period.end,
           demandLines: [
             {
@@ -159,11 +162,12 @@ export class ReplaceConfirmedRentalAssetHandler implements ICommandHandler<
           );
         }
 
-        const replacement = currentRental.replaceConfirmedAssignedAsset(
-          command.props.currentAssignedAssetId,
-          command.props.replacementAssetId,
-          replacementAllocation.ownershipSnapshot,
-        );
+        const replacement = currentRental.replaceConfirmedAssignedAsset({
+          currentAssignedAssetId: command.props.currentAssignedAssetId,
+          replacementAssetId: command.props.replacementAssetId,
+          ownershipSnapshot: replacementAllocation.ownershipSnapshot,
+          operationTime,
+        });
         if (replacement.isErr()) return err(this.toApplicationError(replacement.error, context));
 
         const ownerSplits = this.calculateOwnerSplits(currentRental);
@@ -233,13 +237,8 @@ export class ReplaceConfirmedRentalAssetHandler implements ICommandHandler<
         context,
       );
     }
-    if (error instanceof ConfirmedRentalCannotBeEditedAfterPickupError) {
-      return replaceConfirmedRentalAssetError(
-        'rental_commitment.rental_cannot_be_edited_after_pickup',
-        error.message,
-        error,
-        context,
-      );
+    if (error instanceof RentalPeriodHasEndedError) {
+      return replaceConfirmedRentalAssetError('rental_commitment.rental_period_ended', error.message, error, context);
     }
     if (error instanceof RentalAssignedAssetNotFoundError) {
       return replaceConfirmedRentalAssetError(

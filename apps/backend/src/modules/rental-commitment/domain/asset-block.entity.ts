@@ -121,6 +121,24 @@ export class AssetBlock {
     return ok(undefined);
   }
 
+  truncateAndRelease(releasedAt: Date): Result<void, RentalCommitmentError> {
+    if (!this.isActive) {
+      return err(new RentalInvalidFieldError('releasedAt', 'cannot truncate an already released asset block'));
+    }
+
+    if (!(releasedAt instanceof Date) || Number.isNaN(releasedAt.getTime())) {
+      return err(new RentalInvalidFieldError('releasedAt', 'must be a valid timestamp'));
+    }
+
+    if (releasedAt <= this.props.period.start || releasedAt >= this.props.period.end) {
+      return err(new RentalInvalidFieldError('releasedAt', 'must be within the asset block period'));
+    }
+
+    this.props.period = new RentalPeriod(this.props.period.start, releasedAt);
+    this.props.releasedAt = new Date(releasedAt);
+    return ok(undefined);
+  }
+
   private static validatePrimitiveFields(
     props: Pick<CreateAssetBlockProps, 'tenantId' | 'rentalId' | 'assetId' | 'blockType'>,
   ): Result<void, RentalCommitmentError> {

@@ -75,6 +75,23 @@ export class AssignedAsset {
     return this.props.createdAt ? new Date(this.props.createdAt) : undefined;
   }
 
+  close(effectiveUntil: Date): Result<void, RentalCommitmentError> {
+    if (!this.isActive) {
+      return err(new RentalInvalidFieldError('effectiveUntil', 'cannot close an already closed assignment'));
+    }
+
+    if (!(effectiveUntil instanceof Date) || Number.isNaN(effectiveUntil.getTime())) {
+      return err(new RentalInvalidFieldError('effectiveUntil', 'must be a valid timestamp'));
+    }
+
+    if (effectiveUntil <= this.props.effectiveFrom) {
+      return err(new RentalInvalidFieldError('effectiveUntil', 'must be after effectiveFrom'));
+    }
+
+    this.props.effectiveUntil = new Date(effectiveUntil);
+    return ok(undefined);
+  }
+
   static create(props: CreateAssignedAssetProps): Result<AssignedAsset, RentalCommitmentError> {
     const validation = this.validatePrimitiveFields(props);
 

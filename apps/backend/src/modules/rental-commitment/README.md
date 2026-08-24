@@ -81,6 +81,8 @@ Each assignment preserves the ownership and owner-contract payout terms accepted
 
 Each current assignment is paired with exactly one active rental-owned equipment Asset Block for `[effectiveFrom, rental period end)`. Historical assignments do not require an active block.
 
+A confirmed rental's current assigned equipment asset may be replaced before or during its rental period. Before the period starts, replacement changes the future plan: the replaced assignment and its active block are removed because they never became effective. During the period, replacement preserves the previous assignment and block as history by closing both at the replacement effective time, then creates the replacement assignment and block from that instant through the rental end. Replacement availability is evaluated only for that remaining effective interval. Replacement does not change customer pricing. Current owner-split projection is recalculated from current/open assignments and the accepted price, while closed assignments retain their original ownership and contract terms. This does not create time-prorated owner payouts.
+
 Assignment history is not pickup or return tracking. Rental Commitment does not claim that these timestamps represent actual physical possession, pickup, delivery, or return times. Asset Inventory remains authoritative over the asset's current physical profile.
 
 ### Asset Block

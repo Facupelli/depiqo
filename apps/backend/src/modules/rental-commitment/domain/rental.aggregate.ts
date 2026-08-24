@@ -21,6 +21,7 @@ import {
   RentalCannotBeEditedFromStatusError,
   ConfirmedRentalCannotBeEditedAfterPickupError,
   RentalPeriodCannotStartInPastError,
+  RentalPeriodHasEndedError,
   RentalContainsOperationalCommitmentsError,
   RentalAssignedAssetNotFoundError,
   RentalConfirmationRequiresCustomerError,
@@ -551,50 +552,121 @@ export class Rental extends AggregateRootBase {
     return ok(undefined);
   }
 
-  replaceConfirmedAssignedAsset(
-    currentAssignedAssetId: AssetId,
-    replacementAssetId: AssetId,
-    ownershipSnapshot: AssignedAssetOwnershipSnapshot,
-    now = new Date(),
-  ): Result<void, RentalCommitmentError> {
+  replaceConfirmedAssignedAsset(params: {
+    currentAssignedAssetId: AssetId;
+    replacementAssetId: AssetId;
+    ownershipSnapshot: AssignedAssetOwnershipSnapshot;
+    operationTime: Date;
+  }): Result<void, RentalCommitmentError> {
     if (this.status !== RentalStatus.Confirmed) {
       return err(new RentalCannotBeEditedFromStatusError(this.id, this.status));
     }
-    if (now >= this.period.start) {
-      return err(new ConfirmedRentalCannotBeEditedAfterPickupError(this.id));
-    }
-    if (currentAssignedAssetId === replacementAssetId) {
+    if (params.currentAssignedAssetId === params.replacementAssetId) {
       return err(new RentalInvalidFieldError('replacementAssetId', 'must differ from currentAssignedAssetId'));
     }
 
+    const effectiveAt = params.operationTime < this.period.start ? this.period.start : params.operationTime;
+    if (effectiveAt >= this.period.end) {
+      return err(new RentalPeriodHasEndedError(this.id));
+    }
+
     const currentAssignment = this.currentAssignedAssets.find(
-      (assignment) => assignment.assetId === currentAssignedAssetId,
+      (assignment) => assignment.assetId === params.currentAssignedAssetId,
     );
     if (!currentAssignment) {
-      return err(new RentalAssignedAssetNotFoundError(this.id, currentAssignedAssetId));
+      return err(new RentalAssignedAssetNotFoundError(this.id, params.currentAssignedAssetId));
     }
 
     const replacementAssignment = AssignedAsset.create({
       tenantId: this.tenantId,
       rentalId: this.id,
       rentalDemandLineId: currentAssignment.rentalDemandLineId,
-      assetId: replacementAssetId,
-      ownershipSnapshot,
-      effectiveFrom: this.period.start,
+      assetId: params.replacementAssetId,
+      ownershipSnapshot: params.ownershipSnapshot,
+      effectiveFrom: effectiveAt,
+      createdAt: params.operationTime,
     });
-    if (replacementAssignment.isErr()) {
-      return err(replacementAssignment.error);
-    }
+    if (replacementAssignment.isErr()) return err(replacementAssignment.error);
 
     const replacementBlock = AssetBlock.create({
       tenantId: this.tenantId,
       rentalId: this.id,
-      assetId: replacementAssetId,
-      period: this.period,
+      assetId: params.replacementAssetId,
+      period: new RentalPeriod(effectiveAt, this.period.end),
       blockType: AssetBlockType.Equipment,
+      createdAt: params.operationTime,
     });
-    if (replacementBlock.isErr()) {
-      return err(replacementBlock.error);
+    if (replacementBlock.isErr()) return err(replacementBlock.error);
+
+    const isPlannedReplacement = effectiveAt <= currentAssignment.effectiveFrom;
+    let nextAssignedAssets: AssignedAsset[];
+    let nextAssetBlocks: AssetBlock[];
+
+    if (isPlannedReplacement) {
+      nextAssignedAssets = [
+        ...this.props.assignedAssets.filter((assignment) => assignment.id !== currentAssignment.id),
+        replacementAssignment.value,
+      ];
+      nextAssetBlocks = [
+        ...this.props.assetBlocks.filter(
+          (block) =>
+            !(
+              block.isActive &&
+              block.blockType === AssetBlockType.Equipment &&
+              block.assetId === params.currentAssignedAssetId
+            ),
+        ),
+        replacementBlock.value,
+      ];
+    } else {
+      const historicalAssignment = AssignedAsset.create({
+        id: currentAssignment.id,
+        tenantId: currentAssignment.tenantId,
+        rentalId: currentAssignment.rentalId,
+        rentalDemandLineId: currentAssignment.rentalDemandLineId,
+        assetId: currentAssignment.assetId,
+        ownershipSnapshot: currentAssignment.ownershipSnapshot,
+        effectiveFrom: currentAssignment.effectiveFrom,
+        createdAt: currentAssignment.createdAt,
+      });
+      if (historicalAssignment.isErr()) return err(historicalAssignment.error);
+
+      const currentBlock = this.props.assetBlocks.find(
+        (block) =>
+          block.isActive &&
+          block.blockType === AssetBlockType.Equipment &&
+          block.assetId === params.currentAssignedAssetId,
+      );
+      if (!currentBlock) {
+        return err(new ConfirmedRentalRequiresActiveBlocksError(this.id, params.currentAssignedAssetId));
+      }
+
+      const historicalBlock = AssetBlock.create({
+        id: currentBlock.id,
+        tenantId: currentBlock.tenantId,
+        rentalId: currentBlock.rentalId,
+        assetId: currentBlock.assetId,
+        period: currentBlock.period,
+        blockType: currentBlock.blockType,
+        createdAt: currentBlock.createdAt,
+      });
+      if (historicalBlock.isErr()) return err(historicalBlock.error);
+
+      const closeAssignment = historicalAssignment.value.close(effectiveAt);
+      if (closeAssignment.isErr()) return err(closeAssignment.error);
+      const truncateBlock = historicalBlock.value.truncateAndRelease(effectiveAt);
+      if (truncateBlock.isErr()) return err(truncateBlock.error);
+
+      nextAssignedAssets = [
+        ...this.props.assignedAssets.filter((assignment) => assignment.id !== currentAssignment.id),
+        historicalAssignment.value,
+        replacementAssignment.value,
+      ];
+      nextAssetBlocks = [
+        ...this.props.assetBlocks.filter((block) => block.id !== currentBlock.id),
+        historicalBlock.value,
+        replacementBlock.value,
+      ];
     }
 
     const candidate = Rental.createFromEntities(RentalStatus.Confirmed, {
@@ -613,28 +685,18 @@ export class Rental extends AggregateRootBase {
       confirmedPriceSnapshot: this.confirmedPriceSnapshot,
       selections: [...this.props.selections],
       demandLines: [...this.props.demandLines],
-      assignedAssets: [
-        ...this.props.assignedAssets.filter((assignment) => assignment.id !== currentAssignment.id),
-        replacementAssignment.value,
-      ],
-      assetBlocks: [
-        ...this.props.assetBlocks.filter(
-          (block) => !(block.blockType === AssetBlockType.Equipment && block.assetId === currentAssignedAssetId),
-        ),
-        replacementBlock.value,
-      ],
+      assignedAssets: nextAssignedAssets,
+      assetBlocks: nextAssetBlocks,
       createdAt: this.createdAt,
       version: this.version,
       updatedAt: this.updatedAt,
       cancelledAt: this.cancelledAt,
       confirmedAt: this.confirmedAt,
     });
-    if (candidate.isErr()) {
-      return err(candidate.error);
-    }
+    if (candidate.isErr()) return err(candidate.error);
 
     this.props = candidate.value.props;
-    this.recordConfirmedRentalEditedEvent(now);
+    this.recordConfirmedRentalEditedEvent(params.operationTime);
     return ok(undefined);
   }
 

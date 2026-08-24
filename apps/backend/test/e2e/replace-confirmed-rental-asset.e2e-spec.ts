@@ -24,7 +24,7 @@ describe('POST /rental-commitments/confirmed-rentals/:rentalId/assigned-assets/r
 
   afterAll(async () => testApp?.close());
 
-  async function scenario() {
+  async function scenario(period = { start: utcDate(2030, 1, 1, 10), end: utcDate(2030, 1, 1, 12) }) {
     const tenant = await core.createTenant();
     const branch = await core.createBranch({ tenantId: tenant.id });
     const { customer } = await core.createRentalCustomer({ tenantId: tenant.id });
@@ -34,7 +34,7 @@ describe('POST /rental-commitments/confirmed-rentals/:rentalId/assigned-assets/r
       tenantId: tenant.id,
       branchId: branch.id,
       customerId: customer.id,
-      period: { start: utcDate(2030, 1, 1, 10), end: utcDate(2030, 1, 1, 12) },
+      period,
       offerId: commercial.offer.id,
       equipmentTypeId: commercial.equipmentType.id,
     });
@@ -80,6 +80,31 @@ describe('POST /rental-commitments/confirmed-rentals/:rentalId/assigned-assets/r
     expect(state.blocks.filter((block) => block.releasedAt === null)).toEqual([
       expect.objectContaining({ assetId: setup.replacementAssetId }),
     ]);
+  });
+
+  it('replaces an asset through the route after the rental has started', async () => {
+    const now = Date.now();
+    const setup = await scenario({
+      start: new Date(now - 2 * 60 * 60 * 1000),
+      end: new Date(now + 2 * 60 * 60 * 1000),
+    });
+    const client = await login(setup.user);
+    await client
+      .withCsrf(
+        client.request().post(`/rental-commitments/confirmed-rentals/${setup.rental.rentalId}/assigned-assets/replace`),
+      )
+      .send(body(setup))
+      .expect(201);
+
+    const state = await fixtures.persistedState(setup.rental.rentalId);
+    const closedAssignment = state.rental.assignedAssets.find((asset) => asset.assetId === setup.rental.assetIds[0])!;
+    const replacementAssignment = state.rental.assignedAssets.find(
+      (asset) => asset.assetId === setup.replacementAssetId,
+    )!;
+    const closedBlock = state.blocks.find((block) => block.assetId === setup.rental.assetIds[0])!;
+    expect(closedAssignment.effectiveUntil).toEqual(replacementAssignment.effectiveFrom);
+    expect(closedBlock.releasedAt).toEqual(replacementAssignment.effectiveFrom);
+    expect(replacementAssignment.effectiveUntil).toBeNull();
   });
 
   it('requires authentication', async () => {

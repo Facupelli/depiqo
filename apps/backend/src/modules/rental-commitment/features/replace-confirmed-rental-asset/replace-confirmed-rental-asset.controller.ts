@@ -83,11 +83,11 @@ const problemMap = {
     HttpStatus.CONFLICT,
     'Only confirmed rentals can have equipment assets replaced.',
   ),
-  'rental_commitment.rental_cannot_be_edited_after_pickup': problem(
-    'rental_cannot_be_edited_after_pickup',
-    'Rental cannot be edited',
+  'rental_commitment.rental_period_ended': problem(
+    'rental_period_ended',
+    'Rental period ended',
     HttpStatus.CONFLICT,
-    'A rental cannot have equipment assets replaced at or after its pickup time.',
+    'A rental cannot have equipment assets replaced after its rental period has ended.',
   ),
   'rental_commitment.rental_asset_assignment_not_found': problem(
     'rental_asset_assignment_not_found',

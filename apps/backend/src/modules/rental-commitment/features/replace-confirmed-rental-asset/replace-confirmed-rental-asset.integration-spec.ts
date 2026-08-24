@@ -1,7 +1,9 @@
 import { CommandBus } from '@nestjs/cqrs';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { TestingModule } from '@nestjs/testing';
 
 import { PrismaService } from 'src/core/database/prisma.service';
+import { parsePostgresRange } from 'src/core/utils/postgres-range.util';
 import { Prisma } from 'src/generated/prisma/client';
 import { V2RentalStatus } from 'src/generated/prisma/enums';
 import {
@@ -13,6 +15,7 @@ import { createTestFixtures, TestFixtures } from '../../../../../test/support/fi
 import { oneMillisecondAfter, utcDate } from '../../../../../test/support/time';
 import { RentalPeriod } from '../../domain/value-objects/rental-period.value-object';
 import { RentalRepository } from '../../persistence/rental.repository';
+import { ConfirmedRentalEditedIntegrationEvent } from '../../public-api/events/rental-lifecycle.integration-events';
 import { CancelRentalCommand } from '../cancel-rental/cancel-rental.command';
 import { CancelRentalResult } from '../cancel-rental/cancel-rental.handler';
 import { ConfirmRentalCommand } from '../confirm-rental/confirm-rental.command';
@@ -42,7 +45,9 @@ describe('ReplaceConfirmedRentalAsset integration', () => {
     return moduleRef;
   });
 
-  async function scenario(options: { status?: V2RentalStatus; quantity?: number } = {}) {
+  async function scenario(
+    options: { status?: V2RentalStatus; quantity?: number; period?: { start: Date; end: Date } } = {},
+  ) {
     const tenant = await core.createTenant();
     const branch = await core.createBranch({ tenantId: tenant.id });
     const { customer } = await core.createRentalCustomer({ tenantId: tenant.id });
@@ -52,7 +57,7 @@ describe('ReplaceConfirmedRentalAsset integration', () => {
       tenantId: tenant.id,
       branchId: branch.id,
       customerId: customer.id,
-      period: between(10, 12),
+      period: options.period ?? between(10, 12),
       offerId: commercial.offer.id,
       equipmentTypeId: commercial.equipmentType.id,
       quantity: options.quantity,
@@ -146,8 +151,15 @@ describe('ReplaceConfirmedRentalAsset integration', () => {
     const setup = await scenario();
     const replacementAssetId = await candidate(setup);
     const before = await fixtures.persistedState(setup.rental.rentalId);
-
-    expect((await replace({ setup, replacementAssetId, expectedVersion: before.rental.version })).isOk()).toBe(true);
+    const emitter = moduleRef.get(EventEmitter2);
+    const events: ConfirmedRentalEditedIntegrationEvent[] = [];
+    const listener = (event: ConfirmedRentalEditedIntegrationEvent) => events.push(event);
+    emitter.on(ConfirmedRentalEditedIntegrationEvent.name, listener);
+    try {
+      expect((await replace({ setup, replacementAssetId, expectedVersion: before.rental.version })).isOk()).toBe(true);
+    } finally {
+      emitter.off(ConfirmedRentalEditedIntegrationEvent.name, listener);
+    }
 
     const after = await fixtures.persistedState(setup.rental.rentalId);
     expect(after.rental.status).toBe('CONFIRMED');
@@ -170,6 +182,110 @@ describe('ReplaceConfirmedRentalAsset integration', () => {
     expect(after.rental.branchId).toBe(before.rental.branchId);
     expect(after.rental.customerId).toBe(before.rental.customerId);
     expect(after.rental.ownerSplits).toEqual([]);
+    expect(events).toEqual([expect.objectContaining({ tenantId: setup.tenant.id, rentalId: setup.rental.rentalId })]);
+  });
+
+  it('preserves elapsed assignment and block history when replacing an in-progress rental asset', async () => {
+    const period = inProgressPeriod();
+    const setup = await scenario({ period });
+    const replacementAssetId = await candidate(setup, {
+      ownershipKind: 'THIRD_PARTY',
+      ownerId: 'replacement-owner',
+      ownerContractSnapshot: ownerSnapshot('replacement-owner', 'replacement-contract', '0.40'),
+    });
+    const before = await fixtures.persistedState(setup.rental.rentalId);
+    const oldAssignment = before.rental.assignedAssets[0];
+    const oldBlock = activeEquipmentBlocks(before)[0];
+    const beforeOperation = new Date();
+    expect((await replace({ setup, replacementAssetId, expectedVersion: before.rental.version })).isOk()).toBe(true);
+    const afterOperation = new Date();
+
+    const after = await fixtures.persistedState(setup.rental.rentalId);
+    const closedAssignment = after.rental.assignedAssets.find((assignment) => assignment.id === oldAssignment.id)!;
+    const replacementAssignment = after.rental.assignedAssets.find(
+      (assignment) => assignment.assetId === replacementAssetId,
+    )!;
+    const closedBlock = after.blocks.find((block) => block.id === oldBlock.id)!;
+    const replacementBlock = activeEquipmentBlocks(after).find((block) => block.assetId === replacementAssetId)!;
+    const handoffAt = closedAssignment.effectiveUntil!;
+
+    expect(handoffAt.getTime()).toBeGreaterThanOrEqual(beforeOperation.getTime());
+    expect(handoffAt.getTime()).toBeLessThanOrEqual(afterOperation.getTime());
+    expect(closedAssignment).toEqual(
+      expect.objectContaining({
+        ownershipSnapshot: oldAssignment.ownershipSnapshot,
+        createdAt: oldAssignment.createdAt,
+      }),
+    );
+    expect(closedBlock.createdAt).toEqual(oldBlock.createdAt);
+    expect(closedBlock.releasedAt).toEqual(handoffAt);
+    expect(parsePostgresRange(closedBlock.period).end).toEqual(handoffAt);
+    expect(replacementAssignment.effectiveFrom).toEqual(handoffAt);
+    expect(replacementAssignment.effectiveUntil).toBeNull();
+    expect(parsePostgresRange(replacementBlock.period).start).toEqual(handoffAt);
+    expect(after.rental.assignedAssets.filter((assignment) => assignment.effectiveUntil === null)).toEqual([
+      expect.objectContaining({ id: replacementAssignment.id, rentalDemandLineId: oldAssignment.rentalDemandLineId }),
+    ]);
+    expect(after.rental.priceSnapshot).toEqual(before.rental.priceSnapshot);
+  });
+
+  it('evaluates in-progress replacement availability only over the remaining rental interval', async () => {
+    const availablePeriod = inProgressPeriod();
+    const availableSetup = await scenario({ period: availablePeriod });
+    const availableAssetId = await candidate(availableSetup);
+    const pastReservation = await rentalFixtures.createRental({
+      tenantId: availableSetup.tenant.id,
+      branchId: availableSetup.branch.id,
+      customerId: availableSetup.customer.id,
+      period: { start: new Date(availablePeriod.start.getTime() - 2 * 60 * 60 * 1000), end: availablePeriod.start },
+      status: 'CONFIRMED',
+    });
+    await fixtures.createActiveBlock({
+      tenantId: availableSetup.tenant.id,
+      rentalId: pastReservation.rentalId,
+      assetId: availableAssetId,
+      period: { start: new Date(availablePeriod.start.getTime() - 2 * 60 * 60 * 1000), end: availablePeriod.start },
+    });
+    expect(
+      (
+        await replace({
+          setup: availableSetup,
+          replacementAssetId: availableAssetId,
+          expectedVersion: await version(availableSetup.rental.rentalId),
+        })
+      ).isOk(),
+    ).toBe(true);
+
+    const unavailablePeriod = inProgressPeriod();
+    const unavailableSetup = await scenario({ period: unavailablePeriod });
+    const unavailableAssetId = await candidate(unavailableSetup);
+    const futureReservation = await rentalFixtures.createRental({
+      tenantId: unavailableSetup.tenant.id,
+      branchId: unavailableSetup.branch.id,
+      customerId: unavailableSetup.customer.id,
+      period: {
+        start: new Date(unavailablePeriod.end.getTime() - 2 * 60 * 60 * 1000),
+        end: new Date(unavailablePeriod.end.getTime() - 60 * 60 * 1000),
+      },
+      status: 'CONFIRMED',
+    });
+    await fixtures.createActiveBlock({
+      tenantId: unavailableSetup.tenant.id,
+      rentalId: futureReservation.rentalId,
+      assetId: unavailableAssetId,
+      period: {
+        start: new Date(unavailablePeriod.end.getTime() - 2 * 60 * 60 * 1000),
+        end: new Date(unavailablePeriod.end.getTime() - 60 * 60 * 1000),
+      },
+    });
+    const before = await fixtures.persistedState(unavailableSetup.rental.rentalId);
+    const result = await replace({
+      setup: unavailableSetup,
+      replacementAssetId: unavailableAssetId,
+      expectedVersion: before.rental.version,
+    });
+    expect(result.isErr() && result.error.code).toBe('rental_commitment.replacement_asset_unavailable');
+    expect(await fixtures.persistedState(unavailableSetup.rental.rentalId)).toEqual(before);
   });
 
   it.each([
@@ -528,6 +644,11 @@ describe('ReplaceConfirmedRentalAsset integration', () => {
 
 function between(startHour: number, endHour: number) {
   return { start: utcDate(2030, 1, 1, startHour), end: utcDate(2030, 1, 1, endHour) };
+}
+
+function inProgressPeriod() {
+  const now = Date.now();
+  return { start: new Date(now - 2 * 60 * 60 * 1000), end: new Date(now + 2 * 60 * 60 * 1000) };
 }
 
 function ownerSnapshot(ownerId: string, contractId: string, ownerShare: string): Prisma.InputJsonValue {
