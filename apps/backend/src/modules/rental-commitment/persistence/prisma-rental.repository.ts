@@ -124,15 +124,6 @@ export class PrismaRentalRepository extends RentalRepository {
       return { version: persistedVersion, updatedAt: persistedUpdatedAt };
     }
 
-    if (options?.replaceAccessories) {
-      await tx.v2RentalAccessoryAssetAssignment.deleteMany({
-        where: { tenantId: rental.tenantId, rentalOrderId: rental.id },
-      });
-      await tx.v2RentalAccessorySelection.deleteMany({
-        where: { tenantId: rental.tenantId, rentalOrderId: rental.id },
-      });
-    }
-
     if (options?.ownerSplits !== undefined) {
       await tx.v2RentalOwnerSplit.deleteMany({ where: rentalWhere });
     }

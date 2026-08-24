@@ -10,10 +10,9 @@ export interface ConfirmationOperationPersistence {
 }
 
 export interface SaveRentalOptions {
-  persistence?: 'DETAILS' | 'OPERATIONAL';
+  persistence?: 'DETAILS';
   ownerSplits?: RentalOwnerSplitDraft[];
   confirmationOperation?: ConfirmationOperationPersistence;
-  replaceAccessories?: boolean;
   accessoryAssetIds?: AssetId[];
   expectedVersion?: number;
   tx?: PrismaTransactionClient;
