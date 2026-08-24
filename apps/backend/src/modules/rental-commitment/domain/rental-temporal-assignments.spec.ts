@@ -1,9 +1,14 @@
 import { AssetBlock } from './asset-block.entity';
 import { AssignedAsset, AssignedAssetId } from './assigned-asset.entity';
-import { DuplicateAssignedAssetError } from './errors/rental-commitment.errors';
+import {
+  CurrentAssignedAssetDemandMismatchError,
+  DuplicateAssignedAssetError,
+} from './errors/rental-commitment.errors';
+import { RentalDemandLine } from './rental-demand-line.entity';
 import { RentalDemandLineId } from './ids/rental-demand-line-id';
 import { RentalSelectionId } from './ids/rental-selection-id';
 import { AssetBlockType, FulfillmentMethod, RentalStatus, RentableItemKind } from './rental-status';
+import { RentalSelection } from './rental-selection.entity';
 import { Rental } from './rental.aggregate';
 import { AssetId, EquipmentTypeId, RentalId } from './types/rental-commitment-ids';
 import { AssignedAssetOwnershipSnapshot } from './value-objects/assigned-asset-ownership-snapshot.value-object';
@@ -127,6 +132,69 @@ describe('Rental temporal assignments', () => {
     expect(result.isOk()).toBe(true);
     expect(result._unsafeUnwrap().assignedAssets).toHaveLength(2);
     expect(result._unsafeUnwrap().currentAssignedAssets).toEqual([current]);
+  });
+
+  it('rejects an open assignment that references a removed demand line', () => {
+    const validRental = reconstituteWith([
+      assignment({ id: 'current-a', assetId: 'asset-a', effectiveFrom: handoff }),
+    ])._unsafeUnwrap();
+    const removedAt = new Date('2030-01-01T12:00:00.000Z');
+    const removedSelection = RentalSelection.reconstitute({
+      id: 'selection-history' as RentalSelectionId,
+      tenantId: validRental.tenantId,
+      rentalId: validRental.id,
+      rentalOfferId: 'offer-history',
+      rentableItemId: 'item-history',
+      rentableItemNameSnapshot: 'Historical camera',
+      rentableItemKindSnapshot: RentableItemKind.Single,
+      quantity: 1,
+      removedAt,
+    });
+    const removedDemandLine = RentalDemandLine.reconstitute({
+      id: 'demand-history' as RentalDemandLineId,
+      tenantId: validRental.tenantId,
+      rentalId: validRental.id,
+      rentalSelectionId: removedSelection.id,
+      equipmentTypeId: 'equipment-history' as EquipmentTypeId,
+      equipmentTypeNameSnapshot: 'Historical camera',
+      quantity: 1,
+      removedAt,
+    });
+    const invalidAssignment = AssignedAsset.reconstitute({
+      id: 'current-history' as AssignedAssetId,
+      tenantId: validRental.tenantId,
+      rentalId: validRental.id,
+      rentalDemandLineId: removedDemandLine.id,
+      assetId: 'asset-history' as AssetId,
+      ownershipSnapshot: tenantOwnedSnapshot,
+      effectiveFrom: handoff,
+    });
+    const invalidBlock = AssetBlock.create({
+      tenantId: validRental.tenantId,
+      rentalId: validRental.id,
+      assetId: invalidAssignment.assetId,
+      period: new RentalPeriod(handoff, end),
+      blockType: AssetBlockType.Equipment,
+    })._unsafeUnwrap();
+
+    const result = Rental.reconstitute({
+      id: validRental.id,
+      tenantId: validRental.tenantId,
+      rentalNumber: validRental.rentalNumber,
+      branchId: validRental.branchId,
+      rentalCustomerId: validRental.rentalCustomerId,
+      status: RentalStatus.Confirmed,
+      period: validRental.period,
+      fulfillmentMethod: validRental.fulfillmentMethod,
+      confirmedPriceSnapshot: validRental.confirmedPriceSnapshot!.toJSON(),
+      selections: [...validRental.selections, removedSelection],
+      demandLines: [...validRental.demandLines, removedDemandLine],
+      assignedAssets: [...validRental.assignedAssets, invalidAssignment],
+      assetBlocks: [...validRental.assetBlocks, invalidBlock],
+    });
+
+    expect(result.isErr()).toBe(true);
+    expect(result._unsafeUnwrapErr()).toBeInstanceOf(CurrentAssignedAssetDemandMismatchError);
   });
 
   it('allows the same asset in multiple closed historical rows', () => {

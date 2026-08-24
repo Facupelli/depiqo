@@ -185,6 +185,12 @@ export class AssignedAssetDemandMismatchError extends RentalCommitmentError {
   }
 }
 
+export class CurrentAssignedAssetDemandMismatchError extends RentalCommitmentError {
+  constructor(rentalId: string, assignedAssetId: string) {
+    super(`Rental "${rentalId}" open assigned asset "${assignedAssetId}" must reference a current demand line.`);
+  }
+}
+
 export class RentalAssignedAssetNotFoundError extends RentalCommitmentError {
   constructor(rentalId: string, assetId: string) {
     super(`Rental "${rentalId}" does not have an assignment for asset "${assetId}".`);

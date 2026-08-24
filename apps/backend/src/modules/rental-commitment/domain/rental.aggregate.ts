@@ -13,6 +13,7 @@ import {
   ConfirmedRentalRequiresCompleteAssignmentsError,
   ConfirmedRentalRequiresEquipmentDemandError,
   ConfirmedRentalRequiresPriceSnapshotError,
+  CurrentAssignedAssetDemandMismatchError,
   DemandLineSelectionMismatchError,
   DuplicateAssignedAssetError,
   RentalAlreadyCancelledError,
@@ -1499,6 +1500,13 @@ export class Rental extends AggregateRootBase {
     }
 
     const currentAssignedAssets = params.assignedAssets.filter((assignment) => assignment.isActive);
+    const currentDemandLineIds = new Set(params.demandLines.map((line) => line.id));
+
+    for (const assignment of currentAssignedAssets) {
+      if (!currentDemandLineIds.has(assignment.rentalDemandLineId)) {
+        return err(new CurrentAssignedAssetDemandMismatchError(this.id, assignment.id));
+      }
+    }
 
     const duplicateAssetValidation = this.validateNoDuplicateAssignedAssets(currentAssignedAssets);
     if (duplicateAssetValidation.isErr()) {
