@@ -33,6 +33,7 @@ export class RentalPhysicalAssignmentsService extends RentalPhysicalAssignments 
           select: {
             id: true,
             assignedAssets: {
+              where: { effectiveUntil: null },
               select: {
                 assetId: true,
               },

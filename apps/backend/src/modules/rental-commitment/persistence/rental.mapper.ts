@@ -90,6 +90,8 @@ interface AssignedAssetPersistenceRecord {
   rentalId: string;
   rentalDemandLineId: string;
   assetId: string;
+  effectiveFrom: Date;
+  effectiveUntil: Date | null;
   createdAt: Date;
 }
 
@@ -159,6 +161,8 @@ export class RentalMapper {
           rentalId: assignment.rentalId,
           rentalDemandLineId: assignment.rentalDemandLineId as RentalDemandLineId,
           assetId: assignment.assetId as AssetId,
+          effectiveFrom: assignment.effectiveFrom,
+          effectiveUntil: assignment.effectiveUntil ?? undefined,
           createdAt: assignment.createdAt,
         }),
       ),
@@ -301,6 +305,9 @@ export class RentalMapper {
       rentalId: assignment.rentalId,
       rentalDemandLineId: assignment.rentalDemandLineId,
       assetId: assignment.assetId,
+      effectiveFrom: assignment.effectiveFrom,
+      effectiveUntil: assignment.effectiveUntil,
+      createdAt: assignment.createdAt,
     };
   }
 

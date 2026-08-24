@@ -311,7 +311,7 @@ export class EditConfirmedRentalHandler implements ICommandHandler<
         const preferredAssetIdsByDemandLineId = new Map(
           demandLines.map((line) => [
             line.id,
-            rental.assignedAssets
+            rental.currentAssignedAssets
               .filter((assignment) => {
                 const previousDemandLine = rental.demandLines.find(
                   (existing) => existing.id === assignment.rentalDemandLineId,
@@ -375,7 +375,7 @@ export class EditConfirmedRentalHandler implements ICommandHandler<
 
         const priceSnapshot = getConfirmedPriceSnapshotForOwnerSplits(rental.confirmedPriceSnapshot);
         const assignments = new Map(
-          rental.assignedAssets.map((assignment) => [
+          rental.currentAssignedAssets.map((assignment) => [
             this.assignmentKey(assignment.assetId, assignment.rentalDemandLineId),
             assignment,
           ]),
@@ -552,7 +552,7 @@ export class EditConfirmedRentalHandler implements ICommandHandler<
           currency: priceSnapshot.currency,
           selections: rental.selections.map((selection) => ({ id: selection.id })),
           demandLines: rental.demandLines.map((line) => ({ id: line.id, sourceSelectionId: line.rentalSelectionId })),
-          fulfilledAssets: rental.assignedAssets.map((assignment) => {
+          fulfilledAssets: rental.currentAssignedAssets.map((assignment) => {
             const existingSplit = ownerSplitByAssignedAssetId.get(assignment.id);
             return {
               id: assignment.id,

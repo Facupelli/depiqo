@@ -71,11 +71,15 @@ It is derived data, not the source of truth for the physical asset.
 
 For critical command paths, current asset facts may still need to be validated through Asset Inventory before an assignment is confirmed.
 
-### Assigned Asset Reference
+### Assigned Asset
 
-An assigned asset reference records which physical asset was selected to satisfy rental demand.
+An `AssignedAsset` is a temporal, rental-owned fulfillment participation recording when one physical asset fulfills a rental demand line.
 
-It preserves the rental-owned assignment fact while Asset Inventory remains authoritative over the asset's current physical profile.
+`effectiveFrom` is the instant when the asset begins fulfilling the demand. `effectiveUntil` is the instant when it stops; a null `effectiveUntil` means the assignment is current/open. Closed assignments are preserved as rental history, while current fulfillment counts only open assignments.
+
+Each current assignment is paired with exactly one active rental-owned equipment Asset Block for `[effectiveFrom, rental period end)`. Historical assignments do not require an active block.
+
+Assignment history is not pickup or return tracking. Rental Commitment does not claim that these timestamps represent actual physical possession, pickup, delivery, or return times. Asset Inventory remains authoritative over the asset's current physical profile.
 
 ### Asset Block
 
@@ -186,7 +190,7 @@ Confirmed rentals must not reconstruct accepted prices from current Pricing rule
 
 Confirmed rentals must not reconstruct historical owner payout facts from current Asset Inventory ownership.
 
-A confirmed rental must have all required equipment assets assigned and blocked.
+A confirmed rental must have all required equipment demand fulfilled by current/open assignments, each paired with its active equipment block.
 
 The same physical asset must not be blocked for overlapping rental periods.
 
@@ -200,7 +204,7 @@ Candidate projection updates must happen through explicit synchronization, publi
 
 A stale candidate projection must not bypass required current Asset Inventory validation during critical confirmation paths.
 
-Assigned asset references must not be treated as complete physical asset profiles.
+Assigned assets must not be treated as complete physical asset profiles. Their closed temporal rows are preserved, but only open rows count toward current fulfillment.
 
 Accessory defaults are not rental accessory selections.
 
@@ -232,7 +236,7 @@ Pricing owns current pricing rules and proposed price calculations.
 
 Rental Commitment owns the confirmed price snapshot and must not query Pricing tables later to reconstruct an accepted price. Its `AcceptedRentalPricingFacts` capability publishes only accepted total money, charged units, and an optional common billing unit from that persisted snapshot. Consumers must not use it to recalculate pricing or depend on Pricing internals.
 
-`RentalPhysicalAssignments` publishes the current Rental Commitment assignment relationship between each demand line or accessory selection and its ordered assigned Asset references. It publishes neither demand presentation facts nor Asset Inventory profile facts. Consumers resolve current physical display facts, such as serial numbers, through Asset Inventory's display-facts capability.
+`RentalPhysicalAssignments` publishes only the current/open Rental Commitment assignment relationship between each demand line or accessory selection and its ordered assigned Asset references. It does not publish closed assignment history. It publishes neither demand presentation facts nor Asset Inventory profile facts. Consumers resolve current physical display facts, such as serial numbers, through Asset Inventory's display-facts capability.
 
 Asset Inventory owns equipment types and the current physical profile, condition, ownership, location, and assignment-relevant facts of assets.
 

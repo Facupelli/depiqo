@@ -88,7 +88,10 @@ type CreateRentalSelectionInput = Omit<CreateRentalSelectionProps, 'tenantId' | 
 
 type CreateRentalDemandLineInput = Omit<CreateRentalDemandLineProps, 'tenantId' | 'rentalId'>;
 
-type CreateAssignedAssetInput = Omit<CreateAssignedAssetProps, 'tenantId' | 'rentalId'>;
+type CreateAssignedAssetInput = Omit<
+  CreateAssignedAssetProps,
+  'tenantId' | 'rentalId' | 'effectiveFrom' | 'effectiveUntil'
+>;
 
 export interface EditUnconfirmedRentalProps {
   branchId: string;
@@ -278,6 +281,10 @@ export class Rental extends AggregateRootBase {
     return [...this.props.assignedAssets];
   }
 
+  get currentAssignedAssets(): readonly AssignedAsset[] {
+    return this.props.assignedAssets.filter((assignment) => assignment.isActive);
+  }
+
   get assetBlocks(): readonly AssetBlock[] {
     return [...this.props.assetBlocks];
   }
@@ -368,7 +375,12 @@ export class Rental extends AggregateRootBase {
       return err(demandLines.error);
     }
 
-    const assignedAssets = this.createAssignedAssets(rentalId, props.tenantId, props.assignedAssets);
+    const assignedAssets = this.createAssignedAssets(
+      rentalId,
+      props.tenantId,
+      props.period.start,
+      props.assignedAssets,
+    );
     if (assignedAssets.isErr()) {
       return err(assignedAssets.error);
     }
@@ -553,7 +565,7 @@ export class Rental extends AggregateRootBase {
       return err(new RentalInvalidFieldError('replacementAssetId', 'must differ from currentAssignedAssetId'));
     }
 
-    const currentAssignment = this.props.assignedAssets.find(
+    const currentAssignment = this.currentAssignedAssets.find(
       (assignment) => assignment.assetId === currentAssignedAssetId,
     );
     if (!currentAssignment) {
@@ -565,6 +577,7 @@ export class Rental extends AggregateRootBase {
       rentalId: this.id,
       rentalDemandLineId: currentAssignment.rentalDemandLineId,
       assetId: replacementAssetId,
+      effectiveFrom: this.period.start,
     });
     if (replacementAssignment.isErr()) {
       return err(replacementAssignment.error);
@@ -649,7 +662,12 @@ export class Rental extends AggregateRootBase {
       return err(demandLines.error);
     }
 
-    const assignedAssets = Rental.createAssignedAssets(this.id, this.tenantId, params.assignedAssets);
+    const assignedAssets = Rental.createAssignedAssets(
+      this.id,
+      this.tenantId,
+      params.period.start,
+      params.assignedAssets,
+    );
     if (assignedAssets.isErr()) {
       return err(assignedAssets.error);
     }
@@ -756,7 +774,12 @@ export class Rental extends AggregateRootBase {
       return err(confirmedPriceSnapshot.error);
     }
 
-    const assignedAssets = Rental.createAssignedAssets(this.id, this.tenantId, params.assignedAssets);
+    const assignedAssets = Rental.createAssignedAssets(
+      this.id,
+      this.tenantId,
+      this.period.start,
+      params.assignedAssets,
+    );
 
     if (assignedAssets.isErr()) {
       return err(assignedAssets.error);
@@ -952,14 +975,16 @@ export class Rental extends AggregateRootBase {
       return err(requiredStateValidation.error);
     }
 
-    const duplicateAssetValidation = this.validateNoDuplicateAssignedAssets(params.assignedAssets);
+    const currentAssignedAssets = params.assignedAssets.filter((assignment) => assignment.isActive);
+
+    const duplicateAssetValidation = this.validateNoDuplicateAssignedAssets(currentAssignedAssets);
     if (duplicateAssetValidation.isErr()) {
       return err(duplicateAssetValidation.error);
     }
 
     const assignmentCompletenessValidation = this.validateCompleteDemandLineAssignments({
       demandLines: params.demandLines,
-      assignedAssets: params.assignedAssets,
+      assignedAssets: currentAssignedAssets,
     });
 
     if (assignmentCompletenessValidation.isErr()) {
@@ -967,7 +992,7 @@ export class Rental extends AggregateRootBase {
     }
 
     return this.validateActiveEquipmentBlocks({
-      assignedAssets: params.assignedAssets,
+      assignedAssets: currentAssignedAssets,
       assetBlocks: params.assetBlocks,
       period: params.period,
     });
@@ -1088,25 +1113,29 @@ export class Rental extends AggregateRootBase {
     assetBlocks: readonly AssetBlock[];
     period: RentalPeriod;
   }): Result<void, RentalCommitmentError> {
-    const assignedAssetIds = new Set(params.assignedAssets.map((assignment) => assignment.assetId));
+    const currentAssignmentByAssetId = new Map(
+      params.assignedAssets.map((assignment) => [assignment.assetId, assignment]),
+    );
     const activeEquipmentBlockCountByAssetId = new Map<AssetId, number>();
 
     for (const block of params.assetBlocks.filter(
       (block) => block.isActive && block.blockType === AssetBlockType.Equipment,
     )) {
-      if (!block.covers(params.period)) {
-        return err(new AssetBlockPeriodMismatchError(this.id, block.id));
+      const assignment = currentAssignmentByAssetId.get(block.assetId);
+      if (!assignment) {
+        return err(new UnexpectedActiveAssetBlockError(this.id, block.id));
       }
 
-      if (!assignedAssetIds.has(block.assetId)) {
-        return err(new UnexpectedActiveAssetBlockError(this.id, block.id));
+      const requiredPeriod = new RentalPeriod(assignment.effectiveFrom, params.period.end);
+      if (!block.period.equals(requiredPeriod)) {
+        return err(new AssetBlockPeriodMismatchError(this.id, block.id));
       }
 
       const currentCount = activeEquipmentBlockCountByAssetId.get(block.assetId) ?? 0;
       activeEquipmentBlockCountByAssetId.set(block.assetId, currentCount + 1);
     }
 
-    for (const assetId of assignedAssetIds) {
+    for (const assetId of currentAssignmentByAssetId.keys()) {
       const activeBlockCount = activeEquipmentBlockCountByAssetId.get(assetId) ?? 0;
 
       if (activeBlockCount !== 1) {
@@ -1213,6 +1242,7 @@ export class Rental extends AggregateRootBase {
   private static createAssignedAssets(
     rentalId: RentalId,
     tenantId: string,
+    effectiveFrom: Date,
     inputs: readonly CreateAssignedAssetInput[],
   ): Result<AssignedAsset[], RentalCommitmentError> {
     const assignedAssets: AssignedAsset[] = [];
@@ -1222,6 +1252,7 @@ export class Rental extends AggregateRootBase {
         ...input,
         tenantId,
         rentalId,
+        effectiveFrom,
       });
 
       if (assignedAsset.isErr()) {
@@ -1247,7 +1278,7 @@ export class Rental extends AggregateRootBase {
         tenantId: params.tenantId,
         rentalId: params.rentalId,
         assetId: assignment.assetId,
-        period: params.period,
+        period: new RentalPeriod(assignment.effectiveFrom, params.period.end),
         blockType: AssetBlockType.Equipment,
       });
 

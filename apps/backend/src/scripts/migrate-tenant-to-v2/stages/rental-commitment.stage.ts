@@ -597,6 +597,7 @@ async function migrateAssignedEquipmentAssets(ctx: TenantV2MigrationContext) {
 				rentalId: assignment.order.id,
 				rentalDemandLineId: demandLineId,
 				assetId: assignment.assetId,
+				effectiveFrom: assignment.order.periodStart,
 				createdAt: assignment.createdAt,
 			},
 			update: {
@@ -604,6 +605,8 @@ async function migrateAssignedEquipmentAssets(ctx: TenantV2MigrationContext) {
 				rentalId: assignment.order.id,
 				rentalDemandLineId: demandLineId,
 				assetId: assignment.assetId,
+				effectiveFrom: assignment.order.periodStart,
+				effectiveUntil: null,
 			},
 		});
 	}

@@ -8,12 +8,13 @@ model V2AssignedAsset {
   rentalId           String   @map("rental_id")
   rentalDemandLineId String   @map("rental_demand_line_id")
   assetId            String   @map("asset_id")
+  effectiveFrom      DateTime @map("effective_from") @db.Timestamptz(3)
+  effectiveUntil     DateTime? @map("effective_until") @db.Timestamptz(3)
   createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
 
   rental           V2Rental           @relation(fields: [rentalId], references: [id])
   rentalDemandLine V2RentalDemandLine @relation(fields: [rentalDemandLineId], references: [id])
 
-  @@unique([rentalDemandLineId, assetId])
   @@index([tenantId, rentalId])
   @@index([assetId])
   @@map("v2_assigned_assets")

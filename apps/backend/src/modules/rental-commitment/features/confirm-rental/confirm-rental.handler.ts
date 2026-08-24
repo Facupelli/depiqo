@@ -119,7 +119,7 @@ export class ConfirmRentalHandler implements ICommandHandler<ConfirmRentalComman
     const confirmedPriceSnapshot = getConfirmedPriceSnapshotForOwnerSplits(rental.confirmedPriceSnapshot);
 
     const assignmentsByAssetAndDemandLine = new Map(
-      rental.assignedAssets.map((assignment) => [
+      rental.currentAssignedAssets.map((assignment) => [
         this.assignmentKey(assignment.assetId, assignment.rentalDemandLineId),
         assignment,
       ]),

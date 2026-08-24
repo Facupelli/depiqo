@@ -15,6 +15,8 @@ interface AssignedAssetProps {
   rentalId: string;
   rentalDemandLineId: RentalDemandLineId;
   assetId: AssetId;
+  effectiveFrom: Date;
+  effectiveUntil?: Date;
   createdAt?: Date;
 }
 
@@ -51,6 +53,18 @@ export class AssignedAsset {
     return this.props.assetId;
   }
 
+  get effectiveFrom(): Date {
+    return new Date(this.props.effectiveFrom);
+  }
+
+  get effectiveUntil(): Date | undefined {
+    return this.props.effectiveUntil ? new Date(this.props.effectiveUntil) : undefined;
+  }
+
+  get isActive(): boolean {
+    return this.props.effectiveUntil === undefined;
+  }
+
   get createdAt(): Date | undefined {
     return this.props.createdAt ? new Date(this.props.createdAt) : undefined;
   }
@@ -68,23 +82,35 @@ export class AssignedAsset {
         rentalId: props.rentalId,
         rentalDemandLineId: props.rentalDemandLineId,
         assetId: props.assetId,
+        effectiveFrom: new Date(props.effectiveFrom),
+        effectiveUntil: props.effectiveUntil ? new Date(props.effectiveUntil) : undefined,
         createdAt: props.createdAt ? new Date(props.createdAt) : undefined,
       }),
     );
   }
 
   static reconstitute(props: ReconstituteAssignedAssetProps): AssignedAsset {
+    const validation = this.validatePrimitiveFields(props);
+    if (validation.isErr()) {
+      throw validation.error;
+    }
+
     return new AssignedAsset(props.id, {
       tenantId: props.tenantId,
       rentalId: props.rentalId,
       rentalDemandLineId: props.rentalDemandLineId,
       assetId: props.assetId,
+      effectiveFrom: new Date(props.effectiveFrom),
+      effectiveUntil: props.effectiveUntil ? new Date(props.effectiveUntil) : undefined,
       createdAt: props.createdAt ? new Date(props.createdAt) : undefined,
     });
   }
 
   private static validatePrimitiveFields(
-    props: Pick<AssignedAssetProps, 'tenantId' | 'rentalId' | 'rentalDemandLineId' | 'assetId'>,
+    props: Pick<
+      AssignedAssetProps,
+      'tenantId' | 'rentalId' | 'rentalDemandLineId' | 'assetId' | 'effectiveFrom' | 'effectiveUntil'
+    >,
   ): Result<void, RentalCommitmentError> {
     for (const [field, value] of [
       ['tenantId', props.tenantId],
@@ -94,6 +120,19 @@ export class AssignedAsset {
     ] as const) {
       if (value.trim().length === 0) {
         return err(new RentalInvalidFieldError(field, 'must not be blank'));
+      }
+    }
+
+    if (!(props.effectiveFrom instanceof Date) || Number.isNaN(props.effectiveFrom.getTime())) {
+      return err(new RentalInvalidFieldError('effectiveFrom', 'must be a valid timestamp'));
+    }
+
+    if (props.effectiveUntil !== undefined) {
+      if (!(props.effectiveUntil instanceof Date) || Number.isNaN(props.effectiveUntil.getTime())) {
+        return err(new RentalInvalidFieldError('effectiveUntil', 'must be a valid timestamp'));
+      }
+      if (props.effectiveUntil <= props.effectiveFrom) {
+        return err(new RentalInvalidFieldError('effectiveUntil', 'must be after effectiveFrom'));
       }
     }
 

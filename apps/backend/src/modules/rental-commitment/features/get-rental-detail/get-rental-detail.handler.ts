@@ -70,7 +70,10 @@ export class GetRentalDetailHandler implements IQueryHandler<GetRentalDetailQuer
                 equipmentTypeId: true,
                 equipmentTypeNameSnapshot: true,
                 quantity: true,
-                assignedAssets: { select: { assetId: true } },
+                assignedAssets: {
+                  where: { effectiveUntil: null },
+                  select: { assetId: true },
+                },
               },
               orderBy: { createdAt: 'asc' },
             },

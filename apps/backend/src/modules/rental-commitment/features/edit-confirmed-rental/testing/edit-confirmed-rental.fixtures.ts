@@ -118,6 +118,7 @@ export class EditConfirmedRentalFixtures {
           rentalId: rental.rentalId,
           rentalDemandLineId: rental.demandLineIds[0],
           assetId,
+          effectiveFrom: params.period.start,
         },
       });
       await this.rentals.createActiveBlock({

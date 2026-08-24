@@ -112,6 +112,8 @@ describe('ConfirmRental integration', () => {
           rentalId: scenario.rental.rentalId,
           rentalDemandLineId: scenario.rental.demandLineIds[0],
           assetId,
+          effectiveFrom: state.rental.periodStart,
+          effectiveUntil: null,
         }),
       ]);
       expect(state.blocks).toEqual([

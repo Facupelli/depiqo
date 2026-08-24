@@ -98,7 +98,7 @@ export class ReplaceConfirmedRentalAssetHandler implements ICommandHandler<
           return err(this.toApplicationError(new ConfirmedRentalCannotBeEditedAfterPickupError(rentalId), context));
         }
 
-        const currentAssignment = currentRental.assignedAssets.find(
+        const currentAssignment = currentRental.currentAssignedAssets.find(
           (assignment) => assignment.assetId === command.props.currentAssignedAssetId,
         );
         if (!currentAssignment) {
@@ -110,7 +110,9 @@ export class ReplaceConfirmedRentalAssetHandler implements ICommandHandler<
           );
         }
         if (
-          currentRental.assignedAssets.some((assignment) => assignment.assetId === command.props.replacementAssetId)
+          currentRental.currentAssignedAssets.some(
+            (assignment) => assignment.assetId === command.props.replacementAssetId,
+          )
         ) {
           return err(
             replaceConfirmedRentalAssetError(
@@ -226,7 +228,7 @@ export class ReplaceConfirmedRentalAssetHandler implements ICommandHandler<
       currency: priceSnapshot.currency,
       selections: rental.selections.map((selection) => ({ id: selection.id })),
       demandLines: rental.demandLines.map((line) => ({ id: line.id, sourceSelectionId: line.rentalSelectionId })),
-      fulfilledAssets: rental.assignedAssets.map((assignment) => {
+      fulfilledAssets: rental.currentAssignedAssets.map((assignment) => {
         if (assignment.assetId === replacementAllocation.assetId) {
           return {
             id: assignment.id,

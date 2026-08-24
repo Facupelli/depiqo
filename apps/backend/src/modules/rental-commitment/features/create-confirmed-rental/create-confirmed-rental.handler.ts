@@ -275,7 +275,7 @@ export class CreateConfirmedRentalService implements ICommandHandler<
         const confirmedRental = rental.value;
 
         const assignmentsByAssetAndDemandLine = new Map(
-          confirmedRental.assignedAssets.map((assignment) => [
+          confirmedRental.currentAssignedAssets.map((assignment) => [
             this.assignmentKey(assignment.assetId, assignment.rentalDemandLineId),
             assignment,
           ]),
