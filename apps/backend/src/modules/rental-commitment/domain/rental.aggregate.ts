@@ -22,6 +22,7 @@ import {
   ConfirmedRentalCannotBeEditedAfterPickupError,
   RentalPeriodCannotStartInPastError,
   RentalPeriodHasEndedError,
+  RentalSelectionNotFoundError,
   RentalContainsOperationalCommitmentsError,
   RentalAssignedAssetNotFoundError,
   RentalConfirmationRequiresCustomerError,
@@ -124,6 +125,15 @@ export interface AddConfirmedRentalSelectionProps {
   selection: CreateRentalSelectionInput;
   demandLines: CreateRentalDemandLineInput[];
   assignedAssets: CreateAssignedAssetInput[];
+  confirmedPriceSnapshot: JsonValue;
+  operationTime: Date;
+}
+
+export interface ChangeConfirmedSelectionQuantityProps {
+  selectionId: string;
+  newQuantity: number;
+  releaseAssetIds: readonly AssetId[];
+  newAssignments: readonly CreateAssignedAssetInput[];
   confirmedPriceSnapshot: JsonValue;
   operationTime: Date;
 }
@@ -630,6 +640,207 @@ export class Rental extends AggregateRootBase {
     });
     if (candidate.isErr()) return err(candidate.error);
 
+    this.props = candidate.value.props;
+    this.recordConfirmedRentalEditedEvent(params.operationTime);
+    return ok(undefined);
+  }
+
+  changeConfirmedSelectionQuantity(params: ChangeConfirmedSelectionQuantityProps): Result<void, RentalCommitmentError> {
+    if (this.status !== RentalStatus.Confirmed)
+      return err(new RentalCannotBeEditedFromStatusError(this.id, this.status));
+    const selection = this.props.selections.find((candidate) => candidate.id === params.selectionId);
+    if (!selection) return err(new RentalSelectionNotFoundError(this.id, params.selectionId));
+    if (!Number.isInteger(params.newQuantity) || params.newQuantity <= 0)
+      return err(new RentalInvalidFieldError('quantity', 'must be a positive integer'));
+    if (params.newQuantity === selection.quantity)
+      return err(new RentalInvalidFieldError('quantity', 'must differ from the current quantity'));
+
+    const effectiveAt = params.operationTime < this.period.start ? this.period.start : params.operationTime;
+    if (effectiveAt >= this.period.end) return err(new RentalPeriodHasEndedError(this.id));
+    const targetDemandLines = this.props.demandLines.filter((line) => line.rentalSelectionId === selection.id);
+    if (targetDemandLines.length === 0) {
+      return err(new RentalInvalidFieldError('demandLines', 'target selection must have persisted demand'));
+    }
+    const nextQuantityByDemandLineId = new Map<RentalDemandLineId, number>();
+    const reductionByDemandLineId = new Map<RentalDemandLineId, number>();
+    for (const line of targetDemandLines) {
+      if (selection.quantity <= 0 || line.quantity <= 0 || line.quantity % selection.quantity !== 0) {
+        return err(
+          new RentalInvalidFieldError('demandLines', 'persisted demand is not divisible by selection quantity'),
+        );
+      }
+      const multiplier = line.quantity / selection.quantity;
+      if (!Number.isInteger(multiplier) || multiplier <= 0)
+        return err(new RentalInvalidFieldError('demandLines', 'derived quantity-per-item must be a positive integer'));
+      const nextQuantity = params.newQuantity * multiplier;
+      nextQuantityByDemandLineId.set(line.id, nextQuantity);
+      reductionByDemandLineId.set(line.id, line.quantity - nextQuantity);
+    }
+
+    const increasing = params.newQuantity > selection.quantity;
+    if (increasing && params.releaseAssetIds.length > 0)
+      return err(new RentalInvalidFieldError('releaseAssetIds', 'must be empty when increasing quantity'));
+    if (!increasing && params.releaseAssetIds.length === 0)
+      return err(new RentalInvalidFieldError('releaseAssetIds', 'is required when decreasing quantity'));
+    if (new Set(params.releaseAssetIds).size !== params.releaseAssetIds.length)
+      return err(new RentalInvalidFieldError('releaseAssetIds', 'must contain unique asset IDs'));
+
+    const releaseAssignments: AssignedAsset[] = [];
+    if (!increasing) {
+      const targetDemandIds = new Set(targetDemandLines.map((line) => line.id));
+      const releaseCountByDemandId = new Map<RentalDemandLineId, number>();
+      for (const assetId of params.releaseAssetIds) {
+        const assignment = this.currentAssignedAssets.find((candidate) => candidate.assetId === assetId);
+        if (!assignment) return err(new RentalAssignedAssetNotFoundError(this.id, assetId));
+        if (!targetDemandIds.has(assignment.rentalDemandLineId))
+          return err(
+            new RentalInvalidFieldError(
+              'releaseAssetIds',
+              `asset "${assetId}" does not belong to the target selection`,
+            ),
+          );
+        releaseAssignments.push(assignment);
+        releaseCountByDemandId.set(
+          assignment.rentalDemandLineId,
+          (releaseCountByDemandId.get(assignment.rentalDemandLineId) ?? 0) + 1,
+        );
+      }
+      for (const line of targetDemandLines) {
+        if ((releaseCountByDemandId.get(line.id) ?? 0) !== reductionByDemandLineId.get(line.id))
+          return err(
+            new RentalInvalidFieldError('releaseAssetIds', 'release distribution must exactly match demand reduction'),
+          );
+      }
+    }
+
+    const nextSelection = RentalSelection.create({
+      id: selection.id,
+      tenantId: selection.tenantId,
+      rentalId: selection.rentalId,
+      rentalOfferId: selection.rentalOfferId,
+      rentableItemId: selection.rentableItemId,
+      rentableItemNameSnapshot: selection.rentableItemNameSnapshot,
+      rentableItemKindSnapshot: selection.rentableItemKindSnapshot,
+      quantity: params.newQuantity,
+      priceSnapshot: selection.priceSnapshot?.toJSON(),
+      createdAt: selection.createdAt,
+    });
+    if (nextSelection.isErr()) return err(nextSelection.error);
+    const nextDemandLines: RentalDemandLine[] = [];
+    for (const line of this.props.demandLines) {
+      const quantity = nextQuantityByDemandLineId.get(line.id);
+      if (quantity === undefined) {
+        nextDemandLines.push(line);
+        continue;
+      }
+      const recreated = RentalDemandLine.create({
+        id: line.id,
+        tenantId: line.tenantId,
+        rentalId: line.rentalId,
+        rentalSelectionId: line.rentalSelectionId,
+        equipmentTypeId: line.equipmentTypeId,
+        equipmentTypeNameSnapshot: line.equipmentTypeNameSnapshot,
+        quantity,
+        createdAt: line.createdAt,
+      });
+      if (recreated.isErr()) return err(recreated.error);
+      nextDemandLines.push(recreated.value);
+    }
+
+    let nextAssignedAssets = [...this.props.assignedAssets];
+    let nextAssetBlocks = [...this.props.assetBlocks];
+    if (increasing) {
+      const additions = Rental.createAssignedAssets(
+        this.id,
+        this.tenantId,
+        effectiveAt,
+        params.newAssignments.map((assignment) => ({ ...assignment, createdAt: params.operationTime })),
+      );
+      if (additions.isErr()) return err(additions.error);
+      const blocks = Rental.createEquipmentBlocksForAssignedAssets({
+        tenantId: this.tenantId,
+        rentalId: this.id,
+        period: new RentalPeriod(effectiveAt, this.period.end),
+        assignedAssets: additions.value,
+      });
+      if (blocks.isErr()) return err(blocks.error);
+      nextAssignedAssets.push(...additions.value);
+      nextAssetBlocks.push(...blocks.value);
+    } else {
+      for (const assignment of releaseAssignments) {
+        const currentBlock = nextAssetBlocks.find(
+          (block) =>
+            block.isActive && block.blockType === AssetBlockType.Equipment && block.assetId === assignment.assetId,
+        );
+        if (!currentBlock) return err(new ConfirmedRentalRequiresActiveBlocksError(this.id, assignment.assetId));
+        if (effectiveAt <= assignment.effectiveFrom) {
+          nextAssignedAssets = nextAssignedAssets.filter((candidate) => candidate.id !== assignment.id);
+          nextAssetBlocks = nextAssetBlocks.filter((candidate) => candidate.id !== currentBlock.id);
+          continue;
+        }
+        const assignmentCopy = AssignedAsset.reconstitute({
+          id: assignment.id,
+          tenantId: assignment.tenantId,
+          rentalId: assignment.rentalId,
+          rentalDemandLineId: assignment.rentalDemandLineId,
+          assetId: assignment.assetId,
+          ownershipSnapshot: assignment.ownershipSnapshot,
+          effectiveFrom: assignment.effectiveFrom,
+          effectiveUntil: assignment.effectiveUntil,
+          createdAt: assignment.createdAt,
+        });
+        const blockCopy = AssetBlock.reconstitute({
+          id: currentBlock.id,
+          tenantId: currentBlock.tenantId,
+          rentalId: currentBlock.rentalId,
+          assetId: currentBlock.assetId,
+          period: currentBlock.period,
+          blockType: currentBlock.blockType,
+          createdAt: currentBlock.createdAt,
+          releasedAt: currentBlock.releasedAt,
+        });
+        const closed = assignmentCopy.close(params.operationTime);
+        if (closed.isErr()) return err(closed.error);
+        const released = blockCopy.truncateAndRelease(params.operationTime);
+        if (released.isErr()) return err(released.error);
+        nextAssignedAssets = nextAssignedAssets.map((candidate) =>
+          candidate.id === assignment.id ? assignmentCopy : candidate,
+        );
+        nextAssetBlocks = nextAssetBlocks.map((candidate) =>
+          candidate.id === currentBlock.id ? blockCopy : candidate,
+        );
+      }
+    }
+
+    const price = ConfirmedPriceSnapshot.create(params.confirmedPriceSnapshot);
+    if (price.isErr()) return err(price.error);
+    const candidate = Rental.createFromEntities(RentalStatus.Confirmed, {
+      id: this.id,
+      tenantId: this.tenantId,
+      rentalNumber: this.rentalNumber,
+      branchId: this.branchId,
+      rentalCustomerId: this.rentalCustomerId,
+      period: this.period,
+      source: this.source,
+      fulfillmentMethod: this.fulfillmentMethod,
+      notes: this.notes,
+      insuranceSelected: this.insuranceSelected,
+      bookingSnapshot: this.bookingSnapshot,
+      deliveryDetails: this.deliveryDetails,
+      confirmedPriceSnapshot: price.value,
+      selections: this.props.selections.map((candidate) =>
+        candidate.id === selection.id ? nextSelection.value : candidate,
+      ),
+      demandLines: nextDemandLines,
+      assignedAssets: nextAssignedAssets,
+      assetBlocks: nextAssetBlocks,
+      createdAt: this.createdAt,
+      version: this.version,
+      updatedAt: this.updatedAt,
+      cancelledAt: this.cancelledAt,
+      confirmedAt: this.confirmedAt,
+    });
+    if (candidate.isErr()) return err(candidate.error);
     this.props = candidate.value.props;
     this.recordConfirmedRentalEditedEvent(params.operationTime);
     return ok(undefined);
