@@ -18,6 +18,7 @@ import {
   RentalPeriodHasEndedError,
   RentalSelectionNotFoundError,
 } from '../../domain/errors/rental-commitment.errors';
+import { deriveConfirmedSelectionQuantityChange } from '../../domain/confirmed-selection-quantity-change';
 import { RentalStatus } from '../../domain/rental-status';
 import { Rental } from '../../domain/rental.aggregate';
 import { AssetId } from '../../domain/types/rental-commitment-ids';
@@ -152,30 +153,18 @@ export class ChangeRentalSelectionQuantityHandler implements ICommandHandler<
                 context,
               ),
             );
-          const deltaLines = [];
-          for (const line of targetLines) {
-            if (selection.quantity <= 0 || line.quantity <= 0 || line.quantity % selection.quantity !== 0)
-              return err(
-                this.map(
-                  new RentalInvalidFieldError('demandLines', 'persisted demand is not divisible by selection quantity'),
-                  context,
-                ),
-              );
-            const multiplier = line.quantity / selection.quantity;
-            if (!Number.isInteger(multiplier) || multiplier <= 0)
-              return err(
-                this.map(
-                  new RentalInvalidFieldError('demandLines', 'derived quantity-per-item must be a positive integer'),
-                  context,
-                ),
-              );
-            deltaLines.push({
-              rentalDemandLineId: line.id,
-              rentalSelectionId: line.rentalSelectionId,
-              equipmentTypeId: line.equipmentTypeId,
-              quantity: (quantity - selection.quantity) * multiplier,
-            });
-          }
+          const quantityChange = deriveConfirmedSelectionQuantityChange({
+            currentSelectionQuantity: selection.quantity,
+            requestedSelectionQuantity: quantity,
+            demandLines: targetLines,
+          });
+          if (quantityChange.isErr()) return err(this.map(quantityChange.error, context));
+          const deltaLines = targetLines.map((line) => ({
+            rentalDemandLineId: line.id,
+            rentalSelectionId: line.rentalSelectionId,
+            equipmentTypeId: line.equipmentTypeId,
+            quantity: quantityChange.value.deltaFor(line.id)!,
+          }));
           const plan = await this.allocation.planAllocations({
             tenantId,
             branchId: current.branchId,

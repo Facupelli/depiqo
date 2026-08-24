@@ -35,6 +35,7 @@ import {
   UnexpectedActiveAssetBlockError,
 } from './errors/rental-commitment.errors';
 import { RentalDemandLineId } from './ids/rental-demand-line-id';
+import { deriveConfirmedSelectionQuantityChange } from './confirmed-selection-quantity-change';
 import { AssetId, RentalId } from './types/rental-commitment-ids';
 import { CreateRentalDemandLineProps, RentalDemandLine } from './rental-demand-line.entity';
 import { AssetBlockType, FulfillmentMethod, RentalSource, RentalStatus } from './rental-status';
@@ -739,34 +740,20 @@ export class Rental extends AggregateRootBase {
       return err(new RentalCannotBeEditedFromStatusError(this.id, this.status));
     const selection = this.currentSelections.find((candidate) => candidate.id === params.selectionId);
     if (!selection) return err(new RentalSelectionNotFoundError(this.id, params.selectionId));
-    if (!Number.isInteger(params.newQuantity) || params.newQuantity <= 0)
-      return err(new RentalInvalidFieldError('quantity', 'must be a positive integer'));
-    if (params.newQuantity === selection.quantity)
-      return err(new RentalInvalidFieldError('quantity', 'must differ from the current quantity'));
-
     const effectiveAt = params.operationTime < this.period.start ? this.period.start : params.operationTime;
     if (effectiveAt >= this.period.end) return err(new RentalPeriodHasEndedError(this.id));
     const targetDemandLines = this.currentDemandLines.filter((line) => line.rentalSelectionId === selection.id);
     if (targetDemandLines.length === 0) {
       return err(new RentalInvalidFieldError('demandLines', 'target selection must have persisted demand'));
     }
-    const nextQuantityByDemandLineId = new Map<RentalDemandLineId, number>();
-    const reductionByDemandLineId = new Map<RentalDemandLineId, number>();
-    for (const line of targetDemandLines) {
-      if (selection.quantity <= 0 || line.quantity <= 0 || line.quantity % selection.quantity !== 0) {
-        return err(
-          new RentalInvalidFieldError('demandLines', 'persisted demand is not divisible by selection quantity'),
-        );
-      }
-      const multiplier = line.quantity / selection.quantity;
-      if (!Number.isInteger(multiplier) || multiplier <= 0)
-        return err(new RentalInvalidFieldError('demandLines', 'derived quantity-per-item must be a positive integer'));
-      const nextQuantity = params.newQuantity * multiplier;
-      nextQuantityByDemandLineId.set(line.id, nextQuantity);
-      reductionByDemandLineId.set(line.id, line.quantity - nextQuantity);
-    }
+    const quantityChange = deriveConfirmedSelectionQuantityChange({
+      currentSelectionQuantity: selection.quantity,
+      requestedSelectionQuantity: params.newQuantity,
+      demandLines: targetDemandLines,
+    });
+    if (quantityChange.isErr()) return err(quantityChange.error);
 
-    const increasing = params.newQuantity > selection.quantity;
+    const increasing = quantityChange.value.direction === 'INCREASE';
     if (increasing && params.releaseAssetIds.length > 0)
       return err(new RentalInvalidFieldError('releaseAssetIds', 'must be empty when increasing quantity'));
     if (!increasing && params.releaseAssetIds.length === 0)
@@ -795,7 +782,7 @@ export class Rental extends AggregateRootBase {
         );
       }
       for (const line of targetDemandLines) {
-        if ((releaseCountByDemandId.get(line.id) ?? 0) !== reductionByDemandLineId.get(line.id))
+        if ((releaseCountByDemandId.get(line.id) ?? 0) !== quantityChange.value.deltaFor(line.id))
           return err(
             new RentalInvalidFieldError('releaseAssetIds', 'release distribution must exactly match demand reduction'),
           );
@@ -806,7 +793,7 @@ export class Rental extends AggregateRootBase {
     if (nextSelection.isErr()) return err(nextSelection.error);
     const nextDemandLines: RentalDemandLine[] = [];
     for (const line of this.props.demandLines) {
-      const quantity = nextQuantityByDemandLineId.get(line.id);
+      const quantity = quantityChange.value.nextQuantityFor(line.id);
       if (quantity === undefined) {
         nextDemandLines.push(line);
         continue;
