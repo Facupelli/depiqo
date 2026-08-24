@@ -685,41 +685,11 @@ export class Rental extends AggregateRootBase {
     }
     const targetDemandLineIds = new Set(targetDemandLines.map((line) => line.id));
 
-    const removedSelection = RentalSelection.create({
-      id: selection.id,
-      tenantId: selection.tenantId,
-      rentalId: selection.rentalId,
-      rentalOfferId: selection.rentalOfferId,
-      rentableItemId: selection.rentableItemId,
-      rentableItemNameSnapshot: selection.rentableItemNameSnapshot,
-      rentableItemKindSnapshot: selection.rentableItemKindSnapshot,
-      quantity: selection.quantity,
-      priceSnapshot: selection.priceSnapshot?.toJSON(),
-      createdAt: selection.createdAt,
-      removedAt: params.operationTime,
-    });
-    if (removedSelection.isErr()) return err(removedSelection.error);
+    const removedSelection = selection.removeAt(params.operationTime);
 
-    const nextDemandLines: RentalDemandLine[] = [];
-    for (const line of this.props.demandLines) {
-      if (!targetDemandLineIds.has(line.id)) {
-        nextDemandLines.push(line);
-        continue;
-      }
-      const removedLine = RentalDemandLine.create({
-        id: line.id,
-        tenantId: line.tenantId,
-        rentalId: line.rentalId,
-        rentalSelectionId: line.rentalSelectionId,
-        equipmentTypeId: line.equipmentTypeId,
-        equipmentTypeNameSnapshot: line.equipmentTypeNameSnapshot,
-        quantity: line.quantity,
-        createdAt: line.createdAt,
-        removedAt: params.operationTime,
-      });
-      if (removedLine.isErr()) return err(removedLine.error);
-      nextDemandLines.push(removedLine.value);
-    }
+    const nextDemandLines = this.props.demandLines.map((line) =>
+      targetDemandLineIds.has(line.id) ? line.removeAt(params.operationTime) : line,
+    );
 
     let nextAssignedAssets = [...this.props.assignedAssets];
     let nextAssetBlocks = [...this.props.assetBlocks];
@@ -776,7 +746,7 @@ export class Rental extends AggregateRootBase {
       ...this.props,
       id: this.id,
       confirmedPriceSnapshot: price.value,
-      selections: this.props.selections.map((item) => (item.id === selection.id ? removedSelection.value : item)),
+      selections: this.props.selections.map((item) => (item.id === selection.id ? removedSelection : item)),
       demandLines: nextDemandLines,
       assignedAssets: nextAssignedAssets,
       assetBlocks: nextAssetBlocks,
@@ -855,18 +825,7 @@ export class Rental extends AggregateRootBase {
       }
     }
 
-    const nextSelection = RentalSelection.create({
-      id: selection.id,
-      tenantId: selection.tenantId,
-      rentalId: selection.rentalId,
-      rentalOfferId: selection.rentalOfferId,
-      rentableItemId: selection.rentableItemId,
-      rentableItemNameSnapshot: selection.rentableItemNameSnapshot,
-      rentableItemKindSnapshot: selection.rentableItemKindSnapshot,
-      quantity: params.newQuantity,
-      priceSnapshot: selection.priceSnapshot?.toJSON(),
-      createdAt: selection.createdAt,
-    });
+    const nextSelection = selection.changeQuantity(params.newQuantity);
     if (nextSelection.isErr()) return err(nextSelection.error);
     const nextDemandLines: RentalDemandLine[] = [];
     for (const line of this.props.demandLines) {
@@ -875,18 +834,9 @@ export class Rental extends AggregateRootBase {
         nextDemandLines.push(line);
         continue;
       }
-      const recreated = RentalDemandLine.create({
-        id: line.id,
-        tenantId: line.tenantId,
-        rentalId: line.rentalId,
-        rentalSelectionId: line.rentalSelectionId,
-        equipmentTypeId: line.equipmentTypeId,
-        equipmentTypeNameSnapshot: line.equipmentTypeNameSnapshot,
-        quantity,
-        createdAt: line.createdAt,
-      });
-      if (recreated.isErr()) return err(recreated.error);
-      nextDemandLines.push(recreated.value);
+      const changedLine = line.changeQuantity(quantity);
+      if (changedLine.isErr()) return err(changedLine.error);
+      nextDemandLines.push(changedLine.value);
     }
 
     let nextAssignedAssets = [...this.props.assignedAssets];

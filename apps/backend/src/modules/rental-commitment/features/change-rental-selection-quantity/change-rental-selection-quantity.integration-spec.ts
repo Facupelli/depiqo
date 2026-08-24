@@ -88,8 +88,16 @@ describe('ChangeRentalSelectionQuantity integration', () => {
     expect(after.rental.assignedAssets.find(({ id }) => id === before.rental.assignedAssets[0].id)).toEqual(
       before.rental.assignedAssets[0],
     );
-    expect(after.rental.selections[0].quantity).toBe(3);
-    expect(after.rental.demandLines[0].quantity).toBe(3);
+    expect(after.rental.selections[0]).toMatchObject({
+      id: before.rental.selections[0].id,
+      createdAt: before.rental.selections[0].createdAt,
+      quantity: 3,
+    });
+    expect(after.rental.demandLines[0]).toMatchObject({
+      id: before.rental.demandLines[0].id,
+      createdAt: before.rental.demandLines[0].createdAt,
+      quantity: 3,
+    });
     const additions = after.rental.assignedAssets.filter(
       (item) => !before.rental.assignedAssets.some(({ id }) => id === item.id),
     );

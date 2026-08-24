@@ -70,6 +70,27 @@ export class RentalDemandLine {
     return this.props.removedAt === undefined;
   }
 
+  changeQuantity(newQuantity: number): Result<RentalDemandLine, RentalCommitmentError> {
+    const quantity = RentalQuantity.create(newQuantity);
+    if (quantity.isErr()) {
+      return err(quantity.error);
+    }
+
+    return ok(
+      new RentalDemandLine(this.id, {
+        ...this.props,
+        quantity: quantity.value,
+      }),
+    );
+  }
+
+  removeAt(operationTime: Date): RentalDemandLine {
+    return new RentalDemandLine(this.id, {
+      ...this.props,
+      removedAt: this.props.removedAt ?? new Date(operationTime),
+    });
+  }
+
   static create(props: CreateRentalDemandLineProps): Result<RentalDemandLine, RentalCommitmentError> {
     const validation = this.validatePrimitiveFields(props);
     if (validation.isErr()) {

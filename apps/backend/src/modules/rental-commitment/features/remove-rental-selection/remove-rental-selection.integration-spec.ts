@@ -88,6 +88,8 @@ describe('RemoveRentalSelection integration', () => {
     const removedSelection = after.rental.selections.find((item) => item.id === target.id)!;
     const removedDemand = after.rental.demandLines.find((item) => item.id === targetDemand.id)!;
     const closedAssignment = after.rental.assignedAssets.find((item) => item.id === targetAssignment.id)!;
+    expect(removedSelection).toMatchObject({ id: target.id, createdAt: target.createdAt });
+    expect(removedDemand).toMatchObject({ id: targetDemand.id, createdAt: targetDemand.createdAt });
     expect(removedSelection.removedAt).toEqual(removedDemand.removedAt);
     expect(closedAssignment.effectiveUntil).toEqual(removedSelection.removedAt);
     expect(after.rental.assignedAssets.find((item) => item.id === unrelatedAssignment.id)).toEqual(unrelatedAssignment);

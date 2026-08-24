@@ -87,6 +87,27 @@ export class RentalSelection {
     return this.rentalOfferId === other.rentalOfferId;
   }
 
+  changeQuantity(newQuantity: number): Result<RentalSelection, RentalCommitmentError> {
+    const quantity = RentalQuantity.create(newQuantity);
+    if (quantity.isErr()) {
+      return err(quantity.error);
+    }
+
+    return ok(
+      new RentalSelection(this.id, {
+        ...this.props,
+        quantity: quantity.value,
+      }),
+    );
+  }
+
+  removeAt(operationTime: Date): RentalSelection {
+    return new RentalSelection(this.id, {
+      ...this.props,
+      removedAt: this.props.removedAt ?? new Date(operationTime),
+    });
+  }
+
   static create(props: CreateRentalSelectionProps): Result<RentalSelection, RentalCommitmentError> {
     const validation = this.validatePrimitiveFields(props);
     if (validation.isErr()) {
