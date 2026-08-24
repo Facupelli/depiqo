@@ -207,6 +207,19 @@ export interface ReconstituteRentalProps {
   confirmedAt?: Date;
 }
 
+interface ConfirmedRentalStateChanges {
+  period?: RentalPeriod;
+  fulfillmentMethod?: FulfillmentMethod;
+  notes?: string;
+  insuranceSelected?: boolean;
+  deliveryDetails?: RentalDeliveryDetails;
+  confirmedPriceSnapshot?: ConfirmedPriceSnapshot;
+  selections?: RentalSelection[];
+  demandLines?: RentalDemandLine[];
+  assignedAssets?: AssignedAsset[];
+  assetBlocks?: AssetBlock[];
+}
+
 interface CreateRentalFromEntitiesProps {
   id?: RentalId;
   tenantId: string;
@@ -564,33 +577,15 @@ export class Rental extends AggregateRootBase {
       : ok(this.confirmedPriceSnapshot);
     if (confirmedPriceSnapshot.isErr()) return err(confirmedPriceSnapshot.error);
 
-    const candidate = Rental.createFromEntities(RentalStatus.Confirmed, {
-      id: this.id,
-      tenantId: this.tenantId,
-      rentalNumber: this.rentalNumber,
-      branchId: this.branchId,
-      rentalCustomerId: this.rentalCustomerId,
-      period: this.period,
-      source: this.source,
+    const transition = this.applyConfirmedStateChanges({
       fulfillmentMethod: params.fulfillmentMethod,
       notes: params.notes,
       insuranceSelected: params.insuranceSelected,
-      bookingSnapshot: this.bookingSnapshot,
       deliveryDetails: params.deliveryDetails,
       confirmedPriceSnapshot: confirmedPriceSnapshot.value,
-      selections: [...this.props.selections],
-      demandLines: [...this.props.demandLines],
-      assignedAssets: [...this.props.assignedAssets],
-      assetBlocks: [...this.props.assetBlocks],
-      createdAt: this.createdAt,
-      version: this.version,
-      updatedAt: this.updatedAt,
-      cancelledAt: this.cancelledAt,
-      confirmedAt: this.confirmedAt,
     });
-    if (candidate.isErr()) return err(candidate.error);
+    if (transition.isErr()) return err(transition.error);
 
-    this.props = candidate.value.props;
     this.recordConfirmedRentalEditedEvent(params.operationTime);
     return ok(undefined);
   }
@@ -639,33 +634,15 @@ export class Rental extends AggregateRootBase {
     const confirmedPriceSnapshot = ConfirmedPriceSnapshot.create(params.confirmedPriceSnapshot);
     if (confirmedPriceSnapshot.isErr()) return err(confirmedPriceSnapshot.error);
 
-    const candidate = Rental.createFromEntities(RentalStatus.Confirmed, {
-      id: this.id,
-      tenantId: this.tenantId,
-      rentalNumber: this.rentalNumber,
-      branchId: this.branchId,
-      rentalCustomerId: this.rentalCustomerId,
-      period: this.period,
-      source: this.source,
-      fulfillmentMethod: this.fulfillmentMethod,
-      notes: this.notes,
-      insuranceSelected: this.insuranceSelected,
-      bookingSnapshot: this.bookingSnapshot,
-      deliveryDetails: this.deliveryDetails,
+    const transition = this.applyConfirmedStateChanges({
       confirmedPriceSnapshot: confirmedPriceSnapshot.value,
       selections: [...this.props.selections, selection.value],
       demandLines: [...this.props.demandLines, ...demandLines.value],
       assignedAssets: [...this.props.assignedAssets, ...assignedAssets.value],
       assetBlocks: [...this.props.assetBlocks, ...assetBlocks.value],
-      createdAt: this.createdAt,
-      version: this.version,
-      updatedAt: this.updatedAt,
-      cancelledAt: this.cancelledAt,
-      confirmedAt: this.confirmedAt,
     });
-    if (candidate.isErr()) return err(candidate.error);
+    if (transition.isErr()) return err(transition.error);
 
-    this.props = candidate.value.props;
     this.recordConfirmedRentalEditedEvent(params.operationTime);
     return ok(undefined);
   }
@@ -720,17 +697,14 @@ export class Rental extends AggregateRootBase {
 
     const price = ConfirmedPriceSnapshot.create(params.confirmedPriceSnapshot);
     if (price.isErr()) return err(price.error);
-    const candidate = Rental.createFromEntities(RentalStatus.Confirmed, {
-      ...this.props,
-      id: this.id,
+    const transition = this.applyConfirmedStateChanges({
       confirmedPriceSnapshot: price.value,
       selections: this.props.selections.map((item) => (item.id === selection.id ? removedSelection : item)),
       demandLines: nextDemandLines,
       assignedAssets: nextAssignedAssets,
       assetBlocks: nextAssetBlocks,
     });
-    if (candidate.isErr()) return err(candidate.error);
-    this.props = candidate.value.props;
+    if (transition.isErr()) return err(transition.error);
     this.recordConfirmedRentalEditedEvent(params.operationTime);
     return ok(undefined);
   }
@@ -848,19 +822,7 @@ export class Rental extends AggregateRootBase {
 
     const price = ConfirmedPriceSnapshot.create(params.confirmedPriceSnapshot);
     if (price.isErr()) return err(price.error);
-    const candidate = Rental.createFromEntities(RentalStatus.Confirmed, {
-      id: this.id,
-      tenantId: this.tenantId,
-      rentalNumber: this.rentalNumber,
-      branchId: this.branchId,
-      rentalCustomerId: this.rentalCustomerId,
-      period: this.period,
-      source: this.source,
-      fulfillmentMethod: this.fulfillmentMethod,
-      notes: this.notes,
-      insuranceSelected: this.insuranceSelected,
-      bookingSnapshot: this.bookingSnapshot,
-      deliveryDetails: this.deliveryDetails,
+    const transition = this.applyConfirmedStateChanges({
       confirmedPriceSnapshot: price.value,
       selections: this.props.selections.map((candidate) =>
         candidate.id === selection.id ? nextSelection.value : candidate,
@@ -868,14 +830,8 @@ export class Rental extends AggregateRootBase {
       demandLines: nextDemandLines,
       assignedAssets: nextAssignedAssets,
       assetBlocks: nextAssetBlocks,
-      createdAt: this.createdAt,
-      version: this.version,
-      updatedAt: this.updatedAt,
-      cancelledAt: this.cancelledAt,
-      confirmedAt: this.confirmedAt,
     });
-    if (candidate.isErr()) return err(candidate.error);
-    this.props = candidate.value.props;
+    if (transition.isErr()) return err(transition.error);
     this.recordConfirmedRentalEditedEvent(params.operationTime);
     return ok(undefined);
   }
@@ -969,17 +925,14 @@ export class Rental extends AggregateRootBase {
       );
     }
 
-    const candidate = Rental.createFromEntities(RentalStatus.Confirmed, {
-      ...this.props,
-      id: this.id,
+    const transition = this.applyConfirmedStateChanges({
       period: newPeriod,
       confirmedPriceSnapshot: price.value,
       assignedAssets: nextAssignedAssets,
       assetBlocks: nextAssetBlocks,
     });
-    if (candidate.isErr()) return err(candidate.error);
+    if (transition.isErr()) return err(transition.error);
 
-    this.props = candidate.value.props;
     this.recordConfirmedRentalEditedEvent(params.operationTime);
     return ok(undefined);
   }
@@ -1058,33 +1011,12 @@ export class Rental extends AggregateRootBase {
       replacementBlock.value,
     ];
 
-    const candidate = Rental.createFromEntities(RentalStatus.Confirmed, {
-      id: this.id,
-      tenantId: this.tenantId,
-      rentalNumber: this.rentalNumber,
-      branchId: this.branchId,
-      rentalCustomerId: this.rentalCustomerId,
-      period: this.period,
-      source: this.source,
-      fulfillmentMethod: this.fulfillmentMethod,
-      notes: this.notes,
-      insuranceSelected: this.insuranceSelected,
-      bookingSnapshot: this.bookingSnapshot,
-      deliveryDetails: this.deliveryDetails,
-      confirmedPriceSnapshot: this.confirmedPriceSnapshot,
-      selections: [...this.props.selections],
-      demandLines: [...this.props.demandLines],
+    const transition = this.applyConfirmedStateChanges({
       assignedAssets: nextAssignedAssets,
       assetBlocks: nextAssetBlocks,
-      createdAt: this.createdAt,
-      version: this.version,
-      updatedAt: this.updatedAt,
-      cancelledAt: this.cancelledAt,
-      confirmedAt: this.confirmedAt,
     });
-    if (candidate.isErr()) return err(candidate.error);
+    if (transition.isErr()) return err(transition.error);
 
-    this.props = candidate.value.props;
     this.recordConfirmedRentalEditedEvent(params.operationTime);
     return ok(undefined);
   }
@@ -1186,6 +1118,22 @@ export class Rental extends AggregateRootBase {
     const confirmedAt = params.confirmedAt ? new Date(params.confirmedAt) : new Date();
     this.props.confirmedAt = confirmedAt;
     this.recordRentalConfirmedEvent(confirmedAt);
+
+    return ok(undefined);
+  }
+
+  private applyConfirmedStateChanges(changes: ConfirmedRentalStateChanges): Result<void, RentalCommitmentError> {
+    const candidate = Rental.createFromEntities(this.status, {
+      ...this.props,
+      ...changes,
+      id: this.id,
+    });
+
+    if (candidate.isErr()) {
+      return err(candidate.error);
+    }
+
+    this.props = candidate.value.props;
 
     return ok(undefined);
   }
