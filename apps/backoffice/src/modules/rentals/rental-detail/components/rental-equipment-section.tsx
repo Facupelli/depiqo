@@ -201,7 +201,7 @@ function RentalEquipmentCard({
 						<span className="font-semibold leading-snug text-neutral-950">
 							{selection.rentableItemName}
 						</span>
-						<div className="flex items-center gap-2">
+						<div className="flex items-center gap-6">
 							<QuantityText quantity={selection.quantity} />
 
 							<div className="flex items-center">
