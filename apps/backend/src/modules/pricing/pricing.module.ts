@@ -38,6 +38,8 @@ import { PricingRatePlanAuthoringService } from './public-api/pricing-rate-plan-
 import { PricingRatePlanAuthoring } from './public-api/pricing-rate-plan-authoring.public-api';
 import { PricingRentalOfferPricingAssignmentService } from './public-api/pricing-rental-offer-pricing-assignment.service';
 import { PricingRentalOfferPricingAssignment } from './public-api/pricing-rental-offer-pricing-assignment.public-api';
+import { PricingTargetTotalAdjustment } from './public-api/pricing-target-total-adjustment.public-api';
+import { PricingTargetTotalAdjustmentService } from './public-api/pricing-target-total-adjustment.service';
 import { CatalogModule } from '../catalog/catalog.module';
 import { TenantManagementModule } from '../tenant-management/tenant-management.module';
 
@@ -81,7 +83,13 @@ import { TenantManagementModule } from '../tenant-management/tenant-management.m
     { provide: PricingCalculation, useClass: PricingCalculationService },
     { provide: PricingRatePlanAuthoring, useClass: PricingRatePlanAuthoringService },
     { provide: PricingRentalOfferPricingAssignment, useClass: PricingRentalOfferPricingAssignmentService },
+    { provide: PricingTargetTotalAdjustment, useClass: PricingTargetTotalAdjustmentService },
   ],
-  exports: [PricingCalculation, PricingRatePlanAuthoring, PricingRentalOfferPricingAssignment],
+  exports: [
+    PricingCalculation,
+    PricingRatePlanAuthoring,
+    PricingRentalOfferPricingAssignment,
+    PricingTargetTotalAdjustment,
+  ],
 })
 export class PricingModule {}

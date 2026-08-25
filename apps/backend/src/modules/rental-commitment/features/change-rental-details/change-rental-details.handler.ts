@@ -3,12 +3,11 @@ import Decimal from 'decimal.js';
 import { err, ok, Result } from 'neverthrow';
 import { PrismaUnitOfWork } from 'src/core/database/prisma-unit-of-work';
 import {
-  PricingCalculation,
-  PricingCalculationError,
-} from 'src/modules/pricing/public-api/pricing-calculation.public-api';
+  PricingTargetTotalAdjustment,
+  PricingTargetTotalAdjustmentError,
+  PricingTargetTotalAdjustmentResult,
+} from 'src/modules/pricing/public-api/pricing-target-total-adjustment.public-api';
 import { BranchFacts } from 'src/modules/tenant-management/public-api/branch-facts.public-api';
-import { TenantBillingPreferences } from 'src/modules/tenant-management/public-api/tenant-billing-preferences.public-api';
-import { adaptPricingCalculationToSnapshot } from '../../application/accepted-pricing/adapt-pricing-calculation-to-snapshot';
 import { toRentalIntegrationEvents } from '../../application/rental-integration-event.mapper';
 import {
   RentalCannotBeEditedFromStatusError,
@@ -18,7 +17,10 @@ import {
 } from '../../domain/errors/rental-commitment.errors';
 import { FulfillmentMethod, RentalStatus } from '../../domain/rental-status';
 import { Rental, RentalDeliveryDetails } from '../../domain/rental.aggregate';
-import { AcceptedRentalPricingSnapshotV1 } from '../../domain/value-objects/accepted-pricing-snapshot.type';
+import {
+  AcceptedRentalPricingBreakdownV1,
+  AcceptedRentalPricingSnapshotV1,
+} from '../../domain/value-objects/accepted-pricing-snapshot.type';
 import { JsonValue } from '../../domain/value-objects/json-snapshot.value-object';
 import { getConfirmedPriceSnapshotForOwnerSplits } from '../../owner-split/confirmed-price-snapshot-for-owner-splits';
 import { RentalOwnerSplitCalculator } from '../../owner-split/rental-owner-split-calculator';
@@ -39,9 +41,8 @@ export class ChangeRentalDetailsHandler implements ICommandHandler<
 > {
   constructor(
     private readonly rentals: RentalRepository,
-    private readonly billing: TenantBillingPreferences,
     private readonly branches: BranchFacts,
-    private readonly pricing: PricingCalculation,
+    private readonly targetTotalAdjustment: PricingTargetTotalAdjustment,
     private readonly splitCalculator: RentalOwnerSplitCalculator,
     private readonly unitOfWork: PrismaUnitOfWork,
   ) {}
@@ -56,14 +57,6 @@ export class ChangeRentalDetailsHandler implements ICommandHandler<
     if (initial.status !== RentalStatus.Confirmed)
       return err(this.map(new RentalCannotBeEditedFromStatusError(rentalId, initial.status), context));
 
-    const initialChange = detectChange(initial, patch);
-    let preparedPrice: JsonValue | undefined;
-    if (initialChange.pricingChanged) {
-      const prepared = await this.preparePrice(initial, patch.manualPricingAdjustment!, tenantUserId, context);
-      if (prepared.isErr()) return err(prepared.error);
-      preparedPrice = prepared.value;
-    }
-
     const result = await this.unitOfWork.runInTransaction(async ({ tx, integrationEvents }) => {
       const current = await this.rentals.findById(tenantId, rentalId, tx);
       if (!current)
@@ -76,10 +69,6 @@ export class ChangeRentalDetailsHandler implements ICommandHandler<
       if (!change.changed) {
         return ok({ rentalId, version: current.version, updatedAt: current.updatedAt! });
       }
-      if (change.pricingChanged !== initialChange.pricingChanged || (change.pricingChanged && !preparedPrice)) {
-        return err(this.versionConflict(rentalId, context));
-      }
-
       const operationTime = new Date();
       if (operationTime >= current.period.end) return err(this.map(new RentalPeriodHasEndedError(rentalId), context));
       if (change.fulfillmentOrDeliveryChanged && operationTime >= current.period.start) {
@@ -131,9 +120,26 @@ export class ChangeRentalDetailsHandler implements ICommandHandler<
         }
       }
 
+      let transformedPrice: JsonValue | undefined;
+      if (change.pricingChanged) {
+        const manualPricingAdjustment = patch.manualPricingAdjustment;
+        if (manualPricingAdjustment === undefined) {
+          throw new Error('Manual pricing adjustment change was detected without an adjustment value.');
+        }
+        const transformed = this.transformManualPricingAdjustment({
+          snapshot: current.confirmedPriceSnapshot!.toJSON() as AcceptedRentalPricingSnapshotV1,
+          adjustment: manualPricingAdjustment,
+          tenantUserId,
+          operationTime,
+          context,
+        });
+        if (transformed.isErr()) return err(transformed.error);
+        transformedPrice = transformed.value;
+      }
+
       const changed = current.changeConfirmedDetails({
         ...change.details,
-        confirmedPriceSnapshot: change.pricingChanged ? preparedPrice : undefined,
+        confirmedPriceSnapshot: transformedPrice,
         operationTime,
       });
       if (changed.isErr()) return err(this.map(changed.error, context));
@@ -158,53 +164,83 @@ export class ChangeRentalDetailsHandler implements ICommandHandler<
     return ok({ rentalId, version: persisted.version, updatedAt: persisted.updatedAt! });
   }
 
-  private async preparePrice(
-    rental: Rental,
-    adjustment: NonNullable<ChangeRentalDetailsPatch['manualPricingAdjustment']> | null,
-    tenantUserId: string,
-    context: Record<string, unknown>,
-  ): Promise<Result<JsonValue, ChangeRentalDetailsError>> {
-    const [billing, branch] = await Promise.all([
-      this.billing.getTenantBillingPreferences({ tenantId: rental.tenantId }),
-      this.branches.getBranchFacts({ tenantId: rental.tenantId, branchId: rental.branchId }),
-    ]);
-    if (billing.isErr() || branch.isErr())
-      return err(
-        this.error('rental_commitment.invalid_pricing_input', 'Rental pricing facts are unavailable.', context),
-      );
+  private transformManualPricingAdjustment(input: {
+    snapshot: AcceptedRentalPricingSnapshotV1;
+    adjustment: NonNullable<ChangeRentalDetailsPatch['manualPricingAdjustment']> | null;
+    tenantUserId: string;
+    operationTime: Date;
+    context: Record<string, unknown>;
+  }): Result<JsonValue, ChangeRentalDetailsError> {
+    const snapshotEnvelope = { ...input.snapshot };
+    delete snapshotEnvelope.manualPricingAdjustment;
+    const final = copyAcceptedPricingBreakdown(input.snapshot.calculated);
 
-    const previous = rental.confirmedPriceSnapshot!.toJSON() as AcceptedRentalPricingSnapshotV1;
-    const previousLine = new Map(previous.final.lines.map((line) => [line.rentalSelectionId, line]));
-    const calculated = await this.pricing.calculateProposedPrice({
-      tenantId: rental.tenantId,
-      customerId: rental.rentalCustomerId!,
-      rentalPeriod: { start: rental.period.start, end: rental.period.end },
-      calculationFacts: {
-        effectiveTimezone: branch.value.effectiveTimezone,
-        dailyBillingPolicy: billing.value.dailyBillingPolicy,
-        weekendCountsAsOne: billing.value.weekendCountsAsOne,
-      },
-      lines: rental.currentSelections.map((selection) => ({
-        lineReference: selection.id,
-        rentalOfferId: selection.rentalOfferId,
-        rentableItemId: selection.rentableItemId,
-        categoryId: previousLine.get(selection.id)?.categoryId,
-        quantity: selection.quantity,
+    if (input.adjustment === null) {
+      return ok({ ...snapshotEnvelope, final });
+    }
+
+    const allocation = this.targetTotalAdjustment.allocate({
+      currency: input.snapshot.calculated.currency,
+      targetTotal: input.adjustment.targetTotal,
+      lines: input.snapshot.calculated.lines.map((line) => ({
+        lineReference: line.rentalSelectionId,
+        currentTotal: line.total,
       })),
-      targetTotalAdjustment: adjustment ? { targetTotal: adjustment.targetTotal } : undefined,
     });
-    if (calculated.isErr()) return err(this.map(calculated.error, context));
+    if (allocation.isErr()) return err(this.map(allocation.error, input.context));
 
-    return ok(
-      adaptPricingCalculationToSnapshot({
-        result: calculated.value,
-        context: 'CONFIRMED',
-        lineDisplayNames: Object.fromEntries(
-          rental.currentSelections.map((selection) => [selection.id, selection.rentableItemNameSnapshot]),
-        ),
-        manualPricingAdjustment: adjustment ? { ...adjustment, setByTenantUserId: tenantUserId } : undefined,
+    const reason = normalizeReason(input.adjustment.reason);
+    const setAtIso = input.operationTime.toISOString();
+    const allocationsByLineReference = new Map(allocation.value.lines.map((line) => [line.lineReference, line]));
+
+    final.total = allocation.value.targetTotal;
+    final.lines = final.lines.map((line) => {
+      const lineAllocation = allocationsByLineReference.get(line.rentalSelectionId);
+      if (!lineAllocation) {
+        throw new Error(`Missing target-total allocation for rental selection "${line.rentalSelectionId}".`);
+      }
+      return {
+        ...line,
+        total: lineAllocation.finalTotal,
+        manualPricingAdjustment: {
+          mode: 'TARGET_TOTAL_ALLOCATION',
+          direction: lineAllocation.direction,
+          amount: lineAllocation.adjustmentAmount,
+          setByTenantUserId: input.tenantUserId,
+          setAtIso,
+          ...(reason ? { reason } : {}),
+        },
+      };
+    });
+
+    return ok({
+      ...snapshotEnvelope,
+      final,
+      manualPricingAdjustment: this.toManualPricingAdjustmentMetadata({
+        allocation: allocation.value,
+        tenantUserId: input.tenantUserId,
+        setAtIso,
+        reason,
       }),
-    );
+    });
+  }
+
+  private toManualPricingAdjustmentMetadata(input: {
+    allocation: PricingTargetTotalAdjustmentResult;
+    tenantUserId: string;
+    setAtIso: string;
+    reason?: string;
+  }): NonNullable<AcceptedRentalPricingSnapshotV1['manualPricingAdjustment']> {
+    return {
+      mode: 'TARGET_TOTAL',
+      targetTotal: input.allocation.targetTotal,
+      previousTotal: input.allocation.currentTotal,
+      direction: input.allocation.direction,
+      adjustmentTotal: input.allocation.adjustmentTotal,
+      setByTenantUserId: input.tenantUserId,
+      setAtIso: input.setAtIso,
+      ...(input.reason ? { reason: input.reason } : {}),
+    };
   }
 
   private calculateOwnerSplits(rental: Rental): RentalOwnerSplitDraft[] {
@@ -255,7 +291,7 @@ export class ChangeRentalDetailsHandler implements ICommandHandler<
     if (error instanceof RentalInvalidFieldError)
       return this.error('rental_commitment.invalid_rental_field', error.message, context, error);
     if (
-      error instanceof PricingCalculationError ||
+      error instanceof PricingTargetTotalAdjustmentError ||
       (error instanceof Error && 'code' in error && error.code === 'INVALID_PRICING_INPUT')
     )
       return this.error('rental_commitment.invalid_pricing_input', error.message, context, error);
@@ -277,9 +313,10 @@ function detectChange(rental: Rental, patch: ChangeRentalDetailsPatch) {
     fulfillmentOrDeliveryChanged ||
     details.notes !== rental.notes ||
     details.insuranceSelected !== rental.insuranceSelected;
-  const pricingChanged =
+  const hasManualPricingPatch =
     Object.prototype.hasOwnProperty.call(patch, 'manualPricingAdjustment') &&
-    !sameManualAdjustment(rental, patch.manualPricingAdjustment ?? null);
+    patch.manualPricingAdjustment !== undefined;
+  const pricingChanged = hasManualPricingPatch && !sameManualAdjustment(rental, patch.manualPricingAdjustment);
   return { details, fulfillmentOrDeliveryChanged, pricingChanged, changed: detailsChanged || pricingChanged };
 }
 
@@ -300,6 +337,16 @@ function sameManualAdjustment(
   } catch {
     return false;
   }
+}
+
+function copyAcceptedPricingBreakdown(breakdown: AcceptedRentalPricingBreakdownV1): AcceptedRentalPricingBreakdownV1 {
+  return {
+    ...breakdown,
+    durationPolicySnapshot: { ...breakdown.durationPolicySnapshot },
+    lines: breakdown.lines.map(({ manualPricingAdjustment: _manualAdjustment, ...line }) => ({ ...line })),
+    appliedPromotions: breakdown.appliedPromotions.map((promotion) => ({ ...promotion })),
+    ...(breakdown.appliedCoupon ? { appliedCoupon: { ...breakdown.appliedCoupon } } : {}),
+  };
 }
 
 function normalizeReason(reason?: string): string | undefined {

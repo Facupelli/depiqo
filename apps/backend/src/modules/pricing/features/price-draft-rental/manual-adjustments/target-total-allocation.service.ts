@@ -1,3 +1,4 @@
+import { InvalidPricingInputError } from '../../../pricing-engine/errors/pricing.errors';
 import { Money } from '../../../pricing-engine/money/money.value-object';
 import {
   TargetTotalAllocationInput,
@@ -9,11 +10,14 @@ export class TargetTotalAllocationService {
   allocate(input: TargetTotalAllocationInput): TargetTotalAllocationResult {
     this.validateInput(input);
 
-    const targetTotal = Money.of(input.targetTotal, input.currency);
+    const targetTotal = this.parseInputMoney(input.targetTotal, input.currency, 'Target total');
+    if (targetTotal.isZero()) {
+      throw new InvalidPricingInputError('Target total must be greater than zero.');
+    }
 
     const lines = input.lines.map((line) => ({
       rentalSelectionId: line.rentalSelectionId,
-      currentTotal: Money.of(line.currentTotal, input.currency),
+      currentTotal: this.parseInputMoney(line.currentTotal, input.currency, 'Current line total'),
     }));
 
     const currentTotal = lines.reduce((total, line) => total.add(line.currentTotal), Money.zero(input.currency));
@@ -114,33 +118,38 @@ export class TargetTotalAllocationService {
 
   private validateInput(input: TargetTotalAllocationInput): void {
     if (!input.currency.trim()) {
-      throw new Error('Currency is required for target total allocation.');
-    }
-
-    const targetTotal = Money.of(input.targetTotal, input.currency);
-
-    if (targetTotal.isZero()) {
-      throw new Error('Target total must be greater than zero.');
+      throw new InvalidPricingInputError('Currency is required for target total allocation.');
     }
 
     if (input.lines.length === 0) {
-      throw new Error('At least one line is required for target total allocation.');
+      throw new InvalidPricingInputError('At least one line is required for target total allocation.');
     }
 
     const uniqueSelectionIds = new Set<string>();
 
     for (const line of input.lines) {
       if (!line.rentalSelectionId.trim()) {
-        throw new Error('Rental selection id is required for each allocation line.');
+        throw new InvalidPricingInputError('Rental selection id is required for each allocation line.');
       }
 
       if (uniqueSelectionIds.has(line.rentalSelectionId)) {
-        throw new Error(`Duplicated rental selection id in target total allocation: ${line.rentalSelectionId}`);
+        throw new InvalidPricingInputError(
+          `Duplicated rental selection id in target total allocation: ${line.rentalSelectionId}`,
+        );
       }
 
       uniqueSelectionIds.add(line.rentalSelectionId);
+    }
+  }
 
-      Money.of(line.currentTotal, input.currency);
+  private parseInputMoney(amount: string, currency: string, field: string): Money {
+    try {
+      return Money.of(amount, currency);
+    } catch (error) {
+      if (error instanceof Error) {
+        throw new InvalidPricingInputError(`${field} is invalid: ${error.message}`);
+      }
+      throw error;
     }
   }
 }
