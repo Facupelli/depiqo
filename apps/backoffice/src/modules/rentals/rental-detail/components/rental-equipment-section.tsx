@@ -4,6 +4,7 @@ import { useState } from "react";
 import { buildR2PublicUrl } from "@/lib/r2-public-url";
 import { cn } from "@/lib/utils";
 import { useTenantTimezone } from "@/shared/timezone/operational-timezone.hooks";
+import { AddProductDialog } from "../add-selection/add-product-dialog";
 import type {
 	GetRentalDetailViewResponseDto,
 	RentalDetailViewDemandLineDto,
@@ -19,6 +20,7 @@ import {
 export function RentalEquipmentSection() {
 	const { rental } = useRentalDetailContext();
 	const [isAccessorySheetOpen, setIsAccessorySheetOpen] = useState(false);
+	const [isAddProductDialogOpen, setIsAddProductDialogOpen] = useState(false);
 	const accessoriesByEquipmentLine = groupAccessoriesByEquipmentLine(
 		rental.accessories,
 	);
@@ -32,24 +34,38 @@ export function RentalEquipmentSection() {
 				open={isAccessorySheetOpen}
 				onOpenChange={setIsAccessorySheetOpen}
 			/>
+			<AddProductDialog
+				open={isAddProductDialogOpen}
+				onOpenChange={setIsAddProductDialogOpen}
+			/>
 			<div>
 				<div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 					<h2 className="text-sm font-semibold text-neutral-950">
 						Equipos y accesorios
 					</h2>
-					{rental.status === "DRAFT" ? (
-						<span className="text-sm text-muted-foreground">
-							Confirma el pedido para asignar accesorios
-						</span>
-					) : (
-						<Button
-							type="button"
-							variant="outline"
-							onClick={() => setIsAccessorySheetOpen(true)}
-						>
-							Asignar accesorios
-						</Button>
-					)}
+					<div className="flex items-center gap-2">
+						{rental.status === "CONFIRMED" ? (
+							<Button
+								type="button"
+								onClick={() => setIsAddProductDialogOpen(true)}
+							>
+								Agregar producto
+							</Button>
+						) : null}
+						{rental.status === "DRAFT" ? (
+							<span className="text-sm text-muted-foreground">
+								Confirma el pedido para asignar accesorios
+							</span>
+						) : (
+							<Button
+								type="button"
+								variant="outline"
+								onClick={() => setIsAccessorySheetOpen(true)}
+							>
+								Asignar accesorios
+							</Button>
+						)}
+					</div>
 				</div>
 				<section className="mb-10 space-y-3">
 					{rental.selections.map((selection) => (

@@ -3,7 +3,8 @@ import type {
 	GetRentalOffersPricingItemDto,
 	SearchRentalOffersItemDto,
 } from "@repo/api-contracts";
-import { getRentalOfferAvailability } from "./get-rental-offer-availability.api";
+import { getRentalOfferAvailability } from "@/modules/rentals/shared/rental-offers/get-rental-offer-availability.api";
+import { searchRentalOffers } from "@/modules/rentals/shared/rental-offers/search-rental-offers.api";
 import { getRentalOffersPricing } from "./get-rental-offers-pricing.api";
 import type {
 	SearchDraftRentalOffersInputDto,
@@ -13,7 +14,6 @@ import {
 	SearchDraftRentalOffersInputSchema,
 	SearchDraftRentalOffersResponseSchema,
 } from "./search-draft-rental-offers.schema";
-import { searchRentalOffers } from "./search-rental-offers.api";
 
 export async function searchDraftRentalOffers(
 	input: SearchDraftRentalOffersInputDto,
