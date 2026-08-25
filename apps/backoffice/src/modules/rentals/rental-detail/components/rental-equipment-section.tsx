@@ -1,5 +1,11 @@
 import { Button } from "@repo/ui/components/button";
-import { Clock, Package, Pencil, User2Icon } from "lucide-react";
+import {
+	Popover,
+	PopoverContent,
+	PopoverDescription,
+	PopoverTrigger,
+} from "@repo/ui/components/popover";
+import { Clock, Package, Pencil, Trash2, User2Icon } from "lucide-react";
 import { useState } from "react";
 import { buildR2PublicUrl } from "@/lib/r2-public-url";
 import { cn } from "@/lib/utils";
@@ -12,6 +18,8 @@ import type {
 	RentalDetailViewSelectionDto,
 } from "../get-rental-detail-view/get-rental-detail-view.schema";
 import { RentalAccessoryAssignmentSheet } from "../preparation/accessories/rental-accessory-assignment-sheet";
+import { RemoveSelectionAlertDialog } from "../remove-selection/remove-selection-alert-dialog";
+import { useRemoveSelectionDialog } from "../remove-selection/use-remove-selection-dialog";
 import { useRentalDetailContext } from "../rental-detail.context";
 import {
 	formatRentalDetailDateTime,
@@ -24,6 +32,13 @@ export function RentalEquipmentSection() {
 	const [isAddProductDialogOpen, setIsAddProductDialogOpen] = useState(false);
 	const [quantitySelection, setQuantitySelection] =
 		useState<RentalDetailViewSelectionDto | null>(null);
+	const [removeSelectionId, setRemoveSelectionId] = useState<string | null>(
+		null,
+	);
+	const removeDialog = useRemoveSelectionDialog({
+		selectionId: removeSelectionId,
+		onClose: () => setRemoveSelectionId(null),
+	});
 	const accessoriesByEquipmentLine = groupAccessoriesByEquipmentLine(
 		rental.accessories,
 	);
@@ -47,6 +62,15 @@ export function RentalEquipmentSection() {
 					if (!open) setQuantitySelection(null);
 				}}
 				selection={quantitySelection}
+			/>
+			<RemoveSelectionAlertDialog
+				open={removeSelectionId !== null}
+				onOpenChange={removeDialog.onOpenChange}
+				selection={removeDialog.selection}
+				assignedAssetGroups={removeDialog.assignedAssetGroups}
+				isPending={removeDialog.isSubmitting}
+				errorMessage={removeDialog.errorMessage}
+				onConfirm={removeDialog.onSubmit}
 			/>
 			<div>
 				<div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -78,18 +102,39 @@ export function RentalEquipmentSection() {
 					</div>
 				</div>
 				<section className="mb-10 space-y-3">
-					{rental.selections.map((selection) => (
-						<RentalEquipmentCard
-							key={selection.id}
-							accessoriesByEquipmentLine={accessoriesByEquipmentLine}
-							selection={selection}
-							onEditQuantity={
-								rental.status === "CONFIRMED"
-									? () => setQuantitySelection(selection)
-									: undefined
-							}
-						/>
-					))}
+					{rental.selections.map((selection) => {
+						const hasReferencedAccessories = selection.demandLines.some(
+							(demandLine) => accessoriesByEquipmentLine.has(demandLine.id),
+						);
+						const removeDisabledReason =
+							rental.selections.length <= 1
+								? "El pedido debe conservar al menos un producto."
+								: hasReferencedAccessories
+									? "Quitá o reasigná los accesorios asociados antes de eliminar este producto."
+									: null;
+
+						return (
+							<RentalEquipmentCard
+								key={selection.id}
+								accessoriesByEquipmentLine={accessoriesByEquipmentLine}
+								selection={selection}
+								onEditQuantity={
+									rental.status === "CONFIRMED"
+										? () => setQuantitySelection(selection)
+										: undefined
+								}
+								onRemove={
+									rental.status === "CONFIRMED"
+										? () => {
+												removeDialog.onTargetChange();
+												setRemoveSelectionId(selection.id);
+											}
+										: undefined
+								}
+								removeDisabledReason={removeDisabledReason}
+							/>
+						);
+					})}
 					{unlinkedAccessories.length > 0 ? (
 						<UnlinkedAccessoriesCard accessories={unlinkedAccessories} />
 					) : null}
@@ -104,9 +149,13 @@ function RentalEquipmentCard({
 	selection,
 	accessoriesByEquipmentLine,
 	onEditQuantity,
+	onRemove,
+	removeDisabledReason,
 }: {
 	selection: RentalDetailViewSelectionDto;
 	onEditQuantity?: () => void;
+	onRemove?: () => void;
+	removeDisabledReason: string | null;
 	accessoriesByEquipmentLine: Map<
 		string,
 		GetRentalDetailViewResponseDto["accessories"]
@@ -136,20 +185,29 @@ function RentalEquipmentCard({
 						<span className="font-semibold leading-snug text-neutral-950">
 							{selection.rentableItemName}
 						</span>
-						<div className="flex items-center gap-1">
+						<div className="flex items-center gap-2">
 							<QuantityText quantity={selection.quantity} />
-							{onEditQuantity ? (
-								<Button
-									type="button"
-									variant="ghost"
-									size="icon"
-									className="size-6 text-neutral-500"
-									onClick={onEditQuantity}
-									aria-label={`Editar cantidad de ${selection.rentableItemName}`}
-								>
-									<Pencil className="size-3.5" />
-								</Button>
-							) : null}
+
+							<div className="flex items-center">
+								{onEditQuantity ? (
+									<Button
+										type="button"
+										variant="ghost"
+										size="icon"
+										className="size-6 text-neutral-500"
+										onClick={onEditQuantity}
+										aria-label={`Editar cantidad de ${selection.rentableItemName}`}
+									>
+										<Pencil className="size-3.5" />
+									</Button>
+								) : null}
+								{onRemove ? (
+									<RemoveSelectionButton
+										disabledReason={removeDisabledReason}
+										onRemove={onRemove}
+									/>
+								) : null}
+							</div>
 						</div>
 						{!isPackage
 							? owners.map((owner) => (
@@ -193,6 +251,49 @@ function RentalEquipmentCard({
 				<RentalAccessoriesList accessories={accessories} />
 			) : null}
 		</div>
+	);
+}
+
+function RemoveSelectionButton({
+	disabledReason,
+	onRemove,
+}: {
+	disabledReason: string | null;
+	onRemove: () => void;
+}) {
+	if (!disabledReason) {
+		return (
+			<Button
+				type="button"
+				variant="ghost"
+				size="icon"
+				className="size-6 text-destructive hover:text-destructive"
+				onClick={onRemove}
+				aria-label="Eliminar producto"
+			>
+				<Trash2 className="size-3.5" />
+			</Button>
+		);
+	}
+
+	return (
+		<Popover>
+			<PopoverTrigger
+				render={
+					<button
+						type="button"
+						aria-disabled="true"
+						aria-label={`Eliminar producto. ${disabledReason}`}
+						className="inline-flex size-6 items-center justify-center rounded-md text-destructive opacity-50"
+					>
+						<Trash2 className="size-3.5" />
+					</button>
+				}
+			/>
+			<PopoverContent side="top" className="w-72">
+				<PopoverDescription>{disabledReason}</PopoverDescription>
+			</PopoverContent>
+		</Popover>
 	);
 }
 
