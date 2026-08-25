@@ -1,4 +1,5 @@
 import {
+	AssignmentSource,
 	AssignmentType,
 	ContractBasis,
 	OrderItemType,
@@ -7,12 +8,25 @@ import {
 	PrismaClient,
 	V2AssetBlockType,
 	V2FulfillmentMethod,
-	V2OwnerContractBasis,
 	V2RentalSource,
 	V2RentalStatus,
 	V2RentableItemKind,
 } from "../../../generated/prisma/client";
 import { v5 as uuidv5 } from "uuid";
+import Decimal from "decimal.js";
+
+import { ConfirmedPriceSnapshot } from "../../../modules/rental-commitment/domain/value-objects/confirmed-price-snapshot.value-object";
+import { parseV2RentalDetailPricing } from "../../../modules/rental-commitment/application/accepted-pricing/accepted-pricing-snapshot.decoder";
+import {
+	buildLegacyV2PriceSnapshot,
+	type DiscountMetadataOmission,
+	type LegacyV2PriceSnapshotItem,
+} from "../build-legacy-v2-price-snapshot";
+import { resolveEffectiveTimezone } from "../../../modules/tenant-management/domain/utils/effective-timezone";
+import {
+	AssignedAssetOwnershipSnapshot,
+	type AssignedAssetOwnershipSnapshotData,
+} from "../../../modules/rental-commitment/domain/value-objects/assigned-asset-ownership-snapshot.value-object";
 
 const MIGRATION_UUID_NAMESPACE = "a45fc5e2-ec5e-4d89-8cb8-c35c66d4f830";
 
@@ -35,9 +49,21 @@ export async function migrateRentalCommitmentStage(
 ) {
 	ctx.log("Starting Stage 5A: Rental Commitment structure");
 
-	await migrateRentals(ctx);
+	const canValidatePricing =
+		!ctx.dryRun || (await hasPersistedDryRunPricingMappings(ctx));
+	const legacyPricingData = canValidatePricing
+		? await prepareLegacyPricingData(ctx)
+		: new Map<string, PreparedLegacyOrderItem[]>();
+
+	if (ctx.dryRun && !canValidatePricing) {
+		ctx.log(
+			"Dry-run cannot validate legacy-to-V2 confirmed pricing conversion because earlier dry-run stages do not materialize the required V2 rental offers and tenant users. No pricing conversion was validated.",
+		);
+	}
+
+	await migrateRentals(ctx, legacyPricingData, canValidatePricing);
 	await migrateRentalNumberCounter(ctx);
-	await migrateRentalSelections(ctx);
+	await migrateRentalSelections(ctx, legacyPricingData);
 	await migrateRentalDemandLines(ctx);
 	await migrateRentalDeliveryDetails(ctx);
 
@@ -55,14 +81,171 @@ export async function migrateRentalCommitmentStage(
 	ctx.log("Finished Stage 5B: Rental Commitment operational state");
 }
 
-async function migrateRentals(ctx: TenantV2MigrationContext) {
-	const orders = await ctx.prisma.order.findMany({
-		where: {
-			tenantId: ctx.legacyTenantId,
-			deletedAt: null,
-		},
-		orderBy: { createdAt: "asc" },
-	});
+type PreparedLegacyOrderItem = {
+	orderId: string;
+	createdAt: Date;
+	priceSnapshot: Prisma.JsonValue;
+	conversion: LegacyV2PriceSnapshotItem;
+	type: OrderItemType;
+	productType: { name: string } | null;
+	bundle: { name: string } | null;
+};
+
+async function hasPersistedDryRunPricingMappings(
+	ctx: TenantV2MigrationContext,
+): Promise<boolean> {
+	const [legacyOrderItems, rentalOffers, tenantUsers] =
+		await Promise.all([
+			ctx.prisma.orderItem.findMany({
+				where: { order: { tenantId: ctx.legacyTenantId, deletedAt: null } },
+				select: { manualPricingOverride: true },
+			}),
+			ctx.prisma.v2RentalOffer.count({ where: { tenantId: ctx.v2TenantId } }),
+			ctx.prisma.v2TenantUser.count({ where: { tenantId: ctx.v2TenantId } }),
+		]);
+
+	if (legacyOrderItems.length === 0) return true;
+	const requiresTenantUserMapping = legacyOrderItems.some(
+		(item) => item.manualPricingOverride !== null,
+	);
+	return rentalOffers > 0 && (!requiresTenantUserMapping || tenantUsers > 0);
+}
+
+async function prepareLegacyPricingData(
+	ctx: TenantV2MigrationContext,
+): Promise<Map<string, PreparedLegacyOrderItem[]>> {
+	const [orderItems, rentalOffers, offerPricings, tenantUsers] = await Promise.all([
+		ctx.prisma.orderItem.findMany({
+			where: { order: { tenantId: ctx.legacyTenantId, deletedAt: null } },
+			include: {
+				order: true,
+				productType: { include: { billingUnit: true } },
+				bundle: { include: { billingUnit: true } },
+			},
+			orderBy: { createdAt: "asc" },
+		}),
+		ctx.prisma.v2RentalOffer.findMany({ where: { tenantId: ctx.v2TenantId } }),
+		ctx.prisma.v2RentalOfferPricing.findMany({
+			where: { tenantId: ctx.v2TenantId, isActive: true, deletedAt: null },
+			include: { ratePlan: { include: { tiers: true } } },
+		}),
+		ctx.prisma.v2TenantUser.findMany({
+			where: { tenantId: ctx.v2TenantId },
+			select: { id: true, role: true },
+			orderBy: { id: "asc" },
+		}),
+	]);
+
+	const offerByKey = new Map(
+		rentalOffers.map((offer) => [
+			`${offer.branchId}:${offer.rentableItemId}`,
+			offer,
+		]),
+	);
+	const pricingByOfferId = new Map(
+		offerPricings.map((pricing) => [pricing.catalogRentalOfferId, pricing]),
+	);
+	const tenantUserIds = new Set(tenantUsers.map((user) => user.id));
+	const fallbackAdminId = tenantUsers.find((user) => user.role === "ADMIN")?.id;
+	const result = new Map<string, PreparedLegacyOrderItem[]>();
+
+	for (const item of orderItems) {
+		const rentableItemId = getOrderItemRentableItemId(item);
+		const rentableItemName = getOrderItemRentableItemName(item);
+		const source = item.productType ?? item.bundle;
+		if (!source) throw new Error(`Order item ${item.id} has no rentable item source`);
+		const rentalOffer = offerByKey.get(`${item.order.locationId}:${rentableItemId}`);
+		if (!rentalOffer) throw new Error(`Missing V2RentalOffer for orderItem=${item.id}`);
+		const pricing = pricingByOfferId.get(rentalOffer.id);
+		const historical = readHistoricalTierFacts(item.id, item.priceSnapshot);
+		const matchingTiers = (pricing?.ratePlan.tiers ?? []).filter(
+			(tier) =>
+				tier.fromUnit <= historical.totalUnits &&
+				(tier.toUnit === null || historical.totalUnits <= tier.toUnit) &&
+				new Decimal(tier.pricePerUnit.toString()).equals(historical.pricePerBillingUnit),
+		);
+		const matchedPricingIdentity =
+			pricing && matchingTiers.length === 1
+				? { ratePlanId: pricing.ratePlanId, appliedTierId: matchingTiers[0]!.id }
+				: undefined;
+		if (!matchedPricingIdentity) {
+			ctx.log("Historical pricing identity could not be resolved safely; omitting rate plan and tier metadata", {
+				orderId: item.orderId,
+				orderItemId: item.id,
+				totalUnits: historical.totalUnits,
+				pricePerBillingUnit: historical.pricePerBillingUnit.toString(),
+				matchingTierCount: matchingTiers.length,
+			});
+		}
+
+		const overrideActor = readManualOverrideActor(item.manualPricingOverride);
+		let manualOverrideActorId: string | undefined;
+		if (item.manualPricingOverride !== null) {
+			manualOverrideActorId =
+				overrideActor && tenantUserIds.has(overrideActor)
+					? overrideActor
+					: overrideActor
+						? undefined
+						: fallbackAdminId;
+			if (overrideActor && !manualOverrideActorId) {
+				throw new Error(
+					`Cannot map manual-pricing actor ${overrideActor} for order=${item.orderId}, orderItem=${item.id}`,
+				);
+			}
+			if (!manualOverrideActorId) {
+				throw new Error(`No V2 tenant ADMIN is available for manual override on order=${item.orderId}, orderItem=${item.id}`);
+			}
+		}
+
+		const prepared: PreparedLegacyOrderItem = {
+			orderId: item.orderId,
+			createdAt: item.createdAt,
+			priceSnapshot: item.priceSnapshot,
+			type: item.type,
+			productType: item.productType ? { name: item.productType.name } : null,
+			bundle: item.bundle ? { name: item.bundle.name } : null,
+			conversion: {
+				orderItemId: item.id,
+				priceSnapshot: item.priceSnapshot,
+				manualPricingOverride: item.manualPricingOverride,
+				rentalOfferId: rentalOffer.id,
+				rentableItemId,
+				rentableItemName,
+				billingUnit: mapLegacyBillingUnit(source.billingUnit),
+				...matchedPricingIdentity,
+				manualOverrideActorId,
+			},
+		};
+		result.set(item.orderId, [...(result.get(item.orderId) ?? []), prepared]);
+	}
+
+	return result;
+}
+
+async function migrateRentals(
+	ctx: TenantV2MigrationContext,
+	legacyPricingData: Map<string, PreparedLegacyOrderItem[]>,
+	canValidatePricing: boolean,
+) {
+	const [orders, v2Branches] = await Promise.all([
+		ctx.prisma.order.findMany({
+			where: {
+				tenantId: ctx.legacyTenantId,
+				deletedAt: null,
+			},
+			include: {
+				location: { include: { tenant: { select: { config: true } } } },
+			},
+			orderBy: { createdAt: "asc" },
+		}),
+		ctx.prisma.v2Branch.findMany({
+			where: { tenantId: ctx.v2TenantId },
+			select: { id: true, timezone: true },
+		}),
+	]);
+	const v2BranchTimezoneById = new Map(
+		v2Branches.map((branch) => [branch.id, branch.timezone]),
+	);
 
 	ctx.log(`Migrating rentals from orders: ${orders.length}`);
 
@@ -73,14 +256,41 @@ async function migrateRentals(ctx: TenantV2MigrationContext) {
 		);
 	}
 
-	if (ctx.dryRun) return;
-
 	for (const order of orders) {
 		const status = mapOrderStatusToV2(order.status);
-		const priceSnapshot = migrateLegacyFinancialSnapshot({
+		const legacyFinancialSnapshot = migrateLegacyFinancialSnapshot({
 			tenantId: order.tenantId,
 			financialSnapshot: order.financialSnapshot,
 		});
+		const shouldConvertConfirmedPricing =
+			isHistoricallyCommitted(order.status) && canValidatePricing;
+		const priceSnapshot = shouldConvertConfirmedPricing
+			? buildAndValidateConfirmedPriceSnapshot({
+					order,
+					financialSnapshot: legacyFinancialSnapshot,
+					effectiveTimezone: resolveMigrationPricingTimezone(
+						ctx,
+						order,
+						v2BranchTimezoneById.get(order.locationId),
+					),
+					items: legacyPricingData.get(order.id) ?? [],
+					onDiscountMetadataOmitted: (entry) => {
+						ctx.log(
+							"Historical discount metadata could not be represented safely; preserving monetary discount and omitting promotion metadata",
+							entry,
+						);
+					},
+				})
+			: legacyFinancialSnapshot;
+
+		if (ctx.dryRun) {
+			ctx.log("Dry-run: would migrate rental", {
+				orderId: order.id,
+				status,
+				confirmedPricingValidated: shouldConvertConfirmedPricing,
+			});
+			continue;
+		}
 
 		await ctx.prisma.v2Rental.upsert({
 			where: { id: order.id },
@@ -158,6 +368,120 @@ function isPrismaJsonObject(value: Prisma.JsonValue): value is Prisma.JsonObject
 	return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
+function isHistoricallyCommitted(status: OrderStatus): boolean {
+	return (
+		status === OrderStatus.CONFIRMED ||
+		status === OrderStatus.ACTIVE ||
+		status === OrderStatus.COMPLETED
+	);
+}
+
+function resolveMigrationPricingTimezone(
+	ctx: TenantV2MigrationContext,
+	order: {
+		id: string;
+		locationId: string;
+		bookingSnapshot: Prisma.JsonValue;
+		location: { timezone: string | null; tenant: { config: Prisma.JsonValue } };
+	},
+	v2BranchTimezone: string | null | undefined,
+): string {
+	if (
+		isPrismaJsonObject(order.bookingSnapshot) &&
+		typeof order.bookingSnapshot.timezone === "string" &&
+		order.bookingSnapshot.timezone.length > 0
+	) {
+		return order.bookingSnapshot.timezone;
+	}
+
+	const branchTimezone =
+		order.location.timezone?.trim() || v2BranchTimezone?.trim();
+	const fallbackTimezone = resolveEffectiveTimezone(
+		branchTimezone,
+		readTenantTimezone(order.location.tenant.config),
+	);
+	ctx.log("Substituting migration compatibility timezone for legacy booking snapshot", {
+		orderId: order.id,
+		locationId: order.locationId,
+		fallbackTimezone,
+		reason: "legacy booking snapshot has no timezone",
+	});
+	return fallbackTimezone;
+}
+
+function readTenantTimezone(config: Prisma.JsonValue): string | undefined {
+	return isPrismaJsonObject(config) && typeof config.timezone === "string"
+		? config.timezone
+		: undefined;
+}
+
+function buildAndValidateConfirmedPriceSnapshot(input: {
+	order: {
+		id: string;
+		reviewedAt: Date | null;
+		createdAt: Date;
+	};
+	financialSnapshot: Prisma.JsonValue;
+	effectiveTimezone: string;
+	items: PreparedLegacyOrderItem[];
+	onDiscountMetadataOmitted?: (entry: DiscountMetadataOmission) => void;
+}): Prisma.JsonValue {
+	const snapshot = buildLegacyV2PriceSnapshot({
+		orderId: input.order.id,
+		financialSnapshot: input.financialSnapshot,
+		effectiveTimezone: input.effectiveTimezone,
+		calculatedAt: input.order.reviewedAt ?? input.order.createdAt,
+		items: input.items.map((item) => item.conversion),
+		onDiscountMetadataOmitted: input.onDiscountMetadataOmitted,
+	});
+	const domainValidation = ConfirmedPriceSnapshot.create(snapshot);
+	if (domainValidation.isErr()) {
+		throw new Error(
+			`Converted pricing for order ${input.order.id} failed ConfirmedPriceSnapshot validation: ${domainValidation.error.message}`,
+		);
+	}
+	if (!parseV2RentalDetailPricing(snapshot)) {
+		throw new Error(
+			`Converted pricing for order ${input.order.id} failed the full V2 accepted-pricing decoder`,
+		);
+	}
+	return snapshot as unknown as Prisma.JsonValue;
+}
+
+function readHistoricalTierFacts(orderItemId: string, value: Prisma.JsonValue): {
+	totalUnits: number;
+	pricePerBillingUnit: Decimal;
+} {
+	if (!isPrismaJsonObject(value)) throw new Error(`Invalid priceSnapshot for orderItem=${orderItemId}`);
+	const totalUnits = value.totalUnits;
+	const pricePerBillingUnit = value.pricePerBillingUnit;
+	if (
+		typeof totalUnits !== "number" ||
+		!Number.isInteger(totalUnits) ||
+		totalUnits <= 0 ||
+		(typeof pricePerBillingUnit !== "string" && typeof pricePerBillingUnit !== "number")
+	) {
+		throw new Error(`Invalid historical tier facts for orderItem=${orderItemId}`);
+	}
+	return { totalUnits, pricePerBillingUnit: new Decimal(pricePerBillingUnit) };
+}
+
+function readManualOverrideActor(value: Prisma.JsonValue | null): string | null {
+	if (!isPrismaJsonObject(value) || typeof value.setByUserId !== "string") return null;
+	return value.setByUserId;
+}
+
+function mapLegacyBillingUnit(input: {
+	label: string;
+	durationMinutes: number;
+}): "HOUR" | "DAY" | "WEEK" {
+	const label = input.label.trim().toLowerCase();
+	if (label.includes("hora") || label.includes("hour") || input.durationMinutes === 60) return "HOUR";
+	if (label.includes("día") || label.includes("dia") || label.includes("day") || input.durationMinutes === 1440) return "DAY";
+	if (label.includes("semana") || label.includes("week") || input.durationMinutes === 10080) return "WEEK";
+	throw new Error(`Unsupported legacy billing unit: ${input.label} (${input.durationMinutes} minutes)`);
+}
+
 async function migrateRentalNumberCounter(ctx: TenantV2MigrationContext) {
 	const { _max: { orderNumber: lastOrderNumber } } =
 		await ctx.prisma.order.aggregate({
@@ -182,64 +506,34 @@ async function migrateRentalNumberCounter(ctx: TenantV2MigrationContext) {
 	`;
 }
 
-async function migrateRentalSelections(ctx: TenantV2MigrationContext) {
-	const orderItems = await ctx.prisma.orderItem.findMany({
-		where: {
-			order: {
-				tenantId: ctx.legacyTenantId,
-				deletedAt: null,
-			},
-		},
-		include: {
-			order: true,
-			productType: true,
-			bundle: true,
-		},
-		orderBy: { createdAt: "asc" },
-	});
-
+async function migrateRentalSelections(
+	ctx: TenantV2MigrationContext,
+	legacyPricingData: Map<string, PreparedLegacyOrderItem[]>,
+) {
+	const orderItems = [...legacyPricingData.values()].flat();
 	ctx.log(`Migrating rental selections from order items: ${orderItems.length}`);
-
 	if (ctx.dryRun) return;
 
 	for (const orderItem of orderItems) {
-		const rentableItemId = getOrderItemRentableItemId(orderItem);
-		const rentableItemName = getOrderItemRentableItemName(orderItem);
-		const rentableItemKind = mapOrderItemTypeToRentableItemKind(orderItem.type);
-
-		const rentalOffer = await ctx.prisma.v2RentalOffer.findFirst({
-			where: {
-				tenantId: orderItem.order.tenantId,
-				branchId: orderItem.order.locationId,
-				rentableItemId,
-			},
-		});
-
-		if (!rentalOffer) {
-			throw new Error(
-				`Missing V2RentalOffer for orderItem=${orderItem.id}, branch=${orderItem.order.locationId}, rentableItem=${rentableItemId}`,
-			);
-		}
-
 		await ctx.prisma.v2RentalSelection.upsert({
-			where: { id: orderItem.id },
+			where: { id: orderItem.conversion.orderItemId },
 			create: {
-				id: orderItem.id,
-				tenantId: orderItem.order.tenantId,
+				id: orderItem.conversion.orderItemId,
+				tenantId: ctx.v2TenantId,
 				rentalId: orderItem.orderId,
-				rentalOfferId: rentalOffer.id,
-				rentableItemId,
-				rentableItemNameSnapshot: rentableItemName,
-				rentableItemKindSnapshot: rentableItemKind,
+				rentalOfferId: orderItem.conversion.rentalOfferId,
+				rentableItemId: orderItem.conversion.rentableItemId,
+				rentableItemNameSnapshot: orderItem.conversion.rentableItemName,
+				rentableItemKindSnapshot: mapOrderItemTypeToRentableItemKind(orderItem.type),
 				quantity: 1,
 				priceSnapshot: orderItem.priceSnapshot,
 				createdAt: orderItem.createdAt,
 			},
 			update: {
-				rentalOfferId: rentalOffer.id,
-				rentableItemId,
-				rentableItemNameSnapshot: rentableItemName,
-				rentableItemKindSnapshot: rentableItemKind,
+				rentalOfferId: orderItem.conversion.rentalOfferId,
+				rentableItemId: orderItem.conversion.rentableItemId,
+				rentableItemNameSnapshot: orderItem.conversion.rentableItemName,
+				rentableItemKindSnapshot: mapOrderItemTypeToRentableItemKind(orderItem.type),
 				quantity: 1,
 				priceSnapshot: orderItem.priceSnapshot,
 			},
@@ -539,23 +833,49 @@ function buildDemandLineId(input: {
 // ---
 
 async function migrateAssignedEquipmentAssets(ctx: TenantV2MigrationContext) {
-	const assignments = await ctx.prisma.assetAssignment.findMany({
-		where: {
-			type: AssignmentType.ORDER,
-			orderItemId: { not: null },
-			orderItemAccessoryId: null,
-			order: {
-				tenantId: ctx.legacyTenantId,
-				deletedAt: null,
+	const [assignments, historicalOwnerSplits] = await Promise.all([
+		ctx.prisma.assetAssignment.findMany({
+			where: {
+				type: AssignmentType.ORDER,
+				orderItemId: { not: null },
+				orderItemAccessoryId: null,
+				order: {
+					tenantId: ctx.legacyTenantId,
+					deletedAt: null,
+				},
 			},
-		},
-		include: {
-			asset: true,
-			order: true,
-			orderItem: true,
-		},
-		orderBy: { createdAt: "asc" },
-	});
+			include: {
+				asset: true,
+				order: true,
+				orderItem: true,
+			},
+			orderBy: { createdAt: "asc" },
+		}),
+		ctx.prisma.orderItemOwnerSplit.findMany({
+			where: {
+				orderItem: {
+					order: {
+						tenantId: ctx.legacyTenantId,
+						deletedAt: null,
+					},
+				},
+			},
+			select: {
+				orderItemId: true,
+				assetId: true,
+				ownerId: true,
+				contractId: true,
+				basis: true,
+				ownerShare: true,
+			},
+		}),
+	]);
+	const ownerSplitByAssignmentKey = new Map(
+		historicalOwnerSplits.map((split) => [
+			buildLegacyAssignmentOwnershipKey(split.orderItemId, split.assetId),
+			split,
+		]),
+	);
 
 	ctx.log(`Migrating assigned equipment assets: ${assignments.length}`);
 
@@ -589,6 +909,29 @@ async function migrateAssignedEquipmentAssets(ctx: TenantV2MigrationContext) {
 			continue;
 		}
 
+		const ownershipSnapshotData = buildLegacyAssignmentOwnershipSnapshot({
+			assignmentId: assignment.id,
+			orderId: assignment.order.id,
+			orderItemId: assignment.orderItemId,
+			assetId: assignment.assetId,
+			source: assignment.source,
+			ownerSplit: ownerSplitByAssignmentKey.get(
+				buildLegacyAssignmentOwnershipKey(
+					assignment.orderItemId,
+					assignment.assetId,
+				),
+			),
+		});
+		const ownershipSnapshot = AssignedAssetOwnershipSnapshot.create(
+			ownershipSnapshotData,
+		);
+		if (ownershipSnapshot.isErr()) {
+			throw new Error(
+				`Invalid ownership snapshot for assignment=${assignment.id}, order=${assignment.order.id}, orderItem=${assignment.orderItemId}, asset=${assignment.assetId}: ${ownershipSnapshot.error.message}`,
+			);
+		}
+		const persistedOwnershipSnapshot = ownershipSnapshot.value.toJSON();
+
 		await ctx.prisma.v2AssignedAsset.upsert({
 			where: { id: assignment.id },
 			create: {
@@ -597,6 +940,7 @@ async function migrateAssignedEquipmentAssets(ctx: TenantV2MigrationContext) {
 				rentalId: assignment.order.id,
 				rentalDemandLineId: demandLineId,
 				assetId: assignment.assetId,
+				ownershipSnapshot: persistedOwnershipSnapshot,
 				effectiveFrom: assignment.order.periodStart,
 				createdAt: assignment.createdAt,
 			},
@@ -605,11 +949,57 @@ async function migrateAssignedEquipmentAssets(ctx: TenantV2MigrationContext) {
 				rentalId: assignment.order.id,
 				rentalDemandLineId: demandLineId,
 				assetId: assignment.assetId,
+				ownershipSnapshot: persistedOwnershipSnapshot,
 				effectiveFrom: assignment.order.periodStart,
 				effectiveUntil: null,
 			},
 		});
 	}
+}
+
+function buildLegacyAssignmentOwnershipKey(
+	orderItemId: string,
+	assetId: string,
+): string {
+	return `${orderItemId}:${assetId}`;
+}
+
+function buildLegacyAssignmentOwnershipSnapshot(input: {
+	assignmentId: string;
+	orderId: string;
+	orderItemId: string;
+	assetId: string;
+	source: AssignmentSource | null;
+	ownerSplit?: {
+		ownerId: string;
+		contractId: string;
+		basis: ContractBasis;
+		ownerShare: { toString(): string };
+	};
+}): AssignedAssetOwnershipSnapshotData {
+	if (input.source === AssignmentSource.OWNED) {
+		return { kind: "TENANT_OWNED" };
+	}
+
+	if (input.source === AssignmentSource.EXTERNAL) {
+		if (!input.ownerSplit) {
+			throw new Error(
+				`Missing historical owner split for external assignment: order=${input.orderId}, orderItem=${input.orderItemId}, asset=${input.assetId}, assignment=${input.assignmentId}`,
+			);
+		}
+
+		return {
+			kind: "THIRD_PARTY",
+			ownerId: input.ownerSplit.ownerId,
+			contractId: input.ownerSplit.contractId,
+			basis: mapLegacyContractBasisToV2(input.ownerSplit.basis),
+			ownerShare: new Decimal(input.ownerSplit.ownerShare.toString()).toString(),
+		};
+	}
+
+	throw new Error(
+		`Unsupported legacy assignment source ${String(input.source)}: order=${input.orderId}, orderItem=${input.orderItemId}, asset=${input.assetId}, assignment=${input.assignmentId}`,
+	);
 }
 
 async function migrateEquipmentAssetBlocks(ctx: TenantV2MigrationContext) {
@@ -821,10 +1211,13 @@ async function migrateRentalOwnerSplits(ctx: TenantV2MigrationContext) {
 
 	if (ctx.dryRun) return;
 
-	const currency = await getTenantCurrency(ctx);
-
 	for (const split of splits) {
 		const order = split.orderItem.order;
+		const currency = getHistoricalFinancialCurrency({
+			tenantId: order.tenantId,
+			orderId: order.id,
+			financialSnapshot: order.financialSnapshot,
+		});
 
 		const demandLineId = buildDemandLineId({
 			orderItemId: split.orderItemId,
@@ -962,36 +1355,23 @@ function getReleasedAtForAssetBlock(order: {
 
 function mapLegacyContractBasisToV2(
 	basis: ContractBasis,
-): V2OwnerContractBasis {
+): "NET" {
 	switch (basis) {
 		case ContractBasis.NET_COLLECTED:
-			return V2OwnerContractBasis.NET;
+			return "NET";
 	}
 }
 
-async function getTenantCurrency(
-	ctx: TenantV2MigrationContext,
-): Promise<string> {
-	const tenant = await ctx.prisma.tenant.findUnique({
-		where: { id: ctx.legacyTenantId },
-		select: { config: true },
-	});
-
-	const config = tenant?.config;
-
-	if (
-		config &&
-		typeof config === "object" &&
-		"pricing" in config &&
-		config.pricing &&
-		typeof config.pricing === "object" &&
-		"currency" in config.pricing &&
-		typeof config.pricing.currency === "string"
-	) {
-		return config.pricing.currency;
+function getHistoricalFinancialCurrency(input: {
+	tenantId: string;
+	orderId: string;
+	financialSnapshot: Prisma.JsonValue;
+}): string {
+	const snapshot = migrateLegacyFinancialSnapshot(input);
+	if (!isPrismaJsonObject(snapshot) || typeof snapshot.currency !== "string") {
+		throw new Error(`Cannot determine historical owner-split currency for order ${input.orderId}`);
 	}
-
-	return "ARS";
+	return snapshot.currency;
 }
 
 

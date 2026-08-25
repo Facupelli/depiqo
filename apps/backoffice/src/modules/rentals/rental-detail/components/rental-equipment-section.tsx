@@ -535,13 +535,15 @@ function AssignedAssetsList({
 		<div className="space-y-1.5">
 			{assignments.map((assignment) => {
 				const label = assignment.asset?.serialNumber?.trim();
+				const isIdentifiable = label !== undefined;
+
 				return (
 					<div
 						key={assignment.assetId}
 						className="flex flex-wrap items-center justify-between gap-2"
 					>
 						<div className="flex items-center gap-2">
-							{label !== undefined && (
+							{isIdentifiable && (
 								<span className="rounded-sm border border-neutral-200 bg-white px-2 py-0.5 font-mono font-semibold text-neutral-600 text-xs">
 									{label}
 								</span>
@@ -552,7 +554,7 @@ function AssignedAssetsList({
 								</span>
 							) : null}
 						</div>
-						{onReplace ? (
+						{onReplace && isIdentifiable ? (
 							<Button
 								type="button"
 								variant="ghost"

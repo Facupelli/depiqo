@@ -13,8 +13,8 @@ export type AcceptedRentalPricingLineV1 = {
   quantity: number;
   chargedUnits: number;
   billingUnit: 'HOUR' | 'DAY' | 'WEEK';
-  ratePlanId: string;
-  appliedTierId: string;
+  ratePlanId?: string;
+  appliedTierId?: string;
   pricePerUnit: string;
   subtotal: string;
   discountTotal: string;
