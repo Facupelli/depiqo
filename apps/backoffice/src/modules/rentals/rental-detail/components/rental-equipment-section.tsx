@@ -534,17 +534,18 @@ function AssignedAssetsList({
 	return (
 		<div className="space-y-1.5">
 			{assignments.map((assignment) => {
-				const label =
-					assignment.asset?.serialNumber?.trim() || assignment.assetId;
+				const label = assignment.asset?.serialNumber?.trim();
 				return (
 					<div
 						key={assignment.assetId}
 						className="flex flex-wrap items-center justify-between gap-2"
 					>
 						<div className="flex items-center gap-2">
-							<span className="rounded-sm border border-neutral-200 bg-white px-2 py-0.5 font-mono font-semibold text-neutral-600 text-xs">
-								{label}
-							</span>
+							{label !== undefined && (
+								<span className="rounded-sm border border-neutral-200 bg-white px-2 py-0.5 font-mono font-semibold text-neutral-600 text-xs">
+									{label}
+								</span>
+							)}
 							{assignment.isMissing ? (
 								<span className="text-amber-700 text-[11px]">
 									Asset no encontrado
