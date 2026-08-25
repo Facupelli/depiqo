@@ -53,6 +53,7 @@ export class RentalAssetAllocationService {
     equipmentTypeIds: readonly EquipmentTypeId[];
     periodStart: Date;
     periodEnd: Date;
+    excludeAssetIds?: readonly AssetId[];
   }): Promise<Result<AssetCandidate[], RentalCommitmentError>> {
     const candidates = await this.findAssetCandidates({
       tenantId: params.tenantId,
@@ -67,7 +68,10 @@ export class RentalAssetAllocationService {
       periodStart: params.periodStart,
       periodEnd: params.periodEnd,
     });
-    const reservedAssetIds = new Set(reservations.map((reservation) => reservation.assetId));
+    const reservedAssetIds = new Set([
+      ...reservations.map((reservation) => reservation.assetId),
+      ...(params.excludeAssetIds ?? []),
+    ]);
 
     return ok(this.allocationPolicy.eligibleCandidates(candidates.value, reservedAssetIds));
   }

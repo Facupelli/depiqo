@@ -5,6 +5,7 @@ import { PrismaUnitOfWork } from 'src/core/database/prisma-unit-of-work';
 import { PostgresExclusionViolationError } from 'src/core/utils/postgres-error.mapper';
 import { V2AssetBlockType } from 'src/generated/prisma/enums';
 
+import { getEffectiveRentalOperationTime } from '../../application/get-effective-rental-operation-time';
 import { toRentalIntegrationEvents } from '../../application/rental-integration-event.mapper';
 import { RentalAssetAllocationService } from '../../asset-allocation/rental-asset-allocation.service';
 import {
@@ -95,7 +96,7 @@ export class ReplaceConfirmedRentalAssetHandler implements ICommandHandler<
         }
 
         const operationTime = new Date();
-        const effectiveAt = operationTime < currentRental.period.start ? currentRental.period.start : operationTime;
+        const effectiveAt = getEffectiveRentalOperationTime(operationTime, currentRental.period.start);
         if (effectiveAt >= currentRental.period.end) {
           return err(this.toApplicationError(new RentalPeriodHasEndedError(rentalId), context));
         }
@@ -147,6 +148,7 @@ export class ReplaceConfirmedRentalAssetHandler implements ICommandHandler<
             },
           ],
           ignoredBlockScope: { rentalId, blockType: V2AssetBlockType.EQUIPMENT },
+          excludeAssetIds: currentRental.currentAssignedAssets.map((assignment) => assignment.assetId),
           preferredAssetIdsByDemandLineId: new Map([[demandLine.id, [command.props.replacementAssetId]]]),
           tx,
         });
