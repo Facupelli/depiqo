@@ -1,7 +1,9 @@
+import { Button } from "@repo/ui/components/button";
 import {
 	ChevronDown,
 	Mail,
 	MapPin,
+	Pencil,
 	Phone,
 	ReceiptText,
 	Truck,
@@ -13,6 +15,12 @@ import { useBranchTimezone } from "@/shared/timezone/operational-timezone.hooks"
 import { formatMoney } from "@/shared/utils/formatters";
 import { AssignCustomerToDraftRentalDialog } from "../assign-customer/assign-customer-to-draft-rental-dialog";
 import { RentalContractSigningCard } from "../documents/signing/rental-contract-signing-card";
+import {
+	isZeroDecimal,
+	normalizeDecimal,
+	parsePlainDecimal,
+} from "../edit-price-adjustment/decimal-string";
+import { EditPriceAdjustmentDialog } from "../edit-price-adjustment/edit-price-adjustment-dialog";
 import type { GetRentalDetailViewResponseDto } from "../get-rental-detail-view/get-rental-detail-view.schema";
 import { useRentalDetailContext } from "../rental-detail.context";
 import {
@@ -212,6 +220,7 @@ function DateBlockSkeleton({ label }: { label: string }) {
 function RentalFinancialsCard() {
 	const { rental } = useRentalDetailContext();
 	const [showItems, setShowItems] = useState(false);
+	const [isEditPriceDialogOpen, setIsEditPriceDialogOpen] = useState(false);
 
 	const pricing = rental.pricing;
 
@@ -231,114 +240,143 @@ function RentalFinancialsCard() {
 	}
 
 	const manualAdjustment = pricing.manualPricingAdjustment ?? null;
+	const canEditPrice =
+		rental.status === "CONFIRMED" && Date.now() < Date.parse(rental.period.end);
+	const adjustmentSign =
+		manualAdjustment?.direction === "INCREASE"
+			? "+"
+			: manualAdjustment?.direction === "DECREASE"
+				? "-"
+				: "";
 
 	return (
-		<section className="bg-white border border-neutral-200 rounded-lg p-5">
-			<button
-				type="button"
-				onClick={() => setShowItems((prev) => !prev)}
-				className="flex w-full items-start justify-between gap-4 text-left"
-			>
-				<SidebarHeader
-					icon={<ReceiptText className="size-4" />}
-					title="Resumen financiero"
-				/>
-				<ChevronDown
-					className={`size-4 transition-transform text-neutral-400 ${showItems ? "rotate-180" : ""}`}
-				/>
-			</button>
-			<div className="flex items-baseline justify-between pt-3 pb-3">
-				<span className="text-sm font-bold text-neutral-950">Total</span>
-				<span className="font-mono text-xl font-bold text-neutral-950 tracking-tight">
-					{formatMoney(pricing.total, pricing.currency)}
-				</span>
-			</div>
-			<div className="border-t border-dashed border-neutral-200 pt-3 space-y-2">
-				<MoneyRow
-					label="Subtotal"
-					value={pricing.subtotal}
-					currency={pricing.currency}
-				/>
-				{pricing.discountTotal !== "0" ? (
-					<MoneyRow
-						label="Descuentos"
-						value={pricing.discountTotal}
-						currency={pricing.currency}
-						tone="success"
-						prefix="-"
+		<>
+			<EditPriceAdjustmentDialog
+				open={isEditPriceDialogOpen}
+				onOpenChange={setIsEditPriceDialogOpen}
+			/>
+			<section className="bg-white border border-neutral-200 rounded-lg p-5">
+				<button
+					type="button"
+					onClick={() => setShowItems((prev) => !prev)}
+					className="flex w-full items-start justify-between gap-4 text-left"
+				>
+					<SidebarHeader
+						icon={<ReceiptText className="size-4" />}
+						title="Resumen financiero"
 					/>
-				) : null}
-				{manualAdjustment ? (
-					<ManualAdjustmentRow
-						label="Ajuste manual"
-						amount={manualAdjustment.adjustmentTotal}
-						direction={manualAdjustment.direction}
-						currency={pricing.currency}
+					<ChevronDown
+						className={`size-4 transition-transform text-neutral-400 ${showItems ? "rotate-180" : ""}`}
 					/>
-				) : null}
-				<div className="flex items-center justify-between">
-					<span className="text-sm text-neutral-500">Días cobrados</span>
-					<span className="font-mono text-sm text-neutral-950">
-						{pricing.chargedDays}
+				</button>
+				<div className="flex items-baseline justify-between pt-3 pb-3">
+					<span className="text-sm font-bold text-neutral-950">Total</span>
+					<span className="font-mono text-xl font-bold text-neutral-950 tracking-tight">
+						{formatMoney(pricing.total, pricing.currency)}
 					</span>
 				</div>
-				{pricing.appliedCoupon ? (
-					<div className="flex items-center justify-between">
-						<span className="text-sm text-neutral-500">Cupón</span>
-						<span className="font-mono text-sm text-neutral-950">
-							{pricing.appliedCoupon.code}
-						</span>
-					</div>
-				) : null}
-				{manualAdjustment?.reason ? (
-					<div className="rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-900">
-						<span className="font-semibold">Motivo: </span>
-						{manualAdjustment.reason}
-					</div>
-				) : null}
-			</div>
-			{showItems ? (
-				<div className="border-t border-neutral-100 mt-3 pt-3">
-					{pricing.lines.map((line) => (
-						<div
-							key={`${line.rentalOfferId}-${line.rentableItemId}`}
-							className="border-b border-neutral-100 py-2"
-						>
-							<div className="flex items-center justify-between">
-								<span className="text-sm text-neutral-500">
-									{line.rentableItemName} ×{line.quantity}
-								</span>
-								<span className="font-mono text-sm text-neutral-950">
-									{formatMoney(line.total, pricing.currency)}
-								</span>
-							</div>
-							{line.appliedAdjustments.map((adjustment) => (
-								<div
-									key={`${adjustment.promotionId}-${adjustment.name}`}
-									className="flex items-center justify-between pl-3"
+				<div className="border-t border-dashed border-neutral-200 pt-3 space-y-2">
+					<MoneyRow
+						label="Subtotal"
+						value={pricing.subtotal}
+						currency={pricing.currency}
+					/>
+					{!isZeroDecimal(pricing.discountTotal) ? (
+						<MoneyRow
+							label="Descuentos"
+							value={pricing.discountTotal}
+							currency={pricing.currency}
+							tone="success"
+							prefix="-"
+						/>
+					) : null}
+					<div>
+						<div className="grid grid-cols-[1fr_auto_auto] items-center gap-2">
+							<span className="text-sm text-neutral-500">Ajuste manual</span>
+							<span className="font-mono text-sm text-neutral-950">
+								{manualAdjustment
+									? `${adjustmentSign}${formatMoney(manualAdjustment.adjustmentTotal, pricing.currency)}`
+									: "Sin ajuste"}
+							</span>
+							{canEditPrice ? (
+								<Button
+									type="button"
+									variant="ghost"
+									size="sm"
+									className="h-7 px-2"
+									onClick={() => setIsEditPriceDialogOpen(true)}
 								>
-									<span className="text-[11px] text-neutral-400">
-										{adjustment.name}
-									</span>
-									<span className="font-mono text-[11px] text-emerald-600">
-										-{formatMoney(adjustment.amount, pricing.currency)}
-									</span>
-								</div>
-							))}
-							{line.manualPricingAdjustment ? (
-								<ManualAdjustmentRow
-									label="Ajuste asignado"
-									amount={line.manualPricingAdjustment.amount}
-									direction={line.manualPricingAdjustment.direction}
-									currency={pricing.currency}
-									compact
-								/>
+									<Pencil className="size-3.5" />
+									{manualAdjustment ? "Editar" : "Agregar"}
+								</Button>
 							) : null}
 						</div>
-					))}
+						{manualAdjustment?.reason ? (
+							<p className="mt-1 pl-2 text-xs text-neutral-500">
+								<span className="font-medium">Motivo: </span>
+								{manualAdjustment.reason}
+							</p>
+						) : null}
+					</div>
+					<div className="flex items-center justify-between">
+						<span className="text-sm text-neutral-500">Días cobrados</span>
+						<span className="font-mono text-sm text-neutral-950">
+							{pricing.chargedDays}
+						</span>
+					</div>
+					{pricing.appliedCoupon ? (
+						<div className="flex items-center justify-between">
+							<span className="text-sm text-neutral-500">Cupón</span>
+							<span className="font-mono text-sm text-neutral-950">
+								{pricing.appliedCoupon.code}
+							</span>
+						</div>
+					) : null}
 				</div>
-			) : null}
-		</section>
+				{showItems ? (
+					<div className="border-t border-neutral-100 mt-3 pt-3">
+						{pricing.lines.map((line) => (
+							<div
+								key={`${line.rentalOfferId}-${line.rentableItemId}`}
+								className="border-b border-neutral-100 py-2"
+							>
+								<div className="flex items-center justify-between">
+									<span className="text-sm text-neutral-500">
+										{line.rentableItemName} ×{line.quantity}
+									</span>
+									<span className="font-mono text-sm text-neutral-950">
+										{formatMoney(line.total, pricing.currency)}
+									</span>
+								</div>
+								{line.appliedAdjustments.map((adjustment) => (
+									<div
+										key={`${adjustment.promotionId}-${adjustment.name}`}
+										className="flex items-center justify-between pl-3"
+									>
+										<span className="text-[11px] text-neutral-400">
+											{adjustment.name}
+										</span>
+										<span className="font-mono text-[11px] text-emerald-600">
+											-{formatMoney(adjustment.amount, pricing.currency)}
+										</span>
+									</div>
+								))}
+								{line.manualPricingAdjustment ? (
+									<ManualAdjustmentRow
+										label="Ajuste asignado"
+										amount={line.manualPricingAdjustment.amount}
+										direction={line.manualPricingAdjustment.direction}
+										currency={pricing.currency}
+										compact
+									/>
+								) : null}
+							</div>
+						))}
+						<OwnerPayoutsSection />
+					</div>
+				) : null}
+			</section>
+		</>
 	);
 }
 
@@ -427,10 +465,78 @@ function RentalLegacyFinancialsCard({
 							))}
 						</div>
 					))}
+					<OwnerPayoutsSection />
 				</div>
 			) : null}
 		</section>
 	);
+}
+
+function OwnerPayoutsSection() {
+	const { rental } = useRentalDetailContext();
+	const payouts = rental.ownerPayouts;
+	if (payouts.length === 0) return null;
+
+	const currency = payouts[0]?.currency ?? "";
+	const total = sumDecimalStrings(payouts.map((payout) => payout.total));
+
+	return (
+		<div className="mt-4 border-t border-neutral-200 pt-4">
+			<div className="rounded-lg bg-neutral-50 px-3.5 py-3">
+				<h3 className="mb-3 text-xs font-semibold text-neutral-700">
+					Pagos a propietarios
+				</h3>
+				<div className="space-y-3">
+					{payouts.map((payout) => (
+						<div key={payout.ownerId}>
+							<div className="flex items-baseline justify-between gap-3">
+								<span className="text-sm font-medium text-neutral-800">
+									{payout.ownerName}
+								</span>
+								<span className="font-mono text-sm text-neutral-800">
+									{formatMoney(payout.total, payout.currency)}
+								</span>
+							</div>
+							<div className="mt-1 space-y-0.5 pl-2">
+								{payout.lines.map((line) => (
+									<p
+										key={line.rentalDemandLineId}
+										className="text-xs text-neutral-500"
+									>
+										{line.equipmentName} × {line.quantity}
+									</p>
+								))}
+							</div>
+						</div>
+					))}
+				</div>
+				<div className="mt-3 flex items-center justify-between gap-3 border-t border-neutral-200 pt-3">
+					<span className="text-sm font-semibold text-neutral-800">
+						Total a propietarios
+					</span>
+					<span className="font-mono text-sm font-semibold text-neutral-900">
+						{formatMoney(total, currency)}
+					</span>
+				</div>
+			</div>
+		</div>
+	);
+}
+
+function sumDecimalStrings(values: string[]): string {
+	const parsed = values.map(parsePlainDecimal);
+	if (parsed.some((value) => value === null)) {
+		throw new Error("Invalid owner payout amount.");
+	}
+
+	const decimals = parsed.filter((value) => value !== null);
+	const scale = Math.max(0, ...decimals.map((value) => value.scale));
+	const units = decimals.reduce(
+		(total, value) => total + value.units * 10n ** BigInt(scale - value.scale),
+		0n,
+	);
+
+	return normalizeDecimal({ units, scale });
 }
 
 function MoneyRow({

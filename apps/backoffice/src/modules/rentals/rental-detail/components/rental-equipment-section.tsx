@@ -232,7 +232,7 @@ function RentalEquipmentCard({
 										className="flex items-center gap-1 text-[11px] text-neutral-500"
 									>
 										<User2Icon className="size-3 shrink-0" />
-										{owner}
+										Propietario: {owner}
 									</span>
 								))
 							: null}
@@ -368,7 +368,7 @@ function RentalPackageChildRow({
 								className="flex items-center gap-1 text-[11px] text-neutral-500"
 							>
 								<User2Icon className="size-3 shrink-0" />
-								{owner}
+								Propietario: {owner}
 							</span>
 						))}
 					</div>

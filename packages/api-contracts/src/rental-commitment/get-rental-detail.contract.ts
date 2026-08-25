@@ -206,6 +206,20 @@ export const GetRentalDetailPricingSchema = z.discriminatedUnion("kind", [
 	GetRentalDetailLegacyPricingSchema,
 ]);
 
+export const GetRentalDetailOwnerPayoutLineSchema = z.object({
+	rentalDemandLineId: z.string(),
+	equipmentName: z.string(),
+	quantity: z.number().int().positive(),
+});
+
+export const GetRentalDetailOwnerPayoutSchema = z.object({
+	ownerId: z.string(),
+	ownerName: z.string(),
+	currency: z.string(),
+	total: z.string(),
+	lines: z.array(GetRentalDetailOwnerPayoutLineSchema),
+});
+
 export const GetRentalDetailResponseSchema = z.object({
 	id: z.string(),
 	rentalNumber: z.number().int().positive(),
@@ -228,6 +242,7 @@ export const GetRentalDetailResponseSchema = z.object({
 	selections: z.array(GetRentalDetailSelectionSchema),
 	accessories: z.array(GetRentalDetailAccessorySchema),
 	pricing: GetRentalDetailPricingSchema.nullable(),
+	ownerPayouts: z.array(GetRentalDetailOwnerPayoutSchema),
 });
 
 export type GetRentalDetailParamsDto = z.infer<
@@ -307,6 +322,12 @@ export type GetRentalDetailLegacyPricingDto = z.infer<
 >;
 export type GetRentalDetailPricingDto = z.infer<
 	typeof GetRentalDetailPricingSchema
+>;
+export type GetRentalDetailOwnerPayoutLineDto = z.infer<
+	typeof GetRentalDetailOwnerPayoutLineSchema
+>;
+export type GetRentalDetailOwnerPayoutDto = z.infer<
+	typeof GetRentalDetailOwnerPayoutSchema
 >;
 export type GetRentalDetailResponseDto = z.infer<
 	typeof GetRentalDetailResponseSchema

@@ -19,8 +19,20 @@ export interface GetAssetDisplayFactsInput {
   assetIds: string[];
 }
 
+export interface OwnerDisplayFact {
+  ownerId: string;
+  name: string;
+}
+
+export interface GetOwnerDisplayFactsInput {
+  tenantId: string;
+  ownerIds: string[];
+}
+
 export abstract class AssetInventoryDisplayFacts {
   abstract getEquipmentTypeDisplayFacts(input: GetEquipmentTypeDisplayFactsInput): Promise<EquipmentTypeDisplayFact[]>;
 
   abstract getAssetDisplayFacts(input: GetAssetDisplayFactsInput): Promise<AssetDisplayFact[]>;
+
+  abstract getOwnerDisplayFacts(input: GetOwnerDisplayFactsInput): Promise<OwnerDisplayFact[]>;
 }

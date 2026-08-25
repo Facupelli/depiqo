@@ -8,6 +8,8 @@ import {
   EquipmentTypeDisplayFact,
   GetAssetDisplayFactsInput,
   GetEquipmentTypeDisplayFactsInput,
+  GetOwnerDisplayFactsInput,
+  OwnerDisplayFact,
 } from './asset-inventory-display-facts.public-api';
 
 @Injectable()
@@ -55,5 +57,23 @@ export class AssetInventoryDisplayFactsService extends AssetInventoryDisplayFact
     });
 
     return assets.map((asset) => ({ assetId: asset.id, serialNumber: asset.serialNumber }));
+  }
+
+  async getOwnerDisplayFacts(input: GetOwnerDisplayFactsInput): Promise<OwnerDisplayFact[]> {
+    const ownerIds = [...new Set(input.ownerIds)];
+    if (ownerIds.length === 0) return [];
+
+    const owners = await this.prisma.client.v2AssetOwner.findMany({
+      where: {
+        id: { in: ownerIds },
+        tenantId: input.tenantId,
+      },
+      select: {
+        id: true,
+        name: true,
+      },
+    });
+
+    return owners.map((owner) => ({ ownerId: owner.id, name: owner.name }));
   }
 }

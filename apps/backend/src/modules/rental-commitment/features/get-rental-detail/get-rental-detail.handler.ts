@@ -1,8 +1,10 @@
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
-import type { GetRentalDetailResponseDto } from '@repo/api-contracts';
+import type { GetRentalDetailOwnerPayoutDto, GetRentalDetailResponseDto } from '@repo/api-contracts';
+import Decimal from 'decimal.js';
 import { err, ok, Result } from 'neverthrow';
 
 import { PrismaService } from 'src/core/database/prisma.service';
+import { AssetInventoryDisplayFacts } from 'src/modules/asset-inventory/public-api/asset-inventory-display-facts.public-api';
 import { getRentalDetailError, GetRentalDetailError } from './get-rental-detail.errors';
 import {
   parseLegacyRentalDetailPricing,
@@ -15,7 +17,10 @@ export type GetRentalDetailResult = Result<GetRentalDetailResponseDto, GetRental
 
 @QueryHandler(GetRentalDetailQuery)
 export class GetRentalDetailHandler implements IQueryHandler<GetRentalDetailQuery, GetRentalDetailResult> {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly assetInventoryDisplayFacts: AssetInventoryDisplayFacts,
+  ) {}
 
   async execute(query: GetRentalDetailQuery): Promise<GetRentalDetailResult> {
     const rental = await this.prisma.client.v2Rental.findFirst({
@@ -82,6 +87,15 @@ export class GetRentalDetailHandler implements IQueryHandler<GetRentalDetailQuer
           },
           orderBy: { createdAt: 'asc' },
         },
+        ownerSplits: {
+          select: {
+            ownerId: true,
+            rentalDemandLineId: true,
+            ownerAmount: true,
+            currency: true,
+          },
+          orderBy: { createdAt: 'asc' },
+        },
         accessorySelections: {
           select: {
             id: true,
@@ -106,6 +120,8 @@ export class GetRentalDetailHandler implements IQueryHandler<GetRentalDetailQuer
         ),
       );
     }
+
+    const ownerPayouts = await this.buildOwnerPayoutSummary(query.tenantId, rental.ownerSplits, rental.selections);
 
     return ok({
       id: rental.id,
@@ -154,7 +170,80 @@ export class GetRentalDetailHandler implements IQueryHandler<GetRentalDetailQuer
         assignedAssets: selection.assignments.map((assignment) => ({ assetId: assignment.assetId })),
       })),
       pricing: this.resolvePricing(rental.priceSnapshot, rental.selections),
+      ownerPayouts,
     });
+  }
+
+  private async buildOwnerPayoutSummary(
+    tenantId: string,
+    splits: Array<{ ownerId: string; rentalDemandLineId: string; ownerAmount: Decimal; currency: string }>,
+    selections: Array<{
+      demandLines: Array<{ id: string; equipmentTypeNameSnapshot: string }>;
+    }>,
+  ): Promise<GetRentalDetailOwnerPayoutDto[]> {
+    if (splits.length === 0) return [];
+
+    const currencies = new Set(splits.map((split) => split.currency));
+    if (currencies.size !== 1) throw new Error('Rental owner payouts use multiple currencies.');
+
+    const ownerIds = [...new Set(splits.map((split) => split.ownerId))];
+    const ownerFacts = await this.assetInventoryDisplayFacts.getOwnerDisplayFacts({ tenantId, ownerIds });
+    const ownerNamesById = new Map(ownerFacts.map((owner) => [owner.ownerId, owner.name]));
+    const equipmentNamesByDemandLineId = new Map(
+      selections.flatMap((selection) =>
+        selection.demandLines.map((line) => [line.id, line.equipmentTypeNameSnapshot] as const),
+      ),
+    );
+    const payoutsByOwnerId = new Map<
+      string,
+      {
+        ownerName: string;
+        currency: string;
+        total: Decimal;
+        lines: Map<string, { equipmentName: string; quantity: number }>;
+      }
+    >();
+
+    for (const split of splits) {
+      const ownerName = ownerNamesById.get(split.ownerId);
+      if (!ownerName) throw new Error(`Owner display facts were not found for owner "${split.ownerId}".`);
+
+      const equipmentName = equipmentNamesByDemandLineId.get(split.rentalDemandLineId);
+      if (!equipmentName) {
+        throw new Error(`Rental demand line "${split.rentalDemandLineId}" was not found for an owner payout.`);
+      }
+
+      const existing = payoutsByOwnerId.get(split.ownerId);
+      if (existing) {
+        if (existing.currency !== split.currency) {
+          throw new Error(`Owner "${split.ownerId}" has rental payouts in multiple currencies.`);
+        }
+        existing.total = existing.total.plus(split.ownerAmount);
+        const line = existing.lines.get(split.rentalDemandLineId);
+        if (line) line.quantity += 1;
+        else existing.lines.set(split.rentalDemandLineId, { equipmentName, quantity: 1 });
+        continue;
+      }
+
+      payoutsByOwnerId.set(split.ownerId, {
+        ownerName,
+        currency: split.currency,
+        total: new Decimal(split.ownerAmount),
+        lines: new Map([[split.rentalDemandLineId, { equipmentName, quantity: 1 }]]),
+      });
+    }
+
+    return [...payoutsByOwnerId.entries()].map(([ownerId, payout]) => ({
+      ownerId,
+      ownerName: payout.ownerName,
+      currency: payout.currency,
+      total: payout.total.toFixed(),
+      lines: [...payout.lines.entries()].map(([rentalDemandLineId, line]) => ({
+        rentalDemandLineId,
+        equipmentName: line.equipmentName,
+        quantity: line.quantity,
+      })),
+    }));
   }
 
   private resolvePricing(
