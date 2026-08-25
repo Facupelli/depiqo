@@ -2,9 +2,10 @@ import { Result } from 'neverthrow';
 
 export type PricingDurationPolicySnapshot = {
   timezone: string;
-  dailyBillingPolicy: 'IGNORE_PARTIAL_DAY' | 'BILL_OVER_HALF_DAY' | 'BILL_ANY_PARTIAL_DAY';
+  dailyBillingPolicy: 'IGNORE_PARTIAL_DAY' | 'BILL_OVER_QUARTER_DAY' | 'BILL_OVER_HALF_DAY' | 'BILL_ANY_PARTIAL_DAY';
   weekendCountsAsOne: boolean;
   minimumChargedDays: number;
+  quarterDayThresholdMinutes?: number;
   halfDayThresholdMinutes?: number;
 };
 
@@ -13,7 +14,7 @@ export type PricingCalculationRequest = {
   rentalPeriod: { start: Date; end: Date };
   calculationFacts: {
     effectiveTimezone: string;
-    dailyBillingPolicy: 'IGNORE_PARTIAL_DAY' | 'BILL_OVER_HALF_DAY' | 'BILL_ANY_PARTIAL_DAY';
+    dailyBillingPolicy: 'IGNORE_PARTIAL_DAY' | 'BILL_OVER_QUARTER_DAY' | 'BILL_OVER_HALF_DAY' | 'BILL_ANY_PARTIAL_DAY';
     weekendCountsAsOne: boolean;
   };
   lines: Array<{

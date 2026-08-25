@@ -33,5 +33,6 @@ export type DurationPolicySnapshot = {
   dailyBillingPolicy: DailyBillingPolicy;
   weekendCountsAsOne: boolean;
   minimumChargedDays: number;
+  quarterDayThresholdMinutes?: number;
   halfDayThresholdMinutes?: number;
 };

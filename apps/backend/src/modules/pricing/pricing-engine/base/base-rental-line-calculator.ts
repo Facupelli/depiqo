@@ -27,6 +27,7 @@ export class BaseRentalLineCalculator {
       weekendCountsAsOne: pricingConfig.weekendCountsAsOne,
       timezone: pricingConfig.timezone,
       minimumChargedDays: pricingConfig.minimumChargedDays,
+      quarterDayThresholdMinutes: pricingConfig.quarterDayThresholdMinutes,
       halfDayThresholdMinutes: pricingConfig.halfDayThresholdMinutes,
     });
 

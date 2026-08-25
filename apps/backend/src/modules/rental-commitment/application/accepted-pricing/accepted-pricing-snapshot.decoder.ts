@@ -35,9 +35,15 @@ const V2PersistedPricingResultSchema = z.object({
   chargedDays: z.number().int().nonnegative(),
   durationPolicySnapshot: z.object({
     timezone: z.string(),
-    dailyBillingPolicy: z.enum(['IGNORE_PARTIAL_DAY', 'BILL_OVER_HALF_DAY', 'BILL_ANY_PARTIAL_DAY']),
+    dailyBillingPolicy: z.enum([
+      'IGNORE_PARTIAL_DAY',
+      'BILL_OVER_QUARTER_DAY',
+      'BILL_OVER_HALF_DAY',
+      'BILL_ANY_PARTIAL_DAY',
+    ]),
     weekendCountsAsOne: z.boolean().default(false),
     minimumChargedDays: z.number(),
+    quarterDayThresholdMinutes: z.number().optional(),
     halfDayThresholdMinutes: z.number().optional(),
   }),
   lines: z.array(

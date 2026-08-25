@@ -12,6 +12,7 @@ export type BasePricingInput = {
     dailyBillingPolicy: DailyBillingPolicy;
     weekendCountsAsOne: boolean;
     minimumChargedDays: number;
+    quarterDayThresholdMinutes?: number;
     halfDayThresholdMinutes?: number;
   };
   selections: BasePricingSelectionInput[];

@@ -12,6 +12,7 @@ import { assertValidIanaTimezone } from '../utils/timezone.validation';
 
 export const TenantRoundingRule = {
   IGNORE_PARTIAL_DAY: 'IGNORE_PARTIAL_DAY',
+  BILL_OVER_QUARTER_DAY: 'BILL_OVER_QUARTER_DAY',
   BILL_OVER_HALF_DAY: 'BILL_OVER_HALF_DAY',
   BILL_ANY_PARTIAL_DAY: 'BILL_ANY_PARTIAL_DAY',
 } as const;

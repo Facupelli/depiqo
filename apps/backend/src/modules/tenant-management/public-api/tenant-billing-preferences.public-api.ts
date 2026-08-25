@@ -2,6 +2,7 @@ import { Result } from 'neverthrow';
 
 export const TENANT_DAILY_BILLING_POLICIES = [
   'IGNORE_PARTIAL_DAY',
+  'BILL_OVER_QUARTER_DAY',
   'BILL_OVER_HALF_DAY',
   'BILL_ANY_PARTIAL_DAY',
 ] as const;

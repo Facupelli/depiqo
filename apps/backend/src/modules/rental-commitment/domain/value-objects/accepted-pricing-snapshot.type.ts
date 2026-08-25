@@ -38,9 +38,10 @@ export type AcceptedRentalPricingBreakdownV1 = {
   chargedDays: number;
   durationPolicySnapshot: {
     timezone: string;
-    dailyBillingPolicy: 'IGNORE_PARTIAL_DAY' | 'BILL_OVER_HALF_DAY' | 'BILL_ANY_PARTIAL_DAY';
+    dailyBillingPolicy: 'IGNORE_PARTIAL_DAY' | 'BILL_OVER_QUARTER_DAY' | 'BILL_OVER_HALF_DAY' | 'BILL_ANY_PARTIAL_DAY';
     weekendCountsAsOne: boolean;
     minimumChargedDays: number;
+    quarterDayThresholdMinutes?: number;
     halfDayThresholdMinutes?: number;
   };
   lines: AcceptedRentalPricingLineV1[];

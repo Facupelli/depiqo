@@ -50,6 +50,8 @@ export class TenantBillingPreferencesService extends TenantBillingPreferences {
     switch (roundingRule) {
       case TenantRoundingRule.BILL_ANY_PARTIAL_DAY:
         return 'BILL_ANY_PARTIAL_DAY';
+      case TenantRoundingRule.BILL_OVER_QUARTER_DAY:
+        return 'BILL_OVER_QUARTER_DAY';
       case TenantRoundingRule.BILL_OVER_HALF_DAY:
         return 'BILL_OVER_HALF_DAY';
       case TenantRoundingRule.IGNORE_PARTIAL_DAY:

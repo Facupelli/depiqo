@@ -37,6 +37,7 @@ const schemas = {
 		weekendCountsAsOne: z.boolean(),
 		roundingRule: z.enum([
 			"IGNORE_PARTIAL_DAY",
+			"BILL_OVER_QUARTER_DAY",
 			"BILL_OVER_HALF_DAY",
 			"BILL_ANY_PARTIAL_DAY",
 		]),
@@ -399,6 +400,7 @@ const RentalPolicyFields = withSettingsForm({
 									onValueChange={(value) => {
 										if (
 											value === "IGNORE_PARTIAL_DAY" ||
+											value === "BILL_OVER_QUARTER_DAY" ||
 											value === "BILL_OVER_HALF_DAY" ||
 											value === "BILL_ANY_PARTIAL_DAY"
 										) {
@@ -409,6 +411,10 @@ const RentalPolicyFields = withSettingsForm({
 										{
 											value: "IGNORE_PARTIAL_DAY",
 											label: "No cobrar la fracción restante",
+										},
+										{
+											value: "BILL_OVER_QUARTER_DAY",
+											label: "Cobrar desde un cuarto de jornada extra",
 										},
 										{
 											value: "BILL_OVER_HALF_DAY",
@@ -432,6 +438,9 @@ const RentalPolicyFields = withSettingsForm({
 									<SelectContent>
 										<SelectItem value="IGNORE_PARTIAL_DAY">
 											No cobrar la fracción restante
+										</SelectItem>
+										<SelectItem value="BILL_OVER_QUARTER_DAY">
+											Cobrar desde un cuarto de jornada extra
 										</SelectItem>
 										<SelectItem value="BILL_OVER_HALF_DAY">
 											Cobrar desde media jornada extra

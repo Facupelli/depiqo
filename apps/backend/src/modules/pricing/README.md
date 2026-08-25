@@ -63,9 +63,12 @@ Supported policy concepts include:
 
 ```text
 Ignore partial day
+Bill over quarter day
 Bill over half day
 Bill any partial day
 ```
+
+`Bill over quarter day` charges an additional day only when the remaining elapsed duration is strictly greater than 6 hours. A remainder of exactly 6 hours does not add a day.
 
 Daily billing remains elapsed-duration based. When the tenant enables `weekendCountsAsOne`, Pricing uses the effective branch timezone only to find Saturday-Sunday pairs with positive rental-interval overlap on both local dates. Each qualifying pair reduces the normally calculated day charge by one, never below the minimum charged days. It does not attach elapsed 24-hour units to calendar dates or change the partial-day policy. This adjustment applies only to `DAY` rate plans. `HOUR` and `WEEK` rate plans remain unchanged.
 

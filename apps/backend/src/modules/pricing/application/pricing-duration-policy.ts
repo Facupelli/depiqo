@@ -2,6 +2,7 @@ import { DailyBillingPolicy } from '../pricing-engine/shared/daily-billing-unit-
 
 export const PRICING_DURATION_DEFAULTS = {
   minimumChargedDays: 1,
+  quarterDayThresholdMinutes: 360,
   halfDayThresholdMinutes: 720,
 } as const;
 
@@ -14,6 +15,7 @@ export function createPricingDurationPolicy(input: {
   dailyBillingPolicy: DailyBillingPolicy;
   weekendCountsAsOne: boolean;
   minimumChargedDays: number;
+  quarterDayThresholdMinutes: number;
   halfDayThresholdMinutes: number;
 } {
   return {

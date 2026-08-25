@@ -35,6 +35,7 @@ export class BaseRentalPricingService {
       weekendCountsAsOne: input.pricingConfig.weekendCountsAsOne,
       timezone: input.pricingConfig.timezone,
       minimumChargedDays: input.pricingConfig.minimumChargedDays,
+      quarterDayThresholdMinutes: input.pricingConfig.quarterDayThresholdMinutes,
       halfDayThresholdMinutes: input.pricingConfig.halfDayThresholdMinutes,
     });
 
@@ -50,6 +51,7 @@ export class BaseRentalPricingService {
         dailyBillingPolicy: input.pricingConfig.dailyBillingPolicy,
         weekendCountsAsOne: input.pricingConfig.weekendCountsAsOne,
         minimumChargedDays: input.pricingConfig.minimumChargedDays,
+        quarterDayThresholdMinutes: input.pricingConfig.quarterDayThresholdMinutes,
         halfDayThresholdMinutes: input.pricingConfig.halfDayThresholdMinutes,
       },
     };
@@ -85,8 +87,17 @@ export class BaseRentalPricingService {
     }
 
     if (
+      input.pricingConfig.dailyBillingPolicy === 'BILL_OVER_QUARTER_DAY' &&
+      !this.isValidThreshold(input.pricingConfig.quarterDayThresholdMinutes)
+    ) {
+      throw new InvalidPricingInputError(
+        'Quarter-day threshold minutes must be provided and greater than zero for BILL_OVER_QUARTER_DAY policy.',
+      );
+    }
+
+    if (
       input.pricingConfig.dailyBillingPolicy === 'BILL_OVER_HALF_DAY' &&
-      !this.isValidHalfDayThreshold(input.pricingConfig.halfDayThresholdMinutes)
+      !this.isValidThreshold(input.pricingConfig.halfDayThresholdMinutes)
     ) {
       throw new InvalidPricingInputError(
         'Half-day threshold minutes must be provided and greater than zero for BILL_OVER_HALF_DAY policy.',
@@ -172,10 +183,7 @@ export class BaseRentalPricingService {
     return value instanceof Date && !Number.isNaN(value.getTime());
   }
 
-  private isValidHalfDayThreshold(value: number | undefined): value is number {
-    if (value === undefined) {
-      return false;
-    }
-    return Number.isInteger(value) && value > 0;
+  private isValidThreshold(value: number | undefined): value is number {
+    return value !== undefined && Number.isInteger(value) && value > 0;
   }
 }

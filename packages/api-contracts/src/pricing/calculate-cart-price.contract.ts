@@ -26,11 +26,13 @@ export const CalculateCartPriceDurationPolicySnapshotSchema = z.object({
   timezone: z.string(),
   dailyBillingPolicy: z.enum([
     "IGNORE_PARTIAL_DAY",
+    "BILL_OVER_QUARTER_DAY",
     "BILL_OVER_HALF_DAY",
     "BILL_ANY_PARTIAL_DAY",
   ]),
   weekendCountsAsOne: z.boolean(),
   minimumChargedDays: z.number().int(),
+  quarterDayThresholdMinutes: z.number().int().optional(),
   halfDayThresholdMinutes: z.number().int().optional(),
 });
 

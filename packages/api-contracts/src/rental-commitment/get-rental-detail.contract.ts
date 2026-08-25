@@ -63,6 +63,7 @@ export const GetRentalDetailAccessorySchema = z.object({
 export const GetRentalDetailBillingUnitSchema = z.enum(["HOUR", "DAY", "WEEK"]);
 export const GetRentalDetailDailyBillingPolicySchema = z.enum([
 	"IGNORE_PARTIAL_DAY",
+	"BILL_OVER_QUARTER_DAY",
 	"BILL_OVER_HALF_DAY",
 	"BILL_ANY_PARTIAL_DAY",
 ]);
@@ -88,6 +89,7 @@ export const GetRentalDetailDurationPolicySnapshotSchema = z.object({
 	dailyBillingPolicy: GetRentalDetailDailyBillingPolicySchema,
 	weekendCountsAsOne: z.boolean(),
 	minimumChargedDays: z.number(),
+	quarterDayThresholdMinutes: z.number().optional(),
 	halfDayThresholdMinutes: z.number().optional(),
 });
 

@@ -13,6 +13,7 @@ type RentalDurationCalculatorInput = {
   billingUnit: BillingUnit;
   dailyBillingPolicy: DailyBillingPolicy;
   minimumChargedDays: number;
+  quarterDayThresholdMinutes?: number;
   halfDayThresholdMinutes?: number;
   timezone: string;
   weekendCountsAsOne: boolean;
@@ -37,6 +38,7 @@ export class RentalDurationCalculator {
           durationMinutes,
           dailyBillingPolicy: input.dailyBillingPolicy,
           minimumChargedDays: input.minimumChargedDays,
+          quarterDayThresholdMinutes: input.quarterDayThresholdMinutes,
           halfDayThresholdMinutes: input.halfDayThresholdMinutes,
           start: input.start,
           end: input.end,
@@ -61,6 +63,7 @@ export class RentalDurationCalculator {
       durationMinutes,
       dailyBillingPolicy: input.dailyBillingPolicy,
       minimumChargedDays: input.minimumChargedDays,
+      quarterDayThresholdMinutes: input.quarterDayThresholdMinutes,
       halfDayThresholdMinutes: input.halfDayThresholdMinutes,
       start: input.start,
       end: input.end,
@@ -87,6 +90,7 @@ export class RentalDurationCalculator {
     durationMinutes: number;
     dailyBillingPolicy: DailyBillingPolicy;
     minimumChargedDays: number;
+    quarterDayThresholdMinutes?: number;
     halfDayThresholdMinutes?: number;
     start: Date;
     end: Date;
@@ -103,11 +107,21 @@ export class RentalDurationCalculator {
         chargedDays = fullDays;
         break;
 
-      case 'BILL_OVER_HALF_DAY':
-        chargedDays = this.calculateBillOverHalfDayUnits({
+      case 'BILL_OVER_QUARTER_DAY':
+        chargedDays = this.calculateBillOverThresholdUnits({
           fullDays,
           remainingMinutes,
-          halfDayThresholdMinutes: input.halfDayThresholdMinutes,
+          thresholdMinutes: input.quarterDayThresholdMinutes,
+          policy: 'BILL_OVER_QUARTER_DAY',
+        });
+        break;
+
+      case 'BILL_OVER_HALF_DAY':
+        chargedDays = this.calculateBillOverThresholdUnits({
+          fullDays,
+          remainingMinutes,
+          thresholdMinutes: input.halfDayThresholdMinutes,
+          policy: 'BILL_OVER_HALF_DAY',
         });
         break;
 
@@ -161,20 +175,17 @@ export class RentalDurationCalculator {
     return input.start < nextDayStart && input.end > dayStart;
   }
 
-  private calculateBillOverHalfDayUnits(input: {
+  private calculateBillOverThresholdUnits(input: {
     fullDays: number;
     remainingMinutes: number;
-    halfDayThresholdMinutes?: number;
+    thresholdMinutes?: number;
+    policy: 'BILL_OVER_QUARTER_DAY' | 'BILL_OVER_HALF_DAY';
   }): number {
-    if (input.halfDayThresholdMinutes == null) {
-      throw new InvalidPricingInputError('Half-day threshold minutes must be provided for BILL_OVER_HALF_DAY policy.');
+    if (input.thresholdMinutes == null) {
+      throw new InvalidPricingInputError(`Threshold minutes must be provided for ${input.policy} policy.`);
     }
 
-    if (input.remainingMinutes > input.halfDayThresholdMinutes) {
-      return input.fullDays + 1;
-    }
-
-    return input.fullDays;
+    return input.remainingMinutes > input.thresholdMinutes ? input.fullDays + 1 : input.fullDays;
   }
 
   private validateInput(input: RentalDurationCalculatorInput): void {
@@ -198,17 +209,24 @@ export class RentalDurationCalculator {
       throw new InvalidPricingInputError('Pricing timezone is required.');
     }
 
-    if (input.dailyBillingPolicy === 'BILL_OVER_HALF_DAY') {
-      if (
-        !input.halfDayThresholdMinutes ||
-        !Number.isInteger(input.halfDayThresholdMinutes) ||
-        input.halfDayThresholdMinutes <= 0
-      ) {
-        throw new InvalidPricingInputError(
-          'Half-day threshold minutes must be provided and greater than zero for BILL_OVER_HALF_DAY policy.',
-        );
-      }
+    if (
+      input.dailyBillingPolicy === 'BILL_OVER_QUARTER_DAY' &&
+      !this.isValidThreshold(input.quarterDayThresholdMinutes)
+    ) {
+      throw new InvalidPricingInputError(
+        'Quarter-day threshold minutes must be provided and greater than zero for BILL_OVER_QUARTER_DAY policy.',
+      );
     }
+
+    if (input.dailyBillingPolicy === 'BILL_OVER_HALF_DAY' && !this.isValidThreshold(input.halfDayThresholdMinutes)) {
+      throw new InvalidPricingInputError(
+        'Half-day threshold minutes must be provided and greater than zero for BILL_OVER_HALF_DAY policy.',
+      );
+    }
+  }
+
+  private isValidThreshold(value: number | undefined): value is number {
+    return value !== undefined && Number.isInteger(value) && value > 0;
   }
 
   private assertNever(value: never): never {
