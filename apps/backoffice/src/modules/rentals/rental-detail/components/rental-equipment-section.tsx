@@ -5,7 +5,14 @@ import {
 	PopoverDescription,
 	PopoverTrigger,
 } from "@repo/ui/components/popover";
-import { Clock, Package, Pencil, Trash2, User2Icon } from "lucide-react";
+import {
+	Clock,
+	Package,
+	Pencil,
+	RefreshCw,
+	Trash2,
+	User2Icon,
+} from "lucide-react";
 import { useState } from "react";
 import { buildR2PublicUrl } from "@/lib/r2-public-url";
 import { cn } from "@/lib/utils";
@@ -25,6 +32,7 @@ import {
 	formatRentalDetailDateTime,
 	isNonEmptyString,
 } from "../rental-detail.utils";
+import { ReplaceAssignedAssetDialog } from "../replace-assigned-asset/replace-assigned-asset-dialog";
 
 export function RentalEquipmentSection() {
 	const { rental } = useRentalDetailContext();
@@ -35,6 +43,9 @@ export function RentalEquipmentSection() {
 	const [removeSelectionId, setRemoveSelectionId] = useState<string | null>(
 		null,
 	);
+	const [replaceAssignedAssetId, setReplaceAssignedAssetId] = useState<
+		string | null
+	>(null);
 	const removeDialog = useRemoveSelectionDialog({
 		selectionId: removeSelectionId,
 		onClose: () => setRemoveSelectionId(null),
@@ -71,6 +82,10 @@ export function RentalEquipmentSection() {
 				isPending={removeDialog.isSubmitting}
 				errorMessage={removeDialog.errorMessage}
 				onConfirm={removeDialog.onSubmit}
+			/>
+			<ReplaceAssignedAssetDialog
+				currentAssignedAssetId={replaceAssignedAssetId}
+				onClose={() => setReplaceAssignedAssetId(null)}
 			/>
 			<div>
 				<div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -132,6 +147,11 @@ export function RentalEquipmentSection() {
 										: undefined
 								}
 								removeDisabledReason={removeDisabledReason}
+								onReplaceAssignedAsset={
+									rental.status === "CONFIRMED"
+										? setReplaceAssignedAssetId
+										: undefined
+								}
 							/>
 						);
 					})}
@@ -150,11 +170,13 @@ function RentalEquipmentCard({
 	accessoriesByEquipmentLine,
 	onEditQuantity,
 	onRemove,
+	onReplaceAssignedAsset,
 	removeDisabledReason,
 }: {
 	selection: RentalDetailViewSelectionDto;
 	onEditQuantity?: () => void;
 	onRemove?: () => void;
+	onReplaceAssignedAsset?: (assetId: string) => void;
 	removeDisabledReason: string | null;
 	accessoriesByEquipmentLine: Map<
 		string,
@@ -168,12 +190,6 @@ function RentalEquipmentCard({
 		: [];
 	const owners = singleDemandLine
 		? getAssetOwners(singleDemandLine.assignedAssets)
-		: [];
-	const serials = singleDemandLine
-		? getAssetSerials(singleDemandLine.assignedAssets)
-		: [];
-	const missingAssetIds = singleDemandLine
-		? getMissingAssetIds(singleDemandLine.assignedAssets)
 		: [];
 
 	return (
@@ -223,14 +239,10 @@ function RentalEquipmentCard({
 						{!isPackage ? (
 							<div className="mt-2 space-y-1.5">
 								<p className="text-neutral-400 text-xs">Nº de serie</p>
-								{serials.length > 0 ? (
-									<SerialChips serials={serials} maxVisible={serials.length} />
-								) : (
-									<span className="font-mono text-[11px] text-neutral-400">
-										Sin assets asignadas
-									</span>
-								)}
-								<MissingAssetsFeedback assetIds={missingAssetIds} />
+								<AssignedAssetsList
+									assignments={singleDemandLine?.assignedAssets ?? []}
+									onReplace={onReplaceAssignedAsset}
+								/>
 							</div>
 						) : null}
 					</div>
@@ -245,6 +257,7 @@ function RentalEquipmentCard({
 				<RentalPackageChildrenList
 					accessoriesByEquipmentLine={accessoriesByEquipmentLine}
 					items={selection.demandLines}
+					onReplaceAssignedAsset={onReplaceAssignedAsset}
 				/>
 			) : null}
 			{!isPackage && accessories.length > 0 ? (
@@ -300,8 +313,10 @@ function RemoveSelectionButton({
 function RentalPackageChildrenList({
 	items,
 	accessoriesByEquipmentLine,
+	onReplaceAssignedAsset,
 }: {
 	items: RentalDetailViewDemandLineDto[];
+	onReplaceAssignedAsset?: (assetId: string) => void;
 	accessoriesByEquipmentLine: Map<
 		string,
 		GetRentalDetailViewResponseDto["accessories"]
@@ -318,6 +333,7 @@ function RentalPackageChildrenList({
 						key={child.id}
 						accessories={accessoriesByEquipmentLine.get(child.id) ?? []}
 						equipment={child}
+						onReplaceAssignedAsset={onReplaceAssignedAsset}
 					/>
 				))}
 			</div>
@@ -328,13 +344,13 @@ function RentalPackageChildrenList({
 function RentalPackageChildRow({
 	equipment,
 	accessories,
+	onReplaceAssignedAsset,
 }: {
 	equipment: RentalDetailViewDemandLineDto;
 	accessories: GetRentalDetailViewResponseDto["accessories"];
+	onReplaceAssignedAsset?: (assetId: string) => void;
 }) {
 	const owners = getAssetOwners(equipment.assignedAssets);
-	const serials = getAssetSerials(equipment.assignedAssets);
-	const missingAssetIds = getMissingAssetIds(equipment.assignedAssets);
 
 	return (
 		<div className="rounded-lg border border-neutral-100 bg-neutral-50 px-3 py-2">
@@ -358,14 +374,11 @@ function RentalPackageChildRow({
 					</div>
 				</div>
 				<div className="space-y-1 sm:justify-self-end">
-					{serials.length > 0 ? (
-						<SerialChips serials={serials} maxVisible={3} />
-					) : (
-						<span className="font-mono text-[11px] text-neutral-400">
-							Sin serie
-						</span>
-					)}
-					<MissingAssetsFeedback assetIds={missingAssetIds} />
+					<AssignedAssetsList
+						assignments={equipment.assignedAssets}
+						onReplace={onReplaceAssignedAsset}
+						compact
+					/>
 				</div>
 			</div>
 			{accessories.length > 0 ? (
@@ -497,6 +510,65 @@ function UnlinkedAccessoriesCard({
 					<RentalAccessoryRow key={accessory.id} accessory={accessory} />
 				))}
 			</div>
+		</div>
+	);
+}
+
+function AssignedAssetsList({
+	assignments,
+	onReplace,
+	compact = false,
+}: {
+	assignments: RentalDetailViewDemandLineDto["assignedAssets"];
+	onReplace?: (assetId: string) => void;
+	compact?: boolean;
+}) {
+	if (assignments.length === 0) {
+		return (
+			<span className="font-mono text-[11px] text-neutral-400">
+				Sin assets asignadas
+			</span>
+		);
+	}
+
+	return (
+		<div className="space-y-1.5">
+			{assignments.map((assignment) => {
+				const label =
+					assignment.asset?.serialNumber?.trim() || assignment.assetId;
+				return (
+					<div
+						key={assignment.assetId}
+						className="flex flex-wrap items-center justify-between gap-2"
+					>
+						<div className="flex items-center gap-2">
+							<span className="rounded-sm border border-neutral-200 bg-white px-2 py-0.5 font-mono font-semibold text-neutral-600 text-xs">
+								{label}
+							</span>
+							{assignment.isMissing ? (
+								<span className="text-amber-700 text-[11px]">
+									Asset no encontrado
+								</span>
+							) : null}
+						</div>
+						{onReplace ? (
+							<Button
+								type="button"
+								variant="ghost"
+								size="sm"
+								className={cn(
+									"h-7 px-2 text-neutral-600 text-xs",
+									compact && "h-6",
+								)}
+								onClick={() => onReplace(assignment.assetId)}
+							>
+								<RefreshCw className="size-3" />
+								Reemplazar
+							</Button>
+						) : null}
+					</div>
+				);
+			})}
 		</div>
 	);
 }
