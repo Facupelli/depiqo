@@ -12,6 +12,8 @@
     "PUBLIC_SIGNING_ORIGIN": "https://sign.depiqo.com",
     "STOREFRONT_TENANT_JWT_ISSUER": "storefront-bff",
     "STOREFRONT_TENANT_JWT_AUDIENCE": "nestjs-api",
+    "CLOUDFLARE_ACCOUNT_ID": "104e162e9f4eba61e93a522eb336401b",
+    "R2_CUSTOMERS_BUCKET_NAME": "customers",
     "VITE_R2_PUBLIC_URL": "https://equipment.depiqo.com",
     "VITE_BRANDING_R2_PUBLIC_URL": "https://branding.depiqo.com",
     "VITE_GOOGLE_CLIENT_ID": "95835950658-d0n7ngg3kb1a582345erhldulp89m2e2.apps.googleusercontent.com",

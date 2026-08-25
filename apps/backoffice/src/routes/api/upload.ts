@@ -11,13 +11,13 @@ import { requireV2TenantUser } from "@/lib/auth/route-auth.server";
 
 const s3 = cloudflare({
 	accountId: serverEnv.CLOUDFLARE_ACCOUNT_ID,
-	accessKeyId: serverEnv.CLOUDFLARE_R2_ACCESS_KEY_ID,
-	secretAccessKey: serverEnv.CLOUDFLARE_R2_SECRET_ACCESS_KEY,
+	accessKeyId: serverEnv.R2_EQUIPMENT_ACCESS_KEY_ID,
+	secretAccessKey: serverEnv.R2_EQUIPMENT_SECRET_ACCESS_KEY,
 });
 
 const uploadRouter: Router = {
 	client: s3,
-	bucketName: serverEnv.CLOUDFLARE_R2_BUCKET_NAME,
+	bucketName: serverEnv.R2_EQUIPMENT_BUCKET_NAME,
 	routes: {
 		catalogImages: route({
 			fileTypes: ["image/webp"],

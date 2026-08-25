@@ -19,8 +19,8 @@
   "vars": {
     "BACKEND_URL": "https://api.depiqo.com",
     "CLOUDFLARE_ACCOUNT_ID": "104e162e9f4eba61e93a522eb336401b",
-    "CLOUDFLARE_R2_BUCKET_NAME": "equipment",
-    "CLOUDFLARE_R2_BRANDING_BUCKET_NAME": "branding",
+    "R2_EQUIPMENT_BUCKET_NAME": "equipment",
+    "R2_BRANDING_BUCKET_NAME": "branding",
     "VITE_R2_PUBLIC_URL": "https://equipment.depiqo.com",
     "VITE_BRANDING_R2_PUBLIC_URL": "https://branding.depiqo.com",
     "NODE_ENV": "production",

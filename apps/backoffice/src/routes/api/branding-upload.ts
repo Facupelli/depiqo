@@ -17,7 +17,7 @@ const s3 = cloudflare({
 
 const uploadRouter: Router = {
 	client: s3,
-	bucketName: serverEnv.CLOUDFLARE_R2_BRANDING_BUCKET_NAME,
+	bucketName: serverEnv.R2_BRANDING_BUCKET_NAME,
 	routes: {
 		brandingLogo: route({
 			fileTypes: ["image/webp"],

@@ -31,11 +31,11 @@ export class R2ObjectStorageAdapter extends ObjectStoragePort {
   constructor(private readonly configService: ConfigService<Env, true>) {
     super();
 
-    const accountId = this.configService.get('R2_ACCOUNT_ID');
-    const accessKeyId = this.configService.get('R2_ACCESS_KEY_ID');
-    const secretAccessKey = this.configService.get('R2_SECRET_ACCESS_KEY');
+    const accountId = this.configService.get('CLOUDFLARE_ACCOUNT_ID');
+    const accessKeyId = this.configService.get('R2_SIGNING_ACCESS_KEY_ID');
+    const secretAccessKey = this.configService.get('R2_SIGNING_SECRET_ACCESS_KEY');
 
-    this.bucketName = this.configService.get('R2_BUCKET_NAME');
+    this.bucketName = this.configService.get('R2_SIGNING_BUCKET_NAME');
     this.client = new S3Client({
       region: 'auto',
       endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
