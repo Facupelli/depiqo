@@ -15,10 +15,9 @@ import {
 	ImageIcon,
 	Loader2,
 	MapPin,
-	Minus,
-	Plus,
 	Search,
 } from "lucide-react";
+import { QuantityStepper } from "../components/quantity-stepper";
 import type {
 	AddProductOfferAvailability,
 	AddProductOfferOption,
@@ -77,6 +76,7 @@ function AddProductDialogContent({ onClose }: { onClose: () => void }) {
 				isFetching={dialog.areOffersFetching}
 				isError={dialog.areOffersErrored}
 				quantity={dialog.quantity}
+				isSubmitting={dialog.isSubmitting}
 				onSelectOffer={dialog.onSelectOffer}
 				onQuantityChange={dialog.onQuantityChange}
 			/>
@@ -172,6 +172,7 @@ interface OfferResultsProps {
 	isFetching: boolean;
 	isError: boolean;
 	quantity: number;
+	isSubmitting: boolean;
 	onSelectOffer: (offerId: string) => void;
 	onQuantityChange: (quantity: number) => void;
 }
@@ -182,6 +183,7 @@ function OfferResults({
 	isFetching,
 	isError,
 	quantity,
+	isSubmitting,
 	onSelectOffer,
 	onQuantityChange,
 }: OfferResultsProps) {
@@ -218,6 +220,7 @@ function OfferResults({
 					key={option.offer.id}
 					option={option}
 					quantity={quantity}
+					isSubmitting={isSubmitting}
 					onSelect={() => onSelectOffer(option.offer.id)}
 					onQuantityChange={onQuantityChange}
 				/>
@@ -229,6 +232,7 @@ function OfferResults({
 interface OfferCardProps {
 	option: AddProductOfferOption;
 	quantity: number;
+	isSubmitting: boolean;
 	onSelect: () => void;
 	onQuantityChange: (quantity: number) => void;
 }
@@ -236,6 +240,7 @@ interface OfferCardProps {
 function OfferCard({
 	option,
 	quantity,
+	isSubmitting,
 	onSelect,
 	onQuantityChange,
 }: OfferCardProps) {
@@ -288,6 +293,7 @@ function OfferCard({
 						value={quantity}
 						min={1}
 						max={availableCount ?? 1}
+						disabled={isSubmitting}
 						onChange={onQuantityChange}
 					/>
 				</div>
@@ -312,48 +318,6 @@ function getAvailabilityLabel(
 				availableCount === 1 ? "unidad" : "unidades"
 			}`;
 	}
-}
-
-function QuantityStepper({
-	value,
-	min,
-	max,
-	onChange,
-}: {
-	value: number;
-	min: number;
-	max: number;
-	onChange: (value: number) => void;
-}) {
-	return (
-		<div className="inline-flex items-center gap-2">
-			<Button
-				type="button"
-				variant="outline"
-				size="icon"
-				className="size-7"
-				disabled={value <= min}
-				onClick={() => onChange(Math.max(value - 1, min))}
-				aria-label="Quitar una unidad"
-			>
-				<Minus className="size-3.5" />
-			</Button>
-			<span className="min-w-8 text-center font-medium text-sm tabular-nums">
-				{value}
-			</span>
-			<Button
-				type="button"
-				variant="outline"
-				size="icon"
-				className="size-7"
-				disabled={value >= max}
-				onClick={() => onChange(Math.min(value + 1, max))}
-				aria-label="Agregar una unidad"
-			>
-				<Plus className="size-3.5" />
-			</Button>
-		</div>
-	);
 }
 
 function ProductImage({ imageUrl }: { imageUrl: string | null }) {

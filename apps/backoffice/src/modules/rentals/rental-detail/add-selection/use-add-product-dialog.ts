@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { buildR2PublicUrl } from "@/lib/r2-public-url";
 import { branchQueries } from "@/modules/settings/branches/public";
 import { useDebounce } from "@/shared/hooks/use-debounce";
+import { deriveConfirmedRentalEditAvailabilityPeriod } from "../confirmed-rental-edit-period";
 import { useRentalDetailContext } from "../rental-detail.context";
 import { rentalDetailViewQueries } from "../rental-detail.queries";
 import { toAddSelectionUiError } from "./add-selection.errors";
@@ -26,6 +27,7 @@ interface UseAddProductDialogInput {
 export function useAddProductDialog({ onClose }: UseAddProductDialogInput) {
 	const { rental } = useRentalDetailContext();
 	const queryClient = useQueryClient();
+	const [capturedEditTime] = useState(() => new Date());
 	const [search, setSearch] = useState("");
 	const [page, setPage] = useState(1);
 	const [selectedOfferId, setSelectedOfferId] = useState<string | null>(null);
@@ -58,11 +60,14 @@ export function useAddProductDialog({ onClose }: UseAddProductDialogInput) {
 		rental.selections.map((selection) => selection.rentalOfferId),
 	);
 
+	const editAvailabilityPeriod = deriveConfirmedRentalEditAvailabilityPeriod(
+		capturedEditTime,
+		rental.period,
+	);
 	const availabilityQuery = useQuery(
 		rentalOfferAvailabilityQueries.forInput({
 			branchId: rental.branchId,
-			periodStart: rental.period.start,
-			periodEnd: rental.period.end,
+			...editAvailabilityPeriod,
 			rentalOfferIds: offers.map((offer) => offer.id),
 		}),
 	);

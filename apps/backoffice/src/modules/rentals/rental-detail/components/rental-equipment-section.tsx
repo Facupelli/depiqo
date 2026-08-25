@@ -1,10 +1,11 @@
 import { Button } from "@repo/ui/components/button";
-import { Clock, Package, User2Icon } from "lucide-react";
+import { Clock, Package, Pencil, User2Icon } from "lucide-react";
 import { useState } from "react";
 import { buildR2PublicUrl } from "@/lib/r2-public-url";
 import { cn } from "@/lib/utils";
 import { useTenantTimezone } from "@/shared/timezone/operational-timezone.hooks";
 import { AddProductDialog } from "../add-selection/add-product-dialog";
+import { ChangeSelectionQuantityDialog } from "../change-selection-quantity/change-selection-quantity-dialog";
 import type {
 	GetRentalDetailViewResponseDto,
 	RentalDetailViewDemandLineDto,
@@ -21,6 +22,8 @@ export function RentalEquipmentSection() {
 	const { rental } = useRentalDetailContext();
 	const [isAccessorySheetOpen, setIsAccessorySheetOpen] = useState(false);
 	const [isAddProductDialogOpen, setIsAddProductDialogOpen] = useState(false);
+	const [quantitySelection, setQuantitySelection] =
+		useState<RentalDetailViewSelectionDto | null>(null);
 	const accessoriesByEquipmentLine = groupAccessoriesByEquipmentLine(
 		rental.accessories,
 	);
@@ -37,6 +40,13 @@ export function RentalEquipmentSection() {
 			<AddProductDialog
 				open={isAddProductDialogOpen}
 				onOpenChange={setIsAddProductDialogOpen}
+			/>
+			<ChangeSelectionQuantityDialog
+				open={quantitySelection !== null}
+				onOpenChange={(open) => {
+					if (!open) setQuantitySelection(null);
+				}}
+				selection={quantitySelection}
 			/>
 			<div>
 				<div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -73,6 +83,11 @@ export function RentalEquipmentSection() {
 							key={selection.id}
 							accessoriesByEquipmentLine={accessoriesByEquipmentLine}
 							selection={selection}
+							onEditQuantity={
+								rental.status === "CONFIRMED"
+									? () => setQuantitySelection(selection)
+									: undefined
+							}
 						/>
 					))}
 					{unlinkedAccessories.length > 0 ? (
@@ -88,8 +103,10 @@ export function RentalEquipmentSection() {
 function RentalEquipmentCard({
 	selection,
 	accessoriesByEquipmentLine,
+	onEditQuantity,
 }: {
 	selection: RentalDetailViewSelectionDto;
+	onEditQuantity?: () => void;
 	accessoriesByEquipmentLine: Map<
 		string,
 		GetRentalDetailViewResponseDto["accessories"]
@@ -119,7 +136,21 @@ function RentalEquipmentCard({
 						<span className="font-semibold leading-snug text-neutral-950">
 							{selection.rentableItemName}
 						</span>
-						<QuantityText quantity={selection.quantity} />
+						<div className="flex items-center gap-1">
+							<QuantityText quantity={selection.quantity} />
+							{onEditQuantity ? (
+								<Button
+									type="button"
+									variant="ghost"
+									size="icon"
+									className="size-6 text-neutral-500"
+									onClick={onEditQuantity}
+									aria-label={`Editar cantidad de ${selection.rentableItemName}`}
+								>
+									<Pencil className="size-3.5" />
+								</Button>
+							) : null}
+						</div>
 						{!isPackage
 							? owners.map((owner) => (
 									<span
