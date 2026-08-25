@@ -25,7 +25,6 @@ export const EnvSchema = z.object({
   PORT: z.coerce.number().default(3000),
 
   DATABASE_URL: z.url(),
-  DATABASE_POOL_SIZE: z.coerce.number().default(10),
 
   CORS_ALLOWED_ORIGINS: z.string(),
   BFF_INTERNAL_TOKEN: z.string(),
@@ -58,7 +57,6 @@ export const EnvSchema = z.object({
   NOTIFICATIONS_EMAIL_REPLY_TO: z.string().optional(),
   NOTIFICATIONS_MUTED_CHANNELS_BY_ENV: notificationsMutedChannelsByEnvSchema,
 
-  INTERNAL_API_TOKEN: z.string(),
   ROOT_DOMAIN: z.string(),
 });
 

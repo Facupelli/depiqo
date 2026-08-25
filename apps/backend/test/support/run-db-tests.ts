@@ -41,7 +41,6 @@ async function main(): Promise<void> {
     RESEND_API_KEY: 're_test',
     NOTIFICATIONS_EMAIL_FROM: 'test@example.com',
     NOTIFICATIONS_MUTED_CHANNELS_BY_ENV: '{"test":["EMAIL"]}',
-    INTERNAL_API_TOKEN: 'test-internal-token',
     ROOT_DOMAIN: 'localhost',
   };
 
