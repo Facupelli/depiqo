@@ -3,9 +3,12 @@ import { Module } from '@nestjs/common';
 import { TenantManagementModule } from '../tenant-management/tenant-management.module';
 import { AssetBranchReferenceValidatorService } from './application/services/asset-branch-reference-validator.service';
 import { AssetCreationValidatorService } from './application/services/asset-creation-validator.service';
+import { AssetOwnershipResolver } from './application/services/asset-ownership-resolver.service';
 import { AddAssetsToEquipmentTypeHttpController } from './features/add-assets-to-equipment-type/add-assets-to-equipment-type.controller';
 import { AddAssetsToEquipmentTypeHandler } from './features/add-assets-to-equipment-type/add-assets-to-equipment-type.handler';
 import { ReplaceEquipmentTypeAccessoryDefaultsHttpController } from './features/replace-equipment-type-accessory-defaults/replace-equipment-type-accessory-defaults.controller';
+import { ChangeAssetOwnerHttpController } from './features/change-asset-owner/change-asset-owner.controller';
+import { ChangeAssetOwnerHandler } from './features/change-asset-owner/change-asset-owner.handler';
 import { ReplaceEquipmentTypeAccessoryDefaultsHandler } from './features/replace-equipment-type-accessory-defaults/replace-equipment-type-accessory-defaults.handler';
 import { RetireAssetHttpController } from './features/retire-asset/retire-asset.controller';
 import { RetireAssetHandler } from './features/retire-asset/retire-asset.handler';
@@ -51,6 +54,7 @@ import { EquipmentTypeReferenceAuthority } from './public-api/equipment-type-ref
   imports: [TenantManagementModule],
   controllers: [
     AddAssetsToEquipmentTypeHttpController,
+    ChangeAssetOwnerHttpController,
     ReplaceEquipmentTypeAccessoryDefaultsHttpController,
     RetireAssetHttpController,
     UpdateAssetHttpController,
@@ -69,6 +73,7 @@ import { EquipmentTypeReferenceAuthority } from './public-api/equipment-type-ref
   ],
   providers: [
     AddAssetsToEquipmentTypeHandler,
+    ChangeAssetOwnerHandler,
     ReplaceEquipmentTypeAccessoryDefaultsHandler,
     RetireAssetHandler,
     UpdateAssetHandler,
@@ -87,6 +92,7 @@ import { EquipmentTypeReferenceAuthority } from './public-api/equipment-type-ref
     CreateEquipmentTypeSetupService,
     AssetBranchReferenceValidatorService,
     AssetCreationValidatorService,
+    AssetOwnershipResolver,
     AssetRepository,
     EquipmentTypeRepository,
     { provide: ActivePhysicalStockFacts, useClass: ActivePhysicalStockFactsService },

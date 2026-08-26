@@ -5,6 +5,7 @@ import { err, ok, Result } from 'neverthrow';
 import { AggregateRootBase } from 'src/core/domain/aggregate-root.base';
 
 import { AssetCreatedDomainEvent, AssetOwnerContractSnapshotPayload } from './events/asset-created.domain-event';
+import { AssetOwnershipChangedDomainEvent } from './events/asset-ownership-changed.domain-event';
 import { AssetRetiredDomainEvent } from './events/asset-retired.domain-event';
 import { AssetInventoryError, InvalidAssetFieldError } from './errors/asset-inventory.errors';
 
@@ -40,6 +41,11 @@ export interface ReconstituteAssetProps extends AssetProps {
 export interface UpdateAssetMetadataProps {
   serialNumber?: string | null;
   notes?: string | null;
+}
+
+export interface ChangeAssetOwnershipProps {
+  ownerId: string | null;
+  ownerContractSnapshot: AssetOwnerContractSnapshotPayload | null;
 }
 
 export class Asset extends AggregateRootBase {
@@ -87,11 +93,9 @@ export class Asset extends AggregateRootBase {
     }
 
     const ownerContractSnapshot = normalized.value.ownerId ? (props.ownerContractSnapshot ?? null) : null;
-    if (normalized.value.ownerId && !ownerContractSnapshot) {
-      return err(new InvalidAssetFieldError('ownerContractSnapshot', 'must be provided for third-party assets'));
-    }
-    if (normalized.value.ownerId && ownerContractSnapshot?.ownerId !== normalized.value.ownerId) {
-      return err(new InvalidAssetFieldError('ownerContractSnapshot.ownerId', 'must match asset ownerId'));
+    const ownership = validateOwnershipState(normalized.value.ownerId, ownerContractSnapshot);
+    if (ownership.isErr()) {
+      return err(ownership.error);
     }
 
     const asset = new Asset(props.id ?? randomUUID(), {
@@ -107,7 +111,7 @@ export class Asset extends AggregateRootBase {
         equipmentTypeId: asset.equipmentTypeId,
         status: asset.status,
         ownerId: asset.ownerId,
-        ownerContractSnapshot,
+        ownerContractSnapshot: ownership.value.ownerContractSnapshot,
       }),
     );
 
@@ -116,6 +120,30 @@ export class Asset extends AggregateRootBase {
 
   static reconstitute(props: ReconstituteAssetProps): Asset {
     return new Asset(props.id, { ...props });
+  }
+
+  changeOwner(props: ChangeAssetOwnershipProps): Result<boolean, AssetInventoryError> {
+    const ownerId = normalizeNullableString(props.ownerId);
+    const ownership = validateOwnershipState(ownerId, props.ownerContractSnapshot);
+    if (ownership.isErr()) {
+      return err(ownership.error);
+    }
+
+    if (ownership.value.ownerId === this.props.ownerId) {
+      return ok(false);
+    }
+
+    this.props.ownerId = ownership.value.ownerId;
+    this.recordDomainEvent(
+      new AssetOwnershipChangedDomainEvent({
+        tenantId: this.tenantId,
+        assetId: this.id,
+        ownerId: ownership.value.ownerId,
+        ownerContractSnapshot: ownership.value.ownerContractSnapshot,
+      }),
+    );
+
+    return ok(true);
   }
 
   updateMetadata(props: UpdateAssetMetadataProps): boolean {
@@ -179,6 +207,23 @@ export class Asset extends AggregateRootBase {
       notes: normalizeNullableString(props.notes),
     });
   }
+}
+
+function validateOwnershipState(
+  ownerId: string | null,
+  ownerContractSnapshot: AssetOwnerContractSnapshotPayload | null,
+): Result<ChangeAssetOwnershipProps, AssetInventoryError> {
+  if (!ownerId && ownerContractSnapshot) {
+    return err(new InvalidAssetFieldError('ownerContractSnapshot', 'must be absent for tenant-owned assets'));
+  }
+  if (ownerId && !ownerContractSnapshot) {
+    return err(new InvalidAssetFieldError('ownerContractSnapshot', 'must be provided for third-party assets'));
+  }
+  if (ownerId && ownerContractSnapshot?.ownerId !== ownerId) {
+    return err(new InvalidAssetFieldError('ownerContractSnapshot.ownerId', 'must match asset ownerId'));
+  }
+
+  return ok({ ownerId, ownerContractSnapshot });
 }
 
 function normalizeNullableString(value?: string | null): string | null {

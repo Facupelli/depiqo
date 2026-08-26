@@ -50,6 +50,7 @@ import { RentalNumberAllocator } from './persistence/rental-number.allocator';
 import { PrismaRentalRepository } from './persistence/prisma-rental.repository';
 import { RentalRepository } from './persistence/rental.repository';
 import { UpsertRentalAssetCandidateWhenAssetCreatedEventHandler } from './projections/upsert-rental-asset-candidate-when-asset-created.event-handler';
+import { UpdateRentalAssetCandidateWhenAssetOwnershipChangedEventHandler } from './projections/update-rental-asset-candidate-when-asset-ownership-changed.event-handler';
 import { UpdateRentalAssetCandidateWhenAssetRetiredEventHandler } from './projections/update-rental-asset-candidate-when-asset-retired.event-handler';
 import { RentalOwnerSplitCalculator } from './owner-split/rental-owner-split-calculator';
 import { AcceptedRentalPricingFacts } from './public-api/accepted-rental-pricing-facts.public-api';
@@ -111,6 +112,7 @@ import { RentalLifecycleFactsService } from './public-api/rental-lifecycle-facts
     GetStorefrontBranchesHandler,
     GetStorefrontRentalOfferAvailabilityHandler,
     UpsertRentalAssetCandidateWhenAssetCreatedEventHandler,
+    UpdateRentalAssetCandidateWhenAssetOwnershipChangedEventHandler,
     UpdateRentalAssetCandidateWhenAssetRetiredEventHandler,
     RentalOwnerSplitCalculator,
     { provide: AcceptedRentalPricingFacts, useClass: AcceptedRentalPricingFactsService },

@@ -11,8 +11,9 @@ type TransactionClient = Parameters<Parameters<PrismaService['client']['$transac
 export class AssetRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async loadByIdForTenant(input: { tenantId: string; assetId: string }): Promise<Asset | null> {
-    const record = await this.prisma.client.v2Asset.findFirst({
+  async loadByIdForTenant(input: { tenantId: string; assetId: string }, tx?: TransactionClient): Promise<Asset | null> {
+    const client = tx ?? this.prisma.client;
+    const record = await client.v2Asset.findFirst({
       where: { id: input.assetId, tenantId: input.tenantId },
     });
 
