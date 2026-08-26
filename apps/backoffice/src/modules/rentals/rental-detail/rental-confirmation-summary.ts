@@ -31,7 +31,7 @@ export function buildRentalConfirmationSummary(
 	rental: GetRentalDetailViewResponseDto,
 	timezone: string,
 ): RentalConfirmationSummary | null {
-	if (!rental.pricing || rental.pricing.kind === "LEGACY") {
+	if (!rental.pricing) {
 		return null;
 	}
 

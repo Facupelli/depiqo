@@ -1,5 +1,9 @@
 import { Injectable } from '@nestjs/common';
+import Decimal from 'decimal.js';
 import { err, ok, Result } from 'neverthrow';
+
+import { InsuranceCalculationService } from 'src/core/domain/services/insurance-calculation.service';
+import { TenantInsuranceOfferingTerms } from 'src/modules/tenant-management/public-api/tenant-insurance-offering-terms.public-api';
 
 import { PricingContextLoader } from './pricing-context-loader';
 import { createPricingDurationPolicy } from './pricing-duration-policy';
@@ -9,6 +13,8 @@ import {
   PricingCalculationError,
   PricingCalculationRequest,
   PricingCalculationResult,
+  PricingInsuranceCompositionRequest,
+  PricingInsuranceCompositionResult,
 } from '../public-api/pricing-calculation.public-api';
 import {
   PricingError,
@@ -27,7 +33,10 @@ export class PricingCalculationService extends PricingCalculation {
   private readonly calculator = new RentalPricingService();
   private readonly adjustmentApplier = new ManualPricingAdjustmentApplier();
 
-  constructor(private readonly contextLoader: PricingContextLoader) {
+  constructor(
+    private readonly contextLoader: PricingContextLoader,
+    private readonly tenantInsuranceOfferingTerms: TenantInsuranceOfferingTerms,
+  ) {
     super();
   }
 
@@ -44,29 +53,33 @@ export class PricingCalculationService extends PricingCalculation {
         couponCode: input.couponCode,
         rentalOfferIds: input.lines.map((line) => line.rentalOfferId),
       });
-      const selections = input.lines.map((line) => ({
-        rentalSelectionId: line.lineReference,
-        rentalOfferId: line.rentalOfferId,
-        rentableItemId: line.rentableItemId,
-        rentableItemName: line.rentalOfferId,
-        rentableItemKind: 'PRICEABLE_LINE',
-        categoryId: line.categoryId,
-        quantity: line.quantity,
-        ratePlan: context.ratePlansByRentalOfferId.get(line.rentalOfferId),
-      }));
-      if (selections.some((selection) => !selection.ratePlan)) {
-        return err(
-          new PricingCalculationError(
-            'pricing_calculation.configuration_unpriceable',
-            'Pricing configuration cannot produce a valid price.',
-          ),
-        );
+      const selections: PricingInput['selections'] = [];
+      for (const line of input.lines) {
+        const ratePlan = context.ratePlansByRentalOfferId.get(line.rentalOfferId);
+        if (!ratePlan) {
+          return err(
+            new PricingCalculationError(
+              'pricing_calculation.configuration_unpriceable',
+              'Pricing configuration cannot produce a valid price.',
+            ),
+          );
+        }
+        selections.push({
+          rentalSelectionId: line.lineReference,
+          rentalOfferId: line.rentalOfferId,
+          rentableItemId: line.rentableItemId,
+          rentableItemName: line.rentalOfferId,
+          rentableItemKind: 'PRICEABLE_LINE',
+          categoryId: line.categoryId,
+          quantity: line.quantity,
+          ratePlan,
+        });
       }
       const calculated = this.calculator.calculate({
         tenantId: input.tenantId,
         rentalPeriod: input.rentalPeriod,
         pricingConfig: createPricingDurationPolicy(input.calculationFacts),
-        selections: selections as PricingInput['selections'],
+        selections,
         customerId: input.customerId,
         calculationDate: calculatedAt,
         automaticPromotions: context.automaticPromotions,
@@ -74,10 +87,19 @@ export class PricingCalculationService extends PricingCalculation {
         coupon: context.coupon,
       });
       if (!input.targetTotalAdjustment) {
+        const breakdown = this.toBreakdown(calculated, selections);
+        const insurance = await this.calculateInsuranceForEquipmentPrice({
+          tenantId: input.tenantId,
+          insuranceSelected: input.insuranceSelected,
+          equipmentSubtotalBeforeDiscounts: breakdown.subtotal,
+          equipmentTotal: breakdown.total,
+        });
+        if (insurance.isErr()) return err(insurance.error);
         return ok({
           calculatedAt,
-          calculated: this.toBreakdown(calculated, selections as PricingInput['selections']),
-          final: this.toBreakdown(calculated, selections as PricingInput['selections']),
+          calculated: breakdown,
+          final: breakdown,
+          ...insurance.value,
         });
       }
       let target: Money;
@@ -102,10 +124,20 @@ export class PricingCalculationService extends PricingCalculation {
         pricingResult: calculated,
         targetTotalAdjustment: { targetTotal: input.targetTotalAdjustment.targetTotal },
       });
+      const calculatedBreakdown = this.toBreakdown(calculated, selections);
+      const finalBreakdown = this.toBreakdown(adjusted.pricingResult, selections);
+      const insurance = await this.calculateInsuranceForEquipmentPrice({
+        tenantId: input.tenantId,
+        insuranceSelected: input.insuranceSelected,
+        equipmentSubtotalBeforeDiscounts: calculatedBreakdown.subtotal,
+        equipmentTotal: finalBreakdown.total,
+      });
+      if (insurance.isErr()) return err(insurance.error);
       return ok({
         calculatedAt,
-        calculated: this.toBreakdown(calculated, selections as PricingInput['selections']),
-        final: this.toBreakdown(adjusted.pricingResult, selections as PricingInput['selections']),
+        calculated: calculatedBreakdown,
+        final: finalBreakdown,
+        ...insurance.value,
         targetTotalAdjustment: {
           targetTotal: adjusted.targetTotalAdjustment.targetTotal,
           previousTotal: adjusted.targetTotalAdjustment.previousTotal,
@@ -131,6 +163,45 @@ export class PricingCalculationService extends PricingCalculation {
         );
       throw error;
     }
+  }
+
+  async calculateInsuranceForEquipmentPrice(
+    input: PricingInsuranceCompositionRequest,
+  ): Promise<Result<PricingInsuranceCompositionResult, PricingCalculationError>> {
+    if (
+      !input.tenantId.trim() ||
+      !isValidDecimal(input.equipmentSubtotalBeforeDiscounts) ||
+      !isValidDecimal(input.equipmentTotal)
+    ) {
+      return err(
+        new PricingCalculationError('pricing_calculation.invalid_request', 'Insurance pricing input is invalid.'),
+      );
+    }
+
+    const offeringTerms = await this.tenantInsuranceOfferingTerms.getTenantInsuranceOfferingTerms({
+      tenantId: input.tenantId,
+    });
+    if (offeringTerms.isErr()) {
+      return err(
+        new PricingCalculationError(
+          'pricing_calculation.configuration_unpriceable',
+          'Insurance pricing configuration is unavailable.',
+        ),
+      );
+    }
+
+    const terms = InsuranceCalculationService.resolveTerms(offeringTerms.value, input.insuranceSelected);
+    const calculation = InsuranceCalculationService.calculate(input.equipmentSubtotalBeforeDiscounts, terms);
+    const totalBeforeInsurance = new Decimal(input.equipmentTotal).toFixed(2);
+
+    return ok({
+      insurance: {
+        applied: calculation.insuranceApplied,
+        amount: calculation.insuranceAmount.toFixed(2),
+      },
+      totalBeforeInsurance,
+      total: new Decimal(totalBeforeInsurance).plus(calculation.insuranceAmount).toFixed(2),
+    });
   }
 
   private validate(input: PricingCalculationRequest): PricingCalculationError | null {
@@ -177,8 +248,10 @@ export class PricingCalculationService extends PricingCalculation {
       chargedDays: result.chargedDays,
       durationPolicy: result.durationPolicySnapshot,
       lines: result.lines.map((line) => {
-        const source = selections.find((selection) => selection.rentalSelectionId === line.rentalSelectionId)!;
-        const tier = source.ratePlan.tiers.find((candidate) => candidate.id === line.appliedTierId)!;
+        const source = selections.find((selection) => selection.rentalSelectionId === line.rentalSelectionId);
+        if (!source) throw new Error(`Pricing result references unknown selection ${line.rentalSelectionId}.`);
+        const tier = source.ratePlan.tiers.find((candidate) => candidate.id === line.appliedTierId);
+        if (!tier) throw new Error(`Pricing result references unknown tier ${line.appliedTierId}.`);
         return {
           lineReference: line.rentalSelectionId,
           rentalOfferId: line.rentalOfferId,
@@ -204,5 +277,13 @@ export class PricingCalculationService extends PricingCalculation {
       appliedPromotions: result.appliedPromotions,
       ...(result.appliedCoupon ? { appliedCoupon: result.appliedCoupon } : {}),
     };
+  }
+}
+
+function isValidDecimal(value: string): boolean {
+  try {
+    return new Decimal(value).isFinite();
+  } catch {
+    return false;
   }
 }

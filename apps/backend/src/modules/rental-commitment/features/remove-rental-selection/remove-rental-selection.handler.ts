@@ -19,7 +19,6 @@ import {
   RentalSelectionNotFoundError,
 } from '../../domain/errors/rental-commitment.errors';
 import { RentalStatus } from '../../domain/rental-status';
-import { AcceptedRentalPricingSnapshotV1 } from '../../domain/value-objects/accepted-pricing-snapshot.type';
 import { getConfirmedPriceSnapshotForOwnerSplits } from '../../owner-split/confirmed-price-snapshot-for-owner-splits';
 import { RentalOwnerSplitCalculator } from '../../owner-split/rental-owner-split-calculator';
 import { RentalRepository } from '../../persistence/rental.repository';
@@ -68,7 +67,7 @@ export class RemoveRentalSelectionHandler implements ICommandHandler<
       );
     }
 
-    const previous = rental.confirmedPriceSnapshot!.toJSON() as AcceptedRentalPricingSnapshotV1;
+    const previous = rental.confirmedPriceSnapshot!.snapshot;
     const previousLine = new Map(previous.final.lines.map((line) => [line.rentalSelectionId, line]));
     const remainingSelections = rental.currentSelections.filter((selection) => selection.id !== selectionId);
     const calculated = await this.pricing.calculateProposedPrice({
@@ -80,6 +79,7 @@ export class RemoveRentalSelectionHandler implements ICommandHandler<
         dailyBillingPolicy: billing.value.dailyBillingPolicy,
         weekendCountsAsOne: billing.value.weekendCountsAsOne,
       },
+      insuranceSelected: rental.insuranceSelected ?? false,
       lines: remainingSelections.map((selection) => ({
         lineReference: selection.id,
         rentalOfferId: selection.rentalOfferId,

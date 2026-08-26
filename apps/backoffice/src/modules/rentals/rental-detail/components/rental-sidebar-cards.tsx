@@ -21,7 +21,6 @@ import {
 	parsePlainDecimal,
 } from "../edit-price-adjustment/decimal-string";
 import { EditPriceAdjustmentDialog } from "../edit-price-adjustment/edit-price-adjustment-dialog";
-import type { GetRentalDetailViewResponseDto } from "../get-rental-detail-view/get-rental-detail-view.schema";
 import { useRentalDetailContext } from "../rental-detail.context";
 import {
 	formatRentalDetailDateBlock,
@@ -235,10 +234,6 @@ function RentalFinancialsCard() {
 		);
 	}
 
-	if (pricing.kind === "LEGACY") {
-		return <RentalLegacyFinancialsCard pricing={pricing} />;
-	}
-
 	const manualAdjustment = pricing.manualPricingAdjustment ?? null;
 	const canEditPrice =
 		rental.status === "CONFIRMED" && Date.now() < Date.parse(rental.period.end);
@@ -318,6 +313,13 @@ function RentalFinancialsCard() {
 							</p>
 						) : null}
 					</div>
+					{pricing.insurance.applied ? (
+						<MoneyRow
+							label="Seguro de equipos"
+							value={pricing.insurance.amount}
+							currency={pricing.currency}
+						/>
+					) : null}
 					<div className="flex items-center justify-between">
 						<span className="text-sm text-neutral-500">Días cobrados</span>
 						<span className="font-mono text-sm text-neutral-950">
@@ -377,98 +379,6 @@ function RentalFinancialsCard() {
 				) : null}
 			</section>
 		</>
-	);
-}
-
-function RentalLegacyFinancialsCard({
-	pricing,
-}: {
-	pricing: Extract<
-		NonNullable<GetRentalDetailViewResponseDto["pricing"]>,
-		{ kind: "LEGACY" }
-	>;
-}) {
-	const [showItems, setShowItems] = useState(false);
-	const hasDiscounts = Number(pricing.discountTotal) !== 0;
-
-	return (
-		<section className="bg-white border border-neutral-200 rounded-lg p-5">
-			<button
-				type="button"
-				onClick={() => setShowItems((previous) => !previous)}
-				className="flex w-full items-start justify-between gap-4 text-left"
-			>
-				<div>
-					<SidebarHeader
-						icon={<ReceiptText className="size-4" />}
-						title="Resumen financiero"
-					/>
-					<p className="text-xs text-neutral-500">Resumen histórico</p>
-				</div>
-				<ChevronDown
-					className={`size-4 transition-transform text-neutral-400 ${showItems ? "rotate-180" : ""}`}
-				/>
-			</button>
-			<div className="flex items-baseline justify-between pt-3 pb-3">
-				<span className="text-sm font-bold text-neutral-950">Total</span>
-				<span className="font-mono text-xl font-bold text-neutral-950 tracking-tight">
-					{formatMoney(pricing.total, pricing.currency)}
-				</span>
-			</div>
-			<div className="border-t border-dashed border-neutral-200 pt-3 space-y-2">
-				<MoneyRow
-					label="Subtotal antes de descuentos"
-					value={pricing.subtotalBeforeDiscounts}
-					currency={pricing.currency}
-				/>
-				{hasDiscounts ? (
-					<MoneyRow
-						label="Descuentos"
-						value={pricing.discountTotal}
-						currency={pricing.currency}
-						tone="success"
-					/>
-				) : null}
-				{pricing.insuranceApplied ? (
-					<MoneyRow
-						label="Seguro de equipos"
-						value={pricing.insuranceAmount}
-						currency={pricing.currency}
-					/>
-				) : null}
-			</div>
-			{showItems ? (
-				<div className="border-t border-neutral-100 mt-3 pt-3">
-					{pricing.lines.map((line) => (
-						<div
-							key={line.rentalSelectionId}
-							className="border-b border-neutral-100 py-2"
-						>
-							<div className="flex items-center justify-between gap-3">
-								<span className="text-sm text-neutral-500">{line.label}</span>
-								<span className="font-mono text-sm text-neutral-950">
-									{formatMoney(line.finalPrice, pricing.currency)}
-								</span>
-							</div>
-							{line.discounts.map((discount) => (
-								<div
-									key={`${discount.label}-${discount.amount}`}
-									className="flex items-center justify-between pl-3"
-								>
-									<span className="text-[11px] text-neutral-400">
-										{discount.label}
-									</span>
-									<span className="font-mono text-[11px] text-emerald-600">
-										{formatMoney(discount.amount, pricing.currency)}
-									</span>
-								</div>
-							))}
-						</div>
-					))}
-					<OwnerPayoutsSection />
-				</div>
-			) : null}
-		</section>
 	);
 }
 

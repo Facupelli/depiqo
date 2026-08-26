@@ -21,7 +21,6 @@ import {
 import { RentalStatus } from '../../domain/rental-status';
 import { Rental } from '../../domain/rental.aggregate';
 import { AssetId } from '../../domain/types/rental-commitment-ids';
-import { AcceptedRentalPricingSnapshotV1 } from '../../domain/value-objects/accepted-pricing-snapshot.type';
 import { JsonValue } from '../../domain/value-objects/json-snapshot.value-object';
 import { RentalPeriod } from '../../domain/value-objects/rental-period.value-object';
 import { getConfirmedPriceSnapshotForOwnerSplits } from '../../owner-split/confirmed-price-snapshot-for-owner-splits';
@@ -218,7 +217,7 @@ export class ChangeRentalPeriodHandler implements ICommandHandler<ChangeRentalPe
       return err(
         this.error('rental_commitment.invalid_pricing_input', 'Rental pricing facts are unavailable.', context),
       );
-    const previous = rental.confirmedPriceSnapshot!.toJSON() as AcceptedRentalPricingSnapshotV1;
+    const previous = rental.confirmedPriceSnapshot!.snapshot;
     const previousLine = new Map(previous.final.lines.map((line) => [line.rentalSelectionId, line]));
     const calculated = await this.pricing.calculateProposedPrice({
       tenantId: rental.tenantId,
@@ -229,6 +228,7 @@ export class ChangeRentalPeriodHandler implements ICommandHandler<ChangeRentalPe
         dailyBillingPolicy: billing.value.dailyBillingPolicy,
         weekendCountsAsOne: billing.value.weekendCountsAsOne,
       },
+      insuranceSelected: rental.insuranceSelected ?? false,
       lines: rental.currentSelections.map((selection) => ({
         lineReference: selection.id,
         rentalOfferId: selection.rentalOfferId,

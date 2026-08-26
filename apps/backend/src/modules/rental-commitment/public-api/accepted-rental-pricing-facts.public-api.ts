@@ -18,10 +18,7 @@ export interface AcceptedRentalPricing {
   billingUnit?: AcceptedRentalPricingBillingUnit;
 }
 
-export type AcceptedRentalPricingFactsErrorCode =
-  | 'RentalNotFound'
-  | 'AcceptedPricingSnapshotInvalid'
-  | 'AcceptedPricingUnitsIncomplete';
+export type AcceptedRentalPricingFactsErrorCode = 'RentalNotFound' | 'AcceptedPricingSnapshotInvalid';
 
 export interface AcceptedRentalPricingFactsError {
   code: AcceptedRentalPricingFactsErrorCode;

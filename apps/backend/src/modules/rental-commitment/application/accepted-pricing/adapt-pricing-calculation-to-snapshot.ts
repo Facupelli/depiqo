@@ -3,9 +3,9 @@ import { PricingCalculationResult } from 'src/modules/pricing/public-api/pricing
 import {
   ACCEPTED_RENTAL_PRICING_SNAPSHOT_SCHEMA,
   ACCEPTED_RENTAL_PRICING_SNAPSHOT_VERSION,
-  AcceptedRentalPricingBreakdownV1,
+  AcceptedRentalPricingBreakdown,
   AcceptedRentalPricingContext,
-  AcceptedRentalPricingSnapshotV1,
+  AcceptedRentalPricingSnapshot,
 } from '../../domain/value-objects/accepted-pricing-snapshot.type';
 
 type RentalManualPricingAdjustment = { targetTotal: string; setByTenantUserId: string; reason?: string };
@@ -15,7 +15,7 @@ export function adaptPricingCalculationToSnapshot(input: {
   context: AcceptedRentalPricingContext;
   manualPricingAdjustment?: RentalManualPricingAdjustment;
   lineDisplayNames?: Record<string, string>;
-}): AcceptedRentalPricingSnapshotV1 {
+}): AcceptedRentalPricingSnapshot {
   return {
     schema: ACCEPTED_RENTAL_PRICING_SNAPSHOT_SCHEMA,
     version: ACCEPTED_RENTAL_PRICING_SNAPSHOT_VERSION,
@@ -28,6 +28,9 @@ export function adaptPricingCalculationToSnapshot(input: {
       input.result.calculatedAt,
       input.lineDisplayNames,
     ),
+    insurance: input.result.insurance,
+    totalBeforeInsurance: input.result.totalBeforeInsurance,
+    total: input.result.total,
     ...(input.result.targetTotalAdjustment && input.manualPricingAdjustment
       ? {
           manualPricingAdjustment: {
@@ -47,7 +50,7 @@ function toPersistedBreakdown(
   adjustment?: RentalManualPricingAdjustment,
   appliedAt?: Date,
   lineDisplayNames?: Record<string, string>,
-): AcceptedRentalPricingBreakdownV1 {
+): AcceptedRentalPricingBreakdown {
   return {
     currency: breakdown.currency,
     subtotal: breakdown.subtotal,
@@ -70,7 +73,12 @@ function toPersistedBreakdown(
       subtotal: line.subtotal,
       discountTotal: line.discountTotal,
       total: line.total,
-      appliedAdjustments: line.appliedAdjustments,
+      appliedAdjustments: line.appliedAdjustments.map((adjustment) => {
+        if (adjustment.type !== 'PROMOTION' && adjustment.type !== 'COUPON') {
+          throw new Error(`Pricing returned unsupported adjustment type ${adjustment.type}.`);
+        }
+        return { ...adjustment, type: adjustment.type };
+      }),
       ...(line.targetTotalAllocation && adjustment && appliedAt
         ? {
             manualPricingAdjustment: {

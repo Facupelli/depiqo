@@ -1,7 +1,11 @@
 import Decimal from 'decimal.js';
 import { z } from 'zod';
 
-import type { AcceptedRentalPricingSnapshotV1 } from '../../modules/rental-commitment/domain/value-objects/accepted-pricing-snapshot.type';
+import {
+  ACCEPTED_RENTAL_PRICING_SNAPSHOT_SCHEMA,
+  ACCEPTED_RENTAL_PRICING_SNAPSHOT_VERSION,
+  type AcceptedRentalPricingSnapshot,
+} from '../../modules/rental-commitment/domain/value-objects/accepted-pricing-snapshot.type';
 
 const LegacyFinancialSnapshotSchema = z.object({
   currency: z.string().min(1),
@@ -85,7 +89,7 @@ export type BuildLegacyV2PriceSnapshotInput = {
  */
 export function buildLegacyV2PriceSnapshot(
   input: BuildLegacyV2PriceSnapshotInput,
-): AcceptedRentalPricingSnapshotV1 {
+): AcceptedRentalPricingSnapshot {
   const financial = parseForOrder(LegacyFinancialSnapshotSchema, input.financialSnapshot, input.orderId, 'financialSnapshot');
   if (input.effectiveTimezone.trim().length === 0) {
     fail(input.orderId, 'effective migration timezone must be a non-empty string');
@@ -147,6 +151,9 @@ export function buildLegacyV2PriceSnapshot(
     money(financial.total),
     money(financial.itemsSubtotal).plus(financial.insuranceAmount),
   );
+  if (!financial.insuranceApplied) {
+    assertMoneyIdentity(input.orderId, 'non-applied insurance amount', money(financial.insuranceAmount), money('0'));
+  }
 
   const durationPolicySnapshot = {
     timezone: input.effectiveTimezone,
@@ -182,9 +189,9 @@ export function buildLegacyV2PriceSnapshot(
   const currency = input.currencyOverride ?? financial.currency;
   const overrides = parsedItems.filter((item) => item.override !== null);
 
-  const snapshot: AcceptedRentalPricingSnapshotV1 = {
-    schema: 'v2.rental-price-snapshot',
-    version: 1,
+  const snapshot: AcceptedRentalPricingSnapshot = {
+    schema: ACCEPTED_RENTAL_PRICING_SNAPSHOT_SCHEMA,
+    version: ACCEPTED_RENTAL_PRICING_SNAPSHOT_VERSION,
     calculatedAtIso: input.calculatedAt.toISOString(),
     context: 'CONFIRMED',
     calculated: {
@@ -207,6 +214,12 @@ export function buildLegacyV2PriceSnapshot(
       lines: finalLines,
       appliedPromotions,
     },
+    insurance: {
+      applied: financial.insuranceApplied,
+      amount: money(financial.insuranceAmount).toFixed(2),
+    },
+    totalBeforeInsurance: finalTotal.toString(),
+    total: money(financial.total).toString(),
   };
 
   if (overrides.length > 0) {
@@ -301,7 +314,7 @@ function buildLine(
     representedDiscounts: RepresentedLegacyDiscount[];
   },
   final: boolean,
-): AcceptedRentalPricingSnapshotV1['final']['lines'][number] {
+): AcceptedRentalPricingSnapshot['final']['lines'][number] {
   const subtotal = money(item.price.basePrice);
   const calculatedTotal = money(item.price.finalPrice);
   const total = final && item.override ? money(item.override.finalPrice) : calculatedTotal;
@@ -351,8 +364,8 @@ function buildLine(
 function buildAppliedPromotions(
   orderId: string,
   items: Array<{ representedDiscounts: RepresentedLegacyDiscount[] }>,
-): AcceptedRentalPricingSnapshotV1['final']['appliedPromotions'] {
-  const promotions = new Map<string, AcceptedRentalPricingSnapshotV1['final']['appliedPromotions'][number]>();
+): AcceptedRentalPricingSnapshot['final']['appliedPromotions'] {
+  const promotions = new Map<string, AcceptedRentalPricingSnapshot['final']['appliedPromotions'][number]>();
   for (const { representedDiscounts } of items) {
     for (const discount of representedDiscounts) {
       const candidate = {

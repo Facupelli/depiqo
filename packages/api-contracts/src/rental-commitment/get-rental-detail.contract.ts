@@ -163,11 +163,18 @@ export const GetRentalDetailAppliedCouponSchema = z.object({
 	amount: z.string(),
 });
 
+export const GetRentalDetailInsuranceSchema = z.object({
+	applied: z.boolean(),
+	amount: z.string(),
+});
+
 export const GetRentalDetailV2PricingSchema = z.object({
 	kind: z.literal("V2"),
 	currency: z.string(),
 	subtotal: z.string(),
 	discountTotal: z.string(),
+	insurance: GetRentalDetailInsuranceSchema,
+	totalBeforeInsurance: z.string(),
 	total: z.string(),
 	chargedDays: z.number(),
 	durationPolicySnapshot: GetRentalDetailDurationPolicySnapshotSchema,
@@ -178,35 +185,7 @@ export const GetRentalDetailV2PricingSchema = z.object({
 		GetRentalDetailManualPricingAdjustmentSchema.nullable(),
 });
 
-export const GetRentalDetailLegacyPricingDiscountSchema = z.object({
-	label: z.string(),
-	amount: z.string(),
-});
-
-export const GetRentalDetailLegacyPricingLineSchema = z.object({
-	rentalSelectionId: z.string(),
-	label: z.string(),
-	basePrice: z.string(),
-	finalPrice: z.string(),
-	discounts: z.array(GetRentalDetailLegacyPricingDiscountSchema),
-});
-
-export const GetRentalDetailLegacyPricingSchema = z.object({
-	kind: z.literal("LEGACY"),
-	currency: z.string(),
-	subtotalBeforeDiscounts: z.string(),
-	discountTotal: z.string(),
-	itemsSubtotal: z.string(),
-	insuranceApplied: z.boolean(),
-	insuranceAmount: z.string(),
-	total: z.string(),
-	lines: z.array(GetRentalDetailLegacyPricingLineSchema),
-});
-
-export const GetRentalDetailPricingSchema = z.discriminatedUnion("kind", [
-	GetRentalDetailV2PricingSchema,
-	GetRentalDetailLegacyPricingSchema,
-]);
+export const GetRentalDetailPricingSchema = GetRentalDetailV2PricingSchema;
 
 export const GetRentalDetailOwnerPayoutLineSchema = z.object({
 	rentalDemandLineId: z.string(),
@@ -310,17 +289,11 @@ export type GetRentalDetailAppliedPromotionDto = z.infer<
 export type GetRentalDetailAppliedCouponDto = z.infer<
 	typeof GetRentalDetailAppliedCouponSchema
 >;
+export type GetRentalDetailInsuranceDto = z.infer<
+	typeof GetRentalDetailInsuranceSchema
+>;
 export type GetRentalDetailV2PricingDto = z.infer<
 	typeof GetRentalDetailV2PricingSchema
->;
-export type GetRentalDetailLegacyPricingDiscountDto = z.infer<
-	typeof GetRentalDetailLegacyPricingDiscountSchema
->;
-export type GetRentalDetailLegacyPricingLineDto = z.infer<
-	typeof GetRentalDetailLegacyPricingLineSchema
->;
-export type GetRentalDetailLegacyPricingDto = z.infer<
-	typeof GetRentalDetailLegacyPricingSchema
 >;
 export type GetRentalDetailPricingDto = z.infer<
 	typeof GetRentalDetailPricingSchema

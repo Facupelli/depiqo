@@ -183,6 +183,7 @@ export class EditUnconfirmedRentalHandler implements ICommandHandler<
         dailyBillingPolicy: billingPreferences.value.dailyBillingPolicy,
         weekendCountsAsOne: billingPreferences.value.weekendCountsAsOne,
       },
+      insuranceSelected: insuranceSelected ?? false,
       lines: selections.map((selection) => ({
         lineReference: selection.id,
         rentalOfferId: selection.rentalOfferId,

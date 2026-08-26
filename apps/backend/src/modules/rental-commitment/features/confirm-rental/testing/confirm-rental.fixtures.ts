@@ -149,7 +149,17 @@ export class ConfirmRentalFixtures {
   priceSnapshot(selectionIds: readonly string[]): Prisma.InputJsonValue {
     const lines = selectionIds.map((rentalSelectionId) => ({
       rentalSelectionId,
+      rentalOfferId: `offer-${rentalSelectionId}`,
+      rentableItemId: `item-${rentalSelectionId}`,
+      rentableItemName: 'Equipment',
+      quantity: 1,
+      chargedUnits: 1,
+      billingUnit: 'DAY' as const,
+      pricePerUnit: '100.00',
+      subtotal: '100.00',
+      discountTotal: '0.00',
       total: '100.00',
+      appliedAdjustments: [],
     }));
     const payload = {
       currency: 'USD',
@@ -159,16 +169,24 @@ export class ConfirmRentalFixtures {
       chargedDays: 1,
       lines,
       appliedPromotions: [],
-      durationPolicySnapshot: { dailyBillingPolicy: 'CALENDAR_DAY' },
+      durationPolicySnapshot: {
+        timezone: 'UTC',
+        dailyBillingPolicy: 'IGNORE_PARTIAL_DAY' as const,
+        weekendCountsAsOne: false,
+        minimumChargedDays: 0,
+      },
     };
 
     return {
       schema: 'v2.rental-price-snapshot',
-      version: 1,
+      version: 2,
       calculatedAtIso: '2030-01-01T00:00:00.000Z',
       context: 'DRAFT',
       calculated: payload,
       final: payload,
+      insurance: { applied: false, amount: '0.00' },
+      totalBeforeInsurance: '100.00',
+      total: '100.00',
     };
   }
 }

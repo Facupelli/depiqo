@@ -24,17 +24,40 @@ const pricePayload = {
   discountTotal: '0.00',
   total: '100.00',
   chargedDays: 1,
-  lines: [{ rentalSelectionId: 'selection-1', total: '100.00' }],
+  lines: [
+    {
+      rentalSelectionId: 'selection-1',
+      rentalOfferId: 'offer-1',
+      rentableItemId: 'item-1',
+      rentableItemName: 'Camera',
+      quantity: 1,
+      chargedUnits: 1,
+      billingUnit: 'DAY' as const,
+      pricePerUnit: '100.00',
+      subtotal: '100.00',
+      discountTotal: '0.00',
+      total: '100.00',
+      appliedAdjustments: [],
+    },
+  ],
   appliedPromotions: [],
-  durationPolicySnapshot: { dailyBillingPolicy: 'CALENDAR_DAY' },
+  durationPolicySnapshot: {
+    timezone: 'UTC',
+    dailyBillingPolicy: 'IGNORE_PARTIAL_DAY' as const,
+    weekendCountsAsOne: false,
+    minimumChargedDays: 0,
+  },
 };
 const confirmedPriceSnapshot = {
   schema: 'v2.rental-price-snapshot',
-  version: 1,
+  version: 2,
   calculatedAtIso: '2030-01-01T09:00:00.000Z',
   context: 'CONFIRMED',
   calculated: pricePayload,
   final: pricePayload,
+  insurance: { applied: false, amount: '0.00' },
+  totalBeforeInsurance: '100.00',
+  total: '100.00',
 };
 
 function assignment(params: { id: string; assetId: string; effectiveFrom: Date; effectiveUntil?: Date }) {

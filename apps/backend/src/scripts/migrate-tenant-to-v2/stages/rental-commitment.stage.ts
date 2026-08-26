@@ -16,7 +16,6 @@ import { v5 as uuidv5 } from "uuid";
 import Decimal from "decimal.js";
 
 import { ConfirmedPriceSnapshot } from "../../../modules/rental-commitment/domain/value-objects/confirmed-price-snapshot.value-object";
-import { parseV2RentalDetailPricing } from "../../../modules/rental-commitment/application/accepted-pricing/accepted-pricing-snapshot.decoder";
 import {
 	buildLegacyV2PriceSnapshot,
 	type DiscountMetadataOmission,
@@ -440,12 +439,7 @@ function buildAndValidateConfirmedPriceSnapshot(input: {
 			`Converted pricing for order ${input.order.id} failed ConfirmedPriceSnapshot validation: ${domainValidation.error.message}`,
 		);
 	}
-	if (!parseV2RentalDetailPricing(snapshot)) {
-		throw new Error(
-			`Converted pricing for order ${input.order.id} failed the full V2 accepted-pricing decoder`,
-		);
-	}
-	return snapshot as unknown as Prisma.JsonValue;
+	return domainValidation.value.toJSON() as Prisma.JsonValue;
 }
 
 function readHistoricalTierFacts(orderItemId: string, value: Prisma.JsonValue): {

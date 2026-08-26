@@ -142,6 +142,7 @@ export class CreateDraftRentalService implements ICommandHandler<
         dailyBillingPolicy: billingPreferences.value.dailyBillingPolicy,
         weekendCountsAsOne: billingPreferences.value.weekendCountsAsOne,
       },
+      insuranceSelected: command.insuranceSelected ?? false,
       lines: rentalSelectionsDraft.map((selection) => ({
         lineReference: selection.rentalSelectionId,
         rentalOfferId: selection.rentalOfferId,

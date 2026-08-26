@@ -261,7 +261,7 @@ describe('CreateConfirmedRental integration', () => {
     expect(state.blocks[0].period).toContain('2030-01-07 10:00:00+00');
     expect(state.blocks[0].period).toContain('2030-01-07 12:00:00+00');
     expect(state.rental.priceSnapshot).toEqual(
-      expect.objectContaining({ schema: 'v2.rental-price-snapshot', version: 1, context: 'CONFIRMED' }),
+      expect.objectContaining({ schema: 'v2.rental-price-snapshot', version: 2, context: 'CONFIRMED' }),
     );
     expect(state.rental.ownerSplits).toHaveLength(0);
   });

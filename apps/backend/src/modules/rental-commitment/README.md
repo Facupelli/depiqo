@@ -105,7 +105,7 @@ The confirmed price snapshot is the accepted pricing result for a rental.
 
 Pricing calculates proposed price breakdowns. Rental Commitment translates a proposed calculation at its application boundary and owns the accepted durable snapshot once the rental is confirmed, including its schema identifier, versioning, lifecycle context, manual-adjustment actor/reason audit metadata, validation, and historical decoding.
 
-The snapshot must preserve enough information to explain the accepted price after rate plans, promotions, coupons, or tenant settings change.
+The snapshot must preserve enough information to explain the accepted price after rate plans, promotions, coupons, or tenant settings change. Version 2 keeps calculated and final equipment totals separate from persisted insurance facts: `final.total` is the accepted equipment total, while the snapshot root `total` is the customer accepted total including insurance. Manual target-total adjustments apply only to equipment pricing and preserve the accepted insurance rate and amount.
 
 ### Fulfillment Method and Delivery Details
 
@@ -244,7 +244,7 @@ Pricing owns current pricing rules and proposed price calculations.
 
 `CommittedRentalSelectionsAndDemand` publishes accepted Rental-owned commercial selections and derived operational demand. Selections retain their offer and rentable-item references, accepted item name/kind snapshots, and quantities. Demand lines retain their source selection relationship, equipment-type references, accepted Equipment Type name snapshots, and quantities. It does not refresh those names from Catalog or Asset Inventory and does not currently publish accessory selections.
 
-Rental Commitment owns the confirmed price snapshot and must not query Pricing tables later to reconstruct an accepted price. Its `AcceptedRentalPricingFacts` capability publishes only accepted total money, charged units, and an optional common billing unit from that persisted snapshot. Consumers must not use it to recalculate pricing or depend on Pricing internals.
+Rental Commitment owns the confirmed price snapshot and must not query Pricing tables later to reconstruct an accepted price. Runtime accepts only the current snapshot version produced by normal pricing flows or the legacy-to-V2 migration. Its `AcceptedRentalPricingFacts` capability publishes only the insurance-inclusive customer accepted total money, charged units, and an optional common billing unit from that persisted snapshot. Consumers must not use it to recalculate pricing or depend on Pricing internals.
 
 `RentalPhysicalAssignments` publishes only the current/open Rental Commitment assignment relationship between each demand line or accessory selection and its ordered assigned Asset references. It does not publish closed assignment history. It publishes neither demand presentation facts nor Asset Inventory profile facts. Consumers resolve current physical display facts, such as serial numbers, through Asset Inventory's display-facts capability.
 

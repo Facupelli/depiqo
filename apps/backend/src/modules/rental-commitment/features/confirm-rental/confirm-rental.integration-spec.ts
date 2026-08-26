@@ -182,21 +182,41 @@ describe('ConfirmRental integration', () => {
       discountTotal: '0.00',
       total: '100.00',
       chargedDays: 1,
-      lines: [{ rentalSelectionId: scenario.rental.selectionIds[0], total: '100.00' }],
+      lines: [
+        {
+          rentalSelectionId: scenario.rental.selectionIds[0],
+          rentalOfferId: 'offer-1',
+          rentableItemId: 'item-1',
+          rentableItemName: 'Equipment',
+          quantity: 1,
+          chargedUnits: 1,
+          billingUnit: 'DAY',
+          pricePerUnit: '100.00',
+          subtotal: '100.00',
+          discountTotal: '0.00',
+          total: '100.00',
+          appliedAdjustments: [],
+        },
+      ],
       appliedPromotions: [],
-      durationPolicySnapshot: { dailyBillingPolicy: 'CALENDAR_DAY' },
+      durationPolicySnapshot: {
+        timezone: 'UTC',
+        dailyBillingPolicy: 'IGNORE_PARTIAL_DAY',
+        weekendCountsAsOne: false,
+        minimumChargedDays: 0,
+      },
     };
     const final = {
       ...calculated,
       total: '80.00',
-      lines: [{ rentalSelectionId: scenario.rental.selectionIds[0], total: '80.00' }],
+      lines: calculated.lines.map((line) => ({ ...line, total: '80.00' })),
     };
     await prisma.client.v2Rental.update({
       where: { id: scenario.rental.rentalId },
       data: {
         priceSnapshot: {
           schema: 'v2.rental-price-snapshot',
-          version: 1,
+          version: 2,
           calculatedAtIso: '2030-01-01T00:00:00.000Z',
           context: 'DRAFT',
           calculated,
@@ -210,6 +230,9 @@ describe('ConfirmRental integration', () => {
             setByTenantUserId: 'test-user',
             setAtIso: '2030-01-01T00:00:00.000Z',
           },
+          insurance: { applied: false, amount: '0.00' },
+          totalBeforeInsurance: '80.00',
+          total: '80.00',
         },
       },
     });
