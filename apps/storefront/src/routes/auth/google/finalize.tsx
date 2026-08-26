@@ -37,7 +37,7 @@ function CustomerGoogleFinalizePage() {
 			})
 			.catch(() => {
 				if (active)
-					setError("El acceso con Google expiró o no pudo completarse.");
+					setError("El acceso con Google expir├│ o no pudo completarse.");
 			});
 
 		return () => {
@@ -49,10 +49,10 @@ function CustomerGoogleFinalizePage() {
 		return (
 			<main className="grid min-h-svh place-items-center bg-neutral-100 px-4 py-12">
 				<section className="w-full max-w-md space-y-5 rounded-xl border bg-white p-6 text-center shadow-sm">
-					<h1 className="text-2xl font-bold">No pudimos iniciar sesión</h1>
+					<h1 className="text-2xl font-bold">No pudimos iniciar sesi├│n</h1>
 					<FieldError errors={[{ message: error }]} />
 					<Button className="w-full" render={<Link to="/login" />}>
-						Volver a iniciar sesión
+						Volver a iniciar sesi├│n
 					</Button>
 				</section>
 			</main>
@@ -62,11 +62,12 @@ function CustomerGoogleFinalizePage() {
 	return (
 		<main className="grid min-h-svh place-items-center bg-neutral-100 px-4 py-12">
 			<section className="w-full max-w-md space-y-3 rounded-xl border bg-white p-6 text-center shadow-sm">
-				<h1 className="text-2xl font-bold">Iniciando sesión</h1>
+				<h1 className="text-2xl font-bold">Iniciando sesi├│n</h1>
 				<p className="text-sm text-muted-foreground">
-					Estamos preparando tu sesión segura.
+					Redirigiendo...
 				</p>
 			</section>
 		</main>
 	);
 }
+
