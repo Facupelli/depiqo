@@ -22,6 +22,7 @@ import { Box, MapPin, PackageOpen, Pencil, ShoppingBag } from "lucide-react";
 import { type ReactNode, useId, useState } from "react";
 import { PageBreadcrumb } from "@/components/detail-id-breadcrumb";
 import { buildR2PublicUrl } from "@/lib/r2-public-url";
+import { ChangeAssetOwnerDialog } from "@/modules/inventory/assets/change-asset-owner/change-asset-owner-dialog";
 import { EditAssetDialog } from "@/modules/inventory/assets/edit-asset/edit-asset-dialog";
 import { useRetireAsset } from "@/modules/inventory/assets/retire-asset/retire-asset.mutation";
 import { RetireAssetAlertDialog } from "@/modules/inventory/assets/retire-asset/retire-asset-alert-dialog";
@@ -199,6 +200,8 @@ function EquipmentUnitsTable({
 	equipmentType: GetEquipmentTypeDetailResponseDto;
 }) {
 	const [editingUnit, setEditingUnit] = useState<EquipmentUnit | null>(null);
+	const [changingOwnerUnit, setChangingOwnerUnit] =
+		useState<EquipmentUnit | null>(null);
 	const [retiringUnit, setRetiringUnit] = useState<EquipmentUnit | null>(null);
 	const [retireErrorMessage, setRetireErrorMessage] = useState<string | null>(
 		null,
@@ -271,6 +274,7 @@ function EquipmentUnitsTable({
 								<UnitRowActionsMenu
 									unit={unit}
 									onEdit={setEditingUnit}
+									onChangeOwner={setChangingOwnerUnit}
 									onRetire={(target) => {
 										setRetireErrorMessage(null);
 										setRetiringUnit(target);
@@ -292,6 +296,19 @@ function EquipmentUnitsTable({
 					}}
 					equipmentTypeId={equipmentType.id}
 					unit={editingUnit}
+				/>
+			) : null}
+
+			{changingOwnerUnit ? (
+				<ChangeAssetOwnerDialog
+					open
+					onOpenChange={(open) => {
+						if (!open) {
+							setChangingOwnerUnit(null);
+						}
+					}}
+					equipmentTypeId={equipmentType.id}
+					unit={changingOwnerUnit}
 				/>
 			) : null}
 

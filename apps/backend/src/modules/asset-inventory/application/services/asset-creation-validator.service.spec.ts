@@ -1,15 +1,14 @@
-import { PrismaService } from 'src/core/database/prisma.service';
+import { ok } from 'neverthrow';
 
 import { AssetCreationValidatorService } from './asset-creation-validator.service';
+import { AssetOwnershipResolver } from './asset-ownership-resolver.service';
 
 describe('AssetCreationValidatorService', () => {
   it('allows assets with duplicate manufacturer serial numbers', async () => {
-    const prisma = {
-      client: {
-        v2AssetOwner: { findMany: jest.fn() },
-      },
-    } as unknown as PrismaService;
-    const service = new AssetCreationValidatorService(prisma);
+    const ownershipResolver = {
+      resolveOwnerships: jest.fn().mockResolvedValue(ok(new Map())),
+    } as unknown as AssetOwnershipResolver;
+    const service = new AssetCreationValidatorService(ownershipResolver);
 
     const result = await service.validateAssetsCanBeCreated({
       tenantId: 'tenant-1',
@@ -17,6 +16,10 @@ describe('AssetCreationValidatorService', () => {
     });
 
     expect(result.isOk()).toBe(true);
-    expect(prisma.client.v2AssetOwner.findMany).not.toHaveBeenCalled();
+    expect(ownershipResolver.resolveOwnerships).toHaveBeenCalledWith({
+      tenantId: 'tenant-1',
+      ownerIds: [],
+      now: expect.any(Date),
+    });
   });
 });
