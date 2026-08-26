@@ -1,6 +1,8 @@
 import {
   InvalidBookingModeError,
   InvalidDefaultCurrencyError,
+  InvalidInsuranceDescriptionError,
+  InvalidInsuranceLabelError,
   InvalidInsuranceRatePercentError,
   InvalidMaxOverRentThresholdError,
   InvalidNewArrivalsWindowDaysError,
@@ -45,6 +47,8 @@ export interface TenantPricingConfigProps {
   locale: string;
   insuranceEnabled: boolean;
   insuranceRatePercent: number;
+  insuranceLabel: string;
+  insuranceDescription: string;
 }
 
 export interface TenantNotificationsConfigProps {
@@ -76,6 +80,9 @@ export type TenantConfigPatch = {
 };
 
 export class TenantConfig {
+  static readonly DEFAULT_INSURANCE_LABEL = 'Seguro de equipos';
+  static readonly DEFAULT_INSURANCE_DESCRIPTION = `Protege tu pedido ante imprevistos durante el alquiler. El cargo se calcula sobre el subtotal antes de descuentos y se suma al total final.`;
+
   private static readonly WHATSAPP_NUMBER_CANONICAL_REGEX = /^\d{6,15}$/;
 
   readonly pricing: Readonly<TenantPricingConfigProps>;
@@ -95,13 +102,15 @@ export class TenantConfig {
   }
 
   static create(props: TenantConfigProps): TenantConfig {
-    const normalizedProps = TenantConfig.normalizeProps(props);
+    const normalizedProps = TenantConfig.normalizeProps(props, TenantConfig.normalizePricingForCreate);
 
     TenantConfig.validateTimezone(normalizedProps.timezone);
     TenantConfig.validateNewArrivalsWindowDays(normalizedProps.newArrivalsWindowDays);
     TenantConfig.validateDefaultCurrency(normalizedProps.pricing.currency);
     TenantConfig.validateMaxOverRentThreshold(normalizedProps.pricing.maxOverRentThreshold);
     TenantConfig.validateInsuranceRatePercent(normalizedProps.pricing.insuranceRatePercent);
+    TenantConfig.validateInsuranceLabel(normalizedProps.pricing.insuranceLabel);
+    TenantConfig.validateInsuranceDescription(normalizedProps.pricing.insuranceDescription);
     TenantConfig.validateBookingMode(normalizedProps.bookingMode);
     TenantConfig.validateCommunication(normalizedProps.communication);
 
@@ -109,7 +118,7 @@ export class TenantConfig {
   }
 
   static reconstitute(props: TenantConfigProps): TenantConfig {
-    return new TenantConfig(TenantConfig.normalizeProps(props));
+    return new TenantConfig(TenantConfig.normalizeProps(props, TenantConfig.normalizePricingForReconstitution));
   }
 
   static default(): TenantConfig {
@@ -123,6 +132,8 @@ export class TenantConfig {
         locale: 'es-AR',
         insuranceEnabled: false,
         insuranceRatePercent: 0,
+        insuranceLabel: TenantConfig.DEFAULT_INSURANCE_LABEL,
+        insuranceDescription: TenantConfig.DEFAULT_INSURANCE_DESCRIPTION,
       },
       notifications: {
         enabledChannels: ['EMAIL'],
@@ -168,7 +179,11 @@ export class TenantConfig {
     };
   }
 
-  private static normalizeProps(props: TenantConfigProps): TenantConfigProps {
+  private static normalizeProps(
+    props: TenantConfigProps,
+    normalizePricing: (pricing: TenantPricingConfigProps) => TenantPricingConfigProps,
+  ): TenantConfigProps {
+    const pricing = normalizePricing(props.pricing);
     const communication = TenantConfig.normalizeCommunication(props.communication);
     const bookingMode =
       communication.orderCommunicationMode === TenantOrderCommunicationMode.WHATSAPP
@@ -177,11 +192,43 @@ export class TenantConfig {
 
     return {
       ...props,
-      pricing: { ...props.pricing },
+      pricing,
       notifications: { ...props.notifications },
       bookingMode,
       communication,
     };
+  }
+
+  private static normalizePricingForCreate(pricing: TenantPricingConfigProps): TenantPricingConfigProps {
+    const normalizedPricing = { ...pricing };
+
+    if (typeof normalizedPricing.insuranceLabel === 'string') {
+      normalizedPricing.insuranceLabel = normalizedPricing.insuranceLabel.trim();
+    }
+
+    if (typeof normalizedPricing.insuranceDescription === 'string') {
+      normalizedPricing.insuranceDescription = normalizedPricing.insuranceDescription.trim();
+    }
+
+    return normalizedPricing;
+  }
+
+  private static normalizePricingForReconstitution(pricing: TenantPricingConfigProps): TenantPricingConfigProps {
+    if (pricing === null || typeof pricing !== 'object' || Array.isArray(pricing)) {
+      return pricing;
+    }
+
+    const normalizedPricing = { ...pricing };
+
+    if (!Object.prototype.hasOwnProperty.call(pricing, 'insuranceLabel')) {
+      normalizedPricing.insuranceLabel = TenantConfig.DEFAULT_INSURANCE_LABEL;
+    }
+
+    if (!Object.prototype.hasOwnProperty.call(pricing, 'insuranceDescription')) {
+      normalizedPricing.insuranceDescription = TenantConfig.DEFAULT_INSURANCE_DESCRIPTION;
+    }
+
+    return normalizedPricing;
   }
 
   private static normalizeCommunication(communication: TenantCommunicationConfigProps): TenantCommunicationConfigProps {
@@ -236,6 +283,28 @@ export class TenantConfig {
   private static validateInsuranceRatePercent(ratePercent: number): void {
     if (typeof ratePercent !== 'number' || ratePercent < 0 || ratePercent > 100) {
       throw new InvalidInsuranceRatePercentError(ratePercent);
+    }
+  }
+
+  private static validateInsuranceLabel(label: string): void {
+    if (typeof label !== 'string') {
+      throw new InvalidInsuranceLabelError(label);
+    }
+
+    const trimmedLabel = label.trim();
+    if (trimmedLabel.length === 0 || trimmedLabel.length > 80) {
+      throw new InvalidInsuranceLabelError(label);
+    }
+  }
+
+  private static validateInsuranceDescription(description: string): void {
+    if (typeof description !== 'string') {
+      throw new InvalidInsuranceDescriptionError(description);
+    }
+
+    const trimmedDescription = description.trim();
+    if (trimmedDescription.length === 0 || trimmedDescription.length > 2000) {
+      throw new InvalidInsuranceDescriptionError(description);
     }
   }
 

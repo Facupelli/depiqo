@@ -1,4 +1,8 @@
-import type { UpdateTenantConfigBodyDto } from "@repo/api-contracts";
+import {
+	TenantInsuranceDescriptionSchema,
+	TenantInsuranceLabelSchema,
+	type UpdateTenantConfigBodyDto,
+} from "@repo/api-contracts";
 import { Field, FieldError, FieldLabel } from "@repo/ui/components/field";
 import {
 	Select,
@@ -43,6 +47,8 @@ const schemas = {
 		]),
 		insuranceEnabled: z.boolean(),
 		insuranceRatePercent: z.number().min(0).max(100),
+		insuranceLabel: TenantInsuranceLabelSchema,
+		insuranceDescription: TenantInsuranceDescriptionSchema,
 	}),
 	"customer-communication": z.object({
 		orderCommunicationMode: z.enum(["FORMAL", "WHATSAPP"]),
@@ -74,6 +80,9 @@ const rentalPoliciesFormDefaults: RentalPoliciesConfigurationValues = {
 	roundingRule: "IGNORE_PARTIAL_DAY",
 	insuranceEnabled: false,
 	insuranceRatePercent: 0,
+	insuranceLabel: "Seguro de equipos",
+	insuranceDescription:
+		"Protege tu pedido ante imprevistos durante el alquiler. El cargo se calcula sobre el subtotal antes de descuentos y se suma al total final.",
 };
 const customerCommunicationFormDefaults: CustomerCommunicationConfigurationValues =
 	{
@@ -154,6 +163,8 @@ function RentalPoliciesConfigurationForm() {
 			roundingRule: business.config.pricing.roundingRule,
 			insuranceEnabled: business.config.pricing.insuranceEnabled,
 			insuranceRatePercent: business.config.pricing.insuranceRatePercent,
+			insuranceLabel: business.config.pricing.insuranceLabel,
+			insuranceDescription: business.config.pricing.insuranceDescription,
 		},
 		onSubmit: async ({ value }) => {
 			await updateConfig(toRentalPoliciesDto(value));
@@ -468,6 +479,28 @@ const RentalPolicyFields = withSettingsForm({
 						/>
 					)}
 				</form.AppField>
+				<form.AppField name="insuranceLabel">
+					{(field) => (
+						<field.SettingsTextField
+							label="Nombre del seguro"
+							description="Es el texto que verán los clientes en el carrito de la tienda online."
+							align="start"
+							maxLength={80}
+						/>
+					)}
+				</form.AppField>
+
+				<form.AppField name="insuranceDescription">
+					{(field) => (
+						<field.SettingsTextareaField
+							label="Descripción del seguro"
+							description="Es el texto que verán los clientes al consultar el seguro en el carrito de la tienda online."
+							align="start"
+							maxLength={2000}
+						/>
+					)}
+				</form.AppField>
+
 				<form.AppField name="insuranceRatePercent">
 					{(field) => (
 						<form.Subscribe selector={(state) => state.values.insuranceEnabled}>
@@ -590,6 +623,8 @@ function toRentalPoliciesDto(
 			roundingRule: value.roundingRule,
 			insuranceEnabled: value.insuranceEnabled,
 			insuranceRatePercent: value.insuranceRatePercent,
+			insuranceLabel: value.insuranceLabel,
+			insuranceDescription: value.insuranceDescription,
 		},
 	};
 }

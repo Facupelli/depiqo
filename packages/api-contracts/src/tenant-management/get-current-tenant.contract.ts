@@ -15,6 +15,9 @@ export const TenantOrderCommunicationModeSchema = z.enum(["FORMAL", "WHATSAPP"])
 
 export const TenantNotificationChannelSchema = z.enum(["EMAIL"]);
 
+export const TenantInsuranceLabelSchema = z.string().trim().min(1).max(80);
+export const TenantInsuranceDescriptionSchema = z.string().trim().min(1).max(2000);
+
 export const TenantPricingConfigSchema = z.object({
   overRentalEnabled: z.boolean(),
   maxOverRentThreshold: z.number(),
@@ -24,6 +27,8 @@ export const TenantPricingConfigSchema = z.object({
   locale: z.string(),
   insuranceEnabled: z.boolean(),
   insuranceRatePercent: z.number().min(0).max(100),
+  insuranceLabel: TenantInsuranceLabelSchema,
+  insuranceDescription: TenantInsuranceDescriptionSchema,
 });
 
 export const TenantNotificationsConfigSchema = z.object({

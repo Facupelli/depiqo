@@ -18,12 +18,14 @@ function SettingsTextField({
 	placeholder,
 	transform,
 	align,
+	maxLength,
 }: {
 	label: string;
 	description?: string;
 	placeholder?: string;
 	transform?: (value: string) => string;
 	align?: SettingsRowAlign;
+	maxLength?: number;
 }) {
 	const field = useFieldContext<string>();
 	const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
@@ -45,6 +47,7 @@ function SettingsTextField({
 					}
 					aria-invalid={isInvalid}
 					placeholder={placeholder}
+					maxLength={maxLength}
 					className={align === "start" ? "w-64" : "w-56 text-right"}
 				/>
 				<FieldError errors={field.state.meta.errors} />
@@ -58,11 +61,13 @@ function SettingsTextareaField({
 	description,
 	placeholder,
 	align,
+	maxLength,
 }: {
 	label: string;
 	description?: string;
 	placeholder?: string;
 	align?: SettingsRowAlign;
+	maxLength?: number;
 }) {
 	const field = useFieldContext<string>();
 	const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
@@ -80,6 +85,7 @@ function SettingsTextareaField({
 					onChange={(event) => field.handleChange(event.target.value)}
 					aria-invalid={isInvalid}
 					placeholder={placeholder}
+					maxLength={maxLength}
 					className="w-72"
 				/>
 				<FieldError errors={field.state.meta.errors} />
