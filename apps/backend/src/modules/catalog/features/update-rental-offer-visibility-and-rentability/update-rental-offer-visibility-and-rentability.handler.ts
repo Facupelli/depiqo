@@ -42,6 +42,7 @@ export class UpdateRentalOfferVisibilityAndRentabilityHandler implements IComman
       );
     }
 
+    const becomesVisible = rentalOffer.isVisible === false && command.props.isVisible === true;
     const updateResult = rentalOffer.updateVisibilityAndRentability(command.props);
     if (updateResult.isErr()) {
       if (updateResult.error instanceof CatalogRentalOfferArchivedError) {
@@ -57,8 +58,22 @@ export class UpdateRentalOfferVisibilityAndRentabilityHandler implements IComman
       throw updateResult.error;
     }
 
+    const publishedAt = becomesVisible ? new Date() : undefined;
     await this.unitOfWork.runInTransaction(async ({ tx }) => {
       await this.rentalOfferRepository.save(rentalOffer, tx);
+
+      if (publishedAt) {
+        await tx.v2RentalOffer.updateMany({
+          where: {
+            id: rentalOffer.id,
+            tenantId: command.tenantId,
+            isVisible: true,
+            publishedAt: null,
+            rentableItem: { status: 'ACTIVE' },
+          },
+          data: { publishedAt },
+        });
+      }
     });
 
     return ok(undefined);

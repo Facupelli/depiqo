@@ -11,6 +11,7 @@ export class RentalOfferMapper {
       rentableItemId: record.rentableItemId,
       isVisible: record.isVisible,
       isRentable: record.isRentable,
+      publishedAt: record.publishedAt,
       createdAt: record.createdAt,
       updatedAt: record.updatedAt,
     });
@@ -24,6 +25,7 @@ export class RentalOfferMapper {
       rentableItemId: rentalOffer.rentableItemId,
       isVisible: rentalOffer.isVisible,
       isRentable: rentalOffer.isRentable,
+      publishedAt: rentalOffer.publishedAt,
     };
   }
 

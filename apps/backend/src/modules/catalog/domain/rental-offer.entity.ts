@@ -13,6 +13,7 @@ interface RentalOfferProps {
   rentableItemId: string;
   isVisible: boolean;
   isRentable: boolean;
+  publishedAt: Date | null;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -22,6 +23,7 @@ export interface CreateRentalOfferProps {
   tenantId: string;
   branchId: string;
   rentableItemId: string;
+  publishedAt?: Date | null;
 }
 
 export interface ReconstituteRentalOfferProps extends RentalOfferProps {
@@ -64,6 +66,7 @@ export class RentalOffer extends AggregateRootBase {
         rentableItemId,
         isVisible: true,
         isRentable: true,
+        publishedAt: props.publishedAt ?? null,
       }),
     );
   }
@@ -107,6 +110,10 @@ export class RentalOffer extends AggregateRootBase {
 
   get isRentable(): boolean {
     return this.props.isRentable;
+  }
+
+  get publishedAt(): Date | null {
+    return this.props.publishedAt;
   }
 
   get createdAt(): Date | undefined {

@@ -50,6 +50,7 @@ export class GetPublicTenantConfigHandler implements IQueryHandler<
       locale: config.pricing.locale,
       whatsAppNumber: config.communication.whatsAppNumber,
       showFloatingWhatsAppButton: config.communication.showFloatingWhatsAppButton,
+      newArrivalsWindowDays: config.newArrivalsWindowDays,
     });
   }
 }

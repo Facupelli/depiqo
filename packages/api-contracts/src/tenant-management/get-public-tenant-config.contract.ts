@@ -14,6 +14,7 @@ export const GetPublicTenantConfigResponseSchema = z.object({
   locale: z.string(),
   whatsAppNumber: z.string().optional(),
   showFloatingWhatsAppButton: z.boolean(),
+  newArrivalsWindowDays: z.number().int().positive(),
 });
 
 export type GetPublicTenantConfigResponseDto = z.infer<

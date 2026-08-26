@@ -79,7 +79,12 @@ export class CreateRentalOfferForRentableItemService {
       return err(branchValidation.error);
     }
 
-    const rentalOffer = RentalOffer.create({ tenantId, branchId, rentableItemId });
+    const rentalOffer = RentalOffer.create({
+      tenantId,
+      branchId,
+      rentableItemId,
+      publishedAt: rentableItem.status === 'ACTIVE' ? new Date() : null,
+    });
 
     if (rentalOffer.isErr()) {
       return err(rentalOffer.error);

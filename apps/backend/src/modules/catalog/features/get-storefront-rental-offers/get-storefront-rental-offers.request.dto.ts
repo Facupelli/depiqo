@@ -1,4 +1,11 @@
-import { GetStorefrontRentalOffersQuerySchema } from '@repo/api-contracts';
+import { ExplicitOffsetInstantSchema, GetStorefrontRentalOffersQuerySchema } from '@repo/api-contracts';
 import { createZodDto } from 'nestjs-zod';
 
-export class GetStorefrontRentalOffersRequestDto extends createZodDto(GetStorefrontRentalOffersQuerySchema) {}
+const GetStorefrontRentalOffersApplicationInputSchema = GetStorefrontRentalOffersQuerySchema.transform((query) => ({
+  ...query,
+  publishedAfter: query.publishedAfter ? ExplicitOffsetInstantSchema.parse(query.publishedAfter) : undefined,
+}));
+
+export class GetStorefrontRentalOffersRequestDto extends createZodDto(
+  GetStorefrontRentalOffersApplicationInputSchema,
+) {}

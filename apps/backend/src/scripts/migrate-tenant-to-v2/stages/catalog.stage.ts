@@ -306,9 +306,23 @@ async function migrateRentalOffers(ctx: TenantV2MigrationContext) {
 		return;
 	}
 
-	const rentableItems = await ctx.prisma.v2RentableItem.findMany({
-		where: { tenantId: ctx.v2TenantId },
-	});
+	const [rentableItems, productTypes, bundles] = await Promise.all([
+		ctx.prisma.v2RentableItem.findMany({
+			where: { tenantId: ctx.v2TenantId },
+		}),
+		ctx.prisma.productType.findMany({
+			where: { tenantId: ctx.legacyTenantId },
+			select: { id: true, publishedAt: true },
+		}),
+		ctx.prisma.bundle.findMany({
+			where: { tenantId: ctx.legacyTenantId },
+			select: { id: true, publishedAt: true },
+		}),
+	]);
+	const publishedAtByRentableItemId = new Map([
+		...productTypes.map((productType) => [productType.id, productType.publishedAt] as const),
+		...bundles.map((bundle) => [bundle.id, bundle.publishedAt] as const),
+	]);
 
 	ctx.log("Migrating rental offers", {
 		branches: branches.length,
@@ -320,6 +334,7 @@ async function migrateRentalOffers(ctx: TenantV2MigrationContext) {
 		for (const item of rentableItems) {
 			const isAvailableForCatalog =
 				item.status === V2RentableItemStatus.ACTIVE;
+			const publishedAt = publishedAtByRentableItemId.get(item.id) ?? null;
 
 			const existingOffer = await ctx.prisma.v2RentalOffer.findUnique({
 				where: {
@@ -337,6 +352,7 @@ async function migrateRentalOffers(ctx: TenantV2MigrationContext) {
 					data: {
 						isVisible: isAvailableForCatalog,
 						isRentable: isAvailableForCatalog,
+						publishedAt,
 						updatedAt: item.updatedAt,
 					},
 				});
@@ -351,6 +367,7 @@ async function migrateRentalOffers(ctx: TenantV2MigrationContext) {
 					rentableItemId: item.id,
 					isVisible: isAvailableForCatalog,
 					isRentable: isAvailableForCatalog,
+					publishedAt,
 					createdAt: item.createdAt,
 					updatedAt: item.updatedAt,
 				},

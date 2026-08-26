@@ -2,6 +2,7 @@ import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { err, ok, Result } from 'neverthrow';
 
 import { PrismaService } from 'src/core/database/prisma.service';
+import { PrismaUnitOfWork } from 'src/core/database/prisma-unit-of-work';
 
 import { CatalogRentableItemCannotBeActivatedFromStatusError } from '../../domain/errors/catalog.errors';
 import { PrismaRentableItemRepository } from '../create-rentable-item-offering/prisma-rentable-item.repository';
@@ -15,6 +16,7 @@ export class ActivateRentableItemHandler implements ICommandHandler<
 > {
   constructor(
     private readonly prisma: PrismaService,
+    private readonly unitOfWork: PrismaUnitOfWork,
     private readonly rentableItemRepository: PrismaRentableItemRepository,
   ) {}
 
@@ -56,7 +58,19 @@ export class ActivateRentableItemHandler implements ICommandHandler<
       return err(eligibilityResult.error);
     }
 
-    await this.rentableItemRepository.save(rentableItem);
+    const publishedAt = new Date();
+    await this.unitOfWork.runInTransaction(async ({ tx }) => {
+      await this.rentableItemRepository.save(rentableItem, tx);
+      await tx.v2RentalOffer.updateMany({
+        where: {
+          tenantId: command.tenantId,
+          rentableItemId: command.rentableItemId,
+          isVisible: true,
+          publishedAt: null,
+        },
+        data: { publishedAt },
+      });
+    });
 
     return ok(undefined);
   }

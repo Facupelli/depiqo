@@ -32,6 +32,8 @@ export class GetStorefrontRentalOffersHttpController {
         dto.kind,
         dto.categoryId,
         dto.search,
+        dto.publishedAfter,
+        dto.sort,
       ),
     );
   }

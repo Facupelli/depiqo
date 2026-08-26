@@ -10,5 +10,7 @@ export class GetStorefrontRentalOffersQuery implements IQuery {
     public readonly kind?: V2RentableItemKind,
     public readonly categoryId?: string,
     public readonly search?: string,
+    public readonly publishedAfter?: Date,
+    public readonly sort?: 'PUBLISHED_AT_DESC',
   ) {}
 }
