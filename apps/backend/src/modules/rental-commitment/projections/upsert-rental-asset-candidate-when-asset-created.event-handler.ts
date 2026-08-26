@@ -1,0 +1,71 @@
+import { Injectable } from '@nestjs/common';
+import { PinoLogger } from 'nestjs-pino';
+import { OnEvent } from '@nestjs/event-emitter';
+
+import { PrismaService } from 'src/core/database/prisma.service';
+import { AssetCreatedIntegrationEvent } from 'src/modules/asset-inventory/public-api/events/asset-created.integration-event';
+import { Prisma, V2RentalAssetOwnershipKind } from 'src/generated/prisma/client';
+
+@Injectable()
+export class UpsertRentalAssetCandidateWhenAssetCreatedEventHandler {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly logger: PinoLogger,
+  ) {
+    this.logger.setContext(UpsertRentalAssetCandidateWhenAssetCreatedEventHandler.name);
+  }
+
+  @OnEvent(AssetCreatedIntegrationEvent.name)
+  async handle(event: AssetCreatedIntegrationEvent): Promise<void> {
+    try {
+      const projectedAt = new Date();
+      const ownershipKind = event.ownerId
+        ? V2RentalAssetOwnershipKind.THIRD_PARTY
+        : V2RentalAssetOwnershipKind.TENANT_OWNED;
+
+      const ownerContractSnapshot = event.ownerContractSnapshot
+        ? (event.ownerContractSnapshot as unknown as Prisma.InputJsonObject)
+        : Prisma.JsonNull;
+
+      await this.prisma.client.v2RentalAssetCandidate.upsert({
+        where: {
+          tenantId_assetId: {
+            tenantId: event.tenantId,
+            assetId: event.assetId,
+          },
+        },
+        create: {
+          tenantId: event.tenantId,
+          assetId: event.assetId,
+          branchId: event.branchId,
+          equipmentTypeId: event.equipmentTypeId,
+          assetStatus: event.status,
+          ownershipKind,
+          ownerId: event.ownerId,
+          ownerContractSnapshot,
+          projectedAt,
+          sourceVersion: null,
+        },
+        update: {
+          branchId: event.branchId,
+          equipmentTypeId: event.equipmentTypeId,
+          assetStatus: event.status,
+          ownershipKind,
+          ownerId: event.ownerId,
+          ownerContractSnapshot,
+          projectedAt,
+          sourceVersion: null,
+        },
+      });
+    } catch (error) {
+      this.logger.error(
+        {
+          err: error instanceof Error ? error : new Error('A non-Error value was thrown.', { cause: error }),
+          assetId: event.assetId,
+          tenantId: event.tenantId,
+        },
+        'Failed to upsert rental asset candidate',
+      );
+    }
+  }
+}

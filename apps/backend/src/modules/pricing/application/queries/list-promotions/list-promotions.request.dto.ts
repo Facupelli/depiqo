@@ -1,4 +1,0 @@
-import { listPromotionsQuerySchema } from '@repo/schemas';
-import { createZodDto } from 'nestjs-zod';
-
-export class ListPromotionsRequestDto extends createZodDto(listPromotionsQuerySchema) {}

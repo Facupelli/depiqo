@@ -2,9 +2,10 @@ import { NotificationType } from './notification-type.enum';
 import { NotificationTypeCategory } from './notification-type-category.enum';
 
 const notificationTypeCategoryRegistry: Record<NotificationType, NotificationTypeCategory> = {
-  [NotificationType.ORDER_CREATED_CONFIRMATION]: NotificationTypeCategory.TENANT_WORKFLOW,
-  [NotificationType.ORDER_CREATED_BY_CUSTOMER]: NotificationTypeCategory.TENANT_WORKFLOW,
-  [NotificationType.ORDER_CANCELLED]: NotificationTypeCategory.TENANT_WORKFLOW,
+  [NotificationType.RENTAL_CONFIRMED_CONFIRMATION]: NotificationTypeCategory.TENANT_WORKFLOW,
+  [NotificationType.CONFIRMED_RENTAL_EDITED]: NotificationTypeCategory.TENANT_WORKFLOW,
+  [NotificationType.RENTAL_CREATED_BY_CUSTOMER]: NotificationTypeCategory.TENANT_WORKFLOW,
+  [NotificationType.RENTAL_CANCELLED]: NotificationTypeCategory.TENANT_WORKFLOW,
   [NotificationType.DOCUMENT_SIGNING_INVITATION]: NotificationTypeCategory.TENANT_WORKFLOW,
   [NotificationType.PASSWORD_RESET]: NotificationTypeCategory.PLATFORM_OPERATIONAL,
 };

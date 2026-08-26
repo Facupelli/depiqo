@@ -4,45 +4,52 @@ import { NotificationChannel } from 'src/modules/notifications/domain/notificati
 
 const notificationChannelSchema = z.enum(NotificationChannel);
 
-const notificationsMutedChannelsByEnvSchema = z.preprocess((value) => {
-  if (typeof value !== 'string' || value.trim() === '') {
-    return {};
-  }
+const notificationsMutedChannelsByEnvSchema = z.preprocess(
+  (value) => {
+    if (typeof value !== 'string' || value.trim() === '') {
+      return {};
+    }
 
-  try {
-    return JSON.parse(value);
-  } catch {
-    return value;
-  }
-}, z.record(z.string(), z.array(notificationChannelSchema)).default({}));
+    try {
+      return JSON.parse(value);
+    } catch {
+      return value;
+    }
+  },
+  z.record(z.string(), z.array(notificationChannelSchema)).default({}),
+);
 
 export const EnvSchema = z.object({
-  NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
+  NODE_ENV: z.enum(['development', 'production', 'staging', 'test']).default('development'),
+  LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).default('info'),
   PORT: z.coerce.number().default(3000),
 
   DATABASE_URL: z.url(),
-  DATABASE_POOL_SIZE: z.coerce.number().default(10),
 
-  JWT_SECRET: z.string(),
-  JWT_EXPIRATION_TIME_SECONDS: z.coerce.number().default(3600),
+  CORS_ALLOWED_ORIGINS: z.string(),
+  BFF_INTERNAL_TOKEN: z.string(),
+  STOREFRONT_TENANT_JWT_SECRET: z.string(),
+  STOREFRONT_TENANT_JWT_ISSUER: z.string(),
+  STOREFRONT_TENANT_JWT_AUDIENCE: z.string(),
 
-  JWT_REFRESH_SECRET: z.string(),
-  JWT_REFRESH_EXPIRATION_TIME_SECONDS: z.coerce.number().default(604800), // 7 days
+  SESSION_SECRET: z.string(),
 
   GOOGLE_CLIENT_ID: z.string(),
   GOOGLE_CLIENT_SECRET: z.string(),
-  GOOGLE_AUTH_STATE_SECRET: z.string(),
+  GOOGLE_OAUTH_REDIRECT_URI: z.url(),
   GOOGLE_AUTH_STATE_EXPIRATION_TIME_SECONDS: z.coerce.number().default(600),
   GOOGLE_AUTH_HANDOFF_EXPIRATION_TIME_SECONDS: z.coerce.number().default(300),
 
   CLOUDFLARE_API_TOKEN: z.string(),
   CLOUDFLARE_ZONE_ID: z.string(),
 
-  R2_ACCOUNT_ID: z.string(),
-  R2_BUCKET_NAME: z.string(),
-  R2_ACCESS_KEY_ID: z.string(),
-  R2_SECRET_ACCESS_KEY: z.string(),
+  CLOUDFLARE_ACCOUNT_ID: z.string(),
+  R2_SIGNING_BUCKET_NAME: z.string(),
+  R2_SIGNING_ACCESS_KEY_ID: z.string(),
+  R2_SIGNING_SECRET_ACCESS_KEY: z.string(),
   DOCUMENT_SIGNING_SESSION_TTL_SECONDS: z.coerce.number().default(604800),
+  DOCUMENT_SIGNING_RECEIPT_TOKEN_TTL_SECONDS: z.coerce.number().default(604800),
+  PUBLIC_SIGNING_ORIGIN: z.url(),
 
   RESEND_API_KEY: z.string(),
   NOTIFICATIONS_EMAIL_FROM: z.string(),
@@ -50,7 +57,6 @@ export const EnvSchema = z.object({
   NOTIFICATIONS_EMAIL_REPLY_TO: z.string().optional(),
   NOTIFICATIONS_MUTED_CHANNELS_BY_ENV: notificationsMutedChannelsByEnvSchema,
 
-  INTERNAL_API_TOKEN: z.string(),
   ROOT_DOMAIN: z.string(),
 });
 

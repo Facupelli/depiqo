@@ -1,0 +1,65 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - develop
+
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  ci:
+    name: Validate repository
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: package.json
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client
+        run: pnpm --filter @repo/backend run prisma:generate
+
+      - name: Backend lint
+        run: pnpm --filter @repo/backend run lint:check
+
+      - name: Backend build
+        run: pnpm turbo run build --filter=@repo/backend
+
+      - name: Backend unit tests
+        run: pnpm --filter @repo/backend run test
+
+      - name: Backend database tests
+        run: pnpm --filter @repo/backend run test:db:ci
+
+      - name: Backoffice lint
+        run: pnpm --filter @repo/backoffice run lint
+
+      - name: Backoffice typecheck
+        run: pnpm --filter @repo/backoffice run typecheck
+
+      - name: Backoffice build
+        run: pnpm turbo run build --filter=@repo/backoffice
+
+      - name: Storefront lint
+        run: pnpm --filter @repo/storefront run lint
+
+      - name: Storefront typecheck
+        run: pnpm --filter @repo/storefront run typecheck
+
+      - name: Storefront build
+        run: pnpm turbo run build --filter=@repo/storefront
+

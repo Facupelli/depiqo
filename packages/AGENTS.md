@@ -10,7 +10,6 @@ Use `docs/agent-rules/shared-packages.md` for shared-package conventions and val
 
 Follow package-local `AGENTS.md` files when present:
 
-- `schemas/AGENTS.md`
 - `types/AGENTS.md`
 - `typescript-config/AGENTS.md`
 - `jest-config/AGENTS.md`

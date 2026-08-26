@@ -1,0 +1,3 @@
+import type { GetStorefrontRentalOfferAvailabilityResponseDto as ApiGetStorefrontRentalOfferAvailabilityResponseDto } from '@repo/api-contracts';
+
+export type GetStorefrontRentalOfferAvailabilityResponseDto = ApiGetStorefrontRentalOfferAvailabilityResponseDto;

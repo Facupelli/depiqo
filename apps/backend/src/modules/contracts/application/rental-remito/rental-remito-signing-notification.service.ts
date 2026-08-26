@@ -1,0 +1,129 @@
+import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { TenantIdentityFact } from 'src/modules/tenant-management/public-api/tenant-identity-facts.public-api';
+
+import { Env } from 'src/config/env.schema';
+import { NotificationOrchestrator } from 'src/modules/notifications/application/notification-orchestrator.service';
+import { NotificationDispatchSkipReason } from 'src/modules/notifications/application/types/notification-dispatch-skip-reason.enum';
+import { NotificationChannel } from 'src/modules/notifications/domain/notification-channel.enum';
+import { NotificationType } from 'src/modules/notifications/domain/notification-type.enum';
+
+const RENTAL_REMITO_DOCUMENT_LABEL = 'acuerdo de alquiler';
+const RENTAL_REMITO_DOCUMENT_TYPE = 'RENTAL_AGREEMENT';
+
+export class RentalRemitoSigningInvitationDeliveryFailedError extends Error {}
+
+export type RentalRemitoSigningInvitationDeliveryResult =
+  | {
+      signingUrl: string;
+      delivered: true;
+      failureReason: null;
+      failureMessage: null;
+      deliveryError: null;
+    }
+  | {
+      signingUrl: string;
+      delivered: false;
+      failureReason: string;
+      failureMessage: string;
+      deliveryError: RentalRemitoSigningInvitationDeliveryFailedError;
+    };
+
+@Injectable()
+export class RentalRemitoSigningNotificationService {
+  private readonly publicSigningOrigin: string;
+
+  constructor(
+    private readonly notificationOrchestrator: NotificationOrchestrator,
+    private readonly configService: ConfigService<Env, true>,
+  ) {
+    this.publicSigningOrigin = this.configService.get('PUBLIC_SIGNING_ORIGIN');
+  }
+
+  async sendInvitation(input: {
+    tenant: TenantIdentityFact;
+    requestId: string;
+    orderId: string;
+    documentNumber: string;
+    rawToken: string;
+    tokenHash: string;
+    recipientEmail: string;
+    expiresAt: Date;
+    resend: boolean;
+  }): Promise<RentalRemitoSigningInvitationDeliveryResult> {
+    const signingUrl = this.buildPublicSigningUrl(input.rawToken);
+    const dispatchResult = await this.notificationOrchestrator.dispatch({
+      tenantId: input.tenant.tenantId,
+      notificationType: NotificationType.DOCUMENT_SIGNING_INVITATION,
+      emailRecipients: [{ email: input.recipientEmail }],
+      payload: {
+        tenantName: input.tenant.name,
+        documentLabel: RENTAL_REMITO_DOCUMENT_LABEL,
+        documentNumber: input.documentNumber,
+        signingUrl,
+        expiresAt: input.expiresAt,
+        isReplacement: input.resend,
+      },
+      source: {
+        context: 'document-signing',
+        aggregateType: 'SigningRequest',
+        aggregateId: input.requestId,
+      },
+      contentSnapshotRedactions: [signingUrl],
+      metadata: {
+        orderId: input.orderId,
+        signingRequestId: input.requestId,
+        documentType: RENTAL_REMITO_DOCUMENT_TYPE,
+      },
+      idempotencyKey: `signing-invitation:${input.requestId}:${input.tokenHash}`,
+    });
+
+    if (dispatchResult.deliveredChannels.includes(NotificationChannel.EMAIL)) {
+      return {
+        signingUrl,
+        delivered: true,
+        failureReason: null,
+        failureMessage: null,
+        deliveryError: null,
+      };
+    }
+
+    const skippedEmail = dispatchResult.skippedChannels.find(
+      (skippedChannel) => skippedChannel.channel === NotificationChannel.EMAIL,
+    );
+
+    if (
+      skippedEmail?.reason === NotificationDispatchSkipReason.MUTED_BY_ENVIRONMENT ||
+      skippedEmail?.reason === NotificationDispatchSkipReason.SUPPRESSED_BY_TENANT_COMMUNICATION_MODE
+    ) {
+      return {
+        signingUrl,
+        delivered: true,
+        failureReason: null,
+        failureMessage: null,
+        deliveryError: null,
+      };
+    }
+
+    const failure = dispatchResult.failedChannels[0];
+    const failureReason = failure?.reason ?? 'NO_CHANNEL_DELIVERED';
+    const failureMessage = failure?.message ?? 'No notification channel delivered the invitation.';
+    const message = failure
+      ? `Signing invitation email delivery failed: ${failure.message}`
+      : 'Signing invitation email delivery failed: no notification channel delivered the invitation.';
+
+    return {
+      signingUrl,
+      delivered: false,
+      failureReason,
+      failureMessage,
+      deliveryError: new RentalRemitoSigningInvitationDeliveryFailedError(message),
+    };
+  }
+
+  private buildPublicSigningUrl(rawToken: string): string {
+    const signingUrl = new URL('/signing', this.publicSigningOrigin);
+    signingUrl.searchParams.set('token', rawToken);
+    return signingUrl.toString();
+  }
+}

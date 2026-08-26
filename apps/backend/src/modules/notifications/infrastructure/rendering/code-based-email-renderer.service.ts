@@ -7,18 +7,20 @@ import {
   RenderedEmail,
 } from '../../application/ports/email-renderer.port';
 import { NotificationType } from '../../domain/notification-type.enum';
-import { renderOrderCreatedConfirmationEmailTemplate } from './templates/order-created-confirmation-email.template';
-import { renderOrderCreatedByCustomerEmailTemplate } from './templates/order-created-by-customer-email.template';
-import { renderOrderCancelledEmailTemplate } from './templates/order-cancelled-email.template';
+import { renderConfirmedRentalEditedEmailTemplate } from './templates/confirmed-rental-edited-email.template';
 import { renderDocumentSigningInvitationEmailTemplate } from './templates/document-signing-invitation-email.template';
+import { renderRentalCancelledEmailTemplate } from './templates/rental-cancelled-email.template';
+import { renderRentalConfirmedConfirmationEmailTemplate } from './templates/rental-confirmed-confirmation-email.template';
+import { renderRentalCreatedByCustomerEmailTemplate } from './templates/rental-created-by-customer-email.template';
 import { renderPasswordResetEmailTemplate } from './templates/password-reset-email.template';
 
 const emailTemplateRenderers: {
   [T in NotificationType]: (payload: NotificationEmailPayloadMap[T]) => Promise<RenderedEmail> | RenderedEmail;
 } = {
-  [NotificationType.ORDER_CREATED_CONFIRMATION]: renderOrderCreatedConfirmationEmailTemplate,
-  [NotificationType.ORDER_CREATED_BY_CUSTOMER]: renderOrderCreatedByCustomerEmailTemplate,
-  [NotificationType.ORDER_CANCELLED]: renderOrderCancelledEmailTemplate,
+  [NotificationType.RENTAL_CONFIRMED_CONFIRMATION]: renderRentalConfirmedConfirmationEmailTemplate,
+  [NotificationType.CONFIRMED_RENTAL_EDITED]: renderConfirmedRentalEditedEmailTemplate,
+  [NotificationType.RENTAL_CREATED_BY_CUSTOMER]: renderRentalCreatedByCustomerEmailTemplate,
+  [NotificationType.RENTAL_CANCELLED]: renderRentalCancelledEmailTemplate,
   [NotificationType.DOCUMENT_SIGNING_INVITATION]: renderDocumentSigningInvitationEmailTemplate,
   [NotificationType.PASSWORD_RESET]: renderPasswordResetEmailTemplate,
 };

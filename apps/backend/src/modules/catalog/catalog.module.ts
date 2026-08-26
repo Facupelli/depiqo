@@ -1,120 +1,72 @@
 import { Module } from '@nestjs/common';
-import { ProductCategoryRepository } from './infrastructure/repositories/product-category.repository';
-import { ProductTypeRepository } from './infrastructure/repositories/product-type.repository';
-import { CreateProductTypeService } from './application/commands/create-product-type/create-product-type.service';
-import { CreateProductCategoryService } from './application/commands/create-product-category/create-product-category.service';
-import { GetProductTypeByIdQueryHandler } from './application/queries/get-product-type-by-id/get-product-type-by-id.query-handler';
-import { GetProductTypesQueryHandler } from './application/queries/get-product-types/get-product-types.query-handler';
-import { GetProductCategoriesQueryHandler } from './application/queries/get-product-categories/get-product-categories.query-handler';
-import { GetRentalProductTypesQueryHandler } from './application/queries/get-rental-product-types/get-rental-product-types.query-handler';
-import { CatalogPublicApi } from './catalog.public-api';
-import { CatalogApplicationService } from './application/catalog.application-service';
-import { CreateBundleService } from './application/commands/create-bundle/create-bundle.service';
-import { UpdateBundleService } from './application/commands/update-bundle/update-bundle.service';
-import { GetBundlesQueryHandler } from './application/queries/get-bundles/get-bundles.query-handler';
-import { BundleRepository } from './infrastructure/repositories/bundle.repository';
-import { GetBundleByIdQueryHandler } from './application/queries/get-bundle-by-id/get-bundle-by-id.query-handler';
-import { GetNewArrivalsQueryHandler } from './application/queries/get-rental-new-arrivals/get-rental-new-arrival.query-handler';
-import { GetCombosQueryHandler } from './application/queries/get-rental-bundles/get-rental-bundles.query-handler';
-import { PublishProductTypeService } from './application/commands/publish-product-type/publish-product-type.service';
-import { RetireProductTypeService } from './application/commands/retire-product-type/retire-product-type.service';
-import { PublishBundleService } from './application/commands/publish-bundle/publish-bundle.service';
-import { RetireBundleService } from './application/commands/retire-bundle/retire-bundle.service';
-import { UpdateProductCategoryService } from './application/commands/update-product-category/update-product-category.service';
-import { DeleteProductCategoryService } from './application/commands/delete-product-category/delete-product-category.service';
-import { UpdateProductTypeService } from './application/commands/update-product-type/update-product-type.service';
-import { CreateProductCategoryHttpController } from './application/commands/create-product-category/create-product-category.http.controller';
-import { UpdateProductCategoryHttpController } from './application/commands/update-product-category/update-product-category.http.controller';
-import { DeleteProductCategoryHttpController } from './application/commands/delete-product-category/delete-product-category.http.controller';
-import { GetProductCategoriesHttpController } from './application/queries/get-product-categories/get-product-categories.http.controller';
-import { CreateProductTypeHttpController } from './application/commands/create-product-type/create-product-type.http.controller';
-import { UpdateProductTypeHttpController } from './application/commands/update-product-type/update-product-type.http.controller';
-import { GetProductTypesHttpController } from './application/queries/get-product-types/get-product-types.http.controller';
-import { GetProductTypeByIdHttpController } from './application/queries/get-product-type-by-id/get-product-type-by-id.http.controller';
-import { PublishProductTypeHttpController } from './application/commands/publish-product-type/publish-product-type.http.controller';
-import { RetireProductTypeHttpController } from './application/commands/retire-product-type/retire-product-type.http.controller';
-import { CreateBundleHttpController } from './application/commands/create-bundle/create-bundle.http.controller';
-import { UpdateBundleHttpController } from './application/commands/update-bundle/update-bundle.http.controller';
-import { GetBundlesHttpController } from './application/queries/get-bundles/get-bundles.http.controller';
-import { GetBundleByIdHttpController } from './application/queries/get-bundle-by-id/get-bundle-by-id.http.controller';
-import { PublishBundleHttpController } from './application/commands/publish-bundle/publish-bundle.http.controller';
-import { RetireBundleHttpController } from './application/commands/retire-bundle/retire-bundle.http.controller';
-import { GetRentalProductTypesHttpController } from './application/queries/get-rental-product-types/get-rental-product-types.http.controller';
-import { GetRentalBundlesHttpController } from './application/queries/get-rental-bundles/get-rental-bundles.http.controller';
-import { GetNewArrivalsHttpController } from './application/queries/get-rental-new-arrivals/get-rental-new-arrival.http.controller';
-import { GetRentalCategoriesHttpController } from './application/queries/get-rental-categories/get-rental-categories.http.controller';
-import { CatalogPublicationEligibilityService } from './application/services/catalog-publication-eligibility.service';
-import { ReplaceProductTypeAccessoryLinksService } from './application/commands/replace-product-type-accessory-links/replace-product-type-accessory-links.service';
-import { ReplaceProductTypeAccessoryLinksHttpController } from './application/commands/replace-product-type-accessory-links/replace-product-type-accessory-links.http.controller';
-import { GetProductTypeAccessoryLinksQueryHandler } from './application/queries/get-product-type-accessory-links/get-product-type-accessory-links.query-handler';
-import { GetProductTypeAccessoryLinksHttpController } from './application/queries/get-product-type-accessory-links/get-product-type-accessory-links.http.controller';
-import { GetAvailableAccessoriesQueryHandler } from './application/queries/get-available-accessories/get-available-accessories.query-handler';
-import { GetAvailableAccessoriesHttpController } from './application/queries/get-available-accessories/get-available-accessories.http.controller';
 
-const repositories = [ProductCategoryRepository, ProductTypeRepository, BundleRepository];
-
-const commandhandlers = [
-  CreateProductTypeService,
-  CreateProductCategoryService,
-  CreateBundleService,
-  UpdateProductCategoryService,
-  DeleteProductCategoryService,
-  UpdateProductTypeService,
-  UpdateBundleService,
-  PublishProductTypeService,
-  RetireProductTypeService,
-  PublishBundleService,
-  RetireBundleService,
-  ReplaceProductTypeAccessoryLinksService,
-];
-
-const queryHandlers = [
-  GetProductTypeByIdQueryHandler,
-  GetProductTypesQueryHandler,
-  GetProductCategoriesQueryHandler,
-  GetBundlesQueryHandler,
-  GetBundleByIdQueryHandler,
-  GetProductTypeAccessoryLinksQueryHandler,
-  GetAvailableAccessoriesQueryHandler,
-];
-
-const rentalQueryHandlers = [GetRentalProductTypesQueryHandler, GetNewArrivalsQueryHandler, GetCombosQueryHandler];
+import { AssetInventoryModule } from '../asset-inventory/asset-inventory.module';
+import { TenantManagementModule } from '../tenant-management/tenant-management.module';
+import { ActivateRentableItemHttpController } from './features/activate-rentable-item/activate-rentable-item.controller';
+import { ActivateRentableItemHandler } from './features/activate-rentable-item/activate-rentable-item.handler';
+import { ArchiveRentableItemHttpController } from './features/archive-rentable-item/archive-rentable-item.controller';
+import { ArchiveRentableItemHandler } from './features/archive-rentable-item/archive-rentable-item.handler';
+import { CreateRentalOfferForRentableItemService } from './features/create-rental-offer-for-rentable-item/create-rental-offer-for-rentable-item.service';
+import { CreateRentableItemOfferingService } from './features/create-rentable-item-offering/create-rentable-item-offering.service';
+import { GetEquipmentTypeProductUsagesHttpController } from './features/get-equipment-type-product-usages/get-equipment-type-product-usages.controller';
+import { GetEquipmentTypeProductUsagesHandler } from './features/get-equipment-type-product-usages/get-equipment-type-product-usages.handler';
+import { GetRentableItemDetailHttpController } from './features/get-rentable-item-detail/get-rentable-item-detail.controller';
+import { GetRentableItemDetailHandler } from './features/get-rentable-item-detail/get-rentable-item-detail.handler';
+import { GetRentableItemSummariesHttpController } from './features/get-rentable-item-summaries/get-rentable-item-summaries.controller';
+import { GetRentableItemSummariesHandler } from './features/get-rentable-item-summaries/get-rentable-item-summaries.handler';
+import { GetRentableItemsHttpController } from './features/get-rentable-items/get-rentable-items.controller';
+import { GetRentableItemsHandler } from './features/get-rentable-items/get-rentable-items.handler';
+import { GetStorefrontRentalOffersHttpController } from './features/get-storefront-rental-offers/get-storefront-rental-offers.controller';
+import { GetStorefrontRentalOffersHandler } from './features/get-storefront-rental-offers/get-storefront-rental-offers.handler';
+import { SearchRentalOffersHttpController } from './features/search-rental-offers/search-rental-offers.controller';
+import { SearchRentalOffersHandler } from './features/search-rental-offers/search-rental-offers.handler';
+import { UpdateRentableItemDefinitionHttpController } from './features/update-rentable-item-definition/update-rentable-item-definition.controller';
+import { UpdateRentableItemDefinitionHandler } from './features/update-rentable-item-definition/update-rentable-item-definition.handler';
+import { UpdateRentalOfferVisibilityAndRentabilityHttpController } from './features/update-rental-offer-visibility-and-rentability/update-rental-offer-visibility-and-rentability.controller';
+import { UpdateRentalOfferVisibilityAndRentabilityHandler } from './features/update-rental-offer-visibility-and-rentability/update-rental-offer-visibility-and-rentability.handler';
+import { PrismaRentableItemRepository } from './features/create-rentable-item-offering/prisma-rentable-item.repository';
+import { PrismaRentalOfferRepository } from './features/create-rentable-item-offering/prisma-rental-offer.repository';
+import { PrismaResolveSelectedRentalOffersReader } from './features/resolve-selected-rental-offers/prisma-resolve-selected-rental-offers.reader';
+import { ResolveSelectedRentalOffersService } from './features/resolve-selected-rental-offers/resolve-selected-rental-offers.service';
+import { CatalogOfferingAuthoring } from './public-api/catalog-offering-authoring.public-api';
+import { CatalogOfferingAuthoringService } from './public-api/catalog-offering-authoring.service';
+import { CatalogSelectionResolution } from './public-api/catalog-selection-resolution.public-api';
+import { CatalogSelectionResolutionService } from './public-api/catalog-selection-resolution.service';
 
 @Module({
+  imports: [AssetInventoryModule, TenantManagementModule],
   controllers: [
-    CreateProductCategoryHttpController,
-    UpdateProductCategoryHttpController,
-    DeleteProductCategoryHttpController,
-    GetProductCategoriesHttpController,
-    CreateProductTypeHttpController,
-    UpdateProductTypeHttpController,
-    GetProductTypesHttpController,
-    GetProductTypeByIdHttpController,
-    PublishProductTypeHttpController,
-    RetireProductTypeHttpController,
-    CreateBundleHttpController,
-    UpdateBundleHttpController,
-    GetBundlesHttpController,
-    GetBundleByIdHttpController,
-    PublishBundleHttpController,
-    RetireBundleHttpController,
-    GetRentalProductTypesHttpController,
-    GetRentalBundlesHttpController,
-    GetNewArrivalsHttpController,
-    GetRentalCategoriesHttpController,
-    ReplaceProductTypeAccessoryLinksHttpController,
-    GetProductTypeAccessoryLinksHttpController,
-    GetAvailableAccessoriesHttpController,
+    ActivateRentableItemHttpController,
+    ArchiveRentableItemHttpController,
+    GetEquipmentTypeProductUsagesHttpController,
+    GetRentableItemDetailHttpController,
+    GetRentableItemSummariesHttpController,
+    GetRentableItemsHttpController,
+    GetStorefrontRentalOffersHttpController,
+    SearchRentalOffersHttpController,
+    UpdateRentableItemDefinitionHttpController,
+    UpdateRentalOfferVisibilityAndRentabilityHttpController,
   ],
   providers: [
-    ...repositories,
-    ...commandhandlers,
-    ...queryHandlers,
-    ...rentalQueryHandlers,
-    CatalogPublicationEligibilityService,
-    CatalogApplicationService,
-    { provide: CatalogPublicApi, useClass: CatalogApplicationService },
+    { provide: CatalogOfferingAuthoring, useClass: CatalogOfferingAuthoringService },
+    { provide: CatalogSelectionResolution, useClass: CatalogSelectionResolutionService },
+    ActivateRentableItemHandler,
+    ArchiveRentableItemHandler,
+    GetEquipmentTypeProductUsagesHandler,
+    CreateRentalOfferForRentableItemService,
+    CreateRentableItemOfferingService,
+    GetRentableItemDetailHandler,
+    GetRentableItemSummariesHandler,
+    GetRentableItemsHandler,
+    GetStorefrontRentalOffersHandler,
+    SearchRentalOffersHandler,
+    UpdateRentableItemDefinitionHandler,
+    UpdateRentalOfferVisibilityAndRentabilityHandler,
+    PrismaRentableItemRepository,
+    PrismaRentalOfferRepository,
+    ResolveSelectedRentalOffersService,
+    PrismaResolveSelectedRentalOffersReader,
   ],
-  exports: [CatalogPublicApi],
+  exports: [CatalogOfferingAuthoring, CatalogSelectionResolution],
 })
 export class CatalogModule {}

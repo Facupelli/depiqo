@@ -1,0 +1,35 @@
+// ---------------------------------------------------------------------------
+// V2 RENTAL COMMITMENT - OWNER SPLITS
+// ---------------------------------------------------------------------------
+
+model V2RentalOwnerSplit {
+  id       String @id @default(uuid())
+  tenantId String @map("tenant_id")
+  rentalId String @map("rental_id")
+
+  rentalSelectionId  String @map("rental_selection_id")
+  rentalDemandLineId String @map("rental_demand_line_id")
+  assignedAssetId    String @map("assigned_asset_id")
+  assetId            String @map("asset_id")
+
+  ownerId    String @map("owner_id")
+  contractId String @map("contract_id")
+
+  basis       V2OwnerContractBasis
+  ownerShare  Decimal              @map("owner_share")
+  basisAmount Decimal              @map("basis_amount")
+  ownerAmount Decimal              @map("owner_amount")
+
+  currency String
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  rental V2Rental @relation(fields: [rentalId], references: [id])
+
+  @@unique([rentalId, assignedAssetId])
+  @@index([tenantId, rentalId])
+  @@index([tenantId, ownerId])
+  @@index([tenantId, rentalSelectionId])
+  @@map("v2_rental_owner_splits")
+}

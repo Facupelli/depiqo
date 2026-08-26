@@ -1,0 +1,42 @@
+// ---------------------------------------------------------------------------
+// V2 ASSET INVENTORY - EQUIPMENT TYPES
+// ---------------------------------------------------------------------------
+
+model V2EquipmentType {
+  id          String    @id @default(uuid())
+  tenantId    String    @map("tenant_id")
+  name        String
+  description String?
+  imageUrl    String?   @map("image_url")
+  categoryId  String?   @map("category_id")
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  accessoryDefaults V2EquipmentTypeAccessoryDefault[] @relation("AccessoryDefaultsForEquipment")
+  usedAsAccessoryIn V2EquipmentTypeAccessoryDefault[] @relation("EquipmentUsedAsAccessory")
+  assets            V2Asset[]
+  category          V2Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId])
+  @@index([tenantId, categoryId])
+  @@map("v2_equipment_types")
+}
+
+model V2EquipmentTypeAccessoryDefault {
+  id                       String   @id @default(uuid())
+  tenantId                 String   @map("tenant_id")
+  equipmentTypeId          String   @map("equipment_type_id")
+  accessoryEquipmentTypeId String   @map("accessory_equipment_type_id")
+  quantity                 Int
+  createdAt                DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt                DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  equipmentType          V2EquipmentType @relation("AccessoryDefaultsForEquipment", fields: [equipmentTypeId], references: [id])
+  accessoryEquipmentType V2EquipmentType @relation("EquipmentUsedAsAccessory", fields: [accessoryEquipmentTypeId], references: [id])
+
+  @@unique([tenantId, equipmentTypeId, accessoryEquipmentTypeId])
+  @@index([tenantId])
+  @@index([equipmentTypeId])
+  @@index([accessoryEquipmentTypeId])
+  @@map("equipment_type_accessory_defaults")
+}

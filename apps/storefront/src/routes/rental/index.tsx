@@ -1,0 +1,188 @@
+import {
+	createFileRoute,
+	notFound,
+	stripSearchParams,
+	useNavigate,
+} from "@tanstack/react-router";
+import { Suspense } from "react";
+import { RentalFilters } from "@/modules/catalog/components/catalog-filters";
+import {
+	NewArrivals,
+	NewArrivalsSkeleton,
+} from "@/modules/catalog/components/new-arrivals";
+import {
+	CombosSection,
+	EquipmentCatalogSection,
+	ProductCatalogSkeleton,
+} from "@/modules/catalog/components/product-catalog";
+import {
+	BranchSelection,
+	CatalogUnavailable,
+} from "@/modules/catalog/components/rental-catalog-entry-state";
+import { SectionErrorBoundary } from "@/modules/catalog/components/section-error-boundary";
+import { useRentalPageSearch } from "@/modules/catalog/hooks/use-catalog-page-search";
+import { newArrivalsQueries } from "@/modules/catalog/new-arrivals/new-arrivals.queries";
+import { resolveRentalBranch } from "@/modules/catalog/rental-branch-resolution";
+import {
+	type RentalCatalogSearch,
+	rentalCatalogSearchDefaults,
+	rentalCatalogSearchSchema,
+} from "@/modules/catalog/rental-catalog-search";
+import { storefrontRentalOfferListViewQueries } from "@/modules/catalog/storefront-rental-offer-list-view.queries";
+import { CartPopover } from "@/modules/rental-commitment/cart/view-cart/cart-popover";
+import { CustomerAccountAction } from "@/modules/tenant-management/auth/components/customer-account-action";
+import { storefrontBranchQueries } from "@/modules/tenant-management/branches/branches.queries";
+import { FloatingWhatsAppButton } from "@/modules/tenant-management/components/floating-whatsapp-button";
+import { publicTenantConfigQueries } from "@/modules/tenant-management/tenant/tenant.queries";
+import { getTenantBranding } from "@/modules/tenant-management/tenant-branding/tenant-branding";
+
+export const Route = createFileRoute("/rental/")({
+	validateSearch: rentalCatalogSearchSchema,
+	search: {
+		middlewares: [stripSearchParams(rentalCatalogSearchDefaults)],
+	},
+	loaderDeps: ({ search }) => search,
+	loader: async ({ context: { queryClient, tenantContext }, deps }) => {
+		if (!tenantContext || tenantContext.face !== "storefront") {
+			throw notFound();
+		}
+
+		const [branches, tenantConfig] = await Promise.all([
+			queryClient.ensureQueryData(storefrontBranchQueries.list()),
+			queryClient.ensureQueryData(publicTenantConfigQueries.detail()),
+		]);
+		const resolution = resolveRentalBranch(deps.branchId, branches);
+		const branding = getTenantBranding(tenantContext.tenant);
+
+		if (resolution.kind === "catalog") {
+			const search: RentalCatalogSearch = {
+				...deps,
+				branchId: resolution.branchId,
+			};
+			await Promise.all([
+				queryClient.ensureQueryData(
+					storefrontRentalOfferListViewQueries.list(search),
+				),
+				queryClient.ensureQueryData(
+					newArrivalsQueries.detail({
+						branchId: resolution.branchId,
+						windowDays: tenantConfig.newArrivalsWindowDays,
+					}),
+				),
+			]);
+			return { mode: "catalog" as const, search, branding };
+		}
+
+		if (resolution.kind === "selection") {
+			return {
+				mode: "selection" as const,
+				branches,
+				invalidBranchRequested: resolution.invalidBranchRequested,
+				branding,
+			};
+		}
+
+		return { mode: "no-branches" as const, branding };
+	},
+	head: ({ loaderData }) => ({
+		meta: [
+			{
+				title: loaderData?.branding.tenantName
+					? `${loaderData.branding.tenantName} | Alquiler de Equipos`
+					: "Depiqo | Alquiler de Equipos",
+			},
+		],
+		links: loaderData?.branding.faviconHref
+			? [{ rel: "icon", href: loaderData.branding.faviconHref }]
+			: [{ rel: "icon", href: "/favicon.svg" }],
+	}),
+	pendingComponent: ProductCatalogSkeleton,
+	component: RentalPage,
+});
+
+function RentalPage() {
+	const loaderData = Route.useLoaderData();
+	const navigate = useNavigate({ from: "/rental/" });
+	const handleBranchSelect = (branchId: string) =>
+		navigate({
+			search: (previous) => ({ ...previous, branchId, page: 1 }),
+			replace: true,
+		});
+
+	return (
+		<div className="flex min-h-screen flex-col bg-gray-50">
+			<header className="sticky top-0 z-10 border-b bg-white">
+				<div className="container mx-auto flex h-16 items-center gap-4 px-4">
+					{loaderData.branding.logoSrc ? (
+						<img
+							src={loaderData.branding.logoSrc}
+							alt={loaderData.branding.tenantName}
+							className="h-10 w-auto object-contain"
+						/>
+					) : (
+						<span className="text-xl font-bold text-primary">
+							{loaderData.branding.tenantName}
+						</span>
+					)}
+					<div className="ml-auto flex items-center gap-3">
+						{loaderData.mode === "catalog" && (
+							<CartPopover search={loaderData.search} />
+						)}
+						<CustomerAccountAction />
+					</div>
+				</div>
+			</header>
+			{loaderData.mode === "catalog" ? (
+				<RentalCatalog search={loaderData.search} />
+			) : (
+				<main className="container mx-auto flex flex-1 items-center justify-center px-4 py-12">
+					{loaderData.mode === "selection" ? (
+						<BranchSelection
+							branches={loaderData.branches}
+							invalidBranchRequested={loaderData.invalidBranchRequested}
+							onSelect={handleBranchSelect}
+						/>
+					) : (
+						<CatalogUnavailable />
+					)}
+				</main>
+			)}
+			<FloatingWhatsAppButton />
+		</div>
+	);
+}
+
+function RentalCatalog({ search }: { search: RentalCatalogSearch }) {
+	const { setUrlParam, handleCategorySelect, handleBranchChange } =
+		useRentalPageSearch(search);
+	return (
+		<main className="container mx-auto px-4">
+			<RentalFilters
+				search={search}
+				onBranchChange={handleBranchChange}
+				setUrlParam={setUrlParam}
+				onCategorySelect={handleCategorySelect}
+			/>
+			<SectionErrorBoundary message="Nuestro inventario no está disponible.">
+				<Suspense fallback={<ProductCatalogSkeleton />}>
+					<CombosSection search={search} />
+				</Suspense>
+			</SectionErrorBoundary>
+			<SectionErrorBoundary message="Los productos nuevos no están disponibles.">
+				<Suspense fallback={<NewArrivalsSkeleton />}>
+					<NewArrivals branchId={search.branchId} />
+				</Suspense>
+			</SectionErrorBoundary>
+			<SectionErrorBoundary message="Nuestro inventario no está disponible.">
+				<Suspense fallback={<ProductCatalogSkeleton />}>
+					<EquipmentCatalogSection
+						search={search}
+						onPageChange={(page) => setUrlParam({ page })}
+						handleCategorySelect={handleCategorySelect}
+						setUrlParam={setUrlParam}
+					/>
+				</Suspense>
+			</SectionErrorBoundary>
+		</main>
+	);
+}

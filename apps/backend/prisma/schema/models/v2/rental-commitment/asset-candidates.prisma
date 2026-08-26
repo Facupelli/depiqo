@@ -1,0 +1,28 @@
+// ---------------------------------------------------------------------------
+// V2 RENTAL COMMITMENT - ASSET CANDIDATE PROJECTION
+// ---------------------------------------------------------------------------
+
+enum V2RentalAssetOwnershipKind {
+  TENANT_OWNED
+  THIRD_PARTY
+}
+
+model V2RentalAssetCandidate {
+  id                    String                     @id @default(uuid())
+  tenantId              String                     @map("tenant_id")
+  assetId               String                     @map("asset_id")
+  branchId              String                     @map("branch_id")
+  equipmentTypeId       String                     @map("equipment_type_id")
+  assetStatus           V2AssetStatus              @map("asset_status")
+  ownershipKind         V2RentalAssetOwnershipKind @map("ownership_kind")
+  ownerId               String?                    @map("owner_id")
+  ownerContractSnapshot Json?                      @map("owner_contract_snapshot")
+  projectedAt           DateTime                   @default(now()) @map("projected_at") @db.Timestamptz(3)
+  sourceVersion         String?                    @map("source_version")
+  createdAt             DateTime                   @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt             DateTime                   @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@unique([tenantId, assetId])
+  @@index([tenantId, branchId, equipmentTypeId, assetStatus], map: "v2_asset_candidates_status_idx")
+  @@map("v2_rental_asset_candidates")
+}

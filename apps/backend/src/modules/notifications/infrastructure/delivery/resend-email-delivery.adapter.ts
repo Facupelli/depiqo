@@ -46,6 +46,7 @@ export class ResendEmailDeliveryAdapter implements EmailDeliveryPort {
 
       return {
         success: true,
+        provider: 'RESEND',
         providerMessageId: response.data?.id,
       };
     } catch (error) {
@@ -110,6 +111,7 @@ export class ResendEmailDeliveryAdapter implements EmailDeliveryPort {
   private invalidMessage(message: string): EmailDeliveryFailure {
     return {
       success: false,
+      provider: 'RESEND',
       reason: 'INVALID_MESSAGE',
       message,
     };
@@ -118,6 +120,7 @@ export class ResendEmailDeliveryAdapter implements EmailDeliveryPort {
   private providerFailure(message: string): EmailDeliveryFailure {
     return {
       success: false,
+      provider: 'RESEND',
       reason: 'PROVIDER_ERROR',
       message,
     };

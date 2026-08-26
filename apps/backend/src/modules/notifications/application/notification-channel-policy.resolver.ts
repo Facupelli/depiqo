@@ -1,7 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { QueryBus } from '@nestjs/cqrs';
-import { TenantConfig } from '@repo/schemas';
-import { GetTenantConfigQuery } from 'src/modules/tenant/public/queries/get-tenant-config.query';
+
+import {
+  TenantNotificationPreferences,
+  TenantNotificationPreferencesFact,
+} from 'src/modules/tenant-management/public-api/tenant-notification-preferences.public-api';
 
 import { getAllowedChannelsForNotificationType } from '../domain/notification-channel-registry';
 import { NotificationChannel } from '../domain/notification-channel.enum';
@@ -9,25 +11,27 @@ import { NotificationType } from '../domain/notification-type.enum';
 
 @Injectable()
 export class NotificationChannelPolicyResolver {
-  constructor(private readonly queryBus: QueryBus) {}
+  constructor(private readonly tenantNotificationPreferences: TenantNotificationPreferences) {}
 
   async resolveChannels(tenantId: string, notificationType: NotificationType): Promise<readonly NotificationChannel[]> {
     const allowedChannels = getAllowedChannelsForNotificationType(notificationType);
-    const tenantConfig = await this.queryBus.execute<GetTenantConfigQuery, TenantConfig | null>(
-      new GetTenantConfigQuery(tenantId),
-    );
+    const tenantPreferencesResult = await this.tenantNotificationPreferences.getTenantNotificationPreferences({
+      tenantId,
+    });
 
-    if (!tenantConfig) {
+    if (tenantPreferencesResult.isErr()) {
       return [];
     }
 
-    const enabledChannels = new Set(this.mapTenantChannelsToNotificationChannels(tenantConfig));
+    const enabledChannels = new Set(this.mapTenantChannelsToNotificationChannels(tenantPreferencesResult.value));
 
     return allowedChannels.filter((channel) => enabledChannels.has(channel));
   }
 
-  private mapTenantChannelsToNotificationChannels(tenantConfig: TenantConfig): NotificationChannel[] {
-    return tenantConfig.notifications.enabledChannels.flatMap((channel) => {
+  private mapTenantChannelsToNotificationChannels(
+    preferences: TenantNotificationPreferencesFact,
+  ): NotificationChannel[] {
+    return preferences.enabledChannels.flatMap((channel) => {
       switch (channel) {
         case 'EMAIL':
           return [NotificationChannel.EMAIL];

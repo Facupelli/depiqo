@@ -1,0 +1,86 @@
+// ---------------------------------------------------------------------------
+// V2 RENTAL COMMITMENT - RENTALS
+// ---------------------------------------------------------------------------
+
+enum V2RentalStatus {
+  PENDING
+  DRAFT
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+enum V2RentalSource {
+  STAFF
+  WHATSAPP_FLOW
+  FORMAL
+}
+
+model V2Rental {
+  id           String  @id @default(uuid())
+  tenantId     String  @map("tenant_id")
+  rentalNumber Int     @map("rental_number")
+  branchId     String  @map("branch_id")
+  customerId   String? @map("customer_id")
+
+  status            V2RentalStatus       @default(PENDING)
+  fulfillmentMethod V2FulfillmentMethod? @map("fulfillment_method")
+  notes             String?
+  insuranceSelected Boolean              @default(false) @map("insurance_selected")
+  bookingSnapshot   Json?                @map("booking_snapshot")
+
+  confirmationOperationId String? @map("confirmation_operation_id")
+  confirmationFingerprint String? @map("confirmation_fingerprint")
+
+  periodStart   DateTime        @map("period_start") @db.Timestamptz(3)
+  periodEnd     DateTime        @map("period_end") @db.Timestamptz(3)
+  priceSnapshot Json?           @map("price_snapshot")
+  source        V2RentalSource?
+
+  version     Int       @default(0)
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  cancelledAt DateTime? @map("cancelled_at") @db.Timestamptz(3)
+  confirmedAt DateTime? @map("confirmed_at") @db.Timestamptz(3)
+
+  deliveryDetails           V2RentalDeliveryDetails?
+  selections                V2RentalSelection[]
+  demandLines               V2RentalDemandLine[]
+  assignedAssets            V2AssignedAsset[]
+  assetBlocks               V2AssetBlock[]
+  ownerSplits               V2RentalOwnerSplit[]
+  accessorySelections       V2RentalAccessorySelection[]
+  accessoryAssetAssignments V2RentalAccessoryAssetAssignment[]
+
+  @@unique([tenantId, rentalNumber])
+  @@unique([tenantId, confirmationOperationId])
+  @@index([tenantId, branchId, status, createdAt(sort: Desc)])
+  @@index([tenantId, branchId, periodStart, periodEnd])
+  @@index([tenantId, customerId])
+  @@map("v2_rentals")
+}
+
+model V2RentalDeliveryDetails {
+  id            String @id @default(uuid())
+  tenantId      String @map("tenant_id")
+  rentalOrderId String @unique @map("rental_order_id")
+
+  addressLine1 String  @map("address_line_1")
+  addressLine2 String? @map("address_line_2")
+  city         String
+  state        String? @map("state")
+  postalCode   String? @map("postal_code")
+  country      String? @map("country")
+
+  contactName  String? @map("contact_name")
+  contactPhone String? @map("contact_phone")
+  notes        String? @map("notes")
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  rental V2Rental @relation(fields: [rentalOrderId], references: [id])
+
+  @@index([tenantId])
+  @@map("rental_delivery_details")
+}

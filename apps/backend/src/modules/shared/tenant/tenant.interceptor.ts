@@ -14,7 +14,7 @@ export class TenantInterceptor implements NestInterceptor {
     private readonly tenantContext: TenantContextService,
     private readonly configService: ConfigService<Env, true>,
   ) {
-    this.internalApiToken = this.configService.get('INTERNAL_API_TOKEN');
+    this.internalApiToken = this.configService.get('BFF_INTERNAL_TOKEN');
   }
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {

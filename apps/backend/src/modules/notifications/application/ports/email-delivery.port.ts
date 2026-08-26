@@ -25,11 +25,13 @@ export interface EmailMessage {
 
 export interface EmailDeliverySuccess {
   success: true;
+  provider: string;
   providerMessageId?: string;
 }
 
 export interface EmailDeliveryFailure {
   success: false;
+  provider: string;
   reason: 'PROVIDER_ERROR' | 'INVALID_MESSAGE';
   message: string;
 }

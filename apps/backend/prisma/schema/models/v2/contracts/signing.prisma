@@ -1,0 +1,51 @@
+enum V2DocumentSigningRequestStatus {
+  PENDING
+  SENT
+  VIEWED
+  SIGNED
+  EXPIRED
+  CANCELLED
+  FAILED
+}
+
+model V2DocumentSigningRequest {
+  id         String @id @default(uuid())
+  tenantId   String @map("tenant_id")
+  contractId String @map("contract_id")
+  rentalId   String @map("rental_id")
+
+  unsignedArtifactId String @map("unsigned_artifact_id")
+
+  signerName  String  @map("signer_name")
+  signerEmail String? @map("signer_email")
+  signerPhone String? @map("signer_phone")
+
+  tokenHash String? @unique @map("token_hash")
+
+  acceptanceTextVersion String @default("rental-remito-v1") @map("acceptance_text_version")
+
+  status V2DocumentSigningRequestStatus @default(PENDING)
+
+  providerData Json @default("{}") @map("provider_data")
+
+  sentAt      DateTime? @map("sent_at") @db.Timestamptz(3)
+  viewedAt    DateTime? @map("viewed_at") @db.Timestamptz(3)
+  signedAt    DateTime? @map("signed_at") @db.Timestamptz(3)
+  expiresAt   DateTime? @map("expires_at") @db.Timestamptz(3)
+  cancelledAt DateTime? @map("cancelled_at") @db.Timestamptz(3)
+  failedAt    DateTime? @map("failed_at") @db.Timestamptz(3)
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  contract         V2Contract         @relation(fields: [contractId], references: [id])
+  unsignedArtifact V2ContractArtifact @relation("SigningRequestUnsignedArtifact", fields: [unsignedArtifactId], references: [id])
+
+  acceptance V2DocumentSignatureAcceptance?
+
+  @@index([tenantId, rentalId, status])
+  @@index([tenantId, contractId, status])
+  @@index([unsignedArtifactId])
+  @@index([contractId])
+  @@map("v2_document_signing_requests")
+}
