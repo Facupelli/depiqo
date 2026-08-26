@@ -27,7 +27,7 @@ export class TenantCategoryTaxonomyService extends TenantCategoryTaxonomy {
         tenantId: input.tenantId,
         deletedAt: null,
       },
-      select: { id: true, name: true },
+      select: { id: true, name: true, sortOrder: true },
     });
   }
 

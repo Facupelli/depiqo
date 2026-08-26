@@ -2,7 +2,10 @@ import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 
 import { PrismaService } from 'src/core/database/prisma.service';
 import { AssetInventoryDisplayFacts } from 'src/modules/asset-inventory/public-api/asset-inventory-display-facts.public-api';
-import { TenantCategoryTaxonomy } from 'src/modules/tenant-management/public-api/tenant-category-taxonomy.public-api';
+import {
+  CategoryDisplayFact,
+  TenantCategoryTaxonomy,
+} from 'src/modules/tenant-management/public-api/tenant-category-taxonomy.public-api';
 
 import { GetStorefrontRentalOffersQuery } from './get-storefront-rental-offers.query';
 import { V2RentalOfferWhereInput } from 'src/generated/prisma/models';
@@ -131,6 +134,13 @@ export class GetStorefrontRentalOffersHandler implements IQueryHandler<
                   : [];
               })
             : undefined;
+        const orderedPackageComposition =
+          packageComposition && packageComposition.length === requirements.length
+            ? packageComposition.sort(comparePackageComposition).map(({ category, ...item }) => ({
+                ...item,
+                category: category ? { id: category.id, name: category.name } : null,
+              }))
+            : undefined;
 
         return {
           id: offer.id,
@@ -139,9 +149,7 @@ export class GetStorefrontRentalOffersHandler implements IQueryHandler<
           description: offer.rentableItem.description,
           isRentable: offer.isRentable,
           requirements,
-          ...(packageComposition && packageComposition.length === requirements.length
-            ? { packageComposition: packageComposition.sort(comparePackageComposition) }
-            : {}),
+          ...(orderedPackageComposition ? { packageComposition: orderedPackageComposition } : {}),
         };
       }),
       total,
@@ -151,13 +159,24 @@ export class GetStorefrontRentalOffersHandler implements IQueryHandler<
   }
 }
 
+type EnrichedPackageCompositionItem = Omit<
+  NonNullable<GetStorefrontRentalOffersItemReadModel['packageComposition']>[number],
+  'category'
+> & {
+  category: CategoryDisplayFact | null;
+};
+
 function comparePackageComposition(
-  left: NonNullable<GetStorefrontRentalOffersItemReadModel['packageComposition']>[number],
-  right: NonNullable<GetStorefrontRentalOffersItemReadModel['packageComposition']>[number],
+  left: EnrichedPackageCompositionItem,
+  right: EnrichedPackageCompositionItem,
 ): number {
+  if (!left.category && right.category) return 1;
+  if (left.category && !right.category) return -1;
+
   return (
-    (left.category?.name ?? '\uffff').localeCompare(right.category?.name ?? '\uffff') ||
-    (left.category?.id ?? '\uffff').localeCompare(right.category?.id ?? '\uffff') ||
+    (left.category?.sortOrder ?? 0) - (right.category?.sortOrder ?? 0) ||
+    (left.category?.name ?? '').localeCompare(right.category?.name ?? '') ||
+    (left.category?.id ?? '').localeCompare(right.category?.id ?? '') ||
     left.equipmentTypeName.localeCompare(right.equipmentTypeName) ||
     left.equipmentTypeId.localeCompare(right.equipmentTypeId)
   );

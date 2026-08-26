@@ -3,6 +3,7 @@ import { Result } from 'neverthrow';
 export interface CategoryDisplayFact {
   id: string;
   name: string;
+  sortOrder: number;
 }
 
 export interface GetCategoryDisplayFactsInput {
