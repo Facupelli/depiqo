@@ -6,19 +6,21 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@repo/ui/components/dropdown-menu";
-import { Archive, MoreHorizontal, Pencil } from "lucide-react";
+import { Archive, MoreHorizontal, Pencil, UserRound } from "lucide-react";
 
 type EquipmentUnit = GetEquipmentTypeDetailResponseDto["assets"][number];
 
 export type UnitRowActionsMenuProps = {
 	unit: EquipmentUnit;
 	onEdit: (unit: EquipmentUnit) => void;
+	onChangeOwner: (unit: EquipmentUnit) => void;
 	onRetire: (unit: EquipmentUnit) => void;
 };
 
 export function UnitRowActionsMenu({
 	unit,
 	onEdit,
+	onChangeOwner,
 	onRetire,
 }: UnitRowActionsMenuProps) {
 	return (
@@ -39,6 +41,10 @@ export function UnitRowActionsMenu({
 				<DropdownMenuItem onClick={() => onEdit(unit)}>
 					<Pencil className="mr-2 h-4 w-4" />
 					Editar
+				</DropdownMenuItem>
+				<DropdownMenuItem onClick={() => onChangeOwner(unit)}>
+					<UserRound className="mr-2 h-4 w-4" />
+					Cambiar propietario
 				</DropdownMenuItem>
 				{unit.status !== "RETIRED" ? (
 					<DropdownMenuItem
