@@ -7,7 +7,12 @@ import {
 import { Suspense } from "react";
 import { RentalFilters } from "@/modules/catalog/components/catalog-filters";
 import {
-	ProductCatalog,
+	NewArrivals,
+	NewArrivalsSkeleton,
+} from "@/modules/catalog/components/new-arrivals";
+import {
+	CombosSection,
+	EquipmentCatalogSection,
 	ProductCatalogSkeleton,
 } from "@/modules/catalog/components/product-catalog";
 import {
@@ -16,6 +21,7 @@ import {
 } from "@/modules/catalog/components/rental-catalog-entry-state";
 import { SectionErrorBoundary } from "@/modules/catalog/components/section-error-boundary";
 import { useRentalPageSearch } from "@/modules/catalog/hooks/use-catalog-page-search";
+import { newArrivalsQueries } from "@/modules/catalog/new-arrivals/new-arrivals.queries";
 import { resolveRentalBranch } from "@/modules/catalog/rental-branch-resolution";
 import {
 	type RentalCatalogSearch,
@@ -41,7 +47,7 @@ export const Route = createFileRoute("/rental/")({
 			throw notFound();
 		}
 
-		const [branches] = await Promise.all([
+		const [branches, tenantConfig] = await Promise.all([
 			queryClient.ensureQueryData(storefrontBranchQueries.list()),
 			queryClient.ensureQueryData(publicTenantConfigQueries.detail()),
 		]);
@@ -53,9 +59,17 @@ export const Route = createFileRoute("/rental/")({
 				...deps,
 				branchId: resolution.branchId,
 			};
-			await queryClient.ensureQueryData(
-				storefrontRentalOfferListViewQueries.list(search),
-			);
+			await Promise.all([
+				queryClient.ensureQueryData(
+					storefrontRentalOfferListViewQueries.list(search),
+				),
+				queryClient.ensureQueryData(
+					newArrivalsQueries.detail({
+						branchId: resolution.branchId,
+						windowDays: tenantConfig.newArrivalsWindowDays,
+					}),
+				),
+			]);
 			return { mode: "catalog" as const, search, branding };
 		}
 
@@ -151,7 +165,17 @@ function RentalCatalog({ search }: { search: RentalCatalogSearch }) {
 			/>
 			<SectionErrorBoundary message="Nuestro inventario no está disponible.">
 				<Suspense fallback={<ProductCatalogSkeleton />}>
-					<ProductCatalog
+					<CombosSection search={search} />
+				</Suspense>
+			</SectionErrorBoundary>
+			<SectionErrorBoundary message="Los productos nuevos no están disponibles.">
+				<Suspense fallback={<NewArrivalsSkeleton />}>
+					<NewArrivals branchId={search.branchId} />
+				</Suspense>
+			</SectionErrorBoundary>
+			<SectionErrorBoundary message="Nuestro inventario no está disponible.">
+				<Suspense fallback={<ProductCatalogSkeleton />}>
+					<EquipmentCatalogSection
 						search={search}
 						onPageChange={(page) => setUrlParam({ page })}
 						handleCategorySelect={handleCategorySelect}

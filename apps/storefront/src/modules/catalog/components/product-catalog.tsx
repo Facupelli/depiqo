@@ -26,102 +26,105 @@ import { usePublicTenantConfig } from "@/modules/tenant-management/tenant/tenant
 import { formatCurrency } from "@/shared/utils/price.utils";
 import { CategoryFilter, SearchFilter } from "./product-catalog-filters";
 
-interface ProductCatalogProps {
+interface EquipmentCatalogSectionProps {
 	search: RentalCatalogSearch;
 	onPageChange: (page: number) => void;
 	handleCategorySelect: (id: string) => void;
 	setUrlParam: (patch: Partial<RentalCatalogSearch>) => void;
 }
 
-export function ProductCatalog({
+export function CombosSection({ search }: { search: RentalCatalogSearch }) {
+	const { data: rentalOffers } = useStorefrontRentalOfferListView(search);
+	const { data: tenantPublicConfig } = usePublicTenantConfig();
+
+	return (
+		<section className="py-10">
+			<div className="flex items-end justify-between gap-4">
+				<div className="flex justify-between items-baseline w-full">
+					<h2 className="text-2xl font-semibold tracking-tight">Combos</h2>
+					<p className="text-sm text-muted-foreground">
+						{rentalOffers.packages.total} ofertas disponibles
+					</p>
+				</div>
+			</div>
+			<p className="text-sm text-muted-foreground">
+				Combos de equipo destacados a un precio menor diario.
+			</p>
+			<div className="grid gap-6 py-6 grid-cols-[repeat(auto-fit,minmax(250px,350px))]">
+				{rentalOffers.packages.data.map((rentalOffer) => (
+					<ProductCard
+						key={rentalOffer.id}
+						product={rentalOffer}
+						locale={tenantPublicConfig.locale}
+						branchId={search.branchId}
+					/>
+				))}
+			</div>
+		</section>
+	);
+}
+
+export function EquipmentCatalogSection({
 	search,
 	onPageChange,
 	handleCategorySelect,
 	setUrlParam,
-}: ProductCatalogProps) {
+}: EquipmentCatalogSectionProps) {
 	const { data: rentalOffers, isFetching } =
 		useStorefrontRentalOfferListView(search);
 	const { data: tenantPublicConfig } = usePublicTenantConfig();
-
 	const totalPages = Math.ceil(
 		rentalOffers.singles.total / rentalOffers.singles.pageSize,
 	);
 
 	return (
-		<>
+		<section className="py-10">
 			{isFetching && (
-				<p className="pt-4 text-sm text-muted-foreground">
+				<p className="pb-4 text-sm text-muted-foreground">
 					Actualizando resultados...
 				</p>
 			)}
-
-			<section className="py-10">
-				<div className="flex items-end justify-between gap-4">
-					<div className="flex justify-between items-baseline w-full">
-						<h2 className="text-2xl font-semibold tracking-tight">Combos</h2>
-						<p className="text-sm text-muted-foreground">
-							{rentalOffers.packages.total} ofertas disponibles
-						</p>
-					</div>
+			<div className="flex items-end justify-between gap-4 pb-4">
+				<div className="flex justify-between items-baseline w-full">
+					<h2 className="text-2xl font-semibold tracking-tight">Equipos</h2>
+					<p className="text-sm text-muted-foreground">
+						{rentalOffers.singles.total} ofertas disponibles
+					</p>
 				</div>
-				<p className="text-sm text-muted-foreground">
-					Combos de equipo destacados a un precio menor diario.
-				</p>
-				<div className="grid gap-6 py-6 grid-cols-[repeat(auto-fit,minmax(250px,350px))]">
-					{rentalOffers.packages.data.map((rentalOffer) => (
-						<ProductCard
-							key={rentalOffer.id}
-							product={rentalOffer}
-							locale={tenantPublicConfig.locale}
-							branchId={search.branchId}
-						/>
-					))}
+			</div>
+
+			<CategoryFilter
+				activeCategory={search.categoryId}
+				onSelect={handleCategorySelect}
+			/>
+			<SearchFilter
+				search={search}
+				onSearchCommit={(value) =>
+					setUrlParam({ search: value || undefined, page: 1 })
+				}
+			/>
+
+			<div className="grid gap-6 py-6 grid-cols-[repeat(auto-fit,minmax(250px,350px))]">
+				{rentalOffers.singles.data.map((rentalOffer) => (
+					<ProductCard
+						key={rentalOffer.id}
+						product={rentalOffer}
+						locale={tenantPublicConfig.locale}
+						branchId={search.branchId}
+					/>
+				))}
+			</div>
+
+			{totalPages > 1 && (
+				<div className="mt-4 flex justify-center">
+					<PaginationControls
+						currentPage={search.page}
+						totalPages={totalPages}
+						onPageChange={onPageChange}
+					/>
 				</div>
-			</section>
-
-			<section className="py-10">
-				<div className="flex items-end justify-between gap-4 pb-4">
-					<div className="flex justify-between items-baseline w-full">
-						<h2 className="text-2xl font-semibold tracking-tight">Equipos</h2>
-						<p className="text-sm text-muted-foreground">
-							{rentalOffers.singles.total} ofertas disponibles
-						</p>
-					</div>
-				</div>
-
-				<CategoryFilter
-					activeCategory={search.categoryId}
-					onSelect={handleCategorySelect}
-				/>
-				<SearchFilter
-					search={search}
-					onSearchCommit={(value) =>
-						setUrlParam({ search: value || undefined, page: 1 })
-					}
-				/>
-
-				<div className="grid gap-6 py-6 grid-cols-[repeat(auto-fit,minmax(250px,350px))]">
-					{rentalOffers.singles.data.map((rentalOffer) => (
-						<ProductCard
-							key={rentalOffer.id}
-							product={rentalOffer}
-							locale={tenantPublicConfig.locale}
-							branchId={search.branchId}
-						/>
-					))}
-				</div>
-
-				{totalPages > 1 && (
-					<div className="mt-4 flex justify-center">
-						<PaginationControls
-							currentPage={search.page}
-							totalPages={totalPages}
-							onPageChange={onPageChange}
-						/>
-					</div>
-				)}
-			</section>
-		</>
+			)}
+		</section>
 	);
 }
 

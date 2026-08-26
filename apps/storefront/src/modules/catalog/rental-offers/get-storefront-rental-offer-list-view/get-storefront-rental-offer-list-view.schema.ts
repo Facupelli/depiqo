@@ -1,6 +1,8 @@
 import {
+	ExplicitOffsetInstantWireSchema,
 	GetStorefrontRentalOffersPackageCompositionItemSchema,
 	GetStorefrontRentalOffersPricingItemSchema,
+	GetStorefrontRentalOffersSortSchema,
 } from "@repo/api-contracts";
 import { z } from "zod";
 
@@ -10,6 +12,9 @@ export const GetStorefrontRentalOfferListViewInputSchema = z.object({
 	periodEnd: z.iso.date().optional(),
 	categoryId: z.string().trim().min(1).optional(),
 	search: z.string().trim().min(1).optional(),
+	kind: z.literal("SINGLE").optional(),
+	publishedAfter: ExplicitOffsetInstantWireSchema.optional(),
+	sort: GetStorefrontRentalOffersSortSchema.optional(),
 	page: z.coerce.number().int().positive().default(1),
 	pageSize: z.coerce.number().int().positive().max(100).default(20),
 });

@@ -24,18 +24,28 @@ export async function getStorefrontRentalOfferListView(
 ): Promise<GetStorefrontRentalOfferListViewResponseDto> {
 	const parsedInput = GetStorefrontRentalOfferListViewInputSchema.parse(input);
 
+	const emptyPage: GetStorefrontRentalOffersResponseDto = {
+		data: [],
+		total: 0,
+		page: 1,
+		pageSize: parsedInput.pageSize,
+	};
 	const [packagesPage, singlesPage] = await Promise.all([
-		getStorefrontRentalOffers(requestContext, {
-			branchId: parsedInput.branchId,
-			kind: "PACKAGE",
-			page: 1,
-			pageSize: 30,
-		}),
+		parsedInput.kind === "SINGLE"
+			? Promise.resolve(emptyPage)
+			: getStorefrontRentalOffers(requestContext, {
+					branchId: parsedInput.branchId,
+					kind: "PACKAGE",
+					page: 1,
+					pageSize: 30,
+				}),
 		getStorefrontRentalOffers(requestContext, {
 			branchId: parsedInput.branchId,
 			kind: "SINGLE",
 			categoryId: parsedInput.categoryId,
 			search: parsedInput.search,
+			publishedAfter: parsedInput.publishedAfter,
+			sort: parsedInput.sort,
 			page: parsedInput.page,
 			pageSize: parsedInput.pageSize,
 		}),
