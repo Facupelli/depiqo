@@ -17,6 +17,7 @@ import {
 } from "@repo/ui/components/pagination";
 import { Skeleton } from "@repo/ui/components/skeleton";
 import { Minus, Plus, ShoppingBag } from "lucide-react";
+import { useState } from "react";
 import { buildR2PublicUrl } from "@/lib/r2-public-url";
 import type { RentalCatalogSearch } from "@/modules/catalog/rental-catalog-search";
 import type { StorefrontRentalOfferListViewItemDto } from "@/modules/catalog/rental-offers/get-storefront-rental-offer-list-view/get-storefront-rental-offer-list-view.schema";
@@ -24,6 +25,7 @@ import { useStorefrontRentalOfferListView } from "@/modules/catalog/storefront-r
 import { useRentalOfferCartState } from "@/modules/rental-commitment/cart/add-rental-offer/use-rental-offer-cart-state";
 import { usePublicTenantConfig } from "@/modules/tenant-management/tenant/tenant.queries";
 import { formatCurrency } from "@/shared/utils/price.utils";
+import { PackageCard } from "./package-card";
 import { CategoryFilter, SearchFilter } from "./product-catalog-filters";
 
 interface EquipmentCatalogSectionProps {
@@ -34,13 +36,31 @@ interface EquipmentCatalogSectionProps {
 }
 
 export function CombosSection({ search }: { search: RentalCatalogSearch }) {
+	const [showAllPackages, setShowAllPackages] = useState(false);
 	const { data: rentalOffers } = useStorefrontRentalOfferListView(search);
 	const { data: tenantPublicConfig } = usePublicTenantConfig();
+	const packages = rentalOffers.packages.data;
+	const firstRowPackages = packages.slice(0, 3);
+	const secondRowPackages = packages.slice(3, 7);
+	const additionalPackages = packages.slice(7);
+
+	const renderPackageCard = (
+		rentalOffer: StorefrontRentalOfferListViewItemDto,
+		layout: "wide" | "compact",
+	) => (
+		<PackageCard
+			key={rentalOffer.id}
+			product={rentalOffer}
+			locale={tenantPublicConfig.locale}
+			branchId={search.branchId}
+			layout={layout}
+		/>
+	);
 
 	return (
 		<section className="py-10">
 			<div className="flex items-end justify-between gap-4">
-				<div className="flex justify-between items-baseline w-full">
+				<div className="flex w-full items-baseline justify-between">
 					<h2 className="text-2xl font-semibold tracking-tight">Combos</h2>
 					<p className="text-sm text-muted-foreground">
 						{rentalOffers.packages.total} ofertas disponibles
@@ -48,18 +68,44 @@ export function CombosSection({ search }: { search: RentalCatalogSearch }) {
 				</div>
 			</div>
 			<p className="text-sm text-muted-foreground">
-				Combos de equipo destacados a un precio menor diario.
+				Combos de equipo a un precio menor diario.
 			</p>
-			<div className="grid gap-6 py-6 grid-cols-[repeat(auto-fit,minmax(250px,350px))]">
-				{rentalOffers.packages.data.map((rentalOffer) => (
-					<ProductCard
-						key={rentalOffer.id}
-						product={rentalOffer}
-						locale={tenantPublicConfig.locale}
-						branchId={search.branchId}
-					/>
-				))}
+
+			<div className="space-y-6 py-6">
+				{firstRowPackages.length > 0 && (
+					<div className="grid items-start gap-6 md:grid-cols-2 lg:grid-cols-3">
+						{firstRowPackages.map((rentalOffer) =>
+							renderPackageCard(rentalOffer, "wide"),
+						)}
+					</div>
+				)}
+				{secondRowPackages.length > 0 && (
+					<div className="grid items-start gap-6 sm:grid-cols-2 lg:grid-cols-4">
+						{secondRowPackages.map((rentalOffer) =>
+							renderPackageCard(rentalOffer, "compact"),
+						)}
+					</div>
+				)}
+				{showAllPackages && additionalPackages.length > 0 && (
+					<div className="grid items-start gap-6 sm:grid-cols-2 lg:grid-cols-4">
+						{additionalPackages.map((rentalOffer) =>
+							renderPackageCard(rentalOffer, "compact"),
+						)}
+					</div>
+				)}
 			</div>
+
+			{additionalPackages.length > 0 && (
+				<div className="flex justify-center">
+					<Button
+						type="button"
+						variant="outline"
+						onClick={() => setShowAllPackages((isShowingAll) => !isShowingAll)}
+					>
+						{showAllPackages ? "Ver menos combos" : "Ver todos los combos"}
+					</Button>
+				</div>
+			)}
 		</section>
 	);
 }

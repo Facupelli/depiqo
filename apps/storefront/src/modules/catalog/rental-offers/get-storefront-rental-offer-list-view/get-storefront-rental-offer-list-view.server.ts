@@ -37,7 +37,7 @@ export async function getStorefrontRentalOfferListView(
 					branchId: parsedInput.branchId,
 					kind: "PACKAGE",
 					page: 1,
-					pageSize: 30,
+					pageSize: 100,
 				}),
 		getStorefrontRentalOffers(requestContext, {
 			branchId: parsedInput.branchId,
