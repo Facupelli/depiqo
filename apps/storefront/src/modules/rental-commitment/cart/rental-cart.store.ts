@@ -33,10 +33,11 @@ const useRentalCartStoreBase = create<RentalCartState>()(
 							),
 						};
 					}),
-				incrementRentalOffer: (id) =>
+				incrementRentalOffer: (id, availableCount) =>
 					set((state) => ({
 						items: state.items.map((item) =>
-							item.rentalOfferId === id && canIncreaseRentalCartItem(item)
+							item.rentalOfferId === id &&
+							canIncreaseRentalCartItem(item, availableCount)
 								? { ...item, quantity: item.quantity + 1 }
 								: item,
 						),

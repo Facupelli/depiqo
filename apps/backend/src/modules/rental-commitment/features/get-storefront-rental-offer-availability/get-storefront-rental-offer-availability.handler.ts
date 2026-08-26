@@ -1,7 +1,13 @@
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
+import { err, ok, Result } from 'neverthrow';
 
 import { PrismaService } from 'src/core/database/prisma.service';
+import { CatalogSelectionResolution } from 'src/modules/catalog/public-api/catalog-selection-resolution.public-api';
 
+import {
+  GetStorefrontRentalOfferAvailabilityError,
+  getStorefrontRentalOfferAvailabilityError,
+} from './get-storefront-rental-offer-availability.errors';
 import { GetStorefrontRentalOfferAvailabilityQuery } from './get-storefront-rental-offer-availability.query';
 
 interface ActiveAssetBlockRow {
@@ -18,25 +24,56 @@ export interface StorefrontRentalOfferAvailabilityItemReadModel {
   availableCount: number;
 }
 
-export interface GetStorefrontRentalOfferAvailabilityResult {
+export interface GetStorefrontRentalOfferAvailabilityReadModel {
   data: StorefrontRentalOfferAvailabilityItemReadModel[];
 }
 
-// TODO: Resolve authoritative offer requirements through Catalog instead of accepting caller-controlled requirements.
+export type GetStorefrontRentalOfferAvailabilityResult = Result<
+  GetStorefrontRentalOfferAvailabilityReadModel,
+  GetStorefrontRentalOfferAvailabilityError
+>;
+
 @QueryHandler(GetStorefrontRentalOfferAvailabilityQuery)
 export class GetStorefrontRentalOfferAvailabilityHandler implements IQueryHandler<
   GetStorefrontRentalOfferAvailabilityQuery,
   GetStorefrontRentalOfferAvailabilityResult
 > {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly catalogSelectionResolution: CatalogSelectionResolution,
+  ) {}
 
   async execute(query: GetStorefrontRentalOfferAvailabilityQuery): Promise<GetStorefrontRentalOfferAvailabilityResult> {
-    const equipmentTypeIds = this.collectEquipmentTypeIds(query.rentalOffers);
+    if (query.rentalOfferIds.length === 0) {
+      return ok({ data: [] });
+    }
+
+    const resolved = await this.catalogSelectionResolution.resolveSelectedRentalOfferRequirements({
+      tenantId: query.tenantId,
+      branchId: query.branchId,
+      rentalOfferIds: [...query.rentalOfferIds],
+    });
+
+    if (resolved.isErr()) {
+      return err(
+        getStorefrontRentalOfferAvailabilityError(
+          'rental_commitment.invalid_fulfillment_definition',
+          resolved.error.message,
+          resolved.error,
+        ),
+      );
+    }
+
+    const validOffers = resolved.value.resolvedOffers;
+    const equipmentTypeIds = this.collectEquipmentTypeIds(validOffers);
 
     if (equipmentTypeIds.length === 0) {
-      return {
-        data: query.rentalOffers.map((offer) => ({ rentalOfferId: offer.rentalOfferId, availableCount: 0 })),
-      };
+      return ok({
+        data: query.rentalOfferIds.map((rentalOfferId) => ({
+          rentalOfferId,
+          availableCount: 0,
+        })),
+      });
     }
 
     const candidates = await this.findAllocatableCandidates({
@@ -52,20 +89,33 @@ export class GetStorefrontRentalOfferAvailabilityHandler implements IQueryHandle
     });
 
     const availableAssetCountByEquipmentType = this.countAvailableAssetsByEquipmentType(candidates, blockedAssetIds);
+    const availableCountByRentalOfferId = new Map(
+      validOffers.map((offer) => [
+        offer.rentalOfferId,
+        this.calculateAvailableCount(offer.fulfillmentRequirements, availableAssetCountByEquipmentType),
+      ]),
+    );
 
-    return {
-      data: query.rentalOffers.map((offer) => ({
-        rentalOfferId: offer.rentalOfferId,
-        availableCount: this.calculateAvailableCount(offer.requirements, availableAssetCountByEquipmentType),
+    return ok({
+      data: query.rentalOfferIds.map((rentalOfferId) => ({
+        rentalOfferId,
+        availableCount: availableCountByRentalOfferId.get(rentalOfferId) ?? 0,
       })),
-    };
+    });
   }
 
-  private collectEquipmentTypeIds(rentalOffers: GetStorefrontRentalOfferAvailabilityQuery['rentalOffers']): string[] {
+  private collectEquipmentTypeIds(
+    rentalOffers: readonly {
+      fulfillmentRequirements: readonly {
+        equipmentTypeId: string;
+        quantityPerItem: number;
+      }[];
+    }[],
+  ): string[] {
     return [
       ...new Set(
         rentalOffers.flatMap((offer) =>
-          offer.requirements
+          offer.fulfillmentRequirements
             .filter((requirement) => Number.isInteger(requirement.quantityPerItem) && requirement.quantityPerItem > 0)
             .map((requirement) => requirement.equipmentTypeId),
         ),
@@ -133,7 +183,10 @@ export class GetStorefrontRentalOfferAvailabilityHandler implements IQueryHandle
   }
 
   private calculateAvailableCount(
-    requirements: GetStorefrontRentalOfferAvailabilityQuery['rentalOffers'][number]['requirements'],
+    requirements: readonly {
+      equipmentTypeId: string;
+      quantityPerItem: number;
+    }[],
     availableAssetCountByEquipmentType: ReadonlyMap<string, number>,
   ): number {
     if (requirements.length === 0) {

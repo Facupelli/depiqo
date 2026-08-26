@@ -16,6 +16,9 @@ export function toRentalCartItem(
 	};
 }
 
-export function canIncreaseRentalCartItem(item: RentalCartItem): boolean {
-	return item.availableCount === null || item.quantity < item.availableCount;
+export function canIncreaseRentalCartItem(
+	item: RentalCartItem,
+	availableCount: number | null | undefined = item.availableCount,
+): boolean {
+	return availableCount === null || item.quantity < availableCount;
 }

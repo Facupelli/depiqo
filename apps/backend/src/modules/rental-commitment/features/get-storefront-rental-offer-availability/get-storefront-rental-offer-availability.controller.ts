@@ -1,6 +1,6 @@
 import { Body, Controller, HttpCode, HttpStatus, Post, UseGuards } from '@nestjs/common';
 import { QueryBus } from '@nestjs/cqrs';
-
+import { createProblemDetails, createProblemType, ProblemException } from 'src/core/problem-details';
 import { Public } from 'src/core/decorators/public.decorator';
 import { DateRange } from 'src/core/domain/value-objects/date-range.value-object';
 import { SkipCsrf } from 'src/modules/tenant-management/auth/shared/csrf/skip-csrf.decorator';
@@ -12,8 +12,9 @@ import { StorefrontTenantContextGuard } from '../../../tenant-management/tenant-
 import { StorefrontTenantContext } from '../../../tenant-management/tenant-context/tenant-context.contract';
 import { rentalCommitmentApplicationError } from '../create-confirmed-rental/rental-commitment-application.error';
 import { toRentalCommitmentProblem } from '../create-confirmed-rental/rental-commitment-http-error.mapper';
-import { GetStorefrontRentalOfferAvailabilityQuery } from './get-storefront-rental-offer-availability.query';
+import { GetStorefrontRentalOfferAvailabilityError } from './get-storefront-rental-offer-availability.errors';
 import { GetStorefrontRentalOfferAvailabilityResult } from './get-storefront-rental-offer-availability.handler';
+import { GetStorefrontRentalOfferAvailabilityQuery } from './get-storefront-rental-offer-availability.query';
 import { GetStorefrontRentalOfferAvailabilityRequestDto } from './get-storefront-rental-offer-availability.request.dto';
 import type { GetStorefrontRentalOfferAvailabilityResponseDto } from './get-storefront-rental-offer-availability.response.dto';
 
@@ -63,8 +64,31 @@ export class GetStorefrontRentalOfferAvailabilityHttpController {
       );
     }
 
-    return this.queryBus.execute<GetStorefrontRentalOfferAvailabilityQuery, GetStorefrontRentalOfferAvailabilityResult>(
-      new GetStorefrontRentalOfferAvailabilityQuery(tenant.tenantId, dto.branchId, period, dto.rentalOffers),
-    );
+    const result = await this.queryBus.execute<
+      GetStorefrontRentalOfferAvailabilityQuery,
+      GetStorefrontRentalOfferAvailabilityResult
+    >(new GetStorefrontRentalOfferAvailabilityQuery(tenant.tenantId, dto.branchId, period, dto.rentalOfferIds));
+
+    if (result.isErr()) {
+      throw toGetStorefrontRentalOfferAvailabilityProblem(result.error);
+    }
+
+    return result.value;
   }
+}
+
+function toGetStorefrontRentalOfferAvailabilityProblem(
+  error: GetStorefrontRentalOfferAvailabilityError,
+): ProblemException {
+  return ProblemException.from({
+    problemDetails: createProblemDetails({
+      type: createProblemType('rental-commitment/invalid-fulfillment-definition'),
+      title: 'Invalid fulfillment definition',
+      status: HttpStatus.UNPROCESSABLE_ENTITY,
+      detail: 'The requested rental offer has an invalid fulfillment definition.',
+      extensions: { code: error.code },
+    }),
+    applicationError: error,
+    cause: error.cause,
+  });
 }

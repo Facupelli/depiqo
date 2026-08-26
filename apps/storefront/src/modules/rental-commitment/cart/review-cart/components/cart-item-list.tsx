@@ -6,6 +6,7 @@ import { groupCartPackageComposition } from "../../package-composition/cart-pack
 import type { RentalCartItem } from "../../rental-cart.types";
 import { formatCartMoney } from "../cart-money.utils";
 import {
+	useCartAvailabilityContext,
 	useCartBookingFeedbackContext,
 	useCartContext,
 	useCartPricingContext,
@@ -18,6 +19,7 @@ type CartPriceLine = NonNullable<
 export function CartItemList() {
 	const { items, actions } = useCartContext();
 	const { unavailableRentalOfferIds } = useCartBookingFeedbackContext();
+	const { availableCountByRentalOfferId } = useCartAvailabilityContext();
 	const { pricing } = useCartPricingContext();
 
 	return (
@@ -30,15 +32,22 @@ export function CartItemList() {
 					const line = pricing?.lines.find(
 						(candidate) => candidate.rentalOfferId === item.rentalOfferId,
 					);
+					const availableCount = availableCountByRentalOfferId.get(
+						item.rentalOfferId,
+					);
+					const isQuantityUnavailable =
+						availableCount !== undefined && item.quantity > availableCount;
+					const isUnavailable =
+						unavailableRentalOfferIds.includes(item.rentalOfferId) ||
+						isQuantityUnavailable;
 
 					return item.packageComposition?.length ? (
 						<CartPackageItem
 							key={item.rentalOfferId}
 							item={item}
 							line={line}
-							isUnavailable={unavailableRentalOfferIds.includes(
-								item.rentalOfferId,
-							)}
+							isUnavailable={isUnavailable}
+							availableCount={availableCount}
 							actions={actions}
 						/>
 					) : (
@@ -46,9 +55,8 @@ export function CartItemList() {
 							key={item.rentalOfferId}
 							item={item}
 							line={line}
-							isUnavailable={unavailableRentalOfferIds.includes(
-								item.rentalOfferId,
-							)}
+							isUnavailable={isUnavailable}
+							availableCount={availableCount}
 							actions={actions}
 						/>
 					);
@@ -62,11 +70,13 @@ function CartSingleItem({
 	item,
 	line,
 	isUnavailable,
+	availableCount,
 	actions,
 }: {
 	item: RentalCartItem;
 	line?: CartPriceLine;
 	isUnavailable: boolean;
+	availableCount?: number;
 	actions: ReturnType<typeof useCartContext>["actions"];
 }) {
 	const { pricing } = useCartPricingContext();
@@ -94,6 +104,7 @@ function CartSingleItem({
 			</div>
 			<QuantityControls
 				item={item}
+				availableCount={availableCount}
 				actions={actions}
 				className="col-start-2 sm:col-start-auto"
 			/>
@@ -105,11 +116,13 @@ function CartPackageItem({
 	item,
 	line,
 	isUnavailable,
+	availableCount,
 	actions,
 }: {
 	item: RentalCartItem;
 	line?: CartPriceLine;
 	isUnavailable: boolean;
+	availableCount?: number;
 	actions: ReturnType<typeof useCartContext>["actions"];
 }) {
 	const { pricing } = useCartPricingContext();
@@ -144,6 +157,7 @@ function CartPackageItem({
 				</div>
 				<QuantityControls
 					item={item}
+					availableCount={availableCount}
 					actions={actions}
 					className="col-start-2 sm:col-start-auto"
 				/>
@@ -205,10 +219,12 @@ function ItemImage({ image }: { image: string | null }) {
 
 function QuantityControls({
 	item,
+	availableCount,
 	actions,
 	className,
 }: {
 	item: RentalCartItem;
+	availableCount?: number;
 	actions: ReturnType<typeof useCartContext>["actions"];
 	className?: string;
 }) {
@@ -235,11 +251,14 @@ function QuantityControls({
 				size="icon-sm"
 				aria-label="Aumentar"
 				disabled={
-					item.availableCount !== null && item.quantity >= item.availableCount
+					availableCount === undefined || item.quantity >= availableCount
 				}
 				onClick={() => {
+					if (availableCount === undefined || item.quantity >= availableCount) {
+						return;
+					}
 					clearUnavailableRentalOfferIds();
-					actions.incrementRentalOffer(item.rentalOfferId);
+					actions.incrementRentalOffer(item.rentalOfferId, availableCount);
 				}}
 			>
 				<Plus />

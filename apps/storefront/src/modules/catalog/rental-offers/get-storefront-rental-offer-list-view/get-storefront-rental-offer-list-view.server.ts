@@ -63,10 +63,7 @@ export async function getStorefrontRentalOfferListView(
 					branchId: parsedInput.branchId,
 					periodStart: parsedInput.periodStart,
 					periodEnd: parsedInput.periodEnd,
-					rentalOffers: rentalOffers.map((rentalOffer) => ({
-						rentalOfferId: rentalOffer.id,
-						requirements: rentalOffer.requirements,
-					})),
+					rentalOfferIds,
 				})
 			: Promise.resolve(null),
 	]);
