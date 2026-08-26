@@ -23,7 +23,6 @@ import {
 	TableRow,
 } from "@repo/ui/components/table";
 import { keepPreviousData } from "@tanstack/react-query";
-import { useNavigate } from "@tanstack/react-router";
 import {
 	type ColumnDef,
 	flexRender,
@@ -136,7 +135,6 @@ function createCustomersColumns(
 }
 
 export function CustomersListPage() {
-	const navigate = useNavigate();
 	const timezone = useTenantTimezone();
 	const [filters, setFilters] = useState<FiltersState>(DEFAULT_FILTERS);
 	const debouncedSearch = useDebounce(filters.search, 300);
@@ -241,12 +239,6 @@ export function CustomersListPage() {
 								isLoading={isLoading}
 								isError={isError}
 								pageSize={filters.pageSize}
-								onRowClick={(customer) =>
-									navigate({
-										to: "/dashboard/customers/pending-profiles/$customerId",
-										params: { customerId: customer.id },
-									})
-								}
 							/>
 						</TableBody>
 					</Table>
@@ -342,13 +334,11 @@ function TableBodyContent({
 	isLoading,
 	isError,
 	pageSize,
-	onRowClick,
 }: {
 	table: TanStackTable<GetRentalCustomersItemDto>;
 	isLoading: boolean;
 	isError: boolean;
 	pageSize: number;
-	onRowClick: (customer: GetRentalCustomersItemDto) => void;
 }) {
 	const colSpan = table.getAllColumns().length;
 
@@ -383,11 +373,7 @@ function TableBodyContent({
 	}
 
 	return table.getRowModel().rows.map((row) => (
-		<TableRow
-			key={row.id}
-			className="cursor-pointer"
-			onClick={() => onRowClick(row.original)}
-		>
+		<TableRow key={row.id}>
 			{row.getVisibleCells().map((cell) => (
 				<TableCell key={cell.id}>
 					{flexRender(cell.column.columnDef.cell, cell.getContext())}

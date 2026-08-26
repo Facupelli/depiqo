@@ -473,53 +473,57 @@ function CustomerProfileReviewActionsPanel({
 			<Card>
 				<CardHeader>
 					<CardTitle className="text-sm font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-						Acciones de revision
+						REVISIÓN
 					</CardTitle>
 				</CardHeader>
 				<CardContent className="space-y-6">
-					<div className="space-y-3">
-						<Button
-							type="button"
-							className="w-full"
-							size="lg"
-							onClick={onApprove}
-							disabled={isSubmitting}
-						>
-							<CircleCheck className="h-4 w-4" />
-							{isSubmitting ? "Procesando..." : "Aprobar alta"}
-						</Button>
-						<Button
-							type="button"
-							variant="outline"
-							className="w-full"
-							size="lg"
-							onClick={onReject}
-							disabled={isSubmitting}
-						>
-							<X className="h-4 w-4" />
-							{isSubmitting ? "Procesando..." : "Rechazar"}
-						</Button>
-					</div>
+					{profile.status === "PENDING" ? (
+						<>
+							<div className="space-y-3">
+								<Button
+									type="button"
+									className="w-full"
+									size="lg"
+									onClick={onApprove}
+									disabled={isSubmitting}
+								>
+									<CircleCheck className="h-4 w-4" />
+									{isSubmitting ? "Procesando..." : "Aprobar alta"}
+								</Button>
+								<Button
+									type="button"
+									variant="outline"
+									className="w-full"
+									size="lg"
+									onClick={onReject}
+									disabled={isSubmitting}
+								>
+									<X className="h-4 w-4" />
+									{isSubmitting ? "Procesando..." : "Rechazar"}
+								</Button>
+							</div>
 
-					<div className="space-y-2">
-						<p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
-							Notas del auditor
-						</p>
-						<Textarea
-							value={auditorNotes}
-							onChange={(event) => onAuditorNotesChange(event.target.value)}
-							placeholder="Escriba aqui sus observaciones internas sobre la verificacion del expediente..."
-							className="min-h-24 resize-none"
-						/>
-						<p className="text-xs text-muted-foreground">
-							Estas notas son solo visibles para el equipo de auditoria.
-						</p>
-						{errorMessage ? (
-							<p className="text-sm font-medium text-destructive">
-								{errorMessage}
-							</p>
-						) : null}
-					</div>
+							<div className="space-y-2">
+								<p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
+									Notas del auditor
+								</p>
+								<Textarea
+									value={auditorNotes}
+									onChange={(event) => onAuditorNotesChange(event.target.value)}
+									placeholder="Escriba aqui sus observaciones internas sobre la verificacion del expediente..."
+									className="min-h-24 resize-none"
+								/>
+								<p className="text-xs text-muted-foreground">
+									Estas notas son solo visibles para el equipo de auditoria.
+								</p>
+								{errorMessage ? (
+									<p className="text-sm font-medium text-destructive">
+										{errorMessage}
+									</p>
+								) : null}
+							</div>
+						</>
+					) : null}
 
 					<div className="space-y-4 rounded-lg border bg-muted/20 p-4">
 						<ReviewField
