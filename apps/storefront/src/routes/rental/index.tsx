@@ -26,6 +26,8 @@ import { storefrontRentalOfferListViewQueries } from "@/modules/catalog/storefro
 import { CartPopover } from "@/modules/rental-commitment/cart/view-cart/cart-popover";
 import { CustomerAccountAction } from "@/modules/tenant-management/auth/components/customer-account-action";
 import { storefrontBranchQueries } from "@/modules/tenant-management/branches/branches.queries";
+import { FloatingWhatsAppButton } from "@/modules/tenant-management/components/floating-whatsapp-button";
+import { publicTenantConfigQueries } from "@/modules/tenant-management/tenant/tenant.queries";
 import { getTenantBranding } from "@/modules/tenant-management/tenant-branding/tenant-branding";
 
 export const Route = createFileRoute("/rental/")({
@@ -39,9 +41,10 @@ export const Route = createFileRoute("/rental/")({
 			throw notFound();
 		}
 
-		const branches = await queryClient.ensureQueryData(
-			storefrontBranchQueries.list(),
-		);
+		const [branches] = await Promise.all([
+			queryClient.ensureQueryData(storefrontBranchQueries.list()),
+			queryClient.ensureQueryData(publicTenantConfigQueries.detail()),
+		]);
 		const resolution = resolveRentalBranch(deps.branchId, branches);
 		const branding = getTenantBranding(tenantContext.tenant);
 
@@ -130,6 +133,7 @@ function RentalPage() {
 					)}
 				</main>
 			)}
+			<FloatingWhatsAppButton />
 		</div>
 	);
 }
