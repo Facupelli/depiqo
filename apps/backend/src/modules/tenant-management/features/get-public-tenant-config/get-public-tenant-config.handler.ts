@@ -44,6 +44,8 @@ export class GetPublicTenantConfigHandler implements IQueryHandler<
 
     return ok({
       insuranceEnabled: config.pricing.insuranceEnabled,
+      insuranceLabel: config.pricing.insuranceLabel,
+      insuranceDescription: config.pricing.insuranceDescription,
       bookingMode: config.bookingMode,
       communicationMode: config.communication.orderCommunicationMode,
       currency: config.pricing.currency,

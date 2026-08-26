@@ -62,6 +62,18 @@ export class InvalidInsuranceRatePercentError extends TenantManagementError {
   }
 }
 
+export class InvalidInsuranceLabelError extends TenantManagementError {
+  constructor(label: unknown) {
+    super(`insuranceLabel must be a non-empty string of at most 80 characters, got ${String(label)}.`);
+  }
+}
+
+export class InvalidInsuranceDescriptionError extends TenantManagementError {
+  constructor(description: unknown) {
+    super(`insuranceDescription must be a non-empty string of at most 2000 characters, got ${String(description)}.`);
+  }
+}
+
 export class InvalidBookingModeError extends TenantManagementError {
   constructor(mode: string) {
     super(`bookingMode must be 'instant-book' or 'request-to-book', got ${mode}.`);

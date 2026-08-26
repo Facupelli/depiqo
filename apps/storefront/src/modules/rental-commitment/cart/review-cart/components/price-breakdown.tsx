@@ -91,6 +91,8 @@ export function PriceBreakdown() {
 						<InsuranceToggleRow
 							checked={insuranceSelected}
 							onCheckedChange={setInsuranceSelected}
+							label={config.insuranceLabel}
+							description={config.insuranceDescription}
 							ratePercent={insuranceRatePercent}
 						/>
 					)}
@@ -119,7 +121,7 @@ export function PriceBreakdown() {
 						/>
 						{pricing.insurance.applied && (
 							<MoneyRow
-								label={`Seguro (${pricing.insurance.ratePercent}%)`}
+								label={`${config.insuranceLabel} (${pricing.insurance.ratePercent}%)`}
 								amount={pricing.insurance.amount}
 								currency={currency}
 								locale={locale}
@@ -186,10 +188,14 @@ function MoneyRow({
 function InsuranceToggleRow({
 	checked,
 	onCheckedChange,
+	label,
+	description,
 	ratePercent,
 }: {
 	checked: boolean;
 	onCheckedChange: (checked: boolean) => void;
+	label: string;
+	description: string;
 	ratePercent?: number;
 }) {
 	return (
@@ -197,18 +203,19 @@ function InsuranceToggleRow({
 			<Switch
 				checked={checked}
 				onCheckedChange={onCheckedChange}
-				aria-label="Activar seguro de equipos"
+				aria-label={`Activar ${label}`}
 			/>
 			<div className="flex min-w-0 items-center gap-1.5">
 				<span className="text-sm font-medium">
-					Seguro de equipos{ratePercent == null ? "" : ` (${ratePercent}%)`}
+					{label}
+					{ratePercent == null ? "" : ` (${ratePercent}%)`}
 				</span>
 				<Popover>
 					<PopoverTrigger
 						render={
 							<button
 								type="button"
-								aria-label="Más información sobre el seguro de equipos"
+								aria-label={`Más información sobre ${label}`}
 								className="grid size-7 shrink-0 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
 							>
 								<CircleHelp className="size-4" />
@@ -222,28 +229,10 @@ function InsuranceToggleRow({
 					>
 						<PopoverHeader className="gap-2">
 							<PopoverTitle className="text-sm text-background">
-								Seguro de equipos
+								{label}
 							</PopoverTitle>
-							<PopoverDescription className="space-y-3 text-xs leading-5 text-background/80">
-								<p>
-									Protege tu pedido ante imprevistos durante el alquiler. El
-									cargo{" "}
-									{ratePercent == null
-										? "se calcula sobre el"
-										: `es el ${ratePercent}% del`}{" "}
-									subtotal antes de descuentos y se suma al total final.
-								</p>
-								<p>
-									No cubre daños por mal uso, impericia o negligencia; daños
-									eléctricos, magnéticos, estéticos, de software o por defectos
-									latentes; hurto, estafa, pérdida, apropiación indebida ni
-									contaminación.
-								</p>
-								<p>
-									Durante el transporte al rodaje cubre accidentes del vehículo
-									portador. Durante el montaje y rodaje cubre robo, incendio,
-									roturas y daños por agua.
-								</p>
+							<PopoverDescription className="text-xs leading-5 whitespace-pre-line text-background/80">
+								{description}
 							</PopoverDescription>
 						</PopoverHeader>
 					</PopoverContent>

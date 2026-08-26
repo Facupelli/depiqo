@@ -3,11 +3,15 @@ import { z } from "zod";
 import type { ApiContract } from "../api-contract";
 import {
   TenantBookingModeSchema,
+  TenantInsuranceDescriptionSchema,
+  TenantInsuranceLabelSchema,
   TenantOrderCommunicationModeSchema,
 } from "./get-current-tenant.contract";
 
 export const GetPublicTenantConfigResponseSchema = z.object({
   insuranceEnabled: z.boolean(),
+  insuranceLabel: TenantInsuranceLabelSchema,
+  insuranceDescription: TenantInsuranceDescriptionSchema,
   bookingMode: TenantBookingModeSchema,
   communicationMode: TenantOrderCommunicationModeSchema,
   currency: z.string(),
