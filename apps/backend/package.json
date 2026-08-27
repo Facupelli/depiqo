@@ -23,7 +23,8 @@
     "test:e2e": "tsx test/support/run-db-tests.ts jest.config.e2e.ts",
     "test:db:ci": "pnpm run test:integration && pnpm run test:e2e",
     "migrate:deploy": "prisma migrate deploy",
-    "migrate:tenant-to-v2": "tsx src/scripts/migrate-tenant-to-v2/migrate-tenant-to-v2.ts"
+    "migrate:tenant-to-v2": "tsx src/scripts/migrate-tenant-to-v2/migrate-tenant-to-v2.ts",
+    "upgrade:accepted-pricing-snapshot-v1-to-v2": "tsx src/scripts/upgrade-accepted-pricing-snapshot-v1-to-v2/upgrade-accepted-pricing-snapshot-v1-to-v2.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1045.0",
