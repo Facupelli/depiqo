@@ -1,5 +1,27 @@
-import { FileCheck2, FileSearch, Link2Off, ShieldAlert } from "lucide-react";
-import { useId, useState } from "react";
+import { Button } from "@repo/ui/components/button";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+} from "@repo/ui/components/dropdown-menu";
+import {
+	Sheet,
+	SheetContent,
+	SheetDescription,
+	SheetHeader,
+	SheetTitle,
+} from "@repo/ui/components/sheet";
+import {
+	Download,
+	FileCheck2,
+	FileSearch,
+	Link2Off,
+	MoreVertical,
+	PenLine,
+	ShieldAlert,
+} from "lucide-react";
+import { useState } from "react";
 import { getProblemDetailsStatus, ProblemDetailsError } from "@/shared/errors";
 import type { PublicSigningAcceptanceResult } from "../public-signing.api";
 import {
@@ -13,7 +35,6 @@ import {
 	toAcceptPublicSigningSessionDto,
 } from "./public-signing-form.schema";
 import { PublicSigningPdfViewer } from "./public-signing-pdf-viewer";
-import { PublicSigningSessionDetails } from "./public-signing-session-details";
 import { PublicSigningSignedReceiptDownload } from "./public-signing-signed-receipt-download";
 import { PublicSigningTerminalState } from "./public-signing-terminal-state";
 import { useUnsignedSigningDocument } from "./use-unsigned-signing-document";
@@ -22,8 +43,10 @@ type PublicSigningPageProps = {
 	token: PublicSigningToken;
 };
 
+type SigningUiState = "REVIEW" | "SIGNING" | "COMPLETED";
+
 export function PublicSigningPage({ token }: PublicSigningPageProps) {
-	const signatureHeadingId = useId();
+	const [uiState, setUiState] = useState<SigningUiState>("REVIEW");
 	const [submitError, setSubmitError] = useState<string | null>(null);
 	const [terminalStatus, setTerminalStatus] = useState<number | null>(null);
 	const [unexpectedError, setUnexpectedError] = useState<string | null>(null);
@@ -35,6 +58,15 @@ export function PublicSigningPage({ token }: PublicSigningPageProps) {
 		sessionQuery.data?.requestId,
 	);
 	const acceptMutation = useAcceptPublicSigningSession();
+
+	function handleUnsignedDocumentDownload() {
+		if (!unsignedDocument.objectUrl || !sessionQuery.data) return;
+
+		const anchor = document.createElement("a");
+		anchor.href = unsignedDocument.objectUrl;
+		anchor.download = sessionQuery.data.document.displayFileName;
+		anchor.click();
+	}
 
 	async function handleSubmit(values: PublicSigningFormValues) {
 		setSubmitError(null);
@@ -54,6 +86,7 @@ export function PublicSigningPage({ token }: PublicSigningPageProps) {
 				),
 			});
 			setAcceptanceResult(result);
+			setUiState("COMPLETED");
 		} catch (error) {
 			const status = getProblemDetailsStatus(error) ?? null;
 			const message = getProblemDetailsMessage(error);
@@ -70,12 +103,12 @@ export function PublicSigningPage({ token }: PublicSigningPageProps) {
 		}
 	}
 
-	if (acceptanceResult) {
+	if (uiState === "COMPLETED" && acceptanceResult) {
 		return (
 			<PublicSigningTerminalState
 				icon={FileCheck2}
-				title="Contrato firmado correctamente"
-				description="Tu firma quedó registrada correctamente."
+				title="Documento firmado"
+				description="Tu firma se registró correctamente."
 				detail={`Firmado el ${formatDateTime(acceptanceResult.signedAt)}.`}
 				action={
 					<PublicSigningSignedReceiptDownload
@@ -103,56 +136,130 @@ export function PublicSigningPage({ token }: PublicSigningPageProps) {
 	}
 
 	if (unsignedDocument.isPending) {
-		return <PublicSigningLoadingState />;
+		return (
+			<PublicSigningLoadingState
+				documentNumber={sessionQuery.data.document.documentNumber}
+			/>
+		);
 	}
 
 	if (unsignedDocument.isError) {
 		return renderDocumentUnavailableState(unsignedDocument.error);
 	}
 
-	if (!unsignedDocument.objectUrl) {
+	if (!unsignedDocument.data || !unsignedDocument.objectUrl) {
 		return <PublicSigningLoadingState />;
 	}
 
+	const documentTitle =
+		`Remito ${sessionQuery.data.document.documentNumber ?? ""}`.trim();
+
 	return (
-		<main className="min-h-svh bg-neutral-100 px-4 py-8 sm:px-6 sm:py-12">
-			<div className="mx-auto grid w-full max-w-3xl gap-8">
-				<PublicSigningSessionDetails session={sessionQuery.data} />
+		<main className="min-h-svh bg-neutral-200 text-neutral-950">
+			<header className="sticky top-0 z-30 border-b border-neutral-200 bg-white/95 backdrop-blur">
+				<div className="mx-auto flex h-16 max-w-5xl items-center gap-3 px-4 sm:px-6">
+					<div className="min-w-0 flex-1">
+						<p className="text-xs font-medium uppercase tracking-[0.14em] text-neutral-500">
+							Documento para revisar
+						</p>
+						<h1 className="truncate text-base font-semibold sm:text-lg">
+							{documentTitle}
+						</h1>
+					</div>
+					<DropdownMenu>
+						<DropdownMenuTrigger
+							render={
+								<Button
+									variant="ghost"
+									size="icon"
+									aria-label="Acciones del documento"
+								/>
+							}
+						>
+							<MoreVertical aria-hidden="true" />
+						</DropdownMenuTrigger>
+						<DropdownMenuContent align="end" className="w-52">
+							<DropdownMenuItem onClick={handleUnsignedDocumentDownload}>
+								<Download aria-hidden="true" />
+								Descargar documento
+							</DropdownMenuItem>
+						</DropdownMenuContent>
+					</DropdownMenu>
+				</div>
+			</header>
+
+			<div className="mx-auto max-w-5xl pb-32 sm:pb-36">
 				<PublicSigningPdfViewer
-					objectUrl={unsignedDocument.objectUrl}
-					documentName={sessionQuery.data.document.displayFileName}
+					file={unsignedDocument.data}
 					documentNumber={sessionQuery.data.document.documentNumber}
 				/>
-				<section
-					aria-labelledby={signatureHeadingId}
-					className="rounded-xl border border-neutral-200 bg-white p-5 shadow-sm sm:p-7"
+			</div>
+
+			<div className="fixed inset-x-0 bottom-0 z-30 border-t border-neutral-200 bg-white/95 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-8px_30px_rgba(0,0,0,0.08)] backdrop-blur sm:px-6">
+				<div className="mx-auto max-w-xl">
+					<Button
+						className="h-12 w-full text-base font-semibold"
+						onClick={() => setUiState("SIGNING")}
+					>
+						<PenLine aria-hidden="true" />
+						Firmar documento
+					</Button>
+				</div>
+			</div>
+
+			<Sheet
+				open={uiState === "SIGNING"}
+				onOpenChange={(open) => setUiState(open ? "SIGNING" : "REVIEW")}
+			>
+				<SheetContent
+					side="bottom"
+					className="max-h-[92dvh] min-h-[min(42rem,92dvh)] gap-0 overflow-hidden rounded-t-2xl sm:mx-auto sm:max-w-2xl sm:border-x"
 				>
-					<div className="mb-6 space-y-1">
-						<h2 id={signatureHeadingId} className="text-xl font-semibold">
-							Firma y aceptación
-						</h2>
-						<p className="text-sm text-neutral-600">
-							Revisa la información del contrato antes de confirmar tu firma.
-						</p>
-					</div>
+					<SheetHeader className="border-b border-neutral-200 px-4 py-4 sm:px-6">
+						<SheetTitle className="text-xl font-semibold">Firma</SheetTitle>
+						<SheetDescription>
+							Dibuja tu firma y confirma la aceptación para completar.
+						</SheetDescription>
+					</SheetHeader>
 					<PublicSigningForm
 						acceptanceText={sessionQuery.data.acceptance.textSnapshot}
 						submitError={submitError}
 						isPending={acceptMutation.isPending}
 						onSubmit={handleSubmit}
 					/>
-				</section>
-			</div>
+				</SheetContent>
+			</Sheet>
 		</main>
 	);
 }
 
-function PublicSigningLoadingState() {
+function PublicSigningLoadingState({
+	documentNumber,
+}: {
+	documentNumber?: string | null;
+}) {
 	return (
-		<main className="grid min-h-svh place-items-center bg-neutral-100 px-4 py-10">
-			<p className="rounded-lg border border-neutral-200 bg-white px-5 py-4 text-sm text-neutral-600 shadow-sm">
-				Cargando contrato para firma...
-			</p>
+		<main className="min-h-svh bg-neutral-200">
+			<header className="h-16 border-b border-neutral-200 bg-white px-4">
+				<div className="mx-auto flex h-full max-w-5xl items-center">
+					<div>
+						<p className="text-xs font-medium uppercase tracking-[0.14em] text-neutral-500">
+							Documento para revisar
+						</p>
+						<p className="font-semibold">
+							{documentNumber
+								? `Remito ${documentNumber}`
+								: "Cargando remito..."}
+						</p>
+					</div>
+				</div>
+			</header>
+			<div className="mx-auto max-w-5xl px-3 py-5 sm:px-6 sm:py-8">
+				<div className="mx-auto aspect-[210/297] w-full max-w-[880px] animate-pulse bg-white shadow-sm" />
+				<p className="mt-4 text-center text-sm text-neutral-600">
+					Preparando documento...
+				</p>
+			</div>
 		</main>
 	);
 }

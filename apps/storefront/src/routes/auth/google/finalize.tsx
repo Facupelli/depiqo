@@ -63,11 +63,8 @@ function CustomerGoogleFinalizePage() {
 		<main className="grid min-h-svh place-items-center bg-neutral-100 px-4 py-12">
 			<section className="w-full max-w-md space-y-3 rounded-xl border bg-white p-6 text-center shadow-sm">
 				<h1 className="text-2xl font-bold">Iniciando sesi├│n</h1>
-				<p className="text-sm text-muted-foreground">
-					Redirigiendo...
-				</p>
+				<p className="text-sm text-muted-foreground">Redirigiendo...</p>
 			</section>
 		</main>
 	);
 }
-
