@@ -1,3 +1,4 @@
+import { Skeleton } from "@repo/ui/components/skeleton";
 import {
 	createFileRoute,
 	notFound,
@@ -28,7 +29,8 @@ import {
 	rentalCatalogSearchDefaults,
 	rentalCatalogSearchSchema,
 } from "@/modules/catalog/rental-catalog-search";
-import { storefrontRentalOfferListViewQueries } from "@/modules/catalog/storefront-rental-offer-list-view.queries";
+import { storefrontCombosQueries } from "@/modules/catalog/storefront-combos.queries";
+import { storefrontEquipmentQueries } from "@/modules/catalog/storefront-equipment.queries";
 import { CartPopover } from "@/modules/rental-commitment/cart/view-cart/cart-popover";
 import { CustomerAccountAction } from "@/modules/tenant-management/auth/components/customer-account-action";
 import { storefrontBranchQueries } from "@/modules/tenant-management/branches/branches.queries";
@@ -42,7 +44,7 @@ export const Route = createFileRoute("/rental/")({
 		middlewares: [stripSearchParams(rentalCatalogSearchDefaults)],
 	},
 	loaderDeps: ({ search }) => search,
-	loader: async ({ context: { queryClient, tenantContext }, deps }) => {
+	loader: async ({ context: { queryClient, tenantContext }, deps, cause }) => {
 		if (!tenantContext || tenantContext.face !== "storefront") {
 			throw notFound();
 		}
@@ -55,22 +57,33 @@ export const Route = createFileRoute("/rental/")({
 		const branding = getTenantBranding(tenantContext.tenant);
 
 		if (resolution.kind === "catalog") {
-			const search: RentalCatalogSearch = {
-				...deps,
+			if (cause === "enter" || cause === "preload") {
+				const search: RentalCatalogSearch = {
+					...deps,
+					branchId: resolution.branchId,
+				};
+				await Promise.all([
+					queryClient.prefetchQuery(
+						storefrontCombosQueries.list({
+							branchId: search.branchId,
+							periodStart: search.periodStart,
+							periodEnd: search.periodEnd,
+						}),
+					),
+					queryClient.prefetchQuery(storefrontEquipmentQueries.list(search)),
+					queryClient.prefetchQuery(
+						newArrivalsQueries.detail({
+							branchId: resolution.branchId,
+							windowDays: tenantConfig.newArrivalsWindowDays,
+						}),
+					),
+				]);
+			}
+			return {
+				mode: "catalog" as const,
 				branchId: resolution.branchId,
+				branding,
 			};
-			await Promise.all([
-				queryClient.ensureQueryData(
-					storefrontRentalOfferListViewQueries.list(search),
-				),
-				queryClient.ensureQueryData(
-					newArrivalsQueries.detail({
-						branchId: resolution.branchId,
-						windowDays: tenantConfig.newArrivalsWindowDays,
-					}),
-				),
-			]);
-			return { mode: "catalog" as const, search, branding };
 		}
 
 		if (resolution.kind === "selection") {
@@ -96,13 +109,103 @@ export const Route = createFileRoute("/rental/")({
 			? [{ rel: "icon", href: loaderData.branding.faviconHref }]
 			: [{ rel: "icon", href: "/favicon.svg" }],
 	}),
-	pendingComponent: ProductCatalogSkeleton,
+	pendingComponent: RentalPageSkeleton,
 	component: RentalPage,
 });
 
+function RentalPageSkeleton() {
+	return (
+		<div className="min-h-screen bg-gray-50" aria-hidden="true">
+			<header className="border-b bg-white">
+				<div className="container mx-auto flex h-16 items-center justify-between px-4">
+					<Skeleton className="h-10 w-36" />
+					<div className="flex items-center gap-3">
+						<Skeleton className="size-9 rounded-full" />
+						<Skeleton className="size-9 rounded-full" />
+					</div>
+				</div>
+			</header>
+			<main className="container mx-auto space-y-10 px-4 py-6">
+				<section className="space-y-4">
+					<div className="grid gap-4 md:grid-cols-3">
+						<Skeleton className="h-10" />
+						<Skeleton className="h-10" />
+						<Skeleton className="h-10" />
+					</div>
+					<div className="flex gap-4">
+						<Skeleton className="h-5 w-16" />
+						<Skeleton className="h-5 w-20" />
+						<Skeleton className="h-5 w-20" />
+					</div>
+				</section>
+				<RentalSectionSkeleton cardCount={4} />
+				<section className="space-y-4">
+					<Skeleton className="h-7 w-48" />
+					<div className="flex gap-5 overflow-hidden">
+						{Array.from({ length: 5 }, (_, index) => `arrival-${index}`).map(
+							(key) => (
+								<div key={key} className="w-44 shrink-0 space-y-3">
+									<Skeleton className="aspect-square" />
+									<Skeleton className="h-4 w-4/5" />
+									<Skeleton className="h-4 w-1/2" />
+								</div>
+							),
+						)}
+					</div>
+				</section>
+				<RentalSectionSkeleton cardCount={8} showFilters />
+			</main>
+		</div>
+	);
+}
+
+function RentalSectionSkeleton({
+	cardCount,
+	showFilters = false,
+}: {
+	cardCount: number;
+	showFilters?: boolean;
+}) {
+	return (
+		<section className="space-y-5">
+			<div className="flex items-center justify-between gap-4">
+				<Skeleton className="h-8 w-32" />
+				<Skeleton className="h-4 w-36" />
+			</div>
+			{showFilters && (
+				<div className="space-y-3">
+					<div className="flex gap-2">
+						<Skeleton className="h-8 w-24" />
+						<Skeleton className="h-8 w-28" />
+						<Skeleton className="h-8 w-20" />
+					</div>
+					<Skeleton className="h-10 w-full max-w-md" />
+				</div>
+			)}
+			<div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+				{Array.from(
+					{ length: cardCount },
+					(_, index) => `catalog-card-${index}`,
+				).map((key) => (
+					<div key={key} className="space-y-3">
+						<Skeleton className="aspect-4/3" />
+						<Skeleton className="h-5 w-3/4" />
+						<Skeleton className="h-4 w-full" />
+					</div>
+				))}
+			</div>
+		</section>
+	);
+}
+
 function RentalPage() {
 	const loaderData = Route.useLoaderData();
+	const routeSearch = Route.useSearch();
 	const navigate = useNavigate({ from: "/rental/" });
+	const catalogSearch: RentalCatalogSearch | null =
+		loaderData.mode === "catalog"
+			? { ...routeSearch, branchId: loaderData.branchId }
+			: null;
 	const handleBranchSelect = (branchId: string) =>
 		navigate({
 			search: (previous) => ({ ...previous, branchId, page: 1 }),
@@ -125,15 +228,13 @@ function RentalPage() {
 						</span>
 					)}
 					<div className="ml-auto flex items-center gap-3">
-						{loaderData.mode === "catalog" && (
-							<CartPopover search={loaderData.search} />
-						)}
+						{catalogSearch && <CartPopover search={catalogSearch} />}
 						<CustomerAccountAction />
 					</div>
 				</div>
 			</header>
-			{loaderData.mode === "catalog" ? (
-				<RentalCatalog search={loaderData.search} />
+			{catalogSearch ? (
+				<RentalCatalog search={catalogSearch} />
 			) : (
 				<main className="container mx-auto flex flex-1 items-center justify-center px-4 py-12">
 					{loaderData.mode === "selection" ? (
@@ -163,6 +264,28 @@ function RentalCatalog({ search }: { search: RentalCatalogSearch }) {
 				setUrlParam={setUrlParam}
 				onCategorySelect={handleCategorySelect}
 			/>
+
+			<nav
+				aria-label="Navegación del catálogo"
+				className="flex items-center gap-4 pt-6"
+			>
+				<span className="text-sm text-muted-foreground">Explorar</span>
+
+				<a
+					href="#combos"
+					className="text-sm font-medium text-muted-foreground underline-offset-4 transition-colors hover:text-foreground hover:underline"
+				>
+					Combos
+				</a>
+
+				<a
+					href="#equipos"
+					className="text-sm font-medium text-muted-foreground underline-offset-4 transition-colors hover:text-foreground hover:underline"
+				>
+					Equipos
+				</a>
+			</nav>
+
 			<SectionErrorBoundary message="Nuestro inventario no está disponible.">
 				<Suspense fallback={<ProductCatalogSkeleton />}>
 					<CombosSection search={search} />
@@ -174,14 +297,12 @@ function RentalCatalog({ search }: { search: RentalCatalogSearch }) {
 				</Suspense>
 			</SectionErrorBoundary>
 			<SectionErrorBoundary message="Nuestro inventario no está disponible.">
-				<Suspense fallback={<ProductCatalogSkeleton />}>
-					<EquipmentCatalogSection
-						search={search}
-						onPageChange={(page) => setUrlParam({ page })}
-						handleCategorySelect={handleCategorySelect}
-						setUrlParam={setUrlParam}
-					/>
-				</Suspense>
+				<EquipmentCatalogSection
+					search={search}
+					onPageChange={(page) => setUrlParam({ page })}
+					handleCategorySelect={handleCategorySelect}
+					setUrlParam={setUrlParam}
+				/>
 			</SectionErrorBoundary>
 		</main>
 	);

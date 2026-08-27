@@ -77,7 +77,7 @@ export const Route = createRootRouteWithContext<StorefrontRouterContext>()({
 
 function RootDocument({ children }: { children: React.ReactNode }) {
 	return (
-		<html lang="es">
+		<html lang="es" className="scroll-smooth">
 			<head>
 				<HeadContent />
 			</head>

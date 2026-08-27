@@ -2,7 +2,7 @@ import { Button } from "@repo/ui/components/button";
 import { Input } from "@repo/ui/components/input";
 import { Skeleton } from "@repo/ui/components/skeleton";
 import { Search } from "lucide-react";
-import { startTransition, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import type { RentalCatalogSearch } from "@/modules/catalog/rental-catalog-search";
 import { useStorefrontCategories } from "@/modules/catalog/storefront-categories/storefront-categories.queries";
 import useDebounce from "@/shared/hooks/use-debounce";
@@ -68,11 +68,7 @@ export function SearchFilter({ search, onSearchCommit }: SearchFiltersProps) {
 			return;
 		}
 
-		// The URL update triggers data fetching, so keep it non-urgent and let the
-		// current input value stay responsive while results refresh.
-		startTransition(() => {
-			onSearchCommit(debouncedSearch);
-		});
+		onSearchCommit(debouncedSearch);
 	}, [debouncedSearch, onSearchCommit, search.search]);
 
 	return (

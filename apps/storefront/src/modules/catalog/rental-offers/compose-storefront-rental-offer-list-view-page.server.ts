@@ -2,67 +2,47 @@ import type {
 	GetStorefrontRentalOfferAvailabilityItemDto,
 	GetStorefrontRentalOffersItemDto,
 	GetStorefrontRentalOffersPricingItemDto,
+	GetStorefrontRentalOffersQueryDto,
 	GetStorefrontRentalOffersResponseDto,
 } from "@repo/api-contracts";
 import { getStorefrontRentalOfferAvailability } from "@/modules/catalog/get-storefront-rental-offer-availability/get-storefront-rental-offer-availability.api";
 import { getStorefrontRentalOffers } from "@/modules/catalog/rental-offers/get-storefront-rental-offers/get-storefront-rental-offers.api";
+import {
+	type StorefrontRentalOfferListViewPageDto,
+	StorefrontRentalOfferListViewPageSchema,
+} from "@/modules/catalog/rental-offers/storefront-rental-offer-list-view.schema";
 import { getStorefrontRentalOffersPricing } from "@/modules/pricing/rental-offer-pricings/get-storefront-rental-offers-pricing/get-storefront-rental-offers-pricing.api";
 import type { StorefrontRequestContext } from "@/modules/tenant-management/resolve-public-tenant-context/request-context.middleware";
-import type {
-	GetStorefrontRentalOfferListViewInputDto,
-	GetStorefrontRentalOfferListViewResponseDto,
-	StorefrontRentalOfferListViewPageDto,
-} from "./get-storefront-rental-offer-list-view.schema";
-import {
-	GetStorefrontRentalOfferListViewInputSchema,
-	GetStorefrontRentalOfferListViewResponseSchema,
-} from "./get-storefront-rental-offer-list-view.schema";
 
-export async function getStorefrontRentalOfferListView(
+interface RentalOfferAvailabilityPeriod {
+	periodStart?: string;
+	periodEnd?: string;
+}
+
+export async function composeStorefrontRentalOfferListViewPage(
 	requestContext: StorefrontRequestContext,
-	input: GetStorefrontRentalOfferListViewInputDto,
-): Promise<GetStorefrontRentalOfferListViewResponseDto> {
-	const parsedInput = GetStorefrontRentalOfferListViewInputSchema.parse(input);
-
-	const emptyPage: GetStorefrontRentalOffersResponseDto = {
-		data: [],
-		total: 0,
-		page: 1,
-		pageSize: parsedInput.pageSize,
-	};
-	const [packagesPage, singlesPage] = await Promise.all([
-		parsedInput.kind === "SINGLE"
-			? Promise.resolve(emptyPage)
-			: getStorefrontRentalOffers(requestContext, {
-					branchId: parsedInput.branchId,
-					kind: "PACKAGE",
-					page: 1,
-					pageSize: 100,
-				}),
-		getStorefrontRentalOffers(requestContext, {
-			branchId: parsedInput.branchId,
-			kind: "SINGLE",
-			categoryId: parsedInput.categoryId,
-			search: parsedInput.search,
-			publishedAfter: parsedInput.publishedAfter,
-			sort: parsedInput.sort,
-			page: parsedInput.page,
-			pageSize: parsedInput.pageSize,
-		}),
-	]);
-
-	const rentalOffers = [...packagesPage.data, ...singlesPage.data];
-	const rentalOfferIds = rentalOffers.map((rentalOffer) => rentalOffer.id);
+	offersQuery: GetStorefrontRentalOffersQueryDto,
+	availabilityPeriod?: RentalOfferAvailabilityPeriod,
+): Promise<StorefrontRentalOfferListViewPageDto> {
+	const rentalOffersPage = await getStorefrontRentalOffers(
+		requestContext,
+		offersQuery,
+	);
+	const rentalOfferIds = rentalOffersPage.data.map(
+		(rentalOffer) => rentalOffer.id,
+	);
 
 	const [rentalOfferPricing, rentalOfferAvailability] = await Promise.all([
 		rentalOfferIds.length > 0
 			? getStorefrontRentalOffersPricing(requestContext, { rentalOfferIds })
 			: Promise.resolve({ data: [] }),
-		parsedInput.periodStart && parsedInput.periodEnd && rentalOffers.length > 0
+		availabilityPeriod?.periodStart &&
+		availabilityPeriod.periodEnd &&
+		rentalOfferIds.length > 0
 			? getStorefrontRentalOfferAvailability(requestContext, {
-					branchId: parsedInput.branchId,
-					periodStart: parsedInput.periodStart,
-					periodEnd: parsedInput.periodEnd,
+					branchId: offersQuery.branchId,
+					periodStart: availabilityPeriod.periodStart,
+					periodEnd: availabilityPeriod.periodEnd,
 					rentalOfferIds,
 				})
 			: Promise.resolve(null),
@@ -90,18 +70,13 @@ export async function getStorefrontRentalOfferListView(
 		availabilityByRentalOfferId.set(availability.rentalOfferId, availability);
 	}
 
-	return GetStorefrontRentalOfferListViewResponseSchema.parse({
-		packages: toRentalOfferListViewPage(
-			packagesPage,
+	return StorefrontRentalOfferListViewPageSchema.parse(
+		toRentalOfferListViewPage(
+			rentalOffersPage,
 			pricingByCatalogRentalOfferId,
 			availabilityByRentalOfferId,
 		),
-		singles: toRentalOfferListViewPage(
-			singlesPage,
-			pricingByCatalogRentalOfferId,
-			availabilityByRentalOfferId,
-		),
-	});
+	);
 }
 
 function toRentalOfferListViewPage(
