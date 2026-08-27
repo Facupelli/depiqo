@@ -163,6 +163,28 @@ function RentalCatalog({ search }: { search: RentalCatalogSearch }) {
 				setUrlParam={setUrlParam}
 				onCategorySelect={handleCategorySelect}
 			/>
+
+			<nav
+				aria-label="Navegación del catálogo"
+				className="flex items-center gap-4 pt-6"
+			>
+				<span className="text-sm text-muted-foreground">Explorar</span>
+
+				<a
+					href="#combos"
+					className="text-sm font-medium text-muted-foreground underline-offset-4 transition-colors hover:text-foreground hover:underline"
+				>
+					Combos
+				</a>
+
+				<a
+					href="#equipos"
+					className="text-sm font-medium text-muted-foreground underline-offset-4 transition-colors hover:text-foreground hover:underline"
+				>
+					Equipos
+				</a>
+			</nav>
+
 			<SectionErrorBoundary message="Nuestro inventario no está disponible.">
 				<Suspense fallback={<ProductCatalogSkeleton />}>
 					<CombosSection search={search} />
