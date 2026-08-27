@@ -11,7 +11,11 @@ import { useProducts } from "@/modules/products/list-products/product-list.queri
 import { useCategories } from "@/modules/settings/categories/public";
 import useDebounce from "@/shared/hooks/use-debounce";
 
-export type PromotionTargetType = "RENTABLE_ITEM" | "RENTAL_OFFER" | "CATEGORY";
+export type PromotionTargetType =
+	| "RENTABLE_ITEM"
+	| "RENTAL_OFFER"
+	| "CATEGORY"
+	| "PRODUCT_KIND";
 
 type PromotionTargetSelectorProps = {
 	type: PromotionTargetType;
@@ -38,6 +42,11 @@ const targetCopy: Record<
 		searchPlaceholder: "Buscar producto u oferta",
 		empty: "No encontramos ofertas",
 	},
+	PRODUCT_KIND: {
+		label: "Tipo de producto",
+		searchPlaceholder: "Buscar tipo de producto",
+		empty: "No encontramos tipos de producto",
+	},
 };
 
 export function PromotionTargetSelector({
@@ -57,7 +66,7 @@ export function PromotionTargetSelector({
 			page: 1,
 			pageSize: 100,
 		},
-		{ enabled: type !== "CATEGORY" },
+		{ enabled: type === "RENTABLE_ITEM" || type === "RENTAL_OFFER" },
 	);
 	const options = buildOptions(type, categories, productsPage?.data ?? []);
 	const selected = options.find((option) => option.value === value);
@@ -94,16 +103,24 @@ export function PromotionTargetSelector({
 				className="w-[min(24rem,var(--anchor-width))] p-2"
 				align="start"
 			>
-				<div className="relative">
-					<Search className="-translate-y-1/2 absolute top-1/2 left-3 size-4 text-muted-foreground" />
-					<Input
-						value={search}
-						onChange={(event) => setSearch(event.target.value)}
-						placeholder={copy.searchPlaceholder}
-						className="bg-white pl-9"
-					/>
-				</div>
-				<div className="mt-2 max-h-64 space-y-1 overflow-auto">
+				{type !== "PRODUCT_KIND" ? (
+					<div className="relative">
+						<Search className="-translate-y-1/2 absolute top-1/2 left-3 size-4 text-muted-foreground" />
+						<Input
+							value={search}
+							onChange={(event) => setSearch(event.target.value)}
+							placeholder={copy.searchPlaceholder}
+							className="bg-white pl-9"
+						/>
+					</div>
+				) : null}
+				<div
+					className={
+						type === "PRODUCT_KIND"
+							? "max-h-64 space-y-1 overflow-auto"
+							: "mt-2 max-h-64 space-y-1 overflow-auto"
+					}
+				>
 					{options.map((option) => (
 						<button
 							type="button"
@@ -156,6 +173,13 @@ function buildOptions(
 			value: category.id,
 			label: category.name,
 		}));
+	}
+
+	if (type === "PRODUCT_KIND") {
+		return [
+			{ value: "SINGLE", label: "Individual" },
+			{ value: "PACKAGE", label: "Combo" },
+		];
 	}
 
 	if (type === "RENTABLE_ITEM") {

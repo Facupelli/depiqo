@@ -16,6 +16,7 @@ export type BasePricingResultLine = {
   rentalOfferId: string;
   rentableItemId: string;
   rentableItemName: string;
+  rentableItemKind: 'SINGLE' | 'PACKAGE' | 'KIT' | 'BUNDLE';
   categoryId?: string;
   quantity: number;
   chargedUnits: number;

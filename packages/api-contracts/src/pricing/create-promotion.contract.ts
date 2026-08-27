@@ -18,6 +18,7 @@ export const CreatePromotionExclusionSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("RENTABLE_ITEM"), rentableItemId: z.string().uuid() }),
   z.object({ type: z.literal("RENTAL_OFFER"), rentalOfferId: z.string().uuid() }),
   z.object({ type: z.literal("CATEGORY"), categoryId: z.string().uuid() }),
+  z.object({ type: z.literal("PRODUCT_KIND"), rentableItemKind: z.enum(["SINGLE", "PACKAGE"]) }),
 ]);
 
 export const CreatePromotionBodySchema = z.object({

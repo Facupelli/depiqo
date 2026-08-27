@@ -98,6 +98,7 @@ export class UpdatePromotionHandler implements ICommandHandler<
             rentableItemId: exclusion.type === 'RENTABLE_ITEM' ? exclusion.rentableItemId : null,
             rentalOfferId: exclusion.type === 'RENTAL_OFFER' ? exclusion.rentalOfferId : null,
             categoryId: exclusion.type === 'CATEGORY' ? exclusion.categoryId : null,
+            rentableItemKind: exclusion.type === 'PRODUCT_KIND' ? exclusion.rentableItemKind : null,
           })),
         });
       }
@@ -188,5 +189,7 @@ function exclusionTargetKey(exclusion: UpdatePromotionCommand['exclusions'][numb
       return `RENTAL_OFFER:${exclusion.rentalOfferId}`;
     case 'CATEGORY':
       return `CATEGORY:${exclusion.categoryId}`;
+    case 'PRODUCT_KIND':
+      return `PRODUCT_KIND:${exclusion.rentableItemKind}`;
   }
 }

@@ -4,6 +4,7 @@ import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { err, ok, Result } from 'neverthrow';
 
 import { PrismaService } from 'src/core/database/prisma.service';
+import { PrismaTransactionClient, PrismaUnitOfWork } from 'src/core/database/prisma-unit-of-work';
 import { mapPostgresError, PostgresExclusionViolationError } from 'src/core/utils/postgres-error.mapper';
 import { AssetInventoryDisplayFacts } from 'src/modules/asset-inventory/public-api/asset-inventory-display-facts.public-api';
 import { V2AssetBlockType, V2RentalStatus } from 'src/generated/prisma/enums';
@@ -13,6 +14,7 @@ import { RentalAssetAllocationService } from '../../asset-allocation/rental-asse
 import { InsufficientAssetAvailabilityError } from '../../domain/errors/rental-commitment.errors';
 import { RentalDemandLineId } from '../../domain/ids/rental-demand-line-id';
 import { AssetId, EquipmentTypeId, RentalSelectionId } from '../../domain/types/rental-commitment-ids';
+import { ConfirmedRentalEditedIntegrationEvent } from '../../public-api/events/rental-lifecycle.integration-events';
 import { AssignRentalAccessoriesCommand } from './assign-rental-accessories.command';
 import { assignRentalAccessoriesError, AssignRentalAccessoriesError } from './assign-rental-accessories.errors';
 
@@ -23,6 +25,8 @@ type RentalReadModel = {
   tenantId: string;
   branchId: string;
   status: V2RentalStatus;
+  customerId: string | null;
+  fulfillmentMethod: 'PICKUP' | 'DELIVERY' | null;
   periodStart: Date;
   periodEnd: Date;
   version: number;
@@ -33,6 +37,7 @@ type ExistingSelection = {
   sourceRentalDemandLineId: string | null;
   equipmentTypeId: string;
   equipmentTypeNameSnapshot: string;
+  quantity: number;
   assignments: Array<{ id: string; assetId: string }>;
 };
 
@@ -56,6 +61,7 @@ export class AssignRentalAccessoriesHandler implements ICommandHandler<
 > {
   constructor(
     private readonly prisma: PrismaService,
+    private readonly unitOfWork: PrismaUnitOfWork,
     private readonly rentalAssetAllocation: RentalAssetAllocationService,
     private readonly assetInventoryDisplayFacts: AssetInventoryDisplayFacts,
   ) {}
@@ -69,6 +75,8 @@ export class AssignRentalAccessoriesHandler implements ICommandHandler<
         tenantId: true,
         branchId: true,
         status: true,
+        customerId: true,
+        fulfillmentMethod: true,
         periodStart: true,
         periodEnd: true,
         version: true,
@@ -107,6 +115,7 @@ export class AssignRentalAccessoriesHandler implements ICommandHandler<
         sourceRentalDemandLineId: true,
         equipmentTypeId: true,
         equipmentTypeNameSnapshot: true,
+        quantity: true,
         assignments: { select: { id: true, assetId: true }, orderBy: { createdAt: 'asc' } },
       },
       orderBy: { createdAt: 'asc' },
@@ -215,9 +224,33 @@ export class AssignRentalAccessoriesHandler implements ICommandHandler<
       selection.newAssetIds = newAssetIdsBySelectionId.get(selection.id) ?? [];
     }
 
+    const accessoriesChanged = this.accessoryPlanChanged(existingSelections, plannedSelections);
     let persisted: boolean;
     try {
-      persisted = await this.persistPlan(command, rental, existingSelections, plannedSelections);
+      persisted = await this.unitOfWork.runInTransaction(async ({ tx, integrationEvents }) => {
+        const didPersist = await this.persistPlan(command, rental, existingSelections, plannedSelections, tx);
+        if (
+          didPersist &&
+          accessoriesChanged &&
+          rental.status === V2RentalStatus.CONFIRMED &&
+          rental.customerId &&
+          rental.fulfillmentMethod
+        ) {
+          integrationEvents.collect([
+            new ConfirmedRentalEditedIntegrationEvent(
+              rental.tenantId,
+              rental.id,
+              rental.customerId,
+              rental.branchId,
+              'CONFIRMED',
+              rental.fulfillmentMethod,
+              rental.periodStart,
+              rental.periodEnd,
+            ),
+          ]);
+        }
+        return didPersist;
+      });
     } catch (error) {
       if (error instanceof PostgresExclusionViolationError) {
         return err(
@@ -321,6 +354,7 @@ export class AssignRentalAccessoriesHandler implements ICommandHandler<
     rental: RentalReadModel,
     existingSelections: ExistingSelection[],
     plannedSelections: PlannedSelection[],
+    tx: PrismaTransactionClient,
   ): Promise<boolean> {
     const plannedSelectionIds = new Set(plannedSelections.map((selection) => selection.id));
     const keptAssignmentIds = new Set(plannedSelections.flatMap((selection) => selection.keptAssignmentIds));
@@ -336,70 +370,69 @@ export class AssignRentalAccessoriesHandler implements ICommandHandler<
       .map((assignment) => assignment.assetId);
 
     try {
-      return await this.prisma.client.$transaction(async (tx) => {
-        const claim = await tx.v2Rental.updateMany({
-          where: { id: rental.id, tenantId: rental.tenantId, version: rental.version },
-          data: { version: { increment: 1 } },
+      const claim = await tx.v2Rental.updateMany({
+        where: { id: rental.id, tenantId: rental.tenantId, version: rental.version },
+        data: { version: { increment: 1 } },
+      });
+      if (claim.count === 0) return false;
+
+      if (removedAssignmentIds.length > 0) {
+        await tx.v2RentalAccessoryAssetAssignment.deleteMany({
+          where: { tenantId: command.tenantId, id: { in: removedAssignmentIds } },
         });
-        if (claim.count === 0) return false;
+      }
 
-        if (removedAssignmentIds.length > 0) {
-          await tx.v2RentalAccessoryAssetAssignment.deleteMany({
-            where: { tenantId: command.tenantId, id: { in: removedAssignmentIds } },
-          });
-        }
+      if (removedAssetIds.length > 0) {
+        await tx.v2AssetBlock.deleteMany({
+          where: {
+            tenantId: command.tenantId,
+            rentalId: command.rentalId,
+            blockType: V2AssetBlockType.ACCESSORY,
+            assetId: { in: removedAssetIds },
+          },
+        });
+      }
 
-        if (removedAssetIds.length > 0) {
-          await tx.v2AssetBlock.deleteMany({
-            where: {
-              tenantId: command.tenantId,
-              rentalId: command.rentalId,
-              blockType: V2AssetBlockType.ACCESSORY,
-              assetId: { in: removedAssetIds },
-            },
-          });
-        }
+      const obsoleteSelectionIds = existingSelectionIds.filter((id) => !plannedSelectionIds.has(id));
+      if (obsoleteSelectionIds.length > 0) {
+        await tx.v2RentalAccessorySelection.deleteMany({
+          where: { tenantId: command.tenantId, id: { in: obsoleteSelectionIds } },
+        });
+      }
 
-        const obsoleteSelectionIds = existingSelectionIds.filter((id) => !plannedSelectionIds.has(id));
-        if (obsoleteSelectionIds.length > 0) {
-          await tx.v2RentalAccessorySelection.deleteMany({
-            where: { tenantId: command.tenantId, id: { in: obsoleteSelectionIds } },
-          });
-        }
+      for (const selection of plannedSelections) {
+        await tx.v2RentalAccessorySelection.upsert({
+          where: { id: selection.id },
+          create: {
+            id: selection.id,
+            tenantId: command.tenantId,
+            rentalOrderId: command.rentalId,
+            sourceRentalDemandLineId: selection.sourceRentalDemandLineId,
+            equipmentTypeId: selection.equipmentTypeId,
+            equipmentTypeNameSnapshot: selection.equipmentTypeNameSnapshot,
+            quantity: selection.quantity,
+          },
+          update: {
+            sourceRentalDemandLineId: selection.sourceRentalDemandLineId,
+            equipmentTypeId: selection.equipmentTypeId,
+            equipmentTypeNameSnapshot: selection.equipmentTypeNameSnapshot,
+            quantity: selection.quantity,
+          },
+        });
 
-        for (const selection of plannedSelections) {
-          await tx.v2RentalAccessorySelection.upsert({
-            where: { id: selection.id },
-            create: {
-              id: selection.id,
+        if (selection.newAssetIds.length > 0) {
+          await tx.v2RentalAccessoryAssetAssignment.createMany({
+            data: selection.newAssetIds.map((assetId) => ({
+              id: randomUUID(),
               tenantId: command.tenantId,
               rentalOrderId: command.rentalId,
-              sourceRentalDemandLineId: selection.sourceRentalDemandLineId,
-              equipmentTypeId: selection.equipmentTypeId,
-              equipmentTypeNameSnapshot: selection.equipmentTypeNameSnapshot,
-              quantity: selection.quantity,
-            },
-            update: {
-              sourceRentalDemandLineId: selection.sourceRentalDemandLineId,
-              equipmentTypeId: selection.equipmentTypeId,
-              equipmentTypeNameSnapshot: selection.equipmentTypeNameSnapshot,
-              quantity: selection.quantity,
-            },
+              rentalAccessorySelectionId: selection.id,
+              assetId,
+            })),
           });
 
-          if (selection.newAssetIds.length > 0) {
-            await tx.v2RentalAccessoryAssetAssignment.createMany({
-              data: selection.newAssetIds.map((assetId) => ({
-                id: randomUUID(),
-                tenantId: command.tenantId,
-                rentalOrderId: command.rentalId,
-                rentalAccessorySelectionId: selection.id,
-                assetId,
-              })),
-            });
-
-            for (const assetId of selection.newAssetIds) {
-              await tx.$executeRaw`
+          for (const assetId of selection.newAssetIds) {
+            await tx.$executeRaw`
               INSERT INTO v2_asset_blocks (
                 id,
                 tenant_id,
@@ -420,15 +453,34 @@ export class AssignRentalAccessoriesHandler implements ICommandHandler<
                 ${null}
               )
             `;
-            }
           }
         }
+      }
 
-        return true;
-      });
+      return true;
     } catch (error) {
       mapPostgresError(error);
     }
+  }
+
+  private accessoryPlanChanged(
+    existingSelections: ExistingSelection[],
+    plannedSelections: PlannedSelection[],
+  ): boolean {
+    if (existingSelections.length !== plannedSelections.length) return true;
+
+    const existingByKey = new Map(existingSelections.map((selection) => [this.selectionKey(selection), selection]));
+    return plannedSelections.some((planned) => {
+      const existing = existingByKey.get(this.selectionKey(planned));
+      if (!existing || existing.quantity !== planned.quantity) return true;
+
+      const existingAssetIds = existing.assignments.map((assignment) => assignment.assetId).sort();
+      const plannedAssetIds = [...planned.keptAssetIds, ...planned.newAssetIds].sort();
+      return (
+        existingAssetIds.length !== plannedAssetIds.length ||
+        existingAssetIds.some((assetId, index) => assetId !== plannedAssetIds[index])
+      );
+    });
   }
 
   private selectionKey(selection: { sourceRentalDemandLineId?: string | null; equipmentTypeId: string }): string {

@@ -188,6 +188,7 @@ export class EditUnconfirmedRentalHandler implements ICommandHandler<
         lineReference: selection.id,
         rentalOfferId: selection.rentalOfferId,
         rentableItemId: selection.rentableItemId,
+        rentableItemKind: selection.rentableItemKindSnapshot,
         categoryId: selection.categoryId,
         quantity: selection.quantity,
       })),

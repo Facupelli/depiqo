@@ -46,6 +46,7 @@ export class BaseRentalLineCalculator {
       rentalOfferId: selection.rentalOfferId,
       rentableItemId: selection.rentableItemId,
       rentableItemName: selection.rentableItemName,
+      rentableItemKind: selection.rentableItemKind,
       categoryId: selection.categoryId,
       quantity: selection.quantity,
       chargedUnits,

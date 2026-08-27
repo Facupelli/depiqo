@@ -40,7 +40,7 @@ export function RentalContractSigningCard() {
 	const state = getRentalContractSigningState(summary);
 	const toneClasses = getRentalContractSigningToneClasses(state.tone);
 	const request = summary.latestSigningRequest;
-	const isSigned = summary.contractStatus === "SIGNED" || !!summary.acceptance;
+	const isRequestSigned = request?.status === "SIGNED";
 
 	return (
 		<section className="bg-white border border-neutral-200 rounded-lg p-5">
@@ -122,7 +122,7 @@ export function RentalContractSigningCard() {
 									timezone,
 								)}
 							/>
-							{!isSigned ? (
+							{!isRequestSigned ? (
 								<SigningDetailRow
 									label="Vence"
 									value={formatRentalContractSigningDate(

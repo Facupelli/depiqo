@@ -2,6 +2,7 @@ import type { ReplaceConfirmedRentalAssetResponseDto } from "@repo/api-contracts
 import { type MutationOptions, useMutation } from "@tanstack/react-query";
 import { rentalKeys } from "@/modules/rentals/rental.queries";
 import type { ProblemDetailsError } from "@/shared/errors";
+import { contractKeys } from "../documents/signing/rental-contract-signing.queries";
 import {
 	type ReplaceAssignedAssetVariables,
 	replaceAssignedAsset,
@@ -21,7 +22,10 @@ export function useReplaceAssignedAsset(options?: ReplaceAssignedAssetOptions) {
 		...options,
 		mutationFn: replaceAssignedAsset,
 		meta: {
-			invalidates: rentalKeys.all(),
+			invalidates: (variables: ReplaceAssignedAssetVariables) => [
+				rentalKeys.all(),
+				contractKeys.rentalSigningSummary(variables.rentalId),
+			],
 			...options?.meta,
 		},
 	});

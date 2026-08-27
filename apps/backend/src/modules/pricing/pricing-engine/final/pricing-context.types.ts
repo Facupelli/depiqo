@@ -24,6 +24,7 @@ export type PricingContextLine = {
   rentalOfferId: string;
   rentableItemId: string;
   rentableItemName: string;
+  rentableItemKind: 'SINGLE' | 'PACKAGE' | 'KIT' | 'BUNDLE';
   categoryId?: string;
   quantity: number;
   chargedUnits: number;

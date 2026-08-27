@@ -55,6 +55,10 @@ export const promotionExclusionFormSchema = z.discriminatedUnion("type", [
 		rentalOfferId: requiredUuidSchema,
 	}),
 	z.object({ type: z.literal("CATEGORY"), categoryId: requiredUuidSchema }),
+	z.object({
+		type: z.literal("PRODUCT_KIND"),
+		rentableItemKind: z.enum(["SINGLE", "PACKAGE"]),
+	}),
 ]);
 
 export const promotionFormSchema = z
@@ -133,6 +137,8 @@ export function createEmptyExclusion(
 			return { type, rentalOfferId: "" };
 		case "CATEGORY":
 			return { type, categoryId: "" };
+		case "PRODUCT_KIND":
+			return { type, rentableItemKind: "SINGLE" };
 		default:
 			return assertNever(type);
 	}

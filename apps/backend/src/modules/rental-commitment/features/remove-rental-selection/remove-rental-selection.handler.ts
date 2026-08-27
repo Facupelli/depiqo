@@ -84,6 +84,7 @@ export class RemoveRentalSelectionHandler implements ICommandHandler<
         lineReference: selection.id,
         rentalOfferId: selection.rentalOfferId,
         rentableItemId: selection.rentableItemId,
+        rentableItemKind: selection.rentableItemKindSnapshot,
         categoryId: previousLine.get(selection.id)?.categoryId,
         quantity: selection.quantity,
       })),

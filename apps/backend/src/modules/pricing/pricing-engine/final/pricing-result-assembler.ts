@@ -27,6 +27,7 @@ export class PricingResultAssembler {
         rentalOfferId: line.rentalOfferId,
         rentableItemId: line.rentableItemId,
         rentableItemName: line.rentableItemName,
+        rentableItemKind: line.rentableItemKind,
         categoryId: line.categoryId,
         quantity: line.quantity,
         chargedUnits: line.chargedUnits,

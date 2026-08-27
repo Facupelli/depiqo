@@ -89,17 +89,6 @@ export function ProductListFilters({
 		<section className="rounded-sm border border-border/70 bg-background px-4 py-3 shadow-xs">
 			<div className="flex flex-wrap gap-2">
 				<SavedViewPill
-					label="Todos"
-					isActive={isAllViewActive(filters)}
-					onClick={() =>
-						onFilterChange({
-							kind: undefined,
-							status: undefined,
-							hasActivePricing: undefined,
-						})
-					}
-				/>
-				<SavedViewPill
 					label="Activos"
 					isActive={filters.status === "ACTIVE"}
 					onClick={() =>
@@ -111,7 +100,7 @@ export function ProductListFilters({
 					}
 				/>
 				<SavedViewPill
-					label="Drafts"
+					label="Borradores"
 					isActive={filters.status === "DRAFT"}
 					onClick={() =>
 						onFilterChange({
@@ -393,7 +382,7 @@ function buildActiveChips(
 	if (filters.kind) {
 		chips.push({ key: "kind", label: KIND_LABELS[filters.kind] });
 	}
-	if (filters.status) {
+	if (filters.status && filters.status !== "ACTIVE") {
 		chips.push({ key: "status", label: STATUS_LABELS[filters.status] });
 	}
 	if (category) {
@@ -431,12 +420,4 @@ function buildActiveChips(
 	}
 
 	return chips;
-}
-
-function isAllViewActive(filters: ProductListFilterValue) {
-	return (
-		filters.kind === undefined &&
-		filters.status === undefined &&
-		filters.hasActivePricing === undefined
-	);
 }

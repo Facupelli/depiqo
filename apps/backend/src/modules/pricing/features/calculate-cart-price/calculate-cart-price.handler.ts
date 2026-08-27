@@ -196,6 +196,8 @@ export class CalculateCartPriceHandler implements IQueryHandler<
         rentalOfferId: offer.rentalOfferId,
         rentableItemId: offer.rentableItem.id,
         rentableItemName: offer.rentableItem.name,
+        pricingLineKind: 'PRICEABLE_LINE',
+        rentableItemKind: offer.rentableItem.kind,
         categoryId: offer.rentableItem.categoryId ?? undefined,
         quantity: offer.quantity,
         ratePlan: pricingContext.ratePlansByRentalOfferId.get(offer.rentalOfferId),

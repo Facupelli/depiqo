@@ -73,9 +73,10 @@ model V2PromotionExclusion {
   tenantId    String @map("tenant_id")
   promotionId String @map("promotion_id")
 
-  rentableItemId String? @map("rentable_item_id")
-  rentalOfferId  String? @map("rental_offer_id")
-  categoryId     String? @map("category_id")
+  rentableItemId   String?             @map("rentable_item_id")
+  rentalOfferId    String?             @map("rental_offer_id")
+  categoryId       String?             @map("category_id")
+  rentableItemKind V2RentableItemKind? @map("rentable_item_kind")
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
 

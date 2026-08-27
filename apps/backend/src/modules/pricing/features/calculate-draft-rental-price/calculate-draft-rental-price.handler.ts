@@ -128,6 +128,7 @@ export class CalculateDraftRentalPriceHandler implements IQueryHandler<
         lineReference: randomUUID(),
         rentalOfferId: offer.rentalOfferId,
         rentableItemId: offer.rentableItem.id,
+        rentableItemKind: offer.rentableItem.kind,
         categoryId: offer.rentableItem.categoryId ?? undefined,
         quantity: offer.quantity,
       })),

@@ -233,6 +233,7 @@ export class ChangeRentalPeriodHandler implements ICommandHandler<ChangeRentalPe
         lineReference: selection.id,
         rentalOfferId: selection.rentalOfferId,
         rentableItemId: selection.rentableItemId,
+        rentableItemKind: selection.rentableItemKindSnapshot,
         categoryId: previousLine.get(selection.id)?.categoryId,
         quantity: selection.quantity,
       })),

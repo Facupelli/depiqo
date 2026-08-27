@@ -15,7 +15,7 @@ const catalogSearchSchema = z.object({
 	pageSize: z.coerce.number().int().positive().max(100).default(20),
 	search: z.string().trim().min(1).optional(),
 	kind: z.enum(["SINGLE", "PACKAGE"]).optional(),
-	status: z.enum(["DRAFT", "ACTIVE", "ARCHIVED"]).optional(),
+	status: z.enum(["DRAFT", "ACTIVE", "ARCHIVED"]).default("ACTIVE"),
 	categoryId: z.string().trim().min(1).optional(),
 	branchId: z.string().trim().min(1).optional(),
 	isVisible: BooleanSearchParamSchema,

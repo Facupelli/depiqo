@@ -54,6 +54,7 @@ export class GetPromotionsHandler implements IQueryHandler<GetPromotionsQuery, G
             rentableItemId: true,
             rentalOfferId: true,
             categoryId: true,
+            rentableItemKind: true,
           },
           orderBy: { createdAt: 'asc' },
         },
@@ -90,6 +91,9 @@ export class GetPromotionsHandler implements IQueryHandler<GetPromotionsQuery, G
         }
         if (exclusion.rentalOfferId) return { type: 'RENTAL_OFFER' as const, rentalOfferId: exclusion.rentalOfferId };
         if (exclusion.categoryId) return { type: 'CATEGORY' as const, categoryId: exclusion.categoryId };
+        if (exclusion.rentableItemKind === 'SINGLE' || exclusion.rentableItemKind === 'PACKAGE') {
+          return { type: 'PRODUCT_KIND' as const, rentableItemKind: exclusion.rentableItemKind };
+        }
 
         throw new Error(`Promotion exclusion has no target: ${promotion.id}`);
       }),

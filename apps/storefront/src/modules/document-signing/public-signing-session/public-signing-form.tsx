@@ -37,79 +37,83 @@ export function PublicSigningForm({
 				event.stopPropagation();
 				void form.handleSubmit();
 			}}
-			className="space-y-6"
+			className="flex min-h-0 flex-1 flex-col"
 			noValidate
 		>
-			<form.Field name="signatureImageDataUrl">
-				{(field) => {
-					const isInvalid =
-						field.state.meta.isTouched && !field.state.meta.isValid;
-					return (
-						<Field data-invalid={isInvalid}>
-							<SignaturePadField
-								value={field.state.value}
-								disabled={isPending}
-								isInvalid={isInvalid}
-								onChange={field.handleChange}
-							/>
-							{isInvalid ? (
-								<FieldError errors={field.state.meta.errors} />
-							) : null}
-						</Field>
-					);
-				}}
-			</form.Field>
-
-			<form.Field name="accepted">
-				{(field) => {
-					const isInvalid =
-						field.state.meta.isTouched && !field.state.meta.isValid;
-					return (
-						<Field data-invalid={isInvalid}>
-							<div className="rounded-lg border border-neutral-200 bg-neutral-50 p-4 text-sm leading-6 text-neutral-700">
-								{acceptanceText}
-							</div>
-							<div className="mt-3 flex items-start gap-3">
-								<Checkbox
-									id={acceptedId}
-									checked={field.state.value}
-									onCheckedChange={(checked) =>
-										field.handleChange(checked === true)
-									}
+			<div className="min-h-0 flex-1 space-y-6 overflow-y-auto px-4 py-2 sm:px-6">
+				<form.Field name="signatureImageDataUrl">
+					{(field) => {
+						const isInvalid =
+							field.state.meta.isTouched && !field.state.meta.isValid;
+						return (
+							<Field data-invalid={isInvalid}>
+								<SignaturePadField
+									value={field.state.value}
 									disabled={isPending}
+									isInvalid={isInvalid}
+									onChange={field.handleChange}
 								/>
-								<FieldLabel
-									htmlFor={acceptedId}
-									className="text-sm leading-5 text-neutral-800"
-								>
-									Confirmo expresamente mi aceptación del texto anterior.
-								</FieldLabel>
-							</div>
-							{isInvalid ? (
-								<FieldError errors={field.state.meta.errors} />
-							) : null}
-						</Field>
-					);
-				}}
-			</form.Field>
+								{isInvalid ? (
+									<FieldError errors={field.state.meta.errors} />
+								) : null}
+							</Field>
+						);
+					}}
+				</form.Field>
 
-			{submitError ? <FieldError>{submitError}</FieldError> : null}
+				<form.Field name="accepted">
+					{(field) => {
+						const isInvalid =
+							field.state.meta.isTouched && !field.state.meta.isValid;
+						return (
+							<Field data-invalid={isInvalid}>
+								<div className="rounded-lg border border-neutral-200 bg-neutral-50 p-4 text-sm leading-6 text-neutral-700">
+									{acceptanceText}
+								</div>
+								<div className="mt-3 flex items-start gap-3">
+									<Checkbox
+										id={acceptedId}
+										checked={field.state.value}
+										onCheckedChange={(checked) =>
+											field.handleChange(checked === true)
+										}
+										disabled={isPending}
+									/>
+									<FieldLabel
+										htmlFor={acceptedId}
+										className="text-sm leading-5 text-neutral-800"
+									>
+										Confirmo expresamente mi aceptación del texto anterior.
+									</FieldLabel>
+								</div>
+								{isInvalid ? (
+									<FieldError errors={field.state.meta.errors} />
+								) : null}
+							</Field>
+						);
+					}}
+				</form.Field>
 
-			<form.Subscribe
-				selector={(state) => [state.canSubmit, state.isSubmitting]}
-			>
-				{([canSubmit, isSubmitting]) => (
-					<Button
-						type="submit"
-						disabled={!canSubmit || isSubmitting || isPending}
-						className="h-12 w-full"
-					>
-						{isSubmitting || isPending
-							? "Registrando firma..."
-							: "Firmar y completar"}
-					</Button>
-				)}
-			</form.Subscribe>
+				{submitError ? <FieldError>{submitError}</FieldError> : null}
+			</div>
+
+			<div className="border-t border-neutral-200 bg-white px-4 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:px-6">
+				<form.Subscribe
+					selector={(state) => [state.canSubmit, state.isSubmitting]}
+				>
+					{([canSubmit, isSubmitting]) => (
+						<Button
+							type="submit"
+							disabled={!canSubmit || isSubmitting || isPending}
+							className="h-12 w-full"
+						>
+							{isSubmitting || isPending
+								? "Registrando firma..."
+								: "Firmar y completar"}
+						</Button>
+					)}
+				</form.Subscribe>
+			</div>
 		</form>
 	);
 }

@@ -173,6 +173,7 @@ export class CreateConfirmedRentalService implements ICommandHandler<
         lineReference: selection.rentalSelectionId,
         rentalOfferId: selection.rentalOfferId,
         rentableItemId: selection.rentableItemId,
+        rentableItemKind: selection.rentableItemKindSnapshot,
         categoryId: selection.categoryId,
         quantity: selection.quantity,
       })),
@@ -316,7 +317,19 @@ export class CreateConfirmedRentalService implements ICommandHandler<
         });
       });
     } catch (error) {
-      if (error instanceof PostgresExclusionViolationError) {
+      const isIdempotencyConflict = isUniqueConstraintViolation(error, ['tenant_id', 'confirmation_operation_id']);
+      const isAssetBlockConflict = error instanceof PostgresExclusionViolationError;
+
+      if (isIdempotencyConflict || isAssetBlockConflict) {
+        // The failed transaction has fully rolled back before runInTransaction
+        // rejects. Resolve through the normal Prisma client, never the failed tx.
+        const replay = await this.findCommittedRentalByOperation(command.tenantId, confirmationOperation.operationId);
+        if (replay) {
+          return this.resolveReplayResult(replay, confirmationOperation, context);
+        }
+      }
+
+      if (isAssetBlockConflict) {
         return err(
           createConfirmedRentalError(
             'rental_commitment.insufficient_asset_availability',
@@ -326,15 +339,7 @@ export class CreateConfirmedRentalService implements ICommandHandler<
           ),
         );
       }
-      if (isUniqueConstraintViolation(error, ['tenant_id', 'confirmation_operation_id'])) {
-        // A concurrent confirmation with the same operation identity won the race.
-        // The losing transaction has already rolled back, so resolve against the
-        // committed rental outside the failed transaction.
-        const replay = await this.findCommittedRentalByOperation(command.tenantId, confirmationOperation.operationId);
-        if (replay) {
-          return this.resolveReplayResult(replay, confirmationOperation, context);
-        }
-      }
+
       return err(this.toApplicationError(error, context));
     }
   }

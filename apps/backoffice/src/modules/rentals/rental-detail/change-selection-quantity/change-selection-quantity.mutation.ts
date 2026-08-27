@@ -2,6 +2,7 @@ import type { ChangeRentalSelectionQuantityResponseDto } from "@repo/api-contrac
 import { type MutationOptions, useMutation } from "@tanstack/react-query";
 import { rentalKeys } from "@/modules/rentals/rental.queries";
 import type { ProblemDetailsError } from "@/shared/errors";
+import { contractKeys } from "../documents/signing/rental-contract-signing.queries";
 import {
 	type ChangeSelectionQuantityVariables,
 	changeSelectionQuantity,
@@ -23,7 +24,10 @@ export function useChangeSelectionQuantity(
 		...options,
 		mutationFn: changeSelectionQuantity,
 		meta: {
-			invalidates: rentalKeys.all(),
+			invalidates: (variables: ChangeSelectionQuantityVariables) => [
+				rentalKeys.all(),
+				contractKeys.rentalSigningSummary(variables.rentalId),
+			],
 			...options?.meta,
 		},
 	});
