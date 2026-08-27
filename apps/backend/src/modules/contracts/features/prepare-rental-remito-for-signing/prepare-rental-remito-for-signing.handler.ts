@@ -2,7 +2,7 @@ import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { err, ok, Result } from 'neverthrow';
 
 import { PrismaService } from 'src/core/database/prisma.service';
-import { V2ContractArtifactKind, V2ContractArtifactStorageStatus } from 'src/generated/prisma/enums';
+import { V2ContractArtifactKind, V2ContractArtifactStorageStatus, V2ContractStatus } from 'src/generated/prisma/enums';
 
 import { ContractArtifactPersistenceService } from '../../application/contract-artifact-persistence.service';
 import { RentalRemitoApplicationError } from '../../application/rental-remito/rental-remito-application.error';
@@ -32,6 +32,7 @@ export class PrepareRentalRemitoForSigningHandler implements IQueryHandler<
       select: {
         id: true,
         rentalId: true,
+        status: true,
         documentNumber: true,
         snapshot: true,
         artifacts: {
@@ -46,7 +47,9 @@ export class PrepareRentalRemitoForSigningHandler implements IQueryHandler<
       },
     });
     const artifact = existing?.artifacts[0];
-    if (existing && artifact) {
+    const canReuseArtifact =
+      existing?.status !== V2ContractStatus.DRAFT && existing?.status !== V2ContractStatus.RESIGN_REQUIRED;
+    if (existing && artifact && canReuseArtifact) {
       const snapshot = existing.snapshot as unknown as RentalRemitoSnapshot;
       return ok({
         contractId: existing.id,

@@ -31,6 +31,7 @@ export class RentalLifecycleFactsService extends RentalLifecycleFacts {
       },
       select: {
         id: true,
+        rentalNumber: true,
         branchId: true,
         customerId: true,
         status: true,
@@ -45,6 +46,7 @@ export class RentalLifecycleFactsService extends RentalLifecycleFacts {
 
     return ok({
       rentalId: rental.id,
+      rentalNumber: rental.rentalNumber,
       branchId: rental.branchId,
       rentalCustomerId: rental.customerId,
       status: rental.status as RentalLifecycleStatus,

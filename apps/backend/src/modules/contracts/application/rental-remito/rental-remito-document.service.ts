@@ -97,7 +97,7 @@ export class RentalRemitoDocumentService {
     const fileName = buildRentalRemitoFileName({
       customerName: source.customer.displayName,
       documentNumber: pdfData.document.number,
-      rentalId: source.rental.id,
+      rentalNumber: source.rental.rentalNumber,
       signed: Boolean(input.signedSummary),
     });
 

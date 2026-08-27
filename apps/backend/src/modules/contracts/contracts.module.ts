@@ -5,6 +5,8 @@ import { NotificationsModule } from '../notifications/notifications.module';
 import { ObjectStorageModule } from '../object-storage/object-storage.module';
 import { RentalCommitmentModule } from '../rental-commitment/rental-commitment.module';
 import { TenantManagementModule } from '../tenant-management/tenant-management.module';
+import { DownloadRentalSignedRemitoHttpController } from './features/download-rental-signed-remito/download-rental-signed-remito.controller';
+import { DownloadRentalSignedRemitoHandler } from './features/download-rental-signed-remito/download-rental-signed-remito.handler';
 import { GenerateRentalBudgetHttpController } from './features/generate-rental-budget/generate-rental-budget.controller';
 import { GenerateRentalBudgetHandler } from './features/generate-rental-budget/generate-rental-budget.handler';
 import { GenerateRentalRemitoHttpController } from './features/generate-rental-remito/generate-rental-remito.controller';
@@ -41,6 +43,7 @@ import { SendRentalRemitoSigningInvitationService } from './features/send-rental
     TenantManagementModule,
   ],
   controllers: [
+    DownloadRentalSignedRemitoHttpController,
     GenerateRentalBudgetHttpController,
     GenerateRentalRemitoHttpController,
     GetRentalContractSigningSummaryHttpController,
@@ -48,6 +51,7 @@ import { SendRentalRemitoSigningInvitationService } from './features/send-rental
     SendRentalRemitoSigningInvitationHttpController,
   ],
   providers: [
+    DownloadRentalSignedRemitoHandler,
     GenerateRentalBudgetHandler,
     GenerateRentalRemitoHandler,
     GetRentalContractSigningSummaryHandler,

@@ -117,7 +117,7 @@ export class RentalBudgetDocumentService {
       });
     }
 
-    const documentNumber = `${tenantIdentity.value.slug}-${lifecycle.value.rentalId.slice(0, 8)}`.toUpperCase();
+    const documentNumber = `${tenantIdentity.value.slug}-${lifecycle.value.rentalNumber}`.toUpperCase();
     const data: RentalRemitoPdfData = {
       document: {
         label: 'PRESUPUESTO',
@@ -150,7 +150,7 @@ export class RentalBudgetDocumentService {
     const buffer = await this.renderer.render(data);
     return ok({
       buffer,
-      fileName: `presupuesto-${normalizeFileNameSegment(customer.fullName)}-${lifecycle.value.rentalId.slice(0, 8)}.pdf`,
+      fileName: `presupuesto-${normalizeFileNameSegment(customer.fullName)}-${lifecycle.value.rentalNumber}.pdf`,
     });
   }
 

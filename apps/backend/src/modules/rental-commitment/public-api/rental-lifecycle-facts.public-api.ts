@@ -9,6 +9,7 @@ export type RentalLifecycleStatus = 'PENDING' | 'DRAFT' | 'CONFIRMED' | 'CANCELL
 
 export interface RentalLifecycleFactsResult {
   rentalId: string;
+  rentalNumber: number;
   branchId: string;
   rentalCustomerId: string | null;
   status: RentalLifecycleStatus;

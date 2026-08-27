@@ -38,6 +38,7 @@ export class RentalRemitoReadModelLoader {
       },
       select: {
         id: true,
+        rentalNumber: true,
         tenantId: true,
         branchId: true,
         customerId: true,
@@ -156,6 +157,7 @@ export class RentalRemitoReadModelLoader {
     return ok({
       rental: {
         id: rental.id,
+        rentalNumber: rental.rentalNumber,
         tenantId: rental.tenantId,
         branchId: rental.branchId,
         customerId: rental.customerId,

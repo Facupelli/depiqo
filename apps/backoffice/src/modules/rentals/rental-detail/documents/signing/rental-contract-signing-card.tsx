@@ -1,4 +1,10 @@
-import { CheckCircle2, ChevronDown, FileSignature } from "lucide-react";
+import { Button } from "@repo/ui/components/button";
+import {
+	CheckCircle2,
+	ChevronDown,
+	Download,
+	FileSignature,
+} from "lucide-react";
 import { useState } from "react";
 import { useRentalDetailContext } from "@/modules/rentals/rental-detail/rental-detail.context";
 import { useTenantTimezone } from "@/shared/timezone/operational-timezone.hooks";
@@ -8,6 +14,7 @@ import {
 	getRentalContractSigningState,
 	getRentalContractSigningToneClasses,
 } from "./rental-contract-signing-summary.utils";
+import { useRentalSignedRemitoDownload } from "./use-rental-signed-remito-download";
 
 export function RentalContractSigningCard() {
 	const { rental } = useRentalDetailContext();
@@ -16,6 +23,11 @@ export function RentalContractSigningCard() {
 		rental.id,
 	);
 	const [isExpanded, setIsExpanded] = useState(false);
+	const signedPdf = summary?.artifacts.signedPdf ?? null;
+	const signedRemitoDownload = useRentalSignedRemitoDownload(
+		rental.id,
+		signedPdf?.fileName ?? "remito-firmado.pdf",
+	);
 
 	if (isLoading)
 		return (
@@ -92,6 +104,21 @@ export function RentalContractSigningCard() {
 						{formatRentalContractSigningDate(state.activityAt, timezone)}
 					</p>
 				</div>
+			) : null}
+
+			{signedPdf ? (
+				<Button
+					type="button"
+					variant="outline"
+					className="mt-4 w-full"
+					onClick={signedRemitoDownload.download}
+					disabled={signedRemitoDownload.isDownloading}
+				>
+					<Download className="size-4" />
+					{signedRemitoDownload.isDownloading
+						? "Descargando..."
+						: "Descargar remito firmado"}
+				</Button>
 			) : null}
 
 			{isExpanded ? (
