@@ -2,6 +2,7 @@ import type { ChangeRentalDetailsResponseDto } from "@repo/api-contracts";
 import { type MutationOptions, useMutation } from "@tanstack/react-query";
 import { rentalKeys } from "@/modules/rentals/rental.queries";
 import type { ProblemDetailsError } from "@/shared/errors";
+import { contractKeys } from "../documents/signing/rental-contract-signing.queries";
 import {
 	type ChangeRentalDetailsVariables,
 	changeRentalDetails,
@@ -21,7 +22,10 @@ export function useEditPriceAdjustment(options?: EditPriceAdjustmentOptions) {
 		...options,
 		mutationFn: changeRentalDetails,
 		meta: {
-			invalidates: rentalKeys.all(),
+			invalidates: (variables: ChangeRentalDetailsVariables) => [
+				rentalKeys.all(),
+				contractKeys.rentalSigningSummary(variables.rentalId),
+			],
 			...options?.meta,
 		},
 	});

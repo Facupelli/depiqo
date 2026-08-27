@@ -20,7 +20,16 @@ export function getRentalContractSigningState(
 ): RentalContractSigningState {
 	const request = summary.latestSigningRequest;
 
-	if (summary.contractStatus === "SIGNED" || summary.acceptance) {
+	if (summary.contractStatus === "RESIGN_REQUIRED") {
+		return {
+			label: "Requiere nueva firma",
+			description: "El contrato cambió y debe enviarse nuevamente.",
+			tone: "warning",
+			activityAt: request?.sentAt ?? null,
+		};
+	}
+
+	if (summary.contractStatus === "SIGNED") {
 		return {
 			label: "Contrato firmado",
 			description: "La aceptación quedó registrada correctamente.",
@@ -53,15 +62,6 @@ export function getRentalContractSigningState(
 			description: "La solicitud expiró y requiere un nuevo envío.",
 			tone: "danger",
 			activityAt: request.expiresAt,
-		};
-	}
-
-	if (summary.contractStatus === "RESIGN_REQUIRED") {
-		return {
-			label: "Requiere nueva firma",
-			description: "El contrato cambió y debe enviarse nuevamente.",
-			tone: "warning",
-			activityAt: request?.sentAt ?? null,
 		};
 	}
 

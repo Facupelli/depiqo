@@ -3,6 +3,7 @@ import type { MutationOptions } from "@tanstack/react-query";
 import { useMutation } from "@tanstack/react-query";
 import { rentalKeys } from "@/modules/rentals/rental.queries";
 import type { ProblemDetailsError } from "@/shared/errors";
+import { contractKeys } from "../documents/signing/rental-contract-signing.queries";
 import {
 	type AddRentalSelectionVariables,
 	addRentalSelection,
@@ -26,7 +27,10 @@ export function useAddRentalSelection(options?: AddRentalSelectionOptions) {
 		...options,
 		mutationFn: addRentalSelection,
 		meta: {
-			invalidates: rentalKeys.all(),
+			invalidates: (variables: AddRentalSelectionVariables) => [
+				rentalKeys.all(),
+				contractKeys.rentalSigningSummary(variables.rentalId),
+			],
 			...options?.meta,
 		},
 	});
