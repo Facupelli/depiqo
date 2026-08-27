@@ -4,6 +4,15 @@ Storefront is the customer-facing TanStack Start application for the equipment r
 
 Run commands from `apps/storefront/` using `pnpm`.
 
+## Documentation Map
+
+Load the additional rule documents relevant to the change.
+
+| Need                                                                      | Read                                      |
+| ------------------------------------------------------------------------- | ----------------------------------------- |
+| TanStack Start routing, loaders, server functions, and framework patterns | `docs/agent-rules/tanstack-start.md`      |
+| Date, time, schedule-slot, calendar, pricing, cart, or rental-request work | `docs/architecture/temporal-semantics.md` |
+
 ## Validation
 
 - `pnpm typecheck`
