@@ -6,7 +6,6 @@ import { EmailDeliveryPort } from './application/ports/email-delivery.port';
 import { EmailRenderer } from './application/ports/email-renderer.port';
 import { EmailSenderResolver } from './application/ports/email-sender.resolver';
 import { SendRentalCancelledNotificationHandler } from './application/event-handlers/send-rental-cancelled-notification.event-handler';
-import { SendConfirmedRentalEditedNotificationHandler } from './application/event-handlers/send-confirmed-rental-edited-notification.event-handler';
 import { SendRentalConfirmedConfirmationNotificationHandler } from './application/event-handlers/send-rental-confirmed-confirmation-notification.event-handler';
 import { SendRentalCreatedByCustomerNotificationHandler } from './application/event-handlers/send-rental-created-by-customer-notification.event-handler';
 import { NotificationChannelMutePolicy } from './application/notification-channel-mute-policy.service';
@@ -27,7 +26,6 @@ import { PlatformEmailSenderResolver } from './infrastructure/sender/platform-em
     NotificationChannelMutePolicy,
     TenantNotificationSuppressionPolicy,
     SendRentalCancelledNotificationHandler,
-    SendConfirmedRentalEditedNotificationHandler,
     SendRentalConfirmedConfirmationNotificationHandler,
     SendRentalCreatedByCustomerNotificationHandler,
     CodeBasedEmailRendererService,
