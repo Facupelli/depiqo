@@ -9,6 +9,8 @@ import { createContext, useContext, useMemo, useState } from "react";
 import { toCalculateCartPriceBody } from "@/modules/pricing/calculate-cart-price/calculate-cart-price.mapper";
 import { useCalculatedCartPrice } from "@/modules/pricing/calculate-cart-price/calculate-cart-price.queries";
 import { useStorefrontBranchScheduleSlots } from "@/modules/tenant-management/branches/branch-schedule.queries";
+import { useCartRentalOfferAvailability } from "../availability/cart-rental-offer-availability.queries";
+import type { GetCartRentalOfferAvailabilityInput } from "../availability/get-cart-rental-offer-availability.schema";
 import { useRentalCartActions, useRentalCartItems } from "../rental-cart.hooks";
 import type {
 	DeliveryRequestField,
@@ -39,6 +41,12 @@ type RentalPeriodSlice = {
 	areSlotsLoading: boolean;
 	isPricingReady: boolean;
 	isPeriodInvalid: boolean;
+};
+
+type AvailabilitySlice = {
+	availableCountByRentalOfferId: ReadonlyMap<string, number>;
+	isAvailabilityLoading: boolean;
+	isAvailabilityError: boolean;
 };
 
 type PricingSlice = {
@@ -73,6 +81,7 @@ type FulfillmentSlice = {
 type CartPageValue = {
 	cart: CartSlice;
 	period: RentalPeriodSlice;
+	availability: AvailabilitySlice;
 	pricing: PricingSlice;
 	bookingFeedback: BookingFeedbackSlice;
 	fulfillment: FulfillmentSlice;
@@ -89,6 +98,7 @@ function useCartPageValue(): CartPageValue {
 
 export const useCartContext = () => useCartPageValue().cart;
 export const useCartPeriodContext = () => useCartPageValue().period;
+export const useCartAvailabilityContext = () => useCartPageValue().availability;
 export const useCartPricingContext = () => useCartPageValue().pricing;
 export const useCartBookingFeedbackContext = () =>
 	useCartPageValue().bookingFeedback;
@@ -148,6 +158,35 @@ export function CartPageProvider({
 	const end = returnSlot ? new Date(returnSlot.instant) : null;
 	const isPeriodInvalid = Boolean(start && end && end <= start);
 	const isPricingReady = hasBothTimes && !isPeriodInvalid;
+	const availabilityInput =
+		useMemo<GetCartRentalOfferAvailabilityInput | null>(() => {
+			const rentalOfferIds = items.map((item) => item.rentalOfferId).sort();
+			if (rentalOfferIds.length === 0) return null;
+
+			return {
+				branchId: branch.id,
+				periodStart,
+				periodEnd,
+				rentalOfferIds,
+			};
+		}, [branch.id, periodStart, periodEnd, items]);
+	const availabilityQuery = useCartRentalOfferAvailability(availabilityInput);
+	const availableCountByRentalOfferId = useMemo(() => {
+		if (availabilityQuery.isFetching || availabilityQuery.isError) {
+			return new Map<string, number>();
+		}
+
+		return new Map(
+			availabilityQuery.data?.data.map((item) => [
+				item.rentalOfferId,
+				item.availableCount,
+			]) ?? [],
+		);
+	}, [
+		availabilityQuery.data,
+		availabilityQuery.isError,
+		availabilityQuery.isFetching,
+	]);
 	const body = toCalculateCartPriceBody({
 		branchId: branch.id,
 		periodStart: isPricingReady ? start : null,
@@ -197,6 +236,11 @@ export function CartPageProvider({
 				areSlotsLoading,
 				isPricingReady,
 				isPeriodInvalid,
+			},
+			availability: {
+				availableCountByRentalOfferId,
+				isAvailabilityLoading: availabilityQuery.isFetching,
+				isAvailabilityError: availabilityQuery.isError,
 			},
 			pricing: {
 				config,
@@ -280,6 +324,9 @@ export function CartPageProvider({
 			isPricingReady,
 			isPeriodInvalid,
 			priceQuery.data,
+			availabilityQuery.isFetching,
+			availabilityQuery.isError,
+			availableCountByRentalOfferId,
 			priceQuery.isFetching,
 			priceQuery.isError,
 			insuranceSelected,

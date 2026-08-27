@@ -28,6 +28,7 @@ export type PricingCalculationRequest = {
   couponCode?: string;
   calculationDate?: Date;
   targetTotalAdjustment?: { targetTotal: string };
+  insuranceSelected: boolean;
 };
 
 export type PricingCalculationLine = {
@@ -67,7 +68,25 @@ export type PricingCalculationBreakdown = {
   appliedCoupon?: { couponId: string; code: string; promotionId: string; amount: string };
 };
 
-export type PricingCalculationResult = {
+export type PricingInsuranceCalculation = {
+  applied: boolean;
+  amount: string;
+};
+
+export type PricingInsuranceCompositionRequest = {
+  tenantId: string;
+  insuranceSelected: boolean;
+  equipmentSubtotalBeforeDiscounts: string;
+  equipmentTotal: string;
+};
+
+export type PricingInsuranceCompositionResult = {
+  insurance: PricingInsuranceCalculation;
+  totalBeforeInsurance: string;
+  total: string;
+};
+
+export type PricingCalculationResult = PricingInsuranceCompositionResult & {
   calculatedAt: Date;
   calculated: PricingCalculationBreakdown;
   final: PricingCalculationBreakdown;
@@ -97,4 +116,8 @@ export abstract class PricingCalculation {
   abstract calculateProposedPrice(
     input: PricingCalculationRequest,
   ): Promise<Result<PricingCalculationResult, PricingCalculationError>>;
+
+  abstract calculateInsuranceForEquipmentPrice(
+    input: PricingInsuranceCompositionRequest,
+  ): Promise<Result<PricingInsuranceCompositionResult, PricingCalculationError>>;
 }

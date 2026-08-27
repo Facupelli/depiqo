@@ -5,6 +5,8 @@ import { ResolveSelectedRentalOffersService } from '../features/resolve-selected
 import {
   CatalogSelectionResolution,
   CatalogSelectionResolutionError,
+  ResolveSelectedRentalOfferRequirementsInput,
+  ResolveSelectedRentalOfferRequirementsResult,
   ResolveSelectedRentalOffersInput,
   ResolveSelectedRentalOffersResult,
 } from './catalog-selection-resolution.public-api';
@@ -19,5 +21,11 @@ export class CatalogSelectionResolutionService extends CatalogSelectionResolutio
     input: ResolveSelectedRentalOffersInput,
   ): Promise<Result<ResolveSelectedRentalOffersResult, CatalogSelectionResolutionError>> {
     return this.resolveSelectedRentalOffersService.execute(input);
+  }
+
+  async resolveSelectedRentalOfferRequirements(
+    input: ResolveSelectedRentalOfferRequirementsInput,
+  ): Promise<Result<ResolveSelectedRentalOfferRequirementsResult, CatalogSelectionResolutionError>> {
+    return this.resolveSelectedRentalOffersService.resolveSelectedRentalOfferRequirements(input);
   }
 }

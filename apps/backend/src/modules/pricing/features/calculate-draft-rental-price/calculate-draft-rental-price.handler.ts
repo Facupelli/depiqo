@@ -123,6 +123,7 @@ export class CalculateDraftRentalPriceHandler implements IQueryHandler<
         dailyBillingPolicy: billingPreferences.dailyBillingPolicy,
         weekendCountsAsOne: billingPreferences.weekendCountsAsOne,
       },
+      insuranceSelected: false,
       lines: resolvedCatalogSelections.value.resolvedOffers.map((offer) => ({
         lineReference: randomUUID(),
         rentalOfferId: offer.rentalOfferId,

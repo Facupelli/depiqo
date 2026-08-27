@@ -6,11 +6,8 @@ import { err, ok, Result } from 'neverthrow';
 import { PrismaService } from 'src/core/database/prisma.service';
 import { AssetInventoryDisplayFacts } from 'src/modules/asset-inventory/public-api/asset-inventory-display-facts.public-api';
 import { getRentalDetailError, GetRentalDetailError } from './get-rental-detail.errors';
-import {
-  parseLegacyRentalDetailPricing,
-  parseLegacyRentalDetailPricingLine,
-  parseV2RentalDetailPricing,
-} from './get-rental-detail-pricing-snapshot.decoder';
+import { toRentalDetailPricing } from '../../application/accepted-pricing/accepted-pricing-snapshot.projections';
+import { ConfirmedPriceSnapshot } from '../../domain/value-objects/confirmed-price-snapshot.value-object';
 import { GetRentalDetailQuery } from './get-rental-detail.query';
 
 export type GetRentalDetailResult = Result<GetRentalDetailResponseDto, GetRentalDetailError>;
@@ -169,7 +166,7 @@ export class GetRentalDetailHandler implements IQueryHandler<GetRentalDetailQuer
         quantity: selection.quantity,
         assignedAssets: selection.assignments.map((assignment) => ({ assetId: assignment.assetId })),
       })),
-      pricing: this.resolvePricing(rental.priceSnapshot, rental.selections),
+      pricing: this.resolvePricing(rental.priceSnapshot),
       ownerPayouts,
     });
   }
@@ -246,24 +243,10 @@ export class GetRentalDetailHandler implements IQueryHandler<GetRentalDetailQuer
     }));
   }
 
-  private resolvePricing(
-    priceSnapshot: unknown,
-    selections: Array<{ id: string; rentableItemNameSnapshot: string; priceSnapshot: unknown }>,
-  ): GetRentalDetailResponseDto['pricing'] {
-    const v2Pricing = parseV2RentalDetailPricing(priceSnapshot);
-    if (v2Pricing) return v2Pricing;
-
-    const legacyPricing = parseLegacyRentalDetailPricing(priceSnapshot);
-    if (!legacyPricing) return null;
-
-    return {
-      ...legacyPricing,
-      lines: selections.flatMap((selection) => {
-        const pricingLine = parseLegacyRentalDetailPricingLine(selection.priceSnapshot);
-        return pricingLine
-          ? [{ rentalSelectionId: selection.id, label: selection.rentableItemNameSnapshot, ...pricingLine }]
-          : [];
-      }),
-    };
+  private resolvePricing(priceSnapshot: unknown): GetRentalDetailResponseDto['pricing'] {
+    if (priceSnapshot === null) return null;
+    const snapshot = ConfirmedPriceSnapshot.create(priceSnapshot);
+    if (snapshot.isErr()) throw snapshot.error;
+    return toRentalDetailPricing(snapshot.value.snapshot);
   }
 }

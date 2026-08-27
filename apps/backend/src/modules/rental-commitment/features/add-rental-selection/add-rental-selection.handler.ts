@@ -39,7 +39,6 @@ import { RentalSelectionId } from '../../domain/ids/rental-selection-id';
 import { RentalStatus } from '../../domain/rental-status';
 import { Rental } from '../../domain/rental.aggregate';
 import { EquipmentTypeId } from '../../domain/types/rental-commitment-ids';
-import { AcceptedRentalPricingSnapshotV1 } from '../../domain/value-objects/accepted-pricing-snapshot.type';
 import { getConfirmedPriceSnapshotForOwnerSplits } from '../../owner-split/confirmed-price-snapshot-for-owner-splits';
 import { RentalOwnerSplitDraft } from '../../owner-split/owner-split-calculator.types';
 import { RentalOwnerSplitCalculator } from '../../owner-split/rental-owner-split-calculator';
@@ -132,7 +131,7 @@ export class AddRentalSelectionHandler implements ICommandHandler<AddRentalSelec
       quantity,
     };
 
-    const previousSnapshot = rental.confirmedPriceSnapshot!.toJSON() as AcceptedRentalPricingSnapshotV1;
+    const previousSnapshot = rental.confirmedPriceSnapshot!.snapshot;
     const previousPriceLineBySelectionId = new Map(
       previousSnapshot.final.lines.map((line) => [line.rentalSelectionId, line]),
     );
@@ -145,6 +144,7 @@ export class AddRentalSelectionHandler implements ICommandHandler<AddRentalSelec
         dailyBillingPolicy: billingPreferences.value.dailyBillingPolicy,
         weekendCountsAsOne: billingPreferences.value.weekendCountsAsOne,
       },
+      insuranceSelected: rental.insuranceSelected ?? false,
       lines: [
         ...rental.currentSelections.map((existing) => ({
           lineReference: existing.id,

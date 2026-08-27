@@ -191,7 +191,7 @@ describe('CreateDraftRental integration', () => {
     expect(persisted.rental.priceSnapshot).toEqual(
       expect.objectContaining({
         schema: 'v2.rental-price-snapshot',
-        version: 1,
+        version: 2,
         context: 'DRAFT',
       }),
     );

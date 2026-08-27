@@ -16,7 +16,10 @@ export type RentalCartActions = {
 		branchId: string,
 		offer: StorefrontRentalOfferListViewItemDto,
 	) => void;
-	incrementRentalOffer: (rentalOfferId: string) => void;
+	incrementRentalOffer: (
+		rentalOfferId: string,
+		availableCount?: number | null,
+	) => void;
 	decrementRentalOffer: (rentalOfferId: string) => void;
 	changeRentalOfferQuantity: (rentalOfferId: string, quantity: number) => void;
 	removeRentalOffer: (rentalOfferId: string) => void;

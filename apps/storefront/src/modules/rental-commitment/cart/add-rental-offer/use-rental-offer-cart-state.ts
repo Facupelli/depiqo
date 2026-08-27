@@ -21,7 +21,7 @@ export function useRentalOfferCartState(
 		add: () => {
 			if (!unavailable) addRentalOffer(branchId, offer);
 		},
-		increment: () => incrementRentalOffer(offer.id),
+		increment: () => incrementRentalOffer(offer.id, offer.availableCount),
 		decrement: () => decrementRentalOffer(offer.id),
 	};
 }

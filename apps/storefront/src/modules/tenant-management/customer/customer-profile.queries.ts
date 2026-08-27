@@ -27,7 +27,10 @@ export const customerProfileQueries = {
 };
 
 export function useCurrentRentalCustomerProfile() {
-	return useQuery(customerProfileQueries.current());
+	return useQuery({
+		...customerProfileQueries.current(),
+		enabled: typeof window !== "undefined",
+	});
 }
 
 export function useSubmitCustomerProfile() {

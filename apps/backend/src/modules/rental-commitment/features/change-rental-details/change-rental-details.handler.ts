@@ -7,6 +7,10 @@ import {
   PricingTargetTotalAdjustmentError,
   PricingTargetTotalAdjustmentResult,
 } from 'src/modules/pricing/public-api/pricing-target-total-adjustment.public-api';
+import {
+  PricingCalculation,
+  PricingCalculationError,
+} from 'src/modules/pricing/public-api/pricing-calculation.public-api';
 import { BranchFacts } from 'src/modules/tenant-management/public-api/branch-facts.public-api';
 import { toRentalIntegrationEvents } from '../../application/rental-integration-event.mapper';
 import {
@@ -18,9 +22,11 @@ import {
 import { FulfillmentMethod, RentalStatus } from '../../domain/rental-status';
 import { Rental, RentalDeliveryDetails } from '../../domain/rental.aggregate';
 import {
-  AcceptedRentalPricingBreakdownV1,
-  AcceptedRentalPricingSnapshotV1,
+  ACCEPTED_RENTAL_PRICING_SNAPSHOT_VERSION,
+  AcceptedRentalPricingBreakdown,
+  AcceptedRentalPricingSnapshot,
 } from '../../domain/value-objects/accepted-pricing-snapshot.type';
+import { ConfirmedPriceSnapshot } from '../../domain/value-objects/confirmed-price-snapshot.value-object';
 import { JsonValue } from '../../domain/value-objects/json-snapshot.value-object';
 import { getConfirmedPriceSnapshotForOwnerSplits } from '../../owner-split/confirmed-price-snapshot-for-owner-splits';
 import { RentalOwnerSplitCalculator } from '../../owner-split/rental-owner-split-calculator';
@@ -43,6 +49,7 @@ export class ChangeRentalDetailsHandler implements ICommandHandler<
     private readonly rentals: RentalRepository,
     private readonly branches: BranchFacts,
     private readonly targetTotalAdjustment: PricingTargetTotalAdjustment,
+    private readonly pricingCalculation: PricingCalculation,
     private readonly splitCalculator: RentalOwnerSplitCalculator,
     private readonly unitOfWork: PrismaUnitOfWork,
   ) {}
@@ -121,20 +128,36 @@ export class ChangeRentalDetailsHandler implements ICommandHandler<
       }
 
       let transformedPrice: JsonValue | undefined;
-      if (change.pricingChanged) {
-        const manualPricingAdjustment = patch.manualPricingAdjustment;
-        if (manualPricingAdjustment === undefined) {
-          throw new Error('Manual pricing adjustment change was detected without an adjustment value.');
+      if (change.pricingChanged || change.insuranceChanged) {
+        let snapshot = current.confirmedPriceSnapshot!.snapshot;
+        if (change.pricingChanged) {
+          const manualPricingAdjustment = patch.manualPricingAdjustment;
+          if (manualPricingAdjustment === undefined) {
+            throw new Error('Manual pricing adjustment change was detected without an adjustment value.');
+          }
+          const transformed = this.transformManualPricingAdjustment({
+            snapshot,
+            adjustment: manualPricingAdjustment,
+            tenantUserId,
+            operationTime,
+            context,
+          });
+          if (transformed.isErr()) return err(transformed.error);
+          snapshot = transformed.value;
         }
-        const transformed = this.transformManualPricingAdjustment({
-          snapshot: current.confirmedPriceSnapshot!.toJSON() as AcceptedRentalPricingSnapshotV1,
-          adjustment: manualPricingAdjustment,
-          tenantUserId,
-          operationTime,
-          context,
-        });
-        if (transformed.isErr()) return err(transformed.error);
-        transformedPrice = transformed.value;
+        if (change.insuranceChanged) {
+          const composed = await this.transformInsuranceComposition({
+            tenantId,
+            snapshot,
+            insuranceSelected: change.details.insuranceSelected ?? false,
+            context,
+          });
+          if (composed.isErr()) return err(composed.error);
+          snapshot = composed.value;
+        }
+        const validatedSnapshot = ConfirmedPriceSnapshot.create(snapshot);
+        if (validatedSnapshot.isErr()) return err(this.map(validatedSnapshot.error, context));
+        transformedPrice = validatedSnapshot.value.toJSON();
       }
 
       const changed = current.changeConfirmedDetails({
@@ -165,18 +188,18 @@ export class ChangeRentalDetailsHandler implements ICommandHandler<
   }
 
   private transformManualPricingAdjustment(input: {
-    snapshot: AcceptedRentalPricingSnapshotV1;
+    snapshot: AcceptedRentalPricingSnapshot;
     adjustment: NonNullable<ChangeRentalDetailsPatch['manualPricingAdjustment']> | null;
     tenantUserId: string;
     operationTime: Date;
     context: Record<string, unknown>;
-  }): Result<JsonValue, ChangeRentalDetailsError> {
+  }): Result<AcceptedRentalPricingSnapshot, ChangeRentalDetailsError> {
     const snapshotEnvelope = { ...input.snapshot };
     delete snapshotEnvelope.manualPricingAdjustment;
     const final = copyAcceptedPricingBreakdown(input.snapshot.calculated);
 
     if (input.adjustment === null) {
-      return ok({ ...snapshotEnvelope, final });
+      return ok(withUpdatedEquipmentTotal({ ...snapshotEnvelope, final }));
     }
 
     const allocation = this.targetTotalAdjustment.allocate({
@@ -213,15 +236,38 @@ export class ChangeRentalDetailsHandler implements ICommandHandler<
       };
     });
 
-    return ok({
-      ...snapshotEnvelope,
-      final,
-      manualPricingAdjustment: this.toManualPricingAdjustmentMetadata({
-        allocation: allocation.value,
-        tenantUserId: input.tenantUserId,
-        setAtIso,
-        reason,
+    return ok(
+      withUpdatedEquipmentTotal({
+        ...snapshotEnvelope,
+        final,
+        manualPricingAdjustment: this.toManualPricingAdjustmentMetadata({
+          allocation: allocation.value,
+          tenantUserId: input.tenantUserId,
+          setAtIso,
+          reason,
+        }),
       }),
+    );
+  }
+
+  private async transformInsuranceComposition(input: {
+    tenantId: string;
+    snapshot: AcceptedRentalPricingSnapshot;
+    insuranceSelected: boolean;
+    context: Record<string, unknown>;
+  }): Promise<Result<AcceptedRentalPricingSnapshot, ChangeRentalDetailsError>> {
+    const composition = await this.pricingCalculation.calculateInsuranceForEquipmentPrice({
+      tenantId: input.tenantId,
+      insuranceSelected: input.insuranceSelected,
+      equipmentSubtotalBeforeDiscounts: input.snapshot.calculated.subtotal,
+      equipmentTotal: input.snapshot.final.total,
+    });
+    if (composition.isErr()) return err(this.map(composition.error, input.context));
+
+    return ok({
+      ...input.snapshot,
+      version: ACCEPTED_RENTAL_PRICING_SNAPSHOT_VERSION,
+      ...composition.value,
     });
   }
 
@@ -230,7 +276,7 @@ export class ChangeRentalDetailsHandler implements ICommandHandler<
     tenantUserId: string;
     setAtIso: string;
     reason?: string;
-  }): NonNullable<AcceptedRentalPricingSnapshotV1['manualPricingAdjustment']> {
+  }): NonNullable<AcceptedRentalPricingSnapshot['manualPricingAdjustment']> {
     return {
       mode: 'TARGET_TOTAL',
       targetTotal: input.allocation.targetTotal,
@@ -292,6 +338,7 @@ export class ChangeRentalDetailsHandler implements ICommandHandler<
       return this.error('rental_commitment.invalid_rental_field', error.message, context, error);
     if (
       error instanceof PricingTargetTotalAdjustmentError ||
+      error instanceof PricingCalculationError ||
       (error instanceof Error && 'code' in error && error.code === 'INVALID_PRICING_INPUT')
     )
       return this.error('rental_commitment.invalid_pricing_input', error.message, context, error);
@@ -317,14 +364,21 @@ function detectChange(rental: Rental, patch: ChangeRentalDetailsPatch) {
     Object.prototype.hasOwnProperty.call(patch, 'manualPricingAdjustment') &&
     patch.manualPricingAdjustment !== undefined;
   const pricingChanged = hasManualPricingPatch && !sameManualAdjustment(rental, patch.manualPricingAdjustment);
-  return { details, fulfillmentOrDeliveryChanged, pricingChanged, changed: detailsChanged || pricingChanged };
+  const insuranceChanged = details.insuranceSelected !== rental.insuranceSelected;
+  return {
+    details,
+    fulfillmentOrDeliveryChanged,
+    pricingChanged,
+    insuranceChanged,
+    changed: detailsChanged || pricingChanged,
+  };
 }
 
 function sameManualAdjustment(
   rental: Rental,
   requested: ChangeRentalDetailsPatch['manualPricingAdjustment'] | null,
 ): boolean {
-  const existing = (rental.confirmedPriceSnapshot!.toJSON() as AcceptedRentalPricingSnapshotV1).manualPricingAdjustment;
+  const existing = rental.confirmedPriceSnapshot!.snapshot.manualPricingAdjustment;
   if (requested === null || requested === undefined) return existing === undefined;
   if (
     !existing ||
@@ -339,13 +393,22 @@ function sameManualAdjustment(
   }
 }
 
-function copyAcceptedPricingBreakdown(breakdown: AcceptedRentalPricingBreakdownV1): AcceptedRentalPricingBreakdownV1 {
+function copyAcceptedPricingBreakdown(breakdown: AcceptedRentalPricingBreakdown): AcceptedRentalPricingBreakdown {
   return {
     ...breakdown,
     durationPolicySnapshot: { ...breakdown.durationPolicySnapshot },
     lines: breakdown.lines.map(({ manualPricingAdjustment: _manualAdjustment, ...line }) => ({ ...line })),
     appliedPromotions: breakdown.appliedPromotions.map((promotion) => ({ ...promotion })),
     ...(breakdown.appliedCoupon ? { appliedCoupon: { ...breakdown.appliedCoupon } } : {}),
+  };
+}
+
+function withUpdatedEquipmentTotal(snapshot: AcceptedRentalPricingSnapshot): AcceptedRentalPricingSnapshot {
+  if (snapshot.version !== ACCEPTED_RENTAL_PRICING_SNAPSHOT_VERSION) return snapshot;
+  return {
+    ...snapshot,
+    totalBeforeInsurance: snapshot.final.total,
+    total: new Decimal(snapshot.final.total).plus(snapshot.insurance.amount).toFixed(2),
   };
 }
 

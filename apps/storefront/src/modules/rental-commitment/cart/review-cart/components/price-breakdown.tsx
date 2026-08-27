@@ -97,12 +97,14 @@ export function PriceBreakdown() {
 						/>
 					)}
 					<div className="border-t pt-4">
-						<MoneyRow
-							label="Subtotal antes de descuentos"
-							amount={pricing.subtotal}
-							currency={currency}
-							locale={locale}
-						/>
+						{pricing.appliedPromotions.length > 0 && (
+							<MoneyRow
+								label="Subtotal antes de descuentos"
+								amount={pricing.subtotal}
+								currency={currency}
+								locale={locale}
+							/>
+						)}
 						{Number(pricing.discountTotal) > 0 && (
 							<MoneyRow
 								label="Descuentos"

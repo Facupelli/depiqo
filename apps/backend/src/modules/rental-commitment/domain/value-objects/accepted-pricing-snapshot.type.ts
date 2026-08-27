@@ -1,10 +1,10 @@
 export const ACCEPTED_RENTAL_PRICING_SNAPSHOT_SCHEMA = 'v2.rental-price-snapshot' as const;
-export const ACCEPTED_RENTAL_PRICING_SNAPSHOT_VERSION = 1 as const;
+export const ACCEPTED_RENTAL_PRICING_SNAPSHOT_VERSION = 2 as const;
 
 export type AcceptedRentalPricingContext = 'DRAFT' | 'CONFIRMED' | 'CONFIRM_DRAFT' | 'REPRICE';
 export type AcceptedRentalPricingAdjustmentDirection = 'INCREASE' | 'DECREASE' | 'NONE';
 
-export type AcceptedRentalPricingLineV1 = {
+export type AcceptedRentalPricingLine = {
   rentalSelectionId: string;
   rentalOfferId: string;
   rentableItemId: string;
@@ -19,7 +19,13 @@ export type AcceptedRentalPricingLineV1 = {
   subtotal: string;
   discountTotal: string;
   total: string;
-  appliedAdjustments: Array<{ type: string; promotionId: string; couponId?: string; name: string; amount: string }>;
+  appliedAdjustments: Array<{
+    type: 'PROMOTION' | 'COUPON';
+    promotionId: string;
+    couponId?: string;
+    name: string;
+    amount: string;
+  }>;
   manualPricingAdjustment?: {
     mode: 'TARGET_TOTAL_ALLOCATION';
     direction: AcceptedRentalPricingAdjustmentDirection;
@@ -30,7 +36,7 @@ export type AcceptedRentalPricingLineV1 = {
   };
 };
 
-export type AcceptedRentalPricingBreakdownV1 = {
+export type AcceptedRentalPricingBreakdown = {
   currency: string;
   subtotal: string;
   discountTotal: string;
@@ -44,7 +50,7 @@ export type AcceptedRentalPricingBreakdownV1 = {
     quarterDayThresholdMinutes?: number;
     halfDayThresholdMinutes?: number;
   };
-  lines: AcceptedRentalPricingLineV1[];
+  lines: AcceptedRentalPricingLine[];
   appliedPromotions: Array<{
     promotionId: string;
     name: string;
@@ -57,21 +63,26 @@ export type AcceptedRentalPricingBreakdownV1 = {
   appliedCoupon?: { couponId: string; code: string; promotionId: string; amount: string };
 };
 
-export type AcceptedRentalPricingSnapshotV1 = {
+export type AcceptedRentalManualPricingAdjustment = {
+  mode: 'TARGET_TOTAL';
+  targetTotal: string;
+  previousTotal: string;
+  direction: AcceptedRentalPricingAdjustmentDirection;
+  adjustmentTotal: string;
+  setByTenantUserId: string;
+  setAtIso: string;
+  reason?: string;
+};
+
+export type AcceptedRentalPricingSnapshot = {
   schema: typeof ACCEPTED_RENTAL_PRICING_SNAPSHOT_SCHEMA;
   version: typeof ACCEPTED_RENTAL_PRICING_SNAPSHOT_VERSION;
   calculatedAtIso: string;
   context: AcceptedRentalPricingContext;
-  calculated: AcceptedRentalPricingBreakdownV1;
-  final: AcceptedRentalPricingBreakdownV1;
-  manualPricingAdjustment?: {
-    mode: 'TARGET_TOTAL';
-    targetTotal: string;
-    previousTotal: string;
-    direction: AcceptedRentalPricingAdjustmentDirection;
-    adjustmentTotal: string;
-    setByTenantUserId: string;
-    setAtIso: string;
-    reason?: string;
-  };
+  calculated: AcceptedRentalPricingBreakdown;
+  final: AcceptedRentalPricingBreakdown;
+  manualPricingAdjustment?: AcceptedRentalManualPricingAdjustment;
+  insurance: { applied: boolean; amount: string };
+  totalBeforeInsurance: string;
+  total: string;
 };

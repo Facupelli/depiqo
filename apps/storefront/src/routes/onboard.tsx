@@ -2,10 +2,7 @@ import { Button } from "@repo/ui/components/button";
 import { Skeleton } from "@repo/ui/components/skeleton";
 import { createFileRoute, notFound } from "@tanstack/react-router";
 import { requireStorefrontCustomerSession } from "@/modules/tenant-management/auth/customer-session.policy";
-import {
-	customerProfileQueries,
-	useCurrentRentalCustomerProfile,
-} from "@/modules/tenant-management/customer/customer-profile.queries";
+import { useCurrentRentalCustomerProfile } from "@/modules/tenant-management/customer/customer-profile.queries";
 import { fromCustomerProfileToOnboardingFormValues } from "@/modules/tenant-management/customer/onboarding/customer-onboarding.schema";
 import { CustomerOnboardingForm } from "@/modules/tenant-management/customer/onboarding/customer-onboarding-form";
 
@@ -17,9 +14,6 @@ export const Route = createFileRoute("/onboard")({
 
 		const customer = await requireStorefrontCustomerSession("/onboard");
 		return { customer, storefrontTenant: context.tenantContext };
-	},
-	loader: async ({ context }) => {
-		await context.queryClient.ensureQueryData(customerProfileQueries.current());
 	},
 	component: OnboardPage,
 });

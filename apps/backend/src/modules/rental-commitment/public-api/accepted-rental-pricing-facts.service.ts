@@ -3,7 +3,8 @@ import { err, ok, Result } from 'neverthrow';
 
 import { PrismaService } from 'src/core/database/prisma.service';
 
-import { decodeAcceptedRentalPricing } from '../application/accepted-pricing/accepted-pricing-snapshot.decoder';
+import { toAcceptedRentalPricingFacts } from '../application/accepted-pricing/accepted-pricing-snapshot.projections';
+import { ConfirmedPriceSnapshot } from '../domain/value-objects/confirmed-price-snapshot.value-object';
 import {
   AcceptedRentalPricing,
   AcceptedRentalPricingFacts,
@@ -32,15 +33,7 @@ export class AcceptedRentalPricingFactsService extends AcceptedRentalPricingFact
         id: input.rentalId,
         tenantId: input.tenantId,
       },
-      select: {
-        priceSnapshot: true,
-        selections: {
-          where: { removedAt: null },
-          select: {
-            priceSnapshot: true,
-          },
-        },
-      },
+      select: { priceSnapshot: true },
     });
 
     if (!rental) {
@@ -52,15 +45,11 @@ export class AcceptedRentalPricingFactsService extends AcceptedRentalPricingFact
       );
     }
 
-    const pricing = decodeAcceptedRentalPricing(
-      rental.priceSnapshot,
-      rental.selections.map((selection) => selection.priceSnapshot),
-    );
-
-    if (pricing.isErr()) {
-      return err(acceptedRentalPricingFactsError(pricing.error.code, pricing.error.message));
+    const snapshot = ConfirmedPriceSnapshot.create(rental.priceSnapshot);
+    if (snapshot.isErr()) {
+      return err(acceptedRentalPricingFactsError('AcceptedPricingSnapshotInvalid', snapshot.error.message));
     }
 
-    return ok(pricing.value);
+    return ok(toAcceptedRentalPricingFacts(snapshot.value.snapshot));
   }
 }

@@ -34,6 +34,24 @@ export interface ResolveSelectedRentalOffersResult {
   resolvedOffers: ResolvedSelectedRentalOffer[];
 }
 
+export interface ResolveSelectedRentalOfferRequirementsInput {
+  tenantId: string;
+  branchId: string;
+  rentalOfferIds: string[];
+}
+
+export interface ResolvedSelectedRentalOfferRequirements {
+  rentalOfferId: string;
+  fulfillmentRequirements: Array<{
+    equipmentTypeId: string;
+    quantityPerItem: number;
+  }>;
+}
+
+export interface ResolveSelectedRentalOfferRequirementsResult {
+  resolvedOffers: ResolvedSelectedRentalOfferRequirements[];
+}
+
 export type CatalogSelectionResolutionErrorCode =
   | 'EmptySelection'
   | 'InvalidSelectionQuantity'
@@ -58,4 +76,8 @@ export abstract class CatalogSelectionResolution {
   abstract resolveSelectedRentalOffers(
     input: ResolveSelectedRentalOffersInput,
   ): Promise<Result<ResolveSelectedRentalOffersResult, CatalogSelectionResolutionError>>;
+
+  abstract resolveSelectedRentalOfferRequirements(
+    input: ResolveSelectedRentalOfferRequirementsInput,
+  ): Promise<Result<ResolveSelectedRentalOfferRequirementsResult, CatalogSelectionResolutionError>>;
 }

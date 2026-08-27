@@ -17,13 +17,12 @@ import {
 } from "@repo/ui/components/select";
 import { useForm } from "@tanstack/react-form";
 import { ArrowLeft, ArrowRight, Check, Loader2 } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { ProblemDetailsError } from "@/shared/errors";
 import { useSubmitCustomerProfile } from "../customer-profile.queries";
 import {
 	type CustomerOnboardingFormValues,
 	createCustomerOnboardingFormDefaults,
-	customerOnboardingFormSchema,
 	customerOnboardingStepSchemas,
 	toSubmitCustomerProfileDto,
 } from "./customer-onboarding.schema";
@@ -85,10 +84,10 @@ export function CustomerOnboardingForm({
 	const [stepErrors, setStepErrors] = useState<
 		Partial<Record<keyof CustomerOnboardingFormValues, string[]>>
 	>({});
+	const liveValidationSteps = useRef(new Set<StepNumber>());
 
 	const form = useForm({
 		defaultValues: defaultValues ?? createCustomerOnboardingFormDefaults(),
-		validators: { onChange: customerOnboardingFormSchema },
 		onSubmit: async ({ value }) => {
 			setSubmitError(null);
 			try {
@@ -123,14 +122,16 @@ export function CustomerOnboardingForm({
 		},
 	});
 
-	function validateStep(step: StepNumber) {
-		const result = customerOnboardingStepSchemas[step].safeParse(
-			form.state.values,
-		);
+	function validateStep(
+		step: StepNumber,
+		values: CustomerOnboardingFormValues = form.state.values,
+	) {
+		const result = customerOnboardingStepSchemas[step].safeParse(values);
 		const errors: Partial<
 			Record<keyof CustomerOnboardingFormValues, string[]>
 		> = {};
 		if (!result.success) {
+			liveValidationSteps.current.add(step);
 			for (const issue of result.error.issues) {
 				const fieldName = issue.path[0];
 				if (typeof fieldName === "string") {
@@ -144,13 +145,19 @@ export function CustomerOnboardingForm({
 			for (const fieldName of stepFields[step]) delete next[fieldName];
 			return { ...next, ...errors };
 		});
-		for (const fieldName of stepFields[step]) {
-			form.setFieldMeta(fieldName, (previous) => ({
-				...previous,
-				isTouched: true,
-			}));
-		}
 		return result.success;
+	}
+
+	function handleFieldChange<TField extends keyof CustomerOnboardingFormValues>(
+		fieldName: TField,
+		value: CustomerOnboardingFormValues[TField],
+	) {
+		if (!liveValidationSteps.current.has(currentStep)) return;
+
+		validateStep(currentStep, {
+			...form.state.values,
+			[fieldName]: value,
+		} as CustomerOnboardingFormValues);
 	}
 
 	async function handleNext() {
@@ -162,11 +169,15 @@ export function CustomerOnboardingForm({
 
 	async function handleSubmit() {
 		setSubmitError(null);
+		let firstInvalidStep: StepNumber | null = null;
 		for (const step of STEPS) {
-			if (!validateStep(step.number)) {
-				setCurrentStep(step.number);
-				return;
+			if (!validateStep(step.number) && firstInvalidStep === null) {
+				firstInvalidStep = step.number;
 			}
+		}
+		if (firstInvalidStep !== null) {
+			setCurrentStep(firstInvalidStep);
+			return;
 		}
 		await form.handleSubmit();
 	}
@@ -186,27 +197,41 @@ export function CustomerOnboardingForm({
 				<StepIndicator currentStep={currentStep} />
 				<div className="min-h-105">
 					{currentStep === 1 ? (
-						<PersonalStep form={form as OnboardingForm} errors={stepErrors} />
+						<PersonalStep
+							form={form as OnboardingForm}
+							errors={stepErrors}
+							onFieldChange={handleFieldChange}
+						/>
 					) : null}
 					{currentStep === 2 ? (
 						<DocumentStep
 							form={form as OnboardingForm}
 							errors={stepErrors}
+							onFieldChange={handleFieldChange}
 							uploader={uploader}
 						/>
 					) : null}
 					{currentStep === 3 ? (
-						<WorkStep form={form as OnboardingForm} errors={stepErrors} />
+						<WorkStep
+							form={form as OnboardingForm}
+							errors={stepErrors}
+							onFieldChange={handleFieldChange}
+						/>
 					) : null}
 					{currentStep === 4 ? (
 						<ReferenceStep
 							form={form as OnboardingForm}
 							errors={stepErrors}
+							onFieldChange={handleFieldChange}
 							tenantName={tenantName}
 						/>
 					) : null}
 					{currentStep === 5 ? (
-						<ContactsStep form={form as OnboardingForm} errors={stepErrors} />
+						<ContactsStep
+							form={form as OnboardingForm}
+							errors={stepErrors}
+							onFieldChange={handleFieldChange}
+						/>
 					) : null}
 				</div>
 				{submitError ? (
@@ -250,21 +275,28 @@ export function CustomerOnboardingForm({
 }
 
 type OnboardingForm = ReturnType<typeof useCustomerOnboardingForm>;
+type OnboardingFieldChange = <
+	TField extends keyof CustomerOnboardingFormValues,
+>(
+	fieldName: TField,
+	value: CustomerOnboardingFormValues[TField],
+) => void;
 type StepProps = {
 	form: OnboardingForm;
 	errors: Partial<Record<keyof CustomerOnboardingFormValues, string[]>>;
+	onFieldChange: OnboardingFieldChange;
 };
 
 function useCustomerOnboardingForm() {
 	return useForm({
 		defaultValues: createCustomerOnboardingFormDefaults(),
-		validators: { onChange: customerOnboardingFormSchema },
 	});
 }
 
 function TextField({
 	form,
 	errors,
+	onFieldChange,
 	name,
 	label,
 	description,
@@ -285,11 +317,7 @@ function TextField({
 	return (
 		<form.Field name={name}>
 			{(field) => {
-				const fieldErrors =
-					errors[name] ??
-					(field.state.meta.isTouched
-						? field.state.meta.errors.map(String)
-						: []);
+				const fieldErrors = errors[name] ?? [];
 				const isInvalid = fieldErrors.length > 0;
 				return (
 					<Field data-invalid={isInvalid}>
@@ -301,7 +329,11 @@ function TextField({
 							placeholder={placeholder}
 							value={field.state.value}
 							onBlur={field.handleBlur}
-							onChange={(event) => field.handleChange(event.target.value)}
+							onChange={(event) => {
+								const value = event.target.value;
+								field.handleChange(value);
+								onFieldChange(name, value);
+							}}
 							aria-invalid={isInvalid}
 						/>
 						{description ? (
@@ -319,7 +351,7 @@ function TextField({
 	);
 }
 
-function PersonalStep({ form, errors }: StepProps) {
+function PersonalStep({ form, errors, onFieldChange }: StepProps) {
 	return (
 		<Step
 			title="Información personal"
@@ -328,6 +360,7 @@ function PersonalStep({ form, errors }: StepProps) {
 			<TextField
 				form={form}
 				errors={errors}
+				onFieldChange={onFieldChange}
 				name="fullName"
 				label="Nombre completo"
 				placeholder="Juan Pérez"
@@ -335,6 +368,7 @@ function PersonalStep({ form, errors }: StepProps) {
 			<TextField
 				form={form}
 				errors={errors}
+				onFieldChange={onFieldChange}
 				name="phone"
 				label="Número de teléfono"
 				type="tel"
@@ -344,6 +378,7 @@ function PersonalStep({ form, errors }: StepProps) {
 			<TextField
 				form={form}
 				errors={errors}
+				onFieldChange={onFieldChange}
 				name="birthDate"
 				label="Fecha de nacimiento"
 				type="date"
@@ -351,6 +386,7 @@ function PersonalStep({ form, errors }: StepProps) {
 			<TextField
 				form={form}
 				errors={errors}
+				onFieldChange={onFieldChange}
 				name="documentNumber"
 				label="DNI o NIE"
 				placeholder="12345678Z"
@@ -363,6 +399,7 @@ function PersonalStep({ form, errors }: StepProps) {
 function DocumentStep({
 	form,
 	errors,
+	onFieldChange,
 	uploader,
 }: StepProps & { uploader: ReturnType<typeof useUploadFile> }) {
 	return (
@@ -386,7 +423,10 @@ function DocumentStep({
 										type="button"
 										variant="ghost"
 										size="sm"
-										onClick={() => field.handleChange(null)}
+										onClick={() => {
+											field.handleChange(null);
+											onFieldChange("currentIdentityDocumentPath", null);
+										}}
 									>
 										Quitar
 									</Button>
@@ -409,9 +449,11 @@ function DocumentStep({
 									name={field.name}
 									type="file"
 									accept=".pdf,image/jpeg,image/png,image/webp"
-									onChange={(event) =>
-										field.handleChange(event.target.files?.[0] ?? null)
-									}
+									onChange={(event) => {
+										const file = event.target.files?.[0] ?? null;
+										field.handleChange(file);
+										onFieldChange("identityDocumentFile", file);
+									}}
 									disabled={uploader.isPending}
 								/>
 								<FieldDescription>
@@ -434,6 +476,7 @@ function DocumentStep({
 				<TextField
 					form={form}
 					errors={errors}
+					onFieldChange={onFieldChange}
 					name="address"
 					label="Domicilio real"
 					placeholder="Av. Corrientes 1234, Piso 2"
@@ -441,6 +484,7 @@ function DocumentStep({
 				<TextField
 					form={form}
 					errors={errors}
+					onFieldChange={onFieldChange}
 					name="city"
 					label="Localidad"
 					placeholder="Madrid"
@@ -448,6 +492,7 @@ function DocumentStep({
 				<TextField
 					form={form}
 					errors={errors}
+					onFieldChange={onFieldChange}
 					name="stateRegion"
 					label="Provincia / Región"
 					placeholder="Comunidad de Madrid"
@@ -455,6 +500,7 @@ function DocumentStep({
 				<TextField
 					form={form}
 					errors={errors}
+					onFieldChange={onFieldChange}
 					name="country"
 					label="País"
 					placeholder="España"
@@ -464,7 +510,7 @@ function DocumentStep({
 	);
 }
 
-function WorkStep({ form, errors }: StepProps) {
+function WorkStep({ form, errors, onFieldChange }: StepProps) {
 	return (
 		<Step
 			title="Trabajo y finanzas"
@@ -474,6 +520,7 @@ function WorkStep({ form, errors }: StepProps) {
 				<TextField
 					form={form}
 					errors={errors}
+					onFieldChange={onFieldChange}
 					name="occupation"
 					label="Ocupación (opcional)"
 					placeholder="Empleado, comerciante, estudiante..."
@@ -481,6 +528,7 @@ function WorkStep({ form, errors }: StepProps) {
 				<TextField
 					form={form}
 					errors={errors}
+					onFieldChange={onFieldChange}
 					name="company"
 					label="Empresa (opcional)"
 				/>
@@ -489,6 +537,7 @@ function WorkStep({ form, errors }: StepProps) {
 				<TextField
 					form={form}
 					errors={errors}
+					onFieldChange={onFieldChange}
 					name="taxId"
 					label="Identificación fiscal (opcional)"
 					placeholder="NIF / CIF"
@@ -496,6 +545,7 @@ function WorkStep({ form, errors }: StepProps) {
 				<TextField
 					form={form}
 					errors={errors}
+					onFieldChange={onFieldChange}
 					name="businessName"
 					label="Razón social (opcional)"
 				/>
@@ -507,6 +557,7 @@ function WorkStep({ form, errors }: StepProps) {
 function ReferenceStep({
 	form,
 	errors,
+	onFieldChange,
 	tenantName,
 }: StepProps & { tenantName: string }) {
 	return (
@@ -517,6 +568,7 @@ function ReferenceStep({
 			<TextField
 				form={form}
 				errors={errors}
+				onFieldChange={onFieldChange}
 				name="instagram"
 				label="Instagram"
 				placeholder="tuusuario"
@@ -528,7 +580,11 @@ function ReferenceStep({
 						<FieldLabel>¿Conocés a algún cliente de {tenantName}?</FieldLabel>
 						<Select
 							value={field.state.value ? "yes" : "no"}
-							onValueChange={(value) => field.handleChange(value === "yes")}
+							onValueChange={(value) => {
+								const knowsExistingCustomer = value === "yes";
+								field.handleChange(knowsExistingCustomer);
+								onFieldChange("knowsExistingCustomer", knowsExistingCustomer);
+							}}
 						>
 							<SelectTrigger>
 								<SelectValue />
@@ -547,6 +603,7 @@ function ReferenceStep({
 						<TextField
 							form={form}
 							errors={errors}
+							onFieldChange={onFieldChange}
 							name="knownCustomerName"
 							label="Nombre del cliente"
 							placeholder="Nombre y apellido"
@@ -558,7 +615,7 @@ function ReferenceStep({
 	);
 }
 
-function ContactsStep({ form, errors }: StepProps) {
+function ContactsStep({ form, errors, onFieldChange }: StepProps) {
 	return (
 		<Step
 			title="Contactos de referencia"
@@ -568,12 +625,14 @@ function ContactsStep({ form, errors }: StepProps) {
 				<TextField
 					form={form}
 					errors={errors}
+					onFieldChange={onFieldChange}
 					name="contact1Name"
 					label="Nombre completo"
 				/>
 				<TextField
 					form={form}
 					errors={errors}
+					onFieldChange={onFieldChange}
 					name="contact1Phone"
 					label="Teléfono"
 					type="tel"
@@ -581,6 +640,7 @@ function ContactsStep({ form, errors }: StepProps) {
 				<TextField
 					form={form}
 					errors={errors}
+					onFieldChange={onFieldChange}
 					name="contact1Relationship"
 					label="Vínculo"
 				/>
@@ -589,12 +649,14 @@ function ContactsStep({ form, errors }: StepProps) {
 				<TextField
 					form={form}
 					errors={errors}
+					onFieldChange={onFieldChange}
 					name="contact2Name"
 					label="Nombre completo"
 				/>
 				<TextField
 					form={form}
 					errors={errors}
+					onFieldChange={onFieldChange}
 					name="contact2Phone"
 					label="Teléfono"
 					type="tel"
@@ -602,6 +664,7 @@ function ContactsStep({ form, errors }: StepProps) {
 				<TextField
 					form={form}
 					errors={errors}
+					onFieldChange={onFieldChange}
 					name="contact2Relationship"
 					label="Vínculo"
 				/>
