@@ -1,10 +1,10 @@
 import { PDFDocument } from 'pdf-lib';
 
-const CUSTOMER_SIGNATURE_X = 44;
-const CUSTOMER_SIGNATURE_WIDTH = 190;
-const CUSTOMER_SIGNATURE_HEIGHT = 36;
-const FIRST_AND_ANNEX_SIGNATURE_Y = 145;
-const CONTINUATION_SIGNATURE_Y = 125;
+const CUSTOMER_SIGNATURE_LEFT = 44;
+const CUSTOMER_SIGNATURE_MAX_WIDTH = 192.766;
+const CUSTOMER_SIGNATURE_MAX_HEIGHT = 36;
+const CUSTOMER_SIGNATURE_UNDERLINE_Y = 74.58;
+const CUSTOMER_SIGNATURE_GAP = 4;
 
 export interface CreateSignedRentalRemitoArtifactInput {
   unsignedPdf: Buffer;
@@ -15,23 +15,22 @@ export class RentalRemitoSignedArtifactService {
   async create(input: CreateSignedRentalRemitoArtifactInput): Promise<Buffer> {
     const document = await PDFDocument.load(input.unsignedPdf);
     const signature = await document.embedPng(extractPngBytes(input.signatureImageDataUrl));
-    const pageCount = document.getPageCount();
+    const scale = Math.min(
+      CUSTOMER_SIGNATURE_MAX_WIDTH / signature.width,
+      CUSTOMER_SIGNATURE_MAX_HEIGHT / signature.height,
+      1,
+    );
+    const width = signature.width * scale;
+    const height = signature.height * scale;
+    const x = CUSTOMER_SIGNATURE_LEFT + (CUSTOMER_SIGNATURE_MAX_WIDTH - width) / 2;
+    const y = CUSTOMER_SIGNATURE_UNDERLINE_Y + CUSTOMER_SIGNATURE_GAP;
 
-    for (const [index, page] of document.getPages().entries()) {
-      page.drawImage(signature, {
-        x: CUSTOMER_SIGNATURE_X,
-        y: isContinuationPage(index, pageCount) ? CONTINUATION_SIGNATURE_Y : FIRST_AND_ANNEX_SIGNATURE_Y,
-        width: CUSTOMER_SIGNATURE_WIDTH,
-        height: CUSTOMER_SIGNATURE_HEIGHT,
-      });
+    for (const page of document.getPages()) {
+      page.drawImage(signature, { x, y, width, height });
     }
 
     return Buffer.from(await document.save());
   }
-}
-
-function isContinuationPage(pageIndex: number, pageCount: number): boolean {
-  return pageIndex > 0 && pageIndex < pageCount - 1;
 }
 
 function extractPngBytes(dataUrl: string): Buffer {
