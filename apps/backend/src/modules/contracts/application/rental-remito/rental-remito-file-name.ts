@@ -1,14 +1,14 @@
 export interface BuildRentalRemitoFileNameInput {
   customerName: string | null;
   documentNumber: string;
-  rentalId: string;
+  rentalNumber: number;
   signed?: boolean;
 }
 
 export function buildRentalRemitoFileName(input: BuildRentalRemitoFileNameInput): string {
   const customerSlug = slugify(input.customerName ?? '');
   const documentSlug = slugify(input.documentNumber);
-  const fallback = input.rentalId.slice(0, 8);
+  const fallback = String(input.rentalNumber);
 
   const base = [customerSlug || 'rental', documentSlug || fallback].filter(Boolean).join('-');
   const suffix = input.signed ? '-signed' : '';

@@ -4,6 +4,7 @@ import { AcceptedRentalPricing } from 'src/modules/rental-commitment/public-api/
 export interface RentalRemitoSourceReadModel {
   rental: {
     id: string;
+    rentalNumber: number;
     tenantId: string;
     branchId: string;
     customerId: string | null;

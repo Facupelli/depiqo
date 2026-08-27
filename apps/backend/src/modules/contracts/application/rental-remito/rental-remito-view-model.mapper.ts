@@ -69,5 +69,5 @@ export class RentalRemitoViewModelMapper {
 }
 
 function buildDocumentNumber(source: RentalRemitoSourceReadModel): string {
-  return `${source.tenant.slug}-${source.rental.id.slice(0, 8)}`.toUpperCase();
+  return `${source.tenant.slug}-${source.rental.rentalNumber}`.toUpperCase();
 }
