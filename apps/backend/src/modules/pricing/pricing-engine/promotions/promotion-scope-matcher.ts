@@ -59,6 +59,10 @@ export class PromotionScopeMatcher {
       return true;
     }
 
+    if (exclusion.rentableItemKind && exclusion.rentableItemKind === line.rentableItemKind) {
+      return true;
+    }
+
     return false;
   }
 }

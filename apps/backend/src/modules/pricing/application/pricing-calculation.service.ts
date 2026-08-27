@@ -69,7 +69,8 @@ export class PricingCalculationService extends PricingCalculation {
           rentalOfferId: line.rentalOfferId,
           rentableItemId: line.rentableItemId,
           rentableItemName: line.rentalOfferId,
-          rentableItemKind: 'PRICEABLE_LINE',
+          pricingLineKind: 'PRICEABLE_LINE',
+          rentableItemKind: line.rentableItemKind,
           categoryId: line.categoryId,
           quantity: line.quantity,
           ratePlan,
@@ -223,6 +224,7 @@ export class PricingCalculationService extends PricingCalculation {
         !line.lineReference?.trim() ||
         !line.rentalOfferId?.trim() ||
         !line.rentableItemId?.trim() ||
+        !['SINGLE', 'PACKAGE', 'KIT', 'BUNDLE'].includes(line.rentableItemKind) ||
         !Number.isInteger(line.quantity) ||
         line.quantity <= 0 ||
         references.has(line.lineReference)

@@ -21,6 +21,7 @@ export type PricingCalculationRequest = {
     lineReference: string;
     rentalOfferId: string;
     rentableItemId: string;
+    rentableItemKind: 'SINGLE' | 'PACKAGE' | 'KIT' | 'BUNDLE';
     categoryId?: string;
     quantity: number;
   }>;

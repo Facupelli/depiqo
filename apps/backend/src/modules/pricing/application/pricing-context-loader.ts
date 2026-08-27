@@ -166,6 +166,10 @@ function mapPromotion(row: PromotionRow): PromotionPricingInput {
       rentableItemId: exclusion.rentableItemId,
       rentalOfferId: exclusion.rentalOfferId,
       categoryId: exclusion.categoryId,
+      rentableItemKind:
+        exclusion.rentableItemKind === 'SINGLE' || exclusion.rentableItemKind === 'PACKAGE'
+          ? exclusion.rentableItemKind
+          : null,
     })),
   };
 }

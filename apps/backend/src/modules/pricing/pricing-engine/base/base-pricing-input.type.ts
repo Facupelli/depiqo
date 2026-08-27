@@ -23,7 +23,8 @@ export type BasePricingSelectionInput = {
   rentalOfferId: string;
   rentableItemId: string;
   rentableItemName: string;
-  rentableItemKind: string;
+  pricingLineKind: 'PRICEABLE_LINE';
+  rentableItemKind: 'SINGLE' | 'PACKAGE' | 'KIT' | 'BUNDLE';
   categoryId?: string;
   quantity: number;
   ratePlan: BasePricingRatePlanInput;

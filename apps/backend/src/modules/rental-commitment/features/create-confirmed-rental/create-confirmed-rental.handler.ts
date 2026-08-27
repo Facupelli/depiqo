@@ -173,6 +173,7 @@ export class CreateConfirmedRentalService implements ICommandHandler<
         lineReference: selection.rentalSelectionId,
         rentalOfferId: selection.rentalOfferId,
         rentableItemId: selection.rentableItemId,
+        rentableItemKind: selection.rentableItemKindSnapshot,
         categoryId: selection.categoryId,
         quantity: selection.quantity,
       })),

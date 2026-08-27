@@ -437,6 +437,7 @@ function ExclusionRow({
 								{ value: "RENTABLE_ITEM", label: "Producto" },
 								{ value: "CATEGORY", label: "Categoría" },
 								{ value: "RENTAL_OFFER", label: "Oferta en sucursal" },
+								{ value: "PRODUCT_KIND", label: "Tipo de producto" },
 							]}
 						/>
 					</Field>
@@ -889,7 +890,9 @@ function exclusionFieldName(type: PromotionExclusionType, index: number) {
 		? (`exclusions[${index}].rentableItemId` as const)
 		: type === "CATEGORY"
 			? (`exclusions[${index}].categoryId` as const)
-			: (`exclusions[${index}].rentalOfferId` as const);
+			: type === "PRODUCT_KIND"
+				? (`exclusions[${index}].rentableItemKind` as const)
+				: (`exclusions[${index}].rentalOfferId` as const);
 }
 function buildPromotionSummary(
 	values: PromotionFormValues,

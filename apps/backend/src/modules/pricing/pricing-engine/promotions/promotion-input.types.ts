@@ -33,4 +33,5 @@ export type PromotionExclusionInput = {
   rentableItemId?: string | null;
   rentalOfferId?: string | null;
   categoryId?: string | null;
+  rentableItemKind?: 'SINGLE' | 'PACKAGE' | null;
 };
