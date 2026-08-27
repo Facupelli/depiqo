@@ -19,8 +19,9 @@ import { Skeleton } from "@repo/ui/components/skeleton";
 import { Minus, Plus, ShoppingBag } from "lucide-react";
 import { buildR2PublicUrl } from "@/lib/r2-public-url";
 import type { RentalCatalogSearch } from "@/modules/catalog/rental-catalog-search";
-import type { StorefrontRentalOfferListViewItemDto } from "@/modules/catalog/rental-offers/get-storefront-rental-offer-list-view/get-storefront-rental-offer-list-view.schema";
-import { useStorefrontRentalOfferListView } from "@/modules/catalog/storefront-rental-offer-list-view.queries";
+import type { StorefrontRentalOfferListViewItemDto } from "@/modules/catalog/rental-offers/storefront-rental-offer-list-view.schema";
+import { useStorefrontCombos } from "@/modules/catalog/storefront-combos.queries";
+import { useStorefrontEquipment } from "@/modules/catalog/storefront-equipment.queries";
 import { useRentalOfferCartState } from "@/modules/rental-commitment/cart/add-rental-offer/use-rental-offer-cart-state";
 import { usePublicTenantConfig } from "@/modules/tenant-management/tenant/tenant.queries";
 import { formatCurrency } from "@/shared/utils/price.utils";
@@ -35,9 +36,12 @@ interface EquipmentCatalogSectionProps {
 }
 
 export function CombosSection({ search }: { search: RentalCatalogSearch }) {
-	const { data: rentalOffers } = useStorefrontRentalOfferListView(search);
+	const { data: combos } = useStorefrontCombos({
+		branchId: search.branchId,
+		periodStart: search.periodStart,
+		periodEnd: search.periodEnd,
+	});
 	const { data: tenantPublicConfig } = usePublicTenantConfig();
-	const packages = rentalOffers.packages.data;
 
 	return (
 		// biome-ignore lint/correctness/useUniqueElementIds: Stable ID required for catalog fragment navigation.
@@ -46,7 +50,7 @@ export function CombosSection({ search }: { search: RentalCatalogSearch }) {
 				<div className="flex w-full items-baseline justify-between">
 					<h2 className="text-2xl font-semibold tracking-tight">Combos</h2>
 					<p className="text-sm text-muted-foreground">
-						{rentalOffers.packages.total} combos disponibles
+						{combos.total} combos disponibles
 					</p>
 				</div>
 			</div>
@@ -56,7 +60,7 @@ export function CombosSection({ search }: { search: RentalCatalogSearch }) {
 			</p>
 
 			<div className="grid items-start gap-6 py-6 sm:grid-cols-2 lg:grid-cols-4">
-				{packages.map((rentalOffer) => (
+				{combos.data.map((rentalOffer) => (
 					<PackageCard
 						key={rentalOffer.id}
 						product={rentalOffer}
@@ -76,26 +80,46 @@ export function EquipmentCatalogSection({
 	handleCategorySelect,
 	setUrlParam,
 }: EquipmentCatalogSectionProps) {
-	const { data: rentalOffers, isFetching } =
-		useStorefrontRentalOfferListView(search);
+	const equipmentQuery = useStorefrontEquipment(search);
 	const { data: tenantPublicConfig } = usePublicTenantConfig();
-	const totalPages = Math.ceil(
-		rentalOffers.singles.total / rentalOffers.singles.pageSize,
-	);
+
+	if (equipmentQuery.isInitialPending) {
+		return <EquipmentCatalogSkeleton />;
+	}
+
+	if (equipmentQuery.isInitialError || !equipmentQuery.data) {
+		return (
+			<EquipmentCatalogFailure
+				message="No pudimos cargar los equipos."
+				onRetry={() => equipmentQuery.refetch()}
+			/>
+		);
+	}
+
+	const equipment = equipmentQuery.data;
+	const totalPages = Math.ceil(equipment.total / equipment.pageSize);
 
 	return (
 		// biome-ignore lint/correctness/useUniqueElementIds: Stable ID required for catalog fragment navigation.
 		<section id="equipos" className="py-10">
-			{isFetching && (
-				<p className="pb-4 text-sm text-muted-foreground">
-					Actualizando resultados...
-				</p>
+			{equipmentQuery.isFailedCompatibleRefresh && (
+				<div className="mb-4 flex flex-wrap items-center gap-3 rounded-md border border-destructive/30 bg-destructive/5 p-3 text-sm">
+					<p>No pudimos actualizar los resultados. Mostramos los anteriores.</p>
+					<Button
+						type="button"
+						variant="outline"
+						size="sm"
+						onClick={() => equipmentQuery.refetch()}
+					>
+						Reintentar
+					</Button>
+				</div>
 			)}
 			<div className="flex items-end justify-between gap-4 pb-4">
 				<div className="flex justify-between items-baseline w-full">
 					<h2 className="text-2xl font-semibold tracking-tight">Equipos</h2>
 					<p className="text-sm text-muted-foreground">
-						{rentalOffers.singles.total} ofertas disponibles
+						{equipment.total} ofertas disponibles
 					</p>
 				</div>
 			</div>
@@ -112,7 +136,7 @@ export function EquipmentCatalogSection({
 			/>
 
 			<div className="grid gap-6 py-6 grid-cols-[repeat(auto-fit,minmax(250px,350px))]">
-				{rentalOffers.singles.data.map((rentalOffer) => (
+				{equipment.data.map((rentalOffer) => (
 					<ProductCard
 						key={rentalOffer.id}
 						product={rentalOffer}
@@ -230,6 +254,60 @@ function ProductCard({
 				)}
 			</CardFooter>
 		</Card>
+	);
+}
+
+function EquipmentCatalogFailure({
+	message,
+	onRetry,
+}: {
+	message: string;
+	onRetry: () => void;
+}) {
+	return (
+		// biome-ignore lint/correctness/useUniqueElementIds: Stable ID required for catalog fragment navigation.
+		<section id="equipos" className="py-10">
+			<div className="rounded-md border bg-background p-6 text-center">
+				<h2 className="text-xl font-semibold">Equipos</h2>
+				<p className="mt-2 text-sm text-muted-foreground">{message}</p>
+				<Button
+					type="button"
+					variant="outline"
+					className="mt-4"
+					onClick={onRetry}
+				>
+					Reintentar
+				</Button>
+			</div>
+		</section>
+	);
+}
+
+function EquipmentCatalogSkeleton() {
+	return (
+		// biome-ignore lint/correctness/useUniqueElementIds: Stable ID required for catalog fragment navigation.
+		<section id="equipos" className="space-y-5 py-10" aria-busy="true">
+			<div className="flex items-center justify-between gap-4">
+				<Skeleton className="h-8 w-32" />
+				<Skeleton className="h-4 w-36" />
+			</div>
+			<div className="space-y-3">
+				<div className="flex gap-2">
+					<Skeleton className="h-8 w-24" />
+					<Skeleton className="h-8 w-28" />
+					<Skeleton className="h-8 w-20" />
+				</div>
+				<Skeleton className="h-10 w-full max-w-md" />
+			</div>
+			<div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+				{Array.from(
+					{ length: 8 },
+					(_, index) => `equipment-skeleton-${index}`,
+				).map((key) => (
+					<ProductSkeleton key={key} />
+				))}
+			</div>
+		</section>
 	);
 }
 

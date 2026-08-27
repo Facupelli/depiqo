@@ -1,5 +1,5 @@
 import { buildR2PublicUrl } from "@/lib/r2-public-url";
-import type { StorefrontRentalOfferListViewItemDto } from "@/modules/catalog/rental-offers/get-storefront-rental-offer-list-view/get-storefront-rental-offer-list-view.schema";
+import type { StorefrontRentalOfferListViewItemDto } from "@/modules/catalog/rental-offers/storefront-rental-offer-list-view.schema";
 import { formatCurrency } from "@/shared/utils/price.utils";
 
 interface NewArrivalCardProps {
