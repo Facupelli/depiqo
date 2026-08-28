@@ -5,7 +5,6 @@ import { CustomersListPage } from "@/modules/customers/list-customers/CustomersL
 import { AdminRouteError } from "@/shared/components/admin-route-error";
 
 const customersSearchSchema = z.object({
-	search: z.string().trim().min(1).optional(),
 	status: RentalCustomerOnboardingStatusSchema.optional(),
 	page: z.coerce.number().int().positive().default(1),
 	pageSize: z.coerce.number().int().positive().max(100).default(20),

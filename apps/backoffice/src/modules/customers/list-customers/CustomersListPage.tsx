@@ -32,7 +32,7 @@ import {
 	useReactTable,
 } from "@tanstack/react-table";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { formatTimestampInTimezone } from "@/lib/dates/format";
 import useDebounce from "@/shared/hooks/use-debounce";
 import { useTenantTimezone } from "@/shared/timezone/operational-timezone.hooks";
@@ -41,7 +41,6 @@ import { useCustomers } from "./list-customers.queries";
 export type CustomersListSearch = {
 	page: number;
 	pageSize: number;
-	search?: string;
 	status?: RentalCustomerOnboardingStatusDto;
 };
 
@@ -133,7 +132,8 @@ function createCustomersColumns(
 export function CustomersListPage({ search }: { search: CustomersListSearch }) {
 	const timezone = useTenantTimezone();
 	const navigate = useNavigate({ from: "/dashboard/customers/" });
-	const debouncedSearch = useDebounce(search.search ?? "", 300);
+	const [searchInput, setSearchInput] = useState("");
+	const debouncedSearch = useDebounce(searchInput, 300);
 
 	const queryParams = useMemo<GetRentalCustomersQueryDto>(() => {
 		const normalizedSearch = debouncedSearch.trim();
@@ -153,17 +153,17 @@ export function CustomersListPage({ search }: { search: CustomersListSearch }) {
 	const customers = data?.data ?? [];
 	const total = data?.total ?? 0;
 	const totalPages = Math.max(1, Math.ceil(total / search.pageSize));
-	const hasActiveFilters = !!search.search || !!search.status;
+	const hasActiveFilters = !!searchInput || !!search.status;
 
-	const setSearch = (value: string) => {
-		navigate({
-			search: (previous) => ({
-				...previous,
-				search: value.trim() || undefined,
-				page: 1,
-			}),
-			replace: true,
-		});
+	const handleSearchInputChange = (value: string) => {
+		setSearchInput(value);
+
+		if (search.page !== 1) {
+			navigate({
+				search: (previous) => ({ ...previous, page: 1 }),
+				replace: true,
+			});
+		}
 	};
 
 	const setStatus = (value: RentalCustomerOnboardingStatusDto | null) => {
@@ -185,9 +185,9 @@ export function CustomersListPage({ search }: { search: CustomersListSearch }) {
 	};
 
 	const resetFilters = () => {
+		setSearchInput("");
 		navigate({
 			search: {
-				search: undefined,
 				status: undefined,
 				page: 1,
 				pageSize: DEFAULT_PAGE_SIZE,
@@ -229,8 +229,9 @@ export function CustomersListPage({ search }: { search: CustomersListSearch }) {
 			<div className="space-y-2">
 				<CustomersToolbar
 					search={search}
+					searchInput={searchInput}
 					hasActiveFilters={hasActiveFilters}
-					setSearch={setSearch}
+					onSearchInputChange={handleSearchInputChange}
 					setStatus={setStatus}
 					resetFilters={resetFilters}
 				/>
@@ -281,14 +282,16 @@ export function CustomersListPage({ search }: { search: CustomersListSearch }) {
 
 function CustomersToolbar({
 	search,
+	searchInput,
 	hasActiveFilters,
-	setSearch,
+	onSearchInputChange,
 	setStatus,
 	resetFilters,
 }: {
 	search: CustomersListSearch;
+	searchInput: string;
 	hasActiveFilters: boolean;
-	setSearch: (value: string) => void;
+	onSearchInputChange: (value: string) => void;
 	setStatus: (value: RentalCustomerOnboardingStatusDto | null) => void;
 	resetFilters: () => void;
 }) {
@@ -304,8 +307,8 @@ function CustomersToolbar({
 		<div className="flex flex-wrap items-center gap-2 py-4">
 			<Input
 				placeholder="Search by name, email…"
-				value={search.search ?? ""}
-				onChange={(e) => setSearch(e.target.value)}
+				value={searchInput}
+				onChange={(event) => onSearchInputChange(event.target.value)}
 				className="h-8 w-64"
 			/>
 
