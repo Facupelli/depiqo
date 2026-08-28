@@ -32,9 +32,6 @@ export function OwnerDetailPage({ ownerId }: OwnerDetailPageProps) {
 
 function OwnerDetailContent({ ownerId }: OwnerDetailPageProps) {
 	const { data: owner, isPending, isError, error } = useOwnerDetail(ownerId);
-	const { data: assets = [], isPending: assetsPending } = useAssets({
-		ownerId,
-	});
 
 	if (isPending) {
 		return <OwnerDetailSkeleton />;
@@ -73,23 +70,7 @@ function OwnerDetailContent({ ownerId }: OwnerDetailPageProps) {
 				</div>
 
 				{/* Equipment units */}
-				<div className="mt-6 rounded-lg border border-neutral-200 bg-white">
-					<div className="flex items-center justify-between border-b border-neutral-100 px-6 py-4">
-						<h2 className="text-sm font-semibold uppercase tracking-wider text-neutral-500">
-							Equipos
-						</h2>
-						<span className="font-mono text-xs text-neutral-400">
-							{assets.length} {assets.length === 1 ? "equipo" : "equipos"}
-						</span>
-					</div>
-					{assetsPending ? (
-						<div className="flex items-center justify-center py-12 text-sm text-neutral-400">
-							Cargando equipos...
-						</div>
-					) : (
-						<AssetList assets={assets} />
-					)}
-				</div>
+				<OwnerAssetsSection ownerId={ownerId} />
 			</div>
 		</div>
 	);
@@ -261,6 +242,46 @@ function ActiveContractCard({ contract }: ActiveContractCardProps) {
 				</div>
 			</CardContent>
 		</Card>
+	);
+}
+
+function OwnerAssetsSection({ ownerId }: OwnerDetailPageProps) {
+	const assetsQuery = useAssets({ ownerId });
+	const assets = assetsQuery.data;
+
+	return (
+		<div className="mt-6 rounded-lg border border-neutral-200 bg-white">
+			<div className="flex items-center justify-between border-b border-neutral-100 px-6 py-4">
+				<h2 className="text-sm font-semibold uppercase tracking-wider text-neutral-500">
+					Equipos
+				</h2>
+				{assets ? (
+					<span className="font-mono text-xs text-neutral-400">
+						{assets.length} {assets.length === 1 ? "equipo" : "equipos"}
+					</span>
+				) : null}
+			</div>
+			{assetsQuery.isPending ? (
+				<div className="flex items-center justify-center py-12 text-sm text-neutral-400">
+					Cargando equipos...
+				</div>
+			) : assetsQuery.isError && !assets ? (
+				<div className="flex flex-col items-center justify-center gap-4 py-12 text-center">
+					<p className="text-sm text-neutral-500">
+						No pudimos cargar los equipos de este propietario.
+					</p>
+					<Button
+						variant="outline"
+						size="sm"
+						onClick={() => assetsQuery.refetch()}
+					>
+						Reintentar
+					</Button>
+				</div>
+			) : assets ? (
+				<AssetList assets={assets} />
+			) : null}
+		</div>
 	);
 }
 
