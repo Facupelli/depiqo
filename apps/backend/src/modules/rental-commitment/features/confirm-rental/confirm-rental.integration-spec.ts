@@ -521,6 +521,9 @@ describe('ConfirmRental integration', () => {
       () => confirm(first.tenant.id, first.rental.rentalId),
       () => confirm(first.tenant.id, second.rentalId),
     ]);
+    const rejectedOutcome = outcomes.find((outcome): outcome is PromiseRejectedResult => outcome.status === 'rejected');
+    if (rejectedOutcome) throw rejectedOutcome.reason;
+
     expect(outcomes.every((outcome) => outcome.status === 'fulfilled')).toBe(true);
     const results = outcomes.map((outcome) => (outcome as PromiseFulfilledResult<ConfirmRentalResult>).value);
     expect(results.filter((result) => result.isOk())).toHaveLength(1);

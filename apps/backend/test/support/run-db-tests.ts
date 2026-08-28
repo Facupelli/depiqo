@@ -49,7 +49,9 @@ async function main(): Promise<void> {
   let cleanupError: unknown;
 
   try {
+    console.log('Preparing test database...');
     run('pnpm', ['exec', 'prisma', 'migrate', 'deploy'], env);
+    console.log('Test database ready.');
     const jestArgs = process.argv.slice(3).filter((argument) => argument !== '--');
     jestRun = startJest(['--config', configPath, ...jestArgs], env);
     outcome = await jestRun.outcome;
@@ -143,8 +145,25 @@ function startJest(args: string[], env: NodeJS.ProcessEnv): JestRun {
 }
 
 function run(command: string, args: string[], commandEnv: NodeJS.ProcessEnv): void {
-  const result = spawnSync(command, args, { cwd: process.cwd(), env: commandEnv, stdio: 'inherit' });
-  if (result.status !== 0) throw new Error(`${command} ${args.join(' ')} failed with status ${result.status}`);
+  const result = spawnSync(command, args, {
+    cwd: process.cwd(),
+    env: commandEnv,
+    stdio: ['inherit', 'pipe', 'pipe'],
+    encoding: 'utf8',
+    maxBuffer: 50 * 1024 * 1024,
+  });
+
+  if (result.error || result.signal || result.status !== 0) {
+    if (result.stdout) process.stdout.write(result.stdout);
+    if (result.stderr) process.stderr.write(result.stderr);
+
+    const commandDescription = `${command} ${args.join(' ')}`;
+    if (result.error) {
+      throw new Error(`Failed to execute ${commandDescription}: ${result.error.message}`, { cause: result.error });
+    }
+    if (result.signal) throw new Error(`${commandDescription} was terminated by signal ${result.signal}`);
+    throw new Error(`${commandDescription} failed with status ${result.status}`);
+  }
 }
 
 void main().catch((error: unknown) => {
