@@ -2,12 +2,12 @@ import { Button } from "@repo/ui/components/button";
 import { useLocation, useNavigate } from "@tanstack/react-router";
 import { LoaderCircle } from "lucide-react";
 import { useState } from "react";
+import { writeConfirmedRentalSuccessSnapshot } from "@/modules/rental-commitment/confirmed-rentals/confirmed-rental-success-snapshot";
 import { useCreateConfirmedRental } from "@/modules/rental-commitment/confirmed-rentals/create-confirmed-rental/create-confirmed-rental.mutation";
 import { useCurrentCustomer } from "@/modules/tenant-management/auth/customer-auth.queries";
 import { resolveCustomerReturnTo } from "@/modules/tenant-management/auth/customer-return-to";
 import { ProblemDetailsError } from "@/shared/errors";
 import { useRentalCartActions } from "../../rental-cart.hooks";
-import { formatDeliveryAddressSummary } from "../cart-checkout.utils";
 import {
 	useCartBookingFeedbackContext,
 	useCartFulfillmentContext,
@@ -65,7 +65,7 @@ function useCartBookingCommand() {
 	const { periodStart, branch, pickupSlot } = useCartPeriodContext();
 	const { setUnavailableRentalOfferIds, clearUnavailableRentalOfferIds } =
 		useCartBookingFeedbackContext();
-	const { fulfillmentMethod, deliveryRequest, selectFulfillmentMethod } =
+	const { fulfillmentMethod, selectFulfillmentMethod } =
 		useCartFulfillmentContext();
 	const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -95,13 +95,18 @@ function useCartBookingCommand() {
 				body: confirmedRentalRequest.body,
 				idempotencyKey: ensureConfirmationAttemptKey(),
 			});
-			const pickupTime = pickupSlot
-				? formatSlotMinuteOfDay(pickupSlot.minuteOfDay)
-				: "";
-			const deliveryAddress =
+			const successSnapshot =
 				fulfillmentMethod === "DELIVERY"
-					? formatDeliveryAddressSummary(deliveryRequest)
-					: undefined;
+					? { fulfillmentMethod: "DELIVERY" as const }
+					: {
+							fulfillmentMethod: "PICKUP" as const,
+							pickupDate: periodStart,
+							pickupLocation: branch.name,
+							pickupTime: pickupSlot
+								? formatSlotMinuteOfDay(pickupSlot.minuteOfDay)
+								: "",
+						};
+			writeConfirmedRentalSuccessSnapshot(rental.rentalNumber, successSnapshot);
 
 			clearCart();
 			clearConfirmationAttemptKey();
@@ -109,11 +114,6 @@ function useCartBookingCommand() {
 				to: "/confirmed-rental-success",
 				search: {
 					rentalNumber: rental.rentalNumber,
-					fulfillmentMethod,
-					pickupDate: periodStart,
-					pickupLocation: branch.name,
-					pickupTime,
-					deliveryAddress,
 				},
 				replace: true,
 			});

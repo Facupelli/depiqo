@@ -200,9 +200,6 @@ function createRentalOrdersColumns({
 					<p className="font-medium text-foreground">
 						#{formatOrderNumber(row.original.rentalNumber)}
 					</p>
-					<p className="font-mono text-[11px] text-muted-foreground/80">
-						{row.original.id}
-					</p>
 				</div>
 			),
 		},
