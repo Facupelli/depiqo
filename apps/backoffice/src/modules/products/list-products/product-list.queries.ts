@@ -17,6 +17,25 @@ export type ProductListQueryOverrides<TData = GetRentableItemsResponseDto> =
 		"queryKey" | "queryFn"
 	>;
 
+export function getProductListInputFromQueryKey(
+	queryKey: readonly unknown[],
+): GetRentableItemsQueryDto | undefined {
+	const listKeyPrefix = productKeys.lists();
+	if (
+		queryKey.length !== listKeyPrefix.length + 1 ||
+		!listKeyPrefix.every((value, index) => queryKey[index] === value)
+	) {
+		return undefined;
+	}
+
+	const input = queryKey.at(-1);
+	if (!input || typeof input !== "object" || Array.isArray(input)) {
+		return undefined;
+	}
+
+	return input as GetRentableItemsQueryDto;
+}
+
 export const productListQueries = {
 	list: <TData = GetRentableItemsResponseDto>(
 		query?: GetRentableItemsQueryDto,

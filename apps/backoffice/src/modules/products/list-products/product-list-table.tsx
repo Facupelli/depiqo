@@ -14,7 +14,7 @@ import {
 	type PaginationState,
 	useReactTable,
 } from "@tanstack/react-table";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { createProductListColumns } from "./product-list-columns";
 
 interface ProductListTableProps {
@@ -25,6 +25,7 @@ interface ProductListTableProps {
 	onRowClick: (rentableItemId: string) => void;
 	categoryNameById: Map<string, string>;
 	isLoading?: boolean;
+	isRefreshing?: boolean;
 }
 
 export function ProductListTable({
@@ -35,6 +36,7 @@ export function ProductListTable({
 	onRowClick,
 	categoryNameById,
 	isLoading = false,
+	isRefreshing = false,
 }: ProductListTableProps) {
 	const pageCount = Math.max(1, Math.ceil(total / pagination.pageSize));
 	const columns = createProductListColumns({ categoryNameById });
@@ -72,12 +74,30 @@ export function ProductListTable({
 							<TableRow key={headerGroup.id} className="bg-muted/40">
 								{headerGroup.headers.map((header) => (
 									<TableHead key={header.id}>
-										{header.isPlaceholder
-											? null
-											: flexRender(
+										{header.isPlaceholder ? null : header.index === 0 ? (
+											<div className="flex items-center justify-between gap-3">
+												{flexRender(
 													header.column.columnDef.header,
 													header.getContext(),
 												)}
+												<span
+													className={
+														isRefreshing
+															? "flex items-center gap-1.5 font-normal text-muted-foreground text-xs"
+															: "invisible flex items-center gap-1.5 font-normal text-xs"
+													}
+													aria-live="polite"
+												>
+													<Loader2 className="size-3 animate-spin" />
+													Actualizando...
+												</span>
+											</div>
+										) : (
+											flexRender(
+												header.column.columnDef.header,
+												header.getContext(),
+											)
+										)}
 									</TableHead>
 								))}
 							</TableRow>
