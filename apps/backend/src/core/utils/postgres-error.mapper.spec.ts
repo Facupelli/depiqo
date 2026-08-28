@@ -1,4 +1,5 @@
 import {
+  isPrismaRawQueryPostgresDeadlock,
   isUniqueConstraintViolation,
   mapPostgresError,
   PostgresExclusionViolationError,
@@ -39,6 +40,30 @@ describe('mapPostgresError', () => {
     } catch (thrownError) {
       expect(thrownError).toBe(error);
     }
+  });
+});
+
+describe('isPrismaRawQueryPostgresDeadlock', () => {
+  it('matches the PostgreSQL adapter cause code', () => {
+    expect(isPrismaRawQueryPostgresDeadlock(prismaRawQueryError({ kind: 'postgres', code: '40P01' }))).toBe(true);
+  });
+
+  it('matches the PostgreSQL adapter original code', () => {
+    expect(isPrismaRawQueryPostgresDeadlock(prismaRawQueryError({ kind: 'postgres', originalCode: '40P01' }))).toBe(
+      true,
+    );
+  });
+
+  it.each([
+    ['an exclusion violation', prismaRawQueryError({ kind: 'postgres', code: '23P01' })],
+    ['an unrelated P2010', prismaRawQueryError({ kind: 'postgres', code: '23505' })],
+    ['P2028', { code: 'P2028', meta: { driverAdapterError: { cause: { kind: 'postgres', code: '40P01' } } } }],
+    ['P2034', { code: 'P2034', meta: { driverAdapterError: { cause: { kind: 'postgres', code: '40P01' } } } }],
+    ['missing metadata', { code: 'P2010' }],
+    ['malformed metadata', { code: 'P2010', meta: { driverAdapterError: { cause: null } } }],
+    ['a non-PostgreSQL cause', prismaRawQueryError({ kind: 'mysql', code: '40P01' })],
+  ])('does not match %s', (_name, error) => {
+    expect(isPrismaRawQueryPostgresDeadlock(error)).toBe(false);
   });
 });
 
