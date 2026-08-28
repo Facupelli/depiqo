@@ -17,7 +17,7 @@ import {
 	type PaginationState,
 	useReactTable,
 } from "@tanstack/react-table";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { createEquipmentTypeSummariesColumns } from "./equipment-type-summaries-columns";
 
 interface EquipmentTypeSummariesTableProps {
@@ -31,6 +31,7 @@ interface EquipmentTypeSummariesTableProps {
 	onPaginationChange: (pagination: PaginationState) => void;
 	onRowClick?: (equipmentType: GetEquipmentTypeSummariesItemDto) => void;
 	isLoading?: boolean;
+	isRefreshing: boolean;
 }
 
 export function EquipmentTypeSummariesTable({
@@ -41,6 +42,7 @@ export function EquipmentTypeSummariesTable({
 	onPaginationChange,
 	onRowClick,
 	isLoading = false,
+	isRefreshing,
 }: EquipmentTypeSummariesTableProps) {
 	const columns = createEquipmentTypeSummariesColumns({
 		productsByEquipmentTypeId,
@@ -80,12 +82,30 @@ export function EquipmentTypeSummariesTable({
 							<TableRow key={headerGroup.id} className="bg-muted/40">
 								{headerGroup.headers.map((header) => (
 									<TableHead key={header.id}>
-										{header.isPlaceholder
-											? null
-											: flexRender(
+										{header.isPlaceholder ? null : header.index === 0 ? (
+											<div className="flex items-center justify-between gap-3">
+												{flexRender(
 													header.column.columnDef.header,
 													header.getContext(),
 												)}
+												<span
+													className={
+														isRefreshing
+															? "flex items-center gap-1.5 font-normal text-muted-foreground text-xs"
+															: "invisible flex items-center gap-1.5 font-normal text-xs"
+													}
+													aria-live="polite"
+												>
+													<Loader2 className="size-3 animate-spin" />
+													Actualizando...
+												</span>
+											</div>
+										) : (
+											flexRender(
+												header.column.columnDef.header,
+												header.getContext(),
+											)
+										)}
 									</TableHead>
 								))}
 							</TableRow>
