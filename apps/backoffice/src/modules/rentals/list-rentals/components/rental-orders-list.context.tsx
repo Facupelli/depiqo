@@ -10,9 +10,11 @@ import { useNavigate } from "@tanstack/react-router";
 import { createContext, type ReactNode, useContext } from "react";
 import { useCurrentBusiness } from "@/application/current-business/current-business.queries";
 import {
+	getRentalListInputFromQueryKey,
 	type ParsedRentalListItem,
 	useRentals,
 } from "@/modules/rentals/rental.queries";
+import { RENTAL_ORDER_STATUS_OPTIONS } from "@/modules/rentals/shared/rental-order-status";
 import { useBranches } from "@/modules/settings/branches/public";
 import { resolveOperationalTimezone } from "@/shared/timezone/operational-timezone";
 
@@ -29,6 +31,7 @@ type RentalOrdersListContextValue = {
 	meta: { total: number; totalPages: number };
 	isLoading: boolean;
 	isBranchesLoading: boolean;
+	isRefreshing: boolean;
 	isError: boolean;
 	hasActiveFilters: boolean;
 	getBranchName: (branchId: string) => string | undefined;
@@ -88,7 +91,18 @@ function useRentalOrdersListPage(
 	) => void,
 ): RentalOrdersListContextValue {
 	const navigate = useNavigate();
-	const { data, isLoading, isError } = useRentals(search);
+	const { data, isLoading, isError, isFetching, isPlaceholderData } =
+		useRentals(search, {
+			placeholderData: (previousData, previousQuery) => {
+				const previousInput = getRentalListInputFromQueryKey(
+					previousQuery?.queryKey ?? [],
+				);
+
+				return previousInput && isSameRentalListContext(previousInput, search)
+					? previousData
+					: undefined;
+			},
+		});
 	const { data: branches = [], isLoading: isBranchesLoading } = useBranches();
 	const { data: business } = useCurrentBusiness();
 
@@ -124,6 +138,7 @@ function useRentalOrdersListPage(
 		meta,
 		isLoading,
 		isBranchesLoading,
+		isRefreshing: isFetching && isPlaceholderData,
 		isError,
 		hasActiveFilters,
 		getBranchName: (branchId: string) =>
@@ -173,6 +188,43 @@ function useRentalOrdersListPage(
 				params: { orderId: rental.id },
 			}),
 	};
+}
+
+function isSameRentalListContext(
+	previous: RentalOrdersListSearch,
+	current: RentalOrdersListSearch,
+): boolean {
+	return (
+		previous.branchId === current.branchId &&
+		previous.customerId === current.customerId &&
+		haveSameRentalStatuses(previous.statuses, current.statuses) &&
+		previous.dateLens === current.dateLens
+	);
+}
+
+function haveSameRentalStatuses(
+	previous: GetRentalsStatusDto[] | undefined,
+	current: GetRentalsStatusDto[] | undefined,
+): boolean {
+	const normalizedPrevious = normalizeRentalStatuses(previous);
+	const normalizedCurrent = normalizeRentalStatuses(current);
+
+	return (
+		normalizedPrevious.length === normalizedCurrent.length &&
+		normalizedPrevious.every(
+			(status, index) => status === normalizedCurrent[index],
+		)
+	);
+}
+
+function normalizeRentalStatuses(
+	statuses: GetRentalsStatusDto[] | undefined,
+): readonly GetRentalsStatusDto[] {
+	if (!statuses) return RENTAL_ORDER_STATUS_OPTIONS;
+
+	return RENTAL_ORDER_STATUS_OPTIONS.filter((status) =>
+		statuses.includes(status),
+	);
 }
 
 export function hasExplicitRentalOrdersSort(

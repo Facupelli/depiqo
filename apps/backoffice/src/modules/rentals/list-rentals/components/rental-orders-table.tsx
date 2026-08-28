@@ -29,6 +29,7 @@ import {
 	Building2,
 	ChevronLeft,
 	ChevronRight,
+	Loader2,
 	User,
 } from "lucide-react";
 import dayjs from "@/lib/dates/dayjs";
@@ -54,6 +55,7 @@ export function RentalOrdersTable() {
 		search,
 		isLoading,
 		isBranchesLoading,
+		isRefreshing,
 		isError,
 		setPage,
 		setSort,
@@ -114,12 +116,31 @@ export function RentalOrdersTable() {
 											key={header.id}
 											className={align === "right" ? "text-right" : undefined}
 										>
-											{header.isPlaceholder
-												? null
-												: flexRender(
+											{header.isPlaceholder ? null : header.index === 0 ? (
+												<div className="flex items-center justify-between gap-3">
+													{flexRender(
 														header.column.columnDef.header,
 														header.getContext(),
 													)}
+													<span
+														className={cn(
+															"flex items-center gap-1.5 font-normal text-xs",
+															isRefreshing
+																? "text-muted-foreground"
+																: "invisible",
+														)}
+														aria-live="polite"
+													>
+														<Loader2 className="size-3 animate-spin" />
+														Actualizando...
+													</span>
+												</div>
+											) : (
+												flexRender(
+													header.column.columnDef.header,
+													header.getContext(),
+												)
+											)}
 										</TableHead>
 									);
 								})}
