@@ -4,13 +4,14 @@ import { tenantLandingRegistry } from "@/modules/tenant-landings/tenant-landing-
 import { getResolvedTenantBranding } from "@/modules/tenant-management/tenant-branding/tenant-branding";
 
 const platformSeo = {
-	title: "Depiqo | Software para alquiler de equipos",
-	description:
-		"Gestiona catalogo, reservas, clientes y operaciones para tu negocio de alquiler de equipos desde una sola plataforma.",
-	ogTitle: "Depiqo | Software para rental de equipos",
-	ogDescription:
-		"Una plataforma para gestionar alquiler de equipos, disponibilidad, pedidos y clientes con una experiencia moderna.",
+	title: "DEPIQO — Gestión de alquileres, simplificada.",
+	description: "Inventario, alquileres y operación en un solo lugar.",
+	ogTitle: "DEPIQO — Gestión de alquileres, simplificada.",
+	ogDescription: "Inventario, alquileres y operación en un solo lugar.",
 };
+
+const platformUrl = "https://www.depiqo.com/";
+const platformOgImageUrl = "https://www.depiqo.com/og/depiqo-og.png";
 
 export const Route = createFileRoute("/")({
 	loader: ({ context: { tenantContext } }) => {
@@ -30,25 +31,56 @@ export const Route = createFileRoute("/")({
 	},
 	head: ({ loaderData }) => {
 		const seo = loaderData?.seo ?? platformSeo;
-		const favicon = loaderData?.branding?.faviconHref ?? "/favicon.svg";
+		const isPlatformLanding = !loaderData || loaderData.landingSlug === null;
+		const meta = [
+			{ title: seo.title },
+			{ name: "description", content: seo.description },
+			{ property: "og:title", content: seo.ogTitle ?? seo.title },
+			{
+				property: "og:description",
+				content: seo.ogDescription ?? seo.description,
+			},
+			{ property: "og:type", content: "website" },
+			{ name: "twitter:card", content: "summary_large_image" },
+			{ name: "twitter:title", content: seo.ogTitle ?? seo.title },
+			{
+				name: "twitter:description",
+				content: seo.ogDescription ?? seo.description,
+			},
+		];
+
+		if (!isPlatformLanding) {
+			return {
+				meta,
+				links: [
+					{
+						rel: "icon",
+						href: loaderData.branding?.faviconHref ?? "/favicon.svg",
+					},
+				],
+			};
+		}
+
 		return {
 			meta: [
-				{ title: seo.title },
-				{ name: "description", content: seo.description },
-				{ property: "og:title", content: seo.ogTitle ?? seo.title },
-				{
-					property: "og:description",
-					content: seo.ogDescription ?? seo.description,
-				},
-				{ property: "og:type", content: "website" },
-				{ name: "twitter:card", content: "summary_large_image" },
-				{ name: "twitter:title", content: seo.ogTitle ?? seo.title },
-				{
-					name: "twitter:description",
-					content: seo.ogDescription ?? seo.description,
-				},
+				...meta,
+				{ property: "og:site_name", content: "DEPIQO" },
+				{ property: "og:url", content: platformUrl },
+				{ property: "og:image", content: platformOgImageUrl },
+				{ name: "twitter:image", content: platformOgImageUrl },
 			],
-			links: [{ rel: "icon", href: favicon }],
+			links: [
+				{ rel: "canonical", href: platformUrl },
+				{ rel: "icon", href: "/favicon.ico", sizes: "48x48" },
+				{ rel: "icon", href: "/favicon.svg", type: "image/svg+xml" },
+				{
+					rel: "icon",
+					href: "/favicon-96x96.png",
+					type: "image/png",
+					sizes: "96x96",
+				},
+				{ rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
+			],
 		};
 	},
 	component: HomePage,
