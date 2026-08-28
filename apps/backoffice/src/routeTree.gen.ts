@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as RegisterRouteImport } from './routes/register'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AdminRouteRouteImport } from './routes/_admin/route'
 import { Route as IndexRouteImport } from './routes/index'
@@ -17,7 +18,6 @@ import { Route as ApiUploadRouteImport } from './routes/api/upload'
 import { Route as ApiBrandingUploadRouteImport } from './routes/api/branding-upload'
 import { Route as AdminDashboardRouteRouteImport } from './routes/_admin/dashboard/route'
 import { Route as AdminDashboardIndexRouteImport } from './routes/_admin/dashboard/index'
-import { Route as AdminAdminRegisterRouteImport } from './routes/_admin/admin/register'
 import { Route as AdminDashboardSettingsRouteRouteImport } from './routes/_admin/dashboard/settings/route'
 import { Route as AdminDashboardSettingsIndexRouteImport } from './routes/_admin/dashboard/settings/index'
 import { Route as AdminDashboardPromotionsIndexRouteImport } from './routes/_admin/dashboard/promotions/index'
@@ -51,6 +51,11 @@ import { Route as AdminDashboardCatalogPackagesNewRouteImport } from './routes/_
 import { Route as AdminDashboardCatalogRentableItemIdEditRouteImport } from './routes/_admin/dashboard/catalog/$rentableItemId/edit'
 import { Route as AdminDashboardBranchesBranchIdEditRouteImport } from './routes/_admin/dashboard/branches/$branchId/edit'
 
+const RegisterRoute = RegisterRouteImport.update({
+  id: '/register',
+  path: '/register',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
@@ -89,11 +94,6 @@ const AdminDashboardIndexRoute = AdminDashboardIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AdminDashboardRouteRoute,
-} as any)
-const AdminAdminRegisterRoute = AdminAdminRegisterRouteImport.update({
-  id: '/admin/register',
-  path: '/admin/register',
-  getParentRoute: () => AdminRouteRoute,
 } as any)
 const AdminDashboardSettingsRouteRoute =
   AdminDashboardSettingsRouteRouteImport.update({
@@ -290,12 +290,12 @@ const AdminDashboardBranchesBranchIdEditRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/register': typeof RegisterRoute
   '/dashboard': typeof AdminDashboardRouteRouteWithChildren
   '/api/branding-upload': typeof ApiBrandingUploadRoute
   '/api/upload': typeof ApiUploadRoute
   '/backend/$': typeof BackendSplatRoute
   '/dashboard/settings': typeof AdminDashboardSettingsRouteRouteWithChildren
-  '/admin/register': typeof AdminAdminRegisterRoute
   '/dashboard/': typeof AdminDashboardIndexRoute
   '/dashboard/branches/new': typeof AdminDashboardBranchesNewRoute
   '/dashboard/catalog/new': typeof AdminDashboardCatalogNewRoute
@@ -332,10 +332,10 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/register': typeof RegisterRoute
   '/api/branding-upload': typeof ApiBrandingUploadRoute
   '/api/upload': typeof ApiUploadRoute
   '/backend/$': typeof BackendSplatRoute
-  '/admin/register': typeof AdminAdminRegisterRoute
   '/dashboard': typeof AdminDashboardIndexRoute
   '/dashboard/branches/new': typeof AdminDashboardBranchesNewRoute
   '/dashboard/catalog/new': typeof AdminDashboardCatalogNewRoute
@@ -374,12 +374,12 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_admin': typeof AdminRouteRouteWithChildren
   '/login': typeof LoginRoute
+  '/register': typeof RegisterRoute
   '/_admin/dashboard': typeof AdminDashboardRouteRouteWithChildren
   '/api/branding-upload': typeof ApiBrandingUploadRoute
   '/api/upload': typeof ApiUploadRoute
   '/backend/$': typeof BackendSplatRoute
   '/_admin/dashboard/settings': typeof AdminDashboardSettingsRouteRouteWithChildren
-  '/_admin/admin/register': typeof AdminAdminRegisterRoute
   '/_admin/dashboard/': typeof AdminDashboardIndexRoute
   '/_admin/dashboard/branches/new': typeof AdminDashboardBranchesNewRoute
   '/_admin/dashboard/catalog/new': typeof AdminDashboardCatalogNewRoute
@@ -418,12 +418,12 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/login'
+    | '/register'
     | '/dashboard'
     | '/api/branding-upload'
     | '/api/upload'
     | '/backend/$'
     | '/dashboard/settings'
-    | '/admin/register'
     | '/dashboard/'
     | '/dashboard/branches/new'
     | '/dashboard/catalog/new'
@@ -460,10 +460,10 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/login'
+    | '/register'
     | '/api/branding-upload'
     | '/api/upload'
     | '/backend/$'
-    | '/admin/register'
     | '/dashboard'
     | '/dashboard/branches/new'
     | '/dashboard/catalog/new'
@@ -501,12 +501,12 @@ export interface FileRouteTypes {
     | '/'
     | '/_admin'
     | '/login'
+    | '/register'
     | '/_admin/dashboard'
     | '/api/branding-upload'
     | '/api/upload'
     | '/backend/$'
     | '/_admin/dashboard/settings'
-    | '/_admin/admin/register'
     | '/_admin/dashboard/'
     | '/_admin/dashboard/branches/new'
     | '/_admin/dashboard/catalog/new'
@@ -545,6 +545,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRouteRoute: typeof AdminRouteRouteWithChildren
   LoginRoute: typeof LoginRoute
+  RegisterRoute: typeof RegisterRoute
   ApiBrandingUploadRoute: typeof ApiBrandingUploadRoute
   ApiUploadRoute: typeof ApiUploadRoute
   BackendSplatRoute: typeof BackendSplatRoute
@@ -553,6 +554,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/register': {
+      id: '/register'
+      path: '/register'
+      fullPath: '/register'
+      preLoaderRoute: typeof RegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
       id: '/login'
       path: '/login'
@@ -608,13 +616,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/dashboard/'
       preLoaderRoute: typeof AdminDashboardIndexRouteImport
       parentRoute: typeof AdminDashboardRouteRoute
-    }
-    '/_admin/admin/register': {
-      id: '/_admin/admin/register'
-      path: '/admin/register'
-      fullPath: '/admin/register'
-      preLoaderRoute: typeof AdminAdminRegisterRouteImport
-      parentRoute: typeof AdminRouteRoute
     }
     '/_admin/dashboard/settings': {
       id: '/_admin/dashboard/settings'
@@ -943,12 +944,10 @@ const AdminDashboardRouteRouteWithChildren =
 
 interface AdminRouteRouteChildren {
   AdminDashboardRouteRoute: typeof AdminDashboardRouteRouteWithChildren
-  AdminAdminRegisterRoute: typeof AdminAdminRegisterRoute
 }
 
 const AdminRouteRouteChildren: AdminRouteRouteChildren = {
   AdminDashboardRouteRoute: AdminDashboardRouteRouteWithChildren,
-  AdminAdminRegisterRoute: AdminAdminRegisterRoute,
 }
 
 const AdminRouteRouteWithChildren = AdminRouteRoute._addFileChildren(
@@ -959,6 +958,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRouteRoute: AdminRouteRouteWithChildren,
   LoginRoute: LoginRoute,
+  RegisterRoute: RegisterRoute,
   ApiBrandingUploadRoute: ApiBrandingUploadRoute,
   ApiUploadRoute: ApiUploadRoute,
   BackendSplatRoute: BackendSplatRoute,

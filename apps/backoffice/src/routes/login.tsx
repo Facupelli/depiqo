@@ -15,12 +15,7 @@ import {
 } from "@repo/ui/components/field";
 import { Input } from "@repo/ui/components/input";
 import { useForm } from "@tanstack/react-form";
-import {
-	createFileRoute,
-	Link,
-	redirect,
-	useRouter,
-} from "@tanstack/react-router";
+import { createFileRoute, redirect, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
 import { useLogin } from "@/auth/login/login.mutation";
 import { loginSchema } from "@/auth/login/login-form.schema";
@@ -72,7 +67,9 @@ function LoginPage() {
 				});
 			} catch (error) {
 				if (isAuthError(error)) {
-					setServerError("Invalid email or password");
+					setServerError(
+						"El correo electrónico o la contraseña son incorrectos",
+					);
 					return;
 				}
 
@@ -88,11 +85,13 @@ function LoginPage() {
 	return (
 		<div className="grid place-content-center bg-neutral-100 min-h-svh">
 			<div className="grid gap-y-10">
-				<h1 className="text-3xl font-bold text-primary text-center">DEPIQO</h1>
+				<h1 className="text-center text-3xl font-bold text-depiqo-blue-700">
+					DEPIQO
+				</h1>
 
 				<Card className="w-md">
 					<CardHeader>
-						<CardTitle>Backoffice Login</CardTitle>
+						<CardTitle>Ingreso al panel de administración</CardTitle>
 						<CardDescription>
 							Inicia sesión con tu cuenta para acceder a tu panel de
 							administración.
@@ -115,7 +114,9 @@ function LoginPage() {
 
 										return (
 											<Field data-invalid={isInvalid}>
-												<FieldLabel htmlFor={field.name}>Email:</FieldLabel>
+												<FieldLabel htmlFor={field.name}>
+													Correo electrónico:
+												</FieldLabel>
 												<Input
 													id={field.name}
 													name={field.name}
@@ -124,7 +125,7 @@ function LoginPage() {
 													onChange={(e) => field.handleChange(e.target.value)}
 													aria-invalid={isInvalid}
 													type="email"
-													placeholder="admin@skylines.com"
+													placeholder="admin@empresa.com"
 												/>
 												{isInvalid && (
 													<FieldError errors={field.state.meta.errors} />
@@ -190,15 +191,6 @@ function LoginPage() {
 								</Field>
 							)}
 						</form.Subscribe>
-
-						<div>
-							<p className="text-center text-sm text-muted-foreground">
-								Don't have an account?{" "}
-								<Link to="/admin/register" className="underline">
-									Register
-								</Link>
-							</p>
-						</div>
 					</CardFooter>
 				</Card>
 			</div>

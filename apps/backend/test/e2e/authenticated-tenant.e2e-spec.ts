@@ -9,7 +9,7 @@ import { EmailDeliveryPort } from '../../src/modules/notifications/application/p
 import { ObjectStoragePort } from '../../src/modules/object-storage/application/ports/object-storage.port';
 import { CustomHostnameProvider } from '../../src/modules/tenant-management/application/ports/custom-hostname-provider.port';
 import { GoogleIdentityVerifier } from '../../src/modules/tenant-management/auth/shared/google/google-identity-verifier.port';
-import { createE2ETestApp, E2ETestApp } from '../support/create-e2e-test-app';
+import type { E2ETestApp } from '../support/create-e2e-test-app';
 import { createE2ETestClient } from '../support/create-e2e-test-client';
 import { createTestFixtures } from '../support/fixtures';
 import { runConcurrently } from '../support/concurrency';
@@ -18,7 +18,19 @@ describe('authenticated tenant HTTP flow', () => {
   let testApp!: E2ETestApp;
 
   beforeAll(async () => {
-    testApp = await createE2ETestApp();
+    const previousRegistrationEnabled = process.env.PUBLIC_TENANT_REGISTRATION_ENABLED;
+    process.env.PUBLIC_TENANT_REGISTRATION_ENABLED = 'true';
+
+    try {
+      const { createE2ETestApp } = await import('../support/create-e2e-test-app');
+      testApp = await createE2ETestApp();
+    } finally {
+      if (previousRegistrationEnabled === undefined) {
+        delete process.env.PUBLIC_TENANT_REGISTRATION_ENABLED;
+      } else {
+        process.env.PUBLIC_TENANT_REGISTRATION_ENABLED = previousRegistrationEnabled;
+      }
+    }
   });
 
   afterAll(async () => {
