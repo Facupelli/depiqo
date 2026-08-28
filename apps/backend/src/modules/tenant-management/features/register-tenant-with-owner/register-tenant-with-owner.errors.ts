@@ -1,6 +1,7 @@
 import { ApplicationError } from 'src/core/errors/application-error';
 
 export type RegisterTenantWithOwnerErrorCode =
+  | 'tenant_management.public_registration_disabled'
   | 'tenant_management.tenant_registration_invalid_input'
   | 'tenant_management.tenant_slug_already_in_use';
 

@@ -33,6 +33,10 @@ export const EnvSchema = z.object({
   STOREFRONT_TENANT_JWT_AUDIENCE: z.string(),
 
   SESSION_SECRET: z.string(),
+  PUBLIC_TENANT_REGISTRATION_ENABLED: z
+    .enum(['true', 'false'])
+    .transform((value) => value === 'true')
+    .default(false),
 
   GOOGLE_CLIENT_ID: z.string(),
   GOOGLE_CLIENT_SECRET: z.string(),

@@ -1,12 +1,18 @@
 import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { CommandBus } from '@nestjs/cqrs';
 import { Result } from 'neverthrow';
 
+import { Env } from 'src/config/env.schema';
 import { Public } from 'src/core/decorators/public.decorator';
 import { createProblemDetails, createProblemType, ProblemException } from 'src/core/problem-details';
 
 import { RegisterTenantWithOwnerCommand } from './register-tenant-with-owner.command';
-import { RegisterTenantWithOwnerError, RegisterTenantWithOwnerErrorCode } from './register-tenant-with-owner.errors';
+import {
+  RegisterTenantWithOwnerError,
+  RegisterTenantWithOwnerErrorCode,
+  registerTenantWithOwnerError,
+} from './register-tenant-with-owner.errors';
 import { RegisterTenantWithOwnerRequestDto } from './register-tenant-with-owner.request.dto';
 import { RegisterTenantWithOwnerResponseDto } from './register-tenant-with-owner.response.dto';
 import { RegisterTenantWithOwnerResponse } from './register-tenant-with-owner.service';
@@ -16,11 +22,25 @@ import { SkipCsrf } from '../../auth/shared/csrf/skip-csrf.decorator';
 @SkipCsrf()
 @Controller('tenant-management')
 export class RegisterTenantWithOwnerController {
-  constructor(private readonly commandBus: CommandBus) {}
+  constructor(
+    private readonly commandBus: CommandBus,
+    private readonly configService: ConfigService<Env, true>,
+  ) {}
 
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
   async register(@Body() dto: RegisterTenantWithOwnerRequestDto): Promise<RegisterTenantWithOwnerResponseDto> {
+    if (!this.configService.get('PUBLIC_TENANT_REGISTRATION_ENABLED')) {
+      throw toRegisterTenantWithOwnerProblem(
+        registerTenantWithOwnerError(
+          'tenant_management.public_registration_disabled',
+          'Public tenant registration is disabled.',
+          undefined,
+          { useCase: 'RegisterTenantWithOwner' },
+        ),
+      );
+    }
+
     const result = await this.commandBus.execute<
       RegisterTenantWithOwnerCommand,
       Result<RegisterTenantWithOwnerResponse, RegisterTenantWithOwnerError>
@@ -51,6 +71,12 @@ function toRegisterTenantWithOwnerProblem(error: RegisterTenantWithOwnerError): 
 }
 
 const registerTenantWithOwnerProblemMap = {
+  'tenant_management.public_registration_disabled': {
+    type: createProblemType('tenant-management/public-registration-disabled'),
+    title: 'Public registration disabled',
+    status: HttpStatus.FORBIDDEN,
+    detail: 'Public tenant registration is currently disabled.',
+  },
   'tenant_management.tenant_registration_invalid_input': {
     type: createProblemType('tenant-management/tenant-registration-invalid-input'),
     title: 'Tenant registration input is invalid',

@@ -4,9 +4,9 @@ import { tenantLandingRegistry } from "@/modules/tenant-landings/tenant-landing-
 import { getResolvedTenantBranding } from "@/modules/tenant-management/tenant-branding/tenant-branding";
 
 const platformSeo = {
-	title: "DEPIQO — Gestión de alquileres, simplificada.",
+	title: "DEPIQO - Gestión de alquileres, simplificado.",
 	description: "Inventario, alquileres y operación en un solo lugar.",
-	ogTitle: "DEPIQO — Gestión de alquileres, simplificada.",
+	ogTitle: "DEPIQO - Gestión de alquileres, simplificado.",
 	ogDescription: "Inventario, alquileres y operación en un solo lugar.",
 };
 
