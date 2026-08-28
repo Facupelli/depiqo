@@ -8,6 +8,7 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@repo/ui/components/dialog";
+import { Skeleton } from "@repo/ui/components/skeleton";
 import {
 	Table,
 	TableBody,
@@ -39,7 +40,7 @@ import { AddUnitsForm } from "../add-units/AddUnitsForm";
 import { useAddUnitsToEquipmentType } from "../add-units/add-units.mutation";
 import { toAddUnitsToEquipmentTypeDto } from "../add-units/add-units.schema";
 import { EditEquipmentTypeDialog } from "../edit-equipment-type/edit-equipment-type-dialog";
-import { equipmentTypeProductUsageQueries } from "../product-usages/equipment-type-product-usages.queries";
+import { useEquipmentTypeProductUsages } from "../product-usages/equipment-type-product-usages.queries";
 import { equipmentTypeDetailQueries } from "./equipment-type-detail.queries";
 import { UnitRowActionsMenu } from "./unit-row-actions-menu";
 
@@ -51,10 +52,12 @@ export function EquipmentTypeDetailPage({
 	const { data: equipmentType } = useSuspenseQuery(
 		equipmentTypeDetailQueries.detail(equipmentTypeId),
 	);
-	const { data: productUsages } = useSuspenseQuery(
-		equipmentTypeProductUsageQueries.list([equipmentTypeId]),
-	);
-	const products = productUsages[0]?.products ?? [];
+	const productUsagesQuery = useEquipmentTypeProductUsages([equipmentTypeId]);
+	const products = productUsagesQuery.data
+		? (productUsagesQuery.data.find(
+				(usage) => usage.equipmentTypeId === equipmentTypeId,
+			)?.products ?? [])
+		: undefined;
 	const branchCount = new Set(
 		equipmentType.assets.map((asset) => asset.branchId),
 	).size;
@@ -91,15 +94,28 @@ export function EquipmentTypeDetailPage({
 					<OverviewMetric
 						icon={ShoppingBag}
 						label="Usado por"
-						value={products.length}
-						description="productos"
+						value={
+							products ? (
+								products.length
+							) : productUsagesQuery.isPending ? (
+								<Skeleton className="h-7 w-10" />
+							) : (
+								<span className="text-muted-foreground">-</span>
+							)
+						}
+						description={products ? "productos" : undefined}
 					/>
 				</div>
 
 				<div className="grid gap-5 lg:grid-cols-[minmax(0,2fr)_minmax(20rem,1fr)]">
 					<EquipmentUnitsTable equipmentType={equipmentType} />
 					<div className="space-y-5">
-						<ProductUsageList products={products} />
+						<ProductUsageList
+							products={products}
+							isPending={productUsagesQuery.isPending}
+							isError={productUsagesQuery.isError}
+							onRetry={() => void productUsagesQuery.refetch()}
+						/>
 						<AccessoryDefaultsTable equipmentType={equipmentType} />
 					</div>
 				</div>
@@ -171,7 +187,7 @@ function OverviewMetric({
 }: {
 	icon: typeof Box;
 	label: string;
-	value: number;
+	value: ReactNode;
 	description?: string;
 }) {
 	return (
@@ -332,12 +348,18 @@ function EquipmentUnitsTable({
 
 function ProductUsageList({
 	products,
+	isPending,
+	isError,
+	onRetry,
 }: {
-	products: Array<{
+	products?: Array<{
 		rentableItemId: string;
 		name: string;
 		quantityPerItem: number;
 	}>;
+	isPending: boolean;
+	isError: boolean;
+	onRetry: () => void;
 }) {
 	return (
 		<section className="overflow-hidden rounded-lg border bg-background shadow-sm">
@@ -347,31 +369,53 @@ function ProductUsageList({
 				</h2>
 			</div>
 			<div className="px-4 pb-4">
-				{products.length === 0 ? (
-					<p className="p-4 text-muted-foreground text-sm">
-						Este equipo no se usa en ningún producto.
-					</p>
-				) : (
-					<ul className="divide-y border rounded-md">
-						{products.map((product) => (
-							<li
-								key={product.rentableItemId}
-								className="flex items-center justify-between gap-4 px-4 py-3"
-							>
-								<Link
-									to="/dashboard/catalog/$rentableItemId"
-									params={{ rentableItemId: product.rentableItemId }}
-									className="min-w-0 truncate rounded-sm text-sm hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+				{products ? (
+					products.length === 0 ? (
+						<p className="p-4 text-muted-foreground text-sm">
+							Este equipo no se usa en ningún producto.
+						</p>
+					) : (
+						<ul className="divide-y border rounded-md">
+							{products.map((product) => (
+								<li
+									key={product.rentableItemId}
+									className="flex items-center justify-between gap-4 px-4 py-3"
 								>
-									{product.name}
-								</Link>
-								<span className="shrink-0 text-muted-foreground text-sm">
-									x{product.quantityPerItem}
-								</span>
-							</li>
-						))}
-					</ul>
-				)}
+									<Link
+										to="/dashboard/catalog/$rentableItemId"
+										params={{ rentableItemId: product.rentableItemId }}
+										className="min-w-0 truncate rounded-sm text-sm hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+									>
+										{product.name}
+									</Link>
+									<span className="shrink-0 text-muted-foreground text-sm">
+										x{product.quantityPerItem}
+									</span>
+								</li>
+							))}
+						</ul>
+					)
+				) : isPending ? (
+					<div className="space-y-2 rounded-md border p-4">
+						<Skeleton className="h-4 w-3/4" />
+						<Skeleton className="h-4 w-1/2" />
+					</div>
+				) : isError ? (
+					<div className="rounded-md border p-4">
+						<p className="text-muted-foreground text-sm">
+							No pudimos cargar los productos que usan este equipo.
+						</p>
+						<Button
+							type="button"
+							variant="outline"
+							size="sm"
+							className="mt-3"
+							onClick={onRetry}
+						>
+							Reintentar
+						</Button>
+					</div>
+				) : null}
 			</div>
 		</section>
 	);
