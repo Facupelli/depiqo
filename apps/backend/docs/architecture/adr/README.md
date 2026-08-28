@@ -1,414 +1,279 @@
 # ADR Writing Guide
 
-This directory contains Architecture Decision Records.
+This directory contains Architecture Decision Records (ADRs).
 
-An ADR documents an important architectural decision that should remain understandable after the original discussion is forgotten.
+An ADR records an important decision and, most importantly, **why that decision exists**.
 
-ADRs are not general documentation. They exist to preserve decisions, context, trade-offs, and consequences.
+ADRs are not general architecture documentation, implementation notes, task histories, or explanations of how the code works. Their purpose is to preserve decisions that future developers or agents might otherwise misunderstand or accidentally undo.
 
 ## When to Write an ADR
 
-Write an ADR when a decision affects module boundaries, persistence design, public APIs, integration patterns, deployment shape, long-term invariants, or behavior that future changes must preserve.
+Write an ADR only when **all three** conditions are true:
 
-Good ADR topics include:
+1. **Hard to reverse** - changing the decision later would have meaningful cost.
+2. **Surprising without context** - a future developer could reasonably look at the implementation and wonder why it works this way.
+3. **The result of a real trade-off** - there were genuine alternatives and one was chosen for specific reasons.
 
-```text
-Choosing which module owns a concept or table
-Changing aggregate boundaries
-Introducing a snapshot model
-Changing cross-module communication rules
-Choosing an integration strategy with an external provider
-Changing authentication/session architecture
-Changing deployment or infrastructure shape
-Introducing a new persistence pattern
-Accepting a known trade-off or limitation
-Documenting an intentional exception to normal architecture rules
-```
+If any of these conditions is missing, do not create an ADR.
 
-Do not write an ADR for routine implementation details, simple refactors, small bug fixes, formatting choices, local naming decisions, or code that is already obvious from the implementation.
+An ADR is especially useful when somebody could otherwise "fix" intentional architecture because the reason behind it is no longer visible.
 
-## ADR Naming
-
-Use this file name format:
+Typical ADR topics include:
 
 ```text
-NNNN-short-kebab-case-title.md
+Module and bounded-context boundaries
+
+Ownership of important domain concepts or persistence
+
+Integration patterns between contexts
+
+Persistence strategies and database choices with meaningful lock-in
+
+Authentication or session architecture
+
+Deployment or infrastructure choices that are expensive to reverse
+
+Long-term invariants that application code must preserve
+
+Deliberate deviations from the obvious implementation
+
+Constraints that are important but not visible from the code
+
+Rejected alternatives that future developers are likely to reconsider
 ```
 
-Examples:
+Do not write ADRs for:
 
 ```text
-0001-rental-commitment-owns-asset-blocks.md
-0002-confirmed-rentals-store-price-snapshots.md
-0003-tenant-context-resolved-by-backend.md
+Routine implementation details
+
+Small refactors
+
+Simple bug fixes
+
+Naming or formatting decisions
+
+Individual helper or library choices that are easy to replace
+
+Implementation mechanics already clear from the code
+
+Temporary plans or task lists
 ```
 
-Numbers are sequential and must not be reused.
+## ADR Location and Naming
 
-Use short names. The title should describe the decision, not the task.
-
-## ADR Status
-
-Each ADR must have one status:
+ADRs live in:
 
 ```text
-Proposed
-Accepted
-Superseded
-Deprecated
+docs/architecture/adr/
 ```
 
-Use `Proposed` when the decision is being discussed.
+Create the directory only when the first ADR is actually needed.
 
-Use `Accepted` when the decision is the current architecture.
+Use sequential numbering:
 
-Use `Superseded` when a newer ADR replaces it.
-
-Use `Deprecated` when the decision is no longer recommended but still explains historical context.
-
-When superseding an ADR, do not delete the old file. Mark it as `Superseded` and link to the newer ADR.
-
-## ADR Structure
-
-Use this structure for every ADR:
-
-```md
-# NNNN. Decision Title
-
-## Status
-
-Accepted
-
-## Date
-
-YYYY-MM-DD
-
-## Context
-
-## Decision
-
-## Consequences
-
-## Alternatives Considered
-
-## Implementation Notes
-
-## Related Documents
+```text
+0001-short-kebab-case-title.md
+0002-short-kebab-case-title.md
+0003-short-kebab-case-title.md
 ```
 
-Keep ADRs concise. Most ADRs should be one to three pages.
+Scan the directory for the highest existing number and increment it.
 
-## Section Guidelines
+Numbers must not be reused.
 
-### Title
-
-The title should state the decision clearly.
+The file name and title should describe the **decision**, not the task that produced it.
 
 Prefer:
 
 ```text
-Rental Commitment Owns Rental-Created Asset Blocks
+0004-rental-asset-reservation-concurrency-strategy.md
 ```
 
 Avoid:
 
 ```text
-AssetBlock Refactor
+0004-fix-rental-deadlock.md
 ```
 
-The title should remain meaningful after the implementation details change.
+The first remains meaningful after the implementation changes. The second describes an implementation event.
 
-### Status
+## ADR Format
 
-Use one of the allowed statuses.
+Keep ADRs as small as the decision allows.
+
+The default format is:
 
 ```md
-## Status
+# Short title of the decision
 
-Accepted
+Explain the relevant context, what was decided, and why in one to three sentences.
 ```
 
-When an ADR is superseded, write:
+That is enough for many ADRs.
+
+The value of an ADR comes from preserving the decision and its reasoning, not from filling out a documentation template.
+
+## Optional Detail
+
+Add additional structure only when it preserves information that would otherwise be lost.
+
+Useful optional sections include:
+
+### Considered Options
+
+Use this when rejected alternatives are important enough that somebody is likely to propose them again.
 
 ```md
-## Status
+## Considered Options
 
-Superseded by [0007-new-decision-title.md](0007-new-decision-title.md)
+### Pessimistic locking
+
+Rejected because ...
+
+### Optimistic allocation with database enforcement
+
+Chosen because ...
 ```
 
-### Date
-
-Use the date when the decision was accepted or proposed.
-
-```md
-## Date
-
-2026-07-08
-```
-
-### Context
-
-Explain the problem, constraints, and forces that led to the decision.
-
-Context should answer:
-
-```text
-What problem are we solving?
-What was unclear or disputed?
-Which modules, tables, or workflows are affected?
-What constraints shaped the decision?
-What would go wrong if future agents ignored this?
-```
-
-Do not include a long history of the conversation. Include only the information needed to understand the decision.
-
-### Decision
-
-State the decision directly.
-
-This section should be the clearest part of the ADR.
-
-Prefer:
-
-```md
-Rental Commitment owns rental-created `AssetBlock` records.
-
-Asset Inventory owns physical asset metadata and assignment eligibility, but it does not own rental-created blocks.
-
-A block exists because a rental has committed an asset for a period, so the block belongs to the rental commitment lifecycle.
-```
-
-Avoid vague wording such as:
-
-```md
-We should probably keep blocks close to rentals for now.
-```
-
-The decision should be explicit enough that an agent can preserve it during future changes.
+Do not list weak alternatives that were never seriously considered.
 
 ### Consequences
 
-Explain what becomes easier, what becomes harder, and what rules follow from the decision.
-
-Include both positive and negative consequences.
-
-Good consequences include:
-
-```text
-Which module owns the invariant
-Which module other modules must call
-Which tables must not be mutated directly
-Which future changes become easier or harder
-Which trade-offs were accepted
-Which risks remain
-```
-
-Do not pretend the decision has no downside.
-
-### Alternatives Considered
-
-List serious alternatives and why they were not chosen.
-
-Keep this section short.
-
-Example:
+Use this when the decision creates non-obvious downstream rules, risks, or trade-offs.
 
 ```md
-### Alternative: Asset Inventory owns all asset blocks
-
-This would centralize all availability records inside Asset Inventory.
-
-It was rejected because rental-created blocks are part of the rental commitment lifecycle. Rental Commitment must preserve which rental committed which assets for which period.
-```
-
-Do not include weak alternatives that were never realistic.
-
-### Implementation Notes
-
-Include implementation guidance only when it helps preserve the decision.
-
-Good implementation notes include:
-
-```text
-Public API boundaries
-Owned Prisma models
-Required snapshots
-Migration implications
-Known exceptions
-Testing expectations
-```
-
-Do not document every file, function, DTO, or method. The code remains the source of truth for implementation details.
-
-### Related Documents
-
-Link to module docs, database map sections, previous ADRs, and relevant public API files.
-
-Examples:
-
-```md
-## Related Documents
-
-- `docs/architecture/overview.md`
-- `docs/modules/rental-commitment.md`
-- `docs/modules/asset-inventory.md`
-- `rental-physical-assignments.public-api.ts`
-```
-
-## Writing Rules
-
-Write ADRs in present-tense architectural language.
-
-Prefer “Rental Commitment owns...” over “We decided that Rental Commitment should own...”.
-
-Be specific about module ownership.
-
-Be specific about what other modules must not do.
-
-Do not duplicate the Prisma schema column by column.
-
-Do not duplicate public API files. Reference the public API file instead.
-
-Do not use ADRs as implementation task lists.
-
-Do not remove old ADRs because they are outdated. Supersede or deprecate them.
-
-Do not write ADRs to justify every small refactor.
-
-## Good ADRs Should Answer
-
-Every ADR should make these questions easy to answer:
-
-```text
-What decision was made?
-Why was this decision necessary?
-What alternatives were rejected?
-Which modules are affected?
-Which invariants must future changes preserve?
-What are the consequences?
-Where should an agent look next?
-```
-
-## ADR Template
-
-Copy this template when creating a new ADR.
-
-```md
-# NNNN. Decision Title
-
-## Status
-
-Proposed
-
-## Date
-
-YYYY-MM-DD
-
-## Context
-
-Describe the architectural problem, affected modules, constraints, and why this decision needs to be recorded.
-
-## Decision
-
-State the decision directly.
-
-Describe ownership, boundaries, allowed dependencies, and the rule future changes must preserve.
-
 ## Consequences
 
-Describe the positive and negative consequences of this decision.
+Concurrent confirmations can legitimately race during persistence.
 
-Include any new constraints this creates for modules, persistence, public APIs, tests, or migrations.
-
-## Alternatives Considered
-
-### Alternative: First alternative
-
-Explain why this alternative was not chosen.
-
-### Alternative: Second alternative
-
-Explain why this alternative was not chosen.
-
-## Implementation Notes
-
-Add only the implementation details needed to preserve the decision.
-
-Reference source-of-truth files instead of duplicating them.
-
-## Related Documents
-
-- `docs/architecture/overview.md`
-- `docs/modules/<module>.md`
-- `<module>.public-api.ts`
+A PostgreSQL exclusion violation represents a lost reservation race rather
+than an unexpected database failure.
 ```
 
-## Example ADR
+Include negative consequences when they matter. An ADR should not imply that the chosen design has no cost.
 
-```md
-# 0001. Rental Commitment Owns Rental-Created Asset Blocks
+### Status
 
-## Status
+Status is optional and is mainly useful when a decision is later revisited.
 
-Accepted
+For example:
 
-## Date
-
-2026-07-08
-
-## Context
-
-Depiqo needs to prevent the same physical asset from being committed to overlapping rentals.
-
-Asset Inventory owns the physical truth about equipment: equipment types, physical assets, ownership, condition, location, active state, and assignment eligibility.
-
-Rental Commitment owns rental orders as operational commitments. A confirmed rental must preserve which assets were assigned and blocked for the rental period.
-
-The unclear boundary was whether `AssetBlock` should belong to Asset Inventory because it affects availability, or to Rental Commitment because it exists due to a rental commitment.
-
-## Decision
-
-Rental Commitment owns rental-created `AssetBlock` records.
-
-Asset Inventory owns physical asset metadata and assignment eligibility, but it does not own rental-created blocks.
-
-A rental-created block represents that a rental has committed a specific asset for a specific period. Because the block is part of the rental lifecycle and historical commitment, it belongs to Rental Commitment.
-
-## Consequences
-
-Rental Commitment is responsible for creating, releasing, and preserving rental-created blocks according to rental lifecycle rules.
-
-Asset Inventory may be used to validate asset existence, tenant ownership, equipment type compatibility, active state, and assignment eligibility.
-
-Other modules must not create, update, or delete rental-created blocks directly.
-
-Future non-rental availability concepts, such as maintenance holds or manual inventory blocks, must be modeled intentionally. They should not be added to Rental Commitment unless they are part of a rental commitment.
-
-The availability query model may need to combine rental-created blocks with future non-rental availability records.
-
-## Alternatives Considered
-
-### Alternative: Asset Inventory owns all asset blocks
-
-This would centralize all availability records inside Asset Inventory.
-
-It was rejected because rental-created blocks are part of the rental commitment lifecycle. Rental Commitment must preserve which rental committed which assets for which period.
-
-### Alternative: Shared ownership
-
-This was rejected because shared ownership creates unclear mutation rules. A block must have one owning module.
-
-## Implementation Notes
-
-Rental Commitment documentation must list `AssetBlock` as owned persistence.
-
-Asset Inventory documentation must say it owns asset metadata and assignment eligibility, but not rental-created blocks.
-
-Cross-module access should use public APIs. Other modules must not mutate `AssetBlock` through Prisma delegates directly.
-
-## Related Documents
-
-- `docs/architecture/overview.md`
-- `docs/modules/rental-commitment.md`
-- `docs/modules/asset-inventory.md`
+```yaml
+---
+status: accepted
+---
 ```
+
+Useful values are:
+
+```text
+proposed
+accepted
+deprecated
+superseded by ADR-NNNN
+```
+
+If a newer ADR replaces an older decision, keep the old ADR and make the relationship explicit rather than deleting the historical record.
+
+## What Belongs in the ADR
+
+Record the parts of the decision that future changes must understand or preserve.
+
+Good information includes:
+
+```text
+What was chosen
+
+Why it was chosen
+
+The important constraints behind the choice
+
+The real alternatives that were rejected
+
+Non-obvious consequences
+
+Explicit boundaries or "do not" rules when they are part of the decision
+```
+
+Avoid turning the ADR into a description of the current implementation.
+
+Do not document every file, function, DTO, database column, or execution step.
+
+The code remains the source of truth for implementation mechanics.
+
+The ADR should explain why the architecture has its current shape.
+
+## Writing Style
+
+State decisions directly.
+
+Prefer:
+
+```text
+Rental confirmation uses optimistic allocation with database enforcement.
+```
+
+Avoid:
+
+```text
+We decided that rental confirmation should probably use optimistic
+allocation for now.
+```
+
+Use present-tense architectural language.
+
+Be specific when boundaries or invariants are part of the decision.
+
+For example:
+
+```text
+The database exclusion constraint is the authoritative double-booking
+protection.
+```
+
+Explicit "no" decisions can be as important as positive decisions:
+
+```text
+Do not treat a PostgreSQL deadlock as evidence that an asset is unavailable.
+```
+
+Keep enough reasoning that a future developer can tell the difference between an intentional trade-off and accidental complexity.
+
+## Reading ADRs
+
+Before changing an architectural area, read the ADRs that apply to it.
+
+An ADR represents context that may not be visible from the current implementation.
+
+If a proposed change contradicts an existing ADR, surface that conflict explicitly rather than silently changing the architecture.
+
+For example:
+
+```text
+This change contradicts ADR-0004, which intentionally keeps availability
+planning outside the persistence transaction.
+
+The ADR may need to be reconsidered because ...
+```
+
+An ADR is not permanent law. Architecture can change.
+
+But an existing decision should be **reconsidered deliberately**, with its original reasoning understood, rather than accidentally undone.
+
+## Quick Test
+
+Before creating an ADR, ask:
+
+```text
+Would changing this later be meaningfully expensive?
+
+Could a reasonable developer misunderstand or "fix" this without the
+original context?
+
+Did we choose between legitimate alternatives for specific reasons?
+```
+
+If the answer is not **yes to all three**, do not create an ADR.
+
+If it is, record the decision while the reasoning is still fresh.
