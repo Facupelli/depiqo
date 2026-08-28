@@ -1,8 +1,4 @@
-import {
-	keepPreviousData,
-	queryOptions,
-	useSuspenseQuery,
-} from "@tanstack/react-query";
+import { queryOptions, useQuery } from "@tanstack/react-query";
 import { getStorefrontCombosFn } from "./rental-offers/get-storefront-combos/get-storefront-combos.functions";
 import type { GetStorefrontCombosInputDto } from "./rental-offers/get-storefront-combos/get-storefront-combos.schema";
 
@@ -18,10 +14,19 @@ export const storefrontCombosQueries = {
 		queryOptions({
 			queryKey: storefrontCombosKeys.list(input),
 			queryFn: () => getStorefrontCombosFn({ data: input }),
-			placeholderData: keepPreviousData,
 		}),
 };
 
 export function useStorefrontCombos(input: GetStorefrontCombosInputDto) {
-	return useSuspenseQuery(storefrontCombosQueries.list(input));
+	const query = useQuery(storefrontCombosQueries.list(input));
+	const hasData = query.data !== undefined;
+
+	return {
+		data: query.data,
+		isInitialPending: query.isPending && !hasData,
+		isFetching: query.isFetching,
+		isInitialError: query.isError && !hasData,
+		isFailedRefresh: query.isRefetchError && hasData,
+		refetch: query.refetch,
+	};
 }
