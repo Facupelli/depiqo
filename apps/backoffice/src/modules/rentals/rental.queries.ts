@@ -8,7 +8,6 @@ import type {
 	GetRentalsResponseDto,
 } from "@repo/api-contracts";
 import {
-	keepPreviousData,
 	queryOptions,
 	type UseQueryOptions,
 	useQuery,
@@ -103,6 +102,25 @@ export const rentalKeys = {
 		[...rentalKeys.calendars(), query ?? {}] as const,
 };
 
+export function getRentalListInputFromQueryKey(
+	queryKey: readonly unknown[],
+): GetRentalsQueryDto | undefined {
+	const listKeyPrefix = rentalKeys.lists();
+	if (
+		queryKey.length !== listKeyPrefix.length + 1 ||
+		!listKeyPrefix.every((value, index) => queryKey[index] === value)
+	) {
+		return undefined;
+	}
+
+	const input = queryKey.at(-1);
+	if (!input || typeof input !== "object" || Array.isArray(input)) {
+		return undefined;
+	}
+
+	return input as GetRentalsQueryDto;
+}
+
 export const rentalQueries = {
 	list: <TData = ParsedGetRentalsResponse>(
 		query?: GetRentalsQueryDto,
@@ -111,7 +129,6 @@ export const rentalQueries = {
 		queryOptions<GetRentalsResponseDto, ProblemDetailsError, TData>({
 			queryKey: rentalKeys.list(query),
 			queryFn: () => getRentals(query),
-			placeholderData: keepPreviousData,
 			...overrides,
 			select: (raw) => {
 				const parsed = parseRentalsResponse(raw);

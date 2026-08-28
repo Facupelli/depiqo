@@ -6,7 +6,6 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@repo/ui/components/dropdown-menu";
-import { keepPreviousData } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import type { PaginationState } from "@tanstack/react-table";
 import { Plus } from "lucide-react";
@@ -14,7 +13,10 @@ import { startTransition, useEffect, useMemo, useState } from "react";
 import { useBranches } from "@/modules/settings/branches/public";
 import { useCategories } from "@/modules/settings/categories/public";
 import useDebounce from "@/shared/hooks/use-debounce";
-import { useProducts } from "./product-list.queries";
+import {
+	getProductListInputFromQueryKey,
+	useProducts,
+} from "./product-list.queries";
 import { ProductListFilters } from "./product-list-filters";
 import { ProductListTable } from "./product-list-table";
 
@@ -30,9 +32,19 @@ export function ProductsPage({ search }: { search: ProductListSearch }) {
 	const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
 	const debouncedSearch = useDebounce(searchInput, 300);
 
-	const { data, isLoading, isError } = useProducts(search, {
-		placeholderData: keepPreviousData,
-	});
+	const { data, isLoading, isError, isFetching, isPlaceholderData } =
+		useProducts(search, {
+			placeholderData: (previousData, previousQuery) => {
+				const previousInput = getProductListInputFromQueryKey(
+					previousQuery?.queryKey ?? [],
+				);
+
+				return previousInput && isSameCommercialContext(previousInput, search)
+					? previousData
+					: undefined;
+			},
+		});
+	const isCompatibleRefresh = isFetching && isPlaceholderData;
 	const { data: categories = [] } = useCategories();
 	const { data: branches = [] } = useBranches({ isActive: true });
 	const activeCategories = categories.filter((category) => category.isActive);
@@ -153,8 +165,21 @@ export function ProductsPage({ search }: { search: ProductListSearch }) {
 					}
 					categoryNameById={categoryNameById}
 					isLoading={isLoading}
+					isRefreshing={isCompatibleRefresh}
 				/>
 			)}
 		</div>
+	);
+}
+
+function isSameCommercialContext(
+	previous: GetRentableItemsQueryDto,
+	current: ProductListSearch,
+) {
+	return (
+		previous.branchId === current.branchId &&
+		previous.isVisible === current.isVisible &&
+		previous.isRentable === current.isRentable &&
+		previous.hasActivePricing === current.hasActivePricing
 	);
 }

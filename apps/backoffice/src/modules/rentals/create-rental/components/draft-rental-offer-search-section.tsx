@@ -14,39 +14,55 @@ import { withForm } from "@/shared/contexts/form.context";
 import useDebounce from "@/shared/hooks/use-debounce";
 import { useDraftRentalComposer } from "../create-draft-rental-composer.context";
 import {
+	buildDraftRentalPeriod,
 	createDraftRentalComposerDefaultValues,
 	createDraftRentalSelectedOffer,
+	type DraftRentalComposerFormValues,
 	type DraftRentalSelectedOfferFormValues,
 } from "../create-draft-rental-composer.schema";
-import { useDraftRentalOfferSearch } from "../draft-rental-offers.queries";
-import type { DraftRentalOfferSearchItemDto } from "../search-draft-rental-offers/search-draft-rental-offers.schema";
+import {
+	getDraftRentalOfferSearchInputFromQueryKey,
+	useDraftRentalOfferSearch,
+} from "../draft-rental-offers.queries";
+import type {
+	DraftRentalOfferSearchItemDto,
+	SearchDraftRentalOffersInputDto,
+} from "../search-draft-rental-offers/search-draft-rental-offers.schema";
 
 export const DraftRentalOfferSearchSection = withForm({
 	defaultValues: createDraftRentalComposerDefaultValues(),
 	render: function Render({ form }) {
-		const { branchMissing } = useDraftRentalComposer();
+		const { branchMissing, timezone } = useDraftRentalComposer();
 		const values = useStore(form.store, (state) => state.values);
 
 		const [search, setSearch] = useState("");
 		const debouncedSearch = useDebounce(search, 250).trim();
-		const periodReady = Boolean(values.periodStartDate && values.periodEndDate);
+		const effectivePeriod = buildEffectiveRentalPeriod(values, timezone);
+		const periodReady = effectivePeriod !== null;
+		const queryInput: SearchDraftRentalOffersInputDto = {
+			branchId: values.branchId || "missing",
+			search: debouncedSearch || undefined,
+			periodStart: effectivePeriod?.start,
+			periodEnd: effectivePeriod?.end,
+			page: 1,
+			pageSize: 8,
+		};
 
-		const query = useDraftRentalOfferSearch(
-			{
-				branchId: values.branchId || "missing",
-				search: debouncedSearch || undefined,
-				periodStart: values.periodStartDate
-					? new Date(values.periodStartDate).toISOString()
-					: undefined,
-				periodEnd: values.periodEndDate
-					? new Date(values.periodEndDate).toISOString()
-					: undefined,
-				page: 1,
-				pageSize: 8,
+		const query = useDraftRentalOfferSearch(queryInput, {
+			enabled: !branchMissing && periodReady && !!values.branchId,
+			placeholderData: (previousData, previousQuery) => {
+				const previousInput = getDraftRentalOfferSearchInputFromQueryKey(
+					previousQuery?.queryKey ?? [],
+				);
+
+				return previousInput &&
+					isSameDraftOfferCommercialContext(previousInput, queryInput)
+					? previousData
+					: undefined;
 			},
-			{ enabled: !branchMissing && periodReady && !!values.branchId },
-		);
+		});
 		const offers = query.data?.data ?? [];
+		const isCompatibleRefresh = query.isFetching && query.isPlaceholderData;
 
 		function addOffer(offer: DraftRentalOfferSearchItemDto) {
 			const current = form.state.values.selectedOffers;
@@ -87,7 +103,14 @@ export const DraftRentalOfferSearchSection = withForm({
 					<div className="flex items-center justify-between gap-3">
 						<CardTitle className="text-base">Agregar productos</CardTitle>
 						{query.isFetching ? (
-							<Loader2 className="size-4 animate-spin text-muted-foreground" />
+							<Loader2
+								className="size-4 animate-spin text-muted-foreground"
+								aria-label={
+									isCompatibleRefresh
+										? "Actualizando productos"
+										: "Cargando productos"
+								}
+							/>
 						) : null}
 					</div>
 				</CardHeader>
@@ -157,7 +180,7 @@ function OfferCard({
 interface ProductResultsProps {
 	branchMissing: boolean;
 	periodReady: boolean;
-	query: { isError: boolean; isFetching: boolean }; // swap for your real query result type
+	query: { isError: boolean; isFetching: boolean };
 	offers: DraftRentalOfferSearchItemDto[];
 	onAdd: (offer: DraftRentalOfferSearchItemDto) => void;
 }
@@ -179,7 +202,11 @@ export function ProductResults({
 		return <ErrorState message="No pudimos cargar los productos." />;
 	}
 
-	if (offers.length === 0 && !query.isFetching) {
+	if (offers.length === 0 && query.isFetching) {
+		return <EmptyState message="Cargando productos disponibles..." />;
+	}
+
+	if (offers.length === 0) {
 		return <EmptyState message="No hay resultados para tu búsqueda." />;
 	}
 
@@ -189,6 +216,30 @@ export function ProductResults({
 				<OfferCard key={offer.id} offer={offer} onAdd={onAdd} />
 			))}
 		</div>
+	);
+}
+
+function buildEffectiveRentalPeriod(
+	values: DraftRentalComposerFormValues,
+	timezone: string,
+): { start: string; end: string } | null {
+	if (!values.periodStartDate || !values.periodEndDate) return null;
+
+	try {
+		return buildDraftRentalPeriod(values, timezone);
+	} catch {
+		return null;
+	}
+}
+
+function isSameDraftOfferCommercialContext(
+	previous: SearchDraftRentalOffersInputDto,
+	current: SearchDraftRentalOffersInputDto,
+): boolean {
+	return (
+		previous.branchId === current.branchId &&
+		previous.periodStart === current.periodStart &&
+		previous.periodEnd === current.periodEnd
 	);
 }
 

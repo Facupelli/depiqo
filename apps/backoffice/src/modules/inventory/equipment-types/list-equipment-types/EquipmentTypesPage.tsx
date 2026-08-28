@@ -1,11 +1,14 @@
 import type { GetEquipmentTypeSummariesItemDto } from "@repo/api-contracts";
 import type { PaginationState } from "@tanstack/react-table";
-import { startTransition, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useBranches } from "@/modules/settings/branches/public";
 import useDebounce from "@/shared/hooks/use-debounce";
 import { CreateEquipmentTypeDialog } from "../create-equipment-type/create-equipment-type-dialog";
 import { useEquipmentTypeProductUsages } from "../product-usages/equipment-type-product-usages.queries";
-import { useEquipmentTypeSummaries } from "./equipment-type-summaries.queries";
+import {
+	getEquipmentTypeSummariesInputFromQueryKey,
+	useEquipmentTypeSummaries,
+} from "./equipment-type-summaries.queries";
 import { EquipmentTypeSummariesFilters } from "./equipment-type-summaries-filters";
 import { EquipmentTypeSummariesTable } from "./equipment-type-summaries-table";
 
@@ -33,12 +36,23 @@ export function EquipmentTypesPage({
 }: EquipmentTypesPageProps) {
 	const [searchInput, setSearchInput] = useState(search.search ?? "");
 	const debouncedSearch = useDebounce(searchInput, 300);
-	const { data, isFetching, isError } = useEquipmentTypeSummaries(search);
+	const summaryQuery = useEquipmentTypeSummaries(search, {
+		placeholderData: (previousData, previousQuery) => {
+			const previousInput = getEquipmentTypeSummariesInputFromQueryKey(
+				previousQuery?.queryKey ?? [],
+			);
+
+			return previousInput &&
+				isSameEquipmentTypeListContext(previousInput, search)
+				? previousData
+				: undefined;
+		},
+	});
 	const equipmentTypeIds =
-		data?.data.map((equipmentType) => equipmentType.id) ?? [];
+		summaryQuery.data?.data.map((equipmentType) => equipmentType.id) ?? [];
 	const {
 		data: productUsages,
-		isFetching: isFetchingProductUsages,
+		isLoading: isLoadingProductUsages,
 		isError: isProductUsagesError,
 	} = useEquipmentTypeProductUsages(equipmentTypeIds);
 	const { data: branches = [] } = useBranches({ isActive: true });
@@ -64,14 +78,37 @@ export function EquipmentTypesPage({
 			return;
 		}
 
-		startTransition(() => {
-			onSearchChange((previous) => ({
-				...previous,
-				search: nextSearch,
-				page: 1,
-			}));
-		});
+		onSearchChange((previous) => ({
+			...previous,
+			search: nextSearch,
+			page: 1,
+		}));
 	}, [debouncedSearch, onSearchChange, search.search]);
+
+	useEffect(() => {
+		if (
+			!summaryQuery.isSuccess ||
+			!summaryQuery.data ||
+			summaryQuery.isPlaceholderData
+		) {
+			return;
+		}
+
+		const totalPages = Math.max(
+			1,
+			Math.ceil(summaryQuery.data.total / search.pageSize),
+		);
+		if (search.page > totalPages && search.page > 1) {
+			onSearchChange((previous) => ({ ...previous, page: totalPages }));
+		}
+	}, [
+		onSearchChange,
+		search.page,
+		search.pageSize,
+		summaryQuery.data,
+		summaryQuery.isPlaceholderData,
+		summaryQuery.isSuccess,
+	]);
 
 	function handleFilterChange(filters: Partial<EquipmentTypesSearch>) {
 		onSearchChange((previous) => ({
@@ -118,21 +155,31 @@ export function EquipmentTypesPage({
 				onClearFilters={handleClearFilters}
 			/>
 
-			{isError || isProductUsagesError ? (
+			{summaryQuery.isError || isProductUsagesError ? (
 				<p className="text-destructive text-sm">
 					No pudimos cargar el inventario de equipos. Inténtalo nuevamente.
 				</p>
 			) : (
 				<EquipmentTypeSummariesTable
-					equipmentTypes={data?.data ?? []}
-					total={data?.total ?? 0}
+					equipmentTypes={summaryQuery.data?.data ?? []}
+					total={summaryQuery.data?.total ?? 0}
 					pagination={pagination}
 					onPaginationChange={handlePaginationChange}
 					onRowClick={onEquipmentTypeClick}
 					productsByEquipmentTypeId={productsByEquipmentTypeId}
-					isLoading={isFetching || isFetchingProductUsages}
+					isLoading={summaryQuery.isLoading || isLoadingProductUsages}
+					isRefreshing={
+						summaryQuery.isFetching && summaryQuery.isPlaceholderData
+					}
 				/>
 			)}
 		</div>
 	);
+}
+
+function isSameEquipmentTypeListContext(
+	previous: EquipmentTypesSearch,
+	current: EquipmentTypesSearch,
+): boolean {
+	return previous.branchId === current.branchId;
 }

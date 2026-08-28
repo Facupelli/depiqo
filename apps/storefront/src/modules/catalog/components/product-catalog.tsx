@@ -36,22 +36,48 @@ interface EquipmentCatalogSectionProps {
 }
 
 export function CombosSection({ search }: { search: RentalCatalogSearch }) {
-	const { data: combos } = useStorefrontCombos({
+	const combosQuery = useStorefrontCombos({
 		branchId: search.branchId,
 		periodStart: search.periodStart,
 		periodEnd: search.periodEnd,
 	});
 	const { data: tenantPublicConfig } = usePublicTenantConfig();
 
+	if (combosQuery.isInitialPending) {
+		return <CombosSectionSkeleton />;
+	}
+
+	if (combosQuery.isInitialError || !combosQuery.data) {
+		return <CombosSectionFailure onRetry={() => combosQuery.refetch()} />;
+	}
+
+	const combos = combosQuery.data;
+
 	return (
 		// biome-ignore lint/correctness/useUniqueElementIds: Stable ID required for catalog fragment navigation.
-		<section id="combos" className="py-10">
+		<section id="combos" className="py-10" aria-busy={combosQuery.isFetching}>
+			{combosQuery.isFailedRefresh && (
+				<div className="mb-4 flex flex-wrap items-center gap-3 rounded-md border border-destructive/30 bg-destructive/5 p-3 text-sm">
+					<p>No pudimos actualizar los combos. Mostramos los anteriores.</p>
+					<Button
+						type="button"
+						variant="outline"
+						size="sm"
+						onClick={() => combosQuery.refetch()}
+					>
+						Reintentar
+					</Button>
+				</div>
+			)}
 			<div className="flex items-end justify-between gap-4">
-				<div className="flex w-full items-baseline justify-between">
+				<div className="flex w-full items-baseline justify-between gap-4">
 					<h2 className="text-2xl font-semibold tracking-tight">Combos</h2>
-					<p className="text-sm text-muted-foreground">
-						{combos.total} combos disponibles
-					</p>
+					<div className="text-right text-sm text-muted-foreground">
+						<p>{combos.total} combos disponibles</p>
+						{combosQuery.isFetching && (
+							<p aria-live="polite">Actualizando combos...</p>
+						)}
+					</div>
 				</div>
 			</div>
 
@@ -69,6 +95,48 @@ export function CombosSection({ search }: { search: RentalCatalogSearch }) {
 						layout="compact"
 					/>
 				))}
+			</div>
+		</section>
+	);
+}
+
+function CombosSectionFailure({ onRetry }: { onRetry: () => void }) {
+	return (
+		// biome-ignore lint/correctness/useUniqueElementIds: Stable ID required for catalog fragment navigation.
+		<section id="combos" className="py-10">
+			<div className="rounded-md border bg-background p-6 text-center">
+				<h2 className="text-xl font-semibold">Combos</h2>
+				<p className="mt-2 text-sm text-muted-foreground">
+					No pudimos cargar los combos.
+				</p>
+				<Button
+					type="button"
+					variant="outline"
+					className="mt-4"
+					onClick={onRetry}
+				>
+					Reintentar
+				</Button>
+			</div>
+		</section>
+	);
+}
+
+function CombosSectionSkeleton() {
+	return (
+		// biome-ignore lint/correctness/useUniqueElementIds: Stable ID required for catalog fragment navigation.
+		<section id="combos" className="space-y-5 py-10" aria-busy="true">
+			<div className="flex items-center justify-between gap-4">
+				<Skeleton className="h-8 w-32" />
+				<Skeleton className="h-4 w-36" />
+			</div>
+			<Skeleton className="h-4 w-64 max-w-full" />
+			<div className="grid items-start gap-6 py-1 sm:grid-cols-2 lg:grid-cols-4">
+				{Array.from({ length: 4 }, (_, index) => `combo-skeleton-${index}`).map(
+					(key) => (
+						<ProductSkeleton key={key} />
+					),
+				)}
 			</div>
 		</section>
 	);

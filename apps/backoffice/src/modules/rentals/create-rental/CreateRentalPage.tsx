@@ -6,7 +6,7 @@ import { useCurrentBranchId } from "@/application/current-branch/current-branch.
 import { PageBreadcrumb } from "@/components/detail-id-breadcrumb";
 import { useBranches } from "@/modules/settings/branches/public";
 import { useAppForm } from "@/shared/contexts/form.context";
-import { useSelectedBranchTimezone } from "@/shared/timezone/operational-timezone.hooks";
+import { useBranchTimezone } from "@/shared/timezone/operational-timezone.hooks";
 import { useCalculatedDraftRentalPrice } from "./calculate-draft-rental-price.queries";
 import { DraftRentalOfferSearchSection } from "./components/draft-rental-offer-search-section";
 import { DraftRentalReviewPanel } from "./components/draft-rental-review-panel";
@@ -28,16 +28,19 @@ export function CreateRentalPage() {
 	const navigate = useNavigate();
 	const currentBranchId = useCurrentBranchId();
 
-	const { data: branches } = useBranches();
-	const selectedBranch =
-		branches?.find((branch) => branch.id === currentBranchId) ?? null;
-	const timezone = useSelectedBranchTimezone();
+	const { data: branches = [] } = useBranches();
+	const activeBranches = branches.filter((branch) => branch.isActive);
+	const initialBranchId = activeBranches.some(
+		(branch) => branch.id === currentBranchId,
+	)
+		? (currentBranchId ?? "")
+		: activeBranches.length === 1
+			? activeBranches[0].id
+			: "";
 	const createDraftRental = useCreateDraftRental();
 
 	const form = useAppForm({
-		defaultValues: createDraftRentalComposerDefaultValues(
-			currentBranchId ?? "",
-		),
+		defaultValues: createDraftRentalComposerDefaultValues(initialBranchId),
 		validators: {
 			onSubmit: draftRentalComposerFormSchema,
 		},
@@ -53,6 +56,11 @@ export function CreateRentalPage() {
 	});
 
 	const values = useStore(form.store, (state) => state.values);
+	const selectedBranch = activeBranches.find(
+		(branch) => branch.id === values.branchId,
+	);
+	const branchMissing = !selectedBranch;
+	const timezone = useBranchTimezone(values.branchId);
 	const priceBody = buildPriceBody(values, timezone);
 	const priceQuery = useCalculatedDraftRentalPrice(priceBody, {
 		enabled: !!priceBody,
@@ -60,7 +68,7 @@ export function CreateRentalPage() {
 
 	const contextValue: DraftRentalComposerContextValue = {
 		selectedBranchName: selectedBranch?.name ?? null,
-		branchMissing: !currentBranchId,
+		branchMissing,
 		timezone,
 		pricePreview: priceQuery.data,
 		isPriceLoading: priceQuery.isFetching,
@@ -82,10 +90,13 @@ export function CreateRentalPage() {
 			</div>
 
 			<DraftRentalComposerProvider value={contextValue}>
-				{!currentBranchId ? <MissingBranchNotice /> : null}
+				{branchMissing ? <MissingBranchNotice /> : null}
 				<div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
 					<div className="space-y-4">
-						<DraftRentalSetupSection form={form} />
+						<DraftRentalSetupSection
+							form={form}
+							activeBranches={activeBranches}
+						/>
 						<DraftRentalOfferSearchSection form={form} />
 						<DraftRentalSelectedOffersSection form={form} />
 					</div>

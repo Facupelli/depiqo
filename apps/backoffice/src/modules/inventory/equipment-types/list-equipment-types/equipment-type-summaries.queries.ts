@@ -27,6 +27,25 @@ export const equipmentTypeSummaryKeys = {
 		[...equipmentTypeSummaryKeys.all(), query ?? {}] as const,
 };
 
+export function getEquipmentTypeSummariesInputFromQueryKey(
+	queryKey: readonly unknown[],
+): GetEquipmentTypeSummariesQueryDto | undefined {
+	const listKeyPrefix = equipmentTypeSummaryKeys.all();
+	if (
+		queryKey.length !== listKeyPrefix.length + 1 ||
+		!listKeyPrefix.every((value, index) => queryKey[index] === value)
+	) {
+		return undefined;
+	}
+
+	const input = queryKey.at(-1);
+	if (!input || typeof input !== "object" || Array.isArray(input)) {
+		return undefined;
+	}
+
+	return input as GetEquipmentTypeSummariesQueryDto;
+}
+
 export const equipmentTypeSummaryQueries = {
 	list: <TData = GetEquipmentTypeSummariesResponseDto>(
 		query?: GetEquipmentTypeSummariesQueryDto,

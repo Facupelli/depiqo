@@ -14,7 +14,6 @@ import {
 import {
 	CombosSection,
 	EquipmentCatalogSection,
-	ProductCatalogSkeleton,
 } from "@/modules/catalog/components/product-catalog";
 import {
 	BranchSelection,
@@ -287,9 +286,7 @@ function RentalCatalog({ search }: { search: RentalCatalogSearch }) {
 			</nav>
 
 			<SectionErrorBoundary message="Nuestro inventario no está disponible.">
-				<Suspense fallback={<ProductCatalogSkeleton />}>
-					<CombosSection search={search} />
-				</Suspense>
+				<CombosSection search={search} />
 			</SectionErrorBoundary>
 			<SectionErrorBoundary message="Los productos nuevos no están disponibles.">
 				<Suspense fallback={<NewArrivalsSkeleton />}>

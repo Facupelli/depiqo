@@ -1,3 +1,4 @@
+import type { GetBranchesBranchDto } from "@repo/api-contracts";
 import {
 	Card,
 	CardContent,
@@ -11,6 +12,13 @@ import {
 	NativeSelect,
 	NativeSelectOption,
 } from "@repo/ui/components/native-select";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@repo/ui/components/select";
 import { useStore } from "@tanstack/react-form";
 import { CalendarIcon, Truck, Warehouse } from "lucide-react";
 import { withForm } from "@/shared/contexts/form.context";
@@ -25,12 +33,34 @@ const TIME_OPTIONS = Array.from({ length: 24 }, (_, hour) => ({
 
 export const DraftRentalSetupSection = withForm({
 	defaultValues: createDraftRentalComposerDefaultValues(),
-	render: function Render({ form }) {
+	props: {
+		activeBranches: [] as GetBranchesBranchDto[],
+	},
+	render: function Render({ form, activeBranches }) {
 		const { selectedBranchName, branchMissing } = useDraftRentalComposer();
 		const fulfillmentMethod = useStore(
 			form.store,
 			(state) => state.values.fulfillmentMethod,
 		);
+
+		function handleBranchChange(nextBranchId: string) {
+			const nextBranch = activeBranches.find(
+				(branch) => branch.id === nextBranchId,
+			);
+			if (!nextBranch) return;
+
+			form.setFieldValue("branchId", nextBranchId);
+			form.setFieldValue("selectedOffers", []);
+			form.setFieldValue("targetTotal", "");
+			form.setFieldValue("adjustmentReason", "");
+
+			if (
+				form.state.values.fulfillmentMethod === "DELIVERY" &&
+				!nextBranch.supportsDelivery
+			) {
+				form.setFieldValue("fulfillmentMethod", "PICKUP");
+			}
+		}
 
 		return (
 			<Card className="shadow-xs">
@@ -39,14 +69,53 @@ export const DraftRentalSetupSection = withForm({
 				</CardHeader>
 				<CardContent className="space-y-4">
 					<div className="grid gap-3 md:grid-cols-2">
-						<Field>
-							<FieldLabel>Sucursal</FieldLabel>
-							<div className="flex h-9 items-center rounded-md border bg-muted/40 px-3 text-sm">
-								{branchMissing
-									? "Seleccioná una sucursal primero"
-									: selectedBranchName}
-							</div>
-						</Field>
+						{activeBranches.length > 1 ? (
+							<form.Field name="branchId">
+								{(field) => {
+									const isInvalid =
+										field.state.meta.isTouched && !field.state.meta.isValid;
+
+									return (
+										<Field data-invalid={isInvalid}>
+											<FieldLabel>Sucursal</FieldLabel>
+											<Select
+												value={field.state.value}
+												onValueChange={(value) => {
+													if (value) handleBranchChange(value);
+												}}
+												items={activeBranches.map((branch) => ({
+													label: branch.name,
+													value: branch.id,
+												}))}
+											>
+												<SelectTrigger aria-invalid={isInvalid}>
+													<SelectValue placeholder="Selecciona una sucursal" />
+												</SelectTrigger>
+												<SelectContent>
+													{activeBranches.map((branch) => (
+														<SelectItem key={branch.id} value={branch.id}>
+															{branch.name}
+														</SelectItem>
+													))}
+												</SelectContent>
+											</Select>
+											{isInvalid ? (
+												<FieldError errors={field.state.meta.errors} />
+											) : null}
+										</Field>
+									);
+								}}
+							</form.Field>
+						) : (
+							<Field>
+								<FieldLabel>Sucursal</FieldLabel>
+								<div className="flex h-9 items-center rounded-md border bg-muted/40 px-3 text-sm">
+									{branchMissing
+										? "Seleccioná una sucursal primero"
+										: selectedBranchName}
+								</div>
+							</Field>
+						)}
 
 						<RentalCustomerCombobox form={form} />
 					</div>

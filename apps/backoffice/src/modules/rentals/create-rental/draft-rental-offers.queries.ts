@@ -1,5 +1,4 @@
 import {
-	keepPreviousData,
 	queryOptions,
 	type UseQueryOptions,
 	useQuery,
@@ -31,6 +30,24 @@ export const draftRentalOfferKeys = {
 		[...draftRentalOfferKeys.searches(), input] as const,
 };
 
+export function getDraftRentalOfferSearchInputFromQueryKey(
+	queryKey: readonly unknown[],
+): SearchDraftRentalOffersInputDto | undefined {
+	const prefix = draftRentalOfferKeys.searches();
+
+	if (queryKey.length !== prefix.length + 1) return undefined;
+	if (!prefix.every((segment, index) => queryKey[index] === segment)) {
+		return undefined;
+	}
+
+	const input = queryKey[prefix.length];
+	if (!input || typeof input !== "object" || Array.isArray(input)) {
+		return undefined;
+	}
+
+	return input as SearchDraftRentalOffersInputDto;
+}
+
 export const draftRentalOfferQueries = {
 	search: <TData = SearchDraftRentalOffersResponseDto>(
 		input: SearchDraftRentalOffersInputDto,
@@ -51,7 +68,6 @@ export const draftRentalOfferQueries = {
 							? { "x-csrf-token": await getCsrfToken() }
 							: undefined,
 				}),
-			placeholderData: keepPreviousData,
 			enabled: !!input.branchId,
 			...overrides,
 		}),

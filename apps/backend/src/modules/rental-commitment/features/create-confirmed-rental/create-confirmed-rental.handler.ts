@@ -208,6 +208,14 @@ export class CreateConfirmedRentalService implements ICommandHandler<
 
     if (assetAssignmentPlan.isErr()) {
       const availabilityError = assetAssignmentPlan.error;
+
+      if (availabilityError instanceof InsufficientAssetAvailabilityError) {
+        const replay = await this.findCommittedRentalByOperation(command.tenantId, confirmationOperation.operationId);
+        if (replay) {
+          return this.resolveReplayResult(replay, confirmationOperation, context);
+        }
+      }
+
       const failedSelection =
         availabilityError instanceof InsufficientAssetAvailabilityError
           ? rentalSelectionsDraft.find(
