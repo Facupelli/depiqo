@@ -23,6 +23,7 @@ import {
 	TableRow,
 } from "@repo/ui/components/table";
 import { keepPreviousData } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
 import {
 	type ColumnDef,
 	flexRender,
@@ -31,25 +32,20 @@ import {
 	useReactTable,
 } from "@tanstack/react-table";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { formatTimestampInTimezone } from "@/lib/dates/format";
 import useDebounce from "@/shared/hooks/use-debounce";
 import { useTenantTimezone } from "@/shared/timezone/operational-timezone.hooks";
 import { useCustomers } from "./list-customers.queries";
 
-type FiltersState = {
+export type CustomersListSearch = {
 	page: number;
 	pageSize: number;
-	search: string;
-	status: RentalCustomerOnboardingStatusDto | null;
+	search?: string;
+	status?: RentalCustomerOnboardingStatusDto;
 };
 
-const DEFAULT_FILTERS: FiltersState = {
-	page: 1,
-	pageSize: 20,
-	search: "",
-	status: null,
-};
+const DEFAULT_PAGE_SIZE = 20;
 
 const ONBOARDING_STATUSES: RentalCustomerOnboardingStatusDto[] = [
 	"NOT_STARTED",
@@ -134,21 +130,21 @@ function createCustomersColumns(
 	];
 }
 
-export function CustomersListPage() {
+export function CustomersListPage({ search }: { search: CustomersListSearch }) {
 	const timezone = useTenantTimezone();
-	const [filters, setFilters] = useState<FiltersState>(DEFAULT_FILTERS);
-	const debouncedSearch = useDebounce(filters.search, 300);
+	const navigate = useNavigate({ from: "/dashboard/customers/" });
+	const debouncedSearch = useDebounce(search.search ?? "", 300);
 
 	const queryParams = useMemo<GetRentalCustomersQueryDto>(() => {
-		const search = debouncedSearch.trim();
+		const normalizedSearch = debouncedSearch.trim();
 
 		return {
-			page: filters.page,
-			pageSize: filters.pageSize,
-			...(search ? { search } : {}),
-			...(filters.status ? { status: filters.status } : {}),
+			page: search.page,
+			pageSize: search.pageSize,
+			...(normalizedSearch ? { search: normalizedSearch } : {}),
+			...(search.status ? { status: search.status } : {}),
 		};
-	}, [debouncedSearch, filters.page, filters.pageSize, filters.status]);
+	}, [debouncedSearch, search.page, search.pageSize, search.status]);
 
 	const { data, isLoading, isError } = useCustomers(queryParams, {
 		placeholderData: keepPreviousData,
@@ -156,23 +152,48 @@ export function CustomersListPage() {
 
 	const customers = data?.data ?? [];
 	const total = data?.total ?? 0;
-	const totalPages = Math.max(1, Math.ceil(total / filters.pageSize));
-	const hasActiveFilters = filters.search !== "" || filters.status !== null;
+	const totalPages = Math.max(1, Math.ceil(total / search.pageSize));
+	const hasActiveFilters = !!search.search || !!search.status;
 
 	const setSearch = (value: string) => {
-		setFilters((prev) => ({ ...prev, search: value, page: 1 }));
+		navigate({
+			search: (previous) => ({
+				...previous,
+				search: value.trim() || undefined,
+				page: 1,
+			}),
+			replace: true,
+		});
 	};
 
 	const setStatus = (value: RentalCustomerOnboardingStatusDto | null) => {
-		setFilters((prev) => ({ ...prev, status: value, page: 1 }));
+		navigate({
+			search: (previous) => ({
+				...previous,
+				status: value ?? undefined,
+				page: 1,
+			}),
+			replace: true,
+		});
 	};
 
 	const setPage = (page: number) => {
-		setFilters((prev) => ({ ...prev, page }));
+		navigate({
+			search: (previous) => ({ ...previous, page }),
+			replace: true,
+		});
 	};
 
 	const resetFilters = () => {
-		setFilters(DEFAULT_FILTERS);
+		navigate({
+			search: {
+				search: undefined,
+				status: undefined,
+				page: 1,
+				pageSize: DEFAULT_PAGE_SIZE,
+			},
+			replace: true,
+		});
 	};
 
 	const table = useReactTable({
@@ -183,14 +204,14 @@ export function CustomersListPage() {
 		pageCount: totalPages,
 		state: {
 			pagination: {
-				pageIndex: filters.page - 1,
-				pageSize: filters.pageSize,
+				pageIndex: search.page - 1,
+				pageSize: search.pageSize,
 			},
 		},
 		onPaginationChange: (updater) => {
 			const next =
 				typeof updater === "function"
-					? updater({ pageIndex: filters.page - 1, pageSize: filters.pageSize })
+					? updater({ pageIndex: search.page - 1, pageSize: search.pageSize })
 					: updater;
 			setPage(next.pageIndex + 1);
 		},
@@ -207,7 +228,7 @@ export function CustomersListPage() {
 			</div>
 			<div className="space-y-2">
 				<CustomersToolbar
-					filters={filters}
+					search={search}
 					hasActiveFilters={hasActiveFilters}
 					setSearch={setSearch}
 					setStatus={setStatus}
@@ -238,14 +259,14 @@ export function CustomersListPage() {
 								table={table}
 								isLoading={isLoading}
 								isError={isError}
-								pageSize={filters.pageSize}
+								pageSize={search.pageSize}
 							/>
 						</TableBody>
 					</Table>
 				</div>
 
 				<PaginationFooter
-					page={filters.page}
+					page={search.page}
 					totalPages={totalPages}
 					total={total}
 					canPrevious={table.getCanPreviousPage()}
@@ -259,13 +280,13 @@ export function CustomersListPage() {
 }
 
 function CustomersToolbar({
-	filters,
+	search,
 	hasActiveFilters,
 	setSearch,
 	setStatus,
 	resetFilters,
 }: {
-	filters: FiltersState;
+	search: CustomersListSearch;
 	hasActiveFilters: boolean;
 	setSearch: (value: string) => void;
 	setStatus: (value: RentalCustomerOnboardingStatusDto | null) => void;
@@ -283,13 +304,13 @@ function CustomersToolbar({
 		<div className="flex flex-wrap items-center gap-2 py-4">
 			<Input
 				placeholder="Search by name, email…"
-				value={filters.search}
+				value={search.search ?? ""}
 				onChange={(e) => setSearch(e.target.value)}
 				className="h-8 w-64"
 			/>
 
 			<Select
-				value={filters.status ?? ALL_VALUE}
+				value={search.status ?? ALL_VALUE}
 				onValueChange={(value) =>
 					setStatus(
 						value === ALL_VALUE

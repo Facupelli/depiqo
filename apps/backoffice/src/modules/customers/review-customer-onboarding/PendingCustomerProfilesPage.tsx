@@ -1,7 +1,6 @@
 import type { GetRentalCustomersItemDto } from "@repo/api-contracts";
 import { Badge } from "@repo/ui/components/badge";
 import { Button } from "@repo/ui/components/button";
-import { Skeleton } from "@repo/ui/components/skeleton";
 import {
 	Table,
 	TableBody,
@@ -127,51 +126,5 @@ function PendingProfileRow({
 				</Button>
 			</TableCell>
 		</TableRow>
-	);
-}
-
-export function PendingProfilesTableSkeleton() {
-	const skeletonRows = ["1", "2", "3", "4", "5"];
-
-	return (
-		<div className="space-y-6 p-6">
-			<div className="space-y-2">
-				<Skeleton className="h-8 w-56" />
-				<Skeleton className="h-4 w-96" />
-			</div>
-
-			<div className="rounded-md border bg-background">
-				<Table>
-					<TableHeader>
-						<TableRow>
-							<TableHead>Nombre</TableHead>
-							<TableHead>Fecha</TableHead>
-							<TableHead>Estado</TableHead>
-							<TableHead className="text-right">Accion</TableHead>
-						</TableRow>
-					</TableHeader>
-					<TableBody>
-						{skeletonRows.map((rowId) => (
-							<TableRow key={rowId}>
-								<TableCell>
-									<Skeleton className="h-4 w-40" />
-								</TableCell>
-								<TableCell>
-									<Skeleton className="h-4 w-32" />
-								</TableCell>
-								<TableCell>
-									<Skeleton className="h-5 w-20 rounded-full" />
-								</TableCell>
-								<TableCell className="text-right">
-									<div className="flex justify-end">
-										<Skeleton className="h-8 w-28" />
-									</div>
-								</TableCell>
-							</TableRow>
-						))}
-					</TableBody>
-				</Table>
-			</div>
-		</div>
 	);
 }

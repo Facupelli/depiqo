@@ -1,14 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
-import {
-	PendingCustomerProfilesPage,
-	PendingProfilesTableSkeleton,
-} from "@/modules/customers/review-customer-onboarding/PendingCustomerProfilesPage";
+import { PendingCustomerProfilesPage } from "@/modules/customers/review-customer-onboarding/PendingCustomerProfilesPage";
 import { AdminRouteError } from "@/shared/components/admin-route-error";
 
 export const Route = createFileRoute(
 	"/_admin/dashboard/customers/pending-profiles/",
 )({
-	pendingComponent: PendingProfilesTableSkeleton,
 	errorComponent: ({ error }) => (
 		<AdminRouteError
 			error={error}
