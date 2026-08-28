@@ -198,8 +198,10 @@ function DashboardLayout() {
 					</div>
 				</aside>
 
-				<div className="h-full overflow-y-auto bg-gray-50">
-					<Outlet />
+				<div className="h-full min-w-0 overflow-y-auto bg-gray-50">
+					<div className="mx-auto min-h-full w-full max-w-7xl">
+						<Outlet />
+					</div>
 				</div>
 			</div>
 		</CurrentBranchProvider>
