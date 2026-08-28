@@ -70,12 +70,10 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
 
   async onModuleInit() {
     await this._prisma.$connect();
-    console.log('📦 Database connected successfully');
   }
 
   async onModuleDestroy() {
     await this._prisma.$disconnect();
-    console.log('📦 Database disconnected');
   }
 
   get client() {

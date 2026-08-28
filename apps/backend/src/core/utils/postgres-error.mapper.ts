@@ -1,5 +1,6 @@
 // PostgreSQL SQLSTATE codes
 const PG_EXCLUSION_VIOLATION = '23P01';
+const PG_DEADLOCK_DETECTED = '40P01';
 
 // Prisma error codes
 const PRISMA_RAW_QUERY_FAILED = 'P2010';
@@ -91,20 +92,33 @@ function isErrorWithCode(error: unknown): error is ErrorWithCode {
 }
 
 function isPrismaWrappedPostgresExclusionViolation(error: unknown): boolean {
+  const adapterCause = prismaRawQueryPostgresCause(error);
+  return (
+    adapterCause !== undefined &&
+    (adapterCause.code === PG_EXCLUSION_VIOLATION || adapterCause.originalCode === PG_EXCLUSION_VIOLATION)
+  );
+}
+
+/** Detects the verified Prisma raw-query wrapper for a PostgreSQL deadlock. */
+export function isPrismaRawQueryPostgresDeadlock(error: unknown): boolean {
+  const adapterCause = prismaRawQueryPostgresCause(error);
+  return (
+    adapterCause !== undefined &&
+    (adapterCause.code === PG_DEADLOCK_DETECTED || adapterCause.originalCode === PG_DEADLOCK_DETECTED)
+  );
+}
+
+function prismaRawQueryPostgresCause(error: unknown): Record<string, unknown> | undefined {
   if (!isRecord(error) || error.code !== PRISMA_RAW_QUERY_FAILED || !isRecord(error.meta)) {
-    return false;
+    return undefined;
   }
 
   const driverAdapterError = error.meta.driverAdapterError;
   if (!isRecord(driverAdapterError) || !isRecord(driverAdapterError.cause)) {
-    return false;
+    return undefined;
   }
 
-  const adapterCause = driverAdapterError.cause;
-  return (
-    adapterCause.kind === 'postgres' &&
-    (adapterCause.code === PG_EXCLUSION_VIOLATION || adapterCause.originalCode === PG_EXCLUSION_VIOLATION)
-  );
+  return driverAdapterError.cause.kind === 'postgres' ? driverAdapterError.cause : undefined;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

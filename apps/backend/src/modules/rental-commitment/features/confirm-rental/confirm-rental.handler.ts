@@ -2,7 +2,10 @@ import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { err, ok, Result } from 'neverthrow';
 
 import { PrismaUnitOfWork } from 'src/core/database/prisma-unit-of-work';
-import { PostgresExclusionViolationError } from 'src/core/utils/postgres-error.mapper';
+import {
+  isPrismaRawQueryPostgresDeadlock,
+  PostgresExclusionViolationError,
+} from 'src/core/utils/postgres-error.mapper';
 import { V2AssetBlockType } from 'src/generated/prisma/enums';
 import { RentalOperationalFactsValidatorService } from '../../application/rental-operational-facts-validator.service';
 
@@ -140,8 +143,8 @@ export class ConfirmRentalHandler implements ICommandHandler<ConfirmRentalComman
       })),
     });
 
-    try {
-      const persistence = await this.unitOfWork.runInTransaction(async ({ tx, integrationEvents }) => {
+    const persistConfirmation = () =>
+      this.unitOfWork.runInTransaction(async ({ tx, integrationEvents }) => {
         const saved = await this.rentalRepository.save(rental, { expectedVersion, ownerSplits: splits, tx });
         if (!saved) {
           return err(
@@ -157,6 +160,16 @@ export class ConfirmRentalHandler implements ICommandHandler<ConfirmRentalComman
         integrationEvents.collect(toRentalIntegrationEvents(rental.pullDomainEvents()));
         return ok(undefined);
       });
+
+    try {
+      let persistence: ConfirmRentalResult;
+      try {
+        persistence = await persistConfirmation();
+      } catch (error) {
+        if (!isPrismaRawQueryPostgresDeadlock(error)) throw error;
+        persistence = await persistConfirmation();
+      }
+
       if (persistence.isErr()) return persistence;
     } catch (error) {
       if (error instanceof PostgresExclusionViolationError) {
