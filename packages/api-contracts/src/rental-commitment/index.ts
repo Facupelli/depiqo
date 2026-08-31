@@ -2,7 +2,6 @@ export * from "./assign-rental-accessories.contract";
 export * from "./assign-customer-to-draft-rental.contract";
 export * from "./cancel-rental.contract";
 export * from "./change-rental-details.contract";
-export * from "./change-rental-period.contract";
 export * from "./change-rental-selection-quantity.contract";
 export * from "./confirm-rental.contract";
 export * from "./create-confirmed-rental.contract";

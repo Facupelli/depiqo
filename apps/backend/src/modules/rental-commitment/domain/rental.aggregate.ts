@@ -36,7 +36,6 @@ import {
 } from './errors/rental-commitment.errors';
 import { RentalDemandLineId } from './ids/rental-demand-line-id';
 import { deriveConfirmedSelectionQuantityChange } from './confirmed-selection-quantity-change';
-import { deriveConfirmedRentalPeriodTransition } from './confirmed-rental-period-transition';
 import { deriveConfirmationParticipationTiming } from './confirmation-participation-timing';
 import { AssetId, RentalId } from './types/rental-commitment-ids';
 import { CreateRentalDemandLineProps, RentalDemandLine } from './rental-demand-line.entity';
@@ -148,13 +147,6 @@ export interface ChangeConfirmedSelectionQuantityProps {
   newAssignments: readonly CreateAssignedAssetInput[];
   confirmedPriceSnapshot: JsonValue;
   operationTime: Date;
-}
-
-export interface ChangeConfirmedPeriodProps {
-  newPeriod: { start: Date; end: Date };
-  confirmedPriceSnapshot: JsonValue;
-  operationTime: Date;
-  currentAccessoryBlockIds: readonly string[];
 }
 
 export interface CreateRentalBaseProps {
@@ -871,39 +863,6 @@ export class Rental extends AggregateRootBase {
       assetBlocks: nextAssetBlocks,
     });
     if (transition.isErr()) return err(transition.error);
-    this.recordConfirmedRentalEditedEvent(params.operationTime);
-    return ok(undefined);
-  }
-
-  changeConfirmedPeriod(params: ChangeConfirmedPeriodProps): Result<void, RentalCommitmentError> {
-    if (this.status !== RentalStatus.Confirmed) {
-      return err(new RentalCannotBeEditedFromStatusError(this.id, this.status));
-    }
-
-    const periodTransition = deriveConfirmedRentalPeriodTransition({
-      rentalId: this.id,
-      currentPeriod: this.period,
-      requestedPeriod: params.newPeriod,
-      operationTime: params.operationTime,
-      assignedAssets: this.props.assignedAssets,
-      assetBlocks: this.props.assetBlocks,
-      acceptedAssetBuffer: this.props.acceptedAssetBuffer!,
-      currentAccessoryBlockIds: params.currentAccessoryBlockIds,
-    });
-    if (periodTransition.isErr()) return err(periodTransition.error);
-    if (!periodTransition.value.changed) return ok(undefined);
-
-    const price = ConfirmedPriceSnapshot.create(params.confirmedPriceSnapshot);
-    if (price.isErr()) return err(price.error);
-
-    const transition = this.applyConfirmedStateChanges({
-      period: periodTransition.value.period,
-      confirmedPriceSnapshot: price.value,
-      assignedAssets: periodTransition.value.assignedAssets,
-      assetBlocks: periodTransition.value.assetBlocks,
-    });
-    if (transition.isErr()) return err(transition.error);
-
     this.recordConfirmedRentalEditedEvent(params.operationTime);
     return ok(undefined);
   }

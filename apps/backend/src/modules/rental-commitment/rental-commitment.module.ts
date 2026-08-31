@@ -16,8 +16,6 @@ import { CancelRentalHttpController } from './features/cancel-rental/cancel-rent
 import { CancelRentalHandler } from './features/cancel-rental/cancel-rental.handler';
 import { ChangeRentalDetailsHttpController } from './features/change-rental-details/change-rental-details.controller';
 import { ChangeRentalDetailsHandler } from './features/change-rental-details/change-rental-details.handler';
-import { ChangeRentalPeriodHttpController } from './features/change-rental-period/change-rental-period.controller';
-import { ChangeRentalPeriodHandler } from './features/change-rental-period/change-rental-period.handler';
 import { ChangeRentalSelectionQuantityHttpController } from './features/change-rental-selection-quantity/change-rental-selection-quantity.controller';
 import { ChangeRentalSelectionQuantityHandler } from './features/change-rental-selection-quantity/change-rental-selection-quantity.handler';
 import { ConfirmRentalHttpController } from './features/confirm-rental/confirm-rental.controller';
@@ -72,7 +70,6 @@ import { RentalLifecycleFactsService } from './public-api/rental-lifecycle-facts
     AssignCustomerToDraftRentalHttpController,
     CancelRentalHttpController,
     ChangeRentalDetailsHttpController,
-    ChangeRentalPeriodHttpController,
     ChangeRentalSelectionQuantityHttpController,
     ConfirmRentalHttpController,
     CreateConfirmedRentalHttpController,
@@ -99,7 +96,6 @@ import { RentalLifecycleFactsService } from './public-api/rental-lifecycle-facts
     AssignCustomerToDraftRentalHandler,
     CancelRentalHandler,
     ChangeRentalDetailsHandler,
-    ChangeRentalPeriodHandler,
     ChangeRentalSelectionQuantityHandler,
     ConfirmRentalHandler,
     CreateConfirmedRentalService,
