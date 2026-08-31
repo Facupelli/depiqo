@@ -1,44 +1,103 @@
-# Equipment Rental SaaS
+# DEPIQO
 
-B2B multi-tenant platform for equipment rental businesses. Manages inventory, bookings, pricing, and billing with support for both serialized assets and bulk stock.
+Rental management SaaS for equipment rental businesses.
 
-## Tech Stack
+DEPIQO brings together catalog, inventory, pricing, availability, customers, and rental bookings in one system, with a customer-facing storefront and an operational backoffice.
 
-| Layer      | Technology                |
-| ---------- | ------------------------- |
-| Backend    | NestJS (modular monolith) |
-| Frontend   | TanStack Start (React)    |
-| Database   | PostgreSQL + Prisma       |
-| Auth       | Passport JWT              |
-| Queue      | BullMQ + Redis            |
-| Validation | Zod                       |
+## Product
 
-## Architecture Highlights
+### Storefront
 
-- **Multi-tenancy**: Row-level security with `tenant_id` column on every table
-- **Modular monolith**: Clear module boundaries (Inventory, Rental, Pricing, Billing, Users) ready for microservice extraction
-- **Pragmatic DDD**: Aggregates, entities, value objects, and domain services enforce business invariants
-- **CQRS**: Command/query separation — aggregates for writes, read models for queries
-- **Temporal data**: PostgreSQL `tstzrange` for booking/rental periods with exclusion constraints
-- **BFF pattern**: TanStack Start frontend acts as BFF, enabling SSR with streaming while hiding backend API
-- **API errors**: RFC 7807 Problem Details for standardized error responses
-- **Observability**: Canonical logging with Pino — structured JSON logs with request correlation
+Customers can browse rentable equipment and combos, choose a rental period, and build a booking using the business's actual catalog, pricing, and availability.
 
-## Project Structure
+<p align="center">
+  <img
+    src="./.github/assets/depiqo-storefront.png"
+    alt="DEPIQO customer storefront showing equipment combos available for rental"
+    width="900"
+  />
+</p>
 
-```
-equipment-rental-2/
-├── apps/
-│   ├── backend/     # NestJS API (port 3001)
-│   └── web/         # TanStack Start frontend (port 3000)
-├── packages/
-│   ├── types/       # Shared TypeScript interfaces
-│   ├── api-contracts/ # Shared API contracts and Zod schemas
-│   └── ...
-```
+### Backoffice
 
-## Documentation
+Rental businesses manage their catalog, physical inventory, pricing, customers, and rental operations from a dedicated backoffice.
 
-- [Backend README](./apps/backend/README.md) — Detailed architecture decisions (ADR)
-- [Database Schema](./apps/backend/DB_README.md) — Schema documentation with diagrams
-- [Canonical Logging](./apps/backend/CANONICAL_LOGGING.md) — Logging pattern explanation
+<p align="center">
+  <img
+    src="./.github/assets/depiqo-backoffice.png"
+    alt="DEPIQO backoffice showing the rental product catalog and inventory management interface"
+    width="900"
+  />
+</p>
+
+## Core capabilities
+
+- Rental products and equipment combos
+- Physical asset inventory
+- Branch-specific catalogs and availability
+- Rate plans and pricing tiers
+- Promotions and coupons
+- Customer management
+- Rental bookings and asset allocation
+- Customer-facing storefront
+- Internal operations backoffice
+
+## Engineering highlights
+
+### Availability and concurrent bookings
+
+Rental confirmation uses optimistic asset allocation.
+
+Availability is planned before the persistence transaction to keep transactions short, while a PostgreSQL exclusion constraint remains the final authority preventing the same physical asset from being reserved for overlapping periods.
+
+Concurrent booking conflicts are surfaced as availability failures rather than relying solely on application-level availability checks.
+
+### Pricing engine
+
+Pricing is modeled independently from the storefront and supports:
+
+- rate plans and quantity tiers
+- different partial-period billing policies
+- percentage and fixed-amount promotions
+- free-unit promotions
+- coupons
+- branch-specific rental offers
+
+Pricing rules remain independent from the storefront and booking flow, allowing the same pricing model to be reused across different application flows.
+
+### Multi-tenant architecture
+
+DEPIQO is designed as a multi-tenant system. Each rental business owns its own branches, catalog, inventory, pricing, customers, bookings, and configuration.
+
+### Domain separation
+
+The backend is organized around domain responsibilities such as:
+
+- Catalog
+- Asset Inventory
+- Pricing
+- Rental Commitments
+- Tenant Management
+
+This keeps concepts such as what can be rented, how it is priced, and which physical assets fulfill a booking from becoming one tightly coupled model.
+
+## Tech stack
+
+### Backend
+
+- TypeScript
+- NestJS
+- Prisma
+- PostgreSQL
+
+### Frontend
+
+- TanStack Start
+- React
+- Tailwind CSS
+
+### Infrastructure
+
+- Railway
+- Cloudflare Workers
+- Cloudflare R2
