@@ -1,23 +1,28 @@
+import { isValidBufferMinutes } from 'src/core/domain/rental-asset-buffer';
 import { DomainException } from 'src/core/exceptions/domain.exception';
 
 import { RentalPeriod } from './value-objects/rental-period.value-object';
 
 const MILLISECONDS_PER_MINUTE = 60_000;
 
-export function deriveAssetBlockPeriod(params: {
+export function deriveBufferedAssetBlockPeriod(params: {
   participationPeriod: RentalPeriod;
   beforeBufferMinutes: number;
   afterBufferMinutes: number;
-  operationTime?: Date;
+  clampStartAt?: Date;
 }): RentalPeriod {
-  validateBufferMinutes('beforeBufferMinutes', params.beforeBufferMinutes);
-  validateBufferMinutes('afterBufferMinutes', params.afterBufferMinutes);
+  if (!isValidBufferMinutes(params.beforeBufferMinutes)) {
+    throw new DomainException('Asset block beforeBufferMinutes must be a finite, non-negative integer.');
+  }
+  if (!isValidBufferMinutes(params.afterBufferMinutes)) {
+    throw new DomainException('Asset block afterBufferMinutes must be a finite, non-negative integer.');
+  }
 
   if (
-    params.operationTime !== undefined &&
-    (!(params.operationTime instanceof Date) || Number.isNaN(params.operationTime.getTime()))
+    params.clampStartAt !== undefined &&
+    (!(params.clampStartAt instanceof Date) || Number.isNaN(params.clampStartAt.getTime()))
   ) {
-    throw new DomainException('Asset block operationTime must be a valid date.');
+    throw new DomainException('Asset block clampStartAt must be a valid date.');
   }
 
   const bufferedStart = new Date(
@@ -32,15 +37,9 @@ export function deriveAssetBlockPeriod(params: {
   }
 
   const blockStart =
-    params.operationTime !== undefined && params.operationTime >= params.participationPeriod.start
-      ? params.operationTime
+    params.clampStartAt !== undefined && params.clampStartAt >= params.participationPeriod.start
+      ? params.clampStartAt
       : bufferedStart;
 
   return new RentalPeriod(blockStart, bufferedEnd);
-}
-
-function validateBufferMinutes(field: string, value: number): void {
-  if (!Number.isFinite(value) || !Number.isInteger(value) || value < 0) {
-    throw new DomainException(`Asset block ${field} must be a finite, non-negative integer.`);
-  }
 }

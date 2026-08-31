@@ -1,7 +1,7 @@
 import { err, ok, Result } from 'neverthrow';
 
 import { AssetBlock } from './asset-block.entity';
-import { deriveAssetBlockPeriod } from './asset-block-period';
+import { deriveBufferedAssetBlockPeriod } from './asset-block-period';
 import { AssignedAsset } from './assigned-asset.entity';
 import { RentalCommitmentError } from './errors/rental-commitment.errors';
 import type { AcceptedRentalAssetBuffer } from './rental.aggregate';
@@ -43,11 +43,11 @@ export function endAssignmentParticipation(
   if (closed.isErr()) return err(closed.error);
 
   const participationPeriod = new RentalPeriod(assignment.effectiveFrom, params.effectiveAt);
-  const period = deriveAssetBlockPeriod({
+  const period = deriveBufferedAssetBlockPeriod({
     participationPeriod,
     beforeBufferMinutes: params.acceptedAssetBuffer.beforeBufferMinutes,
     afterBufferMinutes: params.acceptedAssetBuffer.afterBufferMinutes,
-    ...(assignment.effectiveFrom > params.rentalStart ? { operationTime: assignment.effectiveFrom } : {}),
+    ...(assignment.effectiveFrom > params.rentalStart ? { clampStartAt: assignment.effectiveFrom } : {}),
   });
 
   return ok({ assignment, block: params.block.resizePeriod(period) });

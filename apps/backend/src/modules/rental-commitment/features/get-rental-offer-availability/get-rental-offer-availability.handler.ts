@@ -8,7 +8,7 @@ import {
 import { TenantRentalAssetBufferSettings } from 'src/modules/tenant-management/public-api/tenant-rental-asset-buffer-settings.public-api';
 
 import { RentalAssetAllocationService } from '../../asset-allocation/rental-asset-allocation.service';
-import { deriveAssetBlockPeriod } from '../../domain/asset-block-period';
+import { deriveBufferedAssetBlockPeriod } from '../../domain/asset-block-period';
 import { EquipmentTypeId } from '../../domain/types/rental-commitment-ids';
 import {
   GetRentalOfferAvailabilityError,
@@ -53,7 +53,7 @@ export class GetRentalOfferAvailabilityHandler implements IQueryHandler<
       );
     }
 
-    const operationalPeriod = deriveAssetBlockPeriod({
+    const operationalPeriod = deriveBufferedAssetBlockPeriod({
       participationPeriod: query.period,
       ...bufferSettings.value,
     });

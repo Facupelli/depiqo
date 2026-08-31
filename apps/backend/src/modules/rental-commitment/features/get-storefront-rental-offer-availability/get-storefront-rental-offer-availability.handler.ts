@@ -5,7 +5,7 @@ import { PrismaService } from 'src/core/database/prisma.service';
 import { CatalogSelectionResolution } from 'src/modules/catalog/public-api/catalog-selection-resolution.public-api';
 import { TenantRentalAssetBufferSettings } from 'src/modules/tenant-management/public-api/tenant-rental-asset-buffer-settings.public-api';
 
-import { deriveAssetBlockPeriod } from '../../domain/asset-block-period';
+import { deriveBufferedAssetBlockPeriod } from '../../domain/asset-block-period';
 
 import {
   GetStorefrontRentalOfferAvailabilityError,
@@ -65,7 +65,7 @@ export class GetStorefrontRentalOfferAvailabilityHandler implements IQueryHandle
       );
     }
 
-    const operationalPeriod = deriveAssetBlockPeriod({
+    const operationalPeriod = deriveBufferedAssetBlockPeriod({
       participationPeriod: query.period,
       ...bufferSettings.value,
     });

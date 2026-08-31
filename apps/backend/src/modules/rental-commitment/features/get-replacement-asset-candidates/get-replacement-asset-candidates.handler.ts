@@ -4,7 +4,7 @@ import { err, ok, Result } from 'neverthrow';
 import { AssetInventoryDisplayFacts } from 'src/modules/asset-inventory/public-api/asset-inventory-display-facts.public-api';
 
 import { getEffectiveRentalOperationTime } from '../../application/get-effective-rental-operation-time';
-import { deriveAssetBlockPeriod } from '../../domain/asset-block-period';
+import { deriveBufferedAssetBlockPeriod } from '../../domain/asset-block-period';
 import { RentalAssetAllocationService } from '../../asset-allocation/rental-asset-allocation.service';
 import {
   RentalAssignedAssetNotFoundError,
@@ -82,11 +82,11 @@ export class GetReplacementAssetCandidatesHandler implements IQueryHandler<
     }
 
     const acceptedAssetBuffer = rental.requireAcceptedAssetBuffer();
-    const operationalPeriod = deriveAssetBlockPeriod({
+    const operationalPeriod = deriveBufferedAssetBlockPeriod({
       participationPeriod: new RentalPeriod(effectiveAt, rental.period.end),
       beforeBufferMinutes: acceptedAssetBuffer.beforeBufferMinutes,
       afterBufferMinutes: acceptedAssetBuffer.afterBufferMinutes,
-      operationTime,
+      clampStartAt: operationTime,
     });
     const candidates = await this.rentalAssetAllocation.findEligibleAvailableCandidates({
       tenantId,

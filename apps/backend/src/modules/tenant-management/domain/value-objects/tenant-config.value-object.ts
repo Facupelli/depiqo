@@ -1,3 +1,5 @@
+import { isValidBufferMinutes } from 'src/core/domain/rental-asset-buffer';
+
 import {
   InvalidBookingModeError,
   InvalidDefaultCurrencyError,
@@ -295,7 +297,7 @@ export class TenantConfig {
     field: 'beforeBufferMinutes' | 'afterBufferMinutes',
     value: unknown,
   ): void {
-    if (typeof value !== 'number' || !Number.isFinite(value) || !Number.isInteger(value) || value < 0) {
+    if (!isValidBufferMinutes(value)) {
       throw new InvalidRentalAssetBufferMinutesError(field, value);
     }
   }

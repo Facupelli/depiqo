@@ -11,7 +11,7 @@ import { TenantRentalAssetBufferSettings } from 'src/modules/tenant-management/p
 import { RentalOperationalFactsValidatorService } from '../../application/rental-operational-facts-validator.service';
 
 import { toRentalIntegrationEvents } from '../../application/rental-integration-event.mapper';
-import { deriveAssetBlockPeriod } from '../../domain/asset-block-period';
+import { deriveBufferedAssetBlockPeriod } from '../../domain/asset-block-period';
 import { deriveConfirmationParticipationTiming } from '../../domain/confirmation-participation-timing';
 import { RentalAssetAllocationService } from '../../asset-allocation/rental-asset-allocation.service';
 import {
@@ -104,10 +104,10 @@ export class ConfirmRentalHandler implements ICommandHandler<ConfirmRentalComman
     const operationTime = new Date();
     const participationTiming = deriveConfirmationParticipationTiming(rental.period, operationTime);
     const acceptedAssetBuffer = { ...bufferSettings.value };
-    const operationalPeriod = deriveAssetBlockPeriod({
+    const operationalPeriod = deriveBufferedAssetBlockPeriod({
       participationPeriod: participationTiming.participationPeriod,
       ...acceptedAssetBuffer,
-      operationTime: participationTiming.blockOperationTime,
+      clampStartAt: participationTiming.blockOperationTime,
     });
 
     const assetAssignmentPlan = await this.rentalAssetAllocation.planAllocations({

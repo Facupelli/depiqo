@@ -11,7 +11,7 @@ import { V2AssetBlockType, V2RentalStatus } from 'src/generated/prisma/enums';
 
 import { resolveEquipmentTypeNames } from '../../application/equipment-type-display-facts';
 import { RentalAssetAllocationService } from '../../asset-allocation/rental-asset-allocation.service';
-import { deriveAssetBlockPeriod } from '../../domain/asset-block-period';
+import { deriveBufferedAssetBlockPeriod } from '../../domain/asset-block-period';
 import {
   InsufficientAssetAvailabilityError,
   RentalInvalidFieldError,
@@ -127,11 +127,11 @@ export class AssignRentalAccessoriesHandler implements ICommandHandler<
         ),
       );
     }
-    const operationalPeriod = deriveAssetBlockPeriod({
+    const operationalPeriod = deriveBufferedAssetBlockPeriod({
       participationPeriod: new RentalPeriod(participationStart, rental.periodEnd),
       beforeBufferMinutes: acceptedAssetBuffer.beforeBufferMinutes,
       afterBufferMinutes: acceptedAssetBuffer.afterBufferMinutes,
-      ...(operationTime >= rental.periodStart ? { operationTime } : {}),
+      ...(operationTime >= rental.periodStart ? { clampStartAt: operationTime } : {}),
     });
 
     const inputValidation = await this.validateInput(command, context);

@@ -8,7 +8,7 @@ import { V2AssetBlockType, V2RentalStatus } from 'src/generated/prisma/enums';
 import { AccessoryPreparationInventoryFacts } from 'src/modules/asset-inventory/public-api/accessory-preparation-inventory-facts.public-api';
 import { TenantRentalAssetBufferSettings } from 'src/modules/tenant-management/public-api/tenant-rental-asset-buffer-settings.public-api';
 
-import { deriveAssetBlockPeriod } from '../../domain/asset-block-period';
+import { deriveBufferedAssetBlockPeriod } from '../../domain/asset-block-period';
 import { RentalInvalidFieldError } from '../../domain/errors/rental-commitment.errors';
 import { RentalPeriod } from '../../domain/value-objects/rental-period.value-object';
 import {
@@ -42,6 +42,7 @@ export class GetRentalAccessoryDefaultsHandler implements IQueryHandler<
         id: true,
         branchId: true,
         status: true,
+        confirmedAt: true,
         periodStart: true,
         periodEnd: true,
         acceptedBeforeBufferMinutes: true,
@@ -77,15 +78,15 @@ export class GetRentalAccessoryDefaultsHandler implements IQueryHandler<
     if (inventory.defaults.length === 0) return ok({ rentalOrderId: rental.id, suggestions: [] });
 
     const buffer =
-      rental.status === V2RentalStatus.CONFIRMED
+      rental.status === V2RentalStatus.CONFIRMED || rental.confirmedAt !== null
         ? this.resolveAcceptedBuffer(rental.acceptedBeforeBufferMinutes, rental.acceptedAfterBufferMinutes)
         : await this.resolveCurrentBuffer(query.tenantId);
     const participationStart =
       operationTime >= rental.periodStart && operationTime < rental.periodEnd ? operationTime : rental.periodStart;
-    const operationalPeriod = deriveAssetBlockPeriod({
+    const operationalPeriod = deriveBufferedAssetBlockPeriod({
       participationPeriod: new RentalPeriod(participationStart, rental.periodEnd),
       ...buffer,
-      ...(participationStart === operationTime ? { operationTime } : {}),
+      ...(participationStart === operationTime ? { clampStartAt: operationTime } : {}),
     });
 
     const blockedAssetIds = await this.findBlockedAssetIds({

@@ -26,7 +26,7 @@ import { toRentalIntegrationEvents } from '../../application/rental-integration-
 import { buildConfirmationFingerprint } from './confirmation-operation-fingerprint';
 import { CreateConfirmedRentalCommand } from './create-confirmed-rental.command';
 import { ConfirmationOperationPersistence } from '../../persistence/rental.repository';
-import { deriveAssetBlockPeriod } from '../../domain/asset-block-period';
+import { deriveBufferedAssetBlockPeriod } from '../../domain/asset-block-period';
 import { deriveConfirmationParticipationTiming } from '../../domain/confirmation-participation-timing';
 import { Rental } from '../../domain/rental.aggregate';
 import { FulfillmentMethod } from '../../domain/rental-status';
@@ -211,10 +211,10 @@ export class CreateConfirmedRentalService implements ICommandHandler<
     const operationTime = new Date();
     const participationTiming = deriveConfirmationParticipationTiming(command.period, operationTime);
     const acceptedAssetBuffer = { ...bufferSettings.value };
-    const operationalPeriod = deriveAssetBlockPeriod({
+    const operationalPeriod = deriveBufferedAssetBlockPeriod({
       participationPeriod: participationTiming.participationPeriod,
       ...acceptedAssetBuffer,
-      operationTime: participationTiming.blockOperationTime,
+      clampStartAt: participationTiming.blockOperationTime,
     });
 
     const assetAssignmentPlan = await this.rentalAssetAllocation.planAllocations({

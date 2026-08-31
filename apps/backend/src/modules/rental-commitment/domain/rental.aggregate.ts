@@ -3,9 +3,10 @@ import { randomUUID } from 'node:crypto';
 import { err, ok, Result } from 'neverthrow';
 
 import { AggregateRootBase } from 'src/core/domain/aggregate-root.base';
+import { isValidBufferMinutes } from 'src/core/domain/rental-asset-buffer';
 
 import { AssetBlock } from './asset-block.entity';
-import { deriveAssetBlockPeriod } from './asset-block-period';
+import { deriveBufferedAssetBlockPeriod } from './asset-block-period';
 import { AssignedAsset, CreateAssignedAssetProps } from './assigned-asset.entity';
 import {
   AssetBlockPeriodMismatchError,
@@ -918,11 +919,11 @@ export class Rental extends AggregateRootBase {
       tenantId: this.tenantId,
       rentalId: this.id,
       assetId: params.replacementAssetId,
-      period: deriveAssetBlockPeriod({
+      period: deriveBufferedAssetBlockPeriod({
         participationPeriod: new RentalPeriod(effectiveAt, this.period.end),
         beforeBufferMinutes: acceptedAssetBuffer.beforeBufferMinutes,
         afterBufferMinutes: acceptedAssetBuffer.afterBufferMinutes,
-        operationTime: params.operationTime,
+        clampStartAt: params.operationTime,
       }),
       blockType: AssetBlockType.Equipment,
       createdAt: params.operationTime,
@@ -1433,11 +1434,11 @@ export class Rental extends AggregateRootBase {
 
     for (const assignment of orderedAssignments) {
       const participationEnd = assignment.effectiveUntil ?? params.period.end;
-      const expectedPeriod = deriveAssetBlockPeriod({
+      const expectedPeriod = deriveBufferedAssetBlockPeriod({
         participationPeriod: new RentalPeriod(assignment.effectiveFrom, participationEnd),
         beforeBufferMinutes: params.acceptedAssetBuffer.beforeBufferMinutes,
         afterBufferMinutes: params.acceptedAssetBuffer.afterBufferMinutes,
-        ...(assignment.effectiveFrom > params.period.start ? { operationTime: assignment.effectiveFrom } : {}),
+        ...(assignment.effectiveFrom > params.period.start ? { clampStartAt: assignment.effectiveFrom } : {}),
       });
       const block = equipmentBlocks.find((candidate) => {
         if (matchedBlockIds.has(candidate.id) || candidate.assetId !== assignment.assetId) return false;
@@ -1609,11 +1610,11 @@ export class Rental extends AggregateRootBase {
         tenantId: params.tenantId,
         rentalId: params.rentalId,
         assetId: assignment.assetId,
-        period: deriveAssetBlockPeriod({
+        period: deriveBufferedAssetBlockPeriod({
           participationPeriod: new RentalPeriod(assignment.effectiveFrom, params.period.end),
           beforeBufferMinutes: params.acceptedAssetBuffer.beforeBufferMinutes,
           afterBufferMinutes: params.acceptedAssetBuffer.afterBufferMinutes,
-          operationTime: params.operationTime,
+          clampStartAt: params.operationTime,
         }),
         blockType: AssetBlockType.Equipment,
         createdAt: assignment.createdAt,
@@ -1634,7 +1635,7 @@ export class Rental extends AggregateRootBase {
       ['beforeBufferMinutes', buffer.beforeBufferMinutes],
       ['afterBufferMinutes', buffer.afterBufferMinutes],
     ] as const) {
-      if (!Number.isInteger(value) || value < 0) {
+      if (!isValidBufferMinutes(value)) {
         return err(new RentalInvalidFieldError(field, 'must be a non-negative integer'));
       }
     }
