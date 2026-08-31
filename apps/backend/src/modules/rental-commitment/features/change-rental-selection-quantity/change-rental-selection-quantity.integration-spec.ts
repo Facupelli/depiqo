@@ -43,6 +43,7 @@ describe('ChangeRentalSelectionQuantity integration', () => {
       offerId: offer.offer.id,
       equipmentTypeId: offer.equipmentType.id,
       quantity,
+      acceptedAssetBuffer: { beforeBufferMinutes: 10, afterBufferMinutes: 15 },
     });
     return { tenant, branch, user, offer, rental };
   }
@@ -112,7 +113,9 @@ describe('ChangeRentalSelectionQuantity integration', () => {
     expect(additions).toHaveLength(2);
     for (const assignment of additions) {
       const block = after.blocks.find((candidate) => candidate.assetId === assignment.assetId)!;
-      expect(parsePostgresRange(block.period).start).toEqual(assignment.effectiveFrom);
+      const period = parsePostgresRange(block.period);
+      expect(period.start).toEqual(assignment.effectiveFrom);
+      expect(period.end).toEqual(new Date(after.rental.periodEnd.getTime() + 15 * 60_000));
     }
     expect(
       (after.rental.priceSnapshot as { final: { lines: Array<{ quantity: number }> } }).final.lines[0].quantity,
@@ -133,8 +136,8 @@ describe('ChangeRentalSelectionQuantity integration', () => {
     const block = after.blocks.find((item) => item.assetId === releasedId)!;
     const range = parsePostgresRange(block.period);
     expect(assignment.id).toBe(before.rental.assignedAssets.find((item) => item.assetId === releasedId)!.id);
-    expect(assignment.effectiveUntil).toEqual(range.end);
-    expect(block.releasedAt).toEqual(range.end);
+    expect(block.releasedAt).toBeNull();
+    expect(range.end).toEqual(new Date(assignment.effectiveUntil!.getTime() + 15 * 60_000));
     expect(after.rental.assignedAssets.filter((item) => item.effectiveUntil === null)).toHaveLength(2);
     expect(after.rental.selections[0].quantity).toBe(2);
     expect(after.rental.demandLines[0].quantity).toBe(2);

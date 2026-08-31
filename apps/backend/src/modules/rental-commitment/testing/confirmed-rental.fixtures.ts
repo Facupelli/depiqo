@@ -74,6 +74,7 @@ export class ConfirmedRentalFixtures {
     equipmentTypeId: string;
     assetId?: string;
     quantity?: number;
+    acceptedAssetBuffer?: { beforeBufferMinutes: number; afterBufferMinutes: number };
   }) {
     const quantity = params.quantity ?? 1;
     const rental = await this.rentals.createRental({
@@ -83,6 +84,14 @@ export class ConfirmedRentalFixtures {
       period: params.period,
       status: 'CONFIRMED',
       demands: [{ equipmentTypeId: params.equipmentTypeId, quantity }],
+    });
+    const acceptedAssetBuffer = params.acceptedAssetBuffer ?? { beforeBufferMinutes: 0, afterBufferMinutes: 0 };
+    await this.prisma.client.v2Rental.update({
+      where: { id: rental.rentalId },
+      data: {
+        acceptedBeforeBufferMinutes: acceptedAssetBuffer.beforeBufferMinutes,
+        acceptedAfterBufferMinutes: acceptedAssetBuffer.afterBufferMinutes,
+      },
     });
     await this.prisma.client.v2RentalSelection.update({
       where: { id: rental.selectionIds[0] },
@@ -126,7 +135,10 @@ export class ConfirmedRentalFixtures {
         tenantId: params.tenantId,
         rentalId: rental.rentalId,
         assetId,
-        period: params.period,
+        period: {
+          start: new Date(params.period.start.getTime() - acceptedAssetBuffer.beforeBufferMinutes * 60_000),
+          end: new Date(params.period.end.getTime() + acceptedAssetBuffer.afterBufferMinutes * 60_000),
+        },
       });
     }
     return { ...rental, assetIds };

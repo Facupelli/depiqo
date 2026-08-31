@@ -45,6 +45,7 @@ describe('ChangeRentalPeriod integration', () => {
       offerId: offer.offer.id,
       equipmentTypeId: offer.equipmentType.id,
       quantity,
+      acceptedAssetBuffer: { beforeBufferMinutes: 10, afterBufferMinutes: 15 },
     });
     const persisted = await prisma.client.v2Rental.findUniqueOrThrow({ where: { id: rental.rentalId } });
     return { tenant, branch, user, offer, rental, version: persisted.version };
@@ -104,10 +105,13 @@ describe('ChangeRentalPeriod integration', () => {
     expect(state.rental.assignedAssets.every((item) => item.effectiveFrom.getTime() === newStart.getTime())).toBe(true);
     expect(
       state.blocks
-        .filter((block) => block.releasedAt === null)
+        .filter((block) => block.releasedAt === null && block.blockType === 'EQUIPMENT')
         .every((block) => {
           const period = parsePostgresRange(block.period);
-          return period.start.getTime() === newStart.getTime() && period.end.getTime() === newEnd.getTime();
+          return (
+            period.start.getTime() === newStart.getTime() - 10 * 60_000 &&
+            period.end.getTime() === newEnd.getTime() + 15 * 60_000
+          );
         }),
     ).toBe(true);
     const accessoryPeriod = parsePostgresRange(state.blocks.find((block) => block.blockType === 'ACCESSORY')!.period);
@@ -131,7 +135,7 @@ describe('ChangeRentalPeriod integration', () => {
       data: { effectiveFrom: laterStart },
     });
     await prisma.client
-      .$executeRaw`UPDATE v2_asset_blocks SET period = tstzrange(${laterStart}, ${oldEnd}, '[)') WHERE asset_id = ${laterAssignment.assetId} AND released_at IS NULL`;
+      .$executeRaw`UPDATE v2_asset_blocks SET period = tstzrange(${laterStart}, ${new Date(oldEnd.getTime() + 15 * 60_000)}, '[)') WHERE asset_id = ${laterAssignment.assetId} AND released_at IS NULL`;
     const historicalAssetId = await fixtures.createCandidate({
       tenantId: setup.tenant.id,
       branchId: setup.branch.id,
@@ -152,7 +156,7 @@ describe('ChangeRentalPeriod integration', () => {
     await prisma.client.$executeRaw`INSERT INTO v2_asset_blocks
       (id, tenant_id, rental_id, asset_id, period, block_type, released_at)
       VALUES (${historicalBlockId}, ${setup.tenant.id}, ${setup.rental.rentalId}, ${historicalAssetId},
-      ${`[${start.toISOString()},${laterStart.toISOString()})`}::tstzrange, 'EQUIPMENT', ${laterStart})`;
+      ${`[${new Date(start.getTime() - 10 * 60_000).toISOString()},${laterStart.toISOString()})`}::tstzrange, 'EQUIPMENT', ${laterStart})`;
     const newEnd = new Date(now + 7_200_000);
     const result = await change(setup, start, newEnd);
     expect(result.isOk()).toBe(true);
@@ -165,8 +169,8 @@ describe('ChangeRentalPeriod integration', () => {
     ).toEqual([start.getTime(), laterStart.getTime()].sort());
     expect(
       state.blocks
-        .filter((block) => block.releasedAt === null)
-        .every((block) => parsePostgresRange(block.period).end.getTime() === newEnd.getTime()),
+        .filter((block) => block.releasedAt === null && block.blockType === 'EQUIPMENT')
+        .every((block) => parsePostgresRange(block.period).end.getTime() === newEnd.getTime() + 15 * 60_000),
     ).toBe(true);
     expect(state.rental.assignedAssets.find((item) => item.id === historicalAssignment.id)?.effectiveUntil).toEqual(
       laterStart,
@@ -182,6 +186,10 @@ describe('ChangeRentalPeriod integration', () => {
     const setup = await scenario({ start, end: new Date(now + 7_200_000) });
     const newEnd = new Date(now + 3_600_000);
     expect((await change(setup, start, newEnd)).isOk()).toBe(true);
+    const state = await fixtures.persistedState(setup.rental.rentalId);
+    expect(parsePostgresRange(state.blocks.find((block) => block.blockType === 'EQUIPMENT')!.period).end).toEqual(
+      new Date(newEnd.getTime() + 15 * 60_000),
+    );
   });
 
   it('rejects conflict, started start change, ended mutation, and stale version', async () => {
@@ -191,12 +199,12 @@ describe('ChangeRentalPeriod integration', () => {
       tenantId: future.tenant.id,
       branchId: future.branch.id,
       customerId: (await core.createRentalCustomer({ tenantId: future.tenant.id })).customer.id,
-      period: { start: new Date(now + 8_000_000), end: new Date(now + 12_000_000) },
+      period: { start: new Date(now + 8_200_000), end: new Date(now + 12_000_000) },
       offerId: future.offer.offer.id,
       equipmentTypeId: future.offer.equipmentType.id,
       assetId: future.rental.assetIds[0],
     });
-    expect((await change(future, new Date(now + 8_000_000), new Date(now + 12_000_000))).error.code).toBe(
+    expect((await change(future, new Date(now + 8_200_000), new Date(now + 12_000_000))).error.code).toBe(
       'rental_commitment.insufficient_asset_availability',
     );
     const started = await scenario({ start: new Date(now - 3_600_000), end: new Date(now + 3_600_000) });

@@ -12,6 +12,7 @@ import { RentalOperationalFactsValidatorService } from '../../application/rental
 
 import { toRentalIntegrationEvents } from '../../application/rental-integration-event.mapper';
 import { deriveAssetBlockPeriod } from '../../domain/asset-block-period';
+import { deriveConfirmationParticipationTiming } from '../../domain/confirmation-participation-timing';
 import { RentalAssetAllocationService } from '../../asset-allocation/rental-asset-allocation.service';
 import {
   BranchUnavailableForRentalError,
@@ -100,10 +101,13 @@ export class ConfirmRentalHandler implements ICommandHandler<ConfirmRentalComman
       );
     }
 
+    const operationTime = new Date();
+    const participationTiming = deriveConfirmationParticipationTiming(rental.period, operationTime);
     const acceptedAssetBuffer = { ...bufferSettings.value };
     const operationalPeriod = deriveAssetBlockPeriod({
-      participationPeriod: rental.period,
+      participationPeriod: participationTiming.participationPeriod,
       ...acceptedAssetBuffer,
+      operationTime: participationTiming.blockOperationTime,
     });
 
     const assetAssignmentPlan = await this.rentalAssetAllocation.planAllocations({
@@ -129,6 +133,7 @@ export class ConfirmRentalHandler implements ICommandHandler<ConfirmRentalComman
 
     const confirmResult = rental.confirm({
       acceptedAssetBuffer,
+      confirmedAt: operationTime,
       assignedAssets: assetAssignmentPlan.value.allocations.map((allocation) => ({
         rentalDemandLineId: allocation.rentalDemandLineId,
         assetId: allocation.assetId,

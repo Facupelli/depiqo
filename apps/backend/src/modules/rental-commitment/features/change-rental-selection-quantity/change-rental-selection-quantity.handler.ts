@@ -11,6 +11,7 @@ import { TenantBillingPreferences } from 'src/modules/tenant-management/public-a
 import { adaptPricingCalculationToSnapshot } from '../../application/accepted-pricing/adapt-pricing-calculation-to-snapshot';
 import { toRentalIntegrationEvents } from '../../application/rental-integration-event.mapper';
 import { RentalAssetAllocationService } from '../../asset-allocation/rental-asset-allocation.service';
+import { deriveAssetBlockPeriod } from '../../domain/asset-block-period';
 import {
   InsufficientAssetAvailabilityError,
   RentalCannotBeEditedFromStatusError,
@@ -23,6 +24,7 @@ import { RentalStatus } from '../../domain/rental-status';
 import { Rental } from '../../domain/rental.aggregate';
 import { AssetId } from '../../domain/types/rental-commitment-ids';
 import { JsonValue } from '../../domain/value-objects/json-snapshot.value-object';
+import { RentalPeriod } from '../../domain/value-objects/rental-period.value-object';
 import { getConfirmedPriceSnapshotForOwnerSplits } from '../../owner-split/confirmed-price-snapshot-for-owner-splits';
 import { RentalOwnerSplitCalculator } from '../../owner-split/rental-owner-split-calculator';
 import { RentalRepository } from '../../persistence/rental.repository';
@@ -166,11 +168,17 @@ export class ChangeRentalSelectionQuantityHandler implements ICommandHandler<
             equipmentTypeId: line.equipmentTypeId,
             quantity: quantityChange.value.deltaFor(line.id)!,
           }));
+          const operationalPeriod = deriveAssetBlockPeriod({
+            participationPeriod: new RentalPeriod(effectiveAt, current.period.end),
+            beforeBufferMinutes: current.acceptedAssetBuffer!.beforeBufferMinutes,
+            afterBufferMinutes: current.acceptedAssetBuffer!.afterBufferMinutes,
+            operationTime,
+          });
           const plan = await this.allocation.planAllocations({
             tenantId,
             branchId: current.branchId,
-            periodStart: effectiveAt,
-            periodEnd: current.period.end,
+            periodStart: operationalPeriod.start,
+            periodEnd: operationalPeriod.end,
             demandLines: deltaLines,
             excludeAssetIds: current.currentAssignedAssets.map((assignment) => assignment.assetId),
             tx,

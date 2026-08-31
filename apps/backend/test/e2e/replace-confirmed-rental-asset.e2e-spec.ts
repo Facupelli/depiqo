@@ -103,7 +103,7 @@ describe('POST /rental-commitments/confirmed-rentals/:rentalId/assigned-assets/r
     )!;
     const closedBlock = state.blocks.find((block) => block.assetId === setup.rental.assetIds[0])!;
     expect(closedAssignment.effectiveUntil).toEqual(replacementAssignment.effectiveFrom);
-    expect(closedBlock.releasedAt).toEqual(replacementAssignment.effectiveFrom);
+    expect(closedBlock.releasedAt).toBeNull();
     expect(replacementAssignment.effectiveUntil).toBeNull();
   });
 

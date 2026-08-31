@@ -11,6 +11,7 @@ import { TenantBillingPreferences } from 'src/modules/tenant-management/public-a
 import { adaptPricingCalculationToSnapshot } from '../../application/accepted-pricing/adapt-pricing-calculation-to-snapshot';
 import { toRentalIntegrationEvents } from '../../application/rental-integration-event.mapper';
 import { RentalAssetAllocationService } from '../../asset-allocation/rental-asset-allocation.service';
+import { deriveAssetBlockPeriod } from '../../domain/asset-block-period';
 import {
   InsufficientAssetAvailabilityError,
   RentalCannotBeEditedFromStatusError,
@@ -132,15 +133,24 @@ export class ChangeRentalPeriodHandler implements ICommandHandler<ChangeRentalPe
 
         const extending = end > current.period.end;
         if (!started || extending) {
-          const available = await this.allocation.areExactAssetsAvailable({
-            tenantId,
-            assetIds: current.currentAssignedAssets.map((assignment) => assignment.assetId),
-            periodStart: started ? current.period.end : start,
-            periodEnd: end,
-            excludingRentalId: rentalId,
-            tx,
-          });
-          if (!available) return err(this.map(new InsufficientAssetAvailabilityError('', '', 1, 0), context));
+          for (const assignment of current.currentAssignedAssets) {
+            const participationStart = started ? assignment.effectiveFrom : start;
+            const desiredOperationalPeriod = deriveAssetBlockPeriod({
+              participationPeriod: new RentalPeriod(participationStart, end),
+              beforeBufferMinutes: current.acceptedAssetBuffer!.beforeBufferMinutes,
+              afterBufferMinutes: current.acceptedAssetBuffer!.afterBufferMinutes,
+              ...(participationStart > start ? { operationTime: participationStart } : {}),
+            });
+            const available = await this.allocation.areExactAssetsAvailable({
+              tenantId,
+              assetIds: [assignment.assetId],
+              periodStart: desiredOperationalPeriod.start,
+              periodEnd: desiredOperationalPeriod.end,
+              excludingRentalId: rentalId,
+              tx,
+            });
+            if (!available) return err(this.map(new InsufficientAssetAvailabilityError('', '', 1, 0), context));
+          }
         }
 
         const accessorySelections = await tx.v2RentalAccessorySelection.findMany({

@@ -141,6 +141,11 @@ describe('ConfirmRentalHandler deadlock retry', () => {
         }),
       ),
     } as unknown as RentalAssetAllocationService;
+    const bufferSettings = {
+      getTenantRentalAssetBufferSettings: jest
+        .fn()
+        .mockResolvedValue(ok({ beforeBufferMinutes: 0, afterBufferMinutes: 0 })),
+    };
     const ownerSplitCalculator = {
       calculate: jest.fn().mockReturnValue({ splits }),
     } as unknown as RentalOwnerSplitCalculator;
@@ -154,7 +159,14 @@ describe('ConfirmRentalHandler deadlock retry', () => {
     const unitOfWork = { runInTransaction } as unknown as PrismaUnitOfWork;
 
     return {
-      handler: new ConfirmRentalHandler(repository, operationalFacts, allocation, ownerSplitCalculator, unitOfWork),
+      handler: new ConfirmRentalHandler(
+        repository,
+        operationalFacts,
+        bufferSettings as never,
+        allocation,
+        ownerSplitCalculator,
+        unitOfWork,
+      ),
       publishedEvents,
       pullDomainEvents,
       runInTransaction,

@@ -45,6 +45,7 @@ function derive(assignedAssets: AssignedAsset[], assetBlocks: AssetBlock[]) {
     operationTime: new Date('2030-01-02T09:00:00.000Z'),
     assignedAssets,
     assetBlocks,
+    acceptedAssetBuffer: { beforeBufferMinutes: 0, afterBufferMinutes: 0 },
   });
 }
 

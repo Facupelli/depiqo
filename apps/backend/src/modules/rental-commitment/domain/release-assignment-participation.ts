@@ -1,23 +1,28 @@
 import { err, ok, Result } from 'neverthrow';
 
 import { AssetBlock } from './asset-block.entity';
+import { deriveAssetBlockPeriod } from './asset-block-period';
 import { AssignedAsset } from './assigned-asset.entity';
 import { RentalCommitmentError } from './errors/rental-commitment.errors';
+import type { AcceptedRentalAssetBuffer } from './rental.aggregate';
+import { RentalPeriod } from './value-objects/rental-period.value-object';
 
-interface ReleaseAssignmentParticipationParams {
+interface EndAssignmentParticipationParams {
   assignment: AssignedAsset;
   block: AssetBlock;
   effectiveAt: Date;
+  rentalStart: Date;
+  acceptedAssetBuffer: AcceptedRentalAssetBuffer;
 }
 
-interface ReleasedAssignmentParticipation {
+interface EndedAssignmentParticipation {
   assignment: AssignedAsset | null;
   block: AssetBlock | null;
 }
 
-export function releaseAssignmentParticipation(
-  params: ReleaseAssignmentParticipationParams,
-): Result<ReleasedAssignmentParticipation, RentalCommitmentError> {
+export function endAssignmentParticipation(
+  params: EndAssignmentParticipationParams,
+): Result<EndedAssignmentParticipation, RentalCommitmentError> {
   if (params.effectiveAt <= params.assignment.effectiveFrom) {
     return ok({ assignment: null, block: null });
   }
@@ -33,22 +38,17 @@ export function releaseAssignmentParticipation(
     effectiveUntil: params.assignment.effectiveUntil,
     createdAt: params.assignment.createdAt,
   });
-  const block = AssetBlock.reconstitute({
-    id: params.block.id,
-    tenantId: params.block.tenantId,
-    rentalId: params.block.rentalId,
-    assetId: params.block.assetId,
-    period: params.block.period,
-    blockType: params.block.blockType,
-    createdAt: params.block.createdAt,
-    releasedAt: params.block.releasedAt,
-  });
 
   const closed = assignment.close(params.effectiveAt);
   if (closed.isErr()) return err(closed.error);
 
-  const released = block.truncateAndRelease(params.effectiveAt);
-  if (released.isErr()) return err(released.error);
+  const participationPeriod = new RentalPeriod(assignment.effectiveFrom, params.effectiveAt);
+  const period = deriveAssetBlockPeriod({
+    participationPeriod,
+    beforeBufferMinutes: params.acceptedAssetBuffer.beforeBufferMinutes,
+    afterBufferMinutes: params.acceptedAssetBuffer.afterBufferMinutes,
+    ...(assignment.effectiveFrom > params.rentalStart ? { operationTime: assignment.effectiveFrom } : {}),
+  });
 
-  return ok({ assignment, block });
+  return ok({ assignment, block: params.block.resizePeriod(period) });
 }

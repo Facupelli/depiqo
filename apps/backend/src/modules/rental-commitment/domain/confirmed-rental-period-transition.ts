@@ -1,8 +1,11 @@
 import { err, ok, Result } from 'neverthrow';
 
+import type { AcceptedRentalAssetBuffer } from './rental.aggregate';
 import { AssetBlock } from './asset-block.entity';
+import { deriveAssetBlockPeriod } from './asset-block-period';
 import { AssignedAsset } from './assigned-asset.entity';
 import {
+  ConfirmedRentalRequiresActiveBlocksError,
   RentalCommitmentError,
   RentalInvalidFieldError,
   RentalPeriodCannotStartInPastError,
@@ -29,6 +32,7 @@ export function deriveConfirmedRentalPeriodTransition(params: {
   operationTime: Date;
   assignedAssets: readonly AssignedAsset[];
   assetBlocks: readonly AssetBlock[];
+  acceptedAssetBuffer: AcceptedRentalAssetBuffer;
 }): Result<ConfirmedRentalPeriodTransition, RentalCommitmentError> {
   const samePeriod =
     params.requestedPeriod.start.getTime() === params.currentPeriod.start.getTime() &&
@@ -74,19 +78,57 @@ export function deriveConfirmedRentalPeriodTransition(params: {
     assignedAssets.push(assignment.moveEffectiveFrom(period.start));
   }
 
-  const currentAssignmentByAssetId = new Map(
-    assignedAssets.filter((assignment) => assignment.isActive).map((assignment) => [assignment.assetId, assignment]),
+  const assignmentAssetIds = new Set(params.assignedAssets.map((assignment) => assignment.assetId));
+  const orphanedActiveBlock = params.assetBlocks.find(
+    (block) => block.isActive && block.blockType === AssetBlockType.Equipment && !assignmentAssetIds.has(block.assetId),
   );
-  const assetBlocks: AssetBlock[] = [];
-  for (const block of params.assetBlocks) {
-    if (!block.isActive || block.blockType !== AssetBlockType.Equipment) {
-      assetBlocks.push(block);
-      continue;
-    }
-    const assignment = currentAssignmentByAssetId.get(block.assetId);
-    if (!assignment) return err(new UnexpectedActiveAssetBlockError(params.rentalId, block.id));
-    assetBlocks.push(block.resizePeriod(new RentalPeriod(assignment.effectiveFrom, period.end)));
+  if (orphanedActiveBlock) {
+    return err(new UnexpectedActiveAssetBlockError(params.rentalId, orphanedActiveBlock.id));
   }
 
-  return ok({ changed: true, period, assignedAssets, assetBlocks });
+  const resizedBlockIds = new Set<string>();
+  const resizedBlocksById = new Map<string, AssetBlock>();
+  for (const assignment of assignedAssets.filter((candidate) => candidate.isActive)) {
+    const originalAssignment = params.assignedAssets.find((candidate) => candidate.id === assignment.id)!;
+    const currentExpectedPeriod = deriveAssignmentBlockPeriod(
+      originalAssignment,
+      params.currentPeriod,
+      params.acceptedAssetBuffer,
+    );
+    const block = params.assetBlocks.find(
+      (candidate) =>
+        !resizedBlockIds.has(candidate.id) &&
+        candidate.isActive &&
+        candidate.blockType === AssetBlockType.Equipment &&
+        candidate.assetId === assignment.assetId &&
+        candidate.period.equals(currentExpectedPeriod),
+    );
+    if (!block) return err(new ConfirmedRentalRequiresActiveBlocksError(params.rentalId, assignment.assetId));
+
+    resizedBlockIds.add(block.id);
+    resizedBlocksById.set(
+      block.id,
+      block.resizePeriod(deriveAssignmentBlockPeriod(assignment, period, params.acceptedAssetBuffer)),
+    );
+  }
+
+  return ok({
+    changed: true,
+    period,
+    assignedAssets,
+    assetBlocks: params.assetBlocks.map((block) => resizedBlocksById.get(block.id) ?? block),
+  });
+}
+
+function deriveAssignmentBlockPeriod(
+  assignment: AssignedAsset,
+  rentalPeriod: RentalPeriod,
+  acceptedAssetBuffer: AcceptedRentalAssetBuffer,
+): RentalPeriod {
+  return deriveAssetBlockPeriod({
+    participationPeriod: new RentalPeriod(assignment.effectiveFrom, rentalPeriod.end),
+    beforeBufferMinutes: acceptedAssetBuffer.beforeBufferMinutes,
+    afterBufferMinutes: acceptedAssetBuffer.afterBufferMinutes,
+    ...(assignment.effectiveFrom > rentalPeriod.start ? { operationTime: assignment.effectiveFrom } : {}),
+  });
 }

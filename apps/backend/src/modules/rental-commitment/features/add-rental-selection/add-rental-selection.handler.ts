@@ -21,6 +21,7 @@ import { resolveEquipmentTypeNames } from '../../application/equipment-type-disp
 import { RentalOperationalFactsValidatorService } from '../../application/rental-operational-facts-validator.service';
 import { toRentalIntegrationEvents } from '../../application/rental-integration-event.mapper';
 import { RentalAssetAllocationService } from '../../asset-allocation/rental-asset-allocation.service';
+import { deriveAssetBlockPeriod } from '../../domain/asset-block-period';
 import {
   BranchUnavailableForRentalError,
   DuplicateRentalOfferSelectionError,
@@ -39,6 +40,7 @@ import { RentalSelectionId } from '../../domain/ids/rental-selection-id';
 import { RentalStatus } from '../../domain/rental-status';
 import { Rental } from '../../domain/rental.aggregate';
 import { EquipmentTypeId } from '../../domain/types/rental-commitment-ids';
+import { RentalPeriod } from '../../domain/value-objects/rental-period.value-object';
 import { getConfirmedPriceSnapshotForOwnerSplits } from '../../owner-split/confirmed-price-snapshot-for-owner-splits';
 import { RentalOwnerSplitDraft } from '../../owner-split/owner-split-calculator.types';
 import { RentalOwnerSplitCalculator } from '../../owner-split/rental-owner-split-calculator';
@@ -204,11 +206,17 @@ export class AddRentalSelectionHandler implements ICommandHandler<AddRentalSelec
           return err(this.toApplicationError(new RentalPeriodHasEndedError(rentalId), context));
         }
 
+        const operationalPeriod = deriveAssetBlockPeriod({
+          participationPeriod: new RentalPeriod(effectiveAt, currentRental.period.end),
+          beforeBufferMinutes: currentRental.acceptedAssetBuffer!.beforeBufferMinutes,
+          afterBufferMinutes: currentRental.acceptedAssetBuffer!.afterBufferMinutes,
+          operationTime,
+        });
         const allocation = await this.rentalAssetAllocation.planAllocations({
           tenantId,
           branchId: currentRental.branchId,
-          periodStart: effectiveAt,
-          periodEnd: currentRental.period.end,
+          periodStart: operationalPeriod.start,
+          periodEnd: operationalPeriod.end,
           demandLines: demandLines.map((line) => ({
             rentalDemandLineId: line.id,
             rentalSelectionId: line.rentalSelectionId,

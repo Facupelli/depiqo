@@ -27,6 +27,7 @@ import { buildConfirmationFingerprint } from './confirmation-operation-fingerpri
 import { CreateConfirmedRentalCommand } from './create-confirmed-rental.command';
 import { ConfirmationOperationPersistence } from '../../persistence/rental.repository';
 import { deriveAssetBlockPeriod } from '../../domain/asset-block-period';
+import { deriveConfirmationParticipationTiming } from '../../domain/confirmation-participation-timing';
 import { Rental } from '../../domain/rental.aggregate';
 import { FulfillmentMethod } from '../../domain/rental-status';
 import { createConfirmedRentalError, CreateConfirmedRentalError } from './create-confirmed-rental.errors';
@@ -207,10 +208,13 @@ export class CreateConfirmedRentalService implements ICommandHandler<
       })),
     );
 
+    const operationTime = new Date();
+    const participationTiming = deriveConfirmationParticipationTiming(command.period, operationTime);
     const acceptedAssetBuffer = { ...bufferSettings.value };
     const operationalPeriod = deriveAssetBlockPeriod({
-      participationPeriod: command.period,
+      participationPeriod: participationTiming.participationPeriod,
       ...acceptedAssetBuffer,
+      operationTime: participationTiming.blockOperationTime,
     });
 
     const assetAssignmentPlan = await this.rentalAssetAllocation.planAllocations({
@@ -264,6 +268,7 @@ export class CreateConfirmedRentalService implements ICommandHandler<
           deliveryDetails:
             command.fulfillmentMethod === FulfillmentMethod.Delivery ? command.deliveryDetails : undefined,
           acceptedAssetBuffer,
+          confirmedAt: operationTime,
           confirmedPriceSnapshot: adaptPricingCalculationToSnapshot({
             result: pricingResult.value,
             context: 'CONFIRMED',
