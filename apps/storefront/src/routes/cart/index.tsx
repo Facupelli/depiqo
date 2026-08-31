@@ -13,6 +13,7 @@ import {
 import { CartPageProvider } from "@/modules/rental-commitment/cart/review-cart/cart-page.context";
 import { storefrontBranchQueries } from "@/modules/tenant-management/branches/branches.queries";
 import { publicTenantConfigQueries } from "@/modules/tenant-management/tenant/tenant.queries";
+import { getTenantBranding } from "@/modules/tenant-management/tenant-branding/tenant-branding";
 
 const cartSearchSchema = z.object({
 	branchId: z.string().trim().min(1).optional(),
@@ -30,8 +31,17 @@ export const Route = createFileRoute("/cart/")({
 			queryClient.ensureQueryData(storefrontBranchQueries.list()),
 			queryClient.ensureQueryData(publicTenantConfigQueries.detail()),
 		]);
-		return { branches, config };
+		return {
+			branches,
+			config,
+			branding: getTenantBranding(tenantContext.tenant),
+		};
 	},
+	head: ({ loaderData }) => ({
+		links: loaderData?.branding.faviconHref
+			? [{ rel: "icon", href: loaderData.branding.faviconHref }]
+			: [{ rel: "icon", href: "/favicon.svg" }],
+	}),
 	component: CartRoute,
 });
 

@@ -161,15 +161,17 @@ export function CartPageProvider({
 	const availabilityInput =
 		useMemo<GetCartRentalOfferAvailabilityInput | null>(() => {
 			const rentalOfferIds = items.map((item) => item.rentalOfferId).sort();
-			if (rentalOfferIds.length === 0) return null;
+			if (!isPricingReady || !pickupSlot || !returnSlot || rentalOfferIds.length === 0) {
+				return null;
+			}
 
 			return {
 				branchId: branch.id,
-				periodStart,
-				periodEnd,
+				periodStart: pickupSlot.instant,
+				periodEnd: returnSlot.instant,
 				rentalOfferIds,
 			};
-		}, [branch.id, periodStart, periodEnd, items]);
+		}, [branch.id, isPricingReady, pickupSlot, returnSlot, items]);
 	const availabilityQuery = useCartRentalOfferAvailability(availabilityInput);
 	const availableCountByRentalOfferId = useMemo(() => {
 		if (availabilityQuery.isFetching || availabilityQuery.isError) {

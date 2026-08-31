@@ -22,7 +22,12 @@ export function useRentalPageSearch(search: RentalCatalogSearch) {
 	}
 
 	function handleBranchChange(branchId: string) {
-		setUrlParam({ branchId, page: 1 });
+		setUrlParam({
+			branchId,
+			pickupInstant: undefined,
+			returnInstant: undefined,
+			page: 1,
+		});
 	}
 
 	return {

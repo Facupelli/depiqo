@@ -12,11 +12,14 @@ import {
 	StorefrontRentalOfferListViewPageSchema,
 } from "@/modules/catalog/rental-offers/storefront-rental-offer-list-view.schema";
 import { getStorefrontRentalOffersPricing } from "@/modules/pricing/rental-offer-pricings/get-storefront-rental-offers-pricing/get-storefront-rental-offers-pricing.api";
+import { getStorefrontBranchScheduleSlots } from "@/modules/tenant-management/branches/get-storefront-branch-schedule-slots/get-storefront-branch-schedule-slots.api";
 import type { StorefrontRequestContext } from "@/modules/tenant-management/resolve-public-tenant-context/request-context.middleware";
 
 interface RentalOfferAvailabilityPeriod {
-	periodStart?: string;
-	periodEnd?: string;
+	pickupDate?: string;
+	returnDate?: string;
+	pickupInstant?: string;
+	returnInstant?: string;
 }
 
 export async function composeStorefrontRentalOfferListViewPage(
@@ -32,21 +35,43 @@ export async function composeStorefrontRentalOfferListViewPage(
 		(rentalOffer) => rentalOffer.id,
 	);
 
-	const [rentalOfferPricing, rentalOfferAvailability] = await Promise.all([
+	const pickupDate = availabilityPeriod?.pickupDate;
+	const returnDate = availabilityPeriod?.returnDate;
+	const pickupInstant = availabilityPeriod?.pickupInstant;
+	const returnInstant = availabilityPeriod?.returnInstant;
+	const hasCandidatePeriod =
+		pickupDate !== undefined &&
+		returnDate !== undefined &&
+		pickupInstant !== undefined &&
+		returnInstant !== undefined &&
+		Date.parse(returnInstant) > Date.parse(pickupInstant);
+
+	const [rentalOfferPricing, scheduleSlots] = await Promise.all([
 		rentalOfferIds.length > 0
 			? getStorefrontRentalOffersPricing(requestContext, { rentalOfferIds })
 			: Promise.resolve({ data: [] }),
-		availabilityPeriod?.periodStart &&
-		availabilityPeriod.periodEnd &&
-		rentalOfferIds.length > 0
-			? getStorefrontRentalOfferAvailability(requestContext, {
-					branchId: offersQuery.branchId,
-					periodStart: availabilityPeriod.periodStart,
-					periodEnd: availabilityPeriod.periodEnd,
-					rentalOfferIds,
+		hasCandidatePeriod
+			? getStorefrontBranchScheduleSlots(requestContext, offersQuery.branchId, {
+					periodStart: pickupDate,
+					periodEnd: returnDate,
 				})
 			: Promise.resolve(null),
 	]);
+	const exactAvailabilityPeriod =
+		hasCandidatePeriod &&
+		scheduleSlots?.pickupSlots?.some((slot) => slot.instant === pickupInstant) &&
+		scheduleSlots.returnSlots?.some((slot) => slot.instant === returnInstant)
+			? { periodStart: pickupInstant, periodEnd: returnInstant }
+			: null;
+	const rentalOfferAvailability =
+		exactAvailabilityPeriod && rentalOfferIds.length > 0
+			? await getStorefrontRentalOfferAvailability(requestContext, {
+					branchId: offersQuery.branchId,
+					periodStart: exactAvailabilityPeriod.periodStart,
+					periodEnd: exactAvailabilityPeriod.periodEnd,
+					rentalOfferIds,
+				})
+			: null;
 
 	const pricingByCatalogRentalOfferId = new Map<
 		string,

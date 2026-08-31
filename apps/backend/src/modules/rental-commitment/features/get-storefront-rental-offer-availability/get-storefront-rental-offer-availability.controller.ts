@@ -2,7 +2,6 @@ import { Body, Controller, HttpCode, HttpStatus, Post, UseGuards } from '@nestjs
 import { QueryBus } from '@nestjs/cqrs';
 import { createProblemDetails, createProblemType, ProblemException } from 'src/core/problem-details';
 import { Public } from 'src/core/decorators/public.decorator';
-import { DateRange } from 'src/core/domain/value-objects/date-range.value-object';
 import { SkipCsrf } from 'src/modules/tenant-management/auth/shared/csrf/skip-csrf.decorator';
 
 import { RentalPeriod } from '../../domain/value-objects/rental-period.value-object';
@@ -55,12 +54,7 @@ export class GetStorefrontRentalOfferAvailabilityHttpController {
     let period: RentalPeriod;
 
     try {
-      const dateRange = DateRange.fromInclusiveLocalDateKeys(
-        dto.periodStart,
-        dto.periodEnd,
-        branchContext.value.effectiveTimezone,
-      );
-      period = new RentalPeriod(dateRange.start, dateRange.end);
+      period = new RentalPeriod(dto.periodStart, dto.periodEnd);
     } catch (error) {
       throw toRentalCommitmentProblem(
         rentalCommitmentApplicationError('InvalidRentalPeriod', 'Invalid rental period.', error),

@@ -6,10 +6,10 @@ import {
 } from "@repo/ui/components/popover";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { Minus, Plus, ShoppingBag, Trash2 } from "lucide-react";
-import { startTransition } from "react";
-import type { DateRange } from "react-day-picker";
-import { localDateToDateParam } from "@/lib/dates/parse";
-import { DateRangePicker } from "@/modules/catalog/components/date-range-picker";
+import {
+	DateRangePicker,
+	type ExactRentalPeriodSelection,
+} from "@/modules/catalog/components/date-range-picker";
 import type { RentalCatalogSearch } from "@/modules/catalog/rental-catalog-search";
 import {
 	useRentalCartActions,
@@ -26,21 +26,16 @@ export function CartPopover({ search }: { search?: RentalCatalogSearch }) {
 	const navigate = useNavigate({ from: "/rental/" });
 	const branchId = cartBranchId ?? search?.branchId;
 
-	function handleRentalPeriodChange(range: DateRange | undefined) {
-		startTransition(() => {
-			navigate({
-				search: (previous) => ({
-					...previous,
-					branchId,
-					periodStart: range?.from
-						? localDateToDateParam(range.from)
-						: undefined,
-					periodEnd: range?.to ? localDateToDateParam(range.to) : undefined,
-					page: 1,
-				}),
-				replace: true,
-				resetScroll: false,
-			});
+	function handleRentalPeriodChange(period: ExactRentalPeriodSelection) {
+		void navigate({
+			search: (previous) => ({
+				...previous,
+				...period,
+				branchId,
+				page: 1,
+			}),
+			replace: true,
+			resetScroll: false,
 		});
 	}
 
@@ -134,7 +129,10 @@ export function CartPopover({ search }: { search?: RentalCatalogSearch }) {
 						{items.length > 0 &&
 						branchId &&
 						search?.periodStart &&
-						search.periodEnd ? (
+						search.periodEnd &&
+						search.pickupInstant &&
+						search.returnInstant &&
+						Date.parse(search.returnInstant) > Date.parse(search.pickupInstant) ? (
 							<Button
 								className="w-full"
 								render={
@@ -144,6 +142,8 @@ export function CartPopover({ search }: { search?: RentalCatalogSearch }) {
 											branchId,
 											periodStart: search.periodStart,
 											periodEnd: search.periodEnd,
+											pickupInstant: search.pickupInstant,
+											returnInstant: search.returnInstant,
 										}}
 									/>
 								}
@@ -155,6 +155,8 @@ export function CartPopover({ search }: { search?: RentalCatalogSearch }) {
 								branchId={branchId}
 								pickupDate={search?.periodStart}
 								returnDate={search?.periodEnd}
+								pickupInstant={search?.pickupInstant}
+								returnInstant={search?.returnInstant}
 								onChange={handleRentalPeriodChange}
 								numberOfMonths={1}
 								buttonClassName="w-full justify-center rounded-md bg-primary px-4 py-3 text-primary-foreground hover:bg-primary/90"

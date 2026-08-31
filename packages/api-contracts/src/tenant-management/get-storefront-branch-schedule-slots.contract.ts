@@ -21,10 +21,10 @@ export const GetStorefrontBranchScheduleSlotsQuerySchema = z
         return true;
       }
 
-      return query.periodEnd > query.periodStart;
+      return query.periodEnd >= query.periodStart;
     },
     {
-      message: "periodEnd must be after periodStart.",
+      message: "periodEnd must not be before periodStart.",
       path: ["periodEnd"],
     },
   );
