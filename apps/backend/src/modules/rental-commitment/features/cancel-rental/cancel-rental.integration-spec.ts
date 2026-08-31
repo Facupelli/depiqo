@@ -121,6 +121,7 @@ describe('CancelRental integration', () => {
       assetId: alreadyReleasedAssetId,
       period,
       releasedAt: priorRelease,
+      blockType: 'ACCESSORY',
     });
     const persistedRental = await confirmedRentals.persistedState(setup.rental.rentalId);
     await prisma.client.v2RentalOwnerSplit.create({

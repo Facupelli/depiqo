@@ -2,6 +2,7 @@ import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { err, ok, Result } from 'neverthrow';
 import { PrismaUnitOfWork } from 'src/core/database/prisma-unit-of-work';
 import { PostgresExclusionViolationError } from 'src/core/utils/postgres-error.mapper';
+import { V2AssetBlockType } from 'src/generated/prisma/enums';
 import {
   PricingCalculation,
   PricingCalculationError,
@@ -19,7 +20,7 @@ import {
   RentalPeriodCannotStartInPastError,
   RentalPeriodHasEndedError,
 } from '../../domain/errors/rental-commitment.errors';
-import { RentalStatus } from '../../domain/rental-status';
+import { AssetBlockType, RentalStatus } from '../../domain/rental-status';
 import { Rental } from '../../domain/rental.aggregate';
 import { AssetId } from '../../domain/types/rental-commitment-ids';
 import { JsonValue } from '../../domain/value-objects/json-snapshot.value-object';
@@ -146,25 +147,60 @@ export class ChangeRentalPeriodHandler implements ICommandHandler<ChangeRentalPe
               assetIds: [assignment.assetId],
               periodStart: desiredOperationalPeriod.start,
               periodEnd: desiredOperationalPeriod.end,
-              excludingRentalId: rentalId,
+              ignoredBlockScope: { rentalId, blockType: V2AssetBlockType.EQUIPMENT },
               tx,
             });
             if (!available) return err(this.map(new InsufficientAssetAvailabilityError('', '', 1, 0), context));
           }
         }
 
-        const accessorySelections = await tx.v2RentalAccessorySelection.findMany({
+        const accessoryAssignments = await tx.v2RentalAccessoryAssetAssignment.findMany({
           where: { tenantId, rentalOrderId: rentalId },
-          select: { assignments: { select: { assetId: true } } },
+          select: { assetId: true },
         });
-        const accessoryAssetIds = accessorySelections.flatMap((selection) =>
-          selection.assignments.map((assignment) => assignment.assetId as AssetId),
-        );
+        const currentAccessoryBlocks = accessoryAssignments.map((assignment) => {
+          const matches = current.assetBlocks.filter(
+            (block) =>
+              block.isActive && block.blockType === AssetBlockType.Accessory && block.assetId === assignment.assetId,
+          );
+          if (matches.length !== 1) {
+            throw new RentalInvalidFieldError(
+              'accessoryAssetBlocks',
+              `accessory asset "${assignment.assetId}" must have exactly one active accessory block`,
+            );
+          }
+          return matches[0];
+        });
+
+        if (!started || extending) {
+          for (const block of currentAccessoryBlocks) {
+            const desiredOperationalPeriod = started
+              ? new RentalPeriod(
+                  block.period.start,
+                  new Date(end.getTime() + current.acceptedAssetBuffer!.afterBufferMinutes * 60_000),
+                )
+              : deriveAssetBlockPeriod({
+                  participationPeriod: newPeriod,
+                  beforeBufferMinutes: current.acceptedAssetBuffer!.beforeBufferMinutes,
+                  afterBufferMinutes: current.acceptedAssetBuffer!.afterBufferMinutes,
+                });
+            const available = await this.allocation.areExactAssetsAvailable({
+              tenantId,
+              assetIds: [block.assetId as AssetId],
+              periodStart: desiredOperationalPeriod.start,
+              periodEnd: desiredOperationalPeriod.end,
+              ignoredBlockScope: { rentalId, blockType: V2AssetBlockType.ACCESSORY },
+              tx,
+            });
+            if (!available) return err(this.map(new InsufficientAssetAvailabilityError('', '', 1, 0), context));
+          }
+        }
 
         const changed = current.changeConfirmedPeriod({
           newPeriod: { start, end },
           confirmedPriceSnapshot: preparedPrice.value,
           operationTime,
+          currentAccessoryBlockIds: currentAccessoryBlocks.map((block) => block.id),
         });
         if (changed.isErr()) return err(this.map(changed.error, context));
 
@@ -193,7 +229,6 @@ export class ChangeRentalPeriodHandler implements ICommandHandler<ChangeRentalPe
         const saved = await this.rentalRepository.save(current, {
           expectedVersion,
           ownerSplits,
-          accessoryAssetIds,
           tx,
         });
         if (!saved) return err(this.versionConflict(rentalId, context));

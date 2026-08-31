@@ -33,6 +33,7 @@ export function deriveConfirmedRentalPeriodTransition(params: {
   assignedAssets: readonly AssignedAsset[];
   assetBlocks: readonly AssetBlock[];
   acceptedAssetBuffer: AcceptedRentalAssetBuffer;
+  currentAccessoryBlockIds: readonly string[];
 }): Result<ConfirmedRentalPeriodTransition, RentalCommitmentError> {
   const samePeriod =
     params.requestedPeriod.start.getTime() === params.currentPeriod.start.getTime() &&
@@ -110,6 +111,25 @@ export function deriveConfirmedRentalPeriodTransition(params: {
       block.id,
       block.resizePeriod(deriveAssignmentBlockPeriod(assignment, period, params.acceptedAssetBuffer)),
     );
+  }
+
+  for (const blockId of params.currentAccessoryBlockIds) {
+    const block = params.assetBlocks.find(
+      (candidate) => candidate.id === blockId && candidate.isActive && candidate.blockType === AssetBlockType.Accessory,
+    );
+    if (!block) return err(new UnexpectedActiveAssetBlockError(params.rentalId, blockId));
+
+    const desiredPeriod = started
+      ? new RentalPeriod(
+          block.period.start,
+          new Date(period.end.getTime() + params.acceptedAssetBuffer.afterBufferMinutes * 60_000),
+        )
+      : deriveAssetBlockPeriod({
+          participationPeriod: period,
+          beforeBufferMinutes: params.acceptedAssetBuffer.beforeBufferMinutes,
+          afterBufferMinutes: params.acceptedAssetBuffer.afterBufferMinutes,
+        });
+    resizedBlocksById.set(block.id, block.resizePeriod(desiredPeriod));
   }
 
   return ok({

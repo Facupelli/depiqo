@@ -11,6 +11,7 @@ Asset Inventory publishes provider-owned capabilities under `public-api/`:
 - `EquipmentTypeReferenceAuthority` validates that requested Equipment Type references exist within a supplied tenant. It does not validate stock, branch, rental availability, assignment eligibility, or fulfillment readiness.
 - `AssetInventoryDisplayFacts` provides current Equipment Type facts (`equipmentTypeId`, `name`, `categoryId`), Asset facts (`assetId`, `serialNumber`), and tenant-scoped Owner display facts (`ownerId`, `name`). Owner display lookup resolves owners directly by ID without assignment-eligibility or current Asset ownership filtering. Category display names remain owned by Tenant Management.
 - `AssetInventoryAuthoring` creates an Equipment Type and optional initial physical Assets atomically. It validates Category assignment and initial Asset branch references through Tenant Management before Inventory records are persisted.
+- `AccessoryPreparationInventoryFacts` publishes configured accessory defaults and current eligible physical accessory Asset references for a tenant branch. Rental Commitment combines those facts with rental demand and asset blocks to determine rental-specific availability.
 
 
 ## Domain Concepts
@@ -99,7 +100,7 @@ Rental Commitment owns the decision to assign and block assets for a specific re
 
 Asset Inventory must not query Rental Commitment's asset blocks directly to determine availability.
 
-Rental Commitment owns rental-specific accessory selections, accessory asset assignments, and accessory asset blocks.
+Rental Commitment owns rental-specific accessory selections, accessory asset assignments, accessory asset blocks, and the rental-specific accessory-default suggestion/availability orchestration. The existing accessory-default HTTP route retains its historical Asset Inventory URL prefix for transport compatibility.
 
 Rental Commitment owns historical owner split snapshots for confirmed rentals. Asset Inventory owns current asset ownership.
 
@@ -129,6 +130,7 @@ Rental-specific assignments, blocks, selections, pricing snapshots, and owner sp
 * `public-api/equipment-type-reference-authority.public-api.ts`
 * `public-api/asset-inventory-display-facts.public-api.ts`
 * `public-api/asset-inventory-authoring.public-api.ts`
+* `public-api/accessory-preparation-inventory-facts.public-api.ts`
 * `apps/backend/docs/architecture/overview.md`
 * `apps/backend/docs/architecture/adr/`
 * `apps/backend/src/modules/tenant-management/README.md`

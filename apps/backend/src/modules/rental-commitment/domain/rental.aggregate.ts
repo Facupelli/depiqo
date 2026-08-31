@@ -154,6 +154,7 @@ export interface ChangeConfirmedPeriodProps {
   newPeriod: { start: Date; end: Date };
   confirmedPriceSnapshot: JsonValue;
   operationTime: Date;
+  currentAccessoryBlockIds: readonly string[];
 }
 
 export interface CreateRentalBaseProps {
@@ -891,6 +892,7 @@ export class Rental extends AggregateRootBase {
       assignedAssets: this.props.assignedAssets,
       assetBlocks: this.props.assetBlocks,
       acceptedAssetBuffer: this.props.acceptedAssetBuffer!,
+      currentAccessoryBlockIds: params.currentAccessoryBlockIds,
     });
     if (periodTransition.isErr()) return err(periodTransition.error);
     if (!periodTransition.value.changed) return ok(undefined);

@@ -46,6 +46,7 @@ function derive(assignedAssets: AssignedAsset[], assetBlocks: AssetBlock[]) {
     assignedAssets,
     assetBlocks,
     acceptedAssetBuffer: { beforeBufferMinutes: 0, afterBufferMinutes: 0 },
+    currentAccessoryBlockIds: [],
   });
 }
 

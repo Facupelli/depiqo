@@ -81,7 +81,10 @@ export class RentalAssetAllocationService {
     assetIds: readonly AssetId[];
     periodStart: Date;
     periodEnd: Date;
-    excludingRentalId: string;
+    ignoredBlockScope: {
+      rentalId: string;
+      blockType: V2AssetBlockType;
+    };
     tx: PrismaTransactionClient;
   }): Promise<boolean> {
     const reservations = await this.findActiveOverlappingReservations({
@@ -89,10 +92,7 @@ export class RentalAssetAllocationService {
       assetIds: params.assetIds,
       periodStart: params.periodStart,
       periodEnd: params.periodEnd,
-      ignoredBlockScope: {
-        rentalId: params.excludingRentalId,
-        blockType: V2AssetBlockType.EQUIPMENT,
-      },
+      ignoredBlockScope: params.ignoredBlockScope,
       tx: params.tx,
     });
     return reservations.length === 0;

@@ -91,8 +91,9 @@ describe('ChangeRentalPeriod integration', () => {
         assetId: accessoryAssetId,
       },
     });
+    const accessoryBlockId = randomUUID();
     await prisma.client.$executeRaw`INSERT INTO v2_asset_blocks (id, tenant_id, rental_id, asset_id, period, block_type)
-      VALUES (${randomUUID()}, ${setup.tenant.id}, ${setup.rental.rentalId}, ${accessoryAssetId},
+      VALUES (${accessoryBlockId}, ${setup.tenant.id}, ${setup.rental.rentalId}, ${accessoryAssetId},
       ${`[${new Date(now + 3_600_000).toISOString()},${new Date(now + 90_000_000).toISOString()})`}::tstzrange, 'ACCESSORY')`;
     const events: ConfirmedRentalEditedIntegrationEvent[] = [];
     const listener = (event: ConfirmedRentalEditedIntegrationEvent) => events.push(event);
@@ -116,9 +117,10 @@ describe('ChangeRentalPeriod integration', () => {
     ).toBe(true);
     const accessoryPeriod = parsePostgresRange(state.blocks.find((block) => block.blockType === 'ACCESSORY')!.period);
     expect([accessoryPeriod.start.getTime(), accessoryPeriod.end.getTime()]).toEqual([
-      newStart.getTime(),
-      newEnd.getTime(),
+      newStart.getTime() - 10 * 60_000,
+      newEnd.getTime() + 15 * 60_000,
     ]);
+    expect(state.blocks.find((block) => block.blockType === 'ACCESSORY')!.id).toBe(accessoryBlockId);
     expect(events).toHaveLength(1);
     expect((state.rental.priceSnapshot as { manualAdjustment?: unknown }).manualAdjustment).toBeUndefined();
   });

@@ -4,6 +4,7 @@ import { CommandBus } from '@nestjs/cqrs';
 import { TestingModule } from '@nestjs/testing';
 
 import { PrismaService } from 'src/core/database/prisma.service';
+import { parsePostgresRange } from 'src/core/utils/postgres-range.util';
 import { V2RentalStatus } from 'src/generated/prisma/enums';
 import { AssignRentalAccessoriesCommand } from 'src/modules/rental-commitment/features/assign-rental-accessories/assign-rental-accessories.command';
 import { AssignRentalAccessoriesResult } from 'src/modules/rental-commitment/features/assign-rental-accessories/assign-rental-accessories.handler';
@@ -31,7 +32,7 @@ describe('GetRentalAccessoryDefaults integration', () => {
     commandBus = moduleRef.get(CommandBus);
     core = createTestFixtures(prisma);
     rentals = new ConfirmRentalFixtures(prisma);
-    handler = new GetRentalAccessoryDefaultsHandler(prisma);
+    handler = moduleRef.get(GetRentalAccessoryDefaultsHandler);
     return moduleRef;
   });
 
@@ -51,6 +52,10 @@ describe('GetRentalAccessoryDefaults integration', () => {
       period: { start: utcDate(2030, 1, 1, 10), end: utcDate(2030, 1, 2, 10) },
       demands: [{ equipmentTypeId: sourceEquipmentType.id }],
     });
+    await prisma.client.v2Rental.update({
+      where: { id: rental.rentalId },
+      data: { acceptedBeforeBufferMinutes: 10, acceptedAfterBufferMinutes: 15 },
+    });
 
     await prisma.client.v2EquipmentTypeAccessoryDefault.create({
       data: {
@@ -61,16 +66,40 @@ describe('GetRentalAccessoryDefaults integration', () => {
       },
     });
 
-    await rentals.createCandidate({
+    const owner = await prisma.client.v2AssetOwner.create({
+      data: { tenantId: tenant.id, name: `Owner ${randomUUID()}` },
+    });
+    const assetId = await rentals.createCandidate({
       tenantId: tenant.id,
       branchId: branch.id,
       equipmentTypeId: accessoryEquipmentType.id,
       overrides: {
         ownershipKind: 'THIRD_PARTY',
-        ownerId: randomUUID(),
+        ownerId: owner.id,
         ownerContractSnapshot,
       },
     });
+    await prisma.client.v2Asset.create({
+      data: {
+        id: assetId,
+        tenantId: tenant.id,
+        branchId: branch.id,
+        equipmentTypeId: accessoryEquipmentType.id,
+        ownerId: owner.id,
+      },
+    });
+    if (ownerContractSnapshot) {
+      await prisma.client.v2OwnerContract.create({
+        data: {
+          tenantId: tenant.id,
+          ownerId: owner.id,
+          basis: 'NET',
+          ownerShare: '0.4',
+          rentalShare: '0.6',
+          validFrom: new Date(0),
+        },
+      });
+    }
 
     return { tenant, branch, rental, sourceEquipmentType, accessoryEquipmentType };
   }
@@ -172,5 +201,48 @@ describe('GetRentalAccessoryDefaults integration', () => {
     );
 
     expect(result.isOk()).toBe(true);
+    const blocks = await prisma.client.$queryRaw<Array<{ period: string }>>`
+      SELECT period::text AS period
+      FROM v2_asset_blocks
+      WHERE rental_id = ${s.rental.rentalId} AND block_type = 'ACCESSORY'
+    `;
+    expect(blocks).toHaveLength(1);
+    const period = parsePostgresRange(blocks[0].period);
+    expect(period.start).toEqual(utcDate(2030, 1, 1, 9, 50));
+    expect(period.end).toEqual(utcDate(2030, 1, 2, 10, 15));
+
+    const removed = await commandBus.execute<AssignRentalAccessoriesCommand, AssignRentalAccessoriesResult>(
+      new AssignRentalAccessoriesCommand({ tenantId: s.tenant.id, rentalId: s.rental.rentalId, accessories: [] }),
+    );
+    expect(removed.isOk()).toBe(true);
+    expect(
+      await prisma.client.v2RentalAccessoryAssetAssignment.count({
+        where: { rentalOrderId: s.rental.rentalId },
+      }),
+    ).toBe(0);
+    expect(await prisma.client.v2AssetBlock.count({ where: { rentalId: s.rental.rentalId } })).toBe(0);
+
+    await prisma.client.v2Rental.update({
+      where: { id: s.rental.rentalId },
+      data: { status: V2RentalStatus.PENDING },
+    });
+    const pendingAssignment = await commandBus.execute<AssignRentalAccessoriesCommand, AssignRentalAccessoriesResult>(
+      new AssignRentalAccessoriesCommand({
+        tenantId: s.tenant.id,
+        rentalId: s.rental.rentalId,
+        accessories: [
+          {
+            sourceRentalDemandLineId: s.rental.demandLineIds[0],
+            equipmentTypeId: s.accessoryEquipmentType.id,
+            quantity: 1,
+          },
+        ],
+      }),
+    );
+    expect(pendingAssignment.isErr()).toBe(true);
+    expect(
+      await prisma.client.v2RentalAccessoryAssetAssignment.count({ where: { rentalOrderId: s.rental.rentalId } }),
+    ).toBe(0);
+    expect(await prisma.client.v2AssetBlock.count({ where: { rentalId: s.rental.rentalId } })).toBe(0);
   });
 });

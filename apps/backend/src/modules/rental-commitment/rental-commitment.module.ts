@@ -28,6 +28,8 @@ import { CreateDraftRentalHttpController } from './features/create-draft-rental/
 import { CreateDraftRentalService } from './features/create-draft-rental/create-draft-rental.service';
 import { EditUnconfirmedRentalHttpController } from './features/edit-unconfirmed-rental/edit-unconfirmed-rental.controller';
 import { EditUnconfirmedRentalHandler } from './features/edit-unconfirmed-rental/edit-unconfirmed-rental.handler';
+import { GetRentalAccessoryDefaultsHttpController } from './features/get-rental-accessory-defaults/get-rental-accessory-defaults.controller';
+import { GetRentalAccessoryDefaultsHandler } from './features/get-rental-accessory-defaults/get-rental-accessory-defaults.handler';
 import { GetReplacementAssetCandidatesHttpController } from './features/get-replacement-asset-candidates/get-replacement-asset-candidates.controller';
 import { GetReplacementAssetCandidatesHandler } from './features/get-replacement-asset-candidates/get-replacement-asset-candidates.handler';
 import { ReplaceConfirmedRentalAssetHttpController } from './features/replace-confirmed-rental-asset/replace-confirmed-rental-asset.controller';
@@ -81,6 +83,7 @@ import { RentalLifecycleFactsService } from './public-api/rental-lifecycle-facts
     RemoveRentalSelectionHttpController,
     GetRentalsCalendarHttpController,
     GetRentalDetailHttpController,
+    GetRentalAccessoryDefaultsHttpController,
     GetRentalsHttpController,
     GetRentalOfferAvailabilityHttpController,
     GetStorefrontBranchesHttpController,
@@ -106,6 +109,7 @@ import { RentalLifecycleFactsService } from './public-api/rental-lifecycle-facts
     ReplaceConfirmedRentalAssetHandler,
     RemoveRentalSelectionHandler,
     GetRentalDetailHandler,
+    GetRentalAccessoryDefaultsHandler,
     GetRentalsCalendarHandler,
     GetRentalsHandler,
     GetRentalOfferAvailabilityHandler,
