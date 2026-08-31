@@ -41,10 +41,16 @@ export const TenantCommunicationConfigSchema = z.object({
   showFloatingWhatsAppButton: z.boolean(),
 });
 
+export const TenantRentalAssetBufferConfigSchema = z.object({
+  beforeBufferMinutes: z.number().finite().int().nonnegative(),
+  afterBufferMinutes: z.number().finite().int().nonnegative(),
+});
+
 export const TenantConfigSchema = z.object({
   pricing: TenantPricingConfigSchema,
   notifications: TenantNotificationsConfigSchema,
   communication: TenantCommunicationConfigSchema,
+  rentalAssetBuffer: TenantRentalAssetBufferConfigSchema,
   timezone: z.string(),
   newArrivalsWindowDays: z.number().int().positive(),
   bookingMode: TenantBookingModeSchema,
