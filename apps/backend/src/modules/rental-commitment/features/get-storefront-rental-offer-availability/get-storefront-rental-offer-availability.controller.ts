@@ -12,7 +12,10 @@ import { StorefrontTenantContextGuard } from '../../../tenant-management/tenant-
 import { StorefrontTenantContext } from '../../../tenant-management/tenant-context/tenant-context.contract';
 import { rentalCommitmentApplicationError } from '../create-confirmed-rental/rental-commitment-application.error';
 import { toRentalCommitmentProblem } from '../create-confirmed-rental/rental-commitment-http-error.mapper';
-import { GetStorefrontRentalOfferAvailabilityError } from './get-storefront-rental-offer-availability.errors';
+import {
+  GetStorefrontRentalOfferAvailabilityError,
+  GetStorefrontRentalOfferAvailabilityErrorCode,
+} from './get-storefront-rental-offer-availability.errors';
 import { GetStorefrontRentalOfferAvailabilityResult } from './get-storefront-rental-offer-availability.handler';
 import { GetStorefrontRentalOfferAvailabilityQuery } from './get-storefront-rental-offer-availability.query';
 import { GetStorefrontRentalOfferAvailabilityRequestDto } from './get-storefront-rental-offer-availability.request.dto';
@@ -80,15 +83,31 @@ export class GetStorefrontRentalOfferAvailabilityHttpController {
 function toGetStorefrontRentalOfferAvailabilityProblem(
   error: GetStorefrontRentalOfferAvailabilityError,
 ): ProblemException {
+  const definition = storefrontAvailabilityProblemMap[error.code];
   return ProblemException.from({
     problemDetails: createProblemDetails({
-      type: createProblemType('rental-commitment/invalid-fulfillment-definition'),
-      title: 'Invalid fulfillment definition',
-      status: HttpStatus.UNPROCESSABLE_ENTITY,
-      detail: 'The requested rental offer has an invalid fulfillment definition.',
+      ...definition,
       extensions: { code: error.code },
     }),
     applicationError: error,
     cause: error.cause,
   });
 }
+
+const storefrontAvailabilityProblemMap = {
+  'rental_commitment.invalid_fulfillment_definition': {
+    type: createProblemType('rental-commitment/invalid-fulfillment-definition'),
+    title: 'Invalid fulfillment definition',
+    status: HttpStatus.UNPROCESSABLE_ENTITY,
+    detail: 'The requested rental offer has an invalid fulfillment definition.',
+  },
+  'rental_commitment.tenant_unavailable': {
+    type: createProblemType('rental_commitment.tenant_unavailable'),
+    title: 'Tenant unavailable',
+    status: HttpStatus.UNPROCESSABLE_ENTITY,
+    detail: 'The tenant is not available for rental availability.',
+  },
+} satisfies Record<
+  GetStorefrontRentalOfferAvailabilityErrorCode,
+  { type: string; title: string; status: HttpStatus; detail: string }
+>;

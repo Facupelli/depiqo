@@ -3,6 +3,9 @@ import { err, ok, Result } from 'neverthrow';
 
 import { PrismaService } from 'src/core/database/prisma.service';
 import { CatalogSelectionResolution } from 'src/modules/catalog/public-api/catalog-selection-resolution.public-api';
+import { TenantRentalAssetBufferSettings } from 'src/modules/tenant-management/public-api/tenant-rental-asset-buffer-settings.public-api';
+
+import { deriveAssetBlockPeriod } from '../../domain/asset-block-period';
 
 import {
   GetStorefrontRentalOfferAvailabilityError,
@@ -41,12 +44,31 @@ export class GetStorefrontRentalOfferAvailabilityHandler implements IQueryHandle
   constructor(
     private readonly prisma: PrismaService,
     private readonly catalogSelectionResolution: CatalogSelectionResolution,
+    private readonly tenantRentalAssetBufferSettings: TenantRentalAssetBufferSettings,
   ) {}
 
   async execute(query: GetStorefrontRentalOfferAvailabilityQuery): Promise<GetStorefrontRentalOfferAvailabilityResult> {
     if (query.rentalOfferIds.length === 0) {
       return ok({ data: [] });
     }
+
+    const bufferSettings = await this.tenantRentalAssetBufferSettings.getTenantRentalAssetBufferSettings({
+      tenantId: query.tenantId,
+    });
+    if (bufferSettings.isErr()) {
+      return err(
+        getStorefrontRentalOfferAvailabilityError(
+          'rental_commitment.tenant_unavailable',
+          bufferSettings.error.message,
+          bufferSettings.error,
+        ),
+      );
+    }
+
+    const operationalPeriod = deriveAssetBlockPeriod({
+      participationPeriod: query.period,
+      ...bufferSettings.value,
+    });
 
     const resolved = await this.catalogSelectionResolution.resolveSelectedRentalOfferRequirements({
       tenantId: query.tenantId,
@@ -85,7 +107,7 @@ export class GetStorefrontRentalOfferAvailabilityHandler implements IQueryHandle
     const blockedAssetIds = await this.findBlockedAssetIds({
       tenantId: query.tenantId,
       assetIds: candidates.map((candidate) => candidate.assetId),
-      period: query.period.toPostgresRange(),
+      period: operationalPeriod.toPostgresRange(),
     });
 
     const availableAssetCountByEquipmentType = this.countAvailableAssetsByEquipmentType(candidates, blockedAssetIds);

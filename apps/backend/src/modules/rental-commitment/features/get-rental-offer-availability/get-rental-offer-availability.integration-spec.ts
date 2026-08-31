@@ -3,6 +3,7 @@ import { QueryBus } from '@nestjs/cqrs';
 import { TestingModule } from '@nestjs/testing';
 
 import { PrismaService } from 'src/core/database/prisma.service';
+import { Prisma } from 'src/generated/prisma/client';
 import {
   createRentalCommitmentIntegrationContext,
   useIntegrationTestContext,
@@ -37,6 +38,22 @@ describe('GetRentalOfferAvailability integration', () => {
     const tenant = await core.createTenant();
     const branch = await core.createBranch({ tenantId: tenant.id });
     return { tenant, branch };
+  }
+
+  async function setRentalAssetBuffer(tenantId: string, beforeBufferMinutes: number, afterBufferMinutes: number) {
+    const tenant = await prisma.client.v2Tenant.findUniqueOrThrow({
+      where: { id: tenantId },
+      select: { config: true },
+    });
+    await prisma.client.v2Tenant.update({
+      where: { id: tenantId },
+      data: {
+        config: {
+          ...(tenant.config as Prisma.JsonObject),
+          rentalAssetBuffer: { beforeBufferMinutes, afterBufferMinutes },
+        },
+      },
+    });
   }
 
   async function equipmentType(tenantId: string) {
@@ -191,8 +208,9 @@ describe('GetRentalOfferAvailability integration', () => {
     expect((await value(s.tenant.id, s.branch.id, [rentalOffer.id], { start, end }))[0].availableCount).toBe(expected);
   });
 
-  it('ignores released and non-overlapping active blocks', async () => {
+  it('ignores released blocks and checks active blocks against the buffered operational period', async () => {
     const s = await setup();
+    await setRentalAssetBuffer(s.tenant.id, 30, 45);
     const type = await equipmentType(s.tenant.id);
     const rentalOffer = await offer({
       tenantId: s.tenant.id,
@@ -222,7 +240,7 @@ describe('GetRentalOfferAvailability integration', () => {
       assetId: assets[1],
       period: { start: utcDate(2030, 1, 1, 8), end: utcDate(2030, 1, 1, 10) },
     });
-    expect((await value(s.tenant.id, s.branch.id, [rentalOffer.id]))[0].availableCount).toBe(2);
+    expect((await value(s.tenant.id, s.branch.id, [rentalOffer.id]))[0].availableCount).toBe(1);
   });
 
   it('applies projection eligibility, tenant isolation, and branch isolation', async () => {

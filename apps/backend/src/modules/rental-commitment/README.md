@@ -79,7 +79,7 @@ An `AssignedAsset` is a temporal, rental-owned fulfillment participation recordi
 
 Each assignment preserves the ownership and owner-contract payout terms accepted for that participation. Tenant-owned assignments record only that ownership kind. Third-party assignments preserve the owner, contract, payout basis, and owner share, so their history does not depend on later Asset Inventory ownership or owner-contract changes. This snapshot stores payout terms, not a calculated payout amount.
 
-Each current assignment is paired with exactly one active rental-owned equipment Asset Block for `[effectiveFrom, rental period end)`. Historical assignments do not require an active block.
+Each current assignment is paired with exactly one active rental-owned equipment Asset Block covering its accepted operational participation period. Historical assignments do not require an active block.
 
 A confirmed rental's current assigned equipment asset may be replaced before or during its rental period. Before the period starts, replacement changes the future plan: the replaced assignment and its active block are removed because they never became effective. During the period, replacement preserves the previous assignment and block as history by closing both at the replacement effective time, then creates the replacement assignment and block from that instant through the rental end. Replacement availability is evaluated only for that remaining effective interval. Replacement does not change customer pricing. Current owner-split projection is recalculated from current/open assignments and the accepted price, while closed assignments retain their original ownership and contract terms. This does not create time-prorated owner payouts.
 

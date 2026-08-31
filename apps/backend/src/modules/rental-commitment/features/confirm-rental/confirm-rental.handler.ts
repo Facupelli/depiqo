@@ -7,9 +7,11 @@ import {
   PostgresExclusionViolationError,
 } from 'src/core/utils/postgres-error.mapper';
 import { V2AssetBlockType } from 'src/generated/prisma/enums';
+import { TenantRentalAssetBufferSettings } from 'src/modules/tenant-management/public-api/tenant-rental-asset-buffer-settings.public-api';
 import { RentalOperationalFactsValidatorService } from '../../application/rental-operational-facts-validator.service';
 
 import { toRentalIntegrationEvents } from '../../application/rental-integration-event.mapper';
+import { deriveAssetBlockPeriod } from '../../domain/asset-block-period';
 import { RentalAssetAllocationService } from '../../asset-allocation/rental-asset-allocation.service';
 import {
   BranchUnavailableForRentalError,
@@ -39,6 +41,7 @@ export class ConfirmRentalHandler implements ICommandHandler<ConfirmRentalComman
   constructor(
     private readonly rentalRepository: RentalRepository,
     private readonly rentalOperationalFacts: RentalOperationalFactsValidatorService,
+    private readonly tenantRentalAssetBufferSettings: TenantRentalAssetBufferSettings,
     private readonly rentalAssetAllocation: RentalAssetAllocationService,
     private readonly rentalOwnerSplitCalculator: RentalOwnerSplitCalculator,
     private readonly unitOfWork: PrismaUnitOfWork,
@@ -83,11 +86,31 @@ export class ConfirmRentalHandler implements ICommandHandler<ConfirmRentalComman
       return err(this.toApplicationError(tenantValidation.error, context));
     }
 
+    const bufferSettings = await this.tenantRentalAssetBufferSettings.getTenantRentalAssetBufferSettings({
+      tenantId: rental.tenantId,
+    });
+    if (bufferSettings.isErr()) {
+      return err(
+        confirmRentalError(
+          'rental_commitment.tenant_unavailable',
+          bufferSettings.error.message,
+          bufferSettings.error,
+          context,
+        ),
+      );
+    }
+
+    const acceptedAssetBuffer = { ...bufferSettings.value };
+    const operationalPeriod = deriveAssetBlockPeriod({
+      participationPeriod: rental.period,
+      ...acceptedAssetBuffer,
+    });
+
     const assetAssignmentPlan = await this.rentalAssetAllocation.planAllocations({
       tenantId: rental.tenantId,
       branchId: rental.branchId,
-      periodStart: rental.period.start,
-      periodEnd: rental.period.end,
+      periodStart: operationalPeriod.start,
+      periodEnd: operationalPeriod.end,
       demandLines: rental.demandLines.map((line) => ({
         rentalDemandLineId: line.id,
         rentalSelectionId: line.rentalSelectionId,
@@ -105,7 +128,7 @@ export class ConfirmRentalHandler implements ICommandHandler<ConfirmRentalComman
     }
 
     const confirmResult = rental.confirm({
-      acceptedAssetBuffer: { beforeBufferMinutes: 0, afterBufferMinutes: 0 },
+      acceptedAssetBuffer,
       assignedAssets: assetAssignmentPlan.value.allocations.map((allocation) => ({
         rentalDemandLineId: allocation.rentalDemandLineId,
         assetId: allocation.assetId,

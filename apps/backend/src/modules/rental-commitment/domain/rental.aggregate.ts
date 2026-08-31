@@ -5,6 +5,7 @@ import { err, ok, Result } from 'neverthrow';
 import { AggregateRootBase } from 'src/core/domain/aggregate-root.base';
 
 import { AssetBlock } from './asset-block.entity';
+import { deriveAssetBlockPeriod } from './asset-block-period';
 import { AssignedAsset, CreateAssignedAssetProps } from './assigned-asset.entity';
 import {
   AssetBlockPeriodMismatchError,
@@ -422,6 +423,11 @@ export class Rental extends AggregateRootBase {
   }
 
   static createConfirmed(props: CreateConfirmedRentalProps): Result<Rental, RentalCommitmentError> {
+    const acceptedAssetBufferValidation = this.validateAcceptedAssetBuffer(props.acceptedAssetBuffer);
+    if (acceptedAssetBufferValidation.isErr()) {
+      return err(acceptedAssetBufferValidation.error);
+    }
+
     const confirmedPriceSnapshot = ConfirmedPriceSnapshot.create(props.confirmedPriceSnapshot);
     if (confirmedPriceSnapshot.isErr()) {
       return err(confirmedPriceSnapshot.error);
@@ -455,6 +461,7 @@ export class Rental extends AggregateRootBase {
           tenantId: props.tenantId,
           rentalId,
           period: props.period,
+          acceptedAssetBuffer: props.acceptedAssetBuffer,
           assignedAssets: assignedAssets.value,
         });
 
@@ -646,6 +653,7 @@ export class Rental extends AggregateRootBase {
       tenantId: this.tenantId,
       rentalId: this.id,
       period: new RentalPeriod(effectiveAt, this.period.end),
+      acceptedAssetBuffer: this.props.acceptedAssetBuffer!,
       assignedAssets: assignedAssets.value,
     });
     if (assetBlocks.isErr()) return err(assetBlocks.error);
@@ -810,6 +818,7 @@ export class Rental extends AggregateRootBase {
         tenantId: this.tenantId,
         rentalId: this.id,
         period: new RentalPeriod(effectiveAt, this.period.end),
+        acceptedAssetBuffer: this.props.acceptedAssetBuffer!,
         assignedAssets: additions.value,
       });
       if (blocks.isErr()) return err(blocks.error);
@@ -1040,8 +1049,14 @@ export class Rental extends AggregateRootBase {
       return err(assignedAssets.error);
     }
 
+    const acceptedAssetBufferValidation = Rental.validateAcceptedAssetBuffer(params.acceptedAssetBuffer);
+    if (acceptedAssetBufferValidation.isErr()) {
+      return err(acceptedAssetBufferValidation.error);
+    }
+
     const assetBlocks = this.resolveConfirmationAssetBlocks({
       assignedAssets: assignedAssets.value,
+      acceptedAssetBuffer: params.acceptedAssetBuffer,
       assetBlocks: params.assetBlocks,
     });
 
@@ -1054,16 +1069,12 @@ export class Rental extends AggregateRootBase {
       demandLines: this.props.demandLines,
       assignedAssets: assignedAssets.value,
       assetBlocks: assetBlocks.value,
+      acceptedAssetBuffer: params.acceptedAssetBuffer,
       period: this.period,
     });
 
     if (confirmedStateValidation.isErr()) {
       return err(confirmedStateValidation.error);
-    }
-
-    const acceptedAssetBufferValidation = Rental.validateAcceptedAssetBuffer(params.acceptedAssetBuffer);
-    if (acceptedAssetBufferValidation.isErr()) {
-      return err(acceptedAssetBufferValidation.error);
     }
 
     this.props.status = RentalStatus.Confirmed;
@@ -1151,6 +1162,7 @@ export class Rental extends AggregateRootBase {
 
   private resolveConfirmationAssetBlocks(params: {
     assignedAssets: readonly AssignedAsset[];
+    acceptedAssetBuffer: AcceptedRentalAssetBuffer;
     assetBlocks?: readonly AssetBlock[];
   }): Result<AssetBlock[], RentalCommitmentError> {
     if (params.assetBlocks) {
@@ -1161,6 +1173,7 @@ export class Rental extends AggregateRootBase {
       tenantId: this.tenantId,
       rentalId: this.id,
       period: this.period,
+      acceptedAssetBuffer: params.acceptedAssetBuffer,
       assignedAssets: params.assignedAssets,
     });
   }
@@ -1232,6 +1245,7 @@ export class Rental extends AggregateRootBase {
       demandLines: this.currentDemandLines,
       assignedAssets: this.props.assignedAssets,
       assetBlocks: this.props.assetBlocks,
+      acceptedAssetBuffer: this.props.acceptedAssetBuffer!,
       period: this.period,
     });
   }
@@ -1241,6 +1255,7 @@ export class Rental extends AggregateRootBase {
     demandLines: readonly RentalDemandLine[];
     assignedAssets: readonly AssignedAsset[];
     assetBlocks: readonly AssetBlock[];
+    acceptedAssetBuffer: AcceptedRentalAssetBuffer;
     period: RentalPeriod;
   }): Result<void, RentalCommitmentError> {
     const requiredStateValidation = this.validateConfirmedRequiredState({
@@ -1278,6 +1293,7 @@ export class Rental extends AggregateRootBase {
     return this.validateActiveEquipmentBlocks({
       assignedAssets: currentAssignedAssets,
       assetBlocks: params.assetBlocks,
+      acceptedAssetBuffer: params.acceptedAssetBuffer,
       period: params.period,
     });
   }
@@ -1405,6 +1421,7 @@ export class Rental extends AggregateRootBase {
   private validateActiveEquipmentBlocks(params: {
     assignedAssets: readonly AssignedAsset[];
     assetBlocks: readonly AssetBlock[];
+    acceptedAssetBuffer: AcceptedRentalAssetBuffer;
     period: RentalPeriod;
   }): Result<void, RentalCommitmentError> {
     const currentAssignmentByAssetId = new Map(
@@ -1420,7 +1437,11 @@ export class Rental extends AggregateRootBase {
         return err(new UnexpectedActiveAssetBlockError(this.id, block.id));
       }
 
-      const requiredPeriod = new RentalPeriod(assignment.effectiveFrom, params.period.end);
+      const requiredPeriod = deriveAssetBlockPeriod({
+        participationPeriod: new RentalPeriod(assignment.effectiveFrom, params.period.end),
+        beforeBufferMinutes: params.acceptedAssetBuffer.beforeBufferMinutes,
+        afterBufferMinutes: params.acceptedAssetBuffer.afterBufferMinutes,
+      });
       if (!block.period.equals(requiredPeriod)) {
         return err(new AssetBlockPeriodMismatchError(this.id, block.id));
       }
@@ -1571,6 +1592,7 @@ export class Rental extends AggregateRootBase {
     tenantId: string;
     rentalId: RentalId;
     period: RentalPeriod;
+    acceptedAssetBuffer: AcceptedRentalAssetBuffer;
     assignedAssets: readonly AssignedAsset[];
   }): Result<AssetBlock[], RentalCommitmentError> {
     const assetBlocks: AssetBlock[] = [];
@@ -1580,7 +1602,11 @@ export class Rental extends AggregateRootBase {
         tenantId: params.tenantId,
         rentalId: params.rentalId,
         assetId: assignment.assetId,
-        period: new RentalPeriod(assignment.effectiveFrom, params.period.end),
+        period: deriveAssetBlockPeriod({
+          participationPeriod: new RentalPeriod(assignment.effectiveFrom, params.period.end),
+          beforeBufferMinutes: params.acceptedAssetBuffer.beforeBufferMinutes,
+          afterBufferMinutes: params.acceptedAssetBuffer.afterBufferMinutes,
+        }),
         blockType: AssetBlockType.Equipment,
         createdAt: assignment.createdAt,
       });

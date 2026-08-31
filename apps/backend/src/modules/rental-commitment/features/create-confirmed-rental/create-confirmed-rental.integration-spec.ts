@@ -122,6 +122,22 @@ describe('CreateConfirmedRental integration', () => {
     return { offer: rentalOffer, item, equipmentTypes };
   }
 
+  async function setRentalAssetBuffer(tenantId: string, beforeBufferMinutes: number, afterBufferMinutes: number) {
+    const tenant = await prisma.client.v2Tenant.findUniqueOrThrow({
+      where: { id: tenantId },
+      select: { config: true },
+    });
+    await prisma.client.v2Tenant.update({
+      where: { id: tenantId },
+      data: {
+        config: {
+          ...(tenant.config as Prisma.JsonObject),
+          rentalAssetBuffer: { beforeBufferMinutes, afterBufferMinutes },
+        },
+      },
+    });
+  }
+
   async function candidate(
     input: Scenario & {
       equipmentTypeId: string;
@@ -222,6 +238,7 @@ describe('CreateConfirmedRental integration', () => {
     const setup = await scenario();
     const catalog = await offer(setup);
     const assetId = await candidate({ ...setup, equipmentTypeId: catalog.equipmentTypes[0].id });
+    await setRentalAssetBuffer(setup.tenantId, 30, 45);
 
     const result = await create({ ...setup, selectedOffers: [{ rentalOfferId: catalog.offer.id, quantity: 1 }] });
     expect(result.isOk()).toBe(true);
@@ -236,6 +253,8 @@ describe('CreateConfirmedRental integration', () => {
         status: 'CONFIRMED',
         periodStart: period().start,
         periodEnd: period().end,
+        acceptedBeforeBufferMinutes: 30,
+        acceptedAfterBufferMinutes: 45,
       }),
     );
     expect(state.rental.confirmedAt).not.toBeNull();
@@ -255,11 +274,15 @@ describe('CreateConfirmedRental integration', () => {
       }),
     ]);
     expect(state.rental.assignedAssets).toEqual([
-      expect.objectContaining({ rentalDemandLineId: state.rental.demandLines[0].id, assetId }),
+      expect.objectContaining({
+        rentalDemandLineId: state.rental.demandLines[0].id,
+        assetId,
+        effectiveFrom: period().start,
+      }),
     ]);
     expect(state.blocks).toEqual([expect.objectContaining({ assetId, blockType: 'EQUIPMENT', releasedAt: null })]);
-    expect(state.blocks[0].period).toContain('2030-01-07 10:00:00+00');
-    expect(state.blocks[0].period).toContain('2030-01-07 12:00:00+00');
+    expect(state.blocks[0].period).toContain('2030-01-07 09:30:00+00');
+    expect(state.blocks[0].period).toContain('2030-01-07 12:45:00+00');
     expect(state.rental.priceSnapshot).toEqual(
       expect.objectContaining({ schema: 'v2.rental-price-snapshot', version: 2, context: 'CONFIRMED' }),
     );

@@ -1,6 +1,8 @@
 import type { ApplicationError } from 'src/core/errors/application-error';
 
-export type GetStorefrontRentalOfferAvailabilityErrorCode = 'rental_commitment.invalid_fulfillment_definition';
+export type GetStorefrontRentalOfferAvailabilityErrorCode =
+  | 'rental_commitment.invalid_fulfillment_definition'
+  | 'rental_commitment.tenant_unavailable';
 
 export interface GetStorefrontRentalOfferAvailabilityError extends ApplicationError {
   code: GetStorefrontRentalOfferAvailabilityErrorCode;

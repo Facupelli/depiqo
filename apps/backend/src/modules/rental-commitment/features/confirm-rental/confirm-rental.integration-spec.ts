@@ -57,6 +57,22 @@ describe('ConfirmRental integration', () => {
     return commandBus.execute(new ConfirmRentalCommand(tenantId, rentalId));
   }
 
+  async function setRentalAssetBuffer(tenantId: string, beforeBufferMinutes: number, afterBufferMinutes: number) {
+    const tenant = await prisma.client.v2Tenant.findUniqueOrThrow({
+      where: { id: tenantId },
+      select: { config: true },
+    });
+    await prisma.client.v2Tenant.update({
+      where: { id: tenantId },
+      data: {
+        config: {
+          ...(tenant.config as Prisma.JsonObject),
+          rentalAssetBuffer: { beforeBufferMinutes, afterBufferMinutes },
+        },
+      },
+    });
+  }
+
   async function persisted(rentalId: string) {
     const rental = await prisma.client.v2Rental.findUniqueOrThrow({
       where: { id: rentalId },
@@ -97,6 +113,7 @@ describe('ConfirmRental integration', () => {
         branchId: scenario.branch.id,
         equipmentTypeId: scenario.rental.equipmentTypeIds[0],
       });
+      await setRentalAssetBuffer(scenario.tenant.id, 30, 45);
 
       const result = await confirm(scenario.tenant.id, scenario.rental.rentalId);
       expect(result.isOk()).toBe(true);
@@ -104,6 +121,8 @@ describe('ConfirmRental integration', () => {
       const state = await persisted(scenario.rental.rentalId);
       expect(state.rental.status).toBe('CONFIRMED');
       expect(state.rental.confirmedAt).not.toBeNull();
+      expect(state.rental.acceptedBeforeBufferMinutes).toBe(30);
+      expect(state.rental.acceptedAfterBufferMinutes).toBe(45);
       expect(state.rental.priceSnapshot).toEqual(scenario.rental.priceSnapshot);
       expect(state.rental.demandLines).toHaveLength(1);
       expect(state.rental.assignedAssets).toEqual([
@@ -124,8 +143,8 @@ describe('ConfirmRental integration', () => {
           releasedAt: null,
         }),
       ]);
-      expect(state.blocks[0].period).toContain('2030-01-01 10:00:00+00');
-      expect(state.blocks[0].period).toContain('2030-01-01 12:00:00+00');
+      expect(state.blocks[0].period).toContain('2030-01-01 09:30:00+00');
+      expect(state.blocks[0].period).toContain('2030-01-01 12:45:00+00');
       expect(state.rental.ownerSplits).toHaveLength(0);
     },
   );
