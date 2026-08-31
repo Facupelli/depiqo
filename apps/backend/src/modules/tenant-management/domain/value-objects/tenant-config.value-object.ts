@@ -207,7 +207,7 @@ export class TenantConfig {
   ): TenantConfigProps {
     const pricing = normalizePricing(props.pricing);
     const communication = TenantConfig.normalizeCommunication(props.communication);
-    const rentalAssetBuffer = TenantConfig.normalizeRentalAssetBuffer(props.rentalAssetBuffer);
+    const rentalAssetBuffer = props.rentalAssetBuffer;
     const bookingMode =
       communication.orderCommunicationMode === TenantOrderCommunicationMode.WHATSAPP
         ? TenantBookingMode.REQUEST_TO_BOOK
@@ -253,28 +253,6 @@ export class TenantConfig {
     }
 
     return normalizedPricing;
-  }
-
-  private static normalizeRentalAssetBuffer(
-    rentalAssetBuffer: TenantRentalAssetBufferConfigProps | undefined,
-  ): TenantRentalAssetBufferConfigProps {
-    if (rentalAssetBuffer === undefined) {
-      return { beforeBufferMinutes: 0, afterBufferMinutes: 0 };
-    }
-
-    if (rentalAssetBuffer === null || typeof rentalAssetBuffer !== 'object' || Array.isArray(rentalAssetBuffer)) {
-      return rentalAssetBuffer;
-    }
-
-    return {
-      ...rentalAssetBuffer,
-      beforeBufferMinutes: Object.prototype.hasOwnProperty.call(rentalAssetBuffer, 'beforeBufferMinutes')
-        ? rentalAssetBuffer.beforeBufferMinutes
-        : 0,
-      afterBufferMinutes: Object.prototype.hasOwnProperty.call(rentalAssetBuffer, 'afterBufferMinutes')
-        ? rentalAssetBuffer.afterBufferMinutes
-        : 0,
-    };
   }
 
   private static normalizeCommunication(communication: TenantCommunicationConfigProps): TenantCommunicationConfigProps {

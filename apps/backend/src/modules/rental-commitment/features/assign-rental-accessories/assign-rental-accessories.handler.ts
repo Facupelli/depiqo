@@ -532,9 +532,6 @@ export class AssignRentalAccessoriesHandler implements ICommandHandler<
   } {
     const before = rental.acceptedBeforeBufferMinutes;
     const after = rental.acceptedAfterBufferMinutes;
-    if (before === null && after === null) {
-      return { beforeBufferMinutes: 0, afterBufferMinutes: 0 };
-    }
     if (before === null || after === null) {
       throw new RentalInvalidFieldError('acceptedAssetBuffer', 'persisted buffer values must both be present');
     }

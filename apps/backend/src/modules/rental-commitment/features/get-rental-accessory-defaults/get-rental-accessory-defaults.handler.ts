@@ -129,7 +129,6 @@ export class GetRentalAccessoryDefaultsHandler implements IQueryHandler<
   }
 
   private resolveAcceptedBuffer(before: number | null, after: number | null) {
-    if (before === null && after === null) return { beforeBufferMinutes: 0, afterBufferMinutes: 0 };
     if (before === null || after === null) {
       throw new RentalInvalidFieldError('acceptedAssetBuffer', 'persisted buffer values must both be present');
     }

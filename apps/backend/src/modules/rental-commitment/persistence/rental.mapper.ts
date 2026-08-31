@@ -263,6 +263,13 @@ export class RentalMapper {
     const after = record.acceptedAfterBufferMinutes;
 
     if (before === null && after === null) {
+      if (record.status === RentalStatus.Confirmed || record.confirmedAt !== null) {
+        throw new RentalInvalidFieldError(
+          'acceptedAssetBuffer',
+          'confirmed or previously confirmed persisted rentals must have an accepted buffer',
+        );
+      }
+
       return undefined;
     }
 

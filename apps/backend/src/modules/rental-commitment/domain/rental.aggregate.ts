@@ -513,11 +513,7 @@ export class Rental extends AggregateRootBase {
       ...props,
       priceSnapshot: props.priceSnapshot === undefined ? undefined : new JsonSnapshot(props.priceSnapshot),
       confirmedPriceSnapshot,
-      acceptedAssetBuffer:
-        props.acceptedAssetBuffer ??
-        (props.status === RentalStatus.Confirmed || props.confirmedAt
-          ? { beforeBufferMinutes: 0, afterBufferMinutes: 0 }
-          : undefined),
+      acceptedAssetBuffer: props.acceptedAssetBuffer,
       selections: [...props.selections],
       demandLines: [...props.demandLines],
       assignedAssets: [...props.assignedAssets],
@@ -1270,12 +1266,16 @@ export class Rental extends AggregateRootBase {
   }
 
   private validateConfirmedInvariants(): Result<void, RentalCommitmentError> {
+    if (!this.props.acceptedAssetBuffer) {
+      return err(new RentalInvalidFieldError('acceptedAssetBuffer', 'confirmed rentals require an accepted buffer'));
+    }
+
     return this.validateConfirmedState({
       confirmedPriceSnapshot: this.props.confirmedPriceSnapshot,
       demandLines: this.currentDemandLines,
       assignedAssets: this.props.assignedAssets,
       assetBlocks: this.props.assetBlocks,
-      acceptedAssetBuffer: this.props.acceptedAssetBuffer!,
+      acceptedAssetBuffer: this.props.acceptedAssetBuffer,
       period: this.period,
     });
   }
