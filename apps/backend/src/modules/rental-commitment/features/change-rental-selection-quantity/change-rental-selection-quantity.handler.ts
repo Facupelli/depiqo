@@ -168,10 +168,11 @@ export class ChangeRentalSelectionQuantityHandler implements ICommandHandler<
             equipmentTypeId: line.equipmentTypeId,
             quantity: quantityChange.value.deltaFor(line.id)!,
           }));
+          const acceptedAssetBuffer = current.requireAcceptedAssetBuffer();
           const operationalPeriod = deriveAssetBlockPeriod({
             participationPeriod: new RentalPeriod(effectiveAt, current.period.end),
-            beforeBufferMinutes: current.acceptedAssetBuffer!.beforeBufferMinutes,
-            afterBufferMinutes: current.acceptedAssetBuffer!.afterBufferMinutes,
+            beforeBufferMinutes: acceptedAssetBuffer.beforeBufferMinutes,
+            afterBufferMinutes: acceptedAssetBuffer.afterBufferMinutes,
             operationTime,
           });
           const plan = await this.allocation.planAllocations({

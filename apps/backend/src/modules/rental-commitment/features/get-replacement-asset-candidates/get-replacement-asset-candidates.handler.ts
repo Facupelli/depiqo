@@ -81,10 +81,11 @@ export class GetReplacementAssetCandidatesHandler implements IQueryHandler<
       throw new Error(`Assigned asset "${currentAssignment.id}" references an unknown demand line.`);
     }
 
+    const acceptedAssetBuffer = rental.requireAcceptedAssetBuffer();
     const operationalPeriod = deriveAssetBlockPeriod({
       participationPeriod: new RentalPeriod(effectiveAt, rental.period.end),
-      beforeBufferMinutes: rental.acceptedAssetBuffer!.beforeBufferMinutes,
-      afterBufferMinutes: rental.acceptedAssetBuffer!.afterBufferMinutes,
+      beforeBufferMinutes: acceptedAssetBuffer.beforeBufferMinutes,
+      afterBufferMinutes: acceptedAssetBuffer.afterBufferMinutes,
       operationTime,
     });
     const candidates = await this.rentalAssetAllocation.findEligibleAvailableCandidates({

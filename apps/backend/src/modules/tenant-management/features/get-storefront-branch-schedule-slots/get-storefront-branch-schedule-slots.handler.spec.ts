@@ -24,6 +24,7 @@ describe('GetStorefrontBranchScheduleSlotsHandler DST-date schedule lookup', () 
                   pricing: {},
                   notifications: {},
                   communication: { orderCommunicationMode: 'FORMAL' },
+                  rentalAssetBuffer: { beforeBufferMinutes: 0, afterBufferMinutes: 0 },
                   bookingMode: 'instant-book',
                 },
               },

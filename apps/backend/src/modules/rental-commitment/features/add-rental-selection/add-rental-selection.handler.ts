@@ -206,10 +206,11 @@ export class AddRentalSelectionHandler implements ICommandHandler<AddRentalSelec
           return err(this.toApplicationError(new RentalPeriodHasEndedError(rentalId), context));
         }
 
+        const acceptedAssetBuffer = currentRental.requireAcceptedAssetBuffer();
         const operationalPeriod = deriveAssetBlockPeriod({
           participationPeriod: new RentalPeriod(effectiveAt, currentRental.period.end),
-          beforeBufferMinutes: currentRental.acceptedAssetBuffer!.beforeBufferMinutes,
-          afterBufferMinutes: currentRental.acceptedAssetBuffer!.afterBufferMinutes,
+          beforeBufferMinutes: acceptedAssetBuffer.beforeBufferMinutes,
+          afterBufferMinutes: acceptedAssetBuffer.afterBufferMinutes,
           operationTime,
         });
         const allocation = await this.rentalAssetAllocation.planAllocations({

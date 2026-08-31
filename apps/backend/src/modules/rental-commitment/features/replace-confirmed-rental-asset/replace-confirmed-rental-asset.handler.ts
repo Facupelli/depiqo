@@ -136,10 +136,11 @@ export class ReplaceConfirmedRentalAssetHandler implements ICommandHandler<
           throw new Error(`Assigned asset "${currentAssignment.id}" references an unknown demand line.`);
         }
 
+        const acceptedAssetBuffer = currentRental.requireAcceptedAssetBuffer();
         const operationalPeriod = deriveAssetBlockPeriod({
           participationPeriod: new RentalPeriod(effectiveAt, currentRental.period.end),
-          beforeBufferMinutes: currentRental.acceptedAssetBuffer!.beforeBufferMinutes,
-          afterBufferMinutes: currentRental.acceptedAssetBuffer!.afterBufferMinutes,
+          beforeBufferMinutes: acceptedAssetBuffer.beforeBufferMinutes,
+          afterBufferMinutes: acceptedAssetBuffer.afterBufferMinutes,
           operationTime,
         });
         const allocationPlan = await this.rentalAssetAllocation.planAllocations({
