@@ -12,7 +12,8 @@ import {
   RentalStatus,
   RentableItemKind,
 } from '../domain/rental-status';
-import { Rental, RentalDeliveryDetails } from '../domain/rental.aggregate';
+import { RentalInvalidFieldError } from '../domain/errors/rental-commitment.errors';
+import { AcceptedRentalAssetBuffer, Rental, RentalDeliveryDetails } from '../domain/rental.aggregate';
 import { RentalDemandLineId } from '../domain/ids/rental-demand-line-id';
 import { RentalSelectionId } from '../domain/ids/rental-selection-id';
 import { AssetId, EquipmentTypeId, RentalId } from '../domain/types/rental-commitment-ids';
@@ -32,6 +33,8 @@ export interface RentalPersistenceRecord {
   branchId: string;
   customerId: string | null;
   status: string;
+  acceptedBeforeBufferMinutes: number | null;
+  acceptedAfterBufferMinutes: number | null;
   fulfillmentMethod: string | null;
   notes: string | null;
   insuranceSelected: boolean;
@@ -115,6 +118,7 @@ export interface AssetBlockPersistenceRecord {
 
 export class RentalMapper {
   static toDomain(record: RentalPersistenceRecord): Rental {
+    const acceptedAssetBuffer = this.toAcceptedAssetBufferDomain(record);
     const result = Rental.reconstitute({
       id: record.id as RentalId,
       tenantId: record.tenantId,
@@ -135,6 +139,7 @@ export class RentalMapper {
         record.status === 'CONFIRMED' ? undefined : ((record.priceSnapshot as JsonValue | null) ?? undefined),
       confirmedPriceSnapshot:
         record.status === 'CONFIRMED' ? ((record.priceSnapshot as JsonValue | null) ?? undefined) : undefined,
+      acceptedAssetBuffer,
       selections: record.selections.map((selection) =>
         RentalSelection.reconstitute({
           id: selection.id as RentalSelectionId,
@@ -228,6 +233,8 @@ export class RentalMapper {
       confirmedAt: rental.confirmedAt,
       confirmationOperationId: confirmationOperation?.operationId,
       confirmationFingerprint: confirmationOperation?.fingerprint,
+      acceptedBeforeBufferMinutes: rental.acceptedAssetBuffer?.beforeBufferMinutes,
+      acceptedAfterBufferMinutes: rental.acceptedAssetBuffer?.afterBufferMinutes,
     };
   }
 
@@ -246,7 +253,24 @@ export class RentalMapper {
       source: rental.source,
       cancelledAt: rental.cancelledAt,
       confirmedAt: rental.confirmedAt,
+      acceptedBeforeBufferMinutes: rental.acceptedAssetBuffer?.beforeBufferMinutes,
+      acceptedAfterBufferMinutes: rental.acceptedAssetBuffer?.afterBufferMinutes,
     };
+  }
+
+  private static toAcceptedAssetBufferDomain(record: RentalPersistenceRecord): AcceptedRentalAssetBuffer | undefined {
+    const before = record.acceptedBeforeBufferMinutes;
+    const after = record.acceptedAfterBufferMinutes;
+
+    if (before === null && after === null) {
+      return undefined;
+    }
+
+    if (before === null || after === null) {
+      throw new RentalInvalidFieldError('acceptedAssetBuffer', 'persisted buffer values must both be present');
+    }
+
+    return { beforeBufferMinutes: before, afterBufferMinutes: after };
   }
 
   static toSelectionCreateData(selection: RentalSelection): Prisma.V2RentalSelectionCreateManyInput {

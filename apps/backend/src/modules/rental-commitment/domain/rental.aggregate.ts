@@ -51,6 +51,11 @@ import {
   RentalConfirmedDomainEvent,
 } from './events/rental-lifecycle.domain-events';
 
+export interface AcceptedRentalAssetBuffer {
+  beforeBufferMinutes: number;
+  afterBufferMinutes: number;
+}
+
 export interface RentalDeliveryDetails {
   addressLine1: string;
   addressLine2?: string;
@@ -78,6 +83,7 @@ interface RentalProps {
   deliveryDetails?: RentalDeliveryDetails;
   priceSnapshot?: JsonSnapshot;
   confirmedPriceSnapshot?: ConfirmedPriceSnapshot;
+  acceptedAssetBuffer?: AcceptedRentalAssetBuffer;
   selections: RentalSelection[];
   demandLines: RentalDemandLine[];
   assignedAssets: AssignedAsset[];
@@ -175,6 +181,7 @@ export interface CreateDraftRentalProps extends CreateRentalBaseProps {
 
 export interface CreateConfirmedRentalProps extends Omit<CreateRentalBaseProps, 'demandLines'> {
   confirmedPriceSnapshot: JsonValue;
+  acceptedAssetBuffer: AcceptedRentalAssetBuffer;
   demandLines: CreateRentalDemandLineInput[];
   assignedAssets: CreateAssignedAssetInput[];
   assetBlocks?: AssetBlock[];
@@ -196,6 +203,7 @@ export interface ReconstituteRentalProps {
   deliveryDetails?: RentalDeliveryDetails;
   priceSnapshot?: JsonValue;
   confirmedPriceSnapshot?: JsonValue;
+  acceptedAssetBuffer?: AcceptedRentalAssetBuffer;
   selections: RentalSelection[];
   demandLines: RentalDemandLine[];
   assignedAssets: AssignedAsset[];
@@ -235,6 +243,7 @@ interface CreateRentalFromEntitiesProps {
   deliveryDetails?: RentalDeliveryDetails;
   priceSnapshot?: JsonSnapshot;
   confirmedPriceSnapshot?: ConfirmedPriceSnapshot;
+  acceptedAssetBuffer?: AcceptedRentalAssetBuffer;
   selections: RentalSelection[];
   demandLines: RentalDemandLine[];
   assignedAssets: AssignedAsset[];
@@ -310,6 +319,10 @@ export class Rental extends AggregateRootBase {
 
   get confirmedPriceSnapshot(): ConfirmedPriceSnapshot | undefined {
     return this.props.confirmedPriceSnapshot;
+  }
+
+  get acceptedAssetBuffer(): AcceptedRentalAssetBuffer | undefined {
+    return this.props.acceptedAssetBuffer ? { ...this.props.acceptedAssetBuffer } : undefined;
   }
 
   get selections(): readonly RentalSelection[] {
@@ -454,6 +467,7 @@ export class Rental extends AggregateRootBase {
       ...props,
       id: rentalId,
       confirmedPriceSnapshot: confirmedPriceSnapshot.value,
+      acceptedAssetBuffer: props.acceptedAssetBuffer,
       selections: selections.value,
       demandLines: demandLines.value,
       assignedAssets: assignedAssets.value,
@@ -487,6 +501,11 @@ export class Rental extends AggregateRootBase {
       ...props,
       priceSnapshot: props.priceSnapshot === undefined ? undefined : new JsonSnapshot(props.priceSnapshot),
       confirmedPriceSnapshot,
+      acceptedAssetBuffer:
+        props.acceptedAssetBuffer ??
+        (props.status === RentalStatus.Confirmed || props.confirmedAt
+          ? { beforeBufferMinutes: 0, afterBufferMinutes: 0 }
+          : undefined),
       selections: [...props.selections],
       demandLines: [...props.demandLines],
       assignedAssets: [...props.assignedAssets],
@@ -993,6 +1012,7 @@ export class Rental extends AggregateRootBase {
 
   confirm(params: {
     assignedAssets: CreateAssignedAssetInput[];
+    acceptedAssetBuffer: AcceptedRentalAssetBuffer;
     confirmedAt?: Date;
     assetBlocks?: AssetBlock[];
   }): Result<void, RentalCommitmentError> {
@@ -1041,8 +1061,14 @@ export class Rental extends AggregateRootBase {
       return err(confirmedStateValidation.error);
     }
 
+    const acceptedAssetBufferValidation = Rental.validateAcceptedAssetBuffer(params.acceptedAssetBuffer);
+    if (acceptedAssetBufferValidation.isErr()) {
+      return err(acceptedAssetBufferValidation.error);
+    }
+
     this.props.status = RentalStatus.Confirmed;
     this.props.confirmedPriceSnapshot = confirmedPriceSnapshot.value;
+    this.props.acceptedAssetBuffer = { ...params.acceptedAssetBuffer };
     this.props.assignedAssets = assignedAssets.value;
     this.props.assetBlocks = assetBlocks.value;
     const confirmedAt = params.confirmedAt ? new Date(params.confirmedAt) : new Date();
@@ -1440,6 +1466,7 @@ export class Rental extends AggregateRootBase {
       deliveryDetails: props.deliveryDetails,
       priceSnapshot: props.priceSnapshot,
       confirmedPriceSnapshot: props.confirmedPriceSnapshot,
+      acceptedAssetBuffer: props.acceptedAssetBuffer ? { ...props.acceptedAssetBuffer } : undefined,
       selections: [...props.selections],
       demandLines: [...props.demandLines],
       assignedAssets: [...props.assignedAssets],
@@ -1450,6 +1477,13 @@ export class Rental extends AggregateRootBase {
       cancelledAt: props.cancelledAt ? new Date(props.cancelledAt) : undefined,
       confirmedAt: props.confirmedAt ? new Date(props.confirmedAt) : undefined,
     });
+
+    if (rental.props.acceptedAssetBuffer) {
+      const bufferValidation = this.validateAcceptedAssetBuffer(rental.props.acceptedAssetBuffer);
+      if (bufferValidation.isErr()) {
+        return err(bufferValidation.error);
+      }
+    }
 
     const invariantValidation = rental.validateInvariants();
     if (invariantValidation.isErr()) {
@@ -1559,6 +1593,19 @@ export class Rental extends AggregateRootBase {
     }
 
     return ok(assetBlocks);
+  }
+
+  private static validateAcceptedAssetBuffer(buffer: AcceptedRentalAssetBuffer): Result<void, RentalCommitmentError> {
+    for (const [field, value] of [
+      ['beforeBufferMinutes', buffer.beforeBufferMinutes],
+      ['afterBufferMinutes', buffer.afterBufferMinutes],
+    ] as const) {
+      if (!Number.isInteger(value) || value < 0) {
+        return err(new RentalInvalidFieldError(field, 'must be a non-negative integer'));
+      }
+    }
+
+    return ok(undefined);
   }
 
   private static validateRequiredFields(

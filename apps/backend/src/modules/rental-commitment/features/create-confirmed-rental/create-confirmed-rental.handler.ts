@@ -243,6 +243,7 @@ export class CreateConfirmedRentalService implements ICommandHandler<
           bookingSnapshot: command.bookingSnapshot,
           deliveryDetails:
             command.fulfillmentMethod === FulfillmentMethod.Delivery ? command.deliveryDetails : undefined,
+          acceptedAssetBuffer: { beforeBufferMinutes: 0, afterBufferMinutes: 0 },
           confirmedPriceSnapshot: adaptPricingCalculationToSnapshot({
             result: pricingResult.value,
             context: 'CONFIRMED',

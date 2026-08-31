@@ -105,6 +105,7 @@ export class ConfirmRentalHandler implements ICommandHandler<ConfirmRentalComman
     }
 
     const confirmResult = rental.confirm({
+      acceptedAssetBuffer: { beforeBufferMinutes: 0, afterBufferMinutes: 0 },
       assignedAssets: assetAssignmentPlan.value.allocations.map((allocation) => ({
         rentalDemandLineId: allocation.rentalDemandLineId,
         assetId: allocation.assetId,

@@ -32,6 +32,9 @@ model V2Rental {
   confirmationOperationId String? @map("confirmation_operation_id")
   confirmationFingerprint String? @map("confirmation_fingerprint")
 
+  acceptedBeforeBufferMinutes Int? @map("accepted_before_buffer_minutes")
+  acceptedAfterBufferMinutes  Int? @map("accepted_after_buffer_minutes")
+
   periodStart   DateTime        @map("period_start") @db.Timestamptz(3)
   periodEnd     DateTime        @map("period_end") @db.Timestamptz(3)
   priceSnapshot Json?           @map("price_snapshot")
