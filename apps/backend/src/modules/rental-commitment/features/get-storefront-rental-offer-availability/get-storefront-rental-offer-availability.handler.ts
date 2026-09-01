@@ -1,26 +1,15 @@
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { err, ok, Result } from 'neverthrow';
 
-import { PrismaService } from 'src/core/database/prisma.service';
-import { CatalogSelectionResolution } from 'src/modules/catalog/public-api/catalog-selection-resolution.public-api';
-import { TenantRentalAssetBufferSettings } from 'src/modules/tenant-management/public-api/tenant-rental-asset-buffer-settings.public-api';
-
-import { deriveBufferedAssetBlockPeriod } from '../../domain/asset-block-period';
-
+import {
+  RentalOfferAvailabilityError,
+  RentalOfferAvailabilityService,
+} from '../../application/availability/rental-offer-availability.service';
 import {
   GetStorefrontRentalOfferAvailabilityError,
   getStorefrontRentalOfferAvailabilityError,
 } from './get-storefront-rental-offer-availability.errors';
 import { GetStorefrontRentalOfferAvailabilityQuery } from './get-storefront-rental-offer-availability.query';
-
-interface ActiveAssetBlockRow {
-  assetId: string;
-}
-
-interface AvailabilityCandidate {
-  assetId: string;
-  equipmentTypeId: string;
-}
 
 export interface StorefrontRentalOfferAvailabilityItemReadModel {
   rentalOfferId: string;
@@ -41,191 +30,41 @@ export class GetStorefrontRentalOfferAvailabilityHandler implements IQueryHandle
   GetStorefrontRentalOfferAvailabilityQuery,
   GetStorefrontRentalOfferAvailabilityResult
 > {
-  constructor(
-    private readonly prisma: PrismaService,
-    private readonly catalogSelectionResolution: CatalogSelectionResolution,
-    private readonly tenantRentalAssetBufferSettings: TenantRentalAssetBufferSettings,
-  ) {}
+  constructor(private readonly rentalOfferAvailability: RentalOfferAvailabilityService) {}
 
   async execute(query: GetStorefrontRentalOfferAvailabilityQuery): Promise<GetStorefrontRentalOfferAvailabilityResult> {
     if (query.rentalOfferIds.length === 0) {
       return ok({ data: [] });
     }
 
-    const bufferSettings = await this.tenantRentalAssetBufferSettings.getTenantRentalAssetBufferSettings({
-      tenantId: query.tenantId,
-    });
-    if (bufferSettings.isErr()) {
-      return err(
-        getStorefrontRentalOfferAvailabilityError(
-          'rental_commitment.tenant_unavailable',
-          bufferSettings.error.message,
-          bufferSettings.error,
-        ),
-      );
-    }
-
-    const operationalPeriod = deriveBufferedAssetBlockPeriod({
-      participationPeriod: query.period,
-      ...bufferSettings.value,
-    });
-
-    const resolved = await this.catalogSelectionResolution.resolveSelectedRentalOfferRequirements({
+    const result = await this.rentalOfferAvailability.calculate({
       tenantId: query.tenantId,
       branchId: query.branchId,
-      rentalOfferIds: [...query.rentalOfferIds],
+      period: query.period,
+      rentalOfferIds: query.rentalOfferIds,
     });
-
-    if (resolved.isErr()) {
-      return err(
-        getStorefrontRentalOfferAvailabilityError(
-          'rental_commitment.invalid_fulfillment_definition',
-          resolved.error.message,
-          resolved.error,
-        ),
-      );
-    }
-
-    const validOffers = resolved.value.resolvedOffers;
-    const equipmentTypeIds = this.collectEquipmentTypeIds(validOffers);
-
-    if (equipmentTypeIds.length === 0) {
-      return ok({
-        data: query.rentalOfferIds.map((rentalOfferId) => ({
-          rentalOfferId,
-          availableCount: 0,
-        })),
-      });
-    }
-
-    const candidates = await this.findAllocatableCandidates({
-      tenantId: query.tenantId,
-      branchId: query.branchId,
-      equipmentTypeIds,
-    });
-
-    const blockedAssetIds = await this.findBlockedAssetIds({
-      tenantId: query.tenantId,
-      assetIds: candidates.map((candidate) => candidate.assetId),
-      period: operationalPeriod.toPostgresRange(),
-    });
-
-    const availableAssetCountByEquipmentType = this.countAvailableAssetsByEquipmentType(candidates, blockedAssetIds);
-    const availableCountByRentalOfferId = new Map(
-      validOffers.map((offer) => [
-        offer.rentalOfferId,
-        this.calculateAvailableCount(offer.fulfillmentRequirements, availableAssetCountByEquipmentType),
-      ]),
-    );
+    if (result.isErr()) return err(this.mapCalculationError(result.error));
 
     return ok({
-      data: query.rentalOfferIds.map((rentalOfferId) => ({
-        rentalOfferId,
-        availableCount: availableCountByRentalOfferId.get(rentalOfferId) ?? 0,
+      data: result.value.map((outcome) => ({
+        rentalOfferId: outcome.rentalOfferId,
+        availableCount: outcome.kind === 'RESOLVED' ? outcome.availableCount : 0,
       })),
     });
   }
 
-  private collectEquipmentTypeIds(
-    rentalOffers: readonly {
-      fulfillmentRequirements: readonly {
-        equipmentTypeId: string;
-        quantityPerItem: number;
-      }[];
-    }[],
-  ): string[] {
-    return [
-      ...new Set(
-        rentalOffers.flatMap((offer) =>
-          offer.fulfillmentRequirements
-            .filter((requirement) => Number.isInteger(requirement.quantityPerItem) && requirement.quantityPerItem > 0)
-            .map((requirement) => requirement.equipmentTypeId),
-        ),
-      ),
-    ];
-  }
-
-  private async findAllocatableCandidates(params: {
-    tenantId: string;
-    branchId: string;
-    equipmentTypeIds: readonly string[];
-  }): Promise<AvailabilityCandidate[]> {
-    const rows = await this.prisma.client.v2RentalAssetCandidate.findMany({
-      where: {
-        tenantId: params.tenantId,
-        branchId: params.branchId,
-        equipmentTypeId: { in: [...params.equipmentTypeIds] },
-        assetStatus: 'ACTIVE',
-      },
-      select: {
-        assetId: true,
-        equipmentTypeId: true,
-      },
-    });
-
-    return rows;
-  }
-
-  private async findBlockedAssetIds(params: {
-    tenantId: string;
-    assetIds: readonly string[];
-    period: string;
-  }): Promise<Set<string>> {
-    if (params.assetIds.length === 0) {
-      return new Set();
+  private mapCalculationError(error: RentalOfferAvailabilityError): GetStorefrontRentalOfferAvailabilityError {
+    switch (error.code) {
+      case 'rental_commitment.tenant_unavailable':
+      case 'rental_commitment.invalid_fulfillment_definition':
+      case 'rental_commitment.invalid_candidate_projection':
+        return getStorefrontRentalOfferAvailabilityError(error.code, error.message, error.cause);
+      case 'rental_commitment.invalid_availability_selection':
+        return getStorefrontRentalOfferAvailabilityError(
+          'rental_commitment.invalid_fulfillment_definition',
+          error.message,
+          error.cause,
+        );
     }
-
-    const rows = await this.prisma.client.$queryRaw<ActiveAssetBlockRow[]>`
-      SELECT asset_id AS "assetId"
-      FROM v2_asset_blocks
-      WHERE tenant_id = ${params.tenantId}
-        AND released_at IS NULL
-        AND asset_id = ANY(${params.assetIds})
-        AND period && ${params.period}::tstzrange
-    `;
-
-    return new Set(rows.map((row) => row.assetId));
-  }
-
-  private countAvailableAssetsByEquipmentType(
-    candidates: readonly AvailabilityCandidate[],
-    blockedAssetIds: ReadonlySet<string>,
-  ): Map<string, number> {
-    const counts = new Map<string, number>();
-
-    for (const candidate of candidates) {
-      if (blockedAssetIds.has(candidate.assetId)) {
-        continue;
-      }
-
-      counts.set(candidate.equipmentTypeId, (counts.get(candidate.equipmentTypeId) ?? 0) + 1);
-    }
-
-    return counts;
-  }
-
-  private calculateAvailableCount(
-    requirements: readonly {
-      equipmentTypeId: string;
-      quantityPerItem: number;
-    }[],
-    availableAssetCountByEquipmentType: ReadonlyMap<string, number>,
-  ): number {
-    if (requirements.length === 0) {
-      return 0;
-    }
-
-    let availableCount = Number.POSITIVE_INFINITY;
-
-    for (const requirement of requirements) {
-      if (!Number.isInteger(requirement.quantityPerItem) || requirement.quantityPerItem <= 0) {
-        return 0;
-      }
-
-      const availableAssets = availableAssetCountByEquipmentType.get(requirement.equipmentTypeId) ?? 0;
-      availableCount = Math.min(availableCount, Math.floor(availableAssets / requirement.quantityPerItem));
-    }
-
-    return Number.isFinite(availableCount) ? availableCount : 0;
   }
 }

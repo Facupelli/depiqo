@@ -116,6 +116,7 @@ export class ResolveSelectedRentalOffersService {
           quantityPerItem: requirement.quantityPerItem,
         })),
       })),
+      unavailableOffers: records.value.unavailableOffers.map((offer) => ({ ...offer })),
     });
   }
 

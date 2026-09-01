@@ -48,8 +48,15 @@ export interface ResolvedSelectedRentalOfferRequirements {
   }>;
 }
 
+export interface UnavailableSelectedRentalOfferRequirements {
+  rentalOfferId: string;
+  code: 'RentalOfferNotFound' | 'RentalOfferNotRentable' | 'RentableItemNotActive';
+  rentableItemId?: string;
+}
+
 export interface ResolveSelectedRentalOfferRequirementsResult {
   resolvedOffers: ResolvedSelectedRentalOfferRequirements[];
+  unavailableOffers: UnavailableSelectedRentalOfferRequirements[];
 }
 
 export type CatalogSelectionResolutionErrorCode =

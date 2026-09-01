@@ -19,7 +19,7 @@ FulfillmentRequirement
 
 Rental Catalog publishes cohesive provider-owned capabilities under `public-api/`:
 
-- `CatalogSelectionResolution` resolves selected rental offers and their fulfillment requirements for rental workflows.
+- `CatalogSelectionResolution` resolves rental-offer fulfillment requirements in batches for rental workflows. It classifies requested offers individually when they are not found within the supplied tenant and branch scope, are not rentable, or reference an inactive rentable item. Foreign-tenant and wrong-branch offers are classified as not found to preserve non-disclosure. An invalid fulfillment definition fails the overall resolution rather than classifying the affected offer as unavailable.
 - `CatalogOfferingAuthoring` creates rentable item offerings and adds an existing rentable item to another branch.
 
 Consumers use these capabilities rather than Catalog persistence or internal application services.
@@ -144,7 +144,7 @@ If soft deletes are used, active-offer uniqueness may require a database partial
 
 Asset Inventory owns `EquipmentType` and physical asset facts. Rental Catalog may reference `equipmentTypeId` in fulfillment requirements but does not own assets, condition, ownership, location, or assignment eligibility.
 
-Rental Catalog must not query rental asset blocks to determine final physical availability.
+Rental Catalog determines whether a rental offer can participate in a rental workflow and provides its fulfillment requirements. It does not calculate physical asset availability or rental-offer capacity and must not query rental asset blocks to do so. Rental Commitment consumes these Catalog-owned participation and fulfillment facts and owns physical availability.
 
 Pricing owns rate plans, pricing assignments, promotions, coupons, and price calculation for rental offers.
 
