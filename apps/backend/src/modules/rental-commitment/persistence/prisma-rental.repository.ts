@@ -98,18 +98,6 @@ export class PrismaRentalRepository extends RentalRepository {
     }
 
     if (options?.persistence === 'DETAILS') {
-      await tx.v2RentalDeliveryDetails.deleteMany({
-        where: {
-          tenantId: rental.tenantId,
-          rentalOrderId: rental.id,
-        },
-      });
-
-      const deliveryDetails = RentalMapper.toDeliveryDetailsCreateData(rental);
-      if (deliveryDetails) {
-        await tx.v2RentalDeliveryDetails.create({ data: deliveryDetails });
-      }
-
       if (options.ownerSplits !== undefined) {
         await tx.v2RentalOwnerSplit.deleteMany({ where: rentalWhere });
         if (options.ownerSplits.length > 0) {

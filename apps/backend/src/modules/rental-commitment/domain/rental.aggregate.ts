@@ -119,8 +119,6 @@ export interface EditUnconfirmedRentalProps {
 }
 
 export interface ChangeConfirmedRentalDetailsProps {
-  fulfillmentMethod: FulfillmentMethod;
-  deliveryDetails?: RentalDeliveryDetails;
   notes?: string;
   insuranceSelected?: boolean;
   confirmedPriceSnapshot?: JsonValue;
@@ -214,10 +212,8 @@ export interface ReconstituteRentalProps {
 
 interface ConfirmedRentalStateChanges {
   period?: RentalPeriod;
-  fulfillmentMethod?: FulfillmentMethod;
   notes?: string;
   insuranceSelected?: boolean;
-  deliveryDetails?: RentalDeliveryDetails;
   confirmedPriceSnapshot?: ConfirmedPriceSnapshot;
   selections?: RentalSelection[];
   demandLines?: RentalDemandLine[];
@@ -586,29 +582,14 @@ export class Rental extends AggregateRootBase {
     if (params.operationTime >= this.period.end) {
       return err(new RentalPeriodHasEndedError(this.id));
     }
-    if (
-      params.operationTime >= this.period.start &&
-      (params.fulfillmentMethod !== this.fulfillmentMethod ||
-        !sameDeliveryDetails(params.deliveryDetails, this.deliveryDetails))
-    ) {
-      return err(
-        new RentalInvalidFieldError(
-          'fulfillmentMethod',
-          'fulfillment method and delivery details cannot change after the rental starts',
-        ),
-      );
-    }
-
     const confirmedPriceSnapshot = params.confirmedPriceSnapshot
       ? ConfirmedPriceSnapshot.create(params.confirmedPriceSnapshot)
       : ok(this.confirmedPriceSnapshot);
     if (confirmedPriceSnapshot.isErr()) return err(confirmedPriceSnapshot.error);
 
     const transition = this.applyConfirmedStateChanges({
-      fulfillmentMethod: params.fulfillmentMethod,
       notes: params.notes,
       insuranceSelected: params.insuranceSelected,
-      deliveryDetails: params.deliveryDetails,
       confirmedPriceSnapshot: confirmedPriceSnapshot.value,
     });
     if (transition.isErr()) return err(transition.error);
@@ -1661,18 +1642,4 @@ export class Rental extends AggregateRootBase {
 
     return ok(undefined);
   }
-}
-
-function sameDeliveryDetails(left?: RentalDeliveryDetails, right?: RentalDeliveryDetails): boolean {
-  return (
-    left?.addressLine1 === right?.addressLine1 &&
-    left?.addressLine2 === right?.addressLine2 &&
-    left?.city === right?.city &&
-    left?.state === right?.state &&
-    left?.postalCode === right?.postalCode &&
-    left?.country === right?.country &&
-    left?.contactName === right?.contactName &&
-    left?.contactPhone === right?.contactPhone &&
-    left?.notes === right?.notes
-  );
 }

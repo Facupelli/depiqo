@@ -17,8 +17,8 @@ import {
   RentalInvalidFieldError,
   RentalPeriodHasEndedError,
 } from '../../domain/errors/rental-commitment.errors';
-import { FulfillmentMethod, RentalStatus } from '../../domain/rental-status';
-import { Rental, RentalDeliveryDetails } from '../../domain/rental.aggregate';
+import { RentalStatus } from '../../domain/rental-status';
+import { Rental } from '../../domain/rental.aggregate';
 import {
   ACCEPTED_RENTAL_PRICING_SNAPSHOT_VERSION,
   AcceptedRentalPricingBreakdown,
@@ -75,33 +75,6 @@ export class ChangeRentalDetailsHandler implements ICommandHandler<
       }
       const operationTime = new Date();
       if (operationTime >= current.period.end) return err(this.map(new RentalPeriodHasEndedError(rentalId), context));
-      if (change.fulfillmentOrDeliveryChanged && operationTime >= current.period.start) {
-        return err(
-          this.map(
-            new RentalInvalidFieldError(
-              'fulfillmentMethod',
-              'fulfillment method and delivery details cannot change after the rental starts',
-            ),
-            context,
-          ),
-        );
-      }
-      if (
-        (change.details.fulfillmentMethod === FulfillmentMethod.Pickup && change.details.deliveryDetails) ||
-        (change.details.fulfillmentMethod === FulfillmentMethod.Delivery && !change.details.deliveryDetails)
-      ) {
-        return err(
-          this.map(
-            new RentalInvalidFieldError(
-              'deliveryDetails',
-              change.details.fulfillmentMethod === FulfillmentMethod.Delivery
-                ? 'must be present for delivery fulfillment'
-                : 'must be absent for pickup fulfillment',
-            ),
-            context,
-          ),
-        );
-      }
 
       let transformedPrice: JsonValue | undefined;
       if (change.pricingChanged || change.insuranceChanged) {
@@ -322,18 +295,10 @@ export class ChangeRentalDetailsHandler implements ICommandHandler<
 
 function detectChange(rental: Rental, patch: ChangeRentalDetailsPatch) {
   const details = {
-    fulfillmentMethod: patch.fulfillmentMethod ?? rental.fulfillmentMethod,
-    deliveryDetails: patch.deliveryDetails === null ? undefined : (patch.deliveryDetails ?? rental.deliveryDetails),
     notes: patch.notes === null ? undefined : (patch.notes ?? rental.notes),
     insuranceSelected: patch.insuranceSelected ?? rental.insuranceSelected,
   };
-  const fulfillmentOrDeliveryChanged =
-    details.fulfillmentMethod !== rental.fulfillmentMethod ||
-    !sameDeliveryDetails(details.deliveryDetails, rental.deliveryDetails);
-  const detailsChanged =
-    fulfillmentOrDeliveryChanged ||
-    details.notes !== rental.notes ||
-    details.insuranceSelected !== rental.insuranceSelected;
+  const detailsChanged = details.notes !== rental.notes || details.insuranceSelected !== rental.insuranceSelected;
   const hasManualPricingPatch =
     Object.prototype.hasOwnProperty.call(patch, 'manualPricingAdjustment') &&
     patch.manualPricingAdjustment !== undefined;
@@ -341,7 +306,6 @@ function detectChange(rental: Rental, patch: ChangeRentalDetailsPatch) {
   const insuranceChanged = details.insuranceSelected !== rental.insuranceSelected;
   return {
     details,
-    fulfillmentOrDeliveryChanged,
     pricingChanged,
     insuranceChanged,
     changed: detailsChanged || pricingChanged,
@@ -389,18 +353,4 @@ function withUpdatedEquipmentTotal(snapshot: AcceptedRentalPricingSnapshot): Acc
 function normalizeReason(reason?: string): string | undefined {
   const normalized = reason?.trim();
   return normalized ? normalized : undefined;
-}
-
-function sameDeliveryDetails(left?: RentalDeliveryDetails, right?: RentalDeliveryDetails): boolean {
-  return (
-    left?.addressLine1 === right?.addressLine1 &&
-    left?.addressLine2 === right?.addressLine2 &&
-    left?.city === right?.city &&
-    left?.state === right?.state &&
-    left?.postalCode === right?.postalCode &&
-    left?.country === right?.country &&
-    left?.contactName === right?.contactName &&
-    left?.contactPhone === right?.contactPhone &&
-    left?.notes === right?.notes
-  );
 }

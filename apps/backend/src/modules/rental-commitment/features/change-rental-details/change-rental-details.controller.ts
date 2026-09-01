@@ -6,7 +6,6 @@ import { CurrentUser } from 'src/modules/tenant-management/auth/shared/current-u
 import { AllowAuthActors } from 'src/modules/tenant-management/auth/shared/session/auth-actor-access.decorator';
 import { SessionAuthGuard } from 'src/modules/tenant-management/auth/shared/session/session-auth.guard';
 import { TenantUserSessionGuard } from 'src/modules/tenant-management/auth/shared/session/tenant-user-session.guard';
-import { FulfillmentMethod } from '../../domain/rental-status';
 import { ChangeRentalDetailsCommand } from './change-rental-details.command';
 import { ChangeRentalDetailsError } from './change-rental-details.errors';
 import { ChangeRentalDetailsResult } from './change-rental-details.handler';
@@ -26,10 +25,6 @@ export class ChangeRentalDetailsHttpController {
     @CurrentUser() user: AuthUser,
   ): Promise<ChangeRentalDetailsResponseDto> {
     const patch = {
-      ...('fulfillmentMethod' in dto
-        ? { fulfillmentMethod: dto.fulfillmentMethod as FulfillmentMethod | undefined }
-        : {}),
-      ...('deliveryDetails' in dto ? { deliveryDetails: dto.deliveryDetails } : {}),
       ...('notes' in dto ? { notes: dto.notes } : {}),
       ...('insuranceSelected' in dto ? { insuranceSelected: dto.insuranceSelected } : {}),
       ...('manualPricingAdjustment' in dto ? { manualPricingAdjustment: dto.manualPricingAdjustment } : {}),
