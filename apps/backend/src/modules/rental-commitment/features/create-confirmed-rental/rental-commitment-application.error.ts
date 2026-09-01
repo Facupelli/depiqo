@@ -10,7 +10,6 @@ export type RentalCommitmentApplicationErrorCode =
   | 'TenantUserUnavailableForRental'
   | 'EquipmentTypeNotFound'
   | 'EquipmentTypeNotRentable'
-  | 'UnsupportedBranchFulfillmentMethod'
   | 'PickupTimeOutsideBranchSchedule'
   | 'ReturnTimeOutsideBranchSchedule'
   | 'InvalidRentalField'

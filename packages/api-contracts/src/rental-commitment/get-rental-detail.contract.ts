@@ -217,7 +217,7 @@ export const GetRentalDetailResponseSchema = z.object({
 	branchId: z.string(),
 	period: GetRentalDetailPeriodSchema,
 	fulfillment: z.object({
-		method: GetRentalsFulfillmentMethodSchema.nullable(),
+		method: GetRentalsFulfillmentMethodSchema,
 		deliveryDetails: GetRentalDetailDeliveryDetailsSchema.nullable(),
 	}),
 	selections: z.array(GetRentalDetailSelectionSchema),

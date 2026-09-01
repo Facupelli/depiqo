@@ -24,9 +24,7 @@ import {
   RentalCustomerUnavailableForRentalError,
   RentalInvalidFieldError,
   TenantUnavailableForRentalError,
-  UnsupportedBranchFulfillmentMethodError,
 } from '../../domain/errors/rental-commitment.errors';
-import { FulfillmentMethod } from '../../domain/rental-status';
 import { EquipmentTypeId } from '../../domain/types/rental-commitment-ids';
 import { getConfirmedPriceSnapshotForOwnerSplits } from '../../owner-split/confirmed-price-snapshot-for-owner-splits';
 import { RentalOwnerSplitDraft } from '../../owner-split/owner-split-calculator.types';
@@ -74,7 +72,7 @@ export class ConfirmRentalHandler implements ICommandHandler<ConfirmRentalComman
       return err(this.toApplicationError(error, context));
     }
 
-    const fulfillmentMethod = rental.fulfillmentMethod ?? FulfillmentMethod.Pickup;
+    const fulfillmentMethod = rental.fulfillmentMethod;
 
     const tenantValidation = await this.rentalOperationalFacts.validateDraftFacts({
       tenantId: rental.tenantId,
@@ -276,15 +274,6 @@ export class ConfirmRentalHandler implements ICommandHandler<ConfirmRentalComman
 
     if (error instanceof RentalCustomerUnavailableForRentalError) {
       return confirmRentalError('rental_commitment.customer_unavailable', error.message, error, context);
-    }
-
-    if (error instanceof UnsupportedBranchFulfillmentMethodError) {
-      return confirmRentalError(
-        'rental_commitment.unsupported_branch_fulfillment_method',
-        error.message,
-        error,
-        context,
-      );
     }
 
     throw error;

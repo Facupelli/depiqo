@@ -109,10 +109,4 @@ const confirmRentalProblemMap = {
     status: HttpStatus.UNPROCESSABLE_ENTITY,
     detail: 'The linked customer is not available for rental confirmation.',
   },
-  'rental_commitment.unsupported_branch_fulfillment_method': {
-    type: createProblemType('rental_commitment.unsupported_branch_fulfillment_method'),
-    title: 'Unsupported branch fulfillment method',
-    status: HttpStatus.UNPROCESSABLE_ENTITY,
-    detail: 'The rental branch does not support the selected fulfillment method.',
-  },
 } satisfies Record<ConfirmRentalErrorCode, { type: string; title: string; status: HttpStatus; detail: string }>;

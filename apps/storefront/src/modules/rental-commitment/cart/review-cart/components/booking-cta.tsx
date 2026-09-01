@@ -65,8 +65,7 @@ function useCartBookingCommand() {
 	const { periodStart, branch, pickupSlot } = useCartPeriodContext();
 	const { setUnavailableRentalOfferIds, clearUnavailableRentalOfferIds } =
 		useCartBookingFeedbackContext();
-	const { fulfillmentMethod, selectFulfillmentMethod } =
-		useCartFulfillmentContext();
+	const { fulfillmentMethod } = useCartFulfillmentContext();
 	const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
 	const submit = async () => {
@@ -130,9 +129,6 @@ function useCartBookingCommand() {
 				});
 				return;
 			}
-			if (kind === "DELIVERY_NOT_SUPPORTED") {
-				selectFulfillmentMethod("PICKUP");
-			}
 			if (kind === "IDEMPOTENCY_CONFLICT") {
 				// The stale attempt key no longer matches the current intent; start a
 				// fresh confirmation attempt on the next submit.
@@ -190,8 +186,6 @@ function getSubmissionErrorMessage(kind: ConfirmedRentalErrorKind): string {
 			return "Algunos equipos ya no están disponibles para este período. Ajustá el carrito y volvé a intentarlo.";
 		case "CATALOG_SELECTION_UNAVAILABLE":
 			return "Uno de los equipos del carrito ya no está disponible para reservar. Ajustá el carrito y volvé a intentarlo.";
-		case "DELIVERY_NOT_SUPPORTED":
-			return "Esta sucursal solo permite retiro en el local.";
 		case "IDEMPOTENCY_CONFLICT":
 			return "Los datos de la reserva cambiaron durante el envío. Revisá la reserva y volvé a confirmarla.";
 		case "OTHER":

@@ -73,11 +73,6 @@ const definitions: Record<ChangeRentalDetailsError['code'], { title: string; sta
     status: HttpStatus.CONFLICT,
     detail: 'Details cannot be changed after the rental ends.',
   },
-  'rental_commitment.unsupported_branch_fulfillment_method': {
-    title: 'Unsupported fulfillment method',
-    status: HttpStatus.UNPROCESSABLE_ENTITY,
-    detail: 'The rental branch does not support the requested fulfillment method.',
-  },
   'rental_commitment.invalid_rental_field': {
     title: 'Invalid rental field',
     status: HttpStatus.UNPROCESSABLE_ENTITY,

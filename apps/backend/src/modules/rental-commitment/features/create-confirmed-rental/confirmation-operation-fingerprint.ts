@@ -1,6 +1,5 @@
 import { createHash } from 'node:crypto';
 
-import { FulfillmentMethod } from '../../domain/rental-status';
 import { RentalDeliveryDetails } from '../../domain/rental.aggregate';
 import {
   CreateConfirmedRentalCommand,
@@ -30,7 +29,7 @@ export function buildConfirmationFingerprint(command: CreateConfirmedRentalComma
           end: command.period.end.toISOString(),
         },
         selectedOffers: normalizeSelectedOffers(command.selectedOffers),
-        fulfillmentMethod: command.fulfillmentMethod ?? FulfillmentMethod.Pickup,
+        fulfillmentMethod: command.fulfillmentMethod,
         deliveryDetails: normalizeDeliveryDetails(command.deliveryDetails),
         notes: command.notes ?? null,
         insuranceSelected: command.insuranceSelected ?? false,

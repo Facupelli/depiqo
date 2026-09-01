@@ -14,7 +14,6 @@ export type AddRentalSelectionErrorCode =
   | 'rental_commitment.tenant_unavailable'
   | 'rental_commitment.branch_unavailable'
   | 'rental_commitment.customer_unavailable'
-  | 'rental_commitment.unsupported_branch_fulfillment_method'
   | 'rental_commitment.invalid_pricing_input'
   | 'rental_commitment.rental_version_conflict'
   | 'rental_commitment.invalid_rental_field';

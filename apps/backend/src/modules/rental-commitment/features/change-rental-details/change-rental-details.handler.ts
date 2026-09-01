@@ -16,7 +16,6 @@ import {
   RentalCannotBeEditedFromStatusError,
   RentalInvalidFieldError,
   RentalPeriodHasEndedError,
-  UnsupportedBranchFulfillmentMethodError,
 } from '../../domain/errors/rental-commitment.errors';
 import { FulfillmentMethod, RentalStatus } from '../../domain/rental-status';
 import { Rental, RentalDeliveryDetails } from '../../domain/rental.aggregate';
@@ -309,8 +308,6 @@ export class ChangeRentalDetailsHandler implements ICommandHandler<
       return this.error('rental_commitment.rental_cannot_be_edited_from_status', error.message, context, error);
     if (error instanceof RentalPeriodHasEndedError)
       return this.error('rental_commitment.rental_period_ended', error.message, context, error);
-    if (error instanceof UnsupportedBranchFulfillmentMethodError)
-      return this.error('rental_commitment.unsupported_branch_fulfillment_method', error.message, context, error);
     if (error instanceof RentalInvalidFieldError)
       return this.error('rental_commitment.invalid_rental_field', error.message, context, error);
     if (
@@ -325,7 +322,7 @@ export class ChangeRentalDetailsHandler implements ICommandHandler<
 
 function detectChange(rental: Rental, patch: ChangeRentalDetailsPatch) {
   const details = {
-    fulfillmentMethod: patch.fulfillmentMethod ?? rental.fulfillmentMethod!,
+    fulfillmentMethod: patch.fulfillmentMethod ?? rental.fulfillmentMethod,
     deliveryDetails: patch.deliveryDetails === null ? undefined : (patch.deliveryDetails ?? rental.deliveryDetails),
     notes: patch.notes === null ? undefined : (patch.notes ?? rental.notes),
     insuranceSelected: patch.insuranceSelected ?? rental.insuranceSelected,

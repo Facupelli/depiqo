@@ -16,7 +16,7 @@ type RawRentalRow = {
   id: string;
   rentalNumber: number;
   status: V2RentalStatus;
-  fulfillmentMethod: V2FulfillmentMethod | null;
+  fulfillmentMethod: V2FulfillmentMethod;
   createdAt: Date;
   pickupAt: Date;
   returnAt: Date;

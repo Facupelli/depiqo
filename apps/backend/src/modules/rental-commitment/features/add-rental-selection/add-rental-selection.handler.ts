@@ -33,7 +33,6 @@ import {
   RentalInvalidFieldError,
   RentalPeriodHasEndedError,
   TenantUnavailableForRentalError,
-  UnsupportedBranchFulfillmentMethodError,
 } from '../../domain/errors/rental-commitment.errors';
 import { RentalDemandLineId } from '../../domain/ids/rental-demand-line-id';
 import { RentalSelectionId } from '../../domain/ids/rental-selection-id';
@@ -88,7 +87,7 @@ export class AddRentalSelectionHandler implements ICommandHandler<AddRentalSelec
       tenantId,
       branchId: rental.branchId,
       rentalCustomerId: rental.rentalCustomerId,
-      fulfillmentMethod: rental.fulfillmentMethod!,
+      fulfillmentMethod: rental.fulfillmentMethod,
     });
     if (operationalFacts.isErr()) return err(this.toApplicationError(operationalFacts.error, context));
 
@@ -385,14 +384,6 @@ export class AddRentalSelectionHandler implements ICommandHandler<AddRentalSelec
     }
     if (error instanceof RentalCustomerUnavailableForRentalError) {
       return addRentalSelectionError('rental_commitment.customer_unavailable', error.message, error, context);
-    }
-    if (error instanceof UnsupportedBranchFulfillmentMethodError) {
-      return addRentalSelectionError(
-        'rental_commitment.unsupported_branch_fulfillment_method',
-        error.message,
-        error,
-        context,
-      );
     }
     if (error instanceof InvalidCatalogSelectionQuantityError) {
       return addRentalSelectionError(

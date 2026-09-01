@@ -21,7 +21,7 @@ export class CreateDraftRentalCommand {
   public readonly rentalCustomerId?: string;
   public readonly period: RentalPeriod;
   public readonly selectedOffers: CreateDraftRentalOfferSelectionCommand[];
-  public readonly fulfillmentMethod?: FulfillmentMethod;
+  public readonly fulfillmentMethod: FulfillmentMethod;
   public readonly notes?: string;
   public readonly insuranceSelected?: boolean;
   public readonly bookingSnapshot?: BookingSnapshot;
@@ -35,7 +35,7 @@ export class CreateDraftRentalCommand {
     rentalCustomerId?: string;
     period: RentalPeriod;
     selectedOffers?: CreateDraftRentalOfferSelectionCommand[];
-    fulfillmentMethod?: FulfillmentMethod;
+    fulfillmentMethod: FulfillmentMethod;
     notes?: string;
     insuranceSelected?: boolean;
     bookingSnapshot?: BookingSnapshot;

@@ -143,12 +143,6 @@ const createDraftRentalProblemMap = {
     HttpStatus.UNPROCESSABLE_ENTITY,
     'A required equipment type is not rentable.',
   ),
-  'rental_commitment.unsupported_branch_fulfillment_method': problem(
-    'unsupported_branch_fulfillment_method',
-    'Unsupported fulfillment method',
-    HttpStatus.UNPROCESSABLE_ENTITY,
-    'The selected branch does not support the requested fulfillment method.',
-  ),
   'rental_commitment.invalid_rental_field': problem(
     'invalid_rental_field',
     'Invalid rental field',

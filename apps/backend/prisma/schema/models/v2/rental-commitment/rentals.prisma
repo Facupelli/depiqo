@@ -24,7 +24,7 @@ model V2Rental {
   customerId   String? @map("customer_id")
 
   status            V2RentalStatus       @default(PENDING)
-  fulfillmentMethod V2FulfillmentMethod? @map("fulfillment_method")
+  fulfillmentMethod V2FulfillmentMethod  @map("fulfillment_method")
   notes             String?
   insuranceSelected Boolean              @default(false) @map("insurance_selected")
   bookingSnapshot   Json?                @map("booking_snapshot")

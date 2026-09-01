@@ -18,7 +18,6 @@ import {
   ReturnTimeOutsideBranchScheduleError,
   TenantUnavailableForRentalError,
   TenantUserUnavailableForRentalError,
-  UnsupportedBranchFulfillmentMethodError,
 } from '../../domain/errors/rental-commitment.errors';
 
 import {
@@ -69,10 +68,6 @@ export function toRentalCommitmentApplicationError(error: unknown): RentalCommit
 
   if (error instanceof TenantUserUnavailableForRentalError) {
     return rentalCommitmentApplicationError('TenantUserUnavailableForRental', error.message, error);
-  }
-
-  if (error instanceof UnsupportedBranchFulfillmentMethodError) {
-    return rentalCommitmentApplicationError('UnsupportedBranchFulfillmentMethod', error.message, error);
   }
 
   if (error instanceof PickupTimeOutsideBranchScheduleError) {

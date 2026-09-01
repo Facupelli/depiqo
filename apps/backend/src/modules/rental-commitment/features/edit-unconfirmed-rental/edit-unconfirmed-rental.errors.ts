@@ -15,7 +15,6 @@ export type EditUnconfirmedRentalErrorCode =
   | 'rental_commitment.tenant_unavailable'
   | 'rental_commitment.branch_unavailable'
   | 'rental_commitment.customer_unavailable'
-  | 'rental_commitment.unsupported_branch_fulfillment_method'
   | 'rental_commitment.pickup_time_outside_branch_schedule'
   | 'rental_commitment.return_time_outside_branch_schedule'
   | 'rental_commitment.invalid_rental_field'

@@ -58,7 +58,6 @@ import {
   RentalMustContainSelectionError,
   ReturnTimeOutsideBranchScheduleError,
   TenantUnavailableForRentalError,
-  UnsupportedBranchFulfillmentMethodError,
 } from '../../domain/errors/rental-commitment.errors';
 
 export interface CreateConfirmedRentalResult {
@@ -112,7 +111,7 @@ export class CreateConfirmedRentalService implements ICommandHandler<
       rentalCustomerId: command.rentalCustomerId,
       pickupAt: command.period.start,
       returnAt: command.period.end,
-      fulfillmentMethod: command.fulfillmentMethod ?? FulfillmentMethod.Pickup,
+      fulfillmentMethod: command.fulfillmentMethod,
     });
 
     if (tenantValidation.isErr()) {
@@ -261,7 +260,7 @@ export class CreateConfirmedRentalService implements ICommandHandler<
           rentalNumber: await this.rentalNumberAllocator.allocate(command.tenantId, tx),
           branchId: command.branchId,
           rentalCustomerId: command.rentalCustomerId,
-          fulfillmentMethod: command.fulfillmentMethod ?? FulfillmentMethod.Pickup,
+          fulfillmentMethod: command.fulfillmentMethod,
           notes: command.notes,
           insuranceSelected: command.insuranceSelected,
           bookingSnapshot: command.bookingSnapshot,
@@ -514,14 +513,6 @@ export class CreateConfirmedRentalService implements ICommandHandler<
         ...context,
         equipmentTypeId: error.equipmentTypeId,
       });
-    }
-    if (error instanceof UnsupportedBranchFulfillmentMethodError) {
-      return createConfirmedRentalError(
-        'rental_commitment.unsupported_branch_fulfillment_method',
-        error.message,
-        error,
-        context,
-      );
     }
     if (error instanceof PickupTimeOutsideBranchScheduleError) {
       return createConfirmedRentalError(

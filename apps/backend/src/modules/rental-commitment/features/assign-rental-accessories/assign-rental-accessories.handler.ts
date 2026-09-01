@@ -31,7 +31,7 @@ type RentalReadModel = {
   branchId: string;
   status: V2RentalStatus;
   customerId: string | null;
-  fulfillmentMethod: 'PICKUP' | 'DELIVERY' | null;
+  fulfillmentMethod: 'PICKUP' | 'DELIVERY';
   periodStart: Date;
   periodEnd: Date;
   version: number;

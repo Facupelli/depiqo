@@ -35,7 +35,7 @@ export interface RentalPersistenceRecord {
   status: string;
   acceptedBeforeBufferMinutes: number | null;
   acceptedAfterBufferMinutes: number | null;
-  fulfillmentMethod: string | null;
+  fulfillmentMethod: string;
   notes: string | null;
   insuranceSelected: boolean;
   bookingSnapshot: Prisma.JsonValue | null;
@@ -128,8 +128,7 @@ export class RentalMapper {
       status: record.status as RentalStatus,
       period: new RentalPeriod(record.periodStart, record.periodEnd),
       source: record.source === null ? undefined : (record.source as RentalSource),
-      fulfillmentMethod:
-        record.fulfillmentMethod === null ? undefined : (record.fulfillmentMethod as FulfillmentMethod),
+      fulfillmentMethod: record.fulfillmentMethod as FulfillmentMethod,
       notes: record.notes ?? undefined,
       insuranceSelected: record.insuranceSelected,
       bookingSnapshot:

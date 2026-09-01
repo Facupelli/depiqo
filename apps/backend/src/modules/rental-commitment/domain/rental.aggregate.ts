@@ -78,7 +78,7 @@ interface RentalProps {
   status: RentalStatus;
   period: RentalPeriod;
   source?: RentalSource;
-  fulfillmentMethod?: FulfillmentMethod;
+  fulfillmentMethod: FulfillmentMethod;
   notes?: string;
   insuranceSelected?: boolean;
   bookingSnapshot?: BookingSnapshot;
@@ -158,7 +158,7 @@ export interface CreateRentalBaseProps {
   rentalCustomerId?: string;
   period: RentalPeriod;
   source?: RentalSource;
-  fulfillmentMethod?: FulfillmentMethod;
+  fulfillmentMethod: FulfillmentMethod;
   notes?: string;
   insuranceSelected?: boolean;
   bookingSnapshot?: BookingSnapshot;
@@ -193,7 +193,7 @@ export interface ReconstituteRentalProps {
   status: RentalStatus;
   period: RentalPeriod;
   source?: RentalSource;
-  fulfillmentMethod?: FulfillmentMethod;
+  fulfillmentMethod: FulfillmentMethod;
   notes?: string;
   insuranceSelected?: boolean;
   bookingSnapshot?: BookingSnapshot;
@@ -233,7 +233,7 @@ interface CreateRentalFromEntitiesProps {
   rentalCustomerId?: string;
   period: RentalPeriod;
   source?: RentalSource;
-  fulfillmentMethod?: FulfillmentMethod;
+  fulfillmentMethod: FulfillmentMethod;
   notes?: string;
   insuranceSelected?: boolean;
   bookingSnapshot?: BookingSnapshot;
@@ -290,7 +290,7 @@ export class Rental extends AggregateRootBase {
     return this.props.source;
   }
 
-  get fulfillmentMethod(): FulfillmentMethod | undefined {
+  get fulfillmentMethod(): FulfillmentMethod {
     return this.props.fulfillmentMethod;
   }
 
@@ -1117,7 +1117,7 @@ export class Rental extends AggregateRootBase {
         this.rentalCustomerId,
         this.branchId,
         RentalStatus.Confirmed,
-        this.fulfillmentMethod ?? FulfillmentMethod.Pickup,
+        this.fulfillmentMethod,
         this.period.start,
         this.period.end,
         occurredAt,
@@ -1138,7 +1138,7 @@ export class Rental extends AggregateRootBase {
         this.rentalCustomerId,
         this.branchId,
         RentalStatus.Confirmed,
-        this.fulfillmentMethod ?? FulfillmentMethod.Pickup,
+        this.fulfillmentMethod,
         this.period.start,
         this.period.end,
         occurredAt,

@@ -142,12 +142,6 @@ const problemMap = {
     HttpStatus.CONFLICT,
     'The rental customer is unavailable.',
   ),
-  'rental_commitment.unsupported_branch_fulfillment_method': problem(
-    'unsupported_branch_fulfillment_method',
-    'Unsupported fulfillment method',
-    HttpStatus.UNPROCESSABLE_ENTITY,
-    'The rental branch does not support the rental fulfillment method.',
-  ),
   'rental_commitment.invalid_pricing_input': problem(
     'invalid_pricing_input',
     'Invalid pricing input',

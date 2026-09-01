@@ -25,8 +25,7 @@ export const CreateDraftRentalBodySchema = z
     selectedOffers: z
       .array(CreateConfirmedRentalSelectedOfferSchema)
       .default([]),
-    fulfillmentMethod:
-      CreateConfirmedRentalFulfillmentMethodSchema.default("PICKUP"),
+    fulfillmentMethod: CreateConfirmedRentalFulfillmentMethodSchema,
     deliveryDetails: CreateConfirmedRentalDeliveryDetailsSchema.optional(),
     notes: z.string().optional(),
     insuranceSelected: z.boolean().optional(),

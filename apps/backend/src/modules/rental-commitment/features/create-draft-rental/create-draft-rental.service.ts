@@ -43,7 +43,6 @@ import {
   RentalOfferNotRentableError,
   RentableItemNotActiveError,
   TenantUnavailableForRentalError,
-  UnsupportedBranchFulfillmentMethodError,
 } from '../../domain/errors/rental-commitment.errors';
 
 export interface CreateDraftRentalResult {
@@ -77,7 +76,7 @@ export class CreateDraftRentalService implements ICommandHandler<
       branchId: command.branchId,
       rentalCustomerId: command.rentalCustomerId,
     };
-    const fulfillmentMethod = command.fulfillmentMethod ?? FulfillmentMethod.Pickup;
+    const fulfillmentMethod = command.fulfillmentMethod;
 
     const tenantValidation = await this.rentalOperationalFacts.validateDraftFacts({
       tenantId: command.tenantId,
@@ -303,14 +302,6 @@ export class CreateDraftRentalService implements ICommandHandler<
         ...context,
         equipmentTypeId: error.equipmentTypeId,
       });
-    }
-    if (error instanceof UnsupportedBranchFulfillmentMethodError) {
-      return createDraftRentalError(
-        'rental_commitment.unsupported_branch_fulfillment_method',
-        error.message,
-        error,
-        context,
-      );
     }
     if (error instanceof RentalInvalidFieldError) {
       return createDraftRentalError('rental_commitment.invalid_rental_field', error.message, error, {

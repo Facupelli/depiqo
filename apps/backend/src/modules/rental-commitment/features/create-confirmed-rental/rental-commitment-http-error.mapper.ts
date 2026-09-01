@@ -100,12 +100,6 @@ const RentalCommitmentProblemCatalog: Record<RentalCommitmentApplicationErrorCod
       detail: 'One of the selected equipment types is not available for rental.',
       extensions: equipmentTypeNotRentableExtensions,
     },
-    UnsupportedBranchFulfillmentMethod: {
-      type: createProblemType('rental-commitment/unsupported-branch-fulfillment-method'),
-      title: 'Unsupported branch fulfillment method',
-      status: HttpStatus.UNPROCESSABLE_ENTITY,
-      detail: 'The selected branch does not support the requested fulfillment method.',
-    },
     PickupTimeOutsideBranchSchedule: {
       type: createProblemType('rental-commitment/pickup-time-outside-branch-schedule'),
       title: 'Pickup time outside branch schedule',

@@ -291,15 +291,6 @@ export class TenantUserUnavailableForRentalError extends RentalCommitmentError {
   }
 }
 
-export class UnsupportedBranchFulfillmentMethodError extends RentalCommitmentError {
-  constructor(
-    public readonly branchId: string,
-    public readonly fulfillmentMethod: string,
-  ) {
-    super(`Branch "${branchId}" does not support fulfillment method "${fulfillmentMethod}".`);
-  }
-}
-
 export class PickupTimeOutsideBranchScheduleError extends RentalCommitmentError {
   constructor(
     public readonly branchId: string,

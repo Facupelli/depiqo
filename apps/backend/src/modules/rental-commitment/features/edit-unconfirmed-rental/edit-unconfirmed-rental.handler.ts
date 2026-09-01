@@ -32,7 +32,6 @@ import {
   RentalMustContainSelectionError,
   ReturnTimeOutsideBranchScheduleError,
   TenantUnavailableForRentalError,
-  UnsupportedBranchFulfillmentMethodError,
 } from '../../domain/errors/rental-commitment.errors';
 import { RentalDemandLineId } from '../../domain/ids/rental-demand-line-id';
 import { RentalStatus } from '../../domain/rental-status';
@@ -339,14 +338,6 @@ export class EditUnconfirmedRentalHandler implements ICommandHandler<
         ...context,
         equipmentTypeId: error.equipmentTypeId,
       });
-    }
-    if (error instanceof UnsupportedBranchFulfillmentMethodError) {
-      return editUnconfirmedRentalError(
-        'rental_commitment.unsupported_branch_fulfillment_method',
-        error.message,
-        error,
-        context,
-      );
     }
     if (error instanceof PickupTimeOutsideBranchScheduleError) {
       return editUnconfirmedRentalError(

@@ -14,7 +14,7 @@ export class CreateConfirmedRentalCommand {
   public readonly rentalCustomerId: string;
   public readonly period: RentalPeriod;
   public readonly selectedOffers: CreateConfirmedRentalOfferSelectionCommand[];
-  public readonly fulfillmentMethod?: FulfillmentMethod;
+  public readonly fulfillmentMethod: FulfillmentMethod;
   public readonly notes?: string;
   public readonly insuranceSelected?: boolean;
   public readonly bookingSnapshot?: BookingSnapshot;
@@ -27,7 +27,7 @@ export class CreateConfirmedRentalCommand {
     rentalCustomerId: string;
     period: RentalPeriod;
     selectedOffers?: CreateConfirmedRentalOfferSelectionCommand[];
-    fulfillmentMethod?: FulfillmentMethod;
+    fulfillmentMethod: FulfillmentMethod;
     notes?: string;
     insuranceSelected?: boolean;
     bookingSnapshot?: BookingSnapshot;

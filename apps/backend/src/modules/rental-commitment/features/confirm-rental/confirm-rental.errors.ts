@@ -11,8 +11,7 @@ export type ConfirmRentalErrorCode =
   | 'rental_commitment.invalid_rental_field'
   | 'rental_commitment.tenant_unavailable'
   | 'rental_commitment.branch_unavailable'
-  | 'rental_commitment.customer_unavailable'
-  | 'rental_commitment.unsupported_branch_fulfillment_method';
+  | 'rental_commitment.customer_unavailable';
 
 export interface ConfirmRentalError extends ApplicationError {
   code: ConfirmRentalErrorCode;

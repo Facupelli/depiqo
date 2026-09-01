@@ -165,12 +165,6 @@ const editUnconfirmedRentalProblemMap = {
     HttpStatus.UNPROCESSABLE_ENTITY,
     'The rental customer is not available.',
   ),
-  'rental_commitment.unsupported_branch_fulfillment_method': problem(
-    'unsupported_branch_fulfillment_method',
-    'Unsupported fulfillment method',
-    HttpStatus.UNPROCESSABLE_ENTITY,
-    'The selected branch does not support the requested fulfillment method.',
-  ),
   'rental_commitment.pickup_time_outside_branch_schedule': problem(
     'pickup_time_outside_branch_schedule',
     'Pickup time outside branch schedule',
