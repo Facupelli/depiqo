@@ -3,6 +3,7 @@ import { err, ok, Result } from 'neverthrow';
 
 import { PrismaService } from 'src/core/database/prisma.service';
 import { ActivePhysicalStockFacts } from 'src/modules/asset-inventory/public-api/active-physical-stock-facts.public-api';
+import { BranchFacts } from 'src/modules/tenant-management/public-api/branch-facts.public-api';
 
 import { GetRentableItemDetailError, getRentableItemDetailError } from './get-rentable-item-detail.errors';
 import { GetRentableItemDetailQuery } from './get-rentable-item-detail.query';
@@ -68,6 +69,7 @@ export class GetRentableItemDetailHandler implements IQueryHandler<
   constructor(
     private readonly prisma: PrismaService,
     private readonly activePhysicalStockFacts: ActivePhysicalStockFacts,
+    private readonly branchFacts: BranchFacts,
   ) {}
 
   async execute(
@@ -128,11 +130,8 @@ export class GetRentableItemDetailHandler implements IQueryHandler<
     // TODO: This read model currently composes cross-boundary data with Prisma direct reads.
     // Replace with module-owned read facades or a dedicated denormalized read model once Catalog,
     // Pricing, Tenant Management, and Asset Inventory public read APIs stabilize.
-    const [branches, equipmentTypes, pricings] = await this.prisma.client.$transaction([
-      this.prisma.client.v2Branch.findMany({
-        where: { tenantId: query.tenantId, id: { in: branchIds } },
-        select: { id: true, name: true, timezone: true, isActive: true },
-      }),
+    const [branchFactsResult, equipmentTypes, pricings] = await Promise.all([
+      this.branchFacts.getBranchFactsBatch({ tenantId: query.tenantId, branchIds }),
       this.prisma.client.v2EquipmentType.findMany({
         where: { tenantId: query.tenantId, id: { in: equipmentTypeIds } },
         select: { id: true, name: true, description: true },
@@ -164,6 +163,10 @@ export class GetRentableItemDetailHandler implements IQueryHandler<
       }),
     ]);
 
+    if (branchFactsResult.isErr()) {
+      throw new Error(branchFactsResult.error.message, { cause: branchFactsResult.error });
+    }
+
     const activePhysicalStockCounts = await this.activePhysicalStockFacts.getActivePhysicalStockCounts({
       tenantId: query.tenantId,
       branches: item.rentalOffers.map((offer) => ({
@@ -174,7 +177,9 @@ export class GetRentableItemDetailHandler implements IQueryHandler<
     const activeAssetCountByBranchAndEquipmentType = new Map(
       activePhysicalStockCounts.map((count) => [`${count.branchId}:${count.equipmentTypeId}`, count.activeAssetCount]),
     );
-    const branchById = new Map(branches.map((branch) => [branch.id, branch]));
+    const branchById = new Map(
+      branchFactsResult.value.map((branch) => [branch.branchId, branch]),
+    );
     const equipmentTypeById = new Map(equipmentTypes.map((equipmentType) => [equipmentType.id, equipmentType]));
     const activePricingByOfferId = new Map(pricings.map((pricing) => [pricing.catalogRentalOfferId, pricing]));
 
@@ -234,9 +239,9 @@ export class GetRentableItemDetailHandler implements IQueryHandler<
         return {
           rentalOfferId: offer.id,
           branchId: offer.branchId,
-          branchName: branch?.name ?? null,
+          branchName: branch?.displayName ?? null,
           // This administrative setup read model exposes the branch override configuration, not an effective timezone.
-          timezone: branch?.timezone ?? null,
+          timezone: branch?.branchTimezone ?? null,
           isVisible: offer.isVisible,
           isRentable: offer.isRentable,
           updatedAt: offer.updatedAt.toISOString(),

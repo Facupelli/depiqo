@@ -10,6 +10,10 @@ export interface GetBranchFactsBatchInput {
   branchIds: string[];
 }
 
+export interface ListBranchFactsInput {
+  tenantId: string;
+}
+
 export interface BranchOperationalLocation {
   formattedAddress: string;
   latitude: number;
@@ -25,6 +29,7 @@ export interface BranchOperationalLocation {
 
 export interface BranchFact {
   branchId: string;
+  displayName: string;
   isActive: boolean;
   isDeleted: boolean;
   effectiveTimezone: string;
@@ -42,4 +47,6 @@ export abstract class BranchFacts {
   abstract getBranchFacts(input: GetBranchFactsInput): Promise<Result<BranchFact, BranchFactsError>>;
 
   abstract getBranchFactsBatch(input: GetBranchFactsBatchInput): Promise<Result<BranchFact[], BranchFactsError>>;
+
+  abstract listBranchFacts(input: ListBranchFactsInput): Promise<Result<BranchFact[], BranchFactsError>>;
 }
