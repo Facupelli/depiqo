@@ -2,9 +2,11 @@ import { Module } from '@nestjs/common';
 
 import { AssetInventoryModule } from '../asset-inventory/asset-inventory.module';
 import { CatalogModule } from '../catalog/catalog.module';
+import { DeliveryModule } from '../delivery/delivery.module';
 import { PricingModule } from '../pricing/pricing.module';
 import { TenantManagementModule } from '../tenant-management/tenant-management.module';
 import { RentalOfferAvailabilityService } from './application/availability/rental-offer-availability.service';
+import { ProspectiveRentalCostService } from './application/prospective-rental-cost.service';
 import { RentalAssetAllocationService } from './asset-allocation/rental-asset-allocation.service';
 import { AddRentalSelectionHttpController } from './features/add-rental-selection/add-rental-selection.controller';
 import { AddRentalSelectionHandler } from './features/add-rental-selection/add-rental-selection.handler';
@@ -64,7 +66,7 @@ import { RentalLifecycleFacts } from './public-api/rental-lifecycle-facts.public
 import { RentalLifecycleFactsService } from './public-api/rental-lifecycle-facts.service';
 
 @Module({
-  imports: [AssetInventoryModule, CatalogModule, PricingModule, TenantManagementModule],
+  imports: [AssetInventoryModule, CatalogModule, DeliveryModule, PricingModule, TenantManagementModule],
   controllers: [
     AddRentalSelectionHttpController,
     AssignRentalAccessoriesHttpController,
@@ -93,6 +95,7 @@ import { RentalLifecycleFactsService } from './public-api/rental-lifecycle-facts
     { provide: RentalRepository, useClass: PrismaRentalRepository },
     RentalAssetAllocationService,
     RentalOfferAvailabilityService,
+    ProspectiveRentalCostService,
     AddRentalSelectionHandler,
     AssignRentalAccessoriesHandler,
     AssignCustomerToDraftRentalHandler,
