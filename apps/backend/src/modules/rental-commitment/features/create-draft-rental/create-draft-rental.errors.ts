@@ -14,7 +14,8 @@ export type CreateDraftRentalErrorCode =
   | 'rental_commitment.equipment_type_not_rentable'
   | 'rental_commitment.invalid_rental_field'
   | 'rental_commitment.invalid_catalog_selection_quantity'
-  | 'rental_commitment.invalid_pricing_input';
+  | 'rental_commitment.invalid_pricing_input'
+  | 'rental_commitment.delivery_not_serviceable';
 
 export interface CreateDraftRentalError extends ApplicationError {
   code: CreateDraftRentalErrorCode;

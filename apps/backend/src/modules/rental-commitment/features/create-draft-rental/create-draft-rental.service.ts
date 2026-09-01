@@ -9,12 +9,13 @@ import {
 } from 'src/modules/catalog/public-api/catalog-selection-resolution.public-api';
 import { AssetInventoryDisplayFacts } from 'src/modules/asset-inventory/public-api/asset-inventory-display-facts.public-api';
 import {
-  PricingCalculation,
   PricingCalculationError,
+  PricingCalculationRequest,
 } from 'src/modules/pricing/public-api/pricing-calculation.public-api';
 import { BranchFacts } from 'src/modules/tenant-management/public-api/branch-facts.public-api';
 import { TenantBillingPreferences } from 'src/modules/tenant-management/public-api/tenant-billing-preferences.public-api';
 
+import { ProspectiveRentalCostService } from '../../application/prospective-rental-cost.service';
 import { RentalOperationalFactsValidatorService } from '../../application/rental-operational-facts-validator.service';
 
 import { adaptPricingCalculationToSnapshot } from '../../application/accepted-pricing/adapt-pricing-calculation-to-snapshot';
@@ -63,7 +64,7 @@ export class CreateDraftRentalService implements ICommandHandler<
     private readonly rentalOperationalFacts: RentalOperationalFactsValidatorService,
     private readonly catalogSelectionResolution: CatalogSelectionResolution,
     private readonly assetInventoryDisplayFacts: AssetInventoryDisplayFacts,
-    private readonly pricingCalculation: PricingCalculation,
+    private readonly prospectiveRentalCost: ProspectiveRentalCostService,
     private readonly rentalNumberAllocator: RentalNumberAllocator,
     private readonly unitOfWork: PrismaUnitOfWork,
   ) {}
@@ -129,7 +130,7 @@ export class CreateDraftRentalService implements ICommandHandler<
       fulfillmentRequirements: offer.fulfillmentRequirements,
     }));
 
-    const pricingResult = await this.pricingCalculation.calculateProposedPrice({
+    const pricingRequest: PricingCalculationRequest = {
       tenantId: command.tenantId,
       customerId: command.rentalCustomerId,
       rentalPeriod: {
@@ -153,11 +154,49 @@ export class CreateDraftRentalService implements ICommandHandler<
       targetTotalAdjustment: command.manualPricingAdjustment
         ? { targetTotal: command.manualPricingAdjustment.targetTotal }
         : undefined,
-    });
+    };
 
-    if (pricingResult.isErr()) {
-      return err(this.toApplicationError(pricingResult.error, context));
+    if (fulfillmentMethod === FulfillmentMethod.Delivery && !command.deliveryDetails) {
+      return err(
+        this.toApplicationError(
+          new RentalInvalidFieldError('deliveryDetails', 'delivery rentals require delivery details'),
+          context,
+        ),
+      );
     }
+
+    const prospectiveResult = await this.prospectiveRentalCost.calculate(
+      fulfillmentMethod === FulfillmentMethod.Pickup
+        ? { fulfillmentMethod: 'PICKUP', pricing: pricingRequest }
+        : {
+            fulfillmentMethod: 'DELIVERY',
+            pricing: pricingRequest,
+            branchId: command.branchId,
+            customerLocation: {
+              addressLine1: command.deliveryDetails!.addressLine1,
+              addressLine2: command.deliveryDetails!.addressLine2,
+              city: command.deliveryDetails!.city,
+              state: command.deliveryDetails!.state,
+              postalCode: command.deliveryDetails!.postalCode,
+              country: command.deliveryDetails!.country,
+            },
+          },
+    );
+
+    if (prospectiveResult.isErr()) {
+      return err(this.toApplicationError(prospectiveResult.error, context));
+    }
+    if (!prospectiveResult.value.available) {
+      return err(
+        createDraftRentalError(
+          'rental_commitment.delivery_not_serviceable',
+          `Delivery is not serviceable: ${prospectiveResult.value.reason}.`,
+          undefined,
+          { ...context, deliveryReason: prospectiveResult.value.reason },
+        ),
+      );
+    }
+    const prospectivePricing = prospectiveResult.value.pricing;
 
     const equipmentDemandLines = rentalSelectionsDraft.flatMap((selection) =>
       selection.fulfillmentRequirements.map((requirement) => ({
@@ -184,7 +223,7 @@ export class CreateDraftRentalService implements ICommandHandler<
           deliveryDetails: fulfillmentMethod === FulfillmentMethod.Delivery ? command.deliveryDetails : undefined,
           period: command.period,
           priceSnapshot: adaptPricingCalculationToSnapshot({
-            result: pricingResult.value,
+            result: prospectivePricing,
             context: 'DRAFT',
             lineDisplayNames: Object.fromEntries(
               rentalSelectionsDraft.map((selection) => [

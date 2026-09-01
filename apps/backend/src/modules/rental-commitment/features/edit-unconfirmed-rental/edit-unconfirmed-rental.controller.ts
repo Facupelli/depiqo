@@ -74,7 +74,15 @@ function toEditUnconfirmedRentalProblem(error: EditUnconfirmedRentalError): Prob
   const problem = editUnconfirmedRentalProblemMap[error.code];
 
   return ProblemException.from({
-    problemDetails: createProblemDetails({ ...problem, extensions: { code: error.code } }),
+    problemDetails: createProblemDetails({
+      ...problem,
+      extensions: {
+        code: error.code,
+        ...(error.code === 'rental_commitment.delivery_not_serviceable'
+          ? { reason: error.context?.deliveryReason }
+          : {}),
+      },
+    }),
     applicationError: error,
     cause: error.cause,
   });
@@ -194,6 +202,12 @@ const editUnconfirmedRentalProblemMap = {
     'Invalid pricing input',
     HttpStatus.UNPROCESSABLE_ENTITY,
     'The rental could not be priced with the provided input.',
+  ),
+  'rental_commitment.delivery_not_serviceable': problem(
+    'delivery_not_serviceable',
+    'Delivery not serviceable',
+    HttpStatus.UNPROCESSABLE_ENTITY,
+    'Delivery is not serviceable for the requested location and rental period.',
   ),
 } satisfies Record<EditUnconfirmedRentalErrorCode, ProblemDefinition>;
 

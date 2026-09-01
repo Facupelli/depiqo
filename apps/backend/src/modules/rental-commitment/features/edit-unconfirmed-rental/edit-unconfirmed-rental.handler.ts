@@ -8,12 +8,13 @@ import {
 } from 'src/modules/catalog/public-api/catalog-selection-resolution.public-api';
 import { AssetInventoryDisplayFacts } from 'src/modules/asset-inventory/public-api/asset-inventory-display-facts.public-api';
 import {
-  PricingCalculation,
   PricingCalculationError,
+  PricingCalculationRequest,
 } from 'src/modules/pricing/public-api/pricing-calculation.public-api';
 import { BranchFacts } from 'src/modules/tenant-management/public-api/branch-facts.public-api';
 import { TenantBillingPreferences } from 'src/modules/tenant-management/public-api/tenant-billing-preferences.public-api';
 
+import { ProspectiveRentalCostService } from '../../application/prospective-rental-cost.service';
 import { RentalOperationalFactsValidatorService } from '../../application/rental-operational-facts-validator.service';
 
 import { adaptPricingCalculationToSnapshot } from '../../application/accepted-pricing/adapt-pricing-calculation-to-snapshot';
@@ -34,7 +35,7 @@ import {
   TenantUnavailableForRentalError,
 } from '../../domain/errors/rental-commitment.errors';
 import { RentalDemandLineId } from '../../domain/ids/rental-demand-line-id';
-import { RentalStatus } from '../../domain/rental-status';
+import { FulfillmentMethod, RentalStatus } from '../../domain/rental-status';
 import { RentalSelectionId } from '../../domain/ids/rental-selection-id';
 import { EquipmentTypeId } from '../../domain/types/rental-commitment-ids';
 import { RentalRepository } from '../../persistence/rental.repository';
@@ -62,7 +63,7 @@ export class EditUnconfirmedRentalHandler implements ICommandHandler<
     private readonly rentalOperationalFacts: RentalOperationalFactsValidatorService,
     private readonly catalogSelectionResolution: CatalogSelectionResolution,
     private readonly assetInventoryDisplayFacts: AssetInventoryDisplayFacts,
-    private readonly pricingCalculation: PricingCalculation,
+    private readonly prospectiveRentalCost: ProspectiveRentalCostService,
   ) {}
 
   async execute(command: EditUnconfirmedRentalCommand): Promise<EditUnconfirmedRentalResult> {
@@ -173,7 +174,7 @@ export class EditUnconfirmedRentalHandler implements ICommandHandler<
       fulfillmentRequirements: offer.fulfillmentRequirements,
     }));
 
-    const pricingResult = await this.pricingCalculation.calculateProposedPrice({
+    const pricingRequest: PricingCalculationRequest = {
       tenantId,
       customerId: rental.rentalCustomerId,
       rentalPeriod: { start: period.start, end: period.end },
@@ -192,9 +193,46 @@ export class EditUnconfirmedRentalHandler implements ICommandHandler<
         quantity: selection.quantity,
       })),
       targetTotalAdjustment: manualPricingAdjustment ? { targetTotal: manualPricingAdjustment.targetTotal } : undefined,
-    });
-    if (pricingResult.isErr()) {
-      return err(this.toApplicationError(pricingResult.error, context));
+    };
+
+    if (fulfillmentMethod === FulfillmentMethod.Delivery && !deliveryDetails) {
+      return err(
+        this.toApplicationError(
+          new RentalInvalidFieldError('deliveryDetails', 'delivery rentals require delivery details'),
+          context,
+        ),
+      );
+    }
+
+    const prospectiveResult = await this.prospectiveRentalCost.calculate(
+      fulfillmentMethod === FulfillmentMethod.Pickup
+        ? { fulfillmentMethod: 'PICKUP', pricing: pricingRequest }
+        : {
+            fulfillmentMethod: 'DELIVERY',
+            pricing: pricingRequest,
+            branchId,
+            customerLocation: {
+              addressLine1: deliveryDetails!.addressLine1,
+              addressLine2: deliveryDetails!.addressLine2,
+              city: deliveryDetails!.city,
+              state: deliveryDetails!.state,
+              postalCode: deliveryDetails!.postalCode,
+              country: deliveryDetails!.country,
+            },
+          },
+    );
+    if (prospectiveResult.isErr()) {
+      return err(this.toApplicationError(prospectiveResult.error, context));
+    }
+    if (!prospectiveResult.value.available) {
+      return err(
+        editUnconfirmedRentalError(
+          'rental_commitment.delivery_not_serviceable',
+          `Delivery is not serviceable: ${prospectiveResult.value.reason}.`,
+          undefined,
+          { ...context, deliveryReason: prospectiveResult.value.reason },
+        ),
+      );
     }
 
     const editResult = rental.editUnconfirmed({
@@ -205,7 +243,7 @@ export class EditUnconfirmedRentalHandler implements ICommandHandler<
       notes,
       insuranceSelected,
       priceSnapshot: adaptPricingCalculationToSnapshot({
-        result: pricingResult.value,
+        result: prospectiveResult.value.pricing,
         context: 'DRAFT',
         lineDisplayNames: Object.fromEntries(
           selections.map((selection) => [selection.id, selection.rentableItemNameSnapshot]),

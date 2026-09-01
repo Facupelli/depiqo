@@ -19,7 +19,8 @@ export type EditUnconfirmedRentalErrorCode =
   | 'rental_commitment.return_time_outside_branch_schedule'
   | 'rental_commitment.invalid_rental_field'
   | 'rental_commitment.invalid_catalog_selection_quantity'
-  | 'rental_commitment.invalid_pricing_input';
+  | 'rental_commitment.invalid_pricing_input'
+  | 'rental_commitment.delivery_not_serviceable';
 
 export interface EditUnconfirmedRentalError extends ApplicationError {
   code: EditUnconfirmedRentalErrorCode;
