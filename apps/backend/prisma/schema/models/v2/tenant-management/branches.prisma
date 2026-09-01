@@ -39,6 +39,7 @@ model V2Branch {
   tenant    V2Tenant           @relation(fields: [tenantId], references: [id])
   schedules V2BranchSchedule[]
 
+  @@unique([id, tenantId], map: "v2_branches_id_tenant_id_key")
   @@index([tenantId, isActive, deletedAt])
   @@map("v2_branches")
 }
