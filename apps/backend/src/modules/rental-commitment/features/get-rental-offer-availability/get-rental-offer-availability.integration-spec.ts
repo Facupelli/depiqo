@@ -383,7 +383,6 @@ describe('GetRentalOfferAvailability integration', () => {
       branchId: s.branch.id,
       period: new RentalPeriod(requestedPeriod.start, requestedPeriod.end),
       rentalOfferIds: [first.id, unavailableId, third.id],
-      fulfillmentMethod: 'PICKUP',
     });
 
     expect(result._unsafeUnwrap()).toEqual([
@@ -406,7 +405,6 @@ describe('GetRentalOfferAvailability integration', () => {
       branchId: s.branch.id,
       period: new RentalPeriod(requestedPeriod.start, requestedPeriod.end),
       rentalOfferIds: [zeroStock.id],
-      fulfillmentMethod: 'PICKUP',
     });
     expect(zeroResult._unsafeUnwrap()).toEqual([{ kind: 'RESOLVED', rentalOfferId: zeroStock.id, availableCount: 0 }]);
   });

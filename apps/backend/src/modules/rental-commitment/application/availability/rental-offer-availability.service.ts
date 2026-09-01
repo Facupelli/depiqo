@@ -46,22 +46,19 @@ export type CalculateRentalOfferAvailabilityResult = Result<
   RentalOfferAvailabilityError
 >;
 
-export type ProspectiveFulfillmentTiming =
-  | { fulfillmentMethod: 'PICKUP' }
-  | { fulfillmentMethod: 'DELIVERY'; transportReservationMinutes: number };
-
 export type CalculateRentalOfferAvailabilityInput = {
   tenantId: string;
   branchId: string;
   period: RentalPeriod;
   rentalOfferIds: readonly string[];
-} & ProspectiveFulfillmentTiming;
+  transportReservationMinutes?: number;
+};
 
 function deriveProspectiveAssetBlockPeriod(
-  input: Pick<CalculateRentalOfferAvailabilityInput, 'period'> & ProspectiveFulfillmentTiming,
+  input: Pick<CalculateRentalOfferAvailabilityInput, 'period' | 'transportReservationMinutes'>,
   bufferSettings: { beforeBufferMinutes: number; afterBufferMinutes: number },
 ): RentalPeriod {
-  const transportReservationMinutes = input.fulfillmentMethod === 'DELIVERY' ? input.transportReservationMinutes : 0;
+  const transportReservationMinutes = input.transportReservationMinutes ?? 0;
 
   return deriveBufferedAssetBlockPeriod({
     participationPeriod: input.period,
@@ -80,13 +77,13 @@ export class RentalOfferAvailabilityService {
 
   async calculate(input: CalculateRentalOfferAvailabilityInput): Promise<CalculateRentalOfferAvailabilityResult> {
     if (
-      input.fulfillmentMethod === 'DELIVERY' &&
+      input.transportReservationMinutes !== undefined &&
       (!Number.isInteger(input.transportReservationMinutes) || input.transportReservationMinutes < 0)
     ) {
       return err(
         this.error(
           'rental_commitment.invalid_availability_selection',
-          'Delivery transportReservationMinutes must be a non-negative integer.',
+          'transportReservationMinutes must be a non-negative integer when provided.',
         ),
       );
     }
