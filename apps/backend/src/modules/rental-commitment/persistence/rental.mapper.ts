@@ -35,6 +35,8 @@ export interface RentalPersistenceRecord {
   status: string;
   acceptedBeforeBufferMinutes: number | null;
   acceptedAfterBufferMinutes: number | null;
+  acceptedDeliverySnapshot: Prisma.JsonValue | null;
+  acceptedCustomerTotal: Prisma.Decimal | null;
   fulfillmentMethod: string;
   notes: string | null;
   insuranceSelected: boolean;
@@ -119,6 +121,8 @@ export interface AssetBlockPersistenceRecord {
 export class RentalMapper {
   static toDomain(record: RentalPersistenceRecord): Rental {
     const acceptedAssetBuffer = this.toAcceptedAssetBufferDomain(record);
+    const wasConfirmed = record.confirmedAt !== null;
+    const rawPriceSnapshot = (record.priceSnapshot as JsonValue | null) ?? undefined;
     const result = Rental.reconstitute({
       id: record.id as RentalId,
       tenantId: record.tenantId,
@@ -134,10 +138,10 @@ export class RentalMapper {
       bookingSnapshot:
         record.bookingSnapshot === null ? undefined : new BookingSnapshot(record.bookingSnapshot as JsonValue),
       deliveryDetails: record.deliveryDetails ? this.toDeliveryDetailsDomain(record.deliveryDetails) : undefined,
-      priceSnapshot:
-        record.status === 'CONFIRMED' ? undefined : ((record.priceSnapshot as JsonValue | null) ?? undefined),
-      confirmedPriceSnapshot:
-        record.status === 'CONFIRMED' ? ((record.priceSnapshot as JsonValue | null) ?? undefined) : undefined,
+      priceSnapshot: wasConfirmed ? undefined : rawPriceSnapshot,
+      confirmedPriceSnapshot: wasConfirmed ? rawPriceSnapshot : undefined,
+      acceptedDelivery: (record.acceptedDeliverySnapshot as JsonValue | null) ?? undefined,
+      acceptedCustomerTotal: record.acceptedCustomerTotal?.toString(),
       acceptedAssetBuffer,
       selections: record.selections.map((selection) =>
         RentalSelection.reconstitute({
@@ -234,6 +238,8 @@ export class RentalMapper {
       confirmationFingerprint: confirmationOperation?.fingerprint,
       acceptedBeforeBufferMinutes: rental.acceptedAssetBuffer?.beforeBufferMinutes,
       acceptedAfterBufferMinutes: rental.acceptedAssetBuffer?.afterBufferMinutes,
+      acceptedDeliverySnapshot: toPrismaJsonInput(rental.acceptedDelivery?.toJSON()),
+      acceptedCustomerTotal: rental.acceptedCustomerTotal,
     };
   }
 
@@ -254,6 +260,8 @@ export class RentalMapper {
       confirmedAt: rental.confirmedAt,
       acceptedBeforeBufferMinutes: rental.acceptedAssetBuffer?.beforeBufferMinutes,
       acceptedAfterBufferMinutes: rental.acceptedAssetBuffer?.afterBufferMinutes,
+      acceptedDeliverySnapshot: toPrismaJsonInput(rental.acceptedDelivery?.toJSON()),
+      acceptedCustomerTotal: rental.acceptedCustomerTotal,
     };
   }
 

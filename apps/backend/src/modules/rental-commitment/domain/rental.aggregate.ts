@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 
+import Decimal from 'decimal.js';
 import { err, ok, Result } from 'neverthrow';
 
 import { AggregateRootBase } from 'src/core/domain/aggregate-root.base';
@@ -44,6 +45,7 @@ import { AssetBlockType, FulfillmentMethod, RentalSource, RentalStatus } from '.
 import { CreateRentalSelectionProps, RentalSelection } from './rental-selection.entity';
 import { endAssignmentParticipation } from './release-assignment-participation';
 import { AssignedAssetOwnershipSnapshot } from './value-objects/assigned-asset-ownership-snapshot.value-object';
+import { AcceptedDeliverySnapshot } from './value-objects/accepted-delivery-snapshot.value-object';
 import { ConfirmedPriceSnapshot } from './value-objects/confirmed-price-snapshot.value-object';
 import { BookingSnapshot, JsonSnapshot, JsonValue } from './value-objects/json-snapshot.value-object';
 import { RentalPeriod } from './value-objects/rental-period.value-object';
@@ -85,6 +87,8 @@ interface RentalProps {
   deliveryDetails?: RentalDeliveryDetails;
   priceSnapshot?: JsonSnapshot;
   confirmedPriceSnapshot?: ConfirmedPriceSnapshot;
+  acceptedDelivery?: AcceptedDeliverySnapshot;
+  acceptedCustomerTotal?: string;
   acceptedAssetBuffer?: AcceptedRentalAssetBuffer;
   selections: RentalSelection[];
   demandLines: RentalDemandLine[];
@@ -176,6 +180,7 @@ export interface CreateDraftRentalProps extends CreateRentalBaseProps {
 export interface CreateConfirmedRentalProps extends Omit<CreateRentalBaseProps, 'demandLines'> {
   confirmedAt?: Date;
   confirmedPriceSnapshot: JsonValue;
+  acceptedDelivery?: JsonValue;
   acceptedAssetBuffer: AcceptedRentalAssetBuffer;
   demandLines: CreateRentalDemandLineInput[];
   assignedAssets: CreateAssignedAssetInput[];
@@ -198,6 +203,8 @@ export interface ReconstituteRentalProps {
   deliveryDetails?: RentalDeliveryDetails;
   priceSnapshot?: JsonValue;
   confirmedPriceSnapshot?: JsonValue;
+  acceptedDelivery?: JsonValue;
+  acceptedCustomerTotal?: string;
   acceptedAssetBuffer?: AcceptedRentalAssetBuffer;
   selections: RentalSelection[];
   demandLines: RentalDemandLine[];
@@ -236,6 +243,8 @@ interface CreateRentalFromEntitiesProps {
   deliveryDetails?: RentalDeliveryDetails;
   priceSnapshot?: JsonSnapshot;
   confirmedPriceSnapshot?: ConfirmedPriceSnapshot;
+  acceptedDelivery?: AcceptedDeliverySnapshot;
+  acceptedCustomerTotal?: string;
   acceptedAssetBuffer?: AcceptedRentalAssetBuffer;
   selections: RentalSelection[];
   demandLines: RentalDemandLine[];
@@ -312,6 +321,14 @@ export class Rental extends AggregateRootBase {
 
   get confirmedPriceSnapshot(): ConfirmedPriceSnapshot | undefined {
     return this.props.confirmedPriceSnapshot;
+  }
+
+  get acceptedDelivery(): AcceptedDeliverySnapshot | undefined {
+    return this.props.acceptedDelivery;
+  }
+
+  get acceptedCustomerTotal(): string | undefined {
+    return this.props.acceptedCustomerTotal;
   }
 
   get acceptedAssetBuffer(): AcceptedRentalAssetBuffer | undefined {
@@ -432,6 +449,16 @@ export class Rental extends AggregateRootBase {
       return err(confirmedPriceSnapshot.error);
     }
 
+    let acceptedDelivery: AcceptedDeliverySnapshot | undefined;
+    if (props.acceptedDelivery !== undefined) {
+      const snapshot = AcceptedDeliverySnapshot.create(props.acceptedDelivery);
+      if (snapshot.isErr()) return err(snapshot.error);
+      acceptedDelivery = snapshot.value;
+    }
+    const acceptedCustomerTotal = new Decimal(confirmedPriceSnapshot.value.snapshot.total)
+      .plus(acceptedDelivery?.snapshot.deliveryTotal ?? 0)
+      .toString();
+
     const rentalId = props.id ?? (randomUUID() as RentalId);
 
     const selections = this.createSelections(rentalId, props.tenantId, props.selections);
@@ -475,6 +502,8 @@ export class Rental extends AggregateRootBase {
       ...props,
       id: rentalId,
       confirmedPriceSnapshot: confirmedPriceSnapshot.value,
+      acceptedDelivery,
+      acceptedCustomerTotal,
       acceptedAssetBuffer: props.acceptedAssetBuffer,
       selections: selections.value,
       demandLines: demandLines.value,
@@ -505,10 +534,19 @@ export class Rental extends AggregateRootBase {
       confirmedPriceSnapshot = snapshot.value;
     }
 
+    let acceptedDelivery: AcceptedDeliverySnapshot | undefined;
+    if (props.acceptedDelivery !== undefined) {
+      const snapshot = AcceptedDeliverySnapshot.create(props.acceptedDelivery);
+      if (snapshot.isErr()) return err(snapshot.error);
+      acceptedDelivery = snapshot.value;
+    }
+
     return this.createFromEntities(props.status, {
       ...props,
       priceSnapshot: props.priceSnapshot === undefined ? undefined : new JsonSnapshot(props.priceSnapshot),
       confirmedPriceSnapshot,
+      acceptedDelivery,
+      acceptedCustomerTotal: props.acceptedCustomerTotal,
       acceptedAssetBuffer: props.acceptedAssetBuffer,
       selections: [...props.selections],
       demandLines: [...props.demandLines],
@@ -994,6 +1032,7 @@ export class Rental extends AggregateRootBase {
   confirm(params: {
     assignedAssets: CreateAssignedAssetInput[];
     acceptedAssetBuffer: AcceptedRentalAssetBuffer;
+    acceptedDelivery?: JsonValue;
     confirmedAt?: Date;
     assetBlocks?: AssetBlock[];
   }): Result<void, RentalCommitmentError> {
@@ -1008,6 +1047,29 @@ export class Rental extends AggregateRootBase {
     const confirmedPriceSnapshot = this.createConfirmedPriceSnapshotFromCurrentPrice();
     if (confirmedPriceSnapshot.isErr()) {
       return err(confirmedPriceSnapshot.error);
+    }
+
+    let acceptedDelivery: AcceptedDeliverySnapshot | undefined;
+    if (params.acceptedDelivery !== undefined) {
+      const snapshot = AcceptedDeliverySnapshot.create(params.acceptedDelivery);
+      if (snapshot.isErr()) return err(snapshot.error);
+      acceptedDelivery = snapshot.value;
+    }
+    if (this.fulfillmentMethod === FulfillmentMethod.Delivery && !acceptedDelivery) {
+      return err(
+        new RentalInvalidFieldError('acceptedDelivery', 'confirmed Delivery rentals require an accepted snapshot'),
+      );
+    }
+    if (this.fulfillmentMethod === FulfillmentMethod.Pickup && acceptedDelivery) {
+      return err(
+        new RentalInvalidFieldError('acceptedDelivery', 'Pickup rentals cannot have an accepted Delivery snapshot'),
+      );
+    }
+    if (
+      acceptedDelivery &&
+      confirmedPriceSnapshot.value.snapshot.final.currency !== acceptedDelivery.snapshot.currency
+    ) {
+      return err(new RentalInvalidFieldError('acceptedDelivery.currency', 'must match accepted Pricing currency'));
     }
 
     const confirmedAt = params.confirmedAt ? new Date(params.confirmedAt) : new Date();
@@ -1055,6 +1117,10 @@ export class Rental extends AggregateRootBase {
 
     this.props.status = RentalStatus.Confirmed;
     this.props.confirmedPriceSnapshot = confirmedPriceSnapshot.value;
+    this.props.acceptedDelivery = acceptedDelivery;
+    this.props.acceptedCustomerTotal = new Decimal(confirmedPriceSnapshot.value.snapshot.total)
+      .plus(acceptedDelivery?.snapshot.deliveryTotal ?? 0)
+      .toString();
     this.props.acceptedAssetBuffer = { ...params.acceptedAssetBuffer };
     this.props.assignedAssets = assignedAssets.value;
     this.props.assetBlocks = assetBlocks.value;
@@ -1174,12 +1240,16 @@ export class Rental extends AggregateRootBase {
       return err(baseValidation.error);
     }
 
-    if (this.isUnconfirmed()) {
-      return this.validateUnconfirmedInvariants();
-    }
-
     if (this.isOperationallyCommitted()) {
       return this.validateConfirmedInvariants();
+    }
+
+    if (this.confirmedAt) {
+      return this.validateAcceptedHistoricalInvariants();
+    }
+
+    if (this.isUnconfirmed()) {
+      return this.validateUnconfirmedInvariants();
     }
 
     return ok(undefined);
@@ -1204,6 +1274,10 @@ export class Rental extends AggregateRootBase {
   }
 
   private validateUnconfirmedInvariants(): Result<void, RentalCommitmentError> {
+    if (this.props.acceptedDelivery || this.props.acceptedCustomerTotal !== undefined) {
+      return err(new RentalInvalidFieldError('acceptedDelivery', 'unconfirmed rentals cannot have accepted facts'));
+    }
+
     if (this.props.assignedAssets.length > 0) {
       return err(new RentalInvalidFieldError('assignedAssets', 'pending or draft rentals cannot have assigned assets'));
     }
@@ -1218,7 +1292,11 @@ export class Rental extends AggregateRootBase {
   }
 
   private validateConfirmedInvariants(): Result<void, RentalCommitmentError> {
-    if (!this.props.acceptedAssetBuffer) {
+    const acceptedFactsValidation = this.validateAcceptedHistoricalInvariants();
+    if (acceptedFactsValidation.isErr()) return err(acceptedFactsValidation.error);
+
+    const acceptedAssetBuffer = this.props.acceptedAssetBuffer;
+    if (!acceptedAssetBuffer) {
       return err(new RentalInvalidFieldError('acceptedAssetBuffer', 'confirmed rentals require an accepted buffer'));
     }
 
@@ -1227,9 +1305,48 @@ export class Rental extends AggregateRootBase {
       demandLines: this.currentDemandLines,
       assignedAssets: this.props.assignedAssets,
       assetBlocks: this.props.assetBlocks,
-      acceptedAssetBuffer: this.props.acceptedAssetBuffer,
+      acceptedAssetBuffer,
       period: this.period,
     });
+  }
+
+  private validateAcceptedHistoricalInvariants(): Result<void, RentalCommitmentError> {
+    if (!this.props.acceptedAssetBuffer) {
+      return err(
+        new RentalInvalidFieldError('acceptedAssetBuffer', 'previously confirmed rentals require an accepted buffer'),
+      );
+    }
+    if (!this.props.confirmedPriceSnapshot || this.props.acceptedCustomerTotal === undefined) {
+      return err(
+        new RentalInvalidFieldError(
+          'acceptedCustomerTotal',
+          'previously confirmed rentals require an accepted customer total',
+        ),
+      );
+    }
+    if (this.fulfillmentMethod === FulfillmentMethod.Delivery && !this.props.acceptedDelivery) {
+      return err(
+        new RentalInvalidFieldError('acceptedDelivery', 'confirmed Delivery rentals require an accepted snapshot'),
+      );
+    }
+    if (this.fulfillmentMethod === FulfillmentMethod.Pickup && this.props.acceptedDelivery) {
+      return err(
+        new RentalInvalidFieldError('acceptedDelivery', 'Pickup rentals cannot have an accepted Delivery snapshot'),
+      );
+    }
+    const pricing = this.props.confirmedPriceSnapshot.snapshot;
+    const delivery = this.props.acceptedDelivery?.snapshot;
+    if (delivery && pricing.final.currency !== delivery.currency) {
+      return err(new RentalInvalidFieldError('acceptedDelivery.currency', 'must match accepted Pricing currency'));
+    }
+    const expectedTotal = new Decimal(pricing.total).plus(delivery?.deliveryTotal ?? 0);
+    if (!expectedTotal.equals(this.props.acceptedCustomerTotal)) {
+      return err(
+        new RentalInvalidFieldError('acceptedCustomerTotal', 'must equal accepted Pricing plus accepted Delivery'),
+      );
+    }
+
+    return ok(undefined);
   }
 
   private validateConfirmedState(params: {
@@ -1475,6 +1592,8 @@ export class Rental extends AggregateRootBase {
       deliveryDetails: props.deliveryDetails,
       priceSnapshot: props.priceSnapshot,
       confirmedPriceSnapshot: props.confirmedPriceSnapshot,
+      acceptedDelivery: props.acceptedDelivery,
+      acceptedCustomerTotal: props.acceptedCustomerTotal,
       acceptedAssetBuffer: props.acceptedAssetBuffer ? { ...props.acceptedAssetBuffer } : undefined,
       selections: [...props.selections],
       demandLines: [...props.demandLines],

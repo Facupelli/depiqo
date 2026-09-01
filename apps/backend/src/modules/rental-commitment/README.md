@@ -129,9 +129,9 @@ DELIVERY
   Tenant delivers equipment to a customer-provided address.
 ```
 
-Rental delivery details preserve the accepted delivery address and contact facts.
+At confirmation, Rental Commitment separately preserves the accepted provider-neutral Delivery snapshot when applicable. The accepted customer total exactly composes the accepted Pricing total with the accepted Delivery total without putting Delivery charges into the Pricing snapshot.
 
-If a delivery fee affects the accepted customer price, it also belongs in the confirmed price snapshot.
+Confirmed operational block timing uses only the rental's accepted before/after buffers and accepted Delivery transport reservation. Pickup contributes zero transport reservation.
 
 ### Accessory Selection and Assignment
 
@@ -284,6 +284,7 @@ rental asset candidate projection
 assigned asset references
 asset blocks
 confirmed price snapshots
+accepted Delivery snapshots and accepted customer totals
 rental delivery details
 rental accessory selections
 rental accessory asset assignments

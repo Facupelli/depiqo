@@ -33,7 +33,9 @@ model V2Rental {
   confirmationFingerprint String? @map("confirmation_fingerprint")
 
   acceptedBeforeBufferMinutes Int? @map("accepted_before_buffer_minutes")
-  acceptedAfterBufferMinutes  Int? @map("accepted_after_buffer_minutes")
+  acceptedAfterBufferMinutes  Int?     @map("accepted_after_buffer_minutes")
+  acceptedDeliverySnapshot    Json?    @map("accepted_delivery_snapshot")
+  acceptedCustomerTotal       Decimal? @map("accepted_customer_total") @db.Decimal(19, 4)
 
   periodStart   DateTime        @map("period_start") @db.Timestamptz(3)
   periodEnd     DateTime        @map("period_end") @db.Timestamptz(3)
