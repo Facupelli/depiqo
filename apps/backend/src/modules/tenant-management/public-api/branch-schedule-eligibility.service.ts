@@ -1,9 +1,9 @@
-import type { LocalDate } from '@repo/api-contracts';
 import { Injectable } from '@nestjs/common';
 import { err, ok, Result } from 'neverthrow';
 
 import { PrismaService } from 'src/core/database/prisma.service';
-import { localDateDayOfWeek, localDateToPrismaDate, prismaDateToLocalDate } from 'src/core/temporal/local-date';
+import { localDateToPrismaDate, prismaDateToLocalDate } from 'src/core/temporal/local-date';
+import { toZonedDateTimeParts } from 'src/core/temporal/zoned-date-time-parts';
 
 import { BranchFacts } from './branch-facts.public-api';
 import {
@@ -12,8 +12,6 @@ import {
   BranchScheduleEligibilityResult,
 } from './branch-schedule-eligibility.public-api';
 import { BranchScheduleWindow } from '../domain/value-objects/branch-schedule-window.value-object';
-
-type LocalDateTimeParts = { dateKey: LocalDate; dayOfWeek: number; minuteOfDay: number };
 
 @Injectable()
 export class BranchScheduleEligibilityService extends BranchScheduleEligibility {
@@ -33,8 +31,8 @@ export class BranchScheduleEligibilityService extends BranchScheduleEligibility 
     const branch = await this.branchFacts.getBranchFacts({ tenantId: input.tenantId, branchId: input.branchId });
     if (branch.isErr()) return err(branch.error);
 
-    const localDateTime = this.toLocalDateTimeParts(input.operationAt, branch.value.effectiveTimezone);
-    const specificDate = localDateToPrismaDate(localDateTime.dateKey);
+    const localDateTime = toZonedDateTimeParts(input.operationAt, branch.value.effectiveTimezone);
+    const specificDate = localDateToPrismaDate(localDateTime.localDate);
     const rawRows = await this.prisma.client.v2BranchSchedule.findMany({
       where: {
         branchId: input.branchId,
@@ -61,23 +59,5 @@ export class BranchScheduleEligibilityService extends BranchScheduleEligibility 
         }).containsMinute(localDateTime.minuteOfDay),
       ),
     });
-  }
-
-  private toLocalDateTimeParts(date: Date, timezone: string): LocalDateTimeParts {
-    const parts = new Intl.DateTimeFormat('en-US', {
-      timeZone: timezone,
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false,
-    }).formatToParts(date);
-    const get = (type: string): number => Number(parts.find((part) => part.type === type)?.value ?? '0');
-    const hour = get('hour') === 24 ? 0 : get('hour');
-    const dateKey =
-      `${String(get('year')).padStart(4, '0')}-${String(get('month')).padStart(2, '0')}-${String(get('day')).padStart(2, '0')}` as LocalDate;
-
-    return { dateKey, dayOfWeek: localDateDayOfWeek(dateKey), minuteOfDay: hour * 60 + get('minute') };
   }
 }

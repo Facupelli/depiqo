@@ -6,6 +6,10 @@ import { InvalidNonNegativeMoneyAmountError } from '../errors/delivery.errors';
 export class NonNegativeMoneyAmount {
   private constructor(private readonly amount: Decimal) {}
 
+  static zero(): NonNegativeMoneyAmount {
+    return new NonNegativeMoneyAmount(new Decimal(0));
+  }
+
   static create(value: string, field: string): Result<NonNegativeMoneyAmount, InvalidNonNegativeMoneyAmountError> {
     let amount: Decimal;
 
@@ -20,6 +24,10 @@ export class NonNegativeMoneyAmount {
     }
 
     return ok(new NonNegativeMoneyAmount(amount));
+  }
+
+  add(other: NonNegativeMoneyAmount): NonNegativeMoneyAmount {
+    return new NonNegativeMoneyAmount(this.amount.add(other.amount));
   }
 
   toString(): string {

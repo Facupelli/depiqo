@@ -28,3 +28,9 @@ export class InvalidDeliveryConfigurationError extends DeliveryDomainError {
     super(message);
   }
 }
+
+export class InvalidDeliveryQuoteInputError extends DeliveryDomainError {
+  constructor(message: string) {
+    super(message);
+  }
+}

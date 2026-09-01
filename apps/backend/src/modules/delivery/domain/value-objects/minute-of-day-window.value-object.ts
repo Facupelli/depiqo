@@ -28,6 +28,10 @@ export class MinuteOfDayWindow {
     return this.startMinute <= other.startMinute && this.endMinute >= other.endMinute;
   }
 
+  containsMinute(minute: number): boolean {
+    return Number.isInteger(minute) && minute >= this.startMinute && minute < this.endMinute;
+  }
+
   private static isMinuteOfDay(value: number): boolean {
     return Number.isInteger(value) && value >= 0 && value <= 1439;
   }
