@@ -177,9 +177,7 @@ export class GetRentableItemDetailHandler implements IQueryHandler<
     const activeAssetCountByBranchAndEquipmentType = new Map(
       activePhysicalStockCounts.map((count) => [`${count.branchId}:${count.equipmentTypeId}`, count.activeAssetCount]),
     );
-    const branchById = new Map(
-      branchFactsResult.value.map((branch) => [branch.branchId, branch]),
-    );
+    const branchById = new Map(branchFactsResult.value.map((branch) => [branch.branchId, branch]));
     const equipmentTypeById = new Map(equipmentTypes.map((equipmentType) => [equipmentType.id, equipmentType]));
     const activePricingByOfferId = new Map(pricings.map((pricing) => [pricing.catalogRentalOfferId, pricing]));
 

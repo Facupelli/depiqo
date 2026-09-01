@@ -37,6 +37,7 @@ export class GetRentalOfferAvailabilityHandler implements IQueryHandler<
       branchId: query.branchId,
       period: query.period,
       rentalOfferIds: query.rentalOfferIds,
+      fulfillmentMethod: 'PICKUP',
     });
     if (result.isErr()) return err(this.mapCalculationError(result.error));
 
