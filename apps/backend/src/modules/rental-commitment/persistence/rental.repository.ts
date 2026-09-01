@@ -1,7 +1,6 @@
 import { PrismaTransactionClient } from 'src/core/database/prisma-unit-of-work';
 
 import { Rental } from '../domain/rental.aggregate';
-import { AssetId } from '../domain/types/rental-commitment-ids';
 import { RentalOwnerSplitDraft } from '../owner-split/owner-split-calculator.types';
 
 export interface ConfirmationOperationPersistence {
@@ -13,7 +12,6 @@ export interface SaveRentalOptions {
   persistence?: 'DETAILS';
   ownerSplits?: RentalOwnerSplitDraft[];
   confirmationOperation?: ConfirmationOperationPersistence;
-  accessoryAssetIds?: AssetId[];
   expectedVersion?: number;
   tx?: PrismaTransactionClient;
 }

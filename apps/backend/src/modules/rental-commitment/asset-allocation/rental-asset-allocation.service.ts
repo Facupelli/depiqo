@@ -76,28 +76,6 @@ export class RentalAssetAllocationService {
     return ok(this.allocationPolicy.eligibleCandidates(candidates.value, reservedAssetIds));
   }
 
-  async areExactAssetsAvailable(params: {
-    tenantId: string;
-    assetIds: readonly AssetId[];
-    periodStart: Date;
-    periodEnd: Date;
-    excludingRentalId: string;
-    tx: PrismaTransactionClient;
-  }): Promise<boolean> {
-    const reservations = await this.findActiveOverlappingReservations({
-      tenantId: params.tenantId,
-      assetIds: params.assetIds,
-      periodStart: params.periodStart,
-      periodEnd: params.periodEnd,
-      ignoredBlockScope: {
-        rentalId: params.excludingRentalId,
-        blockType: V2AssetBlockType.EQUIPMENT,
-      },
-      tx: params.tx,
-    });
-    return reservations.length === 0;
-  }
-
   async planAllocations(
     params: PlanAssetAllocationsParams,
   ): Promise<Result<RentalAssetAllocationPlan, RentalCommitmentError>> {

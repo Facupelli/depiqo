@@ -11,9 +11,14 @@ import { V2AssetBlockType, V2RentalStatus } from 'src/generated/prisma/enums';
 
 import { resolveEquipmentTypeNames } from '../../application/equipment-type-display-facts';
 import { RentalAssetAllocationService } from '../../asset-allocation/rental-asset-allocation.service';
-import { InsufficientAssetAvailabilityError } from '../../domain/errors/rental-commitment.errors';
+import { deriveBufferedAssetBlockPeriod } from '../../domain/asset-block-period';
+import {
+  InsufficientAssetAvailabilityError,
+  RentalInvalidFieldError,
+} from '../../domain/errors/rental-commitment.errors';
 import { RentalDemandLineId } from '../../domain/ids/rental-demand-line-id';
 import { AssetId, EquipmentTypeId, RentalSelectionId } from '../../domain/types/rental-commitment-ids';
+import { RentalPeriod } from '../../domain/value-objects/rental-period.value-object';
 import { ConfirmedRentalEditedIntegrationEvent } from '../../public-api/events/rental-lifecycle.integration-events';
 import { AssignRentalAccessoriesCommand } from './assign-rental-accessories.command';
 import { assignRentalAccessoriesError, AssignRentalAccessoriesError } from './assign-rental-accessories.errors';
@@ -30,6 +35,8 @@ type RentalReadModel = {
   periodStart: Date;
   periodEnd: Date;
   version: number;
+  acceptedBeforeBufferMinutes: number | null;
+  acceptedAfterBufferMinutes: number | null;
 };
 
 type ExistingSelection = {
@@ -52,7 +59,7 @@ type PlannedSelection = {
   newAssetIds: string[];
 };
 
-const ASSIGNABLE_RENTAL_STATUSES = new Set<V2RentalStatus>([V2RentalStatus.PENDING, V2RentalStatus.CONFIRMED]);
+const ASSIGNABLE_RENTAL_STATUSES = new Set<V2RentalStatus>([V2RentalStatus.CONFIRMED]);
 
 @CommandHandler(AssignRentalAccessoriesCommand)
 export class AssignRentalAccessoriesHandler implements ICommandHandler<
@@ -80,6 +87,8 @@ export class AssignRentalAccessoriesHandler implements ICommandHandler<
         periodStart: true,
         periodEnd: true,
         version: true,
+        acceptedBeforeBufferMinutes: true,
+        acceptedAfterBufferMinutes: true,
       },
     });
 
@@ -104,6 +113,26 @@ export class AssignRentalAccessoriesHandler implements ICommandHandler<
         ),
       );
     }
+
+    const acceptedAssetBuffer = this.resolveAcceptedAssetBuffer(rental);
+    const operationTime = new Date();
+    const participationStart = operationTime < rental.periodStart ? rental.periodStart : operationTime;
+    if (participationStart >= rental.periodEnd) {
+      return err(
+        assignRentalAccessoriesError(
+          'rental_commitment.rental_status_does_not_allow_accessory_assignment',
+          'Accessories cannot be assigned after the rental period has ended.',
+          undefined,
+          context,
+        ),
+      );
+    }
+    const operationalPeriod = deriveBufferedAssetBlockPeriod({
+      participationPeriod: new RentalPeriod(participationStart, rental.periodEnd),
+      beforeBufferMinutes: acceptedAssetBuffer.beforeBufferMinutes,
+      afterBufferMinutes: acceptedAssetBuffer.afterBufferMinutes,
+      ...(operationTime >= rental.periodStart ? { clampStartAt: operationTime } : {}),
+    });
 
     const inputValidation = await this.validateInput(command, context);
     if (inputValidation.isErr()) return err(inputValidation.error);
@@ -174,8 +203,8 @@ export class AssignRentalAccessoriesHandler implements ICommandHandler<
     const allocationPlan = await this.rentalAssetAllocation.planAllocations({
       tenantId: command.tenantId,
       branchId: rental.branchId,
-      periodStart: rental.periodStart,
-      periodEnd: rental.periodEnd,
+      periodStart: operationalPeriod.start,
+      periodEnd: operationalPeriod.end,
       demandLines,
       excludeAssetIds: keptAssetIds as AssetId[],
       ignoredBlockScope: {
@@ -228,7 +257,15 @@ export class AssignRentalAccessoriesHandler implements ICommandHandler<
     let persisted: boolean;
     try {
       persisted = await this.unitOfWork.runInTransaction(async ({ tx, integrationEvents }) => {
-        const didPersist = await this.persistPlan(command, rental, existingSelections, plannedSelections, tx);
+        const didPersist = await this.persistPlan(
+          command,
+          rental,
+          existingSelections,
+          plannedSelections,
+          operationalPeriod,
+          operationTime,
+          tx,
+        );
         if (
           didPersist &&
           accessoriesChanged &&
@@ -354,6 +391,8 @@ export class AssignRentalAccessoriesHandler implements ICommandHandler<
     rental: RentalReadModel,
     existingSelections: ExistingSelection[],
     plannedSelections: PlannedSelection[],
+    operationalPeriod: RentalPeriod,
+    operationTime: Date,
     tx: PrismaTransactionClient,
   ): Promise<boolean> {
     const plannedSelectionIds = new Set(plannedSelections.map((selection) => selection.id));
@@ -447,9 +486,9 @@ export class AssignRentalAccessoriesHandler implements ICommandHandler<
                 ${command.tenantId},
                 ${command.rentalId},
                 ${assetId},
-                ${this.toPostgresRange(rental.periodStart, rental.periodEnd)}::tstzrange,
+                ${operationalPeriod.toPostgresRange()}::tstzrange,
                 ${V2AssetBlockType.ACCESSORY},
-                ${new Date()},
+                ${operationTime},
                 ${null}
               )
             `;
@@ -487,7 +526,15 @@ export class AssignRentalAccessoriesHandler implements ICommandHandler<
     return `${selection.sourceRentalDemandLineId ?? ''}:${selection.equipmentTypeId}`;
   }
 
-  private toPostgresRange(start: Date, end: Date): string {
-    return `[${start.toISOString()}, ${end.toISOString()})`;
+  private resolveAcceptedAssetBuffer(rental: RentalReadModel): {
+    beforeBufferMinutes: number;
+    afterBufferMinutes: number;
+  } {
+    const before = rental.acceptedBeforeBufferMinutes;
+    const after = rental.acceptedAfterBufferMinutes;
+    if (before === null || after === null) {
+      throw new RentalInvalidFieldError('acceptedAssetBuffer', 'persisted buffer values must both be present');
+    }
+    return { beforeBufferMinutes: before, afterBufferMinutes: after };
   }
 }

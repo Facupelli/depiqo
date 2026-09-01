@@ -83,6 +83,7 @@ function reconstituteWith(assignments: AssignedAsset[], blockStart = handoff) {
     rentalCustomerId: 'customer-1',
     period: new RentalPeriod(start, end),
     fulfillmentMethod: FulfillmentMethod.Pickup,
+    acceptedAssetBuffer: { beforeBufferMinutes: 0, afterBufferMinutes: 0 },
     confirmedPriceSnapshot,
     selections: [
       {
@@ -114,14 +115,19 @@ function reconstituteWith(assignments: AssignedAsset[], blockStart = handoff) {
   if (seedResult.isErr()) throw seedResult.error;
   const seed = seedResult.value;
 
-  const current = assignments.find((candidate) => candidate.isActive)!;
-  const block = AssetBlock.create({
-    tenantId: seed.tenantId,
-    rentalId: seed.id,
-    assetId: current.assetId,
-    period: new RentalPeriod(blockStart, end),
-    blockType: AssetBlockType.Equipment,
-  })._unsafeUnwrap();
+  const blocks = assignments.map((candidate) =>
+    AssetBlock.create({
+      tenantId: seed.tenantId,
+      rentalId: seed.id,
+      assetId: candidate.assetId,
+      period: new RentalPeriod(
+        candidate.isActive ? blockStart : candidate.effectiveFrom,
+        candidate.effectiveUntil ?? end,
+      ),
+      blockType: AssetBlockType.Equipment,
+      releasedAt: candidate.effectiveUntil,
+    })._unsafeUnwrap(),
+  );
 
   return Rental.reconstitute({
     id: seed.id,
@@ -133,10 +139,11 @@ function reconstituteWith(assignments: AssignedAsset[], blockStart = handoff) {
     period: seed.period,
     fulfillmentMethod: seed.fulfillmentMethod,
     confirmedPriceSnapshot: seed.confirmedPriceSnapshot!.toJSON(),
+    acceptedAssetBuffer: seed.acceptedAssetBuffer,
     selections: [...seed.selections],
     demandLines: [...seed.demandLines],
     assignedAssets: assignments,
-    assetBlocks: [block],
+    assetBlocks: blocks,
   });
 }
 
@@ -210,6 +217,7 @@ describe('Rental temporal assignments', () => {
       period: validRental.period,
       fulfillmentMethod: validRental.fulfillmentMethod,
       confirmedPriceSnapshot: validRental.confirmedPriceSnapshot!.toJSON(),
+      acceptedAssetBuffer: validRental.acceptedAssetBuffer,
       selections: [...validRental.selections, removedSelection],
       demandLines: [...validRental.demandLines, removedDemandLine],
       assignedAssets: [...validRental.assignedAssets, invalidAssignment],

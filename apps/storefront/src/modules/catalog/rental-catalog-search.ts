@@ -24,6 +24,8 @@ export const rentalCatalogSearchSchema = z.object({
 		.default(rentalCatalogSearchDefaults.pageSize),
 	periodStart: z.iso.date().optional(),
 	periodEnd: z.iso.date().optional(),
+	pickupInstant: z.iso.datetime({ offset: true }).optional(),
+	returnInstant: z.iso.datetime({ offset: true }).optional(),
 	categoryId: z.string().optional(),
 	search: z.string().optional(),
 });

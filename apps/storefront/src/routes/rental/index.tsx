@@ -67,6 +67,8 @@ export const Route = createFileRoute("/rental/")({
 							branchId: search.branchId,
 							periodStart: search.periodStart,
 							periodEnd: search.periodEnd,
+							pickupInstant: search.pickupInstant,
+							returnInstant: search.returnInstant,
 						}),
 					),
 					queryClient.prefetchQuery(storefrontEquipmentQueries.list(search)),
@@ -207,7 +209,13 @@ function RentalPage() {
 			: null;
 	const handleBranchSelect = (branchId: string) =>
 		navigate({
-			search: (previous) => ({ ...previous, branchId, page: 1 }),
+			search: (previous) => ({
+				...previous,
+				branchId,
+				pickupInstant: undefined,
+				returnInstant: undefined,
+				page: 1,
+			}),
 			replace: true,
 		});
 

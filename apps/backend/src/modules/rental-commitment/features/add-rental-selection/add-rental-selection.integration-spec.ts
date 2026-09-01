@@ -47,6 +47,7 @@ describe('AddRentalSelection integration', () => {
       period,
       offerId: camera.offer.id,
       equipmentTypeId: camera.equipmentType.id,
+      acceptedAssetBuffer: { beforeBufferMinutes: 10, afterBufferMinutes: 15 },
     });
     return { tenant, branch, customer, user, camera, light, rental };
   }
@@ -153,7 +154,7 @@ describe('AddRentalSelection integration', () => {
     expect(lightAssignment.effectiveFrom.getTime()).toBeLessThanOrEqual(commandFinishedAt.getTime());
     expect(lightAssignment.effectiveUntil).toBeNull();
     expect(blockPeriod.start).toEqual(lightAssignment.effectiveFrom);
-    expect(blockPeriod.end).toEqual(after.rental.periodEnd);
+    expect(blockPeriod.end).toEqual(new Date(after.rental.periodEnd.getTime() + 15 * 60_000));
 
     const priceSnapshot = after.rental.priceSnapshot as {
       final: { lines: Array<{ rentalSelectionId: string; chargedUnits: number }> };
@@ -233,7 +234,8 @@ describe('AddRentalSelection integration', () => {
     const assignment = state.rental.assignedAssets.find((candidate) => candidate.assetId === lightAssetId)!;
     const block = state.blocks.find((candidate) => candidate.assetId === lightAssetId)!;
     expect(assignment.effectiveFrom).toEqual(state.rental.periodStart);
-    expect(parsePostgresRange(block.period).start).toEqual(state.rental.periodStart);
+    expect(parsePostgresRange(block.period).start).toEqual(new Date(state.rental.periodStart.getTime() - 10 * 60_000));
+    expect(parsePostgresRange(block.period).end).toEqual(new Date(state.rental.periodEnd.getTime() + 15 * 60_000));
   });
 
   it.each([

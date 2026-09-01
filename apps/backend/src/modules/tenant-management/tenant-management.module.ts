@@ -11,6 +11,7 @@ import { TenantNotificationPreferencesService } from './public-api/tenant-notifi
 import { TenantBillingPreferencesService } from './public-api/tenant-billing-preferences.service';
 import { TenantInsuranceOfferingTermsService } from './public-api/tenant-insurance-offering-terms.service';
 import { TenantPresentationPreferencesService } from './public-api/tenant-presentation-preferences.service';
+import { TenantRentalAssetBufferSettingsService } from './public-api/tenant-rental-asset-buffer-settings.service';
 import { BranchFactsService } from './public-api/branch-facts.service';
 import { BranchFacts } from './public-api/branch-facts.public-api';
 import { BranchScheduleEligibilityService } from './public-api/branch-schedule-eligibility.service';
@@ -81,6 +82,7 @@ import { TenantNotificationPreferences } from './public-api/tenant-notification-
 import { TenantBillingPreferences } from './public-api/tenant-billing-preferences.public-api';
 import { TenantInsuranceOfferingTerms } from './public-api/tenant-insurance-offering-terms.public-api';
 import { TenantPresentationPreferences } from './public-api/tenant-presentation-preferences.public-api';
+import { TenantRentalAssetBufferSettings } from './public-api/tenant-rental-asset-buffer-settings.public-api';
 import { TenantContextModule } from './tenant-context/tenant-context.module';
 import { CustomHostnameProvider } from './application/ports/custom-hostname-provider.port';
 import { CloudflareCustomHostnameService } from './infrastructure/cloudflare-custom-hostname.service';
@@ -165,6 +167,7 @@ import { GetStorefrontCategoriesHandler } from './features/get-storefront-catego
     { provide: TenantBillingPreferences, useClass: TenantBillingPreferencesService },
     { provide: TenantInsuranceOfferingTerms, useClass: TenantInsuranceOfferingTermsService },
     { provide: TenantPresentationPreferences, useClass: TenantPresentationPreferencesService },
+    { provide: TenantRentalAssetBufferSettings, useClass: TenantRentalAssetBufferSettingsService },
     { provide: TenantOperationalFacts, useClass: TenantOperationalFactsService },
     { provide: BranchFacts, useClass: BranchFactsService },
     { provide: BranchScheduleEligibility, useClass: BranchScheduleEligibilityService },
@@ -182,6 +185,7 @@ import { GetStorefrontCategoriesHandler } from './features/get-storefront-catego
     TenantBillingPreferences,
     TenantInsuranceOfferingTerms,
     TenantPresentationPreferences,
+    TenantRentalAssetBufferSettings,
     TenantOperationalFacts,
     BranchFacts,
     BranchScheduleEligibility,

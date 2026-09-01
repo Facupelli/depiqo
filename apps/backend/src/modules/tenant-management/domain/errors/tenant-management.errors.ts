@@ -44,6 +44,12 @@ export class InvalidNewArrivalsWindowDaysError extends TenantManagementError {
   }
 }
 
+export class InvalidRentalAssetBufferMinutesError extends TenantManagementError {
+  constructor(field: 'beforeBufferMinutes' | 'afterBufferMinutes', value: unknown) {
+    super(`${field} must be a finite non-negative integer, got ${String(value)}.`);
+  }
+}
+
 export class InvalidDefaultCurrencyError extends TenantManagementError {
   constructor(currency: string) {
     super(`"${currency}" is not a valid ISO 4217 currency code; expected 3 uppercase letters.`);

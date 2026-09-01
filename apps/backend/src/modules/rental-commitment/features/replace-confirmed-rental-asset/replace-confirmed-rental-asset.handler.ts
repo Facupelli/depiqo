@@ -6,6 +6,7 @@ import { PostgresExclusionViolationError } from 'src/core/utils/postgres-error.m
 import { V2AssetBlockType } from 'src/generated/prisma/enums';
 
 import { getEffectiveRentalOperationTime } from '../../application/get-effective-rental-operation-time';
+import { deriveBufferedAssetBlockPeriod } from '../../domain/asset-block-period';
 import { toRentalIntegrationEvents } from '../../application/rental-integration-event.mapper';
 import { RentalAssetAllocationService } from '../../asset-allocation/rental-asset-allocation.service';
 import {
@@ -17,6 +18,7 @@ import {
 } from '../../domain/errors/rental-commitment.errors';
 import { RentalStatus } from '../../domain/rental-status';
 import { Rental } from '../../domain/rental.aggregate';
+import { RentalPeriod } from '../../domain/value-objects/rental-period.value-object';
 import { getConfirmedPriceSnapshotForOwnerSplits } from '../../owner-split/confirmed-price-snapshot-for-owner-splits';
 import { RentalOwnerSplitDraft } from '../../owner-split/owner-split-calculator.types';
 import { RentalOwnerSplitCalculator } from '../../owner-split/rental-owner-split-calculator';
@@ -134,11 +136,18 @@ export class ReplaceConfirmedRentalAssetHandler implements ICommandHandler<
           throw new Error(`Assigned asset "${currentAssignment.id}" references an unknown demand line.`);
         }
 
+        const acceptedAssetBuffer = currentRental.requireAcceptedAssetBuffer();
+        const operationalPeriod = deriveBufferedAssetBlockPeriod({
+          participationPeriod: new RentalPeriod(effectiveAt, currentRental.period.end),
+          beforeBufferMinutes: acceptedAssetBuffer.beforeBufferMinutes,
+          afterBufferMinutes: acceptedAssetBuffer.afterBufferMinutes,
+          clampStartAt: operationTime,
+        });
         const allocationPlan = await this.rentalAssetAllocation.planAllocations({
           tenantId,
           branchId: currentRental.branchId,
-          periodStart: effectiveAt,
-          periodEnd: currentRental.period.end,
+          periodStart: operationalPeriod.start,
+          periodEnd: operationalPeriod.end,
           demandLines: [
             {
               rentalDemandLineId: demandLine.id,

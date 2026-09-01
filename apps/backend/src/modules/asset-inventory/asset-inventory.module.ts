@@ -33,14 +33,14 @@ import { GetEquipmentTypeSummariesHttpController } from './features/get-equipmen
 import { GetEquipmentTypeSummariesHandler } from './features/get-equipment-type-summaries/get-equipment-type-summaries.handler';
 import { GetEquipmentTypesHttpController } from './features/get-equipment-types/get-equipment-types.controller';
 import { GetEquipmentTypesHandler } from './features/get-equipment-types/get-equipment-types.handler';
-import { GetRentalAccessoryDefaultsHttpController } from './features/get-rental-accessory-defaults/get-rental-accessory-defaults.controller';
-import { GetRentalAccessoryDefaultsHandler } from './features/get-rental-accessory-defaults/get-rental-accessory-defaults.handler';
 import { GetOwnerDetailHttpController } from './features/get-owner-detail/get-owner-detail.controller';
 import { GetOwnerDetailHandler } from './features/get-owner-detail/get-owner-detail.handler';
 import { GetOwnersHttpController } from './features/get-owners/get-owners.controller';
 import { GetOwnersHandler } from './features/get-owners/get-owners.handler';
 import { AssetRepository } from './persistence/asset.repository';
 import { EquipmentTypeRepository } from './persistence/equipment-type.repository';
+import { AccessoryPreparationInventoryFactsService } from './public-api/accessory-preparation-inventory-facts.public-api.service';
+import { AccessoryPreparationInventoryFacts } from './public-api/accessory-preparation-inventory-facts.public-api';
 import { ActivePhysicalStockFactsService } from './public-api/active-physical-stock-facts.public-api.service';
 import { ActivePhysicalStockFacts } from './public-api/active-physical-stock-facts.public-api';
 import { AssetInventoryDisplayFactsService } from './public-api/asset-inventory-display-facts.public-api.service';
@@ -69,7 +69,6 @@ import { EquipmentTypeReferenceAuthority } from './public-api/equipment-type-ref
     GetEquipmentTypesHttpController,
     GetOwnerDetailHttpController,
     GetOwnersHttpController,
-    GetRentalAccessoryDefaultsHttpController,
   ],
   providers: [
     AddAssetsToEquipmentTypeHandler,
@@ -88,19 +87,20 @@ import { EquipmentTypeReferenceAuthority } from './public-api/equipment-type-ref
     GetEquipmentTypesHandler,
     GetOwnerDetailHandler,
     GetOwnersHandler,
-    GetRentalAccessoryDefaultsHandler,
     CreateEquipmentTypeSetupService,
     AssetBranchReferenceValidatorService,
     AssetCreationValidatorService,
     AssetOwnershipResolver,
     AssetRepository,
     EquipmentTypeRepository,
+    { provide: AccessoryPreparationInventoryFacts, useClass: AccessoryPreparationInventoryFactsService },
     { provide: ActivePhysicalStockFacts, useClass: ActivePhysicalStockFactsService },
     { provide: AssetInventoryAuthoring, useClass: AssetInventoryAuthoringService },
     { provide: EquipmentTypeReferenceAuthority, useClass: EquipmentTypeReferenceAuthorityService },
     { provide: AssetInventoryDisplayFacts, useClass: AssetInventoryDisplayFactsService },
   ],
   exports: [
+    AccessoryPreparationInventoryFacts,
     ActivePhysicalStockFacts,
     AssetInventoryAuthoring,
     EquipmentTypeReferenceAuthority,

@@ -40,7 +40,11 @@ export const storefrontEquipmentQueries = {
 
 type EquipmentCommercialContext = Pick<
 	GetStorefrontEquipmentInputDto,
-	"branchId" | "periodStart" | "periodEnd"
+	| "branchId"
+	| "periodStart"
+	| "periodEnd"
+	| "pickupInstant"
+	| "returnInstant"
 >;
 
 type EquipmentQueryInput = ReturnType<typeof normalizeStorefrontEquipmentInput>;
@@ -58,6 +62,8 @@ function getCommercialContext(
 		branchId: input.branchId,
 		periodStart: input.periodStart,
 		periodEnd: input.periodEnd,
+		pickupInstant: input.pickupInstant,
+		returnInstant: input.returnInstant,
 	};
 }
 
@@ -68,7 +74,9 @@ function isSameCommercialContext(
 	return (
 		left.branchId === right.branchId &&
 		left.periodStart === right.periodStart &&
-		left.periodEnd === right.periodEnd
+		left.periodEnd === right.periodEnd &&
+		left.pickupInstant === right.pickupInstant &&
+		left.returnInstant === right.returnInstant
 	);
 }
 

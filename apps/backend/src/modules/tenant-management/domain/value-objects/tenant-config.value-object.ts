@@ -1,3 +1,5 @@
+import { isValidBufferMinutes } from 'src/core/domain/rental-asset-buffer';
+
 import {
   InvalidBookingModeError,
   InvalidDefaultCurrencyError,
@@ -7,6 +9,7 @@ import {
   InvalidMaxOverRentThresholdError,
   InvalidNewArrivalsWindowDaysError,
   InvalidOrderCommunicationModeError,
+  InvalidRentalAssetBufferMinutesError,
   InvalidWhatsAppNumberError,
   MissingWhatsAppNumberForWhatsAppModeError,
 } from '../errors/tenant-management.errors';
@@ -61,10 +64,16 @@ export interface TenantCommunicationConfigProps {
   showFloatingWhatsAppButton: boolean;
 }
 
+export interface TenantRentalAssetBufferConfigProps {
+  beforeBufferMinutes: number;
+  afterBufferMinutes: number;
+}
+
 export interface TenantConfigProps {
   pricing: TenantPricingConfigProps;
   notifications: TenantNotificationsConfigProps;
   communication: TenantCommunicationConfigProps;
+  rentalAssetBuffer: TenantRentalAssetBufferConfigProps;
   timezone: string;
   newArrivalsWindowDays: number;
   bookingMode: TenantBookingMode;
@@ -74,6 +83,7 @@ export type TenantConfigPatch = {
   pricing?: Partial<TenantPricingConfigProps>;
   notifications?: Partial<TenantNotificationsConfigProps>;
   communication?: Partial<TenantCommunicationConfigProps>;
+  rentalAssetBuffer?: Partial<TenantRentalAssetBufferConfigProps>;
   timezone?: string;
   newArrivalsWindowDays?: number;
   bookingMode?: TenantBookingMode;
@@ -91,6 +101,7 @@ export class TenantConfig {
   readonly newArrivalsWindowDays: number;
   readonly bookingMode: TenantBookingMode;
   readonly communication: Readonly<TenantCommunicationConfigProps>;
+  readonly rentalAssetBuffer: Readonly<TenantRentalAssetBufferConfigProps>;
 
   private constructor(props: TenantConfigProps) {
     this.pricing = Object.freeze({ ...props.pricing });
@@ -99,6 +110,7 @@ export class TenantConfig {
     this.newArrivalsWindowDays = props.newArrivalsWindowDays;
     this.bookingMode = props.bookingMode;
     this.communication = Object.freeze({ ...props.communication });
+    this.rentalAssetBuffer = Object.freeze({ ...props.rentalAssetBuffer });
   }
 
   static create(props: TenantConfigProps): TenantConfig {
@@ -113,12 +125,15 @@ export class TenantConfig {
     TenantConfig.validateInsuranceDescription(normalizedProps.pricing.insuranceDescription);
     TenantConfig.validateBookingMode(normalizedProps.bookingMode);
     TenantConfig.validateCommunication(normalizedProps.communication);
+    TenantConfig.validateRentalAssetBuffer(normalizedProps.rentalAssetBuffer);
 
     return new TenantConfig(normalizedProps);
   }
 
   static reconstitute(props: TenantConfigProps): TenantConfig {
-    return new TenantConfig(TenantConfig.normalizeProps(props, TenantConfig.normalizePricingForReconstitution));
+    const normalizedProps = TenantConfig.normalizeProps(props, TenantConfig.normalizePricingForReconstitution);
+    TenantConfig.validateRentalAssetBuffer(normalizedProps.rentalAssetBuffer);
+    return new TenantConfig(normalizedProps);
   }
 
   static default(): TenantConfig {
@@ -145,6 +160,10 @@ export class TenantConfig {
         orderCommunicationMode: TenantOrderCommunicationMode.FORMAL,
         showFloatingWhatsAppButton: false,
       },
+      rentalAssetBuffer: {
+        beforeBufferMinutes: 0,
+        afterBufferMinutes: 0,
+      },
     });
   }
 
@@ -156,6 +175,10 @@ export class TenantConfig {
       communication: {
         ...this.communication,
         ...patch.communication,
+      },
+      rentalAssetBuffer: {
+        ...this.rentalAssetBuffer,
+        ...patch.rentalAssetBuffer,
       },
       pricing: {
         ...this.pricing,
@@ -174,6 +197,7 @@ export class TenantConfig {
       newArrivalsWindowDays: this.newArrivalsWindowDays,
       bookingMode: this.bookingMode,
       communication: { ...this.communication },
+      rentalAssetBuffer: { ...this.rentalAssetBuffer },
       pricing: { ...this.pricing },
       notifications: { ...this.notifications },
     };
@@ -185,6 +209,7 @@ export class TenantConfig {
   ): TenantConfigProps {
     const pricing = normalizePricing(props.pricing);
     const communication = TenantConfig.normalizeCommunication(props.communication);
+    const rentalAssetBuffer = props.rentalAssetBuffer;
     const bookingMode =
       communication.orderCommunicationMode === TenantOrderCommunicationMode.WHATSAPP
         ? TenantBookingMode.REQUEST_TO_BOOK
@@ -196,6 +221,7 @@ export class TenantConfig {
       notifications: { ...props.notifications },
       bookingMode,
       communication,
+      rentalAssetBuffer,
     };
   }
 
@@ -256,6 +282,24 @@ export class TenantConfig {
     }
 
     return canonicalNumber;
+  }
+
+  private static validateRentalAssetBuffer(rentalAssetBuffer: TenantRentalAssetBufferConfigProps): void {
+    if (rentalAssetBuffer === null || typeof rentalAssetBuffer !== 'object' || Array.isArray(rentalAssetBuffer)) {
+      throw new InvalidRentalAssetBufferMinutesError('beforeBufferMinutes', undefined);
+    }
+
+    TenantConfig.validateRentalAssetBufferMinutes('beforeBufferMinutes', rentalAssetBuffer.beforeBufferMinutes);
+    TenantConfig.validateRentalAssetBufferMinutes('afterBufferMinutes', rentalAssetBuffer.afterBufferMinutes);
+  }
+
+  private static validateRentalAssetBufferMinutes(
+    field: 'beforeBufferMinutes' | 'afterBufferMinutes',
+    value: unknown,
+  ): void {
+    if (!isValidBufferMinutes(value)) {
+      throw new InvalidRentalAssetBufferMinutesError(field, value);
+    }
   }
 
   private static validateTimezone(timezone: string): void {

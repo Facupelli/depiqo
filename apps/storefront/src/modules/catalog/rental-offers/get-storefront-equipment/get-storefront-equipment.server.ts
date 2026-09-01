@@ -23,8 +23,10 @@ export async function getStorefrontEquipment(
 			pageSize: parsedInput.pageSize,
 		},
 		{
-			periodStart: parsedInput.periodStart,
-			periodEnd: parsedInput.periodEnd,
+			pickupDate: parsedInput.periodStart,
+			returnDate: parsedInput.periodEnd,
+			pickupInstant: parsedInput.pickupInstant,
+			returnInstant: parsedInput.returnInstant,
 		},
 	);
 }

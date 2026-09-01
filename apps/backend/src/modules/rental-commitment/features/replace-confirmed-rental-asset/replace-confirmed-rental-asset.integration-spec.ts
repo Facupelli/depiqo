@@ -45,7 +45,12 @@ describe('ReplaceConfirmedRentalAsset integration', () => {
   });
 
   async function scenario(
-    options: { status?: V2RentalStatus; quantity?: number; period?: { start: Date; end: Date } } = {},
+    options: {
+      status?: V2RentalStatus;
+      quantity?: number;
+      period?: { start: Date; end: Date };
+      acceptedAssetBuffer?: { beforeBufferMinutes: number; afterBufferMinutes: number };
+    } = {},
   ) {
     const tenant = await core.createTenant();
     const branch = await core.createBranch({ tenantId: tenant.id });
@@ -60,6 +65,7 @@ describe('ReplaceConfirmedRentalAsset integration', () => {
       offerId: commercial.offer.id,
       equipmentTypeId: commercial.equipmentType.id,
       quantity: options.quantity,
+      acceptedAssetBuffer: options.acceptedAssetBuffer,
     });
     if (options.status && options.status !== 'CONFIRMED') {
       await prisma.client.v2Rental.update({ where: { id: rental.rentalId }, data: { status: options.status } });
@@ -195,7 +201,10 @@ describe('ReplaceConfirmedRentalAsset integration', () => {
 
   it('preserves elapsed assignment and block history when replacing an in-progress rental asset', async () => {
     const period = inProgressPeriod();
-    const setup = await scenario({ period });
+    const setup = await scenario({
+      period,
+      acceptedAssetBuffer: { beforeBufferMinutes: 10, afterBufferMinutes: 15 },
+    });
     const replacementAssetId = await candidate(setup, {
       ownershipKind: 'THIRD_PARTY',
       ownerId: 'replacement-owner',
@@ -226,11 +235,12 @@ describe('ReplaceConfirmedRentalAsset integration', () => {
       }),
     );
     expect(closedBlock.createdAt).toEqual(oldBlock.createdAt);
-    expect(closedBlock.releasedAt).toEqual(handoffAt);
-    expect(parsePostgresRange(closedBlock.period).end).toEqual(handoffAt);
+    expect(closedBlock.releasedAt).toBeNull();
+    expect(parsePostgresRange(closedBlock.period).end).toEqual(new Date(handoffAt.getTime() + 15 * 60_000));
     expect(replacementAssignment.effectiveFrom).toEqual(handoffAt);
     expect(replacementAssignment.effectiveUntil).toBeNull();
     expect(parsePostgresRange(replacementBlock.period).start).toEqual(handoffAt);
+    expect(parsePostgresRange(replacementBlock.period).end).toEqual(new Date(period.end.getTime() + 15 * 60_000));
     expect(after.rental.assignedAssets.filter((assignment) => assignment.effectiveUntil === null)).toEqual([
       expect.objectContaining({ id: replacementAssignment.id, rentalDemandLineId: oldAssignment.rentalDemandLineId }),
     ]);

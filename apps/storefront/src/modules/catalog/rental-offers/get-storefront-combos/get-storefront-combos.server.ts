@@ -21,8 +21,10 @@ export async function getStorefrontCombos(
 			pageSize: 100,
 		},
 		{
-			periodStart: parsedInput.periodStart,
-			periodEnd: parsedInput.periodEnd,
+			pickupDate: parsedInput.periodStart,
+			returnDate: parsedInput.periodEnd,
+			pickupInstant: parsedInput.pickupInstant,
+			returnInstant: parsedInput.returnInstant,
 		},
 	);
 }

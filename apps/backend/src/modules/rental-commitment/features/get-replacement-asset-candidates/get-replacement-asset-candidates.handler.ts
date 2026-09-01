@@ -4,6 +4,7 @@ import { err, ok, Result } from 'neverthrow';
 import { AssetInventoryDisplayFacts } from 'src/modules/asset-inventory/public-api/asset-inventory-display-facts.public-api';
 
 import { getEffectiveRentalOperationTime } from '../../application/get-effective-rental-operation-time';
+import { deriveBufferedAssetBlockPeriod } from '../../domain/asset-block-period';
 import { RentalAssetAllocationService } from '../../asset-allocation/rental-asset-allocation.service';
 import {
   RentalAssignedAssetNotFoundError,
@@ -12,6 +13,7 @@ import {
   RentalPeriodHasEndedError,
 } from '../../domain/errors/rental-commitment.errors';
 import { RentalStatus } from '../../domain/rental-status';
+import { RentalPeriod } from '../../domain/value-objects/rental-period.value-object';
 import { RentalRepository } from '../../persistence/rental.repository';
 import {
   GetReplacementAssetCandidatesError,
@@ -61,7 +63,8 @@ export class GetReplacementAssetCandidatesHandler implements IQueryHandler<
       return err(this.map(new RentalCannotBeEditedFromStatusError(rentalId, rental.status), context));
     }
 
-    const effectiveAt = getEffectiveRentalOperationTime(new Date(), rental.period.start);
+    const operationTime = new Date();
+    const effectiveAt = getEffectiveRentalOperationTime(operationTime, rental.period.start);
     if (effectiveAt >= rental.period.end) {
       return err(this.map(new RentalPeriodHasEndedError(rentalId), context));
     }
@@ -78,12 +81,19 @@ export class GetReplacementAssetCandidatesHandler implements IQueryHandler<
       throw new Error(`Assigned asset "${currentAssignment.id}" references an unknown demand line.`);
     }
 
+    const acceptedAssetBuffer = rental.requireAcceptedAssetBuffer();
+    const operationalPeriod = deriveBufferedAssetBlockPeriod({
+      participationPeriod: new RentalPeriod(effectiveAt, rental.period.end),
+      beforeBufferMinutes: acceptedAssetBuffer.beforeBufferMinutes,
+      afterBufferMinutes: acceptedAssetBuffer.afterBufferMinutes,
+      clampStartAt: operationTime,
+    });
     const candidates = await this.rentalAssetAllocation.findEligibleAvailableCandidates({
       tenantId,
       branchId: rental.branchId,
       equipmentTypeIds: [demandLine.equipmentTypeId],
-      periodStart: effectiveAt,
-      periodEnd: rental.period.end,
+      periodStart: operationalPeriod.start,
+      periodEnd: operationalPeriod.end,
       excludeAssetIds: rental.currentAssignedAssets.map((assignment) => assignment.assetId),
     });
     if (candidates.isErr()) return err(this.map(candidates.error, context));

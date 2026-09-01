@@ -38,6 +38,8 @@ const schemas = {
 	}),
 	"rental-policies": z.object({
 		bookingMode: z.enum(["instant-book", "request-to-book"]),
+		beforeBufferMinutes: z.number().int().nonnegative(),
+		afterBufferMinutes: z.number().int().nonnegative(),
 		weekendCountsAsOne: z.boolean(),
 		roundingRule: z.enum([
 			"IGNORE_PARTIAL_DAY",
@@ -76,6 +78,8 @@ const businessFormDefaults: BusinessConfigurationValues = {
 };
 const rentalPoliciesFormDefaults: RentalPoliciesConfigurationValues = {
 	bookingMode: "instant-book",
+	beforeBufferMinutes: 0,
+	afterBufferMinutes: 0,
 	weekendCountsAsOne: false,
 	roundingRule: "IGNORE_PARTIAL_DAY",
 	insuranceEnabled: false,
@@ -159,6 +163,9 @@ function RentalPoliciesConfigurationForm() {
 		...rentalPoliciesFormOptions,
 		defaultValues: {
 			bookingMode: business.config.bookingMode,
+			beforeBufferMinutes:
+				business.config.rentalAssetBuffer.beforeBufferMinutes,
+			afterBufferMinutes: business.config.rentalAssetBuffer.afterBufferMinutes,
 			weekendCountsAsOne: business.config.pricing.weekendCountsAsOne,
 			roundingRule: business.config.pricing.roundingRule,
 			insuranceEnabled: business.config.pricing.insuranceEnabled,
@@ -377,6 +384,31 @@ const RentalPolicyFields = withSettingsForm({
 								<FieldError errors={field.state.meta.errors} />
 							</Field>
 						</SettingsRow>
+					)}
+				</form.AppField>
+			</SettingsFieldset>
+			<SettingsFieldset
+				title="Disponibilidad del equipo"
+				description="Añade tiempo operativo alrededor de cada alquiler sin cambiar las fechas ni el precio para el cliente."
+			>
+				<form.AppField name="beforeBufferMinutes">
+					{(field) => (
+						<field.SettingsNumberField
+							label="Tiempo de preparación antes del alquiler"
+							description="Reserva el equipo esta cantidad de minutos antes del inicio del alquiler."
+							suffix="minutos"
+							step={1}
+						/>
+					)}
+				</form.AppField>
+				<form.AppField name="afterBufferMinutes">
+					{(field) => (
+						<field.SettingsNumberField
+							label="Tiempo de disponibilidad después de la devolución"
+							description="Mantiene el equipo no disponible esta cantidad de minutos después de la devolución."
+							suffix="minutos"
+							step={1}
+						/>
 					)}
 				</form.AppField>
 			</SettingsFieldset>
@@ -618,6 +650,10 @@ function toRentalPoliciesDto(
 ): UpdateTenantConfigBodyDto {
 	return {
 		bookingMode: value.bookingMode,
+		rentalAssetBuffer: {
+			beforeBufferMinutes: value.beforeBufferMinutes,
+			afterBufferMinutes: value.afterBufferMinutes,
+		},
 		pricing: {
 			weekendCountsAsOne: value.weekendCountsAsOne,
 			roundingRule: value.roundingRule,

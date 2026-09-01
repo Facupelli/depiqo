@@ -15,6 +15,7 @@ import {
 } from 'src/modules/pricing/public-api/pricing-calculation.public-api';
 import { BranchFacts } from 'src/modules/tenant-management/public-api/branch-facts.public-api';
 import { TenantBillingPreferences } from 'src/modules/tenant-management/public-api/tenant-billing-preferences.public-api';
+import { TenantRentalAssetBufferSettings } from 'src/modules/tenant-management/public-api/tenant-rental-asset-buffer-settings.public-api';
 
 import { RentalOperationalFactsValidatorService } from '../../application/rental-operational-facts-validator.service';
 
@@ -25,6 +26,8 @@ import { toRentalIntegrationEvents } from '../../application/rental-integration-
 import { buildConfirmationFingerprint } from './confirmation-operation-fingerprint';
 import { CreateConfirmedRentalCommand } from './create-confirmed-rental.command';
 import { ConfirmationOperationPersistence } from '../../persistence/rental.repository';
+import { deriveBufferedAssetBlockPeriod } from '../../domain/asset-block-period';
+import { deriveConfirmationParticipationTiming } from '../../domain/confirmation-participation-timing';
 import { Rental } from '../../domain/rental.aggregate';
 import { FulfillmentMethod } from '../../domain/rental-status';
 import { createConfirmedRentalError, CreateConfirmedRentalError } from './create-confirmed-rental.errors';
@@ -74,6 +77,7 @@ export class CreateConfirmedRentalService implements ICommandHandler<
     private readonly rentalRepository: RentalRepository,
     private readonly prisma: PrismaService,
     private readonly tenantBillingPreferences: TenantBillingPreferences,
+    private readonly tenantRentalAssetBufferSettings: TenantRentalAssetBufferSettings,
     private readonly branchFacts: BranchFacts,
     private readonly rentalOperationalFacts: RentalOperationalFactsValidatorService,
     private readonly catalogSelectionResolution: CatalogSelectionResolution,
@@ -115,12 +119,23 @@ export class CreateConfirmedRentalService implements ICommandHandler<
       return err(this.toApplicationError(tenantValidation.error, context));
     }
 
-    const [billingPreferences, branchFacts] = await Promise.all([
+    const [billingPreferences, bufferSettings, branchFacts] = await Promise.all([
       this.tenantBillingPreferences.getTenantBillingPreferences({ tenantId: command.tenantId }),
+      this.tenantRentalAssetBufferSettings.getTenantRentalAssetBufferSettings({ tenantId: command.tenantId }),
       this.branchFacts.getBranchFacts({ tenantId: command.tenantId, branchId: command.branchId }),
     ]);
     if (billingPreferences.isErr())
       return err(this.toApplicationError(new TenantUnavailableForRentalError(command.tenantId), context));
+    if (bufferSettings.isErr()) {
+      return err(
+        createConfirmedRentalError(
+          'rental_commitment.tenant_unavailable',
+          bufferSettings.error.message,
+          bufferSettings.error,
+          context,
+        ),
+      );
+    }
     if (branchFacts.isErr())
       return err(this.toApplicationError(new BranchUnavailableForRentalError(command.branchId), context));
 
@@ -193,11 +208,20 @@ export class CreateConfirmedRentalService implements ICommandHandler<
       })),
     );
 
+    const operationTime = new Date();
+    const participationTiming = deriveConfirmationParticipationTiming(command.period, operationTime);
+    const acceptedAssetBuffer = { ...bufferSettings.value };
+    const operationalPeriod = deriveBufferedAssetBlockPeriod({
+      participationPeriod: participationTiming.participationPeriod,
+      ...acceptedAssetBuffer,
+      clampStartAt: participationTiming.blockOperationTime,
+    });
+
     const assetAssignmentPlan = await this.rentalAssetAllocation.planAllocations({
       tenantId: command.tenantId,
       branchId: command.branchId,
-      periodStart: command.period.start,
-      periodEnd: command.period.end,
+      periodStart: operationalPeriod.start,
+      periodEnd: operationalPeriod.end,
       demandLines: equipmentDemandLines.map((line) => ({
         rentalDemandLineId: line.rentalDemandLineId,
         rentalSelectionId: line.rentalSelectionId,
@@ -243,6 +267,8 @@ export class CreateConfirmedRentalService implements ICommandHandler<
           bookingSnapshot: command.bookingSnapshot,
           deliveryDetails:
             command.fulfillmentMethod === FulfillmentMethod.Delivery ? command.deliveryDetails : undefined,
+          acceptedAssetBuffer,
+          confirmedAt: operationTime,
           confirmedPriceSnapshot: adaptPricingCalculationToSnapshot({
             result: pricingResult.value,
             context: 'CONFIRMED',

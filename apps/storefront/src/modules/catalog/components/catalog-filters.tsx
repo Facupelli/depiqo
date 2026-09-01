@@ -16,7 +16,6 @@ import {
 } from "@repo/ui/components/sheet";
 import { cn } from "@repo/ui/lib/utils";
 import { SlidersHorizontal } from "lucide-react";
-import { localDateToDateParam } from "@/lib/dates/parse";
 import type { RentalCatalogSearch } from "@/modules/catalog/rental-catalog-search";
 import { useStorefrontCategories } from "@/modules/catalog/storefront-categories/storefront-categories.queries";
 import { useStorefrontBranches } from "@/modules/tenant-management/branches/branches.queries";
@@ -92,16 +91,9 @@ export function RentalFilters({
 								branchId={search.branchId}
 								pickupDate={search.periodStart}
 								returnDate={search.periodEnd}
-								onChange={(range) =>
-									setUrlParam({
-										periodStart: range?.from
-											? localDateToDateParam(range.from)
-											: undefined,
-										periodEnd: range?.to
-											? localDateToDateParam(range.to)
-											: undefined,
-									})
-								}
+								pickupInstant={search.pickupInstant}
+								returnInstant={search.returnInstant}
+								onChange={(period) => setUrlParam({ ...period, page: 1 })}
 								numberOfMonths={2}
 								buttonClassName="h-10 w-fit rounded-xl border border-border bg-muted px-8 hover:bg-muted/80"
 							/>
@@ -208,16 +200,9 @@ function FiltersSheet({
 							branchId={search.branchId}
 							pickupDate={search.periodStart}
 							returnDate={search.periodEnd}
-							onChange={(range) =>
-								setUrlParam({
-									periodStart: range?.from
-										? localDateToDateParam(range.from)
-										: undefined,
-									periodEnd: range?.to
-										? localDateToDateParam(range.to)
-										: undefined,
-								})
-							}
+							pickupInstant={search.pickupInstant}
+							returnInstant={search.returnInstant}
+							onChange={(period) => setUrlParam({ ...period, page: 1 })}
 							numberOfMonths={1}
 							buttonClassName="w-full justify-start bg-white/6 px-4 py-3 hover:bg-white/10"
 							datesButtonClassName="text-neutral-400"

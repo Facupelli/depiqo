@@ -1,5 +1,3 @@
-import { randomUUID } from 'node:crypto';
-
 import { Injectable } from '@nestjs/common';
 
 import { PrismaService } from 'src/core/database/prisma.service';
@@ -166,9 +164,7 @@ export class PrismaRentalRepository extends RentalRepository {
       });
     }
 
-    for (const block of rental.assetBlocks.filter(
-      (block) => options?.accessoryAssetIds === undefined || block.blockType === 'EQUIPMENT',
-    )) {
+    for (const block of rental.assetBlocks) {
       await tx.$executeRaw`
         INSERT INTO v2_asset_blocks (
           id,
@@ -190,19 +186,6 @@ export class PrismaRentalRepository extends RentalRepository {
           ${block.releasedAt ?? null}
         )
       `;
-    }
-
-    if (options?.accessoryAssetIds !== undefined) {
-      for (const assetId of options.accessoryAssetIds) {
-        await tx.$executeRaw`
-          INSERT INTO v2_asset_blocks (
-            id, tenant_id, rental_id, asset_id, period, block_type, created_at, released_at
-          ) VALUES (
-            ${randomUUID()}, ${rental.tenantId}, ${rental.id}, ${assetId},
-            ${rental.period.toPostgresRange()}::tstzrange, 'ACCESSORY', ${new Date()}, ${null}
-          )
-        `;
-      }
     }
 
     if (options?.ownerSplits !== undefined) {

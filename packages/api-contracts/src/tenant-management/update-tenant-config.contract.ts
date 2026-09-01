@@ -6,6 +6,7 @@ import {
   TenantCommunicationConfigSchema,
   TenantNotificationsConfigSchema,
   TenantPricingConfigSchema,
+  TenantRentalAssetBufferConfigSchema,
 } from "./get-current-tenant.contract";
 
 export const UpdateTenantConfigBodySchema = z
@@ -13,6 +14,7 @@ export const UpdateTenantConfigBodySchema = z
     pricing: TenantPricingConfigSchema.partial().optional(),
     notifications: TenantNotificationsConfigSchema.partial().optional(),
     communication: TenantCommunicationConfigSchema.partial().optional(),
+    rentalAssetBuffer: TenantRentalAssetBufferConfigSchema.partial().optional(),
     timezone: z.string().optional(),
     newArrivalsWindowDays: z.number().int().positive().optional(),
     bookingMode: TenantBookingModeSchema.optional(),

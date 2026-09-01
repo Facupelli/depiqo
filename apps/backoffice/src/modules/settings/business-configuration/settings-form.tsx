@@ -100,12 +100,14 @@ function SettingsNumberField({
 	suffix,
 	align,
 	disabled,
+	step,
 }: {
 	label: string;
 	description?: string;
 	suffix: string;
 	align?: SettingsRowAlign;
 	disabled?: boolean;
+	step?: number;
 }) {
 	const field = useFieldContext<number>();
 	const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
@@ -121,6 +123,7 @@ function SettingsNumberField({
 						name={field.name}
 						type="number"
 						min={0}
+						step={step}
 						value={field.state.value}
 						onBlur={field.handleBlur}
 						onChange={(event) => field.handleChange(Number(event.target.value))}

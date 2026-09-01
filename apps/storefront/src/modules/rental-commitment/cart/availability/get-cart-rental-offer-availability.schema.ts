@@ -2,8 +2,8 @@ import { z } from "zod";
 
 export const GetCartRentalOfferAvailabilityInputSchema = z.object({
 	branchId: z.string().trim().min(1),
-	periodStart: z.iso.date(),
-	periodEnd: z.iso.date(),
+	periodStart: z.iso.datetime({ offset: true }),
+	periodEnd: z.iso.datetime({ offset: true }),
 	rentalOfferIds: z
 		.array(z.string().trim().min(1))
 		.min(1)

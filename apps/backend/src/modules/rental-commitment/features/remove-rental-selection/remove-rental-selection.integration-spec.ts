@@ -46,6 +46,7 @@ describe('RemoveRentalSelection integration', () => {
       period: { start: new Date(now - 60_000), end: new Date(now + 3_600_000) },
       offerId: first.offer.id,
       equipmentTypeId: first.equipmentType.id,
+      acceptedAssetBuffer: { beforeBufferMinutes: 10, afterBufferMinutes: 15 },
     });
     await fixtures.createCandidate({
       tenantId: tenant.id,
@@ -103,8 +104,10 @@ describe('RemoveRentalSelection integration', () => {
     expect(closedAssignment.effectiveUntil).toEqual(removedSelection.removedAt);
     expect(after.rental.assignedAssets.find((item) => item.id === unrelatedAssignment.id)).toEqual(unrelatedAssignment);
     const releasedBlock = after.blocks.find((block) => block.assetId === targetAssignment.assetId)!;
-    expect(releasedBlock.releasedAt).toEqual(removedSelection.removedAt);
-    expect(parsePostgresRange(releasedBlock.period).end).toEqual(removedSelection.removedAt);
+    expect(releasedBlock.releasedAt).toBeNull();
+    expect(parsePostgresRange(releasedBlock.period).end).toEqual(
+      new Date(removedSelection.removedAt!.getTime() + 15 * 60_000),
+    );
     const price = after.rental.priceSnapshot as {
       final: { lines: Array<{ rentalSelectionId: string }> };
       manualAdjustment?: unknown;

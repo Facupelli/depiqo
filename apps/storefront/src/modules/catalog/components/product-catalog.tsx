@@ -40,6 +40,8 @@ export function CombosSection({ search }: { search: RentalCatalogSearch }) {
 		branchId: search.branchId,
 		periodStart: search.periodStart,
 		periodEnd: search.periodEnd,
+		pickupInstant: search.pickupInstant,
+		returnInstant: search.returnInstant,
 	});
 	const { data: tenantPublicConfig } = usePublicTenantConfig();
 
