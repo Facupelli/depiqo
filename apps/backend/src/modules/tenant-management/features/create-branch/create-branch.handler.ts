@@ -5,6 +5,7 @@ import { Branch } from '../../domain/entities/branch.aggregate';
 import {
   BranchScheduleOverlapError,
   InvalidBranchNameError,
+  InvalidBranchOperationalLocationError,
   InvalidBranchScheduleDayOfWeekError,
   InvalidBranchScheduleDaySpecificationError,
   InvalidBranchScheduleTypeError,
@@ -35,6 +36,7 @@ export class CreateBranchHandler implements ICommandHandler<
       tenantId: command.tenantId,
       name: command.name,
       address: command.address,
+      operationalLocation: command.operationalLocation,
       timezone: command.timezone,
       supportsDelivery: command.supportsDelivery,
       deliveryDefaultCountry: command.deliveryDefaultCountry,
@@ -56,7 +58,11 @@ export class CreateBranchHandler implements ICommandHandler<
     if (branch.isErr()) {
       const error = branch.error;
 
-      if (error instanceof InvalidBranchNameError || error instanceof InvalidTimezoneError) {
+      if (
+        error instanceof InvalidBranchNameError ||
+        error instanceof InvalidBranchOperationalLocationError ||
+        error instanceof InvalidTimezoneError
+      ) {
         return err(createBranchError('tenant_management.branch_invalid_input', error.message, error, context));
       }
 

@@ -16,6 +16,23 @@ export class BranchMapper {
       tenantId: raw.tenantId,
       name: raw.name,
       address: raw.address,
+      operationalLocation:
+        raw.operationalLocationFormattedAddress !== null &&
+        raw.operationalLocationLatitude !== null &&
+        raw.operationalLocationLongitude !== null
+          ? {
+              formattedAddress: raw.operationalLocationFormattedAddress,
+              latitude: raw.operationalLocationLatitude,
+              longitude: raw.operationalLocationLongitude,
+              street: raw.operationalLocationStreet,
+              streetNumber: raw.operationalLocationStreetNumber,
+              city: raw.operationalLocationCity,
+              stateRegion: raw.operationalLocationStateRegion,
+              postalCode: raw.operationalLocationPostalCode,
+              country: raw.operationalLocationCountry,
+              providerPlaceId: raw.operationalLocationProviderPlaceId,
+            }
+          : null,
       timezone: raw.timezone,
       isActive: raw.isActive,
       supportsDelivery: raw.supportsDelivery,
@@ -28,11 +45,13 @@ export class BranchMapper {
   }
 
   static toPersistence(entity: Branch): Prisma.V2BranchUncheckedCreateInput {
+    const location = entity.getOperationalLocation();
     return {
       id: entity.id,
       tenantId: entity.tenantId,
       name: entity.getName(),
       address: entity.getAddress(),
+      ...this.toOperationalLocationPersistence(location),
       timezone: entity.getTimezone(),
       isActive: entity.active,
       supportsDelivery: entity.supportsDeliveryEnabled,
@@ -47,9 +66,11 @@ export class BranchMapper {
   }
 
   static toUpdateData(entity: Branch): Prisma.V2BranchUncheckedUpdateInput {
+    const location = entity.getOperationalLocation();
     return {
       name: entity.getName(),
       address: entity.getAddress(),
+      ...this.toOperationalLocationPersistence(location),
       timezone: entity.getTimezone(),
       supportsDelivery: entity.supportsDeliveryEnabled,
       deliveryDefaultCountry: entity.getDeliveryDefaults().country,
@@ -61,6 +82,21 @@ export class BranchMapper {
 
   static toSchedulePersistence(entity: BranchSchedule): Prisma.V2BranchScheduleCreateManyInput {
     return BranchScheduleMapper.toPersistence(entity);
+  }
+
+  private static toOperationalLocationPersistence(location: ReturnType<Branch['getOperationalLocation']>) {
+    return {
+      operationalLocationFormattedAddress: location?.formattedAddress ?? null,
+      operationalLocationLatitude: location?.latitude ?? null,
+      operationalLocationLongitude: location?.longitude ?? null,
+      operationalLocationStreet: location?.street ?? null,
+      operationalLocationStreetNumber: location?.streetNumber ?? null,
+      operationalLocationCity: location?.city ?? null,
+      operationalLocationStateRegion: location?.stateRegion ?? null,
+      operationalLocationPostalCode: location?.postalCode ?? null,
+      operationalLocationCountry: location?.country ?? null,
+      operationalLocationProviderPlaceId: location?.providerPlaceId ?? null,
+    };
   }
 }
 

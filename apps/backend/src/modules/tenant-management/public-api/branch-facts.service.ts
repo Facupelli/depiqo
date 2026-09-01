@@ -37,6 +37,16 @@ export class BranchFactsService extends BranchFacts {
         isActive: true,
         deletedAt: true,
         timezone: true,
+        operationalLocationFormattedAddress: true,
+        operationalLocationLatitude: true,
+        operationalLocationLongitude: true,
+        operationalLocationStreet: true,
+        operationalLocationStreetNumber: true,
+        operationalLocationCity: true,
+        operationalLocationStateRegion: true,
+        operationalLocationPostalCode: true,
+        operationalLocationCountry: true,
+        operationalLocationProviderPlaceId: true,
         tenant: { select: { config: true } },
       },
     });
@@ -57,6 +67,23 @@ export class BranchFactsService extends BranchFacts {
         isActive: branch.isActive,
         isDeleted: branch.deletedAt !== null,
         effectiveTimezone: resolveEffectiveTimezone(branch.timezone, config!.timezone),
+        operationalLocation:
+          branch.operationalLocationFormattedAddress !== null &&
+          branch.operationalLocationLatitude !== null &&
+          branch.operationalLocationLongitude !== null
+            ? {
+                formattedAddress: branch.operationalLocationFormattedAddress,
+                latitude: branch.operationalLocationLatitude,
+                longitude: branch.operationalLocationLongitude,
+                street: branch.operationalLocationStreet,
+                streetNumber: branch.operationalLocationStreetNumber,
+                city: branch.operationalLocationCity,
+                stateRegion: branch.operationalLocationStateRegion,
+                postalCode: branch.operationalLocationPostalCode,
+                country: branch.operationalLocationCountry,
+                providerPlaceId: branch.operationalLocationProviderPlaceId,
+              }
+            : null,
         branchTimezone: branch.timezone,
         tenantTimezone: config!.timezone,
         timezoneSource: branch.timezone?.trim() ? 'BRANCH' : config!.timezone?.trim() ? 'TENANT' : 'DEFAULT',

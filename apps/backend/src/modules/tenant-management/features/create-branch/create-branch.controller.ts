@@ -27,6 +27,7 @@ export class CreateBranchHttpController {
         tenantId: user.tenantId,
         name: dto.name,
         address: dto.address ?? null,
+        operationalLocation: dto.operationalLocation ?? null,
         timezone: dto.timezone ?? null,
         supportsDelivery: dto.supportsDelivery ?? false,
         deliveryDefaultCountry: dto.deliveryDefaultCountry ?? null,

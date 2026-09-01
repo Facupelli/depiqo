@@ -1,3 +1,4 @@
+import type { BranchOperationalLocationDto } from '@repo/api-contracts';
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 
 import { PrismaService } from 'src/core/database/prisma.service';
@@ -8,6 +9,7 @@ export interface GetBranchesBranchReadModel {
   id: string;
   name: string;
   address: string | null;
+  operationalLocation: BranchOperationalLocationDto | null;
   timezone: string | null;
   isActive: boolean;
   supportsDelivery: boolean;
@@ -36,6 +38,16 @@ export class GetBranchesHandler implements IQueryHandler<GetBranchesQuery, GetBr
         id: true,
         name: true,
         address: true,
+        operationalLocationFormattedAddress: true,
+        operationalLocationLatitude: true,
+        operationalLocationLongitude: true,
+        operationalLocationStreet: true,
+        operationalLocationStreetNumber: true,
+        operationalLocationCity: true,
+        operationalLocationStateRegion: true,
+        operationalLocationPostalCode: true,
+        operationalLocationCountry: true,
+        operationalLocationProviderPlaceId: true,
         timezone: true,
         isActive: true,
         supportsDelivery: true,
@@ -53,6 +65,23 @@ export class GetBranchesHandler implements IQueryHandler<GetBranchesQuery, GetBr
       id: branch.id,
       name: branch.name,
       address: branch.address,
+      operationalLocation:
+        branch.operationalLocationFormattedAddress !== null &&
+        branch.operationalLocationLatitude !== null &&
+        branch.operationalLocationLongitude !== null
+          ? {
+              formattedAddress: branch.operationalLocationFormattedAddress,
+              latitude: branch.operationalLocationLatitude,
+              longitude: branch.operationalLocationLongitude,
+              street: branch.operationalLocationStreet,
+              streetNumber: branch.operationalLocationStreetNumber,
+              city: branch.operationalLocationCity,
+              stateRegion: branch.operationalLocationStateRegion,
+              postalCode: branch.operationalLocationPostalCode,
+              country: branch.operationalLocationCountry,
+              providerPlaceId: branch.operationalLocationProviderPlaceId,
+            }
+          : null,
       timezone: branch.timezone,
       isActive: branch.isActive,
       supportsDelivery: branch.supportsDelivery,

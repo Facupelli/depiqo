@@ -29,6 +29,7 @@ export class UpdateBranchHttpController {
         branchId: params.branchId,
         name: dto.name,
         address: dto.address ?? null,
+        operationalLocation: dto.operationalLocation,
         timezone: dto.timezone ?? null,
         supportsDelivery: dto.supportsDelivery ?? false,
         deliveryDefaultCountry: dto.deliveryDefaultCountry ?? null,

@@ -4,6 +4,7 @@ import { err, ok, Result } from 'neverthrow';
 import {
   BranchScheduleOverlapError,
   InvalidBranchNameError,
+  InvalidBranchOperationalLocationError,
   InvalidBranchScheduleDayOfWeekError,
   InvalidBranchScheduleDaySpecificationError,
   InvalidBranchScheduleTypeError,
@@ -47,6 +48,7 @@ export class UpdateBranchHandler implements ICommandHandler<
     const update = branch.updateDetails({
       name: command.name,
       address: command.address,
+      operationalLocation: command.operationalLocation,
       timezone: command.timezone,
       supportsDelivery: command.supportsDelivery,
       deliveryDefaultCountry: command.deliveryDefaultCountry,
@@ -68,7 +70,11 @@ export class UpdateBranchHandler implements ICommandHandler<
     if (update.isErr()) {
       const error = update.error;
 
-      if (error instanceof InvalidBranchNameError || error instanceof InvalidTimezoneError) {
+      if (
+        error instanceof InvalidBranchNameError ||
+        error instanceof InvalidBranchOperationalLocationError ||
+        error instanceof InvalidTimezoneError
+      ) {
         return err(updateBranchError('tenant_management.branch_invalid_input', error.message, error, context));
       }
 

@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import type { ApiContract } from "../api-contract";
+import { BranchOperationalLocationSchema } from "./branch-operational-location.schema";
 
 export const GetBranchesQuerySchema = z.object({
   isActive: z
@@ -22,6 +23,7 @@ export const GetBranchesBranchSchema = z.object({
   id: z.string(),
   name: z.string(),
   address: z.string().nullable(),
+  operationalLocation: BranchOperationalLocationSchema.nullable(),
   timezone: z.string().nullable(),
   isActive: z.boolean(),
   supportsDelivery: z.boolean(),

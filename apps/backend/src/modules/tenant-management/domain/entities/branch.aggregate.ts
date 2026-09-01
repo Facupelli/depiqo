@@ -7,12 +7,18 @@ import {
   TenantManagementError,
 } from '../errors/tenant-management.errors';
 import { assertValidIanaTimezone } from '../utils/timezone.validation';
+import {
+  BranchOperationalLocation,
+  BranchOperationalLocationProps,
+  BranchOperationalLocationValue,
+} from '../value-objects/branch-operational-location.value-object';
 import { BranchSchedule, CreateBranchScheduleProps } from './branch-schedule.entity';
 
 export interface CreateBranchProps {
   tenantId: string;
   name: string;
   address: string | null;
+  operationalLocation: BranchOperationalLocationProps | null;
   timezone: string | null;
   supportsDelivery: boolean;
   deliveryDefaultCountry: string | null;
@@ -25,6 +31,7 @@ export interface CreateBranchProps {
 export interface UpdateBranchProps {
   name: string;
   address: string | null;
+  operationalLocation: BranchOperationalLocationProps | null | undefined;
   timezone: string | null;
   supportsDelivery: boolean;
   deliveryDefaultCountry: string | null;
@@ -39,6 +46,7 @@ export interface ReconstituteBranchProps {
   tenantId: string;
   name: string;
   address: string | null;
+  operationalLocation: BranchOperationalLocationValue | null;
   timezone: string | null;
   isActive: boolean;
   supportsDelivery: boolean;
@@ -55,6 +63,7 @@ export class Branch {
     public readonly tenantId: string,
     private name: string,
     private address: string | null,
+    private operationalLocation: BranchOperationalLocation | null,
     private timezone: string | null,
     private readonly isActive: boolean,
     private supportsDelivery: boolean,
@@ -80,11 +89,17 @@ export class Branch {
       }
     }
 
+    const operationalLocation = props.operationalLocation
+      ? BranchOperationalLocation.create(props.operationalLocation)
+      : ok(null);
+    if (operationalLocation.isErr()) return err(operationalLocation.error);
+
     const branch = new Branch(
       randomUUID(),
       props.tenantId,
       name,
       Branch.normalizeOptionalString(props.address),
+      operationalLocation.value,
       timezone,
       true,
       props.supportsDelivery,
@@ -107,6 +122,7 @@ export class Branch {
       props.tenantId,
       props.name,
       props.address,
+      props.operationalLocation ? BranchOperationalLocation.reconstitute(props.operationalLocation) : null,
       props.timezone,
       props.isActive,
       props.supportsDelivery,
@@ -124,6 +140,10 @@ export class Branch {
 
   getAddress(): string | null {
     return this.address;
+  }
+
+  getOperationalLocation(): BranchOperationalLocationValue | null {
+    return this.operationalLocation?.toValue() ?? null;
   }
 
   getTimezone(): string | null {
@@ -174,8 +194,20 @@ export class Branch {
     const schedules = this.buildSchedules(props.schedules);
     if (schedules.isErr()) return err(schedules.error);
 
+    let operationalLocation = this.operationalLocation;
+    if (props.operationalLocation !== undefined) {
+      if (props.operationalLocation === null) {
+        operationalLocation = null;
+      } else {
+        const result = BranchOperationalLocation.create(props.operationalLocation);
+        if (result.isErr()) return err(result.error);
+        operationalLocation = result.value;
+      }
+    }
+
     this.name = name;
     this.address = Branch.normalizeOptionalString(props.address);
+    this.operationalLocation = operationalLocation;
     this.timezone = timezone;
     this.supportsDelivery = props.supportsDelivery;
     this.deliveryDefaultCountry = Branch.normalizeOptionalString(props.deliveryDefaultCountry);

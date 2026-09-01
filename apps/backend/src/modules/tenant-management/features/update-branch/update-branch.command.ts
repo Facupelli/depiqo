@@ -1,4 +1,4 @@
-import type { LocalDate } from '@repo/api-contracts';
+import type { BranchOperationalLocationDto, LocalDate } from '@repo/api-contracts';
 
 import { BranchScheduleSlotType } from '../../domain/entities/branch-schedule.entity';
 
@@ -16,6 +16,7 @@ export class UpdateBranchCommand {
   public readonly branchId: string;
   public readonly name: string;
   public readonly address: string | null;
+  public readonly operationalLocation: BranchOperationalLocationDto | null | undefined;
   public readonly timezone: string | null;
   public readonly supportsDelivery: boolean;
   public readonly deliveryDefaultCountry: string | null;
@@ -29,6 +30,7 @@ export class UpdateBranchCommand {
     branchId: string;
     name: string;
     address: string | null;
+    operationalLocation: BranchOperationalLocationDto | null | undefined;
     timezone: string | null;
     supportsDelivery: boolean;
     deliveryDefaultCountry: string | null;
@@ -41,6 +43,7 @@ export class UpdateBranchCommand {
     this.branchId = props.branchId;
     this.name = props.name;
     this.address = props.address;
+    this.operationalLocation = props.operationalLocation;
     this.timezone = props.timezone;
     this.supportsDelivery = props.supportsDelivery;
     this.deliveryDefaultCountry = props.deliveryDefaultCountry;

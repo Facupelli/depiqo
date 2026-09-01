@@ -13,6 +13,17 @@ model V2Branch {
   name     String
   address  String?
   timezone String?
+
+  operationalLocationFormattedAddress String? @map("operational_location_formatted_address")
+  operationalLocationLatitude         Float?  @map("operational_location_latitude")
+  operationalLocationLongitude        Float?  @map("operational_location_longitude")
+  operationalLocationStreet           String? @map("operational_location_street")
+  operationalLocationStreetNumber     String? @map("operational_location_street_number")
+  operationalLocationCity             String? @map("operational_location_city")
+  operationalLocationStateRegion      String? @map("operational_location_state_region")
+  operationalLocationPostalCode       String? @map("operational_location_postal_code")
+  operationalLocationCountry          String? @map("operational_location_country")
+  operationalLocationProviderPlaceId  String? @map("operational_location_provider_place_id")
   isActive Boolean @default(true) @map("is_active")
 
   supportsDelivery           Boolean @default(false) @map("supports_delivery")
