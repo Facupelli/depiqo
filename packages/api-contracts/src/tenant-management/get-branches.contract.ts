@@ -26,11 +26,6 @@ export const GetBranchesBranchSchema = z.object({
   operationalLocation: BranchOperationalLocationSchema.nullable(),
   timezone: z.string().nullable(),
   isActive: z.boolean(),
-  supportsDelivery: z.boolean(),
-  deliveryDefaultCountry: z.string().nullable(),
-  deliveryDefaultStateRegion: z.string().nullable(),
-  deliveryDefaultCity: z.string().nullable(),
-  deliveryDefaultPostalCode: z.string().nullable(),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
 });

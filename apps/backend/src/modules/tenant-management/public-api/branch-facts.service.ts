@@ -33,7 +33,6 @@ export class BranchFactsService extends BranchFacts {
       where: { tenantId: input.tenantId, id: { in: branchIds } },
       select: {
         id: true,
-        supportsDelivery: true,
         isActive: true,
         deletedAt: true,
         timezone: true,
@@ -63,7 +62,6 @@ export class BranchFactsService extends BranchFacts {
     try {
       facts = branches.map((branch) => ({
         branchId: branch.id,
-        supportsDelivery: branch.supportsDelivery,
         isActive: branch.isActive,
         isDeleted: branch.deletedAt !== null,
         effectiveTimezone: resolveEffectiveTimezone(branch.timezone, config!.timezone),

@@ -35,11 +35,6 @@ export class BranchMapper {
           : null,
       timezone: raw.timezone,
       isActive: raw.isActive,
-      supportsDelivery: raw.supportsDelivery,
-      deliveryDefaultCountry: raw.deliveryDefaultCountry,
-      deliveryDefaultStateRegion: raw.deliveryDefaultStateRegion,
-      deliveryDefaultCity: raw.deliveryDefaultCity,
-      deliveryDefaultPostalCode: raw.deliveryDefaultPostalCode,
       schedules: raw.schedules.map(BranchScheduleMapper.toDomain),
     });
   }
@@ -54,11 +49,6 @@ export class BranchMapper {
       ...this.toOperationalLocationPersistence(location),
       timezone: entity.getTimezone(),
       isActive: entity.active,
-      supportsDelivery: entity.supportsDeliveryEnabled,
-      deliveryDefaultCountry: entity.getDeliveryDefaults().country,
-      deliveryDefaultStateRegion: entity.getDeliveryDefaults().stateRegion,
-      deliveryDefaultCity: entity.getDeliveryDefaults().city,
-      deliveryDefaultPostalCode: entity.getDeliveryDefaults().postalCode,
       schedules: {
         create: entity.getSchedules().map(BranchScheduleMapper.toNestedPersistence),
       },
@@ -72,11 +62,6 @@ export class BranchMapper {
       address: entity.getAddress(),
       ...this.toOperationalLocationPersistence(location),
       timezone: entity.getTimezone(),
-      supportsDelivery: entity.supportsDeliveryEnabled,
-      deliveryDefaultCountry: entity.getDeliveryDefaults().country,
-      deliveryDefaultStateRegion: entity.getDeliveryDefaults().stateRegion,
-      deliveryDefaultCity: entity.getDeliveryDefaults().city,
-      deliveryDefaultPostalCode: entity.getDeliveryDefaults().postalCode,
     };
   }
 

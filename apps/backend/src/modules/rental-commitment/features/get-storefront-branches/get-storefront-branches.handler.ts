@@ -9,13 +9,6 @@ export interface StorefrontBranchReadModel {
   id: string;
   name: string;
   timezone: string;
-  supportsDelivery: boolean;
-  deliveryDefaults: {
-    country: string | null;
-    stateRegion: string | null;
-    city: string | null;
-    postalCode: string | null;
-  };
 }
 
 export type GetStorefrontBranchesResult = StorefrontBranchReadModel[];
@@ -40,11 +33,6 @@ export class GetStorefrontBranchesHandler implements IQueryHandler<
       select: {
         id: true,
         name: true,
-        supportsDelivery: true,
-        deliveryDefaultCity: true,
-        deliveryDefaultPostalCode: true,
-        deliveryDefaultCountry: true,
-        deliveryDefaultStateRegion: true,
       },
       orderBy: { name: 'asc' },
     });
@@ -72,13 +60,6 @@ export class GetStorefrontBranchesHandler implements IQueryHandler<
         id: branch.id,
         name: branch.name,
         timezone,
-        supportsDelivery: branch.supportsDelivery,
-        deliveryDefaults: {
-          country: branch.deliveryDefaultCountry,
-          stateRegion: branch.deliveryDefaultStateRegion,
-          city: branch.deliveryDefaultCity,
-          postalCode: branch.deliveryDefaultPostalCode,
-        },
       };
     });
   }

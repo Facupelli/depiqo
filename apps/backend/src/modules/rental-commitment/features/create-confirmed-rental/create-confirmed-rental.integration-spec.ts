@@ -53,11 +53,10 @@ describe('CreateConfirmedRental integration', () => {
     return moduleRef;
   });
 
-  async function scenario(overrides: { supportsDelivery?: boolean } = {}): Promise<Scenario> {
+  async function scenario(): Promise<Scenario> {
     const tenant = await core.createTenant();
     const branch = await core.createBranch({
       tenantId: tenant.id,
-      overrides: { supportsDelivery: overrides.supportsDelivery ?? false },
     });
     const { customer } = await core.createRentalCustomer({ tenantId: tenant.id });
     await prisma.client.v2BranchSchedule.createMany({
@@ -452,7 +451,7 @@ describe('CreateConfirmedRental integration', () => {
   });
 
   it.each(['PICKUP', 'DELIVERY'] as const)('persists valid %s fulfillment', async (fulfillmentMethod) => {
-    const setup = await scenario({ supportsDelivery: true });
+    const setup = await scenario();
     const catalog = await offer(setup);
     await candidate({ ...setup, equipmentTypeId: catalog.equipmentTypes[0].id });
     const result = await create({

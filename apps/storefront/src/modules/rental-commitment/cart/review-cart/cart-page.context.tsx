@@ -146,7 +146,7 @@ export function CartPageProvider({
 	const [fulfillmentMethod, setFulfillmentMethod] =
 		useState<FulfillmentMethod>("PICKUP");
 	const [deliveryRequest, setDeliveryRequest] = useState(() =>
-		createDeliveryRequestDefaultValues(branch.deliveryDefaults),
+		createDeliveryRequestDefaultValues(),
 	);
 	const [draftDeliveryRequest, setDraftDeliveryRequest] =
 		useState<DeliveryRequestFormState>(deliveryRequest);
@@ -161,7 +161,12 @@ export function CartPageProvider({
 	const availabilityInput =
 		useMemo<GetCartRentalOfferAvailabilityInput | null>(() => {
 			const rentalOfferIds = items.map((item) => item.rentalOfferId).sort();
-			if (!isPricingReady || !pickupSlot || !returnSlot || rentalOfferIds.length === 0) {
+			if (
+				!isPricingReady ||
+				!pickupSlot ||
+				!returnSlot ||
+				rentalOfferIds.length === 0
+			) {
 				return null;
 			}
 
@@ -271,7 +276,6 @@ export function CartPageProvider({
 						setIsDeliverySheetOpen(false);
 						return;
 					}
-					if (!branch.supportsDelivery) return;
 					setFulfillmentMethod("DELIVERY");
 					setDraftDeliveryRequest(deliveryRequest);
 					setShowDeliveryError(false);

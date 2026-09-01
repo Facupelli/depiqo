@@ -20,11 +20,6 @@ export interface CreateBranchProps {
   address: string | null;
   operationalLocation: BranchOperationalLocationProps | null;
   timezone: string | null;
-  supportsDelivery: boolean;
-  deliveryDefaultCountry: string | null;
-  deliveryDefaultStateRegion: string | null;
-  deliveryDefaultCity: string | null;
-  deliveryDefaultPostalCode: string | null;
   schedules: Omit<CreateBranchScheduleProps, 'branchId'>[];
 }
 
@@ -33,11 +28,6 @@ export interface UpdateBranchProps {
   address: string | null;
   operationalLocation: BranchOperationalLocationProps | null | undefined;
   timezone: string | null;
-  supportsDelivery: boolean;
-  deliveryDefaultCountry: string | null;
-  deliveryDefaultStateRegion: string | null;
-  deliveryDefaultCity: string | null;
-  deliveryDefaultPostalCode: string | null;
   schedules: Omit<CreateBranchScheduleProps, 'branchId'>[];
 }
 
@@ -49,11 +39,6 @@ export interface ReconstituteBranchProps {
   operationalLocation: BranchOperationalLocationValue | null;
   timezone: string | null;
   isActive: boolean;
-  supportsDelivery: boolean;
-  deliveryDefaultCountry: string | null;
-  deliveryDefaultStateRegion: string | null;
-  deliveryDefaultCity: string | null;
-  deliveryDefaultPostalCode: string | null;
   schedules: BranchSchedule[];
 }
 
@@ -66,11 +51,6 @@ export class Branch {
     private operationalLocation: BranchOperationalLocation | null,
     private timezone: string | null,
     private readonly isActive: boolean,
-    private supportsDelivery: boolean,
-    private deliveryDefaultCountry: string | null,
-    private deliveryDefaultStateRegion: string | null,
-    private deliveryDefaultCity: string | null,
-    private deliveryDefaultPostalCode: string | null,
     private schedules: BranchSchedule[],
   ) {}
 
@@ -102,11 +82,6 @@ export class Branch {
       operationalLocation.value,
       timezone,
       true,
-      props.supportsDelivery,
-      Branch.normalizeOptionalString(props.deliveryDefaultCountry),
-      Branch.normalizeOptionalString(props.deliveryDefaultStateRegion),
-      Branch.normalizeOptionalString(props.deliveryDefaultCity),
-      Branch.normalizeOptionalString(props.deliveryDefaultPostalCode),
       [],
     );
 
@@ -125,11 +100,6 @@ export class Branch {
       props.operationalLocation ? BranchOperationalLocation.reconstitute(props.operationalLocation) : null,
       props.timezone,
       props.isActive,
-      props.supportsDelivery,
-      props.deliveryDefaultCountry,
-      props.deliveryDefaultStateRegion,
-      props.deliveryDefaultCity,
-      props.deliveryDefaultPostalCode,
       props.schedules,
     );
   }
@@ -152,24 +122,6 @@ export class Branch {
 
   get active(): boolean {
     return this.isActive;
-  }
-
-  get supportsDeliveryEnabled(): boolean {
-    return this.supportsDelivery;
-  }
-
-  getDeliveryDefaults(): {
-    country: string | null;
-    stateRegion: string | null;
-    city: string | null;
-    postalCode: string | null;
-  } {
-    return {
-      country: this.deliveryDefaultCountry,
-      stateRegion: this.deliveryDefaultStateRegion,
-      city: this.deliveryDefaultCity,
-      postalCode: this.deliveryDefaultPostalCode,
-    };
   }
 
   getSchedules(): readonly BranchSchedule[] {
@@ -209,11 +161,6 @@ export class Branch {
     this.address = Branch.normalizeOptionalString(props.address);
     this.operationalLocation = operationalLocation;
     this.timezone = timezone;
-    this.supportsDelivery = props.supportsDelivery;
-    this.deliveryDefaultCountry = Branch.normalizeOptionalString(props.deliveryDefaultCountry);
-    this.deliveryDefaultStateRegion = Branch.normalizeOptionalString(props.deliveryDefaultStateRegion);
-    this.deliveryDefaultCity = Branch.normalizeOptionalString(props.deliveryDefaultCity);
-    this.deliveryDefaultPostalCode = Branch.normalizeOptionalString(props.deliveryDefaultPostalCode);
     this.schedules = schedules.value;
 
     return ok(undefined);

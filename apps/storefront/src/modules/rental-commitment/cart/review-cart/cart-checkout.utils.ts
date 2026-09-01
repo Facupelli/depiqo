@@ -4,21 +4,16 @@ import type {
 	NormalizedDeliveryRequest,
 } from "./cart-checkout.types";
 
-export function createDeliveryRequestDefaultValues(defaults: {
-	city?: string | null;
-	stateRegion?: string | null;
-	postalCode?: string | null;
-	country?: string | null;
-}): DeliveryRequestFormState {
+export function createDeliveryRequestDefaultValues(): DeliveryRequestFormState {
 	return {
 		contactName: "",
 		contactPhone: "",
 		addressLine1: "",
 		addressLine2: "",
-		city: defaults.city ?? "",
-		state: defaults.stateRegion ?? "",
-		postalCode: defaults.postalCode ?? "",
-		country: defaults.country ?? "",
+		city: "",
+		state: "",
+		postalCode: "",
+		country: "",
 		notes: "",
 	};
 }

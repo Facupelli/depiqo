@@ -73,11 +73,6 @@ model Location {
   timezone String?
   isActive Boolean @default(true) @map("is_active")
 
-  supportsDelivery           Boolean @default(false) @map("supports_delivery")
-  deliveryDefaultCountry     String? @map("delivery_default_country")
-  deliveryDefaultStateRegion String? @map("delivery_default_state_region")
-  deliveryDefaultCity        String? @map("delivery_default_city")
-  deliveryDefaultPostalCode  String? @map("delivery_default_postal_code")
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")

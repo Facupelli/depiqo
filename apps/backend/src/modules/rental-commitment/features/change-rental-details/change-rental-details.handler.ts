@@ -11,7 +11,6 @@ import {
   PricingCalculation,
   PricingCalculationError,
 } from 'src/modules/pricing/public-api/pricing-calculation.public-api';
-import { BranchFacts } from 'src/modules/tenant-management/public-api/branch-facts.public-api';
 import { toRentalIntegrationEvents } from '../../application/rental-integration-event.mapper';
 import {
   RentalCannotBeEditedFromStatusError,
@@ -47,7 +46,6 @@ export class ChangeRentalDetailsHandler implements ICommandHandler<
 > {
   constructor(
     private readonly rentals: RentalRepository,
-    private readonly branches: BranchFacts,
     private readonly targetTotalAdjustment: PricingTargetTotalAdjustment,
     private readonly pricingCalculation: PricingCalculation,
     private readonly splitCalculator: RentalOwnerSplitCalculator,
@@ -104,27 +102,6 @@ export class ChangeRentalDetailsHandler implements ICommandHandler<
             context,
           ),
         );
-      }
-
-      if (change.fulfillmentOrDeliveryChanged) {
-        const branch = await this.branches.getBranchFacts({ tenantId, branchId: current.branchId });
-        if (branch.isErr())
-          return err(
-            this.error(
-              'rental_commitment.invalid_rental_field',
-              'Branch fulfillment facts are unavailable.',
-              context,
-              branch.error,
-            ),
-          );
-        if (change.details.fulfillmentMethod === FulfillmentMethod.Delivery && !branch.value.supportsDelivery) {
-          return err(
-            this.map(
-              new UnsupportedBranchFulfillmentMethodError(current.branchId, change.details.fulfillmentMethod),
-              context,
-            ),
-          );
-        }
       }
 
       let transformedPrice: JsonValue | undefined;

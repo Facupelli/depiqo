@@ -41,17 +41,11 @@ export function FulfillmentForm() {
 					variant={
 						fulfillment.fulfillmentMethod === "DELIVERY" ? "default" : "outline"
 					}
-					disabled={!fulfillment.branch.supportsDelivery}
 					onClick={() => fulfillment.selectFulfillmentMethod("DELIVERY")}
 				>
 					Envío
 				</Button>
 			</div>
-			{!fulfillment.branch.supportsDelivery && (
-				<p className="mt-3 text-xs text-muted-foreground">
-					Esta sucursal solo ofrece retiro.
-				</p>
-			)}
 			{fulfillment.fulfillmentMethod === "DELIVERY" && addressSummary && (
 				<button
 					type="button"

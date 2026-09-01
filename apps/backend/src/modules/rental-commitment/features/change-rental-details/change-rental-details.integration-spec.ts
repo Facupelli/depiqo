@@ -37,9 +37,9 @@ describe('ChangeRentalDetails integration', () => {
     return moduleRef;
   });
 
-  async function scenario(started: boolean | 'ENDED' = false, supportsDelivery = true) {
+  async function scenario(started: boolean | 'ENDED' = false) {
     const tenant = await core.createTenant();
-    const branch = await core.createBranch({ tenantId: tenant.id, overrides: { supportsDelivery } });
+    const branch = await core.createBranch({ tenantId: tenant.id });
     const { customer } = await core.createRentalCustomer({ tenantId: tenant.id });
     const { user } = await core.createTenantUser({ tenantId: tenant.id });
     const commercial = await fixtures.createOffer({ tenantId: tenant.id, branchId: branch.id });
@@ -120,8 +120,8 @@ describe('ChangeRentalDetails integration', () => {
     expect(events).toEqual([expect.objectContaining({ rentalId: setup.rental.rentalId })]);
   });
 
-  it('enforces pre-start delivery invariants and branch delivery support', async () => {
-    const setup = await scenario(false, true);
+  it('enforces pre-start delivery invariants', async () => {
+    const setup = await scenario(false);
     const missing = await change(setup, { fulfillmentMethod: FulfillmentMethod.Delivery });
     expect(missing.isErr() && missing.error.code).toBe('rental_commitment.invalid_rental_field');
     expect(
@@ -132,13 +132,6 @@ describe('ChangeRentalDetails integration', () => {
     expect((await change(setup, { fulfillmentMethod: FulfillmentMethod.Pickup, deliveryDetails: null })).isOk()).toBe(
       true,
     );
-
-    const unsupported = await scenario(false, false);
-    const result = await change(unsupported, {
-      fulfillmentMethod: FulfillmentMethod.Delivery,
-      deliveryDetails: delivery,
-    });
-    expect(result.isErr() && result.error.code).toBe('rental_commitment.unsupported_branch_fulfillment_method');
   });
 
   it('rejects fulfillment and delivery changes after start without changing state', async () => {

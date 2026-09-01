@@ -31,11 +31,6 @@ export class UpdateBranchHttpController {
         address: dto.address ?? null,
         operationalLocation: dto.operationalLocation,
         timezone: dto.timezone ?? null,
-        supportsDelivery: dto.supportsDelivery ?? false,
-        deliveryDefaultCountry: dto.deliveryDefaultCountry ?? null,
-        deliveryDefaultStateRegion: dto.deliveryDefaultStateRegion ?? null,
-        deliveryDefaultCity: dto.deliveryDefaultCity ?? null,
-        deliveryDefaultPostalCode: dto.deliveryDefaultPostalCode ?? null,
         schedules: (dto.schedules ?? []).map((schedule) => ({
           type: schedule.type,
           dayOfWeek: schedule.dayOfWeek,

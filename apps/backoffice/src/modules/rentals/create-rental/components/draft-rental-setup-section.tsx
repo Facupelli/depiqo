@@ -53,13 +53,6 @@ export const DraftRentalSetupSection = withForm({
 			form.setFieldValue("selectedOffers", []);
 			form.setFieldValue("targetTotal", "");
 			form.setFieldValue("adjustmentReason", "");
-
-			if (
-				form.state.values.fulfillmentMethod === "DELIVERY" &&
-				!nextBranch.supportsDelivery
-			) {
-				form.setFieldValue("fulfillmentMethod", "PICKUP");
-			}
 		}
 
 		return (

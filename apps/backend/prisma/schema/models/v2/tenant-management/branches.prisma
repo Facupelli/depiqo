@@ -26,11 +26,6 @@ model V2Branch {
   operationalLocationProviderPlaceId  String? @map("operational_location_provider_place_id")
   isActive Boolean @default(true) @map("is_active")
 
-  supportsDelivery           Boolean @default(false) @map("supports_delivery")
-  deliveryDefaultCountry     String? @map("delivery_default_country")
-  deliveryDefaultStateRegion String? @map("delivery_default_state_region")
-  deliveryDefaultCity        String? @map("delivery_default_city")
-  deliveryDefaultPostalCode  String? @map("delivery_default_postal_code")
 
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)

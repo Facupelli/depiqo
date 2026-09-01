@@ -8,7 +8,7 @@ Delivery is the bounded context that owns current delivery configuration and, in
 Rental Commitment -> Delivery -> Tenant Management
 ```
 
-Delivery may retain tenant and branch identifiers. Tenant Management remains authoritative for tenant identity, branches, and branch lifecycle. Delivery does not access Tenant Management persistence or model Tenant Management records as Delivery domain objects.
+Delivery may retain tenant and branch identifiers. Tenant Management remains authoritative for Branch identity, lifecycle, timezone, and operational location. Delivery owns Delivery enablement and all Delivery configuration. Delivery does not access Tenant Management persistence or model Tenant Management records as Delivery domain objects.
 
 ## Domain Concepts
 
@@ -39,5 +39,3 @@ The configuration owns its distance bands. The database has a tenant-safe physic
 ## Current Scope
 
 This foundation validates and persists configuration facts only. Delivery does not yet implement location resolution, routing, quote calculation, eligibility evaluation, pricing selection, availability, rental confirmation, or Rental Commitment integration.
-
-Legacy Tenant Management branch delivery fields remain untouched until their dedicated migration stage.

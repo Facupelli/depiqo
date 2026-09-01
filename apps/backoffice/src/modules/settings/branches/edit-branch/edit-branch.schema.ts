@@ -30,11 +30,6 @@ export function toUpdateBranchFormDefaults(
 		name: branch.name,
 		address: branch.address ?? "",
 		timezone: branch.timezone ?? "",
-		supportsDelivery: branch.supportsDelivery,
-		deliveryDefaultCountry: branch.deliveryDefaultCountry ?? "",
-		deliveryDefaultStateRegion: branch.deliveryDefaultStateRegion ?? "",
-		deliveryDefaultCity: branch.deliveryDefaultCity ?? "",
-		deliveryDefaultPostalCode: branch.deliveryDefaultPostalCode ?? "",
 		scheduleEnabled: hasPickupSchedules || hasReturnSchedules,
 		useSameScheduleForPickupAndReturn: schedulesAreEquivalent(
 			pickupSchedule,
@@ -53,21 +48,7 @@ export function toUpdateBranchBodyDto(
 		name: parsedValues.name.trim(),
 		address: emptyToNull(parsedValues.address),
 		timezone: emptyToNull(parsedValues.timezone),
-		supportsDelivery: parsedValues.supportsDelivery,
 	};
-
-	if (parsedValues.supportsDelivery) {
-		body.deliveryDefaultCountry = emptyToNull(
-			parsedValues.deliveryDefaultCountry,
-		);
-		body.deliveryDefaultStateRegion = emptyToNull(
-			parsedValues.deliveryDefaultStateRegion,
-		);
-		body.deliveryDefaultCity = emptyToNull(parsedValues.deliveryDefaultCity);
-		body.deliveryDefaultPostalCode = emptyToNull(
-			parsedValues.deliveryDefaultPostalCode,
-		);
-	}
 
 	body.schedules = parsedValues.scheduleEnabled
 		? toUpdateBranchScheduleDtos(parsedValues)

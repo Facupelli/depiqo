@@ -23,21 +23,7 @@ export function toCreateBranchBodyDto(
 		name: parsedValues.name.trim(),
 		address: emptyToNull(parsedValues.address),
 		timezone: emptyToNull(parsedValues.timezone),
-		supportsDelivery: parsedValues.supportsDelivery,
 	};
-
-	if (parsedValues.supportsDelivery) {
-		body.deliveryDefaultCountry = emptyToNull(
-			parsedValues.deliveryDefaultCountry,
-		);
-		body.deliveryDefaultStateRegion = emptyToNull(
-			parsedValues.deliveryDefaultStateRegion,
-		);
-		body.deliveryDefaultCity = emptyToNull(parsedValues.deliveryDefaultCity);
-		body.deliveryDefaultPostalCode = emptyToNull(
-			parsedValues.deliveryDefaultPostalCode,
-		);
-	}
 
 	const schedules = toCreateBranchScheduleDtos(parsedValues);
 	if (schedules.length > 0) {

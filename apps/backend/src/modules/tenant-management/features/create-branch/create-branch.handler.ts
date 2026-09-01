@@ -38,11 +38,6 @@ export class CreateBranchHandler implements ICommandHandler<
       address: command.address,
       operationalLocation: command.operationalLocation,
       timezone: command.timezone,
-      supportsDelivery: command.supportsDelivery,
-      deliveryDefaultCountry: command.deliveryDefaultCountry,
-      deliveryDefaultStateRegion: command.deliveryDefaultStateRegion,
-      deliveryDefaultCity: command.deliveryDefaultCity,
-      deliveryDefaultPostalCode: command.deliveryDefaultPostalCode,
       schedules: command.schedules.map((schedule) => ({
         type: schedule.type,
         dayOfWeek: schedule.dayOfWeek,

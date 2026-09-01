@@ -36,11 +36,10 @@ describe('CreateDraftRental integration', () => {
     return moduleRef;
   });
 
-  async function scenario(overrides: { supportsDelivery?: boolean } = {}): Promise<Scenario> {
+  async function scenario(): Promise<Scenario> {
     const tenant = await core.createTenant();
     const branch = await core.createBranch({
       tenantId: tenant.id,
-      overrides: { supportsDelivery: overrides.supportsDelivery ?? false },
     });
     const { customer } = await core.createRentalCustomer({ tenantId: tenant.id });
     const { user } = await core.createTenantUser({ tenantId: tenant.id });
@@ -283,7 +282,7 @@ describe('CreateDraftRental integration', () => {
   });
 
   it('persists delivery details atomically', async () => {
-    const setup = await scenario({ supportsDelivery: true });
+    const setup = await scenario();
     const catalog = await offer(setup);
     const result = await create({
       ...setup,
@@ -441,7 +440,7 @@ describe('CreateDraftRental integration', () => {
     expect(await rentalCount(setup)).toBe(0);
   });
 
-  it('rejects an inactive branch, foreign customer, missing pricing, and unsupported delivery without writes', async () => {
+  it('rejects an inactive branch, foreign customer, and missing pricing without writes', async () => {
     const setup = await scenario();
     const catalog = await offer(setup);
     const foreign = await scenario();
@@ -458,13 +457,6 @@ describe('CreateDraftRental integration', () => {
           selectedOffers: [{ rentalOfferId: catalog.offer.id, quantity: 1 }],
         });
       },
-      async () =>
-        create({
-          ...setup,
-          selectedOffers: [{ rentalOfferId: catalog.offer.id, quantity: 1 }],
-          fulfillmentMethod: 'DELIVERY',
-          deliveryDetails: { addressLine1: 'A', city: 'B' },
-        }),
       async () => {
         await prisma.client.v2RentalOfferPricing.deleteMany({ where: { catalogRentalOfferId: catalog.offer.id } });
         return create({ ...setup, selectedOffers: [{ rentalOfferId: catalog.offer.id, quantity: 1 }] });
@@ -473,7 +465,6 @@ describe('CreateDraftRental integration', () => {
     const expected = [
       'rental_commitment.branch_unavailable',
       'rental_commitment.customer_unavailable',
-      'rental_commitment.unsupported_branch_fulfillment_method',
       'rental_commitment.invalid_pricing_input',
     ];
     for (const [index, run] of cases.entries()) {

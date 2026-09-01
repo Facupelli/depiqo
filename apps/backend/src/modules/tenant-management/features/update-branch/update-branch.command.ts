@@ -18,11 +18,6 @@ export class UpdateBranchCommand {
   public readonly address: string | null;
   public readonly operationalLocation: BranchOperationalLocationDto | null | undefined;
   public readonly timezone: string | null;
-  public readonly supportsDelivery: boolean;
-  public readonly deliveryDefaultCountry: string | null;
-  public readonly deliveryDefaultStateRegion: string | null;
-  public readonly deliveryDefaultCity: string | null;
-  public readonly deliveryDefaultPostalCode: string | null;
   public readonly schedules: UpdateBranchScheduleCommandProps[];
 
   constructor(props: {
@@ -32,11 +27,6 @@ export class UpdateBranchCommand {
     address: string | null;
     operationalLocation: BranchOperationalLocationDto | null | undefined;
     timezone: string | null;
-    supportsDelivery: boolean;
-    deliveryDefaultCountry: string | null;
-    deliveryDefaultStateRegion: string | null;
-    deliveryDefaultCity: string | null;
-    deliveryDefaultPostalCode: string | null;
     schedules: UpdateBranchScheduleCommandProps[];
   }) {
     this.tenantId = props.tenantId;
@@ -45,11 +35,6 @@ export class UpdateBranchCommand {
     this.address = props.address;
     this.operationalLocation = props.operationalLocation;
     this.timezone = props.timezone;
-    this.supportsDelivery = props.supportsDelivery;
-    this.deliveryDefaultCountry = props.deliveryDefaultCountry;
-    this.deliveryDefaultStateRegion = props.deliveryDefaultStateRegion;
-    this.deliveryDefaultCity = props.deliveryDefaultCity;
-    this.deliveryDefaultPostalCode = props.deliveryDefaultPostalCode;
     this.schedules = props.schedules;
   }
 }

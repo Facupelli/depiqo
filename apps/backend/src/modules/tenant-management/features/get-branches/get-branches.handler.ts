@@ -12,11 +12,6 @@ export interface GetBranchesBranchReadModel {
   operationalLocation: BranchOperationalLocationDto | null;
   timezone: string | null;
   isActive: boolean;
-  supportsDelivery: boolean;
-  deliveryDefaultCountry: string | null;
-  deliveryDefaultStateRegion: string | null;
-  deliveryDefaultCity: string | null;
-  deliveryDefaultPostalCode: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -50,11 +45,6 @@ export class GetBranchesHandler implements IQueryHandler<GetBranchesQuery, GetBr
         operationalLocationProviderPlaceId: true,
         timezone: true,
         isActive: true,
-        supportsDelivery: true,
-        deliveryDefaultCountry: true,
-        deliveryDefaultStateRegion: true,
-        deliveryDefaultCity: true,
-        deliveryDefaultPostalCode: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -84,11 +74,6 @@ export class GetBranchesHandler implements IQueryHandler<GetBranchesQuery, GetBr
           : null,
       timezone: branch.timezone,
       isActive: branch.isActive,
-      supportsDelivery: branch.supportsDelivery,
-      deliveryDefaultCountry: branch.deliveryDefaultCountry,
-      deliveryDefaultStateRegion: branch.deliveryDefaultStateRegion,
-      deliveryDefaultCity: branch.deliveryDefaultCity,
-      deliveryDefaultPostalCode: branch.deliveryDefaultPostalCode,
       createdAt: branch.createdAt.toISOString(),
       updatedAt: branch.updatedAt.toISOString(),
     }));

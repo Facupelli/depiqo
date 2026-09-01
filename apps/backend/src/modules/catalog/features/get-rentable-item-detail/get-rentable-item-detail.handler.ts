@@ -37,7 +37,6 @@ export interface GetRentableItemDetailOfferReadModel {
   branchId: string;
   branchName: string | null;
   timezone: string | null;
-  supportsDelivery: boolean | null;
   isVisible: boolean;
   isRentable: boolean;
   updatedAt: string;
@@ -132,7 +131,7 @@ export class GetRentableItemDetailHandler implements IQueryHandler<
     const [branches, equipmentTypes, pricings] = await this.prisma.client.$transaction([
       this.prisma.client.v2Branch.findMany({
         where: { tenantId: query.tenantId, id: { in: branchIds } },
-        select: { id: true, name: true, timezone: true, supportsDelivery: true, isActive: true },
+        select: { id: true, name: true, timezone: true, isActive: true },
       }),
       this.prisma.client.v2EquipmentType.findMany({
         where: { tenantId: query.tenantId, id: { in: equipmentTypeIds } },
@@ -238,7 +237,6 @@ export class GetRentableItemDetailHandler implements IQueryHandler<
           branchName: branch?.name ?? null,
           // This administrative setup read model exposes the branch override configuration, not an effective timezone.
           timezone: branch?.timezone ?? null,
-          supportsDelivery: branch?.supportsDelivery ?? null,
           isVisible: offer.isVisible,
           isRentable: offer.isRentable,
           updatedAt: offer.updatedAt.toISOString(),

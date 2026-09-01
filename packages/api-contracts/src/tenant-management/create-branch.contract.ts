@@ -20,11 +20,6 @@ export const CreateBranchBodySchema = z.object({
   address: z.string().nullable().optional(),
   operationalLocation: BranchOperationalLocationSchema.nullable().optional(),
   timezone: z.string().nullable().optional(),
-  supportsDelivery: z.boolean().optional(),
-  deliveryDefaultCountry: z.string().nullable().optional(),
-  deliveryDefaultStateRegion: z.string().nullable().optional(),
-  deliveryDefaultCity: z.string().nullable().optional(),
-  deliveryDefaultPostalCode: z.string().nullable().optional(),
   schedules: z.array(CreateBranchScheduleBodySchema).optional(),
 });
 

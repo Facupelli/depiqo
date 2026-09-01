@@ -25,7 +25,6 @@ export interface BranchOperationalLocation {
 
 export interface BranchFact {
   branchId: string;
-  supportsDelivery: boolean;
   isActive: boolean;
   isDeleted: boolean;
   effectiveTimezone: string;

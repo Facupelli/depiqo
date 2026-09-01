@@ -27,11 +27,6 @@ export interface GetBranchDetailReadModel {
   operationalLocation: BranchOperationalLocationDto | null;
   timezone: string | null;
   isActive: boolean;
-  supportsDelivery: boolean;
-  deliveryDefaultCountry: string | null;
-  deliveryDefaultStateRegion: string | null;
-  deliveryDefaultCity: string | null;
-  deliveryDefaultPostalCode: string | null;
   schedules: GetBranchDetailScheduleReadModel[];
   createdAt: string;
   updatedAt: string;
@@ -71,11 +66,6 @@ export class GetBranchDetailHandler implements IQueryHandler<GetBranchDetailQuer
         operationalLocationProviderPlaceId: true,
         timezone: true,
         isActive: true,
-        supportsDelivery: true,
-        deliveryDefaultCountry: true,
-        deliveryDefaultStateRegion: true,
-        deliveryDefaultCity: true,
-        deliveryDefaultPostalCode: true,
         createdAt: true,
         updatedAt: true,
         schedules: {
@@ -129,11 +119,6 @@ export class GetBranchDetailHandler implements IQueryHandler<GetBranchDetailQuer
           : null,
       timezone: branch.timezone,
       isActive: branch.isActive,
-      supportsDelivery: branch.supportsDelivery,
-      deliveryDefaultCountry: branch.deliveryDefaultCountry,
-      deliveryDefaultStateRegion: branch.deliveryDefaultStateRegion,
-      deliveryDefaultCity: branch.deliveryDefaultCity,
-      deliveryDefaultPostalCode: branch.deliveryDefaultPostalCode,
       schedules: branch.schedules.map((schedule) => ({
         id: schedule.id,
         type: schedule.type,

@@ -72,10 +72,6 @@ export function BranchForm({
 		(timezone) =>
 			timezone.startsWith("Europe/") || timezone.startsWith("America/"),
 	);
-	const supportsDelivery = useStore(
-		form.store,
-		(state) => state.values.supportsDelivery,
-	);
 	const scheduleEnabled = useStore(
 		form.store,
 		(state) => state.values.scheduleEnabled,
@@ -217,67 +213,6 @@ export function BranchForm({
 						<CardHeader>
 							<CardTitle className="flex items-center gap-3">
 								<StepBadge>2</StepBadge>
-								Entrega a domicilio
-							</CardTitle>
-						</CardHeader>
-						<CardContent className="space-y-5">
-							<form.Field name="supportsDelivery">
-								{(field: BranchFormField) => (
-									<Field orientation="horizontal">
-										<Switch
-											id={field.name}
-											checked={field.state.value}
-											onCheckedChange={(checked) =>
-												field.handleChange(checked === true)
-											}
-										/>
-										<div>
-											<FieldLabel htmlFor={field.name}>
-												Habilitar envíos
-											</FieldLabel>
-											<FieldDescription>
-												Si está apagado, no se enviarán defaults de entrega.
-											</FieldDescription>
-										</div>
-									</Field>
-								)}
-							</form.Field>
-
-							{supportsDelivery && (
-								<div className="grid gap-4 sm:grid-cols-2">
-									<DeliveryTextField
-										form={form}
-										name="deliveryDefaultCountry"
-										label="País"
-										placeholder="Argentina"
-									/>
-									<DeliveryTextField
-										form={form}
-										name="deliveryDefaultStateRegion"
-										label="Provincia / región"
-										placeholder="Buenos Aires"
-									/>
-									<DeliveryTextField
-										form={form}
-										name="deliveryDefaultCity"
-										label="Ciudad"
-										placeholder="CABA"
-									/>
-									<DeliveryTextField
-										form={form}
-										name="deliveryDefaultPostalCode"
-										label="Código postal"
-										placeholder="1425"
-									/>
-								</div>
-							)}
-						</CardContent>
-					</Card>
-
-					<Card>
-						<CardHeader>
-							<CardTitle className="flex items-center gap-3">
-								<StepBadge>3</StepBadge>
 								Horarios iniciales
 							</CardTitle>
 						</CardHeader>
@@ -407,47 +342,6 @@ function StepBadge({ children }: { children: ReactNode }) {
 		<span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-foreground text-sm font-semibold text-background">
 			{children}
 		</span>
-	);
-}
-
-function DeliveryTextField({
-	form,
-	name,
-	label,
-	placeholder,
-}: {
-	form: BranchFormApi;
-	name:
-		| "deliveryDefaultCountry"
-		| "deliveryDefaultStateRegion"
-		| "deliveryDefaultCity"
-		| "deliveryDefaultPostalCode";
-	label: string;
-	placeholder: string;
-}) {
-	return (
-		<form.Field name={name}>
-			{(field: BranchFormField) => {
-				const isInvalid =
-					field.state.meta.isTouched && !field.state.meta.isValid;
-
-				return (
-					<Field data-invalid={isInvalid}>
-						<FieldLabel htmlFor={field.name}>{label}</FieldLabel>
-						<Input
-							id={field.name}
-							name={field.name}
-							value={field.state.value}
-							onBlur={field.handleBlur}
-							onChange={(event) => field.handleChange(event.target.value)}
-							aria-invalid={isInvalid}
-							placeholder={placeholder}
-						/>
-						{isInvalid && <FieldError errors={field.state.meta.errors} />}
-					</Field>
-				);
-			}}
-		</form.Field>
 	);
 }
 
