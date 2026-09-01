@@ -1,6 +1,6 @@
 # Delivery Module
 
-Delivery is the bounded context that owns current delivery configuration and, in later stages, delivery-specific operational decisions.
+Delivery is the bounded context that owns current delivery configuration and authoritative current Delivery quote calculation through its public boundary.
 
 ## Dependency Direction
 
@@ -38,4 +38,6 @@ The configuration owns its distance bands. The database has a tenant-safe physic
 
 ## Current Scope
 
-This foundation validates and persists configuration facts only. Delivery does not yet implement location resolution, routing, quote calculation, eligibility evaluation, pricing selection, availability, rental confirmation, or Rental Commitment integration.
+Delivery validates and persists configuration facts and provides authoritative current quote calculation through `DeliveryQuoteService`. The quote capability resolves the customer location, obtains one authoritative road distance, evaluates serviceability, and calculates Delivery-owned transport pricing and scheduling facts.
+
+Delivery does not yet implement availability, accepted Delivery snapshots, confirmation, quote persistence, caching, Rental Commitment integration, or Pricing composition.

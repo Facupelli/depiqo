@@ -11,6 +11,19 @@ type BranchDeliveryConfigurationPersistenceClient = Pick<PrismaService['client']
 export class BranchDeliveryConfigurationRepository {
   constructor(private readonly prisma: PrismaService) {}
 
+  async findByTenantAndBranch(
+    tenantId: string,
+    branchId: string,
+    client: BranchDeliveryConfigurationPersistenceClient = this.prisma.client,
+  ): Promise<BranchDeliveryConfiguration | null> {
+    const record = await client.v2BranchDeliveryConfiguration.findUnique({
+      where: { tenantId_branchId: { tenantId, branchId } },
+      include: { distancePriceBands: { orderBy: { maxDistanceMeters: 'asc' } } },
+    });
+
+    return record ? BranchDeliveryConfigurationMapper.toDomain(record) : null;
+  }
+
   async findById(
     id: string,
     tenantId: string,
