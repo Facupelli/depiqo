@@ -11,8 +11,11 @@ import {
 import { runConcurrently } from '../../../../../test/support/concurrency';
 import { createTestFixtures, TestFixtures } from '../../../../../test/support/fixtures';
 import { oneMillisecondAfter, oneMillisecondBefore, utcDate } from '../../../../../test/support/time';
-import { ConfirmRentalFixtures } from '../confirm-rental/testing/confirm-rental.fixtures';
+import { RentalOfferAvailabilityService } from '../../application/availability/rental-offer-availability.service';
 import { RentalPeriod } from '../../domain/value-objects/rental-period.value-object';
+import { ConfirmRentalFixtures } from '../confirm-rental/testing/confirm-rental.fixtures';
+import { GetStorefrontRentalOfferAvailabilityResult } from '../get-storefront-rental-offer-availability/get-storefront-rental-offer-availability.handler';
+import { GetStorefrontRentalOfferAvailabilityQuery } from '../get-storefront-rental-offer-availability/get-storefront-rental-offer-availability.query';
 import { GetRentalOfferAvailabilityQuery } from './get-rental-offer-availability.query';
 import { GetRentalOfferAvailabilityResult } from './get-rental-offer-availability.handler';
 
@@ -24,6 +27,7 @@ describe('GetRentalOfferAvailability integration', () => {
   let queryBus: QueryBus;
   let core: TestFixtures;
   let rentals: ConfirmRentalFixtures;
+  let rentalOfferAvailability: RentalOfferAvailabilityService;
 
   useIntegrationTestContext(async () => {
     moduleRef = await createRentalCommitmentIntegrationContext();
@@ -31,6 +35,7 @@ describe('GetRentalOfferAvailability integration', () => {
     queryBus = moduleRef.get(QueryBus);
     core = createTestFixtures(prisma);
     rentals = new ConfirmRentalFixtures(prisma);
+    rentalOfferAvailability = moduleRef.get(RentalOfferAvailabilityService);
     return moduleRef;
   });
 
@@ -355,6 +360,170 @@ describe('GetRentalOfferAvailability integration', () => {
     expect((await availability(s.tenant.id, s.branch.id, [inactive.id]))._unsafeUnwrapErr().code).toBe(
       'rental_commitment.rentable_item_not_active',
     );
+  });
+
+  it('returns ordered canonical outcomes for a mixed batch and distinguishes resolved zero capacity', async () => {
+    const s = await setup();
+    const type = await equipmentType(s.tenant.id);
+    const first = await offer({
+      tenantId: s.tenant.id,
+      branchId: s.branch.id,
+      requirements: [{ equipmentTypeId: type.id, quantityPerItem: 1 }],
+    });
+    const unavailableId = randomUUID();
+    const third = await offer({
+      tenantId: s.tenant.id,
+      branchId: s.branch.id,
+      requirements: [{ equipmentTypeId: type.id, quantityPerItem: 1 }],
+    });
+    await rentals.createCandidate({ tenantId: s.tenant.id, branchId: s.branch.id, equipmentTypeId: type.id });
+
+    const result = await rentalOfferAvailability.calculate({
+      tenantId: s.tenant.id,
+      branchId: s.branch.id,
+      period: new RentalPeriod(requestedPeriod.start, requestedPeriod.end),
+      rentalOfferIds: [first.id, unavailableId, third.id],
+    });
+
+    expect(result._unsafeUnwrap()).toEqual([
+      { kind: 'RESOLVED', rentalOfferId: first.id, availableCount: 1 },
+      {
+        kind: 'CATALOG_UNAVAILABLE',
+        rentalOfferId: unavailableId,
+        reason: 'RENTAL_OFFER_NOT_FOUND',
+      },
+      { kind: 'RESOLVED', rentalOfferId: third.id, availableCount: 1 },
+    ]);
+
+    const zeroStock = await offer({
+      tenantId: s.tenant.id,
+      branchId: s.branch.id,
+      requirements: [{ equipmentTypeId: (await equipmentType(s.tenant.id)).id, quantityPerItem: 1 }],
+    });
+    const zeroResult = await rentalOfferAvailability.calculate({
+      tenantId: s.tenant.id,
+      branchId: s.branch.id,
+      period: new RentalPeriod(requestedPeriod.start, requestedPeriod.end),
+      rentalOfferIds: [zeroStock.id],
+    });
+    expect(zeroResult._unsafeUnwrap()).toEqual([{ kind: 'RESOLVED', rentalOfferId: zeroStock.id, availableCount: 0 }]);
+  });
+
+  it('preserves strict staff first-unavailable semantics for a mixed batch', async () => {
+    const s = await setup();
+    const type = await equipmentType(s.tenant.id);
+    const valid = await offer({
+      tenantId: s.tenant.id,
+      branchId: s.branch.id,
+      requirements: [{ equipmentTypeId: type.id, quantityPerItem: 1 }],
+    });
+    const firstUnavailable = randomUUID();
+    const secondUnavailable = randomUUID();
+
+    const result = await availability(s.tenant.id, s.branch.id, [valid.id, firstUnavailable, secondUnavailable]);
+
+    expect(result.isErr() && result.error.code).toBe('rental_commitment.rental_offer_not_found');
+    expect(result.isErr() && result.error.message).toContain(firstUnavailable);
+  });
+
+  it('maps mixed storefront outcomes to ordered capacities and applies canonical candidate eligibility', async () => {
+    const s = await setup();
+    const type = await equipmentType(s.tenant.id);
+    const first = await offer({
+      tenantId: s.tenant.id,
+      branchId: s.branch.id,
+      requirements: [{ equipmentTypeId: type.id, quantityPerItem: 1 }],
+    });
+    const unavailableId = randomUUID();
+    const third = await offer({
+      tenantId: s.tenant.id,
+      branchId: s.branch.id,
+      requirements: [{ equipmentTypeId: type.id, quantityPerItem: 1 }],
+    });
+    await rentals.createCandidate({
+      tenantId: s.tenant.id,
+      branchId: s.branch.id,
+      equipmentTypeId: type.id,
+      overrides: { ownershipKind: 'THIRD_PARTY', ownerId: randomUUID() },
+    });
+
+    const result = await queryBus.execute<
+      GetStorefrontRentalOfferAvailabilityQuery,
+      GetStorefrontRentalOfferAvailabilityResult
+    >(
+      new GetStorefrontRentalOfferAvailabilityQuery(
+        s.tenant.id,
+        s.branch.id,
+        new RentalPeriod(requestedPeriod.start, requestedPeriod.end),
+        [first.id, unavailableId, third.id],
+      ),
+    );
+
+    expect(result._unsafeUnwrap()).toEqual({
+      data: [
+        { rentalOfferId: first.id, availableCount: 0 },
+        { rentalOfferId: unavailableId, availableCount: 0 },
+        { rentalOfferId: third.id, availableCount: 0 },
+      ],
+    });
+  });
+
+  it('maps wrong-branch, unrentable, and inactive storefront offers to zero', async () => {
+    const s = await setup();
+    const otherBranch = await core.createBranch({ tenantId: s.tenant.id });
+    const type = await equipmentType(s.tenant.id);
+    const wrongBranch = await offer({
+      tenantId: s.tenant.id,
+      branchId: otherBranch.id,
+      requirements: [{ equipmentTypeId: type.id, quantityPerItem: 1 }],
+    });
+    const unrentable = await offer({
+      tenantId: s.tenant.id,
+      branchId: s.branch.id,
+      requirements: [{ equipmentTypeId: type.id, quantityPerItem: 1 }],
+      isRentable: false,
+    });
+    const inactive = await offer({
+      tenantId: s.tenant.id,
+      branchId: s.branch.id,
+      requirements: [{ equipmentTypeId: type.id, quantityPerItem: 1 }],
+      itemStatus: 'DRAFT',
+    });
+
+    const result = await queryBus.execute<
+      GetStorefrontRentalOfferAvailabilityQuery,
+      GetStorefrontRentalOfferAvailabilityResult
+    >(
+      new GetStorefrontRentalOfferAvailabilityQuery(
+        s.tenant.id,
+        s.branch.id,
+        new RentalPeriod(requestedPeriod.start, requestedPeriod.end),
+        [wrongBranch.id, unrentable.id, inactive.id],
+      ),
+    );
+
+    expect(result._unsafeUnwrap()).toEqual({
+      data: [wrongBranch.id, unrentable.id, inactive.id].map((rentalOfferId) => ({
+        rentalOfferId,
+        availableCount: 0,
+      })),
+    });
+  });
+
+  it('preserves the storefront empty-list short circuit', async () => {
+    const result = await queryBus.execute<
+      GetStorefrontRentalOfferAvailabilityQuery,
+      GetStorefrontRentalOfferAvailabilityResult
+    >(
+      new GetStorefrontRentalOfferAvailabilityQuery(
+        randomUUID(),
+        randomUUID(),
+        new RentalPeriod(requestedPeriod.start, requestedPeriod.end),
+        [],
+      ),
+    );
+
+    expect(result._unsafeUnwrap()).toEqual({ data: [] });
   });
 
   it('is repeatable and concurrent reads do not persist side effects', async () => {

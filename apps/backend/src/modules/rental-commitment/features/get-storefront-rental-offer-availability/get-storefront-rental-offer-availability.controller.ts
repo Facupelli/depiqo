@@ -95,6 +95,12 @@ const storefrontAvailabilityProblemMap = {
     status: HttpStatus.UNPROCESSABLE_ENTITY,
     detail: 'The requested rental offer has an invalid fulfillment definition.',
   },
+  'rental_commitment.invalid_candidate_projection': {
+    type: createProblemType('rental_commitment.invalid_candidate_projection'),
+    title: 'Invalid candidate projection',
+    status: HttpStatus.UNPROCESSABLE_ENTITY,
+    detail: 'Availability could not be determined from the current asset candidate projection.',
+  },
   'rental_commitment.tenant_unavailable': {
     type: createProblemType('rental_commitment.tenant_unavailable'),
     title: 'Tenant unavailable',

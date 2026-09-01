@@ -99,6 +99,16 @@ All rental-related asset blocks belong to Rental Commitment, including equipment
 
 Other modules must not create or mutate them directly.
 
+### Prospective Rental Offer Availability
+
+Rental-offer availability is a prospective physical-capacity calculation owned by Rental Commitment. It evaluates the complete requested rental period using the tenant's current rental-asset buffer settings.
+
+Rental Catalog determines which requested offers can participate and provides their fulfillment requirements. Rental Commitment evaluates eligible asset candidates against active overlapping rental blocks and calculates how many units of each requested offer can be fulfilled. Assets counted toward availability must satisfy the same candidate eligibility rules used when Rental Commitment allocates assets, including required ownership and owner-contract eligibility for third-party assets.
+
+Package capacity is derived from its fulfillment requirements and is limited by the requirement with the lowest fulfillable capacity. Requested offers are evaluated independently: multiple offers in one availability request do not reserve, consume, or subtract capacity from one another.
+
+Availability is advisory and read-only. Calculating availability does not assign assets, reserve assets, or create asset blocks. Application entry points may interpret Catalog-unavailable outcomes differently while sharing the same canonical Rental Commitment-owned physical availability semantics.
+
 ### Confirmed Price Snapshot
 
 The confirmed price snapshot is the accepted pricing result for a rental.
@@ -234,9 +244,9 @@ Notification failure must not roll back rental confirmation.
 
 ## Boundaries
 
-Rental Catalog owns current rental offers, rentable items, presentation, and fulfillment requirement definitions.
+Rental Catalog owns current rental-offer participation, rentable items, presentation, and fulfillment requirements. Rental Commitment consumes those Catalog facts and owns prospective physical availability, candidate eligibility, available capacity, rental assignments, and rental-created asset blocks.
 
-Rental Commitment resolves those definitions when creating or changing a rental, then preserves the commercial selections and generated demand it accepts.
+Rental Commitment resolves Catalog definitions when creating or changing a rental, then preserves the commercial selections and generated demand it accepts.
 
 Pricing owns current pricing rules and proposed price calculations.
 
@@ -298,6 +308,7 @@ Projection handlers must be idempotent and may update only Rental Commitment's d
 
 ## References
 
+- `application/availability/rental-offer-availability.service.ts`
 - `rental-lifecycle-facts.public-api.ts`
 - `committed-rental-selections-and-demand.public-api.ts`
 - `accepted-rental-pricing-facts.public-api.ts`
