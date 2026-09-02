@@ -5,8 +5,6 @@ import { AttachRatePlanToRentalOfferOperation } from './application/operations/a
 import { CreateRatePlanOperation } from './application/operations/create-rate-plan.operation';
 import { AttachRatePlanToRentalOfferHttpController } from './features/attach-rate-plan-to-rental-offer/attach-rate-plan-to-rental-offer.controller';
 import { AttachRatePlanToRentalOfferHandler } from './features/attach-rate-plan-to-rental-offer/attach-rate-plan-to-rental-offer.handler';
-import { CalculateCartPriceHttpController } from './features/calculate-cart-price/calculate-cart-price.controller';
-import { CalculateCartPriceHandler } from './features/calculate-cart-price/calculate-cart-price.handler';
 import { CalculateDraftRentalPriceHttpController } from './features/calculate-draft-rental-price/calculate-draft-rental-price.controller';
 import { CalculateDraftRentalPriceHandler } from './features/calculate-draft-rental-price/calculate-draft-rental-price.handler';
 import { CorrectRatePlanHttpController } from './features/correct-rate-plan/correct-rate-plan.controller';
@@ -47,7 +45,6 @@ import { TenantManagementModule } from '../tenant-management/tenant-management.m
   imports: [CatalogModule, TenantManagementModule],
   controllers: [
     AttachRatePlanToRentalOfferHttpController,
-    CalculateCartPriceHttpController,
     CalculateDraftRentalPriceHttpController,
     CorrectRatePlanHttpController,
     DetachOfferPricingHttpController,
@@ -63,7 +60,6 @@ import { TenantManagementModule } from '../tenant-management/tenant-management.m
   ],
   providers: [
     AttachRatePlanToRentalOfferOperation,
-    CalculateCartPriceHandler,
     CalculateDraftRentalPriceHandler,
     CorrectRatePlanHandler,
     DetachOfferPricingHandler,

@@ -1,26 +1,6 @@
 import { z } from "zod";
 
-import type { ApiContract } from "../api-contract";
-import { ExplicitOffsetInstantWireSchema } from "../explicit-offset-instant.schema";
-
 const DecimalStringSchema = z.string();
-
-export const CalculateCartPriceSelectedOfferSchema = z.object({
-  rentalOfferId: z.string(),
-  quantity: z.number().int().positive(),
-});
-
-export const CalculateCartPriceBodySchema = z.object({
-  branchId: z.string(),
-  rentalPeriod: z.object({
-    start: ExplicitOffsetInstantWireSchema,
-    end: ExplicitOffsetInstantWireSchema,
-  }),
-  selectedOffers: z.array(CalculateCartPriceSelectedOfferSchema),
-  insuranceSelected: z.boolean().default(false),
-  customerId: z.string().optional(),
-  couponCode: z.string().trim().min(1).optional(),
-});
 
 export const CalculateCartPriceDurationPolicySnapshotSchema = z.object({
   timezone: z.string(),
@@ -101,22 +81,6 @@ export const CalculateCartPriceResponseSchema = z.object({
   appliedCoupon: CalculateCartPriceAppliedCouponSchema.nullable(),
 });
 
-export type CalculateCartPriceBodyDto = z.input<
-  typeof CalculateCartPriceBodySchema
->;
 export type CalculateCartPriceResponseDto = z.infer<
-  typeof CalculateCartPriceResponseSchema
->;
-
-export const calculateCartPriceContract = {
-  method: "POST",
-  path: "/storefront/pricing/cart/price",
-  body: CalculateCartPriceBodySchema,
-  response: CalculateCartPriceResponseSchema,
-} satisfies ApiContract<
-  undefined,
-  undefined,
-  undefined,
-  typeof CalculateCartPriceBodySchema,
   typeof CalculateCartPriceResponseSchema
 >;
