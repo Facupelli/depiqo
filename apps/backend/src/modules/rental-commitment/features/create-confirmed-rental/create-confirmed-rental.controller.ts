@@ -76,7 +76,7 @@ function toCreateConfirmedRentalProblem(error: CreateConfirmedRentalError): Prob
       ...problem,
       extensions: {
         code: error.code,
-        ...availabilityProblemExtensions(error),
+        ...problemExtensions(error),
       },
     }),
     applicationError: error,
@@ -193,6 +193,12 @@ const createConfirmedRentalProblemMap = {
     HttpStatus.UNPROCESSABLE_ENTITY,
     'The rental could not be priced with the provided input.',
   ),
+  'rental_commitment.delivery_not_serviceable': problem(
+    'delivery_not_serviceable',
+    'Delivery not serviceable',
+    HttpStatus.UNPROCESSABLE_ENTITY,
+    'Delivery is not serviceable for the selected location and rental period.',
+  ),
   'rental_commitment.duplicate_assigned_asset': problem(
     'duplicate_assigned_asset',
     'Duplicate assigned asset',
@@ -220,7 +226,11 @@ const rentalOfferIdProblemCodes: ReadonlySet<CreateConfirmedRentalErrorCode> = n
   'rental_commitment.catalog_selection_unavailable',
 ]);
 
-function availabilityProblemExtensions(error: CreateConfirmedRentalError): Record<string, string> {
+function problemExtensions(error: CreateConfirmedRentalError): Record<string, string> {
+  if (error.code === 'rental_commitment.delivery_not_serviceable') {
+    const reason = error.context?.deliveryReason;
+    return typeof reason === 'string' ? { reason } : {};
+  }
   if (!rentalOfferIdProblemCodes.has(error.code)) return {};
 
   const rentalOfferId = error.context?.rentalOfferId;

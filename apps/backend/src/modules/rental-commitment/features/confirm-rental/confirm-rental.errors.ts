@@ -7,6 +7,7 @@ export type ConfirmRentalErrorCode =
   | 'rental_commitment.rental_confirmation_requires_customer'
   | 'rental_commitment.confirmed_rental_requires_price_snapshot'
   | 'rental_commitment.insufficient_asset_availability'
+  | 'rental_commitment.delivery_not_serviceable'
   | 'rental_commitment.duplicate_assigned_asset'
   | 'rental_commitment.invalid_rental_field'
   | 'rental_commitment.tenant_unavailable'

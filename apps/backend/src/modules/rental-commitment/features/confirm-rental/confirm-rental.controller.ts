@@ -36,7 +36,15 @@ function toConfirmRentalProblem(error: ConfirmRentalError): ProblemException {
   const problem = confirmRentalProblemMap[error.code];
 
   return ProblemException.from({
-    problemDetails: createProblemDetails({ ...problem, extensions: { code: error.code } }),
+    problemDetails: createProblemDetails({
+      ...problem,
+      extensions: {
+        code: error.code,
+        ...(error.code === 'rental_commitment.delivery_not_serviceable'
+          ? { reason: error.context?.deliveryReason }
+          : {}),
+      },
+    }),
     applicationError: error,
     cause: error.cause,
   });
@@ -78,6 +86,12 @@ const confirmRentalProblemMap = {
     title: 'Insufficient asset availability',
     status: HttpStatus.CONFLICT,
     detail: 'Not enough equipment is available for the requested rental period.',
+  },
+  'rental_commitment.delivery_not_serviceable': {
+    type: createProblemType('rental_commitment.delivery_not_serviceable'),
+    title: 'Delivery not serviceable',
+    status: HttpStatus.UNPROCESSABLE_ENTITY,
+    detail: 'Delivery is not serviceable for the selected location and rental period.',
   },
   'rental_commitment.duplicate_assigned_asset': {
     type: createProblemType('rental_commitment.duplicate_assigned_asset'),

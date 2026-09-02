@@ -7,6 +7,7 @@ export function deriveConfirmedAssetBlockPeriod(params: {
   acceptedBeforeBufferMinutes: number;
   acceptedAfterBufferMinutes: number;
   acceptedDelivery?: AcceptedDeliverySnapshot;
+  clampStartAt?: Date;
 }): RentalPeriod {
   const acceptedTransportReservationMinutes = params.acceptedDelivery?.snapshot.transportReservationMinutes ?? 0;
 
@@ -14,5 +15,6 @@ export function deriveConfirmedAssetBlockPeriod(params: {
     participationPeriod: params.participationPeriod,
     beforeBufferMinutes: params.acceptedBeforeBufferMinutes + acceptedTransportReservationMinutes,
     afterBufferMinutes: params.acceptedAfterBufferMinutes + acceptedTransportReservationMinutes,
+    clampStartAt: params.clampStartAt,
   });
 }
