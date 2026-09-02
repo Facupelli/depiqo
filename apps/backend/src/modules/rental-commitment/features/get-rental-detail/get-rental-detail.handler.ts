@@ -7,6 +7,7 @@ import { PrismaService } from 'src/core/database/prisma.service';
 import { AssetInventoryDisplayFacts } from 'src/modules/asset-inventory/public-api/asset-inventory-display-facts.public-api';
 import { getRentalDetailError, GetRentalDetailError } from './get-rental-detail.errors';
 import { toRentalDetailPricing } from '../../application/accepted-pricing/accepted-pricing-snapshot.projections';
+import { AcceptedDeliverySnapshot } from '../../domain/value-objects/accepted-delivery-snapshot.value-object';
 import { ConfirmedPriceSnapshot } from '../../domain/value-objects/confirmed-price-snapshot.value-object';
 import { GetRentalDetailQuery } from './get-rental-detail.query';
 
@@ -36,6 +37,8 @@ export class GetRentalDetailHandler implements IQueryHandler<GetRentalDetailQuer
         periodStart: true,
         periodEnd: true,
         priceSnapshot: true,
+        acceptedDeliverySnapshot: true,
+        acceptedCustomerTotal: true,
         version: true,
         createdAt: true,
         updatedAt: true,
@@ -167,6 +170,8 @@ export class GetRentalDetailHandler implements IQueryHandler<GetRentalDetailQuer
         assignedAssets: selection.assignments.map((assignment) => ({ assetId: assignment.assetId })),
       })),
       pricing: this.resolvePricing(rental.priceSnapshot),
+      acceptedCustomerTotal: rental.confirmedAt ? (rental.acceptedCustomerTotal?.toString() ?? null) : null,
+      acceptedDelivery: rental.confirmedAt ? this.resolveAcceptedDelivery(rental.acceptedDeliverySnapshot) : null,
       ownerPayouts,
     });
   }
@@ -248,5 +253,12 @@ export class GetRentalDetailHandler implements IQueryHandler<GetRentalDetailQuer
     const snapshot = ConfirmedPriceSnapshot.create(priceSnapshot);
     if (snapshot.isErr()) throw snapshot.error;
     return toRentalDetailPricing(snapshot.value.snapshot);
+  }
+
+  private resolveAcceptedDelivery(acceptedDeliverySnapshot: unknown): GetRentalDetailResponseDto['acceptedDelivery'] {
+    if (acceptedDeliverySnapshot === null) return null;
+    const snapshot = AcceptedDeliverySnapshot.create(acceptedDeliverySnapshot);
+    if (snapshot.isErr()) throw snapshot.error;
+    return snapshot.value.snapshot;
   }
 }

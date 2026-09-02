@@ -28,6 +28,39 @@ export const GetRentalDetailDeliveryDetailsSchema = z.object({
 	notes: z.string().nullable(),
 });
 
+export const GetRentalDetailAcceptedDeliveryLocationSchema = z.object({
+	formattedAddress: z.string(),
+	latitude: z.number(),
+	longitude: z.number(),
+	addressLine1: z.string().optional(),
+	addressLine2: z.string().optional(),
+	city: z.string().optional(),
+	state: z.string().optional(),
+	postalCode: z.string().optional(),
+	country: z.string().optional(),
+	providerPlaceId: z.string().optional(),
+});
+
+export const GetRentalDetailAcceptedDeliveryLegSchema = z.object({
+	scheduledAt: z.string().datetime(),
+	serviceLevel: z.enum(["NORMAL", "SPECIAL"]),
+	basePrice: z.string(),
+	surcharge: z.string(),
+	total: z.string(),
+});
+
+export const GetRentalDetailAcceptedDeliverySchema = z.object({
+	schema: z.literal("v2.accepted-delivery"),
+	version: z.literal(1),
+	resolvedCustomerLocation: GetRentalDetailAcceptedDeliveryLocationSchema,
+	distanceMeters: z.number().int().nonnegative(),
+	delivery: GetRentalDetailAcceptedDeliveryLegSchema,
+	collection: GetRentalDetailAcceptedDeliveryLegSchema,
+	currency: z.string(),
+	deliveryTotal: z.string(),
+	transportReservationMinutes: z.number().int().nonnegative(),
+});
+
 export const GetRentalDetailAssignedAssetSchema = z.object({
 	assetId: z.string(),
 });
@@ -223,6 +256,8 @@ export const GetRentalDetailResponseSchema = z.object({
 	selections: z.array(GetRentalDetailSelectionSchema),
 	accessories: z.array(GetRentalDetailAccessorySchema),
 	pricing: GetRentalDetailPricingSchema.nullable(),
+	acceptedCustomerTotal: z.string().nullable(),
+	acceptedDelivery: GetRentalDetailAcceptedDeliverySchema.nullable(),
 	ownerPayouts: z.array(GetRentalDetailOwnerPayoutSchema),
 });
 
@@ -234,6 +269,15 @@ export type GetRentalDetailPeriodDto = z.infer<
 >;
 export type GetRentalDetailDeliveryDetailsDto = z.infer<
 	typeof GetRentalDetailDeliveryDetailsSchema
+>;
+export type GetRentalDetailAcceptedDeliveryLocationDto = z.infer<
+	typeof GetRentalDetailAcceptedDeliveryLocationSchema
+>;
+export type GetRentalDetailAcceptedDeliveryLegDto = z.infer<
+	typeof GetRentalDetailAcceptedDeliveryLegSchema
+>;
+export type GetRentalDetailAcceptedDeliveryDto = z.infer<
+	typeof GetRentalDetailAcceptedDeliverySchema
 >;
 export type GetRentalDetailAssignedAssetDto = z.infer<
 	typeof GetRentalDetailAssignedAssetSchema
