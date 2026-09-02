@@ -39,7 +39,7 @@ type RentalReadModel = {
   version: number;
   acceptedBeforeBufferMinutes: number | null;
   acceptedAfterBufferMinutes: number | null;
-  acceptedDeliverySnapshot: unknown | null;
+  deliverySnapshot: unknown | null;
 };
 
 type ExistingSelection = {
@@ -92,7 +92,7 @@ export class AssignRentalAccessoriesHandler implements ICommandHandler<
         version: true,
         acceptedBeforeBufferMinutes: true,
         acceptedAfterBufferMinutes: true,
-        acceptedDeliverySnapshot: true,
+        deliverySnapshot: true,
       },
     });
 
@@ -135,7 +135,7 @@ export class AssignRentalAccessoriesHandler implements ICommandHandler<
       participationPeriod: new RentalPeriod(participationStart, rental.periodEnd),
       acceptedBeforeBufferMinutes: acceptedAssetBuffer.beforeBufferMinutes,
       acceptedAfterBufferMinutes: acceptedAssetBuffer.afterBufferMinutes,
-      acceptedDelivery: this.resolveAcceptedDelivery(rental.acceptedDeliverySnapshot),
+      acceptedDelivery: this.resolveAcceptedDelivery(rental.deliverySnapshot),
       ...(operationTime >= rental.periodStart ? { clampStartAt: operationTime } : {}),
     });
 

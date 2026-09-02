@@ -50,7 +50,7 @@ export class GetRentalAccessoryDefaultsHandler implements IQueryHandler<
         periodEnd: true,
         acceptedBeforeBufferMinutes: true,
         acceptedAfterBufferMinutes: true,
-        acceptedDeliverySnapshot: true,
+        deliverySnapshot: true,
         demandLines: {
           where: { removedAt: null },
           select: { id: true, equipmentTypeId: true, equipmentTypeNameSnapshot: true, quantity: true },
@@ -94,7 +94,7 @@ export class GetRentalAccessoryDefaultsHandler implements IQueryHandler<
           participationPeriod,
           acceptedBeforeBufferMinutes: buffer.beforeBufferMinutes,
           acceptedAfterBufferMinutes: buffer.afterBufferMinutes,
-          acceptedDelivery: this.resolveAcceptedDelivery(rental.acceptedDeliverySnapshot),
+          acceptedDelivery: this.resolveAcceptedDelivery(rental.deliverySnapshot),
           ...(clampStartAt ? { clampStartAt } : {}),
         })
       : deriveBufferedAssetBlockPeriod({

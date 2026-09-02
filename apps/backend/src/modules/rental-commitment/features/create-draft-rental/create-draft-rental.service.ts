@@ -18,6 +18,7 @@ import { TenantBillingPreferences } from 'src/modules/tenant-management/public-a
 import { ProspectiveRentalCostService } from '../../application/prospective-rental-cost.service';
 import { RentalOperationalFactsValidatorService } from '../../application/rental-operational-facts-validator.service';
 
+import { acceptedDeliverySnapshotFromQuote } from '../../application/accepted-delivery-snapshot.adapter';
 import { adaptPricingCalculationToSnapshot } from '../../application/accepted-pricing/adapt-pricing-calculation-to-snapshot';
 import { toRentalSelectionKind } from '../../application/catalog-selection-kind.mapper';
 import { resolveEquipmentTypeNames } from '../../application/equipment-type-display-facts';
@@ -195,6 +196,9 @@ export class CreateDraftRentalService implements ICommandHandler<
       );
     }
     const prospectivePricing = prospectiveResult.value.pricing;
+    const deliverySnapshot = prospectiveResult.value.deliveryQuote
+      ? acceptedDeliverySnapshotFromQuote(prospectiveResult.value.deliveryQuote)
+      : undefined;
 
     const equipmentDemandLines = rentalSelectionsDraft.flatMap((selection) =>
       selection.fulfillmentRequirements.map((requirement) => ({
@@ -222,6 +226,7 @@ export class CreateDraftRentalService implements ICommandHandler<
             fulfillmentMethod === FulfillmentMethod.Delivery && command.deliveryDetails
               ? { address: command.deliveryDetails.address }
               : undefined,
+          deliverySnapshot,
           period: command.period,
           priceSnapshot: adaptPricingCalculationToSnapshot({
             result: prospectivePricing,

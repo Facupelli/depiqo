@@ -37,7 +37,7 @@ export class GetRentalDetailHandler implements IQueryHandler<GetRentalDetailQuer
         periodStart: true,
         periodEnd: true,
         priceSnapshot: true,
-        acceptedDeliverySnapshot: true,
+        deliverySnapshot: true,
         acceptedCustomerTotal: true,
         version: true,
         createdAt: true,
@@ -161,7 +161,7 @@ export class GetRentalDetailHandler implements IQueryHandler<GetRentalDetailQuer
       })),
       pricing: this.resolvePricing(rental.priceSnapshot),
       acceptedCustomerTotal: rental.confirmedAt ? (rental.acceptedCustomerTotal?.toString() ?? null) : null,
-      acceptedDelivery: rental.confirmedAt ? this.resolveAcceptedDelivery(rental.acceptedDeliverySnapshot) : null,
+      acceptedDelivery: rental.confirmedAt ? this.resolveAcceptedDelivery(rental.deliverySnapshot) : null,
       ownerPayouts,
     });
   }
@@ -245,9 +245,9 @@ export class GetRentalDetailHandler implements IQueryHandler<GetRentalDetailQuer
     return toRentalDetailPricing(snapshot.value.snapshot);
   }
 
-  private resolveAcceptedDelivery(acceptedDeliverySnapshot: unknown): GetRentalDetailResponseDto['acceptedDelivery'] {
-    if (acceptedDeliverySnapshot === null) return null;
-    const snapshot = AcceptedDeliverySnapshot.create(acceptedDeliverySnapshot);
+  private resolveAcceptedDelivery(deliverySnapshot: unknown): GetRentalDetailResponseDto['acceptedDelivery'] {
+    if (deliverySnapshot === null) return null;
+    const snapshot = AcceptedDeliverySnapshot.create(deliverySnapshot);
     if (snapshot.isErr()) throw snapshot.error;
     return snapshot.value.snapshot;
   }

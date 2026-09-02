@@ -79,7 +79,7 @@ interface RentalProps {
   deliveryDetails?: RentalDeliveryDetails;
   priceSnapshot?: JsonSnapshot;
   confirmedPriceSnapshot?: ConfirmedPriceSnapshot;
-  acceptedDelivery?: AcceptedDeliverySnapshot;
+  deliverySnapshot?: AcceptedDeliverySnapshot;
   acceptedCustomerTotal?: string;
   acceptedAssetBuffer?: AcceptedRentalAssetBuffer;
   selections: RentalSelection[];
@@ -167,6 +167,7 @@ export interface CreatePendingRentalProps extends CreateRentalBaseProps {
 
 export interface CreateDraftRentalProps extends CreateRentalBaseProps {
   priceSnapshot?: JsonValue;
+  deliverySnapshot?: JsonValue;
 }
 
 export interface CreateConfirmedRentalProps extends Omit<CreateRentalBaseProps, 'demandLines'> {
@@ -195,7 +196,7 @@ export interface ReconstituteRentalProps {
   deliveryDetails?: RentalDeliveryDetails;
   priceSnapshot?: JsonValue;
   confirmedPriceSnapshot?: JsonValue;
-  acceptedDelivery?: JsonValue;
+  deliverySnapshot?: JsonValue;
   acceptedCustomerTotal?: string;
   acceptedAssetBuffer?: AcceptedRentalAssetBuffer;
   selections: RentalSelection[];
@@ -235,7 +236,7 @@ interface CreateRentalFromEntitiesProps {
   deliveryDetails?: RentalDeliveryDetails;
   priceSnapshot?: JsonSnapshot;
   confirmedPriceSnapshot?: ConfirmedPriceSnapshot;
-  acceptedDelivery?: AcceptedDeliverySnapshot;
+  deliverySnapshot?: AcceptedDeliverySnapshot;
   acceptedCustomerTotal?: string;
   acceptedAssetBuffer?: AcceptedRentalAssetBuffer;
   selections: RentalSelection[];
@@ -315,8 +316,12 @@ export class Rental extends AggregateRootBase {
     return this.props.confirmedPriceSnapshot;
   }
 
+  get deliverySnapshot(): AcceptedDeliverySnapshot | undefined {
+    return this.props.deliverySnapshot;
+  }
+
   get acceptedDelivery(): AcceptedDeliverySnapshot | undefined {
-    return this.props.acceptedDelivery;
+    return this.props.deliverySnapshot;
   }
 
   get acceptedCustomerTotal(): string | undefined {
@@ -419,10 +424,18 @@ export class Rental extends AggregateRootBase {
       return err(demandLines.error);
     }
 
+    let deliverySnapshot: AcceptedDeliverySnapshot | undefined;
+    if (props.deliverySnapshot !== undefined) {
+      const snapshot = AcceptedDeliverySnapshot.create(props.deliverySnapshot);
+      if (snapshot.isErr()) return err(snapshot.error);
+      deliverySnapshot = snapshot.value;
+    }
+
     return this.createFromEntities(RentalStatus.Draft, {
       ...props,
       id: rentalId,
       priceSnapshot: props.priceSnapshot === undefined ? undefined : new JsonSnapshot(props.priceSnapshot),
+      deliverySnapshot,
       selections: selections.value,
       demandLines: demandLines.value,
       assignedAssets: [],
@@ -495,7 +508,7 @@ export class Rental extends AggregateRootBase {
       ...props,
       id: rentalId,
       confirmedPriceSnapshot: confirmedPriceSnapshot.value,
-      acceptedDelivery,
+      deliverySnapshot: acceptedDelivery,
       acceptedCustomerTotal,
       acceptedAssetBuffer: props.acceptedAssetBuffer,
       selections: selections.value,
@@ -527,18 +540,18 @@ export class Rental extends AggregateRootBase {
       confirmedPriceSnapshot = snapshot.value;
     }
 
-    let acceptedDelivery: AcceptedDeliverySnapshot | undefined;
-    if (props.acceptedDelivery !== undefined) {
-      const snapshot = AcceptedDeliverySnapshot.create(props.acceptedDelivery);
+    let deliverySnapshot: AcceptedDeliverySnapshot | undefined;
+    if (props.deliverySnapshot !== undefined) {
+      const snapshot = AcceptedDeliverySnapshot.create(props.deliverySnapshot);
       if (snapshot.isErr()) return err(snapshot.error);
-      acceptedDelivery = snapshot.value;
+      deliverySnapshot = snapshot.value;
     }
 
     return this.createFromEntities(props.status, {
       ...props,
       priceSnapshot: props.priceSnapshot === undefined ? undefined : new JsonSnapshot(props.priceSnapshot),
       confirmedPriceSnapshot,
-      acceptedDelivery,
+      deliverySnapshot,
       acceptedCustomerTotal: props.acceptedCustomerTotal,
       acceptedAssetBuffer: props.acceptedAssetBuffer,
       selections: [...props.selections],
@@ -668,7 +681,7 @@ export class Rental extends AggregateRootBase {
       rentalId: this.id,
       period: new RentalPeriod(effectiveAt, this.period.end),
       acceptedAssetBuffer,
-      acceptedDelivery: this.props.acceptedDelivery,
+      acceptedDelivery: this.props.deliverySnapshot,
       assignedAssets: assignedAssets.value,
       operationTime: params.operationTime,
     });
@@ -733,7 +746,7 @@ export class Rental extends AggregateRootBase {
         effectiveAt,
         rentalStart: this.period.start,
         acceptedAssetBuffer,
-        acceptedDelivery: this.props.acceptedDelivery,
+        acceptedDelivery: this.props.deliverySnapshot,
       });
       if (releasedParticipation.isErr()) return err(releasedParticipation.error);
 
@@ -844,7 +857,7 @@ export class Rental extends AggregateRootBase {
         rentalId: this.id,
         period: new RentalPeriod(effectiveAt, this.period.end),
         acceptedAssetBuffer,
-        acceptedDelivery: this.props.acceptedDelivery,
+        acceptedDelivery: this.props.deliverySnapshot,
         assignedAssets: additions.value,
         operationTime: params.operationTime,
       });
@@ -864,7 +877,7 @@ export class Rental extends AggregateRootBase {
           effectiveAt,
           rentalStart: this.period.start,
           acceptedAssetBuffer,
-          acceptedDelivery: this.props.acceptedDelivery,
+          acceptedDelivery: this.props.deliverySnapshot,
         });
         if (releasedParticipation.isErr()) return err(releasedParticipation.error);
 
@@ -939,7 +952,7 @@ export class Rental extends AggregateRootBase {
         participationPeriod: new RentalPeriod(effectiveAt, this.period.end),
         acceptedBeforeBufferMinutes: acceptedAssetBuffer.beforeBufferMinutes,
         acceptedAfterBufferMinutes: acceptedAssetBuffer.afterBufferMinutes,
-        acceptedDelivery: this.props.acceptedDelivery,
+        acceptedDelivery: this.props.deliverySnapshot,
         clampStartAt: params.operationTime,
       }),
       blockType: AssetBlockType.Equipment,
@@ -963,7 +976,7 @@ export class Rental extends AggregateRootBase {
       effectiveAt,
       rentalStart: this.period.start,
       acceptedAssetBuffer,
-      acceptedDelivery: this.props.acceptedDelivery,
+      acceptedDelivery: this.props.deliverySnapshot,
     });
     if (releasedParticipation.isErr()) return err(releasedParticipation.error);
 
@@ -1118,7 +1131,7 @@ export class Rental extends AggregateRootBase {
 
     this.props.status = RentalStatus.Confirmed;
     this.props.confirmedPriceSnapshot = confirmedPriceSnapshot.value;
-    this.props.acceptedDelivery = acceptedDelivery;
+    this.props.deliverySnapshot = acceptedDelivery;
     this.props.acceptedCustomerTotal = new Decimal(confirmedPriceSnapshot.value.snapshot.total)
       .plus(acceptedDelivery?.snapshot.deliveryTotal ?? 0)
       .toString();
@@ -1134,7 +1147,7 @@ export class Rental extends AggregateRootBase {
   private applyConfirmedStateChanges(changes: ConfirmedRentalStateChanges): Result<void, RentalCommitmentError> {
     const acceptedCustomerTotal = changes.confirmedPriceSnapshot
       ? new Decimal(changes.confirmedPriceSnapshot.snapshot.total)
-          .plus(this.props.acceptedDelivery?.snapshot.deliveryTotal ?? 0)
+          .plus(this.props.deliverySnapshot?.snapshot.deliveryTotal ?? 0)
           .toString()
       : this.props.acceptedCustomerTotal;
     const candidate = Rental.createFromEntities(this.status, {
@@ -1283,8 +1296,12 @@ export class Rental extends AggregateRootBase {
   }
 
   private validateUnconfirmedInvariants(): Result<void, RentalCommitmentError> {
-    if (this.props.acceptedDelivery || this.props.acceptedCustomerTotal !== undefined) {
-      return err(new RentalInvalidFieldError('acceptedDelivery', 'unconfirmed rentals cannot have accepted facts'));
+    if (this.props.acceptedCustomerTotal !== undefined) {
+      return err(new RentalInvalidFieldError('acceptedCustomerTotal', 'unconfirmed rentals cannot have accepted facts'));
+    }
+
+    if (this.fulfillmentMethod === FulfillmentMethod.Pickup && this.props.deliverySnapshot) {
+      return err(new RentalInvalidFieldError('deliverySnapshot', 'Pickup rentals cannot have a Delivery snapshot'));
     }
 
     if (this.props.assignedAssets.length > 0) {
@@ -1315,7 +1332,7 @@ export class Rental extends AggregateRootBase {
       assignedAssets: this.props.assignedAssets,
       assetBlocks: this.props.assetBlocks,
       acceptedAssetBuffer,
-      acceptedDelivery: this.props.acceptedDelivery,
+      acceptedDelivery: this.props.deliverySnapshot,
       period: this.period,
     });
   }
@@ -1334,18 +1351,18 @@ export class Rental extends AggregateRootBase {
         ),
       );
     }
-    if (this.fulfillmentMethod === FulfillmentMethod.Delivery && !this.props.acceptedDelivery) {
+    if (this.fulfillmentMethod === FulfillmentMethod.Delivery && !this.props.deliverySnapshot) {
       return err(
         new RentalInvalidFieldError('acceptedDelivery', 'confirmed Delivery rentals require an accepted snapshot'),
       );
     }
-    if (this.fulfillmentMethod === FulfillmentMethod.Pickup && this.props.acceptedDelivery) {
+    if (this.fulfillmentMethod === FulfillmentMethod.Pickup && this.props.deliverySnapshot) {
       return err(
         new RentalInvalidFieldError('acceptedDelivery', 'Pickup rentals cannot have an accepted Delivery snapshot'),
       );
     }
     const pricing = this.props.confirmedPriceSnapshot.snapshot;
-    const delivery = this.props.acceptedDelivery?.snapshot;
+    const delivery = this.props.deliverySnapshot?.snapshot;
     if (delivery && pricing.final.currency !== delivery.currency) {
       return err(new RentalInvalidFieldError('acceptedDelivery.currency', 'must match accepted Pricing currency'));
     }
@@ -1612,7 +1629,7 @@ export class Rental extends AggregateRootBase {
       deliveryDetails: props.deliveryDetails,
       priceSnapshot: props.priceSnapshot,
       confirmedPriceSnapshot: props.confirmedPriceSnapshot,
-      acceptedDelivery: props.acceptedDelivery,
+      deliverySnapshot: props.deliverySnapshot,
       acceptedCustomerTotal: props.acceptedCustomerTotal,
       acceptedAssetBuffer: props.acceptedAssetBuffer ? { ...props.acceptedAssetBuffer } : undefined,
       selections: [...props.selections],

@@ -35,7 +35,7 @@ export interface RentalPersistenceRecord {
   status: string;
   acceptedBeforeBufferMinutes: number | null;
   acceptedAfterBufferMinutes: number | null;
-  acceptedDeliverySnapshot: Prisma.JsonValue | null;
+  deliverySnapshot: Prisma.JsonValue | null;
   acceptedCustomerTotal: Prisma.Decimal | null;
   fulfillmentMethod: string;
   notes: string | null;
@@ -132,7 +132,7 @@ export class RentalMapper {
       deliveryDetails: record.deliveryDetails ? this.toDeliveryDetailsDomain(record.deliveryDetails) : undefined,
       priceSnapshot: wasConfirmed ? undefined : rawPriceSnapshot,
       confirmedPriceSnapshot: wasConfirmed ? rawPriceSnapshot : undefined,
-      acceptedDelivery: (record.acceptedDeliverySnapshot as JsonValue | null) ?? undefined,
+      deliverySnapshot: (record.deliverySnapshot as JsonValue | null) ?? undefined,
       acceptedCustomerTotal: record.acceptedCustomerTotal?.toString(),
       acceptedAssetBuffer,
       selections: record.selections.map((selection) =>
@@ -230,7 +230,7 @@ export class RentalMapper {
       confirmationFingerprint: confirmationOperation?.fingerprint,
       acceptedBeforeBufferMinutes: rental.acceptedAssetBuffer?.beforeBufferMinutes,
       acceptedAfterBufferMinutes: rental.acceptedAssetBuffer?.afterBufferMinutes,
-      acceptedDeliverySnapshot: toPrismaJsonInput(rental.acceptedDelivery?.toJSON()),
+      deliverySnapshot: toPrismaJsonInput(rental.deliverySnapshot?.toJSON()),
       acceptedCustomerTotal: rental.acceptedCustomerTotal,
     };
   }
@@ -252,7 +252,7 @@ export class RentalMapper {
       confirmedAt: rental.confirmedAt,
       acceptedBeforeBufferMinutes: rental.acceptedAssetBuffer?.beforeBufferMinutes,
       acceptedAfterBufferMinutes: rental.acceptedAssetBuffer?.afterBufferMinutes,
-      acceptedDeliverySnapshot: toPrismaJsonInput(rental.acceptedDelivery?.toJSON()),
+      deliverySnapshot: toPrismaJsonInput(rental.deliverySnapshot?.toJSON()),
       acceptedCustomerTotal: rental.acceptedCustomerTotal,
     };
   }

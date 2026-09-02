@@ -1,4 +1,4 @@
-import type { DeliveryQuote } from '../domain/delivery-quote.types';
+import type { DeliveryQuote, ResolvedCustomerLocation } from '../domain/delivery-quote.types';
 
 export type {
   DeliveryQuote,
@@ -7,10 +7,14 @@ export type {
   ResolvedCustomerLocation,
 } from '../domain/delivery-quote.types';
 
-export interface CustomerLocationSelection {
-  address: string;
-  locationId?: string;
-}
+export type CustomerLocationSelection =
+  | {
+      address: string;
+      locationId?: string;
+    }
+  | {
+      resolvedLocation: ResolvedCustomerLocation;
+    };
 
 export interface GetDeliveryQuoteInput {
   tenantId: string;
