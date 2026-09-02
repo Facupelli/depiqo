@@ -88,29 +88,16 @@ export class DeliveryQuoteServiceImpl extends DeliveryQuoteService {
 
   private async resolveCustomerLocation(
     input: GetDeliveryQuoteInput,
-  ): Promise<
-    | ResolvedCustomerLocation
-    | { reason: 'CUSTOMER_LOCATION_UNRESOLVED' | 'CUSTOMER_LOCATION_AMBIGUOUS' }
-  > {
+  ): Promise<ResolvedCustomerLocation | { reason: 'CUSTOMER_LOCATION_UNRESOLVED' }> {
     if ('resolvedLocation' in input.customerLocation) {
       return input.customerLocation.resolvedLocation;
     }
 
-    const locationId = input.customerLocation.locationId?.trim();
-    if (locationId) {
-      const location = await this.addressGeocoder.resolve({ locationId });
-      return location ? this.toResolvedCustomerLocation(location) : { reason: 'CUSTOMER_LOCATION_UNRESOLVED' };
-    }
+    const locationId = input.customerLocation.locationId.trim();
+    if (!locationId) return { reason: 'CUSTOMER_LOCATION_UNRESOLVED' };
 
-    const result = await this.addressGeocoder.geocode({ address: input.customerLocation.address });
-    if (result.outcome === 'UNRESOLVED') {
-      return { reason: 'CUSTOMER_LOCATION_UNRESOLVED' };
-    }
-    if (result.outcome === 'AMBIGUOUS') {
-      return { reason: 'CUSTOMER_LOCATION_AMBIGUOUS' };
-    }
-
-    return this.toResolvedCustomerLocation(result.location);
+    const location = await this.addressGeocoder.resolve({ locationId });
+    return location ? this.toResolvedCustomerLocation(location) : { reason: 'CUSTOMER_LOCATION_UNRESOLVED' };
   }
 
   private toResolvedCustomerLocation(location: GeocodedLocation): ResolvedCustomerLocation {

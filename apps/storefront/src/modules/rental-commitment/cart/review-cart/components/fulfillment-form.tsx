@@ -106,7 +106,6 @@ function getDeliveryUnavailableMessage(
 ): string {
 	switch (reason) {
 		case "CUSTOMER_LOCATION_UNRESOLVED":
-		case "CUSTOMER_LOCATION_AMBIGUOUS":
 			return "No pudimos encontrar esa dirección. Revisala e intentá nuevamente.";
 		case "BEYOND_MAX_DISTANCE":
 			return "La dirección está fuera de nuestra zona de entrega.";

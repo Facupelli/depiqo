@@ -9,7 +9,7 @@ export interface CreateConfirmedRentalOfferSelectionCommand {
 
 export interface CreateConfirmedRentalDeliveryDetailsCommand {
   address: string;
-  locationId?: string;
+  locationId: string;
 }
 
 export class CreateConfirmedRentalCommand {

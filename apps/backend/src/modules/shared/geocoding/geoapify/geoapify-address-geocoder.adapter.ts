@@ -3,23 +3,11 @@ import { Injectable } from '@nestjs/common';
 import {
   AddressGeocoder,
   AddressSuggestion,
-  GeocodeAddressInput,
   ResolveAddressInput,
   SearchAddressesInput,
 } from '../address-geocoder.port';
-import {
-  AddressGeocodingResult,
-  GeocodedLocation,
-} from '../geocoded-location';
+import { GeocodedLocation } from '../geocoded-location';
 import { GeoapifyGeocodingHttpClient } from './geoapify-geocoding-http.client';
-
-const ACCEPT_CONFIDENCE = 0.95;
-const DECLINE_CONFIDENCE = 0.2;
-
-interface GeoapifyRank {
-  confidence?: unknown;
-  match_type?: unknown;
-}
 
 interface GeoapifyGeocodingResult {
   address_line1?: unknown;
@@ -35,16 +23,10 @@ interface GeoapifyGeocodingResult {
   formatted?: unknown;
   result_type?: unknown;
   place_id?: unknown;
-  rank?: GeoapifyRank;
 }
 
 interface GeoapifyPlaceDetailsFeature {
   properties?: unknown;
-}
-
-interface Candidate {
-  location: GeocodedLocation;
-  confidence?: number;
 }
 
 @Injectable()
@@ -53,52 +35,6 @@ export class GeoapifyAddressGeocoderAdapter extends AddressGeocoder {
     private readonly httpClient: GeoapifyGeocodingHttpClient,
   ) {
     super();
-  }
-
-  async geocode(
-    input: GeocodeAddressInput,
-  ): Promise<AddressGeocodingResult> {
-    const url = new URL(
-      'https://api.geoapify.com/v1/geocode/search',
-    );
-
-    url.searchParams.set('text', input.address);
-    url.searchParams.set('format', 'json');
-    url.searchParams.set('limit', '2');
-    url.searchParams.set('lang', 'es');
-
-    // Avoid Geoapify biasing results by the backend server's IP country.
-    url.searchParams.set('bias', 'countrycode:none');
-
-    const body = await this.httpClient.getJson(url);
-    const candidates = this.readResults(body).map((result) =>
-      this.toCandidate(result),
-    );
-
-    if (candidates.length === 0) {
-      return { outcome: 'UNRESOLVED' };
-    }
-
-    const first = candidates[0];
-    const firstConfidence = first.confidence ?? 0;
-
-    if (firstConfidence < DECLINE_CONFIDENCE) {
-      return { outcome: 'UNRESOLVED' };
-    }
-
-    const second = candidates[1];
-
-    if (
-      firstConfidence >= ACCEPT_CONFIDENCE &&
-      (!second || (second.confidence ?? 0) < ACCEPT_CONFIDENCE)
-    ) {
-      return {
-        outcome: 'RESOLVED',
-        location: first.location,
-      };
-    }
-
-    return { outcome: 'AMBIGUOUS' };
   }
 
   async search(
@@ -203,15 +139,6 @@ export class GeoapifyAddressGeocoderAdapter extends AddressGeocoder {
     };
   }
 
-  private toCandidate(
-    result: GeoapifyGeocodingResult,
-  ): Candidate {
-    return {
-      location: this.toLocation(result),
-      confidence: this.readConfidence(result.rank),
-    };
-  }
-
   private toLocation(
     result: GeoapifyGeocodingResult,
     providerPlaceIdOverride?: string,
@@ -257,19 +184,6 @@ export class GeoapifyAddressGeocoderAdapter extends AddressGeocoder {
       country: this.optionalString(result.country),
       providerPlaceId,
     };
-  }
-
-  private readConfidence(rank: unknown): number | undefined {
-    if (!this.isRecord(rank)) return undefined;
-
-    const confidence = rank.confidence;
-
-    return typeof confidence === 'number' &&
-      Number.isFinite(confidence) &&
-      confidence >= 0 &&
-      confidence <= 1
-      ? confidence
-      : undefined;
   }
 
   private optionalString(value: unknown): string | undefined {

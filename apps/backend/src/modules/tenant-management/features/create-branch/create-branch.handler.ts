@@ -50,17 +50,6 @@ export class CreateBranchHandler implements ICommandHandler<
         ),
       );
     }
-    if (addressResolution.outcome === 'AMBIGUOUS') {
-      return err(
-        createBranchError(
-          'tenant_management.branch_address_ambiguous',
-          'The branch address resolved to multiple possible locations.',
-          undefined,
-          context,
-        ),
-      );
-    }
-
     const branch = Branch.create({
       tenantId: command.tenantId,
       name: command.name,

@@ -10,8 +10,3 @@ export interface GeocodedLocation {
   country?: string;
   providerPlaceId?: string;
 }
-
-export type AddressGeocodingResult =
-  | { outcome: 'RESOLVED'; location: GeocodedLocation }
-  | { outcome: 'UNRESOLVED' }
-  | { outcome: 'AMBIGUOUS' };

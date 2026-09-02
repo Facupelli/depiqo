@@ -10,7 +10,7 @@ export type {
 export type CustomerLocationSelection =
   | {
       address: string;
-      locationId?: string;
+      locationId: string;
     }
   | {
       resolvedLocation: ResolvedCustomerLocation;
@@ -30,7 +30,6 @@ export type DeliveryQuoteNonServiceabilityReason =
   | 'BRANCH_UNAVAILABLE'
   | 'BRANCH_LOCATION_MISSING'
   | 'CUSTOMER_LOCATION_UNRESOLVED'
-  | 'CUSTOMER_LOCATION_AMBIGUOUS'
   | 'NO_ROUTE'
   | 'BEYOND_MAX_DISTANCE'
   | 'DELIVERY_OUTSIDE_SERVICE_HOURS'

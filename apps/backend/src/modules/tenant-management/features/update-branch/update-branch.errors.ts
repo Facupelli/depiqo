@@ -4,8 +4,7 @@ export type UpdateBranchErrorCode =
   | 'tenant_management.branch_not_found'
   | 'tenant_management.branch_invalid_input'
   | 'tenant_management.branch_schedule_invalid_input'
-  | 'tenant_management.branch_address_unresolved'
-  | 'tenant_management.branch_address_ambiguous';
+  | 'tenant_management.branch_address_unresolved';
 
 export interface UpdateBranchError extends ApplicationError {
   code: UpdateBranchErrorCode;

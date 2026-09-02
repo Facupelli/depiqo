@@ -9,7 +9,7 @@ import {
 
 export const CreateDraftRentalDeliveryDetailsSchema = z.object({
   address: z.string().trim().min(1),
-  locationId: z.string().trim().min(1).optional(),
+  locationId: z.string().trim().min(1),
 });
 
 export const CreateDraftRentalManualPricingAdjustmentSchema = z.object({

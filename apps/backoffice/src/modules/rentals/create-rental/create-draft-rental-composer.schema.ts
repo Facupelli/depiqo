@@ -204,6 +204,14 @@ export function toCreateDraftRentalDto(
 	timezone: string,
 ): CreateDraftRentalBodyDto {
 	const deliveryDetails = values.deliveryDetails;
+	const locationId = deliveryDetails.locationId?.trim();
+	if (
+		values.fulfillmentMethod === "DELIVERY" &&
+		(!deliveryDetails.address.trim() || !locationId)
+	) {
+		throw new Error("Delivery requires a complete selected address");
+	}
+
 	const dto = {
 		branchId: values.branchId,
 		rentalCustomerId: emptyToUndefined(values.rentalCustomerId),
@@ -214,7 +222,7 @@ export function toCreateDraftRentalDto(
 			values.fulfillmentMethod === "DELIVERY"
 				? {
 						address: deliveryDetails.address,
-						locationId: deliveryDetails.locationId ?? undefined,
+						locationId,
 					}
 				: undefined,
 		insuranceSelected: values.insuranceSelected,

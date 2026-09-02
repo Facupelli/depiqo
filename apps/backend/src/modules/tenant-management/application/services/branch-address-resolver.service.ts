@@ -10,8 +10,7 @@ export type BranchAddressResolution =
       address: string | null;
       operationalLocation: BranchOperationalLocationProps | null;
     }
-  | { outcome: 'UNRESOLVED' }
-  | { outcome: 'AMBIGUOUS' };
+  | { outcome: 'UNRESOLVED' };
 
 export interface ResolveBranchAddressInput {
   address: string | null;
@@ -53,10 +52,7 @@ export class BranchAddressResolver {
       };
     }
 
-    const result = await this.addressGeocoder.geocode({ address });
-    if (result.outcome !== 'RESOLVED') return result;
-
-    return this.resolvedLocation(address, result.location);
+    return { outcome: 'UNRESOLVED' };
   }
 
   private resolvedLocation(address: string, location: GeocodedLocation): BranchAddressResolution {

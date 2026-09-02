@@ -83,10 +83,4 @@ const createBranchProblemMap = {
     status: HttpStatus.UNPROCESSABLE_ENTITY,
     detail: 'The branch address could not be resolved.',
   },
-  'tenant_management.branch_address_ambiguous': {
-    type: createProblemType('tenant-management/branch-address-ambiguous'),
-    title: 'Branch address is ambiguous',
-    status: HttpStatus.UNPROCESSABLE_ENTITY,
-    detail: 'The branch address matches multiple possible locations.',
-  },
 } satisfies Record<CreateBranchErrorCode, { type: string; title: string; status: HttpStatus; detail: string }>;

@@ -5,7 +5,7 @@ export type ProspectiveCartCostSelectedOffer = {
 
 export type ProspectiveCartCostDeliveryDetails = {
   address: string;
-  locationId?: string;
+  locationId: string;
 };
 
 export class CalculateProspectiveCartCostQuery {

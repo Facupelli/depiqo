@@ -15,7 +15,7 @@ export interface CreateDraftRentalManualPricingAdjustmentCommand {
 
 export interface CreateDraftRentalDeliveryDetailsCommand {
   address: string;
-  locationId?: string;
+  locationId: string;
 }
 
 export class CreateDraftRentalCommand {

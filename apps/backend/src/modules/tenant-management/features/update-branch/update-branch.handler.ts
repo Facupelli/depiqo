@@ -65,17 +65,6 @@ export class UpdateBranchHandler implements ICommandHandler<
         ),
       );
     }
-    if (addressResolution.outcome === 'AMBIGUOUS') {
-      return err(
-        updateBranchError(
-          'tenant_management.branch_address_ambiguous',
-          'The branch address resolved to multiple possible locations.',
-          undefined,
-          context,
-        ),
-      );
-    }
-
     const update = branch.updateDetails({
       name: command.name,
       address: addressResolution.address,

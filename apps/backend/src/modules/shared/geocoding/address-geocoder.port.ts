@@ -1,11 +1,4 @@
-import {
-  AddressGeocodingResult,
-  GeocodedLocation,
-} from './geocoded-location';
-
-export interface GeocodeAddressInput {
-  address: string;
-}
+import { GeocodedLocation } from './geocoded-location';
 
 export type AddressSuggestion = {
   locationId: string;
@@ -23,8 +16,6 @@ export type ResolveAddressInput = {
 };
 
 export abstract class AddressGeocoder {
-  abstract geocode(input: GeocodeAddressInput): Promise<AddressGeocodingResult>;
-
   abstract search(
     input: SearchAddressesInput,
   ): Promise<readonly AddressSuggestion[]>;
