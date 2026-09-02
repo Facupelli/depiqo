@@ -3,14 +3,15 @@ import type {
 	CalculateCartPriceResponseDto,
 	GetPublicTenantConfigResponseDto,
 	GetStorefrontBranchDto,
+	ProspectiveCartCostResponseDto,
 } from "@repo/api-contracts";
 import { useNavigate } from "@tanstack/react-router";
 import { createContext, useContext, useMemo, useState } from "react";
-import { toCalculateCartPriceBody } from "@/modules/pricing/calculate-cart-price/calculate-cart-price.mapper";
-import { useCalculatedCartPrice } from "@/modules/pricing/calculate-cart-price/calculate-cart-price.queries";
 import { useStorefrontBranchScheduleSlots } from "@/modules/tenant-management/branches/branch-schedule.queries";
 import { useCartRentalOfferAvailability } from "../availability/cart-rental-offer-availability.queries";
 import type { GetCartRentalOfferAvailabilityInput } from "../availability/get-cart-rental-offer-availability.schema";
+import { toProspectiveCartCostBody } from "../prospective-cart-cost/prospective-cart-cost.mapper";
+import { useProspectiveCartCost } from "../prospective-cart-cost/prospective-cart-cost.queries";
 import { useRentalCartActions, useRentalCartItems } from "../rental-cart.hooks";
 import type {
 	DeliveryRequestField,
@@ -49,9 +50,22 @@ type AvailabilitySlice = {
 	isAvailabilityError: boolean;
 };
 
+type AvailableProspectiveCartCost = Extract<
+	ProspectiveCartCostResponseDto,
+	{ available: true }
+>;
+type UnavailableProspectiveCartCost = Extract<
+	ProspectiveCartCostResponseDto,
+	{ available: false }
+>;
+
 type PricingSlice = {
 	config: GetPublicTenantConfigResponseDto;
 	pricing?: CalculateCartPriceResponseDto;
+	delivery?: AvailableProspectiveCartCost["delivery"];
+	customerTotal?: string;
+	currency?: string;
+	deliveryNotServiceableReason?: UnavailableProspectiveCartCost["reason"];
 	isPriceLoading: boolean;
 	isPriceError: boolean;
 	insuranceSelected: boolean;
@@ -194,18 +208,6 @@ export function CartPageProvider({
 		availabilityQuery.isError,
 		availabilityQuery.isFetching,
 	]);
-	const body = toCalculateCartPriceBody({
-		branchId: branch.id,
-		periodStart: isPricingReady ? start : null,
-		periodEnd: isPricingReady ? end : null,
-		selectedOffers: items.map((item) => ({
-			rentalOfferId: item.rentalOfferId,
-			quantity: item.quantity,
-		})),
-		insuranceSelected,
-		couponCode: "",
-	});
-	const priceQuery = useCalculatedCartPrice(body);
 	const normalizedDeliveryRequest = normalizeDeliveryRequest(
 		deliveryRequest,
 		"DELIVERY",
@@ -213,6 +215,27 @@ export function CartPageProvider({
 	const hasConfirmedDeliveryAddress = isDeliveryRequestComplete(
 		normalizedDeliveryRequest,
 	);
+	const prospectiveCostBody = toProspectiveCartCostBody({
+		branchId: branch.id,
+		periodStart: isPricingReady ? pickupSlot?.instant : null,
+		periodEnd: isPricingReady ? returnSlot?.instant : null,
+		selectedOffers: items.map((item) => ({
+			rentalOfferId: item.rentalOfferId,
+			quantity: item.quantity,
+		})),
+		insuranceSelected,
+		couponCode: "",
+		fulfillmentMethod,
+		committedDeliveryDetails: deliveryRequest,
+	});
+	const prospectiveCostQuery = useProspectiveCartCost(prospectiveCostBody);
+	const availableProspectiveCost = prospectiveCostQuery.data?.available
+		? prospectiveCostQuery.data
+		: undefined;
+	const deliveryNotServiceableReason =
+		prospectiveCostQuery.data?.available === false
+			? prospectiveCostQuery.data.reason
+			: undefined;
 	const value = useMemo<CartPageValue>(
 		() => ({
 			cart: { items, actions },
@@ -251,9 +274,13 @@ export function CartPageProvider({
 			},
 			pricing: {
 				config,
-				pricing: priceQuery.data,
-				isPriceLoading: priceQuery.isFetching,
-				isPriceError: priceQuery.isError,
+				pricing: availableProspectiveCost?.pricing,
+				delivery: availableProspectiveCost?.delivery,
+				customerTotal: availableProspectiveCost?.customerTotal,
+				currency: availableProspectiveCost?.currency,
+				deliveryNotServiceableReason,
+				isPriceLoading: prospectiveCostQuery.isFetching,
+				isPriceError: prospectiveCostQuery.isError,
 				insuranceSelected,
 				setInsuranceSelected,
 			},
@@ -329,12 +356,13 @@ export function CartPageProvider({
 			returnSlot,
 			isPricingReady,
 			isPeriodInvalid,
-			priceQuery.data,
+			availableProspectiveCost,
+			deliveryNotServiceableReason,
 			availabilityQuery.isFetching,
 			availabilityQuery.isError,
 			availableCountByRentalOfferId,
-			priceQuery.isFetching,
-			priceQuery.isError,
+			prospectiveCostQuery.isFetching,
+			prospectiveCostQuery.isError,
 			insuranceSelected,
 			unavailableRentalOfferIds,
 			fulfillmentMethod,
