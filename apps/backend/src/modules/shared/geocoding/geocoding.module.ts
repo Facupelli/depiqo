@@ -1,14 +1,17 @@
 import { Module } from '@nestjs/common';
 
 import { AddressGeocoder } from './address-geocoder.port';
-import { MapboxAddressGeocoderAdapter } from './mapbox/mapbox-address-geocoder.adapter';
-import { MapboxGeocodingHttpClient } from './mapbox/mapbox-http.client';
+import { GeoapifyAddressGeocoderAdapter } from './geoapify/geoapify-address-geocoder.adapter';
+import { GeoapifyGeocodingHttpClient } from './geoapify/geoapify-geocoding-http.client';
 
 @Module({
   providers: [
-    MapboxGeocodingHttpClient,
-    MapboxAddressGeocoderAdapter,
-    { provide: AddressGeocoder, useExisting: MapboxAddressGeocoderAdapter },
+    GeoapifyGeocodingHttpClient,
+    GeoapifyAddressGeocoderAdapter,
+    {
+      provide: AddressGeocoder,
+      useExisting: GeoapifyAddressGeocoderAdapter,
+    },
   ],
   exports: [AddressGeocoder],
 })

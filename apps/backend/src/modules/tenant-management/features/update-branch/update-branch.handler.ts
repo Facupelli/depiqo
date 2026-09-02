@@ -67,6 +67,9 @@ export class UpdateBranchHandler implements ICommandHandler<
           ),
         );
       }
+
+			console.dir({addressResolution},{depth:null})
+
       if (addressResolution.outcome === 'AMBIGUOUS') {
         return err(
           updateBranchError(
