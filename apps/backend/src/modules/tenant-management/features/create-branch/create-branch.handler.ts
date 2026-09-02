@@ -36,7 +36,10 @@ export class CreateBranchHandler implements ICommandHandler<
       useCase: 'CreateBranch',
       tenantId: command.tenantId,
     };
-    const addressResolution = await this.branchAddressResolver.resolve(command.address);
+    const addressResolution = await this.branchAddressResolver.resolve({
+      address: command.address,
+      addressLocationId: command.addressLocationId,
+    });
     if (addressResolution.outcome === 'UNRESOLVED') {
       return err(
         createBranchError(

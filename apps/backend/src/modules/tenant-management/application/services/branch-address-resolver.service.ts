@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 
 import { AddressGeocoder } from '../../../shared/geocoding/address-geocoder.port';
+import type { GeocodedLocation } from '../../../shared/geocoding/geocoded-location';
 import { BranchOperationalLocationProps } from '../../domain/value-objects/branch-operational-location.value-object';
 
 export type BranchAddressResolution =
@@ -12,37 +13,67 @@ export type BranchAddressResolution =
   | { outcome: 'UNRESOLVED' }
   | { outcome: 'AMBIGUOUS' };
 
+export interface ResolveBranchAddressInput {
+  address: string | null;
+  addressLocationId?: string | null;
+  currentAddress?: string | null;
+  currentOperationalLocation?: BranchOperationalLocationProps | null;
+}
+
 @Injectable()
 export class BranchAddressResolver {
   constructor(private readonly addressGeocoder: AddressGeocoder) {}
 
-  normalize(address: string | null): string | null {
-    return address?.trim() || null;
+  normalize(value: string | null | undefined): string | null {
+    return value?.trim() || null;
   }
 
-  async resolve(address: string | null): Promise<BranchAddressResolution> {
-    const normalizedAddress = this.normalize(address);
-    if (normalizedAddress === null) {
+  async resolve(input: ResolveBranchAddressInput): Promise<BranchAddressResolution> {
+    const addressLocationId = this.normalize(input.addressLocationId);
+    if (addressLocationId !== null) {
+      const location = await this.addressGeocoder.resolve({ locationId: addressLocationId });
+      if (location === null) return { outcome: 'UNRESOLVED' };
+
+      return this.resolvedLocation(location.formattedAddress, location);
+    }
+
+    const address = this.normalize(input.address);
+    if (address === null) {
       return { outcome: 'RESOLVED', address: null, operationalLocation: null };
     }
 
-    const result = await this.addressGeocoder.geocode({ address: normalizedAddress });
+    if (
+      address === this.normalize(input.currentAddress) &&
+      input.currentOperationalLocation != null
+    ) {
+      return {
+        outcome: 'RESOLVED',
+        address,
+        operationalLocation: input.currentOperationalLocation,
+      };
+    }
+
+    const result = await this.addressGeocoder.geocode({ address });
     if (result.outcome !== 'RESOLVED') return result;
 
+    return this.resolvedLocation(address, result.location);
+  }
+
+  private resolvedLocation(address: string, location: GeocodedLocation): BranchAddressResolution {
     return {
       outcome: 'RESOLVED',
-      address: normalizedAddress,
+      address,
       operationalLocation: {
-        formattedAddress: result.location.formattedAddress,
-        latitude: result.location.latitude,
-        longitude: result.location.longitude,
-        street: result.location.street,
-        streetNumber: result.location.streetNumber,
-        city: result.location.city,
-        stateRegion: result.location.stateRegion,
-        postalCode: result.location.postalCode,
-        country: result.location.country,
-        providerPlaceId: result.location.providerPlaceId,
+        formattedAddress: location.formattedAddress,
+        latitude: location.latitude,
+        longitude: location.longitude,
+        street: location.street,
+        streetNumber: location.streetNumber,
+        city: location.city,
+        stateRegion: location.stateRegion,
+        postalCode: location.postalCode,
+        country: location.country,
+        providerPlaceId: location.providerPlaceId,
       },
     };
   }

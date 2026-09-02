@@ -41,6 +41,14 @@ export function toProspectiveCartCostBody(
 		return null;
 	}
 
+	const committedDeliveryDetails =
+		input.fulfillmentMethod === "DELIVERY" && deliveryDetails?.locationId
+			? {
+					address: deliveryDetails.address,
+					locationId: deliveryDetails.locationId,
+				}
+			: undefined;
+
 	const result = ProspectiveCartCostBodySchema.safeParse({
 		branchId: input.branchId,
 		rentalPeriod: {
@@ -51,10 +59,7 @@ export function toProspectiveCartCostBody(
 		insuranceSelected: input.insuranceSelected,
 		couponCode: input.couponCode.trim() || undefined,
 		fulfillmentMethod: input.fulfillmentMethod,
-		deliveryDetails:
-			input.fulfillmentMethod === "DELIVERY"
-				? (deliveryDetails ?? undefined)
-				: undefined,
+		deliveryDetails: committedDeliveryDetails,
 	});
 
 	return result.success ? result.data : null;

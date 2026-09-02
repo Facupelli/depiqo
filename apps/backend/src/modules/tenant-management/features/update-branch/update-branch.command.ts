@@ -16,6 +16,7 @@ export class UpdateBranchCommand {
   public readonly branchId: string;
   public readonly name: string;
   public readonly address: string | null;
+  public readonly addressLocationId: string | null;
   public readonly timezone: string | null;
   public readonly schedules: UpdateBranchScheduleCommandProps[];
 
@@ -24,6 +25,7 @@ export class UpdateBranchCommand {
     branchId: string;
     name: string;
     address: string | null;
+    addressLocationId: string | null;
     timezone: string | null;
     schedules: UpdateBranchScheduleCommandProps[];
   }) {
@@ -31,6 +33,7 @@ export class UpdateBranchCommand {
     this.branchId = props.branchId;
     this.name = props.name;
     this.address = props.address;
+    this.addressLocationId = props.addressLocationId;
     this.timezone = props.timezone;
     this.schedules = props.schedules;
   }

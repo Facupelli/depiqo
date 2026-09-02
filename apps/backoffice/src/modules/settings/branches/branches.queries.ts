@@ -2,6 +2,7 @@ import type {
 	GetBranchDetailResponseDto,
 	GetBranchesQueryDto,
 	GetBranchesResponseDto,
+	SearchBranchAddressSuggestionsResponseDto,
 } from "@repo/api-contracts";
 import {
 	queryOptions,
@@ -9,6 +10,7 @@ import {
 	useQuery,
 } from "@tanstack/react-query";
 import type { ProblemDetailsError } from "@/shared/errors";
+import { searchBranchAddressSuggestions } from "./address-suggestions.api";
 import { getBranchDetail } from "./edit-branch/branch-detail.api";
 import { getBranches } from "./list-branches/list-branches.api";
 
@@ -23,6 +25,17 @@ export type BranchDetailQueryOverrides<TData = GetBranchDetailResponseDto> =
 		"queryKey" | "queryFn"
 	>;
 
+type AddressSuggestionsQueryOverrides<
+	TData = SearchBranchAddressSuggestionsResponseDto,
+> = Omit<
+	UseQueryOptions<
+		SearchBranchAddressSuggestionsResponseDto,
+		ProblemDetailsError,
+		TData
+	>,
+	"queryKey" | "queryFn"
+>;
+
 export const branchKeys = {
 	all: () => ["v2", "tenant-management", "branches"] as const,
 	lists: () => [...branchKeys.all(), "list"] as const,
@@ -30,6 +43,8 @@ export const branchKeys = {
 		[...branchKeys.lists(), query ?? {}] as const,
 	details: () => [...branchKeys.all(), "detail"] as const,
 	detail: (branchId?: string) => [...branchKeys.details(), branchId] as const,
+	addressSuggestions: (text: string) =>
+		[...branchKeys.all(), "address-suggestions", text] as const,
 };
 
 export const branchQueries = {
@@ -58,6 +73,20 @@ export const branchQueries = {
 			enabled: !!branchId,
 			...overrides,
 		}),
+	addressSuggestions: <TData = SearchBranchAddressSuggestionsResponseDto>(
+		text: string,
+		overrides?: AddressSuggestionsQueryOverrides<TData>,
+	) =>
+		queryOptions<
+			SearchBranchAddressSuggestionsResponseDto,
+			ProblemDetailsError,
+			TData
+		>({
+			queryKey: branchKeys.addressSuggestions(text),
+			queryFn: () => searchBranchAddressSuggestions(text),
+			enabled: text.trim().length >= 3,
+			...overrides,
+		}),
 };
 
 export function useBranches<TData = GetBranchesResponseDto>(
@@ -72,4 +101,10 @@ export function useBranchDetail<TData = GetBranchDetailResponseDto>(
 	overrides?: BranchDetailQueryOverrides<TData>,
 ) {
 	return useQuery(branchQueries.detail(branchId, overrides));
+}
+
+export function useBranchAddressSuggestions<
+	TData = SearchBranchAddressSuggestionsResponseDto,
+>(text: string, overrides?: AddressSuggestionsQueryOverrides<TData>) {
+	return useQuery(branchQueries.addressSuggestions(text, overrides));
 }

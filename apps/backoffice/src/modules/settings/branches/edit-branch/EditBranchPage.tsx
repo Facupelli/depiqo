@@ -114,7 +114,7 @@ export function EditBranchPage({
 			<BranchForm
 				formId={formId}
 				defaultValues={toUpdateBranchFormDefaults(branch)}
-				validator={updateBranchFormSchema}
+				validator={updateBranchFormSchema(branch)}
 				submitLabel="Guardar cambios"
 				isPending={isUpdatePending}
 				onSubmit={handleSubmit}

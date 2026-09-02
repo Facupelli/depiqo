@@ -205,7 +205,10 @@ export class CreateConfirmedRentalService implements ICommandHandler<
               fulfillmentMethod: 'DELIVERY',
               pricing: pricingRequest,
               branchId: command.branchId,
-              customerLocation: { address: deliveryDetails.address },
+              customerLocation: {
+                address: deliveryDetails.address,
+                locationId: deliveryDetails.locationId,
+              },
             })
           : null;
 
@@ -313,7 +316,9 @@ export class CreateConfirmedRentalService implements ICommandHandler<
           insuranceSelected: command.insuranceSelected,
           bookingSnapshot: command.bookingSnapshot,
           deliveryDetails:
-            command.fulfillmentMethod === FulfillmentMethod.Delivery ? command.deliveryDetails : undefined,
+            command.fulfillmentMethod === FulfillmentMethod.Delivery && command.deliveryDetails
+              ? { address: command.deliveryDetails.address }
+              : undefined,
           acceptedAssetBuffer,
           confirmedAt: operationTime,
           confirmedPriceSnapshot: adaptPricingCalculationToSnapshot({

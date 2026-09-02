@@ -1,0 +1,4 @@
+import type { SearchStorefrontDeliveryAddressSuggestionsResponseDto as ApiSearchStorefrontDeliveryAddressSuggestionsResponseDto } from '@repo/api-contracts';
+
+export type SearchStorefrontDeliveryAddressSuggestionsResponseDto =
+  ApiSearchStorefrontDeliveryAddressSuggestionsResponseDto;

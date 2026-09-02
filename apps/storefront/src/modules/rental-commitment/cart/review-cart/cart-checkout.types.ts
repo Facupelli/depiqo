@@ -1,10 +1,11 @@
-import type { CreateConfirmedRentalDeliveryDetailsDto } from "@repo/api-contracts";
-
 export type FulfillmentMethod = "PICKUP" | "DELIVERY";
 
 export type DeliveryRequestFormState = {
 	address: string;
+	locationId: string | null;
 };
 
-export type NormalizedDeliveryRequest =
-	CreateConfirmedRentalDeliveryDetailsDto | null;
+export type NormalizedDeliveryRequest = {
+	address: string;
+	locationId: string | null;
+} | null;

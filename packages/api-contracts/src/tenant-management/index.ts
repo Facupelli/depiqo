@@ -17,6 +17,7 @@ export * from "./get-current-tenant.contract";
 export * from "./get-public-tenant-config.contract";
 export * from "./register-tenant-with-owner.contract";
 export * from "./reject-submitted-customer-onboarding.contract";
+export * from "./search-branch-address-suggestions.contract";
 export * from "./submit-customer-profile.contract";
 export * from "./tenant-domain.contract";
 export * from "./tenant-context.contract";

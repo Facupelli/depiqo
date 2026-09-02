@@ -2,7 +2,10 @@ import { Injectable } from '@nestjs/common';
 
 import {
   AddressGeocoder,
+  AddressSuggestion,
   GeocodeAddressInput,
+  ResolveAddressInput,
+  SearchAddressesInput,
 } from '../address-geocoder.port';
 import {
   AddressGeocodingResult,
@@ -19,6 +22,8 @@ interface GeoapifyRank {
 }
 
 interface GeoapifyGeocodingResult {
+  address_line1?: unknown;
+  address_line2?: unknown;
   housenumber?: unknown;
   street?: unknown;
   city?: unknown;
@@ -31,6 +36,10 @@ interface GeoapifyGeocodingResult {
   result_type?: unknown;
   place_id?: unknown;
   rank?: GeoapifyRank;
+}
+
+interface GeoapifyPlaceDetailsFeature {
+  properties?: unknown;
 }
 
 interface Candidate {
@@ -56,6 +65,7 @@ export class GeoapifyAddressGeocoderAdapter extends AddressGeocoder {
     url.searchParams.set('text', input.address);
     url.searchParams.set('format', 'json');
     url.searchParams.set('limit', '2');
+    url.searchParams.set('lang', 'es');
 
     // Avoid Geoapify biasing results by the backend server's IP country.
     url.searchParams.set('bias', 'countrycode:none');
@@ -64,8 +74,6 @@ export class GeoapifyAddressGeocoderAdapter extends AddressGeocoder {
     const candidates = this.readResults(body).map((result) =>
       this.toCandidate(result),
     );
-
-		console.dir({body},{depth:null})
 
     if (candidates.length === 0) {
       return { outcome: 'UNRESOLVED' };
@@ -93,6 +101,50 @@ export class GeoapifyAddressGeocoderAdapter extends AddressGeocoder {
     return { outcome: 'AMBIGUOUS' };
   }
 
+  async search(
+    input: SearchAddressesInput,
+  ): Promise<readonly AddressSuggestion[]> {
+    const url = new URL(
+      'https://api.geoapify.com/v1/geocode/autocomplete',
+    );
+
+    url.searchParams.set('text', input.text);
+    url.searchParams.set('format', 'json');
+    url.searchParams.set('limit', '5');
+    url.searchParams.set('lang', 'es');
+    url.searchParams.set('bias', 'countrycode:none');
+
+    const body = await this.httpClient.getJson(url);
+
+    return this.readResults(body).map((result) =>
+      this.toSuggestion(result),
+    );
+  }
+
+  async resolve(
+    input: ResolveAddressInput,
+  ): Promise<GeocodedLocation | null> {
+    const url = new URL(
+      'https://api.geoapify.com/v2/place-details',
+    );
+
+    url.searchParams.set('id', input.locationId);
+    url.searchParams.set('lang', 'es');
+
+    const body = await this.httpClient.getJson(url);
+    const feature = this.readDetailsFeature(body);
+
+    if (!feature) return null;
+
+    if (!this.isRecord(feature.properties)) {
+      throw this.httpClient.malformedResponse(
+        'a place details feature has malformed properties.',
+      );
+    }
+
+    return this.toLocation(feature.properties, input.locationId);
+  }
+
   private readResults(body: unknown): GeoapifyGeocodingResult[] {
     if (!this.isRecord(body) || !Array.isArray(body.results)) {
       throw this.httpClient.malformedResponse(
@@ -103,9 +155,67 @@ export class GeoapifyAddressGeocoderAdapter extends AddressGeocoder {
     return body.results as GeoapifyGeocodingResult[];
   }
 
+  private readDetailsFeature(
+    body: unknown,
+  ): GeoapifyPlaceDetailsFeature | null {
+    if (!this.isRecord(body) || !Array.isArray(body.features)) {
+      throw this.httpClient.malformedResponse(
+        'features must be an array.',
+      );
+    }
+
+    if (body.features.length === 0) return null;
+
+    const feature: unknown = body.features[0];
+
+    if (!this.isRecord(feature)) {
+      throw this.httpClient.malformedResponse(
+        'a place details feature is malformed.',
+      );
+    }
+
+    return feature;
+  }
+
+  private toSuggestion(
+    result: GeoapifyGeocodingResult,
+  ): AddressSuggestion {
+    if (!this.isRecord(result)) {
+      throw this.httpClient.malformedResponse(
+        'an address suggestion is malformed.',
+      );
+    }
+
+    const locationId = this.optionalString(result.place_id);
+    const formattedAddress = this.optionalString(result.formatted);
+
+    if (!locationId || !formattedAddress) {
+      throw this.httpClient.malformedResponse(
+        'an address suggestion is missing its formatted address or identifier.',
+      );
+    }
+
+    return {
+      locationId,
+      formattedAddress,
+      addressLine1: this.optionalString(result.address_line1),
+      addressLine2: this.optionalString(result.address_line2),
+    };
+  }
+
   private toCandidate(
     result: GeoapifyGeocodingResult,
   ): Candidate {
+    return {
+      location: this.toLocation(result),
+      confidence: this.readConfidence(result.rank),
+    };
+  }
+
+  private toLocation(
+    result: GeoapifyGeocodingResult,
+    providerPlaceIdOverride?: string,
+  ): GeocodedLocation {
     if (!this.isRecord(result)) {
       throw this.httpClient.malformedResponse(
         'a geocoding result is malformed.',
@@ -125,7 +235,9 @@ export class GeoapifyAddressGeocoderAdapter extends AddressGeocoder {
     }
 
     const formattedAddress = this.optionalString(result.formatted);
-    const providerPlaceId = this.optionalString(result.place_id);
+    const providerPlaceId =
+      providerPlaceIdOverride ??
+      this.optionalString(result.place_id);
 
     if (!formattedAddress || !providerPlaceId) {
       throw this.httpClient.malformedResponse(
@@ -134,19 +246,16 @@ export class GeoapifyAddressGeocoderAdapter extends AddressGeocoder {
     }
 
     return {
-      location: {
-        formattedAddress,
-        latitude,
-        longitude,
-        street: this.optionalString(result.street),
-        streetNumber: this.optionalString(result.housenumber),
-        city: this.optionalString(result.city),
-        stateRegion: this.optionalString(result.state),
-        postalCode: this.optionalString(result.postcode),
-        country: this.optionalString(result.country),
-        providerPlaceId,
-      },
-      confidence: this.readConfidence(result.rank),
+      formattedAddress,
+      latitude,
+      longitude,
+      street: this.optionalString(result.street),
+      streetNumber: this.optionalString(result.housenumber),
+      city: this.optionalString(result.city),
+      stateRegion: this.optionalString(result.state),
+      postalCode: this.optionalString(result.postcode),
+      country: this.optionalString(result.country),
+      providerPlaceId,
     };
   }
 

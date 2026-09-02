@@ -9,6 +9,7 @@ export type {
 
 export interface CustomerLocationSelection {
   address: string;
+  locationId?: string;
 }
 
 export interface GetDeliveryQuoteInput {

@@ -1,4 +1,3 @@
-import { RentalDeliveryDetails } from '../../domain/rental.aggregate';
 import { FulfillmentMethod } from '../../domain/rental-status';
 import { BookingSnapshot } from '../../domain/value-objects/json-snapshot.value-object';
 import { RentalPeriod } from '../../domain/value-objects/rental-period.value-object';
@@ -6,6 +5,11 @@ import { RentalPeriod } from '../../domain/value-objects/rental-period.value-obj
 export interface CreateConfirmedRentalOfferSelectionCommand {
   rentalOfferId: string;
   quantity: number;
+}
+
+export interface CreateConfirmedRentalDeliveryDetailsCommand {
+  address: string;
+  locationId?: string;
 }
 
 export class CreateConfirmedRentalCommand {
@@ -18,7 +22,7 @@ export class CreateConfirmedRentalCommand {
   public readonly notes?: string;
   public readonly insuranceSelected?: boolean;
   public readonly bookingSnapshot?: BookingSnapshot;
-  public readonly deliveryDetails?: RentalDeliveryDetails;
+  public readonly deliveryDetails?: CreateConfirmedRentalDeliveryDetailsCommand;
   public readonly confirmationOperationId: string;
 
   constructor(props: {
@@ -31,7 +35,7 @@ export class CreateConfirmedRentalCommand {
     notes?: string;
     insuranceSelected?: boolean;
     bookingSnapshot?: BookingSnapshot;
-    deliveryDetails?: RentalDeliveryDetails;
+    deliveryDetails?: CreateConfirmedRentalDeliveryDetailsCommand;
     confirmationOperationId: string;
   }) {
     this.tenantId = props.tenantId;

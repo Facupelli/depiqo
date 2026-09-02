@@ -1,4 +1,5 @@
 import type {
+	AddressSuggestionDto,
 	BranchScheduleSlotDto,
 	CalculateCartPriceResponseDto,
 	GetPublicTenantConfigResponseDto,
@@ -88,6 +89,7 @@ type FulfillmentSlice = {
 	selectFulfillmentMethod: (value: FulfillmentMethod) => void;
 	setDeliverySheetOpen: (open: boolean) => void;
 	setDraftDeliveryAddress: (value: string) => void;
+	selectDraftDeliveryAddress: (suggestion: AddressSuggestionDto) => void;
 	confirmDeliveryRequest: () => void;
 };
 
@@ -320,7 +322,14 @@ export function CartPageProvider({
 					}
 				},
 				setDraftDeliveryAddress: (address) => {
-					setDraftDeliveryRequest({ address });
+					setDraftDeliveryRequest({ address, locationId: null });
+					setShowDeliveryError(false);
+				},
+				selectDraftDeliveryAddress: (suggestion) => {
+					setDraftDeliveryRequest({
+						address: suggestion.formattedAddress,
+						locationId: suggestion.locationId,
+					});
 					setShowDeliveryError(false);
 				},
 				confirmDeliveryRequest: () => {
@@ -328,11 +337,14 @@ export function CartPageProvider({
 						draftDeliveryRequest,
 						"DELIVERY",
 					);
-					if (!normalized?.address) {
+					if (!isDeliveryRequestComplete(normalized)) {
 						setShowDeliveryError(true);
 						return;
 					}
-					setDeliveryRequest({ address: normalized.address });
+					setDeliveryRequest({
+						address: normalized.address,
+						locationId: normalized.locationId,
+					});
 					setShowDeliveryError(false);
 					setIsDeliverySheetOpen(false);
 				},

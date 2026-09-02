@@ -5,7 +5,7 @@ import type {
 } from "./cart-checkout.types";
 
 export function createDeliveryRequestDefaultValues(): DeliveryRequestFormState {
-	return { address: "" };
+	return { address: "", locationId: null };
 }
 
 export function normalizeDeliveryRequest(
@@ -14,13 +14,16 @@ export function normalizeDeliveryRequest(
 ): NormalizedDeliveryRequest {
 	if (fulfillmentMethod !== "DELIVERY") return null;
 
-	return { address: deliveryRequest.address.trim() };
+	return {
+		address: deliveryRequest.address.trim(),
+		locationId: deliveryRequest.locationId,
+	};
 }
 
 export function isDeliveryRequestComplete(
 	deliveryRequest: NormalizedDeliveryRequest,
 ): boolean {
-	return Boolean(deliveryRequest?.address);
+	return Boolean(deliveryRequest?.address && deliveryRequest.locationId);
 }
 
 export function formatDeliveryAddressSummary(

@@ -24,6 +24,7 @@ import { CalendarIcon, Truck, Warehouse } from "lucide-react";
 import { withForm } from "@/shared/contexts/form.context";
 import { useDraftRentalComposer } from "../create-draft-rental-composer.context";
 import { createDraftRentalComposerDefaultValues } from "../create-draft-rental-composer.schema";
+import { DeliveryAddressAutocomplete } from "./delivery-address-autocomplete";
 import { RentalCustomerCombobox } from "./rental-customer-combobox";
 
 const TIME_OPTIONS = Array.from({ length: 24 }, (_, hour) => ({
@@ -266,38 +267,41 @@ const DeliveryFields = withForm({
 	defaultValues: createDraftRentalComposerDefaultValues(),
 	render: function Render({ form }) {
 		return (
-			<div className="grid gap-3 rounded-lg border bg-muted/20 p-3 md:grid-cols-2">
-				<form.Field name="deliveryDetails.addressLine1">
-					{(field) => (
-						<Field data-invalid={!field.state.meta.isValid}>
-							<FieldLabel htmlFor={field.name}>Dirección</FieldLabel>
-							<Input
-								id={field.name}
-								value={field.state.value}
-								onBlur={field.handleBlur}
-								onChange={(event) => field.handleChange(event.target.value)}
-							/>
-							{!field.state.meta.isValid && (
-								<FieldError errors={field.state.meta.errors} />
-							)}
-						</Field>
-					)}
-				</form.Field>
-				<form.Field name="deliveryDetails.city">
-					{(field) => (
-						<Field data-invalid={!field.state.meta.isValid}>
-							<FieldLabel htmlFor={field.name}>Ciudad</FieldLabel>
-							<Input
-								id={field.name}
-								value={field.state.value}
-								onBlur={field.handleBlur}
-								onChange={(event) => field.handleChange(event.target.value)}
-							/>
-							{!field.state.meta.isValid && (
-								<FieldError errors={field.state.meta.errors} />
-							)}
-						</Field>
-					)}
+			<div className="rounded-lg border bg-muted/20 p-3">
+				<form.Field name="deliveryDetails.address">
+					{(field) => {
+						const isInvalid =
+							field.state.meta.isTouched && !field.state.meta.isValid;
+
+						return (
+							<Field data-invalid={isInvalid}>
+								<FieldLabel htmlFor={field.name}>
+									Dirección de entrega
+								</FieldLabel>
+								<DeliveryAddressAutocomplete
+									id={field.name}
+									name={field.name}
+									value={field.state.value}
+									isInvalid={isInvalid}
+									onBlur={field.handleBlur}
+									onChange={(value) => {
+										field.handleChange(value);
+										form.setFieldValue("deliveryDetails.locationId", null);
+									}}
+									onSelect={(suggestion) => {
+										field.handleChange(suggestion.formattedAddress);
+										form.setFieldValue(
+											"deliveryDetails.locationId",
+											suggestion.locationId,
+										);
+									}}
+								/>
+								{isInvalid ? (
+									<FieldError errors={field.state.meta.errors} />
+								) : null}
+							</Field>
+						);
+					}}
 				</form.Field>
 			</div>
 		);

@@ -40,6 +40,8 @@ import { GetCustomerProfileDetailHttpController } from './features/get-customer-
 import { GetCustomerProfileDetailHandler } from './features/get-customer-profile-detail/get-customer-profile-detail.handler';
 import { GetBranchesHttpController } from './features/get-branches/get-branches.controller';
 import { GetBranchesHandler } from './features/get-branches/get-branches.handler';
+import { SearchBranchAddressSuggestionsHttpController } from './features/search-branch-address-suggestions/search-branch-address-suggestions.controller';
+import { SearchBranchAddressSuggestionsHandler } from './features/search-branch-address-suggestions/search-branch-address-suggestions.handler';
 import { GetStorefrontBranchScheduleSlotsHttpController } from './features/get-storefront-branch-schedule-slots/get-storefront-branch-schedule-slots.controller';
 import { GetStorefrontBranchScheduleSlotsHandler } from './features/get-storefront-branch-schedule-slots/get-storefront-branch-schedule-slots.handler';
 import { GetStorefrontBranchSchedulesHttpController } from './features/get-storefront-branch-schedules/get-storefront-branch-schedules.controller';
@@ -104,6 +106,7 @@ import { GetStorefrontCategoriesHandler } from './features/get-storefront-catego
     ApproveSubmittedCustomerOnboardingHttpController,
     CreateBranchHttpController,
     CreateContractSignerHttpController,
+    SearchBranchAddressSuggestionsHttpController,
     GetBranchDetailHttpController,
     GetBranchesHttpController,
     GetCurrentRentalCustomerProfileHttpController,
@@ -140,6 +143,7 @@ import { GetStorefrontCategoriesHandler } from './features/get-storefront-catego
     CreateContractSignerHandler,
     GetBranchDetailHandler,
     GetBranchesHandler,
+    SearchBranchAddressSuggestionsHandler,
     GetCurrentRentalCustomerProfileHandler,
     GetCustomerProfileDetailHandler,
     GetContractSignerHandler,

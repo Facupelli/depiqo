@@ -165,7 +165,10 @@ export class CreateDraftRentalService implements ICommandHandler<
               fulfillmentMethod: 'DELIVERY',
               pricing: pricingRequest,
               branchId: command.branchId,
-              customerLocation: { address: deliveryDetails.address },
+              customerLocation: {
+                address: deliveryDetails.address,
+                locationId: deliveryDetails.locationId,
+              },
             })
           : null;
 
@@ -215,7 +218,10 @@ export class CreateDraftRentalService implements ICommandHandler<
           notes: command.notes,
           insuranceSelected: command.insuranceSelected,
           bookingSnapshot: command.bookingSnapshot,
-          deliveryDetails: fulfillmentMethod === FulfillmentMethod.Delivery ? command.deliveryDetails : undefined,
+          deliveryDetails:
+            fulfillmentMethod === FulfillmentMethod.Delivery && command.deliveryDetails
+              ? { address: command.deliveryDetails.address }
+              : undefined,
           period: command.period,
           priceSnapshot: adaptPricingCalculationToSnapshot({
             result: prospectivePricing,

@@ -15,6 +15,7 @@ export class CreateBranchCommand {
   public readonly tenantId: string;
   public readonly name: string;
   public readonly address: string | null;
+  public readonly addressLocationId: string | null;
   public readonly timezone: string | null;
   public readonly schedules: CreateBranchScheduleCommandProps[];
 
@@ -22,12 +23,14 @@ export class CreateBranchCommand {
     tenantId: string;
     name: string;
     address: string | null;
+    addressLocationId: string | null;
     timezone: string | null;
     schedules: CreateBranchScheduleCommandProps[];
   }) {
     this.tenantId = props.tenantId;
     this.name = props.name;
     this.address = props.address;
+    this.addressLocationId = props.addressLocationId;
     this.timezone = props.timezone;
     this.schedules = props.schedules;
   }

@@ -27,6 +27,7 @@ export class CreateBranchHttpController {
         tenantId: user.tenantId,
         name: dto.name,
         address: dto.address ?? null,
+        addressLocationId: dto.addressLocationId ?? null,
         timezone: dto.timezone ?? null,
         schedules: (dto.schedules ?? []).map((schedule) => ({
           type: schedule.type,

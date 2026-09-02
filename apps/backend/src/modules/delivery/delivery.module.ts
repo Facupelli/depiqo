@@ -4,6 +4,8 @@ import { GeocodingModule } from '../shared/geocoding/geocoding.module';
 import { TenantManagementModule } from '../tenant-management/tenant-management.module';
 
 import { RoadRouteDistanceProvider } from './application/ports/road-route-distance-provider.port';
+import { SearchStorefrontDeliveryAddressSuggestionsHttpController } from './features/search-storefront-delivery-address-suggestions/search-storefront-delivery-address-suggestions.controller';
+import { SearchStorefrontDeliveryAddressSuggestionsHandler } from './features/search-storefront-delivery-address-suggestions/search-storefront-delivery-address-suggestions.handler';
 import { GeoapifyRoadRouteDistanceProviderAdapter } from './infrastructure/geoapify/geoapify-road-route-distance-provider.adapter';
 import { BranchDeliveryConfigurationRepository } from './persistence/branch-delivery-configuration.repository';
 import { DeliveryQuoteService } from './public-api/delivery-quote.public-api';
@@ -15,7 +17,9 @@ import { GeoapifyRoutingHttpClient } from './infrastructure/geoapify/geoapify-ro
     GeocodingModule,
     TenantManagementModule,
   ],
+  controllers: [SearchStorefrontDeliveryAddressSuggestionsHttpController],
   providers: [
+    SearchStorefrontDeliveryAddressSuggestionsHandler,
     BranchDeliveryConfigurationRepository,
 
     GeoapifyRoutingHttpClient,

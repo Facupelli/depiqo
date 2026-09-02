@@ -3,10 +3,14 @@ import { z } from "zod";
 import type { ApiContract } from "../api-contract";
 import { ExplicitOffsetInstantWireSchema } from "../explicit-offset-instant.schema";
 import {
-  CreateConfirmedRentalDeliveryDetailsSchema,
   CreateConfirmedRentalFulfillmentMethodSchema,
   CreateConfirmedRentalSelectedOfferSchema,
 } from "./create-confirmed-rental.contract";
+
+export const CreateDraftRentalDeliveryDetailsSchema = z.object({
+  address: z.string().trim().min(1),
+  locationId: z.string().trim().min(1).optional(),
+});
 
 export const CreateDraftRentalManualPricingAdjustmentSchema = z.object({
   mode: z.literal("TARGET_TOTAL"),
@@ -26,7 +30,7 @@ export const CreateDraftRentalBodySchema = z
       .array(CreateConfirmedRentalSelectedOfferSchema)
       .default([]),
     fulfillmentMethod: CreateConfirmedRentalFulfillmentMethodSchema,
-    deliveryDetails: CreateConfirmedRentalDeliveryDetailsSchema.optional(),
+    deliveryDetails: CreateDraftRentalDeliveryDetailsSchema.optional(),
     notes: z.string().optional(),
     insuranceSelected: z.boolean().optional(),
     manualPricingAdjustment:

@@ -2,10 +2,12 @@ import {
 	type BranchScheduleSlotDto,
 	type CreateConfirmedRentalBodyDto,
 	CreateConfirmedRentalBodySchema,
-	type CreateConfirmedRentalDeliveryDetailsDto,
 } from "@repo/api-contracts";
 import type { RentalCartItem } from "../rental-cart.types";
-import type { FulfillmentMethod } from "./cart-checkout.types";
+import type {
+	FulfillmentMethod,
+	NormalizedDeliveryRequest,
+} from "./cart-checkout.types";
 import { isDeliveryRequestComplete } from "./cart-checkout.utils";
 
 type ConfirmedRentalSelection = Pick<
@@ -19,7 +21,7 @@ export type ConfirmedRentalRequestInput = {
 	pickupSlot?: BranchScheduleSlotDto;
 	returnSlot?: BranchScheduleSlotDto;
 	fulfillmentMethod: FulfillmentMethod;
-	deliveryDetails: CreateConfirmedRentalDeliveryDetailsDto | null;
+	deliveryDetails: NormalizedDeliveryRequest;
 	insuranceSelected: boolean;
 };
 
@@ -58,6 +60,14 @@ export function buildConfirmedRentalRequest(
 		return { ok: false, failure: { kind: "DELIVERY_DETAILS_REQUIRED" } };
 	}
 
+	const committedDeliveryDetails =
+		input.fulfillmentMethod === "DELIVERY" && input.deliveryDetails?.locationId
+			? {
+					address: input.deliveryDetails.address,
+					locationId: input.deliveryDetails.locationId,
+				}
+			: undefined;
+
 	const body: CreateConfirmedRentalBodyDto = {
 		branchId: input.branchId,
 		period: {
@@ -69,10 +79,7 @@ export function buildConfirmedRentalRequest(
 			quantity,
 		})),
 		fulfillmentMethod: input.fulfillmentMethod,
-		deliveryDetails:
-			input.fulfillmentMethod === "DELIVERY"
-				? (input.deliveryDetails ?? undefined)
-				: undefined,
+		deliveryDetails: committedDeliveryDetails,
 		insuranceSelected: input.insuranceSelected,
 	};
 	const parsed = CreateConfirmedRentalBodySchema.safeParse(body);

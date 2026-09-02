@@ -12,7 +12,13 @@ import {
 	timeStringToMinutes,
 } from "../branch-form.schema";
 
-export const createBranchFormSchema = branchFormSchema;
+export const createBranchFormSchema = branchFormSchema.refine(
+	(values) => values.address.trim() === "" || values.addressLocationId !== null,
+	{
+		message: "Seleccioná una dirección de la lista.",
+		path: ["address"],
+	},
+);
 export type CreateBranchFormValues = BranchFormValues;
 
 export function toCreateBranchBodyDto(
@@ -22,6 +28,7 @@ export function toCreateBranchBodyDto(
 	const body: CreateBranchBodyDto = {
 		name: parsedValues.name.trim(),
 		address: emptyToNull(parsedValues.address),
+		addressLocationId: parsedValues.addressLocationId,
 		timezone: emptyToNull(parsedValues.timezone),
 	};
 

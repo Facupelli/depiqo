@@ -22,11 +22,11 @@ import { useForm, useStore } from "@tanstack/react-form";
 import { Loader2 } from "lucide-react";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
+import { AddressAutocomplete } from "./AddressAutocomplete";
 import {
 	type BranchFormValues,
 	type BranchScheduleWindowFormValues,
 	branchFormDefaults,
-	type branchFormSchema,
 	daysOfWeek,
 	getSupportedTimezones,
 	slotIntervalOptions,
@@ -36,11 +36,13 @@ import {
 type BranchFormApi = any;
 // biome-ignore lint/suspicious/noExplicitAny: TanStack Form field inference is not portable outside the component.
 type BranchFormField = any;
+// biome-ignore lint/suspicious/noExplicitAny: TanStack Form accepts any Standard Schema validator with this form value shape.
+type BranchFormValidator = any;
 type BranchFormStoreState = { values: BranchFormValues };
 interface BranchFormProps {
 	formId: string;
 	defaultValues?: BranchFormValues;
-	validator: typeof branchFormSchema;
+	validator: BranchFormValidator;
 	submitLabel: string;
 	isPending: boolean;
 	requireDirty?: boolean;
@@ -145,16 +147,23 @@ export function BranchForm({
 										return (
 											<Field data-invalid={isInvalid}>
 												<FieldLabel htmlFor={field.name}>Dirección</FieldLabel>
-												<Input
+												<AddressAutocomplete
 													id={field.name}
 													name={field.name}
 													value={field.state.value}
+													isInvalid={isInvalid}
 													onBlur={field.handleBlur}
-													onChange={(event) =>
-														field.handleChange(event.target.value)
-													}
-													aria-invalid={isInvalid}
-													placeholder="Ej. Av. Corrientes 1234"
+													onChange={(value) => {
+														field.handleChange(value);
+														form.setFieldValue("addressLocationId", null);
+													}}
+													onSelect={(suggestion) => {
+														field.handleChange(suggestion.formattedAddress);
+														form.setFieldValue(
+															"addressLocationId",
+															suggestion.locationId,
+														);
+													}}
 												/>
 												{isInvalid && (
 													<FieldError errors={field.state.meta.errors} />

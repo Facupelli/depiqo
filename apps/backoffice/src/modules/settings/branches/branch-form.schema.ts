@@ -43,6 +43,7 @@ export const branchScheduleWindowFormSchema = z
 export const branchFormSchema = z.object({
 	name: z.string().trim().min(1, "El nombre es obligatorio."),
 	address: z.string(),
+	addressLocationId: z.string().nullable(),
 	timezone: z.string(),
 	scheduleEnabled: z.boolean(),
 	useSameScheduleForPickupAndReturn: z.boolean(),
@@ -60,6 +61,7 @@ export const weekdayDefaults = [1, 2, 3, 4, 5];
 export const branchFormDefaults: BranchFormValues = {
 	name: "",
 	address: "",
+	addressLocationId: null,
 	timezone: "",
 	scheduleEnabled: true,
 	useSameScheduleForPickupAndReturn: true,

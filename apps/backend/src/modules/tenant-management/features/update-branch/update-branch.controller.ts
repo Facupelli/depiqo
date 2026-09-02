@@ -29,6 +29,7 @@ export class UpdateBranchHttpController {
         branchId: params.branchId,
         name: dto.name,
         address: dto.address ?? null,
+        addressLocationId: dto.addressLocationId ?? null,
         timezone: dto.timezone ?? null,
         schedules: (dto.schedules ?? []).map((schedule) => ({
           type: schedule.type,

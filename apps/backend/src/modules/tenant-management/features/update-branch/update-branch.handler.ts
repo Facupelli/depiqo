@@ -2,7 +2,6 @@ import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { err, ok, Result } from 'neverthrow';
 
 import { BranchAddressResolver } from '../../application/services/branch-address-resolver.service';
-import type { BranchOperationalLocationProps } from '../../domain/value-objects/branch-operational-location.value-object';
 import {
   BranchScheduleOverlapError,
   InvalidBranchNameError,
@@ -50,43 +49,37 @@ export class UpdateBranchHandler implements ICommandHandler<
       );
     }
 
-    const address = this.branchAddressResolver.normalize(command.address);
-    let operationalLocation: BranchOperationalLocationProps | null = branch.getOperationalLocation();
-
-    if (address === null) {
-      operationalLocation = null;
-    } else if (address !== this.branchAddressResolver.normalize(branch.getAddress()) || operationalLocation === null) {
-      const addressResolution = await this.branchAddressResolver.resolve(address);
-      if (addressResolution.outcome === 'UNRESOLVED') {
-        return err(
-          updateBranchError(
-            'tenant_management.branch_address_unresolved',
-            'The branch address could not be resolved.',
-            undefined,
-            context,
-          ),
-        );
-      }
-
-			console.dir({addressResolution},{depth:null})
-
-      if (addressResolution.outcome === 'AMBIGUOUS') {
-        return err(
-          updateBranchError(
-            'tenant_management.branch_address_ambiguous',
-            'The branch address resolved to multiple possible locations.',
-            undefined,
-            context,
-          ),
-        );
-      }
-      operationalLocation = addressResolution.operationalLocation;
+    const addressResolution = await this.branchAddressResolver.resolve({
+      address: command.address,
+      addressLocationId: command.addressLocationId,
+      currentAddress: branch.getAddress(),
+      currentOperationalLocation: branch.getOperationalLocation(),
+    });
+    if (addressResolution.outcome === 'UNRESOLVED') {
+      return err(
+        updateBranchError(
+          'tenant_management.branch_address_unresolved',
+          'The branch address could not be resolved.',
+          undefined,
+          context,
+        ),
+      );
+    }
+    if (addressResolution.outcome === 'AMBIGUOUS') {
+      return err(
+        updateBranchError(
+          'tenant_management.branch_address_ambiguous',
+          'The branch address resolved to multiple possible locations.',
+          undefined,
+          context,
+        ),
+      );
     }
 
     const update = branch.updateDetails({
       name: command.name,
-      address,
-      operationalLocation,
+      address: addressResolution.address,
+      operationalLocation: addressResolution.operationalLocation,
       timezone: command.timezone,
       schedules: command.schedules.map((schedule) => ({
         type: schedule.type,
