@@ -25,7 +25,6 @@ import {
   RentalCannotBeEditedFromStatusError,
   RentalPeriodHasEndedError,
   RentalSelectionNotFoundError,
-  RentalContainsOperationalCommitmentsError,
   RentalAssignedAssetNotFoundError,
   RentalConfirmationRequiresCustomerError,
   RentalChildRentalMismatchError,
@@ -101,18 +100,6 @@ type CreateAssignedAssetInput = Omit<
   CreateAssignedAssetProps,
   'tenantId' | 'rentalId' | 'effectiveFrom' | 'effectiveUntil'
 >;
-
-export interface EditUnconfirmedRentalProps {
-  branchId: string;
-  period: RentalPeriod;
-  fulfillmentMethod: FulfillmentMethod;
-  notes?: string;
-  insuranceSelected?: boolean;
-  deliveryDetails?: RentalDeliveryDetails;
-  priceSnapshot: JsonValue;
-  selections: CreateRentalSelectionInput[];
-  demandLines: CreateRentalDemandLineInput[];
-}
 
 export interface ChangeConfirmedRentalDetailsProps {
   notes?: string;
@@ -564,59 +551,6 @@ export class Rental extends AggregateRootBase {
       cancelledAt: props.cancelledAt ? new Date(props.cancelledAt) : undefined,
       confirmedAt: props.confirmedAt ? new Date(props.confirmedAt) : undefined,
     });
-  }
-
-  editUnconfirmed(params: EditUnconfirmedRentalProps): Result<void, RentalCommitmentError> {
-    if (!this.isUnconfirmed()) {
-      return err(new RentalCannotBeEditedFromStatusError(this.id, this.status));
-    }
-
-    if (this.props.assignedAssets.length > 0 || this.props.assetBlocks.length > 0) {
-      return err(new RentalContainsOperationalCommitmentsError(this.id));
-    }
-
-    const selections = Rental.createSelections(this.id, this.tenantId, params.selections);
-    if (selections.isErr()) {
-      return err(selections.error);
-    }
-
-    const demandLines = Rental.createDemandLines(this.id, this.tenantId, params.demandLines);
-    if (demandLines.isErr()) {
-      return err(demandLines.error);
-    }
-
-    const candidate = Rental.createFromEntities(this.status, {
-      id: this.id,
-      tenantId: this.tenantId,
-      rentalNumber: this.rentalNumber,
-      branchId: params.branchId,
-      rentalCustomerId: this.rentalCustomerId,
-      period: params.period,
-      source: this.source,
-      fulfillmentMethod: params.fulfillmentMethod,
-      notes: params.notes,
-      insuranceSelected: params.insuranceSelected,
-      bookingSnapshot: this.bookingSnapshot,
-      deliveryDetails: params.deliveryDetails,
-      priceSnapshot: new JsonSnapshot(params.priceSnapshot),
-      selections: selections.value,
-      demandLines: demandLines.value,
-      assignedAssets: [...this.props.assignedAssets],
-      assetBlocks: [...this.props.assetBlocks],
-      createdAt: this.createdAt,
-      version: this.version,
-      updatedAt: this.updatedAt,
-      cancelledAt: this.cancelledAt,
-      confirmedAt: this.confirmedAt,
-    });
-
-    if (candidate.isErr()) {
-      return err(candidate.error);
-    }
-
-    this.props = candidate.value.props;
-
-    return ok(undefined);
   }
 
   changeConfirmedDetails(params: ChangeConfirmedRentalDetailsProps): Result<void, RentalCommitmentError> {

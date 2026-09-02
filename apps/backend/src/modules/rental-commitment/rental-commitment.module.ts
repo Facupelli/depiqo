@@ -29,8 +29,6 @@ import { CreateConfirmedRentalHttpController } from './features/create-confirmed
 import { CreateConfirmedRentalService } from './features/create-confirmed-rental/create-confirmed-rental.handler';
 import { CreateDraftRentalHttpController } from './features/create-draft-rental/create-draft-rental.controller';
 import { CreateDraftRentalService } from './features/create-draft-rental/create-draft-rental.service';
-import { EditUnconfirmedRentalHttpController } from './features/edit-unconfirmed-rental/edit-unconfirmed-rental.controller';
-import { EditUnconfirmedRentalHandler } from './features/edit-unconfirmed-rental/edit-unconfirmed-rental.handler';
 import { GetRentalAccessoryDefaultsHttpController } from './features/get-rental-accessory-defaults/get-rental-accessory-defaults.controller';
 import { GetRentalAccessoryDefaultsHandler } from './features/get-rental-accessory-defaults/get-rental-accessory-defaults.handler';
 import { GetReplacementAssetCandidatesHttpController } from './features/get-replacement-asset-candidates/get-replacement-asset-candidates.controller';
@@ -80,7 +78,6 @@ import { RentalLifecycleFactsService } from './public-api/rental-lifecycle-facts
     ConfirmRentalHttpController,
     CreateConfirmedRentalHttpController,
     CreateDraftRentalHttpController,
-    EditUnconfirmedRentalHttpController,
     GetReplacementAssetCandidatesHttpController,
     ReplaceConfirmedRentalAssetHttpController,
     RemoveRentalSelectionHttpController,
@@ -109,7 +106,6 @@ import { RentalLifecycleFactsService } from './public-api/rental-lifecycle-facts
     ConfirmRentalHandler,
     CreateConfirmedRentalService,
     CreateDraftRentalService,
-    EditUnconfirmedRentalHandler,
     GetReplacementAssetCandidatesHandler,
     ReplaceConfirmedRentalAssetHandler,
     RemoveRentalSelectionHandler,

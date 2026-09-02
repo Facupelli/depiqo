@@ -91,12 +91,6 @@ export class RentalPeriodHasEndedError extends RentalCommitmentError {
   }
 }
 
-export class RentalContainsOperationalCommitmentsError extends RentalCommitmentError {
-  constructor(rentalId: string) {
-    super(`Rental "${rentalId}" contains assignments or asset blocks and cannot be edited while unconfirmed.`);
-  }
-}
-
 export class RentalConfirmationRequiresCustomerError extends RentalCommitmentError {
   constructor(rentalId: string) {
     super(`Rental "${rentalId}" cannot be confirmed without a linked rental customer.`);
