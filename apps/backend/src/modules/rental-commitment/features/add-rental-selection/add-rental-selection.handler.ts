@@ -21,7 +21,7 @@ import { resolveEquipmentTypeNames } from '../../application/equipment-type-disp
 import { RentalOperationalFactsValidatorService } from '../../application/rental-operational-facts-validator.service';
 import { toRentalIntegrationEvents } from '../../application/rental-integration-event.mapper';
 import { RentalAssetAllocationService } from '../../asset-allocation/rental-asset-allocation.service';
-import { deriveBufferedAssetBlockPeriod } from '../../domain/asset-block-period';
+import { deriveConfirmedAssetBlockPeriod } from '../../domain/confirmed-asset-block-period';
 import {
   BranchUnavailableForRentalError,
   DuplicateRentalOfferSelectionError,
@@ -206,10 +206,11 @@ export class AddRentalSelectionHandler implements ICommandHandler<AddRentalSelec
         }
 
         const acceptedAssetBuffer = currentRental.requireAcceptedAssetBuffer();
-        const operationalPeriod = deriveBufferedAssetBlockPeriod({
+        const operationalPeriod = deriveConfirmedAssetBlockPeriod({
           participationPeriod: new RentalPeriod(effectiveAt, currentRental.period.end),
-          beforeBufferMinutes: acceptedAssetBuffer.beforeBufferMinutes,
-          afterBufferMinutes: acceptedAssetBuffer.afterBufferMinutes,
+          acceptedBeforeBufferMinutes: acceptedAssetBuffer.beforeBufferMinutes,
+          acceptedAfterBufferMinutes: acceptedAssetBuffer.afterBufferMinutes,
+          acceptedDelivery: currentRental.acceptedDelivery,
           clampStartAt: operationTime,
         });
         const allocation = await this.rentalAssetAllocation.planAllocations({

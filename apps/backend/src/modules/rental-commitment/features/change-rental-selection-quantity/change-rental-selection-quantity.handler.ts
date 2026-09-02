@@ -11,7 +11,7 @@ import { TenantBillingPreferences } from 'src/modules/tenant-management/public-a
 import { adaptPricingCalculationToSnapshot } from '../../application/accepted-pricing/adapt-pricing-calculation-to-snapshot';
 import { toRentalIntegrationEvents } from '../../application/rental-integration-event.mapper';
 import { RentalAssetAllocationService } from '../../asset-allocation/rental-asset-allocation.service';
-import { deriveBufferedAssetBlockPeriod } from '../../domain/asset-block-period';
+import { deriveConfirmedAssetBlockPeriod } from '../../domain/confirmed-asset-block-period';
 import {
   InsufficientAssetAvailabilityError,
   RentalCannotBeEditedFromStatusError,
@@ -169,10 +169,11 @@ export class ChangeRentalSelectionQuantityHandler implements ICommandHandler<
             quantity: quantityChange.value.deltaFor(line.id)!,
           }));
           const acceptedAssetBuffer = current.requireAcceptedAssetBuffer();
-          const operationalPeriod = deriveBufferedAssetBlockPeriod({
+          const operationalPeriod = deriveConfirmedAssetBlockPeriod({
             participationPeriod: new RentalPeriod(effectiveAt, current.period.end),
-            beforeBufferMinutes: acceptedAssetBuffer.beforeBufferMinutes,
-            afterBufferMinutes: acceptedAssetBuffer.afterBufferMinutes,
+            acceptedBeforeBufferMinutes: acceptedAssetBuffer.beforeBufferMinutes,
+            acceptedAfterBufferMinutes: acceptedAssetBuffer.afterBufferMinutes,
+            acceptedDelivery: current.acceptedDelivery,
             clampStartAt: operationTime,
           });
           const plan = await this.allocation.planAllocations({

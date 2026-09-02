@@ -7,7 +7,6 @@ import { AggregateRootBase } from 'src/core/domain/aggregate-root.base';
 import { isValidBufferMinutes } from 'src/core/domain/rental-asset-buffer';
 
 import { AssetBlock } from './asset-block.entity';
-import { deriveBufferedAssetBlockPeriod } from './asset-block-period';
 import { deriveConfirmedAssetBlockPeriod } from './confirmed-asset-block-period';
 import { AssignedAsset, CreateAssignedAssetProps } from './assigned-asset.entity';
 import {
@@ -677,6 +676,7 @@ export class Rental extends AggregateRootBase {
       rentalId: this.id,
       period: new RentalPeriod(effectiveAt, this.period.end),
       acceptedAssetBuffer,
+      acceptedDelivery: this.props.acceptedDelivery,
       assignedAssets: assignedAssets.value,
       operationTime: params.operationTime,
     });
@@ -741,6 +741,7 @@ export class Rental extends AggregateRootBase {
         effectiveAt,
         rentalStart: this.period.start,
         acceptedAssetBuffer,
+        acceptedDelivery: this.props.acceptedDelivery,
       });
       if (releasedParticipation.isErr()) return err(releasedParticipation.error);
 
@@ -851,6 +852,7 @@ export class Rental extends AggregateRootBase {
         rentalId: this.id,
         period: new RentalPeriod(effectiveAt, this.period.end),
         acceptedAssetBuffer,
+        acceptedDelivery: this.props.acceptedDelivery,
         assignedAssets: additions.value,
         operationTime: params.operationTime,
       });
@@ -870,6 +872,7 @@ export class Rental extends AggregateRootBase {
           effectiveAt,
           rentalStart: this.period.start,
           acceptedAssetBuffer,
+          acceptedDelivery: this.props.acceptedDelivery,
         });
         if (releasedParticipation.isErr()) return err(releasedParticipation.error);
 
@@ -940,10 +943,11 @@ export class Rental extends AggregateRootBase {
       tenantId: this.tenantId,
       rentalId: this.id,
       assetId: params.replacementAssetId,
-      period: deriveBufferedAssetBlockPeriod({
+      period: deriveConfirmedAssetBlockPeriod({
         participationPeriod: new RentalPeriod(effectiveAt, this.period.end),
-        beforeBufferMinutes: acceptedAssetBuffer.beforeBufferMinutes,
-        afterBufferMinutes: acceptedAssetBuffer.afterBufferMinutes,
+        acceptedBeforeBufferMinutes: acceptedAssetBuffer.beforeBufferMinutes,
+        acceptedAfterBufferMinutes: acceptedAssetBuffer.afterBufferMinutes,
+        acceptedDelivery: this.props.acceptedDelivery,
         clampStartAt: params.operationTime,
       }),
       blockType: AssetBlockType.Equipment,
@@ -967,6 +971,7 @@ export class Rental extends AggregateRootBase {
       effectiveAt,
       rentalStart: this.period.start,
       acceptedAssetBuffer,
+      acceptedDelivery: this.props.acceptedDelivery,
     });
     if (releasedParticipation.isErr()) return err(releasedParticipation.error);
 
