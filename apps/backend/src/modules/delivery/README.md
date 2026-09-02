@@ -6,9 +6,10 @@ Delivery is the bounded context that owns current delivery configuration and aut
 
 ```text
 Rental Commitment -> Delivery -> Tenant Management
+Rental Commitment -> Pricing
 ```
 
-Delivery may retain tenant and branch identifiers. Tenant Management remains authoritative for Branch identity, lifecycle, timezone, and operational location. Delivery owns Delivery enablement and all Delivery configuration. Delivery does not access Tenant Management persistence or model Tenant Management records as Delivery domain objects.
+Delivery remains independent from Rental Commitment and Pricing. Delivery may retain tenant and branch identifiers. Tenant Management remains authoritative for Branch identity, lifecycle, timezone, and operational location. Delivery owns Delivery enablement and all Delivery configuration. Delivery does not access Tenant Management persistence or model Tenant Management records as Delivery domain objects.
 
 ## Domain Concepts
 
@@ -38,6 +39,10 @@ The configuration owns its distance bands. The database has a tenant-safe physic
 
 ## Current Scope
 
-Delivery validates and persists configuration facts and provides authoritative current quote calculation through `DeliveryQuoteService`. The quote capability resolves the customer location, obtains one authoritative road distance, evaluates serviceability, and calculates Delivery-owned transport pricing and scheduling facts.
+Delivery owns and provides current branch Delivery configuration, customer location and road-distance resolution, current Delivery serviceability, Delivery and Collection pricing, special-hours classification, `transportReservationMinutes`, and authoritative current Delivery quotes through `DeliveryQuoteService`.
 
-Delivery does not yet implement availability, accepted Delivery snapshots, confirmation, quote persistence, caching, Rental Commitment integration, or Pricing composition.
+Rental Commitment consumes the current quote and owns prospective rental orchestration, accepted Delivery snapshots at confirmation, the accepted customer total, and confirmed or historical transport timing.
+
+## Historical Boundary
+
+Delivery owns current quote calculation only. Once a quote is accepted at rental confirmation, Rental Commitment persists provider-neutral accepted Delivery facts. Historical reads and post-confirmation operations use those accepted facts; Delivery is not queried again to reconstruct historical truth.
