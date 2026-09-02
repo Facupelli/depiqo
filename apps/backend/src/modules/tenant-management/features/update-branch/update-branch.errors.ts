@@ -3,7 +3,9 @@ import { ApplicationError } from 'src/core/errors/application-error';
 export type UpdateBranchErrorCode =
   | 'tenant_management.branch_not_found'
   | 'tenant_management.branch_invalid_input'
-  | 'tenant_management.branch_schedule_invalid_input';
+  | 'tenant_management.branch_schedule_invalid_input'
+  | 'tenant_management.branch_address_unresolved'
+  | 'tenant_management.branch_address_ambiguous';
 
 export interface UpdateBranchError extends ApplicationError {
   code: UpdateBranchErrorCode;

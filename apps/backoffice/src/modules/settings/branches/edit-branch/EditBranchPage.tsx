@@ -2,8 +2,8 @@ import { Alert, AlertDescription } from "@repo/ui/components/alert";
 import { Button } from "@repo/ui/components/button";
 import { ArrowLeft } from "lucide-react";
 import { useState } from "react";
-import { ProblemDetailsError } from "@/shared/errors";
 import { BranchForm } from "../BranchForm";
+import { getBranchSaveErrorMessage } from "../branch-save-errors";
 import { useBranchDetail } from "../branches.queries";
 import {
 	toUpdateBranchBodyDto,
@@ -45,16 +45,12 @@ export function EditBranchPage({
 			});
 			onUpdated();
 		} catch (error) {
-			if (error instanceof ProblemDetailsError) {
-				setErrorMessage(
-					error.problemDetails.detail ??
-						error.problemDetails.title ??
-						"No pudimos actualizar la sucursal.",
-				);
-				return;
-			}
-
-			setErrorMessage("Ocurrió un error al actualizar la sucursal.");
+			setErrorMessage(
+				getBranchSaveErrorMessage(
+					error,
+					"Ocurrió un error al actualizar la sucursal.",
+				),
+			);
 		}
 	}
 

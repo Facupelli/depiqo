@@ -1,4 +1,4 @@
-import type { BranchOperationalLocationDto, LocalDate } from '@repo/api-contracts';
+import type { LocalDate } from '@repo/api-contracts';
 
 import { BranchScheduleSlotType } from '../../domain/entities/branch-schedule.entity';
 
@@ -15,7 +15,6 @@ export class CreateBranchCommand {
   public readonly tenantId: string;
   public readonly name: string;
   public readonly address: string | null;
-  public readonly operationalLocation: BranchOperationalLocationDto | null;
   public readonly timezone: string | null;
   public readonly schedules: CreateBranchScheduleCommandProps[];
 
@@ -23,14 +22,12 @@ export class CreateBranchCommand {
     tenantId: string;
     name: string;
     address: string | null;
-    operationalLocation: BranchOperationalLocationDto | null;
     timezone: string | null;
     schedules: CreateBranchScheduleCommandProps[];
   }) {
     this.tenantId = props.tenantId;
     this.name = props.name;
     this.address = props.address;
-    this.operationalLocation = props.operationalLocation;
     this.timezone = props.timezone;
     this.schedules = props.schedules;
   }

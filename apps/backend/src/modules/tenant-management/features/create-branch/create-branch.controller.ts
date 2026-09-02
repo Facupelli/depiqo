@@ -27,7 +27,6 @@ export class CreateBranchHttpController {
         tenantId: user.tenantId,
         name: dto.name,
         address: dto.address ?? null,
-        operationalLocation: dto.operationalLocation ?? null,
         timezone: dto.timezone ?? null,
         schedules: (dto.schedules ?? []).map((schedule) => ({
           type: schedule.type,
@@ -76,5 +75,17 @@ const createBranchProblemMap = {
     title: 'Branch schedule input is invalid',
     status: HttpStatus.UNPROCESSABLE_ENTITY,
     detail: 'The branch schedule request contains invalid input.',
+  },
+  'tenant_management.branch_address_unresolved': {
+    type: createProblemType('tenant-management/branch-address-unresolved'),
+    title: 'Branch address was not found',
+    status: HttpStatus.UNPROCESSABLE_ENTITY,
+    detail: 'The branch address could not be resolved.',
+  },
+  'tenant_management.branch_address_ambiguous': {
+    type: createProblemType('tenant-management/branch-address-ambiguous'),
+    title: 'Branch address is ambiguous',
+    status: HttpStatus.UNPROCESSABLE_ENTITY,
+    detail: 'The branch address matches multiple possible locations.',
   },
 } satisfies Record<CreateBranchErrorCode, { type: string; title: string; status: HttpStatus; detail: string }>;

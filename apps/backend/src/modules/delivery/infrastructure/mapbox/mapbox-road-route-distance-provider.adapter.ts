@@ -6,7 +6,7 @@ import {
   RoadRouteDistanceProvider,
   RoadRouteDistanceResult,
 } from '../../application/ports/road-route-distance-provider.port';
-import { MapboxHttpClient } from './mapbox-http.client';
+import { MapboxDirectionsHttpClient } from './mapbox-directions-http.client';
 
 interface MapboxDirectionsRoute {
   distance?: unknown;
@@ -14,7 +14,7 @@ interface MapboxDirectionsRoute {
 
 @Injectable()
 export class MapboxRoadRouteDistanceProviderAdapter extends RoadRouteDistanceProvider {
-  constructor(private readonly httpClient: MapboxHttpClient) {
+  constructor(private readonly httpClient: MapboxDirectionsHttpClient) {
     super();
   }
 
@@ -28,9 +28,9 @@ export class MapboxRoadRouteDistanceProviderAdapter extends RoadRouteDistancePro
     url.searchParams.set('overview', 'false');
     url.searchParams.set('steps', 'false');
 
-    const body = await this.httpClient.getJson(url, 'getDrivingDistance');
+    const body = await this.httpClient.getJson(url);
     if (!this.isRecord(body) || typeof body.code !== 'string') {
-      throw this.httpClient.malformedResponse('getDrivingDistance', 'code must be a string.');
+      throw this.httpClient.malformedResponse('code must be a string.');
     }
 
     if (body.code === 'NoRoute' || body.code === 'NoSegment') {
@@ -38,11 +38,11 @@ export class MapboxRoadRouteDistanceProviderAdapter extends RoadRouteDistancePro
     }
 
     if (body.code !== 'Ok') {
-      throw this.httpClient.malformedResponse('getDrivingDistance', `unexpected result code '${body.code}'.`);
+      throw this.httpClient.malformedResponse(`unexpected result code '${body.code}'.`);
     }
 
     if (!Array.isArray(body.routes)) {
-      throw this.httpClient.malformedResponse('getDrivingDistance', 'routes must be an array.');
+      throw this.httpClient.malformedResponse('routes must be an array.');
     }
 
     if (body.routes.length === 0) {
@@ -56,7 +56,7 @@ export class MapboxRoadRouteDistanceProviderAdapter extends RoadRouteDistancePro
       !Number.isFinite(route.distance) ||
       route.distance < 0
     ) {
-      throw this.httpClient.malformedResponse('getDrivingDistance', 'the route distance is invalid.');
+      throw this.httpClient.malformedResponse('the route distance is invalid.');
     }
 
     return { outcome: 'ROUTE_FOUND', distanceMeters: Math.round(route.distance) };
@@ -71,7 +71,7 @@ export class MapboxRoadRouteDistanceProviderAdapter extends RoadRouteDistancePro
       coordinates.longitude < -180 ||
       coordinates.longitude > 180
     ) {
-      throw this.httpClient.malformedResponse('getDrivingDistance', 'routing coordinates are invalid.');
+      throw this.httpClient.malformedResponse('routing coordinates are invalid.');
     }
   }
 

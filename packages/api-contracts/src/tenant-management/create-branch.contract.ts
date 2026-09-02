@@ -2,7 +2,6 @@ import { z } from "zod";
 
 import type { ApiContract } from "../api-contract";
 import { LocalDateSchema } from "../local-date.schema";
-import { BranchOperationalLocationSchema } from "./branch-operational-location.schema";
 
 export const CreateBranchScheduleSlotTypeSchema = z.enum(["PICKUP", "RETURN"]);
 
@@ -18,7 +17,6 @@ export const CreateBranchScheduleBodySchema = z.object({
 export const CreateBranchBodySchema = z.object({
   name: z.string().trim().min(1),
   address: z.string().nullable().optional(),
-  operationalLocation: BranchOperationalLocationSchema.nullable().optional(),
   timezone: z.string().nullable().optional(),
   schedules: z.array(CreateBranchScheduleBodySchema).optional(),
 });

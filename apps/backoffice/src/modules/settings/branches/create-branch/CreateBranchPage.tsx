@@ -2,8 +2,8 @@ import { Alert, AlertDescription } from "@repo/ui/components/alert";
 import { Button } from "@repo/ui/components/button";
 import { ArrowLeft } from "lucide-react";
 import { useState } from "react";
-import { ProblemDetailsError } from "@/shared/errors";
 import { BranchForm } from "../BranchForm";
+import { getBranchSaveErrorMessage } from "../branch-save-errors";
 import { useCreateBranch } from "./create-branch.mutation";
 import {
 	type CreateBranchFormValues,
@@ -29,16 +29,12 @@ export function CreateBranchPage({ onBack, onCreated }: CreateBranchPageProps) {
 			await createBranch({ body: toCreateBranchBodyDto(values) });
 			onCreated();
 		} catch (error) {
-			if (error instanceof ProblemDetailsError) {
-				setErrorMessage(
-					error.problemDetails.detail ??
-						error.problemDetails.title ??
-						"No pudimos crear la sucursal.",
-				);
-				return;
-			}
-
-			setErrorMessage("Ocurrió un error al crear la sucursal.");
+			setErrorMessage(
+				getBranchSaveErrorMessage(
+					error,
+					"Ocurrió un error al crear la sucursal.",
+				),
+			);
 		}
 	}
 

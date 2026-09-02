@@ -1,13 +1,15 @@
-import type { CustomerLocationSelection } from '../application/ports/customer-location-resolver.port';
 import type { DeliveryQuote } from '../domain/delivery-quote.types';
 
-export type { CustomerLocationSelection } from '../application/ports/customer-location-resolver.port';
 export type {
   DeliveryQuote,
   DeliveryQuoteLeg,
   DeliveryServiceLevel,
   ResolvedCustomerLocation,
 } from '../domain/delivery-quote.types';
+
+export interface CustomerLocationSelection {
+  address: string;
+}
 
 export interface GetDeliveryQuoteInput {
   tenantId: string;

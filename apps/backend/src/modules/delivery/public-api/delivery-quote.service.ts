@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 
+import { AddressGeocoder } from '../../shared/geocoding/address-geocoder.port';
 import { BranchFacts } from '../../tenant-management/public-api/branch-facts.public-api';
-import { CustomerLocationResolver } from '../application/ports/customer-location-resolver.port';
 import { RoadRouteDistanceProvider } from '../application/ports/road-route-distance-provider.port';
 import { DeliveryQuoteCalculator } from '../domain/delivery-quote-calculator';
 import { BranchDeliveryConfigurationRepository } from '../persistence/branch-delivery-configuration.repository';
@@ -14,7 +14,7 @@ export class DeliveryQuoteServiceImpl extends DeliveryQuoteService {
   constructor(
     private readonly configurations: BranchDeliveryConfigurationRepository,
     private readonly branchFacts: BranchFacts,
-    private readonly customerLocationResolver: CustomerLocationResolver,
+    private readonly addressGeocoder: AddressGeocoder,
     private readonly roadRouteDistanceProvider: RoadRouteDistanceProvider,
   ) {
     super();
@@ -44,7 +44,7 @@ export class DeliveryQuoteServiceImpl extends DeliveryQuoteService {
       return { serviceable: false, reason: 'BRANCH_LOCATION_MISSING' };
     }
 
-    const customerLocation = await this.customerLocationResolver.resolve(input.customerLocation);
+    const customerLocation = await this.addressGeocoder.geocode(input.customerLocation);
     if (customerLocation.outcome === 'UNRESOLVED') {
       return { serviceable: false, reason: 'CUSTOMER_LOCATION_UNRESOLVED' };
     }
@@ -68,7 +68,17 @@ export class DeliveryQuoteServiceImpl extends DeliveryQuoteService {
       configuration,
       distanceMeters: route.distanceMeters,
       effectiveTimezone: branch.effectiveTimezone,
-      resolvedCustomerLocation: customerLocation.location,
+      resolvedCustomerLocation: {
+        formattedAddress: customerLocation.location.formattedAddress,
+        latitude: customerLocation.location.latitude,
+        longitude: customerLocation.location.longitude,
+        addressLine1: customerLocation.location.street,
+        city: customerLocation.location.city,
+        state: customerLocation.location.stateRegion,
+        postalCode: customerLocation.location.postalCode,
+        country: customerLocation.location.country,
+        providerPlaceId: customerLocation.location.providerPlaceId,
+      },
       rentalStart: input.rentalStart,
       rentalEnd: input.rentalEnd,
       calculatedAt: new Date(),

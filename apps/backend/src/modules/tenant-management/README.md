@@ -55,7 +55,7 @@ This includes tenant users, local credentials, sessions, tenant roles, permissio
 
 A `Branch` is a tenant-owned operational location where rentals may be offered, picked up, returned, or fulfilled.
 
-Tenant Management owns Branch identity, lifecycle, timezone, nullable operational location, schedules, and pickup/return slot rules. Delivery owns Delivery enablement and configuration. The legacy free-form branch address is not authoritative for routing and is never used to infer coordinates.
+Tenant Management owns Branch identity, lifecycle, timezone, nullable operational location, schedules, and pickup/return slot rules. Delivery owns Delivery enablement and configuration. The free-form branch address is not authoritative for routing. Branch create and update resolve it through Shared Geocoding to establish the authoritative operational location.
 
 Other modules may reference `branchId`, but Tenant Management remains authoritative over the branch.
 

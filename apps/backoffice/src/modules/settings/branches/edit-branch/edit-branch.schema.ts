@@ -28,7 +28,8 @@ export function toUpdateBranchFormDefaults(
 	return {
 		...branchFormDefaults,
 		name: branch.name,
-		address: branch.address ?? "",
+		address:
+			branch.address ?? branch.operationalLocation?.formattedAddress ?? "",
 		timezone: branch.timezone ?? "",
 		scheduleEnabled: hasPickupSchedules || hasReturnSchedules,
 		useSameScheduleForPickupAndReturn: schedulesAreEquivalent(

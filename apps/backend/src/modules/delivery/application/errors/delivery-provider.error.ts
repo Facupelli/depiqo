@@ -1,4 +1,4 @@
-export type DeliveryProviderOperation = 'resolveCustomerLocation' | 'getDrivingDistance';
+export type DeliveryProviderOperation = 'getDrivingDistance';
 
 export class DeliveryProviderError extends Error {
   constructor(

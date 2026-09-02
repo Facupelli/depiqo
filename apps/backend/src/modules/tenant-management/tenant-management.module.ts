@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
 
+import { GeocodingModule } from '../shared/geocoding/geocoding.module';
+import { BranchAddressResolver } from './application/services/branch-address-resolver.service';
 import { TenantCategoryTaxonomyService } from './public-api/tenant-category-taxonomy.service';
 import { RentalCustomerContactFactsService } from './public-api/rental-customer-contact-facts.service';
 import { TenantIdentityFactsService } from './public-api/tenant-identity-facts.service';
@@ -94,7 +96,7 @@ import { GetStorefrontCategoriesHttpController } from './features/get-storefront
 import { GetStorefrontCategoriesHandler } from './features/get-storefront-categories/get-storefront-categories.handler';
 
 @Module({
-  imports: [AuthModule, TenantContextModule],
+  imports: [AuthModule, GeocodingModule, TenantContextModule],
   controllers: [
     CreateCategoryHttpController,
     GetCategoriesHttpController,
@@ -129,6 +131,7 @@ import { GetStorefrontCategoriesHandler } from './features/get-storefront-catego
     GetCategoriesHandler,
     GetStorefrontCategoriesHandler,
     BranchRepository,
+    BranchAddressResolver,
     TenantRepository,
     CloudflareCustomHostnameService,
     { provide: CustomHostnameProvider, useExisting: CloudflareCustomHostnameService },

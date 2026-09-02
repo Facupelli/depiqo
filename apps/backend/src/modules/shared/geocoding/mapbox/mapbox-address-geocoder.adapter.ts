@@ -1,12 +1,8 @@
 import { Injectable } from '@nestjs/common';
 
-import {
-  CustomerLocationResolution,
-  CustomerLocationResolver,
-  CustomerLocationSelection,
-} from '../../application/ports/customer-location-resolver.port';
-import { ResolvedCustomerLocation } from '../../domain/delivery-quote.types';
-import { MapboxHttpClient } from './mapbox-http.client';
+import { AddressGeocoder, GeocodeAddressInput } from '../address-geocoder.port';
+import { AddressGeocodingResult, GeocodedLocation } from '../geocoded-location';
+import { MapboxGeocodingHttpClient } from './mapbox-http.client';
 
 interface MapboxContextValue {
   name?: unknown;
@@ -19,9 +15,11 @@ interface MapboxGeocodingFeature {
     mapbox_id?: unknown;
     full_address?: unknown;
     name?: unknown;
+    address_number?: unknown;
     place_formatted?: unknown;
     match_code?: { confidence?: unknown };
     context?: {
+      street?: MapboxContextValue;
       place?: MapboxContextValue;
       locality?: MapboxContextValue;
       region?: MapboxContextValue;
@@ -32,32 +30,28 @@ interface MapboxGeocodingFeature {
 }
 
 interface Candidate {
-  location: ResolvedCustomerLocation;
+  location: GeocodedLocation;
   confidence?: string;
 }
 
 @Injectable()
-export class MapboxCustomerLocationResolverAdapter extends CustomerLocationResolver {
-  constructor(private readonly httpClient: MapboxHttpClient) {
+export class MapboxAddressGeocoderAdapter extends AddressGeocoder {
+  constructor(private readonly httpClient: MapboxGeocodingHttpClient) {
     super();
   }
 
-  async resolve(selection: CustomerLocationSelection): Promise<CustomerLocationResolution> {
+  async geocode(input: GeocodeAddressInput): Promise<AddressGeocodingResult> {
     const url = new URL('https://api.mapbox.com/search/geocode/v6/forward');
-    url.searchParams.set('q', selection.address);
+    url.searchParams.set('q', input.address);
     url.searchParams.set('types', 'address');
     url.searchParams.set('autocomplete', 'false');
     url.searchParams.set('permanent', 'true');
     url.searchParams.set('limit', '2');
 
-    const body = await this.httpClient.getJson(url, 'resolveCustomerLocation');
-    const features = this.readFeatures(body);
-    const candidates = features.map((feature) => this.toCandidate(feature));
+    const body = await this.httpClient.getJson(url);
+    const candidates = this.readFeatures(body).map((feature) => this.toCandidate(feature));
 
-    if (candidates.length === 0) {
-      return { outcome: 'UNRESOLVED' };
-    }
-
+    if (candidates.length === 0) return { outcome: 'UNRESOLVED' };
     if (candidates.length === 1 || this.hasDecisiveFirstCandidate(candidates)) {
       return { outcome: 'RESOLVED', location: candidates[0].location };
     }
@@ -67,7 +61,7 @@ export class MapboxCustomerLocationResolverAdapter extends CustomerLocationResol
 
   private readFeatures(body: unknown): MapboxGeocodingFeature[] {
     if (!this.isRecord(body) || !Array.isArray(body.features)) {
-      throw this.httpClient.malformedResponse('resolveCustomerLocation', 'features must be an array.');
+      throw this.httpClient.malformedResponse('features must be an array.');
     }
 
     return body.features as MapboxGeocodingFeature[];
@@ -75,7 +69,7 @@ export class MapboxCustomerLocationResolverAdapter extends CustomerLocationResol
 
   private toCandidate(feature: MapboxGeocodingFeature): Candidate {
     if (!this.isRecord(feature) || !this.isRecord(feature.properties) || !this.isRecord(feature.geometry)) {
-      throw this.httpClient.malformedResponse('resolveCustomerLocation', 'an address feature is malformed.');
+      throw this.httpClient.malformedResponse('an address feature is malformed.');
     }
 
     const coordinates = feature.geometry.coordinates;
@@ -85,22 +79,20 @@ export class MapboxCustomerLocationResolverAdapter extends CustomerLocationResol
       !this.isValidLongitude(coordinates[0]) ||
       !this.isValidLatitude(coordinates[1])
     ) {
-      throw this.httpClient.malformedResponse('resolveCustomerLocation', 'an address feature has invalid coordinates.');
+      throw this.httpClient.malformedResponse('an address feature has invalid coordinates.');
     }
 
     const properties = feature.properties;
-    const addressLine1 = this.optionalString(properties.name);
+    const featureName = this.optionalString(properties.name);
     const placeFormatted = this.optionalString(properties.place_formatted);
     const formattedAddress =
       this.optionalString(properties.full_address) ??
-      [addressLine1, placeFormatted].filter((value): value is string => value !== undefined).join(', ');
+      [featureName, placeFormatted].filter((value): value is string => value !== undefined).join(', ');
+
     const providerPlaceId = this.optionalString(properties.mapbox_id) ?? this.optionalString(feature.id);
 
     if (!formattedAddress || !providerPlaceId) {
-      throw this.httpClient.malformedResponse(
-        'resolveCustomerLocation',
-        'an address feature is missing its formatted address or identifier.',
-      );
+      throw this.httpClient.malformedResponse('an address feature is missing its formatted address or identifier.');
     }
 
     const context = this.isRecord(properties.context) ? properties.context : undefined;
@@ -110,9 +102,10 @@ export class MapboxCustomerLocationResolverAdapter extends CustomerLocationResol
         formattedAddress,
         longitude: coordinates[0],
         latitude: coordinates[1],
-        addressLine1,
+        street: featureName ?? this.contextName(context?.street),
+        streetNumber: this.optionalString(properties.address_number),
         city: this.contextName(context?.place) ?? this.contextName(context?.locality),
-        state: this.contextName(context?.region),
+        stateRegion: this.contextName(context?.region),
         postalCode: this.contextName(context?.postcode),
         country: this.contextName(context?.country),
         providerPlaceId,
