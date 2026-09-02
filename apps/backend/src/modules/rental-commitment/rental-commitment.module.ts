@@ -17,6 +17,8 @@ import { AssignCustomerToDraftRentalHttpController } from './features/assign-cus
 import { AssignCustomerToDraftRentalHandler } from './features/assign-customer-to-draft-rental/assign-customer-to-draft-rental.handler';
 import { CancelRentalHttpController } from './features/cancel-rental/cancel-rental.controller';
 import { CancelRentalHandler } from './features/cancel-rental/cancel-rental.handler';
+import { CalculateProspectiveCartCostHttpController } from './features/calculate-prospective-cart-cost/calculate-prospective-cart-cost.controller';
+import { CalculateProspectiveCartCostHandler } from './features/calculate-prospective-cart-cost/calculate-prospective-cart-cost.handler';
 import { ChangeRentalDetailsHttpController } from './features/change-rental-details/change-rental-details.controller';
 import { ChangeRentalDetailsHandler } from './features/change-rental-details/change-rental-details.handler';
 import { ChangeRentalSelectionQuantityHttpController } from './features/change-rental-selection-quantity/change-rental-selection-quantity.controller';
@@ -72,6 +74,7 @@ import { RentalLifecycleFactsService } from './public-api/rental-lifecycle-facts
     AssignRentalAccessoriesHttpController,
     AssignCustomerToDraftRentalHttpController,
     CancelRentalHttpController,
+    CalculateProspectiveCartCostHttpController,
     ChangeRentalDetailsHttpController,
     ChangeRentalSelectionQuantityHttpController,
     ConfirmRentalHttpController,
@@ -100,6 +103,7 @@ import { RentalLifecycleFactsService } from './public-api/rental-lifecycle-facts
     AssignRentalAccessoriesHandler,
     AssignCustomerToDraftRentalHandler,
     CancelRentalHandler,
+    CalculateProspectiveCartCostHandler,
     ChangeRentalDetailsHandler,
     ChangeRentalSelectionQuantityHandler,
     ConfirmRentalHandler,
