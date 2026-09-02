@@ -235,6 +235,8 @@ export class ConfirmRentalHandler implements ICommandHandler<ConfirmRentalComman
       })),
     });
 
+    const confirmationIntegrationEvents = toRentalIntegrationEvents(rental.pullDomainEvents());
+
     const persistConfirmation = () =>
       this.unitOfWork.runInTransaction(async ({ tx, integrationEvents }) => {
         const saved = await this.rentalRepository.save(rental, { expectedVersion, ownerSplits: splits, tx });
@@ -249,7 +251,7 @@ export class ConfirmRentalHandler implements ICommandHandler<ConfirmRentalComman
           );
         }
 
-        integrationEvents.collect(toRentalIntegrationEvents(rental.pullDomainEvents()));
+        integrationEvents.collect(confirmationIntegrationEvents);
         return ok(undefined);
       });
 

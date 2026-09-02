@@ -21,7 +21,9 @@ export function toRentalDetailPricing(snapshot: AcceptedRentalPricingSnapshot): 
   };
 }
 
-export function toAcceptedRentalPricingFacts(snapshot: AcceptedRentalPricingSnapshot): AcceptedRentalPricing {
+export function toAcceptedRentalPricingFacts(
+  snapshot: AcceptedRentalPricingSnapshot,
+): Omit<AcceptedRentalPricing, 'acceptedCustomerTotal'> {
   return {
     total: { amount: snapshot.total, currency: snapshot.final.currency },
     chargedUnits: snapshot.final.chargedDays,

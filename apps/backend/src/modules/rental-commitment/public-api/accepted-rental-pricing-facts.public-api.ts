@@ -14,6 +14,7 @@ export interface AcceptedRentalPricingMoney {
 
 export interface AcceptedRentalPricing {
   total: AcceptedRentalPricingMoney;
+  acceptedCustomerTotal: string | null;
   chargedUnits: number;
   billingUnit?: AcceptedRentalPricingBillingUnit;
 }

@@ -1140,10 +1140,16 @@ export class Rental extends AggregateRootBase {
   }
 
   private applyConfirmedStateChanges(changes: ConfirmedRentalStateChanges): Result<void, RentalCommitmentError> {
+    const acceptedCustomerTotal = changes.confirmedPriceSnapshot
+      ? new Decimal(changes.confirmedPriceSnapshot.snapshot.total)
+          .plus(this.props.acceptedDelivery?.snapshot.deliveryTotal ?? 0)
+          .toString()
+      : this.props.acceptedCustomerTotal;
     const candidate = Rental.createFromEntities(this.status, {
       ...this.props,
       ...changes,
       id: this.id,
+      acceptedCustomerTotal,
     });
 
     if (candidate.isErr()) {
