@@ -11,21 +11,26 @@ import { Switch } from "@repo/ui/components/switch";
 import { CircleHelp, Tag } from "lucide-react";
 import { formatCartMoney, parseCartMoneyAmount } from "../cart-money.utils";
 import {
+	useCartFulfillmentContext,
 	useCartPeriodContext,
 	useCartPricingContext,
 } from "../cart-page.context";
 
 export function PriceBreakdown() {
 	const { isPricingReady, isPeriodInvalid } = useCartPeriodContext();
+	const { fulfillmentMethod } = useCartFulfillmentContext();
 	const {
 		pricing,
+		delivery,
+		customerTotal,
+		currency: responseCurrency,
 		isPriceLoading,
 		isPriceError,
 		config,
 		insuranceSelected,
 		setInsuranceSelected,
 	} = useCartPricingContext();
-	const currency = pricing?.currency ?? config.currency;
+	const currency = responseCurrency ?? pricing?.currency ?? config.currency;
 	const locale = pricing?.locale ?? config.locale;
 	const insuranceRatePercent = parseCartMoneyAmount(
 		pricing?.insurance.ratePercent,
@@ -134,10 +139,30 @@ export function PriceBreakdown() {
 						Duración facturada: {pricing.chargedDays}{" "}
 						{pricing.chargedDays === 1 ? "día" : "días"}
 					</p>
+					{fulfillmentMethod === "DELIVERY" && delivery ? (
+						<div className="border-t pt-2">
+							<MoneyRow
+								label="Entrega"
+								amount={delivery.delivery.total}
+								currency={currency}
+								locale={locale}
+							/>
+							<MoneyRow
+								label="Retiro"
+								amount={delivery.collection.total}
+								currency={currency}
+								locale={locale}
+							/>
+						</div>
+					) : null}
 					<div className="flex items-baseline justify-between border-t pt-4">
 						<strong>Total</strong>
 						<strong className="text-2xl">
-							{formatCartMoney(pricing.total, currency, locale)}
+							{formatCartMoney(
+								customerTotal ?? pricing.total,
+								currency,
+								locale,
+							)}
 						</strong>
 					</div>
 				</div>

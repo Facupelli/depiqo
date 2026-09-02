@@ -14,7 +14,6 @@ import { toProspectiveCartCostBody } from "../prospective-cart-cost/prospective-
 import { useProspectiveCartCost } from "../prospective-cart-cost/prospective-cart-cost.queries";
 import { useRentalCartActions, useRentalCartItems } from "../rental-cart.hooks";
 import type {
-	DeliveryRequestField,
 	DeliveryRequestFormState,
 	FulfillmentMethod,
 } from "./cart-checkout.types";
@@ -88,7 +87,7 @@ type FulfillmentSlice = {
 	hasConfirmedDeliveryAddress: boolean;
 	selectFulfillmentMethod: (value: FulfillmentMethod) => void;
 	setDeliverySheetOpen: (open: boolean) => void;
-	setDraftDeliveryField: (field: DeliveryRequestField, value: string) => void;
+	setDraftDeliveryAddress: (value: string) => void;
 	confirmDeliveryRequest: () => void;
 };
 
@@ -320,11 +319,8 @@ export function CartPageProvider({
 						if (!hasConfirmedDeliveryAddress) setFulfillmentMethod("PICKUP");
 					}
 				},
-				setDraftDeliveryField: (field, next) => {
-					setDraftDeliveryRequest((current) => ({
-						...current,
-						[field]: next,
-					}));
+				setDraftDeliveryAddress: (address) => {
+					setDraftDeliveryRequest({ address });
 					setShowDeliveryError(false);
 				},
 				confirmDeliveryRequest: () => {
@@ -332,11 +328,11 @@ export function CartPageProvider({
 						draftDeliveryRequest,
 						"DELIVERY",
 					);
-					if (!isDeliveryRequestComplete(normalized)) {
+					if (!normalized?.address) {
 						setShowDeliveryError(true);
 						return;
 					}
-					setDeliveryRequest(draftDeliveryRequest);
+					setDeliveryRequest({ address: normalized.address });
 					setShowDeliveryError(false);
 					setIsDeliverySheetOpen(false);
 				},

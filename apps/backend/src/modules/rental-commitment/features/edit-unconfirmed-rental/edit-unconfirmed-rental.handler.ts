@@ -195,7 +195,19 @@ export class EditUnconfirmedRentalHandler implements ICommandHandler<
       targetTotalAdjustment: manualPricingAdjustment ? { targetTotal: manualPricingAdjustment.targetTotal } : undefined,
     };
 
-    if (fulfillmentMethod === FulfillmentMethod.Delivery && !deliveryDetails) {
+    const prospectiveResult =
+      fulfillmentMethod === FulfillmentMethod.Pickup
+        ? await this.prospectiveRentalCost.calculate({ fulfillmentMethod: 'PICKUP', pricing: pricingRequest })
+        : deliveryDetails
+          ? await this.prospectiveRentalCost.calculate({
+              fulfillmentMethod: 'DELIVERY',
+              pricing: pricingRequest,
+              branchId,
+              customerLocation: { address: deliveryDetails.address },
+            })
+          : null;
+
+    if (!prospectiveResult) {
       return err(
         this.toApplicationError(
           new RentalInvalidFieldError('deliveryDetails', 'delivery rentals require delivery details'),
@@ -203,24 +215,6 @@ export class EditUnconfirmedRentalHandler implements ICommandHandler<
         ),
       );
     }
-
-    const prospectiveResult = await this.prospectiveRentalCost.calculate(
-      fulfillmentMethod === FulfillmentMethod.Pickup
-        ? { fulfillmentMethod: 'PICKUP', pricing: pricingRequest }
-        : {
-            fulfillmentMethod: 'DELIVERY',
-            pricing: pricingRequest,
-            branchId,
-            customerLocation: {
-              addressLine1: deliveryDetails!.addressLine1,
-              addressLine2: deliveryDetails!.addressLine2,
-              city: deliveryDetails!.city,
-              state: deliveryDetails!.state,
-              postalCode: deliveryDetails!.postalCode,
-              country: deliveryDetails!.country,
-            },
-          },
-    );
     if (prospectiveResult.isErr()) {
       return err(this.toApplicationError(prospectiveResult.error, context));
     }

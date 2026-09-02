@@ -44,11 +44,7 @@ export class MapboxCustomerLocationResolverAdapter extends CustomerLocationResol
 
   async resolve(selection: CustomerLocationSelection): Promise<CustomerLocationResolution> {
     const url = new URL('https://api.mapbox.com/search/geocode/v6/forward');
-    url.searchParams.set('address_line1', selection.addressLine1);
-    url.searchParams.set('place', selection.city);
-    this.setOptionalParameter(url, 'region', selection.state);
-    this.setOptionalParameter(url, 'postcode', selection.postalCode);
-    this.setOptionalParameter(url, 'country', selection.country);
+    url.searchParams.set('q', selection.address);
     url.searchParams.set('types', 'address');
     url.searchParams.set('autocomplete', 'false');
     url.searchParams.set('permanent', 'true');
@@ -56,7 +52,7 @@ export class MapboxCustomerLocationResolverAdapter extends CustomerLocationResol
 
     const body = await this.httpClient.getJson(url, 'resolveCustomerLocation');
     const features = this.readFeatures(body);
-    const candidates = features.map((feature) => this.toCandidate(feature, selection));
+    const candidates = features.map((feature) => this.toCandidate(feature));
 
     if (candidates.length === 0) {
       return { outcome: 'UNRESOLVED' };
@@ -77,7 +73,7 @@ export class MapboxCustomerLocationResolverAdapter extends CustomerLocationResol
     return body.features as MapboxGeocodingFeature[];
   }
 
-  private toCandidate(feature: MapboxGeocodingFeature, selection: CustomerLocationSelection): Candidate {
+  private toCandidate(feature: MapboxGeocodingFeature): Candidate {
     if (!this.isRecord(feature) || !this.isRecord(feature.properties) || !this.isRecord(feature.geometry)) {
       throw this.httpClient.malformedResponse('resolveCustomerLocation', 'an address feature is malformed.');
     }
@@ -115,7 +111,6 @@ export class MapboxCustomerLocationResolverAdapter extends CustomerLocationResol
         longitude: coordinates[0],
         latitude: coordinates[1],
         addressLine1,
-        addressLine2: selection.addressLine2,
         city: this.contextName(context?.place) ?? this.contextName(context?.locality),
         state: this.contextName(context?.region),
         postalCode: this.contextName(context?.postcode),
@@ -138,10 +133,6 @@ export class MapboxCustomerLocationResolverAdapter extends CustomerLocationResol
 
   private contextName(value: unknown): string | undefined {
     return this.isRecord(value) ? this.optionalString(value.name) : undefined;
-  }
-
-  private setOptionalParameter(url: URL, name: string, value?: string): void {
-    if (value) url.searchParams.set(name, value);
   }
 
   private optionalString(value: unknown): string | undefined {

@@ -17,15 +17,7 @@ export const GetRentalDetailPeriodSchema = z.object({
 });
 
 export const GetRentalDetailDeliveryDetailsSchema = z.object({
-	addressLine1: z.string(),
-	addressLine2: z.string().nullable(),
-	city: z.string(),
-	state: z.string().nullable(),
-	postalCode: z.string().nullable(),
-	country: z.string().nullable(),
-	contactName: z.string().nullable(),
-	contactPhone: z.string().nullable(),
-	notes: z.string().nullable(),
+	address: z.string(),
 });
 
 export const GetRentalDetailAcceptedDeliveryLocationSchema = z.object({

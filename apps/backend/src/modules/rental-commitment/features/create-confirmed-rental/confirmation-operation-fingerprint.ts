@@ -49,15 +49,5 @@ function normalizeSelectedOffers(
 function normalizeDeliveryDetails(deliveryDetails?: RentalDeliveryDetails) {
   if (!deliveryDetails) return null;
 
-  return {
-    addressLine1: deliveryDetails.addressLine1,
-    addressLine2: deliveryDetails.addressLine2 ?? null,
-    city: deliveryDetails.city,
-    state: deliveryDetails.state ?? null,
-    postalCode: deliveryDetails.postalCode ?? null,
-    country: deliveryDetails.country ?? null,
-    contactName: deliveryDetails.contactName ?? null,
-    contactPhone: deliveryDetails.contactPhone ?? null,
-    notes: deliveryDetails.notes ?? null,
-  };
+  return { address: deliveryDetails.address };
 }

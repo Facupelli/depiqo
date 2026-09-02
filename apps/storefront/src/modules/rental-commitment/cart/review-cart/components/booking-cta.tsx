@@ -12,6 +12,7 @@ import {
 	useCartBookingFeedbackContext,
 	useCartFulfillmentContext,
 	useCartPeriodContext,
+	useCartPricingContext,
 } from "../cart-page.context";
 import {
 	clearConfirmationAttemptKey,
@@ -65,11 +66,27 @@ function useCartBookingCommand() {
 	const { periodStart, branch, pickupSlot } = useCartPeriodContext();
 	const { setUnavailableRentalOfferIds, clearUnavailableRentalOfferIds } =
 		useCartBookingFeedbackContext();
-	const { fulfillmentMethod } = useCartFulfillmentContext();
+	const { fulfillmentMethod, hasConfirmedDeliveryAddress } =
+		useCartFulfillmentContext();
+	const {
+		delivery,
+		customerTotal,
+		deliveryNotServiceableReason,
+		isPriceLoading,
+		isPriceError,
+	} = useCartPricingContext();
 	const [errorMessage, setErrorMessage] = useState<string | null>(null);
+	const isDeliveryConfirmationReady =
+		fulfillmentMethod !== "DELIVERY" ||
+		(hasConfirmedDeliveryAddress &&
+			!isPriceLoading &&
+			!isPriceError &&
+			deliveryNotServiceableReason === undefined &&
+			delivery != null &&
+			customerTotal !== undefined);
 
 	const submit = async () => {
-		if (isPending) return;
+		if (isPending || !isDeliveryConfirmationReady) return;
 
 		setErrorMessage(null);
 		clearUnavailableRentalOfferIds();
@@ -149,7 +166,7 @@ function useCartBookingCommand() {
 
 	return {
 		errorMessage,
-		isDisabled: isCustomerPending || isPending,
+		isDisabled: isCustomerPending || isPending || !isDeliveryConfirmationReady,
 		isPending,
 		label: isCustomerPending
 			? "Verificando sesión..."

@@ -142,14 +142,7 @@ export class CalculateProspectiveCartCostHandler implements IQueryHandler<
         fulfillmentMethod: 'DELIVERY',
         pricing: pricingRequest,
         branchId: query.branchId,
-        customerLocation: {
-          addressLine1: deliveryDetails.addressLine1,
-          addressLine2: deliveryDetails.addressLine2,
-          city: deliveryDetails.city,
-          state: deliveryDetails.state,
-          postalCode: deliveryDetails.postalCode,
-          country: deliveryDetails.country,
-        },
+        customerLocation: { address: deliveryDetails.address },
       };
     }
 

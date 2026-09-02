@@ -47,17 +47,7 @@ export class GetRentalDetailHandler implements IQueryHandler<GetRentalDetailQuer
         branchId: true,
         customerId: true,
         deliveryDetails: {
-          select: {
-            addressLine1: true,
-            addressLine2: true,
-            city: true,
-            state: true,
-            postalCode: true,
-            country: true,
-            contactName: true,
-            contactPhone: true,
-            notes: true,
-          },
+          select: { address: true },
         },
         selections: {
           where: { removedAt: null },

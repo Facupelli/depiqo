@@ -61,15 +61,7 @@ export interface AcceptedRentalAssetBuffer {
 }
 
 export interface RentalDeliveryDetails {
-  addressLine1: string;
-  addressLine2?: string;
-  city: string;
-  state?: string;
-  postalCode?: string;
-  country?: string;
-  contactName?: string;
-  contactPhone?: string;
-  notes?: string;
+  address: string;
 }
 
 interface RentalProps {
@@ -1436,6 +1428,12 @@ export class Rental extends AggregateRootBase {
     if (this.fulfillmentMethod === FulfillmentMethod.Delivery) {
       if (!this.props.deliveryDetails) {
         return err(new RentalInvalidFieldError('deliveryDetails', 'delivery rentals require delivery details'));
+      }
+      if (
+        this.props.deliveryDetails.address.trim() === '' ||
+        this.props.deliveryDetails.address !== this.props.deliveryDetails.address.trim()
+      ) {
+        return err(new RentalInvalidFieldError('deliveryDetails.address', 'delivery address must be a trimmed string'));
       }
 
       return ok(undefined);

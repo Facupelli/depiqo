@@ -8,17 +8,31 @@ import {
 	SheetHeader,
 	SheetTitle,
 } from "@repo/ui/components/sheet";
-import { Textarea } from "@repo/ui/components/textarea";
-import { MapPin, Truck } from "lucide-react";
+import { CheckCircle2, LoaderCircle, MapPin, Truck } from "lucide-react";
 import { useId } from "react";
-import type { DeliveryRequestField } from "../cart-checkout.types";
 import { formatDeliveryAddressSummary } from "../cart-checkout.utils";
-import { useCartFulfillmentContext } from "../cart-page.context";
+import {
+	useCartFulfillmentContext,
+	useCartPricingContext,
+} from "../cart-page.context";
 
 export function FulfillmentForm() {
 	const fulfillment = useCartFulfillmentContext();
+	const {
+		delivery,
+		deliveryNotServiceableReason,
+		isPriceLoading,
+		isPriceError,
+	} = useCartPricingContext();
 	const addressSummary = fulfillment.hasConfirmedDeliveryAddress
 		? formatDeliveryAddressSummary(fulfillment.deliveryRequest)
+		: null;
+	const isQuotingDelivery =
+		fulfillment.fulfillmentMethod === "DELIVERY" &&
+		fulfillment.hasConfirmedDeliveryAddress &&
+		isPriceLoading;
+	const deliveryStatusMessage = deliveryNotServiceableReason
+		? getDeliveryUnavailableMessage(deliveryNotServiceableReason)
 		: null;
 
 	return (
@@ -47,31 +61,68 @@ export function FulfillmentForm() {
 				</Button>
 			</div>
 			{fulfillment.fulfillmentMethod === "DELIVERY" && addressSummary && (
-				<button
-					type="button"
-					onClick={() => fulfillment.setDeliverySheetOpen(true)}
-					className="mt-4 flex w-full items-start gap-2 rounded-lg bg-muted p-3 text-left text-sm"
-				>
-					<MapPin className="mt-0.5 size-4 shrink-0" />
-					<span>
-						<span className="block font-semibold">Dirección de entrega</span>
-						<span className="text-muted-foreground">{addressSummary}</span>
-					</span>
-				</button>
+				<>
+					<button
+						type="button"
+						onClick={() => fulfillment.setDeliverySheetOpen(true)}
+						className="mt-4 flex w-full items-start gap-2 rounded-lg bg-muted p-3 text-left text-sm"
+					>
+						<MapPin className="mt-0.5 size-4 shrink-0" />
+						<span>
+							<span className="block font-semibold">Dirección de entrega</span>
+							<span className="text-muted-foreground">{addressSummary}</span>
+						</span>
+					</button>
+					{isQuotingDelivery ? (
+						<p className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
+							<LoaderCircle className="size-4 animate-spin" />
+							Consultando disponibilidad de entrega...
+						</p>
+					) : delivery && !isPriceError ? (
+						<p className="mt-2 flex items-center gap-2 text-sm text-emerald-700">
+							<CheckCircle2 className="size-4" />
+							Entrega disponible en esta dirección.
+						</p>
+					) : deliveryStatusMessage && !isPriceError ? (
+						<p className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">
+							{deliveryStatusMessage}
+						</p>
+					) : null}
+				</>
 			)}
 			<DeliveryAddressSheet />
 		</section>
 	);
 }
 
+function getDeliveryUnavailableMessage(
+	reason: ReturnType<
+		typeof useCartPricingContext
+	>["deliveryNotServiceableReason"],
+): string {
+	switch (reason) {
+		case "CUSTOMER_LOCATION_UNRESOLVED":
+		case "CUSTOMER_LOCATION_AMBIGUOUS":
+			return "No pudimos encontrar esa dirección. Revisala e intentá nuevamente.";
+		case "BEYOND_MAX_DISTANCE":
+			return "La dirección está fuera de nuestra zona de entrega.";
+		case "DELIVERY_OUTSIDE_SERVICE_HOURS":
+			return "No podemos realizar la entrega en el horario seleccionado.";
+		case "COLLECTION_OUTSIDE_SERVICE_HOURS":
+			return "No podemos realizar el retiro en el horario seleccionado.";
+		default:
+			return "La entrega no está disponible para esta reserva.";
+	}
+}
+
 function DeliveryAddressSheet() {
-	const notesId = useId();
+	const addressId = useId();
 	const {
 		draftDeliveryRequest,
 		isDeliverySheetOpen,
 		showDeliveryError,
 		setDeliverySheetOpen,
-		setDraftDeliveryField,
+		setDraftDeliveryAddress,
 		confirmDeliveryRequest,
 	} = useCartFulfillmentContext();
 
@@ -81,80 +132,23 @@ function DeliveryAddressSheet() {
 				<SheetHeader>
 					<SheetTitle>Dirección de entrega</SheetTitle>
 					<SheetDescription>
-						Completá los datos obligatorios para solicitar envío.
+						Ingresá la dirección completa donde querés recibir el equipo.
 					</SheetDescription>
 				</SheetHeader>
-				<div className="space-y-4 px-4 pb-4">
+				<div className="px-4 pb-4">
 					{showDeliveryError && (
-						<p className="rounded-lg border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-							Completá todos los campos obligatorios antes de confirmar.
+						<p className="mb-4 rounded-lg border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+							Ingresá una dirección antes de confirmar.
 						</p>
 					)}
-					<div className="grid gap-3 sm:grid-cols-2">
-						<DeliveryInput
-							label="Destinatario"
-							field="contactName"
-							value={draftDeliveryRequest.contactName}
-							onChange={setDraftDeliveryField}
-						/>
-						<DeliveryInput
-							label="Teléfono"
-							field="contactPhone"
-							value={draftDeliveryRequest.contactPhone}
-							onChange={setDraftDeliveryField}
-						/>
-					</div>
-					<DeliveryInput
-						label="Dirección"
-						field="addressLine1"
-						value={draftDeliveryRequest.addressLine1}
-						onChange={setDraftDeliveryField}
-					/>
-					<DeliveryInput
-						label="Dirección adicional"
-						field="addressLine2"
-						value={draftDeliveryRequest.addressLine2}
-						onChange={setDraftDeliveryField}
-						required={false}
-					/>
-					<div className="grid gap-3 sm:grid-cols-2">
-						<DeliveryInput
-							label="Ciudad"
-							field="city"
-							value={draftDeliveryRequest.city}
-							onChange={setDraftDeliveryField}
-						/>
-						<DeliveryInput
-							label="Provincia / región"
-							field="state"
-							value={draftDeliveryRequest.state}
-							onChange={setDraftDeliveryField}
-						/>
-					</div>
-					<div className="grid gap-3 sm:grid-cols-2">
-						<DeliveryInput
-							label="Código postal"
-							field="postalCode"
-							value={draftDeliveryRequest.postalCode}
-							onChange={setDraftDeliveryField}
-						/>
-						<DeliveryInput
-							label="País"
-							field="country"
-							value={draftDeliveryRequest.country}
-							onChange={setDraftDeliveryField}
-						/>
-					</div>
 					<div className="text-xs font-semibold">
-						<label htmlFor={notesId}>Notas de entrega</label>
-						<Textarea
-							id={notesId}
-							className="mt-1.5 min-h-24"
-							value={draftDeliveryRequest.notes}
-							onChange={(event) =>
-								setDraftDeliveryField("notes", event.target.value)
-							}
-							placeholder="Ej: llamar antes de llegar"
+						<label htmlFor={addressId}>Dirección *</label>
+						<Input
+							id={addressId}
+							className="mt-1.5"
+							value={draftDeliveryRequest.address}
+							onChange={(event) => setDraftDeliveryAddress(event.target.value)}
+							placeholder="Av. Santa Fe 1234, Palermo, CABA"
 						/>
 					</div>
 				</div>
@@ -172,34 +166,5 @@ function DeliveryAddressSheet() {
 				</SheetFooter>
 			</SheetContent>
 		</Sheet>
-	);
-}
-
-function DeliveryInput({
-	label,
-	field,
-	value,
-	onChange,
-	required = true,
-}: {
-	label: string;
-	field: DeliveryRequestField;
-	value: string;
-	onChange: (field: DeliveryRequestField, value: string) => void;
-	required?: boolean;
-}) {
-	return (
-		<div className="text-xs font-semibold">
-			<label htmlFor={`delivery-${field}`}>
-				{label}
-				{required ? " *" : ""}
-			</label>
-			<Input
-				id={`delivery-${field}`}
-				className="mt-1.5"
-				value={value}
-				onChange={(event) => onChange(field, event.target.value)}
-			/>
-		</div>
 	);
 }

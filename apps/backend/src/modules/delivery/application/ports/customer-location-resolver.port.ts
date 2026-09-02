@@ -1,12 +1,7 @@
 import { ResolvedCustomerLocation } from '../../domain/delivery-quote.types';
 
 export interface CustomerLocationSelection {
-  addressLine1: string;
-  addressLine2?: string;
-  city: string;
-  state?: string;
-  postalCode?: string;
-  country?: string;
+  address: string;
 }
 
 export type CustomerLocationResolution =

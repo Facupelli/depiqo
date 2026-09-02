@@ -4,12 +4,7 @@ export type ProspectiveCartCostSelectedOffer = {
 };
 
 export type ProspectiveCartCostDeliveryDetails = {
-  addressLine1: string;
-  addressLine2?: string;
-  city: string;
-  state?: string;
-  postalCode?: string;
-  country?: string;
+  address: string;
 };
 
 export class CalculateProspectiveCartCostQuery {

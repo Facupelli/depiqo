@@ -70,16 +70,7 @@ model V2RentalDeliveryDetails {
   tenantId      String @map("tenant_id")
   rentalOrderId String @unique @map("rental_order_id")
 
-  addressLine1 String  @map("address_line_1")
-  addressLine2 String? @map("address_line_2")
-  city         String
-  state        String? @map("state")
-  postalCode   String? @map("postal_code")
-  country      String? @map("country")
-
-  contactName  String? @map("contact_name")
-  contactPhone String? @map("contact_phone")
-  notes        String? @map("notes")
+  address String
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)

@@ -121,14 +121,7 @@ export class ConfirmRentalHandler implements ICommandHandler<ConfirmRentalComman
       const deliveryOutcome = await this.deliveryQuoteService.getQuote({
         tenantId: rental.tenantId,
         branchId: rental.branchId,
-        customerLocation: {
-          addressLine1: deliveryDetails.addressLine1,
-          addressLine2: deliveryDetails.addressLine2,
-          city: deliveryDetails.city,
-          state: deliveryDetails.state,
-          postalCode: deliveryDetails.postalCode,
-          country: deliveryDetails.country,
-        },
+        customerLocation: { address: deliveryDetails.address },
         rentalStart: rental.period.start,
         rentalEnd: rental.period.end,
       });
