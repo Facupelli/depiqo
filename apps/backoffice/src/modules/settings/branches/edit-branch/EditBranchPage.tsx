@@ -1,10 +1,17 @@
 import { Alert, AlertDescription } from "@repo/ui/components/alert";
 import { Button } from "@repo/ui/components/button";
+import {
+	Tabs,
+	TabsContent,
+	TabsList,
+	TabsTrigger,
+} from "@repo/ui/components/tabs";
 import { ArrowLeft } from "lucide-react";
 import { useState } from "react";
 import { BranchForm } from "../BranchForm";
 import { getBranchSaveErrorMessage } from "../branch-save-errors";
 import { useBranchDetail } from "../branches.queries";
+import { DeliveryConfigurationSection } from "../delivery-configuration/delivery-configuration-section";
 import {
 	toUpdateBranchBodyDto,
 	toUpdateBranchFormDefaults,
@@ -34,6 +41,7 @@ export function EditBranchPage({
 	const { mutateAsync: updateBranch, isPending: isUpdatePending } =
 		useUpdateBranch();
 	const [errorMessage, setErrorMessage] = useState<string | null>(null);
+	const [activeTab, setActiveTab] = useState("general");
 
 	async function handleSubmit(values: UpdateBranchFormValues) {
 		setErrorMessage(null);
@@ -105,21 +113,34 @@ export function EditBranchPage({
 				</div>
 			</div>
 
-			{errorMessage && (
-				<Alert variant="destructive">
-					<AlertDescription>{errorMessage}</AlertDescription>
-				</Alert>
-			)}
+			<Tabs value={activeTab} onValueChange={setActiveTab} className="gap-6">
+				<TabsList>
+					<TabsTrigger value="general">General</TabsTrigger>
+					<TabsTrigger value="delivery">Delivery</TabsTrigger>
+				</TabsList>
 
-			<BranchForm
-				formId={formId}
-				defaultValues={toUpdateBranchFormDefaults(branch)}
-				validator={updateBranchFormSchema(branch)}
-				submitLabel="Guardar cambios"
-				isPending={isUpdatePending}
-				onSubmit={handleSubmit}
-				onCancel={onBack}
-			/>
+				<TabsContent value="general" keepMounted className="space-y-6">
+					{errorMessage && (
+						<Alert variant="destructive">
+							<AlertDescription>{errorMessage}</AlertDescription>
+						</Alert>
+					)}
+
+					<BranchForm
+						formId={formId}
+						defaultValues={toUpdateBranchFormDefaults(branch)}
+						validator={updateBranchFormSchema(branch)}
+						submitLabel="Guardar cambios"
+						isPending={isUpdatePending}
+						onSubmit={handleSubmit}
+						onCancel={onBack}
+					/>
+				</TabsContent>
+
+				<TabsContent value="delivery" keepMounted>
+					<DeliveryConfigurationSection branchId={branchId} />
+				</TabsContent>
+			</Tabs>
 		</div>
 	);
 }
