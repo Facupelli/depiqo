@@ -23,7 +23,6 @@ export class GetPromotionsHttpController {
         isActive: dto.isActive,
         activation: dto.activation,
         effectType: dto.effectType,
-        target: dto.target,
         search: dto.search,
       }),
     );

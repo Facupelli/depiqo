@@ -111,7 +111,23 @@ An offer may exist without active pricing during setup, but it is not fully book
 
 A promotion is a pricing rule that modifies a calculation.
 
-It may apply to a rentable item, rental offer, order, tenant, date range, or another explicit scope supported by the current schema.
+A promotion can qualify from and financially affect only the lines inside its resolved scope after exclusions.
+
+```text
+scope
+  determines the candidate participating lines
+
+exclusions
+  remove lines from that scope
+
+conditions
+  are evaluated from those eligible lines
+
+effect
+  is calculated from and allocated only to those eligible lines
+```
+
+A whole-order promotion uses `scope = ALL` with no exclusions.
 
 Promotion behavior with first-class domain meaning should remain explicit and queryable rather than being hidden inside opaque JSON.
 

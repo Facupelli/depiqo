@@ -62,7 +62,6 @@ export type PricingCalculationBreakdown = {
     name: string;
     activation: 'AUTOMATIC' | 'COUPON_REQUIRED';
     effectType: 'PERCENTAGE_OFF' | 'FIXED_AMOUNT_OFF';
-    target: 'ORDER' | 'ELIGIBLE_LINES';
     effectValue: string;
     amount: string;
   }>;

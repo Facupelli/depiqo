@@ -11,20 +11,20 @@ import { useProducts } from "@/modules/products/list-products/product-list.queri
 import { useCategories } from "@/modules/settings/categories/public";
 import useDebounce from "@/shared/hooks/use-debounce";
 
-export type PromotionTargetType =
+export type PromotionScopeType =
 	| "RENTABLE_ITEM"
 	| "RENTAL_OFFER"
 	| "CATEGORY"
 	| "PRODUCT_KIND";
 
-type PromotionTargetSelectorProps = {
-	type: PromotionTargetType;
+type PromotionScopeSelectorProps = {
+	type: PromotionScopeType;
 	value: string;
 	onValueChange: (value: string) => void;
 };
 
-const targetCopy: Record<
-	PromotionTargetType,
+const scopeCopy: Record<
+	PromotionScopeType,
 	{ label: string; searchPlaceholder: string; empty: string }
 > = {
 	RENTABLE_ITEM: {
@@ -49,11 +49,11 @@ const targetCopy: Record<
 	},
 };
 
-export function PromotionTargetSelector({
+export function PromotionScopeSelector({
 	type,
 	value,
 	onValueChange,
-}: PromotionTargetSelectorProps) {
+}: PromotionScopeSelectorProps) {
 	const [open, setOpen] = useState(false);
 	const [search, setSearch] = useState("");
 	const debouncedSearch = useDebounce(search, 250).trim();
@@ -70,7 +70,7 @@ export function PromotionTargetSelector({
 	);
 	const options = buildOptions(type, categories, productsPage?.data ?? []);
 	const selected = options.find((option) => option.value === value);
-	const copy = targetCopy[type];
+	const copy = scopeCopy[type];
 
 	return (
 		<Popover open={open} onOpenChange={setOpen}>
@@ -160,7 +160,7 @@ export function PromotionTargetSelector({
 type Option = { value: string; label: string; description?: string };
 
 function buildOptions(
-	type: PromotionTargetType,
+	type: PromotionScopeType,
 	categories: { id: string; name: string }[],
 	products: {
 		id: string;

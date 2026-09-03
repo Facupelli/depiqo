@@ -74,7 +74,6 @@ function pricingBasisSignature(pricing: V2Pricing): string {
 			activation: promotion.activation,
 			effectType: promotion.effectType,
 			effectValue: promotion.effectValue,
-			target: promotion.target,
 			amount: promotion.amount,
 		}))
 		.sort((left, right) => left.promotionId.localeCompare(right.promotionId));

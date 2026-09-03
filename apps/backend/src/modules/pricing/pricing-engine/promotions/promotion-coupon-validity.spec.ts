@@ -56,7 +56,6 @@ function promotion(overrides: Partial<PromotionPricingInput> = {}): PromotionPri
     validUntil: '2026-08-10',
     effectType: 'PERCENTAGE_OFF',
     effectValue: '10',
-    target: 'ORDER',
     scopes: [{ appliesToAll: true }],
     exclusions: [],
     ...overrides,

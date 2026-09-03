@@ -1,6 +1,6 @@
 import type { LocalDate } from '@repo/api-contracts';
 
-import { PromotionActivation, PromotionApplicationTarget, PromotionEffectType } from './promotion.types';
+import { PromotionActivation, PromotionEffectType } from './promotion.types';
 
 export type PromotionPricingInput = {
   id: string;
@@ -14,7 +14,6 @@ export type PromotionPricingInput = {
   validUntil?: LocalDate | null;
   effectType: PromotionEffectType;
   effectValue: string;
-  target: PromotionApplicationTarget;
   minOrderSubtotal?: string | null;
   minRentalUnits?: number | null;
   maxRentalUnits?: number | null;

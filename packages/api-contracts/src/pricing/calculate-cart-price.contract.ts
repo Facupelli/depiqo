@@ -47,7 +47,6 @@ export const CalculateCartPriceAppliedPromotionSchema = z.object({
   activation: z.enum(["AUTOMATIC", "COUPON_REQUIRED"]),
   effectType: z.enum(["PERCENTAGE_OFF", "FIXED_AMOUNT_OFF"]),
   effectValue: DecimalStringSchema,
-  target: z.enum(["ORDER", "ELIGIBLE_LINES"]),
   amount: DecimalStringSchema,
 });
 

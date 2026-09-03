@@ -1,5 +1,5 @@
 import { UpdatePromotionExclusionDto, UpdatePromotionScopeDto } from '@repo/api-contracts';
-import { PromotionActivation, PromotionApplicationTarget, PromotionEffectType } from 'src/generated/prisma/client';
+import { PromotionActivation, PromotionEffectType } from 'src/generated/prisma/client';
 
 export class UpdatePromotionCommand {
   public readonly tenantId: string;
@@ -13,7 +13,6 @@ export class UpdatePromotionCommand {
   public readonly validUntil?: string;
   public readonly effectType: PromotionEffectType;
   public readonly effectValue: string;
-  public readonly target: PromotionApplicationTarget;
   public readonly minOrderSubtotal?: string;
   public readonly minRentalUnits?: number;
   public readonly maxRentalUnits?: number;
@@ -32,7 +31,6 @@ export class UpdatePromotionCommand {
     validUntil?: string;
     effectType: PromotionEffectType;
     effectValue: string;
-    target: PromotionApplicationTarget;
     minOrderSubtotal?: string;
     minRentalUnits?: number;
     maxRentalUnits?: number;
@@ -50,7 +48,6 @@ export class UpdatePromotionCommand {
     this.validUntil = props.validUntil;
     this.effectType = props.effectType;
     this.effectValue = props.effectValue;
-    this.target = props.target;
     this.minOrderSubtotal = props.minOrderSubtotal;
     this.minRentalUnits = props.minRentalUnits;
     this.maxRentalUnits = props.maxRentalUnits;

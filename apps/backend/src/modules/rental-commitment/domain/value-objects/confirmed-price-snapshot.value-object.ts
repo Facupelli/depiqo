@@ -4,7 +4,8 @@ import { z } from 'zod';
 
 import {
   ACCEPTED_RENTAL_PRICING_SNAPSHOT_SCHEMA,
-  ACCEPTED_RENTAL_PRICING_SNAPSHOT_VERSION,
+  ACCEPTED_RENTAL_PRICING_SNAPSHOT_V2_VERSION,
+  ACCEPTED_RENTAL_PRICING_SNAPSHOT_V3_VERSION,
   AcceptedRentalPricingSnapshot,
 } from './accepted-pricing-snapshot.type';
 import { RentalCommitmentError, RentalInvalidFieldError } from '../errors/rental-commitment.errors';
@@ -47,7 +48,20 @@ const lineSchema = z.object({
     })
     .optional(),
 });
-const breakdownSchema = z.object({
+const appliedPromotionV3Schema = z
+  .object({
+    promotionId: z.string(),
+    name: z.string(),
+    activation: z.enum(['AUTOMATIC', 'COUPON_REQUIRED']),
+    effectType: z.enum(['PERCENTAGE_OFF', 'FIXED_AMOUNT_OFF']),
+    effectValue: z.string(),
+    amount: decimalString,
+  })
+  .strict();
+const appliedPromotionV2Schema = appliedPromotionV3Schema.extend({
+  target: z.enum(['ORDER', 'ELIGIBLE_LINES']),
+});
+const breakdownV3Schema = z.object({
   currency: z.string().trim().min(1),
   subtotal: decimalString,
   discountTotal: decimalString,
@@ -67,45 +81,49 @@ const breakdownSchema = z.object({
     halfDayThresholdMinutes: z.number().optional(),
   }),
   lines: z.array(lineSchema),
-  appliedPromotions: z.array(
-    z.object({
-      promotionId: z.string(),
-      name: z.string(),
-      activation: z.enum(['AUTOMATIC', 'COUPON_REQUIRED']),
-      effectType: z.enum(['PERCENTAGE_OFF', 'FIXED_AMOUNT_OFF']),
-      effectValue: z.string(),
-      target: z.enum(['ORDER', 'ELIGIBLE_LINES']),
-      amount: decimalString,
-    }),
-  ),
+  appliedPromotions: z.array(appliedPromotionV3Schema),
   appliedCoupon: z
     .object({ couponId: z.string(), code: z.string(), promotionId: z.string(), amount: decimalString })
     .optional(),
 });
+const breakdownV2Schema = breakdownV3Schema.extend({
+  appliedPromotions: z.array(appliedPromotionV2Schema),
+});
+const snapshotFields = {
+  schema: z.literal(ACCEPTED_RENTAL_PRICING_SNAPSHOT_SCHEMA),
+  calculatedAtIso: z.string().min(1),
+  context: z.enum(['DRAFT', 'CONFIRMED', 'CONFIRM_DRAFT', 'REPRICE']),
+  manualPricingAdjustment: z
+    .object({
+      mode: z.literal('TARGET_TOTAL'),
+      targetTotal: decimalString,
+      previousTotal: decimalString,
+      direction,
+      adjustmentTotal: decimalString,
+      setByTenantUserId: z.string(),
+      setAtIso: z.string(),
+      reason: z.string().optional(),
+    })
+    .optional(),
+  insurance: z.object({ applied: z.boolean(), amount: decimalString }),
+  totalBeforeInsurance: decimalString,
+  total: decimalString,
+};
 const acceptedSnapshotSchema: z.ZodType<AcceptedRentalPricingSnapshot> = z
-  .object({
-    schema: z.literal(ACCEPTED_RENTAL_PRICING_SNAPSHOT_SCHEMA),
-    version: z.literal(ACCEPTED_RENTAL_PRICING_SNAPSHOT_VERSION),
-    calculatedAtIso: z.string().min(1),
-    context: z.enum(['DRAFT', 'CONFIRMED', 'CONFIRM_DRAFT', 'REPRICE']),
-    calculated: breakdownSchema,
-    final: breakdownSchema,
-    manualPricingAdjustment: z
-      .object({
-        mode: z.literal('TARGET_TOTAL'),
-        targetTotal: decimalString,
-        previousTotal: decimalString,
-        direction,
-        adjustmentTotal: decimalString,
-        setByTenantUserId: z.string(),
-        setAtIso: z.string(),
-        reason: z.string().optional(),
-      })
-      .optional(),
-    insurance: z.object({ applied: z.boolean(), amount: decimalString }),
-    totalBeforeInsurance: decimalString,
-    total: decimalString,
-  })
+  .discriminatedUnion('version', [
+    z.object({
+      ...snapshotFields,
+      version: z.literal(ACCEPTED_RENTAL_PRICING_SNAPSHOT_V2_VERSION),
+      calculated: breakdownV2Schema,
+      final: breakdownV2Schema,
+    }),
+    z.object({
+      ...snapshotFields,
+      version: z.literal(ACCEPTED_RENTAL_PRICING_SNAPSHOT_V3_VERSION),
+      calculated: breakdownV3Schema,
+      final: breakdownV3Schema,
+    }),
+  ])
   .superRefine((snapshot, context) => {
     const finalTotal = parseFiniteDecimal(snapshot.final.total);
     const totalBeforeInsurance = parseFiniteDecimal(snapshot.totalBeforeInsurance);

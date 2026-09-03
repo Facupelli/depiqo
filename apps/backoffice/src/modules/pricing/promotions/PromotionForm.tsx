@@ -19,7 +19,6 @@ import { useForm } from "@tanstack/react-form";
 import { ChevronDown, Minus, Plus } from "lucide-react";
 import { type ReactNode, useId, useState } from "react";
 import { useCategories } from "@/modules/settings/categories/public";
-import { PromotionTargetSelector } from "./PromotionTargetSelector";
 import {
 	createEmptyExclusion,
 	createEmptyScope,
@@ -31,6 +30,7 @@ import {
 	type PromotionScopeType,
 	promotionFormSchema,
 } from "./promotion-form.schema";
+import { PromotionScopeSelector } from "./promotion-scope-selector";
 
 type PromotionFormApi = ReturnType<typeof usePromotionForm>["form"];
 type ConditionName = "minOrderSubtotal" | "minRentalUnits" | "maxRentalUnits";
@@ -133,7 +133,7 @@ function DiscountSection({ form }: { form: PromotionFormApi }) {
 	return (
 		<Section
 			title="Descuento"
-			description="Definí qué descuento ofrecés y qué parte de la reserva lo recibe."
+			description="Definí qué descuento ofrecés. El alcance determina qué productos lo reciben."
 		>
 			<div className="grid gap-4 sm:grid-cols-2">
 				<form.Field name="effectType">
@@ -164,28 +164,6 @@ function DiscountSection({ form }: { form: PromotionFormApi }) {
 					placeholder="Ej: 10"
 				/>
 			</div>
-			<form.Field name="target">
-				{(field) => (
-					<ChoiceCards
-						label="¿Qué recibe el descuento?"
-						value={field.state.value}
-						onValueChange={field.handleChange}
-						items={[
-							{
-								value: "ORDER",
-								label: "Toda la reserva",
-								description:
-									"Se descuenta el total de la reserva cuando cumple los requisitos.",
-							},
-							{
-								value: "ELIGIBLE_LINES",
-								label: "Productos específicos",
-								description: "Solo se descuentan los productos que elijas.",
-							},
-						]}
-					/>
-				)}
-			</form.Field>
 		</Section>
 	);
 }
@@ -222,31 +200,17 @@ function ActivationSection({ form }: { form: PromotionFormApi }) {
 
 function ProductEligibilitySection({ form }: { form: PromotionFormApi }) {
 	return (
-		<form.Subscribe selector={(state) => state.values.target}>
-			{(target) => (
-				<Section
-					title="Productos"
-					description={
-						target === "ORDER"
-							? "Definí si la reserva debe contener productos determinados para obtener el descuento."
-							: "Elegí los productos que reciben el descuento."
-					}
-				>
-					<ScopeEditor form={form} target={target} />
-					<ExclusionEditor form={form} />
-				</Section>
-			)}
-		</form.Subscribe>
+		<Section
+			title="Productos"
+			description="Elegí los productos que reciben el descuento. Las exclusiones quitan productos de ese alcance."
+		>
+			<ScopeEditor form={form} />
+			<ExclusionEditor form={form} />
+		</Section>
 	);
 }
 
-function ScopeEditor({
-	form,
-	target,
-}: {
-	form: PromotionFormApi;
-	target: "ORDER" | "ELIGIBLE_LINES";
-}) {
+function ScopeEditor({ form }: { form: PromotionFormApi }) {
 	return (
 		<form.Field name="scopes" mode="array">
 			{(field) => {
@@ -254,24 +218,14 @@ function ScopeEditor({
 				return (
 					<div className="space-y-4">
 						<Field>
-							<FieldLabel>
-								{target === "ORDER"
-									? "¿La reserva debe incluir algún producto específico?"
-									: "¿Qué productos reciben el descuento?"}
-							</FieldLabel>
+							<FieldLabel>¿Qué productos reciben el descuento?</FieldLabel>
 							<StaticSelect
 								value={scopeType}
 								onValueChange={(nextType) =>
 									form.setFieldValue("scopes", [createEmptyScope(nextType)])
 								}
 								items={[
-									{
-										value: "ALL",
-										label:
-											target === "ORDER"
-												? "No, cualquier reserva"
-												: "Todos los productos",
-									},
+									{ value: "ALL", label: "Todos los productos" },
 									{ value: "RENTABLE_ITEM", label: "Productos" },
 									{ value: "CATEGORY", label: "Categorías" },
 									{ value: "RENTAL_OFFER", label: "Ofertas en sucursal" },
@@ -280,9 +234,7 @@ function ScopeEditor({
 						</Field>
 						{scopeType === "ALL" ? (
 							<p className="rounded-lg border bg-muted/30 px-4 py-3 text-muted-foreground text-sm">
-								{target === "ORDER"
-									? "No hay requisitos de productos: la promoción puede aplicar a cualquier reserva."
-									: "El descuento alcanza todos los productos de la reserva."}
+								El descuento alcanza todos los productos de la reserva.
 							</p>
 						) : (
 							<>
@@ -337,7 +289,7 @@ function ScopeRow({
 				{(valueField) => (
 					<Field>
 						<FieldLabel>{scopeLabel(scope.type)}</FieldLabel>
-						<PromotionTargetSelector
+						<PromotionScopeSelector
 							type={scope.type}
 							value={valueField.state.value}
 							onValueChange={valueField.handleChange}
@@ -447,7 +399,7 @@ function ExclusionRow({
 				{(valueField) => (
 					<Field>
 						<FieldLabel>Selección</FieldLabel>
-						<PromotionTargetSelector
+						<PromotionScopeSelector
 							type={exclusion.type}
 							value={valueField.state.value}
 							onValueChange={valueField.handleChange}
@@ -901,10 +853,6 @@ function buildPromotionSummary(
 	const value = values.effectValue.trim() || "un valor pendiente";
 	const discount =
 		values.effectType === "PERCENTAGE_OFF" ? `${value}%` : `$${value}`;
-	const target =
-		values.target === "ORDER"
-			? "en toda la reserva"
-			: "en los productos seleccionados";
 	const activation =
 		values.activation === "AUTOMATIC"
 			? "Se aplica automáticamente"
@@ -918,12 +866,7 @@ function buildPromotionSummary(
 				: firstScope?.type === "RENTAL_OFFER"
 					? "las ofertas en sucursal elegidas"
 					: "";
-	const scope =
-		firstScope?.type === "ALL"
-			? ""
-			: values.target === "ORDER"
-				? ` cuando la reserva incluye ${scopeDescription}`
-				: ` para ${scopeDescription}`;
+	const scope = firstScope?.type === "ALL" ? "" : ` para ${scopeDescription}`;
 	const conditions = [
 		values.minOrderSubtotal.trim()
 			? `requiere un subtotal mínimo de $${values.minOrderSubtotal.trim()}`
@@ -945,7 +888,7 @@ function buildPromotionSummary(
 	const stackability = values.stackable
 		? " Puede combinarse con promociones posteriores."
 		: " No se combina con promociones posteriores.";
-	return `${discount} de descuento ${target}.${scope} ${activation}.${conditions.length ? ` ${conditions.join(" y ")}.` : ""}${exclusions}${validity}${stackability}`
+	return `${discount} de descuento${scope}. ${activation}.${conditions.length ? ` ${conditions.join(" y ")}.` : ""}${exclusions}${validity}${stackability}`
 		.replace(/\s+/g, " ")
 		.trim();
 }

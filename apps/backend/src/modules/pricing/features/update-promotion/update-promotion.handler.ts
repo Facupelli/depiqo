@@ -57,7 +57,6 @@ export class UpdatePromotionHandler implements ICommandHandler<
           validUntil: command.validUntil ? localDateToPrismaDate(command.validUntil) : null,
           effectType: command.effectType,
           effectValue: command.effectValue,
-          target: command.target,
           minOrderSubtotal: command.minOrderSubtotal ?? null,
           minRentalUnits: command.minRentalUnits ?? null,
           maxRentalUnits: command.maxRentalUnits ?? null,

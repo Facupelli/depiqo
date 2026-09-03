@@ -152,7 +152,6 @@ function mapPromotion(row: PromotionRow): PromotionPricingInput {
     validUntil: row.validUntil ? prismaDateToLocalDate(row.validUntil) : null,
     effectType: row.effectType,
     effectValue: String(row.effectValue),
-    target: row.target,
     minOrderSubtotal: row.minOrderSubtotal == null ? null : String(row.minOrderSubtotal),
     minRentalUnits: row.minRentalUnits,
     maxRentalUnits: row.maxRentalUnits,

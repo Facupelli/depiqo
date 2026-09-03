@@ -52,7 +52,6 @@ export class PricingResultAssembler {
         activation: appliedPromotion.promotion.activation,
         effectType: appliedPromotion.promotion.effectType,
         effectValue: appliedPromotion.promotion.effectValue,
-        target: appliedPromotion.promotion.target,
         amount: appliedPromotion.amount.toSnapshotString(),
       })),
       appliedCoupon: appliedCouponPromotion

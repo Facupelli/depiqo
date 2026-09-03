@@ -104,11 +104,6 @@ export const GetRentalDetailPromotionEffectTypeSchema = z.enum([
 	"PERCENTAGE_OFF",
 	"FIXED_AMOUNT_OFF",
 ]);
-export const GetRentalDetailPromotionApplicationTargetSchema = z.enum([
-	"ORDER",
-	"ELIGIBLE_LINES",
-]);
-
 export const GetRentalDetailDurationPolicySnapshotSchema = z.object({
 	timezone: z.string(),
 	dailyBillingPolicy: GetRentalDetailDailyBillingPolicySchema,
@@ -177,7 +172,6 @@ export const GetRentalDetailAppliedPromotionSchema = z.object({
 	activation: GetRentalDetailPromotionActivationSchema,
 	effectType: GetRentalDetailPromotionEffectTypeSchema,
 	effectValue: z.string(),
-	target: GetRentalDetailPromotionApplicationTargetSchema,
 	amount: z.string(),
 });
 
@@ -297,9 +291,6 @@ export type GetRentalDetailPromotionActivationDto = z.infer<
 >;
 export type GetRentalDetailPromotionEffectTypeDto = z.infer<
 	typeof GetRentalDetailPromotionEffectTypeSchema
->;
-export type GetRentalDetailPromotionApplicationTargetDto = z.infer<
-	typeof GetRentalDetailPromotionApplicationTargetSchema
 >;
 export type GetRentalDetailDurationPolicySnapshotDto = z.infer<
 	typeof GetRentalDetailDurationPolicySnapshotSchema

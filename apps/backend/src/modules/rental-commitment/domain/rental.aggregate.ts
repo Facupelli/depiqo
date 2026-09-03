@@ -45,6 +45,7 @@ import { CreateRentalSelectionProps, RentalSelection } from './rental-selection.
 import { endAssignmentParticipation } from './release-assignment-participation';
 import { AssignedAssetOwnershipSnapshot } from './value-objects/assigned-asset-ownership-snapshot.value-object';
 import { AcceptedDeliverySnapshot } from './value-objects/accepted-delivery-snapshot.value-object';
+import { toAcceptedRentalPricingV3Snapshot } from './value-objects/accepted-pricing-snapshot.type';
 import { ConfirmedPriceSnapshot } from './value-objects/confirmed-price-snapshot.value-object';
 import { BookingSnapshot, JsonSnapshot, JsonValue } from './value-objects/json-snapshot.value-object';
 import { RentalPeriod } from './value-objects/rental-period.value-object';
@@ -1152,7 +1153,10 @@ export class Rental extends AggregateRootBase {
       return err(new ConfirmedRentalRequiresPriceSnapshotError(this.id));
     }
 
-    return ConfirmedPriceSnapshot.create(this.props.priceSnapshot.toJSON());
+    const currentSnapshot = ConfirmedPriceSnapshot.create(this.props.priceSnapshot.toJSON());
+    if (currentSnapshot.isErr()) return currentSnapshot;
+
+    return ConfirmedPriceSnapshot.create(toAcceptedRentalPricingV3Snapshot(currentSnapshot.value.snapshot));
   }
 
   private resolveConfirmationAssetBlocks(params: {
@@ -1231,7 +1235,9 @@ export class Rental extends AggregateRootBase {
 
   private validateUnconfirmedInvariants(): Result<void, RentalCommitmentError> {
     if (this.props.acceptedCustomerTotal !== undefined) {
-      return err(new RentalInvalidFieldError('acceptedCustomerTotal', 'unconfirmed rentals cannot have accepted facts'));
+      return err(
+        new RentalInvalidFieldError('acceptedCustomerTotal', 'unconfirmed rentals cannot have accepted facts'),
+      );
     }
 
     if (this.fulfillmentMethod === FulfillmentMethod.Pickup && this.props.deliverySnapshot) {

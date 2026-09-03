@@ -1,11 +1,6 @@
 import { LineTargetTotalAllocation } from '../../features/price-draft-rental/manual-adjustments/manual-pricing-adjustment.types';
 import { BasePricingResult, BasePricingResultLine } from '../base/base-pricing-result.type';
-import {
-  PricingAdjustmentType,
-  PromotionActivation,
-  PromotionApplicationTarget,
-  PromotionEffectType,
-} from '../promotions/promotion.types';
+import { PricingAdjustmentType, PromotionActivation, PromotionEffectType } from '../promotions/promotion.types';
 
 export type PricingResult = Omit<BasePricingResult, 'lines'> & {
   lines: PricingResultLine[];
@@ -32,7 +27,6 @@ export type AppliedPromotionSnapshot = {
   activation: PromotionActivation;
   effectType: PromotionEffectType;
   effectValue: string;
-  target: PromotionApplicationTarget;
   amount: string;
 };
 

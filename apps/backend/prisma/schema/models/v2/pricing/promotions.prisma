@@ -8,11 +8,6 @@ enum PromotionEffectType {
   FIXED_AMOUNT_OFF
 }
 
-enum PromotionApplicationTarget {
-  ORDER
-  ELIGIBLE_LINES
-}
-
 model V2Promotion {
   id         String              @id @default(uuid())
   tenantId   String              @map("tenant_id")
@@ -25,9 +20,8 @@ model V2Promotion {
   validFrom  DateTime? @map("valid_from") @db.Date
   validUntil DateTime? @map("valid_until") @db.Date
 
-  effectType  PromotionEffectType        @map("effect_type")
-  effectValue Decimal                    @map("effect_value")
-  target      PromotionApplicationTarget @default(ORDER)
+  effectType  PromotionEffectType @map("effect_type")
+  effectValue Decimal             @map("effect_value")
 
   minOrderSubtotal Decimal? @map("min_order_subtotal")
   minRentalUnits   Int?     @map("min_rental_units")

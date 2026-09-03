@@ -20,9 +20,9 @@ import {
 import { RentalStatus } from '../../domain/rental-status';
 import { Rental } from '../../domain/rental.aggregate';
 import {
-  ACCEPTED_RENTAL_PRICING_SNAPSHOT_VERSION,
   AcceptedRentalPricingBreakdown,
-  AcceptedRentalPricingSnapshot,
+  AcceptedRentalPricingV3Snapshot,
+  toAcceptedRentalPricingV3Snapshot,
 } from '../../domain/value-objects/accepted-pricing-snapshot.type';
 import { ConfirmedPriceSnapshot } from '../../domain/value-objects/confirmed-price-snapshot.value-object';
 import { JsonValue } from '../../domain/value-objects/json-snapshot.value-object';
@@ -78,7 +78,7 @@ export class ChangeRentalDetailsHandler implements ICommandHandler<
 
       let transformedPrice: JsonValue | undefined;
       if (change.pricingChanged || change.insuranceChanged) {
-        let snapshot = current.confirmedPriceSnapshot!.snapshot;
+        let snapshot = toAcceptedRentalPricingV3Snapshot(current.confirmedPriceSnapshot!.snapshot);
         if (change.pricingChanged) {
           const manualPricingAdjustment = patch.manualPricingAdjustment;
           if (manualPricingAdjustment === undefined) {
@@ -137,12 +137,12 @@ export class ChangeRentalDetailsHandler implements ICommandHandler<
   }
 
   private transformManualPricingAdjustment(input: {
-    snapshot: AcceptedRentalPricingSnapshot;
+    snapshot: AcceptedRentalPricingV3Snapshot;
     adjustment: NonNullable<ChangeRentalDetailsPatch['manualPricingAdjustment']> | null;
     tenantUserId: string;
     operationTime: Date;
     context: Record<string, unknown>;
-  }): Result<AcceptedRentalPricingSnapshot, ChangeRentalDetailsError> {
+  }): Result<AcceptedRentalPricingV3Snapshot, ChangeRentalDetailsError> {
     const snapshotEnvelope = { ...input.snapshot };
     delete snapshotEnvelope.manualPricingAdjustment;
     const final = copyAcceptedPricingBreakdown(input.snapshot.calculated);
@@ -201,10 +201,10 @@ export class ChangeRentalDetailsHandler implements ICommandHandler<
 
   private async transformInsuranceComposition(input: {
     tenantId: string;
-    snapshot: AcceptedRentalPricingSnapshot;
+    snapshot: AcceptedRentalPricingV3Snapshot;
     insuranceSelected: boolean;
     context: Record<string, unknown>;
-  }): Promise<Result<AcceptedRentalPricingSnapshot, ChangeRentalDetailsError>> {
+  }): Promise<Result<AcceptedRentalPricingV3Snapshot, ChangeRentalDetailsError>> {
     const composition = await this.pricingCalculation.calculateInsuranceForEquipmentPrice({
       tenantId: input.tenantId,
       insuranceSelected: input.insuranceSelected,
@@ -215,7 +215,6 @@ export class ChangeRentalDetailsHandler implements ICommandHandler<
 
     return ok({
       ...input.snapshot,
-      version: ACCEPTED_RENTAL_PRICING_SNAPSHOT_VERSION,
       ...composition.value,
     });
   }
@@ -225,7 +224,7 @@ export class ChangeRentalDetailsHandler implements ICommandHandler<
     tenantUserId: string;
     setAtIso: string;
     reason?: string;
-  }): NonNullable<AcceptedRentalPricingSnapshot['manualPricingAdjustment']> {
+  }): NonNullable<AcceptedRentalPricingV3Snapshot['manualPricingAdjustment']> {
     return {
       mode: 'TARGET_TOTAL',
       targetTotal: input.allocation.targetTotal,
@@ -341,8 +340,7 @@ function copyAcceptedPricingBreakdown(breakdown: AcceptedRentalPricingBreakdown)
   };
 }
 
-function withUpdatedEquipmentTotal(snapshot: AcceptedRentalPricingSnapshot): AcceptedRentalPricingSnapshot {
-  if (snapshot.version !== ACCEPTED_RENTAL_PRICING_SNAPSHOT_VERSION) return snapshot;
+function withUpdatedEquipmentTotal(snapshot: AcceptedRentalPricingV3Snapshot): AcceptedRentalPricingV3Snapshot {
   return {
     ...snapshot,
     totalBeforeInsurance: snapshot.final.total,

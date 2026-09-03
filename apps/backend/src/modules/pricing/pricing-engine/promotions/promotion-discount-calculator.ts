@@ -9,11 +9,10 @@ export class PromotionDiscountCalculator {
     const { context, eligiblePromotion } = input;
     const { promotion, eligibleLines } = eligiblePromotion;
 
-    // TODO: fix nested ternary operation
-    const discountableSubtotal =
-      promotion.target === 'ORDER'
-        ? context.total
-        : eligibleLines.reduce((total, line) => total.add(line.total), Money.zero(context.currency));
+    const discountableSubtotal = eligibleLines.reduce(
+      (total, line) => total.add(line.total),
+      Money.zero(context.currency),
+    );
 
     if (discountableSubtotal.isZero()) {
       return Money.zero(context.currency);
