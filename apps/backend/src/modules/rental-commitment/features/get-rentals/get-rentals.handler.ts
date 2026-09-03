@@ -6,7 +6,10 @@ import type {
   GetRentalsSortDirectionDto,
 } from '@repo/api-contracts';
 import { Prisma } from 'src/generated/prisma/client';
-import { V2FulfillmentMethod, V2RentalStatus } from 'src/generated/prisma/enums';
+import {
+  V2FulfillmentMethod,
+  V2RentalStatus,
+} from 'src/generated/prisma/enums';
 
 import { PrismaService } from 'src/core/database/prisma.service';
 import { BranchFacts } from 'src/modules/tenant-management/public-api/branch-facts.public-api';
@@ -33,29 +36,54 @@ type RawCountRow = {
   total: bigint | number;
 };
 
-const UPCOMING_EXCLUDED_STATUSES = [V2RentalStatus.COMPLETED, V2RentalStatus.CANCELLED] as const;
+const UPCOMING_EXCLUDED_STATUSES = [
+  V2RentalStatus.COMPLETED,
+  V2RentalStatus.CANCELLED,
+] as const;
 
-const PICKUP_LOCAL_DATE_SQL = Prisma.sql`(r.period_start AT TIME ZONE bf.effective_timezone)::date`;
-const RETURN_LOCAL_DATE_SQL = Prisma.sql`(r.period_end AT TIME ZONE bf.effective_timezone)::date`;
-const TODAY_LOCAL_DATE_SQL = Prisma.sql`(CURRENT_TIMESTAMP AT TIME ZONE bf.effective_timezone)::date`;
+const PICKUP_LOCAL_DATE_SQL = Prisma.sql`
+  (r.period_start AT TIME ZONE bf.effective_timezone)::date
+`;
+
+const RETURN_LOCAL_DATE_SQL = Prisma.sql`
+  (r.period_end AT TIME ZONE bf.effective_timezone)::date
+`;
+
+const TODAY_LOCAL_DATE_SQL = Prisma.sql`
+  (CURRENT_TIMESTAMP AT TIME ZONE bf.effective_timezone)::date
+`;
 
 @QueryHandler(GetRentalsQuery)
-export class GetRentalsHandler implements IQueryHandler<GetRentalsQuery, GetRentalsResponseDto> {
+export class GetRentalsHandler
+  implements IQueryHandler<GetRentalsQuery, GetRentalsResponseDto>
+{
   constructor(
     private readonly prisma: PrismaService,
     private readonly branchFacts: BranchFacts,
   ) {}
 
   async execute(query: GetRentalsQuery): Promise<GetRentalsResponseDto> {
-    const branchFactsResult = await this.branchFacts.listBranchFacts({ tenantId: query.tenantId });
+    const branchFactsResult = await this.branchFacts.listBranchFacts({
+      tenantId: query.tenantId,
+    });
+
     if (branchFactsResult.isErr()) {
-      throw new Error(branchFactsResult.error.message, { cause: branchFactsResult.error });
+      throw new Error(branchFactsResult.error.message, {
+        cause: branchFactsResult.error,
+      });
     }
 
     const effectiveTimezoneByBranchId = new Map(
-      branchFactsResult.value.map((branch) => [branch.branchId, branch.effectiveTimezone]),
+      branchFactsResult.value.map((branch) => [
+        branch.branchId,
+        branch.effectiveTimezone,
+      ]),
     );
-    const branchFactsCte = this.buildBranchFactsCte(effectiveTimezoneByBranchId);
+
+    const branchFactsCte = this.buildBranchFactsCte(
+      effectiveTimezoneByBranchId,
+    );
+
     const offset = (query.page - 1) * query.limit;
     const whereFilters = this.buildWhereFilters(query);
     const orderBy = this.buildOrderBy(query);
@@ -79,18 +107,25 @@ export class GetRentalsHandler implements IQueryHandler<GetRentalsQuery, GetRent
           r.branch_id AS "branchId"
         FROM v2_rentals r
         JOIN branch_facts bf ON bf.branch_id = r.branch_id
-        LEFT JOIN v2_rental_customers c ON c.id = r.customer_id AND c.tenant_id = r.tenant_id AND c.deleted_at IS NULL
+        LEFT JOIN v2_rental_customers c
+          ON c.id = r.customer_id
+          AND c.tenant_id = r.tenant_id
+          AND c.deleted_at IS NULL
         WHERE ${Prisma.join(whereFilters, ' AND ')}
         ORDER BY ${orderBy}
         OFFSET ${offset}
         LIMIT ${query.limit}
       `),
+
       this.prisma.client.$queryRaw<RawCountRow[]>(Prisma.sql`
         WITH ${branchFactsCte}
         SELECT COUNT(*) AS "total"
         FROM v2_rentals r
         JOIN branch_facts bf ON bf.branch_id = r.branch_id
-        LEFT JOIN v2_rental_customers c ON c.id = r.customer_id AND c.tenant_id = r.tenant_id AND c.deleted_at IS NULL
+        LEFT JOIN v2_rental_customers c
+          ON c.id = r.customer_id
+          AND c.tenant_id = r.tenant_id
+          AND c.deleted_at IS NULL
         WHERE ${Prisma.join(whereFilters, ' AND ')}
       `),
     ]);
@@ -119,35 +154,52 @@ export class GetRentalsHandler implements IQueryHandler<GetRentalsQuery, GetRent
     };
   }
 
-  private buildBranchFactsCte(effectiveTimezoneByBranchId: Map<string, string>): Prisma.Sql {
+  private buildBranchFactsCte(
+    effectiveTimezoneByBranchId: Map<string, string>,
+  ): Prisma.Sql {
     const rows = [...effectiveTimezoneByBranchId].map(
-      ([branchId, effectiveTimezone]) => Prisma.sql`(${branchId}::uuid, ${effectiveTimezone}::text)`,
+      ([branchId, effectiveTimezone]) =>
+        Prisma.sql`(${branchId}::text, ${effectiveTimezone}::text)`,
     );
 
     if (rows.length === 0) {
-      return Prisma.sql`branch_facts(branch_id, effective_timezone) AS (
-        SELECT NULL::uuid, NULL::text WHERE FALSE
-      )`;
+      return Prisma.sql`
+        branch_facts(branch_id, effective_timezone) AS (
+          SELECT NULL::text, NULL::text WHERE FALSE
+        )
+      `;
     }
 
-    return Prisma.sql`branch_facts(branch_id, effective_timezone) AS (
-      VALUES ${Prisma.join(rows, ', ')}
-    )`;
+    return Prisma.sql`
+      branch_facts(branch_id, effective_timezone) AS (
+        VALUES ${Prisma.join(rows, ', ')}
+      )
+    `;
   }
 
   private buildWhereFilters(query: GetRentalsQuery): Prisma.Sql[] {
-    const filters: Prisma.Sql[] = [Prisma.sql`r.tenant_id = ${query.tenantId}`];
+    const filters: Prisma.Sql[] = [
+      Prisma.sql`r.tenant_id = ${query.tenantId}`,
+    ];
 
     if (query.branchId) {
-      filters.push(Prisma.sql`r.branch_id = ${query.branchId}`);
+      filters.push(
+        Prisma.sql`r.branch_id = ${query.branchId}`,
+      );
     }
 
     if (query.customerId) {
-      filters.push(Prisma.sql`r.customer_id = ${query.customerId}`);
+      filters.push(
+        Prisma.sql`r.customer_id = ${query.customerId}`,
+      );
     }
 
     if (query.statuses?.length) {
-      filters.push(Prisma.sql`r.status IN (${Prisma.join(query.statuses)})`);
+      filters.push(
+        Prisma.sql`
+          r.status IN (${this.buildRentalStatusList(query.statuses)})
+        `,
+      );
     }
 
     if (query.dateLens) {
@@ -157,33 +209,83 @@ export class GetRentalsHandler implements IQueryHandler<GetRentalsQuery, GetRent
     return filters;
   }
 
-  private buildDateLensFilter(dateLens: GetRentalsDateLensDto): Prisma.Sql {
+  private buildDateLensFilter(
+    dateLens: GetRentalsDateLensDto,
+  ): Prisma.Sql {
     switch (dateLens) {
       case 'TODAY':
-        return Prisma.sql`(${PICKUP_LOCAL_DATE_SQL} = ${TODAY_LOCAL_DATE_SQL} OR ${RETURN_LOCAL_DATE_SQL} = ${TODAY_LOCAL_DATE_SQL})`;
+        return Prisma.sql`
+          (
+            ${PICKUP_LOCAL_DATE_SQL} = ${TODAY_LOCAL_DATE_SQL}
+            OR ${RETURN_LOCAL_DATE_SQL} = ${TODAY_LOCAL_DATE_SQL}
+          )
+        `;
+
       case 'UPCOMING':
-        return Prisma.sql`${PICKUP_LOCAL_DATE_SQL} >= ${TODAY_LOCAL_DATE_SQL} AND r.status NOT IN (${Prisma.join(UPCOMING_EXCLUDED_STATUSES)})`;
+        return Prisma.sql`
+          ${PICKUP_LOCAL_DATE_SQL} >= ${TODAY_LOCAL_DATE_SQL}
+          AND r.status NOT IN (
+            ${this.buildRentalStatusList(UPCOMING_EXCLUDED_STATUSES)}
+          )
+        `;
+
       case 'ACTIVE':
-        return Prisma.sql`${PICKUP_LOCAL_DATE_SQL} <= ${TODAY_LOCAL_DATE_SQL} AND ${RETURN_LOCAL_DATE_SQL} >= ${TODAY_LOCAL_DATE_SQL}`;
+        return Prisma.sql`
+          ${PICKUP_LOCAL_DATE_SQL} <= ${TODAY_LOCAL_DATE_SQL}
+          AND ${RETURN_LOCAL_DATE_SQL} >= ${TODAY_LOCAL_DATE_SQL}
+        `;
+
       case 'PAST':
-        return Prisma.sql`${RETURN_LOCAL_DATE_SQL} < ${TODAY_LOCAL_DATE_SQL}`;
+        return Prisma.sql`
+          ${RETURN_LOCAL_DATE_SQL} < ${TODAY_LOCAL_DATE_SQL}
+        `;
+
       default:
         return Prisma.empty;
     }
   }
 
+  private buildRentalStatusList(
+    statuses: readonly V2RentalStatus[],
+  ): Prisma.Sql {
+    return Prisma.join(
+      statuses.map(
+        (status) => Prisma.sql`${status}::"V2RentalStatus"`,
+      ),
+      ', ',
+    );
+  }
+
   private buildOrderBy(query: GetRentalsQuery): Prisma.Sql {
     const { sortBy, sortDirection } = this.resolveSort(query);
-    const directionSql = sortDirection === 'asc' ? Prisma.sql`ASC` : Prisma.sql`DESC`;
+    const directionSql =
+      sortDirection === 'asc'
+        ? Prisma.sql`ASC`
+        : Prisma.sql`DESC`;
 
     switch (sortBy) {
       case 'pickupDate':
-        return Prisma.sql`${PICKUP_LOCAL_DATE_SQL} ${directionSql}, r.period_start ${directionSql}, r.created_at DESC, r.id DESC`;
+        return Prisma.sql`
+          ${PICKUP_LOCAL_DATE_SQL} ${directionSql},
+          r.period_start ${directionSql},
+          r.created_at DESC,
+          r.id DESC
+        `;
+
       case 'returnDate':
-        return Prisma.sql`${RETURN_LOCAL_DATE_SQL} ${directionSql}, r.period_end ${directionSql}, r.created_at DESC, r.id DESC`;
+        return Prisma.sql`
+          ${RETURN_LOCAL_DATE_SQL} ${directionSql},
+          r.period_end ${directionSql},
+          r.created_at DESC,
+          r.id DESC
+        `;
+
       case 'createdAt':
       default:
-        return Prisma.sql`r.created_at ${directionSql}, r.id ${directionSql}`;
+        return Prisma.sql`
+          r.created_at ${directionSql},
+          r.id ${directionSql}
+        `;
     }
   }
 
@@ -198,25 +300,44 @@ export class GetRentalsHandler implements IQueryHandler<GetRentalsQuery, GetRent
     }
 
     const sortBy = query.sortBy ?? fallback.sortBy;
-    const sortDirection = query.sortDirection ?? this.getDefaultDirectionForSortBy(sortBy, query.dateLens);
+    const sortDirection =
+      query.sortDirection ??
+      this.getDefaultDirectionForSortBy(sortBy, query.dateLens);
 
     return { sortBy, sortDirection };
   }
 
-  private getDefaultSort(dateLens?: GetRentalsDateLensDto): {
+  private getDefaultSort(
+    dateLens?: GetRentalsDateLensDto,
+  ): {
     sortBy: GetRentalsSortByDto;
     sortDirection: GetRentalsSortDirectionDto;
   } {
     switch (dateLens) {
       case 'UPCOMING':
-        return { sortBy: 'pickupDate', sortDirection: 'asc' };
+        return {
+          sortBy: 'pickupDate',
+          sortDirection: 'asc',
+        };
+
       case 'ACTIVE':
-        return { sortBy: 'returnDate', sortDirection: 'asc' };
+        return {
+          sortBy: 'returnDate',
+          sortDirection: 'asc',
+        };
+
       case 'PAST':
-        return { sortBy: 'returnDate', sortDirection: 'desc' };
+        return {
+          sortBy: 'returnDate',
+          sortDirection: 'desc',
+        };
+
       case 'TODAY':
       default:
-        return { sortBy: 'createdAt', sortDirection: 'desc' };
+        return {
+          sortBy: 'createdAt',
+          sortDirection: 'desc',
+        };
     }
   }
 
@@ -240,6 +361,8 @@ export class GetRentalsHandler implements IQueryHandler<GetRentalsQuery, GetRent
       return row.customerCompanyName;
     }
 
-    return `${row.customerFirstName ?? ''} ${row.customerLastName ?? ''}`.trim();
+    return `${row.customerFirstName ?? ''} ${
+      row.customerLastName ?? ''
+    }`.trim();
   }
 }
