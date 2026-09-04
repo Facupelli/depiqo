@@ -1,8 +1,8 @@
 import { createHash } from 'node:crypto';
 
-import { RentalDeliveryDetails } from '../../domain/rental.aggregate';
 import {
   CreateConfirmedRentalCommand,
+  CreateConfirmedRentalDeliveryDetailsCommand,
   CreateConfirmedRentalOfferSelectionCommand,
 } from './create-confirmed-rental.command';
 
@@ -46,8 +46,8 @@ function normalizeSelectedOffers(
     .sort((a, b) => a.rentalOfferId.localeCompare(b.rentalOfferId));
 }
 
-function normalizeDeliveryDetails(deliveryDetails?: RentalDeliveryDetails) {
+function normalizeDeliveryDetails(deliveryDetails?: CreateConfirmedRentalDeliveryDetailsCommand) {
   if (!deliveryDetails) return null;
 
-  return { address: deliveryDetails.address };
+  return { address: deliveryDetails.address, locationId: deliveryDetails.locationId };
 }
