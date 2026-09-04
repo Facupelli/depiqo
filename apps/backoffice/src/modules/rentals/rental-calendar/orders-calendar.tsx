@@ -1,15 +1,19 @@
+import "@fullcalendar/react/skeleton.css";
+import "@fullcalendar/react/themes/classic/theme.css";
+import "@fullcalendar/react/themes/classic/palette.css";
 import "./orders-calendar.css";
 
-import type {
-	DatesSetArg,
-	EventClickArg,
-	EventContentArg,
-	EventMountArg,
-} from "@fullcalendar/core";
-import esLocale from "@fullcalendar/core/locales/es";
-import dayGridPlugin from "@fullcalendar/daygrid";
-import interactionPlugin from "@fullcalendar/interaction";
-import FullCalendar from "@fullcalendar/react";
+import FullCalendar, {
+	type CalendarRef,
+	type DatesSetInfo,
+	type EventClickInfo,
+	type EventDisplayInfo,
+	type MountInfo,
+} from "@fullcalendar/react";
+import dayGridPlugin from "@fullcalendar/react/daygrid";
+import interactionPlugin from "@fullcalendar/react/interaction";
+import esLocale from "@fullcalendar/react/locales/es";
+import classicThemePlugin from "@fullcalendar/react/themes/classic";
 import { Button } from "@repo/ui/components/button";
 import {
 	AlertCircle,
@@ -34,7 +38,8 @@ import {
 	type OrdersCalendarView,
 	toOrdersCalendarEvent,
 } from "./orders-calendar.utils";
-import { useOrdersCalendarDayGridGeometry } from "./use-orders-calendar-daygrid-geometry";
+
+type OrdersCalendarEventMountInfo = MountInfo<EventDisplayInfo>;
 
 type OrdersCalendarProps = {
 	currentDate: string;
@@ -59,13 +64,11 @@ export function OrdersCalendar({
 	onRangeChange,
 	onOrderClick,
 }: OrdersCalendarProps) {
-	const calendarRef = useRef<FullCalendar | null>(null);
+	const calendarRef = useRef<CalendarRef | null>(null);
 	const eventCleanupRef = useRef(new Map<HTMLElement, () => void>());
 	const [title, setTitle] = useState("");
-	const { calendarShellRef, registerEventSegment, unregisterEventSegment } =
-		useOrdersCalendarDayGridGeometry({ timezone });
 
-	function handleDatesSet(arg: DatesSetArg) {
+	function handleDatesSet(arg: DatesSetInfo) {
 		const calendarApi = arg.view.calendar;
 		const anchorDate = calendarApi.getDate();
 
@@ -78,12 +81,12 @@ export function OrdersCalendar({
 		});
 	}
 
-	function handleEventClick(arg: EventClickArg) {
+	function handleEventClick(arg: EventClickInfo) {
 		arg.jsEvent.preventDefault();
 		onOrderClick(arg.event.id);
 	}
 
-	function handleEventDidMount(arg: EventMountArg) {
+	function handleEventDidMount(arg: OrdersCalendarEventMountInfo) {
 		arg.el.tabIndex = 0;
 		arg.el.setAttribute("role", "button");
 		const handleKeyDown = (event: KeyboardEvent) => {
@@ -100,14 +103,12 @@ export function OrdersCalendar({
 		eventCleanupRef.current.set(arg.el, () => {
 			arg.el.removeEventListener("keydown", handleKeyDown);
 		});
-		registerEventSegment(arg);
 	}
 
-	function handleEventWillUnmount(arg: EventMountArg) {
+	function handleEventWillUnmount(arg: OrdersCalendarEventMountInfo) {
 		const cleanup = eventCleanupRef.current.get(arg.el);
 		cleanup?.();
 		eventCleanupRef.current.delete(arg.el);
-		unregisterEventSegment(arg);
 	}
 
 	function handleViewChange(nextView: OrdersCalendarView) {
@@ -117,21 +118,22 @@ export function OrdersCalendar({
 	const events = orders.map((order) => toOrdersCalendarEvent(order, timezone));
 
 	return (
-		<div className="space-y-5">
-			<div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+		<div className="space-y-4">
+			<div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
 				<div className="flex flex-wrap items-center gap-2">
 					<Button
 						variant="outline"
 						size="sm"
+						className="h-9 rounded-lg border-neutral-200 bg-white px-3 shadow-none"
 						onClick={() => calendarRef.current?.getApi().today()}
 					>
 						Hoy
 					</Button>
-					<div className="flex items-center rounded-md border border-neutral-200 bg-white">
+					<div className="flex h-9 items-center overflow-hidden rounded-lg border border-neutral-200 bg-white">
 						<Button
 							variant="ghost"
 							size="icon-sm"
-							className="rounded-r-none"
+							className="h-full rounded-none"
 							onClick={() => calendarRef.current?.getApi().prev()}
 						>
 							<ChevronLeft className="size-4" />
@@ -139,38 +141,44 @@ export function OrdersCalendar({
 						<Button
 							variant="ghost"
 							size="icon-sm"
-							className="rounded-l-none border-l border-neutral-200"
+							className="h-full rounded-none border-l border-neutral-200"
 							onClick={() => calendarRef.current?.getApi().next()}
 						>
 							<ChevronRight className="size-4" />
 						</Button>
 					</div>
-					<div className="inline-flex items-center gap-2 rounded-md border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm font-medium text-neutral-900">
-						<CalendarDays className="size-4 text-neutral-500" />
-						<span>{title}</span>
+					<div className="inline-flex h-9 min-w-0 items-center gap-2 rounded-lg border border-neutral-200 bg-white px-3 text-sm font-medium text-neutral-800">
+						<CalendarDays className="size-4 shrink-0 text-neutral-400" />
+						<span className="truncate">{title}</span>
 					</div>
 				</div>
 
-				<div className="inline-flex w-fit rounded-md border border-neutral-200 bg-white p-1">
-					{(
-						Object.entries(ORDERS_CALENDAR_VIEW_LABELS) as Array<
-							[OrdersCalendarView, string]
-						>
-					).map(([view, label]) => (
-						<button
-							key={view}
-							type="button"
-							onClick={() => handleViewChange(view)}
-							className={cn(
-								"rounded-[10px] px-3 py-1.5 text-sm font-medium transition-colors",
-								currentView === view
-									? "bg-neutral-900 text-white"
-									: "text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900",
-							)}
-						>
-							{label}
-						</button>
-					))}
+				<div className="flex items-center gap-4">
+					<div className="text-right text-xs text-muted-foreground">
+						<p>{timezone}</p>
+					</div>
+
+					<div className="inline-flex h-9 w-fit rounded-lg border border-neutral-200 bg-neutral-50 p-0.5">
+						{(
+							Object.entries(ORDERS_CALENDAR_VIEW_LABELS) as Array<
+								[OrdersCalendarView, string]
+							>
+						).map(([view, label]) => (
+							<button
+								key={view}
+								type="button"
+								onClick={() => handleViewChange(view)}
+								className={cn(
+									"rounded-md px-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-1",
+									currentView === view
+										? "bg-emerald-600 text-white shadow-sm"
+										: "text-neutral-600 hover:bg-white hover:text-neutral-900",
+								)}
+							>
+								{label}
+							</button>
+						))}
+					</div>
 				</div>
 			</div>
 
@@ -180,10 +188,7 @@ export function OrdersCalendar({
 					No pudimos cargar los pedidos de este rango.
 				</div>
 			) : (
-				<div
-					ref={calendarShellRef}
-					className="orders-calendar-shell relative overflow-hidden rounded-2xl border border-neutral-200 bg-white"
-				>
+				<div className="orders-calendar-shell relative overflow-hidden rounded-2xl border border-neutral-200 bg-white">
 					{isFetching || isLoading ? (
 						<div className="pointer-events-none absolute inset-x-0 top-0 z-20 h-1 overflow-hidden bg-transparent">
 							<div className="h-full w-full animate-pulse bg-neutral-900/70" />
@@ -193,7 +198,7 @@ export function OrdersCalendar({
 					<FullCalendar
 						key={`${currentView}:${currentDate}:${timezone}`}
 						ref={calendarRef}
-						plugins={[dayGridPlugin, interactionPlugin]}
+						plugins={[classicThemePlugin, dayGridPlugin, interactionPlugin]}
 						initialView={currentView}
 						initialDate={currentDate}
 						headerToolbar={false}
@@ -202,34 +207,74 @@ export function OrdersCalendar({
 						firstDay={1}
 						height="auto"
 						fixedWeekCount={false}
+						tableClass="orders-calendar-table"
+						dayHeaderClass={(info) =>
+							info.inPopover
+								? "orders-calendar-popover-header"
+								: "orders-calendar-day-header"
+						}
+						dayCellClass={(info) =>
+							info.inPopover
+								? "orders-calendar-popover-body"
+								: cn(
+										"orders-calendar-day-cell",
+										info.isToday && "orders-calendar-day-cell--today",
+									)
+						}
+						dayCellTopClass={(info) =>
+							info.inPopover ? "" : "orders-calendar-day-top"
+						}
+						dayCellTopInnerClass={(info) =>
+							info.inPopover
+								? ""
+								: cn(
+										"orders-calendar-day-number",
+										info.isToday && "orders-calendar-day-number--today",
+									)
+						}
+						dayCellInnerClass={(info) =>
+							info.inPopover ? "" : "orders-calendar-day-events"
+						}
 						dayMaxEvents={3}
 						moreLinkClick="popover"
+						moreLinkClass="orders-calendar-more-link"
+						moreLinkInnerClass="orders-calendar-more-link-inner"
+						popoverClass="orders-calendar-popover"
 						events={events}
 						eventDisplay="block"
-						nowIndicator={true}
 						now={new Date().toISOString()}
 						datesSet={handleDatesSet}
 						eventClick={handleEventClick}
 						eventDidMount={handleEventDidMount}
 						eventWillUnmount={handleEventWillUnmount}
-						eventContent={(arg) => <CalendarEventContent arg={arg} />}
-						eventClassNames={(arg) => {
+						eventContent={(arg) => (
+							<CalendarEventContent arg={arg} timezone={timezone} />
+						)}
+						eventClass={(arg) => {
 							const order = getOrdersCalendarEventOrder(arg.event);
 							const statusPresentation = getRentalOrderStatusPresentation(
 								order,
 								dayjs(),
 							);
 
-							return [
+							return cn(
 								"orders-calendar-event",
 								statusPresentation.calendarEventClassName,
-							];
+							);
 						}}
+						rowEventClass={(info) =>
+							cn(
+								"orders-calendar-row-event",
+								info.isStart && "orders-calendar-row-event--start",
+								info.isEnd && "orders-calendar-row-event--end",
+							)
+						}
+						rowEventInnerClass="orders-calendar-event-main"
 					/>
 				</div>
 			)}
 
-			<div className="flex flex-wrap items-center gap-4 rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-700">
+			<div className="flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-neutral-200 px-1 pt-3 text-xs text-neutral-500">
 				{RENTAL_ORDER_STATUS_LEGEND_ITEMS.map((item) => (
 					<LegendItem
 						key={item.label}
@@ -250,24 +295,40 @@ function LegendItem({
 	label: string;
 }) {
 	return (
-		<div className="inline-flex items-center gap-2">
-			<span className={cn("h-2.5 w-2.5 rounded-full", colorClass)} />
-			<span className="font-medium">{label}</span>
+		<div className="inline-flex items-center gap-1.5">
+			<span className={cn("size-2 rounded-full", colorClass)} />
+			<span>{label}</span>
 		</div>
 	);
 }
 
-function CalendarEventContent({ arg }: { arg: EventContentArg }) {
+function CalendarEventContent({
+	arg,
+	timezone,
+}: {
+	arg: EventDisplayInfo;
+	timezone: string;
+}) {
 	const order = getOrdersCalendarEventOrder(arg.event);
+	const pickupTime = order.pickupAt.tz(timezone).format("HH:mm");
+	const returnTime = order.returnAt.tz(timezone).format("HH:mm");
 
 	return (
-		<div className="min-w-0 px-1.5 py-1">
-			<p className="truncate font-mono text-[11px] uppercase tracking-[0.08em] opacity-70">
-				#{formatOrderNumber(order.rentalNumber)}
-			</p>
-			<p className="truncate text-sm font-medium">
-				{order.customer?.displayName ?? "Pedido"}
-			</p>
+		<div className="flex min-w-0 flex-1 flex-col justify-center gap-px overflow-hidden px-2 py-0.5">
+			<div className="flex min-w-0 items-baseline gap-1.5">
+				<span className="shrink-0 font-mono text-[10px] uppercase tracking-[0.04em] opacity-60">
+					#{formatOrderNumber(order.rentalNumber)}
+				</span>
+				<span className="truncate text-xs font-semibold">
+					{order.customer?.displayName ?? "Pedido"}
+				</span>
+			</div>
+			<div className="grid min-w-0 grid-cols-2 text-[9px] leading-none opacity-55">
+				<span className="truncate">{arg.isStart ? pickupTime : null}</span>
+				<span className="truncate text-right">
+					{arg.isEnd ? returnTime : null}
+				</span>
+			</div>
 		</div>
 	);
 }
