@@ -11,6 +11,46 @@ import { SharedModule } from '../../../src/modules/shared/shared.module';
 import { TenantConfig } from '../../../src/modules/tenant-management/domain/value-objects/tenant-config.value-object';
 import { createTestFixtures, TestFixtures } from '../../support/fixtures';
 
+const acceptedPricingSnapshot = {
+  schema: 'v2.rental-price-snapshot',
+  version: 3,
+  calculatedAtIso: '2026-01-01T00:00:00.000Z',
+  context: 'CONFIRMED',
+  calculated: {
+    currency: 'USD',
+    subtotal: '0.00',
+    discountTotal: '0.00',
+    total: '0.00',
+    chargedDays: 0,
+    lines: [],
+    appliedPromotions: [],
+    durationPolicySnapshot: {
+      timezone: 'UTC',
+      dailyBillingPolicy: 'IGNORE_PARTIAL_DAY',
+      weekendCountsAsOne: false,
+      minimumChargedDays: 0,
+    },
+  },
+  final: {
+    currency: 'USD',
+    subtotal: '0.00',
+    discountTotal: '0.00',
+    total: '0.00',
+    chargedDays: 0,
+    lines: [],
+    appliedPromotions: [],
+    durationPolicySnapshot: {
+      timezone: 'UTC',
+      dailyBillingPolicy: 'IGNORE_PARTIAL_DAY',
+      weekendCountsAsOne: false,
+      minimumChargedDays: 0,
+    },
+  },
+  insurance: { applied: false, amount: '0.00' },
+  totalBeforeInsurance: '0.00',
+  total: '0.00',
+} satisfies Prisma.InputJsonObject;
+
 describe('temporal PostgreSQL regression coverage', () => {
   let moduleRef: TestingModule;
   let prisma: PrismaService;
@@ -47,8 +87,11 @@ describe('temporal PostgreSQL regression coverage', () => {
           rentalNumber: counter.lastIssuedNumber,
           branchId: branch.id,
           status: 'CONFIRMED',
+          fulfillmentMethod: 'PICKUP',
           periodStart,
           periodEnd,
+          priceSnapshot: acceptedPricingSnapshot,
+          acceptedCustomerTotal: acceptedPricingSnapshot.total,
           confirmedAt,
           cancelledAt: null,
         },
@@ -101,8 +144,11 @@ describe('temporal PostgreSQL regression coverage', () => {
             rentalNumber: counter.lastIssuedNumber,
             branchId: branch.id,
             status: 'CONFIRMED',
+            fulfillmentMethod: 'PICKUP',
             periodStart: start,
             periodEnd: end,
+            priceSnapshot: acceptedPricingSnapshot,
+            acceptedCustomerTotal: acceptedPricingSnapshot.total,
             confirmedAt,
           },
         });

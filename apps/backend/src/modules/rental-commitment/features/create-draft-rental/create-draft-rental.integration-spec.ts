@@ -5,11 +5,18 @@ import { TestingModule } from '@nestjs/testing';
 
 import { PrismaService } from 'src/core/database/prisma.service';
 import { Prisma } from 'src/generated/prisma/client';
+import { RoadRouteDistanceProvider } from 'src/modules/delivery/application/ports/road-route-distance-provider.port';
+import { persistServiceableBranchDeliveryConfiguration } from 'src/modules/delivery/testing/serviceable-delivery.fixtures';
+import { AddressGeocoder } from 'src/modules/shared/geocoding/address-geocoder.port';
 import {
   createRentalCommitmentIntegrationContext,
   useIntegrationTestContext,
 } from '../../../../../test/support/integration-test-context';
 import { createTestFixtures, TestFixtures } from '../../../../../test/support/fixtures';
+import {
+  FakeAddressGeocoder,
+  FakeRoadRouteDistanceProvider,
+} from '../../../../../test/support/external-infrastructure/fakes';
 import { utcDate } from '../../../../../test/support/time';
 
 import { RentalPeriod } from '../../domain/value-objects/rental-period.value-object';
@@ -17,6 +24,17 @@ import { CreateDraftRentalCommand } from './create-draft-rental.command';
 import { CreateDraftRentalServiceResult } from './create-draft-rental.service';
 
 const period = () => new RentalPeriod(utcDate(2030, 1, 7, 10), utcDate(2030, 1, 9, 10));
+const deliveryLocationId = 'test-delivery-location';
+const deliveryDisplayAddress = '10 Rental Road';
+const deliveryCustomerCoordinates = { latitude: 40.7128, longitude: -74.006 };
+const deliveryRouteDistanceMeters = 10_000;
+const addressGeocoder = new FakeAddressGeocoder({
+  [deliveryLocationId]: {
+    formattedAddress: deliveryDisplayAddress,
+    ...deliveryCustomerCoordinates,
+  },
+});
+const roadRouteDistanceProvider = new FakeRoadRouteDistanceProvider(deliveryRouteDistanceMeters);
 
 type Scenario = { tenantId: string; branchId: string; customerId: string; tenantUserId: string };
 
@@ -27,17 +45,23 @@ describe('CreateDraftRental integration', () => {
   let core: TestFixtures;
 
   useIntegrationTestContext(async () => {
-    moduleRef = await createRentalCommitmentIntegrationContext();
+    moduleRef = await createRentalCommitmentIntegrationContext([
+      { provide: AddressGeocoder, useValue: addressGeocoder },
+      { provide: RoadRouteDistanceProvider, useValue: roadRouteDistanceProvider },
+    ]);
     prisma = moduleRef.get(PrismaService);
     commands = moduleRef.get(CommandBus);
     core = createTestFixtures(prisma);
     return moduleRef;
   });
 
-  async function scenario(): Promise<Scenario> {
+  async function scenario(
+    branchOverrides?: Parameters<TestFixtures['createBranch']>[0]['overrides'],
+  ): Promise<Scenario> {
     const tenant = await core.createTenant();
     const branch = await core.createBranch({
       tenantId: tenant.id,
+      overrides: branchOverrides,
     });
     const { customer } = await core.createRentalCustomer({ tenantId: tenant.id });
     const { user } = await core.createTenantUser({ tenantId: tenant.id });
@@ -107,7 +131,7 @@ describe('CreateDraftRental integration', () => {
       selectedOffers: Array<{ rentalOfferId: string; quantity: number }>;
       customerId?: string | null;
       fulfillmentMethod?: 'PICKUP' | 'DELIVERY';
-      deliveryDetails?: { addressLine1: string; city: string };
+      deliveryDetails?: { address: string; locationId: string };
       manualPricingAdjustment?: { mode: 'TARGET_TOTAL'; targetTotal: string; reason?: string };
     },
   ): Promise<CreateDraftRentalServiceResult> {
@@ -119,7 +143,7 @@ describe('CreateDraftRental integration', () => {
         rentalCustomerId: input.customerId === null ? undefined : input.customerId,
         period: period(),
         selectedOffers: input.selectedOffers,
-        fulfillmentMethod: input.fulfillmentMethod,
+        fulfillmentMethod: input.fulfillmentMethod ?? 'PICKUP',
         deliveryDetails: input.deliveryDetails,
         manualPricingAdjustment: input.manualPricingAdjustment,
       }),
@@ -188,7 +212,7 @@ describe('CreateDraftRental integration', () => {
     expect(persisted.rental.priceSnapshot).toEqual(
       expect.objectContaining({
         schema: 'v2.rental-price-snapshot',
-        version: 2,
+        version: 3,
         context: 'DRAFT',
       }),
     );
@@ -261,6 +285,7 @@ describe('CreateDraftRental integration', () => {
           rentalNumber: counter.lastIssuedNumber,
           branchId: setup.branchId,
           status: 'DRAFT',
+          fulfillmentMethod: 'PICKUP',
           periodStart: period().start,
           periodEnd: period().end,
         },
@@ -279,22 +304,38 @@ describe('CreateDraftRental integration', () => {
     expect(await prisma.client.v2AssetBlock.count({ where: { rentalId: otherRental.id, releasedAt: null } })).toBe(1);
   });
 
-  it('persists delivery details atomically', async () => {
-    const setup = await scenario();
+  it('persists a serviceable Delivery draft and its Delivery snapshot', async () => {
+    const setup = await scenario({
+      operationalLocationFormattedAddress: '1 Branch Road',
+      operationalLocationLatitude: 40.7,
+      operationalLocationLongitude: -74,
+    });
+    await persistServiceableBranchDeliveryConfiguration({ prisma, ...setup });
     const catalog = await offer(setup);
+
     const result = await create({
       ...setup,
       selectedOffers: [{ rentalOfferId: catalog.offer.id, quantity: 1 }],
       fulfillmentMethod: 'DELIVERY',
-      deliveryDetails: { addressLine1: '10 Rental Road', city: 'Test City' },
+      deliveryDetails: { address: deliveryDisplayAddress, locationId: deliveryLocationId },
     });
+
     expect(result.isOk()).toBe(true);
-    if (result.isOk()) {
-      const persisted = await state(result.value.rentalId);
-      expect(persisted.rental.deliveryDetails).toEqual(
-        expect.objectContaining({ addressLine1: '10 Rental Road', city: 'Test City' }),
-      );
-    }
+    if (result.isErr()) return;
+
+    const persisted = await state(result.value.rentalId);
+    expect(persisted.rental.fulfillmentMethod).toBe('DELIVERY');
+    expect(persisted.rental.deliveryDetails).toEqual(expect.objectContaining({ address: deliveryDisplayAddress }));
+    expect(persisted.rental.deliverySnapshot).toEqual(
+      expect.objectContaining({
+        distanceMeters: deliveryRouteDistanceMeters,
+        deliveryTotal: '50',
+      }),
+    );
+    expect(persisted.rental.priceSnapshot).toEqual(
+      expect.objectContaining({ schema: 'v2.rental-price-snapshot', context: 'DRAFT' }),
+    );
+    expect(persisted.rental.acceptedCustomerTotal).toBeNull();
   });
 
   it('persists a valid target-total adjustment', async () => {

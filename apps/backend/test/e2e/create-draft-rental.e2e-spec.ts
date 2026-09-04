@@ -255,7 +255,7 @@ describe('POST /rental-commitments/draft-rentals', () => {
       .withCsrf(client.request().post('/rental-commitments/draft-rentals'))
       .send({
         ...body(setup),
-        deliveryDetails: { addressLine1: 'Ignored', city: 'Ignored' },
+        deliveryDetails: { address: 'Ignored address', locationId: 'ignored-location-id' },
       })
       .expect(201);
     const rentalId = response.body.data.id as string;
