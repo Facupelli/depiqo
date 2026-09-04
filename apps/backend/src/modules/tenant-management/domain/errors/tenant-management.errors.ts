@@ -112,6 +112,12 @@ export class InvalidBranchNameError extends TenantManagementError {
   }
 }
 
+export class InvalidBranchOperationalLocationError extends TenantManagementError {
+  constructor(reason: string) {
+    super(`Invalid branch operational location: ${reason}`);
+  }
+}
+
 export class BranchNotFoundError extends TenantManagementError {
   constructor() {
     super('Branch was not found.');

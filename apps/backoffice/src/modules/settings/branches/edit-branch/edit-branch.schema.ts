@@ -14,8 +14,27 @@ import {
 	timeStringToMinutes,
 } from "../branch-form.schema";
 
-export const updateBranchFormSchema = branchFormSchema;
 export type UpdateBranchFormValues = BranchFormValues;
+
+export function updateBranchFormSchema(branch: GetBranchDetailResponseDto) {
+	const initialAddress = normalizeAddress(
+		branch.address ?? branch.operationalLocation?.formattedAddress ?? "",
+	);
+
+	return branchFormSchema.refine(
+		(values) => {
+			const address = normalizeAddress(values.address);
+			if (address === "") return true;
+			if (values.addressLocationId !== null) return true;
+
+			return address === initialAddress && branch.operationalLocation != null;
+		},
+		{
+			message: "Seleccioná una dirección de la lista.",
+			path: ["address"],
+		},
+	);
+}
 
 export function toUpdateBranchFormDefaults(
 	branch: GetBranchDetailResponseDto,
@@ -28,13 +47,10 @@ export function toUpdateBranchFormDefaults(
 	return {
 		...branchFormDefaults,
 		name: branch.name,
-		address: branch.address ?? "",
+		address:
+			branch.address ?? branch.operationalLocation?.formattedAddress ?? "",
+		addressLocationId: null,
 		timezone: branch.timezone ?? "",
-		supportsDelivery: branch.supportsDelivery,
-		deliveryDefaultCountry: branch.deliveryDefaultCountry ?? "",
-		deliveryDefaultStateRegion: branch.deliveryDefaultStateRegion ?? "",
-		deliveryDefaultCity: branch.deliveryDefaultCity ?? "",
-		deliveryDefaultPostalCode: branch.deliveryDefaultPostalCode ?? "",
 		scheduleEnabled: hasPickupSchedules || hasReturnSchedules,
 		useSameScheduleForPickupAndReturn: schedulesAreEquivalent(
 			pickupSchedule,
@@ -48,26 +64,13 @@ export function toUpdateBranchFormDefaults(
 export function toUpdateBranchBodyDto(
 	values: UpdateBranchFormValues,
 ): UpdateBranchBodyDto {
-	const parsedValues = updateBranchFormSchema.parse(values);
+	const parsedValues = branchFormSchema.parse(values);
 	const body: UpdateBranchBodyDto = {
 		name: parsedValues.name.trim(),
 		address: emptyToNull(parsedValues.address),
+		addressLocationId: parsedValues.addressLocationId,
 		timezone: emptyToNull(parsedValues.timezone),
-		supportsDelivery: parsedValues.supportsDelivery,
 	};
-
-	if (parsedValues.supportsDelivery) {
-		body.deliveryDefaultCountry = emptyToNull(
-			parsedValues.deliveryDefaultCountry,
-		);
-		body.deliveryDefaultStateRegion = emptyToNull(
-			parsedValues.deliveryDefaultStateRegion,
-		);
-		body.deliveryDefaultCity = emptyToNull(parsedValues.deliveryDefaultCity);
-		body.deliveryDefaultPostalCode = emptyToNull(
-			parsedValues.deliveryDefaultPostalCode,
-		);
-	}
 
 	body.schedules = parsedValues.scheduleEnabled
 		? toUpdateBranchScheduleDtos(parsedValues)
@@ -129,6 +132,10 @@ function toScheduleWindowDefaults(
 		closeTime: minutesToTimeString(firstSchedule.closeTime),
 		slotIntervalMinutes: firstSchedule.slotIntervalMinutes,
 	};
+}
+
+function normalizeAddress(address: string): string {
+	return address.trim();
 }
 
 function schedulesAreEquivalent(

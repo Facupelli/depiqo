@@ -14,15 +14,8 @@ export const CreateConfirmedRentalFulfillmentMethodSchema = z.enum([
 ]);
 
 export const CreateConfirmedRentalDeliveryDetailsSchema = z.object({
-  addressLine1: z.string().trim().min(1),
-  addressLine2: z.string().trim().optional(),
-  city: z.string().trim().min(1),
-  state: z.string().trim().optional(),
-  postalCode: z.string().trim().optional(),
-  country: z.string().trim().optional(),
-  contactName: z.string().trim().optional(),
-  contactPhone: z.string().trim().optional(),
-  notes: z.string().trim().optional(),
+  address: z.string().trim().min(1),
+  locationId: z.string().trim().min(1),
 });
 
 export const CreateConfirmedRentalBodySchema = z
@@ -35,8 +28,7 @@ export const CreateConfirmedRentalBodySchema = z
     selectedOffers: z
       .array(CreateConfirmedRentalSelectedOfferSchema)
       .default([]),
-    fulfillmentMethod:
-      CreateConfirmedRentalFulfillmentMethodSchema.default("PICKUP"),
+    fulfillmentMethod: CreateConfirmedRentalFulfillmentMethodSchema,
     deliveryDetails: CreateConfirmedRentalDeliveryDetailsSchema.optional(),
     notes: z.string().optional(),
     insuranceSelected: z.boolean().optional(),

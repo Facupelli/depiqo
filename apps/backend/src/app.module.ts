@@ -18,6 +18,7 @@ import { AssetInventoryModule } from './modules/asset-inventory/asset-inventory.
 import { PricingModule } from './modules/pricing/pricing.module';
 import { RentalCommitmentModule } from './modules/rental-commitment/rental-commitment.module';
 import { ContractsModule } from './modules/contracts/contracts.module';
+import { DeliveryModule } from './modules/delivery/delivery.module';
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import { ContractsModule } from './modules/contracts/contracts.module';
     PricingModule,
     RentalCommitmentModule,
     ContractsModule,
+    DeliveryModule,
   ],
   providers: [
     {

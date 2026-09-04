@@ -11,13 +11,15 @@ import { V2AssetBlockType, V2RentalStatus } from 'src/generated/prisma/enums';
 
 import { resolveEquipmentTypeNames } from '../../application/equipment-type-display-facts';
 import { RentalAssetAllocationService } from '../../asset-allocation/rental-asset-allocation.service';
-import { deriveBufferedAssetBlockPeriod } from '../../domain/asset-block-period';
+import { deriveConfirmedAssetBlockPeriod } from '../../domain/confirmed-asset-block-period';
 import {
   InsufficientAssetAvailabilityError,
   RentalInvalidFieldError,
 } from '../../domain/errors/rental-commitment.errors';
 import { RentalDemandLineId } from '../../domain/ids/rental-demand-line-id';
 import { AssetId, EquipmentTypeId, RentalSelectionId } from '../../domain/types/rental-commitment-ids';
+import { AcceptedDeliverySnapshot } from '../../domain/value-objects/accepted-delivery-snapshot.value-object';
+import { JsonValue } from '../../domain/value-objects/json-snapshot.value-object';
 import { RentalPeriod } from '../../domain/value-objects/rental-period.value-object';
 import { ConfirmedRentalEditedIntegrationEvent } from '../../public-api/events/rental-lifecycle.integration-events';
 import { AssignRentalAccessoriesCommand } from './assign-rental-accessories.command';
@@ -31,12 +33,13 @@ type RentalReadModel = {
   branchId: string;
   status: V2RentalStatus;
   customerId: string | null;
-  fulfillmentMethod: 'PICKUP' | 'DELIVERY' | null;
+  fulfillmentMethod: 'PICKUP' | 'DELIVERY';
   periodStart: Date;
   periodEnd: Date;
   version: number;
   acceptedBeforeBufferMinutes: number | null;
   acceptedAfterBufferMinutes: number | null;
+  deliverySnapshot: unknown | null;
 };
 
 type ExistingSelection = {
@@ -89,6 +92,7 @@ export class AssignRentalAccessoriesHandler implements ICommandHandler<
         version: true,
         acceptedBeforeBufferMinutes: true,
         acceptedAfterBufferMinutes: true,
+        deliverySnapshot: true,
       },
     });
 
@@ -127,10 +131,11 @@ export class AssignRentalAccessoriesHandler implements ICommandHandler<
         ),
       );
     }
-    const operationalPeriod = deriveBufferedAssetBlockPeriod({
+    const operationalPeriod = deriveConfirmedAssetBlockPeriod({
       participationPeriod: new RentalPeriod(participationStart, rental.periodEnd),
-      beforeBufferMinutes: acceptedAssetBuffer.beforeBufferMinutes,
-      afterBufferMinutes: acceptedAssetBuffer.afterBufferMinutes,
+      acceptedBeforeBufferMinutes: acceptedAssetBuffer.beforeBufferMinutes,
+      acceptedAfterBufferMinutes: acceptedAssetBuffer.afterBufferMinutes,
+      acceptedDelivery: this.resolveAcceptedDelivery(rental.deliverySnapshot),
       ...(operationTime >= rental.periodStart ? { clampStartAt: operationTime } : {}),
     });
 
@@ -524,6 +529,13 @@ export class AssignRentalAccessoriesHandler implements ICommandHandler<
 
   private selectionKey(selection: { sourceRentalDemandLineId?: string | null; equipmentTypeId: string }): string {
     return `${selection.sourceRentalDemandLineId ?? ''}:${selection.equipmentTypeId}`;
+  }
+
+  private resolveAcceptedDelivery(snapshot: unknown | null): AcceptedDeliverySnapshot | undefined {
+    if (snapshot === null) return undefined;
+    const acceptedDelivery = AcceptedDeliverySnapshot.create(snapshot as JsonValue);
+    if (acceptedDelivery.isErr()) throw acceptedDelivery.error;
+    return acceptedDelivery.value;
   }
 
   private resolveAcceptedAssetBuffer(rental: RentalReadModel): {

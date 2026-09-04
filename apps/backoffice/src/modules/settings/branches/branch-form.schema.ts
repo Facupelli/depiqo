@@ -43,12 +43,8 @@ export const branchScheduleWindowFormSchema = z
 export const branchFormSchema = z.object({
 	name: z.string().trim().min(1, "El nombre es obligatorio."),
 	address: z.string(),
+	addressLocationId: z.string().nullable(),
 	timezone: z.string(),
-	supportsDelivery: z.boolean(),
-	deliveryDefaultCountry: z.string(),
-	deliveryDefaultStateRegion: z.string(),
-	deliveryDefaultCity: z.string(),
-	deliveryDefaultPostalCode: z.string(),
 	scheduleEnabled: z.boolean(),
 	useSameScheduleForPickupAndReturn: z.boolean(),
 	pickupSchedule: branchScheduleWindowFormSchema,
@@ -65,12 +61,8 @@ export const weekdayDefaults = [1, 2, 3, 4, 5];
 export const branchFormDefaults: BranchFormValues = {
 	name: "",
 	address: "",
+	addressLocationId: null,
 	timezone: "",
-	supportsDelivery: false,
-	deliveryDefaultCountry: "",
-	deliveryDefaultStateRegion: "",
-	deliveryDefaultCity: "",
-	deliveryDefaultPostalCode: "",
 	scheduleEnabled: true,
 	useSameScheduleForPickupAndReturn: true,
 	pickupSchedule: {

@@ -19,7 +19,7 @@ export class CreatePendingRentalCommand {
   public readonly period: RentalPeriod;
   public readonly selectedEquipmentTypes: CreatePendingRentalEquipmentTypeSelectionCommand[];
   public readonly selectedCombos: CreatePendingRentalComboSelectionCommand[];
-  public readonly fulfillmentMethod?: FulfillmentMethod;
+  public readonly fulfillmentMethod: FulfillmentMethod;
   public readonly notes?: string;
   public readonly insuranceSelected?: boolean;
   public readonly bookingSnapshot?: BookingSnapshot;
@@ -31,7 +31,7 @@ export class CreatePendingRentalCommand {
     period: RentalPeriod;
     selectedEquipmentTypes?: CreatePendingRentalEquipmentTypeSelectionCommand[];
     selectedCombos?: CreatePendingRentalComboSelectionCommand[];
-    fulfillmentMethod?: FulfillmentMethod;
+    fulfillmentMethod: FulfillmentMethod;
     notes?: string;
     insuranceSelected?: boolean;
     bookingSnapshot?: BookingSnapshot;

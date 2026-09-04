@@ -2,9 +2,11 @@ import { Module } from '@nestjs/common';
 
 import { AssetInventoryModule } from '../asset-inventory/asset-inventory.module';
 import { CatalogModule } from '../catalog/catalog.module';
+import { DeliveryModule } from '../delivery/delivery.module';
 import { PricingModule } from '../pricing/pricing.module';
 import { TenantManagementModule } from '../tenant-management/tenant-management.module';
 import { RentalOfferAvailabilityService } from './application/availability/rental-offer-availability.service';
+import { ProspectiveRentalCostService } from './application/prospective-rental-cost.service';
 import { RentalAssetAllocationService } from './asset-allocation/rental-asset-allocation.service';
 import { AddRentalSelectionHttpController } from './features/add-rental-selection/add-rental-selection.controller';
 import { AddRentalSelectionHandler } from './features/add-rental-selection/add-rental-selection.handler';
@@ -15,6 +17,8 @@ import { AssignCustomerToDraftRentalHttpController } from './features/assign-cus
 import { AssignCustomerToDraftRentalHandler } from './features/assign-customer-to-draft-rental/assign-customer-to-draft-rental.handler';
 import { CancelRentalHttpController } from './features/cancel-rental/cancel-rental.controller';
 import { CancelRentalHandler } from './features/cancel-rental/cancel-rental.handler';
+import { CalculateProspectiveCartCostHttpController } from './features/calculate-prospective-cart-cost/calculate-prospective-cart-cost.controller';
+import { CalculateProspectiveCartCostHandler } from './features/calculate-prospective-cart-cost/calculate-prospective-cart-cost.handler';
 import { ChangeRentalDetailsHttpController } from './features/change-rental-details/change-rental-details.controller';
 import { ChangeRentalDetailsHandler } from './features/change-rental-details/change-rental-details.handler';
 import { ChangeRentalSelectionQuantityHttpController } from './features/change-rental-selection-quantity/change-rental-selection-quantity.controller';
@@ -25,8 +29,6 @@ import { CreateConfirmedRentalHttpController } from './features/create-confirmed
 import { CreateConfirmedRentalService } from './features/create-confirmed-rental/create-confirmed-rental.handler';
 import { CreateDraftRentalHttpController } from './features/create-draft-rental/create-draft-rental.controller';
 import { CreateDraftRentalService } from './features/create-draft-rental/create-draft-rental.service';
-import { EditUnconfirmedRentalHttpController } from './features/edit-unconfirmed-rental/edit-unconfirmed-rental.controller';
-import { EditUnconfirmedRentalHandler } from './features/edit-unconfirmed-rental/edit-unconfirmed-rental.handler';
 import { GetRentalAccessoryDefaultsHttpController } from './features/get-rental-accessory-defaults/get-rental-accessory-defaults.controller';
 import { GetRentalAccessoryDefaultsHandler } from './features/get-rental-accessory-defaults/get-rental-accessory-defaults.handler';
 import { GetReplacementAssetCandidatesHttpController } from './features/get-replacement-asset-candidates/get-replacement-asset-candidates.controller';
@@ -64,18 +66,18 @@ import { RentalLifecycleFacts } from './public-api/rental-lifecycle-facts.public
 import { RentalLifecycleFactsService } from './public-api/rental-lifecycle-facts.service';
 
 @Module({
-  imports: [AssetInventoryModule, CatalogModule, PricingModule, TenantManagementModule],
+  imports: [AssetInventoryModule, CatalogModule, DeliveryModule, PricingModule, TenantManagementModule],
   controllers: [
     AddRentalSelectionHttpController,
     AssignRentalAccessoriesHttpController,
     AssignCustomerToDraftRentalHttpController,
     CancelRentalHttpController,
+    CalculateProspectiveCartCostHttpController,
     ChangeRentalDetailsHttpController,
     ChangeRentalSelectionQuantityHttpController,
     ConfirmRentalHttpController,
     CreateConfirmedRentalHttpController,
     CreateDraftRentalHttpController,
-    EditUnconfirmedRentalHttpController,
     GetReplacementAssetCandidatesHttpController,
     ReplaceConfirmedRentalAssetHttpController,
     RemoveRentalSelectionHttpController,
@@ -93,16 +95,17 @@ import { RentalLifecycleFactsService } from './public-api/rental-lifecycle-facts
     { provide: RentalRepository, useClass: PrismaRentalRepository },
     RentalAssetAllocationService,
     RentalOfferAvailabilityService,
+    ProspectiveRentalCostService,
     AddRentalSelectionHandler,
     AssignRentalAccessoriesHandler,
     AssignCustomerToDraftRentalHandler,
     CancelRentalHandler,
+    CalculateProspectiveCartCostHandler,
     ChangeRentalDetailsHandler,
     ChangeRentalSelectionQuantityHandler,
     ConfirmRentalHandler,
     CreateConfirmedRentalService,
     CreateDraftRentalService,
-    EditUnconfirmedRentalHandler,
     GetReplacementAssetCandidatesHandler,
     ReplaceConfirmedRentalAssetHandler,
     RemoveRentalSelectionHandler,

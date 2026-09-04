@@ -1,0 +1,44 @@
+// ---------------------------------------------------------------------------
+// V2 DELIVERY - BRANCH DELIVERY CONFIGURATION
+// ---------------------------------------------------------------------------
+
+model V2BranchDeliveryConfiguration {
+  id       String @id @default(uuid())
+  tenantId String @map("tenant_id")
+  branchId String @map("branch_id")
+
+  enabled                     Boolean @default(false)
+  currency                    String
+  maximumDistanceMeters       Int     @map("maximum_distance_meters")
+  eligibleWeekdays            Int[]   @map("eligible_weekdays")
+  eligibilityStartMinute      Int     @map("eligibility_start_minute")
+  eligibilityEndMinute        Int     @map("eligibility_end_minute")
+  normalServiceStartMinute    Int     @map("normal_service_start_minute")
+  normalServiceEndMinute      Int     @map("normal_service_end_minute")
+  specialHoursSurcharge       Decimal @map("special_hours_surcharge")
+  transportReservationMinutes Int     @map("transport_reservation_minutes")
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  distancePriceBands V2BranchDeliveryDistancePriceBand[]
+
+  @@unique([tenantId, branchId], map: "v2_branch_delivery_configurations_tenant_branch_key")
+  @@index([branchId], map: "v2_branch_delivery_configurations_branch_id_idx")
+  @@map("v2_branch_delivery_configurations")
+}
+
+model V2BranchDeliveryDistancePriceBand {
+  id                            String @id @default(uuid())
+  branchDeliveryConfigurationId String @map("branch_delivery_configuration_id")
+  maxDistanceMeters             Int     @map("max_distance_meters")
+  price                         Decimal
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  branchDeliveryConfiguration V2BranchDeliveryConfiguration @relation(fields: [branchDeliveryConfigurationId], references: [id], onDelete: Cascade)
+
+  @@unique([branchDeliveryConfigurationId, maxDistanceMeters], map: "v2_branch_delivery_bands_config_max_distance_key")
+  @@map("v2_branch_delivery_distance_price_bands")
+}

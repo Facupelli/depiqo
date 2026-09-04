@@ -47,15 +47,8 @@ export const draftRentalComposerFormSchema = z
 			.min(1, "Agregá al menos un producto"),
 		fulfillmentMethod: z.enum(["PICKUP", "DELIVERY"]),
 		deliveryDetails: z.object({
-			addressLine1: z.string(),
-			addressLine2: z.string(),
-			city: z.string(),
-			state: z.string(),
-			postalCode: z.string(),
-			country: z.string(),
-			contactName: z.string(),
-			contactPhone: z.string(),
-			notes: z.string(),
+			address: z.string(),
+			locationId: z.string().nullable(),
 		}),
 		insuranceSelected: z.boolean(),
 		targetTotal: z.string(),
@@ -82,19 +75,17 @@ export const draftRentalComposerFormSchema = z
 		}
 
 		if (value.fulfillmentMethod === "DELIVERY") {
-			if (!value.deliveryDetails.addressLine1.trim()) {
+			if (!value.deliveryDetails.address.trim()) {
 				ctx.addIssue({
 					code: "custom",
-					path: ["deliveryDetails", "addressLine1"],
+					path: ["deliveryDetails", "address"],
 					message: "La dirección es obligatoria",
 				});
-			}
-
-			if (!value.deliveryDetails.city.trim()) {
+			} else if (!value.deliveryDetails.locationId) {
 				ctx.addIssue({
 					code: "custom",
-					path: ["deliveryDetails", "city"],
-					message: "La ciudad es obligatoria",
+					path: ["deliveryDetails", "address"],
+					message: "Seleccioná una dirección de la lista",
 				});
 			}
 		}
@@ -120,15 +111,8 @@ export function createDraftRentalComposerDefaultValues(
 		selectedOffers: [],
 		fulfillmentMethod: "PICKUP",
 		deliveryDetails: {
-			addressLine1: "",
-			addressLine2: "",
-			city: "",
-			state: "",
-			postalCode: "",
-			country: "",
-			contactName: "",
-			contactPhone: "",
-			notes: "",
+			address: "",
+			locationId: null,
 		},
 		insuranceSelected: false,
 		targetTotal: "",
@@ -219,27 +203,29 @@ export function toCreateDraftRentalDto(
 	values: DraftRentalComposerFormValues,
 	timezone: string,
 ): CreateDraftRentalBodyDto {
-	const deliveryDetails = values.deliveryDetails;
+	let deliveryDetailsDto: CreateDraftRentalBodyDto["deliveryDetails"];
+
+	if (values.fulfillmentMethod === "DELIVERY") {
+		const address = values.deliveryDetails.address.trim();
+		const locationId = values.deliveryDetails.locationId?.trim();
+
+		if (!address || !locationId) {
+			throw new Error("Delivery requires a complete selected address");
+		}
+
+		deliveryDetailsDto = {
+			address,
+			locationId,
+		};
+	}
+
 	const dto = {
 		branchId: values.branchId,
 		rentalCustomerId: emptyToUndefined(values.rentalCustomerId),
 		period: buildDraftRentalPeriod(values, timezone),
 		selectedOffers: selectedOffers(values),
 		fulfillmentMethod: values.fulfillmentMethod,
-		deliveryDetails:
-			values.fulfillmentMethod === "DELIVERY"
-				? {
-						addressLine1: deliveryDetails.addressLine1,
-						city: deliveryDetails.city,
-						addressLine2: emptyToUndefined(deliveryDetails.addressLine2),
-						state: emptyToUndefined(deliveryDetails.state),
-						postalCode: emptyToUndefined(deliveryDetails.postalCode),
-						country: emptyToUndefined(deliveryDetails.country),
-						contactName: emptyToUndefined(deliveryDetails.contactName),
-						contactPhone: emptyToUndefined(deliveryDetails.contactPhone),
-						notes: emptyToUndefined(deliveryDetails.notes),
-					}
-				: undefined,
+		deliveryDetails: deliveryDetailsDto,
 		insuranceSelected: values.insuranceSelected,
 		manualPricingAdjustment: manualPricingAdjustment(values),
 	};

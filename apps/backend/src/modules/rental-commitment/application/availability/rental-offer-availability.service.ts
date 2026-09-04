@@ -46,6 +46,27 @@ export type CalculateRentalOfferAvailabilityResult = Result<
   RentalOfferAvailabilityError
 >;
 
+export type CalculateRentalOfferAvailabilityInput = {
+  tenantId: string;
+  branchId: string;
+  period: RentalPeriod;
+  rentalOfferIds: readonly string[];
+  transportReservationMinutes?: number;
+};
+
+function deriveProspectiveAssetBlockPeriod(
+  input: Pick<CalculateRentalOfferAvailabilityInput, 'period' | 'transportReservationMinutes'>,
+  bufferSettings: { beforeBufferMinutes: number; afterBufferMinutes: number },
+): RentalPeriod {
+  const transportReservationMinutes = input.transportReservationMinutes ?? 0;
+
+  return deriveBufferedAssetBlockPeriod({
+    participationPeriod: input.period,
+    beforeBufferMinutes: bufferSettings.beforeBufferMinutes + transportReservationMinutes,
+    afterBufferMinutes: bufferSettings.afterBufferMinutes + transportReservationMinutes,
+  });
+}
+
 @Injectable()
 export class RentalOfferAvailabilityService {
   constructor(
@@ -54,12 +75,19 @@ export class RentalOfferAvailabilityService {
     private readonly tenantRentalAssetBufferSettings: TenantRentalAssetBufferSettings,
   ) {}
 
-  async calculate(input: {
-    tenantId: string;
-    branchId: string;
-    period: RentalPeriod;
-    rentalOfferIds: readonly string[];
-  }): Promise<CalculateRentalOfferAvailabilityResult> {
+  async calculate(input: CalculateRentalOfferAvailabilityInput): Promise<CalculateRentalOfferAvailabilityResult> {
+    if (
+      input.transportReservationMinutes !== undefined &&
+      (!Number.isInteger(input.transportReservationMinutes) || input.transportReservationMinutes < 0)
+    ) {
+      return err(
+        this.error(
+          'rental_commitment.invalid_availability_selection',
+          'transportReservationMinutes must be a non-negative integer when provided.',
+        ),
+      );
+    }
+
     const bufferSettings = await this.tenantRentalAssetBufferSettings.getTenantRentalAssetBufferSettings({
       tenantId: input.tenantId,
     });
@@ -69,10 +97,7 @@ export class RentalOfferAvailabilityService {
       );
     }
 
-    const operationalPeriod = deriveBufferedAssetBlockPeriod({
-      participationPeriod: input.period,
-      ...bufferSettings.value,
-    });
+    const operationalPeriod = deriveProspectiveAssetBlockPeriod(input, bufferSettings.value);
 
     const catalogResult = await this.catalogSelectionResolution.resolveSelectedRentalOfferRequirements({
       tenantId: input.tenantId,

@@ -40,11 +40,7 @@ export const storefrontEquipmentQueries = {
 
 type EquipmentCommercialContext = Pick<
 	GetStorefrontEquipmentInputDto,
-	| "branchId"
-	| "periodStart"
-	| "periodEnd"
-	| "pickupInstant"
-	| "returnInstant"
+	"branchId" | "periodStart" | "periodEnd" | "pickupInstant" | "returnInstant"
 >;
 
 type EquipmentQueryInput = ReturnType<typeof normalizeStorefrontEquipmentInput>;

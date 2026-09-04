@@ -40,4 +40,4 @@ The URL dates describe the customer's calendar search. Selected schedule slots p
 - `../../../packages/api-contracts/src/explicit-offset-instant.schema.ts`
 - `../../../packages/api-contracts/src/local-date.schema.ts`
 - `../../src/modules/rental-commitment/cart/review-cart/confirmed-rental-request.ts`
-- `../../src/modules/pricing/calculate-cart-price/`
+- `../../src/modules/rental-commitment/cart/prospective-cart-cost/`

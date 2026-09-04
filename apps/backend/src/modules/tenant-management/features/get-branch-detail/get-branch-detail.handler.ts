@@ -1,3 +1,4 @@
+import type { BranchOperationalLocationDto } from '@repo/api-contracts';
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { err, ok, Result } from 'neverthrow';
 
@@ -23,13 +24,9 @@ export interface GetBranchDetailReadModel {
   id: string;
   name: string;
   address: string | null;
+  operationalLocation: BranchOperationalLocationDto | null;
   timezone: string | null;
   isActive: boolean;
-  supportsDelivery: boolean;
-  deliveryDefaultCountry: string | null;
-  deliveryDefaultStateRegion: string | null;
-  deliveryDefaultCity: string | null;
-  deliveryDefaultPostalCode: string | null;
   schedules: GetBranchDetailScheduleReadModel[];
   createdAt: string;
   updatedAt: string;
@@ -57,13 +54,18 @@ export class GetBranchDetailHandler implements IQueryHandler<GetBranchDetailQuer
         id: true,
         name: true,
         address: true,
+        operationalLocationFormattedAddress: true,
+        operationalLocationLatitude: true,
+        operationalLocationLongitude: true,
+        operationalLocationStreet: true,
+        operationalLocationStreetNumber: true,
+        operationalLocationCity: true,
+        operationalLocationStateRegion: true,
+        operationalLocationPostalCode: true,
+        operationalLocationCountry: true,
+        operationalLocationProviderPlaceId: true,
         timezone: true,
         isActive: true,
-        supportsDelivery: true,
-        deliveryDefaultCountry: true,
-        deliveryDefaultStateRegion: true,
-        deliveryDefaultCity: true,
-        deliveryDefaultPostalCode: true,
         createdAt: true,
         updatedAt: true,
         schedules: {
@@ -98,13 +100,25 @@ export class GetBranchDetailHandler implements IQueryHandler<GetBranchDetailQuer
       id: branch.id,
       name: branch.name,
       address: branch.address,
+      operationalLocation:
+        branch.operationalLocationFormattedAddress !== null &&
+        branch.operationalLocationLatitude !== null &&
+        branch.operationalLocationLongitude !== null
+          ? {
+              formattedAddress: branch.operationalLocationFormattedAddress,
+              latitude: branch.operationalLocationLatitude,
+              longitude: branch.operationalLocationLongitude,
+              street: branch.operationalLocationStreet,
+              streetNumber: branch.operationalLocationStreetNumber,
+              city: branch.operationalLocationCity,
+              stateRegion: branch.operationalLocationStateRegion,
+              postalCode: branch.operationalLocationPostalCode,
+              country: branch.operationalLocationCountry,
+              providerPlaceId: branch.operationalLocationProviderPlaceId,
+            }
+          : null,
       timezone: branch.timezone,
       isActive: branch.isActive,
-      supportsDelivery: branch.supportsDelivery,
-      deliveryDefaultCountry: branch.deliveryDefaultCountry,
-      deliveryDefaultStateRegion: branch.deliveryDefaultStateRegion,
-      deliveryDefaultCity: branch.deliveryDefaultCity,
-      deliveryDefaultPostalCode: branch.deliveryDefaultPostalCode,
       schedules: branch.schedules.map((schedule) => ({
         id: schedule.id,
         type: schedule.type,

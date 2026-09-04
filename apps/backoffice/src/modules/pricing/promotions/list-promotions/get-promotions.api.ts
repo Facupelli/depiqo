@@ -25,10 +25,6 @@ export async function getPromotions(
 		searchParams.set("effectType", parsedQuery.effectType);
 	}
 
-	if (parsedQuery.target !== undefined) {
-		searchParams.set("target", parsedQuery.target);
-	}
-
 	if (parsedQuery.search !== undefined) {
 		searchParams.set("search", parsedQuery.search);
 	}

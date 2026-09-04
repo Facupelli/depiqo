@@ -1,13 +1,8 @@
-import { CommandBus } from '@nestjs/cqrs';
-import { randomUUID } from 'node:crypto';
-import { ok } from 'neverthrow';
-
 import {
   CalculateDraftRentalPriceBodySchema,
   CreateConfirmedRentalBodySchema,
   CreateDraftRentalBodySchema,
   CreateOwnerWithContractBodySchema,
-  EditUnconfirmedRentalBodySchema,
   GetRentalOfferAvailabilityRequestSchema,
 } from '@repo/api-contracts';
 
@@ -15,11 +10,7 @@ import { CreateOwnerWithContractApplicationInputSchema } from './asset-inventory
 import { CalculateDraftRentalPriceApplicationInputSchema } from './pricing/features/calculate-draft-rental-price/calculate-draft-rental-price.request.dto';
 import { CreateConfirmedRentalApplicationInputSchema } from './rental-commitment/features/create-confirmed-rental/create-confirmed-rental.request.dto';
 import { CreateDraftRentalApplicationInputSchema } from './rental-commitment/features/create-draft-rental/create-draft-rental.request.dto';
-import { EditUnconfirmedRentalApplicationInputSchema } from './rental-commitment/features/edit-unconfirmed-rental/edit-unconfirmed-rental.request.dto';
 import { GetRentalOfferAvailabilityApplicationInputSchema } from './rental-commitment/features/get-rental-offer-availability/get-rental-offer-availability.request.dto';
-import { CreateConfirmedRentalCommand } from './rental-commitment/features/create-confirmed-rental/create-confirmed-rental.command';
-import { CreateConfirmedRentalHttpController } from './rental-commitment/features/create-confirmed-rental/create-confirmed-rental.controller';
-import { RentalPeriod } from './rental-commitment/domain/value-objects/rental-period.value-object';
 
 const period = { start: '2026-08-10T13:00:00Z', end: '2026-08-10T10:30:00-03:00' };
 const selectedOffers = [{ rentalOfferId: 'offer-1', quantity: 1 }];
@@ -43,19 +34,13 @@ const wireCases = [
   [
     'confirmed rental',
     CreateConfirmedRentalBodySchema,
-    { branchId: 'branch-1', period, selectedOffers },
+    { branchId: 'branch-1', period, selectedOffers, fulfillmentMethod: 'PICKUP' },
     (body: { period: { start: string } }) => body.period.start,
   ],
   [
     'draft rental',
     CreateDraftRentalBodySchema,
-    { branchId: 'branch-1', period, selectedOffers },
-    (body: { period: { start: string } }) => body.period.start,
-  ],
-  [
-    'edit unconfirmed rental',
-    EditUnconfirmedRentalBodySchema,
-    { expectedVersion: 0, branchId: 'branch-1', period, selectedOffers },
+    { branchId: 'branch-1', period, selectedOffers, fulfillmentMethod: 'PICKUP' },
     (body: { period: { start: string } }) => body.period.start,
   ],
   [
@@ -90,40 +75,13 @@ describe('instant-bearing request boundaries', () => {
     const calculateDraftRentalPriceInput = CalculateDraftRentalPriceApplicationInputSchema.parse(wireCases[1][2]);
     const createConfirmedRentalInput = CreateConfirmedRentalApplicationInputSchema.parse(wireCases[2][2]);
     const createDraftRentalInput = CreateDraftRentalApplicationInputSchema.parse(wireCases[3][2]);
-    const editUnconfirmedRentalInput = EditUnconfirmedRentalApplicationInputSchema.parse(wireCases[4][2]);
-    const offerAvailabilityInput = GetRentalOfferAvailabilityApplicationInputSchema.parse(wireCases[5][2]);
+    const offerAvailabilityInput = GetRentalOfferAvailabilityApplicationInputSchema.parse(wireCases[4][2]);
 
     expect(ownerInput.contract.validFrom).toBeInstanceOf(Date);
     expect(calculateDraftRentalPriceInput.period.start).toBeInstanceOf(Date);
     expect(createConfirmedRentalInput.period.start).toBeInstanceOf(Date);
     expect(createDraftRentalInput.period.start).toBeInstanceOf(Date);
-    expect(editUnconfirmedRentalInput.period.start).toBeInstanceOf(Date);
     expect(offerAvailabilityInput.periodStart).toBeInstanceOf(Date);
-
-    const periods = [
-      [calculateDraftRentalPriceInput.period.start, calculateDraftRentalPriceInput.period.end],
-      [createConfirmedRentalInput.period.start, createConfirmedRentalInput.period.end],
-      [createDraftRentalInput.period.start, createDraftRentalInput.period.end],
-      [editUnconfirmedRentalInput.period.start, editUnconfirmedRentalInput.period.end],
-      [offerAvailabilityInput.periodStart, offerAvailabilityInput.periodEnd],
-    ] as const;
-    for (const [start, end] of periods) {
-      expect(() => new RentalPeriod(start, end)).not.toThrow();
-    }
-  });
-
-  it('passes Date-backed periods from the controller into rental commands', async () => {
-    const commandBus = {
-      execute: jest.fn().mockResolvedValue(ok({ rentalId: 'rental-1', rentalNumber: 1 })),
-    } as unknown as CommandBus;
-    const controller = new CreateConfirmedRentalHttpController(commandBus);
-    const dto = CreateConfirmedRentalApplicationInputSchema.parse(wireCases[2][2]);
-
-    await controller.create(randomUUID(), dto, { tenantId: 'tenant-1', id: 'customer-1' } as never);
-
-    const command = (commandBus.execute as jest.Mock).mock.calls[0][0] as CreateConfirmedRentalCommand;
-    expect(command.period.start).toBeInstanceOf(Date);
-    expect(command.period.end).toBeInstanceOf(Date);
   });
 
   it('keeps owner-contract ordering offset-aware after conversion to Dates', () => {

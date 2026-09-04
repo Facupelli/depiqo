@@ -35,7 +35,7 @@ export class PromotionEligibilityService {
         exclusions: promotion.exclusions,
       });
 
-      if (eligibleLines.length === 0) {
+      if (eligibleLines.length === 0 || !this.meetsLineDependentConditions({ context, promotion, eligibleLines })) {
         return [];
       }
 
@@ -77,15 +77,29 @@ export class PromotionEligibilityService {
       return false;
     }
 
+    return true;
+  }
+
+  private meetsLineDependentConditions(input: {
+    context: PricingContext;
+    promotion: PromotionPricingInput;
+    eligibleLines: EligiblePromotion['eligibleLines'];
+  }): boolean {
+    const { context, promotion, eligibleLines } = input;
+
     if (promotion.minOrderSubtotal != null) {
       const minOrderSubtotal = Money.of(promotion.minOrderSubtotal, context.currency);
+      const eligibleSubtotal = eligibleLines.reduce(
+        (total, line) => total.add(line.subtotal),
+        Money.zero(context.currency),
+      );
 
-      if (!context.subtotal.isGreaterThan(minOrderSubtotal) && !context.subtotal.equals(minOrderSubtotal)) {
+      if (!eligibleSubtotal.isGreaterThan(minOrderSubtotal) && !eligibleSubtotal.equals(minOrderSubtotal)) {
         return false;
       }
     }
 
-    const maxChargedUnits = Math.max(...context.lines.map((line) => line.chargedUnits));
+    const maxChargedUnits = Math.max(...eligibleLines.map((line) => line.chargedUnits));
 
     if (promotion.minRentalUnits != null && maxChargedUnits < promotion.minRentalUnits) {
       return false;

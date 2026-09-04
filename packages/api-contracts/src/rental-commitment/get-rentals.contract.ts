@@ -50,7 +50,7 @@ export const GetRentalsItemSchema = z.object({
   id: z.string(),
   rentalNumber: z.number().int().positive(),
   status: GetRentalsStatusSchema,
-  fulfillmentMethod: GetRentalsFulfillmentMethodSchema.nullable(),
+  fulfillmentMethod: GetRentalsFulfillmentMethodSchema,
   createdAt: z.iso.datetime(),
   pickupAt: z.iso.datetime(),
   returnAt: z.iso.datetime(),

@@ -61,6 +61,8 @@ export const EnvSchema = z.object({
   NOTIFICATIONS_EMAIL_REPLY_TO: z.string().optional(),
   NOTIFICATIONS_MUTED_CHANNELS_BY_ENV: notificationsMutedChannelsByEnvSchema,
 
+  GEOAPIFY_API_KEY: z.string(),
+
   ROOT_DOMAIN: z.string(),
 });
 

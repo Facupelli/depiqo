@@ -3,16 +3,24 @@ import { randomUUID } from 'node:crypto';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { TestingModule } from '@nestjs/testing';
 import { CommandBus } from '@nestjs/cqrs';
+import Decimal from 'decimal.js';
 
 import { PrismaService } from 'src/core/database/prisma.service';
 import { Prisma } from 'src/generated/prisma/client';
+import { RoadRouteDistanceProvider } from 'src/modules/delivery/application/ports/road-route-distance-provider.port';
+import { persistServiceableBranchDeliveryConfiguration } from 'src/modules/delivery/testing/serviceable-delivery.fixtures';
 import { RentalConfirmedIntegrationEvent } from 'src/modules/rental-commitment/public-api/events/rental-lifecycle.integration-events';
+import { AddressGeocoder } from 'src/modules/shared/geocoding/address-geocoder.port';
 import {
   createRentalCommitmentIntegrationContext,
   useIntegrationTestContext,
 } from '../../../../../test/support/integration-test-context';
 import { createTestFixtures, TestFixtures } from '../../../../../test/support/fixtures';
 import { runConcurrently } from '../../../../../test/support/concurrency';
+import {
+  FakeAddressGeocoder,
+  FakeRoadRouteDistanceProvider,
+} from '../../../../../test/support/external-infrastructure/fakes';
 import { oneMillisecondAfter, utcDate } from '../../../../../test/support/time';
 
 import { ConfirmRentalFixtures } from '../confirm-rental/testing/confirm-rental.fixtures';
@@ -34,6 +42,17 @@ interface Scenario {
 }
 
 const period = (start = utcDate(2030, 1, 7, 10), end = utcDate(2030, 1, 7, 12)) => new RentalPeriod(start, end);
+const deliveryLocationId = 'test-delivery-location';
+const deliveryDisplayAddress = '10 Rental Road';
+const deliveryCustomerCoordinates = { latitude: 40.7128, longitude: -74.006 };
+const deliveryRouteDistanceMeters = 10_000;
+const addressGeocoder = new FakeAddressGeocoder({
+  [deliveryLocationId]: {
+    formattedAddress: deliveryDisplayAddress,
+    ...deliveryCustomerCoordinates,
+  },
+});
+const roadRouteDistanceProvider = new FakeRoadRouteDistanceProvider(deliveryRouteDistanceMeters);
 
 describe('CreateConfirmedRental integration', () => {
   let moduleRef: TestingModule;
@@ -44,7 +63,10 @@ describe('CreateConfirmedRental integration', () => {
   let confirmationFixtures: ConfirmRentalFixtures;
 
   useIntegrationTestContext(async () => {
-    moduleRef = await createRentalCommitmentIntegrationContext();
+    moduleRef = await createRentalCommitmentIntegrationContext([
+      { provide: AddressGeocoder, useValue: addressGeocoder },
+      { provide: RoadRouteDistanceProvider, useValue: roadRouteDistanceProvider },
+    ]);
     prisma = moduleRef.get(PrismaService);
     commandBus = moduleRef.get(CommandBus);
     emitter = moduleRef.get(EventEmitter2);
@@ -53,11 +75,13 @@ describe('CreateConfirmedRental integration', () => {
     return moduleRef;
   });
 
-  async function scenario(overrides: { supportsDelivery?: boolean } = {}): Promise<Scenario> {
+  async function scenario(
+    branchOverrides?: Parameters<TestFixtures['createBranch']>[0]['overrides'],
+  ): Promise<Scenario> {
     const tenant = await core.createTenant();
     const branch = await core.createBranch({
       tenantId: tenant.id,
-      overrides: { supportsDelivery: overrides.supportsDelivery ?? false },
+      overrides: branchOverrides,
     });
     const { customer } = await core.createRentalCustomer({ tenantId: tenant.id });
     await prisma.client.v2BranchSchedule.createMany({
@@ -159,7 +183,7 @@ describe('CreateConfirmedRental integration', () => {
       selectedOffers: Array<{ rentalOfferId: string; quantity: number }>;
       rentalPeriod?: RentalPeriod;
       fulfillmentMethod?: 'PICKUP' | 'DELIVERY';
-      deliveryDetails?: { addressLine1: string; city: string };
+      deliveryDetails?: { address: string; locationId: string };
       confirmationOperationId?: string;
     },
   ): Promise<CreateConfirmedRentalServiceResult> {
@@ -170,7 +194,7 @@ describe('CreateConfirmedRental integration', () => {
         rentalCustomerId: input.customerId,
         period: input.rentalPeriod ?? period(),
         selectedOffers: input.selectedOffers,
-        fulfillmentMethod: input.fulfillmentMethod,
+        fulfillmentMethod: input.fulfillmentMethod ?? 'PICKUP',
         deliveryDetails: input.deliveryDetails,
         confirmationOperationId: input.confirmationOperationId ?? randomUUID(),
       }),
@@ -284,7 +308,7 @@ describe('CreateConfirmedRental integration', () => {
     expect(state.blocks[0].period).toContain('2030-01-07 09:30:00+00');
     expect(state.blocks[0].period).toContain('2030-01-07 12:45:00+00');
     expect(state.rental.priceSnapshot).toEqual(
-      expect.objectContaining({ schema: 'v2.rental-price-snapshot', version: 2, context: 'CONFIRMED' }),
+      expect.objectContaining({ schema: 'v2.rental-price-snapshot', version: 3, context: 'CONFIRMED' }),
     );
     expect(state.rental.ownerSplits).toHaveLength(0);
   });
@@ -451,26 +475,70 @@ describe('CreateConfirmedRental integration', () => {
     expect(state.rental.ownerSplits[0].ownerAmount.toString()).toBe('40');
   });
 
-  it.each(['PICKUP', 'DELIVERY'] as const)('persists valid %s fulfillment', async (fulfillmentMethod) => {
-    const setup = await scenario({ supportsDelivery: true });
+  it('persists valid PICKUP fulfillment', async () => {
+    const setup = await scenario();
     const catalog = await offer(setup);
     await candidate({ ...setup, equipmentTypeId: catalog.equipmentTypes[0].id });
     const result = await create({
       ...setup,
       selectedOffers: [{ rentalOfferId: catalog.offer.id, quantity: 1 }],
-      fulfillmentMethod,
-      deliveryDetails:
-        fulfillmentMethod === 'DELIVERY' ? { addressLine1: '1 Test Street', city: 'Test City' } : undefined,
+      fulfillmentMethod: 'PICKUP',
     });
     expect(result.isOk()).toBe(true);
     if (result.isErr()) return;
     const state = await persisted(result.value.rentalId);
-    expect(state.rental.fulfillmentMethod).toBe(fulfillmentMethod);
-    expect(state.rental.deliveryDetails).toEqual(
-      fulfillmentMethod === 'DELIVERY'
-        ? expect.objectContaining({ addressLine1: '1 Test Street', city: 'Test City' })
-        : null,
+    expect(state.rental.fulfillmentMethod).toBe('PICKUP');
+    expect(state.rental.deliveryDetails).toBeNull();
+  });
+
+  it('persists valid DELIVERY fulfillment', async () => {
+    const setup = await scenario({
+      operationalLocationFormattedAddress: '1 Branch Road',
+      operationalLocationLatitude: 40.7,
+      operationalLocationLongitude: -74,
+    });
+    await persistServiceableBranchDeliveryConfiguration({ prisma, ...setup });
+    const catalog = await offer(setup);
+    await candidate({ ...setup, equipmentTypeId: catalog.equipmentTypes[0].id });
+
+    const result = await create({
+      ...setup,
+      selectedOffers: [{ rentalOfferId: catalog.offer.id, quantity: 1 }],
+      fulfillmentMethod: 'DELIVERY',
+      deliveryDetails: { address: deliveryDisplayAddress, locationId: deliveryLocationId },
+    });
+
+    expect(result.isOk()).toBe(true);
+    if (result.isErr()) return;
+
+    const state = await persisted(result.value.rentalId);
+    expect(state.rental.fulfillmentMethod).toBe('DELIVERY');
+    expect(state.rental.deliveryDetails).toEqual(expect.objectContaining({ address: deliveryDisplayAddress }));
+    expect(state.rental.deliverySnapshot).toEqual(
+      expect.objectContaining({
+        schema: 'v2.accepted-delivery',
+        resolvedCustomerLocation: expect.objectContaining({
+          formattedAddress: deliveryDisplayAddress,
+          ...deliveryCustomerCoordinates,
+        }),
+        distanceMeters: deliveryRouteDistanceMeters,
+        deliveryTotal: '50',
+      }),
     );
+    expect(state.rental.priceSnapshot).toEqual(
+      expect.objectContaining({
+        schema: 'v2.rental-price-snapshot',
+        version: 3,
+        context: 'CONFIRMED',
+        total: '100.00',
+      }),
+    );
+    expect(state.rental.confirmedAt).not.toBeNull();
+    expect(state.rental.acceptedCustomerTotal?.toString()).toBe('150');
+
+    const pricingTotal = (state.rental.priceSnapshot as Prisma.JsonObject).total as string;
+    const deliveryTotal = (state.rental.deliverySnapshot as Prisma.JsonObject).deliveryTotal as string;
+    expect(new Decimal(pricingTotal).plus(deliveryTotal).equals(state.rental.acceptedCustomerTotal!)).toBe(true);
   });
 
   it('maps authoritative Catalog availability outcomes without writing', async () => {

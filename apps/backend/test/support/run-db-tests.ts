@@ -42,6 +42,7 @@ async function main(): Promise<void> {
     NOTIFICATIONS_EMAIL_FROM: 'test@example.com',
     NOTIFICATIONS_MUTED_CHANNELS_BY_ENV: '{"test":["EMAIL"]}',
     ROOT_DOMAIN: 'localhost',
+    GEOAPIFY_API_KEY: 'test-geoapify-key',
   };
 
   let jestRun: JestRun | undefined;

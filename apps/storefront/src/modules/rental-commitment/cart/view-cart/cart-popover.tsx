@@ -132,7 +132,8 @@ export function CartPopover({ search }: { search?: RentalCatalogSearch }) {
 						search.periodEnd &&
 						search.pickupInstant &&
 						search.returnInstant &&
-						Date.parse(search.returnInstant) > Date.parse(search.pickupInstant) ? (
+						Date.parse(search.returnInstant) >
+							Date.parse(search.pickupInstant) ? (
 							<Button
 								className="w-full"
 								render={

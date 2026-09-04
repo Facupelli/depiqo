@@ -2,6 +2,7 @@ import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { err, ok, Result } from 'neverthrow';
 
 import { PrismaService } from 'src/core/database/prisma.service';
+import { BranchFacts } from 'src/modules/tenant-management/public-api/branch-facts.public-api';
 import { TenantCategoryTaxonomy } from 'src/modules/tenant-management/public-api/tenant-category-taxonomy.public-api';
 
 import { getEquipmentTypeDetailError, GetEquipmentTypeDetailError } from './get-equipment-type-detail.errors';
@@ -49,6 +50,7 @@ export class GetEquipmentTypeDetailHandler implements IQueryHandler<
   constructor(
     private readonly prisma: PrismaService,
     private readonly tenantCategoryTaxonomy: TenantCategoryTaxonomy,
+    private readonly branchFacts: BranchFacts,
   ) {}
 
   async execute(query: GetEquipmentTypeDetailQuery): Promise<GetEquipmentTypeDetailResult> {
@@ -109,17 +111,22 @@ export class GetEquipmentTypeDetailHandler implements IQueryHandler<
     }
 
     const branchIds = [...new Set(equipmentType.assets.map((asset) => asset.branchId))];
-    const [branches, categories] = await Promise.all([
-      this.prisma.client.v2Branch.findMany({
-        where: { tenantId: query.tenantId, id: { in: branchIds }, deletedAt: null },
-        select: { id: true, name: true },
-      }),
+    const [branchFactsResult, categories] = await Promise.all([
+      this.branchFacts.getBranchFactsBatch({ tenantId: query.tenantId, branchIds }),
       this.tenantCategoryTaxonomy.getCategoryDisplayFacts({
         tenantId: query.tenantId,
         categoryIds: equipmentType.categoryId ? [equipmentType.categoryId] : [],
       }),
     ]);
-    const branchNameById = new Map(branches.map((branch) => [branch.id, branch.name]));
+    if (branchFactsResult.isErr()) {
+      throw new Error(branchFactsResult.error.message, { cause: branchFactsResult.error });
+    }
+
+    const branchNameById = new Map(
+      branchFactsResult.value
+        .filter((branch) => !branch.isDeleted)
+        .map((branch) => [branch.branchId, branch.displayName]),
+    );
     const categoryNameById = new Map(categories.map((category) => [category.id, category.name]));
 
     return ok({

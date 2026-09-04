@@ -33,7 +33,10 @@ export class AcceptedRentalPricingFactsService extends AcceptedRentalPricingFact
         id: input.rentalId,
         tenantId: input.tenantId,
       },
-      select: { priceSnapshot: true },
+      select: {
+        priceSnapshot: true,
+        acceptedCustomerTotal: true,
+      },
     });
 
     if (!rental) {
@@ -50,6 +53,9 @@ export class AcceptedRentalPricingFactsService extends AcceptedRentalPricingFact
       return err(acceptedRentalPricingFactsError('AcceptedPricingSnapshotInvalid', snapshot.error.message));
     }
 
-    return ok(toAcceptedRentalPricingFacts(snapshot.value.snapshot));
+    return ok({
+      ...toAcceptedRentalPricingFacts(snapshot.value.snapshot),
+      acceptedCustomerTotal: rental.acceptedCustomerTotal?.toString() ?? null,
+    });
   }
 }

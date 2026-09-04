@@ -1,10 +1,6 @@
 import { z } from "zod";
 
 import type { ApiContract } from "../api-contract";
-import {
-  CreateConfirmedRentalDeliveryDetailsSchema,
-  CreateConfirmedRentalFulfillmentMethodSchema,
-} from "./create-confirmed-rental.contract";
 
 export const ChangeRentalDetailsParamsSchema = z.object({
   rentalId: z.string().trim().min(1),
@@ -12,8 +8,6 @@ export const ChangeRentalDetailsParamsSchema = z.object({
 
 export const ChangeRentalDetailsBodySchema = z.object({
   expectedVersion: z.number().int().nonnegative(),
-  fulfillmentMethod: CreateConfirmedRentalFulfillmentMethodSchema.optional(),
-  deliveryDetails: CreateConfirmedRentalDeliveryDetailsSchema.nullable().optional(),
   notes: z.string().nullable().optional(),
   insuranceSelected: z.boolean().optional(),
   manualPricingAdjustment: z

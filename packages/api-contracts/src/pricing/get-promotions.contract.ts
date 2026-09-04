@@ -15,7 +15,6 @@ export const GetPromotionsQuerySchema = z.object({
   isActive: OptionalBooleanQuerySchema,
   activation: z.enum(["AUTOMATIC", "COUPON_REQUIRED"]).optional(),
   effectType: z.enum(["PERCENTAGE_OFF", "FIXED_AMOUNT_OFF"]).optional(),
-  target: z.enum(["ORDER", "ELIGIBLE_LINES"]).optional(),
   search: z.string().trim().min(1).optional(),
 });
 
@@ -30,7 +29,6 @@ export const GetPromotionsPromotionSchema = z.object({
   validUntil: LocalDateSchema.nullable(),
   effectType: z.enum(["PERCENTAGE_OFF", "FIXED_AMOUNT_OFF"]),
   effectValue: z.string(),
-  target: z.enum(["ORDER", "ELIGIBLE_LINES"]),
   minOrderSubtotal: z.string().nullable(),
   minRentalUnits: z.number().int().nullable(),
   maxRentalUnits: z.number().int().nullable(),

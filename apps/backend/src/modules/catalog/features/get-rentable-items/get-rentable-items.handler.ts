@@ -1,6 +1,7 @@
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 
 import { PrismaService } from 'src/core/database/prisma.service';
+import { BranchFacts } from 'src/modules/tenant-management/public-api/branch-facts.public-api';
 
 import { GetRentableItemsQuery } from './get-rentable-items.query';
 
@@ -59,7 +60,10 @@ type StartingPriceCandidate = {
 
 @QueryHandler(GetRentableItemsQuery)
 export class GetRentableItemsHandler implements IQueryHandler<GetRentableItemsQuery, GetRentableItemsResult> {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly branchFacts: BranchFacts,
+  ) {}
 
   async execute(query: GetRentableItemsQuery): Promise<GetRentableItemsResult> {
     const activePricedOfferIds = await this.resolveActivePricedOfferIds(query);
@@ -122,11 +126,8 @@ export class GetRentableItemsHandler implements IQueryHandler<GetRentableItemsQu
     // TODO: This read model currently composes cross-boundary data with Prisma direct reads.
     // Replace with module-owned read facades or a dedicated denormalized read model once Catalog,
     // Pricing, Tenant Management, and Asset Inventory public read APIs stabilize.
-    const [branches, equipmentTypes, pricings] = await this.prisma.client.$transaction([
-      this.prisma.client.v2Branch.findMany({
-        where: { tenantId: query.tenantId, id: { in: branchIds } },
-        select: { id: true, name: true },
-      }),
+    const [branchFactsResult, equipmentTypes, pricings] = await Promise.all([
+      this.branchFacts.getBranchFactsBatch({ tenantId: query.tenantId, branchIds }),
       this.prisma.client.v2EquipmentType.findMany({
         where: { tenantId: query.tenantId, id: { in: equipmentTypeIds } },
         select: { id: true, name: true },
@@ -154,7 +155,11 @@ export class GetRentableItemsHandler implements IQueryHandler<GetRentableItemsQu
       }),
     ]);
 
-    const branchNameById = new Map(branches.map((branch) => [branch.id, branch.name]));
+    if (branchFactsResult.isErr()) {
+      throw new Error(branchFactsResult.error.message, { cause: branchFactsResult.error });
+    }
+
+    const branchNameById = new Map(branchFactsResult.value.map((branch) => [branch.branchId, branch.displayName]));
     const equipmentTypeNameById = new Map(
       equipmentTypes.map((equipmentType) => [equipmentType.id, equipmentType.name]),
     );

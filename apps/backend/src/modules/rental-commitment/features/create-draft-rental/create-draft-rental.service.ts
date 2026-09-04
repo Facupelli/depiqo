@@ -9,14 +9,16 @@ import {
 } from 'src/modules/catalog/public-api/catalog-selection-resolution.public-api';
 import { AssetInventoryDisplayFacts } from 'src/modules/asset-inventory/public-api/asset-inventory-display-facts.public-api';
 import {
-  PricingCalculation,
   PricingCalculationError,
+  PricingCalculationRequest,
 } from 'src/modules/pricing/public-api/pricing-calculation.public-api';
 import { BranchFacts } from 'src/modules/tenant-management/public-api/branch-facts.public-api';
 import { TenantBillingPreferences } from 'src/modules/tenant-management/public-api/tenant-billing-preferences.public-api';
 
+import { ProspectiveRentalCostService } from '../../application/prospective-rental-cost.service';
 import { RentalOperationalFactsValidatorService } from '../../application/rental-operational-facts-validator.service';
 
+import { acceptedDeliverySnapshotFromQuote } from '../../application/accepted-delivery-snapshot.adapter';
 import { adaptPricingCalculationToSnapshot } from '../../application/accepted-pricing/adapt-pricing-calculation-to-snapshot';
 import { toRentalSelectionKind } from '../../application/catalog-selection-kind.mapper';
 import { resolveEquipmentTypeNames } from '../../application/equipment-type-display-facts';
@@ -43,7 +45,6 @@ import {
   RentalOfferNotRentableError,
   RentableItemNotActiveError,
   TenantUnavailableForRentalError,
-  UnsupportedBranchFulfillmentMethodError,
 } from '../../domain/errors/rental-commitment.errors';
 
 export interface CreateDraftRentalResult {
@@ -64,7 +65,7 @@ export class CreateDraftRentalService implements ICommandHandler<
     private readonly rentalOperationalFacts: RentalOperationalFactsValidatorService,
     private readonly catalogSelectionResolution: CatalogSelectionResolution,
     private readonly assetInventoryDisplayFacts: AssetInventoryDisplayFacts,
-    private readonly pricingCalculation: PricingCalculation,
+    private readonly prospectiveRentalCost: ProspectiveRentalCostService,
     private readonly rentalNumberAllocator: RentalNumberAllocator,
     private readonly unitOfWork: PrismaUnitOfWork,
   ) {}
@@ -77,7 +78,7 @@ export class CreateDraftRentalService implements ICommandHandler<
       branchId: command.branchId,
       rentalCustomerId: command.rentalCustomerId,
     };
-    const fulfillmentMethod = command.fulfillmentMethod ?? FulfillmentMethod.Pickup;
+    const fulfillmentMethod = command.fulfillmentMethod;
 
     const tenantValidation = await this.rentalOperationalFacts.validateDraftFacts({
       tenantId: command.tenantId,
@@ -130,7 +131,7 @@ export class CreateDraftRentalService implements ICommandHandler<
       fulfillmentRequirements: offer.fulfillmentRequirements,
     }));
 
-    const pricingResult = await this.pricingCalculation.calculateProposedPrice({
+    const pricingRequest: PricingCalculationRequest = {
       tenantId: command.tenantId,
       customerId: command.rentalCustomerId,
       rentalPeriod: {
@@ -154,11 +155,50 @@ export class CreateDraftRentalService implements ICommandHandler<
       targetTotalAdjustment: command.manualPricingAdjustment
         ? { targetTotal: command.manualPricingAdjustment.targetTotal }
         : undefined,
-    });
+    };
 
-    if (pricingResult.isErr()) {
-      return err(this.toApplicationError(pricingResult.error, context));
+    const deliveryDetails = command.deliveryDetails;
+    const prospectiveResult =
+      fulfillmentMethod === FulfillmentMethod.Pickup
+        ? await this.prospectiveRentalCost.calculate({ fulfillmentMethod: 'PICKUP', pricing: pricingRequest })
+        : deliveryDetails
+          ? await this.prospectiveRentalCost.calculate({
+              fulfillmentMethod: 'DELIVERY',
+              pricing: pricingRequest,
+              branchId: command.branchId,
+              customerLocation: {
+                address: deliveryDetails.address,
+                locationId: deliveryDetails.locationId,
+              },
+            })
+          : null;
+
+    if (!prospectiveResult) {
+      return err(
+        this.toApplicationError(
+          new RentalInvalidFieldError('deliveryDetails', 'delivery rentals require delivery details'),
+          context,
+        ),
+      );
     }
+
+    if (prospectiveResult.isErr()) {
+      return err(this.toApplicationError(prospectiveResult.error, context));
+    }
+    if (!prospectiveResult.value.available) {
+      return err(
+        createDraftRentalError(
+          'rental_commitment.delivery_not_serviceable',
+          `Delivery is not serviceable: ${prospectiveResult.value.reason}.`,
+          undefined,
+          { ...context, deliveryReason: prospectiveResult.value.reason },
+        ),
+      );
+    }
+    const prospectivePricing = prospectiveResult.value.pricing;
+    const deliverySnapshot = prospectiveResult.value.deliveryQuote
+      ? acceptedDeliverySnapshotFromQuote(prospectiveResult.value.deliveryQuote)
+      : undefined;
 
     const equipmentDemandLines = rentalSelectionsDraft.flatMap((selection) =>
       selection.fulfillmentRequirements.map((requirement) => ({
@@ -182,10 +222,14 @@ export class CreateDraftRentalService implements ICommandHandler<
           notes: command.notes,
           insuranceSelected: command.insuranceSelected,
           bookingSnapshot: command.bookingSnapshot,
-          deliveryDetails: fulfillmentMethod === FulfillmentMethod.Delivery ? command.deliveryDetails : undefined,
+          deliveryDetails:
+            fulfillmentMethod === FulfillmentMethod.Delivery && command.deliveryDetails
+              ? { address: command.deliveryDetails.address }
+              : undefined,
+          deliverySnapshot,
           period: command.period,
           priceSnapshot: adaptPricingCalculationToSnapshot({
-            result: pricingResult.value,
+            result: prospectivePricing,
             context: 'DRAFT',
             lineDisplayNames: Object.fromEntries(
               rentalSelectionsDraft.map((selection) => [
@@ -303,14 +347,6 @@ export class CreateDraftRentalService implements ICommandHandler<
         ...context,
         equipmentTypeId: error.equipmentTypeId,
       });
-    }
-    if (error instanceof UnsupportedBranchFulfillmentMethodError) {
-      return createDraftRentalError(
-        'rental_commitment.unsupported_branch_fulfillment_method',
-        error.message,
-        error,
-        context,
-      );
     }
     if (error instanceof RentalInvalidFieldError) {
       return createDraftRentalError('rental_commitment.invalid_rental_field', error.message, error, {

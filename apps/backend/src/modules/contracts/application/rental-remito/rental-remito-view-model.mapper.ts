@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { ok, Result } from 'neverthrow';
+import { err, ok, Result } from 'neverthrow';
 
-import { RentalRemitoApplicationError } from './rental-remito-application.error';
-import { formatAcceptedPricingForRentalRemito, formatLocalDate } from './rental-remito-formatters';
+import { rentalRemitoApplicationError, RentalRemitoApplicationError } from './rental-remito-application.error';
+import { formatAcceptedCustomerTotalForRentalRemito, formatLocalDate } from './rental-remito-formatters';
 import { RentalRemitoPdfData, RentalRemitoEquipmentLine, SignedContractSummary } from './rental-remito-pdf-data';
 import { RentalRemitoSourceReadModel } from './rental-remito-source-read-model';
 
@@ -18,6 +18,16 @@ export class RentalRemitoViewModelMapper {
   ): Result<RentalRemitoPdfData, RentalRemitoApplicationError> {
     const timezone = source.branch.timezone;
     const documentNumber = buildDocumentNumber(source);
+    const acceptedCustomerTotal = source.rental.acceptedPricing.acceptedCustomerTotal;
+
+    if (acceptedCustomerTotal === null) {
+      return err(
+        rentalRemitoApplicationError(
+          'PriceSnapshotInvalid',
+          `Rental "${source.rental.id}" is missing its accepted customer total.`,
+        ),
+      );
+    }
 
     return ok({
       document: {
@@ -27,7 +37,10 @@ export class RentalRemitoViewModelMapper {
         pickupDate: formatLocalDate(source.rental.periodStart, timezone),
         returnDate: formatLocalDate(source.rental.periodEnd, timezone),
         jornadas: source.rental.acceptedPricing.chargedUnits,
-        agreedPrice: formatAcceptedPricingForRentalRemito(source.rental.acceptedPricing),
+        agreedPrice: formatAcceptedCustomerTotalForRentalRemito(
+          acceptedCustomerTotal,
+          source.rental.acceptedPricing.total.currency,
+        ),
         logoUrl: source.tenant.branding?.logoUrl ?? null,
         rentalSignatureUrl: source.contractSigner?.signatureUrl ?? null,
         presentation: {

@@ -13,13 +13,19 @@ model V2Branch {
   name     String
   address  String?
   timezone String?
+
+  operationalLocationFormattedAddress String? @map("operational_location_formatted_address")
+  operationalLocationLatitude         Float?  @map("operational_location_latitude")
+  operationalLocationLongitude        Float?  @map("operational_location_longitude")
+  operationalLocationStreet           String? @map("operational_location_street")
+  operationalLocationStreetNumber     String? @map("operational_location_street_number")
+  operationalLocationCity             String? @map("operational_location_city")
+  operationalLocationStateRegion      String? @map("operational_location_state_region")
+  operationalLocationPostalCode       String? @map("operational_location_postal_code")
+  operationalLocationCountry          String? @map("operational_location_country")
+  operationalLocationProviderPlaceId  String? @map("operational_location_provider_place_id")
   isActive Boolean @default(true) @map("is_active")
 
-  supportsDelivery           Boolean @default(false) @map("supports_delivery")
-  deliveryDefaultCountry     String? @map("delivery_default_country")
-  deliveryDefaultStateRegion String? @map("delivery_default_state_region")
-  deliveryDefaultCity        String? @map("delivery_default_city")
-  deliveryDefaultPostalCode  String? @map("delivery_default_postal_code")
 
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
@@ -28,6 +34,7 @@ model V2Branch {
   tenant    V2Tenant           @relation(fields: [tenantId], references: [id])
   schedules V2BranchSchedule[]
 
+  @@unique([id, tenantId], map: "v2_branches_id_tenant_id_key")
   @@index([tenantId, isActive, deletedAt])
   @@map("v2_branches")
 }

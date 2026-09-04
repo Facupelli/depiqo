@@ -16,12 +16,22 @@ export function toRentalDetailPricing(snapshot: AcceptedRentalPricingSnapshot): 
       ...line,
       manualPricingAdjustment: line.manualPricingAdjustment ?? null,
     })),
+    appliedPromotions: snapshot.final.appliedPromotions.map((promotion) => ({
+      promotionId: promotion.promotionId,
+      name: promotion.name,
+      activation: promotion.activation,
+      effectType: promotion.effectType,
+      effectValue: promotion.effectValue,
+      amount: promotion.amount,
+    })),
     appliedCoupon: snapshot.final.appliedCoupon ?? null,
     manualPricingAdjustment: snapshot.manualPricingAdjustment ?? null,
   };
 }
 
-export function toAcceptedRentalPricingFacts(snapshot: AcceptedRentalPricingSnapshot): AcceptedRentalPricing {
+export function toAcceptedRentalPricingFacts(
+  snapshot: AcceptedRentalPricingSnapshot,
+): Omit<AcceptedRentalPricing, 'acceptedCustomerTotal'> {
   return {
     total: { amount: snapshot.total, currency: snapshot.final.currency },
     chargedUnits: snapshot.final.chargedDays,

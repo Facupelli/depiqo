@@ -35,7 +35,9 @@ export interface RentalPersistenceRecord {
   status: string;
   acceptedBeforeBufferMinutes: number | null;
   acceptedAfterBufferMinutes: number | null;
-  fulfillmentMethod: string | null;
+  deliverySnapshot: Prisma.JsonValue | null;
+  acceptedCustomerTotal: Prisma.Decimal | null;
+  fulfillmentMethod: string;
   notes: string | null;
   insuranceSelected: boolean;
   bookingSnapshot: Prisma.JsonValue | null;
@@ -56,15 +58,7 @@ export interface RentalPersistenceRecord {
 }
 
 interface RentalDeliveryDetailsPersistenceRecord {
-  addressLine1: string;
-  addressLine2: string | null;
-  city: string;
-  state: string | null;
-  postalCode: string | null;
-  country: string | null;
-  contactName: string | null;
-  contactPhone: string | null;
-  notes: string | null;
+  address: string;
 }
 
 interface RentalSelectionPersistenceRecord {
@@ -119,6 +113,8 @@ export interface AssetBlockPersistenceRecord {
 export class RentalMapper {
   static toDomain(record: RentalPersistenceRecord): Rental {
     const acceptedAssetBuffer = this.toAcceptedAssetBufferDomain(record);
+    const wasConfirmed = record.confirmedAt !== null;
+    const rawPriceSnapshot = (record.priceSnapshot as JsonValue | null) ?? undefined;
     const result = Rental.reconstitute({
       id: record.id as RentalId,
       tenantId: record.tenantId,
@@ -128,17 +124,16 @@ export class RentalMapper {
       status: record.status as RentalStatus,
       period: new RentalPeriod(record.periodStart, record.periodEnd),
       source: record.source === null ? undefined : (record.source as RentalSource),
-      fulfillmentMethod:
-        record.fulfillmentMethod === null ? undefined : (record.fulfillmentMethod as FulfillmentMethod),
+      fulfillmentMethod: record.fulfillmentMethod as FulfillmentMethod,
       notes: record.notes ?? undefined,
       insuranceSelected: record.insuranceSelected,
       bookingSnapshot:
         record.bookingSnapshot === null ? undefined : new BookingSnapshot(record.bookingSnapshot as JsonValue),
       deliveryDetails: record.deliveryDetails ? this.toDeliveryDetailsDomain(record.deliveryDetails) : undefined,
-      priceSnapshot:
-        record.status === 'CONFIRMED' ? undefined : ((record.priceSnapshot as JsonValue | null) ?? undefined),
-      confirmedPriceSnapshot:
-        record.status === 'CONFIRMED' ? ((record.priceSnapshot as JsonValue | null) ?? undefined) : undefined,
+      priceSnapshot: wasConfirmed ? undefined : rawPriceSnapshot,
+      confirmedPriceSnapshot: wasConfirmed ? rawPriceSnapshot : undefined,
+      deliverySnapshot: (record.deliverySnapshot as JsonValue | null) ?? undefined,
+      acceptedCustomerTotal: record.acceptedCustomerTotal?.toString(),
       acceptedAssetBuffer,
       selections: record.selections.map((selection) =>
         RentalSelection.reconstitute({
@@ -235,6 +230,8 @@ export class RentalMapper {
       confirmationFingerprint: confirmationOperation?.fingerprint,
       acceptedBeforeBufferMinutes: rental.acceptedAssetBuffer?.beforeBufferMinutes,
       acceptedAfterBufferMinutes: rental.acceptedAssetBuffer?.afterBufferMinutes,
+      deliverySnapshot: toPrismaJsonInput(rental.deliverySnapshot?.toJSON()),
+      acceptedCustomerTotal: rental.acceptedCustomerTotal,
     };
   }
 
@@ -255,6 +252,8 @@ export class RentalMapper {
       confirmedAt: rental.confirmedAt,
       acceptedBeforeBufferMinutes: rental.acceptedAssetBuffer?.beforeBufferMinutes,
       acceptedAfterBufferMinutes: rental.acceptedAssetBuffer?.afterBufferMinutes,
+      deliverySnapshot: toPrismaJsonInput(rental.deliverySnapshot?.toJSON()),
+      acceptedCustomerTotal: rental.acceptedCustomerTotal,
     };
   }
 
@@ -311,17 +310,7 @@ export class RentalMapper {
   }
 
   static toDeliveryDetailsDomain(record: RentalDeliveryDetailsPersistenceRecord): RentalDeliveryDetails {
-    return {
-      addressLine1: record.addressLine1,
-      addressLine2: record.addressLine2 ?? undefined,
-      city: record.city,
-      state: record.state ?? undefined,
-      postalCode: record.postalCode ?? undefined,
-      country: record.country ?? undefined,
-      contactName: record.contactName ?? undefined,
-      contactPhone: record.contactPhone ?? undefined,
-      notes: record.notes ?? undefined,
-    };
+    return { address: record.address };
   }
 
   static toDeliveryDetailsCreateData(rental: Rental): Prisma.V2RentalDeliveryDetailsUncheckedCreateInput | undefined {
@@ -333,15 +322,7 @@ export class RentalMapper {
     return {
       tenantId: rental.tenantId,
       rentalOrderId: rental.id,
-      addressLine1: details.addressLine1,
-      addressLine2: details.addressLine2,
-      city: details.city,
-      state: details.state,
-      postalCode: details.postalCode,
-      country: details.country,
-      contactName: details.contactName,
-      contactPhone: details.contactPhone,
-      notes: details.notes,
+      address: details.address,
     };
   }
 

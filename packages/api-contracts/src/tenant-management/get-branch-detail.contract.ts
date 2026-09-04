@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import type { ApiContract } from "../api-contract";
+import { BranchOperationalLocationSchema } from "./branch-operational-location.schema";
 import { CreateBranchScheduleSlotTypeSchema } from "./create-branch.contract";
 import { LocalDateSchema } from "../local-date.schema";
 
@@ -24,13 +25,9 @@ export const GetBranchDetailResponseSchema = z.object({
   id: z.string(),
   name: z.string(),
   address: z.string().nullable(),
+  operationalLocation: BranchOperationalLocationSchema.nullable(),
   timezone: z.string().nullable(),
   isActive: z.boolean(),
-  supportsDelivery: z.boolean(),
-  deliveryDefaultCountry: z.string().nullable(),
-  deliveryDefaultStateRegion: z.string().nullable(),
-  deliveryDefaultCity: z.string().nullable(),
-  deliveryDefaultPostalCode: z.string().nullable(),
   schedules: z.array(GetBranchDetailScheduleSchema),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),

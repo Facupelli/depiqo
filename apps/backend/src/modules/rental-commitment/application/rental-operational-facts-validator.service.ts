@@ -14,7 +14,6 @@ import {
   RentalCustomerUnavailableForRentalError,
   ReturnTimeOutsideBranchScheduleError,
   TenantUnavailableForRentalError,
-  UnsupportedBranchFulfillmentMethodError,
 } from '../domain/errors/rental-commitment.errors';
 import { FulfillmentMethod } from '../domain/rental-status';
 
@@ -39,9 +38,6 @@ export class RentalOperationalFactsValidatorService {
     const branch = await this.branchFacts.getBranchFacts({ tenantId: input.tenantId, branchId: input.branchId });
     if (branch.isErr() || !branch.value.isActive || branch.value.isDeleted) {
       return err(new BranchUnavailableForRentalError(input.branchId));
-    }
-    if (input.fulfillmentMethod === FulfillmentMethod.Delivery && !branch.value.supportsDelivery) {
-      return err(new UnsupportedBranchFulfillmentMethodError(input.branchId, input.fulfillmentMethod));
     }
 
     if (input.rentalCustomerId) {
@@ -102,9 +98,6 @@ export class RentalOperationalFactsValidatorService {
     const branch = await this.branchFacts.getBranchFacts({ tenantId: input.tenantId, branchId: input.branchId });
     if (branch.isErr() || !branch.value.isActive || branch.value.isDeleted) {
       return err(new BranchUnavailableForRentalError(input.branchId));
-    }
-    if (input.fulfillmentMethod === FulfillmentMethod.Delivery && !branch.value.supportsDelivery) {
-      return err(new UnsupportedBranchFulfillmentMethodError(input.branchId, input.fulfillmentMethod));
     }
     const customer = await this.rentalCustomerEligibility.evaluateRentalCustomerOperationalEligibility({
       tenantId: input.tenantId,

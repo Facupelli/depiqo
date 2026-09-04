@@ -70,7 +70,15 @@ export class CreateDraftRentalHttpController {
 function toCreateDraftRentalProblem(error: CreateDraftRentalError): ProblemException {
   const problem = createDraftRentalProblemMap[error.code];
   return ProblemException.from({
-    problemDetails: createProblemDetails({ ...problem, extensions: { code: error.code } }),
+    problemDetails: createProblemDetails({
+      ...problem,
+      extensions: {
+        code: error.code,
+        ...(error.code === 'rental_commitment.delivery_not_serviceable'
+          ? { reason: error.context?.deliveryReason }
+          : {}),
+      },
+    }),
     applicationError: error,
     cause: error.cause,
   });
@@ -143,12 +151,6 @@ const createDraftRentalProblemMap = {
     HttpStatus.UNPROCESSABLE_ENTITY,
     'A required equipment type is not rentable.',
   ),
-  'rental_commitment.unsupported_branch_fulfillment_method': problem(
-    'unsupported_branch_fulfillment_method',
-    'Unsupported fulfillment method',
-    HttpStatus.UNPROCESSABLE_ENTITY,
-    'The selected branch does not support the requested fulfillment method.',
-  ),
   'rental_commitment.invalid_rental_field': problem(
     'invalid_rental_field',
     'Invalid rental field',
@@ -166,6 +168,12 @@ const createDraftRentalProblemMap = {
     'Invalid pricing input',
     HttpStatus.UNPROCESSABLE_ENTITY,
     'The rental could not be priced with the provided input.',
+  ),
+  'rental_commitment.delivery_not_serviceable': problem(
+    'delivery_not_serviceable',
+    'Delivery not serviceable',
+    HttpStatus.UNPROCESSABLE_ENTITY,
+    'Delivery is not serviceable for the requested location and rental period.',
   ),
 } satisfies Record<CreateDraftRentalErrorCode, ProblemDefinition>;
 

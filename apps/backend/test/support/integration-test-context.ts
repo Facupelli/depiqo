@@ -98,8 +98,10 @@ export async function createOfferingSetupIntegrationContext(
   return moduleRef;
 }
 
-export async function createRentalCommitmentIntegrationContext(): Promise<TestingModule> {
-  const moduleRef = await Test.createTestingModule({
+export async function createRentalCommitmentIntegrationContext(
+  overrides: ProviderOverride[] = [],
+): Promise<TestingModule> {
+  let builder = Test.createTestingModule({
     imports: [
       SharedModule,
       LoggerModule,
@@ -110,7 +112,13 @@ export async function createRentalCommitmentIntegrationContext(): Promise<Testin
       CqrsModule.forRoot(),
       RentalCommitmentModule,
     ],
-  }).compile();
+  });
+
+  for (const override of overrides) {
+    builder = builder.overrideProvider(override.provide as any).useValue(override.useValue);
+  }
+
+  const moduleRef = await builder.compile();
 
   await moduleRef.init();
   return moduleRef;

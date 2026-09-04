@@ -76,7 +76,7 @@ function toCreateConfirmedRentalProblem(error: CreateConfirmedRentalError): Prob
       ...problem,
       extensions: {
         code: error.code,
-        ...availabilityProblemExtensions(error),
+        ...problemExtensions(error),
       },
     }),
     applicationError: error,
@@ -163,12 +163,6 @@ const createConfirmedRentalProblemMap = {
     HttpStatus.UNPROCESSABLE_ENTITY,
     'A required equipment type is not rentable.',
   ),
-  'rental_commitment.unsupported_branch_fulfillment_method': problem(
-    'unsupported_branch_fulfillment_method',
-    'Unsupported fulfillment method',
-    HttpStatus.UNPROCESSABLE_ENTITY,
-    'The selected branch does not support the requested fulfillment method.',
-  ),
   'rental_commitment.pickup_time_outside_branch_schedule': problem(
     'pickup_time_outside_branch_schedule',
     'Pickup time outside branch schedule',
@@ -199,6 +193,12 @@ const createConfirmedRentalProblemMap = {
     HttpStatus.UNPROCESSABLE_ENTITY,
     'The rental could not be priced with the provided input.',
   ),
+  'rental_commitment.delivery_not_serviceable': problem(
+    'delivery_not_serviceable',
+    'Delivery not serviceable',
+    HttpStatus.UNPROCESSABLE_ENTITY,
+    'Delivery is not serviceable for the selected location and rental period.',
+  ),
   'rental_commitment.duplicate_assigned_asset': problem(
     'duplicate_assigned_asset',
     'Duplicate assigned asset',
@@ -226,7 +226,11 @@ const rentalOfferIdProblemCodes: ReadonlySet<CreateConfirmedRentalErrorCode> = n
   'rental_commitment.catalog_selection_unavailable',
 ]);
 
-function availabilityProblemExtensions(error: CreateConfirmedRentalError): Record<string, string> {
+function problemExtensions(error: CreateConfirmedRentalError): Record<string, string> {
+  if (error.code === 'rental_commitment.delivery_not_serviceable') {
+    const reason = error.context?.deliveryReason;
+    return typeof reason === 'string' ? { reason } : {};
+  }
   if (!rentalOfferIdProblemCodes.has(error.code)) return {};
 
   const rentalOfferId = error.context?.rentalOfferId;

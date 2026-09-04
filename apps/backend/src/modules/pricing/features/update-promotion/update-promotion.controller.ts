@@ -39,7 +39,6 @@ export class UpdatePromotionHttpController {
         validUntil: dto.validUntil,
         effectType: dto.effectType,
         effectValue: dto.effectValue,
-        target: dto.target,
         minOrderSubtotal: dto.minOrderSubtotal,
         minRentalUnits: dto.minRentalUnits,
         maxRentalUnits: dto.maxRentalUnits,

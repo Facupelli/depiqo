@@ -36,7 +36,15 @@ function toConfirmRentalProblem(error: ConfirmRentalError): ProblemException {
   const problem = confirmRentalProblemMap[error.code];
 
   return ProblemException.from({
-    problemDetails: createProblemDetails({ ...problem, extensions: { code: error.code } }),
+    problemDetails: createProblemDetails({
+      ...problem,
+      extensions: {
+        code: error.code,
+        ...(error.code === 'rental_commitment.delivery_not_serviceable'
+          ? { reason: error.context?.deliveryReason }
+          : {}),
+      },
+    }),
     applicationError: error,
     cause: error.cause,
   });
@@ -79,6 +87,12 @@ const confirmRentalProblemMap = {
     status: HttpStatus.CONFLICT,
     detail: 'Not enough equipment is available for the requested rental period.',
   },
+  'rental_commitment.delivery_not_serviceable': {
+    type: createProblemType('rental_commitment.delivery_not_serviceable'),
+    title: 'Delivery not serviceable',
+    status: HttpStatus.UNPROCESSABLE_ENTITY,
+    detail: 'Delivery is not serviceable for the selected location and rental period.',
+  },
   'rental_commitment.duplicate_assigned_asset': {
     type: createProblemType('rental_commitment.duplicate_assigned_asset'),
     title: 'Duplicate assigned asset',
@@ -108,11 +122,5 @@ const confirmRentalProblemMap = {
     title: 'Customer unavailable',
     status: HttpStatus.UNPROCESSABLE_ENTITY,
     detail: 'The linked customer is not available for rental confirmation.',
-  },
-  'rental_commitment.unsupported_branch_fulfillment_method': {
-    type: createProblemType('rental_commitment.unsupported_branch_fulfillment_method'),
-    title: 'Unsupported branch fulfillment method',
-    status: HttpStatus.UNPROCESSABLE_ENTITY,
-    detail: 'The rental branch does not support the selected fulfillment method.',
   },
 } satisfies Record<ConfirmRentalErrorCode, { type: string; title: string; status: HttpStatus; detail: string }>;

@@ -17,7 +17,7 @@ Tenant Management publishes focused provider-owned operational capabilities unde
 - `RentalCustomerProfileFacts` provides the current tenant-scoped customer profile, including Tenant Management's display/legal name resolution; deleted or missing customers are not readable, while inactive customers remain readable.
 - `RetainedRentalCustomerProfileFacts` provides legal/profile facts for a tenant-scoped customer reference already retained by another bounded context. It includes active, inactive, and soft-deleted customers for historical document composition, but is not a general lookup, selection, or operational-eligibility capability.
 - `RentalCustomerContactFacts` provides current tenant-scoped customer email contact and lifecycle facts; missing or out-of-tenant customers are not readable, while inactive and deleted customers remain observable as lifecycle facts.
-- `BranchFacts` provides tenant-scoped current branch facts, including lifecycle state, delivery support, and effective timezone resolution.
+- `BranchFacts` provides tenant-scoped current branch facts, including identity, lifecycle state, effective timezone resolution, and the current nullable operational location.
 - `BranchScheduleEligibility` evaluates a pickup or return instant against a branch schedule.
 - `RentalCustomerOperationalEligibility` provides current rental-customer eligibility.
 - `TenantNotificationPreferences` provides current enabled notification delivery channels and order communication mode.
@@ -55,7 +55,7 @@ This includes tenant users, local credentials, sessions, tenant roles, permissio
 
 A `Branch` is a tenant-owned operational location where rentals may be offered, picked up, returned, or fulfilled.
 
-Tenant Management owns its profile, active state, timezone, schedules, and pickup/return slot rules.
+Tenant Management owns Branch identity, lifecycle, timezone, nullable operational location, schedules, and pickup/return slot rules. Delivery owns Delivery enablement and configuration. The free-form branch address is not authoritative for routing. Branch create and update resolve it through Shared Geocoding to establish the authoritative operational location.
 
 Other modules may reference `branchId`, but Tenant Management remains authoritative over the branch.
 

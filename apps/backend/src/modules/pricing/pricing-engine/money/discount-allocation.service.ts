@@ -1,5 +1,4 @@
 import { PricingContextLine } from '../final/pricing-context.types';
-import { PromotionApplicationTarget } from '../promotions/promotion.types';
 import { Money } from './money.value-object';
 
 export type DiscountAllocation = {
@@ -9,14 +8,12 @@ export type DiscountAllocation = {
 
 type DiscountAllocationServiceInput = {
   discount: Money;
-  target: PromotionApplicationTarget;
-  allLines: PricingContextLine[];
   eligibleLines: PricingContextLine[];
 };
 
 export class DiscountAllocationService {
   allocate(input: DiscountAllocationServiceInput): DiscountAllocation[] {
-    const discountableLines = this.resolveDiscountableLines(input);
+    const discountableLines = input.eligibleLines;
 
     if (discountableLines.length === 0 || input.discount.isZero()) {
       return [];
@@ -43,14 +40,6 @@ export class DiscountAllocationService {
       line,
       amount: allocatedAmounts[index],
     }));
-  }
-
-  private resolveDiscountableLines(input: DiscountAllocationServiceInput): PricingContextLine[] {
-    if (input.target === 'ORDER') {
-      return input.allLines;
-    }
-
-    return input.eligibleLines;
   }
 
   private toAllocationRatio(amount: Money): number {

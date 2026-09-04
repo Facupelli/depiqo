@@ -14,12 +14,12 @@ export type CreateConfirmedRentalErrorCode =
   | 'rental_commitment.customer_unavailable'
   | 'rental_commitment.equipment_type_not_found'
   | 'rental_commitment.equipment_type_not_rentable'
-  | 'rental_commitment.unsupported_branch_fulfillment_method'
   | 'rental_commitment.pickup_time_outside_branch_schedule'
   | 'rental_commitment.return_time_outside_branch_schedule'
   | 'rental_commitment.invalid_rental_field'
   | 'rental_commitment.invalid_catalog_selection_quantity'
   | 'rental_commitment.invalid_pricing_input'
+  | 'rental_commitment.delivery_not_serviceable'
   | 'rental_commitment.duplicate_assigned_asset'
   | 'rental_commitment.invalid_idempotency_key'
   | 'rental_commitment.idempotency_key_reused_with_different_input';

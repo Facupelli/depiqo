@@ -13,7 +13,6 @@ import {
 	Layers,
 	MoreHorizontal,
 	Pencil,
-	ShoppingCart,
 	Tag,
 	Trash2,
 	Zap,
@@ -31,11 +30,6 @@ const ACTIVATION_LABELS: Record<
 > = {
 	AUTOMATIC: "Automática",
 	COUPON_REQUIRED: "Con cupón",
-};
-
-const TARGET_LABELS: Record<GetPromotionsPromotionDto["target"], string> = {
-	ORDER: "Toda la orden",
-	ELIGIBLE_LINES: "Líneas elegibles",
 };
 
 export function PromotionsList({
@@ -90,11 +84,6 @@ function PromotionCard({
 									<Tag className="h-3.5 w-3.5" />
 								)}
 								{ACTIVATION_LABELS[promotion.activation]}
-							</Badge>
-
-							<Badge variant="outline" className="gap-1.5">
-								<ShoppingCart className="h-3.5 w-3.5" />
-								{TARGET_LABELS[promotion.target]}
 							</Badge>
 						</div>
 					</div>
@@ -280,16 +269,11 @@ function buildRowSummary(promotion: GetPromotionsPromotionDto): string {
 		? `${discountValue}%`
 		: formatCurrency(promotion.effectValue);
 
-	const target =
-		promotion.target === "ORDER"
-			? "sobre toda la orden"
-			: "sobre líneas elegibles";
-
 	const conditions = buildConditionsText(promotion);
 	const conditionPhrase = conditions ? ` ${conditions}` : "";
 	const stackable = promotion.stackable ? " Acumulable." : " No acumulable.";
 
-	return `${discount} de descuento ${target}${conditionPhrase}.${stackable}`;
+	return `${discount} de descuento sobre los productos del alcance${conditionPhrase}.${stackable}`;
 }
 
 type ScopeTypeCounts = Record<

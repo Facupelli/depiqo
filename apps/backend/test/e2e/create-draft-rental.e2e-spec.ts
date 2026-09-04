@@ -24,11 +24,10 @@ describe('POST /rental-commitments/draft-rentals', () => {
 
   afterAll(async () => app?.close());
 
-  async function scenario(overrides: { supportsDelivery?: boolean } = {}) {
+  async function scenario() {
     const tenant = await core.createTenant();
     const branch = await core.createBranch({
       tenantId: tenant.id,
-      overrides: { supportsDelivery: overrides.supportsDelivery ?? false },
     });
     const customer = await core.createRentalCustomer({ tenantId: tenant.id });
     const user = await core.createTenantUser({ tenantId: tenant.id });
@@ -256,7 +255,7 @@ describe('POST /rental-commitments/draft-rentals', () => {
       .withCsrf(client.request().post('/rental-commitments/draft-rentals'))
       .send({
         ...body(setup),
-        deliveryDetails: { addressLine1: 'Ignored', city: 'Ignored' },
+        deliveryDetails: { address: 'Ignored address', locationId: 'ignored-location-id' },
       })
       .expect(201);
     const rentalId = response.body.data.id as string;
@@ -264,7 +263,7 @@ describe('POST /rental-commitments/draft-rentals', () => {
   });
 
   it('rejects DELIVERY without required details', async () => {
-    const setup = await scenario({ supportsDelivery: true });
+    const setup = await scenario();
     const client = await tenantUserClient(setup);
     const response = await client.withCsrf(client.request().post('/rental-commitments/draft-rentals')).send({
       ...body(setup),
@@ -275,22 +274,6 @@ describe('POST /rental-commitments/draft-rentals', () => {
       status: 422,
       type: createProblemType('rental_commitment.invalid_rental_field'),
       code: 'rental_commitment.invalid_rental_field',
-    });
-    await expectNoDraft(setup);
-  });
-
-  it('rejects unsupported delivery', async () => {
-    const setup = await scenario();
-    const client = await tenantUserClient(setup);
-    const response = await client.withCsrf(client.request().post('/rental-commitments/draft-rentals')).send({
-      ...body(setup),
-      fulfillmentMethod: 'DELIVERY',
-      deliveryDetails: { addressLine1: '10 Road', city: 'City' },
-    });
-    expectProblemResponse(response, {
-      status: 422,
-      type: createProblemType('rental_commitment.unsupported_branch_fulfillment_method'),
-      code: 'rental_commitment.unsupported_branch_fulfillment_method',
     });
     await expectNoDraft(setup);
   });

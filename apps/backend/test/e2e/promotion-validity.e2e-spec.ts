@@ -37,7 +37,6 @@ describe('promotion local-date validity HTTP flow', () => {
       validUntil,
       effectType: 'PERCENTAGE_OFF',
       effectValue: '10',
-      target: 'ORDER',
       scopes: [{ type: 'ALL' }],
       exclusions: [],
     };

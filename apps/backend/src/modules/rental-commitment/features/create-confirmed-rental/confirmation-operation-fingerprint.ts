@@ -1,9 +1,8 @@
 import { createHash } from 'node:crypto';
 
-import { FulfillmentMethod } from '../../domain/rental-status';
-import { RentalDeliveryDetails } from '../../domain/rental.aggregate';
 import {
   CreateConfirmedRentalCommand,
+  CreateConfirmedRentalDeliveryDetailsCommand,
   CreateConfirmedRentalOfferSelectionCommand,
 } from './create-confirmed-rental.command';
 
@@ -30,7 +29,7 @@ export function buildConfirmationFingerprint(command: CreateConfirmedRentalComma
           end: command.period.end.toISOString(),
         },
         selectedOffers: normalizeSelectedOffers(command.selectedOffers),
-        fulfillmentMethod: command.fulfillmentMethod ?? FulfillmentMethod.Pickup,
+        fulfillmentMethod: command.fulfillmentMethod,
         deliveryDetails: normalizeDeliveryDetails(command.deliveryDetails),
         notes: command.notes ?? null,
         insuranceSelected: command.insuranceSelected ?? false,
@@ -47,18 +46,8 @@ function normalizeSelectedOffers(
     .sort((a, b) => a.rentalOfferId.localeCompare(b.rentalOfferId));
 }
 
-function normalizeDeliveryDetails(deliveryDetails?: RentalDeliveryDetails) {
+function normalizeDeliveryDetails(deliveryDetails?: CreateConfirmedRentalDeliveryDetailsCommand) {
   if (!deliveryDetails) return null;
 
-  return {
-    addressLine1: deliveryDetails.addressLine1,
-    addressLine2: deliveryDetails.addressLine2 ?? null,
-    city: deliveryDetails.city,
-    state: deliveryDetails.state ?? null,
-    postalCode: deliveryDetails.postalCode ?? null,
-    country: deliveryDetails.country ?? null,
-    contactName: deliveryDetails.contactName ?? null,
-    contactPhone: deliveryDetails.contactPhone ?? null,
-    notes: deliveryDetails.notes ?? null,
-  };
+  return { address: deliveryDetails.address, locationId: deliveryDetails.locationId };
 }

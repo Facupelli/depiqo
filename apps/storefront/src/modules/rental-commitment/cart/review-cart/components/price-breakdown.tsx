@@ -11,25 +11,42 @@ import { Switch } from "@repo/ui/components/switch";
 import { CircleHelp, Tag } from "lucide-react";
 import { formatCartMoney, parseCartMoneyAmount } from "../cart-money.utils";
 import {
+	useCartFulfillmentContext,
 	useCartPeriodContext,
 	useCartPricingContext,
 } from "../cart-page.context";
+import {
+	derivePromotionPresentations,
+	type PromotionPresentation,
+} from "../price-breakdown.utils";
 
 export function PriceBreakdown() {
 	const { isPricingReady, isPeriodInvalid } = useCartPeriodContext();
+	const { fulfillmentMethod } = useCartFulfillmentContext();
 	const {
 		pricing,
+		delivery,
+		customerTotal,
+		currency: responseCurrency,
 		isPriceLoading,
 		isPriceError,
 		config,
 		insuranceSelected,
 		setInsuranceSelected,
 	} = useCartPricingContext();
-	const currency = pricing?.currency ?? config.currency;
+	const currency = responseCurrency ?? pricing?.currency ?? config.currency;
 	const locale = pricing?.locale ?? config.locale;
 	const insuranceRatePercent = parseCartMoneyAmount(
 		pricing?.insurance.ratePercent,
 	);
+	const promotions = pricing ? derivePromotionPresentations(pricing) : [];
+	const orderPromotions = promotions.filter(
+		(promotion) => promotion.placement === "ORDER",
+	);
+	const linePromotions = promotions.filter(
+		(promotion) => promotion.placement === "LINES",
+	);
+	const isDeliveryUpdating = fulfillmentMethod === "DELIVERY" && isPriceLoading;
 
 	return (
 		<section className="rounded-xl border bg-card p-5">
@@ -55,24 +72,32 @@ export function PriceBreakdown() {
 					<div className="space-y-4">
 						{pricing.lines.map((line) => (
 							<div
-								key={line.rentalOfferId}
+								key={line.lineReference}
 								className="flex items-start justify-between gap-4"
 							>
 								<div className="min-w-0">
 									<p className="font-medium">{line.rentableItemName}</p>
 									<p className="text-xs text-muted-foreground">
-										{line.quantity} x {line.chargedUnits}{" "}
+										{line.quantity} {unitLabel(line.quantity)} ·{" "}
+										{line.chargedUnits}{" "}
 										{billingUnitLabel(line.billingUnit, line.chargedUnits)}
 									</p>
-									{line.appliedAdjustments.map((adjustment) => (
-										<span
-											key={`${adjustment.type}-${adjustment.promotionId}-${adjustment.couponId ?? "none"}`}
-											className="mt-1 inline-flex items-center gap-1 rounded bg-emerald-50 px-2 py-1 text-[11px] font-semibold text-emerald-700"
-										>
-											<Tag className="size-3" /> {adjustment.name} -
-											{formatCartMoney(adjustment.amount, currency, locale)}
-										</span>
-									))}
+									{linePromotions.flatMap((promotion) => {
+										const amount = promotion.affectedLines.get(
+											line.lineReference,
+										);
+										return amount == null
+											? []
+											: [
+													<PromotionBadge
+														key={promotion.promotionId}
+														promotion={promotion}
+														amount={amount}
+														currency={currency}
+														locale={locale}
+													/>,
+												];
+									})}
 								</div>
 								<div className="shrink-0 text-right">
 									{Number(line.discountTotal) > 0 && (
@@ -96,49 +121,60 @@ export function PriceBreakdown() {
 							ratePercent={insuranceRatePercent}
 						/>
 					)}
-					<div className="border-t pt-4">
-						{pricing.appliedPromotions.length > 0 && (
-							<MoneyRow
-								label="Subtotal antes de descuentos"
-								amount={pricing.subtotal}
-								currency={currency}
-								locale={locale}
-							/>
-						)}
-						{Number(pricing.discountTotal) > 0 && (
-							<MoneyRow
-								label="Descuentos"
-								amount={pricing.discountTotal}
-								currency={currency}
-								locale={locale}
-								tone="success"
-								prefix="-"
-							/>
-						)}
+					<div className="space-y-2 border-t pt-4">
 						<MoneyRow
-							label="Subtotal de equipos"
+							label="Equipos"
 							amount={pricing.totalBeforeInsurance}
 							currency={currency}
 							locale={locale}
 						/>
+						{orderPromotions.map((promotion) => (
+							<PromotionRow
+								key={promotion.promotionId}
+								promotion={promotion}
+								currency={currency}
+								locale={locale}
+							/>
+						))}
 						{pricing.insurance.applied && (
 							<MoneyRow
-								label={`${config.insuranceLabel} (${pricing.insurance.ratePercent}%)`}
+								label={config.insuranceLabel}
 								amount={pricing.insurance.amount}
 								currency={currency}
 								locale={locale}
 							/>
 						)}
+						{fulfillmentMethod === "DELIVERY" && (
+							<MoneyRow
+								label="Entrega y recogida"
+								amount={delivery?.total}
+								pending={isDeliveryUpdating}
+								pendingLabel="Calculando…"
+								currency={currency}
+								locale={locale}
+							/>
+						)}
 					</div>
-					<p className="text-xs text-muted-foreground">
-						Duración facturada: {pricing.chargedDays}{" "}
-						{pricing.chargedDays === 1 ? "día" : "días"}
-					</p>
-					<div className="flex items-baseline justify-between border-t pt-4">
-						<strong>Total</strong>
-						<strong className="text-2xl">
-							{formatCartMoney(pricing.total, currency, locale)}
-						</strong>
+					<div className="border-t pt-4">
+						<div className="flex items-baseline justify-between gap-4">
+							<strong>Total</strong>
+							<strong className="text-2xl">
+								{isDeliveryUpdating
+									? "Actualizando…"
+									: formatCartMoney(
+											customerTotal ?? pricing.total,
+											currency,
+											locale,
+										)}
+							</strong>
+						</div>
+						{Number(pricing.discountTotal) > 0 && (
+							<p className="mt-1 text-right text-xs font-medium text-emerald-700">
+								Has ahorrado{" "}
+								{formatCartMoney(pricing.discountTotal, currency, locale)} en
+								equipos
+							</p>
+						)}
 					</div>
 				</div>
 			) : (
@@ -150,6 +186,10 @@ export function PriceBreakdown() {
 	);
 }
 
+function unitLabel(quantity: number): string {
+	return quantity === 1 ? "unidad" : "unidades";
+}
+
 function billingUnitLabel(
 	unit: "HOUR" | "DAY" | "WEEK",
 	units: number,
@@ -159,29 +199,71 @@ function billingUnitLabel(
 	return units === 1 ? "día" : "días";
 }
 
+function PromotionBadge({
+	promotion,
+	amount,
+	currency,
+	locale,
+}: {
+	promotion: PromotionPresentation;
+	amount: string;
+	currency: string;
+	locale: string;
+}) {
+	return (
+		<span className="mt-1 inline-flex items-center gap-1 rounded bg-emerald-50 px-2 py-1 text-[11px] font-semibold text-emerald-700">
+			<Tag className="size-3" /> {promotion.name} · Ahorras{" "}
+			{formatCartMoney(amount, currency, locale)}
+		</span>
+	);
+}
+
+function PromotionRow({
+	promotion,
+	currency,
+	locale,
+}: {
+	promotion: PromotionPresentation;
+	currency: string;
+	locale: string;
+}) {
+	return (
+		<div className="flex items-center justify-between gap-4 text-xs font-medium text-emerald-700">
+			<span className="inline-flex min-w-0 items-center gap-1">
+				<Tag className="size-3 shrink-0" />
+				<span className="truncate">{promotion.name}</span>
+			</span>
+			<span className="shrink-0">
+				Ahorras {formatCartMoney(promotion.totalAmount, currency, locale)}
+			</span>
+		</div>
+	);
+}
+
 function MoneyRow({
 	label,
 	amount,
 	currency,
 	locale,
-	tone = "default",
-	prefix = "",
+	pending = false,
+	pendingLabel = "Actualizando…",
 }: {
 	label: string;
-	amount: string;
+	amount?: string;
 	currency: string;
 	locale: string;
-	tone?: "default" | "success";
-	prefix?: string;
+	pending?: boolean;
+	pendingLabel?: string;
 }) {
 	return (
-		<div
-			className={`mt-2 flex justify-between gap-4 ${tone === "success" ? "text-emerald-700" : "text-muted-foreground"}`}
-		>
+		<div className="flex justify-between gap-4 text-muted-foreground">
 			<span>{label}</span>
 			<span>
-				{prefix}
-				{formatCartMoney(amount, currency, locale)}
+				{pending
+					? pendingLabel
+					: amount == null
+						? "-"
+						: formatCartMoney(amount, currency, locale)}
 			</span>
 		</div>
 	);

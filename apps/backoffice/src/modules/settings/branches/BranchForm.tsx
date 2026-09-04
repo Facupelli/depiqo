@@ -22,11 +22,11 @@ import { useForm, useStore } from "@tanstack/react-form";
 import { Loader2 } from "lucide-react";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
+import { AddressAutocomplete } from "./AddressAutocomplete";
 import {
 	type BranchFormValues,
 	type BranchScheduleWindowFormValues,
 	branchFormDefaults,
-	type branchFormSchema,
 	daysOfWeek,
 	getSupportedTimezones,
 	slotIntervalOptions,
@@ -36,11 +36,13 @@ import {
 type BranchFormApi = any;
 // biome-ignore lint/suspicious/noExplicitAny: TanStack Form field inference is not portable outside the component.
 type BranchFormField = any;
+// biome-ignore lint/suspicious/noExplicitAny: TanStack Form accepts any Standard Schema validator with this form value shape.
+type BranchFormValidator = any;
 type BranchFormStoreState = { values: BranchFormValues };
 interface BranchFormProps {
 	formId: string;
 	defaultValues?: BranchFormValues;
-	validator: typeof branchFormSchema;
+	validator: BranchFormValidator;
 	submitLabel: string;
 	isPending: boolean;
 	requireDirty?: boolean;
@@ -71,10 +73,6 @@ export function BranchForm({
 	const supportedTimezones = getSupportedTimezones().filter(
 		(timezone) =>
 			timezone.startsWith("Europe/") || timezone.startsWith("America/"),
-	);
-	const supportsDelivery = useStore(
-		form.store,
-		(state) => state.values.supportsDelivery,
 	);
 	const scheduleEnabled = useStore(
 		form.store,
@@ -149,16 +147,23 @@ export function BranchForm({
 										return (
 											<Field data-invalid={isInvalid}>
 												<FieldLabel htmlFor={field.name}>Dirección</FieldLabel>
-												<Input
+												<AddressAutocomplete
 													id={field.name}
 													name={field.name}
 													value={field.state.value}
+													isInvalid={isInvalid}
 													onBlur={field.handleBlur}
-													onChange={(event) =>
-														field.handleChange(event.target.value)
-													}
-													aria-invalid={isInvalid}
-													placeholder="Ej. Av. Corrientes 1234"
+													onChange={(value) => {
+														field.handleChange(value);
+														form.setFieldValue("addressLocationId", null);
+													}}
+													onSelect={(suggestion) => {
+														field.handleChange(suggestion.formattedAddress);
+														form.setFieldValue(
+															"addressLocationId",
+															suggestion.locationId,
+														);
+													}}
 												/>
 												{isInvalid && (
 													<FieldError errors={field.state.meta.errors} />
@@ -217,67 +222,6 @@ export function BranchForm({
 						<CardHeader>
 							<CardTitle className="flex items-center gap-3">
 								<StepBadge>2</StepBadge>
-								Entrega a domicilio
-							</CardTitle>
-						</CardHeader>
-						<CardContent className="space-y-5">
-							<form.Field name="supportsDelivery">
-								{(field: BranchFormField) => (
-									<Field orientation="horizontal">
-										<Switch
-											id={field.name}
-											checked={field.state.value}
-											onCheckedChange={(checked) =>
-												field.handleChange(checked === true)
-											}
-										/>
-										<div>
-											<FieldLabel htmlFor={field.name}>
-												Habilitar envíos
-											</FieldLabel>
-											<FieldDescription>
-												Si está apagado, no se enviarán defaults de entrega.
-											</FieldDescription>
-										</div>
-									</Field>
-								)}
-							</form.Field>
-
-							{supportsDelivery && (
-								<div className="grid gap-4 sm:grid-cols-2">
-									<DeliveryTextField
-										form={form}
-										name="deliveryDefaultCountry"
-										label="País"
-										placeholder="Argentina"
-									/>
-									<DeliveryTextField
-										form={form}
-										name="deliveryDefaultStateRegion"
-										label="Provincia / región"
-										placeholder="Buenos Aires"
-									/>
-									<DeliveryTextField
-										form={form}
-										name="deliveryDefaultCity"
-										label="Ciudad"
-										placeholder="CABA"
-									/>
-									<DeliveryTextField
-										form={form}
-										name="deliveryDefaultPostalCode"
-										label="Código postal"
-										placeholder="1425"
-									/>
-								</div>
-							)}
-						</CardContent>
-					</Card>
-
-					<Card>
-						<CardHeader>
-							<CardTitle className="flex items-center gap-3">
-								<StepBadge>3</StepBadge>
 								Horarios iniciales
 							</CardTitle>
 						</CardHeader>
@@ -407,47 +351,6 @@ function StepBadge({ children }: { children: ReactNode }) {
 		<span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-foreground text-sm font-semibold text-background">
 			{children}
 		</span>
-	);
-}
-
-function DeliveryTextField({
-	form,
-	name,
-	label,
-	placeholder,
-}: {
-	form: BranchFormApi;
-	name:
-		| "deliveryDefaultCountry"
-		| "deliveryDefaultStateRegion"
-		| "deliveryDefaultCity"
-		| "deliveryDefaultPostalCode";
-	label: string;
-	placeholder: string;
-}) {
-	return (
-		<form.Field name={name}>
-			{(field: BranchFormField) => {
-				const isInvalid =
-					field.state.meta.isTouched && !field.state.meta.isValid;
-
-				return (
-					<Field data-invalid={isInvalid}>
-						<FieldLabel htmlFor={field.name}>{label}</FieldLabel>
-						<Input
-							id={field.name}
-							name={field.name}
-							value={field.state.value}
-							onBlur={field.handleBlur}
-							onChange={(event) => field.handleChange(event.target.value)}
-							aria-invalid={isInvalid}
-							placeholder={placeholder}
-						/>
-						{isInvalid && <FieldError errors={field.state.meta.errors} />}
-					</Field>
-				);
-			}}
-		</form.Field>
 	);
 }
 

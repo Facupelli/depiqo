@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
 
+import { GeocodingModule } from '../shared/geocoding/geocoding.module';
+import { BranchAddressResolver } from './application/services/branch-address-resolver.service';
 import { TenantCategoryTaxonomyService } from './public-api/tenant-category-taxonomy.service';
 import { RentalCustomerContactFactsService } from './public-api/rental-customer-contact-facts.service';
 import { TenantIdentityFactsService } from './public-api/tenant-identity-facts.service';
@@ -38,6 +40,8 @@ import { GetCustomerProfileDetailHttpController } from './features/get-customer-
 import { GetCustomerProfileDetailHandler } from './features/get-customer-profile-detail/get-customer-profile-detail.handler';
 import { GetBranchesHttpController } from './features/get-branches/get-branches.controller';
 import { GetBranchesHandler } from './features/get-branches/get-branches.handler';
+import { SearchBranchAddressSuggestionsHttpController } from './features/search-branch-address-suggestions/search-branch-address-suggestions.controller';
+import { SearchBranchAddressSuggestionsHandler } from './features/search-branch-address-suggestions/search-branch-address-suggestions.handler';
 import { GetStorefrontBranchScheduleSlotsHttpController } from './features/get-storefront-branch-schedule-slots/get-storefront-branch-schedule-slots.controller';
 import { GetStorefrontBranchScheduleSlotsHandler } from './features/get-storefront-branch-schedule-slots/get-storefront-branch-schedule-slots.handler';
 import { GetStorefrontBranchSchedulesHttpController } from './features/get-storefront-branch-schedules/get-storefront-branch-schedules.controller';
@@ -94,7 +98,7 @@ import { GetStorefrontCategoriesHttpController } from './features/get-storefront
 import { GetStorefrontCategoriesHandler } from './features/get-storefront-categories/get-storefront-categories.handler';
 
 @Module({
-  imports: [AuthModule, TenantContextModule],
+  imports: [AuthModule, GeocodingModule, TenantContextModule],
   controllers: [
     CreateCategoryHttpController,
     GetCategoriesHttpController,
@@ -102,6 +106,7 @@ import { GetStorefrontCategoriesHandler } from './features/get-storefront-catego
     ApproveSubmittedCustomerOnboardingHttpController,
     CreateBranchHttpController,
     CreateContractSignerHttpController,
+    SearchBranchAddressSuggestionsHttpController,
     GetBranchDetailHttpController,
     GetBranchesHttpController,
     GetCurrentRentalCustomerProfileHttpController,
@@ -129,6 +134,7 @@ import { GetStorefrontCategoriesHandler } from './features/get-storefront-catego
     GetCategoriesHandler,
     GetStorefrontCategoriesHandler,
     BranchRepository,
+    BranchAddressResolver,
     TenantRepository,
     CloudflareCustomHostnameService,
     { provide: CustomHostnameProvider, useExisting: CloudflareCustomHostnameService },
@@ -137,6 +143,7 @@ import { GetStorefrontCategoriesHandler } from './features/get-storefront-catego
     CreateContractSignerHandler,
     GetBranchDetailHandler,
     GetBranchesHandler,
+    SearchBranchAddressSuggestionsHandler,
     GetCurrentRentalCustomerProfileHandler,
     GetCustomerProfileDetailHandler,
     GetContractSignerHandler,

@@ -24,7 +24,7 @@ model V2Rental {
   customerId   String? @map("customer_id")
 
   status            V2RentalStatus       @default(PENDING)
-  fulfillmentMethod V2FulfillmentMethod? @map("fulfillment_method")
+  fulfillmentMethod V2FulfillmentMethod  @map("fulfillment_method")
   notes             String?
   insuranceSelected Boolean              @default(false) @map("insurance_selected")
   bookingSnapshot   Json?                @map("booking_snapshot")
@@ -33,7 +33,9 @@ model V2Rental {
   confirmationFingerprint String? @map("confirmation_fingerprint")
 
   acceptedBeforeBufferMinutes Int? @map("accepted_before_buffer_minutes")
-  acceptedAfterBufferMinutes  Int? @map("accepted_after_buffer_minutes")
+  acceptedAfterBufferMinutes  Int?     @map("accepted_after_buffer_minutes")
+  deliverySnapshot            Json?    @map("accepted_delivery_snapshot")
+  acceptedCustomerTotal       Decimal? @map("accepted_customer_total") @db.Decimal(19, 4)
 
   periodStart   DateTime        @map("period_start") @db.Timestamptz(3)
   periodEnd     DateTime        @map("period_end") @db.Timestamptz(3)
@@ -68,16 +70,7 @@ model V2RentalDeliveryDetails {
   tenantId      String @map("tenant_id")
   rentalOrderId String @unique @map("rental_order_id")
 
-  addressLine1 String  @map("address_line_1")
-  addressLine2 String? @map("address_line_2")
-  city         String
-  state        String? @map("state")
-  postalCode   String? @map("postal_code")
-  country      String? @map("country")
-
-  contactName  String? @map("contact_name")
-  contactPhone String? @map("contact_phone")
-  notes        String? @map("notes")
+  address String
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)

@@ -10,14 +10,16 @@ import {
 } from 'src/modules/catalog/public-api/catalog-selection-resolution.public-api';
 import { AssetInventoryDisplayFacts } from 'src/modules/asset-inventory/public-api/asset-inventory-display-facts.public-api';
 import {
-  PricingCalculation,
   PricingCalculationError,
+  PricingCalculationRequest,
 } from 'src/modules/pricing/public-api/pricing-calculation.public-api';
 import { BranchFacts } from 'src/modules/tenant-management/public-api/branch-facts.public-api';
 import { TenantBillingPreferences } from 'src/modules/tenant-management/public-api/tenant-billing-preferences.public-api';
 import { TenantRentalAssetBufferSettings } from 'src/modules/tenant-management/public-api/tenant-rental-asset-buffer-settings.public-api';
 
 import { RentalOperationalFactsValidatorService } from '../../application/rental-operational-facts-validator.service';
+import { ProspectiveRentalCostService } from '../../application/prospective-rental-cost.service';
+import { acceptedDeliverySnapshotFromQuote } from '../../application/accepted-delivery-snapshot.adapter';
 
 import { adaptPricingCalculationToSnapshot } from '../../application/accepted-pricing/adapt-pricing-calculation-to-snapshot';
 import { toRentalSelectionKind } from '../../application/catalog-selection-kind.mapper';
@@ -26,8 +28,9 @@ import { toRentalIntegrationEvents } from '../../application/rental-integration-
 import { buildConfirmationFingerprint } from './confirmation-operation-fingerprint';
 import { CreateConfirmedRentalCommand } from './create-confirmed-rental.command';
 import { ConfirmationOperationPersistence } from '../../persistence/rental.repository';
-import { deriveBufferedAssetBlockPeriod } from '../../domain/asset-block-period';
+import { deriveConfirmedAssetBlockPeriod } from '../../domain/confirmed-asset-block-period';
 import { deriveConfirmationParticipationTiming } from '../../domain/confirmation-participation-timing';
+import { AcceptedDeliverySnapshot } from '../../domain/value-objects/accepted-delivery-snapshot.value-object';
 import { Rental } from '../../domain/rental.aggregate';
 import { FulfillmentMethod } from '../../domain/rental-status';
 import { createConfirmedRentalError, CreateConfirmedRentalError } from './create-confirmed-rental.errors';
@@ -58,7 +61,6 @@ import {
   RentalMustContainSelectionError,
   ReturnTimeOutsideBranchScheduleError,
   TenantUnavailableForRentalError,
-  UnsupportedBranchFulfillmentMethodError,
 } from '../../domain/errors/rental-commitment.errors';
 
 export interface CreateConfirmedRentalResult {
@@ -82,7 +84,7 @@ export class CreateConfirmedRentalService implements ICommandHandler<
     private readonly rentalOperationalFacts: RentalOperationalFactsValidatorService,
     private readonly catalogSelectionResolution: CatalogSelectionResolution,
     private readonly assetInventoryDisplayFacts: AssetInventoryDisplayFacts,
-    private readonly pricingCalculation: PricingCalculation,
+    private readonly prospectiveRentalCost: ProspectiveRentalCostService,
     private readonly rentalAssetAllocation: RentalAssetAllocationService,
     private readonly rentalOwnerSplitCalculator: RentalOwnerSplitCalculator,
     private readonly rentalNumberAllocator: RentalNumberAllocator,
@@ -112,7 +114,7 @@ export class CreateConfirmedRentalService implements ICommandHandler<
       rentalCustomerId: command.rentalCustomerId,
       pickupAt: command.period.start,
       returnAt: command.period.end,
-      fulfillmentMethod: command.fulfillmentMethod ?? FulfillmentMethod.Pickup,
+      fulfillmentMethod: command.fulfillmentMethod,
     });
 
     if (tenantValidation.isErr()) {
@@ -171,7 +173,7 @@ export class CreateConfirmedRentalService implements ICommandHandler<
       fulfillmentRequirements: offer.fulfillmentRequirements,
     }));
 
-    const pricingResult = await this.pricingCalculation.calculateProposedPrice({
+    const pricingRequest: PricingCalculationRequest = {
       tenantId: command.tenantId,
       customerId: command.rentalCustomerId,
       rentalPeriod: {
@@ -192,10 +194,56 @@ export class CreateConfirmedRentalService implements ICommandHandler<
         categoryId: selection.categoryId,
         quantity: selection.quantity,
       })),
-    });
+    };
 
-    if (pricingResult.isErr()) {
-      return err(this.toApplicationError(pricingResult.error, context));
+    const deliveryDetails = command.deliveryDetails;
+    const prospectiveResult =
+      command.fulfillmentMethod === FulfillmentMethod.Pickup
+        ? await this.prospectiveRentalCost.calculate({ fulfillmentMethod: 'PICKUP', pricing: pricingRequest })
+        : deliveryDetails
+          ? await this.prospectiveRentalCost.calculate({
+              fulfillmentMethod: 'DELIVERY',
+              pricing: pricingRequest,
+              branchId: command.branchId,
+              customerLocation: {
+                address: deliveryDetails.address,
+                locationId: deliveryDetails.locationId,
+              },
+            })
+          : null;
+
+    if (!prospectiveResult) {
+      return err(
+        this.toApplicationError(
+          new RentalInvalidFieldError('deliveryDetails', 'delivery rentals require delivery details'),
+          context,
+        ),
+      );
+    }
+
+    if (prospectiveResult.isErr()) {
+      return err(this.toApplicationError(prospectiveResult.error, context));
+    }
+    if (!prospectiveResult.value.available) {
+      return err(
+        createConfirmedRentalError(
+          'rental_commitment.delivery_not_serviceable',
+          `Delivery is not serviceable: ${prospectiveResult.value.reason}.`,
+          undefined,
+          { ...context, deliveryReason: prospectiveResult.value.reason },
+        ),
+      );
+    }
+
+    const pricingResult = prospectiveResult.value.pricing;
+    const acceptedDeliveryData = prospectiveResult.value.deliveryQuote
+      ? acceptedDeliverySnapshotFromQuote(prospectiveResult.value.deliveryQuote)
+      : undefined;
+    let acceptedDelivery: AcceptedDeliverySnapshot | undefined;
+    if (acceptedDeliveryData) {
+      const acceptedDeliveryResult = AcceptedDeliverySnapshot.create(acceptedDeliveryData);
+      if (acceptedDeliveryResult.isErr()) throw acceptedDeliveryResult.error;
+      acceptedDelivery = acceptedDeliveryResult.value;
     }
 
     const equipmentDemandLines = rentalSelectionsDraft.flatMap((selection) =>
@@ -211,9 +259,11 @@ export class CreateConfirmedRentalService implements ICommandHandler<
     const operationTime = new Date();
     const participationTiming = deriveConfirmationParticipationTiming(command.period, operationTime);
     const acceptedAssetBuffer = { ...bufferSettings.value };
-    const operationalPeriod = deriveBufferedAssetBlockPeriod({
+    const operationalPeriod = deriveConfirmedAssetBlockPeriod({
       participationPeriod: participationTiming.participationPeriod,
-      ...acceptedAssetBuffer,
+      acceptedBeforeBufferMinutes: acceptedAssetBuffer.beforeBufferMinutes,
+      acceptedAfterBufferMinutes: acceptedAssetBuffer.afterBufferMinutes,
+      acceptedDelivery,
       clampStartAt: participationTiming.blockOperationTime,
     });
 
@@ -261,16 +311,18 @@ export class CreateConfirmedRentalService implements ICommandHandler<
           rentalNumber: await this.rentalNumberAllocator.allocate(command.tenantId, tx),
           branchId: command.branchId,
           rentalCustomerId: command.rentalCustomerId,
-          fulfillmentMethod: command.fulfillmentMethod ?? FulfillmentMethod.Pickup,
+          fulfillmentMethod: command.fulfillmentMethod,
           notes: command.notes,
           insuranceSelected: command.insuranceSelected,
           bookingSnapshot: command.bookingSnapshot,
           deliveryDetails:
-            command.fulfillmentMethod === FulfillmentMethod.Delivery ? command.deliveryDetails : undefined,
+            command.fulfillmentMethod === FulfillmentMethod.Delivery && command.deliveryDetails
+              ? { address: command.deliveryDetails.address }
+              : undefined,
           acceptedAssetBuffer,
           confirmedAt: operationTime,
           confirmedPriceSnapshot: adaptPricingCalculationToSnapshot({
-            result: pricingResult.value,
+            result: pricingResult,
             context: 'CONFIRMED',
             lineDisplayNames: Object.fromEntries(
               rentalSelectionsDraft.map((selection) => [
@@ -279,6 +331,7 @@ export class CreateConfirmedRentalService implements ICommandHandler<
               ]),
             ),
           }),
+          acceptedDelivery: acceptedDeliveryData,
           period: command.period,
 
           selections: rentalSelectionsDraft.map((selection) => ({
@@ -315,7 +368,7 @@ export class CreateConfirmedRentalService implements ICommandHandler<
         const ownerSplitInput = {
           tenantId: confirmedRental.tenantId,
           rentalId: confirmedRental.id,
-          currency: pricingResult.value.final.currency,
+          currency: pricingResult.final.currency,
 
           selections: confirmedRental.selections.map((selection) => ({
             id: selection.id,
@@ -333,7 +386,7 @@ export class CreateConfirmedRentalService implements ICommandHandler<
             ownershipSnapshot: assignment.ownershipSnapshot.toJSON(),
           })),
 
-          priceLines: pricingResult.value.final.lines.map((line) => ({
+          priceLines: pricingResult.final.lines.map((line) => ({
             rentalSelectionId: line.lineReference,
             netAmount: line.total,
           })),
@@ -514,14 +567,6 @@ export class CreateConfirmedRentalService implements ICommandHandler<
         ...context,
         equipmentTypeId: error.equipmentTypeId,
       });
-    }
-    if (error instanceof UnsupportedBranchFulfillmentMethodError) {
-      return createConfirmedRentalError(
-        'rental_commitment.unsupported_branch_fulfillment_method',
-        error.message,
-        error,
-        context,
-      );
     }
     if (error instanceof PickupTimeOutsideBranchScheduleError) {
       return createConfirmedRentalError(

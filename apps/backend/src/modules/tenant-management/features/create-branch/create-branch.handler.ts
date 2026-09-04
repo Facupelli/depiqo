@@ -1,10 +1,12 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { err, ok, Result } from 'neverthrow';
 
+import { BranchAddressResolver } from '../../application/services/branch-address-resolver.service';
 import { Branch } from '../../domain/entities/branch.aggregate';
 import {
   BranchScheduleOverlapError,
   InvalidBranchNameError,
+  InvalidBranchOperationalLocationError,
   InvalidBranchScheduleDayOfWeekError,
   InvalidBranchScheduleDaySpecificationError,
   InvalidBranchScheduleTypeError,
@@ -24,23 +26,36 @@ export class CreateBranchHandler implements ICommandHandler<
   CreateBranchCommand,
   Result<CreateBranchResult, CreateBranchError>
 > {
-  constructor(private readonly branchRepository: BranchRepository) {}
+  constructor(
+    private readonly branchRepository: BranchRepository,
+    private readonly branchAddressResolver: BranchAddressResolver,
+  ) {}
 
   async execute(command: CreateBranchCommand): Promise<Result<CreateBranchResult, CreateBranchError>> {
     const context = {
       useCase: 'CreateBranch',
       tenantId: command.tenantId,
     };
+    const addressResolution = await this.branchAddressResolver.resolve({
+      address: command.address,
+      addressLocationId: command.addressLocationId,
+    });
+    if (addressResolution.outcome === 'UNRESOLVED') {
+      return err(
+        createBranchError(
+          'tenant_management.branch_address_unresolved',
+          'The branch address could not be resolved.',
+          undefined,
+          context,
+        ),
+      );
+    }
     const branch = Branch.create({
       tenantId: command.tenantId,
       name: command.name,
-      address: command.address,
+      address: addressResolution.address,
+      operationalLocation: addressResolution.operationalLocation,
       timezone: command.timezone,
-      supportsDelivery: command.supportsDelivery,
-      deliveryDefaultCountry: command.deliveryDefaultCountry,
-      deliveryDefaultStateRegion: command.deliveryDefaultStateRegion,
-      deliveryDefaultCity: command.deliveryDefaultCity,
-      deliveryDefaultPostalCode: command.deliveryDefaultPostalCode,
       schedules: command.schedules.map((schedule) => ({
         type: schedule.type,
         dayOfWeek: schedule.dayOfWeek,
@@ -56,7 +71,11 @@ export class CreateBranchHandler implements ICommandHandler<
     if (branch.isErr()) {
       const error = branch.error;
 
-      if (error instanceof InvalidBranchNameError || error instanceof InvalidTimezoneError) {
+      if (
+        error instanceof InvalidBranchNameError ||
+        error instanceof InvalidBranchOperationalLocationError ||
+        error instanceof InvalidTimezoneError
+      ) {
         return err(createBranchError('tenant_management.branch_invalid_input', error.message, error, context));
       }
 

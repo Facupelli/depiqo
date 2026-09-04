@@ -1,19 +1,20 @@
 import type {
+	AddressSuggestionDto,
 	BranchScheduleSlotDto,
 	CalculateCartPriceResponseDto,
 	GetPublicTenantConfigResponseDto,
 	GetStorefrontBranchDto,
+	ProspectiveCartCostResponseDto,
 } from "@repo/api-contracts";
 import { useNavigate } from "@tanstack/react-router";
 import { createContext, useContext, useMemo, useState } from "react";
-import { toCalculateCartPriceBody } from "@/modules/pricing/calculate-cart-price/calculate-cart-price.mapper";
-import { useCalculatedCartPrice } from "@/modules/pricing/calculate-cart-price/calculate-cart-price.queries";
 import { useStorefrontBranchScheduleSlots } from "@/modules/tenant-management/branches/branch-schedule.queries";
 import { useCartRentalOfferAvailability } from "../availability/cart-rental-offer-availability.queries";
 import type { GetCartRentalOfferAvailabilityInput } from "../availability/get-cart-rental-offer-availability.schema";
+import { toProspectiveCartCostBody } from "../prospective-cart-cost/prospective-cart-cost.mapper";
+import { useProspectiveCartCost } from "../prospective-cart-cost/prospective-cart-cost.queries";
 import { useRentalCartActions, useRentalCartItems } from "../rental-cart.hooks";
 import type {
-	DeliveryRequestField,
 	DeliveryRequestFormState,
 	FulfillmentMethod,
 } from "./cart-checkout.types";
@@ -49,9 +50,22 @@ type AvailabilitySlice = {
 	isAvailabilityError: boolean;
 };
 
+type AvailableProspectiveCartCost = Extract<
+	ProspectiveCartCostResponseDto,
+	{ available: true }
+>;
+type UnavailableProspectiveCartCost = Extract<
+	ProspectiveCartCostResponseDto,
+	{ available: false }
+>;
+
 type PricingSlice = {
 	config: GetPublicTenantConfigResponseDto;
 	pricing?: CalculateCartPriceResponseDto;
+	delivery?: AvailableProspectiveCartCost["delivery"];
+	customerTotal?: string;
+	currency?: string;
+	deliveryNotServiceableReason?: UnavailableProspectiveCartCost["reason"];
 	isPriceLoading: boolean;
 	isPriceError: boolean;
 	insuranceSelected: boolean;
@@ -74,7 +88,8 @@ type FulfillmentSlice = {
 	hasConfirmedDeliveryAddress: boolean;
 	selectFulfillmentMethod: (value: FulfillmentMethod) => void;
 	setDeliverySheetOpen: (open: boolean) => void;
-	setDraftDeliveryField: (field: DeliveryRequestField, value: string) => void;
+	setDraftDeliveryAddress: (value: string) => void;
+	selectDraftDeliveryAddress: (suggestion: AddressSuggestionDto) => void;
 	confirmDeliveryRequest: () => void;
 };
 
@@ -146,7 +161,7 @@ export function CartPageProvider({
 	const [fulfillmentMethod, setFulfillmentMethod] =
 		useState<FulfillmentMethod>("PICKUP");
 	const [deliveryRequest, setDeliveryRequest] = useState(() =>
-		createDeliveryRequestDefaultValues(branch.deliveryDefaults),
+		createDeliveryRequestDefaultValues(),
 	);
 	const [draftDeliveryRequest, setDraftDeliveryRequest] =
 		useState<DeliveryRequestFormState>(deliveryRequest);
@@ -161,7 +176,12 @@ export function CartPageProvider({
 	const availabilityInput =
 		useMemo<GetCartRentalOfferAvailabilityInput | null>(() => {
 			const rentalOfferIds = items.map((item) => item.rentalOfferId).sort();
-			if (!isPricingReady || !pickupSlot || !returnSlot || rentalOfferIds.length === 0) {
+			if (
+				!isPricingReady ||
+				!pickupSlot ||
+				!returnSlot ||
+				rentalOfferIds.length === 0
+			) {
 				return null;
 			}
 
@@ -189,18 +209,6 @@ export function CartPageProvider({
 		availabilityQuery.isError,
 		availabilityQuery.isFetching,
 	]);
-	const body = toCalculateCartPriceBody({
-		branchId: branch.id,
-		periodStart: isPricingReady ? start : null,
-		periodEnd: isPricingReady ? end : null,
-		selectedOffers: items.map((item) => ({
-			rentalOfferId: item.rentalOfferId,
-			quantity: item.quantity,
-		})),
-		insuranceSelected,
-		couponCode: "",
-	});
-	const priceQuery = useCalculatedCartPrice(body);
 	const normalizedDeliveryRequest = normalizeDeliveryRequest(
 		deliveryRequest,
 		"DELIVERY",
@@ -208,6 +216,27 @@ export function CartPageProvider({
 	const hasConfirmedDeliveryAddress = isDeliveryRequestComplete(
 		normalizedDeliveryRequest,
 	);
+	const prospectiveCostBody = toProspectiveCartCostBody({
+		branchId: branch.id,
+		periodStart: isPricingReady ? pickupSlot?.instant : null,
+		periodEnd: isPricingReady ? returnSlot?.instant : null,
+		selectedOffers: items.map((item) => ({
+			rentalOfferId: item.rentalOfferId,
+			quantity: item.quantity,
+		})),
+		insuranceSelected,
+		couponCode: "",
+		fulfillmentMethod,
+		committedDeliveryDetails: deliveryRequest,
+	});
+	const prospectiveCostQuery = useProspectiveCartCost(prospectiveCostBody);
+	const availableProspectiveCost = prospectiveCostQuery.data?.available
+		? prospectiveCostQuery.data
+		: undefined;
+	const deliveryNotServiceableReason =
+		prospectiveCostQuery.data?.available === false
+			? prospectiveCostQuery.data.reason
+			: undefined;
 	const value = useMemo<CartPageValue>(
 		() => ({
 			cart: { items, actions },
@@ -246,9 +275,13 @@ export function CartPageProvider({
 			},
 			pricing: {
 				config,
-				pricing: priceQuery.data,
-				isPriceLoading: priceQuery.isFetching,
-				isPriceError: priceQuery.isError,
+				pricing: availableProspectiveCost?.pricing,
+				delivery: availableProspectiveCost?.delivery,
+				customerTotal: availableProspectiveCost?.customerTotal,
+				currency: availableProspectiveCost?.currency,
+				deliveryNotServiceableReason,
+				isPriceLoading: prospectiveCostQuery.isFetching,
+				isPriceError: prospectiveCostQuery.isError,
 				insuranceSelected,
 				setInsuranceSelected,
 			},
@@ -271,7 +304,6 @@ export function CartPageProvider({
 						setIsDeliverySheetOpen(false);
 						return;
 					}
-					if (!branch.supportsDelivery) return;
 					setFulfillmentMethod("DELIVERY");
 					setDraftDeliveryRequest(deliveryRequest);
 					setShowDeliveryError(false);
@@ -289,11 +321,15 @@ export function CartPageProvider({
 						if (!hasConfirmedDeliveryAddress) setFulfillmentMethod("PICKUP");
 					}
 				},
-				setDraftDeliveryField: (field, next) => {
-					setDraftDeliveryRequest((current) => ({
-						...current,
-						[field]: next,
-					}));
+				setDraftDeliveryAddress: (address) => {
+					setDraftDeliveryRequest({ address, locationId: null });
+					setShowDeliveryError(false);
+				},
+				selectDraftDeliveryAddress: (suggestion) => {
+					setDraftDeliveryRequest({
+						address: suggestion.formattedAddress,
+						locationId: suggestion.locationId,
+					});
 					setShowDeliveryError(false);
 				},
 				confirmDeliveryRequest: () => {
@@ -305,7 +341,10 @@ export function CartPageProvider({
 						setShowDeliveryError(true);
 						return;
 					}
-					setDeliveryRequest(draftDeliveryRequest);
+					setDeliveryRequest({
+						address: normalized.address,
+						locationId: normalized.locationId,
+					});
 					setShowDeliveryError(false);
 					setIsDeliverySheetOpen(false);
 				},
@@ -325,12 +364,13 @@ export function CartPageProvider({
 			returnSlot,
 			isPricingReady,
 			isPeriodInvalid,
-			priceQuery.data,
+			availableProspectiveCost,
+			deliveryNotServiceableReason,
 			availabilityQuery.isFetching,
 			availabilityQuery.isError,
 			availableCountByRentalOfferId,
-			priceQuery.isFetching,
-			priceQuery.isError,
+			prospectiveCostQuery.isFetching,
+			prospectiveCostQuery.isError,
 			insuranceSelected,
 			unavailableRentalOfferIds,
 			fulfillmentMethod,

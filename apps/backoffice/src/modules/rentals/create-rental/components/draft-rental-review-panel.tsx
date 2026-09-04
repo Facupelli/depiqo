@@ -39,8 +39,8 @@ export const DraftRentalReviewPanel = withForm({
 			values.periodEndDate.length > 0 &&
 			values.selectedOffers.length > 0 &&
 			(values.fulfillmentMethod !== "DELIVERY" ||
-				(values.deliveryDetails.addressLine1.trim().length > 0 &&
-					values.deliveryDetails.city.trim().length > 0));
+				(values.deliveryDetails.address.trim().length > 0 &&
+					values.deliveryDetails.locationId !== null));
 
 		return (
 			<Card className="shadow-xs">

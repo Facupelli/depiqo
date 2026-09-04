@@ -33,8 +33,6 @@ export class PromotionApplierService {
 
     const allocations = this.allocationService.allocate({
       discount,
-      target: promotion.target,
-      allLines: context.lines,
       eligibleLines,
     });
 

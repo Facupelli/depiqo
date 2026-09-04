@@ -6,7 +6,7 @@ import { PostgresExclusionViolationError } from 'src/core/utils/postgres-error.m
 import { V2AssetBlockType } from 'src/generated/prisma/enums';
 
 import { getEffectiveRentalOperationTime } from '../../application/get-effective-rental-operation-time';
-import { deriveBufferedAssetBlockPeriod } from '../../domain/asset-block-period';
+import { deriveConfirmedAssetBlockPeriod } from '../../domain/confirmed-asset-block-period';
 import { toRentalIntegrationEvents } from '../../application/rental-integration-event.mapper';
 import { RentalAssetAllocationService } from '../../asset-allocation/rental-asset-allocation.service';
 import {
@@ -137,10 +137,11 @@ export class ReplaceConfirmedRentalAssetHandler implements ICommandHandler<
         }
 
         const acceptedAssetBuffer = currentRental.requireAcceptedAssetBuffer();
-        const operationalPeriod = deriveBufferedAssetBlockPeriod({
+        const operationalPeriod = deriveConfirmedAssetBlockPeriod({
           participationPeriod: new RentalPeriod(effectiveAt, currentRental.period.end),
-          beforeBufferMinutes: acceptedAssetBuffer.beforeBufferMinutes,
-          afterBufferMinutes: acceptedAssetBuffer.afterBufferMinutes,
+          acceptedBeforeBufferMinutes: acceptedAssetBuffer.beforeBufferMinutes,
+          acceptedAfterBufferMinutes: acceptedAssetBuffer.afterBufferMinutes,
+          acceptedDelivery: currentRental.acceptedDelivery,
           clampStartAt: operationTime,
         });
         const allocationPlan = await this.rentalAssetAllocation.planAllocations({

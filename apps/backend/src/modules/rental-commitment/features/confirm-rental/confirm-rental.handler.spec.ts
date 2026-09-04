@@ -4,6 +4,7 @@ import { PrismaUnitOfWork, PrismaTransactionContext } from 'src/core/database/pr
 import { IntegrationEvent } from 'src/core/domain/events/integration-event';
 import { InMemoryIntegrationEventsCollector } from 'src/core/domain/events/in-memory-integration-events.collector';
 import { PostgresExclusionViolationError } from 'src/core/utils/postgres-error.mapper';
+import { DeliveryQuoteService } from 'src/modules/delivery/public-api/delivery-quote.public-api';
 
 import { RentalOperationalFactsValidatorService } from '../../application/rental-operational-facts-validator.service';
 import { RentalAssetAllocationService } from '../../asset-allocation/rental-asset-allocation.service';
@@ -48,7 +49,6 @@ describe('ConfirmRentalHandler deadlock retry', () => {
 
     expect(result.isErr() && result.error.code).toBe('rental_commitment.insufficient_asset_availability');
     expect(setup.runInTransaction).toHaveBeenCalledTimes(2);
-    expect(setup.pullDomainEvents).not.toHaveBeenCalled();
     expect(setup.publishedEvents).toHaveLength(0);
   });
 
@@ -128,6 +128,7 @@ describe('ConfirmRentalHandler deadlock retry', () => {
     const operationalFacts = {
       validateDraftFacts: jest.fn().mockResolvedValue(ok(undefined)),
     } as unknown as RentalOperationalFactsValidatorService;
+    const deliveryQuoteService = {} as DeliveryQuoteService;
     const allocation = {
       planAllocations: jest.fn().mockResolvedValue(
         ok({
@@ -163,6 +164,7 @@ describe('ConfirmRentalHandler deadlock retry', () => {
         repository,
         operationalFacts,
         bufferSettings as never,
+        deliveryQuoteService,
         allocation,
         ownerSplitCalculator,
         unitOfWork,

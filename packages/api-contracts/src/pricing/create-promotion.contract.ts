@@ -31,7 +31,6 @@ export const CreatePromotionBodySchema = z.object({
   validUntil: LocalDateSchema.optional(),
   effectType: z.enum(["PERCENTAGE_OFF", "FIXED_AMOUNT_OFF"]),
   effectValue: PositiveDecimalSchema,
-  target: z.enum(["ORDER", "ELIGIBLE_LINES"]).default("ORDER"),
   minOrderSubtotal: PositiveDecimalSchema.optional(),
   minRentalUnits: z.number().int().positive().optional(),
   maxRentalUnits: z.number().int().positive().optional(),

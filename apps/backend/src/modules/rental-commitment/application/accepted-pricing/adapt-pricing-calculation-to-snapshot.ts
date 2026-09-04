@@ -5,7 +5,7 @@ import {
   ACCEPTED_RENTAL_PRICING_SNAPSHOT_VERSION,
   AcceptedRentalPricingBreakdown,
   AcceptedRentalPricingContext,
-  AcceptedRentalPricingSnapshot,
+  AcceptedRentalPricingV3Snapshot,
 } from '../../domain/value-objects/accepted-pricing-snapshot.type';
 
 type RentalManualPricingAdjustment = { targetTotal: string; setByTenantUserId: string; reason?: string };
@@ -15,7 +15,7 @@ export function adaptPricingCalculationToSnapshot(input: {
   context: AcceptedRentalPricingContext;
   manualPricingAdjustment?: RentalManualPricingAdjustment;
   lineDisplayNames?: Record<string, string>;
-}): AcceptedRentalPricingSnapshot {
+}): AcceptedRentalPricingV3Snapshot {
   return {
     schema: ACCEPTED_RENTAL_PRICING_SNAPSHOT_SCHEMA,
     version: ACCEPTED_RENTAL_PRICING_SNAPSHOT_VERSION,
@@ -92,7 +92,14 @@ function toPersistedBreakdown(
           }
         : {}),
     })),
-    appliedPromotions: breakdown.appliedPromotions,
+    appliedPromotions: breakdown.appliedPromotions.map((promotion) => ({
+      promotionId: promotion.promotionId,
+      name: promotion.name,
+      activation: promotion.activation,
+      effectType: promotion.effectType,
+      effectValue: promotion.effectValue,
+      amount: promotion.amount,
+    })),
     ...(breakdown.appliedCoupon ? { appliedCoupon: breakdown.appliedCoupon } : {}),
   };
 }

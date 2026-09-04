@@ -77,7 +77,6 @@ export const GetRentableItemDetailOfferSchema = z.object({
   branchId: z.string(),
   branchName: z.string().nullable(),
   timezone: z.string().nullable(),
-  supportsDelivery: z.boolean().nullable(),
   isVisible: z.boolean(),
   isRentable: z.boolean(),
   updatedAt: z.string().datetime(),

@@ -654,39 +654,36 @@ async function migrateRentalDeliveryDetails(ctx: TenantV2MigrationContext) {
 	if (ctx.dryRun) return;
 
 	for (const deliveryRequest of deliveryRequests) {
+		const address = [
+			deliveryRequest.addressLine1,
+			deliveryRequest.addressLine2,
+			deliveryRequest.city,
+			deliveryRequest.stateRegion,
+			deliveryRequest.postalCode,
+			deliveryRequest.country,
+		]
+			.map((part) => part?.trim())
+			.filter(Boolean)
+			.join(", ");
+
+		if (!address) {
+			throw new Error(
+				`Cannot migrate Delivery details for order ${deliveryRequest.orderId}: legacy address is empty`,
+			);
+		}
+
 		await ctx.prisma.v2RentalDeliveryDetails.upsert({
 			where: { rentalOrderId: deliveryRequest.orderId },
 			create: {
 				id: deliveryRequest.id,
 				tenantId: deliveryRequest.order.tenantId,
 				rentalOrderId: deliveryRequest.orderId,
-
-				addressLine1: deliveryRequest.addressLine1,
-				addressLine2: deliveryRequest.addressLine2,
-				city: deliveryRequest.city,
-				state: deliveryRequest.stateRegion,
-				postalCode: deliveryRequest.postalCode,
-				country: deliveryRequest.country,
-
-				contactName: deliveryRequest.recipientName,
-				contactPhone: deliveryRequest.phone,
-				notes: deliveryRequest.instructions,
-
+				address,
 				createdAt: deliveryRequest.createdAt,
 				updatedAt: deliveryRequest.updatedAt,
 			},
 			update: {
-				addressLine1: deliveryRequest.addressLine1,
-				addressLine2: deliveryRequest.addressLine2,
-				city: deliveryRequest.city,
-				state: deliveryRequest.stateRegion,
-				postalCode: deliveryRequest.postalCode,
-				country: deliveryRequest.country,
-
-				contactName: deliveryRequest.recipientName,
-				contactPhone: deliveryRequest.phone,
-				notes: deliveryRequest.instructions,
-
+				address,
 				updatedAt: deliveryRequest.updatedAt,
 			},
 		});

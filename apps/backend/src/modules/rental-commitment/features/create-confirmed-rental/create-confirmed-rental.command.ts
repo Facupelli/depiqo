@@ -1,4 +1,3 @@
-import { RentalDeliveryDetails } from '../../domain/rental.aggregate';
 import { FulfillmentMethod } from '../../domain/rental-status';
 import { BookingSnapshot } from '../../domain/value-objects/json-snapshot.value-object';
 import { RentalPeriod } from '../../domain/value-objects/rental-period.value-object';
@@ -8,17 +7,22 @@ export interface CreateConfirmedRentalOfferSelectionCommand {
   quantity: number;
 }
 
+export interface CreateConfirmedRentalDeliveryDetailsCommand {
+  address: string;
+  locationId: string;
+}
+
 export class CreateConfirmedRentalCommand {
   public readonly tenantId: string;
   public readonly branchId: string;
   public readonly rentalCustomerId: string;
   public readonly period: RentalPeriod;
   public readonly selectedOffers: CreateConfirmedRentalOfferSelectionCommand[];
-  public readonly fulfillmentMethod?: FulfillmentMethod;
+  public readonly fulfillmentMethod: FulfillmentMethod;
   public readonly notes?: string;
   public readonly insuranceSelected?: boolean;
   public readonly bookingSnapshot?: BookingSnapshot;
-  public readonly deliveryDetails?: RentalDeliveryDetails;
+  public readonly deliveryDetails?: CreateConfirmedRentalDeliveryDetailsCommand;
   public readonly confirmationOperationId: string;
 
   constructor(props: {
@@ -27,11 +31,11 @@ export class CreateConfirmedRentalCommand {
     rentalCustomerId: string;
     period: RentalPeriod;
     selectedOffers?: CreateConfirmedRentalOfferSelectionCommand[];
-    fulfillmentMethod?: FulfillmentMethod;
+    fulfillmentMethod: FulfillmentMethod;
     notes?: string;
     insuranceSelected?: boolean;
     bookingSnapshot?: BookingSnapshot;
-    deliveryDetails?: RentalDeliveryDetails;
+    deliveryDetails?: CreateConfirmedRentalDeliveryDetailsCommand;
     confirmationOperationId: string;
   }) {
     this.tenantId = props.tenantId;

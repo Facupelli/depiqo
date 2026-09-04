@@ -67,10 +67,10 @@ export class RentalRemitoReadModelLoader {
       );
     }
 
-    const [tenant, branch, customer, contractSigner, acceptedPricing, selectionsAndDemand, physicalAssignments] =
+    const [tenant, branchContext, customer, contractSigner, acceptedPricing, selectionsAndDemand, physicalAssignments] =
       await Promise.all([
         this.loadTenant(tenantId),
-        this.loadBranch(tenantId, rental.branchId),
+        this.branchFacts.getBranchFacts({ tenantId, branchId: rental.branchId }),
         rental.customerId ? this.loadCustomer(tenantId, rental.customerId) : Promise.resolve(null),
         this.loadDefaultContractSigner(tenantId),
         this.acceptedRentalPricingFacts.getAcceptedRentalPricingFacts({ tenantId, rentalId }),
@@ -134,23 +134,18 @@ export class RentalRemitoReadModelLoader {
     });
     const serialNumberByAssetId = new Map(assetDisplayFacts.map((asset) => [asset.assetId, asset.serialNumber]));
 
-    if (!branch) {
+    if (branchContext.isErr()) {
+      return err(
+        rentalRemitoApplicationError('BranchContextMissing', branchContext.error.message, branchContext.error),
+      );
+    }
+
+    if (branchContext.value.isDeleted) {
       return err(
         rentalRemitoApplicationError(
           'BranchContextMissing',
           `Branch "${rental.branchId}" was not found while loading rental "${rental.id}".`,
         ),
-      );
-    }
-
-    const branchContext = await this.branchFacts.getBranchFacts({
-      tenantId,
-      branchId: rental.branchId,
-    });
-
-    if (branchContext.isErr()) {
-      return err(
-        rentalRemitoApplicationError('BranchContextMissing', branchContext.error.message, branchContext.error),
       );
     }
 
@@ -170,7 +165,8 @@ export class RentalRemitoReadModelLoader {
       },
       tenant,
       branch: {
-        ...branch,
+        id: branchContext.value.branchId,
+        name: branchContext.value.displayName,
         timezone: branchContext.value.effectiveTimezone,
       },
       customer,
@@ -236,30 +232,6 @@ export class RentalRemitoReadModelLoader {
             logoUrl: tenant.branding.logoUrl,
           }
         : null,
-    };
-  }
-
-  private async loadBranch(tenantId: string, branchId: string): Promise<{ id: string; name: string } | null> {
-    // TODO(v2-contract-boundaries): Replace this cross-context Prisma read with a public read API/facade.
-    const branch = await this.prisma.client.v2Branch.findFirst({
-      where: {
-        id: branchId,
-        tenantId,
-        deletedAt: null,
-      },
-      select: {
-        id: true,
-        name: true,
-      },
-    });
-
-    if (!branch) {
-      return null;
-    }
-
-    return {
-      id: branch.id,
-      name: branch.name,
     };
   }
 

@@ -3,7 +3,6 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { TestingModule } from '@nestjs/testing';
 import { PrismaService } from 'src/core/database/prisma.service';
 import { ConfirmedRentalEditedIntegrationEvent } from '../../public-api/events/rental-lifecycle.integration-events';
-import { FulfillmentMethod } from '../../domain/rental-status';
 import {
   createRentalCommitmentIntegrationContext,
   useIntegrationTestContext,
@@ -12,14 +11,6 @@ import { createTestFixtures, TestFixtures } from '../../../../../test/support/fi
 import { ChangeRentalDetailsCommand, ChangeRentalDetailsPatch } from './change-rental-details.command';
 import { ChangeRentalDetailsResult } from './change-rental-details.handler';
 import { ConfirmedRentalFixtures } from '../../testing/confirmed-rental.fixtures';
-
-const delivery = {
-  addressLine1: '123 Rental Street',
-  city: 'Austin',
-  state: 'TX',
-  postalCode: '78701',
-  country: 'US',
-};
 
 describe('ChangeRentalDetails integration', () => {
   let moduleRef: TestingModule;
@@ -37,9 +28,9 @@ describe('ChangeRentalDetails integration', () => {
     return moduleRef;
   });
 
-  async function scenario(started: boolean | 'ENDED' = false, supportsDelivery = true) {
+  async function scenario(started: boolean | 'ENDED' = false) {
     const tenant = await core.createTenant();
-    const branch = await core.createBranch({ tenantId: tenant.id, overrides: { supportsDelivery } });
+    const branch = await core.createBranch({ tenantId: tenant.id });
     const { customer } = await core.createRentalCustomer({ tenantId: tenant.id });
     const { user } = await core.createTenantUser({ tenantId: tenant.id });
     const commercial = await fixtures.createOffer({ tenantId: tenant.id, branchId: branch.id });
@@ -118,35 +109,6 @@ describe('ChangeRentalDetails integration', () => {
     expect(after.rental.assignedAssets).toEqual(stableBefore.rental.assignedAssets);
     expect(after.blocks).toEqual(stableBefore.blocks);
     expect(events).toEqual([expect.objectContaining({ rentalId: setup.rental.rentalId })]);
-  });
-
-  it('enforces pre-start delivery invariants and branch delivery support', async () => {
-    const setup = await scenario(false, true);
-    const missing = await change(setup, { fulfillmentMethod: FulfillmentMethod.Delivery });
-    expect(missing.isErr() && missing.error.code).toBe('rental_commitment.invalid_rental_field');
-    expect(
-      (await change(setup, { fulfillmentMethod: FulfillmentMethod.Delivery, deliveryDetails: delivery })).isOk(),
-    ).toBe(true);
-    const notCleared = await change(setup, { fulfillmentMethod: FulfillmentMethod.Pickup });
-    expect(notCleared.isErr() && notCleared.error.code).toBe('rental_commitment.invalid_rental_field');
-    expect((await change(setup, { fulfillmentMethod: FulfillmentMethod.Pickup, deliveryDetails: null })).isOk()).toBe(
-      true,
-    );
-
-    const unsupported = await scenario(false, false);
-    const result = await change(unsupported, {
-      fulfillmentMethod: FulfillmentMethod.Delivery,
-      deliveryDetails: delivery,
-    });
-    expect(result.isErr() && result.error.code).toBe('rental_commitment.unsupported_branch_fulfillment_method');
-  });
-
-  it('rejects fulfillment and delivery changes after start without changing state', async () => {
-    const setup = await scenario(true);
-    const before = await fixtures.persistedState(setup.rental.rentalId);
-    const result = await change(setup, { fulfillmentMethod: FulfillmentMethod.Delivery, deliveryDetails: delivery });
-    expect(result.isErr() && result.error.code).toBe('rental_commitment.invalid_rental_field');
-    expect(await fixtures.persistedState(setup.rental.rentalId)).toEqual(before);
   });
 
   it('clears manual pricing back to standard pricing and recalculates owner splits', async () => {

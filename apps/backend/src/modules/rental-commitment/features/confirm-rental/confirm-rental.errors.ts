@@ -7,12 +7,12 @@ export type ConfirmRentalErrorCode =
   | 'rental_commitment.rental_confirmation_requires_customer'
   | 'rental_commitment.confirmed_rental_requires_price_snapshot'
   | 'rental_commitment.insufficient_asset_availability'
+  | 'rental_commitment.delivery_not_serviceable'
   | 'rental_commitment.duplicate_assigned_asset'
   | 'rental_commitment.invalid_rental_field'
   | 'rental_commitment.tenant_unavailable'
   | 'rental_commitment.branch_unavailable'
-  | 'rental_commitment.customer_unavailable'
-  | 'rental_commitment.unsupported_branch_fulfillment_method';
+  | 'rental_commitment.customer_unavailable';
 
 export interface ConfirmRentalError extends ApplicationError {
   code: ConfirmRentalErrorCode;

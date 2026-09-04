@@ -34,6 +34,10 @@ export function formatAcceptedPricingForRentalRemito(pricing: AcceptedRentalPric
   return formatCurrency(Number(pricing.total.amount), pricing.total.currency);
 }
 
+export function formatAcceptedCustomerTotalForRentalRemito(amount: string, currency: string): string {
+  return formatCurrency(Number(amount), currency);
+}
+
 function formatCurrency(amount: number, currency: string): string {
   try {
     return new Intl.NumberFormat(resolveLocaleForCurrency(currency), {

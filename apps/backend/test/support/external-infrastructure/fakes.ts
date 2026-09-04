@@ -1,10 +1,21 @@
 import { Readable } from 'node:stream';
 
 import {
+  RoadRouteDistanceInput,
+  RoadRouteDistanceProvider,
+  RoadRouteDistanceResult,
+} from '../../../src/modules/delivery/application/ports/road-route-distance-provider.port';
+import {
   EmailDeliveryPort,
   EmailDeliveryResult,
   EmailMessage,
 } from '../../../src/modules/notifications/application/ports/email-delivery.port';
+import {
+  AddressGeocoder,
+  ResolveAddressInput,
+  SearchAddressesInput,
+} from '../../../src/modules/shared/geocoding/address-geocoder.port';
+import { GeocodedLocation } from '../../../src/modules/shared/geocoding/geocoded-location';
 import {
   DeleteObjectInput,
   GetObjectInput,
@@ -20,6 +31,40 @@ import {
   VerifiedGoogleIdentity,
   VerifyGoogleAuthorizationCodeParams,
 } from '../../../src/modules/tenant-management/auth/shared/google/google-identity-verifier.port';
+
+export class FakeAddressGeocoder extends AddressGeocoder {
+  readonly resolveCalls: ResolveAddressInput[] = [];
+  private readonly resolutions = new Map<string, GeocodedLocation>();
+
+  constructor(resolutions: Readonly<Record<string, GeocodedLocation>> = {}) {
+    super();
+    for (const [locationId, location] of Object.entries(resolutions)) {
+      this.resolutions.set(locationId, location);
+    }
+  }
+
+  async search(_input: SearchAddressesInput): Promise<readonly []> {
+    return [];
+  }
+
+  async resolve(input: ResolveAddressInput): Promise<GeocodedLocation | null> {
+    this.resolveCalls.push(input);
+    return this.resolutions.get(input.locationId) ?? null;
+  }
+}
+
+export class FakeRoadRouteDistanceProvider extends RoadRouteDistanceProvider {
+  readonly calls: RoadRouteDistanceInput[] = [];
+
+  constructor(private readonly distanceMeters: number) {
+    super();
+  }
+
+  async getDrivingDistance(input: RoadRouteDistanceInput): Promise<RoadRouteDistanceResult> {
+    this.calls.push(input);
+    return { outcome: 'ROUTE_FOUND', distanceMeters: this.distanceMeters };
+  }
+}
 
 export class FakeEmailDeliveryPort extends EmailDeliveryPort {
   readonly calls: EmailMessage[] = [];

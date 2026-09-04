@@ -48,24 +48,20 @@
       </tbody>
     </table>
 
-    <h2>Understand the two discount targets</h2>
+    <h2>Resolve participating lines</h2>
     <div class="card">
-      <h3>Eligible lines</h3>
-      <p>The engine calculates and allocates the discount only on the lines that match the promotion scope.</p>
-    </div>
-    <div class="card">
-      <h3>Whole order</h3>
-      <p>The engine calculates from, and allocates across, all order lines. The scope still matters: one matching line makes the promotion eligible.</p>
+      <h3>Scope and exclusions</h3>
+      <p>Scope determines the candidate participating lines. Exclusions remove lines from that scope. Conditions are evaluated from the remaining eligible lines, and the effect is calculated from and allocated only to those lines.</p>
     </div>
     <aside class="callout">
-      <strong>Important:</strong> A category-scoped promotion with target <code>ORDER</code> discounts the full order if one line is in that category. Use <code>ELIGIBLE_LINES</code> when only that category must receive the discount.
+      <strong>Core rule:</strong> A promotion can qualify from and financially affect only the lines inside its resolved scope after exclusions. For a whole-order promotion, use an all-lines scope with no exclusions.
     </aside>
 
     <h2>Follow one calculation</h2>
-    <p>An order has a camera for 100 and a tripod for 50. A 20% camera promotion has target <code>ELIGIBLE_LINES</code>. A 10% order promotion has target <code>ORDER</code>.</p>
+    <p>An order has a camera for 100 and a tripod for 50. A 20% promotion is scoped to cameras. A 10% promotion uses an all-lines scope with no exclusions.</p>
     <ol>
       <li>The camera promotion reduces the camera from 100 to 80.</li>
-      <li>The order promotion calculates from the new total: 130, not 150.</li>
+      <li>The all-lines promotion calculates from the new total: 130, not 150.</li>
       <li>Its 13 discount is allocated across both current line totals.</li>
     </ol>
     <p>Each new discount uses the current totals. No line and no order total can become negative.</p>

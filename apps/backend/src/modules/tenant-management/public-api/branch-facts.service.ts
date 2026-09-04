@@ -29,14 +29,42 @@ export class BranchFactsService extends BranchFacts {
     const branchIds = [...new Set(input.branchIds)];
     if (branchIds.length === 0) return ok([]);
 
+    const result = await this.loadBranchFacts(input.tenantId, branchIds);
+    if (result.isErr()) return err(result.error);
+
+    const found = new Set(result.value.map((branch) => branch.branchId));
+    const missingBranchId = branchIds.find((branchId) => !found.has(branchId));
+    if (missingBranchId) return err(this.branchNotFound(missingBranchId));
+
+    return result;
+  }
+
+  async listBranchFacts(input: { tenantId: string }): Promise<Result<BranchFact[], BranchFactsError>> {
+    return this.loadBranchFacts(input.tenantId);
+  }
+
+  private async loadBranchFacts(
+    tenantId: string,
+    branchIds?: string[],
+  ): Promise<Result<BranchFact[], BranchFactsError>> {
     const branches = await this.prisma.client.v2Branch.findMany({
-      where: { tenantId: input.tenantId, id: { in: branchIds } },
+      where: { tenantId, ...(branchIds ? { id: { in: branchIds } } : {}) },
       select: {
         id: true,
-        supportsDelivery: true,
+        name: true,
         isActive: true,
         deletedAt: true,
         timezone: true,
+        operationalLocationFormattedAddress: true,
+        operationalLocationLatitude: true,
+        operationalLocationLongitude: true,
+        operationalLocationStreet: true,
+        operationalLocationStreetNumber: true,
+        operationalLocationCity: true,
+        operationalLocationStateRegion: true,
+        operationalLocationPostalCode: true,
+        operationalLocationCountry: true,
+        operationalLocationProviderPlaceId: true,
         tenant: { select: { config: true } },
       },
     });
@@ -45,34 +73,46 @@ export class BranchFactsService extends BranchFacts {
     if (branches.length > 0 && !config) {
       return err({
         code: 'TenantConfigurationInvalid',
-        message: `Tenant "${input.tenantId}" configuration is invalid.`,
+        message: `Tenant "${tenantId}" configuration is invalid.`,
       });
     }
 
-    let facts: BranchFact[];
     try {
-      facts = branches.map((branch) => ({
-        branchId: branch.id,
-        supportsDelivery: branch.supportsDelivery,
-        isActive: branch.isActive,
-        isDeleted: branch.deletedAt !== null,
-        effectiveTimezone: resolveEffectiveTimezone(branch.timezone, config!.timezone),
-        branchTimezone: branch.timezone,
-        tenantTimezone: config!.timezone,
-        timezoneSource: branch.timezone?.trim() ? 'BRANCH' : config!.timezone?.trim() ? 'TENANT' : 'DEFAULT',
-      }));
+      return ok(
+        branches.map((branch) => ({
+          branchId: branch.id,
+          displayName: branch.name,
+          isActive: branch.isActive,
+          isDeleted: branch.deletedAt !== null,
+          effectiveTimezone: resolveEffectiveTimezone(branch.timezone, config!.timezone),
+          operationalLocation:
+            branch.operationalLocationFormattedAddress !== null &&
+            branch.operationalLocationLatitude !== null &&
+            branch.operationalLocationLongitude !== null
+              ? {
+                  formattedAddress: branch.operationalLocationFormattedAddress,
+                  latitude: branch.operationalLocationLatitude,
+                  longitude: branch.operationalLocationLongitude,
+                  street: branch.operationalLocationStreet,
+                  streetNumber: branch.operationalLocationStreetNumber,
+                  city: branch.operationalLocationCity,
+                  stateRegion: branch.operationalLocationStateRegion,
+                  postalCode: branch.operationalLocationPostalCode,
+                  country: branch.operationalLocationCountry,
+                  providerPlaceId: branch.operationalLocationProviderPlaceId,
+                }
+              : null,
+          branchTimezone: branch.timezone,
+          tenantTimezone: config!.timezone,
+          timezoneSource: branch.timezone?.trim() ? 'BRANCH' : config!.timezone?.trim() ? 'TENANT' : 'DEFAULT',
+        })),
+      );
     } catch {
       return err({
         code: 'TenantConfigurationInvalid',
-        message: `Tenant "${input.tenantId}" configuration is invalid.`,
+        message: `Tenant "${tenantId}" configuration is invalid.`,
       });
     }
-
-    const found = new Set(facts.map((branch) => branch.branchId));
-    const missingBranchId = branchIds.find((branchId) => !found.has(branchId));
-    if (missingBranchId) return err(this.branchNotFound(missingBranchId));
-
-    return ok(facts);
   }
 
   private branchNotFound(branchId: string): BranchFactsError {

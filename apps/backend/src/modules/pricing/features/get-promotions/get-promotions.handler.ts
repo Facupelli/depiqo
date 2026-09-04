@@ -20,7 +20,6 @@ export class GetPromotionsHandler implements IQueryHandler<GetPromotionsQuery, G
         ...(query.isActive === undefined ? {} : { isActive: query.isActive }),
         ...(query.activation === undefined ? {} : { activation: query.activation }),
         ...(query.effectType === undefined ? {} : { effectType: query.effectType }),
-        ...(query.target === undefined ? {} : { target: query.target }),
         ...(query.search === undefined ? {} : { name: { contains: query.search, mode: 'insensitive' } }),
       },
       select: {
@@ -34,7 +33,6 @@ export class GetPromotionsHandler implements IQueryHandler<GetPromotionsQuery, G
         validUntil: true,
         effectType: true,
         effectValue: true,
-        target: true,
         minOrderSubtotal: true,
         minRentalUnits: true,
         maxRentalUnits: true,
@@ -73,7 +71,6 @@ export class GetPromotionsHandler implements IQueryHandler<GetPromotionsQuery, G
       validUntil: promotion.validUntil ? prismaDateToLocalDate(promotion.validUntil) : null,
       effectType: promotion.effectType,
       effectValue: promotion.effectValue.toString(),
-      target: promotion.target,
       minOrderSubtotal: promotion.minOrderSubtotal?.toString() ?? null,
       minRentalUnits: promotion.minRentalUnits,
       maxRentalUnits: promotion.maxRentalUnits,

@@ -17,15 +17,40 @@ export const GetRentalDetailPeriodSchema = z.object({
 });
 
 export const GetRentalDetailDeliveryDetailsSchema = z.object({
-	addressLine1: z.string(),
-	addressLine2: z.string().nullable(),
-	city: z.string(),
-	state: z.string().nullable(),
-	postalCode: z.string().nullable(),
-	country: z.string().nullable(),
-	contactName: z.string().nullable(),
-	contactPhone: z.string().nullable(),
-	notes: z.string().nullable(),
+	address: z.string(),
+});
+
+export const GetRentalDetailAcceptedDeliveryLocationSchema = z.object({
+	formattedAddress: z.string(),
+	latitude: z.number(),
+	longitude: z.number(),
+	addressLine1: z.string().optional(),
+	addressLine2: z.string().optional(),
+	city: z.string().optional(),
+	state: z.string().optional(),
+	postalCode: z.string().optional(),
+	country: z.string().optional(),
+	providerPlaceId: z.string().optional(),
+});
+
+export const GetRentalDetailAcceptedDeliveryLegSchema = z.object({
+	scheduledAt: z.string().datetime(),
+	serviceLevel: z.enum(["NORMAL", "SPECIAL"]),
+	basePrice: z.string(),
+	surcharge: z.string(),
+	total: z.string(),
+});
+
+export const GetRentalDetailAcceptedDeliverySchema = z.object({
+	schema: z.literal("v2.accepted-delivery"),
+	version: z.literal(1),
+	resolvedCustomerLocation: GetRentalDetailAcceptedDeliveryLocationSchema,
+	distanceMeters: z.number().int().nonnegative(),
+	delivery: GetRentalDetailAcceptedDeliveryLegSchema,
+	collection: GetRentalDetailAcceptedDeliveryLegSchema,
+	currency: z.string(),
+	deliveryTotal: z.string(),
+	transportReservationMinutes: z.number().int().nonnegative(),
 });
 
 export const GetRentalDetailAssignedAssetSchema = z.object({
@@ -79,11 +104,6 @@ export const GetRentalDetailPromotionEffectTypeSchema = z.enum([
 	"PERCENTAGE_OFF",
 	"FIXED_AMOUNT_OFF",
 ]);
-export const GetRentalDetailPromotionApplicationTargetSchema = z.enum([
-	"ORDER",
-	"ELIGIBLE_LINES",
-]);
-
 export const GetRentalDetailDurationPolicySnapshotSchema = z.object({
 	timezone: z.string(),
 	dailyBillingPolicy: GetRentalDetailDailyBillingPolicySchema,
@@ -152,7 +172,6 @@ export const GetRentalDetailAppliedPromotionSchema = z.object({
 	activation: GetRentalDetailPromotionActivationSchema,
 	effectType: GetRentalDetailPromotionEffectTypeSchema,
 	effectValue: z.string(),
-	target: GetRentalDetailPromotionApplicationTargetSchema,
 	amount: z.string(),
 });
 
@@ -217,12 +236,14 @@ export const GetRentalDetailResponseSchema = z.object({
 	branchId: z.string(),
 	period: GetRentalDetailPeriodSchema,
 	fulfillment: z.object({
-		method: GetRentalsFulfillmentMethodSchema.nullable(),
+		method: GetRentalsFulfillmentMethodSchema,
 		deliveryDetails: GetRentalDetailDeliveryDetailsSchema.nullable(),
 	}),
 	selections: z.array(GetRentalDetailSelectionSchema),
 	accessories: z.array(GetRentalDetailAccessorySchema),
 	pricing: GetRentalDetailPricingSchema.nullable(),
+	acceptedCustomerTotal: z.string().nullable(),
+	acceptedDelivery: GetRentalDetailAcceptedDeliverySchema.nullable(),
 	ownerPayouts: z.array(GetRentalDetailOwnerPayoutSchema),
 });
 
@@ -234,6 +255,15 @@ export type GetRentalDetailPeriodDto = z.infer<
 >;
 export type GetRentalDetailDeliveryDetailsDto = z.infer<
 	typeof GetRentalDetailDeliveryDetailsSchema
+>;
+export type GetRentalDetailAcceptedDeliveryLocationDto = z.infer<
+	typeof GetRentalDetailAcceptedDeliveryLocationSchema
+>;
+export type GetRentalDetailAcceptedDeliveryLegDto = z.infer<
+	typeof GetRentalDetailAcceptedDeliveryLegSchema
+>;
+export type GetRentalDetailAcceptedDeliveryDto = z.infer<
+	typeof GetRentalDetailAcceptedDeliverySchema
 >;
 export type GetRentalDetailAssignedAssetDto = z.infer<
 	typeof GetRentalDetailAssignedAssetSchema
@@ -261,9 +291,6 @@ export type GetRentalDetailPromotionActivationDto = z.infer<
 >;
 export type GetRentalDetailPromotionEffectTypeDto = z.infer<
 	typeof GetRentalDetailPromotionEffectTypeSchema
->;
-export type GetRentalDetailPromotionApplicationTargetDto = z.infer<
-	typeof GetRentalDetailPromotionApplicationTargetSchema
 >;
 export type GetRentalDetailDurationPolicySnapshotDto = z.infer<
 	typeof GetRentalDetailDurationPolicySnapshotSchema

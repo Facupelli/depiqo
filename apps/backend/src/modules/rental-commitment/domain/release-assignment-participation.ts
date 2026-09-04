@@ -1,10 +1,11 @@
 import { err, ok, Result } from 'neverthrow';
 
 import { AssetBlock } from './asset-block.entity';
-import { deriveBufferedAssetBlockPeriod } from './asset-block-period';
+import { deriveConfirmedAssetBlockPeriod } from './confirmed-asset-block-period';
 import { AssignedAsset } from './assigned-asset.entity';
 import { RentalCommitmentError } from './errors/rental-commitment.errors';
 import type { AcceptedRentalAssetBuffer } from './rental.aggregate';
+import { AcceptedDeliverySnapshot } from './value-objects/accepted-delivery-snapshot.value-object';
 import { RentalPeriod } from './value-objects/rental-period.value-object';
 
 interface EndAssignmentParticipationParams {
@@ -13,6 +14,7 @@ interface EndAssignmentParticipationParams {
   effectiveAt: Date;
   rentalStart: Date;
   acceptedAssetBuffer: AcceptedRentalAssetBuffer;
+  acceptedDelivery?: AcceptedDeliverySnapshot;
 }
 
 interface EndedAssignmentParticipation {
@@ -43,10 +45,11 @@ export function endAssignmentParticipation(
   if (closed.isErr()) return err(closed.error);
 
   const participationPeriod = new RentalPeriod(assignment.effectiveFrom, params.effectiveAt);
-  const period = deriveBufferedAssetBlockPeriod({
+  const period = deriveConfirmedAssetBlockPeriod({
     participationPeriod,
-    beforeBufferMinutes: params.acceptedAssetBuffer.beforeBufferMinutes,
-    afterBufferMinutes: params.acceptedAssetBuffer.afterBufferMinutes,
+    acceptedBeforeBufferMinutes: params.acceptedAssetBuffer.beforeBufferMinutes,
+    acceptedAfterBufferMinutes: params.acceptedAssetBuffer.afterBufferMinutes,
+    acceptedDelivery: params.acceptedDelivery,
     ...(assignment.effectiveFrom > params.rentalStart ? { clampStartAt: assignment.effectiveFrom } : {}),
   });
 

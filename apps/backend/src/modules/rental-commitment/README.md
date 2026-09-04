@@ -129,9 +129,9 @@ DELIVERY
   Tenant delivers equipment to a customer-provided address.
 ```
 
-Rental delivery details preserve the accepted delivery address and contact facts.
+At confirmation, Rental Commitment separately preserves the accepted provider-neutral Delivery snapshot when applicable. The accepted customer total exactly composes the accepted Pricing total with the accepted Delivery total without putting Delivery charges into the Pricing snapshot.
 
-If a delivery fee affects the accepted customer price, it also belongs in the confirmed price snapshot.
+Confirmed operational block timing uses only the rental's accepted before/after buffers and accepted Delivery transport reservation. Pickup contributes zero transport reservation.
 
 ### Accessory Selection and Assignment
 
@@ -190,7 +190,7 @@ Confirming a rental must consistently preserve its selections, expanded demand, 
 
 Confirmed rental changes use focused operations where implemented, including detail edits, additive selection, selection removal, quantity changes, and temporal asset replacement. Confirmed rental details may change before or during the active period. Once the rental starts, fulfillment method and delivery details are immutable, while notes, insurance selection, and manual pricing remain editable until the period ends. A manual pricing adjustment object applies target-total pricing; null removes an existing manual adjustment and restores standard pricing. Detail edits never replan selections, demand, assigned assets, blocks, accessories, or their history. Successful detail edits emit the existing confirmed-edited event, which invalidates existing Contracts state. Clients compose focused commands sequentially; there is no bundled multi-domain confirmed-edit endpoint. A confirmed rental's period and branch are immutable after confirmation. Unconfirmed (draft and pending) editing remains a separate broad rewrite path.
 
-Accessory preparation for a confirmed rental may create rental accessory selections, non-temporal accessory assignments, and accessory blocks. Physical accessory assignment is confirmed-only; pending rentals do not create accessory assignments or blocks. Before a confirmed rental starts, an accessory block covers the complete rental participation with the rental's persisted accepted before/after buffer. During a running rental, a newly assigned accessory starts at the assignment operation time without applying the before-buffer retroactively, while its block still extends through the accepted after-buffer. Removing an accessory deletes its current assignment and block without retaining temporal history.
+Accessory preparation for a confirmed rental may create rental accessory selections, non-temporal accessory assignments, and accessory blocks. Physical accessory assignment is confirmed-only; pending rentals do not create accessory assignments or blocks. Confirmed accessory blocks use the rental's accepted before/after buffer plus accepted Delivery transport reservation. Before a confirmed rental starts, an accessory block covers the complete rental participation. During a running rental, a newly assigned accessory starts at the assignment operation time without applying the before-buffer or transport reservation retroactively, while its block still extends through the accepted after-buffer and transport reservation. Removing an accessory deletes its current assignment and block without retaining temporal history.
 
 Contract signing does not automatically make a rental immutable.
 
@@ -284,6 +284,7 @@ rental asset candidate projection
 assigned asset references
 asset blocks
 confirmed price snapshots
+accepted Delivery snapshots and accepted customer totals
 rental delivery details
 rental accessory selections
 rental accessory asset assignments

@@ -9,7 +9,10 @@ import { AccessoryPreparationInventoryFacts } from 'src/modules/asset-inventory/
 import { TenantRentalAssetBufferSettings } from 'src/modules/tenant-management/public-api/tenant-rental-asset-buffer-settings.public-api';
 
 import { deriveBufferedAssetBlockPeriod } from '../../domain/asset-block-period';
+import { deriveConfirmedAssetBlockPeriod } from '../../domain/confirmed-asset-block-period';
 import { RentalInvalidFieldError } from '../../domain/errors/rental-commitment.errors';
+import { AcceptedDeliverySnapshot } from '../../domain/value-objects/accepted-delivery-snapshot.value-object';
+import { JsonValue } from '../../domain/value-objects/json-snapshot.value-object';
 import { RentalPeriod } from '../../domain/value-objects/rental-period.value-object';
 import {
   getRentalAccessoryDefaultsError,
@@ -47,6 +50,7 @@ export class GetRentalAccessoryDefaultsHandler implements IQueryHandler<
         periodEnd: true,
         acceptedBeforeBufferMinutes: true,
         acceptedAfterBufferMinutes: true,
+        deliverySnapshot: true,
         demandLines: {
           where: { removedAt: null },
           select: { id: true, equipmentTypeId: true, equipmentTypeNameSnapshot: true, quantity: true },
@@ -77,17 +81,27 @@ export class GetRentalAccessoryDefaultsHandler implements IQueryHandler<
     });
     if (inventory.defaults.length === 0) return ok({ rentalOrderId: rental.id, suggestions: [] });
 
-    const buffer =
-      rental.status === V2RentalStatus.CONFIRMED || rental.confirmedAt !== null
-        ? this.resolveAcceptedBuffer(rental.acceptedBeforeBufferMinutes, rental.acceptedAfterBufferMinutes)
-        : await this.resolveCurrentBuffer(query.tenantId);
+    const usesAcceptedFacts = rental.status === V2RentalStatus.CONFIRMED || rental.confirmedAt !== null;
+    const buffer = usesAcceptedFacts
+      ? this.resolveAcceptedBuffer(rental.acceptedBeforeBufferMinutes, rental.acceptedAfterBufferMinutes)
+      : await this.resolveCurrentBuffer(query.tenantId);
     const participationStart =
       operationTime >= rental.periodStart && operationTime < rental.periodEnd ? operationTime : rental.periodStart;
-    const operationalPeriod = deriveBufferedAssetBlockPeriod({
-      participationPeriod: new RentalPeriod(participationStart, rental.periodEnd),
-      ...buffer,
-      ...(participationStart === operationTime ? { clampStartAt: operationTime } : {}),
-    });
+    const participationPeriod = new RentalPeriod(participationStart, rental.periodEnd);
+    const clampStartAt = participationStart === operationTime ? operationTime : undefined;
+    const operationalPeriod = usesAcceptedFacts
+      ? deriveConfirmedAssetBlockPeriod({
+          participationPeriod,
+          acceptedBeforeBufferMinutes: buffer.beforeBufferMinutes,
+          acceptedAfterBufferMinutes: buffer.afterBufferMinutes,
+          acceptedDelivery: this.resolveAcceptedDelivery(rental.deliverySnapshot),
+          ...(clampStartAt ? { clampStartAt } : {}),
+        })
+      : deriveBufferedAssetBlockPeriod({
+          participationPeriod,
+          ...buffer,
+          ...(clampStartAt ? { clampStartAt } : {}),
+        });
 
     const blockedAssetIds = await this.findBlockedAssetIds({
       tenantId: query.tenantId,
@@ -127,6 +141,13 @@ export class GetRentalAccessoryDefaultsHandler implements IQueryHandler<
         })),
       ),
     });
+  }
+
+  private resolveAcceptedDelivery(snapshot: Prisma.JsonValue | null): AcceptedDeliverySnapshot | undefined {
+    if (snapshot === null) return undefined;
+    const acceptedDelivery = AcceptedDeliverySnapshot.create(snapshot as JsonValue);
+    if (acceptedDelivery.isErr()) throw acceptedDelivery.error;
+    return acceptedDelivery.value;
   }
 
   private resolveAcceptedBuffer(before: number | null, after: number | null) {

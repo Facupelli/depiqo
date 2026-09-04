@@ -1,9 +1,11 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { err, ok, Result } from 'neverthrow';
 
+import { BranchAddressResolver } from '../../application/services/branch-address-resolver.service';
 import {
   BranchScheduleOverlapError,
   InvalidBranchNameError,
+  InvalidBranchOperationalLocationError,
   InvalidBranchScheduleDayOfWeekError,
   InvalidBranchScheduleDaySpecificationError,
   InvalidBranchScheduleTypeError,
@@ -23,7 +25,10 @@ export class UpdateBranchHandler implements ICommandHandler<
   UpdateBranchCommand,
   Result<UpdateBranchResult, UpdateBranchError>
 > {
-  constructor(private readonly branchRepository: BranchRepository) {}
+  constructor(
+    private readonly branchRepository: BranchRepository,
+    private readonly branchAddressResolver: BranchAddressResolver,
+  ) {}
 
   async execute(command: UpdateBranchCommand): Promise<Result<UpdateBranchResult, UpdateBranchError>> {
     const context = {
@@ -44,15 +49,27 @@ export class UpdateBranchHandler implements ICommandHandler<
       );
     }
 
+    const addressResolution = await this.branchAddressResolver.resolve({
+      address: command.address,
+      addressLocationId: command.addressLocationId,
+      currentAddress: branch.getAddress(),
+      currentOperationalLocation: branch.getOperationalLocation(),
+    });
+    if (addressResolution.outcome === 'UNRESOLVED') {
+      return err(
+        updateBranchError(
+          'tenant_management.branch_address_unresolved',
+          'The branch address could not be resolved.',
+          undefined,
+          context,
+        ),
+      );
+    }
     const update = branch.updateDetails({
       name: command.name,
-      address: command.address,
+      address: addressResolution.address,
+      operationalLocation: addressResolution.operationalLocation,
       timezone: command.timezone,
-      supportsDelivery: command.supportsDelivery,
-      deliveryDefaultCountry: command.deliveryDefaultCountry,
-      deliveryDefaultStateRegion: command.deliveryDefaultStateRegion,
-      deliveryDefaultCity: command.deliveryDefaultCity,
-      deliveryDefaultPostalCode: command.deliveryDefaultPostalCode,
       schedules: command.schedules.map((schedule) => ({
         type: schedule.type,
         dayOfWeek: schedule.dayOfWeek,
@@ -68,7 +85,11 @@ export class UpdateBranchHandler implements ICommandHandler<
     if (update.isErr()) {
       const error = update.error;
 
-      if (error instanceof InvalidBranchNameError || error instanceof InvalidTimezoneError) {
+      if (
+        error instanceof InvalidBranchNameError ||
+        error instanceof InvalidBranchOperationalLocationError ||
+        error instanceof InvalidTimezoneError
+      ) {
         return err(updateBranchError('tenant_management.branch_invalid_input', error.message, error, context));
       }
 

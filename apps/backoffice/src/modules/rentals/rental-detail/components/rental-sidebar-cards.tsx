@@ -2,7 +2,6 @@ import { Button } from "@repo/ui/components/button";
 import {
 	ChevronDown,
 	Mail,
-	MapPin,
 	Pencil,
 	Phone,
 	ReceiptText,
@@ -10,7 +9,6 @@ import {
 	User2Icon,
 } from "lucide-react";
 import { type ReactNode, useState } from "react";
-import { useBranchDetail } from "@/modules/settings/branches/public";
 import { useBranchTimezone } from "@/shared/timezone/operational-timezone.hooks";
 import { formatMoney } from "@/shared/utils/formatters";
 import { AssignCustomerToDraftRentalDialog } from "../assign-customer/assign-customer-to-draft-rental-dialog";
@@ -109,74 +107,35 @@ function RentalClientCard() {
 
 function RentalLogisticsCard() {
 	const { rental } = useRentalDetailContext();
-	const delivery = rental.fulfillment.deliveryDetails;
-	const { data: branch, isLoading: isBranchLoading } = useBranchDetail(
-		rental.branchId,
-	);
+	const acceptedDelivery = rental.acceptedDelivery;
 	const timezone = useBranchTimezone(rental.branchId);
 
 	return (
 		<SidebarCard icon={<Truck className="size-4" />} title="Logística">
 			<div className="grid grid-cols-2 gap-x-6 gap-y-1 mb-4">
-				{isBranchLoading ? (
-					<>
-						<DateBlockSkeleton label="Fecha de retiro" />
-						<DateBlockSkeleton label="Fecha de devolución" />
-					</>
-				) : (
-					<>
-						<DateBlock
-							label="Fecha de retiro"
-							value={rental.period.start}
-							timezone={timezone}
-						/>
-						<DateBlock
-							label="Fecha de devolución"
-							value={rental.period.end}
-							timezone={timezone}
-						/>
-					</>
-				)}
+				<DateBlock
+					label="Fecha de retiro"
+					value={rental.period.start}
+					timezone={timezone}
+				/>
+				<DateBlock
+					label="Fecha de devolución"
+					value={rental.period.end}
+					timezone={timezone}
+				/>
 			</div>
-			<div className="border-t border-neutral-100 pt-3">
-				<p className="text-xs text-neutral-400 mb-1.5">
-					{rental.fulfillment.method === "DELIVERY"
-						? "Solicitó delivery"
-						: "Retiro en punto de entrega"}
-				</p>
-				<div className="flex items-center gap-2 text-sm font-medium text-neutral-900">
-					<MapPin className="size-3.5 text-neutral-400 shrink-0" />
-					{branch?.name ?? "Sucursal no encontrada"}
-				</div>
-			</div>
-			{delivery ? (
-				<div className="border-t border-neutral-100 mt-3 pt-3">
-					<p className="font-mono text-[10px] uppercase tracking-wider text-neutral-400 mb-2">
-						Pedido de Delivery
-					</p>
-					<div className="space-y-1 text-sm text-neutral-700">
-						{delivery.contactName && (
-							<p className="font-medium text-neutral-900">
-								{delivery.contactName}
-							</p>
-						)}
-						{delivery.contactPhone ? <p>{delivery.contactPhone}</p> : null}
-						<p>
-							{delivery.addressLine1}
-							{delivery.addressLine2 ? `, ${delivery.addressLine2}` : ""}
+			<div className="border-t border-neutral-100">
+				{acceptedDelivery ? (
+					<div className="mt-3">
+						<p className="font-mono text-[10px] uppercase tracking-wider text-neutral-400 mb-1">
+							Pedido de delivery
 						</p>
-						<p>
-							{[delivery.city, delivery.state, delivery.postalCode]
-								.filter(Boolean)
-								.join(", ")}
+						<p className="text-sm text-neutral-700">
+							{acceptedDelivery.resolvedCustomerLocation.formattedAddress}
 						</p>
-						{delivery.country ? <p>{delivery.country}</p> : null}
-						{delivery.notes ? (
-							<p className="text-neutral-500 pt-1">{delivery.notes}</p>
-						) : null}
 					</div>
-				</div>
-			) : null}
+				) : null}
+			</div>
 		</SidebarCard>
 	);
 }
@@ -205,17 +164,6 @@ function DateBlock({
 	);
 }
 
-function DateBlockSkeleton({ label }: { label: string }) {
-	return (
-		<div>
-			<p className="font-mono text-[10px] uppercase tracking-wider text-neutral-400 mb-0.5">
-				{label}
-			</p>
-			<p className="text-sm font-medium text-neutral-400">Cargando...</p>
-		</div>
-	);
-}
-
 function RentalFinancialsCard() {
 	const { rental } = useRentalDetailContext();
 	const [showItems, setShowItems] = useState(false);
@@ -234,6 +182,10 @@ function RentalFinancialsCard() {
 		);
 	}
 
+	const acceptedDelivery = rental.acceptedDelivery;
+	const headlineTotal = acceptedDelivery
+		? (rental.acceptedCustomerTotal ?? pricing.total)
+		: pricing.total;
 	const manualAdjustment = pricing.manualPricingAdjustment ?? null;
 	const canEditPrice =
 		rental.status === "CONFIRMED" && Date.now() < Date.parse(rental.period.end);
@@ -267,7 +219,7 @@ function RentalFinancialsCard() {
 				<div className="flex items-baseline justify-between pt-3 pb-3">
 					<span className="text-sm font-bold text-neutral-950">Total</span>
 					<span className="font-mono text-xl font-bold text-neutral-950 tracking-tight">
-						{formatMoney(pricing.total, pricing.currency)}
+						{formatMoney(headlineTotal, pricing.currency)}
 					</span>
 				</div>
 				<div className="border-t border-dashed border-neutral-200 pt-3 space-y-2">
@@ -283,6 +235,13 @@ function RentalFinancialsCard() {
 							currency={pricing.currency}
 							tone="success"
 							prefix="-"
+						/>
+					) : null}
+					{acceptedDelivery ? (
+						<MoneyRow
+							label="Delivery"
+							value={acceptedDelivery.deliveryTotal}
+							currency={acceptedDelivery.currency}
 						/>
 					) : null}
 					<div>

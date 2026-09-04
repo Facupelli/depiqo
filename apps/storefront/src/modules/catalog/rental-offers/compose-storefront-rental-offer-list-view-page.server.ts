@@ -59,7 +59,9 @@ export async function composeStorefrontRentalOfferListViewPage(
 	]);
 	const exactAvailabilityPeriod =
 		hasCandidatePeriod &&
-		scheduleSlots?.pickupSlots?.some((slot) => slot.instant === pickupInstant) &&
+		scheduleSlots?.pickupSlots?.some(
+			(slot) => slot.instant === pickupInstant,
+		) &&
 		scheduleSlots.returnSlots?.some((slot) => slot.instant === returnInstant)
 			? { periodStart: pickupInstant, periodEnd: returnInstant }
 			: null;
