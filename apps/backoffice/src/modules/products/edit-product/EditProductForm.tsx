@@ -24,7 +24,7 @@ import {
 } from "@repo/ui/components/table";
 import { Textarea } from "@repo/ui/components/textarea";
 import { useForm } from "@tanstack/react-form";
-import { Trash2 } from "lucide-react";
+import { Loader2, Trash2 } from "lucide-react";
 import { useId } from "react";
 import { CatalogImageUploader } from "@/shared/components/catalog-image-uploader";
 import {
@@ -44,6 +44,8 @@ interface EditProductFormProps {
 	isCategoriesLoading?: boolean;
 	equipmentTypes: SelectOption[];
 	equipmentSearch: string;
+	isEquipmentSearchFetching: boolean;
+	isEquipmentSearchError: boolean;
 	isPending: boolean;
 	onEquipmentSearchChange: (search: string) => void;
 	onSubmit: (values: EditProductFormValues) => Promise<void>;
@@ -57,6 +59,8 @@ export function EditProductForm({
 	isCategoriesLoading = false,
 	equipmentTypes,
 	equipmentSearch,
+	isEquipmentSearchFetching,
+	isEquipmentSearchError,
 	isPending,
 	onEquipmentSearchChange,
 	onSubmit,
@@ -235,38 +239,49 @@ export function EditProductForm({
 										</Field>
 										<Field>
 											<FieldLabel>Resultados</FieldLabel>
-											<Select
-												items={availableEquipmentTypes.map((equipmentType) => ({
-													value: equipmentType.id,
-													label: equipmentType.name,
-												}))}
-												value=""
-												onValueChange={(value) => {
-													const equipmentType = availableEquipmentTypes.find(
-														(item) => item.id === value,
-													);
-													if (!equipmentType) return;
-													field.pushValue({
-														equipmentTypeId: equipmentType.id,
-														equipmentTypeName: equipmentType.name,
-														quantityPerItem: 1,
-													});
-												}}
-											>
-												<SelectTrigger>
-													<SelectValue placeholder="Agregar equipo requerido" />
-												</SelectTrigger>
-												<SelectContent>
-													{availableEquipmentTypes.map((equipmentType) => (
-														<SelectItem
-															key={equipmentType.id}
-															value={equipmentType.id}
-														>
-															{equipmentType.name}
-														</SelectItem>
-													))}
-												</SelectContent>
-											</Select>
+											<div className="h-56 overflow-y-auto rounded-md border bg-background">
+												{isEquipmentSearchFetching ? (
+													<p className="flex h-full items-center justify-center gap-2 text-muted-foreground text-sm">
+														<Loader2 className="size-3.5 animate-spin" />
+														Buscando equipos...
+													</p>
+												) : isEquipmentSearchError ? (
+													<p className="flex h-full items-center justify-center px-4 text-center text-destructive text-sm">
+														No pudimos buscar equipos. Intenta nuevamente.
+													</p>
+												) : availableEquipmentTypes.length === 0 ? (
+													<p className="flex h-full items-center justify-center px-4 text-center text-muted-foreground text-sm">
+														No encontramos equipos.
+													</p>
+												) : (
+													<ul className="divide-y">
+														{availableEquipmentTypes.map((equipmentType) => (
+															<li
+																key={equipmentType.id}
+																className="flex min-h-12 items-center gap-3 px-3 py-2 transition-colors hover:bg-muted/50"
+															>
+																<span className="min-w-0 flex-1 text-sm">
+																	{equipmentType.name}
+																</span>
+																<Button
+																	type="button"
+																	variant="outline"
+																	size="sm"
+																	onClick={() =>
+																		field.pushValue({
+																			equipmentTypeId: equipmentType.id,
+																			equipmentTypeName: equipmentType.name,
+																			quantityPerItem: 1,
+																		})
+																	}
+																>
+																	Agregar
+																</Button>
+															</li>
+														))}
+													</ul>
+												)}
+											</div>
 										</Field>
 									</div>
 
