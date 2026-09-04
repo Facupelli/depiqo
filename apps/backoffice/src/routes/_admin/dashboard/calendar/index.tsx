@@ -1,20 +1,15 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useCallback } from "react";
 import { z } from "zod";
-import type { OrdersCalendarSearch } from "@/modules/rentals/rental-calendar/orders-calendar.utils";
+import {
+	ORDERS_CALENDAR_VIEWS,
+	type OrdersCalendarSearch,
+} from "@/modules/rentals/rental-calendar/orders-calendar.utils";
 import { OrdersCalendarPage } from "@/modules/rentals/rental-calendar/orders-calendar-page";
 import { AdminRouteError } from "@/shared/components/admin-route-error";
 
 const ordersCalendarSearchSchema = z.object({
-	view: z
-		.enum([
-			"dayGridDay",
-			"dayGridWeek",
-			"timeGridDay",
-			"timeGridWeek",
-			"dayGridMonth",
-		])
-		.optional(),
+	view: z.enum(ORDERS_CALENDAR_VIEWS).optional(),
 	date: z.iso.date().optional(),
 });
 
