@@ -41,10 +41,7 @@ export class BranchAddressResolver {
       return { outcome: 'RESOLVED', address: null, operationalLocation: null };
     }
 
-    if (
-      address === this.normalize(input.currentAddress) &&
-      input.currentOperationalLocation != null
-    ) {
+    if (address === this.normalize(input.currentAddress) && input.currentOperationalLocation != null) {
       return {
         outcome: 'RESOLVED',
         address,

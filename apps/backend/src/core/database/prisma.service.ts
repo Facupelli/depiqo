@@ -49,25 +49,13 @@ const READ_WITH_WHERE_OPS = new Set([
   'groupBy',
 ]);
 
-const MUTATE_WITH_WHERE_OPS = new Set([
-  'update',
-  'updateMany',
-  'delete',
-  'deleteMany',
-]);
+const MUTATE_WITH_WHERE_OPS = new Set(['update', 'updateMany', 'delete', 'deleteMany']);
 
 function requiresTenantWhere(operation: string): boolean {
-  return (
-    READ_WITH_WHERE_OPS.has(operation) ||
-    MUTATE_WITH_WHERE_OPS.has(operation)
-  );
+  return READ_WITH_WHERE_OPS.has(operation) || MUTATE_WITH_WHERE_OPS.has(operation);
 }
 
-export function injectTenantId(
-  operation: string,
-  args: Record<string, any>,
-  tenantId: string,
-): Record<string, any> {
+export function injectTenantId(operation: string, args: Record<string, any>, tenantId: string): Record<string, any> {
   if (!requiresTenantWhere(operation)) {
     return args;
   }
@@ -81,10 +69,7 @@ export function injectTenantId(
   };
 }
 
-function createExtendedClient(
-  prisma: PrismaClient,
-  tenantContext: TenantContextService,
-) {
+function createExtendedClient(prisma: PrismaClient, tenantContext: TenantContextService) {
   const tenantScopedClient = prisma.$extends({
     name: 'tenant-scope',
 
@@ -101,11 +86,7 @@ function createExtendedClient(
             return query(args);
           }
 
-          const mutatedArgs = injectTenantId(
-            operation,
-            args as Record<string, any>,
-            tenantId,
-          ) as typeof args;
+          const mutatedArgs = injectTenantId(operation, args as Record<string, any>, tenantId) as typeof args;
 
           return query(mutatedArgs);
         },
@@ -150,10 +131,7 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
 
     this.prisma = new PrismaClient({ adapter });
 
-    this.extendedClient = createExtendedClient(
-      this.prisma,
-      tenantContext,
-    );
+    this.extendedClient = createExtendedClient(this.prisma, tenantContext);
   }
 
   async onModuleInit(): Promise<void> {

@@ -16,11 +16,7 @@ export type ResolveAddressInput = {
 };
 
 export abstract class AddressGeocoder {
-  abstract search(
-    input: SearchAddressesInput,
-  ): Promise<readonly AddressSuggestion[]>;
+  abstract search(input: SearchAddressesInput): Promise<readonly AddressSuggestion[]>;
 
-  abstract resolve(
-    input: ResolveAddressInput,
-  ): Promise<GeocodedLocation | null>;
+  abstract resolve(input: ResolveAddressInput): Promise<GeocodedLocation | null>;
 }

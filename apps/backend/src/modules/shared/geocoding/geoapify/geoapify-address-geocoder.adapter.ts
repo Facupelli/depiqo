@@ -31,18 +31,12 @@ interface GeoapifyPlaceDetailsFeature {
 
 @Injectable()
 export class GeoapifyAddressGeocoderAdapter extends AddressGeocoder {
-  constructor(
-    private readonly httpClient: GeoapifyGeocodingHttpClient,
-  ) {
+  constructor(private readonly httpClient: GeoapifyGeocodingHttpClient) {
     super();
   }
 
-  async search(
-    input: SearchAddressesInput,
-  ): Promise<readonly AddressSuggestion[]> {
-    const url = new URL(
-      'https://api.geoapify.com/v1/geocode/autocomplete',
-    );
+  async search(input: SearchAddressesInput): Promise<readonly AddressSuggestion[]> {
+    const url = new URL('https://api.geoapify.com/v1/geocode/autocomplete');
 
     url.searchParams.set('text', input.text);
     url.searchParams.set('format', 'json');
@@ -52,17 +46,11 @@ export class GeoapifyAddressGeocoderAdapter extends AddressGeocoder {
 
     const body = await this.httpClient.getJson(url);
 
-    return this.readResults(body).map((result) =>
-      this.toSuggestion(result),
-    );
+    return this.readResults(body).map((result) => this.toSuggestion(result));
   }
 
-  async resolve(
-    input: ResolveAddressInput,
-  ): Promise<GeocodedLocation | null> {
-    const url = new URL(
-      'https://api.geoapify.com/v2/place-details',
-    );
+  async resolve(input: ResolveAddressInput): Promise<GeocodedLocation | null> {
+    const url = new URL('https://api.geoapify.com/v2/place-details');
 
     url.searchParams.set('id', input.locationId);
     url.searchParams.set('lang', 'es');
@@ -73,9 +61,7 @@ export class GeoapifyAddressGeocoderAdapter extends AddressGeocoder {
     if (!feature) return null;
 
     if (!this.isRecord(feature.properties)) {
-      throw this.httpClient.malformedResponse(
-        'a place details feature has malformed properties.',
-      );
+      throw this.httpClient.malformedResponse('a place details feature has malformed properties.');
     }
 
     return this.toLocation(feature.properties, input.locationId);
@@ -83,21 +69,15 @@ export class GeoapifyAddressGeocoderAdapter extends AddressGeocoder {
 
   private readResults(body: unknown): GeoapifyGeocodingResult[] {
     if (!this.isRecord(body) || !Array.isArray(body.results)) {
-      throw this.httpClient.malformedResponse(
-        'results must be an array.',
-      );
+      throw this.httpClient.malformedResponse('results must be an array.');
     }
 
     return body.results as GeoapifyGeocodingResult[];
   }
 
-  private readDetailsFeature(
-    body: unknown,
-  ): GeoapifyPlaceDetailsFeature | null {
+  private readDetailsFeature(body: unknown): GeoapifyPlaceDetailsFeature | null {
     if (!this.isRecord(body) || !Array.isArray(body.features)) {
-      throw this.httpClient.malformedResponse(
-        'features must be an array.',
-      );
+      throw this.httpClient.malformedResponse('features must be an array.');
     }
 
     if (body.features.length === 0) return null;
@@ -105,30 +85,22 @@ export class GeoapifyAddressGeocoderAdapter extends AddressGeocoder {
     const feature: unknown = body.features[0];
 
     if (!this.isRecord(feature)) {
-      throw this.httpClient.malformedResponse(
-        'a place details feature is malformed.',
-      );
+      throw this.httpClient.malformedResponse('a place details feature is malformed.');
     }
 
     return feature;
   }
 
-  private toSuggestion(
-    result: GeoapifyGeocodingResult,
-  ): AddressSuggestion {
+  private toSuggestion(result: GeoapifyGeocodingResult): AddressSuggestion {
     if (!this.isRecord(result)) {
-      throw this.httpClient.malformedResponse(
-        'an address suggestion is malformed.',
-      );
+      throw this.httpClient.malformedResponse('an address suggestion is malformed.');
     }
 
     const locationId = this.optionalString(result.place_id);
     const formattedAddress = this.optionalString(result.formatted);
 
     if (!locationId || !formattedAddress) {
-      throw this.httpClient.malformedResponse(
-        'an address suggestion is missing its formatted address or identifier.',
-      );
+      throw this.httpClient.malformedResponse('an address suggestion is missing its formatted address or identifier.');
     }
 
     return {
@@ -139,37 +111,23 @@ export class GeoapifyAddressGeocoderAdapter extends AddressGeocoder {
     };
   }
 
-  private toLocation(
-    result: GeoapifyGeocodingResult,
-    providerPlaceIdOverride?: string,
-  ): GeocodedLocation {
+  private toLocation(result: GeoapifyGeocodingResult, providerPlaceIdOverride?: string): GeocodedLocation {
     if (!this.isRecord(result)) {
-      throw this.httpClient.malformedResponse(
-        'a geocoding result is malformed.',
-      );
+      throw this.httpClient.malformedResponse('a geocoding result is malformed.');
     }
 
     const latitude = result.lat;
     const longitude = result.lon;
 
-    if (
-      !this.isValidLatitude(latitude) ||
-      !this.isValidLongitude(longitude)
-    ) {
-      throw this.httpClient.malformedResponse(
-        'a geocoding result has invalid coordinates.',
-      );
+    if (!this.isValidLatitude(latitude) || !this.isValidLongitude(longitude)) {
+      throw this.httpClient.malformedResponse('a geocoding result has invalid coordinates.');
     }
 
     const formattedAddress = this.optionalString(result.formatted);
-    const providerPlaceId =
-      providerPlaceIdOverride ??
-      this.optionalString(result.place_id);
+    const providerPlaceId = providerPlaceIdOverride ?? this.optionalString(result.place_id);
 
     if (!formattedAddress || !providerPlaceId) {
-      throw this.httpClient.malformedResponse(
-        'a geocoding result is missing its formatted address or identifier.',
-      );
+      throw this.httpClient.malformedResponse('a geocoding result is missing its formatted address or identifier.');
     }
 
     return {
@@ -187,32 +145,18 @@ export class GeoapifyAddressGeocoderAdapter extends AddressGeocoder {
   }
 
   private optionalString(value: unknown): string | undefined {
-    return typeof value === 'string' && value.trim() !== ''
-      ? value.trim()
-      : undefined;
+    return typeof value === 'string' && value.trim() !== '' ? value.trim() : undefined;
   }
 
   private isValidLongitude(value: unknown): value is number {
-    return (
-      typeof value === 'number' &&
-      Number.isFinite(value) &&
-      value >= -180 &&
-      value <= 180
-    );
+    return typeof value === 'number' && Number.isFinite(value) && value >= -180 && value <= 180;
   }
 
   private isValidLatitude(value: unknown): value is number {
-    return (
-      typeof value === 'number' &&
-      Number.isFinite(value) &&
-      value >= -90 &&
-      value <= 90
-    );
+    return typeof value === 'number' && Number.isFinite(value) && value >= -90 && value <= 90;
   }
 
-  private isRecord(
-    value: unknown,
-  ): value is Record<string, unknown> {
+  private isRecord(value: unknown): value is Record<string, unknown> {
     return typeof value === 'object' && value !== null;
   }
 }

@@ -15,29 +15,20 @@ interface GeoapifyRoute {
 
 @Injectable()
 export class GeoapifyRoadRouteDistanceProviderAdapter extends RoadRouteDistanceProvider {
-  constructor(
-    private readonly httpClient: GeoapifyRoutingHttpClient,
-  ) {
+  constructor(private readonly httpClient: GeoapifyRoutingHttpClient) {
     super();
   }
 
-  async getDrivingDistance(
-    input: RoadRouteDistanceInput,
-  ): Promise<RoadRouteDistanceResult> {
+  async getDrivingDistance(input: RoadRouteDistanceInput): Promise<RoadRouteDistanceResult> {
     this.assertCoordinates(input.origin);
     this.assertCoordinates(input.destination);
 
-    const origin =
-      `lonlat:${input.origin.longitude},${input.origin.latitude}`;
-    const destination =
-      `lonlat:${input.destination.longitude},${input.destination.latitude}`;
+    const origin = `lonlat:${input.origin.longitude},${input.origin.latitude}`;
+    const destination = `lonlat:${input.destination.longitude},${input.destination.latitude}`;
 
     const url = new URL('https://api.geoapify.com/v1/routing');
 
-    url.searchParams.set(
-      'waypoints',
-      `${origin}|${destination}`,
-    );
+    url.searchParams.set('waypoints', `${origin}|${destination}`);
     url.searchParams.set('mode', 'drive');
     url.searchParams.set('type', 'balanced');
     url.searchParams.set('units', 'metric');
@@ -46,9 +37,7 @@ export class GeoapifyRoadRouteDistanceProviderAdapter extends RoadRouteDistanceP
     const body = await this.httpClient.getJson(url);
 
     if (!this.isRecord(body) || !Array.isArray(body.results)) {
-      throw this.httpClient.malformedResponse(
-        'results must be an array.',
-      );
+      throw this.httpClient.malformedResponse('results must be an array.');
     }
 
     if (body.results.length === 0) {
@@ -63,9 +52,7 @@ export class GeoapifyRoadRouteDistanceProviderAdapter extends RoadRouteDistanceP
       !Number.isFinite(route.distance) ||
       route.distance < 0
     ) {
-      throw this.httpClient.malformedResponse(
-        'the route distance is invalid.',
-      );
+      throw this.httpClient.malformedResponse('the route distance is invalid.');
     }
 
     return {
@@ -83,15 +70,11 @@ export class GeoapifyRoadRouteDistanceProviderAdapter extends RoadRouteDistanceP
       coordinates.longitude < -180 ||
       coordinates.longitude > 180
     ) {
-      throw this.httpClient.malformedResponse(
-        'routing coordinates are invalid.',
-      );
+      throw this.httpClient.malformedResponse('routing coordinates are invalid.');
     }
   }
 
-  private isRecord(
-    value: unknown,
-  ): value is Record<string, unknown> {
+  private isRecord(value: unknown): value is Record<string, unknown> {
     return typeof value === 'object' && value !== null;
   }
 }

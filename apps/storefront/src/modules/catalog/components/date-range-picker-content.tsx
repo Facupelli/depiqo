@@ -14,8 +14,8 @@ import { es } from "date-fns/locale";
 import type { DateRange } from "react-day-picker";
 import { localDateToDateParam } from "@/lib/dates/parse";
 import {
-	useStorefrontBranchSchedules,
 	useStorefrontBranchScheduleSlots,
+	useStorefrontBranchSchedules,
 } from "@/modules/tenant-management/branches/branch-schedule.queries";
 
 type StorefrontBranchScheduleSlotType =
@@ -43,9 +43,7 @@ export function DateRangePickerContent({
 	numberOfMonths,
 }: DateRangePickerContentProps) {
 	const { data: schedules } = useStorefrontBranchSchedules(branchId);
-	const periodStart = value.from
-		? localDateToDateParam(value.from)
-		: undefined;
+	const periodStart = value.from ? localDateToDateParam(value.from) : undefined;
 	const periodEnd = value.to ? localDateToDateParam(value.to) : undefined;
 	const { data: slots, isLoading } = useStorefrontBranchScheduleSlots(
 		branchId,
@@ -134,7 +132,9 @@ function TimeSelector({
 				value={value}
 				disabled={loading || slots?.length === 0}
 				onValueChange={(nextValue: string | null) => {
-					const slot = slots?.find((candidate) => candidate.instant === nextValue);
+					const slot = slots?.find(
+						(candidate) => candidate.instant === nextValue,
+					);
 					if (slot) onChange(slot);
 				}}
 				items={slots?.map((slot) => ({
@@ -181,8 +181,7 @@ function isScheduleBoundaryDisabled(
 
 	const typedSchedules = schedules.filter((schedule) => schedule.type === type);
 	const overrideSchedules = typedSchedules.filter(
-		(schedule) =>
-			schedule.specificDate === localDateToDateParam(date),
+		(schedule) => schedule.specificDate === localDateToDateParam(date),
 	);
 
 	if (overrideSchedules.length > 0) return false;

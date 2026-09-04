@@ -2,7 +2,6 @@ import { Button } from "@repo/ui/components/button";
 import {
 	ChevronDown,
 	Mail,
-	MapPin,
 	Pencil,
 	Phone,
 	ReceiptText,
@@ -10,7 +9,6 @@ import {
 	User2Icon,
 } from "lucide-react";
 import { type ReactNode, useState } from "react";
-import { useBranchDetail } from "@/modules/settings/branches/public";
 import { useBranchTimezone } from "@/shared/timezone/operational-timezone.hooks";
 import { formatMoney } from "@/shared/utils/formatters";
 import { AssignCustomerToDraftRentalDialog } from "../assign-customer/assign-customer-to-draft-rental-dialog";
@@ -110,36 +108,24 @@ function RentalClientCard() {
 function RentalLogisticsCard() {
 	const { rental } = useRentalDetailContext();
 	const acceptedDelivery = rental.acceptedDelivery;
-	const { data: branch, isLoading: isBranchLoading } = useBranchDetail(
-		rental.branchId,
-	);
 	const timezone = useBranchTimezone(rental.branchId);
 
 	return (
 		<SidebarCard icon={<Truck className="size-4" />} title="Logística">
 			<div className="grid grid-cols-2 gap-x-6 gap-y-1 mb-4">
-				{isBranchLoading ? (
-					<>
-						<DateBlockSkeleton label="Fecha de retiro" />
-						<DateBlockSkeleton label="Fecha de devolución" />
-					</>
-				) : (
-					<>
-						<DateBlock
-							label="Fecha de retiro"
-							value={rental.period.start}
-							timezone={timezone}
-						/>
-						<DateBlock
-							label="Fecha de devolución"
-							value={rental.period.end}
-							timezone={timezone}
-						/>
-					</>
-				)}
+				<DateBlock
+					label="Fecha de retiro"
+					value={rental.period.start}
+					timezone={timezone}
+				/>
+				<DateBlock
+					label="Fecha de devolución"
+					value={rental.period.end}
+					timezone={timezone}
+				/>
 			</div>
 			<div className="border-t border-neutral-100">
-		  	{acceptedDelivery ? (
+				{acceptedDelivery ? (
 					<div className="mt-3">
 						<p className="font-mono text-[10px] uppercase tracking-wider text-neutral-400 mb-1">
 							Pedido de delivery
@@ -174,17 +160,6 @@ function DateBlock({
 				<span className="text-neutral-400 mx-1">·</span>
 				{time}
 			</p>
-		</div>
-	);
-}
-
-function DateBlockSkeleton({ label }: { label: string }) {
-	return (
-		<div>
-			<p className="font-mono text-[10px] uppercase tracking-wider text-neutral-400 mb-0.5">
-				{label}
-			</p>
-			<p className="text-sm font-medium text-neutral-400">Cargando...</p>
 		</div>
 	);
 }

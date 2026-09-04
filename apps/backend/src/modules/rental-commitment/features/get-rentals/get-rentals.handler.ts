@@ -6,10 +6,7 @@ import type {
   GetRentalsSortDirectionDto,
 } from '@repo/api-contracts';
 import { Prisma } from 'src/generated/prisma/client';
-import {
-  V2FulfillmentMethod,
-  V2RentalStatus,
-} from 'src/generated/prisma/enums';
+import { V2FulfillmentMethod, V2RentalStatus } from 'src/generated/prisma/enums';
 
 import { PrismaService } from 'src/core/database/prisma.service';
 import { BranchFacts } from 'src/modules/tenant-management/public-api/branch-facts.public-api';
@@ -36,10 +33,7 @@ type RawCountRow = {
   total: bigint | number;
 };
 
-const UPCOMING_EXCLUDED_STATUSES = [
-  V2RentalStatus.COMPLETED,
-  V2RentalStatus.CANCELLED,
-] as const;
+const UPCOMING_EXCLUDED_STATUSES = [V2RentalStatus.COMPLETED, V2RentalStatus.CANCELLED] as const;
 
 const PICKUP_LOCAL_DATE_SQL = Prisma.sql`
   (r.period_start AT TIME ZONE bf.effective_timezone)::date
@@ -54,9 +48,7 @@ const TODAY_LOCAL_DATE_SQL = Prisma.sql`
 `;
 
 @QueryHandler(GetRentalsQuery)
-export class GetRentalsHandler
-  implements IQueryHandler<GetRentalsQuery, GetRentalsResponseDto>
-{
+export class GetRentalsHandler implements IQueryHandler<GetRentalsQuery, GetRentalsResponseDto> {
   constructor(
     private readonly prisma: PrismaService,
     private readonly branchFacts: BranchFacts,
@@ -74,15 +66,10 @@ export class GetRentalsHandler
     }
 
     const effectiveTimezoneByBranchId = new Map(
-      branchFactsResult.value.map((branch) => [
-        branch.branchId,
-        branch.effectiveTimezone,
-      ]),
+      branchFactsResult.value.map((branch) => [branch.branchId, branch.effectiveTimezone]),
     );
 
-    const branchFactsCte = this.buildBranchFactsCte(
-      effectiveTimezoneByBranchId,
-    );
+    const branchFactsCte = this.buildBranchFactsCte(effectiveTimezoneByBranchId);
 
     const offset = (query.page - 1) * query.limit;
     const whereFilters = this.buildWhereFilters(query);
@@ -154,12 +141,9 @@ export class GetRentalsHandler
     };
   }
 
-  private buildBranchFactsCte(
-    effectiveTimezoneByBranchId: Map<string, string>,
-  ): Prisma.Sql {
+  private buildBranchFactsCte(effectiveTimezoneByBranchId: Map<string, string>): Prisma.Sql {
     const rows = [...effectiveTimezoneByBranchId].map(
-      ([branchId, effectiveTimezone]) =>
-        Prisma.sql`(${branchId}::text, ${effectiveTimezone}::text)`,
+      ([branchId, effectiveTimezone]) => Prisma.sql`(${branchId}::text, ${effectiveTimezone}::text)`,
     );
 
     if (rows.length === 0) {
@@ -178,20 +162,14 @@ export class GetRentalsHandler
   }
 
   private buildWhereFilters(query: GetRentalsQuery): Prisma.Sql[] {
-    const filters: Prisma.Sql[] = [
-      Prisma.sql`r.tenant_id = ${query.tenantId}`,
-    ];
+    const filters: Prisma.Sql[] = [Prisma.sql`r.tenant_id = ${query.tenantId}`];
 
     if (query.branchId) {
-      filters.push(
-        Prisma.sql`r.branch_id = ${query.branchId}`,
-      );
+      filters.push(Prisma.sql`r.branch_id = ${query.branchId}`);
     }
 
     if (query.customerId) {
-      filters.push(
-        Prisma.sql`r.customer_id = ${query.customerId}`,
-      );
+      filters.push(Prisma.sql`r.customer_id = ${query.customerId}`);
     }
 
     if (query.statuses?.length) {
@@ -209,9 +187,7 @@ export class GetRentalsHandler
     return filters;
   }
 
-  private buildDateLensFilter(
-    dateLens: GetRentalsDateLensDto,
-  ): Prisma.Sql {
+  private buildDateLensFilter(dateLens: GetRentalsDateLensDto): Prisma.Sql {
     switch (dateLens) {
       case 'TODAY':
         return Prisma.sql`
@@ -245,23 +221,16 @@ export class GetRentalsHandler
     }
   }
 
-  private buildRentalStatusList(
-    statuses: readonly V2RentalStatus[],
-  ): Prisma.Sql {
+  private buildRentalStatusList(statuses: readonly V2RentalStatus[]): Prisma.Sql {
     return Prisma.join(
-      statuses.map(
-        (status) => Prisma.sql`${status}::"V2RentalStatus"`,
-      ),
+      statuses.map((status) => Prisma.sql`${status}::"V2RentalStatus"`),
       ', ',
     );
   }
 
   private buildOrderBy(query: GetRentalsQuery): Prisma.Sql {
     const { sortBy, sortDirection } = this.resolveSort(query);
-    const directionSql =
-      sortDirection === 'asc'
-        ? Prisma.sql`ASC`
-        : Prisma.sql`DESC`;
+    const directionSql = sortDirection === 'asc' ? Prisma.sql`ASC` : Prisma.sql`DESC`;
 
     switch (sortBy) {
       case 'pickupDate':
@@ -300,16 +269,12 @@ export class GetRentalsHandler
     }
 
     const sortBy = query.sortBy ?? fallback.sortBy;
-    const sortDirection =
-      query.sortDirection ??
-      this.getDefaultDirectionForSortBy(sortBy, query.dateLens);
+    const sortDirection = query.sortDirection ?? this.getDefaultDirectionForSortBy(sortBy, query.dateLens);
 
     return { sortBy, sortDirection };
   }
 
-  private getDefaultSort(
-    dateLens?: GetRentalsDateLensDto,
-  ): {
+  private getDefaultSort(dateLens?: GetRentalsDateLensDto): {
     sortBy: GetRentalsSortByDto;
     sortDirection: GetRentalsSortDirectionDto;
   } {
@@ -361,8 +326,6 @@ export class GetRentalsHandler
       return row.customerCompanyName;
     }
 
-    return `${row.customerFirstName ?? ''} ${
-      row.customerLastName ?? ''
-    }`.trim();
+    return `${row.customerFirstName ?? ''} ${row.customerLastName ?? ''}`.trim();
   }
 }

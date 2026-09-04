@@ -526,7 +526,12 @@ describe('CreateConfirmedRental integration', () => {
       }),
     );
     expect(state.rental.priceSnapshot).toEqual(
-      expect.objectContaining({ schema: 'v2.rental-price-snapshot', version: 3, context: 'CONFIRMED', total: '100.00' }),
+      expect.objectContaining({
+        schema: 'v2.rental-price-snapshot',
+        version: 3,
+        context: 'CONFIRMED',
+        total: '100.00',
+      }),
     );
     expect(state.rental.confirmedAt).not.toBeNull();
     expect(state.rental.acceptedCustomerTotal?.toString()).toBe('150');

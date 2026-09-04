@@ -30,9 +30,7 @@ export class GeoapifyRoutingHttpClient {
     }
 
     if (!response.ok) {
-      throw this.error(
-        `Geoapify routing request failed with HTTP status ${response.status}.`,
-      );
+      throw this.error(`Geoapify routing request failed with HTTP status ${response.status}.`);
     }
 
     try {
@@ -43,20 +41,10 @@ export class GeoapifyRoutingHttpClient {
   }
 
   malformedResponse(detail: string): DeliveryProviderError {
-    return this.error(
-      `Geoapify returned a malformed routing response: ${detail}`,
-    );
+    return this.error(`Geoapify returned a malformed routing response: ${detail}`);
   }
 
-  private error(
-    message: string,
-    cause?: unknown,
-  ): DeliveryProviderError {
-    return new DeliveryProviderError(
-      GeoapifyRoutingHttpClient.provider,
-      'getDrivingDistance',
-      message,
-      cause,
-    );
+  private error(message: string, cause?: unknown): DeliveryProviderError {
+    return new DeliveryProviderError(GeoapifyRoutingHttpClient.provider, 'getDrivingDistance', message, cause);
   }
 }

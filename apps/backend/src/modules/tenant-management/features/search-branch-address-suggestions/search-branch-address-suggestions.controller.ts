@@ -14,9 +14,8 @@ export class SearchBranchAddressSuggestionsHttpController {
   async search(
     @Query() dto: SearchBranchAddressSuggestionsRequestDto,
   ): Promise<SearchBranchAddressSuggestionsResponseDto> {
-    return this.queryBus.execute<
-      SearchBranchAddressSuggestionsQuery,
-      SearchBranchAddressSuggestionsResult
-    >(new SearchBranchAddressSuggestionsQuery(dto.text));
+    return this.queryBus.execute<SearchBranchAddressSuggestionsQuery, SearchBranchAddressSuggestionsResult>(
+      new SearchBranchAddressSuggestionsQuery(dto.text),
+    );
   }
 }

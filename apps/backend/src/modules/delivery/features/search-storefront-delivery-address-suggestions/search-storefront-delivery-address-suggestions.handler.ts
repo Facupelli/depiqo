@@ -4,17 +4,13 @@ import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { AddressGeocoder } from '../../../shared/geocoding/address-geocoder.port';
 import { SearchStorefrontDeliveryAddressSuggestionsQuery } from './search-storefront-delivery-address-suggestions.query';
 
-export type SearchStorefrontDeliveryAddressSuggestionsResult =
-  SearchStorefrontDeliveryAddressSuggestionsResponseDto;
+export type SearchStorefrontDeliveryAddressSuggestionsResult = SearchStorefrontDeliveryAddressSuggestionsResponseDto;
 
 @QueryHandler(SearchStorefrontDeliveryAddressSuggestionsQuery)
-export class SearchStorefrontDeliveryAddressSuggestionsHandler
-  implements
-    IQueryHandler<
-      SearchStorefrontDeliveryAddressSuggestionsQuery,
-      SearchStorefrontDeliveryAddressSuggestionsResult
-    >
-{
+export class SearchStorefrontDeliveryAddressSuggestionsHandler implements IQueryHandler<
+  SearchStorefrontDeliveryAddressSuggestionsQuery,
+  SearchStorefrontDeliveryAddressSuggestionsResult
+> {
   constructor(private readonly addressGeocoder: AddressGeocoder) {}
 
   async execute(

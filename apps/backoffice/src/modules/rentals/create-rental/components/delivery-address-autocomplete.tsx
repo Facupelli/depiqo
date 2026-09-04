@@ -164,11 +164,7 @@ export function DeliveryAddressAutocomplete({
 	);
 }
 
-function SuggestionLabel({
-	suggestion,
-}: {
-	suggestion: AddressSuggestionDto;
-}) {
+function SuggestionLabel({ suggestion }: { suggestion: AddressSuggestionDto }) {
 	if (!suggestion.addressLine1 && !suggestion.addressLine2) {
 		return <span>{suggestion.formattedAddress}</span>;
 	}

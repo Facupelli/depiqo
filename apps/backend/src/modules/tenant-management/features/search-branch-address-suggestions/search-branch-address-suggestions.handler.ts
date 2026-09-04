@@ -7,9 +7,10 @@ import { SearchBranchAddressSuggestionsQuery } from './search-branch-address-sug
 export type SearchBranchAddressSuggestionsResult = SearchBranchAddressSuggestionsResponseDto;
 
 @QueryHandler(SearchBranchAddressSuggestionsQuery)
-export class SearchBranchAddressSuggestionsHandler
-  implements IQueryHandler<SearchBranchAddressSuggestionsQuery, SearchBranchAddressSuggestionsResult>
-{
+export class SearchBranchAddressSuggestionsHandler implements IQueryHandler<
+  SearchBranchAddressSuggestionsQuery,
+  SearchBranchAddressSuggestionsResult
+> {
   constructor(private readonly addressGeocoder: AddressGeocoder) {}
 
   async execute(query: SearchBranchAddressSuggestionsQuery): Promise<SearchBranchAddressSuggestionsResult> {

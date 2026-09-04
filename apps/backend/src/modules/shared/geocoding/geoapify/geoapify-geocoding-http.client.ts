@@ -30,9 +30,7 @@ export class GeoapifyGeocodingHttpClient {
     }
 
     if (!response.ok) {
-      throw this.error(
-        `Geoapify geocoding request failed with HTTP status ${response.status}.`,
-      );
+      throw this.error(`Geoapify geocoding request failed with HTTP status ${response.status}.`);
     }
 
     try {
@@ -43,19 +41,10 @@ export class GeoapifyGeocodingHttpClient {
   }
 
   malformedResponse(detail: string): GeocodingProviderError {
-    return this.error(
-      `Geoapify returned a malformed geocoding response: ${detail}`,
-    );
+    return this.error(`Geoapify returned a malformed geocoding response: ${detail}`);
   }
 
-  private error(
-    message: string,
-    cause?: unknown,
-  ): GeocodingProviderError {
-    return new GeocodingProviderError(
-      GeoapifyGeocodingHttpClient.provider,
-      message,
-      cause,
-    );
+  private error(message: string, cause?: unknown): GeocodingProviderError {
+    return new GeocodingProviderError(GeoapifyGeocodingHttpClient.provider, message, cause);
   }
 }

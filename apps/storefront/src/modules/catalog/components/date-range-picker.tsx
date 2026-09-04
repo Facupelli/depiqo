@@ -11,10 +11,7 @@ import { CalendarIcon } from "lucide-react";
 import { lazy, Suspense, useState } from "react";
 import type { DateRange } from "react-day-picker";
 import dayjs from "@/lib/dates/dayjs";
-import {
-	dateParamToLocalDate,
-	localDateToDateParam,
-} from "@/lib/dates/parse";
+import { dateParamToLocalDate, localDateToDateParam } from "@/lib/dates/parse";
 import { useStorefrontBranchScheduleSlots } from "@/modules/tenant-management/branches/branch-schedule.queries";
 
 const LazyDateRangePickerContent = lazy(() =>
@@ -86,9 +83,7 @@ export function DateRangePicker({
 			Date.parse(committedReturnSlot.instant) >
 				Date.parse(committedPickupSlot.instant),
 	);
-	const displayValue = open
-		? (draftValue ?? EMPTY_DATE_RANGE)
-		: committedValue;
+	const displayValue = open ? (draftValue ?? EMPTY_DATE_RANGE) : committedValue;
 	const displayPickupSlot = open
 		? findSlot(slotQuery.data?.pickupSlots, draftPickupInstant)
 		: committedPickupSlot;
@@ -160,7 +155,9 @@ export function DateRangePicker({
 							buttonClassName,
 						)}
 					>
-						{hasCompleteCommittedPeriod && displayValue.from && displayValue.to ? (
+						{hasCompleteCommittedPeriod &&
+						displayValue.from &&
+						displayValue.to ? (
 							<>
 								<PeriodBoundary
 									date={displayValue.from}
@@ -191,7 +188,10 @@ export function DateRangePicker({
 					</Button>
 				}
 			/>
-			<PopoverContent className="w-auto max-w-[calc(100vw-2rem)] p-0" align="start">
+			<PopoverContent
+				className="w-auto max-w-[calc(100vw-2rem)] p-0"
+				align="start"
+			>
 				{hasOpened ? (
 					<Suspense
 						fallback={
