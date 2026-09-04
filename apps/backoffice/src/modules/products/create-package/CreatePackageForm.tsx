@@ -24,7 +24,7 @@ import {
 } from "@repo/ui/components/table";
 import { Textarea } from "@repo/ui/components/textarea";
 import { useForm } from "@tanstack/react-form";
-import { Trash2 } from "lucide-react";
+import { Loader2, Trash2 } from "lucide-react";
 import { useId } from "react";
 import { CatalogImageUploader } from "@/shared/components/catalog-image-uploader";
 import type { CreatePackageSubmissionError } from "./create-package.errors";
@@ -52,12 +52,15 @@ interface CreatePackageFormProps {
 	branches: SelectOption[];
 	equipmentTypes: PackageEquipmentTypeOption[];
 	equipmentSearch: string;
+	isEquipmentSearchFetching: boolean;
+	isEquipmentSearchError: boolean;
 	isPending: boolean;
 	submitError?: CreatePackageSubmissionError | null;
 	submitLabel?: string;
 	pendingLabel?: string;
 	cancelLabel?: string;
 	onEquipmentSearchChange: (search: string) => void;
+	onSelectedBranchIdsChange: (branchIds: string[]) => void;
 	onSubmit: (values: CreatePackageFormValues) => Promise<void> | void;
 	onCancel: () => void;
 }
@@ -69,12 +72,15 @@ export function CreatePackageForm({
 	branches,
 	equipmentTypes,
 	equipmentSearch,
+	isEquipmentSearchFetching,
+	isEquipmentSearchError,
 	isPending,
 	submitError,
 	submitLabel = "Crear paquete",
 	pendingLabel = "Creando...",
 	cancelLabel = "Cancelar",
 	onEquipmentSearchChange,
+	onSelectedBranchIdsChange,
 	onSubmit,
 	onCancel,
 }: CreatePackageFormProps) {
@@ -272,13 +278,13 @@ export function CreatePackageForm({
 														<Checkbox
 															checked={isChecked}
 															onCheckedChange={(checked) => {
-																field.handleChange(
-																	checked
-																		? [...field.state.value, branch.value]
-																		: field.state.value.filter(
-																				(id) => id !== branch.value,
-																			),
-																);
+																const nextBranchIds = checked
+																	? [...field.state.value, branch.value]
+																	: field.state.value.filter(
+																			(id) => id !== branch.value,
+																		);
+																field.handleChange(nextBranchIds);
+																onSelectedBranchIdsChange(nextBranchIds);
 															}}
 														/>
 														<span>{branch.label}</span>
@@ -317,12 +323,6 @@ export function CreatePackageForm({
 									const availableEquipmentTypes = equipmentTypes.filter(
 										(equipmentType) => !selectedIds.has(equipmentType.id),
 									);
-									const availableEquipmentItems = availableEquipmentTypes.map(
-										(equipmentType) => ({
-											value: equipmentType.id,
-											label: equipmentType.name,
-										}),
-									);
 									const isInvalid =
 										field.state.meta.isTouched && !field.state.meta.isValid;
 
@@ -345,46 +345,56 @@ export function CreatePackageForm({
 												</Field>
 												<Field>
 													<FieldLabel>Resultados</FieldLabel>
-													<Select
-														items={availableEquipmentItems}
-														disabled={selectedBranchIds.length === 0}
-														value=""
-														onValueChange={(value) => {
-															if (!value || selectedIds.has(value)) return;
-															const equipmentType =
-																availableEquipmentTypes.find(
-																	(item) => item.id === value,
-																);
-
-															if (!equipmentType) return;
-
-															field.pushValue({
-																equipmentTypeId: value,
-																equipmentTypeName: equipmentType.name,
-																quantityPerItem: 1,
-															});
-														}}
-													>
-														<SelectTrigger>
-															<SelectValue
-																placeholder={
-																	selectedBranchIds.length === 0
-																		? "Selecciona una sucursal primero"
-																		: "Agregar equipo al paquete"
-																}
-															/>
-														</SelectTrigger>
-														<SelectContent>
-															{availableEquipmentTypes.map((equipmentType) => (
-																<SelectItem
-																	key={equipmentType.id}
-																	value={equipmentType.id}
-																>
-																	{equipmentType.name}
-																</SelectItem>
-															))}
-														</SelectContent>
-													</Select>
+													<div className="h-56 overflow-y-auto rounded-md border bg-background">
+														{selectedBranchIds.length === 0 ? (
+															<p className="flex h-full items-center justify-center px-4 text-center text-muted-foreground text-sm">
+																Selecciona una sucursal primero.
+															</p>
+														) : isEquipmentSearchFetching ? (
+															<p className="flex h-full items-center justify-center gap-2 text-muted-foreground text-sm">
+																<Loader2 className="size-3.5 animate-spin" />
+																Buscando equipos...
+															</p>
+														) : isEquipmentSearchError ? (
+															<p className="flex h-full items-center justify-center px-4 text-center text-destructive text-sm">
+																No pudimos buscar equipos. Intenta nuevamente.
+															</p>
+														) : availableEquipmentTypes.length === 0 ? (
+															<p className="flex h-full items-center justify-center px-4 text-center text-muted-foreground text-sm">
+																No encontramos equipos.
+															</p>
+														) : (
+															<ul className="divide-y">
+																{availableEquipmentTypes.map(
+																	(equipmentType) => (
+																		<li
+																			key={equipmentType.id}
+																			className="flex min-h-12 items-center gap-3 px-3 py-2 transition-colors hover:bg-muted/50"
+																		>
+																			<span className="min-w-0 flex-1 text-sm">
+																				{equipmentType.name}
+																			</span>
+																			<Button
+																				type="button"
+																				variant="outline"
+																				size="sm"
+																				onClick={() =>
+																					field.pushValue({
+																						equipmentTypeId: equipmentType.id,
+																						equipmentTypeName:
+																							equipmentType.name,
+																						quantityPerItem: 1,
+																					})
+																				}
+																			>
+																				Agregar
+																			</Button>
+																		</li>
+																	),
+																)}
+															</ul>
+														)}
+													</div>
 												</Field>
 											</div>
 

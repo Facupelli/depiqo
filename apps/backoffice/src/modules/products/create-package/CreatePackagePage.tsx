@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useEquipmentTypeOptions } from "@/modules/inventory/equipment-types/public";
 import { useBranches } from "@/modules/settings/branches/public";
 import { useCategories } from "@/modules/settings/categories/public";
+import useDebounce from "@/shared/hooks/use-debounce";
 import { CreatePackageForm } from "./CreatePackageForm";
 import {
 	type CreatePackageSubmissionError,
@@ -16,13 +17,24 @@ const equipmentTypeSearchLimit = 15;
 
 export function CreatePackagePage() {
 	const navigate = useNavigate();
-	const [equipmentSearch, setEquipmentSearch] = useState("");
+	const [equipmentSearchInput, setEquipmentSearchInput] = useState("");
+	const [hasSelectedBranches, setHasSelectedBranches] = useState(false);
+	const debouncedEquipmentSearch = useDebounce(equipmentSearchInput, 300);
 	const { data: categories = [] } = useCategories();
 	const { data: branches = [] } = useBranches();
-	const { data: equipmentTypes = [] } = useEquipmentTypeOptions({
-		search: equipmentSearch.trim() || undefined,
-		limit: equipmentTypeSearchLimit,
-	});
+	const {
+		data: equipmentTypes = [],
+		isFetching: isEquipmentSearchFetching,
+		isError: isEquipmentSearchError,
+	} = useEquipmentTypeOptions(
+		{
+			search: debouncedEquipmentSearch.trim() || undefined,
+			limit: equipmentTypeSearchLimit,
+		},
+		{ enabled: hasSelectedBranches },
+	);
+	const isEquipmentSearchDebouncing =
+		equipmentSearchInput.trim() !== debouncedEquipmentSearch.trim();
 	const { mutateAsync: createPackage, isPending } = useCreatePackage();
 	const [submitError, setSubmitError] =
 		useState<CreatePackageSubmissionError | null>(null);
@@ -45,8 +57,15 @@ export function CreatePackagePage() {
 				categories={categories.filter((category) => category.isActive)}
 				branches={branches}
 				equipmentTypes={equipmentTypes}
-				equipmentSearch={equipmentSearch}
-				onEquipmentSearchChange={setEquipmentSearch}
+				equipmentSearch={equipmentSearchInput}
+				isEquipmentSearchFetching={
+					isEquipmentSearchDebouncing || isEquipmentSearchFetching
+				}
+				isEquipmentSearchError={isEquipmentSearchError}
+				onEquipmentSearchChange={setEquipmentSearchInput}
+				onSelectedBranchIdsChange={(branchIds) =>
+					setHasSelectedBranches(branchIds.length > 0)
+				}
 				isPending={isPending}
 				submitError={submitError}
 				submitLabel="Crear paquete"

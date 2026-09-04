@@ -3,6 +3,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { useEquipmentTypeOptions } from "@/modules/inventory/equipment-types/public";
 import { useCategories } from "@/modules/settings/categories/public";
+import useDebounce from "@/shared/hooks/use-debounce";
 import { EditProductForm } from "./EditProductForm";
 import { useUpdateProduct } from "./edit-product.mutation";
 import {
@@ -19,12 +20,19 @@ export function EditProductPage({
 }) {
 	const navigate = useNavigate();
 	const [equipmentSearch, setEquipmentSearch] = useState("");
+	const debouncedEquipmentSearch = useDebounce(equipmentSearch, 300);
 	const { data: categories = [], isPending: isCategoriesPending } =
 		useCategories();
-	const { data: equipmentTypes = [] } = useEquipmentTypeOptions({
-		search: equipmentSearch.trim() || undefined,
+	const {
+		data: equipmentTypes = [],
+		isFetching: isEquipmentSearchFetching,
+		isError: isEquipmentSearchError,
+	} = useEquipmentTypeOptions({
+		search: debouncedEquipmentSearch.trim() || undefined,
 		limit: equipmentTypeSearchLimit,
 	});
+	const isEquipmentSearchDebouncing =
+		equipmentSearch.trim() !== debouncedEquipmentSearch.trim();
 	const { mutateAsync: updateProduct, isPending } = useUpdateProduct();
 	const defaultValues = fromProductDetailToEditProductFormValues(product);
 
@@ -48,6 +56,10 @@ export function EditProductPage({
 				isCategoriesLoading={isCategoriesPending}
 				equipmentTypes={equipmentTypes}
 				equipmentSearch={equipmentSearch}
+				isEquipmentSearchFetching={
+					isEquipmentSearchDebouncing || isEquipmentSearchFetching
+				}
+				isEquipmentSearchError={isEquipmentSearchError}
 				onEquipmentSearchChange={setEquipmentSearch}
 				isPending={isPending}
 				onCancel={() =>
