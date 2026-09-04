@@ -6,7 +6,15 @@ import { OrdersCalendarPage } from "@/modules/rentals/rental-calendar/orders-cal
 import { AdminRouteError } from "@/shared/components/admin-route-error";
 
 const ordersCalendarSearchSchema = z.object({
-	view: z.enum(["dayGridDay", "dayGridWeek", "dayGridMonth"]).optional(),
+	view: z
+		.enum([
+			"dayGridDay",
+			"dayGridWeek",
+			"timeGridDay",
+			"timeGridWeek",
+			"dayGridMonth",
+		])
+		.optional(),
 	date: z.iso.date().optional(),
 });
 

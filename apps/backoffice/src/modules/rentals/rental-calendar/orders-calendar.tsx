@@ -14,6 +14,7 @@ import dayGridPlugin from "@fullcalendar/react/daygrid";
 import interactionPlugin from "@fullcalendar/react/interaction";
 import esLocale from "@fullcalendar/react/locales/es";
 import classicThemePlugin from "@fullcalendar/react/themes/classic";
+import timeGridPlugin from "@fullcalendar/react/timegrid";
 import { Button } from "@repo/ui/components/button";
 import {
 	AlertCircle,
@@ -115,7 +116,9 @@ export function OrdersCalendar({
 		calendarRef.current?.getApi().changeView(nextView);
 	}
 
-	const events = orders.map((order) => toOrdersCalendarEvent(order, timezone));
+	const events = orders.map((order) =>
+		toOrdersCalendarEvent(order, timezone, currentView),
+	);
 
 	return (
 		<div className="space-y-4">
@@ -198,7 +201,12 @@ export function OrdersCalendar({
 					<FullCalendar
 						key={`${currentView}:${currentDate}:${timezone}`}
 						ref={calendarRef}
-						plugins={[classicThemePlugin, dayGridPlugin, interactionPlugin]}
+						plugins={[
+							classicThemePlugin,
+							dayGridPlugin,
+							timeGridPlugin,
+							interactionPlugin,
+						]}
 						initialView={currentView}
 						initialDate={currentDate}
 						headerToolbar={false}
@@ -207,6 +215,15 @@ export function OrdersCalendar({
 						firstDay={1}
 						height="auto"
 						fixedWeekCount={false}
+						views={{
+							dayGrid: {
+								dayMaxEvents: 3,
+							},
+							timeGrid: {
+								allDaySlot: false,
+							},
+						}}
+						slotEventOverlap={false}
 						tableClass="orders-calendar-table"
 						dayHeaderClass={(info) =>
 							info.inPopover
@@ -235,7 +252,6 @@ export function OrdersCalendar({
 						dayCellInnerClass={(info) =>
 							info.inPopover ? "" : "orders-calendar-day-events"
 						}
-						dayMaxEvents={3}
 						moreLinkClick="popover"
 						moreLinkClass="orders-calendar-more-link"
 						moreLinkInnerClass="orders-calendar-more-link-inner"
@@ -243,6 +259,7 @@ export function OrdersCalendar({
 						events={events}
 						eventDisplay="block"
 						now={new Date().toISOString()}
+						nowIndicator={currentView !== "dayGridMonth"}
 						datesSet={handleDatesSet}
 						eventClick={handleEventClick}
 						eventDidMount={handleEventDidMount}
@@ -270,6 +287,8 @@ export function OrdersCalendar({
 							)
 						}
 						rowEventInnerClass="orders-calendar-event-main"
+						columnEventClass="orders-calendar-column-event"
+						columnEventInnerClass="orders-calendar-event-main orders-calendar-column-event-main"
 					/>
 				</div>
 			)}
@@ -312,6 +331,35 @@ function CalendarEventContent({
 	const order = getOrdersCalendarEventOrder(arg.event);
 	const pickupTime = order.pickupAt.tz(timezone).format("HH:mm");
 	const returnTime = order.returnAt.tz(timezone).format("HH:mm");
+	const isTimeGrid =
+		arg.view.type === "timeGridDay" || arg.view.type === "timeGridWeek";
+
+	if (isTimeGrid) {
+		const boundaryTime =
+			arg.isStart && arg.isEnd
+				? `${pickupTime} → ${returnTime}`
+				: arg.isStart
+					? pickupTime
+					: arg.isEnd
+						? returnTime
+						: null;
+
+		return (
+			<div className="flex min-w-0 flex-1 flex-col gap-1 overflow-hidden px-2 py-1">
+				<span className="truncate font-mono text-[10px] uppercase tracking-[0.04em] opacity-60">
+					#{formatOrderNumber(order.rentalNumber)}
+				</span>
+				<span className="break-words text-xs font-semibold leading-tight">
+					{order.customer?.displayName ?? "Pedido"}
+				</span>
+				{boundaryTime ? (
+					<span className="text-[9px] leading-none opacity-55">
+						{boundaryTime}
+					</span>
+				) : null}
+			</div>
+		);
+	}
 
 	return (
 		<div className="flex min-w-0 flex-1 flex-col justify-center gap-px overflow-hidden px-2 py-0.5">

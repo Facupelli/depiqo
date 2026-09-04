@@ -43,12 +43,12 @@
 }
 
 .orders-calendar-shell .orders-calendar-row-event {
+	min-height: 2.25rem;
 	border: 0;
 	background: transparent;
 }
 
 .orders-calendar-shell .orders-calendar-event {
-	min-height: 2.25rem;
 	cursor: pointer;
 	border-radius: 0.25rem;
 	border-width: 1px;
@@ -64,14 +64,22 @@
 	align-items: center;
 }
 
+.orders-calendar-shell .orders-calendar-column-event-main {
+	align-items: flex-start;
+}
+
 .orders-calendar-shell
-	.orders-calendar-event:not(.orders-calendar-row-event--start) {
+	.orders-calendar-row-event.orders-calendar-event:not(
+		.orders-calendar-row-event--start
+	) {
 	border-start-start-radius: 0;
 	border-end-start-radius: 0;
 }
 
 .orders-calendar-shell
-	.orders-calendar-event:not(.orders-calendar-row-event--end) {
+	.orders-calendar-row-event.orders-calendar-event:not(
+		.orders-calendar-row-event--end
+	) {
 	border-start-end-radius: 0;
 	border-end-end-radius: 0;
 }

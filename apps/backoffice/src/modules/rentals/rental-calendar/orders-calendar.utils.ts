@@ -4,8 +4,8 @@ import type { ParsedRentalsCalendarItem } from "@/modules/rentals/rental.queries
 import { formatOrderNumber } from "@/shared/utils/formatters";
 
 export const ORDERS_CALENDAR_VIEWS = [
-	"dayGridDay",
-	"dayGridWeek",
+	"timeGridDay",
+	"timeGridWeek",
 	"dayGridMonth",
 ] as const;
 
@@ -41,8 +41,8 @@ type OrdersCalendarEventRangeInput = Pick<
 export const DEFAULT_ORDERS_CALENDAR_VIEW: OrdersCalendarView = "dayGridMonth";
 
 export const ORDERS_CALENDAR_VIEW_LABELS: Record<OrdersCalendarView, string> = {
-	dayGridDay: "Dia",
-	dayGridWeek: "Semana",
+	timeGridDay: "Dia",
+	timeGridWeek: "Semana",
 	dayGridMonth: "Mes",
 };
 
@@ -66,18 +66,32 @@ export function getInclusiveCalendarRange(
 export function toOrdersCalendarEvent(
 	order: ParsedRentalsCalendarItem,
 	timezone: string,
+	view: OrdersCalendarView,
 ): EventInput {
-	const range = getOrdersCalendarEventRange(order, timezone);
-
-	return {
+	const event = {
 		id: order.id,
-		start: range.startDate,
-		end: range.exclusiveEndDate,
-		allDay: true,
 		title: getOrdersCalendarEventTitle(order),
 		extendedProps: {
 			order,
 		},
+	};
+
+	if (view !== "dayGridMonth") {
+		return {
+			...event,
+			start: order.pickupAt.toISOString(),
+			end: order.returnAt.toISOString(),
+			allDay: false,
+		};
+	}
+
+	const range = getOrdersCalendarEventRange(order, timezone);
+
+	return {
+		...event,
+		start: range.startDate,
+		end: range.exclusiveEndDate,
+		allDay: true,
 	};
 }
 
