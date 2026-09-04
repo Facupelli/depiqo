@@ -203,13 +203,20 @@ export function toCreateDraftRentalDto(
 	values: DraftRentalComposerFormValues,
 	timezone: string,
 ): CreateDraftRentalBodyDto {
-	const deliveryDetails = values.deliveryDetails;
-	const locationId = deliveryDetails.locationId?.trim();
-	if (
-		values.fulfillmentMethod === "DELIVERY" &&
-		(!deliveryDetails.address.trim() || !locationId)
-	) {
-		throw new Error("Delivery requires a complete selected address");
+	let deliveryDetailsDto: CreateDraftRentalBodyDto["deliveryDetails"];
+
+	if (values.fulfillmentMethod === "DELIVERY") {
+		const address = values.deliveryDetails.address.trim();
+		const locationId = values.deliveryDetails.locationId?.trim();
+
+		if (!address || !locationId) {
+			throw new Error("Delivery requires a complete selected address");
+		}
+
+		deliveryDetailsDto = {
+			address,
+			locationId,
+		};
 	}
 
 	const dto = {
@@ -218,13 +225,7 @@ export function toCreateDraftRentalDto(
 		period: buildDraftRentalPeriod(values, timezone),
 		selectedOffers: selectedOffers(values),
 		fulfillmentMethod: values.fulfillmentMethod,
-		deliveryDetails:
-			values.fulfillmentMethod === "DELIVERY"
-				? {
-						address: deliveryDetails.address,
-						locationId,
-					}
-				: undefined,
+		deliveryDetails: deliveryDetailsDto,
 		insuranceSelected: values.insuranceSelected,
 		manualPricingAdjustment: manualPricingAdjustment(values),
 	};

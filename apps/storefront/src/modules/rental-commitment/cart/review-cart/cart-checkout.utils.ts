@@ -1,4 +1,5 @@
 import type {
+	CompleteDeliveryRequest,
 	DeliveryRequestFormState,
 	FulfillmentMethod,
 	NormalizedDeliveryRequest,
@@ -22,7 +23,7 @@ export function normalizeDeliveryRequest(
 
 export function isDeliveryRequestComplete(
 	deliveryRequest: NormalizedDeliveryRequest,
-): boolean {
+): deliveryRequest is CompleteDeliveryRequest {
 	return Boolean(deliveryRequest?.address && deliveryRequest.locationId);
 }
 
