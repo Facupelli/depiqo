@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { PrismaService } from 'src/core/database/prisma.service';
 import { Prisma } from 'src/generated/prisma/client';
 import { V2RentalStatus } from 'src/generated/prisma/enums';
+import { ConfirmedPriceSnapshot } from '../../../domain/value-objects/confirmed-price-snapshot.value-object';
 
 export interface RentalPeriodFixture {
   start: Date;
@@ -50,6 +51,9 @@ export class ConfirmRentalFixtures {
     const equipmentTypeIds = demands.map((demand) => demand.equipmentTypeId ?? randomUUID());
     const priceSnapshot = params.priceSnapshot === undefined ? this.priceSnapshot(selectionIds) : params.priceSnapshot;
     const persistedPriceSnapshot = priceSnapshot === null ? Prisma.JsonNull : priceSnapshot;
+    const status = params.status ?? 'DRAFT';
+    const wasConfirmed = status !== 'DRAFT' && status !== 'PENDING';
+    const acceptedCustomerTotal = this.acceptedCustomerTotal(wasConfirmed, priceSnapshot);
 
     await this.prisma.client.$transaction(async (tx) => {
       const counter = await tx.v2RentalNumberCounter.upsert({
@@ -66,11 +70,13 @@ export class ConfirmRentalFixtures {
           rentalNumber: counter.lastIssuedNumber,
           branchId: params.branchId,
           customerId: params.customerId,
-          status: params.status ?? 'DRAFT',
+          status,
+          confirmedAt: status === 'CONFIRMED' ? new Date() : undefined,
           fulfillmentMethod: 'PICKUP',
           periodStart: params.period.start,
           periodEnd: params.period.end,
           priceSnapshot: persistedPriceSnapshot,
+          acceptedCustomerTotal,
           source: 'STAFF',
           selections: {
             create: selectionIds.map((id, index) => ({
@@ -146,6 +152,18 @@ export class ConfirmRentalFixtures {
     return id;
   }
 
+  private acceptedCustomerTotal(
+    wasConfirmed: boolean,
+    priceSnapshot: Prisma.InputJsonValue | null,
+  ): string | undefined {
+    if (!wasConfirmed) return undefined;
+
+    const acceptedPrice = ConfirmedPriceSnapshot.create(priceSnapshot);
+    if (acceptedPrice.isErr()) throw acceptedPrice.error;
+
+    return acceptedPrice.value.snapshot.total;
+  }
+
   priceSnapshot(selectionIds: readonly string[]): Prisma.InputJsonValue {
     const lines = selectionIds.map((rentalSelectionId) => ({
       rentalSelectionId,
@@ -179,7 +197,7 @@ export class ConfirmRentalFixtures {
 
     return {
       schema: 'v2.rental-price-snapshot',
-      version: 2,
+      version: 3,
       calculatedAtIso: '2030-01-01T00:00:00.000Z',
       context: 'DRAFT',
       calculated: payload,
