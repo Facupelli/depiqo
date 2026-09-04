@@ -1,4 +1,4 @@
-import type { EventApi, EventInput } from "@fullcalendar/core";
+import type { EventApi, EventInput } from "@fullcalendar/react";
 import dayjs from "@/lib/dates/dayjs";
 import type { ParsedRentalsCalendarItem } from "@/modules/rentals/rental.queries";
 import { formatOrderNumber } from "@/shared/utils/formatters";
@@ -28,17 +28,14 @@ export type OrdersCalendarEventProps = {
 	order: ParsedRentalsCalendarItem;
 };
 
-export type OrdersCalendarEventGeometry = {
+type OrdersCalendarEventRange = {
 	startDate: string;
 	exclusiveEndDate: string;
-	startFraction: number;
-	finalOccupiedDate: string;
-	finalFraction: number;
 };
 
-export type OrdersCalendarEventGeometryInput = Pick<
+type OrdersCalendarEventRangeInput = Pick<
 	ParsedRentalsCalendarItem,
-	"pickupAt" | "returnAt" | "pickupDate" | "returnDate"
+	"returnAt" | "pickupDate" | "returnDate"
 >;
 
 export const DEFAULT_ORDERS_CALENDAR_VIEW: OrdersCalendarView = "dayGridMonth";
@@ -70,12 +67,12 @@ export function toOrdersCalendarEvent(
 	order: ParsedRentalsCalendarItem,
 	timezone: string,
 ): EventInput {
-	const geometry = getOrdersCalendarEventGeometry(order, timezone);
+	const range = getOrdersCalendarEventRange(order, timezone);
 
 	return {
 		id: order.id,
-		start: geometry.startDate,
-		end: geometry.exclusiveEndDate,
+		start: range.startDate,
+		end: range.exclusiveEndDate,
 		allDay: true,
 		title: getOrdersCalendarEventTitle(order),
 		extendedProps: {
@@ -84,26 +81,17 @@ export function toOrdersCalendarEvent(
 	};
 }
 
-export function getOrdersCalendarEventGeometry(
-	order: OrdersCalendarEventGeometryInput,
+export function getOrdersCalendarEventRange(
+	order: OrdersCalendarEventRangeInput,
 	timezone: string,
-): OrdersCalendarEventGeometry {
-	const pickupMinutes = getLocalClockMinutes(order.pickupAt, timezone);
-	const returnMinutes = getLocalClockMinutes(order.returnAt, timezone);
-	const isReturnAtMidnight = returnMinutes === 0;
-
+): OrdersCalendarEventRange {
 	return {
 		startDate: toCalendarDateToken(order.pickupDate),
 		exclusiveEndDate: toCalendarDateToken(
-			isReturnAtMidnight ? order.returnDate : order.returnDate.add(1, "day"),
+			isLocalMidnight(order.returnAt, timezone)
+				? order.returnDate
+				: order.returnDate.add(1, "day"),
 		),
-		startFraction: pickupMinutes / MINUTES_PER_DAY,
-		finalOccupiedDate: toCalendarDateToken(
-			isReturnAtMidnight
-				? order.returnDate.subtract(1, "day")
-				: order.returnDate,
-		),
-		finalFraction: isReturnAtMidnight ? 1 : returnMinutes / MINUTES_PER_DAY,
 	};
 }
 
@@ -122,18 +110,16 @@ export function getOrdersCalendarEventTitle(
 		: `#${formatOrderNumber(order.rentalNumber)}`;
 }
 
-const MINUTES_PER_DAY = 24 * 60;
-
-function getLocalClockMinutes(
-	value: ParsedRentalsCalendarItem["pickupAt"],
+function isLocalMidnight(
+	value: ParsedRentalsCalendarItem["returnAt"],
 	timezone: string,
-): number {
+): boolean {
 	const localValue = value.tz(timezone);
 	return (
-		localValue.hour() * 60 +
-		localValue.minute() +
-		localValue.second() / 60 +
-		localValue.millisecond() / 60_000
+		localValue.hour() === 0 &&
+		localValue.minute() === 0 &&
+		localValue.second() === 0 &&
+		localValue.millisecond() === 0
 	);
 }
 

@@ -70,25 +70,6 @@ export function OrdersCalendarPage({
 
 	return (
 		<div className="space-y-6 p-6">
-			<div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-				<div className="space-y-2">
-					<div>
-						<h1 className="text-2xl font-semibold tracking-tight">
-							Calendario
-						</h1>
-						<p className="mt-1 text-sm text-muted-foreground">
-							Visualiza pedidos en el tiempo para leer densidad, solapes y carga
-							operativa de un vistazo.
-						</p>
-					</div>
-				</div>
-
-				<div className="text-right text-xs text-muted-foreground">
-					<p>{timezone}</p>
-					<p>{isFetching ? "Actualizando pedidos" : "Confirmados y activos"}</p>
-				</div>
-			</div>
-
 			<OrdersCalendar
 				currentDate={currentDate}
 				currentView={currentView}
