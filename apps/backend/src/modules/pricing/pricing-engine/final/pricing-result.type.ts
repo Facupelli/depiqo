@@ -28,6 +28,7 @@ export type AppliedPromotionSnapshot = {
   effectType: PromotionEffectType;
   effectValue: string;
   amount: string;
+  affectedLineReferences: string[];
 };
 
 export type AppliedCouponSnapshot = {

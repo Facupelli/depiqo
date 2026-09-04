@@ -217,6 +217,7 @@ export class CalculateProspectiveCartCostHandler implements IQueryHandler<
       total: result.total,
       durationPolicySnapshot: result.final.durationPolicy,
       lines: result.final.lines.map((line) => ({
+        lineReference: line.lineReference,
         rentalOfferId: line.rentalOfferId,
         rentableItemId: line.rentableItemId,
         rentableItemName: offersById.get(line.rentalOfferId)?.rentableItem.name ?? line.rentalOfferId,

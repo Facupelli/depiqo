@@ -64,6 +64,7 @@ export type PricingCalculationBreakdown = {
     effectType: 'PERCENTAGE_OFF' | 'FIXED_AMOUNT_OFF';
     effectValue: string;
     amount: string;
+    affectedLineReferences: string[];
   }>;
   appliedCoupon?: { couponId: string; code: string; promotionId: string; amount: string };
 };

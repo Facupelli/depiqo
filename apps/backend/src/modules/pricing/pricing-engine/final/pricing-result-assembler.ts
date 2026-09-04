@@ -53,6 +53,13 @@ export class PricingResultAssembler {
         effectType: appliedPromotion.promotion.effectType,
         effectValue: appliedPromotion.promotion.effectValue,
         amount: appliedPromotion.amount.toSnapshotString(),
+        affectedLineReferences: context.lines.flatMap((line) =>
+          line.appliedAdjustments.some(
+            (adjustment) => adjustment.promotionId === appliedPromotion.promotion.id && !adjustment.amount.isZero(),
+          )
+            ? [line.rentalSelectionId]
+            : [],
+        ),
       })),
       appliedCoupon: appliedCouponPromotion
         ? {

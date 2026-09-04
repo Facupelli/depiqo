@@ -25,6 +25,7 @@ export const CalculateCartPriceLineAdjustmentSchema = z.object({
 });
 
 export const CalculateCartPriceLineSchema = z.object({
+  lineReference: z.string(),
   rentalOfferId: z.string(),
   rentableItemId: z.string(),
   rentableItemName: z.string(),
@@ -48,6 +49,7 @@ export const CalculateCartPriceAppliedPromotionSchema = z.object({
   effectType: z.enum(["PERCENTAGE_OFF", "FIXED_AMOUNT_OFF"]),
   effectValue: DecimalStringSchema,
   amount: DecimalStringSchema,
+  affectedLineReferences: z.array(z.string()),
 });
 
 export const CalculateCartPriceAppliedCouponSchema = z.object({
