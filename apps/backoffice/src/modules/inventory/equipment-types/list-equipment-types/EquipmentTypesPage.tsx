@@ -1,6 +1,13 @@
-import type { GetEquipmentTypeSummariesItemDto } from "@repo/api-contracts";
+import type {
+	GetEquipmentTypeSummariesItemDto,
+	GetEquipmentTypeSummariesQueryDto,
+} from "@repo/api-contracts";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import type { PaginationState } from "@tanstack/react-table";
 import { useEffect, useState } from "react";
+import type { BranchScopeFilter } from "@/application/branch-scope/branch-scope-filter";
+import { resolveEffectiveBranchId } from "@/application/branch-scope/resolve-effective-branch-id";
+import { currentAuthQueries } from "@/auth/auth.queries";
 import { useBranches } from "@/modules/settings/branches/public";
 import useDebounce from "@/shared/hooks/use-debounce";
 import { CreateEquipmentTypeDialog } from "../create-equipment-type/create-equipment-type-dialog";
@@ -17,6 +24,7 @@ export type EquipmentTypesSearch = {
 	pageSize: number;
 	search?: string;
 	branchId?: string;
+	branchScope?: "all";
 };
 
 interface EquipmentTypesPageProps {
@@ -36,14 +44,27 @@ export function EquipmentTypesPage({
 }: EquipmentTypesPageProps) {
 	const [searchInput, setSearchInput] = useState(search.search ?? "");
 	const debouncedSearch = useDebounce(searchInput, 300);
-	const summaryQuery = useEquipmentTypeSummaries(search, {
+	const { data: currentAuth } = useSuspenseQuery(currentAuthQueries.current());
+	const { data: branches = [] } = useBranches();
+	const { branchScope: _branchScope, ...backendSearch } = search;
+	const effectiveBranchId = resolveEffectiveBranchId({
+		branches,
+		branchId: search.branchId,
+		branchScope: search.branchScope,
+		workingBranchId: currentAuth.workingBranchId,
+	});
+	const summaryInput: GetEquipmentTypeSummariesQueryDto = {
+		...backendSearch,
+		branchId: effectiveBranchId,
+	};
+	const summaryQuery = useEquipmentTypeSummaries(summaryInput, {
 		placeholderData: (previousData, previousQuery) => {
 			const previousInput = getEquipmentTypeSummariesInputFromQueryKey(
 				previousQuery?.queryKey ?? [],
 			);
 
 			return previousInput &&
-				isSameEquipmentTypeListContext(previousInput, search)
+				isSameEquipmentTypeListContext(previousInput, summaryInput)
 				? previousData
 				: undefined;
 		},
@@ -55,7 +76,6 @@ export function EquipmentTypesPage({
 		isLoading: isLoadingProductUsages,
 		isError: isProductUsagesError,
 	} = useEquipmentTypeProductUsages(equipmentTypeIds);
-	const { data: branches = [] } = useBranches({ isActive: true });
 	const productsByEquipmentTypeId = new Map(
 		(productUsages ?? []).map((usage) => [
 			usage.equipmentTypeId,
@@ -118,6 +138,13 @@ export function EquipmentTypesPage({
 		}));
 	}
 
+	function handleBranchChange(branch: BranchScopeFilter) {
+		handleFilterChange({
+			branchId: branch.type === "branch" ? branch.branchId : undefined,
+			branchScope: branch.type === "all" ? "all" : undefined,
+		});
+	}
+
 	function handlePaginationChange(nextPagination: PaginationState) {
 		onSearchChange((previous) => ({
 			...previous,
@@ -150,8 +177,11 @@ export function EquipmentTypesPage({
 				filters={search}
 				searchValue={searchInput}
 				branches={branches}
+				inheritedBranchId={currentAuth.workingBranchId}
+				showBranchFilter={branches.length !== 1}
 				onSearchChange={setSearchInput}
 				onFilterChange={handleFilterChange}
+				onBranchChange={handleBranchChange}
 				onClearFilters={handleClearFilters}
 			/>
 
@@ -178,8 +208,8 @@ export function EquipmentTypesPage({
 }
 
 function isSameEquipmentTypeListContext(
-	previous: EquipmentTypesSearch,
-	current: EquipmentTypesSearch,
+	previous: GetEquipmentTypeSummariesQueryDto,
+	current: GetEquipmentTypeSummariesQueryDto,
 ): boolean {
 	return previous.branchId === current.branchId;
 }

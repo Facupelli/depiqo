@@ -8,6 +8,7 @@ const equipmentTypesSearchSchema = z.object({
 	pageSize: z.coerce.number().int().positive().max(100).default(20),
 	search: z.string().trim().min(1).optional(),
 	branchId: z.string().trim().min(1).optional(),
+	branchScope: z.literal("all").optional(),
 });
 
 export const Route = createFileRoute(

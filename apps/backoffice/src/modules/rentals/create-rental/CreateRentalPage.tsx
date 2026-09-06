@@ -1,8 +1,9 @@
 import { Card, CardContent } from "@repo/ui/components/card";
 import { useStore } from "@tanstack/react-form";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { AlertCircle } from "lucide-react";
-import { useCurrentBranchId } from "@/application/current-branch/current-branch.hooks";
+import { currentAuthQueries } from "@/auth/auth.queries";
 import { PageBreadcrumb } from "@/components/detail-id-breadcrumb";
 import { useBranches } from "@/modules/settings/branches/public";
 import { useAppForm } from "@/shared/contexts/form.context";
@@ -26,14 +27,14 @@ import {
 
 export function CreateRentalPage() {
 	const navigate = useNavigate();
-	const currentBranchId = useCurrentBranchId();
-
+	const { data: currentAuth } = useSuspenseQuery(currentAuthQueries.current());
 	const { data: branches = [] } = useBranches();
 	const activeBranches = branches.filter((branch) => branch.isActive);
-	const initialBranchId = activeBranches.some(
-		(branch) => branch.id === currentBranchId,
-	)
-		? (currentBranchId ?? "")
+	const workingBranchIsActive = activeBranches.some(
+		(branch) => branch.id === currentAuth.workingBranchId,
+	);
+	const initialBranchId = workingBranchIsActive
+		? (currentAuth.workingBranchId ?? "")
 		: activeBranches.length === 1
 			? activeBranches[0].id
 			: "";

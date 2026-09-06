@@ -1,19 +1,21 @@
-import {
-	type GetRentalsQueryDto,
-	GetRentalsQuerySchema,
-} from "@repo/api-contracts";
+import { GetRentalsQuerySchema } from "@repo/api-contracts";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useCallback } from "react";
+import { z } from "zod";
 import {
 	RentalsListPage,
 	type RentalsListSearch,
 } from "@/modules/rentals/list-rentals/RentalsListPage";
 import { AdminRouteError } from "@/shared/components/admin-route-error";
 
-export type OrdersListSearch = GetRentalsQueryDto;
+const ordersListSearchSchema = GetRentalsQuerySchema.extend({
+	branchScope: z.literal("all").optional(),
+});
+
+export type OrdersListSearch = z.infer<typeof ordersListSearchSchema>;
 
 export const Route = createFileRoute("/_admin/dashboard/orders/")({
-	validateSearch: GetRentalsQuerySchema,
+	validateSearch: ordersListSearchSchema,
 	errorComponent: ({ error }) => {
 		return (
 			<AdminRouteError

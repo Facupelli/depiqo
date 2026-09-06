@@ -14,6 +14,7 @@ export type OrdersCalendarView = (typeof ORDERS_CALENDAR_VIEWS)[number];
 export type OrdersCalendarSearch = {
 	view?: OrdersCalendarView;
 	date?: string;
+	branchId?: string;
 };
 
 export type OrdersCalendarRange = {

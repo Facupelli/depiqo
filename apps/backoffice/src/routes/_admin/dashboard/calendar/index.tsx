@@ -11,6 +11,7 @@ import { AdminRouteError } from "@/shared/components/admin-route-error";
 const ordersCalendarSearchSchema = z.object({
 	view: z.enum(ORDERS_CALENDAR_VIEWS).optional(),
 	date: z.iso.date().optional(),
+	branchId: z.string().trim().min(1).optional(),
 });
 
 export const Route = createFileRoute("/_admin/dashboard/calendar/")({

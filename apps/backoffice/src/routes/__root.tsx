@@ -8,7 +8,7 @@ import {
 	Scripts,
 } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
-import { getCurrentUser } from "@/auth/get-current-user/get-current-user.api";
+import { currentAuthQueries } from "@/auth/auth.queries";
 import { NotFoundPage } from "@/components/not-found-page";
 import { ServiceUnavailablePage } from "@/components/service-unavailable-page";
 import TanStackQueryDevtools from "../integrations/tanstack-query/devtools";
@@ -22,9 +22,13 @@ export interface RouterContext {
 const isDevEnv = import.meta.env.DEV;
 
 export const Route = createRootRouteWithContext<RouterContext>()({
-	beforeLoad: async () => {
+	beforeLoad: async ({ context: { queryClient } }) => {
 		try {
-			return { user: await getCurrentUser() };
+			const user: AuthActorDto = await queryClient.ensureQueryData(
+				currentAuthQueries.current(),
+			);
+
+			return { user };
 		} catch (error) {
 			if (isUnauthorizedProblemDetailsError(error)) {
 				return { user: null };

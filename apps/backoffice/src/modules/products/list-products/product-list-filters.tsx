@@ -14,6 +14,8 @@ import {
 } from "@repo/ui/components/select";
 import { Search, SlidersHorizontal, X } from "lucide-react";
 import { useId } from "react";
+import type { BranchScopeFilter } from "@/application/branch-scope/branch-scope-filter";
+import { BranchScopeSelect } from "@/components/branch-scope-select";
 
 type ProductKind = NonNullable<GetRentableItemsQueryDto["kind"]>;
 type ProductStatus = NonNullable<GetRentableItemsQueryDto["status"]>;
@@ -25,6 +27,7 @@ export interface ProductListFilterValue {
 	status?: ProductStatus;
 	categoryId?: string;
 	branchId?: string;
+	branchScope?: "all";
 	isVisible?: boolean;
 	isRentable?: boolean;
 	hasActivePricing?: boolean;
@@ -35,9 +38,12 @@ interface ProductListFiltersProps {
 	searchValue: string;
 	categories: CategoryDto[];
 	branches: GetBranchesBranchDto[];
+	inheritedBranchId: string | null;
+	showBranchFilter: boolean;
 	isAdvancedOpen: boolean;
 	onSearchChange: (value: string) => void;
 	onFilterChange: (filters: Partial<ProductListFilterValue>) => void;
+	onBranchChange: (branch: BranchScopeFilter) => void;
 	onToggleAdvanced: () => void;
 	onClearFilters: () => void;
 }
@@ -76,14 +82,22 @@ export function ProductListFilters({
 	searchValue,
 	categories,
 	branches,
+	inheritedBranchId,
+	showBranchFilter,
 	isAdvancedOpen,
 	onSearchChange,
 	onFilterChange,
+	onBranchChange,
 	onToggleAdvanced,
 	onClearFilters,
 }: ProductListFiltersProps) {
 	const searchInputId = useId();
-	const activeChips = buildActiveChips(filters, categories, branches);
+	const activeChips = buildActiveChips(
+		filters,
+		categories,
+		branches,
+		showBranchFilter,
+	);
 
 	return (
 		<section className="rounded-sm border border-border/70 bg-background px-4 py-3 shadow-xs">
@@ -145,7 +159,13 @@ export function ProductListFilters({
 				/>
 			</div>
 
-			<div className="mt-3 grid gap-2 lg:grid-cols-[minmax(280px,1fr)_160px_160px_auto] lg:items-center">
+			<div
+				className={
+					showBranchFilter
+						? "mt-3 grid gap-2 lg:grid-cols-[minmax(280px,1fr)_160px_160px_auto] lg:items-center"
+						: "mt-3 grid gap-2 lg:grid-cols-[minmax(280px,1fr)_160px_auto] lg:items-center"
+				}
+			>
 				<div className="relative">
 					<Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
 					<Input
@@ -169,16 +189,21 @@ export function ProductListFilters({
 					}))}
 				/>
 
-				<CompactSelect
-					value={filters.branchId}
-					placeholder="Sucursal"
-					allLabel="All"
-					onValueChange={(branchId) => onFilterChange({ branchId })}
-					options={branches.map((branch) => ({
-						label: branch.name,
-						value: branch.id,
-					}))}
-				/>
+				{showBranchFilter ? (
+					<BranchScopeSelect
+						value={
+							filters.branchId
+								? { type: "branch", branchId: filters.branchId }
+								: filters.branchScope === "all"
+									? { type: "all" }
+									: { type: "inherit" }
+						}
+						branches={branches}
+						inheritedBranchId={inheritedBranchId}
+						onChange={onBranchChange}
+						className="h-9 w-full rounded-sm border-border/70 bg-background px-4 shadow-none"
+					/>
+				) : null}
 
 				<Button
 					variant="outline"
@@ -197,7 +222,13 @@ export function ProductListFilters({
 						<ActiveFilterChip
 							key={chip.key}
 							label={chip.label}
-							onRemove={() => onFilterChange({ [chip.key]: undefined })}
+							onRemove={() => {
+								if (chip.key === "branchId" || chip.key === "branchScope") {
+									onBranchChange({ type: "inherit" });
+								} else {
+									onFilterChange({ [chip.key]: undefined });
+								}
+							}}
 						/>
 					))}
 					<button
@@ -371,9 +402,12 @@ function buildActiveChips(
 	filters: ProductListFilterValue,
 	categories: CategoryDto[],
 	branches: GetBranchesBranchDto[],
+	showBranchFilter: boolean,
 ): Array<{ key: keyof ProductListFilterValue; label: string }> {
 	const category = categories.find((item) => item.id === filters.categoryId);
-	const branch = branches.find((item) => item.id === filters.branchId);
+	const branch = showBranchFilter
+		? branches.find((item) => item.id === filters.branchId)
+		: undefined;
 	const chips: Array<{ key: keyof ProductListFilterValue; label: string }> = [];
 
 	if (filters.search) {
@@ -390,6 +424,8 @@ function buildActiveChips(
 	}
 	if (branch) {
 		chips.push({ key: "branchId", label: branch.name });
+	} else if (showBranchFilter && filters.branchScope === "all") {
+		chips.push({ key: "branchScope", label: "Todas las sucursales" });
 	}
 	if (filters.isVisible !== undefined) {
 		chips.push({

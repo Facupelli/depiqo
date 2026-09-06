@@ -6,9 +6,13 @@ import type {
 	GetRentalsSortDirectionDto,
 	GetRentalsStatusDto,
 } from "@repo/api-contracts";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { createContext, type ReactNode, useContext } from "react";
+import type { BranchScopeFilter } from "@/application/branch-scope/branch-scope-filter";
+import { resolveEffectiveBranchId } from "@/application/branch-scope/resolve-effective-branch-id";
 import { useCurrentBusiness } from "@/application/current-business/current-business.queries";
+import { currentAuthQueries } from "@/auth/auth.queries";
 import {
 	getRentalListInputFromQueryKey,
 	type ParsedRentalListItem,
@@ -18,7 +22,9 @@ import { RENTAL_ORDER_STATUS_OPTIONS } from "@/modules/rentals/shared/rental-ord
 import { useBranches } from "@/modules/settings/branches/public";
 import { resolveOperationalTimezone } from "@/shared/timezone/operational-timezone";
 
-export type RentalOrdersListSearch = GetRentalsQueryDto;
+export type RentalOrdersListSearch = GetRentalsQueryDto & {
+	branchScope?: "all";
+};
 export type RentalOrdersListSort = {
 	sortBy: GetRentalsSortByDto;
 	sortDirection: GetRentalsSortDirectionDto;
@@ -26,6 +32,7 @@ export type RentalOrdersListSort = {
 
 type RentalOrdersListContextValue = {
 	search: RentalOrdersListSearch;
+	effectiveRequest: GetRentalsQueryDto;
 	rentals: ParsedRentalListItem[];
 	branches: GetBranchesResponseDto;
 	meta: { total: number; totalPages: number };
@@ -34,11 +41,12 @@ type RentalOrdersListContextValue = {
 	isRefreshing: boolean;
 	isError: boolean;
 	hasActiveFilters: boolean;
+	inheritedBranchId: string | null;
 	getBranchName: (branchId: string) => string | undefined;
 	getOperationalTimezone: (branchId: string) => string;
 	setDateLens: (dateLens?: GetRentalsDateLensDto) => void;
 	setStatuses: (statuses?: GetRentalsStatusDto[]) => void;
-	setBranch: (branchId?: string) => void;
+	setBranch: (filter: BranchScopeFilter) => void;
 	resetFilters: () => void;
 	setPage: (page: number) => void;
 	setSort: (
@@ -91,19 +99,32 @@ function useRentalOrdersListPage(
 	) => void,
 ): RentalOrdersListContextValue {
 	const navigate = useNavigate();
+	const { data: currentAuth } = useSuspenseQuery(currentAuthQueries.current());
+	const { data: branches = [], isLoading: isBranchesLoading } = useBranches();
+	const { branchScope: _branchScope, ...backendSearch } = search;
+	const effectiveBranchId = resolveEffectiveBranchId({
+		branches,
+		branchId: search.branchId,
+		branchScope: search.branchScope,
+		workingBranchId: currentAuth.workingBranchId,
+	});
+	const effectiveRequest: GetRentalsQueryDto = {
+		...backendSearch,
+		branchId: effectiveBranchId,
+	};
 	const { data, isLoading, isError, isFetching, isPlaceholderData } =
-		useRentals(search, {
+		useRentals(effectiveRequest, {
 			placeholderData: (previousData, previousQuery) => {
 				const previousInput = getRentalListInputFromQueryKey(
 					previousQuery?.queryKey ?? [],
 				);
 
-				return previousInput && isSameRentalListContext(previousInput, search)
+				return previousInput &&
+					isSameRentalListContext(previousInput, effectiveRequest)
 					? previousData
 					: undefined;
 			},
 		});
-	const { data: branches = [], isLoading: isBranchesLoading } = useBranches();
 	const { data: business } = useCurrentBusiness();
 
 	const rentals = data?.data ?? [];
@@ -111,7 +132,10 @@ function useRentalOrdersListPage(
 		total: data?.total ?? 0,
 		totalPages: data ? Math.max(1, Math.ceil(data.total / search.limit)) : 1,
 	};
-	const hasActiveFilters = hasActiveRentalOrdersFilters(search);
+	const hasActiveFilters = hasActiveRentalOrdersFilters(
+		search,
+		branches.length !== 1,
+	);
 
 	function updateSearch(
 		updater: (previous: RentalOrdersListSearch) => RentalOrdersListSearch,
@@ -133,6 +157,7 @@ function useRentalOrdersListPage(
 
 	return {
 		search,
+		effectiveRequest,
 		rentals,
 		branches,
 		meta,
@@ -141,6 +166,7 @@ function useRentalOrdersListPage(
 		isRefreshing: isFetching && isPlaceholderData,
 		isError,
 		hasActiveFilters,
+		inheritedBranchId: currentAuth.workingBranchId,
 		getBranchName: (branchId: string) =>
 			branches.find((branch) => branch.id === branchId)?.name,
 		getOperationalTimezone: (branchId: string) =>
@@ -158,14 +184,23 @@ function useRentalOrdersListPage(
 			}),
 		setStatuses: (statuses?: GetRentalsStatusDto[]) =>
 			updateSearch((prev) => resetToFirstPage({ ...prev, statuses })),
-		setBranch: (branchId?: string) =>
-			updateSearch((prev) => resetToFirstPage({ ...prev, branchId })),
+		setBranch: (filter: BranchScopeFilter) =>
+			updateSearch((prev) => {
+				const next: RentalOrdersListSearch = {
+					...prev,
+					branchId: filter.type === "branch" ? filter.branchId : undefined,
+					branchScope: filter.type === "all" ? "all" : undefined,
+				};
+
+				return resetToFirstPage(next);
+			}),
 		resetFilters: () =>
 			updateSearch((prev) => ({
 				...prev,
 				page: 1,
 				limit: prev.limit,
 				branchId: undefined,
+				branchScope: undefined,
 				customerId: undefined,
 				statuses: undefined,
 				dateLens: undefined,
@@ -235,10 +270,12 @@ export function hasExplicitRentalOrdersSort(
 
 export function hasActiveRentalOrdersFilters(
 	search: RentalOrdersListSearch,
+	branchFilteringEnabled: boolean,
 ): boolean {
 	return Boolean(
 		search.dateLens ||
-			search.branchId ||
+			(branchFilteringEnabled &&
+				(search.branchId || search.branchScope === "all")) ||
 			search.customerId ||
 			search.statuses?.length ||
 			hasExplicitRentalOrdersSort(search),

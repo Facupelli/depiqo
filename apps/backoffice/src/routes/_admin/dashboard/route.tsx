@@ -17,6 +17,8 @@ import {
 	notFound,
 	Outlet,
 	redirect,
+	useNavigate,
+	useRouterState,
 } from "@tanstack/react-router";
 import type { LucideIcon } from "lucide-react";
 import {
@@ -31,13 +33,10 @@ import {
 	Users,
 	Warehouse,
 } from "lucide-react";
-import { CurrentBranchProvider } from "@/application/current-branch/current-branch.context";
-import {
-	useCurrentBranchActions,
-	useCurrentBranchId,
-} from "@/application/current-branch/current-branch.hooks";
 import { currentBusinessQueries } from "@/application/current-business/current-business.queries";
+import { currentAuthQueries } from "@/auth/auth.queries";
 import { useLogout } from "@/auth/logout/logout.mutation";
+import { useUpdateWorkingBranch } from "@/auth/update-working-branch/update-working-branch.mutation";
 import { branchQueries } from "@/modules/settings/branches/public";
 
 export const Route = createFileRoute("/_admin/dashboard")({
@@ -135,100 +134,173 @@ function DashboardLayout() {
 	}));
 
 	return (
-		<CurrentBranchProvider branches={branches}>
-			<div className="grid h-full grid-cols-[280px_1fr]">
-				<aside className="sticky top-0 flex h-svh flex-col border-r border-gray-200 bg-neutral-900 p-4 text-white overflow-y-auto">
-					{/* Tenant header */}
-					<div>
-						<p className="font-bold">{business.name}</p>
-					</div>
+		<div className="grid h-full grid-cols-[280px_1fr]">
+			<aside className="sticky top-0 flex h-svh flex-col border-r border-gray-200 bg-neutral-900 p-4 text-white overflow-y-auto">
+				{/* Tenant header */}
+				<div>
+					<p className="font-bold">{business.name}</p>
+				</div>
 
-					{/* Branch selector */}
-					<div className="py-6">
-						<BranchSelector branches={branchSelectorData} />
-					</div>
+				{/* Branch selector */}
+				<div className="py-6">
+					<BranchSelector branches={branchSelectorData} />
+				</div>
 
-					{/* Nav links */}
-					<nav className="flex flex-col gap-y-0.5 overflow-y-auto">
-						{sidebarItems.map((item) => {
-							const Icon = item.icon;
+				{/* Nav links */}
+				<nav className="flex flex-col gap-y-0.5 overflow-y-auto">
+					{sidebarItems.map((item) => {
+						const Icon = item.icon;
 
-							return (
-								<div key={item.name}>
-									<Link
-										to={item.href}
-										className="flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium text-neutral-400 transition-colors hover:bg-white/5 hover:text-white"
-										activeProps={{
-											className:
-												"flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium bg-white/10 text-white transition-colors",
-										}}
-										activeOptions={{ exact: true, includeSearch: false }}
-										preload={false}
-									>
-										<Icon className="h-4 w-4 shrink-0" />
-										{item.name}
-									</Link>
+						return (
+							<div key={item.name}>
+								<Link
+									to={item.href}
+									className="flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium text-neutral-400 transition-colors hover:bg-white/5 hover:text-white"
+									activeProps={{
+										className:
+											"flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium bg-white/10 text-white transition-colors",
+									}}
+									activeOptions={{ exact: true, includeSearch: false }}
+									preload={false}
+								>
+									<Icon className="h-4 w-4 shrink-0" />
+									{item.name}
+								</Link>
 
-									{item.children ? (
-										<div className="ml-5 mt-0.5 border-l border-white/10 pl-3">
-											{item.children.map((child) => (
-												<Link
-													key={child.href}
-													to={child.href}
-													activeOptions={{ exact: true }}
-													className="block py-1 text-sm text-neutral-400 transition-colors hover:text-neutral-300"
-													activeProps={{
-														className:
-															"block py-1 text-sm font-medium text-white transition-colors",
-													}}
-												>
-													{child.name}
-												</Link>
-											))}
-										</div>
-									) : null}
-								</div>
-							);
-						})}
-					</nav>
+								{item.children ? (
+									<div className="ml-5 mt-0.5 border-l border-white/10 pl-3">
+										{item.children.map((child) => (
+											<Link
+												key={child.href}
+												to={child.href}
+												activeOptions={{ exact: true }}
+												className="block py-1 text-sm text-neutral-400 transition-colors hover:text-neutral-300"
+												activeProps={{
+													className:
+														"block py-1 text-sm font-medium text-white transition-colors",
+												}}
+											>
+												{child.name}
+											</Link>
+										))}
+									</div>
+								) : null}
+							</div>
+						);
+					})}
+				</nav>
 
-					{/* Profile popover — pinned to bottom via mt-auto */}
-					<div className="mt-auto">
-						<UserPopover name={user.name} email={user.email} />
-					</div>
-				</aside>
+				{/* Profile popover — pinned to bottom via mt-auto */}
+				<div className="mt-auto">
+					<UserPopover name={user.name} email={user.email} />
+				</div>
+			</aside>
 
-				<div className="h-full min-w-0 overflow-y-auto bg-gray-50">
-					<div className="mx-auto min-h-full w-full max-w-7xl">
-						<Outlet />
-					</div>
+			<div className="h-full min-w-0 overflow-y-auto bg-gray-50">
+				<div className="mx-auto min-h-full w-full max-w-7xl">
+					<Outlet />
 				</div>
 			</div>
-		</CurrentBranchProvider>
+		</div>
 	);
 }
+
+const ALL_BRANCHES_VALUE = "all-branches";
 
 function BranchSelector({
 	branches,
 }: {
 	branches: { name: string; id: string }[];
 }) {
-	const branchId = useCurrentBranchId();
-	const { setCurrentBranch } = useCurrentBranchActions();
+	const { data: currentAuth } = useSuspenseQuery(currentAuthQueries.current());
+	const updateWorkingBranch = useUpdateWorkingBranch();
+	const navigate = useNavigate();
+	const navigateCatalog = useNavigate({ from: "/dashboard/catalog/" });
+	const location = useRouterState({ select: (state) => state.location });
+	const currentPathname = location.pathname.replace(/\/$/, "");
+	const selectedBranch = branches.find(
+		(branch) => branch.id === currentAuth.workingBranchId,
+	);
+
+	if (branches.length === 1) {
+		return (
+			<div className="rounded-md border border-white/15 px-3 py-2 text-sm text-neutral-200">
+				{branches[0].name}
+			</div>
+		);
+	}
+
+	async function handleWorkingBranchChange(value: string | null) {
+		if (!value) {
+			return;
+		}
+
+		await updateWorkingBranch.mutateAsync({
+			workingBranchId: value === ALL_BRANCHES_VALUE ? null : value,
+		});
+
+		switch (currentPathname) {
+			case "/dashboard/calendar":
+				if (typeof location.search.branchId === "string") {
+					await navigate({
+						to: "/dashboard/calendar",
+						search: (previous) => ({ ...previous, branchId: undefined }),
+						replace: true,
+					});
+				}
+				break;
+			case "/dashboard/orders":
+			case "/dashboard/inventory/equipment-types":
+				if (
+					typeof location.search.branchId === "string" ||
+					location.search.branchScope === "all"
+				) {
+					await navigate({
+						to: currentPathname,
+						search: (previous) => ({
+							...previous,
+							branchId: undefined,
+							branchScope: undefined,
+						}),
+						replace: true,
+					});
+				}
+				break;
+			case "/dashboard/catalog":
+				if (
+					typeof location.search.branchId === "string" ||
+					location.search.branchScope === "all"
+				) {
+					await navigateCatalog({
+						search: (previous) => ({
+							...previous,
+							branchId: undefined,
+							branchScope: undefined,
+						}),
+						replace: true,
+					});
+				}
+				break;
+		}
+	}
+
+	const items = [
+		{ label: "Todas las sucursales", value: ALL_BRANCHES_VALUE },
+		...branches.map((branch) => ({ label: branch.name, value: branch.id })),
+	];
 
 	return (
 		<Select
-			value={branchId ?? ""}
-			onValueChange={(value) => value && setCurrentBranch(value)}
-			items={branches.map((branch) => ({
-				label: branch.name,
-				value: branch.id,
-			}))}
+			value={selectedBranch?.id ?? ALL_BRANCHES_VALUE}
+			onValueChange={handleWorkingBranchChange}
+			items={items}
+			disabled={updateWorkingBranch.isPending}
 		>
 			<SelectTrigger className="w-full bg-transparent">
-				<SelectValue placeholder="Select a branch" />
+				<SelectValue />
 			</SelectTrigger>
 			<SelectContent>
+				<SelectItem value={ALL_BRANCHES_VALUE}>Todas las sucursales</SelectItem>
 				{branches.map((branch) => (
 					<SelectItem key={branch.id} value={branch.id}>
 						{branch.name}

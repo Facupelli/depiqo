@@ -17,6 +17,8 @@ import {
 	SelectValue,
 } from "@repo/ui/components/select";
 import { ChevronDown, X } from "lucide-react";
+import type { BranchScopeFilter } from "@/application/branch-scope/branch-scope-filter";
+import { BranchScopeSelect } from "@/components/branch-scope-select";
 import {
 	getRentalOrderStatusLabel,
 	RENTAL_ORDER_STATUS_OPTIONS,
@@ -40,6 +42,7 @@ export function RentalOrdersToolbar() {
 		search,
 		branches,
 		hasActiveFilters,
+		inheritedBranchId,
 		setDateLens,
 		setStatuses,
 		setBranch,
@@ -51,6 +54,11 @@ export function RentalOrdersToolbar() {
 			? selectedStatuses
 			: RENTAL_ORDER_STATUS_OPTIONS;
 	const statusLabel = getStatusFilterLabel(selectedStatuses);
+	const branchScopeValue: BranchScopeFilter = search.branchId
+		? { type: "branch", branchId: search.branchId }
+		: search.branchScope === "all"
+			? { type: "all" }
+			: { type: "inherit" };
 
 	function changeStatuses(statuses?: GetRentalsStatusDto[]) {
 		setStatuses(normalizeStatusesFilter(statuses));
@@ -164,31 +172,15 @@ export function RentalOrdersToolbar() {
 				</PopoverContent>
 			</Popover>
 
-			<Select
-				value={search.branchId ?? ALL_VALUE}
-				onValueChange={(value) =>
-					setBranch(!value || value === ALL_VALUE ? undefined : value)
-				}
-				items={[
-					{ value: ALL_VALUE, label: "Todas las ubicaciones" },
-					...branches.map((branch) => ({
-						value: branch.id,
-						label: branch.name,
-					})),
-				]}
-			>
-				<SelectTrigger className="h-9 w-full sm:w-52">
-					<SelectValue placeholder="Ubicación" />
-				</SelectTrigger>
-				<SelectContent>
-					<SelectItem value={ALL_VALUE}>Todas las ubicaciones</SelectItem>
-					{branches.map((branch) => (
-						<SelectItem key={branch.id} value={branch.id}>
-							{branch.name}
-						</SelectItem>
-					))}
-				</SelectContent>
-			</Select>
+			{branches.length === 1 ? null : (
+				<BranchScopeSelect
+					value={branchScopeValue}
+					branches={branches}
+					inheritedBranchId={inheritedBranchId}
+					onChange={setBranch}
+					className="h-9 w-full sm:w-52"
+				/>
+			)}
 
 			{hasActiveFilters ? (
 				<Button
