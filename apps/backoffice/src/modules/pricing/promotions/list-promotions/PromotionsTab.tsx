@@ -66,8 +66,8 @@ export function PromotionsTab() {
 					items={
 						[
 							{ value: "ALL", label: "Todas las activaciones" },
-							{ value: "AUTOMATIC", label: "Automaticas" },
-							{ value: "COUPON_REQUIRED", label: "Con cupon" },
+							{ value: "AUTOMATIC", label: "Automáticas" },
+							{ value: "COUPON_REQUIRED", label: "Con cupón" },
 						] as const
 					}
 				>
@@ -76,14 +76,14 @@ export function PromotionsTab() {
 					</SelectTrigger>
 					<SelectContent>
 						<SelectItem value="ALL">Todas las activaciones</SelectItem>
-						<SelectItem value="AUTOMATIC">Automaticas</SelectItem>
-						<SelectItem value="COUPON_REQUIRED">Con cupon</SelectItem>
+						<SelectItem value="AUTOMATIC">Automáticas</SelectItem>
+						<SelectItem value="COUPON_REQUIRED">Con cupón</SelectItem>
 					</SelectContent>
 				</Select>
 			</div>
 
 			<div>
-				<div className="px-2">
+				<div>
 					{query.isLoading ? (
 						<TableSkeleton />
 					) : query.isError ? (
