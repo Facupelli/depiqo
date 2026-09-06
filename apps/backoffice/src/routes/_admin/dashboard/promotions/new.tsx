@@ -12,8 +12,8 @@ function CreatePromotionPage() {
 		navigate({
 			to: "/dashboard/promotions",
 			search: {
-				tab: "promotions",
 				search: undefined,
+				activation: undefined,
 			},
 		});
 	}
