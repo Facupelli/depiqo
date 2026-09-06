@@ -53,6 +53,7 @@ export function RentalOrdersTable() {
 		rentals,
 		meta,
 		search,
+		effectiveRequest,
 		isLoading,
 		isBranchesLoading,
 		isRefreshing,
@@ -67,6 +68,7 @@ export function RentalOrdersTable() {
 	const tenantTimezone = useTenantTimezone();
 	const columns = createRentalOrdersColumns({
 		currentSort,
+		showBranch: effectiveRequest.branchId === undefined,
 		onSortChange: setSort,
 		getBranchName,
 		getOperationalTimezone,
@@ -177,12 +179,14 @@ export function RentalOrdersTable() {
 
 function createRentalOrdersColumns({
 	currentSort,
+	showBranch,
 	onSortChange,
 	getBranchName,
 	getOperationalTimezone,
 	tenantTimezone,
 }: {
 	currentSort: RentalOrdersListSort;
+	showBranch: boolean;
 	onSortChange: (
 		sortBy: GetRentalsSortByDto,
 		nextDirection?: GetRentalsSortDirectionDto,
@@ -245,15 +249,20 @@ function createRentalOrdersColumns({
 				);
 			},
 		},
-		{
-			id: "branch",
-			header: "Ubicación",
-			cell: ({ row }) => (
-				<span className="text-sm text-foreground">
-					{getBranchName(row.original.branchId) ?? "Sucursal no encontrada"}
-				</span>
-			),
-		},
+		...(showBranch
+			? [
+					{
+						id: "branch",
+						header: "Ubicación",
+						cell: ({ row }) => (
+							<span className="text-sm text-foreground">
+								{getBranchName(row.original.branchId) ??
+									"Sucursal no encontrada"}
+							</span>
+						),
+					} satisfies ColumnDef<ParsedRentalListItem>,
+				]
+			: []),
 		{
 			accessorKey: "pickupAt",
 			id: "pickupDate",

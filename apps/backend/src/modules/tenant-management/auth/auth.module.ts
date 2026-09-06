@@ -16,6 +16,7 @@ import { LocalAuthGuard } from './features/login/local-auth.guard';
 import { LocalStrategy } from './features/login/local.strategy';
 import { LoginController } from './features/login/login.controller';
 import { LogoutController } from './features/logout/logout.controller';
+import { UpdateWorkingBranchController } from './features/update-working-branch/update-working-branch.controller';
 import { ValidateCustomerLocalCredentialsService } from './features/validate-customer-local-credentials/validate-customer-local-credentials.service';
 import { ValidateLocalCredentialsService } from './features/validate-local-credentials/validate-local-credentials.service';
 import { AuthAuditService } from './shared/audit/auth-audit.service';
@@ -34,6 +35,7 @@ import { TenantCustomerSessionGuard } from './shared/session/tenant-customer-ses
 import { StorefrontTenantCustomerSessionGuard } from './shared/session/storefront-tenant-customer-session.guard';
 import { StorefrontTenantContextGuard } from '../tenant-context/guards/storefront-tenant-context.guard';
 import { TenantUserSessionGuard } from './shared/session/tenant-user-session.guard';
+import { WorkingBranchSessionService } from './shared/session/working-branch-session.service';
 
 @Module({
   imports: [
@@ -52,6 +54,7 @@ import { TenantUserSessionGuard } from './shared/session/tenant-user-session.gua
     GetCurrentUserController,
     LoginController,
     LogoutController,
+    UpdateWorkingBranchController,
   ],
   providers: [
     ValidateLocalCredentialsService,
@@ -75,6 +78,7 @@ import { TenantUserSessionGuard } from './shared/session/tenant-user-session.gua
     StorefrontTenantCustomerSessionGuard,
     AuthSessionSerializer,
     SessionRegeneratorService,
+    WorkingBranchSessionService,
     {
       provide: APP_GUARD,
       useClass: CsrfGuard,

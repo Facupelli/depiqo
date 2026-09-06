@@ -18,6 +18,7 @@ const catalogSearchSchema = z.object({
 	status: z.enum(["DRAFT", "ACTIVE", "ARCHIVED"]).default("ACTIVE"),
 	categoryId: z.string().trim().min(1).optional(),
 	branchId: z.string().trim().min(1).optional(),
+	branchScope: z.literal("all").optional(),
 	isVisible: BooleanSearchParamSchema,
 	isRentable: BooleanSearchParamSchema,
 	hasActivePricing: BooleanSearchParamSchema,

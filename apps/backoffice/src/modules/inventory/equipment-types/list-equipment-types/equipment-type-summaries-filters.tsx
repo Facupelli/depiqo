@@ -1,29 +1,25 @@
-import type {
-	GetBranchesBranchDto,
-	GetEquipmentTypeSummariesQueryDto,
-} from "@repo/api-contracts";
+import type { GetBranchesBranchDto } from "@repo/api-contracts";
 import { Input } from "@repo/ui/components/input";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@repo/ui/components/select";
 import { Search, X } from "lucide-react";
 import { useId } from "react";
+import type { BranchScopeFilter } from "@/application/branch-scope/branch-scope-filter";
+import { BranchScopeSelect } from "@/components/branch-scope-select";
 
 export interface EquipmentTypeSummariesFilterValue {
 	search?: string;
 	branchId?: string;
+	branchScope?: "all";
 }
 
 interface EquipmentTypeSummariesFiltersProps {
 	filters: EquipmentTypeSummariesFilterValue;
 	searchValue: string;
 	branches: GetBranchesBranchDto[];
+	inheritedBranchId: string | null;
+	showBranchFilter: boolean;
 	onSearchChange: (value: string) => void;
-	onFilterChange: (filters: Partial<GetEquipmentTypeSummariesQueryDto>) => void;
+	onFilterChange: (filters: Partial<EquipmentTypeSummariesFilterValue>) => void;
+	onBranchChange: (branch: BranchScopeFilter) => void;
 	onClearFilters: () => void;
 }
 
@@ -31,16 +27,25 @@ export function EquipmentTypeSummariesFilters({
 	filters,
 	searchValue,
 	branches,
+	inheritedBranchId,
+	showBranchFilter,
 	onSearchChange,
 	onFilterChange,
+	onBranchChange,
 	onClearFilters,
 }: EquipmentTypeSummariesFiltersProps) {
 	const searchInputId = useId();
-	const activeChips = buildActiveChips(filters, branches);
+	const activeChips = buildActiveChips(filters, branches, showBranchFilter);
 
 	return (
 		<section className="rounded-sm border border-border/70 bg-background px-4 py-3 shadow-xs">
-			<div className="grid gap-2 lg:grid-cols-[minmax(280px,1fr)_180px_auto] lg:items-center">
+			<div
+				className={
+					showBranchFilter
+						? "grid gap-2 lg:grid-cols-[minmax(280px,1fr)_180px_auto] lg:items-center"
+						: "grid gap-2 lg:grid-cols-[minmax(280px,1fr)_auto] lg:items-center"
+				}
+			>
 				<div className="relative">
 					<Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
 					<Input
@@ -53,16 +58,21 @@ export function EquipmentTypeSummariesFilters({
 					/>
 				</div>
 
-				<CompactSelect
-					value={filters.branchId}
-					placeholder="Sucursal"
-					allLabel="Todas"
-					onValueChange={(branchId) => onFilterChange({ branchId })}
-					options={branches.map((branch) => ({
-						label: branch.name,
-						value: branch.id,
-					}))}
-				/>
+				{showBranchFilter ? (
+					<BranchScopeSelect
+						value={
+							filters.branchId
+								? { type: "branch", branchId: filters.branchId }
+								: filters.branchScope === "all"
+									? { type: "all" }
+									: { type: "inherit" }
+						}
+						branches={branches}
+						inheritedBranchId={inheritedBranchId}
+						onChange={onBranchChange}
+						className="h-9 w-full rounded-sm border-border/70 bg-background px-4 shadow-none"
+					/>
+				) : null}
 			</div>
 
 			{activeChips.length > 0 ? (
@@ -71,7 +81,13 @@ export function EquipmentTypeSummariesFilters({
 						<ActiveFilterChip
 							key={chip.key}
 							label={chip.label}
-							onRemove={() => onFilterChange({ [chip.key]: undefined })}
+							onRemove={() => {
+								if (chip.key === "branchId" || chip.key === "branchScope") {
+									onBranchChange({ type: "inherit" });
+								} else {
+									onFilterChange({ [chip.key]: undefined });
+								}
+							}}
 						/>
 					))}
 					<button
@@ -84,47 +100,6 @@ export function EquipmentTypeSummariesFilters({
 				</div>
 			) : null}
 		</section>
-	);
-}
-
-function CompactSelect({
-	value,
-	placeholder,
-	allLabel,
-	options,
-	onValueChange,
-}: {
-	value?: string;
-	placeholder: string;
-	allLabel: string;
-	options: Array<{ label: string; value: string }>;
-	onValueChange: (value: string | undefined) => void;
-}) {
-	const selectItems = [{ label: allLabel, value: "all" }, ...options];
-
-	return (
-		<Select
-			value={value ?? "all"}
-			items={selectItems}
-			onValueChange={(nextValue) => {
-				if (nextValue)
-					onValueChange(nextValue === "all" ? undefined : nextValue);
-			}}
-		>
-			<SelectTrigger className="h-9 w-full rounded-sm border-border/70 bg-background px-4 shadow-none">
-				<span className="mr-1 text-muted-foreground text-xs">
-					{placeholder}
-				</span>
-				<SelectValue placeholder={allLabel} />
-			</SelectTrigger>
-			<SelectContent>
-				{selectItems.map((option) => (
-					<SelectItem key={option.value} value={option.value}>
-						{option.label}
-					</SelectItem>
-				))}
-			</SelectContent>
-		</Select>
 	);
 }
 
@@ -153,8 +128,11 @@ function ActiveFilterChip({
 function buildActiveChips(
 	filters: EquipmentTypeSummariesFilterValue,
 	branches: GetBranchesBranchDto[],
+	showBranchFilter: boolean,
 ): Array<{ key: keyof EquipmentTypeSummariesFilterValue; label: string }> {
-	const branch = branches.find((item) => item.id === filters.branchId);
+	const branch = showBranchFilter
+		? branches.find((item) => item.id === filters.branchId)
+		: undefined;
 	const chips: Array<{
 		key: keyof EquipmentTypeSummariesFilterValue;
 		label: string;
@@ -165,6 +143,8 @@ function buildActiveChips(
 	}
 	if (branch) {
 		chips.push({ key: "branchId", label: branch.name });
+	} else if (showBranchFilter && filters.branchScope === "all") {
+		chips.push({ key: "branchScope", label: "Todas las sucursales" });
 	}
 
 	return chips;

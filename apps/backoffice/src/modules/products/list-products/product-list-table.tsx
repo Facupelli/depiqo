@@ -24,6 +24,7 @@ interface ProductListTableProps {
 	onPaginationChange: (pagination: PaginationState) => void;
 	onRowClick: (rentableItemId: string) => void;
 	categoryNameById: Map<string, string>;
+	isSingleBranchScope: boolean;
 	isLoading?: boolean;
 	isRefreshing?: boolean;
 }
@@ -35,11 +36,15 @@ export function ProductListTable({
 	onPaginationChange,
 	onRowClick,
 	categoryNameById,
+	isSingleBranchScope,
 	isLoading = false,
 	isRefreshing = false,
 }: ProductListTableProps) {
 	const pageCount = Math.max(1, Math.ceil(total / pagination.pageSize));
-	const columns = createProductListColumns({ categoryNameById });
+	const columns = createProductListColumns({
+		categoryNameById,
+		isSingleBranchScope,
+	});
 	const table = useReactTable({
 		data: items,
 		columns,

@@ -33,8 +33,10 @@ const billingUnitLabels: NonNullable<
 
 export function createProductListColumns({
 	categoryNameById,
+	isSingleBranchScope,
 }: {
 	categoryNameById: Map<string, string>;
+	isSingleBranchScope: boolean;
 }): ColumnDef<GetRentableItemsItemDto>[] {
 	return [
 		{
@@ -96,23 +98,27 @@ export function createProductListColumns({
 				return categoryNameById.get(categoryId) ?? categoryId;
 			},
 		},
-		{
-			id: "offers",
-			header: "Sucursales",
-			cell: ({ row }) => {
-				const branchNames = Array.from(
-					new Set(
-						row.original.offers.map(
-							(offer) => offer.branchName ?? offer.branchId,
-						),
-					),
-				);
+		...(isSingleBranchScope
+			? []
+			: [
+					{
+						id: "offers",
+						header: "Sucursales",
+						cell: ({ row }) => {
+							const branchNames = Array.from(
+								new Set(
+									row.original.offers.map(
+										(offer) => offer.branchName ?? offer.branchId,
+									),
+								),
+							);
 
-				return branchNames.length > 0
-					? branchNames.join(", ")
-					: "Sin sucursales";
-			},
-		},
+							return branchNames.length > 0
+								? branchNames.join(", ")
+								: "Sin sucursales";
+						},
+					} satisfies ColumnDef<GetRentableItemsItemDto>,
+				]),
 		{
 			id: "startingPrice",
 			header: "Precio",

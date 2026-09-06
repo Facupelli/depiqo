@@ -8,3 +8,4 @@ export * from "./get-csrf-token.contract";
 export * from "./get-current-user.contract";
 export * from "./login.contract";
 export * from "./logout.contract";
+export * from "./update-working-branch.contract";

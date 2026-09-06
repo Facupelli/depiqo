@@ -6,10 +6,14 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@repo/ui/components/dropdown-menu";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import type { PaginationState } from "@tanstack/react-table";
 import { Plus } from "lucide-react";
 import { startTransition, useEffect, useMemo, useState } from "react";
+import type { BranchScopeFilter } from "@/application/branch-scope/branch-scope-filter";
+import { resolveEffectiveBranchId } from "@/application/branch-scope/resolve-effective-branch-id";
+import { currentAuthQueries } from "@/auth/auth.queries";
 import { useBranches } from "@/modules/settings/branches/public";
 import { useCategories } from "@/modules/settings/categories/public";
 import useDebounce from "@/shared/hooks/use-debounce";
@@ -24,6 +28,7 @@ type ProductListSearch = Omit<GetRentableItemsQueryDto, "kind"> & {
 	page: number;
 	pageSize: number;
 	kind?: Extract<GetRentableItemsQueryDto["kind"], "SINGLE" | "PACKAGE">;
+	branchScope?: "all";
 };
 
 export function ProductsPage({ search }: { search: ProductListSearch }) {
@@ -31,22 +36,35 @@ export function ProductsPage({ search }: { search: ProductListSearch }) {
 	const [searchInput, setSearchInput] = useState(search.search ?? "");
 	const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
 	const debouncedSearch = useDebounce(searchInput, 300);
+	const { data: currentAuth } = useSuspenseQuery(currentAuthQueries.current());
+	const { data: branches = [] } = useBranches();
+	const { branchScope: _branchScope, ...backendSearch } = search;
+	const effectiveBranchId = resolveEffectiveBranchId({
+		branches,
+		branchId: search.branchId,
+		branchScope: search.branchScope,
+		workingBranchId: currentAuth.workingBranchId,
+	});
+	const productListInput: GetRentableItemsQueryDto = {
+		...backendSearch,
+		branchId: effectiveBranchId,
+	};
 
 	const { data, isLoading, isError, isFetching, isPlaceholderData } =
-		useProducts(search, {
+		useProducts(productListInput, {
 			placeholderData: (previousData, previousQuery) => {
 				const previousInput = getProductListInputFromQueryKey(
 					previousQuery?.queryKey ?? [],
 				);
 
-				return previousInput && isSameCommercialContext(previousInput, search)
+				return previousInput &&
+					isSameCommercialContext(previousInput, productListInput)
 					? previousData
 					: undefined;
 			},
 		});
 	const isCompatibleRefresh = isFetching && isPlaceholderData;
 	const { data: categories = [] } = useCategories();
-	const { data: branches = [] } = useBranches({ isActive: true });
 	const activeCategories = categories.filter((category) => category.isActive);
 	const categoryNameById = useMemo(
 		() => new Map(categories.map((category) => [category.id, category.name])),
@@ -78,6 +96,13 @@ export function ProductsPage({ search }: { search: ProductListSearch }) {
 		navigate({
 			search: (previous) => ({ ...previous, ...filters, page: 1 }),
 			replace: true,
+		});
+	}
+
+	function handleBranchChange(branch: BranchScopeFilter) {
+		handleFilterChange({
+			branchId: branch.type === "branch" ? branch.branchId : undefined,
+			branchScope: branch.type === "all" ? "all" : undefined,
 		});
 	}
 
@@ -140,9 +165,12 @@ export function ProductsPage({ search }: { search: ProductListSearch }) {
 				searchValue={searchInput}
 				categories={activeCategories}
 				branches={branches}
+				inheritedBranchId={currentAuth.workingBranchId}
+				showBranchFilter={branches.length !== 1}
 				isAdvancedOpen={isAdvancedOpen}
 				onSearchChange={setSearchInput}
 				onFilterChange={handleFilterChange}
+				onBranchChange={handleBranchChange}
 				onToggleAdvanced={() => setIsAdvancedOpen((isOpen) => !isOpen)}
 				onClearFilters={handleClearFilters}
 			/>
@@ -164,6 +192,7 @@ export function ProductsPage({ search }: { search: ProductListSearch }) {
 						})
 					}
 					categoryNameById={categoryNameById}
+					isSingleBranchScope={productListInput.branchId !== undefined}
 					isLoading={isLoading}
 					isRefreshing={isCompatibleRefresh}
 				/>
@@ -174,7 +203,7 @@ export function ProductsPage({ search }: { search: ProductListSearch }) {
 
 function isSameCommercialContext(
 	previous: GetRentableItemsQueryDto,
-	current: ProductListSearch,
+	current: GetRentableItemsQueryDto,
 ) {
 	return (
 		previous.branchId === current.branchId &&

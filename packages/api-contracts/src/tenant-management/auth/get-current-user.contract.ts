@@ -1,9 +1,16 @@
 import { z } from "zod";
 
 import type { ApiContract } from "../../api-contract";
-import { AuthActorSchema } from "./login.contract";
+import { AuthCustomerSchema, AuthUserSchema } from "./login.contract";
 
-export const GetCurrentUserResponseSchema = AuthActorSchema;
+const WorkingBranchContextSchema = z.object({
+  workingBranchId: z.string().nullable(),
+});
+
+export const GetCurrentUserResponseSchema = z.discriminatedUnion("actorType", [
+  AuthUserSchema.extend(WorkingBranchContextSchema.shape),
+  AuthCustomerSchema.extend(WorkingBranchContextSchema.shape),
+]);
 
 export type GetCurrentUserResponseDto = z.infer<typeof GetCurrentUserResponseSchema>;
 
