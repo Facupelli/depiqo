@@ -157,26 +157,22 @@ export function ProductsPage({ search }: { search: ProductListSearch }) {
 				</div>
 			</div>
 
-			<ProductListFilters
-				filters={search}
-				searchValue={searchInput}
-				categories={activeCategories}
-				branches={branches}
-				inheritedBranchId={currentAuth.workingBranchId}
-				showBranchFilter={branches.length !== 1}
-				isAdvancedOpen={isAdvancedOpen}
-				onSearchChange={setSearchInput}
-				onFilterChange={handleFilterChange}
-				onBranchChange={handleBranchChange}
-				onToggleAdvanced={() => setIsAdvancedOpen((isOpen) => !isOpen)}
-				onClearFilters={handleClearFilters}
-			/>
+			<div className="@container/catalog-index space-y-4">
+				<ProductListFilters
+					filters={search}
+					searchValue={searchInput}
+					categories={activeCategories}
+					branches={branches}
+					inheritedBranchId={currentAuth.workingBranchId}
+					showBranchFilter={branches.length !== 1}
+					isAdvancedOpen={isAdvancedOpen}
+					onSearchChange={setSearchInput}
+					onFilterChange={handleFilterChange}
+					onBranchChange={handleBranchChange}
+					onToggleAdvanced={() => setIsAdvancedOpen((isOpen) => !isOpen)}
+					onClearFilters={handleClearFilters}
+				/>
 
-			{isError ? (
-				<p className="text-sm text-destructive">
-					No pudimos cargar los productos. Inténtalo nuevamente.
-				</p>
-			) : (
 				<ProductListTable
 					items={data?.data ?? []}
 					total={data?.total ?? 0}
@@ -192,8 +188,9 @@ export function ProductsPage({ search }: { search: ProductListSearch }) {
 					isSingleBranchScope={productListInput.branchId !== undefined}
 					isLoading={isLoading}
 					isRefreshing={isCompatibleRefresh}
+					isError={isError}
 				/>
-			)}
+			</div>
 		</div>
 	);
 }

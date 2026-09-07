@@ -62,6 +62,56 @@ const KIND_LABELS: Record<
 	PACKAGE: "Combo",
 };
 
+const SAVED_VIEWS = [
+	{
+		value: "active",
+		label: "Activos",
+		filters: {
+			status: "ACTIVE" as const,
+			kind: undefined,
+			hasActivePricing: undefined,
+		},
+	},
+	{
+		value: "draft",
+		label: "Borradores",
+		filters: {
+			status: "DRAFT" as const,
+			kind: undefined,
+			hasActivePricing: undefined,
+		},
+	},
+	{
+		value: "packages",
+		label: "Combos",
+		filters: {
+			status: undefined,
+			kind: "PACKAGE" as const,
+			hasActivePricing: undefined,
+		},
+	},
+	{
+		value: "needs-setup",
+		label: "Needs setup",
+		filters: {
+			status: undefined,
+			kind: undefined,
+			hasActivePricing: false as const,
+		},
+	},
+	{
+		value: "archived",
+		label: "Archivados",
+		filters: {
+			status: "ARCHIVED" as const,
+			kind: undefined,
+			hasActivePricing: undefined,
+		},
+	},
+] as const;
+
+const CUSTOM_VIEW_VALUE = "custom";
+
 const BOOLEAN_FILTER_LABELS = {
 	isVisible: {
 		true: "Visible in catalog",
@@ -98,75 +148,67 @@ export function ProductListFilters({
 		branches,
 		showBranchFilter,
 	);
+	const selectedSavedView = getSelectedSavedView(filters);
+
+	function applySavedView(savedView: (typeof SAVED_VIEWS)[number]) {
+		onFilterChange({
+			kind: savedView.filters.kind,
+			status: savedView.filters.status,
+			hasActivePricing: savedView.filters.hasActivePricing,
+		});
+	}
 
 	return (
 		<section className="rounded-sm border border-border/70 bg-background px-4 py-3 shadow-xs">
-			<div className="flex flex-wrap gap-2">
-				<SavedViewPill
-					label="Activos"
-					isActive={filters.status === "ACTIVE"}
-					onClick={() =>
-						onFilterChange({
-							kind: undefined,
-							status: "ACTIVE",
-							hasActivePricing: undefined,
-						})
-					}
-				/>
-				<SavedViewPill
-					label="Borradores"
-					isActive={filters.status === "DRAFT"}
-					onClick={() =>
-						onFilterChange({
-							kind: undefined,
-							status: "DRAFT",
-							hasActivePricing: undefined,
-						})
-					}
-				/>
-				<SavedViewPill
-					label="Combos"
-					isActive={filters.kind === "PACKAGE"}
-					onClick={() =>
-						onFilterChange({
-							kind: "PACKAGE",
-							status: undefined,
-							hasActivePricing: undefined,
-						})
-					}
-				/>
-				<SavedViewPill
-					label="Needs setup"
-					isActive={filters.hasActivePricing === false}
-					onClick={() =>
-						onFilterChange({
-							kind: undefined,
-							status: undefined,
-							hasActivePricing: false,
-						})
-					}
-				/>
-				<SavedViewPill
-					label="Archivados"
-					isActive={filters.status === "ARCHIVED"}
-					onClick={() =>
-						onFilterChange({
-							kind: undefined,
-							status: "ARCHIVED",
-							hasActivePricing: undefined,
-						})
-					}
-				/>
+			<div className="@2xl/catalog-index:hidden">
+				<Select
+					value={selectedSavedView?.value ?? CUSTOM_VIEW_VALUE}
+					items={[
+						...SAVED_VIEWS.map(({ value, label }) => ({ value, label })),
+						{ value: CUSTOM_VIEW_VALUE, label: "Vista personalizada" },
+					]}
+					onValueChange={(value) => {
+						const savedView = SAVED_VIEWS.find((view) => view.value === value);
+						if (savedView) applySavedView(savedView);
+					}}
+				>
+					<SelectTrigger className="h-9 w-full rounded-sm border-border/70 bg-background px-4 shadow-none @lg/catalog-index:w-56">
+						<SelectValue placeholder="Vista" />
+					</SelectTrigger>
+					<SelectContent>
+						{SAVED_VIEWS.map((view) => (
+							<SelectItem key={view.value} value={view.value}>
+								{view.label}
+							</SelectItem>
+						))}
+						{selectedSavedView ? null : (
+							<SelectItem value={CUSTOM_VIEW_VALUE} disabled>
+								Vista personalizada
+							</SelectItem>
+						)}
+					</SelectContent>
+				</Select>
+			</div>
+
+			<div className="hidden flex-wrap gap-2 @2xl/catalog-index:flex">
+				{SAVED_VIEWS.map((view) => (
+					<SavedViewPill
+						key={view.value}
+						label={view.label}
+						isActive={isSavedViewPillActive(view.value, filters)}
+						onClick={() => applySavedView(view)}
+					/>
+				))}
 			</div>
 
 			<div
 				className={
 					showBranchFilter
-						? "mt-3 grid gap-2 lg:grid-cols-[minmax(280px,1fr)_160px_160px_auto] lg:items-center"
-						: "mt-3 grid gap-2 lg:grid-cols-[minmax(280px,1fr)_160px_auto] lg:items-center"
+						? "mt-3 grid gap-2 @lg/catalog-index:grid-cols-2 @3xl/catalog-index:grid-cols-[minmax(280px,1fr)_160px_160px_auto] @3xl/catalog-index:items-center"
+						: "mt-3 grid gap-2 @lg/catalog-index:grid-cols-2 @3xl/catalog-index:grid-cols-[minmax(280px,1fr)_160px_auto] @3xl/catalog-index:items-center"
 				}
 			>
-				<div className="relative">
+				<div className="relative @lg/catalog-index:col-span-2 @3xl/catalog-index:col-span-1">
 					<Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
 					<Input
 						id={searchInputId}
@@ -242,7 +284,7 @@ export function ProductListFilters({
 			) : null}
 
 			{isAdvancedOpen ? (
-				<div className="mt-3 grid gap-3 rounded-sm border border-border/60 bg-muted/20 p-3 md:grid-cols-3">
+				<div className="mt-3 grid gap-3 rounded-sm border border-border/60 bg-muted/20 p-3 @2xl/catalog-index:grid-cols-3">
 					<BooleanSegment
 						label="Catalog visibility"
 						value={filters.isVisible}
@@ -269,6 +311,33 @@ export function ProductListFilters({
 				</div>
 			) : null}
 		</section>
+	);
+}
+
+function isSavedViewPillActive(
+	value: (typeof SAVED_VIEWS)[number]["value"],
+	filters: ProductListFilterValue,
+): boolean {
+	switch (value) {
+		case "active":
+			return filters.status === "ACTIVE";
+		case "draft":
+			return filters.status === "DRAFT";
+		case "packages":
+			return filters.kind === "PACKAGE";
+		case "needs-setup":
+			return filters.hasActivePricing === false;
+		case "archived":
+			return filters.status === "ARCHIVED";
+	}
+}
+
+function getSelectedSavedView(filters: ProductListFilterValue) {
+	return SAVED_VIEWS.find(
+		(view) =>
+			filters.status === view.filters.status &&
+			filters.kind === view.filters.kind &&
+			filters.hasActivePricing === view.filters.hasActivePricing,
 	);
 }
 
