@@ -12,12 +12,13 @@ import {
   CatalogRentableItemCannotBeActivatedFromStatusError,
   CatalogRentableItemRequirementAlreadyExistsError,
 } from './errors/catalog.errors';
+import { CATALOG_RENTABLE_ITEM_KINDS, CatalogRentableItemKind, CatalogRentableItemStatus } from './rentable-item.types';
 import { RentableItemRequirement } from './rentable-item-requirement.entity';
 
-export type RentableItemKind = 'SINGLE' | 'PACKAGE' | 'KIT' | 'BUNDLE';
-export type RentableItemStatus = 'DRAFT' | 'ACTIVE' | 'ARCHIVED';
+export type RentableItemKind = CatalogRentableItemKind;
+export type RentableItemStatus = CatalogRentableItemStatus;
 
-export const RENTABLE_ITEM_KINDS: readonly RentableItemKind[] = ['SINGLE', 'PACKAGE', 'KIT', 'BUNDLE'];
+export const RENTABLE_ITEM_KINDS: readonly RentableItemKind[] = CATALOG_RENTABLE_ITEM_KINDS;
 
 interface RentableItemProps {
   tenantId: string;

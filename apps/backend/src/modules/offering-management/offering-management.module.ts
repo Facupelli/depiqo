@@ -10,6 +10,8 @@ import { CreateRentalOfferWithPricingHttpController } from './features/create-re
 import { CreateRentalOfferWithPricingHandler } from './features/create-rental-offer-with-pricing/create-rental-offer-with-pricing.handler';
 import { CreateEquipmentHttpController } from './features/create-equipment/create-equipment.controller';
 import { CreateEquipmentHandler } from './features/create-equipment/create-equipment.handler';
+import { GetEquipmentTypeRentalUsagesHttpController } from './features/get-equipment-type-rental-usages/get-equipment-type-rental-usages.controller';
+import { GetEquipmentTypeRentalUsagesHandler } from './features/get-equipment-type-rental-usages/get-equipment-type-rental-usages.handler';
 import { ListEquipmentTypesHttpController } from './features/list-equipment-types/list-equipment-types.controller';
 import { ListEquipmentTypesHandler } from './features/list-equipment-types/list-equipment-types.handler';
 
@@ -20,12 +22,14 @@ import { ListEquipmentTypesHandler } from './features/list-equipment-types/list-
     CreatePackageHttpController,
     CreateRentalOfferWithPricingHttpController,
     ListEquipmentTypesHttpController,
+    GetEquipmentTypeRentalUsagesHttpController,
   ],
   providers: [
     CreateEquipmentHandler,
     CreatePackageHandler,
     CreateRentalOfferWithPricingHandler,
     ListEquipmentTypesHandler,
+    GetEquipmentTypeRentalUsagesHandler,
   ],
 })
 export class OfferingManagementModule {}

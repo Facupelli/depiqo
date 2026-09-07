@@ -1,20 +1,17 @@
-import type { ListEquipmentTypesResponseDto, ListEquipmentTypesStartingPriceDto } from '@repo/api-contracts';
+import type { ListEquipmentTypesResponseDto } from '@repo/api-contracts';
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
-import Decimal from 'decimal.js';
 import { err, ok, Result } from 'neverthrow';
 
 import { EquipmentTypePageFacts } from 'src/modules/asset-inventory/public-api/equipment-type-page-facts.public-api';
 import {
-  CatalogEquipmentTypeRentalFact,
-  CatalogEquipmentTypeRentalFacts,
-} from 'src/modules/catalog/public-api/catalog-equipment-type-rental-facts.public-api';
-import {
-  PricingRentalOfferStartingPriceFact,
-  PricingRentalOfferStartingPriceFacts,
-} from 'src/modules/pricing/public-api/pricing-rental-offer-starting-price-facts.public-api';
+  CatalogEquipmentTypeRentalUsage,
+  CatalogEquipmentTypeRentalUsages,
+} from 'src/modules/catalog/public-api/catalog-equipment-type-rental-usages.public-api';
+import { PricingRentalOfferStartingPriceFacts } from 'src/modules/pricing/public-api/pricing-rental-offer-starting-price-facts.public-api';
 import { BranchFacts, BranchFactsError } from 'src/modules/tenant-management/public-api/branch-facts.public-api';
 import { TenantCategoryTaxonomy } from 'src/modules/tenant-management/public-api/tenant-category-taxonomy.public-api';
 
+import { selectStartingPrice } from '../../application/select-starting-price';
 import { ListEquipmentTypesError, listEquipmentTypesError } from './list-equipment-types.errors';
 import { ListEquipmentTypesQuery } from './list-equipment-types.query';
 
@@ -24,7 +21,7 @@ export type ListEquipmentTypesResult = Result<ListEquipmentTypesResponseDto, Lis
 export class ListEquipmentTypesHandler implements IQueryHandler<ListEquipmentTypesQuery, ListEquipmentTypesResult> {
   constructor(
     private readonly equipmentTypePageFacts: EquipmentTypePageFacts,
-    private readonly catalogEquipmentTypeRentalFacts: CatalogEquipmentTypeRentalFacts,
+    private readonly catalogEquipmentTypeRentalUsages: CatalogEquipmentTypeRentalUsages,
     private readonly pricingRentalOfferStartingPriceFacts: PricingRentalOfferStartingPriceFacts,
     private readonly branchFacts: BranchFacts,
     private readonly tenantCategoryTaxonomy: TenantCategoryTaxonomy,
@@ -58,18 +55,17 @@ export class ListEquipmentTypesHandler implements IQueryHandler<ListEquipmentTyp
     const categoryIds = [...new Set(page.items.flatMap(({ categoryId }) => (categoryId === null ? [] : [categoryId])))];
     const [categories, catalogFacts] = await Promise.all([
       this.tenantCategoryTaxonomy.getCategoryDisplayFacts({ tenantId: query.tenantId, categoryIds }),
-      this.catalogEquipmentTypeRentalFacts.getFacts({
+      this.catalogEquipmentTypeRentalUsages.getUsages({
         tenantId: query.tenantId,
         equipmentTypeIds,
-        branchId: query.branchId,
       }),
     ]);
 
     const categoryById = new Map(categories.map((category) => [category.id, category]));
-    const catalogFactsByEquipmentTypeId = new Map(catalogFacts.map((facts) => [facts.equipmentTypeId, facts]));
-    const rentalOfferIds = [
-      ...new Set(catalogFacts.flatMap(({ standaloneRentalOfferIds }) => standaloneRentalOfferIds)),
-    ];
+    const catalogFactsByEquipmentTypeId = new Map(
+      catalogFacts.map((facts) => [facts.equipmentTypeId, deriveListRentalFacts(facts.usages, query.branchId)]),
+    );
+    const rentalOfferIds = [...new Set([...catalogFactsByEquipmentTypeId.values()].flatMap((facts) => facts.offerIds))];
     const pricingFacts =
       rentalOfferIds.length === 0
         ? []
@@ -82,7 +78,7 @@ export class ListEquipmentTypesHandler implements IQueryHandler<ListEquipmentTyp
     return ok({
       data: page.items.map((equipmentType) => {
         const category = equipmentType.categoryId ? categoryById.get(equipmentType.categoryId) : undefined;
-        const rentalFacts = catalogFactsByEquipmentTypeId.get(equipmentType.id) ?? emptyRentalFacts(equipmentType.id);
+        const rentalFacts = catalogFactsByEquipmentTypeId.get(equipmentType.id) ?? emptyRentalFacts();
 
         return {
           id: equipmentType.id,
@@ -94,7 +90,7 @@ export class ListEquipmentTypesHandler implements IQueryHandler<ListEquipmentTyp
           rentalSummary: {
             standaloneCount: rentalFacts.standaloneCount,
             comboCount: rentalFacts.comboCount,
-            startingPrice: selectStartingPrice(rentalFacts.standaloneRentalOfferIds, pricingFactByOfferId),
+            startingPrice: selectStartingPrice(rentalFacts.offerIds, pricingFactByOfferId),
           },
         };
       }),
@@ -105,32 +101,43 @@ export class ListEquipmentTypesHandler implements IQueryHandler<ListEquipmentTyp
   }
 }
 
-function emptyRentalFacts(equipmentTypeId: string): CatalogEquipmentTypeRentalFact {
-  return { equipmentTypeId, standaloneCount: 0, comboCount: 0, standaloneRentalOfferIds: [] };
+interface ListRentalFacts {
+  standaloneCount: number;
+  comboCount: number;
+  offerIds: string[];
 }
 
-function selectStartingPrice(
-  rentalOfferIds: string[],
-  pricingFactByOfferId: Map<string, PricingRentalOfferStartingPriceFact>,
-): ListEquipmentTypesStartingPriceDto | null {
-  const candidates = rentalOfferIds.flatMap((id) => {
-    const candidate = pricingFactByOfferId.get(id);
-    return candidate ? [candidate] : [];
-  });
-  if (candidates.length === 0) return null;
+function emptyRentalFacts(): ListRentalFacts {
+  return { standaloneCount: 0, comboCount: 0, offerIds: [] };
+}
 
-  const currencies = new Set(candidates.map(({ currency }) => currency));
-  const billingUnits = new Set(candidates.map(({ billingUnit }) => billingUnit));
-  if (currencies.size !== 1 || billingUnits.size !== 1) return null;
+function deriveListRentalFacts(usages: CatalogEquipmentTypeRentalUsage[], branchId?: string): ListRentalFacts {
+  const facts = emptyRentalFacts();
 
-  const lowest = candidates.reduce((current, candidate) =>
-    new Decimal(candidate.amount).lessThan(new Decimal(current.amount)) ? candidate : current,
-  );
-  return {
-    amount: lowest.amount,
-    currency: lowest.currency,
-    billingUnit: lowest.billingUnit,
-  };
+  for (const usage of usages) {
+    if (usage.status === 'ARCHIVED') continue;
+
+    const participatingOffers = branchId ? usage.offers.filter((offer) => offer.branchId === branchId) : usage.offers;
+    if (participatingOffers.length === 0) continue;
+
+    switch (usage.kind) {
+      case 'SINGLE':
+        facts.standaloneCount += 1;
+        facts.offerIds.push(...participatingOffers.map((offer) => offer.rentalOfferId));
+        break;
+      case 'PACKAGE':
+      case 'KIT':
+      case 'BUNDLE':
+        facts.comboCount += 1;
+        break;
+      default: {
+        const exhaustiveCheck: never = usage.kind;
+        throw exhaustiveCheck;
+      }
+    }
+  }
+
+  return facts;
 }
 
 function translateBranchFactsError(error: BranchFactsError, query: ListEquipmentTypesQuery): ListEquipmentTypesError {

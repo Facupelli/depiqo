@@ -36,8 +36,8 @@ import { CatalogRentalOfferReferenceAuthorityService } from './public-api/catalo
 import { CatalogOfferingAuthoringService } from './public-api/catalog-offering-authoring.service';
 import { CatalogSelectionResolution } from './public-api/catalog-selection-resolution.public-api';
 import { CatalogSelectionResolutionService } from './public-api/catalog-selection-resolution.service';
-import { CatalogEquipmentTypeRentalFacts } from './public-api/catalog-equipment-type-rental-facts.public-api';
-import { CatalogEquipmentTypeRentalFactsService } from './public-api/catalog-equipment-type-rental-facts.service';
+import { CatalogEquipmentTypeRentalUsages } from './public-api/catalog-equipment-type-rental-usages.public-api';
+import { CatalogEquipmentTypeRentalUsagesService } from './public-api/catalog-equipment-type-rental-usages.service';
 
 @Module({
   imports: [AssetInventoryModule, TenantManagementModule],
@@ -58,7 +58,7 @@ import { CatalogEquipmentTypeRentalFactsService } from './public-api/catalog-equ
     { provide: CatalogOfferingAuthoring, useClass: CatalogOfferingAuthoringService },
     { provide: CatalogRentalOfferReferenceAuthority, useClass: CatalogRentalOfferReferenceAuthorityService },
     { provide: CatalogSelectionResolution, useClass: CatalogSelectionResolutionService },
-    { provide: CatalogEquipmentTypeRentalFacts, useClass: CatalogEquipmentTypeRentalFactsService },
+    { provide: CatalogEquipmentTypeRentalUsages, useClass: CatalogEquipmentTypeRentalUsagesService },
     ActivateRentableItemHandler,
     ArchiveRentableItemHandler,
     CreateIndividualRentalHandler,
@@ -81,7 +81,7 @@ import { CatalogEquipmentTypeRentalFactsService } from './public-api/catalog-equ
     CatalogOfferingAuthoring,
     CatalogRentalOfferReferenceAuthority,
     CatalogSelectionResolution,
-    CatalogEquipmentTypeRentalFacts,
+    CatalogEquipmentTypeRentalUsages,
   ],
 })
 export class CatalogModule {}
