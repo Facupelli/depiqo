@@ -9,7 +9,11 @@ import { AddAssetsToEquipmentTypeHandler } from './features/add-assets-to-equipm
 import { ReplaceEquipmentTypeAccessoryDefaultsHttpController } from './features/replace-equipment-type-accessory-defaults/replace-equipment-type-accessory-defaults.controller';
 import { ChangeAssetOwnerHttpController } from './features/change-asset-owner/change-asset-owner.controller';
 import { ChangeAssetOwnerHandler } from './features/change-asset-owner/change-asset-owner.handler';
+import { DeactivateAssetHttpController } from './features/deactivate-asset/deactivate-asset.controller';
+import { DeactivateAssetHandler } from './features/deactivate-asset/deactivate-asset.handler';
 import { ReplaceEquipmentTypeAccessoryDefaultsHandler } from './features/replace-equipment-type-accessory-defaults/replace-equipment-type-accessory-defaults.handler';
+import { ReactivateAssetHttpController } from './features/reactivate-asset/reactivate-asset.controller';
+import { ReactivateAssetHandler } from './features/reactivate-asset/reactivate-asset.handler';
 import { RetireAssetHttpController } from './features/retire-asset/retire-asset.controller';
 import { RetireAssetHandler } from './features/retire-asset/retire-asset.handler';
 import { UpdateAssetHttpController } from './features/update-asset/update-asset.controller';
@@ -55,6 +59,8 @@ import { EquipmentTypeReferenceAuthority } from './public-api/equipment-type-ref
   controllers: [
     AddAssetsToEquipmentTypeHttpController,
     ChangeAssetOwnerHttpController,
+    DeactivateAssetHttpController,
+    ReactivateAssetHttpController,
     ReplaceEquipmentTypeAccessoryDefaultsHttpController,
     RetireAssetHttpController,
     UpdateAssetHttpController,
@@ -73,6 +79,8 @@ import { EquipmentTypeReferenceAuthority } from './public-api/equipment-type-ref
   providers: [
     AddAssetsToEquipmentTypeHandler,
     ChangeAssetOwnerHandler,
+    DeactivateAssetHandler,
+    ReactivateAssetHandler,
     ReplaceEquipmentTypeAccessoryDefaultsHandler,
     RetireAssetHandler,
     UpdateAssetHandler,

@@ -26,6 +26,16 @@ export class InvalidAssetFieldError extends AssetInventoryError {
   }
 }
 
+export class InvalidAssetLifecycleTransitionError extends AssetInventoryError {
+  constructor(
+    public readonly assetId: string,
+    public readonly currentStatus: 'ACTIVE' | 'INACTIVE' | 'RETIRED',
+    public readonly requestedStatus: 'ACTIVE' | 'INACTIVE' | 'RETIRED',
+  ) {
+    super(`Asset "${assetId}" cannot transition from status "${currentStatus}" to "${requestedStatus}".`);
+  }
+}
+
 export class AssetOwnerNotFoundError extends AssetInventoryError {
   constructor(public readonly ownerId: string) {
     super(`Asset owner "${ownerId}" was not found.`);
