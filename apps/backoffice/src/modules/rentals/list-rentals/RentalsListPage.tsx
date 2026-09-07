@@ -30,8 +30,10 @@ export function RentalsListPage({
 						Nuevo borrador
 					</Link>
 				</div>
-				<RentalOrdersToolbar />
-				<RentalOrdersTable />
+				<div className="@container/rentals-index space-y-4">
+					<RentalOrdersToolbar />
+					<RentalOrdersTable />
+				</div>
 			</div>
 		</RentalOrdersListProvider>
 	);

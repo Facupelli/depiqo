@@ -181,7 +181,7 @@ function DashboardLayout() {
 						<BranchSelector branches={branchSelectorData} />
 					</div>
 				</header>
-				<div className="space-y-4 p-6">
+				<div className="space-y-4 p-4 lg:p-6">
 					<Outlet />
 				</div>
 			</div>
