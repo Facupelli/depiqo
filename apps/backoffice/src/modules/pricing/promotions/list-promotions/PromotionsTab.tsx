@@ -7,20 +7,11 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@repo/ui/components/select";
-import { Skeleton } from "@repo/ui/components/skeleton";
 import { useNavigate } from "@tanstack/react-router";
 import { Search } from "lucide-react";
 import { Route } from "@/routes/_admin/dashboard/promotions";
 import { PromotionsList } from "./PromotionsList";
 import { usePromotionsTab } from "./use-promotions-tab";
-
-const TABLE_SKELETON_KEYS = [
-	"promotion-skeleton-1",
-	"promotion-skeleton-2",
-	"promotion-skeleton-3",
-	"promotion-skeleton-4",
-	"promotion-skeleton-5",
-] as const;
 
 export function PromotionsTab() {
 	const navigate = useNavigate({ from: Route.fullPath });
@@ -43,8 +34,8 @@ export function PromotionsTab() {
 
 	return (
 		<div className="space-y-4">
-			<div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-				<div className="relative max-w-sm flex-1">
+			<div className="flex flex-col gap-3 @lg/promotions-index:flex-row @lg/promotions-index:items-center">
+				<div className="relative w-full @lg/promotions-index:max-w-sm @lg/promotions-index:flex-1">
 					<Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
 					<Input
 						className="pl-9"
@@ -71,7 +62,7 @@ export function PromotionsTab() {
 						] as const
 					}
 				>
-					<SelectTrigger className="w-full sm:w-52">
+					<SelectTrigger className="w-full @lg/promotions-index:w-52">
 						<SelectValue placeholder="Todas las activaciones" />
 					</SelectTrigger>
 					<SelectContent>
@@ -83,32 +74,22 @@ export function PromotionsTab() {
 			</div>
 
 			<div>
-				<div>
-					{query.isLoading ? (
-						<TableSkeleton />
-					) : query.isError ? (
-						<p className="py-10 text-center text-sm text-destructive">
-							No se pudieron cargar las promociones.
-						</p>
-					) : query.data?.length === 0 ? (
-						<p className="py-10 text-center text-sm text-muted-foreground">
-							No se encontraron promociones.
-						</p>
-					) : (
-						<PromotionsList promotions={query.data ?? []} onEdit={handleEdit} />
-					)}
-				</div>
+				{query.isError ? (
+					<p className="py-10 text-center text-sm text-destructive">
+						No se pudieron cargar las promociones.
+					</p>
+				) : !query.isLoading && query.data?.length === 0 ? (
+					<p className="py-10 text-center text-sm text-muted-foreground">
+						No se encontraron promociones.
+					</p>
+				) : (
+					<PromotionsList
+						promotions={query.data ?? []}
+						onEdit={handleEdit}
+						isLoading={query.isLoading}
+					/>
+				)}
 			</div>
-		</div>
-	);
-}
-
-function TableSkeleton() {
-	return (
-		<div className="space-y-3 px-1 pt-2">
-			{TABLE_SKELETON_KEYS.map((key) => (
-				<Skeleton key={key} className="h-12 w-full rounded-md" />
-			))}
 		</div>
 	);
 }

@@ -32,12 +32,14 @@ function RouteComponent() {
 					to="/dashboard/promotions/new"
 					className={buttonVariants({ className: "ml-auto shrink-0 gap-2" })}
 				>
-					Nueva promocion
+					Nueva promoción
 				</Link>
 				{/* TODO: Restore the coupon creation dialog after it is migrated to v2 promotion queries. */}
 			</div>
 
-			<PromotionsTab />
+			<div className="@container/promotions-index">
+				<PromotionsTab />
+			</div>
 		</div>
 	);
 }
