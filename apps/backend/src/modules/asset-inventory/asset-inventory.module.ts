@@ -35,6 +35,8 @@ import { GetEquipmentTypeDetailHttpController } from './features/get-equipment-t
 import { GetEquipmentTypeDetailHandler } from './features/get-equipment-type-detail/get-equipment-type-detail.handler';
 import { GetEquipmentTypeSummariesHttpController } from './features/get-equipment-type-summaries/get-equipment-type-summaries.controller';
 import { GetEquipmentTypeSummariesHandler } from './features/get-equipment-type-summaries/get-equipment-type-summaries.handler';
+import { GetEquipmentTypeSummaryHttpController } from './features/get-equipment-type-summary/get-equipment-type-summary.controller';
+import { GetEquipmentTypeSummaryHandler } from './features/get-equipment-type-summary/get-equipment-type-summary.handler';
 import { GetEquipmentTypesHttpController } from './features/get-equipment-types/get-equipment-types.controller';
 import { GetEquipmentTypesHandler } from './features/get-equipment-types/get-equipment-types.handler';
 import { GetOwnerDetailHttpController } from './features/get-owner-detail/get-owner-detail.controller';
@@ -74,6 +76,7 @@ import { EquipmentTypePageFactsService } from './public-api/equipment-type-page-
     GetAssetsHttpController,
     GetEquipmentTypeDetailHttpController,
     GetEquipmentTypeSummariesHttpController,
+    GetEquipmentTypeSummaryHttpController,
     GetEquipmentTypesHttpController,
     GetOwnerDetailHttpController,
     GetOwnersHttpController,
@@ -94,6 +97,7 @@ import { EquipmentTypePageFactsService } from './public-api/equipment-type-page-
     GetAssetsHandler,
     GetEquipmentTypeDetailHandler,
     GetEquipmentTypeSummariesHandler,
+    GetEquipmentTypeSummaryHandler,
     GetEquipmentTypesHandler,
     GetOwnerDetailHandler,
     GetOwnersHandler,

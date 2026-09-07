@@ -9,6 +9,7 @@ export * from "./get-asset-summaries.contract";
 export * from "./get-assets.contract";
 export * from "./get-equipment-type-detail.contract";
 export * from "./get-equipment-type-summaries.contract";
+export * from "./get-equipment-type-summary.contract";
 export * from "./get-equipment-types.contract";
 export * from "./get-owner-detail.contract";
 export * from "./get-rental-accessory-defaults.contract";
