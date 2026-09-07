@@ -246,9 +246,9 @@ function SkeletonRows({ columns }: { columns: string[] }) {
 	return Array.from({ length: 5 }).map((_, rowIndex) => (
 		// biome-ignore lint/suspicious/noArrayIndexKey: skeleton rows are static placeholders.
 		<TableRow key={rowIndex}>
-			{columns.map((columnId, columnIndex) => (
+			{columns.map((columnId) => (
 				<TableCell
-					key={`${columnId}-${columnIndex}`}
+					key={columnId}
 					className={getResponsiveColumnClass(columnId)}
 				>
 					<Skeleton className="h-4 w-full" />

@@ -75,6 +75,30 @@ const ONBOARDING_STATUS_VARIANT: Record<
 	REJECTED: "destructive",
 };
 
+function getCustomerName(customer: GetRentalCustomersItemDto) {
+	return `${customer.firstName} ${customer.lastName}`;
+}
+
+function getCustomerEmail(customer: GetRentalCustomersItemDto) {
+	return customer.email;
+}
+
+function formatCustomerCreatedDate(createdAt: string, timezone: string) {
+	return formatTimestampInTimezone(createdAt, timezone, "DD MMM, YYYY");
+}
+
+function CustomerOnboardingBadge({
+	status,
+}: {
+	status: RentalCustomerOnboardingStatusDto;
+}) {
+	return (
+		<Badge variant={ONBOARDING_STATUS_VARIANT[status]}>
+			{ONBOARDING_STATUS_LABELS[status]}
+		</Badge>
+	);
+}
+
 function createCustomersColumns(
 	timezone: string,
 ): ColumnDef<GetRentalCustomersItemDto>[] {
@@ -82,51 +106,50 @@ function createCustomersColumns(
 		{
 			id: "name",
 			header: "Nombre",
-			accessorFn: (row) => `${row.firstName} ${row.lastName}`,
-			cell: ({ row }) => {
-				const { firstName, lastName } = row.original;
-				return (
-					<span className="font-medium leading-snug">
-						{firstName} {lastName}
-					</span>
-				);
-			},
+			accessorFn: getCustomerName,
+			cell: ({ row }) => (
+				<div className="space-y-1">
+					<p className="font-medium leading-snug">
+						{getCustomerName(row.original)}
+					</p>
+					<p className="text-xs text-muted-foreground tabular-nums @5xl/customers-index:hidden">
+						{formatCustomerCreatedDate(row.original.createdAt, timezone)}
+					</p>
+				</div>
+			),
 		},
 		{
 			accessorKey: "email",
 			header: "Email",
-			cell: ({ getValue }) => (
+			cell: ({ row }) => (
 				<span className="text-sm text-muted-foreground">
-					{getValue<string>()}
+					{getCustomerEmail(row.original)}
 				</span>
 			),
 		},
 		{
 			accessorKey: "status",
 			header: "Onboarding",
-			cell: ({ getValue }) => {
-				const status = getValue<RentalCustomerOnboardingStatusDto>();
-				return (
-					<Badge variant={ONBOARDING_STATUS_VARIANT[status]}>
-						{ONBOARDING_STATUS_LABELS[status]}
-					</Badge>
-				);
-			},
+			cell: ({ row }) => (
+				<CustomerOnboardingBadge status={row.original.status} />
+			),
 		},
 		{
 			accessorKey: "createdAt",
 			header: "Creado",
-			cell: ({ getValue }) => (
+			cell: ({ row }) => (
 				<span className="text-sm text-muted-foreground tabular-nums">
-					{formatTimestampInTimezone(
-						getValue<string>(),
-						timezone,
-						"DD MMM, YYYY",
-					)}
+					{formatCustomerCreatedDate(row.original.createdAt, timezone)}
 				</span>
 			),
 		},
 	];
+}
+
+function getCustomerColumnClass(columnId: string) {
+	return columnId === "createdAt"
+		? "hidden @5xl/customers-index:table-cell"
+		: undefined;
 }
 
 export function CustomersListPage({ search }: { search: CustomersListSearch }) {
@@ -221,7 +244,7 @@ export function CustomersListPage({ search }: { search: CustomersListSearch }) {
 	return (
 		<div className="space-y-4">
 			<h1 className="sr-only">Clientes</h1>
-			<div className="space-y-2">
+			<div className="@container/customers-index space-y-2">
 				<CustomersToolbar
 					search={search}
 					searchInput={searchInput}
@@ -231,13 +254,16 @@ export function CustomersListPage({ search }: { search: CustomersListSearch }) {
 					resetFilters={resetFilters}
 				/>
 
-				<div className="rounded-md border">
+				<div className="hidden rounded-md border @2xl/customers-index:block">
 					<Table>
 						<TableHeader>
 							{table.getHeaderGroups().map((headerGroup) => (
 								<TableRow key={headerGroup.id}>
 									{headerGroup.headers.map((header) => (
-										<TableHead key={header.id}>
+										<TableHead
+											key={header.id}
+											className={getCustomerColumnClass(header.column.id)}
+										>
 											{header.isPlaceholder
 												? null
 												: flexRender(
@@ -260,6 +286,14 @@ export function CustomersListPage({ search }: { search: CustomersListSearch }) {
 						</TableBody>
 					</Table>
 				</div>
+
+				<CompactCustomersList
+					customers={customers}
+					isLoading={isLoading}
+					isError={isError}
+					pageSize={search.pageSize}
+					timezone={timezone}
+				/>
 
 				<PaginationFooter
 					page={search.page}
@@ -299,12 +333,12 @@ function CustomersToolbar({
 	];
 
 	return (
-		<div className="flex flex-wrap items-center gap-2 py-4">
+		<div className="flex flex-col items-stretch gap-2 py-4 @sm/customers-index:flex-row @sm/customers-index:flex-wrap @sm/customers-index:items-center">
 			<Input
 				placeholder="Search by name, email…"
 				value={searchInput}
 				onChange={(event) => onSearchInputChange(event.target.value)}
-				className="h-8 w-64"
+				className="h-8 w-full @sm/customers-index:w-64"
 			/>
 
 			<Select
@@ -318,7 +352,7 @@ function CustomersToolbar({
 				}
 				items={statusItems}
 			>
-				<SelectTrigger className="h-8 w-44">
+				<SelectTrigger className="h-8 w-full @sm/customers-index:w-44">
 					<SelectValue placeholder="Onboarding status" />
 				</SelectTrigger>
 				<SelectContent>
@@ -362,7 +396,12 @@ function TableBodyContent({
 	const colSpan = table.getAllColumns().length;
 
 	if (isLoading) {
-		return <SkeletonRows columns={colSpan} rows={pageSize} />;
+		return (
+			<SkeletonRows
+				columnIds={table.getAllLeafColumns().map((column) => column.id)}
+				rows={pageSize}
+			/>
+		);
 	}
 
 	if (isError) {
@@ -394,7 +433,10 @@ function TableBodyContent({
 	return table.getRowModel().rows.map((row) => (
 		<TableRow key={row.id}>
 			{row.getVisibleCells().map((cell) => (
-				<TableCell key={cell.id}>
+				<TableCell
+					key={cell.id}
+					className={getCustomerColumnClass(cell.column.id)}
+				>
 					{flexRender(cell.column.columnDef.cell, cell.getContext())}
 				</TableCell>
 			))}
@@ -402,22 +444,104 @@ function TableBodyContent({
 	));
 }
 
-function SkeletonRows({ columns, rows }: { columns: number; rows: number }) {
+function CompactCustomersList({
+	customers,
+	isLoading,
+	isError,
+	pageSize,
+	timezone,
+}: {
+	customers: GetRentalCustomersItemDto[];
+	isLoading: boolean;
+	isError: boolean;
+	pageSize: number;
+	timezone: string;
+}) {
+	if (isLoading) {
+		const skeletonKeys = Array.from(
+			{ length: Math.min(pageSize, 10) },
+			(_, index) => `compact-skeleton-${index}`,
+		);
+
+		return (
+			<ul className="divide-y rounded-md border @2xl/customers-index:hidden">
+				{skeletonKeys.map((key) => (
+					<li key={key} className="space-y-2 p-4">
+						<div className="flex items-center justify-between gap-3">
+							<Skeleton className="h-4 w-32" />
+							<Skeleton className="h-5 w-20" />
+						</div>
+						<Skeleton className="h-4 w-48 max-w-full" />
+						<Skeleton className="h-3 w-24" />
+					</li>
+				))}
+			</ul>
+		);
+	}
+
+	if (isError) {
+		return (
+			<ul className="rounded-md border @2xl/customers-index:hidden">
+				<li className="px-4 py-12 text-center text-muted-foreground">
+					Something went wrong loading customers.
+				</li>
+			</ul>
+		);
+	}
+
+	if (customers.length === 0) {
+		return (
+			<ul className="rounded-md border @2xl/customers-index:hidden">
+				<li className="px-4 py-12 text-center text-muted-foreground">
+					No customers found.
+				</li>
+			</ul>
+		);
+	}
+
+	return (
+		<ul className="divide-y rounded-md border @2xl/customers-index:hidden">
+			{customers.map((customer) => (
+				<li key={customer.id} className="space-y-2 p-4">
+					<div className="flex items-start justify-between gap-3">
+						<p className="min-w-0 break-words font-medium leading-snug">
+							{getCustomerName(customer)}
+						</p>
+						<CustomerOnboardingBadge status={customer.status} />
+					</div>
+					<p className="break-all text-sm text-muted-foreground">
+						{getCustomerEmail(customer)}
+					</p>
+					<p className="text-xs text-muted-foreground tabular-nums">
+						{formatCustomerCreatedDate(customer.createdAt, timezone)}
+					</p>
+				</li>
+			))}
+		</ul>
+	);
+}
+
+function SkeletonRows({
+	columnIds,
+	rows,
+}: {
+	columnIds: string[];
+	rows: number;
+}) {
 	const rowKeys = Array.from(
 		{ length: Math.min(rows, 10) },
 		(_, rowIndex) => `skeleton-row-${rowIndex}`,
-	);
-	const columnKeys = Array.from(
-		{ length: columns },
-		(_, columnIndex) => `skeleton-column-${columnIndex}`,
 	);
 
 	return (
 		<>
 			{rowKeys.map((rowKey) => (
 				<TableRow key={rowKey}>
-					{columnKeys.map((columnKey) => (
-						<TableCell key={columnKey}>
+					{columnIds.map((columnId) => (
+						<TableCell
+							key={columnId}
+							className={getCustomerColumnClass(columnId)}
+						>
 							<Skeleton className="h-4 w-full" />
 						</TableCell>
 					))}
