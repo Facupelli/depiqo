@@ -4,11 +4,11 @@ import "@fullcalendar/react/themes/classic/palette.css";
 import "./orders-calendar.css";
 
 import FullCalendar, {
-	type CalendarRef,
 	type DatesSetInfo,
 	type EventClickInfo,
 	type EventDisplayInfo,
 	type MountInfo,
+	useCalendarController,
 } from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/react/daygrid";
 import interactionPlugin from "@fullcalendar/react/interaction";
@@ -22,7 +22,7 @@ import {
 	ChevronLeft,
 	ChevronRight,
 } from "lucide-react";
-import { useRef, useState } from "react";
+import { useRef } from "react";
 import dayjs from "@/lib/dates/dayjs";
 import { cn } from "@/lib/utils";
 import type { ParsedGetRentalsCalendarResponse } from "@/modules/rentals/rental.queries";
@@ -65,15 +65,13 @@ export function OrdersCalendar({
 	onRangeChange,
 	onOrderClick,
 }: OrdersCalendarProps) {
-	const calendarRef = useRef<CalendarRef | null>(null);
+	const controller = useCalendarController();
 	const eventCleanupRef = useRef(new Map<HTMLElement, () => void>());
-	const [title, setTitle] = useState("");
 
 	function handleDatesSet(arg: DatesSetInfo) {
 		const calendarApi = arg.view.calendar;
 		const anchorDate = calendarApi.getDate();
 
-		setTitle(arg.view.title);
 		onRangeChange({
 			view: arg.view.type as OrdersCalendarView,
 			date: calendarApi.formatIso(anchorDate, true),
@@ -113,7 +111,7 @@ export function OrdersCalendar({
 	}
 
 	function handleViewChange(nextView: OrdersCalendarView) {
-		calendarRef.current?.getApi().changeView(nextView);
+		controller.changeView(nextView);
 	}
 
 	const events = orders.map((order) =>
@@ -121,67 +119,71 @@ export function OrdersCalendar({
 	);
 
 	return (
-		<div className="space-y-4">
-			<div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-				<div className="flex flex-wrap items-center gap-2">
+		<div className="orders-calendar space-y-4">
+			<div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 @2xl/calendar-page:flex @2xl/calendar-page:flex-wrap @2xl/calendar-page:gap-x-3 @2xl/calendar-page:gap-y-2">
+				<div className="col-start-1 row-start-1 flex h-8 w-fit items-center overflow-hidden rounded-lg border border-neutral-200 bg-white @5xl/calendar-page:h-9">
 					<Button
-						variant="outline"
+						variant="ghost"
 						size="sm"
-						className="h-9 rounded-lg border-neutral-200 bg-white px-3 shadow-none"
-						onClick={() => calendarRef.current?.getApi().today()}
+						className="h-full rounded-none border-r border-neutral-200 px-2.5 shadow-none @2xl/calendar-page:px-3"
+						onClick={() => controller.today()}
 					>
 						Hoy
 					</Button>
-					<div className="flex h-9 items-center overflow-hidden rounded-lg border border-neutral-200 bg-white">
-						<Button
-							variant="ghost"
-							size="icon-sm"
-							className="h-full rounded-none"
-							onClick={() => calendarRef.current?.getApi().prev()}
-						>
-							<ChevronLeft className="size-4" />
-						</Button>
-						<Button
-							variant="ghost"
-							size="icon-sm"
-							className="h-full rounded-none border-l border-neutral-200"
-							onClick={() => calendarRef.current?.getApi().next()}
-						>
-							<ChevronRight className="size-4" />
-						</Button>
-					</div>
-					<div className="inline-flex h-9 min-w-0 items-center gap-2 rounded-lg border border-neutral-200 bg-white px-3 text-sm font-medium text-neutral-800">
-						<CalendarDays className="size-4 shrink-0 text-neutral-400" />
-						<span className="truncate">{title}</span>
+					<Button
+						variant="ghost"
+						size="icon-sm"
+						className="h-full w-8 rounded-none @5xl/calendar-page:w-9"
+						aria-label="Ir al periodo anterior"
+						onClick={() => controller.prev()}
+					>
+						<ChevronLeft className="size-4" />
+					</Button>
+					<Button
+						variant="ghost"
+						size="icon-sm"
+						className="h-full w-8 rounded-none border-l border-neutral-200 @5xl/calendar-page:w-9"
+						aria-label="Ir al periodo siguiente"
+						onClick={() => controller.next()}
+					>
+						<ChevronRight className="size-4" />
+					</Button>
+				</div>
+
+				<div className="col-span-2 row-start-2 flex min-w-0 items-center gap-2 overflow-hidden @2xl/calendar-page:order-none @2xl/calendar-page:col-auto @2xl/calendar-page:row-auto @2xl/calendar-page:flex-1">
+					<CalendarDays className="hidden size-4 shrink-0 text-neutral-400 @2xl/calendar-page:block" />
+
+					<div className="flex min-w-0 items-baseline gap-1.5 @2xl/calendar-page:flex-wrap @2xl/calendar-page:gap-x-3 @2xl/calendar-page:gap-y-1">
+						<span className="min-w-0 truncate text-sm font-semibold text-neutral-800">
+							{controller.view?.title ?? ""}
+						</span>
+
+						<p className="shrink-0 truncate text-xs text-neutral-500">
+							{timezone}
+						</p>
 					</div>
 				</div>
 
-				<div className="flex items-center gap-4">
-					<div className="text-right text-xs text-muted-foreground">
-						<p>{timezone}</p>
-					</div>
-
-					<div className="inline-flex h-9 w-fit rounded-lg border border-neutral-200 bg-neutral-50 p-0.5">
-						{(
-							Object.entries(ORDERS_CALENDAR_VIEW_LABELS) as Array<
-								[OrdersCalendarView, string]
-							>
-						).map(([view, label]) => (
-							<button
-								key={view}
-								type="button"
-								onClick={() => handleViewChange(view)}
-								className={cn(
-									"rounded-md px-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-1",
-									currentView === view
-										? "bg-emerald-600 text-white shadow-sm"
-										: "text-neutral-600 hover:bg-white hover:text-neutral-900",
-								)}
-							>
-								{label}
-							</button>
-						))}
-					</div>
+				<div className="col-start-2 row-start-1 inline-flex h-8 w-fit max-w-full items-center justify-self-end rounded-lg border border-neutral-200 bg-neutral-50 p-0.5 @2xl/calendar-page:justify-self-auto @5xl/calendar-page:h-9">
+					{(
+						Object.entries(ORDERS_CALENDAR_VIEW_LABELS) as Array<
+							[OrdersCalendarView, string]
+						>
+					).map(([view, label]) => (
+						<button
+							key={view}
+							type="button"
+							onClick={() => handleViewChange(view)}
+							className={cn(
+								"h-full min-w-0 rounded-md px-2 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-1 @2xl/calendar-page:px-3 @2xl/calendar-page:text-sm",
+								(controller.view?.type ?? currentView) === view
+									? "bg-emerald-600 text-white shadow-sm"
+									: "text-neutral-600 hover:bg-white hover:text-neutral-900",
+							)}
+						>
+							{label}
+						</button>
+					))}
 				</div>
 			</div>
 
@@ -200,7 +202,7 @@ export function OrdersCalendar({
 
 					<FullCalendar
 						key={`${currentView}:${currentDate}:${timezone}`}
-						ref={calendarRef}
+						controller={controller}
 						plugins={[
 							classicThemePlugin,
 							dayGridPlugin,
@@ -293,7 +295,7 @@ export function OrdersCalendar({
 				</div>
 			)}
 
-			<div className="flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-neutral-200 px-1 pt-3 text-xs text-neutral-500">
+			<div className="flex items-center justify-between gap-2 whitespace-nowrap border-t border-neutral-200 px-1 pt-3 text-[10px] text-neutral-500 @2xl/calendar-page:flex-wrap @2xl/calendar-page:justify-start @2xl/calendar-page:gap-x-5 @2xl/calendar-page:gap-y-2 @2xl/calendar-page:text-xs">
 				{RENTAL_ORDER_STATUS_LEGEND_ITEMS.map((item) => (
 					<LegendItem
 						key={item.label}
@@ -314,8 +316,13 @@ function LegendItem({
 	label: string;
 }) {
 	return (
-		<div className="inline-flex items-center gap-1.5">
-			<span className={cn("size-2 rounded-full", colorClass)} />
+		<div className="inline-flex min-w-0 items-center gap-1 @2xl/calendar-page:gap-1.5">
+			<span
+				className={cn(
+					"size-1.5 shrink-0 rounded-full @2xl/calendar-page:size-2",
+					colorClass,
+				)}
+			/>
 			<span>{label}</span>
 		</div>
 	);
@@ -337,7 +344,7 @@ function CalendarEventContent({
 	if (isTimeGrid) {
 		const boundaryTime =
 			arg.isStart && arg.isEnd
-				? `${pickupTime} → ${returnTime}`
+				? `${pickupTime} ΓåÆ ${returnTime}`
 				: arg.isStart
 					? pickupTime
 					: arg.isEnd
@@ -345,15 +352,15 @@ function CalendarEventContent({
 						: null;
 
 		return (
-			<div className="flex min-w-0 flex-1 flex-col gap-1 overflow-hidden px-2 py-1">
-				<span className="truncate font-mono text-[10px] uppercase tracking-[0.04em] opacity-60">
+			<div className="orders-calendar-event-content flex min-w-0 flex-1 flex-col gap-1 overflow-hidden px-2 py-1">
+				<span className="orders-calendar-event-number truncate font-mono text-[10px] uppercase tracking-[0.04em] opacity-60">
 					#{formatOrderNumber(order.rentalNumber)}
 				</span>
-				<span className="break-words text-xs font-semibold leading-tight">
+				<span className="orders-calendar-event-customer break-words text-xs font-semibold leading-tight">
 					{order.customer?.displayName ?? "Pedido"}
 				</span>
 				{boundaryTime ? (
-					<span className="text-[9px] leading-none opacity-55">
+					<span className="orders-calendar-event-time text-[9px] leading-none opacity-55">
 						{boundaryTime}
 					</span>
 				) : null}
@@ -362,16 +369,16 @@ function CalendarEventContent({
 	}
 
 	return (
-		<div className="flex min-w-0 flex-1 flex-col justify-center gap-px overflow-hidden px-2 py-0.5">
+		<div className="orders-calendar-event-content flex min-w-0 flex-1 flex-col justify-center gap-px overflow-hidden px-2 py-0.5">
 			<div className="flex min-w-0 items-baseline gap-1.5">
-				<span className="shrink-0 font-mono text-[10px] uppercase tracking-[0.04em] opacity-60">
+				<span className="orders-calendar-event-number shrink-0 font-mono text-[10px] uppercase tracking-[0.04em] opacity-60">
 					#{formatOrderNumber(order.rentalNumber)}
 				</span>
-				<span className="truncate text-xs font-semibold">
+				<span className="orders-calendar-event-customer truncate text-xs font-semibold">
 					{order.customer?.displayName ?? "Pedido"}
 				</span>
 			</div>
-			<div className="grid min-w-0 grid-cols-2 text-[9px] leading-none opacity-55">
+			<div className="orders-calendar-event-time grid min-w-0 grid-cols-2 text-[9px] leading-none opacity-55">
 				<span className="truncate">{arg.isStart ? pickupTime : null}</span>
 				<span className="truncate text-right">
 					{arg.isEnd ? returnTime : null}
