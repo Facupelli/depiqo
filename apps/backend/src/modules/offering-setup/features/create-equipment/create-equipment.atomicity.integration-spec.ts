@@ -1,28 +1,25 @@
 import { randomUUID } from 'node:crypto';
 
 import { TestingModule } from '@nestjs/testing';
-import { err, ok } from 'neverthrow';
+import { ok } from 'neverthrow';
 
 import { IntegrationEventPublisher } from 'src/core/domain/events/integration-event.publisher';
 import { PrismaService } from 'src/core/database/prisma.service';
 import { AssetCreatedIntegrationEvent } from 'src/modules/asset-inventory/public-api/events/asset-created.integration-event';
-import {
-  EquipmentTypeReferenceAuthority,
-  EquipmentTypeReferenceAuthorityError,
-} from 'src/modules/asset-inventory/public-api/equipment-type-reference-authority.public-api';
+import { EquipmentTypeReferenceAuthority } from 'src/modules/asset-inventory/public-api/equipment-type-reference-authority.public-api';
 import {
   createOfferingSetupIntegrationContext,
   useIntegrationTestContext,
 } from '../../../../../test/support/integration-test-context';
 import { createTestFixtures, TestFixtures } from '../../../../../test/support/fixtures';
-import { CreateRentableEquipmentCommand } from './create-rentable-equipment.command';
-import { CreateRentableEquipmentHandler } from './create-rentable-equipment.handler';
+import { CreateEquipmentCommand } from './create-equipment.command';
+import { CreateEquipmentHandler } from './create-equipment.handler';
 
-describe('CreateRentableEquipment atomicity integration', () => {
+describe('CreateEquipment atomicity integration', () => {
   let moduleRef: TestingModule;
   let prisma: PrismaService;
   let fixtures: TestFixtures;
-  let handler: CreateRentableEquipmentHandler;
+  let handler: CreateEquipmentHandler;
   let publishSpy: jest.SpyInstance;
   let validateEquipmentTypeReferences: jest.Mock;
 
@@ -33,20 +30,29 @@ describe('CreateRentableEquipment atomicity integration', () => {
     ]);
     prisma = moduleRef.get(PrismaService);
     fixtures = createTestFixtures(prisma);
-    handler = moduleRef.get(CreateRentableEquipmentHandler);
+    handler = moduleRef.get(CreateEquipmentHandler);
     const publisher = moduleRef.get(IntegrationEventPublisher);
     publishSpy = jest.spyOn(publisher, 'publish');
     return moduleRef;
   });
 
-  function buildCommand(tenantId: string, branchId: string): CreateRentableEquipmentCommand {
-    return new CreateRentableEquipmentCommand({
+  function buildCommand(
+    tenantId: string,
+    physicalBranchId: string,
+    commercialBranchId = physicalBranchId,
+  ): CreateEquipmentCommand {
+    return new CreateEquipmentCommand({
       tenantId,
-      name: `Atomicity Camera ${randomUUID()}`,
-      imageUrl: 'https://images.example.com/atomicity-camera.webp',
-      kind: 'SINGLE',
-      quantityPerItem: 1,
-      assets: [{ branchId }],
+      equipment: {
+        name: `Atomicity Camera ${randomUUID()}`,
+        imageUrl: 'https://images.example.com/atomicity-camera.webp',
+      },
+      assets: [{ branchId: physicalBranchId }],
+      standaloneRental: {
+        name: `Atomicity Camera Rental ${randomUUID()}`,
+        imageUrl: 'https://images.example.com/atomicity-camera.webp',
+        branchIds: [commercialBranchId],
+      },
     });
   }
 
@@ -65,19 +71,13 @@ describe('CreateRentableEquipment atomicity integration', () => {
   it('rolls back Inventory writes when Catalog returns a typed failure', async () => {
     const tenant = await fixtures.createTenant();
     const branch = await fixtures.createBranch({ tenantId: tenant.id });
-    validateEquipmentTypeReferences.mockResolvedValue(
-      err({
-        code: 'EquipmentTypeReferenceNotFound',
-        message: 'Equipment type was not found.',
-        equipmentTypeId: 'missing-id',
-      } satisfies EquipmentTypeReferenceAuthorityError),
-    );
+    validateEquipmentTypeReferences.mockResolvedValue(ok(undefined));
 
-    const result = await handler.execute(buildCommand(tenant.id, branch.id));
+    const result = await handler.execute(buildCommand(tenant.id, branch.id, randomUUID()));
 
     expect(result.isErr()).toBe(true);
     if (result.isOk()) return;
-    expect(result.error.code).toBe('offering_setup.invalid_equipment');
+    expect(result.error.code).toBe('offering_setup.branch_unavailable');
 
     // The reference authority is invoked during the Catalog phase, after the
     // real Inventory writes have executed inside the outer transaction.
@@ -116,13 +116,19 @@ describe('CreateRentableEquipment atomicity integration', () => {
     await expect(
       prisma.client.v2Asset.count({ where: { id: { in: result.value.assetIds }, tenantId: tenant.id } }),
     ).resolves.toBe(result.value.assetIds.length);
+    expect(result.value.standaloneRental).not.toBeNull();
+    if (!result.value.standaloneRental) return;
     await expect(
-      prisma.client.v2RentableItem.count({ where: { id: result.value.rentableItemId, tenantId: tenant.id } }),
+      prisma.client.v2RentableItem.count({
+        where: { id: result.value.standaloneRental.rentableItemId, tenantId: tenant.id },
+      }),
     ).resolves.toBe(1);
     await expect(prisma.client.v2RentableItemRequirement.count({ where: { tenantId: tenant.id } })).resolves.toBe(1);
     await expect(
-      prisma.client.v2RentalOffer.count({ where: { id: { in: result.value.rentalOfferIds }, tenantId: tenant.id } }),
-    ).resolves.toBe(result.value.rentalOfferIds.length);
+      prisma.client.v2RentalOffer.count({
+        where: { id: { in: result.value.standaloneRental.rentalOfferIds }, tenantId: tenant.id },
+      }),
+    ).resolves.toBe(result.value.standaloneRental.rentalOfferIds.length);
 
     expect(publishSpy).toHaveBeenCalledTimes(1);
     const publishedEvents = publishSpy.mock.calls[0][0] as readonly unknown[];

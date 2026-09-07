@@ -1,6 +1,6 @@
 import { ApplicationError } from 'src/core/errors/application-error';
 
-export type CreateRentableEquipmentErrorCode =
+export type CreateEquipmentErrorCode =
   | 'offering_setup.tenant_unavailable'
   | 'offering_setup.branch_unavailable'
   | 'offering_setup.invalid_equipment'
@@ -8,17 +8,17 @@ export type CreateRentableEquipmentErrorCode =
   | 'offering_setup.asset_owner_not_found'
   | 'offering_setup.active_owner_contract_not_found'
   | 'offering_setup.multiple_active_owner_contracts'
-  | 'offering_setup.invalid_rentable_item';
+  | 'offering_setup.invalid_standalone_rental';
 
-export interface CreateRentableEquipmentError extends ApplicationError {
-  code: CreateRentableEquipmentErrorCode;
+export interface CreateEquipmentError extends ApplicationError {
+  code: CreateEquipmentErrorCode;
 }
 
-export function createRentableEquipmentError(
-  code: CreateRentableEquipmentErrorCode,
+export function createEquipmentError(
+  code: CreateEquipmentErrorCode,
   message: string,
   cause?: unknown,
   context?: Record<string, unknown>,
-): CreateRentableEquipmentError {
+): CreateEquipmentError {
   return { code, message, cause, context };
 }

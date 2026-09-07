@@ -8,16 +8,12 @@ import { CreatePackageHttpController } from './features/create-package/create-pa
 import { CreatePackageHandler } from './features/create-package/create-package.handler';
 import { CreateRentalOfferWithPricingHttpController } from './features/create-rental-offer-with-pricing/create-rental-offer-with-pricing.controller';
 import { CreateRentalOfferWithPricingHandler } from './features/create-rental-offer-with-pricing/create-rental-offer-with-pricing.handler';
-import { CreateRentableEquipmentHttpController } from './features/create-rentable-equipment/create-rentable-equipment.controller';
-import { CreateRentableEquipmentHandler } from './features/create-rentable-equipment/create-rentable-equipment.handler';
+import { CreateEquipmentHttpController } from './features/create-equipment/create-equipment.controller';
+import { CreateEquipmentHandler } from './features/create-equipment/create-equipment.handler';
 
 @Module({
   imports: [TenantManagementModule, AssetInventoryModule, CatalogModule, PricingModule],
-  controllers: [
-    CreateRentableEquipmentHttpController,
-    CreatePackageHttpController,
-    CreateRentalOfferWithPricingHttpController,
-  ],
-  providers: [CreateRentableEquipmentHandler, CreatePackageHandler, CreateRentalOfferWithPricingHandler],
+  controllers: [CreateEquipmentHttpController, CreatePackageHttpController, CreateRentalOfferWithPricingHttpController],
+  providers: [CreateEquipmentHandler, CreatePackageHandler, CreateRentalOfferWithPricingHandler],
 })
 export class OfferingSetupModule {}

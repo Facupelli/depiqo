@@ -38,25 +38,21 @@ Pricing
 
 The resulting records remain owned by those modules.
 
-### Rentable Equipment Setup
+### Equipment Setup
 
-Rentable equipment setup coordinates the records required to make equipment available through rental flows.
+Equipment setup always creates an operational `EquipmentType` and may independently include physical Assets and a standalone rental configuration.
 
-It may include:
+When standalone rental configuration is requested, the workflow also creates:
 
 ```text
-EquipmentType
-Physical assets
-Accessory defaults
-RentableItem
-FulfillmentRequirement
-RentalOffer
-RatePlan or pricing assignment
+SINGLE RentableItem
+EquipmentType x1 FulfillmentRequirement
+RentalOffers for the explicitly selected commercial branches
 ```
 
-Standalone rentable equipment still has both an operational `EquipmentType` and a catalog `RentableItem`.
+Physical Asset branches come from the Asset inputs. Commercial RentalOffer branches come from the standalone rental configuration. Neither is inferred from the other.
 
-The customer-selectable entity is the `RentalOffer` for that rentable item.
+The customer-selectable entity is the `RentalOffer` for the standalone rentable item.
 
 ### Setup Result
 
@@ -86,7 +82,7 @@ Rate plan, tier, promotion, coupon, and pricing-assignment rules must be validat
 
 A package setup creates fulfillment requirements against equipment types, not child rentable items.
 
-A standalone rentable equipment setup must not treat `EquipmentType` as the customer-selected catalog item.
+A standalone rental setup must not treat `EquipmentType` as the customer-selected catalog item.
 
 A setup workflow must not mark an offer as ready or bookable when required catalog, pricing, or inventory setup is missing.
 
