@@ -39,7 +39,7 @@ export function CreateBranchPage({ onBack, onCreated }: CreateBranchPageProps) {
 	}
 
 	return (
-		<div className="space-y-6 p-8">
+		<div className="space-y-4">
 			<div className="flex items-start justify-between gap-4">
 				<div className="space-y-2">
 					<Button

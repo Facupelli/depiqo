@@ -8,16 +8,12 @@ export function CategoriesPage() {
 	const timezone = useTenantTimezone();
 
 	return (
-		<div className="space-y-6 p-8">
+		<div className="space-y-4">
 			<div className="flex items-start justify-between gap-4">
-				<div>
-					<h1 className="text-2xl font-semibold tracking-tight">Categorías</h1>
-					<p className="text-sm text-muted-foreground">
-						Gestiona la taxonomía compartida para equipos e ítems rentables.
-					</p>
+				<h1 className="sr-only">Categorías</h1>
+				<div className="ml-auto">
+					<CreateCategoryDialog />
 				</div>
-
-				<CreateCategoryDialog />
 			</div>
 
 			{isError ? (

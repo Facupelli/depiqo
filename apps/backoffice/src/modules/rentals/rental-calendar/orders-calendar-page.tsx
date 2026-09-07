@@ -88,7 +88,7 @@ export function OrdersCalendarPage({
 	const inheritedScopeLabel = globalBranch?.name ?? "Todas las sucursales";
 
 	return (
-		<div className="space-y-6 p-6">
+		<div className="space-y-4">
 			{branches.length > 1 && (
 				<Select
 					value={search.branchId ?? INHERIT_GLOBAL_BRANCH_VALUE}

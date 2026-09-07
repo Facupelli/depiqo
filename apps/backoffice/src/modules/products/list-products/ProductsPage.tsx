@@ -126,38 +126,35 @@ export function ProductsPage({ search }: { search: ProductListSearch }) {
 	}
 
 	return (
-		<div className="space-y-6 p-8">
+		<div className="space-y-4">
 			<div className="flex items-start justify-between gap-4">
-				<div>
-					<h1 className="text-2xl font-semibold tracking-tight">Productos</h1>
-					<p className="text-sm text-muted-foreground">
-						Gestiona lo que tus clientes pueden alquilar
-					</p>
-				</div>
-				<DropdownMenu>
-					<DropdownMenuTrigger
-						render={
-							<Button>
-								<Plus className="mr-2 h-4 w-4" />
-								Nuevo producto
-							</Button>
-						}
-					/>
-					<DropdownMenuContent align="end">
-						<DropdownMenuItem
-							onClick={() => navigate({ to: "/dashboard/catalog/new" })}
-						>
-							Individual
-						</DropdownMenuItem>
-						<DropdownMenuItem
-							onClick={() =>
-								navigate({ to: "/dashboard/catalog/packages/new" })
+				<h1 className="sr-only">Productos</h1>
+				<div className="ml-auto">
+					<DropdownMenu>
+						<DropdownMenuTrigger
+							render={
+								<Button>
+									<Plus className="mr-2 h-4 w-4" />
+									Nuevo producto
+								</Button>
 							}
-						>
-							Combo
-						</DropdownMenuItem>
-					</DropdownMenuContent>
-				</DropdownMenu>
+						/>
+						<DropdownMenuContent align="end">
+							<DropdownMenuItem
+								onClick={() => navigate({ to: "/dashboard/catalog/new" })}
+							>
+								Individual
+							</DropdownMenuItem>
+							<DropdownMenuItem
+								onClick={() =>
+									navigate({ to: "/dashboard/catalog/packages/new" })
+								}
+							>
+								Combo
+							</DropdownMenuItem>
+						</DropdownMenuContent>
+					</DropdownMenu>
+				</div>
 			</div>
 
 			<ProductListFilters

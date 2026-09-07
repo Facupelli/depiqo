@@ -11,18 +11,12 @@ interface OwnersPageProps {
 
 export function OwnersPage({ onOwnerSelect }: OwnersPageProps) {
 	return (
-		<div className="space-y-6 p-8">
+		<div className="space-y-4">
 			<div className="flex items-start justify-between">
-				<div>
-					<h1 className="text-2xl font-semibold tracking-tight">
-						Propietarios de equipos
-					</h1>
-					<p className="text-sm text-muted-foreground">
-						Gestiona las personas o empresas externas propietarias de equipos de
-						tu inventario.
-					</p>
+				<h1 className="sr-only">Propietarios de equipos</h1>
+				<div className="ml-auto">
+					<CreateOwnerWithContractDialog triggerLabel="Agregar Propietario" />
 				</div>
-				<CreateOwnerWithContractDialog triggerLabel="Agregar Propietario" />
 			</div>
 
 			<OwnersTable onOwnerSelect={onOwnerSelect} />

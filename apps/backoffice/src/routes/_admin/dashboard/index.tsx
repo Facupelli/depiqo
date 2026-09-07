@@ -137,8 +137,8 @@ function DashboardHome() {
 			<header className="flex items-center justify-between border-b border-gray-200 bg-white px-6 py-4">
 				<h1 className="text-lg font-semibold text-gray-800">Dashboard</h1>
 			</header>
-			<main className="overflow-y-auto p-6">
-				<div className="min-h-screen bg-gray-50 p-4 md:p-8">
+			<main className="overflow-y-auto">
+				<div className="min-h-screen bg-gray-50">
 					<div className="max-w-4xl mx-auto">
 						{/* Header Section */}
 						<div className="mb-8">

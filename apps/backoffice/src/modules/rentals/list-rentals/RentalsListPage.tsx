@@ -20,32 +20,19 @@ export function RentalsListPage({
 }: RentalsListPageProps) {
 	return (
 		<RentalOrdersListProvider search={search} onSearchChange={onSearchChange}>
-			<div className="space-y-6 p-6">
-				<RentalsListPageHeader />
+			<div className="space-y-4">
+				<div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+					<h1 className="sr-only">Alquileres</h1>
+					<Link
+						to="/dashboard/orders/new"
+						className={buttonVariants({ className: "ml-auto shrink-0" })}
+					>
+						Nuevo borrador
+					</Link>
+				</div>
 				<RentalOrdersToolbar />
 				<RentalOrdersTable />
 			</div>
 		</RentalOrdersListProvider>
-	);
-}
-
-function RentalsListPageHeader() {
-	return (
-		<div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-			<div>
-				<h1 className="text-2xl font-semibold tracking-tight">Alquileres</h1>
-				<p className="mt-1 text-sm text-muted-foreground">
-					Lista operativa para revisar, filtrar y entrar rápido al detalle del
-					alquiler.
-				</p>
-			</div>
-
-			<Link
-				to="/dashboard/orders/new"
-				className={buttonVariants({ className: "shrink-0" })}
-			>
-				Nuevo borrador
-			</Link>
-		</div>
 	);
 }

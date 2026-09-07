@@ -162,15 +162,12 @@ export function EquipmentTypesPage({
 	}
 
 	return (
-		<div className="space-y-6 p-8">
+		<div className="space-y-4">
 			<div className="flex items-start justify-between">
-				<div>
-					<h1 className="font-semibold text-2xl tracking-tight">Inventario</h1>
-					<p className="text-muted-foreground text-sm">
-						Gestiona el equipamiento físico que tiene tu negocio.
-					</p>
+				<h1 className="sr-only">Inventario</h1>
+				<div className="ml-auto">
+					<CreateEquipmentTypeDialog />
 				</div>
-				<CreateEquipmentTypeDialog />
 			</div>
 
 			<EquipmentTypeSummariesFilters
