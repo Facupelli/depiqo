@@ -3,6 +3,8 @@ import { err, ok, Result } from 'neverthrow';
 
 import { PrismaUnitOfWork } from 'src/core/database/prisma-unit-of-work';
 
+import { CatalogRentalOfferReferenceAuthority } from '../../../catalog/public-api/catalog-rental-offer-reference-authority.public-api';
+
 export type AttachRatePlanToRentalOfferOperationError =
   | { code: 'RentalOfferNotFound'; message: string }
   | { code: 'RatePlanNotFound'; message: string }
@@ -21,7 +23,10 @@ export interface AttachRatePlanToRentalOfferOperationResult {
 
 @Injectable()
 export class AttachRatePlanToRentalOfferOperation {
-  constructor(private readonly unitOfWork: PrismaUnitOfWork) {}
+  constructor(
+    private readonly unitOfWork: PrismaUnitOfWork,
+    private readonly rentalOfferReferenceAuthority: CatalogRentalOfferReferenceAuthority,
+  ) {}
 
   async attachRatePlanToRentalOffer(
     input: AttachRatePlanToRentalOfferOperationInput,
@@ -32,19 +37,19 @@ export class AttachRatePlanToRentalOfferOperation {
     // and, in Offering Setup workflows, the RatePlan may have been created
     // earlier inside the same uncommitted transaction.
     return this.unitOfWork.runInTransaction(async ({ tx }) => {
-      const [rentalOffer, ratePlan] = await Promise.all([
-        tx.v2RentalOffer.findFirst({
-          where: { id: input.catalogRentalOfferId, tenantId: input.tenantId },
-          select: { id: true },
+      const [rentalOfferReference, ratePlan] = await Promise.all([
+        this.rentalOfferReferenceAuthority.validateRentalOfferReference({
+          tenantId: input.tenantId,
+          rentalOfferId: input.catalogRentalOfferId,
         }),
         tx.v2RatePlan.findFirst({
-          where: { id: input.ratePlanId, tenantId: input.tenantId },
+          where: { id: input.ratePlanId, tenantId: input.tenantId, deletedAt: null },
           select: { id: true, isActive: true },
         }),
       ]);
 
-      if (!rentalOffer) {
-        return err({ code: 'RentalOfferNotFound', message: 'The requested rental offer was not found.' });
+      if (rentalOfferReference.isErr()) {
+        return err({ code: 'RentalOfferNotFound', message: rentalOfferReference.error.message });
       }
 
       if (!ratePlan) {
@@ -69,6 +74,7 @@ export class AttachRatePlanToRentalOfferOperation {
         update: {
           ratePlanId: input.ratePlanId,
           isActive: true,
+          deletedAt: null,
         },
         select: { id: true },
       });

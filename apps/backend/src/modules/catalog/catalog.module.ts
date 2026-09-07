@@ -31,6 +31,8 @@ import { PrismaRentalOfferRepository } from './features/create-rentable-item-off
 import { PrismaResolveSelectedRentalOffersReader } from './features/resolve-selected-rental-offers/prisma-resolve-selected-rental-offers.reader';
 import { ResolveSelectedRentalOffersService } from './features/resolve-selected-rental-offers/resolve-selected-rental-offers.service';
 import { CatalogOfferingAuthoring } from './public-api/catalog-offering-authoring.public-api';
+import { CatalogRentalOfferReferenceAuthority } from './public-api/catalog-rental-offer-reference-authority.public-api';
+import { CatalogRentalOfferReferenceAuthorityService } from './public-api/catalog-rental-offer-reference-authority.service';
 import { CatalogOfferingAuthoringService } from './public-api/catalog-offering-authoring.service';
 import { CatalogSelectionResolution } from './public-api/catalog-selection-resolution.public-api';
 import { CatalogSelectionResolutionService } from './public-api/catalog-selection-resolution.service';
@@ -52,6 +54,7 @@ import { CatalogSelectionResolutionService } from './public-api/catalog-selectio
   ],
   providers: [
     { provide: CatalogOfferingAuthoring, useClass: CatalogOfferingAuthoringService },
+    { provide: CatalogRentalOfferReferenceAuthority, useClass: CatalogRentalOfferReferenceAuthorityService },
     { provide: CatalogSelectionResolution, useClass: CatalogSelectionResolutionService },
     ActivateRentableItemHandler,
     ArchiveRentableItemHandler,
@@ -71,6 +74,6 @@ import { CatalogSelectionResolutionService } from './public-api/catalog-selectio
     ResolveSelectedRentalOffersService,
     PrismaResolveSelectedRentalOffersReader,
   ],
-  exports: [CatalogOfferingAuthoring, CatalogSelectionResolution],
+  exports: [CatalogOfferingAuthoring, CatalogRentalOfferReferenceAuthority, CatalogSelectionResolution],
 })
 export class CatalogModule {}

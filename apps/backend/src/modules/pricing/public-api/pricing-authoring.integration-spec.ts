@@ -95,7 +95,7 @@ describe('Pricing authoring public capabilities integration', () => {
     expect(invalid.isErr() && invalid.error.code).toBe('InvalidRatePlan');
   });
 
-  it('assigns a newly created Rate Plan and preserves the existing assignment on reassignment', async () => {
+  it('restores and preserves the existing assignment when reassigned after detach', async () => {
     const tenant = await fixtures.createTenant();
     const rentalOffer = await createRentalOffer(tenant.id);
     const ratePlan = await createRatePlan(tenant.id);
@@ -109,12 +109,20 @@ describe('Pricing authoring public capabilities integration', () => {
     expect(assigned.isOk()).toBe(true);
     if (assigned.isErr()) return;
 
+    await prisma.client.v2RentalOfferPricing.update({
+      where: { id: assigned.value.rentalOfferPricingId },
+      data: { isActive: false, deletedAt: new Date() },
+    });
+
     const reassigned = await rentalOfferPricingAssignment.assignRatePlanToRentalOffer({
       tenantId: tenant.id,
       catalogRentalOfferId: rentalOffer.id,
       ratePlanId: ratePlan.value.ratePlanId,
     });
     expect(reassigned.isOk() && reassigned.value).toEqual(assigned.value);
+    await expect(
+      prisma.client.v2RentalOfferPricing.findUniqueOrThrow({ where: { id: assigned.value.rentalOfferPricingId } }),
+    ).resolves.toEqual(expect.objectContaining({ isActive: true, deletedAt: null }));
   });
 
   it('rejects missing and inactive Rate Plans during assignment', async () => {

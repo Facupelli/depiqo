@@ -21,6 +21,7 @@ Rental Catalog publishes cohesive provider-owned capabilities under `public-api/
 
 - `CatalogSelectionResolution` resolves rental-offer fulfillment requirements in batches for rental workflows. It classifies requested offers individually when they are not found within the supplied tenant and branch scope, are not rentable, or reference an inactive rentable item. Foreign-tenant and wrong-branch offers are classified as not found to preserve non-disclosure. An invalid fulfillment definition fails the overall resolution rather than classifying the affected offer as unavailable.
 - `CatalogOfferingAuthoring` creates rentable item offerings and adds an existing rentable item to another branch.
+- `CatalogRentalOfferReferenceAuthority` validates tenant-owned Rental Offer references for cross-module authoring workflows without applying selection semantics.
 
 Consumers use these capabilities rather than Catalog persistence or internal application services.
 

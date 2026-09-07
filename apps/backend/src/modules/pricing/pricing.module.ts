@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 
 import { PricingContextLoader } from './application/pricing-context-loader';
 import { AttachRatePlanToRentalOfferOperation } from './application/operations/attach-rate-plan-to-rental-offer.operation';
+import { CreatePricingForRentalOfferOperation } from './application/operations/create-pricing-for-rental-offer.operation';
 import { CreateRatePlanOperation } from './application/operations/create-rate-plan.operation';
 import { AttachRatePlanToRentalOfferHttpController } from './features/attach-rate-plan-to-rental-offer/attach-rate-plan-to-rental-offer.controller';
 import { AttachRatePlanToRentalOfferHandler } from './features/attach-rate-plan-to-rental-offer/attach-rate-plan-to-rental-offer.handler';
@@ -13,6 +14,8 @@ import { DetachOfferPricingHttpController } from './features/detach-offer-pricin
 import { DetachOfferPricingHandler } from './features/detach-offer-pricing/detach-offer-pricing.handler';
 import { CreatePromotionHttpController } from './features/create-promotion/create-promotion.controller';
 import { CreatePromotionHandler } from './features/create-promotion/create-promotion.handler';
+import { CreatePricingForRentalOfferHttpController } from './features/create-pricing-for-rental-offer/create-pricing-for-rental-offer.controller';
+import { CreatePricingForRentalOfferHandler } from './features/create-pricing-for-rental-offer/create-pricing-for-rental-offer.handler';
 import { CreateRatePlanHttpController } from './features/create-rate-plan/create-rate-plan.controller';
 import { CreateRatePlanHandler } from './features/create-rate-plan/create-rate-plan.handler';
 import { GetPromotionDetailHttpController } from './features/get-promotion-detail/get-promotion-detail.controller';
@@ -49,6 +52,7 @@ import { TenantManagementModule } from '../tenant-management/tenant-management.m
     CorrectRatePlanHttpController,
     DetachOfferPricingHttpController,
     CreatePromotionHttpController,
+    CreatePricingForRentalOfferHttpController,
     CreateRatePlanHttpController,
     GetPromotionDetailHttpController,
     GetPromotionsHttpController,
@@ -64,8 +68,10 @@ import { TenantManagementModule } from '../tenant-management/tenant-management.m
     CorrectRatePlanHandler,
     DetachOfferPricingHandler,
     AttachRatePlanToRentalOfferHandler,
+    CreatePricingForRentalOfferOperation,
     CreateRatePlanOperation,
     CreatePromotionHandler,
+    CreatePricingForRentalOfferHandler,
     CreateRatePlanHandler,
     GetPromotionDetailHandler,
     GetPromotionsHandler,

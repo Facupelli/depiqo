@@ -194,7 +194,7 @@ Rental Catalog owns `RentalOffer`, `RentableItem`, catalog visibility, rentabili
 
 Pricing may reference catalog-owned identifiers for pricing scope and assignments but must not take ownership of those records.
 
-The current rental-offer pricing-assignment implementation directly reads Catalog-owned `v2RentalOffer` persistence to validate the reference. This is an existing deferred cross-module boundary violation. It remains intentionally unchanged while public module boundaries are cleaned up and must be addressed separately through the appropriate Catalog collaboration mechanism.
+Pricing validates rental-offer references through Catalog's published reference authority and translates Catalog failures into Pricing-owned assignment errors.
 
 Pricing must not depend on Rental Catalog internals for calculation logic.
 

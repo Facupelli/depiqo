@@ -3,6 +3,7 @@ export * from "./calculate-cart-price.contract";
 export * from "./calculate-draft-rental-price.contract";
 export * from "./correct-rate-plan.contract";
 export * from "./detach-offer-pricing.contract";
+export * from "./create-pricing-for-rental-offer.contract";
 export * from "./create-promotion.contract";
 export * from "./create-rate-plan.contract";
 export * from "./get-promotion-detail.contract";
