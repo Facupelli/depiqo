@@ -53,7 +53,7 @@ export function CustomerOnboardingReviewPage({
 
 	if (!customer) {
 		return (
-			<div className="space-y-6 px-6 pb-6">
+			<div className="space-y-4">
 				<PageBreadcrumb
 					parent={{
 						label: "Altas de cliente",
@@ -173,7 +173,7 @@ function CustomerProfileReviewView({
 	}
 
 	return (
-		<div className="space-y-6 px-6 pb-6">
+		<div className="space-y-4">
 			<CustomerProfileReviewHeader profile={profile} timezone={timezone} />
 
 			<div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
@@ -608,7 +608,7 @@ function getReviewActionErrorMessage(error: unknown) {
 
 export function CustomerProfileReviewPageSkeleton() {
 	return (
-		<div className="space-y-6 px-6 pb-6">
+		<div className="space-y-4">
 			<div className="space-y-4 border-b border-border pb-6">
 				<Skeleton className="h-5 w-60" />
 				<div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">

@@ -64,7 +64,7 @@ export function EditBranchPage({
 
 	if (isBranchPending) {
 		return (
-			<div className="space-y-6 p-8">
+			<div className="space-y-4">
 				<p className="text-sm text-muted-foreground">Cargando sucursal...</p>
 			</div>
 		);
@@ -72,7 +72,7 @@ export function EditBranchPage({
 
 	if (isError || !branch) {
 		return (
-			<div className="space-y-6 p-8">
+			<div className="space-y-4">
 				<Button
 					type="button"
 					variant="ghost"
@@ -90,7 +90,7 @@ export function EditBranchPage({
 	}
 
 	return (
-		<div className="space-y-6 p-8">
+		<div className="space-y-4">
 			<div className="flex items-start justify-between gap-4">
 				<div className="space-y-2">
 					<Button

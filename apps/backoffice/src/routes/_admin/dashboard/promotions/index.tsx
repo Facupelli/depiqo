@@ -25,26 +25,21 @@ export const Route = createFileRoute("/_admin/dashboard/promotions/")({
 
 function RouteComponent() {
 	return (
-		<div className="space-y-6 px-6 py-8 max-w-6xl mx-auto">
-			{/* Header */}
+		<div className="mx-auto max-w-6xl space-y-4">
 			<div className="flex items-start justify-between gap-4">
-				<div>
-					<h1 className="text-3xl font-bold tracking-tight">Promociones</h1>
-					<p className="text-muted-foreground mt-1 text-sm">
-						Gestiona incentivos de precios y códigos promocionales para tu flota
-						de alquiler.
-					</p>
-				</div>
+				<h1 className="sr-only">Promociones</h1>
 				<Link
 					to="/dashboard/promotions/new"
-					className={buttonVariants({ className: "shrink-0 gap-2" })}
+					className={buttonVariants({ className: "ml-auto shrink-0 gap-2" })}
 				>
-					Nueva promocion
+					Nueva promoción
 				</Link>
 				{/* TODO: Restore the coupon creation dialog after it is migrated to v2 promotion queries. */}
 			</div>
 
-			<PromotionsTab />
+			<div className="@container/promotions-index">
+				<PromotionsTab />
+			</div>
 		</div>
 	);
 }

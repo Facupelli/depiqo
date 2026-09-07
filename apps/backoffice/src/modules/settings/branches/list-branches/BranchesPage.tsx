@@ -24,7 +24,7 @@ export function BranchesPage({
 	const [isInfoDismissed, setIsInfoDismissed] = useState(false);
 
 	return (
-		<div className={compact ? "space-y-6" : "space-y-6 p-8"}>
+		<div className="space-y-4">
 			<div className="flex items-start justify-between">
 				{compact ? null : (
 					<div>

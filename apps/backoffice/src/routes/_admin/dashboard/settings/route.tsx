@@ -40,7 +40,7 @@ function SettingsLayout() {
 				<SettingsSecondaryNav />
 			</aside>
 			<div className="h-full min-h-0 overflow-y-auto">
-				<main className="min-w-0 space-y-6 p-8">
+				<main className="min-w-0 space-y-4">
 					{activeItem ? (
 						<div className="space-y-2">
 							<h2 className="text-2xl font-semibold tracking-tight">

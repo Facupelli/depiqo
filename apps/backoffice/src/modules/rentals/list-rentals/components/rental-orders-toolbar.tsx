@@ -1,5 +1,7 @@
 import type {
 	GetRentalsDateLensDto,
+	GetRentalsSortByDto,
+	GetRentalsSortDirectionDto,
 	GetRentalsStatusDto,
 } from "@repo/api-contracts";
 import { Button } from "@repo/ui/components/button";
@@ -23,10 +25,57 @@ import {
 	getRentalOrderStatusLabel,
 	RENTAL_ORDER_STATUS_OPTIONS,
 } from "@/modules/rentals/shared/rental-order-status";
-import { useRentalOrdersList } from "./rental-orders-list.context";
+import {
+	getEffectiveRentalOrdersSort,
+	useRentalOrdersList,
+} from "./rental-orders-list.context";
 
 const ALL_VALUE = "__ALL__";
 const OPERATIONALLY_ACTIVE_STATUSES = ["CONFIRMED"] as const;
+const SORT_OPTIONS: Array<{
+	value: `${GetRentalsSortByDto}:${GetRentalsSortDirectionDto}`;
+	label: string;
+	sortBy: GetRentalsSortByDto;
+	sortDirection: GetRentalsSortDirectionDto;
+}> = [
+	{
+		value: "pickupDate:asc",
+		label: "Retira - ascendente",
+		sortBy: "pickupDate",
+		sortDirection: "asc",
+	},
+	{
+		value: "pickupDate:desc",
+		label: "Retira - descendente",
+		sortBy: "pickupDate",
+		sortDirection: "desc",
+	},
+	{
+		value: "returnDate:asc",
+		label: "Devuelve - ascendente",
+		sortBy: "returnDate",
+		sortDirection: "asc",
+	},
+	{
+		value: "returnDate:desc",
+		label: "Devuelve - descendente",
+		sortBy: "returnDate",
+		sortDirection: "desc",
+	},
+	{
+		value: "createdAt:asc",
+		label: "Creado - ascendente",
+		sortBy: "createdAt",
+		sortDirection: "asc",
+	},
+	{
+		value: "createdAt:desc",
+		label: "Creado - descendente",
+		sortBy: "createdAt",
+		sortDirection: "desc",
+	},
+];
+
 const DATE_LENS_OPTIONS: Array<{
 	value: GetRentalsDateLensDto;
 	label: string;
@@ -47,7 +96,9 @@ export function RentalOrdersToolbar() {
 		setStatuses,
 		setBranch,
 		resetFilters,
+		setSort,
 	} = useRentalOrdersList();
+	const currentSort = getEffectiveRentalOrdersSort(search);
 	const selectedStatuses = search.statuses ?? [];
 	const effectiveStatuses =
 		selectedStatuses.length > 0
@@ -181,6 +232,33 @@ export function RentalOrdersToolbar() {
 					className="h-9 w-full sm:w-52"
 				/>
 			)}
+
+			<Select
+				value={`${currentSort.sortBy}:${currentSort.sortDirection}`}
+				onValueChange={(value) => {
+					const selectedOption = SORT_OPTIONS.find(
+						(option) => option.value === value,
+					);
+					if (!selectedOption) return;
+
+					setSort(selectedOption.sortBy, selectedOption.sortDirection);
+				}}
+				items={SORT_OPTIONS}
+			>
+				<SelectTrigger
+					className="h-9 w-full @sm/rentals-index:w-56 @5xl/rentals-index:hidden"
+					aria-label="Ordenar pedidos"
+				>
+					<SelectValue placeholder="Ordenar" />
+				</SelectTrigger>
+				<SelectContent>
+					{SORT_OPTIONS.map((option) => (
+						<SelectItem key={option.value} value={option.value}>
+							{option.label}
+						</SelectItem>
+					))}
+				</SelectContent>
+			</Select>
 
 			{hasActiveFilters ? (
 				<Button

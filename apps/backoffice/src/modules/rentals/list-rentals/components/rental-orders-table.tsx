@@ -13,6 +13,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@repo/ui/components/table";
+import { Link } from "@tanstack/react-router";
 import type { ColumnDef } from "@tanstack/react-table";
 import {
 	flexRender,
@@ -99,9 +100,11 @@ export function RentalOrdersTable() {
 		},
 	});
 
+	const collectionIsLoading = isLoading || isBranchesLoading;
+
 	return (
 		<div className="space-y-2">
-			<div className="rounded-md border">
+			<div className="hidden rounded-md border @2xl/rentals-index:block">
 				<Table>
 					<TableHeader>
 						{table.getHeaderGroups().map((headerGroup) => (
@@ -116,7 +119,10 @@ export function RentalOrdersTable() {
 									return (
 										<TableHead
 											key={header.id}
-											className={align === "right" ? "text-right" : undefined}
+											className={cn(
+												align === "right" && "text-right",
+												getResponsiveColumnClass(header.column.id),
+											)}
 										>
 											{header.isPlaceholder ? null : header.index === 0 ? (
 												<div className="flex items-center justify-between gap-3">
@@ -124,18 +130,7 @@ export function RentalOrdersTable() {
 														header.column.columnDef.header,
 														header.getContext(),
 													)}
-													<span
-														className={cn(
-															"flex items-center gap-1.5 font-normal text-xs",
-															isRefreshing
-																? "text-muted-foreground"
-																: "invisible",
-														)}
-														aria-live="polite"
-													>
-														<Loader2 className="size-3 animate-spin" />
-														Actualizando...
-													</span>
+													<RefreshingIndicator isRefreshing={isRefreshing} />
 												</div>
 											) : (
 												flexRender(
@@ -153,7 +148,7 @@ export function RentalOrdersTable() {
 					<TableBody>
 						<TableBodyContent
 							table={table}
-							isLoading={isLoading || isBranchesLoading}
+							isLoading={collectionIsLoading}
 							isError={isError}
 							pageLimit={search.limit}
 							onRowClick={openRentalOrder}
@@ -162,6 +157,15 @@ export function RentalOrdersTable() {
 					</TableBody>
 				</Table>
 			</div>
+
+			<CompactRentalOrdersList
+				rentals={rentals}
+				isLoading={collectionIsLoading}
+				isRefreshing={isRefreshing}
+				isError={isError}
+				pageLimit={search.limit}
+				getOperationalTimezone={getOperationalTimezone}
+			/>
 
 			<PaginationFooter
 				page={search.page}
@@ -200,10 +204,13 @@ function createRentalOrdersColumns({
 			accessorKey: "rentalNumber",
 			header: "Pedido",
 			cell: ({ row }) => (
-				<div className="space-y-1">
-					<p className="font-medium text-foreground">
+				<div className="min-w-0 space-y-1">
+					<p className="break-words font-medium text-foreground">
 						#{formatOrderNumber(row.original.rentalNumber)}
 					</p>
+					<div className="@5xl/rentals-index:hidden">
+						<RentalOrderStatusBadge rental={row.original} />
+					</div>
 				</div>
 			),
 		},
@@ -217,37 +224,21 @@ function createRentalOrdersColumns({
 			header: "Entrega",
 			cell: ({ row }) => (
 				<span className="text-sm text-foreground">
-					{row.original.fulfillmentMethod === "DELIVERY"
-						? "Delivery"
-						: "Retiro"}
+					{getFulfillmentMethodLabel(row.original)}
 				</span>
 			),
 		},
 		{
 			id: "customer",
 			header: "Cliente",
-			cell: ({ row }) => {
-				const customer = row.original.customer;
-				if (!customer)
-					return (
-						<span className="text-sm text-muted-foreground">Sin cliente</span>
-					);
-
-				return (
-					<div className="flex items-center gap-2">
-						<Badge variant="outline" className="gap-1 px-1 rounded-full py-0.5">
-							{customer.isCompany ? (
-								<Building2 className="h-3 w-3" />
-							) : (
-								<User className="h-3 w-3" />
-							)}
-						</Badge>
-						<span className="text-sm text-foreground">
-							{customer.displayName}
-						</span>
-					</div>
-				);
-			},
+			cell: ({ row }) => (
+				<div className="min-w-0 space-y-1">
+					<RentalOrderCustomer rental={row.original} />
+					<p className="text-xs text-muted-foreground @5xl/rentals-index:hidden">
+						{getFulfillmentMethodLabel(row.original)}
+					</p>
+				</div>
+			),
 		},
 		...(showBranch
 			? [
@@ -328,6 +319,38 @@ function createRentalOrdersColumns({
 	];
 }
 
+function RentalOrderCustomer({ rental }: { rental: ParsedRentalListItem }) {
+	const customer = rental.customer;
+
+	if (!customer) {
+		return <span className="text-sm text-muted-foreground">Sin cliente</span>;
+	}
+
+	return (
+		<div className="flex min-w-0 items-center gap-2">
+			<Badge
+				variant="outline"
+				className="shrink-0 gap-1 rounded-full px-1 py-0.5"
+			>
+				{customer.isCompany ? (
+					<Building2 className="size-3" />
+				) : (
+					<User className="size-3" />
+				)}
+			</Badge>
+			<span className="min-w-0 break-words text-sm text-foreground">
+				{customer.displayName}
+			</span>
+		</div>
+	);
+}
+
+function getFulfillmentMethodLabel(
+	rental: ParsedRentalListItem,
+): "Delivery" | "Retiro" {
+	return rental.fulfillmentMethod === "DELIVERY" ? "Delivery" : "Retiro";
+}
+
 function RentalOrderStatusBadge({ rental }: { rental: ParsedRentalListItem }) {
 	const config = getRentalOrderStatusPresentation(rental, dayjs());
 
@@ -389,10 +412,12 @@ function RentalOrderDateCell({
 	value,
 	timezone,
 	emphasis,
+	align = "right",
 }: {
 	value: ParsedRentalListItem["pickupAt"];
 	timezone: string;
 	emphasis: "primary" | "secondary";
+	align?: "left" | "right";
 }) {
 	const localizedValue = value.tz(timezone);
 	const localizedNow = dayjs().tz(timezone);
@@ -402,7 +427,7 @@ function RentalOrderDateCell({
 	);
 
 	return (
-		<div className="space-y-1 text-right">
+		<div className={cn("space-y-1", align === "right" && "text-right")}>
 			<p
 				className={cn(
 					"tabular-nums",
@@ -496,7 +521,10 @@ function TableBodyContent({
 				return (
 					<TableCell
 						key={cell.id}
-						className={align === "right" ? "text-right" : undefined}
+						className={cn(
+							align === "right" && "text-right",
+							getResponsiveColumnClass(cell.column.id),
+						)}
 					>
 						{flexRender(cell.column.columnDef.cell, cell.getContext())}
 					</TableCell>
@@ -504,6 +532,158 @@ function TableBodyContent({
 			})}
 		</TableRow>
 	));
+}
+
+function getResponsiveColumnClass(columnId: string): string | undefined {
+	if (
+		["status", "fulfillmentMethod", "branch", "createdAt"].includes(columnId)
+	) {
+		return "hidden @5xl/rentals-index:table-cell";
+	}
+
+	return undefined;
+}
+
+function RefreshingIndicator({ isRefreshing }: { isRefreshing: boolean }) {
+	return (
+		<span
+			className={cn(
+				"flex items-center gap-1.5 font-normal text-xs",
+				isRefreshing ? "text-muted-foreground" : "invisible",
+			)}
+			aria-live="polite"
+		>
+			<Loader2 className="size-3 animate-spin" />
+			Actualizando...
+		</span>
+	);
+}
+
+function CompactRentalOrdersList({
+	rentals,
+	isLoading,
+	isRefreshing,
+	isError,
+	pageLimit,
+	getOperationalTimezone,
+}: {
+	rentals: ParsedRentalListItem[];
+	isLoading: boolean;
+	isRefreshing: boolean;
+	isError: boolean;
+	pageLimit: number;
+	getOperationalTimezone: (branchId: string) => string;
+}) {
+	const referenceDate = dayjs();
+
+	return (
+		<div className="@2xl/rentals-index:hidden">
+			<div className="flex min-h-5 justify-end px-1">
+				<RefreshingIndicator isRefreshing={isRefreshing} />
+			</div>
+			{isLoading ? (
+				<CompactSkeletonRows rows={pageLimit} />
+			) : isError ? (
+				<p className="border-y px-4 py-12 text-center text-sm text-muted-foreground">
+					No pudimos cargar los pedidos.
+				</p>
+			) : rentals.length === 0 ? (
+				<p className="border-y px-4 py-12 text-center text-sm text-muted-foreground">
+					No hay pedidos para los filtros seleccionados.
+				</p>
+			) : (
+				<ul className="divide-y border-y">
+					{rentals.map((rental) => {
+						const timezone = getOperationalTimezone(rental.branchId);
+						const isToday = hasRentalOrderTodayEvent(
+							rental,
+							referenceDate,
+							timezone,
+						);
+
+						return (
+							<li key={rental.id} className={cn(isToday && "bg-amber-50/60")}>
+								<Link
+									to="/dashboard/orders/$orderId"
+									params={{ orderId: rental.id }}
+									className="block min-w-0 space-y-3 px-3 py-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
+								>
+									<div className="flex min-w-0 items-start justify-between gap-3">
+										<p className="min-w-0 break-words font-semibold text-sm text-foreground">
+											#{formatOrderNumber(rental.rentalNumber)}
+										</p>
+										<RentalOrderStatusBadge rental={rental} />
+									</div>
+									<div className="min-w-0 space-y-1">
+										<RentalOrderCustomer rental={rental} />
+										<p className="text-xs text-muted-foreground">
+											{getFulfillmentMethodLabel(rental)}
+										</p>
+									</div>
+									<div className="grid grid-cols-2 gap-x-4 gap-y-2">
+										<CompactRentalOrderDate
+											label="Retira"
+											value={rental.pickupAt}
+											timezone={timezone}
+											emphasis="primary"
+										/>
+										<CompactRentalOrderDate
+											label="Devuelve"
+											value={rental.returnAt}
+											timezone={timezone}
+											emphasis="secondary"
+										/>
+									</div>
+								</Link>
+							</li>
+						);
+					})}
+				</ul>
+			)}
+		</div>
+	);
+}
+
+function CompactRentalOrderDate({
+	label,
+	value,
+	timezone,
+	emphasis,
+}: {
+	label: "Retira" | "Devuelve";
+	value: ParsedRentalListItem["pickupAt"];
+	timezone: string;
+	emphasis: "primary" | "secondary";
+}) {
+	return (
+		<div className="min-w-0 space-y-1">
+			<p className="text-xs font-medium text-muted-foreground">{label}</p>
+			<RentalOrderDateCell
+				value={value}
+				timezone={timezone}
+				emphasis={emphasis}
+				align="left"
+			/>
+		</div>
+	);
+}
+
+function CompactSkeletonRows({ rows }: { rows: number }) {
+	return (
+		<ul className="divide-y border-y" aria-label="Cargando pedidos">
+			{Array.from({ length: Math.min(rows, 10) }).map((_, index) => (
+				// biome-ignore lint/suspicious/noArrayIndexKey: skeleton rows are static placeholders.
+				<li key={index} className="space-y-3 px-3 py-3">
+					<Skeleton className="h-5 w-2/3" />
+					<Skeleton className="h-4 w-1/2" />
+					<div className="grid grid-cols-2 gap-4">
+						<Skeleton className="h-10 w-full" />
+						<Skeleton className="h-10 w-full" />
+					</div>
+				</li>
+			))}
+		</ul>
+	);
 }
 
 function SkeletonRows({ columns, rows }: { columns: number; rows: number }) {

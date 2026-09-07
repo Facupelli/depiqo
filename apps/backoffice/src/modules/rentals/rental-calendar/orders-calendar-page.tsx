@@ -88,7 +88,7 @@ export function OrdersCalendarPage({
 	const inheritedScopeLabel = globalBranch?.name ?? "Todas las sucursales";
 
 	return (
-		<div className="space-y-6 p-6">
+		<div className="@container/calendar-page space-y-4">
 			{branches.length > 1 && (
 				<Select
 					value={search.branchId ?? INHERIT_GLOBAL_BRANCH_VALUE}
@@ -104,7 +104,7 @@ export function OrdersCalendarPage({
 						})),
 					]}
 				>
-					<SelectTrigger className="w-64 bg-white">
+					<SelectTrigger className="w-full bg-white @sm/calendar-page:w-64">
 						<SelectValue />
 					</SelectTrigger>
 					<SelectContent>

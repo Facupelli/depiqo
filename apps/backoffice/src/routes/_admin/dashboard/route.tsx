@@ -10,6 +10,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@repo/ui/components/select";
+import { cn } from "@repo/ui/lib/utils";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import {
 	createFileRoute,
@@ -37,6 +38,21 @@ import { currentBusinessQueries } from "@/application/current-business/current-b
 import { currentAuthQueries } from "@/auth/auth.queries";
 import { useLogout } from "@/auth/logout/logout.mutation";
 import { useUpdateWorkingBranch } from "@/auth/update-working-branch/update-working-branch.mutation";
+import {
+	Sidebar,
+	SidebarContent,
+	SidebarFooter,
+	SidebarHeader,
+	SidebarMenu,
+	SidebarMenuButton,
+	SidebarMenuItem,
+	SidebarMenuSub,
+	SidebarMenuSubButton,
+	SidebarMenuSubItem,
+	SidebarProvider,
+	SidebarTrigger,
+	useSidebar,
+} from "@/components/ui/sidebar";
 import { branchQueries } from "@/modules/settings/branches/public";
 
 export const Route = createFileRoute("/_admin/dashboard")({
@@ -134,74 +150,98 @@ function DashboardLayout() {
 	}));
 
 	return (
-		<div className="grid h-full grid-cols-[280px_1fr]">
-			<aside className="sticky top-0 flex h-svh flex-col border-r border-gray-200 bg-neutral-900 p-4 text-white overflow-y-auto">
-				{/* Tenant header */}
-				<div>
-					<p className="font-bold">{business.name}</p>
-				</div>
-
-				{/* Branch selector */}
-				<div className="py-6">
-					<BranchSelector branches={branchSelectorData} />
-				</div>
-
-				{/* Nav links */}
-				<nav className="flex flex-col gap-y-0.5 overflow-y-auto">
-					{sidebarItems.map((item) => {
-						const Icon = item.icon;
-
-						return (
-							<div key={item.name}>
-								<Link
-									to={item.href}
-									className="flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium text-neutral-400 transition-colors hover:bg-white/5 hover:text-white"
-									activeProps={{
-										className:
-											"flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium bg-white/10 text-white transition-colors",
-									}}
-									activeOptions={{ exact: true, includeSearch: false }}
-									preload={false}
-								>
-									<Icon className="h-4 w-4 shrink-0" />
-									{item.name}
-								</Link>
-
-								{item.children ? (
-									<div className="ml-5 mt-0.5 border-l border-white/10 pl-3">
-										{item.children.map((child) => (
-											<Link
-												key={child.href}
-												to={child.href}
-												activeOptions={{ exact: true }}
-												className="block py-1 text-sm text-neutral-400 transition-colors hover:text-neutral-300"
-												activeProps={{
-													className:
-														"block py-1 text-sm font-medium text-white transition-colors",
-												}}
-											>
-												{child.name}
-											</Link>
-										))}
-									</div>
-								) : null}
-							</div>
-						);
-					})}
-				</nav>
-
-				{/* Profile popover — pinned to bottom via mt-auto */}
-				<div className="mt-auto">
+		<SidebarProvider>
+			<Sidebar
+				collapsible="offcanvas"
+				className="border-neutral-200 bg-neutral-900 text-white"
+			>
+				<SidebarHeader className="gap-0 p-4">
+					<p className="flex min-h-11 items-center pr-11 font-bold wrap-anywhere lg:min-h-0 lg:pr-0">
+						{business.name}
+					</p>
+					<div className="pt-6 pb-2">
+						<BranchSelector
+							branches={branchSelectorData}
+							className="border-white/15 text-neutral-200"
+						/>
+					</div>
+				</SidebarHeader>
+				<SidebarContent className="px-4">
+					<DashboardNavigation />
+				</SidebarContent>
+				<SidebarFooter className="p-4">
 					<UserPopover name={user.name} email={user.email} />
-				</div>
-			</aside>
+				</SidebarFooter>
+			</Sidebar>
 
-			<div className="h-full min-w-0 overflow-y-auto bg-gray-50">
-				<div className="mx-auto min-h-full w-full max-w-7xl">
+			<div className="min-w-0 flex-1 bg-gray-50">
+				<header className="sticky top-0 z-30 flex items-center gap-2 border-b border-neutral-200 bg-white px-3 py-2 lg:hidden">
+					<SidebarTrigger />
+					<div className="min-w-0 flex-1">
+						<BranchSelector branches={branchSelectorData} />
+					</div>
+				</header>
+				<div className="space-y-4 p-4 lg:p-6">
 					<Outlet />
 				</div>
 			</div>
-		</div>
+		</SidebarProvider>
+	);
+}
+
+function DashboardNavigation() {
+	const { setOpenMobile } = useSidebar();
+
+	function closeNavigation() {
+		setOpenMobile(false);
+	}
+
+	return (
+		<nav aria-label="Navegación principal">
+			<SidebarMenu>
+				{sidebarItems.map((item) => {
+					const Icon = item.icon;
+					return (
+						<SidebarMenuItem key={item.href}>
+							<SidebarMenuButton
+								className="text-neutral-400 hover:bg-white/5 hover:text-white aria-[current=page]:bg-white/10 aria-[current=page]:text-white"
+								render={
+									<Link
+										to={item.href}
+										activeOptions={{ exact: true, includeSearch: false }}
+										preload={false}
+										onClick={closeNavigation}
+									/>
+								}
+							>
+								<Icon />
+								{item.name}
+							</SidebarMenuButton>
+							{item.children ? (
+								<SidebarMenuSub className="border-white/10">
+									{item.children.map((child) => (
+										<SidebarMenuSubItem key={child.href}>
+											<SidebarMenuSubButton
+												className="text-neutral-400 hover:text-neutral-300 aria-[current=page]:font-medium aria-[current=page]:text-white"
+												render={
+													<Link
+														to={child.href}
+														activeOptions={{ exact: true }}
+														onClick={closeNavigation}
+													/>
+												}
+											>
+												{child.name}
+											</SidebarMenuSubButton>
+										</SidebarMenuSubItem>
+									))}
+								</SidebarMenuSub>
+							) : null}
+						</SidebarMenuItem>
+					);
+				})}
+			</SidebarMenu>
+		</nav>
 	);
 }
 
@@ -209,8 +249,10 @@ const ALL_BRANCHES_VALUE = "all-branches";
 
 function BranchSelector({
 	branches,
+	className,
 }: {
 	branches: { name: string; id: string }[];
+	className?: string;
 }) {
 	const { data: currentAuth } = useSuspenseQuery(currentAuthQueries.current());
 	const updateWorkingBranch = useUpdateWorkingBranch();
@@ -224,8 +266,13 @@ function BranchSelector({
 
 	if (branches.length === 1) {
 		return (
-			<div className="rounded-md border border-white/15 px-3 py-2 text-sm text-neutral-200">
-				{branches[0].name}
+			<div
+				className={cn(
+					"flex min-h-11 min-w-0 items-center rounded-md border px-3 py-2 text-sm lg:min-h-9 pointer-coarse:min-h-11",
+					className,
+				)}
+			>
+				<span className="truncate">{branches[0].name}</span>
 			</div>
 		);
 	}
@@ -296,13 +343,28 @@ function BranchSelector({
 			items={items}
 			disabled={updateWorkingBranch.isPending}
 		>
-			<SelectTrigger className="w-full bg-transparent">
-				<SelectValue />
+			<SelectTrigger
+				aria-label="Sucursal de trabajo"
+				className={cn(
+					"min-h-11 w-full min-w-0 bg-transparent lg:min-h-9 pointer-coarse:min-h-11 *:data-[slot=select-value]:block *:data-[slot=select-value]:line-clamp-none",
+					className,
+				)}
+			>
+				<SelectValue className="min-w-0 truncate" />
 			</SelectTrigger>
 			<SelectContent>
-				<SelectItem value={ALL_BRANCHES_VALUE}>Todas las sucursales</SelectItem>
+				<SelectItem
+					value={ALL_BRANCHES_VALUE}
+					className="min-h-11 lg:min-h-8 pointer-coarse:min-h-11"
+				>
+					Todas las sucursales
+				</SelectItem>
 				{branches.map((branch) => (
-					<SelectItem key={branch.id} value={branch.id}>
+					<SelectItem
+						key={branch.id}
+						value={branch.id}
+						className="min-h-11 lg:min-h-8 pointer-coarse:min-h-11"
+					>
 						{branch.name}
 					</SelectItem>
 				))}
@@ -343,7 +405,7 @@ function UserPopover({ name, email }: { name: string | null; email: string }) {
 					onClick={async () => {
 						await logOut();
 					}}
-					className="flex w-full items-center gap-2 rounded-sm px-3 py-2 text-sm text-red-600 transition-colors hover:bg-red-50"
+					className="flex min-h-11 w-full items-center gap-2 rounded-sm px-3 py-2 text-sm text-red-600 transition-colors hover:bg-red-50 lg:min-h-9 pointer-coarse:min-h-11"
 				>
 					<LogOut className="h-4 w-4" />
 					Salir

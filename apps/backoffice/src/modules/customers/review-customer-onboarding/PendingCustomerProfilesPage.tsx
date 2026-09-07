@@ -25,15 +25,8 @@ export function PendingCustomerProfilesPage() {
 	});
 
 	return (
-		<div className="space-y-6 p-6">
-			<div>
-				<h1 className="text-2xl font-semibold tracking-tight">
-					Altas de cliente
-				</h1>
-				<p className="mt-1 text-sm text-muted-foreground">
-					Revisa los perfiles enviados por clientes pendientes de aprobacion.
-				</p>
-			</div>
+		<div className="space-y-4">
+			<h1 className="sr-only">Altas de cliente</h1>
 
 			<div className="rounded-md border bg-background">
 				<Table>

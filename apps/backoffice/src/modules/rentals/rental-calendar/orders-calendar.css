@@ -1,8 +1,6 @@
 .orders-calendar-shell {
 	--fc-page-bg-color: #ffffff;
 	--fc-neutral-bg-color: #fafafa;
-	font-family: inherit;
-	color: #171717;
 }
 
 .orders-calendar-shell .orders-calendar-table {
@@ -16,18 +14,18 @@
 
 .orders-calendar-shell .orders-calendar-day-header {
 	background: #fafafa;
-	padding: 0.5rem 0;
-	font-size: 0.75rem;
+	padding: 0.4rem 0;
+	font-size: 0.625rem;
 	font-weight: 600;
 	text-transform: uppercase;
-	letter-spacing: 0.08em;
+	letter-spacing: 0.04em;
 	color: #737373;
 }
 
 .orders-calendar-shell .orders-calendar-day-top {
-	padding: 0.4rem 0.5rem 0;
 	justify-content: flex-end;
-	font-size: 0.75rem;
+	padding: 0.3rem 0.35rem 0;
+	font-size: 0.6875rem;
 	color: #737373;
 }
 
@@ -38,24 +36,24 @@
 .orders-calendar-shell .orders-calendar-day-number--today {
 	border-radius: 9999px;
 	background: #10b981;
-	padding: 0.15rem 0.45rem;
+	padding: 0.15rem 0.4rem;
 	color: #ffffff;
 }
 
 .orders-calendar-shell .orders-calendar-row-event {
-	min-height: 2.25rem;
+	min-height: 1.75rem;
 	border: 0;
 	background: transparent;
 }
 
 .orders-calendar-shell .orders-calendar-event {
 	cursor: pointer;
-	border-radius: 0.25rem;
+	overflow: hidden;
 	border-width: 1px;
 	border-style: solid;
+	border-radius: 0.25rem;
 	padding: 0;
 	box-shadow: none;
-	overflow: hidden;
 }
 
 .orders-calendar-shell .orders-calendar-event-main {
@@ -168,13 +166,13 @@
 }
 
 .orders-calendar-shell .orders-calendar-more-link {
-	margin-top: 0.2rem;
+	margin-top: 0.15rem;
 	border-radius: 0.25rem;
-	padding: 0.1rem 0.35rem;
+	padding: 0.2rem 0.35rem;
 }
 
 .orders-calendar-shell .orders-calendar-more-link-inner {
-	font-size: 0.6875rem;
+	font-size: 0.625rem;
 	font-weight: 600;
 	color: #525252;
 }
@@ -190,15 +188,17 @@
 }
 
 .orders-calendar-shell .orders-calendar-popover {
+	width: min(20rem, calc(100cqw - 2rem));
+	max-width: calc(100cqw - 2rem);
+	overflow: hidden;
 	border: 1px solid #e5e5e5;
 	border-radius: 0.75rem;
 	box-shadow: 0 12px 30px rgba(23, 23, 23, 0.12);
-	overflow: hidden;
 }
 
 .orders-calendar-shell .orders-calendar-popover-header {
-	background: #fafafa;
 	border-bottom: 1px solid #e5e5e5;
+	background: #fafafa;
 	padding: 0.625rem 0.75rem;
 	font-size: 0.8125rem;
 	font-weight: 600;
@@ -206,4 +206,50 @@
 
 .orders-calendar-shell .orders-calendar-popover-body {
 	padding: 0.3rem;
+}
+
+@container calendar-page (width < 42rem) {
+	.orders-calendar-shell .fc-dayGridMonth-view .orders-calendar-event-customer,
+	.orders-calendar-shell .fc-dayGridMonth-view .orders-calendar-event-time {
+		display: none;
+	}
+
+	.orders-calendar-shell .fc-dayGridMonth-view .orders-calendar-event-content {
+		padding-inline: 0.25rem;
+	}
+
+	.orders-calendar-shell .fc-dayGridMonth-view .orders-calendar-event-number {
+		font-size: 0.5625rem;
+	}
+}
+
+@container calendar-page (width < 64rem) {
+	.orders-calendar-shell:has(.fc-timegrid) {
+		max-height: min(48rem, 72vh);
+		overflow-y: auto;
+		overscroll-behavior: contain;
+	}
+
+	.orders-calendar-shell:has(.fc-timegrid) .orders-calendar-day-header {
+		position: sticky;
+		top: 0;
+		z-index: 3;
+	}
+}
+
+@container calendar-page (width >= 42rem) {
+	.orders-calendar-shell .orders-calendar-day-header {
+		padding: 0.5rem 0;
+		font-size: 0.75rem;
+		letter-spacing: 0.08em;
+	}
+
+	.orders-calendar-shell .orders-calendar-day-top {
+		padding: 0.4rem 0.5rem 0;
+		font-size: 0.75rem;
+	}
+
+	.orders-calendar-shell .orders-calendar-row-event {
+		min-height: 2.25rem;
+	}
 }

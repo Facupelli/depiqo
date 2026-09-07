@@ -7,6 +7,7 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@repo/ui/components/dropdown-menu";
+import { Skeleton } from "@repo/ui/components/skeleton";
 import {
 	Table,
 	TableBody,
@@ -27,6 +28,7 @@ interface PromotionsListProps {
 	promotions: GetPromotionsPromotionDto[];
 	onEdit: (promotion: GetPromotionsPromotionDto) => void;
 	onDelete?: (promotion: GetPromotionsPromotionDto) => void;
+	isLoading?: boolean;
 }
 
 const ACTIVATION_LABELS: Record<
@@ -41,6 +43,7 @@ export function PromotionsList({
 	promotions,
 	onDelete,
 	onEdit,
+	isLoading = false,
 }: PromotionsListProps) {
 	const columns = createColumns({ onDelete, onEdit });
 	const table = useReactTable({
@@ -50,37 +53,172 @@ export function PromotionsList({
 	});
 
 	return (
-		<div className="overflow-hidden rounded-lg border bg-background">
-			<Table>
-				<TableHeader>
-					{table.getHeaderGroups().map((headerGroup) => (
-						<TableRow key={headerGroup.id} className="bg-muted/40">
-							{headerGroup.headers.map((header) => (
-								<TableHead key={header.id}>
-									{header.isPlaceholder
-										? null
-										: flexRender(
-												header.column.columnDef.header,
-												header.getContext(),
+		<>
+			<div className="hidden overflow-hidden rounded-lg border bg-background @2xl/promotions-index:block">
+				<Table>
+					<TableHeader>
+						{table.getHeaderGroups().map((headerGroup) => (
+							<TableRow key={headerGroup.id} className="bg-muted/40">
+								{headerGroup.headers.map((header) => (
+									<TableHead
+										key={header.id}
+										className={getResponsiveColumnClass(header.column.id)}
+									>
+										{header.isPlaceholder
+											? null
+											: flexRender(
+													header.column.columnDef.header,
+													header.getContext(),
+												)}
+									</TableHead>
+								))}
+							</TableRow>
+						))}
+					</TableHeader>
+					<TableBody>
+						{isLoading ? (
+							<TableSkeletonRows
+								columnIds={table.getAllLeafColumns().map((column) => column.id)}
+							/>
+						) : (
+							table.getRowModel().rows.map((row) => (
+								<TableRow key={row.id} className="hover:bg-muted/50">
+									{row.getVisibleCells().map((cell) => (
+										<TableCell
+											key={cell.id}
+											className={`py-2.5 ${getResponsiveColumnClass(cell.column.id) ?? ""}`}
+										>
+											{flexRender(
+												cell.column.columnDef.cell,
+												cell.getContext(),
 											)}
-								</TableHead>
-							))}
-						</TableRow>
+										</TableCell>
+									))}
+								</TableRow>
+							))
+						)}
+					</TableBody>
+				</Table>
+			</div>
+
+			<CompactPromotionsList
+				promotions={promotions}
+				onDelete={onDelete}
+				onEdit={onEdit}
+				isLoading={isLoading}
+			/>
+		</>
+	);
+}
+
+function getResponsiveColumnClass(columnId: string): string | undefined {
+	if (["activation", "priority"].includes(columnId)) {
+		return "hidden @5xl/promotions-index:table-cell";
+	}
+	return undefined;
+}
+
+function TableSkeletonRows({ columnIds }: { columnIds: string[] }) {
+	return Array.from({ length: 5 }).map((_, rowIndex) => (
+		// biome-ignore lint/suspicious/noArrayIndexKey: skeleton rows are static placeholders.
+		<TableRow key={rowIndex}>
+			{columnIds.map((columnId) => (
+				<TableCell
+					key={columnId}
+					className={getResponsiveColumnClass(columnId)}
+				>
+					<Skeleton className="h-4 w-full" />
+				</TableCell>
+			))}
+		</TableRow>
+	));
+}
+
+function CompactPromotionsList({
+	promotions,
+	onDelete,
+	onEdit,
+	isLoading,
+}: PromotionsListProps & { isLoading: boolean }) {
+	return (
+		<div className="@2xl/promotions-index:hidden">
+			{isLoading ? (
+				<CompactSkeletonRows />
+			) : (
+				<ul className="divide-y border-y">
+					{promotions.map((promotion) => (
+						<li key={promotion.id} className="px-3 py-3">
+							<div className="flex min-w-0 items-start gap-3">
+								<div className="min-w-0 flex-1 space-y-3">
+									<div className="flex min-w-0 flex-wrap items-start justify-between gap-2">
+										<p className="min-w-0 break-words font-medium text-foreground">
+											{promotion.name}
+										</p>
+										<PromotionStatusBadge promotion={promotion} />
+									</div>
+									<div className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
+										<CompactDetail label="Descuento">
+											{formatDiscount(promotion)}
+										</CompactDetail>
+										<CompactDetail label="Activación">
+											<PromotionActivationBadge promotion={promotion} />
+										</CompactDetail>
+										<CompactDetail label="Vigencia" className="col-span-2">
+											{formatValidity(promotion)}
+										</CompactDetail>
+									</div>
+									<p className="text-xs text-muted-foreground tabular-nums">
+										Prioridad {promotion.priority}
+									</p>
+								</div>
+								<RowActions
+									onEdit={() => onEdit(promotion)}
+									onDelete={onDelete ? () => onDelete(promotion) : undefined}
+								/>
+							</div>
+						</li>
 					))}
-				</TableHeader>
-				<TableBody>
-					{table.getRowModel().rows.map((row) => (
-						<TableRow key={row.id} className="hover:bg-muted/50">
-							{row.getVisibleCells().map((cell) => (
-								<TableCell key={cell.id} className="py-2.5">
-									{flexRender(cell.column.columnDef.cell, cell.getContext())}
-								</TableCell>
-							))}
-						</TableRow>
-					))}
-				</TableBody>
-			</Table>
+				</ul>
+			)}
 		</div>
+	);
+}
+
+function CompactDetail({
+	label,
+	children,
+	className = "",
+}: {
+	label: string;
+	children: React.ReactNode;
+	className?: string;
+}) {
+	return (
+		<div className={`min-w-0 space-y-1 ${className}`}>
+			<p className="text-xs font-medium text-muted-foreground">{label}</p>
+			<div className="break-words text-foreground">{children}</div>
+		</div>
+	);
+}
+
+function CompactSkeletonRows() {
+	return (
+		<ul className="divide-y border-y" aria-label="Cargando promociones">
+			{Array.from({ length: 5 }).map((_, index) => (
+				// biome-ignore lint/suspicious/noArrayIndexKey: skeleton rows are static placeholders.
+				<li key={index} className="space-y-3 px-3 py-3">
+					<div className="flex items-center justify-between gap-3">
+						<Skeleton className="h-5 w-1/2" />
+						<Skeleton className="h-5 w-16" />
+					</div>
+					<div className="grid grid-cols-2 gap-4">
+						<Skeleton className="h-10 w-full" />
+						<Skeleton className="h-10 w-full" />
+					</div>
+					<Skeleton className="h-9 w-full" />
+				</li>
+			))}
+		</ul>
 	);
 }
 
@@ -96,7 +234,17 @@ function createColumns({
 			accessorKey: "name",
 			header: "Promoción",
 			cell: ({ row }) => (
-				<span className="font-medium text-foreground">{row.original.name}</span>
+				<div className="min-w-0 space-y-1.5">
+					<span className="break-words font-medium text-foreground">
+						{row.original.name}
+					</span>
+					<div className="flex flex-wrap items-center gap-2 @5xl/promotions-index:hidden">
+						<PromotionActivationBadge promotion={row.original} />
+						<span className="text-xs text-muted-foreground tabular-nums">
+							Prioridad {row.original.priority}
+						</span>
+					</div>
+				</div>
 			),
 		},
 		{
@@ -107,11 +255,7 @@ function createColumns({
 		{
 			accessorKey: "activation",
 			header: "Activación",
-			cell: ({ row }) => (
-				<Badge variant="outline">
-					{ACTIVATION_LABELS[row.original.activation]}
-				</Badge>
-			),
+			cell: ({ row }) => <PromotionActivationBadge promotion={row.original} />,
 		},
 		{
 			id: "validity",
@@ -128,11 +272,7 @@ function createColumns({
 		{
 			accessorKey: "isActive",
 			header: "Estado",
-			cell: ({ row }) => (
-				<Badge variant={row.original.isActive ? "default" : "secondary"}>
-					{row.original.isActive ? "Activa" : "Inactiva"}
-				</Badge>
-			),
+			cell: ({ row }) => <PromotionStatusBadge promotion={row.original} />,
 		},
 		{
 			id: "actions",
@@ -147,6 +287,28 @@ function createColumns({
 			),
 		},
 	];
+}
+
+function PromotionActivationBadge({
+	promotion,
+}: {
+	promotion: GetPromotionsPromotionDto;
+}) {
+	return (
+		<Badge variant="outline">{ACTIVATION_LABELS[promotion.activation]}</Badge>
+	);
+}
+
+function PromotionStatusBadge({
+	promotion,
+}: {
+	promotion: GetPromotionsPromotionDto;
+}) {
+	return (
+		<Badge variant={promotion.isActive ? "default" : "secondary"}>
+			{promotion.isActive ? "Activa" : "Inactiva"}
+		</Badge>
+	);
 }
 
 function RowActions({
