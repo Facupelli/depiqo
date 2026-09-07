@@ -8,7 +8,7 @@ import { PrismaService } from 'src/core/database/prisma.service';
 import { AssetCreatedIntegrationEvent } from 'src/modules/asset-inventory/public-api/events/asset-created.integration-event';
 import { EquipmentTypeReferenceAuthority } from 'src/modules/asset-inventory/public-api/equipment-type-reference-authority.public-api';
 import {
-  createOfferingSetupIntegrationContext,
+  createOfferingManagementIntegrationContext,
   useIntegrationTestContext,
 } from '../../../../../test/support/integration-test-context';
 import { createTestFixtures, TestFixtures } from '../../../../../test/support/fixtures';
@@ -25,7 +25,7 @@ describe('CreateEquipment atomicity integration', () => {
 
   useIntegrationTestContext(async () => {
     validateEquipmentTypeReferences = jest.fn();
-    moduleRef = await createOfferingSetupIntegrationContext([
+    moduleRef = await createOfferingManagementIntegrationContext([
       { provide: EquipmentTypeReferenceAuthority, useValue: { validateEquipmentTypeReferences } },
     ]);
     prisma = moduleRef.get(PrismaService);

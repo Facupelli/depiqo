@@ -12,6 +12,7 @@ Pricing publishes cohesive synchronous capabilities for other modules:
 
 - `PricingRatePlanAuthoring` creates reusable Rate Plans.
 - `PricingRentalOfferPricingAssignment` assigns an active Pricing Rate Plan to a Catalog Rental Offer reference.
+- `PricingRentalOfferStartingPriceFacts` provides at most one current first-billable-unit price candidate for each requested Rental Offer.
 - `PricingCalculation.calculateProposedPrice` calculates a current proposed price from Pricing-owned assignments, rate plans, promotions, coupons, Pricing-owned fixed duration defaults, caller-provided effective timezone and tenant-selected daily billing policy, optional equipment target-total math, and the tenant's current insurance offering terms. It returns equipment pricing, insurance composition, and the insurance-inclusive proposed total. `calculateInsuranceForEquipmentPrice` recomposes only insurance from persisted equipment pricing when a consumer must not reprice equipment. Consumers translate these provider results into their own domain concepts.
 
 The authoring capabilities publish Pricing-owned inputs, result IDs, error vocabularies, and billing-unit values. They do not expose Prisma, persistence, domain, or feature-local types.

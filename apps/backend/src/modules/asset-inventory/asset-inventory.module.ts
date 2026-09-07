@@ -53,6 +53,8 @@ import { AssetInventoryAuthoringService } from './public-api/asset-inventory-aut
 import { AssetInventoryAuthoring } from './public-api/asset-inventory-authoring.public-api';
 import { EquipmentTypeReferenceAuthorityService } from './public-api/equipment-type-reference-authority.public-api.service';
 import { EquipmentTypeReferenceAuthority } from './public-api/equipment-type-reference-authority.public-api';
+import { EquipmentTypePageFacts } from './public-api/equipment-type-page-facts.public-api';
+import { EquipmentTypePageFactsService } from './public-api/equipment-type-page-facts.service';
 
 @Module({
   imports: [TenantManagementModule],
@@ -106,6 +108,7 @@ import { EquipmentTypeReferenceAuthority } from './public-api/equipment-type-ref
     { provide: AssetInventoryAuthoring, useClass: AssetInventoryAuthoringService },
     { provide: EquipmentTypeReferenceAuthority, useClass: EquipmentTypeReferenceAuthorityService },
     { provide: AssetInventoryDisplayFacts, useClass: AssetInventoryDisplayFactsService },
+    { provide: EquipmentTypePageFacts, useClass: EquipmentTypePageFactsService },
   ],
   exports: [
     AccessoryPreparationInventoryFacts,
@@ -113,6 +116,7 @@ import { EquipmentTypeReferenceAuthority } from './public-api/equipment-type-ref
     AssetInventoryAuthoring,
     EquipmentTypeReferenceAuthority,
     AssetInventoryDisplayFacts,
+    EquipmentTypePageFacts,
   ],
 })
 export class AssetInventoryModule {}

@@ -6,7 +6,7 @@ import { err } from 'neverthrow';
 import { PrismaService } from 'src/core/database/prisma.service';
 import { AttachRatePlanToRentalOfferOperation } from '../../../pricing/application/operations/attach-rate-plan-to-rental-offer.operation';
 import {
-  createOfferingSetupIntegrationContext,
+  createOfferingManagementIntegrationContext,
   useIntegrationTestContext,
 } from '../../../../../test/support/integration-test-context';
 import { createTestFixtures, TestFixtures } from '../../../../../test/support/fixtures';
@@ -22,7 +22,7 @@ describe('CreateRentalOfferWithPricing atomicity integration', () => {
 
   useIntegrationTestContext(async () => {
     attachRatePlanToRentalOffer = jest.fn();
-    moduleRef = await createOfferingSetupIntegrationContext([
+    moduleRef = await createOfferingManagementIntegrationContext([
       {
         provide: AttachRatePlanToRentalOfferOperation,
         useValue: { attachRatePlanToRentalOffer },

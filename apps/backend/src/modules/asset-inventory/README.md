@@ -9,6 +9,7 @@ It does not own rental assignments or rental availability state.
 Asset Inventory publishes provider-owned capabilities under `public-api/`:
 
 - `EquipmentTypeReferenceAuthority` validates that requested Equipment Type references exist within a supplied tenant. It does not validate stock, branch, rental availability, assignment eligibility, or fulfillment readiness.
+- `EquipmentTypePageFacts` provides a tenant-scoped Equipment Type page with current active physical-unit counts and optional selected-branch counts. Branch scope affects only the selected-branch count, not Equipment Type page membership.
 - `AssetInventoryDisplayFacts` provides current Equipment Type facts (`equipmentTypeId`, `name`, `categoryId`), Asset facts (`assetId`, `serialNumber`), and tenant-scoped Owner display facts (`ownerId`, `name`). Owner display lookup resolves owners directly by ID without assignment-eligibility or current Asset ownership filtering. Category display names remain owned by Tenant Management.
 - `AssetInventoryAuthoring` creates an Equipment Type and optional initial physical Assets atomically. It validates Category assignment and initial Asset branch references through Tenant Management before Inventory records are persisted.
 - `AccessoryPreparationInventoryFacts` publishes configured accessory defaults and current eligible physical accessory Asset references for a tenant branch. Rental Commitment combines those facts with rental demand and asset blocks to determine rental-specific availability.

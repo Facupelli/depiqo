@@ -1,6 +1,7 @@
 export * from "./address-suggestion.schema";
 export * from "./api-contract";
 export * from "./asset-inventory";
+export * from "./backoffice";
 export * from "./catalog";
 export * from "./contracts";
 export * from "./delivery";

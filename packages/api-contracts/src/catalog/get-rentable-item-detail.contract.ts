@@ -1,11 +1,8 @@
 import { z } from "zod";
 
 import type { ApiContract } from "../api-contract";
-import {
-  GetRentableItemsBillingUnitSchema,
-  GetRentableItemsKindSchema,
-  GetRentableItemsStatusSchema,
-} from "./get-rentable-items.contract";
+import { PricingBillingUnitSchema } from "../pricing/billing-unit.schema";
+import { GetRentableItemsKindSchema, GetRentableItemsStatusSchema } from "./get-rentable-items.contract";
 
 export const GetRentableItemDetailParamsSchema = z.object({
   rentableItemId: z.string().trim().min(1),
@@ -30,7 +27,7 @@ export const GetRentableItemDetailActiveRatePlanSchema = z.object({
   ratePlanId: z.string(),
   ratePlanName: z.string(),
   currency: z.string(),
-  billingUnit: GetRentableItemsBillingUnitSchema,
+  billingUnit: PricingBillingUnitSchema,
   status: z.enum(["ACTIVE", "INACTIVE"]),
   tiers: z.array(GetRentableItemDetailRatePlanTierSchema),
 });
@@ -62,7 +59,7 @@ export const GetRentableItemDetailOfferPriceSummarySchema = z.object({
   ratePlanName: z.string(),
   startingPrice: z.string(),
   currency: z.string(),
-  billingUnit: GetRentableItemsBillingUnitSchema,
+  billingUnit: PricingBillingUnitSchema,
 });
 
 export const GetRentableItemDetailOfferSetupSummarySchema = z.object({

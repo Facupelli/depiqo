@@ -4,7 +4,7 @@ import { TestingModule } from '@nestjs/testing';
 
 import { PrismaService } from 'src/core/database/prisma.service';
 import {
-  createOfferingSetupIntegrationContext,
+  createOfferingManagementIntegrationContext,
   useIntegrationTestContext,
 } from '../../../../../test/support/integration-test-context';
 import { createTestFixtures, TestFixtures } from '../../../../../test/support/fixtures';
@@ -20,7 +20,7 @@ describe('CreateRentalOfferWithPricing integration', () => {
   let ratePlanAuthoring: PricingRatePlanAuthoring;
 
   useIntegrationTestContext(async () => {
-    moduleRef = await createOfferingSetupIntegrationContext();
+    moduleRef = await createOfferingManagementIntegrationContext();
     prisma = moduleRef.get(PrismaService);
     fixtures = createTestFixtures(prisma);
     handler = moduleRef.get(CreateRentalOfferWithPricingHandler);
@@ -117,7 +117,7 @@ describe('CreateRentalOfferWithPricing integration', () => {
     ).resolves.toBe(1);
   });
 
-  it('preserves Offering Setup translation for an inactive existing Rate Plan', async () => {
+  it('preserves Offering Management translation for an inactive existing Rate Plan', async () => {
     const current = await setup();
     const ratePlan = await createRatePlan(current.tenant.id, false);
 

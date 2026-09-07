@@ -4,7 +4,7 @@ import { TestingModule } from '@nestjs/testing';
 
 import { PrismaService } from 'src/core/database/prisma.service';
 import {
-  createOfferingSetupIntegrationContext,
+  createOfferingManagementIntegrationContext,
   useIntegrationTestContext,
 } from '../../../../../test/support/integration-test-context';
 import { createTestFixtures, TestFixtures } from '../../../../../test/support/fixtures';
@@ -18,7 +18,7 @@ describe('CreateEquipment integration', () => {
   let handler: CreateEquipmentHandler;
 
   useIntegrationTestContext(async () => {
-    moduleRef = await createOfferingSetupIntegrationContext();
+    moduleRef = await createOfferingManagementIntegrationContext();
     prisma = moduleRef.get(PrismaService);
     fixtures = createTestFixtures(prisma);
     handler = moduleRef.get(CreateEquipmentHandler);

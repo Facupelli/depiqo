@@ -36,6 +36,8 @@ import { CatalogRentalOfferReferenceAuthorityService } from './public-api/catalo
 import { CatalogOfferingAuthoringService } from './public-api/catalog-offering-authoring.service';
 import { CatalogSelectionResolution } from './public-api/catalog-selection-resolution.public-api';
 import { CatalogSelectionResolutionService } from './public-api/catalog-selection-resolution.service';
+import { CatalogEquipmentTypeRentalFacts } from './public-api/catalog-equipment-type-rental-facts.public-api';
+import { CatalogEquipmentTypeRentalFactsService } from './public-api/catalog-equipment-type-rental-facts.service';
 
 @Module({
   imports: [AssetInventoryModule, TenantManagementModule],
@@ -56,6 +58,7 @@ import { CatalogSelectionResolutionService } from './public-api/catalog-selectio
     { provide: CatalogOfferingAuthoring, useClass: CatalogOfferingAuthoringService },
     { provide: CatalogRentalOfferReferenceAuthority, useClass: CatalogRentalOfferReferenceAuthorityService },
     { provide: CatalogSelectionResolution, useClass: CatalogSelectionResolutionService },
+    { provide: CatalogEquipmentTypeRentalFacts, useClass: CatalogEquipmentTypeRentalFactsService },
     ActivateRentableItemHandler,
     ArchiveRentableItemHandler,
     CreateIndividualRentalHandler,
@@ -74,6 +77,11 @@ import { CatalogSelectionResolutionService } from './public-api/catalog-selectio
     ResolveSelectedRentalOffersService,
     PrismaResolveSelectedRentalOffersReader,
   ],
-  exports: [CatalogOfferingAuthoring, CatalogRentalOfferReferenceAuthority, CatalogSelectionResolution],
+  exports: [
+    CatalogOfferingAuthoring,
+    CatalogRentalOfferReferenceAuthority,
+    CatalogSelectionResolution,
+    CatalogEquipmentTypeRentalFacts,
+  ],
 })
 export class CatalogModule {}
