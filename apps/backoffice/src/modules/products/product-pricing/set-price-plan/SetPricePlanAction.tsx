@@ -13,13 +13,13 @@ import {
 	CreatePricePlanForm,
 	EditPricePlanDialog,
 	toCreatePricePlanDto,
-	useCreatePricePlan,
 } from "@/modules/pricing/price-plans/public";
 import { formatPriceSummary } from "../../product-detail/product-detail.utils";
 import {
 	type PricePlanOption,
 	PricePlanSelectionForm,
 } from "../price-plan-selection/PricePlanSelectionForm";
+import { useCreatePricingForRentalOffer } from "./create-pricing-for-rental-offer.mutation";
 import { useAttachRatePlanToRentalOffer } from "./set-price-plan.mutation";
 import { toAttachRatePlanToRentalOfferDto } from "./set-price-plan.schema";
 
@@ -29,19 +29,23 @@ type RentalOffer = GetRentableItemDetailResponseDto["offers"][number];
 export function SetPricePlanAction({
 	offer,
 	ratePlanOptions,
+	defaultOpen = false,
+	assignLabel = "Asignar precio",
 }: {
 	offer: RentalOffer;
 	ratePlanOptions: PricePlanOption[];
+	defaultOpen?: boolean;
+	assignLabel?: string;
 }) {
 	const attachFormId = useId();
 	const createFormId = useId();
-	const [open, setOpen] = useState(false);
+	const [open, setOpen] = useState(defaultOpen);
 	const [editingRatePlanId, setEditingRatePlanId] = useState<string | null>(
 		null,
 	);
 	const [step, setStep] = useState<PriceAssignmentStep>("choose");
 	const attachMutation = useAttachRatePlanToRentalOffer();
-	const createRatePlanMutation = useCreatePricePlan();
+	const createPricingMutation = useCreatePricingForRentalOffer();
 	const branchLabel = offer.branchName ?? offer.branchId;
 	const canAssign =
 		offer.setupSummary.availableActions.includes("ASSIGN_PRICE");
@@ -66,7 +70,7 @@ export function SetPricePlanAction({
 					onClick={() => setOpen(true)}
 				>
 					<CircleDollarSign className="mr-2 size-4" />
-					{canAssign ? "Asignar precio" : "Editar precio"}
+					{canAssign ? assignLabel : "Editar precio"}
 				</Button>
 				<DialogContent
 					className={
@@ -142,21 +146,16 @@ export function SetPricePlanAction({
 						<CreatePricePlanForm
 							formId={createFormId}
 							isPending={
-								createRatePlanMutation.isPending || attachMutation.isPending
+								createPricingMutation.isPending || attachMutation.isPending
 							}
 							submitLabel="Crear y asignar plan"
 							pendingLabel="Creando y asignando..."
 							onSubmit={async (values) => {
-								const ratePlan = await createRatePlanMutation.mutateAsync(
-									toCreatePricePlanDto({ ...values, isActive: true }),
-								);
-								await attachMutation.mutateAsync({
-									body: toAttachRatePlanToRentalOfferDto(
-										{ ratePlanId: ratePlan.id },
-										{
-											catalogRentalOfferId: offer.rentalOfferId,
-										},
-									),
+								const { isActive: _isActive, ...ratePlan } =
+									toCreatePricePlanDto({ ...values, isActive: true });
+								await createPricingMutation.mutateAsync({
+									catalogRentalOfferId: offer.rentalOfferId,
+									ratePlan,
 								});
 								handleOpenChange(false);
 							}}

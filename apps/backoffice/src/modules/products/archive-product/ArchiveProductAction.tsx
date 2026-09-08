@@ -1,4 +1,3 @@
-import type { GetRentableItemDetailResponseDto } from "@repo/api-contracts";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -17,11 +16,11 @@ import {
 import { useArchiveProduct } from "./archive-product.mutation";
 
 export function ArchiveProductAction({
-	product,
+	rentableItemId,
 	open,
 	onOpenChange,
 }: {
-	product: GetRentableItemDetailResponseDto;
+	rentableItemId: string;
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 }) {
@@ -31,7 +30,7 @@ export function ArchiveProductAction({
 	async function handleArchive() {
 		setError(null);
 		try {
-			await archiveMutation.mutateAsync({ rentableItemId: product.id });
+			await archiveMutation.mutateAsync({ rentableItemId });
 			onOpenChange(false);
 		} catch (mutationError) {
 			setError(getArchiveProductError(mutationError));

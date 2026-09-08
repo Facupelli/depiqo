@@ -1,8 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { z } from "zod";
 import { CreatePackagePage } from "@/modules/products/create-package/CreatePackagePage";
 import { AdminRouteError } from "@/shared/components/admin-route-error";
 
+const createPackageSearchSchema = z.object({
+	equipmentTypeId: z.string().trim().min(1).optional(),
+});
+
 export const Route = createFileRoute("/_admin/dashboard/catalog/packages/new")({
+	validateSearch: createPackageSearchSchema,
 	errorComponent: ({ error }) => {
 		return (
 			<AdminRouteError
@@ -12,5 +18,10 @@ export const Route = createFileRoute("/_admin/dashboard/catalog/packages/new")({
 			/>
 		);
 	},
-	component: CreatePackagePage,
+	component: CreatePackageRoute,
 });
+
+function CreatePackageRoute() {
+	const { equipmentTypeId } = Route.useSearch();
+	return <CreatePackagePage equipmentTypeId={equipmentTypeId} />;
+}

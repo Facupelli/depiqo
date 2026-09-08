@@ -1,6 +1,10 @@
+import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { useEquipmentTypeOptions } from "@/modules/inventory/equipment-types/public";
+import {
+	equipmentTypeSummaryQueries,
+	useEquipmentTypeOptions,
+} from "@/modules/inventory/equipment-types/public";
 import { useBranches } from "@/modules/settings/branches/public";
 import { useCategories } from "@/modules/settings/categories/public";
 import useDebounce from "@/shared/hooks/use-debounce";
@@ -10,18 +14,30 @@ import {
 	mapCreatePackageError,
 } from "./create-package.errors";
 import { useCreatePackage } from "./create-package.mutation";
-import { toCreatePackageDto } from "./create-package.schema";
+import {
+	createPackageFormDefaultValues,
+	toCreatePackageDto,
+} from "./create-package.schema";
 
 const formId = "create-package";
 const equipmentTypeSearchLimit = 15;
 
-export function CreatePackagePage() {
+export function CreatePackagePage({
+	equipmentTypeId,
+}: {
+	equipmentTypeId?: string;
+}) {
 	const navigate = useNavigate();
 	const [equipmentSearchInput, setEquipmentSearchInput] = useState("");
 	const [hasSelectedBranches, setHasSelectedBranches] = useState(false);
 	const debouncedEquipmentSearch = useDebounce(equipmentSearchInput, 300);
 	const { data: categories = [] } = useCategories();
 	const { data: branches = [] } = useBranches();
+	const preselectedEquipmentQuery = useQuery({
+		...equipmentTypeSummaryQueries.summary(equipmentTypeId ?? ""),
+		enabled: Boolean(equipmentTypeId),
+	});
+	const preselectedEquipment = preselectedEquipmentQuery.data;
 	const {
 		data: equipmentTypes = [],
 		isFetching: isEquipmentSearchFetching,
@@ -39,6 +55,32 @@ export function CreatePackagePage() {
 	const [submitError, setSubmitError] =
 		useState<CreatePackageSubmissionError | null>(null);
 
+	if (equipmentTypeId && preselectedEquipmentQuery.isPending) {
+		return (
+			<div className="px-6 py-12 text-muted-foreground">Cargando equipo...</div>
+		);
+	}
+	if (
+		equipmentTypeId &&
+		(!preselectedEquipment || preselectedEquipmentQuery.isError)
+	) {
+		return (
+			<div className="px-6 py-12 text-destructive">
+				No pudimos resolver el equipo seleccionado.
+			</div>
+		);
+	}
+	const defaultValues = createPackageFormDefaultValues();
+	if (preselectedEquipment) {
+		defaultValues.requirements = [
+			{
+				equipmentTypeId: preselectedEquipment.id,
+				equipmentTypeName: preselectedEquipment.name,
+				quantityPerItem: 1,
+			},
+		];
+	}
+
 	return (
 		<div className="mx-auto w-full max-w-6xl px-6 py-10">
 			<header className="mb-10 max-w-3xl">
@@ -53,7 +95,9 @@ export function CreatePackagePage() {
 			</header>
 
 			<CreatePackageForm
+				key={equipmentTypeId ?? "default"}
 				formId={formId}
+				defaultValues={defaultValues}
 				categories={categories.filter((category) => category.isActive)}
 				branches={branches}
 				equipmentTypes={equipmentTypes}

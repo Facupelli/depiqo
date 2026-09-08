@@ -1,6 +1,6 @@
 import { Tabs, TabsList, TabsTrigger } from "@repo/ui/components/tabs";
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Boxes, LayoutDashboard } from "lucide-react";
+import { Boxes, HandCoins, LayoutDashboard } from "lucide-react";
 
 const detailSections = [
 	{
@@ -16,6 +16,13 @@ const detailSections = [
 		icon: Boxes,
 		to: "/dashboard/inventory/equipment-types/$equipmentTypeId/units" as const,
 		suffix: "/units",
+	},
+	{
+		value: "rentals",
+		label: "Alquileres",
+		icon: HandCoins,
+		to: "/dashboard/inventory/equipment-types/$equipmentTypeId/rentals" as const,
+		suffix: "/rentals",
 	},
 ] as const;
 

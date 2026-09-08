@@ -4,7 +4,10 @@ import type {
 } from "@repo/api-contracts";
 import type { MutationOptions } from "@tanstack/react-query";
 import { useMutation } from "@tanstack/react-query";
-import { listEquipmentTypeKeys } from "@/modules/inventory/equipment-types/public";
+import {
+	equipmentTypeRentalUsageKeys,
+	listEquipmentTypeKeys,
+} from "@/modules/inventory/equipment-types/public";
 import { pricePlanKeys } from "@/modules/pricing/price-plans/public";
 import { productKeys } from "@/modules/products/products.queries";
 import { rentalOfferPricingKeys } from "@/modules/products/rental-offer-pricing.keys";
@@ -33,6 +36,7 @@ export function useCreateRentalOfferWithPricing(
 		meta: {
 			invalidates: [
 				productKeys.all(),
+				equipmentTypeRentalUsageKeys.all(),
 				listEquipmentTypeKeys.lists(),
 				rentalOfferPricingKeys.all(),
 				pricePlanKeys.all(),

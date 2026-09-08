@@ -1,21 +1,17 @@
 import type { GetRentableItemsItemDto } from "@repo/api-contracts";
-import { Badge } from "@repo/ui/components/badge";
 import { Link } from "@tanstack/react-router";
 import type { ColumnDef } from "@tanstack/react-table";
 import { PackageOpen } from "lucide-react";
 import { buildR2PublicUrl } from "@/lib/r2-public-url";
+import { ProductStatusBadge } from "../product-status-badge";
+
+export { ProductStatusBadge } from "../product-status-badge";
 
 const kindLabels = {
 	SINGLE: "Individual",
 	PACKAGE: "Combo",
 	KIT: "Kit",
 } satisfies Partial<Record<GetRentableItemsItemDto["kind"], string>>;
-
-const statusLabels: Record<GetRentableItemsItemDto["status"], string> = {
-	DRAFT: "Borrador",
-	ACTIVE: "Activo",
-	ARCHIVED: "Archivado",
-};
 
 const billingUnitLabels: NonNullable<
 	GetRentableItemsItemDto["startingPrice"]
@@ -78,22 +74,6 @@ export function ProductImage({ item }: { item: GetRentableItemsItemDto }) {
 			<PackageOpen className="h-5 w-5" />
 		</div>
 	);
-}
-
-export function ProductStatusBadge({
-	status,
-}: {
-	status: GetRentableItemsItemDto["status"];
-}) {
-	if (status === "ACTIVE") {
-		return <Badge className="bg-emerald-600 text-white">Activo</Badge>;
-	}
-
-	if (status === "DRAFT") {
-		return <Badge variant="secondary">Borrador</Badge>;
-	}
-
-	return <Badge variant="outline">{statusLabels[status]}</Badge>;
 }
 
 export function createProductListColumns({

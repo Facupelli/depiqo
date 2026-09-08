@@ -1,4 +1,3 @@
-import type { GetRentableItemDetailResponseDto } from "@repo/api-contracts";
 import { Button } from "@repo/ui/components/button";
 import {
 	Dialog,
@@ -48,14 +47,16 @@ type BranchOption = {
 };
 
 type AddBranchAvailabilityDialogProps = {
-	item: GetRentableItemDetailResponseDto;
+	rentableItemId: string;
+	existingOffers: Array<{ branchId: string }>;
 	ratePlanOptions: PricePlanOption[];
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 };
 
 export function AddBranchAvailabilityDialog({
-	item,
+	rentableItemId,
+	existingOffers,
 	ratePlanOptions,
 	open,
 	onOpenChange,
@@ -68,7 +69,7 @@ export function AddBranchAvailabilityDialog({
 	const mutation = useCreateRentalOfferWithPricing();
 	const availableBranches = getAvailableBranches(
 		branchesQuery.data ?? [],
-		item.offers,
+		existingOffers,
 	);
 	const selectedBranch = availableBranches.find(
 		(branch) => branch.id === selectedBranchId,
@@ -135,7 +136,7 @@ export function AddBranchAvailabilityDialog({
 									const body = toCreateRentalOfferWithAttachedRatePlanDto(
 										values,
 										{
-											rentableItemId: item.id,
+											rentableItemId,
 											branchId: selectedBranchId,
 										},
 									);
@@ -158,7 +159,7 @@ export function AddBranchAvailabilityDialog({
 									const body = toCreateRentalOfferWithCreatedRatePlanDto(
 										values,
 										{
-											rentableItemId: item.id,
+											rentableItemId,
 											branchId: selectedBranchId,
 										},
 									);
@@ -316,7 +317,7 @@ function PricingActionCard({
 
 function getAvailableBranches(
 	branches: BranchOption[],
-	offers: GetRentableItemDetailResponseDto["offers"],
+	offers: Array<{ branchId: string }>,
 ): BranchOption[] {
 	const existingBranchIds = new Set(offers.map((offer) => offer.branchId));
 	return branches.filter((branch) => !existingBranchIds.has(branch.id));

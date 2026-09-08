@@ -126,7 +126,12 @@ function BranchOfferCard({
 			</OfferCardSection>
 			<div className="flex flex-col justify-center gap-2 border-t p-4 lg:border-t-0 lg:border-l">
 				<SetPricePlanAction offer={offer} ratePlanOptions={ratePlanOptions} />
-				<EditBranchAvailabilityDialog offer={offer} />
+				<EditBranchAvailabilityDialog
+					rentalOfferId={offer.rentalOfferId}
+					branchName={offer.branchName}
+					isVisible={offer.isVisible}
+					isRentable={offer.isRentable}
+				/>
 			</div>
 		</article>
 	);

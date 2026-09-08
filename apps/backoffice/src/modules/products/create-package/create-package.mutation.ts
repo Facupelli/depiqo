@@ -4,7 +4,10 @@ import type {
 } from "@repo/api-contracts";
 import type { MutationOptions } from "@tanstack/react-query";
 import { useMutation } from "@tanstack/react-query";
-import { listEquipmentTypeKeys } from "@/modules/inventory/equipment-types/public";
+import {
+	equipmentTypeRentalUsageKeys,
+	listEquipmentTypeKeys,
+} from "@/modules/inventory/equipment-types/public";
 import { productKeys } from "@/modules/products/products.queries";
 import type { ProblemDetailsError } from "@/shared/errors";
 import { createPackage } from "./create-package.api";
@@ -27,7 +30,11 @@ export function useCreatePackage(options?: CreatePackageOptions) {
 		...options,
 		mutationFn: createPackage,
 		meta: {
-			invalidates: [productKeys.all(), listEquipmentTypeKeys.lists()],
+			invalidates: [
+				productKeys.all(),
+				listEquipmentTypeKeys.lists(),
+				equipmentTypeRentalUsageKeys.all(),
+			],
 			...options?.meta,
 		},
 	});

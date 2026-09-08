@@ -5,8 +5,8 @@ import { PageBreadcrumb } from "@/components/detail-id-breadcrumb";
 import { buildR2PublicUrl } from "@/lib/r2-public-url";
 import { AddUnitsDialog } from "../add-units/add-units-dialog";
 import { EditEquipmentTypeDialog } from "../edit-equipment-type/edit-equipment-type-dialog";
-import { EquipmentTypeDetailActionsProvider } from "./equipment-type-detail-actions";
 import { EquipmentDetailNavigation } from "./equipment-detail-navigation";
+import { EquipmentTypeDetailActionsProvider } from "./equipment-type-detail-actions";
 import { EquipmentTypeHeader } from "./equipment-type-header";
 import { equipmentTypeSummaryQueries } from "./equipment-type-summary.queries";
 

@@ -183,14 +183,15 @@ function ProductActions({
 				</DropdownMenuContent>
 			</DropdownMenu>
 			<AddBranchAvailabilityDialog
-				item={product}
+				rentableItemId={product.id}
+				existingOffers={product.offers}
 				ratePlanOptions={ratePlanOptions}
 				open={addOfferOpen}
 				onOpenChange={setAddOfferOpen}
 			/>
 			{product.status !== "ARCHIVED" ? (
 				<ArchiveProductAction
-					product={product}
+					rentableItemId={product.id}
 					open={archiveOpen}
 					onOpenChange={setArchiveOpen}
 				/>

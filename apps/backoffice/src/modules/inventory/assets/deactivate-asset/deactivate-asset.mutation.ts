@@ -7,8 +7,8 @@ import { listEquipmentTypeKeys } from "@/modules/inventory/equipment-types/publi
 import type { ProblemDetailsError } from "@/shared/errors";
 import { assetKeys } from "../assets.queries";
 import {
-	deactivateAsset,
 	type DeactivateAssetVariables,
+	deactivateAsset,
 } from "./deactivate-asset.api";
 
 type Variables = DeactivateAssetVariables & { equipmentTypeId: string };

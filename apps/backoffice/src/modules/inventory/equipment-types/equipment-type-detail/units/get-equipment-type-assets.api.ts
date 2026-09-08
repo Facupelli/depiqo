@@ -1,7 +1,7 @@
 import {
+	GetEquipmentTypeAssetsParamsSchema,
 	type GetEquipmentTypeAssetsQueryDto,
 	GetEquipmentTypeAssetsQuerySchema,
-	GetEquipmentTypeAssetsParamsSchema,
 	type GetEquipmentTypeAssetsResponseDto,
 	GetEquipmentTypeAssetsResponseSchema,
 	getEquipmentTypeAssetsContract,

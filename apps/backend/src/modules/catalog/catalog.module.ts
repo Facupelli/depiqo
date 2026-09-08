@@ -10,8 +10,6 @@ import { CreateIndividualRentalHttpController } from './features/create-individu
 import { CreateIndividualRentalHandler } from './features/create-individual-rental/create-individual-rental.handler';
 import { CreateRentalOfferForRentableItemService } from './features/create-rental-offer-for-rentable-item/create-rental-offer-for-rentable-item.service';
 import { CreateRentableItemOfferingService } from './features/create-rentable-item-offering/create-rentable-item-offering.service';
-import { GetEquipmentTypeProductUsagesHttpController } from './features/get-equipment-type-product-usages/get-equipment-type-product-usages.controller';
-import { GetEquipmentTypeProductUsagesHandler } from './features/get-equipment-type-product-usages/get-equipment-type-product-usages.handler';
 import { GetRentableItemDetailHttpController } from './features/get-rentable-item-detail/get-rentable-item-detail.controller';
 import { GetRentableItemDetailHandler } from './features/get-rentable-item-detail/get-rentable-item-detail.handler';
 import { GetRentableItemSummariesHttpController } from './features/get-rentable-item-summaries/get-rentable-item-summaries.controller';
@@ -45,7 +43,6 @@ import { CatalogEquipmentTypeRentalUsagesService } from './public-api/catalog-eq
     ActivateRentableItemHttpController,
     ArchiveRentableItemHttpController,
     CreateIndividualRentalHttpController,
-    GetEquipmentTypeProductUsagesHttpController,
     GetRentableItemDetailHttpController,
     GetRentableItemSummariesHttpController,
     GetRentableItemsHttpController,
@@ -62,7 +59,6 @@ import { CatalogEquipmentTypeRentalUsagesService } from './public-api/catalog-eq
     ActivateRentableItemHandler,
     ArchiveRentableItemHandler,
     CreateIndividualRentalHandler,
-    GetEquipmentTypeProductUsagesHandler,
     CreateRentalOfferForRentableItemService,
     CreateRentableItemOfferingService,
     GetRentableItemDetailHandler,
