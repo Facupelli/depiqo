@@ -27,8 +27,6 @@ import { ChangeAssetOwnerDialog } from "@/modules/inventory/assets/change-asset-
 import { EditAssetDialog } from "@/modules/inventory/assets/edit-asset/edit-asset-dialog";
 import { useRetireAsset } from "@/modules/inventory/assets/retire-asset/retire-asset.mutation";
 import { RetireAssetAlertDialog } from "@/modules/inventory/assets/retire-asset/retire-asset-alert-dialog";
-import { useOwnerOptions } from "@/modules/inventory/ownership/owner-options.queries";
-import { useBranches } from "@/modules/settings/branches/public";
 import { ProblemDetailsError } from "@/shared/errors";
 import { AddAccessorySuggestionsForm } from "../accessory-suggestions/AddAccessorySuggestionsForm";
 import {
@@ -36,9 +34,7 @@ import {
 	toReplaceAccessoryDefaultsDto,
 } from "../accessory-suggestions/add-accessory-suggestions.schema";
 import { useReplaceAccessoryDefaults } from "../accessory-suggestions/replace-accessory-defaults.mutation";
-import { AddUnitsForm } from "../add-units/AddUnitsForm";
-import { useAddUnitsToEquipmentType } from "../add-units/add-units.mutation";
-import { toAddUnitsToEquipmentTypeDto } from "../add-units/add-units.schema";
+import { AddUnitsDialog } from "../add-units/add-units-dialog";
 import { EditEquipmentTypeDialog } from "../edit-equipment-type/edit-equipment-type-dialog";
 import { useEquipmentTypeProductUsages } from "../product-usages/equipment-type-product-usages.queries";
 import { equipmentTypeDetailQueries } from "./equipment-type-detail.queries";
@@ -173,7 +169,7 @@ function EquipmentTypeHeader({
 			<EditEquipmentTypeDialog
 				open={editOpen}
 				onOpenChange={setEditOpen}
-				equipmentType={equipmentType}
+				equipmentTypeId={equipmentType.id}
 			/>
 		</section>
 	);
@@ -216,6 +212,7 @@ function EquipmentUnitsTable({
 	equipmentType: GetEquipmentTypeDetailResponseDto;
 }) {
 	const [editingUnit, setEditingUnit] = useState<EquipmentUnit | null>(null);
+	const [addUnitsOpen, setAddUnitsOpen] = useState(false);
 	const [changingOwnerUnit, setChangingOwnerUnit] =
 		useState<EquipmentUnit | null>(null);
 	const [retiringUnit, setRetiringUnit] = useState<EquipmentUnit | null>(null);
@@ -254,7 +251,16 @@ function EquipmentUnitsTable({
 				colSpan={5}
 				isEmpty={equipmentType.assets.length === 0}
 				emptyMessage="No hay unidades para este equipo."
-				actions={<AddUnitsDialog equipmentTypeId={equipmentType.id} />}
+				actions={
+					<Button
+						type="button"
+						size="sm"
+						variant="outline"
+						onClick={() => setAddUnitsOpen(true)}
+					>
+						Agregar unidad
+					</Button>
+				}
 			>
 				<TableHeader>
 					<TableRow className="bg-muted/80">
@@ -327,6 +333,12 @@ function EquipmentUnitsTable({
 					unit={changingOwnerUnit}
 				/>
 			) : null}
+
+			<AddUnitsDialog
+				equipmentTypeId={equipmentType.id}
+				open={addUnitsOpen}
+				onOpenChange={setAddUnitsOpen}
+			/>
 
 			{retiringUnit ? (
 				<RetireAssetAlertDialog
@@ -513,51 +525,6 @@ function AddAccessorySuggestionsDialog({
 						await replaceAccessoryDefaults({
 							equipmentTypeId: equipmentType.id,
 							body: toReplaceAccessoryDefaultsDto(values),
-						});
-						setOpen(false);
-					}}
-				/>
-			</DialogContent>
-		</Dialog>
-	);
-}
-
-function AddUnitsDialog({ equipmentTypeId }: { equipmentTypeId: string }) {
-	const [open, setOpen] = useState(false);
-	const formId = useId();
-	const { data: branches = [] } = useBranches({ isActive: true });
-	const { data: owners = [] } = useOwnerOptions();
-	const { mutateAsync: addUnitsToEquipmentType, isPending } =
-		useAddUnitsToEquipmentType();
-
-	return (
-		<Dialog open={open} onOpenChange={setOpen}>
-			<Button
-				type="button"
-				size="sm"
-				variant="outline"
-				onClick={() => setOpen(true)}
-			>
-				Agregar unidad
-			</Button>
-			<DialogContent className="max-h-[calc(100vh-2rem)] overflow-y-auto sm:max-w-5xl">
-				<DialogHeader>
-					<DialogTitle>Agregar unidades</DialogTitle>
-					<DialogDescription>
-						Carga una o más unidades físicas para este tipo de equipo.
-					</DialogDescription>
-				</DialogHeader>
-				<AddUnitsForm
-					key={open ? "open" : "closed"}
-					formId={formId}
-					branches={branches}
-					owners={owners}
-					isPending={isPending}
-					onCancel={() => setOpen(false)}
-					onSubmit={async (values) => {
-						await addUnitsToEquipmentType({
-							equipmentTypeId,
-							body: toAddUnitsToEquipmentTypeDto(values),
 						});
 						setOpen(false);
 					}}

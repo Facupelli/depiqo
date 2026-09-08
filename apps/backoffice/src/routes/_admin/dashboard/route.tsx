@@ -119,7 +119,7 @@ const sidebarItems: SidebarItem[] = [
 		children: [{ name: "Categorías", href: "/dashboard/catalog/categories" }],
 	},
 	{
-		name: "Inventario",
+		name: "Equipos",
 		icon: Warehouse,
 		href: "/dashboard/inventory/equipment-types",
 		children: [{ name: "Dueños de Equipo", href: "/dashboard/owners" }],

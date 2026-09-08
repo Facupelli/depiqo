@@ -344,7 +344,7 @@ function CalendarEventContent({
 	if (isTimeGrid) {
 		const boundaryTime =
 			arg.isStart && arg.isEnd
-				? `${pickupTime} ΓåÆ ${returnTime}`
+				? `${pickupTime} → ${returnTime}`
 				: arg.isStart
 					? pickupTime
 					: arg.isEnd

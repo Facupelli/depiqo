@@ -1,6 +1,7 @@
 import type { ArchiveRentableItemResponseDto } from "@repo/api-contracts";
 import type { MutationOptions } from "@tanstack/react-query";
 import { useMutation } from "@tanstack/react-query";
+import { listEquipmentTypeKeys } from "@/modules/inventory/equipment-types/public";
 import { productKeys } from "@/modules/products/products.queries";
 import type { ProblemDetailsError } from "@/shared/errors";
 import {
@@ -26,7 +27,7 @@ export function useArchiveProduct(options?: ArchiveProductOptions) {
 		...options,
 		mutationFn: archiveProduct,
 		meta: {
-			invalidates: productKeys.all(),
+			invalidates: [productKeys.all(), listEquipmentTypeKeys.lists()],
 			...options?.meta,
 		},
 	});

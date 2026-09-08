@@ -1,6 +1,7 @@
 import type { CorrectRatePlanResponseDto } from "@repo/api-contracts";
 import type { MutationOptions } from "@tanstack/react-query";
 import { useMutation } from "@tanstack/react-query";
+import { listEquipmentTypeKeys } from "@/modules/inventory/equipment-types/public";
 import { productKeys } from "@/modules/products/products.queries";
 import type { ProblemDetailsError } from "@/shared/errors";
 import { pricePlanKeys } from "../list-price-plans/price-plans.queries";
@@ -23,7 +24,11 @@ export function useEditPricePlan(options?: EditPricePlanOptions) {
 		...options,
 		mutationFn: editPricePlan,
 		meta: {
-			invalidates: [pricePlanKeys.all(), productKeys.all()],
+			invalidates: [
+				pricePlanKeys.all(),
+				productKeys.all(),
+				listEquipmentTypeKeys.lists(),
+			],
 			...options?.meta,
 		},
 	});

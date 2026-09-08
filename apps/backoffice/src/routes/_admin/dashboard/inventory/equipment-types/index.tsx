@@ -7,6 +7,7 @@ const equipmentTypesSearchSchema = z.object({
 	page: z.coerce.number().int().positive().default(1),
 	pageSize: z.coerce.number().int().positive().max(100).default(20),
 	search: z.string().trim().min(1).optional(),
+	categoryId: z.string().trim().min(1).optional(),
 	branchId: z.string().trim().min(1).optional(),
 	branchScope: z.literal("all").optional(),
 });
@@ -35,10 +36,10 @@ function EquipmentTypesRoute() {
 			onSearchChange={(updater) => {
 				navigate({ search: updater, replace: true });
 			}}
-			onEquipmentTypeClick={(equipmentType) => {
+			onEquipmentTypeClick={(equipmentTypeId) => {
 				navigate({
 					to: "/dashboard/inventory/equipment-types/$equipmentTypeId",
-					params: { equipmentTypeId: equipmentType.id },
+					params: { equipmentTypeId },
 				});
 			}}
 		/>

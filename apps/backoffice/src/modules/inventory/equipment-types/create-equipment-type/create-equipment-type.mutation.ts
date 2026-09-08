@@ -3,7 +3,7 @@ import type { MutationOptions } from "@tanstack/react-query";
 import { useMutation } from "@tanstack/react-query";
 import type { ProblemDetailsError } from "@/shared/errors";
 import { equipmentTypeOptionKeys } from "../equipment-type-options.queries";
-import { equipmentTypeSummaryKeys } from "../list-equipment-types/equipment-type-summaries.queries";
+import { listEquipmentTypeKeys } from "../list-equipment-types/list-equipment-types.queries";
 import {
 	type CreateEquipmentTypeVariables,
 	createEquipmentType,
@@ -28,7 +28,7 @@ export function useCreateEquipmentType(options?: CreateEquipmentTypeOptions) {
 		mutationFn: createEquipmentType,
 		meta: {
 			invalidates: [
-				equipmentTypeSummaryKeys.all(),
+				listEquipmentTypeKeys.lists(),
 				equipmentTypeOptionKeys.all(),
 			],
 			...options?.meta,

@@ -1,28 +1,28 @@
-import type {
-	GetEquipmentTypeSummariesItemDto,
-	GetEquipmentTypeSummariesQueryDto,
-} from "@repo/api-contracts";
+import type { ListEquipmentTypesQueryDto } from "@repo/api-contracts";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import type { PaginationState } from "@tanstack/react-table";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { BranchScopeFilter } from "@/application/branch-scope/branch-scope-filter";
 import { resolveEffectiveBranchId } from "@/application/branch-scope/resolve-effective-branch-id";
 import { currentAuthQueries } from "@/auth/auth.queries";
 import { useBranches } from "@/modules/settings/branches/public";
+import { useCategories } from "@/modules/settings/categories/public";
 import useDebounce from "@/shared/hooks/use-debounce";
+import { AddUnitsDialog } from "../add-units/add-units-dialog";
 import { CreateEquipmentTypeDialog } from "../create-equipment-type/create-equipment-type-dialog";
-import { useEquipmentTypeProductUsages } from "../product-usages/equipment-type-product-usages.queries";
+import { EditEquipmentTypeDialog } from "../edit-equipment-type/edit-equipment-type-dialog";
+import { EquipmentListTable } from "./equipment-list-table";
+import { EquipmentListToolbar } from "./equipment-list-toolbar";
 import {
-	getEquipmentTypeSummariesInputFromQueryKey,
-	useEquipmentTypeSummaries,
-} from "./equipment-type-summaries.queries";
-import { EquipmentTypeSummariesFilters } from "./equipment-type-summaries-filters";
-import { EquipmentTypeSummariesTable } from "./equipment-type-summaries-table";
+	getListEquipmentTypesInputFromQueryKey,
+	useListEquipmentTypes,
+} from "./list-equipment-types.queries";
 
 export type EquipmentTypesSearch = {
 	page: number;
 	pageSize: number;
 	search?: string;
+	categoryId?: string;
 	branchId?: string;
 	branchScope?: "all";
 };
@@ -32,9 +32,7 @@ interface EquipmentTypesPageProps {
 	onSearchChange: (
 		updater: (previous: EquipmentTypesSearch) => EquipmentTypesSearch,
 	) => void;
-	onEquipmentTypeClick: (
-		equipmentType: GetEquipmentTypeSummariesItemDto,
-	) => void;
+	onEquipmentTypeClick: (equipmentTypeId: string) => void;
 }
 
 export function EquipmentTypesPage({
@@ -43,46 +41,50 @@ export function EquipmentTypesPage({
 	onEquipmentTypeClick,
 }: EquipmentTypesPageProps) {
 	const [searchInput, setSearchInput] = useState(search.search ?? "");
+	const [editEquipmentTypeId, setEditEquipmentTypeId] = useState<string | null>(
+		null,
+	);
+	const [addUnitEquipmentTypeId, setAddUnitEquipmentTypeId] = useState<
+		string | null
+	>(null);
 	const debouncedSearch = useDebounce(searchInput, 300);
 	const { data: currentAuth } = useSuspenseQuery(currentAuthQueries.current());
 	const { data: branches = [] } = useBranches();
-	const { branchScope: _branchScope, ...backendSearch } = search;
+	const { data: categories = [] } = useCategories();
+	const activeCategories = categories.filter((category) => category.isActive);
 	const effectiveBranchId = resolveEffectiveBranchId({
 		branches,
 		branchId: search.branchId,
 		branchScope: search.branchScope,
 		workingBranchId: currentAuth.workingBranchId,
 	});
-	const summaryInput: GetEquipmentTypeSummariesQueryDto = {
-		...backendSearch,
-		branchId: effectiveBranchId,
-	};
-	const summaryQuery = useEquipmentTypeSummaries(summaryInput, {
+	const listInput = useMemo<ListEquipmentTypesQueryDto>(
+		() => ({
+			page: search.page,
+			pageSize: search.pageSize,
+			search: search.search,
+			categoryId: search.categoryId,
+			branchId: effectiveBranchId,
+		}),
+		[
+			effectiveBranchId,
+			search.categoryId,
+			search.page,
+			search.pageSize,
+			search.search,
+		],
+	);
+	const listQuery = useListEquipmentTypes(listInput, {
 		placeholderData: (previousData, previousQuery) => {
-			const previousInput = getEquipmentTypeSummariesInputFromQueryKey(
+			const previousInput = getListEquipmentTypesInputFromQueryKey(
 				previousQuery?.queryKey ?? [],
 			);
 
-			return previousInput &&
-				isSameEquipmentTypeListContext(previousInput, summaryInput)
+			return previousInput && previousInput.branchId === listInput.branchId
 				? previousData
 				: undefined;
 		},
 	});
-	const equipmentTypeIds =
-		summaryQuery.data?.data.map((equipmentType) => equipmentType.id) ?? [];
-	const {
-		data: productUsages,
-		isLoading: isLoadingProductUsages,
-		isError: isProductUsagesError,
-	} = useEquipmentTypeProductUsages(equipmentTypeIds);
-	const productsByEquipmentTypeId = new Map(
-		(productUsages ?? []).map((usage) => [
-			usage.equipmentTypeId,
-			usage.products,
-		]),
-	);
-
 	const pagination: PaginationState = {
 		pageIndex: search.page - 1,
 		pageSize: search.pageSize,
@@ -94,9 +96,7 @@ export function EquipmentTypesPage({
 
 	useEffect(() => {
 		const nextSearch = debouncedSearch.trim() || undefined;
-		if (nextSearch === search.search) {
-			return;
-		}
+		if (nextSearch === search.search) return;
 
 		onSearchChange((previous) => ({
 			...previous,
@@ -106,28 +106,22 @@ export function EquipmentTypesPage({
 	}, [debouncedSearch, onSearchChange, search.search]);
 
 	useEffect(() => {
-		if (
-			!summaryQuery.isSuccess ||
-			!summaryQuery.data ||
-			summaryQuery.isPlaceholderData
-		) {
+		if (!listQuery.isSuccess || !listQuery.data || listQuery.isPlaceholderData)
 			return;
-		}
 
 		const totalPages = Math.max(
 			1,
-			Math.ceil(summaryQuery.data.total / search.pageSize),
+			Math.ceil(listQuery.data.total / listQuery.data.pageSize),
 		);
 		if (search.page > totalPages && search.page > 1) {
 			onSearchChange((previous) => ({ ...previous, page: totalPages }));
 		}
 	}, [
+		listQuery.data,
+		listQuery.isPlaceholderData,
+		listQuery.isSuccess,
 		onSearchChange,
 		search.page,
-		search.pageSize,
-		summaryQuery.data,
-		summaryQuery.isPlaceholderData,
-		summaryQuery.isSuccess,
 	]);
 
 	function handleFilterChange(filters: Partial<EquipmentTypesSearch>) {
@@ -163,50 +157,55 @@ export function EquipmentTypesPage({
 
 	return (
 		<div className="space-y-4">
-			<div className="flex items-start justify-between">
-				<h1 className="sr-only">Inventario</h1>
-				<div className="ml-auto">
-					<CreateEquipmentTypeDialog />
-				</div>
-			</div>
+			<h1 className="sr-only">Equipos</h1>
+			<div className="@container/equipment-index space-y-4">
+				<EquipmentListToolbar
+					filters={search}
+					searchValue={searchInput}
+					categories={activeCategories}
+					branches={branches}
+					inheritedBranchId={currentAuth.workingBranchId}
+					showBranchFilter={branches.length !== 1}
+					onSearchChange={setSearchInput}
+					onFilterChange={handleFilterChange}
+					onBranchChange={handleBranchChange}
+					onClearFilters={handleClearFilters}
+				/>
 
-			<EquipmentTypeSummariesFilters
-				filters={search}
-				searchValue={searchInput}
-				branches={branches}
-				inheritedBranchId={currentAuth.workingBranchId}
-				showBranchFilter={branches.length !== 1}
-				onSearchChange={setSearchInput}
-				onFilterChange={handleFilterChange}
-				onBranchChange={handleBranchChange}
-				onClearFilters={handleClearFilters}
-			/>
-
-			{summaryQuery.isError || isProductUsagesError ? (
-				<p className="text-destructive text-sm">
-					No pudimos cargar el inventario de equipos. Inténtalo nuevamente.
-				</p>
-			) : (
-				<EquipmentTypeSummariesTable
-					equipmentTypes={summaryQuery.data?.data ?? []}
-					total={summaryQuery.data?.total ?? 0}
+				<EquipmentListTable
+					items={listQuery.data?.data ?? []}
+					total={listQuery.data?.total ?? 0}
 					pagination={pagination}
 					onPaginationChange={handlePaginationChange}
 					onRowClick={onEquipmentTypeClick}
-					productsByEquipmentTypeId={productsByEquipmentTypeId}
-					isLoading={summaryQuery.isLoading || isLoadingProductUsages}
-					isRefreshing={
-						summaryQuery.isFetching && summaryQuery.isPlaceholderData
-					}
+					onEdit={setEditEquipmentTypeId}
+					onAddUnit={setAddUnitEquipmentTypeId}
+					showBranchStock={effectiveBranchId !== undefined}
+					isLoading={listQuery.isLoading}
+					isRefreshing={listQuery.isFetching && listQuery.isPlaceholderData}
+					isError={listQuery.isError}
+					emptyAction={<CreateEquipmentTypeDialog />}
 				/>
-			)}
+			</div>
+
+			{editEquipmentTypeId ? (
+				<EditEquipmentTypeDialog
+					equipmentTypeId={editEquipmentTypeId}
+					open
+					onOpenChange={(open) => {
+						if (!open) setEditEquipmentTypeId(null);
+					}}
+				/>
+			) : null}
+			{addUnitEquipmentTypeId ? (
+				<AddUnitsDialog
+					equipmentTypeId={addUnitEquipmentTypeId}
+					open
+					onOpenChange={(open) => {
+						if (!open) setAddUnitEquipmentTypeId(null);
+					}}
+				/>
+			) : null}
 		</div>
 	);
-}
-
-function isSameEquipmentTypeListContext(
-	previous: GetEquipmentTypeSummariesQueryDto,
-	current: GetEquipmentTypeSummariesQueryDto,
-): boolean {
-	return previous.branchId === current.branchId;
 }

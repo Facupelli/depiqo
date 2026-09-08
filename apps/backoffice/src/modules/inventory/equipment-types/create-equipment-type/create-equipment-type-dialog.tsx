@@ -33,13 +33,13 @@ export function CreateEquipmentTypeDialog() {
 				render={
 					<Button>
 						<Plus className="mr-2 h-4 w-4" />
-						Crear equipo
+						Nuevo equipo
 					</Button>
 				}
 			/>
 			<DialogContent className="max-h-[calc(100vh-2rem)] overflow-y-auto sm:max-w-5xl">
 				<DialogHeader>
-					<DialogTitle>Crear equipo</DialogTitle>
+					<DialogTitle>Nuevo equipo</DialogTitle>
 					<DialogDescription>
 						Registra un tipo de equipo y, opcionalmente, carga sus unidades
 						iniciales.
