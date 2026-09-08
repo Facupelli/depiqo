@@ -10,10 +10,10 @@ import { Skeleton } from "@repo/ui/components/skeleton";
 import { useQuery } from "@tanstack/react-query";
 import { useId } from "react";
 import { useCategories } from "@/modules/settings/categories/public";
-import { equipmentTypeDetailQueries } from "../equipment-type-detail/equipment-type-detail.queries";
+import { equipmentTypeSummaryQueries } from "../equipment-type-detail/equipment-type-summary.queries";
 import { useUpdateEquipmentType } from "./edit-equipment-type.mutation";
 import {
-	fromEquipmentTypeDetailToEditFormValues,
+	fromEquipmentTypeSummaryToEditFormValues,
 	toUpdateEquipmentTypeDto,
 } from "./edit-equipment-type.schema";
 import { EditEquipmentTypeForm } from "./edit-equipment-type-form";
@@ -32,7 +32,7 @@ export function EditEquipmentTypeDialog({
 	const formId = useId();
 	const { data: categories = [] } = useCategories();
 	const equipmentTypeQuery = useQuery({
-		...equipmentTypeDetailQueries.detail(equipmentTypeId),
+		...equipmentTypeSummaryQueries.summary(equipmentTypeId),
 		enabled: open,
 	});
 	const { mutateAsync: updateEquipmentType, isPending } =
@@ -80,7 +80,7 @@ export function EditEquipmentTypeDialog({
 					<EditEquipmentTypeForm
 						key={equipmentType.id}
 						formId={formId}
-						defaultValues={fromEquipmentTypeDetailToEditFormValues(
+						defaultValues={fromEquipmentTypeSummaryToEditFormValues(
 							equipmentType,
 						)}
 						categories={selectableCategories}

@@ -3,6 +3,7 @@ import type { MutationOptions } from "@tanstack/react-query";
 import { useMutation } from "@tanstack/react-query";
 import type { ProblemDetailsError } from "@/shared/errors";
 import { equipmentTypeDetailKeys } from "../equipment-type-detail/equipment-type-detail.queries";
+import { equipmentTypeSummaryKeys } from "../equipment-type-detail/equipment-type-summary.queries";
 import { listEquipmentTypeKeys } from "../list-equipment-types/list-equipment-types.queries";
 import {
 	type AddAssetsToEquipmentTypeVariables,
@@ -28,6 +29,7 @@ export function useAddUnitsToEquipmentType(options?: AddUnitsOptions) {
 		mutationFn: addAssetsToEquipmentType,
 		meta: {
 			invalidates: (variables: AddAssetsToEquipmentTypeVariables) => [
+				equipmentTypeSummaryKeys.summary(variables.equipmentTypeId),
 				equipmentTypeDetailKeys.detail(variables.equipmentTypeId),
 				listEquipmentTypeKeys.lists(),
 			],

@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { EquipmentTypeDetailPage } from "@/modules/inventory/equipment-types/equipment-type-detail/EquipmentTypeDetailPage";
-import { equipmentTypeDetailQueries } from "@/modules/inventory/equipment-types/equipment-type-detail/equipment-type-detail.queries";
+import { EquipmentDetailPageSkeleton } from "@/modules/inventory/equipment-types/equipment-type-detail/equipment-detail-page-skeleton";
+import { equipmentTypeSummaryQueries } from "@/modules/inventory/equipment-types/equipment-type-detail/equipment-type-summary.queries";
 import { AdminRouteError } from "@/shared/components/admin-route-error";
 
 export const Route = createFileRoute(
@@ -8,8 +9,11 @@ export const Route = createFileRoute(
 )({
 	loader: ({ context: { queryClient }, params: { equipmentTypeId } }) =>
 		queryClient.ensureQueryData(
-			equipmentTypeDetailQueries.detail(equipmentTypeId),
+			equipmentTypeSummaryQueries.summary(equipmentTypeId),
 		),
+	pendingComponent: EquipmentDetailPageSkeleton,
+	pendingMs: 0,
+	pendingMinMs: 250,
 	errorComponent: ({ error }) => (
 		<AdminRouteError
 			error={error}
@@ -17,9 +21,11 @@ export const Route = createFileRoute(
 			forbiddenMessage="No tienes permisos para ver este equipo."
 		/>
 	),
-	component: () => (
-		<EquipmentTypeDetailPage
-			equipmentTypeId={Route.useParams().equipmentTypeId}
-		/>
-	),
+	component: EquipmentTypeDetailRoute,
 });
+
+function EquipmentTypeDetailRoute() {
+	const { equipmentTypeId } = Route.useParams();
+
+	return <EquipmentTypeDetailPage equipmentTypeId={equipmentTypeId} />;
+}
