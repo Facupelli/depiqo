@@ -8,15 +8,15 @@ import {
 } from "@repo/api-contracts";
 import { apiFetch } from "@/lib/api/api-fetch";
 
-export type ReplaceEquipmentTypeAccessoryDefaultsVariables = {
+export type ReplaceEquipmentAccessoriesVariables = {
 	equipmentTypeId: string;
 	body: ReplaceEquipmentTypeAccessoryDefaultsBodyDto;
 };
 
-export async function replaceAccessoryDefaults({
+export async function replaceEquipmentAccessories({
 	body,
 	equipmentTypeId,
-}: ReplaceEquipmentTypeAccessoryDefaultsVariables): Promise<ReplaceEquipmentTypeAccessoryDefaultsResponseDto> {
+}: ReplaceEquipmentAccessoriesVariables): Promise<ReplaceEquipmentTypeAccessoryDefaultsResponseDto> {
 	const parsedParams = ReplaceEquipmentTypeAccessoryDefaultsParamsSchema.parse({
 		equipmentTypeId,
 	});

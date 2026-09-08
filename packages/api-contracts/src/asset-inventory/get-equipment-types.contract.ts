@@ -5,6 +5,13 @@ import type { ApiContract } from "../api-contract";
 export const GetEquipmentTypesQuerySchema = z.object({
   search: z.string().trim().min(1).optional(),
   limit: z.coerce.number().int().positive().max(50).optional(),
+  excludeIds: z
+    .string()
+    .trim()
+    .min(1)
+    .transform((value) => value.split(",").map((id) => id.trim()).filter(Boolean))
+    .pipe(z.array(z.string().uuid()).min(1))
+    .optional(),
 });
 
 export const GetEquipmentTypesItemSchema = z.object({
