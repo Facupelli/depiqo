@@ -1,11 +1,5 @@
 import type { GetRentableItemsQueryDto } from "@repo/api-contracts";
 import { Button } from "@repo/ui/components/button";
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuTrigger,
-} from "@repo/ui/components/dropdown-menu";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import type { PaginationState } from "@tanstack/react-table";
@@ -130,30 +124,12 @@ export function ProductsPage({ search }: { search: ProductListSearch }) {
 			<div className="flex items-start justify-between gap-4">
 				<h1 className="sr-only">Productos</h1>
 				<div className="ml-auto">
-					<DropdownMenu>
-						<DropdownMenuTrigger
-							render={
-								<Button>
-									<Plus className="mr-2 h-4 w-4" />
-									Nuevo producto
-								</Button>
-							}
-						/>
-						<DropdownMenuContent align="end">
-							<DropdownMenuItem
-								onClick={() => navigate({ to: "/dashboard/catalog/new" })}
-							>
-								Individual
-							</DropdownMenuItem>
-							<DropdownMenuItem
-								onClick={() =>
-									navigate({ to: "/dashboard/catalog/packages/new" })
-								}
-							>
-								Combo
-							</DropdownMenuItem>
-						</DropdownMenuContent>
-					</DropdownMenu>
+					<Button
+						onClick={() => navigate({ to: "/dashboard/catalog/packages/new" })}
+					>
+						<Plus className="mr-2 h-4 w-4" />
+						Nuevo combo
+					</Button>
 				</div>
 			</div>
 

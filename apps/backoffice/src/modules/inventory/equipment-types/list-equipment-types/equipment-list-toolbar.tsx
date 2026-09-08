@@ -1,4 +1,5 @@
 import type { CategoryDto, GetBranchesBranchDto } from "@repo/api-contracts";
+import { Button } from "@repo/ui/components/button";
 import { Input } from "@repo/ui/components/input";
 import {
 	Select,
@@ -7,11 +8,11 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@repo/ui/components/select";
-import { Search, X } from "lucide-react";
+import { useNavigate } from "@tanstack/react-router";
+import { Plus, Search, X } from "lucide-react";
 import { useId } from "react";
 import type { BranchScopeFilter } from "@/application/branch-scope/branch-scope-filter";
 import { BranchScopeSelect } from "@/components/branch-scope-select";
-import { CreateEquipmentTypeDialog } from "../create-equipment-type/create-equipment-type-dialog";
 import type { EquipmentTypesSearch } from "./EquipmentTypesPage";
 
 const ALL_CATEGORIES = "all";
@@ -42,6 +43,7 @@ export function EquipmentListToolbar({
 	onClearFilters,
 }: EquipmentListToolbarProps) {
 	const searchInputId = useId();
+	const navigate = useNavigate();
 	const hasFilters = Boolean(
 		filters.search ||
 			filters.categoryId ||
@@ -119,7 +121,14 @@ export function EquipmentListToolbar({
 				) : null}
 
 				<div className="@md/equipment-index:col-span-2 @3xl/equipment-index:col-span-1 @3xl/equipment-index:justify-self-end">
-					<CreateEquipmentTypeDialog />
+					<Button
+						onClick={() =>
+							navigate({ to: "/dashboard/inventory/equipment-types/new" })
+						}
+					>
+						<Plus className="mr-2 size-4" />
+						Nuevo equipo
+					</Button>
 				</div>
 			</div>
 

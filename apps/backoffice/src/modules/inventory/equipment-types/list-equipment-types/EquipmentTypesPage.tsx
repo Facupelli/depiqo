@@ -1,6 +1,9 @@
 import type { ListEquipmentTypesQueryDto } from "@repo/api-contracts";
+import { Button } from "@repo/ui/components/button";
 import { useSuspenseQuery } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
 import type { PaginationState } from "@tanstack/react-table";
+import { Plus } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import type { BranchScopeFilter } from "@/application/branch-scope/branch-scope-filter";
 import { resolveEffectiveBranchId } from "@/application/branch-scope/resolve-effective-branch-id";
@@ -9,7 +12,6 @@ import { useBranches } from "@/modules/settings/branches/public";
 import { useCategories } from "@/modules/settings/categories/public";
 import useDebounce from "@/shared/hooks/use-debounce";
 import { AddUnitsDialog } from "../add-units/add-units-dialog";
-import { CreateEquipmentTypeDialog } from "../create-equipment-type/create-equipment-type-dialog";
 import { EditEquipmentTypeDialog } from "../edit-equipment-type/edit-equipment-type-dialog";
 import { EquipmentListTable } from "./equipment-list-table";
 import { EquipmentListToolbar } from "./equipment-list-toolbar";
@@ -40,6 +42,7 @@ export function EquipmentTypesPage({
 	onSearchChange,
 	onEquipmentTypeClick,
 }: EquipmentTypesPageProps) {
+	const navigate = useNavigate();
 	const [searchInput, setSearchInput] = useState(search.search ?? "");
 	const [editEquipmentTypeId, setEditEquipmentTypeId] = useState<string | null>(
 		null,
@@ -184,7 +187,16 @@ export function EquipmentTypesPage({
 					isLoading={listQuery.isLoading}
 					isRefreshing={listQuery.isFetching && listQuery.isPlaceholderData}
 					isError={listQuery.isError}
-					emptyAction={<CreateEquipmentTypeDialog />}
+					emptyAction={
+						<Button
+							onClick={() =>
+								navigate({ to: "/dashboard/inventory/equipment-types/new" })
+							}
+						>
+							<Plus className="mr-2 size-4" />
+							Nuevo equipo
+						</Button>
+					}
 				/>
 			</div>
 
