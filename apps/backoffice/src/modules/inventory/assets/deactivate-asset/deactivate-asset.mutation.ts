@@ -1,4 +1,4 @@
-import type { RetireAssetResponseDto } from "@repo/api-contracts";
+import type { DeactivateAssetResponseDto } from "@repo/api-contracts";
 import type { MutationOptions } from "@tanstack/react-query";
 import { useMutation } from "@tanstack/react-query";
 import { equipmentTypeSummaryKeys } from "@/modules/inventory/equipment-types/equipment-type-detail/equipment-type-summary.queries";
@@ -6,31 +6,27 @@ import { equipmentTypeAssetsKeys } from "@/modules/inventory/equipment-types/equ
 import { listEquipmentTypeKeys } from "@/modules/inventory/equipment-types/public";
 import type { ProblemDetailsError } from "@/shared/errors";
 import { assetKeys } from "../assets.queries";
-import { type RetireAssetVariables, retireAsset } from "./retire-asset.api";
+import {
+	deactivateAsset,
+	type DeactivateAssetVariables,
+} from "./deactivate-asset.api";
 
-type RetireAssetMutationVariables = RetireAssetVariables & {
-	equipmentTypeId: string;
-};
-
-type RetireAssetOptions = Omit<
-	MutationOptions<
-		RetireAssetResponseDto,
-		ProblemDetailsError,
-		RetireAssetMutationVariables
-	>,
+type Variables = DeactivateAssetVariables & { equipmentTypeId: string };
+type Options = Omit<
+	MutationOptions<DeactivateAssetResponseDto, ProblemDetailsError, Variables>,
 	"mutationFn" | "mutationKey"
 >;
 
-export function useRetireAsset(options?: RetireAssetOptions) {
+export function useDeactivateAsset(options?: Options) {
 	return useMutation<
-		RetireAssetResponseDto,
+		DeactivateAssetResponseDto,
 		ProblemDetailsError,
-		RetireAssetMutationVariables
+		Variables
 	>({
 		...options,
-		mutationFn: ({ assetId }) => retireAsset({ assetId }),
+		mutationFn: ({ assetId }) => deactivateAsset({ assetId }),
 		meta: {
-			invalidates: (variables: RetireAssetMutationVariables) => [
+			invalidates: (variables: Variables) => [
 				equipmentTypeAssetsKeys.equipmentType(variables.equipmentTypeId),
 				equipmentTypeSummaryKeys.summary(variables.equipmentTypeId),
 				listEquipmentTypeKeys.lists(),

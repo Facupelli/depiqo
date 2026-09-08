@@ -1,6 +1,6 @@
 import { Tabs, TabsList, TabsTrigger } from "@repo/ui/components/tabs";
-import { Link } from "@tanstack/react-router";
-import { LayoutDashboard } from "lucide-react";
+import { Link, useRouterState } from "@tanstack/react-router";
+import { Boxes, LayoutDashboard } from "lucide-react";
 
 const detailSections = [
 	{
@@ -8,16 +8,32 @@ const detailSections = [
 		label: "Resumen",
 		icon: LayoutDashboard,
 		to: "/dashboard/inventory/equipment-types/$equipmentTypeId" as const,
+		suffix: "",
 	},
-];
+	{
+		value: "units",
+		label: "Unidades",
+		icon: Boxes,
+		to: "/dashboard/inventory/equipment-types/$equipmentTypeId/units" as const,
+		suffix: "/units",
+	},
+] as const;
 
 export function EquipmentDetailNavigation({
 	equipmentTypeId,
 }: {
 	equipmentTypeId: string;
 }) {
+	const pathname = useRouterState({
+		select: ({ location }) => location.pathname.replace(/\/$/, ""),
+	});
+	const activeSection =
+		detailSections.find((section) =>
+			section.suffix ? pathname.endsWith(section.suffix) : false,
+		)?.value ?? "summary";
+
 	return (
-		<Tabs value="summary">
+		<Tabs value={activeSection}>
 			<TabsList
 				variant="line"
 				className="h-auto w-full justify-start overflow-x-auto rounded-none border-b bg-transparent p-0"

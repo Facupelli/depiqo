@@ -5,6 +5,7 @@ import { PageBreadcrumb } from "@/components/detail-id-breadcrumb";
 import { buildR2PublicUrl } from "@/lib/r2-public-url";
 import { AddUnitsDialog } from "../add-units/add-units-dialog";
 import { EditEquipmentTypeDialog } from "../edit-equipment-type/edit-equipment-type-dialog";
+import { EquipmentTypeDetailActionsProvider } from "./equipment-type-detail-actions";
 import { EquipmentDetailNavigation } from "./equipment-detail-navigation";
 import { EquipmentTypeHeader } from "./equipment-type-header";
 import { equipmentTypeSummaryQueries } from "./equipment-type-summary.queries";
@@ -31,18 +32,22 @@ export function EquipmentTypeDetailPage({
 				current={summary.name}
 			/>
 
-			<div className="space-y-5">
-				<EquipmentTypeHeader
-					name={summary.name}
-					imageUrl={imageUrl}
-					categoryName={summary.categoryName}
-					activeAssetCount={summary.activeAssetCount}
-					onEdit={() => setEditOpen(true)}
-					onAddUnit={() => setAddUnitsOpen(true)}
-				/>
-				<EquipmentDetailNavigation equipmentTypeId={equipmentTypeId} />
-				<Outlet />
-			</div>
+			<EquipmentTypeDetailActionsProvider
+				value={{ openAddUnits: () => setAddUnitsOpen(true) }}
+			>
+				<div className="space-y-5">
+					<EquipmentTypeHeader
+						name={summary.name}
+						imageUrl={imageUrl}
+						categoryName={summary.categoryName}
+						activeAssetCount={summary.activeAssetCount}
+						onEdit={() => setEditOpen(true)}
+						onAddUnit={() => setAddUnitsOpen(true)}
+					/>
+					<EquipmentDetailNavigation equipmentTypeId={equipmentTypeId} />
+					<Outlet />
+				</div>
+			</EquipmentTypeDetailActionsProvider>
 
 			<EditEquipmentTypeDialog
 				open={editOpen}
