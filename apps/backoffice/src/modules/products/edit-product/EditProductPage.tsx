@@ -35,13 +35,24 @@ export function EditProductPage({
 		equipmentSearch.trim() !== debouncedEquipmentSearch.trim();
 	const { mutateAsync: updateProduct, isPending } = useUpdateProduct();
 	const defaultValues = fromProductDetailToEditProductFormValues(product);
+	const originalEquipmentTypeId = product.requiredEquipment[0]?.equipmentTypeId;
+
+	if (!originalEquipmentTypeId) {
+		throw new Error("El alquiler individual no tiene un equipo asociado.");
+	}
+
+	const handleCancel = () =>
+		navigate({
+			to: "/dashboard/inventory/equipment-types/$equipmentTypeId/rentals",
+			params: { equipmentTypeId: originalEquipmentTypeId },
+		});
 
 	return (
 		<div className="mx-auto w-full max-w-6xl px-6 py-10">
 			<header className="mb-10 max-w-3xl">
-				<p className="font-medium text-muted-foreground text-sm">Productos</p>
+				<p className="font-medium text-muted-foreground text-sm">Equipo</p>
 				<h1 className="mt-2 font-semibold text-3xl tracking-tight">
-					Editar producto
+					Editar alquiler
 				</h1>
 				<p className="mt-3 text-muted-foreground">
 					Actualiza la información y el equipo requerido para {product.name}.
@@ -62,20 +73,24 @@ export function EditProductPage({
 				isEquipmentSearchError={isEquipmentSearchError}
 				onEquipmentSearchChange={setEquipmentSearch}
 				isPending={isPending}
-				onCancel={() =>
-					navigate({
-						to: "/dashboard/catalog/$rentableItemId",
-						params: { rentableItemId: product.id },
-					})
-				}
+				onCancel={handleCancel}
 				onSubmit={async (values) => {
+					const submittedEquipmentTypeId =
+						values.requirements[0]?.equipmentTypeId;
+
+					if (!submittedEquipmentTypeId) {
+						throw new Error(
+							"El alquiler individual no tiene un equipo asociado.",
+						);
+					}
+
 					await updateProduct({
 						rentableItemId: product.id,
 						body: toUpdateProductDto(values),
 					});
 					await navigate({
-						to: "/dashboard/catalog/$rentableItemId",
-						params: { rentableItemId: product.id },
+						to: "/dashboard/inventory/equipment-types/$equipmentTypeId/rentals",
+						params: { equipmentTypeId: submittedEquipmentTypeId },
 					});
 				}}
 			/>

@@ -3,8 +3,8 @@ import type { MutationOptions } from "@tanstack/react-query";
 import { useMutation } from "@tanstack/react-query";
 import { productKeys } from "@/modules/products/products.queries";
 import type { ProblemDetailsError } from "@/shared/errors";
-import { equipmentTypeDetailKeys } from "../equipment-type-detail/equipment-type-detail.queries";
 import { equipmentTypeSummaryKeys } from "../equipment-type-detail/equipment-type-summary.queries";
+import { equipmentTypeOptionKeys } from "../equipment-type-options.queries";
 import { listEquipmentTypeKeys } from "../list-equipment-types/list-equipment-types.queries";
 import {
 	type UpdateEquipmentTypeVariables,
@@ -31,8 +31,8 @@ export function useUpdateEquipmentType(options?: UpdateEquipmentTypeOptions) {
 		meta: {
 			invalidates: (variables: UpdateEquipmentTypeVariables) => [
 				equipmentTypeSummaryKeys.summary(variables.equipmentTypeId),
-				equipmentTypeDetailKeys.detail(variables.equipmentTypeId),
 				listEquipmentTypeKeys.lists(),
+				equipmentTypeOptionKeys.all(),
 				productKeys.all(),
 			],
 			...options?.meta,

@@ -16,11 +16,16 @@ export const Route = createFileRoute(
 		const item = await queryClient.ensureQueryData(
 			rentableItemDetailQueries.detail(rentableItemId),
 		);
-		if (!isComboKind(item.kind))
+		if (!isComboKind(item.kind)) {
+			const equipmentTypeId = item.requiredEquipment[0]?.equipmentTypeId;
+			if (!equipmentTypeId) {
+				throw new Error("El alquiler individual no tiene un equipo asociado.");
+			}
 			throw redirect({
-				to: "/dashboard/catalog/$rentableItemId",
-				params: { rentableItemId },
+				to: "/dashboard/inventory/equipment-types/$equipmentTypeId/rentals",
+				params: { equipmentTypeId },
 			});
+		}
 		return item;
 	},
 	pendingComponent: ComboDetailPageSkeleton,

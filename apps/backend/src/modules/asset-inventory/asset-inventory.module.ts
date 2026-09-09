@@ -35,10 +35,6 @@ import { GetEquipmentTypeAccessoryDefaultsHttpController } from './features/get-
 import { GetEquipmentTypeAccessoryDefaultsHandler } from './features/get-equipment-type-accessory-defaults/get-equipment-type-accessory-defaults.handler';
 import { GetEquipmentTypeAssetsHttpController } from './features/get-equipment-type-assets/get-equipment-type-assets.controller';
 import { GetEquipmentTypeAssetsHandler } from './features/get-equipment-type-assets/get-equipment-type-assets.handler';
-import { GetEquipmentTypeDetailHttpController } from './features/get-equipment-type-detail/get-equipment-type-detail.controller';
-import { GetEquipmentTypeDetailHandler } from './features/get-equipment-type-detail/get-equipment-type-detail.handler';
-import { GetEquipmentTypeSummariesHttpController } from './features/get-equipment-type-summaries/get-equipment-type-summaries.controller';
-import { GetEquipmentTypeSummariesHandler } from './features/get-equipment-type-summaries/get-equipment-type-summaries.handler';
 import { GetEquipmentTypeSummaryHttpController } from './features/get-equipment-type-summary/get-equipment-type-summary.controller';
 import { GetEquipmentTypeSummaryHandler } from './features/get-equipment-type-summary/get-equipment-type-summary.handler';
 import { GetEquipmentTypesHttpController } from './features/get-equipment-types/get-equipment-types.controller';
@@ -80,8 +76,6 @@ import { EquipmentTypePageFactsService } from './public-api/equipment-type-page-
     GetAssetsHttpController,
     GetEquipmentTypeAccessoryDefaultsHttpController,
     GetEquipmentTypeAssetsHttpController,
-    GetEquipmentTypeDetailHttpController,
-    GetEquipmentTypeSummariesHttpController,
     GetEquipmentTypeSummaryHttpController,
     GetEquipmentTypesHttpController,
     GetOwnerDetailHttpController,
@@ -103,8 +97,6 @@ import { EquipmentTypePageFactsService } from './public-api/equipment-type-page-
     GetAssetsHandler,
     GetEquipmentTypeAccessoryDefaultsHandler,
     GetEquipmentTypeAssetsHandler,
-    GetEquipmentTypeDetailHandler,
-    GetEquipmentTypeSummariesHandler,
     GetEquipmentTypeSummaryHandler,
     GetEquipmentTypesHandler,
     GetOwnerDetailHandler,

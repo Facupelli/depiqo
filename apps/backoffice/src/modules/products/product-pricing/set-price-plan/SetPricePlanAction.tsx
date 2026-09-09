@@ -14,11 +14,11 @@ import {
 	EditPricePlanDialog,
 	toCreatePricePlanDto,
 } from "@/modules/pricing/price-plans/public";
-import { formatPriceSummary } from "../../product-detail/product-detail.utils";
 import {
 	type PricePlanOption,
 	PricePlanSelectionForm,
 } from "../price-plan-selection/PricePlanSelectionForm";
+import { formatPriceSummary } from "../product-pricing.utils";
 import { useCreatePricingForRentalOffer } from "./create-pricing-for-rental-offer.mutation";
 import { useAttachRatePlanToRentalOffer } from "./set-price-plan.mutation";
 import { toAttachRatePlanToRentalOfferDto } from "./set-price-plan.schema";

@@ -2,12 +2,8 @@ import { Module } from '@nestjs/common';
 
 import { AssetInventoryModule } from '../asset-inventory/asset-inventory.module';
 import { TenantManagementModule } from '../tenant-management/tenant-management.module';
-import { ActivateRentableItemHttpController } from './features/activate-rentable-item/activate-rentable-item.controller';
-import { ActivateRentableItemHandler } from './features/activate-rentable-item/activate-rentable-item.handler';
 import { ArchiveRentableItemHttpController } from './features/archive-rentable-item/archive-rentable-item.controller';
 import { ArchiveRentableItemHandler } from './features/archive-rentable-item/archive-rentable-item.handler';
-import { CreateIndividualRentalHttpController } from './features/create-individual-rental/create-individual-rental.controller';
-import { CreateIndividualRentalHandler } from './features/create-individual-rental/create-individual-rental.handler';
 import { CreateRentalOfferForRentableItemService } from './features/create-rental-offer-for-rentable-item/create-rental-offer-for-rentable-item.service';
 import { CreateRentableItemOfferingService } from './features/create-rentable-item-offering/create-rentable-item-offering.service';
 import { GetRentableItemDetailHttpController } from './features/get-rentable-item-detail/get-rentable-item-detail.controller';
@@ -40,9 +36,7 @@ import { CatalogEquipmentTypeRentalUsagesService } from './public-api/catalog-eq
 @Module({
   imports: [AssetInventoryModule, TenantManagementModule],
   controllers: [
-    ActivateRentableItemHttpController,
     ArchiveRentableItemHttpController,
-    CreateIndividualRentalHttpController,
     GetRentableItemDetailHttpController,
     GetRentableItemSummariesHttpController,
     GetRentableItemsHttpController,
@@ -56,9 +50,7 @@ import { CatalogEquipmentTypeRentalUsagesService } from './public-api/catalog-eq
     { provide: CatalogRentalOfferReferenceAuthority, useClass: CatalogRentalOfferReferenceAuthorityService },
     { provide: CatalogSelectionResolution, useClass: CatalogSelectionResolutionService },
     { provide: CatalogEquipmentTypeRentalUsages, useClass: CatalogEquipmentTypeRentalUsagesService },
-    ActivateRentableItemHandler,
     ArchiveRentableItemHandler,
-    CreateIndividualRentalHandler,
     CreateRentalOfferForRentableItemService,
     CreateRentableItemOfferingService,
     GetRentableItemDetailHandler,
