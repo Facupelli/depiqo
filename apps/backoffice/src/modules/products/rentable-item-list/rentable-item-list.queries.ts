@@ -8,8 +8,8 @@ import {
 	useQuery,
 } from "@tanstack/react-query";
 import type { ProblemDetailsError } from "@/shared/errors";
-import { productKeys } from "../products.queries";
-import { getProducts } from "./get-products.api";
+import { normalizeProductListQuery, productKeys } from "../products.queries";
+import { getProducts } from "./get-rentable-items.api";
 
 export type ProductListQueryOverrides<TData = GetRentableItemsResponseDto> =
 	Omit<
@@ -41,11 +41,18 @@ export const productListQueries = {
 		query?: GetRentableItemsQueryDto,
 		overrides?: ProductListQueryOverrides<TData>,
 	) =>
-		queryOptions<GetRentableItemsResponseDto, ProblemDetailsError, TData>({
-			queryKey: productKeys.list(query),
-			queryFn: () => getProducts(query),
-			...overrides,
-		}),
+		(() => {
+			const normalizedQuery = normalizeProductListQuery(query);
+			return queryOptions<
+				GetRentableItemsResponseDto,
+				ProblemDetailsError,
+				TData
+			>({
+				queryKey: productKeys.list(normalizedQuery),
+				queryFn: () => getProducts(normalizedQuery),
+				...overrides,
+			});
+		})(),
 };
 
 export function useProducts<TData = GetRentableItemsResponseDto>(

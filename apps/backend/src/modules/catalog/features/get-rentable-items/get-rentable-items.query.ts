@@ -4,7 +4,7 @@ import { RentableItemKind, RentableItemStatus } from '../../domain/rentable-item
 
 type GetRentableItemsQueryProps = {
   search?: string;
-  kind?: RentableItemKind;
+  kinds?: RentableItemKind[];
   status?: RentableItemStatus;
   categoryId?: string;
   branchId?: string;
@@ -17,7 +17,7 @@ type GetRentableItemsQueryProps = {
 
 export class GetRentableItemsQuery implements IQuery {
   public readonly search?: string;
-  public readonly kind?: RentableItemKind;
+  public readonly kinds?: RentableItemKind[];
   public readonly status?: RentableItemStatus;
   public readonly categoryId?: string;
   public readonly branchId?: string;
@@ -32,7 +32,7 @@ export class GetRentableItemsQuery implements IQuery {
     props: GetRentableItemsQueryProps,
   ) {
     this.search = props.search;
-    this.kind = props.kind;
+    this.kinds = props.kinds;
     this.status = props.status;
     this.categoryId = props.categoryId;
     this.branchId = props.branchId;

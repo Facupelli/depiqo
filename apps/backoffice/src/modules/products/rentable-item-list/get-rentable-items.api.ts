@@ -9,7 +9,7 @@ import { apiFetch } from "@/lib/api/api-fetch";
 
 const GET_PRODUCTS_QUERY_PARAM_KEYS = [
 	"search",
-	"kind",
+	"kinds",
 	"status",
 	"categoryId",
 	"branchId",
@@ -32,7 +32,10 @@ function buildGetProductsPath(query?: GetRentableItemsQueryDto) {
 		const value = parsedQuery[key];
 
 		if (value !== undefined) {
-			searchParams.set(key, String(value));
+			searchParams.set(
+				key,
+				Array.isArray(value) ? value.join(",") : String(value),
+			);
 		}
 	}
 

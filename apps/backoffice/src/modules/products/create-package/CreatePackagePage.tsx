@@ -115,12 +115,12 @@ export function CreatePackagePage({
 				submitLabel="Crear paquete"
 				pendingLabel="Creando..."
 				cancelLabel="Cancelar"
-				onCancel={() => navigate({ to: "/dashboard/catalog" })}
+				onCancel={() => navigate({ to: "/dashboard/catalog/packages" })}
 				onSubmit={async (values) => {
 					setSubmitError(null);
 					try {
 						await createPackage(toCreatePackageDto(values));
-						navigate({ to: "/dashboard/catalog" });
+						navigate({ to: "/dashboard/catalog/packages" });
 					} catch (error) {
 						setSubmitError(mapCreatePackageError(error));
 					}

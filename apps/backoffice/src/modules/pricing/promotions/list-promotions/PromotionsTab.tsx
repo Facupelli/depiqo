@@ -18,7 +18,7 @@ export function PromotionsTab() {
 	const search = Route.useSearch();
 	const {
 		inputValue,
-		setInputValue,
+		handleSearchChange,
 		query,
 		activation,
 		handleActivationChange,
@@ -41,7 +41,7 @@ export function PromotionsTab() {
 						className="pl-9"
 						placeholder="Buscar promociones..."
 						value={inputValue}
-						onChange={(e) => setInputValue(e.target.value)}
+						onChange={(event) => handleSearchChange(event.target.value)}
 					/>
 				</div>
 

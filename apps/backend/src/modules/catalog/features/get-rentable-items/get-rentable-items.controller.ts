@@ -20,7 +20,7 @@ export class GetRentableItemsHttpController {
     return this.queryBus.execute<GetRentableItemsQuery, GetRentableItemsResult>(
       new GetRentableItemsQuery(user.tenantId, {
         search: dto.search,
-        kind: dto.kind,
+        kinds: dto.kinds,
         status: dto.status,
         categoryId: dto.categoryId,
         branchId: dto.branchId,

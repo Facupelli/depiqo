@@ -33,8 +33,12 @@ export function ProductDetailPage({
 	return (
 		<div className="px-6 pb-8">
 			<PageBreadcrumb
-				parent={{ label: "Productos", to: "/dashboard/catalog" }}
-				current={`Producto / ${product.name}`}
+				parent={
+					product.kind === "SINGLE"
+						? { label: "Equipos", to: "/dashboard/inventory/equipment-types" }
+						: { label: "Combos", to: "/dashboard/catalog/packages" }
+				}
+				current={`${product.kind === "SINGLE" ? "Equipo" : "Combo"} / ${product.name}`}
 			/>
 			<div className="space-y-5">
 				<ProductOverview

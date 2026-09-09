@@ -19,9 +19,16 @@ const BooleanQueryParamSchema = z.preprocess((value) => {
 export const GetRentableItemsKindSchema = z.enum(["SINGLE", "PACKAGE", "KIT", "BUNDLE"]);
 export const GetRentableItemsStatusSchema = z.enum(["DRAFT", "ACTIVE", "ARCHIVED"]);
 
+const RentableItemKindsQuerySchema = z.preprocess((value) => {
+  if (value === undefined || value === null || value === "") return undefined;
+  if (Array.isArray(value)) return value;
+  if (typeof value === "string") return value.split(",").map((kind) => kind.trim()).filter(Boolean);
+  return value;
+}, z.array(GetRentableItemsKindSchema).min(1).optional());
+
 export const GetRentableItemsQuerySchema = z.object({
   search: z.string().trim().min(1).optional(),
-  kind: GetRentableItemsKindSchema.optional(),
+  kinds: RentableItemKindsQuerySchema,
   status: GetRentableItemsStatusSchema.optional(),
   categoryId: z.string().trim().min(1).optional(),
   branchId: z.string().trim().min(1).optional(),

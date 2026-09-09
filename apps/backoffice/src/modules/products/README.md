@@ -512,7 +512,8 @@ Possible slices include:
 
 ```text
 products/
-  list-products/
+  list-combos/
+  rentable-item-list/
   create-product/
   product-detail/
   edit-product/

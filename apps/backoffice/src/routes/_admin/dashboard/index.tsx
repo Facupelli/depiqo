@@ -74,27 +74,26 @@ const STOREFRONT_STEPS: StepConfig[] = [
 	},
 	{
 		id: "product",
-		title: "Crea tu Primer Producto",
+		title: "Crea tu Primer Equipo",
 		description:
-			"Agrega tu primer artículo al catálogo para comenzar a construir tu inventario.",
+			"Agrega tu primer equipo para comenzar a construir tu inventario.",
 		icon: FileText,
-		path: "/dashboard/catalog/products",
+		path: "/dashboard/inventory/equipment-types/new",
 	},
 	{
 		id: "pricing",
-		title: "Define el Precio de tu Producto",
+		title: "Define el Precio de tu Equipo",
 		description:
-			"Asigna una tarifa por día u hora a tu producto para que pueda ser publicado.",
+			"Asigna una tarifa por día u hora a tu equipo para que pueda ser publicado.",
 		icon: BadgeDollarSign,
-		path: "/dashboard/catalog/products/productId",
+		path: "/dashboard/inventory/equipment-types",
 	},
 	{
 		id: "assets",
 		title: "Agrega Unidades Físicas",
-		description:
-			"Registra las unidades físicas asociadas a tu producto, como bicicletas, habitaciones o equipos específicos.",
+		description: "Registra las unidades físicas asociadas a tu equipo.",
 		icon: Warehouse,
-		path: "/dashboard/catalog/products/productId",
+		path: "/dashboard/inventory/equipment-types",
 	},
 	{
 		id: "golive",

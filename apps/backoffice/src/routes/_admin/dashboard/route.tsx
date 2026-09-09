@@ -27,6 +27,7 @@ import {
 	BookOpen,
 	CalendarDays,
 	ChevronsUpDown,
+	LayoutGrid,
 	LogOut,
 	Settings,
 	ShoppingBag,
@@ -113,16 +114,20 @@ const sidebarItems: SidebarItem[] = [
 		// ],
 	},
 	{
-		name: "Catálogo",
-		icon: BookOpen,
-		href: "/dashboard/catalog",
-		children: [{ name: "Categorías", href: "/dashboard/catalog/categories" }],
-	},
-	{
 		name: "Equipos",
 		icon: Warehouse,
 		href: "/dashboard/inventory/equipment-types",
 		children: [{ name: "Dueños de Equipo", href: "/dashboard/owners" }],
+	},
+	{
+		name: "Combos",
+		icon: BookOpen,
+		href: "/dashboard/catalog/packages",
+	},
+	{
+		name: "Categorías",
+		icon: LayoutGrid,
+		href: "/dashboard/catalog/categories",
 	},
 	{
 		name: "Clientes",
@@ -257,7 +262,9 @@ function BranchSelector({
 	const { data: currentAuth } = useSuspenseQuery(currentAuthQueries.current());
 	const updateWorkingBranch = useUpdateWorkingBranch();
 	const navigate = useNavigate();
-	const navigateCatalog = useNavigate({ from: "/dashboard/catalog/" });
+	const navigateCombos = useNavigate({
+		from: "/dashboard/catalog/packages/",
+	});
 	const location = useRouterState({ select: (state) => state.location });
 	const currentPathname = location.pathname.replace(/\/$/, "");
 	const selectedBranch = branches.find(
@@ -313,12 +320,12 @@ function BranchSelector({
 					});
 				}
 				break;
-			case "/dashboard/catalog":
+			case "/dashboard/catalog/packages":
 				if (
 					typeof location.search.branchId === "string" ||
 					location.search.branchScope === "all"
 				) {
-					await navigateCatalog({
+					await navigateCombos({
 						search: (previous) => ({
 							...previous,
 							branchId: undefined,

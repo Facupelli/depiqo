@@ -7,7 +7,7 @@ import {
 } from "@repo/ui/components/popover";
 import { Check, Search, X } from "lucide-react";
 import { useState } from "react";
-import { useProducts } from "@/modules/products/list-products/product-list.queries";
+import { useProducts } from "@/modules/products/rentable-item-list/rentable-item-list.queries";
 import { useCategories } from "@/modules/settings/categories/public";
 import useDebounce from "@/shared/hooks/use-debounce";
 
