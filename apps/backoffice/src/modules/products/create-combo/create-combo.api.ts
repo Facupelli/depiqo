@@ -7,7 +7,7 @@ import {
 } from "@repo/api-contracts";
 import { apiFetch } from "@/lib/api/api-fetch";
 
-export async function createPackage(
+export async function createCombo(
 	body: CreatePackageBodyDto,
 ): Promise<CreatePackageResponseDto> {
 	const parsedBody = CreatePackageBodySchema.parse(body);

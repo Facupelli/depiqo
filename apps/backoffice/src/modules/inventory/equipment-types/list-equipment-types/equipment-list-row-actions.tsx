@@ -5,13 +5,16 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@repo/ui/components/dropdown-menu";
-import { MoreHorizontal, PackagePlus, Pencil } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { Boxes, MoreHorizontal, PackagePlus, Pencil } from "lucide-react";
 
 export function EquipmentListRowActions({
+	equipmentTypeId,
 	equipmentName,
 	onEdit,
 	onAddUnit,
 }: {
+	equipmentTypeId: string;
 	equipmentName: string;
 	onEdit: () => void;
 	onAddUnit: () => void;
@@ -41,6 +44,17 @@ export function EquipmentListRowActions({
 				<DropdownMenuItem onClick={onAddUnit}>
 					<PackagePlus className="size-4" />
 					Añadir unidad
+				</DropdownMenuItem>
+				<DropdownMenuItem
+					render={
+						<Link
+							to="/dashboard/catalog/packages/new"
+							search={{ equipmentTypeId }}
+						/>
+					}
+				>
+					<Boxes className="size-4" />
+					Crear combo con este equipo
 				</DropdownMenuItem>
 			</DropdownMenuContent>
 		</DropdownMenu>

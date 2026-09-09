@@ -5,12 +5,7 @@ import {
 import { z } from "zod";
 import { emptyToNull } from "@/shared/utils/form.utils";
 
-export interface PackageEquipmentTypeOption {
-	id: string;
-	name: string;
-}
-
-export const createPackageRequirementFormSchema = z.object({
+export const createComboRequirementFormSchema = z.object({
 	equipmentTypeId: z.string().min(1, "El equipo es obligatorio"),
 	equipmentTypeName: z.string().min(1),
 	quantityPerItem: z
@@ -19,17 +14,17 @@ export const createPackageRequirementFormSchema = z.object({
 		.positive("Debe ser mayor o igual a 1"),
 });
 
-export const createPackageFormSchema = z.object({
+export const createComboFormSchema = z.object({
 	categoryId: z.string(),
-	name: z.string().min(1, "El nombre es obligatorio"),
+	name: z.string().trim().min(1, "El nombre es obligatorio"),
 	imageUrl: z.string(),
 	description: z.string(),
 	branchIds: z
 		.array(z.string().min(1))
 		.min(1, "Selecciona al menos una sucursal"),
 	requirements: z
-		.array(createPackageRequirementFormSchema)
-		.min(1, "Agrega al menos un equipo requerido al paquete")
+		.array(createComboRequirementFormSchema)
+		.min(1, "Agrega al menos un equipo al combo")
 		.refine(
 			(requirements) =>
 				new Set(requirements.map((requirement) => requirement.equipmentTypeId))
@@ -38,9 +33,9 @@ export const createPackageFormSchema = z.object({
 		),
 });
 
-export type CreatePackageFormValues = z.infer<typeof createPackageFormSchema>;
+export type CreateComboFormValues = z.infer<typeof createComboFormSchema>;
 
-export function createPackageFormDefaultValues(): CreatePackageFormValues {
+export function createComboFormDefaultValues(): CreateComboFormValues {
 	return {
 		categoryId: "",
 		name: "",
@@ -51,8 +46,8 @@ export function createPackageFormDefaultValues(): CreatePackageFormValues {
 	};
 }
 
-export function toCreatePackageDto(
-	values: CreatePackageFormValues,
+export function toCreateComboDto(
+	values: CreateComboFormValues,
 ): CreatePackageBodyDto {
 	const dto = {
 		name: values.name.trim(),

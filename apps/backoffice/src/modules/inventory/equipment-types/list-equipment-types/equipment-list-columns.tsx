@@ -129,6 +129,7 @@ export function createEquipmentListColumns({
 			header: "Acciones",
 			cell: ({ row }) => (
 				<EquipmentListRowActions
+					equipmentTypeId={row.original.id}
 					equipmentName={row.original.name}
 					onEdit={() => onEdit(row.original.id)}
 					onAddUnit={() => onAddUnit(row.original.id)}

@@ -10,9 +10,9 @@ import {
 } from "@/modules/inventory/equipment-types/public";
 import { productKeys } from "@/modules/products/products.queries";
 import type { ProblemDetailsError } from "@/shared/errors";
-import { createPackage } from "./create-package.api";
+import { createCombo } from "./create-combo.api";
 
-type CreatePackageOptions = Omit<
+type CreateComboOptions = Omit<
 	MutationOptions<
 		CreatePackageResponseDto,
 		ProblemDetailsError,
@@ -21,19 +21,21 @@ type CreatePackageOptions = Omit<
 	"mutationFn" | "mutationKey"
 >;
 
-export function useCreatePackage(options?: CreatePackageOptions) {
+export function useCreateCombo(options?: CreateComboOptions) {
 	return useMutation<
 		CreatePackageResponseDto,
 		ProblemDetailsError,
 		CreatePackageBodyDto
 	>({
 		...options,
-		mutationFn: createPackage,
+		mutationFn: createCombo,
 		meta: {
-			invalidates: [
-				productKeys.all(),
+			invalidates: (variables: CreatePackageBodyDto) => [
+				productKeys.lists(),
 				listEquipmentTypeKeys.lists(),
-				equipmentTypeRentalUsageKeys.all(),
+				...variables.requirements.map((requirement) =>
+					equipmentTypeRentalUsageKeys.detail(requirement.equipmentTypeId),
+				),
 			],
 			...options?.meta,
 		},

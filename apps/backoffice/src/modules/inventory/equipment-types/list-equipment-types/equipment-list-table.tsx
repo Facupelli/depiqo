@@ -261,6 +261,7 @@ function CompactEquipmentList({
 							</Link>
 							<div className="absolute top-2 right-2">
 								<EquipmentListRowActions
+									equipmentTypeId={item.id}
 									equipmentName={item.name}
 									onEdit={() => onEdit(item.id)}
 									onAddUnit={() => onAddUnit(item.id)}
