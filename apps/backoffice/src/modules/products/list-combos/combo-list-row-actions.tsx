@@ -39,7 +39,7 @@ export function ComboListRowActions({
 				<DropdownMenuItem
 					onClick={() =>
 						navigate({
-							to: "/dashboard/catalog/$rentableItemId",
+							to: "/dashboard/catalog/packages/$rentableItemId",
 							params: { rentableItemId: item.id },
 						})
 					}
@@ -50,7 +50,7 @@ export function ComboListRowActions({
 				<DropdownMenuItem
 					onClick={() =>
 						navigate({
-							to: "/dashboard/catalog/$rentableItemId/edit",
+							to: "/dashboard/catalog/packages/$rentableItemId/edit",
 							params: { rentableItemId: item.id },
 						})
 					}

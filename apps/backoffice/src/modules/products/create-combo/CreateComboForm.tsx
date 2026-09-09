@@ -17,12 +17,10 @@ import {
 	SelectValue,
 } from "@repo/ui/components/select";
 import { Textarea } from "@repo/ui/components/textarea";
-import { useForm, useSelector } from "@tanstack/react-form";
-import { Loader2, Trash2 } from "lucide-react";
-import { useId, useState } from "react";
-import { useEquipmentTypeOptions } from "@/modules/inventory/equipment-types/public";
+
 import { CatalogImageUploader } from "@/shared/components/catalog-image-uploader";
-import useDebounce from "@/shared/hooks/use-debounce";
+import { useAppForm } from "@/shared/contexts/form.context";
+import { ComboRequirementEditor } from "../combo-form/combo-requirement-editor";
 import type { CreateComboSubmissionError } from "./create-combo.errors";
 import {
 	type CreateComboFormValues,
@@ -50,15 +48,6 @@ interface CreateComboFormProps {
 }
 
 const NO_CATEGORY_VALUE = "sin-categoria";
-const EQUIPMENT_SEARCH_LIMIT = 15;
-
-function areStringArraysEqual(previous: string[], next: string[]) {
-	return (
-		previous.length === next.length &&
-		previous.every((value, index) => value === next[index])
-	);
-}
-
 export function CreateComboForm({
 	formId,
 	defaultValues = createComboFormDefaultValues(),
@@ -72,29 +61,11 @@ export function CreateComboForm({
 	onSubmit,
 	onCancel,
 }: CreateComboFormProps) {
-	const equipmentSearchId = useId();
-	const [equipmentSearch, setEquipmentSearch] = useState("");
-	const debouncedEquipmentSearch = useDebounce(equipmentSearch, 300);
-	const form = useForm({
+	const form = useAppForm({
 		defaultValues,
 		validators: { onSubmit: createComboFormSchema },
 		onSubmit: async ({ value }) => onSubmit(value),
 	});
-	const selectedEquipmentTypeIds = useSelector(
-		form.store,
-		(state) =>
-			state.values.requirements.map(
-				(requirement) => requirement.equipmentTypeId,
-			),
-		{ compare: areStringArraysEqual },
-	);
-	const equipmentQuery = useEquipmentTypeOptions({
-		search: debouncedEquipmentSearch.trim() || undefined,
-		limit: EQUIPMENT_SEARCH_LIMIT,
-		excludeIds: selectedEquipmentTypeIds,
-	});
-	const isEquipmentSearchDebouncing =
-		equipmentSearch.trim() !== debouncedEquipmentSearch.trim();
 	const categoryItems = [
 		{ value: NO_CATEGORY_VALUE, label: "Sin categoría" },
 		...categories.map((category) => ({
@@ -157,6 +128,7 @@ export function CreateComboForm({
 										<Field data-invalid={invalid}>
 											<FieldLabel htmlFor={field.name}>Categoría</FieldLabel>
 											<Select
+												name={field.name}
 												items={categoryItems}
 												value={field.state.value || NO_CATEGORY_VALUE}
 												onValueChange={(value) =>
@@ -241,163 +213,10 @@ export function CreateComboForm({
 					</div>
 				</section>
 
-				<section className="space-y-5 border-t pt-8">
-					<div>
-						<h2 className="font-semibold text-lg">Equipos del combo</h2>
-						<p className="mt-1 text-muted-foreground text-sm">
-							Agrega al menos un equipo y define cuántas unidades incluye.
-						</p>
-					</div>
-					<form.Field name="requirements" mode="array">
-						{(field) => {
-							const invalid =
-								field.state.meta.isTouched && !field.state.meta.isValid;
-							return (
-								<div className="space-y-4">
-									<div className="grid gap-3 rounded-xl border bg-muted/20 p-4 md:grid-cols-2">
-										<Field>
-											<FieldLabel htmlFor={equipmentSearchId}>
-												Buscar equipo
-											</FieldLabel>
-											<Input
-												id={equipmentSearchId}
-												value={equipmentSearch}
-												onChange={(event) =>
-													setEquipmentSearch(event.target.value)
-												}
-												placeholder="Ej. cámara, trípode, micrófono"
-											/>
-										</Field>
-										<Field>
-											<FieldLabel>Resultados</FieldLabel>
-											<div className="h-56 overflow-y-auto rounded-md border bg-background">
-												{isEquipmentSearchDebouncing ||
-												equipmentQuery.isFetching ? (
-													<SearchState>
-														<Loader2 className="size-3.5 animate-spin" />
-														Buscando equipos...
-													</SearchState>
-												) : equipmentQuery.isError ? (
-													<SearchState error>
-														No pudimos buscar equipos. Intenta nuevamente.
-													</SearchState>
-												) : !equipmentQuery.data?.length ? (
-													<SearchState>No encontramos equipos.</SearchState>
-												) : (
-													<ul className="divide-y">
-														{equipmentQuery.data.map((equipmentType) => (
-															<li
-																key={equipmentType.id}
-																className="flex min-h-12 items-center gap-3 px-3 py-2 hover:bg-muted/50"
-															>
-																<span className="min-w-0 flex-1 text-sm">
-																	{equipmentType.name}
-																</span>
-																<Button
-																	type="button"
-																	variant="outline"
-																	size="sm"
-																	onClick={() => {
-																		if (
-																			!field.state.value.some(
-																				(item) =>
-																					item.equipmentTypeId ===
-																					equipmentType.id,
-																			)
-																		)
-																			field.pushValue({
-																				equipmentTypeId: equipmentType.id,
-																				equipmentTypeName: equipmentType.name,
-																				quantityPerItem: 1,
-																			});
-																	}}
-																>
-																	Añadir equipo
-																</Button>
-															</li>
-														))}
-													</ul>
-												)}
-											</div>
-										</Field>
-									</div>
-									{field.state.value.length === 0 ? (
-										<div className="rounded-xl border border-dashed p-6 text-sm">
-											<p className="font-medium">
-												Todavía no agregaste equipos.
-											</p>
-											<p className="mt-1 text-muted-foreground">
-												Busca y agrega al menos un equipo para crear el combo.
-											</p>
-										</div>
-									) : (
-										<div className="space-y-3">
-											{field.state.value.map((requirement, index) => (
-												<div
-													key={requirement.equipmentTypeId}
-													className="grid gap-4 rounded-lg border p-4 sm:grid-cols-[minmax(0,1fr)_9rem_auto] sm:items-start"
-												>
-													<p className="min-w-0 font-medium text-sm sm:pt-8">
-														{requirement.equipmentTypeName}
-													</p>
-													<form.Field
-														name={`requirements[${index}].quantityPerItem`}
-													>
-														{(quantityField) => {
-															const quantityInvalid =
-																quantityField.state.meta.isTouched &&
-																!quantityField.state.meta.isValid;
-															return (
-																<Field data-invalid={quantityInvalid}>
-																	<FieldLabel htmlFor={quantityField.name}>
-																		Cantidad
-																	</FieldLabel>
-																	<Input
-																		id={quantityField.name}
-																		type="number"
-																		min={1}
-																		step={1}
-																		value={quantityField.state.value}
-																		onBlur={quantityField.handleBlur}
-																		onChange={(event) => {
-																			const nextValue =
-																				event.target.valueAsNumber;
-																			quantityField.handleChange(
-																				Number.isNaN(nextValue) || nextValue < 1
-																					? 1
-																					: nextValue,
-																			);
-																		}}
-																		aria-invalid={quantityInvalid}
-																	/>
-																	{quantityInvalid && (
-																		<FieldError
-																			errors={quantityField.state.meta.errors}
-																		/>
-																	)}
-																</Field>
-															);
-														}}
-													</form.Field>
-													<Button
-														type="button"
-														variant="ghost"
-														className="justify-self-start text-muted-foreground sm:mt-6"
-														onClick={() => field.removeValue(index)}
-													>
-														<Trash2 className="size-4" />
-														Quitar
-													</Button>
-												</div>
-											))}
-										</div>
-									)}
-									{invalid && <FieldError errors={field.state.meta.errors} />}
-								</div>
-							);
-						}}
-					</form.Field>
-				</section>
+				<ComboRequirementEditor
+					form={form}
+					fields={{ requirements: "requirements" }}
+				/>
 
 				<section className="border-t pt-8">
 					<form.Field name="branchIds" mode="array">
@@ -478,16 +297,13 @@ export function CreateComboForm({
 						state.canSubmit,
 						state.isSubmitting,
 						state.isDirty,
-						state.values.requirements.length,
 					]}
 				>
-					{([canSubmit, isSubmitting, isDirty, requirementCount]) => (
+					{([canSubmit, isSubmitting, isDirty]) => (
 						<Button
 							type="submit"
 							form={formId}
-							disabled={
-								!canSubmit || !isDirty || requirementCount === 0 || isPending
-							}
+							disabled={!canSubmit || !isDirty || isPending}
 						>
 							{isSubmitting || isPending ? pendingLabel : submitLabel}
 						</Button>
@@ -495,21 +311,5 @@ export function CreateComboForm({
 				</form.Subscribe>
 			</div>
 		</>
-	);
-}
-
-function SearchState({
-	children,
-	error = false,
-}: {
-	children: React.ReactNode;
-	error?: boolean;
-}) {
-	return (
-		<p
-			className={`flex h-full items-center justify-center gap-2 px-4 text-center text-sm ${error ? "text-destructive" : "text-muted-foreground"}`}
-		>
-			{children}
-		</p>
 	);
 }

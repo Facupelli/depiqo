@@ -31,11 +31,13 @@ export function SetPricePlanAction({
 	ratePlanOptions,
 	defaultOpen = false,
 	assignLabel = "Asignar precio",
+	ratePlanOptionsStatus = "ready",
 }: {
 	offer: RentalOffer;
 	ratePlanOptions: PricePlanOption[];
 	defaultOpen?: boolean;
 	assignLabel?: string;
+	ratePlanOptionsStatus?: "loading" | "error" | "ready";
 }) {
 	const attachFormId = useId();
 	const createFormId = useId();
@@ -109,11 +111,21 @@ export function SetPricePlanAction({
 								<p className="font-medium text-sm">
 									Cambiar la configuración de precio
 								</p>
+								{ratePlanOptionsStatus !== "ready" ? (
+									<p className="text-muted-foreground text-sm">
+										{ratePlanOptionsStatus === "loading"
+											? "Cargando planes de precios disponibles..."
+											: "Los planes existentes no están disponibles en este momento."}
+									</p>
+								) : null}
 								<div className="grid gap-3 sm:grid-cols-2">
 									<PricingChoiceButton
 										title="Usar plan existente"
 										description="Asigna a esta oferta un plan de precios reutilizable."
-										disabled={ratePlanOptions.length === 0}
+										disabled={
+											ratePlanOptionsStatus !== "ready" ||
+											ratePlanOptions.length === 0
+										}
 										onClick={() => setStep("existing")}
 									/>
 									<PricingChoiceButton

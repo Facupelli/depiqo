@@ -4,8 +4,8 @@ import { useQuery } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import { useState } from "react";
 import { usePricePlans } from "@/modules/pricing/price-plans/public";
-import { productDetailQueries } from "@/modules/products/product-detail/product-detail.queries";
 import { SetPricePlanAction } from "@/modules/products/product-pricing/set-price-plan/SetPricePlanAction";
+import { rentableItemDetailQueries } from "@/modules/products/rentable-item-detail/rentable-item-detail.queries";
 
 export function RentalOfferPriceAction({
 	rentableItemId,
@@ -16,7 +16,7 @@ export function RentalOfferPriceAction({
 }) {
 	const [requested, setRequested] = useState(false);
 	const productQuery = useQuery(
-		productDetailQueries.detail(rentableItemId, { enabled: requested }),
+		rentableItemDetailQueries.detail(rentableItemId, { enabled: requested }),
 	);
 	const pricePlansQuery = usePricePlans(
 		{ isActive: true },

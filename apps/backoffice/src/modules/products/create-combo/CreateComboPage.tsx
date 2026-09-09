@@ -89,7 +89,7 @@ export function CreateComboPage({
 					try {
 						const result = await createCombo(toCreateComboDto(values));
 						navigate({
-							to: "/dashboard/catalog/$rentableItemId",
+							to: "/dashboard/catalog/packages/$rentableItemId",
 							params: { rentableItemId: result.rentableItemId },
 						});
 					} catch (error) {

@@ -8,15 +8,15 @@ import {
 } from "@repo/api-contracts";
 import { apiFetch } from "@/lib/api/api-fetch";
 
-export interface UpdateProductVariables {
+export interface UpdateRentableItemDefinitionVariables {
 	rentableItemId: string;
 	body: UpdateRentableItemDefinitionBodyDto;
 }
 
-export async function updateProduct({
+export async function updateRentableItemDefinition({
 	rentableItemId,
 	body,
-}: UpdateProductVariables): Promise<UpdateRentableItemDefinitionResponseDto> {
+}: UpdateRentableItemDefinitionVariables): Promise<UpdateRentableItemDefinitionResponseDto> {
 	const parsedParams = UpdateRentableItemDefinitionParamsSchema.parse({
 		rentableItemId,
 	});

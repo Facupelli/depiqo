@@ -19,11 +19,13 @@ export function ArchiveProductAction({
 	rentableItemId,
 	open,
 	onOpenChange,
+	onSuccess,
 	terminology = "producto",
 }: {
 	rentableItemId: string;
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
+	onSuccess?: () => void | Promise<void>;
 	terminology?: "producto" | "combo";
 }) {
 	const [error, setError] = useState<ArchiveProductUiError | null>(null);
@@ -34,6 +36,7 @@ export function ArchiveProductAction({
 		try {
 			await archiveMutation.mutateAsync({ rentableItemId });
 			onOpenChange(false);
+			await onSuccess?.();
 		} catch (mutationError) {
 			setError(getArchiveProductError(mutationError));
 		}

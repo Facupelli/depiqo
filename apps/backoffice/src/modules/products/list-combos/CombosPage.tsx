@@ -14,14 +14,13 @@ import { currentAuthQueries } from "@/auth/auth.queries";
 import { useBranches } from "@/modules/settings/branches/public";
 import { useCategories } from "@/modules/settings/categories/public";
 import { ArchiveProductAction } from "../archive-product/ArchiveProductAction";
+import { comboKinds } from "../product-kind";
 import {
 	getProductListInputFromQueryKey,
 	useProducts,
 } from "../rentable-item-list/rentable-item-list.queries";
 import { ComboListTable } from "./combo-list-table";
 import { ComboListToolbar, type SearchCommit } from "./combo-list-toolbar";
-
-const COMBO_KINDS = ["PACKAGE", "KIT", "BUNDLE"] as const;
 
 export type CombosSearch = {
 	page: number;
@@ -54,7 +53,7 @@ export function CombosPage({ search }: { search: CombosSearch }) {
 			status: search.status === "ALL" ? undefined : search.status,
 			categoryId: search.categoryId,
 			branchId: effectiveBranchId,
-			kinds: [...COMBO_KINDS],
+			kinds: [...comboKinds],
 		}),
 		[
 			effectiveBranchId,
@@ -91,7 +90,7 @@ export function CombosPage({ search }: { search: CombosSearch }) {
 		!hasExplicitNarrowingFilters &&
 		(search.status === "ACTIVE" || Boolean(effectiveBranchId));
 	const tenantComboCountQuery = useProducts(
-		{ kinds: [...COMBO_KINDS], page: 1, pageSize: 1 },
+		{ kinds: [...comboKinds], page: 1, pageSize: 1 },
 		{
 			enabled: needsTenantComboVerification,
 			select: (result) => result.total,
@@ -204,7 +203,7 @@ export function CombosPage({ search }: { search: CombosSearch }) {
 					onPaginationChange={handlePaginationChange}
 					onRowClick={(rentableItemId) =>
 						navigate({
-							to: "/dashboard/catalog/$rentableItemId",
+							to: "/dashboard/catalog/packages/$rentableItemId",
 							params: { rentableItemId },
 						})
 					}

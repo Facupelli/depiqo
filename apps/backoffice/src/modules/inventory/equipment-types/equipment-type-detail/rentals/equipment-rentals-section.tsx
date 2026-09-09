@@ -349,7 +349,7 @@ function ComboUsageItem({ item }: { item: ComboRentalUsageDto }) {
 					size="sm"
 					render={
 						<Link
-							to="/dashboard/catalog/$rentableItemId"
+							to="/dashboard/catalog/packages/$rentableItemId"
 							params={{ rentableItemId: item.rentableItemId }}
 						/>
 					}
@@ -361,7 +361,7 @@ function ComboUsageItem({ item }: { item: ComboRentalUsageDto }) {
 					size="sm"
 					render={
 						<Link
-							to="/dashboard/catalog/$rentableItemId/edit"
+							to="/dashboard/catalog/packages/$rentableItemId/edit"
 							params={{ rentableItemId: item.rentableItemId }}
 						/>
 					}

@@ -81,7 +81,7 @@ export function createComboListColumns({
 						<ComboImage item={item} />
 						<div className="min-w-0">
 							<Link
-								to="/dashboard/catalog/$rentableItemId"
+								to="/dashboard/catalog/packages/$rentableItemId"
 								params={{ rentableItemId: item.id }}
 								preload={false}
 								onClick={(event) => event.stopPropagation()}

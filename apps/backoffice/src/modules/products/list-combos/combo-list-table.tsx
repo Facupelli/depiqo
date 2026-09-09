@@ -247,7 +247,7 @@ function CompactComboList({
 					{items.map((item) => (
 						<li key={item.id} className="relative px-3 py-3">
 							<Link
-								to="/dashboard/catalog/$rentableItemId"
+								to="/dashboard/catalog/packages/$rentableItemId"
 								params={{ rentableItemId: item.id }}
 								preload={false}
 								className="block space-y-3 rounded-sm pr-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"

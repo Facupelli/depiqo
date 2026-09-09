@@ -2,19 +2,19 @@ import type { GetRentableItemDetailResponseDto } from "@repo/api-contracts";
 import { queryOptions, type UseQueryOptions } from "@tanstack/react-query";
 import type { ProblemDetailsError } from "@/shared/errors";
 import { productKeys } from "../products.queries";
-import { getProductDetail } from "./get-product-detail.api";
+import { getRentableItemDetail } from "./get-rentable-item-detail.api";
 
-export type ProductDetailQueryOverrides<
+export type RentableItemDetailQueryOverrides<
 	TData = GetRentableItemDetailResponseDto,
 > = Omit<
 	UseQueryOptions<GetRentableItemDetailResponseDto, ProblemDetailsError, TData>,
 	"queryKey" | "queryFn"
 >;
 
-export const productDetailQueries = {
+export const rentableItemDetailQueries = {
 	detail: <TData = GetRentableItemDetailResponseDto>(
 		rentableItemId?: string,
-		overrides?: ProductDetailQueryOverrides<TData>,
+		overrides?: RentableItemDetailQueryOverrides<TData>,
 	) =>
 		queryOptions<GetRentableItemDetailResponseDto, ProblemDetailsError, TData>({
 			queryKey: productKeys.detail(rentableItemId),
@@ -25,7 +25,7 @@ export const productDetailQueries = {
 					);
 				}
 
-				return getProductDetail(rentableItemId);
+				return getRentableItemDetail(rentableItemId);
 			},
 			enabled: !!rentableItemId,
 			...overrides,

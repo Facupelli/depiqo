@@ -7,13 +7,16 @@ import {
 } from "@/modules/inventory/equipment-types/public";
 import { productKeys } from "@/modules/products/products.queries";
 import type { ProblemDetailsError } from "@/shared/errors";
-import { type UpdateProductVariables, updateProduct } from "./edit-product.api";
+import {
+	type UpdateRentableItemDefinitionVariables,
+	updateRentableItemDefinition,
+} from "../rentable-item-detail/update-rentable-item-definition.api";
 
 type UpdateProductOptions = Omit<
 	MutationOptions<
 		UpdateRentableItemDefinitionResponseDto,
 		ProblemDetailsError,
-		UpdateProductVariables
+		UpdateRentableItemDefinitionVariables
 	>,
 	"mutationFn" | "mutationKey"
 >;
@@ -22,10 +25,10 @@ export function useUpdateProduct(options?: UpdateProductOptions) {
 	return useMutation<
 		UpdateRentableItemDefinitionResponseDto,
 		ProblemDetailsError,
-		UpdateProductVariables
+		UpdateRentableItemDefinitionVariables
 	>({
 		...options,
-		mutationFn: updateProduct,
+		mutationFn: updateRentableItemDefinition,
 		meta: {
 			invalidates: [
 				productKeys.all(),

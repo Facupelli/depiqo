@@ -50,6 +50,7 @@ type AddBranchAvailabilityDialogProps = {
 	rentableItemId: string;
 	existingOffers: Array<{ branchId: string }>;
 	ratePlanOptions: PricePlanOption[];
+	ratePlanOptionsStatus?: "loading" | "error" | "ready";
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 };
@@ -58,6 +59,7 @@ export function AddBranchAvailabilityDialog({
 	rentableItemId,
 	existingOffers,
 	ratePlanOptions,
+	ratePlanOptionsStatus = "ready",
 	open,
 	onOpenChange,
 }: AddBranchAvailabilityDialogProps) {
@@ -118,6 +120,7 @@ export function AddBranchAvailabilityDialog({
 								selectedBranchId={selectedBranchId}
 								isLoadingBranches={branchesQuery.isPending}
 								onBranchChange={setSelectedBranchId}
+								ratePlanOptionsStatus={ratePlanOptionsStatus}
 								onAttachRatePlan={() => setStep("attach-rate-plan")}
 								onCreateRatePlan={() => setStep("create-rate-plan")}
 								onCancel={() => handleOpenChange(false)}
@@ -181,6 +184,7 @@ function ChooseBranchAndPricingActionForm({
 	branches,
 	selectedBranchId,
 	isLoadingBranches,
+	ratePlanOptionsStatus,
 	onBranchChange,
 	onAttachRatePlan,
 	onCreateRatePlan,
@@ -189,6 +193,7 @@ function ChooseBranchAndPricingActionForm({
 	branches: BranchOption[];
 	selectedBranchId: string;
 	isLoadingBranches: boolean;
+	ratePlanOptionsStatus: "loading" | "error" | "ready";
 	onBranchChange: (branchId: string) => void;
 	onAttachRatePlan: () => void;
 	onCreateRatePlan: () => void;
@@ -264,11 +269,19 @@ function ChooseBranchAndPricingActionForm({
 				</FieldGroup>
 			</form>
 
+			{ratePlanOptionsStatus !== "ready" ? (
+				<p className="text-muted-foreground text-sm">
+					{ratePlanOptionsStatus === "loading"
+						? "Cargando planes de precios disponibles..."
+						: "No se pueden consultar los planes existentes en este momento."}
+				</p>
+			) : null}
+
 			<div className="grid gap-3 sm:grid-cols-2">
 				<PricingActionCard
 					title="Vincular plan existente"
 					description="Crea la oferta en esta sucursal y asígnale un plan de precios ya creado."
-					disabled={!hasSelectedBranch}
+					disabled={!hasSelectedBranch || ratePlanOptionsStatus !== "ready"}
 					onClick={onAttachRatePlan}
 				/>
 				<PricingActionCard

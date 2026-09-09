@@ -3,16 +3,8 @@ import {
 	CreatePackageBodySchema,
 } from "@repo/api-contracts";
 import { z } from "zod";
+import { comboRequirementsFormSchema } from "@/modules/products/combo-form/combo-requirement.schema";
 import { emptyToNull } from "@/shared/utils/form.utils";
-
-export const createComboRequirementFormSchema = z.object({
-	equipmentTypeId: z.string().min(1, "El equipo es obligatorio"),
-	equipmentTypeName: z.string().min(1),
-	quantityPerItem: z
-		.number()
-		.int("Debe ser un número entero")
-		.positive("Debe ser mayor o igual a 1"),
-});
 
 export const createComboFormSchema = z.object({
 	categoryId: z.string(),
@@ -22,15 +14,7 @@ export const createComboFormSchema = z.object({
 	branchIds: z
 		.array(z.string().min(1))
 		.min(1, "Selecciona al menos una sucursal"),
-	requirements: z
-		.array(createComboRequirementFormSchema)
-		.min(1, "Agrega al menos un equipo al combo")
-		.refine(
-			(requirements) =>
-				new Set(requirements.map((requirement) => requirement.equipmentTypeId))
-					.size === requirements.length,
-			"Cada equipo puede agregarse una sola vez",
-		),
+	requirements: comboRequirementsFormSchema,
 });
 
 export type CreateComboFormValues = z.infer<typeof createComboFormSchema>;
