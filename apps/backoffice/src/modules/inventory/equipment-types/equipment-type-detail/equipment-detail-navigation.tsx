@@ -1,15 +1,8 @@
 import { Tabs, TabsList, TabsTrigger } from "@repo/ui/components/tabs";
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Boxes, HandCoins, LayoutDashboard, PackagePlus } from "lucide-react";
+import { Boxes, HandCoins, PackagePlus } from "lucide-react";
 
 const detailSections = [
-	{
-		value: "summary",
-		label: "Resumen",
-		icon: LayoutDashboard,
-		to: "/dashboard/inventory/equipment-types/$equipmentTypeId" as const,
-		suffix: "",
-	},
 	{
 		value: "units",
 		label: "Unidades",
@@ -42,15 +35,14 @@ export function EquipmentDetailNavigation({
 		select: ({ location }) => location.pathname.replace(/\/$/, ""),
 	});
 	const activeSection =
-		detailSections.find((section) =>
-			section.suffix ? pathname.endsWith(section.suffix) : false,
-		)?.value ?? "summary";
+		detailSections.find((section) => pathname.endsWith(section.suffix))
+			?.value ?? "units";
 
 	return (
-		<Tabs value={activeSection}>
+		<Tabs value={activeSection} className="min-w-0 gap-0">
 			<TabsList
 				variant="line"
-				className="h-auto w-full justify-start overflow-x-auto rounded-none border-b bg-transparent p-0"
+				className="group-data-horizontal/tabs:h-12 w-full justify-start overflow-x-auto overflow-y-hidden rounded-none border-b bg-transparent p-0"
 			>
 				{detailSections.map((section) => {
 					const Icon = section.icon;
@@ -59,7 +51,7 @@ export function EquipmentDetailNavigation({
 							key={section.value}
 							value={section.value}
 							nativeButton={false}
-							className="flex-none gap-2 rounded-none px-5 py-3 text-sm"
+							className="h-full shrink-0 flex-none gap-2 px-4 py-0 whitespace-nowrap after:bottom-0"
 							render={<Link to={section.to} params={{ equipmentTypeId }} />}
 						>
 							<Icon className="size-4" />

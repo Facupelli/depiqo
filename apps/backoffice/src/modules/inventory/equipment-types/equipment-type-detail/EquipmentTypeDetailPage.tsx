@@ -35,17 +35,20 @@ export function EquipmentTypeDetailPage({
 			<EquipmentTypeDetailActionsProvider
 				value={{ openAddUnits: () => setAddUnitsOpen(true) }}
 			>
-				<div className="space-y-5">
+				<div className="flex flex-col">
 					<EquipmentTypeHeader
 						name={summary.name}
 						imageUrl={imageUrl}
 						categoryName={summary.categoryName}
+						description={summary.description}
 						activeAssetCount={summary.activeAssetCount}
 						onEdit={() => setEditOpen(true)}
 						onAddUnit={() => setAddUnitsOpen(true)}
 					/>
 					<EquipmentDetailNavigation equipmentTypeId={equipmentTypeId} />
-					<Outlet />
+					<div className="mt-5">
+						<Outlet />
+					</div>
 				</div>
 			</EquipmentTypeDetailActionsProvider>
 

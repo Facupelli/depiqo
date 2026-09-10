@@ -1,16 +1,11 @@
 import { Button } from "@repo/ui/components/button";
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuTrigger,
-} from "@repo/ui/components/dropdown-menu";
-import { Ellipsis, PackageOpen, PackagePlus, Pencil } from "lucide-react";
+import { PackageOpen, PackagePlus, Pencil } from "lucide-react";
 
 type EquipmentTypeHeaderProps = {
 	name: string;
 	imageUrl: string | null;
 	categoryName: string | null;
+	description: string | null;
 	activeAssetCount: number;
 	onEdit: () => void;
 	onAddUnit: () => void;
@@ -20,15 +15,20 @@ export function EquipmentTypeHeader({
 	name,
 	imageUrl,
 	categoryName,
+	description,
 	activeAssetCount,
 	onEdit,
 	onAddUnit,
 }: EquipmentTypeHeaderProps) {
+	const visibleDescription = description?.trim();
+
 	return (
 		<header className="border-b border-neutral-200 pb-6">
 			<div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
 				<div className="flex min-w-0 items-center gap-4">
-					<div className="flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-xl border bg-muted/20 sm:size-24">
+					<div
+						className={`flex shrink-0 items-center justify-center overflow-hidden rounded-xl border bg-muted/20 ${visibleDescription ? "size-24 sm:size-32" : "size-20 sm:size-24"}`}
+					>
 						{imageUrl ? (
 							<img
 								src={imageUrl}
@@ -50,34 +50,23 @@ export function EquipmentTypeHeader({
 							{activeAssetCount}{" "}
 							{activeAssetCount === 1 ? "unidad activa" : "unidades activas"}
 						</p>
+						{visibleDescription ? (
+							<p className="mt-3 max-w-2xl whitespace-pre-wrap text-sm leading-6 text-neutral-600">
+								{visibleDescription}
+							</p>
+						) : null}
 					</div>
 				</div>
 
-				<div className="flex shrink-0 items-center gap-2 self-start">
+				<div className="flex shrink-0 flex-wrap items-center gap-2 self-start">
 					<Button type="button" onClick={onEdit}>
 						<Pencil className="mr-2 size-4" />
 						Editar equipo
 					</Button>
-					<DropdownMenu>
-						<DropdownMenuTrigger
-							render={
-								<Button
-									type="button"
-									variant="outline"
-									size="icon"
-									aria-label="Abrir acciones del equipo"
-								>
-									<Ellipsis className="size-4" />
-								</Button>
-							}
-						/>
-						<DropdownMenuContent align="end" className="min-w-fit">
-							<DropdownMenuItem onClick={onAddUnit}>
-								<PackagePlus className="size-4" />
-								Añadir unidad
-							</DropdownMenuItem>
-						</DropdownMenuContent>
-					</DropdownMenu>
+					<Button type="button" variant="outline" onClick={onAddUnit}>
+						<PackagePlus className="mr-2 size-4" />
+						Añadir unidad
+					</Button>
 				</div>
 			</div>
 		</header>

@@ -482,7 +482,7 @@ function UnitCollection({
 			<div className="flex min-h-5 justify-end">
 				<RefreshIndicator show={isRefreshing} />
 			</div>
-			<div className="hidden overflow-hidden rounded-lg border @2xl/equipment-units:block">
+			<div className="hidden overflow-hidden rounded-lg border bg-card @2xl/equipment-units:block">
 				<Table>
 					<TableHeader>
 						<TableRow className="bg-muted/40">
@@ -528,7 +528,7 @@ function UnitCollection({
 				{isLoading ? (
 					<CompactSkeleton />
 				) : items.length ? (
-					<ul className="divide-y rounded-lg border">
+					<ul className="divide-y rounded-lg border bg-card">
 						{items.map((unit) => (
 							<li key={unit.id} className="relative space-y-3 px-4 py-4 pr-12">
 								<Reference unit={unit} />
@@ -549,7 +549,7 @@ function UnitCollection({
 						))}
 					</ul>
 				) : (
-					<div className="rounded-lg border">{empty}</div>
+					<div className="rounded-lg border bg-card">{empty}</div>
 				)}
 			</div>
 		</div>
@@ -598,7 +598,7 @@ function DesktopSkeleton() {
 }
 function CompactSkeleton() {
 	return (
-		<ul className="divide-y rounded-lg border">
+		<ul className="divide-y rounded-lg border bg-card">
 			{Array.from({ length: 5 }).map((_, index) => (
 				// biome-ignore lint/suspicious/noArrayIndexKey: skeleton rows are static placeholders.
 				<li key={index} className="space-y-3 px-4 py-4">

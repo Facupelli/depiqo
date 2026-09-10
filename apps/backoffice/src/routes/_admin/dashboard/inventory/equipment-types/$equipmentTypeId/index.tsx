@@ -1,19 +1,13 @@
-import { useSuspenseQuery } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
-import { EquipmentOverview } from "@/modules/inventory/equipment-types/equipment-type-detail/equipment-overview";
-import { equipmentTypeSummaryQueries } from "@/modules/inventory/equipment-types/equipment-type-detail/equipment-type-summary.queries";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 
 export const Route = createFileRoute(
 	"/_admin/dashboard/inventory/equipment-types/$equipmentTypeId/",
 )({
-	component: EquipmentOverviewRoute,
+	beforeLoad: ({ params: { equipmentTypeId } }) => {
+		throw redirect({
+			to: "/dashboard/inventory/equipment-types/$equipmentTypeId/units",
+			params: { equipmentTypeId },
+			replace: true,
+		});
+	},
 });
-
-function EquipmentOverviewRoute() {
-	const { equipmentTypeId } = Route.useParams();
-	const { data: summary } = useSuspenseQuery(
-		equipmentTypeSummaryQueries.summary(equipmentTypeId),
-	);
-
-	return <EquipmentOverview summary={summary} />;
-}
