@@ -14,7 +14,8 @@ export function ComboDetailPageSkeleton() {
 						<div className="space-y-2">
 							<Skeleton className="h-8 w-56 max-w-[60vw]" />
 							<Skeleton className="h-4 w-28" />
-							<Skeleton className="h-5 w-20" />
+							<Skeleton className="h-5 w-52" />
+							<Skeleton className="h-4 w-72 max-w-[60vw]" />
 						</div>
 					</div>
 					<div className="flex gap-2">
@@ -22,16 +23,21 @@ export function ComboDetailPageSkeleton() {
 						<Skeleton className="size-9" />
 					</div>
 				</header>
-				<Skeleton className="h-11 w-full" />
-				<section className="rounded-xl border p-6">
-					<div className="grid gap-6 sm:grid-cols-2">
-						{[1, 2, 3, 4].map((item) => (
-							<div key={item} className="space-y-2">
-								<Skeleton className="h-4 w-24" />
-								<Skeleton className="h-5 w-48" />
-							</div>
-						))}
+				<Skeleton className="h-12 w-full" />
+				<section className="overflow-hidden rounded-xl border">
+					<div className="space-y-2 border-b p-5">
+						<Skeleton className="h-5 w-36" />
+						<Skeleton className="h-4 w-80 max-w-full" />
 					</div>
+					{[1, 2, 3, 4].map((item) => (
+						<div
+							key={item}
+							className="flex justify-between border-b px-5 py-3 last:border-b-0"
+						>
+							<Skeleton className="h-4 w-48" />
+							<Skeleton className="h-4 w-20" />
+						</div>
+					))}
 				</section>
 			</div>
 		</div>

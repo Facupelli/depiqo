@@ -26,7 +26,7 @@ export function ComboRentalSection({
 		<section className="rounded-xl border bg-card">
 			<div className="flex flex-col gap-3 border-b px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
 				<div>
-					<h2 className="font-semibold">Alquiler por sucursal</h2>
+					<h2 className="font-semibold">Sucursales</h2>
 					<p className="mt-1 text-sm text-muted-foreground">
 						Gestiona visibilidad, disponibilidad y precios para cada sucursal.
 					</p>

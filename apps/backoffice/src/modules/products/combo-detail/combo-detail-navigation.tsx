@@ -1,15 +1,8 @@
 import { Tabs, TabsList, TabsTrigger } from "@repo/ui/components/tabs";
 import { Link, useRouterState } from "@tanstack/react-router";
-import { HandCoins, LayoutDashboard, PackageOpen } from "lucide-react";
+import { Building2, PackageOpen } from "lucide-react";
 
 const sections = [
-	{
-		value: "summary",
-		label: "Resumen",
-		icon: LayoutDashboard,
-		to: "/dashboard/catalog/packages/$rentableItemId" as const,
-		suffix: "",
-	},
 	{
 		value: "equipment",
 		label: "Equipos",
@@ -19,8 +12,8 @@ const sections = [
 	},
 	{
 		value: "rental",
-		label: "Alquiler",
-		icon: HandCoins,
+		label: "Sucursales",
+		icon: Building2,
 		to: "/dashboard/catalog/packages/$rentableItemId/rental" as const,
 		suffix: "/rental",
 	},
@@ -33,22 +26,19 @@ export function ComboDetailNavigation({
 	const pathname = useRouterState({
 		select: ({ location }) => location.pathname.replace(/\/$/, ""),
 	});
-	const active =
-		sections.find(
-			(section) => section.suffix && pathname.endsWith(section.suffix),
-		)?.value ?? "summary";
+	const active = pathname.endsWith("/rental") ? "rental" : "equipment";
 	return (
-		<Tabs value={active}>
+		<Tabs value={active} className="min-w-0 gap-0">
 			<TabsList
 				variant="line"
-				className="h-auto w-full justify-start overflow-x-auto rounded-none border-b bg-transparent p-0"
+				className="group-data-horizontal/tabs:h-12 w-full justify-start overflow-x-auto overflow-y-hidden rounded-none border-b bg-transparent p-0"
 			>
 				{sections.map(({ icon: Icon, ...section }) => (
 					<TabsTrigger
 						key={section.value}
 						value={section.value}
 						nativeButton={false}
-						className="flex-none gap-2 rounded-none px-5 py-3 text-sm"
+						className="h-full shrink-0 flex-none gap-2 px-4 py-0 whitespace-nowrap after:bottom-0"
 						render={<Link to={section.to} params={{ rentableItemId }} />}
 					>
 						<Icon className="size-4" />

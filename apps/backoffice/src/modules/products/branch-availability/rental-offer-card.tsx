@@ -146,7 +146,7 @@ function getOfferPresentation(offer: RentalOffer): Presentation {
 			label: "Lista para alquilar",
 			badgeClassName: "border-emerald-200 bg-emerald-50 text-emerald-700",
 			icon: CheckCircle2,
-			description: "Esta oferta está lista para alquilar.",
+			description: "Lista para alquilar",
 		},
 	} satisfies Record<SetupStatus, Presentation>;
 	return presentations[offer.setupSummary.status];

@@ -21,11 +21,16 @@ export function ComboDetailHeader({
 	const [archiveOpen, setArchiveOpen] = useState(false);
 	const navigate = useNavigate();
 	const imageUrl = buildR2PublicUrl(combo.imageUrl, "catalog");
+	const visibleDescription = combo.description?.trim();
+	const requirementCount = combo.requiredEquipment.length;
+	const branchCount = combo.offers.length;
 	return (
 		<header className="border-b border-neutral-200 pb-6">
 			<div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
 				<div className="flex min-w-0 items-center gap-4">
-					<div className="flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-xl border bg-muted/20 sm:size-24">
+					<div
+						className={`flex shrink-0 items-center justify-center overflow-hidden rounded-xl border bg-muted/20 ${visibleDescription ? "size-24 sm:size-32" : "size-20 sm:size-24"}`}
+					>
 						{imageUrl ? (
 							<img
 								src={imageUrl}
@@ -43,9 +48,26 @@ export function ComboDetailHeader({
 						<p className="mt-1 text-sm text-muted-foreground">
 							{combo.categoryName ?? "Sin categoría"}
 						</p>
-						<div className="mt-2">
+						<div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2">
 							<ProductStatusBadge status={combo.status} />
+							<span className="text-sm text-neutral-500">
+								{requirementCount}{" "}
+								{requirementCount === 1
+									? "equipo requerido"
+									: "equipos requeridos"}
+							</span>
+							<span aria-hidden="true" className="text-neutral-300">
+								·
+							</span>
+							<span className="text-sm text-neutral-500">
+								{branchCount} {branchCount === 1 ? "sucursal" : "sucursales"}
+							</span>
 						</div>
+						{visibleDescription ? (
+							<p className="mt-3 max-w-2xl whitespace-pre-wrap text-sm leading-6 text-neutral-600">
+								{visibleDescription}
+							</p>
+						) : null}
 					</div>
 				</div>
 				<div className="flex shrink-0 items-center gap-2 self-start">

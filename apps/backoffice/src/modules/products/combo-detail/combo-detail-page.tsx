@@ -19,10 +19,12 @@ export function ComboDetailPage({
 				parent={{ label: "Combos", to: "/dashboard/catalog/packages" }}
 				current={combo.name}
 			/>
-			<div className="space-y-5">
+			<div className="flex flex-col">
 				<ComboDetailHeader combo={combo} />
 				<ComboDetailNavigation rentableItemId={rentableItemId} />
-				<Outlet />
+				<div className="mt-5">
+					<Outlet />
+				</div>
 			</div>
 		</div>
 	);
