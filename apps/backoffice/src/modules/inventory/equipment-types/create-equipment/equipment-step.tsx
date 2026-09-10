@@ -88,7 +88,10 @@ export const EquipmentStep = withForm({
 										</span>
 									</FieldLabel>
 									<Select
-										items={categoryItems}
+										items={[
+											{ value: noCategoryValue, label: "Sin categoría" },
+											...categoryItems,
+										]}
 										value={field.state.value || noCategoryValue}
 										onValueChange={(value) =>
 											field.handleChange(

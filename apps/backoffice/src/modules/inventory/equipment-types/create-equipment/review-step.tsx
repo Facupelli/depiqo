@@ -1,5 +1,6 @@
 import { Button } from "@repo/ui/components/button";
 import type { ReactNode } from "react";
+import { cn } from "@/lib/utils";
 import { withForm } from "@/shared/contexts/form.context";
 import { createEquipmentFormDefaultValues } from "./create-equipment.schema";
 import { WizardStepHeading } from "./wizard-step-heading";
@@ -44,7 +45,14 @@ export const ReviewStep = withForm({
 								title="Revisión"
 								description="Confirma la información antes de crear el equipo."
 							/>
-							<div className="grid gap-4 lg:grid-cols-3">
+							<div
+								className={cn(
+									"grid gap-4",
+									values.standaloneRental.enabled
+										? "lg:grid-cols-3"
+										: "lg:grid-cols-2",
+								)}
+							>
 								<ReviewCard title="Equipo" onEdit={() => onEdit(0)}>
 									<p className="font-medium">{values.equipment.name}</p>
 									<p>{categoryName(values.equipment.categoryId)}</p>
@@ -53,39 +61,43 @@ export const ReviewStep = withForm({
 									)}
 								</ReviewCard>
 								<ReviewCard title="Unidades" onEdit={() => onEdit(1)}>
-									<p className="font-medium">
-										{values.assets.length}{" "}
-										{values.assets.length === 1 ? "unidad" : "unidades"}
-									</p>
-									{Object.entries(unitsByBranchId).map(([branchId, count]) => (
-										<p key={branchId}>
-											{branchName(branchId)}: {count}
-										</p>
-									))}
-								</ReviewCard>
-								<ReviewCard
-									title="Alquiler individual"
-									onEdit={() => onEdit(2)}
-								>
-									{values.standaloneRental.enabled ? (
+									{values.assets.length === 0 ? (
+										<p className="font-medium">Sin unidades iniciales</p>
+									) : (
 										<>
 											<p className="font-medium">
-												{values.standaloneRental.name}
+												{values.assets.length}{" "}
+												{values.assets.length === 1 ? "unidad" : "unidades"}
 											</p>
-											<p>{categoryName(values.standaloneRental.categoryId)}</p>
-											<p>
-												{values.standaloneRental.branchIds
-													.map((branchId) => branchName(branchId))
-													.join(", ")}
-											</p>
-											<p className="text-muted-foreground text-xs">
-												El precio se configura por separado.
-											</p>
+											{Object.entries(unitsByBranchId).map(
+												([branchId, count]) => (
+													<p key={branchId}>
+														{branchName(branchId)}: {count}
+													</p>
+												),
+											)}
 										</>
-									) : (
-										<p className="font-medium">No configurado</p>
 									)}
 								</ReviewCard>
+								{values.standaloneRental.enabled ? (
+									<ReviewCard
+										title="Alquiler individual"
+										onEdit={() => onEdit(2)}
+									>
+										<p className="font-medium">
+											{values.standaloneRental.name}
+										</p>
+										<p>{categoryName(values.standaloneRental.categoryId)}</p>
+										<p>
+											{values.standaloneRental.branchIds
+												.map((branchId) => branchName(branchId))
+												.join(", ")}
+										</p>
+										<p className="text-muted-foreground text-xs">
+											El precio se configura por separado.
+										</p>
+									</ReviewCard>
+								) : null}
 							</div>
 						</section>
 					);

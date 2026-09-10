@@ -89,6 +89,7 @@ type SidebarItem = {
 	name: string;
 	icon: LucideIcon;
 	href: string;
+	matchDescendants?: boolean;
 	children?: Array<{
 		name: string;
 		href: string;
@@ -117,6 +118,7 @@ const sidebarItems: SidebarItem[] = [
 		name: "Equipos",
 		icon: Warehouse,
 		href: "/dashboard/inventory/equipment-types",
+		matchDescendants: true,
 		children: [{ name: "Dueños de Equipo", href: "/dashboard/owners" }],
 	},
 	{
@@ -213,7 +215,10 @@ function DashboardNavigation() {
 								render={
 									<Link
 										to={item.href}
-										activeOptions={{ exact: true, includeSearch: false }}
+										activeOptions={{
+											exact: !item.matchDescendants,
+											includeSearch: false,
+										}}
 										preload={false}
 										onClick={closeNavigation}
 									/>

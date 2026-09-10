@@ -47,7 +47,7 @@ export const StandaloneRentalStep = withForm({
 			<section className="space-y-8">
 				<WizardStepHeading
 					title="Alquiler individual"
-					description="Define si este equipo también estará disponible como producto individual."
+					description="Define si este equipo también se alquilará de forma individual."
 				/>
 				<form.Field name="standaloneRental.enabled">
 					{(field) => (
@@ -116,7 +116,13 @@ export const StandaloneRentalStep = withForm({
 														</span>
 													</FieldLabel>
 													<Select
-														items={categoryItems}
+														items={[
+															{
+																value: noCategoryValue,
+																label: "Sin categoría",
+															},
+															...categoryItems,
+														]}
 														value={field.state.value || noCategoryValue}
 														onValueChange={(value) =>
 															field.handleChange(

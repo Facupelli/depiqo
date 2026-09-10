@@ -78,7 +78,12 @@ export function CreateEquipmentWizardShell({
 				</p>
 			</nav>
 
-			<div className="min-h-80 rounded-xl border bg-background p-4 sm:p-6 lg:p-8">
+			<div
+				className={cn(
+					"rounded-xl border bg-background p-4 sm:p-6 lg:p-8",
+					currentStep !== 1 && currentStep !== 2 && "min-h-80",
+				)}
+			>
 				{children}
 			</div>
 
