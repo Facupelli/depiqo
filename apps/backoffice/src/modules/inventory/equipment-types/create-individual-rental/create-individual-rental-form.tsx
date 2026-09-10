@@ -70,7 +70,7 @@ export function CreateIndividualRentalForm({
 			<form
 				id={formId}
 				noValidate
-				className="space-y-10"
+				className="space-y-8 lg:space-y-10"
 				onSubmit={(event) => {
 					event.preventDefault();
 					event.stopPropagation();
@@ -85,7 +85,7 @@ export function CreateIndividualRentalForm({
 							editarlos sin modificarlo.
 						</p>
 					</div>
-					<div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_22rem]">
+					<div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem] lg:gap-8">
 						<FieldGroup className="grid gap-5">
 							<form.Field name="name">
 								{(field) => {
@@ -238,7 +238,7 @@ export function CreateIndividualRentalForm({
 				</section>
 			</form>
 
-			<div className="sticky bottom-0 mt-10 flex flex-wrap justify-end gap-3 border-t bg-background/95 py-4 backdrop-blur supports-backdrop-filter:bg-background/80">
+			<div className="sticky bottom-0 mt-8 flex flex-wrap justify-end gap-3 border-t bg-background/95 py-4 backdrop-blur supports-backdrop-filter:bg-background/80 lg:mt-10">
 				{submitError ? (
 					<p
 						role="alert"

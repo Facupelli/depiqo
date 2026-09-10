@@ -59,16 +59,7 @@ export function EquipmentAccessoriesSection({
 				</div>
 			) : null}
 
-			{accessoriesQuery.isError && !accessories ? (
-				<div className="rounded-lg border px-4 py-12 text-center">
-					<p className="mb-4 text-destructive text-sm">
-						No pudimos cargar los accesorios.
-					</p>
-					<Button variant="outline" onClick={() => accessoriesQuery.refetch()}>
-						Intentar nuevamente
-					</Button>
-				</div>
-			) : isEditing && accessories ? (
+			{isEditing && accessories ? (
 				<EditEquipmentAccessoriesEditor
 					key={equipmentTypeId}
 					equipmentTypeId={equipmentTypeId}
@@ -81,6 +72,8 @@ export function EquipmentAccessoriesSection({
 					items={accessories ?? []}
 					isLoading={accessoriesQuery.isPending}
 					isRefreshing={accessoriesQuery.isFetching && Boolean(accessories)}
+					isError={accessoriesQuery.isError && !accessories}
+					onRetry={() => accessoriesQuery.refetch()}
 					onConfigure={() => setIsEditing(true)}
 				/>
 			)}
@@ -92,14 +85,25 @@ function AccessoryCollection({
 	items,
 	isLoading,
 	isRefreshing,
+	isError,
+	onRetry,
 	onConfigure,
 }: {
 	items: GetEquipmentTypeAccessoryDefaultsItemDto[];
 	isLoading: boolean;
 	isRefreshing: boolean;
+	isError: boolean;
+	onRetry: () => void;
 	onConfigure: () => void;
 }) {
-	const empty = (
+	const message = isError ? (
+		<div className="flex flex-col items-center gap-4 px-4 py-12 text-center text-destructive text-sm">
+			<p>No pudimos cargar los accesorios.</p>
+			<Button variant="outline" onClick={onRetry}>
+				Intentar nuevamente
+			</Button>
+		</div>
+	) : (
 		<div className="flex flex-col items-center gap-4 px-4 py-12 text-center text-muted-foreground text-sm">
 			<p>Este equipo todavía no tiene accesorios configurados.</p>
 			<Button onClick={onConfigure}>Configurar accesorios</Button>
@@ -120,7 +124,7 @@ function AccessoryCollection({
 					Actualizando...
 				</span>
 			</div>
-			<div className="hidden overflow-hidden rounded-lg border @2xl/equipment-accessories:block">
+			<div className="hidden overflow-hidden rounded-lg border bg-card @2xl/equipment-accessories:block">
 				<Table>
 					<TableHeader>
 						<TableRow className="bg-muted/40">
@@ -131,7 +135,7 @@ function AccessoryCollection({
 					<TableBody>
 						{isLoading ? (
 							<DesktopSkeleton />
-						) : items.length > 0 ? (
+						) : !isError && items.length > 0 ? (
 							items.map((item) => (
 								<TableRow key={item.accessoryEquipmentTypeId}>
 									<TableCell>
@@ -142,7 +146,7 @@ function AccessoryCollection({
 							))
 						) : (
 							<TableRow>
-								<TableCell colSpan={2}>{empty}</TableCell>
+								<TableCell colSpan={2}>{message}</TableCell>
 							</TableRow>
 						)}
 					</TableBody>
@@ -151,8 +155,8 @@ function AccessoryCollection({
 			<div className="@2xl/equipment-accessories:hidden">
 				{isLoading ? (
 					<CompactSkeleton />
-				) : items.length > 0 ? (
-					<ul className="divide-y rounded-lg border">
+				) : !isError && items.length > 0 ? (
+					<ul className="divide-y rounded-lg border bg-card">
 						{items.map((item) => (
 							<li
 								key={item.accessoryEquipmentTypeId}
@@ -169,7 +173,7 @@ function AccessoryCollection({
 						))}
 					</ul>
 				) : (
-					<div className="rounded-lg border">{empty}</div>
+					<div className="rounded-lg border bg-card">{message}</div>
 				)}
 			</div>
 		</div>
@@ -231,7 +235,7 @@ function DesktopSkeleton() {
 
 function CompactSkeleton() {
 	return (
-		<ul className="divide-y rounded-lg border">
+		<ul className="divide-y rounded-lg border bg-card">
 			{Array.from({ length: 4 }).map((_, index) => (
 				// biome-ignore lint/suspicious/noArrayIndexKey: skeleton rows are static placeholders.
 				<li key={index} className="flex items-center gap-3 px-4 py-4">

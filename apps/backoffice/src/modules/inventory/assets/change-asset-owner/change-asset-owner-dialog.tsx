@@ -52,7 +52,7 @@ export function ChangeAssetOwnerDialog({
 	) {
 		ownerOptions.unshift({
 			id: unit.ownerId,
-			name: unit.ownerName ?? unit.ownerId,
+			name: unit.ownerName?.trim() || "Propietario no disponible",
 		});
 	}
 

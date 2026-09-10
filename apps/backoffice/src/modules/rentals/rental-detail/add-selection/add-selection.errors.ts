@@ -10,7 +10,7 @@ export function toAddSelectionUiError(error: unknown): AddSelectionUiError {
 	if (!(error instanceof ProblemDetailsError)) {
 		return {
 			message:
-				"No pudimos agregar el producto. Revisá tu conexión e intentá nuevamente.",
+				"No pudimos añadir el producto. Revisá tu conexión e intentá nuevamente.",
 			shouldRefreshDetail: false,
 			shouldRefreshAvailability: false,
 		};
@@ -57,14 +57,14 @@ export function toAddSelectionUiError(error: unknown): AddSelectionUiError {
 	if (code === "rental_commitment.rental_cannot_be_edited_from_status") {
 		return {
 			message:
-				"El estado actual del pedido no permite agregar productos. Actualizá la página e intentá nuevamente.",
+				"El estado actual del pedido no permite añadir productos. Actualizá la página e intentá nuevamente.",
 			shouldRefreshDetail: true,
 			shouldRefreshAvailability: false,
 		};
 	}
 
 	return {
-		message: "No pudimos agregar el producto. Intentá nuevamente.",
+		message: "No pudimos añadir el producto. Intentá nuevamente.",
 		shouldRefreshDetail: false,
 		shouldRefreshAvailability: false,
 	};

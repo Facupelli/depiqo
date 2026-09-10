@@ -266,7 +266,7 @@ function EquipmentTypePicker({
 							<p className="px-3 py-6 text-center text-muted-foreground text-sm">
 								{isPending || isFetching
 									? "Buscando tipos de equipo..."
-									: "No hay tipos de equipo disponibles para agregar."}
+									: "No hay tipos de equipo disponibles para añadir."}
 							</p>
 						) : (
 							<ul className="divide-y">

@@ -24,7 +24,8 @@ export function fromComboDetailToFormValues(
 		description: combo.description ?? "",
 		requirements: combo.requiredEquipment.map((item) => ({
 			equipmentTypeId: item.equipmentTypeId,
-			equipmentTypeName: item.equipmentTypeName ?? item.equipmentTypeId,
+			equipmentTypeName:
+				item.equipmentTypeName?.trim() || "Equipo no disponible",
 			quantityPerItem: item.quantityPerItem,
 		})),
 	};

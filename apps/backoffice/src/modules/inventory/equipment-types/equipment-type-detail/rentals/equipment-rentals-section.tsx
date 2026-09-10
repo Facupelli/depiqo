@@ -49,7 +49,7 @@ export function EquipmentRentalsSection({
 	if (query.isPending && !data) return <RentalSectionSkeleton />;
 	if (query.isError && !data)
 		return (
-			<div className="rounded-lg border px-4 py-12 text-center">
+			<div className="rounded-lg border bg-card px-4 py-12 text-center">
 				<p className="mb-4 text-destructive text-sm">
 					No pudimos cargar los productos.
 				</p>
@@ -209,7 +209,7 @@ function IndividualRentalItem({ item }: { item: IndividualRentalUsageDto }) {
 								className="grid gap-3 px-3 py-2.5 @lg/equipment-rentals:grid-cols-[minmax(140px,1fr)_auto_auto_minmax(140px,auto)] @lg/equipment-rentals:items-center"
 							>
 								<p className="font-medium text-sm">
-									{offer.branchName ?? offer.branchId}
+									{offer.branchName?.trim() || "Sucursal no disponible"}
 								</p>
 								<Badge variant={offer.isVisible ? "secondary" : "outline"}>
 									{offer.isVisible ? "Visible" : "Oculta"}
@@ -330,18 +330,14 @@ function ComboUsagesSection({
 					</Button>
 				}
 			/>
-			{items.length ? (
-				<ComboTable items={items} />
-			) : (
-				<EmptyState message="Este equipo todavía no forma parte de ningún combo." />
-			)}
+			<ComboTable items={items} />
 		</section>
 	);
 }
 
 function ComboTable({ items }: { items: ComboRentalUsageDto[] }) {
 	return (
-		<div className="overflow-hidden rounded-lg border">
+		<div className="overflow-hidden rounded-lg border bg-card">
 			<Table>
 				<TableHeader>
 					<TableRow>
@@ -352,9 +348,20 @@ function ComboTable({ items }: { items: ComboRentalUsageDto[] }) {
 					</TableRow>
 				</TableHeader>
 				<TableBody>
-					{items.map((item) => (
-						<ComboUsageRow key={item.rentableItemId} item={item} />
-					))}
+					{items.length > 0 ? (
+						items.map((item) => (
+							<ComboUsageRow key={item.rentableItemId} item={item} />
+						))
+					) : (
+						<TableRow>
+							<TableCell
+								colSpan={4}
+								className="h-28 text-center text-muted-foreground"
+							>
+								Este equipo todavía no forma parte de ningún combo.
+							</TableCell>
+						</TableRow>
+					)}
 				</TableBody>
 			</Table>
 		</div>
@@ -441,7 +448,9 @@ function RentalSectionSkeleton() {
 			{["individuals", "combos"].map((section) => (
 				<div key={section} className="space-y-4">
 					<Skeleton className="h-8 w-64" />
-					<Skeleton className="h-40 w-full" />
+					<div className="overflow-hidden rounded-lg border bg-card p-4">
+						<Skeleton className="h-32 w-full" />
+					</div>
 				</div>
 			))}
 		</div>

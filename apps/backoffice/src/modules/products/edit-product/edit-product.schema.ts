@@ -50,7 +50,7 @@ export function fromProductDetailToEditProductFormValues(
 		requirements: product.requiredEquipment.map((requirement) => ({
 			equipmentTypeId: requirement.equipmentTypeId,
 			equipmentTypeName:
-				requirement.equipmentTypeName ?? requirement.equipmentTypeId,
+				requirement.equipmentTypeName?.trim() || "Equipo no disponible",
 			quantityPerItem: requirement.quantityPerItem,
 		})),
 	};

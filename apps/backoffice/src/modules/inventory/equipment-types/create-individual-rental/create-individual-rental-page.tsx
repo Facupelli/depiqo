@@ -35,15 +35,15 @@ export function CreateIndividualRentalPage({
 	const isOptionsError = branchesQuery.isError || categoriesQuery.isError;
 
 	return (
-		<div className="w-full py-4">
-			<header className="mb-8 max-w-3xl">
+		<div className="mx-auto w-full max-w-6xl py-4 sm:py-6 lg:py-10">
+			<header className="mb-6 max-w-3xl lg:mb-10">
 				<p className="font-medium text-muted-foreground text-sm">
 					Alquileres individuales
 				</p>
 				<h1 className="mt-2 font-semibold text-3xl tracking-tight">
 					Nuevo alquiler individual
 				</h1>
-				<p className="mt-3 text-muted-foreground">
+				<p className="mt-1 text-muted-foreground">
 					Crea una nueva presentación comercial de {equipmentType.name} y elige
 					las sucursales donde estará disponible.
 				</p>

@@ -48,7 +48,7 @@ export function SetPricePlanAction({
 	const [step, setStep] = useState<PriceAssignmentStep>("choose");
 	const attachMutation = useAttachRatePlanToRentalOffer();
 	const createPricingMutation = useCreatePricingForRentalOffer();
-	const branchLabel = offer.branchName ?? offer.branchId;
+	const branchLabel = offer.branchName?.trim() || "Sucursal no disponible";
 	const canAssign =
 		offer.setupSummary.availableActions.includes("ASSIGN_PRICE");
 	const canEdit = offer.setupSummary.availableActions.includes("EDIT_PRICING");
@@ -93,8 +93,8 @@ export function SetPricePlanAction({
 						</DialogTitle>
 						<DialogDescription>
 							{step === "choose"
-								? "Selecciona un plan existente o crea uno nuevo para esta oferta."
-								: `El plan quedará asignado a la oferta de ${branchLabel}.`}
+								? "Selecciona un plan existente o crea uno nuevo para este producto."
+								: `El plan quedará asignado al producto en ${branchLabel}.`}
 						</DialogDescription>
 					</DialogHeader>
 					{step === "choose" ? (
@@ -123,7 +123,7 @@ export function SetPricePlanAction({
 								<div className="grid gap-3 sm:grid-cols-2">
 									<PricingChoiceButton
 										title="Usar plan existente"
-										description="Asigna a esta oferta un plan de precios reutilizable."
+										description="Asigna al producto un plan de precios reutilizable en esta sucursal."
 										disabled={
 											ratePlanOptionsStatus !== "ready" ||
 											ratePlanOptions.length === 0
@@ -132,7 +132,7 @@ export function SetPricePlanAction({
 									/>
 									<PricingChoiceButton
 										title="Crear nuevo plan"
-										description="Crea un plan de precios y asígnalo a esta oferta."
+										description="Crea un plan de precios y asígnalo al producto en esta sucursal."
 										onClick={() => setStep("create")}
 									/>
 								</div>

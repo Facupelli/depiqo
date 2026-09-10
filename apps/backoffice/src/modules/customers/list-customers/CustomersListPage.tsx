@@ -244,7 +244,7 @@ export function CustomersListPage({ search }: { search: CustomersListSearch }) {
 	return (
 		<div className="space-y-4">
 			<h1 className="sr-only">Clientes</h1>
-			<div className="@container/customers-index space-y-2">
+			<div className="@container/customers-index space-y-4">
 				<CustomersToolbar
 					search={search}
 					searchInput={searchInput}
@@ -254,7 +254,7 @@ export function CustomersListPage({ search }: { search: CustomersListSearch }) {
 					resetFilters={resetFilters}
 				/>
 
-				<div className="hidden rounded-md border @2xl/customers-index:block">
+				<div className="hidden overflow-hidden rounded-lg border bg-card @2xl/customers-index:block">
 					<Table>
 						<TableHeader>
 							{table.getHeaderGroups().map((headerGroup) => (
@@ -333,12 +333,12 @@ function CustomersToolbar({
 	];
 
 	return (
-		<div className="flex flex-col items-stretch gap-2 py-4 @sm/customers-index:flex-row @sm/customers-index:flex-wrap @sm/customers-index:items-center">
+		<div className="flex flex-col items-stretch gap-2 @sm/customers-index:flex-row @sm/customers-index:flex-wrap @sm/customers-index:items-center">
 			<Input
 				placeholder="Search by name, email…"
 				value={searchInput}
 				onChange={(event) => onSearchInputChange(event.target.value)}
-				className="h-8 w-full @sm/customers-index:w-64"
+				className="h-9 w-full @sm/customers-index:w-64"
 			/>
 
 			<Select
@@ -352,7 +352,7 @@ function CustomersToolbar({
 				}
 				items={statusItems}
 			>
-				<SelectTrigger className="h-8 w-full @sm/customers-index:w-44">
+				<SelectTrigger className="h-9 w-full @sm/customers-index:w-44">
 					<SelectValue placeholder="Onboarding status" />
 				</SelectTrigger>
 				<SelectContent>
@@ -370,7 +370,7 @@ function CustomersToolbar({
 					variant="ghost"
 					size="sm"
 					onClick={resetFilters}
-					className="h-8 px-2 text-muted-foreground"
+					className="h-9 px-2 text-muted-foreground"
 				>
 					<X className="mr-1 h-3.5 w-3.5" />
 					Reset
@@ -464,7 +464,7 @@ function CompactCustomersList({
 		);
 
 		return (
-			<ul className="divide-y rounded-md border @2xl/customers-index:hidden">
+			<ul className="divide-y rounded-lg border bg-card @2xl/customers-index:hidden">
 				{skeletonKeys.map((key) => (
 					<li key={key} className="space-y-2 p-4">
 						<div className="flex items-center justify-between gap-3">
@@ -481,7 +481,7 @@ function CompactCustomersList({
 
 	if (isError) {
 		return (
-			<ul className="rounded-md border @2xl/customers-index:hidden">
+			<ul className="rounded-lg border bg-card @2xl/customers-index:hidden">
 				<li className="px-4 py-12 text-center text-muted-foreground">
 					Something went wrong loading customers.
 				</li>
@@ -491,7 +491,7 @@ function CompactCustomersList({
 
 	if (customers.length === 0) {
 		return (
-			<ul className="rounded-md border @2xl/customers-index:hidden">
+			<ul className="rounded-lg border bg-card @2xl/customers-index:hidden">
 				<li className="px-4 py-12 text-center text-muted-foreground">
 					No customers found.
 				</li>
@@ -500,7 +500,7 @@ function CompactCustomersList({
 	}
 
 	return (
-		<ul className="divide-y rounded-md border @2xl/customers-index:hidden">
+		<ul className="divide-y rounded-lg border bg-card @2xl/customers-index:hidden">
 			{customers.map((customer) => (
 				<li key={customer.id} className="space-y-2 p-4">
 					<div className="flex items-start justify-between gap-3">

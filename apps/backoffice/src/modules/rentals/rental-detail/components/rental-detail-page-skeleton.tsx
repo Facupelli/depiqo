@@ -3,10 +3,7 @@ import { PageBreadcrumb } from "@/components/detail-id-breadcrumb";
 
 export function RentalDetailPageSkeleton() {
 	return (
-		<div
-			aria-busy="true"
-			className="min-h-screen bg-neutral-50 px-8 text-neutral-950"
-		>
+		<div aria-busy="true" className="text-neutral-950">
 			<span aria-live="polite" className="sr-only">
 				Cargando detalle del alquiler
 			</span>

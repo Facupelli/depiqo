@@ -54,7 +54,7 @@ export function RentalOfferCard({
 				</div>
 				<div className="min-w-0">
 					<h3 className="truncate font-semibold">
-						{offer.branchName ?? offer.branchId}
+						{offer.branchName?.trim() || "Sucursal no disponible"}
 					</h3>
 					<div className="mt-2 flex flex-wrap gap-2">
 						<Badge variant="outline" className={presentation.badgeClassName}>
@@ -140,7 +140,7 @@ function getOfferPresentation(offer: RentalOffer): Presentation {
 			badgeClassName: "border-muted bg-muted text-muted-foreground",
 			icon: EyeOff,
 			description:
-				"La oferta está configurada, pero no se muestra en el catálogo.",
+				"El producto está configurado, pero no se muestra en el catálogo.",
 		},
 		READY: {
 			label: "Lista para alquilar",

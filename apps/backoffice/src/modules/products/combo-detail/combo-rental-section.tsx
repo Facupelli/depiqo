@@ -23,8 +23,8 @@ export function ComboRentalSection({
 				.map((plan) => ({ id: plan.id, name: plan.name }))
 		: [];
 	return (
-		<section className="rounded-xl border bg-card">
-			<div className="flex flex-col gap-3 border-b px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+		<section className="space-y-4">
+			<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 				<div>
 					<h2 className="font-semibold">Sucursales</h2>
 					<p className="mt-1 text-sm text-muted-foreground">
@@ -40,7 +40,7 @@ export function ComboRentalSection({
 					Añadir sucursal
 				</Button>
 			</div>
-			<div className="p-5 sm:p-6">
+			<div className="overflow-hidden rounded-lg border bg-card p-5 sm:p-6">
 				{plansQuery.isError ? (
 					<div className="mb-4 flex flex-wrap items-center gap-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
 						<p className="mr-auto">
@@ -59,7 +59,7 @@ export function ComboRentalSection({
 					</div>
 				) : null}
 				{combo.offers.length === 0 ? (
-					<div className="flex min-h-36 flex-col items-center justify-center rounded-xl border border-dashed p-6 text-center">
+					<div className="flex min-h-36 flex-col items-center justify-center p-6 text-center">
 						<p className="font-medium">
 							Este combo todavía no se ofrece en ninguna sucursal.
 						</p>

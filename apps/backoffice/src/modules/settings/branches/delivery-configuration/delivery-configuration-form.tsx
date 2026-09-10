@@ -184,7 +184,7 @@ export function DeliveryConfigurationForm({
 									}
 								>
 									<Plus className="mr-2 size-4" />
-									Agregar tramo
+									Añadir tramo
 								</Button>
 							</div>
 						)}

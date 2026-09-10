@@ -73,23 +73,12 @@ export function PromotionsTab() {
 				</Select>
 			</div>
 
-			<div>
-				{query.isError ? (
-					<p className="py-10 text-center text-sm text-destructive">
-						No se pudieron cargar las promociones.
-					</p>
-				) : !query.isLoading && query.data?.length === 0 ? (
-					<p className="py-10 text-center text-sm text-muted-foreground">
-						No se encontraron promociones.
-					</p>
-				) : (
-					<PromotionsList
-						promotions={query.data ?? []}
-						onEdit={handleEdit}
-						isLoading={query.isLoading}
-					/>
-				)}
-			</div>
+			<PromotionsList
+				promotions={query.data ?? []}
+				onEdit={handleEdit}
+				isLoading={query.isLoading}
+				isError={query.isError}
+			/>
 		</div>
 	);
 }

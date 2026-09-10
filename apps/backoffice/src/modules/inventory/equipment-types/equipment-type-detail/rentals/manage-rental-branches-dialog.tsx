@@ -50,7 +50,7 @@ export function ManageRentalBranchesDialog({
 								>
 									<div className="min-w-0">
 										<p className="truncate font-medium text-sm">
-											{offer.branchName ?? offer.branchId}
+											{offer.branchName?.trim() || "Sucursal no disponible"}
 										</p>
 										<p className="text-muted-foreground text-xs">
 											{offer.isVisible ? "Visible en el catálogo" : "Oculta"} ·{" "}
@@ -69,7 +69,7 @@ export function ManageRentalBranchesDialog({
 							))
 						) : (
 							<p className="rounded-lg border border-dashed p-6 text-center text-muted-foreground text-sm">
-								Este alquiler todavía no tiene ofertas por sucursal.
+								Este alquiler todavía no está configurado en ninguna sucursal.
 							</p>
 						)}
 						<Button

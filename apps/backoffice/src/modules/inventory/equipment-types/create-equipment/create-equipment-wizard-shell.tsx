@@ -30,7 +30,7 @@ export function CreateEquipmentWizardShell({
 	isSubmitting,
 }: CreateEquipmentWizardShellProps) {
 	return (
-		<div className="mx-auto w-full max-w-5xl p-4 lg:p-6">
+		<div className="mx-auto w-full max-w-5xl py-4 lg:py-6">
 			<header className="mb-6 space-y-2 lg:mb-8">
 				<h1 className="font-semibold text-2xl tracking-tight sm:text-3xl">
 					Nuevo equipo

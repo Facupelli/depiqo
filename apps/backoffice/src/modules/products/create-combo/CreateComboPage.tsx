@@ -35,7 +35,7 @@ export function CreateComboPage({
 
 	if (equipmentTypeId && preselectedEquipmentQuery.isPending) {
 		return (
-			<div className="px-6 py-12 text-muted-foreground">Cargando equipo...</div>
+			<div className="py-12 text-muted-foreground">Cargando equipo...</div>
 		);
 	}
 	if (
@@ -43,7 +43,7 @@ export function CreateComboPage({
 		(!preselectedEquipment || preselectedEquipmentQuery.isError)
 	) {
 		return (
-			<div className="px-6 py-12 text-destructive">
+			<div className="py-12 text-destructive">
 				No pudimos resolver el equipo seleccionado.
 			</div>
 		);
@@ -60,13 +60,13 @@ export function CreateComboPage({
 	}
 
 	return (
-		<div className="mx-auto w-full max-w-6xl px-6 py-10">
-			<header className="mb-10 max-w-3xl">
+		<div className="mx-auto w-full max-w-6xl py-4 sm:py-6 lg:py-10">
+			<header className="mb-6 max-w-3xl lg:mb-10">
 				<p className="font-medium text-muted-foreground text-sm">Combos</p>
 				<h1 className="mt-2 font-semibold text-3xl tracking-tight">
 					Nuevo combo
 				</h1>
-				<p className="mt-3 text-muted-foreground">
+				<p className="mt-1 text-muted-foreground">
 					Define la presentación, los equipos incluidos y las sucursales donde
 					estará disponible.
 				</p>

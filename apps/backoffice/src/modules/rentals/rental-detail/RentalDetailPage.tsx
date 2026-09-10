@@ -23,7 +23,7 @@ export function RentalDetailPage({ orderId }: RentalDetailPageProps) {
 	} = useQuery(rentalCustomerQueries.summary(rental.customerId ?? undefined));
 
 	return (
-		<div className="min-h-screen bg-neutral-50 text-neutral-950 px-8">
+		<div className="text-neutral-950">
 			<PageBreadcrumb
 				parent={{
 					label: "Alquileres",

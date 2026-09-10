@@ -44,8 +44,8 @@ function OwnerDetailContent({ ownerId }: OwnerDetailPageProps) {
 	const activeContract = owner.contracts.find(isActiveContract) ?? null;
 
 	return (
-		<div className="min-h-screen bg-neutral-50">
-			<div className="mx-auto max-w-6xl px-8">
+		<div>
+			<div className="w-full">
 				<PageBreadcrumb
 					parent={{ label: "Propietarios", to: "/dashboard/owners" }}
 					current={owner.name}
@@ -55,7 +55,7 @@ function OwnerDetailContent({ ownerId }: OwnerDetailPageProps) {
 				<div className="mb-8 flex items-start justify-between gap-4">
 					<div>
 						<h1 className="text-3xl font-bold tracking-tight text-neutral-900">
-							Detalle del Propietario
+							Propietario
 						</h1>
 						<p className="mt-1 text-sm text-neutral-500">
 							Información contractual y datos de contacto
@@ -337,8 +337,8 @@ function AssetStatusBadge({
 
 function OwnerDetailSkeleton() {
 	return (
-		<div className="min-h-screen bg-neutral-50">
-			<div className="mx-auto max-w-6xl px-6 py-10">
+		<div>
+			<div className="w-full py-10">
 				{/* Breadcrumb */}
 				<Skeleton className="mb-6 h-3 w-40" />
 
@@ -367,8 +367,8 @@ function OwnerDetailError({ error, resetErrorBoundary }: FallbackProps) {
 	const message = error instanceof Error ? error.message : "Error desconocido.";
 
 	return (
-		<div className="min-h-screen bg-neutral-50">
-			<div className="mx-auto max-w-6xl px-6 py-10">
+		<div>
+			<div className="w-full py-10">
 				<div className="flex flex-col items-center justify-center rounded-lg border border-rose-100 bg-white py-20 text-center">
 					<AlertTriangle className="mb-4 h-8 w-8 text-rose-400" />
 					<h2 className="text-base font-semibold text-neutral-800">

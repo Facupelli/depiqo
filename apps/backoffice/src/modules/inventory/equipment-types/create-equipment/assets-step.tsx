@@ -45,7 +45,7 @@ export const AssetsStep = withForm({
 								onClick={() => field.pushValue(createEmptyAsset())}
 							>
 								<Plus className="mr-2 size-4" />
-								Agregar unidad
+								Añadir unidad
 							</Button>
 						)}
 					</form.Field>

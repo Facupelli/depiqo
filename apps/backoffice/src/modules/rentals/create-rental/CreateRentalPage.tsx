@@ -78,7 +78,7 @@ export function CreateRentalPage() {
 	};
 
 	return (
-		<div className="min-h-screen bg-neutral-50 px-8 pb-10 text-neutral-950">
+		<div className="pb-10 text-neutral-950">
 			<PageBreadcrumb
 				parent={{ label: "Alquileres", to: "/dashboard/orders" }}
 				current="Nuevo borrador"

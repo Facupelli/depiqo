@@ -44,7 +44,7 @@ export const StandaloneRentalStep = withForm({
 		onEnabledChange,
 	}) {
 		return (
-			<section className="space-y-8">
+			<section className="space-y-6 lg:space-y-8">
 				<WizardStepHeading
 					title="Alquiler individual"
 					description="Define si este equipo también se alquilará de forma individual."
@@ -78,8 +78,8 @@ export const StandaloneRentalStep = withForm({
 				>
 					{(enabled) =>
 						enabled ? (
-							<div className="space-y-8 border-t pt-8">
-								<div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_20rem]">
+							<div className="space-y-6 border-t pt-6 lg:space-y-8 lg:pt-8">
+								<div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-8">
 									<FieldGroup className="grid gap-5">
 										<form.Field name="standaloneRental.name">
 											{(field) => {

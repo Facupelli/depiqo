@@ -25,7 +25,7 @@ export const Route = createFileRoute("/_admin/dashboard/promotions/")({
 
 function RouteComponent() {
 	return (
-		<div className="mx-auto max-w-6xl space-y-4">
+		<div className="w-full space-y-4">
 			<div className="flex items-start justify-between gap-4">
 				<h1 className="sr-only">Promociones</h1>
 				<Link

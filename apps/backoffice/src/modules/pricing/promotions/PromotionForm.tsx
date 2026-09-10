@@ -78,9 +78,9 @@ export function PromotionForm({
 				event.stopPropagation();
 				form.handleSubmit();
 			}}
-			className="space-y-8"
+			className="space-y-6 lg:space-y-8"
 		>
-			<div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_22rem] xl:items-start">
+			<div className="grid gap-6 lg:gap-8 xl:grid-cols-[minmax(0,1fr)_22rem] xl:items-start">
 				<FieldGroup className="space-y-6">
 					<Section
 						title="Nombre"
@@ -254,7 +254,7 @@ function ScopeEditor({ form }: { form: PromotionFormApi }) {
 									onClick={() => field.pushValue(createEmptyScope(scopeType))}
 								>
 									<Plus className="size-4" />
-									Agregar {scopeLabel(scopeType).toLowerCase()}
+									Añadir {scopeLabel(scopeType).toLowerCase()}
 								</Button>
 							</>
 						)}
@@ -338,7 +338,7 @@ function ExclusionEditor({ form }: { form: PromotionFormApi }) {
 							}
 						>
 							<Plus className="size-4" />
-							Agregar exclusión
+							Añadir exclusión
 						</Button>
 					) : (
 						<Button
@@ -350,7 +350,7 @@ function ExclusionEditor({ form }: { form: PromotionFormApi }) {
 							}
 						>
 							<Plus className="size-4" />
-							Agregar otra exclusión
+							Añadir otra exclusión
 						</Button>
 					)}
 				</div>
@@ -442,7 +442,7 @@ function ConditionsSection({
 	return (
 		<Section
 			title="Condiciones"
-			description="Agregá solo los requisitos que deba cumplir la reserva."
+			description="Añadí solo los requisitos que deba cumplir la reserva."
 		>
 			<div className="space-y-4">
 				{conditions.map((name) => (
@@ -467,7 +467,7 @@ function ConditionsSection({
 							setConditions((current) => [...current, value as ConditionName]);
 					}}
 					items={[
-						{ value: "", label: "Agregar condición" },
+						{ value: "", label: "Añadir condición" },
 						...addable.map((name) => ({
 							value: name,
 							label: conditionLabel(name),
@@ -615,7 +615,7 @@ function Section({
 		<section className="space-y-4 border-t pt-6 first:border-t-0 first:pt-0">
 			<div>
 				<h2 className="font-semibold text-base">{title}</h2>
-				<p className="text-muted-foreground text-sm">{description}</p>
+				<p className="mt-1 text-muted-foreground text-sm">{description}</p>
 			</div>
 			{children}
 		</section>

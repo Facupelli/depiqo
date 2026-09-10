@@ -540,7 +540,7 @@ function CustomerProfileReviewActionsPanel({
 						/>
 						<ReviewField
 							label="Revisado por"
-							value={getSafeValue(profile.reviewedById)}
+							value={profile.reviewedById ? "Usuario no disponible" : "-"}
 						/>
 						<ReviewField
 							label="Motivo de rechazo"

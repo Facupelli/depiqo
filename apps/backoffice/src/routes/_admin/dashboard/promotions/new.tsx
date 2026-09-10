@@ -19,12 +19,12 @@ function CreatePromotionPage() {
 	}
 
 	return (
-		<div className="mx-auto max-w-7xl space-y-8 px-6 py-8">
-			<header className="max-w-3xl space-y-2">
+		<div className="mx-auto w-full max-w-6xl space-y-6 py-4 sm:py-6 lg:space-y-8 lg:py-8">
+			<header className="max-w-3xl">
 				<h1 className="font-semibold text-3xl tracking-tight">
 					Nueva promoción
 				</h1>
-				<p className="text-muted-foreground">
+				<p className="mt-1 text-muted-foreground">
 					Configurá un descuento automático o con cupón. Podés definir cuándo se
 					aplica, qué ítems alcanza y si puede combinarse con otras promociones.
 				</p>

@@ -24,13 +24,15 @@ export function ComboEquipmentSection({
 					combo.
 				</p>
 			</div>
-			{combo.requiredEquipment.length === 0 ? (
-				<div className="flex min-h-32 flex-col items-center justify-center rounded-xl border border-dashed bg-card p-6 text-center">
-					<PackageOpen className="mb-3 size-7 text-muted-foreground" />
-					<p className="font-medium">Este combo no tiene equipos definidos.</p>
-				</div>
-			) : (
-				<div className="overflow-hidden rounded-lg border bg-card">
+			<div className="overflow-hidden rounded-lg border bg-card">
+				{combo.requiredEquipment.length === 0 ? (
+					<div className="flex min-h-32 flex-col items-center justify-center p-6 text-center">
+						<PackageOpen className="mb-3 size-7 text-muted-foreground" />
+						<p className="font-medium">
+							Este combo no tiene equipos definidos.
+						</p>
+					</div>
+				) : (
 					<Table>
 						<TableHeader>
 							<TableRow className="bg-muted/40 hover:bg-muted/40">
@@ -49,9 +51,7 @@ export function ComboEquipmentSection({
 									<TableCell className="px-5 py-3 sm:px-6">
 										<Link
 											to="/dashboard/inventory/equipment-types/$equipmentTypeId"
-											params={{
-												equipmentTypeId: requirement.equipmentTypeId,
-											}}
+											params={{ equipmentTypeId: requirement.equipmentTypeId }}
 											className="font-medium text-primary hover:underline"
 										>
 											{requirement.equipmentTypeName ??
@@ -66,8 +66,8 @@ export function ComboEquipmentSection({
 							))}
 						</TableBody>
 					</Table>
-				</div>
-			)}
+				)}
+			</div>
 		</section>
 	);
 }

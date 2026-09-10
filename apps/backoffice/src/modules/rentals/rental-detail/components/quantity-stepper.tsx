@@ -43,7 +43,7 @@ export function QuantityStepper({
 				onClick={() =>
 					onChange(max === null ? value + 1 : Math.min(value + 1, max))
 				}
-				aria-label="Agregar una unidad"
+				aria-label="Añadir una unidad"
 			>
 				<Plus className="size-3.5" />
 			</Button>

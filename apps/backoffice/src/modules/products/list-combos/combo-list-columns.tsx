@@ -41,7 +41,11 @@ export function getComboCategoryLabel(
 
 export function getComboBranchLabel(item: GetRentableItemsItemDto): string {
 	const names = Array.from(
-		new Set(item.offers.map((offer) => offer.branchName ?? offer.branchId)),
+		new Set(
+			item.offers.map(
+				(offer) => offer.branchName?.trim() || "Sucursal no disponible",
+			),
+		),
 	);
 	return names.length > 0 ? names.join(", ") : "Sin sucursales";
 }

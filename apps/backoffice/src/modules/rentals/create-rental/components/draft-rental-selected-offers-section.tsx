@@ -59,7 +59,7 @@ export const DraftRentalSelectedOffersSection = withForm({
 					{selectedOffers.length === 0 ? (
 						<div className="flex flex-col items-center gap-2 rounded-lg border border-dashed py-8 text-center text-muted-foreground text-sm">
 							<Package className="size-5" />
-							Agregá al menos un producto para crear el borrador.
+							Añadí al menos un producto para crear el borrador.
 						</div>
 					) : (
 						<div className="divide-y rounded-lg border">

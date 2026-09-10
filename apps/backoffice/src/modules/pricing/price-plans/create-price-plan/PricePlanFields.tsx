@@ -283,7 +283,7 @@ export const PricePlanFields = withForm({
 										onClick={() => field.pushValue(createEmptyPricePlanTier())}
 									>
 										<Plus className="mr-2 h-4 w-4" />
-										Agregar tramo
+										Añadir tramo
 									</Button>
 
 									{isInvalid && <FieldError errors={field.state.meta.errors} />}

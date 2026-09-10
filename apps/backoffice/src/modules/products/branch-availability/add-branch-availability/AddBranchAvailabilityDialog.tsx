@@ -132,8 +132,8 @@ export function AddBranchAvailabilityDialog({
 								formId={attachFormId}
 								ratePlanOptions={ratePlanOptions}
 								isPending={mutation.isPending}
-								submitLabel="Crear oferta y vincular plan"
-								pendingLabel="Creando oferta..."
+								submitLabel="Configurar sucursal y vincular plan"
+								pendingLabel="Configurando sucursal..."
 								secondaryAction={renderBackButton()}
 								onSubmit={async (values) => {
 									const body = toCreateRentalOfferWithAttachedRatePlanDto(
@@ -155,8 +155,8 @@ export function AddBranchAvailabilityDialog({
 							<CreateBranchAvailabilityWithNewPricePlanForm
 								formId={createFormId}
 								isPending={mutation.isPending}
-								submitLabel="Crear oferta y plan"
-								pendingLabel="Creando oferta..."
+								submitLabel="Configurar sucursal y plan"
+								pendingLabel="Configurando sucursal..."
 								secondaryAction={renderBackButton()}
 								onSubmit={async (values) => {
 									const body = toCreateRentalOfferWithCreatedRatePlanDto(
@@ -261,7 +261,7 @@ function ChooseBranchAndPricingActionForm({
 									</Select>
 									{!isLoadingBranches && !hasBranches ? (
 										<p className="text-muted-foreground text-sm">
-											No hay sucursales activas disponibles para agregar esta
+											No hay sucursales activas disponibles para añadir esta
 											oferta.
 										</p>
 									) : null}
@@ -284,13 +284,13 @@ function ChooseBranchAndPricingActionForm({
 			<div className="grid gap-3 sm:grid-cols-2">
 				<PricingActionCard
 					title="Usar plan existente"
-					description="Crea la oferta en esta sucursal y asígnale un plan de precios ya creado."
+					description="Configura el producto en esta sucursal y asígnale un plan de precios existente."
 					disabled={!hasSelectedBranch || ratePlanOptionsStatus !== "ready"}
 					onClick={onAttachRatePlan}
 				/>
 				<PricingActionCard
 					title="Crear nuevo plan"
-					description="Crea la oferta en esta sucursal con un nuevo plan de precios."
+					description="Configura el producto en esta sucursal con un nuevo plan de precios."
 					disabled={!hasSelectedBranch}
 					onClick={onCreateRatePlan}
 				/>

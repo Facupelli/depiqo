@@ -75,9 +75,9 @@ export function EditComboForm({
 					event.stopPropagation();
 					form.handleSubmit();
 				}}
-				className="space-y-12"
+				className="space-y-8 lg:space-y-12"
 			>
-				<section className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_22rem]">
+				<section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem] lg:gap-8">
 					<FieldGroup className="grid gap-5">
 						<form.Field name="name">
 							{(field) => {
@@ -199,7 +199,7 @@ export function EditComboForm({
 				/>
 			</form>
 
-			<div className="sticky bottom-0 mt-10 flex flex-wrap justify-end gap-4 border-t bg-background/95 py-4 backdrop-blur supports-backdrop-filter:bg-background/80">
+			<div className="sticky bottom-0 mt-8 flex flex-wrap justify-end gap-4 border-t bg-background/95 py-4 backdrop-blur supports-backdrop-filter:bg-background/80 lg:mt-10">
 				{submitError && (
 					<p
 						className="mr-auto self-center text-destructive text-sm"

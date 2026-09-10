@@ -84,7 +84,7 @@ export function ComboListTable(props: ComboListTableProps) {
 
 	return (
 		<div className="space-y-4">
-			<div className="hidden overflow-hidden rounded-lg border bg-background shadow-sm @2xl/combo-index:block">
+			<div className="hidden overflow-hidden rounded-lg border bg-card @2xl/combo-index:block">
 				<Table>
 					<TableHeader>
 						{table.getHeaderGroups().map((group) => (

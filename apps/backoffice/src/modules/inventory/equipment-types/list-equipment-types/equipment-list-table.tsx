@@ -84,7 +84,7 @@ export function EquipmentListTable({
 
 	return (
 		<div className="space-y-4">
-			<div className="hidden overflow-hidden rounded-lg border bg-background shadow-sm @2xl/equipment-index:block">
+			<div className="hidden overflow-hidden rounded-lg border bg-card @2xl/equipment-index:block">
 				<Table>
 					<TableHeader>
 						{table.getHeaderGroups().map((headerGroup) => (

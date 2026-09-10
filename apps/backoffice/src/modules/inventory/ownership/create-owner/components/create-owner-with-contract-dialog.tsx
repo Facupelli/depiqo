@@ -20,7 +20,7 @@ interface CreateOwnerWithContractDialogProps {
 }
 
 export function CreateOwnerWithContractDialog({
-	triggerLabel = "Nuevo Propietario",
+	triggerLabel = "Nuevo propietario",
 }: CreateOwnerWithContractDialogProps) {
 	const [open, setOpen] = useState(false);
 	const { mutateAsync: createOwnerWithContract, isPending } =
@@ -38,7 +38,7 @@ export function CreateOwnerWithContractDialog({
 			/>
 			<DialogContent className="sm:max-w-lg">
 				<DialogHeader>
-					<DialogTitle>Nuevo Propietario</DialogTitle>
+					<DialogTitle>Nuevo propietario</DialogTitle>
 					<DialogDescription>
 						Registra el propietario y configura su contrato inicial.
 					</DialogDescription>

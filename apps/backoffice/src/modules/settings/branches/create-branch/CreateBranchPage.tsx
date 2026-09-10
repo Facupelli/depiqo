@@ -55,7 +55,7 @@ export function CreateBranchPage({ onBack, onCreated }: CreateBranchPageProps) {
 						<h1 className="text-2xl font-semibold tracking-tight">
 							Nueva sucursal
 						</h1>
-						<p className="text-sm text-muted-foreground">
+						<p className="mt-1 text-sm text-muted-foreground">
 							Crea una sucursal y, si quieres, deja configurados sus horarios
 							semanales iniciales.
 						</p>

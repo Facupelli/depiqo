@@ -29,12 +29,12 @@ function RouteComponent() {
 	}
 
 	return (
-		<div className="mx-auto max-w-7xl space-y-8 px-6 py-8">
-			<header className="max-w-3xl space-y-2">
+		<div className="mx-auto w-full max-w-6xl space-y-6 py-4 sm:py-6 lg:space-y-8 lg:py-8">
+			<header className="max-w-3xl">
 				<h1 className="font-semibold text-3xl tracking-tight">
 					Editar promoción
 				</h1>
-				<p className="text-muted-foreground">
+				<p className="mt-1 text-muted-foreground">
 					Actualizá la configuración de la promoción sin perder el contexto de
 					tu listado.
 				</p>

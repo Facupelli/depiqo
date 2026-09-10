@@ -320,40 +320,29 @@ export function EquipmentUnitsSection({
 				</div>
 			) : null}
 
-			{unitsQuery.isError && !data ? (
-				<div className="rounded-lg border px-4 py-12 text-center">
-					<p className="mb-4 text-destructive text-sm">
-						No pudimos cargar las unidades.
-					</p>
-					<Button variant="outline" onClick={() => unitsQuery.refetch()}>
-						Intentar nuevamente
-					</Button>
-				</div>
-			) : (
-				<>
-					<UnitCollection
-						items={data?.data ?? []}
-						isLoading={unitsQuery.isPending}
-						isRefreshing={unitsQuery.isFetching && Boolean(data)}
-						hasFilters={hasFilters}
-						onAdd={openAddUnits}
-						onClear={clearFilters}
-						actions={actions}
-					/>
-					{data && data.total > 0 ? (
-						<Pagination
-							page={search.page}
-							pageSize={data.pageSize}
-							total={data.total}
-							totalPages={totalPages}
-							disabled={unitsQuery.isPending}
-							onPageChange={(page) =>
-								onSearchChange((previous) => ({ ...previous, page }))
-							}
-						/>
-					) : null}
-				</>
-			)}
+			<UnitCollection
+				items={data?.data ?? []}
+				isLoading={unitsQuery.isPending}
+				isRefreshing={unitsQuery.isFetching && Boolean(data)}
+				isError={unitsQuery.isError && !data}
+				hasFilters={hasFilters}
+				onAdd={openAddUnits}
+				onClear={clearFilters}
+				onRetry={() => unitsQuery.refetch()}
+				actions={actions}
+			/>
+			{data && data.total > 0 ? (
+				<Pagination
+					page={search.page}
+					pageSize={data.pageSize}
+					total={data.total}
+					totalPages={totalPages}
+					disabled={unitsQuery.isPending}
+					onPageChange={(page) =>
+						onSearchChange((previous) => ({ ...previous, page }))
+					}
+				/>
+			) : null}
 
 			{editUnit ? (
 				<EditAssetDialog
@@ -449,20 +438,31 @@ function UnitCollection({
 	items,
 	isLoading,
 	isRefreshing,
+	isError,
 	hasFilters,
 	onAdd,
 	onClear,
+	onRetry,
 	actions,
 }: {
 	items: GetEquipmentTypeAssetsItemDto[];
 	isLoading: boolean;
 	isRefreshing: boolean;
+	isError: boolean;
 	hasFilters: boolean;
 	onAdd: () => void;
 	onClear: () => void;
+	onRetry: () => void;
 	actions: (unit: GetEquipmentTypeAssetsItemDto) => React.ReactNode;
 }) {
-	const empty = (
+	const message = isError ? (
+		<div className="flex flex-col items-center gap-4 px-4 py-12 text-center text-destructive text-sm">
+			<p>No pudimos cargar las unidades.</p>
+			<Button variant="outline" onClick={onRetry}>
+				Intentar nuevamente
+			</Button>
+		</div>
+	) : (
 		<div className="flex flex-col items-center gap-4 px-4 py-12 text-center text-muted-foreground text-sm">
 			<p>
 				{hasFilters
@@ -498,7 +498,7 @@ function UnitCollection({
 					<TableBody>
 						{isLoading ? (
 							<DesktopSkeleton />
-						) : items.length ? (
+						) : !isError && items.length ? (
 							items.map((unit) => (
 								<TableRow key={unit.id}>
 									<TableCell>
@@ -507,18 +507,20 @@ function UnitCollection({
 									<TableCell>
 										<AssetStatusBadge status={unit.status} />
 									</TableCell>
-									<TableCell>{unit.branchName ?? unit.branchId}</TableCell>
+									<TableCell>
+										{unit.branchName?.trim() || "Sucursal no disponible"}
+									</TableCell>
 									<TableCell>
 										{unit.ownerId === null
 											? "Propio"
-											: (unit.ownerName ?? unit.ownerId)}
+											: unit.ownerName?.trim() || "Propietario no disponible"}
 									</TableCell>
 									<TableCell>{actions(unit)}</TableCell>
 								</TableRow>
 							))
 						) : (
 							<TableRow>
-								<TableCell colSpan={5}>{empty}</TableCell>
+								<TableCell colSpan={5}>{message}</TableCell>
 							</TableRow>
 						)}
 					</TableBody>
@@ -527,7 +529,7 @@ function UnitCollection({
 			<div className="@2xl/equipment-units:hidden">
 				{isLoading ? (
 					<CompactSkeleton />
-				) : items.length ? (
+				) : !isError && items.length ? (
 					<ul className="divide-y rounded-lg border bg-card">
 						{items.map((unit) => (
 							<li key={unit.id} className="relative space-y-3 px-4 py-4 pr-12">
@@ -535,21 +537,21 @@ function UnitCollection({
 								<div className="flex flex-wrap items-center gap-2">
 									<AssetStatusBadge status={unit.status} />
 									<span className="text-muted-foreground text-xs">
-										{unit.branchName ?? unit.branchId}
+										{unit.branchName?.trim() || "Sucursal no disponible"}
 									</span>
 								</div>
 								<p className="text-sm">
 									<span className="text-muted-foreground">Propietario: </span>
 									{unit.ownerId === null
 										? "Propio"
-										: (unit.ownerName ?? unit.ownerId)}
+										: unit.ownerName?.trim() || "Propietario no disponible"}
 								</p>
 								<div className="absolute top-2 right-2">{actions(unit)}</div>
 							</li>
 						))}
 					</ul>
 				) : (
-					<div className="rounded-lg border bg-card">{empty}</div>
+					<div className="rounded-lg border bg-card">{message}</div>
 				)}
 			</div>
 		</div>

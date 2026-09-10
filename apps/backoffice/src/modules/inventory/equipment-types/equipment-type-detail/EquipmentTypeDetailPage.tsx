@@ -2,6 +2,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { Outlet } from "@tanstack/react-router";
 import { useState } from "react";
 import { PageBreadcrumb } from "@/components/detail-id-breadcrumb";
+import { DetailPageShell } from "@/components/detail-page-shell";
 import { buildR2PublicUrl } from "@/lib/r2-public-url";
 import { AddUnitsDialog } from "../add-units/add-units-dialog";
 import { EditEquipmentTypeDialog } from "../edit-equipment-type/edit-equipment-type-dialog";
@@ -23,33 +24,37 @@ export function EquipmentTypeDetailPage({
 	const imageUrl = buildR2PublicUrl(summary.imageUrl, "catalog");
 
 	return (
-		<div className="px-4 pb-8 sm:px-6">
-			<PageBreadcrumb
-				parent={{
-					label: "Equipos",
-					to: "/dashboard/inventory/equipment-types",
-				}}
-				current={summary.name}
-			/>
-
+		<div className="pb-8">
 			<EquipmentTypeDetailActionsProvider
 				value={{ openAddUnits: () => setAddUnitsOpen(true) }}
 			>
-				<div className="flex flex-col">
-					<EquipmentTypeHeader
-						name={summary.name}
-						imageUrl={imageUrl}
-						categoryName={summary.categoryName}
-						description={summary.description}
-						activeAssetCount={summary.activeAssetCount}
-						onEdit={() => setEditOpen(true)}
-						onAddUnit={() => setAddUnitsOpen(true)}
-					/>
-					<EquipmentDetailNavigation equipmentTypeId={equipmentTypeId} />
-					<div className="mt-5">
-						<Outlet />
-					</div>
-				</div>
+				<DetailPageShell
+					breadcrumb={
+						<PageBreadcrumb
+							parent={{
+								label: "Equipos",
+								to: "/dashboard/inventory/equipment-types",
+							}}
+							current={summary.name}
+						/>
+					}
+					header={
+						<EquipmentTypeHeader
+							name={summary.name}
+							imageUrl={imageUrl}
+							categoryName={summary.categoryName}
+							description={summary.description}
+							activeAssetCount={summary.activeAssetCount}
+							onEdit={() => setEditOpen(true)}
+							onAddUnit={() => setAddUnitsOpen(true)}
+						/>
+					}
+					navigation={
+						<EquipmentDetailNavigation equipmentTypeId={equipmentTypeId} />
+					}
+				>
+					<Outlet />
+				</DetailPageShell>
 			</EquipmentTypeDetailActionsProvider>
 
 			<EditEquipmentTypeDialog
