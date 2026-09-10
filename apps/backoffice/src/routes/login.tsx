@@ -83,13 +83,13 @@ function LoginPage() {
 	const [serverError, setServerError] = useState<string | null>(null);
 
 	return (
-		<div className="grid place-content-center bg-neutral-100 min-h-svh">
-			<div className="grid gap-y-10">
+		<main className="grid min-h-svh place-items-center bg-neutral-100 px-4 py-10 sm:py-12">
+			<div className="grid w-full max-w-md gap-y-6 sm:gap-y-10">
 				<h1 className="text-center text-3xl font-bold text-depiqo-blue-700">
 					DEPIQO
 				</h1>
 
-				<Card className="w-md">
+				<Card className="w-full">
 					<CardHeader>
 						<CardTitle>Ingreso al panel de administración</CardTitle>
 						<CardDescription>
@@ -194,6 +194,6 @@ function LoginPage() {
 					</CardFooter>
 				</Card>
 			</div>
-		</div>
+		</main>
 	);
 }
