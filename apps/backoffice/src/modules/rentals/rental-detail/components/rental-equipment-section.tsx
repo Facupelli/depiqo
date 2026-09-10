@@ -77,11 +77,11 @@ export function RentalEquipmentSection() {
 				onClose={() => setReplaceAssignedAssetId(null)}
 			/>
 			<div>
-				<div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+				<div className="mb-5 flex min-w-0 flex-col gap-3 @3xl/rental-detail:flex-row @3xl/rental-detail:items-center @3xl/rental-detail:justify-between">
 					<h2 className="text-sm font-semibold text-neutral-950">
 						Equipos y accesorios
 					</h2>
-					<div className="flex items-center gap-2">
+					<div className="flex min-w-0 flex-col items-start gap-2 @sm/rental-detail:flex-row @sm/rental-detail:flex-wrap @sm/rental-detail:items-center @3xl/rental-detail:justify-end">
 						{rental.status === "CONFIRMED" ? (
 							<Button
 								type="button"

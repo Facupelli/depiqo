@@ -1,5 +1,13 @@
+import {
+	Breadcrumb,
+	BreadcrumbItem,
+	BreadcrumbLink,
+	BreadcrumbList,
+	BreadcrumbPage,
+	BreadcrumbSeparator,
+} from "@repo/ui/components/breadcrumb";
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
-import { PageBreadcrumb } from "@/components/detail-id-breadcrumb";
+import { Link } from "@tanstack/react-router";
 import { formatOrderNumber } from "@/shared/utils/formatters";
 import { RentalActivityLog } from "./components/rental-activity-log";
 import { RentalDetailHeader } from "./components/rental-detail-header";
@@ -32,13 +40,21 @@ export function RentalDetailPage({ orderId }: RentalDetailPageProps) {
 
 	return (
 		<div className="@container/rental-detail text-neutral-950">
-			<PageBreadcrumb
-				parent={{
-					label: "Alquileres",
-					to: "/dashboard/orders",
-				}}
-				current={formatOrderNumber(rental.rentalNumber)}
-			/>
+			<Breadcrumb className="pt-6 pb-4">
+				<BreadcrumbList>
+					<BreadcrumbItem>
+						<BreadcrumbLink
+							render={<Link to="/dashboard/orders">Alquileres</Link>}
+						/>
+					</BreadcrumbItem>
+					<BreadcrumbSeparator className="hidden @5xl/rental-detail:block" />
+					<BreadcrumbItem className="hidden min-w-0 @5xl/rental-detail:block">
+						<BreadcrumbPage className="break-all">
+							{formatOrderNumber(rental.rentalNumber)}
+						</BreadcrumbPage>
+					</BreadcrumbItem>
+				</BreadcrumbList>
+			</Breadcrumb>
 
 			<RentalDetailProvider
 				rental={rental}

@@ -10,21 +10,21 @@ export function RentalDetailHeader() {
 	const timezone = useTenantTimezone();
 
 	return (
-		<header className="border-b border-neutral-200 pb-8">
-			<div className="flex flex-col gap-6">
-				<div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
-					<div>
-						<div className="flex flex-wrap items-center gap-3 mb-1.5">
-							<h1 className="text-3xl font-bold tracking-tight leading-none">
+		<header className="border-b border-neutral-200 pb-5 @5xl/rental-detail:pb-8">
+			<div className="flex flex-col gap-4 @5xl/rental-detail:gap-6">
+				<div className="flex min-w-0 flex-col gap-4 @sm/rental-detail:flex-row @sm/rental-detail:items-start @sm/rental-detail:justify-between">
+					<div className="min-w-0">
+						<div className="mb-1.5 flex min-w-0 flex-wrap items-center gap-3">
+							<h1 className="min-w-0 break-all text-3xl font-bold leading-none tracking-tight">
 								#{formatOrderNumber(rental.rentalNumber)}
 							</h1>
 							<RentalStatusBadge />
 						</div>
-						<p className="text-sm text-neutral-400 mt-2">
+						<p className="mt-2 text-sm text-neutral-400">
 							Creado el {formatRentalDetailDateTime(rental.createdAt, timezone)}
 						</p>
 					</div>
-					<div className="flex justify-start xl:justify-end">
+					<div className="flex shrink-0 justify-start @sm/rental-detail:justify-end">
 						<RentalDetailActionsMenu />
 					</div>
 				</div>
