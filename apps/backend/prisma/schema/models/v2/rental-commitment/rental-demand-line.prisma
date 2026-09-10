@@ -16,7 +16,7 @@ model V2RentalDemandLine {
   rental              V2Rental                     @relation(fields: [rentalId], references: [id])
   rentalSelection     V2RentalSelection            @relation(fields: [rentalSelectionId], references: [id])
   assignedAssets      V2AssignedAsset[]
-  accessorySelections V2RentalAccessorySelection[]
+  accessorySelections V2RentalAccessorySelection[] @relation("RentalAccessorySelectionSourceDemandLine")
 
   @@index([tenantId, rentalId])
   @@index([tenantId, equipmentTypeId])

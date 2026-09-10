@@ -37,10 +37,10 @@ model V2RentalAccessorySelection {
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  rental V2Rental @relation(fields: [rentalOrderId], references: [id])
+  rental                 V2Rental            @relation(fields: [rentalOrderId], references: [id])
+  sourceRentalDemandLine V2RentalDemandLine? @relation("RentalAccessorySelectionSourceDemandLine", fields: [sourceRentalDemandLineId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 
   assignments V2RentalAccessoryAssetAssignment[]
-  demandLines V2RentalDemandLine[]
 
   @@index([tenantId, rentalOrderId])
   @@index([sourceRentalDemandLineId])

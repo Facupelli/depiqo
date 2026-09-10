@@ -295,6 +295,16 @@ export class RentalMapper {
     };
   }
 
+  static toSelectionUpdateData(
+    selection: RentalSelection,
+  ): Pick<Prisma.V2RentalSelectionUpdateManyMutationInput, 'quantity' | 'priceSnapshot' | 'removedAt'> {
+    return {
+      quantity: selection.quantity,
+      priceSnapshot: toPrismaJsonInput(selection.priceSnapshot?.toJSON()) ?? Prisma.DbNull,
+      removedAt: selection.removedAt ?? null,
+    };
+  }
+
   static toDemandLineCreateData(line: RentalDemandLine): Prisma.V2RentalDemandLineCreateManyInput {
     return {
       id: line.id,
@@ -306,6 +316,15 @@ export class RentalMapper {
       quantity: line.quantity,
       createdAt: line.createdAt,
       removedAt: line.removedAt,
+    };
+  }
+
+  static toDemandLineUpdateData(
+    line: RentalDemandLine,
+  ): Pick<Prisma.V2RentalDemandLineUpdateManyMutationInput, 'quantity' | 'removedAt'> {
+    return {
+      quantity: line.quantity,
+      removedAt: line.removedAt ?? null,
     };
   }
 
