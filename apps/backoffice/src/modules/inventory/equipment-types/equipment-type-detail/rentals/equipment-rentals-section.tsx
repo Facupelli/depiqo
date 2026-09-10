@@ -122,7 +122,7 @@ function IndividualRentalsSection({
 	return (
 		<section className="space-y-4">
 			<SectionHeader
-				title="Alquileres individuales"
+				title="Productos individuales"
 				description="Presentaciones, precios y disponibilidad comercial por sucursal."
 				action={
 					<Button
@@ -284,7 +284,7 @@ function RentalActions({
 					}
 				>
 					<Pencil className="size-4" />
-					Editar alquiler
+					Editar producto
 				</DropdownMenuItem>
 				<DropdownMenuItem onClick={onManage}>
 					Gestionar sucursales
@@ -311,7 +311,7 @@ function ComboUsagesSection({
 	items: ComboRentalUsageDto[];
 }) {
 	return (
-		<section className="space-y-4 border-t pt-8">
+		<section className="space-y-4 pt-8">
 			<SectionHeader
 				title="Combos"
 				description="Combos que requieren este equipo."

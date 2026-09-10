@@ -29,9 +29,8 @@ export function EditComboPage({
 	};
 
 	return (
-		<div className="mx-auto w-full max-w-6xl py-4 sm:py-6 lg:py-10">
+		<div className="mx-auto w-full max-w-6xl pb-4 sm:pb-6 lg:pb-10">
 			<header className="mb-6 max-w-3xl lg:mb-10">
-				<p className="font-medium text-sm text-muted-foreground">Combos</p>
 				<h1 className="mt-2 text-3xl font-semibold tracking-tight">
 					Editar combo
 				</h1>

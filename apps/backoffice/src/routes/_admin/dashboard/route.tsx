@@ -24,16 +24,14 @@ import {
 import type { LucideIcon } from "lucide-react";
 import {
 	BadgePercent,
-	BookOpen,
 	CalendarDays,
+	Camera,
 	ChevronsUpDown,
-	LayoutGrid,
 	LogOut,
 	Settings,
 	ShoppingBag,
 	User,
 	Users,
-	Warehouse,
 } from "lucide-react";
 import { currentBusinessQueries } from "@/application/current-business/current-business.queries";
 import { currentAuthQueries } from "@/auth/auth.queries";
@@ -116,20 +114,14 @@ const sidebarItems: SidebarItem[] = [
 	},
 	{
 		name: "Equipos",
-		icon: Warehouse,
+		icon: Camera,
 		href: "/dashboard/inventory/equipment-types",
 		matchDescendants: true,
-		children: [{ name: "Dueños de Equipo", href: "/dashboard/owners" }],
-	},
-	{
-		name: "Combos",
-		icon: BookOpen,
-		href: "/dashboard/catalog/packages",
-	},
-	{
-		name: "Categorías",
-		icon: LayoutGrid,
-		href: "/dashboard/catalog/categories",
+		children: [
+			{ name: "Combos", href: "/dashboard/catalog/packages" },
+			{ name: "Categorías", href: "/dashboard/catalog/categories" },
+			{ name: "Dueños de Equipo", href: "/dashboard/owners" },
+		],
 	},
 	{
 		name: "Clientes",

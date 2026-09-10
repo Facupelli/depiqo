@@ -1,4 +1,5 @@
 import { useUploadFile } from "@better-upload/client";
+import { cn } from "@repo/ui/lib/utils";
 import { buildR2PublicUrl } from "@/lib/r2-public-url";
 
 type Props = {
@@ -6,6 +7,7 @@ type Props = {
 	inputName: string;
 	onUploadComplete: (path: string) => void;
 	currentPath?: string | null;
+	previewClassName?: string;
 };
 
 export function CatalogImageUploader({
@@ -13,6 +15,7 @@ export function CatalogImageUploader({
 	inputName,
 	onUploadComplete,
 	currentPath,
+	previewClassName,
 }: Props) {
 	const { upload, isPending, isSuccess, isError } = useUploadFile({
 		route: "catalogImages",
@@ -45,7 +48,7 @@ export function CatalogImageUploader({
 				<img
 					src={previewUrl}
 					alt="Current upload"
-					className="h-40 w-40 rounded-md object-cover"
+					className={cn("h-40 w-40 rounded-md object-cover", previewClassName)}
 				/>
 			)}
 

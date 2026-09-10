@@ -48,11 +48,10 @@ export function EditProductPage({
 		});
 
 	return (
-		<div className="mx-auto w-full max-w-6xl py-4 sm:py-6 lg:py-10">
+		<div className="mx-auto w-full max-w-6xl pb-4 sm:pb-6 lg:pb-10">
 			<header className="mb-6 max-w-3xl lg:mb-10">
-				<p className="font-medium text-muted-foreground text-sm">Equipo</p>
-				<h1 className="mt-2 font-semibold text-3xl tracking-tight">
-					Editar alquiler
+				<h1 className="font-semibold text-3xl tracking-tight">
+					Editar producto
 				</h1>
 				<p className="mt-1 text-muted-foreground">
 					Actualiza la información y el equipo requerido para {product.name}.

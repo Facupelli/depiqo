@@ -175,17 +175,12 @@ export function EditComboForm({
 					<form.Field name="imageUrl">
 						{(field) => (
 							<Field className="self-start">
-								<div>
-									<FieldLabel>Imagen del combo</FieldLabel>
-									<p className="mt-1 text-muted-foreground text-sm">
-										La imagen ayuda a reconocer el combo rápidamente en el
-										catálogo.
-									</p>
-								</div>
+								<FieldLabel>Imagen del combo</FieldLabel>
 								<CatalogImageUploader
 									inputId={field.name}
 									inputName={field.name}
 									currentPath={field.state.value}
+									previewClassName="bg-white object-contain lg:h-64 lg:w-64"
 									onUploadComplete={(path) => field.handleChange(path)}
 								/>
 							</Field>
@@ -199,7 +194,7 @@ export function EditComboForm({
 				/>
 			</form>
 
-			<div className="sticky bottom-0 mt-8 flex flex-wrap justify-end gap-4 border-t bg-background/95 py-4 backdrop-blur supports-backdrop-filter:bg-background/80 lg:mt-10">
+			<div className="sticky bottom-0 mt-8 flex flex-wrap justify-end gap-4 border-t py-4 lg:mt-10">
 				{submitError && (
 					<p
 						className="mr-auto self-center text-destructive text-sm"

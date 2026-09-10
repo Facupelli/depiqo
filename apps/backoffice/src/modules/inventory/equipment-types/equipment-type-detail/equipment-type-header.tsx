@@ -27,7 +27,7 @@ export function EquipmentTypeHeader({
 			<div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
 				<div className="flex min-w-0 items-center gap-4">
 					<div
-						className={`flex shrink-0 items-center justify-center overflow-hidden rounded-xl border bg-muted/20 ${visibleDescription ? "size-24 sm:size-32" : "size-20 sm:size-24"}`}
+						className={`flex shrink-0 items-center justify-center overflow-hidden rounded-xl border bg-white ${visibleDescription ? "size-24 sm:size-32" : "size-20 sm:size-24"}`}
 					>
 						{imageUrl ? (
 							<img

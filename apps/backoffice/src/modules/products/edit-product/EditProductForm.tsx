@@ -185,17 +185,12 @@ export function EditProductForm({
 					<form.Field name="imageUrl">
 						{(field) => (
 							<Field className="self-start">
-								<div>
-									<FieldLabel>Imagen del producto</FieldLabel>
-									<p className="mt-1 text-muted-foreground text-sm">
-										La imagen ayuda a reconocer el producto rápidamente en el
-										catálogo.
-									</p>
-								</div>
+								<FieldLabel>Imagen del producto</FieldLabel>
 								<CatalogImageUploader
 									inputId={field.name}
 									inputName={field.name}
 									currentPath={field.state.value}
+									previewClassName="bg-white object-contain lg:h-64 lg:w-64"
 									onUploadComplete={(path) => field.handleChange(path)}
 								/>
 							</Field>
@@ -287,7 +282,7 @@ export function EditProductForm({
 										</Field>
 									</div>
 
-									<div className="rounded-sm border">
+									<div className="rounded-sm border bg-white">
 										<Table>
 											<TableHeader>
 												<TableRow>
@@ -349,7 +344,7 @@ export function EditProductForm({
 				</section>
 			</form>
 
-			<div className="sticky bottom-0 mt-8 flex justify-end gap-4 border-t bg-background/95 py-4 backdrop-blur supports-backdrop-filter:bg-background/80 lg:mt-10">
+			<div className="sticky bottom-0 mt-8 flex justify-end gap-4 border-t py-4 lg:mt-10">
 				<Button type="button" variant="outline" onClick={onCancel}>
 					Cancelar
 				</Button>

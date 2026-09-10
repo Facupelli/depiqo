@@ -146,7 +146,7 @@ export const ComboRequirementEditor = withFieldGroup({
 											</p>
 										</div>
 									) : (
-										<div className="divide-y rounded-xl border">
+										<div className="divide-y rounded-xl border bg-white">
 											{field.state.value.map((requirement, index) => (
 												<div
 													key={requirement.equipmentTypeId}
