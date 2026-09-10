@@ -9,11 +9,16 @@ import {
 } from "@repo/ui/components/select";
 import { useNavigate } from "@tanstack/react-router";
 import { Search } from "lucide-react";
+import type { ReactNode } from "react";
 import { Route } from "@/routes/_admin/dashboard/promotions";
 import { PromotionsList } from "./PromotionsList";
 import { usePromotionsTab } from "./use-promotions-tab";
 
-export function PromotionsTab() {
+interface PromotionsTabProps {
+	toolbarActions?: ReactNode;
+}
+
+export function PromotionsTab({ toolbarActions }: PromotionsTabProps) {
 	const navigate = useNavigate({ from: Route.fullPath });
 	const search = Route.useSearch();
 	const {
@@ -34,7 +39,7 @@ export function PromotionsTab() {
 
 	return (
 		<div className="space-y-4">
-			<div className="flex flex-col gap-3 @lg/promotions-index:flex-row @lg/promotions-index:items-center">
+			<section className="flex flex-col gap-3 rounded-sm border border-border/70 bg-background px-4 py-3 shadow-xs @lg/promotions-index:flex-row @lg/promotions-index:items-center">
 				<div className="relative w-full @lg/promotions-index:max-w-sm @lg/promotions-index:flex-1">
 					<Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
 					<Input
@@ -71,7 +76,13 @@ export function PromotionsTab() {
 						<SelectItem value="COUPON_REQUIRED">Con cupón</SelectItem>
 					</SelectContent>
 				</Select>
-			</div>
+
+				{toolbarActions ? (
+					<div className="flex shrink-0 justify-end @lg/promotions-index:ml-auto">
+						{toolbarActions}
+					</div>
+				) : null}
+			</section>
 
 			<PromotionsList
 				promotions={query.data ?? []}

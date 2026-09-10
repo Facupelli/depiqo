@@ -94,7 +94,7 @@ export function SettingsSecondaryNav() {
 		<nav aria-label="Configuración" className="flex flex-col gap-6">
 			{settingsNavGroups.map((group) => (
 				<div key={group.title}>
-					<p className="px-3 pb-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+					<p className="pb-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
 						{group.title}
 					</p>
 					<div className="flex flex-col gap-0.5">

@@ -333,7 +333,7 @@ function CustomersToolbar({
 	];
 
 	return (
-		<div className="flex flex-col items-stretch gap-2 @sm/customers-index:flex-row @sm/customers-index:flex-wrap @sm/customers-index:items-center">
+		<section className="flex flex-col items-stretch gap-2 rounded-sm border border-border/70 bg-background px-4 py-3 shadow-xs @sm/customers-index:flex-row @sm/customers-index:flex-wrap @sm/customers-index:items-center">
 			<Input
 				placeholder="Search by name, email…"
 				value={searchInput}
@@ -376,7 +376,7 @@ function CustomersToolbar({
 					Reset
 				</Button>
 			)}
-		</div>
+		</section>
 	);
 }
 

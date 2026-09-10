@@ -28,8 +28,8 @@ function SettingsLayout() {
 
 	return (
 		<div className="grid h-full min-h-0 lg:grid-cols-[auto_minmax(0,1fr)]">
-			<aside className="sticky top-0 hidden h-svh flex-col overflow-y-auto border-r border-gray-200 bg-background px-4 py-6 lg:flex lg:w-fit lg:max-w-72">
-				<div className="px-3 pb-6">
+			<aside className="sticky top-0 hidden h-svh flex-col overflow-y-auto border-r border-gray-200 bg-background pr-6 py-6 lg:flex lg:w-fit lg:max-w-72">
+				<div className="pb-6">
 					<h1 className="text-lg font-semibold tracking-tight">
 						Configuración
 					</h1>
@@ -40,7 +40,7 @@ function SettingsLayout() {
 				<SettingsSecondaryNav />
 			</aside>
 			<div className="h-full min-h-0 overflow-y-auto">
-				<main className="min-w-0 space-y-4">
+				<main className="min-w-0 space-y-4 pl-6">
 					{activeItem ? (
 						<div className="space-y-2">
 							<h2 className="text-2xl font-semibold tracking-tight">

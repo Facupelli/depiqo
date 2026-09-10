@@ -19,6 +19,7 @@ import {
 	SelectValue,
 } from "@repo/ui/components/select";
 import { ChevronDown, X } from "lucide-react";
+import type { ReactNode } from "react";
 import type { BranchScopeFilter } from "@/application/branch-scope/branch-scope-filter";
 import { BranchScopeSelect } from "@/components/branch-scope-select";
 import {
@@ -86,7 +87,13 @@ const DATE_LENS_OPTIONS: Array<{
 	{ value: "PAST", label: "Pasados" },
 ];
 
-export function RentalOrdersToolbar() {
+interface RentalOrdersToolbarProps {
+	toolbarActions?: ReactNode;
+}
+
+export function RentalOrdersToolbar({
+	toolbarActions,
+}: RentalOrdersToolbarProps) {
 	const {
 		search,
 		branches,
@@ -124,7 +131,7 @@ export function RentalOrdersToolbar() {
 	}
 
 	return (
-		<div className="flex flex-wrap items-center gap-3">
+		<section className="flex flex-wrap items-center gap-3 rounded-sm border border-border/70 bg-background px-4 py-3 shadow-xs">
 			<Select
 				value={search.dateLens ?? ALL_VALUE}
 				onValueChange={(value) =>
@@ -271,7 +278,13 @@ export function RentalOrdersToolbar() {
 					Limpiar
 				</Button>
 			) : null}
-		</div>
+
+			{toolbarActions ? (
+				<div className="ml-auto flex shrink-0 justify-end">
+					{toolbarActions}
+				</div>
+			) : null}
+		</section>
 	);
 }
 

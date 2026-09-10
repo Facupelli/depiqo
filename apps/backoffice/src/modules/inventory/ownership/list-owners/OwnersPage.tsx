@@ -1,4 +1,5 @@
 import type { GetOwnersItemDto } from "@repo/api-contracts";
+import type { ReactNode } from "react";
 import { useTenantTimezone } from "@/shared/timezone/operational-timezone.hooks";
 import { CreateOwnerWithContractDialog } from "../create-owner/components/create-owner-with-contract-dialog";
 import { useOwnerOptions } from "../owner-options.queries";
@@ -9,22 +10,26 @@ interface OwnersPageProps {
 	onOwnerSelect: (owner: GetOwnersItemDto) => void;
 }
 
+interface OwnersTableProps extends OwnersPageProps {
+	toolbarActions?: ReactNode;
+}
+
 export function OwnersPage({ onOwnerSelect }: OwnersPageProps) {
 	return (
 		<div className="space-y-4">
-			<div className="flex items-start justify-between">
-				<h1 className="sr-only">Propietarios de equipos</h1>
-				<div className="ml-auto">
-					<CreateOwnerWithContractDialog triggerLabel="Nuevo propietario" />
-				</div>
-			</div>
+			<h1 className="sr-only">Propietarios de equipos</h1>
 
-			<OwnersTable onOwnerSelect={onOwnerSelect} />
+			<OwnersTable
+				onOwnerSelect={onOwnerSelect}
+				toolbarActions={
+					<CreateOwnerWithContractDialog triggerLabel="Nuevo propietario" />
+				}
+			/>
 		</div>
 	);
 }
 
-function OwnersTable({ onOwnerSelect }: OwnersPageProps) {
+function OwnersTable({ onOwnerSelect, toolbarActions }: OwnersTableProps) {
 	const { data: owners = [], isPending, isError } = useOwnerOptions();
 	const timezone = useTenantTimezone();
 
@@ -46,7 +51,10 @@ function OwnersTable({ onOwnerSelect }: OwnersPageProps) {
 			data={owners}
 			searchColumn="name"
 			searchPlaceholder="Buscar propietarios..."
+			noDataMessage="No se encontraron propietarios."
+			itemLabel="propietarios"
 			handleRowClick={onOwnerSelect}
+			toolbarActions={toolbarActions}
 		/>
 	);
 }

@@ -20,6 +20,7 @@ import {
 	useReactTable,
 } from "@tanstack/react-table";
 import clsx from "clsx";
+import type { ReactNode } from "react";
 import { useState } from "react";
 
 interface OwnersDataTableProps<TData, TValue> {
@@ -28,7 +29,9 @@ interface OwnersDataTableProps<TData, TValue> {
 	searchColumn?: string;
 	searchPlaceholder?: string;
 	noDataMessage?: string;
+	itemLabel?: string;
 	handleRowClick?: (row: TData) => void;
+	toolbarActions?: ReactNode;
 }
 
 export function OwnersDataTable<TData, TValue>({
@@ -36,8 +39,10 @@ export function OwnersDataTable<TData, TValue>({
 	data,
 	searchColumn,
 	searchPlaceholder = "Buscar...",
-	noDataMessage = "No se encontraron propietarios.",
+	noDataMessage = "No se encontraron resultados.",
+	itemLabel = "elementos",
 	handleRowClick,
+	toolbarActions,
 }: OwnersDataTableProps<TData, TValue>) {
 	const [sorting, setSorting] = useState<SortingState>([]);
 	const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
@@ -67,18 +72,33 @@ export function OwnersDataTable<TData, TValue>({
 
 	return (
 		<div className="space-y-4">
-			{searchColumn && (
-				<Input
-					placeholder={searchPlaceholder}
-					value={
-						(table.getColumn(searchColumn)?.getFilterValue() as string) ?? ""
-					}
-					onChange={(event) =>
-						table.getColumn(searchColumn)?.setFilterValue(event.target.value)
-					}
-					className="max-w-sm"
-				/>
-			)}
+			{searchColumn || toolbarActions ? (
+				<section className="flex flex-col gap-2 rounded-sm border border-border/70 bg-background px-4 py-3 shadow-xs sm:flex-row sm:items-center">
+					{searchColumn ? (
+						<div className="min-w-0 flex-1">
+							<Input
+								placeholder={searchPlaceholder}
+								value={
+									(table.getColumn(searchColumn)?.getFilterValue() as string) ??
+									""
+								}
+								onChange={(event) =>
+									table
+										.getColumn(searchColumn)
+										?.setFilterValue(event.target.value)
+								}
+								className="w-full"
+							/>
+						</div>
+					) : null}
+
+					{toolbarActions ? (
+						<div className="flex shrink-0 justify-end sm:ml-auto">
+							{toolbarActions}
+						</div>
+					) : null}
+				</section>
+			) : null}
 
 			<div className="rounded-md border">
 				<Table>
@@ -135,7 +155,7 @@ export function OwnersDataTable<TData, TValue>({
 
 			<div className="flex items-center justify-between text-sm text-muted-foreground">
 				<span>
-					Mostrando {firstRow} a {lastRow} de {totalRows} propietarios
+					Mostrando {firstRow} a {lastRow} de {totalRows} {itemLabel}
 				</span>
 				<div className="flex items-center gap-2">
 					<Button
