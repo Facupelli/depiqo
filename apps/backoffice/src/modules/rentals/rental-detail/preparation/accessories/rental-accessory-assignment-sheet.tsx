@@ -38,8 +38,8 @@ export function RentalAccessoryAssignmentSheet({
 }: RentalAccessoryAssignmentSheetProps) {
 	return (
 		<Sheet open={open} onOpenChange={onOpenChange}>
-			<SheetContent className="gap-0 overflow-hidden p-0 w-160 min-w-160 max-w-160">
-				<SheetHeader className="border-neutral-200 border-b px-6 py-5">
+			<SheetContent className="w-full max-w-full min-w-0 gap-0 overflow-hidden p-0 sm:max-w-160">
+				<SheetHeader className="min-w-0 border-neutral-200 border-b px-4 py-5 sm:px-6">
 					<div className="flex items-start gap-3 pr-10">
 						<SheetTitle>Asignar accesorios</SheetTitle>
 					</div>
@@ -92,7 +92,7 @@ function RentalAccessoryAssignmentSheetBody({
 
 	if (isPending) {
 		return (
-			<div className="flex-1 space-y-4 overflow-auto px-6 py-6">
+			<div className="min-w-0 flex-1 space-y-4 overflow-y-auto px-4 py-6 sm:px-6">
 				<div className="h-28 animate-pulse rounded-2xl bg-neutral-100" />
 				<div className="h-28 animate-pulse rounded-2xl bg-neutral-100" />
 				<div className="h-28 animate-pulse rounded-2xl bg-neutral-100" />
@@ -102,7 +102,7 @@ function RentalAccessoryAssignmentSheetBody({
 
 	if (isError || !defaults) {
 		return (
-			<div className="flex flex-1 items-center justify-center px-6 py-12">
+			<div className="flex min-w-0 flex-1 items-center justify-center px-4 py-12 sm:px-6">
 				<div className="max-w-md text-center">
 					<AlertCircle className="mx-auto mb-3 size-8 text-red-500" />
 					<p className="font-semibold text-neutral-950">
@@ -118,8 +118,8 @@ function RentalAccessoryAssignmentSheetBody({
 
 	if (defaults.suggestions.length === 0) {
 		return (
-			<div className="flex flex-1 flex-col">
-				<div className="flex flex-1 items-center justify-center px-6 py-12">
+			<div className="flex min-w-0 flex-1 flex-col">
+				<div className="flex min-w-0 flex-1 items-center justify-center px-4 py-12 sm:px-6">
 					<div className="max-w-md text-center">
 						<PackagePlus className="mx-auto mb-3 size-9 text-neutral-300" />
 						<p className="font-semibold text-neutral-950">
@@ -131,7 +131,7 @@ function RentalAccessoryAssignmentSheetBody({
 						</p>
 					</div>
 				</div>
-				<div className="flex justify-end border-neutral-200 border-t px-6 py-4">
+				<div className="flex justify-end border-neutral-200 border-t px-4 py-4 sm:px-6">
 					<Button type="button" variant="outline" onClick={onClose}>
 						Cerrar
 					</Button>
@@ -148,8 +148,8 @@ function RentalAccessoryAssignmentSheetBody({
 		createSharedAccessoryCapacityByEquipmentType(defaults);
 
 	return (
-		<div className="flex min-h-0 flex-1 flex-col">
-			<div className="flex-1 overflow-auto px-6 py-6">
+		<div className="flex min-h-0 min-w-0 flex-1 flex-col">
+			<div className="min-w-0 flex-1 overflow-y-auto px-4 py-6 sm:px-6">
 				<RentalAccessoryAssignmentForm
 					key={defaults.rentalOrderId}
 					defaultValues={defaultValues}

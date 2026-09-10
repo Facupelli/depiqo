@@ -64,7 +64,7 @@ export function RentalAccessoryAssignmentForm({
 		<>
 			<form
 				id={formId}
-				className="space-y-5"
+				className="min-w-0 space-y-5"
 				onSubmit={(event) => {
 					event.preventDefault();
 					event.stopPropagation();
@@ -73,7 +73,7 @@ export function RentalAccessoryAssignmentForm({
 			>
 				{error ? (
 					<div
-						className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-red-950 text-sm"
+						className="break-words rounded-md border border-red-200 bg-red-50 px-4 py-3 text-red-950 text-sm"
 						role="alert"
 					>
 						{error.message}
@@ -104,13 +104,13 @@ export function RentalAccessoryAssignmentForm({
 										{groupsField.state.value.map((group, groupIndex) => (
 											<section
 												key={group.sourceRentalDemandLineId}
-												className="overflow-hidden rounded-md border border-neutral-200 bg-white"
+												className="min-w-0 overflow-hidden rounded-md border border-neutral-200 bg-white"
 											>
 												<header className="border-neutral-200 border-b bg-neutral-50/80 px-4 py-3">
-													<div className="flex items-center justify-between gap-3">
+													<div className="flex min-w-0 flex-col items-start gap-3 sm:flex-row sm:justify-between">
 														<div className="min-w-0">
-															<div className="flex items-center gap-2">
-																<p className="truncate font-semibold text-neutral-950 text-sm">
+															<div className="flex min-w-0 flex-wrap items-center gap-2">
+																<p className="min-w-0 break-words font-semibold text-neutral-950 text-sm">
 																	{group.sourceEquipmentTypeName}
 																</p>
 																<span className="font-medium text-neutral-500 text-xs">
@@ -157,15 +157,15 @@ export function RentalAccessoryAssignmentForm({
 															return (
 																<div
 																	key={rowKey}
-																	className="grid gap-3 px-4 py-3 md:grid-cols-[minmax(0,1fr)_120px_120px_150px] md:items-center"
+																	className="grid min-w-0 gap-3 px-4 py-3 md:grid-cols-[minmax(0,1fr)_120px_120px_150px] md:items-center"
 																>
 																	<div className="min-w-0">
-																		<p className="truncate font-medium text-neutral-950 text-sm">
+																		<p className="break-words font-medium text-neutral-950 text-sm">
 																			{accessory.equipmentTypeName}
 																		</p>
 																	</div>
 
-																	<div className="grid grid-cols-2 gap-3 md:contents">
+																	<div className="grid min-w-0 grid-cols-[repeat(2,minmax(0,1fr))] gap-3 md:contents">
 																		<div className="flex items-center justify-between rounded-md border border-neutral-200 bg-neutral-50 px-3 py-2 md:block md:border-0 md:bg-transparent md:p-0 md:text-center">
 																			<span className="text-neutral-500 text-xs md:hidden">
 																				Recomendado
@@ -221,7 +221,7 @@ export function RentalAccessoryAssignmentForm({
 																						isInvalid ||
 																						Boolean(pool?.isOverCapacity)
 																					}
-																					className="gap-1"
+																					className="min-w-0 gap-1 break-words"
 																				>
 																					<FieldLabel className="text-neutral-500 text-xs md:hidden">
 																						Cantidad
@@ -280,7 +280,7 @@ export function RentalAccessoryAssignmentForm({
 																						</p>
 																					) : null}
 																					{sharedAllocationMessage ? (
-																						<p className="text-amber-700 text-xs">
+																						<p className="break-words text-amber-700 text-xs">
 																							{sharedAllocationMessage}
 																						</p>
 																					) : null}
@@ -334,10 +334,11 @@ export function RentalAccessoryAssignmentForm({
 						).values(),
 					].some((pool) => pool.isOverCapacity);
 					return (
-						<div className="flex flex-col-reverse gap-2 border-neutral-200 border-t bg-white px-6 py-4 sm:flex-row sm:justify-end">
+						<div className="flex min-w-0 flex-col-reverse gap-2 border-neutral-200 border-t bg-white px-4 py-4 sm:flex-row sm:justify-end sm:px-6">
 							<Button
 								type="button"
 								variant="outline"
+								className="w-full sm:w-auto"
 								onClick={onCancel}
 								disabled={isPending}
 							>
@@ -346,6 +347,7 @@ export function RentalAccessoryAssignmentForm({
 							<Button
 								type="submit"
 								form={formId}
+								className="w-full sm:w-auto"
 								disabled={
 									!canSubmit ||
 									isSubmitting ||
