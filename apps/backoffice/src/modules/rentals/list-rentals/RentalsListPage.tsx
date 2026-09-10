@@ -21,17 +21,19 @@ export function RentalsListPage({
 	return (
 		<RentalOrdersListProvider search={search} onSearchChange={onSearchChange}>
 			<div className="space-y-4">
-				<div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-					<h1 className="sr-only">Alquileres</h1>
-					<Link
-						to="/dashboard/orders/new"
-						className={buttonVariants({ className: "ml-auto shrink-0" })}
-					>
-						Nuevo borrador
-					</Link>
-				</div>
+				<h1 className="sr-only">Alquileres</h1>
+
 				<div className="@container/rentals-index space-y-4">
-					<RentalOrdersToolbar />
+					<RentalOrdersToolbar
+						toolbarActions={
+							<Link
+								to="/dashboard/orders/new"
+								className={buttonVariants({ className: "shrink-0" })}
+							>
+								Nuevo borrador
+							</Link>
+						}
+					/>
 					<RentalOrdersTable />
 				</div>
 			</div>

@@ -26,19 +26,20 @@ export const Route = createFileRoute("/_admin/dashboard/promotions/")({
 function RouteComponent() {
 	return (
 		<div className="w-full space-y-4">
-			<div className="flex items-start justify-between gap-4">
-				<h1 className="sr-only">Promociones</h1>
-				<Link
-					to="/dashboard/promotions/new"
-					className={buttonVariants({ className: "ml-auto shrink-0 gap-2" })}
-				>
-					Nueva promoción
-				</Link>
-				{/* TODO: Restore the coupon creation dialog after it is migrated to v2 promotion queries. */}
-			</div>
+			<h1 className="sr-only">Promociones</h1>
 
 			<div className="@container/promotions-index">
-				<PromotionsTab />
+				<PromotionsTab
+					toolbarActions={
+						<Link
+							to="/dashboard/promotions/new"
+							className={buttonVariants({ className: "shrink-0 gap-2" })}
+						>
+							Nueva promoción
+						</Link>
+					}
+				/>
+				{/* TODO: Restore the coupon creation dialog after it is migrated to v2 promotion queries. */}
 			</div>
 		</div>
 	);
