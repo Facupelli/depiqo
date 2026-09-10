@@ -128,7 +128,7 @@ export function RentalContractSigningCard() {
 			>
 				{state.activityAt && state.activityLabel ? (
 					<div className="mt-4 rounded-md border border-neutral-100 bg-neutral-50 px-3 py-2.5">
-						<p className="mb-1 font-mono text-[9px] uppercase tracking-widest text-neutral-400">
+						<p className="mb-1 font-mono text-[9px] uppercase tracking-wider text-neutral-400">
 							{state.activityLabel}
 						</p>
 						<p className="text-sm font-semibold text-neutral-950">
@@ -254,7 +254,7 @@ function SigningDetailRow({
 }) {
 	return (
 		<div className="flex items-center justify-between gap-3">
-			<p className="font-mono text-[10px] tracking-[0.12em] uppercase text-neutral-400">
+			<p className="font-mono text-[10px] tracking-wider uppercase text-neutral-400">
 				{label}
 			</p>
 			<p className="text-right text-sm font-medium text-neutral-950">

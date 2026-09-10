@@ -42,7 +42,7 @@ function SectionErrorFallback({
 			<button
 				type="button"
 				onClick={resetErrorBoundary}
-				className="border border-neutral-800 px-6 py-2 text-xs font-medium tracking-[0.15em] text-neutral-800 uppercase transition-colors hover:bg-neutral-800 hover:text-white"
+				className="border border-neutral-800 px-6 py-2 text-xs font-medium tracking-wider text-neutral-800 uppercase transition-colors hover:bg-neutral-800 hover:text-white"
 			>
 				Intentar de nuevo
 			</button>

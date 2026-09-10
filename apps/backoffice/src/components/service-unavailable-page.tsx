@@ -37,7 +37,7 @@ export function ServiceUnavailablePage() {
 					<button
 						type="button"
 						onClick={() => window.location.reload()}
-						className="bg-neutral-900 px-6 py-2.5 text-xs font-medium tracking-[0.15em] text-white uppercase transition-colors hover:bg-neutral-700"
+						className="bg-neutral-900 px-6 py-2.5 text-xs font-medium tracking-wider text-white uppercase transition-colors hover:bg-neutral-700"
 					>
 						Try Again
 					</button>

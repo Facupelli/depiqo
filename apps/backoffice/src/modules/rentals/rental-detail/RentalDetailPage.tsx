@@ -40,7 +40,7 @@ export function RentalDetailPage({ orderId }: RentalDetailPageProps) {
 
 	return (
 		<div className="@container/rental-detail text-neutral-950">
-			<Breadcrumb className="pt-6 pb-4">
+			<Breadcrumb className="pb-4">
 				<BreadcrumbList>
 					<BreadcrumbItem>
 						<BreadcrumbLink

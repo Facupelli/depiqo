@@ -32,7 +32,7 @@ function ConfirmedRentalSuccessPage() {
 					<CheckCircle2 className="size-8" />
 				</div>
 				<div className="mt-6">
-					<p className="text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground">
+					<p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
 						Reserva confirmada
 					</p>
 					<h1 className="mt-2 text-3xl font-black tracking-tight">

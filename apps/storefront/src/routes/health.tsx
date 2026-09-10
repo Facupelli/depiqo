@@ -15,13 +15,13 @@ function HealthPage() {
 	return (
 		<ShellPage
 			footer={
-				<footer className="self-end pt-12 font-mono text-[0.7rem] tracking-[0.14em] text-[#59584e] uppercase">
+				<footer className="self-end pt-12 font-mono text-[0.7rem] tracking-wider text-[#59584e] uppercase">
 					Depiqo · Equipment Rental
 				</footer>
 			}
 		>
 			<ShellPanel>
-				<div className="mb-8 flex items-center gap-2.5 font-mono text-[0.7rem] tracking-[0.14em] uppercase">
+				<div className="mb-8 flex items-center gap-2.5 font-mono text-[0.7rem] tracking-wider uppercase">
 					<span
 						className="size-2.5 rounded-full bg-[#5c8f51] shadow-[0_0_0_4px_rgba(92,143,81,0.16)]"
 						aria-hidden="true"
@@ -29,7 +29,7 @@ function HealthPage() {
 					<span>Estado: {status}</span>
 				</div>
 				<ShellRule />
-				<p className="mb-5 font-mono text-[0.7rem] tracking-[0.14em] text-[#59584e] uppercase">
+				<p className="mb-5 font-mono text-[0.7rem] tracking-wider text-[#59584e] uppercase">
 					Storefront de Depiqo
 				</p>
 				<h1 className="max-w-[12ch] font-serif text-5xl leading-[0.94] font-normal tracking-[-0.055em] sm:text-7xl lg:text-8xl">

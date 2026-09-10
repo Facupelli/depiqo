@@ -24,7 +24,7 @@ export function CartPage() {
 	return (
 		<main className="mx-auto w-full max-w-7xl px-4 py-8 md:px-6 md:py-12">
 			<div className="mb-8">
-				<p className="text-xs font-bold uppercase tracking-[0.22em] text-muted-foreground">
+				<p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
 					Tu selección
 				</p>
 				<h1 className="mt-2 text-3xl font-black tracking-tight md:text-5xl">

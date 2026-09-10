@@ -94,7 +94,7 @@ function OwnerCard({ owner, isActive }: OwnerCardProps) {
 			<CardContent>
 				<div className="flex items-center gap-4">
 					{/* Avatar */}
-					<div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-neutral-900 font-mono text-lg font-semibold tracking-tight text-white">
+					<div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-neutral-900 font-mono text-lg font-semibold text-white">
 						{initials}
 					</div>
 
@@ -189,7 +189,7 @@ function ActiveContractCard({ contract }: ActiveContractCardProps) {
 	return (
 		<Card className="border-neutral-900 bg-neutral-900 text-white shadow-none">
 			<CardHeader className="flex flex-row items-center justify-between">
-				<span className="text-xs font-semibold uppercase tracking-widest text-neutral-400">
+				<span className="text-xs font-semibold uppercase tracking-wider text-neutral-400">
 					Contrato Activo
 				</span>
 				<Badge className="border-emerald-500/30 bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/15">

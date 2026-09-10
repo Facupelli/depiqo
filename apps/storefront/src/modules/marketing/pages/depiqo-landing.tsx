@@ -21,7 +21,7 @@ export function DepiqoLandingPage() {
 				/>
 				<a
 					href="https://app.depiqo.com/login"
-					className="rounded-full border border-[#17201d]/20 px-5 py-2.5 text-sm font-semibold tracking-tight transition-colors hover:border-[#1d4ed8] hover:bg-[#1d4ed8] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#17201d]"
+					className="rounded-full border border-[#17201d]/20 px-5 py-2.5 text-sm font-semibold transition-colors hover:border-[#1d4ed8] hover:bg-[#1d4ed8] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#17201d]"
 				>
 					Ingresar
 				</a>

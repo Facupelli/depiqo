@@ -30,7 +30,7 @@ function SettingsLayout() {
 		<div className="grid h-full min-h-0 lg:grid-cols-[auto_minmax(0,1fr)]">
 			<aside className="sticky top-0 hidden h-svh flex-col overflow-y-auto border-r border-gray-200 bg-background pr-6 py-6 lg:flex lg:w-fit lg:max-w-72">
 				<div className="pb-6">
-					<h1 className="text-lg font-semibold tracking-tight">
+					<h1 className="text-lg font-semibold">
 						Configuración
 					</h1>
 					<p className="text-sm text-muted-foreground">
