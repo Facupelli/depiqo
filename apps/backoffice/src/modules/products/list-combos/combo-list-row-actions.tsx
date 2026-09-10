@@ -4,6 +4,7 @@ import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
+	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@repo/ui/components/dropdown-menu";
 import { useNavigate } from "@tanstack/react-router";
@@ -34,6 +35,7 @@ export function ComboListRowActions({
 			/>
 			<DropdownMenuContent
 				align="end"
+				className="min-w-44"
 				onClick={(event) => event.stopPropagation()}
 			>
 				<DropdownMenuItem
@@ -59,13 +61,17 @@ export function ComboListRowActions({
 					Editar combo
 				</DropdownMenuItem>
 				{item.status !== "ARCHIVED" ? (
-					<DropdownMenuItem
-						variant="destructive"
-						onClick={() => onArchive(item)}
-					>
-						<Archive className="size-4" />
-						Archivar
-					</DropdownMenuItem>
+					<>
+						<DropdownMenuSeparator />
+						<DropdownMenuItem
+							variant="destructive"
+							className="whitespace-nowrap"
+							onClick={() => onArchive(item)}
+						>
+							<Archive className="size-4" />
+							Archivar
+						</DropdownMenuItem>
+					</>
 				) : null}
 			</DropdownMenuContent>
 		</DropdownMenu>

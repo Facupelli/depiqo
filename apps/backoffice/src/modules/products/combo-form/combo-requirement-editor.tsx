@@ -62,8 +62,8 @@ export const ComboRequirementEditor = withFieldGroup({
 						const invalid =
 							field.state.meta.isTouched && !field.state.meta.isValid;
 						return (
-							<div className="space-y-4">
-								<div className="grid gap-3 rounded-xl border bg-muted/20 p-4 md:grid-cols-2">
+							<div className="space-y-5">
+								<div className="space-y-4 rounded-xl border bg-muted/20 p-4">
 									<Field>
 										<FieldLabel htmlFor={equipmentSearchId}>
 											Buscar equipo
@@ -124,7 +124,7 @@ export const ComboRequirementEditor = withFieldGroup({
 																	}
 																}}
 															>
-																Añadir equipo
+																Añadir
 															</Button>
 														</li>
 													))}
@@ -133,75 +133,85 @@ export const ComboRequirementEditor = withFieldGroup({
 										</div>
 									</Field>
 								</div>
-								{field.state.value.length === 0 ? (
-									<div className="rounded-xl border border-dashed p-6 text-sm">
-										<p className="font-medium">Todavía no agregaste equipos.</p>
-										<p className="mt-1 text-muted-foreground">
-											Busca y agrega al menos un equipo para completar el combo.
-										</p>
-									</div>
-								) : (
-									<div className="space-y-3">
-										{field.state.value.map((requirement, index) => (
-											<div
-												key={requirement.equipmentTypeId}
-												className="grid gap-4 rounded-lg border p-4 sm:grid-cols-[minmax(0,1fr)_9rem_auto] sm:items-start"
-											>
-												<p className="min-w-0 font-medium text-sm sm:pt-8">
-													{requirement.equipmentTypeName}
-												</p>
-												<form.Field
-													name={`requirements[${index}].quantityPerItem`}
+								<div className="space-y-3">
+									<h3 className="font-medium text-sm">Equipos añadidos</h3>
+									{field.state.value.length === 0 ? (
+										<div className="rounded-xl border border-dashed p-6 text-sm">
+											<p className="font-medium">
+												Todavía no agregaste equipos.
+											</p>
+											<p className="mt-1 text-muted-foreground">
+												Busca y agrega al menos un equipo para completar el
+												combo.
+											</p>
+										</div>
+									) : (
+										<div className="divide-y rounded-xl border">
+											{field.state.value.map((requirement, index) => (
+												<div
+													key={requirement.equipmentTypeId}
+													className="grid gap-3 p-3 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-center"
 												>
-													{(quantityField) => {
-														const quantityInvalid =
-															quantityField.state.meta.isTouched &&
-															!quantityField.state.meta.isValid;
-														return (
-															<Field data-invalid={quantityInvalid}>
-																<FieldLabel htmlFor={quantityField.name}>
-																	Cantidad
-																</FieldLabel>
-																<Input
-																	id={quantityField.name}
-																	name={quantityField.name}
-																	type="number"
-																	min={1}
-																	step={1}
-																	value={quantityField.state.value}
-																	onBlur={quantityField.handleBlur}
-																	onChange={(event) => {
-																		const value = event.target.valueAsNumber;
-																		quantityField.handleChange(
-																			Number.isNaN(value) || value < 1
-																				? 1
-																				: value,
-																		);
-																	}}
-																	aria-invalid={quantityInvalid}
-																/>
-																{quantityInvalid && (
-																	<FieldError
-																		errors={quantityField.state.meta.errors}
+													<p className="min-w-0 font-medium text-sm">
+														{requirement.equipmentTypeName}
+													</p>
+													<form.Field
+														name={`requirements[${index}].quantityPerItem`}
+													>
+														{(quantityField) => {
+															const quantityInvalid =
+																quantityField.state.meta.isTouched &&
+																!quantityField.state.meta.isValid;
+															return (
+																<Field
+																	data-invalid={quantityInvalid}
+																	className="grid grid-cols-[auto_5rem] items-center gap-2"
+																>
+																	<FieldLabel htmlFor={quantityField.name}>
+																		Cantidad
+																	</FieldLabel>
+																	<Input
+																		id={quantityField.name}
+																		name={quantityField.name}
+																		type="number"
+																		min={1}
+																		step={1}
+																		value={quantityField.state.value}
+																		onBlur={quantityField.handleBlur}
+																		onChange={(event) => {
+																			const value = event.target.valueAsNumber;
+																			quantityField.handleChange(
+																				Number.isNaN(value) || value < 1
+																					? 1
+																					: value,
+																			);
+																		}}
+																		aria-invalid={quantityInvalid}
 																	/>
-																)}
-															</Field>
-														);
-													}}
-												</form.Field>
-												<Button
-													type="button"
-													variant="ghost"
-													className="justify-self-start text-muted-foreground sm:mt-6"
-													onClick={() => field.removeValue(index)}
-												>
-													<Trash2 className="size-4" />
-													Quitar
-												</Button>
-											</div>
-										))}
-									</div>
-								)}
+																	{quantityInvalid && (
+																		<FieldError
+																			errors={quantityField.state.meta.errors}
+																			className="col-span-2"
+																		/>
+																	)}
+																</Field>
+															);
+														}}
+													</form.Field>
+													<Button
+														type="button"
+														variant="ghost"
+														className="justify-self-start text-muted-foreground"
+														onClick={() => field.removeValue(index)}
+													>
+														<Trash2 className="size-4" />
+														Eliminar
+													</Button>
+												</div>
+											))}
+										</div>
+									)}
+								</div>
 								{invalid && <FieldError errors={field.state.meta.errors} />}
 							</div>
 						);

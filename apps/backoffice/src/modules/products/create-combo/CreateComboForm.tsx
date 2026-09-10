@@ -231,7 +231,7 @@ export function CreateComboForm({
 										variant="label"
 										className="mb-0 font-semibold text-lg"
 									>
-										Disponible en
+										Sucursales donde se ofrece
 									</FieldLegend>
 									<p className="text-muted-foreground text-sm">
 										Selecciona las sucursales donde se ofrecerá este combo.
