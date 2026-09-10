@@ -58,6 +58,7 @@ export function EquipmentDetailNavigation({
 						<TabsTrigger
 							key={section.value}
 							value={section.value}
+							nativeButton={false}
 							className="flex-none gap-2 rounded-none px-5 py-3 text-sm"
 							render={<Link to={section.to} params={{ equipmentTypeId }} />}
 						>

@@ -6,7 +6,7 @@ import {
 	DropdownMenuTrigger,
 } from "@repo/ui/components/dropdown-menu";
 import { Link } from "@tanstack/react-router";
-import { Boxes, MoreHorizontal, PackagePlus, Pencil } from "lucide-react";
+import { Boxes, MoreHorizontal, PackagePlus, Pencil, Plus } from "lucide-react";
 
 export function EquipmentListRowActions({
 	equipmentTypeId,
@@ -44,6 +44,17 @@ export function EquipmentListRowActions({
 				<DropdownMenuItem onClick={onAddUnit}>
 					<PackagePlus className="size-4" />
 					Añadir unidad
+				</DropdownMenuItem>
+				<DropdownMenuItem
+					render={
+						<Link
+							to="/dashboard/inventory/equipment-types/$equipmentTypeId/rentals/new"
+							params={{ equipmentTypeId }}
+						/>
+					}
+				>
+					<Plus className="size-4" />
+					Nuevo alquiler individual
 				</DropdownMenuItem>
 				<DropdownMenuItem
 					render={

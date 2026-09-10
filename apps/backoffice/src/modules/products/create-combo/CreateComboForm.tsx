@@ -202,6 +202,8 @@ export function CreateComboForm({
 											</p>
 										</div>
 										<CatalogImageUploader
+											inputId={field.name}
+											inputName={field.name}
 											currentPath={field.state.value}
 											onUploadComplete={(path) => field.handleChange(path)}
 										/>

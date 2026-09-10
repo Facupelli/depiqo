@@ -70,6 +70,9 @@ export const ComboRequirementEditor = withFieldGroup({
 										</FieldLabel>
 										<Input
 											id={equipmentSearchId}
+											name="equipmentSearch"
+											type="search"
+											autoComplete="off"
 											value={equipmentSearch}
 											onChange={(event) =>
 												setEquipmentSearch(event.target.value)

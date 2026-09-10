@@ -57,6 +57,7 @@ import { Route as AdminDashboardInventoryEquipmentTypesEquipmentTypeIdAccessorie
 import { Route as AdminDashboardCatalogPackagesRentableItemIdRentalRouteImport } from './routes/_admin/dashboard/catalog/packages/$rentableItemId/rental'
 import { Route as AdminDashboardCatalogPackagesRentableItemIdEquipmentRouteImport } from './routes/_admin/dashboard/catalog/packages/$rentableItemId/equipment'
 import { Route as AdminDashboardCatalogPackagesRentableItemIdEditRouteImport } from './routes/_admin/dashboard/catalog/packages/$rentableItemId/edit'
+import { Route as AdminDashboardInventoryEquipmentTypesEquipmentTypeIdRentalsNewRouteImport } from './routes/_admin/dashboard/inventory/equipment-types/$equipmentTypeId/rentals_.new'
 
 const RegisterRoute = RegisterRouteImport.update({
   id: '/register',
@@ -343,6 +344,15 @@ const AdminDashboardCatalogPackagesRentableItemIdEditRoute =
     path: '/edit',
     getParentRoute: () => AdminDashboardCatalogPackagesRentableItemIdRouteRoute,
   } as any)
+const AdminDashboardInventoryEquipmentTypesEquipmentTypeIdRentalsNewRoute =
+  AdminDashboardInventoryEquipmentTypesEquipmentTypeIdRentalsNewRouteImport.update(
+    {
+      id: '/rentals_/new',
+      path: '/rentals/new',
+      getParentRoute: () =>
+        AdminDashboardInventoryEquipmentTypesEquipmentTypeIdRouteRoute,
+    } as any,
+  )
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -392,6 +402,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/inventory/equipment-types/$equipmentTypeId/units': typeof AdminDashboardInventoryEquipmentTypesEquipmentTypeIdUnitsRoute
   '/dashboard/catalog/packages/$rentableItemId/': typeof AdminDashboardCatalogPackagesRentableItemIdIndexRoute
   '/dashboard/inventory/equipment-types/$equipmentTypeId/': typeof AdminDashboardInventoryEquipmentTypesEquipmentTypeIdIndexRoute
+  '/dashboard/inventory/equipment-types/$equipmentTypeId/rentals/new': typeof AdminDashboardInventoryEquipmentTypesEquipmentTypeIdRentalsNewRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -437,6 +448,7 @@ export interface FileRoutesByTo {
   '/dashboard/inventory/equipment-types/$equipmentTypeId/units': typeof AdminDashboardInventoryEquipmentTypesEquipmentTypeIdUnitsRoute
   '/dashboard/catalog/packages/$rentableItemId': typeof AdminDashboardCatalogPackagesRentableItemIdIndexRoute
   '/dashboard/inventory/equipment-types/$equipmentTypeId': typeof AdminDashboardInventoryEquipmentTypesEquipmentTypeIdIndexRoute
+  '/dashboard/inventory/equipment-types/$equipmentTypeId/rentals/new': typeof AdminDashboardInventoryEquipmentTypesEquipmentTypeIdRentalsNewRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -488,6 +500,7 @@ export interface FileRoutesById {
   '/_admin/dashboard/inventory/equipment-types/$equipmentTypeId/units': typeof AdminDashboardInventoryEquipmentTypesEquipmentTypeIdUnitsRoute
   '/_admin/dashboard/catalog/packages/$rentableItemId/': typeof AdminDashboardCatalogPackagesRentableItemIdIndexRoute
   '/_admin/dashboard/inventory/equipment-types/$equipmentTypeId/': typeof AdminDashboardInventoryEquipmentTypesEquipmentTypeIdIndexRoute
+  '/_admin/dashboard/inventory/equipment-types/$equipmentTypeId/rentals_/new': typeof AdminDashboardInventoryEquipmentTypesEquipmentTypeIdRentalsNewRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -539,6 +552,7 @@ export interface FileRouteTypes {
     | '/dashboard/inventory/equipment-types/$equipmentTypeId/units'
     | '/dashboard/catalog/packages/$rentableItemId/'
     | '/dashboard/inventory/equipment-types/$equipmentTypeId/'
+    | '/dashboard/inventory/equipment-types/$equipmentTypeId/rentals/new'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -584,6 +598,7 @@ export interface FileRouteTypes {
     | '/dashboard/inventory/equipment-types/$equipmentTypeId/units'
     | '/dashboard/catalog/packages/$rentableItemId'
     | '/dashboard/inventory/equipment-types/$equipmentTypeId'
+    | '/dashboard/inventory/equipment-types/$equipmentTypeId/rentals/new'
   id:
     | '__root__'
     | '/'
@@ -634,6 +649,7 @@ export interface FileRouteTypes {
     | '/_admin/dashboard/inventory/equipment-types/$equipmentTypeId/units'
     | '/_admin/dashboard/catalog/packages/$rentableItemId/'
     | '/_admin/dashboard/inventory/equipment-types/$equipmentTypeId/'
+    | '/_admin/dashboard/inventory/equipment-types/$equipmentTypeId/rentals_/new'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -985,6 +1001,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminDashboardCatalogPackagesRentableItemIdEditRouteImport
       parentRoute: typeof AdminDashboardCatalogPackagesRentableItemIdRouteRoute
     }
+    '/_admin/dashboard/inventory/equipment-types/$equipmentTypeId/rentals_/new': {
+      id: '/_admin/dashboard/inventory/equipment-types/$equipmentTypeId/rentals_/new'
+      path: '/rentals/new'
+      fullPath: '/dashboard/inventory/equipment-types/$equipmentTypeId/rentals/new'
+      preLoaderRoute: typeof AdminDashboardInventoryEquipmentTypesEquipmentTypeIdRentalsNewRouteImport
+      parentRoute: typeof AdminDashboardInventoryEquipmentTypesEquipmentTypeIdRouteRoute
+    }
   }
 }
 
@@ -1046,6 +1069,7 @@ interface AdminDashboardInventoryEquipmentTypesEquipmentTypeIdRouteRouteChildren
   AdminDashboardInventoryEquipmentTypesEquipmentTypeIdRentalsRoute: typeof AdminDashboardInventoryEquipmentTypesEquipmentTypeIdRentalsRoute
   AdminDashboardInventoryEquipmentTypesEquipmentTypeIdUnitsRoute: typeof AdminDashboardInventoryEquipmentTypesEquipmentTypeIdUnitsRoute
   AdminDashboardInventoryEquipmentTypesEquipmentTypeIdIndexRoute: typeof AdminDashboardInventoryEquipmentTypesEquipmentTypeIdIndexRoute
+  AdminDashboardInventoryEquipmentTypesEquipmentTypeIdRentalsNewRoute: typeof AdminDashboardInventoryEquipmentTypesEquipmentTypeIdRentalsNewRoute
 }
 
 const AdminDashboardInventoryEquipmentTypesEquipmentTypeIdRouteRouteChildren: AdminDashboardInventoryEquipmentTypesEquipmentTypeIdRouteRouteChildren =
@@ -1058,6 +1082,8 @@ const AdminDashboardInventoryEquipmentTypesEquipmentTypeIdRouteRouteChildren: Ad
       AdminDashboardInventoryEquipmentTypesEquipmentTypeIdUnitsRoute,
     AdminDashboardInventoryEquipmentTypesEquipmentTypeIdIndexRoute:
       AdminDashboardInventoryEquipmentTypesEquipmentTypeIdIndexRoute,
+    AdminDashboardInventoryEquipmentTypesEquipmentTypeIdRentalsNewRoute:
+      AdminDashboardInventoryEquipmentTypesEquipmentTypeIdRentalsNewRoute,
   }
 
 const AdminDashboardInventoryEquipmentTypesEquipmentTypeIdRouteRouteWithChildren =

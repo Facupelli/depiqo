@@ -176,6 +176,8 @@ export const StandaloneRentalStep = withForm({
 											<Field className="self-start">
 												<FieldLabel>Imagen</FieldLabel>
 												<CatalogImageUploader
+													inputId={field.name}
+													inputName={field.name}
 													currentPath={field.state.value}
 													onUploadComplete={field.handleChange}
 												/>

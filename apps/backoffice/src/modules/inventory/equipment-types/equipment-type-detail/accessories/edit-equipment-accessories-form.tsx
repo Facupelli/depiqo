@@ -4,7 +4,7 @@ import { Field, FieldError, FieldLabel } from "@repo/ui/components/field";
 import { Input } from "@repo/ui/components/input";
 import { useForm } from "@tanstack/react-form";
 import { Plus, Search, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useId, useState } from "react";
 import { useEquipmentTypeOptions } from "@/modules/inventory/equipment-types/equipment-type-options.queries";
 import useDebounce from "@/shared/hooks/use-debounce";
 import {
@@ -98,8 +98,12 @@ export function EditEquipmentAccessoriesForm({
 															!quantityField.state.meta.isValid;
 														return (
 															<Field data-invalid={isInvalid}>
-																<FieldLabel>Cantidad</FieldLabel>
+																<FieldLabel htmlFor={quantityField.name}>
+																	Cantidad
+																</FieldLabel>
 																<Input
+																	id={quantityField.name}
+																	name={quantityField.name}
 																	type="number"
 																	min={1}
 																	step={1}
@@ -215,14 +219,19 @@ function EquipmentTypePicker({
 	onSearchChange: (value: string) => void;
 	onSelect: (option: GetEquipmentTypesItemDto) => void;
 }) {
+	const searchInputId = useId();
+
 	return (
 		<section className="space-y-2 rounded-md border bg-muted/20 p-3">
 			<Field>
-				<FieldLabel>Añadir accesorio</FieldLabel>
+				<FieldLabel htmlFor={searchInputId}>Añadir accesorio</FieldLabel>
 				<div className="relative">
 					<Search className="-translate-y-1/2 absolute top-1/2 left-3 size-4 text-muted-foreground" />
 					<Input
+						id={searchInputId}
+						name="accessorySearch"
 						type="search"
+						autoComplete="off"
 						placeholder="Buscar por nombre"
 						value={search}
 						className="pl-9"

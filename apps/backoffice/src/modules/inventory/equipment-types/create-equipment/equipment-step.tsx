@@ -148,6 +148,8 @@ export const EquipmentStep = withForm({
 									La imagen ayuda a reconocer el equipo rápidamente.
 								</FieldDescription>
 								<CatalogImageUploader
+									inputId={field.name}
+									inputName={field.name}
 									currentPath={field.state.value}
 									onUploadComplete={field.handleChange}
 								/>

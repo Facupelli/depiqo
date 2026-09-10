@@ -51,6 +51,7 @@ export function ComboDetailHeader({
 				<div className="flex shrink-0 items-center gap-2 self-start">
 					{combo.status !== "ARCHIVED" ? (
 						<Button
+							nativeButton={false}
 							render={
 								<Link
 									to="/dashboard/catalog/packages/$rentableItemId/edit"

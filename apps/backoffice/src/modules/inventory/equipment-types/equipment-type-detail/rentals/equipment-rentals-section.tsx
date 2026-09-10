@@ -98,7 +98,15 @@ function IndividualRentalsSection({
 						Presentación, precio y ofertas comerciales por sucursal.
 					</p>
 				</div>
-				<Button disabled>
+				<Button
+					nativeButton={false}
+					render={
+						<Link
+							to="/dashboard/inventory/equipment-types/$equipmentTypeId/rentals/new"
+							params={{ equipmentTypeId }}
+						/>
+					}
+				>
 					<Plus className="mr-2 size-4" />
 					Nuevo alquiler individual
 				</Button>
@@ -113,7 +121,15 @@ function IndividualRentalsSection({
 				<EmptyState
 					message="Este equipo todavía no tiene un alquiler individual configurado."
 					action={
-						<Button disabled>
+						<Button
+							nativeButton={false}
+							render={
+								<Link
+									to="/dashboard/inventory/equipment-types/$equipmentTypeId/rentals/new"
+									params={{ equipmentTypeId }}
+								/>
+							}
+						>
 							<Plus className="mr-2 size-4" />
 							Nuevo alquiler individual
 						</Button>
@@ -276,6 +292,7 @@ function ComboUsagesSection({
 					</p>
 				</div>
 				<Button
+					nativeButton={false}
 					render={
 						<Link
 							to="/dashboard/catalog/packages/new"
@@ -298,6 +315,7 @@ function ComboUsagesSection({
 					message="Este equipo todavía no forma parte de ningún combo."
 					action={
 						<Button
+							nativeButton={false}
 							render={
 								<Link
 									to="/dashboard/catalog/packages/new"
@@ -345,6 +363,7 @@ function ComboUsageItem({ item }: { item: ComboRentalUsageDto }) {
 			</p>
 			<div className="flex gap-2">
 				<Button
+					nativeButton={false}
 					variant="outline"
 					size="sm"
 					render={
@@ -357,6 +376,7 @@ function ComboUsageItem({ item }: { item: ComboRentalUsageDto }) {
 					Ver combo
 				</Button>
 				<Button
+					nativeButton={false}
 					variant="outline"
 					size="sm"
 					render={
