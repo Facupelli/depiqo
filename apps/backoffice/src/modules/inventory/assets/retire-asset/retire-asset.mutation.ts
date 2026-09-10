@@ -1,8 +1,9 @@
 import type { RetireAssetResponseDto } from "@repo/api-contracts";
 import type { MutationOptions } from "@tanstack/react-query";
 import { useMutation } from "@tanstack/react-query";
-import { equipmentTypeDetailKeys } from "@/modules/inventory/equipment-types/equipment-type-detail/equipment-type-detail.queries";
-import { equipmentTypeSummaryKeys } from "@/modules/inventory/equipment-types/list-equipment-types/equipment-type-summaries.queries";
+import { equipmentTypeSummaryKeys } from "@/modules/inventory/equipment-types/equipment-type-detail/equipment-type-summary.queries";
+import { equipmentTypeAssetsKeys } from "@/modules/inventory/equipment-types/equipment-type-detail/units/equipment-type-assets.queries";
+import { listEquipmentTypeKeys } from "@/modules/inventory/equipment-types/public";
 import type { ProblemDetailsError } from "@/shared/errors";
 import { assetKeys } from "../assets.queries";
 import { type RetireAssetVariables, retireAsset } from "./retire-asset.api";
@@ -30,8 +31,9 @@ export function useRetireAsset(options?: RetireAssetOptions) {
 		mutationFn: ({ assetId }) => retireAsset({ assetId }),
 		meta: {
 			invalidates: (variables: RetireAssetMutationVariables) => [
-				equipmentTypeDetailKeys.detail(variables.equipmentTypeId),
-				equipmentTypeSummaryKeys.all(),
+				equipmentTypeAssetsKeys.equipmentType(variables.equipmentTypeId),
+				equipmentTypeSummaryKeys.summary(variables.equipmentTypeId),
+				listEquipmentTypeKeys.lists(),
 				assetKeys.all(),
 			],
 			...options?.meta,

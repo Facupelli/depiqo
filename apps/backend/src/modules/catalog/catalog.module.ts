@@ -2,14 +2,12 @@ import { Module } from '@nestjs/common';
 
 import { AssetInventoryModule } from '../asset-inventory/asset-inventory.module';
 import { TenantManagementModule } from '../tenant-management/tenant-management.module';
-import { ActivateRentableItemHttpController } from './features/activate-rentable-item/activate-rentable-item.controller';
-import { ActivateRentableItemHandler } from './features/activate-rentable-item/activate-rentable-item.handler';
 import { ArchiveRentableItemHttpController } from './features/archive-rentable-item/archive-rentable-item.controller';
 import { ArchiveRentableItemHandler } from './features/archive-rentable-item/archive-rentable-item.handler';
+import { CreateIndividualRentalHttpController } from './features/create-individual-rental/create-individual-rental.controller';
+import { CreateIndividualRentalHandler } from './features/create-individual-rental/create-individual-rental.handler';
 import { CreateRentalOfferForRentableItemService } from './features/create-rental-offer-for-rentable-item/create-rental-offer-for-rentable-item.service';
 import { CreateRentableItemOfferingService } from './features/create-rentable-item-offering/create-rentable-item-offering.service';
-import { GetEquipmentTypeProductUsagesHttpController } from './features/get-equipment-type-product-usages/get-equipment-type-product-usages.controller';
-import { GetEquipmentTypeProductUsagesHandler } from './features/get-equipment-type-product-usages/get-equipment-type-product-usages.handler';
 import { GetRentableItemDetailHttpController } from './features/get-rentable-item-detail/get-rentable-item-detail.controller';
 import { GetRentableItemDetailHandler } from './features/get-rentable-item-detail/get-rentable-item-detail.handler';
 import { GetRentableItemSummariesHttpController } from './features/get-rentable-item-summaries/get-rentable-item-summaries.controller';
@@ -29,16 +27,19 @@ import { PrismaRentalOfferRepository } from './features/create-rentable-item-off
 import { PrismaResolveSelectedRentalOffersReader } from './features/resolve-selected-rental-offers/prisma-resolve-selected-rental-offers.reader';
 import { ResolveSelectedRentalOffersService } from './features/resolve-selected-rental-offers/resolve-selected-rental-offers.service';
 import { CatalogOfferingAuthoring } from './public-api/catalog-offering-authoring.public-api';
+import { CatalogRentalOfferReferenceAuthority } from './public-api/catalog-rental-offer-reference-authority.public-api';
+import { CatalogRentalOfferReferenceAuthorityService } from './public-api/catalog-rental-offer-reference-authority.service';
 import { CatalogOfferingAuthoringService } from './public-api/catalog-offering-authoring.service';
 import { CatalogSelectionResolution } from './public-api/catalog-selection-resolution.public-api';
 import { CatalogSelectionResolutionService } from './public-api/catalog-selection-resolution.service';
+import { CatalogEquipmentTypeRentalUsages } from './public-api/catalog-equipment-type-rental-usages.public-api';
+import { CatalogEquipmentTypeRentalUsagesService } from './public-api/catalog-equipment-type-rental-usages.service';
 
 @Module({
   imports: [AssetInventoryModule, TenantManagementModule],
   controllers: [
-    ActivateRentableItemHttpController,
     ArchiveRentableItemHttpController,
-    GetEquipmentTypeProductUsagesHttpController,
+    CreateIndividualRentalHttpController,
     GetRentableItemDetailHttpController,
     GetRentableItemSummariesHttpController,
     GetRentableItemsHttpController,
@@ -49,10 +50,11 @@ import { CatalogSelectionResolutionService } from './public-api/catalog-selectio
   ],
   providers: [
     { provide: CatalogOfferingAuthoring, useClass: CatalogOfferingAuthoringService },
+    { provide: CatalogRentalOfferReferenceAuthority, useClass: CatalogRentalOfferReferenceAuthorityService },
     { provide: CatalogSelectionResolution, useClass: CatalogSelectionResolutionService },
-    ActivateRentableItemHandler,
+    { provide: CatalogEquipmentTypeRentalUsages, useClass: CatalogEquipmentTypeRentalUsagesService },
     ArchiveRentableItemHandler,
-    GetEquipmentTypeProductUsagesHandler,
+    CreateIndividualRentalHandler,
     CreateRentalOfferForRentableItemService,
     CreateRentableItemOfferingService,
     GetRentableItemDetailHandler,
@@ -67,6 +69,11 @@ import { CatalogSelectionResolutionService } from './public-api/catalog-selectio
     ResolveSelectedRentalOffersService,
     PrismaResolveSelectedRentalOffersReader,
   ],
-  exports: [CatalogOfferingAuthoring, CatalogSelectionResolution],
+  exports: [
+    CatalogOfferingAuthoring,
+    CatalogRentalOfferReferenceAuthority,
+    CatalogSelectionResolution,
+    CatalogEquipmentTypeRentalUsages,
+  ],
 })
 export class CatalogModule {}

@@ -51,8 +51,8 @@ export function AddUnitsForm({
 	owners,
 	defaultValues = addUnitsFormDefaultValues(),
 	isPending,
-	submitLabel = "Agregar unidades",
-	pendingLabel = "Agregando...",
+	submitLabel = "Añadir unidades",
+	pendingLabel = "Añadiendo...",
 	cancelLabel = "Cancelar",
 	onSubmit,
 	onCancel,
@@ -71,10 +71,13 @@ export function AddUnitsForm({
 		value: branch.id,
 		label: branch.name,
 	}));
-	const ownerItems = owners.map((owner) => ({
-		value: owner.id,
-		label: owner.name,
-	}));
+	const ownerItems = [
+		{ value: TENANT_OWNER_VALUE, label: "Propio" },
+		...owners.map((owner) => ({
+			value: owner.id,
+			label: owner.name,
+		})),
+	];
 
 	return (
 		<>
@@ -96,7 +99,7 @@ export function AddUnitsForm({
 								onClick={() => field.pushValue(createEmptyEquipmentUnit())}
 							>
 								<Plus className="mr-2 h-4 w-4" />
-								Agregar otra fila
+								Añadir otra unidad
 							</Button>
 						</div>
 					)}
@@ -194,9 +197,6 @@ export function AddUnitsForm({
 																		<SelectValue placeholder="Selecciona propietario" />
 																	</SelectTrigger>
 																	<SelectContent>
-																		<SelectItem value={TENANT_OWNER_VALUE}>
-																			Propiedad del tenant
-																		</SelectItem>
 																		{ownerItems.map((item) => (
 																			<SelectItem
 																				key={item.value}

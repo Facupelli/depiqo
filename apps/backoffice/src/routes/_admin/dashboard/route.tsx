@@ -24,15 +24,14 @@ import {
 import type { LucideIcon } from "lucide-react";
 import {
 	BadgePercent,
-	BookOpen,
 	CalendarDays,
+	Camera,
 	ChevronsUpDown,
 	LogOut,
 	Settings,
 	ShoppingBag,
 	User,
 	Users,
-	Warehouse,
 } from "lucide-react";
 import { currentBusinessQueries } from "@/application/current-business/current-business.queries";
 import { currentAuthQueries } from "@/auth/auth.queries";
@@ -88,6 +87,7 @@ type SidebarItem = {
 	name: string;
 	icon: LucideIcon;
 	href: string;
+	matchDescendants?: boolean;
 	children?: Array<{
 		name: string;
 		href: string;
@@ -113,16 +113,15 @@ const sidebarItems: SidebarItem[] = [
 		// ],
 	},
 	{
-		name: "Catálogo",
-		icon: BookOpen,
-		href: "/dashboard/catalog",
-		children: [{ name: "Categorías", href: "/dashboard/catalog/categories" }],
-	},
-	{
-		name: "Inventario",
-		icon: Warehouse,
+		name: "Equipos",
+		icon: Camera,
 		href: "/dashboard/inventory/equipment-types",
-		children: [{ name: "Dueños de Equipo", href: "/dashboard/owners" }],
+		matchDescendants: true,
+		children: [
+			{ name: "Combos", href: "/dashboard/catalog/packages" },
+			{ name: "Categorías", href: "/dashboard/catalog/categories" },
+			{ name: "Dueños de Equipo", href: "/dashboard/owners" },
+		],
 	},
 	{
 		name: "Clientes",
@@ -208,7 +207,10 @@ function DashboardNavigation() {
 								render={
 									<Link
 										to={item.href}
-										activeOptions={{ exact: true, includeSearch: false }}
+										activeOptions={{
+											exact: !item.matchDescendants,
+											includeSearch: false,
+										}}
 										preload={false}
 										onClick={closeNavigation}
 									/>
@@ -257,7 +259,9 @@ function BranchSelector({
 	const { data: currentAuth } = useSuspenseQuery(currentAuthQueries.current());
 	const updateWorkingBranch = useUpdateWorkingBranch();
 	const navigate = useNavigate();
-	const navigateCatalog = useNavigate({ from: "/dashboard/catalog/" });
+	const navigateCombos = useNavigate({
+		from: "/dashboard/catalog/packages/",
+	});
 	const location = useRouterState({ select: (state) => state.location });
 	const currentPathname = location.pathname.replace(/\/$/, "");
 	const selectedBranch = branches.find(
@@ -313,12 +317,12 @@ function BranchSelector({
 					});
 				}
 				break;
-			case "/dashboard/catalog":
+			case "/dashboard/catalog/packages":
 				if (
 					typeof location.search.branchId === "string" ||
 					location.search.branchScope === "all"
 				) {
-					await navigateCatalog({
+					await navigateCombos({
 						search: (previous) => ({
 							...previous,
 							branchId: undefined,

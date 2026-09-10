@@ -1,5 +1,5 @@
 import {
-	type GetEquipmentTypeDetailResponseDto,
+	type GetEquipmentTypeSummaryResponseDto,
 	type UpdateEquipmentTypeBodyDto,
 	UpdateEquipmentTypeBodySchema,
 } from "@repo/api-contracts";
@@ -17,8 +17,11 @@ export type EditEquipmentTypeFormValues = z.infer<
 	typeof editEquipmentTypeFormSchema
 >;
 
-export function fromEquipmentTypeDetailToEditFormValues(
-	equipmentType: GetEquipmentTypeDetailResponseDto,
+export function fromEquipmentTypeSummaryToEditFormValues(
+	equipmentType: Pick<
+		GetEquipmentTypeSummaryResponseDto,
+		"categoryId" | "name" | "description" | "imageUrl"
+	>,
 ): EditEquipmentTypeFormValues {
 	return {
 		categoryId: equipmentType.categoryId ?? "",

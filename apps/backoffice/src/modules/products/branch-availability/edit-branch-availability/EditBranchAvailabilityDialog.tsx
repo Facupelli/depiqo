@@ -1,4 +1,3 @@
-import type { GetRentableItemDetailResponseDto } from "@repo/api-contracts";
 import { Button } from "@repo/ui/components/button";
 import {
 	Dialog,
@@ -25,13 +24,19 @@ import {
 	toUpdateRentalOfferVisibilityAndRentabilityDto,
 } from "./edit-branch-availability.schema";
 
-type RentalOffer = GetRentableItemDetailResponseDto["offers"][number];
+export type EditBranchAvailabilityDialogProps = {
+	rentalOfferId: string;
+	branchName: string | null;
+	isVisible: boolean;
+	isRentable: boolean;
+};
 
 export function EditBranchAvailabilityDialog({
-	offer,
-}: {
-	offer: RentalOffer;
-}) {
+	rentalOfferId,
+	branchName,
+	isVisible,
+	isRentable,
+}: EditBranchAvailabilityDialogProps) {
 	const formId = useId();
 	const [open, setOpen] = useState(false);
 	const mutation = useUpdateBranchAvailability();
@@ -42,28 +47,28 @@ export function EditBranchAvailabilityDialog({
 				render={
 					<Button type="button" variant="outline">
 						<Pencil className="mr-2 size-4" />
-						Editar oferta
+						Configurar sucursal
 					</Button>
 				}
 			/>
 			<DialogContent>
 				<DialogHeader>
-					<DialogTitle>Editar oferta</DialogTitle>
+					<DialogTitle>Configurar sucursal</DialogTitle>
 					<DialogDescription>
 						Actualiza la visibilidad y disponibilidad de esta oferta para{" "}
-						{offer.branchName ?? "esta sucursal"}.
+						{branchName ?? "esta sucursal"}.
 					</DialogDescription>
 				</DialogHeader>
 				{open ? (
 					<EditBranchAvailabilityForm
-						key={offer.rentalOfferId}
+						key={rentalOfferId}
 						formId={formId}
-						offer={offer}
+						offer={{ isVisible, isRentable }}
 						isPending={mutation.isPending}
 						onCancel={() => setOpen(false)}
 						onSubmit={async (values) => {
 							await mutation.mutateAsync({
-								rentalOfferId: offer.rentalOfferId,
+								rentalOfferId,
 								body: toUpdateRentalOfferVisibilityAndRentabilityDto(values),
 							});
 							setOpen(false);
@@ -83,7 +88,7 @@ function EditBranchAvailabilityForm({
 	onSubmit,
 }: {
 	formId: string;
-	offer: RentalOffer;
+	offer: { isVisible: boolean; isRentable: boolean };
 	isPending: boolean;
 	onCancel: () => void;
 	onSubmit: (

@@ -77,7 +77,7 @@ export class GetRentableItemsHandler implements IQueryHandler<GetRentableItemsQu
       tenantId: query.tenantId,
       ...(query.status ? { status: query.status } : {}),
       ...(query.search ? { name: { contains: query.search, mode: 'insensitive' as const } } : {}),
-      ...(query.kind ? { kind: query.kind } : {}),
+      ...(query.kinds?.length ? { kind: { in: query.kinds } } : {}),
       ...(query.categoryId ? { categoryId: query.categoryId } : {}),
       ...this.buildRentalOffersWhere(query, offerFilter, activePricedOfferIds),
     };

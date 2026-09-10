@@ -98,7 +98,7 @@ export function RentalEquipmentSection() {
 								type="button"
 								onClick={() => setIsAddProductDialogOpen(true)}
 							>
-								Agregar producto
+								Añadir producto
 							</Button>
 						) : null}
 						{rental.status === "DRAFT" ? (
@@ -249,7 +249,7 @@ function RentalEquipmentCard({
 				</div>
 				<div className="flex items-start justify-end">
 					<span className="rounded-full bg-neutral-100 px-2 py-0.5 font-medium text-[11px] text-neutral-600">
-						{isPackage ? "Paquete" : "Equipo"}
+						{isPackage ? "Combo" : "Equipo"}
 					</span>
 				</div>
 			</div>
@@ -325,7 +325,7 @@ function RentalPackageChildrenList({
 	return (
 		<div className="mt-4 border-neutral-100 border-t pt-3">
 			<p className="mb-2 font-semibold text-[11px] text-neutral-400 uppercase tracking-wide">
-				Equipos del paquete
+				Equipos del combo
 			</p>
 			<div className="space-y-2">
 				{items.map((child) => (

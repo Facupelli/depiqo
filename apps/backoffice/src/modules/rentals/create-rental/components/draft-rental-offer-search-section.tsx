@@ -101,7 +101,7 @@ export const DraftRentalOfferSearchSection = withForm({
 			<Card className="shadow-xs">
 				<CardHeader>
 					<div className="flex items-center justify-between gap-3">
-						<CardTitle className="text-base">Agregar productos</CardTitle>
+						<CardTitle className="text-base">Añadir productos</CardTitle>
 						{query.isFetching ? (
 							<Loader2
 								className="size-4 animate-spin text-muted-foreground"
@@ -120,7 +120,7 @@ export const DraftRentalOfferSearchSection = withForm({
 						<Input
 							value={search}
 							onChange={(event) => setSearch(event.target.value)}
-							placeholder="Buscar productos, kits o paquetes"
+							placeholder="Buscar productos o combos"
 							className="pl-9"
 							disabled={branchMissing || !periodReady}
 						/>
@@ -167,7 +167,7 @@ function OfferCard({
 				type="button"
 				size="sm"
 				variant={unavailable ? "outline" : "default"}
-				aria-label={`Agregar ${offer.name} al borrador`}
+				aria-label={`Añadir ${offer.name} al borrador`}
 				disabled={unavailable}
 				onClick={() => onAdd(offer)}
 			>

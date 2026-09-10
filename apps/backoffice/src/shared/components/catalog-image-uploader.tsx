@@ -1,12 +1,22 @@
 import { useUploadFile } from "@better-upload/client";
+import { cn } from "@repo/ui/lib/utils";
 import { buildR2PublicUrl } from "@/lib/r2-public-url";
 
 type Props = {
+	inputId: string;
+	inputName: string;
 	onUploadComplete: (path: string) => void;
 	currentPath?: string | null;
+	previewClassName?: string;
 };
 
-export function CatalogImageUploader({ onUploadComplete, currentPath }: Props) {
+export function CatalogImageUploader({
+	inputId,
+	inputName,
+	onUploadComplete,
+	currentPath,
+	previewClassName,
+}: Props) {
 	const { upload, isPending, isSuccess, isError } = useUploadFile({
 		route: "catalogImages",
 		onBeforeUpload: async ({ file }) => {
@@ -38,12 +48,14 @@ export function CatalogImageUploader({ onUploadComplete, currentPath }: Props) {
 				<img
 					src={previewUrl}
 					alt="Current upload"
-					className="h-40 w-40 rounded-md object-cover"
+					className={cn("h-40 w-40 rounded-md object-cover", previewClassName)}
 				/>
 			)}
 
 			<label className="relative inline-flex w-fit cursor-pointer items-center gap-2 rounded-md border px-4 py-2 text-sm font-medium transition-colors hover:bg-muted disabled:cursor-not-allowed">
 				<input
+					id={inputId}
+					name={inputName}
 					type="file"
 					accept="image/*"
 					className="absolute inset-0 size-0 opacity-0"

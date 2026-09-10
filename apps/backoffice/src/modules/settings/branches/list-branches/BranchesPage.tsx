@@ -41,7 +41,7 @@ export function BranchesPage({
 					onClick={onCreateBranch}
 				>
 					<Plus className="mr-2 h-4 w-4" />
-					Agregar sucursal
+					Nueva sucursal
 				</Button>
 			</div>
 

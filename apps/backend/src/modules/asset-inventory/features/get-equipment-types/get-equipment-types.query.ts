@@ -3,5 +3,6 @@ export class GetEquipmentTypesQuery {
     public readonly tenantId: string,
     public readonly search?: string,
     public readonly limit?: number,
+    public readonly excludeIds?: string[],
   ) {}
 }

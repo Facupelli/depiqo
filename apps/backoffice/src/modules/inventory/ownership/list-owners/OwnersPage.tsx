@@ -15,7 +15,7 @@ export function OwnersPage({ onOwnerSelect }: OwnersPageProps) {
 			<div className="flex items-start justify-between">
 				<h1 className="sr-only">Propietarios de equipos</h1>
 				<div className="ml-auto">
-					<CreateOwnerWithContractDialog triggerLabel="Agregar Propietario" />
+					<CreateOwnerWithContractDialog triggerLabel="Nuevo propietario" />
 				</div>
 			</div>
 

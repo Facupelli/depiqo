@@ -28,6 +28,7 @@ export class GetEquipmentTypesHandler implements IQueryHandler<GetEquipmentTypes
               },
             }
           : {}),
+        ...(query.excludeIds?.length ? { id: { notIn: query.excludeIds } } : {}),
       },
       select: {
         id: true,

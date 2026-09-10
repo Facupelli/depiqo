@@ -1,5 +1,5 @@
 import {
-	type GetEquipmentTypeDetailResponseDto,
+	type GetEquipmentTypeAssetsItemDto,
 	type UpdateAssetBodyDto,
 	UpdateAssetBodySchema,
 } from "@repo/api-contracts";
@@ -14,7 +14,7 @@ export const editAssetFormSchema = z.object({
 export type EditAssetFormValues = z.infer<typeof editAssetFormSchema>;
 
 export function fromUnitToEditFormValues(
-	unit: GetEquipmentTypeDetailResponseDto["assets"][number],
+	unit: Pick<GetEquipmentTypeAssetsItemDto, "serialNumber" | "notes">,
 ): EditAssetFormValues {
 	return {
 		serialNumber: unit.serialNumber ?? "",

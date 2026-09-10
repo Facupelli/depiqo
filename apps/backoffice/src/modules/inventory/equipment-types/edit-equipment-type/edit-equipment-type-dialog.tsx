@@ -1,4 +1,4 @@
-import type { GetEquipmentTypeDetailResponseDto } from "@repo/api-contracts";
+import { Button } from "@repo/ui/components/button";
 import {
 	Dialog,
 	DialogContent,
@@ -6,11 +6,14 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@repo/ui/components/dialog";
+import { Skeleton } from "@repo/ui/components/skeleton";
+import { useQuery } from "@tanstack/react-query";
 import { useId } from "react";
 import { useCategories } from "@/modules/settings/categories/public";
+import { equipmentTypeSummaryQueries } from "../equipment-type-detail/equipment-type-summary.queries";
 import { useUpdateEquipmentType } from "./edit-equipment-type.mutation";
 import {
-	fromEquipmentTypeDetailToEditFormValues,
+	fromEquipmentTypeSummaryToEditFormValues,
 	toUpdateEquipmentTypeDto,
 } from "./edit-equipment-type.schema";
 import { EditEquipmentTypeForm } from "./edit-equipment-type-form";
@@ -18,22 +21,29 @@ import { EditEquipmentTypeForm } from "./edit-equipment-type-form";
 interface EditEquipmentTypeDialogProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
-	equipmentType: GetEquipmentTypeDetailResponseDto;
+	equipmentTypeId: string;
 }
 
 export function EditEquipmentTypeDialog({
 	open,
 	onOpenChange,
-	equipmentType,
+	equipmentTypeId,
 }: EditEquipmentTypeDialogProps) {
 	const formId = useId();
 	const { data: categories = [] } = useCategories();
+	const equipmentTypeQuery = useQuery({
+		...equipmentTypeSummaryQueries.summary(equipmentTypeId),
+		enabled: open,
+	});
 	const { mutateAsync: updateEquipmentType, isPending } =
 		useUpdateEquipmentType();
-
-	const selectableCategories = categories.filter(
-		(category) => category.isActive || category.id === equipmentType.categoryId,
-	);
+	const equipmentType = equipmentTypeQuery.data;
+	const selectableCategories = equipmentType
+		? categories.filter(
+				(category) =>
+					category.isActive || category.id === equipmentType.categoryId,
+			)
+		: [];
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
@@ -41,15 +51,36 @@ export function EditEquipmentTypeDialog({
 				<DialogHeader>
 					<DialogTitle>Editar equipo</DialogTitle>
 					<DialogDescription>
-						Actualiza la información de {equipmentType.name}.
+						{equipmentType
+							? `Actualiza la información de ${equipmentType.name}.`
+							: "Carga la información del equipo para editarla."}
 					</DialogDescription>
 				</DialogHeader>
 
-				{open && (
+				{equipmentTypeQuery.isPending ? (
+					<div className="space-y-4 py-2">
+						<Skeleton className="h-9 w-full" />
+						<Skeleton className="h-24 w-full" />
+						<Skeleton className="h-9 w-full" />
+					</div>
+				) : equipmentTypeQuery.isError || !equipmentType ? (
+					<div className="space-y-4 py-4">
+						<p className="text-destructive text-sm">
+							No pudimos cargar el equipo. Inténtalo nuevamente.
+						</p>
+						<Button
+							type="button"
+							variant="outline"
+							onClick={() => equipmentTypeQuery.refetch()}
+						>
+							Reintentar
+						</Button>
+					</div>
+				) : (
 					<EditEquipmentTypeForm
-						key={open ? "open" : "closed"}
+						key={equipmentType.id}
 						formId={formId}
-						defaultValues={fromEquipmentTypeDetailToEditFormValues(
+						defaultValues={fromEquipmentTypeSummaryToEditFormValues(
 							equipmentType,
 						)}
 						categories={selectableCategories}

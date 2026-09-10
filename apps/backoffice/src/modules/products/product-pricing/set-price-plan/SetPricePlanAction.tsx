@@ -13,13 +13,13 @@ import {
 	CreatePricePlanForm,
 	EditPricePlanDialog,
 	toCreatePricePlanDto,
-	useCreatePricePlan,
 } from "@/modules/pricing/price-plans/public";
-import { formatPriceSummary } from "../../product-detail/product-detail.utils";
 import {
 	type PricePlanOption,
 	PricePlanSelectionForm,
 } from "../price-plan-selection/PricePlanSelectionForm";
+import { formatPriceSummary } from "../product-pricing.utils";
+import { useCreatePricingForRentalOffer } from "./create-pricing-for-rental-offer.mutation";
 import { useAttachRatePlanToRentalOffer } from "./set-price-plan.mutation";
 import { toAttachRatePlanToRentalOfferDto } from "./set-price-plan.schema";
 
@@ -29,20 +29,26 @@ type RentalOffer = GetRentableItemDetailResponseDto["offers"][number];
 export function SetPricePlanAction({
 	offer,
 	ratePlanOptions,
+	defaultOpen = false,
+	assignLabel = "Asignar precio",
+	ratePlanOptionsStatus = "ready",
 }: {
 	offer: RentalOffer;
 	ratePlanOptions: PricePlanOption[];
+	defaultOpen?: boolean;
+	assignLabel?: string;
+	ratePlanOptionsStatus?: "loading" | "error" | "ready";
 }) {
 	const attachFormId = useId();
 	const createFormId = useId();
-	const [open, setOpen] = useState(false);
+	const [open, setOpen] = useState(defaultOpen);
 	const [editingRatePlanId, setEditingRatePlanId] = useState<string | null>(
 		null,
 	);
 	const [step, setStep] = useState<PriceAssignmentStep>("choose");
 	const attachMutation = useAttachRatePlanToRentalOffer();
-	const createRatePlanMutation = useCreatePricePlan();
-	const branchLabel = offer.branchName ?? offer.branchId;
+	const createPricingMutation = useCreatePricingForRentalOffer();
+	const branchLabel = offer.branchName?.trim() || "Sucursal no disponible";
 	const canAssign =
 		offer.setupSummary.availableActions.includes("ASSIGN_PRICE");
 	const canEdit = offer.setupSummary.availableActions.includes("EDIT_PRICING");
@@ -66,7 +72,7 @@ export function SetPricePlanAction({
 					onClick={() => setOpen(true)}
 				>
 					<CircleDollarSign className="mr-2 size-4" />
-					{canAssign ? "Asignar precio" : "Editar precio"}
+					{canAssign ? assignLabel : "Editar precio"}
 				</Button>
 				<DialogContent
 					className={
@@ -78,15 +84,17 @@ export function SetPricePlanAction({
 					<DialogHeader>
 						<DialogTitle>
 							{step === "choose"
-								? `${canAssign ? "Asignar" : "Editar"} precio a ${branchLabel}`
+								? canAssign
+									? `Asignar precio a ${branchLabel}`
+									: `Editar precio en ${branchLabel}`
 								: step === "existing"
 									? "Usar plan existente"
 									: "Crear nuevo plan"}
 						</DialogTitle>
 						<DialogDescription>
 							{step === "choose"
-								? "Selecciona un plan existente o crea uno nuevo para esta oferta."
-								: `El plan quedará asignado a la oferta de ${branchLabel}.`}
+								? "Selecciona un plan existente o crea uno nuevo para este producto."
+								: `El plan quedará asignado al producto en ${branchLabel}.`}
 						</DialogDescription>
 					</DialogHeader>
 					{step === "choose" ? (
@@ -105,16 +113,26 @@ export function SetPricePlanAction({
 								<p className="font-medium text-sm">
 									Cambiar la configuración de precio
 								</p>
+								{ratePlanOptionsStatus !== "ready" ? (
+									<p className="text-muted-foreground text-sm">
+										{ratePlanOptionsStatus === "loading"
+											? "Cargando planes de precios disponibles..."
+											: "Los planes existentes no están disponibles en este momento."}
+									</p>
+								) : null}
 								<div className="grid gap-3 sm:grid-cols-2">
 									<PricingChoiceButton
 										title="Usar plan existente"
-										description="Asigna a esta oferta un plan de precios reutilizable."
-										disabled={ratePlanOptions.length === 0}
+										description="Asigna al producto un plan de precios reutilizable en esta sucursal."
+										disabled={
+											ratePlanOptionsStatus !== "ready" ||
+											ratePlanOptions.length === 0
+										}
 										onClick={() => setStep("existing")}
 									/>
 									<PricingChoiceButton
 										title="Crear nuevo plan"
-										description="Crea un plan de precios y asígnalo a esta oferta."
+										description="Crea un plan de precios y asígnalo al producto en esta sucursal."
 										onClick={() => setStep("create")}
 									/>
 								</div>
@@ -142,21 +160,16 @@ export function SetPricePlanAction({
 						<CreatePricePlanForm
 							formId={createFormId}
 							isPending={
-								createRatePlanMutation.isPending || attachMutation.isPending
+								createPricingMutation.isPending || attachMutation.isPending
 							}
 							submitLabel="Crear y asignar plan"
 							pendingLabel="Creando y asignando..."
 							onSubmit={async (values) => {
-								const ratePlan = await createRatePlanMutation.mutateAsync(
-									toCreatePricePlanDto({ ...values, isActive: true }),
-								);
-								await attachMutation.mutateAsync({
-									body: toAttachRatePlanToRentalOfferDto(
-										{ ratePlanId: ratePlan.id },
-										{
-											catalogRentalOfferId: offer.rentalOfferId,
-										},
-									),
+								const { isActive: _isActive, ...ratePlan } =
+									toCreatePricePlanDto({ ...values, isActive: true });
+								await createPricingMutation.mutateAsync({
+									catalogRentalOfferId: offer.rentalOfferId,
+									ratePlan,
 								});
 								handleOpenChange(false);
 							}}

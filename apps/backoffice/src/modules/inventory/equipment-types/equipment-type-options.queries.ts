@@ -17,22 +17,44 @@ export type EquipmentTypeOptionsQueryOverrides<
 	"queryKey" | "queryFn"
 >;
 
+function normalizeEquipmentTypeOptionsQuery(
+	query?: GetEquipmentTypesQueryDto,
+): GetEquipmentTypesQueryDto {
+	return {
+		...(query?.search?.trim() ? { search: query.search.trim() } : {}),
+		...(query?.limit !== undefined ? { limit: query.limit } : {}),
+		...(query?.excludeIds?.length
+			? { excludeIds: [...new Set(query.excludeIds)].sort() }
+			: {}),
+	};
+}
+
 export const equipmentTypeOptionKeys = {
 	all: () => ["v2", "asset-inventory", "equipment-types", "options"] as const,
 	list: (query?: GetEquipmentTypesQueryDto) =>
-		[...equipmentTypeOptionKeys.all(), query ?? {}] as const,
+		[
+			...equipmentTypeOptionKeys.all(),
+			normalizeEquipmentTypeOptionsQuery(query),
+		] as const,
 };
 
 export const equipmentTypeOptionQueries = {
 	list: <TData = GetEquipmentTypesResponseDto>(
 		query?: GetEquipmentTypesQueryDto,
 		overrides?: EquipmentTypeOptionsQueryOverrides<TData>,
-	) =>
-		queryOptions<GetEquipmentTypesResponseDto, ProblemDetailsError, TData>({
-			queryKey: equipmentTypeOptionKeys.list(query),
-			queryFn: () => getEquipmentTypes(query),
+	) => {
+		const normalizedQuery = normalizeEquipmentTypeOptionsQuery(query);
+
+		return queryOptions<
+			GetEquipmentTypesResponseDto,
+			ProblemDetailsError,
+			TData
+		>({
+			queryKey: equipmentTypeOptionKeys.list(normalizedQuery),
+			queryFn: () => getEquipmentTypes(normalizedQuery),
 			...overrides,
-		}),
+		});
+	},
 };
 
 export function useEquipmentTypeOptions<TData = GetEquipmentTypesResponseDto>(

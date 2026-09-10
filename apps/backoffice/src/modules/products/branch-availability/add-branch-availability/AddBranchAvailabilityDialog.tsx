@@ -1,4 +1,3 @@
-import type { GetRentableItemDetailResponseDto } from "@repo/api-contracts";
 import { Button } from "@repo/ui/components/button";
 import {
 	Dialog,
@@ -48,15 +47,19 @@ type BranchOption = {
 };
 
 type AddBranchAvailabilityDialogProps = {
-	item: GetRentableItemDetailResponseDto;
+	rentableItemId: string;
+	existingOffers: Array<{ branchId: string }>;
 	ratePlanOptions: PricePlanOption[];
+	ratePlanOptionsStatus?: "loading" | "error" | "ready";
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 };
 
 export function AddBranchAvailabilityDialog({
-	item,
+	rentableItemId,
+	existingOffers,
 	ratePlanOptions,
+	ratePlanOptionsStatus = "ready",
 	open,
 	onOpenChange,
 }: AddBranchAvailabilityDialogProps) {
@@ -68,7 +71,7 @@ export function AddBranchAvailabilityDialog({
 	const mutation = useCreateRentalOfferWithPricing();
 	const availableBranches = getAvailableBranches(
 		branchesQuery.data ?? [],
-		item.offers,
+		existingOffers,
 	);
 	const selectedBranch = availableBranches.find(
 		(branch) => branch.id === selectedBranchId,
@@ -117,6 +120,7 @@ export function AddBranchAvailabilityDialog({
 								selectedBranchId={selectedBranchId}
 								isLoadingBranches={branchesQuery.isPending}
 								onBranchChange={setSelectedBranchId}
+								ratePlanOptionsStatus={ratePlanOptionsStatus}
 								onAttachRatePlan={() => setStep("attach-rate-plan")}
 								onCreateRatePlan={() => setStep("create-rate-plan")}
 								onCancel={() => handleOpenChange(false)}
@@ -128,14 +132,14 @@ export function AddBranchAvailabilityDialog({
 								formId={attachFormId}
 								ratePlanOptions={ratePlanOptions}
 								isPending={mutation.isPending}
-								submitLabel="Crear oferta y vincular plan"
-								pendingLabel="Creando oferta..."
+								submitLabel="Configurar sucursal y vincular plan"
+								pendingLabel="Configurando sucursal..."
 								secondaryAction={renderBackButton()}
 								onSubmit={async (values) => {
 									const body = toCreateRentalOfferWithAttachedRatePlanDto(
 										values,
 										{
-											rentableItemId: item.id,
+											rentableItemId,
 											branchId: selectedBranchId,
 										},
 									);
@@ -151,14 +155,14 @@ export function AddBranchAvailabilityDialog({
 							<CreateBranchAvailabilityWithNewPricePlanForm
 								formId={createFormId}
 								isPending={mutation.isPending}
-								submitLabel="Crear oferta y plan"
-								pendingLabel="Creando oferta..."
+								submitLabel="Configurar sucursal y plan"
+								pendingLabel="Configurando sucursal..."
 								secondaryAction={renderBackButton()}
 								onSubmit={async (values) => {
 									const body = toCreateRentalOfferWithCreatedRatePlanDto(
 										values,
 										{
-											rentableItemId: item.id,
+											rentableItemId,
 											branchId: selectedBranchId,
 										},
 									);
@@ -180,6 +184,7 @@ function ChooseBranchAndPricingActionForm({
 	branches,
 	selectedBranchId,
 	isLoadingBranches,
+	ratePlanOptionsStatus,
 	onBranchChange,
 	onAttachRatePlan,
 	onCreateRatePlan,
@@ -188,6 +193,7 @@ function ChooseBranchAndPricingActionForm({
 	branches: BranchOption[];
 	selectedBranchId: string;
 	isLoadingBranches: boolean;
+	ratePlanOptionsStatus: "loading" | "error" | "ready";
 	onBranchChange: (branchId: string) => void;
 	onAttachRatePlan: () => void;
 	onCreateRatePlan: () => void;
@@ -239,7 +245,11 @@ function ChooseBranchAndPricingActionForm({
 														? "Cargando sucursales..."
 														: "Selecciona una sucursal"
 												}
-											/>
+											>
+												{branches.find(
+													(branch) => branch.id === field.state.value,
+												)?.name ?? null}
+											</SelectValue>
 										</SelectTrigger>
 										<SelectContent>
 											{branches.map((branch) => (
@@ -251,7 +261,7 @@ function ChooseBranchAndPricingActionForm({
 									</Select>
 									{!isLoadingBranches && !hasBranches ? (
 										<p className="text-muted-foreground text-sm">
-											No hay sucursales activas disponibles para agregar esta
+											No hay sucursales activas disponibles para añadir esta
 											oferta.
 										</p>
 									) : null}
@@ -263,16 +273,24 @@ function ChooseBranchAndPricingActionForm({
 				</FieldGroup>
 			</form>
 
+			{ratePlanOptionsStatus !== "ready" ? (
+				<p className="text-muted-foreground text-sm">
+					{ratePlanOptionsStatus === "loading"
+						? "Cargando planes de precios disponibles..."
+						: "No se pueden consultar los planes existentes en este momento."}
+				</p>
+			) : null}
+
 			<div className="grid gap-3 sm:grid-cols-2">
 				<PricingActionCard
-					title="Vincular plan existente"
-					description="Crea la oferta en esta sucursal y asígnale un plan de precios ya creado."
-					disabled={!hasSelectedBranch}
+					title="Usar plan existente"
+					description="Configura el producto en esta sucursal y asígnale un plan de precios existente."
+					disabled={!hasSelectedBranch || ratePlanOptionsStatus !== "ready"}
 					onClick={onAttachRatePlan}
 				/>
 				<PricingActionCard
 					title="Crear nuevo plan"
-					description="Crea la oferta en esta sucursal con un nuevo plan de precios."
+					description="Configura el producto en esta sucursal con un nuevo plan de precios."
 					disabled={!hasSelectedBranch}
 					onClick={onCreateRatePlan}
 				/>
@@ -316,16 +334,16 @@ function PricingActionCard({
 
 function getAvailableBranches(
 	branches: BranchOption[],
-	offers: GetRentableItemDetailResponseDto["offers"],
+	offers: Array<{ branchId: string }>,
 ): BranchOption[] {
 	const existingBranchIds = new Set(offers.map((offer) => offer.branchId));
 	return branches.filter((branch) => !existingBranchIds.has(branch.id));
 }
 
 function getDialogTitle(step: AddOfferDialogStep) {
-	if (step === "attach-rate-plan") return "Vincular plan existente";
+	if (step === "attach-rate-plan") return "Usar plan existente";
 	if (step === "create-rate-plan") return "Crear nuevo plan";
-	return "Agregar oferta en sucursal";
+	return "Añadir sucursal";
 }
 
 function getDialogDescription(

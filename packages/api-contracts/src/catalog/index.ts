@@ -1,6 +1,5 @@
-export * from "./activate-rentable-item.contract";
 export * from "./archive-rentable-item.contract";
-export * from "./get-equipment-type-product-usages.contract";
+export * from "./create-individual-rental.contract";
 export * from "./get-rentable-item-detail.contract";
 export * from "./get-rentable-item-summaries.contract";
 export * from "./get-rentable-items.contract";

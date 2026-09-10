@@ -10,7 +10,12 @@ import { apiFetch } from "@/lib/api/api-fetch";
 export async function getEquipmentTypes(
 	query?: GetEquipmentTypesQueryDto,
 ): Promise<GetEquipmentTypesResponseDto> {
-	const parsedQuery = GetEquipmentTypesQuerySchema.parse(query ?? {});
+	const parsedQuery = GetEquipmentTypesQuerySchema.parse({
+		...query,
+		...(query?.excludeIds?.length
+			? { excludeIds: query.excludeIds.join(",") }
+			: {}),
+	});
 	const searchParams = new URLSearchParams();
 
 	if (parsedQuery.search !== undefined) {
@@ -19,6 +24,10 @@ export async function getEquipmentTypes(
 
 	if (parsedQuery.limit !== undefined) {
 		searchParams.set("limit", String(parsedQuery.limit));
+	}
+
+	if (parsedQuery.excludeIds !== undefined) {
+		searchParams.set("excludeIds", parsedQuery.excludeIds.join(","));
 	}
 
 	const path = searchParams.size

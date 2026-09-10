@@ -37,9 +37,9 @@ export function AddProductDialog({
 		<Dialog open={open} onOpenChange={onOpenChange}>
 			<DialogContent className="sm:max-w-lg">
 				<DialogHeader>
-					<DialogTitle>Agregar producto</DialogTitle>
+					<DialogTitle>Añadir producto</DialogTitle>
 					<DialogDescription>
-						Agregá un producto al pedido de alquiler confirmado.
+						Añadí un producto al pedido de alquiler confirmado.
 					</DialogDescription>
 				</DialogHeader>
 				{open ? (
@@ -65,7 +65,7 @@ function AddProductDialogContent({ onClose }: { onClose: () => void }) {
 				<Input
 					value={dialog.search}
 					onChange={(event) => dialog.onSearchChange(event.target.value)}
-					placeholder="Buscar productos, kits o paquetes"
+					placeholder="Buscar productos o combos"
 					className="pl-9"
 				/>
 			</div>
@@ -136,7 +136,7 @@ function AddProductDialogContent({ onClose }: { onClose: () => void }) {
 					{dialog.isSubmitting ? (
 						<Loader2 className="size-4 animate-spin" />
 					) : null}
-					Agregar al pedido
+					Añadir al pedido
 				</Button>
 			</DialogFooter>
 		</div>

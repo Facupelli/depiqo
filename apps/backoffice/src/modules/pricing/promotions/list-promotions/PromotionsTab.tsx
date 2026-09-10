@@ -18,7 +18,7 @@ export function PromotionsTab() {
 	const search = Route.useSearch();
 	const {
 		inputValue,
-		setInputValue,
+		handleSearchChange,
 		query,
 		activation,
 		handleActivationChange,
@@ -41,7 +41,7 @@ export function PromotionsTab() {
 						className="pl-9"
 						placeholder="Buscar promociones..."
 						value={inputValue}
-						onChange={(e) => setInputValue(e.target.value)}
+						onChange={(event) => handleSearchChange(event.target.value)}
 					/>
 				</div>
 
@@ -73,23 +73,12 @@ export function PromotionsTab() {
 				</Select>
 			</div>
 
-			<div>
-				{query.isError ? (
-					<p className="py-10 text-center text-sm text-destructive">
-						No se pudieron cargar las promociones.
-					</p>
-				) : !query.isLoading && query.data?.length === 0 ? (
-					<p className="py-10 text-center text-sm text-muted-foreground">
-						No se encontraron promociones.
-					</p>
-				) : (
-					<PromotionsList
-						promotions={query.data ?? []}
-						onEdit={handleEdit}
-						isLoading={query.isLoading}
-					/>
-				)}
-			</div>
+			<PromotionsList
+				promotions={query.data ?? []}
+				onEdit={handleEdit}
+				isLoading={query.isLoading}
+				isError={query.isError}
+			/>
 		</div>
 	);
 }

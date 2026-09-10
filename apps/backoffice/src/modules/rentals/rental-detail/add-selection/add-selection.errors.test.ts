@@ -81,7 +81,7 @@ describe("toAddSelectionUiError", () => {
 
 		expect(toAddSelectionUiError(error)).toEqual({
 			message:
-				"El estado actual del pedido no permite agregar productos. Actualizá la página e intentá nuevamente.",
+				"El estado actual del pedido no permite añadir productos. Actualizá la página e intentá nuevamente.",
 			shouldRefreshDetail: true,
 			shouldRefreshAvailability: false,
 		});
@@ -90,7 +90,7 @@ describe("toAddSelectionUiError", () => {
 	it("falls back to a generic message for unknown errors", () => {
 		expect(toAddSelectionUiError(new Error("boom"))).toEqual({
 			message:
-				"No pudimos agregar el producto. Revisá tu conexión e intentá nuevamente.",
+				"No pudimos añadir el producto. Revisá tu conexión e intentá nuevamente.",
 			shouldRefreshDetail: false,
 			shouldRefreshAvailability: false,
 		});

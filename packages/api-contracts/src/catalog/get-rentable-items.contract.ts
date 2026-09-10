@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import type { ApiContract } from "../api-contract";
+import { PricingBillingUnitSchema } from "../pricing/billing-unit.schema";
 
 const BooleanQueryParamSchema = z.preprocess((value) => {
   if (value === undefined || value === null || value === "") {
@@ -17,11 +18,17 @@ const BooleanQueryParamSchema = z.preprocess((value) => {
 
 export const GetRentableItemsKindSchema = z.enum(["SINGLE", "PACKAGE", "KIT", "BUNDLE"]);
 export const GetRentableItemsStatusSchema = z.enum(["DRAFT", "ACTIVE", "ARCHIVED"]);
-export const GetRentableItemsBillingUnitSchema = z.enum(["HOUR", "DAY", "WEEK"]);
+
+const RentableItemKindsQuerySchema = z.preprocess((value) => {
+  if (value === undefined || value === null || value === "") return undefined;
+  if (Array.isArray(value)) return value;
+  if (typeof value === "string") return value.split(",").map((kind) => kind.trim()).filter(Boolean);
+  return value;
+}, z.array(GetRentableItemsKindSchema).min(1).optional());
 
 export const GetRentableItemsQuerySchema = z.object({
   search: z.string().trim().min(1).optional(),
-  kind: GetRentableItemsKindSchema.optional(),
+  kinds: RentableItemKindsQuerySchema,
   status: GetRentableItemsStatusSchema.optional(),
   categoryId: z.string().trim().min(1).optional(),
   branchId: z.string().trim().min(1).optional(),
@@ -43,7 +50,7 @@ export const GetRentableItemsOfferSchema = z.object({
 export const GetRentableItemsStartingPriceSchema = z.object({
   amount: z.string(),
   currency: z.string(),
-  billingUnit: GetRentableItemsBillingUnitSchema,
+  billingUnit: PricingBillingUnitSchema,
 });
 
 export const GetRentableItemsRequiredEquipmentSchema = z.object({

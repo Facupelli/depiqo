@@ -261,7 +261,7 @@ function RentalFinancialsCard() {
 									onClick={() => setIsEditPriceDialogOpen(true)}
 								>
 									<Pencil className="size-3.5" />
-									{manualAdjustment ? "Editar" : "Agregar"}
+									{manualAdjustment ? "Editar" : "Añadir"}
 								</Button>
 							) : null}
 						</div>

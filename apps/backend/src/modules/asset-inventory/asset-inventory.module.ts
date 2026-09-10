@@ -9,7 +9,11 @@ import { AddAssetsToEquipmentTypeHandler } from './features/add-assets-to-equipm
 import { ReplaceEquipmentTypeAccessoryDefaultsHttpController } from './features/replace-equipment-type-accessory-defaults/replace-equipment-type-accessory-defaults.controller';
 import { ChangeAssetOwnerHttpController } from './features/change-asset-owner/change-asset-owner.controller';
 import { ChangeAssetOwnerHandler } from './features/change-asset-owner/change-asset-owner.handler';
+import { DeactivateAssetHttpController } from './features/deactivate-asset/deactivate-asset.controller';
+import { DeactivateAssetHandler } from './features/deactivate-asset/deactivate-asset.handler';
 import { ReplaceEquipmentTypeAccessoryDefaultsHandler } from './features/replace-equipment-type-accessory-defaults/replace-equipment-type-accessory-defaults.handler';
+import { ReactivateAssetHttpController } from './features/reactivate-asset/reactivate-asset.controller';
+import { ReactivateAssetHandler } from './features/reactivate-asset/reactivate-asset.handler';
 import { RetireAssetHttpController } from './features/retire-asset/retire-asset.controller';
 import { RetireAssetHandler } from './features/retire-asset/retire-asset.handler';
 import { UpdateAssetHttpController } from './features/update-asset/update-asset.controller';
@@ -27,10 +31,12 @@ import { GetAssetSummariesHttpController } from './features/get-asset-summaries/
 import { GetAssetSummariesHandler } from './features/get-asset-summaries/get-asset-summaries.handler';
 import { GetAssetsHttpController } from './features/get-assets/get-assets.controller';
 import { GetAssetsHandler } from './features/get-assets/get-assets.handler';
-import { GetEquipmentTypeDetailHttpController } from './features/get-equipment-type-detail/get-equipment-type-detail.controller';
-import { GetEquipmentTypeDetailHandler } from './features/get-equipment-type-detail/get-equipment-type-detail.handler';
-import { GetEquipmentTypeSummariesHttpController } from './features/get-equipment-type-summaries/get-equipment-type-summaries.controller';
-import { GetEquipmentTypeSummariesHandler } from './features/get-equipment-type-summaries/get-equipment-type-summaries.handler';
+import { GetEquipmentTypeAccessoryDefaultsHttpController } from './features/get-equipment-type-accessory-defaults/get-equipment-type-accessory-defaults.controller';
+import { GetEquipmentTypeAccessoryDefaultsHandler } from './features/get-equipment-type-accessory-defaults/get-equipment-type-accessory-defaults.handler';
+import { GetEquipmentTypeAssetsHttpController } from './features/get-equipment-type-assets/get-equipment-type-assets.controller';
+import { GetEquipmentTypeAssetsHandler } from './features/get-equipment-type-assets/get-equipment-type-assets.handler';
+import { GetEquipmentTypeSummaryHttpController } from './features/get-equipment-type-summary/get-equipment-type-summary.controller';
+import { GetEquipmentTypeSummaryHandler } from './features/get-equipment-type-summary/get-equipment-type-summary.handler';
 import { GetEquipmentTypesHttpController } from './features/get-equipment-types/get-equipment-types.controller';
 import { GetEquipmentTypesHandler } from './features/get-equipment-types/get-equipment-types.handler';
 import { GetOwnerDetailHttpController } from './features/get-owner-detail/get-owner-detail.controller';
@@ -49,12 +55,16 @@ import { AssetInventoryAuthoringService } from './public-api/asset-inventory-aut
 import { AssetInventoryAuthoring } from './public-api/asset-inventory-authoring.public-api';
 import { EquipmentTypeReferenceAuthorityService } from './public-api/equipment-type-reference-authority.public-api.service';
 import { EquipmentTypeReferenceAuthority } from './public-api/equipment-type-reference-authority.public-api';
+import { EquipmentTypePageFacts } from './public-api/equipment-type-page-facts.public-api';
+import { EquipmentTypePageFactsService } from './public-api/equipment-type-page-facts.service';
 
 @Module({
   imports: [TenantManagementModule],
   controllers: [
     AddAssetsToEquipmentTypeHttpController,
     ChangeAssetOwnerHttpController,
+    DeactivateAssetHttpController,
+    ReactivateAssetHttpController,
     ReplaceEquipmentTypeAccessoryDefaultsHttpController,
     RetireAssetHttpController,
     UpdateAssetHttpController,
@@ -64,8 +74,9 @@ import { EquipmentTypeReferenceAuthority } from './public-api/equipment-type-ref
     CreateOwnerWithContractHttpController,
     GetAssetSummariesHttpController,
     GetAssetsHttpController,
-    GetEquipmentTypeDetailHttpController,
-    GetEquipmentTypeSummariesHttpController,
+    GetEquipmentTypeAccessoryDefaultsHttpController,
+    GetEquipmentTypeAssetsHttpController,
+    GetEquipmentTypeSummaryHttpController,
     GetEquipmentTypesHttpController,
     GetOwnerDetailHttpController,
     GetOwnersHttpController,
@@ -73,6 +84,8 @@ import { EquipmentTypeReferenceAuthority } from './public-api/equipment-type-ref
   providers: [
     AddAssetsToEquipmentTypeHandler,
     ChangeAssetOwnerHandler,
+    DeactivateAssetHandler,
+    ReactivateAssetHandler,
     ReplaceEquipmentTypeAccessoryDefaultsHandler,
     RetireAssetHandler,
     UpdateAssetHandler,
@@ -82,8 +95,9 @@ import { EquipmentTypeReferenceAuthority } from './public-api/equipment-type-ref
     CreateOwnerWithContractHandler,
     GetAssetSummariesHandler,
     GetAssetsHandler,
-    GetEquipmentTypeDetailHandler,
-    GetEquipmentTypeSummariesHandler,
+    GetEquipmentTypeAccessoryDefaultsHandler,
+    GetEquipmentTypeAssetsHandler,
+    GetEquipmentTypeSummaryHandler,
     GetEquipmentTypesHandler,
     GetOwnerDetailHandler,
     GetOwnersHandler,
@@ -98,6 +112,7 @@ import { EquipmentTypeReferenceAuthority } from './public-api/equipment-type-ref
     { provide: AssetInventoryAuthoring, useClass: AssetInventoryAuthoringService },
     { provide: EquipmentTypeReferenceAuthority, useClass: EquipmentTypeReferenceAuthorityService },
     { provide: AssetInventoryDisplayFacts, useClass: AssetInventoryDisplayFactsService },
+    { provide: EquipmentTypePageFacts, useClass: EquipmentTypePageFactsService },
   ],
   exports: [
     AccessoryPreparationInventoryFacts,
@@ -105,6 +120,7 @@ import { EquipmentTypeReferenceAuthority } from './public-api/equipment-type-ref
     AssetInventoryAuthoring,
     EquipmentTypeReferenceAuthority,
     AssetInventoryDisplayFacts,
+    EquipmentTypePageFacts,
   ],
 })
 export class AssetInventoryModule {}

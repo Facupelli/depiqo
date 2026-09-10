@@ -1,4 +1,4 @@
-import type { GetEquipmentTypeDetailResponseDto } from "@repo/api-contracts";
+import type { GetEquipmentTypeAssetsItemDto } from "@repo/api-contracts";
 import {
 	Dialog,
 	DialogContent,
@@ -23,7 +23,7 @@ interface ChangeAssetOwnerDialogProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	equipmentTypeId: string;
-	unit: GetEquipmentTypeDetailResponseDto["assets"][number];
+	unit: Pick<GetEquipmentTypeAssetsItemDto, "id" | "ownerId" | "ownerName">;
 }
 
 export function ChangeAssetOwnerDialog({
@@ -52,7 +52,7 @@ export function ChangeAssetOwnerDialog({
 	) {
 		ownerOptions.unshift({
 			id: unit.ownerId,
-			name: unit.ownerName ?? unit.ownerId,
+			name: unit.ownerName?.trim() || "Propietario no disponible",
 		});
 	}
 

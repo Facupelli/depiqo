@@ -1,4 +1,3 @@
-import type { GetRentableItemDetailResponseDto } from "@repo/api-contracts";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -17,13 +16,17 @@ import {
 import { useArchiveProduct } from "./archive-product.mutation";
 
 export function ArchiveProductAction({
-	product,
+	rentableItemId,
 	open,
 	onOpenChange,
+	onSuccess,
+	terminology = "producto",
 }: {
-	product: GetRentableItemDetailResponseDto;
+	rentableItemId: string;
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
+	onSuccess?: () => void | Promise<void>;
+	terminology?: "producto" | "combo";
 }) {
 	const [error, setError] = useState<ArchiveProductUiError | null>(null);
 	const archiveMutation = useArchiveProduct();
@@ -31,8 +34,9 @@ export function ArchiveProductAction({
 	async function handleArchive() {
 		setError(null);
 		try {
-			await archiveMutation.mutateAsync({ rentableItemId: product.id });
+			await archiveMutation.mutateAsync({ rentableItemId });
 			onOpenChange(false);
+			await onSuccess?.();
 		} catch (mutationError) {
 			setError(getArchiveProductError(mutationError));
 		}
@@ -48,11 +52,11 @@ export function ArchiveProductAction({
 		>
 			<AlertDialogContent>
 				<AlertDialogHeader>
-					<AlertDialogTitle>Archivar producto</AlertDialogTitle>
+					<AlertDialogTitle>Archivar {terminology}</AlertDialogTitle>
 					<AlertDialogDescription>
-						Una vez archivado, este producto ya no estará disponible para nuevos
-						alquileres. Los alquileres existentes no se modifican. Esta acción
-						no elimina el producto.
+						Una vez archivado, este {terminology} ya no estará disponible para
+						nuevos alquileres. Los alquileres existentes no se modifican. Esta
+						acción no elimina el {terminology}.
 					</AlertDialogDescription>
 				</AlertDialogHeader>
 				{error ? (

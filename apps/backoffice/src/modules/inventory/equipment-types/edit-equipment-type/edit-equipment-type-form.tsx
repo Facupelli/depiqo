@@ -153,7 +153,7 @@ export function EditEquipmentTypeForm({
 							return (
 								<Field data-invalid={isInvalid}>
 									<FieldLabel htmlFor={field.name}>
-										Descripción breve{" "}
+										Descripción{" "}
 										<span className="text-muted-foreground text-xs">
 											(opcional)
 										</span>
@@ -184,6 +184,8 @@ export function EditEquipmentTypeForm({
 									</p>
 								</div>
 								<CatalogImageUploader
+									inputId={field.name}
+									inputName={field.name}
 									currentPath={field.state.value}
 									onUploadComplete={(path) => field.handleChange(path)}
 								/>

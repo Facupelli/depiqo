@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { err, ok, Result } from 'neverthrow';
 
-import { PrismaService } from 'src/core/database/prisma.service';
 import { PrismaUnitOfWork } from 'src/core/database/prisma-unit-of-work';
 import { V2BillingUnit } from 'src/generated/prisma/client';
 
@@ -28,47 +27,47 @@ export interface CreateRatePlanOperationResult {
 
 @Injectable()
 export class CreateRatePlanOperation {
-  constructor(
-    private readonly prisma: PrismaService,
-    private readonly unitOfWork: PrismaUnitOfWork,
-  ) {}
+  constructor(private readonly unitOfWork: PrismaUnitOfWork) {}
 
   async createRatePlan(
     input: CreateRatePlanOperationInput,
   ): Promise<Result<CreateRatePlanOperationResult, CreateRatePlanOperationError>> {
-    const name = input.name.trim();
-    const existingRatePlan = await this.prisma.client.v2RatePlan.findFirst({
-      where: {
-        tenantId: input.tenantId,
-        name,
-        deletedAt: null,
-      },
-      select: { id: true },
-    });
-
-    if (existingRatePlan) {
-      return err({ code: 'RatePlanNameAlreadyInUse', message: 'A rate plan with the requested name already exists.' });
-    }
-
-    const ratePlan = RatePlan.create({
-      tenantId: input.tenantId,
-      name,
-      billingUnit: input.billingUnit,
-      currency: input.currency,
-      isActive: input.isActive,
-      tiers: input.tiers,
-    });
-
-    if (ratePlan.isErr()) {
-      return err({ code: 'InvalidRatePlan', message: ratePlan.error.message, cause: ratePlan.error });
-    }
-
     // Joins the caller's ambient transaction when one is active (e.g. Offering
     // Setup coordination); standalone calls open their own transaction.
-    await this.unitOfWork.runInTransaction(async ({ tx }) => {
-      await tx.v2RatePlan.create({ data: RatePlanMapper.toCreateData(ratePlan.value) });
-    });
+    return this.unitOfWork.runInTransaction(async ({ tx }) => {
+      const name = input.name.trim();
+      const existingRatePlan = await tx.v2RatePlan.findFirst({
+        where: {
+          tenantId: input.tenantId,
+          name,
+          deletedAt: null,
+        },
+        select: { id: true },
+      });
 
-    return ok({ ratePlan: ratePlan.value });
+      if (existingRatePlan) {
+        return err({
+          code: 'RatePlanNameAlreadyInUse',
+          message: 'A rate plan with the requested name already exists.',
+        });
+      }
+
+      const ratePlan = RatePlan.create({
+        tenantId: input.tenantId,
+        name,
+        billingUnit: input.billingUnit,
+        currency: input.currency,
+        isActive: input.isActive,
+        tiers: input.tiers,
+      });
+
+      if (ratePlan.isErr()) {
+        return err({ code: 'InvalidRatePlan', message: ratePlan.error.message, cause: ratePlan.error });
+      }
+
+      await tx.v2RatePlan.create({ data: RatePlanMapper.toCreateData(ratePlan.value) });
+
+      return ok({ ratePlan: ratePlan.value });
+    });
   }
 }

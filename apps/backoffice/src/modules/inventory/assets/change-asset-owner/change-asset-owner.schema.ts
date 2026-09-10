@@ -1,7 +1,7 @@
 import {
 	type ChangeAssetOwnerBodyDto,
 	ChangeAssetOwnerBodySchema,
-	type GetEquipmentTypeDetailResponseDto,
+	type GetEquipmentTypeAssetsItemDto,
 } from "@repo/api-contracts";
 import { z } from "zod";
 
@@ -14,7 +14,7 @@ export type ChangeAssetOwnerFormValues = z.infer<
 >;
 
 export function fromUnitToChangeAssetOwnerFormValues(
-	unit: GetEquipmentTypeDetailResponseDto["assets"][number],
+	unit: Pick<GetEquipmentTypeAssetsItemDto, "ownerId">,
 ): ChangeAssetOwnerFormValues {
 	return {
 		ownerId: unit.ownerId ?? "",

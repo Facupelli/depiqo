@@ -44,7 +44,7 @@ export const draftRentalComposerFormSchema = z
 		periodEndTime: z.number().int().nonnegative(),
 		selectedOffers: z
 			.array(draftRentalSelectedOfferFormSchema)
-			.min(1, "Agregá al menos un producto"),
+			.min(1, "Añadí al menos un producto"),
 		fulfillmentMethod: z.enum(["PICKUP", "DELIVERY"]),
 		deliveryDetails: z.object({
 			address: z.string(),

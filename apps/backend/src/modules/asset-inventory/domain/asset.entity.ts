@@ -6,8 +6,12 @@ import { AggregateRootBase } from 'src/core/domain/aggregate-root.base';
 
 import { AssetCreatedDomainEvent, AssetOwnerContractSnapshotPayload } from './events/asset-created.domain-event';
 import { AssetOwnershipChangedDomainEvent } from './events/asset-ownership-changed.domain-event';
-import { AssetRetiredDomainEvent } from './events/asset-retired.domain-event';
-import { AssetInventoryError, InvalidAssetFieldError } from './errors/asset-inventory.errors';
+import { AssetStatusChangedDomainEvent } from './events/asset-status-changed.domain-event';
+import {
+  AssetInventoryError,
+  InvalidAssetFieldError,
+  InvalidAssetLifecycleTransitionError,
+} from './errors/asset-inventory.errors';
 
 export type AssetStatus = 'ACTIVE' | 'INACTIVE' | 'RETIRED';
 
@@ -160,6 +164,38 @@ export class Asset extends AggregateRootBase {
     return true;
   }
 
+  deactivate(): Result<boolean, InvalidAssetLifecycleTransitionError> {
+    const currentStatus = this.props.status;
+
+    switch (currentStatus) {
+      case 'ACTIVE':
+        this.changeStatus('INACTIVE');
+        return ok(true);
+      case 'INACTIVE':
+        return ok(false);
+      case 'RETIRED':
+        return err(new InvalidAssetLifecycleTransitionError(this.id, currentStatus, 'INACTIVE'));
+      default:
+        return assertNever(currentStatus);
+    }
+  }
+
+  reactivate(): Result<boolean, InvalidAssetLifecycleTransitionError> {
+    const currentStatus = this.props.status;
+
+    switch (currentStatus) {
+      case 'ACTIVE':
+        return ok(false);
+      case 'INACTIVE':
+        this.changeStatus('ACTIVE');
+        return ok(true);
+      case 'RETIRED':
+        return err(new InvalidAssetLifecycleTransitionError(this.id, currentStatus, 'ACTIVE'));
+      default:
+        return assertNever(currentStatus);
+    }
+  }
+
   /**
    * RETIRED is terminal. Retiring an already-retired asset is an idempotent
    * no-op and returns false without recording a domain event.
@@ -169,15 +205,21 @@ export class Asset extends AggregateRootBase {
       return false;
     }
 
-    this.props.status = 'RETIRED';
+    this.changeStatus('RETIRED');
+    return true;
+  }
+
+  private changeStatus(status: AssetStatus): void {
+    const previousStatus = this.props.status;
+    this.props.status = status;
     this.recordDomainEvent(
-      new AssetRetiredDomainEvent({
+      new AssetStatusChangedDomainEvent({
         tenantId: this.tenantId,
         assetId: this.id,
+        previousStatus,
+        status,
       }),
     );
-
-    return true;
   }
 
   private static normalizeCreateProps(
@@ -229,4 +271,8 @@ function validateOwnershipState(
 function normalizeNullableString(value?: string | null): string | null {
   const normalized = value?.trim();
   return normalized && normalized.length > 0 ? normalized : null;
+}
+
+function assertNever(value: never): never {
+  throw new Error(`Unexpected AssetStatus: ${String(value)}`);
 }

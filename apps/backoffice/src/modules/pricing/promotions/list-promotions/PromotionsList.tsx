@@ -29,6 +29,7 @@ interface PromotionsListProps {
 	onEdit: (promotion: GetPromotionsPromotionDto) => void;
 	onDelete?: (promotion: GetPromotionsPromotionDto) => void;
 	isLoading?: boolean;
+	isError?: boolean;
 }
 
 const ACTIVATION_LABELS: Record<
@@ -44,6 +45,7 @@ export function PromotionsList({
 	onDelete,
 	onEdit,
 	isLoading = false,
+	isError = false,
 }: PromotionsListProps) {
 	const columns = createColumns({ onDelete, onEdit });
 	const table = useReactTable({
@@ -54,7 +56,7 @@ export function PromotionsList({
 
 	return (
 		<>
-			<div className="hidden overflow-hidden rounded-lg border bg-background @2xl/promotions-index:block">
+			<div className="hidden overflow-hidden rounded-lg border bg-card @2xl/promotions-index:block">
 				<Table>
 					<TableHeader>
 						{table.getHeaderGroups().map((headerGroup) => (
@@ -80,6 +82,17 @@ export function PromotionsList({
 							<TableSkeletonRows
 								columnIds={table.getAllLeafColumns().map((column) => column.id)}
 							/>
+						) : isError || table.getRowModel().rows.length === 0 ? (
+							<TableRow>
+								<TableCell
+									colSpan={columns.length}
+									className={`h-32 text-center text-sm ${isError ? "text-destructive" : "text-muted-foreground"}`}
+								>
+									{isError
+										? "No se pudieron cargar las promociones."
+										: "No se encontraron promociones."}
+								</TableCell>
+							</TableRow>
 						) : (
 							table.getRowModel().rows.map((row) => (
 								<TableRow key={row.id} className="hover:bg-muted/50">
@@ -106,6 +119,7 @@ export function PromotionsList({
 				onDelete={onDelete}
 				onEdit={onEdit}
 				isLoading={isLoading}
+				isError={isError}
 			/>
 		</>
 	);
@@ -139,11 +153,20 @@ function CompactPromotionsList({
 	onDelete,
 	onEdit,
 	isLoading,
+	isError = false,
 }: PromotionsListProps & { isLoading: boolean }) {
 	return (
 		<div className="@2xl/promotions-index:hidden">
 			{isLoading ? (
 				<CompactSkeletonRows />
+			) : isError || promotions.length === 0 ? (
+				<div
+					className={`border-y px-4 py-12 text-center text-sm ${isError ? "text-destructive" : "text-muted-foreground"}`}
+				>
+					{isError
+						? "No se pudieron cargar las promociones."
+						: "No se encontraron promociones."}
+				</div>
 			) : (
 				<ul className="divide-y border-y">
 					{promotions.map((promotion) => (

@@ -106,7 +106,7 @@ export function EditBranchPage({
 						<h1 className="text-2xl font-semibold tracking-tight">
 							Editar sucursal
 						</h1>
-						<p className="text-sm text-muted-foreground">
+						<p className="mt-1 text-sm text-muted-foreground">
 							Actualiza los datos operativos de {branch.name}.
 						</p>
 					</div>

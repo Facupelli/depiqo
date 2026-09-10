@@ -104,7 +104,7 @@ export function RentalOrdersTable() {
 
 	return (
 		<div className="space-y-2">
-			<div className="hidden rounded-md border @2xl/rentals-index:block">
+			<div className="hidden overflow-hidden rounded-lg border bg-card @2xl/rentals-index:block">
 				<Table>
 					<TableHeader>
 						{table.getHeaderGroups().map((headerGroup) => (

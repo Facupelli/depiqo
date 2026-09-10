@@ -8,7 +8,7 @@ import { IntegrationEventsModule } from '../../src/core/domain/events/integratio
 import { LoggerModule } from '../../src/core/logger/logger.module';
 import { CatalogModule } from '../../src/modules/catalog/catalog.module';
 import { RentalCommitmentModule } from '../../src/modules/rental-commitment/rental-commitment.module';
-import { OfferingSetupModule } from '../../src/modules/offering-setup/offering-setup.module';
+import { OfferingManagementModule } from '../../src/modules/offering-management/offering-management.module';
 import { PricingModule } from '../../src/modules/pricing/pricing.module';
 import { SharedModule } from '../../src/modules/shared/shared.module';
 
@@ -72,7 +72,7 @@ export async function createPricingIntegrationContext(): Promise<TestingModule> 
   return moduleRef;
 }
 
-export async function createOfferingSetupIntegrationContext(
+export async function createOfferingManagementIntegrationContext(
   overrides: ProviderOverride[] = [],
 ): Promise<TestingModule> {
   let builder = Test.createTestingModule({
@@ -84,7 +84,7 @@ export async function createOfferingSetupIntegrationContext(
       EventEmitterModule.forRoot(),
       IntegrationEventsModule,
       CqrsModule.forRoot(),
-      OfferingSetupModule,
+      OfferingManagementModule,
     ],
   });
 

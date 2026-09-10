@@ -1,0 +1,3 @@
+import type { GetEquipmentTypeAccessoryDefaultsResponseDto as ApiGetEquipmentTypeAccessoryDefaultsResponseDto } from '@repo/api-contracts';
+
+export type GetEquipmentTypeAccessoryDefaultsResponseDto = ApiGetEquipmentTypeAccessoryDefaultsResponseDto;

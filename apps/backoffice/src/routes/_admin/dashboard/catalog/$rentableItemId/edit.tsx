@@ -1,14 +1,25 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { EditProductPage } from "@/modules/products/edit-product/EditProductPage";
-import { productDetailQueries } from "@/modules/products/product-detail/product-detail.queries";
+import { isComboKind } from "@/modules/products/product-kind";
+import { rentableItemDetailQueries } from "@/modules/products/rentable-item-detail/rentable-item-detail.queries";
 import { AdminRouteError } from "@/shared/components/admin-route-error";
 
 export const Route = createFileRoute(
 	"/_admin/dashboard/catalog/$rentableItemId/edit",
 )({
-	loader: ({ context: { queryClient }, params: { rentableItemId } }) =>
-		queryClient.ensureQueryData(productDetailQueries.detail(rentableItemId)),
+	loader: async ({ context: { queryClient }, params: { rentableItemId } }) => {
+		const item = await queryClient.ensureQueryData(
+			rentableItemDetailQueries.detail(rentableItemId),
+		);
+		if (isComboKind(item.kind)) {
+			throw redirect({
+				to: "/dashboard/catalog/packages/$rentableItemId/edit",
+				params: { rentableItemId },
+			});
+		}
+		return item;
+	},
 	errorComponent: ({ error }) => (
 		<AdminRouteError
 			error={error}
@@ -22,7 +33,7 @@ export const Route = createFileRoute(
 function EditProductRoute() {
 	const { rentableItemId } = Route.useParams();
 	const { data: product } = useSuspenseQuery(
-		productDetailQueries.detail(rentableItemId),
+		rentableItemDetailQueries.detail(rentableItemId),
 	);
 
 	return <EditProductPage product={product} />;

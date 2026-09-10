@@ -1,4 +1,4 @@
-import type { GetEquipmentTypeDetailResponseDto } from "@repo/api-contracts";
+import type { GetEquipmentTypeAssetsItemDto } from "@repo/api-contracts";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -14,7 +14,7 @@ import { AlertCircle } from "lucide-react";
 interface RetireAssetAlertDialogProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
-	unit: GetEquipmentTypeDetailResponseDto["assets"][number];
+	unit: Pick<GetEquipmentTypeAssetsItemDto, "id" | "serialNumber">;
 	isPending: boolean;
 	errorMessage: string | null;
 	onConfirm: () => void;
@@ -36,11 +36,10 @@ export function RetireAssetAlertDialog({
 					<AlertDialogDescription>
 						La unidad{" "}
 						<span className="font-medium text-neutral-950">
-							{unit.serialNumber ?? unit.id}
+							{unit.serialNumber ?? "Sin referencia"}
 						</span>{" "}
-						quedará marcada como retirada de forma permanente y ya no estará
-						disponible para futuras asignaciones de alquiler. Esta acción no
-						puede deshacerse.
+						pasará al estado Retirado y ya no estará disponible para futuras
+						asignaciones de alquiler. Este cambio de estado no puede deshacerse.
 					</AlertDialogDescription>
 				</AlertDialogHeader>
 				{errorMessage ? (

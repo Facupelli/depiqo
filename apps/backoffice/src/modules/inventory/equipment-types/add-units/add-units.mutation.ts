@@ -1,9 +1,11 @@
 import type { AddAssetsToEquipmentTypeResponseDto } from "@repo/api-contracts";
 import type { MutationOptions } from "@tanstack/react-query";
 import { useMutation } from "@tanstack/react-query";
+import { assetKeys } from "@/modules/inventory/assets/assets.queries";
 import type { ProblemDetailsError } from "@/shared/errors";
-import { equipmentTypeDetailKeys } from "../equipment-type-detail/equipment-type-detail.queries";
-import { equipmentTypeSummaryKeys } from "../list-equipment-types/equipment-type-summaries.queries";
+import { equipmentTypeSummaryKeys } from "../equipment-type-detail/equipment-type-summary.queries";
+import { equipmentTypeAssetsKeys } from "../equipment-type-detail/units/equipment-type-assets.queries";
+import { listEquipmentTypeKeys } from "../list-equipment-types/list-equipment-types.queries";
 import {
 	type AddAssetsToEquipmentTypeVariables,
 	addAssetsToEquipmentType,
@@ -28,8 +30,10 @@ export function useAddUnitsToEquipmentType(options?: AddUnitsOptions) {
 		mutationFn: addAssetsToEquipmentType,
 		meta: {
 			invalidates: (variables: AddAssetsToEquipmentTypeVariables) => [
-				equipmentTypeDetailKeys.detail(variables.equipmentTypeId),
-				equipmentTypeSummaryKeys.all(),
+				equipmentTypeAssetsKeys.equipmentType(variables.equipmentTypeId),
+				equipmentTypeSummaryKeys.summary(variables.equipmentTypeId),
+				listEquipmentTypeKeys.lists(),
+				assetKeys.all(),
 			],
 			...options?.meta,
 		},
