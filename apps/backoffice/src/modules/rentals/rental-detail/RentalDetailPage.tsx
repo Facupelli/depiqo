@@ -1,6 +1,7 @@
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { PageBreadcrumb } from "@/components/detail-id-breadcrumb";
 import { formatOrderNumber } from "@/shared/utils/formatters";
+import { RentalActivityLog } from "./components/rental-activity-log";
 import { RentalDetailHeader } from "./components/rental-detail-header";
 import { RentalEquipmentSection } from "./components/rental-equipment-section";
 import { RentalSidebarCards } from "./components/rental-sidebar-cards";
@@ -23,7 +24,7 @@ export function RentalDetailPage({ orderId }: RentalDetailPageProps) {
 	} = useQuery(rentalCustomerQueries.summary(rental.customerId ?? undefined));
 
 	return (
-		<div className="text-neutral-950">
+		<div className="@container/rental-detail text-neutral-950">
 			<PageBreadcrumb
 				parent={{
 					label: "Alquileres",
@@ -39,11 +40,12 @@ export function RentalDetailPage({ orderId }: RentalDetailPageProps) {
 				isCustomerSummaryError={isCustomerSummaryError}
 			>
 				<RentalDetailHeader />
-				<div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] py-10 gap-20">
-					<div>
-						<RentalEquipmentSection />
+				<div className="grid gap-8 py-10 @5xl/rental-detail:grid-cols-[minmax(0,1fr)_360px]">
+					<RentalEquipmentSection />
+					<div className="@5xl/rental-detail:col-start-2 @5xl/rental-detail:row-span-2 @5xl/rental-detail:row-start-1">
+						<RentalSidebarCards />
 					</div>
-					<RentalSidebarCards />
+					<RentalActivityLog />
 				</div>
 			</RentalDetailProvider>
 		</div>

@@ -5,18 +5,10 @@ import {
 	PopoverDescription,
 	PopoverTrigger,
 } from "@repo/ui/components/popover";
-import {
-	Clock,
-	Package,
-	Pencil,
-	RefreshCw,
-	Trash2,
-	User2Icon,
-} from "lucide-react";
+import { Package, Pencil, RefreshCw, Trash2, User2Icon } from "lucide-react";
 import { useState } from "react";
 import { buildR2PublicUrl } from "@/lib/r2-public-url";
 import { cn } from "@/lib/utils";
-import { useTenantTimezone } from "@/shared/timezone/operational-timezone.hooks";
 import { AddProductDialog } from "../add-selection/add-product-dialog";
 import { ChangeSelectionQuantityDialog } from "../change-selection-quantity/change-selection-quantity-dialog";
 import type {
@@ -28,10 +20,7 @@ import { RentalAccessoryAssignmentSheet } from "../preparation/accessories/renta
 import { RemoveSelectionAlertDialog } from "../remove-selection/remove-selection-alert-dialog";
 import { useRemoveSelectionDialog } from "../remove-selection/use-remove-selection-dialog";
 import { useRentalDetailContext } from "../rental-detail.context";
-import {
-	formatRentalDetailDateTime,
-	isNonEmptyString,
-} from "../rental-detail.utils";
+import { isNonEmptyString } from "../rental-detail.utils";
 import { ReplaceAssignedAssetDialog } from "../replace-assigned-asset/replace-assigned-asset-dialog";
 
 export function RentalEquipmentSection() {
@@ -160,7 +149,6 @@ export function RentalEquipmentSection() {
 					) : null}
 				</section>
 			</div>
-			<ActivityLog />
 		</div>
 	);
 }
@@ -719,57 +707,4 @@ function getMissingAssetIds(
 	return assets
 		.filter((asset) => asset.isMissing)
 		.map((asset) => asset.assetId);
-}
-
-function ActivityLog() {
-	const { rental } = useRentalDetailContext();
-	const timezone = useTenantTimezone();
-	return (
-		<section>
-			<div className="flex items-center gap-2 mb-5">
-				<Clock className="w-4 h-4 text-neutral-400" />
-				<span className="text-sm font-semibold text-neutral-950">
-					Activity Log
-				</span>
-			</div>
-			<ActivityEntry
-				label="Pedido creado"
-				timestamp={formatRentalDetailDateTime(rental.createdAt, timezone)}
-			/>
-			{rental.confirmedAt ? (
-				<ActivityEntry
-					label="Pedido confirmado"
-					timestamp={formatRentalDetailDateTime(rental.confirmedAt, timezone)}
-				/>
-			) : null}
-			{rental.cancelledAt ? (
-				<ActivityEntry
-					label="Pedido cancelado"
-					timestamp={formatRentalDetailDateTime(rental.cancelledAt, timezone)}
-				/>
-			) : null}
-		</section>
-	);
-}
-
-function ActivityEntry({
-	label,
-	timestamp,
-}: {
-	label: string;
-	timestamp: string;
-}) {
-	return (
-		<div className="flex items-start gap-4">
-			<div className="flex flex-col items-center shrink-0 pt-1">
-				<div className="w-8 h-8 rounded-full bg-neutral-950 flex items-center justify-center">
-					<Clock className="w-3.5 h-3.5 text-white" />
-				</div>
-			</div>
-			<div className="flex flex-col gap-0.5 pb-6">
-				<span className="text-sm font-semibold text-neutral-950">{label}</span>
-				<span className="text-xs text-neutral-400">{timestamp} · System</span>
-			</div>
-		</div>
-	);
 }
