@@ -34,7 +34,7 @@ export function ReplaceAssignedAssetDialog({
 			}}
 		>
 			<DialogContent
-				className="sm:max-w-lg"
+				className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-lg"
 				showCloseButton={!dialog.isSubmitting}
 			>
 				<DialogHeader>
@@ -48,7 +48,7 @@ export function ReplaceAssignedAssetDialog({
 					<div className="space-y-5">
 						<div className="rounded-lg border border-neutral-200 bg-neutral-50 p-4">
 							<p className="text-muted-foreground text-xs">Equipo actual</p>
-							<p className="mt-1 font-mono font-semibold text-neutral-900">
+							<p className="mt-1 font-mono font-semibold text-neutral-900 [overflow-wrap:anywhere]">
 								{dialog.target.label}
 							</p>
 						</div>
@@ -61,7 +61,7 @@ export function ReplaceAssignedAssetDialog({
 						</div>
 
 						{dialog.replacementSummary ? (
-							<div className="rounded-lg border border-neutral-200 bg-white px-4 py-3 text-center font-mono font-semibold text-sm">
+							<div className="rounded-lg border border-neutral-200 bg-white px-4 py-3 text-center font-mono font-semibold text-sm [overflow-wrap:anywhere]">
 								{dialog.replacementSummary}
 							</div>
 						) : null}
@@ -69,7 +69,9 @@ export function ReplaceAssignedAssetDialog({
 						{dialog.submitErrorMessage ? (
 							<div className="flex gap-2 rounded-lg border border-destructive/20 bg-destructive/5 p-3 text-destructive text-sm">
 								<AlertCircle className="mt-0.5 size-4 shrink-0" />
-								<p>{dialog.submitErrorMessage}</p>
+								<p className="min-w-0 [overflow-wrap:anywhere]">
+									{dialog.submitErrorMessage}
+								</p>
 							</div>
 						) : null}
 
@@ -108,7 +110,7 @@ function CandidateList({ dialog }: { dialog: DialogController }) {
 		dialog.candidates.state === "refreshing"
 	) {
 		return (
-			<div className="flex min-h-28 items-center justify-center gap-2 rounded-lg border border-dashed text-muted-foreground text-sm">
+			<div className="flex min-h-28 min-w-0 flex-col items-center justify-center gap-2 rounded-lg border border-dashed px-3 text-center text-muted-foreground text-sm sm:flex-row">
 				<Loader2 className="size-4 animate-spin" />
 				{dialog.candidates.state === "loading"
 					? "Cargando equipos disponibles..."
@@ -155,7 +157,7 @@ function CandidateList({ dialog }: { dialog: DialogController }) {
 					<label
 						key={candidate.assetId}
 						className={cn(
-							"flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2.5 transition-colors",
+							"flex min-w-0 cursor-pointer items-start gap-3 rounded-lg border px-3 py-2.5 transition-colors",
 							selected
 								? "border-neutral-900 bg-neutral-50 ring-1 ring-neutral-900"
 								: "border-neutral-200 hover:border-neutral-300",
@@ -169,9 +171,11 @@ function CandidateList({ dialog }: { dialog: DialogController }) {
 							checked={selected}
 							disabled={dialog.isSubmitting}
 							onChange={() => dialog.selectReplacement(candidate.assetId)}
-							className="size-4 accent-neutral-950"
+							className="mt-0.5 size-4 shrink-0 accent-neutral-950"
 						/>
-						<span className="font-mono font-medium">{label}</span>
+						<span className="min-w-0 font-mono font-medium [overflow-wrap:anywhere]">
+							{label}
+						</span>
 					</label>
 				);
 			})}

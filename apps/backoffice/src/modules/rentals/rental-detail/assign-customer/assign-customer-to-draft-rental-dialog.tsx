@@ -76,7 +76,7 @@ export function AssignCustomerToDraftRentalDialog({
 	return (
 		<Dialog open={open} onOpenChange={handleOpenChange}>
 			{renderTrigger(dialogTrigger)}
-			<DialogContent className="sm:max-w-xl">
+			<DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-xl">
 				<DialogHeader>
 					<DialogTitle>Asignar cliente al borrador</DialogTitle>
 					<DialogDescription>
@@ -84,7 +84,9 @@ export function AssignCustomerToDraftRentalDialog({
 					</DialogDescription>
 				</DialogHeader>
 				{errorMessage ? (
-					<p className="text-destructive text-sm">{errorMessage}</p>
+					<p className="text-destructive text-sm [overflow-wrap:anywhere]">
+						{errorMessage}
+					</p>
 				) : null}
 				{open ? (
 					<AssignCustomerToDraftRentalForm

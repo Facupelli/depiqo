@@ -26,7 +26,7 @@ export function ChangeSelectionQuantityDialog({
 }: ChangeSelectionQuantityDialogProps) {
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="sm:max-w-lg">
+			<DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-lg">
 				<DialogHeader>
 					<DialogTitle>Editar cantidad</DialogTitle>
 					<DialogDescription>
@@ -56,8 +56,10 @@ function ChangeSelectionQuantityDialogContent({
 	return (
 		<div className="space-y-5">
 			<div className="rounded-lg border bg-neutral-50 p-4">
-				<p className="font-medium text-sm">{selection.rentableItemName}</p>
-				<div className="mt-3 flex items-center justify-between gap-4">
+				<p className="font-medium text-sm [overflow-wrap:anywhere]">
+					{selection.rentableItemName}
+				</p>
+				<div className="mt-3 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
 					<div className="text-muted-foreground text-sm">
 						<p>Actual: {dialog.currentQuantity}</p>
 						<p>Nueva: {dialog.quantity}</p>
@@ -73,7 +75,7 @@ function ChangeSelectionQuantityDialogContent({
 			</div>
 
 			{dialog.mode === "increase" ? (
-				<div className="space-y-1 text-sm">
+				<div className="space-y-1 text-sm [overflow-wrap:anywhere]">
 					<p>Unidades adicionales necesarias: {dialog.additionalQuantity}</p>
 					{dialog.availabilityState === "checking" ? (
 						<p className="text-muted-foreground">
@@ -104,8 +106,11 @@ function ChangeSelectionQuantityDialogContent({
 						</p>
 					</div>
 					{dialog.releaseRequirements?.map((requirement) => (
-						<fieldset key={requirement.demandLineId} className="space-y-2">
-							<legend className="font-medium text-sm">
+						<fieldset
+							key={requirement.demandLineId}
+							className="min-w-0 space-y-2"
+						>
+							<legend className="max-w-full font-medium text-sm [overflow-wrap:anywhere]">
 								{requirement.equipmentTypeName}
 							</legend>
 							<p className="text-muted-foreground text-xs">
@@ -122,7 +127,7 @@ function ChangeSelectionQuantityDialogContent({
 										<label
 											key={assignment.assetId}
 											htmlFor={checkboxId}
-											className="flex items-center gap-2 text-sm"
+											className="flex min-w-0 items-start gap-2 text-sm"
 										>
 											<Checkbox
 												id={checkboxId}
@@ -137,7 +142,9 @@ function ChangeSelectionQuantityDialogContent({
 													)
 												}
 											/>
-											<span>{label}</span>
+											<span className="min-w-0 [overflow-wrap:anywhere]">
+												{label}
+											</span>
 										</label>
 									);
 								})}
@@ -148,7 +155,9 @@ function ChangeSelectionQuantityDialogContent({
 			) : null}
 
 			{dialog.submitErrorMessage ? (
-				<p className="text-destructive text-sm">{dialog.submitErrorMessage}</p>
+				<p className="text-destructive text-sm [overflow-wrap:anywhere]">
+					{dialog.submitErrorMessage}
+				</p>
 			) : null}
 
 			<DialogFooter className="gap-2">
