@@ -105,7 +105,7 @@ export function RentalEquipmentSection() {
 						)}
 					</div>
 				</div>
-				<section className="mb-10 space-y-3">
+				<section className="mb-10 min-w-0 space-y-3">
 					{rental.selections.map((selection) => {
 						const hasReferencedAccessories = selection.demandLines.some(
 							(demandLine) => accessoriesByEquipmentLine.has(demandLine.id),
@@ -181,64 +181,65 @@ function RentalEquipmentCard({
 		: [];
 
 	return (
-		<div className="rounded-xl border border-neutral-200 bg-white p-4 transition-colors hover:border-neutral-300">
-			<div className="grid gap-4 sm:grid-cols-[1fr_auto]">
-				<div className="flex gap-4">
-					<ProductImage imageUrl={selection.rentableItem?.imageUrl ?? null} />
-					<div className="flex min-w-0 flex-col gap-0.5">
-						<span className="font-semibold leading-snug text-neutral-950">
+		<div className="@container/equipment-card min-w-0 rounded-xl border border-neutral-200 bg-white p-3 transition-colors hover:border-neutral-300 @sm/equipment-card:p-4">
+			<div className="flex min-w-0 items-start gap-3 @md/equipment-card:gap-4">
+				<ProductImage imageUrl={selection.rentableItem?.imageUrl ?? null} />
+				<div className="min-w-0 flex-1 space-y-2">
+					<div className="flex min-w-0 flex-wrap items-start gap-x-3 gap-y-1">
+						<span className="min-w-0 flex-1 break-words font-semibold leading-snug text-neutral-950">
 							{selection.rentableItemName}
 						</span>
-						<div className="flex items-center gap-6">
-							<QuantityText quantity={selection.quantity} />
-
-							<div className="flex items-center">
-								{onEditQuantity ? (
-									<Button
-										type="button"
-										variant="ghost"
-										size="icon"
-										className="size-6 text-neutral-500"
-										onClick={onEditQuantity}
-										aria-label={`Editar cantidad de ${selection.rentableItemName}`}
-									>
-										<Pencil className="size-3.5" />
-									</Button>
-								) : null}
-								{onRemove ? (
-									<RemoveSelectionButton
-										disabledReason={removeDisabledReason}
-										onRemove={onRemove}
-									/>
-								) : null}
-							</div>
+						<div className="flex shrink-0 items-center">
+							{onEditQuantity ? (
+								<Button
+									type="button"
+									variant="ghost"
+									size="icon"
+									className="size-6 text-neutral-500"
+									onClick={onEditQuantity}
+									aria-label={`Editar cantidad de ${selection.rentableItemName}`}
+								>
+									<Pencil className="size-3.5" />
+								</Button>
+							) : null}
+							{onRemove ? (
+								<RemoveSelectionButton
+									disabledReason={removeDisabledReason}
+									onRemove={onRemove}
+								/>
+							) : null}
 						</div>
-						{!isPackage
-							? owners.map((owner) => (
+					</div>
+					<div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+						<QuantityText quantity={selection.quantity} />
+						<span className="rounded-full bg-neutral-100 px-2 py-0.5 font-medium text-[11px] text-neutral-600">
+							{isPackage ? "Combo" : "Equipo"}
+						</span>
+					</div>
+					{!isPackage ? (
+						<div className="space-y-2">
+							<div className="space-y-0.5">
+								{owners.map((owner) => (
 									<span
 										key={owner}
-										className="flex items-center gap-1 text-[11px] text-neutral-500"
+										className="flex min-w-0 items-start gap-1 text-[11px] text-neutral-500"
 									>
-										<User2Icon className="size-3 shrink-0" />
-										Propietario: {owner}
+										<User2Icon className="mt-0.5 size-3 shrink-0" />
+										<span className="min-w-0 break-words">
+											Propietario: {owner}
+										</span>
 									</span>
-								))
-							: null}
-						{!isPackage ? (
-							<div className="mt-2 space-y-1.5">
+								))}
+							</div>
+							<div className="space-y-1.5">
 								<p className="text-neutral-400 text-xs">Nº de serie</p>
 								<AssignedAssetsList
 									assignments={singleDemandLine?.assignedAssets ?? []}
 									onReplace={onReplaceAssignedAsset}
 								/>
 							</div>
-						) : null}
-					</div>
-				</div>
-				<div className="flex items-start justify-end">
-					<span className="rounded-full bg-neutral-100 px-2 py-0.5 font-medium text-[11px] text-neutral-600">
-						{isPackage ? "Combo" : "Equipo"}
-					</span>
+						</div>
+					) : null}
 				</div>
 			</div>
 			{isPackage ? (
@@ -311,7 +312,7 @@ function RentalPackageChildrenList({
 	>;
 }) {
 	return (
-		<div className="mt-4 border-neutral-100 border-t pt-3">
+		<div className="mt-4 min-w-0 border-neutral-100 border-t pt-3">
 			<p className="mb-2 font-semibold text-[11px] text-neutral-400 uppercase tracking-wide">
 				Equipos del combo
 			</p>
@@ -341,27 +342,29 @@ function RentalPackageChildRow({
 	const owners = getAssetOwners(equipment.assignedAssets);
 
 	return (
-		<div className="rounded-lg border border-neutral-100 bg-neutral-50 px-3 py-2">
-			<div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-center">
+		<div className="@container/package-child min-w-0 rounded-lg border border-neutral-100 bg-neutral-50 px-2.5 py-2 @sm/package-child:px-3">
+			<div className="grid min-w-0 gap-3 @md/package-child:grid-cols-[minmax(0,1fr)_auto] @md/package-child:items-center">
 				<div className="flex min-w-0 items-start gap-3">
 					<ProductImage imageUrl={null} variant="compact" />
 					<div className="min-w-0 space-y-0.5">
-						<p className="truncate font-medium text-neutral-800 text-sm">
+						<p className="break-words font-medium text-neutral-800 text-sm">
 							{equipment.equipmentTypeName}
 						</p>
 						<QuantityText quantity={equipment.quantity} compact />
 						{owners.map((owner) => (
 							<span
 								key={owner}
-								className="flex items-center gap-1 text-[11px] text-neutral-500"
+								className="flex min-w-0 items-start gap-1 text-[11px] text-neutral-500"
 							>
-								<User2Icon className="size-3 shrink-0" />
-								Propietario: {owner}
+								<User2Icon className="mt-0.5 size-3 shrink-0" />
+								<span className="min-w-0 break-words">
+									Propietario: {owner}
+								</span>
 							</span>
 						))}
 					</div>
 				</div>
-				<div className="space-y-1 sm:justify-self-end">
+				<div className="min-w-0 space-y-1 @md/package-child:justify-self-end">
 					<AssignedAssetsList
 						assignments={equipment.assignedAssets}
 						onReplace={onReplaceAssignedAsset}
@@ -437,13 +440,13 @@ function RentalAccessoryRow({
 	return (
 		<div
 			className={cn(
-				"grid gap-3 rounded-lg border sm:grid-cols-[1fr_auto] sm:items-center",
+				"@container/accessory-row grid min-w-0 gap-2 rounded-lg border @md/accessory-row:grid-cols-[minmax(0,1fr)_auto] @md/accessory-row:items-center @md/accessory-row:gap-3",
 				variant === "default"
-					? "border-neutral-100 bg-neutral-50 px-3 py-2"
+					? "border-neutral-100 bg-neutral-50 px-2.5 py-2 @sm/accessory-row:px-3"
 					: "border-neutral-200/70 bg-white/70 px-2.5 py-1.5",
 			)}
 		>
-			<div className="flex min-w-0 items-center gap-3">
+			<div className="flex min-w-0 items-start gap-3">
 				<div
 					className={cn(
 						"flex shrink-0 items-center justify-center rounded-md border border-neutral-200 bg-white",
@@ -460,7 +463,7 @@ function RentalAccessoryRow({
 				<div className="min-w-0">
 					<p
 						className={cn(
-							"truncate font-medium text-neutral-800",
+							"break-words font-medium text-neutral-800",
 							variant === "default" ? "text-sm" : "text-xs",
 						)}
 					>
@@ -469,7 +472,7 @@ function RentalAccessoryRow({
 					<QuantityText quantity={accessory.quantity} compact />
 				</div>
 			</div>
-			<div className="space-y-1 sm:justify-self-end">
+			<div className="min-w-0 space-y-1 @md/accessory-row:justify-self-end">
 				{serials.length > 0 ? (
 					<SerialChips serials={serials} maxVisible={3} />
 				) : (
@@ -489,7 +492,7 @@ function UnlinkedAccessoriesCard({
 	accessories: GetRentalDetailViewResponseDto["accessories"];
 }) {
 	return (
-		<div className="rounded-xl border border-amber-200 bg-amber-50/60 p-4">
+		<div className="min-w-0 rounded-xl border border-amber-200 bg-amber-50/60 p-3 @sm/rental-detail:p-4">
 			<p className="mb-3 font-semibold text-amber-900 text-xs">
 				Accesorios sin equipo asociado
 			</p>
@@ -520,7 +523,7 @@ function AssignedAssetsList({
 	}
 
 	return (
-		<div className="space-y-1.5">
+		<div className="min-w-0 space-y-1.5">
 			{assignments.map((assignment) => {
 				const label = assignment.asset?.serialNumber?.trim();
 				const isIdentifiable = label !== undefined;
@@ -528,11 +531,11 @@ function AssignedAssetsList({
 				return (
 					<div
 						key={assignment.assetId}
-						className="flex flex-wrap items-center justify-between gap-2"
+						className="flex min-w-0 flex-wrap items-center justify-between gap-2"
 					>
-						<div className="flex items-center gap-2">
+						<div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
 							{isIdentifiable && (
-								<span className="rounded-sm border border-neutral-200 bg-white px-2 py-0.5 font-mono font-semibold text-neutral-600 text-xs">
+								<span className="max-w-full break-all rounded-sm border border-neutral-200 bg-white px-2 py-0.5 font-mono font-semibold text-neutral-600 text-xs">
 									{label}
 								</span>
 							)}
@@ -575,11 +578,11 @@ function SerialChips({
 	const hiddenCount = serials.length - visibleSerials.length;
 
 	return (
-		<div className="flex flex-wrap gap-1.5">
+		<div className="flex min-w-0 flex-wrap gap-1.5">
 			{visibleSerials.map((serial) => (
 				<span
 					key={serial}
-					className="rounded-sm border border-neutral-200 bg-white px-2 py-0.5 font-mono font-semibold text-neutral-600 text-xs"
+					className="max-w-full break-all rounded-sm border border-neutral-200 bg-white px-2 py-0.5 font-mono font-semibold text-neutral-600 text-xs"
 				>
 					{serial}
 				</span>
@@ -601,8 +604,10 @@ function ProductImage({
 	variant?: "default" | "compact";
 }) {
 	const publicImageUrl = buildR2PublicUrl(imageUrl, "catalog");
-	const sizeClassName = variant === "default" ? "size-18" : "size-10";
-	const iconClassName = variant === "default" ? "size-6" : "size-4";
+	const sizeClassName =
+		variant === "default" ? "size-14 @md/equipment-card:size-18" : "size-10";
+	const iconClassName =
+		variant === "default" ? "size-5 @md/equipment-card:size-6" : "size-4";
 
 	return (
 		<div
@@ -630,7 +635,7 @@ function MissingAssetsFeedback({ assetIds }: { assetIds: string[] }) {
 	}
 
 	return (
-		<p className="font-mono text-[11px] text-amber-700">
+		<p className="min-w-0 break-words font-mono text-[11px] text-amber-700">
 			Asset no encontrado: {assetIds.join(", ")}
 		</p>
 	);
