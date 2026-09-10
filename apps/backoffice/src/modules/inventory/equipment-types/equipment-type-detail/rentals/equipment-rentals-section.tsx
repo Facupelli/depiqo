@@ -84,6 +84,7 @@ export function EquipmentRentalsSection({
 }
 
 function IndividualRentalsSection({
+	equipmentTypeId,
 	items,
 }: {
 	equipmentTypeId: string;

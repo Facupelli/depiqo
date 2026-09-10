@@ -35,6 +35,7 @@ export function EquipmentListRowActions({
 			/>
 			<DropdownMenuContent
 				align="end"
+				className="min-w-64"
 				onClick={(event) => event.stopPropagation()}
 			>
 				<DropdownMenuItem onClick={onEdit}>

@@ -153,7 +153,7 @@ export function EditEquipmentTypeForm({
 							return (
 								<Field data-invalid={isInvalid}>
 									<FieldLabel htmlFor={field.name}>
-										Descripción breve{" "}
+										Descripción{" "}
 										<span className="text-muted-foreground text-xs">
 											(opcional)
 										</span>

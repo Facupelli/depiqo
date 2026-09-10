@@ -191,7 +191,7 @@ export function CreateIndividualRentalForm({
 										variant="label"
 										className="font-semibold text-lg"
 									>
-										Disponible en
+										Sucursales donde se ofrece
 									</FieldLegend>
 									<FieldDescription>
 										Selecciona al menos una sucursal comercial.

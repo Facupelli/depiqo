@@ -31,7 +31,7 @@ export function AddUnitsDialog({
 		<Dialog open={open} onOpenChange={onOpenChange}>
 			<DialogContent className="max-h-[calc(100vh-2rem)] overflow-y-auto sm:max-w-5xl">
 				<DialogHeader>
-					<DialogTitle>Agregar unidades</DialogTitle>
+					<DialogTitle>Añadir unidades</DialogTitle>
 					<DialogDescription>
 						Carga una o más unidades físicas para este tipo de equipo.
 					</DialogDescription>
