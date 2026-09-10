@@ -423,7 +423,7 @@ function FilterSelect({
 					<SelectValue />
 				)}
 			</SelectTrigger>
-			<SelectContent>
+			<SelectContent align="start" alignItemWithTrigger={false}>
 				{items.map((item) => (
 					<SelectItem key={item.value} value={item.value}>
 						{item.label}

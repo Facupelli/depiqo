@@ -4,6 +4,7 @@ import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
+	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@repo/ui/components/dropdown-menu";
 import {
@@ -76,6 +77,7 @@ export function UnitRowActionsMenu({
 						Reactivar
 					</DropdownMenuItem>
 				) : null}
+				{unit.status !== "RETIRED" ? <DropdownMenuSeparator /> : null}
 				{unit.status !== "RETIRED" ? (
 					<DropdownMenuItem
 						disabled={isLifecyclePending}
