@@ -8,7 +8,6 @@ import {
 import { useState } from "react";
 import { useRentalDetailContext } from "@/modules/rentals/rental-detail/rental-detail.context";
 import { useTenantTimezone } from "@/shared/timezone/operational-timezone.hooks";
-import { useRentalContractSigningSummary } from "./rental-contract-signing.queries";
 import {
 	formatRentalContractSigningDate,
 	getRentalContractSigningState,
@@ -17,11 +16,12 @@ import {
 import { useRentalSignedRemitoDownload } from "./use-rental-signed-remito-download";
 
 export function RentalContractSigningCard() {
-	const { rental } = useRentalDetailContext();
+	const {
+		rental,
+		contractSigningSummary: summary,
+		isContractSigningSummaryLoading: isLoading,
+	} = useRentalDetailContext();
 	const timezone = useTenantTimezone();
-	const { data: summary, isLoading } = useRentalContractSigningSummary(
-		rental.id,
-	);
 	const [isExpanded, setIsExpanded] = useState(false);
 	const signedPdf = summary?.artifacts.signedPdf ?? null;
 	const signedRemitoDownload = useRentalSignedRemitoDownload(
