@@ -4,6 +4,7 @@ import { formatOrderNumber } from "@/shared/utils/formatters";
 import { RentalActivityLog } from "./components/rental-activity-log";
 import { RentalDetailHeader } from "./components/rental-detail-header";
 import { RentalEquipmentSection } from "./components/rental-equipment-section";
+import { RentalOperationalSummary } from "./components/rental-operational-summary";
 import { RentalSidebarCards } from "./components/rental-sidebar-cards";
 import { rentalCustomerQueries } from "./customer-summary/rental-customer-summary.queries";
 import { useRentalContractSigningSummary } from "./documents/signing/rental-contract-signing.queries";
@@ -49,7 +50,8 @@ export function RentalDetailPage({ orderId }: RentalDetailPageProps) {
 				isContractSigningSummaryError={isContractSigningSummaryError}
 			>
 				<RentalDetailHeader />
-				<div className="grid gap-8 py-10 @5xl/rental-detail:grid-cols-[minmax(0,1fr)_360px]">
+				<RentalOperationalSummary />
+				<div className="grid gap-8 pt-6 pb-10 @5xl/rental-detail:grid-cols-[minmax(0,1fr)_360px] @5xl/rental-detail:py-10">
 					<RentalEquipmentSection />
 					<div className="@5xl/rental-detail:col-start-2 @5xl/rental-detail:row-span-2 @5xl/rental-detail:row-start-1">
 						<RentalSidebarCards />

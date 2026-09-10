@@ -23,6 +23,7 @@ import { useRentalDetailContext } from "../rental-detail.context";
 import {
 	formatRentalDetailDateBlock,
 	getRentalCustomerInitials,
+	getRentalDisplayTotal,
 } from "../rental-detail.utils";
 
 export function RentalSidebarCards() {
@@ -45,7 +46,6 @@ function RentalClientCard() {
 	} = useRentalDetailContext();
 	const customer = customerSummary;
 	const hasLinkedCustomer = rental.customerId !== null;
-	const canAssignCustomer = !hasLinkedCustomer && rental.status === "DRAFT";
 
 	return (
 		<SidebarCard
@@ -89,17 +89,22 @@ function RentalClientCard() {
 						resumen.
 					</p>
 				</div>
-			) : canAssignCustomer ? (
-				<div className="space-y-2 rounded-md border border-amber-200 bg-amber-50 p-3">
-					<p className="text-xs text-amber-900">
-						Este borrador todavía no tiene un cliente vinculado.
-					</p>
-					<AssignCustomerToDraftRentalDialog />
-				</div>
 			) : (
-				<p className="text-sm text-amber-900">
-					Todavía no hay un cliente vinculado.
-				</p>
+				<AssignCustomerToDraftRentalDialog
+					renderTrigger={(trigger) => (
+						<div className="space-y-2 rounded-md border border-amber-200 bg-amber-50 p-3">
+							<p className="text-xs text-amber-900">
+								Este borrador todavía no tiene un cliente vinculado.
+							</p>
+							{trigger}
+						</div>
+					)}
+					unavailableFallback={
+						<p className="text-sm text-amber-900">
+							Todavía no hay un cliente vinculado.
+						</p>
+					}
+				/>
 			)}
 		</SidebarCard>
 	);
@@ -183,9 +188,7 @@ function RentalFinancialsCard() {
 	}
 
 	const acceptedDelivery = rental.acceptedDelivery;
-	const headlineTotal = acceptedDelivery
-		? (rental.acceptedCustomerTotal ?? pricing.total)
-		: pricing.total;
+	const headlineTotal = getRentalDisplayTotal(rental, pricing);
 	const manualAdjustment = pricing.manualPricingAdjustment ?? null;
 	const canEditPrice =
 		rental.status === "CONFIRMED" && Date.now() < Date.parse(rental.period.end);

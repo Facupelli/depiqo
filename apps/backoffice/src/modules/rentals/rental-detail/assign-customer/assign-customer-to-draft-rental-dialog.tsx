@@ -8,7 +8,7 @@ import {
 	DialogTrigger,
 } from "@repo/ui/components/dialog";
 import { UserPlus } from "lucide-react";
-import { useState } from "react";
+import { type ReactElement, type ReactNode, useState } from "react";
 import { useRentalDetailContext } from "../rental-detail.context";
 import { getAssignCustomerToDraftRentalErrorMessage } from "./assign-customer-to-draft-rental.errors";
 import { useAssignCustomerToDraftRental } from "./assign-customer-to-draft-rental.mutation";
@@ -18,7 +18,17 @@ import {
 } from "./assign-customer-to-draft-rental.schema";
 import { AssignCustomerToDraftRentalForm } from "./assign-customer-to-draft-rental-form";
 
-export function AssignCustomerToDraftRentalDialog() {
+type AssignCustomerToDraftRentalDialogProps = {
+	trigger?: ReactElement;
+	renderTrigger?: (trigger: ReactElement) => ReactNode;
+	unavailableFallback?: ReactNode;
+};
+
+export function AssignCustomerToDraftRentalDialog({
+	trigger,
+	renderTrigger = (dialogTrigger) => dialogTrigger,
+	unavailableFallback = null,
+}: AssignCustomerToDraftRentalDialogProps = {}) {
 	const { rental } = useRentalDetailContext();
 	const [open, setOpen] = useState(false);
 	const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -43,16 +53,29 @@ export function AssignCustomerToDraftRentalDialog() {
 		}
 	}
 
-	return (
-		<Dialog open={open} onOpenChange={handleOpenChange}>
-			<DialogTrigger
-				render={
+	const canAssignCustomer =
+		rental.customerId === null && rental.status === "DRAFT";
+
+	if (!canAssignCustomer) {
+		return unavailableFallback;
+	}
+
+	const dialogTrigger = (
+		<DialogTrigger
+			render={
+				trigger ?? (
 					<Button type="button" size="sm">
 						<UserPlus className="size-4" />
 						Asignar cliente
 					</Button>
-				}
-			/>
+				)
+			}
+		/>
+	);
+
+	return (
+		<Dialog open={open} onOpenChange={handleOpenChange}>
+			{renderTrigger(dialogTrigger)}
 			<DialogContent className="sm:max-w-xl">
 				<DialogHeader>
 					<DialogTitle>Asignar cliente al borrador</DialogTitle>
