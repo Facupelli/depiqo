@@ -67,9 +67,9 @@ export function RentalDetailPage({ orderId }: RentalDetailPageProps) {
 			>
 				<RentalDetailHeader />
 				<RentalOperationalSummary />
-				<div className="grid gap-8 pt-6 pb-10 @5xl/rental-detail:grid-cols-[minmax(0,1fr)_360px] @5xl/rental-detail:py-10">
+				<div className="grid gap-6 pt-6 pb-8 @5xl/rental-detail:grid-cols-[minmax(0,1fr)_360px] @5xl/rental-detail:gap-8 @5xl/rental-detail:py-10">
 					<RentalEquipmentSection />
-					<div className="@5xl/rental-detail:col-start-2 @5xl/rental-detail:row-span-2 @5xl/rental-detail:row-start-1">
+					<div className="min-w-0 @5xl/rental-detail:col-start-2 @5xl/rental-detail:row-span-2 @5xl/rental-detail:row-start-1">
 						<RentalSidebarCards />
 					</div>
 					<RentalActivityLog />

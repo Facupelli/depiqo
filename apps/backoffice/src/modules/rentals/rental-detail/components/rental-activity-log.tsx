@@ -8,7 +8,7 @@ export function RentalActivityLog() {
 	const timezone = useTenantTimezone();
 
 	return (
-		<section>
+		<section className="min-w-0">
 			<div className="mb-5 flex items-center gap-2">
 				<Clock className="size-4 text-neutral-400" />
 				<span className="text-sm font-semibold text-neutral-950">
@@ -43,15 +43,19 @@ function ActivityEntry({
 	timestamp: string;
 }) {
 	return (
-		<div className="flex items-start gap-4">
+		<div className="flex min-w-0 items-start gap-4">
 			<div className="shrink-0 pt-1">
 				<div className="flex size-8 items-center justify-center rounded-full bg-neutral-950">
 					<Clock className="size-3.5 text-white" />
 				</div>
 			</div>
-			<div className="flex flex-col gap-0.5 pb-6">
-				<span className="text-sm font-semibold text-neutral-950">{label}</span>
-				<span className="text-xs text-neutral-400">{timestamp} · System</span>
+			<div className="flex min-w-0 flex-1 flex-col gap-0.5 pb-6">
+				<span className="block break-words text-sm font-semibold text-neutral-950">
+					{label}
+				</span>
+				<span className="block break-words text-xs text-neutral-400">
+					{timestamp} · System
+				</span>
 			</div>
 		</div>
 	);
