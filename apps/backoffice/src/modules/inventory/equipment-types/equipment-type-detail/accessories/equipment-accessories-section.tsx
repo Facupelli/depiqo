@@ -13,7 +13,7 @@ import { Link } from "@tanstack/react-router";
 import { Loader2, PackageOpen, Pencil } from "lucide-react";
 import { useState } from "react";
 import { buildR2PublicUrl } from "@/lib/r2-public-url";
-import { EditEquipmentAccessoriesDialog } from "./edit-equipment-accessories-dialog";
+import { EditEquipmentAccessoriesEditor } from "./edit-equipment-accessories-editor";
 import { useEquipmentTypeAccessoryDefaults } from "./equipment-type-accessory-defaults.queries";
 
 export function EquipmentAccessoriesSection({
@@ -21,7 +21,7 @@ export function EquipmentAccessoriesSection({
 }: {
 	equipmentTypeId: string;
 }) {
-	const [isEditorOpen, setIsEditorOpen] = useState(false);
+	const [isEditing, setIsEditing] = useState(false);
 	const accessoriesQuery = useEquipmentTypeAccessoryDefaults(equipmentTypeId);
 	const accessories = accessoriesQuery.data;
 
@@ -35,10 +35,10 @@ export function EquipmentAccessoriesSection({
 						equipo.
 					</p>
 				</div>
-				{accessories && accessories.length > 0 ? (
-					<Button variant="outline" onClick={() => setIsEditorOpen(true)}>
+				{!isEditing && accessories && accessories.length > 0 ? (
+					<Button variant="outline" onClick={() => setIsEditing(true)}>
 						<Pencil className="mr-2 size-4" />
-						Editar accesorios
+						Gestionar accesorios
 					</Button>
 				) : null}
 			</div>
@@ -68,23 +68,22 @@ export function EquipmentAccessoriesSection({
 						Intentar nuevamente
 					</Button>
 				</div>
+			) : isEditing && accessories ? (
+				<EditEquipmentAccessoriesEditor
+					key={equipmentTypeId}
+					equipmentTypeId={equipmentTypeId}
+					accessoryDefaults={accessories}
+					onCancel={() => setIsEditing(false)}
+					onSaved={() => setIsEditing(false)}
+				/>
 			) : (
 				<AccessoryCollection
 					items={accessories ?? []}
 					isLoading={accessoriesQuery.isPending}
 					isRefreshing={accessoriesQuery.isFetching && Boolean(accessories)}
-					onConfigure={() => setIsEditorOpen(true)}
+					onConfigure={() => setIsEditing(true)}
 				/>
 			)}
-
-			{accessories ? (
-				<EditEquipmentAccessoriesDialog
-					open={isEditorOpen}
-					onOpenChange={setIsEditorOpen}
-					equipmentTypeId={equipmentTypeId}
-					accessoryDefaults={accessories}
-				/>
-			) : null}
 		</section>
 	);
 }

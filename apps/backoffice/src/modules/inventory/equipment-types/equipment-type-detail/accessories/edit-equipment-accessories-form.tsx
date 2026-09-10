@@ -39,10 +39,10 @@ export function EditEquipmentAccessoriesForm({
 	});
 
 	return (
-		<>
+		<div className="space-y-6 rounded-lg border bg-background p-4 @2xl/equipment-accessories:p-6">
 			<form
 				id={formId}
-				className="space-y-5"
+				className="space-y-6"
 				onSubmit={(event) => {
 					event.preventDefault();
 					event.stopPropagation();
@@ -74,6 +74,11 @@ export function EditEquipmentAccessoriesForm({
 					{(field) => (
 						<Field>
 							<div className="overflow-hidden rounded-md border">
+								<div className="hidden grid-cols-[minmax(0,1fr)_11rem_7rem] gap-4 border-b bg-muted/40 px-4 py-2.5 font-medium text-muted-foreground text-xs @2xl/equipment-accessories:grid">
+									<span>Accesorio</span>
+									<span>Cantidad sugerida</span>
+									<span>Acción</span>
+								</div>
 								{field.state.value.length === 0 ? (
 									<p className="px-4 py-10 text-center text-muted-foreground text-sm">
 										No hay accesorios en la configuración. Puedes añadir uno o
@@ -84,13 +89,11 @@ export function EditEquipmentAccessoriesForm({
 										{field.state.value.map((accessory, index) => (
 											<li
 												key={accessory.accessoryEquipmentTypeId}
-												className="grid gap-3 px-4 py-3 sm:grid-cols-[minmax(0,1fr)_9rem_2.5rem] sm:items-start"
+												className="grid gap-3 px-4 py-3 @2xl/equipment-accessories:grid-cols-[minmax(0,1fr)_11rem_7rem] @2xl/equipment-accessories:items-center @2xl/equipment-accessories:gap-4"
 											>
-												<div className="min-w-0">
-													<p className="truncate font-medium text-sm">
-														{accessory.name}
-													</p>
-												</div>
+												<p className="min-w-0 truncate font-medium text-sm">
+													{accessory.name}
+												</p>
 												<form.Field name={`accessories[${index}].quantity`}>
 													{(quantityField) => {
 														const isInvalid =
@@ -98,8 +101,11 @@ export function EditEquipmentAccessoriesForm({
 															!quantityField.state.meta.isValid;
 														return (
 															<Field data-invalid={isInvalid}>
-																<FieldLabel htmlFor={quantityField.name}>
-																	Cantidad
+																<FieldLabel
+																	htmlFor={quantityField.name}
+																	className="@2xl/equipment-accessories:sr-only"
+																>
+																	Cantidad sugerida
 																</FieldLabel>
 																<Input
 																	id={quantityField.name}
@@ -128,12 +134,12 @@ export function EditEquipmentAccessoriesForm({
 												<Button
 													type="button"
 													variant="ghost"
-													size="icon"
-													className="justify-self-end sm:mt-6"
+													className="w-fit px-2 text-muted-foreground hover:text-destructive"
 													onClick={() => field.removeValue(index)}
 													aria-label={`Eliminar ${accessory.name}`}
 												>
 													<Trash2 className="size-4" />
+													Eliminar
 												</Button>
 											</li>
 										))}
@@ -158,12 +164,12 @@ export function EditEquipmentAccessoriesForm({
 							form={formId}
 							disabled={!canSubmit || isPending}
 						>
-							{isSubmitting || isPending ? "Guardando..." : "Guardar"}
+							{isSubmitting || isPending ? "Guardando..." : "Guardar cambios"}
 						</Button>
 					)}
 				</form.Subscribe>
 			</div>
-		</>
+		</div>
 	);
 }
 
@@ -222,7 +228,7 @@ function EquipmentTypePicker({
 	const searchInputId = useId();
 
 	return (
-		<section className="space-y-2 rounded-md border bg-muted/20 p-3">
+		<section className="space-y-3 rounded-md border bg-muted/20 p-4">
 			<Field>
 				<FieldLabel htmlFor={searchInputId}>Añadir accesorio</FieldLabel>
 				<div className="relative">
@@ -251,34 +257,39 @@ function EquipmentTypePicker({
 				</div>
 			) : null}
 			{options.length > 0 || !isError ? (
-				<div className="max-h-48 overflow-y-auto rounded-md border bg-background">
-					{options.length === 0 ? (
-						<p className="px-3 py-6 text-center text-muted-foreground text-sm">
-							{isPending || isFetching
-								? "Buscando tipos de equipo..."
-								: "No hay tipos de equipo disponibles para agregar."}
-						</p>
-					) : (
-						<ul className="divide-y">
-							{options.map((option) => (
-								<li key={option.id}>
-									<button
-										type="button"
-										className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left transition-colors hover:bg-muted"
-										onClick={() => onSelect(option)}
-									>
-										<span className="truncate font-medium text-sm">
-											{option.name}
-										</span>
-										<span className="inline-flex shrink-0 items-center text-primary text-sm">
-											<Plus className="mr-1 size-4" />
-											Agregar
-										</span>
-									</button>
-								</li>
-							))}
-						</ul>
-					)}
+				<div className="space-y-2">
+					<p className="font-medium text-muted-foreground text-xs">
+						Resultados
+					</p>
+					<div className="max-h-48 overflow-y-auto rounded-md border bg-background">
+						{options.length === 0 ? (
+							<p className="px-3 py-6 text-center text-muted-foreground text-sm">
+								{isPending || isFetching
+									? "Buscando tipos de equipo..."
+									: "No hay tipos de equipo disponibles para agregar."}
+							</p>
+						) : (
+							<ul className="divide-y">
+								{options.map((option) => (
+									<li key={option.id}>
+										<button
+											type="button"
+											className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left transition-colors hover:bg-muted"
+											onClick={() => onSelect(option)}
+										>
+											<span className="truncate font-medium text-sm">
+												{option.name}
+											</span>
+											<span className="inline-flex shrink-0 items-center text-primary text-sm">
+												<Plus className="mr-1 size-4" />
+												Añadir
+											</span>
+										</button>
+									</li>
+								))}
+							</ul>
+						)}
+					</div>
 				</div>
 			) : null}
 		</section>
