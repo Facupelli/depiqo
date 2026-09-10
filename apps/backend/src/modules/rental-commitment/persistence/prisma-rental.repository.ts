@@ -116,8 +116,6 @@ export class PrismaRentalRepository extends RentalRepository {
 
     await tx.v2AssignedAsset.deleteMany({ where: rentalWhere });
     await tx.v2AssetBlock.deleteMany({ where: rentalWhere });
-    await tx.v2RentalDemandLine.deleteMany({ where: rentalWhere });
-    await tx.v2RentalSelection.deleteMany({ where: rentalWhere });
 
     await tx.v2RentalDeliveryDetails.deleteMany({
       where: {
@@ -134,16 +132,39 @@ export class PrismaRentalRepository extends RentalRepository {
       });
     }
 
-    if (rental.selections.length > 0) {
-      await tx.v2RentalSelection.createMany({
-        data: rental.selections.map(RentalMapper.toSelectionCreateData),
+    for (const selection of rental.selections) {
+      const updated = await tx.v2RentalSelection.updateMany({
+        where: {
+          id: selection.id,
+          tenantId: selection.tenantId,
+          rentalId: selection.rentalId,
+        },
+        data: RentalMapper.toSelectionUpdateData(selection),
       });
+
+      if (updated.count === 0) {
+        await tx.v2RentalSelection.create({
+          data: RentalMapper.toSelectionCreateData(selection),
+        });
+      }
     }
 
-    if (rental.demandLines.length > 0) {
-      await tx.v2RentalDemandLine.createMany({
-        data: rental.demandLines.map(RentalMapper.toDemandLineCreateData),
+    for (const demandLine of rental.demandLines) {
+      const updated = await tx.v2RentalDemandLine.updateMany({
+        where: {
+          id: demandLine.id,
+          tenantId: demandLine.tenantId,
+          rentalId: demandLine.rentalId,
+          rentalSelectionId: demandLine.rentalSelectionId,
+        },
+        data: RentalMapper.toDemandLineUpdateData(demandLine),
       });
+
+      if (updated.count === 0) {
+        await tx.v2RentalDemandLine.create({
+          data: RentalMapper.toDemandLineCreateData(demandLine),
+        });
+      }
     }
 
     if (rental.assignedAssets.length > 0) {
