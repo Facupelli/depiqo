@@ -38,7 +38,7 @@ export function RentalAccessoryAssignmentSheet({
 }: RentalAccessoryAssignmentSheetProps) {
 	return (
 		<Sheet open={open} onOpenChange={onOpenChange}>
-			<SheetContent className="w-full max-w-full min-w-0 gap-0 overflow-hidden p-0 sm:max-w-160">
+			<SheetContent className="w-full max-w-full min-w-0 gap-0 overflow-hidden p-0 data-[side=right]:w-[90%] data-[side=right]:sm:max-w-160">
 				<SheetHeader className="min-w-0 border-neutral-200 border-b px-4 py-5 sm:px-6">
 					<div className="flex items-start gap-3 pr-10">
 						<SheetTitle>Asignar accesorios</SheetTitle>
