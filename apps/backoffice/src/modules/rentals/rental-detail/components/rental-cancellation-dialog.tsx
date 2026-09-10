@@ -26,7 +26,7 @@ export function RentalCancellationDialog({
 }: RentalCancellationDialogProps) {
 	return (
 		<AlertDialog open={open} onOpenChange={onOpenChange}>
-			<AlertDialogContent>
+			<AlertDialogContent className="max-h-[calc(100dvh-2rem)] max-w-[calc(100%-2rem)] overflow-y-auto">
 				<AlertDialogHeader>
 					<AlertDialogTitle>Cancelar alquiler</AlertDialogTitle>
 					<AlertDialogDescription>

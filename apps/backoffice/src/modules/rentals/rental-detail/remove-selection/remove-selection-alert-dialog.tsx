@@ -33,7 +33,7 @@ export function RemoveSelectionAlertDialog({
 }: RemoveSelectionAlertDialogProps) {
 	return (
 		<AlertDialog open={open && selection !== null} onOpenChange={onOpenChange}>
-			<AlertDialogContent>
+			<AlertDialogContent className="max-h-[calc(100dvh-2rem)] max-w-[calc(100%-2rem)] overflow-y-auto">
 				<AlertDialogHeader>
 					<AlertDialogTitle>Eliminar producto del pedido</AlertDialogTitle>
 					<AlertDialogDescription>
@@ -47,7 +47,9 @@ export function RemoveSelectionAlertDialog({
 						<div className="rounded-lg border bg-neutral-50 px-4 py-3">
 							<p className="text-muted-foreground text-xs">Producto</p>
 							<p className="font-medium text-sm">
-								{selection.rentableItemName}
+								<span className="[overflow-wrap:anywhere]">
+									{selection.rentableItemName}
+								</span>
 							</p>
 						</div>
 
@@ -59,11 +61,18 @@ export function RemoveSelectionAlertDialog({
 								{assignedAssetGroups.map((group) => (
 									<div key={group.demandLineId} className="space-y-1.5">
 										<p className="text-muted-foreground text-xs">
-											{group.equipmentTypeName}
+											<span className="[overflow-wrap:anywhere]">
+												{group.equipmentTypeName}
+											</span>
 										</p>
 										<ul className="space-y-1 rounded-lg border px-3 py-2 font-mono text-xs">
 											{group.assets.map((asset) => (
-												<li key={asset.assetId}>{asset.label}</li>
+												<li
+													key={asset.assetId}
+													className="[overflow-wrap:anywhere]"
+												>
+													{asset.label}
+												</li>
 											))}
 										</ul>
 									</div>
@@ -76,7 +85,7 @@ export function RemoveSelectionAlertDialog({
 				{errorMessage ? (
 					<div className="flex items-start gap-2 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-red-900 text-sm">
 						<AlertCircle className="mt-0.5 size-4 shrink-0" />
-						<p>{errorMessage}</p>
+						<p className="min-w-0 [overflow-wrap:anywhere]">{errorMessage}</p>
 					</div>
 				) : null}
 

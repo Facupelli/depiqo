@@ -34,7 +34,7 @@ export function NewArrivals({ branchId }: NewArrivalsProps) {
 		<section className="py-8" aria-labelledby={headingId}>
 			<div className="mb-4 flex items-center justify-between gap-4">
 				<div>
-					<h2 id={headingId} className="text-xl font-semibold tracking-tight">
+					<h2 id={headingId} className="text-xl font-semibold">
 						Nuevos productos
 					</h2>
 				</div>

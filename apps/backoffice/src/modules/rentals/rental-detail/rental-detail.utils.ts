@@ -1,5 +1,6 @@
 import dayjs from "@/lib/dates/dayjs";
 import { formatTimestampInTimezone } from "@/lib/dates/format";
+import type { GetRentalDetailViewResponseDto } from "./get-rental-detail-view/get-rental-detail-view.schema";
 
 export function formatRentalDetailDateTime(value: string, timezone: string) {
 	return formatTimestampInTimezone(value, timezone, "DD MMM, YYYY · HH:mm");
@@ -12,6 +13,15 @@ export function formatRentalDetailDateBlock(value: string, timezone: string) {
 		date: date.format("MMM DD, YYYY"),
 		time: date.format("HH:mm"),
 	};
+}
+
+export function getRentalDisplayTotal(
+	rental: GetRentalDetailViewResponseDto,
+	pricing: NonNullable<GetRentalDetailViewResponseDto["pricing"]>,
+) {
+	return rental.acceptedDelivery
+		? (rental.acceptedCustomerTotal ?? pricing.total)
+		: pricing.total;
 }
 
 export function getRentalCustomerInitials(value: string) {

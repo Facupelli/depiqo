@@ -10,42 +10,24 @@ export function RentalDetailHeader() {
 	const timezone = useTenantTimezone();
 
 	return (
-		<header className="border-b border-neutral-200 pb-8">
-			<div className="flex flex-col gap-6">
-				<div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
-					<div>
-						<div className="flex flex-wrap items-center gap-3 mb-1.5">
-							<h1 className="text-3xl font-bold tracking-tight leading-none">
+		<header className="border-b border-neutral-200 pb-5 @5xl/rental-detail:pb-6">
+			<div className="flex flex-col gap-4 @5xl/rental-detail:gap-6">
+				<div className="flex min-w-0 flex-col gap-4 @sm/rental-detail:flex-row @sm/rental-detail:items-start @sm/rental-detail:justify-between">
+					<div className="min-w-0">
+						<div className="mb-1.5 flex min-w-0 flex-wrap items-center gap-3">
+							<h1 className="min-w-0 break-all text-3xl font-bold leading-none tracking-tight">
 								#{formatOrderNumber(rental.rentalNumber)}
 							</h1>
 							<RentalStatusBadge />
 						</div>
-						<p className="text-sm text-neutral-400 mt-2">
+						<p className="mt-2 text-sm text-neutral-400">
 							Creado el {formatRentalDetailDateTime(rental.createdAt, timezone)}
 						</p>
 					</div>
-					<div className="flex justify-start xl:justify-end">
+					<div className="flex shrink-0 justify-start @sm/rental-detail:justify-end">
 						<RentalDetailActionsMenu />
 					</div>
 				</div>
-				{/* <section className="rounded-2xl border px-5 py-5 sm:px-6 bg-white border-neutral-200">
-					<div className="flex items-start gap-4">
-						<div className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-neutral-100">
-							<Package className="size-6 text-neutral-600" />
-						</div>
-						<div className="space-y-2 min-w-0">
-							<h2 className="text-xl font-semibold tracking-tight text-neutral-950">
-								Pedido{" "}
-								{RENTAL_ORDER_STATUS_CONFIG[
-									rental.status
-								]?.label.toLowerCase() ?? rental.status.toLowerCase()}
-							</h2>
-							<p className="text-sm text-neutral-500">
-								Las acciones operativas de v2 estarán disponibles próximamente.
-							</p>
-						</div>
-					</div>
-				</section> */}
 			</div>
 		</header>
 	);
@@ -56,7 +38,7 @@ function RentalStatusBadge() {
 	const config = RENTAL_STATUS_CONFIG[rental.status];
 	return (
 		<span
-			className={`inline-flex items-center rounded px-2 py-0.5 text-[10px] font-semibold tracking-widest uppercase ${config?.className ?? "bg-neutral-100 text-neutral-700"}`}
+			className={`inline-flex items-center rounded px-2 py-0.5 text-[10px] font-semibold tracking-wider uppercase ${config?.className ?? "bg-neutral-100 text-neutral-700"}`}
 		>
 			{config?.label ?? rental.status}
 		</span>

@@ -5,7 +5,7 @@ export function NotFoundPage() {
 	return (
 		<ShellPage>
 			<ShellPanel>
-				<p className="mb-5 font-mono text-[0.7rem] tracking-[0.14em] text-[#59584e] uppercase">
+				<p className="mb-5 font-mono text-[0.7rem] tracking-wider text-[#59584e] uppercase">
 					Error 404
 				</p>
 				<ShellRule />

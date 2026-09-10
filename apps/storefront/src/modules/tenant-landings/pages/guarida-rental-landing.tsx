@@ -142,7 +142,7 @@ export function GuaridaRentalLandingPage({
 									<div className="flex size-12 items-center rounded-md justify-center bg-white/4 text-[#F4A79A] md:size-auto md:bg-transparent md:text-[#C85C3E]">
 										{icon}
 									</div>
-									<span className="text-[14px] font-semibold tracking-[0.04em] text-white/70 uppercase md:text-base md:font-light md:tracking-wider md:normal-case md:text-white/60">
+									<span className="text-[14px] font-semibold tracking-[0.04em] text-white/70 uppercase md:text-base md:font-light md:normal-case md:text-white/60">
 										{label}
 									</span>
 								</div>

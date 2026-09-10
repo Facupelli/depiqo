@@ -3,7 +3,7 @@ export function NotFoundPage() {
 		<div className="relative flex min-h-screen flex-col items-center justify-center bg-white px-6">
 			{/* Center content */}
 			<div className="flex flex-col items-center text-center">
-				<p className="mb-6 text-xs font-medium tracking-[0.2em] text-neutral-400 uppercase">
+				<p className="mb-6 text-xs font-medium text-neutral-400 uppercase">
 					Error 404
 				</p>
 
@@ -19,14 +19,14 @@ export function NotFoundPage() {
 				<div className="flex items-center gap-8">
 					<a
 						href="/"
-						className="text-xs font-medium tracking-[0.15em] text-neutral-900 uppercase underline-offset-4 hover:underline"
+						className="text-xs font-medium text-neutral-900 uppercase underline-offset-4 hover:underline"
 					>
 						Return to Homepage
 					</a>
 					<span className="h-3 w-px bg-neutral-300" aria-hidden="true" />
 					<a
 						href="mailto:support@portalplatform.com"
-						className="text-xs font-medium tracking-[0.15em] text-neutral-900 uppercase underline-offset-4 hover:underline"
+						className="text-xs font-medium text-neutral-900 uppercase underline-offset-4 hover:underline"
 					>
 						Contact Support
 					</a>

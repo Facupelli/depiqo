@@ -39,7 +39,7 @@ export function RentalConfirmationDialog({
 
 	return (
 		<AlertDialog open={open} onOpenChange={onOpenChange}>
-			<AlertDialogContent className="max-h-[calc(100vh-2rem)] overflow-y-auto">
+			<AlertDialogContent className="max-h-[calc(100dvh-2rem)] max-w-[calc(100%-2rem)] overflow-y-auto">
 				<AlertDialogHeader>
 					<AlertDialogTitle>Confirmar alquiler</AlertDialogTitle>
 					<AlertDialogDescription>
@@ -49,9 +49,9 @@ export function RentalConfirmationDialog({
 				</AlertDialogHeader>
 				{summary ? <RentalConfirmationReview summary={summary} /> : null}
 				{errorMessage ? (
-					<div className="flex items-start gap-2 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-900">
+					<div className="flex min-w-0 items-start gap-2 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-900">
 						<AlertCircle className="mt-0.5 size-4 shrink-0" />
-						<p>{errorMessage}</p>
+						<p className="min-w-0 [overflow-wrap:anywhere]">{errorMessage}</p>
 					</div>
 				) : null}
 				<AlertDialogFooter>
@@ -142,12 +142,12 @@ function RentalConfirmationReview({
 				</div>
 			</section>
 
-			<div className="flex items-center justify-between rounded-lg px-4 py-3 border border-neutral-200">
-				<div className="flex items-center gap-2 text-sm font-medium">
-					<ReceiptText className="size-4" />
-					Total a confirmar
+			<div className="flex flex-col gap-2 rounded-lg border border-neutral-200 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+				<div className="flex min-w-0 items-center gap-2 text-sm font-medium">
+					<ReceiptText className="size-4 shrink-0" />
+					<span className="[overflow-wrap:anywhere]">Total a confirmar</span>
 				</div>
-				<span className="font-mono text-lg font-bold">
+				<span className="min-w-0 font-mono text-lg font-bold [overflow-wrap:anywhere]">
 					{formatMoney(summary.total.amount, summary.total.currency)}
 				</span>
 			</div>
@@ -200,13 +200,13 @@ function EquipmentRow({
 	compact?: boolean;
 }) {
 	return (
-		<div className="flex items-center justify-between gap-3">
+		<div className="flex min-w-0 flex-wrap items-start justify-between gap-x-3 gap-y-1">
 			<p
-				className={
+				className={`min-w-0 flex-1 [overflow-wrap:anywhere] ${
 					compact
 						? "text-sm text-neutral-600"
 						: "text-sm font-medium text-neutral-900"
-				}
+				}`}
 			>
 				{name}
 			</p>

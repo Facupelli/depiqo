@@ -62,7 +62,7 @@ export function CartPopover({ search }: { search?: RentalCatalogSearch }) {
 				className="w-[calc(100vw-2rem)] max-w-sm overflow-hidden p-0"
 			>
 				<div className="border-b px-5 py-4">
-					<p className="text-xs font-bold uppercase tracking-[0.18em]">
+					<p className="text-xs font-bold uppercase tracking-wider">
 						Tu pedido
 					</p>
 				</div>

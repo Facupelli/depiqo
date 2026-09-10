@@ -159,7 +159,7 @@ export function PublicSigningPage({ token }: PublicSigningPageProps) {
 			<header className="sticky top-0 z-30 border-b border-neutral-200 bg-white/95 backdrop-blur">
 				<div className="mx-auto flex h-16 max-w-5xl items-center gap-3 px-4 sm:px-6">
 					<div className="min-w-0 flex-1">
-						<p className="text-xs font-medium uppercase tracking-[0.14em] text-neutral-500">
+						<p className="text-xs font-medium uppercase tracking-wider text-neutral-500">
 							Documento para revisar
 						</p>
 						<h1 className="truncate text-base font-semibold sm:text-lg">
@@ -243,7 +243,7 @@ function PublicSigningLoadingState({
 			<header className="h-16 border-b border-neutral-200 bg-white px-4">
 				<div className="mx-auto flex h-full max-w-5xl items-center">
 					<div>
-						<p className="text-xs font-medium uppercase tracking-[0.14em] text-neutral-500">
+						<p className="text-xs font-medium uppercase tracking-wider text-neutral-500">
 							Documento para revisar
 						</p>
 						<p className="font-semibold">

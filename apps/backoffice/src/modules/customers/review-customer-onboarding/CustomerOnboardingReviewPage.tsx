@@ -442,7 +442,7 @@ function ReferenceContactCard({
 			<p className="mt-1 text-sm text-muted-foreground">
 				{getSafeValue(phone)}
 			</p>
-			<p className="mt-1 text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
+			<p className="mt-1 text-xs font-medium uppercase tracking-wider text-muted-foreground">
 				{getSafeValue(relationship)}
 			</p>
 		</div>
@@ -472,7 +472,7 @@ function CustomerProfileReviewActionsPanel({
 		<div className="space-y-6 xl:sticky xl:top-6 xl:self-start">
 			<Card>
 				<CardHeader>
-					<CardTitle className="text-sm font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+					<CardTitle className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
 						REVISIÓN
 					</CardTitle>
 				</CardHeader>
@@ -504,7 +504,7 @@ function CustomerProfileReviewActionsPanel({
 							</div>
 
 							<div className="space-y-2">
-								<p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
+								<p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
 									Notas del auditor
 								</p>
 								<Textarea

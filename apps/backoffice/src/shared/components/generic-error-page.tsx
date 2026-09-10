@@ -16,7 +16,7 @@ export function GenericErrorPage({
 	return (
 		<div className="flex min-h-screen flex-col items-center justify-center bg-white px-6">
 			<div className="flex max-w-md flex-col items-center text-center">
-				<p className="mb-6 text-xs font-medium uppercase tracking-[0.2em] text-neutral-400">
+				<p className="mb-6 text-xs font-medium uppercase tracking-wider text-neutral-400">
 					Error
 				</p>
 
@@ -49,7 +49,7 @@ export function GenericErrorPage({
 				<Button
 					type="button"
 					onClick={onRetry ?? (() => window.location.reload())}
-					className="bg-neutral-900 px-6 py-2.5 text-xs font-medium uppercase tracking-[0.15em] text-white hover:bg-neutral-700"
+					className="bg-neutral-900 px-6 py-2.5 text-xs font-medium uppercase tracking-wider text-white hover:bg-neutral-700"
 				>
 					{retryLabel}
 				</Button>

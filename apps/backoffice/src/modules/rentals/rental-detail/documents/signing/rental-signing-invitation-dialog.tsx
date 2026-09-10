@@ -28,7 +28,7 @@ export function RentalSigningInvitationDialog({
 }: RentalSigningInvitationDialogProps) {
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="sm:max-w-lg">
+			<DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-lg">
 				<DialogHeader>
 					<DialogTitle>Enviar remito a firmar</DialogTitle>
 					<DialogDescription>
@@ -41,7 +41,9 @@ export function RentalSigningInvitationDialog({
 					<div className="space-y-6">
 						{submitError ? (
 							<Alert variant="destructive">
-								<AlertDescription>{submitError}</AlertDescription>
+								<AlertDescription className="[overflow-wrap:anywhere]">
+									{submitError}
+								</AlertDescription>
 							</Alert>
 						) : null}
 

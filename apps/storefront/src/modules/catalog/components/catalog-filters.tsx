@@ -47,7 +47,7 @@ export function RentalFilters({
 					<div className="flex flex-wrap items-end gap-6">
 						{/* Location */}
 						<div className="flex flex-col gap-2">
-							<p className="text-[11px] font-semibold tracking-widest text-muted-foreground uppercase">
+							<p className="text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
 								Ubicación del rental
 							</p>
 							{branches?.length === 1 ? (
@@ -84,7 +84,7 @@ export function RentalFilters({
 
 						{/* Date range */}
 						<div className="flex flex-col gap-2">
-							<p className="text-[11px] font-semibold tracking-widest text-muted-foreground uppercase">
+							<p className="text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
 								Periodo de alquiler
 							</p>
 							<DateRangePicker

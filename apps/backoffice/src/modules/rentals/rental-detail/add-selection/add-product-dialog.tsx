@@ -35,7 +35,7 @@ export function AddProductDialog({
 }: AddProductDialogProps) {
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="sm:max-w-lg">
+			<DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-lg">
 				<DialogHeader>
 					<DialogTitle>Añadir producto</DialogTitle>
 					<DialogDescription>
@@ -82,7 +82,7 @@ function AddProductDialogContent({ onClose }: { onClose: () => void }) {
 			/>
 
 			{dialog.totalPageCount > 1 ? (
-				<div className="flex items-center justify-between">
+				<div className="flex flex-wrap items-center justify-between gap-2">
 					<Button
 						type="button"
 						variant="outline"
@@ -116,7 +116,9 @@ function AddProductDialogContent({ onClose }: { onClose: () => void }) {
 			) : null}
 
 			{dialog.submitErrorMessage ? (
-				<p className="text-destructive text-sm">{dialog.submitErrorMessage}</p>
+				<p className="text-destructive text-sm [overflow-wrap:anywhere]">
+					{dialog.submitErrorMessage}
+				</p>
 			) : null}
 
 			<DialogFooter className="gap-2">
@@ -159,9 +161,11 @@ function BranchContextLine({
 	}
 
 	return (
-		<div className="flex items-center gap-1.5 text-muted-foreground text-xs">
-			<MapPin className="size-3.5 shrink-0" />
-			<span>Sucursal: {label}</span>
+		<div className="flex min-w-0 items-start gap-1.5 text-muted-foreground text-xs">
+			<MapPin className="mt-0.5 size-3.5 shrink-0" />
+			<span className="min-w-0 [overflow-wrap:anywhere]">
+				Sucursal: {label}
+			</span>
 		</div>
 	);
 }
@@ -259,7 +263,7 @@ function OfferCard({
 				type="button"
 				onClick={isSelectable ? onSelect : undefined}
 				disabled={!isSelectable}
-				className={`flex w-full items-start gap-3 text-left ${
+				className={`flex min-w-0 w-full items-start gap-3 text-left ${
 					isSelectable ? "cursor-pointer" : "cursor-not-allowed"
 				}`}
 				aria-pressed={isSelected}
@@ -267,7 +271,9 @@ function OfferCard({
 				<ProductImage imageUrl={option.imageUrl} />
 				<div className="min-w-0 flex-1 space-y-1">
 					<div className="flex flex-wrap items-center gap-2">
-						<p className="truncate font-medium text-sm">{offer.name}</p>
+						<p className="min-w-0 [overflow-wrap:anywhere] font-medium text-sm">
+							{offer.name}
+						</p>
 						<Badge variant="outline" className="text-[10px]">
 							{offer.kind}
 						</Badge>
@@ -278,17 +284,17 @@ function OfferCard({
 						) : null}
 					</div>
 					{offer.description ? (
-						<p className="line-clamp-1 text-muted-foreground text-xs">
+						<p className="text-muted-foreground text-xs [overflow-wrap:anywhere]">
 							{offer.description}
 						</p>
 					) : null}
-					<p className="text-muted-foreground text-xs">
+					<p className="text-muted-foreground text-xs [overflow-wrap:anywhere]">
 						{getAvailabilityLabel(availability, availableCount)}
 					</p>
 				</div>
 			</button>
 			{isSelected ? (
-				<div className="pt-2 pl-[3.75rem]">
+				<div className="flex justify-start pt-2 sm:pl-[3.75rem]">
 					<QuantityStepper
 						value={quantity}
 						min={1}
