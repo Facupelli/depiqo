@@ -126,10 +126,10 @@ export function RentalContractSigningCard() {
 				id={contentId}
 				className={isExpanded ? "block" : "hidden @5xl/rental-detail:block"}
 			>
-				{state.activityAt ? (
+				{state.activityAt && state.activityLabel ? (
 					<div className="mt-4 rounded-md border border-neutral-100 bg-neutral-50 px-3 py-2.5">
 						<p className="mb-1 font-mono text-[9px] uppercase tracking-widest text-neutral-400">
-							Actividad
+							{state.activityLabel}
 						</p>
 						<p className="text-sm font-semibold text-neutral-950">
 							{formatRentalContractSigningDate(state.activityAt, timezone)}

@@ -1,7 +1,6 @@
 import { Button } from "@repo/ui/components/button";
 import {
 	ChevronDown,
-	Mail,
 	Pencil,
 	Phone,
 	ReceiptText,
@@ -28,11 +27,19 @@ import {
 
 export function RentalSidebarCards() {
 	return (
-		<div className="space-y-2 @5xl/rental-detail:space-y-4">
-			<RentalClientCard />
-			<RentalContractSigningCard />
-			<RentalLogisticsCard />
-			<RentalFinancialsCard />
+		<div className="flex flex-col gap-2 @5xl/rental-detail:gap-4">
+			<div className="order-1 @5xl/rental-detail:order-2">
+				<RentalClientCard />
+			</div>
+			<div className="order-2 @5xl/rental-detail:order-3">
+				<RentalContractSigningCard />
+			</div>
+			<div className="order-3 @5xl/rental-detail:order-1">
+				<RentalLogisticsCard />
+			</div>
+			<div className="order-4">
+				<RentalFinancialsCard />
+			</div>
 		</div>
 	);
 }
@@ -62,21 +69,22 @@ function RentalClientCard() {
 		>
 			{customer ? (
 				<>
-					<div className="flex items-center gap-3 mb-4">
-						<div className="w-10 h-10 rounded-full bg-neutral-200 flex items-center justify-center shrink-0">
+					<div className="flex items-center gap-3">
+						<div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-neutral-200">
 							<span className="text-sm font-bold text-neutral-600">
 								{getRentalCustomerInitials(customer.displayName)}
 							</span>
 						</div>
-						<p className="text-sm font-bold text-neutral-950 leading-tight">
-							{customer.displayName}
-						</p>
+						<div className="min-w-0">
+							<p className="text-sm font-bold leading-tight text-neutral-950">
+								{customer.displayName}
+							</p>
+							<p className="mt-0.5 min-w-0 break-words text-xs text-neutral-500">
+								{customer.email}
+							</p>
+						</div>
 					</div>
 					<div className="space-y-2.5">
-						<SidebarField
-							icon={<Mail className="w-3.5 h-3.5" />}
-							value={customer.email}
-						/>
 						{customer.phone ? (
 							<SidebarField
 								icon={<Phone className="w-3.5 h-3.5" />}
@@ -131,7 +139,7 @@ function RentalLogisticsCard() {
 			title="Logística"
 			summary={`${pickup.date} ${pickup.time} → ${returnDate.date} ${returnDate.time}`}
 		>
-			<div className="grid grid-cols-2 gap-x-6 gap-y-1 mb-4">
+			<div className="grid grid-cols-2 gap-x-6 gap-y-1">
 				<DateBlock
 					label="Fecha de retiro"
 					value={rental.period.start}
@@ -143,18 +151,16 @@ function RentalLogisticsCard() {
 					timezone={timezone}
 				/>
 			</div>
-			<div className="border-t border-neutral-100">
-				{acceptedDelivery ? (
-					<div className="mt-3">
-						<p className="font-mono text-[10px] uppercase tracking-wider text-neutral-400 mb-1">
-							Pedido de delivery
-						</p>
-						<p className="text-sm text-neutral-700">
-							{acceptedDelivery.resolvedCustomerLocation.formattedAddress}
-						</p>
-					</div>
-				) : null}
-			</div>
+			{acceptedDelivery ? (
+				<div className="mt-3 border-t border-neutral-100">
+					<p className="mt-3 mb-1 font-mono text-[10px] uppercase tracking-wider text-neutral-400">
+						Pedido de delivery
+					</p>
+					<p className="text-sm text-neutral-700">
+						{acceptedDelivery.resolvedCustomerLocation.formattedAddress}
+					</p>
+				</div>
+			) : null}
 		</ResponsiveDisclosureCard>
 	);
 }

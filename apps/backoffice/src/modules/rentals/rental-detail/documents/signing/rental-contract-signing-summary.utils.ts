@@ -13,6 +13,7 @@ export type RentalContractSigningState = {
 	description: string;
 	tone: RentalContractSigningStateTone;
 	activityAt: string | null;
+	activityLabel: string | null;
 };
 
 export function getRentalContractSigningState(
@@ -26,15 +27,18 @@ export function getRentalContractSigningState(
 			description: "El contrato cambió y debe enviarse nuevamente.",
 			tone: "warning",
 			activityAt: request?.sentAt ?? null,
+			activityLabel: request?.sentAt ? "Enviado" : null,
 		};
 	}
 
 	if (summary.contractStatus === "SIGNED") {
 		return {
 			label: "Contrato firmado",
-			description: "La aceptación quedó registrada correctamente.",
+			description: "Firma registrada correctamente.",
 			tone: "success",
 			activityAt: summary.acceptance?.acceptedAt ?? request?.signedAt ?? null,
+			activityLabel:
+				summary.acceptance?.acceptedAt || request?.signedAt ? "Firmado" : null,
 		};
 	}
 
@@ -44,6 +48,7 @@ export function getRentalContractSigningState(
 			description: "El envío falló y requiere una nueva invitación.",
 			tone: "danger",
 			activityAt: request.failedAt,
+			activityLabel: request.failedAt ? "Fallido" : null,
 		};
 	}
 
@@ -53,6 +58,7 @@ export function getRentalContractSigningState(
 			description: "La solicitud anterior ya no está disponible.",
 			tone: "neutral",
 			activityAt: request.cancelledAt,
+			activityLabel: request.cancelledAt ? "Cancelado" : null,
 		};
 	}
 
@@ -62,6 +68,7 @@ export function getRentalContractSigningState(
 			description: "La solicitud expiró y requiere un nuevo envío.",
 			tone: "danger",
 			activityAt: request.expiresAt,
+			activityLabel: request.expiresAt ? "Vencido" : null,
 		};
 	}
 
@@ -71,6 +78,11 @@ export function getRentalContractSigningState(
 			description: "Este contrato ya no está disponible para firma.",
 			tone: "neutral",
 			activityAt: request?.cancelledAt ?? request?.failedAt ?? null,
+			activityLabel: request?.cancelledAt
+				? "Cancelado"
+				: request?.failedAt
+					? "Fallido"
+					: null,
 		};
 	}
 
@@ -84,6 +96,11 @@ export function getRentalContractSigningState(
 					: "La invitación fue enviada y espera la firma del cliente.",
 			tone: "info",
 			activityAt: request.viewedAt ?? request.sentAt ?? null,
+			activityLabel: request.viewedAt
+				? "Visto"
+				: request.sentAt
+					? "Enviado"
+					: null,
 		};
 	}
 
@@ -96,6 +113,7 @@ export function getRentalContractSigningState(
 			description: "El contrato existe, pero todavía no se envió a firmar.",
 			tone: "warning",
 			activityAt: null,
+			activityLabel: null,
 		};
 	}
 
@@ -104,6 +122,7 @@ export function getRentalContractSigningState(
 		description: "Todavía no se envió la invitación de firma.",
 		tone: "warning",
 		activityAt: null,
+		activityLabel: null,
 	};
 }
 
