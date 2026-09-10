@@ -245,7 +245,11 @@ function ChooseBranchAndPricingActionForm({
 														? "Cargando sucursales..."
 														: "Selecciona una sucursal"
 												}
-											/>
+											>
+												{branches.find(
+													(branch) => branch.id === field.state.value,
+												)?.name ?? null}
+											</SelectValue>
 										</SelectTrigger>
 										<SelectContent>
 											{branches.map((branch) => (
@@ -279,7 +283,7 @@ function ChooseBranchAndPricingActionForm({
 
 			<div className="grid gap-3 sm:grid-cols-2">
 				<PricingActionCard
-					title="Vincular plan existente"
+					title="Usar plan existente"
 					description="Crea la oferta en esta sucursal y asígnale un plan de precios ya creado."
 					disabled={!hasSelectedBranch || ratePlanOptionsStatus !== "ready"}
 					onClick={onAttachRatePlan}
@@ -337,9 +341,9 @@ function getAvailableBranches(
 }
 
 function getDialogTitle(step: AddOfferDialogStep) {
-	if (step === "attach-rate-plan") return "Vincular plan existente";
+	if (step === "attach-rate-plan") return "Usar plan existente";
 	if (step === "create-rate-plan") return "Crear nuevo plan";
-	return "Agregar oferta en sucursal";
+	return "Añadir sucursal";
 }
 
 function getDialogDescription(

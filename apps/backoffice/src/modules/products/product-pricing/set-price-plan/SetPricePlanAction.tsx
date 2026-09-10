@@ -84,7 +84,9 @@ export function SetPricePlanAction({
 					<DialogHeader>
 						<DialogTitle>
 							{step === "choose"
-								? `${canAssign ? "Asignar" : "Editar"} precio a ${branchLabel}`
+								? canAssign
+									? `Asignar precio a ${branchLabel}`
+									: `Editar precio en ${branchLabel}`
 								: step === "existing"
 									? "Usar plan existente"
 									: "Crear nuevo plan"}

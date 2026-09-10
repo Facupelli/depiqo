@@ -12,7 +12,7 @@ const detailSections = [
 	},
 	{
 		value: "rentals",
-		label: "Alquileres",
+		label: "Productos",
 		icon: HandCoins,
 		to: "/dashboard/inventory/equipment-types/$equipmentTypeId/rentals" as const,
 		suffix: "/rentals",
@@ -34,9 +34,10 @@ export function EquipmentDetailNavigation({
 	const pathname = useRouterState({
 		select: ({ location }) => location.pathname.replace(/\/$/, ""),
 	});
-	const activeSection =
-		detailSections.find((section) => pathname.endsWith(section.suffix))
-			?.value ?? "units";
+	const activeSection = pathname.includes("/rentals")
+		? "rentals"
+		: (detailSections.find((section) => pathname.endsWith(section.suffix))
+				?.value ?? "units");
 
 	return (
 		<Tabs value={activeSection} className="min-w-0 gap-0">

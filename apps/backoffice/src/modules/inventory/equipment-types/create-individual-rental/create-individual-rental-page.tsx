@@ -35,7 +35,7 @@ export function CreateIndividualRentalPage({
 	const isOptionsError = branchesQuery.isError || categoriesQuery.isError;
 
 	return (
-		<div className="mx-auto w-full max-w-5xl py-4">
+		<div className="w-full py-4">
 			<header className="mb-8 max-w-3xl">
 				<p className="font-medium text-muted-foreground text-sm">
 					Alquileres individuales

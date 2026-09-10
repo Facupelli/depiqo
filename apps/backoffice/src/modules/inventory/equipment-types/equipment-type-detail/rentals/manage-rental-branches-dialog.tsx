@@ -38,7 +38,7 @@ export function ManageRentalBranchesDialog({
 					<DialogHeader>
 						<DialogTitle>Gestionar sucursales</DialogTitle>
 						<DialogDescription>
-							Administra las ofertas comerciales de {rental.name}.
+							Gestiona en qué sucursales se ofrece {rental.name}.
 						</DialogDescription>
 					</DialogHeader>
 					<div className="space-y-3">
@@ -79,7 +79,7 @@ export function ManageRentalBranchesDialog({
 								setAddOpen(true);
 							}}
 						>
-							Agregar sucursal
+							Añadir sucursal
 						</Button>
 					</div>
 				</DialogContent>

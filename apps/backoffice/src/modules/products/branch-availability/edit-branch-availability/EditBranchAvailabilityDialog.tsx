@@ -47,13 +47,13 @@ export function EditBranchAvailabilityDialog({
 				render={
 					<Button type="button" variant="outline">
 						<Pencil className="mr-2 size-4" />
-						Editar oferta
+						Configurar sucursal
 					</Button>
 				}
 			/>
 			<DialogContent>
 				<DialogHeader>
-					<DialogTitle>Editar oferta</DialogTitle>
+					<DialogTitle>Configurar sucursal</DialogTitle>
 					<DialogDescription>
 						Actualiza la visibilidad y disponibilidad de esta oferta para{" "}
 						{branchName ?? "esta sucursal"}.
