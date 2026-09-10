@@ -8,7 +8,7 @@ import {
 	Truck,
 	User2Icon,
 } from "lucide-react";
-import { type ReactNode, useState } from "react";
+import { type ReactNode, useId, useState } from "react";
 import { useBranchTimezone } from "@/shared/timezone/operational-timezone.hooks";
 import { formatMoney } from "@/shared/utils/formatters";
 import { AssignCustomerToDraftRentalDialog } from "../assign-customer/assign-customer-to-draft-rental-dialog";
@@ -28,7 +28,7 @@ import {
 
 export function RentalSidebarCards() {
 	return (
-		<div className="space-y-4">
+		<div className="space-y-2 @5xl/rental-detail:space-y-4">
 			<RentalClientCard />
 			<RentalContractSigningCard />
 			<RentalLogisticsCard />
@@ -46,11 +46,19 @@ function RentalClientCard() {
 	} = useRentalDetailContext();
 	const customer = customerSummary;
 	const hasLinkedCustomer = rental.customerId !== null;
+	const summary = customer
+		? customer.displayName
+		: isCustomerSummaryLoading && hasLinkedCustomer
+			? "Cargando cliente..."
+			: isCustomerSummaryError && hasLinkedCustomer
+				? "Cliente no encontrado"
+				: "Sin cliente asignado";
 
 	return (
-		<SidebarCard
+		<ResponsiveDisclosureCard
 			icon={<User2Icon className="size-4" />}
 			title="Información del cliente"
+			summary={summary}
 		>
 			{customer ? (
 				<>
@@ -106,7 +114,7 @@ function RentalClientCard() {
 					}
 				/>
 			)}
-		</SidebarCard>
+		</ResponsiveDisclosureCard>
 	);
 }
 
@@ -114,9 +122,15 @@ function RentalLogisticsCard() {
 	const { rental } = useRentalDetailContext();
 	const acceptedDelivery = rental.acceptedDelivery;
 	const timezone = useBranchTimezone(rental.branchId);
+	const pickup = formatRentalDetailDateBlock(rental.period.start, timezone);
+	const returnDate = formatRentalDetailDateBlock(rental.period.end, timezone);
 
 	return (
-		<SidebarCard icon={<Truck className="size-4" />} title="Logística">
+		<ResponsiveDisclosureCard
+			icon={<Truck className="size-4" />}
+			title="Logística"
+			summary={`${pickup.date} ${pickup.time} → ${returnDate.date} ${returnDate.time}`}
+		>
 			<div className="grid grid-cols-2 gap-x-6 gap-y-1 mb-4">
 				<DateBlock
 					label="Fecha de retiro"
@@ -141,7 +155,7 @@ function RentalLogisticsCard() {
 					</div>
 				) : null}
 			</div>
-		</SidebarCard>
+		</ResponsiveDisclosureCard>
 	);
 }
 
@@ -173,17 +187,25 @@ function RentalFinancialsCard() {
 	const { rental } = useRentalDetailContext();
 	const [showItems, setShowItems] = useState(false);
 	const [isEditPriceDialogOpen, setIsEditPriceDialogOpen] = useState(false);
+	const financialContentId = useId();
 
 	const pricing = rental.pricing;
 
 	if (!pricing) {
 		return (
-			<SidebarCard
-				icon={<ReceiptText className="size-4" />}
-				title="Resumen financiero"
-			>
-				<p className="text-sm text-neutral-500">Sin precio calculado.</p>
-			</SidebarCard>
+			<section className="rounded-lg border border-neutral-200 bg-white p-4 @5xl/rental-detail:p-5">
+				<div className="@5xl/rental-detail:mb-3 @5xl/rental-detail:flex @5xl/rental-detail:items-center @5xl/rental-detail:gap-2 @5xl/rental-detail:border-neutral-100 @5xl/rental-detail:border-b @5xl/rental-detail:pb-1">
+					<span className="hidden size-8 items-center justify-center text-neutral-600 @5xl/rental-detail:flex">
+						<ReceiptText className="size-4" />
+					</span>
+					<h2 className="text-sm font-bold text-neutral-950">
+						Resumen financiero
+					</h2>
+				</div>
+				<p className="mt-0.5 break-words text-sm text-neutral-500 @5xl/rental-detail:mt-0">
+					Sin precio calculado.
+				</p>
+			</section>
 		);
 	}
 
@@ -205,27 +227,42 @@ function RentalFinancialsCard() {
 				open={isEditPriceDialogOpen}
 				onOpenChange={setIsEditPriceDialogOpen}
 			/>
-			<section className="bg-white border border-neutral-200 rounded-lg p-5">
+			<section className="rounded-lg border border-neutral-200 bg-white p-4 @5xl/rental-detail:p-5">
 				<button
 					type="button"
 					onClick={() => setShowItems((prev) => !prev)}
-					className="flex w-full items-start justify-between gap-4 text-left"
+					className="flex w-full min-w-0 items-start justify-between gap-4 text-left"
+					aria-controls={financialContentId}
+					aria-expanded={showItems}
 				>
-					<SidebarHeader
-						icon={<ReceiptText className="size-4" />}
-						title="Resumen financiero"
-					/>
+					<span className="min-w-0 flex-1 @5xl/rental-detail:hidden">
+						<span className="block text-sm font-bold text-neutral-950">
+							Resumen financiero
+						</span>
+						<span className="mt-0.5 block break-words font-mono text-sm font-semibold text-neutral-950">
+							{formatMoney(headlineTotal, pricing.currency)}
+						</span>
+					</span>
+					<span className="hidden min-w-0 flex-1 @5xl/rental-detail:block">
+						<SidebarHeader
+							icon={<ReceiptText className="size-4" />}
+							title="Resumen financiero"
+						/>
+					</span>
 					<ChevronDown
-						className={`size-4 transition-transform text-neutral-400 ${showItems ? "rotate-180" : ""}`}
+						className={`size-4 shrink-0 text-neutral-400 transition-transform ${showItems ? "rotate-180" : ""}`}
 					/>
 				</button>
-				<div className="flex items-baseline justify-between pt-3 pb-3">
+				<div className="hidden items-baseline justify-between pt-3 pb-3 @5xl/rental-detail:flex">
 					<span className="text-sm font-bold text-neutral-950">Total</span>
-					<span className="font-mono text-xl font-bold text-neutral-950 tracking-tight">
+					<span className="break-words font-mono text-xl font-bold tracking-tight text-neutral-950">
 						{formatMoney(headlineTotal, pricing.currency)}
 					</span>
 				</div>
-				<div className="border-t border-dashed border-neutral-200 pt-3 space-y-2">
+				<div
+					id={financialContentId}
+					className={`${showItems ? "mt-4 block" : "hidden"} space-y-2 border-neutral-200 border-t border-dashed pt-3 @5xl/rental-detail:mt-0 @5xl/rental-detail:block`}
+				>
 					<MoneyRow
 						label="Subtotal"
 						value={pricing.subtotal}
@@ -492,43 +529,65 @@ function ManualAdjustmentRow({
 	);
 }
 
-function SidebarCard({
+function ResponsiveDisclosureCard({
 	icon,
 	title,
-	action,
+	summary,
 	children,
 }: {
 	icon: ReactNode;
 	title: string;
-	action?: ReactNode;
+	summary: string;
 	children: ReactNode;
 }) {
+	const [isExpanded, setIsExpanded] = useState(false);
+	const contentId = useId();
+
 	return (
-		<section className="bg-white border border-neutral-200 rounded-lg p-5">
-			<SidebarHeader icon={icon} title={title} action={action} />
-			{children}
+		<section className="rounded-lg border border-neutral-200 bg-white p-4 @5xl/rental-detail:p-5">
+			<button
+				type="button"
+				className="flex w-full min-w-0 items-center justify-between gap-3 text-left @5xl/rental-detail:hidden"
+				onClick={() => setIsExpanded((previous) => !previous)}
+				aria-controls={contentId}
+				aria-expanded={isExpanded}
+			>
+				<span className="min-w-0">
+					<span className="block text-sm font-bold text-neutral-950">
+						{title}
+					</span>
+					<span className="mt-0.5 block min-w-0 break-words text-sm text-neutral-600">
+						{summary}
+					</span>
+				</span>
+				<ChevronDown
+					className={`size-4 shrink-0 text-neutral-400 transition-transform ${isExpanded ? "rotate-180" : ""}`}
+				/>
+			</button>
+			<div className="hidden @5xl/rental-detail:block">
+				<SidebarHeader icon={icon} title={title} />
+			</div>
+			<div
+				id={contentId}
+				className={
+					isExpanded
+						? "mt-4 @5xl/rental-detail:mt-0"
+						: "hidden @5xl/rental-detail:block"
+				}
+			>
+				{children}
+			</div>
 		</section>
 	);
 }
 
-function SidebarHeader({
-	icon,
-	title,
-	action,
-}: {
-	icon: ReactNode;
-	title: string;
-	action?: ReactNode;
-}) {
+function SidebarHeader({ icon, title }: { icon: ReactNode; title: string }) {
 	return (
-		<div className="flex items-center justify-between gap-3 border-b border-neutral-100 mb-3 pb-1">
-			<div className="flex items-center gap-2">
-				<span className="flex size-8 items-center justify-center text-neutral-600">
-					{icon}
-				</span>
-				<h2 className="text-sm font-bold text-neutral-950">{title}</h2>
-			</div>
-			{action}
+		<div className="mb-3 flex items-center gap-2 border-neutral-100 border-b pb-1">
+			<span className="flex size-8 items-center justify-center text-neutral-600">
+				{icon}
+			</span>
+			<h2 className="text-sm font-bold text-neutral-950">{title}</h2>
 		</div>
 	);
 }
