@@ -16,16 +16,20 @@ import type {
 	RentalDetailViewDemandLineDto,
 	RentalDetailViewSelectionDto,
 } from "../get-rental-detail-view/get-rental-detail-view.schema";
+import { DemandLineAccessoryAssignmentSheet } from "../preparation/accessories/demand-line-accessory-assignment-sheet";
 import { RentalAccessoryAssignmentSheet } from "../preparation/accessories/rental-accessory-assignment-sheet";
 import { RemoveSelectionAlertDialog } from "../remove-selection/remove-selection-alert-dialog";
 import { useRemoveSelectionDialog } from "../remove-selection/use-remove-selection-dialog";
 import { useRentalDetailContext } from "../rental-detail.context";
 import { isNonEmptyString } from "../rental-detail.utils";
 import { ReplaceAssignedAssetDialog } from "../replace-assigned-asset/replace-assigned-asset-dialog";
+import { DemandLineRowActions } from "./demand-line-row-actions";
 
 export function RentalEquipmentSection() {
 	const { rental } = useRentalDetailContext();
 	const [isAccessorySheetOpen, setIsAccessorySheetOpen] = useState(false);
+	const [selectedAccessoryDemandLineId, setSelectedAccessoryDemandLineId] =
+		useState<string | null>(null);
 	const [isAddProductDialogOpen, setIsAddProductDialogOpen] = useState(false);
 	const [quantitySelection, setQuantitySelection] =
 		useState<RentalDetailViewSelectionDto | null>(null);
@@ -45,12 +49,24 @@ export function RentalEquipmentSection() {
 	const unlinkedAccessories = rental.accessories.filter(
 		(accessory) => !accessory.sourceRentalDemandLineId,
 	);
+	const selectedAccessoryDemandLine = rental.selections
+		.flatMap((selection) => selection.demandLines)
+		.find((demandLine) => demandLine.id === selectedAccessoryDemandLineId);
+	const canAssignDemandLineAccessories =
+		rental.status === "CONFIRMED" && Date.now() < Date.parse(rental.period.end);
 
 	return (
 		<div className="space-y-8">
 			<RentalAccessoryAssignmentSheet
 				open={isAccessorySheetOpen}
 				onOpenChange={setIsAccessorySheetOpen}
+			/>
+			<DemandLineAccessoryAssignmentSheet
+				demandLine={selectedAccessoryDemandLine ?? null}
+				open={selectedAccessoryDemandLine !== undefined}
+				onOpenChange={(open) => {
+					if (!open) setSelectedAccessoryDemandLineId(null);
+				}}
 			/>
 			<AddProductDialog
 				open={isAddProductDialogOpen}
@@ -141,6 +157,11 @@ export function RentalEquipmentSection() {
 										? setReplaceAssignedAssetId
 										: undefined
 								}
+								onAssignAccessories={
+									canAssignDemandLineAccessories
+										? setSelectedAccessoryDemandLineId
+										: undefined
+								}
 							/>
 						);
 					})}
@@ -159,12 +180,14 @@ function RentalEquipmentCard({
 	onEditQuantity,
 	onRemove,
 	onReplaceAssignedAsset,
+	onAssignAccessories,
 	removeDisabledReason,
 }: {
 	selection: RentalDetailViewSelectionDto;
 	onEditQuantity?: () => void;
 	onRemove?: () => void;
 	onReplaceAssignedAsset?: (assetId: string) => void;
+	onAssignAccessories?: (rentalDemandLineId: string) => void;
 	removeDisabledReason: string | null;
 	accessoriesByEquipmentLine: Map<
 		string,
@@ -208,6 +231,13 @@ function RentalEquipmentCard({
 									onRemove={onRemove}
 								/>
 							) : null}
+							{!isPackage && singleDemandLine && onAssignAccessories ? (
+								<DemandLineRowActions
+									equipmentTypeName={singleDemandLine.equipmentTypeName}
+									rentalDemandLineId={singleDemandLine.id}
+									onAssignAccessories={onAssignAccessories}
+								/>
+							) : null}
 						</div>
 					</div>
 					<div className="flex flex-wrap items-center gap-x-3 gap-y-1">
@@ -247,6 +277,7 @@ function RentalEquipmentCard({
 					accessoriesByEquipmentLine={accessoriesByEquipmentLine}
 					items={selection.demandLines}
 					onReplaceAssignedAsset={onReplaceAssignedAsset}
+					onAssignAccessories={onAssignAccessories}
 				/>
 			) : null}
 			{!isPackage && accessories.length > 0 ? (
@@ -303,9 +334,11 @@ function RentalPackageChildrenList({
 	items,
 	accessoriesByEquipmentLine,
 	onReplaceAssignedAsset,
+	onAssignAccessories,
 }: {
 	items: RentalDetailViewDemandLineDto[];
 	onReplaceAssignedAsset?: (assetId: string) => void;
+	onAssignAccessories?: (rentalDemandLineId: string) => void;
 	accessoriesByEquipmentLine: Map<
 		string,
 		GetRentalDetailViewResponseDto["accessories"]
@@ -323,6 +356,7 @@ function RentalPackageChildrenList({
 						accessories={accessoriesByEquipmentLine.get(child.id) ?? []}
 						equipment={child}
 						onReplaceAssignedAsset={onReplaceAssignedAsset}
+						onAssignAccessories={onAssignAccessories}
 					/>
 				))}
 			</div>
@@ -334,10 +368,12 @@ function RentalPackageChildRow({
 	equipment,
 	accessories,
 	onReplaceAssignedAsset,
+	onAssignAccessories,
 }: {
 	equipment: RentalDetailViewDemandLineDto;
 	accessories: GetRentalDetailViewResponseDto["accessories"];
 	onReplaceAssignedAsset?: (assetId: string) => void;
+	onAssignAccessories?: (rentalDemandLineId: string) => void;
 }) {
 	const owners = getAssetOwners(equipment.assignedAssets);
 
@@ -364,12 +400,21 @@ function RentalPackageChildRow({
 						))}
 					</div>
 				</div>
-				<div className="min-w-0 space-y-1 @md/package-child:justify-self-end">
-					<AssignedAssetsList
-						assignments={equipment.assignedAssets}
-						onReplace={onReplaceAssignedAsset}
-						compact
-					/>
+				<div className="flex min-w-0 items-start gap-1 @md/package-child:justify-self-end">
+					<div className="min-w-0 space-y-1">
+						<AssignedAssetsList
+							assignments={equipment.assignedAssets}
+							onReplace={onReplaceAssignedAsset}
+							compact
+						/>
+					</div>
+					{onAssignAccessories ? (
+						<DemandLineRowActions
+							equipmentTypeName={equipment.equipmentTypeName}
+							rentalDemandLineId={equipment.id}
+							onAssignAccessories={onAssignAccessories}
+						/>
+					) : null}
 				</div>
 			</div>
 			{accessories.length > 0 ? (
