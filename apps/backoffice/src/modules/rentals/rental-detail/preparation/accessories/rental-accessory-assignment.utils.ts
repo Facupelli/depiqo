@@ -41,10 +41,10 @@ export function createSharedAccessoryCapacityByEquipmentType(
 
 export type SharedAccessoryPoolState = {
 	equipmentTypeId: string;
-	capacity: number;
+	capacity: number | null;
 	selectedQuantity: number;
 	isOverCapacity: boolean;
-	rowMaximumByKey: ReadonlyMap<string, number>;
+	rowMaximumByKey: ReadonlyMap<string, number | null>;
 	otherSelectedGroupsByRowKey: ReadonlyMap<string, string[]>;
 };
 
@@ -78,12 +78,12 @@ export function createSharedAccessoryPoolStates(
 
 	const states = new Map<string, SharedAccessoryPoolState>();
 	for (const [equipmentTypeId, rows] of rowsByEquipmentType) {
-		const capacity = capacities.get(equipmentTypeId) ?? 0;
+		const capacity = capacities.get(equipmentTypeId) ?? null;
 		const selectedQuantity = rows.reduce(
 			(total, row) => total + row.quantity,
 			0,
 		);
-		const rowMaximumByKey = new Map<string, number>();
+		const rowMaximumByKey = new Map<string, number | null>();
 		const otherSelectedGroupsByRowKey = new Map<string, string[]>();
 
 		for (const row of rows) {
@@ -94,7 +94,9 @@ export function createSharedAccessoryPoolStates(
 			);
 			rowMaximumByKey.set(
 				row.key,
-				Math.max(row.quantity, capacity - selectedByOthers),
+				capacity === null
+					? null
+					: Math.max(row.quantity, capacity - selectedByOthers),
 			);
 			otherSelectedGroupsByRowKey.set(
 				row.key,
@@ -108,7 +110,7 @@ export function createSharedAccessoryPoolStates(
 			equipmentTypeId,
 			capacity,
 			selectedQuantity,
-			isOverCapacity: selectedQuantity > capacity,
+			isOverCapacity: capacity !== null && selectedQuantity > capacity,
 			rowMaximumByKey,
 			otherSelectedGroupsByRowKey,
 		});

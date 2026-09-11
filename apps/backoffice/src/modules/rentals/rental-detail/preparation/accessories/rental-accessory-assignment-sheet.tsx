@@ -72,7 +72,7 @@ function RentalAccessoryAssignmentSheetBody({
 		setAssignmentError(undefined);
 
 		try {
-			const body = toAssignRentalAccessoriesDto(values);
+			const body = toAssignRentalAccessoriesDto(values, rental.accessories);
 			await assignAccessories.mutateAsync({ rentalId: rental.id, body });
 			onClose();
 		} catch (error) {
@@ -116,7 +116,16 @@ function RentalAccessoryAssignmentSheetBody({
 		);
 	}
 
-	if (defaults.suggestions.length === 0) {
+	const demandLines = rental.selections.flatMap(
+		(selection) => selection.demandLines,
+	);
+	const defaultValues = createRentalAccessoryAssignmentFormDefaultValues({
+		defaults,
+		demandLines,
+		existingAccessories: rental.accessories,
+	});
+
+	if (defaultValues.groups.length === 0) {
 		return (
 			<div className="flex min-w-0 flex-1 flex-col">
 				<div className="flex min-w-0 flex-1 items-center justify-center px-4 py-12 sm:px-6">
@@ -140,10 +149,6 @@ function RentalAccessoryAssignmentSheetBody({
 		);
 	}
 
-	const defaultValues = createRentalAccessoryAssignmentFormDefaultValues({
-		defaults,
-		existingAccessories: rental.accessories,
-	});
 	const sharedCapacityByEquipmentType =
 		createSharedAccessoryCapacityByEquipmentType(defaults);
 

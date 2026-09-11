@@ -124,14 +124,14 @@ export function RentalAccessoryAssignmentForm({
 														<span className="shrink-0 rounded-md border border-neutral-200 bg-white px-2.5 py-1 font-medium text-neutral-600 text-xs">
 															{group.accessories.length}{" "}
 															{group.accessories.length === 1
-																? "sugerencia"
-																: "sugerencias"}
+																? "accesorio"
+																: "accesorios"}
 														</span>
 													</div>
 												</header>
 
 												<div className="hidden grid-cols-[minmax(0,1fr)_120px_120px_150px] border-neutral-200 border-b bg-white px-4 py-2 text-neutral-500 text-xs md:grid">
-													<p>Accesorio sugerido</p>
+													<p>Accesorio</p>
 													<p className="text-center">Recomendado</p>
 													<p className="text-center">Disponible</p>
 													<p className="text-center">Cantidad</p>
@@ -171,7 +171,7 @@ export function RentalAccessoryAssignmentForm({
 																				Recomendado
 																			</span>
 																			<span className="font-semibold text-neutral-950 tabular-nums">
-																				{accessory.recommendedQuantity}
+																				{accessory.recommendedQuantity ?? "-"}
 																			</span>
 																		</div>
 																		<div className="flex items-center justify-between rounded-md border border-neutral-200 bg-neutral-50 px-3 py-2 md:block md:border-0 md:bg-transparent md:p-0 md:text-center">
@@ -179,11 +179,16 @@ export function RentalAccessoryAssignmentForm({
 																				Disponible
 																			</span>
 																			<span className="font-semibold text-neutral-950 tabular-nums">
-																				{isSharedPool
-																					? formatSharedAccessoryAvailability(
-																							pool?.capacity ?? 0,
-																						)
-																					: (pool?.capacity ?? 0)}
+																				{accessory.recommendedQuantity ===
+																					null ||
+																				pool?.capacity === null ||
+																				pool?.capacity === undefined
+																					? "-"
+																					: isSharedPool
+																						? formatSharedAccessoryAvailability(
+																								pool.capacity,
+																							)
+																						: pool.capacity}
 																			</span>
 																		</div>
 																	</div>
@@ -198,14 +203,19 @@ export function RentalAccessoryAssignmentForm({
 																			const quantity =
 																				quantityField.state.value;
 																			const max =
-																				pool?.rowMaximumByKey.get(rowKey) ??
-																				quantity;
+																				accessory.recommendedQuantity === null
+																					? null
+																					: (pool?.rowMaximumByKey.get(
+																							rowKey,
+																						) ?? quantity);
 																			const otherSources =
 																				pool?.otherSelectedGroupsByRowKey.get(
 																					rowKey,
 																				) ?? [];
 																			const sharedAllocationMessage =
-																				!pool?.isOverCapacity && quantity >= max
+																				!pool?.isOverCapacity &&
+																				max !== null &&
+																				quantity >= max
 																					? formatSharedAccessoryAllocationMessage(
 																							{
 																								capacity: pool?.capacity ?? 0,
@@ -255,14 +265,20 @@ export function RentalAccessoryAssignmentForm({
 																							aria-label={`Sumar ${accessory.equipmentTypeName} para ${group.sourceEquipmentTypeName}`}
 																							className="rounded-none border-neutral-200 border-l"
 																							disabled={
-																								quantity >= max ||
+																								(max !== null &&
+																									quantity >= max) ||
 																								pool?.isOverCapacity ||
 																								isPending
 																							}
 																							onClick={() => {
 																								onAccessoryQuantityChange();
 																								quantityField.handleChange(
-																									Math.min(max, quantity + 1),
+																									max === null
+																										? quantity + 1
+																										: Math.min(
+																												max,
+																												quantity + 1,
+																											),
 																								);
 																							}}
 																						>
@@ -275,7 +291,7 @@ export function RentalAccessoryAssignmentForm({
 																							role="alert"
 																						>
 																							{formatSharedAccessoryPoolConflictMessage(
-																								pool.capacity,
+																								pool.capacity ?? 0,
 																							)}
 																						</p>
 																					) : null}
