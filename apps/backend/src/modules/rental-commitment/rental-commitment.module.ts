@@ -6,6 +6,7 @@ import { DeliveryModule } from '../delivery/delivery.module';
 import { PricingModule } from '../pricing/pricing.module';
 import { TenantManagementModule } from '../tenant-management/tenant-management.module';
 import { RentalOfferAvailabilityService } from './application/availability/rental-offer-availability.service';
+import { AccessorySelectionReconciliationService } from './application/accessory-selection-reconciliation.service';
 import { ProspectiveRentalCostService } from './application/prospective-rental-cost.service';
 import { RentalAssetAllocationService } from './asset-allocation/rental-asset-allocation.service';
 import { AddRentalSelectionHttpController } from './features/add-rental-selection/add-rental-selection.controller';
@@ -35,6 +36,8 @@ import { GetReplacementAssetCandidatesHttpController } from './features/get-repl
 import { GetReplacementAssetCandidatesHandler } from './features/get-replacement-asset-candidates/get-replacement-asset-candidates.handler';
 import { ReplaceConfirmedRentalAssetHttpController } from './features/replace-confirmed-rental-asset/replace-confirmed-rental-asset.controller';
 import { ReplaceConfirmedRentalAssetHandler } from './features/replace-confirmed-rental-asset/replace-confirmed-rental-asset.handler';
+import { ReplaceRentalDemandLineAccessoriesHttpController } from './features/replace-rental-demand-line-accessories/replace-rental-demand-line-accessories.controller';
+import { ReplaceRentalDemandLineAccessoriesHandler } from './features/replace-rental-demand-line-accessories/replace-rental-demand-line-accessories.handler';
 import { RemoveRentalSelectionHttpController } from './features/remove-rental-selection/remove-rental-selection.controller';
 import { RemoveRentalSelectionHandler } from './features/remove-rental-selection/remove-rental-selection.handler';
 import { GetRentalDetailHttpController } from './features/get-rental-detail/get-rental-detail.controller';
@@ -80,6 +83,7 @@ import { RentalLifecycleFactsService } from './public-api/rental-lifecycle-facts
     CreateDraftRentalHttpController,
     GetReplacementAssetCandidatesHttpController,
     ReplaceConfirmedRentalAssetHttpController,
+    ReplaceRentalDemandLineAccessoriesHttpController,
     RemoveRentalSelectionHttpController,
     GetRentalsCalendarHttpController,
     GetRentalDetailHttpController,
@@ -94,6 +98,7 @@ import { RentalLifecycleFactsService } from './public-api/rental-lifecycle-facts
     RentalNumberAllocator,
     { provide: RentalRepository, useClass: PrismaRentalRepository },
     RentalAssetAllocationService,
+    AccessorySelectionReconciliationService,
     RentalOfferAvailabilityService,
     ProspectiveRentalCostService,
     AddRentalSelectionHandler,
@@ -108,6 +113,7 @@ import { RentalLifecycleFactsService } from './public-api/rental-lifecycle-facts
     CreateDraftRentalService,
     GetReplacementAssetCandidatesHandler,
     ReplaceConfirmedRentalAssetHandler,
+    ReplaceRentalDemandLineAccessoriesHandler,
     RemoveRentalSelectionHandler,
     GetRentalDetailHandler,
     GetRentalAccessoryDefaultsHandler,
