@@ -5,7 +5,14 @@ import {
 	PopoverDescription,
 	PopoverTrigger,
 } from "@repo/ui/components/popover";
-import { Package, Pencil, RefreshCw, Trash2, User2Icon } from "lucide-react";
+import {
+	ChevronDown,
+	ChevronUp,
+	Package,
+	Pencil,
+	Trash2,
+	User2Icon,
+} from "lucide-react";
 import { useState } from "react";
 import { buildR2PublicUrl } from "@/lib/r2-public-url";
 import { cn } from "@/lib/utils";
@@ -16,16 +23,20 @@ import type {
 	RentalDetailViewDemandLineDto,
 	RentalDetailViewSelectionDto,
 } from "../get-rental-detail-view/get-rental-detail-view.schema";
+import { DemandLineAccessoryAssignmentSheet } from "../preparation/accessories/demand-line-accessory-assignment-sheet";
 import { RentalAccessoryAssignmentSheet } from "../preparation/accessories/rental-accessory-assignment-sheet";
 import { RemoveSelectionAlertDialog } from "../remove-selection/remove-selection-alert-dialog";
 import { useRemoveSelectionDialog } from "../remove-selection/use-remove-selection-dialog";
 import { useRentalDetailContext } from "../rental-detail.context";
 import { isNonEmptyString } from "../rental-detail.utils";
 import { ReplaceAssignedAssetDialog } from "../replace-assigned-asset/replace-assigned-asset-dialog";
+import { DemandLineRowActions } from "./demand-line-row-actions";
 
 export function RentalEquipmentSection() {
 	const { rental } = useRentalDetailContext();
 	const [isAccessorySheetOpen, setIsAccessorySheetOpen] = useState(false);
+	const [selectedAccessoryDemandLineId, setSelectedAccessoryDemandLineId] =
+		useState<string | null>(null);
 	const [isAddProductDialogOpen, setIsAddProductDialogOpen] = useState(false);
 	const [quantitySelection, setQuantitySelection] =
 		useState<RentalDetailViewSelectionDto | null>(null);
@@ -45,12 +56,24 @@ export function RentalEquipmentSection() {
 	const unlinkedAccessories = rental.accessories.filter(
 		(accessory) => !accessory.sourceRentalDemandLineId,
 	);
+	const selectedAccessoryDemandLine = rental.selections
+		.flatMap((selection) => selection.demandLines)
+		.find((demandLine) => demandLine.id === selectedAccessoryDemandLineId);
+	const canAssignDemandLineAccessories =
+		rental.status === "CONFIRMED" && Date.now() < Date.parse(rental.period.end);
 
 	return (
 		<div className="space-y-8">
 			<RentalAccessoryAssignmentSheet
 				open={isAccessorySheetOpen}
 				onOpenChange={setIsAccessorySheetOpen}
+			/>
+			<DemandLineAccessoryAssignmentSheet
+				demandLine={selectedAccessoryDemandLine ?? null}
+				open={selectedAccessoryDemandLine !== undefined}
+				onOpenChange={(open) => {
+					if (!open) setSelectedAccessoryDemandLineId(null);
+				}}
 			/>
 			<AddProductDialog
 				open={isAddProductDialogOpen}
@@ -141,6 +164,11 @@ export function RentalEquipmentSection() {
 										? setReplaceAssignedAssetId
 										: undefined
 								}
+								onAssignAccessories={
+									canAssignDemandLineAccessories
+										? setSelectedAccessoryDemandLineId
+										: undefined
+								}
 							/>
 						);
 					})}
@@ -159,12 +187,14 @@ function RentalEquipmentCard({
 	onEditQuantity,
 	onRemove,
 	onReplaceAssignedAsset,
+	onAssignAccessories,
 	removeDisabledReason,
 }: {
 	selection: RentalDetailViewSelectionDto;
 	onEditQuantity?: () => void;
 	onRemove?: () => void;
 	onReplaceAssignedAsset?: (assetId: string) => void;
+	onAssignAccessories?: (rentalDemandLineId: string) => void;
 	removeDisabledReason: string | null;
 	accessoriesByEquipmentLine: Map<
 		string,
@@ -172,6 +202,8 @@ function RentalEquipmentCard({
 	>;
 }) {
 	const isPackage = selection.rentableItemKind !== "SINGLE";
+	const [isPackageExpanded, setIsPackageExpanded] = useState(true);
+	const packageContentsId = `combo-${selection.id}-contents`;
 	const singleDemandLine = selection.demandLines[0];
 	const accessories = singleDemandLine
 		? (accessoriesByEquipmentLine.get(singleDemandLine.id) ?? [])
@@ -179,23 +211,53 @@ function RentalEquipmentCard({
 	const owners = singleDemandLine
 		? getAssetOwners(singleDemandLine.assignedAssets)
 		: [];
+	const replaceableAssignedAssets = singleDemandLine
+		? getReplaceableAssignedAssets(singleDemandLine.assignedAssets)
+		: [];
 
 	return (
 		<div className="@container/equipment-card min-w-0 rounded-xl border border-neutral-200 bg-white p-3 transition-colors hover:border-neutral-300 @sm/equipment-card:p-4">
-			<div className="flex min-w-0 items-start gap-3 @md/equipment-card:gap-4">
+			<div className="flex min-w-0 items-start gap-3">
 				<ProductImage imageUrl={selection.rentableItem?.imageUrl ?? null} />
-				<div className="min-w-0 flex-1 space-y-2">
-					<div className="flex min-w-0 flex-wrap items-start gap-x-3 gap-y-1">
-						<span className="min-w-0 flex-1 break-words font-semibold leading-snug text-neutral-950">
-							{selection.rentableItemName}
-						</span>
+				<div className="min-w-0 flex-1">
+					<div className="flex min-w-0 items-start gap-2">
+						<div className="min-w-0 flex-1">
+							<p className="break-words font-semibold leading-snug text-neutral-950">
+								{selection.rentableItemName}
+							</p>
+							<div className="mt-1 flex min-w-0 flex-wrap items-baseline gap-x-1.5 text-neutral-500 text-xs">
+								<span>{isPackage ? "Combo" : "Equipo"}</span>
+								<span aria-hidden="true">·</span>
+								<QuantityText quantity={selection.quantity} />
+								{!isPackage && singleDemandLine ? (
+									<AssignedAssetMetadata
+										assignments={singleDemandLine.assignedAssets}
+									/>
+								) : null}
+							</div>
+							{!isPackage && owners.length > 0 ? (
+								<div className="mt-1 space-y-0.5">
+									{owners.map((owner) => (
+										<span
+											key={owner}
+											className="flex min-w-0 items-start gap-1 text-[11px] text-neutral-500"
+										>
+											<User2Icon className="mt-0.5 size-3 shrink-0" />
+											<span className="min-w-0 break-words">
+												Propietario: {owner}
+											</span>
+										</span>
+									))}
+								</div>
+							) : null}
+						</div>
 						<div className="flex shrink-0 items-center">
 							{onEditQuantity ? (
 								<Button
 									type="button"
 									variant="ghost"
 									size="icon"
-									className="size-6 text-neutral-500"
+									className="size-7 text-neutral-500"
 									onClick={onEditQuantity}
 									aria-label={`Editar cantidad de ${selection.rentableItemName}`}
 								>
@@ -208,46 +270,65 @@ function RentalEquipmentCard({
 									onRemove={onRemove}
 								/>
 							) : null}
-						</div>
-					</div>
-					<div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-						<QuantityText quantity={selection.quantity} />
-						<span className="rounded-full bg-neutral-100 px-2 py-0.5 font-medium text-[11px] text-neutral-600">
-							{isPackage ? "Combo" : "Equipo"}
-						</span>
-					</div>
-					{!isPackage ? (
-						<div className="space-y-2">
-							<div className="space-y-0.5">
-								{owners.map((owner) => (
-									<span
-										key={owner}
-										className="flex min-w-0 items-start gap-1 text-[11px] text-neutral-500"
-									>
-										<User2Icon className="mt-0.5 size-3 shrink-0" />
-										<span className="min-w-0 break-words">
-											Propietario: {owner}
-										</span>
-									</span>
-								))}
-							</div>
-							<div className="space-y-1.5">
-								<p className="text-neutral-400 text-xs">Nº de serie</p>
-								<AssignedAssetsList
-									assignments={singleDemandLine?.assignedAssets ?? []}
-									onReplace={onReplaceAssignedAsset}
+							{isPackage ? (
+								<Button
+									type="button"
+									variant="ghost"
+									size="icon"
+									className="size-7 text-neutral-500"
+									onClick={() => setIsPackageExpanded((expanded) => !expanded)}
+									aria-controls={packageContentsId}
+									aria-expanded={isPackageExpanded}
+									aria-label={
+										isPackageExpanded
+											? `Ocultar equipos de ${selection.rentableItemName}`
+											: `Mostrar equipos de ${selection.rentableItemName}`
+									}
+								>
+									{isPackageExpanded ? (
+										<ChevronUp className="size-3.5" />
+									) : (
+										<ChevronDown className="size-3.5" />
+									)}
+								</Button>
+							) : null}
+							{!isPackage &&
+							singleDemandLine &&
+							(onAssignAccessories ||
+								(onReplaceAssignedAsset &&
+									replaceableAssignedAssets.length > 0)) ? (
+								<DemandLineRowActions
+									equipmentTypeName={singleDemandLine.equipmentTypeName}
+									rentalDemandLineId={singleDemandLine.id}
+									replaceableAssignedAssets={replaceableAssignedAssets}
+									onAssignAccessories={onAssignAccessories}
+									onReplaceAssignedAsset={onReplaceAssignedAsset}
 								/>
-							</div>
+							) : null}
 						</div>
-					) : null}
+					</div>
 				</div>
 			</div>
 			{isPackage ? (
-				<RentalPackageChildrenList
-					accessoriesByEquipmentLine={accessoriesByEquipmentLine}
-					items={selection.demandLines}
-					onReplaceAssignedAsset={onReplaceAssignedAsset}
-				/>
+				<div
+					id={packageContentsId}
+					aria-hidden={!isPackageExpanded}
+					className={cn(
+						"grid transition-[grid-template-rows,opacity] duration-150 ease-out motion-reduce:transition-none",
+						isPackageExpanded
+							? "grid-rows-[1fr] opacity-100"
+							: "pointer-events-none grid-rows-[0fr] opacity-0",
+					)}
+				>
+					<div className="min-h-0 overflow-hidden" inert={!isPackageExpanded}>
+						<RentalPackageChildrenList
+							accessoriesByEquipmentLine={accessoriesByEquipmentLine}
+							items={selection.demandLines}
+							onReplaceAssignedAsset={onReplaceAssignedAsset}
+							onAssignAccessories={onAssignAccessories}
+						/>
+					</div>
+				</div>
 			) : null}
 			{!isPackage && accessories.length > 0 ? (
 				<RentalAccessoriesList accessories={accessories} />
@@ -303,29 +384,27 @@ function RentalPackageChildrenList({
 	items,
 	accessoriesByEquipmentLine,
 	onReplaceAssignedAsset,
+	onAssignAccessories,
 }: {
 	items: RentalDetailViewDemandLineDto[];
 	onReplaceAssignedAsset?: (assetId: string) => void;
+	onAssignAccessories?: (rentalDemandLineId: string) => void;
 	accessoriesByEquipmentLine: Map<
 		string,
 		GetRentalDetailViewResponseDto["accessories"]
 	>;
 }) {
 	return (
-		<div className="mt-4 min-w-0 border-neutral-100 border-t pt-3">
-			<p className="mb-2 font-semibold text-[11px] text-neutral-400 uppercase tracking-wide">
-				Equipos del combo
-			</p>
-			<div className="space-y-2">
-				{items.map((child) => (
-					<RentalPackageChildRow
-						key={child.id}
-						accessories={accessoriesByEquipmentLine.get(child.id) ?? []}
-						equipment={child}
-						onReplaceAssignedAsset={onReplaceAssignedAsset}
-					/>
-				))}
-			</div>
+		<div className="mt-3 min-w-0 space-y-2.5">
+			{items.map((child) => (
+				<RentalPackageChildRow
+					key={child.id}
+					accessories={accessoriesByEquipmentLine.get(child.id) ?? []}
+					equipment={child}
+					onReplaceAssignedAsset={onReplaceAssignedAsset}
+					onAssignAccessories={onAssignAccessories}
+				/>
+			))}
 		</div>
 	);
 }
@@ -334,43 +413,55 @@ function RentalPackageChildRow({
 	equipment,
 	accessories,
 	onReplaceAssignedAsset,
+	onAssignAccessories,
 }: {
 	equipment: RentalDetailViewDemandLineDto;
 	accessories: GetRentalDetailViewResponseDto["accessories"];
 	onReplaceAssignedAsset?: (assetId: string) => void;
+	onAssignAccessories?: (rentalDemandLineId: string) => void;
 }) {
 	const owners = getAssetOwners(equipment.assignedAssets);
+	const replaceableAssignedAssets = getReplaceableAssignedAssets(
+		equipment.assignedAssets,
+	);
 
 	return (
-		<div className="@container/package-child min-w-0 rounded-lg border border-neutral-100 bg-neutral-50 px-2.5 py-2 @sm/package-child:px-3">
-			<div className="grid min-w-0 gap-3 @md/package-child:grid-cols-[minmax(0,1fr)_auto] @md/package-child:items-center">
-				<div className="flex min-w-0 items-start gap-3">
-					<ProductImage imageUrl={null} variant="compact" />
-					<div className="min-w-0 space-y-0.5">
-						<p className="break-words font-medium text-neutral-800 text-sm">
-							{equipment.equipmentTypeName}
-						</p>
-						<QuantityText quantity={equipment.quantity} compact />
-						{owners.map((owner) => (
-							<span
-								key={owner}
-								className="flex min-w-0 items-start gap-1 text-[11px] text-neutral-500"
-							>
-								<User2Icon className="mt-0.5 size-3 shrink-0" />
-								<span className="min-w-0 break-words">
-									Propietario: {owner}
-								</span>
-							</span>
-						))}
+		<div className="@container/package-child min-w-0 rounded-lg bg-neutral-50 px-3 py-2.5">
+			<div className="flex min-w-0 items-start gap-2">
+				<div className="min-w-0 flex-1">
+					<p className="break-words font-medium leading-snug text-neutral-800 text-sm">
+						{equipment.equipmentTypeName}
+					</p>
+					<div className="mt-0.5 flex min-w-0 flex-wrap items-baseline gap-x-1.5 text-[11px] text-neutral-500">
+						<QuantityText quantity={equipment.quantity} />
+						<AssignedAssetMetadata assignments={equipment.assignedAssets} />
 					</div>
+					{owners.length > 0 ? (
+						<div className="mt-1 space-y-0.5">
+							{owners.map((owner) => (
+								<span
+									key={owner}
+									className="flex min-w-0 items-start gap-1 text-[11px] text-neutral-500"
+								>
+									<User2Icon className="mt-0.5 size-3 shrink-0" />
+									<span className="min-w-0 break-words">
+										Propietario: {owner}
+									</span>
+								</span>
+							))}
+						</div>
+					) : null}
 				</div>
-				<div className="min-w-0 space-y-1 @md/package-child:justify-self-end">
-					<AssignedAssetsList
-						assignments={equipment.assignedAssets}
-						onReplace={onReplaceAssignedAsset}
-						compact
+				{onAssignAccessories ||
+				(onReplaceAssignedAsset && replaceableAssignedAssets.length > 0) ? (
+					<DemandLineRowActions
+						equipmentTypeName={equipment.equipmentTypeName}
+						rentalDemandLineId={equipment.id}
+						replaceableAssignedAssets={replaceableAssignedAssets}
+						onAssignAccessories={onAssignAccessories}
+						onReplaceAssignedAsset={onReplaceAssignedAsset}
 					/>
-				</div>
+				) : null}
 			</div>
 			{accessories.length > 0 ? (
 				<RentalAccessoriesList accessories={accessories} variant="compact" />
@@ -389,99 +480,42 @@ function RentalAccessoriesList({
 	return (
 		<div
 			className={cn(
-				"border-neutral-100 border-t",
-				variant === "default" ? "mt-4 pt-3" : "mt-3 pt-2",
+				"min-w-0 rounded-md px-3 py-1.5",
+				variant === "default" ? "mt-3 bg-neutral-50" : "mt-2 bg-white/80",
 			)}
 		>
-			<p
-				className={cn(
-					"font-semibold text-[11px] text-neutral-400 uppercase tracking-wide",
-					variant === "default" ? "mb-2" : "mb-1.5",
-				)}
-			>
-				{variant === "default" ? "Accesorios asignados" : "Accesorios"}
+			<p className="mb-1 font-semibold text-[10px] text-neutral-400 uppercase tracking-wide">
+				Accesorios
 			</p>
-			{accessories.length > 0 ? (
-				<div
-					className={cn(variant === "default" ? "space-y-2" : "space-y-1.5")}
-				>
-					{accessories.map((accessory) => (
-						<RentalAccessoryRow
-							key={accessory.id}
-							accessory={accessory}
-							variant={variant}
-						/>
-					))}
-				</div>
-			) : (
-				<div
-					className={cn(
-						"rounded-lg border border-dashed border-neutral-200 bg-neutral-50 text-neutral-400 text-xs",
-						variant === "default" ? "px-3 py-2" : "px-2.5 py-1.5",
-					)}
-				>
-					Sin accesorios asignados
-				</div>
-			)}
+			<div className="space-y-1.5">
+				{accessories.map((accessory) => (
+					<RentalAccessoryRow key={accessory.id} accessory={accessory} />
+				))}
+			</div>
 		</div>
 	);
 }
 
 function RentalAccessoryRow({
 	accessory,
-	variant = "default",
 }: {
 	accessory: GetRentalDetailViewResponseDto["accessories"][number];
-	variant?: "default" | "compact";
 }) {
 	const serials = getAssetSerials(accessory.assignedAssets);
 	const missingAssetIds = getMissingAssetIds(accessory.assignedAssets);
 
 	return (
-		<div
-			className={cn(
-				"@container/accessory-row grid min-w-0 gap-2 rounded-lg border @md/accessory-row:grid-cols-[minmax(0,1fr)_auto] @md/accessory-row:items-center @md/accessory-row:gap-3",
-				variant === "default"
-					? "border-neutral-100 bg-neutral-50 px-2.5 py-2 @sm/accessory-row:px-3"
-					: "border-neutral-200/70 bg-white/70 px-2.5 py-1.5",
-			)}
-		>
-			<div className="flex min-w-0 items-start gap-3">
-				<div
-					className={cn(
-						"flex shrink-0 items-center justify-center rounded-md border border-neutral-200 bg-white",
-						variant === "default" ? "size-10" : "size-8",
-					)}
-				>
-					<Package
-						className={cn(
-							"text-neutral-300",
-							variant === "default" ? "size-4" : "size-3.5",
-						)}
-					/>
-				</div>
-				<div className="min-w-0">
-					<p
-						className={cn(
-							"break-words font-medium text-neutral-800",
-							variant === "default" ? "text-sm" : "text-xs",
-						)}
-					>
-						{accessory.equipmentTypeName}
-					</p>
-					<QuantityText quantity={accessory.quantity} compact />
-				</div>
-			</div>
-			<div className="min-w-0 space-y-1 @md/accessory-row:justify-self-end">
-				{serials.length > 0 ? (
-					<SerialChips serials={serials} maxVisible={3} />
-				) : (
-					<span className="font-mono text-[11px] text-neutral-400">
-						Sin serie
-					</span>
-				)}
-				<MissingAssetsFeedback assetIds={missingAssetIds} />
-			</div>
+		<div className="min-w-0 py-0.5 text-xs">
+			<p className="min-w-0 break-words text-neutral-700">
+				<span className="font-medium">{accessory.equipmentTypeName}</span>{" "}
+				<span className="whitespace-nowrap text-neutral-500">
+					×{accessory.quantity}
+				</span>
+			</p>
+			{serials.length > 0 ? (
+				<SerialMetadata serials={serials} className="mt-0.5" />
+			) : null}
+			<MissingAssetsFeedback assetIds={missingAssetIds} />
 		</div>
 	);
 }
@@ -492,11 +526,11 @@ function UnlinkedAccessoriesCard({
 	accessories: GetRentalDetailViewResponseDto["accessories"];
 }) {
 	return (
-		<div className="min-w-0 rounded-xl border border-amber-200 bg-amber-50/60 p-3 @sm/rental-detail:p-4">
-			<p className="mb-3 font-semibold text-amber-900 text-xs">
-				Accesorios sin equipo asociado
+		<div className="min-w-0 rounded-xl bg-amber-50/60 px-4 py-3">
+			<p className="mb-1.5 font-semibold text-amber-900 text-xs">
+				Accesorios generales
 			</p>
-			<div className="space-y-2">
+			<div className="space-y-1.5">
 				{accessories.map((accessory) => (
 					<RentalAccessoryRow key={accessory.id} accessory={accessory} />
 				))}
@@ -505,117 +539,63 @@ function UnlinkedAccessoriesCard({
 	);
 }
 
-function AssignedAssetsList({
+function AssignedAssetMetadata({
 	assignments,
-	onReplace,
-	compact = false,
 }: {
 	assignments: RentalDetailViewDemandLineDto["assignedAssets"];
-	onReplace?: (assetId: string) => void;
-	compact?: boolean;
 }) {
-	if (assignments.length === 0) {
-		return (
-			<span className="font-mono text-[11px] text-neutral-400">
-				Sin assets asignadas
-			</span>
-		);
-	}
+	const serials = getAssetSerials(assignments);
+	const missingAssetIds = getMissingAssetIds(assignments);
 
 	return (
-		<div className="min-w-0 space-y-1.5">
-			{assignments.map((assignment) => {
-				const label = assignment.asset?.serialNumber?.trim();
-				const isIdentifiable = label !== undefined;
-
-				return (
-					<div
-						key={assignment.assetId}
-						className="flex min-w-0 flex-wrap items-center justify-between gap-2"
-					>
-						<div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
-							{isIdentifiable && (
-								<span className="max-w-full break-all rounded-sm border border-neutral-200 bg-white px-2 py-0.5 font-mono font-semibold text-neutral-600 text-xs">
-									{label}
-								</span>
-							)}
-							{assignment.isMissing ? (
-								<span className="text-amber-700 text-[11px]">
-									Asset no encontrado
-								</span>
-							) : null}
-						</div>
-						{onReplace && isIdentifiable ? (
-							<Button
-								type="button"
-								variant="ghost"
-								size="sm"
-								className={cn(
-									"h-7 px-2 text-neutral-600 text-xs",
-									compact && "h-6",
-								)}
-								onClick={() => onReplace(assignment.assetId)}
-							>
-								<RefreshCw className="size-3" />
-								Reemplazar
-							</Button>
-						) : null}
-					</div>
-				);
-			})}
-		</div>
+		<>
+			{serials.length > 0 ? (
+				<>
+					<span aria-hidden="true">·</span>
+					<SerialMetadata serials={serials} />
+				</>
+			) : null}
+			{missingAssetIds.length > 0 ? (
+				<div className="basis-full">
+					<MissingAssetsFeedback assetIds={missingAssetIds} />
+				</div>
+			) : null}
+		</>
 	);
 }
 
-function SerialChips({
+function SerialMetadata({
 	serials,
-	maxVisible,
+	className,
 }: {
 	serials: string[];
-	maxVisible: number;
+	className?: string;
 }) {
-	const visibleSerials = serials.slice(0, maxVisible);
-	const hiddenCount = serials.length - visibleSerials.length;
-
 	return (
-		<div className="flex min-w-0 flex-wrap gap-1.5">
-			{visibleSerials.map((serial) => (
-				<span
-					key={serial}
-					className="max-w-full break-all rounded-sm border border-neutral-200 bg-white px-2 py-0.5 font-mono font-semibold text-neutral-600 text-xs"
-				>
-					{serial}
+		<span
+			className={cn(
+				"min-w-0 break-words text-[11px] text-neutral-500",
+				className,
+			)}
+		>
+			<span>S/N </span>
+			{serials.map((serial, index) => (
+				<span className="text-sm" key={serial}>
+					{index > 0 ? <span className="font-sans"> · </span> : null}
+					<span className="break-all font-mono text-depiqo-blue-900/80">
+						{serial}
+					</span>
 				</span>
 			))}
-			{hiddenCount > 0 ? (
-				<span className="rounded-sm border border-neutral-200 bg-white px-2 py-0.5 font-medium text-[11px] text-neutral-500">
-					+{hiddenCount} más
-				</span>
-			) : null}
-		</div>
+		</span>
 	);
 }
 
-function ProductImage({
-	imageUrl,
-	variant = "default",
-}: {
-	imageUrl: string | null;
-	variant?: "default" | "compact";
-}) {
+function ProductImage({ imageUrl }: { imageUrl: string | null }) {
 	const publicImageUrl = buildR2PublicUrl(imageUrl, "catalog");
-	const sizeClassName =
-		variant === "default" ? "size-14 @md/equipment-card:size-18" : "size-10";
-	const iconClassName =
-		variant === "default" ? "size-5 @md/equipment-card:size-6" : "size-4";
 
 	return (
-		<div
-			className={cn(
-				"flex shrink-0 items-center justify-center overflow-hidden rounded-lg border border-neutral-200 bg-neutral-100",
-				sizeClassName,
-			)}
-		>
+		<div className="flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-neutral-100">
 			{publicImageUrl ? (
 				<img
 					alt=""
@@ -623,7 +603,7 @@ function ProductImage({
 					src={publicImageUrl}
 				/>
 			) : (
-				<Package className={cn("text-neutral-300", iconClassName)} />
+				<Package className="size-5 text-neutral-300" />
 			)}
 		</div>
 	);
@@ -641,30 +621,8 @@ function MissingAssetsFeedback({ assetIds }: { assetIds: string[] }) {
 	);
 }
 
-function QuantityText({
-	quantity,
-	compact = false,
-}: {
-	quantity: number;
-	compact?: boolean;
-}) {
-	return (
-		<div
-			className={
-				compact
-					? "font-medium text-[11px] text-neutral-400"
-					: "font-semibold text-neutral-400 text-xs"
-			}
-		>
-			{compact ? null : <span>Cantidad: </span>}
-			<span className={compact ? "" : "text-sm text-neutral-500"}>
-				{quantity}
-			</span>{" "}
-			<span className={compact ? "" : "text-neutral-500"}>
-				{quantity > 1 ? "unidades" : "unidad"}
-			</span>
-		</div>
-	);
+function QuantityText({ quantity }: { quantity: number }) {
+	return <span className="whitespace-nowrap text-sm">×{quantity}</span>;
 }
 
 function groupAccessoriesByEquipmentLine(
@@ -686,6 +644,23 @@ function groupAccessoriesByEquipmentLine(
 	}
 
 	return groups;
+}
+
+function getReplaceableAssignedAssets(
+	assets: RentalDetailViewDemandLineDto["assignedAssets"],
+) {
+	return assets.flatMap((assignment) => {
+		const serialNumber = assignment.asset?.serialNumber?.trim();
+
+		return serialNumber !== undefined
+			? [
+					{
+						assetId: assignment.assetId,
+						label: serialNumber || assignment.assetId,
+					},
+				]
+			: [];
+	});
 }
 
 function getAssetOwners(

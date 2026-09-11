@@ -85,7 +85,7 @@ function isUnauthorizedProblemDetailsError(error: unknown): boolean {
 
 function RootDocument({ children }: { children: React.ReactNode }) {
 	return (
-		<html lang="en">
+		<html lang="es" className="scrollbar-gutter-stable">
 			<head>
 				<HeadContent />
 			</head>
