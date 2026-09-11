@@ -5,7 +5,7 @@ import {
 	PopoverDescription,
 	PopoverTrigger,
 } from "@repo/ui/components/popover";
-import { Package, Pencil, RefreshCw, Trash2, User2Icon } from "lucide-react";
+import { Package, Pencil, Trash2, User2Icon } from "lucide-react";
 import { useState } from "react";
 import { buildR2PublicUrl } from "@/lib/r2-public-url";
 import { cn } from "@/lib/utils";
@@ -202,6 +202,9 @@ function RentalEquipmentCard({
 	const owners = singleDemandLine
 		? getAssetOwners(singleDemandLine.assignedAssets)
 		: [];
+	const replaceableAssignedAssets = singleDemandLine
+		? getReplaceableAssignedAssets(singleDemandLine.assignedAssets)
+		: [];
 
 	return (
 		<div className="@container/equipment-card min-w-0 rounded-xl border border-neutral-200 bg-white p-3 transition-colors hover:border-neutral-300 @sm/equipment-card:p-4">
@@ -231,11 +234,17 @@ function RentalEquipmentCard({
 									onRemove={onRemove}
 								/>
 							) : null}
-							{!isPackage && singleDemandLine && onAssignAccessories ? (
+							{!isPackage &&
+							singleDemandLine &&
+							(onAssignAccessories ||
+								(onReplaceAssignedAsset &&
+									replaceableAssignedAssets.length > 0)) ? (
 								<DemandLineRowActions
 									equipmentTypeName={singleDemandLine.equipmentTypeName}
 									rentalDemandLineId={singleDemandLine.id}
+									replaceableAssignedAssets={replaceableAssignedAssets}
 									onAssignAccessories={onAssignAccessories}
+									onReplaceAssignedAsset={onReplaceAssignedAsset}
 								/>
 							) : null}
 						</div>
@@ -265,7 +274,6 @@ function RentalEquipmentCard({
 								<p className="text-neutral-400 text-xs">Nº de serie</p>
 								<AssignedAssetsList
 									assignments={singleDemandLine?.assignedAssets ?? []}
-									onReplace={onReplaceAssignedAsset}
 								/>
 							</div>
 						</div>
@@ -376,6 +384,9 @@ function RentalPackageChildRow({
 	onAssignAccessories?: (rentalDemandLineId: string) => void;
 }) {
 	const owners = getAssetOwners(equipment.assignedAssets);
+	const replaceableAssignedAssets = getReplaceableAssignedAssets(
+		equipment.assignedAssets,
+	);
 
 	return (
 		<div className="@container/package-child min-w-0 rounded-lg border border-neutral-100 bg-neutral-50 px-2.5 py-2 @sm/package-child:px-3">
@@ -402,17 +413,16 @@ function RentalPackageChildRow({
 				</div>
 				<div className="flex min-w-0 items-start gap-1 @md/package-child:justify-self-end">
 					<div className="min-w-0 space-y-1">
-						<AssignedAssetsList
-							assignments={equipment.assignedAssets}
-							onReplace={onReplaceAssignedAsset}
-							compact
-						/>
+						<AssignedAssetsList assignments={equipment.assignedAssets} />
 					</div>
-					{onAssignAccessories ? (
+					{onAssignAccessories ||
+					(onReplaceAssignedAsset && replaceableAssignedAssets.length > 0) ? (
 						<DemandLineRowActions
 							equipmentTypeName={equipment.equipmentTypeName}
 							rentalDemandLineId={equipment.id}
+							replaceableAssignedAssets={replaceableAssignedAssets}
 							onAssignAccessories={onAssignAccessories}
+							onReplaceAssignedAsset={onReplaceAssignedAsset}
 						/>
 					) : null}
 				</div>
@@ -485,13 +495,13 @@ function RentalAccessoryRow({
 	return (
 		<div
 			className={cn(
-				"@container/accessory-row grid min-w-0 gap-2 rounded-lg border @md/accessory-row:grid-cols-[minmax(0,1fr)_auto] @md/accessory-row:items-center @md/accessory-row:gap-3",
+				"@container/accessory-row flex min-w-0 flex-wrap items-center justify-between gap-2 rounded-lg border @md/accessory-row:gap-3",
 				variant === "default"
 					? "border-neutral-100 bg-neutral-50 px-2.5 py-2 @sm/accessory-row:px-3"
 					: "border-neutral-200/70 bg-white/70 px-2.5 py-1.5",
 			)}
 		>
-			<div className="flex min-w-0 items-start gap-3">
+			<div className="flex min-w-0 flex-[1_1_14rem] items-start gap-3">
 				<div
 					className={cn(
 						"flex shrink-0 items-center justify-center rounded-md border border-neutral-200 bg-white",
@@ -517,7 +527,7 @@ function RentalAccessoryRow({
 					<QuantityText quantity={accessory.quantity} compact />
 				</div>
 			</div>
-			<div className="min-w-0 space-y-1 @md/accessory-row:justify-self-end">
+			<div className="ml-auto min-w-0 max-w-full flex-[0_1_auto] space-y-1 @md/accessory-row:max-w-[55%]">
 				{serials.length > 0 ? (
 					<SerialChips serials={serials} maxVisible={3} />
 				) : (
@@ -552,12 +562,8 @@ function UnlinkedAccessoriesCard({
 
 function AssignedAssetsList({
 	assignments,
-	onReplace,
-	compact = false,
 }: {
 	assignments: RentalDetailViewDemandLineDto["assignedAssets"];
-	onReplace?: (assetId: string) => void;
-	compact?: boolean;
 }) {
 	if (assignments.length === 0) {
 		return (
@@ -590,21 +596,6 @@ function AssignedAssetsList({
 								</span>
 							) : null}
 						</div>
-						{onReplace && isIdentifiable ? (
-							<Button
-								type="button"
-								variant="ghost"
-								size="sm"
-								className={cn(
-									"h-7 px-2 text-neutral-600 text-xs",
-									compact && "h-6",
-								)}
-								onClick={() => onReplace(assignment.assetId)}
-							>
-								<RefreshCw className="size-3" />
-								Reemplazar
-							</Button>
-						) : null}
 					</div>
 				);
 			})}
@@ -731,6 +722,23 @@ function groupAccessoriesByEquipmentLine(
 	}
 
 	return groups;
+}
+
+function getReplaceableAssignedAssets(
+	assets: RentalDetailViewDemandLineDto["assignedAssets"],
+) {
+	return assets.flatMap((assignment) => {
+		const serialNumber = assignment.asset?.serialNumber?.trim();
+
+		return serialNumber !== undefined
+			? [
+					{
+						assetId: assignment.assetId,
+						label: serialNumber || assignment.assetId,
+					},
+				]
+			: [];
+	});
 }
 
 function getAssetOwners(

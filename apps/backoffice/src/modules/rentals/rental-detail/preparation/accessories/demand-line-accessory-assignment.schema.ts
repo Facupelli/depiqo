@@ -34,27 +34,32 @@ export function createDemandLineAccessoryAssignmentFormDefaultValues({
 	defaults?: GetRentalAccessoryDefaultsResponseDto;
 	existingAccessories: GetRentalDetailResponseDto["accessories"];
 }): DemandLineAccessoryAssignmentFormValues {
+	const persistedAccessories = existingAccessories.filter(
+		(accessory) => accessory.sourceRentalDemandLineId === rentalDemandLineId,
+	);
+
 	const rows = new Map<
 		string,
 		DemandLineAccessoryAssignmentFormValues["accessories"][number]
 	>();
 
-	for (const suggestion of defaults?.suggestions ?? []) {
-		if (suggestion.sourceRentalDemandLineId !== rentalDemandLineId) continue;
-		rows.set(suggestion.accessoryEquipmentTypeId, {
-			equipmentTypeId: suggestion.accessoryEquipmentTypeId,
-			equipmentTypeName: suggestion.accessoryEquipmentTypeName,
-			quantity: suggestion.recommendedQuantity,
-		});
-	}
-
-	for (const accessory of existingAccessories) {
-		if (accessory.sourceRentalDemandLineId !== rentalDemandLineId) continue;
-		rows.set(accessory.equipmentTypeId, {
-			equipmentTypeId: accessory.equipmentTypeId,
-			equipmentTypeName: accessory.equipmentTypeName,
-			quantity: accessory.quantity,
-		});
+	if (persistedAccessories.length > 0) {
+		for (const accessory of persistedAccessories) {
+			rows.set(accessory.equipmentTypeId, {
+				equipmentTypeId: accessory.equipmentTypeId,
+				equipmentTypeName: accessory.equipmentTypeName,
+				quantity: accessory.quantity,
+			});
+		}
+	} else {
+		for (const suggestion of defaults?.suggestions ?? []) {
+			if (suggestion.sourceRentalDemandLineId !== rentalDemandLineId) continue;
+			rows.set(suggestion.accessoryEquipmentTypeId, {
+				equipmentTypeId: suggestion.accessoryEquipmentTypeId,
+				equipmentTypeName: suggestion.accessoryEquipmentTypeName,
+				quantity: suggestion.recommendedQuantity,
+			});
+		}
 	}
 
 	return { accessories: [...rows.values()] };
