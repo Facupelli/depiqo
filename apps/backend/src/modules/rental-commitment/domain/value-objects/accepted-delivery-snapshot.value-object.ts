@@ -72,6 +72,32 @@ export class AcceptedDeliverySnapshot extends JsonSnapshot {
     return ok(new AcceptedDeliverySnapshot(toJsonValue(parsed.data), parsed.data));
   }
 
+  reschedule(params: {
+    deliveryScheduledAt: Date;
+    collectionScheduledAt: Date;
+  }): Result<AcceptedDeliverySnapshot, RentalCommitmentError> {
+    for (const [field, value] of [
+      ['delivery.scheduledAt', params.deliveryScheduledAt],
+      ['collection.scheduledAt', params.collectionScheduledAt],
+    ] as const) {
+      if (!(value instanceof Date) || Number.isNaN(value.getTime())) {
+        return err(new RentalInvalidFieldError(`acceptedDelivery.${field}`, 'must be a valid timestamp'));
+      }
+    }
+
+    return AcceptedDeliverySnapshot.create({
+      ...this.snapshot,
+      delivery: {
+        ...this.data.delivery,
+        scheduledAt: params.deliveryScheduledAt.toISOString(),
+      },
+      collection: {
+        ...this.data.collection,
+        scheduledAt: params.collectionScheduledAt.toISOString(),
+      },
+    });
+  }
+
   get snapshot(): AcceptedDeliverySnapshotData {
     return structuredClone(this.data);
   }

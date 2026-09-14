@@ -1,5 +1,6 @@
 import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
+import { useBranchTimezone } from "@/shared/timezone/operational-timezone.hooks";
 import { useCancelRental } from "../cancel-rental/cancel-rental.mutation";
 import { useConfirmRental } from "../confirm-rental/confirm-rental.mutation";
 import {
@@ -17,8 +18,10 @@ const CONFIRM_RENTAL_FALLBACK_ERROR =
 export function useRentalDetailActions() {
 	const navigate = useNavigate();
 	const { rental, customerSummary } = useRentalDetailContext();
+	const operationalTimezone = useBranchTimezone(rental.branchId);
 	const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
 	const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
+	const [isRescheduleDialogOpen, setIsRescheduleDialogOpen] = useState(false);
 
 	const budget = useRentalBudgetActions(rental.id, rental.customerId !== null);
 	const remito = useRentalRemitoActions(rental.id);
@@ -36,6 +39,9 @@ export function useRentalDetailActions() {
 		customerSummary !== null && rental.pricing !== null;
 	const canConfirmRental = isDraftRental && hasConfirmPrerequisites;
 	const canCancelRental = !["CANCELLED", "COMPLETED"].includes(rental.status);
+	const canRescheduleRental =
+		rental.status === "CONFIRMED" &&
+		new Date(rental.period.start).getTime() > Date.now();
 	const confirmRentalErrorMessage = confirmRental.error
 		? (confirmRental.error.problemDetails.detail ??
 			confirmRental.error.problemDetails.title ??
@@ -78,6 +84,18 @@ export function useRentalDetailActions() {
 			onOpenSigningDialog: signing.openSendDialog,
 			onOpenCancelDialog: () => setIsCancelDialogOpen(true),
 		},
+		periodEditAction: canRescheduleRental
+			? { onOpen: () => setIsRescheduleDialogOpen(true) }
+			: undefined,
+		rescheduleDialogProps: {
+			rentalId: rental.id,
+			rentalVersion: rental.version,
+			currentPeriodStart: rental.period.start,
+			currentPeriodEnd: rental.period.end,
+			operationalTimezone,
+			open: isRescheduleDialogOpen,
+			onOpenChange: setIsRescheduleDialogOpen,
+		},
 		budgetCustomerDialogProps: {
 			open: budget.isCustomerDialogOpen,
 			onOpenChange: budget.setIsCustomerDialogOpen,
@@ -109,3 +127,5 @@ export function useRentalDetailActions() {
 		},
 	};
 }
+
+export type RentalDetailActions = ReturnType<typeof useRentalDetailActions>;

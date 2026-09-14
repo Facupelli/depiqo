@@ -23,7 +23,9 @@ import {
   RentalCannotBeCancelledFromStatusError,
   RentalCannotBeConfirmedFromStatusError,
   RentalCannotBeEditedFromStatusError,
+  RentalPeriodCannotStartInPastError,
   RentalPeriodHasEndedError,
+  RentalPeriodHasStartedError,
   RentalSelectionNotFoundError,
   RentalAssignedAssetNotFoundError,
   RentalConfirmationRequiresCustomerError,
@@ -126,6 +128,11 @@ export interface ChangeConfirmedRentalDetailsProps {
   operationTime: Date;
 }
 
+export interface RescheduleConfirmedRentalPeriodProps {
+  period: RentalPeriod;
+  operationTime: Date;
+}
+
 export interface AddConfirmedRentalSelectionProps {
   selection: CreateRentalSelectionInput;
   demandLines: CreateRentalDemandLineInput[];
@@ -220,6 +227,7 @@ interface ConfirmedRentalStateChanges {
   notes?: string;
   insuranceSelected?: boolean;
   confirmedPriceSnapshot?: ConfirmedPriceSnapshot;
+  deliverySnapshot?: AcceptedDeliverySnapshot;
   selections?: RentalSelection[];
   demandLines?: RentalDemandLine[];
   assignedAssets?: AssignedAsset[];
@@ -370,6 +378,17 @@ export class Rental extends AggregateRootBase {
 
   get assetBlocks(): readonly AssetBlock[] {
     return [...this.props.assetBlocks];
+  }
+
+  get currentOperationalAssetBlocks(): readonly AssetBlock[] {
+    const currentEquipmentAssetIds = new Set(this.currentAssignedAssets.map((assignment) => assignment.assetId));
+
+    return this.props.assetBlocks.filter(
+      (block) =>
+        block.isActive &&
+        (block.blockType === AssetBlockType.Accessory ||
+          (block.blockType === AssetBlockType.Equipment && currentEquipmentAssetIds.has(block.assetId))),
+    );
   }
 
   get createdAt(): Date | undefined {
@@ -640,6 +659,54 @@ export class Rental extends AggregateRootBase {
       notes: params.notes,
       insuranceSelected: params.insuranceSelected,
       confirmedPriceSnapshot: confirmedPriceSnapshot.value,
+    });
+    if (transition.isErr()) return err(transition.error);
+
+    this.recordConfirmedRentalEditedEvent(params.operationTime);
+    return ok(undefined);
+  }
+
+  rescheduleConfirmedPeriod(params: RescheduleConfirmedRentalPeriodProps): Result<void, RentalCommitmentError> {
+    if (this.status !== RentalStatus.Confirmed) {
+      return err(new RentalCannotBeEditedFromStatusError(this.id, this.status));
+    }
+    if (params.operationTime >= this.period.start) {
+      return err(new RentalPeriodHasStartedError(this.id));
+    }
+    if (params.period.start <= params.operationTime) {
+      return err(new RentalPeriodCannotStartInPastError());
+    }
+
+    const acceptedAssetBuffer = this.requireAcceptedAssetBuffer();
+    let acceptedDelivery = this.acceptedDelivery;
+    if (acceptedDelivery) {
+      const rescheduledDelivery = acceptedDelivery.reschedule({
+        deliveryScheduledAt: params.period.start,
+        collectionScheduledAt: params.period.end,
+      });
+      if (rescheduledDelivery.isErr()) return err(rescheduledDelivery.error);
+      acceptedDelivery = rescheduledDelivery.value;
+    }
+
+    const blockPeriod = deriveConfirmedAssetBlockPeriod({
+      participationPeriod: params.period,
+      acceptedBeforeBufferMinutes: acceptedAssetBuffer.beforeBufferMinutes,
+      acceptedAfterBufferMinutes: acceptedAssetBuffer.afterBufferMinutes,
+      acceptedDelivery,
+    });
+    const currentOperationalBlockIds = new Set(this.currentOperationalAssetBlocks.map((block) => block.id));
+    const assignedAssets = this.props.assignedAssets.map((assignment) =>
+      assignment.isActive ? assignment.moveEffectiveFrom(params.period.start) : assignment,
+    );
+    const assetBlocks = this.props.assetBlocks.map((block) =>
+      currentOperationalBlockIds.has(block.id) ? block.resizePeriod(blockPeriod) : block,
+    );
+
+    const transition = this.applyConfirmedStateChanges({
+      period: params.period,
+      deliverySnapshot: acceptedDelivery,
+      assignedAssets,
+      assetBlocks,
     });
     if (transition.isErr()) return err(transition.error);
 

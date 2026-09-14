@@ -1,4 +1,4 @@
-import dayjs from "@/lib/dates/dayjs";
+import { hydrateRentalPeriod } from "@/modules/rentals/shared/rental-period/rental-period";
 import type { RentalCustomerDisplayFacts } from "../customer-selection/rental-customer-selector";
 import type { DraftRentalBranchDisplayFacts } from "../draft-rental-composer/draft-rental-composer";
 import type { DraftRentalComposerFormValues } from "../draft-rental-composer/draft-rental-composer.schema";
@@ -15,8 +15,11 @@ export function hydrateRentalDetailToComposer(
 	rental: GetRentalDetailViewResponseDto,
 	operationalTimezone: string,
 ): HydratedDraftRentalEditor {
-	const start = toLocalPeriodEndpoint(rental.period.start, operationalTimezone);
-	const end = toLocalPeriodEndpoint(rental.period.end, operationalTimezone);
+	const period = hydrateRentalPeriod(
+		rental.period.start,
+		rental.period.end,
+		operationalTimezone,
+	);
 	const manualAdjustment = rental.pricing?.manualPricingAdjustment;
 	const deliveryDetails = rental.fulfillment.deliveryDetails;
 
@@ -24,10 +27,10 @@ export function hydrateRentalDetailToComposer(
 		defaultValues: {
 			branchId: rental.branchId,
 			rentalCustomerId: rental.customerId ?? "",
-			periodStartDate: start.date,
-			periodStartTime: start.minuteOfDay,
-			periodEndDate: end.date,
-			periodEndTime: end.minuteOfDay,
+			periodStartDate: period.startDate,
+			periodStartTime: period.startTime,
+			periodEndDate: period.endDate,
+			periodEndTime: period.endTime,
 			selectedOffers: rental.selections.map((selection) => ({
 				rentalOfferId: selection.rentalOfferId,
 				name: selection.rentableItemName,
@@ -49,14 +52,5 @@ export function hydrateRentalDetailToComposer(
 		initialBranch: rental.retainedBranch,
 		initialCustomer: rental.retainedCustomer ?? undefined,
 		expectedVersion: rental.version,
-	};
-}
-
-function toLocalPeriodEndpoint(instant: string, timezone: string) {
-	const local = dayjs(instant).tz(timezone);
-
-	return {
-		date: local.format("YYYY-MM-DD"),
-		minuteOfDay: local.hour() * 60 + local.minute(),
 	};
 }
