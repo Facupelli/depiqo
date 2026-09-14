@@ -5,7 +5,14 @@ import { PrismaTransactionClient } from 'src/core/database/prisma-unit-of-work';
 import { mapPostgresError } from 'src/core/utils/postgres-error.mapper';
 
 import { Rental } from '../domain/rental.aggregate';
-import { RentalRepository, SaveRentalOptions, SaveRentalResult } from './rental.repository';
+import { RentalStatus } from '../domain/rental-status';
+import {
+  RentalRepository,
+  ReplaceDraftRentalOptions,
+  SaveRentalOptions,
+  SaveRentalResult,
+  UnsafeDraftRentalReplacementError,
+} from './rental.repository';
 import { AssetBlockPersistenceRecord, RentalMapper } from './rental.mapper';
 
 @Injectable()
@@ -48,6 +55,87 @@ export class PrismaRentalRepository extends RentalRepository {
     } catch (error) {
       mapPostgresError(error);
     }
+  }
+
+  async replaceDraft(rental: Rental, options: ReplaceDraftRentalOptions): Promise<SaveRentalResult | null> {
+    if (rental.status !== RentalStatus.Draft) {
+      throw new UnsafeDraftRentalReplacementError(rental.id, [`rental status ${rental.status}`]);
+    }
+
+    try {
+      if (options.tx) {
+        return await this.persistDraftReplacement(options.tx, rental, options.expectedVersion);
+      }
+
+      return await this.prisma.client.$transaction((tx) =>
+        this.persistDraftReplacement(tx, rental, options.expectedVersion),
+      );
+    } catch (error) {
+      mapPostgresError(error);
+    }
+  }
+
+  private async persistDraftReplacement(
+    tx: PrismaTransactionClient,
+    rental: Rental,
+    expectedVersion: number,
+  ): Promise<SaveRentalResult | null> {
+    const claimed = await tx.v2Rental.updateMany({
+      where: {
+        id: rental.id,
+        tenantId: rental.tenantId,
+        status: 'DRAFT',
+        version: expectedVersion,
+      },
+      data: { version: { increment: 1 } },
+    });
+    if (claimed.count === 0) return null;
+
+    const rentalWhere = { tenantId: rental.tenantId, rentalId: rental.id };
+    const orderWhere = { tenantId: rental.tenantId, rentalOrderId: rental.id };
+    const [assignedAssets, assetBlocks, accessorySelections, accessoryAssignments, ownerSplits] = await Promise.all([
+      tx.v2AssignedAsset.count({ where: rentalWhere }),
+      tx.v2AssetBlock.count({ where: rentalWhere }),
+      tx.v2RentalAccessorySelection.count({ where: orderWhere }),
+      tx.v2RentalAccessoryAssetAssignment.count({ where: orderWhere }),
+      tx.v2RentalOwnerSplit.count({ where: rentalWhere }),
+    ]);
+    const forbiddenState = [
+      assignedAssets > 0 ? 'assigned assets' : undefined,
+      assetBlocks > 0 ? 'asset blocks' : undefined,
+      accessorySelections > 0 ? 'accessory selections' : undefined,
+      accessoryAssignments > 0 ? 'accessory assignments' : undefined,
+      ownerSplits > 0 ? 'owner splits' : undefined,
+    ].filter((value): value is string => value !== undefined);
+    if (forbiddenState.length > 0) {
+      throw new UnsafeDraftRentalReplacementError(rental.id, forbiddenState);
+    }
+
+    await tx.v2RentalDemandLine.deleteMany({ where: rentalWhere });
+    await tx.v2RentalSelection.deleteMany({ where: rentalWhere });
+
+    if (rental.selections.length > 0) {
+      await tx.v2RentalSelection.createMany({
+        data: rental.selections.map(RentalMapper.toSelectionCreateData),
+      });
+    }
+    if (rental.demandLines.length > 0) {
+      await tx.v2RentalDemandLine.createMany({
+        data: rental.demandLines.map(RentalMapper.toDemandLineCreateData),
+      });
+    }
+
+    await tx.v2RentalDeliveryDetails.deleteMany({ where: orderWhere });
+    const deliveryDetails = RentalMapper.toDeliveryDetailsCreateData(rental);
+    if (deliveryDetails) {
+      await tx.v2RentalDeliveryDetails.create({ data: deliveryDetails });
+    }
+
+    return tx.v2Rental.update({
+      where: { id: rental.id },
+      data: RentalMapper.toDraftProposalUpdateData(rental),
+      select: { version: true, updatedAt: true },
+    });
   }
 
   private async persistRental(

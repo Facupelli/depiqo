@@ -513,14 +513,17 @@ describe('CreateConfirmedRental integration', () => {
 
     const state = await persisted(result.value.rentalId);
     expect(state.rental.fulfillmentMethod).toBe('DELIVERY');
-    expect(state.rental.deliveryDetails).toEqual(expect.objectContaining({ address: deliveryDisplayAddress }));
+    expect(state.rental.deliveryDetails).toEqual(
+      expect.objectContaining({
+        address: deliveryDisplayAddress,
+        formattedAddress: deliveryDisplayAddress,
+        ...deliveryCustomerCoordinates,
+        providerPlaceId: null,
+      }),
+    );
     expect(state.rental.deliverySnapshot).toEqual(
       expect.objectContaining({
         schema: 'v2.accepted-delivery',
-        resolvedCustomerLocation: expect.objectContaining({
-          formattedAddress: deliveryDisplayAddress,
-          ...deliveryCustomerCoordinates,
-        }),
         distanceMeters: deliveryRouteDistanceMeters,
         deliveryTotal: '50',
       }),

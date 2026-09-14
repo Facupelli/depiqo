@@ -19,7 +19,8 @@ type DeliveryAddressSuggestionsQueryOverrides<
 >;
 
 const deliveryAddressSuggestionKeys = {
-	all: () => ["v2", "rentals", "create-rental", "delivery-address"] as const,
+	all: () =>
+		["v2", "rentals", "draft-rental-composer", "delivery-address"] as const,
 	suggestions: (text: string) =>
 		[...deliveryAddressSuggestionKeys.all(), "suggestions", text] as const,
 };

@@ -42,6 +42,7 @@ import { Route as AdminDashboardCustomersPendingProfilesIndexRouteImport } from 
 import { Route as AdminDashboardCatalogPackagesIndexRouteImport } from './routes/_admin/dashboard/catalog/packages/index'
 import { Route as AdminDashboardCatalogCategoriesIndexRouteImport } from './routes/_admin/dashboard/catalog/categories/index'
 import { Route as AdminDashboardPromotionsPromotionIdEditRouteImport } from './routes/_admin/dashboard/promotions/$promotionId/edit'
+import { Route as AdminDashboardOrdersOrderIdEditRouteImport } from './routes/_admin/dashboard/orders/$orderId/edit'
 import { Route as AdminDashboardInventoryEquipmentTypesNewRouteImport } from './routes/_admin/dashboard/inventory/equipment-types/new'
 import { Route as AdminDashboardCustomersPendingProfilesCustomerIdRouteImport } from './routes/_admin/dashboard/customers/pending-profiles/$customerId'
 import { Route as AdminDashboardCatalogPackagesNewRouteImport } from './routes/_admin/dashboard/catalog/packages/new'
@@ -246,6 +247,12 @@ const AdminDashboardPromotionsPromotionIdEditRoute =
     path: '/promotions/$promotionId/edit',
     getParentRoute: () => AdminDashboardRouteRoute,
   } as any)
+const AdminDashboardOrdersOrderIdEditRoute =
+  AdminDashboardOrdersOrderIdEditRouteImport.update({
+    id: '/orders/$orderId/edit',
+    path: '/orders/$orderId/edit',
+    getParentRoute: () => AdminDashboardRouteRoute,
+  } as any)
 const AdminDashboardInventoryEquipmentTypesNewRoute =
   AdminDashboardInventoryEquipmentTypesNewRouteImport.update({
     id: '/inventory/equipment-types/new',
@@ -388,6 +395,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/catalog/packages/new': typeof AdminDashboardCatalogPackagesNewRoute
   '/dashboard/customers/pending-profiles/$customerId': typeof AdminDashboardCustomersPendingProfilesCustomerIdRoute
   '/dashboard/inventory/equipment-types/new': typeof AdminDashboardInventoryEquipmentTypesNewRoute
+  '/dashboard/orders/$orderId/edit': typeof AdminDashboardOrdersOrderIdEditRoute
   '/dashboard/promotions/$promotionId/edit': typeof AdminDashboardPromotionsPromotionIdEditRoute
   '/dashboard/catalog/categories/': typeof AdminDashboardCatalogCategoriesIndexRoute
   '/dashboard/catalog/packages/': typeof AdminDashboardCatalogPackagesIndexRoute
@@ -434,6 +442,7 @@ export interface FileRoutesByTo {
   '/dashboard/catalog/packages/new': typeof AdminDashboardCatalogPackagesNewRoute
   '/dashboard/customers/pending-profiles/$customerId': typeof AdminDashboardCustomersPendingProfilesCustomerIdRoute
   '/dashboard/inventory/equipment-types/new': typeof AdminDashboardInventoryEquipmentTypesNewRoute
+  '/dashboard/orders/$orderId/edit': typeof AdminDashboardOrdersOrderIdEditRoute
   '/dashboard/promotions/$promotionId/edit': typeof AdminDashboardPromotionsPromotionIdEditRoute
   '/dashboard/catalog/categories': typeof AdminDashboardCatalogCategoriesIndexRoute
   '/dashboard/catalog/packages': typeof AdminDashboardCatalogPackagesIndexRoute
@@ -486,6 +495,7 @@ export interface FileRoutesById {
   '/_admin/dashboard/catalog/packages/new': typeof AdminDashboardCatalogPackagesNewRoute
   '/_admin/dashboard/customers/pending-profiles/$customerId': typeof AdminDashboardCustomersPendingProfilesCustomerIdRoute
   '/_admin/dashboard/inventory/equipment-types/new': typeof AdminDashboardInventoryEquipmentTypesNewRoute
+  '/_admin/dashboard/orders/$orderId/edit': typeof AdminDashboardOrdersOrderIdEditRoute
   '/_admin/dashboard/promotions/$promotionId/edit': typeof AdminDashboardPromotionsPromotionIdEditRoute
   '/_admin/dashboard/catalog/categories/': typeof AdminDashboardCatalogCategoriesIndexRoute
   '/_admin/dashboard/catalog/packages/': typeof AdminDashboardCatalogPackagesIndexRoute
@@ -538,6 +548,7 @@ export interface FileRouteTypes {
     | '/dashboard/catalog/packages/new'
     | '/dashboard/customers/pending-profiles/$customerId'
     | '/dashboard/inventory/equipment-types/new'
+    | '/dashboard/orders/$orderId/edit'
     | '/dashboard/promotions/$promotionId/edit'
     | '/dashboard/catalog/categories/'
     | '/dashboard/catalog/packages/'
@@ -584,6 +595,7 @@ export interface FileRouteTypes {
     | '/dashboard/catalog/packages/new'
     | '/dashboard/customers/pending-profiles/$customerId'
     | '/dashboard/inventory/equipment-types/new'
+    | '/dashboard/orders/$orderId/edit'
     | '/dashboard/promotions/$promotionId/edit'
     | '/dashboard/catalog/categories'
     | '/dashboard/catalog/packages'
@@ -635,6 +647,7 @@ export interface FileRouteTypes {
     | '/_admin/dashboard/catalog/packages/new'
     | '/_admin/dashboard/customers/pending-profiles/$customerId'
     | '/_admin/dashboard/inventory/equipment-types/new'
+    | '/_admin/dashboard/orders/$orderId/edit'
     | '/_admin/dashboard/promotions/$promotionId/edit'
     | '/_admin/dashboard/catalog/categories/'
     | '/_admin/dashboard/catalog/packages/'
@@ -896,6 +909,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminDashboardPromotionsPromotionIdEditRouteImport
       parentRoute: typeof AdminDashboardRouteRoute
     }
+    '/_admin/dashboard/orders/$orderId/edit': {
+      id: '/_admin/dashboard/orders/$orderId/edit'
+      path: '/orders/$orderId/edit'
+      fullPath: '/dashboard/orders/$orderId/edit'
+      preLoaderRoute: typeof AdminDashboardOrdersOrderIdEditRouteImport
+      parentRoute: typeof AdminDashboardRouteRoute
+    }
     '/_admin/dashboard/inventory/equipment-types/new': {
       id: '/_admin/dashboard/inventory/equipment-types/new'
       path: '/inventory/equipment-types/new'
@@ -1110,6 +1130,7 @@ interface AdminDashboardRouteRouteChildren {
   AdminDashboardCatalogPackagesNewRoute: typeof AdminDashboardCatalogPackagesNewRoute
   AdminDashboardCustomersPendingProfilesCustomerIdRoute: typeof AdminDashboardCustomersPendingProfilesCustomerIdRoute
   AdminDashboardInventoryEquipmentTypesNewRoute: typeof AdminDashboardInventoryEquipmentTypesNewRoute
+  AdminDashboardOrdersOrderIdEditRoute: typeof AdminDashboardOrdersOrderIdEditRoute
   AdminDashboardPromotionsPromotionIdEditRoute: typeof AdminDashboardPromotionsPromotionIdEditRoute
   AdminDashboardCatalogCategoriesIndexRoute: typeof AdminDashboardCatalogCategoriesIndexRoute
   AdminDashboardCatalogPackagesIndexRoute: typeof AdminDashboardCatalogPackagesIndexRoute
@@ -1144,6 +1165,7 @@ const AdminDashboardRouteRouteChildren: AdminDashboardRouteRouteChildren = {
     AdminDashboardCustomersPendingProfilesCustomerIdRoute,
   AdminDashboardInventoryEquipmentTypesNewRoute:
     AdminDashboardInventoryEquipmentTypesNewRoute,
+  AdminDashboardOrdersOrderIdEditRoute: AdminDashboardOrdersOrderIdEditRoute,
   AdminDashboardPromotionsPromotionIdEditRoute:
     AdminDashboardPromotionsPromotionIdEditRoute,
   AdminDashboardCatalogCategoriesIndexRoute:

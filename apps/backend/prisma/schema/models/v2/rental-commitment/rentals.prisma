@@ -70,7 +70,11 @@ model V2RentalDeliveryDetails {
   tenantId      String @map("tenant_id")
   rentalOrderId String @unique @map("rental_order_id")
 
-  address String
+  address          String
+  formattedAddress String  @map("formatted_address")
+  latitude         Float
+  longitude        Float
+  providerPlaceId  String? @map("provider_place_id")
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)

@@ -2,6 +2,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { buildR2PublicUrl } from "@/lib/r2-public-url";
+import { rentalOfferAvailabilityQueries } from "@/modules/rentals/shared/rental-offers/rental-offer-availability.queries";
 import { branchQueries } from "@/modules/settings/branches/public";
 import { useDebounce } from "@/shared/hooks/use-debounce";
 import { deriveConfirmedRentalEditAvailabilityPeriod } from "../confirmed-rental-edit-period";
@@ -15,7 +16,6 @@ import {
 	isOfferSelectable,
 	isSelectedOfferSubmittable,
 } from "./add-selection.utils";
-import { rentalOfferAvailabilityQueries } from "./rental-offer-availability.queries";
 import { rentalOfferSearchQueries } from "./rental-offer-search.queries";
 
 const SEARCH_DEBOUNCE_MS = 250;

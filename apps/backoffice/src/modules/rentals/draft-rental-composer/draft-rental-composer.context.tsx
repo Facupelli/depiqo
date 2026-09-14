@@ -9,6 +9,9 @@ export type DraftRentalComposerContextValue = {
 	isPriceLoading: boolean;
 	isPriceError: boolean;
 	isSubmitting: boolean;
+	submitDisabled: boolean;
+	submitError: string | null;
+	submitLabel: string;
 };
 
 const DraftRentalComposerContext =

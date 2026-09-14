@@ -5,6 +5,8 @@ import { err, ok, Result } from 'neverthrow';
 
 import { PrismaService } from 'src/core/database/prisma.service';
 import { AssetInventoryDisplayFacts } from 'src/modules/asset-inventory/public-api/asset-inventory-display-facts.public-api';
+import { BranchFacts } from 'src/modules/tenant-management/public-api/branch-facts.public-api';
+import { RetainedRentalCustomerProfileFacts } from 'src/modules/tenant-management/public-api/retained-rental-customer-profile-facts.public-api';
 import { getRentalDetailError, GetRentalDetailError } from './get-rental-detail.errors';
 import { toRentalDetailPricing } from '../../application/accepted-pricing/accepted-pricing-snapshot.projections';
 import { AcceptedDeliverySnapshot } from '../../domain/value-objects/accepted-delivery-snapshot.value-object';
@@ -18,6 +20,8 @@ export class GetRentalDetailHandler implements IQueryHandler<GetRentalDetailQuer
   constructor(
     private readonly prisma: PrismaService,
     private readonly assetInventoryDisplayFacts: AssetInventoryDisplayFacts,
+    private readonly branchFacts: BranchFacts,
+    private readonly retainedRentalCustomerProfileFacts: RetainedRentalCustomerProfileFacts,
   ) {}
 
   async execute(query: GetRentalDetailQuery): Promise<GetRentalDetailResult> {
@@ -47,7 +51,13 @@ export class GetRentalDetailHandler implements IQueryHandler<GetRentalDetailQuer
         branchId: true,
         customerId: true,
         deliveryDetails: {
-          select: { address: true },
+          select: {
+            address: true,
+            formattedAddress: true,
+            latitude: true,
+            longitude: true,
+            providerPlaceId: true,
+          },
         },
         selections: {
           where: { removedAt: null },
@@ -111,7 +121,19 @@ export class GetRentalDetailHandler implements IQueryHandler<GetRentalDetailQuer
       );
     }
 
-    const ownerPayouts = await this.buildOwnerPayoutSummary(query.tenantId, rental.ownerSplits, rental.selections);
+    const [ownerPayouts, branchFactsResult, retainedCustomer] = await Promise.all([
+      this.buildOwnerPayoutSummary(query.tenantId, rental.ownerSplits, rental.selections),
+      this.branchFacts.getBranchFacts({ tenantId: query.tenantId, branchId: rental.branchId }),
+      rental.customerId
+        ? this.retainedRentalCustomerProfileFacts.getRetainedRentalCustomerProfileFacts({
+            tenantId: query.tenantId,
+            rentalCustomerId: rental.customerId,
+          })
+        : Promise.resolve(null),
+    ]);
+
+    if (branchFactsResult.isErr()) throw new Error(branchFactsResult.error.message);
+    const retainedBranch = branchFactsResult.value;
 
     return ok({
       id: rental.id,
@@ -127,13 +149,29 @@ export class GetRentalDetailHandler implements IQueryHandler<GetRentalDetailQuer
       confirmedAt: rental.confirmedAt?.toISOString() ?? null,
       customerId: rental.customerId,
       branchId: rental.branchId,
+      retainedBranch: {
+        id: retainedBranch.branchId,
+        name: retainedBranch.displayName,
+        timezone: retainedBranch.branchTimezone,
+      },
+      retainedCustomer: retainedCustomer
+        ? { id: retainedCustomer.rentalCustomerId, name: retainedCustomer.fullName }
+        : null,
       period: {
         start: rental.periodStart.toISOString(),
         end: rental.periodEnd.toISOString(),
       },
       fulfillment: {
         method: rental.fulfillmentMethod,
-        deliveryDetails: rental.deliveryDetails,
+        deliveryDetails: rental.deliveryDetails
+          ? {
+              address: rental.deliveryDetails.address,
+              formattedAddress: rental.deliveryDetails.formattedAddress,
+              latitude: rental.deliveryDetails.latitude,
+              longitude: rental.deliveryDetails.longitude,
+              providerPlaceId: rental.deliveryDetails.providerPlaceId ?? undefined,
+            }
+          : null,
       },
       selections: rental.selections.map((selection) => ({
         id: selection.id,
@@ -249,6 +287,8 @@ export class GetRentalDetailHandler implements IQueryHandler<GetRentalDetailQuer
     if (deliverySnapshot === null) return null;
     const snapshot = AcceptedDeliverySnapshot.create(deliverySnapshot);
     if (snapshot.isErr()) throw snapshot.error;
-    return snapshot.value.snapshot;
+    const { distanceMeters, delivery, collection, currency, deliveryTotal, transportReservationMinutes } =
+      snapshot.value.snapshot;
+    return { distanceMeters, delivery, collection, currency, deliveryTotal, transportReservationMinutes };
   }
 }

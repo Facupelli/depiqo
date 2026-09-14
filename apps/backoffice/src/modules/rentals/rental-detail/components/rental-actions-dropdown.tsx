@@ -9,6 +9,7 @@ import {
 	CheckCircle2,
 	ChevronDown,
 	FileText,
+	Pencil,
 	Send,
 	Trash2,
 } from "lucide-react";
@@ -23,6 +24,7 @@ export type RentalActionsDropdownProps = {
 	isCancelling: boolean;
 	isOpeningRemito: boolean;
 	isOpeningBudget: boolean;
+	onEditDraft: () => void;
 	onOpenConfirmDialog: () => void;
 	onOpenRemito: () => void;
 	onOpenBudget: () => void;
@@ -40,6 +42,7 @@ export function RentalActionsDropdown({
 	isCancelling,
 	isOpeningRemito,
 	isOpeningBudget,
+	onEditDraft,
 	onOpenConfirmDialog,
 	onOpenRemito,
 	onOpenBudget,
@@ -58,6 +61,12 @@ export function RentalActionsDropdown({
 			/>
 
 			<DropdownMenuContent align="end" className="w-60">
+				{isDraftRental ? (
+					<DropdownMenuItem onClick={onEditDraft}>
+						<Pencil className="mr-2 h-4 w-4" />
+						Editar
+					</DropdownMenuItem>
+				) : null}
 				{isDraftRental ? (
 					<DropdownMenuItem
 						onClick={onOpenConfirmDialog}

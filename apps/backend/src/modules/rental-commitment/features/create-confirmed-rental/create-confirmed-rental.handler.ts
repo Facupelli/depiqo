@@ -236,9 +236,8 @@ export class CreateConfirmedRentalService implements ICommandHandler<
     }
 
     const pricingResult = prospectiveResult.value.pricing;
-    const acceptedDeliveryData = prospectiveResult.value.deliveryQuote
-      ? acceptedDeliverySnapshotFromQuote(prospectiveResult.value.deliveryQuote)
-      : undefined;
+    const deliveryQuote = prospectiveResult.value.deliveryQuote;
+    const acceptedDeliveryData = deliveryQuote ? acceptedDeliverySnapshotFromQuote(deliveryQuote) : undefined;
     let acceptedDelivery: AcceptedDeliverySnapshot | undefined;
     if (acceptedDeliveryData) {
       const acceptedDeliveryResult = AcceptedDeliverySnapshot.create(acceptedDeliveryData);
@@ -316,8 +315,14 @@ export class CreateConfirmedRentalService implements ICommandHandler<
           insuranceSelected: command.insuranceSelected,
           bookingSnapshot: command.bookingSnapshot,
           deliveryDetails:
-            command.fulfillmentMethod === FulfillmentMethod.Delivery && command.deliveryDetails
-              ? { address: command.deliveryDetails.address }
+            command.fulfillmentMethod === FulfillmentMethod.Delivery && command.deliveryDetails && deliveryQuote
+              ? {
+                  address: command.deliveryDetails.address,
+                  formattedAddress: deliveryQuote.resolvedCustomerLocation.formattedAddress,
+                  latitude: deliveryQuote.resolvedCustomerLocation.latitude,
+                  longitude: deliveryQuote.resolvedCustomerLocation.longitude,
+                  providerPlaceId: deliveryQuote.resolvedCustomerLocation.providerPlaceId,
+                }
               : undefined,
           acceptedAssetBuffer,
           confirmedAt: operationTime,

@@ -1,0 +1,44 @@
+import {
+	type CreateDraftRentalBodyDto,
+	CreateDraftRentalBodySchema,
+} from "@repo/api-contracts";
+import {
+	buildDraftRentalPeriod,
+	type DraftRentalComposerFormValues,
+	emptyDraftRentalValueToUndefined,
+	toDraftRentalManualPricingAdjustment,
+	toDraftRentalSelectedOffers,
+} from "../draft-rental-composer/draft-rental-composer.schema";
+
+export function toCreateDraftRentalDto(
+	values: DraftRentalComposerFormValues,
+	timezone: string,
+): CreateDraftRentalBodyDto {
+	let deliveryDetailsDto: CreateDraftRentalBodyDto["deliveryDetails"];
+
+	if (values.fulfillmentMethod === "DELIVERY") {
+		if (values.deliveryDestination.status !== "NEW_DESTINATION") {
+			throw new Error("Delivery requires a newly selected address");
+		}
+
+		deliveryDetailsDto = {
+			address: values.deliveryDestination.address.trim(),
+			locationId: values.deliveryDestination.locationId.trim(),
+		};
+	}
+
+	const dto = {
+		branchId: values.branchId,
+		rentalCustomerId: emptyDraftRentalValueToUndefined(values.rentalCustomerId),
+		period: buildDraftRentalPeriod(values, timezone),
+		selectedOffers: toDraftRentalSelectedOffers(values),
+		fulfillmentMethod: values.fulfillmentMethod,
+		deliveryDetails: deliveryDetailsDto,
+		insuranceSelected: values.insuranceSelected,
+		manualPricingAdjustment: toDraftRentalManualPricingAdjustment(values),
+	};
+
+	CreateDraftRentalBodySchema.parse(dto);
+
+	return dto;
+}

@@ -108,11 +108,11 @@ export class ConfirmRentalHandler implements ICommandHandler<ConfirmRentalComman
     let acceptedDeliveryData;
     let acceptedDelivery: AcceptedDeliverySnapshot | undefined;
     if (fulfillmentMethod === FulfillmentMethod.Delivery) {
-      const deliverySnapshot = rental.deliverySnapshot;
-      if (!deliverySnapshot) {
+      const deliveryDetails = rental.deliveryDetails;
+      if (!deliveryDetails) {
         return err(
           this.toApplicationError(
-            new RentalInvalidFieldError('deliverySnapshot', 'unconfirmed Delivery rentals require a Delivery snapshot'),
+            new RentalInvalidFieldError('deliveryDetails', 'Delivery rentals require resolved Delivery details'),
             context,
           ),
         );
@@ -121,7 +121,14 @@ export class ConfirmRentalHandler implements ICommandHandler<ConfirmRentalComman
       const deliveryOutcome = await this.deliveryQuoteService.getQuote({
         tenantId: rental.tenantId,
         branchId: rental.branchId,
-        customerLocation: { resolvedLocation: deliverySnapshot.snapshot.resolvedCustomerLocation },
+        customerLocation: {
+          resolvedLocation: {
+            formattedAddress: deliveryDetails.formattedAddress,
+            latitude: deliveryDetails.latitude,
+            longitude: deliveryDetails.longitude,
+            providerPlaceId: deliveryDetails.providerPlaceId,
+          },
+        },
         rentalStart: rental.period.start,
         rentalEnd: rental.period.end,
       });

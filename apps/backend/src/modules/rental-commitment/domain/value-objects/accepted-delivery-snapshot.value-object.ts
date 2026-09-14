@@ -35,18 +35,6 @@ const snapshotSchema = z
   .object({
     schema: z.literal(ACCEPTED_DELIVERY_SNAPSHOT_SCHEMA),
     version: z.literal(ACCEPTED_DELIVERY_SNAPSHOT_VERSION),
-    resolvedCustomerLocation: z.object({
-      formattedAddress: z.string().trim().min(1),
-      latitude: z.number().finite().min(-90).max(90),
-      longitude: z.number().finite().min(-180).max(180),
-      addressLine1: z.string().optional(),
-      addressLine2: z.string().optional(),
-      city: z.string().optional(),
-      state: z.string().optional(),
-      postalCode: z.string().optional(),
-      country: z.string().optional(),
-      providerPlaceId: z.string().optional(),
-    }),
     distanceMeters: z.number().int().nonnegative(),
     delivery: legSchema,
     collection: legSchema,

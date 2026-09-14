@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { rentalOfferAvailabilityQueries } from "../add-selection/rental-offer-availability.queries";
+import { rentalOfferAvailabilityQueries } from "@/modules/rentals/shared/rental-offers/rental-offer-availability.queries";
 import { deriveConfirmedRentalEditAvailabilityPeriod } from "../confirmed-rental-edit-period";
 import type { RentalDetailViewSelectionDto } from "../get-rental-detail-view/get-rental-detail-view.schema";
 import { useRentalDetailContext } from "../rental-detail.context";

@@ -12,8 +12,17 @@ import { useState } from "react";
 import useDebounce from "@/shared/hooks/use-debounce";
 import { useRentalCustomers } from "./rental-customer-selection.queries";
 
+export type RentalCustomerDisplayFacts = {
+	id: string;
+	name: string;
+	email?: string | null;
+	status?: GetRentalCustomersItemDto["status"];
+};
+
 type RentalCustomerSelectorProps = {
 	value: string;
+	id?: string;
+	initialSelectedCustomer?: RentalCustomerDisplayFacts;
 	onValueChange: (customerId: string) => void;
 	placeholder?: string;
 	allowEmpty?: boolean;
@@ -21,6 +30,8 @@ type RentalCustomerSelectorProps = {
 
 export function RentalCustomerSelector({
 	value,
+	id,
+	initialSelectedCustomer,
 	onValueChange,
 	placeholder = "Sin cliente asignado",
 	allowEmpty = true,
@@ -36,17 +47,23 @@ export function RentalCustomerSelector({
 	});
 	const customers = data?.data ?? [];
 	const selectedCustomer = customers.find((customer) => customer.id === value);
+	const hydratedCustomer =
+		initialSelectedCustomer?.id === value ? initialSelectedCustomer : undefined;
 	const selectedLabel = selectedCustomer
 		? customerLabel(selectedCustomer)
-		: value
-			? "Cliente seleccionado"
-			: placeholder;
+		: hydratedCustomer
+			? customerDisplayFactsLabel(hydratedCustomer)
+			: value
+				? "Cliente seleccionado"
+				: placeholder;
+	const selectedStatus = selectedCustomer?.status ?? hydratedCustomer?.status;
 
 	return (
 		<Popover open={open} onOpenChange={setOpen}>
 			<PopoverTrigger
 				render={
 					<Button
+						id={id}
 						type="button"
 						variant="outline"
 						className="w-full min-w-0 justify-start overflow-hidden"
@@ -57,9 +74,9 @@ export function RentalCustomerSelector({
 					{selectedLabel}
 				</span>
 
-				{selectedCustomer ? (
+				{selectedStatus ? (
 					<CustomerOnboardingStatusBadge
-						status={selectedCustomer.status}
+						status={selectedStatus}
 						className="shrink-0"
 					/>
 				) : null}
@@ -144,6 +161,12 @@ function customerLabel(customer: Customer) {
 	return customer.email
 		? `${customerName(customer)} · ${customer.email}`
 		: customerName(customer);
+}
+
+function customerDisplayFactsLabel(customer: RentalCustomerDisplayFacts) {
+	return customer.email
+		? `${customer.name} · ${customer.email}`
+		: customer.name;
 }
 
 const onboardingStatusPresentation = {
