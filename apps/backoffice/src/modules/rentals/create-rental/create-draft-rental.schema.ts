@@ -17,16 +17,13 @@ export function toCreateDraftRentalDto(
 	let deliveryDetailsDto: CreateDraftRentalBodyDto["deliveryDetails"];
 
 	if (values.fulfillmentMethod === "DELIVERY") {
-		const address = values.deliveryDetails.address.trim();
-		const locationId = values.deliveryDetails.locationId?.trim();
-
-		if (!address || !locationId) {
-			throw new Error("Delivery requires a complete selected address");
+		if (values.deliveryDestination.status !== "NEW_DESTINATION") {
+			throw new Error("Delivery requires a newly selected address");
 		}
 
 		deliveryDetailsDto = {
-			address,
-			locationId,
+			address: values.deliveryDestination.address.trim(),
+			locationId: values.deliveryDestination.locationId.trim(),
 		};
 	}
 

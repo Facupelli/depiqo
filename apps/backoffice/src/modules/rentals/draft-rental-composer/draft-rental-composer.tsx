@@ -2,8 +2,10 @@ import type { GetBranchesBranchDto } from "@repo/api-contracts";
 import { Card, CardContent } from "@repo/ui/components/card";
 import { useStore } from "@tanstack/react-form";
 import { AlertCircle } from "lucide-react";
+import { useMemo } from "react";
 import { useAppForm } from "@/shared/contexts/form.context";
-import { useBranchTimezone } from "@/shared/timezone/operational-timezone.hooks";
+import { useBranchTimezoneResolver } from "@/shared/timezone/operational-timezone.hooks";
+import type { RentalCustomerDisplayFacts } from "../customer-selection/rental-customer-selector";
 import { useCalculatedDraftRentalPrice } from "./calculate-draft-rental-price.queries";
 import { DraftRentalOfferSearchSection } from "./components/draft-rental-offer-search-section";
 import { DraftRentalReviewPanel } from "./components/draft-rental-review-panel";
@@ -14,14 +16,22 @@ import {
 	DraftRentalComposerProvider,
 } from "./draft-rental-composer.context";
 import {
+	createDraftRentalComposerFormSchema,
 	type DraftRentalComposerFormValues,
-	draftRentalComposerFormSchema,
 	toCalculateDraftRentalPriceDto,
 } from "./draft-rental-composer.schema";
+
+export type DraftRentalBranchDisplayFacts = {
+	id: string;
+	name: string;
+	timezone: string | null;
+};
 
 type DraftRentalComposerProps = {
 	activeBranches: GetBranchesBranchDto[];
 	defaultValues: DraftRentalComposerFormValues;
+	initialCustomer?: RentalCustomerDisplayFacts;
+	initialBranch?: DraftRentalBranchDisplayFacts;
 	onSubmit: (
 		values: DraftRentalComposerFormValues,
 		timezone: string,
@@ -35,16 +45,37 @@ type DraftRentalComposerProps = {
 export function DraftRentalComposer({
 	activeBranches,
 	defaultValues,
+	initialCustomer,
+	initialBranch,
 	onSubmit,
 	isSubmitting,
 	submitError,
 	submitLabel,
 	missingBranchMessage,
 }: DraftRentalComposerProps) {
+	const resolveKnownBranchTimezone = useBranchTimezoneResolver();
+	const resolveBranchTimezone = useMemo(
+		() => (branchId: string) => {
+			if (initialBranch?.id === branchId && initialBranch.timezone) {
+				return initialBranch.timezone;
+			}
+
+			return resolveKnownBranchTimezone(branchId);
+		},
+		[initialBranch, resolveKnownBranchTimezone],
+	);
+	const formSchema = useMemo(
+		() =>
+			createDraftRentalComposerFormSchema({
+				selectableBranchIds: new Set(activeBranches.map((branch) => branch.id)),
+				resolveBranchTimezone,
+			}),
+		[activeBranches, resolveBranchTimezone],
+	);
 	const form = useAppForm({
 		defaultValues,
 		validators: {
-			onSubmit: draftRentalComposerFormSchema,
+			onSubmit: formSchema,
 		},
 		onSubmit: async ({ value }) => {
 			await onSubmit(value, timezone);
@@ -56,14 +87,16 @@ export function DraftRentalComposer({
 		(branch) => branch.id === values.branchId,
 	);
 	const branchMissing = !selectedBranch;
-	const timezone = useBranchTimezone(values.branchId);
-	const priceBody = buildPriceBody(values, timezone);
+	const persistedBranch =
+		initialBranch?.id === values.branchId ? initialBranch : undefined;
+	const timezone = resolveBranchTimezone(values.branchId);
+	const priceBody = branchMissing ? null : buildPriceBody(values, timezone);
 	const priceQuery = useCalculatedDraftRentalPrice(priceBody, {
 		enabled: !!priceBody,
 	});
 
 	const contextValue: DraftRentalComposerContextValue = {
-		selectedBranchName: selectedBranch?.name ?? null,
+		selectedBranchName: selectedBranch?.name ?? persistedBranch?.name ?? null,
 		branchMissing,
 		timezone,
 		pricePreview: priceQuery.data,
@@ -84,6 +117,8 @@ export function DraftRentalComposer({
 					<DraftRentalSetupSection
 						form={form}
 						activeBranches={activeBranches}
+						initialBranch={initialBranch}
+						initialCustomer={initialCustomer}
 					/>
 					<DraftRentalOfferSearchSection form={form} />
 					<DraftRentalSelectedOffersSection form={form} />

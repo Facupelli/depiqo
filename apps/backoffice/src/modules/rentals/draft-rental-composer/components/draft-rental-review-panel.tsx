@@ -23,27 +23,19 @@ export const DraftRentalReviewPanel = withForm({
 			isPriceLoading,
 			isPriceError,
 			isSubmitting,
-			branchMissing,
 			submitError,
 			submitLabel,
 		} = useDraftRentalComposer();
-		const values = useStore(form.store, (state) => state.values);
+		const targetTotal = useStore(
+			form.store,
+			(state) => state.values.targetTotal,
+		);
 		const calculatedTotal = pricePreview?.calculated.total;
 		const finalTotal =
-			pricePreview?.final.total ?? (values.targetTotal || calculatedTotal);
+			pricePreview?.final.total ?? (targetTotal || calculatedTotal);
 		const currency = pricePreview?.final.currency ?? "USD";
 		const difference = pricePreview?.targetTotalAdjustment?.adjustmentTotal;
 		const direction = pricePreview?.targetTotalAdjustment?.direction;
-		const canSubmit =
-			!branchMissing &&
-			values.branchId.length > 0 &&
-			values.periodStartDate.length > 0 &&
-			values.periodEndDate.length > 0 &&
-			values.selectedOffers.length > 0 &&
-			(values.fulfillmentMethod !== "DELIVERY" ||
-				(values.deliveryDetails.address.trim().length > 0 &&
-					values.deliveryDetails.locationId !== null));
-
 		return (
 			<Card className="shadow-xs">
 				<CardHeader>
@@ -54,12 +46,12 @@ export const DraftRentalReviewPanel = withForm({
 						<SummaryRow
 							label="Precio calculado"
 							value={
-								calculatedTotal ? formatMoney(calculatedTotal, currency) : "—"
+								calculatedTotal ? formatMoney(calculatedTotal, currency) : "-"
 							}
 						/>
 						<SummaryRow
 							label="Precio final"
-							value={finalTotal ? formatMoney(finalTotal, currency) : "—"}
+							value={finalTotal ? formatMoney(finalTotal, currency) : "-"}
 							strong
 						/>
 						<SummaryRow
@@ -67,7 +59,7 @@ export const DraftRentalReviewPanel = withForm({
 							value={
 								difference
 									? `${direction === "DECREASE" ? "−" : "+"}${formatMoney(difference, currency)}`
-									: "—"
+									: "-"
 							}
 						/>
 						{isPriceLoading ? (
@@ -130,12 +122,7 @@ export const DraftRentalReviewPanel = withForm({
 							<Button
 								type="button"
 								className="w-full"
-								disabled={
-									!canSubmit ||
-									!formCanSubmit ||
-									isSubmitting ||
-									formIsSubmitting
-								}
+								disabled={!formCanSubmit || isSubmitting || formIsSubmitting}
 								onClick={() => form.handleSubmit()}
 							>
 								{isSubmitting || formIsSubmitting

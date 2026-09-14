@@ -32,69 +32,136 @@ export const draftRentalSelectedOfferFormSchema = z.object({
 	availableCount: z.number().int().nonnegative().nullable(),
 });
 
-export const draftRentalComposerFormSchema = z
-	.object({
-		branchId: z.string().min(1, "Seleccioná una sucursal"),
-		rentalCustomerId: z.string(),
-		periodStartDate: z.string().min(1, "La fecha de inicio es obligatoria"),
-		periodStartTime: z.number().int().nonnegative(),
-		periodEndDate: z.string().min(1, "La fecha de devolución es obligatoria"),
-		periodEndTime: z.number().int().nonnegative(),
-		selectedOffers: z
-			.array(draftRentalSelectedOfferFormSchema)
-			.min(1, "Añadí al menos un producto"),
-		fulfillmentMethod: z.enum(["PICKUP", "DELIVERY"]),
-		deliveryDetails: z.object({
+export const draftRentalDeliveryDestinationFormSchema = z.discriminatedUnion(
+	"status",
+	[
+		z.object({
+			status: z.literal("INVALID"),
 			address: z.string(),
-			locationId: z.string().nullable(),
 		}),
-		insuranceSelected: z.boolean(),
-		targetTotal: z.string(),
-		adjustmentReason: z.string(),
-	})
-	.superRefine((value, ctx) => {
-		const start = toRentalPeriodDateTime(
-			value.periodStartDate,
-			value.periodStartTime,
-			"UTC",
-		);
-		const end = toRentalPeriodDateTime(
-			value.periodEndDate,
-			value.periodEndTime,
-			"UTC",
-		);
+		z.object({
+			status: z.literal("EXISTING"),
+			address: z.string().trim().min(1),
+		}),
+		z.object({
+			status: z.literal("NEW_DESTINATION"),
+			address: z.string().trim().min(1),
+			locationId: z.string().trim().min(1),
+		}),
+	],
+);
 
-		if (end <= start) {
-			ctx.addIssue({
-				code: "custom",
-				path: ["periodEndDate"],
-				message: "La devolución debe ser posterior al inicio",
-			});
-		}
+const draftRentalComposerFormBaseSchema = z.object({
+	branchId: z.string().min(1, "Seleccioná una sucursal"),
+	rentalCustomerId: z.string(),
+	periodStartDate: z.string().min(1, "La fecha de inicio es obligatoria"),
+	periodStartTime: z
+		.number()
+		.int()
+		.min(0)
+		.max(24 * 60 - 1),
+	periodEndDate: z.string().min(1, "La fecha de devolución es obligatoria"),
+	periodEndTime: z
+		.number()
+		.int()
+		.min(0)
+		.max(24 * 60 - 1),
+	selectedOffers: z
+		.array(draftRentalSelectedOfferFormSchema)
+		.min(1, "Añadí al menos un producto"),
+	fulfillmentMethod: z.enum(["PICKUP", "DELIVERY"]),
+	deliveryDestination: draftRentalDeliveryDestinationFormSchema,
+	insuranceSelected: z.boolean(),
+	targetTotal: z.string(),
+	adjustmentReason: z.string(),
+});
 
-		if (value.fulfillmentMethod === "DELIVERY") {
-			if (!value.deliveryDetails.address.trim()) {
-				ctx.addIssue({
-					code: "custom",
-					path: ["deliveryDetails", "address"],
-					message: "La dirección es obligatoria",
-				});
-			} else if (!value.deliveryDetails.locationId) {
-				ctx.addIssue({
-					code: "custom",
-					path: ["deliveryDetails", "address"],
-					message: "Seleccioná una dirección de la lista",
-				});
-			}
-		}
-	});
-
+export type DraftRentalComposerFormValues = z.infer<
+	typeof draftRentalComposerFormBaseSchema
+>;
 export type DraftRentalSelectedOfferFormValues = z.infer<
 	typeof draftRentalSelectedOfferFormSchema
 >;
-export type DraftRentalComposerFormValues = z.infer<
-	typeof draftRentalComposerFormSchema
->;
+
+export type DraftRentalComposerValidationContext = {
+	selectableBranchIds: ReadonlySet<string>;
+	resolveBranchTimezone: (branchId: string) => string;
+};
+
+export function createDraftRentalComposerFormSchema({
+	selectableBranchIds,
+	resolveBranchTimezone,
+}: DraftRentalComposerValidationContext) {
+	return draftRentalComposerFormBaseSchema.superRefine((value, ctx) => {
+		if (value.branchId && !selectableBranchIds.has(value.branchId)) {
+			ctx.addIssue({
+				code: "custom",
+				path: ["branchId"],
+				message: "Seleccioná una sucursal disponible",
+			});
+		}
+
+		if (value.periodStartDate && value.periodEndDate) {
+			const timezone = resolveBranchTimezone(value.branchId);
+			const start = resolveRentalPeriodEndpoint(
+				value.periodStartDate,
+				value.periodStartTime,
+				timezone,
+				"periodStartTime",
+				ctx,
+			);
+			const end = resolveRentalPeriodEndpoint(
+				value.periodEndDate,
+				value.periodEndTime,
+				timezone,
+				"periodEndTime",
+				ctx,
+			);
+
+			if (start && end && end <= start) {
+				ctx.addIssue({
+					code: "custom",
+					path: ["periodEndDate"],
+					message: "La devolución debe ser posterior al inicio",
+				});
+			}
+		}
+
+		if (
+			value.fulfillmentMethod === "DELIVERY" &&
+			value.deliveryDestination.status === "INVALID"
+		) {
+			ctx.addIssue({
+				code: "custom",
+				path: ["deliveryDestination", "address"],
+				message: value.deliveryDestination.address.trim()
+					? "Seleccioná una dirección de la lista"
+					: "La dirección es obligatoria",
+			});
+		}
+	});
+}
+
+function resolveRentalPeriodEndpoint(
+	date: string,
+	minuteOfDay: number,
+	timezone: string,
+	field: "periodStartTime" | "periodEndTime",
+	ctx: z.RefinementCtx,
+): Date | null {
+	try {
+		return toRentalPeriodDateTime(date, minuteOfDay, timezone);
+	} catch (error) {
+		if (!(error instanceof RangeError)) throw error;
+
+		ctx.addIssue({
+			code: "custom",
+			path: [field],
+			message: "El horario seleccionado no existe en esta sucursal",
+		});
+		return null;
+	}
+}
 
 export function createDraftRentalComposerDefaultValues(
 	branchId = "",
@@ -108,14 +175,31 @@ export function createDraftRentalComposerDefaultValues(
 		periodEndTime: 18 * 60,
 		selectedOffers: [],
 		fulfillmentMethod: "PICKUP",
-		deliveryDetails: {
+		deliveryDestination: {
+			status: "INVALID",
 			address: "",
-			locationId: null,
 		},
 		insuranceSelected: false,
 		targetTotal: "",
 		adjustmentReason: "",
 	};
+}
+
+export function draftRentalMinuteOfDayToTime(value: number): string {
+	const hour = Math.floor(value / 60);
+	const minute = value % 60;
+	return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+}
+
+export function draftRentalTimeToMinuteOfDay(value: string): number | null {
+	const match = /^(\d{2}):(\d{2})$/.exec(value);
+	if (!match) return null;
+
+	const hour = Number(match[1]);
+	const minute = Number(match[2]);
+	if (hour > 23 || minute > 59) return null;
+
+	return hour * 60 + minute;
 }
 
 export function createDraftRentalSelectedOffer(
@@ -137,7 +221,7 @@ export function emptyDraftRentalValueToUndefined(
 	return trimmed.length > 0 ? trimmed : undefined;
 }
 
-export function buildDraftRentalPeriod(
+function resolveDraftRentalPeriod(
 	values: DraftRentalComposerFormValues,
 	timezone: string,
 ) {
@@ -146,12 +230,23 @@ export function buildDraftRentalPeriod(
 			values.periodStartDate,
 			values.periodStartTime,
 			timezone,
-		).toISOString(),
+		),
 		end: toRentalPeriodDateTime(
 			values.periodEndDate,
 			values.periodEndTime,
 			timezone,
-		).toISOString(),
+		),
+	};
+}
+
+export function buildDraftRentalPeriod(
+	values: DraftRentalComposerFormValues,
+	timezone: string,
+) {
+	const period = resolveDraftRentalPeriod(values, timezone);
+	return {
+		start: period.start.toISOString(),
+		end: period.end.toISOString(),
 	};
 }
 
@@ -169,9 +264,7 @@ export function toDraftRentalManualPricingAdjustment(
 ) {
 	const targetTotal = emptyDraftRentalValueToUndefined(values.targetTotal);
 
-	if (!targetTotal) {
-		return undefined;
-	}
+	if (!targetTotal) return undefined;
 
 	return {
 		mode: "TARGET_TOTAL" as const,
@@ -199,6 +292,5 @@ export function toCalculateDraftRentalPriceDto(
 	};
 
 	CalculateDraftRentalPriceBodySchema.parse(dto);
-
 	return dto;
 }

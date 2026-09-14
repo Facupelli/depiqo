@@ -1,11 +1,17 @@
 import { Field, FieldLabel } from "@repo/ui/components/field";
-import { RentalCustomerSelector } from "@/modules/rentals/customer-selection/rental-customer-selector";
+import {
+	type RentalCustomerDisplayFacts,
+	RentalCustomerSelector,
+} from "@/modules/rentals/customer-selection/rental-customer-selector";
 import { withForm } from "@/shared/contexts/form.context";
 import { createDraftRentalComposerDefaultValues } from "../draft-rental-composer.schema";
 
 export const RentalCustomerCombobox = withForm({
 	defaultValues: createDraftRentalComposerDefaultValues(),
-	render: function Render({ form }) {
+	props: {
+		initialCustomer: undefined as RentalCustomerDisplayFacts | undefined,
+	},
+	render: function Render({ form, initialCustomer }) {
 		return (
 			<form.Field name="rentalCustomerId">
 				{(field) => (
@@ -13,6 +19,7 @@ export const RentalCustomerCombobox = withForm({
 						<FieldLabel>Cliente</FieldLabel>
 						<RentalCustomerSelector
 							value={field.state.value}
+							initialSelectedCustomer={initialCustomer}
 							onValueChange={field.handleChange}
 						/>
 					</Field>

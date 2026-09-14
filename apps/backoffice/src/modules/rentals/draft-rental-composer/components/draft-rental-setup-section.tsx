@@ -9,10 +9,6 @@ import { Checkbox } from "@repo/ui/components/checkbox";
 import { Field, FieldError, FieldLabel } from "@repo/ui/components/field";
 import { Input } from "@repo/ui/components/input";
 import {
-	NativeSelect,
-	NativeSelectOption,
-} from "@repo/ui/components/native-select";
-import {
 	Select,
 	SelectContent,
 	SelectItem,
@@ -21,28 +17,50 @@ import {
 } from "@repo/ui/components/select";
 import { useStore } from "@tanstack/react-form";
 import { CalendarIcon, Truck, Warehouse } from "lucide-react";
+import type { RentalCustomerDisplayFacts } from "@/modules/rentals/customer-selection/rental-customer-selector";
 import { withForm } from "@/shared/contexts/form.context";
+import type { DraftRentalBranchDisplayFacts } from "../draft-rental-composer";
 import { useDraftRentalComposer } from "../draft-rental-composer.context";
-import { createDraftRentalComposerDefaultValues } from "../draft-rental-composer.schema";
+import {
+	createDraftRentalComposerDefaultValues,
+	draftRentalMinuteOfDayToTime,
+	draftRentalTimeToMinuteOfDay,
+} from "../draft-rental-composer.schema";
 import { DeliveryAddressAutocomplete } from "./delivery-address-autocomplete";
 import { RentalCustomerCombobox } from "./rental-customer-combobox";
-
-const TIME_OPTIONS = Array.from({ length: 24 }, (_, hour) => ({
-	value: hour * 60,
-	label: `${String(hour).padStart(2, "0")}:00`,
-}));
 
 export const DraftRentalSetupSection = withForm({
 	defaultValues: createDraftRentalComposerDefaultValues(),
 	props: {
 		activeBranches: [] as GetBranchesBranchDto[],
+		initialBranch: undefined as DraftRentalBranchDisplayFacts | undefined,
+		initialCustomer: undefined as RentalCustomerDisplayFacts | undefined,
 	},
-	render: function Render({ form, activeBranches }) {
+	render: function Render({
+		form,
+		activeBranches,
+		initialBranch,
+		initialCustomer,
+	}) {
 		const { selectedBranchName, branchMissing } = useDraftRentalComposer();
 		const fulfillmentMethod = useStore(
 			form.store,
 			(state) => state.values.fulfillmentMethod,
 		);
+		const branchSelectItems = [
+			...(branchMissing && initialBranch
+				? [
+						{
+							label: `${initialBranch.name} (no disponible)`,
+							value: initialBranch.id,
+						},
+					]
+				: []),
+			...activeBranches.map((branch) => ({
+				label: branch.name,
+				value: branch.id,
+			})),
+		];
 
 		function handleBranchChange(nextBranchId: string) {
 			const nextBranch = activeBranches.find(
@@ -63,7 +81,7 @@ export const DraftRentalSetupSection = withForm({
 				</CardHeader>
 				<CardContent className="space-y-4">
 					<div className="grid gap-3 md:grid-cols-2">
-						{activeBranches.length > 1 ? (
+						{activeBranches.length > 1 || branchMissing ? (
 							<form.Field name="branchId">
 								{(field) => {
 									const isInvalid =
@@ -77,15 +95,17 @@ export const DraftRentalSetupSection = withForm({
 												onValueChange={(value) => {
 													if (value) handleBranchChange(value);
 												}}
-												items={activeBranches.map((branch) => ({
-													label: branch.name,
-													value: branch.id,
-												}))}
+												items={branchSelectItems}
 											>
 												<SelectTrigger aria-invalid={isInvalid}>
 													<SelectValue placeholder="Selecciona una sucursal" />
 												</SelectTrigger>
 												<SelectContent>
+													{branchMissing && initialBranch ? (
+														<SelectItem value={initialBranch.id} disabled>
+															{initialBranch.name} (no disponible)
+														</SelectItem>
+													) : null}
 													{activeBranches.map((branch) => (
 														<SelectItem key={branch.id} value={branch.id}>
 															{branch.name}
@@ -111,7 +131,10 @@ export const DraftRentalSetupSection = withForm({
 							</Field>
 						)}
 
-						<RentalCustomerCombobox form={form} />
+						<RentalCustomerCombobox
+							form={form}
+							initialCustomer={initialCustomer}
+						/>
 					</div>
 
 					<div className="grid gap-3 md:grid-cols-4">
@@ -141,25 +164,25 @@ export const DraftRentalSetupSection = withForm({
 
 						<form.Field name="periodStartTime">
 							{(field) => (
-								<Field>
+								<Field data-invalid={!field.state.meta.isValid}>
 									<FieldLabel htmlFor={field.name}>Hora inicio</FieldLabel>
-									<NativeSelect
+									<Input
 										id={field.name}
-										value={String(field.state.value)}
-										onChange={(event) =>
-											field.handleChange(Number(event.target.value))
-										}
-										className="w-full"
-									>
-										{TIME_OPTIONS.map((option) => (
-											<NativeSelectOption
-												key={option.value}
-												value={option.value}
-											>
-												{option.label}
-											</NativeSelectOption>
-										))}
-									</NativeSelect>
+										type="time"
+										step={60}
+										aria-invalid={!field.state.meta.isValid}
+										value={draftRentalMinuteOfDayToTime(field.state.value)}
+										onBlur={field.handleBlur}
+										onChange={(event) => {
+											const value = draftRentalTimeToMinuteOfDay(
+												event.target.value,
+											);
+											if (value !== null) field.handleChange(value);
+										}}
+									/>
+									{!field.state.meta.isValid ? (
+										<FieldError errors={field.state.meta.errors} />
+									) : null}
 								</Field>
 							)}
 						</form.Field>
@@ -184,25 +207,25 @@ export const DraftRentalSetupSection = withForm({
 
 						<form.Field name="periodEndTime">
 							{(field) => (
-								<Field>
+								<Field data-invalid={!field.state.meta.isValid}>
 									<FieldLabel htmlFor={field.name}>Hora devolución</FieldLabel>
-									<NativeSelect
+									<Input
 										id={field.name}
-										value={String(field.state.value)}
-										onChange={(event) =>
-											field.handleChange(Number(event.target.value))
-										}
-										className="w-full"
-									>
-										{TIME_OPTIONS.map((option) => (
-											<NativeSelectOption
-												key={option.value}
-												value={option.value}
-											>
-												{option.label}
-											</NativeSelectOption>
-										))}
-									</NativeSelect>
+										type="time"
+										step={60}
+										aria-invalid={!field.state.meta.isValid}
+										value={draftRentalMinuteOfDayToTime(field.state.value)}
+										onBlur={field.handleBlur}
+										onChange={(event) => {
+											const value = draftRentalTimeToMinuteOfDay(
+												event.target.value,
+											);
+											if (value !== null) field.handleChange(value);
+										}}
+									/>
+									{!field.state.meta.isValid ? (
+										<FieldError errors={field.state.meta.errors} />
+									) : null}
 								</Field>
 							)}
 						</form.Field>
@@ -268,7 +291,7 @@ const DeliveryFields = withForm({
 	render: function Render({ form }) {
 		return (
 			<div className="rounded-lg border bg-muted/20 p-3">
-				<form.Field name="deliveryDetails.address">
+				<form.Field name="deliveryDestination.address">
 					{(field) => {
 						const isInvalid =
 							field.state.meta.isTouched && !field.state.meta.isValid;
@@ -284,16 +307,18 @@ const DeliveryFields = withForm({
 									value={field.state.value}
 									isInvalid={isInvalid}
 									onBlur={field.handleBlur}
-									onChange={(value) => {
-										field.handleChange(value);
-										form.setFieldValue("deliveryDetails.locationId", null);
+									onChange={(address) => {
+										form.setFieldValue("deliveryDestination", {
+											status: "INVALID",
+											address,
+										});
 									}}
 									onSelect={(suggestion) => {
-										field.handleChange(suggestion.formattedAddress);
-										form.setFieldValue(
-											"deliveryDetails.locationId",
-											suggestion.locationId,
-										);
+										form.setFieldValue("deliveryDestination", {
+											status: "NEW_DESTINATION",
+											address: suggestion.formattedAddress,
+											locationId: suggestion.locationId,
+										});
 									}}
 								/>
 								{isInvalid ? (
