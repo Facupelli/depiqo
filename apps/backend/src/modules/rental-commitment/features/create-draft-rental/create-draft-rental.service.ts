@@ -55,7 +55,7 @@ export class CreateDraftRentalService implements ICommandHandler<
       selectedOffers: command.selectedOffers,
       fulfillmentMethod: command.fulfillmentMethod,
       insuranceSelected: command.insuranceSelected,
-      deliveryDetails: command.deliveryDetails,
+      deliveryDestination: command.deliveryDetails,
       manualPricingAdjustment: command.manualPricingAdjustment
         ? { ...command.manualPricingAdjustment, setByTenantUserId: command.tenantUserId }
         : undefined,

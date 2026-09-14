@@ -11,6 +11,10 @@ import {
   PricingCalculationError,
   PricingCalculationRequest,
 } from 'src/modules/pricing/public-api/pricing-calculation.public-api';
+import {
+  CustomerLocationSelection,
+  ResolvedCustomerLocation,
+} from 'src/modules/delivery/public-api/delivery-quote.public-api';
 import { BranchFacts } from 'src/modules/tenant-management/public-api/branch-facts.public-api';
 import { TenantBillingPreferences } from 'src/modules/tenant-management/public-api/tenant-billing-preferences.public-api';
 
@@ -63,6 +67,10 @@ export interface DraftRentalProposalResolutionError extends ApplicationError {
   code: DraftRentalProposalResolutionErrorCode;
 }
 
+export type DraftRentalDeliveryAuthoringInput =
+  | { address: string; locationId: string }
+  | { address: string; resolvedLocation: ResolvedCustomerLocation };
+
 export interface DraftRentalProposalInput {
   tenantId: string;
   branchId: string;
@@ -71,7 +79,7 @@ export interface DraftRentalProposalInput {
   selectedOffers: Array<{ rentalOfferId: string; quantity: number }>;
   fulfillmentMethod: FulfillmentMethod;
   insuranceSelected?: boolean;
-  deliveryDetails?: { address: string; locationId: string };
+  deliveryDestination?: DraftRentalDeliveryAuthoringInput;
   manualPricingAdjustment?: {
     mode: 'TARGET_TOTAL';
     targetTotal: string;
@@ -196,12 +204,12 @@ export class DraftRentalProposalResolver {
     const prospectiveResult =
       input.fulfillmentMethod === FulfillmentMethod.Pickup
         ? await this.prospectiveRentalCost.calculate({ fulfillmentMethod: 'PICKUP', pricing: pricingRequest })
-        : input.deliveryDetails
+        : input.deliveryDestination
           ? await this.prospectiveRentalCost.calculate({
               fulfillmentMethod: 'DELIVERY',
               pricing: pricingRequest,
               branchId: input.branchId,
-              customerLocation: input.deliveryDetails,
+              customerLocation: toCustomerLocationSelection(input.deliveryDestination),
             })
           : null;
 
@@ -253,9 +261,9 @@ export class DraftRentalProposalResolver {
         manualPricingAdjustment: input.manualPricingAdjustment,
       }),
       deliveryDetails:
-        input.fulfillmentMethod === FulfillmentMethod.Delivery && input.deliveryDetails && deliveryQuote
+        input.fulfillmentMethod === FulfillmentMethod.Delivery && input.deliveryDestination && deliveryQuote
           ? {
-              address: input.deliveryDetails.address,
+              address: input.deliveryDestination.address,
               formattedAddress: deliveryQuote.resolvedCustomerLocation.formattedAddress,
               latitude: deliveryQuote.resolvedCustomerLocation.latitude,
               longitude: deliveryQuote.resolvedCustomerLocation.longitude,
@@ -338,6 +346,12 @@ export class DraftRentalProposalResolver {
     }
     throw error;
   }
+}
+
+function toCustomerLocationSelection(input: DraftRentalDeliveryAuthoringInput): CustomerLocationSelection {
+  return 'resolvedLocation' in input
+    ? { resolvedLocation: input.resolvedLocation }
+    : { address: input.address, locationId: input.locationId };
 }
 
 function resolutionError(
