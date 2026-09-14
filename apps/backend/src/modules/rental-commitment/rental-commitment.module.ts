@@ -8,6 +8,7 @@ import { TenantManagementModule } from '../tenant-management/tenant-management.m
 import { RentalOfferAvailabilityService } from './application/availability/rental-offer-availability.service';
 import { AccessorySelectionReconciliationService } from './application/accessory-selection-reconciliation.service';
 import { ProspectiveRentalCostService } from './application/prospective-rental-cost.service';
+import { DraftRentalProposalResolver } from './application/draft-rental-proposal-resolver.service';
 import { RentalAssetAllocationService } from './asset-allocation/rental-asset-allocation.service';
 import { AddRentalSelectionHttpController } from './features/add-rental-selection/add-rental-selection.controller';
 import { AddRentalSelectionHandler } from './features/add-rental-selection/add-rental-selection.handler';
@@ -101,6 +102,7 @@ import { RentalLifecycleFactsService } from './public-api/rental-lifecycle-facts
     AccessorySelectionReconciliationService,
     RentalOfferAvailabilityService,
     ProspectiveRentalCostService,
+    DraftRentalProposalResolver,
     AddRentalSelectionHandler,
     AssignRentalAccessoriesHandler,
     AssignCustomerToDraftRentalHandler,
