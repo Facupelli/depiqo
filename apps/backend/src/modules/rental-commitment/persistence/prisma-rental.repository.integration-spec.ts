@@ -1,11 +1,8 @@
-import { randomUUID } from 'node:crypto';
-
 import { TestingModule } from '@nestjs/testing';
 
 import { PrismaService } from 'src/core/database/prisma.service';
 import { PrismaUnitOfWork } from 'src/core/database/prisma-unit-of-work';
 import { PostgresExclusionViolationError } from 'src/core/utils/postgres-error.mapper';
-import { Prisma } from 'src/generated/prisma/client';
 import {
   createRentalCommitmentIntegrationContext,
   useIntegrationTestContext,
@@ -293,16 +290,23 @@ describe('PrismaRentalRepository confirmed period reschedule persistence', () =>
       WHERE rental_id = ${scenario.rental.rentalId}
     `;
     const before = await rentalFixtures.persistedState(scenario.rental.rentalId);
-    const conflictingAssetId = scenario.rental.assetIds[1];
     const aggregate = await repository.findById(scenario.tenant.id, scenario.rental.rentalId);
     if (!aggregate) throw new Error('Expected rental fixture to exist.');
     aggregate.rescheduleConfirmedPeriod({ period: rescheduledPeriod, operationTime })._unsafeUnwrap();
-    await prisma.client.$executeRaw(Prisma.sql`
-      INSERT INTO v2_asset_blocks (id, tenant_id, rental_id, asset_id, period, block_type, created_at)
-      VALUES (${randomUUID()}, ${scenario.tenant.id}, ${scenario.rental.rentalId}, ${conflictingAssetId},
-              ${rescheduledPeriod.toPostgresRange()}::tstzrange, 'EQUIPMENT', ${new Date()})
-    `);
+    const currentBlocks = aggregate.currentOperationalAssetBlocks;
+    expect(currentBlocks).toHaveLength(2);
+    const conflictingAssetId = currentBlocks[currentBlocks.length - 1].assetId;
+    const competingRental = await rentalFixtures.createConfirmedRental({
+      tenantId: scenario.tenant.id,
+      branchId: scenario.branch.id,
+      customerId: scenario.customer.id,
+      period: { start: rescheduledPeriod.start, end: rescheduledPeriod.end },
+      offerId: scenario.offer.offer.id,
+      equipmentTypeId: scenario.offer.equipmentType.id,
+      assetId: conflictingAssetId,
+    });
     const beforeAttempt = await rentalFixtures.persistedState(scenario.rental.rentalId);
+    const competingBeforeAttempt = await rentalFixtures.persistedState(competingRental.rentalId);
 
     await expect(
       unitOfWork.runInTransaction(({ tx }) =>
@@ -311,6 +315,10 @@ describe('PrismaRentalRepository confirmed period reschedule persistence', () =>
     ).rejects.toBeInstanceOf(PostgresExclusionViolationError);
 
     expect(await rentalFixtures.persistedState(scenario.rental.rentalId)).toEqual(beforeAttempt);
-    expect(beforeAttempt.rental.periodStart).toEqual(before.rental.periodStart);
+    expect(await rentalFixtures.persistedState(competingRental.rentalId)).toEqual(competingBeforeAttempt);
+    expect(beforeAttempt).toEqual(before);
+    expect(beforeAttempt.rental.periodStart).toEqual(originalPeriod.start);
+    expect(beforeAttempt.rental.periodEnd).toEqual(originalPeriod.end);
+    expect(beforeAttempt.rental.deliverySnapshot).toEqual(acceptedDelivery);
   });
 });

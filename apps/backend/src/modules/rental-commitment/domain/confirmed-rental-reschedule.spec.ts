@@ -240,6 +240,23 @@ function withHistoryAndAccessoryBlocks(fulfillmentMethod: FulfillmentMethod): Re
   })._unsafeUnwrap();
 }
 
+describe('Rental currentOperationalAssetBlocks', () => {
+  it('returns a fresh collection containing only active accessories and equipment with open assignments', () => {
+    const rental = withHistoryAndAccessoryBlocks(FulfillmentMethod.Pickup);
+
+    const firstRead = rental.currentOperationalAssetBlocks;
+    const secondRead = rental.currentOperationalAssetBlocks;
+
+    expect(firstRead).not.toBe(secondRead);
+    expect(firstRead.map((block) => block.id).sort()).toEqual(
+      [rental.assetBlocks[0].id, 'block-accessory-active'].sort(),
+    );
+    expect(firstRead.map((block) => block.id)).not.toContain('block-history-unreleased');
+    expect(firstRead.map((block) => block.id)).not.toContain('block-history-released');
+    expect(firstRead.map((block) => block.id)).not.toContain('block-accessory-released');
+  });
+});
+
 describe('Rental rescheduleConfirmedPeriod', () => {
   it.each([
     ['later start', new Date('2030-01-11T10:00:00.000Z'), new Date('2030-01-14T18:00:00.000Z')],

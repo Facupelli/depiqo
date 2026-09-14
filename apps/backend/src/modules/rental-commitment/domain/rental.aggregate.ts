@@ -380,6 +380,17 @@ export class Rental extends AggregateRootBase {
     return [...this.props.assetBlocks];
   }
 
+  get currentOperationalAssetBlocks(): readonly AssetBlock[] {
+    const currentEquipmentAssetIds = new Set(this.currentAssignedAssets.map((assignment) => assignment.assetId));
+
+    return this.props.assetBlocks.filter(
+      (block) =>
+        block.isActive &&
+        (block.blockType === AssetBlockType.Accessory ||
+          (block.blockType === AssetBlockType.Equipment && currentEquipmentAssetIds.has(block.assetId))),
+    );
+  }
+
   get createdAt(): Date | undefined {
     return this.props.createdAt ? new Date(this.props.createdAt) : undefined;
   }
@@ -683,18 +694,13 @@ export class Rental extends AggregateRootBase {
       acceptedAfterBufferMinutes: acceptedAssetBuffer.afterBufferMinutes,
       acceptedDelivery,
     });
-    const openEquipmentAssetIds = new Set(this.currentAssignedAssets.map((assignment) => assignment.assetId));
+    const currentOperationalBlockIds = new Set(this.currentOperationalAssetBlocks.map((block) => block.id));
     const assignedAssets = this.props.assignedAssets.map((assignment) =>
       assignment.isActive ? assignment.moveEffectiveFrom(params.period.start) : assignment,
     );
-    const assetBlocks = this.props.assetBlocks.map((block) => {
-      if (!block.isActive) return block;
-      if (block.blockType === AssetBlockType.Accessory) return block.resizePeriod(blockPeriod);
-      if (block.blockType === AssetBlockType.Equipment && openEquipmentAssetIds.has(block.assetId)) {
-        return block.resizePeriod(blockPeriod);
-      }
-      return block;
-    });
+    const assetBlocks = this.props.assetBlocks.map((block) =>
+      currentOperationalBlockIds.has(block.id) ? block.resizePeriod(blockPeriod) : block,
+    );
 
     const transition = this.applyConfirmedStateChanges({
       period: params.period,

@@ -5,7 +5,7 @@ import { PrismaTransactionClient } from 'src/core/database/prisma-unit-of-work';
 import { mapPostgresError } from 'src/core/utils/postgres-error.mapper';
 
 import { Rental } from '../domain/rental.aggregate';
-import { AssetBlockType, RentalStatus } from '../domain/rental-status';
+import { RentalStatus } from '../domain/rental-status';
 import {
   RentalPersistenceStateMismatchError,
   RentalRepository,
@@ -95,14 +95,7 @@ export class PrismaRentalRepository extends RentalRepository {
         }
       }
 
-      const currentEquipmentAssetIds = new Set(rental.currentAssignedAssets.map((assignment) => assignment.assetId));
-      const currentBlocks = rental.assetBlocks.filter(
-        (block) =>
-          block.isActive &&
-          (block.blockType === AssetBlockType.Accessory ||
-            (block.blockType === AssetBlockType.Equipment && currentEquipmentAssetIds.has(block.assetId))),
-      );
-      for (const block of currentBlocks) {
+      for (const block of rental.currentOperationalAssetBlocks) {
         const updated = await options.tx.$executeRaw`
           UPDATE v2_asset_blocks
           SET period = ${block.period.toPostgresRange()}::tstzrange

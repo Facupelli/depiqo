@@ -41,6 +41,8 @@ import { ReplaceConfirmedRentalAssetHttpController } from './features/replace-co
 import { ReplaceConfirmedRentalAssetHandler } from './features/replace-confirmed-rental-asset/replace-confirmed-rental-asset.handler';
 import { ReplaceRentalDemandLineAccessoriesHttpController } from './features/replace-rental-demand-line-accessories/replace-rental-demand-line-accessories.controller';
 import { ReplaceRentalDemandLineAccessoriesHandler } from './features/replace-rental-demand-line-accessories/replace-rental-demand-line-accessories.handler';
+import { RescheduleConfirmedRentalPeriodHttpController } from './features/reschedule-confirmed-rental-period/reschedule-confirmed-rental-period.controller';
+import { RescheduleConfirmedRentalPeriodHandler } from './features/reschedule-confirmed-rental-period/reschedule-confirmed-rental-period.handler';
 import { RemoveRentalSelectionHttpController } from './features/remove-rental-selection/remove-rental-selection.controller';
 import { RemoveRentalSelectionHandler } from './features/remove-rental-selection/remove-rental-selection.handler';
 import { GetRentalDetailHttpController } from './features/get-rental-detail/get-rental-detail.controller';
@@ -88,6 +90,7 @@ import { RentalLifecycleFactsService } from './public-api/rental-lifecycle-facts
     GetReplacementAssetCandidatesHttpController,
     ReplaceConfirmedRentalAssetHttpController,
     ReplaceRentalDemandLineAccessoriesHttpController,
+    RescheduleConfirmedRentalPeriodHttpController,
     RemoveRentalSelectionHttpController,
     GetRentalsCalendarHttpController,
     GetRentalDetailHttpController,
@@ -120,6 +123,7 @@ import { RentalLifecycleFactsService } from './public-api/rental-lifecycle-facts
     GetReplacementAssetCandidatesHandler,
     ReplaceConfirmedRentalAssetHandler,
     ReplaceRentalDemandLineAccessoriesHandler,
+    RescheduleConfirmedRentalPeriodHandler,
     RemoveRentalSelectionHandler,
     GetRentalDetailHandler,
     GetRentalAccessoryDefaultsHandler,
