@@ -16,6 +16,7 @@ import { RentalOperationalSummary } from "./components/rental-operational-summar
 import { RentalSidebarCards } from "./components/rental-sidebar-cards";
 import { rentalCustomerQueries } from "./customer-summary/rental-customer-summary.queries";
 import { useRentalContractSigningSummary } from "./documents/signing/rental-contract-signing.queries";
+import { useRentalDetailActions } from "./hooks/use-rental-detail-actions";
 import { RentalDetailProvider } from "./rental-detail.context";
 import { rentalDetailViewQueries } from "./rental-detail.queries";
 
@@ -65,16 +66,26 @@ export function RentalDetailPage({ orderId }: RentalDetailPageProps) {
 				isContractSigningSummaryLoading={isContractSigningSummaryLoading}
 				isContractSigningSummaryError={isContractSigningSummaryError}
 			>
-				<RentalDetailHeader />
-				<RentalOperationalSummary />
-				<div className="grid gap-6 pt-6 pb-8 @5xl/rental-detail:grid-cols-[minmax(0,1fr)_360px] @5xl/rental-detail:gap-8 @5xl/rental-detail:py-10">
-					<RentalEquipmentSection />
-					<div className="min-w-0 @5xl/rental-detail:col-start-2 @5xl/rental-detail:row-span-2 @5xl/rental-detail:row-start-1">
-						<RentalSidebarCards />
-					</div>
-					<RentalActivityLog />
-				</div>
+				<RentalDetailContent />
 			</RentalDetailProvider>
 		</div>
+	);
+}
+
+function RentalDetailContent() {
+	const actions = useRentalDetailActions();
+
+	return (
+		<>
+			<RentalDetailHeader actions={actions} />
+			<RentalOperationalSummary />
+			<div className="grid gap-6 pt-6 pb-8 @5xl/rental-detail:grid-cols-[minmax(0,1fr)_360px] @5xl/rental-detail:gap-8 @5xl/rental-detail:py-10">
+				<RentalEquipmentSection />
+				<div className="min-w-0 @5xl/rental-detail:col-start-2 @5xl/rental-detail:row-span-2 @5xl/rental-detail:row-start-1">
+					<RentalSidebarCards periodEditAction={actions.periodEditAction} />
+				</div>
+				<RentalActivityLog />
+			</div>
+		</>
 	);
 }

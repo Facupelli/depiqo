@@ -25,7 +25,15 @@ import {
 	getRentalDisplayTotal,
 } from "../rental-detail.utils";
 
-export function RentalSidebarCards() {
+type PeriodEditAction = {
+	onOpen: () => void;
+};
+
+export function RentalSidebarCards({
+	periodEditAction,
+}: {
+	periodEditAction?: PeriodEditAction;
+}) {
 	return (
 		<div className="flex flex-col gap-2 @5xl/rental-detail:gap-4">
 			<div className="order-1 @5xl/rental-detail:order-2">
@@ -35,7 +43,7 @@ export function RentalSidebarCards() {
 				<RentalContractSigningCard />
 			</div>
 			<div className="order-3 @5xl/rental-detail:order-1">
-				<RentalLogisticsCard />
+				<RentalLogisticsCard periodEditAction={periodEditAction} />
 			</div>
 			<div className="order-4">
 				<RentalFinancialsCard />
@@ -126,7 +134,11 @@ function RentalClientCard() {
 	);
 }
 
-function RentalLogisticsCard() {
+function RentalLogisticsCard({
+	periodEditAction,
+}: {
+	periodEditAction?: PeriodEditAction;
+}) {
 	const { rental } = useRentalDetailContext();
 	const deliveryDetails = rental.fulfillment.deliveryDetails;
 	const timezone = useBranchTimezone(rental.branchId);
@@ -138,6 +150,21 @@ function RentalLogisticsCard() {
 			icon={<Truck className="size-4" />}
 			title="Logística"
 			summary={`${pickup.date} ${pickup.time} → ${returnDate.date} ${returnDate.time}`}
+			headerAction={
+				periodEditAction ? (
+					<Button
+						type="button"
+						variant="ghost"
+						size="icon-sm"
+						className="shrink-0 text-neutral-500 hover:text-neutral-950"
+						onClick={periodEditAction.onOpen}
+						aria-label="Editar período"
+						title="Editar período"
+					>
+						<Pencil className="size-3.5" />
+					</Button>
+				) : null
+			}
 		>
 			<div className="grid grid-cols-2 gap-x-6 gap-y-1">
 				<DateBlock
@@ -539,39 +566,52 @@ function ResponsiveDisclosureCard({
 	icon,
 	title,
 	summary,
+	headerAction,
 	children,
 }: {
 	icon: ReactNode;
 	title: string;
 	summary: string;
+	headerAction?: ReactNode;
 	children: ReactNode;
 }) {
 	const [isExpanded, setIsExpanded] = useState(false);
 	const contentId = useId();
+	const toggleExpanded = () => setIsExpanded((previous) => !previous);
 
 	return (
 		<section className="rounded-lg border border-neutral-200 bg-white p-4 @5xl/rental-detail:p-5">
-			<button
-				type="button"
-				className="flex w-full min-w-0 items-center justify-between gap-3 text-left @5xl/rental-detail:hidden"
-				onClick={() => setIsExpanded((previous) => !previous)}
-				aria-controls={contentId}
-				aria-expanded={isExpanded}
-			>
-				<span className="min-w-0">
+			<div className="flex min-w-0 items-center gap-1 @5xl/rental-detail:hidden">
+				<button
+					type="button"
+					className="min-w-0 flex-1 text-left"
+					onClick={toggleExpanded}
+					aria-controls={contentId}
+					aria-expanded={isExpanded}
+				>
 					<span className="block text-sm font-bold text-neutral-950">
 						{title}
 					</span>
 					<span className="mt-0.5 block min-w-0 break-words text-sm text-neutral-600">
 						{summary}
 					</span>
-				</span>
-				<ChevronDown
-					className={`size-4 shrink-0 text-neutral-400 transition-transform ${isExpanded ? "rotate-180" : ""}`}
-				/>
-			</button>
+				</button>
+				{headerAction}
+				<button
+					type="button"
+					className="flex size-8 shrink-0 items-center justify-center rounded-md text-neutral-400 transition-colors hover:bg-neutral-100 hover:text-neutral-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+					onClick={toggleExpanded}
+					aria-controls={contentId}
+					aria-expanded={isExpanded}
+					aria-label={`${isExpanded ? "Contraer" : "Expandir"} ${title}`}
+				>
+					<ChevronDown
+						className={`size-4 transition-transform ${isExpanded ? "rotate-180" : ""}`}
+					/>
+				</button>
+			</div>
 			<div className="hidden @5xl/rental-detail:block">
-				<SidebarHeader icon={icon} title={title} />
+				<SidebarHeader icon={icon} title={title} action={headerAction} />
 			</div>
 			<div
 				id={contentId}
@@ -587,13 +627,24 @@ function ResponsiveDisclosureCard({
 	);
 }
 
-function SidebarHeader({ icon, title }: { icon: ReactNode; title: string }) {
+function SidebarHeader({
+	icon,
+	title,
+	action,
+}: {
+	icon: ReactNode;
+	title: string;
+	action?: ReactNode;
+}) {
 	return (
 		<div className="mb-3 flex items-center gap-2 border-neutral-100 border-b pb-1">
 			<span className="flex size-8 items-center justify-center text-neutral-600">
 				{icon}
 			</span>
-			<h2 className="text-sm font-bold text-neutral-950">{title}</h2>
+			<h2 className="min-w-0 flex-1 text-sm font-bold text-neutral-950">
+				{title}
+			</h2>
+			{action}
 		</div>
 	);
 }

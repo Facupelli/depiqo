@@ -6,26 +6,25 @@ import { z } from "zod";
 import {
 	hydrateRentalPeriod,
 	isRentalPeriodChronological,
-	resolveRentalPeriod,
 	type RentalPeriodValue,
 	type ResolvedRentalPeriod,
+	resolveRentalPeriod,
 } from "@/modules/rentals/shared/rental-period/rental-period";
 
-const rescheduleRentalPeriodFormBaseSchema: z.ZodType<RentalPeriodValue> =
-	z.object({
-		startDate: z.string().min(1, "La fecha de inicio es obligatoria"),
-		startTime: z
-			.number()
-			.int()
-			.min(0)
-			.max(24 * 60 - 1),
-		endDate: z.string().min(1, "La fecha de devolución es obligatoria"),
-		endTime: z
-			.number()
-			.int()
-			.min(0)
-			.max(24 * 60 - 1),
-	});
+const rescheduleRentalPeriodFormBaseSchema = z.object({
+	startDate: z.string().min(1, "La fecha de inicio es obligatoria"),
+	startTime: z
+		.number()
+		.int()
+		.min(0)
+		.max(24 * 60 - 1),
+	endDate: z.string().min(1, "La fecha de devolución es obligatoria"),
+	endTime: z
+		.number()
+		.int()
+		.min(0)
+		.max(24 * 60 - 1),
+});
 
 export type RescheduleRentalPeriodFormValues = RentalPeriodValue;
 

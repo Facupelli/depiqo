@@ -1,11 +1,16 @@
 import { RENTAL_STATUS_CONFIG } from "@/modules/rentals/shared/rental-status.config";
 import { useTenantTimezone } from "@/shared/timezone/operational-timezone.hooks";
 import { formatOrderNumber } from "@/shared/utils/formatters";
+import type { RentalDetailActions } from "../hooks/use-rental-detail-actions";
 import { useRentalDetailContext } from "../rental-detail.context";
 import { formatRentalDetailDateTime } from "../rental-detail.utils";
 import { RentalDetailActionsMenu } from "./rental-detail-actions-menu";
 
-export function RentalDetailHeader() {
+export function RentalDetailHeader({
+	actions,
+}: {
+	actions: RentalDetailActions;
+}) {
 	const { rental } = useRentalDetailContext();
 	const timezone = useTenantTimezone();
 
@@ -25,7 +30,7 @@ export function RentalDetailHeader() {
 						</p>
 					</div>
 					<div className="flex shrink-0 justify-start @sm/rental-detail:justify-end">
-						<RentalDetailActionsMenu />
+						<RentalDetailActionsMenu actions={actions} />
 					</div>
 				</div>
 			</div>
