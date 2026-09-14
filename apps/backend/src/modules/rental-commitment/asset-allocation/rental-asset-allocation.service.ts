@@ -41,6 +41,16 @@ interface ActiveAssetReservationRow {
   assetId: string;
 }
 
+type IgnoredBlockScope =
+  | {
+      rentalId: string;
+      blockType: V2AssetBlockType;
+    }
+  | {
+      rentalId: string;
+      allBlockTypes: true;
+    };
+
 @Injectable()
 export class RentalAssetAllocationService {
   private readonly allocationPolicy = new RentalAssetAllocationPolicy();
@@ -74,6 +84,26 @@ export class RentalAssetAllocationService {
     ]);
 
     return ok(this.allocationPolicy.eligibleCandidates(candidates.value, reservedAssetIds));
+  }
+
+  async findConflictingExactAssetIds(params: {
+    tenantId: string;
+    currentRentalId: string;
+    assetIds: readonly AssetId[];
+    periodStart: Date;
+    periodEnd: Date;
+    tx?: PrismaTransactionClient;
+  }): Promise<AssetId[]> {
+    const reservations = await this.findActiveOverlappingReservations({
+      tenantId: params.tenantId,
+      assetIds: params.assetIds,
+      periodStart: params.periodStart,
+      periodEnd: params.periodEnd,
+      ignoredBlockScope: { rentalId: params.currentRentalId, allBlockTypes: true },
+      tx: params.tx,
+    });
+
+    return [...new Set(reservations.map((reservation) => reservation.assetId))];
   }
 
   async planAllocations(
@@ -167,10 +197,7 @@ export class RentalAssetAllocationService {
     assetIds: readonly AssetId[];
     periodStart: Date;
     periodEnd: Date;
-    ignoredBlockScope?: {
-      rentalId: string;
-      blockType: V2AssetBlockType;
-    };
+    ignoredBlockScope?: IgnoredBlockScope;
     tx?: PrismaTransactionClient;
   }): Promise<OverlappingReservedAsset[]> {
     if (params.assetIds.length === 0) {
@@ -182,12 +209,14 @@ export class RentalAssetAllocationService {
     const assetIds = params.assetIds.map(String);
 
     const ignoredBlockScopeSql = params.ignoredBlockScope
-      ? Prisma.sql`
-        AND NOT (
-          rental_id = ${params.ignoredBlockScope.rentalId}
-          AND block_type = ${params.ignoredBlockScope.blockType}::"V2AssetBlockType"
-        )
-      `
+      ? 'allBlockTypes' in params.ignoredBlockScope
+        ? Prisma.sql`AND rental_id <> ${params.ignoredBlockScope.rentalId}`
+        : Prisma.sql`
+          AND NOT (
+            rental_id = ${params.ignoredBlockScope.rentalId}
+            AND block_type = ${params.ignoredBlockScope.blockType}::"V2AssetBlockType"
+          )
+        `
       : Prisma.empty;
 
     const db = params.tx ?? this.prisma.client;
