@@ -319,6 +319,7 @@ const DeliveryFields = withForm({
 											address: suggestion.formattedAddress,
 											locationId: suggestion.locationId,
 										});
+										form.validateField("deliveryDestination.address", "change");
 									}}
 								/>
 								{isInvalid ? (
