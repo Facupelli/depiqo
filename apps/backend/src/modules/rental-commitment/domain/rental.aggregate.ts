@@ -27,6 +27,7 @@ import {
   RentalPeriodHasEndedError,
   RentalPeriodHasStartedError,
   RentalSelectionNotFoundError,
+  RentalDemandLineNotFoundError,
   RentalAssignedAssetNotFoundError,
   RentalConfirmationRequiresCustomerError,
   RentalChildRentalMismatchError,
@@ -42,7 +43,7 @@ import { deriveConfirmedSelectionQuantityChange } from './confirmed-selection-qu
 import { deriveConfirmationParticipationTiming } from './confirmation-participation-timing';
 import { AssetId, RentalId } from './types/rental-commitment-ids';
 import { CreateRentalDemandLineProps, RentalDemandLine } from './rental-demand-line.entity';
-import { AssetBlockType, FulfillmentMethod, RentalSource, RentalStatus } from './rental-status';
+import { AssetBlockType, FulfillmentMethod, RentableItemKind, RentalSource, RentalStatus } from './rental-status';
 import { CreateRentalSelectionProps, RentalSelection } from './rental-selection.entity';
 import { endAssignmentParticipation } from './release-assignment-participation';
 import { AssignedAssetOwnershipSnapshot } from './value-objects/assigned-asset-ownership-snapshot.value-object';
@@ -144,6 +145,11 @@ export interface AddConfirmedRentalSelectionProps {
 export interface RemoveConfirmedSelectionProps {
   selectionId: string;
   confirmedPriceSnapshot: JsonValue;
+  operationTime: Date;
+}
+
+export interface RemoveConfirmedPackageDemandLineProps {
+  demandLineId: string;
   operationTime: Date;
 }
 
@@ -841,6 +847,77 @@ export class Rental extends AggregateRootBase {
       assetBlocks: nextAssetBlocks,
     });
     if (transition.isErr()) return err(transition.error);
+    this.recordConfirmedRentalEditedEvent(params.operationTime);
+    return ok(undefined);
+  }
+
+  removeConfirmedPackageDemandLine(params: RemoveConfirmedPackageDemandLineProps): Result<void, RentalCommitmentError> {
+    if (this.status !== RentalStatus.Confirmed) {
+      return err(new RentalCannotBeEditedFromStatusError(this.id, this.status));
+    }
+
+    const demandLine = this.currentDemandLines.find((candidate) => candidate.id === params.demandLineId);
+    if (!demandLine) return err(new RentalDemandLineNotFoundError(this.id, params.demandLineId));
+
+    const selection = this.currentSelections.find((candidate) => candidate.id === demandLine.rentalSelectionId);
+    if (!selection) return err(new RentalSelectionNotFoundError(this.id, demandLine.rentalSelectionId));
+    if (selection.rentableItemKindSnapshot !== RentableItemKind.Package) {
+      return err(new RentalInvalidFieldError('demandLineId', 'must belong to a current PACKAGE selection'));
+    }
+
+    const currentSiblings = this.currentDemandLines.filter(
+      (candidate) => candidate.rentalSelectionId === selection.id && candidate.id !== demandLine.id,
+    );
+    if (currentSiblings.length === 0) {
+      return err(new RentalInvalidFieldError('demandLineId', 'PACKAGE selection must retain current demand'));
+    }
+
+    const effectiveAt = params.operationTime < this.period.start ? this.period.start : params.operationTime;
+    if (effectiveAt >= this.period.end) return err(new RentalPeriodHasEndedError(this.id));
+    const acceptedAssetBuffer = this.requireAcceptedAssetBuffer();
+
+    let nextAssignedAssets = [...this.props.assignedAssets];
+    let nextAssetBlocks = [...this.props.assetBlocks];
+    const assignmentsToRelease = this.currentAssignedAssets.filter(
+      (assignment) => assignment.rentalDemandLineId === demandLine.id,
+    );
+    for (const assignment of assignmentsToRelease) {
+      const block = nextAssetBlocks.find(
+        (candidate) =>
+          candidate.isActive &&
+          candidate.blockType === AssetBlockType.Equipment &&
+          candidate.assetId === assignment.assetId,
+      );
+      if (!block) return err(new ConfirmedRentalRequiresActiveBlocksError(this.id, assignment.assetId));
+
+      const releasedParticipation = endAssignmentParticipation({
+        assignment,
+        block,
+        effectiveAt,
+        rentalStart: this.period.start,
+        acceptedAssetBuffer,
+        acceptedDelivery: this.props.deliverySnapshot,
+      });
+      if (releasedParticipation.isErr()) return err(releasedParticipation.error);
+
+      const { assignment: releasedAssignment, block: releasedBlock } = releasedParticipation.value;
+      nextAssignedAssets = releasedAssignment
+        ? nextAssignedAssets.map((candidate) => (candidate.id === assignment.id ? releasedAssignment : candidate))
+        : nextAssignedAssets.filter((candidate) => candidate.id !== assignment.id);
+      nextAssetBlocks = releasedBlock
+        ? nextAssetBlocks.map((candidate) => (candidate.id === block.id ? releasedBlock : candidate))
+        : nextAssetBlocks.filter((candidate) => candidate.id !== block.id);
+    }
+
+    const transition = this.applyConfirmedStateChanges({
+      demandLines: this.props.demandLines.map((candidate) =>
+        candidate.id === demandLine.id ? candidate.removeAt(params.operationTime) : candidate,
+      ),
+      assignedAssets: nextAssignedAssets,
+      assetBlocks: nextAssetBlocks,
+    });
+    if (transition.isErr()) return err(transition.error);
+
     this.recordConfirmedRentalEditedEvent(params.operationTime);
     return ok(undefined);
   }
@@ -1585,16 +1662,54 @@ export class Rental extends AggregateRootBase {
     }
 
     const selectionById = new Map(this.props.selections.map((selection) => [selection.id, selection]));
+    const demandLinesBySelectionId = new Map<string, RentalDemandLine[]>();
     for (const demandLine of this.props.demandLines) {
       if (!selectionIds.has(demandLine.rentalSelectionId)) {
         return err(new DemandLineSelectionMismatchError(this.id, demandLine.id));
       }
       const selection = selectionById.get(demandLine.rentalSelectionId)!;
-      if (selection.removedAt?.getTime() !== demandLine.removedAt?.getTime()) {
+      if (demandLine.isCurrent && !selection.isCurrent) {
         return err(
           new RentalInvalidFieldError(
             'removedAt',
-            `demand line "${demandLine.id}" must match its source selection tombstone`,
+            `current demand line "${demandLine.id}" must belong to a current selection`,
+          ),
+        );
+      }
+      const selectionDemandLines = demandLinesBySelectionId.get(demandLine.rentalSelectionId) ?? [];
+      selectionDemandLines.push(demandLine);
+      demandLinesBySelectionId.set(demandLine.rentalSelectionId, selectionDemandLines);
+    }
+
+    for (const selection of this.props.selections) {
+      const selectionDemandLines = demandLinesBySelectionId.get(selection.id) ?? [];
+      const currentDemandLines = selectionDemandLines.filter((line) => line.isCurrent);
+      if (!selection.isCurrent && currentDemandLines.length > 0) {
+        return err(
+          new RentalInvalidFieldError('removedAt', `removed selection "${selection.id}" cannot retain current demand`),
+        );
+      }
+      if (
+        selection.isCurrent &&
+        selection.rentableItemKindSnapshot === RentableItemKind.Single &&
+        selectionDemandLines.some((line) => !line.isCurrent)
+      ) {
+        return err(
+          new RentalInvalidFieldError(
+            'removedAt',
+            `current SINGLE selection "${selection.id}" cannot have removed demand`,
+          ),
+        );
+      }
+      if (
+        selection.isCurrent &&
+        selection.rentableItemKindSnapshot === RentableItemKind.Package &&
+        currentDemandLines.length === 0
+      ) {
+        return err(
+          new RentalInvalidFieldError(
+            'demandLines',
+            `current PACKAGE selection "${selection.id}" requires current demand`,
           ),
         );
       }
