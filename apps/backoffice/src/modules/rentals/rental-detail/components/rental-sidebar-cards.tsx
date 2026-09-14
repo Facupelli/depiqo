@@ -128,7 +128,7 @@ function RentalClientCard() {
 
 function RentalLogisticsCard() {
 	const { rental } = useRentalDetailContext();
-	const acceptedDelivery = rental.acceptedDelivery;
+	const deliveryDetails = rental.fulfillment.deliveryDetails;
 	const timezone = useBranchTimezone(rental.branchId);
 	const pickup = formatRentalDetailDateBlock(rental.period.start, timezone);
 	const returnDate = formatRentalDetailDateBlock(rental.period.end, timezone);
@@ -151,13 +151,13 @@ function RentalLogisticsCard() {
 					timezone={timezone}
 				/>
 			</div>
-			{acceptedDelivery ? (
+			{deliveryDetails ? (
 				<div className="mt-3 border-t border-neutral-100">
 					<p className="mt-3 mb-1 font-mono text-[10px] uppercase tracking-wider text-neutral-400">
 						Pedido de delivery
 					</p>
 					<p className="text-sm text-neutral-700">
-						{acceptedDelivery.resolvedCustomerLocation.formattedAddress}
+						{deliveryDetails.formattedAddress}
 					</p>
 				</div>
 			) : null}
