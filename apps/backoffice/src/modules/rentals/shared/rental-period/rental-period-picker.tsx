@@ -12,20 +12,22 @@ import { ArrowRight, CalendarDays, Clock3 } from "lucide-react";
 import { useId, useState } from "react";
 import type { DateRange } from "react-day-picker";
 import {
-	draftRentalMinuteOfDayToTime,
-	draftRentalTimeToMinuteOfDay,
-} from "../draft-rental-composer.schema";
+	dateParamToLocalDate,
+	localDateToDateParam,
+	minuteOfDayToTime,
+	type RentalPeriodValue,
+	timeToMinuteOfDay,
+} from "./rental-period";
 
-export type DraftRentalPeriodPickerProps = {
+export type RentalPeriodPickerProps = {
 	id: string;
-	startDate: string;
-	startTime: number;
-	endDate: string;
-	endTime: number;
-	startDateInvalid: boolean;
-	startTimeInvalid: boolean;
-	endDateInvalid: boolean;
-	endTimeInvalid: boolean;
+	value: RentalPeriodValue;
+	invalid: {
+		startDate: boolean;
+		startTime: boolean;
+		endDate: boolean;
+		endTime: boolean;
+	};
 	onStartDateChange: (value: string) => void;
 	onStartDateBlur: () => void;
 	onStartTimeChange: (value: number) => void;
@@ -36,16 +38,10 @@ export type DraftRentalPeriodPickerProps = {
 	onEndTimeBlur: () => void;
 };
 
-export function DraftRentalPeriodPicker({
+export function RentalPeriodPicker({
 	id,
-	startDate,
-	startTime,
-	endDate,
-	endTime,
-	startDateInvalid,
-	startTimeInvalid,
-	endDateInvalid,
-	endTimeInvalid,
+	value,
+	invalid,
 	onStartDateChange,
 	onStartDateBlur,
 	onStartTimeChange,
@@ -54,19 +50,22 @@ export function DraftRentalPeriodPicker({
 	onEndDateBlur,
 	onEndTimeChange,
 	onEndTimeBlur,
-}: DraftRentalPeriodPickerProps) {
+}: RentalPeriodPickerProps) {
 	const [open, setOpen] = useState(false);
 	const startTimeId = useId();
 	const endTimeId = useId();
-	const startCalendarDate = dateParamToLocalDate(startDate);
-	const endCalendarDate = dateParamToLocalDate(endDate);
+	const startCalendarDate = dateParamToLocalDate(value.startDate);
+	const endCalendarDate = dateParamToLocalDate(value.endDate);
 	const dateRange: DateRange = {
 		from: startCalendarDate,
 		to: endCalendarDate,
 	};
 	const hasCompletePeriod = Boolean(startCalendarDate && endCalendarDate);
 	const hasInvalidValue =
-		startDateInvalid || startTimeInvalid || endDateInvalid || endTimeInvalid;
+		invalid.startDate ||
+		invalid.startTime ||
+		invalid.endDate ||
+		invalid.endTime;
 
 	function handleOpenChange(nextOpen: boolean) {
 		setOpen(nextOpen);
@@ -84,12 +83,12 @@ export function DraftRentalPeriodPicker({
 	}
 
 	function handleStartTimeChange(value: string) {
-		const minuteOfDay = draftRentalTimeToMinuteOfDay(value);
+		const minuteOfDay = timeToMinuteOfDay(value);
 		if (minuteOfDay !== null) onStartTimeChange(minuteOfDay);
 	}
 
 	function handleEndTimeChange(value: string) {
-		const minuteOfDay = draftRentalTimeToMinuteOfDay(value);
+		const minuteOfDay = timeToMinuteOfDay(value);
 		if (minuteOfDay !== null) onEndTimeChange(minuteOfDay);
 	}
 
@@ -112,11 +111,11 @@ export function DraftRentalPeriodPicker({
 						{hasCompletePeriod ? (
 							<div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 tabular-nums">
 								<span className="truncate">
-									{formatPeriodBoundary(startCalendarDate, startTime)}
+									{formatPeriodBoundary(startCalendarDate, value.startTime)}
 								</span>
 								<ArrowRight className="size-3.5 shrink-0 text-muted-foreground" />
 								<span className="truncate">
-									{formatPeriodBoundary(endCalendarDate, endTime)}
+									{formatPeriodBoundary(endCalendarDate, value.endTime)}
 								</span>
 							</div>
 						) : (
@@ -152,8 +151,8 @@ export function DraftRentalPeriodPicker({
 							id={startTimeId}
 							label="Inicio"
 							date={startCalendarDate}
-							value={draftRentalMinuteOfDayToTime(startTime)}
-							invalid={startTimeInvalid}
+							value={minuteOfDayToTime(value.startTime)}
+							invalid={invalid.startTime}
 							onBlur={onStartTimeBlur}
 							onChange={handleStartTimeChange}
 						/>
@@ -161,8 +160,8 @@ export function DraftRentalPeriodPicker({
 							id={endTimeId}
 							label="Devolución"
 							date={endCalendarDate}
-							value={draftRentalMinuteOfDayToTime(endTime)}
-							invalid={endTimeInvalid}
+							value={minuteOfDayToTime(value.endTime)}
+							invalid={invalid.endTime}
 							onBlur={onEndTimeBlur}
 							onChange={handleEndTimeChange}
 						/>
@@ -213,7 +212,7 @@ function TimeInput({
 
 function formatPeriodBoundary(date: Date | undefined, minuteOfDay: number) {
 	if (!date) return "Fecha pendiente";
-	return `${formatPeriodDate(date)}, ${draftRentalMinuteOfDayToTime(minuteOfDay)}`;
+	return `${formatPeriodDate(date)}, ${minuteOfDayToTime(minuteOfDay)}`;
 }
 
 function formatPeriodDate(date: Date): string {
@@ -229,27 +228,4 @@ function formatCalendarDate(date: Date): string {
 		day: "numeric",
 		month: "short",
 	}).format(date);
-}
-
-function dateParamToLocalDate(date: string): Date | undefined {
-	if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return undefined;
-
-	const [year, month, day] = date.split("-").map(Number);
-	const result = new Date(year, month - 1, day);
-	if (
-		result.getFullYear() !== year ||
-		result.getMonth() !== month - 1 ||
-		result.getDate() !== day
-	) {
-		return undefined;
-	}
-
-	return result;
-}
-
-function localDateToDateParam(date: Date): string {
-	const year = date.getFullYear();
-	const month = String(date.getMonth() + 1).padStart(2, "0");
-	const day = String(date.getDate()).padStart(2, "0");
-	return `${year}-${month}-${day}`;
 }

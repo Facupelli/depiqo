@@ -2,28 +2,12 @@ import {
 	type CalculateDraftRentalPriceBodyDto,
 	CalculateDraftRentalPriceBodySchema,
 } from "@repo/api-contracts";
-import { resolveLocalDateTime } from "@repo/temporal";
 import { z } from "zod";
-
-function toRentalPeriodDateTime(
-	date: string,
-	minuteOfDay: number,
-	timezone: string,
-): Date {
-	const resolution = resolveLocalDateTime({
-		localDate: date,
-		minuteOfDay,
-		timeZone: timezone,
-	});
-
-	if (resolution.kind === "nonexistent") {
-		throw new RangeError(
-			"The selected local time does not exist in the branch timezone.",
-		);
-	}
-
-	return resolution.instant;
-}
+import {
+	isRentalPeriodChronological,
+	resolveRentalPeriod,
+	resolveRentalPeriodEndpoint as resolveSharedRentalPeriodEndpoint,
+} from "@/modules/rentals/shared/rental-period/rental-period";
 
 export const draftRentalSelectedOfferFormSchema = z.object({
 	rentalOfferId: z.string().min(1),
@@ -118,7 +102,7 @@ export function createDraftRentalComposerFormSchema({
 				ctx,
 			);
 
-			if (start && end && end <= start) {
+			if (start && end && !isRentalPeriodChronological({ start, end })) {
 				ctx.addIssue({
 					code: "custom",
 					path: ["periodEndDate"],
@@ -149,18 +133,19 @@ function resolveRentalPeriodEndpoint(
 	field: "periodStartTime" | "periodEndTime",
 	ctx: z.RefinementCtx,
 ): Date | null {
-	try {
-		return toRentalPeriodDateTime(date, minuteOfDay, timezone);
-	} catch (error) {
-		if (!(error instanceof RangeError)) throw error;
+	const resolution = resolveSharedRentalPeriodEndpoint(
+		date,
+		minuteOfDay,
+		timezone,
+	);
+	if (resolution.kind === "resolved") return resolution.instant;
 
-		ctx.addIssue({
-			code: "custom",
-			path: [field],
-			message: "El horario seleccionado no existe en esta sucursal",
-		});
-		return null;
-	}
+	ctx.addIssue({
+		code: "custom",
+		path: [field],
+		message: "El horario seleccionado no existe en esta sucursal",
+	});
+	return null;
 }
 
 export function createDraftRentalComposerDefaultValues(
@@ -185,23 +170,6 @@ export function createDraftRentalComposerDefaultValues(
 	};
 }
 
-export function draftRentalMinuteOfDayToTime(value: number): string {
-	const hour = Math.floor(value / 60);
-	const minute = value % 60;
-	return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
-}
-
-export function draftRentalTimeToMinuteOfDay(value: string): number | null {
-	const match = /^(\d{2}):(\d{2})$/.exec(value);
-	if (!match) return null;
-
-	const hour = Number(match[1]);
-	const minute = Number(match[2]);
-	if (hour > 23 || minute > 59) return null;
-
-	return hour * 60 + minute;
-}
-
 export function createDraftRentalSelectedOffer(
 	input: DraftRentalSelectedOfferFormValues,
 ): DraftRentalSelectedOfferFormValues {
@@ -221,32 +189,28 @@ export function emptyDraftRentalValueToUndefined(
 	return trimmed.length > 0 ? trimmed : undefined;
 }
 
-function resolveDraftRentalPeriod(
-	values: DraftRentalComposerFormValues,
-	timezone: string,
-) {
-	return {
-		start: toRentalPeriodDateTime(
-			values.periodStartDate,
-			values.periodStartTime,
-			timezone,
-		),
-		end: toRentalPeriodDateTime(
-			values.periodEndDate,
-			values.periodEndTime,
-			timezone,
-		),
-	};
-}
-
 export function buildDraftRentalPeriod(
 	values: DraftRentalComposerFormValues,
 	timezone: string,
 ) {
-	const period = resolveDraftRentalPeriod(values, timezone);
+	const resolution = resolveRentalPeriod(
+		{
+			startDate: values.periodStartDate,
+			startTime: values.periodStartTime,
+			endDate: values.periodEndDate,
+			endTime: values.periodEndTime,
+		},
+		timezone,
+	);
+	if (resolution.kind === "nonexistent") {
+		throw new RangeError(
+			"The selected local time does not exist in the branch timezone.",
+		);
+	}
+
 	return {
-		start: period.start.toISOString(),
-		end: period.end.toISOString(),
+		start: resolution.period.start.toISOString(),
+		end: resolution.period.end.toISOString(),
 	};
 }
 

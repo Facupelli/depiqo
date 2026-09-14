@@ -26,12 +26,12 @@ import { useStore } from "@tanstack/react-form";
 import { Truck, Warehouse } from "lucide-react";
 import { useId } from "react";
 import type { RentalCustomerDisplayFacts } from "@/modules/rentals/customer-selection/rental-customer-selector";
+import { RentalPeriodPicker } from "@/modules/rentals/shared/rental-period/rental-period-picker";
 import { withForm } from "@/shared/contexts/form.context";
 import type { DraftRentalBranchDisplayFacts } from "../draft-rental-composer";
 import { useDraftRentalComposer } from "../draft-rental-composer.context";
 import { createDraftRentalComposerDefaultValues } from "../draft-rental-composer.schema";
 import { DeliveryAddressAutocomplete } from "./delivery-address-autocomplete";
-import { DraftRentalPeriodPicker } from "./draft-rental-period-picker";
 import { RentalCustomerCombobox } from "./rental-customer-combobox";
 
 export const DraftRentalSetupSection = withForm({
@@ -173,24 +173,22 @@ export const DraftRentalSetupSection = withForm({
 																<FieldLabel htmlFor={periodId}>
 																	Periodo de alquiler
 																</FieldLabel>
-																<DraftRentalPeriodPicker
+																<RentalPeriodPicker
 																	id={periodId}
-																	startDate={startDateField.state.value}
-																	startTime={startTimeField.state.value}
-																	endDate={endDateField.state.value}
-																	endTime={endTimeField.state.value}
-																	startDateInvalid={
-																		!startDateField.state.meta.isValid
-																	}
-																	startTimeInvalid={
-																		!startTimeField.state.meta.isValid
-																	}
-																	endDateInvalid={
-																		!endDateField.state.meta.isValid
-																	}
-																	endTimeInvalid={
-																		!endTimeField.state.meta.isValid
-																	}
+																	value={{
+																		startDate: startDateField.state.value,
+																		startTime: startTimeField.state.value,
+																		endDate: endDateField.state.value,
+																		endTime: endTimeField.state.value,
+																	}}
+																	invalid={{
+																		startDate:
+																			!startDateField.state.meta.isValid,
+																		startTime:
+																			!startTimeField.state.meta.isValid,
+																		endDate: !endDateField.state.meta.isValid,
+																		endTime: !endTimeField.state.meta.isValid,
+																	}}
 																	onStartDateChange={
 																		startDateField.handleChange
 																	}
