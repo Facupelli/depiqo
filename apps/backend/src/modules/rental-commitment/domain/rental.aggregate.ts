@@ -106,6 +106,19 @@ type CreateAssignedAssetInput = Omit<
   'tenantId' | 'rentalId' | 'effectiveFrom' | 'effectiveUntil'
 >;
 
+export interface ReplaceDraftProposalProps {
+  branchId: string;
+  rentalCustomerId?: string;
+  period: RentalPeriod;
+  fulfillmentMethod: FulfillmentMethod;
+  insuranceSelected?: boolean;
+  deliveryDetails?: RentalDeliveryDetails;
+  deliverySnapshot?: JsonValue;
+  selections: CreateRentalSelectionInput[];
+  demandLines: CreateRentalDemandLineInput[];
+  priceSnapshot: JsonValue;
+}
+
 export interface ChangeConfirmedRentalDetailsProps {
   notes?: string;
   insuranceSelected?: boolean;
@@ -556,6 +569,59 @@ export class Rental extends AggregateRootBase {
       cancelledAt: props.cancelledAt ? new Date(props.cancelledAt) : undefined,
       confirmedAt: props.confirmedAt ? new Date(props.confirmedAt) : undefined,
     });
+  }
+
+  replaceDraftProposal(params: ReplaceDraftProposalProps): Result<void, RentalCommitmentError> {
+    if (this.status !== RentalStatus.Draft) {
+      return err(new RentalCannotBeEditedFromStatusError(this.id, this.status));
+    }
+
+    if (this.props.assignedAssets.length > 0) {
+      return err(new RentalInvalidFieldError('assignedAssets', 'draft rentals cannot have assigned assets'));
+    }
+    if (this.props.assetBlocks.length > 0) {
+      return err(new RentalInvalidFieldError('assetBlocks', 'draft rentals cannot have asset blocks'));
+    }
+    if (
+      this.props.confirmedPriceSnapshot ||
+      this.props.acceptedCustomerTotal !== undefined ||
+      this.props.acceptedAssetBuffer ||
+      this.props.confirmedAt
+    ) {
+      return err(new RentalInvalidFieldError('confirmedState', 'draft rentals cannot have accepted confirmed facts'));
+    }
+
+    const selections = Rental.createSelections(this.id, this.tenantId, params.selections);
+    if (selections.isErr()) return err(selections.error);
+
+    const demandLines = Rental.createDemandLines(this.id, this.tenantId, params.demandLines);
+    if (demandLines.isErr()) return err(demandLines.error);
+
+    let deliverySnapshot: AcceptedDeliverySnapshot | undefined;
+    if (params.deliverySnapshot !== undefined) {
+      const snapshot = AcceptedDeliverySnapshot.create(params.deliverySnapshot);
+      if (snapshot.isErr()) return err(snapshot.error);
+      deliverySnapshot = snapshot.value;
+    }
+
+    const candidate = Rental.createFromEntities(RentalStatus.Draft, {
+      ...this.props,
+      id: this.id,
+      branchId: params.branchId,
+      rentalCustomerId: params.rentalCustomerId,
+      period: params.period,
+      fulfillmentMethod: params.fulfillmentMethod,
+      insuranceSelected: params.insuranceSelected,
+      deliveryDetails: params.deliveryDetails,
+      deliverySnapshot,
+      priceSnapshot: new JsonSnapshot(params.priceSnapshot),
+      selections: selections.value,
+      demandLines: demandLines.value,
+    });
+    if (candidate.isErr()) return err(candidate.error);
+
+    this.props = candidate.value.props;
+    return ok(undefined);
   }
 
   changeConfirmedDetails(params: ChangeConfirmedRentalDetailsProps): Result<void, RentalCommitmentError> {

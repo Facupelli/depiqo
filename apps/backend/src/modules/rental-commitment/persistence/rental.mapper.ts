@@ -239,6 +239,19 @@ export class RentalMapper {
     };
   }
 
+  static toDraftProposalUpdateData(rental: Rental): Prisma.V2RentalUncheckedUpdateInput {
+    return {
+      branchId: rental.branchId,
+      customerId: rental.rentalCustomerId ?? null,
+      fulfillmentMethod: rental.fulfillmentMethod,
+      insuranceSelected: rental.insuranceSelected ?? false,
+      periodStart: rental.period.start,
+      periodEnd: rental.period.end,
+      priceSnapshot: toPrismaJsonInput(rental.priceSnapshot?.toJSON()) ?? Prisma.DbNull,
+      deliverySnapshot: toPrismaJsonInput(rental.deliverySnapshot?.toJSON()) ?? Prisma.DbNull,
+    };
+  }
+
   static toRentalUpdateData(rental: Rental): Prisma.V2RentalUncheckedUpdateInput {
     return {
       branchId: rental.branchId,
