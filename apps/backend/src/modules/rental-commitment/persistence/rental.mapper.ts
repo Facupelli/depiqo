@@ -252,6 +252,16 @@ export class RentalMapper {
     };
   }
 
+  static toConfirmedPeriodRescheduleUpdateData(
+    rental: Rental,
+  ): Pick<Prisma.V2RentalUpdateManyMutationInput, 'periodStart' | 'periodEnd' | 'deliverySnapshot'> {
+    return {
+      periodStart: rental.period.start,
+      periodEnd: rental.period.end,
+      deliverySnapshot: toPrismaJsonInput(rental.acceptedDelivery?.toJSON()) ?? Prisma.DbNull,
+    };
+  }
+
   static toRentalUpdateData(rental: Rental): Prisma.V2RentalUncheckedUpdateInput {
     return {
       branchId: rental.branchId,

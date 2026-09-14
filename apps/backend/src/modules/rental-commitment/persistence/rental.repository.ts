@@ -26,6 +26,22 @@ export interface ReplaceDraftRentalOptions {
   tx?: PrismaTransactionClient;
 }
 
+export interface RescheduleConfirmedRentalOptions {
+  expectedVersion: number;
+  tx: PrismaTransactionClient;
+}
+
+export class RentalPersistenceStateMismatchError extends Error {
+  constructor(
+    public readonly rentalId: string,
+    public readonly resource: 'assignment' | 'asset block',
+    public readonly resourceId: string,
+  ) {
+    super(`Rental "${rentalId}" expected current ${resource} "${resourceId}" was not updated.`);
+    this.name = 'RentalPersistenceStateMismatchError';
+  }
+}
+
 export class UnsafeDraftRentalReplacementError extends Error {
   constructor(
     public readonly rentalId: string,
@@ -40,5 +56,9 @@ export class UnsafeDraftRentalReplacementError extends Error {
 export abstract class RentalRepository {
   abstract findById(tenantId: string, rentalId: string, tx?: PrismaTransactionClient): Promise<Rental | null>;
   abstract save(rental: Rental, options?: SaveRentalOptions): Promise<SaveRentalResult | null>;
+  abstract rescheduleConfirmedPeriod(
+    rental: Rental,
+    options: RescheduleConfirmedRentalOptions,
+  ): Promise<SaveRentalResult | null>;
   abstract replaceDraft(rental: Rental, options: ReplaceDraftRentalOptions): Promise<SaveRentalResult | null>;
 }

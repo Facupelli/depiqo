@@ -5,10 +5,12 @@ import { PrismaTransactionClient } from 'src/core/database/prisma-unit-of-work';
 import { mapPostgresError } from 'src/core/utils/postgres-error.mapper';
 
 import { Rental } from '../domain/rental.aggregate';
-import { RentalStatus } from '../domain/rental-status';
+import { AssetBlockType, RentalStatus } from '../domain/rental-status';
 import {
+  RentalPersistenceStateMismatchError,
   RentalRepository,
   ReplaceDraftRentalOptions,
+  RescheduleConfirmedRentalOptions,
   SaveRentalOptions,
   SaveRentalResult,
   UnsafeDraftRentalReplacementError,
@@ -52,6 +54,74 @@ export class PrismaRentalRepository extends RentalRepository {
       }
 
       return await this.prisma.client.$transaction((tx) => this.persistRental(tx, rental, options));
+    } catch (error) {
+      mapPostgresError(error);
+    }
+  }
+
+  async rescheduleConfirmedPeriod(
+    rental: Rental,
+    options: RescheduleConfirmedRentalOptions,
+  ): Promise<SaveRentalResult | null> {
+    try {
+      const claimed = await options.tx.v2Rental.updateMany({
+        where: {
+          id: rental.id,
+          tenantId: rental.tenantId,
+          status: 'CONFIRMED',
+          version: options.expectedVersion,
+        },
+        data: {
+          ...RentalMapper.toConfirmedPeriodRescheduleUpdateData(rental),
+          version: { increment: 1 },
+        },
+      });
+      if (claimed.count === 0) return null;
+
+      for (const assignment of rental.currentAssignedAssets) {
+        const updated = await options.tx.v2AssignedAsset.updateMany({
+          where: {
+            id: assignment.id,
+            tenantId: rental.tenantId,
+            rentalId: rental.id,
+            rentalDemandLineId: assignment.rentalDemandLineId,
+            assetId: assignment.assetId,
+            effectiveUntil: null,
+          },
+          data: { effectiveFrom: assignment.effectiveFrom },
+        });
+        if (updated.count !== 1) {
+          throw new RentalPersistenceStateMismatchError(rental.id, 'assignment', assignment.id);
+        }
+      }
+
+      const currentEquipmentAssetIds = new Set(rental.currentAssignedAssets.map((assignment) => assignment.assetId));
+      const currentBlocks = rental.assetBlocks.filter(
+        (block) =>
+          block.isActive &&
+          (block.blockType === AssetBlockType.Accessory ||
+            (block.blockType === AssetBlockType.Equipment && currentEquipmentAssetIds.has(block.assetId))),
+      );
+      for (const block of currentBlocks) {
+        const updated = await options.tx.$executeRaw`
+          UPDATE v2_asset_blocks
+          SET period = ${block.period.toPostgresRange()}::tstzrange
+          WHERE id = ${block.id}
+            AND tenant_id = ${rental.tenantId}
+            AND rental_id = ${rental.id}
+            AND asset_id = ${block.assetId}
+            AND block_type = ${block.blockType}::"V2AssetBlockType"
+            AND released_at IS NULL
+        `;
+        if (updated !== 1) {
+          throw new RentalPersistenceStateMismatchError(rental.id, 'asset block', block.id);
+        }
+      }
+
+      return options.tx.v2Rental.findUniqueOrThrow({
+        where: { id: rental.id },
+        select: { version: true, updatedAt: true },
+      });
     } catch (error) {
       mapPostgresError(error);
     }
