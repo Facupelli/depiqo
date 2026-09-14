@@ -23,6 +23,7 @@ export const DraftRentalReviewPanel = withForm({
 			isPriceLoading,
 			isPriceError,
 			isSubmitting,
+			submitDisabled,
 			submitError,
 			submitLabel,
 		} = useDraftRentalComposer();
@@ -122,7 +123,12 @@ export const DraftRentalReviewPanel = withForm({
 							<Button
 								type="button"
 								className="w-full"
-								disabled={!formCanSubmit || isSubmitting || formIsSubmitting}
+								disabled={
+									submitDisabled ||
+									!formCanSubmit ||
+									isSubmitting ||
+									formIsSubmitting
+								}
 								onClick={() => form.handleSubmit()}
 							>
 								{isSubmitting || formIsSubmitting

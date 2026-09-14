@@ -37,6 +37,7 @@ type DraftRentalComposerProps = {
 		timezone: string,
 	) => Promise<void>;
 	isSubmitting: boolean;
+	submitDisabled?: boolean;
 	submitError: string | null;
 	submitLabel: string;
 	missingBranchMessage: string;
@@ -49,6 +50,7 @@ export function DraftRentalComposer({
 	initialBranch,
 	onSubmit,
 	isSubmitting,
+	submitDisabled = false,
 	submitError,
 	submitLabel,
 	missingBranchMessage,
@@ -103,6 +105,7 @@ export function DraftRentalComposer({
 		isPriceLoading: priceQuery.isFetching,
 		isPriceError: priceQuery.isError,
 		isSubmitting,
+		submitDisabled,
 		submitError,
 		submitLabel,
 	};

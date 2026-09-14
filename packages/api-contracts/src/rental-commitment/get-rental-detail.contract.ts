@@ -208,6 +208,17 @@ export const GetRentalDetailOwnerPayoutSchema = z.object({
 	lines: z.array(GetRentalDetailOwnerPayoutLineSchema),
 });
 
+export const GetRentalDetailRetainedBranchSchema = z.object({
+	id: z.string(),
+	name: z.string(),
+	timezone: z.string().nullable(),
+});
+
+export const GetRentalDetailRetainedCustomerSchema = z.object({
+	id: z.string(),
+	name: z.string(),
+});
+
 export const GetRentalDetailResponseSchema = z.object({
 	id: z.string(),
 	rentalNumber: z.number().int().positive(),
@@ -222,6 +233,8 @@ export const GetRentalDetailResponseSchema = z.object({
 	confirmedAt: z.string().datetime().nullable(),
 	customerId: z.string().nullable(),
 	branchId: z.string(),
+	retainedBranch: GetRentalDetailRetainedBranchSchema,
+	retainedCustomer: GetRentalDetailRetainedCustomerSchema.nullable(),
 	period: GetRentalDetailPeriodSchema,
 	fulfillment: z.object({
 		method: GetRentalsFulfillmentMethodSchema,
@@ -315,6 +328,12 @@ export type GetRentalDetailOwnerPayoutLineDto = z.infer<
 >;
 export type GetRentalDetailOwnerPayoutDto = z.infer<
 	typeof GetRentalDetailOwnerPayoutSchema
+>;
+export type GetRentalDetailRetainedBranchDto = z.infer<
+	typeof GetRentalDetailRetainedBranchSchema
+>;
+export type GetRentalDetailRetainedCustomerDto = z.infer<
+	typeof GetRentalDetailRetainedCustomerSchema
 >;
 export type GetRentalDetailResponseDto = z.infer<
 	typeof GetRentalDetailResponseSchema
