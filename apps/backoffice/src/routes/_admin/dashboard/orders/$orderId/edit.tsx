@@ -24,5 +24,5 @@ export const Route = createFileRoute("/_admin/dashboard/orders/$orderId/edit")({
 function EditRentalRoute() {
 	const { orderId } = Route.useParams();
 
-	return <EditRentalPage orderId={orderId} />;
+	return <EditRentalPage key={orderId} orderId={orderId} />;
 }
