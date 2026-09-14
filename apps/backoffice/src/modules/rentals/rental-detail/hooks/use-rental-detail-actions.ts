@@ -1,3 +1,4 @@
+import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { useCancelRental } from "../cancel-rental/cancel-rental.mutation";
 import { useConfirmRental } from "../confirm-rental/confirm-rental.mutation";
@@ -14,6 +15,7 @@ const CONFIRM_RENTAL_FALLBACK_ERROR =
 	"No pudimos confirmar el alquiler. Revisá que tenga cliente, precio calculado y equipos disponibles para el período.";
 
 export function useRentalDetailActions() {
+	const navigate = useNavigate();
 	const { rental, customerSummary } = useRentalDetailContext();
 	const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
 	const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
@@ -65,6 +67,11 @@ export function useRentalDetailActions() {
 			isCancelling: cancelRental.isPending,
 			isOpeningRemito: remito.isOpening,
 			isOpeningBudget: budget.isOpening,
+			onEditDraft: () =>
+				navigate({
+					to: "/dashboard/orders/$orderId/edit",
+					params: { orderId: rental.id },
+				}),
 			onOpenConfirmDialog: () => setConfirmDialogOpen(true),
 			onOpenRemito: remito.openRemito,
 			onOpenBudget: budget.openBudget,
