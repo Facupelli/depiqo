@@ -1,11 +1,5 @@
 import { Badge } from "@repo/ui/components/badge";
 import { Button } from "@repo/ui/components/button";
-import {
-	Card,
-	CardContent,
-	CardHeader,
-	CardTitle,
-} from "@repo/ui/components/card";
 import { Input } from "@repo/ui/components/input";
 import { useStore } from "@tanstack/react-form";
 import { Loader2, Plus, Search } from "lucide-react";
@@ -45,7 +39,7 @@ export const DraftRentalOfferSearchSection = withForm({
 			periodStart: effectivePeriod?.start,
 			periodEnd: effectivePeriod?.end,
 			page: 1,
-			pageSize: 8,
+			pageSize: 3,
 		};
 
 		const query = useDraftRentalOfferSearch(queryInput, {
@@ -98,43 +92,36 @@ export const DraftRentalOfferSearchSection = withForm({
 		}
 
 		return (
-			<Card className="shadow-xs">
-				<CardHeader>
-					<div className="flex items-center justify-between gap-3">
-						<CardTitle className="text-base">Añadir productos</CardTitle>
-						{query.isFetching ? (
-							<Loader2
-								className="size-4 animate-spin text-muted-foreground"
-								aria-label={
-									isCompatibleRefresh
-										? "Actualizando productos"
-										: "Cargando productos"
-								}
-							/>
-						) : null}
-					</div>
-				</CardHeader>
-				<CardContent className="space-y-3">
-					<div className="relative">
-						<Search className="-translate-y-1/2 absolute top-1/2 left-3 size-4 text-muted-foreground" />
-						<Input
-							value={search}
-							onChange={(event) => setSearch(event.target.value)}
-							placeholder="Buscar productos o combos"
-							className="pl-9"
-							disabled={branchMissing || !periodReady}
-						/>
-					</div>
-
-					<ProductResults
-						branchMissing={branchMissing}
-						periodReady={periodReady}
-						query={query}
-						offers={offers}
-						onAdd={addOffer}
+			<div className="space-y-3">
+				<div className="relative">
+					<Search className="-translate-y-1/2 absolute top-1/2 left-3 size-4 text-muted-foreground" />
+					<Input
+						value={search}
+						onChange={(event) => setSearch(event.target.value)}
+						placeholder="Buscar productos o combos"
+						className={query.isFetching ? "pr-9 pl-9" : "pl-9"}
+						disabled={branchMissing || !periodReady}
 					/>
-				</CardContent>
-			</Card>
+					{query.isFetching ? (
+						<Loader2
+							className="-translate-y-1/2 absolute top-1/2 right-3 size-4 animate-spin text-muted-foreground"
+							aria-label={
+								isCompatibleRefresh
+									? "Actualizando productos"
+									: "Cargando productos"
+							}
+						/>
+					) : null}
+				</div>
+
+				<ProductResults
+					branchMissing={branchMissing}
+					periodReady={periodReady}
+					query={query}
+					offers={offers}
+					onAdd={addOffer}
+				/>
+			</div>
 		);
 	},
 });
@@ -147,25 +134,27 @@ function OfferCard({
 	onAdd: (offer: DraftRentalOfferSearchItemDto) => void;
 }) {
 	const unavailable = offer.availableCount === 0;
+	const isCombo = offer.kind !== "SINGLE";
 
 	return (
-		<div className="flex items-start justify-between gap-3 rounded-lg border bg-card p-3">
-			<div className="min-w-0 space-y-1">
+		<div className="flex min-w-0 items-center justify-between gap-3 px-3 py-2.5">
+			<div className="min-w-0 space-y-0.5">
 				<div className="flex items-center gap-2">
 					<p className="truncate font-medium text-sm">{offer.name}</p>
-					<Badge variant="outline" className="text-[10px]">
-						{offer.kind}
-					</Badge>
+					{isCombo ? (
+						<Badge variant="outline" className="text-[10px]">
+							Combo
+						</Badge>
+					) : null}
 				</div>
 				<p className="text-muted-foreground text-xs">
-					{offer.availableCount === null
-						? "Disponibilidad pendiente"
-						: `${offer.availableCount} disponibles`}
+					{getAvailabilityLabel(offer.availableCount)}
 				</p>
 			</div>
 			<Button
 				type="button"
 				size="sm"
+				className="shrink-0"
 				variant={unavailable ? "outline" : "default"}
 				aria-label={`Añadir ${offer.name} al borrador`}
 				disabled={unavailable}
@@ -211,12 +200,18 @@ export function ProductResults({
 	}
 
 	return (
-		<div className="grid gap-2 md:grid-cols-2">
+		<div className="divide-y overflow-hidden rounded-lg border">
 			{offers.map((offer) => (
 				<OfferCard key={offer.id} offer={offer} onAdd={onAdd} />
 			))}
 		</div>
 	);
+}
+
+function getAvailabilityLabel(availableCount: number | null): string {
+	if (availableCount === null) return "Disponibilidad pendiente";
+	if (availableCount === 1) return "1 disponible";
+	return `${availableCount} disponibles`;
 }
 
 function buildEffectiveRentalPeriod(

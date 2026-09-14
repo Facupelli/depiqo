@@ -21,6 +21,7 @@ export type RentalCustomerDisplayFacts = {
 
 type RentalCustomerSelectorProps = {
 	value: string;
+	id?: string;
 	initialSelectedCustomer?: RentalCustomerDisplayFacts;
 	onValueChange: (customerId: string) => void;
 	placeholder?: string;
@@ -29,6 +30,7 @@ type RentalCustomerSelectorProps = {
 
 export function RentalCustomerSelector({
 	value,
+	id,
 	initialSelectedCustomer,
 	onValueChange,
 	placeholder = "Sin cliente asignado",
@@ -61,6 +63,7 @@ export function RentalCustomerSelector({
 			<PopoverTrigger
 				render={
 					<Button
+						id={id}
 						type="button"
 						variant="outline"
 						className="w-full min-w-0 justify-start overflow-hidden"

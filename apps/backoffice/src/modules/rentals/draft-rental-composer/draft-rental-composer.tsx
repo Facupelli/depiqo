@@ -7,9 +7,8 @@ import { useAppForm } from "@/shared/contexts/form.context";
 import { useBranchTimezoneResolver } from "@/shared/timezone/operational-timezone.hooks";
 import type { RentalCustomerDisplayFacts } from "../customer-selection/rental-customer-selector";
 import { useCalculatedDraftRentalPrice } from "./calculate-draft-rental-price.queries";
-import { DraftRentalOfferSearchSection } from "./components/draft-rental-offer-search-section";
+import { DraftRentalProductsSection } from "./components/draft-rental-products-section";
 import { DraftRentalReviewPanel } from "./components/draft-rental-review-panel";
-import { DraftRentalSelectedOffersSection } from "./components/draft-rental-selected-offers-section";
 import { DraftRentalSetupSection } from "./components/draft-rental-setup-section";
 import {
 	type DraftRentalComposerContextValue,
@@ -115,16 +114,15 @@ export function DraftRentalComposer({
 			{branchMissing ? (
 				<MissingBranchNotice message={missingBranchMessage} />
 			) : null}
-			<div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
-				<div className="space-y-4">
+			<div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
+				<div className="space-y-3">
 					<DraftRentalSetupSection
 						form={form}
 						activeBranches={activeBranches}
 						initialBranch={initialBranch}
 						initialCustomer={initialCustomer}
 					/>
-					<DraftRentalOfferSearchSection form={form} />
-					<DraftRentalSelectedOffersSection form={form} />
+					<DraftRentalProductsSection form={form} />
 				</div>
 
 				<aside className="lg:sticky lg:top-6 lg:self-start">

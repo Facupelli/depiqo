@@ -6,8 +6,14 @@ import {
 	CardTitle,
 } from "@repo/ui/components/card";
 import { Checkbox } from "@repo/ui/components/checkbox";
-import { Field, FieldError, FieldLabel } from "@repo/ui/components/field";
-import { Input } from "@repo/ui/components/input";
+import {
+	Field,
+	FieldError,
+	FieldLabel,
+	FieldLegend,
+	FieldSet,
+	FieldTitle,
+} from "@repo/ui/components/field";
 import {
 	Select,
 	SelectContent,
@@ -15,18 +21,17 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@repo/ui/components/select";
+import { ToggleGroup, ToggleGroupItem } from "@repo/ui/components/toggle-group";
 import { useStore } from "@tanstack/react-form";
-import { CalendarIcon, Truck, Warehouse } from "lucide-react";
+import { Truck, Warehouse } from "lucide-react";
+import { useId } from "react";
 import type { RentalCustomerDisplayFacts } from "@/modules/rentals/customer-selection/rental-customer-selector";
 import { withForm } from "@/shared/contexts/form.context";
 import type { DraftRentalBranchDisplayFacts } from "../draft-rental-composer";
 import { useDraftRentalComposer } from "../draft-rental-composer.context";
-import {
-	createDraftRentalComposerDefaultValues,
-	draftRentalMinuteOfDayToTime,
-	draftRentalTimeToMinuteOfDay,
-} from "../draft-rental-composer.schema";
+import { createDraftRentalComposerDefaultValues } from "../draft-rental-composer.schema";
 import { DeliveryAddressAutocomplete } from "./delivery-address-autocomplete";
+import { DraftRentalPeriodPicker } from "./draft-rental-period-picker";
 import { RentalCustomerCombobox } from "./rental-customer-combobox";
 
 export const DraftRentalSetupSection = withForm({
@@ -42,6 +47,7 @@ export const DraftRentalSetupSection = withForm({
 		initialBranch,
 		initialCustomer,
 	}) {
+		const periodId = useId();
 		const { selectedBranchName, branchMissing } = useDraftRentalComposer();
 		const fulfillmentMethod = useStore(
 			form.store,
@@ -75,11 +81,11 @@ export const DraftRentalSetupSection = withForm({
 		}
 
 		return (
-			<Card className="shadow-xs">
+			<Card size="sm" className="gap-3 shadow-none">
 				<CardHeader>
 					<CardTitle className="text-base">Datos del pedido</CardTitle>
 				</CardHeader>
-				<CardContent className="space-y-4">
+				<CardContent className="space-y-3 [&_[data-slot=field]]:gap-1.5">
 					<div className="grid gap-3 md:grid-cols-2">
 						{activeBranches.length > 1 || branchMissing ? (
 							<form.Field name="branchId">
@@ -89,7 +95,7 @@ export const DraftRentalSetupSection = withForm({
 
 									return (
 										<Field data-invalid={isInvalid}>
-											<FieldLabel>Sucursal</FieldLabel>
+											<FieldLabel htmlFor={field.name}>Sucursal</FieldLabel>
 											<Select
 												value={field.state.value}
 												onValueChange={(value) => {
@@ -97,7 +103,7 @@ export const DraftRentalSetupSection = withForm({
 												}}
 												items={branchSelectItems}
 											>
-												<SelectTrigger aria-invalid={isInvalid}>
+												<SelectTrigger id={field.name} aria-invalid={isInvalid}>
 													<SelectValue placeholder="Selecciona una sucursal" />
 												</SelectTrigger>
 												<SelectContent>
@@ -122,7 +128,7 @@ export const DraftRentalSetupSection = withForm({
 							</form.Field>
 						) : (
 							<Field>
-								<FieldLabel>Sucursal</FieldLabel>
+								<FieldTitle>Sucursal</FieldTitle>
 								<div className="flex h-9 items-center rounded-md border bg-muted/40 px-3 text-sm">
 									{branchMissing
 										? "Seleccioná una sucursal primero"
@@ -137,144 +143,137 @@ export const DraftRentalSetupSection = withForm({
 						/>
 					</div>
 
-					<div className="grid gap-3 md:grid-cols-4">
+					<div className="space-y-3">
 						<form.Field name="periodStartDate">
-							{(field) => (
-								<Field data-invalid={!field.state.meta.isValid}>
-									<FieldLabel htmlFor={field.name}>Inicio</FieldLabel>
-									<div className="relative">
-										<CalendarIcon className="-translate-y-1/2 absolute top-1/2 left-3 size-4 text-muted-foreground" />
-										<Input
-											id={field.name}
-											type="date"
-											value={field.state.value}
-											onBlur={field.handleBlur}
-											onChange={(event) =>
-												field.handleChange(event.target.value)
-											}
-											className="pl-9"
-										/>
-									</div>
-									{!field.state.meta.isValid && (
-										<FieldError errors={field.state.meta.errors} />
+							{(startDateField) => (
+								<form.Field name="periodStartTime">
+									{(startTimeField) => (
+										<form.Field name="periodEndDate">
+											{(endDateField) => (
+												<form.Field name="periodEndTime">
+													{(endTimeField) => {
+														const periodInvalid = [
+															startDateField,
+															startTimeField,
+															endDateField,
+															endTimeField,
+														].some((field) => !field.state.meta.isValid);
+														const periodErrors = [
+															...startDateField.state.meta.errors,
+															...startTimeField.state.meta.errors,
+															...endDateField.state.meta.errors,
+															...endTimeField.state.meta.errors,
+														];
+
+														return (
+															<Field
+																className="gap-1.5 md:max-w-[calc(50%-0.375rem)]"
+																data-invalid={periodInvalid}
+															>
+																<FieldLabel htmlFor={periodId}>
+																	Periodo de alquiler
+																</FieldLabel>
+																<DraftRentalPeriodPicker
+																	id={periodId}
+																	startDate={startDateField.state.value}
+																	startTime={startTimeField.state.value}
+																	endDate={endDateField.state.value}
+																	endTime={endTimeField.state.value}
+																	startDateInvalid={
+																		!startDateField.state.meta.isValid
+																	}
+																	startTimeInvalid={
+																		!startTimeField.state.meta.isValid
+																	}
+																	endDateInvalid={
+																		!endDateField.state.meta.isValid
+																	}
+																	endTimeInvalid={
+																		!endTimeField.state.meta.isValid
+																	}
+																	onStartDateChange={
+																		startDateField.handleChange
+																	}
+																	onStartDateBlur={startDateField.handleBlur}
+																	onStartTimeChange={
+																		startTimeField.handleChange
+																	}
+																	onStartTimeBlur={startTimeField.handleBlur}
+																	onEndDateChange={endDateField.handleChange}
+																	onEndDateBlur={endDateField.handleBlur}
+																	onEndTimeChange={endTimeField.handleChange}
+																	onEndTimeBlur={endTimeField.handleBlur}
+																/>
+																<FieldError errors={periodErrors} />
+															</Field>
+														);
+													}}
+												</form.Field>
+											)}
+										</form.Field>
 									)}
-								</Field>
+								</form.Field>
 							)}
 						</form.Field>
 
-						<form.Field name="periodStartTime">
-							{(field) => (
-								<Field data-invalid={!field.state.meta.isValid}>
-									<FieldLabel htmlFor={field.name}>Hora inicio</FieldLabel>
-									<Input
-										id={field.name}
-										type="time"
-										step={60}
-										aria-invalid={!field.state.meta.isValid}
-										value={draftRentalMinuteOfDayToTime(field.state.value)}
-										onBlur={field.handleBlur}
-										onChange={(event) => {
-											const value = draftRentalTimeToMinuteOfDay(
-												event.target.value,
-											);
-											if (value !== null) field.handleChange(value);
-										}}
-									/>
-									{!field.state.meta.isValid ? (
-										<FieldError errors={field.state.meta.errors} />
-									) : null}
-								</Field>
-							)}
-						</form.Field>
-
-						<form.Field name="periodEndDate">
-							{(field) => (
-								<Field data-invalid={!field.state.meta.isValid}>
-									<FieldLabel htmlFor={field.name}>Devolución</FieldLabel>
-									<Input
-										id={field.name}
-										type="date"
-										value={field.state.value}
-										onBlur={field.handleBlur}
-										onChange={(event) => field.handleChange(event.target.value)}
-									/>
-									{!field.state.meta.isValid && (
-										<FieldError errors={field.state.meta.errors} />
-									)}
-								</Field>
-							)}
-						</form.Field>
-
-						<form.Field name="periodEndTime">
-							{(field) => (
-								<Field data-invalid={!field.state.meta.isValid}>
-									<FieldLabel htmlFor={field.name}>Hora devolución</FieldLabel>
-									<Input
-										id={field.name}
-										type="time"
-										step={60}
-										aria-invalid={!field.state.meta.isValid}
-										value={draftRentalMinuteOfDayToTime(field.state.value)}
-										onBlur={field.handleBlur}
-										onChange={(event) => {
-											const value = draftRentalTimeToMinuteOfDay(
-												event.target.value,
-											);
-											if (value !== null) field.handleChange(value);
-										}}
-									/>
-									{!field.state.meta.isValid ? (
-										<FieldError errors={field.state.meta.errors} />
-									) : null}
-								</Field>
-							)}
-						</form.Field>
-					</div>
-
-					<div className="grid gap-3 md:grid-cols-2">
-						<form.Field name="fulfillmentMethod">
-							{(field) => (
-								<Field>
-									<FieldLabel>Entrega</FieldLabel>
-									<div className="grid grid-cols-2 gap-2">
-										<button
-											type="button"
-											onClick={() => field.handleChange("PICKUP")}
-											className={`flex items-center gap-2 rounded-md border px-3 py-2 text-sm ${field.state.value === "PICKUP" ? "border-primary bg-primary/5" : "bg-background"}`}
+						<div className="grid items-end gap-3 sm:grid-cols-[minmax(0,28rem)_auto]">
+							<form.Field name="fulfillmentMethod">
+								{(field) => (
+									<FieldSet className="w-full gap-0 [&_[data-slot=field-legend]]:mb-1.5">
+										<FieldLegend variant="label">Entrega</FieldLegend>
+										<ToggleGroup
+											variant="outline"
+											value={[field.state.value]}
+											onValueChange={(value) => {
+												const nextValue = value[0];
+												if (
+													nextValue === "PICKUP" ||
+													nextValue === "DELIVERY"
+												) {
+													field.handleChange(nextValue);
+												}
+											}}
+											className="grid w-full grid-cols-2"
 										>
-											<Warehouse className="size-4" /> Retiro
-										</button>
-										<button
-											type="button"
-											onClick={() => field.handleChange("DELIVERY")}
-											className={`flex items-center gap-2 rounded-md border px-3 py-2 text-sm ${field.state.value === "DELIVERY" ? "border-primary bg-primary/5" : "bg-background"}`}
-										>
-											<Truck className="size-4" /> Envío
-										</button>
-									</div>
-								</Field>
-							)}
-						</form.Field>
+											<ToggleGroupItem
+												value="PICKUP"
+												className="min-w-0 gap-2 data-[state=on]:bg-primary/5 data-[state=on]:text-primary"
+											>
+												<Warehouse className="size-4" />
+												Retiro
+											</ToggleGroupItem>
+											<ToggleGroupItem
+												value="DELIVERY"
+												className="min-w-0 gap-2 data-[state=on]:bg-primary/5 data-[state=on]:text-primary"
+											>
+												<Truck className="size-4" />
+												Envío
+											</ToggleGroupItem>
+										</ToggleGroup>
+									</FieldSet>
+								)}
+							</form.Field>
 
-						<form.Field name="insuranceSelected">
-							{(field) => (
-								<Field className="justify-end">
-									<label
-										htmlFor={field.name}
-										className="flex h-9 items-center gap-2 rounded-md border px-3 text-sm"
-									>
-										<Checkbox
-											id={field.name}
-											checked={field.state.value}
-											onCheckedChange={(checked) =>
-												field.handleChange(checked === true)
-											}
-										/>
-										Seguro seleccionado
-									</label>
-								</Field>
-							)}
-						</form.Field>
+							<form.Field name="insuranceSelected">
+								{(field) => (
+									<Field className="justify-end gap-1.5">
+										<label
+											htmlFor={field.name}
+											className="flex h-9 w-fit items-center gap-2 text-sm font-medium"
+										>
+											<Checkbox
+												id={field.name}
+												checked={field.state.value}
+												onCheckedChange={(checked) =>
+													field.handleChange(checked === true)
+												}
+											/>
+											Seguro
+										</label>
+									</Field>
+								)}
+							</form.Field>
+						</div>
 					</div>
 
 					{fulfillmentMethod === "DELIVERY" ? (

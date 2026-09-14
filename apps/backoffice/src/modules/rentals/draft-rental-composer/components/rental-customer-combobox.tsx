@@ -16,8 +16,9 @@ export const RentalCustomerCombobox = withForm({
 			<form.Field name="rentalCustomerId">
 				{(field) => (
 					<Field>
-						<FieldLabel>Cliente</FieldLabel>
+						<FieldLabel htmlFor={field.name}>Cliente</FieldLabel>
 						<RentalCustomerSelector
+							id={field.name}
 							value={field.state.value}
 							initialSelectedCustomer={initialCustomer}
 							onValueChange={field.handleChange}
