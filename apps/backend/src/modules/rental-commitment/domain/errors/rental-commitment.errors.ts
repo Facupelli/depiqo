@@ -81,7 +81,13 @@ export class RentalCannotBeEditedFromStatusError extends RentalCommitmentError {
 
 export class RentalPeriodCannotStartInPastError extends RentalCommitmentError {
   constructor() {
-    super('Rental period cannot start in the past.');
+    super('Rental period must start strictly after the operation time.');
+  }
+}
+
+export class RentalPeriodHasStartedError extends RentalCommitmentError {
+  constructor(rentalId: string) {
+    super(`Confirmed rental "${rentalId}" cannot be rescheduled after its rental period has started.`);
   }
 }
 
