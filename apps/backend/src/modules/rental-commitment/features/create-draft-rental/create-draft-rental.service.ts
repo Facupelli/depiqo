@@ -196,9 +196,8 @@ export class CreateDraftRentalService implements ICommandHandler<
       );
     }
     const prospectivePricing = prospectiveResult.value.pricing;
-    const deliverySnapshot = prospectiveResult.value.deliveryQuote
-      ? acceptedDeliverySnapshotFromQuote(prospectiveResult.value.deliveryQuote)
-      : undefined;
+    const deliveryQuote = prospectiveResult.value.deliveryQuote;
+    const deliverySnapshot = deliveryQuote ? acceptedDeliverySnapshotFromQuote(deliveryQuote) : undefined;
 
     const equipmentDemandLines = rentalSelectionsDraft.flatMap((selection) =>
       selection.fulfillmentRequirements.map((requirement) => ({
@@ -223,8 +222,14 @@ export class CreateDraftRentalService implements ICommandHandler<
           insuranceSelected: command.insuranceSelected,
           bookingSnapshot: command.bookingSnapshot,
           deliveryDetails:
-            fulfillmentMethod === FulfillmentMethod.Delivery && command.deliveryDetails
-              ? { address: command.deliveryDetails.address }
+            fulfillmentMethod === FulfillmentMethod.Delivery && command.deliveryDetails && deliveryQuote
+              ? {
+                  address: command.deliveryDetails.address,
+                  formattedAddress: deliveryQuote.resolvedCustomerLocation.formattedAddress,
+                  latitude: deliveryQuote.resolvedCustomerLocation.latitude,
+                  longitude: deliveryQuote.resolvedCustomerLocation.longitude,
+                  providerPlaceId: deliveryQuote.resolvedCustomerLocation.providerPlaceId,
+                }
               : undefined,
           deliverySnapshot,
           period: command.period,

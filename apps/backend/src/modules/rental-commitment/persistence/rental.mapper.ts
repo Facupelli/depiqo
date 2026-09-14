@@ -59,6 +59,10 @@ export interface RentalPersistenceRecord {
 
 interface RentalDeliveryDetailsPersistenceRecord {
   address: string;
+  formattedAddress: string;
+  latitude: number;
+  longitude: number;
+  providerPlaceId: string | null;
 }
 
 interface RentalSelectionPersistenceRecord {
@@ -329,7 +333,13 @@ export class RentalMapper {
   }
 
   static toDeliveryDetailsDomain(record: RentalDeliveryDetailsPersistenceRecord): RentalDeliveryDetails {
-    return { address: record.address };
+    return {
+      address: record.address,
+      formattedAddress: record.formattedAddress,
+      latitude: record.latitude,
+      longitude: record.longitude,
+      providerPlaceId: record.providerPlaceId ?? undefined,
+    };
   }
 
   static toDeliveryDetailsCreateData(rental: Rental): Prisma.V2RentalDeliveryDetailsUncheckedCreateInput | undefined {
@@ -342,6 +352,10 @@ export class RentalMapper {
       tenantId: rental.tenantId,
       rentalOrderId: rental.id,
       address: details.address,
+      formattedAddress: details.formattedAddress,
+      latitude: details.latitude,
+      longitude: details.longitude,
+      providerPlaceId: details.providerPlaceId,
     };
   }
 

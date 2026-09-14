@@ -47,7 +47,13 @@ export class GetRentalDetailHandler implements IQueryHandler<GetRentalDetailQuer
         branchId: true,
         customerId: true,
         deliveryDetails: {
-          select: { address: true },
+          select: {
+            address: true,
+            formattedAddress: true,
+            latitude: true,
+            longitude: true,
+            providerPlaceId: true,
+          },
         },
         selections: {
           where: { removedAt: null },
@@ -133,7 +139,7 @@ export class GetRentalDetailHandler implements IQueryHandler<GetRentalDetailQuer
       },
       fulfillment: {
         method: rental.fulfillmentMethod,
-        deliveryDetails: rental.deliveryDetails,
+        deliveryDetails: rental.deliveryDetails ? { address: rental.deliveryDetails.address } : null,
       },
       selections: rental.selections.map((selection) => ({
         id: selection.id,
@@ -161,7 +167,9 @@ export class GetRentalDetailHandler implements IQueryHandler<GetRentalDetailQuer
       })),
       pricing: this.resolvePricing(rental.priceSnapshot),
       acceptedCustomerTotal: rental.confirmedAt ? (rental.acceptedCustomerTotal?.toString() ?? null) : null,
-      acceptedDelivery: rental.confirmedAt ? this.resolveAcceptedDelivery(rental.deliverySnapshot) : null,
+      acceptedDelivery: rental.confirmedAt
+        ? this.resolveAcceptedDelivery(rental.deliverySnapshot, rental.deliveryDetails)
+        : null,
       ownerPayouts,
     });
   }
@@ -245,10 +253,27 @@ export class GetRentalDetailHandler implements IQueryHandler<GetRentalDetailQuer
     return toRentalDetailPricing(snapshot.value.snapshot);
   }
 
-  private resolveAcceptedDelivery(deliverySnapshot: unknown): GetRentalDetailResponseDto['acceptedDelivery'] {
+  private resolveAcceptedDelivery(
+    deliverySnapshot: unknown,
+    deliveryDetails: {
+      formattedAddress: string;
+      latitude: number;
+      longitude: number;
+      providerPlaceId: string | null;
+    } | null,
+  ): GetRentalDetailResponseDto['acceptedDelivery'] {
     if (deliverySnapshot === null) return null;
+    if (deliveryDetails === null) throw new Error('Accepted Delivery snapshot requires persisted Delivery details.');
     const snapshot = AcceptedDeliverySnapshot.create(deliverySnapshot);
     if (snapshot.isErr()) throw snapshot.error;
-    return snapshot.value.snapshot;
+    return {
+      ...snapshot.value.snapshot,
+      resolvedCustomerLocation: {
+        formattedAddress: deliveryDetails.formattedAddress,
+        latitude: deliveryDetails.latitude,
+        longitude: deliveryDetails.longitude,
+        providerPlaceId: deliveryDetails.providerPlaceId ?? undefined,
+      },
+    };
   }
 }

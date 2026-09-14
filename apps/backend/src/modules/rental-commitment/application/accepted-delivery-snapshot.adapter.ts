@@ -9,7 +9,6 @@ export function acceptedDeliverySnapshotFromQuote(quote: DeliveryQuote): Accepte
   return {
     schema: ACCEPTED_DELIVERY_SNAPSHOT_SCHEMA,
     version: ACCEPTED_DELIVERY_SNAPSHOT_VERSION,
-    resolvedCustomerLocation: { ...quote.resolvedCustomerLocation },
     distanceMeters: quote.distanceMeters,
     delivery: {
       scheduledAt: quote.delivery.scheduledAt.toISOString(),

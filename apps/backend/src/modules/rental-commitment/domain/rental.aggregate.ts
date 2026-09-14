@@ -62,6 +62,10 @@ export interface AcceptedRentalAssetBuffer {
 
 export interface RentalDeliveryDetails {
   address: string;
+  formattedAddress: string;
+  latitude: number;
+  longitude: number;
+  providerPlaceId?: string;
 }
 
 interface RentalProps {
@@ -1391,6 +1395,31 @@ export class Rental extends AggregateRootBase {
         this.props.deliveryDetails.address !== this.props.deliveryDetails.address.trim()
       ) {
         return err(new RentalInvalidFieldError('deliveryDetails.address', 'delivery address must be a trimmed string'));
+      }
+      if (
+        this.props.deliveryDetails.formattedAddress.trim() === '' ||
+        this.props.deliveryDetails.formattedAddress !== this.props.deliveryDetails.formattedAddress.trim()
+      ) {
+        return err(
+          new RentalInvalidFieldError(
+            'deliveryDetails.formattedAddress',
+            'formatted delivery address must be a trimmed string',
+          ),
+        );
+      }
+      if (
+        !Number.isFinite(this.props.deliveryDetails.latitude) ||
+        this.props.deliveryDetails.latitude < -90 ||
+        this.props.deliveryDetails.latitude > 90
+      ) {
+        return err(new RentalInvalidFieldError('deliveryDetails.latitude', 'must be between -90 and 90'));
+      }
+      if (
+        !Number.isFinite(this.props.deliveryDetails.longitude) ||
+        this.props.deliveryDetails.longitude < -180 ||
+        this.props.deliveryDetails.longitude > 180
+      ) {
+        return err(new RentalInvalidFieldError('deliveryDetails.longitude', 'must be between -180 and 180'));
       }
 
       return ok(undefined);

@@ -325,7 +325,14 @@ describe('CreateDraftRental integration', () => {
 
     const persisted = await state(result.value.rentalId);
     expect(persisted.rental.fulfillmentMethod).toBe('DELIVERY');
-    expect(persisted.rental.deliveryDetails).toEqual(expect.objectContaining({ address: deliveryDisplayAddress }));
+    expect(persisted.rental.deliveryDetails).toEqual(
+      expect.objectContaining({
+        address: deliveryDisplayAddress,
+        formattedAddress: deliveryDisplayAddress,
+        ...deliveryCustomerCoordinates,
+        providerPlaceId: null,
+      }),
+    );
     expect(persisted.rental.deliverySnapshot).toEqual(
       expect.objectContaining({
         distanceMeters: deliveryRouteDistanceMeters,
