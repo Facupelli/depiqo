@@ -22,8 +22,8 @@ import {
 import { useStore } from "@tanstack/react-form";
 import { CalendarIcon, Truck, Warehouse } from "lucide-react";
 import { withForm } from "@/shared/contexts/form.context";
-import { useDraftRentalComposer } from "../create-draft-rental-composer.context";
-import { createDraftRentalComposerDefaultValues } from "../create-draft-rental-composer.schema";
+import { useDraftRentalComposer } from "../draft-rental-composer.context";
+import { createDraftRentalComposerDefaultValues } from "../draft-rental-composer.schema";
 import { DeliveryAddressAutocomplete } from "./delivery-address-autocomplete";
 import { RentalCustomerCombobox } from "./rental-customer-combobox";
 

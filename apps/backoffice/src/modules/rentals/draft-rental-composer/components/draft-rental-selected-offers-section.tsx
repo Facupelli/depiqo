@@ -12,7 +12,7 @@ import { withForm } from "@/shared/contexts/form.context";
 import {
 	createDraftRentalComposerDefaultValues,
 	type DraftRentalSelectedOfferFormValues,
-} from "../create-draft-rental-composer.schema";
+} from "../draft-rental-composer.schema";
 
 export const DraftRentalSelectedOffersSection = withForm({
 	defaultValues: createDraftRentalComposerDefaultValues(),

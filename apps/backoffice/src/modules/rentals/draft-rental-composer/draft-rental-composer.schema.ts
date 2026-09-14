@@ -1,8 +1,6 @@
 import {
 	type CalculateDraftRentalPriceBodyDto,
 	CalculateDraftRentalPriceBodySchema,
-	type CreateDraftRentalBodyDto,
-	CreateDraftRentalBodySchema,
 } from "@repo/api-contracts";
 import { resolveLocalDateTime } from "@repo/temporal";
 import { z } from "zod";
@@ -132,7 +130,9 @@ export function createDraftRentalSelectedOffer(
 	};
 }
 
-function emptyToUndefined(value: string): string | undefined {
+export function emptyDraftRentalValueToUndefined(
+	value: string,
+): string | undefined {
 	const trimmed = value.trim();
 	return trimmed.length > 0 ? trimmed : undefined;
 }
@@ -155,15 +155,19 @@ export function buildDraftRentalPeriod(
 	};
 }
 
-function selectedOffers(values: DraftRentalComposerFormValues) {
+export function toDraftRentalSelectedOffers(
+	values: DraftRentalComposerFormValues,
+) {
 	return values.selectedOffers.map((offer) => ({
 		rentalOfferId: offer.rentalOfferId,
 		quantity: offer.quantity,
 	}));
 }
 
-function manualPricingAdjustment(values: DraftRentalComposerFormValues) {
-	const targetTotal = emptyToUndefined(values.targetTotal);
+export function toDraftRentalManualPricingAdjustment(
+	values: DraftRentalComposerFormValues,
+) {
+	const targetTotal = emptyDraftRentalValueToUndefined(values.targetTotal);
 
 	if (!targetTotal) {
 		return undefined;
@@ -172,7 +176,7 @@ function manualPricingAdjustment(values: DraftRentalComposerFormValues) {
 	return {
 		mode: "TARGET_TOTAL" as const,
 		targetTotal,
-		reason: emptyToUndefined(values.adjustmentReason),
+		reason: emptyDraftRentalValueToUndefined(values.adjustmentReason),
 	};
 }
 
@@ -180,12 +184,12 @@ export function toCalculateDraftRentalPriceDto(
 	values: DraftRentalComposerFormValues,
 	timezone: string,
 ): CalculateDraftRentalPriceBodyDto {
-	const adjustment = manualPricingAdjustment(values);
+	const adjustment = toDraftRentalManualPricingAdjustment(values);
 	const dto = {
 		branchId: values.branchId,
-		rentalCustomerId: emptyToUndefined(values.rentalCustomerId),
+		rentalCustomerId: emptyDraftRentalValueToUndefined(values.rentalCustomerId),
 		period: buildDraftRentalPeriod(values, timezone),
-		selectedOffers: selectedOffers(values),
+		selectedOffers: toDraftRentalSelectedOffers(values),
 		targetTotalAdjustment: adjustment
 			? {
 					mode: "TARGET_TOTAL" as const,
@@ -195,42 +199,6 @@ export function toCalculateDraftRentalPriceDto(
 	};
 
 	CalculateDraftRentalPriceBodySchema.parse(dto);
-
-	return dto;
-}
-
-export function toCreateDraftRentalDto(
-	values: DraftRentalComposerFormValues,
-	timezone: string,
-): CreateDraftRentalBodyDto {
-	let deliveryDetailsDto: CreateDraftRentalBodyDto["deliveryDetails"];
-
-	if (values.fulfillmentMethod === "DELIVERY") {
-		const address = values.deliveryDetails.address.trim();
-		const locationId = values.deliveryDetails.locationId?.trim();
-
-		if (!address || !locationId) {
-			throw new Error("Delivery requires a complete selected address");
-		}
-
-		deliveryDetailsDto = {
-			address,
-			locationId,
-		};
-	}
-
-	const dto = {
-		branchId: values.branchId,
-		rentalCustomerId: emptyToUndefined(values.rentalCustomerId),
-		period: buildDraftRentalPeriod(values, timezone),
-		selectedOffers: selectedOffers(values),
-		fulfillmentMethod: values.fulfillmentMethod,
-		deliveryDetails: deliveryDetailsDto,
-		insuranceSelected: values.insuranceSelected,
-		manualPricingAdjustment: manualPricingAdjustment(values),
-	};
-
-	CreateDraftRentalBodySchema.parse(dto);
 
 	return dto;
 }

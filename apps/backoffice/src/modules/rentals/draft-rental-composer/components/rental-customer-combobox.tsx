@@ -1,7 +1,7 @@
 import { Field, FieldLabel } from "@repo/ui/components/field";
 import { RentalCustomerSelector } from "@/modules/rentals/customer-selection/rental-customer-selector";
 import { withForm } from "@/shared/contexts/form.context";
-import { createDraftRentalComposerDefaultValues } from "../create-draft-rental-composer.schema";
+import { createDraftRentalComposerDefaultValues } from "../draft-rental-composer.schema";
 
 export const RentalCustomerCombobox = withForm({
 	defaultValues: createDraftRentalComposerDefaultValues(),

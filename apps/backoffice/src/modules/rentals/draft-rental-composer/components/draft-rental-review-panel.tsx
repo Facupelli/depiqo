@@ -12,8 +12,8 @@ import { useStore } from "@tanstack/react-form";
 import { Loader2 } from "lucide-react";
 import { withForm } from "@/shared/contexts/form.context";
 import { formatMoney } from "@/shared/utils/formatters";
-import { useDraftRentalComposer } from "../create-draft-rental-composer.context";
-import { createDraftRentalComposerDefaultValues } from "../create-draft-rental-composer.schema";
+import { useDraftRentalComposer } from "../draft-rental-composer.context";
+import { createDraftRentalComposerDefaultValues } from "../draft-rental-composer.schema";
 
 export const DraftRentalReviewPanel = withForm({
 	defaultValues: createDraftRentalComposerDefaultValues(),
@@ -24,6 +24,8 @@ export const DraftRentalReviewPanel = withForm({
 			isPriceError,
 			isSubmitting,
 			branchMissing,
+			submitError,
+			submitLabel,
 		} = useDraftRentalComposer();
 		const values = useStore(form.store, (state) => state.values);
 		const calculatedTotal = pricePreview?.calculated.total;
@@ -117,6 +119,10 @@ export const DraftRentalReviewPanel = withForm({
 						)}
 					</form.Field>
 
+					{submitError ? (
+						<p className="text-sm text-destructive">{submitError}</p>
+					) : null}
+
 					<form.Subscribe
 						selector={(state) => [state.canSubmit, state.isSubmitting] as const}
 					>
@@ -134,7 +140,7 @@ export const DraftRentalReviewPanel = withForm({
 							>
 								{isSubmitting || formIsSubmitting
 									? "Guardando..."
-									: "Crear borrador"}
+									: submitLabel}
 							</Button>
 						)}
 					</form.Subscribe>
