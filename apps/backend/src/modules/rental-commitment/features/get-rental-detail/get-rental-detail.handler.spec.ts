@@ -43,6 +43,7 @@ function rentalRecord() {
             equipmentTypeId: 'type-a',
             equipmentTypeNameSnapshot: 'Nanlite',
             quantity: 1,
+            removedQuantity: 0,
             assignedAssets: [{ assetId: 'asset-a' }],
           },
           {
@@ -50,7 +51,8 @@ function rentalRecord() {
             rentalSelectionId: 'package-selection',
             equipmentTypeId: 'type-c',
             equipmentTypeNameSnapshot: 'Softbox',
-            quantity: 2,
+            quantity: 3,
+            removedQuantity: 1,
             assignedAssets: [{ assetId: 'asset-c' }],
           },
         ],
@@ -113,7 +115,7 @@ describe('GetRentalDetailHandler removed package demand', () => {
       rentalSelectionId: 'package-selection',
       equipmentTypeId: 'type-b',
       equipmentTypeNameSnapshot: 'Amaran snapshot',
-      quantity: 1,
+      quantity: 3,
       removedAt,
     };
     const { handler, findFirst, findMany } = createHandler([removedLine]);
@@ -125,8 +127,8 @@ describe('GetRentalDetailHandler removed package demand', () => {
     expect(result.value.selections[0]).toMatchObject({
       id: 'package-selection',
       demandLines: [
-        { id: 'demand-a', assignedAssets: [{ assetId: 'asset-a' }] },
-        { id: 'demand-c', assignedAssets: [{ assetId: 'asset-c' }] },
+        { id: 'demand-a', quantity: 1, removedQuantity: 0, assignedAssets: [{ assetId: 'asset-a' }] },
+        { id: 'demand-c', quantity: 2, removedQuantity: 1, assignedAssets: [{ assetId: 'asset-c' }] },
       ],
       removedDemandLines: [
         {
@@ -134,7 +136,7 @@ describe('GetRentalDetailHandler removed package demand', () => {
           rentalSelectionId: 'package-selection',
           equipmentTypeId: 'type-b',
           equipmentTypeName: 'Amaran snapshot',
-          quantity: 1,
+          quantity: 3,
           removedAt: removedAt.toISOString(),
         },
       ],
@@ -179,6 +181,7 @@ describe('GetRentalDetailHandler removed package demand', () => {
       equipmentTypeId: 'type-b',
       equipmentTypeNameSnapshot: 'Amaran snapshot',
       quantity: 1,
+      removedQuantity: 0,
       assignedAssets: [{ assetId: 'replacement-asset' }],
     });
     const { handler, findFirst } = createHandler([]);

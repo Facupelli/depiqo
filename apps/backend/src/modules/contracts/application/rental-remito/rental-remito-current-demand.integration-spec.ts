@@ -128,6 +128,10 @@ describe('Rental Remito current committed demand integration', () => {
     });
     const artifactBefore = await prisma.client.v2ContractArtifact.findUniqueOrThrow({ where: { id: artifact.id } });
     const rentalBefore = await prisma.client.v2Rental.findUniqueOrThrow({ where: { id: rental.rentalId } });
+    const removedDemandAssignment = await prisma.client.v2AssignedAsset.findFirstOrThrow({
+      where: { rentalDemandLineId: rental.demandLineIds[1], effectiveUntil: null },
+      select: { assetId: true },
+    });
 
     const result = await bus.execute(
       new RemoveConfirmedPackageDemandLineCommand({
@@ -136,17 +140,73 @@ describe('Rental Remito current committed demand integration', () => {
         rentalId: rental.rentalId,
         demandLineId: rental.demandLineIds[1],
         expectedVersion: rentalBefore.version,
+        quantity: 1,
+        releaseAssetIds: [removedDemandAssignment.assetId],
       }),
     );
+    if (result.isErr()) throw result.error;
     expect(result.isOk()).toBe(true);
+
+    const currentExtraAsset = await prisma.client.v2Asset.create({
+      data: {
+        tenantId: tenant.id,
+        branchId: branch.id,
+        equipmentTypeId: rental.equipmentTypeIds[0],
+        serialNumber: 'SERIAL-1-CURRENT-EXTRA',
+      },
+    });
+    const endedExtraAsset = await prisma.client.v2Asset.create({
+      data: {
+        tenantId: tenant.id,
+        branchId: branch.id,
+        equipmentTypeId: rental.equipmentTypeIds[0],
+        serialNumber: 'SERIAL-1-ENDED',
+      },
+    });
+    await prisma.client.v2AssignedAsset.createMany({
+      data: [
+        {
+          tenantId: tenant.id,
+          rentalId: rental.rentalId,
+          rentalDemandLineId: rental.demandLineIds[0],
+          assetId: currentExtraAsset.id,
+          ownershipSnapshot: { kind: 'TENANT_OWNED' },
+          effectiveFrom: period.start,
+        },
+        {
+          tenantId: tenant.id,
+          rentalId: rental.rentalId,
+          rentalDemandLineId: rental.demandLineIds[0],
+          assetId: endedExtraAsset.id,
+          ownershipSnapshot: { kind: 'TENANT_OWNED' },
+          effectiveFrom: period.start,
+          effectiveUntil: new Date(period.start.getTime() + 1_000),
+        },
+      ],
+    });
+    await prisma.client.v2RentalDemandLine.update({
+      where: { id: rental.demandLineIds[0] },
+      data: { quantity: 3, removedQuantity: 1 },
+    });
 
     const source = await moduleRef.get(RentalRemitoReadModelLoader).load(tenant.id, rental.rentalId);
     expect(source.isOk()).toBe(true);
     if (source.isOk()) {
-      expect(source.value.equipmentLines).toEqual([
-        { id: rental.demandLineIds[0], name: 'Demand A', quantity: 1, serialNumbers: ['SERIAL-1'] },
-        { id: rental.demandLineIds[2], name: 'Demand C', quantity: 1, serialNumbers: ['SERIAL-3'] },
-      ]);
+      expect(source.value.equipmentLines).toHaveLength(2);
+      expect(source.value.equipmentLines).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            id: rental.demandLineIds[0],
+            name: 'Demand A',
+            quantity: 2,
+            serialNumbers: expect.arrayContaining(['SERIAL-1', 'SERIAL-1-CURRENT-EXTRA']),
+          }),
+          { id: rental.demandLineIds[2], name: 'Demand C', quantity: 1, serialNumbers: ['SERIAL-3'] },
+        ]),
+      );
+      expect(
+        source.value.equipmentLines.find((line) => line.id === rental.demandLineIds[0])?.serialNumbers,
+      ).toHaveLength(2);
       expect(source.value.equipmentLines.some((line) => line.id === rental.demandLineIds[1])).toBe(false);
     }
 

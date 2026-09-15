@@ -53,7 +53,13 @@ export class GetRentalAccessoryDefaultsHandler implements IQueryHandler<
         deliverySnapshot: true,
         demandLines: {
           where: { removedAt: null },
-          select: { id: true, equipmentTypeId: true, equipmentTypeNameSnapshot: true, quantity: true },
+          select: {
+            id: true,
+            equipmentTypeId: true,
+            equipmentTypeNameSnapshot: true,
+            quantity: true,
+            removedQuantity: true,
+          },
           orderBy: { createdAt: 'asc' },
         },
       },
@@ -127,19 +133,20 @@ export class GetRentalAccessoryDefaultsHandler implements IQueryHandler<
 
     return ok({
       rentalOrderId: rental.id,
-      suggestions: rental.demandLines.flatMap((line) =>
-        (defaultsBySourceEquipmentTypeId.get(line.equipmentTypeId) ?? []).map((item) => ({
+      suggestions: rental.demandLines.flatMap((line) => {
+        const operationalQuantity = line.quantity - line.removedQuantity;
+        return (defaultsBySourceEquipmentTypeId.get(line.equipmentTypeId) ?? []).map((item) => ({
           sourceRentalDemandLineId: line.id,
           sourceEquipmentTypeId: line.equipmentTypeId,
           sourceEquipmentTypeName: line.equipmentTypeNameSnapshot,
           accessoryEquipmentTypeId: item.accessoryEquipmentTypeId,
           accessoryEquipmentTypeName: item.accessoryEquipmentTypeName,
           quantityPerUnit: item.quantityPerUnit,
-          sourceQuantity: line.quantity,
-          recommendedQuantity: item.quantityPerUnit * line.quantity,
+          sourceQuantity: operationalQuantity,
+          recommendedQuantity: item.quantityPerUnit * operationalQuantity,
           availableCount: availableCountByEquipmentType.get(item.accessoryEquipmentTypeId) ?? 0,
-        })),
-      ),
+        }));
+      }),
     });
   }
 

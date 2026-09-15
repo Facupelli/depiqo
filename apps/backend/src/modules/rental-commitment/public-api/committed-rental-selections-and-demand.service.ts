@@ -52,6 +52,7 @@ export class CommittedRentalSelectionsAndDemandService extends CommittedRentalSe
             equipmentTypeId: true,
             equipmentTypeNameSnapshot: true,
             quantity: true,
+            removedQuantity: true,
           },
           orderBy: {
             createdAt: 'asc',
@@ -82,7 +83,7 @@ export class CommittedRentalSelectionsAndDemandService extends CommittedRentalSe
         sourceSelectionId: line.rentalSelectionId,
         equipmentTypeId: line.equipmentTypeId,
         equipmentTypeNameSnapshot: line.equipmentTypeNameSnapshot,
-        quantity: line.quantity,
+        quantity: line.quantity - line.removedQuantity,
       })),
     });
   }

@@ -329,6 +329,25 @@ describe('RemoveConfirmedPackageDemandLine integration', () => {
     expect(after.rental.priceSnapshot).toEqual(before.rental.priceSnapshot);
     expect(after.rental.acceptedCustomerTotal).toEqual(before.rental.acceptedCustomerTotal);
     expect(after.rental.version).toBe(before.rental.version + 1);
+
+    const committed = await moduleRef
+      .get(CommittedRentalSelectionsAndDemand)
+      .getCommittedRentalSelectionsAndDemand({ tenantId: setup.tenant.id, rentalId: setup.rental.rentalId });
+    expect(committed.isOk()).toBe(true);
+    if (committed.isOk()) {
+      expect(committed.value.demandLines.find(({ demandLineId }) => demandLineId === targetId)?.quantity).toBe(2);
+    }
+
+    const assignments = await moduleRef
+      .get(RentalPhysicalAssignments)
+      .getRentalPhysicalAssignments({ tenantId: setup.tenant.id, rentalId: setup.rental.rentalId });
+    expect(assignments.isOk()).toBe(true);
+    if (assignments.isOk()) {
+      expect(
+        assignments.value.demandAssignments.find(({ demandLineId }) => demandLineId === targetId)?.assignedAssetIds,
+      ).toHaveLength(2);
+    }
+
     expect(events).toHaveLength(1);
     expect(events[0]).toEqual(expect.objectContaining({ tenantId: setup.tenant.id, rentalId: setup.rental.rentalId }));
   });

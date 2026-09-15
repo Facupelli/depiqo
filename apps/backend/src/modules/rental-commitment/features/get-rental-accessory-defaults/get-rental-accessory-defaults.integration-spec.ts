@@ -139,6 +139,20 @@ describe('GetRentalAccessoryDefaults integration', () => {
     });
   }
 
+  it('uses operational demand quantity for partially suppressed demand', async () => {
+    const s = await scenario({ ownerId: randomUUID() });
+    await prisma.client.v2RentalDemandLine.update({
+      where: { id: s.rental.demandLineIds[0] },
+      data: { quantity: 3, removedQuantity: 1 },
+    });
+
+    const result = await handler.execute(new GetRentalAccessoryDefaultsQuery(s.tenant.id, s.rental.rentalId));
+
+    expect(result.isOk()).toBe(true);
+    if (result.isErr()) return;
+    expect(result.value.suggestions[0]).toEqual(expect.objectContaining({ sourceQuantity: 2, recommendedQuantity: 2 }));
+  });
+
   it('does not count a third-party candidate without an owner contract snapshot', async () => {
     const s = await scenario(null);
 

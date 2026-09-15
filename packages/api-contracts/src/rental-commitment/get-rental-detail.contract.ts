@@ -51,6 +51,7 @@ export const GetRentalDetailDemandLineSchema = z.object({
 	equipmentTypeId: z.string(),
 	equipmentTypeName: z.string(),
 	quantity: z.number().int().positive(),
+	removedQuantity: z.number().int().nonnegative(),
 	assignedAssets: z.array(GetRentalDetailAssignedAssetSchema),
 });
 

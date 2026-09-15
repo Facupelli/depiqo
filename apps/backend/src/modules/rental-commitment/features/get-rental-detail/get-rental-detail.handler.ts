@@ -77,6 +77,7 @@ export class GetRentalDetailHandler implements IQueryHandler<GetRentalDetailQuer
                 equipmentTypeId: true,
                 equipmentTypeNameSnapshot: true,
                 quantity: true,
+                removedQuantity: true,
                 assignedAssets: {
                   where: { effectiveUntil: null },
                   select: { assetId: true },
@@ -212,7 +213,8 @@ export class GetRentalDetailHandler implements IQueryHandler<GetRentalDetailQuer
           rentalSelectionId: line.rentalSelectionId,
           equipmentTypeId: line.equipmentTypeId,
           equipmentTypeName: line.equipmentTypeNameSnapshot,
-          quantity: line.quantity,
+          quantity: line.quantity - line.removedQuantity,
+          removedQuantity: line.removedQuantity,
           assignedAssets: line.assignedAssets.map((assignment) => ({ assetId: assignment.assetId })),
         })),
         removedDemandLines: (removedDemandLinesBySelectionId.get(selection.id) ?? []).map((line) => ({
