@@ -107,4 +107,14 @@ export class TenantAuthorizationService extends TenantAuthorization {
       permissions.some((permission) => effectivePermissions.includes(permission)),
     );
   }
+
+  async hasAllPermissions(
+    subject: TenantAuthorizationSubject,
+    permissions: readonly [TenantPermission, ...TenantPermission[]],
+  ): Promise<Result<boolean, TenantAuthorizationError>> {
+    const result = await this.getEffectivePermissions(subject);
+    return result.map(({ permissions: effectivePermissions }) =>
+      permissions.every((permission) => effectivePermissions.includes(permission)),
+    );
+  }
 }

@@ -1,7 +1,9 @@
+import { TenantPermission } from '@repo/api-contracts';
 import { Body, Controller, HttpCode, HttpStatus, Param, Put } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
 
 import { createProblemDetails, createProblemType, ProblemException } from 'src/core/problem-details';
+import { RequirePermission } from '../../../tenant-management/authorization/tenant-authorization.decorators';
 import { AuthUser } from '../../../tenant-management/auth/shared/auth.types';
 import { CurrentUser } from '../../../tenant-management/auth/shared/current-user/current-user.decorator';
 
@@ -23,6 +25,7 @@ export class PutBranchDeliveryConfigurationHttpController {
 
   @Put(':branchId/configuration')
   @HttpCode(HttpStatus.OK)
+  @RequirePermission(TenantPermission.BranchesManage)
   async putConfiguration(
     @Param() params: PutBranchDeliveryConfigurationParamsDto,
     @Body() dto: PutBranchDeliveryConfigurationRequestDto,

@@ -1,7 +1,13 @@
 import { TenantPermission } from '@repo/api-contracts';
 import { Reflector } from '@nestjs/core';
 
-import { AuthorizationExempt, RequireAnyPermission, RequirePermission } from './tenant-authorization.decorators';
+import {
+  AuthorizationExempt,
+  ConditionalAuthorization,
+  RequireAllPermissions,
+  RequireAnyPermission,
+  RequirePermission,
+} from './tenant-authorization.decorators';
 import {
   TENANT_AUTHORIZATION_REQUIREMENT_KEY,
   type TenantAuthorizationRequirement,
@@ -30,10 +36,20 @@ describe('tenant authorization decorators', () => {
     });
   });
 
+  it('stores every all-of permission', () => {
+    @RequireAllPermissions(TenantPermission.ProductsManage, TenantPermission.ProductsAvailabilityManage)
+    class TestController {}
+
+    expect(requirementOn(TestController)).toEqual({
+      type: 'ALL',
+      permissions: [TenantPermission.ProductsManage, TenantPermission.ProductsAvailabilityManage],
+    });
+  });
+
   it('resolves method metadata ahead of class metadata', () => {
     @RequirePermission(TenantPermission.ProductsRead)
     class TestController {
-      @RequirePermission(TenantPermission.TeamManage)
+      @RequireAllPermissions(TenantPermission.ProductsManage, TenantPermission.ProductsAvailabilityManage)
       handler() {}
     }
 
@@ -42,7 +58,10 @@ describe('tenant authorization decorators', () => {
       [TestController.prototype.handler, TestController],
     );
 
-    expect(requirement).toEqual({ type: 'ONE', permission: TenantPermission.TeamManage });
+    expect(requirement).toEqual({
+      type: 'ALL',
+      permissions: [TenantPermission.ProductsManage, TenantPermission.ProductsAvailabilityManage],
+    });
   });
 
   it('stores an explicit exemption', () => {
@@ -52,9 +71,26 @@ describe('tenant authorization decorators', () => {
     expect(requirementOn(TestController)).toEqual({ type: 'EXEMPT' });
   });
 
+  it('stores conditional authorization distinctly from an exemption', () => {
+    @ConditionalAuthorization()
+    class ConditionalController {}
+
+    @AuthorizationExempt()
+    class ExemptController {}
+
+    expect(requirementOn(ConditionalController)).toEqual({ type: 'CONDITIONAL' });
+    expect(requirementOn(ConditionalController)).not.toEqual(requirementOn(ExemptController));
+  });
+
   it('rejects an empty any-of declaration at runtime', () => {
     expect(() => (RequireAnyPermission as (...permissions: TenantPermission[]) => ClassDecorator)()).toThrow(
       'RequireAnyPermission requires at least one tenant permission.',
+    );
+  });
+
+  it('rejects an empty all-of declaration at runtime', () => {
+    expect(() => (RequireAllPermissions as (...permissions: TenantPermission[]) => ClassDecorator)()).toThrow(
+      'RequireAllPermissions requires at least one tenant permission.',
     );
   });
 

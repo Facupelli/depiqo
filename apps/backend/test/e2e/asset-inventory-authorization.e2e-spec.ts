@@ -95,6 +95,99 @@ describe('Asset Inventory HTTP authorization', () => {
     await inventoryManager.withCsrf(inventoryManager.request().patch(path)).send(body).expect(403);
   });
 
+  it('conditionally requires product permissions when equipment creation includes a standalone rental', async () => {
+    const tenant = await fixtures.createTenant();
+    const branch = await fixtures.createBranch({ tenantId: tenant.id });
+    const inventoryOnly = await clientWithPermissions(tenant.id, [TenantPermission.InventoryManage]);
+    const productOnly = await clientWithPermissions(tenant.id, [
+      TenantPermission.ProductsManage,
+      TenantPermission.ProductsAvailabilityManage,
+    ]);
+    const fullyAllowed = await clientWithPermissions(tenant.id, [
+      TenantPermission.InventoryManage,
+      TenantPermission.ProductsManage,
+      TenantPermission.ProductsAvailabilityManage,
+    ]);
+    const path = '/offering-setup/equipment';
+    const equipment = { name: `Authorization equipment ${randomUUID()}` };
+    const standaloneRental = {
+      name: `Authorization product ${randomUUID()}`,
+      branchIds: [branch.id],
+    };
+
+    await inventoryOnly.withCsrf(inventoryOnly.request().post(path)).send({ equipment }).expect(201);
+    await inventoryOnly
+      .withCsrf(inventoryOnly.request().post(path))
+      .send({ equipment: { name: `${equipment.name} denied` }, standaloneRental })
+      .expect(403);
+    await fullyAllowed
+      .withCsrf(fullyAllowed.request().post(path))
+      .send({ equipment: { name: `${equipment.name} allowed` }, standaloneRental })
+      .expect(201);
+    await productOnly
+      .withCsrf(productOnly.request().post(path))
+      .send({ equipment: { name: `${equipment.name} no inventory` }, standaloneRental })
+      .expect(403);
+  });
+
+  it('conditionally protects third-party ownership on equipment type creation', async () => {
+    const tenant = await fixtures.createTenant();
+    const branch = await fixtures.createBranch({ tenantId: tenant.id });
+    const inventoryOnly = await clientWithPermissions(tenant.id, [TenantPermission.InventoryManage]);
+    const ownershipOnly = await clientWithPermissions(tenant.id, [TenantPermission.InventoryOwnershipManage]);
+    const fullyAllowed = await clientWithPermissions(tenant.id, [
+      TenantPermission.InventoryManage,
+      TenantPermission.InventoryOwnershipManage,
+    ]);
+    const path = '/asset-inventory/equipment-types';
+
+    await inventoryOnly
+      .withCsrf(inventoryOnly.request().post(path))
+      .send({ name: `Tenant-owned ${randomUUID()}`, assets: [{ branchId: branch.id, ownerId: null }] })
+      .expect(201);
+    await inventoryOnly
+      .withCsrf(inventoryOnly.request().post(path))
+      .send({ name: `Third-party denied ${randomUUID()}`, assets: [{ branchId: branch.id, ownerId: randomUUID() }] })
+      .expect(403);
+    await fullyAllowed
+      .withCsrf(fullyAllowed.request().post(path))
+      .send({ name: `Third-party allowed ${randomUUID()}`, assets: [{ branchId: branch.id, ownerId: randomUUID() }] })
+      .expect(404);
+    await ownershipOnly
+      .withCsrf(ownershipOnly.request().post(path))
+      .send({ name: `No inventory ${randomUUID()}` })
+      .expect(403);
+  });
+
+  it('conditionally protects third-party ownership when adding assets', async () => {
+    const tenant = await fixtures.createTenant();
+    const branch = await fixtures.createBranch({ tenantId: tenant.id });
+    const inventoryOnly = await clientWithPermissions(tenant.id, [TenantPermission.InventoryManage]);
+    const ownershipOnly = await clientWithPermissions(tenant.id, [TenantPermission.InventoryOwnershipManage]);
+    const fullyAllowed = await clientWithPermissions(tenant.id, [
+      TenantPermission.InventoryManage,
+      TenantPermission.InventoryOwnershipManage,
+    ]);
+    const path = `/asset-inventory/equipment-types/${randomUUID()}/assets`;
+
+    await inventoryOnly
+      .withCsrf(inventoryOnly.request().post(path))
+      .send({ assets: [{ branchId: branch.id }] })
+      .expect(404);
+    await inventoryOnly
+      .withCsrf(inventoryOnly.request().post(path))
+      .send({ assets: [{ branchId: branch.id, ownerId: randomUUID() }] })
+      .expect(403);
+    await fullyAllowed
+      .withCsrf(fullyAllowed.request().post(path))
+      .send({ assets: [{ branchId: branch.id, ownerId: randomUUID() }] })
+      .expect(404);
+    await ownershipOnly
+      .withCsrf(ownershipOnly.request().post(path))
+      .send({ assets: [{ branchId: branch.id }] })
+      .expect(403);
+  });
+
   it('protects accessory-default management with inventory.manage', async () => {
     const tenant = await fixtures.createTenant();
     const allowed = await clientWithPermissions(tenant.id, [TenantPermission.InventoryManage]);

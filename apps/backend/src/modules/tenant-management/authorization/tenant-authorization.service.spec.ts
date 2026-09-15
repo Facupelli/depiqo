@@ -121,6 +121,48 @@ describe('TenantAuthorizationService', () => {
     expect(empty._unsafeUnwrap()).toBe(false);
   });
 
+  it('requires every requested permission for all-of checks', async () => {
+    const { service } = createService(
+      userWithRole({ permissions: [TenantPermission.ProductsRead, TenantPermission.InventoryManage] }),
+    );
+
+    const allowed = await service.hasAllPermissions(subject, [
+      TenantPermission.ProductsRead,
+      TenantPermission.InventoryManage,
+    ]);
+    const denied = await service.hasAllPermissions(subject, [
+      TenantPermission.ProductsRead,
+      TenantPermission.ProductsManage,
+    ]);
+
+    expect(allowed._unsafeUnwrap()).toBe(true);
+    expect(denied._unsafeUnwrap()).toBe(false);
+  });
+
+  it('allows Administrator for arbitrary valid all-of requirements', async () => {
+    const { service } = createService(userWithRole({ systemRole: V2TenantSystemRole.ADMIN }));
+
+    const result = await service.hasAllPermissions(subject, [
+      TenantPermission.TeamManage,
+      TenantPermission.InventoryOwnershipManage,
+      TenantPermission.RentalsCancel,
+    ]);
+
+    expect(result._unsafeUnwrap()).toBe(true);
+  });
+
+  it('resolves current persistence state for every all-of check', async () => {
+    const fixture = createService(userWithRole({ permissions: [TenantPermission.ProductsRead] }));
+
+    const first = await fixture.service.hasAllPermissions(subject, [TenantPermission.ProductsRead]);
+    fixture.setUser(userWithRole({ permissions: [TenantPermission.InventoryManage] }));
+    const second = await fixture.service.hasAllPermissions(subject, [TenantPermission.ProductsRead]);
+
+    expect(first._unsafeUnwrap()).toBe(true);
+    expect(second._unsafeUnwrap()).toBe(false);
+    expect(fixture.findFirst).toHaveBeenCalledTimes(2);
+  });
+
   it('fails explicitly when persistence contains an unknown permission', async () => {
     const { service } = createService(userWithRole({ permissions: ['products.unknown'] }));
 

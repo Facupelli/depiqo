@@ -110,6 +110,52 @@ describe('Tenant Management HTTP authorization', () => {
     await publicRequest.expect(200);
   });
 
+  it('requires the permission matching each tenant config field group', async () => {
+    const tenant = await fixtures.createTenant();
+    const settingsManager = await clientWithPermissions(tenant.id, [TenantPermission.TenantSettingsManage]);
+    const storefrontManager = await clientWithPermissions(tenant.id, [TenantPermission.TenantStorefrontManage]);
+    const pricingManager = await clientWithPermissions(tenant.id, [TenantPermission.PricingManage]);
+    const unrelated = await clientWithPermissions(tenant.id, [TenantPermission.CustomersRead]);
+    const path = '/tenant-management/tenant/config';
+    const cases: Array<{ client: E2ETestClient; body: Record<string, unknown> }> = [
+      { client: settingsManager, body: { timezone: 'UTC' } },
+      { client: settingsManager, body: { notifications: { enabledChannels: ['EMAIL'] } } },
+      { client: settingsManager, body: { communication: { orderCommunicationMode: 'FORMAL' } } },
+      { client: settingsManager, body: { rentalAssetBuffer: { beforeBufferMinutes: 5 } } },
+      { client: storefrontManager, body: { bookingMode: 'instant-book' } },
+      { client: storefrontManager, body: { newArrivalsWindowDays: 14 } },
+      { client: storefrontManager, body: { communication: { showFloatingWhatsAppButton: false } } },
+      { client: pricingManager, body: { pricing: { currency: 'ARS' } } },
+    ];
+
+    for (const testCase of cases) {
+      await testCase.client.withCsrf(testCase.client.request().patch(path)).send(testCase.body).expect(200);
+      await unrelated.withCsrf(unrelated.request().patch(path)).send(testCase.body).expect(403);
+    }
+  });
+
+  it('requires all permissions represented by a multi-group tenant config patch', async () => {
+    const tenant = await fixtures.createTenant();
+    const partial = await clientWithPermissions(tenant.id, [
+      TenantPermission.TenantSettingsManage,
+      TenantPermission.TenantStorefrontManage,
+    ]);
+    const fullyAllowed = await clientWithPermissions(tenant.id, [
+      TenantPermission.TenantSettingsManage,
+      TenantPermission.TenantStorefrontManage,
+      TenantPermission.PricingManage,
+    ]);
+    const body = {
+      timezone: 'UTC',
+      newArrivalsWindowDays: 21,
+      pricing: { currency: 'ARS' },
+    };
+    const path = '/tenant-management/tenant/config';
+
+    await partial.withCsrf(partial.request().patch(path)).send(body).expect(403);
+    await fullyAllowed.withCsrf(fullyAllowed.request().patch(path)).send(body).expect(200);
+  });
+
   it('keeps contract signer management independent from document sending', async () => {
     const tenant = await fixtures.createTenant();
     const manager = await clientWithPermissions(tenant.id, [TenantPermission.TenantContractSignerManage]);

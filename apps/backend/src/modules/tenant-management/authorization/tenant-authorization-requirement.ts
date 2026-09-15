@@ -12,5 +12,17 @@ export type TenantAuthorizationRequirement =
       readonly permissions: readonly [TenantPermission, ...TenantPermission[]];
     }
   | {
+      readonly type: 'ALL';
+      readonly permissions: readonly [TenantPermission, ...TenantPermission[]];
+    }
+  | {
       readonly type: 'EXEMPT';
+    }
+  | {
+      readonly type: 'CONDITIONAL';
     };
+
+export type TenantPermissionRequirement = Extract<
+  TenantAuthorizationRequirement,
+  { readonly type: 'ONE' | 'ANY' | 'ALL' }
+>;

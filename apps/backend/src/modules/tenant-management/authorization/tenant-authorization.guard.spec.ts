@@ -11,7 +11,14 @@ import { err, ok } from 'neverthrow';
 import { IS_PUBLIC_KEY } from 'src/core/decorators/public.decorator';
 import { AUTH_ACTOR_TYPES, type AuthActor } from 'src/modules/tenant-management/auth/shared/auth.types';
 
-import { RequireAnyPermission, RequirePermission, AuthorizationExempt } from './tenant-authorization.decorators';
+import {
+  AuthorizationExempt,
+  ConditionalAuthorization,
+  RequireAllPermissions,
+  RequireAnyPermission,
+  RequirePermission,
+} from './tenant-authorization.decorators';
+import { TenantAuthorizationHttpEnforcer } from './tenant-authorization-http.enforcer';
 import { TenantAuthorization } from './tenant-authorization.public-api';
 import { TenantAuthorizationGuard } from './tenant-authorization.guard';
 
@@ -27,8 +34,12 @@ describe('TenantAuthorizationGuard', () => {
       getEffectivePermissions: jest.fn(),
       hasPermission: jest.fn(),
       hasAnyPermission: jest.fn(),
+      hasAllPermissions: jest.fn(),
     } as unknown as jest.Mocked<TenantAuthorization>;
-    const guard = new TenantAuthorizationGuard(new Reflector(), tenantAuthorization);
+    const guard = new TenantAuthorizationGuard(
+      new Reflector(),
+      new TenantAuthorizationHttpEnforcer(tenantAuthorization),
+    );
 
     return {
       guard,
@@ -94,6 +105,28 @@ describe('TenantAuthorizationGuard', () => {
     await expect(test.guard.canActivate(test.contextFor(handler).context)).rejects.toBeInstanceOf(ForbiddenException);
   });
 
+  it('allows all-of when every permission is present', async () => {
+    const test = fixture();
+    test.tenantAuthorization.hasAllPermissions.mockResolvedValue(ok(true));
+    const handler = () => undefined;
+    RequireAllPermissions(TenantPermission.ProductsManage, TenantPermission.ProductsAvailabilityManage)(handler);
+
+    await expect(test.guard.canActivate(test.contextFor(handler).context)).resolves.toBe(true);
+    expect(test.tenantAuthorization.hasAllPermissions).toHaveBeenCalledWith(
+      { tenantId: 'tenant-1', tenantUserId: 'user-1' },
+      [TenantPermission.ProductsManage, TenantPermission.ProductsAvailabilityManage],
+    );
+  });
+
+  it('denies with 403 when one all-of permission is absent', async () => {
+    const test = fixture();
+    test.tenantAuthorization.hasAllPermissions.mockResolvedValue(ok(false));
+    const handler = () => undefined;
+    RequireAllPermissions(TenantPermission.ProductsManage, TenantPermission.ProductsAvailabilityManage)(handler);
+
+    await expect(test.guard.canActivate(test.contextFor(handler).context)).rejects.toBeInstanceOf(ForbiddenException);
+  });
+
   it('allows an exempt declaration without evaluating permissions', async () => {
     const test = fixture();
     const handler = () => undefined;
@@ -102,6 +135,18 @@ describe('TenantAuthorizationGuard', () => {
     await expect(test.guard.canActivate(test.contextFor(handler).context)).resolves.toBe(true);
     expect(test.tenantAuthorization.hasPermission).not.toHaveBeenCalled();
     expect(test.tenantAuthorization.hasAnyPermission).not.toHaveBeenCalled();
+    expect(test.tenantAuthorization.hasAllPermissions).not.toHaveBeenCalled();
+  });
+
+  it('allows conditional authorization to proceed without evaluating permissions', async () => {
+    const test = fixture();
+    const handler = () => undefined;
+    ConditionalAuthorization()(handler);
+
+    await expect(test.guard.canActivate(test.contextFor(handler).context)).resolves.toBe(true);
+    expect(test.tenantAuthorization.hasPermission).not.toHaveBeenCalled();
+    expect(test.tenantAuthorization.hasAnyPermission).not.toHaveBeenCalled();
+    expect(test.tenantAuthorization.hasAllPermissions).not.toHaveBeenCalled();
   });
 
   it('allows missing metadata during transition mode', async () => {

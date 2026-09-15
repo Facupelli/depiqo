@@ -1,9 +1,11 @@
+import { TenantPermission } from '@repo/api-contracts';
 import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
 
 import { CurrentUser } from 'src/core/decorators/current-user.decorator';
 import { createProblemDetails, createProblemType, ProblemException } from 'src/core/problem-details';
 import { AuthUser } from 'src/modules/tenant-management/auth/shared/auth.types';
+import { RequireAllPermissions } from 'src/modules/tenant-management/authorization/tenant-authorization.decorators';
 import { CreatePackageCommand } from './create-package.command';
 import { CreatePackageError, CreatePackageErrorCode } from './create-package.errors';
 import { CreatePackageServiceResult } from './create-package.handler';
@@ -16,6 +18,7 @@ export class CreatePackageHttpController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
+  @RequireAllPermissions(TenantPermission.ProductsManage, TenantPermission.ProductsAvailabilityManage)
   async create(@Body() dto: CreatePackageRequestDto, @CurrentUser() user: AuthUser): Promise<CreatePackageResponseDto> {
     const result = await this.commandBus.execute<CreatePackageCommand, CreatePackageServiceResult>(
       new CreatePackageCommand({

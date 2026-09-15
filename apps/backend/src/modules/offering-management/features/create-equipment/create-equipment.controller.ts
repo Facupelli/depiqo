@@ -1,9 +1,12 @@
 import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
+import { TenantPermission } from '@repo/api-contracts';
 
 import { CurrentUser } from 'src/core/decorators/current-user.decorator';
 import { createProblemDetails, createProblemType, ProblemException } from 'src/core/problem-details';
 import { AuthUser } from 'src/modules/tenant-management/auth/shared/auth.types';
+import { RequirePermission } from 'src/modules/tenant-management/authorization/tenant-authorization.decorators';
+import { TenantAuthorizationHttpEnforcer } from 'src/modules/tenant-management/authorization/tenant-authorization-http.enforcer';
 import { CreateEquipmentCommand } from './create-equipment.command';
 import { CreateEquipmentError, CreateEquipmentErrorCode } from './create-equipment.errors';
 import { CreateEquipmentServiceResult } from './create-equipment.handler';
@@ -12,14 +15,25 @@ import { CreateEquipmentResponseDto } from './create-equipment.response.dto';
 
 @Controller('offering-setup/equipment')
 export class CreateEquipmentHttpController {
-  constructor(private readonly commandBus: CommandBus) {}
+  constructor(
+    private readonly commandBus: CommandBus,
+    private readonly authorizationEnforcer: TenantAuthorizationHttpEnforcer,
+  ) {}
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
+  @RequirePermission(TenantPermission.InventoryManage)
   async create(
     @Body() dto: CreateEquipmentRequestDto,
     @CurrentUser() user: AuthUser,
   ): Promise<CreateEquipmentResponseDto> {
+    if (dto.standaloneRental !== undefined) {
+      await this.authorizationEnforcer.requireAllPermissions(user, [
+        TenantPermission.ProductsManage,
+        TenantPermission.ProductsAvailabilityManage,
+      ]);
+    }
+
     const result = await this.commandBus.execute<CreateEquipmentCommand, CreateEquipmentServiceResult>(
       new CreateEquipmentCommand({
         tenantId: user.tenantId,

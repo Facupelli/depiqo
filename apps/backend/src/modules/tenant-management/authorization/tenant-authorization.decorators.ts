@@ -25,8 +25,26 @@ export function RequireAnyPermission(
   });
 }
 
+export function RequireAllPermissions(
+  permission: TenantPermission,
+  ...additionalPermissions: TenantPermission[]
+): AuthorizationDeclarationDecorator {
+  if (permission === undefined) {
+    throw new TypeError('RequireAllPermissions requires at least one tenant permission.');
+  }
+
+  return authorizationRequirement({
+    type: 'ALL',
+    permissions: Object.freeze([permission, ...additionalPermissions]),
+  });
+}
+
 export function AuthorizationExempt(): AuthorizationDeclarationDecorator {
   return authorizationRequirement({ type: 'EXEMPT' });
+}
+
+export function ConditionalAuthorization(): AuthorizationDeclarationDecorator {
+  return authorizationRequirement({ type: 'CONDITIONAL' });
 }
 
 function authorizationRequirement(requirement: TenantAuthorizationRequirement): AuthorizationDeclarationDecorator {

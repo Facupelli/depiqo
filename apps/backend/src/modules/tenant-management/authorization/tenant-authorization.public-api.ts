@@ -38,4 +38,9 @@ export abstract class TenantAuthorization {
     subject: TenantAuthorizationSubject,
     permissions: readonly TenantPermission[],
   ): Promise<Result<boolean, TenantAuthorizationError>>;
+
+  abstract hasAllPermissions(
+    subject: TenantAuthorizationSubject,
+    permissions: readonly [TenantPermission, ...TenantPermission[]],
+  ): Promise<Result<boolean, TenantAuthorizationError>>;
 }

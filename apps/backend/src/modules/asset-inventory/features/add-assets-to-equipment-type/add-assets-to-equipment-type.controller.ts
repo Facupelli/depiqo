@@ -1,9 +1,12 @@
 import { Body, Controller, HttpCode, HttpStatus, Param, Post } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
+import { TenantPermission } from '@repo/api-contracts';
 
 import { CurrentUser } from 'src/core/decorators/current-user.decorator';
 import { createProblemDetails, createProblemType, ProblemException } from 'src/core/problem-details';
 import { AuthUser } from 'src/modules/tenant-management/auth/shared/auth.types';
+import { RequirePermission } from 'src/modules/tenant-management/authorization/tenant-authorization.decorators';
+import { TenantAuthorizationHttpEnforcer } from 'src/modules/tenant-management/authorization/tenant-authorization-http.enforcer';
 
 import { AddAssetsToEquipmentTypeCommand } from './add-assets-to-equipment-type.command';
 import {
@@ -19,15 +22,23 @@ import { AddAssetsToEquipmentTypeResponseDto } from './add-assets-to-equipment-t
 
 @Controller('asset-inventory/equipment-types/:equipmentTypeId/assets')
 export class AddAssetsToEquipmentTypeHttpController {
-  constructor(private readonly commandBus: CommandBus) {}
+  constructor(
+    private readonly commandBus: CommandBus,
+    private readonly authorizationEnforcer: TenantAuthorizationHttpEnforcer,
+  ) {}
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
+  @RequirePermission(TenantPermission.InventoryManage)
   async create(
     @Param() params: AddAssetsToEquipmentTypeParamsDto,
     @Body() dto: AddAssetsToEquipmentTypeRequestDto,
     @CurrentUser() user: AuthUser,
   ): Promise<AddAssetsToEquipmentTypeResponseDto> {
+    if (dto.assets.some((asset) => asset.ownerId !== undefined && asset.ownerId !== null)) {
+      await this.authorizationEnforcer.requirePermission(user, TenantPermission.InventoryOwnershipManage);
+    }
+
     const result = await this.commandBus.execute<
       AddAssetsToEquipmentTypeCommand,
       AddAssetsToEquipmentTypeServiceResult

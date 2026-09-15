@@ -63,6 +63,99 @@ describe('Rental Commitment and Contracts HTTP authorization', () => {
     await denied.withCsrf(denied.request().put(path)).send(body).expect(403);
   });
 
+  it('conditionally protects manual pricing on draft rental creation', async () => {
+    const tenant = await fixtures.createTenant();
+    const proposalOnly = await clientWithPermissions(tenant.id, [TenantPermission.RentalsProposalsManage]);
+    const priceOnly = await clientWithPermissions(tenant.id, [TenantPermission.RentalsPriceAdjustmentManage]);
+    const fullyAllowed = await clientWithPermissions(tenant.id, [
+      TenantPermission.RentalsProposalsManage,
+      TenantPermission.RentalsPriceAdjustmentManage,
+    ]);
+    const ordinaryBody = {
+      branchId: randomUUID(),
+      period: { start: '2027-01-10T10:00:00-03:00', end: '2027-01-11T10:00:00-03:00' },
+      selectedOffers: [],
+      fulfillmentMethod: 'PICKUP',
+    };
+    const path = '/rental-commitments/draft-rentals';
+
+    await proposalOnly.withCsrf(proposalOnly.request().post(path)).send(ordinaryBody).expect(422);
+    await proposalOnly
+      .withCsrf(proposalOnly.request().post(path))
+      .send({ ...ordinaryBody, manualPricingAdjustment: { mode: 'TARGET_TOTAL', targetTotal: '100' } })
+      .expect(403);
+    await fullyAllowed
+      .withCsrf(fullyAllowed.request().post(path))
+      .send({ ...ordinaryBody, manualPricingAdjustment: { mode: 'TARGET_TOTAL', targetTotal: '100' } })
+      .expect(422);
+    await priceOnly.withCsrf(priceOnly.request().post(path)).send(ordinaryBody).expect(403);
+  });
+
+  it('conditionally protects manual pricing on draft rental updates', async () => {
+    const tenant = await fixtures.createTenant();
+    const proposalOnly = await clientWithPermissions(tenant.id, [TenantPermission.RentalsProposalsManage]);
+    const priceOnly = await clientWithPermissions(tenant.id, [TenantPermission.RentalsPriceAdjustmentManage]);
+    const fullyAllowed = await clientWithPermissions(tenant.id, [
+      TenantPermission.RentalsProposalsManage,
+      TenantPermission.RentalsPriceAdjustmentManage,
+    ]);
+    const path = `/rental-commitments/draft-rentals/${randomUUID()}`;
+    const ordinaryBody = {
+      expectedVersion: 0,
+      branchId: randomUUID(),
+      period: { start: '2027-01-10T10:00:00-03:00', end: '2027-01-11T10:00:00-03:00' },
+      selectedOffers: [],
+      fulfillmentMethod: 'PICKUP',
+    };
+
+    await proposalOnly.withCsrf(proposalOnly.request().put(path)).send(ordinaryBody).expect(404);
+    await proposalOnly
+      .withCsrf(proposalOnly.request().put(path))
+      .send({ ...ordinaryBody, manualPricingAdjustment: { mode: 'TARGET_TOTAL', targetTotal: '100' } })
+      .expect(403);
+    await fullyAllowed
+      .withCsrf(fullyAllowed.request().put(path))
+      .send({ ...ordinaryBody, manualPricingAdjustment: { mode: 'TARGET_TOTAL', targetTotal: '100' } })
+      .expect(404);
+    await priceOnly.withCsrf(priceOnly.request().put(path)).send(ordinaryBody).expect(403);
+  });
+
+  it('conditionally protects changes and explicit clearing of confirmed rental manual pricing', async () => {
+    const tenant = await fixtures.createTenant();
+    const confirmedOnly = await clientWithPermissions(tenant.id, [TenantPermission.RentalsConfirmedManage]);
+    const priceOnly = await clientWithPermissions(tenant.id, [TenantPermission.RentalsPriceAdjustmentManage]);
+    const fullyAllowed = await clientWithPermissions(tenant.id, [
+      TenantPermission.RentalsConfirmedManage,
+      TenantPermission.RentalsPriceAdjustmentManage,
+    ]);
+    const path = `/rental-commitments/confirmed-rentals/${randomUUID()}/details`;
+
+    await confirmedOnly
+      .withCsrf(confirmedOnly.request().patch(path))
+      .send({ expectedVersion: 0, notes: 'Ordinary edit' })
+      .expect(404);
+    await confirmedOnly
+      .withCsrf(confirmedOnly.request().patch(path))
+      .send({ expectedVersion: 0, manualPricingAdjustment: { mode: 'TARGET_TOTAL', targetTotal: '100' } })
+      .expect(403);
+    await fullyAllowed
+      .withCsrf(fullyAllowed.request().patch(path))
+      .send({ expectedVersion: 0, manualPricingAdjustment: { mode: 'TARGET_TOTAL', targetTotal: '100' } })
+      .expect(404);
+    await confirmedOnly
+      .withCsrf(confirmedOnly.request().patch(path))
+      .send({ expectedVersion: 0, manualPricingAdjustment: null })
+      .expect(403);
+    await fullyAllowed
+      .withCsrf(fullyAllowed.request().patch(path))
+      .send({ expectedVersion: 0, manualPricingAdjustment: null })
+      .expect(404);
+    await priceOnly
+      .withCsrf(priceOnly.request().patch(path))
+      .send({ expectedVersion: 0, notes: 'No base permission' })
+      .expect(403);
+  });
+
   it('enforces rentals.confirm independently from proposal management', async () => {
     const tenant = await fixtures.createTenant();
     const allowed = await clientWithPermissions(tenant.id, [TenantPermission.RentalsConfirm]);

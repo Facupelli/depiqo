@@ -21,6 +21,7 @@
     "test:cov": "jest --config jest.config.ts --coverage",
     "test:integration": "tsx test/support/run-db-tests.ts jest.config.integration.ts",
     "test:e2e": "tsx test/support/run-db-tests.ts jest.config.e2e.ts",
+    "audit:http-authorization": "tsx test/audits/http-authorization-completeness.ts",
     "test:db:ci": "pnpm run test:integration && pnpm run test:e2e",
     "migrate:deploy": "prisma migrate deploy",
     "migrate:tenant-to-v2": "tsx src/scripts/migrate-tenant-to-v2/migrate-tenant-to-v2.ts",
