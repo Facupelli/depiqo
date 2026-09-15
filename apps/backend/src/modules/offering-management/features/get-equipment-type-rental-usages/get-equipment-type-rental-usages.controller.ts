@@ -1,9 +1,12 @@
+import { TenantPermission } from '@repo/api-contracts';
+
 import { Controller, Get, HttpStatus, Param } from '@nestjs/common';
 import { QueryBus } from '@nestjs/cqrs';
 
 import { CurrentUser } from 'src/core/decorators/current-user.decorator';
 import { createProblemDetails, createProblemType, ProblemException } from 'src/core/problem-details';
 import { AuthUser } from 'src/modules/tenant-management/auth/shared/auth.types';
+import { RequireAnyPermission } from 'src/modules/tenant-management/authorization/tenant-authorization.decorators';
 
 import {
   GetEquipmentTypeRentalUsagesError,
@@ -19,6 +22,14 @@ export class GetEquipmentTypeRentalUsagesHttpController {
   constructor(private readonly queryBus: QueryBus) {}
 
   @Get(':equipmentTypeId/rental-usages')
+  @RequireAnyPermission(
+    TenantPermission.InventoryRead,
+    TenantPermission.InventoryManage,
+    TenantPermission.ProductsRead,
+    TenantPermission.ProductsManage,
+    TenantPermission.ProductsAvailabilityManage,
+    TenantPermission.PricingManage,
+  )
   async getRentalUsages(
     @Param() params: GetEquipmentTypeRentalUsagesParamsDto,
     @CurrentUser() user: AuthUser,

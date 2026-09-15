@@ -2,7 +2,10 @@ import { Controller, HttpCode, HttpStatus, Param, Post } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
 import { Result } from 'neverthrow';
 
+import { TenantPermission } from '@repo/api-contracts';
+
 import { createProblemDetails, createProblemType, ProblemException } from 'src/core/problem-details';
+import { RequirePermission } from 'src/modules/tenant-management/authorization/tenant-authorization.decorators';
 
 import { AuthUser } from '../../../tenant-management/auth/shared/auth.types';
 import { CurrentUser } from '../../../tenant-management/auth/shared/current-user/current-user.decorator';
@@ -15,6 +18,7 @@ export class ArchiveRentableItemHttpController {
   constructor(private readonly commandBus: CommandBus) {}
 
   @Post(':rentableItemId/archive')
+  @RequirePermission(TenantPermission.ProductsManage)
   @HttpCode(HttpStatus.NO_CONTENT)
   async archiveRentableItem(
     @Param() params: ArchiveRentableItemRequestDto,
