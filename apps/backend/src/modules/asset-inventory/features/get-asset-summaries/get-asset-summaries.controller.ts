@@ -1,8 +1,10 @@
+import { TenantPermission } from '@repo/api-contracts';
 import { Controller, Get, Query } from '@nestjs/common';
 import { QueryBus } from '@nestjs/cqrs';
 
 import { CurrentUser } from 'src/core/decorators/current-user.decorator';
 import { AuthUser } from 'src/modules/tenant-management/auth/shared/auth.types';
+import { RequireAnyPermission } from 'src/modules/tenant-management/authorization/tenant-authorization.decorators';
 import { GetAssetSummariesResult } from './get-asset-summaries.handler';
 import { GetAssetSummariesQuery } from './get-asset-summaries.query';
 import { GetAssetSummariesRequestDto } from './get-asset-summaries.request.dto';
@@ -12,6 +14,7 @@ import type { GetAssetSummariesResponseDto } from './get-asset-summaries.respons
 export class GetAssetSummariesHttpController {
   constructor(private readonly queryBus: QueryBus) {}
 
+  @RequireAnyPermission(TenantPermission.InventoryRead, TenantPermission.InventoryManage, TenantPermission.RentalsRead)
   @Get()
   async getAssetSummaries(
     @Query() dto: GetAssetSummariesRequestDto,

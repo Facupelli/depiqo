@@ -1,9 +1,11 @@
+import { TenantPermission } from '@repo/api-contracts';
 import { Controller, HttpCode, HttpStatus, Param, Post } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
 
 import { CurrentUser } from 'src/core/decorators/current-user.decorator';
 import { createProblemDetails, createProblemType, ProblemException } from 'src/core/problem-details';
 import { AuthUser } from 'src/modules/tenant-management/auth/shared/auth.types';
+import { RequirePermission } from 'src/modules/tenant-management/authorization/tenant-authorization.decorators';
 
 import { DeactivateAssetCommand } from './deactivate-asset.command';
 import { DeactivateAssetError, DeactivateAssetErrorCode } from './deactivate-asset.errors';
@@ -14,6 +16,7 @@ import { DeactivateAssetParamsDto } from './deactivate-asset.request.dto';
 export class DeactivateAssetHttpController {
   constructor(private readonly commandBus: CommandBus) {}
 
+  @RequirePermission(TenantPermission.InventoryManage)
   @Post(':assetId/deactivate')
   @HttpCode(HttpStatus.NO_CONTENT)
   async deactivate(@Param() params: DeactivateAssetParamsDto, @CurrentUser() user: AuthUser): Promise<void> {

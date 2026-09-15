@@ -1,9 +1,11 @@
+import { TenantPermission } from '@repo/api-contracts';
 import { Body, Controller, HttpCode, HttpStatus, Param, Put } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
 
 import { CurrentUser } from 'src/core/decorators/current-user.decorator';
 import { createProblemDetails, createProblemType, ProblemException } from 'src/core/problem-details';
 import { AuthUser } from 'src/modules/tenant-management/auth/shared/auth.types';
+import { RequirePermission } from 'src/modules/tenant-management/authorization/tenant-authorization.decorators';
 
 import { ReplaceEquipmentTypeAccessoryDefaultsCommand } from './replace-equipment-type-accessory-defaults.command';
 import {
@@ -20,6 +22,7 @@ import {
 export class ReplaceEquipmentTypeAccessoryDefaultsHttpController {
   constructor(private readonly commandBus: CommandBus) {}
 
+  @RequirePermission(TenantPermission.InventoryManage)
   @Put()
   @HttpCode(HttpStatus.NO_CONTENT)
   async replace(

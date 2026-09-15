@@ -1,8 +1,10 @@
+import { TenantPermission } from '@repo/api-contracts';
 import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
 
 import { CurrentUser } from 'src/core/decorators/current-user.decorator';
 import { AuthUser } from 'src/modules/tenant-management/auth/shared/auth.types';
+import { RequirePermission } from 'src/modules/tenant-management/authorization/tenant-authorization.decorators';
 
 import { CreateOwnerWithContractCommand } from './create-owner-with-contract.command';
 import { CreateOwnerWithContractResult } from './create-owner-with-contract.handler';
@@ -13,6 +15,7 @@ import { CreateOwnerWithContractResponseDto } from './create-owner-with-contract
 export class CreateOwnerWithContractHttpController {
   constructor(private readonly commandBus: CommandBus) {}
 
+  @RequirePermission(TenantPermission.InventoryOwnershipManage)
   @Post()
   @HttpCode(HttpStatus.CREATED)
   async create(

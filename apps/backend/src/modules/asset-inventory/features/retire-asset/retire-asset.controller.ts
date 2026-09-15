@@ -1,9 +1,11 @@
+import { TenantPermission } from '@repo/api-contracts';
 import { Controller, HttpCode, HttpStatus, Param, Post } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
 
 import { CurrentUser } from 'src/core/decorators/current-user.decorator';
 import { createProblemDetails, createProblemType, ProblemException } from 'src/core/problem-details';
 import { AuthUser } from 'src/modules/tenant-management/auth/shared/auth.types';
+import { RequirePermission } from 'src/modules/tenant-management/authorization/tenant-authorization.decorators';
 
 import { RetireAssetCommand } from './retire-asset.command';
 import { RetireAssetError, RetireAssetErrorCode } from './retire-asset.errors';
@@ -14,6 +16,7 @@ import { RetireAssetParamsDto } from './retire-asset.request.dto';
 export class RetireAssetHttpController {
   constructor(private readonly commandBus: CommandBus) {}
 
+  @RequirePermission(TenantPermission.InventoryManage)
   @Post(':assetId/retire')
   @HttpCode(HttpStatus.NO_CONTENT)
   async retire(@Param() params: RetireAssetParamsDto, @CurrentUser() user: AuthUser): Promise<void> {
