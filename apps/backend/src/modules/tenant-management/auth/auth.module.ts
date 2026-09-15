@@ -36,6 +36,8 @@ import { StorefrontTenantCustomerSessionGuard } from './shared/session/storefron
 import { StorefrontTenantContextGuard } from '../tenant-context/guards/storefront-tenant-context.guard';
 import { TenantUserSessionGuard } from './shared/session/tenant-user-session.guard';
 import { WorkingBranchSessionService } from './shared/session/working-branch-session.service';
+import { TenantAuthorizationModule } from '../authorization/tenant-authorization.module';
+import { TenantAuthorizationGuard } from '../authorization/tenant-authorization.guard';
 
 @Module({
   imports: [
@@ -43,6 +45,7 @@ import { WorkingBranchSessionService } from './shared/session/working-branch-ses
       session: true,
     }),
     JwtModule.register({}),
+    TenantAuthorizationModule,
   ],
   controllers: [
     CustomerGoogleFinalizeController,
@@ -86,6 +89,10 @@ import { WorkingBranchSessionService } from './shared/session/working-branch-ses
     {
       provide: APP_GUARD,
       useClass: AuthActorAccessGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: TenantAuthorizationGuard,
     },
   ],
   exports: [PasswordService, SessionAuthGuard, StorefrontTenantContextGuard, StorefrontTenantCustomerSessionGuard],
