@@ -40,6 +40,7 @@ describe('RestoreConfirmedPackageDemandLineHandler', () => {
       period: { start: new Date('2030-01-01T00:00:00.000Z'), end: new Date('2030-01-05T00:00:00.000Z') },
       acceptedDelivery: undefined,
       demandLines: [demandLine],
+      selections: [{ id: 'selection-1', rentableItemKindSnapshot: 'PACKAGE', isCurrent: true }],
       currentSelections: [{ id: 'selection-1' }],
       currentDemandLines: [demandLine],
       currentAssignedAssets: [],
@@ -154,6 +155,21 @@ describe('RestoreConfirmedPackageDemandLineHandler', () => {
     expect(rental.restoreConfirmedPackageDemandLine).not.toHaveBeenCalled();
     expect(rentalRepository.save).not.toHaveBeenCalled();
     expect(integrationEvents.collect).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['removed parent', { rentableItemKindSnapshot: 'PACKAGE', isCurrent: false }],
+    ['non-package parent', { rentableItemKindSnapshot: 'SINGLE', isCurrent: false }],
+  ])('rejects a %s before allocation', async (_name, parentState) => {
+    const { rental } = createRental();
+    Object.assign(rental.selections[0], parentState);
+    const { handler, rentalRepository, allocation } = createHandler(rental);
+
+    const result = await handler.execute(command);
+
+    expect(result.isErr() && result.error.code).toBe('rental_commitment.invalid_rental_field');
+    expect(allocation.planAllocations).not.toHaveBeenCalled();
+    expect(rentalRepository.save).not.toHaveBeenCalled();
   });
 
   it('rejects a stale version before allocation', async () => {

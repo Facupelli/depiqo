@@ -15,7 +15,7 @@ import {
   RentalPeriodHasEndedError,
   RentalSelectionNotFoundError,
 } from '../../domain/errors/rental-commitment.errors';
-import { RentalStatus } from '../../domain/rental-status';
+import { RentalStatus, RentableItemKind } from '../../domain/rental-status';
 import { Rental } from '../../domain/rental.aggregate';
 import { RentalPeriod } from '../../domain/value-objects/rental-period.value-object';
 import { getConfirmedPriceSnapshotForOwnerSplits } from '../../owner-split/confirmed-price-snapshot-for-owner-splits';
@@ -84,6 +84,24 @@ export class RestoreConfirmedPackageDemandLineHandler implements ICommandHandler
             this.error(
               'rental_commitment.rental_demand_line_already_current',
               `Rental demand line "${demandLineId}" is already current.`,
+              context,
+            ),
+          );
+        }
+
+        const parentSelection = rental.selections.find((selection) => selection.id === demandLine.rentalSelectionId);
+        if (!parentSelection) {
+          return err(this.map(new RentalSelectionNotFoundError(rentalId, demandLine.rentalSelectionId), context));
+        }
+        if (parentSelection.rentableItemKindSnapshot !== RentableItemKind.Package || !parentSelection.isCurrent) {
+          return err(
+            this.map(
+              new RentalInvalidFieldError(
+                'demandLineId',
+                parentSelection.rentableItemKindSnapshot !== RentableItemKind.Package
+                  ? 'must belong to a PACKAGE selection'
+                  : 'must belong to a current selection',
+              ),
               context,
             ),
           );
