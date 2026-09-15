@@ -19,20 +19,43 @@ export function useRemovePackageDemandLineDialog({
 	const queryClient = useQueryClient();
 	const mutation = useRemovePackageDemandLine();
 	const [errorMessage, setErrorMessage] = useState<string | null>(null);
+	const [selectedReleaseAssetIds, setSelectedReleaseAssetIds] = useState<
+		Set<string>
+	>(() => new Set());
 	const demandLine = demandLineId
 		? (rental.selections
 				.flatMap((selection) => selection.demandLines)
 				.find((line) => line.id === demandLineId) ?? null)
 		: null;
 
+	function resetState() {
+		setErrorMessage(null);
+		setSelectedReleaseAssetIds(new Set());
+	}
+
 	function handleClose() {
 		if (mutation.isPending) return;
-		setErrorMessage(null);
+		resetState();
 		onClose();
 	}
 
+	function handleReleaseAssetToggle(assetId: string, checked: boolean) {
+		if (mutation.isPending) return;
+		setErrorMessage(null);
+		setSelectedReleaseAssetIds((current) => {
+			const next = new Set(current);
+			if (checked) {
+				next.add(assetId);
+			} else {
+				next.delete(assetId);
+			}
+			return next;
+		});
+	}
+
 	async function handleSubmit() {
-		if (!demandLine || mutation.isPending) return;
+		if (!demandLine || mutation.isPending || selectedReleaseAssetIds.size === 0)
+			return;
 		setErrorMessage(null);
 
 		try {
@@ -40,9 +63,12 @@ export function useRemovePackageDemandLineDialog({
 				rentalId: rental.id,
 				demandLineId: demandLine.id,
 				expectedVersion: rental.version,
+				quantity: selectedReleaseAssetIds.size,
+				releaseAssetIds: [...selectedReleaseAssetIds],
 			});
 			toast.success("Equipo quitado del combo");
-			handleClose();
+			resetState();
+			onClose();
 		} catch (error) {
 			const uiError = toRemovePackageDemandLineUiError(error);
 			setErrorMessage(uiError.message);
@@ -52,7 +78,8 @@ export function useRemovePackageDemandLineDialog({
 					await queryClient.fetchQuery(
 						rentalDetailViewQueries.detail(rental.id),
 					);
-					handleClose();
+					resetState();
+					onClose();
 				} catch {
 					setErrorMessage(
 						`${uiError.message} No pudimos actualizar el alquiler. Revisá tu conexión e intentá actualizar la página.`,
@@ -64,9 +91,12 @@ export function useRemovePackageDemandLineDialog({
 
 	return {
 		demandLine,
+		selectedReleaseAssetIds,
 		errorMessage,
 		isSubmitting: mutation.isPending,
-		onTargetChange: () => setErrorMessage(null),
+		isSubmitDisabled: mutation.isPending || selectedReleaseAssetIds.size === 0,
+		onReleaseAssetToggle: handleReleaseAssetToggle,
+		onTargetChange: resetState,
 		onOpenChange: (open: boolean) => {
 			if (!open) handleClose();
 		},

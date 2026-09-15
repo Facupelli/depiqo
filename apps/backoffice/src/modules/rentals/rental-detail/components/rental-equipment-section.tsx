@@ -119,16 +119,25 @@ export function RentalEquipmentSection() {
 				open={removePackageDemandLineId !== null}
 				onOpenChange={removePackageDemandLineDialog.onOpenChange}
 				demandLine={removePackageDemandLineDialog.demandLine}
+				selectedReleaseAssetIds={
+					removePackageDemandLineDialog.selectedReleaseAssetIds
+				}
 				isPending={removePackageDemandLineDialog.isSubmitting}
+				isSubmitDisabled={removePackageDemandLineDialog.isSubmitDisabled}
 				errorMessage={removePackageDemandLineDialog.errorMessage}
+				onReleaseAssetToggle={
+					removePackageDemandLineDialog.onReleaseAssetToggle
+				}
 				onConfirm={removePackageDemandLineDialog.onSubmit}
 			/>
 			<RestorePackageDemandLineAlertDialog
 				open={restorePackageDemandLineId !== null}
 				onOpenChange={restorePackageDemandLineDialog.onOpenChange}
-				demandLine={restorePackageDemandLineDialog.demandLine}
+				target={restorePackageDemandLineDialog.target}
+				quantity={restorePackageDemandLineDialog.quantity}
 				isPending={restorePackageDemandLineDialog.isSubmitting}
 				errorMessage={restorePackageDemandLineDialog.errorMessage}
+				onQuantityChange={restorePackageDemandLineDialog.onQuantityChange}
 				onConfirm={restorePackageDemandLineDialog.onSubmit}
 			/>
 			<ReplaceAssignedAssetDialog
@@ -169,6 +178,10 @@ export function RentalEquipmentSection() {
 						const hasReferencedAccessories = selection.demandLines.some(
 							(demandLine) => accessoriesByEquipmentLine.has(demandLine.id),
 						);
+						const packageHasSuppressedQuantity =
+							selection.rentableItemKind !== "SINGLE" &&
+							(selection.demandLines.some((line) => line.removedQuantity > 0) ||
+								selection.removedDemandLines.length > 0);
 						const removeDisabledReason =
 							rental.selections.length <= 1
 								? "El pedido debe conservar al menos un producto."
@@ -182,7 +195,7 @@ export function RentalEquipmentSection() {
 								accessoriesByEquipmentLine={accessoriesByEquipmentLine}
 								selection={selection}
 								onEditQuantity={
-									rental.status === "CONFIRMED"
+									rental.status === "CONFIRMED" && !packageHasSuppressedQuantity
 										? () => setQuantitySelection(selection)
 										: undefined
 								}
@@ -469,6 +482,7 @@ function RentalPackageChildrenList({
 					onReplaceAssignedAsset={onReplaceAssignedAsset}
 					onAssignAccessories={onAssignAccessories}
 					onRemove={onRemove}
+					onRestore={onRestore}
 				/>
 			))}
 			{removedItems.length > 0 ? (
@@ -495,12 +509,14 @@ function RentalPackageChildRow({
 	onReplaceAssignedAsset,
 	onAssignAccessories,
 	onRemove,
+	onRestore,
 }: {
 	equipment: RentalDetailViewDemandLineDto;
 	accessories: GetRentalDetailViewResponseDto["accessories"];
 	onReplaceAssignedAsset?: (assetId: string) => void;
 	onAssignAccessories?: (rentalDemandLineId: string) => void;
 	onRemove?: (rentalDemandLineId: string) => void;
+	onRestore?: (rentalDemandLineId: string) => void;
 }) {
 	const owners = getAssetOwners(equipment.assignedAssets);
 	const replaceableAssignedAssets = getReplaceableAssignedAssets(
@@ -516,6 +532,15 @@ function RentalPackageChildRow({
 					</p>
 					<div className="mt-0.5 flex min-w-0 flex-wrap items-baseline gap-x-1.5 text-[11px] text-neutral-500">
 						<QuantityText quantity={equipment.quantity} />
+						{equipment.removedQuantity > 0 ? (
+							<>
+								<span aria-hidden="true">·</span>
+								<span className="whitespace-nowrap text-neutral-400">
+									{equipment.removedQuantity}{" "}
+									{equipment.removedQuantity === 1 ? "quitada" : "quitadas"}
+								</span>
+							</>
+						) : null}
 						<AssignedAssetMetadata assignments={equipment.assignedAssets} />
 					</div>
 					{owners.length > 0 ? (
@@ -536,6 +561,7 @@ function RentalPackageChildRow({
 				</div>
 				{onAssignAccessories ||
 				onRemove ||
+				(onRestore && equipment.removedQuantity > 0) ||
 				(onReplaceAssignedAsset && replaceableAssignedAssets.length > 0) ? (
 					<DemandLineRowActions
 						equipmentTypeName={equipment.equipmentTypeName}
@@ -544,6 +570,9 @@ function RentalPackageChildRow({
 						onAssignAccessories={onAssignAccessories}
 						onReplaceAssignedAsset={onReplaceAssignedAsset}
 						onRemovePackageDemandLine={onRemove}
+						onRestorePackageDemandLine={
+							equipment.removedQuantity > 0 ? onRestore : undefined
+						}
 					/>
 				) : null}
 			</div>

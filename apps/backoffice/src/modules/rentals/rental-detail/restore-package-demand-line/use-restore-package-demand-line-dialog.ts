@@ -19,27 +19,58 @@ export function useRestorePackageDemandLineDialog({
 	const queryClient = useQueryClient();
 	const mutation = useRestorePackageDemandLine();
 	const [errorMessage, setErrorMessage] = useState<string | null>(null);
-	const demandLine = demandLineId
+	const [quantity, setQuantity] = useState(1);
+	const target = demandLineId
 		? (rental.selections
-				.flatMap((selection) => selection.removedDemandLines)
+				.flatMap((selection) => [
+					...selection.removedDemandLines.map((line) => ({
+						id: line.id,
+						equipmentTypeName: line.equipmentTypeName,
+						restorableQuantity: line.quantity,
+					})),
+					...selection.demandLines
+						.filter((line) => line.removedQuantity > 0)
+						.map((line) => ({
+							id: line.id,
+							equipmentTypeName: line.equipmentTypeName,
+							restorableQuantity: line.removedQuantity,
+						})),
+				])
 				.find((line) => line.id === demandLineId) ?? null)
 		: null;
 
+	function resetState() {
+		setErrorMessage(null);
+		setQuantity(1);
+	}
+
 	function handleClose() {
 		if (mutation.isPending) return;
-		setErrorMessage(null);
+		resetState();
 		onClose();
 	}
 
+	function handleQuantityChange(nextQuantity: number) {
+		if (!target || mutation.isPending) return;
+		setQuantity(
+			Math.min(
+				target.restorableQuantity,
+				Math.max(1, Math.trunc(nextQuantity)),
+			),
+		);
+		setErrorMessage(null);
+	}
+
 	async function handleSubmit() {
-		if (!demandLine || mutation.isPending) return;
+		if (!target || mutation.isPending) return;
 		setErrorMessage(null);
 
 		try {
 			await mutation.mutateAsync({
 				rentalId: rental.id,
-				demandLineId: demandLine.id,
+				demandLineId: target.id,
 				expectedVersion: rental.version,
+				quantity,
 			});
 			toast.success("Equipo restaurado en el combo");
 			handleClose();
@@ -63,10 +94,12 @@ export function useRestorePackageDemandLineDialog({
 	}
 
 	return {
-		demandLine,
+		target,
+		quantity,
 		errorMessage,
 		isSubmitting: mutation.isPending,
-		onTargetChange: () => setErrorMessage(null),
+		onQuantityChange: handleQuantityChange,
+		onTargetChange: resetState,
 		onOpenChange: (open: boolean) => {
 			if (!open) handleClose();
 		},
