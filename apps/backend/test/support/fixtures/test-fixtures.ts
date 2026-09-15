@@ -1,7 +1,9 @@
 import type { PrismaService } from 'src/core/database/prisma.service';
+import { TenantAuthorizationRoleProvisioner } from 'src/modules/tenant-management/authorization/tenant-authorization-role.provisioner';
 import { PasswordService } from 'src/modules/tenant-management/auth/shared/password/password.service';
 import { TenantConfig } from 'src/modules/tenant-management/domain/value-objects/tenant-config.value-object';
 import type { Prisma } from 'src/generated/prisma/client';
+import { V2TenantSystemRole, V2UserRole } from 'src/generated/prisma/enums';
 import type {
   V2Branch,
   V2LocalCredential,
@@ -14,7 +16,7 @@ import { randomUUID } from 'node:crypto';
 type TenantOverrides = Partial<
   Omit<Prisma.V2TenantCreateInput, 'branding' | 'branches' | 'contractSigners' | 'domains' | 'rentalCustomers'>
 >;
-type TenantUserOverrides = Partial<Omit<Prisma.V2TenantUserUncheckedCreateInput, 'tenantId'>>;
+type TenantUserOverrides = Partial<Omit<Prisma.V2TenantUserUncheckedCreateInput, 'tenantId' | 'role' | 'roleId'>>;
 type RentalCustomerOverrides = Partial<
   Omit<
     Prisma.V2RentalCustomerUncheckedCreateInput,
@@ -27,6 +29,10 @@ export type CreateTenantUserInput = {
   tenantId: string;
   password?: string;
   overrides?: TenantUserOverrides;
+};
+
+export type CreateTenantUserWithRoleInput = CreateTenantUserInput & {
+  roleId: string;
 };
 
 export type CreateRentalCustomerInput = {
@@ -55,11 +61,9 @@ export type CreateBranchInput = {
 
 export type TestFixtures = {
   createTenant(overrides?: TenantOverrides): Promise<V2Tenant>;
-  createTenantUser(input: CreateTenantUserInput): Promise<{
-    user: V2TenantUser;
-    credential: V2LocalCredential;
-    password: string;
-  }>;
+  createTenantUser(input: CreateTenantUserInput): Promise<TenantUserFixture>;
+  createAdministratorTenantUser(input: CreateTenantUserInput): Promise<TenantUserFixture>;
+  createTenantUserWithRole(input: CreateTenantUserWithRoleInput): Promise<TenantUserFixture>;
   createRentalCustomer(input: CreateRentalCustomerInput): Promise<RentalCustomerFixture>;
   createRentalCustomer(
     input: CreateRentalCustomerWithLocalCredentialInput,
@@ -67,7 +71,14 @@ export type TestFixtures = {
   createBranch(input: CreateBranchInput): Promise<V2Branch>;
 };
 
+export type TenantUserFixture = {
+  user: V2TenantUser;
+  credential: V2LocalCredential;
+  password: string;
+};
+
 export function createTestFixtures(prisma: PrismaService, passwordService = new PasswordService()): TestFixtures {
+  const authorizationRoleProvisioner = new TenantAuthorizationRoleProvisioner();
   async function createRentalCustomer(input: CreateRentalCustomerInput): Promise<RentalCustomerFixture>;
   async function createRentalCustomer(
     input: CreateRentalCustomerWithLocalCredentialInput,
@@ -94,49 +105,89 @@ export function createTestFixtures(prisma: PrismaService, passwordService = new 
     return passwordData ? { customer, password } : { customer };
   }
 
+  async function createTenantUserWithRole({
+    tenantId,
+    roleId,
+    password = 'test-password',
+    overrides = {},
+  }: CreateTenantUserWithRoleInput): Promise<TenantUserFixture> {
+    const passwordData = await passwordService.hashPassword(password);
+
+    return prisma.client.$transaction(async (tx) => {
+      const role = await tx.v2TenantRole.findUnique({
+        where: { tenantId_id: { tenantId, id: roleId } },
+        select: { systemRole: true },
+      });
+      if (!role) {
+        throw new Error(`Cannot create a tenant user with role ${roleId} in tenant ${tenantId}.`);
+      }
+
+      const unique = randomUUID();
+      const user = await tx.v2TenantUser.create({
+        data: {
+          tenantId,
+          roleId,
+          role: role.systemRole === V2TenantSystemRole.ADMIN ? V2UserRole.ADMIN : V2UserRole.USER,
+          email: `user-${unique}@test.local`,
+          name: `Test User ${unique}`,
+          ...overrides,
+        },
+      });
+      const credential = await tx.v2LocalCredential.create({
+        data: {
+          userId: user.id,
+          passwordHash: passwordData.hash,
+          passwordAlgorithm: passwordData.algorithm,
+        },
+      });
+
+      return { user, credential, password };
+    });
+  }
+
   return {
     createTenant: (overrides = {}) => {
       const unique = randomUUID();
 
-      return prisma.client.v2Tenant.create({
-        data: {
-          name: `Test tenant ${unique}`,
-          slug: `test-tenant-${unique}`,
-          config: TenantConfig.default().toPlainObject() as Prisma.InputJsonValue,
-          ...overrides,
-        },
-      });
-    },
-
-    createTenantUser: async ({ tenantId, password = 'test-password', overrides = {} }) => {
-      const passwordData = await passwordService.hashPassword(password);
-
       return prisma.client.$transaction(async (tx) => {
-        const tenant = await tx.v2Tenant.findUnique({ where: { id: tenantId }, select: { id: true } });
-        if (!tenant) {
-          throw new Error(`Cannot create a tenant user for nonexistent tenant ${tenantId}.`);
-        }
-
-        const unique = randomUUID();
-        const user = await tx.v2TenantUser.create({
+        const tenant = await tx.v2Tenant.create({
           data: {
-            tenantId,
-            email: `user-${unique}@test.local`,
-            name: `Test User ${unique}`,
+            name: `Test tenant ${unique}`,
+            slug: `test-tenant-${unique}`,
+            config: TenantConfig.default().toPlainObject() as Prisma.InputJsonValue,
             ...overrides,
           },
         });
-        const credential = await tx.v2LocalCredential.create({
-          data: {
-            userId: user.id,
-            passwordHash: passwordData.hash,
-            passwordAlgorithm: passwordData.algorithm,
-          },
-        });
-
-        return { user, credential, password };
+        await authorizationRoleProvisioner.provision(tx, tenant.id);
+        return tenant;
       });
     },
+
+    createTenantUser: async (input) => {
+      const member = await prisma.client.v2TenantRole.findUnique({
+        where: { tenantId_name: { tenantId: input.tenantId, name: 'Miembro' } },
+        select: { id: true },
+      });
+      if (!member) {
+        throw new Error(`Cannot create a Miembro tenant user for tenant ${input.tenantId}.`);
+      }
+
+      return createTenantUserWithRole({ ...input, roleId: member.id });
+    },
+
+    createAdministratorTenantUser: async (input) => {
+      const administrator = await prisma.client.v2TenantRole.findUnique({
+        where: { tenantId_systemRole: { tenantId: input.tenantId, systemRole: V2TenantSystemRole.ADMIN } },
+        select: { id: true },
+      });
+      if (!administrator) {
+        throw new Error(`Cannot create an Administrator tenant user for tenant ${input.tenantId}.`);
+      }
+
+      return createTenantUserWithRole({ ...input, roleId: administrator.id });
+    },
+
+    createTenantUserWithRole,
 
     createRentalCustomer,
 

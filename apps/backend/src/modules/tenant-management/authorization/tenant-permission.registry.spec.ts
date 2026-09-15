@@ -14,6 +14,11 @@ import {
   parseTenantPermission,
 } from './tenant-permission.registry';
 
+const MEMBER_PERMISSION_BACKFILL_PATH = join(
+  __dirname,
+  '../../../../prisma/migrations/20260909000000_backfill_default_member_tenant_permissions/migration.sql',
+);
+
 const EXPECTED_PERMISSION_IDS = [
   'rentals.read',
   'rentals.proposals.manage',
@@ -94,6 +99,21 @@ describe('tenant permission registry', () => {
     expect(DEFAULT_MEMBER_TENANT_PERMISSIONS).toHaveLength(24);
     expect(DEFAULT_MEMBER_TENANT_PERMISSIONS).not.toContain(TenantPermission.TeamRead);
     expect(DEFAULT_MEMBER_TENANT_PERMISSIONS).not.toContain(TenantPermission.TeamManage);
+  });
+
+  it('keeps the migration Member baseline synchronized with the application baseline', () => {
+    const migration = readFileSync(MEMBER_PERMISSION_BACKFILL_PATH, 'utf8');
+    const valuesBlock = migration.match(
+      /WITH default_member_permission\(permission\) AS \(\s*VALUES(?<values>[\s\S]*?)\s*\)\s*INSERT INTO/,
+    );
+    const migrationPermissions = [...(valuesBlock?.groups?.values.matchAll(/\('([^']+)'\)/g) ?? [])].map(
+      ([, permission]) => permission,
+    );
+
+    expect(valuesBlock).not.toBeNull();
+    expect(migrationPermissions).toEqual(DEFAULT_MEMBER_TENANT_PERMISSIONS);
+    expect(migrationPermissions).not.toContain(TenantPermission.TeamRead);
+    expect(migrationPermissions).not.toContain(TenantPermission.TeamManage);
   });
 
   it('does not depend on generated Prisma or the legacy permission enum', () => {

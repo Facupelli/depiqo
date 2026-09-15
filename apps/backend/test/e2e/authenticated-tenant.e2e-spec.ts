@@ -3,7 +3,13 @@ import { randomUUID } from 'node:crypto';
 import request from 'supertest';
 
 import { PrismaService } from '../../src/core/database/prisma.service';
-import { V2TenantStatus, V2UserStatus } from '../../src/generated/prisma/enums';
+import { V2TenantStatus, V2UserRole, V2UserStatus } from '../../src/generated/prisma/enums';
+import { TenantAuthorization } from '../../src/modules/tenant-management/authorization/tenant-authorization.public-api';
+import { TenantAuthorizationRoleProvisioner } from '../../src/modules/tenant-management/authorization/tenant-authorization-role.provisioner';
+import {
+  ALL_TENANT_PERMISSIONS,
+  DEFAULT_MEMBER_TENANT_PERMISSIONS,
+} from '../../src/modules/tenant-management/authorization/tenant-permission.registry';
 import { PasswordService } from '../../src/modules/tenant-management/auth/shared/password/password.service';
 import { EmailDeliveryPort } from '../../src/modules/notifications/application/ports/email-delivery.port';
 import { ObjectStoragePort } from '../../src/modules/object-storage/application/ports/object-storage.port';
@@ -69,15 +75,49 @@ describe('authenticated tenant HTTP flow', () => {
     const registered = registration.body.data as { tenantId: string; tenantUserId: string };
     const user = await prisma.client.v2TenantUser.findUnique({
       where: { id: registered.tenantUserId },
-      include: { localCredential: true },
+      include: { localCredential: true, tenantRole: true },
     });
+    const roles = await prisma.client.v2TenantRole.findMany({
+      where: { tenantId: registered.tenantId },
+      include: { permissions: { orderBy: { permission: 'asc' } } },
+      orderBy: { name: 'asc' },
+    });
+    const administrator = roles.find(({ systemRole }) => systemRole === 'ADMIN');
+    const member = roles.find(({ name }) => name === 'Miembro');
 
     expect(user).toMatchObject({
       id: registered.tenantUserId,
       tenantId: registered.tenantId,
       email,
+      role: V2UserRole.ADMIN,
+      roleId: administrator?.id,
       status: V2UserStatus.ACTIVE,
+      mustChangePassword: false,
+      tenantRole: { name: 'Administrador', systemRole: 'ADMIN' },
     });
+    expect(roles).toHaveLength(2);
+    expect(administrator?.permissions).toEqual([]);
+    expect(member).toMatchObject({ name: 'Miembro', systemRole: null });
+    expect(member?.permissions.map(({ permission }) => permission).sort()).toEqual(
+      [...DEFAULT_MEMBER_TENANT_PERMISSIONS].sort(),
+    );
+
+    const authorization = testApp.app.get(TenantAuthorization);
+    const administratorAuthorization = await authorization.getEffectivePermissions({
+      tenantId: registered.tenantId,
+      tenantUserId: registered.tenantUserId,
+    });
+    const memberUser = await createTestFixtures(prisma).createTenantUserWithRole({
+      tenantId: registered.tenantId,
+      roleId: member!.id,
+    });
+    const memberAuthorization = await authorization.getEffectivePermissions({
+      tenantId: registered.tenantId,
+      tenantUserId: memberUser.user.id,
+    });
+
+    expect(administratorAuthorization._unsafeUnwrap().permissions).toBe(ALL_TENANT_PERMISSIONS);
+    expect(memberAuthorization._unsafeUnwrap().permissions).toEqual(DEFAULT_MEMBER_TENANT_PERMISSIONS);
     expect(user?.localCredential).not.toBeNull();
     await expect(
       passwordService.verifyPassword({
@@ -89,6 +129,25 @@ describe('authenticated tenant HTTP flow', () => {
     await expect(prisma.client.v2LocalCredential.count({ where: { userId: registered.tenantUserId } })).resolves.toBe(
       1,
     );
+  });
+
+  it('rolls back tenant registration when authorization-role provisioning fails', async () => {
+    const prisma = testApp.app.get(PrismaService);
+    const provisioner = testApp.app.get(TenantAuthorizationRoleProvisioner);
+    const unique = randomUUID();
+    const tenantName = `Provisioning Rollback Tenant ${unique}`;
+    const tenantSlug = `provisioning-rollback-tenant-${unique}`;
+    jest.spyOn(provisioner, 'provision').mockRejectedValueOnce(new Error('Role provisioning failed.'));
+
+    await request(testApp.app.getHttpServer())
+      .post('/tenant-management/register')
+      .send({
+        tenant: { name: tenantName },
+        owner: { name: 'Registered Owner', email: `owner-${unique}@test.local`, password: 'password' },
+      })
+      .expect(500);
+
+    await expect(prisma.client.v2Tenant.findUnique({ where: { slug: tenantSlug } })).resolves.toBeNull();
   });
 
   it('rolls back tenant registration when owner account persistence conflicts', async () => {

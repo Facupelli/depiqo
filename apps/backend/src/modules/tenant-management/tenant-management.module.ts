@@ -29,6 +29,7 @@ import { RentalCustomerProfileFacts } from './public-api/rental-customer-profile
 import { RetainedRentalCustomerProfileFacts } from './public-api/retained-rental-customer-profile-facts.public-api';
 import { AuthModule } from './auth/auth.module';
 import { TenantAuthorizationModule } from './authorization/tenant-authorization.module';
+import { TenantAuthorizationRoleProvisioner } from './authorization/tenant-authorization-role.provisioner';
 import { ApproveSubmittedCustomerOnboardingHttpController } from './features/approve-submitted-customer-onboarding/approve-submitted-customer-onboarding.controller';
 import { ApproveSubmittedCustomerOnboardingHandler } from './features/approve-submitted-customer-onboarding/approve-submitted-customer-onboarding.handler';
 import { CreateContractSignerHttpController } from './features/create-contract-signer/create-contract-signer.controller';
@@ -157,6 +158,7 @@ import { GetStorefrontCategoriesHandler } from './features/get-storefront-catego
     GetStorefrontBranchSchedulesHandler,
     RegisterCustomDomainHandler,
     RegisterTenantWithOwnerService,
+    TenantAuthorizationRoleProvisioner,
     RefreshCustomDomainStatusHandler,
     RejectSubmittedCustomerOnboardingHandler,
     SubmitCustomerProfileHandler,
