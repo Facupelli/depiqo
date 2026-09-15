@@ -6,6 +6,8 @@ export class RemoveConfirmedPackageDemandLineCommand {
       rentalId: string;
       demandLineId: string;
       expectedVersion: number;
+      quantity: number;
+      releaseAssetIds: readonly string[];
     },
   ) {}
 }

@@ -150,6 +150,8 @@ export interface RemoveConfirmedSelectionProps {
 
 export interface RemoveConfirmedPackageDemandLineProps {
   demandLineId: string;
+  quantity: number;
+  releaseAssetIds: readonly string[];
   operationTime: Date;
 }
 
@@ -871,12 +873,41 @@ export class Rental extends AggregateRootBase {
       return err(new RentalInvalidFieldError('demandLineId', 'must belong to a current PACKAGE selection'));
     }
 
-    const currentSiblings = this.currentDemandLines.filter(
-      (candidate) => candidate.rentalSelectionId === selection.id && candidate.id !== demandLine.id,
-    );
-    if (currentSiblings.length === 0) {
-      return err(new RentalInvalidFieldError('demandLineId', 'PACKAGE selection must retain current demand'));
+    if (!Number.isInteger(params.quantity) || params.quantity <= 0) {
+      return err(new RentalInvalidFieldError('quantity', 'must be a positive integer'));
     }
+    if (params.quantity > demandLine.operationalQuantity) {
+      return err(new RentalInvalidFieldError('quantity', 'must not exceed operationalQuantity'));
+    }
+    if (params.releaseAssetIds.length !== params.quantity) {
+      return err(new RentalInvalidFieldError('releaseAssetIds', 'count must equal suppression quantity'));
+    }
+    if (new Set(params.releaseAssetIds).size !== params.releaseAssetIds.length) {
+      return err(new RentalInvalidFieldError('releaseAssetIds', 'must contain unique asset IDs'));
+    }
+
+    const resultingOperationalQuantity = demandLine.operationalQuantity - params.quantity;
+    const siblingOperationalQuantity = this.props.demandLines
+      .filter((candidate) => candidate.rentalSelectionId === selection.id && candidate.id !== demandLine.id)
+      .reduce((total, candidate) => total + candidate.operationalQuantity, 0);
+    if (resultingOperationalQuantity + siblingOperationalQuantity === 0) {
+      return err(new RentalInvalidFieldError('demandLineId', 'PACKAGE selection must retain operational demand'));
+    }
+
+    const assignmentsToRelease: AssignedAsset[] = [];
+    for (const assetId of params.releaseAssetIds) {
+      const assignment = this.currentAssignedAssets.find((candidate) => candidate.assetId === assetId);
+      if (!assignment) return err(new RentalAssignedAssetNotFoundError(this.id, assetId));
+      if (assignment.rentalDemandLineId !== demandLine.id) {
+        return err(
+          new RentalInvalidFieldError('releaseAssetIds', `asset "${assetId}" does not belong to the demand line`),
+        );
+      }
+      assignmentsToRelease.push(assignment);
+    }
+
+    const suppressedDemandLine = demandLine.suppress(params.quantity, params.operationTime);
+    if (suppressedDemandLine.isErr()) return err(suppressedDemandLine.error);
 
     const effectiveAt = params.operationTime < this.period.start ? this.period.start : params.operationTime;
     if (effectiveAt >= this.period.end) return err(new RentalPeriodHasEndedError(this.id));
@@ -884,9 +915,6 @@ export class Rental extends AggregateRootBase {
 
     let nextAssignedAssets = [...this.props.assignedAssets];
     let nextAssetBlocks = [...this.props.assetBlocks];
-    const assignmentsToRelease = this.currentAssignedAssets.filter(
-      (assignment) => assignment.rentalDemandLineId === demandLine.id,
-    );
     for (const assignment of assignmentsToRelease) {
       const block = nextAssetBlocks.find(
         (candidate) =>
@@ -917,7 +945,7 @@ export class Rental extends AggregateRootBase {
 
     const transition = this.applyConfirmedStateChanges({
       demandLines: this.props.demandLines.map((candidate) =>
-        candidate.id === demandLine.id ? candidate.removeAt(params.operationTime) : candidate,
+        candidate.id === demandLine.id ? suppressedDemandLine.value : candidate,
       ),
       assignedAssets: nextAssignedAssets,
       assetBlocks: nextAssetBlocks,
@@ -1000,6 +1028,17 @@ export class Rental extends AggregateRootBase {
     const acceptedAssetBuffer = this.requireAcceptedAssetBuffer();
     const selection = this.currentSelections.find((candidate) => candidate.id === params.selectionId);
     if (!selection) return err(new RentalSelectionNotFoundError(this.id, params.selectionId));
+    if (
+      selection.rentableItemKindSnapshot === RentableItemKind.Package &&
+      this.props.demandLines.some((line) => line.rentalSelectionId === selection.id && line.removedQuantity > 0)
+    ) {
+      return err(
+        new RentalInvalidFieldError(
+          'selectionId',
+          'PACKAGE selection quantity cannot change while child demand is suppressed',
+        ),
+      );
+    }
     const effectiveAt = params.operationTime < this.period.start ? this.period.start : params.operationTime;
     if (effectiveAt >= this.period.end) return err(new RentalPeriodHasEndedError(this.id));
     const targetDemandLines = this.currentDemandLines.filter((line) => line.rentalSelectionId === selection.id);
@@ -1764,7 +1803,7 @@ export class Rental extends AggregateRootBase {
       if (
         selection.isCurrent &&
         selection.rentableItemKindSnapshot === RentableItemKind.Single &&
-        selectionDemandLines.some((line) => !line.isCurrent)
+        selectionDemandLines.some((line) => line.removedQuantity > 0)
       ) {
         return err(
           new RentalInvalidFieldError(
@@ -1776,12 +1815,12 @@ export class Rental extends AggregateRootBase {
       if (
         selection.isCurrent &&
         selection.rentableItemKindSnapshot === RentableItemKind.Package &&
-        currentDemandLines.length === 0
+        selectionDemandLines.every((line) => line.operationalQuantity === 0)
       ) {
         return err(
           new RentalInvalidFieldError(
             'demandLines',
-            `current PACKAGE selection "${selection.id}" requires current demand`,
+            `current PACKAGE selection "${selection.id}" requires operational demand`,
           ),
         );
       }
@@ -1826,12 +1865,12 @@ export class Rental extends AggregateRootBase {
     for (const demandLine of params.demandLines) {
       const assignmentCount = assignmentCountByDemandLineId.get(demandLine.id) ?? 0;
 
-      if (assignmentCount !== demandLine.quantity) {
+      if (assignmentCount !== demandLine.operationalQuantity) {
         return err(
           new ConfirmedRentalRequiresCompleteAssignmentsError(
             this.id,
             demandLine.id,
-            demandLine.quantity,
+            demandLine.operationalQuantity,
             assignmentCount,
           ),
         );

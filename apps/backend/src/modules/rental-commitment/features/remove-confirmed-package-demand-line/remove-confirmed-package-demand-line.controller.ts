@@ -42,6 +42,8 @@ export class RemoveConfirmedPackageDemandLineHttpController {
         rentalId: params.rentalId,
         demandLineId: params.demandLineId,
         expectedVersion: dto.expectedVersion,
+        quantity: dto.quantity,
+        releaseAssetIds: dto.releaseAssetIds,
       }),
     );
     if (result.isErr()) throw toProblem(result.error);

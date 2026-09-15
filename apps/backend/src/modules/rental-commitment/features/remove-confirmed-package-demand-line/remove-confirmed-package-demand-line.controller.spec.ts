@@ -17,7 +17,11 @@ describe('RemoveConfirmedPackageDemandLineHttpController', () => {
     rentalId: 'rental-1',
     demandLineId: 'demand-line-1',
   } as RemoveConfirmedPackageDemandLineParamsDto;
-  const dto = { expectedVersion: 7 } as RemoveConfirmedPackageDemandLineRequestDto;
+  const dto = {
+    expectedVersion: 7,
+    quantity: 1,
+    releaseAssetIds: ['asset-1'],
+  } as RemoveConfirmedPackageDemandLineRequestDto;
   const user = { id: 'user-1', tenantId: 'tenant-1' } as AuthUser;
 
   it('dispatches tenant context and returns the confirmed-rental mutation response', async () => {
@@ -39,6 +43,8 @@ describe('RemoveConfirmedPackageDemandLineHttpController', () => {
         rentalId: 'rental-1',
         demandLineId: 'demand-line-1',
         expectedVersion: 7,
+        quantity: 1,
+        releaseAssetIds: ['asset-1'],
       }),
     );
   });

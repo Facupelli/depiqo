@@ -28,6 +28,15 @@ const standDemandId = 'stand-demand' as RentalDemandLineId;
 const cameraDemandId = 'camera-demand' as RentalDemandLineId;
 const tenantOwnership = AssignedAssetOwnershipSnapshot.create({ kind: 'TENANT_OWNED' })._unsafeUnwrap();
 
+function assetIdFor(demandLineId: string): AssetId {
+  const assetIds: Record<string, AssetId> = {
+    [lightDemandId]: 'light-asset' as AssetId,
+    [standDemandId]: 'stand-asset' as AssetId,
+    [cameraDemandId]: 'camera-asset' as AssetId,
+  };
+  return assetIds[demandLineId] ?? ('missing-asset' as AssetId);
+}
+
 const pricePayload = {
   currency: 'USD',
   subtotal: '100.00',
@@ -55,7 +64,7 @@ const confirmedPriceSnapshot = {
   total: '100.00',
 };
 
-function createConfirmed(): Rental {
+function createConfirmed(lightQuantity = 1): Rental {
   return Rental.createConfirmed({
     id: 'rental-1' as RentalId,
     tenantId: 'tenant-1',
@@ -90,7 +99,7 @@ function createConfirmed(): Rental {
         rentalSelectionId: packageSelectionId,
         equipmentTypeId: 'light-type' as EquipmentTypeId,
         equipmentTypeNameSnapshot: 'Light',
-        quantity: 1,
+        quantity: lightQuantity,
       },
       {
         id: standDemandId,
@@ -108,7 +117,11 @@ function createConfirmed(): Rental {
       },
     ],
     assignedAssets: [
-      { rentalDemandLineId: lightDemandId, assetId: 'light-asset' as AssetId, ownershipSnapshot: tenantOwnership },
+      ...Array.from({ length: lightQuantity }, (_, index) => ({
+        rentalDemandLineId: lightDemandId,
+        assetId: (index === 0 ? 'light-asset' : `light-asset-${index + 1}`) as AssetId,
+        ownershipSnapshot: tenantOwnership,
+      })),
       { rentalDemandLineId: standDemandId, assetId: 'stand-asset' as AssetId, ownershipSnapshot: tenantOwnership },
       { rentalDemandLineId: cameraDemandId, assetId: 'camera-asset' as AssetId, ownershipSnapshot: tenantOwnership },
     ],
@@ -145,45 +158,87 @@ function reconstituteFrom(
 }
 
 describe('Confirmed package demand line removal', () => {
-  it('removes one package demand line before participation without changing its parent, siblings, price, or unrelated fulfillment', () => {
-    const rental = createConfirmed();
+  it('suppresses one unit before participation without changing its parent, siblings, price, or unrelated fulfillment', () => {
+    const rental = createConfirmed(3);
     rental.pullDomainEvents();
     const originalPrice = rental.confirmedPriceSnapshot;
     const standAssignment = rental.currentAssignedAssets.find((item) => item.rentalDemandLineId === standDemandId);
     const cameraBlock = rental.assetBlocks.find((item) => item.assetId === 'camera-asset');
 
-    const result = rental.removeConfirmedPackageDemandLine({ demandLineId: lightDemandId, operationTime: beforeStart });
+    const result = rental.removeConfirmedPackageDemandLine({
+      demandLineId: lightDemandId,
+      quantity: 1,
+      releaseAssetIds: [assetIdFor(lightDemandId)],
+      operationTime: beforeStart,
+    });
 
     expect(result.isOk()).toBe(true);
     expect(rental.demandLines.find((line) => line.id === lightDemandId)).toMatchObject({
       removedQuantity: 1,
-      operationalQuantity: 0,
-      removedAt: beforeStart,
+      operationalQuantity: 2,
+      removedAt: undefined,
     });
     expect(rental.demandLines.find((line) => line.id === standDemandId)?.isCurrent).toBe(true);
     expect(rental.selections.find((selection) => selection.id === packageSelectionId)?.isCurrent).toBe(true);
-    expect(rental.currentAssignedAssets.map((item) => item.assetId)).toEqual(['stand-asset', 'camera-asset']);
-    expect(rental.assetBlocks.map((item) => item.assetId)).toEqual(['stand-asset', 'camera-asset']);
+    expect(rental.currentAssignedAssets.map((item) => item.assetId)).toEqual([
+      'light-asset-2',
+      'light-asset-3',
+      'stand-asset',
+      'camera-asset',
+    ]);
+    expect(rental.assetBlocks.map((item) => item.assetId)).toEqual([
+      'light-asset-2',
+      'light-asset-3',
+      'stand-asset',
+      'camera-asset',
+    ]);
     expect(rental.currentAssignedAssets.find((item) => item.rentalDemandLineId === standDemandId)).toBe(
       standAssignment,
     );
     expect(rental.assetBlocks.find((item) => item.assetId === 'camera-asset')).toBe(cameraBlock);
     expect(rental.confirmedPriceSnapshot).toBe(originalPrice);
+
+    const quantityChange = rental.changeConfirmedSelectionQuantity({
+      selectionId: packageSelectionId,
+      newQuantity: 2,
+      releaseAssetIds: [],
+      newAssignments: [],
+      confirmedPriceSnapshot,
+      operationTime: beforeStart,
+    });
+    expect(quantityChange._unsafeUnwrapErr()).toEqual(
+      new RentalInvalidFieldError(
+        'selectionId',
+        'PACKAGE selection quantity cannot change while child demand is suppressed',
+      ),
+    );
+    expect(rental.selections.find((selection) => selection.id === packageSelectionId)?.quantity).toBe(1);
     expect(rental.pullDomainEvents()).toEqual([expect.any(ConfirmedRentalEditedDomainEvent)]);
   });
 
-  it('closes only target participation after it starts and shortens its block by the existing temporal rules', () => {
-    const rental = createConfirmed();
+  it('suppresses two units after participation starts and reuses the existing temporal rules', () => {
+    const rental = createConfirmed(3);
     const unrelatedAssignment = rental.currentAssignedAssets.find((item) => item.assetId === 'stand-asset');
     const unrelatedBlock = rental.assetBlocks.find((item) => item.assetId === 'stand-asset');
 
     rental
-      .removeConfirmedPackageDemandLine({ demandLineId: lightDemandId, operationTime: duringRental })
+      .removeConfirmedPackageDemandLine({
+        demandLineId: lightDemandId,
+        quantity: 2,
+        releaseAssetIds: ['light-asset' as AssetId, 'light-asset-2' as AssetId],
+        operationTime: duringRental,
+      })
       ._unsafeUnwrap();
 
     const closed = rental.assignedAssets.find((item) => item.assetId === 'light-asset');
     const shortenedBlock = rental.assetBlocks.find((item) => item.assetId === 'light-asset');
     expect(closed?.effectiveUntil).toEqual(duringRental);
+    expect(rental.demandLines.find((line) => line.id === lightDemandId)).toMatchObject({
+      removedQuantity: 2,
+      operationalQuantity: 1,
+      removedAt: undefined,
+    });
+    expect(rental.currentAssignedAssets.find((item) => item.assetId === 'light-asset-3')).toBeDefined();
     expect(shortenedBlock?.isActive).toBe(true);
     expect(shortenedBlock?.period.end).toEqual(new Date('2030-01-11T13:00:00.000Z'));
     expect(rental.currentAssignedAssets.find((item) => item.assetId === 'stand-asset')).toBe(unrelatedAssignment);
@@ -193,6 +248,8 @@ describe('Confirmed package demand line removal', () => {
   it('rejects removal from a SINGLE selection', () => {
     const result = createConfirmed().removeConfirmedPackageDemandLine({
       demandLineId: cameraDemandId,
+      quantity: 1,
+      releaseAssetIds: [assetIdFor(cameraDemandId)],
       operationTime: beforeStart,
     });
 
@@ -204,24 +261,78 @@ describe('Confirmed package demand line removal', () => {
   it('rejects removing the last current demand line of a PACKAGE', () => {
     const rental = createConfirmed();
     rental
-      .removeConfirmedPackageDemandLine({ demandLineId: lightDemandId, operationTime: beforeStart })
+      .removeConfirmedPackageDemandLine({
+        demandLineId: lightDemandId,
+        quantity: 1,
+        releaseAssetIds: [assetIdFor(lightDemandId)],
+        operationTime: beforeStart,
+      })
       ._unsafeUnwrap();
 
-    const result = rental.removeConfirmedPackageDemandLine({ demandLineId: standDemandId, operationTime: beforeStart });
+    const result = rental.removeConfirmedPackageDemandLine({
+      demandLineId: standDemandId,
+      quantity: 1,
+      releaseAssetIds: [assetIdFor(standDemandId)],
+      operationTime: beforeStart,
+    });
 
     expect(result._unsafeUnwrapErr()).toEqual(
-      new RentalInvalidFieldError('demandLineId', 'PACKAGE selection must retain current demand'),
+      new RentalInvalidFieldError('demandLineId', 'PACKAGE selection must retain operational demand'),
     );
   });
 
-  it('rejects an already removed or unknown demand line as non-current', () => {
+  it('rejects invalid suppression input, already removed demand, and unknown demand', () => {
+    const operationalRental = createConfirmed(3);
+    for (const quantity of [0, -1, 4]) {
+      expect(
+        operationalRental
+          .removeConfirmedPackageDemandLine({
+            demandLineId: lightDemandId,
+            quantity,
+            releaseAssetIds: [],
+            operationTime: beforeStart,
+          })
+          .isErr(),
+      ).toBe(true);
+    }
+    expect(
+      operationalRental
+        .removeConfirmedPackageDemandLine({
+          demandLineId: lightDemandId,
+          quantity: 2,
+          releaseAssetIds: ['light-asset' as AssetId, 'light-asset' as AssetId],
+          operationTime: beforeStart,
+        })
+        ._unsafeUnwrapErr(),
+    ).toEqual(new RentalInvalidFieldError('releaseAssetIds', 'must contain unique asset IDs'));
+    expect(
+      operationalRental
+        .removeConfirmedPackageDemandLine({
+          demandLineId: lightDemandId,
+          quantity: 1,
+          releaseAssetIds: ['stand-asset' as AssetId],
+          operationTime: beforeStart,
+        })
+        ._unsafeUnwrapErr(),
+    ).toEqual(new RentalInvalidFieldError('releaseAssetIds', 'asset "stand-asset" does not belong to the demand line'));
+
     const rental = createConfirmed();
     rental
-      .removeConfirmedPackageDemandLine({ demandLineId: lightDemandId, operationTime: beforeStart })
+      .removeConfirmedPackageDemandLine({
+        demandLineId: lightDemandId,
+        quantity: 1,
+        releaseAssetIds: [assetIdFor(lightDemandId)],
+        operationTime: beforeStart,
+      })
       ._unsafeUnwrap();
 
     for (const demandLineId of [lightDemandId, 'missing-demand']) {
-      const result = rental.removeConfirmedPackageDemandLine({ demandLineId, operationTime: beforeStart });
+      const result = rental.removeConfirmedPackageDemandLine({
+        demandLineId,
+        quantity: 1,
+        releaseAssetIds: ['missing-asset' as AssetId],
+        operationTime: beforeStart,
+      });
       expect(result._unsafeUnwrapErr()).toBeInstanceOf(RentalDemandLineNotFoundError);
     }
   });
@@ -229,7 +340,12 @@ describe('Confirmed package demand line removal', () => {
   it('reconstitutes a current PACKAGE with a previously removed child', () => {
     const rental = createConfirmed();
     rental
-      .removeConfirmedPackageDemandLine({ demandLineId: lightDemandId, operationTime: beforeStart })
+      .removeConfirmedPackageDemandLine({
+        demandLineId: lightDemandId,
+        quantity: 1,
+        releaseAssetIds: [assetIdFor(lightDemandId)],
+        operationTime: beforeStart,
+      })
       ._unsafeUnwrap();
 
     expect(reconstituteFrom(rental).isOk()).toBe(true);
@@ -272,7 +388,12 @@ describe('Confirmed package demand line removal', () => {
   it('allows later whole-selection removal when a package child has an earlier tombstone', () => {
     const rental = createConfirmed();
     rental
-      .removeConfirmedPackageDemandLine({ demandLineId: lightDemandId, operationTime: beforeStart })
+      .removeConfirmedPackageDemandLine({
+        demandLineId: lightDemandId,
+        quantity: 1,
+        releaseAssetIds: [assetIdFor(lightDemandId)],
+        operationTime: beforeStart,
+      })
       ._unsafeUnwrap();
 
     const result = rental.removeConfirmedSelection({
@@ -298,7 +419,12 @@ describe('Confirmed package demand line restoration', () => {
   it('restores the same package child before start without changing commercial facts or siblings', () => {
     const rental = createConfirmed();
     rental
-      .removeConfirmedPackageDemandLine({ demandLineId: lightDemandId, operationTime: beforeStart })
+      .removeConfirmedPackageDemandLine({
+        demandLineId: lightDemandId,
+        quantity: 1,
+        releaseAssetIds: [assetIdFor(lightDemandId)],
+        operationTime: beforeStart,
+      })
       ._unsafeUnwrap();
     rental.pullDomainEvents();
     const originalSelection = rental.selections.find((item) => item.id === packageSelectionId);
@@ -336,7 +462,12 @@ describe('Confirmed package demand line restoration', () => {
   it('restores during rental with a new current participation while preserving closed history', () => {
     const rental = createConfirmed();
     rental
-      .removeConfirmedPackageDemandLine({ demandLineId: lightDemandId, operationTime: duringRental })
+      .removeConfirmedPackageDemandLine({
+        demandLineId: lightDemandId,
+        quantity: 1,
+        releaseAssetIds: [assetIdFor(lightDemandId)],
+        operationTime: duringRental,
+      })
       ._unsafeUnwrap();
     const historical = rental.assignedAssets.find((item) => item.assetId === 'light-asset')!;
     const historicalBlock = rental.assetBlocks.find((item) => item.assetId === 'light-asset')!;
@@ -386,7 +517,12 @@ describe('Confirmed package demand line restoration', () => {
   it('rejects a removed parent selection and a SINGLE parent', () => {
     const removedPackage = createConfirmed();
     removedPackage
-      .removeConfirmedPackageDemandLine({ demandLineId: lightDemandId, operationTime: beforeStart })
+      .removeConfirmedPackageDemandLine({
+        demandLineId: lightDemandId,
+        quantity: 1,
+        releaseAssetIds: [assetIdFor(lightDemandId)],
+        operationTime: beforeStart,
+      })
       ._unsafeUnwrap();
     removedPackage
       .removeConfirmedSelection({
@@ -427,7 +563,12 @@ describe('Confirmed package demand line restoration', () => {
   it('rejects restoration at or after rental end and incomplete or mismatched allocation', () => {
     const rental = createConfirmed();
     rental
-      .removeConfirmedPackageDemandLine({ demandLineId: lightDemandId, operationTime: beforeStart })
+      .removeConfirmedPackageDemandLine({
+        demandLineId: lightDemandId,
+        quantity: 1,
+        releaseAssetIds: [assetIdFor(lightDemandId)],
+        operationTime: beforeStart,
+      })
       ._unsafeUnwrap();
     expect(
       rental
@@ -461,7 +602,12 @@ describe('Confirmed package demand line restoration', () => {
   it('supports remove, restore, and remove again with the same demand identity', () => {
     const rental = createConfirmed();
     rental
-      .removeConfirmedPackageDemandLine({ demandLineId: lightDemandId, operationTime: duringRental })
+      .removeConfirmedPackageDemandLine({
+        demandLineId: lightDemandId,
+        quantity: 1,
+        releaseAssetIds: [assetIdFor(lightDemandId)],
+        operationTime: duringRental,
+      })
       ._unsafeUnwrap();
     rental
       .restoreConfirmedPackageDemandLine({
@@ -473,7 +619,12 @@ describe('Confirmed package demand line restoration', () => {
     const removedAgainAt = new Date('2030-01-11T16:00:00.000Z');
 
     rental
-      .removeConfirmedPackageDemandLine({ demandLineId: lightDemandId, operationTime: removedAgainAt })
+      .removeConfirmedPackageDemandLine({
+        demandLineId: lightDemandId,
+        quantity: 1,
+        releaseAssetIds: ['restored-light-asset' as AssetId],
+        operationTime: removedAgainAt,
+      })
       ._unsafeUnwrap();
 
     const line = rental.demandLines.find((item) => item.id === lightDemandId)!;

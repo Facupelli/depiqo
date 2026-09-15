@@ -99,12 +99,27 @@ export class RentalDemandLine {
     );
   }
 
+  suppress(quantity: number, operationTime: Date): Result<RentalDemandLine, RentalCommitmentError> {
+    if (!Number.isInteger(quantity) || quantity <= 0) {
+      return err(new RentalInvalidFieldError('quantity', 'must be a positive integer'));
+    }
+    if (quantity > this.operationalQuantity) {
+      return err(new RentalInvalidFieldError('quantity', 'must not exceed operationalQuantity'));
+    }
+
+    const removedQuantity = this.removedQuantity + quantity;
+    return ok(
+      new RentalDemandLine(this.id, {
+        ...this.props,
+        removedQuantity,
+        removedAt: removedQuantity === this.quantity ? (this.props.removedAt ?? new Date(operationTime)) : undefined,
+      }),
+    );
+  }
+
   removeAt(operationTime: Date): RentalDemandLine {
-    return new RentalDemandLine(this.id, {
-      ...this.props,
-      removedQuantity: this.quantity,
-      removedAt: this.props.removedAt ?? new Date(operationTime),
-    });
+    if (this.operationalQuantity === 0) return this;
+    return this.suppress(this.operationalQuantity, operationTime)._unsafeUnwrap();
   }
 
   restore(): RentalDemandLine {

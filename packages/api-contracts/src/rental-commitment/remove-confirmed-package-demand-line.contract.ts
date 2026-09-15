@@ -7,9 +7,16 @@ export const RemoveConfirmedPackageDemandLineParamsSchema = z.object({
   demandLineId: z.string().trim().min(1),
 });
 
-export const RemoveConfirmedPackageDemandLineBodySchema = z.object({
-  expectedVersion: z.number().int().nonnegative(),
-});
+export const RemoveConfirmedPackageDemandLineBodySchema = z
+  .object({
+    expectedVersion: z.number().int().nonnegative(),
+    quantity: z.number().int().positive(),
+    releaseAssetIds: z.array(z.string().trim().min(1)),
+  })
+  .refine(({ quantity, releaseAssetIds }) => releaseAssetIds.length === quantity, {
+    message: "releaseAssetIds length must equal quantity",
+    path: ["releaseAssetIds"],
+  });
 
 export const RemoveConfirmedPackageDemandLineResponseSchema = z.object({
   id: z.string(),

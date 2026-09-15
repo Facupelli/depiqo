@@ -46,6 +46,7 @@ describe('RemoveConfirmedPackageDemandLine integration', () => {
       period?: { start: Date; end: Date };
       kind?: 'PACKAGE' | 'SINGLE';
       demandCount?: number;
+      demandQuantities?: number[];
       thirdPartyDemandIndex?: number;
     } = {},
   ) {
@@ -55,14 +56,15 @@ describe('RemoveConfirmedPackageDemandLine integration', () => {
     const { user } = await core.createTenantUser({ tenantId: tenant.id });
     const now = Date.now();
     const period = options.period ?? { start: new Date(now + 3_600_000), end: new Date(now + 7_200_000) };
-    const demandCount = options.demandCount ?? 3;
+    const demandCount = options.demandQuantities?.length ?? options.demandCount ?? 3;
+    const demandQuantities = options.demandQuantities ?? Array.from({ length: demandCount }, () => 1);
     const rental = await rentalFixtures.createRental({
       tenantId: tenant.id,
       branchId: branch.id,
       customerId: customer.id,
       period,
       status: 'CONFIRMED',
-      demands: Array.from({ length: demandCount }, () => ({})),
+      demands: demandQuantities.map((quantity) => ({ quantity })),
     });
     const selectionId = rental.selectionIds[0];
     const priceSnapshot = rentalFixtures.priceSnapshot([selectionId]);
@@ -91,75 +93,84 @@ describe('RemoveConfirmedPackageDemandLine integration', () => {
     });
 
     const assetIds: string[] = [];
+    const assetIdsByDemand: string[][] = [];
     for (let index = 0; index < demandCount; index += 1) {
-      const assetId = await rentalFixtures.createCandidate({
-        tenantId: tenant.id,
-        branchId: branch.id,
-        equipmentTypeId: rental.equipmentTypeIds[index],
-      });
-      assetIds.push(assetId);
-      const ownershipSnapshot =
-        options.thirdPartyDemandIndex === index
-          ? {
-              kind: 'THIRD_PARTY',
-              ownerId: `owner-${index}`,
-              contractId: `contract-${index}`,
-              basis: 'NET',
-              ownerShare: '0.25',
-            }
-          : { kind: 'TENANT_OWNED' };
-      await prisma.client.v2AssignedAsset.create({
-        data: {
+      const demandAssetIds: string[] = [];
+      for (let assignmentIndex = 0; assignmentIndex < demandQuantities[index]; assignmentIndex += 1) {
+        const assetId = await rentalFixtures.createCandidate({
+          tenantId: tenant.id,
+          branchId: branch.id,
+          equipmentTypeId: rental.equipmentTypeIds[index],
+        });
+        assetIds.push(assetId);
+        demandAssetIds.push(assetId);
+        const ownershipSnapshot =
+          options.thirdPartyDemandIndex === index
+            ? {
+                kind: 'THIRD_PARTY',
+                ownerId: `owner-${index}`,
+                contractId: `contract-${index}`,
+                basis: 'NET',
+                ownerShare: '0.25',
+              }
+            : { kind: 'TENANT_OWNED' };
+        await prisma.client.v2AssignedAsset.create({
+          data: {
+            tenantId: tenant.id,
+            rentalId: rental.rentalId,
+            rentalDemandLineId: rental.demandLineIds[index],
+            assetId,
+            ownershipSnapshot,
+            effectiveFrom: period.start,
+          },
+        });
+        await rentalFixtures.createActiveBlock({
           tenantId: tenant.id,
           rentalId: rental.rentalId,
-          rentalDemandLineId: rental.demandLineIds[index],
           assetId,
-          ownershipSnapshot,
-          effectiveFrom: period.start,
-        },
-      });
-      await rentalFixtures.createActiveBlock({
-        tenantId: tenant.id,
-        rentalId: rental.rentalId,
-        assetId,
-        period: {
-          start: new Date(period.start.getTime() - 10 * 60_000),
-          end: new Date(period.end.getTime() + 15 * 60_000),
-        },
-      });
+          period: {
+            start: new Date(period.start.getTime() - 10 * 60_000),
+            end: new Date(period.end.getTime() + 15 * 60_000),
+          },
+        });
+      }
+      assetIdsByDemand.push(demandAssetIds);
     }
 
     if (options.thirdPartyDemandIndex !== undefined) {
       const state = await fixtures.persistedState(rental.rentalId);
-      const assignment = state.rental.assignedAssets.find(
+      const assignments = state.rental.assignedAssets.filter(
         (item) => item.rentalDemandLineId === rental.demandLineIds[options.thirdPartyDemandIndex!],
-      )!;
-      await prisma.client.v2RentalOwnerSplit.create({
-        data: {
-          tenantId: tenant.id,
-          rentalId: rental.rentalId,
-          rentalSelectionId: selectionId,
-          rentalDemandLineId: assignment.rentalDemandLineId,
-          assignedAssetId: assignment.id,
-          assetId: assignment.assetId,
-          ownerId: `owner-${options.thirdPartyDemandIndex}`,
-          contractId: `contract-${options.thirdPartyDemandIndex}`,
-          basis: 'NET',
-          ownerShare: '0.25',
-          basisAmount: '100.00',
-          ownerAmount: '25.00',
-          currency: 'USD',
-        },
-      });
+      );
+      for (const assignment of assignments) {
+        await prisma.client.v2RentalOwnerSplit.create({
+          data: {
+            tenantId: tenant.id,
+            rentalId: rental.rentalId,
+            rentalSelectionId: selectionId,
+            rentalDemandLineId: assignment.rentalDemandLineId,
+            assignedAssetId: assignment.id,
+            assetId: assignment.assetId,
+            ownerId: `owner-${options.thirdPartyDemandIndex}`,
+            contractId: `contract-${options.thirdPartyDemandIndex}`,
+            basis: 'NET',
+            ownerShare: '0.25',
+            basisAmount: '100.00',
+            ownerAmount: '25.00',
+            currency: 'USD',
+          },
+        });
+      }
     }
 
-    return { tenant, branch, customer, user, period, rental, selectionId, assetIds };
+    return { tenant, branch, customer, user, period, rental, selectionId, assetIds, assetIdsByDemand };
   }
 
   function remove(
     setup: Awaited<ReturnType<typeof scenario>>,
     demandLineId: string,
     expectedVersion: number,
+    options: { quantity?: number; releaseAssetIds?: string[] } = {},
   ): Promise<RemoveConfirmedPackageDemandLineResult> {
     return bus.execute(
       new RemoveConfirmedPackageDemandLineCommand({
@@ -168,6 +179,10 @@ describe('RemoveConfirmedPackageDemandLine integration', () => {
         rentalId: setup.rental.rentalId,
         demandLineId,
         expectedVersion,
+        quantity: options.quantity ?? 1,
+        releaseAssetIds: options.releaseAssetIds ?? [
+          setup.assetIdsByDemand[setup.rental.demandLineIds.indexOf(demandLineId)]?.[0],
+        ],
       }),
     );
   }
@@ -250,6 +265,74 @@ describe('RemoveConfirmedPackageDemandLine integration', () => {
     ]);
   });
 
+  it('partially suppresses one in-progress package child assignment and preserves remaining operational truth', async () => {
+    const now = Date.now();
+    const setup = await scenario({
+      period: { start: new Date(now - 60_000), end: new Date(now + 3_600_000) },
+      demandQuantities: [3, 1, 1],
+      thirdPartyDemandIndex: 0,
+    });
+    const targetId = setup.rental.demandLineIds[0];
+    const releasedAssetId = setup.assetIdsByDemand[0][1];
+    const before = await fixtures.persistedState(setup.rental.rentalId);
+    const releasedAssignment = before.rental.assignedAssets.find((item) => item.assetId === releasedAssetId)!;
+    const remainingTargetAssignments = before.rental.assignedAssets.filter(
+      (item) => item.rentalDemandLineId === targetId && item.assetId !== releasedAssetId,
+    );
+    const releasedBlock = before.blocks.find((item) => item.assetId === releasedAssetId)!;
+    const unaffectedBlocks = before.blocks.filter((item) => item.assetId !== releasedAssetId);
+    const events: ConfirmedRentalEditedIntegrationEvent[] = [];
+    const listener = (event: ConfirmedRentalEditedIntegrationEvent) => events.push(event);
+    emitter.on(ConfirmedRentalEditedIntegrationEvent.name, listener);
+    try {
+      const result = await remove(setup, targetId, before.rental.version, {
+        quantity: 1,
+        releaseAssetIds: [releasedAssetId],
+      });
+      expect(result.isOk()).toBe(true);
+    } finally {
+      emitter.off(ConfirmedRentalEditedIntegrationEvent.name, listener);
+    }
+
+    const after = await fixtures.persistedState(setup.rental.rentalId);
+    expect(after.rental.demandLines.find((item) => item.id === targetId)).toMatchObject({
+      quantity: 3,
+      removedQuantity: 1,
+      removedAt: null,
+    });
+    const reconstituted = await moduleRef.get(RentalRepository).findById(setup.tenant.id, setup.rental.rentalId);
+    expect(reconstituted?.currentDemandLines.find(({ id }) => id === targetId)?.operationalQuantity).toBe(2);
+    expect(after.rental.assignedAssets.find((item) => item.id === releasedAssignment.id)?.effectiveUntil).toEqual(
+      expect.any(Date),
+    );
+    expect(
+      after.rental.assignedAssets.filter(
+        (item) => item.rentalDemandLineId === targetId && item.effectiveUntil === null,
+      ),
+    ).toEqual(remainingTargetAssignments);
+    const persistedReleasedBlock = after.blocks.find((item) => item.id === releasedBlock.id)!;
+    expect(persistedReleasedBlock.releasedAt).toBeNull();
+    expect(parsePostgresRange(persistedReleasedBlock.period).end).toEqual(
+      new Date(
+        after.rental.assignedAssets.find((item) => item.id === releasedAssignment.id)!.effectiveUntil!.getTime() +
+          15 * 60_000,
+      ),
+    );
+    expect(after.blocks.filter((item) => item.id !== releasedBlock.id)).toEqual(unaffectedBlocks);
+    expect(after.rental.ownerSplits).toHaveLength(2);
+    expect(after.rental.ownerSplits.map(({ assignedAssetId }) => assignedAssetId)).toEqual(
+      expect.arrayContaining(remainingTargetAssignments.map(({ id }) => id)),
+    );
+    expect(after.rental.ownerSplits.some(({ assignedAssetId }) => assignedAssetId === releasedAssignment.id)).toBe(
+      false,
+    );
+    expect(after.rental.priceSnapshot).toEqual(before.rental.priceSnapshot);
+    expect(after.rental.acceptedCustomerTotal).toEqual(before.rental.acceptedCustomerTotal);
+    expect(after.rental.version).toBe(before.rental.version + 1);
+    expect(events).toHaveLength(1);
+    expect(events[0]).toEqual(expect.objectContaining({ tenantId: setup.tenant.id, rentalId: setup.rental.rentalId }));
+  });
+
   it('replaces owner splits from remaining fulfillment without changing accepted pricing', async () => {
     const setup = await scenario({ thirdPartyDemandIndex: 0 });
     const before = await fixtures.persistedState(setup.rental.rentalId);
@@ -328,9 +411,37 @@ describe('RemoveConfirmedPackageDemandLine integration', () => {
     expect(events).toEqual([]);
   });
 
-  it('rejects a current accessory reference atomically and publishes no edit event', async () => {
-    const setup = await scenario({ thirdPartyDemandIndex: 1 });
-    const targetId = setup.rental.demandLineIds[1];
+  it('allows partial suppression when a current accessory references the package demand line', async () => {
+    const setup = await scenario({ demandQuantities: [3, 1] });
+    const targetId = setup.rental.demandLineIds[0];
+    await fixtures.createAccessoryState({
+      tenantId: setup.tenant.id,
+      branchId: setup.branch.id,
+      rentalId: setup.rental.rentalId,
+      sourceRentalDemandLineId: targetId,
+      period: setup.period,
+    });
+    const before = await fixtures.persistedState(setup.rental.rentalId);
+    const accessoryBefore = await fixtures.accessoryState(setup.rental.rentalId);
+
+    const result = await remove(setup, targetId, before.rental.version, {
+      quantity: 1,
+      releaseAssetIds: [setup.assetIdsByDemand[0][0]],
+    });
+
+    expect(result.isOk()).toBe(true);
+    const after = await fixtures.persistedState(setup.rental.rentalId);
+    expect(after.rental.demandLines.find((item) => item.id === targetId)).toMatchObject({
+      quantity: 3,
+      removedQuantity: 1,
+      removedAt: null,
+    });
+    expect(await fixtures.accessoryState(setup.rental.rentalId)).toEqual(accessoryBefore);
+  });
+
+  it('rejects full suppression with a current accessory reference atomically and publishes no edit event', async () => {
+    const setup = await scenario({ demandQuantities: [3, 1], thirdPartyDemandIndex: 0 });
+    const targetId = setup.rental.demandLineIds[0];
     await fixtures.createAccessoryState({
       tenantId: setup.tenant.id,
       branchId: setup.branch.id,
@@ -344,7 +455,10 @@ describe('RemoveConfirmedPackageDemandLine integration', () => {
     const listener = (event: ConfirmedRentalEditedIntegrationEvent) => events.push(event);
     emitter.on(ConfirmedRentalEditedIntegrationEvent.name, listener);
     try {
-      const result = await remove(setup, targetId, before.rental.version);
+      const result = await remove(setup, targetId, before.rental.version, {
+        quantity: 3,
+        releaseAssetIds: setup.assetIdsByDemand[0],
+      });
       expect(result.isErr() && result.error.code).toBe('rental_commitment.rental_demand_line_referenced_by_accessory');
     } finally {
       emitter.off(ConfirmedRentalEditedIntegrationEvent.name, listener);
@@ -352,6 +466,26 @@ describe('RemoveConfirmedPackageDemandLine integration', () => {
     expect(await fixtures.persistedState(setup.rental.rentalId)).toEqual(before);
     expect(await fixtures.accessoryState(setup.rental.rentalId)).toEqual(accessoryBefore);
     expect(events).toEqual([]);
+  });
+
+  it('returns PACKAGE eligibility errors before checking accessory references', async () => {
+    const setup = await scenario({ kind: 'SINGLE', demandCount: 2 });
+    const targetId = setup.rental.demandLineIds[0];
+    await fixtures.createAccessoryState({
+      tenantId: setup.tenant.id,
+      branchId: setup.branch.id,
+      rentalId: setup.rental.rentalId,
+      sourceRentalDemandLineId: targetId,
+      period: setup.period,
+    });
+    const before = await fixtures.persistedState(setup.rental.rentalId);
+    const accessoryBefore = await fixtures.accessoryState(setup.rental.rentalId);
+
+    const result = await remove(setup, targetId, before.rental.version);
+
+    expect(result.isErr() && result.error.code).toBe('rental_commitment.invalid_rental_field');
+    expect(await fixtures.persistedState(setup.rental.rentalId)).toEqual(before);
+    expect(await fixtures.accessoryState(setup.rental.rentalId)).toEqual(accessoryBefore);
   });
 
   it.each([

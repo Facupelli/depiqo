@@ -12,6 +12,7 @@ import {
   RentalSelectionNotFoundError,
 } from '../../domain/errors/rental-commitment.errors';
 import { Rental } from '../../domain/rental.aggregate';
+import { RentableItemKind } from '../../domain/rental-status';
 import { getConfirmedPriceSnapshotForOwnerSplits } from '../../owner-split/confirmed-price-snapshot-for-owner-splits';
 import { RentalOwnerSplitDraft } from '../../owner-split/owner-split-calculator.types';
 import { RentalOwnerSplitCalculator } from '../../owner-split/rental-owner-split-calculator';
@@ -39,13 +40,16 @@ export class RemoveConfirmedPackageDemandLineHandler implements ICommandHandler<
   ) {}
 
   async execute(command: RemoveConfirmedPackageDemandLineCommand): Promise<RemoveConfirmedPackageDemandLineResult> {
-    const { tenantId, tenantUserId, rentalId, demandLineId, expectedVersion } = command.props;
+    const { tenantId, tenantUserId, rentalId, demandLineId, expectedVersion, quantity, releaseAssetIds } =
+      command.props;
     const context = {
       useCase: 'RemoveConfirmedPackageDemandLine',
       tenantId,
       tenantUserId,
       rentalId,
       demandLineId,
+      quantity,
+      releaseAssetIds,
     };
 
     return this.unitOfWork.runInTransaction(async ({ tx, integrationEvents }) => {
@@ -63,25 +67,37 @@ export class RemoveConfirmedPackageDemandLineHandler implements ICommandHandler<
         );
       }
 
-      const accessoryReference = await tx.v2RentalAccessorySelection.findFirst({
-        where: {
-          tenantId,
-          rentalOrderId: rentalId,
-          sourceRentalDemandLineId: demandLineId,
-        },
-        select: { id: true },
-      });
-      if (accessoryReference) {
-        return err(
-          this.error(
-            'rental_commitment.rental_demand_line_referenced_by_accessory',
-            `Rental demand line "${demandLineId}" is referenced by a current accessory selection.`,
-            context,
-          ),
-        );
+      const demandLine = rental.currentDemandLines.find((candidate) => candidate.id === demandLineId);
+      const parentSelection = demandLine
+        ? rental.currentSelections.find((candidate) => candidate.id === demandLine.rentalSelectionId)
+        : undefined;
+      const isCurrentPackageDemandLine = parentSelection?.rentableItemKindSnapshot === RentableItemKind.Package;
+      if (isCurrentPackageDemandLine && demandLine?.operationalQuantity === quantity) {
+        const accessoryReference = await tx.v2RentalAccessorySelection.findFirst({
+          where: {
+            tenantId,
+            rentalOrderId: rentalId,
+            sourceRentalDemandLineId: demandLineId,
+          },
+          select: { id: true },
+        });
+        if (accessoryReference) {
+          return err(
+            this.error(
+              'rental_commitment.rental_demand_line_referenced_by_accessory',
+              `Rental demand line "${demandLineId}" is referenced by a current accessory selection.`,
+              context,
+            ),
+          );
+        }
       }
 
-      const removed = rental.removeConfirmedPackageDemandLine({ demandLineId, operationTime: new Date() });
+      const removed = rental.removeConfirmedPackageDemandLine({
+        demandLineId,
+        quantity,
+        releaseAssetIds,
+        operationTime: new Date(),
+      });
       if (removed.isErr()) return err(this.map(removed.error, context));
 
       const ownerSplits = this.calculateOwnerSplits(rental);

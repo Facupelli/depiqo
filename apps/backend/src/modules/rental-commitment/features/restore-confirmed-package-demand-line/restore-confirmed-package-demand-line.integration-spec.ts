@@ -132,6 +132,8 @@ describe('RestoreConfirmedPackageDemandLine integration', () => {
         rentalId: setup.rental.rentalId,
         demandLineId,
         expectedVersion,
+        quantity: 1,
+        releaseAssetIds: [setup.assetIds[setup.rental.demandLineIds.indexOf(demandLineId)]],
       }),
     );
   }
