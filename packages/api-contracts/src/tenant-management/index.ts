@@ -21,6 +21,7 @@ export * from "./search-branch-address-suggestions.contract";
 export * from "./submit-customer-profile.contract";
 export * from "./tenant-domain.contract";
 export * from "./tenant-context.contract";
+export * from "./tenant-permission.schema";
 export * from "./get-custom-domain.contract";
 export * from "./register-custom-domain.contract";
 export * from "./refresh-custom-domain-status.contract";
