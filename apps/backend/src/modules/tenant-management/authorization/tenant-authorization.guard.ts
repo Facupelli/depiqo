@@ -1,9 +1,9 @@
-import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
+import { CanActivate, ExecutionContext, ForbiddenException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import type { Request } from 'express';
 
 import { IS_PUBLIC_KEY } from 'src/core/decorators/public.decorator';
-import type { AuthActor } from 'src/modules/tenant-management/auth/shared/auth.types';
+import { AUTH_ACTOR_TYPES, type AuthActor } from 'src/modules/tenant-management/auth/shared/auth.types';
 
 import { TenantAuthorizationHttpEnforcer } from './tenant-authorization-http.enforcer';
 import {
@@ -31,14 +31,21 @@ export class TenantAuthorizationGuard implements CanActivate {
       targets,
     );
 
-    // Transition mode: strict missing-metadata denial is intentionally deferred.
-    if (!requirement || requirement.type === 'EXEMPT' || requirement.type === 'CONDITIONAL') {
+    if (requirement?.type === 'EXEMPT' || requirement?.type === 'CONDITIONAL') {
       return true;
     }
 
     const request = context.switchToHttp().getRequest<Request & { user?: AuthActor }>();
     if (!request.isAuthenticated?.() || !request.user) {
       throw new UnauthorizedException('Authentication required.');
+    }
+
+    if (!requirement) {
+      if (request.user.actorType === AUTH_ACTOR_TYPES.TENANT_CUSTOMER) {
+        return true;
+      }
+
+      throw new ForbiddenException('Tenant authorization metadata is required.');
     }
 
     await this.authorizationEnforcer.enforceRequirement(request.user, requirement);

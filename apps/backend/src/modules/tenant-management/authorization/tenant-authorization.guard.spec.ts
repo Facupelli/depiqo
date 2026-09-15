@@ -149,11 +149,43 @@ describe('TenantAuthorizationGuard', () => {
     expect(test.tenantAuthorization.hasAllPermissions).not.toHaveBeenCalled();
   });
 
-  it('allows missing metadata during transition mode', async () => {
-    const test = fixture(undefined, false);
+  it('denies an authenticated tenant user with 403 when authorization metadata is missing', async () => {
+    const test = fixture();
+    const handler = () => undefined;
+
+    await expect(test.guard.canActivate(test.contextFor(handler).context)).rejects.toMatchObject({
+      response: {
+        statusCode: 403,
+        message: 'Tenant authorization metadata is required.',
+      },
+    });
+    expect(test.tenantAuthorization.hasPermission).not.toHaveBeenCalled();
+    expect(test.tenantAuthorization.hasAnyPermission).not.toHaveBeenCalled();
+    expect(test.tenantAuthorization.hasAllPermissions).not.toHaveBeenCalled();
+  });
+
+  it('allows an authenticated tenant customer when tenant authorization metadata is missing', async () => {
+    const customer = {
+      actorType: AUTH_ACTOR_TYPES.TENANT_CUSTOMER,
+      id: 'customer-1',
+      tenantId: 'tenant-1',
+    } as AuthActor;
+    const test = fixture(customer);
     const handler = () => undefined;
 
     await expect(test.guard.canActivate(test.contextFor(handler).context)).resolves.toBe(true);
+    expect(test.tenantAuthorization.hasPermission).not.toHaveBeenCalled();
+    expect(test.tenantAuthorization.hasAnyPermission).not.toHaveBeenCalled();
+    expect(test.tenantAuthorization.hasAllPermissions).not.toHaveBeenCalled();
+  });
+
+  it('returns 401 when authorization metadata and the authenticated actor are missing', async () => {
+    const test = fixture(undefined, false);
+    const handler = () => undefined;
+
+    await expect(test.guard.canActivate(test.contextFor(handler).context)).rejects.toBeInstanceOf(
+      UnauthorizedException,
+    );
   });
 
   it('fails a missing authorization subject closed as stale authentication', async () => {
