@@ -87,6 +87,7 @@ interface RentalDemandLinePersistenceRecord {
   equipmentTypeId: string;
   equipmentTypeNameSnapshot: string;
   quantity: number;
+  removedQuantity: number;
   createdAt: Date;
   removedAt: Date | null;
 }
@@ -163,6 +164,7 @@ export class RentalMapper {
           equipmentTypeId: line.equipmentTypeId as EquipmentTypeId,
           equipmentTypeNameSnapshot: line.equipmentTypeNameSnapshot,
           quantity: line.quantity,
+          removedQuantity: line.removedQuantity,
           createdAt: line.createdAt,
           removedAt: line.removedAt ?? undefined,
         }),
@@ -341,6 +343,7 @@ export class RentalMapper {
       equipmentTypeId: line.equipmentTypeId,
       equipmentTypeNameSnapshot: line.equipmentTypeNameSnapshot,
       quantity: line.quantity,
+      removedQuantity: line.removedQuantity,
       createdAt: line.createdAt,
       removedAt: line.removedAt,
     };
@@ -348,9 +351,10 @@ export class RentalMapper {
 
   static toDemandLineUpdateData(
     line: RentalDemandLine,
-  ): Pick<Prisma.V2RentalDemandLineUpdateManyMutationInput, 'quantity' | 'removedAt'> {
+  ): Pick<Prisma.V2RentalDemandLineUpdateManyMutationInput, 'quantity' | 'removedQuantity' | 'removedAt'> {
     return {
       quantity: line.quantity,
+      removedQuantity: line.removedQuantity,
       removedAt: line.removedAt ?? null,
     };
   }

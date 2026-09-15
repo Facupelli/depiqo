@@ -51,7 +51,17 @@ export const GetRentalDetailDemandLineSchema = z.object({
 	equipmentTypeId: z.string(),
 	equipmentTypeName: z.string(),
 	quantity: z.number().int().positive(),
+	removedQuantity: z.number().int().nonnegative(),
 	assignedAssets: z.array(GetRentalDetailAssignedAssetSchema),
+});
+
+export const GetRentalDetailRemovedDemandLineSchema = z.object({
+	id: z.string(),
+	rentalSelectionId: z.string(),
+	equipmentTypeId: z.string(),
+	equipmentTypeName: z.string(),
+	quantity: z.number().int().positive(),
+	removedAt: z.string().datetime(),
 });
 
 export const GetRentalDetailSelectionSchema = z.object({
@@ -62,6 +72,7 @@ export const GetRentalDetailSelectionSchema = z.object({
 	rentableItemKind: GetRentableItemsKindSchema,
 	quantity: z.number().int().positive(),
 	demandLines: z.array(GetRentalDetailDemandLineSchema),
+	removedDemandLines: z.array(GetRentalDetailRemovedDemandLineSchema),
 });
 
 export const GetRentalDetailAccessorySchema = z.object({
@@ -268,6 +279,9 @@ export type GetRentalDetailAssignedAssetDto = z.infer<
 >;
 export type GetRentalDetailDemandLineDto = z.infer<
 	typeof GetRentalDetailDemandLineSchema
+>;
+export type GetRentalDetailRemovedDemandLineDto = z.infer<
+	typeof GetRentalDetailRemovedDemandLineSchema
 >;
 export type GetRentalDetailSelectionDto = z.infer<
 	typeof GetRentalDetailSelectionSchema

@@ -1,3 +1,4 @@
+import type { GetRentalDetailRemovedDemandLineDto } from "@repo/api-contracts";
 import { Button } from "@repo/ui/components/button";
 import {
 	Popover,
@@ -11,6 +12,7 @@ import {
 	Package,
 	Pencil,
 	Trash2,
+	Undo2,
 	User2Icon,
 } from "lucide-react";
 import { useState } from "react";
@@ -25,11 +27,15 @@ import type {
 } from "../get-rental-detail-view/get-rental-detail-view.schema";
 import { DemandLineAccessoryAssignmentSheet } from "../preparation/accessories/demand-line-accessory-assignment-sheet";
 import { RentalAccessoryAssignmentSheet } from "../preparation/accessories/rental-accessory-assignment-sheet";
+import { RemovePackageDemandLineAlertDialog } from "../remove-package-demand-line/remove-package-demand-line-alert-dialog";
+import { useRemovePackageDemandLineDialog } from "../remove-package-demand-line/use-remove-package-demand-line-dialog";
 import { RemoveSelectionAlertDialog } from "../remove-selection/remove-selection-alert-dialog";
 import { useRemoveSelectionDialog } from "../remove-selection/use-remove-selection-dialog";
 import { useRentalDetailContext } from "../rental-detail.context";
 import { isNonEmptyString } from "../rental-detail.utils";
 import { ReplaceAssignedAssetDialog } from "../replace-assigned-asset/replace-assigned-asset-dialog";
+import { RestorePackageDemandLineAlertDialog } from "../restore-package-demand-line/restore-package-demand-line-alert-dialog";
+import { useRestorePackageDemandLineDialog } from "../restore-package-demand-line/use-restore-package-demand-line-dialog";
 import { DemandLineRowActions } from "./demand-line-row-actions";
 
 export function RentalEquipmentSection() {
@@ -46,9 +52,23 @@ export function RentalEquipmentSection() {
 	const [replaceAssignedAssetId, setReplaceAssignedAssetId] = useState<
 		string | null
 	>(null);
+	const [removePackageDemandLineId, setRemovePackageDemandLineId] = useState<
+		string | null
+	>(null);
+	const [restorePackageDemandLineId, setRestorePackageDemandLineId] = useState<
+		string | null
+	>(null);
 	const removeDialog = useRemoveSelectionDialog({
 		selectionId: removeSelectionId,
 		onClose: () => setRemoveSelectionId(null),
+	});
+	const removePackageDemandLineDialog = useRemovePackageDemandLineDialog({
+		demandLineId: removePackageDemandLineId,
+		onClose: () => setRemovePackageDemandLineId(null),
+	});
+	const restorePackageDemandLineDialog = useRestorePackageDemandLineDialog({
+		demandLineId: restorePackageDemandLineId,
+		onClose: () => setRestorePackageDemandLineId(null),
 	});
 	const accessoriesByEquipmentLine = groupAccessoriesByEquipmentLine(
 		rental.accessories,
@@ -95,6 +115,31 @@ export function RentalEquipmentSection() {
 				errorMessage={removeDialog.errorMessage}
 				onConfirm={removeDialog.onSubmit}
 			/>
+			<RemovePackageDemandLineAlertDialog
+				open={removePackageDemandLineId !== null}
+				onOpenChange={removePackageDemandLineDialog.onOpenChange}
+				demandLine={removePackageDemandLineDialog.demandLine}
+				selectedReleaseAssetIds={
+					removePackageDemandLineDialog.selectedReleaseAssetIds
+				}
+				isPending={removePackageDemandLineDialog.isSubmitting}
+				isSubmitDisabled={removePackageDemandLineDialog.isSubmitDisabled}
+				errorMessage={removePackageDemandLineDialog.errorMessage}
+				onReleaseAssetToggle={
+					removePackageDemandLineDialog.onReleaseAssetToggle
+				}
+				onConfirm={removePackageDemandLineDialog.onSubmit}
+			/>
+			<RestorePackageDemandLineAlertDialog
+				open={restorePackageDemandLineId !== null}
+				onOpenChange={restorePackageDemandLineDialog.onOpenChange}
+				target={restorePackageDemandLineDialog.target}
+				quantity={restorePackageDemandLineDialog.quantity}
+				isPending={restorePackageDemandLineDialog.isSubmitting}
+				errorMessage={restorePackageDemandLineDialog.errorMessage}
+				onQuantityChange={restorePackageDemandLineDialog.onQuantityChange}
+				onConfirm={restorePackageDemandLineDialog.onSubmit}
+			/>
 			<ReplaceAssignedAssetDialog
 				currentAssignedAssetId={replaceAssignedAssetId}
 				onClose={() => setReplaceAssignedAssetId(null)}
@@ -133,6 +178,10 @@ export function RentalEquipmentSection() {
 						const hasReferencedAccessories = selection.demandLines.some(
 							(demandLine) => accessoriesByEquipmentLine.has(demandLine.id),
 						);
+						const packageHasSuppressedQuantity =
+							selection.rentableItemKind !== "SINGLE" &&
+							(selection.demandLines.some((line) => line.removedQuantity > 0) ||
+								selection.removedDemandLines.length > 0);
 						const removeDisabledReason =
 							rental.selections.length <= 1
 								? "El pedido debe conservar al menos un producto."
@@ -146,7 +195,7 @@ export function RentalEquipmentSection() {
 								accessoriesByEquipmentLine={accessoriesByEquipmentLine}
 								selection={selection}
 								onEditQuantity={
-									rental.status === "CONFIRMED"
+									rental.status === "CONFIRMED" && !packageHasSuppressedQuantity
 										? () => setQuantitySelection(selection)
 										: undefined
 								}
@@ -169,6 +218,22 @@ export function RentalEquipmentSection() {
 										? setSelectedAccessoryDemandLineId
 										: undefined
 								}
+								onRemovePackageDemandLine={
+									rental.status === "CONFIRMED"
+										? (demandLineId) => {
+												removePackageDemandLineDialog.onTargetChange();
+												setRemovePackageDemandLineId(demandLineId);
+											}
+										: undefined
+								}
+								onRestorePackageDemandLine={
+									rental.status === "CONFIRMED"
+										? (demandLineId) => {
+												restorePackageDemandLineDialog.onTargetChange();
+												setRestorePackageDemandLineId(demandLineId);
+											}
+										: undefined
+								}
 							/>
 						);
 					})}
@@ -188,6 +253,8 @@ function RentalEquipmentCard({
 	onRemove,
 	onReplaceAssignedAsset,
 	onAssignAccessories,
+	onRemovePackageDemandLine,
+	onRestorePackageDemandLine,
 	removeDisabledReason,
 }: {
 	selection: RentalDetailViewSelectionDto;
@@ -195,6 +262,8 @@ function RentalEquipmentCard({
 	onRemove?: () => void;
 	onReplaceAssignedAsset?: (assetId: string) => void;
 	onAssignAccessories?: (rentalDemandLineId: string) => void;
+	onRemovePackageDemandLine?: (rentalDemandLineId: string) => void;
+	onRestorePackageDemandLine?: (rentalDemandLineId: string) => void;
 	removeDisabledReason: string | null;
 	accessoriesByEquipmentLine: Map<
 		string,
@@ -324,8 +393,11 @@ function RentalEquipmentCard({
 						<RentalPackageChildrenList
 							accessoriesByEquipmentLine={accessoriesByEquipmentLine}
 							items={selection.demandLines}
+							removedItems={selection.removedDemandLines}
 							onReplaceAssignedAsset={onReplaceAssignedAsset}
 							onAssignAccessories={onAssignAccessories}
+							onRemove={onRemovePackageDemandLine}
+							onRestore={onRestorePackageDemandLine}
 						/>
 					</div>
 				</div>
@@ -382,13 +454,19 @@ function RemoveSelectionButton({
 
 function RentalPackageChildrenList({
 	items,
+	removedItems,
 	accessoriesByEquipmentLine,
 	onReplaceAssignedAsset,
 	onAssignAccessories,
+	onRemove,
+	onRestore,
 }: {
 	items: RentalDetailViewDemandLineDto[];
+	removedItems: GetRentalDetailRemovedDemandLineDto[];
 	onReplaceAssignedAsset?: (assetId: string) => void;
 	onAssignAccessories?: (rentalDemandLineId: string) => void;
+	onRemove?: (rentalDemandLineId: string) => void;
+	onRestore?: (rentalDemandLineId: string) => void;
 	accessoriesByEquipmentLine: Map<
 		string,
 		GetRentalDetailViewResponseDto["accessories"]
@@ -403,8 +481,24 @@ function RentalPackageChildrenList({
 					equipment={child}
 					onReplaceAssignedAsset={onReplaceAssignedAsset}
 					onAssignAccessories={onAssignAccessories}
+					onRemove={onRemove}
+					onRestore={onRestore}
 				/>
 			))}
+			{removedItems.length > 0 ? (
+				<div className="min-w-0 space-y-1.5 border-neutral-200 border-t pt-3">
+					<p className="font-semibold text-[10px] text-neutral-400 uppercase tracking-wide">
+						Equipos quitados
+					</p>
+					{removedItems.map((child) => (
+						<RemovedPackageChildRow
+							key={child.id}
+							equipment={child}
+							onRestore={onRestore}
+						/>
+					))}
+				</div>
+			) : null}
 		</div>
 	);
 }
@@ -414,11 +508,15 @@ function RentalPackageChildRow({
 	accessories,
 	onReplaceAssignedAsset,
 	onAssignAccessories,
+	onRemove,
+	onRestore,
 }: {
 	equipment: RentalDetailViewDemandLineDto;
 	accessories: GetRentalDetailViewResponseDto["accessories"];
 	onReplaceAssignedAsset?: (assetId: string) => void;
 	onAssignAccessories?: (rentalDemandLineId: string) => void;
+	onRemove?: (rentalDemandLineId: string) => void;
+	onRestore?: (rentalDemandLineId: string) => void;
 }) {
 	const owners = getAssetOwners(equipment.assignedAssets);
 	const replaceableAssignedAssets = getReplaceableAssignedAssets(
@@ -434,6 +532,15 @@ function RentalPackageChildRow({
 					</p>
 					<div className="mt-0.5 flex min-w-0 flex-wrap items-baseline gap-x-1.5 text-[11px] text-neutral-500">
 						<QuantityText quantity={equipment.quantity} />
+						{equipment.removedQuantity > 0 ? (
+							<>
+								<span aria-hidden="true">·</span>
+								<span className="whitespace-nowrap text-neutral-400">
+									{equipment.removedQuantity}{" "}
+									{equipment.removedQuantity === 1 ? "quitada" : "quitadas"}
+								</span>
+							</>
+						) : null}
 						<AssignedAssetMetadata assignments={equipment.assignedAssets} />
 					</div>
 					{owners.length > 0 ? (
@@ -453,6 +560,8 @@ function RentalPackageChildRow({
 					) : null}
 				</div>
 				{onAssignAccessories ||
+				onRemove ||
+				(onRestore && equipment.removedQuantity > 0) ||
 				(onReplaceAssignedAsset && replaceableAssignedAssets.length > 0) ? (
 					<DemandLineRowActions
 						equipmentTypeName={equipment.equipmentTypeName}
@@ -460,11 +569,46 @@ function RentalPackageChildRow({
 						replaceableAssignedAssets={replaceableAssignedAssets}
 						onAssignAccessories={onAssignAccessories}
 						onReplaceAssignedAsset={onReplaceAssignedAsset}
+						onRemovePackageDemandLine={onRemove}
+						onRestorePackageDemandLine={
+							equipment.removedQuantity > 0 ? onRestore : undefined
+						}
 					/>
 				) : null}
 			</div>
 			{accessories.length > 0 ? (
 				<RentalAccessoriesList accessories={accessories} variant="compact" />
+			) : null}
+		</div>
+	);
+}
+
+function RemovedPackageChildRow({
+	equipment,
+	onRestore,
+}: {
+	equipment: GetRentalDetailRemovedDemandLineDto;
+	onRestore?: (rentalDemandLineId: string) => void;
+}) {
+	return (
+		<div className="flex min-w-0 items-start gap-2 rounded-md px-2 py-1.5 text-neutral-500">
+			<p className="min-w-0 flex-1 break-words text-sm">
+				{equipment.equipmentTypeName}
+			</p>
+			<span className="shrink-0 whitespace-nowrap text-xs">
+				×{equipment.quantity}
+			</span>
+			{onRestore ? (
+				<Button
+					type="button"
+					variant="ghost"
+					size="icon"
+					className="size-6 shrink-0 text-neutral-500"
+					onClick={() => onRestore(equipment.id)}
+					aria-label={`Restaurar ${equipment.equipmentTypeName} en el combo`}
+				>
+					<Undo2 className="size-3.5" />
+				</Button>
 			) : null}
 		</div>
 	);

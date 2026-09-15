@@ -189,6 +189,7 @@ describe('Rental temporal assignments', () => {
       equipmentTypeId: 'equipment-history' as EquipmentTypeId,
       equipmentTypeNameSnapshot: 'Historical camera',
       quantity: 1,
+      removedQuantity: 1,
       removedAt,
     });
     const invalidAssignment = AssignedAsset.reconstitute({

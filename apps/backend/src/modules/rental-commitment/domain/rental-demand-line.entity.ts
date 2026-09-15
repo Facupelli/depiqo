@@ -13,6 +13,7 @@ interface RentalDemandLineProps {
   equipmentTypeId: EquipmentTypeId;
   equipmentTypeNameSnapshot: string;
   quantity: RentalQuantity;
+  removedQuantity: number;
   createdAt?: Date;
   removedAt?: Date;
 }
@@ -26,11 +27,12 @@ export interface CreateRentalDemandLineProps {
   equipmentTypeNameSnapshot: string;
   quantity: number;
   createdAt?: Date;
-  removedAt?: Date;
 }
 
-export interface ReconstituteRentalDemandLineProps extends Omit<CreateRentalDemandLineProps, 'id'> {
+export interface ReconstituteRentalDemandLineProps extends CreateRentalDemandLineProps {
   id: RentalDemandLineId;
+  removedQuantity: number;
+  removedAt?: Date;
 }
 
 export class RentalDemandLine {
@@ -60,6 +62,12 @@ export class RentalDemandLine {
   get quantity(): number {
     return this.props.quantity.value;
   }
+  get removedQuantity(): number {
+    return this.props.removedQuantity;
+  }
+  get operationalQuantity(): number {
+    return this.quantity - this.removedQuantity;
+  }
   get createdAt(): Date | undefined {
     return this.props.createdAt ? new Date(this.props.createdAt) : undefined;
   }
@@ -75,20 +83,60 @@ export class RentalDemandLine {
     if (quantity.isErr()) {
       return err(quantity.error);
     }
+    if (newQuantity < this.removedQuantity) {
+      return err(new RentalInvalidFieldError('quantity', 'must not be lower than removedQuantity'));
+    }
+    if (this.isCurrent && this.removedQuantity > 0 && newQuantity === this.removedQuantity) {
+      return err(new RentalInvalidFieldError('quantity', 'must be greater than removedQuantity for a current line'));
+    }
 
     return ok(
       new RentalDemandLine(this.id, {
         ...this.props,
         quantity: quantity.value,
+        removedQuantity: this.removedAt ? newQuantity : this.removedQuantity,
+      }),
+    );
+  }
+
+  suppress(quantity: number, operationTime: Date): Result<RentalDemandLine, RentalCommitmentError> {
+    if (!Number.isInteger(quantity) || quantity <= 0) {
+      return err(new RentalInvalidFieldError('quantity', 'must be a positive integer'));
+    }
+    if (quantity > this.operationalQuantity) {
+      return err(new RentalInvalidFieldError('quantity', 'must not exceed operationalQuantity'));
+    }
+
+    const removedQuantity = this.removedQuantity + quantity;
+    return ok(
+      new RentalDemandLine(this.id, {
+        ...this.props,
+        removedQuantity,
+        removedAt: removedQuantity === this.quantity ? (this.props.removedAt ?? new Date(operationTime)) : undefined,
       }),
     );
   }
 
   removeAt(operationTime: Date): RentalDemandLine {
-    return new RentalDemandLine(this.id, {
-      ...this.props,
-      removedAt: this.props.removedAt ?? new Date(operationTime),
-    });
+    if (this.operationalQuantity === 0) return this;
+    return this.suppress(this.operationalQuantity, operationTime)._unsafeUnwrap();
+  }
+
+  restore(quantity: number): Result<RentalDemandLine, RentalCommitmentError> {
+    if (!Number.isInteger(quantity) || quantity <= 0) {
+      return err(new RentalInvalidFieldError('quantity', 'must be a positive integer'));
+    }
+    if (quantity > this.removedQuantity) {
+      return err(new RentalInvalidFieldError('quantity', 'must not exceed removedQuantity'));
+    }
+
+    return ok(
+      new RentalDemandLine(this.id, {
+        ...this.props,
+        removedQuantity: this.removedQuantity - quantity,
+        removedAt: undefined,
+      }),
+    );
   }
 
   static create(props: CreateRentalDemandLineProps): Result<RentalDemandLine, RentalCommitmentError> {
@@ -106,19 +154,41 @@ export class RentalDemandLine {
       new RentalDemandLine(props.id ?? RentalDemandLineId.create(), {
         ...props,
         quantity: quantity.value,
+        removedQuantity: 0,
         createdAt: props.createdAt ? new Date(props.createdAt) : undefined,
-        removedAt: props.removedAt ? new Date(props.removedAt) : undefined,
+        removedAt: undefined,
       }),
     );
   }
 
   static reconstitute(props: ReconstituteRentalDemandLineProps): RentalDemandLine {
+    const quantity = RentalQuantity.reconstitute(props.quantity);
+    this.assertRemovalState(props.removedQuantity, quantity.value, props.removedAt);
+
     return new RentalDemandLine(props.id, {
       ...props,
-      quantity: RentalQuantity.reconstitute(props.quantity),
+      quantity,
       createdAt: props.createdAt ? new Date(props.createdAt) : undefined,
       removedAt: props.removedAt ? new Date(props.removedAt) : undefined,
     });
+  }
+
+  private static assertRemovalState(removedQuantity: number, quantity: number, removedAt?: Date): void {
+    if (!Number.isInteger(removedQuantity)) {
+      throw new RentalInvalidFieldError('removedQuantity', 'must be an integer');
+    }
+    if (removedQuantity < 0) {
+      throw new RentalInvalidFieldError('removedQuantity', 'must be greater than or equal to zero');
+    }
+    if (removedQuantity > quantity) {
+      throw new RentalInvalidFieldError('removedQuantity', 'must not exceed quantity');
+    }
+    if (removedQuantity === quantity && removedAt === undefined) {
+      throw new RentalInvalidFieldError('removedAt', 'must be set when the full quantity is removed');
+    }
+    if (removedQuantity < quantity && removedAt !== undefined) {
+      throw new RentalInvalidFieldError('removedAt', 'must be absent unless the full quantity is removed');
+    }
   }
 
   private static validatePrimitiveFields(

@@ -43,6 +43,10 @@ import { ReplaceRentalDemandLineAccessoriesHttpController } from './features/rep
 import { ReplaceRentalDemandLineAccessoriesHandler } from './features/replace-rental-demand-line-accessories/replace-rental-demand-line-accessories.handler';
 import { RescheduleConfirmedRentalPeriodHttpController } from './features/reschedule-confirmed-rental-period/reschedule-confirmed-rental-period.controller';
 import { RescheduleConfirmedRentalPeriodHandler } from './features/reschedule-confirmed-rental-period/reschedule-confirmed-rental-period.handler';
+import { RestoreConfirmedPackageDemandLineHttpController } from './features/restore-confirmed-package-demand-line/restore-confirmed-package-demand-line.controller';
+import { RestoreConfirmedPackageDemandLineHandler } from './features/restore-confirmed-package-demand-line/restore-confirmed-package-demand-line.handler';
+import { RemoveConfirmedPackageDemandLineHttpController } from './features/remove-confirmed-package-demand-line/remove-confirmed-package-demand-line.controller';
+import { RemoveConfirmedPackageDemandLineHandler } from './features/remove-confirmed-package-demand-line/remove-confirmed-package-demand-line.handler';
 import { RemoveRentalSelectionHttpController } from './features/remove-rental-selection/remove-rental-selection.controller';
 import { RemoveRentalSelectionHandler } from './features/remove-rental-selection/remove-rental-selection.handler';
 import { GetRentalDetailHttpController } from './features/get-rental-detail/get-rental-detail.controller';
@@ -91,6 +95,8 @@ import { RentalLifecycleFactsService } from './public-api/rental-lifecycle-facts
     ReplaceConfirmedRentalAssetHttpController,
     ReplaceRentalDemandLineAccessoriesHttpController,
     RescheduleConfirmedRentalPeriodHttpController,
+    RestoreConfirmedPackageDemandLineHttpController,
+    RemoveConfirmedPackageDemandLineHttpController,
     RemoveRentalSelectionHttpController,
     GetRentalsCalendarHttpController,
     GetRentalDetailHttpController,
@@ -124,6 +130,8 @@ import { RentalLifecycleFactsService } from './public-api/rental-lifecycle-facts
     ReplaceConfirmedRentalAssetHandler,
     ReplaceRentalDemandLineAccessoriesHandler,
     RescheduleConfirmedRentalPeriodHandler,
+    RestoreConfirmedPackageDemandLineHandler,
+    RemoveConfirmedPackageDemandLineHandler,
     RemoveRentalSelectionHandler,
     GetRentalDetailHandler,
     GetRentalAccessoryDefaultsHandler,

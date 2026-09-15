@@ -7,6 +7,7 @@ import { DatabaseModule } from '../../src/core/database/database.module';
 import { IntegrationEventsModule } from '../../src/core/domain/events/integration-events.module';
 import { LoggerModule } from '../../src/core/logger/logger.module';
 import { CatalogModule } from '../../src/modules/catalog/catalog.module';
+import { ContractsModule } from '../../src/modules/contracts/contracts.module';
 import { RentalCommitmentModule } from '../../src/modules/rental-commitment/rental-commitment.module';
 import { OfferingManagementModule } from '../../src/modules/offering-management/offering-management.module';
 import { PricingModule } from '../../src/modules/pricing/pricing.module';
@@ -85,6 +86,30 @@ export async function createOfferingManagementIntegrationContext(
       IntegrationEventsModule,
       CqrsModule.forRoot(),
       OfferingManagementModule,
+    ],
+  });
+
+  for (const override of overrides) {
+    builder = builder.overrideProvider(override.provide as any).useValue(override.useValue);
+  }
+
+  const moduleRef = await builder.compile();
+
+  await moduleRef.init();
+  return moduleRef;
+}
+
+export async function createContractsIntegrationContext(overrides: ProviderOverride[] = []): Promise<TestingModule> {
+  let builder = Test.createTestingModule({
+    imports: [
+      SharedModule,
+      LoggerModule,
+      AppConfigModule,
+      DatabaseModule,
+      EventEmitterModule.forRoot(),
+      IntegrationEventsModule,
+      CqrsModule.forRoot(),
+      ContractsModule,
     ],
   });
 
