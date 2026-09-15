@@ -10,6 +10,7 @@ model V2RentalDemandLine {
   equipmentTypeId           String   @map("equipment_type_id")
   equipmentTypeNameSnapshot String   @map("equipment_type_name_snapshot")
   quantity                  Int
+  removedQuantity           Int      @default(0) @map("removed_quantity")
   createdAt                 DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
   removedAt                 DateTime? @map("removed_at") @db.Timestamptz(3)
 

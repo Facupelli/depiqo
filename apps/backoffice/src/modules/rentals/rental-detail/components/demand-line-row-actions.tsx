@@ -96,7 +96,7 @@ export function DemandLineRowActions({
 						onClick={() => onRemovePackageDemandLine(rentalDemandLineId)}
 					>
 						<Trash2 className="size-4" />
-						Quitar equipo del combo
+						Quitar equipo
 					</DropdownMenuItem>
 				) : null}
 			</DropdownMenuContent>

@@ -155,7 +155,11 @@ describe('Confirmed package demand line removal', () => {
     const result = rental.removeConfirmedPackageDemandLine({ demandLineId: lightDemandId, operationTime: beforeStart });
 
     expect(result.isOk()).toBe(true);
-    expect(rental.demandLines.find((line) => line.id === lightDemandId)?.removedAt).toEqual(beforeStart);
+    expect(rental.demandLines.find((line) => line.id === lightDemandId)).toMatchObject({
+      removedQuantity: 1,
+      operationalQuantity: 0,
+      removedAt: beforeStart,
+    });
     expect(rental.demandLines.find((line) => line.id === standDemandId)?.isCurrent).toBe(true);
     expect(rental.selections.find((selection) => selection.id === packageSelectionId)?.isCurrent).toBe(true);
     expect(rental.currentAssignedAssets.map((item) => item.assetId)).toEqual(['stand-asset', 'camera-asset']);
@@ -314,7 +318,7 @@ describe('Confirmed package demand line restoration', () => {
     const restored = rental.demandLines.find((line) => line.id === lightDemandId)!;
     const assignment = rental.currentAssignedAssets.find((item) => item.rentalDemandLineId === lightDemandId)!;
     const block = rental.assetBlocks.find((item) => item.assetId === 'restored-light-asset')!;
-    expect(restored.isCurrent).toBe(true);
+    expect(restored).toMatchObject({ isCurrent: true, removedQuantity: 0, operationalQuantity: 1 });
     expect(restored.id).toBe(lightDemandId);
     expect(restored.createdAt).toBeUndefined();
     expect(rental.selections.find((item) => item.id === packageSelectionId)).toBe(originalSelection);

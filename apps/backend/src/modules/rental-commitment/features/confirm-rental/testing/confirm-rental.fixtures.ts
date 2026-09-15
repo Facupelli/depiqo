@@ -97,6 +97,7 @@ export class ConfirmRentalFixtures {
               equipmentTypeId: equipmentTypeIds[index],
               equipmentTypeNameSnapshot: `Equipment type ${index + 1}`,
               quantity: demands[index].quantity ?? 1,
+              removedQuantity: 0,
             })),
           },
         },

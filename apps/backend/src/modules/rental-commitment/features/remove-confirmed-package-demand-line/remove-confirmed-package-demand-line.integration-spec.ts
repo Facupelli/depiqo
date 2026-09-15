@@ -193,7 +193,10 @@ describe('RemoveConfirmedPackageDemandLine integration', () => {
     expect(after.rental.selections).toEqual([
       expect.objectContaining({ id: setup.selectionId, quantity: 1, removedAt: null }),
     ]);
-    expect(after.rental.demandLines.find((item) => item.id === targetId)?.removedAt).toEqual(expect.any(Date));
+    expect(after.rental.demandLines.find((item) => item.id === targetId)).toMatchObject({
+      removedQuantity: 1,
+      removedAt: expect.any(Date),
+    });
     expect(
       after.rental.demandLines.filter((item) => item.id !== targetId).every((item) => item.removedAt === null),
     ).toBe(true);

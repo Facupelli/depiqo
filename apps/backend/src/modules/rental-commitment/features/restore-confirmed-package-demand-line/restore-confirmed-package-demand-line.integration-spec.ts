@@ -195,7 +195,7 @@ describe('RestoreConfirmedPackageDemandLine integration', () => {
     )!;
     expect(after.rental.version).toBe(removed.rental.version + 1);
     expect(after.rental.demandLines.filter(({ id }) => id === targetId)).toEqual([
-      expect.objectContaining({ id: targetId, removedAt: null }),
+      expect.objectContaining({ id: targetId, removedQuantity: 0, removedAt: null }),
     ]);
     expect(after.rental.selections).toEqual([
       expect.objectContaining({
@@ -356,7 +356,7 @@ describe('RestoreConfirmedPackageDemandLine integration', () => {
     const secondRemovalAt = new Date('2030-01-22T10:00:00.000Z');
     const removedAgain = await removeAt(setup, targetId, secondRemovalAt);
     expect(removedAgain.rental.demandLines.filter(({ id }) => id === targetId)).toEqual([
-      expect.objectContaining({ removedAt: secondRemovalAt }),
+      expect.objectContaining({ removedQuantity: 1, removedAt: secondRemovalAt }),
     ]);
     expect(
       removedAgain.rental.assignedAssets.filter(({ rentalDemandLineId }) => rentalDemandLineId === targetId),
