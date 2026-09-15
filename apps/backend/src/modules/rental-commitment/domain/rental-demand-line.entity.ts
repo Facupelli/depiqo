@@ -122,12 +122,21 @@ export class RentalDemandLine {
     return this.suppress(this.operationalQuantity, operationTime)._unsafeUnwrap();
   }
 
-  restore(): RentalDemandLine {
-    return new RentalDemandLine(this.id, {
-      ...this.props,
-      removedQuantity: 0,
-      removedAt: undefined,
-    });
+  restore(quantity: number): Result<RentalDemandLine, RentalCommitmentError> {
+    if (!Number.isInteger(quantity) || quantity <= 0) {
+      return err(new RentalInvalidFieldError('quantity', 'must be a positive integer'));
+    }
+    if (quantity > this.removedQuantity) {
+      return err(new RentalInvalidFieldError('quantity', 'must not exceed removedQuantity'));
+    }
+
+    return ok(
+      new RentalDemandLine(this.id, {
+        ...this.props,
+        removedQuantity: this.removedQuantity - quantity,
+        removedAt: undefined,
+      }),
+    );
   }
 
   static create(props: CreateRentalDemandLineProps): Result<RentalDemandLine, RentalCommitmentError> {

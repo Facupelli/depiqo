@@ -42,6 +42,7 @@ export class RestoreConfirmedPackageDemandLineHttpController {
         rentalId: params.rentalId,
         demandLineId: params.demandLineId,
         expectedVersion: dto.expectedVersion,
+        quantity: dto.quantity,
       }),
     );
     if (result.isErr()) throw toProblem(result.error);

@@ -137,9 +137,9 @@ describe('Rental selection and demand line local transitions', () => {
     expect(demandLine().removeAt(laterRemoval).removedAt).toEqual(removedAt);
   });
 
-  it('restores a demand line without changing its identity or accepted facts', () => {
-    const original = demandLine();
-    const restored = original.restore();
+  it('partially restores a current demand line without changing its identity or accepted facts', () => {
+    const original = reconstituteDemandLine(2);
+    const restored = original.restore(1)._unsafeUnwrap();
 
     expect(restored).toMatchObject({
       id: original.id,
@@ -147,12 +147,34 @@ describe('Rental selection and demand line local transitions', () => {
       equipmentTypeId: original.equipmentTypeId,
       equipmentTypeNameSnapshot: original.equipmentTypeNameSnapshot,
       quantity: original.quantity,
-      removedQuantity: 0,
-      operationalQuantity: original.quantity,
+      removedQuantity: 1,
+      operationalQuantity: 2,
       isCurrent: true,
     });
-    expect(restored.createdAt).toEqual(createdAt);
     expect(restored.removedAt).toBeUndefined();
-    expect(original.removedAt).toEqual(removedAt);
+  });
+
+  it('partially restores a fully removed demand line and clears its tombstone', () => {
+    const restored = reconstituteDemandLine(3, removedAt).restore(1)._unsafeUnwrap();
+
+    expect(restored).toMatchObject({ removedQuantity: 2, operationalQuantity: 1, isCurrent: true });
+    expect(restored.removedAt).toBeUndefined();
+  });
+
+  it('restores all remaining suppression', () => {
+    const restored = reconstituteDemandLine(1).restore(1)._unsafeUnwrap();
+
+    expect(restored).toMatchObject({ removedQuantity: 0, operationalQuantity: 3, isCurrent: true });
+    expect(restored.removedAt).toBeUndefined();
+  });
+
+  it.each([0, -1, 4])('rejects invalid restoration quantity %s', (quantity) => {
+    expect(demandLine().restore(quantity)._unsafeUnwrapErr()).toBeInstanceOf(RentalInvalidFieldError);
+  });
+
+  it('rejects restoration when fully operational', () => {
+    expect(reconstituteDemandLine(0).restore(1)._unsafeUnwrapErr()).toEqual(
+      new RentalInvalidFieldError('quantity', 'must not exceed removedQuantity'),
+    );
   });
 });

@@ -46,13 +46,14 @@ export class RestoreConfirmedPackageDemandLineHandler implements ICommandHandler
   ) {}
 
   async execute(command: RestoreConfirmedPackageDemandLineCommand): Promise<RestoreConfirmedPackageDemandLineResult> {
-    const { tenantId, tenantUserId, rentalId, demandLineId, expectedVersion } = command.props;
+    const { tenantId, tenantUserId, rentalId, demandLineId, expectedVersion, quantity } = command.props;
     const context = {
       useCase: 'RestoreConfirmedPackageDemandLine',
       tenantId,
       tenantUserId,
       rentalId,
       demandLineId,
+      quantity,
     };
 
     try {
@@ -79,11 +80,11 @@ export class RestoreConfirmedPackageDemandLineHandler implements ICommandHandler
         if (!demandLine) {
           return err(this.map(new RentalDemandLineNotFoundError(rentalId, demandLineId), context));
         }
-        if (demandLine.isCurrent) {
+        if (demandLine.removedQuantity === 0) {
           return err(
             this.error(
               'rental_commitment.rental_demand_line_already_current',
-              `Rental demand line "${demandLineId}" is already current.`,
+              `Rental demand line "${demandLineId}" is fully operational.`,
               context,
             ),
           );
@@ -112,6 +113,12 @@ export class RestoreConfirmedPackageDemandLineHandler implements ICommandHandler
         if (effectiveAt >= rental.period.end) {
           return err(this.map(new RentalPeriodHasEndedError(rentalId), context));
         }
+        if (!Number.isInteger(quantity) || quantity <= 0) {
+          return err(this.map(new RentalInvalidFieldError('quantity', 'must be a positive integer'), context));
+        }
+        if (quantity > demandLine.removedQuantity) {
+          return err(this.map(new RentalInvalidFieldError('quantity', 'must not exceed removedQuantity'), context));
+        }
 
         const acceptedAssetBuffer = rental.requireAcceptedAssetBuffer();
         const operationalPeriod = deriveConfirmedAssetBlockPeriod({
@@ -131,7 +138,7 @@ export class RestoreConfirmedPackageDemandLineHandler implements ICommandHandler
               rentalDemandLineId: demandLine.id,
               rentalSelectionId: demandLine.rentalSelectionId,
               equipmentTypeId: demandLine.equipmentTypeId,
-              quantity: demandLine.quantity,
+              quantity,
             },
           ],
           excludeAssetIds: rental.currentAssignedAssets.map((assignment) => assignment.assetId),
@@ -141,6 +148,7 @@ export class RestoreConfirmedPackageDemandLineHandler implements ICommandHandler
 
         const restored = rental.restoreConfirmedPackageDemandLine({
           demandLineId,
+          quantity,
           assignedAssets: plan.value.allocations.map((allocation) => ({
             rentalDemandLineId: allocation.rentalDemandLineId,
             assetId: allocation.assetId,

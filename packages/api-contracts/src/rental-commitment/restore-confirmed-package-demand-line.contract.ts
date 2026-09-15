@@ -9,6 +9,7 @@ export const RestoreConfirmedPackageDemandLineParamsSchema = z.object({
 
 export const RestoreConfirmedPackageDemandLineBodySchema = z.object({
   expectedVersion: z.number().int().nonnegative(),
+  quantity: z.number().int().positive(),
 });
 
 export const RestoreConfirmedPackageDemandLineResponseSchema = z.object({

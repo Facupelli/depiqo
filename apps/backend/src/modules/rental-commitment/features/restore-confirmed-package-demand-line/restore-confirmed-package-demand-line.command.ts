@@ -6,6 +6,7 @@ export class RestoreConfirmedPackageDemandLineCommand {
       rentalId: string;
       demandLineId: string;
       expectedVersion: number;
+      quantity: number;
     },
   ) {}
 }

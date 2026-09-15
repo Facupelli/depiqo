@@ -12,6 +12,7 @@ import {
   useIntegrationTestContext,
 } from '../../../../../test/support/integration-test-context';
 import { createTestFixtures, TestFixtures } from '../../../../../test/support/fixtures';
+import { RentalAssetAllocationService } from '../../asset-allocation/rental-asset-allocation.service';
 import { RentalRepository } from '../../persistence/rental.repository';
 import { CommittedRentalSelectionsAndDemand } from '../../public-api/committed-rental-selections-and-demand.public-api';
 import { ConfirmedRentalEditedIntegrationEvent } from '../../public-api/events/rental-lifecycle.integration-events';
@@ -142,6 +143,7 @@ describe('RestoreConfirmedPackageDemandLine integration', () => {
     setup: Setup,
     demandLineId: string,
     expectedVersion: number,
+    quantity = 1,
   ): Promise<RestoreConfirmedPackageDemandLineResult> {
     return bus.execute(
       new RestoreConfirmedPackageDemandLineCommand({
@@ -150,6 +152,7 @@ describe('RestoreConfirmedPackageDemandLine integration', () => {
         rentalId: setup.rental.rentalId,
         demandLineId,
         expectedVersion,
+        quantity,
       }),
     );
   }
@@ -163,6 +166,207 @@ describe('RestoreConfirmedPackageDemandLine integration', () => {
     expect(result.isOk()).toBe(true);
     return fixtures.persistedState(setup.rental.rentalId);
   }
+
+  it('restores one unit of partially suppressed current demand and preserves existing participation', async () => {
+    const setup = await scenario();
+    const targetId = setup.rental.demandLineIds[1];
+    const equipmentTypeId = setup.rental.equipmentTypeIds[1];
+    await prisma.client.v2RentalDemandLine.update({ where: { id: targetId }, data: { quantity: 3 } });
+    const additionalAssetIds: string[] = [];
+    for (let index = 0; index < 2; index += 1) {
+      const assetId = await rentalFixtures.createCandidate({
+        tenantId: setup.tenant.id,
+        branchId: setup.branch.id,
+        equipmentTypeId,
+      });
+      additionalAssetIds.push(assetId);
+      await prisma.client.v2AssignedAsset.create({
+        data: {
+          tenantId: setup.tenant.id,
+          rentalId: setup.rental.rentalId,
+          rentalDemandLineId: targetId,
+          assetId,
+          ownershipSnapshot: { kind: 'TENANT_OWNED' },
+          effectiveFrom: setup.period.start,
+        },
+      });
+      await rentalFixtures.createActiveBlock({
+        tenantId: setup.tenant.id,
+        rentalId: setup.rental.rentalId,
+        assetId,
+        period: {
+          start: new Date(setup.period.start.getTime() - 10 * 60_000),
+          end: new Date(setup.period.end.getTime() + 15 * 60_000),
+        },
+      });
+    }
+    const before = await fixtures.persistedState(setup.rental.rentalId);
+    const removeResult = await bus.execute<
+      RemoveConfirmedPackageDemandLineCommand,
+      RemoveConfirmedPackageDemandLineResult
+    >(
+      new RemoveConfirmedPackageDemandLineCommand({
+        tenantId: setup.tenant.id,
+        tenantUserId: setup.user.id,
+        rentalId: setup.rental.rentalId,
+        demandLineId: targetId,
+        expectedVersion: before.rental.version,
+        quantity: 2,
+        releaseAssetIds: [setup.assetIds[1], additionalAssetIds[0]],
+      }),
+    );
+    expect(removeResult.isOk()).toBe(true);
+    const suppressed = await fixtures.persistedState(setup.rental.rentalId);
+    const preservedAssignment = suppressed.rental.assignedAssets.find(
+      (assignment) => assignment.assetId === additionalAssetIds[1],
+    );
+    await prisma.client.v2RentalAssetCandidate.updateMany({
+      where: { tenantId: setup.tenant.id, assetId: { in: [setup.assetIds[1], additionalAssetIds[0]] } },
+      data: { assetStatus: 'INACTIVE' },
+    });
+    const replacementAssetId = await rentalFixtures.createCandidate({
+      tenantId: setup.tenant.id,
+      branchId: setup.branch.id,
+      equipmentTypeId,
+    });
+
+    expect((await restore(setup, targetId, suppressed.rental.version, 1)).isOk()).toBe(true);
+
+    const after = await fixtures.persistedState(setup.rental.rentalId);
+    expect(after.rental.demandLines.find(({ id }) => id === targetId)).toMatchObject({
+      id: targetId,
+      quantity: 3,
+      removedQuantity: 1,
+      removedAt: null,
+    });
+    expect(after.rental.assignedAssets).toContainEqual(preservedAssignment);
+    expect(
+      after.rental.assignedAssets.filter(
+        (assignment) => assignment.rentalDemandLineId === targetId && assignment.effectiveUntil === null,
+      ),
+    ).toHaveLength(2);
+    expect(after.rental.assignedAssets).toEqual(
+      expect.arrayContaining([expect.objectContaining({ assetId: replacementAssetId, rentalDemandLineId: targetId })]),
+    );
+    expect(after.rental.priceSnapshot).toEqual(suppressed.rental.priceSnapshot);
+    expect(after.rental.acceptedCustomerTotal).toEqual(suppressed.rental.acceptedCustomerTotal);
+  });
+
+  it('partially restores a fully suppressed multi-quantity demand line without duplicating allocations or history', async () => {
+    const setup = await scenario({
+      period: { start: new Date('2030-01-10T10:00:00.000Z'), end: new Date('2030-01-10T18:00:00.000Z') },
+    });
+    const targetId = setup.rental.demandLineIds[1];
+    const equipmentTypeId = setup.rental.equipmentTypeIds[1];
+    await prisma.client.v2RentalDemandLine.update({ where: { id: targetId }, data: { quantity: 3 } });
+    const targetAssetIds = [setup.assetIds[1]];
+    for (let index = 0; index < 2; index += 1) {
+      const assetId = await rentalFixtures.createCandidate({
+        tenantId: setup.tenant.id,
+        branchId: setup.branch.id,
+        equipmentTypeId,
+      });
+      targetAssetIds.push(assetId);
+      await prisma.client.v2AssignedAsset.create({
+        data: {
+          tenantId: setup.tenant.id,
+          rentalId: setup.rental.rentalId,
+          rentalDemandLineId: targetId,
+          assetId,
+          ownershipSnapshot: { kind: 'TENANT_OWNED' },
+          effectiveFrom: setup.period.start,
+        },
+      });
+      await rentalFixtures.createActiveBlock({
+        tenantId: setup.tenant.id,
+        rentalId: setup.rental.rentalId,
+        assetId,
+        period: {
+          start: new Date(setup.period.start.getTime() - 10 * 60_000),
+          end: new Date(setup.period.end.getTime() + 15 * 60_000),
+        },
+      });
+    }
+
+    jest
+      .useFakeTimers({ doNotFake: ['nextTick', 'setImmediate', 'setTimeout', 'setInterval', 'queueMicrotask'] })
+      .setSystemTime(new Date('2030-01-10T12:00:00.000Z'));
+    const before = await fixtures.persistedState(setup.rental.rentalId);
+    const removeResult = await bus.execute<
+      RemoveConfirmedPackageDemandLineCommand,
+      RemoveConfirmedPackageDemandLineResult
+    >(
+      new RemoveConfirmedPackageDemandLineCommand({
+        tenantId: setup.tenant.id,
+        tenantUserId: setup.user.id,
+        rentalId: setup.rental.rentalId,
+        demandLineId: targetId,
+        expectedVersion: before.rental.version,
+        quantity: 3,
+        releaseAssetIds: targetAssetIds,
+      }),
+    );
+    expect(removeResult.isOk()).toBe(true);
+
+    const removed = await fixtures.persistedState(setup.rental.rentalId);
+    expect(removed.rental.demandLines.find(({ id }) => id === targetId)).toMatchObject({
+      id: targetId,
+      quantity: 3,
+      removedQuantity: 3,
+      removedAt: expect.any(Date),
+    });
+    const removedRental = await moduleRef.get(RentalRepository).findById(setup.tenant.id, setup.rental.rentalId);
+    expect(removedRental?.demandLines.find(({ id }) => id === targetId)?.operationalQuantity).toBe(0);
+    const historicalAssignments = removed.rental.assignedAssets.filter(
+      ({ rentalDemandLineId }) => rentalDemandLineId === targetId,
+    );
+    expect(historicalAssignments).toHaveLength(3);
+    expect(historicalAssignments.every(({ effectiveUntil }) => effectiveUntil !== null)).toBe(true);
+    const historicalBlocks = removed.blocks.filter(({ assetId }) => targetAssetIds.includes(assetId));
+    expect(historicalBlocks).toHaveLength(3);
+    const restorationAssetId = await rentalFixtures.createCandidate({
+      tenantId: setup.tenant.id,
+      branchId: setup.branch.id,
+      equipmentTypeId,
+    });
+
+    const allocationSpy = jest.spyOn(moduleRef.get(RentalAssetAllocationService), 'planAllocations');
+    const events: ConfirmedRentalEditedIntegrationEvent[] = [];
+    const listener = (event: ConfirmedRentalEditedIntegrationEvent) => events.push(event);
+    emitter.on(ConfirmedRentalEditedIntegrationEvent.name, listener);
+    jest.setSystemTime(new Date('2030-01-10T12:05:00.000Z'));
+    try {
+      expect((await restore(setup, targetId, removed.rental.version, 1)).isOk()).toBe(true);
+    } finally {
+      emitter.off(ConfirmedRentalEditedIntegrationEvent.name, listener);
+    }
+
+    const after = await fixtures.persistedState(setup.rental.rentalId);
+    expect(after.rental.demandLines.filter(({ id }) => id === targetId)).toEqual([
+      expect.objectContaining({ id: targetId, quantity: 3, removedQuantity: 2, removedAt: null }),
+    ]);
+    const reloaded = await moduleRef.get(RentalRepository).findById(setup.tenant.id, setup.rental.rentalId);
+    expect(reloaded?.currentDemandLines.find(({ id }) => id === targetId)?.operationalQuantity).toBe(1);
+    expect(
+      after.rental.assignedAssets.filter(
+        ({ rentalDemandLineId, effectiveUntil }) => rentalDemandLineId === targetId && effectiveUntil === null,
+      ),
+    ).toEqual([expect.objectContaining({ assetId: restorationAssetId })]);
+    expect(allocationSpy).toHaveBeenCalledTimes(1);
+    const allocationResult = await allocationSpy.mock.results[0].value;
+    expect(allocationResult.isOk() && allocationResult.value.allocations).toHaveLength(1);
+    expect(
+      after.rental.assignedAssets.filter(({ id }) => historicalAssignments.some((historical) => historical.id === id)),
+    ).toEqual(historicalAssignments);
+    expect(after.blocks.filter(({ id }) => historicalBlocks.some((historical) => historical.id === id))).toEqual(
+      historicalBlocks,
+    );
+    expect(after.rental.priceSnapshot).toEqual(removed.rental.priceSnapshot);
+    expect(after.rental.acceptedCustomerTotal).toEqual(removed.rental.acceptedCustomerTotal);
+    expect(after.rental.version).toBe(removed.rental.version + 1);
+    expect(events).toHaveLength(1);
+    expect(events[0]).toEqual(expect.objectContaining({ tenantId: setup.tenant.id, rentalId: setup.rental.rentalId }));
+  });
 
   it('restores the same future package demand row, preserves all accepted pricing, and publishes current capabilities once', async () => {
     const setup = await scenario();

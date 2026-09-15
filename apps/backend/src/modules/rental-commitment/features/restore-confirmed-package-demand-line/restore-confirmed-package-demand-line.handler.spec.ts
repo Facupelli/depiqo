@@ -28,8 +28,9 @@ describe('RestoreConfirmedPackageDemandLineHandler', () => {
       id: 'demand-1',
       rentalSelectionId: 'selection-1',
       equipmentTypeId: 'equipment-type-1',
-      quantity: 1,
-      isCurrent: false,
+      quantity: 3,
+      removedQuantity: 2,
+      isCurrent: true,
     };
     const rental = {
       id: 'rental-1',
@@ -85,6 +86,7 @@ describe('RestoreConfirmedPackageDemandLineHandler', () => {
     rentalId: 'rental-1',
     demandLineId: 'demand-1',
     expectedVersion: 7,
+    quantity: 1,
   });
 
   it('allocates persisted removed demand before restoring and saves owner splits atomically', async () => {
@@ -123,6 +125,7 @@ describe('RestoreConfirmedPackageDemandLineHandler', () => {
     );
     expect(rental.restoreConfirmedPackageDemandLine).toHaveBeenCalledWith({
       demandLineId: 'demand-1',
+      quantity: 1,
       assignedAssets: [
         {
           rentalDemandLineId: 'demand-1',
@@ -168,6 +171,42 @@ describe('RestoreConfirmedPackageDemandLineHandler', () => {
     const result = await handler.execute(command);
 
     expect(result.isErr() && result.error.code).toBe('rental_commitment.invalid_rental_field');
+    expect(allocation.planAllocations).not.toHaveBeenCalled();
+    expect(rentalRepository.save).not.toHaveBeenCalled();
+  });
+
+  it('rejects a fully operational demand line before allocation', async () => {
+    const { rental, demandLine } = createRental();
+    Object.assign(demandLine, { removedQuantity: 0 });
+    const { handler, rentalRepository, allocation } = createHandler(rental);
+
+    const result = await handler.execute(command);
+
+    expect(result.isErr() && result.error.code).toBe('rental_commitment.rental_demand_line_already_current');
+    expect(allocation.planAllocations).not.toHaveBeenCalled();
+    expect(rentalRepository.save).not.toHaveBeenCalled();
+  });
+
+  it('rejects restoration exceeding suppressed quantity before allocation', async () => {
+    const { rental } = createRental();
+    const { handler, rentalRepository, allocation } = createHandler(rental);
+    const result = await handler.execute(
+      new RestoreConfirmedPackageDemandLineCommand({ ...command.props, quantity: 3 }),
+    );
+
+    expect(result.isErr() && result.error.code).toBe('rental_commitment.invalid_rental_field');
+    expect(allocation.planAllocations).not.toHaveBeenCalled();
+    expect(rentalRepository.save).not.toHaveBeenCalled();
+  });
+
+  it('rejects an ended rental before allocation', async () => {
+    const { rental } = createRental();
+    Object.assign(rental, { period: { start: new Date('2029-01-01'), end: operationTime } });
+    const { handler, rentalRepository, allocation } = createHandler(rental);
+
+    const result = await handler.execute(command);
+
+    expect(result.isErr() && result.error.code).toBe('rental_commitment.rental_period_ended');
     expect(allocation.planAllocations).not.toHaveBeenCalled();
     expect(rentalRepository.save).not.toHaveBeenCalled();
   });

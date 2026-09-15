@@ -17,7 +17,7 @@ describe('RestoreConfirmedPackageDemandLineHttpController', () => {
     rentalId: 'rental-1',
     demandLineId: 'demand-line-1',
   } as RestoreConfirmedPackageDemandLineParamsDto;
-  const dto = { expectedVersion: 7 } as RestoreConfirmedPackageDemandLineRequestDto;
+  const dto = { expectedVersion: 7, quantity: 1 } as RestoreConfirmedPackageDemandLineRequestDto;
   const user = { id: 'user-1', tenantId: 'tenant-1' } as AuthUser;
 
   it('dispatches tenant context and returns the confirmed-rental mutation response', async () => {
@@ -39,6 +39,7 @@ describe('RestoreConfirmedPackageDemandLineHttpController', () => {
         rentalId: 'rental-1',
         demandLineId: 'demand-line-1',
         expectedVersion: 7,
+        quantity: 1,
       }),
     );
   });

@@ -416,6 +416,71 @@ describe('Confirmed package demand line restoration', () => {
     ownershipSnapshot: tenantOwnership,
   });
 
+  it('partially restores a partially suppressed current line with only delta participation', () => {
+    const rental = createConfirmed(3);
+    rental
+      .removeConfirmedPackageDemandLine({
+        demandLineId: lightDemandId,
+        quantity: 2,
+        releaseAssetIds: ['light-asset' as AssetId, 'light-asset-2' as AssetId],
+        operationTime: beforeStart,
+      })
+      ._unsafeUnwrap();
+    const existingAssignment = rental.currentAssignedAssets.find((item) => item.assetId === 'light-asset-3');
+    const assignmentCount = rental.assignedAssets.length;
+    const blockCount = rental.assetBlocks.length;
+
+    rental
+      .restoreConfirmedPackageDemandLine({
+        quantity: 1,
+        demandLineId: lightDemandId,
+        assignedAssets: [restoredAssignment()],
+        operationTime: beforeStart,
+      })
+      ._unsafeUnwrap();
+
+    expect(rental.demandLines.find((line) => line.id === lightDemandId)).toMatchObject({
+      id: lightDemandId,
+      quantity: 3,
+      removedQuantity: 1,
+      operationalQuantity: 2,
+      removedAt: undefined,
+    });
+    expect(rental.currentAssignedAssets).toContain(existingAssignment);
+    expect(rental.assignedAssets).toHaveLength(assignmentCount + 1);
+    expect(rental.assetBlocks).toHaveLength(blockCount + 1);
+  });
+
+  it('partially restores a fully removed line', () => {
+    const rental = createConfirmed(3);
+    rental
+      .removeConfirmedPackageDemandLine({
+        demandLineId: lightDemandId,
+        quantity: 3,
+        releaseAssetIds: ['light-asset' as AssetId, 'light-asset-2' as AssetId, 'light-asset-3' as AssetId],
+        operationTime: duringRental,
+      })
+      ._unsafeUnwrap();
+
+    rental
+      .restoreConfirmedPackageDemandLine({
+        quantity: 1,
+        demandLineId: lightDemandId,
+        assignedAssets: [restoredAssignment()],
+        operationTime: laterRemoval,
+      })
+      ._unsafeUnwrap();
+
+    expect(rental.demandLines.find((line) => line.id === lightDemandId)).toMatchObject({
+      id: lightDemandId,
+      quantity: 3,
+      removedQuantity: 2,
+      operationalQuantity: 1,
+      removedAt: undefined,
+    });
+    expect(rental.currentAssignedAssets.filter((item) => item.rentalDemandLineId === lightDemandId)).toHaveLength(1);
+  });
+
   it('restores the same package child before start without changing commercial facts or siblings', () => {
     const rental = createConfirmed();
     rental
@@ -435,6 +500,7 @@ describe('Confirmed package demand line restoration', () => {
 
     rental
       .restoreConfirmedPackageDemandLine({
+        quantity: 1,
         demandLineId: lightDemandId,
         assignedAssets: [restoredAssignment()],
         operationTime: beforeStart,
@@ -474,6 +540,7 @@ describe('Confirmed package demand line restoration', () => {
 
     rental
       .restoreConfirmedPackageDemandLine({
+        quantity: 1,
         demandLineId: lightDemandId,
         assignedAssets: [restoredAssignment()],
         operationTime: laterRemoval,
@@ -497,15 +564,17 @@ describe('Confirmed package demand line restoration', () => {
     expect(
       rental
         .restoreConfirmedPackageDemandLine({
+          quantity: 1,
           demandLineId: lightDemandId,
           assignedAssets: [restoredAssignment()],
           operationTime: beforeStart,
         })
         ._unsafeUnwrapErr(),
-    ).toEqual(new RentalInvalidFieldError('demandLineId', 'must identify a removed demand line'));
+    ).toEqual(new RentalInvalidFieldError('demandLineId', 'must identify a suppressed demand line'));
     expect(
       rental
         .restoreConfirmedPackageDemandLine({
+          quantity: 1,
           demandLineId: 'missing-demand',
           assignedAssets: [restoredAssignment()],
           operationTime: beforeStart,
@@ -534,6 +603,7 @@ describe('Confirmed package demand line restoration', () => {
     expect(
       removedPackage
         .restoreConfirmedPackageDemandLine({
+          quantity: 1,
           demandLineId: lightDemandId,
           assignedAssets: [restoredAssignment()],
           operationTime: beforeStart,
@@ -552,6 +622,7 @@ describe('Confirmed package demand line restoration', () => {
     expect(
       removedSingle
         .restoreConfirmedPackageDemandLine({
+          quantity: 1,
           demandLineId: cameraDemandId,
           assignedAssets: [{ ...restoredAssignment('camera-restored'), rentalDemandLineId: cameraDemandId }],
           operationTime: beforeStart,
@@ -573,6 +644,7 @@ describe('Confirmed package demand line restoration', () => {
     expect(
       rental
         .restoreConfirmedPackageDemandLine({
+          quantity: 1,
           demandLineId: lightDemandId,
           assignedAssets: [restoredAssignment()],
           operationTime: end,
@@ -582,21 +654,23 @@ describe('Confirmed package demand line restoration', () => {
     expect(
       rental
         .restoreConfirmedPackageDemandLine({
+          quantity: 1,
           demandLineId: lightDemandId,
           assignedAssets: [],
           operationTime: beforeStart,
         })
         ._unsafeUnwrapErr(),
-    ).toEqual(new RentalInvalidFieldError('assignedAssets', 'must exactly satisfy the restored demand-line quantity'));
+    ).toEqual(new RentalInvalidFieldError('assignedAssets', 'must exactly satisfy the restoration quantity'));
     expect(
       rental
         .restoreConfirmedPackageDemandLine({
+          quantity: 1,
           demandLineId: lightDemandId,
           assignedAssets: [{ ...restoredAssignment(), rentalDemandLineId: standDemandId }],
           operationTime: beforeStart,
         })
         ._unsafeUnwrapErr(),
-    ).toEqual(new RentalInvalidFieldError('assignedAssets', 'must exactly satisfy the restored demand-line quantity'));
+    ).toEqual(new RentalInvalidFieldError('assignedAssets', 'must exactly satisfy the restoration quantity'));
   });
 
   it('supports remove, restore, and remove again with the same demand identity', () => {
@@ -611,6 +685,7 @@ describe('Confirmed package demand line restoration', () => {
       ._unsafeUnwrap();
     rental
       .restoreConfirmedPackageDemandLine({
+        quantity: 1,
         demandLineId: lightDemandId,
         assignedAssets: [restoredAssignment()],
         operationTime: laterRemoval,

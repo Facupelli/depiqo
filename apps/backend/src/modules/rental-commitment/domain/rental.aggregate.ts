@@ -157,6 +157,7 @@ export interface RemoveConfirmedPackageDemandLineProps {
 
 export interface RestoreConfirmedPackageDemandLineProps {
   demandLineId: string;
+  quantity: number;
   assignedAssets: readonly CreateAssignedAssetInput[];
   operationTime: Date;
 }
@@ -965,8 +966,8 @@ export class Rental extends AggregateRootBase {
 
     const demandLine = this.props.demandLines.find((candidate) => candidate.id === params.demandLineId);
     if (!demandLine) return err(new RentalDemandLineNotFoundError(this.id, params.demandLineId));
-    if (demandLine.isCurrent) {
-      return err(new RentalInvalidFieldError('demandLineId', 'must identify a removed demand line'));
+    if (demandLine.removedQuantity === 0) {
+      return err(new RentalInvalidFieldError('demandLineId', 'must identify a suppressed demand line'));
     }
 
     const selection = this.props.selections.find((candidate) => candidate.id === demandLine.rentalSelectionId);
@@ -980,13 +981,13 @@ export class Rental extends AggregateRootBase {
 
     const effectiveAt = params.operationTime < this.period.start ? this.period.start : params.operationTime;
     if (effectiveAt >= this.period.end) return err(new RentalPeriodHasEndedError(this.id));
+    const restoredDemandLine = demandLine.restore(params.quantity);
+    if (restoredDemandLine.isErr()) return err(restoredDemandLine.error);
     if (
-      params.assignedAssets.length !== demandLine.quantity ||
+      params.assignedAssets.length !== params.quantity ||
       params.assignedAssets.some((assignment) => assignment.rentalDemandLineId !== demandLine.id)
     ) {
-      return err(
-        new RentalInvalidFieldError('assignedAssets', 'must exactly satisfy the restored demand-line quantity'),
-      );
+      return err(new RentalInvalidFieldError('assignedAssets', 'must exactly satisfy the restoration quantity'));
     }
 
     const acceptedAssetBuffer = this.requireAcceptedAssetBuffer();
@@ -1011,7 +1012,7 @@ export class Rental extends AggregateRootBase {
 
     const transition = this.applyConfirmedStateChanges({
       demandLines: this.props.demandLines.map((candidate) =>
-        candidate.id === demandLine.id ? candidate.restore() : candidate,
+        candidate.id === demandLine.id ? restoredDemandLine.value : candidate,
       ),
       assignedAssets: [...this.props.assignedAssets, ...assignedAssets.value],
       assetBlocks: [...this.props.assetBlocks, ...assetBlocks.value],
