@@ -91,6 +91,13 @@ export class RentalDemandLine {
     });
   }
 
+  restore(): RentalDemandLine {
+    return new RentalDemandLine(this.id, {
+      ...this.props,
+      removedAt: undefined,
+    });
+  }
+
   static create(props: CreateRentalDemandLineProps): Result<RentalDemandLine, RentalCommitmentError> {
     const validation = this.validatePrimitiveFields(props);
     if (validation.isErr()) {

@@ -1,6 +1,10 @@
 import { AssetBlock } from './asset-block.entity';
 import { AssignedAsset } from './assigned-asset.entity';
-import { RentalDemandLineNotFoundError, RentalInvalidFieldError } from './errors/rental-commitment.errors';
+import {
+  RentalDemandLineNotFoundError,
+  RentalInvalidFieldError,
+  RentalPeriodHasEndedError,
+} from './errors/rental-commitment.errors';
 import { ConfirmedRentalEditedDomainEvent } from './events/rental-lifecycle.domain-events';
 import { RentalDemandLineId } from './ids/rental-demand-line-id';
 import { RentalSelectionId } from './ids/rental-selection-id';
@@ -277,5 +281,201 @@ describe('Confirmed package demand line removal', () => {
     expect(rental.demandLines.find((line) => line.id === lightDemandId)?.removedAt).toEqual(beforeStart);
     expect(rental.demandLines.find((line) => line.id === standDemandId)?.removedAt).toEqual(laterRemoval);
     expect(rental.selections.find((selection) => selection.id === packageSelectionId)?.removedAt).toEqual(laterRemoval);
+  });
+});
+
+describe('Confirmed package demand line restoration', () => {
+  const restoredAssignment = (assetId = 'restored-light-asset') => ({
+    rentalDemandLineId: lightDemandId,
+    assetId: assetId as AssetId,
+    ownershipSnapshot: tenantOwnership,
+  });
+
+  it('restores the same package child before start without changing commercial facts or siblings', () => {
+    const rental = createConfirmed();
+    rental
+      .removeConfirmedPackageDemandLine({ demandLineId: lightDemandId, operationTime: beforeStart })
+      ._unsafeUnwrap();
+    rental.pullDomainEvents();
+    const originalSelection = rental.selections.find((item) => item.id === packageSelectionId);
+    const originalPrice = rental.confirmedPriceSnapshot;
+    const originalTotal = rental.acceptedCustomerTotal;
+    const siblingAssignment = rental.currentAssignedAssets.find((item) => item.assetId === 'stand-asset');
+    const siblingBlock = rental.assetBlocks.find((item) => item.assetId === 'stand-asset');
+
+    rental
+      .restoreConfirmedPackageDemandLine({
+        demandLineId: lightDemandId,
+        assignedAssets: [restoredAssignment()],
+        operationTime: beforeStart,
+      })
+      ._unsafeUnwrap();
+
+    const restored = rental.demandLines.find((line) => line.id === lightDemandId)!;
+    const assignment = rental.currentAssignedAssets.find((item) => item.rentalDemandLineId === lightDemandId)!;
+    const block = rental.assetBlocks.find((item) => item.assetId === 'restored-light-asset')!;
+    expect(restored.isCurrent).toBe(true);
+    expect(restored.id).toBe(lightDemandId);
+    expect(restored.createdAt).toBeUndefined();
+    expect(rental.selections.find((item) => item.id === packageSelectionId)).toBe(originalSelection);
+    expect(originalSelection?.quantity).toBe(1);
+    expect(rental.confirmedPriceSnapshot).toBe(originalPrice);
+    expect(rental.acceptedCustomerTotal).toBe(originalTotal);
+    expect(assignment.effectiveFrom).toEqual(start);
+    expect(block.period.start).toEqual(new Date('2030-01-10T09:30:00.000Z'));
+    expect(block.period.end).toEqual(new Date('2030-01-12T19:00:00.000Z'));
+    expect(rental.currentAssignedAssets.find((item) => item.assetId === 'stand-asset')).toBe(siblingAssignment);
+    expect(rental.assetBlocks.find((item) => item.assetId === 'stand-asset')).toBe(siblingBlock);
+    expect(rental.pullDomainEvents()).toEqual([expect.any(ConfirmedRentalEditedDomainEvent)]);
+  });
+
+  it('restores during rental with a new current participation while preserving closed history', () => {
+    const rental = createConfirmed();
+    rental
+      .removeConfirmedPackageDemandLine({ demandLineId: lightDemandId, operationTime: duringRental })
+      ._unsafeUnwrap();
+    const historical = rental.assignedAssets.find((item) => item.assetId === 'light-asset')!;
+    const historicalBlock = rental.assetBlocks.find((item) => item.assetId === 'light-asset')!;
+
+    rental
+      .restoreConfirmedPackageDemandLine({
+        demandLineId: lightDemandId,
+        assignedAssets: [restoredAssignment()],
+        operationTime: laterRemoval,
+      })
+      ._unsafeUnwrap();
+
+    const current = rental.currentAssignedAssets.find((item) => item.rentalDemandLineId === lightDemandId)!;
+    const currentBlock = rental.assetBlocks.find((item) => item.assetId === 'restored-light-asset')!;
+    expect(current).not.toBe(historical);
+    expect(current.effectiveFrom).toEqual(laterRemoval);
+    expect(current.effectiveUntil).toBeUndefined();
+    expect(historical.effectiveUntil).toEqual(duringRental);
+    expect(rental.assignedAssets).toContain(historical);
+    expect(rental.assetBlocks).toContain(historicalBlock);
+    expect(currentBlock.period.start).toEqual(laterRemoval);
+    expect(currentBlock.period.end).toEqual(new Date('2030-01-12T19:00:00.000Z'));
+  });
+
+  it('rejects an already-current or unknown demand line', () => {
+    const rental = createConfirmed();
+    expect(
+      rental
+        .restoreConfirmedPackageDemandLine({
+          demandLineId: lightDemandId,
+          assignedAssets: [restoredAssignment()],
+          operationTime: beforeStart,
+        })
+        ._unsafeUnwrapErr(),
+    ).toEqual(new RentalInvalidFieldError('demandLineId', 'must identify a removed demand line'));
+    expect(
+      rental
+        .restoreConfirmedPackageDemandLine({
+          demandLineId: 'missing-demand',
+          assignedAssets: [restoredAssignment()],
+          operationTime: beforeStart,
+        })
+        ._unsafeUnwrapErr(),
+    ).toBeInstanceOf(RentalDemandLineNotFoundError);
+  });
+
+  it('rejects a removed parent selection and a SINGLE parent', () => {
+    const removedPackage = createConfirmed();
+    removedPackage
+      .removeConfirmedPackageDemandLine({ demandLineId: lightDemandId, operationTime: beforeStart })
+      ._unsafeUnwrap();
+    removedPackage
+      .removeConfirmedSelection({
+        selectionId: packageSelectionId,
+        confirmedPriceSnapshot,
+        operationTime: beforeStart,
+      })
+      ._unsafeUnwrap();
+    expect(
+      removedPackage
+        .restoreConfirmedPackageDemandLine({
+          demandLineId: lightDemandId,
+          assignedAssets: [restoredAssignment()],
+          operationTime: beforeStart,
+        })
+        ._unsafeUnwrapErr(),
+    ).toEqual(new RentalInvalidFieldError('demandLineId', 'must belong to a current selection'));
+
+    const removedSingle = createConfirmed();
+    removedSingle
+      .removeConfirmedSelection({
+        selectionId: singleSelectionId,
+        confirmedPriceSnapshot,
+        operationTime: beforeStart,
+      })
+      ._unsafeUnwrap();
+    expect(
+      removedSingle
+        .restoreConfirmedPackageDemandLine({
+          demandLineId: cameraDemandId,
+          assignedAssets: [{ ...restoredAssignment('camera-restored'), rentalDemandLineId: cameraDemandId }],
+          operationTime: beforeStart,
+        })
+        ._unsafeUnwrapErr(),
+    ).toEqual(new RentalInvalidFieldError('demandLineId', 'must belong to a PACKAGE selection'));
+  });
+
+  it('rejects restoration at or after rental end and incomplete or mismatched allocation', () => {
+    const rental = createConfirmed();
+    rental
+      .removeConfirmedPackageDemandLine({ demandLineId: lightDemandId, operationTime: beforeStart })
+      ._unsafeUnwrap();
+    expect(
+      rental
+        .restoreConfirmedPackageDemandLine({
+          demandLineId: lightDemandId,
+          assignedAssets: [restoredAssignment()],
+          operationTime: end,
+        })
+        ._unsafeUnwrapErr(),
+    ).toBeInstanceOf(RentalPeriodHasEndedError);
+    expect(
+      rental
+        .restoreConfirmedPackageDemandLine({
+          demandLineId: lightDemandId,
+          assignedAssets: [],
+          operationTime: beforeStart,
+        })
+        ._unsafeUnwrapErr(),
+    ).toEqual(new RentalInvalidFieldError('assignedAssets', 'must exactly satisfy the restored demand-line quantity'));
+    expect(
+      rental
+        .restoreConfirmedPackageDemandLine({
+          demandLineId: lightDemandId,
+          assignedAssets: [{ ...restoredAssignment(), rentalDemandLineId: standDemandId }],
+          operationTime: beforeStart,
+        })
+        ._unsafeUnwrapErr(),
+    ).toEqual(new RentalInvalidFieldError('assignedAssets', 'must exactly satisfy the restored demand-line quantity'));
+  });
+
+  it('supports remove, restore, and remove again with the same demand identity', () => {
+    const rental = createConfirmed();
+    rental
+      .removeConfirmedPackageDemandLine({ demandLineId: lightDemandId, operationTime: duringRental })
+      ._unsafeUnwrap();
+    rental
+      .restoreConfirmedPackageDemandLine({
+        demandLineId: lightDemandId,
+        assignedAssets: [restoredAssignment()],
+        operationTime: laterRemoval,
+      })
+      ._unsafeUnwrap();
+    const removedAgainAt = new Date('2030-01-11T16:00:00.000Z');
+
+    rental
+      .removeConfirmedPackageDemandLine({ demandLineId: lightDemandId, operationTime: removedAgainAt })
+      ._unsafeUnwrap();
+
+    const line = rental.demandLines.find((item) => item.id === lightDemandId)!;
+    expect(line.id).toBe(lightDemandId);
+    expect(line.removedAt).toEqual(removedAgainAt);
+    expect(rental.assignedAssets.filter((item) => item.rentalDemandLineId === lightDemandId)).toHaveLength(2);
+    expect(rental.currentAssignedAssets.some((item) => item.rentalDemandLineId === lightDemandId)).toBe(false);
   });
 });

@@ -55,4 +55,21 @@ describe('Rental selection and demand line local transitions', () => {
     expect(selection().removeAt(laterRemoval).removedAt).toEqual(removedAt);
     expect(demandLine().removeAt(laterRemoval).removedAt).toEqual(removedAt);
   });
+
+  it('restores a demand line without changing its identity or accepted facts', () => {
+    const original = demandLine();
+    const restored = original.restore();
+
+    expect(restored).toMatchObject({
+      id: original.id,
+      rentalSelectionId: original.rentalSelectionId,
+      equipmentTypeId: original.equipmentTypeId,
+      equipmentTypeNameSnapshot: original.equipmentTypeNameSnapshot,
+      quantity: original.quantity,
+      isCurrent: true,
+    });
+    expect(restored.createdAt).toEqual(createdAt);
+    expect(restored.removedAt).toBeUndefined();
+    expect(original.removedAt).toEqual(removedAt);
+  });
 });

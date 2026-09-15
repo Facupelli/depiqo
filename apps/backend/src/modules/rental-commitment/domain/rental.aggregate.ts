@@ -153,6 +153,12 @@ export interface RemoveConfirmedPackageDemandLineProps {
   operationTime: Date;
 }
 
+export interface RestoreConfirmedPackageDemandLineProps {
+  demandLineId: string;
+  assignedAssets: readonly CreateAssignedAssetInput[];
+  operationTime: Date;
+}
+
 export interface ChangeConfirmedSelectionQuantityProps {
   selectionId: string;
   newQuantity: number;
@@ -915,6 +921,72 @@ export class Rental extends AggregateRootBase {
       ),
       assignedAssets: nextAssignedAssets,
       assetBlocks: nextAssetBlocks,
+    });
+    if (transition.isErr()) return err(transition.error);
+
+    this.recordConfirmedRentalEditedEvent(params.operationTime);
+    return ok(undefined);
+  }
+
+  restoreConfirmedPackageDemandLine(
+    params: RestoreConfirmedPackageDemandLineProps,
+  ): Result<void, RentalCommitmentError> {
+    if (this.status !== RentalStatus.Confirmed) {
+      return err(new RentalCannotBeEditedFromStatusError(this.id, this.status));
+    }
+
+    const demandLine = this.props.demandLines.find((candidate) => candidate.id === params.demandLineId);
+    if (!demandLine) return err(new RentalDemandLineNotFoundError(this.id, params.demandLineId));
+    if (demandLine.isCurrent) {
+      return err(new RentalInvalidFieldError('demandLineId', 'must identify a removed demand line'));
+    }
+
+    const selection = this.props.selections.find((candidate) => candidate.id === demandLine.rentalSelectionId);
+    if (!selection) return err(new RentalSelectionNotFoundError(this.id, demandLine.rentalSelectionId));
+    if (selection.rentableItemKindSnapshot !== RentableItemKind.Package) {
+      return err(new RentalInvalidFieldError('demandLineId', 'must belong to a PACKAGE selection'));
+    }
+    if (!selection.isCurrent) {
+      return err(new RentalInvalidFieldError('demandLineId', 'must belong to a current selection'));
+    }
+
+    const effectiveAt = params.operationTime < this.period.start ? this.period.start : params.operationTime;
+    if (effectiveAt >= this.period.end) return err(new RentalPeriodHasEndedError(this.id));
+    if (
+      params.assignedAssets.length !== demandLine.quantity ||
+      params.assignedAssets.some((assignment) => assignment.rentalDemandLineId !== demandLine.id)
+    ) {
+      return err(
+        new RentalInvalidFieldError('assignedAssets', 'must exactly satisfy the restored demand-line quantity'),
+      );
+    }
+
+    const acceptedAssetBuffer = this.requireAcceptedAssetBuffer();
+    const assignedAssets = Rental.createAssignedAssets(
+      this.id,
+      this.tenantId,
+      effectiveAt,
+      params.assignedAssets.map((assignment) => ({ ...assignment, createdAt: params.operationTime })),
+    );
+    if (assignedAssets.isErr()) return err(assignedAssets.error);
+
+    const assetBlocks = Rental.createEquipmentBlocksForAssignedAssets({
+      tenantId: this.tenantId,
+      rentalId: this.id,
+      period: new RentalPeriod(effectiveAt, this.period.end),
+      acceptedAssetBuffer,
+      acceptedDelivery: this.props.deliverySnapshot,
+      assignedAssets: assignedAssets.value,
+      operationTime: params.operationTime,
+    });
+    if (assetBlocks.isErr()) return err(assetBlocks.error);
+
+    const transition = this.applyConfirmedStateChanges({
+      demandLines: this.props.demandLines.map((candidate) =>
+        candidate.id === demandLine.id ? candidate.restore() : candidate,
+      ),
+      assignedAssets: [...this.props.assignedAssets, ...assignedAssets.value],
+      assetBlocks: [...this.props.assetBlocks, ...assetBlocks.value],
     });
     if (transition.isErr()) return err(transition.error);
 
