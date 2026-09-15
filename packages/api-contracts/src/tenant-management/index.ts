@@ -16,6 +16,7 @@ export * from "./get-storefront-branch-schedules.contract";
 export * from "./get-current-tenant.contract";
 export * from "./get-public-tenant-config.contract";
 export * from "./register-tenant-with-owner.contract";
+export * from "./roles.contract";
 export * from "./reject-submitted-customer-onboarding.contract";
 export * from "./search-branch-address-suggestions.contract";
 export * from "./submit-customer-profile.contract";
