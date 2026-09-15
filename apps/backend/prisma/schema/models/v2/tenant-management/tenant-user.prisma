@@ -42,13 +42,16 @@ model V2TenantUser {
   avatarUrl       String?   @map("avatar_url")
 
   role   V2UserRole   @default(USER)
+  roleId String?      @map("role_id")
   status V2UserStatus @default(ACTIVE)
 
-  sessionVersion    Int       @default(1) @map("session_version")
-  passwordChangedAt DateTime? @map("password_changed_at") @db.Timestamptz(3)
-  lastLoginAt       DateTime? @map("last_login_at") @db.Timestamptz(3)
+  mustChangePassword Boolean   @default(false) @map("must_change_password")
+  sessionVersion     Int       @default(1) @map("session_version")
+  passwordChangedAt  DateTime? @map("password_changed_at") @db.Timestamptz(3)
+  lastLoginAt        DateTime? @map("last_login_at") @db.Timestamptz(3)
 
   tenant              V2Tenant               @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  tenantRole          V2TenantRole?          @relation(fields: [tenantId, roleId], references: [tenantId, id], onDelete: Restrict)
   localCredential     V2LocalCredential?
   passwordResetTokens V2PasswordResetToken[]
   auditEvents         V2AuthAuditEvent[]
@@ -58,6 +61,7 @@ model V2TenantUser {
 
   @@index([status])
   @@index([role])
+  @@index([roleId])
   @@index([createdAt])
   @@map("v2_tenant_users")
 }
