@@ -121,6 +121,33 @@ export class GetRentalDetailHandler implements IQueryHandler<GetRentalDetailQuer
       );
     }
 
+    const removedDemandLines = await this.prisma.client.v2RentalDemandLine.findMany({
+      where: {
+        tenantId: query.tenantId,
+        rentalId: query.rentalId,
+        removedAt: { not: null },
+        rentalSelection: {
+          removedAt: null,
+          rentableItemKindSnapshot: 'PACKAGE',
+        },
+      },
+      select: {
+        id: true,
+        rentalSelectionId: true,
+        equipmentTypeId: true,
+        equipmentTypeNameSnapshot: true,
+        quantity: true,
+        removedAt: true,
+      },
+      orderBy: { createdAt: 'asc' },
+    });
+    const removedDemandLinesBySelectionId = new Map<string, typeof removedDemandLines>();
+    for (const line of removedDemandLines) {
+      const selectionLines = removedDemandLinesBySelectionId.get(line.rentalSelectionId) ?? [];
+      selectionLines.push(line);
+      removedDemandLinesBySelectionId.set(line.rentalSelectionId, selectionLines);
+    }
+
     const [ownerPayouts, branchFactsResult, retainedCustomer] = await Promise.all([
       this.buildOwnerPayoutSummary(query.tenantId, rental.ownerSplits, rental.selections),
       this.branchFacts.getBranchFacts({ tenantId: query.tenantId, branchId: rental.branchId }),
@@ -187,6 +214,14 @@ export class GetRentalDetailHandler implements IQueryHandler<GetRentalDetailQuer
           equipmentTypeName: line.equipmentTypeNameSnapshot,
           quantity: line.quantity,
           assignedAssets: line.assignedAssets.map((assignment) => ({ assetId: assignment.assetId })),
+        })),
+        removedDemandLines: (removedDemandLinesBySelectionId.get(selection.id) ?? []).map((line) => ({
+          id: line.id,
+          rentalSelectionId: line.rentalSelectionId,
+          equipmentTypeId: line.equipmentTypeId,
+          equipmentTypeName: line.equipmentTypeNameSnapshot,
+          quantity: line.quantity,
+          removedAt: line.removedAt!.toISOString(),
         })),
       })),
       accessories: rental.accessorySelections.map((selection) => ({
