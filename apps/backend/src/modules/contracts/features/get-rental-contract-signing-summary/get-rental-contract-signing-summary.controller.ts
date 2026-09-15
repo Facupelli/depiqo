@@ -1,5 +1,7 @@
 import { Controller, Get, Param, UseGuards } from '@nestjs/common';
 import { QueryBus } from '@nestjs/cqrs';
+import { RequirePermission } from 'src/modules/tenant-management/authorization/tenant-authorization.decorators';
+import { TenantPermission } from '@repo/api-contracts';
 
 import { AUTH_ACTOR_TYPES, AuthUser } from 'src/modules/tenant-management/auth/shared/auth.types';
 import { CurrentUser } from 'src/modules/tenant-management/auth/shared/current-user/current-user.decorator';
@@ -17,6 +19,7 @@ export class GetRentalContractSigningSummaryHttpController {
   constructor(private readonly queryBus: QueryBus) {}
 
   @Get(':rentalId/signing-summary')
+  @RequirePermission(TenantPermission.ContractsRead)
   @AllowAuthActors(AUTH_ACTOR_TYPES.TENANT_USER)
   @UseGuards(SessionAuthGuard, TenantUserSessionGuard)
   async getRentalContractSigningSummary(

@@ -1,5 +1,7 @@
 import { Controller, Delete, HttpCode, HttpStatus, Param, UseGuards } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
+import { RequirePermission } from 'src/modules/tenant-management/authorization/tenant-authorization.decorators';
+import { TenantPermission } from '@repo/api-contracts';
 
 import { createProblemDetails, createProblemType, ProblemException } from 'src/core/problem-details';
 import { AUTH_ACTOR_TYPES, AuthUser } from 'src/modules/tenant-management/auth/shared/auth.types';
@@ -18,6 +20,7 @@ export class CancelRentalHttpController {
   constructor(private readonly commandBus: CommandBus) {}
 
   @Delete(':rentalId')
+  @RequirePermission(TenantPermission.RentalsCancel)
   @HttpCode(HttpStatus.NO_CONTENT)
   @AllowAuthActors(AUTH_ACTOR_TYPES.TENANT_USER)
   @UseGuards(SessionAuthGuard, TenantUserSessionGuard)

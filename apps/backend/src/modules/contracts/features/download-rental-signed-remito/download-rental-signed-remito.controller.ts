@@ -1,6 +1,8 @@
 import { Controller, Get, HttpStatus, Param, Res, UseGuards } from '@nestjs/common';
 import { QueryBus } from '@nestjs/cqrs';
 import type { Response } from 'express';
+import { RequirePermission } from 'src/modules/tenant-management/authorization/tenant-authorization.decorators';
+import { TenantPermission } from '@repo/api-contracts';
 
 import { createProblemDetails, createProblemType, ProblemException } from 'src/core/problem-details';
 import { AUTH_ACTOR_TYPES, AuthUser } from 'src/modules/tenant-management/auth/shared/auth.types';
@@ -22,6 +24,7 @@ export class DownloadRentalSignedRemitoHttpController {
   constructor(private readonly queryBus: QueryBus) {}
 
   @Get(':rentalId/signed-remito/download')
+  @RequirePermission(TenantPermission.ContractsRead)
   @AllowAuthActors(AUTH_ACTOR_TYPES.TENANT_USER)
   @UseGuards(SessionAuthGuard, TenantUserSessionGuard)
   async download(

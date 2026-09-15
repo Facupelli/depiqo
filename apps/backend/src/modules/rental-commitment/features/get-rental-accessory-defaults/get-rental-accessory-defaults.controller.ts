@@ -1,5 +1,7 @@
 import { Controller, Get, HttpStatus, Param } from '@nestjs/common';
 import { QueryBus } from '@nestjs/cqrs';
+import { RequirePermission } from 'src/modules/tenant-management/authorization/tenant-authorization.decorators';
+import { TenantPermission } from '@repo/api-contracts';
 
 import { CurrentUser } from 'src/core/decorators/current-user.decorator';
 import { createProblemDetails, createProblemType, ProblemException } from 'src/core/problem-details';
@@ -19,6 +21,7 @@ export class GetRentalAccessoryDefaultsHttpController {
   constructor(private readonly queryBus: QueryBus) {}
 
   @Get(':rentalId/accessory-defaults')
+  @RequirePermission(TenantPermission.RentalsFulfillmentManage)
   async getRentalAccessoryDefaults(
     @Param() params: GetRentalAccessoryDefaultsParamsDto,
     @CurrentUser() user: AuthUser,

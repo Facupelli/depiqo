@@ -2,6 +2,8 @@ import { Controller, Get, HttpStatus, Param, Res, UseGuards } from '@nestjs/comm
 import { QueryBus } from '@nestjs/cqrs';
 import type { Response } from 'express';
 import { Result } from 'neverthrow';
+import { RequirePermission } from 'src/modules/tenant-management/authorization/tenant-authorization.decorators';
+import { TenantPermission } from '@repo/api-contracts';
 
 import { createProblemDetails, createProblemType, ProblemException } from 'src/core/problem-details';
 import { AUTH_ACTOR_TYPES, AuthUser } from 'src/modules/tenant-management/auth/shared/auth.types';
@@ -19,6 +21,7 @@ export class GenerateRentalRemitoHttpController {
   constructor(private readonly queryBus: QueryBus) {}
 
   @Get(':rentalId/remito')
+  @RequirePermission(TenantPermission.ContractsGenerate)
   @AllowAuthActors(AUTH_ACTOR_TYPES.TENANT_USER)
   @UseGuards(SessionAuthGuard, TenantUserSessionGuard)
   async previewRemito(
@@ -35,6 +38,7 @@ export class GenerateRentalRemitoHttpController {
   }
 
   @Get(':rentalId/remito/download')
+  @RequirePermission(TenantPermission.ContractsGenerate)
   @AllowAuthActors(AUTH_ACTOR_TYPES.TENANT_USER)
   @UseGuards(SessionAuthGuard, TenantUserSessionGuard)
   async downloadRemito(
