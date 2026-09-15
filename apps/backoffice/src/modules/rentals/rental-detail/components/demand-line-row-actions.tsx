@@ -8,7 +8,7 @@ import {
 	DropdownMenuSubTrigger,
 	DropdownMenuTrigger,
 } from "@repo/ui/components/dropdown-menu";
-import { MoreHorizontal, RefreshCw } from "lucide-react";
+import { MoreHorizontal, RefreshCw, Trash2 } from "lucide-react";
 
 interface ReplaceableAssignedAsset {
 	assetId: string;
@@ -21,6 +21,7 @@ interface DemandLineRowActionsProps {
 	replaceableAssignedAssets: ReplaceableAssignedAsset[];
 	onAssignAccessories?: (rentalDemandLineId: string) => void;
 	onReplaceAssignedAsset?: (assetId: string) => void;
+	onRemovePackageDemandLine?: (rentalDemandLineId: string) => void;
 }
 
 export function DemandLineRowActions({
@@ -29,6 +30,7 @@ export function DemandLineRowActions({
 	replaceableAssignedAssets,
 	onAssignAccessories,
 	onReplaceAssignedAsset,
+	onRemovePackageDemandLine,
 }: DemandLineRowActionsProps) {
 	const soleReplaceableAsset =
 		replaceableAssignedAssets.length === 1
@@ -86,6 +88,16 @@ export function DemandLineRowActions({
 							))}
 						</DropdownMenuSubContent>
 					</DropdownMenuSub>
+				) : null}
+				{onRemovePackageDemandLine ? (
+					<DropdownMenuItem
+						variant="destructive"
+						className="whitespace-nowrap"
+						onClick={() => onRemovePackageDemandLine(rentalDemandLineId)}
+					>
+						<Trash2 className="size-4" />
+						Quitar equipo del combo
+					</DropdownMenuItem>
 				) : null}
 			</DropdownMenuContent>
 		</DropdownMenu>
