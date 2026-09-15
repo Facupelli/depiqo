@@ -1,3 +1,4 @@
+import { TenantPermission } from '@repo/api-contracts';
 import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
 
@@ -5,6 +6,7 @@ import { createProblemDetails, createProblemType, ProblemException } from 'src/c
 
 import { AuthUser } from '../../auth/shared/auth.types';
 import { CurrentUser } from '../../auth/shared/current-user/current-user.decorator';
+import { RequirePermission } from '../../authorization/tenant-authorization.decorators';
 import { RegisterCustomDomainCommand } from './register-custom-domain.command';
 import { RegisterCustomDomainError, RegisterCustomDomainErrorCode } from './register-custom-domain.errors';
 import { RegisterCustomDomainResult } from './register-custom-domain.handler';
@@ -17,6 +19,7 @@ export class RegisterCustomDomainHttpController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
+  @RequirePermission(TenantPermission.TenantStorefrontManage)
   async register(
     @CurrentUser() user: AuthUser,
     @Body() dto: RegisterCustomDomainRequestDto,

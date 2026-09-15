@@ -1,3 +1,4 @@
+import { TenantPermission } from '@repo/api-contracts';
 import { Body, Controller, HttpCode, HttpStatus, Put } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
 import { Result } from 'neverthrow';
@@ -6,6 +7,7 @@ import { createProblemDetails, createProblemType, ProblemException } from 'src/c
 
 import { AuthUser } from '../../auth/shared/auth.types';
 import { CurrentUser } from '../../auth/shared/current-user/current-user.decorator';
+import { RequirePermission } from '../../authorization/tenant-authorization.decorators';
 import { UpdateTenantBrandingCommand } from './update-tenant-branding.command';
 import { UpdateTenantBrandingError, UpdateTenantBrandingErrorCode } from './update-tenant-branding.errors';
 import { UpdateTenantBrandingResult } from './update-tenant-branding.handler';
@@ -18,6 +20,7 @@ export class UpdateTenantBrandingHttpController {
 
   @Put()
   @HttpCode(HttpStatus.OK)
+  @RequirePermission(TenantPermission.TenantStorefrontManage)
   async updateTenantBranding(
     @Body() dto: UpdateTenantBrandingRequestDto,
     @CurrentUser() user: AuthUser,

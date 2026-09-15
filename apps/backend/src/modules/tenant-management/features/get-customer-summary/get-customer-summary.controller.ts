@@ -1,9 +1,11 @@
+import { TenantPermission } from '@repo/api-contracts';
 import { Controller, Get, HttpStatus, Param } from '@nestjs/common';
 import { QueryBus } from '@nestjs/cqrs';
 
 import { createProblemDetails, createProblemType, ProblemException } from 'src/core/problem-details';
 
 import { AuthUser } from '../../auth/shared/auth.types';
+import { RequireAnyPermission } from '../../authorization/tenant-authorization.decorators';
 import { CurrentUser } from '../../auth/shared/current-user/current-user.decorator';
 import { GetCustomerSummaryError, GetCustomerSummaryErrorCode } from './get-customer-summary.errors';
 import { GetCustomerSummaryResult } from './get-customer-summary.handler';
@@ -16,6 +18,7 @@ export class GetCustomerSummaryHttpController {
   constructor(private readonly queryBus: QueryBus) {}
 
   @Get(':customerId')
+  @RequireAnyPermission(TenantPermission.CustomersRead, TenantPermission.RentalsRead)
   async getCustomerSummary(
     @Param() params: GetCustomerSummaryParamsDto,
     @CurrentUser() user: AuthUser,

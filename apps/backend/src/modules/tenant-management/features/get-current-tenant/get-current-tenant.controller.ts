@@ -5,6 +5,7 @@ import { createProblemDetails, createProblemType, ProblemException } from 'src/c
 
 import { AuthUser } from '../../auth/shared/auth.types';
 import { CurrentUser } from '../../auth/shared/current-user/current-user.decorator';
+import { AuthorizationExempt } from '../../authorization/tenant-authorization.decorators';
 import { GetCurrentTenantError, GetCurrentTenantErrorCode } from './get-current-tenant.errors';
 import { GetCurrentTenantResult } from './get-current-tenant.handler';
 import { GetCurrentTenantQuery } from './get-current-tenant.query';
@@ -15,6 +16,7 @@ export class GetCurrentTenantHttpController {
   constructor(private readonly queryBus: QueryBus) {}
 
   @Get('me')
+  @AuthorizationExempt()
   async me(@CurrentUser() user: AuthUser): Promise<GetCurrentTenantResponseDto> {
     const result = await this.queryBus.execute<GetCurrentTenantQuery, GetCurrentTenantResult>(
       new GetCurrentTenantQuery(user.tenantId),

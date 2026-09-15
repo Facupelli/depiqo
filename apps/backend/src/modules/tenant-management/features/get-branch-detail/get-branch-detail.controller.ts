@@ -1,3 +1,4 @@
+import { TenantPermission } from '@repo/api-contracts';
 import { Controller, Get, HttpStatus, Param } from '@nestjs/common';
 import { QueryBus } from '@nestjs/cqrs';
 
@@ -5,6 +6,7 @@ import { createProblemDetails, createProblemType, ProblemException } from 'src/c
 
 import { AuthUser } from '../../auth/shared/auth.types';
 import { CurrentUser } from '../../auth/shared/current-user/current-user.decorator';
+import { RequirePermission } from '../../authorization/tenant-authorization.decorators';
 import { GetBranchDetailError, GetBranchDetailErrorCode } from './get-branch-detail.errors';
 import { GetBranchDetailResult } from './get-branch-detail.handler';
 import { GetBranchDetailQuery } from './get-branch-detail.query';
@@ -16,6 +18,7 @@ export class GetBranchDetailHttpController {
   constructor(private readonly queryBus: QueryBus) {}
 
   @Get(':branchId')
+  @RequirePermission(TenantPermission.BranchesManage)
   async getBranchDetail(
     @Param() params: GetBranchDetailParamsDto,
     @CurrentUser() user: AuthUser,

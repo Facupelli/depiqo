@@ -1,6 +1,8 @@
+import { TenantPermission } from '@repo/api-contracts';
 import { Controller, Get, Query } from '@nestjs/common';
 import { QueryBus } from '@nestjs/cqrs';
 
+import { RequireAnyPermission } from '../../authorization/tenant-authorization.decorators';
 import { AuthUser } from '../../auth/shared/auth.types';
 import { CurrentUser } from '../../auth/shared/current-user/current-user.decorator';
 import { GetRentalCustomersResult } from './get-rental-customers.handler';
@@ -13,6 +15,11 @@ export class GetRentalCustomersHttpController {
   constructor(private readonly queryBus: QueryBus) {}
 
   @Get()
+  @RequireAnyPermission(
+    TenantPermission.CustomersRead,
+    TenantPermission.CustomersOnboardingManage,
+    TenantPermission.RentalsProposalsManage,
+  )
   async getRentalCustomers(
     @Query() dto: GetRentalCustomersRequestDto,
     @CurrentUser() user: AuthUser,

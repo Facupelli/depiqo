@@ -6,6 +6,7 @@ import { AuthActor } from '../../shared/auth.types';
 import { CurrentUser } from '../../shared/current-user/current-user.decorator';
 import { SessionAuthGuard } from '../../shared/session/session-auth.guard';
 import { WorkingBranchSessionService } from '../../shared/session/working-branch-session.service';
+import { AuthorizationExempt } from '../../../authorization/tenant-authorization.decorators';
 
 @Controller('auth')
 export class GetCurrentUserController {
@@ -13,6 +14,7 @@ export class GetCurrentUserController {
 
   @Get('me')
   @UseGuards(SessionAuthGuard)
+  @AuthorizationExempt()
   async me(@Req() req: Request, @CurrentUser() actor: AuthActor): Promise<GetCurrentUserResponseDto> {
     const workingBranchId = await this.workingBranchSession.resolve(req, actor.tenantId);
 

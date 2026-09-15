@@ -2,6 +2,7 @@ import { Controller, HttpCode, Post, Req, Res } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { SESSION_COOKIE_NAME } from '../../shared/session/auth-session.constants';
 import { SessionRegeneratorService } from '../../shared/session/session-regenerator.service';
+import { AuthorizationExempt } from '../../../authorization/tenant-authorization.decorators';
 
 @Controller('auth')
 export class LogoutController {
@@ -9,6 +10,7 @@ export class LogoutController {
 
   @Post('logout')
   @HttpCode(204)
+  @AuthorizationExempt()
   async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response): Promise<void> {
     await this.logoutFromPassport(req);
     await this.sessionRegenerator.destroy(req);

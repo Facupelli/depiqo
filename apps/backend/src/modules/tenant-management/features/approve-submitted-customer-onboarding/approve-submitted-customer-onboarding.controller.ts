@@ -1,3 +1,4 @@
+import { TenantPermission } from '@repo/api-contracts';
 import { Controller, HttpCode, HttpStatus, Param, Post } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
 
@@ -5,6 +6,7 @@ import { createProblemDetails, createProblemType, ProblemException } from 'src/c
 
 import { AuthUser } from '../../auth/shared/auth.types';
 import { CurrentUser } from '../../auth/shared/current-user/current-user.decorator';
+import { RequirePermission } from '../../authorization/tenant-authorization.decorators';
 import { ApproveSubmittedCustomerOnboardingCommand } from './approve-submitted-customer-onboarding.command';
 import {
   ApproveSubmittedCustomerOnboardingError,
@@ -19,6 +21,7 @@ export class ApproveSubmittedCustomerOnboardingHttpController {
 
   @Post(':customerId/onboarding/approve')
   @HttpCode(HttpStatus.NO_CONTENT)
+  @RequirePermission(TenantPermission.CustomersOnboardingManage)
   async approveSubmittedCustomerOnboarding(
     @Param() params: ApproveSubmittedCustomerOnboardingParamsDto,
     @CurrentUser() user: AuthUser,

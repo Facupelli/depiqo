@@ -1,3 +1,4 @@
+import { TenantPermission } from '@repo/api-contracts';
 import { Body, Controller, HttpCode, HttpStatus, Put } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
 import { Result } from 'neverthrow';
@@ -6,6 +7,7 @@ import { createProblemDetails, createProblemType, ProblemException } from 'src/c
 
 import { AuthUser } from '../../auth/shared/auth.types';
 import { CurrentUser } from '../../auth/shared/current-user/current-user.decorator';
+import { RequirePermission } from '../../authorization/tenant-authorization.decorators';
 import { UpdateContractSignerCommand } from './update-contract-signer.command';
 import { UpdateContractSignerError, UpdateContractSignerErrorCode } from './update-contract-signer.errors';
 import { UpdateContractSignerResult } from './update-contract-signer.handler';
@@ -18,6 +20,7 @@ export class UpdateContractSignerHttpController {
 
   @Put()
   @HttpCode(HttpStatus.OK)
+  @RequirePermission(TenantPermission.TenantContractSignerManage)
   async updateContractSigner(
     @Body() dto: UpdateContractSignerRequestDto,
     @CurrentUser() user: AuthUser,
