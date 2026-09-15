@@ -18,6 +18,7 @@ export const AuthUserSchema = z.object({
   avatarUrl: z.string().url().nullable(),
   role: z.enum(["USER", "ADMIN"]),
   status: z.enum(["ACTIVE", "SUSPENDED", "DELETED"]),
+  mustChangePassword: z.boolean(),
   emailVerifiedAt: z.string().datetime().nullable(),
   sessionVersion: z.number().int(),
 });

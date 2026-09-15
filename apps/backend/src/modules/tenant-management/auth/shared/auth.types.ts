@@ -16,6 +16,7 @@ export type TenantUserAuthActor = {
   avatarUrl: string | null;
   role: V2UserRole;
   status: V2UserStatus;
+  mustChangePassword: boolean;
   emailVerifiedAt: Date | null;
   sessionVersion: number;
 };
@@ -52,6 +53,7 @@ type UserLike = {
   avatarUrl: string | null;
   role: V2UserRole;
   status: V2UserStatus;
+  mustChangePassword: boolean;
   emailVerifiedAt: Date | null;
   sessionVersion: number;
 };
@@ -79,6 +81,7 @@ export function toAuthUser(user: UserLike): AuthUser {
     avatarUrl: user.avatarUrl,
     role: user.role,
     status: user.status,
+    mustChangePassword: user.mustChangePassword,
     emailVerifiedAt: user.emailVerifiedAt,
     sessionVersion: user.sessionVersion,
   };

@@ -23,6 +23,7 @@ export * from "./submit-customer-profile.contract";
 export * from "./tenant-domain.contract";
 export * from "./tenant-context.contract";
 export * from "./tenant-permission.schema";
+export * from "./team.contract";
 export * from "./get-custom-domain.contract";
 export * from "./register-custom-domain.contract";
 export * from "./refresh-custom-domain-status.contract";

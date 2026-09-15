@@ -99,6 +99,7 @@ import { GetCategoriesHandler } from './features/get-categories/get-categories.h
 import { GetStorefrontCategoriesHttpController } from './features/get-storefront-categories/get-storefront-categories.controller';
 import { GetStorefrontCategoriesHandler } from './features/get-storefront-categories/get-storefront-categories.handler';
 import { ManageTenantRolesHttpController } from './features/manage-roles/manage-roles.controller';
+import { ManageTenantTeamHttpController } from './features/manage-team/manage-team.controller';
 import {
   CreateTenantRoleHandler,
   DeleteTenantRoleHandler,
@@ -107,6 +108,15 @@ import {
   GetTenantRolesHandler,
   UpdateTenantRoleHandler,
 } from './features/manage-roles/manage-roles.handlers';
+import {
+  ChangeTenantCollaboratorRoleHandler,
+  CreateTenantCollaboratorHandler,
+  GetTenantCollaboratorHandler,
+  GetTenantCollaboratorsHandler,
+  ReactivateTenantCollaboratorHandler,
+  ResetTenantCollaboratorPasswordHandler,
+  SuspendTenantCollaboratorHandler,
+} from './features/manage-team/manage-team.handlers';
 
 @Module({
   imports: [AuthModule, GeocodingModule, TenantAuthorizationModule, TenantContextModule],
@@ -115,6 +125,7 @@ import {
     GetCategoriesHttpController,
     GetStorefrontCategoriesHttpController,
     ManageTenantRolesHttpController,
+    ManageTenantTeamHttpController,
     ApproveSubmittedCustomerOnboardingHttpController,
     CreateBranchHttpController,
     CreateContractSignerHttpController,
@@ -151,6 +162,13 @@ import {
     CreateTenantRoleHandler,
     UpdateTenantRoleHandler,
     DeleteTenantRoleHandler,
+    GetTenantCollaboratorsHandler,
+    GetTenantCollaboratorHandler,
+    CreateTenantCollaboratorHandler,
+    ChangeTenantCollaboratorRoleHandler,
+    SuspendTenantCollaboratorHandler,
+    ReactivateTenantCollaboratorHandler,
+    ResetTenantCollaboratorPasswordHandler,
     BranchRepository,
     BranchAddressResolver,
     TenantRepository,

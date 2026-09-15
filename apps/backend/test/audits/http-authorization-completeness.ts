@@ -38,6 +38,7 @@ const authorizationDecorators = new Set([
   'AuthorizationExempt',
 ]);
 const expectedExemptRoutes = new Set([
+  'ChangePasswordController.changePassword',
   'GetCurrentUserController.me',
   'LogoutController.logout',
   'UpdateWorkingBranchController.update',
