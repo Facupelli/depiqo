@@ -11,8 +11,10 @@ import {
 	Globe2,
 	MapPin,
 	Shield,
+	Users,
 } from "lucide-react";
-import { can } from "@/auth/permissions";
+import { teamWorkspacePermissions } from "@/auth/capabilities";
+import { can, canAny } from "@/auth/permissions";
 
 export type SettingsNavItem = {
 	to: string;
@@ -39,6 +41,14 @@ export const settingsNavGroups: SettingsNavGroup[] = [
 				icon: Building2,
 				isVisible: (permissions) =>
 					can(permissions, TenantPermission.TenantSettingsManage),
+			},
+			{
+				to: "/dashboard/settings/team",
+				label: "Equipo",
+				description: "Administra las personas con acceso a tu negocio.",
+				icon: Users,
+				isVisible: (permissions) =>
+					canAny(permissions, teamWorkspacePermissions),
 			},
 			{
 				to: "/dashboard/settings/branches",

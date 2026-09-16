@@ -51,9 +51,15 @@ export const promotionListPermissions = [
 	TenantPermission.PricingManage,
 ] as const satisfies readonly TenantPermissionId[];
 
+export const teamWorkspacePermissions = [
+	TenantPermission.TeamRead,
+	TenantPermission.TeamManage,
+] as const satisfies readonly TenantPermissionId[];
+
 export const settingsPermissions = [
 	TenantPermission.TenantSettingsManage,
 	TenantPermission.BranchesManage,
 	TenantPermission.TenantStorefrontManage,
 	TenantPermission.TenantContractSignerManage,
+	...teamWorkspacePermissions,
 ] as const satisfies readonly TenantPermissionId[];

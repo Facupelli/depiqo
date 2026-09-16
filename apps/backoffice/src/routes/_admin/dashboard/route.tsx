@@ -45,6 +45,7 @@ import {
 	productWorkspacePermissions,
 	promotionListPermissions,
 	rentalWorkspacePermissions,
+	teamWorkspacePermissions,
 } from "@/auth/capabilities";
 import { useLogout } from "@/auth/logout/logout.mutation";
 import { can, canAny } from "@/auth/permissions";
@@ -185,6 +186,12 @@ const sidebarItems: SidebarItem[] = [
 				href: "/dashboard/settings/business",
 				isVisible: (permissions) =>
 					can(permissions, TenantPermission.TenantSettingsManage),
+			},
+			{
+				name: "Equipo",
+				href: "/dashboard/settings/team",
+				isVisible: (permissions) =>
+					canAny(permissions, teamWorkspacePermissions),
 			},
 			{
 				name: "Sucursales",

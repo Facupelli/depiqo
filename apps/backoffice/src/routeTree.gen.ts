@@ -37,6 +37,8 @@ import { Route as AdminDashboardPromotionsNewRouteImport } from './routes/_admin
 import { Route as AdminDashboardOwnersOwnerIdRouteImport } from './routes/_admin/dashboard/owners/$ownerId'
 import { Route as AdminDashboardOrdersNewRouteImport } from './routes/_admin/dashboard/orders/new'
 import { Route as AdminDashboardBranchesNewRouteImport } from './routes/_admin/dashboard/branches/new'
+import { Route as AdminDashboardSettingsTeamRouteRouteImport } from './routes/_admin/dashboard/settings/team/route'
+import { Route as AdminDashboardSettingsTeamIndexRouteImport } from './routes/_admin/dashboard/settings/team/index'
 import { Route as AdminDashboardOrdersOrderIdIndexRouteImport } from './routes/_admin/dashboard/orders/$orderId/index'
 import { Route as AdminDashboardInventoryEquipmentTypesIndexRouteImport } from './routes/_admin/dashboard/inventory/equipment-types/index'
 import { Route as AdminDashboardCustomersPendingProfilesIndexRouteImport } from './routes/_admin/dashboard/customers/pending-profiles/index'
@@ -217,6 +219,18 @@ const AdminDashboardBranchesNewRoute =
     path: '/branches/new',
     getParentRoute: () => AdminDashboardRouteRoute,
   } as any)
+const AdminDashboardSettingsTeamRouteRoute =
+  AdminDashboardSettingsTeamRouteRouteImport.update({
+    id: '/team',
+    path: '/team',
+    getParentRoute: () => AdminDashboardSettingsRouteRoute,
+  } as any)
+const AdminDashboardSettingsTeamIndexRoute =
+  AdminDashboardSettingsTeamIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AdminDashboardSettingsTeamRouteRoute,
+  } as any)
 const AdminDashboardOrdersOrderIdIndexRoute =
   AdminDashboardOrdersOrderIdIndexRouteImport.update({
     id: '/orders/$orderId/',
@@ -378,6 +392,7 @@ export interface FileRoutesByFullPath {
   '/backend/$': typeof BackendSplatRoute
   '/dashboard/settings': typeof AdminDashboardSettingsRouteRouteWithChildren
   '/dashboard/': typeof AdminDashboardIndexRoute
+  '/dashboard/settings/team': typeof AdminDashboardSettingsTeamRouteRouteWithChildren
   '/dashboard/branches/new': typeof AdminDashboardBranchesNewRoute
   '/dashboard/orders/new': typeof AdminDashboardOrdersNewRoute
   '/dashboard/owners/$ownerId': typeof AdminDashboardOwnersOwnerIdRoute
@@ -409,6 +424,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/customers/pending-profiles/': typeof AdminDashboardCustomersPendingProfilesIndexRoute
   '/dashboard/inventory/equipment-types/': typeof AdminDashboardInventoryEquipmentTypesIndexRoute
   '/dashboard/orders/$orderId/': typeof AdminDashboardOrdersOrderIdIndexRoute
+  '/dashboard/settings/team/': typeof AdminDashboardSettingsTeamIndexRoute
   '/dashboard/catalog/packages/$rentableItemId/edit': typeof AdminDashboardCatalogPackagesRentableItemIdEditRoute
   '/dashboard/catalog/packages/$rentableItemId/equipment': typeof AdminDashboardCatalogPackagesRentableItemIdEquipmentRoute
   '/dashboard/catalog/packages/$rentableItemId/rental': typeof AdminDashboardCatalogPackagesRentableItemIdRentalRoute
@@ -457,6 +473,7 @@ export interface FileRoutesByTo {
   '/dashboard/customers/pending-profiles': typeof AdminDashboardCustomersPendingProfilesIndexRoute
   '/dashboard/inventory/equipment-types': typeof AdminDashboardInventoryEquipmentTypesIndexRoute
   '/dashboard/orders/$orderId': typeof AdminDashboardOrdersOrderIdIndexRoute
+  '/dashboard/settings/team': typeof AdminDashboardSettingsTeamIndexRoute
   '/dashboard/catalog/packages/$rentableItemId/edit': typeof AdminDashboardCatalogPackagesRentableItemIdEditRoute
   '/dashboard/catalog/packages/$rentableItemId/equipment': typeof AdminDashboardCatalogPackagesRentableItemIdEquipmentRoute
   '/dashboard/catalog/packages/$rentableItemId/rental': typeof AdminDashboardCatalogPackagesRentableItemIdRentalRoute
@@ -480,6 +497,7 @@ export interface FileRoutesById {
   '/backend/$': typeof BackendSplatRoute
   '/_admin/dashboard/settings': typeof AdminDashboardSettingsRouteRouteWithChildren
   '/_admin/dashboard/': typeof AdminDashboardIndexRoute
+  '/_admin/dashboard/settings/team': typeof AdminDashboardSettingsTeamRouteRouteWithChildren
   '/_admin/dashboard/branches/new': typeof AdminDashboardBranchesNewRoute
   '/_admin/dashboard/orders/new': typeof AdminDashboardOrdersNewRoute
   '/_admin/dashboard/owners/$ownerId': typeof AdminDashboardOwnersOwnerIdRoute
@@ -511,6 +529,7 @@ export interface FileRoutesById {
   '/_admin/dashboard/customers/pending-profiles/': typeof AdminDashboardCustomersPendingProfilesIndexRoute
   '/_admin/dashboard/inventory/equipment-types/': typeof AdminDashboardInventoryEquipmentTypesIndexRoute
   '/_admin/dashboard/orders/$orderId/': typeof AdminDashboardOrdersOrderIdIndexRoute
+  '/_admin/dashboard/settings/team/': typeof AdminDashboardSettingsTeamIndexRoute
   '/_admin/dashboard/catalog/packages/$rentableItemId/edit': typeof AdminDashboardCatalogPackagesRentableItemIdEditRoute
   '/_admin/dashboard/catalog/packages/$rentableItemId/equipment': typeof AdminDashboardCatalogPackagesRentableItemIdEquipmentRoute
   '/_admin/dashboard/catalog/packages/$rentableItemId/rental': typeof AdminDashboardCatalogPackagesRentableItemIdRentalRoute
@@ -534,6 +553,7 @@ export interface FileRouteTypes {
     | '/backend/$'
     | '/dashboard/settings'
     | '/dashboard/'
+    | '/dashboard/settings/team'
     | '/dashboard/branches/new'
     | '/dashboard/orders/new'
     | '/dashboard/owners/$ownerId'
@@ -565,6 +585,7 @@ export interface FileRouteTypes {
     | '/dashboard/customers/pending-profiles/'
     | '/dashboard/inventory/equipment-types/'
     | '/dashboard/orders/$orderId/'
+    | '/dashboard/settings/team/'
     | '/dashboard/catalog/packages/$rentableItemId/edit'
     | '/dashboard/catalog/packages/$rentableItemId/equipment'
     | '/dashboard/catalog/packages/$rentableItemId/rental'
@@ -613,6 +634,7 @@ export interface FileRouteTypes {
     | '/dashboard/customers/pending-profiles'
     | '/dashboard/inventory/equipment-types'
     | '/dashboard/orders/$orderId'
+    | '/dashboard/settings/team'
     | '/dashboard/catalog/packages/$rentableItemId/edit'
     | '/dashboard/catalog/packages/$rentableItemId/equipment'
     | '/dashboard/catalog/packages/$rentableItemId/rental'
@@ -635,6 +657,7 @@ export interface FileRouteTypes {
     | '/backend/$'
     | '/_admin/dashboard/settings'
     | '/_admin/dashboard/'
+    | '/_admin/dashboard/settings/team'
     | '/_admin/dashboard/branches/new'
     | '/_admin/dashboard/orders/new'
     | '/_admin/dashboard/owners/$ownerId'
@@ -666,6 +689,7 @@ export interface FileRouteTypes {
     | '/_admin/dashboard/customers/pending-profiles/'
     | '/_admin/dashboard/inventory/equipment-types/'
     | '/_admin/dashboard/orders/$orderId/'
+    | '/_admin/dashboard/settings/team/'
     | '/_admin/dashboard/catalog/packages/$rentableItemId/edit'
     | '/_admin/dashboard/catalog/packages/$rentableItemId/equipment'
     | '/_admin/dashboard/catalog/packages/$rentableItemId/rental'
@@ -886,6 +910,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminDashboardBranchesNewRouteImport
       parentRoute: typeof AdminDashboardRouteRoute
     }
+    '/_admin/dashboard/settings/team': {
+      id: '/_admin/dashboard/settings/team'
+      path: '/team'
+      fullPath: '/dashboard/settings/team'
+      preLoaderRoute: typeof AdminDashboardSettingsTeamRouteRouteImport
+      parentRoute: typeof AdminDashboardSettingsRouteRoute
+    }
+    '/_admin/dashboard/settings/team/': {
+      id: '/_admin/dashboard/settings/team/'
+      path: '/'
+      fullPath: '/dashboard/settings/team/'
+      preLoaderRoute: typeof AdminDashboardSettingsTeamIndexRouteImport
+      parentRoute: typeof AdminDashboardSettingsTeamRouteRoute
+    }
     '/_admin/dashboard/orders/$orderId/': {
       id: '/_admin/dashboard/orders/$orderId/'
       path: '/orders/$orderId'
@@ -1050,7 +1088,22 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AdminDashboardSettingsTeamRouteRouteChildren {
+  AdminDashboardSettingsTeamIndexRoute: typeof AdminDashboardSettingsTeamIndexRoute
+}
+
+const AdminDashboardSettingsTeamRouteRouteChildren: AdminDashboardSettingsTeamRouteRouteChildren =
+  {
+    AdminDashboardSettingsTeamIndexRoute: AdminDashboardSettingsTeamIndexRoute,
+  }
+
+const AdminDashboardSettingsTeamRouteRouteWithChildren =
+  AdminDashboardSettingsTeamRouteRoute._addFileChildren(
+    AdminDashboardSettingsTeamRouteRouteChildren,
+  )
+
 interface AdminDashboardSettingsRouteRouteChildren {
+  AdminDashboardSettingsTeamRouteRoute: typeof AdminDashboardSettingsTeamRouteRouteWithChildren
   AdminDashboardSettingsBranchesRoute: typeof AdminDashboardSettingsBranchesRoute
   AdminDashboardSettingsBusinessRoute: typeof AdminDashboardSettingsBusinessRoute
   AdminDashboardSettingsContractsRoute: typeof AdminDashboardSettingsContractsRoute
@@ -1062,6 +1115,8 @@ interface AdminDashboardSettingsRouteRouteChildren {
 
 const AdminDashboardSettingsRouteRouteChildren: AdminDashboardSettingsRouteRouteChildren =
   {
+    AdminDashboardSettingsTeamRouteRoute:
+      AdminDashboardSettingsTeamRouteRouteWithChildren,
     AdminDashboardSettingsBranchesRoute: AdminDashboardSettingsBranchesRoute,
     AdminDashboardSettingsBusinessRoute: AdminDashboardSettingsBusinessRoute,
     AdminDashboardSettingsContractsRoute: AdminDashboardSettingsContractsRoute,
