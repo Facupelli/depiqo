@@ -16,6 +16,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as BackendSplatRouteImport } from './routes/backend/$'
 import { Route as ApiUploadRouteImport } from './routes/api/upload'
 import { Route as ApiBrandingUploadRouteImport } from './routes/api/branding-upload'
+import { Route as AdminChangePasswordRouteImport } from './routes/_admin/change-password'
 import { Route as AdminDashboardRouteRouteImport } from './routes/_admin/dashboard/route'
 import { Route as AdminDashboardIndexRouteImport } from './routes/_admin/dashboard/index'
 import { Route as AdminDashboardSettingsRouteRouteImport } from './routes/_admin/dashboard/settings/route'
@@ -93,6 +94,11 @@ const ApiBrandingUploadRoute = ApiBrandingUploadRouteImport.update({
   id: '/api/branding-upload',
   path: '/api/branding-upload',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AdminChangePasswordRoute = AdminChangePasswordRouteImport.update({
+  id: '/change-password',
+  path: '/change-password',
+  getParentRoute: () => AdminRouteRoute,
 } as any)
 const AdminDashboardRouteRoute = AdminDashboardRouteRouteImport.update({
   id: '/dashboard',
@@ -366,6 +372,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/dashboard': typeof AdminDashboardRouteRouteWithChildren
+  '/change-password': typeof AdminChangePasswordRoute
   '/api/branding-upload': typeof ApiBrandingUploadRoute
   '/api/upload': typeof ApiUploadRoute
   '/backend/$': typeof BackendSplatRoute
@@ -416,6 +423,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/change-password': typeof AdminChangePasswordRoute
   '/api/branding-upload': typeof ApiBrandingUploadRoute
   '/api/upload': typeof ApiUploadRoute
   '/backend/$': typeof BackendSplatRoute
@@ -466,6 +474,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/_admin/dashboard': typeof AdminDashboardRouteRouteWithChildren
+  '/_admin/change-password': typeof AdminChangePasswordRoute
   '/api/branding-upload': typeof ApiBrandingUploadRoute
   '/api/upload': typeof ApiUploadRoute
   '/backend/$': typeof BackendSplatRoute
@@ -519,6 +528,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/dashboard'
+    | '/change-password'
     | '/api/branding-upload'
     | '/api/upload'
     | '/backend/$'
@@ -569,6 +579,7 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/register'
+    | '/change-password'
     | '/api/branding-upload'
     | '/api/upload'
     | '/backend/$'
@@ -618,6 +629,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/_admin/dashboard'
+    | '/_admin/change-password'
     | '/api/branding-upload'
     | '/api/upload'
     | '/backend/$'
@@ -726,6 +738,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/branding-upload'
       preLoaderRoute: typeof ApiBrandingUploadRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_admin/change-password': {
+      id: '/_admin/change-password'
+      path: '/change-password'
+      fullPath: '/change-password'
+      preLoaderRoute: typeof AdminChangePasswordRouteImport
+      parentRoute: typeof AdminRouteRoute
     }
     '/_admin/dashboard': {
       id: '/_admin/dashboard'
@@ -1184,10 +1203,12 @@ const AdminDashboardRouteRouteWithChildren =
 
 interface AdminRouteRouteChildren {
   AdminDashboardRouteRoute: typeof AdminDashboardRouteRouteWithChildren
+  AdminChangePasswordRoute: typeof AdminChangePasswordRoute
 }
 
 const AdminRouteRouteChildren: AdminRouteRouteChildren = {
   AdminDashboardRouteRoute: AdminDashboardRouteRouteWithChildren,
+  AdminChangePasswordRoute: AdminChangePasswordRoute,
 }
 
 const AdminRouteRouteWithChildren = AdminRouteRoute._addFileChildren(

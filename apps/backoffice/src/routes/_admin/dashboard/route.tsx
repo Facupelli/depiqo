@@ -15,7 +15,6 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import {
 	createFileRoute,
 	Link,
-	notFound,
 	Outlet,
 	redirect,
 	useNavigate,
@@ -55,23 +54,10 @@ import {
 import { branchQueries } from "@/modules/settings/branches/public";
 
 export const Route = createFileRoute("/_admin/dashboard")({
-	beforeLoad: async ({ context, location }) => {
-		const redirectTo = `${location.pathname}${location.searchStr ?? ""}${location.hash ?? ""}`;
-
-		if (!context.user) {
-			throw redirect({
-				to: "/login",
-				search: { redirectTo },
-			});
+	beforeLoad: ({ context }) => {
+		if (context.user.mustChangePassword) {
+			throw redirect({ to: "/change-password" });
 		}
-
-		if (context.user.actorType !== "TENANT_USER") {
-			throw notFound();
-		}
-
-		return {
-			user: context.user,
-		};
 	},
 	loader: async ({ context: { queryClient } }) => {
 		await Promise.all([
