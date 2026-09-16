@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 
 import request from 'supertest';
+import { GetCurrentUserResponseSchema, TenantPermission } from '@repo/api-contracts';
 
 import { PrismaService } from '../../src/core/database/prisma.service';
 import { V2TenantStatus, V2UserStatus } from '../../src/generated/prisma/enums';
@@ -183,6 +184,66 @@ describe('authenticated tenant HTTP flow', () => {
 
     const currentTenant = await client.request().get('/tenant-management/tenant/me').expect(200);
     expect(currentTenant.body.data).toMatchObject({ name: 'Tenant A' });
+  });
+
+  it('returns a custom tenant role and resolves its current persisted permissions on every /auth/me request', async () => {
+    const prisma = testApp.app.get(PrismaService);
+    const client = createE2ETestClient(testApp.app);
+    const fixtures = createTestFixtures(prisma);
+    const tenant = await fixtures.createTenant();
+    const role = await prisma.client.v2TenantRole.create({
+      data: {
+        tenantId: tenant.id,
+        name: 'Operations',
+        permissions: {
+          create: [TenantPermission.RentalsRead, TenantPermission.InventoryRead].map((permission) => ({ permission })),
+        },
+      },
+    });
+    const tenantUser = await fixtures.createTenantUserWithRole({
+      tenantId: tenant.id,
+      roleId: role.id,
+      overrides: { mustChangePassword: true },
+    });
+
+    await client.loginTenantUser({ email: tenantUser.user.email, password: tenantUser.password });
+    const first = await client.request().get('/auth/me').expect(200);
+
+    expect(first.body.data).toMatchObject({
+      actorType: 'TENANT_USER',
+      tenantRole: { id: role.id, name: role.name, systemRole: null },
+      permissions: [TenantPermission.RentalsRead, TenantPermission.InventoryRead],
+      mustChangePassword: true,
+    });
+    expect(GetCurrentUserResponseSchema.safeParse(first.body.data).success).toBe(true);
+
+    await prisma.client.v2TenantRolePermission.deleteMany({ where: { roleId: role.id } });
+    await prisma.client.v2TenantRolePermission.create({
+      data: { roleId: role.id, permission: TenantPermission.TeamRead },
+    });
+
+    const second = await client.request().get('/auth/me').expect(200);
+    expect(second.body.data.permissions).toEqual([TenantPermission.TeamRead]);
+  });
+
+  it('returns the full canonical permission registry for an administrator without persisted permission rows', async () => {
+    const prisma = testApp.app.get(PrismaService);
+    const client = createE2ETestClient(testApp.app);
+    const fixtures = createTestFixtures(prisma);
+    const tenant = await fixtures.createTenant();
+    const tenantUser = await fixtures.createAdministratorTenantUser({ tenantId: tenant.id });
+    const role = await prisma.client.v2TenantRole.findUniqueOrThrow({
+      where: { tenantId_id: { tenantId: tenant.id, id: tenantUser.user.roleId } },
+      include: { permissions: true },
+    });
+
+    expect(role.permissions).toEqual([]);
+    await client.loginTenantUser({ email: tenantUser.user.email, password: tenantUser.password });
+    const currentUser = await client.request().get('/auth/me').expect(200);
+
+    expect(currentUser.body.data.tenantRole).toEqual({ id: role.id, name: role.name, systemRole: 'ADMIN' });
+    expect(currentUser.body.data.permissions).toEqual(ALL_TENANT_PERMISSIONS);
+    expect(GetCurrentUserResponseSchema.safeParse(currentUser.body.data).success).toBe(true);
   });
 
   it('rejects a tenant user without a local credential', async () => {
@@ -600,6 +661,15 @@ describe('authenticated tenant HTTP flow', () => {
     );
 
     expect(login.body.data.customer).toMatchObject({ email: rentalCustomer.customer.email });
+
+    const currentUser = await client.request().get('/auth/me').expect(200);
+    expect(currentUser.body.data).toMatchObject({
+      actorType: 'TENANT_CUSTOMER',
+      email: rentalCustomer.customer.email,
+    });
+    expect(currentUser.body.data).not.toHaveProperty('tenantRole');
+    expect(currentUser.body.data).not.toHaveProperty('permissions');
+    expect(GetCurrentUserResponseSchema.safeParse(currentUser.body.data).success).toBe(true);
   });
 });
 
