@@ -52,6 +52,7 @@ import {
 	useSidebar,
 } from "@/components/ui/sidebar";
 import { branchQueries } from "@/modules/settings/branches/public";
+import { AdminRouteError } from "@/shared/components/admin-route-error";
 
 export const Route = createFileRoute("/_admin/dashboard")({
 	beforeLoad: ({ context, location }) => {
@@ -70,6 +71,7 @@ export const Route = createFileRoute("/_admin/dashboard")({
 			// queryClient.ensureQueryData(tenantQueries.me()),
 		]);
 	},
+	errorComponent: ({ error }) => <AdminRouteError error={error} />,
 	component: DashboardLayout,
 });
 

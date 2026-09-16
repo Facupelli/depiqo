@@ -1,4 +1,5 @@
 import type { TenantPermission } from "@repo/api-contracts";
+import { RoutePermissionDeniedError } from "@/shared/errors";
 
 export function can(
 	permissions: readonly TenantPermission[],
@@ -23,4 +24,10 @@ export function canAll(
 	return requestedPermissions.every((permission) =>
 		can(permissions, permission),
 	);
+}
+
+export function requireRouteAccess(hasAccess: boolean): void {
+	if (!hasAccess) {
+		throw new RoutePermissionDeniedError();
+	}
 }

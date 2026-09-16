@@ -1,10 +1,17 @@
+import { TenantPermission } from "@repo/api-contracts";
 import { createFileRoute } from "@tanstack/react-router";
+import { can, requireRouteAccess } from "@/auth/permissions";
 import { EditRentalPage } from "@/modules/rentals/edit-rental/EditRentalPage";
 import { RentalDetailPageSkeleton } from "@/modules/rentals/rental-detail/components/rental-detail-page-skeleton";
 import { rentalDetailViewQueries } from "@/modules/rentals/rental-detail/rental-detail.queries";
 import { AdminRouteError } from "@/shared/components/admin-route-error";
 
 export const Route = createFileRoute("/_admin/dashboard/orders/$orderId/edit")({
+	beforeLoad: ({ context }) => {
+		requireRouteAccess(
+			can(context.user.permissions, TenantPermission.RentalsProposalsManage),
+		);
+	},
 	loader: async ({ context: { queryClient }, params: { orderId } }) => {
 		await queryClient.ensureQueryData(rentalDetailViewQueries.detail(orderId));
 	},

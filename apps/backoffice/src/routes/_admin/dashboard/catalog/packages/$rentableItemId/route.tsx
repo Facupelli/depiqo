@@ -4,6 +4,8 @@ import {
 	redirect,
 	useRouterState,
 } from "@tanstack/react-router";
+import { canAny, requireRouteAccess } from "@/auth/permissions";
+import { productWorkspacePermissions } from "@/auth/capabilities";
 import { ComboDetailPage } from "@/modules/products/combo-detail/combo-detail-page";
 import { ComboDetailPageSkeleton } from "@/modules/products/combo-detail/combo-detail-page-skeleton";
 import { isComboKind } from "@/modules/products/product-kind";
@@ -12,6 +14,11 @@ import { AdminRouteError } from "@/shared/components/admin-route-error";
 export const Route = createFileRoute(
 	"/_admin/dashboard/catalog/packages/$rentableItemId",
 )({
+	beforeLoad: ({ context }) => {
+		requireRouteAccess(
+			canAny(context.user.permissions, productWorkspacePermissions),
+		);
+	},
 	loader: async ({ context: { queryClient }, params: { rentableItemId } }) => {
 		const item = await queryClient.ensureQueryData(
 			rentableItemDetailQueries.detail(rentableItemId),

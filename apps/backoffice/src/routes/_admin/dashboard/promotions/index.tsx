@@ -1,6 +1,8 @@
 import { buttonVariants } from "@repo/ui/components/button";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import z from "zod";
+import { canAny, requireRouteAccess } from "@/auth/permissions";
+import { promotionListPermissions } from "@/auth/capabilities";
 import { PromotionsTab } from "@/modules/pricing/promotions/list-promotions/PromotionsTab";
 import { AdminRouteError } from "@/shared/components/admin-route-error";
 
@@ -10,6 +12,12 @@ const promotionsSearchSchema = z.object({
 });
 
 export const Route = createFileRoute("/_admin/dashboard/promotions/")({
+	beforeLoad: ({ context }) => {
+		requireRouteAccess(
+			canAny(context.user.permissions, promotionListPermissions),
+		);
+	},
+
 	validateSearch: promotionsSearchSchema,
 	errorComponent: ({ error }) => {
 		return (

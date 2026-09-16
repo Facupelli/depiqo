@@ -1,4 +1,6 @@
+import { TenantPermission } from "@repo/api-contracts";
 import { createFileRoute } from "@tanstack/react-router";
+import { canAll, requireRouteAccess } from "@/auth/permissions";
 import { CreateIndividualRentalPage } from "@/modules/inventory/equipment-types/create-individual-rental/create-individual-rental-page";
 import { equipmentTypeSummaryQueries } from "@/modules/inventory/equipment-types/equipment-type-detail/equipment-type-summary.queries";
 import { AdminRouteError } from "@/shared/components/admin-route-error";
@@ -6,6 +8,14 @@ import { AdminRouteError } from "@/shared/components/admin-route-error";
 export const Route = createFileRoute(
 	"/_admin/dashboard/inventory/equipment-types/$equipmentTypeId/rentals_/new",
 )({
+	beforeLoad: ({ context }) => {
+		requireRouteAccess(
+			canAll(context.user.permissions, [
+				TenantPermission.ProductsManage,
+				TenantPermission.ProductsAvailabilityManage,
+			]),
+		);
+	},
 	loader: ({ context: { queryClient }, params: { equipmentTypeId } }) =>
 		queryClient.ensureQueryData(
 			equipmentTypeSummaryQueries.summary(equipmentTypeId),

@@ -1,5 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { z } from "zod";
+import { canAny, requireRouteAccess } from "@/auth/permissions";
+import { inventoryWorkspacePermissions } from "@/auth/capabilities";
 import { EquipmentTypesPage } from "@/modules/inventory/equipment-types/list-equipment-types/EquipmentTypesPage";
 import { AdminRouteError } from "@/shared/components/admin-route-error";
 
@@ -15,6 +17,11 @@ const equipmentTypesSearchSchema = z.object({
 export const Route = createFileRoute(
 	"/_admin/dashboard/inventory/equipment-types/",
 )({
+	beforeLoad: ({ context }) => {
+		requireRouteAccess(
+			canAny(context.user.permissions, inventoryWorkspacePermissions),
+		);
+	},
 	validateSearch: equipmentTypesSearchSchema,
 	errorComponent: ({ error }) => (
 		<AdminRouteError

@@ -1,4 +1,6 @@
+import { TenantPermission } from "@repo/api-contracts";
 import { createFileRoute } from "@tanstack/react-router";
+import { can, requireRouteAccess } from "@/auth/permissions";
 import {
 	CustomerOnboardingReviewPage,
 	CustomerProfileReviewPageSkeleton,
@@ -9,6 +11,12 @@ import { AdminRouteError } from "@/shared/components/admin-route-error";
 export const Route = createFileRoute(
 	"/_admin/dashboard/customers/pending-profiles/$customerId",
 )({
+	beforeLoad: ({ context }) => {
+		requireRouteAccess(
+			can(context.user.permissions, TenantPermission.CustomersOnboardingManage),
+		);
+	},
+
 	loader: ({ context: { queryClient }, params: { customerId } }) =>
 		queryClient.ensureQueryData(
 			customerOnboardingProfileQueries.detail(customerId),

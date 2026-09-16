@@ -1,7 +1,18 @@
+import { TenantPermission } from "@repo/api-contracts";
 import { createFileRoute } from "@tanstack/react-router";
+import { can, requireRouteAccess } from "@/auth/permissions";
 import { ContractSignerSettingsSection } from "@/modules/settings/contract-settings/configure-contract-signer/ContractSignerSettingsSection";
 
 export const Route = createFileRoute("/_admin/dashboard/settings/contracts")({
+	beforeLoad: ({ context }) => {
+		requireRouteAccess(
+			can(
+				context.user.permissions,
+				TenantPermission.TenantContractSignerManage,
+			),
+		);
+	},
+
 	component: ContractsScreen,
 });
 

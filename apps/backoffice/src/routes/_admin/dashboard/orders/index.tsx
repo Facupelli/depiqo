@@ -2,6 +2,8 @@ import { GetRentalsQuerySchema } from "@repo/api-contracts";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useCallback } from "react";
 import { z } from "zod";
+import { canAny, requireRouteAccess } from "@/auth/permissions";
+import { rentalWorkspacePermissions } from "@/auth/capabilities";
 import {
 	RentalsListPage,
 	type RentalsListSearch,
@@ -15,6 +17,11 @@ const ordersListSearchSchema = GetRentalsQuerySchema.extend({
 export type OrdersListSearch = z.infer<typeof ordersListSearchSchema>;
 
 export const Route = createFileRoute("/_admin/dashboard/orders/")({
+	beforeLoad: ({ context }) => {
+		requireRouteAccess(
+			canAny(context.user.permissions, rentalWorkspacePermissions),
+		);
+	},
 	validateSearch: ordersListSearchSchema,
 	errorComponent: ({ error }) => {
 		return (

@@ -37,6 +37,15 @@ export class WrongActorError extends Error {
 	}
 }
 
+export class RoutePermissionDeniedError extends Error {
+	public readonly status = 403;
+
+	constructor(message = "Permission is required to access this route") {
+		super(message);
+		this.name = "RoutePermissionDeniedError";
+	}
+}
+
 export function isAuthRequiredError(
 	error: unknown,
 ): error is AuthRequiredError {
