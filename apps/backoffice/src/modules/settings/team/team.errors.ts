@@ -14,7 +14,19 @@ const teamErrorMessages: Record<string, string> = {
 	"tenant_management.last_active_administrator":
 		"Debe permanecer al menos un Administrador activo en el equipo.",
 	"tenant_management.role_not_found":
-		"El rol seleccionado ya no está disponible.",
+		"El rol cambió o ya no está disponible. Actualiza la lista e inténtalo nuevamente.",
+	"tenant_management.role_name_already_in_use":
+		"Ya existe otro rol con ese nombre.",
+	"tenant_management.role_permission_escalation_forbidden":
+		"No puedes otorgar permisos que no posees.",
+	"tenant_management.role_authorization_state_invalid":
+		"Los permisos del rol no se pueden actualizar en este momento. Contacta a soporte.",
+	"tenant_management.system_role_cannot_be_edited":
+		"El rol Administrador es administrado por el sistema y no se puede editar.",
+	"tenant_management.system_role_cannot_be_deleted":
+		"El rol Administrador es administrado por el sistema y no se puede eliminar.",
+	"tenant_management.role_in_use":
+		"No puedes eliminar este rol porque tiene integrantes asignados.",
 	"tenant_management.role_assignment_forbidden":
 		"No tienes autorización para asignar ese rol.",
 	"tenant_management.administrator_role_assignment_forbidden":

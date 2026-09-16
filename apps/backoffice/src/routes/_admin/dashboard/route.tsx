@@ -45,7 +45,8 @@ import {
 	productWorkspacePermissions,
 	promotionListPermissions,
 	rentalWorkspacePermissions,
-	teamWorkspacePermissions,
+	settingsPermissions,
+	workingBranchContextPermissions,
 } from "@/auth/capabilities";
 import { useLogout } from "@/auth/logout/logout.mutation";
 import { can, canAny } from "@/auth/permissions";
@@ -78,13 +79,8 @@ export const Route = createFileRoute("/_admin/dashboard")({
 			});
 		}
 	},
-	loader: async ({ context: { queryClient } }) => {
-		await Promise.all([
-			queryClient.ensureQueryData(branchQueries.list()),
-			queryClient.ensureQueryData(currentBusinessQueries.current()),
-			// queryClient.ensureQueryData(tenantQueries.me()),
-		]);
-	},
+	loader: ({ context: { queryClient } }) =>
+		queryClient.ensureQueryData(currentBusinessQueries.current()),
 	errorComponent: ({ error }) => <AdminRouteError error={error} />,
 	component: DashboardLayout,
 });
@@ -180,62 +176,17 @@ const sidebarItems: SidebarItem[] = [
 		name: "Ajustes",
 		icon: Settings,
 		href: "/dashboard/settings",
-		children: [
-			{
-				name: "Negocio",
-				href: "/dashboard/settings/business",
-				isVisible: (permissions) =>
-					can(permissions, TenantPermission.TenantSettingsManage),
-			},
-			{
-				name: "Equipo",
-				href: "/dashboard/settings/team",
-				isVisible: (permissions) =>
-					canAny(permissions, teamWorkspacePermissions),
-			},
-			{
-				name: "Sucursales",
-				href: "/dashboard/settings/branches",
-				isVisible: (permissions) =>
-					can(permissions, TenantPermission.BranchesManage),
-			},
-			{
-				name: "Tienda online",
-				href: "/dashboard/settings/storefront",
-				isVisible: (permissions) =>
-					can(permissions, TenantPermission.TenantStorefrontManage),
-			},
-			{
-				name: "Políticas de alquiler",
-				href: "/dashboard/settings/rental-policies",
-				isVisible: (permissions) =>
-					can(permissions, TenantPermission.TenantSettingsManage),
-			},
-			{
-				name: "Comunicación con clientes",
-				href: "/dashboard/settings/customer-communication",
-				isVisible: (permissions) =>
-					can(permissions, TenantPermission.TenantSettingsManage),
-			},
-			{
-				name: "Contratos",
-				href: "/dashboard/settings/contracts",
-				isVisible: (permissions) =>
-					can(permissions, TenantPermission.TenantContractSignerManage),
-			},
-		],
+		isVisible: (permissions) => canAny(permissions, settingsPermissions),
 	},
 ];
 
 function DashboardLayout() {
 	const { user } = Route.useRouteContext();
 	const { data: business } = useSuspenseQuery(currentBusinessQueries.current());
-	const { data: branches } = useSuspenseQuery(branchQueries.list());
-
-	const branchSelectorData = branches.map((branch) => ({
-		name: branch.name,
-		id: branch.id,
-	}));
+	const usesWorkingBranchContext = canAny(
+		user.permissions,
+		workingBranchContextPermissions,
+	);
 
 	return (
 		<SidebarProvider>
@@ -247,12 +198,11 @@ function DashboardLayout() {
 					<p className="flex min-h-11 items-center pr-11 font-bold wrap-anywhere lg:min-h-0 lg:pr-0">
 						{business.name}
 					</p>
-					<div className="pt-6 pb-2">
-						<BranchSelector
-							branches={branchSelectorData}
-							className="border-white/15 text-neutral-200"
-						/>
-					</div>
+					{usesWorkingBranchContext ? (
+						<div className="pt-6 pb-2">
+							<BranchSelector className="border-white/15 text-neutral-200" />
+						</div>
+					) : null}
 				</SidebarHeader>
 				<SidebarContent className="px-4">
 					<DashboardNavigation />
@@ -265,9 +215,11 @@ function DashboardLayout() {
 			<div className="min-w-0 flex-1 bg-gray-50">
 				<header className="sticky top-0 z-30 flex items-center gap-2 border-b border-neutral-200 bg-white px-3 py-2 lg:hidden">
 					<SidebarTrigger />
-					<div className="min-w-0 flex-1">
-						<BranchSelector branches={branchSelectorData} />
-					</div>
+					{usesWorkingBranchContext ? (
+						<div className="min-w-0 flex-1">
+							<BranchSelector />
+						</div>
+					) : null}
 				</header>
 				<div className="space-y-4 p-4 lg:p-6">
 					<Outlet />
@@ -359,14 +311,13 @@ function DashboardNavigation() {
 
 const ALL_BRANCHES_VALUE = "all-branches";
 
-function BranchSelector({
-	branches,
-	className,
-}: {
-	branches: { name: string; id: string }[];
-	className?: string;
-}) {
+function BranchSelector({ className }: { className?: string }) {
+	const { data: branchData } = useSuspenseQuery(branchQueries.list());
 	const { data: currentAuth } = useSuspenseQuery(currentAuthQueries.current());
+	const branches = branchData.map((branch) => ({
+		name: branch.name,
+		id: branch.id,
+	}));
 	const updateWorkingBranch = useUpdateWorkingBranch();
 	const navigate = useNavigate();
 	const navigateCombos = useNavigate({

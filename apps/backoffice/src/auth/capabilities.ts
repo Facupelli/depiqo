@@ -56,6 +56,12 @@ export const teamWorkspacePermissions = [
 	TenantPermission.TeamManage,
 ] as const satisfies readonly TenantPermissionId[];
 
+export const workingBranchContextPermissions = [
+	...rentalWorkspacePermissions,
+	...inventoryWorkspacePermissions,
+	...productWorkspacePermissions,
+] as const satisfies readonly TenantPermissionId[];
+
 export const settingsPermissions = [
 	TenantPermission.TenantSettingsManage,
 	TenantPermission.BranchesManage,

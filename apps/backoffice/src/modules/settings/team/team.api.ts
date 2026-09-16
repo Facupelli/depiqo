@@ -4,11 +4,17 @@ import {
 	CreateTenantCollaboratorBodySchema,
 	type CreateTenantCollaboratorResponseDto,
 	CreateTenantCollaboratorResponseSchema,
+	CreateTenantRoleResponseSchema,
 	changeTenantCollaboratorRoleContract,
 	createTenantCollaboratorContract,
+	createTenantRoleContract,
+	DeleteTenantRoleResponseSchema,
+	deleteTenantRoleContract,
 	GetTenantCollaboratorsResponseSchema,
+	GetTenantPermissionCatalogResponseSchema,
 	GetTenantRolesResponseSchema,
 	getTenantCollaboratorsContract,
+	getTenantPermissionCatalogContract,
 	getTenantRolesContract,
 	ReactivateTenantCollaboratorResponseSchema,
 	type ResetTenantCollaboratorPasswordResponseDto,
@@ -19,7 +25,13 @@ import {
 	suspendTenantCollaboratorContract,
 	type TenantCollaboratorDto,
 	TenantCollaboratorParamsSchema,
+	type TenantPermissionMetadataDto,
+	type TenantRoleBodyDto,
+	TenantRoleBodySchema,
 	type TenantRoleDto,
+	TenantRoleParamsSchema,
+	UpdateTenantRoleResponseSchema,
+	updateTenantRoleContract,
 } from "@repo/api-contracts";
 import type { z } from "zod";
 
@@ -37,6 +49,11 @@ function collaboratorPath(path: string, tenantUserId: string): string {
 	return path.replace(":tenantUserId", encodeURIComponent(params.tenantUserId));
 }
 
+function rolePath(path: string, roleId: string): string {
+	const params = TenantRoleParamsSchema.parse({ roleId });
+	return path.replace(":roleId", encodeURIComponent(params.roleId));
+}
+
 export async function getTeamMembers(): Promise<TenantCollaboratorDto[]> {
 	const response = await apiFetch(getTenantCollaboratorsContract.path, {
 		method: getTenantCollaboratorsContract.method,
@@ -49,6 +66,53 @@ export async function getTeamRoles(): Promise<TenantRoleDto[]> {
 		method: getTenantRolesContract.method,
 	});
 	return GetTenantRolesResponseSchema.parse(response);
+}
+
+export async function getTeamPermissionCatalog(): Promise<
+	TenantPermissionMetadataDto[]
+> {
+	const response = await apiFetch(getTenantPermissionCatalogContract.path, {
+		method: getTenantPermissionCatalogContract.method,
+	});
+	return GetTenantPermissionCatalogResponseSchema.parse(response);
+}
+
+export async function createTeamRole(
+	body: TenantRoleBodyDto,
+): Promise<TenantRoleDto> {
+	const parsedBody = TenantRoleBodySchema.parse(body);
+	const response = await apiFetch(createTenantRoleContract.path, {
+		method: createTenantRoleContract.method,
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify(parsedBody),
+	});
+	return CreateTenantRoleResponseSchema.parse(response);
+}
+
+export async function updateTeamRole(input: {
+	roleId: string;
+	body: TenantRoleBodyDto;
+}): Promise<TenantRoleDto> {
+	const body = TenantRoleBodySchema.parse(input.body);
+	const response = await apiFetch(
+		rolePath(updateTenantRoleContract.path, input.roleId),
+		{
+			method: updateTenantRoleContract.method,
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify(body),
+		},
+	);
+	return UpdateTenantRoleResponseSchema.parse(response);
+}
+
+export async function deleteTeamRole(roleId: string): Promise<{ id: string }> {
+	const response = await apiFetch(
+		rolePath(deleteTenantRoleContract.path, roleId),
+		{
+			method: deleteTenantRoleContract.method,
+		},
+	);
+	return DeleteTenantRoleResponseSchema.parse(response);
 }
 
 export async function createTeamMember(

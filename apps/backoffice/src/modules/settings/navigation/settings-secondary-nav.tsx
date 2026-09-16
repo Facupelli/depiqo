@@ -108,7 +108,9 @@ const settingsNavItems: SettingsNavItem[] = settingsNavGroups.flatMap(
 export function findSettingsNavItem(
 	pathname: string,
 ): SettingsNavItem | undefined {
-	return settingsNavItems.find((item) => item.to === pathname);
+	return settingsNavItems.find(
+		(item) => pathname === item.to || pathname.startsWith(`${item.to}/`),
+	);
 }
 
 const idleItemClassName =
@@ -143,7 +145,6 @@ export function SettingsSecondaryNav({
 									key={item.to}
 									to={item.to}
 									preload={false}
-									activeOptions={{ exact: true }}
 									className={idleItemClassName}
 									activeProps={{ className: activeItemClassName }}
 								>
