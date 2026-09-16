@@ -27,11 +27,21 @@ import { isAuthError, ProblemDetailsError } from "@/shared/errors";
 
 export const Route = createFileRoute("/login")({
 	validateSearch: authRedirectSearchSchema,
-	beforeLoad: ({ context }) => {
+	beforeLoad: ({ context, search }) => {
 		if (context.user?.actorType === "TENANT_USER") {
-			throw redirect({
-				to: context.user.mustChangePassword ? "/change-password" : "/dashboard",
-			});
+			if (context.user.mustChangePassword) {
+				throw redirect({
+					to: "/change-password",
+					search: {
+						redirectTo: normalizeSafeRedirectTo(
+							search.redirectTo,
+							"/dashboard",
+						),
+					},
+				});
+			}
+
+			throw redirect({ to: "/dashboard" });
 		}
 	},
 	component: LoginPage,
@@ -62,10 +72,21 @@ function LoginPage() {
 
 				await router.invalidate({ sync: true });
 
-				router.navigate({
-					href: user.mustChangePassword
-						? "/change-password"
-						: normalizeSafeRedirectTo(search.redirectTo, "/dashboard"),
+				if (user.mustChangePassword) {
+					await router.navigate({
+						to: "/change-password",
+						search: {
+							redirectTo: normalizeSafeRedirectTo(
+								search.redirectTo,
+								"/dashboard",
+							),
+						},
+					});
+					return;
+				}
+
+				await router.navigate({
+					href: normalizeSafeRedirectTo(search.redirectTo, "/dashboard"),
 				});
 			} catch (error) {
 				if (isAuthError(error)) {

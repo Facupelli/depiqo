@@ -54,9 +54,13 @@ import {
 import { branchQueries } from "@/modules/settings/branches/public";
 
 export const Route = createFileRoute("/_admin/dashboard")({
-	beforeLoad: ({ context }) => {
+	beforeLoad: ({ context, location }) => {
 		if (context.user.mustChangePassword) {
-			throw redirect({ to: "/change-password" });
+			const redirectTo = `${location.pathname}${location.searchStr ?? ""}${location.hash ?? ""}`;
+			throw redirect({
+				to: "/change-password",
+				search: { redirectTo },
+			});
 		}
 	},
 	loader: async ({ context: { queryClient } }) => {
