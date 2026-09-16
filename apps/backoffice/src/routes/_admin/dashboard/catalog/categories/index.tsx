@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { canAny, requireRouteAccess } from "@/auth/permissions";
 import { categoryWorkspacePermissions } from "@/auth/capabilities";
+import { canAny, requireRouteAccess } from "@/auth/permissions";
 import { CategoriesPage } from "@/modules/settings/categories/list-categories/CategoriesPage";
 import { AdminRouteError } from "@/shared/components/admin-route-error";
 

@@ -1,4 +1,8 @@
 import {
+	TenantPermission,
+	type TenantPermission as TenantPermissionId,
+} from "@repo/api-contracts";
+import {
 	Popover,
 	PopoverContent,
 	PopoverTrigger,
@@ -34,7 +38,16 @@ import {
 } from "lucide-react";
 import { currentBusinessQueries } from "@/application/current-business/current-business.queries";
 import { currentAuthQueries } from "@/auth/auth.queries";
+import {
+	categoryWorkspacePermissions,
+	customerListPermissions,
+	inventoryWorkspacePermissions,
+	productWorkspacePermissions,
+	promotionListPermissions,
+	rentalWorkspacePermissions,
+} from "@/auth/capabilities";
 import { useLogout } from "@/auth/logout/logout.mutation";
+import { can, canAny } from "@/auth/permissions";
 import { useUpdateWorkingBranch } from "@/auth/update-working-branch/update-working-branch.mutation";
 import {
 	Sidebar,
@@ -75,15 +88,23 @@ export const Route = createFileRoute("/_admin/dashboard")({
 	component: DashboardLayout,
 });
 
+type PermissionPredicate = (
+	permissions: readonly TenantPermissionId[],
+) => boolean;
+
+type SidebarChild = {
+	name: string;
+	href: string;
+	isVisible: PermissionPredicate;
+};
+
 type SidebarItem = {
 	name: string;
 	icon: LucideIcon;
 	href: string;
 	matchDescendants?: boolean;
-	children?: Array<{
-		name: string;
-		href: string;
-	}>;
+	isVisible?: PermissionPredicate;
+	children?: SidebarChild[];
 };
 
 const sidebarItems: SidebarItem[] = [
@@ -92,11 +113,13 @@ const sidebarItems: SidebarItem[] = [
 		name: "Calendario",
 		icon: CalendarDays,
 		href: "/dashboard/calendar",
+		isVisible: (permissions) => can(permissions, TenantPermission.RentalsRead),
 	},
 	{
 		name: "Alquileres",
 		icon: ShoppingBag,
 		href: "/dashboard/orders",
+		isVisible: (permissions) => canAny(permissions, rentalWorkspacePermissions),
 		// children: [
 		// 	{
 		// 		name: "Pendientes de revisión",
@@ -109,25 +132,92 @@ const sidebarItems: SidebarItem[] = [
 		icon: Camera,
 		href: "/dashboard/inventory/equipment-types",
 		matchDescendants: true,
+		isVisible: (permissions) =>
+			canAny(permissions, inventoryWorkspacePermissions),
 		children: [
-			{ name: "Combos", href: "/dashboard/catalog/packages" },
-			{ name: "Categorías", href: "/dashboard/catalog/categories" },
-			{ name: "Dueños de Equipo", href: "/dashboard/owners" },
+			{
+				name: "Combos",
+				href: "/dashboard/catalog/packages",
+				isVisible: (permissions) =>
+					canAny(permissions, productWorkspacePermissions),
+			},
+			{
+				name: "Categorías",
+				href: "/dashboard/catalog/categories",
+				isVisible: (permissions) =>
+					canAny(permissions, categoryWorkspacePermissions),
+			},
+			{
+				name: "Dueños de Equipo",
+				href: "/dashboard/owners",
+				isVisible: (permissions) =>
+					canAny(permissions, inventoryWorkspacePermissions),
+			},
 		],
 	},
 	{
 		name: "Clientes",
 		icon: Users,
 		href: "/dashboard/customers",
+		isVisible: (permissions) => canAny(permissions, customerListPermissions),
 		children: [
 			{
 				name: "Altas de cliente",
 				href: "/dashboard/customers/pending-profiles",
+				isVisible: (permissions) =>
+					can(permissions, TenantPermission.CustomersOnboardingManage),
 			},
 		],
 	},
-	{ name: "Promociones", icon: BadgePercent, href: "/dashboard/promotions" },
-	{ name: "Ajustes", icon: Settings, href: "/dashboard/settings" },
+	{
+		name: "Promociones",
+		icon: BadgePercent,
+		href: "/dashboard/promotions",
+		isVisible: (permissions) => canAny(permissions, promotionListPermissions),
+	},
+	{
+		name: "Ajustes",
+		icon: Settings,
+		href: "/dashboard/settings",
+		children: [
+			{
+				name: "Negocio",
+				href: "/dashboard/settings/business",
+				isVisible: (permissions) =>
+					can(permissions, TenantPermission.TenantSettingsManage),
+			},
+			{
+				name: "Sucursales",
+				href: "/dashboard/settings/branches",
+				isVisible: (permissions) =>
+					can(permissions, TenantPermission.BranchesManage),
+			},
+			{
+				name: "Tienda online",
+				href: "/dashboard/settings/storefront",
+				isVisible: (permissions) =>
+					can(permissions, TenantPermission.TenantStorefrontManage),
+			},
+			{
+				name: "Políticas de alquiler",
+				href: "/dashboard/settings/rental-policies",
+				isVisible: (permissions) =>
+					can(permissions, TenantPermission.TenantSettingsManage),
+			},
+			{
+				name: "Comunicación con clientes",
+				href: "/dashboard/settings/customer-communication",
+				isVisible: (permissions) =>
+					can(permissions, TenantPermission.TenantSettingsManage),
+			},
+			{
+				name: "Contratos",
+				href: "/dashboard/settings/contracts",
+				isVisible: (permissions) =>
+					can(permissions, TenantPermission.TenantContractSignerManage),
+			},
+		],
+	},
 ];
 
 function DashboardLayout() {
@@ -181,7 +271,28 @@ function DashboardLayout() {
 }
 
 function DashboardNavigation() {
+	const { user } = Route.useRouteContext();
 	const { setOpenMobile } = useSidebar();
+	const visibleItems = sidebarItems.flatMap((item) => {
+		const children = item.children?.filter((child) =>
+			child.isVisible(user.permissions),
+		);
+		const canOpenDirectTarget = item.isVisible?.(user.permissions) ?? false;
+
+		if (!canOpenDirectTarget && !children?.length) {
+			return [];
+		}
+
+		return [
+			{
+				...item,
+				href: canOpenDirectTarget
+					? item.href
+					: (children?.[0]?.href ?? item.href),
+				children,
+			},
+		];
+	});
 
 	function closeNavigation() {
 		setOpenMobile(false);
@@ -190,7 +301,7 @@ function DashboardNavigation() {
 	return (
 		<nav aria-label="Navegación principal">
 			<SidebarMenu>
-				{sidebarItems.map((item) => {
+				{visibleItems.map((item) => {
 					const Icon = item.icon;
 					return (
 						<SidebarMenuItem key={item.href}>

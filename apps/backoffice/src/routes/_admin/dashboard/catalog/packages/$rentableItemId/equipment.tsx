@@ -1,7 +1,7 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { canAny, requireRouteAccess } from "@/auth/permissions";
 import { productCompositionPermissions } from "@/auth/capabilities";
+import { canAny, requireRouteAccess } from "@/auth/permissions";
 import { ComboEquipmentSection } from "@/modules/products/combo-detail/combo-equipment-section";
 import { rentableItemDetailQueries } from "@/modules/products/rentable-item-detail/rentable-item-detail.queries";
 export const Route = createFileRoute(

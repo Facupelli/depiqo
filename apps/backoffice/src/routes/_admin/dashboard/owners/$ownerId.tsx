@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { canAny, requireRouteAccess } from "@/auth/permissions";
 import { inventoryWorkspacePermissions } from "@/auth/capabilities";
+import { canAny, requireRouteAccess } from "@/auth/permissions";
 import { OwnerDetailPage } from "@/modules/inventory/ownership/owner-detail/OwnerDetailPage";
 import { ownerQueries } from "@/modules/inventory/ownership/owner-detail/owner-detail.queries";
 

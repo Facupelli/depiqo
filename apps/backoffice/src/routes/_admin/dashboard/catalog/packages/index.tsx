@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
-import { canAny, requireRouteAccess } from "@/auth/permissions";
 import { productWorkspacePermissions } from "@/auth/capabilities";
+import { canAny, requireRouteAccess } from "@/auth/permissions";
 import { CombosPage } from "@/modules/products/list-combos/CombosPage";
 import { AdminRouteError } from "@/shared/components/admin-route-error";
 

@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { canAny, requireRouteAccess } from "@/auth/permissions";
 import { rentalWorkspacePermissions } from "@/auth/capabilities";
+import { canAny, requireRouteAccess } from "@/auth/permissions";
 import { RentalDetailPageSkeleton } from "@/modules/rentals/rental-detail/components/rental-detail-page-skeleton";
 import { RentalDetailPage } from "@/modules/rentals/rental-detail/RentalDetailPage";
 import { rentalDetailViewQueries } from "@/modules/rentals/rental-detail/rental-detail.queries";

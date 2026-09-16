@@ -1,6 +1,5 @@
 import { TenantPermission } from "@repo/api-contracts";
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { can, canAny, requireRouteAccess } from "@/auth/permissions";
 import {
 	customerListPermissions,
 	inventoryWorkspacePermissions,
@@ -9,6 +8,7 @@ import {
 	rentalWorkspacePermissions,
 	settingsPermissions,
 } from "@/auth/capabilities";
+import { can, canAny, requireRouteAccess } from "@/auth/permissions";
 
 export const Route = createFileRoute("/_admin/dashboard/")({
 	beforeLoad: ({ context }) => {

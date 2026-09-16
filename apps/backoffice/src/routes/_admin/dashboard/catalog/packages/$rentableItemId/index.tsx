@@ -1,7 +1,7 @@
 import { TenantPermission } from "@repo/api-contracts";
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { canAny } from "@/auth/permissions";
 import { productCompositionPermissions } from "@/auth/capabilities";
+import { canAny } from "@/auth/permissions";
 
 export const Route = createFileRoute(
 	"/_admin/dashboard/catalog/packages/$rentableItemId/",

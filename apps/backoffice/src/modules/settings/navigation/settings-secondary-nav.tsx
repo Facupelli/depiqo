@@ -1,3 +1,7 @@
+import {
+	TenantPermission,
+	type TenantPermission as TenantPermissionId,
+} from "@repo/api-contracts";
 import { Link } from "@tanstack/react-router";
 import type { LucideIcon } from "lucide-react";
 import {
@@ -8,12 +12,14 @@ import {
 	MapPin,
 	Shield,
 } from "lucide-react";
+import { can } from "@/auth/permissions";
 
 export type SettingsNavItem = {
 	to: string;
 	label: string;
 	description: string;
 	icon: LucideIcon;
+	isVisible: (permissions: readonly TenantPermissionId[]) => boolean;
 };
 
 export type SettingsNavGroup = {
@@ -31,18 +37,24 @@ export const settingsNavGroups: SettingsNavGroup[] = [
 				description:
 					"¿Cómo se identifica y configura regionalmente mi negocio?",
 				icon: Building2,
+				isVisible: (permissions) =>
+					can(permissions, TenantPermission.TenantSettingsManage),
 			},
 			{
 				to: "/dashboard/settings/branches",
 				label: "Sucursales",
 				description: "Gestiona las ubicaciones donde opera tu negocio.",
 				icon: MapPin,
+				isVisible: (permissions) =>
+					can(permissions, TenantPermission.BranchesManage),
 			},
 			{
 				to: "/dashboard/settings/storefront",
 				label: "Tienda online",
 				description: "Personaliza cómo se ve y opera tu tienda online.",
 				icon: Globe2,
+				isVisible: (permissions) =>
+					can(permissions, TenantPermission.TenantStorefrontManage),
 			},
 		],
 	},
@@ -55,6 +67,8 @@ export const settingsNavGroups: SettingsNavGroup[] = [
 				description:
 					"Define las reglas generales que se aplican a tus alquileres.",
 				icon: Shield,
+				isVisible: (permissions) =>
+					can(permissions, TenantPermission.TenantSettingsManage),
 			},
 			{
 				to: "/dashboard/settings/customer-communication",
@@ -62,12 +76,16 @@ export const settingsNavGroups: SettingsNavGroup[] = [
 				description:
 					"Configura cómo se comunican los pedidos y el contacto con tus clientes.",
 				icon: Bell,
+				isVisible: (permissions) =>
+					can(permissions, TenantPermission.TenantSettingsManage),
 			},
 			{
 				to: "/dashboard/settings/contracts",
 				label: "Contratos",
 				description: "Define quién firma los contratos de alquiler.",
 				icon: FileText,
+				isVisible: (permissions) =>
+					can(permissions, TenantPermission.TenantContractSignerManage),
 			},
 		],
 	},
@@ -89,10 +107,19 @@ const idleItemClassName =
 const activeItemClassName =
 	"flex items-center gap-3 rounded-lg bg-muted px-3 py-2 text-sm font-medium text-foreground transition-colors";
 
-export function SettingsSecondaryNav() {
+export function SettingsSecondaryNav({
+	permissions,
+}: {
+	permissions: readonly TenantPermissionId[];
+}) {
+	const visibleGroups = settingsNavGroups.flatMap((group) => {
+		const items = group.items.filter((item) => item.isVisible(permissions));
+		return items.length > 0 ? [{ ...group, items }] : [];
+	});
+
 	return (
 		<nav aria-label="Configuración" className="flex flex-col gap-6">
-			{settingsNavGroups.map((group) => (
+			{visibleGroups.map((group) => (
 				<div key={group.title}>
 					<p className="pb-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
 						{group.title}

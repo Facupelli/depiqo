@@ -1,7 +1,7 @@
 import type { GetOwnersItemDto } from "@repo/api-contracts";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { canAny, requireRouteAccess } from "@/auth/permissions";
 import { inventoryWorkspacePermissions } from "@/auth/capabilities";
+import { canAny, requireRouteAccess } from "@/auth/permissions";
 import { OwnersPage } from "@/modules/inventory/ownership/list-owners/OwnersPage";
 import { AdminRouteError } from "@/shared/components/admin-route-error";
 

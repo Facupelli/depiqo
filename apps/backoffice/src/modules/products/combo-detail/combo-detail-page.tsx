@@ -1,3 +1,4 @@
+import type { TenantPermission } from "@repo/api-contracts";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { Outlet } from "@tanstack/react-router";
 import { PageBreadcrumb } from "@/components/detail-id-breadcrumb";
@@ -8,8 +9,10 @@ import { ComboDetailNavigation } from "./combo-detail-navigation";
 
 export function ComboDetailPage({
 	rentableItemId,
+	permissions,
 }: {
 	rentableItemId: string;
+	permissions: readonly TenantPermission[];
 }) {
 	const { data: combo } = useSuspenseQuery(
 		rentableItemDetailQueries.detail(rentableItemId),
@@ -24,7 +27,12 @@ export function ComboDetailPage({
 					/>
 				}
 				header={<ComboDetailHeader combo={combo} />}
-				navigation={<ComboDetailNavigation rentableItemId={rentableItemId} />}
+				navigation={
+					<ComboDetailNavigation
+						rentableItemId={rentableItemId}
+						permissions={permissions}
+					/>
+				}
 			>
 				<Outlet />
 			</DetailPageShell>

@@ -21,6 +21,7 @@ export const Route = createFileRoute("/_admin/dashboard/settings")({
 });
 
 function SettingsLayout() {
+	const { user } = Route.useRouteContext();
 	const pathname = useRouterState({
 		select: ({ location }) => location.pathname,
 	});
@@ -35,7 +36,7 @@ function SettingsLayout() {
 						Administra cómo opera y se presenta tu negocio.
 					</p>
 				</div>
-				<SettingsSecondaryNav />
+				<SettingsSecondaryNav permissions={user.permissions} />
 			</aside>
 			<div className="h-full min-h-0 overflow-y-auto">
 				<main className="min-w-0 space-y-4 pl-6">

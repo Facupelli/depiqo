@@ -1,8 +1,8 @@
 import { buttonVariants } from "@repo/ui/components/button";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import z from "zod";
-import { canAny, requireRouteAccess } from "@/auth/permissions";
 import { promotionListPermissions } from "@/auth/capabilities";
+import { canAny, requireRouteAccess } from "@/auth/permissions";
 import { PromotionsTab } from "@/modules/pricing/promotions/list-promotions/PromotionsTab";
 import { AdminRouteError } from "@/shared/components/admin-route-error";
 

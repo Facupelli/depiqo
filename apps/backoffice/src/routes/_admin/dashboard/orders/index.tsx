@@ -2,8 +2,8 @@ import { GetRentalsQuerySchema } from "@repo/api-contracts";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useCallback } from "react";
 import { z } from "zod";
-import { canAny, requireRouteAccess } from "@/auth/permissions";
 import { rentalWorkspacePermissions } from "@/auth/capabilities";
+import { canAny, requireRouteAccess } from "@/auth/permissions";
 import {
 	RentalsListPage,
 	type RentalsListSearch,

@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { z } from "zod";
-import { canAny, requireRouteAccess } from "@/auth/permissions";
 import { inventoryWorkspacePermissions } from "@/auth/capabilities";
+import { canAny, requireRouteAccess } from "@/auth/permissions";
 import { EquipmentTypesPage } from "@/modules/inventory/equipment-types/list-equipment-types/EquipmentTypesPage";
 import { AdminRouteError } from "@/shared/components/admin-route-error";
 

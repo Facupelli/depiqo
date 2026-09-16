@@ -4,8 +4,8 @@ import {
 	redirect,
 	useRouterState,
 } from "@tanstack/react-router";
-import { canAny, requireRouteAccess } from "@/auth/permissions";
 import { productWorkspacePermissions } from "@/auth/capabilities";
+import { canAny, requireRouteAccess } from "@/auth/permissions";
 import { ComboDetailPage } from "@/modules/products/combo-detail/combo-detail-page";
 import { ComboDetailPageSkeleton } from "@/modules/products/combo-detail/combo-detail-page-skeleton";
 import { isComboKind } from "@/modules/products/product-kind";
@@ -48,6 +48,7 @@ export const Route = createFileRoute(
 	component: ComboRoute,
 });
 function ComboRoute() {
+	const { user } = Route.useRouteContext();
 	const { rentableItemId } = Route.useParams();
 	const isEdit = useRouterState({
 		select: ({ location }) =>
@@ -56,6 +57,9 @@ function ComboRoute() {
 	return isEdit ? (
 		<Outlet />
 	) : (
-		<ComboDetailPage rentableItemId={rentableItemId} />
+		<ComboDetailPage
+			rentableItemId={rentableItemId}
+			permissions={user.permissions}
+		/>
 	);
 }

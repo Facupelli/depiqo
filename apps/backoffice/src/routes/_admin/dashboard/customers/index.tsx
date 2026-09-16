@@ -1,8 +1,8 @@
 import { RentalCustomerOnboardingStatusSchema } from "@repo/api-contracts";
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
-import { canAny, requireRouteAccess } from "@/auth/permissions";
 import { customerListPermissions } from "@/auth/capabilities";
+import { canAny, requireRouteAccess } from "@/auth/permissions";
 import { CustomersListPage } from "@/modules/customers/list-customers/CustomersListPage";
 import { AdminRouteError } from "@/shared/components/admin-route-error";
 
