@@ -2,8 +2,8 @@ import type { ListEquipmentTypesItemDto } from "@repo/api-contracts";
 import { Link } from "@tanstack/react-router";
 import type { ColumnDef } from "@tanstack/react-table";
 import { PackageOpen } from "lucide-react";
+import type { ReactNode } from "react";
 import { buildR2PublicUrl } from "@/lib/r2-public-url";
-import { EquipmentListRowActions } from "./equipment-list-row-actions";
 
 const billingUnitLabels = {
 	HOUR: "hora",
@@ -60,12 +60,10 @@ export function EquipmentImage({ item }: { item: ListEquipmentTypesItemDto }) {
 
 export function createEquipmentListColumns({
 	showBranchStock,
-	onEdit,
-	onAddUnit,
+	renderRowActions,
 }: {
 	showBranchStock: boolean;
-	onEdit: (equipmentTypeId: string) => void;
-	onAddUnit: (equipmentTypeId: string) => void;
+	renderRowActions?: (item: ListEquipmentTypesItemDto) => ReactNode;
 }): ColumnDef<ListEquipmentTypesItemDto>[] {
 	return [
 		{
@@ -124,18 +122,15 @@ export function createEquipmentListColumns({
 				</span>
 			),
 		},
-		{
-			id: "actions",
-			header: "Acciones",
-			cell: ({ row }) => (
-				<EquipmentListRowActions
-					equipmentTypeId={row.original.id}
-					equipmentName={row.original.name}
-					onEdit={() => onEdit(row.original.id)}
-					onAddUnit={() => onAddUnit(row.original.id)}
-				/>
-			),
-		},
+		...(renderRowActions
+			? [
+					{
+						id: "actions",
+						header: "Acciones",
+						cell: ({ row }) => renderRowActions(row.original),
+					} satisfies ColumnDef<ListEquipmentTypesItemDto>,
+				]
+			: []),
 	];
 }
 

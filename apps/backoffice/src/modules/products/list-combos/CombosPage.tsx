@@ -1,6 +1,7 @@
-import type {
-	GetRentableItemsItemDto,
-	GetRentableItemsQueryDto,
+import {
+	type GetRentableItemsItemDto,
+	type GetRentableItemsQueryDto,
+	TenantPermission,
 } from "@repo/api-contracts";
 import { Button } from "@repo/ui/components/button";
 import { useSuspenseQuery } from "@tanstack/react-query";
@@ -11,6 +12,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { BranchScopeFilter } from "@/application/branch-scope/branch-scope-filter";
 import { resolveEffectiveBranchId } from "@/application/branch-scope/resolve-effective-branch-id";
 import { currentAuthQueries } from "@/auth/auth.queries";
+import { can, canAll } from "@/auth/permissions";
 import { useBranches } from "@/modules/settings/branches/public";
 import { useCategories } from "@/modules/settings/categories/public";
 import { ArchiveProductAction } from "../archive-product/ArchiveProductAction";
@@ -37,6 +39,13 @@ export function CombosPage({ search }: { search: CombosSearch }) {
 	const [archiveItem, setArchiveItem] =
 		useState<GetRentableItemsItemDto | null>(null);
 	const { data: currentAuth } = useSuspenseQuery(currentAuthQueries.current());
+	const permissions =
+		currentAuth.actorType === "TENANT_USER" ? currentAuth.permissions : [];
+	const canManageProducts = can(permissions, TenantPermission.ProductsManage);
+	const canCreateProduct = canAll(permissions, [
+		TenantPermission.ProductsManage,
+		TenantPermission.ProductsAvailabilityManage,
+	]);
 	const { data: branches = [] } = useBranches();
 	const { data: categories = [] } = useCategories();
 	const effectiveBranchId = resolveEffectiveBranchId({
@@ -172,12 +181,12 @@ export function CombosPage({ search }: { search: CombosSearch }) {
 			replace: true,
 		});
 	}
-	const emptyAction = (
+	const emptyAction = canCreateProduct ? (
 		<Button onClick={() => navigate({ to: "/dashboard/catalog/packages/new" })}>
 			<Plus className="mr-2 size-4" />
 			Nuevo combo
 		</Button>
-	);
+	) : null;
 
 	return (
 		<div className="space-y-4">
@@ -190,6 +199,7 @@ export function CombosPage({ search }: { search: CombosSearch }) {
 					branches={branches}
 					inheritedBranchId={currentAuth.workingBranchId}
 					showBranchFilter={branches.length !== 1}
+					actions={emptyAction}
 					onSearchCommit={handleSearchCommit}
 					onFilterChange={handleFilterChange}
 					onBranchChange={handleBranchChange}
@@ -207,7 +217,7 @@ export function CombosPage({ search }: { search: CombosSearch }) {
 							params: { rentableItemId },
 						})
 					}
-					onArchive={setArchiveItem}
+					onArchive={canManageProducts ? setArchiveItem : undefined}
 					onRetry={() =>
 						isVerificationError
 							? tenantComboCountQuery.refetch()

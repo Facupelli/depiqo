@@ -25,6 +25,7 @@ export class ListEquipmentTypesHttpController {
     TenantPermission.ProductsManage,
     TenantPermission.ProductsAvailabilityManage,
     TenantPermission.PricingManage,
+    TenantPermission.InventoryOwnershipManage,
   )
   async list(
     @Query() dto: ListEquipmentTypesRequestDto,

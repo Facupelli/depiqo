@@ -1,3 +1,4 @@
+import { TenantPermission } from "@repo/api-contracts";
 import { Button } from "@repo/ui/components/button";
 import {
 	ChevronDown,
@@ -8,6 +9,7 @@ import {
 	User2Icon,
 } from "lucide-react";
 import { type ReactNode, useId, useState } from "react";
+import { can } from "@/auth/permissions";
 import { useBranchTimezone } from "@/shared/timezone/operational-timezone.hooks";
 import { formatMoney } from "@/shared/utils/formatters";
 import { AssignCustomerToDraftRentalDialog } from "../assign-customer/assign-customer-to-draft-rental-dialog";
@@ -34,14 +36,19 @@ export function RentalSidebarCards({
 }: {
 	periodEditAction?: PeriodEditAction;
 }) {
+	const { permissions } = useRentalDetailContext();
+	const canReadContracts = can(permissions, TenantPermission.ContractsRead);
+
 	return (
 		<div className="flex flex-col gap-2 @5xl/rental-detail:gap-4">
 			<div className="order-1 @5xl/rental-detail:order-2">
 				<RentalClientCard />
 			</div>
-			<div className="order-2 @5xl/rental-detail:order-3">
-				<RentalContractSigningCard />
-			</div>
+			{canReadContracts ? (
+				<div className="order-2 @5xl/rental-detail:order-3">
+					<RentalContractSigningCard />
+				</div>
+			) : null}
 			<div className="order-3 @5xl/rental-detail:order-1">
 				<RentalLogisticsCard periodEditAction={periodEditAction} />
 			</div>
@@ -55,11 +62,16 @@ export function RentalSidebarCards({
 function RentalClientCard() {
 	const {
 		rental,
+		permissions,
 		customerSummary,
 		isCustomerSummaryLoading,
 		isCustomerSummaryError,
 	} = useRentalDetailContext();
 	const customer = customerSummary;
+	const canAssignCustomer = can(
+		permissions,
+		TenantPermission.RentalsProposalsManage,
+	);
 	const hasLinkedCustomer = rental.customerId !== null;
 	const summary = customer
 		? customer.displayName
@@ -113,7 +125,7 @@ function RentalClientCard() {
 						resumen.
 					</p>
 				</div>
-			) : (
+			) : canAssignCustomer ? (
 				<AssignCustomerToDraftRentalDialog
 					renderTrigger={(trigger) => (
 						<div className="space-y-2 rounded-md border border-amber-200 bg-amber-50 p-3">
@@ -129,6 +141,10 @@ function RentalClientCard() {
 						</p>
 					}
 				/>
+			) : (
+				<p className="text-sm text-amber-900">
+					Todavía no hay un cliente vinculado.
+				</p>
 			)}
 		</ResponsiveDisclosureCard>
 	);
@@ -217,7 +233,11 @@ function DateBlock({
 }
 
 function RentalFinancialsCard() {
-	const { rental } = useRentalDetailContext();
+	const { rental, permissions } = useRentalDetailContext();
+	const canAdjustPrice = can(
+		permissions,
+		TenantPermission.RentalsPriceAdjustmentManage,
+	);
 	const [showItems, setShowItems] = useState(false);
 	const [isEditPriceDialogOpen, setIsEditPriceDialogOpen] = useState(false);
 	const financialContentId = useId();
@@ -246,7 +266,9 @@ function RentalFinancialsCard() {
 	const headlineTotal = getRentalDisplayTotal(rental, pricing);
 	const manualAdjustment = pricing.manualPricingAdjustment ?? null;
 	const canEditPrice =
-		rental.status === "CONFIRMED" && Date.now() < Date.parse(rental.period.end);
+		canAdjustPrice &&
+		rental.status === "CONFIRMED" &&
+		Date.now() < Date.parse(rental.period.end);
 	const adjustmentSign =
 		manualAdjustment?.direction === "INCREASE"
 			? "+"

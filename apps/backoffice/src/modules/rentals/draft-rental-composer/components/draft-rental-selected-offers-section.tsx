@@ -15,7 +15,9 @@ import {
 export const DraftRentalSelectedOffersSection = withForm({
 	defaultValues: createDraftRentalComposerDefaultValues(),
 	render: function Render({ form }) {
-		const { branchMissing, timezone } = useDraftRentalComposer();
+		const {
+			state: { branchMissing, timezone },
+		} = useDraftRentalComposer();
 		const values = useStore(form.store, (state) => state.values);
 		const selectedOffers = values.selectedOffers;
 		const effectivePeriod = buildEffectiveRentalPeriod(values, timezone);

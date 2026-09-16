@@ -37,6 +37,7 @@ export const Route = createFileRoute("/_admin/dashboard/orders/")({
 
 function OrdersPage() {
 	const search = Route.useSearch();
+	const { user } = Route.useRouteContext();
 	const navigate = useNavigate({ from: Route.fullPath });
 	const handleSearchChange = useCallback(
 		(updater: (previous: RentalsListSearch) => RentalsListSearch) => {
@@ -49,6 +50,10 @@ function OrdersPage() {
 	);
 
 	return (
-		<RentalsListPage search={search} onSearchChange={handleSearchChange} />
+		<RentalsListPage
+			search={search}
+			permissions={user.permissions}
+			onSearchChange={handleSearchChange}
+		/>
 	);
 }

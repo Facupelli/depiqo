@@ -32,6 +32,7 @@ export const Route = createFileRoute("/_admin/dashboard/orders/$orderId/")({
 
 function RouteComponent() {
 	const { orderId } = Route.useParams();
+	const { user } = Route.useRouteContext();
 
-	return <RentalDetailPage orderId={orderId} />;
+	return <RentalDetailPage orderId={orderId} permissions={user.permissions} />;
 }

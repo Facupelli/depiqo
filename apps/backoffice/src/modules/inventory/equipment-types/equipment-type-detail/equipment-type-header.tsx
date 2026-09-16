@@ -7,8 +7,8 @@ type EquipmentTypeHeaderProps = {
 	categoryName: string | null;
 	description: string | null;
 	activeAssetCount: number;
-	onEdit: () => void;
-	onAddUnit: () => void;
+	onEdit?: () => void;
+	onAddUnit?: () => void;
 };
 
 export function EquipmentTypeHeader({
@@ -58,16 +58,22 @@ export function EquipmentTypeHeader({
 					</div>
 				</div>
 
-				<div className="flex shrink-0 flex-wrap items-center gap-2 self-start">
-					<Button type="button" onClick={onEdit}>
-						<Pencil className="mr-2 size-4" />
-						Editar equipo
-					</Button>
-					<Button type="button" variant="outline" onClick={onAddUnit}>
-						<PackagePlus className="mr-2 size-4" />
-						Añadir unidad
-					</Button>
-				</div>
+				{onEdit || onAddUnit ? (
+					<div className="flex shrink-0 flex-wrap items-center gap-2 self-start">
+						{onEdit ? (
+							<Button type="button" onClick={onEdit}>
+								<Pencil className="mr-2 size-4" />
+								Editar equipo
+							</Button>
+						) : null}
+						{onAddUnit ? (
+							<Button type="button" variant="outline" onClick={onAddUnit}>
+								<PackagePlus className="mr-2 size-4" />
+								Añadir unidad
+							</Button>
+						) : null}
+					</div>
+				) : null}
 			</div>
 		</header>
 	);

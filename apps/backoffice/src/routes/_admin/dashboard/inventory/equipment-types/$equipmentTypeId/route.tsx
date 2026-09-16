@@ -32,7 +32,13 @@ export const Route = createFileRoute(
 });
 
 function EquipmentTypeDetailRoute() {
+	const { user } = Route.useRouteContext();
 	const { equipmentTypeId } = Route.useParams();
 
-	return <EquipmentTypeDetailPage equipmentTypeId={equipmentTypeId} />;
+	return (
+		<EquipmentTypeDetailPage
+			equipmentTypeId={equipmentTypeId}
+			permissions={user.permissions}
+		/>
+	);
 }

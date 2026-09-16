@@ -14,7 +14,19 @@ import type { GetAssetSummariesResponseDto } from './get-asset-summaries.respons
 export class GetAssetSummariesHttpController {
   constructor(private readonly queryBus: QueryBus) {}
 
-  @RequireAnyPermission(TenantPermission.InventoryRead, TenantPermission.InventoryManage, TenantPermission.RentalsRead)
+  @RequireAnyPermission(
+    TenantPermission.InventoryRead,
+    TenantPermission.InventoryManage,
+    TenantPermission.RentalsRead,
+    TenantPermission.RentalsProposalsManage,
+    TenantPermission.RentalsConfirm,
+    TenantPermission.RentalsConfirmedManage,
+    TenantPermission.RentalsFulfillmentManage,
+    TenantPermission.RentalsCancel,
+    TenantPermission.ContractsRead,
+    TenantPermission.ContractsGenerate,
+    TenantPermission.ContractsSigningSend,
+  )
   @Get()
   async getAssetSummaries(
     @Query() dto: GetAssetSummariesRequestDto,

@@ -1,4 +1,8 @@
-import type { GetRentableItemDetailResponseDto } from "@repo/api-contracts";
+import {
+	type GetRentableItemDetailResponseDto,
+	TenantPermission,
+	type TenantPermission as TenantPermissionId,
+} from "@repo/api-contracts";
 import { Button } from "@repo/ui/components/button";
 import {
 	DropdownMenu,
@@ -9,16 +13,20 @@ import {
 import { Link, useNavigate } from "@tanstack/react-router";
 import { Archive, Ellipsis, PackageOpen, Pencil } from "lucide-react";
 import { useState } from "react";
+import { can } from "@/auth/permissions";
 import { buildR2PublicUrl } from "@/lib/r2-public-url";
 import { ArchiveProductAction } from "../archive-product/ArchiveProductAction";
 import { ProductStatusBadge } from "../product-status-badge";
 
 export function ComboDetailHeader({
 	combo,
+	permissions,
 }: {
 	combo: GetRentableItemDetailResponseDto;
+	permissions: readonly TenantPermissionId[];
 }) {
 	const [archiveOpen, setArchiveOpen] = useState(false);
+	const canManageProducts = can(permissions, TenantPermission.ProductsManage);
 	const navigate = useNavigate();
 	const imageUrl = buildR2PublicUrl(combo.imageUrl, "catalog");
 	const visibleDescription = combo.description?.trim();
@@ -71,7 +79,7 @@ export function ComboDetailHeader({
 					</div>
 				</div>
 				<div className="flex shrink-0 items-center gap-2 self-start">
-					{combo.status !== "ARCHIVED" ? (
+					{canManageProducts && combo.status !== "ARCHIVED" ? (
 						<Button
 							nativeButton={false}
 							render={
@@ -85,7 +93,7 @@ export function ComboDetailHeader({
 							Editar combo
 						</Button>
 					) : null}
-					{combo.status !== "ARCHIVED" ? (
+					{canManageProducts && combo.status !== "ARCHIVED" ? (
 						<DropdownMenu>
 							<DropdownMenuTrigger
 								render={
@@ -111,13 +119,15 @@ export function ComboDetailHeader({
 					) : null}
 				</div>
 			</div>
-			<ArchiveProductAction
-				rentableItemId={combo.id}
-				terminology="combo"
-				open={archiveOpen}
-				onOpenChange={setArchiveOpen}
-				onSuccess={() => navigate({ to: "/dashboard/catalog/packages" })}
-			/>
+			{canManageProducts ? (
+				<ArchiveProductAction
+					rentableItemId={combo.id}
+					terminology="combo"
+					open={archiveOpen}
+					onOpenChange={setArchiveOpen}
+					onSuccess={() => navigate({ to: "/dashboard/catalog/packages" })}
+				/>
+			) : null}
 		</header>
 	);
 }

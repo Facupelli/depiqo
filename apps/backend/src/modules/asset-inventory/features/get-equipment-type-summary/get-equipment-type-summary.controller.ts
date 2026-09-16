@@ -21,6 +21,7 @@ export class GetEquipmentTypeSummaryHttpController {
     TenantPermission.InventoryRead,
     TenantPermission.InventoryManage,
     TenantPermission.ProductsManage,
+    TenantPermission.InventoryOwnershipManage,
   )
   @Get(':equipmentTypeId/summary')
   async getEquipmentTypeSummary(

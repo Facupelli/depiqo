@@ -15,9 +15,11 @@ export function ComboListRowActions({
 	onArchive,
 }: {
 	item: GetRentableItemsItemDto;
-	onArchive: (item: GetRentableItemsItemDto) => void;
+	onArchive?: (item: GetRentableItemsItemDto) => void;
 }) {
 	const navigate = useNavigate();
+
+	if (!onArchive) return null;
 
 	return (
 		<DropdownMenu>

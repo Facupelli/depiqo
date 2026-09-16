@@ -18,7 +18,18 @@ export class GetCustomerSummaryHttpController {
   constructor(private readonly queryBus: QueryBus) {}
 
   @Get(':customerId')
-  @RequireAnyPermission(TenantPermission.CustomersRead, TenantPermission.RentalsRead)
+  @RequireAnyPermission(
+    TenantPermission.CustomersRead,
+    TenantPermission.RentalsRead,
+    TenantPermission.RentalsProposalsManage,
+    TenantPermission.RentalsConfirm,
+    TenantPermission.RentalsConfirmedManage,
+    TenantPermission.RentalsFulfillmentManage,
+    TenantPermission.RentalsCancel,
+    TenantPermission.ContractsRead,
+    TenantPermission.ContractsGenerate,
+    TenantPermission.ContractsSigningSend,
+  )
   async getCustomerSummary(
     @Param() params: GetCustomerSummaryParamsDto,
     @CurrentUser() user: AuthUser,

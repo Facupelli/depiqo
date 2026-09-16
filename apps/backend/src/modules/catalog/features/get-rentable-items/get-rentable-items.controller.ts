@@ -22,6 +22,7 @@ export class GetRentableItemsHttpController {
     TenantPermission.ProductsManage,
     TenantPermission.ProductsAvailabilityManage,
     TenantPermission.PricingManage,
+    TenantPermission.PricingRead,
   )
   async getRentableItems(
     @Query() dto: GetRentableItemsRequestDto,

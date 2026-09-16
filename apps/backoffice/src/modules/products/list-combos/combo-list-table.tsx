@@ -36,7 +36,7 @@ interface ComboListTableProps {
 	categoryNameById: Map<string, string>;
 	onPaginationChange: (pagination: PaginationState) => void;
 	onRowClick: (rentableItemId: string) => void;
-	onArchive: (item: GetRentableItemsItemDto) => void;
+	onArchive?: (item: GetRentableItemsItemDto) => void;
 	onRetry: () => void;
 	isLoading: boolean;
 	isRefreshing: boolean;

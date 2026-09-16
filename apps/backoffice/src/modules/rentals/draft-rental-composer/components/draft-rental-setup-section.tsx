@@ -48,7 +48,9 @@ export const DraftRentalSetupSection = withForm({
 		initialCustomer,
 	}) {
 		const periodId = useId();
-		const { selectedBranchName, branchMissing } = useDraftRentalComposer();
+		const {
+			state: { selectedBranchName, branchMissing },
+		} = useDraftRentalComposer();
 		const fulfillmentMethod = useStore(
 			form.store,
 			(state) => state.values.fulfillmentMethod,

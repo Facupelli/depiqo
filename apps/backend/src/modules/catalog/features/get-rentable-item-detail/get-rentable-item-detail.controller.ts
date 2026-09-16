@@ -25,6 +25,7 @@ export class GetRentableItemDetailHttpController {
     TenantPermission.ProductsManage,
     TenantPermission.ProductsAvailabilityManage,
     TenantPermission.PricingManage,
+    TenantPermission.PricingRead,
   )
   async getRentableItemDetail(
     @Param() params: GetRentableItemDetailRequestDto,

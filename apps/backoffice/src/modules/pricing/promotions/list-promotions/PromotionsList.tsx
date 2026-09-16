@@ -26,7 +26,7 @@ import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 
 interface PromotionsListProps {
 	promotions: GetPromotionsPromotionDto[];
-	onEdit: (promotion: GetPromotionsPromotionDto) => void;
+	onEdit?: (promotion: GetPromotionsPromotionDto) => void;
 	onDelete?: (promotion: GetPromotionsPromotionDto) => void;
 	isLoading?: boolean;
 	isError?: boolean;
@@ -195,7 +195,7 @@ function CompactPromotionsList({
 									</p>
 								</div>
 								<RowActions
-									onEdit={() => onEdit(promotion)}
+									onEdit={onEdit ? () => onEdit(promotion) : undefined}
 									onDelete={onDelete ? () => onDelete(promotion) : undefined}
 								/>
 							</div>
@@ -303,7 +303,7 @@ function createColumns({
 			cell: ({ row }) => (
 				<div className="flex justify-end">
 					<RowActions
-						onEdit={() => onEdit(row.original)}
+						onEdit={onEdit ? () => onEdit(row.original) : undefined}
 						onDelete={onDelete ? () => onDelete(row.original) : undefined}
 					/>
 				</div>
@@ -339,8 +339,10 @@ function RowActions({
 	onEdit,
 }: {
 	onDelete?: () => void;
-	onEdit: () => void;
+	onEdit?: () => void;
 }) {
+	if (!onEdit && !onDelete) return null;
+
 	return (
 		<DropdownMenu>
 			<DropdownMenuTrigger
@@ -356,10 +358,12 @@ function RowActions({
 			/>
 
 			<DropdownMenuContent align="end" className="w-40">
-				<DropdownMenuItem onClick={onEdit}>
-					<Pencil className="h-4 w-4" />
-					Editar
-				</DropdownMenuItem>
+				{onEdit ? (
+					<DropdownMenuItem onClick={onEdit}>
+						<Pencil className="h-4 w-4" />
+						Editar
+					</DropdownMenuItem>
+				) : null}
 
 				{onDelete ? (
 					<DropdownMenuItem variant="destructive" onClick={onDelete}>

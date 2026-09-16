@@ -7,10 +7,8 @@ import {
 	EyeOff,
 	type LucideIcon,
 } from "lucide-react";
+import type { ReactNode } from "react";
 import { formatMoney } from "@/shared/utils/formatters";
-import type { PricePlanOption } from "../product-pricing/price-plan-selection/PricePlanSelectionForm";
-import { SetPricePlanAction } from "../product-pricing/set-price-plan/SetPricePlanAction";
-import { EditBranchAvailabilityDialog } from "./edit-branch-availability/EditBranchAvailabilityDialog";
 
 type RentalOffer = GetRentableItemDetailResponseDto["offers"][number];
 type SetupStatus = RentalOffer["setupSummary"]["status"];
@@ -36,12 +34,10 @@ const setupIssueLabels = {
 
 export function RentalOfferCard({
 	offer,
-	ratePlanOptions,
-	ratePlanOptionsStatus = "ready",
+	actions,
 }: {
 	offer: RentalOffer;
-	ratePlanOptions: PricePlanOption[];
-	ratePlanOptionsStatus?: "loading" | "error" | "ready";
+	actions?: ReactNode;
 }) {
 	const price = offer.setupSummary.priceSummary;
 	const presentation = getOfferPresentation(offer);
@@ -87,20 +83,11 @@ export function RentalOfferCard({
 					</div>
 				</div>
 			</div>
-			<div className="flex flex-col gap-2 border-t p-4 lg:border-t-0 lg:border-l">
-				<SetPricePlanAction
-					offer={offer}
-					ratePlanOptions={ratePlanOptions}
-					ratePlanOptionsStatus={ratePlanOptionsStatus}
-					assignLabel="Configurar precio"
-				/>
-				<EditBranchAvailabilityDialog
-					rentalOfferId={offer.rentalOfferId}
-					branchName={offer.branchName}
-					isVisible={offer.isVisible}
-					isRentable={offer.isRentable}
-				/>
-			</div>
+			{actions ? (
+				<div className="flex flex-col gap-2 border-t p-4 lg:border-t-0 lg:border-l">
+					{actions}
+				</div>
+			) : null}
 		</article>
 	);
 }

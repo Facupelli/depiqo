@@ -26,7 +26,7 @@ export function ComboDetailPage({
 						current={combo.name}
 					/>
 				}
-				header={<ComboDetailHeader combo={combo} />}
+				header={<ComboDetailHeader combo={combo} permissions={permissions} />}
 				navigation={
 					<ComboDetailNavigation
 						rentableItemId={rentableItemId}

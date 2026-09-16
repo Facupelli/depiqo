@@ -15,9 +15,10 @@ export const Route = createFileRoute(
 	component: ComboRentalRoute,
 });
 function ComboRentalRoute() {
+	const { user } = Route.useRouteContext();
 	const { rentableItemId } = Route.useParams();
 	const { data } = useSuspenseQuery(
 		rentableItemDetailQueries.detail(rentableItemId),
 	);
-	return <ComboRentalSection combo={data} />;
+	return <ComboRentalSection combo={data} permissions={user.permissions} />;
 }

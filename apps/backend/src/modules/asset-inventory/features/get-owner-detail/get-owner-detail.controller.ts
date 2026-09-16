@@ -17,7 +17,11 @@ import type { GetOwnerDetailResponseDto } from './get-owner-detail.response.dto'
 export class GetOwnerDetailHttpController {
   constructor(private readonly queryBus: QueryBus) {}
 
-  @RequireAnyPermission(TenantPermission.InventoryRead, TenantPermission.InventoryOwnershipManage)
+  @RequireAnyPermission(
+    TenantPermission.InventoryRead,
+    TenantPermission.InventoryManage,
+    TenantPermission.InventoryOwnershipManage,
+  )
   @Get(':ownerId')
   async getOwnerDetail(
     @Param() params: GetOwnerDetailParamsDto,

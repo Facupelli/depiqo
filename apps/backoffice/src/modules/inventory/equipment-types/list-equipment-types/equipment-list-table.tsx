@@ -25,7 +25,6 @@ import {
 	getEquipmentRentalSummaryLabel,
 	getEquipmentUnitCountLabel,
 } from "./equipment-list-columns";
-import { EquipmentListRowActions } from "./equipment-list-row-actions";
 
 interface EquipmentListTableProps {
 	items: ListEquipmentTypesItemDto[];
@@ -33,8 +32,7 @@ interface EquipmentListTableProps {
 	pagination: PaginationState;
 	onPaginationChange: (pagination: PaginationState) => void;
 	onRowClick: (equipmentTypeId: string) => void;
-	onEdit: (equipmentTypeId: string) => void;
-	onAddUnit: (equipmentTypeId: string) => void;
+	renderRowActions?: (item: ListEquipmentTypesItemDto) => ReactNode;
 	showBranchStock: boolean;
 	isLoading: boolean;
 	isRefreshing: boolean;
@@ -48,8 +46,7 @@ export function EquipmentListTable({
 	pagination,
 	onPaginationChange,
 	onRowClick,
-	onEdit,
-	onAddUnit,
+	renderRowActions,
 	showBranchStock,
 	isLoading,
 	isRefreshing,
@@ -58,8 +55,7 @@ export function EquipmentListTable({
 }: EquipmentListTableProps) {
 	const columns = createEquipmentListColumns({
 		showBranchStock,
-		onEdit,
-		onAddUnit,
+		renderRowActions,
 	});
 	const pageCount = Math.max(1, Math.ceil(total / pagination.pageSize));
 	const table = useReactTable({
@@ -146,12 +142,11 @@ export function EquipmentListTable({
 			<CompactEquipmentList
 				items={items}
 				showBranchStock={showBranchStock}
+				renderRowActions={renderRowActions}
 				isLoading={isLoading}
 				isRefreshing={isRefreshing}
 				isError={isError}
 				emptyAction={emptyAction}
-				onEdit={onEdit}
-				onAddUnit={onAddUnit}
 			/>
 
 			{isError ? null : (
@@ -195,12 +190,11 @@ export function EquipmentListTable({
 function CompactEquipmentList({
 	items,
 	showBranchStock,
+	renderRowActions,
 	isLoading,
 	isRefreshing,
 	isError,
 	emptyAction,
-	onEdit,
-	onAddUnit,
 }: Omit<
 	EquipmentListTableProps,
 	"total" | "pagination" | "onPaginationChange" | "onRowClick"
@@ -259,14 +253,11 @@ function CompactEquipmentList({
 									{getEquipmentRentalSummaryLabel(item) ?? "-"}
 								</p>
 							</Link>
-							<div className="absolute top-2 right-2">
-								<EquipmentListRowActions
-									equipmentTypeId={item.id}
-									equipmentName={item.name}
-									onEdit={() => onEdit(item.id)}
-									onAddUnit={() => onAddUnit(item.id)}
-								/>
-							</div>
+							{renderRowActions ? (
+								<div className="absolute top-2 right-2">
+									{renderRowActions(item)}
+								</div>
+							) : null}
 						</li>
 					))}
 				</ul>

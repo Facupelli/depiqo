@@ -3,7 +3,7 @@ import { QueryBus } from '@nestjs/cqrs';
 import { TenantPermission } from '@repo/api-contracts';
 
 import { createProblemDetails, createProblemType, ProblemException } from 'src/core/problem-details';
-import { RequirePermission } from 'src/modules/tenant-management/authorization/tenant-authorization.decorators';
+import { RequireAnyPermission } from 'src/modules/tenant-management/authorization/tenant-authorization.decorators';
 import { AUTH_ACTOR_TYPES, AuthUser } from 'src/modules/tenant-management/auth/shared/auth.types';
 import { CurrentUser } from 'src/modules/tenant-management/auth/shared/current-user/current-user.decorator';
 import { AllowAuthActors } from 'src/modules/tenant-management/auth/shared/session/auth-actor-access.decorator';
@@ -21,7 +21,17 @@ export class GetRentalDetailHttpController {
   constructor(private readonly queryBus: QueryBus) {}
 
   @Get(':rentalId')
-  @RequirePermission(TenantPermission.RentalsRead)
+  @RequireAnyPermission(
+    TenantPermission.RentalsRead,
+    TenantPermission.RentalsProposalsManage,
+    TenantPermission.RentalsConfirm,
+    TenantPermission.RentalsConfirmedManage,
+    TenantPermission.RentalsFulfillmentManage,
+    TenantPermission.RentalsCancel,
+    TenantPermission.ContractsRead,
+    TenantPermission.ContractsGenerate,
+    TenantPermission.ContractsSigningSend,
+  )
   @AllowAuthActors(AUTH_ACTOR_TYPES.TENANT_USER)
   @UseGuards(SessionAuthGuard, TenantUserSessionGuard)
   async getRentalDetail(

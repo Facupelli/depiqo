@@ -17,7 +17,18 @@ export class GetRentableItemSummariesHttpController {
   constructor(private readonly queryBus: QueryBus) {}
 
   @Get()
-  @RequireAnyPermission(TenantPermission.ProductsRead, TenantPermission.RentalsRead)
+  @RequireAnyPermission(
+    TenantPermission.ProductsRead,
+    TenantPermission.RentalsRead,
+    TenantPermission.RentalsProposalsManage,
+    TenantPermission.RentalsConfirm,
+    TenantPermission.RentalsConfirmedManage,
+    TenantPermission.RentalsFulfillmentManage,
+    TenantPermission.RentalsCancel,
+    TenantPermission.ContractsRead,
+    TenantPermission.ContractsGenerate,
+    TenantPermission.ContractsSigningSend,
+  )
   async getRentableItemSummaries(
     @Query() dto: GetRentableItemSummariesRequestDto,
     @CurrentUser() user: AuthUser,

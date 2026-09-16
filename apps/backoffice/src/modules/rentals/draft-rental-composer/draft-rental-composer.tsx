@@ -8,7 +8,10 @@ import { useBranchTimezoneResolver } from "@/shared/timezone/operational-timezon
 import type { RentalCustomerDisplayFacts } from "../customer-selection/rental-customer-selector";
 import { useCalculatedDraftRentalPrice } from "./calculate-draft-rental-price.queries";
 import { DraftRentalProductsSection } from "./components/draft-rental-products-section";
-import { DraftRentalReviewPanel } from "./components/draft-rental-review-panel";
+import {
+	DraftRentalReviewPanel,
+	PriceAdjustableDraftRentalReviewPanel,
+} from "./components/draft-rental-review-panel";
 import { DraftRentalSetupSection } from "./components/draft-rental-setup-section";
 import {
 	type DraftRentalComposerContextValue,
@@ -42,7 +45,17 @@ type DraftRentalComposerProps = {
 	missingBranchMessage: string;
 };
 
-export function DraftRentalComposer({
+export function DraftRentalComposer(props: DraftRentalComposerProps) {
+	return <DraftRentalComposerLayout {...props} reviewMode="standard" />;
+}
+
+export function PriceAdjustableDraftRentalComposer(
+	props: DraftRentalComposerProps,
+) {
+	return <DraftRentalComposerLayout {...props} reviewMode="price-adjustable" />;
+}
+
+function DraftRentalComposerLayout({
 	activeBranches,
 	defaultValues,
 	initialCustomer,
@@ -53,7 +66,10 @@ export function DraftRentalComposer({
 	submitError,
 	submitLabel,
 	missingBranchMessage,
-}: DraftRentalComposerProps) {
+	reviewMode,
+}: DraftRentalComposerProps & {
+	reviewMode: "standard" | "price-adjustable";
+}) {
 	const resolveKnownBranchTimezone = useBranchTimezoneResolver();
 	const resolveBranchTimezone = useMemo(
 		() => (branchId: string) => {
@@ -97,16 +113,20 @@ export function DraftRentalComposer({
 	});
 
 	const contextValue: DraftRentalComposerContextValue = {
-		selectedBranchName: selectedBranch?.name ?? persistedBranch?.name ?? null,
-		branchMissing,
-		timezone,
-		pricePreview: priceQuery.data,
-		isPriceLoading: priceQuery.isFetching,
-		isPriceError: priceQuery.isError,
-		isSubmitting,
-		submitDisabled,
-		submitError,
-		submitLabel,
+		state: {
+			selectedBranchName: selectedBranch?.name ?? persistedBranch?.name ?? null,
+			branchMissing,
+			timezone,
+			pricePreview: priceQuery.data,
+		},
+		meta: {
+			isPriceLoading: priceQuery.isFetching,
+			isPriceError: priceQuery.isError,
+			isSubmitting,
+			submitDisabled,
+			submitError,
+			submitLabel,
+		},
 	};
 
 	return (
@@ -126,7 +146,11 @@ export function DraftRentalComposer({
 				</div>
 
 				<aside className="lg:sticky lg:top-6 lg:self-start">
-					<DraftRentalReviewPanel form={form} />
+					{reviewMode === "price-adjustable" ? (
+						<PriceAdjustableDraftRentalReviewPanel form={form} />
+					) : (
+						<DraftRentalReviewPanel form={form} />
+					)}
 				</aside>
 			</div>
 		</DraftRentalComposerProvider>

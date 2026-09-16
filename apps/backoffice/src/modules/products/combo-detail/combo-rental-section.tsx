@@ -1,17 +1,38 @@
-import type { GetRentableItemDetailResponseDto } from "@repo/api-contracts";
+import {
+	type GetRentableItemDetailResponseDto,
+	TenantPermission,
+	type TenantPermission as TenantPermissionId,
+} from "@repo/api-contracts";
 import { Button } from "@repo/ui/components/button";
 import { Plus } from "lucide-react";
 import { useState } from "react";
+import { can, canAll } from "@/auth/permissions";
 import { usePricePlans } from "@/modules/pricing/price-plans/public";
 import { AddBranchAvailabilityDialog } from "../branch-availability/add-branch-availability/AddBranchAvailabilityDialog";
+import { EditBranchAvailabilityDialog } from "../branch-availability/edit-branch-availability/EditBranchAvailabilityDialog";
 import { RentalOfferCard } from "../branch-availability/rental-offer-card";
+import { SetPricePlanAction } from "../product-pricing/set-price-plan/SetPricePlanAction";
 export function ComboRentalSection({
 	combo,
+	permissions,
 }: {
 	combo: GetRentableItemDetailResponseDto;
+	permissions: readonly TenantPermissionId[];
 }) {
 	const [addOpen, setAddOpen] = useState(false);
-	const plansQuery = usePricePlans({ isActive: true });
+	const canManageAvailability = can(
+		permissions,
+		TenantPermission.ProductsAvailabilityManage,
+	);
+	const canManagePricing = can(permissions, TenantPermission.PricingManage);
+	const canAddBranch = canAll(permissions, [
+		TenantPermission.ProductsAvailabilityManage,
+		TenantPermission.PricingManage,
+	]);
+	const plansQuery = usePricePlans(
+		{ isActive: true },
+		{ enabled: canManagePricing },
+	);
 	const ratePlanOptionsStatus = plansQuery.isPending
 		? "loading"
 		: plansQuery.isError
@@ -31,14 +52,16 @@ export function ComboRentalSection({
 						Gestiona visibilidad, disponibilidad y precios para cada sucursal.
 					</p>
 				</div>
-				<Button
-					type="button"
-					onClick={() => setAddOpen(true)}
-					disabled={plansQuery.isPending}
-				>
-					<Plus className="mr-2 size-4" />
-					Añadir sucursal
-				</Button>
+				{canAddBranch ? (
+					<Button
+						type="button"
+						onClick={() => setAddOpen(true)}
+						disabled={plansQuery.isPending}
+					>
+						<Plus className="mr-2 size-4" />
+						Añadir sucursal
+					</Button>
+				) : null}
 			</div>
 			<div className="overflow-hidden rounded-lg border bg-card p-5 sm:p-6">
 				{plansQuery.isError ? (
@@ -63,15 +86,17 @@ export function ComboRentalSection({
 						<p className="font-medium">
 							Este combo todavía no se ofrece en ninguna sucursal.
 						</p>
-						<Button
-							type="button"
-							className="mt-4"
-							disabled={plansQuery.isPending}
-							variant="outline"
-							onClick={() => setAddOpen(true)}
-						>
-							Añadir sucursal
-						</Button>
+						{canAddBranch ? (
+							<Button
+								type="button"
+								className="mt-4"
+								disabled={plansQuery.isPending}
+								variant="outline"
+								onClick={() => setAddOpen(true)}
+							>
+								Añadir sucursal
+							</Button>
+						) : null}
 					</div>
 				) : (
 					<div className="space-y-3">
@@ -79,21 +104,43 @@ export function ComboRentalSection({
 							<RentalOfferCard
 								key={offer.rentalOfferId}
 								offer={offer}
-								ratePlanOptions={options}
-								ratePlanOptionsStatus={ratePlanOptionsStatus}
+								actions={
+									canManagePricing || canManageAvailability ? (
+										<>
+											{canManagePricing ? (
+												<SetPricePlanAction
+													offer={offer}
+													ratePlanOptions={options}
+													ratePlanOptionsStatus={ratePlanOptionsStatus}
+													assignLabel="Configurar precio"
+												/>
+											) : null}
+											{canManageAvailability ? (
+												<EditBranchAvailabilityDialog
+													rentalOfferId={offer.rentalOfferId}
+													branchName={offer.branchName}
+													isVisible={offer.isVisible}
+													isRentable={offer.isRentable}
+												/>
+											) : null}
+										</>
+									) : undefined
+								}
 							/>
 						))}
 					</div>
 				)}
 			</div>
-			<AddBranchAvailabilityDialog
-				rentableItemId={combo.id}
-				existingOffers={combo.offers}
-				ratePlanOptions={options}
-				ratePlanOptionsStatus={ratePlanOptionsStatus}
-				open={addOpen}
-				onOpenChange={setAddOpen}
-			/>
+			{canAddBranch ? (
+				<AddBranchAvailabilityDialog
+					rentableItemId={combo.id}
+					existingOffers={combo.offers}
+					ratePlanOptions={options}
+					ratePlanOptionsStatus={ratePlanOptionsStatus}
+					open={addOpen}
+					onOpenChange={setAddOpen}
+				/>
+			) : null}
 		</section>
 	);
 }

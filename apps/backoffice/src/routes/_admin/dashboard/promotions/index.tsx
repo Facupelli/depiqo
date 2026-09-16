@@ -1,8 +1,12 @@
+import {
+	type GetPromotionsPromotionDto,
+	TenantPermission,
+} from "@repo/api-contracts";
 import { buttonVariants } from "@repo/ui/components/button";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import z from "zod";
 import { promotionListPermissions } from "@/auth/capabilities";
-import { canAny, requireRouteAccess } from "@/auth/permissions";
+import { can, canAny, requireRouteAccess } from "@/auth/permissions";
 import { PromotionsTab } from "@/modules/pricing/promotions/list-promotions/PromotionsTab";
 import { AdminRouteError } from "@/shared/components/admin-route-error";
 
@@ -32,19 +36,38 @@ export const Route = createFileRoute("/_admin/dashboard/promotions/")({
 });
 
 function RouteComponent() {
+	const { user } = Route.useRouteContext();
+	const navigate = useNavigate({ from: Route.fullPath });
+	const search = Route.useSearch();
+	const canManagePricing = can(
+		user.permissions,
+		TenantPermission.PricingManage,
+	);
+
+	function handleEdit(promotion: GetPromotionsPromotionDto) {
+		navigate({
+			to: "/dashboard/promotions/$promotionId/edit",
+			params: { promotionId: promotion.id },
+			search,
+		});
+	}
+
 	return (
 		<div className="w-full space-y-4">
 			<h1 className="sr-only">Promociones</h1>
 
 			<div className="@container/promotions-index">
 				<PromotionsTab
+					onEdit={canManagePricing ? handleEdit : undefined}
 					toolbarActions={
-						<Link
-							to="/dashboard/promotions/new"
-							className={buttonVariants({ className: "shrink-0 gap-2" })}
-						>
-							Nueva promoción
-						</Link>
+						canManagePricing ? (
+							<Link
+								to="/dashboard/promotions/new"
+								className={buttonVariants({ className: "shrink-0 gap-2" })}
+							>
+								Nueva promoción
+							</Link>
+						) : null
 					}
 				/>
 				{/* TODO: Restore the coupon creation dialog after it is migrated to v2 promotion queries. */}

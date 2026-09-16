@@ -1,17 +1,21 @@
 import type { CalculateDraftRentalPriceResponseDto } from "@repo/api-contracts";
-import { createContext, useContext } from "react";
+import { createContext, use } from "react";
 
 export type DraftRentalComposerContextValue = {
-	selectedBranchName: string | null;
-	branchMissing: boolean;
-	timezone: string;
-	pricePreview: CalculateDraftRentalPriceResponseDto | undefined;
-	isPriceLoading: boolean;
-	isPriceError: boolean;
-	isSubmitting: boolean;
-	submitDisabled: boolean;
-	submitError: string | null;
-	submitLabel: string;
+	state: {
+		selectedBranchName: string | null;
+		branchMissing: boolean;
+		timezone: string;
+		pricePreview: CalculateDraftRentalPriceResponseDto | undefined;
+	};
+	meta: {
+		isPriceLoading: boolean;
+		isPriceError: boolean;
+		isSubmitting: boolean;
+		submitDisabled: boolean;
+		submitError: string | null;
+		submitLabel: string;
+	};
 };
 
 const DraftRentalComposerContext =
@@ -25,14 +29,14 @@ export function DraftRentalComposerProvider({
 	children: React.ReactNode;
 }) {
 	return (
-		<DraftRentalComposerContext.Provider value={value}>
+		<DraftRentalComposerContext value={value}>
 			{children}
-		</DraftRentalComposerContext.Provider>
+		</DraftRentalComposerContext>
 	);
 }
 
 export function useDraftRentalComposer() {
-	const context = useContext(DraftRentalComposerContext);
+	const context = use(DraftRentalComposerContext);
 
 	if (!context) {
 		throw new Error(
