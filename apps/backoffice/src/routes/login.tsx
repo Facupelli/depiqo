@@ -70,8 +70,6 @@ function LoginPage() {
 					body: value,
 				});
 
-				await router.invalidate({ sync: true });
-
 				if (user.mustChangePassword) {
 					await router.navigate({
 						to: "/change-password",
