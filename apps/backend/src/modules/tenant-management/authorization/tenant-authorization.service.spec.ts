@@ -21,23 +21,20 @@ describe('TenantAuthorizationService', () => {
   }
 
   function userWithRole(input?: {
-    roleId?: string | null;
+    roleId?: string;
     roleName?: string;
     systemRole?: V2TenantSystemRole | null;
     permissions?: string[];
   }) {
-    const roleId = input?.roleId === undefined ? 'role-1' : input.roleId;
+    const roleId = input?.roleId ?? 'role-1';
     return {
       roleId,
-      tenantRole:
-        roleId === null
-          ? null
-          : {
-              id: roleId,
-              name: input?.roleName ?? 'Operations',
-              systemRole: input?.systemRole ?? null,
-              permissions: (input?.permissions ?? []).map((permission) => ({ permission })),
-            },
+      tenantRole: {
+        id: roleId,
+        name: input?.roleName ?? 'Operations',
+        systemRole: input?.systemRole ?? null,
+        permissions: (input?.permissions ?? []).map((permission) => ({ permission })),
+      },
     };
   }
 
@@ -173,15 +170,6 @@ describe('TenantAuthorizationService', () => {
       code: 'TenantAuthorizationStateInvalid',
       cause: expect.any(TypeError),
     });
-  });
-
-  it('fails explicitly when the user has no assigned tenant role', async () => {
-    const { service } = createService(userWithRole({ roleId: null }));
-
-    const result = await service.getEffectivePermissions(subject);
-
-    expect(result.isErr()).toBe(true);
-    expect(result._unsafeUnwrapErr().code).toBe('TenantAuthorizationStateInvalid');
   });
 
   it('fails explicitly when the user does not exist', async () => {

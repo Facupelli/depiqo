@@ -9,7 +9,7 @@ import { err, ok, type Result } from 'neverthrow';
 
 import { PrismaService } from 'src/core/database/prisma.service';
 import { Prisma } from 'src/generated/prisma/client';
-import { V2TenantSystemRole, V2UserRole, V2UserStatus } from 'src/generated/prisma/enums';
+import { V2TenantSystemRole, V2UserStatus } from 'src/generated/prisma/enums';
 
 import { normalizeEmail } from '../../auth/shared/auth.types';
 import { PasswordService } from '../../auth/shared/password/password.service';
@@ -118,7 +118,6 @@ export class CreateTenantCollaboratorHandler implements ICommandHandler<
             tenantId: command.tenantId,
             email,
             roleId: targetRole.id,
-            role: legacyRoleFor(targetRole.systemRole),
             status: V2UserStatus.ACTIVE,
             mustChangePassword: true,
             localCredential: {
@@ -192,7 +191,7 @@ export class ChangeTenantCollaboratorRoleHandler implements ICommandHandler<
 
       const updated = await tx.v2TenantUser.update({
         where: { id: target.id },
-        data: { roleId: role.id, role: legacyRoleFor(role.systemRole), sessionVersion: { increment: 1 } },
+        data: { roleId: role.id, sessionVersion: { increment: 1 } },
         select: collaboratorSelect,
       });
       return toCollaboratorDto(updated, command.tenantId, 'ChangeTenantCollaboratorRole');
@@ -478,10 +477,6 @@ function countActiveAdministrators(tx: TransactionClient, tenantId: string): Pro
 
 async function lockTenant(tx: TransactionClient, tenantId: string): Promise<void> {
   await tx.$queryRaw`SELECT id FROM v2_tenants WHERE id = ${tenantId} FOR UPDATE`;
-}
-
-function legacyRoleFor(systemRole: V2TenantSystemRole | null): V2UserRole {
-  return systemRole === V2TenantSystemRole.ADMIN ? V2UserRole.ADMIN : V2UserRole.USER;
 }
 
 function collaboratorManagementForbidden(context: Record<string, unknown>): ManageTenantTeamError {

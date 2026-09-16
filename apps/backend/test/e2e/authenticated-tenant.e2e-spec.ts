@@ -3,7 +3,7 @@ import { randomUUID } from 'node:crypto';
 import request from 'supertest';
 
 import { PrismaService } from '../../src/core/database/prisma.service';
-import { V2TenantStatus, V2UserRole, V2UserStatus } from '../../src/generated/prisma/enums';
+import { V2TenantStatus, V2UserStatus } from '../../src/generated/prisma/enums';
 import { TenantAuthorization } from '../../src/modules/tenant-management/authorization/tenant-authorization.public-api';
 import { TenantAuthorizationRoleProvisioner } from '../../src/modules/tenant-management/authorization/tenant-authorization-role.provisioner';
 import {
@@ -89,7 +89,6 @@ describe('authenticated tenant HTTP flow', () => {
       id: registered.tenantUserId,
       tenantId: registered.tenantId,
       email,
-      role: V2UserRole.ADMIN,
       roleId: administrator?.id,
       status: V2UserStatus.ACTIVE,
       mustChangePassword: false,
@@ -192,8 +191,12 @@ describe('authenticated tenant HTTP flow', () => {
     const tenant = await fixtures.createTenant();
     const email = `no-credential-${randomUUID()}@test.local`;
 
+    const role = await prisma.client.v2TenantRole.findUniqueOrThrow({
+      where: { tenantId_name: { tenantId: tenant.id, name: 'Miembro' } },
+      select: { id: true },
+    });
     await prisma.client.v2TenantUser.create({
-      data: { tenantId: tenant.id, email, name: 'No Credential User' },
+      data: { tenantId: tenant.id, roleId: role.id, email, name: 'No Credential User' },
     });
 
     await request(testApp.app.getHttpServer())

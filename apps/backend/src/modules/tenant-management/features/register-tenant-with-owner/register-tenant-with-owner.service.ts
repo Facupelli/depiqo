@@ -3,7 +3,7 @@ import { InputJsonValue } from '@prisma/client/runtime/client';
 import { err, ok, Result } from 'neverthrow';
 
 import { PrismaService } from 'src/core/database/prisma.service';
-import { V2AuthAuditEventType, V2TenantStatus, V2UserRole, V2UserStatus } from 'src/generated/prisma/enums';
+import { V2AuthAuditEventType, V2TenantStatus, V2UserStatus } from 'src/generated/prisma/enums';
 
 import { TenantAuthorizationRoleProvisioner } from '../../authorization/tenant-authorization-role.provisioner';
 import { normalizeEmail } from '../../auth/shared/auth.types';
@@ -93,7 +93,6 @@ export class RegisterTenantWithOwnerService implements ICommandHandler<
           tenantId: createdTenant.id,
           email,
           name: command.ownerName.trim(),
-          role: V2UserRole.ADMIN,
           roleId: authorizationRoles.administratorRoleId,
           status: V2UserStatus.ACTIVE,
           mustChangePassword: false,

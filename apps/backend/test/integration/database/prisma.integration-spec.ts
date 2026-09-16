@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 
-import { V2TenantSystemRole, V2UserRole } from '../../../src/generated/prisma/enums';
+import { V2TenantSystemRole } from '../../../src/generated/prisma/enums';
 import { createDirectDatabaseTestContext, DirectDatabaseTestContext } from '../../support/direct-database-test-context';
 import { useIntegrationTestContext } from '../../support/integration-test-context';
 
@@ -69,17 +69,15 @@ describe('Prisma database integration', () => {
     ).rejects.toMatchObject({ code: 'P2002' });
   });
 
-  it('defaults new tenant users to no related role and no required password change', async () => {
-    const tenant = await createTenant('user-defaults');
-    const user = await database.prisma.v2TenantUser.create({
-      data: {
-        tenantId: tenant.id,
-        email: `user-${randomUUID()}@test.local`,
-        role: V2UserRole.ADMIN,
-      },
-    });
+  it('requires every tenant user to have a role', async () => {
+    const tenant = await createTenant('required-role');
 
-    expect(user).toMatchObject({ roleId: null, mustChangePassword: false, role: V2UserRole.ADMIN });
+    await expect(
+      database.prisma.$executeRaw`
+        INSERT INTO "v2_tenant_users" ("id", "tenant_id", "email", "updated_at")
+        VALUES (${randomUUID()}, ${tenant.id}, ${`user-${randomUUID()}@test.local`}, CURRENT_TIMESTAMP)
+      `,
+    ).rejects.toThrow();
   });
 
   it('prevents assigning a tenant user to another tenant role', async () => {

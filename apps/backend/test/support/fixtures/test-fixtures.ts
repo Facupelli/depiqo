@@ -3,7 +3,7 @@ import { TenantAuthorizationRoleProvisioner } from 'src/modules/tenant-managemen
 import { PasswordService } from 'src/modules/tenant-management/auth/shared/password/password.service';
 import { TenantConfig } from 'src/modules/tenant-management/domain/value-objects/tenant-config.value-object';
 import type { Prisma } from 'src/generated/prisma/client';
-import { V2TenantSystemRole, V2UserRole } from 'src/generated/prisma/enums';
+import { V2TenantSystemRole } from 'src/generated/prisma/enums';
 import type {
   V2Branch,
   V2LocalCredential,
@@ -16,7 +16,7 @@ import { randomUUID } from 'node:crypto';
 type TenantOverrides = Partial<
   Omit<Prisma.V2TenantCreateInput, 'branding' | 'branches' | 'contractSigners' | 'domains' | 'rentalCustomers'>
 >;
-type TenantUserOverrides = Partial<Omit<Prisma.V2TenantUserUncheckedCreateInput, 'tenantId' | 'role' | 'roleId'>>;
+type TenantUserOverrides = Partial<Omit<Prisma.V2TenantUserUncheckedCreateInput, 'tenantId' | 'roleId'>>;
 type RentalCustomerOverrides = Partial<
   Omit<
     Prisma.V2RentalCustomerUncheckedCreateInput,
@@ -114,11 +114,11 @@ export function createTestFixtures(prisma: PrismaService, passwordService = new 
     const passwordData = await passwordService.hashPassword(password);
 
     return prisma.client.$transaction(async (tx) => {
-      const role = await tx.v2TenantRole.findUnique({
+      const roleExists = await tx.v2TenantRole.findUnique({
         where: { tenantId_id: { tenantId, id: roleId } },
-        select: { systemRole: true },
+        select: { id: true },
       });
-      if (!role) {
+      if (!roleExists) {
         throw new Error(`Cannot create a tenant user with role ${roleId} in tenant ${tenantId}.`);
       }
 
@@ -127,7 +127,6 @@ export function createTestFixtures(prisma: PrismaService, passwordService = new 
         data: {
           tenantId,
           roleId,
-          role: role.systemRole === V2TenantSystemRole.ADMIN ? V2UserRole.ADMIN : V2UserRole.USER,
           email: `user-${unique}@test.local`,
           name: `Test User ${unique}`,
           ...overrides,

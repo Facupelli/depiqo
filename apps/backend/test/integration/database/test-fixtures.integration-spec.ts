@@ -4,7 +4,7 @@ import { useIntegrationTestContext } from '../../support/integration-test-contex
 import { AppConfigModule } from '../../../src/config/config.module';
 import { PrismaService } from '../../../src/core/database/prisma.service';
 import { PasswordService } from '../../../src/modules/tenant-management/auth/shared/password/password.service';
-import { V2PasswordAlgorithm, V2TenantSystemRole, V2UserRole } from '../../../src/generated/prisma/enums';
+import { V2PasswordAlgorithm, V2TenantSystemRole } from '../../../src/generated/prisma/enums';
 import { SharedModule } from '../../../src/modules/shared/shared.module';
 import { DEFAULT_MEMBER_TENANT_PERMISSIONS } from '../../../src/modules/tenant-management/authorization/tenant-permission.registry';
 import { createTestFixtures, TestFixtures } from '../../support/fixtures';
@@ -52,7 +52,6 @@ describe('database test fixtures', () => {
 
     expect(tenantUser.user).toMatchObject({
       tenantId: tenant.id,
-      role: V2UserRole.USER,
       roleId: expect.any(String),
     });
     expect(customer.customer).toMatchObject({ tenantId: tenant.id, passwordHash: null });
@@ -78,9 +77,9 @@ describe('database test fixtures', () => {
     const administratorUser = await fixtures.createAdministratorTenantUser({ tenantId: tenant.id });
     const explicitMemberUser = await fixtures.createTenantUserWithRole({ tenantId: tenant.id, roleId: member!.id });
 
-    expect(tenantUser.user).toMatchObject({ roleId: member!.id, role: V2UserRole.USER });
-    expect(administratorUser.user).toMatchObject({ roleId: administrator!.id, role: V2UserRole.ADMIN });
-    expect(explicitMemberUser.user).toMatchObject({ roleId: member!.id, role: V2UserRole.USER });
+    expect(tenantUser.user).toMatchObject({ roleId: member!.id });
+    expect(administratorUser.user).toMatchObject({ roleId: administrator!.id });
+    expect(explicitMemberUser.user).toMatchObject({ roleId: member!.id });
   });
 
   it('rejects a tenant user without an existing tenant', async () => {
