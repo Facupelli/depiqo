@@ -1,4 +1,5 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
+import type { IncomingMessage } from 'node:http';
 
 export interface ProblemLogContext {
   kind: string;
@@ -34,7 +35,7 @@ export interface RequestLogContext {
 
 export const REQUEST_LOG_CONTEXT = Symbol('depiqo.requestLogContext');
 
-interface RequestWithLogContext {
+interface RequestWithLogContext extends IncomingMessage {
   [REQUEST_LOG_CONTEXT]?: RequestLogContext;
 }
 
@@ -49,14 +50,12 @@ export class LogContext {
     store.run(log, fn);
   }
 
-  static attach(request: object, log: RequestLogContext): void {
-    // SAFETY: The log-context middleware initializes this Express request with the private context slot before these accessors run.
-    (request as RequestWithLogContext)[REQUEST_LOG_CONTEXT] = log;
+  static attach(request: RequestWithLogContext, log: RequestLogContext): void {
+    request[REQUEST_LOG_CONTEXT] = log;
   }
 
-  static forRequest(request: object): RequestLogContext | undefined {
-    // SAFETY: The log-context middleware initializes this Express request with the private context slot before these accessors run.
-    return (request as RequestWithLogContext)[REQUEST_LOG_CONTEXT];
+  static forRequest(request: RequestWithLogContext): RequestLogContext | undefined {
+    return request[REQUEST_LOG_CONTEXT];
   }
 
   static set<K extends keyof RequestLogContext>(key: K, value: RequestLogContext[K]): void {

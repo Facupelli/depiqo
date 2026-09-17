@@ -6,6 +6,7 @@ import {
 } from './tenant-authorization-requirement';
 
 type AuthorizationDeclarationDecorator = ClassDecorator & MethodDecorator;
+type AuthorizationDecoratorTarget = Parameters<ClassDecorator>[0] | Parameters<MethodDecorator>[0];
 
 export function RequirePermission(permission: TenantPermission): AuthorizationDeclarationDecorator {
   return authorizationRequirement({ type: 'ONE', permission });
@@ -48,7 +49,11 @@ export function ConditionalAuthorization(): AuthorizationDeclarationDecorator {
 }
 
 function authorizationRequirement(requirement: TenantAuthorizationRequirement): AuthorizationDeclarationDecorator {
-  return (target: object, _propertyKey?: string | symbol, descriptor?: PropertyDescriptor): void => {
+  return (
+    target: AuthorizationDecoratorTarget,
+    _propertyKey?: string | symbol,
+    descriptor?: PropertyDescriptor,
+  ): void => {
     const metadataTarget = descriptor?.value ?? target;
 
     if (Reflect.hasOwnMetadata(TENANT_AUTHORIZATION_REQUIREMENT_KEY, metadataTarget)) {

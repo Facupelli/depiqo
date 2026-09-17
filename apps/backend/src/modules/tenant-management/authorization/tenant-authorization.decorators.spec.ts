@@ -106,7 +106,7 @@ describe('tenant authorization decorators', () => {
     }).toThrow('Only one tenant authorization declaration may be applied to the same target.');
   });
 
-  function requirementOn(target: object): TenantAuthorizationRequirement | undefined {
+  function requirementOn(target: Parameters<ClassDecorator>[0]): TenantAuthorizationRequirement | undefined {
     // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
     return Reflect.getOwnMetadata(TENANT_AUTHORIZATION_REQUIREMENT_KEY, target) as
       | TenantAuthorizationRequirement

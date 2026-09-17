@@ -12,6 +12,10 @@ interface Deferred<T> {
   reject: (error: unknown) => void;
 }
 
+interface TestTransactionClient {
+  readonly id?: number;
+}
+
 function deferred<T>(): Deferred<T> {
   let resolve!: (value: T) => void;
   let reject!: (error: unknown) => void;
@@ -57,7 +61,7 @@ function makePrisma() {
   // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
   const prisma = {
     client: {
-      $transaction: jest.fn(async (work: (tx: object) => Promise<unknown>) => {
+      $transaction: jest.fn(async (work: (tx: TestTransactionClient) => Promise<unknown>) => {
         transactionsOpened += 1;
         const tx = { id: transactionsOpened };
         return work(tx);
@@ -213,7 +217,7 @@ describe('PrismaUnitOfWork', () => {
       // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
       const prisma = {
         client: {
-          $transaction: jest.fn(async (work: (tx: object) => Promise<unknown>) => {
+          $transaction: jest.fn(async (work: (tx: TestTransactionClient) => Promise<unknown>) => {
             try {
               const value = await work({});
               markers.push('commit');
@@ -252,7 +256,7 @@ describe('PrismaUnitOfWork', () => {
       // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
       const prisma = {
         client: {
-          $transaction: jest.fn(async (work: (tx: object) => Promise<unknown>) => {
+          $transaction: jest.fn(async (work: (tx: TestTransactionClient) => Promise<unknown>) => {
             try {
               const value = await work({});
               markers.push('commit');

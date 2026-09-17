@@ -2,6 +2,7 @@ import { TenantPermission } from '@repo/api-contracts';
 import {
   ExecutionContext,
   ForbiddenException,
+  type Type,
   InternalServerErrorException,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -46,7 +47,7 @@ describe('TenantAuthorizationGuard', () => {
     return {
       guard,
       tenantAuthorization,
-      contextFor(handler: () => void, controller: object = class TestController {}) {
+      contextFor(handler: () => void, controller: Type<unknown> = class TestController {}) {
         const request = {
           user: actor,
           isAuthenticated: jest.fn().mockReturnValue(authenticated),
