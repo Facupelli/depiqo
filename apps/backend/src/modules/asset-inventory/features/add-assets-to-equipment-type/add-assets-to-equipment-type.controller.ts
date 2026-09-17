@@ -74,7 +74,7 @@ function toAddAssetsToEquipmentTypeProblem(error: AddAssetsToEquipmentTypeError)
   });
 }
 
-function publicErrorExtensions(error: AddAssetsToEquipmentTypeError): Record<string, unknown> {
+function publicErrorExtensions(error: AddAssetsToEquipmentTypeError) {
   const context = error.context ?? {};
 
   if (error.code === 'asset_inventory.invalid_asset_field') {

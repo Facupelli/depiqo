@@ -28,7 +28,7 @@
   ],
   "rules": {
     "anti-slop/no-chained-type-assertions": "error",
-    "anti-slop/no-known-value-widening": "allow",
+    "anti-slop/no-known-value-widening": "error",
     "anti-slop/no-module-mocking": "allow",
     "anti-slop/no-object-parameters": "allow",
     "anti-slop/no-shape-in-symbol-names": "allow",

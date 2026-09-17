@@ -246,7 +246,7 @@ export class GetRentableItemsHandler implements IQueryHandler<GetRentableItemsQu
     query: GetRentableItemsQuery,
     offerFilter: RentalOfferFilter,
     activePricedOfferIds: string[],
-  ): Record<string, unknown> {
+  ) {
     if (query.hasActivePricing === false) {
       const baseOfferFilter = this.buildOfferFilter(query, []);
       if (activePricedOfferIds.length === 0) {

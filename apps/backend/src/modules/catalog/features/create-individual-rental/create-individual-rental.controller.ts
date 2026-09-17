@@ -60,11 +60,7 @@ function toCreateIndividualRentalProblem(error: CreateIndividualRentalError): Pr
   });
 }
 
-function getProblemDescription(code: CreateIndividualRentalErrorCode): {
-  title: string;
-  status: HttpStatus;
-  detail: string;
-} {
+function getProblemDescription(code: CreateIndividualRentalErrorCode) {
   switch (code) {
     case 'catalog.invalid_individual_rental':
       return {

@@ -20,7 +20,7 @@ export function toCreateEquipmentTypeProblem(error: CreateEquipmentTypeError): P
   });
 }
 
-function publicErrorExtensions(error: CreateEquipmentTypeError): Record<string, unknown> {
+function publicErrorExtensions(error: CreateEquipmentTypeError) {
   const context = error.context ?? {};
 
   if (

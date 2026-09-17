@@ -258,10 +258,7 @@ export class GetRentalsHandler implements IQueryHandler<GetRentalsQuery, GetRent
     }
   }
 
-  private resolveSort(query: GetRentalsQuery): {
-    sortBy: GetRentalsSortByDto;
-    sortDirection: GetRentalsSortDirectionDto;
-  } {
+  private resolveSort(query: GetRentalsQuery) {
     const fallback = this.getDefaultSort(query.dateLens);
 
     if (!query.sortBy && !query.sortDirection) {
@@ -271,30 +268,39 @@ export class GetRentalsHandler implements IQueryHandler<GetRentalsQuery, GetRent
     const sortBy = query.sortBy ?? fallback.sortBy;
     const sortDirection = query.sortDirection ?? this.getDefaultDirectionForSortBy(sortBy, query.dateLens);
 
-    return { sortBy, sortDirection };
+    return { sortBy, sortDirection } satisfies {
+      sortBy: GetRentalsSortByDto;
+      sortDirection: GetRentalsSortDirectionDto;
+    };
   }
 
-  private getDefaultSort(dateLens?: GetRentalsDateLensDto): {
-    sortBy: GetRentalsSortByDto;
-    sortDirection: GetRentalsSortDirectionDto;
-  } {
+  private getDefaultSort(dateLens?: GetRentalsDateLensDto) {
     switch (dateLens) {
       case 'UPCOMING':
         return {
           sortBy: 'pickupDate',
           sortDirection: 'asc',
+        } satisfies {
+          sortBy: GetRentalsSortByDto;
+          sortDirection: GetRentalsSortDirectionDto;
         };
 
       case 'ACTIVE':
         return {
           sortBy: 'returnDate',
           sortDirection: 'asc',
+        } satisfies {
+          sortBy: GetRentalsSortByDto;
+          sortDirection: GetRentalsSortDirectionDto;
         };
 
       case 'PAST':
         return {
           sortBy: 'returnDate',
           sortDirection: 'desc',
+        } satisfies {
+          sortBy: GetRentalsSortByDto;
+          sortDirection: GetRentalsSortDirectionDto;
         };
 
       case 'TODAY':
@@ -302,6 +308,9 @@ export class GetRentalsHandler implements IQueryHandler<GetRentalsQuery, GetRent
         return {
           sortBy: 'createdAt',
           sortDirection: 'desc',
+        } satisfies {
+          sortBy: GetRentalsSortByDto;
+          sortDirection: GetRentalsSortDirectionDto;
         };
     }
   }

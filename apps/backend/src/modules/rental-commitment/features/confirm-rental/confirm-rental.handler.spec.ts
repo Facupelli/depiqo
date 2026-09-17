@@ -186,7 +186,7 @@ describe('ConfirmRentalHandler deadlock retry', () => {
   }
 });
 
-function deadlockError(): Record<string, unknown> {
+function deadlockError() {
   return {
     code: 'P2010',
     meta: {

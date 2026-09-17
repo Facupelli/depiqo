@@ -120,7 +120,7 @@ function expectMappedExclusionViolation(error: unknown): void {
   }
 }
 
-function prismaRawQueryError(cause: Record<string, unknown>): Record<string, unknown> {
+function prismaRawQueryError(cause: Record<string, unknown>) {
   return {
     code: 'P2010',
     meta: {

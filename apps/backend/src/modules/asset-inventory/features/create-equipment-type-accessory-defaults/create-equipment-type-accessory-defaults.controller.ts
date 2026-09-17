@@ -65,7 +65,7 @@ function toCreateEquipmentTypeAccessoryDefaultsProblem(
   });
 }
 
-function publicErrorExtensions(error: CreateEquipmentTypeAccessoryDefaultsError): Record<string, unknown> {
+function publicErrorExtensions(error: CreateEquipmentTypeAccessoryDefaultsError) {
   const context = error.context ?? {};
 
   if (error.code === 'asset_inventory.accessory_default_already_exists') {

@@ -147,7 +147,7 @@ export class CalculateDraftRentalPriceHandler implements IQueryHandler<
     });
   }
 
-  private errorContext(query: CalculateDraftRentalPriceQuery): Record<string, unknown> {
+  private errorContext(query: CalculateDraftRentalPriceQuery) {
     return {
       useCase: 'CalculateDraftRentalPrice',
       tenantId: query.tenantId,

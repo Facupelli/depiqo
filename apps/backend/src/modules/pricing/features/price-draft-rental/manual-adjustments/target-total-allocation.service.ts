@@ -80,30 +80,27 @@ export class TargetTotalAllocationService {
     };
   }
 
-  private calculateAdjustment(input: { previousTotal: Money; finalTotal: Money }): {
-    direction: 'INCREASE' | 'DECREASE' | 'NONE';
-    amount: string;
-  } {
+  private calculateAdjustment(input: { previousTotal: Money; finalTotal: Money }) {
     const { previousTotal, finalTotal } = input;
 
     if (finalTotal.equals(previousTotal)) {
       return {
         direction: 'NONE',
         amount: Money.zero(previousTotal.currency).toSnapshotString(),
-      };
+      } satisfies TargetTotalAllocationLineResult['adjustment'];
     }
 
     if (finalTotal.isGreaterThan(previousTotal)) {
       return {
         direction: 'INCREASE',
         amount: finalTotal.subtract(previousTotal).toSnapshotString(),
-      };
+      } satisfies TargetTotalAllocationLineResult['adjustment'];
     }
 
     return {
       direction: 'DECREASE',
       amount: previousTotal.subtract(finalTotal).toSnapshotString(),
-    };
+    } satisfies TargetTotalAllocationLineResult['adjustment'];
   }
 
   private toAllocationRatio(amount: Money): number {

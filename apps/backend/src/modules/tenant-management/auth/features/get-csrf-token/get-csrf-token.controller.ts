@@ -9,7 +9,7 @@ export class GetCsrfTokenController {
   constructor(private readonly csrfService: CsrfService) {}
 
   @Get('csrf')
-  getCsrfToken(@Req() req: Request): { csrfToken: string } {
+  getCsrfToken(@Req() req: Request) {
     return {
       csrfToken: this.csrfService.getOrCreateToken(req),
     };

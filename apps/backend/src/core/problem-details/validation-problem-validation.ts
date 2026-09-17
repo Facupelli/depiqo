@@ -101,7 +101,7 @@ function hasInvalidParams(value: Record<string, unknown>): value is Record<strin
 }
 
 function hasInvalidParam(value: Record<string, unknown>): value is Record<string, unknown> & InvalidParam {
-  return isInvalidParam(value);
+  return typeof value.name === 'string' && typeof value.reason === 'string';
 }
 
 function isInvalidParam(value: unknown): value is InvalidParam {

@@ -285,10 +285,7 @@ export class AssignRentalAccessoriesHandler implements ICommandHandler<
     if (result.isErr()) throw result.error;
     return result.value;
   }
-  private resolveAcceptedAssetBuffer(rental: RentalReadModel): {
-    beforeBufferMinutes: number;
-    afterBufferMinutes: number;
-  } {
+  private resolveAcceptedAssetBuffer(rental: RentalReadModel) {
     if (rental.acceptedBeforeBufferMinutes === null || rental.acceptedAfterBufferMinutes === null)
       throw new RentalInvalidFieldError('acceptedAssetBuffer', 'persisted buffer values must both be present');
     return {

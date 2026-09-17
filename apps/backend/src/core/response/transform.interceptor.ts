@@ -23,21 +23,17 @@ export class TransformInterceptor implements NestInterceptor {
     return next.handle().pipe(
       map((payload) => {
         if (isPaginated) {
-          const result: Record<string, unknown> = {
+          return {
             data: payload.data,
             meta: payload.meta,
+            ...(message ? { message } : {}),
           };
-          if (message) {
-            result.message = message;
-          }
-          return result;
         }
 
-        const result: Record<string, unknown> = { data: payload ?? null };
-        if (message) {
-          result.message = message;
-        }
-        return result;
+        return {
+          data: payload ?? null,
+          ...(message ? { message } : {}),
+        };
       }),
     );
   }

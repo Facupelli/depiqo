@@ -80,7 +80,7 @@ export class AssignCustomerToDraftRentalHandler implements ICommandHandler<
     return ok(undefined);
   }
 
-  private errorContext(command: AssignCustomerToDraftRentalCommand): Record<string, unknown> {
+  private errorContext(command: AssignCustomerToDraftRentalCommand) {
     return {
       useCase: 'AssignCustomerToDraftRental',
       tenantId: command.tenantId,

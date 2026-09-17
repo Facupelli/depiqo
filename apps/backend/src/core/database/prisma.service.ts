@@ -56,7 +56,7 @@ function requiresTenantWhere(operation: string): boolean {
   return READ_WITH_WHERE_OPS.has(operation) || MUTATE_WITH_WHERE_OPS.has(operation);
 }
 
-export function injectTenantId(operation: string, args: Record<string, any>, tenantId: string): Record<string, any> {
+export function injectTenantId(operation: string, args: Record<string, any>, tenantId: string) {
   if (!requiresTenantWhere(operation)) {
     return args;
   }

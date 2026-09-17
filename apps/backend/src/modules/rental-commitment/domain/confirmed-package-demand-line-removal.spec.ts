@@ -39,9 +39,13 @@ const standDemandId = 'stand-demand' as RentalDemandLineId;
 const cameraDemandId = 'camera-demand' as RentalDemandLineId;
 const tenantOwnership = AssignedAssetOwnershipSnapshot.create({ kind: 'TENANT_OWNED' })._unsafeUnwrap();
 
+interface AssetIdsByDemandLineId {
+  [demandLineId: string]: AssetId;
+}
+
 function assetIdFor(demandLineId: string): AssetId {
   // SAFETY: These stable fixture identifiers are non-empty and are used only as opaque domain identifiers in this test.
-  const assetIds: Record<string, AssetId> = {
+  const assetIds: AssetIdsByDemandLineId = {
     [lightDemandId]: 'light-asset' as AssetId,
     [standDemandId]: 'stand-asset' as AssetId,
     [cameraDemandId]: 'camera-asset' as AssetId,

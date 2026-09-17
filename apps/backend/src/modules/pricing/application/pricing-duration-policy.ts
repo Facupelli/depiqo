@@ -10,14 +10,7 @@ export function createPricingDurationPolicy(input: {
   effectiveTimezone: string;
   dailyBillingPolicy: DailyBillingPolicy;
   weekendCountsAsOne: boolean;
-}): {
-  timezone: string;
-  dailyBillingPolicy: DailyBillingPolicy;
-  weekendCountsAsOne: boolean;
-  minimumChargedDays: number;
-  quarterDayThresholdMinutes: number;
-  halfDayThresholdMinutes: number;
-} {
+}) {
   return {
     timezone: input.effectiveTimezone,
     dailyBillingPolicy: input.dailyBillingPolicy,

@@ -42,7 +42,7 @@ export class ArchiveRentableItemHandler implements ICommandHandler<
     return ok(undefined);
   }
 
-  private errorContext(command: ArchiveRentableItemCommand): Record<string, unknown> {
+  private errorContext(command: ArchiveRentableItemCommand) {
     return {
       useCase: 'ArchiveRentableItem',
       tenantId: command.tenantId,

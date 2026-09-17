@@ -79,7 +79,7 @@ function classifyRoute(input: {
   controller: string;
   method: string;
   methodText: string;
-}): { classification: Classification; issues: string[] } {
+}) {
   const { controllerPath, classDecorators, methodDecorators, guards, authorization } = input;
   const issues: string[] = [];
   const classAuthorization = classDecorators.filter(({ name }) => authorizationDecorators.has(name));
@@ -122,13 +122,13 @@ function classifyRoute(input: {
   const declaration = authorization[0] ?? classAuthorization[0];
   if (!declaration) return { classification: 'MISSING', issues };
 
-  const classificationByDecorator: Record<string, Classification> = {
+  const classificationByDecorator = {
     RequirePermission: 'STATIC_ONE',
     RequireAnyPermission: 'STATIC_ANY',
     RequireAllPermissions: 'STATIC_ALL',
     ConditionalAuthorization: 'CONDITIONAL',
     AuthorizationExempt: 'EXEMPT',
-  };
+  } satisfies Record<string, Classification>;
   const classification = classificationByDecorator[declaration.name];
 
   if (classification === 'EXEMPT' && !expectedExemptRoutes.has(`${input.controller}.${input.method}`)) {
