@@ -61,7 +61,7 @@ function makePrisma() {
   // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
   const prisma = {
     client: {
-      $transaction: jest.fn(async (work: (tx: TestTransactionClient) => Promise<unknown>) => {
+      $transaction: jest.fn(async <T>(work: (tx: TestTransactionClient) => Promise<T>): Promise<T> => {
         transactionsOpened += 1;
         const tx = { id: transactionsOpened };
         return work(tx);
@@ -217,7 +217,7 @@ describe('PrismaUnitOfWork', () => {
       // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
       const prisma = {
         client: {
-          $transaction: jest.fn(async (work: (tx: TestTransactionClient) => Promise<unknown>) => {
+          $transaction: jest.fn(async <T>(work: (tx: TestTransactionClient) => Promise<T>): Promise<T> => {
             try {
               const value = await work({});
               markers.push('commit');
@@ -256,7 +256,7 @@ describe('PrismaUnitOfWork', () => {
       // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
       const prisma = {
         client: {
-          $transaction: jest.fn(async (work: (tx: TestTransactionClient) => Promise<unknown>) => {
+          $transaction: jest.fn(async <T>(work: (tx: TestTransactionClient) => Promise<T>): Promise<T> => {
             try {
               const value = await work({});
               markers.push('commit');

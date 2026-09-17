@@ -70,7 +70,7 @@ export class ProblemException extends HttpException {
     };
   }
 
-  getCause(): unknown {
+  getCause(): ProblemExceptionApplicationError['cause'] {
     return this.causeValue;
   }
 

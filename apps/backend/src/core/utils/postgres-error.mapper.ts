@@ -48,35 +48,30 @@ export function isUniqueConstraintViolation(error: unknown, expectedColumns: rea
  * shape and normalizes them to database (snake_case) column names.
  */
 function violatedUniqueConstraintColumns(meta: Record<string, unknown>): string[] {
-  const fields = uniqueConstraintFields(meta);
-  if (!Array.isArray(fields)) {
-    return [];
-  }
-
-  return fields.filter((field): field is string => typeof field === 'string').map(toDatabaseColumnName);
+  return uniqueConstraintFields(meta).map(toDatabaseColumnName);
 }
 
-function uniqueConstraintFields(meta: Record<string, unknown>): unknown {
+function uniqueConstraintFields(meta: Record<string, unknown>): string[] {
   const target = meta.target;
-  if (target !== undefined && target !== null) {
-    return target;
+  if (Array.isArray(target)) {
+    return target.filter((field): field is string => typeof field === 'string');
   }
 
   // Driver-adapter shape: meta.driverAdapterError.cause.constraint.fields
   const adapterError = meta.driverAdapterError;
   if (!isRecord(adapterError)) {
-    return undefined;
+    return [];
   }
   const adapterCause = adapterError.cause;
   if (!isRecord(adapterCause)) {
-    return undefined;
+    return [];
   }
   const constraint = adapterCause.constraint;
-  if (!isRecord(constraint)) {
-    return undefined;
+  if (!isRecord(constraint) || !Array.isArray(constraint.fields)) {
+    return [];
   }
 
-  return constraint.fields;
+  return constraint.fields.filter((field): field is string => typeof field === 'string');
 }
 
 function toDatabaseColumnName(field: string): string {

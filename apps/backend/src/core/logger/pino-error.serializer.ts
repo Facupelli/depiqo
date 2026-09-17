@@ -104,7 +104,10 @@ function readString(error: Error, key: 'name' | 'message' | 'stack'): string | u
   return typeof value === 'string' ? value : undefined;
 }
 
-function readValue(error: Error, key: 'name' | 'message' | 'stack' | 'code' | 'cause'): unknown {
+function readValue<K extends 'name' | 'message' | 'stack' | 'code' | 'cause'>(
+  error: Error,
+  key: K,
+): (Error & Record<string, unknown>)[K] | undefined {
   try {
     // SAFETY: The immediately preceding null and object checks establish that this value is a non-array object.
     return (error as Error & Record<string, unknown>)[key];

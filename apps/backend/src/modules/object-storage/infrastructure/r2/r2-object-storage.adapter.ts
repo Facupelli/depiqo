@@ -164,17 +164,13 @@ export class R2ObjectStorageAdapter extends ObjectStoragePort {
   }
 
   private hasTransformToByteArray(value: unknown): value is BodyWithByteArray {
-    return this.hasFunction(value, 'transformToByteArray');
-  }
-
-  private hasFunction<T extends string>(value: unknown, key: T): value is Record<T, (...args: never[]) => unknown> {
     if (!value || typeof value !== 'object') {
       return false;
     }
 
     // SAFETY: The immediately preceding null and object checks establish that this value is a non-array object.
     const record = value as Record<string, unknown>;
-    return key in record && typeof record[key] === 'function';
+    return 'transformToByteArray' in record && typeof record.transformToByteArray === 'function';
   }
 
   private async readReadable(stream: Readable): Promise<Buffer> {

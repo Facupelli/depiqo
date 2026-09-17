@@ -12,7 +12,7 @@ import { PrismaService } from './prisma.service';
 export type PrismaTransactionClient = Parameters<PrismaService['client']['$transaction']>[0] extends (
   tx: infer T,
   ...args: never[]
-) => Promise<unknown>
+) => ReturnType<PrismaService['client']['$transaction']>
   ? T
   : never;
 

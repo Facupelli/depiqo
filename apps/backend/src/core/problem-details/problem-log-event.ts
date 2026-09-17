@@ -59,7 +59,7 @@ function loggingError(error: unknown, applicationError?: ProblemExceptionApplica
   return nonErrorThrown;
 }
 
-function causeFromProblemException(error: unknown): unknown {
+function causeFromProblemException(error: unknown): ProblemExceptionApplicationError['cause'] {
   return error instanceof ProblemException ? error.getCause() : undefined;
 }
 

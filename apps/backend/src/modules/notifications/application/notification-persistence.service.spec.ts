@@ -15,7 +15,7 @@ describe('NotificationPersistenceService', () => {
     // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
     const prisma = {
       client: {
-        $transaction: jest.fn(async (work: (transaction: typeof tx) => Promise<unknown>) => work(tx)),
+        $transaction: jest.fn(async <T>(work: (transaction: typeof tx) => Promise<T>): Promise<T> => work(tx)),
         v2Notification: {
           findFirst: jest.fn(),
         },

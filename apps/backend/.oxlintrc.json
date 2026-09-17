@@ -33,7 +33,7 @@
     "anti-slop/no-object-parameters": "error",
     "anti-slop/no-shape-in-symbol-names": "allow",
     "anti-slop/no-unknown-parameters": "error",
-    "anti-slop/no-unknown-returns": "allow",
+    "anti-slop/no-unknown-returns": "error",
     "anti-slop/no-unknown-type-aliases": "allow",
     "anti-slop/no-unsafe-dictionary-type": "allow",
     "anti-slop/no-widen-then-assert": "error",

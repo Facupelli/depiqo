@@ -157,7 +157,7 @@ describe('ConfirmRentalHandler deadlock retry', () => {
       calculate: jest.fn().mockReturnValue({ splits }),
     } as RentalOwnerSplitCalculator;
     const publishedEvents: IntegrationEvent[] = [];
-    const runInTransaction = jest.fn(async (work: (context: PrismaTransactionContext) => Promise<unknown>) => {
+    const runInTransaction = jest.fn(async <T>(work: (context: PrismaTransactionContext) => Promise<T>): Promise<T> => {
       const integrationEvents = new InMemoryIntegrationEventsCollector();
       // SAFETY: The preceding test setup and assertions establish this value shape before the test inspects it.
       const result = await work({ tx: {} as PrismaTransactionContext['tx'], integrationEvents });
