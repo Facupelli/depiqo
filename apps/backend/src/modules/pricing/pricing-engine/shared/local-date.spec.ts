@@ -1,3 +1,4 @@
+import { describe, expect, it } from 'vitest';
 import { toLocalDate } from './local-date';
 
 describe('local-date', () => {

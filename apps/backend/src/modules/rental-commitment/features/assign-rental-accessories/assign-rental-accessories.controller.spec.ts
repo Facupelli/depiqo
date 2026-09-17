@@ -1,3 +1,4 @@
+import { describe, expect, it, vi } from 'vitest';
 import { CommandBus } from '@nestjs/cqrs';
 import { err } from 'neverthrow';
 
@@ -44,7 +45,7 @@ describe('AssignRentalAccessoriesHttpController', () => {
       },
     );
     // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
-    const commandBus = { execute: jest.fn().mockResolvedValue(err(applicationError)) } as CommandBus;
+    const commandBus = { execute: vi.fn().mockResolvedValue(err(applicationError)) } as CommandBus;
     const controller = new AssignRentalAccessoriesHttpController(commandBus);
     const input = requestInput();
 
@@ -65,7 +66,7 @@ describe('AssignRentalAccessoriesHttpController', () => {
   it('does not attach a row extension for an availability race', async () => {
     const applicationError = assignRentalAccessoriesError('rental_commitment.asset_availability_changed', 'ignored');
     // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
-    const commandBus = { execute: jest.fn().mockResolvedValue(err(applicationError)) } as CommandBus;
+    const commandBus = { execute: vi.fn().mockResolvedValue(err(applicationError)) } as CommandBus;
     const controller = new AssignRentalAccessoriesHttpController(commandBus);
     const input = requestInput();
 

@@ -1,8 +1,9 @@
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createBarrier, runConcurrently } from './concurrency';
 
 describe('createBarrier', () => {
   afterEach(() => {
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 
   it('does not release a participant before every configured participant arrives', async () => {
@@ -27,7 +28,7 @@ describe('createBarrier', () => {
   });
 
   it('rejects all waiting participants with expected and arrived counts when it times out', async () => {
-    jest.useFakeTimers();
+    vi.useFakeTimers();
     const barrier = createBarrier(3, { timeoutMs: 100 });
     const first = expect(barrier.wait()).rejects.toThrow(
       'Concurrency barrier timed out: expected 3 participants, but only 2 arrived.',
@@ -36,7 +37,7 @@ describe('createBarrier', () => {
       'Concurrency barrier timed out: expected 3 participants, but only 2 arrived.',
     );
 
-    await jest.advanceTimersByTimeAsync(100);
+    await vi.advanceTimersByTimeAsync(100);
     await Promise.all([first, second]);
   });
 

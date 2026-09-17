@@ -1,8 +1,9 @@
+import { describe, expect, it, vi } from 'vitest';
 import { RentalPhysicalAssignmentsService } from './rental-physical-assignments.service';
 
 describe('RentalPhysicalAssignmentsService', () => {
   it('queries and exposes only open equipment assignments', async () => {
-    const findFirst = jest.fn().mockResolvedValue({
+    const findFirst = vi.fn().mockResolvedValue({
       demandLines: [{ id: 'demand-1', assignedAssets: [{ assetId: 'current-asset' }] }],
       accessorySelections: [],
     });

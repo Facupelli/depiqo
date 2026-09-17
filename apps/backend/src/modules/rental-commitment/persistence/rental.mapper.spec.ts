@@ -1,3 +1,4 @@
+import { describe, expect, it } from 'vitest';
 import { Prisma } from 'src/generated/prisma/client';
 
 import { AssignedAsset, AssignedAssetId } from '../domain/assigned-asset.entity';

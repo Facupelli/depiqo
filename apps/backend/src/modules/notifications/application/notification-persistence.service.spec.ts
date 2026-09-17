@@ -1,3 +1,4 @@
+import { describe, expect, it, vi } from 'vitest';
 import { Prisma, V2NotificationChannel, V2NotificationDeliveryStatus } from 'src/generated/prisma/client';
 
 import { PrismaService } from 'src/core/database/prisma.service';
@@ -9,18 +10,18 @@ describe('NotificationPersistenceService', () => {
   function createService() {
     const tx = {
       v2Notification: {
-        create: jest.fn(),
+        create: vi.fn(),
       },
     };
     // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
     const prisma = {
       client: {
-        $transaction: jest.fn(async <T>(work: (transaction: typeof tx) => Promise<T>): Promise<T> => work(tx)),
+        $transaction: vi.fn(async <T>(work: (transaction: typeof tx) => Promise<T>): Promise<T> => work(tx)),
         v2Notification: {
-          findFirst: jest.fn(),
+          findFirst: vi.fn(),
         },
         v2NotificationDelivery: {
-          updateMany: jest.fn(),
+          updateMany: vi.fn(),
         },
       },
     } as PrismaService;

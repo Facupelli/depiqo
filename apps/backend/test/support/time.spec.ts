@@ -1,3 +1,4 @@
+import { describe, expect, it } from 'vitest';
 import { dateInterval, oneMillisecondAfter, oneMillisecondBefore, utcDate } from './time';
 
 describe('test time utilities', () => {

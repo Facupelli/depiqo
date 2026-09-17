@@ -1,8 +1,9 @@
+import { describe, expect, it, vi } from 'vitest';
 import { CommittedRentalSelectionsAndDemandService } from './committed-rental-selections-and-demand.service';
 
 describe('CommittedRentalSelectionsAndDemandService', () => {
   it('projects current demand quantity as operational quantity without exposing suppression internals', async () => {
-    const findFirst = jest.fn().mockResolvedValue({
+    const findFirst = vi.fn().mockResolvedValue({
       selections: [],
       demandLines: [
         {

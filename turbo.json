@@ -24,13 +24,23 @@
 
     "test": {
       "dependsOn": ["^build"],
-      "inputs": ["src/**/*.ts", "jest.config.ts"],
+      "inputs": [
+        "src/**/*.ts",
+        "test/**/*.ts",
+        "jest.config.ts",
+        "vitest.config.ts"
+      ],
       "outputs": ["coverage/**"],
       "cache": true
     },
     "test:cov": {
       "dependsOn": ["^build"],
-      "inputs": ["src/**/*.ts", "jest.config.ts"],
+      "inputs": [
+        "src/**/*.ts",
+        "test/**/*.ts",
+        "jest.config.ts",
+        "vitest.config.ts"
+      ],
       "outputs": ["coverage/**"],
       "cache": true
     },

@@ -1,3 +1,4 @@
+import { describe, expect, it, vi } from 'vitest';
 import Decimal from 'decimal.js';
 
 import { GetRentalDetailHandler } from './get-rental-detail.handler';
@@ -90,21 +91,21 @@ function rentalRecord(compositeKind: 'PACKAGE' | 'KIT' | 'BUNDLE' = 'PACKAGE') {
 }
 
 function createHandler(removedDemandLines: object[], compositeKind: 'PACKAGE' | 'KIT' | 'BUNDLE' = 'PACKAGE') {
-  const findFirst = jest.fn().mockResolvedValue(rentalRecord(compositeKind));
-  const findMany = jest.fn().mockResolvedValue(removedDemandLines);
+  const findFirst = vi.fn().mockResolvedValue(rentalRecord(compositeKind));
+  const findMany = vi.fn().mockResolvedValue(removedDemandLines);
   // SAFETY: The preceding test setup and assertions establish this value shape before the test inspects it.
   const handler = new GetRentalDetailHandler(
     { client: { v2Rental: { findFirst }, v2RentalDemandLine: { findMany } } } as any,
     {
-      getOwnerDisplayFacts: jest.fn().mockResolvedValue([{ ownerId: 'owner-1', name: 'Owner One' }]),
+      getOwnerDisplayFacts: vi.fn().mockResolvedValue([{ ownerId: 'owner-1', name: 'Owner One' }]),
     } as any,
     {
-      getBranchFacts: jest.fn().mockResolvedValue({
+      getBranchFacts: vi.fn().mockResolvedValue({
         isErr: () => false,
         value: { branchId: 'branch-1', displayName: 'Central', branchTimezone: 'UTC' },
       }),
     } as any,
-    { getRetainedRentalCustomerProfileFacts: jest.fn() } as any,
+    { getRetainedRentalCustomerProfileFacts: vi.fn() } as any,
   );
   return { handler, findFirst, findMany };
 }

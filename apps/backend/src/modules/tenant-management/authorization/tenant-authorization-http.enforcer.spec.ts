@@ -1,3 +1,4 @@
+import { describe, expect, it, vi, type Mocked } from 'vitest';
 import { ForbiddenException, InternalServerErrorException } from '@nestjs/common';
 import { TenantPermission } from '@repo/api-contracts';
 import { err, ok } from 'neverthrow';
@@ -18,11 +19,11 @@ describe('TenantAuthorizationHttpEnforcer', () => {
   function fixture() {
     // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
     const tenantAuthorization = {
-      getEffectivePermissions: jest.fn(),
-      hasPermission: jest.fn(),
-      hasAnyPermission: jest.fn(),
-      hasAllPermissions: jest.fn(),
-    } as jest.Mocked<TenantAuthorization>;
+      getEffectivePermissions: vi.fn(),
+      hasPermission: vi.fn(),
+      hasAnyPermission: vi.fn(),
+      hasAllPermissions: vi.fn(),
+    } as Mocked<TenantAuthorization>;
 
     return {
       tenantAuthorization,

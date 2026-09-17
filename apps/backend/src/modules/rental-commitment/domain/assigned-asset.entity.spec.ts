@@ -1,3 +1,4 @@
+import { describe, expect, it } from 'vitest';
 import { AssignedAsset, AssignedAssetId } from './assigned-asset.entity';
 import { RentalDemandLineId } from './ids/rental-demand-line-id';
 import { AssetId } from './types/rental-commitment-ids';

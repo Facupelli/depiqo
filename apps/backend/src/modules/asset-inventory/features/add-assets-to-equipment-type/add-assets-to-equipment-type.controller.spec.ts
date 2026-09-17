@@ -1,3 +1,4 @@
+import { describe, expect, it, vi } from 'vitest';
 import { CommandBus } from '@nestjs/cqrs';
 import { err, ok } from 'neverthrow';
 
@@ -25,7 +26,7 @@ function requestInput() {
 describe('AddAssetsToEquipmentTypeHttpController', () => {
   it('returns the created asset ids', async () => {
     // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
-    const commandBus = { execute: jest.fn().mockResolvedValue(ok({ assetIds: ['asset-1'] })) } as CommandBus;
+    const commandBus = { execute: vi.fn().mockResolvedValue(ok({ assetIds: ['asset-1'] })) } as CommandBus;
     const controller = new AddAssetsToEquipmentTypeHttpController(commandBus);
     const input = requestInput();
 
@@ -41,7 +42,7 @@ describe('AddAssetsToEquipmentTypeHttpController', () => {
       { equipmentTypeId: 'equipment-type-1' },
     );
     // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
-    const commandBus = { execute: jest.fn().mockResolvedValue(err(applicationError)) } as CommandBus;
+    const commandBus = { execute: vi.fn().mockResolvedValue(err(applicationError)) } as CommandBus;
     const controller = new AddAssetsToEquipmentTypeHttpController(commandBus);
     const input = requestInput();
 

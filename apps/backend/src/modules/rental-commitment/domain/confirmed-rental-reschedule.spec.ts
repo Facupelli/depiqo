@@ -1,3 +1,4 @@
+import { describe, expect, it } from 'vitest';
 import { AssetBlock, AssetBlockId } from './asset-block.entity';
 import { AssignedAsset, AssignedAssetId } from './assigned-asset.entity';
 import { deriveConfirmedAssetBlockPeriod } from './confirmed-asset-block-period';

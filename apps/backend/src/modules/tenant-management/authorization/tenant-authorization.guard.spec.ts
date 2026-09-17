@@ -1,3 +1,4 @@
+import { describe, expect, it, vi, type Mocked } from 'vitest';
 import { TenantPermission } from '@repo/api-contracts';
 import {
   ExecutionContext,
@@ -34,11 +35,11 @@ describe('TenantAuthorizationGuard', () => {
   function fixture(actor: AuthActor | undefined = tenantUser, authenticated = true) {
     // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
     const tenantAuthorization = {
-      getEffectivePermissions: jest.fn(),
-      hasPermission: jest.fn(),
-      hasAnyPermission: jest.fn(),
-      hasAllPermissions: jest.fn(),
-    } as jest.Mocked<TenantAuthorization>;
+      getEffectivePermissions: vi.fn(),
+      hasPermission: vi.fn(),
+      hasAnyPermission: vi.fn(),
+      hasAllPermissions: vi.fn(),
+    } as Mocked<TenantAuthorization>;
     const guard = new TenantAuthorizationGuard(
       new Reflector(),
       new TenantAuthorizationHttpEnforcer(tenantAuthorization),
@@ -50,7 +51,7 @@ describe('TenantAuthorizationGuard', () => {
       contextFor(handler: () => void, controller: Type<unknown> = class TestController {}) {
         const request = {
           user: actor,
-          isAuthenticated: jest.fn().mockReturnValue(authenticated),
+          isAuthenticated: vi.fn().mockReturnValue(authenticated),
         };
         // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
         const context = {

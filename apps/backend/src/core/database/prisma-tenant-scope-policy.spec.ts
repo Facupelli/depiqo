@@ -1,3 +1,4 @@
+import { describe, expect, it } from 'vitest';
 import { Prisma } from '../../generated/prisma/client';
 import { DIRECT_TENANT_WHERE_EXCLUDED_MODELS } from './prisma.service';
 

@@ -1,3 +1,4 @@
+import { describe, expect, it } from 'vitest';
 import { AssetBlock } from './asset-block.entity';
 import { AssignedAsset, AssignedAssetId } from './assigned-asset.entity';
 import {
