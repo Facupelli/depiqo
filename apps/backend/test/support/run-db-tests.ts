@@ -55,7 +55,7 @@ async function main(): Promise<void> {
     run('pnpm', ['exec', 'prisma', 'migrate', 'deploy'], env);
     console.log('Test database ready.');
     const runnerArgs = process.argv.slice(3).filter((argument) => argument !== '--');
-    testRun = startTestRunner(['--config', configPath, ...runnerArgs], env);
+    testRun = startTestRunner(['run', '--config', configPath, ...runnerArgs], env);
     outcome = await testRun.outcome;
   } finally {
     try {
