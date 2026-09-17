@@ -1,6 +1,8 @@
+import { HttpException } from '@nestjs/common';
+
 import { InvalidParam } from './problem-details';
 
-export function extractInvalidParams(responseBody: unknown): InvalidParam[] {
+export function extractInvalidParams(responseBody: ReturnType<HttpException['getResponse']>): InvalidParam[] {
   if (!isRecord(responseBody)) {
     return [];
   }
@@ -116,7 +118,7 @@ function hasClassValidatorConstraints(value: Record<string, unknown>): boolean {
   return isRecord(value.constraints);
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
+function isRecord<T>(value: T): value is T & Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 

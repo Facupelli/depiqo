@@ -24,15 +24,15 @@ export function applyHttpErrorStackPolicy(error: Error, status: number, isProduc
 /**
  * Serializes only explicitly allowlisted native Error information.
  */
-export function pinoErrorSerializer(value: unknown): SerializedPinoError {
-  if (!(value instanceof Error)) {
+export function pinoErrorSerializer(error: unknown): SerializedPinoError {
+  if (!(error instanceof Error)) {
     return {
       type: 'Error',
       message: 'A non-Error value was supplied as err.',
     };
   }
 
-  return serializeError(value, 0, new Set<Error>(), !errorsWithoutStacks.has(value));
+  return serializeError(error, 0, new Set<Error>(), !errorsWithoutStacks.has(error));
 }
 
 function serializeError(error: Error, depth: number, seen: Set<Error>, includeStack: boolean): SerializedPinoError {

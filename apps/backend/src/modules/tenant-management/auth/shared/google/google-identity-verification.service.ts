@@ -16,13 +16,15 @@ const GOOGLE_TOKEN_ENDPOINT = 'https://oauth2.googleapis.com/token';
 
 const googleJwks = createRemoteJWKSet(GOOGLE_JWKS_URL);
 
+type GoogleJsonValue = null | boolean | number | string | GoogleJsonValue[] | { [key: string]: GoogleJsonValue };
+
 interface GoogleTokenResponse {
   error?: string;
   error_description?: string;
   id_token?: string;
 }
 
-function parseGoogleTokenResponse(payload: unknown): GoogleTokenResponse {
+function parseGoogleTokenResponse(payload: GoogleJsonValue): GoogleTokenResponse {
   if (!isRecord(payload)) {
     throw new TypeError('Google token response must be a JSON object.');
   }
@@ -34,11 +36,11 @@ function parseGoogleTokenResponse(payload: unknown): GoogleTokenResponse {
   };
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
+function isRecord(value: GoogleJsonValue): value is Record<string, GoogleJsonValue> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-function stringValue(value: unknown): string | undefined {
+function stringValue(value: GoogleJsonValue | undefined): string | undefined {
   return typeof value === 'string' ? value : undefined;
 }
 

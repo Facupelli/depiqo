@@ -5,10 +5,18 @@ import { Env } from 'src/config/env.schema';
 
 import { CustomHostname, CustomHostnameProvider } from '../application/ports/custom-hostname-provider.port';
 
+type CloudflareJsonValue =
+  | null
+  | boolean
+  | number
+  | string
+  | CloudflareJsonValue[]
+  | { [key: string]: CloudflareJsonValue };
+
 interface CloudflareApiResponse {
   success?: boolean;
   errors?: Array<{ message?: string }>;
-  result?: Record<string, unknown>;
+  result?: Record<string, CloudflareJsonValue>;
 }
 
 @Injectable()
@@ -64,7 +72,7 @@ export class CloudflareCustomHostnameService extends CustomHostnameProvider {
     return this.toCustomHostname(payload.result);
   }
 
-  private parseApiResponse(value: unknown): CloudflareApiResponse {
+  private parseApiResponse(value: CloudflareJsonValue): CloudflareApiResponse {
     const payload = this.asRecord(value);
     if (!payload) {
       throw new Error('Cloudflare custom hostname response must be a JSON object');
@@ -84,7 +92,7 @@ export class CloudflareCustomHostnameService extends CustomHostnameProvider {
     };
   }
 
-  private toCustomHostname(result: Record<string, unknown>): CustomHostname {
+  private toCustomHostname(result: Record<string, CloudflareJsonValue>): CustomHostname {
     const ssl = this.asRecord(result.ssl);
     const ownershipVerification = this.asRecord(result.ownership_verification);
 
@@ -105,15 +113,15 @@ export class CloudflareCustomHostnameService extends CustomHostnameProvider {
     };
   }
 
-  private asRecord(value: unknown): Record<string, unknown> | null {
+  private asRecord(value: CloudflareJsonValue | undefined): Record<string, CloudflareJsonValue> | null {
     if (typeof value !== 'object' || value === null || Array.isArray(value)) {
       return null;
     }
 
-    return Object.fromEntries(Object.entries(value));
+    return value;
   }
 
-  private toMessageList(value: unknown): string[] {
+  private toMessageList(value: CloudflareJsonValue | undefined): string[] {
     if (!Array.isArray(value)) {
       return [];
     }

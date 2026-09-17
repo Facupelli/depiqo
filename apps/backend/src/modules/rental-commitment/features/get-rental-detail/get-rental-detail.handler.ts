@@ -4,6 +4,7 @@ import Decimal from 'decimal.js';
 import { err, ok, Result } from 'neverthrow';
 
 import { PrismaService } from 'src/core/database/prisma.service';
+import { Prisma } from 'src/generated/prisma/client';
 import { AssetInventoryDisplayFacts } from 'src/modules/asset-inventory/public-api/asset-inventory-display-facts.public-api';
 import { BranchFacts } from 'src/modules/tenant-management/public-api/branch-facts.public-api';
 import { RetainedRentalCustomerProfileFacts } from 'src/modules/tenant-management/public-api/retained-rental-customer-profile-facts.public-api';
@@ -314,14 +315,16 @@ export class GetRentalDetailHandler implements IQueryHandler<GetRentalDetailQuer
     }));
   }
 
-  private resolvePricing(priceSnapshot: unknown): GetRentalDetailResponseDto['pricing'] {
+  private resolvePricing(priceSnapshot: Prisma.JsonValue | null): GetRentalDetailResponseDto['pricing'] {
     if (priceSnapshot === null) return null;
     const snapshot = ConfirmedPriceSnapshot.create(priceSnapshot);
     if (snapshot.isErr()) throw snapshot.error;
     return toRentalDetailPricing(snapshot.value.snapshot);
   }
 
-  private resolveAcceptedDelivery(deliverySnapshot: unknown): GetRentalDetailResponseDto['acceptedDelivery'] {
+  private resolveAcceptedDelivery(
+    deliverySnapshot: Prisma.JsonValue | null,
+  ): GetRentalDetailResponseDto['acceptedDelivery'] {
     if (deliverySnapshot === null) return null;
     const snapshot = AcceptedDeliverySnapshot.create(deliverySnapshot);
     if (snapshot.isErr()) throw snapshot.error;

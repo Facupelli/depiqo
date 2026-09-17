@@ -2,6 +2,7 @@ import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { err, ok, Result } from 'neverthrow';
 
 import { PrismaService } from 'src/core/database/prisma.service';
+import { Prisma } from 'src/generated/prisma/client';
 
 import { getOwnerDetailError, GetOwnerDetailError } from './get-owner-detail.errors';
 import { GetOwnerDetailQuery } from './get-owner-detail.query';
@@ -32,7 +33,7 @@ export interface GetOwnerDetailReadModel {
 
 export type GetOwnerDetailResult = Result<GetOwnerDetailReadModel, GetOwnerDetailError>;
 
-function getNullableStringFromJson(value: unknown, key: string): string | null {
+function getNullableStringFromJson(value: Prisma.JsonValue, key: string): string | null {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
     return null;
   }

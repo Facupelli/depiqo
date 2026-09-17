@@ -4,6 +4,7 @@ import { err, ok, Result } from 'neverthrow';
 import { PrismaService } from 'src/core/database/prisma.service';
 import { PrismaUnitOfWork } from 'src/core/database/prisma-unit-of-work';
 import { PostgresExclusionViolationError } from 'src/core/utils/postgres-error.mapper';
+import { Prisma } from 'src/generated/prisma/client';
 import { V2RentalStatus } from 'src/generated/prisma/enums';
 import { AssetInventoryDisplayFacts } from 'src/modules/asset-inventory/public-api/asset-inventory-display-facts.public-api';
 
@@ -17,7 +18,6 @@ import { resolveEquipmentTypeNames } from '../../application/equipment-type-disp
 import { deriveConfirmedAssetBlockPeriod } from '../../domain/confirmed-asset-block-period';
 import { RentalInvalidFieldError } from '../../domain/errors/rental-commitment.errors';
 import { AcceptedDeliverySnapshot } from '../../domain/value-objects/accepted-delivery-snapshot.value-object';
-import { JsonValue } from '../../domain/value-objects/json-snapshot.value-object';
 import { RentalPeriod } from '../../domain/value-objects/rental-period.value-object';
 import { ConfirmedRentalEditedIntegrationEvent } from '../../public-api/events/rental-lifecycle.integration-events';
 import { AssignRentalAccessoriesCommand } from './assign-rental-accessories.command';
@@ -37,7 +37,7 @@ type RentalReadModel = {
   version: number;
   acceptedBeforeBufferMinutes: number | null;
   acceptedAfterBufferMinutes: number | null;
-  deliverySnapshot: unknown | null;
+  deliverySnapshot: Prisma.JsonValue | null;
 };
 
 @CommandHandler(AssignRentalAccessoriesCommand)
@@ -278,10 +278,9 @@ export class AssignRentalAccessoriesHandler implements ICommandHandler<
     return ok(undefined);
   }
 
-  private resolveAcceptedDelivery(snapshot: unknown | null): AcceptedDeliverySnapshot | undefined {
+  private resolveAcceptedDelivery(snapshot: Prisma.JsonValue | null): AcceptedDeliverySnapshot | undefined {
     if (snapshot === null) return undefined;
-    // SAFETY: This value is composed only of JSON-compatible primitives, arrays, and objects before it crosses the Prisma JSON boundary.
-    const result = AcceptedDeliverySnapshot.create(snapshot as JsonValue);
+    const result = AcceptedDeliverySnapshot.create(snapshot);
     if (result.isErr()) throw result.error;
     return result.value;
   }

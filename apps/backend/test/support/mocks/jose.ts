@@ -78,7 +78,7 @@ function sign(input: string, secret: Uint8Array): string {
   return createHmac('sha256', secret).update(input).digest('base64url');
 }
 
-function encodeJson(value: unknown): string {
+function encodeJson(value: ProtectedHeader | JwtPayload): string {
   return Buffer.from(JSON.stringify(value)).toString('base64url');
 }
 

@@ -7,6 +7,14 @@ import { GeocodingProviderError } from '../geocoding-provider.error';
 
 const GEOAPIFY_REQUEST_TIMEOUT_MS = 10_000;
 
+export type GeoapifyJsonValue =
+  | null
+  | boolean
+  | number
+  | string
+  | GeoapifyJsonValue[]
+  | { [key: string]: GeoapifyJsonValue };
+
 @Injectable()
 export class GeoapifyGeocodingHttpClient {
   private static readonly provider = 'Geoapify';
@@ -16,7 +24,7 @@ export class GeoapifyGeocodingHttpClient {
     this.apiKey = configService.get('GEOAPIFY_API_KEY');
   }
 
-  async getJson(url: URL): Promise<unknown> {
+  async getJson(url: URL): Promise<GeoapifyJsonValue> {
     url.searchParams.set('apiKey', this.apiKey);
 
     let response: Response;

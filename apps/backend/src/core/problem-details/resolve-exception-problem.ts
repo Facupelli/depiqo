@@ -15,22 +15,22 @@ export interface ResolvedProblem {
   problemDetails: ProblemDetailsBody;
 }
 
-export function resolveExceptionProblem(exception: unknown, instance: string): ResolvedProblem {
+export function resolveExceptionProblem(error: unknown, instance: string): ResolvedProblem {
   return (
-    resolveProblemException(exception, instance) ??
-    resolveValidationException(exception, instance) ??
-    resolveHttpException(exception, instance) ??
+    resolveProblemException(error, instance) ??
+    resolveValidationException(error, instance) ??
+    resolveHttpException(error, instance) ??
     resolveUnknownException(instance)
   );
 }
 
-function resolveProblemException(exception: unknown, instance: string): ResolvedProblem | null {
-  if (!(exception instanceof ProblemException)) {
+function resolveProblemException(error: unknown, instance: string): ResolvedProblem | null {
+  if (!(error instanceof ProblemException)) {
     return null;
   }
 
-  const status = exception.getStatus();
-  const problemDetails = exception.getProblemDetails();
+  const status = error.getStatus();
+  const problemDetails = error.getProblemDetails();
 
   return {
     kind: 'problem-exception',
@@ -43,18 +43,18 @@ function resolveProblemException(exception: unknown, instance: string): Resolved
   };
 }
 
-function resolveValidationException(exception: unknown, instance: string): ResolvedProblem | null {
-  if (!(exception instanceof HttpException)) {
+function resolveValidationException(error: unknown, instance: string): ResolvedProblem | null {
+  if (!(error instanceof HttpException)) {
     return null;
   }
 
-  const invalidParams = extractInvalidParams(exception.getResponse());
+  const invalidParams = extractInvalidParams(error.getResponse());
 
   if (invalidParams.length === 0) {
     return null;
   }
 
-  const status = exception.getStatus();
+  const status = error.getStatus();
 
   return {
     kind: 'validation',
@@ -68,12 +68,12 @@ function resolveValidationException(exception: unknown, instance: string): Resol
   };
 }
 
-function resolveHttpException(exception: unknown, instance: string): ResolvedProblem | null {
-  if (!(exception instanceof HttpException)) {
+function resolveHttpException(error: unknown, instance: string): ResolvedProblem | null {
+  if (!(error instanceof HttpException)) {
     return null;
   }
 
-  const status = exception.getStatus();
+  const status = error.getStatus();
   const defaults = httpProblemDefaults(status);
 
   return {

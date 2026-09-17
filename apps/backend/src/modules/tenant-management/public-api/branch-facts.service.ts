@@ -2,9 +2,10 @@ import { Injectable } from '@nestjs/common';
 import { err, ok, Result } from 'neverthrow';
 
 import { PrismaService } from 'src/core/database/prisma.service';
+import { Prisma } from 'src/generated/prisma/client';
 
 import { BranchFact, BranchFacts, BranchFactsError } from './branch-facts.public-api';
-import { TenantConfig, TenantConfigProps } from '../domain/value-objects/tenant-config.value-object';
+import { TenantConfig } from '../domain/value-objects/tenant-config.value-object';
 import { resolveEffectiveTimezone } from '../domain/utils/effective-timezone';
 
 @Injectable()
@@ -119,10 +120,9 @@ export class BranchFactsService extends BranchFacts {
     return { code: 'BranchNotFound', message: `Branch "${branchId}" was not found.` };
   }
 
-  private reconstituteTenantConfig(config: unknown): TenantConfig | null {
+  private reconstituteTenantConfig(config: Prisma.JsonValue): TenantConfig | null {
     try {
-      // SAFETY: Tenant configuration is loaded from the validated persisted configuration shape and normalized before any fields are consumed.
-      return TenantConfig.reconstitute(config as TenantConfigProps);
+      return TenantConfig.reconstitute(config);
     } catch {
       return null;
     }

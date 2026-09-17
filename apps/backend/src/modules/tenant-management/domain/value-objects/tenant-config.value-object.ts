@@ -1,4 +1,5 @@
 import { isValidBufferMinutes } from 'src/core/domain/rental-asset-buffer';
+import { Prisma } from 'src/generated/prisma/client';
 
 import {
   InvalidBookingModeError,
@@ -130,7 +131,7 @@ export class TenantConfig {
     return new TenantConfig(normalizedProps);
   }
 
-  static reconstitute(props: unknown): TenantConfig {
+  static reconstitute(props: Prisma.JsonValue): TenantConfig {
     // SAFETY: Tenant configuration is loaded from the validated persisted configuration shape and normalized before any fields are consumed.
     const configProps = props as TenantConfigProps;
     const normalizedProps = TenantConfig.normalizeProps(configProps, TenantConfig.normalizePricingForReconstitution);
@@ -297,7 +298,7 @@ export class TenantConfig {
 
   private static validateRentalAssetBufferMinutes(
     field: 'beforeBufferMinutes' | 'afterBufferMinutes',
-    value: unknown,
+    value: number,
   ): void {
     if (!isValidBufferMinutes(value)) {
       throw new InvalidRentalAssetBufferMinutesError(field, value);

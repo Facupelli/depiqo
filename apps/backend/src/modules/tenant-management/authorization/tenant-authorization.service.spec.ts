@@ -7,13 +7,10 @@ import { ALL_TENANT_PERMISSIONS } from './tenant-permission.registry';
 describe('TenantAuthorizationService', () => {
   const subject = { tenantId: 'tenant-1', tenantUserId: 'user-1' };
 
-  function createService(initialUser: unknown) {
+  function createService(initialUser: ReturnType<typeof userWithRole> | null) {
     let user = initialUser;
     const findFirst = jest.fn().mockImplementation(async () => user);
-    // SAFETY: The preceding test setup and assertions establish this value shape before the test inspects it.
-    const findMany = jest
-      .fn()
-      .mockImplementation(async () => (user as ReturnType<typeof userWithRole>)?.tenantRole.permissions ?? []);
+    const findMany = jest.fn().mockImplementation(async () => user?.tenantRole.permissions ?? []);
 
     // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
     return {
@@ -22,7 +19,7 @@ describe('TenantAuthorizationService', () => {
       } as never),
       findFirst,
       findMany,
-      setUser(nextUser: unknown) {
+      setUser(nextUser: ReturnType<typeof userWithRole> | null) {
         user = nextUser;
       },
     };

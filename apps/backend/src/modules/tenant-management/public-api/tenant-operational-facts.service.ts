@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { err, ok, Result } from 'neverthrow';
 
 import { PrismaService } from 'src/core/database/prisma.service';
+import { Prisma } from 'src/generated/prisma/client';
 
 import {
   TenantBookingModeFact,
@@ -9,7 +10,7 @@ import {
   TenantOperationalFacts,
   TenantOperationalFactsError,
 } from './tenant-operational-facts.public-api';
-import { TenantBookingMode, TenantConfig, TenantConfigProps } from '../domain/value-objects/tenant-config.value-object';
+import { TenantBookingMode, TenantConfig } from '../domain/value-objects/tenant-config.value-object';
 
 @Injectable()
 export class TenantOperationalFactsService extends TenantOperationalFacts {
@@ -41,10 +42,9 @@ export class TenantOperationalFactsService extends TenantOperationalFacts {
     return ok({ tenantId: tenant.id, bookingMode: this.toBookingModeFact(config.bookingMode) });
   }
 
-  private reconstituteTenantConfig(config: unknown): TenantConfig | null {
+  private reconstituteTenantConfig(config: Prisma.JsonValue): TenantConfig | null {
     try {
-      // SAFETY: Tenant configuration is loaded from the validated persisted configuration shape and normalized before any fields are consumed.
-      return TenantConfig.reconstitute(config as TenantConfigProps);
+      return TenantConfig.reconstitute(config);
     } catch {
       return null;
     }
