@@ -56,20 +56,6 @@ function requiresTenantWhere(operation: string): boolean {
   return READ_WITH_WHERE_OPS.has(operation) || MUTATE_WITH_WHERE_OPS.has(operation);
 }
 
-export function injectTenantId(operation: string, args: Record<string, any>, tenantId: string) {
-  if (!requiresTenantWhere(operation)) {
-    return args;
-  }
-
-  return {
-    ...args,
-    where: {
-      ...args.where,
-      tenantId,
-    },
-  };
-}
-
 function createExtendedClient(prisma: PrismaClient, tenantContext: TenantContextService) {
   const tenantScopedClient = prisma.$extends({
     name: 'tenant-scope',
@@ -87,11 +73,14 @@ function createExtendedClient(prisma: PrismaClient, tenantContext: TenantContext
             return query(args);
           }
 
-          // SAFETY: Prisma supplies args for the intercepted model operation, and injectTenantId preserves that operation-specific argument shape.
-          // SAFETY: The preceding runtime checks establish the object and required property shape before this access.
-          const mutatedArgs = injectTenantId(operation, args as Record<string, any>, tenantId) as typeof args;
+          if (requiresTenantWhere(operation)) {
+            args.where = {
+              ...args.where,
+              tenantId,
+            };
+          }
 
-          return query(mutatedArgs);
+          return query(args);
         },
       },
     },
