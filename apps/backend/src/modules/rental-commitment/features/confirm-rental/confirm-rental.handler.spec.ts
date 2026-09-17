@@ -118,16 +118,16 @@ describe('ConfirmRentalHandler deadlock retry', () => {
       },
       confirm: jest.fn().mockReturnValue(ok(undefined)),
       pullDomainEvents,
-    } as unknown as Rental;
+    } as Rental;
 
     const save = jest.fn();
     const repository = {
       findById: jest.fn().mockResolvedValue(rental),
       save,
-    } as unknown as RentalRepository;
+    } as RentalRepository;
     const operationalFacts = {
       validateDraftFacts: jest.fn().mockResolvedValue(ok(undefined)),
-    } as unknown as RentalOperationalFactsValidatorService;
+    } as RentalOperationalFactsValidatorService;
     const deliveryQuoteService = {} as DeliveryQuoteService;
     const allocation = {
       planAllocations: jest.fn().mockResolvedValue(
@@ -141,7 +141,7 @@ describe('ConfirmRentalHandler deadlock retry', () => {
           ],
         }),
       ),
-    } as unknown as RentalAssetAllocationService;
+    } as RentalAssetAllocationService;
     const bufferSettings = {
       getTenantRentalAssetBufferSettings: jest
         .fn()
@@ -149,7 +149,7 @@ describe('ConfirmRentalHandler deadlock retry', () => {
     };
     const ownerSplitCalculator = {
       calculate: jest.fn().mockReturnValue({ splits }),
-    } as unknown as RentalOwnerSplitCalculator;
+    } as RentalOwnerSplitCalculator;
     const publishedEvents: IntegrationEvent[] = [];
     const runInTransaction = jest.fn(async (work: (context: PrismaTransactionContext) => Promise<unknown>) => {
       const integrationEvents = new InMemoryIntegrationEventsCollector();
@@ -157,7 +157,7 @@ describe('ConfirmRentalHandler deadlock retry', () => {
       publishedEvents.push(...integrationEvents.drain());
       return result;
     });
-    const unitOfWork = { runInTransaction } as unknown as PrismaUnitOfWork;
+    const unitOfWork = { runInTransaction } as PrismaUnitOfWork;
 
     return {
       handler: new ConfirmRentalHandler(

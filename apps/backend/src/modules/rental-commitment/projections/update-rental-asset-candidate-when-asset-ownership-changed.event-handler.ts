@@ -21,9 +21,7 @@ export class UpdateRentalAssetCandidateWhenAssetOwnershipChangedEventHandler {
       const ownershipKind = event.ownerId
         ? V2RentalAssetOwnershipKind.THIRD_PARTY
         : V2RentalAssetOwnershipKind.TENANT_OWNED;
-      const ownerContractSnapshot = event.ownerContractSnapshot
-        ? (event.ownerContractSnapshot as unknown as Prisma.InputJsonObject)
-        : Prisma.JsonNull;
+      const ownerContractSnapshot = event.ownerContractSnapshot ? event.ownerContractSnapshot : Prisma.JsonNull;
 
       // Update-only by design: a missing candidate row follows the same
       // synchronization policy as asset retirement and is not recreated here.

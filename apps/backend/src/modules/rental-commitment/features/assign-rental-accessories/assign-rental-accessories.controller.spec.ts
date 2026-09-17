@@ -42,7 +42,7 @@ describe('AssignRentalAccessoriesHttpController', () => {
         },
       },
     );
-    const commandBus = { execute: jest.fn().mockResolvedValue(err(applicationError)) } as unknown as CommandBus;
+    const commandBus = { execute: jest.fn().mockResolvedValue(err(applicationError)) } as CommandBus;
     const controller = new AssignRentalAccessoriesHttpController(commandBus);
     const input = requestInput();
 
@@ -61,7 +61,7 @@ describe('AssignRentalAccessoriesHttpController', () => {
 
   it('does not attach a row extension for an availability race', async () => {
     const applicationError = assignRentalAccessoriesError('rental_commitment.asset_availability_changed', 'ignored');
-    const commandBus = { execute: jest.fn().mockResolvedValue(err(applicationError)) } as unknown as CommandBus;
+    const commandBus = { execute: jest.fn().mockResolvedValue(err(applicationError)) } as CommandBus;
     const controller = new AssignRentalAccessoriesHttpController(commandBus);
     const input = requestInput();
 

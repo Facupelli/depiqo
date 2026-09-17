@@ -4,13 +4,13 @@ import { IntegrationEvent } from 'src/core/domain/events/integration-event';
 
 export type AssetCreatedStatus = 'ACTIVE' | 'INACTIVE' | 'RETIRED';
 
-export interface AssetOwnerContractSnapshotPayload {
+export type AssetOwnerContractSnapshotPayload = {
   ownerId: string;
   contractId: string;
   ownerShare: number;
   rentalShare: number;
   basis: 'GROSS' | 'NET';
-}
+};
 
 export interface AssetCreatedIntegrationEventProps {
   eventId?: string;

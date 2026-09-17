@@ -23,7 +23,7 @@ function requestInput() {
 
 describe('AddAssetsToEquipmentTypeHttpController', () => {
   it('returns the created asset ids', async () => {
-    const commandBus = { execute: jest.fn().mockResolvedValue(ok({ assetIds: ['asset-1'] })) } as unknown as CommandBus;
+    const commandBus = { execute: jest.fn().mockResolvedValue(ok({ assetIds: ['asset-1'] })) } as CommandBus;
     const controller = new AddAssetsToEquipmentTypeHttpController(commandBus);
     const input = requestInput();
 
@@ -38,7 +38,7 @@ describe('AddAssetsToEquipmentTypeHttpController', () => {
       cause,
       { equipmentTypeId: 'equipment-type-1' },
     );
-    const commandBus = { execute: jest.fn().mockResolvedValue(err(applicationError)) } as unknown as CommandBus;
+    const commandBus = { execute: jest.fn().mockResolvedValue(err(applicationError)) } as CommandBus;
     const controller = new AddAssetsToEquipmentTypeHttpController(commandBus);
     const input = requestInput();
 

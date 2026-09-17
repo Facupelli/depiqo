@@ -7,7 +7,7 @@ describe('AssetCreationValidatorService', () => {
   it('allows assets with duplicate manufacturer serial numbers', async () => {
     const ownershipResolver = {
       resolveOwnerships: jest.fn().mockResolvedValue(ok(new Map())),
-    } as unknown as AssetOwnershipResolver;
+    } as AssetOwnershipResolver;
     const service = new AssetCreationValidatorService(ownershipResolver);
 
     const result = await service.validateAssetsCanBeCreated({

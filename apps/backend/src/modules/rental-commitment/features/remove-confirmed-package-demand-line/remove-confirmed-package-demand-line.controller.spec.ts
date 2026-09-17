@@ -28,7 +28,7 @@ describe('RemoveConfirmedPackageDemandLineHttpController', () => {
     const updatedAt = new Date('2030-01-01T10:00:00.000Z');
     const commandBus = {
       execute: jest.fn().mockResolvedValue(ok({ rentalId: 'rental-1', version: 8, updatedAt })),
-    } as unknown as CommandBus;
+    } as CommandBus;
     const controller = new RemoveConfirmedPackageDemandLineHttpController(commandBus);
 
     await expect(controller.remove(params, dto, user)).resolves.toEqual({
@@ -58,7 +58,7 @@ describe('RemoveConfirmedPackageDemandLineHttpController', () => {
     'rental_commitment.release_asset_demand_line_mismatch',
   ] as const)('maps %s to unprocessable entity Problem Details', async (code) => {
     const applicationError = removeConfirmedPackageDemandLineError(code, 'ignored');
-    const commandBus = { execute: jest.fn().mockResolvedValue(err(applicationError)) } as unknown as CommandBus;
+    const commandBus = { execute: jest.fn().mockResolvedValue(err(applicationError)) } as CommandBus;
     const controller = new RemoveConfirmedPackageDemandLineHttpController(commandBus);
 
     try {
@@ -76,7 +76,7 @@ describe('RemoveConfirmedPackageDemandLineHttpController', () => {
       'rental_commitment.rental_demand_line_referenced_by_accessory',
       'ignored',
     );
-    const commandBus = { execute: jest.fn().mockResolvedValue(err(applicationError)) } as unknown as CommandBus;
+    const commandBus = { execute: jest.fn().mockResolvedValue(err(applicationError)) } as CommandBus;
     const controller = new RemoveConfirmedPackageDemandLineHttpController(commandBus);
 
     try {

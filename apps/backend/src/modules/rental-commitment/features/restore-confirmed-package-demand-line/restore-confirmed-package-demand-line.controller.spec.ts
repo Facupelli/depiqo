@@ -24,7 +24,7 @@ describe('RestoreConfirmedPackageDemandLineHttpController', () => {
     const updatedAt = new Date('2030-01-01T10:00:00.000Z');
     const commandBus = {
       execute: jest.fn().mockResolvedValue(ok({ rentalId: 'rental-1', version: 8, updatedAt })),
-    } as unknown as CommandBus;
+    } as CommandBus;
     const controller = new RestoreConfirmedPackageDemandLineHttpController(commandBus);
 
     await expect(controller.restore(params, dto, user)).resolves.toEqual({
@@ -49,7 +49,7 @@ describe('RestoreConfirmedPackageDemandLineHttpController', () => {
       'rental_commitment.rental_demand_line_already_current',
       'ignored',
     );
-    const commandBus = { execute: jest.fn().mockResolvedValue(err(applicationError)) } as unknown as CommandBus;
+    const commandBus = { execute: jest.fn().mockResolvedValue(err(applicationError)) } as CommandBus;
     const controller = new RestoreConfirmedPackageDemandLineHttpController(commandBus);
 
     try {

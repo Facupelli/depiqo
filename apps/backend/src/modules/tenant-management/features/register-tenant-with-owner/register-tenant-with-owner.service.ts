@@ -1,5 +1,4 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { InputJsonValue } from '@prisma/client/runtime/client';
 import { err, ok, Result } from 'neverthrow';
 
 import { PrismaService } from 'src/core/database/prisma.service';
@@ -81,7 +80,7 @@ export class RegisterTenantWithOwnerService implements ICommandHandler<
           name: tenant.name,
           slug: tenant.slug,
           status: V2TenantStatus.ACTIVE,
-          config: tenant.config.toPlainObject() as unknown as InputJsonValue,
+          config: tenant.config.toPlainObject(),
         },
         select: { id: true },
       });

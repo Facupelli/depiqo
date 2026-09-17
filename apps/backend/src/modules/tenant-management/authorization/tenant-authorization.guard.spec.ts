@@ -35,7 +35,7 @@ describe('TenantAuthorizationGuard', () => {
       hasPermission: jest.fn(),
       hasAnyPermission: jest.fn(),
       hasAllPermissions: jest.fn(),
-    } as unknown as jest.Mocked<TenantAuthorization>;
+    } as jest.Mocked<TenantAuthorization>;
     const guard = new TenantAuthorizationGuard(
       new Reflector(),
       new TenantAuthorizationHttpEnforcer(tenantAuthorization),
@@ -53,7 +53,7 @@ describe('TenantAuthorizationGuard', () => {
           getHandler: () => handler,
           getClass: () => controller,
           switchToHttp: () => ({ getRequest: () => request }),
-        } as unknown as ExecutionContext;
+        } as ExecutionContext;
 
         return { context, request };
       },
@@ -256,7 +256,7 @@ describe('TenantAuthorizationGuard', () => {
       get role(): never {
         throw new Error('legacy role was read');
       },
-    } as unknown as AuthActor;
+    } as AuthActor;
     const test = fixture(actor);
     test.tenantAuthorization.hasPermission.mockResolvedValue(ok(true));
     const handler = () => undefined;

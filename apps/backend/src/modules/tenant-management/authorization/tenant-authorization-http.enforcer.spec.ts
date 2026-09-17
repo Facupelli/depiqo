@@ -20,7 +20,7 @@ describe('TenantAuthorizationHttpEnforcer', () => {
       hasPermission: jest.fn(),
       hasAnyPermission: jest.fn(),
       hasAllPermissions: jest.fn(),
-    } as unknown as jest.Mocked<TenantAuthorization>;
+    } as jest.Mocked<TenantAuthorization>;
 
     return {
       tenantAuthorization,
@@ -124,7 +124,7 @@ describe('TenantAuthorizationHttpEnforcer', () => {
       get role(): never {
         throw new Error('legacy role was read');
       },
-    } as unknown as AuthActor;
+    } as AuthActor;
 
     await test.enforcer.requirePermission(actor, TenantPermission.ProductsRead);
 

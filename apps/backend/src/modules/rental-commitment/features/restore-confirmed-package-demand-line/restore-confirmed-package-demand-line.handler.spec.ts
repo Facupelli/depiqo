@@ -54,7 +54,7 @@ describe('RestoreConfirmedPackageDemandLineHandler', () => {
       }),
       restoreConfirmedPackageDemandLine: jest.fn().mockReturnValue(ok(undefined)),
       pullDomainEvents: jest.fn().mockReturnValue([]),
-    } as unknown as Rental;
+    } as Rental;
     return { rental, demandLine };
   }
 
@@ -62,16 +62,16 @@ describe('RestoreConfirmedPackageDemandLineHandler', () => {
     const rentalRepository = {
       findById: jest.fn().mockResolvedValue(rental),
       save: jest.fn().mockResolvedValue({ version: 8, updatedAt: new Date('2030-01-02T12:00:01.000Z') }),
-    } as unknown as RentalRepository;
+    } as RentalRepository;
     const allocation = {
       planAllocations: jest.fn().mockResolvedValue(allocationResult),
-    } as unknown as RentalAssetAllocationService;
+    } as RentalAssetAllocationService;
     const splitCalculator = {
       calculate: jest.fn().mockReturnValue({ splits: [] }),
-    } as unknown as RentalOwnerSplitCalculator;
+    } as RentalOwnerSplitCalculator;
     const unitOfWork = {
       runInTransaction: jest.fn((callback) => callback({ tx, integrationEvents })),
-    } as unknown as PrismaUnitOfWork;
+    } as PrismaUnitOfWork;
     return {
       handler: new RestoreConfirmedPackageDemandLineHandler(rentalRepository, allocation, splitCalculator, unitOfWork),
       rentalRepository,

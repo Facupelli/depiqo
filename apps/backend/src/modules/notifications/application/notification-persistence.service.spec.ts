@@ -22,7 +22,7 @@ describe('NotificationPersistenceService', () => {
           updateMany: jest.fn(),
         },
       },
-    } as unknown as PrismaService;
+    } as PrismaService;
 
     return {
       service: new NotificationPersistenceService(prisma),

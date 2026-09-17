@@ -4,7 +4,7 @@ import { err, ok, Result } from 'neverthrow';
 
 import { PrismaService } from 'src/core/database/prisma.service';
 
-import { TenantConfig, TenantConfigProps } from '../../domain/value-objects/tenant-config.value-object';
+import { TenantConfig } from '../../domain/value-objects/tenant-config.value-object';
 import { GetPublicTenantConfigError, getPublicTenantConfigError } from './get-public-tenant-config.errors';
 import { GetPublicTenantConfigQuery } from './get-public-tenant-config.query';
 
@@ -40,7 +40,7 @@ export class GetPublicTenantConfigHandler implements IQueryHandler<
       );
     }
 
-    const config: TenantConfig = TenantConfig.reconstitute(tenant.config as unknown as TenantConfigProps);
+    const config: TenantConfig = TenantConfig.reconstitute(tenant.config);
 
     return ok({
       insuranceEnabled: config.pricing.insuranceEnabled,

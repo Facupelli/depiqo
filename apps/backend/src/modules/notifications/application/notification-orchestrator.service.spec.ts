@@ -32,13 +32,13 @@ describe('NotificationOrchestrator', () => {
   function createOrchestrator() {
     const channelPolicyResolver = {
       resolveChannels: jest.fn().mockResolvedValue([NotificationChannel.EMAIL]),
-    } as unknown as NotificationChannelPolicyResolver;
+    } as NotificationChannelPolicyResolver;
     const channelMutePolicy = {
       isMuted: jest.fn().mockReturnValue(false),
-    } as unknown as NotificationChannelMutePolicy;
+    } as NotificationChannelMutePolicy;
     const tenantNotificationSuppressionPolicy = {
       evaluate: jest.fn().mockResolvedValue({ suppressed: false }),
-    } as unknown as TenantNotificationSuppressionPolicy;
+    } as TenantNotificationSuppressionPolicy;
     const notificationPersistence = {
       createNotificationWithPendingDeliveries: jest.fn().mockResolvedValue({
         notificationId: 'notification-1',
@@ -56,18 +56,18 @@ describe('NotificationOrchestrator', () => {
       }),
       markDeliverySent: jest.fn().mockResolvedValue(true),
       markDeliveryFailed: jest.fn().mockResolvedValue(true),
-    } as unknown as NotificationPersistenceService;
+    } as NotificationPersistenceService;
     const emailRenderer = {
       render: jest.fn().mockResolvedValue({
         subject: 'Rental cancelled',
         html: '<p>Rental cancelled</p>',
         text: 'Rental cancelled',
       }),
-    } as unknown as EmailRenderer;
+    } as EmailRenderer;
     const emailDeliveryPort = new FakeEmailDeliveryPort();
     const emailSenderResolver = {
       resolve: jest.fn().mockResolvedValue({ fromEmail: 'no-reply@example.com' }),
-    } as unknown as EmailSenderResolver;
+    } as EmailSenderResolver;
 
     return {
       orchestrator: new NotificationOrchestrator(

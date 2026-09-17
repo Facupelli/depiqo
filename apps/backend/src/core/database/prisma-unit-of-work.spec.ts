@@ -30,7 +30,7 @@ function makeLogger(): PinoLogger {
   return {
     error: jest.fn(),
     setContext: jest.fn(),
-  } as unknown as PinoLogger;
+  } as PinoLogger;
 }
 
 function makeEvent(overrides: Partial<IntegrationEvent> = {}): IntegrationEvent {
@@ -61,7 +61,7 @@ function makePrisma() {
         return work(tx);
       }),
     },
-  } as unknown as PrismaService;
+  } as PrismaService;
 
   return {
     prisma,
@@ -220,7 +220,7 @@ describe('PrismaUnitOfWork', () => {
             }
           }),
         },
-      } as unknown as PrismaService;
+      } as PrismaService;
 
       const publisher = new TestIntegrationEventPublisher();
       const unitOfWork = new PrismaUnitOfWork(prisma, publisher, makeLogger());
@@ -257,7 +257,7 @@ describe('PrismaUnitOfWork', () => {
             }
           }),
         },
-      } as unknown as PrismaService;
+      } as PrismaService;
 
       const publisher = new TestIntegrationEventPublisher();
       const unitOfWork = new PrismaUnitOfWork(prisma, publisher, makeLogger());

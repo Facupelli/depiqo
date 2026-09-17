@@ -23,9 +23,7 @@ export class UpsertRentalAssetCandidateWhenAssetCreatedEventHandler {
         ? V2RentalAssetOwnershipKind.THIRD_PARTY
         : V2RentalAssetOwnershipKind.TENANT_OWNED;
 
-      const ownerContractSnapshot = event.ownerContractSnapshot
-        ? (event.ownerContractSnapshot as unknown as Prisma.InputJsonObject)
-        : Prisma.JsonNull;
+      const ownerContractSnapshot = event.ownerContractSnapshot ? event.ownerContractSnapshot : Prisma.JsonNull;
 
       await this.prisma.client.v2RentalAssetCandidate.upsert({
         where: {

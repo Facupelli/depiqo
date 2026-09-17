@@ -6,7 +6,7 @@ import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { PrismaService } from 'src/core/database/prisma.service';
 import { localDateDayOfWeek, localDateToPrismaDate, prismaDateToLocalDate } from 'src/core/temporal/local-date';
 
-import { TenantConfig, TenantConfigProps } from '../../domain/value-objects/tenant-config.value-object';
+import { TenantConfig } from '../../domain/value-objects/tenant-config.value-object';
 import { resolveEffectiveTimezone } from '../../domain/utils/effective-timezone';
 import { GetStorefrontBranchScheduleSlotsQuery } from './get-storefront-branch-schedule-slots.query';
 
@@ -102,7 +102,7 @@ export class GetStorefrontBranchScheduleSlotsHandler implements IQueryHandler<
 
     if (!branch) return null;
 
-    const tenantConfig = TenantConfig.reconstitute(branch.tenant.config as unknown as TenantConfigProps);
+    const tenantConfig = TenantConfig.reconstitute(branch.tenant.config);
     return resolveEffectiveTimezone(branch.timezone, tenantConfig.timezone);
   }
 
