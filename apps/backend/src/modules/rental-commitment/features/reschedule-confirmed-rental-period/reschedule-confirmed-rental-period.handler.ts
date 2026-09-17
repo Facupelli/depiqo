@@ -78,6 +78,7 @@ export class RescheduleConfirmedRentalPeriodHandler implements ICommandHandler<
           throw new Error(`Confirmed rental "${rentalId}" has inconsistent current operational block periods.`);
         }
 
+        // SAFETY: This value comes from a persisted or already validated non-empty domain identifier; the brand adds no runtime representation.
         const assetIds = [...new Set(currentOperationalBlocks.map((block) => block.assetId))] as AssetId[];
         const conflictingAssetIds = await this.allocation.findConflictingExactAssetIds({
           tenantId,

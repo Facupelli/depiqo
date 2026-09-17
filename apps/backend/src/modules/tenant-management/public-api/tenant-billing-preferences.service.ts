@@ -61,6 +61,7 @@ export class TenantBillingPreferencesService extends TenantBillingPreferences {
 
   private reconstituteTenantConfig(config: unknown): TenantConfig | null {
     try {
+      // SAFETY: Tenant configuration is loaded from the validated persisted configuration shape and normalized before any fields are consumed.
       return TenantConfig.reconstitute(config as TenantConfigProps);
     } catch {
       return null;

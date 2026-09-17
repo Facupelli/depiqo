@@ -143,7 +143,10 @@ describe('POST /rental-commitments/confirmed-rentals/:rentalId/assigned-assets/r
     const setup = await scenario();
     const before = await fixtures.persistedState(setup.rental.rentalId);
     const requestBody = body(setup, overrides);
-    if (overrides.expectedVersion === undefined) delete (requestBody as Record<string, unknown>).expectedVersion;
+    if (overrides.expectedVersion === undefined) {
+      // SAFETY: body() returns a mutable request object whose keys are strings; this case intentionally removes the required field.
+      delete (requestBody as Record<string, unknown>).expectedVersion;
+    }
     const client = await login(setup.user);
     const response = await client
       .withCsrf(

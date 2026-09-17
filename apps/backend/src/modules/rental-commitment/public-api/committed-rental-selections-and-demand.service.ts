@@ -69,6 +69,7 @@ export class CommittedRentalSelectionsAndDemandService extends CommittedRentalSe
       );
     }
 
+    // SAFETY: The value originates from the constrained persistence or validated request field represented by this closed domain type.
     return ok({
       selections: rental.selections.map((selection) => ({
         selectionId: selection.id,

@@ -87,6 +87,8 @@ function createExtendedClient(prisma: PrismaClient, tenantContext: TenantContext
             return query(args);
           }
 
+          // SAFETY: Prisma supplies args for the intercepted model operation, and injectTenantId preserves that operation-specific argument shape.
+          // SAFETY: The preceding runtime checks establish the object and required property shape before this access.
           const mutatedArgs = injectTenantId(operation, args as Record<string, any>, tenantId) as typeof args;
 
           return query(mutatedArgs);

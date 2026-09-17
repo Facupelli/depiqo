@@ -51,6 +51,7 @@ export function canonicalCompletionMessage(request: IncomingMessage, response: S
 }
 
 export function requestPath(request: IncomingMessage): string {
+  // SAFETY: The logger receives requests from Nest HTTP middleware, which uses Express request objects for this application.
   const expressRequest = request as ExpressRequest;
   const url = expressRequest.originalUrl ?? request.url ?? '/';
   const queryIndex = url.indexOf('?');

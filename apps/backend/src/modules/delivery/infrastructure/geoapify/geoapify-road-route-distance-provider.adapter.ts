@@ -8,11 +8,6 @@ import {
 } from '../../application/ports/road-route-distance-provider.port';
 import { GeoapifyRoutingHttpClient } from './geoapify-routing-http.client';
 
-interface GeoapifyRoute {
-  distance?: unknown;
-  distance_units?: unknown;
-}
-
 @Injectable()
 export class GeoapifyRoadRouteDistanceProviderAdapter extends RoadRouteDistanceProvider {
   constructor(private readonly httpClient: GeoapifyRoutingHttpClient) {
@@ -44,7 +39,7 @@ export class GeoapifyRoadRouteDistanceProviderAdapter extends RoadRouteDistanceP
       return { outcome: 'NO_ROUTE' };
     }
 
-    const route = body.results[0] as GeoapifyRoute;
+    const route = body.results[0];
 
     if (
       !this.isRecord(route) ||

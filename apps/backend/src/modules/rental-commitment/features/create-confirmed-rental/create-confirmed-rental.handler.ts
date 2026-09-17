@@ -266,6 +266,7 @@ export class CreateConfirmedRentalService implements ICommandHandler<
       clampStartAt: participationTiming.blockOperationTime,
     });
 
+    // SAFETY: This value comes from a persisted or already validated non-empty domain identifier; the brand adds no runtime representation.
     const assetAssignmentPlan = await this.rentalAssetAllocation.planAllocations({
       tenantId: command.tenantId,
       branchId: command.branchId,
@@ -305,6 +306,7 @@ export class CreateConfirmedRentalService implements ICommandHandler<
 
     try {
       return await this.unitOfWork.runInTransaction(async ({ tx, integrationEvents }) => {
+        // SAFETY: This value comes from a persisted or already validated non-empty domain identifier; the brand adds no runtime representation.
         const rental = Rental.createConfirmed({
           tenantId: command.tenantId,
           rentalNumber: await this.rentalNumberAllocator.allocate(command.tenantId, tx),

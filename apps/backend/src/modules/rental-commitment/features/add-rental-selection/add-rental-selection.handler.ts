@@ -116,6 +116,7 @@ export class AddRentalSelectionHandler implements ICommandHandler<AddRentalSelec
     });
     if (equipmentTypeNames.isErr()) return err(this.toApplicationError(equipmentTypeNames.error, context));
 
+    // SAFETY: This value comes from a persisted or already validated non-empty domain identifier; the brand adds no runtime representation.
     const demandLines = offer.fulfillmentRequirements.map((requirement) => ({
       id: RentalDemandLineId.create(),
       rentalSelectionId: selectionId,

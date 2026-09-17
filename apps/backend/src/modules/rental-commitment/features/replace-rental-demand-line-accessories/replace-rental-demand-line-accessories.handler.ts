@@ -143,6 +143,7 @@ export class ReplaceRentalDemandLineAccessoriesHandler implements ICommandHandle
       throw new RentalInvalidFieldError('acceptedAssetBuffer', 'persisted buffer values must both be present');
     let acceptedDelivery: AcceptedDeliverySnapshot | undefined;
     if (rental.deliverySnapshot !== null) {
+      // SAFETY: This value is composed only of JSON-compatible primitives, arrays, and objects before it crosses the Prisma JSON boundary.
       const parsed = AcceptedDeliverySnapshot.create(rental.deliverySnapshot as JsonValue);
       if (parsed.isErr()) throw parsed.error;
       acceptedDelivery = parsed.value;

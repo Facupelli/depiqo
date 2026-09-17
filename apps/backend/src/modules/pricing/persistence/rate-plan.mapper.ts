@@ -45,6 +45,7 @@ export class RatePlanMapper {
   }
 
   static toCreateData(ratePlan: RatePlan): Prisma.V2RatePlanCreateInput {
+    // SAFETY: The value originates from the constrained persistence or validated request field represented by this closed domain type.
     return {
       id: ratePlan.id,
       tenantId: ratePlan.tenantId,

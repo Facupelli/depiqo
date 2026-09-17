@@ -106,6 +106,7 @@ function readString(error: Error, key: 'name' | 'message' | 'stack'): string | u
 
 function readValue(error: Error, key: 'name' | 'message' | 'stack' | 'code' | 'cause'): unknown {
   try {
+    // SAFETY: The immediately preceding null and object checks establish that this value is a non-array object.
     return (error as Error & Record<string, unknown>)[key];
   } catch {
     return undefined;

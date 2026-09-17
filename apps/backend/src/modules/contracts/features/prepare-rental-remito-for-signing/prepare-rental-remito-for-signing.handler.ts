@@ -50,6 +50,7 @@ export class PrepareRentalRemitoForSigningHandler implements IQueryHandler<
     const canReuseArtifact =
       existing?.status !== V2ContractStatus.DRAFT && existing?.status !== V2ContractStatus.RESIGN_REQUIRED;
     if (existing && artifact && canReuseArtifact) {
+      // SAFETY: The persisted snapshot version and document kind checked above uniquely determine the rental remito snapshot structure.
       const snapshot = existing.snapshot as RentalRemitoSnapshot;
       return ok({
         contractId: existing.id,

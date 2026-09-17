@@ -131,6 +131,7 @@ export class TenantConfig {
   }
 
   static reconstitute(props: unknown): TenantConfig {
+    // SAFETY: Tenant configuration is loaded from the validated persisted configuration shape and normalized before any fields are consumed.
     const configProps = props as TenantConfigProps;
     const normalizedProps = TenantConfig.normalizeProps(configProps, TenantConfig.normalizePricingForReconstitution);
     TenantConfig.validateRentalAssetBuffer(normalizedProps.rentalAssetBuffer);

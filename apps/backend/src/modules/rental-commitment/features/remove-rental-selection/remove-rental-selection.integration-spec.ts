@@ -108,6 +108,7 @@ describe('RemoveRentalSelection integration', () => {
     expect(parsePostgresRange(releasedBlock.period).end).toEqual(
       new Date(removedSelection.removedAt!.getTime() + 15 * 60_000),
     );
+    // SAFETY: The fixture or preceding response assertions establish this object shape before these fields are inspected.
     const price = after.rental.priceSnapshot as {
       final: { lines: Array<{ rentalSelectionId: string }> };
       manualAdjustment?: unknown;

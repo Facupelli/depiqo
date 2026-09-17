@@ -115,6 +115,7 @@ function expectMappedExclusionViolation(error: unknown): void {
     throw new Error('Expected mapPostgresError to throw.');
   } catch (mappedError) {
     expect(mappedError).toBeInstanceOf(PostgresExclusionViolationError);
+    // SAFETY: The preceding expectation establishes this error subtype before subtype-specific fields are inspected.
     expect((mappedError as PostgresExclusionViolationError).cause).toBe(error);
   }
 }

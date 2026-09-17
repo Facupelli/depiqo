@@ -61,12 +61,20 @@ describe('instant-bearing request boundaries', () => {
 
   it.each(wireCases)('%s accepts Z and numeric offsets and rejects offset-less values', (_name, schema, body) => {
     expect(schema.safeParse(body).success).toBe(true);
+    // SAFETY: The fixture or preceding response assertions establish this object shape before these fields are inspected.
     const offsetless = structuredClone(body) as Record<string, unknown>;
-    if ('period' in offsetless) (offsetless.period as Record<string, string>).start = '2026-08-10T13:00:00';
-    else if ('contract' in offsetless)
+    if ('period' in offsetless) {
+      // SAFETY: Every wire case with a period property defines it as a string-keyed object.
+      (offsetless.period as Record<string, string>).start = '2026-08-10T13:00:00';
+    } else if ('contract' in offsetless) {
+      // SAFETY: Every wire case with a contract property defines it as a string-keyed object.
       (offsetless.contract as Record<string, string>).validFrom = '2026-08-10T13:00:00';
-    else if ('periodStart' in offsetless) offsetless.periodStart = '2026-08-10T13:00:00';
-    else (offsetless as Record<string, string>).start = '2026-08-10T13:00:00';
+    } else if ('periodStart' in offsetless) {
+      offsetless.periodStart = '2026-08-10T13:00:00';
+    } else {
+      // SAFETY: The remaining wire case is the top-level period object with string values.
+      (offsetless as Record<string, string>).start = '2026-08-10T13:00:00';
+    }
     expect(schema.safeParse(offsetless).success).toBe(false);
   });
 

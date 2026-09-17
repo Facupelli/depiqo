@@ -184,6 +184,7 @@ export class R2ObjectStorageAdapter extends ObjectStoragePort {
       return false;
     }
 
+    // SAFETY: The immediately preceding null and object checks establish that this value is a non-array object.
     const record = value as Record<string, unknown>;
     return key in record && typeof record[key] === 'function';
   }

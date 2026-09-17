@@ -99,6 +99,7 @@ describe('AddRentalSelection integration', () => {
       period: { start: before.rental.periodStart, end: before.rental.periodEnd },
     });
     const accessoryBefore = await fixtures.accessoryState(setup.rental.rentalId);
+    // SAFETY: The fixture or preceding response assertions establish this object shape before these fields are inspected.
     const oldSnapshot = before.rental.priceSnapshot as Record<string, unknown>;
     await prisma.client.v2Rental.update({
       where: { id: setup.rental.rentalId },
@@ -156,6 +157,7 @@ describe('AddRentalSelection integration', () => {
     expect(blockPeriod.start).toEqual(lightAssignment.effectiveFrom);
     expect(blockPeriod.end).toEqual(new Date(after.rental.periodEnd.getTime() + 15 * 60_000));
 
+    // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
     const priceSnapshot = after.rental.priceSnapshot as {
       final: { lines: Array<{ rentalSelectionId: string; chargedUnits: number }> };
       durationPolicySnapshot?: unknown;

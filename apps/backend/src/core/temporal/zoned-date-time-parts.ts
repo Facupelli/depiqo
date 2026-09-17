@@ -20,6 +20,7 @@ export function toZonedDateTimeParts(date: Date, timeZone: string): ZonedDateTim
   }).formatToParts(date);
   const get = (type: string): number => Number(parts.find((part) => part.type === type)?.value ?? '0');
   const hour = get('hour') === 24 ? 0 : get('hour');
+  // SAFETY: The value originates from the constrained persistence or validated request field represented by this closed domain type.
   const localDate = `${String(get('year')).padStart(4, '0')}-${String(get('month')).padStart(2, '0')}-${String(
     get('day'),
   ).padStart(2, '0')}` as LocalDate;

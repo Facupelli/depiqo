@@ -17,6 +17,7 @@ export class CustomerLocalStrategy extends PassportStrategy(Strategy, 'customer-
   }
 
   async validate(req: Request, email: string, password: string): Promise<AuthCustomer> {
+    // SAFETY: Passport invokes this strategy with the Express request type configured by the local authentication guard.
     const storefrontRequest = req as StorefrontTenantRequest;
 
     return this.validateCustomerLocalCredentialsService.validateCustomerLocalCredentials({

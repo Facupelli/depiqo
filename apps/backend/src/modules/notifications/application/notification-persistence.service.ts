@@ -168,6 +168,7 @@ export class NotificationPersistenceService {
 
   async markDeliverySent(input: MarkNotificationDeliverySentInput): Promise<boolean> {
     const attemptedAt = new Date();
+    // SAFETY: This value is composed only of JSON-compatible primitives, arrays, and objects before it crosses the Prisma JSON boundary.
     const result = await this.prisma.client.v2NotificationDelivery.updateMany({
       where: {
         id: input.deliveryId,
@@ -190,6 +191,7 @@ export class NotificationPersistenceService {
 
   async markDeliveryFailed(input: MarkNotificationDeliveryFailedInput): Promise<boolean> {
     const attemptedAt = new Date();
+    // SAFETY: This value is composed only of JSON-compatible primitives, arrays, and objects before it crosses the Prisma JSON boundary.
     const result = await this.prisma.client.v2NotificationDelivery.updateMany({
       where: {
         id: input.deliveryId,

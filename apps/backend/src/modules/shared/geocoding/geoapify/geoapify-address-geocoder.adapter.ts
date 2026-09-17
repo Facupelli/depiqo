@@ -72,7 +72,7 @@ export class GeoapifyAddressGeocoderAdapter extends AddressGeocoder {
       throw this.httpClient.malformedResponse('results must be an array.');
     }
 
-    return body.results as GeoapifyGeocodingResult[];
+    return body.results.filter((result): result is GeoapifyGeocodingResult => this.isRecord(result));
   }
 
   private readDetailsFeature(body: unknown): GeoapifyPlaceDetailsFeature | null {

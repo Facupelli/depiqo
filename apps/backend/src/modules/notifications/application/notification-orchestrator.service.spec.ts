@@ -30,15 +30,19 @@ const request: NotificationDispatchRequest = {
 
 describe('NotificationOrchestrator', () => {
   function createOrchestrator() {
+    // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
     const channelPolicyResolver = {
       resolveChannels: jest.fn().mockResolvedValue([NotificationChannel.EMAIL]),
     } as NotificationChannelPolicyResolver;
+    // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
     const channelMutePolicy = {
       isMuted: jest.fn().mockReturnValue(false),
     } as NotificationChannelMutePolicy;
+    // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
     const tenantNotificationSuppressionPolicy = {
       evaluate: jest.fn().mockResolvedValue({ suppressed: false }),
     } as TenantNotificationSuppressionPolicy;
+    // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
     const notificationPersistence = {
       createNotificationWithPendingDeliveries: jest.fn().mockResolvedValue({
         notificationId: 'notification-1',
@@ -57,6 +61,7 @@ describe('NotificationOrchestrator', () => {
       markDeliverySent: jest.fn().mockResolvedValue(true),
       markDeliveryFailed: jest.fn().mockResolvedValue(true),
     } as NotificationPersistenceService;
+    // SAFETY: The preceding test setup and assertions establish this value shape before the test inspects it.
     const emailRenderer = {
       render: jest.fn().mockResolvedValue({
         subject: 'Rental cancelled',
@@ -65,6 +70,7 @@ describe('NotificationOrchestrator', () => {
       }),
     } as EmailRenderer;
     const emailDeliveryPort = new FakeEmailDeliveryPort();
+    // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
     const emailSenderResolver = {
       resolve: jest.fn().mockResolvedValue({ fromEmail: 'no-reply@example.com' }),
     } as EmailSenderResolver;

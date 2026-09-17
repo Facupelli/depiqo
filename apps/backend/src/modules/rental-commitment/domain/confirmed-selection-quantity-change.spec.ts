@@ -3,7 +3,9 @@ import { RentalDemandLineId } from './ids/rental-demand-line-id';
 import { deriveConfirmedSelectionQuantityChange } from './confirmed-selection-quantity-change';
 
 describe('ConfirmedSelectionQuantityChange', () => {
+  // SAFETY: These stable fixture identifiers are non-empty and are used only as opaque domain identifiers in this test.
   const cameraDemandId = 'camera-demand' as RentalDemandLineId;
+  // SAFETY: These stable fixture identifiers are non-empty and are used only as opaque domain identifiers in this test.
   const tripodDemandId = 'tripod-demand' as RentalDemandLineId;
   const demandLines = [
     { id: cameraDemandId, quantity: 4 },

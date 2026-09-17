@@ -44,6 +44,7 @@ export class RentalLifecycleFactsService extends RentalLifecycleFacts {
       return err(rentalLifecycleFactsError(`Rental "${input.rentalId}" was not found for tenant "${input.tenantId}".`));
     }
 
+    // SAFETY: The value originates from the constrained persistence or validated request field represented by this closed domain type.
     return ok({
       rentalId: rental.id,
       rentalNumber: rental.rentalNumber,

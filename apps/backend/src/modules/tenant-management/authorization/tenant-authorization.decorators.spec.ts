@@ -83,12 +83,14 @@ describe('tenant authorization decorators', () => {
   });
 
   it('rejects an empty any-of declaration at runtime', () => {
+    // SAFETY: The preceding test setup and assertions establish this value shape before the test inspects it.
     expect(() => (RequireAnyPermission as (...permissions: TenantPermission[]) => ClassDecorator)()).toThrow(
       'RequireAnyPermission requires at least one tenant permission.',
     );
   });
 
   it('rejects an empty all-of declaration at runtime', () => {
+    // SAFETY: The preceding test setup and assertions establish this value shape before the test inspects it.
     expect(() => (RequireAllPermissions as (...permissions: TenantPermission[]) => ClassDecorator)()).toThrow(
       'RequireAllPermissions requires at least one tenant permission.',
     );
@@ -105,6 +107,7 @@ describe('tenant authorization decorators', () => {
   });
 
   function requirementOn(target: object): TenantAuthorizationRequirement | undefined {
+    // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
     return Reflect.getOwnMetadata(TENANT_AUTHORIZATION_REQUIREMENT_KEY, target) as
       | TenantAuthorizationRequirement
       | undefined;

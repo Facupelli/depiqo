@@ -97,6 +97,7 @@ function severityForStatus(status: number): 'info' | 'warn' | 'error' {
 
 function responseTime(value: unknown): number {
   if (!value || typeof value !== 'object') return 0;
+  // SAFETY: The preceding runtime checks establish the object and required property shape before this access.
   const duration = (value as { responseTime?: unknown }).responseTime;
   return typeof duration === 'number' && Number.isFinite(duration) ? duration : 0;
 }

@@ -5,6 +5,7 @@ import { AssetOwnershipResolver } from './asset-ownership-resolver.service';
 
 describe('AssetCreationValidatorService', () => {
   it('allows assets with duplicate manufacturer serial numbers', async () => {
+    // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
     const ownershipResolver = {
       resolveOwnerships: jest.fn().mockResolvedValue(ok(new Map())),
     } as AssetOwnershipResolver;

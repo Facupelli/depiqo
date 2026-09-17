@@ -32,6 +32,7 @@ describe('RestoreConfirmedPackageDemandLineHandler', () => {
       removedQuantity: 2,
       isCurrent: true,
     };
+    // SAFETY: This fixture supplies every field read by the unit under test; omitted members are outside this test path.
     const rental = {
       id: 'rental-1',
       tenantId: 'tenant-1',
@@ -59,16 +60,20 @@ describe('RestoreConfirmedPackageDemandLineHandler', () => {
   }
 
   function createHandler(rental: Rental, allocationResult = ok({ allocations: [] })) {
+    // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
     const rentalRepository = {
       findById: jest.fn().mockResolvedValue(rental),
       save: jest.fn().mockResolvedValue({ version: 8, updatedAt: new Date('2030-01-02T12:00:01.000Z') }),
     } as RentalRepository;
+    // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
     const allocation = {
       planAllocations: jest.fn().mockResolvedValue(allocationResult),
     } as RentalAssetAllocationService;
+    // SAFETY: The preceding test setup and assertions establish this value shape before the test inspects it.
     const splitCalculator = {
       calculate: jest.fn().mockReturnValue({ splits: [] }),
     } as RentalOwnerSplitCalculator;
+    // SAFETY: The preceding test setup and assertions establish this value shape before the test inspects it.
     const unitOfWork = {
       runInTransaction: jest.fn((callback) => callback({ tx, integrationEvents })),
     } as PrismaUnitOfWork;
@@ -120,6 +125,7 @@ describe('RestoreConfirmedPackageDemandLineHandler', () => {
         tx,
       }),
     );
+    // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
     expect((allocation.planAllocations as jest.Mock).mock.invocationCallOrder[0]).toBeLessThan(
       (rental.restoreConfirmedPackageDemandLine as jest.Mock).mock.invocationCallOrder[0],
     );

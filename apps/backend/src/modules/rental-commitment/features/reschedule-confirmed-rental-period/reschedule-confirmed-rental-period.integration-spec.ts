@@ -164,7 +164,9 @@ describe('RescheduleConfirmedRentalPeriod integration', () => {
     }
 
     const after = await fixtures.persistedState(setup.rental.rentalId);
+    // SAFETY: The fixture or preceding response assertions establish this object shape before these fields are inspected.
     const beforeDelivery = before.rental.deliverySnapshot as Record<string, any>;
+    // SAFETY: The fixture or preceding response assertions establish this object shape before these fields are inspected.
     const afterDelivery = after.rental.deliverySnapshot as Record<string, any>;
     expect(afterDelivery).toEqual({
       ...beforeDelivery,

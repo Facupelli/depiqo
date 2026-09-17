@@ -82,6 +82,7 @@ export class AssetBlock {
       return err(validation.error);
     }
 
+    // SAFETY: randomUUID() always returns a non-empty UUID string, which satisfies this opaque identifier brand.
     return ok(
       new AssetBlock(props.id ?? (randomUUID() as AssetBlockId), {
         tenantId: props.tenantId,

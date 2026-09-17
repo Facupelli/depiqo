@@ -177,6 +177,7 @@ export class RentalAssetAllocationService {
         return err(ownerContractSnapshot.error);
       }
 
+      // SAFETY: This value comes from a persisted or already validated non-empty domain identifier; the brand adds no runtime representation.
       candidates.push({
         tenantId: row.tenantId,
         assetId: row.assetId as AssetId,
@@ -230,6 +231,7 @@ export class RentalAssetAllocationService {
         ${ignoredBlockScopeSql}
     `);
 
+    // SAFETY: This value comes from a persisted or already validated non-empty domain identifier; the brand adds no runtime representation.
     return rows.map((row) => ({ assetId: row.assetId as AssetId }));
   }
 

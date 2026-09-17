@@ -73,6 +73,7 @@ describe('authenticated tenant HTTP flow', () => {
       })
       .expect(201);
 
+    // SAFETY: The fixture or preceding response assertions establish this object shape before these fields are inspected.
     const registered = registration.body.data as { tenantId: string; tenantUserId: string };
     const user = await prisma.client.v2TenantUser.findUnique({
       where: { id: registered.tenantUserId },
@@ -393,6 +394,7 @@ describe('authenticated tenant HTTP flow', () => {
     const firstLoginRequest = client.request().post('/auth/customer/google/finalize');
     await client.withStorefrontTenantContext(firstLoginRequest, storefrontTenantContext(tenant));
     const firstLogin = await firstLoginRequest.send({ ticket: firstTicket }).expect(200);
+    // SAFETY: The fixture or preceding response assertions establish this object shape before these fields are inspected.
     const firstCustomer = firstLogin.body.data.customer as { id: string; tenantId: string; email: string };
 
     expect(firstCustomer).toMatchObject({ tenantId: tenant.id, email: googleIdentity.email });
@@ -701,6 +703,7 @@ async function issueGoogleState(testApp: E2ETestApp, tenantId: string, tenantSlu
   });
   const response = await stateRequest.send({ redirectPath: '/account' }).expect(200);
 
+  // SAFETY: The fixture or preceding response assertions establish this object shape before these fields are inspected.
   return (response.body.data as { state: string }).state;
 }
 
@@ -717,6 +720,7 @@ async function createCustomerGoogleHandoffTicket(
     .send({ code, state })
     .expect(200);
 
+  // SAFETY: The fixture or preceding response assertions establish this object shape before these fields are inspected.
   return (handoffResponse.body.data as { ticket: string }).ticket;
 }
 

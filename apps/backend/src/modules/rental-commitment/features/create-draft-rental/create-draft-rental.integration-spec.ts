@@ -355,6 +355,7 @@ describe('CreateDraftRental integration', () => {
     });
     expect(result.isOk()).toBe(true);
     if (result.isOk()) {
+      // SAFETY: The fixture or preceding response assertions establish this object shape before these fields are inspected.
       const snapshot = (await state(result.value.rentalId)).rental.priceSnapshot as {
         final: { total: string };
         manualPricingAdjustment: { targetTotal: string; setByTenantUserId: string; reason?: string };

@@ -1,11 +1,11 @@
 import { InvalidParam } from './problem-details';
 
 export function extractInvalidParams(responseBody: unknown): InvalidParam[] {
-  if (typeof responseBody !== 'object' || responseBody === null) {
+  if (!isRecord(responseBody)) {
     return [];
   }
 
-  const responseObject = responseBody as Record<string, unknown>;
+  const responseObject = responseBody;
 
   if (hasInvalidParams(responseObject)) {
     return responseObject['invalid-params'];
@@ -36,11 +36,11 @@ function normalizeValidationEntry(error: unknown): InvalidParam[] {
     return [{ name: 'request', reason: error }];
   }
 
-  if (typeof error !== 'object' || error === null) {
+  if (!isRecord(error)) {
     return [];
   }
 
-  const errorObject = error as Record<string, unknown>;
+  const errorObject = error;
 
   if (hasInvalidParam(errorObject)) {
     return [{ name: errorObject.name, reason: errorObject.reason }];
@@ -63,7 +63,11 @@ function normalizeValidationEntry(error: unknown): InvalidParam[] {
 }
 
 function normalizeClassValidatorConstraint(error: Record<string, unknown>): InvalidParam[] {
-  const constraints = error.constraints as Record<string, unknown>;
+  if (!isRecord(error.constraints)) {
+    return [];
+  }
+
+  const constraints = error.constraints;
   const name = validationPath(error);
 
   return Object.values(constraints)
@@ -101,17 +105,19 @@ function hasInvalidParam(value: Record<string, unknown>): value is Record<string
 }
 
 function isInvalidParam(value: unknown): value is InvalidParam {
-  if (typeof value !== 'object' || value === null) {
+  if (!isRecord(value)) {
     return false;
   }
 
-  const candidate = value as Record<string, unknown>;
-
-  return typeof candidate.name === 'string' && typeof candidate.reason === 'string';
+  return typeof value.name === 'string' && typeof value.reason === 'string';
 }
 
 function hasClassValidatorConstraints(value: Record<string, unknown>): boolean {
-  return typeof value.constraints === 'object' && value.constraints !== null;
+  return isRecord(value.constraints);
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 function validationPath(error: Record<string, unknown>): string {

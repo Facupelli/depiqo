@@ -61,6 +61,7 @@ const confirmedPriceSnapshot = {
 };
 
 function assignment(params: { id: string; assetId: string; effectiveFrom: Date; effectiveUntil?: Date }) {
+  // SAFETY: These stable fixture identifiers are non-empty and are used only as opaque domain identifiers in this test.
   return AssignedAsset.reconstitute({
     id: params.id as AssignedAssetId,
     tenantId: 'tenant-1',
@@ -75,6 +76,7 @@ function assignment(params: { id: string; assetId: string; effectiveFrom: Date; 
 }
 
 function reconstituteWith(assignments: AssignedAsset[], blockStart = handoff) {
+  // SAFETY: These stable fixture identifiers are non-empty and are used only as opaque domain identifiers in this test.
   const seedResult = Rental.createConfirmed({
     id: 'rental-1' as RentalId,
     tenantId: 'tenant-1',
@@ -170,6 +172,7 @@ describe('Rental temporal assignments', () => {
       assignment({ id: 'current-a', assetId: 'asset-a', effectiveFrom: handoff }),
     ])._unsafeUnwrap();
     const removedAt = new Date('2030-01-01T12:00:00.000Z');
+    // SAFETY: These stable fixture identifiers are non-empty and are used only as opaque domain identifiers in this test.
     const removedSelection = RentalSelection.reconstitute({
       id: 'selection-history' as RentalSelectionId,
       tenantId: validRental.tenantId,
@@ -181,6 +184,7 @@ describe('Rental temporal assignments', () => {
       quantity: 1,
       removedAt,
     });
+    // SAFETY: These stable fixture identifiers are non-empty and are used only as opaque domain identifiers in this test.
     const removedDemandLine = RentalDemandLine.reconstitute({
       id: 'demand-history' as RentalDemandLineId,
       tenantId: validRental.tenantId,
@@ -192,6 +196,7 @@ describe('Rental temporal assignments', () => {
       removedQuantity: 1,
       removedAt,
     });
+    // SAFETY: These stable fixture identifiers are non-empty and are used only as opaque domain identifiers in this test.
     const invalidAssignment = AssignedAsset.reconstitute({
       id: 'current-history' as AssignedAssetId,
       tenantId: validRental.tenantId,

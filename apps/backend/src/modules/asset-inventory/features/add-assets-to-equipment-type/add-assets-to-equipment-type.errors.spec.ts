@@ -15,6 +15,7 @@ describe('mapAssetInventoryError', () => {
   it('throws unrecognized domain errors', () => {
     const unknownError = new (class extends Error {})('unexpected');
 
+    // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
     expect(() => mapAssetInventoryError(unknownError as never)).toThrow(unknownError);
   });
 });

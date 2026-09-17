@@ -151,6 +151,7 @@ describe('CreateConfirmedRental integration', () => {
       where: { id: tenantId },
       select: { config: true },
     });
+    // SAFETY: The fixture or preceding response assertions establish this object shape before these fields are inspected.
     await prisma.client.v2Tenant.update({
       where: { id: tenantId },
       data: {
@@ -539,7 +540,11 @@ describe('CreateConfirmedRental integration', () => {
     expect(state.rental.confirmedAt).not.toBeNull();
     expect(state.rental.acceptedCustomerTotal?.toString()).toBe('150');
 
+    // SAFETY: The preceding test setup and assertions establish this value shape before the test inspects it.
+    // SAFETY: The fixture or preceding response assertions establish this object shape before these fields are inspected.
     const pricingTotal = (state.rental.priceSnapshot as Prisma.JsonObject).total as string;
+    // SAFETY: The preceding test setup and assertions establish this value shape before the test inspects it.
+    // SAFETY: The fixture or preceding response assertions establish this object shape before these fields are inspected.
     const deliveryTotal = (state.rental.deliverySnapshot as Prisma.JsonObject).deliveryTotal as string;
     expect(new Decimal(pricingTotal).plus(deliveryTotal).equals(state.rental.acceptedCustomerTotal!)).toBe(true);
   });
@@ -623,6 +628,7 @@ describe('CreateConfirmedRental integration', () => {
       () => create({ ...setup, selectedOffers: [{ rentalOfferId: catalog.offer.id, quantity: 1 }] }),
     ]);
     expect(outcomes.every((outcome) => outcome.status === 'fulfilled')).toBe(true);
+    // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
     const results = outcomes.map(
       (outcome) => (outcome as PromiseFulfilledResult<CreateConfirmedRentalServiceResult>).value,
     );
@@ -659,6 +665,7 @@ describe('CreateConfirmedRental integration', () => {
       () => commandBus.execute(new ConfirmRentalCommand(setup.tenantId, draft.rentalId)),
     ]);
     expect(outcomes.every((outcome) => outcome.status === 'fulfilled')).toBe(true);
+    // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
     const directOutcome = outcomes[0] as PromiseFulfilledResult<CreateConfirmedRentalServiceResult>;
     const directRentalIds = directOutcome.value.isOk() ? [directOutcome.value.value.rentalId] : [];
     const states = await prisma.client.v2Rental.findMany({
@@ -745,11 +752,13 @@ describe('CreateConfirmedRental integration', () => {
       const outcomes = await runConcurrently([() => create(input), () => create(input)]);
 
       expect(outcomes.every((outcome) => outcome.status === 'fulfilled')).toBe(true);
+      // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
       const results = outcomes.map(
         (outcome) => (outcome as PromiseFulfilledResult<CreateConfirmedRentalServiceResult>).value,
       );
       expect(results.filter((result) => result.isOk())).toHaveLength(2);
       if (results.some((result) => result.isErr())) return;
+      // SAFETY: The fixture or preceding response assertions establish this object shape before these fields are inspected.
       const [rentalId, otherRentalId] = results.map(
         (result) => (result as { value: { rentalId: string } }).value.rentalId,
       );

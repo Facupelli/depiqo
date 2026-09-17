@@ -29,6 +29,7 @@ export class StorefrontTenantContextGuard implements CanActivate {
 
     const payload = await this.verifyToken(token);
 
+    // SAFETY: Nest invokes this HTTP guard after storefront tenant middleware has attached the resolved tenant context to the request.
     const storefrontRequest = request as StorefrontTenantRequest;
 
     storefrontRequest.storefrontTenantContext = {

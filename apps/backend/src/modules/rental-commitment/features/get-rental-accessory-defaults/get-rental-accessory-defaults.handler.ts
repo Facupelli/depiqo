@@ -152,6 +152,7 @@ export class GetRentalAccessoryDefaultsHandler implements IQueryHandler<
 
   private resolveAcceptedDelivery(snapshot: Prisma.JsonValue | null): AcceptedDeliverySnapshot | undefined {
     if (snapshot === null) return undefined;
+    // SAFETY: This value is composed only of JSON-compatible primitives, arrays, and objects before it crosses the Prisma JSON boundary.
     const acceptedDelivery = AcceptedDeliverySnapshot.create(snapshot as JsonValue);
     if (acceptedDelivery.isErr()) throw acceptedDelivery.error;
     return acceptedDelivery.value;

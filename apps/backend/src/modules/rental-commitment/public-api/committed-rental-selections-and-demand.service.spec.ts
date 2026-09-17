@@ -15,6 +15,7 @@ describe('CommittedRentalSelectionsAndDemandService', () => {
         },
       ],
     });
+    // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
     const service = new CommittedRentalSelectionsAndDemandService({
       client: { v2Rental: { findFirst } },
     } as never);

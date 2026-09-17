@@ -15,6 +15,7 @@ export class AuthAuditService {
     metadata?: Record<string, unknown>;
   }): Promise<void> {
     try {
+      // SAFETY: This value is composed only of JSON-compatible primitives, arrays, and objects before it crosses the Prisma JSON boundary.
       await this.prisma.client.v2AuthAuditEvent.create({
         data: {
           userId: input.userId ?? null,

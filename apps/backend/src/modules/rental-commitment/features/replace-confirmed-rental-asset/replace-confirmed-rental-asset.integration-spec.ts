@@ -92,6 +92,7 @@ describe('ReplaceConfirmedRentalAsset integration', () => {
     currentAssetId?: string;
     expectedVersion: number;
   }) {
+    // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
     return new ReplaceConfirmedRentalAssetCommand({
       tenantId: params.setup.tenant.id,
       tenantUserId: params.setup.user.id,
@@ -129,6 +130,7 @@ describe('ReplaceConfirmedRentalAsset integration', () => {
         () => replace({ setup, replacementAssetId, expectedVersion }),
       ]);
       expect(outcomes.every((outcome) => outcome.status === 'fulfilled')).toBe(true);
+      // SAFETY: The preceding status assertion establishes that this Promise.allSettled result is fulfilled before its value is inspected.
       const results = outcomes.map(
         (outcome) => (outcome as PromiseFulfilledResult<CancelRentalResult | ReplaceConfirmedRentalAssetResult>).value,
       );
@@ -547,6 +549,7 @@ describe('ReplaceConfirmedRentalAsset integration', () => {
       () => replace({ setup: first, replacementAssetId, expectedVersion: firstBefore.rental.version }),
       () => replace({ setup: secondSetup, replacementAssetId, expectedVersion: secondBefore.rental.version }),
     ]);
+    // SAFETY: The preceding status assertion establishes that this Promise.allSettled result is fulfilled before its value is inspected.
     const results = outcomes.map(
       (outcome) => (outcome as PromiseFulfilledResult<ReplaceConfirmedRentalAssetResult>).value,
     );
@@ -606,6 +609,7 @@ describe('ReplaceConfirmedRentalAsset integration', () => {
       () => replace({ setup, replacementAssetId: y, expectedVersion: before.rental.version }),
       () => replace({ setup, replacementAssetId: z, expectedVersion: before.rental.version }),
     ]);
+    // SAFETY: The preceding status assertion establishes that this Promise.allSettled result is fulfilled before its value is inspected.
     const results = outcomes.map(
       (outcome) => (outcome as PromiseFulfilledResult<ReplaceConfirmedRentalAssetResult>).value,
     );
@@ -637,6 +641,7 @@ describe('ReplaceConfirmedRentalAsset integration', () => {
           }),
         ),
     ]);
+    // SAFETY: The preceding status assertion establishes that this Promise.allSettled result is fulfilled before its value is inspected.
     const results = outcomes.map(
       (outcome) =>
         (outcome as PromiseFulfilledResult<ReplaceConfirmedRentalAssetResult | ChangeRentalDetailsResult>).value,

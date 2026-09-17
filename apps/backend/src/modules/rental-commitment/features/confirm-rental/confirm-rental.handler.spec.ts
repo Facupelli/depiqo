@@ -85,6 +85,7 @@ describe('ConfirmRentalHandler deadlock retry', () => {
       new Date('2030-01-01T12:00:00.000Z'),
     );
     const pullDomainEvents = jest.fn().mockReturnValueOnce([event]);
+    // SAFETY: This fixture supplies every field read by the unit under test; omitted members are outside this test path.
     const rental = {
       id: rentalId,
       tenantId,
@@ -121,14 +122,18 @@ describe('ConfirmRentalHandler deadlock retry', () => {
     } as Rental;
 
     const save = jest.fn();
+    // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
     const repository = {
       findById: jest.fn().mockResolvedValue(rental),
       save,
     } as RentalRepository;
+    // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
     const operationalFacts = {
       validateDraftFacts: jest.fn().mockResolvedValue(ok(undefined)),
     } as RentalOperationalFactsValidatorService;
+    // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
     const deliveryQuoteService = {} as DeliveryQuoteService;
+    // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
     const allocation = {
       planAllocations: jest.fn().mockResolvedValue(
         ok({
@@ -147,18 +152,22 @@ describe('ConfirmRentalHandler deadlock retry', () => {
         .fn()
         .mockResolvedValue(ok({ beforeBufferMinutes: 0, afterBufferMinutes: 0 })),
     };
+    // SAFETY: The preceding test setup and assertions establish this value shape before the test inspects it.
     const ownerSplitCalculator = {
       calculate: jest.fn().mockReturnValue({ splits }),
     } as RentalOwnerSplitCalculator;
     const publishedEvents: IntegrationEvent[] = [];
     const runInTransaction = jest.fn(async (work: (context: PrismaTransactionContext) => Promise<unknown>) => {
       const integrationEvents = new InMemoryIntegrationEventsCollector();
+      // SAFETY: The preceding test setup and assertions establish this value shape before the test inspects it.
       const result = await work({ tx: {} as PrismaTransactionContext['tx'], integrationEvents });
       publishedEvents.push(...integrationEvents.drain());
       return result;
     });
+    // SAFETY: The preceding test setup and assertions establish this value shape before the test inspects it.
     const unitOfWork = { runInTransaction } as PrismaUnitOfWork;
 
+    // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
     return {
       handler: new ConfirmRentalHandler(
         repository,

@@ -51,7 +51,7 @@ export class CloudflareCustomHostnameService extends CustomHostnameProvider {
       },
     });
 
-    const payload = (await response.json()) as CloudflareApiResponse;
+    const payload = this.parseApiResponse(await response.json());
 
     if (!response.ok || !payload.success || !payload.result) {
       const providerMessage = payload.errors
@@ -62,6 +62,26 @@ export class CloudflareCustomHostnameService extends CustomHostnameProvider {
     }
 
     return this.toCustomHostname(payload.result);
+  }
+
+  private parseApiResponse(value: unknown): CloudflareApiResponse {
+    const payload = this.asRecord(value);
+    if (!payload) {
+      throw new Error('Cloudflare custom hostname response must be a JSON object');
+    }
+
+    const errors = Array.isArray(payload.errors)
+      ? payload.errors.flatMap((error) => {
+          const record = this.asRecord(error);
+          return record && typeof record.message === 'string' ? [{ message: record.message }] : [];
+        })
+      : undefined;
+
+    return {
+      success: typeof payload.success === 'boolean' ? payload.success : undefined,
+      errors,
+      result: this.asRecord(payload.result) ?? undefined,
+    };
   }
 
   private toCustomHostname(result: Record<string, unknown>): CustomHostname {
@@ -86,7 +106,11 @@ export class CloudflareCustomHostnameService extends CustomHostnameProvider {
   }
 
   private asRecord(value: unknown): Record<string, unknown> | null {
-    return value && typeof value === 'object' ? (value as Record<string, unknown>) : null;
+    if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+      return null;
+    }
+
+    return Object.fromEntries(Object.entries(value));
   }
 
   private toMessageList(value: unknown): string[] {

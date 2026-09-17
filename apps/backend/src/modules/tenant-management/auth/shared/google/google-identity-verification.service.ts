@@ -165,7 +165,7 @@ export class GoogleIdentityVerificationService extends GoogleIdentityVerifier {
         issuer: Array.from(GOOGLE_ISSUERS),
       });
 
-      payload = verification.payload as GoogleIdTokenClaims;
+      payload = verification.payload;
     } catch {
       throw new GoogleIdentityVerificationError('Google ID token verification failed.');
     }

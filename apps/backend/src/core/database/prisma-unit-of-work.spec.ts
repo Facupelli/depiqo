@@ -27,6 +27,7 @@ class TestIntegrationEventPublisher extends IntegrationEventPublisher {
 }
 
 function makeLogger(): PinoLogger {
+  // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
   return {
     error: jest.fn(),
     setContext: jest.fn(),
@@ -53,6 +54,7 @@ function makeEvent(overrides: Partial<IntegrationEvent> = {}): IntegrationEvent 
 function makePrisma() {
   let transactionsOpened = 0;
 
+  // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
   const prisma = {
     client: {
       $transaction: jest.fn(async (work: (tx: object) => Promise<unknown>) => {
@@ -63,6 +65,7 @@ function makePrisma() {
     },
   } as PrismaService;
 
+  // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
   return {
     prisma,
     transactionCalls: () => prisma.client.$transaction as jest.Mock,
@@ -89,6 +92,7 @@ describe('PrismaUnitOfWork', () => {
       const unitOfWork = new PrismaUnitOfWork(prisma, publisher, makeLogger());
 
       const result = await unitOfWork.runInTransaction(async ({ tx, integrationEvents }) => {
+        // SAFETY: The fixture or preceding response assertions establish this object shape before these fields are inspected.
         expect((tx as { id: number }).id).toBe(1);
         markers.push('work');
         integrationEvents.collect([event]);
@@ -206,6 +210,7 @@ describe('PrismaUnitOfWork', () => {
       const markers: string[] = [];
       const rollbackMarker = 'rollback';
 
+      // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
       const prisma = {
         client: {
           $transaction: jest.fn(async (work: (tx: object) => Promise<unknown>) => {
@@ -244,6 +249,7 @@ describe('PrismaUnitOfWork', () => {
     it('rolls back and rethrows the original exception', async () => {
       const markers: string[] = [];
 
+      // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
       const prisma = {
         client: {
           $transaction: jest.fn(async (work: (tx: object) => Promise<unknown>) => {

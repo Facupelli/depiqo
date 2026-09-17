@@ -36,6 +36,7 @@ export class ReplaceConfirmedRentalAssetHttpController {
     @Body() dto: ReplaceConfirmedRentalAssetRequestDto,
     @CurrentUser() user: AuthUser,
   ): Promise<ReplaceConfirmedRentalAssetResponseDto> {
+    // SAFETY: This value comes from a persisted or already validated non-empty domain identifier; the brand adds no runtime representation.
     const result = await this.commandBus.execute<ReplaceConfirmedRentalAssetCommand, ReplaceConfirmedRentalAssetResult>(
       new ReplaceConfirmedRentalAssetCommand({
         tenantId: user.tenantId,

@@ -12,6 +12,7 @@ import {
 } from './assign-rental-accessories.request.dto';
 
 function requestInput() {
+  // SAFETY: This fixture supplies every field read by the unit under test; omitted members are outside this test path.
   return {
     params: { rentalId: 'rental-1' } as AssignRentalAccessoriesParamsDto,
     dto: {
@@ -42,6 +43,7 @@ describe('AssignRentalAccessoriesHttpController', () => {
         },
       },
     );
+    // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
     const commandBus = { execute: jest.fn().mockResolvedValue(err(applicationError)) } as CommandBus;
     const controller = new AssignRentalAccessoriesHttpController(commandBus);
     const input = requestInput();
@@ -50,6 +52,7 @@ describe('AssignRentalAccessoriesHttpController', () => {
       await controller.assignAccessories(input.params, input.dto, input.user);
       throw new Error('Expected controller to throw');
     } catch (error) {
+      // SAFETY: The preceding expectation establishes this error subtype before subtype-specific fields are inspected.
       const problem = error as ProblemException;
       expect(problem.getStatus()).toBe(409);
       expect(problem.getProblemDetails()).toMatchObject({
@@ -61,6 +64,7 @@ describe('AssignRentalAccessoriesHttpController', () => {
 
   it('does not attach a row extension for an availability race', async () => {
     const applicationError = assignRentalAccessoriesError('rental_commitment.asset_availability_changed', 'ignored');
+    // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
     const commandBus = { execute: jest.fn().mockResolvedValue(err(applicationError)) } as CommandBus;
     const controller = new AssignRentalAccessoriesHttpController(commandBus);
     const input = requestInput();
@@ -69,6 +73,7 @@ describe('AssignRentalAccessoriesHttpController', () => {
       await controller.assignAccessories(input.params, input.dto, input.user);
       throw new Error('Expected controller to throw');
     } catch (error) {
+      // SAFETY: The preceding expectation establishes this error subtype before subtype-specific fields are inspected.
       const problem = error as ProblemException;
       expect(problem.getStatus()).toBe(409);
       expect(problem.getProblemDetails()).toMatchObject({

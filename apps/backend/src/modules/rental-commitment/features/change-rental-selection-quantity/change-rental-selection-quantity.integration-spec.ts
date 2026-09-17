@@ -117,6 +117,7 @@ describe('ChangeRentalSelectionQuantity integration', () => {
       expect(period.start).toEqual(assignment.effectiveFrom);
       expect(period.end).toEqual(new Date(after.rental.periodEnd.getTime() + 15 * 60_000));
     }
+    // SAFETY: The fixture or preceding response assertions establish this object shape before these fields are inspected.
     expect(
       (after.rental.priceSnapshot as { final: { lines: Array<{ quantity: number }> } }).final.lines[0].quantity,
     ).toBe(3);

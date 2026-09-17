@@ -50,6 +50,7 @@ describe('GetRentalOfferAvailability integration', () => {
       where: { id: tenantId },
       select: { config: true },
     });
+    // SAFETY: The fixture or preceding response assertions establish this object shape before these fields are inspected.
     await prisma.client.v2Tenant.update({
       where: { id: tenantId },
       data: {

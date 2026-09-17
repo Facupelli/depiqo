@@ -8,6 +8,7 @@ import { TenantAuthorizationHttpEnforcer } from './tenant-authorization-http.enf
 import { TenantAuthorization } from './tenant-authorization.public-api';
 
 describe('TenantAuthorizationHttpEnforcer', () => {
+  // SAFETY: This fixture supplies every field read by the unit under test; omitted members are outside this test path.
   const tenantUser = {
     actorType: AUTH_ACTOR_TYPES.TENANT_USER,
     id: 'user-1',
@@ -15,6 +16,7 @@ describe('TenantAuthorizationHttpEnforcer', () => {
   } as AuthActor;
 
   function fixture() {
+    // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
     const tenantAuthorization = {
       getEffectivePermissions: jest.fn(),
       hasPermission: jest.fn(),
@@ -75,6 +77,7 @@ describe('TenantAuthorizationHttpEnforcer', () => {
 
   it('rejects a non-tenant-user actor with 403 without evaluating permissions', async () => {
     const test = fixture();
+    // SAFETY: This fixture supplies every field read by the unit under test; omitted members are outside this test path.
     const customer = {
       actorType: AUTH_ACTOR_TYPES.TENANT_CUSTOMER,
       id: 'customer-1',
@@ -117,6 +120,7 @@ describe('TenantAuthorizationHttpEnforcer', () => {
   it('derives the authorization subject only from authenticated actor IDs', async () => {
     const test = fixture();
     test.tenantAuthorization.hasPermission.mockResolvedValue(ok(true));
+    // SAFETY: This fixture supplies every field read by the unit under test; omitted members are outside this test path.
     const actor = {
       actorType: AUTH_ACTOR_TYPES.TENANT_USER,
       id: 'trusted-user',

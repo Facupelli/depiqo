@@ -131,6 +131,7 @@ describe('CreateEquipment atomicity integration', () => {
     ).resolves.toBe(result.value.standaloneRental.rentalOfferIds.length);
 
     expect(publishSpy).toHaveBeenCalledTimes(1);
+    // SAFETY: The preceding test setup and assertions establish this value shape before the test inspects it.
     const publishedEvents = publishSpy.mock.calls[0][0] as readonly unknown[];
     const assetCreatedEvents = publishedEvents.filter((event) => event instanceof AssetCreatedIntegrationEvent);
     expect(assetCreatedEvents).toHaveLength(1);

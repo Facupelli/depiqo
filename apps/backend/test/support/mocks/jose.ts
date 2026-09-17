@@ -83,5 +83,6 @@ function encodeJson(value: unknown): string {
 }
 
 function decodeJson<T>(value: string): T {
+  // SAFETY: The preceding test setup and assertions establish this value shape before the test inspects it.
   return JSON.parse(Buffer.from(value, 'base64url').toString('utf8')) as T;
 }

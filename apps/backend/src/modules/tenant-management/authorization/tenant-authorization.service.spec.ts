@@ -10,10 +10,12 @@ describe('TenantAuthorizationService', () => {
   function createService(initialUser: unknown) {
     let user = initialUser;
     const findFirst = jest.fn().mockImplementation(async () => user);
+    // SAFETY: The preceding test setup and assertions establish this value shape before the test inspects it.
     const findMany = jest
       .fn()
       .mockImplementation(async () => (user as ReturnType<typeof userWithRole>)?.tenantRole.permissions ?? []);
 
+    // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
     return {
       service: new TenantAuthorizationService({
         client: { v2TenantUser: { findFirst }, v2TenantRolePermission: { findMany } },

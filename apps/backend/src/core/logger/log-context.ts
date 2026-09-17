@@ -50,10 +50,12 @@ export class LogContext {
   }
 
   static attach(request: object, log: RequestLogContext): void {
+    // SAFETY: The log-context middleware initializes this Express request with the private context slot before these accessors run.
     (request as RequestWithLogContext)[REQUEST_LOG_CONTEXT] = log;
   }
 
   static forRequest(request: object): RequestLogContext | undefined {
+    // SAFETY: The log-context middleware initializes this Express request with the private context slot before these accessors run.
     return (request as RequestWithLogContext)[REQUEST_LOG_CONTEXT];
   }
 

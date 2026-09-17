@@ -172,6 +172,7 @@ export class ConfirmRentalHandler implements ICommandHandler<ConfirmRentalComman
       clampStartAt: participationTiming.blockOperationTime,
     });
 
+    // SAFETY: This value comes from a persisted or already validated non-empty domain identifier; the brand adds no runtime representation.
     const assetAssignmentPlan = await this.rentalAssetAllocation.planAllocations({
       tenantId: rental.tenantId,
       branchId: rental.branchId,

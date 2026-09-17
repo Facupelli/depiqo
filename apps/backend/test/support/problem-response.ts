@@ -11,6 +11,7 @@ export function expectProblemResponse(response: Response, expected: ExpectedProb
   expect(response.type).toBe(PROBLEM_DETAILS_CONTENT_TYPE);
   expect(response.status).toBe(expected.status);
 
+  // SAFETY: The fixture or preceding response assertions establish this object shape before these fields are inspected.
   const problem = response.body as Record<string, unknown>;
 
   expect(problem).toEqual(
@@ -38,6 +39,7 @@ export function expectValidationProblem(response: Response): void {
     type: PlatformProblemTypes.request.validationFailed,
   });
 
+  // SAFETY: The fixture or preceding response assertions establish this object shape before these fields are inspected.
   const invalidParams = (response.body as Record<string, unknown>)['invalid-params'];
 
   expect(invalidParams).toEqual(

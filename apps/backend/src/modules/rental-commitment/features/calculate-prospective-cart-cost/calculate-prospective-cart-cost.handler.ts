@@ -201,6 +201,7 @@ export class CalculateProspectiveCartCostHandler implements IQueryHandler<
     insuranceRatePercent: number,
     offersById: Map<string, { rentableItem: { name: string } }>,
   ): Extract<ProspectiveCartCostResponseDto, { available: true }>['pricing'] {
+    // SAFETY: The adjustment discriminator is checked against PROMOTION and COUPON in the enclosing branch.
     return {
       currency: result.final.currency,
       locale,

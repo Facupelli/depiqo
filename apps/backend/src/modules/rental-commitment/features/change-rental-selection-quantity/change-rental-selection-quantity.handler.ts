@@ -192,6 +192,7 @@ export class ChangeRentalSelectionQuantityHandler implements ICommandHandler<
             ownershipSnapshot: item.ownershipSnapshot,
           }));
         }
+        // SAFETY: This value comes from a persisted or already validated non-empty domain identifier; the brand adds no runtime representation.
         const changed = current.changeConfirmedSelectionQuantity({
           selectionId,
           newQuantity: quantity,

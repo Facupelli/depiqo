@@ -280,6 +280,7 @@ export class AssignRentalAccessoriesHandler implements ICommandHandler<
 
   private resolveAcceptedDelivery(snapshot: unknown | null): AcceptedDeliverySnapshot | undefined {
     if (snapshot === null) return undefined;
+    // SAFETY: This value is composed only of JSON-compatible primitives, arrays, and objects before it crosses the Prisma JSON boundary.
     const result = AcceptedDeliverySnapshot.create(snapshot as JsonValue);
     if (result.isErr()) throw result.error;
     return result.value;

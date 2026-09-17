@@ -113,6 +113,7 @@ export class AssignedAsset {
       return err(validation.error);
     }
 
+    // SAFETY: randomUUID() always returns a non-empty UUID string, which satisfies this opaque identifier brand.
     return ok(
       new AssignedAsset(props.id ?? (randomUUID() as AssignedAssetId), {
         tenantId: props.tenantId,
