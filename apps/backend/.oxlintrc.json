@@ -10,12 +10,34 @@
     "nursery": "allow"
   },
   "plugins": ["typescript"],
+  "jsPlugins": [
+    {
+      "name": "anti-slop",
+      "specifier": "./tools/oxlint/anti-slop/index.ts"
+    }
+  ],
   "env": {
     "node": true,
     "jest": true
   },
-  "ignorePatterns": ["src/scripts/**", "src/generated/prisma/**", "**/*.tsx"],
+  "ignorePatterns": [
+    "src/scripts/**",
+    "src/generated/prisma/**",
+    "tools/oxlint/anti-slop/**",
+    "**/*.tsx"
+  ],
   "rules": {
+    "anti-slop/no-chained-type-assertions": "allow",
+    "anti-slop/no-known-value-widening": "allow",
+    "anti-slop/no-module-mocking": "allow",
+    "anti-slop/no-object-parameters": "allow",
+    "anti-slop/no-shape-in-symbol-names": "allow",
+    "anti-slop/no-unknown-parameters": "allow",
+    "anti-slop/no-unknown-returns": "allow",
+    "anti-slop/no-unknown-type-aliases": "allow",
+    "anti-slop/no-unsafe-dictionary-type": "allow",
+    "anti-slop/no-widen-then-assert": "allow",
+    "anti-slop/require-safety-comment-for-type-assertion": "allow",
     "no-var": "error",
     "prefer-const": "error",
     "prefer-rest-params": "error",
