@@ -8,3 +8,12 @@ vendored from the upstream commit above.
 
 DEPIQO intentionally vendors only the rules it has reviewed and selected.
 Future upstream changes must be reviewed and incorporated deliberately.
+
+## Intentional deviations
+
+### `no-unknown-parameters`
+
+The pinned upstream rule exempts `cause: unknown`. DEPIQO exempts both
+`cause: unknown` and `error: unknown` because both represent the same legitimate
+arbitrary thrown-value boundary, and DEPIQO conventionally names these
+parameters `error`.

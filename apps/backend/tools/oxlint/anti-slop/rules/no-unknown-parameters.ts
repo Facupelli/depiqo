@@ -24,13 +24,13 @@ function isTypePredicateSubject(owner: ParameterOwner, parameterName: string): b
   );
 }
 
-/** Disallow unknown inputs except explicitly named error-cause enrichment. */
+/** Disallow unknown inputs except explicitly named error-boundary parameters. */
 export const noUnknownParametersRule = defineRule({
   meta: {
     type: "problem",
     docs: {
       description:
-        "Disallow explicitly unknown function parameters except `cause` and type-predicate subjects; decode unknown input at its I/O boundary instead.",
+        "Disallow explicitly unknown function parameters except error-boundary `error` and `cause` parameters and type-predicate subjects; decode unknown input at its I/O boundary instead.",
     },
     messages: {
       unknownParameter:
@@ -44,7 +44,7 @@ export const noUnknownParametersRule = defineRule({
         if (annotation === null || annotation === undefined) continue;
         if (!containsUnknownType(annotation.typeAnnotation)) continue;
         const name = functionParameterBindingName(parameter, context.sourceCode);
-        if (name === "cause" || isTypePredicateSubject(node, name)) continue;
+        if ((name === "cause" || name === "error") || isTypePredicateSubject(node, name)) continue;
         context.report({
           node: annotation.typeAnnotation,
           messageId: "unknownParameter",
