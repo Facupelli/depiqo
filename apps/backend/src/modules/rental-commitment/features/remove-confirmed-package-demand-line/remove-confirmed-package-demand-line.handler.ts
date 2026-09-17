@@ -5,14 +5,19 @@ import { PrismaUnitOfWork } from 'src/core/database/prisma-unit-of-work';
 
 import { toRentalIntegrationEvents } from '../../application/rental-integration-event.mapper';
 import {
+  DuplicateReleaseAssetIdsError,
+  InvalidPackageDemandLineRemovalQuantityError,
+  ReleaseAssetCountMismatchError,
+  ReleaseAssetDemandLineMismatchError,
+  RentalAssignedAssetNotFoundError,
   RentalCannotBeEditedFromStatusError,
   RentalDemandLineNotFoundError,
-  RentalInvalidFieldError,
+  RentalDemandLineNotPartOfPackageError,
+  RentalPackageMustRetainDemandLineError,
   RentalPeriodHasEndedError,
-  RentalSelectionNotFoundError,
 } from '../../domain/errors/rental-commitment.errors';
 import { Rental } from '../../domain/rental.aggregate';
-import { RentableItemKind } from '../../domain/rental-status';
+import { isCompositeRentableItemKind } from '../../domain/rental-status';
 import { getConfirmedPriceSnapshotForOwnerSplits } from '../../owner-split/confirmed-price-snapshot-for-owner-splits';
 import { RentalOwnerSplitDraft } from '../../owner-split/owner-split-calculator.types';
 import { RentalOwnerSplitCalculator } from '../../owner-split/rental-owner-split-calculator';
@@ -71,8 +76,9 @@ export class RemoveConfirmedPackageDemandLineHandler implements ICommandHandler<
       const parentSelection = demandLine
         ? rental.currentSelections.find((candidate) => candidate.id === demandLine.rentalSelectionId)
         : undefined;
-      const isCurrentPackageDemandLine = parentSelection?.rentableItemKindSnapshot === RentableItemKind.Package;
-      if (isCurrentPackageDemandLine && demandLine?.operationalQuantity === quantity) {
+      const isCurrentCompositeDemandLine =
+        parentSelection !== undefined && isCompositeRentableItemKind(parentSelection.rentableItemKindSnapshot);
+      if (isCurrentCompositeDemandLine && demandLine?.operationalQuantity === quantity) {
         const accessoryReference = await tx.v2RentalAccessorySelection.findFirst({
           where: {
             tenantId,
@@ -160,8 +166,28 @@ export class RemoveConfirmedPackageDemandLineHandler implements ICommandHandler<
     if (error instanceof RentalPeriodHasEndedError) {
       return this.error('rental_commitment.rental_period_ended', error.message, context, error);
     }
-    if (error instanceof RentalInvalidFieldError || error instanceof RentalSelectionNotFoundError) {
-      return this.error('rental_commitment.invalid_rental_field', error.message, context, error);
+    if (error instanceof RentalDemandLineNotPartOfPackageError) {
+      return this.error('rental_commitment.demand_line_not_part_of_package', error.message, context, error);
+    }
+    if (error instanceof RentalPackageMustRetainDemandLineError) {
+      return this.error('rental_commitment.package_must_retain_demand_line', error.message, context, error);
+    }
+    if (error instanceof InvalidPackageDemandLineRemovalQuantityError) {
+      return this.error(
+        'rental_commitment.invalid_package_demand_line_removal_quantity',
+        error.message,
+        context,
+        error,
+      );
+    }
+    if (error instanceof ReleaseAssetCountMismatchError) {
+      return this.error('rental_commitment.release_asset_count_mismatch', error.message, context, error);
+    }
+    if (error instanceof DuplicateReleaseAssetIdsError) {
+      return this.error('rental_commitment.duplicate_release_asset_ids', error.message, context, error);
+    }
+    if (error instanceof ReleaseAssetDemandLineMismatchError || error instanceof RentalAssignedAssetNotFoundError) {
+      return this.error('rental_commitment.release_asset_demand_line_mismatch', error.message, context, error);
     }
     throw error;
   }

@@ -112,10 +112,40 @@ const problemMap = {
     HttpStatus.CONFLICT,
     'The rental was changed by another request. Refresh it and try again.',
   ),
-  'rental_commitment.invalid_rental_field': problem(
-    'invalid_rental_field',
-    'Invalid rental state',
+  'rental_commitment.demand_line_not_part_of_package': problem(
+    'demand_line_not_part_of_package',
+    'Demand line is not part of a package',
     HttpStatus.UNPROCESSABLE_ENTITY,
-    'The demand line cannot be removed from its current rental state.',
+    'The demand line does not belong to a package and cannot be removed with this operation.',
+  ),
+  'rental_commitment.package_must_retain_demand_line': problem(
+    'package_must_retain_demand_line',
+    'Package must retain equipment',
+    HttpStatus.UNPROCESSABLE_ENTITY,
+    'Removing this demand line would leave the package without operational equipment.',
+  ),
+  'rental_commitment.invalid_package_demand_line_removal_quantity': problem(
+    'invalid_package_demand_line_removal_quantity',
+    'Invalid removal quantity',
+    HttpStatus.UNPROCESSABLE_ENTITY,
+    'The requested package demand line removal quantity is invalid.',
+  ),
+  'rental_commitment.release_asset_count_mismatch': problem(
+    'release_asset_count_mismatch',
+    'Release asset count mismatch',
+    HttpStatus.UNPROCESSABLE_ENTITY,
+    'The selected asset count must match the requested removal quantity.',
+  ),
+  'rental_commitment.duplicate_release_asset_ids': problem(
+    'duplicate_release_asset_ids',
+    'Duplicate release assets',
+    HttpStatus.UNPROCESSABLE_ENTITY,
+    'Each selected asset may only be included once.',
+  ),
+  'rental_commitment.release_asset_demand_line_mismatch': problem(
+    'release_asset_demand_line_mismatch',
+    'Selected asset does not belong to the demand line',
+    HttpStatus.UNPROCESSABLE_ENTITY,
+    'Every selected asset must currently belong to the package demand line being changed.',
   ),
 } satisfies Record<RemoveConfirmedPackageDemandLineErrorCode, ProblemDefinition>;

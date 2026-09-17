@@ -49,6 +49,28 @@ describe('RemoveConfirmedPackageDemandLineHttpController', () => {
     );
   });
 
+  it.each([
+    'rental_commitment.demand_line_not_part_of_package',
+    'rental_commitment.package_must_retain_demand_line',
+    'rental_commitment.invalid_package_demand_line_removal_quantity',
+    'rental_commitment.release_asset_count_mismatch',
+    'rental_commitment.duplicate_release_asset_ids',
+    'rental_commitment.release_asset_demand_line_mismatch',
+  ] as const)('maps %s to unprocessable entity Problem Details', async (code) => {
+    const applicationError = removeConfirmedPackageDemandLineError(code, 'ignored');
+    const commandBus = { execute: jest.fn().mockResolvedValue(err(applicationError)) } as unknown as CommandBus;
+    const controller = new RemoveConfirmedPackageDemandLineHttpController(commandBus);
+
+    try {
+      await controller.remove(params, dto, user);
+      throw new Error('Expected controller to throw');
+    } catch (error) {
+      const problem = error as ProblemException;
+      expect(problem.getStatus()).toBe(422);
+      expect(problem.getProblemDetails()).toMatchObject({ code });
+    }
+  });
+
   it('maps an accessory reference to conflict Problem Details', async () => {
     const applicationError = removeConfirmedPackageDemandLineError(
       'rental_commitment.rental_demand_line_referenced_by_accessory',

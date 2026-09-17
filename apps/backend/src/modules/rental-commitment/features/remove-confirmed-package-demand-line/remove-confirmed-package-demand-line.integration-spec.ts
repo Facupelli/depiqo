@@ -44,7 +44,7 @@ describe('RemoveConfirmedPackageDemandLine integration', () => {
   async function scenario(
     options: {
       period?: { start: Date; end: Date };
-      kind?: 'PACKAGE' | 'SINGLE';
+      kind?: 'PACKAGE' | 'KIT' | 'BUNDLE' | 'SINGLE';
       demandCount?: number;
       demandQuantities?: number[];
       thirdPartyDemandIndex?: number;
@@ -263,6 +263,29 @@ describe('RemoveConfirmedPackageDemandLine integration', () => {
         periodEnd: setup.period.end,
       }),
     ]);
+  });
+
+  it('removes a BUNDLE child with the same persistence behavior as PACKAGE', async () => {
+    const setup = await scenario({ kind: 'BUNDLE' });
+    const before = await fixtures.persistedState(setup.rental.rentalId);
+    const targetId = setup.rental.demandLineIds[1];
+    const targetAssignment = before.rental.assignedAssets.find((item) => item.rentalDemandLineId === targetId)!;
+
+    const result = await remove(setup, targetId, before.rental.version);
+
+    expect(result.isOk()).toBe(true);
+    const after = await fixtures.persistedState(setup.rental.rentalId);
+    expect(after.rental.version).toBe(before.rental.version + 1);
+    expect(after.rental.selections).toContainEqual(
+      expect.objectContaining({ id: setup.selectionId, rentableItemKindSnapshot: 'BUNDLE', removedAt: null }),
+    );
+    expect(after.rental.demandLines).toContainEqual(
+      expect.objectContaining({ id: targetId, removedQuantity: 1, removedAt: expect.any(Date) }),
+    );
+    expect(after.rental.assignedAssets.some((item) => item.id === targetAssignment.id)).toBe(false);
+    expect(after.blocks.some((item) => item.assetId === targetAssignment.assetId)).toBe(false);
+    expect(after.rental.priceSnapshot).toEqual(before.rental.priceSnapshot);
+    expect(after.rental.acceptedCustomerTotal).toEqual(before.rental.acceptedCustomerTotal);
   });
 
   it('partially suppresses one in-progress package child assignment and preserves remaining operational truth', async () => {
@@ -502,18 +525,23 @@ describe('RemoveConfirmedPackageDemandLine integration', () => {
 
     const result = await remove(setup, targetId, before.rental.version);
 
-    expect(result.isErr() && result.error.code).toBe('rental_commitment.invalid_rental_field');
+    expect(result.isErr() && result.error.code).toBe('rental_commitment.demand_line_not_part_of_package');
     expect(await fixtures.persistedState(setup.rental.rentalId)).toEqual(before);
     expect(await fixtures.accessoryState(setup.rental.rentalId)).toEqual(accessoryBefore);
   });
 
   it.each([
-    ['a SINGLE demand', { kind: 'SINGLE' as const, demandCount: 3 }, 0, 'rental_commitment.invalid_rental_field'],
+    [
+      'a SINGLE demand',
+      { kind: 'SINGLE' as const, demandCount: 3 },
+      0,
+      'rental_commitment.demand_line_not_part_of_package',
+    ],
     [
       'the final PACKAGE child',
       { kind: 'PACKAGE' as const, demandCount: 1 },
       0,
-      'rental_commitment.invalid_rental_field',
+      'rental_commitment.package_must_retain_demand_line',
     ],
     [
       'an unknown demand',
@@ -526,6 +554,44 @@ describe('RemoveConfirmedPackageDemandLine integration', () => {
     const before = await fixtures.persistedState(setup.rental.rentalId);
     const demandLineId = index < 0 ? randomUUID() : setup.rental.demandLineIds[index];
     const result = await remove(setup, demandLineId, before.rental.version);
+    expect(result.isErr() && result.error.code).toBe(code);
+    expect(await fixtures.persistedState(setup.rental.rentalId)).toEqual(before);
+  });
+
+  it.each([
+    [
+      'an invalid quantity',
+      { quantity: 0, releaseAssetIds: [] },
+      'rental_commitment.invalid_package_demand_line_removal_quantity',
+    ],
+    [
+      'a release asset count mismatch',
+      { quantity: 2, releaseAssetIds: [] },
+      'rental_commitment.release_asset_count_mismatch',
+    ],
+    [
+      'duplicate release asset IDs',
+      { quantity: 2, releaseAssetIds: undefined },
+      'rental_commitment.duplicate_release_asset_ids',
+    ],
+    [
+      'an asset from another demand line',
+      { quantity: 1, releaseAssetIds: undefined },
+      'rental_commitment.release_asset_demand_line_mismatch',
+    ],
+  ])('maps %s to its specific application error', async (_name, options, code) => {
+    const setup = await scenario({ demandQuantities: [3, 1] });
+    const targetId = setup.rental.demandLineIds[0];
+    const before = await fixtures.persistedState(setup.rental.rentalId);
+    const effectiveOptions =
+      code === 'rental_commitment.duplicate_release_asset_ids'
+        ? { quantity: 2, releaseAssetIds: [setup.assetIdsByDemand[0][0], setup.assetIdsByDemand[0][0]] }
+        : code === 'rental_commitment.release_asset_demand_line_mismatch'
+          ? { quantity: 1, releaseAssetIds: [setup.assetIdsByDemand[1][0]] }
+          : options;
+
+    const result = await remove(setup, targetId, before.rental.version, effectiveOptions);
+
     expect(result.isErr() && result.error.code).toBe(code);
     expect(await fixtures.persistedState(setup.rental.rentalId)).toEqual(before);
   });

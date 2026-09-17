@@ -5,7 +5,7 @@ import { GetRentalDetailQuery } from './get-rental-detail.query';
 
 const removedAt = new Date('2030-01-15T12:00:00.000Z');
 
-function rentalRecord() {
+function rentalRecord(compositeKind: 'PACKAGE' | 'KIT' | 'BUNDLE' = 'PACKAGE') {
   return {
     id: 'rental-1',
     rentalNumber: 1,
@@ -33,7 +33,7 @@ function rentalRecord() {
         rentalOfferId: 'package-offer',
         rentableItemId: 'package-item',
         rentableItemNameSnapshot: 'Pack Iluminación',
-        rentableItemKindSnapshot: 'PACKAGE' as const,
+        rentableItemKindSnapshot: compositeKind,
         quantity: 1,
         priceSnapshot: null,
         demandLines: [
@@ -89,8 +89,8 @@ function rentalRecord() {
   };
 }
 
-function createHandler(removedDemandLines: object[]) {
-  const findFirst = jest.fn().mockResolvedValue(rentalRecord());
+function createHandler(removedDemandLines: object[], compositeKind: 'PACKAGE' | 'KIT' | 'BUNDLE' = 'PACKAGE') {
+  const findFirst = jest.fn().mockResolvedValue(rentalRecord(compositeKind));
   const findMany = jest.fn().mockResolvedValue(removedDemandLines);
   const handler = new GetRentalDetailHandler(
     { client: { v2Rental: { findFirst }, v2RentalDemandLine: { findMany } } } as any,
@@ -167,11 +167,38 @@ describe('GetRentalDetailHandler removed package demand', () => {
           tenantId: 'tenant-1',
           rentalId: 'rental-1',
           removedAt: { not: null },
-          rentalSelection: { removedAt: null, rentableItemKindSnapshot: 'PACKAGE' },
+          rentalSelection: {
+            removedAt: null,
+            rentableItemKindSnapshot: { in: ['PACKAGE', 'KIT', 'BUNDLE'] },
+          },
         },
       }),
     );
   });
+
+  it.each(['BUNDLE', 'KIT'] as const)(
+    'projects a fully removed child for a current %s parent',
+    async (compositeKind) => {
+      const removedLine = {
+        id: 'demand-b',
+        rentalSelectionId: 'package-selection',
+        equipmentTypeId: 'type-b',
+        equipmentTypeNameSnapshot: 'Removed child',
+        quantity: 1,
+        removedAt,
+      };
+      const { handler } = createHandler([removedLine], compositeKind);
+
+      const result = await handler.execute(new GetRentalDetailQuery('tenant-1', 'rental-1'));
+
+      expect(result.isOk()).toBe(true);
+      if (result.isErr()) return;
+      expect(result.value.selections[0]).toMatchObject({
+        rentableItemKind: compositeKind,
+        removedDemandLines: [expect.objectContaining({ id: 'demand-b', quantity: 1 })],
+      });
+    },
+  );
 
   it('returns a restored line to current demand and removes its historical representation', async () => {
     const record = rentalRecord();

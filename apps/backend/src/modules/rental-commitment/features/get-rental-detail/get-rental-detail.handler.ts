@@ -9,6 +9,7 @@ import { BranchFacts } from 'src/modules/tenant-management/public-api/branch-fac
 import { RetainedRentalCustomerProfileFacts } from 'src/modules/tenant-management/public-api/retained-rental-customer-profile-facts.public-api';
 import { getRentalDetailError, GetRentalDetailError } from './get-rental-detail.errors';
 import { toRentalDetailPricing } from '../../application/accepted-pricing/accepted-pricing-snapshot.projections';
+import { COMPOSITE_RENTABLE_ITEM_KINDS } from '../../domain/rental-status';
 import { AcceptedDeliverySnapshot } from '../../domain/value-objects/accepted-delivery-snapshot.value-object';
 import { ConfirmedPriceSnapshot } from '../../domain/value-objects/confirmed-price-snapshot.value-object';
 import { GetRentalDetailQuery } from './get-rental-detail.query';
@@ -129,7 +130,7 @@ export class GetRentalDetailHandler implements IQueryHandler<GetRentalDetailQuer
         removedAt: { not: null },
         rentalSelection: {
           removedAt: null,
-          rentableItemKindSnapshot: 'PACKAGE',
+          rentableItemKindSnapshot: { in: [...COMPOSITE_RENTABLE_ITEM_KINDS] },
         },
       },
       select: {

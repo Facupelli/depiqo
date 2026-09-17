@@ -24,6 +24,16 @@ export enum RentableItemKind {
   Bundle = 'BUNDLE',
 }
 
+export const COMPOSITE_RENTABLE_ITEM_KINDS = [
+  RentableItemKind.Package,
+  RentableItemKind.Kit,
+  RentableItemKind.Bundle,
+] as const;
+
+export function isCompositeRentableItemKind(kind: RentableItemKind): boolean {
+  return COMPOSITE_RENTABLE_ITEM_KINDS.some((compositeKind) => compositeKind === kind);
+}
+
 export enum AssetBlockType {
   Equipment = 'EQUIPMENT',
   Accessory = 'ACCESSORY',
