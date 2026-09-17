@@ -1,6 +1,22 @@
 import type { LocalDate } from '@repo/api-contracts';
 
 /**
+ * Converts an absolute instant to its calendar date in an IANA timezone.
+ */
+export function instantToLocalDate(instant: Date, timezone: string): LocalDate {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: timezone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(instant);
+
+  const get = (type: string): string => parts.find((part) => part.type === type)?.value ?? '00';
+
+  return `${get('year')}-${get('month')}-${get('day')}`;
+}
+
+/**
  * Maps Prisma's DateTime representation for a PostgreSQL DATE to a local-date key.
  * PostgreSQL DATE contains no timezone. UTC components avoid machine-timezone conversion.
  */

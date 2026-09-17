@@ -1,3 +1,4 @@
+import { describe, expect, it } from 'vitest';
 import { RentalDemandLine } from './rental-demand-line.entity';
 import { RentalInvalidFieldError } from './errors/rental-commitment.errors';
 import { RentalSelection } from './rental-selection.entity';

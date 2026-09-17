@@ -3,7 +3,7 @@ import { PassportStrategy } from '@nestjs/passport';
 import { Strategy } from 'passport-local';
 import { AuthUser } from '../../shared/auth.types';
 import { ValidateLocalCredentialsService } from '../validate-local-credentials/validate-local-credentials.service';
-import { Request } from 'express';
+import type { Request } from 'express';
 
 @Injectable()
 export class LocalStrategy extends PassportStrategy(Strategy, 'local') {

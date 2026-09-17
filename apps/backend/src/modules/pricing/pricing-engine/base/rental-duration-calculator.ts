@@ -5,7 +5,7 @@ import { localDateDayOfWeek } from 'src/core/temporal/local-date';
 import { InvalidPricingInputError } from '../errors/pricing.errors';
 import { BillingUnit } from '../shared/billing-unit.type';
 import { DailyBillingPolicy } from '../shared/daily-billing-unit-policy.type';
-import { toLocalDate } from '../shared/local-date';
+import { instantToLocalDate } from 'src/core/temporal/local-date';
 
 type RentalDurationCalculatorInput = {
   start: Date;
@@ -144,8 +144,8 @@ export class RentalDurationCalculator {
    * from elapsed duration and the selected daily billing policy.
    */
   private countQualifyingWeekendPairs(input: { start: Date; end: Date; timezone: string }): number {
-    const firstLocalDate = toLocalDate(input.start, input.timezone);
-    const lastLocalDate = toLocalDate(input.end, input.timezone);
+    const firstLocalDate = instantToLocalDate(input.start, input.timezone);
+    const lastLocalDate = instantToLocalDate(input.end, input.timezone);
     let candidateDate = firstLocalDate;
     let count = 0;
 

@@ -1,3 +1,4 @@
+import { describe, expect, it, vi } from 'vitest';
 import { TenantPermission } from '@repo/api-contracts';
 import { V2TenantSystemRole } from 'src/generated/prisma/enums';
 
@@ -9,8 +10,8 @@ describe('TenantAuthorizationService', () => {
 
   function createService(initialUser: ReturnType<typeof userWithRole> | null) {
     let user = initialUser;
-    const findFirst = jest.fn().mockImplementation(async () => user);
-    const findMany = jest.fn().mockImplementation(async () => user?.tenantRole.permissions ?? []);
+    const findFirst = vi.fn().mockImplementation(async () => user);
+    const findMany = vi.fn().mockImplementation(async () => user?.tenantRole.permissions ?? []);
 
     // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
     return {

@@ -1,3 +1,4 @@
+import { describe, expect, it } from 'vitest';
 import { Money } from '../money/money.value-object';
 import { CouponValidationService } from '../coupons/coupon-validation.service';
 import { CouponNotApplicableError } from '../errors/pricing.errors';

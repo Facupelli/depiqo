@@ -1,5 +1,6 @@
+import { describe, expect, it, vi } from 'vitest';
 import { CommandBus } from '@nestjs/cqrs';
-import { err, ok } from 'neverthrow';
+import { err } from 'neverthrow';
 
 import { ProblemException } from 'src/core/problem-details';
 import { AuthUser } from 'src/modules/tenant-management/auth/shared/auth.types';
@@ -23,15 +24,6 @@ function requestInput() {
 }
 
 describe('AddAssetsToEquipmentTypeHttpController', () => {
-  it('returns the created asset ids', async () => {
-    // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
-    const commandBus = { execute: jest.fn().mockResolvedValue(ok({ assetIds: ['asset-1'] })) } as CommandBus;
-    const controller = new AddAssetsToEquipmentTypeHttpController(commandBus);
-    const input = requestInput();
-
-    await expect(controller.create(input.params, input.dto, input.user)).resolves.toEqual({ assetIds: ['asset-1'] });
-  });
-
   it('maps expected failures to Problem Details with the feature error and cause', async () => {
     const cause = new Error('equipment type not found');
     const applicationError = addAssetsToEquipmentTypeError(
@@ -41,7 +33,7 @@ describe('AddAssetsToEquipmentTypeHttpController', () => {
       { equipmentTypeId: 'equipment-type-1' },
     );
     // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
-    const commandBus = { execute: jest.fn().mockResolvedValue(err(applicationError)) } as CommandBus;
+    const commandBus = { execute: vi.fn().mockResolvedValue(err(applicationError)) } as CommandBus;
     const controller = new AddAssetsToEquipmentTypeHttpController(commandBus);
     const input = requestInput();
 

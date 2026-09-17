@@ -1,3 +1,4 @@
+import { beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
 import { err, ok } from 'neverthrow';
 import { PinoLogger } from 'nestjs-pino';
 
@@ -27,14 +28,14 @@ function deferred<T>(): Deferred<T> {
 }
 
 class TestIntegrationEventPublisher extends IntegrationEventPublisher {
-  publish = jest.fn(async (_events: readonly IntegrationEvent[]) => undefined);
+  publish = vi.fn(async (_events: readonly IntegrationEvent[]) => undefined);
 }
 
 function makeLogger(): PinoLogger {
   // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
   return {
-    error: jest.fn(),
-    setContext: jest.fn(),
+    error: vi.fn(),
+    setContext: vi.fn(),
   } as PinoLogger;
 }
 
@@ -61,7 +62,7 @@ function makePrisma() {
   // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
   const prisma = {
     client: {
-      $transaction: jest.fn(async <T>(work: (tx: TestTransactionClient) => Promise<T>): Promise<T> => {
+      $transaction: vi.fn(async <T>(work: (tx: TestTransactionClient) => Promise<T>): Promise<T> => {
         transactionsOpened += 1;
         const tx = { id: transactionsOpened };
         return work(tx);
@@ -72,14 +73,14 @@ function makePrisma() {
   // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
   return {
     prisma,
-    transactionCalls: () => prisma.client.$transaction as jest.Mock,
+    transactionCalls: () => prisma.client.$transaction as Mock,
     transactionsOpened: () => transactionsOpened,
   };
 }
 
 describe('PrismaUnitOfWork', () => {
   beforeEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   describe('standalone transaction', () => {
@@ -217,7 +218,7 @@ describe('PrismaUnitOfWork', () => {
       // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
       const prisma = {
         client: {
-          $transaction: jest.fn(async <T>(work: (tx: TestTransactionClient) => Promise<T>): Promise<T> => {
+          $transaction: vi.fn(async <T>(work: (tx: TestTransactionClient) => Promise<T>): Promise<T> => {
             try {
               const value = await work({});
               markers.push('commit');
@@ -256,7 +257,7 @@ describe('PrismaUnitOfWork', () => {
       // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
       const prisma = {
         client: {
-          $transaction: jest.fn(async <T>(work: (tx: TestTransactionClient) => Promise<T>): Promise<T> => {
+          $transaction: vi.fn(async <T>(work: (tx: TestTransactionClient) => Promise<T>): Promise<T> => {
             try {
               const value = await work({});
               markers.push('commit');
@@ -287,7 +288,7 @@ describe('PrismaUnitOfWork', () => {
       const { prisma, transactionsOpened } = makePrisma();
       const publisher = new TestIntegrationEventPublisher();
       const unitOfWork = new PrismaUnitOfWork(prisma, publisher, makeLogger());
-      const nestedWork = jest.fn();
+      const nestedWork = vi.fn();
 
       await expect(
         unitOfWork.runInTransaction(async (outer) => {
@@ -306,7 +307,7 @@ describe('PrismaUnitOfWork', () => {
       const { prisma, transactionsOpened } = makePrisma();
       const publisher = new TestIntegrationEventPublisher();
       const unitOfWork = new PrismaUnitOfWork(prisma, publisher, makeLogger());
-      const nestedWork = jest.fn();
+      const nestedWork = vi.fn();
       const event = makeEvent();
 
       await unitOfWork.runInTransaction(async ({ integrationEvents }) => {

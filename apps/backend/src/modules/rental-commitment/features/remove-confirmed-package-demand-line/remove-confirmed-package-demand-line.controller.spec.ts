@@ -1,3 +1,4 @@
+import { describe, expect, it, vi } from 'vitest';
 import { CommandBus } from '@nestjs/cqrs';
 import { err, ok } from 'neverthrow';
 
@@ -31,7 +32,7 @@ describe('RemoveConfirmedPackageDemandLineHttpController', () => {
     const updatedAt = new Date('2030-01-01T10:00:00.000Z');
     // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
     const commandBus = {
-      execute: jest.fn().mockResolvedValue(ok({ rentalId: 'rental-1', version: 8, updatedAt })),
+      execute: vi.fn().mockResolvedValue(ok({ rentalId: 'rental-1', version: 8, updatedAt })),
     } as CommandBus;
     const controller = new RemoveConfirmedPackageDemandLineHttpController(commandBus);
 
@@ -63,7 +64,7 @@ describe('RemoveConfirmedPackageDemandLineHttpController', () => {
   ] as const)('maps %s to unprocessable entity Problem Details', async (code) => {
     const applicationError = removeConfirmedPackageDemandLineError(code, 'ignored');
     // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
-    const commandBus = { execute: jest.fn().mockResolvedValue(err(applicationError)) } as CommandBus;
+    const commandBus = { execute: vi.fn().mockResolvedValue(err(applicationError)) } as CommandBus;
     const controller = new RemoveConfirmedPackageDemandLineHttpController(commandBus);
 
     try {
@@ -83,7 +84,7 @@ describe('RemoveConfirmedPackageDemandLineHttpController', () => {
       'ignored',
     );
     // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
-    const commandBus = { execute: jest.fn().mockResolvedValue(err(applicationError)) } as CommandBus;
+    const commandBus = { execute: vi.fn().mockResolvedValue(err(applicationError)) } as CommandBus;
     const controller = new RemoveConfirmedPackageDemandLineHttpController(commandBus);
 
     try {

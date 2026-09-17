@@ -1,3 +1,4 @@
+import { describe, expect, it, vi } from 'vitest';
 import { randomUUID } from 'node:crypto';
 
 import { TestingModule } from '@nestjs/testing';
@@ -201,7 +202,8 @@ describe('CatalogOfferingAuthoring integration', () => {
     // Deterministic race simulation: force the application duplicate pre-check
     // to miss so the real upsert reaches the
     // v2_rental_offers_tenant_branch_item_key unique index.
-    const findFirstSpy = jest.spyOn(prisma.client.v2RentalOffer, 'findFirst').mockResolvedValue(null);
+    const originalFindFirst = prisma.client.v2RentalOffer.findFirst;
+    const findFirstSpy = vi.spyOn(prisma.client.v2RentalOffer, 'findFirst').mockResolvedValue(null);
 
     let result: Awaited<ReturnType<typeof authoring.createRentalOfferForRentableItem>>;
     try {
@@ -211,7 +213,9 @@ describe('CatalogOfferingAuthoring integration', () => {
         branchId: current.branch.id,
       });
     } finally {
-      findFirstSpy.mockRestore();
+      // Prisma delegates are proxies, so Vitest cannot restore their property descriptor reliably.
+      // Restore the original implementation while retaining the harmless spy wrapper.
+      findFirstSpy.mockImplementation(originalFindFirst);
     }
 
     expect(result.isErr() && result.error.code).toBe('RentalOfferAlreadyExists');
@@ -242,7 +246,7 @@ describe('CatalogOfferingAuthoring integration', () => {
 
     const repository = moduleRef.get(PrismaRentalOfferRepository);
     const rejection = createRejection();
-    const saveManySpy = jest.spyOn(repository, 'saveMany').mockRejectedValueOnce(rejection);
+    const saveManySpy = vi.spyOn(repository, 'saveMany').mockRejectedValueOnce(rejection);
 
     try {
       // A fresh branch keeps the duplicate pre-check happy so the flow reaches

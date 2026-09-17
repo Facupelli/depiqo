@@ -1,3 +1,4 @@
+import { describe, expect, it } from 'vitest';
 import { V2TenantStatus, V2UserStatus } from 'src/generated/prisma/enums';
 
 import { isTenantUserAuthenticationEligible } from './tenant-user-authentication-eligibility.policy';

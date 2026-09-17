@@ -1,3 +1,4 @@
+import { describe, expect, it } from 'vitest';
 import { FulfillmentMethod } from '../../domain/rental-status';
 import { RentalPeriod } from '../../domain/value-objects/rental-period.value-object';
 import { CreateConfirmedRentalCommand } from './create-confirmed-rental.command';

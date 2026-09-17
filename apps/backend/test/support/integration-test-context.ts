@@ -1,6 +1,7 @@
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { CqrsModule } from '@nestjs/cqrs';
 import { Test, TestingModule } from '@nestjs/testing';
+import { afterAll, beforeAll } from 'vitest';
 
 import { AppConfigModule } from '../../src/config/config.module';
 import { DatabaseModule } from '../../src/core/database/database.module';

@@ -1,3 +1,4 @@
+import { describe, expect, it, vi } from 'vitest';
 import { TenantConfig } from '../domain/value-objects/tenant-config.value-object';
 import { BranchFactsService } from './branch-facts.service';
 
@@ -5,7 +6,7 @@ describe('BranchFactsService timezone resolution', () => {
   const tenantConfig = TenantConfig.default().toPlainObject();
 
   function createService(branches: Array<{ id: string; timezone: string | null }>, config = tenantConfig) {
-    const findMany = jest.fn().mockResolvedValue(
+    const findMany = vi.fn().mockResolvedValue(
       branches.map((branch) => ({
         id: branch.id,
         timezone: branch.timezone,

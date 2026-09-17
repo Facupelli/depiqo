@@ -6,7 +6,7 @@ import {
 import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { jwtVerify } from 'jose';
-import { Request } from 'express';
+import type { Request } from 'express';
 import { Env } from 'src/config/env.schema';
 import { StorefrontTenantContext } from '../tenant-context.contract';
 

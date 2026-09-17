@@ -1,3 +1,4 @@
+import { describe, expect, it, vi } from 'vitest';
 import { V2NotificationChannel, V2NotificationDeliveryStatus } from 'src/generated/prisma/client';
 
 import { FakeEmailDeliveryPort } from '../../../../test/support/external-infrastructure/fakes';
@@ -32,19 +33,19 @@ describe('NotificationOrchestrator', () => {
   function createOrchestrator() {
     // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
     const channelPolicyResolver = {
-      resolveChannels: jest.fn().mockResolvedValue([NotificationChannel.EMAIL]),
+      resolveChannels: vi.fn().mockResolvedValue([NotificationChannel.EMAIL]),
     } as NotificationChannelPolicyResolver;
     // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
     const channelMutePolicy = {
-      isMuted: jest.fn().mockReturnValue(false),
+      isMuted: vi.fn().mockReturnValue(false),
     } as NotificationChannelMutePolicy;
     // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
     const tenantNotificationSuppressionPolicy = {
-      evaluate: jest.fn().mockResolvedValue({ suppressed: false }),
+      evaluate: vi.fn().mockResolvedValue({ suppressed: false }),
     } as TenantNotificationSuppressionPolicy;
     // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
     const notificationPersistence = {
-      createNotificationWithPendingDeliveries: jest.fn().mockResolvedValue({
+      createNotificationWithPendingDeliveries: vi.fn().mockResolvedValue({
         notificationId: 'notification-1',
         created: true,
         deliveries: [
@@ -58,12 +59,12 @@ describe('NotificationOrchestrator', () => {
           },
         ],
       }),
-      markDeliverySent: jest.fn().mockResolvedValue(true),
-      markDeliveryFailed: jest.fn().mockResolvedValue(true),
+      markDeliverySent: vi.fn().mockResolvedValue(true),
+      markDeliveryFailed: vi.fn().mockResolvedValue(true),
     } as NotificationPersistenceService;
     // SAFETY: The preceding test setup and assertions establish this value shape before the test inspects it.
     const emailRenderer = {
-      render: jest.fn().mockResolvedValue({
+      render: vi.fn().mockResolvedValue({
         subject: 'Rental cancelled',
         html: '<p>Rental cancelled</p>',
         text: 'Rental cancelled',
@@ -72,7 +73,7 @@ describe('NotificationOrchestrator', () => {
     const emailDeliveryPort = new FakeEmailDeliveryPort();
     // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
     const emailSenderResolver = {
-      resolve: jest.fn().mockResolvedValue({ fromEmail: 'no-reply@example.com' }),
+      resolve: vi.fn().mockResolvedValue({ fromEmail: 'no-reply@example.com' }),
     } as EmailSenderResolver;
 
     return {
@@ -97,7 +98,7 @@ describe('NotificationOrchestrator', () => {
   it('does not persist or send a suppressed notification', async () => {
     const { orchestrator, tenantNotificationSuppressionPolicy, notificationPersistence, emailDeliveryPort } =
       createOrchestrator();
-    tenantNotificationSuppressionPolicy.evaluate = jest.fn().mockResolvedValue({
+    tenantNotificationSuppressionPolicy.evaluate = vi.fn().mockResolvedValue({
       suppressed: true,
       reason: NotificationDispatchSkipReason.SUPPRESSED_BY_TENANT_COMMUNICATION_MODE,
       message: 'Suppressed by tenant communication mode.',
@@ -121,7 +122,7 @@ describe('NotificationOrchestrator', () => {
 
   it('does not persist or send a muted notification', async () => {
     const { orchestrator, channelMutePolicy, notificationPersistence, emailDeliveryPort } = createOrchestrator();
-    channelMutePolicy.isMuted = jest.fn().mockReturnValue(true);
+    channelMutePolicy.isMuted = vi.fn().mockReturnValue(true);
 
     await expect(orchestrator.dispatch(request)).resolves.toEqual({
       attemptedChannels: [],
@@ -141,7 +142,7 @@ describe('NotificationOrchestrator', () => {
 
   it('persists each recipient before sending it through the provider', async () => {
     const { orchestrator, notificationPersistence, emailDeliveryPort } = createOrchestrator();
-    notificationPersistence.createNotificationWithPendingDeliveries = jest.fn().mockResolvedValue({
+    notificationPersistence.createNotificationWithPendingDeliveries = vi.fn().mockResolvedValue({
       notificationId: 'notification-1',
       created: true,
       deliveries: [
@@ -230,7 +231,7 @@ describe('NotificationOrchestrator', () => {
 
   it('returns a persisted replay outcome without sending again', async () => {
     const { orchestrator, notificationPersistence, emailDeliveryPort } = createOrchestrator();
-    notificationPersistence.createNotificationWithPendingDeliveries = jest.fn().mockResolvedValue({
+    notificationPersistence.createNotificationWithPendingDeliveries = vi.fn().mockResolvedValue({
       notificationId: 'notification-1',
       created: false,
       deliveries: [
@@ -262,7 +263,7 @@ describe('NotificationOrchestrator', () => {
 
   it('redacts sensitive values from the persisted HTML snapshot', async () => {
     const { orchestrator, notificationPersistence, emailRenderer } = createOrchestrator();
-    emailRenderer.render = jest.fn().mockResolvedValue({
+    emailRenderer.render = vi.fn().mockResolvedValue({
       subject: 'Sign',
       html: '<a href="https://tenant.example/sign?token=secret">Sign</a>',
       text: 'https://tenant.example/sign?token=secret',

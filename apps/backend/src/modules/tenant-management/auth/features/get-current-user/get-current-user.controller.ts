@@ -1,6 +1,6 @@
 import type { GetCurrentUserResponseDto } from '@repo/api-contracts';
 import { Controller, Get, InternalServerErrorException, Req, UnauthorizedException, UseGuards } from '@nestjs/common';
-import { Request } from 'express';
+import type { Request } from 'express';
 
 import { AUTH_ACTOR_TYPES, AuthActor } from '../../shared/auth.types';
 import { CurrentUser } from '../../shared/current-user/current-user.decorator';

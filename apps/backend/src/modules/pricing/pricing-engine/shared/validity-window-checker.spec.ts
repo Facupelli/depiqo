@@ -1,3 +1,4 @@
+import { describe, expect, it } from 'vitest';
 import { ValidityWindowChecker } from './validity-window-checker';
 
 describe('ValidityWindowChecker', () => {

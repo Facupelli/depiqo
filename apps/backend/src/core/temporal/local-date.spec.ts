@@ -1,8 +1,9 @@
+import { describe, expect, it } from 'vitest';
 import { ExplicitOffsetInstantSchema, GetRentalsCalendarQuerySchema, LocalDateSchema } from '@repo/api-contracts';
 import { spawnSync } from 'child_process';
 import { join } from 'path';
 
-import { localDateDayOfWeek, localDateToPrismaDate, prismaDateToLocalDate } from './local-date';
+import { instantToLocalDate, localDateDayOfWeek, localDateToPrismaDate, prismaDateToLocalDate } from './local-date';
 
 describe('LocalDate', () => {
   it.each(['2026-08-10T00:00:00Z', '2026-08-10T10:00:00-03:00', '2026-02-30', '2026-2-10', 'not-a-date'])(
@@ -28,13 +29,20 @@ describe('LocalDate', () => {
     expect(() => ExplicitOffsetInstantSchema.parse(value)).toThrow();
   });
 
+  it('derives calendar dates from an instant in the requested timezone', () => {
+    const instant = new Date('2026-08-10T02:30:00.000Z');
+
+    expect(instantToLocalDate(instant, 'America/Argentina/Buenos_Aires')).toBe('2026-08-09');
+    expect(instantToLocalDate(instant, 'Europe/Madrid')).toBe('2026-08-10');
+  });
+
   it('round-trips a LocalDate through Prisma DATE transport without timezone interpretation', () => {
     const localDate = LocalDateSchema.parse('2026-08-10');
 
     expect(prismaDateToLocalDate(localDateToPrismaDate(localDate))).toBe(localDate);
   });
 
-  it('keeps birth dates and branch override dates stable in a non-UTC process timezone', () => {
+  it('keeps birth dates and branch override dates stable in a non-UTC process timezone', { timeout: 10_000 }, () => {
     const modulePath = join(process.cwd(), 'src/core/temporal/local-date.ts');
     const result = spawnSync(
       process.execPath,

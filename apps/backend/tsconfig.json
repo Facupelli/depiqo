@@ -1,7 +1,7 @@
 {
   "extends": "@repo/typescript-config/base.json",
   "compilerOptions": {
-    "types": ["jest", "node"],
+    "types": ["node"],
     "module": "nodenext",
     "moduleResolution": "nodenext",
     "jsx": "react",

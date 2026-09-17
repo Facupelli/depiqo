@@ -1,6 +1,6 @@
 import { CanActivate, ExecutionContext, Injectable, UnauthorizedException, ForbiddenException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { Request } from 'express';
+import type { Request } from 'express';
 
 import { IS_PUBLIC_KEY } from 'src/core/decorators/public.decorator';
 import { AUTH_ACTOR_TYPES, AuthActor, AuthActorType } from '../auth.types';

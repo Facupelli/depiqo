@@ -1,3 +1,4 @@
+import { describe, expect, it } from 'vitest';
 import { RentalDurationCalculator } from './rental-duration-calculator';
 
 describe('RentalDurationCalculator daily billing thresholds', () => {

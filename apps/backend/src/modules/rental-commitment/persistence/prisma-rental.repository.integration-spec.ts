@@ -1,3 +1,4 @@
+import { describe, expect, it } from 'vitest';
 import { TestingModule } from '@nestjs/testing';
 
 import { PrismaService } from 'src/core/database/prisma.service';

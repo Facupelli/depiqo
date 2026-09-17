@@ -1,3 +1,4 @@
+import { describe, expect, it, vi } from 'vitest';
 import { RetainedRentalCustomerProfileFactsService } from './retained-rental-customer-profile-facts.service';
 
 describe('RetainedRentalCustomerProfileFactsService', () => {
@@ -17,7 +18,7 @@ describe('RetainedRentalCustomerProfileFactsService', () => {
   };
 
   function createService(record: typeof customer | null) {
-    const findFirst = jest.fn().mockResolvedValue(record);
+    const findFirst = vi.fn().mockResolvedValue(record);
 
     // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
     return {

@@ -1,3 +1,4 @@
+import { describe, expect, it } from 'vitest';
 import { EquipmentTypeNotFoundError } from '../../domain/errors/asset-inventory.errors';
 import { mapAssetInventoryError } from './add-assets-to-equipment-type.errors';
 

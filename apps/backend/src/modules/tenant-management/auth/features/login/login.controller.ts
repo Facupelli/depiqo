@@ -1,5 +1,5 @@
 import { Controller, HttpCode, Post, Req, UseGuards } from '@nestjs/common';
-import { Request } from 'express';
+import type { Request } from 'express';
 import { LoginRequest } from '../../shared/auth-request.types';
 import { AuthUser } from '../../shared/auth.types';
 import { CsrfService } from '../../shared/csrf/csrf.service';

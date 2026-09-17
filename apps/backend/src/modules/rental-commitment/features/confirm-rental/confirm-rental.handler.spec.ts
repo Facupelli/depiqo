@@ -1,3 +1,4 @@
+import { describe, expect, it, vi } from 'vitest';
 import { ok } from 'neverthrow';
 
 import { PrismaUnitOfWork, PrismaTransactionContext } from 'src/core/database/prisma-unit-of-work';
@@ -84,7 +85,7 @@ describe('ConfirmRentalHandler deadlock retry', () => {
       new Date('2030-01-01T10:00:00.000Z'),
       new Date('2030-01-01T12:00:00.000Z'),
     );
-    const pullDomainEvents = jest.fn().mockReturnValueOnce([event]);
+    const pullDomainEvents = vi.fn().mockReturnValueOnce([event]);
     // SAFETY: This fixture supplies every field read by the unit under test; omitted members are outside this test path.
     const rental = {
       id: rentalId,
@@ -117,25 +118,25 @@ describe('ConfirmRentalHandler deadlock retry', () => {
           },
         },
       },
-      confirm: jest.fn().mockReturnValue(ok(undefined)),
+      confirm: vi.fn().mockReturnValue(ok(undefined)),
       pullDomainEvents,
     } as Rental;
 
-    const save = jest.fn();
+    const save = vi.fn();
     // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
     const repository = {
-      findById: jest.fn().mockResolvedValue(rental),
+      findById: vi.fn().mockResolvedValue(rental),
       save,
     } as RentalRepository;
     // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
     const operationalFacts = {
-      validateDraftFacts: jest.fn().mockResolvedValue(ok(undefined)),
+      validateDraftFacts: vi.fn().mockResolvedValue(ok(undefined)),
     } as RentalOperationalFactsValidatorService;
     // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
     const deliveryQuoteService = {} as DeliveryQuoteService;
     // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
     const allocation = {
-      planAllocations: jest.fn().mockResolvedValue(
+      planAllocations: vi.fn().mockResolvedValue(
         ok({
           allocations: [
             {
@@ -148,16 +149,16 @@ describe('ConfirmRentalHandler deadlock retry', () => {
       ),
     } as RentalAssetAllocationService;
     const bufferSettings = {
-      getTenantRentalAssetBufferSettings: jest
+      getTenantRentalAssetBufferSettings: vi
         .fn()
         .mockResolvedValue(ok({ beforeBufferMinutes: 0, afterBufferMinutes: 0 })),
     };
     // SAFETY: The preceding test setup and assertions establish this value shape before the test inspects it.
     const ownerSplitCalculator = {
-      calculate: jest.fn().mockReturnValue({ splits }),
+      calculate: vi.fn().mockReturnValue({ splits }),
     } as RentalOwnerSplitCalculator;
     const publishedEvents: IntegrationEvent[] = [];
-    const runInTransaction = jest.fn(async <T>(work: (context: PrismaTransactionContext) => Promise<T>): Promise<T> => {
+    const runInTransaction = vi.fn(async <T>(work: (context: PrismaTransactionContext) => Promise<T>): Promise<T> => {
       const integrationEvents = new InMemoryIntegrationEventsCollector();
       // SAFETY: The preceding test setup and assertions establish this value shape before the test inspects it.
       const result = await work({ tx: {} as PrismaTransactionContext['tx'], integrationEvents });

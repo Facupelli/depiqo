@@ -1,5 +1,5 @@
 import { Controller, HttpCode, Post, Req, Res } from '@nestjs/common';
-import { Request, Response } from 'express';
+import type { Request, Response } from 'express';
 import { SESSION_COOKIE_NAME } from '../../shared/session/auth-session.constants';
 import { SessionRegeneratorService } from '../../shared/session/session-regenerator.service';
 import { AuthorizationExempt } from '../../../authorization/tenant-authorization.decorators';

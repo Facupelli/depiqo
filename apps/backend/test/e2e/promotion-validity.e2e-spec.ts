@@ -1,3 +1,5 @@
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+
 import { PrismaService } from '../../src/core/database/prisma.service';
 import { createE2ETestApp, E2ETestApp } from '../support/create-e2e-test-app';
 import { createE2ETestClient, E2ETestClient } from '../support/create-e2e-test-client';

@@ -1,3 +1,4 @@
+import { describe, expect, it } from 'vitest';
 import { RentalInvalidFieldError } from './errors/rental-commitment.errors';
 import { RentalDemandLineId } from './ids/rental-demand-line-id';
 import { deriveConfirmedSelectionQuantityChange } from './confirmed-selection-quantity-change';

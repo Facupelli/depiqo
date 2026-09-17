@@ -1,3 +1,4 @@
+import { describe, expect, it } from 'vitest';
 import { randomUUID } from 'node:crypto';
 
 import { V2TenantSystemRole } from '../../../src/generated/prisma/enums';

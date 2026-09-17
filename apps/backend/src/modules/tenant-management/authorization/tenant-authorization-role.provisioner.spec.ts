@@ -1,3 +1,4 @@
+import { describe, expect, it, vi } from 'vitest';
 import { V2TenantSystemRole } from 'src/generated/prisma/enums';
 
 import { TenantAuthorizationRoleProvisioner } from './tenant-authorization-role.provisioner';
@@ -5,7 +6,7 @@ import { DEFAULT_MEMBER_TENANT_PERMISSIONS } from './tenant-permission.registry'
 
 describe('TenantAuthorizationRoleProvisioner', () => {
   it('creates Administrator and Miembro with the canonical Member baseline', async () => {
-    const create = jest
+    const create = vi
       .fn()
       .mockResolvedValueOnce({ id: 'administrator-role' })
       .mockResolvedValueOnce({ id: 'member-role' });

@@ -1,3 +1,4 @@
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { randomUUID } from 'node:crypto';
 
 import { CommandBus } from '@nestjs/cqrs';
@@ -44,7 +45,7 @@ describe('RestoreConfirmedPackageDemandLine integration', () => {
     return moduleRef;
   });
 
-  afterEach(() => jest.useRealTimers());
+  afterEach(() => vi.useRealTimers());
 
   async function scenario(
     options: { period?: { start: Date; end: Date }; kind?: 'PACKAGE' | 'KIT' | 'BUNDLE' | 'SINGLE' } = {},
@@ -160,9 +161,9 @@ describe('RestoreConfirmedPackageDemandLine integration', () => {
   }
 
   async function removeAt(setup: Setup, demandLineId: string, time: Date) {
-    jest
-      .useFakeTimers({ doNotFake: ['nextTick', 'setImmediate', 'setTimeout', 'setInterval', 'queueMicrotask'] })
-      .setSystemTime(time);
+    vi.useFakeTimers({
+      doNotFake: ['nextTick', 'setImmediate', 'setTimeout', 'setInterval', 'queueMicrotask'],
+    }).setSystemTime(time);
     const before = await fixtures.persistedState(setup.rental.rentalId);
     const result = await remove(setup, demandLineId, before.rental.version);
     expect(result.isOk()).toBe(true);
@@ -174,7 +175,7 @@ describe('RestoreConfirmedPackageDemandLine integration', () => {
     const targetId = setup.rental.demandLineIds[1];
     const removed = await removeAt(setup, targetId, new Date('2030-01-20T10:00:00.000Z'));
 
-    jest.setSystemTime(new Date('2030-01-21T10:00:00.000Z'));
+    vi.setSystemTime(new Date('2030-01-21T10:00:00.000Z'));
     const result = await restore(setup, targetId, removed.rental.version);
 
     expect(result.isOk()).toBe(true);
@@ -317,9 +318,9 @@ describe('RestoreConfirmedPackageDemandLine integration', () => {
       });
     }
 
-    jest
-      .useFakeTimers({ doNotFake: ['nextTick', 'setImmediate', 'setTimeout', 'setInterval', 'queueMicrotask'] })
-      .setSystemTime(new Date('2030-01-10T12:00:00.000Z'));
+    vi.useFakeTimers({
+      doNotFake: ['nextTick', 'setImmediate', 'setTimeout', 'setInterval', 'queueMicrotask'],
+    }).setSystemTime(new Date('2030-01-10T12:00:00.000Z'));
     const before = await fixtures.persistedState(setup.rental.rentalId);
     const removeResult = await bus.execute<
       RemoveConfirmedPackageDemandLineCommand,
@@ -359,11 +360,11 @@ describe('RestoreConfirmedPackageDemandLine integration', () => {
       equipmentTypeId,
     });
 
-    const allocationSpy = jest.spyOn(moduleRef.get(RentalAssetAllocationService), 'planAllocations');
+    const allocationSpy = vi.spyOn(moduleRef.get(RentalAssetAllocationService), 'planAllocations');
     const events: ConfirmedRentalEditedIntegrationEvent[] = [];
     const listener = (event: ConfirmedRentalEditedIntegrationEvent) => events.push(event);
     emitter.on(ConfirmedRentalEditedIntegrationEvent.name, listener);
-    jest.setSystemTime(new Date('2030-01-10T12:05:00.000Z'));
+    vi.setSystemTime(new Date('2030-01-10T12:05:00.000Z'));
     try {
       expect((await restore(setup, targetId, removed.rental.version, 1)).isOk()).toBe(true);
     } finally {
@@ -417,7 +418,7 @@ describe('RestoreConfirmedPackageDemandLine integration', () => {
     const events: ConfirmedRentalEditedIntegrationEvent[] = [];
     const listener = (event: ConfirmedRentalEditedIntegrationEvent) => events.push(event);
     emitter.on(ConfirmedRentalEditedIntegrationEvent.name, listener);
-    jest.setSystemTime(new Date('2030-01-21T10:00:00.000Z'));
+    vi.setSystemTime(new Date('2030-01-21T10:00:00.000Z'));
     try {
       expect((await restore(setup, targetId, removed.rental.version)).isOk()).toBe(true);
     } finally {
@@ -495,7 +496,7 @@ describe('RestoreConfirmedPackageDemandLine integration', () => {
     });
 
     const restoreAt = new Date('2030-01-10T12:05:00.000Z');
-    jest.setSystemTime(restoreAt);
+    vi.setSystemTime(restoreAt);
     expect((await restore(setup, targetId, removed.rental.version)).isOk()).toBe(true);
     const after = await fixtures.persistedState(setup.rental.rentalId);
     const historical = after.rental.assignedAssets.find(({ id }) => id === oldAssignment.id)!;
@@ -583,7 +584,7 @@ describe('RestoreConfirmedPackageDemandLine integration', () => {
     const firstRemovalAt = new Date('2030-01-20T10:00:00.000Z');
     const removed = await removeAt(setup, targetId, firstRemovalAt);
     expect(await moduleRef.get(RentalRepository).findById(setup.tenant.id, setup.rental.rentalId)).not.toBeNull();
-    jest.setSystemTime(new Date('2030-01-21T10:00:00.000Z'));
+    vi.setSystemTime(new Date('2030-01-21T10:00:00.000Z'));
     expect((await restore(setup, targetId, removed.rental.version)).isOk()).toBe(true);
     const restored = await fixtures.persistedState(setup.rental.rentalId);
     expect(restored.rental.demandLines.find(({ id }) => id === targetId)?.removedAt).toBeNull();
@@ -635,9 +636,9 @@ describe('RestoreConfirmedPackageDemandLine integration', () => {
         : {},
     );
     const targetId = setup.rental.demandLineIds[1];
-    jest
-      .useFakeTimers({ doNotFake: ['nextTick', 'setImmediate', 'setTimeout', 'setInterval', 'queueMicrotask'] })
-      .setSystemTime(ended ? new Date('2029-12-20T10:00:00.000Z') : new Date('2030-01-20T10:00:00.000Z'));
+    vi.useFakeTimers({
+      doNotFake: ['nextTick', 'setImmediate', 'setTimeout', 'setInterval', 'queueMicrotask'],
+    }).setSystemTime(ended ? new Date('2029-12-20T10:00:00.000Z') : new Date('2030-01-20T10:00:00.000Z'));
     let expectedVersion = (await fixtures.persistedState(setup.rental.rentalId)).rental.version;
     if (state !== 'current' && state !== 'unknown') {
       expect((await remove(setup, targetId, expectedVersion)).isOk()).toBe(true);
@@ -649,7 +650,7 @@ describe('RestoreConfirmedPackageDemandLine integration', () => {
         data: { assetStatus: 'INACTIVE' },
       });
     }
-    if (ended) jest.setSystemTime(new Date('2030-01-03T10:00:00.000Z'));
+    if (ended) vi.setSystemTime(new Date('2030-01-03T10:00:00.000Z'));
     const before = await fixtures.persistedState(setup.rental.rentalId);
     const result = await restore(setup, state === 'unknown' ? randomUUID() : targetId, expectedVersion);
     expect(result.isErr() && result.error.code).toBe(code);

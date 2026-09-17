@@ -72,7 +72,7 @@ export async function jwtVerify(token: string, secret: Uint8Array, options: JwtV
   return { payload };
 }
 
-export const createRemoteJWKSet = jest.fn();
+export const createRemoteJWKSet = () => async () => undefined;
 export class JWTPayload {}
 
 function sign(input: string, secret: Uint8Array): string {

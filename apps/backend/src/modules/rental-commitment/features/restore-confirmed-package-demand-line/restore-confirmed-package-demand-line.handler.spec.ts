@@ -1,3 +1,4 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { err, ok } from 'neverthrow';
 
 import { PrismaUnitOfWork } from 'src/core/database/prisma-unit-of-work';
@@ -14,14 +15,14 @@ import { RestoreConfirmedPackageDemandLineHandler } from './restore-confirmed-pa
 describe('RestoreConfirmedPackageDemandLineHandler', () => {
   const operationTime = new Date('2030-01-02T12:00:00.000Z');
   const tx = {};
-  const integrationEvents = { collect: jest.fn() };
+  const integrationEvents = { collect: vi.fn() };
 
   beforeEach(() => {
-    jest.useFakeTimers().setSystemTime(operationTime);
+    vi.useFakeTimers().setSystemTime(operationTime);
     integrationEvents.collect.mockClear();
   });
 
-  afterEach(() => jest.useRealTimers());
+  afterEach(() => vi.useRealTimers());
 
   function createRental() {
     const demandLine = {
@@ -49,12 +50,12 @@ describe('RestoreConfirmedPackageDemandLineHandler', () => {
       confirmedPriceSnapshot: {
         snapshot: { final: { currency: 'ARS', lines: [{ rentalSelectionId: 'selection-1', total: '100' }] } },
       },
-      requireAcceptedAssetBuffer: jest.fn().mockReturnValue({
+      requireAcceptedAssetBuffer: vi.fn().mockReturnValue({
         beforeBufferMinutes: 60,
         afterBufferMinutes: 120,
       }),
-      restoreConfirmedPackageDemandLine: jest.fn().mockReturnValue(ok(undefined)),
-      pullDomainEvents: jest.fn().mockReturnValue([]),
+      restoreConfirmedPackageDemandLine: vi.fn().mockReturnValue(ok(undefined)),
+      pullDomainEvents: vi.fn().mockReturnValue([]),
     } as Rental;
     return { rental, demandLine };
   }
@@ -62,20 +63,25 @@ describe('RestoreConfirmedPackageDemandLineHandler', () => {
   function createHandler(rental: Rental, allocationResult = ok({ allocations: [] })) {
     // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
     const rentalRepository = {
-      findById: jest.fn().mockResolvedValue(rental),
-      save: jest.fn().mockResolvedValue({ version: 8, updatedAt: new Date('2030-01-02T12:00:01.000Z') }),
+      findById: vi.fn().mockResolvedValue(rental),
+      save: vi.fn().mockResolvedValue({ version: 8, updatedAt: new Date('2030-01-02T12:00:01.000Z') }),
     } as RentalRepository;
     // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
     const allocation = {
-      planAllocations: jest.fn().mockResolvedValue(allocationResult),
+      planAllocations: vi.fn().mockImplementation(async () => {
+        if (vi.mocked(rental.restoreConfirmedPackageDemandLine).mock.calls.length > 0) {
+          throw new Error('Rental was mutated before allocation completed.');
+        }
+        return allocationResult;
+      }),
     } as RentalAssetAllocationService;
     // SAFETY: The preceding test setup and assertions establish this value shape before the test inspects it.
     const splitCalculator = {
-      calculate: jest.fn().mockReturnValue({ splits: [] }),
+      calculate: vi.fn().mockReturnValue({ splits: [] }),
     } as RentalOwnerSplitCalculator;
     // SAFETY: The preceding test setup and assertions establish this value shape before the test inspects it.
     const unitOfWork = {
-      runInTransaction: jest.fn((callback) => callback({ tx, integrationEvents })),
+      runInTransaction: vi.fn((callback) => callback({ tx, integrationEvents })),
     } as PrismaUnitOfWork;
     return {
       handler: new RestoreConfirmedPackageDemandLineHandler(rentalRepository, allocation, splitCalculator, unitOfWork),
@@ -124,10 +130,6 @@ describe('RestoreConfirmedPackageDemandLineHandler', () => {
         ],
         tx,
       }),
-    );
-    // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
-    expect((allocation.planAllocations as jest.Mock).mock.invocationCallOrder[0]).toBeLessThan(
-      (rental.restoreConfirmedPackageDemandLine as jest.Mock).mock.invocationCallOrder[0],
     );
     expect(rental.restoreConfirmedPackageDemandLine).toHaveBeenCalledWith({
       demandLineId: 'demand-1',

@@ -1,5 +1,5 @@
 import { CanActivate, ExecutionContext, ForbiddenException, Injectable } from '@nestjs/common';
-import { Request } from 'express';
+import type { Request } from 'express';
 import { CSRF_HEADER_NAME } from './csrf.constants';
 import { CsrfService } from './csrf.service';
 import { Reflector } from '@nestjs/core';

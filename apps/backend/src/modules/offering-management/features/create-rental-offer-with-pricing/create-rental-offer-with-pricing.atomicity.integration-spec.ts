@@ -1,3 +1,5 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { Mock } from 'vitest';
 import { randomUUID } from 'node:crypto';
 
 import { TestingModule } from '@nestjs/testing';
@@ -18,10 +20,10 @@ describe('CreateRentalOfferWithPricing atomicity integration', () => {
   let prisma: PrismaService;
   let fixtures: TestFixtures;
   let handler: CreateRentalOfferWithPricingHandler;
-  let attachRatePlanToRentalOffer: jest.Mock;
+  let attachRatePlanToRentalOffer: Mock;
 
   useIntegrationTestContext(async () => {
-    attachRatePlanToRentalOffer = jest.fn();
+    attachRatePlanToRentalOffer = vi.fn();
     moduleRef = await createOfferingManagementIntegrationContext([
       {
         provide: AttachRatePlanToRentalOfferOperation,

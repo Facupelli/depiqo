@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Request } from 'express';
+import type { Request } from 'express';
 import { err, ok, Result } from 'neverthrow';
 
 import { PrismaService } from 'src/core/database/prisma.service';

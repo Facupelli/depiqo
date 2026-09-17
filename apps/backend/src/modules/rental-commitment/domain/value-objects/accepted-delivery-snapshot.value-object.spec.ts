@@ -1,3 +1,4 @@
+import { describe, expect, it } from 'vitest';
 import { AcceptedDeliverySnapshot } from './accepted-delivery-snapshot.value-object';
 
 const snapshotData = {

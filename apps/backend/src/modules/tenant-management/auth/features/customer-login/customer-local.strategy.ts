@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { Strategy } from 'passport-local';
-import { Request } from 'express';
+import type { Request } from 'express';
 import { StorefrontTenantRequest } from '../../../tenant-context/guards/storefront-tenant-context.guard';
 import { AuthCustomer } from '../../shared/auth.types';
 import { ValidateCustomerLocalCredentialsService } from '../validate-customer-local-credentials/validate-customer-local-credentials.service';

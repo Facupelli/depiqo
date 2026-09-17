@@ -1,3 +1,4 @@
+import { describe, expect, it } from 'vitest';
 import { randomUUID } from 'node:crypto';
 import { QueryBus } from '@nestjs/cqrs';
 import { TestingModule } from '@nestjs/testing';

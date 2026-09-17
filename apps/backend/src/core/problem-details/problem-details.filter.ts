@@ -1,5 +1,5 @@
 import { ArgumentsHost, Catch, ExceptionFilter } from '@nestjs/common';
-import { Request, Response } from 'express';
+import type { Request, Response } from 'express';
 
 import { LogContext } from 'src/core/logger/log-context';
 import { applyHttpErrorStackPolicy } from 'src/core/logger/pino-error.serializer';

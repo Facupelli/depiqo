@@ -1,3 +1,5 @@
+import { expect } from 'vitest';
+
 import {
   PlatformProblemTypes,
   PROBLEM_DETAILS_CONTENT_TYPE,

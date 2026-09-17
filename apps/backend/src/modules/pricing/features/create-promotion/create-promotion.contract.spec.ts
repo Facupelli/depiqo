@@ -1,3 +1,4 @@
+import { describe, expect, it } from 'vitest';
 import { CreatePromotionBodySchema } from '@repo/api-contracts';
 
 describe('CreatePromotionBodySchema validity dates', () => {
