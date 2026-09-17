@@ -28,7 +28,7 @@ export class CouponValidationService {
       throw new CouponNotApplicableError(`Coupon "${couponCode}" was not found or is not available.`);
     }
 
-    this.validateCouponShape(coupon);
+    this.validateCouponInvariants(coupon);
 
     if (coupon.tenantId !== context.tenantId) {
       throw new CouponNotApplicableError(`Coupon "${couponCode}" is not available for this tenant.`);
@@ -97,7 +97,7 @@ export class CouponValidationService {
     return eligibleCouponPromotions[0];
   }
 
-  private validateCouponShape(coupon: CouponPricingInput): void {
+  private validateCouponInvariants(coupon: CouponPricingInput): void {
     if (!coupon.id.trim()) {
       throw new InvalidCouponError('Coupon id is required.');
     }

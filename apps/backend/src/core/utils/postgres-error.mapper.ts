@@ -32,7 +32,7 @@ export function isForeignKeyConstraintError(error: unknown): boolean {
  * normalized to their database (snake_case) form before comparison.
  */
 export function isUniqueConstraintViolation(error: unknown, expectedColumns: readonly string[]): boolean {
-  if (!isPrismaErrorShape(error) || error.code !== PRISMA_UNIQUE_CONSTRAINT_VIOLATION) {
+  if (!isPrismaErrorEnvelope(error) || error.code !== PRISMA_UNIQUE_CONSTRAINT_VIOLATION) {
     return false;
   }
   if (!isPrismaErrorMetadata(error.meta)) {
@@ -79,7 +79,7 @@ function toDatabaseColumnName(field: string): string {
   return field.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`);
 }
 
-interface PrismaErrorShape {
+interface PrismaErrorEnvelope {
   code?: unknown;
   meta?: unknown;
 }
@@ -107,15 +107,15 @@ interface PostgresConstraint {
   fields?: unknown;
 }
 
-type ErrorWithCode = PrismaErrorShape & {
+type ErrorWithCode = PrismaErrorEnvelope & {
   code: string;
 };
 
 function isErrorWithCode(error: unknown): error is ErrorWithCode {
-  return isPrismaErrorShape(error) && typeof error.code === 'string';
+  return isPrismaErrorEnvelope(error) && typeof error.code === 'string';
 }
 
-function isPrismaErrorShape(value: unknown): value is PrismaErrorShape {
+function isPrismaErrorEnvelope(value: unknown): value is PrismaErrorEnvelope {
   return isNonArrayObject(value) && hasKnownProperty(value, ['code', 'meta']);
 }
 
@@ -169,7 +169,7 @@ export function isPrismaRawQueryPostgresDeadlock(error: unknown): boolean {
 }
 
 function prismaRawQueryPostgresCause(error: unknown): PostgresAdapterCause | undefined {
-  if (!isPrismaErrorShape(error) || error.code !== PRISMA_RAW_QUERY_FAILED) {
+  if (!isPrismaErrorEnvelope(error) || error.code !== PRISMA_RAW_QUERY_FAILED) {
     return undefined;
   }
   if (!isPrismaErrorMetadata(error.meta) || !isDriverAdapterError(error.meta.driverAdapterError)) {
