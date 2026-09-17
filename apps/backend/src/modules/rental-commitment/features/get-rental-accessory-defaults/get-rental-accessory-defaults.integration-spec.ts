@@ -37,7 +37,7 @@ describe('GetRentalAccessoryDefaults integration', () => {
     return moduleRef;
   });
 
-  async function scenario(ownerContractSnapshot: Record<string, unknown> | null) {
+  async function scenario(ownerContractSnapshot: Prisma.InputJsonValue | null) {
     const tenant = await core.createTenant();
     const branch = await core.createBranch({ tenantId: tenant.id });
     const sourceEquipmentType = await prisma.client.v2EquipmentType.create({

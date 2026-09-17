@@ -3,6 +3,7 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { TestingModule } from '@nestjs/testing';
 
 import { PrismaService } from 'src/core/database/prisma.service';
+import { Prisma } from 'src/generated/prisma/client';
 import { parsePostgresRange } from 'src/core/utils/postgres-range.util';
 import { ConfirmedRentalEditedIntegrationEvent } from '../../public-api/events/rental-lifecycle.integration-events';
 import {
@@ -14,6 +15,14 @@ import { utcDate } from '../../../../../test/support/time';
 import { ConfirmedRentalFixtures } from '../../testing/confirmed-rental.fixtures';
 import { AddRentalSelectionCommand } from './add-rental-selection.command';
 import { AddRentalSelectionResult } from './add-rental-selection.handler';
+
+function readPersistedJsonObject(value: Prisma.JsonValue | null): Prisma.JsonObject {
+  if (value === null || typeof value !== 'object' || Array.isArray(value)) {
+    throw new Error('Expected a persisted JSON object.');
+  }
+
+  return value;
+}
 
 describe('AddRentalSelection integration', () => {
   let moduleRef: TestingModule;
@@ -99,8 +108,7 @@ describe('AddRentalSelection integration', () => {
       period: { start: before.rental.periodStart, end: before.rental.periodEnd },
     });
     const accessoryBefore = await fixtures.accessoryState(setup.rental.rentalId);
-    // SAFETY: The fixture or preceding response assertions establish this object shape before these fields are inspected.
-    const oldSnapshot = before.rental.priceSnapshot as Record<string, unknown>;
+    const oldSnapshot = readPersistedJsonObject(before.rental.priceSnapshot);
     await prisma.client.v2Rental.update({
       where: { id: setup.rental.rentalId },
       data: {

@@ -6,7 +6,7 @@ import {
   RoadRouteDistanceProvider,
   RoadRouteDistanceResult,
 } from '../../application/ports/road-route-distance-provider.port';
-import { GeoapifyRoutingHttpClient } from './geoapify-routing-http.client';
+import { GeoapifyRoutingHttpClient, GeoapifyRoutingJsonValue } from './geoapify-routing-http.client';
 
 @Injectable()
 export class GeoapifyRoadRouteDistanceProviderAdapter extends RoadRouteDistanceProvider {
@@ -69,7 +69,7 @@ export class GeoapifyRoadRouteDistanceProviderAdapter extends RoadRouteDistanceP
     }
   }
 
-  private isRecord(value: unknown): value is Record<string, unknown> {
-    return typeof value === 'object' && value !== null;
+  private isRecord(value: GeoapifyRoutingJsonValue): value is Record<string, GeoapifyRoutingJsonValue> {
+    return typeof value === 'object' && value !== null && !Array.isArray(value);
   }
 }

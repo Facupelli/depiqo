@@ -168,9 +168,7 @@ export class R2ObjectStorageAdapter extends ObjectStoragePort {
       return false;
     }
 
-    // SAFETY: The immediately preceding null and object checks establish that this value is a non-array object.
-    const record = value as Record<string, unknown>;
-    return 'transformToByteArray' in record && typeof record.transformToByteArray === 'function';
+    return 'transformToByteArray' in value && typeof value.transformToByteArray === 'function';
   }
 
   private async readReadable(stream: Readable): Promise<Buffer> {
