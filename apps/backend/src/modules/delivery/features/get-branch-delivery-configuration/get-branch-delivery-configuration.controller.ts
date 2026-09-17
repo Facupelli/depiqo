@@ -1,7 +1,9 @@
+import { TenantPermission } from '@repo/api-contracts';
 import { Controller, Get, HttpStatus, Param } from '@nestjs/common';
 import { QueryBus } from '@nestjs/cqrs';
 
 import { createProblemDetails, createProblemType, ProblemException } from 'src/core/problem-details';
+import { RequirePermission } from '../../../tenant-management/authorization/tenant-authorization.decorators';
 import { AuthUser } from '../../../tenant-management/auth/shared/auth.types';
 import { CurrentUser } from '../../../tenant-management/auth/shared/current-user/current-user.decorator';
 
@@ -19,6 +21,7 @@ export class GetBranchDeliveryConfigurationHttpController {
   constructor(private readonly queryBus: QueryBus) {}
 
   @Get(':branchId/configuration')
+  @RequirePermission(TenantPermission.BranchesManage)
   async getConfiguration(
     @Param() params: GetBranchDeliveryConfigurationParamsDto,
     @CurrentUser() user: AuthUser,

@@ -1,8 +1,10 @@
+import { TenantPermission } from '@repo/api-contracts';
 import { Body, Controller, HttpCode, HttpStatus, Put } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
 import { Result } from 'neverthrow';
 
 import { createProblemDetails, createProblemType, ProblemException } from 'src/core/problem-details';
+import { RequirePermission } from 'src/modules/tenant-management/authorization/tenant-authorization.decorators';
 
 import { AuthUser } from '../../../tenant-management/auth/shared/auth.types';
 import { CurrentUser } from '../../../tenant-management/auth/shared/current-user/current-user.decorator';
@@ -21,6 +23,7 @@ export class AttachRatePlanToRentalOfferHttpController {
 
   @Put()
   @HttpCode(HttpStatus.OK)
+  @RequirePermission(TenantPermission.PricingManage)
   async attachRatePlanToRentalOffer(
     @Body() dto: AttachRatePlanToRentalOfferRequestDto,
     @CurrentUser() user: AuthUser,

@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+CONTAINER="depiqo-postgres"
+
+export PGHOST="127.0.0.1"
+export PGPORT="5432"
+export PGUSER="$(docker exec "$CONTAINER" printenv POSTGRES_USER)"
+export PGPASSWORD="$(docker exec "$CONTAINER" printenv POSTGRES_PASSWORD)"
+export PGDATABASE="$(docker exec "$CONTAINER" printenv POSTGRES_DB)"
+
+exec pg-axi "$@"

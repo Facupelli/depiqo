@@ -1,9 +1,11 @@
+import { TenantPermission } from '@repo/api-contracts';
 import { Controller, Get, HttpStatus, Param } from '@nestjs/common';
 import { QueryBus } from '@nestjs/cqrs';
 
 import { createProblemDetails, createProblemType, ProblemException } from 'src/core/problem-details';
 
 import { AuthUser } from '../../auth/shared/auth.types';
+import { RequirePermission } from '../../authorization/tenant-authorization.decorators';
 import { CurrentUser } from '../../auth/shared/current-user/current-user.decorator';
 import { GetCustomerProfileDetailError, GetCustomerProfileDetailErrorCode } from './get-customer-profile-detail.errors';
 import { GetCustomerProfileDetailResult } from './get-customer-profile-detail.handler';
@@ -16,6 +18,7 @@ export class GetCustomerProfileDetailHttpController {
   constructor(private readonly queryBus: QueryBus) {}
 
   @Get(':customerId/profile')
+  @RequirePermission(TenantPermission.CustomersOnboardingManage)
   async getCustomerProfileDetail(
     @Param() params: GetCustomerProfileDetailParamsDto,
     @CurrentUser() user: AuthUser,

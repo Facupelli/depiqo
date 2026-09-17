@@ -1,6 +1,7 @@
 import { Body, Controller, HttpStatus, Param, Patch, UseGuards } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
 import { createProblemDetails, createProblemType, ProblemException } from 'src/core/problem-details';
+import { RequirePermission } from 'src/modules/tenant-management/authorization/tenant-authorization.decorators';
 import { AUTH_ACTOR_TYPES, AuthUser } from 'src/modules/tenant-management/auth/shared/auth.types';
 import { CurrentUser } from 'src/modules/tenant-management/auth/shared/current-user/current-user.decorator';
 import { AllowAuthActors } from 'src/modules/tenant-management/auth/shared/session/auth-actor-access.decorator';
@@ -14,11 +15,13 @@ import {
   ChangeRentalSelectionQuantityRequestDto,
 } from './change-rental-selection-quantity.request.dto';
 import { ChangeRentalSelectionQuantityResponseDto } from './change-rental-selection-quantity.response.dto';
+import { TenantPermission } from '@repo/api-contracts';
 
 @Controller('rental-commitments/confirmed-rentals')
 export class ChangeRentalSelectionQuantityHttpController {
   constructor(private readonly commandBus: CommandBus) {}
   @Patch(':rentalId/selections/:selectionId/quantity')
+  @RequirePermission(TenantPermission.RentalsConfirmedManage)
   @AllowAuthActors(AUTH_ACTOR_TYPES.TENANT_USER)
   @UseGuards(SessionAuthGuard, TenantUserSessionGuard)
   async change(

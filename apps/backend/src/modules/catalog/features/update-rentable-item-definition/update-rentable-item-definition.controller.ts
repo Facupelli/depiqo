@@ -1,8 +1,11 @@
+import { TenantPermission } from '@repo/api-contracts';
+
 import { Body, Controller, HttpCode, HttpStatus, Param, Patch } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
 import { Result } from 'neverthrow';
 
 import { createProblemDetails, createProblemType, ProblemException } from 'src/core/problem-details';
+import { RequirePermission } from 'src/modules/tenant-management/authorization/tenant-authorization.decorators';
 
 import { AuthUser } from '../../../tenant-management/auth/shared/auth.types';
 import { CurrentUser } from '../../../tenant-management/auth/shared/current-user/current-user.decorator';
@@ -21,6 +24,7 @@ export class UpdateRentableItemDefinitionHttpController {
   constructor(private readonly commandBus: CommandBus) {}
 
   @Patch(':rentableItemId')
+  @RequirePermission(TenantPermission.ProductsManage)
   @HttpCode(HttpStatus.NO_CONTENT)
   async update(
     @Param() params: UpdateRentableItemDefinitionParamsDto,

@@ -2,7 +2,6 @@ import type { MutationOptions } from "@tanstack/react-query";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "@tanstack/react-router";
 import type { ProblemDetailsError } from "@/shared/errors";
-import { v2AuthKeys } from "../auth.queries";
 import { logout } from "./logout.api";
 
 type LogoutOptions = Omit<
@@ -17,13 +16,11 @@ export function useLogout(options?: LogoutOptions) {
 	return useMutation<void, ProblemDetailsError, void>({
 		...options,
 		mutationFn: logout,
-		meta: {
-			...options?.meta,
-		},
-		onSuccess: async () => {
-			queryClient.removeQueries({ queryKey: v2AuthKeys.all() });
-			await router.invalidate();
+		onSuccess: async (data, variables, result, context) => {
+			queryClient.clear();
+			await router.invalidate({ sync: true });
 			await router.navigate({ to: "/login", replace: true });
+			await options?.onSuccess?.(data, variables, result, context);
 		},
 	});
 }

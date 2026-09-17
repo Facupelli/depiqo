@@ -28,6 +28,8 @@ import { TenantContractSignerFacts } from './public-api/tenant-contract-signer-f
 import { RentalCustomerProfileFacts } from './public-api/rental-customer-profile-facts.public-api';
 import { RetainedRentalCustomerProfileFacts } from './public-api/retained-rental-customer-profile-facts.public-api';
 import { AuthModule } from './auth/auth.module';
+import { TenantAuthorizationModule } from './authorization/tenant-authorization.module';
+import { TenantAuthorizationRoleProvisioner } from './authorization/tenant-authorization-role.provisioner';
 import { ApproveSubmittedCustomerOnboardingHttpController } from './features/approve-submitted-customer-onboarding/approve-submitted-customer-onboarding.controller';
 import { ApproveSubmittedCustomerOnboardingHandler } from './features/approve-submitted-customer-onboarding/approve-submitted-customer-onboarding.handler';
 import { CreateContractSignerHttpController } from './features/create-contract-signer/create-contract-signer.controller';
@@ -96,13 +98,34 @@ import { GetCategoriesHttpController } from './features/get-categories/get-categ
 import { GetCategoriesHandler } from './features/get-categories/get-categories.handler';
 import { GetStorefrontCategoriesHttpController } from './features/get-storefront-categories/get-storefront-categories.controller';
 import { GetStorefrontCategoriesHandler } from './features/get-storefront-categories/get-storefront-categories.handler';
+import { ManageTenantRolesHttpController } from './features/manage-roles/manage-roles.controller';
+import { ManageTenantTeamHttpController } from './features/manage-team/manage-team.controller';
+import {
+  CreateTenantRoleHandler,
+  DeleteTenantRoleHandler,
+  GetTenantPermissionCatalogHandler,
+  GetTenantRoleHandler,
+  GetTenantRolesHandler,
+  UpdateTenantRoleHandler,
+} from './features/manage-roles/manage-roles.handlers';
+import {
+  ChangeTenantCollaboratorRoleHandler,
+  CreateTenantCollaboratorHandler,
+  GetTenantCollaboratorHandler,
+  GetTenantCollaboratorsHandler,
+  ReactivateTenantCollaboratorHandler,
+  ResetTenantCollaboratorPasswordHandler,
+  SuspendTenantCollaboratorHandler,
+} from './features/manage-team/manage-team.handlers';
 
 @Module({
-  imports: [AuthModule, GeocodingModule, TenantContextModule],
+  imports: [AuthModule, GeocodingModule, TenantAuthorizationModule, TenantContextModule],
   controllers: [
     CreateCategoryHttpController,
     GetCategoriesHttpController,
     GetStorefrontCategoriesHttpController,
+    ManageTenantRolesHttpController,
+    ManageTenantTeamHttpController,
     ApproveSubmittedCustomerOnboardingHttpController,
     CreateBranchHttpController,
     CreateContractSignerHttpController,
@@ -133,6 +156,19 @@ import { GetStorefrontCategoriesHandler } from './features/get-storefront-catego
     CreateCategoryHandler,
     GetCategoriesHandler,
     GetStorefrontCategoriesHandler,
+    GetTenantRolesHandler,
+    GetTenantRoleHandler,
+    GetTenantPermissionCatalogHandler,
+    CreateTenantRoleHandler,
+    UpdateTenantRoleHandler,
+    DeleteTenantRoleHandler,
+    GetTenantCollaboratorsHandler,
+    GetTenantCollaboratorHandler,
+    CreateTenantCollaboratorHandler,
+    ChangeTenantCollaboratorRoleHandler,
+    SuspendTenantCollaboratorHandler,
+    ReactivateTenantCollaboratorHandler,
+    ResetTenantCollaboratorPasswordHandler,
     BranchRepository,
     BranchAddressResolver,
     TenantRepository,
@@ -156,6 +192,7 @@ import { GetStorefrontCategoriesHandler } from './features/get-storefront-catego
     GetStorefrontBranchSchedulesHandler,
     RegisterCustomDomainHandler,
     RegisterTenantWithOwnerService,
+    TenantAuthorizationRoleProvisioner,
     RefreshCustomDomainStatusHandler,
     RejectSubmittedCustomerOnboardingHandler,
     SubmitCustomerProfileHandler,
@@ -181,6 +218,7 @@ import { GetStorefrontCategoriesHandler } from './features/get-storefront-catego
     { provide: RentalCustomerOperationalEligibility, useClass: RentalCustomerOperationalEligibilityService },
   ],
   exports: [
+    TenantAuthorizationModule,
     RentalCustomerContactFacts,
     TenantIdentityFacts,
     TenantBrandingFacts,

@@ -1,5 +1,8 @@
+import { TenantPermission } from '@repo/api-contracts';
 import { Controller, Get, Query } from '@nestjs/common';
 import { QueryBus } from '@nestjs/cqrs';
+
+import { RequireAnyPermission } from 'src/modules/tenant-management/authorization/tenant-authorization.decorators';
 
 import { AuthUser } from '../../../tenant-management/auth/shared/auth.types';
 import { CurrentUser } from '../../../tenant-management/auth/shared/current-user/current-user.decorator';
@@ -13,6 +16,7 @@ export class GetPromotionsHttpController {
   constructor(private readonly queryBus: QueryBus) {}
 
   @Get()
+  @RequireAnyPermission(TenantPermission.PricingRead, TenantPermission.PricingManage)
   async getPromotions(
     @Query() dto: GetPromotionsRequestDto,
     @CurrentUser() user: AuthUser,

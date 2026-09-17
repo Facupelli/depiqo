@@ -1,5 +1,8 @@
+import { TenantPermission } from '@repo/api-contracts';
 import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { QueryBus } from '@nestjs/cqrs';
+
+import { RequireAnyPermission } from 'src/modules/tenant-management/authorization/tenant-authorization.decorators';
 
 import { AUTH_ACTOR_TYPES, AuthUser } from '../../../tenant-management/auth/shared/auth.types';
 import { CurrentUser } from '../../../tenant-management/auth/shared/current-user/current-user.decorator';
@@ -16,6 +19,11 @@ export class GetRentalOffersPricingHttpController {
   constructor(private readonly queryBus: QueryBus) {}
 
   @Get()
+  @RequireAnyPermission(
+    TenantPermission.PricingRead,
+    TenantPermission.PricingManage,
+    TenantPermission.RentalsProposalsManage,
+  )
   @AllowAuthActors(AUTH_ACTOR_TYPES.TENANT_USER)
   @UseGuards(SessionAuthGuard, TenantUserSessionGuard)
   async getRentalOffersPricing(

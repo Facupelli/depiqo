@@ -16,6 +16,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as BackendSplatRouteImport } from './routes/backend/$'
 import { Route as ApiUploadRouteImport } from './routes/api/upload'
 import { Route as ApiBrandingUploadRouteImport } from './routes/api/branding-upload'
+import { Route as AdminChangePasswordRouteImport } from './routes/_admin/change-password'
 import { Route as AdminDashboardRouteRouteImport } from './routes/_admin/dashboard/route'
 import { Route as AdminDashboardIndexRouteImport } from './routes/_admin/dashboard/index'
 import { Route as AdminDashboardSettingsRouteRouteImport } from './routes/_admin/dashboard/settings/route'
@@ -36,11 +37,14 @@ import { Route as AdminDashboardPromotionsNewRouteImport } from './routes/_admin
 import { Route as AdminDashboardOwnersOwnerIdRouteImport } from './routes/_admin/dashboard/owners/$ownerId'
 import { Route as AdminDashboardOrdersNewRouteImport } from './routes/_admin/dashboard/orders/new'
 import { Route as AdminDashboardBranchesNewRouteImport } from './routes/_admin/dashboard/branches/new'
+import { Route as AdminDashboardSettingsTeamRouteRouteImport } from './routes/_admin/dashboard/settings/team/route'
+import { Route as AdminDashboardSettingsTeamIndexRouteImport } from './routes/_admin/dashboard/settings/team/index'
 import { Route as AdminDashboardOrdersOrderIdIndexRouteImport } from './routes/_admin/dashboard/orders/$orderId/index'
 import { Route as AdminDashboardInventoryEquipmentTypesIndexRouteImport } from './routes/_admin/dashboard/inventory/equipment-types/index'
 import { Route as AdminDashboardCustomersPendingProfilesIndexRouteImport } from './routes/_admin/dashboard/customers/pending-profiles/index'
 import { Route as AdminDashboardCatalogPackagesIndexRouteImport } from './routes/_admin/dashboard/catalog/packages/index'
 import { Route as AdminDashboardCatalogCategoriesIndexRouteImport } from './routes/_admin/dashboard/catalog/categories/index'
+import { Route as AdminDashboardSettingsTeamRolesRouteImport } from './routes/_admin/dashboard/settings/team/roles'
 import { Route as AdminDashboardPromotionsPromotionIdEditRouteImport } from './routes/_admin/dashboard/promotions/$promotionId/edit'
 import { Route as AdminDashboardOrdersOrderIdEditRouteImport } from './routes/_admin/dashboard/orders/$orderId/edit'
 import { Route as AdminDashboardInventoryEquipmentTypesNewRouteImport } from './routes/_admin/dashboard/inventory/equipment-types/new'
@@ -93,6 +97,11 @@ const ApiBrandingUploadRoute = ApiBrandingUploadRouteImport.update({
   id: '/api/branding-upload',
   path: '/api/branding-upload',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AdminChangePasswordRoute = AdminChangePasswordRouteImport.update({
+  id: '/change-password',
+  path: '/change-password',
+  getParentRoute: () => AdminRouteRoute,
 } as any)
 const AdminDashboardRouteRoute = AdminDashboardRouteRouteImport.update({
   id: '/dashboard',
@@ -211,6 +220,18 @@ const AdminDashboardBranchesNewRoute =
     path: '/branches/new',
     getParentRoute: () => AdminDashboardRouteRoute,
   } as any)
+const AdminDashboardSettingsTeamRouteRoute =
+  AdminDashboardSettingsTeamRouteRouteImport.update({
+    id: '/team',
+    path: '/team',
+    getParentRoute: () => AdminDashboardSettingsRouteRoute,
+  } as any)
+const AdminDashboardSettingsTeamIndexRoute =
+  AdminDashboardSettingsTeamIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AdminDashboardSettingsTeamRouteRoute,
+  } as any)
 const AdminDashboardOrdersOrderIdIndexRoute =
   AdminDashboardOrdersOrderIdIndexRouteImport.update({
     id: '/orders/$orderId/',
@@ -240,6 +261,12 @@ const AdminDashboardCatalogCategoriesIndexRoute =
     id: '/catalog/categories/',
     path: '/catalog/categories/',
     getParentRoute: () => AdminDashboardRouteRoute,
+  } as any)
+const AdminDashboardSettingsTeamRolesRoute =
+  AdminDashboardSettingsTeamRolesRouteImport.update({
+    id: '/roles',
+    path: '/roles',
+    getParentRoute: () => AdminDashboardSettingsTeamRouteRoute,
   } as any)
 const AdminDashboardPromotionsPromotionIdEditRoute =
   AdminDashboardPromotionsPromotionIdEditRouteImport.update({
@@ -366,11 +393,13 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/dashboard': typeof AdminDashboardRouteRouteWithChildren
+  '/change-password': typeof AdminChangePasswordRoute
   '/api/branding-upload': typeof ApiBrandingUploadRoute
   '/api/upload': typeof ApiUploadRoute
   '/backend/$': typeof BackendSplatRoute
   '/dashboard/settings': typeof AdminDashboardSettingsRouteRouteWithChildren
   '/dashboard/': typeof AdminDashboardIndexRoute
+  '/dashboard/settings/team': typeof AdminDashboardSettingsTeamRouteRouteWithChildren
   '/dashboard/branches/new': typeof AdminDashboardBranchesNewRoute
   '/dashboard/orders/new': typeof AdminDashboardOrdersNewRoute
   '/dashboard/owners/$ownerId': typeof AdminDashboardOwnersOwnerIdRoute
@@ -397,11 +426,13 @@ export interface FileRoutesByFullPath {
   '/dashboard/inventory/equipment-types/new': typeof AdminDashboardInventoryEquipmentTypesNewRoute
   '/dashboard/orders/$orderId/edit': typeof AdminDashboardOrdersOrderIdEditRoute
   '/dashboard/promotions/$promotionId/edit': typeof AdminDashboardPromotionsPromotionIdEditRoute
+  '/dashboard/settings/team/roles': typeof AdminDashboardSettingsTeamRolesRoute
   '/dashboard/catalog/categories/': typeof AdminDashboardCatalogCategoriesIndexRoute
   '/dashboard/catalog/packages/': typeof AdminDashboardCatalogPackagesIndexRoute
   '/dashboard/customers/pending-profiles/': typeof AdminDashboardCustomersPendingProfilesIndexRoute
   '/dashboard/inventory/equipment-types/': typeof AdminDashboardInventoryEquipmentTypesIndexRoute
   '/dashboard/orders/$orderId/': typeof AdminDashboardOrdersOrderIdIndexRoute
+  '/dashboard/settings/team/': typeof AdminDashboardSettingsTeamIndexRoute
   '/dashboard/catalog/packages/$rentableItemId/edit': typeof AdminDashboardCatalogPackagesRentableItemIdEditRoute
   '/dashboard/catalog/packages/$rentableItemId/equipment': typeof AdminDashboardCatalogPackagesRentableItemIdEquipmentRoute
   '/dashboard/catalog/packages/$rentableItemId/rental': typeof AdminDashboardCatalogPackagesRentableItemIdRentalRoute
@@ -416,6 +447,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/change-password': typeof AdminChangePasswordRoute
   '/api/branding-upload': typeof ApiBrandingUploadRoute
   '/api/upload': typeof ApiUploadRoute
   '/backend/$': typeof BackendSplatRoute
@@ -444,11 +476,13 @@ export interface FileRoutesByTo {
   '/dashboard/inventory/equipment-types/new': typeof AdminDashboardInventoryEquipmentTypesNewRoute
   '/dashboard/orders/$orderId/edit': typeof AdminDashboardOrdersOrderIdEditRoute
   '/dashboard/promotions/$promotionId/edit': typeof AdminDashboardPromotionsPromotionIdEditRoute
+  '/dashboard/settings/team/roles': typeof AdminDashboardSettingsTeamRolesRoute
   '/dashboard/catalog/categories': typeof AdminDashboardCatalogCategoriesIndexRoute
   '/dashboard/catalog/packages': typeof AdminDashboardCatalogPackagesIndexRoute
   '/dashboard/customers/pending-profiles': typeof AdminDashboardCustomersPendingProfilesIndexRoute
   '/dashboard/inventory/equipment-types': typeof AdminDashboardInventoryEquipmentTypesIndexRoute
   '/dashboard/orders/$orderId': typeof AdminDashboardOrdersOrderIdIndexRoute
+  '/dashboard/settings/team': typeof AdminDashboardSettingsTeamIndexRoute
   '/dashboard/catalog/packages/$rentableItemId/edit': typeof AdminDashboardCatalogPackagesRentableItemIdEditRoute
   '/dashboard/catalog/packages/$rentableItemId/equipment': typeof AdminDashboardCatalogPackagesRentableItemIdEquipmentRoute
   '/dashboard/catalog/packages/$rentableItemId/rental': typeof AdminDashboardCatalogPackagesRentableItemIdRentalRoute
@@ -466,11 +500,13 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/_admin/dashboard': typeof AdminDashboardRouteRouteWithChildren
+  '/_admin/change-password': typeof AdminChangePasswordRoute
   '/api/branding-upload': typeof ApiBrandingUploadRoute
   '/api/upload': typeof ApiUploadRoute
   '/backend/$': typeof BackendSplatRoute
   '/_admin/dashboard/settings': typeof AdminDashboardSettingsRouteRouteWithChildren
   '/_admin/dashboard/': typeof AdminDashboardIndexRoute
+  '/_admin/dashboard/settings/team': typeof AdminDashboardSettingsTeamRouteRouteWithChildren
   '/_admin/dashboard/branches/new': typeof AdminDashboardBranchesNewRoute
   '/_admin/dashboard/orders/new': typeof AdminDashboardOrdersNewRoute
   '/_admin/dashboard/owners/$ownerId': typeof AdminDashboardOwnersOwnerIdRoute
@@ -497,11 +533,13 @@ export interface FileRoutesById {
   '/_admin/dashboard/inventory/equipment-types/new': typeof AdminDashboardInventoryEquipmentTypesNewRoute
   '/_admin/dashboard/orders/$orderId/edit': typeof AdminDashboardOrdersOrderIdEditRoute
   '/_admin/dashboard/promotions/$promotionId/edit': typeof AdminDashboardPromotionsPromotionIdEditRoute
+  '/_admin/dashboard/settings/team/roles': typeof AdminDashboardSettingsTeamRolesRoute
   '/_admin/dashboard/catalog/categories/': typeof AdminDashboardCatalogCategoriesIndexRoute
   '/_admin/dashboard/catalog/packages/': typeof AdminDashboardCatalogPackagesIndexRoute
   '/_admin/dashboard/customers/pending-profiles/': typeof AdminDashboardCustomersPendingProfilesIndexRoute
   '/_admin/dashboard/inventory/equipment-types/': typeof AdminDashboardInventoryEquipmentTypesIndexRoute
   '/_admin/dashboard/orders/$orderId/': typeof AdminDashboardOrdersOrderIdIndexRoute
+  '/_admin/dashboard/settings/team/': typeof AdminDashboardSettingsTeamIndexRoute
   '/_admin/dashboard/catalog/packages/$rentableItemId/edit': typeof AdminDashboardCatalogPackagesRentableItemIdEditRoute
   '/_admin/dashboard/catalog/packages/$rentableItemId/equipment': typeof AdminDashboardCatalogPackagesRentableItemIdEquipmentRoute
   '/_admin/dashboard/catalog/packages/$rentableItemId/rental': typeof AdminDashboardCatalogPackagesRentableItemIdRentalRoute
@@ -519,11 +557,13 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/dashboard'
+    | '/change-password'
     | '/api/branding-upload'
     | '/api/upload'
     | '/backend/$'
     | '/dashboard/settings'
     | '/dashboard/'
+    | '/dashboard/settings/team'
     | '/dashboard/branches/new'
     | '/dashboard/orders/new'
     | '/dashboard/owners/$ownerId'
@@ -550,11 +590,13 @@ export interface FileRouteTypes {
     | '/dashboard/inventory/equipment-types/new'
     | '/dashboard/orders/$orderId/edit'
     | '/dashboard/promotions/$promotionId/edit'
+    | '/dashboard/settings/team/roles'
     | '/dashboard/catalog/categories/'
     | '/dashboard/catalog/packages/'
     | '/dashboard/customers/pending-profiles/'
     | '/dashboard/inventory/equipment-types/'
     | '/dashboard/orders/$orderId/'
+    | '/dashboard/settings/team/'
     | '/dashboard/catalog/packages/$rentableItemId/edit'
     | '/dashboard/catalog/packages/$rentableItemId/equipment'
     | '/dashboard/catalog/packages/$rentableItemId/rental'
@@ -569,6 +611,7 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/register'
+    | '/change-password'
     | '/api/branding-upload'
     | '/api/upload'
     | '/backend/$'
@@ -597,11 +640,13 @@ export interface FileRouteTypes {
     | '/dashboard/inventory/equipment-types/new'
     | '/dashboard/orders/$orderId/edit'
     | '/dashboard/promotions/$promotionId/edit'
+    | '/dashboard/settings/team/roles'
     | '/dashboard/catalog/categories'
     | '/dashboard/catalog/packages'
     | '/dashboard/customers/pending-profiles'
     | '/dashboard/inventory/equipment-types'
     | '/dashboard/orders/$orderId'
+    | '/dashboard/settings/team'
     | '/dashboard/catalog/packages/$rentableItemId/edit'
     | '/dashboard/catalog/packages/$rentableItemId/equipment'
     | '/dashboard/catalog/packages/$rentableItemId/rental'
@@ -618,11 +663,13 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/_admin/dashboard'
+    | '/_admin/change-password'
     | '/api/branding-upload'
     | '/api/upload'
     | '/backend/$'
     | '/_admin/dashboard/settings'
     | '/_admin/dashboard/'
+    | '/_admin/dashboard/settings/team'
     | '/_admin/dashboard/branches/new'
     | '/_admin/dashboard/orders/new'
     | '/_admin/dashboard/owners/$ownerId'
@@ -649,11 +696,13 @@ export interface FileRouteTypes {
     | '/_admin/dashboard/inventory/equipment-types/new'
     | '/_admin/dashboard/orders/$orderId/edit'
     | '/_admin/dashboard/promotions/$promotionId/edit'
+    | '/_admin/dashboard/settings/team/roles'
     | '/_admin/dashboard/catalog/categories/'
     | '/_admin/dashboard/catalog/packages/'
     | '/_admin/dashboard/customers/pending-profiles/'
     | '/_admin/dashboard/inventory/equipment-types/'
     | '/_admin/dashboard/orders/$orderId/'
+    | '/_admin/dashboard/settings/team/'
     | '/_admin/dashboard/catalog/packages/$rentableItemId/edit'
     | '/_admin/dashboard/catalog/packages/$rentableItemId/equipment'
     | '/_admin/dashboard/catalog/packages/$rentableItemId/rental'
@@ -726,6 +775,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/branding-upload'
       preLoaderRoute: typeof ApiBrandingUploadRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_admin/change-password': {
+      id: '/_admin/change-password'
+      path: '/change-password'
+      fullPath: '/change-password'
+      preLoaderRoute: typeof AdminChangePasswordRouteImport
+      parentRoute: typeof AdminRouteRoute
     }
     '/_admin/dashboard': {
       id: '/_admin/dashboard'
@@ -867,6 +923,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminDashboardBranchesNewRouteImport
       parentRoute: typeof AdminDashboardRouteRoute
     }
+    '/_admin/dashboard/settings/team': {
+      id: '/_admin/dashboard/settings/team'
+      path: '/team'
+      fullPath: '/dashboard/settings/team'
+      preLoaderRoute: typeof AdminDashboardSettingsTeamRouteRouteImport
+      parentRoute: typeof AdminDashboardSettingsRouteRoute
+    }
+    '/_admin/dashboard/settings/team/': {
+      id: '/_admin/dashboard/settings/team/'
+      path: '/'
+      fullPath: '/dashboard/settings/team/'
+      preLoaderRoute: typeof AdminDashboardSettingsTeamIndexRouteImport
+      parentRoute: typeof AdminDashboardSettingsTeamRouteRoute
+    }
     '/_admin/dashboard/orders/$orderId/': {
       id: '/_admin/dashboard/orders/$orderId/'
       path: '/orders/$orderId'
@@ -901,6 +971,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/dashboard/catalog/categories/'
       preLoaderRoute: typeof AdminDashboardCatalogCategoriesIndexRouteImport
       parentRoute: typeof AdminDashboardRouteRoute
+    }
+    '/_admin/dashboard/settings/team/roles': {
+      id: '/_admin/dashboard/settings/team/roles'
+      path: '/roles'
+      fullPath: '/dashboard/settings/team/roles'
+      preLoaderRoute: typeof AdminDashboardSettingsTeamRolesRouteImport
+      parentRoute: typeof AdminDashboardSettingsTeamRouteRoute
     }
     '/_admin/dashboard/promotions/$promotionId/edit': {
       id: '/_admin/dashboard/promotions/$promotionId/edit'
@@ -1031,7 +1108,24 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AdminDashboardSettingsTeamRouteRouteChildren {
+  AdminDashboardSettingsTeamRolesRoute: typeof AdminDashboardSettingsTeamRolesRoute
+  AdminDashboardSettingsTeamIndexRoute: typeof AdminDashboardSettingsTeamIndexRoute
+}
+
+const AdminDashboardSettingsTeamRouteRouteChildren: AdminDashboardSettingsTeamRouteRouteChildren =
+  {
+    AdminDashboardSettingsTeamRolesRoute: AdminDashboardSettingsTeamRolesRoute,
+    AdminDashboardSettingsTeamIndexRoute: AdminDashboardSettingsTeamIndexRoute,
+  }
+
+const AdminDashboardSettingsTeamRouteRouteWithChildren =
+  AdminDashboardSettingsTeamRouteRoute._addFileChildren(
+    AdminDashboardSettingsTeamRouteRouteChildren,
+  )
+
 interface AdminDashboardSettingsRouteRouteChildren {
+  AdminDashboardSettingsTeamRouteRoute: typeof AdminDashboardSettingsTeamRouteRouteWithChildren
   AdminDashboardSettingsBranchesRoute: typeof AdminDashboardSettingsBranchesRoute
   AdminDashboardSettingsBusinessRoute: typeof AdminDashboardSettingsBusinessRoute
   AdminDashboardSettingsContractsRoute: typeof AdminDashboardSettingsContractsRoute
@@ -1043,6 +1137,8 @@ interface AdminDashboardSettingsRouteRouteChildren {
 
 const AdminDashboardSettingsRouteRouteChildren: AdminDashboardSettingsRouteRouteChildren =
   {
+    AdminDashboardSettingsTeamRouteRoute:
+      AdminDashboardSettingsTeamRouteRouteWithChildren,
     AdminDashboardSettingsBranchesRoute: AdminDashboardSettingsBranchesRoute,
     AdminDashboardSettingsBusinessRoute: AdminDashboardSettingsBusinessRoute,
     AdminDashboardSettingsContractsRoute: AdminDashboardSettingsContractsRoute,
@@ -1184,10 +1280,12 @@ const AdminDashboardRouteRouteWithChildren =
 
 interface AdminRouteRouteChildren {
   AdminDashboardRouteRoute: typeof AdminDashboardRouteRouteWithChildren
+  AdminChangePasswordRoute: typeof AdminChangePasswordRoute
 }
 
 const AdminRouteRouteChildren: AdminRouteRouteChildren = {
   AdminDashboardRouteRoute: AdminDashboardRouteRouteWithChildren,
+  AdminChangePasswordRoute: AdminChangePasswordRoute,
 }
 
 const AdminRouteRouteWithChildren = AdminRouteRoute._addFileChildren(

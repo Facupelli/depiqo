@@ -1,5 +1,7 @@
+import { TenantPermission } from "@repo/api-contracts";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, redirect } from "@tanstack/react-router";
+import { can, requireRouteAccess } from "@/auth/permissions";
 import { EditProductPage } from "@/modules/products/edit-product/EditProductPage";
 import { isComboKind } from "@/modules/products/product-kind";
 import { rentableItemDetailQueries } from "@/modules/products/rentable-item-detail/rentable-item-detail.queries";
@@ -8,6 +10,12 @@ import { AdminRouteError } from "@/shared/components/admin-route-error";
 export const Route = createFileRoute(
 	"/_admin/dashboard/catalog/$rentableItemId/edit",
 )({
+	beforeLoad: ({ context }) => {
+		requireRouteAccess(
+			can(context.user.permissions, TenantPermission.ProductsManage),
+		);
+	},
+
 	loader: async ({ context: { queryClient }, params: { rentableItemId } }) => {
 		const item = await queryClient.ensureQueryData(
 			rentableItemDetailQueries.detail(rentableItemId),

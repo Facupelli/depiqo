@@ -1,9 +1,14 @@
+import { TenantPermission } from "@repo/api-contracts";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { currentAuthQueries } from "@/auth/auth.queries";
+import { can } from "@/auth/permissions";
 import { PageBreadcrumb } from "@/components/detail-id-breadcrumb";
 import { useBranches } from "@/modules/settings/branches/public";
-import { DraftRentalComposer } from "../draft-rental-composer/draft-rental-composer";
+import {
+	DraftRentalComposer,
+	PriceAdjustableDraftRentalComposer,
+} from "../draft-rental-composer/draft-rental-composer";
 import {
 	createDraftRentalComposerDefaultValues,
 	type DraftRentalComposerFormValues,
@@ -25,6 +30,13 @@ export function CreateRentalPage() {
 			? activeBranches[0].id
 			: "";
 	const createDraftRental = useCreateDraftRental();
+	const canManagePriceAdjustment =
+		currentAuth.actorType === "TENANT_USER" &&
+		can(currentAuth.permissions, TenantPermission.RentalsPriceAdjustmentManage);
+
+	const Composer = canManagePriceAdjustment
+		? PriceAdjustableDraftRentalComposer
+		: DraftRentalComposer;
 
 	async function handleSubmit(
 		values: DraftRentalComposerFormValues,
@@ -52,7 +64,7 @@ export function CreateRentalPage() {
 				</h1>
 			</div>
 
-			<DraftRentalComposer
+			<Composer
 				activeBranches={activeBranches}
 				defaultValues={createDraftRentalComposerDefaultValues(initialBranchId)}
 				onSubmit={handleSubmit}

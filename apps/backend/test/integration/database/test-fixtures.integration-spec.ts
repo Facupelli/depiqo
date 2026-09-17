@@ -4,8 +4,9 @@ import { useIntegrationTestContext } from '../../support/integration-test-contex
 import { AppConfigModule } from '../../../src/config/config.module';
 import { PrismaService } from '../../../src/core/database/prisma.service';
 import { PasswordService } from '../../../src/modules/tenant-management/auth/shared/password/password.service';
-import { V2PasswordAlgorithm } from '../../../src/generated/prisma/enums';
+import { V2PasswordAlgorithm, V2TenantSystemRole } from '../../../src/generated/prisma/enums';
 import { SharedModule } from '../../../src/modules/shared/shared.module';
+import { DEFAULT_MEMBER_TENANT_PERMISSIONS } from '../../../src/modules/tenant-management/authorization/tenant-permission.registry';
 import { createTestFixtures, TestFixtures } from '../../support/fixtures';
 
 describe('database test fixtures', () => {
@@ -49,14 +50,41 @@ describe('database test fixtures', () => {
       fixtures.createBranch({ tenantId: tenant.id }),
     ]);
 
-    expect(tenantUser.user.tenantId).toBe(tenant.id);
+    expect(tenantUser.user).toMatchObject({
+      tenantId: tenant.id,
+      roleId: expect.any(String),
+    });
     expect(customer.customer).toMatchObject({ tenantId: tenant.id, passwordHash: null });
     expect(branch.tenantId).toBe(tenant.id);
   });
 
+  it('provisions tenant roles and supports explicit custom-role user creation', async () => {
+    const tenant = await fixtures.createTenant();
+    const roles = await prisma.client.v2TenantRole.findMany({
+      where: { tenantId: tenant.id },
+      include: { permissions: true },
+    });
+    const administrator = roles.find(({ systemRole }) => systemRole === V2TenantSystemRole.ADMIN);
+    const member = roles.find(({ name }) => name === 'Miembro');
+
+    expect(roles).toHaveLength(2);
+    expect(administrator?.permissions).toEqual([]);
+    expect(member?.permissions.map(({ permission }) => permission).sort()).toEqual(
+      [...DEFAULT_MEMBER_TENANT_PERMISSIONS].sort(),
+    );
+
+    const tenantUser = await fixtures.createTenantUser({ tenantId: tenant.id });
+    const administratorUser = await fixtures.createAdministratorTenantUser({ tenantId: tenant.id });
+    const explicitMemberUser = await fixtures.createTenantUserWithRole({ tenantId: tenant.id, roleId: member!.id });
+
+    expect(tenantUser.user).toMatchObject({ roleId: member!.id });
+    expect(administratorUser.user).toMatchObject({ roleId: administrator!.id });
+    expect(explicitMemberUser.user).toMatchObject({ roleId: member!.id });
+  });
+
   it('rejects a tenant user without an existing tenant', async () => {
     await expect(fixtures.createTenantUser({ tenantId: 'missing-tenant' })).rejects.toThrow(
-      'Cannot create a tenant user for nonexistent tenant missing-tenant.',
+      'Cannot create a Miembro tenant user for tenant missing-tenant.',
     );
   });
 

@@ -1,5 +1,7 @@
 import { Body, Controller, HttpCode, HttpStatus, Post, UseGuards } from '@nestjs/common';
 import { QueryBus } from '@nestjs/cqrs';
+import { RequireAnyPermission } from 'src/modules/tenant-management/authorization/tenant-authorization.decorators';
+import { TenantPermission } from '@repo/api-contracts';
 
 import { createProblemDetails, createProblemType, ProblemException } from 'src/core/problem-details';
 import { AUTH_ACTOR_TYPES, AuthUser } from 'src/modules/tenant-management/auth/shared/auth.types';
@@ -24,6 +26,7 @@ export class GetRentalOfferAvailabilityHttpController {
   constructor(private readonly queryBus: QueryBus) {}
 
   @Post()
+  @RequireAnyPermission(TenantPermission.RentalsProposalsManage, TenantPermission.RentalsConfirmedManage)
   @HttpCode(HttpStatus.OK)
   @AllowAuthActors(AUTH_ACTOR_TYPES.TENANT_USER)
   @UseGuards(SessionAuthGuard, TenantUserSessionGuard)

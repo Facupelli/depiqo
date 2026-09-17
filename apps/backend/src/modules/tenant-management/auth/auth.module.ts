@@ -2,6 +2,8 @@ import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { APP_GUARD } from '@nestjs/core';
+import { ChangePasswordController } from './features/change-password/change-password.controller';
+import { ChangePasswordService } from './features/change-password/change-password.service';
 import { CustomerGoogleFinalizeController } from './features/customer-google-finalize/customer-google-finalize.controller';
 import { CustomerGoogleLoginController } from './features/customer-google-login/customer-google-login.controller';
 import { CustomerGoogleLoginService } from './features/customer-google-login/customer-google-login.service';
@@ -27,7 +29,9 @@ import { GoogleIdentityVerificationService } from './shared/google/google-identi
 import { GoogleIdentityVerifier } from './shared/google/google-identity-verifier.port';
 import { CustomerGoogleHandoffTicketService } from './shared/handoff/customer-google-handoff-ticket.service';
 import { PasswordService } from './shared/password/password.service';
+import { TemporaryPasswordService } from './shared/password/temporary-password.service';
 import { AuthSessionSerializer } from './shared/session/auth-session.serializer';
+import { ForcedPasswordChangeGuard } from './shared/session/forced-password-change.guard';
 import { SessionAuthGuard } from './shared/session/session-auth.guard';
 import { AuthActorAccessGuard } from './shared/session/auth-actor-access.guard';
 import { SessionRegeneratorService } from './shared/session/session-regenerator.service';
@@ -36,6 +40,8 @@ import { StorefrontTenantCustomerSessionGuard } from './shared/session/storefron
 import { StorefrontTenantContextGuard } from '../tenant-context/guards/storefront-tenant-context.guard';
 import { TenantUserSessionGuard } from './shared/session/tenant-user-session.guard';
 import { WorkingBranchSessionService } from './shared/session/working-branch-session.service';
+import { TenantAuthorizationModule } from '../authorization/tenant-authorization.module';
+import { TenantAuthorizationGuard } from '../authorization/tenant-authorization.guard';
 
 @Module({
   imports: [
@@ -43,8 +49,10 @@ import { WorkingBranchSessionService } from './shared/session/working-branch-ses
       session: true,
     }),
     JwtModule.register({}),
+    TenantAuthorizationModule,
   ],
   controllers: [
+    ChangePasswordController,
     CustomerGoogleFinalizeController,
     CustomerGoogleLoginController,
     CustomerGoogleStateController,
@@ -57,6 +65,7 @@ import { WorkingBranchSessionService } from './shared/session/working-branch-ses
     UpdateWorkingBranchController,
   ],
   providers: [
+    ChangePasswordService,
     ValidateLocalCredentialsService,
     ValidateCustomerLocalCredentialsService,
     CustomerGoogleLoginService,
@@ -65,6 +74,7 @@ import { WorkingBranchSessionService } from './shared/session/working-branch-ses
     GoogleIdentityVerificationService,
     { provide: GoogleIdentityVerifier, useExisting: GoogleIdentityVerificationService },
     PasswordService,
+    TemporaryPasswordService,
     AuthAuditService,
     CsrfService,
     LocalStrategy,
@@ -87,7 +97,21 @@ import { WorkingBranchSessionService } from './shared/session/working-branch-ses
       provide: APP_GUARD,
       useClass: AuthActorAccessGuard,
     },
+    {
+      provide: APP_GUARD,
+      useClass: ForcedPasswordChangeGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: TenantAuthorizationGuard,
+    },
   ],
-  exports: [PasswordService, SessionAuthGuard, StorefrontTenantContextGuard, StorefrontTenantCustomerSessionGuard],
+  exports: [
+    PasswordService,
+    TemporaryPasswordService,
+    SessionAuthGuard,
+    StorefrontTenantContextGuard,
+    StorefrontTenantCustomerSessionGuard,
+  ],
 })
 export class AuthModule {}

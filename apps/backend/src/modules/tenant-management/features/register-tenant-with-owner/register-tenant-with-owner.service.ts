@@ -3,8 +3,9 @@ import { InputJsonValue } from '@prisma/client/runtime/client';
 import { err, ok, Result } from 'neverthrow';
 
 import { PrismaService } from 'src/core/database/prisma.service';
-import { V2AuthAuditEventType, V2TenantStatus, V2UserRole, V2UserStatus } from 'src/generated/prisma/enums';
+import { V2AuthAuditEventType, V2TenantStatus, V2UserStatus } from 'src/generated/prisma/enums';
 
+import { TenantAuthorizationRoleProvisioner } from '../../authorization/tenant-authorization-role.provisioner';
 import { normalizeEmail } from '../../auth/shared/auth.types';
 import { PasswordService } from '../../auth/shared/password/password.service';
 import { Tenant } from '../../domain/entities/tenant.aggregate';
@@ -29,6 +30,7 @@ export class RegisterTenantWithOwnerService implements ICommandHandler<
   constructor(
     private readonly prisma: PrismaService,
     private readonly passwordService: PasswordService,
+    private readonly authorizationRoleProvisioner: TenantAuthorizationRoleProvisioner,
   ) {}
 
   async execute(
@@ -84,13 +86,16 @@ export class RegisterTenantWithOwnerService implements ICommandHandler<
         select: { id: true },
       });
 
+      const authorizationRoles = await this.authorizationRoleProvisioner.provision(tx, createdTenant.id);
+
       const tenantUser = await tx.v2TenantUser.create({
         data: {
           tenantId: createdTenant.id,
           email,
           name: command.ownerName.trim(),
-          role: V2UserRole.ADMIN,
+          roleId: authorizationRoles.administratorRoleId,
           status: V2UserStatus.ACTIVE,
+          mustChangePassword: false,
           localCredential: {
             create: {
               passwordHash: password.hash,

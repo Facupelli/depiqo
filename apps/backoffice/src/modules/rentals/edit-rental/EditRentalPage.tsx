@@ -1,13 +1,19 @@
+import { TenantPermission } from "@repo/api-contracts";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { currentBusinessQueries } from "@/application/current-business/current-business.queries";
+import { currentAuthQueries } from "@/auth/auth.queries";
+import { can } from "@/auth/permissions";
 import { PageBreadcrumb } from "@/components/detail-id-breadcrumb";
 import { useBranches } from "@/modules/settings/branches/public";
 import { GenericErrorPage } from "@/shared/components/generic-error-page";
 import { ProblemDetailsError } from "@/shared/errors";
 import { resolveOperationalTimezone } from "@/shared/timezone/operational-timezone";
-import { DraftRentalComposer } from "../draft-rental-composer/draft-rental-composer";
+import {
+	DraftRentalComposer,
+	PriceAdjustableDraftRentalComposer,
+} from "../draft-rental-composer/draft-rental-composer";
 import type { DraftRentalComposerFormValues } from "../draft-rental-composer/draft-rental-composer.schema";
 import { rentalDetailViewQueries } from "../rental-detail/rental-detail.queries";
 import { hydrateRentalDetailToComposer } from "./rental-detail-to-composer";
@@ -24,6 +30,10 @@ export function EditRentalPage({ orderId }: EditRentalPageProps) {
 	const { data: rental } = useSuspenseQuery(
 		rentalDetailViewQueries.detail(orderId),
 	);
+	const { data: currentAuth } = useSuspenseQuery(currentAuthQueries.current());
+	const canManagePriceAdjustment =
+		currentAuth.actorType === "TENANT_USER" &&
+		can(currentAuth.permissions, TenantPermission.RentalsPriceAdjustmentManage);
 	const { data: business } = useSuspenseQuery(currentBusinessQueries.current());
 	const { data: branches = [] } = useBranches();
 	const [baseline] = useState(() => {
@@ -37,9 +47,21 @@ export function EditRentalPage({ orderId }: EditRentalPageProps) {
 			editor: hydrateRentalDetailToComposer(rental, operationalTimezone),
 		};
 	});
-	const [submitError, setSubmitError] = useState<string | null>(null);
-	const [submissionBlocked, setSubmissionBlocked] = useState(false);
+	const hasProtectedManualAdjustment =
+		Boolean(baseline.editor.defaultValues.targetTotal.trim()) &&
+		!canManagePriceAdjustment;
+	const [submitError, setSubmitError] = useState<string | null>(() =>
+		hasProtectedManualAdjustment
+			? "Este borrador tiene un total acordado. Necesitás permiso para gestionar ajustes de precio antes de guardar otros cambios."
+			: null,
+	);
+	const [submissionBlocked, setSubmissionBlocked] = useState(
+		hasProtectedManualAdjustment,
+	);
 	const updateDraftRental = useUpdateDraftRental();
+	const Composer = canManagePriceAdjustment
+		? PriceAdjustableDraftRentalComposer
+		: DraftRentalComposer;
 
 	if (baseline.rental.status !== "DRAFT") {
 		return (
@@ -104,7 +126,7 @@ export function EditRentalPage({ orderId }: EditRentalPageProps) {
 				</h1>
 			</div>
 
-			<DraftRentalComposer
+			<Composer
 				activeBranches={activeBranches}
 				defaultValues={baseline.editor.defaultValues}
 				initialBranch={baseline.editor.initialBranch}

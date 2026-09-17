@@ -13,42 +13,11 @@ import {
 	Send,
 	Trash2,
 } from "lucide-react";
+import { Children, type ReactNode } from "react";
 
-export type RentalActionsDropdownProps = {
-	isDraftRental: boolean;
-	canConfirmRental: boolean;
-	isConfirming: boolean;
-	canSendSigningInvitation: boolean;
-	isSendingSigningInvitation: boolean;
-	canCancelRental: boolean;
-	isCancelling: boolean;
-	isOpeningRemito: boolean;
-	isOpeningBudget: boolean;
-	onEditDraft: () => void;
-	onOpenConfirmDialog: () => void;
-	onOpenRemito: () => void;
-	onOpenBudget: () => void;
-	onOpenSigningDialog: () => void;
-	onOpenCancelDialog: () => void;
-};
+export function RentalActionsDropdown({ children }: { children: ReactNode }) {
+	if (Children.toArray(children).length === 0) return null;
 
-export function RentalActionsDropdown({
-	isDraftRental,
-	canConfirmRental,
-	isConfirming,
-	canSendSigningInvitation,
-	isSendingSigningInvitation,
-	canCancelRental,
-	isCancelling,
-	isOpeningRemito,
-	isOpeningBudget,
-	onEditDraft,
-	onOpenConfirmDialog,
-	onOpenRemito,
-	onOpenBudget,
-	onOpenSigningDialog,
-	onOpenCancelDialog,
-}: RentalActionsDropdownProps) {
 	return (
 		<DropdownMenu>
 			<DropdownMenuTrigger
@@ -61,50 +30,102 @@ export function RentalActionsDropdown({
 			/>
 
 			<DropdownMenuContent align="end" className="w-60">
-				{isDraftRental ? (
-					<DropdownMenuItem onClick={onEditDraft}>
-						<Pencil className="mr-2 h-4 w-4" />
-						Editar
-					</DropdownMenuItem>
-				) : null}
-				{isDraftRental ? (
-					<DropdownMenuItem
-						onClick={onOpenConfirmDialog}
-						disabled={!canConfirmRental || isConfirming}
-					>
-						<CheckCircle2 className="mr-2 h-4 w-4" />
-						{isConfirming ? "Confirmando..." : "Confirmar alquiler"}
-					</DropdownMenuItem>
-				) : null}
-				{isDraftRental ? (
-					<DropdownMenuItem onClick={onOpenBudget} disabled={isOpeningBudget}>
-						<FileText className="mr-2 h-4 w-4" />
-						{isOpeningBudget ? "Abriendo presupuesto..." : "Ver presupuesto"}
-					</DropdownMenuItem>
-				) : (
-					<>
-						<DropdownMenuItem onClick={onOpenRemito} disabled={isOpeningRemito}>
-							<FileText className="mr-2 h-4 w-4" />
-							{isOpeningRemito ? "Abriendo remito..." : "Ver remito"}
-						</DropdownMenuItem>
-						<DropdownMenuItem
-							onClick={onOpenSigningDialog}
-							disabled={!canSendSigningInvitation || isSendingSigningInvitation}
-						>
-							<Send className="mr-2 h-4 w-4" />
-							Enviar remito a firmar
-						</DropdownMenuItem>
-					</>
-				)}
-				<DropdownMenuItem
-					onClick={onOpenCancelDialog}
-					disabled={!canCancelRental || isCancelling}
-					variant="destructive"
-				>
-					<Trash2 className="mr-2 h-4 w-4" />
-					{isCancelling ? "Cancelando..." : "Cancelar alquiler"}
-				</DropdownMenuItem>
+				{children}
 			</DropdownMenuContent>
 		</DropdownMenu>
+	);
+}
+
+export function EditDraftAction({ onSelect }: { onSelect: () => void }) {
+	return (
+		<DropdownMenuItem onClick={onSelect}>
+			<Pencil className="mr-2 h-4 w-4" />
+			Editar
+		</DropdownMenuItem>
+	);
+}
+
+export function ConfirmRentalAction({
+	disabled,
+	isPending,
+	onSelect,
+}: {
+	disabled: boolean;
+	isPending: boolean;
+	onSelect: () => void;
+}) {
+	return (
+		<DropdownMenuItem onClick={onSelect} disabled={disabled || isPending}>
+			<CheckCircle2 className="mr-2 h-4 w-4" />
+			{isPending ? "Confirmando..." : "Confirmar alquiler"}
+		</DropdownMenuItem>
+	);
+}
+
+export function BudgetAction({
+	isPending,
+	onSelect,
+}: {
+	isPending: boolean;
+	onSelect: () => void;
+}) {
+	return (
+		<DropdownMenuItem onClick={onSelect} disabled={isPending}>
+			<FileText className="mr-2 h-4 w-4" />
+			{isPending ? "Abriendo presupuesto..." : "Ver presupuesto"}
+		</DropdownMenuItem>
+	);
+}
+
+export function RemitoAction({
+	isPending,
+	onSelect,
+}: {
+	isPending: boolean;
+	onSelect: () => void;
+}) {
+	return (
+		<DropdownMenuItem onClick={onSelect} disabled={isPending}>
+			<FileText className="mr-2 h-4 w-4" />
+			{isPending ? "Abriendo remito..." : "Ver remito"}
+		</DropdownMenuItem>
+	);
+}
+
+export function SigningInvitationAction({
+	disabled,
+	isPending,
+	onSelect,
+}: {
+	disabled: boolean;
+	isPending: boolean;
+	onSelect: () => void;
+}) {
+	return (
+		<DropdownMenuItem onClick={onSelect} disabled={disabled || isPending}>
+			<Send className="mr-2 h-4 w-4" />
+			Enviar remito a firmar
+		</DropdownMenuItem>
+	);
+}
+
+export function CancelRentalAction({
+	disabled,
+	isPending,
+	onSelect,
+}: {
+	disabled: boolean;
+	isPending: boolean;
+	onSelect: () => void;
+}) {
+	return (
+		<DropdownMenuItem
+			onClick={onSelect}
+			disabled={disabled || isPending}
+			variant="destructive"
+		>
+			<Trash2 className="mr-2 h-4 w-4" />
+			{isPending ? "Cancelando..." : "Cancelar alquiler"}
+		</DropdownMenuItem>
 	);
 }

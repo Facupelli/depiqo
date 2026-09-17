@@ -1,5 +1,7 @@
+import { TenantPermission } from "@repo/api-contracts";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import z from "zod";
+import { can, requireRouteAccess } from "@/auth/permissions";
 import { EditPromotionPage } from "@/modules/pricing/promotions/edit-promotion/EditPromotionPage";
 import { promotionQueries } from "@/modules/pricing/promotions/promotion.queries";
 
@@ -11,6 +13,12 @@ const promotionsSearchSchema = z.object({
 export const Route = createFileRoute(
 	"/_admin/dashboard/promotions/$promotionId/edit",
 )({
+	beforeLoad: ({ context }) => {
+		requireRouteAccess(
+			can(context.user.permissions, TenantPermission.PricingManage),
+		);
+	},
+
 	validateSearch: promotionsSearchSchema,
 	loader: ({ context: { queryClient }, params: { promotionId } }) =>
 		queryClient.ensureQueryData(promotionQueries.detail(promotionId)),

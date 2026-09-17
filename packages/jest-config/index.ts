@@ -45,6 +45,7 @@ export const integrationConfig: Config.InitialOptions = {
   testRegex: ".*\\.integration-spec\\.ts$",
   testTimeout: 30_000,
   maxWorkers: 1,
+  workerIdleMemoryLimit: "700MB",
 };
 
 /**
@@ -57,4 +58,5 @@ export const e2eConfig: Config.InitialOptions = {
   testRegex: ".*\\.e2e-spec\\.ts$",
   testTimeout: 30_000,
   maxWorkers: 1,
+  workerIdleMemoryLimit: "700MB",
 };

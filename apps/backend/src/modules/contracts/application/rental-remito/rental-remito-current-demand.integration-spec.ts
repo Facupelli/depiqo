@@ -63,14 +63,12 @@ describe('Rental Remito current committed demand integration', () => {
         where: { id: rental.rentalId },
         data: { acceptedBeforeBufferMinutes: 0, acceptedAfterBufferMinutes: 0 },
       });
-      await Promise.all(
-        ['Demand A', 'Demand B', 'Demand C'].map((name, index) =>
-          tx.v2RentalDemandLine.update({
-            where: { id: rental.demandLineIds[index] },
-            data: { equipmentTypeNameSnapshot: name },
-          }),
-        ),
-      );
+      for (const [index, name] of ['Demand A', 'Demand B', 'Demand C'].entries()) {
+        await tx.v2RentalDemandLine.update({
+          where: { id: rental.demandLineIds[index] },
+          data: { equipmentTypeNameSnapshot: name },
+        });
+      }
     });
 
     for (let index = 0; index < rental.demandLineIds.length; index += 1) {

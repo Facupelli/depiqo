@@ -1,4 +1,7 @@
-import type { GetRentalDetailRemovedDemandLineDto } from "@repo/api-contracts";
+import {
+	type GetRentalDetailRemovedDemandLineDto,
+	TenantPermission,
+} from "@repo/api-contracts";
 import { Button } from "@repo/ui/components/button";
 import {
 	Popover,
@@ -16,6 +19,7 @@ import {
 	User2Icon,
 } from "lucide-react";
 import { useState } from "react";
+import { can } from "@/auth/permissions";
 import { buildR2PublicUrl } from "@/lib/r2-public-url";
 import { cn } from "@/lib/utils";
 import { AddProductDialog } from "../add-selection/add-product-dialog";
@@ -39,7 +43,15 @@ import { useRestorePackageDemandLineDialog } from "../restore-package-demand-lin
 import { DemandLineRowActions } from "./demand-line-row-actions";
 
 export function RentalEquipmentSection() {
-	const { rental } = useRentalDetailContext();
+	const { rental, permissions } = useRentalDetailContext();
+	const canManageConfirmed = can(
+		permissions,
+		TenantPermission.RentalsConfirmedManage,
+	);
+	const canManageFulfillment = can(
+		permissions,
+		TenantPermission.RentalsFulfillmentManage,
+	);
 	const [isAccessorySheetOpen, setIsAccessorySheetOpen] = useState(false);
 	const [selectedAccessoryDemandLineId, setSelectedAccessoryDemandLineId] =
 		useState<string | null>(null);
@@ -80,7 +92,9 @@ export function RentalEquipmentSection() {
 		.flatMap((selection) => selection.demandLines)
 		.find((demandLine) => demandLine.id === selectedAccessoryDemandLineId);
 	const canAssignDemandLineAccessories =
-		rental.status === "CONFIRMED" && Date.now() < Date.parse(rental.period.end);
+		canManageFulfillment &&
+		rental.status === "CONFIRMED" &&
+		Date.now() < Date.parse(rental.period.end);
 
 	return (
 		<div className="space-y-8">
@@ -150,7 +164,7 @@ export function RentalEquipmentSection() {
 						Equipos y accesorios
 					</h2>
 					<div className="flex min-w-0 flex-col items-start gap-2 @sm/rental-detail:flex-row @sm/rental-detail:flex-wrap @sm/rental-detail:items-center @3xl/rental-detail:justify-end">
-						{rental.status === "CONFIRMED" ? (
+						{canManageConfirmed && rental.status === "CONFIRMED" ? (
 							<Button
 								type="button"
 								onClick={() => setIsAddProductDialogOpen(true)}
@@ -158,11 +172,11 @@ export function RentalEquipmentSection() {
 								Añadir producto
 							</Button>
 						) : null}
-						{rental.status === "DRAFT" ? (
+						{rental.status === "DRAFT" && canManageFulfillment ? (
 							<span className="text-sm text-muted-foreground">
 								Confirma el pedido para asignar accesorios
 							</span>
-						) : (
+						) : canManageFulfillment ? (
 							<Button
 								type="button"
 								variant="outline"
@@ -170,7 +184,7 @@ export function RentalEquipmentSection() {
 							>
 								Asignar accesorios
 							</Button>
-						)}
+						) : null}
 					</div>
 				</div>
 				<section className="mb-10 min-w-0 space-y-3">
@@ -195,12 +209,14 @@ export function RentalEquipmentSection() {
 								accessoriesByEquipmentLine={accessoriesByEquipmentLine}
 								selection={selection}
 								onEditQuantity={
-									rental.status === "CONFIRMED" && !packageHasSuppressedQuantity
+									canManageConfirmed &&
+									rental.status === "CONFIRMED" &&
+									!packageHasSuppressedQuantity
 										? () => setQuantitySelection(selection)
 										: undefined
 								}
 								onRemove={
-									rental.status === "CONFIRMED"
+									canManageConfirmed && rental.status === "CONFIRMED"
 										? () => {
 												removeDialog.onTargetChange();
 												setRemoveSelectionId(selection.id);
@@ -209,7 +225,7 @@ export function RentalEquipmentSection() {
 								}
 								removeDisabledReason={removeDisabledReason}
 								onReplaceAssignedAsset={
-									rental.status === "CONFIRMED"
+									canManageFulfillment && rental.status === "CONFIRMED"
 										? setReplaceAssignedAssetId
 										: undefined
 								}
@@ -219,7 +235,7 @@ export function RentalEquipmentSection() {
 										: undefined
 								}
 								onRemovePackageDemandLine={
-									rental.status === "CONFIRMED"
+									canManageConfirmed && rental.status === "CONFIRMED"
 										? (demandLineId) => {
 												removePackageDemandLineDialog.onTargetChange();
 												setRemovePackageDemandLineId(demandLineId);
@@ -227,7 +243,7 @@ export function RentalEquipmentSection() {
 										: undefined
 								}
 								onRestorePackageDemandLine={
-									rental.status === "CONFIRMED"
+									canManageConfirmed && rental.status === "CONFIRMED"
 										? (demandLineId) => {
 												restorePackageDemandLineDialog.onTargetChange();
 												setRestorePackageDemandLineId(demandLineId);

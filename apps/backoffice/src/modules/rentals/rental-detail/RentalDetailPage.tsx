@@ -1,4 +1,8 @@
 import {
+	TenantPermission,
+	type TenantPermission as TenantPermissionId,
+} from "@repo/api-contracts";
+import {
 	Breadcrumb,
 	BreadcrumbItem,
 	BreadcrumbLink,
@@ -8,6 +12,7 @@ import {
 } from "@repo/ui/components/breadcrumb";
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
+import { can } from "@/auth/permissions";
 import { formatOrderNumber } from "@/shared/utils/formatters";
 import { RentalActivityLog } from "./components/rental-activity-log";
 import { RentalDetailHeader } from "./components/rental-detail-header";
@@ -22,9 +27,13 @@ import { rentalDetailViewQueries } from "./rental-detail.queries";
 
 type RentalDetailPageProps = {
 	orderId: string;
+	permissions: readonly TenantPermissionId[];
 };
 
-export function RentalDetailPage({ orderId }: RentalDetailPageProps) {
+export function RentalDetailPage({
+	orderId,
+	permissions,
+}: RentalDetailPageProps) {
 	const { data: rental } = useSuspenseQuery(
 		rentalDetailViewQueries.detail(orderId),
 	);
@@ -37,7 +46,9 @@ export function RentalDetailPage({ orderId }: RentalDetailPageProps) {
 		data: contractSigningSummary = null,
 		isLoading: isContractSigningSummaryLoading,
 		isError: isContractSigningSummaryError,
-	} = useRentalContractSigningSummary(rental.id);
+	} = useRentalContractSigningSummary(rental.id, {
+		enabled: can(permissions, TenantPermission.ContractsRead),
+	});
 
 	return (
 		<div className="@container/rental-detail text-neutral-950">
@@ -59,6 +70,7 @@ export function RentalDetailPage({ orderId }: RentalDetailPageProps) {
 
 			<RentalDetailProvider
 				rental={rental}
+				permissions={permissions}
 				customerSummary={customerSummary}
 				isCustomerSummaryLoading={isCustomerSummaryLoading}
 				isCustomerSummaryError={isCustomerSummaryError}

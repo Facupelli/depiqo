@@ -1,9 +1,11 @@
+import { TenantPermission } from '@repo/api-contracts';
 import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
 
 import { CurrentUser } from 'src/core/decorators/current-user.decorator';
 import { createProblemDetails, createProblemType, ProblemException } from 'src/core/problem-details';
 import { AuthUser } from 'src/modules/tenant-management/auth/shared/auth.types';
+import { RequireAllPermissions } from 'src/modules/tenant-management/authorization/tenant-authorization.decorators';
 import { CreateRentalOfferWithPricingCommand } from './create-rental-offer-with-pricing.command';
 import {
   CreateRentalOfferWithPricingError,
@@ -19,6 +21,7 @@ export class CreateRentalOfferWithPricingHttpController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
+  @RequireAllPermissions(TenantPermission.ProductsAvailabilityManage, TenantPermission.PricingManage)
   async create(
     @Body() dto: CreateRentalOfferWithPricingRequestDto,
     @CurrentUser() user: AuthUser,

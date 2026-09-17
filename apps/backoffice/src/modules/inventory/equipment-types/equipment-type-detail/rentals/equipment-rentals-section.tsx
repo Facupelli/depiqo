@@ -32,9 +32,12 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { buildR2PublicUrl } from "@/lib/r2-public-url";
+import { usePricePlans } from "@/modules/pricing/price-plans/public";
 import { ArchiveProductAction } from "@/modules/products/archive-product/ArchiveProductAction";
+import { AddBranchAvailabilityDialog } from "@/modules/products/branch-availability/add-branch-availability/AddBranchAvailabilityDialog";
 import { ProductStatusBadge } from "@/modules/products/product-status-badge";
 import { formatMoney } from "@/shared/utils/formatters";
+import { useEquipmentTypeDetail } from "../equipment-type-detail-context";
 import { useEquipmentTypeRentalUsages } from "./equipment-type-rental-usages.queries";
 import { ManageRentalBranchesDialog } from "./manage-rental-branches-dialog";
 import { RentalOfferPriceAction } from "./rental-offer-price-action";
@@ -119,24 +122,28 @@ function IndividualRentalsSection({
 	equipmentTypeId: string;
 	items: IndividualRentalUsageDto[];
 }) {
+	const { capabilities } = useEquipmentTypeDetail();
+
 	return (
 		<section className="space-y-4">
 			<SectionHeader
 				title="Productos individuales"
 				description="Presentaciones, precios y disponibilidad comercial por sucursal."
 				action={
-					<Button
-						nativeButton={false}
-						render={
-							<Link
-								to="/dashboard/inventory/equipment-types/$equipmentTypeId/rentals/new"
-								params={{ equipmentTypeId }}
-							/>
-						}
-					>
-						<Plus className="mr-2 size-4" />
-						Nuevo alquiler individual
-					</Button>
+					capabilities.createProduct ? (
+						<Button
+							nativeButton={false}
+							render={
+								<Link
+									to="/dashboard/inventory/equipment-types/$equipmentTypeId/rentals/new"
+									params={{ equipmentTypeId }}
+								/>
+							}
+						>
+							<Plus className="mr-2 size-4" />
+							Nuevo alquiler individual
+						</Button>
+					) : null
 				}
 			/>
 			{items.length ? (
@@ -153,8 +160,17 @@ function IndividualRentalsSection({
 }
 
 function IndividualRentalItem({ item }: { item: IndividualRentalUsageDto }) {
+	const { capabilities } = useEquipmentTypeDetail();
 	const [manageOpen, setManageOpen] = useState(false);
+	const [addOpen, setAddOpen] = useState(false);
 	const [archiveOpen, setArchiveOpen] = useState(false);
+	const { data: plans = [] } = usePricePlans(
+		{ isActive: true },
+		{ enabled: capabilities.managePricing && addOpen },
+	);
+	const ratePlanOptions = plans
+		.filter((plan) => plan.isActive)
+		.map((plan) => ({ id: plan.id, name: plan.name }));
 	const imageUrl = buildR2PublicUrl(item.imageUrl, "catalog");
 	const hasMissingPricing = item.offers.some(
 		(offer) => !offer.pricing.configured,
@@ -225,10 +241,12 @@ function IndividualRentalItem({ item }: { item: IndividualRentalUsageDto }) {
 											? formatStartingPrice(offer.pricing.startingPrice)
 											: "Sin precio configurado"}
 									</span>
-									<RentalOfferPriceAction
-										rentableItemId={item.rentableItemId}
-										offer={offer}
-									/>
+									{capabilities.managePricing ? (
+										<RentalOfferPriceAction
+											rentableItemId={item.rentableItemId}
+											offer={offer}
+										/>
+									) : null}
 								</div>
 							</div>
 						))}
@@ -239,12 +257,36 @@ function IndividualRentalItem({ item }: { item: IndividualRentalUsageDto }) {
 					</p>
 				)}
 			</div>
-			<ManageRentalBranchesDialog
-				rental={item}
-				open={manageOpen}
-				onOpenChange={setManageOpen}
-			/>
-			{item.status !== "ARCHIVED" ? (
+			{capabilities.manageAvailability ? (
+				<ManageRentalBranchesDialog
+					rental={item}
+					open={manageOpen}
+					onOpenChange={setManageOpen}
+					addBranchAction={
+						capabilities.managePricing ? (
+							<Button
+								type="button"
+								onClick={() => {
+									setManageOpen(false);
+									setAddOpen(true);
+								}}
+							>
+								Añadir sucursal
+							</Button>
+						) : null
+					}
+				/>
+			) : null}
+			{capabilities.manageAvailability && capabilities.managePricing ? (
+				<AddBranchAvailabilityDialog
+					rentableItemId={item.rentableItemId}
+					existingOffers={item.offers}
+					ratePlanOptions={ratePlanOptions}
+					open={addOpen}
+					onOpenChange={setAddOpen}
+				/>
+			) : null}
+			{capabilities.manageProducts && item.status !== "ARCHIVED" ? (
 				<ArchiveProductAction
 					rentableItemId={item.rentableItemId}
 					open={archiveOpen}
@@ -264,6 +306,11 @@ function RentalActions({
 	onManage: () => void;
 	onArchive: () => void;
 }) {
+	const { capabilities } = useEquipmentTypeDetail();
+	if (!capabilities.manageProducts && !capabilities.manageAvailability) {
+		return null;
+	}
+
 	return (
 		<DropdownMenu>
 			<DropdownMenuTrigger
@@ -275,21 +322,25 @@ function RentalActions({
 				}
 			/>
 			<DropdownMenuContent align="end" className="min-w-52">
-				<DropdownMenuItem
-					render={
-						<Link
-							to="/dashboard/catalog/$rentableItemId/edit"
-							params={{ rentableItemId: item.rentableItemId }}
-						/>
-					}
-				>
-					<Pencil className="size-4" />
-					Editar producto
-				</DropdownMenuItem>
-				<DropdownMenuItem onClick={onManage}>
-					Gestionar sucursales
-				</DropdownMenuItem>
-				{item.status !== "ARCHIVED" ? (
+				{capabilities.manageProducts ? (
+					<DropdownMenuItem
+						render={
+							<Link
+								to="/dashboard/catalog/$rentableItemId/edit"
+								params={{ rentableItemId: item.rentableItemId }}
+							/>
+						}
+					>
+						<Pencil className="size-4" />
+						Editar producto
+					</DropdownMenuItem>
+				) : null}
+				{capabilities.manageAvailability ? (
+					<DropdownMenuItem onClick={onManage}>
+						Gestionar sucursales
+					</DropdownMenuItem>
+				) : null}
+				{capabilities.manageProducts && item.status !== "ARCHIVED" ? (
 					<>
 						<DropdownMenuSeparator />
 						<DropdownMenuItem variant="destructive" onClick={onArchive}>
@@ -310,24 +361,28 @@ function ComboUsagesSection({
 	equipmentTypeId: string;
 	items: ComboRentalUsageDto[];
 }) {
+	const { capabilities } = useEquipmentTypeDetail();
+
 	return (
 		<section className="space-y-4 pt-8">
 			<SectionHeader
 				title="Combos"
 				description="Combos que requieren este equipo."
 				action={
-					<Button
-						nativeButton={false}
-						render={
-							<Link
-								to="/dashboard/catalog/packages/new"
-								search={{ equipmentTypeId }}
-							/>
-						}
-					>
-						<Plus className="mr-2 size-4" />
-						Crear combo con este equipo
-					</Button>
+					capabilities.createProduct ? (
+						<Button
+							nativeButton={false}
+							render={
+								<Link
+									to="/dashboard/catalog/packages/new"
+									search={{ equipmentTypeId }}
+								/>
+							}
+						>
+							<Plus className="mr-2 size-4" />
+							Crear combo con este equipo
+						</Button>
+					) : null
 				}
 			/>
 			<ComboTable items={items} />
@@ -369,6 +424,7 @@ function ComboTable({ items }: { items: ComboRentalUsageDto[] }) {
 }
 
 function ComboUsageRow({ item }: { item: ComboRentalUsageDto }) {
+	const { capabilities } = useEquipmentTypeDetail();
 	const imageUrl = buildR2PublicUrl(item.imageUrl, "catalog");
 	return (
 		<TableRow>
@@ -415,19 +471,21 @@ function ComboUsageRow({ item }: { item: ComboRentalUsageDto }) {
 					>
 						Ver combo
 					</Button>
-					<Button
-						nativeButton={false}
-						variant="outline"
-						size="sm"
-						render={
-							<Link
-								to="/dashboard/catalog/packages/$rentableItemId/edit"
-								params={{ rentableItemId: item.rentableItemId }}
-							/>
-						}
-					>
-						Editar combo
-					</Button>
+					{capabilities.manageProducts ? (
+						<Button
+							nativeButton={false}
+							variant="outline"
+							size="sm"
+							render={
+								<Link
+									to="/dashboard/catalog/packages/$rentableItemId/edit"
+									params={{ rentableItemId: item.rentableItemId }}
+								/>
+							}
+						>
+							Editar combo
+						</Button>
+					) : null}
 				</div>
 			</TableCell>
 		</TableRow>

@@ -1,8 +1,10 @@
+import { TenantPermission } from '@repo/api-contracts';
 import { Body, Controller, HttpCode, HttpStatus, Param, Patch } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
 import { CurrentUser } from 'src/core/decorators/current-user.decorator';
 import { createProblemDetails, createProblemType, ProblemException } from 'src/core/problem-details';
 import { AuthUser } from 'src/modules/tenant-management/auth/shared/auth.types';
+import { RequirePermission } from 'src/modules/tenant-management/authorization/tenant-authorization.decorators';
 import { UpdateEquipmentTypeCommand } from './update-equipment-type.command';
 import { UpdateEquipmentTypeError, UpdateEquipmentTypeErrorCode } from './update-equipment-type.errors';
 import { UpdateEquipmentTypeResult } from './update-equipment-type.handler';
@@ -11,6 +13,7 @@ import { UpdateEquipmentTypeParamsDto, UpdateEquipmentTypeRequestDto } from './u
 @Controller('asset-inventory/equipment-types')
 export class UpdateEquipmentTypeHttpController {
   constructor(private readonly commandBus: CommandBus) {}
+  @RequirePermission(TenantPermission.InventoryManage)
   @Patch(':equipmentTypeId')
   @HttpCode(HttpStatus.NO_CONTENT)
   async update(

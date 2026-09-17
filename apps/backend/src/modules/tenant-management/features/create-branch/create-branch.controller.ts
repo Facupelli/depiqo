@@ -1,3 +1,4 @@
+import { TenantPermission } from '@repo/api-contracts';
 import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
 import { Result } from 'neverthrow';
@@ -6,6 +7,7 @@ import { createProblemDetails, createProblemType, ProblemException } from 'src/c
 
 import { AuthUser } from '../../auth/shared/auth.types';
 import { CurrentUser } from '../../auth/shared/current-user/current-user.decorator';
+import { RequirePermission } from '../../authorization/tenant-authorization.decorators';
 import { CreateBranchCommand } from './create-branch.command';
 import { CreateBranchError, CreateBranchErrorCode } from './create-branch.errors';
 import { CreateBranchRequestDto } from './create-branch.request.dto';
@@ -18,6 +20,7 @@ export class CreateBranchHttpController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
+  @RequirePermission(TenantPermission.BranchesManage)
   async createBranch(
     @Body() dto: CreateBranchRequestDto,
     @CurrentUser() user: AuthUser,

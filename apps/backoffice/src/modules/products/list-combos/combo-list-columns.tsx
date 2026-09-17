@@ -71,7 +71,7 @@ export function createComboListColumns({
 	onArchive,
 }: {
 	categoryNameById: Map<string, string>;
-	onArchive: (item: GetRentableItemsItemDto) => void;
+	onArchive?: (item: GetRentableItemsItemDto) => void;
 }): ColumnDef<GetRentableItemsItemDto>[] {
 	return [
 		{

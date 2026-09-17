@@ -1,6 +1,8 @@
+import { TenantPermission } from "@repo/api-contracts";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useCallback } from "react";
 import { z } from "zod";
+import { can, requireRouteAccess } from "@/auth/permissions";
 import {
 	ORDERS_CALENDAR_VIEWS,
 	type OrdersCalendarSearch,
@@ -15,6 +17,11 @@ const ordersCalendarSearchSchema = z.object({
 });
 
 export const Route = createFileRoute("/_admin/dashboard/calendar/")({
+	beforeLoad: ({ context }) => {
+		requireRouteAccess(
+			can(context.user.permissions, TenantPermission.RentalsRead),
+		);
+	},
 	validateSearch: ordersCalendarSearchSchema,
 	errorComponent: ({ error }) => {
 		return (

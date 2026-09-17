@@ -1,9 +1,16 @@
-import type { GetOwnersItemDto } from "@repo/api-contracts";
+import { type GetOwnersItemDto, TenantPermission } from "@repo/api-contracts";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { inventoryWorkspacePermissions } from "@/auth/capabilities";
+import { can, canAny, requireRouteAccess } from "@/auth/permissions";
 import { OwnersPage } from "@/modules/inventory/ownership/list-owners/OwnersPage";
 import { AdminRouteError } from "@/shared/components/admin-route-error";
 
 export const Route = createFileRoute("/_admin/dashboard/owners/")({
+	beforeLoad: ({ context }) => {
+		requireRouteAccess(
+			canAny(context.user.permissions, inventoryWorkspacePermissions),
+		);
+	},
 	errorComponent: ({ error }) => {
 		return (
 			<AdminRouteError
@@ -18,6 +25,7 @@ export const Route = createFileRoute("/_admin/dashboard/owners/")({
 
 function RouteComponent() {
 	const navigate = useNavigate();
+	const { user } = Route.useRouteContext();
 
 	function handleOwnerSelect(owner: GetOwnersItemDto) {
 		navigate({
@@ -26,5 +34,13 @@ function RouteComponent() {
 		});
 	}
 
-	return <OwnersPage onOwnerSelect={handleOwnerSelect} />;
+	return (
+		<OwnersPage
+			onOwnerSelect={handleOwnerSelect}
+			canManageOwnership={can(
+				user.permissions,
+				TenantPermission.InventoryOwnershipManage,
+			)}
+		/>
+	);
 }

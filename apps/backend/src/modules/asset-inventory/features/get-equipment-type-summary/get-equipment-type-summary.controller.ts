@@ -1,9 +1,11 @@
+import { TenantPermission } from '@repo/api-contracts';
 import { Controller, Get, HttpStatus, Param } from '@nestjs/common';
 import { QueryBus } from '@nestjs/cqrs';
 
 import { CurrentUser } from 'src/core/decorators/current-user.decorator';
 import { createProblemDetails, createProblemType, ProblemException } from 'src/core/problem-details';
 import { AuthUser } from 'src/modules/tenant-management/auth/shared/auth.types';
+import { RequireAnyPermission } from 'src/modules/tenant-management/authorization/tenant-authorization.decorators';
 
 import { GetEquipmentTypeSummaryError, GetEquipmentTypeSummaryErrorCode } from './get-equipment-type-summary.errors';
 import { GetEquipmentTypeSummaryResult } from './get-equipment-type-summary.handler';
@@ -15,6 +17,12 @@ import type { GetEquipmentTypeSummaryResponseDto } from './get-equipment-type-su
 export class GetEquipmentTypeSummaryHttpController {
   constructor(private readonly queryBus: QueryBus) {}
 
+  @RequireAnyPermission(
+    TenantPermission.InventoryRead,
+    TenantPermission.InventoryManage,
+    TenantPermission.ProductsManage,
+    TenantPermission.InventoryOwnershipManage,
+  )
   @Get(':equipmentTypeId/summary')
   async getEquipmentTypeSummary(
     @Param() params: GetEquipmentTypeSummaryParamsDto,

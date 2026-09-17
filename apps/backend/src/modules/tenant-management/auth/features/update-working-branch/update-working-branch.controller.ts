@@ -11,6 +11,7 @@ import { WorkingBranchSessionError } from '../../shared/session/working-branch-s
 import { WorkingBranchSessionService } from '../../shared/session/working-branch-session.service';
 import { UpdateWorkingBranchRequestDto } from './update-working-branch.request.dto';
 import { UpdateWorkingBranchResponseDto } from './update-working-branch.response.dto';
+import { AuthorizationExempt } from '../../../authorization/tenant-authorization.decorators';
 
 @Controller('auth')
 export class UpdateWorkingBranchController {
@@ -18,6 +19,7 @@ export class UpdateWorkingBranchController {
 
   @Patch('working-branch')
   @UseGuards(SessionAuthGuard, TenantUserSessionGuard)
+  @AuthorizationExempt()
   async update(
     @Req() req: Request,
     @Body() dto: UpdateWorkingBranchRequestDto,

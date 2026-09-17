@@ -1,7 +1,15 @@
+import { TenantPermission } from "@repo/api-contracts";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { can, requireRouteAccess } from "@/auth/permissions";
 import { CreatePromotionForm } from "@/modules/pricing/promotions/create-promotion/CreatePromotionForm";
 
 export const Route = createFileRoute("/_admin/dashboard/promotions/new")({
+	beforeLoad: ({ context }) => {
+		requireRouteAccess(
+			can(context.user.permissions, TenantPermission.PricingManage),
+		);
+	},
+
 	component: CreatePromotionPage,
 });
 

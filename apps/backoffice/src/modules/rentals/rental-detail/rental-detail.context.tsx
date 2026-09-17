@@ -1,12 +1,14 @@
 import type {
 	GetCustomerSummaryResponseDto,
 	GetRentalContractSigningSummaryResponseDto,
+	TenantPermission,
 } from "@repo/api-contracts";
 import { createContext, type ReactNode, useContext } from "react";
 import type { GetRentalDetailViewResponseDto } from "./get-rental-detail-view/get-rental-detail-view.schema";
 
 type RentalDetailContextValue = {
 	rental: GetRentalDetailViewResponseDto;
+	permissions: readonly TenantPermission[];
 	customerSummary: GetCustomerSummaryResponseDto | null;
 	isCustomerSummaryLoading: boolean;
 	isCustomerSummaryError: boolean;
@@ -21,6 +23,7 @@ const RentalDetailContext = createContext<RentalDetailContextValue | null>(
 
 export function RentalDetailProvider({
 	rental,
+	permissions,
 	customerSummary,
 	isCustomerSummaryLoading = false,
 	isCustomerSummaryError = false,
@@ -30,6 +33,7 @@ export function RentalDetailProvider({
 	children,
 }: {
 	rental: GetRentalDetailViewResponseDto;
+	permissions: readonly TenantPermission[];
 	customerSummary: GetCustomerSummaryResponseDto | null;
 	isCustomerSummaryLoading?: boolean;
 	isCustomerSummaryError?: boolean;
@@ -42,6 +46,7 @@ export function RentalDetailProvider({
 		<RentalDetailContext.Provider
 			value={{
 				rental,
+				permissions,
 				customerSummary,
 				isCustomerSummaryLoading,
 				isCustomerSummaryError,

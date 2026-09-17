@@ -1,5 +1,7 @@
+import { TenantPermission } from "@repo/api-contracts";
 import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
+import { can } from "@/auth/permissions";
 import { useBranchTimezone } from "@/shared/timezone/operational-timezone.hooks";
 import { useCancelRental } from "../cancel-rental/cancel-rental.mutation";
 import { useConfirmRental } from "../confirm-rental/confirm-rental.mutation";
@@ -17,7 +19,11 @@ const CONFIRM_RENTAL_FALLBACK_ERROR =
 
 export function useRentalDetailActions() {
 	const navigate = useNavigate();
-	const { rental, customerSummary } = useRentalDetailContext();
+	const { rental, customerSummary, permissions } = useRentalDetailContext();
+	const canManageConfirmed = can(
+		permissions,
+		TenantPermission.RentalsConfirmedManage,
+	);
 	const operationalTimezone = useBranchTimezone(rental.branchId);
 	const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
 	const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
@@ -64,7 +70,6 @@ export function useRentalDetailActions() {
 
 	return {
 		dropdownProps: {
-			isDraftRental,
 			canConfirmRental,
 			isConfirming: confirmRental.isPending,
 			canSendSigningInvitation,
@@ -84,9 +89,10 @@ export function useRentalDetailActions() {
 			onOpenSigningDialog: signing.openSendDialog,
 			onOpenCancelDialog: () => setIsCancelDialogOpen(true),
 		},
-		periodEditAction: canRescheduleRental
-			? { onOpen: () => setIsRescheduleDialogOpen(true) }
-			: undefined,
+		periodEditAction:
+			canManageConfirmed && canRescheduleRental
+				? { onOpen: () => setIsRescheduleDialogOpen(true) }
+				: undefined,
 		rescheduleDialogProps: {
 			rentalId: rental.id,
 			rentalVersion: rental.version,

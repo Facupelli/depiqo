@@ -13,6 +13,7 @@ import { Link } from "@tanstack/react-router";
 import { Loader2, PackageOpen, Pencil } from "lucide-react";
 import { useState } from "react";
 import { buildR2PublicUrl } from "@/lib/r2-public-url";
+import { useEquipmentTypeDetail } from "../equipment-type-detail-context";
 import { EditEquipmentAccessoriesEditor } from "./edit-equipment-accessories-editor";
 import { useEquipmentTypeAccessoryDefaults } from "./equipment-type-accessory-defaults.queries";
 
@@ -22,6 +23,7 @@ export function EquipmentAccessoriesSection({
 	equipmentTypeId: string;
 }) {
 	const [isEditing, setIsEditing] = useState(false);
+	const { capabilities } = useEquipmentTypeDetail();
 	const accessoriesQuery = useEquipmentTypeAccessoryDefaults(equipmentTypeId);
 	const accessories = accessoriesQuery.data;
 
@@ -35,7 +37,10 @@ export function EquipmentAccessoriesSection({
 						equipo.
 					</p>
 				</div>
-				{!isEditing && accessories && accessories.length > 0 ? (
+				{capabilities.manageInventory &&
+				!isEditing &&
+				accessories &&
+				accessories.length > 0 ? (
 					<Button variant="outline" onClick={() => setIsEditing(true)}>
 						<Pencil className="mr-2 size-4" />
 						Gestionar accesorios
@@ -59,7 +64,7 @@ export function EquipmentAccessoriesSection({
 				</div>
 			) : null}
 
-			{isEditing && accessories ? (
+			{capabilities.manageInventory && isEditing && accessories ? (
 				<EditEquipmentAccessoriesEditor
 					key={equipmentTypeId}
 					equipmentTypeId={equipmentTypeId}
@@ -74,7 +79,9 @@ export function EquipmentAccessoriesSection({
 					isRefreshing={accessoriesQuery.isFetching && Boolean(accessories)}
 					isError={accessoriesQuery.isError && !accessories}
 					onRetry={() => accessoriesQuery.refetch()}
-					onConfigure={() => setIsEditing(true)}
+					onConfigure={
+						capabilities.manageInventory ? () => setIsEditing(true) : undefined
+					}
 				/>
 			)}
 		</section>
@@ -94,7 +101,7 @@ function AccessoryCollection({
 	isRefreshing: boolean;
 	isError: boolean;
 	onRetry: () => void;
-	onConfigure: () => void;
+	onConfigure?: () => void;
 }) {
 	const message = isError ? (
 		<div className="flex flex-col items-center gap-4 px-4 py-12 text-center text-destructive text-sm">
@@ -106,7 +113,9 @@ function AccessoryCollection({
 	) : (
 		<div className="flex flex-col items-center gap-4 px-4 py-12 text-center text-muted-foreground text-sm">
 			<p>Este equipo todavía no tiene accesorios configurados.</p>
-			<Button onClick={onConfigure}>Configurar accesorios</Button>
+			{onConfigure ? (
+				<Button onClick={onConfigure}>Configurar accesorios</Button>
+			) : null}
 		</div>
 	);
 

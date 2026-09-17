@@ -156,13 +156,11 @@ export class PrismaRentalRepository extends RentalRepository {
 
     const rentalWhere = { tenantId: rental.tenantId, rentalId: rental.id };
     const orderWhere = { tenantId: rental.tenantId, rentalOrderId: rental.id };
-    const [assignedAssets, assetBlocks, accessorySelections, accessoryAssignments, ownerSplits] = await Promise.all([
-      tx.v2AssignedAsset.count({ where: rentalWhere }),
-      tx.v2AssetBlock.count({ where: rentalWhere }),
-      tx.v2RentalAccessorySelection.count({ where: orderWhere }),
-      tx.v2RentalAccessoryAssetAssignment.count({ where: orderWhere }),
-      tx.v2RentalOwnerSplit.count({ where: rentalWhere }),
-    ]);
+    const assignedAssets = await tx.v2AssignedAsset.count({ where: rentalWhere });
+    const assetBlocks = await tx.v2AssetBlock.count({ where: rentalWhere });
+    const accessorySelections = await tx.v2RentalAccessorySelection.count({ where: orderWhere });
+    const accessoryAssignments = await tx.v2RentalAccessoryAssetAssignment.count({ where: orderWhere });
+    const ownerSplits = await tx.v2RentalOwnerSplit.count({ where: rentalWhere });
     const forbiddenState = [
       assignedAssets > 0 ? 'assigned assets' : undefined,
       assetBlocks > 0 ? 'asset blocks' : undefined,

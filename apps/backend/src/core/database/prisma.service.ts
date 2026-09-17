@@ -33,6 +33,7 @@ const TENANT_EXCLUDED_MODELS = new Set([
 
   // V2
   'V2Tenant',
+  'V2TenantRolePermission', // Scoped through V2TenantRole.
   'V2BranchSchedule',
   'V2Contract',
   'V2CustomerProfile',

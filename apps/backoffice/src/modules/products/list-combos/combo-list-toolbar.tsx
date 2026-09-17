@@ -1,5 +1,4 @@
 import type { CategoryDto, GetBranchesBranchDto } from "@repo/api-contracts";
-import { Button } from "@repo/ui/components/button";
 import { Input } from "@repo/ui/components/input";
 import {
 	Select,
@@ -9,9 +8,8 @@ import {
 	SelectValue,
 } from "@repo/ui/components/select";
 import { useDebouncer } from "@tanstack/react-pacer";
-import { useNavigate } from "@tanstack/react-router";
-import { Plus, Search, X } from "lucide-react";
-import { useId, useState } from "react";
+import { Search, X } from "lucide-react";
+import { type ReactNode, useId, useState } from "react";
 import type { BranchScopeFilter } from "@/application/branch-scope/branch-scope-filter";
 import { BranchScopeSelect } from "@/components/branch-scope-select";
 import type { CombosSearch } from "./CombosPage";
@@ -39,6 +37,7 @@ interface ComboListToolbarProps {
 	branches: GetBranchesBranchDto[];
 	inheritedBranchId: string | null;
 	showBranchFilter: boolean;
+	actions?: ReactNode;
 	onSearchCommit: (commit: SearchCommit) => void;
 	onFilterChange: (filters: Partial<CombosSearch>) => void;
 	onBranchChange: (branch: BranchScopeFilter) => void;
@@ -52,13 +51,13 @@ export function ComboListToolbar({
 	branches,
 	inheritedBranchId,
 	showBranchFilter,
+	actions,
 	onSearchCommit,
 	onFilterChange,
 	onBranchChange,
 	onClearFilters,
 }: ComboListToolbarProps) {
 	const searchInputId = useId();
-	const navigate = useNavigate();
 	const searchDebouncer = useDebouncer(onSearchCommit, { wait: 300 });
 	const [searchDraft, setSearchDraft] = useState<SearchDraft>({
 		value: appliedSearchValue,
@@ -175,20 +174,17 @@ export function ComboListToolbar({
 					/>
 				)}
 
-				<div
-					className={
-						showBranchFilter
-							? "@md/combo-index:justify-self-end @5xl/combo-index:col-span-1"
-							: "@md/combo-index:col-span-2 @md/combo-index:justify-self-end @5xl/combo-index:col-span-1"
-					}
-				>
-					<Button
-						onClick={() => navigate({ to: "/dashboard/catalog/packages/new" })}
+				{actions ? (
+					<div
+						className={
+							showBranchFilter
+								? "@md/combo-index:justify-self-end @5xl/combo-index:col-span-1"
+								: "@md/combo-index:col-span-2 @md/combo-index:justify-self-end @5xl/combo-index:col-span-1"
+						}
 					>
-						<Plus className="mr-2 size-4" />
-						Nuevo combo
-					</Button>
-				</div>
+						{actions}
+					</div>
+				) : null}
 			</div>
 
 			{hasFilters ? (

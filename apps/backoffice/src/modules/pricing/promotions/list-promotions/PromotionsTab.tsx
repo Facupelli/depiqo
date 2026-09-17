@@ -7,20 +7,17 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@repo/ui/components/select";
-import { useNavigate } from "@tanstack/react-router";
 import { Search } from "lucide-react";
 import type { ReactNode } from "react";
-import { Route } from "@/routes/_admin/dashboard/promotions";
 import { PromotionsList } from "./PromotionsList";
 import { usePromotionsTab } from "./use-promotions-tab";
 
 interface PromotionsTabProps {
 	toolbarActions?: ReactNode;
+	onEdit?: (promotion: GetPromotionsPromotionDto) => void;
 }
 
-export function PromotionsTab({ toolbarActions }: PromotionsTabProps) {
-	const navigate = useNavigate({ from: Route.fullPath });
-	const search = Route.useSearch();
+export function PromotionsTab({ toolbarActions, onEdit }: PromotionsTabProps) {
 	const {
 		inputValue,
 		handleSearchChange,
@@ -28,14 +25,6 @@ export function PromotionsTab({ toolbarActions }: PromotionsTabProps) {
 		activation,
 		handleActivationChange,
 	} = usePromotionsTab();
-
-	function handleEdit(promotion: GetPromotionsPromotionDto) {
-		navigate({
-			to: "/dashboard/promotions/$promotionId/edit",
-			params: { promotionId: promotion.id },
-			search,
-		});
-	}
 
 	return (
 		<div className="space-y-4">
@@ -86,7 +75,7 @@ export function PromotionsTab({ toolbarActions }: PromotionsTabProps) {
 
 			<PromotionsList
 				promotions={query.data ?? []}
-				onEdit={handleEdit}
+				onEdit={onEdit}
 				isLoading={query.isLoading}
 				isError={query.isError}
 			/>

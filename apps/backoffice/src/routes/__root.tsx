@@ -1,4 +1,4 @@
-import type { AuthActorDto } from "@repo/api-contracts";
+import type { GetCurrentUserResponseDto } from "@repo/api-contracts";
 import { Toaster } from "@repo/ui/components/sonner";
 import { TanStackDevtools } from "@tanstack/react-devtools";
 import type { QueryClient } from "@tanstack/react-query";
@@ -16,7 +16,7 @@ import appCss from "../styles.css?url";
 
 export interface RouterContext {
 	queryClient: QueryClient;
-	user: AuthActorDto | null;
+	user: GetCurrentUserResponseDto | null;
 }
 
 const isDevEnv = import.meta.env.DEV;
@@ -24,7 +24,7 @@ const isDevEnv = import.meta.env.DEV;
 export const Route = createRootRouteWithContext<RouterContext>()({
 	beforeLoad: async ({ context: { queryClient } }) => {
 		try {
-			const user: AuthActorDto = await queryClient.ensureQueryData(
+			const user: GetCurrentUserResponseDto = await queryClient.ensureQueryData(
 				currentAuthQueries.current(),
 			);
 

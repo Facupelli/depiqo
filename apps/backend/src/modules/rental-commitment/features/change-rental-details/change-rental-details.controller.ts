@@ -1,11 +1,14 @@
 import { Body, Controller, HttpStatus, Param, Patch, UseGuards } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
+import { TenantPermission } from '@repo/api-contracts';
 import { createProblemDetails, createProblemType, ProblemException } from 'src/core/problem-details';
 import { AUTH_ACTOR_TYPES, AuthUser } from 'src/modules/tenant-management/auth/shared/auth.types';
 import { CurrentUser } from 'src/modules/tenant-management/auth/shared/current-user/current-user.decorator';
 import { AllowAuthActors } from 'src/modules/tenant-management/auth/shared/session/auth-actor-access.decorator';
 import { SessionAuthGuard } from 'src/modules/tenant-management/auth/shared/session/session-auth.guard';
 import { TenantUserSessionGuard } from 'src/modules/tenant-management/auth/shared/session/tenant-user-session.guard';
+import { RequirePermission } from 'src/modules/tenant-management/authorization/tenant-authorization.decorators';
+import { TenantAuthorizationHttpEnforcer } from 'src/modules/tenant-management/authorization/tenant-authorization-http.enforcer';
 import { ChangeRentalDetailsCommand } from './change-rental-details.command';
 import { ChangeRentalDetailsError } from './change-rental-details.errors';
 import { ChangeRentalDetailsResult } from './change-rental-details.handler';
@@ -14,9 +17,13 @@ import { ChangeRentalDetailsResponseDto } from './change-rental-details.response
 
 @Controller('rental-commitments/confirmed-rentals')
 export class ChangeRentalDetailsHttpController {
-  constructor(private readonly commandBus: CommandBus) {}
+  constructor(
+    private readonly commandBus: CommandBus,
+    private readonly authorizationEnforcer: TenantAuthorizationHttpEnforcer,
+  ) {}
 
   @Patch(':rentalId/details')
+  @RequirePermission(TenantPermission.RentalsConfirmedManage)
   @AllowAuthActors(AUTH_ACTOR_TYPES.TENANT_USER)
   @UseGuards(SessionAuthGuard, TenantUserSessionGuard)
   async change(
@@ -24,6 +31,10 @@ export class ChangeRentalDetailsHttpController {
     @Body() dto: ChangeRentalDetailsRequestDto,
     @CurrentUser() user: AuthUser,
   ): Promise<ChangeRentalDetailsResponseDto> {
+    if ('manualPricingAdjustment' in dto) {
+      await this.authorizationEnforcer.requirePermission(user, TenantPermission.RentalsPriceAdjustmentManage);
+    }
+
     const patch = {
       ...('notes' in dto ? { notes: dto.notes } : {}),
       ...('insuranceSelected' in dto ? { insuranceSelected: dto.insuranceSelected } : {}),

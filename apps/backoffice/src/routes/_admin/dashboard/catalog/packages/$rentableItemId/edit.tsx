@@ -1,10 +1,19 @@
+import { TenantPermission } from "@repo/api-contracts";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
+import { can, requireRouteAccess } from "@/auth/permissions";
 import { EditComboPage } from "@/modules/products/edit-combo/edit-combo-page";
 import { rentableItemDetailQueries } from "@/modules/products/rentable-item-detail/rentable-item-detail.queries";
 export const Route = createFileRoute(
 	"/_admin/dashboard/catalog/packages/$rentableItemId/edit",
-)({ component: EditComboRoute });
+)({
+	beforeLoad: ({ context }) => {
+		requireRouteAccess(
+			can(context.user.permissions, TenantPermission.ProductsManage),
+		);
+	},
+	component: EditComboRoute,
+});
 function EditComboRoute() {
 	const { rentableItemId } = Route.useParams();
 	const { data } = useSuspenseQuery(

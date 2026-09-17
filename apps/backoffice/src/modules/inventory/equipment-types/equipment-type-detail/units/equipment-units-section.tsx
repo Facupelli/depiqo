@@ -4,6 +4,10 @@ import type {
 } from "@repo/api-contracts";
 import { Badge } from "@repo/ui/components/badge";
 import { Button } from "@repo/ui/components/button";
+import {
+	DropdownMenuItem,
+	DropdownMenuSeparator,
+} from "@repo/ui/components/dropdown-menu";
 import { Input } from "@repo/ui/components/input";
 import {
 	Select,
@@ -22,11 +26,16 @@ import {
 	TableRow,
 } from "@repo/ui/components/table";
 import {
+	Archive,
 	ChevronLeft,
 	ChevronRight,
+	CirclePlay,
+	CircleStop,
 	Loader2,
+	Pencil,
 	Plus,
 	Search,
+	UserRound,
 	X,
 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -40,7 +49,7 @@ import { useOwnerOptions } from "@/modules/inventory/ownership/public";
 import { useBranches } from "@/modules/settings/branches/public";
 import { ProblemDetailsError } from "@/shared/errors";
 import useDebounce from "@/shared/hooks/use-debounce";
-import { useEquipmentTypeDetailActions } from "../equipment-type-detail-actions";
+import { useEquipmentTypeDetail } from "../equipment-type-detail-context";
 import { UnitRowActionsMenu } from "../unit-row-actions-menu";
 import { useEquipmentTypeAssets } from "./equipment-type-assets.queries";
 
@@ -59,7 +68,10 @@ export function EquipmentUnitsSection({
 	search,
 	onSearchChange,
 }: Props) {
-	const { openAddUnits } = useEquipmentTypeDetailActions();
+	const {
+		actions: { openAddUnits },
+		capabilities,
+	} = useEquipmentTypeDetail();
 	const [searchInput, setSearchInput] = useState(search.search ?? "");
 	const [editUnit, setEditUnit] =
 		useState<GetEquipmentTypeAssetsItemDto | null>(null);
@@ -172,20 +184,63 @@ export function EquipmentUnitsSection({
 		}
 	}
 
-	const actions = (unit: GetEquipmentTypeAssetsItemDto) => (
-		<UnitRowActionsMenu
-			unit={unit}
-			onEdit={setEditUnit}
-			onChangeOwner={setOwnerUnit}
-			onDeactivate={(item) => runLifecycleAction(item, "deactivate")}
-			onReactivate={(item) => runLifecycleAction(item, "reactivate")}
-			onRetire={(item) => {
-				setRetireError(null);
-				setRetireUnit(item);
-			}}
-			isLifecyclePending={pendingLifecycleAssetId === unit.id}
-		/>
-	);
+	const actions = (unit: GetEquipmentTypeAssetsItemDto) => {
+		if (!capabilities.manageInventory && !capabilities.manageOwnership) {
+			return null;
+		}
+		const isLifecyclePending = pendingLifecycleAssetId === unit.id;
+
+		return (
+			<UnitRowActionsMenu>
+				{capabilities.manageInventory ? (
+					<DropdownMenuItem onClick={() => setEditUnit(unit)}>
+						<Pencil className="mr-2 size-4" />
+						Editar
+					</DropdownMenuItem>
+				) : null}
+				{capabilities.manageOwnership ? (
+					<DropdownMenuItem onClick={() => setOwnerUnit(unit)}>
+						<UserRound className="mr-2 size-4" />
+						Cambiar propietario
+					</DropdownMenuItem>
+				) : null}
+				{capabilities.manageInventory && unit.status === "ACTIVE" ? (
+					<DropdownMenuItem
+						disabled={isLifecyclePending}
+						onClick={() => runLifecycleAction(unit, "deactivate")}
+					>
+						<CircleStop className="mr-2 size-4" />
+						Inactivar
+					</DropdownMenuItem>
+				) : null}
+				{capabilities.manageInventory && unit.status === "INACTIVE" ? (
+					<DropdownMenuItem
+						disabled={isLifecyclePending}
+						onClick={() => runLifecycleAction(unit, "reactivate")}
+					>
+						<CirclePlay className="mr-2 size-4" />
+						Reactivar
+					</DropdownMenuItem>
+				) : null}
+				{capabilities.manageInventory && unit.status !== "RETIRED" ? (
+					<>
+						<DropdownMenuSeparator />
+						<DropdownMenuItem
+							disabled={isLifecyclePending}
+							variant="destructive"
+							onClick={() => {
+								setRetireError(null);
+								setRetireUnit(unit);
+							}}
+						>
+							<Archive className="mr-2 size-4" />
+							Retirar
+						</DropdownMenuItem>
+					</>
+				) : null}
+			</UnitRowActionsMenu>
+		);
+	};
 
 	return (
 		<section className="@container/equipment-units space-y-4">
@@ -272,10 +327,12 @@ export function EquipmentUnitsSection({
 							})),
 						]}
 					/>
-					<Button onClick={openAddUnits}>
-						<Plus className="mr-2 size-4" />
-						Añadir unidad
-					</Button>
+					{capabilities.manageInventory ? (
+						<Button onClick={openAddUnits}>
+							<Plus className="mr-2 size-4" />
+							Añadir unidad
+						</Button>
+					) : null}
 				</div>
 				{hasFilters ? (
 					<button
@@ -326,7 +383,7 @@ export function EquipmentUnitsSection({
 				isRefreshing={unitsQuery.isFetching && Boolean(data)}
 				isError={unitsQuery.isError && !data}
 				hasFilters={hasFilters}
-				onAdd={openAddUnits}
+				onAdd={capabilities.manageInventory ? openAddUnits : undefined}
 				onClear={clearFilters}
 				onRetry={() => unitsQuery.refetch()}
 				actions={actions}
@@ -344,7 +401,7 @@ export function EquipmentUnitsSection({
 				/>
 			) : null}
 
-			{editUnit ? (
+			{capabilities.manageInventory && editUnit ? (
 				<EditAssetDialog
 					open
 					equipmentTypeId={equipmentTypeId}
@@ -354,7 +411,7 @@ export function EquipmentUnitsSection({
 					}}
 				/>
 			) : null}
-			{ownerUnit ? (
+			{capabilities.manageOwnership && ownerUnit ? (
 				<ChangeAssetOwnerDialog
 					open
 					equipmentTypeId={equipmentTypeId}
@@ -364,7 +421,7 @@ export function EquipmentUnitsSection({
 					}}
 				/>
 			) : null}
-			{retireUnit ? (
+			{capabilities.manageInventory && retireUnit ? (
 				<RetireAssetAlertDialog
 					open
 					unit={retireUnit}
@@ -450,7 +507,7 @@ function UnitCollection({
 	isRefreshing: boolean;
 	isError: boolean;
 	hasFilters: boolean;
-	onAdd: () => void;
+	onAdd?: () => void;
 	onClear: () => void;
 	onRetry: () => void;
 	actions: (unit: GetEquipmentTypeAssetsItemDto) => React.ReactNode;
@@ -469,12 +526,14 @@ function UnitCollection({
 					? "No hay unidades que coincidan con los filtros."
 					: "Este equipo todavía no tiene unidades."}
 			</p>
-			<Button
-				variant={hasFilters ? "outline" : "default"}
-				onClick={hasFilters ? onClear : onAdd}
-			>
-				{hasFilters ? "Limpiar filtros" : "Añadir unidad"}
-			</Button>
+			{hasFilters || onAdd ? (
+				<Button
+					variant={hasFilters ? "outline" : "default"}
+					onClick={hasFilters ? onClear : onAdd}
+				>
+					{hasFilters ? "Limpiar filtros" : "Añadir unidad"}
+				</Button>
+			) : null}
 		</div>
 	);
 	return (

@@ -1,10 +1,18 @@
+import { TenantPermission } from "@repo/api-contracts";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { can, requireRouteAccess } from "@/auth/permissions";
 import { EditBranchPage } from "@/modules/settings/branches/edit-branch/EditBranchPage";
 import { AdminRouteError } from "@/shared/components/admin-route-error";
 
 export const Route = createFileRoute(
 	"/_admin/dashboard/branches/$branchId/edit",
 )({
+	beforeLoad: ({ context }) => {
+		requireRouteAccess(
+			can(context.user.permissions, TenantPermission.BranchesManage),
+		);
+	},
+
 	errorComponent: ({ error }) => {
 		return (
 			<AdminRouteError

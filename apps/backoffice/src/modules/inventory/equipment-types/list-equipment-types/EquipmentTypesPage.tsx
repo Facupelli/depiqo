@@ -1,18 +1,25 @@
-import type { ListEquipmentTypesQueryDto } from "@repo/api-contracts";
+import {
+	type ListEquipmentTypesItemDto,
+	type ListEquipmentTypesQueryDto,
+	TenantPermission,
+} from "@repo/api-contracts";
 import { Button } from "@repo/ui/components/button";
+import { DropdownMenuItem } from "@repo/ui/components/dropdown-menu";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import type { PaginationState } from "@tanstack/react-table";
-import { Plus } from "lucide-react";
+import { Boxes, PackagePlus, Pencil, Plus } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import type { BranchScopeFilter } from "@/application/branch-scope/branch-scope-filter";
 import { resolveEffectiveBranchId } from "@/application/branch-scope/resolve-effective-branch-id";
 import { currentAuthQueries } from "@/auth/auth.queries";
+import { can, canAll } from "@/auth/permissions";
 import { useBranches } from "@/modules/settings/branches/public";
 import { useCategories } from "@/modules/settings/categories/public";
 import useDebounce from "@/shared/hooks/use-debounce";
 import { AddUnitsDialog } from "../add-units/add-units-dialog";
 import { EditEquipmentTypeDialog } from "../edit-equipment-type/edit-equipment-type-dialog";
+import { EquipmentListRowActions } from "./equipment-list-row-actions";
 import { EquipmentListTable } from "./equipment-list-table";
 import { EquipmentListToolbar } from "./equipment-list-toolbar";
 import {
@@ -52,6 +59,13 @@ export function EquipmentTypesPage({
 	>(null);
 	const debouncedSearch = useDebounce(searchInput, 300);
 	const { data: currentAuth } = useSuspenseQuery(currentAuthQueries.current());
+	const permissions =
+		currentAuth.actorType === "TENANT_USER" ? currentAuth.permissions : [];
+	const canManageInventory = can(permissions, TenantPermission.InventoryManage);
+	const canCreateProduct = canAll(permissions, [
+		TenantPermission.ProductsManage,
+		TenantPermission.ProductsAvailabilityManage,
+	]);
 	const { data: branches = [] } = useBranches();
 	const { data: categories = [] } = useCategories();
 	const activeCategories = categories.filter((category) => category.isActive);
@@ -158,6 +172,56 @@ export function EquipmentTypesPage({
 		}));
 	}
 
+	const renderRowActions =
+		canManageInventory || canCreateProduct
+			? (item: ListEquipmentTypesItemDto) => (
+					<EquipmentListRowActions equipmentName={item.name}>
+						{canManageInventory ? (
+							<>
+								<DropdownMenuItem
+									onClick={() => setEditEquipmentTypeId(item.id)}
+								>
+									<Pencil className="size-4" />
+									Editar equipo
+								</DropdownMenuItem>
+								<DropdownMenuItem
+									onClick={() => setAddUnitEquipmentTypeId(item.id)}
+								>
+									<PackagePlus className="size-4" />
+									Añadir unidad
+								</DropdownMenuItem>
+							</>
+						) : null}
+						{canCreateProduct ? (
+							<>
+								<DropdownMenuItem
+									render={
+										<Link
+											to="/dashboard/inventory/equipment-types/$equipmentTypeId/rentals/new"
+											params={{ equipmentTypeId: item.id }}
+										/>
+									}
+								>
+									<Plus className="size-4" />
+									Nuevo alquiler individual
+								</DropdownMenuItem>
+								<DropdownMenuItem
+									render={
+										<Link
+											to="/dashboard/catalog/packages/new"
+											search={{ equipmentTypeId: item.id }}
+										/>
+									}
+								>
+									<Boxes className="size-4" />
+									Crear combo con este equipo
+								</DropdownMenuItem>
+							</>
+						) : null}
+					</EquipmentListRowActions>
+				)
+			: undefined;
+
 	return (
 		<div className="space-y-4">
 			<h1 className="sr-only">Equipos</h1>
@@ -181,21 +245,22 @@ export function EquipmentTypesPage({
 					pagination={pagination}
 					onPaginationChange={handlePaginationChange}
 					onRowClick={onEquipmentTypeClick}
-					onEdit={setEditEquipmentTypeId}
-					onAddUnit={setAddUnitEquipmentTypeId}
+					renderRowActions={renderRowActions}
 					showBranchStock={effectiveBranchId !== undefined}
 					isLoading={listQuery.isLoading}
 					isRefreshing={listQuery.isFetching && listQuery.isPlaceholderData}
 					isError={listQuery.isError}
 					emptyAction={
-						<Button
-							onClick={() =>
-								navigate({ to: "/dashboard/inventory/equipment-types/new" })
-							}
-						>
-							<Plus className="mr-2 size-4" />
-							Nuevo equipo
-						</Button>
+						canManageInventory ? (
+							<Button
+								onClick={() =>
+									navigate({ to: "/dashboard/inventory/equipment-types/new" })
+								}
+							>
+								<Plus className="mr-2 size-4" />
+								Nuevo equipo
+							</Button>
+						) : null
 					}
 				/>
 			</div>

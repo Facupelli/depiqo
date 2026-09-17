@@ -1,8 +1,10 @@
+import { TenantPermission } from '@repo/api-contracts';
 import { Controller, Get, HttpStatus, Param } from '@nestjs/common';
 import { QueryBus } from '@nestjs/cqrs';
 import { Result } from 'neverthrow';
 
 import { createProblemDetails, createProblemType, ProblemException } from 'src/core/problem-details';
+import { RequireAnyPermission } from 'src/modules/tenant-management/authorization/tenant-authorization.decorators';
 
 import { AuthUser } from '../../../tenant-management/auth/shared/auth.types';
 import { CurrentUser } from '../../../tenant-management/auth/shared/current-user/current-user.decorator';
@@ -17,6 +19,7 @@ export class GetRatePlanDetailHttpController {
   constructor(private readonly queryBus: QueryBus) {}
 
   @Get(':ratePlanId')
+  @RequireAnyPermission(TenantPermission.PricingRead, TenantPermission.PricingManage)
   async getRatePlanDetail(
     @Param() params: GetRatePlanDetailParamsDto,
     @CurrentUser() user: AuthUser,

@@ -1,0 +1,36 @@
+// ---------------------------------------------------------------------------
+// V2 TENANT MANAGEMENT - TENANT ROLES
+// ---------------------------------------------------------------------------
+
+enum V2TenantSystemRole {
+  ADMIN
+}
+
+model V2TenantRole {
+  id         String              @id @default(uuid())
+  tenantId   String              @map("tenant_id")
+  name       String
+  systemRole V2TenantSystemRole? @map("system_role")
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  tenant      V2Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  tenantUsers V2TenantUser[]
+  permissions V2TenantRolePermission[]
+
+  @@unique([tenantId, name])
+  @@unique([tenantId, systemRole])
+  @@unique([tenantId, id])
+  @@map("v2_tenant_roles")
+}
+
+model V2TenantRolePermission {
+  roleId     String @map("role_id")
+  permission String
+
+  role V2TenantRole @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permission])
+  @@map("v2_tenant_role_permissions")
+}

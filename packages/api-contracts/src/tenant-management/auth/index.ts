@@ -1,3 +1,4 @@
+export * from "./change-password.contract";
 export * from "./customer-google-finalize.contract";
 export * from "./customer-google-handoff.contract";
 export * from "./customer-google-login.contract";

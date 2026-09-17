@@ -7,6 +7,8 @@ import { CurrentUser } from 'src/modules/tenant-management/auth/shared/current-u
 import { AllowAuthActors } from 'src/modules/tenant-management/auth/shared/session/auth-actor-access.decorator';
 import { SessionAuthGuard } from 'src/modules/tenant-management/auth/shared/session/session-auth.guard';
 import { TenantUserSessionGuard } from 'src/modules/tenant-management/auth/shared/session/tenant-user-session.guard';
+import { RequirePermission } from 'src/modules/tenant-management/authorization/tenant-authorization.decorators';
+import { TenantPermission } from '@repo/api-contracts';
 
 import { GenerateRentalBudgetError, GenerateRentalBudgetErrorCode } from './generate-rental-budget.errors';
 import { GenerateRentalBudgetResult } from './generate-rental-budget.handler';
@@ -18,6 +20,7 @@ export class GenerateRentalBudgetHttpController {
   constructor(private readonly queryBus: QueryBus) {}
 
   @Post(':rentalId/budget')
+  @RequirePermission(TenantPermission.ContractsGenerate)
   @AllowAuthActors(AUTH_ACTOR_TYPES.TENANT_USER)
   @UseGuards(SessionAuthGuard, TenantUserSessionGuard)
   async previewBudget(

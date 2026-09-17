@@ -8,13 +8,18 @@ import { OwnersDataTable } from "./owners-table";
 
 interface OwnersPageProps {
 	onOwnerSelect: (owner: GetOwnersItemDto) => void;
+	canManageOwnership: boolean;
 }
 
-interface OwnersTableProps extends OwnersPageProps {
+interface OwnersTableProps {
+	onOwnerSelect: (owner: GetOwnersItemDto) => void;
 	toolbarActions?: ReactNode;
 }
 
-export function OwnersPage({ onOwnerSelect }: OwnersPageProps) {
+export function OwnersPage({
+	onOwnerSelect,
+	canManageOwnership,
+}: OwnersPageProps) {
 	return (
 		<div className="space-y-4">
 			<h1 className="sr-only">Propietarios de equipos</h1>
@@ -22,7 +27,9 @@ export function OwnersPage({ onOwnerSelect }: OwnersPageProps) {
 			<OwnersTable
 				onOwnerSelect={onOwnerSelect}
 				toolbarActions={
-					<CreateOwnerWithContractDialog triggerLabel="Nuevo propietario" />
+					canManageOwnership ? (
+						<CreateOwnerWithContractDialog triggerLabel="Nuevo propietario" />
+					) : null
 				}
 			/>
 		</div>

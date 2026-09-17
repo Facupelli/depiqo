@@ -1,8 +1,10 @@
+import { TenantPermission } from '@repo/api-contracts';
 import { Body, Controller, HttpCode, HttpStatus, Param, Put } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
 import { Result } from 'neverthrow';
 
 import { createProblemDetails, createProblemType, ProblemException } from 'src/core/problem-details';
+import { RequirePermission } from 'src/modules/tenant-management/authorization/tenant-authorization.decorators';
 
 import { AuthUser } from '../../../tenant-management/auth/shared/auth.types';
 import { CurrentUser } from '../../../tenant-management/auth/shared/current-user/current-user.decorator';
@@ -18,6 +20,7 @@ export class CorrectRatePlanHttpController {
 
   @Put(':ratePlanId')
   @HttpCode(HttpStatus.OK)
+  @RequirePermission(TenantPermission.PricingManage)
   async correctRatePlan(
     @Param() params: CorrectRatePlanParamsDto,
     @Body() dto: CorrectRatePlanRequestDto,

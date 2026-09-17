@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
+import { productWorkspacePermissions } from "@/auth/capabilities";
+import { canAny, requireRouteAccess } from "@/auth/permissions";
 import { CombosPage } from "@/modules/products/list-combos/CombosPage";
 import { AdminRouteError } from "@/shared/components/admin-route-error";
 
@@ -14,6 +16,11 @@ const combosSearchSchema = z.object({
 });
 
 export const Route = createFileRoute("/_admin/dashboard/catalog/packages/")({
+	beforeLoad: ({ context }) => {
+		requireRouteAccess(
+			canAny(context.user.permissions, productWorkspacePermissions),
+		);
+	},
 	validateSearch: combosSearchSchema,
 	errorComponent: ({ error }) => (
 		<AdminRouteError

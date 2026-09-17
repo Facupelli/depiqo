@@ -1,3 +1,4 @@
+import { TenantPermission } from '@repo/api-contracts';
 import { Controller, HttpStatus, Post } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
 
@@ -5,6 +6,7 @@ import { createProblemDetails, createProblemType, ProblemException } from 'src/c
 
 import { AuthUser } from '../../auth/shared/auth.types';
 import { CurrentUser } from '../../auth/shared/current-user/current-user.decorator';
+import { RequirePermission } from '../../authorization/tenant-authorization.decorators';
 import { RefreshCustomDomainStatusCommand } from './refresh-custom-domain-status.command';
 import {
   RefreshCustomDomainStatusError,
@@ -18,6 +20,7 @@ export class RefreshCustomDomainStatusHttpController {
   constructor(private readonly commandBus: CommandBus) {}
 
   @Post()
+  @RequirePermission(TenantPermission.TenantStorefrontManage)
   async refresh(@CurrentUser() user: AuthUser): Promise<RefreshCustomDomainStatusResponseDto> {
     const result = await this.commandBus.execute<RefreshCustomDomainStatusCommand, RefreshCustomDomainStatusResult>(
       new RefreshCustomDomainStatusCommand(user.tenantId),

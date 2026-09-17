@@ -1,9 +1,12 @@
+import { TenantPermission } from '@repo/api-contracts';
+
 import { Controller, Get, HttpStatus, Query } from '@nestjs/common';
 import { QueryBus } from '@nestjs/cqrs';
 
 import { CurrentUser } from 'src/core/decorators/current-user.decorator';
 import { createProblemDetails, createProblemType, ProblemException } from 'src/core/problem-details';
 import { AuthUser } from 'src/modules/tenant-management/auth/shared/auth.types';
+import { RequireAnyPermission } from 'src/modules/tenant-management/authorization/tenant-authorization.decorators';
 
 import { ListEquipmentTypesError, ListEquipmentTypesErrorCode } from './list-equipment-types.errors';
 import { ListEquipmentTypesResult } from './list-equipment-types.handler';
@@ -16,6 +19,14 @@ export class ListEquipmentTypesHttpController {
   constructor(private readonly queryBus: QueryBus) {}
 
   @Get()
+  @RequireAnyPermission(
+    TenantPermission.InventoryRead,
+    TenantPermission.InventoryManage,
+    TenantPermission.ProductsManage,
+    TenantPermission.ProductsAvailabilityManage,
+    TenantPermission.PricingManage,
+    TenantPermission.InventoryOwnershipManage,
+  )
   async list(
     @Query() dto: ListEquipmentTypesRequestDto,
     @CurrentUser() user: AuthUser,

@@ -1,5 +1,6 @@
 import { Body, Controller, HttpStatus, Param, Put, UseGuards } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
+import { TenantPermission } from '@repo/api-contracts';
 
 import { createProblemDetails, createProblemType, ProblemException } from 'src/core/problem-details';
 import { AUTH_ACTOR_TYPES, AuthUser } from 'src/modules/tenant-management/auth/shared/auth.types';
@@ -7,6 +8,8 @@ import { CurrentUser } from 'src/modules/tenant-management/auth/shared/current-u
 import { AllowAuthActors } from 'src/modules/tenant-management/auth/shared/session/auth-actor-access.decorator';
 import { SessionAuthGuard } from 'src/modules/tenant-management/auth/shared/session/session-auth.guard';
 import { TenantUserSessionGuard } from 'src/modules/tenant-management/auth/shared/session/tenant-user-session.guard';
+import { RequirePermission } from 'src/modules/tenant-management/authorization/tenant-authorization.decorators';
+import { TenantAuthorizationHttpEnforcer } from 'src/modules/tenant-management/authorization/tenant-authorization-http.enforcer';
 
 import { FulfillmentMethod } from '../../domain/rental-status';
 import { RentalPeriod } from '../../domain/value-objects/rental-period.value-object';
@@ -18,9 +21,13 @@ import { UpdateDraftRentalResponseDto } from './update-draft-rental.response.dto
 
 @Controller('rental-commitments/draft-rentals')
 export class UpdateDraftRentalHttpController {
-  constructor(private readonly commandBus: CommandBus) {}
+  constructor(
+    private readonly commandBus: CommandBus,
+    private readonly authorizationEnforcer: TenantAuthorizationHttpEnforcer,
+  ) {}
 
   @Put(':rentalId')
+  @RequirePermission(TenantPermission.RentalsProposalsManage)
   @AllowAuthActors(AUTH_ACTOR_TYPES.TENANT_USER)
   @UseGuards(SessionAuthGuard, TenantUserSessionGuard)
   async update(
@@ -28,6 +35,10 @@ export class UpdateDraftRentalHttpController {
     @Body() dto: UpdateDraftRentalRequestDto,
     @CurrentUser() user: AuthUser,
   ): Promise<UpdateDraftRentalResponseDto> {
+    if (dto.manualPricingAdjustment !== undefined) {
+      await this.authorizationEnforcer.requirePermission(user, TenantPermission.RentalsPriceAdjustmentManage);
+    }
+
     let period: RentalPeriod;
     try {
       period = new RentalPeriod(dto.period.start, dto.period.end);

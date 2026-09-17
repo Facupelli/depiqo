@@ -1,3 +1,4 @@
+import { TenantPermission } from '@repo/api-contracts';
 import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
 import { Result } from 'neverthrow';
@@ -6,6 +7,7 @@ import { createProblemDetails, createProblemType, ProblemException } from 'src/c
 
 import { AuthUser } from '../../../tenant-management/auth/shared/auth.types';
 import { CurrentUser } from '../../../tenant-management/auth/shared/current-user/current-user.decorator';
+import { RequirePermission } from '../../authorization/tenant-authorization.decorators';
 import { CreateCategoryCommand } from './create-category.command';
 import { CreateCategoryError, CreateCategoryErrorCode } from './create-category.errors';
 import { CreateCategoryRequestDto } from './create-category.request.dto';
@@ -18,6 +20,7 @@ export class CreateCategoryHttpController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
+  @RequirePermission(TenantPermission.ProductsManage)
   async createCategory(
     @Body() dto: CreateCategoryRequestDto,
     @CurrentUser() user: AuthUser,

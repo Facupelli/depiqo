@@ -1,8 +1,10 @@
 import { Body, Controller, HttpCode, HttpStatus, Param, Put, UseGuards } from '@nestjs/common';
 import { AssignRentalAccessoriesAvailabilityProblemExtensionsSchema } from '@repo/api-contracts';
 import { CommandBus } from '@nestjs/cqrs';
+import { TenantPermission } from '@repo/api-contracts';
 
 import { createProblemDetails, createProblemType, ProblemException } from 'src/core/problem-details';
+import { RequirePermission } from 'src/modules/tenant-management/authorization/tenant-authorization.decorators';
 import { AUTH_ACTOR_TYPES, AuthUser } from 'src/modules/tenant-management/auth/shared/auth.types';
 import { CurrentUser } from 'src/modules/tenant-management/auth/shared/current-user/current-user.decorator';
 import { AllowAuthActors } from 'src/modules/tenant-management/auth/shared/session/auth-actor-access.decorator';
@@ -22,6 +24,7 @@ export class AssignRentalAccessoriesHttpController {
   constructor(private readonly commandBus: CommandBus) {}
 
   @Put(':rentalId/accessories')
+  @RequirePermission(TenantPermission.RentalsFulfillmentManage)
   @HttpCode(HttpStatus.CREATED)
   @AllowAuthActors(AUTH_ACTOR_TYPES.TENANT_USER)
   @UseGuards(SessionAuthGuard, TenantUserSessionGuard)

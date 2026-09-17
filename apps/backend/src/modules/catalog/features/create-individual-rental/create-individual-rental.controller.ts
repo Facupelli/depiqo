@@ -1,9 +1,11 @@
+import { TenantPermission } from '@repo/api-contracts';
 import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
 
 import { createProblemDetails, createProblemType, ProblemException } from 'src/core/problem-details';
 import { AuthUser } from 'src/modules/tenant-management/auth/shared/auth.types';
 import { CurrentUser } from 'src/modules/tenant-management/auth/shared/current-user/current-user.decorator';
+import { RequireAllPermissions } from 'src/modules/tenant-management/authorization/tenant-authorization.decorators';
 
 import { CreateIndividualRentalCommand } from './create-individual-rental.command';
 import { CreateIndividualRentalError, CreateIndividualRentalErrorCode } from './create-individual-rental.errors';
@@ -17,6 +19,7 @@ export class CreateIndividualRentalHttpController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
+  @RequireAllPermissions(TenantPermission.ProductsManage, TenantPermission.ProductsAvailabilityManage)
   async create(
     @Body() body: CreateIndividualRentalRequestDto,
     @CurrentUser() user: AuthUser,

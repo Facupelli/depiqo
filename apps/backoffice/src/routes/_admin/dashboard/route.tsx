@@ -1,4 +1,8 @@
 import {
+	TenantPermission,
+	type TenantPermission as TenantPermissionId,
+} from "@repo/api-contracts";
+import {
 	Popover,
 	PopoverContent,
 	PopoverTrigger,
@@ -15,7 +19,6 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import {
 	createFileRoute,
 	Link,
-	notFound,
 	Outlet,
 	redirect,
 	useNavigate,
@@ -35,7 +38,18 @@ import {
 } from "lucide-react";
 import { currentBusinessQueries } from "@/application/current-business/current-business.queries";
 import { currentAuthQueries } from "@/auth/auth.queries";
+import {
+	categoryWorkspacePermissions,
+	customerListPermissions,
+	inventoryWorkspacePermissions,
+	productWorkspacePermissions,
+	promotionListPermissions,
+	rentalWorkspacePermissions,
+	settingsPermissions,
+	workingBranchContextPermissions,
+} from "@/auth/capabilities";
 import { useLogout } from "@/auth/logout/logout.mutation";
+import { can, canAny } from "@/auth/permissions";
 import { useUpdateWorkingBranch } from "@/auth/update-working-branch/update-working-branch.mutation";
 import {
 	Sidebar,
@@ -53,45 +67,41 @@ import {
 	useSidebar,
 } from "@/components/ui/sidebar";
 import { branchQueries } from "@/modules/settings/branches/public";
+import { AdminRouteError } from "@/shared/components/admin-route-error";
 
 export const Route = createFileRoute("/_admin/dashboard")({
-	beforeLoad: async ({ context, location }) => {
-		const redirectTo = `${location.pathname}${location.searchStr ?? ""}${location.hash ?? ""}`;
-
-		if (!context.user) {
+	beforeLoad: ({ context, location }) => {
+		if (context.user.mustChangePassword) {
+			const redirectTo = `${location.pathname}${location.searchStr ?? ""}${location.hash ?? ""}`;
 			throw redirect({
-				to: "/login",
+				to: "/change-password",
 				search: { redirectTo },
 			});
 		}
-
-		if (context.user.actorType !== "TENANT_USER") {
-			throw notFound();
-		}
-
-		return {
-			user: context.user,
-		};
 	},
-	loader: async ({ context: { queryClient } }) => {
-		await Promise.all([
-			queryClient.ensureQueryData(branchQueries.list()),
-			queryClient.ensureQueryData(currentBusinessQueries.current()),
-			// queryClient.ensureQueryData(tenantQueries.me()),
-		]);
-	},
+	loader: ({ context: { queryClient } }) =>
+		queryClient.ensureQueryData(currentBusinessQueries.current()),
+	errorComponent: ({ error }) => <AdminRouteError error={error} />,
 	component: DashboardLayout,
 });
+
+type PermissionPredicate = (
+	permissions: readonly TenantPermissionId[],
+) => boolean;
+
+type SidebarChild = {
+	name: string;
+	href: string;
+	isVisible: PermissionPredicate;
+};
 
 type SidebarItem = {
 	name: string;
 	icon: LucideIcon;
 	href: string;
 	matchDescendants?: boolean;
-	children?: Array<{
-		name: string;
-		href: string;
-	}>;
+	isVisible?: PermissionPredicate;
+	children?: SidebarChild[];
 };
 
 const sidebarItems: SidebarItem[] = [
@@ -100,11 +110,13 @@ const sidebarItems: SidebarItem[] = [
 		name: "Calendario",
 		icon: CalendarDays,
 		href: "/dashboard/calendar",
+		isVisible: (permissions) => can(permissions, TenantPermission.RentalsRead),
 	},
 	{
 		name: "Alquileres",
 		icon: ShoppingBag,
 		href: "/dashboard/orders",
+		isVisible: (permissions) => canAny(permissions, rentalWorkspacePermissions),
 		// children: [
 		// 	{
 		// 		name: "Pendientes de revisión",
@@ -117,36 +129,64 @@ const sidebarItems: SidebarItem[] = [
 		icon: Camera,
 		href: "/dashboard/inventory/equipment-types",
 		matchDescendants: true,
+		isVisible: (permissions) =>
+			canAny(permissions, inventoryWorkspacePermissions),
 		children: [
-			{ name: "Combos", href: "/dashboard/catalog/packages" },
-			{ name: "Categorías", href: "/dashboard/catalog/categories" },
-			{ name: "Dueños de Equipo", href: "/dashboard/owners" },
+			{
+				name: "Combos",
+				href: "/dashboard/catalog/packages",
+				isVisible: (permissions) =>
+					canAny(permissions, productWorkspacePermissions),
+			},
+			{
+				name: "Categorías",
+				href: "/dashboard/catalog/categories",
+				isVisible: (permissions) =>
+					canAny(permissions, categoryWorkspacePermissions),
+			},
+			{
+				name: "Dueños de Equipo",
+				href: "/dashboard/owners",
+				isVisible: (permissions) =>
+					canAny(permissions, inventoryWorkspacePermissions),
+			},
 		],
 	},
 	{
 		name: "Clientes",
 		icon: Users,
 		href: "/dashboard/customers",
+		isVisible: (permissions) => canAny(permissions, customerListPermissions),
 		children: [
 			{
 				name: "Altas de cliente",
 				href: "/dashboard/customers/pending-profiles",
+				isVisible: (permissions) =>
+					can(permissions, TenantPermission.CustomersOnboardingManage),
 			},
 		],
 	},
-	{ name: "Promociones", icon: BadgePercent, href: "/dashboard/promotions" },
-	{ name: "Ajustes", icon: Settings, href: "/dashboard/settings" },
+	{
+		name: "Promociones",
+		icon: BadgePercent,
+		href: "/dashboard/promotions",
+		isVisible: (permissions) => canAny(permissions, promotionListPermissions),
+	},
+	{
+		name: "Ajustes",
+		icon: Settings,
+		href: "/dashboard/settings",
+		isVisible: (permissions) => canAny(permissions, settingsPermissions),
+	},
 ];
 
 function DashboardLayout() {
 	const { user } = Route.useRouteContext();
 	const { data: business } = useSuspenseQuery(currentBusinessQueries.current());
-	const { data: branches } = useSuspenseQuery(branchQueries.list());
-
-	const branchSelectorData = branches.map((branch) => ({
-		name: branch.name,
-		id: branch.id,
-	}));
+	const usesWorkingBranchContext = canAny(
+		user.permissions,
+		workingBranchContextPermissions,
+	);
 
 	return (
 		<SidebarProvider>
@@ -158,12 +198,11 @@ function DashboardLayout() {
 					<p className="flex min-h-11 items-center pr-11 font-bold wrap-anywhere lg:min-h-0 lg:pr-0">
 						{business.name}
 					</p>
-					<div className="pt-6 pb-2">
-						<BranchSelector
-							branches={branchSelectorData}
-							className="border-white/15 text-neutral-200"
-						/>
-					</div>
+					{usesWorkingBranchContext ? (
+						<div className="pt-6 pb-2">
+							<BranchSelector className="border-white/15 text-neutral-200" />
+						</div>
+					) : null}
 				</SidebarHeader>
 				<SidebarContent className="px-4">
 					<DashboardNavigation />
@@ -176,9 +215,11 @@ function DashboardLayout() {
 			<div className="min-w-0 flex-1 bg-gray-50">
 				<header className="sticky top-0 z-30 flex items-center gap-2 border-b border-neutral-200 bg-white px-3 py-2 lg:hidden">
 					<SidebarTrigger />
-					<div className="min-w-0 flex-1">
-						<BranchSelector branches={branchSelectorData} />
-					</div>
+					{usesWorkingBranchContext ? (
+						<div className="min-w-0 flex-1">
+							<BranchSelector />
+						</div>
+					) : null}
 				</header>
 				<div className="space-y-4 p-4 lg:p-6">
 					<Outlet />
@@ -189,7 +230,28 @@ function DashboardLayout() {
 }
 
 function DashboardNavigation() {
+	const { user } = Route.useRouteContext();
 	const { setOpenMobile } = useSidebar();
+	const visibleItems = sidebarItems.flatMap((item) => {
+		const children = item.children?.filter((child) =>
+			child.isVisible(user.permissions),
+		);
+		const canOpenDirectTarget = item.isVisible?.(user.permissions) ?? false;
+
+		if (!canOpenDirectTarget && !children?.length) {
+			return [];
+		}
+
+		return [
+			{
+				...item,
+				href: canOpenDirectTarget
+					? item.href
+					: (children?.[0]?.href ?? item.href),
+				children,
+			},
+		];
+	});
 
 	function closeNavigation() {
 		setOpenMobile(false);
@@ -198,7 +260,7 @@ function DashboardNavigation() {
 	return (
 		<nav aria-label="Navegación principal">
 			<SidebarMenu>
-				{sidebarItems.map((item) => {
+				{visibleItems.map((item) => {
 					const Icon = item.icon;
 					return (
 						<SidebarMenuItem key={item.href}>
@@ -249,14 +311,13 @@ function DashboardNavigation() {
 
 const ALL_BRANCHES_VALUE = "all-branches";
 
-function BranchSelector({
-	branches,
-	className,
-}: {
-	branches: { name: string; id: string }[];
-	className?: string;
-}) {
+function BranchSelector({ className }: { className?: string }) {
+	const { data: branchData } = useSuspenseQuery(branchQueries.list());
 	const { data: currentAuth } = useSuspenseQuery(currentAuthQueries.current());
+	const branches = branchData.map((branch) => ({
+		name: branch.name,
+		id: branch.id,
+	}));
 	const updateWorkingBranch = useUpdateWorkingBranch();
 	const navigate = useNavigate();
 	const navigateCombos = useNavigate({

@@ -1,4 +1,4 @@
-import { V2RentalCustomerOnboardingStatus, V2UserRole, V2UserStatus } from 'src/generated/prisma/enums';
+import { V2RentalCustomerOnboardingStatus, V2UserStatus } from 'src/generated/prisma/enums';
 
 export const AUTH_ACTOR_TYPES = {
   TENANT_USER: 'TENANT_USER',
@@ -14,8 +14,8 @@ export type TenantUserAuthActor = {
   email: string;
   name: string | null;
   avatarUrl: string | null;
-  role: V2UserRole;
   status: V2UserStatus;
+  mustChangePassword: boolean;
   emailVerifiedAt: Date | null;
   sessionVersion: number;
 };
@@ -50,8 +50,8 @@ type UserLike = {
   email: string;
   name: string | null;
   avatarUrl: string | null;
-  role: V2UserRole;
   status: V2UserStatus;
+  mustChangePassword: boolean;
   emailVerifiedAt: Date | null;
   sessionVersion: number;
 };
@@ -77,8 +77,8 @@ export function toAuthUser(user: UserLike): AuthUser {
     email: user.email,
     name: user.name,
     avatarUrl: user.avatarUrl,
-    role: user.role,
     status: user.status,
+    mustChangePassword: user.mustChangePassword,
     emailVerifiedAt: user.emailVerifiedAt,
     sessionVersion: user.sessionVersion,
   };

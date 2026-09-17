@@ -1,5 +1,7 @@
+import { TenantPermission } from "@repo/api-contracts";
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
+import { canAll, requireRouteAccess } from "@/auth/permissions";
 import { CreateComboPage } from "@/modules/products/create-combo/CreateComboPage";
 import { AdminRouteError } from "@/shared/components/admin-route-error";
 
@@ -8,6 +10,15 @@ const createComboSearchSchema = z.object({
 });
 
 export const Route = createFileRoute("/_admin/dashboard/catalog/packages/new")({
+	beforeLoad: ({ context }) => {
+		requireRouteAccess(
+			canAll(context.user.permissions, [
+				TenantPermission.ProductsManage,
+				TenantPermission.ProductsAvailabilityManage,
+			]),
+		);
+	},
+
 	validateSearch: createComboSearchSchema,
 	errorComponent: ({ error }) => {
 		return (
