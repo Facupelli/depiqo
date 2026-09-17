@@ -1,5 +1,5 @@
 import { Controller, Get, HttpCode, Post, Req, Res, UseGuards } from '@nestjs/common';
-import { Request, Response } from 'express';
+import type { Request, Response } from 'express';
 import { StorefrontTenantContextGuard } from '../../../tenant-context/guards/storefront-tenant-context.guard';
 import { AuthCustomer } from '../../shared/auth.types';
 import { CurrentUser } from '../../shared/current-user/current-user.decorator';

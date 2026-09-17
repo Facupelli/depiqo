@@ -4,11 +4,19 @@ import { createRequire } from 'node:module';
 import { resolve } from 'node:path';
 
 const projectRequire = createRequire(resolve(process.cwd(), 'package.json'));
-const jestExecutable = projectRequire.resolve('jest/bin/jest');
+const runnerExecutables = {
+  jest: projectRequire.resolve('jest/bin/jest'),
+  vitest: projectRequire.resolve('vitest/vitest.mjs'),
+} as const;
+
+type TestRunner = keyof typeof runnerExecutables;
 
 async function main(): Promise<void> {
-  const configPath = process.argv[2];
-  if (!configPath) throw new Error('Expected a Jest config path.');
+  const runner = process.argv[2];
+  const configPath = process.argv[3];
+  if (!isTestRunner(runner) || !configPath) {
+    throw new Error('Expected a test runner (jest or vitest) and config path.');
+  }
 
   const container = await new PostgreSqlContainer('postgres:18-alpine')
     .withDatabase('depiqo_test')
@@ -19,7 +27,10 @@ async function main(): Promise<void> {
   const env: NodeJS.ProcessEnv = {
     ...process.env,
     NODE_ENV: 'test',
-    NODE_OPTIONS: [process.env.NODE_OPTIONS, '--experimental-vm-modules'].filter(Boolean).join(' '),
+    NODE_OPTIONS:
+      runner === 'jest'
+        ? [process.env.NODE_OPTIONS, '--experimental-vm-modules'].filter(Boolean).join(' ')
+        : process.env.NODE_OPTIONS,
     LOG_LEVEL: 'silent',
     DATABASE_URL: container.getConnectionUri(),
     CORS_ALLOWED_ORIGINS: 'http://localhost',
@@ -45,17 +56,17 @@ async function main(): Promise<void> {
     GEOAPIFY_API_KEY: 'test-geoapify-key',
   };
 
-  let jestRun: JestRun | undefined;
-  let outcome: JestOutcome | undefined;
+  let testRun: TestRun | undefined;
+  let outcome: TestOutcome | undefined;
   let cleanupError: unknown;
 
   try {
     console.log('Preparing test database...');
     run('pnpm', ['exec', 'prisma', 'migrate', 'deploy'], env);
     console.log('Test database ready.');
-    const jestArgs = process.argv.slice(3).filter((argument) => argument !== '--');
-    jestRun = startJest(['--config', configPath, ...jestArgs], env);
-    outcome = await jestRun.outcome;
+    const runnerArgs = process.argv.slice(4).filter((argument) => argument !== '--');
+    testRun = startTestRunner(runner, ['--config', configPath, ...runnerArgs], env);
+    outcome = await testRun.outcome;
   } finally {
     try {
       await container.stop();
@@ -63,13 +74,13 @@ async function main(): Promise<void> {
       cleanupError = error;
       console.error('Failed to stop the PostgreSQL test container:', error);
     } finally {
-      jestRun?.removeSignalHandlers();
+      testRun?.removeSignalHandlers();
     }
   }
 
-  if (!jestRun || !outcome) return;
+  if (!testRun || !outcome) return;
 
-  const terminationSignal = jestRun.receivedSignal() ?? outcome.signal;
+  const terminationSignal = testRun.receivedSignal() ?? outcome.signal;
   if (terminationSignal) {
     process.kill(process.pid, terminationSignal);
     return;
@@ -78,16 +89,20 @@ async function main(): Promise<void> {
   process.exitCode = outcome.exitCode;
 }
 
-type JestOutcome = { exitCode: number; signal: NodeJS.Signals | null };
-type JestRun = {
-  outcome: Promise<JestOutcome>;
+function isTestRunner(value: string | undefined): value is TestRunner {
+  return value !== undefined && Object.hasOwn(runnerExecutables, value);
+}
+
+type TestOutcome = { exitCode: number; signal: NodeJS.Signals | null };
+type TestRun = {
+  outcome: Promise<TestOutcome>;
   receivedSignal(): NodeJS.Signals | null;
   removeSignalHandlers(): void;
 };
 
-function startJest(args: string[], env: NodeJS.ProcessEnv): JestRun {
+function startTestRunner(runner: TestRunner, args: string[], env: NodeJS.ProcessEnv): TestRun {
   const usesProcessGroup = process.platform !== 'win32';
-  const child = spawn(process.execPath, [jestExecutable, ...args], {
+  const child = spawn(process.execPath, [runnerExecutables[runner], ...args], {
     cwd: process.cwd(),
     env,
     stdio: 'inherit',
@@ -98,7 +113,6 @@ function startJest(args: string[], env: NodeJS.ProcessEnv): JestRun {
   let firstReceivedSignal: NodeJS.Signals | null = null;
   let childClosed = false;
 
-  // SAFETY: The preceding test setup and assertions establish this value shape before the test inspects it.
   const forwardSignal = (signal: NodeJS.Signals): void => {
     if (firstReceivedSignal) return;
     firstReceivedSignal = signal;
@@ -109,8 +123,9 @@ function startJest(args: string[], env: NodeJS.ProcessEnv): JestRun {
         process.kill(-child.pid, signal);
         return;
       } catch (error) {
+        // SAFETY: Node process signaling failures expose their stable error code through ErrnoException.
         if ((error as NodeJS.ErrnoException).code === 'ESRCH') return;
-        console.error(`Failed to forward ${signal} to the Jest process group:`, error);
+        console.error(`Failed to forward ${signal} to the ${runner} process group:`, error);
       }
     }
     child.kill(signal);
@@ -122,16 +137,16 @@ function startJest(args: string[], env: NodeJS.ProcessEnv): JestRun {
     process.on(signal, handler);
   }
 
-  const outcome = new Promise<JestOutcome>((resolve) => {
+  const outcome = new Promise<TestOutcome>((resolve) => {
     let settled = false;
-    const settle = (result: JestOutcome): void => {
+    const settle = (result: TestOutcome): void => {
       if (settled) return;
       settled = true;
       childClosed = true;
       resolve(result);
     };
     child.once('error', (error) => {
-      console.error('Failed to start Jest:', error);
+      console.error(`Failed to start ${runner}:`, error);
       settle({ exitCode: 1, signal: null });
     });
     child.once('close', (exitCode, signal) => settle({ exitCode: exitCode ?? 1, signal }));

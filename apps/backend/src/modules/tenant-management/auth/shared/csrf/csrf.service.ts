@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { randomBytes, timingSafeEqual } from 'node:crypto';
-import { Request } from 'express';
+import type { Request } from 'express';
 import { CSRF_TOKEN_BYTES } from './csrf.constants';
 
 @Injectable()

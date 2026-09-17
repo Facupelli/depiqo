@@ -1,3 +1,5 @@
+import { describe, expect, it, vi } from 'vitest';
+import type { Mock, MockInstance } from 'vitest';
 import { randomUUID } from 'node:crypto';
 
 import { TestingModule } from '@nestjs/testing';
@@ -20,11 +22,11 @@ describe('CreateEquipment atomicity integration', () => {
   let prisma: PrismaService;
   let fixtures: TestFixtures;
   let handler: CreateEquipmentHandler;
-  let publishSpy: jest.SpyInstance;
-  let validateEquipmentTypeReferences: jest.Mock;
+  let publishSpy: MockInstance;
+  let validateEquipmentTypeReferences: Mock;
 
   useIntegrationTestContext(async () => {
-    validateEquipmentTypeReferences = jest.fn();
+    validateEquipmentTypeReferences = vi.fn();
     moduleRef = await createOfferingManagementIntegrationContext([
       { provide: EquipmentTypeReferenceAuthority, useValue: { validateEquipmentTypeReferences } },
     ]);
@@ -32,7 +34,7 @@ describe('CreateEquipment atomicity integration', () => {
     fixtures = createTestFixtures(prisma);
     handler = moduleRef.get(CreateEquipmentHandler);
     const publisher = moduleRef.get(IntegrationEventPublisher);
-    publishSpy = jest.spyOn(publisher, 'publish');
+    publishSpy = vi.spyOn(publisher, 'publish');
     return moduleRef;
   });
 

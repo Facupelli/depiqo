@@ -1,3 +1,4 @@
+import { describe, expect, it, vi } from 'vitest';
 import { randomUUID } from 'node:crypto';
 
 import { CommandBus } from '@nestjs/cqrs';
@@ -576,7 +577,7 @@ describe('ConfirmRental integration', () => {
     const repository = moduleRef.get(RentalRepository);
     const originalFindById = repository.findById.bind(repository);
     const loaded = createBarrier(2);
-    const findSpy = jest.spyOn(repository, 'findById').mockImplementation(async (tenantId, rentalId, tx) => {
+    const findSpy = vi.spyOn(repository, 'findById').mockImplementation(async (tenantId, rentalId, tx) => {
       const rental = await originalFindById(tenantId, rentalId, tx);
       if (rentalId === scenario.rental.rentalId && !tx) await loaded.wait();
       return rental;

@@ -1,5 +1,5 @@
 import { Body, Controller, Get, Headers, HttpCode, HttpStatus, Post, Query, Req, Res } from '@nestjs/common';
-import { Request, Response } from 'express';
+import type { Request, Response } from 'express';
 
 import { Public } from 'src/core/decorators/public.decorator';
 import { createProblemDetails, createProblemType, ProblemException } from 'src/core/problem-details';

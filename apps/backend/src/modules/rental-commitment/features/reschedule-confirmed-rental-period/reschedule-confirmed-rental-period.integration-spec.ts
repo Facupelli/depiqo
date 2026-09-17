@@ -1,3 +1,4 @@
+import { describe, expect, it, vi } from 'vitest';
 import { CommandBus } from '@nestjs/cqrs';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { TestingModule } from '@nestjs/testing';
@@ -288,17 +289,17 @@ describe('RescheduleConfirmedRentalPeriod integration', () => {
     const repository = moduleRef.get(RentalRepository);
     const allocation = moduleRef.get(RentalAssetAllocationService);
 
-    const exclusion = jest
+    const exclusion = vi
       .spyOn(repository, 'rescheduleConfirmedPeriod')
       .mockRejectedValueOnce(new PostgresExclusionViolationError({ code: '23P01' }));
     const race = await reschedule(setup, proposed);
     expect(race.isErr() && race.error.code).toBe('rental_commitment.assigned_assets_unavailable');
     exclusion.mockRestore();
 
-    const mismatch = jest
+    const mismatch = vi
       .spyOn(repository, 'rescheduleConfirmedPeriod')
       .mockRejectedValueOnce(new RentalPersistenceStateMismatchError(setup.rental.rentalId, 'asset block', 'changed'));
-    jest.spyOn(allocation, 'findConflictingExactAssetIds').mockResolvedValueOnce([]);
+    vi.spyOn(allocation, 'findConflictingExactAssetIds').mockResolvedValueOnce([]);
     const concurrent = await reschedule(setup, proposed);
     expect(concurrent.isErr() && concurrent.error.code).toBe('rental_commitment.rental_version_conflict');
     mismatch.mockRestore();

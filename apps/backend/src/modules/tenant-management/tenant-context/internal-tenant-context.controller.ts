@@ -1,5 +1,5 @@
 import { Controller, Get, HttpCode, HttpStatus, NotFoundException, Query, Res, UseGuards } from '@nestjs/common';
-import { Response } from 'express';
+import type { Response } from 'express';
 import { TenantContextResolverService } from './tenant-context-resolver.service';
 import { TrustedTenantContext } from './tenant-context.contract';
 import { normalizeHostname } from './utils/normalize-hostname.util';

@@ -1,5 +1,5 @@
 import { Body, Controller, HttpStatus, Patch, Req, UseGuards } from '@nestjs/common';
-import { Request } from 'express';
+import type { Request } from 'express';
 
 import { createProblemDetails, createProblemType, ProblemException } from 'src/core/problem-details';
 

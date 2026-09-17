@@ -1,3 +1,4 @@
+import { describe, expect, it } from 'vitest';
 import { CommandBus } from '@nestjs/cqrs';
 import { TestingModule } from '@nestjs/testing';
 

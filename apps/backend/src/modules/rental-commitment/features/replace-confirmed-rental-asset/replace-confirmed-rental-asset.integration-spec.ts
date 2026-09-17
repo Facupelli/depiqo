@@ -1,3 +1,4 @@
+import { describe, expect, it, vi } from 'vitest';
 import { CommandBus } from '@nestjs/cqrs';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { TestingModule } from '@nestjs/testing';
@@ -119,7 +120,7 @@ describe('ReplaceConfirmedRentalAsset integration', () => {
     const repository = moduleRef.get(RentalRepository);
     const originalFindById = repository.findById.bind(repository);
     const loaded = createBarrier(2);
-    const findSpy = jest.spyOn(repository, 'findById').mockImplementation(async (tenantId, rentalId, tx) => {
+    const findSpy = vi.spyOn(repository, 'findById').mockImplementation(async (tenantId, rentalId, tx) => {
       const rental = await originalFindById(tenantId, rentalId, tx);
       if (rentalId === setup.rental.rentalId && !tx) await loaded.wait();
       return rental;

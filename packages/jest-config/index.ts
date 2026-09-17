@@ -35,20 +35,6 @@ export const unitConfig: Config.InitialOptions = {
 };
 
 /**
- * Integration test preset.
- * Runs sequentially - test files share one disposable database per command
- * and isolate scenarios with unique data, not parallel workers or full-table cleanup.
- */
-export const integrationConfig: Config.InitialOptions = {
-  ...base,
-  rootDir: ".",
-  testRegex: ".*\\.integration-spec\\.ts$",
-  testTimeout: 30_000,
-  maxWorkers: 1,
-  workerIdleMemoryLimit: "700MB",
-};
-
-/**
  * E2E test preset.
  * Runs sequentially — boots a real NestJS app + DB.
  */

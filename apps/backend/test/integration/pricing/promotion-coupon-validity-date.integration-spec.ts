@@ -1,3 +1,4 @@
+import { describe, expect, it } from 'vitest';
 import { Test, TestingModule } from '@nestjs/testing';
 import { useIntegrationTestContext } from '../../support/integration-test-context';
 

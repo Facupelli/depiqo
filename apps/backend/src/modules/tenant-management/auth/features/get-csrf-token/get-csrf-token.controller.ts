@@ -1,5 +1,5 @@
 import { Controller, Get, Req } from '@nestjs/common';
-import { Request } from 'express';
+import type { Request } from 'express';
 import { CsrfService } from '../../shared/csrf/csrf.service';
 import { Public } from 'src/core/decorators/public.decorator';
 

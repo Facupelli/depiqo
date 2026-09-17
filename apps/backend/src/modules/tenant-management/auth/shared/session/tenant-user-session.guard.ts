@@ -1,5 +1,5 @@
 import { CanActivate, ExecutionContext, ForbiddenException, Injectable } from '@nestjs/common';
-import { Request } from 'express';
+import type { Request } from 'express';
 import { AUTH_ACTOR_TYPES, AuthActor } from '../auth.types';
 
 @Injectable()
