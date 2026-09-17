@@ -267,22 +267,26 @@ export class CalculateProspectiveCartCostHandler implements IQueryHandler<
   }
 
   private mapCatalogError(error: CatalogSelectionResolutionError, context: ApplicationErrorContext) {
-    const code =
-      error.code === 'RentalOfferNotFound'
-        ? ('rental_commitment.rental_offer_not_found' as const)
-        : error.code === 'RentalOfferNotRentable' || error.code === 'RentableItemNotActive'
-          ? ('rental_commitment.rental_offer_not_selectable' as const)
-          : ('rental_commitment.invalid_prospective_cart' as const);
+    let code: CalculateProspectiveCartCostError['code'];
+    if (error.code === 'RentalOfferNotFound') {
+      code = 'rental_commitment.rental_offer_not_found';
+    } else if (error.code === 'RentalOfferNotRentable' || error.code === 'RentableItemNotActive') {
+      code = 'rental_commitment.rental_offer_not_selectable';
+    } else {
+      code = 'rental_commitment.invalid_prospective_cart';
+    }
     return calculateProspectiveCartCostError(code, error.message, error, context);
   }
 
   private mapPricingError(error: PricingCalculationError, context: ApplicationErrorContext) {
-    const code =
-      error.code === 'pricing_calculation.coupon_not_applicable'
-        ? ('rental_commitment.coupon_not_applicable' as const)
-        : error.code === 'pricing_calculation.invalid_request'
-          ? ('rental_commitment.invalid_pricing_input' as const)
-          : ('rental_commitment.pricing_unavailable' as const);
+    let code: CalculateProspectiveCartCostError['code'];
+    if (error.code === 'pricing_calculation.coupon_not_applicable') {
+      code = 'rental_commitment.coupon_not_applicable';
+    } else if (error.code === 'pricing_calculation.invalid_request') {
+      code = 'rental_commitment.invalid_pricing_input';
+    } else {
+      code = 'rental_commitment.pricing_unavailable';
+    }
     return calculateProspectiveCartCostError(code, error.message, error, context);
   }
 }

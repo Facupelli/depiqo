@@ -70,6 +70,28 @@ function joinRoutePath(controllerPath: string, methodPath: string): string {
   return [controllerPath, methodPath].filter(Boolean).join('/');
 }
 
+function resolveAuthorizationActor(
+  actors: readonly string[],
+  guards: readonly string[],
+  classification: Classification,
+  controller: string,
+): string {
+  if (actors.length > 0) return actors.join(', ');
+  if (
+    guards.some(
+      (guard) => guard.includes('TenantCustomerSessionGuard') || guard.includes('StorefrontTenantCustomerSessionGuard'),
+    )
+  ) {
+    return 'TENANT_CUSTOMER';
+  }
+  if (classification === 'PUBLIC') return 'PUBLIC';
+  if (classification === 'INTERNAL') return 'INTERNAL';
+  if (classification === 'EXEMPT' && (controller === 'GetCurrentUserController' || controller === 'LogoutController')) {
+    return 'AUTHENTICATED_ACTOR';
+  }
+  return 'TENANT_USER (global default)';
+}
+
 function classifyRoute(input: {
   controllerPath: string;
   classDecorators: ReturnType<typeof getDecorators>;
@@ -185,22 +207,7 @@ function auditControllers(): RouteAudit[] {
           methodText: member.getText(sourceFile),
         });
 
-        const actor = actors.length
-          ? actors.join(', ')
-          : guards.some(
-                (guard) =>
-                  guard.includes('TenantCustomerSessionGuard') ||
-                  guard.includes('StorefrontTenantCustomerSessionGuard'),
-              )
-            ? 'TENANT_CUSTOMER'
-            : classification === 'PUBLIC'
-              ? 'PUBLIC'
-              : classification === 'INTERNAL'
-                ? 'INTERNAL'
-                : classification === 'EXEMPT' &&
-                    (node.name.text === 'GetCurrentUserController' || node.name.text === 'LogoutController')
-                  ? 'AUTHENTICATED_ACTOR'
-                  : 'TENANT_USER (global default)';
+        const actor = resolveAuthorizationActor(actors, guards, classification, node.name.text);
 
         const permissionParts = authorization
           .filter(({ name }) => name.startsWith('Require'))

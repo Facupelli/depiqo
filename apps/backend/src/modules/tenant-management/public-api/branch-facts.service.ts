@@ -80,13 +80,9 @@ export class BranchFactsService extends BranchFacts {
 
     try {
       return ok(
-        branches.map((branch) => ({
-          branchId: branch.id,
-          displayName: branch.name,
-          isActive: branch.isActive,
-          isDeleted: branch.deletedAt !== null,
-          effectiveTimezone: resolveEffectiveTimezone(branch.timezone, config!.timezone),
-          operationalLocation:
+        branches.map((branch) => {
+          const effectiveTimezone = resolveEffectiveTimezone(branch.timezone, config!.timezone);
+          const operationalLocation =
             branch.operationalLocationFormattedAddress !== null &&
             branch.operationalLocationLatitude !== null &&
             branch.operationalLocationLongitude !== null
@@ -102,11 +98,30 @@ export class BranchFactsService extends BranchFacts {
                   country: branch.operationalLocationCountry,
                   providerPlaceId: branch.operationalLocationProviderPlaceId,
                 }
-              : null,
-          branchTimezone: branch.timezone,
-          tenantTimezone: config!.timezone,
-          timezoneSource: branch.timezone?.trim() ? 'BRANCH' : config!.timezone?.trim() ? 'TENANT' : 'DEFAULT',
-        })),
+              : null;
+          const branchTimezone = branch.timezone;
+          const tenantTimezone = config!.timezone;
+          let timezoneSource: BranchFact['timezoneSource'];
+          if (branch.timezone?.trim()) {
+            timezoneSource = 'BRANCH';
+          } else if (config!.timezone?.trim()) {
+            timezoneSource = 'TENANT';
+          } else {
+            timezoneSource = 'DEFAULT';
+          }
+
+          return {
+            branchId: branch.id,
+            displayName: branch.name,
+            isActive: branch.isActive,
+            isDeleted: branch.deletedAt !== null,
+            effectiveTimezone,
+            operationalLocation,
+            branchTimezone,
+            tenantTimezone,
+            timezoneSource,
+          };
+        }),
       );
     } catch {
       return err({

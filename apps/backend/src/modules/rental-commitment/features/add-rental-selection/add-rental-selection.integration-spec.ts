@@ -261,12 +261,12 @@ describe('AddRentalSelection integration', () => {
         : { start: new Date(now - 60 * 60_000), end: new Date(now + 60 * 60_000) };
     const setup = await scenario(period);
     const before = await fixtures.persistedState(setup.rental.rentalId);
-    const overrides =
-      failure === 'duplicate offer'
-        ? { rentalOfferId: setup.camera.offer.id }
-        : failure === 'stale version'
-          ? { expectedVersion: before.rental.version + 1 }
-          : {};
+    let overrides: Partial<AddRentalSelectionCommand['props']> = {};
+    if (failure === 'duplicate offer') {
+      overrides = { rentalOfferId: setup.camera.offer.id };
+    } else if (failure === 'stale version') {
+      overrides = { expectedVersion: before.rental.version + 1 };
+    }
     const result = await add(setup, overrides);
     expect(result.isErr() && result.error.code).toBe(expectedCode);
     expect(await fixtures.persistedState(setup.rental.rentalId)).toEqual(before);

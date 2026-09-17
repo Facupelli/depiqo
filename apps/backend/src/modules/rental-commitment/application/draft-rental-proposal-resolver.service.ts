@@ -201,17 +201,20 @@ export class DraftRentalProposalResolver {
         : undefined,
     };
 
-    const prospectiveResult =
-      input.fulfillmentMethod === FulfillmentMethod.Pickup
-        ? await this.prospectiveRentalCost.calculate({ fulfillmentMethod: 'PICKUP', pricing: pricingRequest })
-        : input.deliveryDestination
-          ? await this.prospectiveRentalCost.calculate({
-              fulfillmentMethod: 'DELIVERY',
-              pricing: pricingRequest,
-              branchId: input.branchId,
-              customerLocation: toCustomerLocationSelection(input.deliveryDestination),
-            })
-          : null;
+    let prospectiveResult: Awaited<ReturnType<ProspectiveRentalCostService['calculate']>> | null = null;
+    if (input.fulfillmentMethod === FulfillmentMethod.Pickup) {
+      prospectiveResult = await this.prospectiveRentalCost.calculate({
+        fulfillmentMethod: 'PICKUP',
+        pricing: pricingRequest,
+      });
+    } else if (input.deliveryDestination) {
+      prospectiveResult = await this.prospectiveRentalCost.calculate({
+        fulfillmentMethod: 'DELIVERY',
+        pricing: pricingRequest,
+        branchId: input.branchId,
+        customerLocation: toCustomerLocationSelection(input.deliveryDestination),
+      });
+    }
 
     if (!prospectiveResult) {
       return err(

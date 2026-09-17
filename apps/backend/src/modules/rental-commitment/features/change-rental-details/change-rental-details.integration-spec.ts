@@ -11,6 +11,7 @@ import { createTestFixtures, TestFixtures } from '../../../../../test/support/fi
 import { ChangeRentalDetailsCommand, ChangeRentalDetailsPatch } from './change-rental-details.command';
 import { ChangeRentalDetailsResult } from './change-rental-details.handler';
 import { ConfirmedRentalFixtures } from '../../testing/confirmed-rental.fixtures';
+import type { RentalPeriodFixture } from '../confirm-rental/testing/confirm-rental.fixtures';
 
 describe('ChangeRentalDetails integration', () => {
   let moduleRef: TestingModule;
@@ -35,16 +36,19 @@ describe('ChangeRentalDetails integration', () => {
     const { user } = await core.createTenantUser({ tenantId: tenant.id });
     const commercial = await fixtures.createOffer({ tenantId: tenant.id, branchId: branch.id });
     const now = Date.now();
+    let period: RentalPeriodFixture;
+    if (started === 'ENDED') {
+      period = { start: new Date(now - 7_200_000), end: new Date(now - 3_600_000) };
+    } else if (started) {
+      period = { start: new Date(now - 3_600_000), end: new Date(now + 86_400_000) };
+    } else {
+      period = { start: new Date(now + 86_400_000), end: new Date(now + 172_800_000) };
+    }
     const rental = await fixtures.createConfirmedRental({
       tenantId: tenant.id,
       branchId: branch.id,
       customerId: customer.id,
-      period:
-        started === 'ENDED'
-          ? { start: new Date(now - 7_200_000), end: new Date(now - 3_600_000) }
-          : started
-            ? { start: new Date(now - 3_600_000), end: new Date(now + 86_400_000) }
-            : { start: new Date(now + 86_400_000), end: new Date(now + 172_800_000) },
+      period,
       offerId: commercial.offer.id,
       equipmentTypeId: commercial.equipmentType.id,
     });

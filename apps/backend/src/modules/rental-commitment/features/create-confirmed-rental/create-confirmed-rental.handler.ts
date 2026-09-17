@@ -199,20 +199,23 @@ export class CreateConfirmedRentalService implements ICommandHandler<
     };
 
     const deliveryDetails = command.deliveryDetails;
-    const prospectiveResult =
-      command.fulfillmentMethod === FulfillmentMethod.Pickup
-        ? await this.prospectiveRentalCost.calculate({ fulfillmentMethod: 'PICKUP', pricing: pricingRequest })
-        : deliveryDetails
-          ? await this.prospectiveRentalCost.calculate({
-              fulfillmentMethod: 'DELIVERY',
-              pricing: pricingRequest,
-              branchId: command.branchId,
-              customerLocation: {
-                address: deliveryDetails.address,
-                locationId: deliveryDetails.locationId,
-              },
-            })
-          : null;
+    let prospectiveResult: Awaited<ReturnType<ProspectiveRentalCostService['calculate']>> | null = null;
+    if (command.fulfillmentMethod === FulfillmentMethod.Pickup) {
+      prospectiveResult = await this.prospectiveRentalCost.calculate({
+        fulfillmentMethod: 'PICKUP',
+        pricing: pricingRequest,
+      });
+    } else if (deliveryDetails) {
+      prospectiveResult = await this.prospectiveRentalCost.calculate({
+        fulfillmentMethod: 'DELIVERY',
+        pricing: pricingRequest,
+        branchId: command.branchId,
+        customerLocation: {
+          address: deliveryDetails.address,
+          locationId: deliveryDetails.locationId,
+        },
+      });
+    }
 
     if (!prospectiveResult) {
       return err(
