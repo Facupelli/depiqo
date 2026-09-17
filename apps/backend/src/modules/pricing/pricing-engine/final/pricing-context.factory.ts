@@ -2,7 +2,7 @@ import { BasePricingInput } from '../base/base-pricing-input.type';
 import { BasePricingResult } from '../base/base-pricing-result.type';
 import { Money } from '../money/money.value-object';
 import { PricingContext, PricingContextLine } from './pricing-context.types';
-import { toLocalDate } from '../shared/local-date';
+import { instantToLocalDate } from 'src/core/temporal/local-date';
 
 type PricingContextFactoryInput = {
   input: BasePricingInput & {
@@ -51,7 +51,7 @@ export class PricingContextFactory {
       total: Money.of(baseResult.total, baseResult.currency),
       chargedDays: baseResult.chargedDays,
       calculationDate: pricingInput.calculationDate,
-      calculationLocalDate: toLocalDate(pricingInput.calculationDate, pricingInput.pricingConfig.timezone),
+      calculationLocalDate: instantToLocalDate(pricingInput.calculationDate, pricingInput.pricingConfig.timezone),
       durationPolicySnapshot: baseResult.durationPolicySnapshot,
       lines,
     };

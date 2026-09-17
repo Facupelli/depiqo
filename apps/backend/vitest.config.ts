@@ -15,7 +15,6 @@ export default defineConfig({
   },
   test: {
     environment: 'node',
-    testTimeout: 10_000,
     include: ['{src,test}/**/*.spec.ts'],
     exclude: ['**/*.integration-spec.ts', '**/*.e2e-spec.ts', '**/dist/**', '**/node_modules/**'],
     coverage: {

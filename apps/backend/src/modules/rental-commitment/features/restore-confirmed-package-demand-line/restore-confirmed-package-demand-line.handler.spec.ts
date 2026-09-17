@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { err, ok } from 'neverthrow';
 
 import { PrismaUnitOfWork } from 'src/core/database/prisma-unit-of-work';
@@ -68,7 +68,12 @@ describe('RestoreConfirmedPackageDemandLineHandler', () => {
     } as RentalRepository;
     // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
     const allocation = {
-      planAllocations: vi.fn().mockResolvedValue(allocationResult),
+      planAllocations: vi.fn().mockImplementation(async () => {
+        if (vi.mocked(rental.restoreConfirmedPackageDemandLine).mock.calls.length > 0) {
+          throw new Error('Rental was mutated before allocation completed.');
+        }
+        return allocationResult;
+      }),
     } as RentalAssetAllocationService;
     // SAFETY: The preceding test setup and assertions establish this value shape before the test inspects it.
     const splitCalculator = {
@@ -125,10 +130,6 @@ describe('RestoreConfirmedPackageDemandLineHandler', () => {
         ],
         tx,
       }),
-    );
-    // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
-    expect((allocation.planAllocations as Mock).mock.invocationCallOrder[0]).toBeLessThan(
-      (rental.restoreConfirmedPackageDemandLine as Mock).mock.invocationCallOrder[0],
     );
     expect(rental.restoreConfirmedPackageDemandLine).toHaveBeenCalledWith({
       demandLineId: 'demand-1',
