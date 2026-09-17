@@ -43,6 +43,8 @@ const authorizationRoleSelect = {
 } as const;
 
 type CollaboratorRecord = Prisma.V2TenantUserGetPayload<{ select: typeof collaboratorSelect }>;
+type AuthorizationRole = Prisma.V2TenantRoleGetPayload<{ select: typeof authorizationRoleSelect }>;
+type ActorAuthorization = { tenantRole: AuthorizationRole | null } | null;
 type CollaboratorResult = Result<TenantCollaboratorDto, ManageTenantTeamError>;
 type TransactionClient = Pick<PrismaService['client'], 'v2TenantUser' | 'v2TenantRole' | '$queryRaw'>;
 
@@ -110,7 +112,8 @@ export class CreateTenantCollaboratorHandler implements ICommandHandler<
         });
         if (!targetRole) return err(roleNotFound(command.tenantId, command.roleId, 'CreateTenantCollaborator'));
 
-        const assignmentError = await enforceRoleAssignment(tx, command, targetRole, 'CreateTenantCollaborator');
+        const actor = await loadActorAuthorization(tx, command.tenantId, command.actorTenantUserId);
+        const assignmentError = enforceRoleAssignment(actor, command, targetRole, 'CreateTenantCollaborator');
         if (assignmentError) return err(assignmentError);
 
         const record = await tx.v2TenantUser.create({
@@ -163,8 +166,9 @@ export class ChangeTenantCollaboratorRoleHandler implements ICommandHandler<
       if (!target)
         return err(collaboratorNotFound(command.tenantId, command.tenantUserId, 'ChangeTenantCollaboratorRole'));
 
-      const managementError = await enforceCanManageCollaborator(
-        tx,
+      const actor = await loadActorAuthorization(tx, command.tenantId, command.actorTenantUserId);
+      const managementError = enforceCanManageCollaborator(
+        actor,
         command,
         target.tenantRole,
         'ChangeTenantCollaboratorRole',
@@ -177,7 +181,7 @@ export class ChangeTenantCollaboratorRoleHandler implements ICommandHandler<
       });
       if (!role) return err(roleNotFound(command.tenantId, command.roleId, 'ChangeTenantCollaboratorRole'));
 
-      const assignmentError = await enforceRoleAssignment(tx, command, role, 'ChangeTenantCollaboratorRole');
+      const assignmentError = enforceRoleAssignment(actor, command, role, 'ChangeTenantCollaboratorRole');
       if (assignmentError) return err(assignmentError);
 
       if (
@@ -216,8 +220,9 @@ export class SuspendTenantCollaboratorHandler implements ICommandHandler<
       if (!target)
         return err(collaboratorNotFound(command.tenantId, command.tenantUserId, 'SuspendTenantCollaborator'));
 
-      const managementError = await enforceCanManageCollaborator(
-        tx,
+      const actor = await loadActorAuthorization(tx, command.tenantId, command.actorTenantUserId);
+      const managementError = enforceCanManageCollaborator(
+        actor,
         command,
         target.tenantRole,
         'SuspendTenantCollaborator',
@@ -257,8 +262,9 @@ export class ReactivateTenantCollaboratorHandler implements ICommandHandler<
       if (!target)
         return err(collaboratorNotFound(command.tenantId, command.tenantUserId, 'ReactivateTenantCollaborator'));
 
-      const managementError = await enforceCanManageCollaborator(
-        tx,
+      const actor = await loadActorAuthorization(tx, command.tenantId, command.actorTenantUserId);
+      const managementError = enforceCanManageCollaborator(
+        actor,
         command,
         target.tenantRole,
         'ReactivateTenantCollaborator',
@@ -299,8 +305,9 @@ export class ResetTenantCollaboratorPasswordHandler implements ICommandHandler<
       if (!target)
         return err(collaboratorNotFound(command.tenantId, command.tenantUserId, 'ResetTenantCollaboratorPassword'));
 
-      const managementError = await enforceCanManageCollaborator(
-        tx,
+      const actor = await loadActorAuthorization(tx, command.tenantId, command.actorTenantUserId);
+      const managementError = enforceCanManageCollaborator(
+        actor,
         command,
         target.tenantRole,
         'ResetTenantCollaboratorPassword',
@@ -331,22 +338,18 @@ export class ResetTenantCollaboratorPasswordHandler implements ICommandHandler<
   }
 }
 
-async function enforceCanManageCollaborator(
-  tx: TransactionClient,
+function enforceCanManageCollaborator(
+  actor: ActorAuthorization,
   command: { tenantId: string; actorTenantUserId: string; tenantUserId: string },
   targetRole: { systemRole: V2TenantSystemRole | null; permissions: { permission: string }[] } | null,
   useCase: string,
-): Promise<ManageTenantTeamError | null> {
+): ManageTenantTeamError | null {
   const context = {
     useCase,
     tenantId: command.tenantId,
     actorTenantUserId: command.actorTenantUserId,
     tenantUserId: command.tenantUserId,
   };
-  const actor = await tx.v2TenantUser.findFirst({
-    where: { id: command.actorTenantUserId, tenantId: command.tenantId },
-    select: { tenantRole: { select: authorizationRoleSelect } },
-  });
   if (!actor) {
     return manageTenantTeamError(
       'tenant_management.team_authorization_subject_not_found',
@@ -374,16 +377,12 @@ async function enforceCanManageCollaborator(
   return null;
 }
 
-async function enforceRoleAssignment(
-  tx: TransactionClient,
+function enforceRoleAssignment(
+  actor: ActorAuthorization,
   command: { tenantId: string; actorTenantUserId: string },
   targetRole: { id: string; systemRole: V2TenantSystemRole | null; permissions: { permission: string }[] },
   useCase: string,
-): Promise<ManageTenantTeamError | null> {
-  const actor = await tx.v2TenantUser.findFirst({
-    where: { id: command.actorTenantUserId, tenantId: command.tenantId },
-    select: { tenantRole: { select: authorizationRoleSelect } },
-  });
+): ManageTenantTeamError | null {
   const context = {
     useCase,
     tenantId: command.tenantId,
@@ -424,6 +423,17 @@ async function enforceRoleAssignment(
     );
   }
   return null;
+}
+
+function loadActorAuthorization(
+  tx: TransactionClient,
+  tenantId: string,
+  actorTenantUserId: string,
+): Promise<ActorAuthorization> {
+  return tx.v2TenantUser.findFirst({
+    where: { id: actorTenantUserId, tenantId },
+    select: { tenantRole: { select: authorizationRoleSelect } },
+  });
 }
 
 function parsePermissions(

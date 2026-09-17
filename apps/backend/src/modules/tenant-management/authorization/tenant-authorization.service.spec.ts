@@ -10,10 +10,16 @@ describe('TenantAuthorizationService', () => {
   function createService(initialUser: unknown) {
     let user = initialUser;
     const findFirst = jest.fn().mockImplementation(async () => user);
+    const findMany = jest
+      .fn()
+      .mockImplementation(async () => (user as ReturnType<typeof userWithRole>)?.tenantRole.permissions ?? []);
 
     return {
-      service: new TenantAuthorizationService({ client: { v2TenantUser: { findFirst } } } as never),
+      service: new TenantAuthorizationService({
+        client: { v2TenantUser: { findFirst }, v2TenantRolePermission: { findMany } },
+      } as never),
       findFirst,
+      findMany,
       setUser(nextUser: unknown) {
         user = nextUser;
       },
@@ -41,7 +47,7 @@ describe('TenantAuthorizationService', () => {
   it.each([[[]], [[TenantPermission.TeamManage]], [[TenantPermission.ProductsRead, TenantPermission.RentalsConfirm]]])(
     'gives Administrator exactly every registered permission regardless of persisted rows',
     async (persistedPermissions) => {
-      const { service } = createService(
+      const { service, findMany } = createService(
         userWithRole({ systemRole: V2TenantSystemRole.ADMIN, permissions: persistedPermissions }),
       );
 
@@ -55,6 +61,7 @@ describe('TenantAuthorizationService', () => {
         permissions: ALL_TENANT_PERMISSIONS,
       });
       expect(result._unsafeUnwrap().permissions).toBe(ALL_TENANT_PERMISSIONS);
+      expect(findMany).not.toHaveBeenCalled();
     },
   );
 
@@ -195,11 +202,35 @@ describe('TenantAuthorizationService', () => {
             id: true,
             name: true,
             systemRole: true,
-            permissions: { select: { permission: true } },
           },
         },
       },
     });
+  });
+
+  it('loads custom-role permissions through the tenant-scoped parent role', async () => {
+    const { service, findMany } = createService(
+      userWithRole({ roleId: 'role-1', permissions: [TenantPermission.ProductsRead] }),
+    );
+
+    await service.getEffectivePermissions(subject);
+
+    expect(findMany).toHaveBeenCalledTimes(1);
+    expect(findMany).toHaveBeenCalledWith({
+      where: {
+        roleId: 'role-1',
+        role: { tenantId: subject.tenantId },
+      },
+      select: { permission: true },
+    });
+  });
+
+  it('does not map permission-query infrastructure failures to invalid authorization state', async () => {
+    const infrastructureError = new Error('database unavailable');
+    const fixture = createService(userWithRole());
+    fixture.findMany.mockRejectedValueOnce(infrastructureError);
+
+    await expect(fixture.service.getEffectivePermissions(subject)).rejects.toBe(infrastructureError);
   });
 
   it('rejects a foreign-tenant subject as not found', async () => {

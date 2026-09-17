@@ -34,9 +34,6 @@ export class TenantAuthorizationService extends TenantAuthorization {
             id: true,
             name: true,
             systemRole: true,
-            permissions: {
-              select: { permission: true },
-            },
           },
         },
       },
@@ -68,8 +65,18 @@ export class TenantAuthorizationService extends TenantAuthorization {
       );
     }
 
+    const rolePermissions = await this.prisma.client.v2TenantRolePermission.findMany({
+      where: {
+        roleId: role.id,
+        role: {
+          tenantId: subject.tenantId,
+        },
+      },
+      select: { permission: true },
+    });
+
     try {
-      const persistedPermissions = new Set(role.permissions.map(({ permission }) => parseTenantPermission(permission)));
+      const persistedPermissions = new Set(rolePermissions.map(({ permission }) => parseTenantPermission(permission)));
       const permissions = Object.freeze(
         ALL_TENANT_PERMISSIONS.filter((permission) => persistedPermissions.has(permission)),
       );
