@@ -149,6 +149,7 @@ export function createTestFixtures(prisma: PrismaService, passwordService = new 
       const unique = randomUUID();
 
       return prisma.client.$transaction(async (tx) => {
+        // SAFETY: The fixture or preceding response assertions establish this object shape before these fields are inspected.
         const tenant = await tx.v2Tenant.create({
           data: {
             name: `Test tenant ${unique}`,

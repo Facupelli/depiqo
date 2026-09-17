@@ -1,4 +1,4 @@
-import { ApplicationError } from 'src/core/errors/application-error';
+import { ApplicationError, ApplicationErrorContext } from 'src/core/errors/application-error';
 
 export type GenerateRentalBudgetErrorCode =
   | 'contracts.rental_budget_rental_not_found'
@@ -15,7 +15,7 @@ export function generateRentalBudgetError(
   code: GenerateRentalBudgetErrorCode,
   message: string,
   cause?: unknown,
-  context?: Record<string, unknown>,
+  context?: ApplicationErrorContext,
 ): GenerateRentalBudgetError {
   return { code, message, cause, context };
 }

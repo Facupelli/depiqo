@@ -4,6 +4,7 @@ export type RentalDemandLineId = string & { readonly __brand: 'RentalDemandLineI
 
 export const RentalDemandLineId = {
   create(): RentalDemandLineId {
+    // SAFETY: randomUUID() always returns a non-empty UUID string, which satisfies this opaque identifier brand.
     return randomUUID() as RentalDemandLineId;
   },
 
@@ -12,6 +13,7 @@ export const RentalDemandLineId = {
       throw new Error('RentalDemandLineId cannot be empty');
     }
 
+    // SAFETY: This value comes from a persisted or already validated non-empty domain identifier; the brand adds no runtime representation.
     return value as RentalDemandLineId;
   },
 };

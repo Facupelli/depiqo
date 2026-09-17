@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { err, ok, Result } from 'neverthrow';
 
 import { PrismaService } from 'src/core/database/prisma.service';
+import { Prisma } from 'src/generated/prisma/client';
 
 import {
   GetTenantBillingPreferencesInput,
@@ -10,11 +11,7 @@ import {
   TenantBillingPreferencesFact,
   TenantDailyBillingPolicy,
 } from './tenant-billing-preferences.public-api';
-import {
-  TenantConfig,
-  TenantConfigProps,
-  TenantRoundingRule,
-} from '../domain/value-objects/tenant-config.value-object';
+import { TenantConfig, TenantRoundingRule } from '../domain/value-objects/tenant-config.value-object';
 
 @Injectable()
 export class TenantBillingPreferencesService extends TenantBillingPreferences {
@@ -59,9 +56,9 @@ export class TenantBillingPreferencesService extends TenantBillingPreferences {
     }
   }
 
-  private reconstituteTenantConfig(config: unknown): TenantConfig | null {
+  private reconstituteTenantConfig(config: Prisma.JsonValue): TenantConfig | null {
     try {
-      return TenantConfig.reconstitute(config as TenantConfigProps);
+      return TenantConfig.reconstitute(config);
     } catch {
       return null;
     }

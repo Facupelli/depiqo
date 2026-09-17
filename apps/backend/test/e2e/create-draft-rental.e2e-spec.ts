@@ -66,6 +66,7 @@ describe('POST /rental-commitments/draft-rentals', () => {
       .expect(201);
     expect(response.body).toEqual({ data: { id: expect.any(String) } });
 
+    // SAFETY: The preceding test setup and assertions establish this value shape before the test inspects it.
     const rentalId = response.body.data.id as string;
     const rental = await prisma.client.v2Rental.findUniqueOrThrow({
       where: { id: rentalId },
@@ -258,6 +259,7 @@ describe('POST /rental-commitments/draft-rentals', () => {
         deliveryDetails: { address: 'Ignored address', locationId: 'ignored-location-id' },
       })
       .expect(201);
+    // SAFETY: The preceding test setup and assertions establish this value shape before the test inspects it.
     const rentalId = response.body.data.id as string;
     expect(await prisma.client.v2RentalDeliveryDetails.findUnique({ where: { rentalOrderId: rentalId } })).toBeNull();
   });

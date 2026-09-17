@@ -8,7 +8,8 @@ import { TenantContextService } from 'src/modules/shared/tenant/tenant-context.s
 import { PrismaClient } from '../../generated/prisma/client';
 import { LogContext } from '../logger/log-context';
 
-const TENANT_EXCLUDED_MODELS = new Set([
+// These models bypass only generic direct where.tenantId injection and may still be tenant-owned through another policy.
+export const DIRECT_TENANT_WHERE_EXCLUDED_MODELS = new Set([
   'Tenant',
   'CustomDomain',
   'BillingUnit', // Global lookup table, no tenant scope.
@@ -18,6 +19,8 @@ const TENANT_EXCLUDED_MODELS = new Set([
   'Asset', // Scoped through Location.
   'AssetAssignment', // Scoped through Asset.
   'OrderItem', // Scoped through Order.
+  'OwnerPaymentSplit',
+  'OrderItemOwnerSplit',
   'BundleComponent', // Scoped through Bundle.
   'BundleSnapshot', // Scoped through OrderItem.
   'BundleSnapshotComponent', // Scoped through BundleSnapshot.
@@ -35,8 +38,12 @@ const TENANT_EXCLUDED_MODELS = new Set([
   'V2Tenant',
   'V2TenantRolePermission', // Scoped through V2TenantRole.
   'V2BranchSchedule',
+  'V2BranchDeliveryDistancePriceBand',
   'V2Contract',
   'V2CustomerProfile',
+  'V2LocalCredential',
+  'V2PasswordResetToken',
+  'V2AuthAuditEvent',
 ]);
 
 const READ_WITH_WHERE_OPS = new Set([
@@ -56,20 +63,6 @@ function requiresTenantWhere(operation: string): boolean {
   return READ_WITH_WHERE_OPS.has(operation) || MUTATE_WITH_WHERE_OPS.has(operation);
 }
 
-export function injectTenantId(operation: string, args: Record<string, any>, tenantId: string): Record<string, any> {
-  if (!requiresTenantWhere(operation)) {
-    return args;
-  }
-
-  return {
-    ...args,
-    where: {
-      ...args.where,
-      tenantId,
-    },
-  };
-}
-
 function createExtendedClient(prisma: PrismaClient, tenantContext: TenantContextService) {
   const tenantScopedClient = prisma.$extends({
     name: 'tenant-scope',
@@ -77,7 +70,7 @@ function createExtendedClient(prisma: PrismaClient, tenantContext: TenantContext
     query: {
       $allModels: {
         async $allOperations({ model, operation, args, query }) {
-          if (TENANT_EXCLUDED_MODELS.has(model ?? '')) {
+          if (DIRECT_TENANT_WHERE_EXCLUDED_MODELS.has(model ?? '')) {
             return query(args);
           }
 
@@ -87,9 +80,14 @@ function createExtendedClient(prisma: PrismaClient, tenantContext: TenantContext
             return query(args);
           }
 
-          const mutatedArgs = injectTenantId(operation, args as Record<string, any>, tenantId) as typeof args;
+          if (requiresTenantWhere(operation)) {
+            args.where = {
+              ...args.where,
+              tenantId,
+            };
+          }
 
-          return query(mutatedArgs);
+          return query(args);
         },
       },
     },

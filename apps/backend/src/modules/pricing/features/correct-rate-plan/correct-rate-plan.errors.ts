@@ -1,4 +1,4 @@
-import { ApplicationError } from 'src/core/errors/application-error';
+import { ApplicationError, ApplicationErrorContext } from 'src/core/errors/application-error';
 
 export type CorrectRatePlanErrorCode =
   | 'pricing.rate_plan_not_found'
@@ -14,7 +14,7 @@ export function correctRatePlanError(
   code: CorrectRatePlanErrorCode,
   message: string,
   cause?: unknown,
-  context?: Record<string, unknown>,
+  context?: ApplicationErrorContext,
 ): CorrectRatePlanError {
   return { code, message, cause, context };
 }

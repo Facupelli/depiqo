@@ -1,4 +1,4 @@
-import { ApplicationError } from 'src/core/errors/application-error';
+import { ApplicationError, ApplicationErrorContext } from 'src/core/errors/application-error';
 
 export type GetBranchDeliveryConfigurationErrorCode = 'delivery.branch_not_found';
 
@@ -10,7 +10,7 @@ export function getBranchDeliveryConfigurationError(
   code: GetBranchDeliveryConfigurationErrorCode,
   message: string,
   cause?: unknown,
-  context?: Record<string, unknown>,
+  context?: ApplicationErrorContext,
 ): GetBranchDeliveryConfigurationError {
   return { code, message, cause, context };
 }

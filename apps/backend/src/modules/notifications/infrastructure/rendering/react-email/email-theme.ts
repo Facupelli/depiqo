@@ -14,7 +14,7 @@ export const emailTheme = {
   width: '680px',
 };
 
-export const sharedEmailStyles: Record<string, CSSProperties> = {
+export const sharedEmailStyles = {
   body: {
     margin: 0,
     backgroundColor: emailTheme.colors.pageBackground,
@@ -76,4 +76,4 @@ export const sharedEmailStyles: Record<string, CSSProperties> = {
     color: emailTheme.colors.mutedText,
     textAlign: 'right',
   },
-};
+} satisfies Record<string, CSSProperties>;

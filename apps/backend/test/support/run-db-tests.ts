@@ -98,6 +98,7 @@ function startJest(args: string[], env: NodeJS.ProcessEnv): JestRun {
   let firstReceivedSignal: NodeJS.Signals | null = null;
   let childClosed = false;
 
+  // SAFETY: The preceding test setup and assertions establish this value shape before the test inspects it.
   const forwardSignal = (signal: NodeJS.Signals): void => {
     if (firstReceivedSignal) return;
     firstReceivedSignal = signal;

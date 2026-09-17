@@ -13,18 +13,22 @@ import {
 } from './restore-confirmed-package-demand-line.request.dto';
 
 describe('RestoreConfirmedPackageDemandLineHttpController', () => {
+  // SAFETY: This fixture supplies every field read by the unit under test; omitted members are outside this test path.
   const params = {
     rentalId: 'rental-1',
     demandLineId: 'demand-line-1',
   } as RestoreConfirmedPackageDemandLineParamsDto;
+  // SAFETY: This fixture supplies every field read by the unit under test; omitted members are outside this test path.
   const dto = { expectedVersion: 7, quantity: 1 } as RestoreConfirmedPackageDemandLineRequestDto;
+  // SAFETY: This fixture supplies every field read by the unit under test; omitted members are outside this test path.
   const user = { id: 'user-1', tenantId: 'tenant-1' } as AuthUser;
 
   it('dispatches tenant context and returns the confirmed-rental mutation response', async () => {
     const updatedAt = new Date('2030-01-01T10:00:00.000Z');
+    // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
     const commandBus = {
       execute: jest.fn().mockResolvedValue(ok({ rentalId: 'rental-1', version: 8, updatedAt })),
-    } as unknown as CommandBus;
+    } as CommandBus;
     const controller = new RestoreConfirmedPackageDemandLineHttpController(commandBus);
 
     await expect(controller.restore(params, dto, user)).resolves.toEqual({
@@ -49,12 +53,14 @@ describe('RestoreConfirmedPackageDemandLineHttpController', () => {
       'rental_commitment.rental_demand_line_already_current',
       'ignored',
     );
-    const commandBus = { execute: jest.fn().mockResolvedValue(err(applicationError)) } as unknown as CommandBus;
+    // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
+    const commandBus = { execute: jest.fn().mockResolvedValue(err(applicationError)) } as CommandBus;
     const controller = new RestoreConfirmedPackageDemandLineHttpController(commandBus);
 
     try {
       await controller.restore(params, dto, user);
     } catch (error) {
+      // SAFETY: The preceding expectation establishes this error subtype before subtype-specific fields are inspected.
       const problem = error as ProblemException;
       expect(problem.getStatus()).toBe(409);
       expect(problem.getProblemDetails()).toMatchObject({

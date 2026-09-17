@@ -85,6 +85,7 @@ describe('ConfirmRentalHandler deadlock retry', () => {
       new Date('2030-01-01T12:00:00.000Z'),
     );
     const pullDomainEvents = jest.fn().mockReturnValueOnce([event]);
+    // SAFETY: This fixture supplies every field read by the unit under test; omitted members are outside this test path.
     const rental = {
       id: rentalId,
       tenantId,
@@ -118,17 +119,21 @@ describe('ConfirmRentalHandler deadlock retry', () => {
       },
       confirm: jest.fn().mockReturnValue(ok(undefined)),
       pullDomainEvents,
-    } as unknown as Rental;
+    } as Rental;
 
     const save = jest.fn();
+    // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
     const repository = {
       findById: jest.fn().mockResolvedValue(rental),
       save,
-    } as unknown as RentalRepository;
+    } as RentalRepository;
+    // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
     const operationalFacts = {
       validateDraftFacts: jest.fn().mockResolvedValue(ok(undefined)),
-    } as unknown as RentalOperationalFactsValidatorService;
+    } as RentalOperationalFactsValidatorService;
+    // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
     const deliveryQuoteService = {} as DeliveryQuoteService;
+    // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
     const allocation = {
       planAllocations: jest.fn().mockResolvedValue(
         ok({
@@ -141,24 +146,28 @@ describe('ConfirmRentalHandler deadlock retry', () => {
           ],
         }),
       ),
-    } as unknown as RentalAssetAllocationService;
+    } as RentalAssetAllocationService;
     const bufferSettings = {
       getTenantRentalAssetBufferSettings: jest
         .fn()
         .mockResolvedValue(ok({ beforeBufferMinutes: 0, afterBufferMinutes: 0 })),
     };
+    // SAFETY: The preceding test setup and assertions establish this value shape before the test inspects it.
     const ownerSplitCalculator = {
       calculate: jest.fn().mockReturnValue({ splits }),
-    } as unknown as RentalOwnerSplitCalculator;
+    } as RentalOwnerSplitCalculator;
     const publishedEvents: IntegrationEvent[] = [];
-    const runInTransaction = jest.fn(async (work: (context: PrismaTransactionContext) => Promise<unknown>) => {
+    const runInTransaction = jest.fn(async <T>(work: (context: PrismaTransactionContext) => Promise<T>): Promise<T> => {
       const integrationEvents = new InMemoryIntegrationEventsCollector();
+      // SAFETY: The preceding test setup and assertions establish this value shape before the test inspects it.
       const result = await work({ tx: {} as PrismaTransactionContext['tx'], integrationEvents });
       publishedEvents.push(...integrationEvents.drain());
       return result;
     });
-    const unitOfWork = { runInTransaction } as unknown as PrismaUnitOfWork;
+    // SAFETY: The preceding test setup and assertions establish this value shape before the test inspects it.
+    const unitOfWork = { runInTransaction } as PrismaUnitOfWork;
 
+    // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
     return {
       handler: new ConfirmRentalHandler(
         repository,
@@ -177,7 +186,7 @@ describe('ConfirmRentalHandler deadlock retry', () => {
   }
 });
 
-function deadlockError(): Record<string, unknown> {
+function deadlockError() {
   return {
     code: 'P2010',
     meta: {

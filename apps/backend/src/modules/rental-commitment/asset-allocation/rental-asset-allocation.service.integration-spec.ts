@@ -57,6 +57,7 @@ describe('RentalAssetAllocationService exact-asset availability integration', ()
     proposed?: RentalPeriodFixture;
   }) {
     const targetPeriod = params.proposed ?? proposedPeriod;
+    // SAFETY: These stable fixture identifiers are non-empty and are used only as opaque domain identifiers in this test.
     return service.findConflictingExactAssetIds({
       tenantId: params.tenantId,
       currentRentalId: params.currentRentalId,
@@ -253,6 +254,7 @@ describe('RentalAssetAllocationService exact-asset availability integration', ()
   it('accepts the established Prisma transaction client', async () => {
     const s = await setup();
 
+    // SAFETY: These stable fixture identifiers are non-empty and are used only as opaque domain identifiers in this test.
     await expect(
       prisma.client.$transaction((tx) =>
         service.findConflictingExactAssetIds({

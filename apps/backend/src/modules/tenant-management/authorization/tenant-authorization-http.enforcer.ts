@@ -38,12 +38,18 @@ export class TenantAuthorizationHttpEnforcer {
       tenantUserId: actor.id,
     };
 
-    const result =
-      requirement.type === 'ONE'
-        ? await this.tenantAuthorization.hasPermission(subject, requirement.permission)
-        : requirement.type === 'ANY'
-          ? await this.tenantAuthorization.hasAnyPermission(subject, requirement.permissions)
-          : await this.tenantAuthorization.hasAllPermissions(subject, requirement.permissions);
+    let result: Awaited<ReturnType<TenantAuthorization['hasPermission']>>;
+    switch (requirement.type) {
+      case 'ONE':
+        result = await this.tenantAuthorization.hasPermission(subject, requirement.permission);
+        break;
+      case 'ANY':
+        result = await this.tenantAuthorization.hasAnyPermission(subject, requirement.permissions);
+        break;
+      case 'ALL':
+        result = await this.tenantAuthorization.hasAllPermissions(subject, requirement.permissions);
+        break;
+    }
 
     if (result.isErr()) {
       if (result.error.code === 'TenantAuthorizationSubjectNotFound') {

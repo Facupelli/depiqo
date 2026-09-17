@@ -3,6 +3,7 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { TestingModule } from '@nestjs/testing';
 
 import { PrismaService } from 'src/core/database/prisma.service';
+import { Prisma } from 'src/generated/prisma/client';
 import { PostgresExclusionViolationError } from 'src/core/utils/postgres-error.mapper';
 import {
   createRentalCommitmentIntegrationContext,
@@ -13,8 +14,25 @@ import { RentalAssetAllocationService } from '../../asset-allocation/rental-asse
 import { RentalPersistenceStateMismatchError, RentalRepository } from '../../persistence/rental.repository';
 import { ConfirmedRentalEditedIntegrationEvent } from '../../public-api/events/rental-lifecycle.integration-events';
 import { ConfirmedRentalFixtures } from '../../testing/confirmed-rental.fixtures';
+import {
+  AcceptedDeliverySnapshot,
+  AcceptedDeliverySnapshotData,
+} from '../../domain/value-objects/accepted-delivery-snapshot.value-object';
 import { RescheduleConfirmedRentalPeriodCommand } from './reschedule-confirmed-rental-period.command';
 import { RescheduleConfirmedRentalPeriodResult } from './reschedule-confirmed-rental-period.handler';
+
+function readAcceptedDeliverySnapshot(value: Prisma.JsonValue | null): AcceptedDeliverySnapshotData {
+  if (value === null) {
+    throw new Error('Expected a persisted delivery snapshot.');
+  }
+
+  const parsed = AcceptedDeliverySnapshot.create(value);
+  if (parsed.isErr()) {
+    throw parsed.error;
+  }
+
+  return parsed.value.snapshot;
+}
 
 describe('RescheduleConfirmedRentalPeriod integration', () => {
   let moduleRef: TestingModule;
@@ -164,8 +182,8 @@ describe('RescheduleConfirmedRentalPeriod integration', () => {
     }
 
     const after = await fixtures.persistedState(setup.rental.rentalId);
-    const beforeDelivery = before.rental.deliverySnapshot as Record<string, any>;
-    const afterDelivery = after.rental.deliverySnapshot as Record<string, any>;
+    const beforeDelivery = readAcceptedDeliverySnapshot(before.rental.deliverySnapshot);
+    const afterDelivery = readAcceptedDeliverySnapshot(after.rental.deliverySnapshot);
     expect(afterDelivery).toEqual({
       ...beforeDelivery,
       delivery: { ...beforeDelivery.delivery, scheduledAt: proposed.start.toISOString() },

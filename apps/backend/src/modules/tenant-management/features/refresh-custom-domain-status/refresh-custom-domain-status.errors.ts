@@ -1,4 +1,4 @@
-import { ApplicationError } from 'src/core/errors/application-error';
+import { ApplicationError, ApplicationErrorContext } from 'src/core/errors/application-error';
 
 export type RefreshCustomDomainStatusErrorCode = 'tenant_management.custom_domain_not_found';
 
@@ -10,7 +10,7 @@ export function refreshCustomDomainStatusError(
   code: RefreshCustomDomainStatusErrorCode,
   message: string,
   cause?: unknown,
-  context?: Record<string, unknown>,
+  context?: ApplicationErrorContext,
 ): RefreshCustomDomainStatusError {
   return { code, message, cause, context };
 }

@@ -1,3 +1,5 @@
+import type { ApplicationErrorContext } from 'src/core/errors/application-error';
+
 import type { ProspectiveCartCostResponseDto } from '@repo/api-contracts';
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { err, ok, Result } from 'neverthrow';
@@ -201,6 +203,7 @@ export class CalculateProspectiveCartCostHandler implements IQueryHandler<
     insuranceRatePercent: number,
     offersById: Map<string, { rentableItem: { name: string } }>,
   ): Extract<ProspectiveCartCostResponseDto, { available: true }>['pricing'] {
+    // SAFETY: The adjustment discriminator is checked against PROMOTION and COUPON in the enclosing branch.
     return {
       currency: result.final.currency,
       locale,
@@ -254,7 +257,7 @@ export class CalculateProspectiveCartCostHandler implements IQueryHandler<
     return { ...leg, scheduledAt: leg.scheduledAt.toISOString() };
   }
 
-  private tenantConfigurationError(cause: unknown, context: Record<string, unknown>) {
+  private tenantConfigurationError(cause: unknown, context: ApplicationErrorContext) {
     return calculateProspectiveCartCostError(
       'rental_commitment.tenant_config_unavailable',
       'Tenant pricing configuration is unavailable.',
@@ -263,23 +266,27 @@ export class CalculateProspectiveCartCostHandler implements IQueryHandler<
     );
   }
 
-  private mapCatalogError(error: CatalogSelectionResolutionError, context: Record<string, unknown>) {
-    const code =
-      error.code === 'RentalOfferNotFound'
-        ? ('rental_commitment.rental_offer_not_found' as const)
-        : error.code === 'RentalOfferNotRentable' || error.code === 'RentableItemNotActive'
-          ? ('rental_commitment.rental_offer_not_selectable' as const)
-          : ('rental_commitment.invalid_prospective_cart' as const);
+  private mapCatalogError(error: CatalogSelectionResolutionError, context: ApplicationErrorContext) {
+    let code: CalculateProspectiveCartCostError['code'];
+    if (error.code === 'RentalOfferNotFound') {
+      code = 'rental_commitment.rental_offer_not_found';
+    } else if (error.code === 'RentalOfferNotRentable' || error.code === 'RentableItemNotActive') {
+      code = 'rental_commitment.rental_offer_not_selectable';
+    } else {
+      code = 'rental_commitment.invalid_prospective_cart';
+    }
     return calculateProspectiveCartCostError(code, error.message, error, context);
   }
 
-  private mapPricingError(error: PricingCalculationError, context: Record<string, unknown>) {
-    const code =
-      error.code === 'pricing_calculation.coupon_not_applicable'
-        ? ('rental_commitment.coupon_not_applicable' as const)
-        : error.code === 'pricing_calculation.invalid_request'
-          ? ('rental_commitment.invalid_pricing_input' as const)
-          : ('rental_commitment.pricing_unavailable' as const);
+  private mapPricingError(error: PricingCalculationError, context: ApplicationErrorContext) {
+    let code: CalculateProspectiveCartCostError['code'];
+    if (error.code === 'pricing_calculation.coupon_not_applicable') {
+      code = 'rental_commitment.coupon_not_applicable';
+    } else if (error.code === 'pricing_calculation.invalid_request') {
+      code = 'rental_commitment.invalid_pricing_input';
+    } else {
+      code = 'rental_commitment.pricing_unavailable';
+    }
     return calculateProspectiveCartCostError(code, error.message, error, context);
   }
 }

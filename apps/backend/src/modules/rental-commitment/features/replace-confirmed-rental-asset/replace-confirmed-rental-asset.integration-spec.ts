@@ -21,6 +21,7 @@ import { ConfirmRentalCommand } from '../confirm-rental/confirm-rental.command';
 import { ConfirmRentalResult } from '../confirm-rental/confirm-rental.handler';
 import { ConfirmRentalFixtures } from '../confirm-rental/testing/confirm-rental.fixtures';
 import { ConfirmedRentalFixtures } from '../../testing/confirmed-rental.fixtures';
+import type { CandidateOverrides } from '../confirm-rental/testing/confirm-rental.fixtures';
 import { ChangeRentalDetailsCommand } from '../change-rental-details/change-rental-details.command';
 import { ChangeRentalDetailsResult } from '../change-rental-details/change-rental-details.handler';
 import { ReplaceConfirmedRentalAssetCommand } from './replace-confirmed-rental-asset.command';
@@ -73,7 +74,7 @@ describe('ReplaceConfirmedRentalAsset integration', () => {
     return { tenant, branch, customer, user, commercial, rental };
   }
 
-  async function candidate(setup: Awaited<ReturnType<typeof scenario>>, overrides: Record<string, unknown> = {}) {
+  async function candidate(setup: Awaited<ReturnType<typeof scenario>>, overrides: CandidateOverrides = {}) {
     return fixtures.createCandidate({
       tenantId: setup.tenant.id,
       branchId: setup.branch.id,
@@ -92,6 +93,7 @@ describe('ReplaceConfirmedRentalAsset integration', () => {
     currentAssetId?: string;
     expectedVersion: number;
   }) {
+    // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
     return new ReplaceConfirmedRentalAssetCommand({
       tenantId: params.setup.tenant.id,
       tenantUserId: params.setup.user.id,
@@ -129,6 +131,7 @@ describe('ReplaceConfirmedRentalAsset integration', () => {
         () => replace({ setup, replacementAssetId, expectedVersion }),
       ]);
       expect(outcomes.every((outcome) => outcome.status === 'fulfilled')).toBe(true);
+      // SAFETY: The preceding status assertion establishes that this Promise.allSettled result is fulfilled before its value is inspected.
       const results = outcomes.map(
         (outcome) => (outcome as PromiseFulfilledResult<CancelRentalResult | ReplaceConfirmedRentalAssetResult>).value,
       );
@@ -306,7 +309,7 @@ describe('ReplaceConfirmedRentalAsset integration', () => {
     expect(await fixtures.persistedState(unavailableSetup.rental.rentalId)).toEqual(before);
   });
 
-  it.each([
+  const candidatePolicyCases: ReadonlyArray<readonly [string, CandidateOverrides]> = [
     ['wrong equipment type', { equipmentTypeId: 'different-equipment-type' }],
     ['inactive asset status', { assetStatus: 'INACTIVE' }],
     ['retired asset status', { assetStatus: 'RETIRED' }],
@@ -315,14 +318,19 @@ describe('ReplaceConfirmedRentalAsset integration', () => {
       'third-party candidate without owner contract snapshot',
       { ownershipKind: 'THIRD_PARTY', ownerId: 'owner', ownerContractSnapshot: null },
     ],
-  ])('enforces the V2RentalAssetCandidate projection policy: %s', async (_name, overrides) => {
-    const setup = await scenario();
-    const replacementAssetId = await candidate(setup, overrides);
-    const before = await fixtures.persistedState(setup.rental.rentalId);
-    const result = await replace({ setup, replacementAssetId, expectedVersion: before.rental.version });
-    expect(result.isErr() && result.error.code).toBe('rental_commitment.replacement_asset_unavailable');
-    expect(await fixtures.persistedState(setup.rental.rentalId)).toEqual(before);
-  });
+  ];
+
+  it.each(candidatePolicyCases)(
+    'enforces the V2RentalAssetCandidate projection policy: %s',
+    async (_name, overrides) => {
+      const setup = await scenario();
+      const replacementAssetId = await candidate(setup, overrides);
+      const before = await fixtures.persistedState(setup.rental.rentalId);
+      const result = await replace({ setup, replacementAssetId, expectedVersion: before.rental.version });
+      expect(result.isErr() && result.error.code).toBe('rental_commitment.replacement_asset_unavailable');
+      expect(await fixtures.persistedState(setup.rental.rentalId)).toEqual(before);
+    },
+  );
 
   it('enforces tenant isolation through the V2RentalAssetCandidate projection', async () => {
     const setupA = await scenario();
@@ -547,6 +555,7 @@ describe('ReplaceConfirmedRentalAsset integration', () => {
       () => replace({ setup: first, replacementAssetId, expectedVersion: firstBefore.rental.version }),
       () => replace({ setup: secondSetup, replacementAssetId, expectedVersion: secondBefore.rental.version }),
     ]);
+    // SAFETY: The preceding status assertion establishes that this Promise.allSettled result is fulfilled before its value is inspected.
     const results = outcomes.map(
       (outcome) => (outcome as PromiseFulfilledResult<ReplaceConfirmedRentalAssetResult>).value,
     );
@@ -606,6 +615,7 @@ describe('ReplaceConfirmedRentalAsset integration', () => {
       () => replace({ setup, replacementAssetId: y, expectedVersion: before.rental.version }),
       () => replace({ setup, replacementAssetId: z, expectedVersion: before.rental.version }),
     ]);
+    // SAFETY: The preceding status assertion establishes that this Promise.allSettled result is fulfilled before its value is inspected.
     const results = outcomes.map(
       (outcome) => (outcome as PromiseFulfilledResult<ReplaceConfirmedRentalAssetResult>).value,
     );
@@ -637,6 +647,7 @@ describe('ReplaceConfirmedRentalAsset integration', () => {
           }),
         ),
     ]);
+    // SAFETY: The preceding status assertion establishes that this Promise.allSettled result is fulfilled before its value is inspected.
     const results = outcomes.map(
       (outcome) =>
         (outcome as PromiseFulfilledResult<ReplaceConfirmedRentalAssetResult | ChangeRentalDetailsResult>).value,

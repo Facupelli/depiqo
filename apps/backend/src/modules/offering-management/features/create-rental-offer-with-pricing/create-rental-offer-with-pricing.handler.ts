@@ -126,6 +126,7 @@ function mapCatalogError(error: CatalogOfferingAuthoringError): CreateRentalOffe
     BranchDeleted: 'offering_setup.branch_unavailable',
     BranchContextUnavailable: 'offering_setup.branch_unavailable',
   } as const;
+  // SAFETY: The value originates from the constrained persistence or validated request field represented by this closed domain type.
   const code = codes[error.code as keyof typeof codes];
   if (!code) throw error;
   return createRentalOfferWithPricingError(code, error.message, error);
@@ -146,6 +147,7 @@ function mapRentalOfferPricingAssignmentError(
     RatePlanNotFound: 'offering_setup.rate_plan_not_found',
     RatePlanInactive: 'offering_setup.rate_plan_inactive',
   } as const;
+  // SAFETY: The value originates from the constrained persistence or validated request field represented by this closed domain type.
   const code = codes[error.code as keyof typeof codes];
   if (!code) throw error;
   return createRentalOfferWithPricingError(code, error.message, error);

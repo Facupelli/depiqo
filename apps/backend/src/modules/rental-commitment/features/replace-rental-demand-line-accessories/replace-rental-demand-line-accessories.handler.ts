@@ -1,3 +1,5 @@
+import type { ApplicationErrorContext } from 'src/core/errors/application-error';
+
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { err, ok, Result } from 'neverthrow';
 
@@ -143,6 +145,7 @@ export class ReplaceRentalDemandLineAccessoriesHandler implements ICommandHandle
       throw new RentalInvalidFieldError('acceptedAssetBuffer', 'persisted buffer values must both be present');
     let acceptedDelivery: AcceptedDeliverySnapshot | undefined;
     if (rental.deliverySnapshot !== null) {
+      // SAFETY: This value is composed only of JSON-compatible primitives, arrays, and objects before it crosses the Prisma JSON boundary.
       const parsed = AcceptedDeliverySnapshot.create(rental.deliverySnapshot as JsonValue);
       if (parsed.isErr()) throw parsed.error;
       acceptedDelivery = parsed.value;
@@ -256,7 +259,7 @@ export class ReplaceRentalDemandLineAccessoriesHandler implements ICommandHandle
     return persisted ? ok(undefined) : err(this.versionConflict(rentalId, context));
   }
 
-  private versionConflict(rentalId: string, context: Record<string, unknown>): ReplaceRentalDemandLineAccessoriesError {
+  private versionConflict(rentalId: string, context: ApplicationErrorContext): ReplaceRentalDemandLineAccessoriesError {
     return replaceRentalDemandLineAccessoriesError(
       'rental_commitment.rental_version_conflict',
       `Rental "${rentalId}" was modified by another request.`,

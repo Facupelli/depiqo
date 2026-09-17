@@ -1,4 +1,4 @@
-import type { ApplicationError } from 'src/core/errors/application-error';
+import type { ApplicationError, ApplicationErrorContext } from 'src/core/errors/application-error';
 
 export type ManageTenantRolesErrorCode =
   | 'tenant_management.role_not_found'
@@ -18,7 +18,7 @@ export function manageTenantRolesError(
   code: ManageTenantRolesErrorCode,
   message: string,
   cause?: unknown,
-  context?: Record<string, unknown>,
+  context?: ApplicationErrorContext,
 ): ManageTenantRolesError {
   return { code, message, cause, context };
 }

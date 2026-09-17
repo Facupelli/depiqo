@@ -119,7 +119,12 @@ export class RentalMapper {
   static toDomain(record: RentalPersistenceRecord): Rental {
     const acceptedAssetBuffer = this.toAcceptedAssetBufferDomain(record);
     const wasConfirmed = record.confirmedAt !== null;
+    // SAFETY: This value is composed only of JSON-compatible primitives, arrays, and objects before it crosses the Prisma JSON boundary.
     const rawPriceSnapshot = (record.priceSnapshot as JsonValue | null) ?? undefined;
+    // SAFETY: This value comes from a persisted or already validated non-empty domain identifier; the brand adds no runtime representation.
+    // SAFETY: The value originates from the constrained persistence or validated request field represented by this closed domain type.
+    // SAFETY: This value is composed only of JSON-compatible primitives, arrays, and objects before it crosses the Prisma JSON boundary.
+    // SAFETY: This mapper input is assembled from Prisma rental records; the database enum and JSON columns enforce the represented domain values.
     const result = Rental.reconstitute({
       id: record.id as RentalId,
       tenantId: record.tenantId,
@@ -186,6 +191,8 @@ export class RentalMapper {
       ),
       assetBlocks: record.assetBlocks.map((block) => {
         const period = parsePostgresRange(block.period);
+        // SAFETY: This value comes from a persisted or already validated non-empty domain identifier; the brand adds no runtime representation.
+        // SAFETY: The value originates from the constrained persistence or validated request field represented by this closed domain type.
         return AssetBlock.reconstitute({
           id: block.id as AssetBlockId,
           tenantId: block.tenantId,

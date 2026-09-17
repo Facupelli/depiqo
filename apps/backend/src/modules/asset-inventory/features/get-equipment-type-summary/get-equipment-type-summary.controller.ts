@@ -59,7 +59,7 @@ function toGetEquipmentTypeSummaryProblem(error: GetEquipmentTypeSummaryError): 
       detail: problem.detail,
       extensions: {
         code: error.code,
-        equipmentTypeId: error.context?.equipmentTypeId,
+        ...(error.context?.equipmentTypeId === undefined ? {} : { equipmentTypeId: error.context.equipmentTypeId }),
       },
     }),
     applicationError: error,

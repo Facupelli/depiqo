@@ -295,6 +295,7 @@ describe('CancelRental integration', () => {
         () => cancel(setup.tenant.id, setup.rental.rentalId),
         () => cancel(setup.tenant.id, setup.rental.rentalId),
       ]);
+      // SAFETY: The preceding status assertion establishes that this Promise.allSettled result is fulfilled before its value is inspected.
       const results = outcomes.map((outcome) => (outcome as PromiseFulfilledResult<CancelRentalResult>).value);
       expect(results.filter((result) => result.isOk())).toHaveLength(1);
       expect(
@@ -334,6 +335,7 @@ describe('CancelRental integration', () => {
         () => cancel(setup.tenant.id, setup.rental.rentalId),
         () => commandBus.execute(new ConfirmRentalCommand(setup.tenant.id, setup.rental.rentalId)),
       ]);
+      // SAFETY: The preceding status assertion establishes that this Promise.allSettled result is fulfilled before its value is inspected.
       const results = outcomes.map(
         (outcome) => (outcome as PromiseFulfilledResult<CancelRentalResult | ConfirmRentalResult>).value,
       );

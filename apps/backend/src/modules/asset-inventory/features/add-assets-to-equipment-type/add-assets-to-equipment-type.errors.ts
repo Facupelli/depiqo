@@ -1,4 +1,4 @@
-import { ApplicationError } from 'src/core/errors/application-error';
+import { ApplicationError, ApplicationErrorContext } from 'src/core/errors/application-error';
 
 import {
   ActiveOwnerContractNotFoundError,
@@ -25,7 +25,7 @@ export function addAssetsToEquipmentTypeError(
   code: AddAssetsToEquipmentTypeErrorCode,
   message: string,
   cause?: unknown,
-  context?: Record<string, unknown>,
+  context?: ApplicationErrorContext,
 ): AddAssetsToEquipmentTypeError {
   return { code, message, cause, context };
 }

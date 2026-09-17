@@ -1,4 +1,4 @@
-import { ApplicationError } from 'src/core/errors/application-error';
+import { ApplicationError, ApplicationErrorContext } from 'src/core/errors/application-error';
 
 export type CreateRentalOfferWithPricingErrorCode =
   | 'offering_setup.tenant_unavailable'
@@ -20,7 +20,7 @@ export function createRentalOfferWithPricingError(
   code: CreateRentalOfferWithPricingErrorCode,
   message: string,
   cause?: unknown,
-  context?: Record<string, unknown>,
+  context?: ApplicationErrorContext,
 ): CreateRentalOfferWithPricingError {
   return { code, message, cause, context };
 }

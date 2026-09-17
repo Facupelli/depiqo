@@ -24,15 +24,15 @@ export function applyHttpErrorStackPolicy(error: Error, status: number, isProduc
 /**
  * Serializes only explicitly allowlisted native Error information.
  */
-export function pinoErrorSerializer(value: unknown): SerializedPinoError {
-  if (!(value instanceof Error)) {
+export function pinoErrorSerializer(error: unknown): SerializedPinoError {
+  if (!(error instanceof Error)) {
     return {
       type: 'Error',
       message: 'A non-Error value was supplied as err.',
     };
   }
 
-  return serializeError(value, 0, new Set<Error>(), !errorsWithoutStacks.has(value));
+  return serializeError(error, 0, new Set<Error>(), !errorsWithoutStacks.has(error));
 }
 
 function serializeError(error: Error, depth: number, seen: Set<Error>, includeStack: boolean): SerializedPinoError {
@@ -43,8 +43,8 @@ function serializeError(error: Error, depth: number, seen: Set<Error>, includeSt
     message: readString(error, 'message') || '',
   };
 
-  const code = readValue(error, 'code');
-  if (typeof code === 'string' || (typeof code === 'number' && Number.isFinite(code))) {
+  const code = readCode(error);
+  if (code !== undefined) {
     serialized.code = code;
   }
 
@@ -55,7 +55,13 @@ function serializeError(error: Error, depth: number, seen: Set<Error>, includeSt
     }
   }
 
-  const cause = readValue(error, 'cause');
+  let cause: unknown;
+  try {
+    cause = Reflect.get(error, 'cause');
+  } catch {
+    return serialized;
+  }
+
   if (cause === undefined) {
     return serialized;
   }
@@ -100,13 +106,22 @@ function serializeOpaqueCause(cause: unknown): string | number | boolean | null 
 }
 
 function readString(error: Error, key: 'name' | 'message' | 'stack'): string | undefined {
-  const value = readValue(error, key);
-  return typeof value === 'string' ? value : undefined;
+  try {
+    const value = Reflect.get(error, key);
+    return typeof value === 'string' ? value : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
-function readValue(error: Error, key: 'name' | 'message' | 'stack' | 'code' | 'cause'): unknown {
+function readCode(error: Error): string | number | undefined {
   try {
-    return (error as Error & Record<string, unknown>)[key];
+    const value = Reflect.get(error, 'code');
+    if (typeof value === 'string') {
+      return value;
+    }
+
+    return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
   } catch {
     return undefined;
   }

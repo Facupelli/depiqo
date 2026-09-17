@@ -4,7 +4,7 @@ import { err, ok, Result } from 'neverthrow';
 
 import { PrismaService } from 'src/core/database/prisma.service';
 
-import { TenantConfig, TenantConfigProps } from '../../domain/value-objects/tenant-config.value-object';
+import { TenantConfig } from '../../domain/value-objects/tenant-config.value-object';
 import { GetCurrentTenantError, getCurrentTenantError } from './get-current-tenant.errors';
 import { GetCurrentTenantQuery } from './get-current-tenant.query';
 
@@ -62,9 +62,7 @@ export class GetCurrentTenantHandler implements IQueryHandler<GetCurrentTenantQu
       );
     }
 
-    const config: TenantConfigDto = TenantConfig.reconstitute(
-      tenant.config as unknown as TenantConfigProps,
-    ).toPlainObject();
+    const config: TenantConfigDto = TenantConfig.reconstitute(tenant.config).toPlainObject();
 
     return ok({
       id: tenant.id,

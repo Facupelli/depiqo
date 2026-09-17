@@ -1,3 +1,5 @@
+import type { ApplicationErrorContext } from 'src/core/errors/application-error';
+
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import Decimal from 'decimal.js';
 import { err, ok, Result } from 'neverthrow';
@@ -141,7 +143,7 @@ export class ChangeRentalDetailsHandler implements ICommandHandler<
     adjustment: NonNullable<ChangeRentalDetailsPatch['manualPricingAdjustment']> | null;
     tenantUserId: string;
     operationTime: Date;
-    context: Record<string, unknown>;
+    context: ApplicationErrorContext;
   }): Result<AcceptedRentalPricingV3Snapshot, ChangeRentalDetailsError> {
     const snapshotEnvelope = { ...input.snapshot };
     delete snapshotEnvelope.manualPricingAdjustment;
@@ -203,7 +205,7 @@ export class ChangeRentalDetailsHandler implements ICommandHandler<
     tenantId: string;
     snapshot: AcceptedRentalPricingV3Snapshot;
     insuranceSelected: boolean;
-    context: Record<string, unknown>;
+    context: ApplicationErrorContext;
   }): Promise<Result<AcceptedRentalPricingV3Snapshot, ChangeRentalDetailsError>> {
     const composition = await this.pricingCalculation.calculateInsuranceForEquipmentPrice({
       tenantId: input.tenantId,
@@ -261,13 +263,13 @@ export class ChangeRentalDetailsHandler implements ICommandHandler<
   private error(
     code: ChangeRentalDetailsError['code'],
     message: string,
-    context: Record<string, unknown>,
+    context: ApplicationErrorContext,
     cause?: unknown,
   ) {
     return changeRentalDetailsError(code, message, cause, context);
   }
 
-  private versionConflict(rentalId: string, context: Record<string, unknown>) {
+  private versionConflict(rentalId: string, context: ApplicationErrorContext) {
     return this.error(
       'rental_commitment.rental_version_conflict',
       `Rental "${rentalId}" was modified by another request.`,
@@ -275,7 +277,7 @@ export class ChangeRentalDetailsHandler implements ICommandHandler<
     );
   }
 
-  private map(error: unknown, context: Record<string, unknown>): ChangeRentalDetailsError {
+  private map(error: unknown, context: ApplicationErrorContext): ChangeRentalDetailsError {
     if (error instanceof RentalCannotBeEditedFromStatusError)
       return this.error('rental_commitment.rental_cannot_be_edited_from_status', error.message, context, error);
     if (error instanceof RentalPeriodHasEndedError)

@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { err, ok, Result } from 'neverthrow';
 
 import { PrismaService } from 'src/core/database/prisma.service';
+import { Prisma } from 'src/generated/prisma/client';
 
 import {
   GetTenantNotificationPreferencesInput,
@@ -13,7 +14,6 @@ import {
 } from './tenant-notification-preferences.public-api';
 import {
   TenantConfig,
-  TenantConfigProps,
   TenantOrderCommunicationMode as TenantConfigOrderCommunicationMode,
 } from '../domain/value-objects/tenant-config.value-object';
 
@@ -49,9 +49,9 @@ export class TenantNotificationPreferencesService extends TenantNotificationPref
     });
   }
 
-  private reconstituteTenantConfig(config: unknown): TenantConfig | null {
+  private reconstituteTenantConfig(config: Prisma.JsonValue): TenantConfig | null {
     try {
-      return TenantConfig.reconstitute(config as TenantConfigProps);
+      return TenantConfig.reconstitute(config);
     } catch {
       return null;
     }

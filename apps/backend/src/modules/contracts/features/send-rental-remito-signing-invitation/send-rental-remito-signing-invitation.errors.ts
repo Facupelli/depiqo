@@ -1,4 +1,4 @@
-import { ApplicationError } from 'src/core/errors/application-error';
+import { ApplicationError, ApplicationErrorContext } from 'src/core/errors/application-error';
 
 export type SendRentalRemitoSigningInvitationErrorCode =
   | 'document_signing.order_not_found'
@@ -16,7 +16,7 @@ export function sendRentalRemitoSigningInvitationError(
   code: SendRentalRemitoSigningInvitationErrorCode,
   message: string,
   cause?: unknown,
-  context?: Record<string, unknown>,
+  context?: ApplicationErrorContext,
 ): SendRentalRemitoSigningInvitationError {
   return { code, message, cause, context };
 }

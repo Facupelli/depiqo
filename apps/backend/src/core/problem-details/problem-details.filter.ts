@@ -16,13 +16,13 @@ interface ResponseWithLoggingError extends Response {
 export class ProblemDetailsFilter implements ExceptionFilter {
   constructor(private readonly isProduction = false) {}
 
-  catch(exception: unknown, host: ArgumentsHost): void {
+  catch(error: unknown, host: ArgumentsHost): void {
     const context = host.switchToHttp();
     const request = context.getRequest<Request>();
     const response = context.getResponse<ResponseWithLoggingError>();
     const instance = request.originalUrl || request.url;
 
-    const resolvedProblem = resolveExceptionProblem(exception, instance);
+    const resolvedProblem = resolveExceptionProblem(error, instance);
     const body = this.withResponseDefaults(resolvedProblem.problemDetails, {
       status: resolvedProblem.status,
       instance,
@@ -30,7 +30,7 @@ export class ProblemDetailsFilter implements ExceptionFilter {
     });
 
     const logInformation = buildProblemLogInformation({
-      exception,
+      error,
       status: resolvedProblem.status,
       problemDetails: body,
       kind: resolvedProblem.kind,
@@ -60,7 +60,9 @@ export class ProblemDetailsFilter implements ExceptionFilter {
       ...problemDetails,
       status: defaults.status,
       instance: problemDetails.instance ?? defaults.instance,
-      requestId: problemDetails.requestId ?? defaults.requestId,
+      ...(problemDetails.requestId === undefined && defaults.requestId === undefined
+        ? {}
+        : { requestId: problemDetails.requestId ?? defaults.requestId }),
     };
   }
 }

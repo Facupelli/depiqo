@@ -1,4 +1,6 @@
 import Decimal from 'decimal.js';
+
+import { Prisma } from 'src/generated/prisma/client';
 import { err, ok, Result } from 'neverthrow';
 import { z } from 'zod';
 
@@ -62,7 +64,9 @@ export class AcceptedDeliverySnapshot extends JsonSnapshot {
     super(rawValue);
   }
 
-  static create(value: unknown): Result<AcceptedDeliverySnapshot, RentalCommitmentError> {
+  static create(
+    value: JsonValue | Prisma.JsonValue | Prisma.InputJsonValue,
+  ): Result<AcceptedDeliverySnapshot, RentalCommitmentError> {
     const parsed = snapshotSchema.safeParse(value);
     if (!parsed.success) {
       const issue = parsed.error.issues[0];
@@ -103,7 +107,7 @@ export class AcceptedDeliverySnapshot extends JsonSnapshot {
   }
 }
 
-function toJsonValue(value: unknown): JsonValue {
+function toJsonValue(value: JsonValue | undefined): JsonValue {
   if (value === null || typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean')
     return value;
   if (Array.isArray(value)) return value.map(toJsonValue);

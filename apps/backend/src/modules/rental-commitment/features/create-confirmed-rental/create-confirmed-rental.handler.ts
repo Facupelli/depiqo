@@ -1,3 +1,5 @@
+import type { ApplicationErrorContext } from 'src/core/errors/application-error';
+
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { err, ok, Result } from 'neverthrow';
 
@@ -197,20 +199,23 @@ export class CreateConfirmedRentalService implements ICommandHandler<
     };
 
     const deliveryDetails = command.deliveryDetails;
-    const prospectiveResult =
-      command.fulfillmentMethod === FulfillmentMethod.Pickup
-        ? await this.prospectiveRentalCost.calculate({ fulfillmentMethod: 'PICKUP', pricing: pricingRequest })
-        : deliveryDetails
-          ? await this.prospectiveRentalCost.calculate({
-              fulfillmentMethod: 'DELIVERY',
-              pricing: pricingRequest,
-              branchId: command.branchId,
-              customerLocation: {
-                address: deliveryDetails.address,
-                locationId: deliveryDetails.locationId,
-              },
-            })
-          : null;
+    let prospectiveResult: Awaited<ReturnType<ProspectiveRentalCostService['calculate']>> | null = null;
+    if (command.fulfillmentMethod === FulfillmentMethod.Pickup) {
+      prospectiveResult = await this.prospectiveRentalCost.calculate({
+        fulfillmentMethod: 'PICKUP',
+        pricing: pricingRequest,
+      });
+    } else if (deliveryDetails) {
+      prospectiveResult = await this.prospectiveRentalCost.calculate({
+        fulfillmentMethod: 'DELIVERY',
+        pricing: pricingRequest,
+        branchId: command.branchId,
+        customerLocation: {
+          address: deliveryDetails.address,
+          locationId: deliveryDetails.locationId,
+        },
+      });
+    }
 
     if (!prospectiveResult) {
       return err(
@@ -266,6 +271,7 @@ export class CreateConfirmedRentalService implements ICommandHandler<
       clampStartAt: participationTiming.blockOperationTime,
     });
 
+    // SAFETY: This value comes from a persisted or already validated non-empty domain identifier; the brand adds no runtime representation.
     const assetAssignmentPlan = await this.rentalAssetAllocation.planAllocations({
       tenantId: command.tenantId,
       branchId: command.branchId,
@@ -305,6 +311,7 @@ export class CreateConfirmedRentalService implements ICommandHandler<
 
     try {
       return await this.unitOfWork.runInTransaction(async ({ tx, integrationEvents }) => {
+        // SAFETY: This value comes from a persisted or already validated non-empty domain identifier; the brand adds no runtime representation.
         const rental = Rental.createConfirmed({
           tenantId: command.tenantId,
           rentalNumber: await this.rentalNumberAllocator.allocate(command.tenantId, tx),
@@ -449,7 +456,7 @@ export class CreateConfirmedRentalService implements ICommandHandler<
   private resolveReplayResult(
     replay: { id: string; rentalNumber: number; confirmationFingerprint: string | null },
     operation: ConfirmationOperationPersistence,
-    context: Record<string, unknown>,
+    context: ApplicationErrorContext,
   ): CreateConfirmedRentalServiceResult {
     if (replay.confirmationFingerprint !== operation.fingerprint) {
       return err(
@@ -465,7 +472,7 @@ export class CreateConfirmedRentalService implements ICommandHandler<
     return ok({ rentalId: replay.id, rentalNumber: replay.rentalNumber });
   }
 
-  private toApplicationError(error: unknown, context: Record<string, unknown>): CreateConfirmedRentalError {
+  private toApplicationError(error: unknown, context: ApplicationErrorContext): CreateConfirmedRentalError {
     if (isCatalogSelectionError(error)) {
       switch (error.code) {
         case 'EmptySelection':
@@ -489,7 +496,7 @@ export class CreateConfirmedRentalService implements ICommandHandler<
             error,
             {
               ...context,
-              rentalOfferId: error.context?.rentalOfferId,
+              ...(error.context?.rentalOfferId === undefined ? {} : { rentalOfferId: error.context.rentalOfferId }),
             },
           );
         case 'RentalOfferNotFound':
@@ -498,7 +505,7 @@ export class CreateConfirmedRentalService implements ICommandHandler<
         case 'RentableItemNotActive':
           return createConfirmedRentalError('rental_commitment.catalog_selection_unavailable', error.message, error, {
             ...context,
-            rentalOfferId: error.context?.rentalOfferId,
+            ...(error.context?.rentalOfferId === undefined ? {} : { rentalOfferId: error.context.rentalOfferId }),
           });
         case 'InvalidFulfillmentDefinition':
           return createConfirmedRentalError(
@@ -518,7 +525,7 @@ export class CreateConfirmedRentalService implements ICommandHandler<
     if (error instanceof RentalOfferNotRentableError || error instanceof RentableItemNotActiveError) {
       return createConfirmedRentalError('rental_commitment.catalog_selection_unavailable', error.message, error, {
         ...context,
-        rentalOfferId: error instanceof RentalOfferNotRentableError ? error.rentalOfferId : undefined,
+        ...(error instanceof RentalOfferNotRentableError ? { rentalOfferId: error.rentalOfferId } : {}),
       });
     }
     if (error instanceof InvalidFulfillmentDefinitionError) {

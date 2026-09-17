@@ -1,4 +1,4 @@
-import { ApplicationError } from 'src/core/errors/application-error';
+import { ApplicationError, ApplicationErrorContext } from 'src/core/errors/application-error';
 
 export type UpdatePromotionErrorCode =
   | 'pricing.promotion_not_found'
@@ -13,7 +13,7 @@ export function updatePromotionError(
   code: UpdatePromotionErrorCode,
   message: string,
   cause?: unknown,
-  context?: Record<string, unknown>,
+  context?: ApplicationErrorContext,
 ): UpdatePromotionError {
   return { code, message, cause, context };
 }

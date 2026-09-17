@@ -1,4 +1,4 @@
-import { ApplicationError } from 'src/core/errors/application-error';
+import { ApplicationError, ApplicationErrorContext } from 'src/core/errors/application-error';
 
 export type ReplaceRentalDemandLineAccessoriesErrorCode =
   | 'rental_commitment.rental_not_found'
@@ -19,7 +19,7 @@ export function replaceRentalDemandLineAccessoriesError(
   code: ReplaceRentalDemandLineAccessoriesErrorCode,
   message: string,
   cause?: unknown,
-  context?: Record<string, unknown>,
+  context?: ApplicationErrorContext,
 ): ReplaceRentalDemandLineAccessoriesError {
   return { code, message, cause, context };
 }

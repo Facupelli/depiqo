@@ -13,6 +13,7 @@ describe('BranchFactsService timezone resolution', () => {
       })),
     );
 
+    // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
     return {
       service: new BranchFactsService({ client: { v2Branch: { findMany } } } as never),
       findMany,

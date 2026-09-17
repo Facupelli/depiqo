@@ -1,3 +1,5 @@
+import type { ApplicationErrorContext } from 'src/core/errors/application-error';
+
 import { Result } from 'neverthrow';
 
 export interface ValidateCatalogRentalOfferReferenceInput {
@@ -10,7 +12,7 @@ export class CatalogRentalOfferReferenceAuthorityError extends Error {
 
   constructor(
     message: string,
-    public readonly context?: Record<string, unknown>,
+    public readonly context?: ApplicationErrorContext,
   ) {
     super(message);
     this.name = 'CatalogRentalOfferReferenceAuthorityError';

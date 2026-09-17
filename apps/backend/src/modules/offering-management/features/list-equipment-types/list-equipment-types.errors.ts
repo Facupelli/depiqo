@@ -1,4 +1,4 @@
-import { ApplicationError } from 'src/core/errors/application-error';
+import { ApplicationError, ApplicationErrorContext } from 'src/core/errors/application-error';
 
 export type ListEquipmentTypesErrorCode = 'offering_management.equipment_types.branch_not_found';
 
@@ -10,7 +10,7 @@ export function listEquipmentTypesError(
   code: ListEquipmentTypesErrorCode,
   message: string,
   cause?: unknown,
-  context?: Record<string, unknown>,
+  context?: ApplicationErrorContext,
 ): ListEquipmentTypesError {
   return { code, message, cause, context };
 }

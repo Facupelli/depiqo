@@ -1,7 +1,11 @@
 import { Readable } from 'node:stream';
-import { ReadableStream } from 'node:stream/web';
-
-import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import {
+  DeleteObjectCommand,
+  GetObjectCommand,
+  GetObjectCommandOutput,
+  PutObjectCommand,
+  S3Client,
+} from '@aws-sdk/client-s3';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
@@ -16,10 +20,6 @@ import {
 
 interface BodyWithByteArray {
   transformToByteArray(): Promise<Uint8Array>;
-}
-
-interface BodyWithWebStream {
-  transformToWebStream(): ReadableStream;
 }
 
 @Injectable()
@@ -123,7 +123,7 @@ export class R2ObjectStorageAdapter extends ObjectStoragePort {
     );
   }
 
-  private async toBuffer(body: unknown): Promise<Buffer> {
+  private async toBuffer(body: GetObjectCommandOutput['Body']): Promise<Buffer> {
     if (!body) {
       throw new Error('Object storage response body is empty');
     }
@@ -148,14 +148,10 @@ export class R2ObjectStorageAdapter extends ObjectStoragePort {
       return Buffer.from(await body.transformToByteArray());
     }
 
-    if (this.hasTransformToWebStream(body)) {
-      return this.readReadable(Readable.fromWeb(body.transformToWebStream()));
-    }
-
     throw new Error('Unsupported object storage response body type');
   }
 
-  private async toReadable(body: unknown): Promise<Readable> {
+  private async toReadable(body: GetObjectCommandOutput['Body']): Promise<Readable> {
     if (!body) {
       throw new Error('Object storage response body is empty');
     }
@@ -164,28 +160,15 @@ export class R2ObjectStorageAdapter extends ObjectStoragePort {
       return body;
     }
 
-    if (this.hasTransformToWebStream(body)) {
-      return Readable.fromWeb(body.transformToWebStream());
-    }
-
     return Readable.from([await this.toBuffer(body)]);
   }
 
   private hasTransformToByteArray(value: unknown): value is BodyWithByteArray {
-    return this.hasFunction(value, 'transformToByteArray');
-  }
-
-  private hasTransformToWebStream(value: unknown): value is BodyWithWebStream {
-    return this.hasFunction(value, 'transformToWebStream');
-  }
-
-  private hasFunction<T extends string>(value: unknown, key: T): value is Record<T, (...args: never[]) => unknown> {
     if (!value || typeof value !== 'object') {
       return false;
     }
 
-    const record = value as Record<string, unknown>;
-    return key in record && typeof record[key] === 'function';
+    return 'transformToByteArray' in value && typeof value.transformToByteArray === 'function';
   }
 
   private async readReadable(stream: Readable): Promise<Buffer> {

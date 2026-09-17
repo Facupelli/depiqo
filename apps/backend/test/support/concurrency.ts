@@ -4,7 +4,7 @@ export type BarrierOptions = {
 
 export type Barrier = {
   wait(): Promise<void>;
-  abort(reason?: unknown): void;
+  abort(reason?: Error): void;
 };
 
 const DEFAULT_BARRIER_TIMEOUT_MS = 5_000;
@@ -115,9 +115,6 @@ export async function runConcurrently<T>(
   return Promise.allSettled(tasks);
 }
 
-function toBarrierAbortError(reason: unknown): Error {
-  if (reason instanceof Error) return reason;
-  if (reason === undefined) return new Error('Concurrency barrier aborted.');
-
-  return new Error(`Concurrency barrier aborted: ${String(reason)}`);
+function toBarrierAbortError(reason: Error | undefined): Error {
+  return reason ?? new Error('Concurrency barrier aborted.');
 }

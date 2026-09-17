@@ -19,6 +19,7 @@ describe('RetainedRentalCustomerProfileFactsService', () => {
   function createService(record: typeof customer | null) {
     const findFirst = jest.fn().mockResolvedValue(record);
 
+    // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
     return {
       service: new RetainedRentalCustomerProfileFactsService({ client: { v2RentalCustomer: { findFirst } } } as never),
       findFirst,

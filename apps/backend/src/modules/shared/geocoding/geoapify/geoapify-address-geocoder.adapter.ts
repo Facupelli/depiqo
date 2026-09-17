@@ -7,27 +7,10 @@ import {
   SearchAddressesInput,
 } from '../address-geocoder.port';
 import { GeocodedLocation } from '../geocoded-location';
-import { GeoapifyGeocodingHttpClient } from './geoapify-geocoding-http.client';
+import { GeoapifyGeocodingHttpClient, GeoapifyJsonValue } from './geoapify-geocoding-http.client';
 
-interface GeoapifyGeocodingResult {
-  address_line1?: unknown;
-  address_line2?: unknown;
-  housenumber?: unknown;
-  street?: unknown;
-  city?: unknown;
-  state?: unknown;
-  postcode?: unknown;
-  country?: unknown;
-  lon?: unknown;
-  lat?: unknown;
-  formatted?: unknown;
-  result_type?: unknown;
-  place_id?: unknown;
-}
-
-interface GeoapifyPlaceDetailsFeature {
-  properties?: unknown;
-}
+type GeoapifyGeocodingResult = Record<string, GeoapifyJsonValue>;
+type GeoapifyPlaceDetailsFeature = Record<string, GeoapifyJsonValue>;
 
 @Injectable()
 export class GeoapifyAddressGeocoderAdapter extends AddressGeocoder {
@@ -67,15 +50,15 @@ export class GeoapifyAddressGeocoderAdapter extends AddressGeocoder {
     return this.toLocation(feature.properties, input.locationId);
   }
 
-  private readResults(body: unknown): GeoapifyGeocodingResult[] {
+  private readResults(body: GeoapifyJsonValue): GeoapifyGeocodingResult[] {
     if (!this.isRecord(body) || !Array.isArray(body.results)) {
       throw this.httpClient.malformedResponse('results must be an array.');
     }
 
-    return body.results as GeoapifyGeocodingResult[];
+    return body.results.filter((result): result is GeoapifyGeocodingResult => this.isRecord(result));
   }
 
-  private readDetailsFeature(body: unknown): GeoapifyPlaceDetailsFeature | null {
+  private readDetailsFeature(body: GeoapifyJsonValue): GeoapifyPlaceDetailsFeature | null {
     if (!this.isRecord(body) || !Array.isArray(body.features)) {
       throw this.httpClient.malformedResponse('features must be an array.');
     }
@@ -144,7 +127,7 @@ export class GeoapifyAddressGeocoderAdapter extends AddressGeocoder {
     };
   }
 
-  private optionalString(value: unknown): string | undefined {
+  private optionalString(value: GeoapifyJsonValue | undefined): string | undefined {
     return typeof value === 'string' && value.trim() !== '' ? value.trim() : undefined;
   }
 
@@ -156,7 +139,7 @@ export class GeoapifyAddressGeocoderAdapter extends AddressGeocoder {
     return typeof value === 'number' && Number.isFinite(value) && value >= -90 && value <= 90;
   }
 
-  private isRecord(value: unknown): value is Record<string, unknown> {
+  private isRecord(value: unknown): value is Record<string, GeoapifyJsonValue> {
     return typeof value === 'object' && value !== null;
   }
 }

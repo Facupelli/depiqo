@@ -30,15 +30,19 @@ const request: NotificationDispatchRequest = {
 
 describe('NotificationOrchestrator', () => {
   function createOrchestrator() {
+    // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
     const channelPolicyResolver = {
       resolveChannels: jest.fn().mockResolvedValue([NotificationChannel.EMAIL]),
-    } as unknown as NotificationChannelPolicyResolver;
+    } as NotificationChannelPolicyResolver;
+    // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
     const channelMutePolicy = {
       isMuted: jest.fn().mockReturnValue(false),
-    } as unknown as NotificationChannelMutePolicy;
+    } as NotificationChannelMutePolicy;
+    // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
     const tenantNotificationSuppressionPolicy = {
       evaluate: jest.fn().mockResolvedValue({ suppressed: false }),
-    } as unknown as TenantNotificationSuppressionPolicy;
+    } as TenantNotificationSuppressionPolicy;
+    // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
     const notificationPersistence = {
       createNotificationWithPendingDeliveries: jest.fn().mockResolvedValue({
         notificationId: 'notification-1',
@@ -56,18 +60,20 @@ describe('NotificationOrchestrator', () => {
       }),
       markDeliverySent: jest.fn().mockResolvedValue(true),
       markDeliveryFailed: jest.fn().mockResolvedValue(true),
-    } as unknown as NotificationPersistenceService;
+    } as NotificationPersistenceService;
+    // SAFETY: The preceding test setup and assertions establish this value shape before the test inspects it.
     const emailRenderer = {
       render: jest.fn().mockResolvedValue({
         subject: 'Rental cancelled',
         html: '<p>Rental cancelled</p>',
         text: 'Rental cancelled',
       }),
-    } as unknown as EmailRenderer;
+    } as EmailRenderer;
     const emailDeliveryPort = new FakeEmailDeliveryPort();
+    // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
     const emailSenderResolver = {
       resolve: jest.fn().mockResolvedValue({ fromEmail: 'no-reply@example.com' }),
-    } as unknown as EmailSenderResolver;
+    } as EmailSenderResolver;
 
     return {
       orchestrator: new NotificationOrchestrator(

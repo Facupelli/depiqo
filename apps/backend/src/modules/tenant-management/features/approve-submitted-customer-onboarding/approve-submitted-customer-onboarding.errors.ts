@@ -1,4 +1,4 @@
-import { ApplicationError } from 'src/core/errors/application-error';
+import { ApplicationError, ApplicationErrorContext } from 'src/core/errors/application-error';
 
 export type ApproveSubmittedCustomerOnboardingErrorCode =
   | 'tenant_management.rental_customer_not_found'
@@ -13,7 +13,7 @@ export function approveSubmittedCustomerOnboardingError(
   code: ApproveSubmittedCustomerOnboardingErrorCode,
   message: string,
   cause?: unknown,
-  context?: Record<string, unknown>,
+  context?: ApplicationErrorContext,
 ): ApproveSubmittedCustomerOnboardingError {
   return { code, message, cause, context };
 }

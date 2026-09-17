@@ -1,4 +1,4 @@
-import { ApplicationError } from 'src/core/errors/application-error';
+import { ApplicationError, ApplicationErrorContext } from 'src/core/errors/application-error';
 
 export type GetEquipmentTypeAccessoryDefaultsErrorCode = 'asset_inventory.equipment_type_not_found';
 
@@ -10,7 +10,7 @@ export function getEquipmentTypeAccessoryDefaultsError(
   code: GetEquipmentTypeAccessoryDefaultsErrorCode,
   message: string,
   cause?: unknown,
-  context?: Record<string, unknown>,
+  context?: ApplicationErrorContext,
 ): GetEquipmentTypeAccessoryDefaultsError {
   return { code, message, cause, context };
 }

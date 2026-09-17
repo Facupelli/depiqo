@@ -1,4 +1,4 @@
-import { ApplicationError } from 'src/core/errors/application-error';
+import { ApplicationError, ApplicationErrorContext } from 'src/core/errors/application-error';
 
 export type CreateEquipmentErrorCode =
   | 'offering_setup.tenant_unavailable'
@@ -18,7 +18,7 @@ export function createEquipmentError(
   code: CreateEquipmentErrorCode,
   message: string,
   cause?: unknown,
-  context?: Record<string, unknown>,
+  context?: ApplicationErrorContext,
 ): CreateEquipmentError {
   return { code, message, cause, context };
 }

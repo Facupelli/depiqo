@@ -440,6 +440,7 @@ export class Rental extends AggregateRootBase {
   }
 
   static createPending(props: CreatePendingRentalProps): Result<Rental, RentalCommitmentError> {
+    // SAFETY: randomUUID() always returns a non-empty UUID string, which satisfies this opaque identifier brand.
     const rentalId = props.id ?? (randomUUID() as RentalId);
 
     const selections = this.createSelections(rentalId, props.tenantId, props.selections);
@@ -464,6 +465,7 @@ export class Rental extends AggregateRootBase {
   }
 
   static createDraft(props: CreateDraftRentalProps): Result<Rental, RentalCommitmentError> {
+    // SAFETY: randomUUID() always returns a non-empty UUID string, which satisfies this opaque identifier brand.
     const rentalId = props.id ?? (randomUUID() as RentalId);
 
     const selections = this.createSelections(rentalId, props.tenantId, props.selections);
@@ -516,6 +518,7 @@ export class Rental extends AggregateRootBase {
       .plus(acceptedDelivery?.snapshot.deliveryTotal ?? 0)
       .toString();
 
+    // SAFETY: randomUUID() always returns a non-empty UUID string, which satisfies this opaque identifier brand.
     const rentalId = props.id ?? (randomUUID() as RentalId);
 
     const selections = this.createSelections(rentalId, props.tenantId, props.selections);
@@ -1948,6 +1951,7 @@ export class Rental extends AggregateRootBase {
     status: RentalStatus,
     props: CreateRentalFromEntitiesProps,
   ): Result<Rental, RentalCommitmentError> {
+    // SAFETY: randomUUID() always returns a non-empty UUID string, which satisfies this opaque identifier brand.
     const id = props.id ?? (randomUUID() as RentalId);
 
     const fieldValidation = this.validateRequiredFields(props);

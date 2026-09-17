@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { err, ok, Result } from 'neverthrow';
 
-import { ApplicationError } from 'src/core/errors/application-error';
+import { ApplicationError, ApplicationErrorContext } from 'src/core/errors/application-error';
 import { AssetInventoryDisplayFacts } from 'src/modules/asset-inventory/public-api/asset-inventory-display-facts.public-api';
 import {
   CatalogSelectionResolution,
@@ -130,7 +130,7 @@ export class DraftRentalProposalResolver {
     const context = {
       tenantId: input.tenantId,
       branchId: input.branchId,
-      rentalCustomerId: input.rentalCustomerId,
+      ...(input.rentalCustomerId === undefined ? {} : { rentalCustomerId: input.rentalCustomerId }),
     };
 
     const operationalFacts = await this.rentalOperationalFacts.validateDraftFacts({
@@ -201,17 +201,20 @@ export class DraftRentalProposalResolver {
         : undefined,
     };
 
-    const prospectiveResult =
-      input.fulfillmentMethod === FulfillmentMethod.Pickup
-        ? await this.prospectiveRentalCost.calculate({ fulfillmentMethod: 'PICKUP', pricing: pricingRequest })
-        : input.deliveryDestination
-          ? await this.prospectiveRentalCost.calculate({
-              fulfillmentMethod: 'DELIVERY',
-              pricing: pricingRequest,
-              branchId: input.branchId,
-              customerLocation: toCustomerLocationSelection(input.deliveryDestination),
-            })
-          : null;
+    let prospectiveResult: Awaited<ReturnType<ProspectiveRentalCostService['calculate']>> | null = null;
+    if (input.fulfillmentMethod === FulfillmentMethod.Pickup) {
+      prospectiveResult = await this.prospectiveRentalCost.calculate({
+        fulfillmentMethod: 'PICKUP',
+        pricing: pricingRequest,
+      });
+    } else if (input.deliveryDestination) {
+      prospectiveResult = await this.prospectiveRentalCost.calculate({
+        fulfillmentMethod: 'DELIVERY',
+        pricing: pricingRequest,
+        branchId: input.branchId,
+        customerLocation: toCustomerLocationSelection(input.deliveryDestination),
+      });
+    }
 
     if (!prospectiveResult) {
       return err(
@@ -239,6 +242,7 @@ export class DraftRentalProposalResolver {
       rentableItemKindSnapshot: selection.rentableItemKindSnapshot,
       quantity: selection.quantity,
     }));
+    // SAFETY: This value comes from a persisted or already validated non-empty domain identifier; the brand adds no runtime representation.
     const demandLines: ResolvedDraftRentalDemandLine[] = selectionsWithRequirements.flatMap((selection) =>
       selection.fulfillmentRequirements.map((requirement) => ({
         id: RentalDemandLineId.create(),
@@ -274,7 +278,7 @@ export class DraftRentalProposalResolver {
     });
   }
 
-  private toResolutionError(error: unknown, context: Record<string, unknown>): DraftRentalProposalResolutionError {
+  private toResolutionError(error: unknown, context: ApplicationErrorContext): DraftRentalProposalResolutionError {
     if (error instanceof CatalogSelectionResolutionError) {
       switch (error.code) {
         case 'EmptySelection':
@@ -284,7 +288,7 @@ export class DraftRentalProposalResolver {
         case 'DuplicateRentalOfferSelection':
           return resolutionError('rental_commitment.duplicate_rental_offer_selection', error, {
             ...context,
-            rentalOfferId: error.context?.rentalOfferId,
+            ...(error.context?.rentalOfferId === undefined ? {} : { rentalOfferId: error.context.rentalOfferId }),
           });
         case 'RentalOfferNotFound':
           return resolutionError('rental_commitment.rental_offer_not_found', error, context);
@@ -357,7 +361,7 @@ function toCustomerLocationSelection(input: DraftRentalDeliveryAuthoringInput): 
 function resolutionError(
   code: DraftRentalProposalResolutionErrorCode,
   cause: Error,
-  context: Record<string, unknown>,
+  context: ApplicationErrorContext,
 ): DraftRentalProposalResolutionError {
   return { code, message: cause.message, cause, context };
 }

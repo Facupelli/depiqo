@@ -45,7 +45,7 @@ export class InvalidNewArrivalsWindowDaysError extends TenantManagementError {
 }
 
 export class InvalidRentalAssetBufferMinutesError extends TenantManagementError {
-  constructor(field: 'beforeBufferMinutes' | 'afterBufferMinutes', value: unknown) {
+  constructor(field: 'beforeBufferMinutes' | 'afterBufferMinutes', value: number | undefined) {
     super(`${field} must be a finite non-negative integer, got ${String(value)}.`);
   }
 }
@@ -69,13 +69,13 @@ export class InvalidInsuranceRatePercentError extends TenantManagementError {
 }
 
 export class InvalidInsuranceLabelError extends TenantManagementError {
-  constructor(label: unknown) {
+  constructor(label: string) {
     super(`insuranceLabel must be a non-empty string of at most 80 characters, got ${String(label)}.`);
   }
 }
 
 export class InvalidInsuranceDescriptionError extends TenantManagementError {
-  constructor(description: unknown) {
+  constructor(description: string) {
     super(`insuranceDescription must be a non-empty string of at most 2000 characters, got ${String(description)}.`);
   }
 }

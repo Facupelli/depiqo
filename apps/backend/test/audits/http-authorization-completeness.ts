@@ -70,6 +70,28 @@ function joinRoutePath(controllerPath: string, methodPath: string): string {
   return [controllerPath, methodPath].filter(Boolean).join('/');
 }
 
+function resolveAuthorizationActor(
+  actors: readonly string[],
+  guards: readonly string[],
+  classification: Classification,
+  controller: string,
+): string {
+  if (actors.length > 0) return actors.join(', ');
+  if (
+    guards.some(
+      (guard) => guard.includes('TenantCustomerSessionGuard') || guard.includes('StorefrontTenantCustomerSessionGuard'),
+    )
+  ) {
+    return 'TENANT_CUSTOMER';
+  }
+  if (classification === 'PUBLIC') return 'PUBLIC';
+  if (classification === 'INTERNAL') return 'INTERNAL';
+  if (classification === 'EXEMPT' && (controller === 'GetCurrentUserController' || controller === 'LogoutController')) {
+    return 'AUTHENTICATED_ACTOR';
+  }
+  return 'TENANT_USER (global default)';
+}
+
 function classifyRoute(input: {
   controllerPath: string;
   classDecorators: ReturnType<typeof getDecorators>;
@@ -79,7 +101,7 @@ function classifyRoute(input: {
   controller: string;
   method: string;
   methodText: string;
-}): { classification: Classification; issues: string[] } {
+}) {
   const { controllerPath, classDecorators, methodDecorators, guards, authorization } = input;
   const issues: string[] = [];
   const classAuthorization = classDecorators.filter(({ name }) => authorizationDecorators.has(name));
@@ -122,13 +144,13 @@ function classifyRoute(input: {
   const declaration = authorization[0] ?? classAuthorization[0];
   if (!declaration) return { classification: 'MISSING', issues };
 
-  const classificationByDecorator: Record<string, Classification> = {
+  const classificationByDecorator = {
     RequirePermission: 'STATIC_ONE',
     RequireAnyPermission: 'STATIC_ANY',
     RequireAllPermissions: 'STATIC_ALL',
     ConditionalAuthorization: 'CONDITIONAL',
     AuthorizationExempt: 'EXEMPT',
-  };
+  } satisfies Record<string, Classification>;
   const classification = classificationByDecorator[declaration.name];
 
   if (classification === 'EXEMPT' && !expectedExemptRoutes.has(`${input.controller}.${input.method}`)) {
@@ -185,22 +207,7 @@ function auditControllers(): RouteAudit[] {
           methodText: member.getText(sourceFile),
         });
 
-        const actor = actors.length
-          ? actors.join(', ')
-          : guards.some(
-                (guard) =>
-                  guard.includes('TenantCustomerSessionGuard') ||
-                  guard.includes('StorefrontTenantCustomerSessionGuard'),
-              )
-            ? 'TENANT_CUSTOMER'
-            : classification === 'PUBLIC'
-              ? 'PUBLIC'
-              : classification === 'INTERNAL'
-                ? 'INTERNAL'
-                : classification === 'EXEMPT' &&
-                    (node.name.text === 'GetCurrentUserController' || node.name.text === 'LogoutController')
-                  ? 'AUTHENTICATED_ACTOR'
-                  : 'TENANT_USER (global default)';
+        const actor = resolveAuthorizationActor(actors, guards, classification, node.name.text);
 
         const permissionParts = authorization
           .filter(({ name }) => name.startsWith('Require'))

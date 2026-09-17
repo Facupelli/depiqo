@@ -10,6 +10,7 @@ describe('Rental selection and demand line local transitions', () => {
   const createdAt = new Date('2026-08-20T09:00:00.000Z');
   const removedAt = new Date('2026-08-21T09:00:00.000Z');
   const laterRemoval = new Date('2026-08-22T09:00:00.000Z');
+  // SAFETY: These stable fixture identifiers are non-empty and are used only as opaque domain identifiers in this test.
   const selectionId = 'selection-1' as RentalSelectionId;
 
   const selection = () =>
@@ -27,6 +28,7 @@ describe('Rental selection and demand line local transitions', () => {
       removedAt,
     });
 
+  // SAFETY: These stable fixture identifiers are non-empty and are used only as opaque domain identifiers in this test.
   const demandLine = () =>
     RentalDemandLine.reconstitute({
       id: 'demand-1' as RentalDemandLineId,
@@ -41,6 +43,7 @@ describe('Rental selection and demand line local transitions', () => {
       removedAt,
     });
 
+  // SAFETY: These stable fixture identifiers are non-empty and are used only as opaque domain identifiers in this test.
   const reconstituteDemandLine = (removedQuantity: number, lineRemovedAt?: Date) =>
     RentalDemandLine.reconstitute({
       id: 'demand-state' as RentalDemandLineId,
@@ -86,6 +89,7 @@ describe('Rental selection and demand line local transitions', () => {
   });
 
   it('creates demand lines as fully operational', () => {
+    // SAFETY: These stable fixture identifiers are non-empty and are used only as opaque domain identifiers in this test.
     const created = RentalDemandLine.create({
       tenantId: 'tenant-1',
       rentalId: 'rental-1',

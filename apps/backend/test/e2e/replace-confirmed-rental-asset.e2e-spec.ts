@@ -1,5 +1,7 @@
 import { randomUUID } from 'node:crypto';
 
+import type { ReplaceConfirmedRentalAssetBodyDto } from '@repo/api-contracts';
+
 import { PrismaService } from '../../src/core/database/prisma.service';
 import { PlatformProblemTypes, createProblemType } from '../../src/core/problem-details';
 import { ConfirmedRentalFixtures } from '../../src/modules/rental-commitment/testing/confirmed-rental.fixtures';
@@ -8,6 +10,10 @@ import { createE2ETestClient, E2ETestClient } from '../support/create-e2e-test-c
 import { createTestFixtures, TestFixtures } from '../support/fixtures';
 import { expectProblemResponse } from '../support/problem-response';
 import { utcDate } from '../support/time';
+
+type ReplaceConfirmedRentalAssetTestBody = Omit<ReplaceConfirmedRentalAssetBodyDto, 'expectedVersion'> & {
+  expectedVersion?: ReplaceConfirmedRentalAssetBodyDto['expectedVersion'];
+};
 
 describe('POST /rental-commitments/confirmed-rentals/:rentalId/assigned-assets/replace', () => {
   let testApp: E2ETestApp;
@@ -53,7 +59,10 @@ describe('POST /rental-commitments/confirmed-rentals/:rentalId/assigned-assets/r
     return client;
   }
 
-  function body(setup: Awaited<ReturnType<typeof scenario>>, overrides: Record<string, unknown> = {}) {
+  function body(
+    setup: Awaited<ReturnType<typeof scenario>>,
+    overrides: Partial<ReplaceConfirmedRentalAssetTestBody> = {},
+  ): ReplaceConfirmedRentalAssetTestBody {
     return {
       expectedVersion: setup.persisted.version,
       currentAssignedAssetId: setup.rental.assetIds[0],
@@ -143,7 +152,10 @@ describe('POST /rental-commitments/confirmed-rentals/:rentalId/assigned-assets/r
     const setup = await scenario();
     const before = await fixtures.persistedState(setup.rental.rentalId);
     const requestBody = body(setup, overrides);
-    if (overrides.expectedVersion === undefined) delete (requestBody as Record<string, unknown>).expectedVersion;
+    if ('expectedVersion' in overrides && overrides.expectedVersion === undefined) {
+      // SAFETY: body() returns a mutable request object whose keys are strings; this case intentionally removes the required field.
+      delete requestBody.expectedVersion;
+    }
     const client = await login(setup.user);
     const response = await client
       .withCsrf(

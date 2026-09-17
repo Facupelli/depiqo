@@ -1,4 +1,4 @@
-import { ApplicationError } from 'src/core/errors/application-error';
+import { ApplicationError, ApplicationErrorContext } from 'src/core/errors/application-error';
 
 export type CreatePromotionErrorCode = 'pricing.invalid_promotion_configuration' | 'pricing.duplicate_promotion_target';
 
@@ -10,7 +10,7 @@ export function createPromotionError(
   code: CreatePromotionErrorCode,
   message: string,
   cause?: unknown,
-  context?: Record<string, unknown>,
+  context?: ApplicationErrorContext,
 ): CreatePromotionError {
   return { code, message, cause, context };
 }

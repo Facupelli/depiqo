@@ -1,4 +1,4 @@
-import type { ApplicationError } from 'src/core/errors/application-error';
+import type { ApplicationError, ApplicationErrorContext } from 'src/core/errors/application-error';
 
 export type ManageTenantTeamErrorCode =
   | 'tenant_management.collaborator_not_found'
@@ -21,7 +21,7 @@ export function manageTenantTeamError(
   code: ManageTenantTeamErrorCode,
   message: string,
   cause?: unknown,
-  context?: Record<string, unknown>,
+  context?: ApplicationErrorContext,
 ): ManageTenantTeamError {
   return { code, message, cause, context };
 }

@@ -62,6 +62,7 @@ describe('ConfirmRental integration', () => {
       where: { id: tenantId },
       select: { config: true },
     });
+    // SAFETY: The fixture or preceding response assertions establish this object shape before these fields are inspected.
     await prisma.client.v2Tenant.update({
       where: { id: tenantId },
       data: {
@@ -544,6 +545,7 @@ describe('ConfirmRental integration', () => {
     if (rejectedOutcome) throw rejectedOutcome.reason;
 
     expect(outcomes.every((outcome) => outcome.status === 'fulfilled')).toBe(true);
+    // SAFETY: The preceding status assertion establishes that this Promise.allSettled result is fulfilled before its value is inspected.
     const results = outcomes.map((outcome) => (outcome as PromiseFulfilledResult<ConfirmRentalResult>).value);
     expect(results.filter((result) => result.isOk())).toHaveLength(1);
     expect(
@@ -586,6 +588,7 @@ describe('ConfirmRental integration', () => {
         () => confirm(scenario.tenant.id, scenario.rental.rentalId),
       ]);
       expect(outcomes.every((outcome) => outcome.status === 'fulfilled')).toBe(true);
+      // SAFETY: The preceding status assertion establishes that this Promise.allSettled result is fulfilled before its value is inspected.
       const results = outcomes.map((outcome) => (outcome as PromiseFulfilledResult<ConfirmRentalResult>).value);
       expect(results.filter((result) => result.isOk())).toHaveLength(1);
       expect(

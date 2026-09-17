@@ -1,4 +1,7 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
+import type { IncomingMessage } from 'node:http';
+
+import type { ApplicationErrorContext } from 'src/core/errors/application-error';
 
 export interface ProblemLogContext {
   kind: string;
@@ -7,11 +10,11 @@ export interface ProblemLogContext {
   detail: string;
   code?: string | number;
   errorCode?: string;
-  metadata?: Record<string, unknown>;
+  metadata?: ApplicationErrorContext;
   application?: {
     code: string;
     message: string;
-    context?: Record<string, unknown>;
+    context?: ApplicationErrorContext;
   };
 }
 
@@ -34,7 +37,7 @@ export interface RequestLogContext {
 
 export const REQUEST_LOG_CONTEXT = Symbol('depiqo.requestLogContext');
 
-interface RequestWithLogContext {
+interface RequestWithLogContext extends IncomingMessage {
   [REQUEST_LOG_CONTEXT]?: RequestLogContext;
 }
 
@@ -49,12 +52,12 @@ export class LogContext {
     store.run(log, fn);
   }
 
-  static attach(request: object, log: RequestLogContext): void {
-    (request as RequestWithLogContext)[REQUEST_LOG_CONTEXT] = log;
+  static attach(request: RequestWithLogContext, log: RequestLogContext): void {
+    request[REQUEST_LOG_CONTEXT] = log;
   }
 
-  static forRequest(request: object): RequestLogContext | undefined {
-    return (request as RequestWithLogContext)[REQUEST_LOG_CONTEXT];
+  static forRequest(request: RequestWithLogContext): RequestLogContext | undefined {
+    return request[REQUEST_LOG_CONTEXT];
   }
 
   static set<K extends keyof RequestLogContext>(key: K, value: RequestLogContext[K]): void {

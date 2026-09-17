@@ -1,4 +1,5 @@
 import { isValidBufferMinutes } from 'src/core/domain/rental-asset-buffer';
+import { Prisma } from 'src/generated/prisma/client';
 
 import {
   InvalidBookingModeError,
@@ -41,7 +42,7 @@ export type TenantOrderCommunicationMode =
 
 export type TenantNotificationChannel = 'EMAIL';
 
-export interface TenantPricingConfigProps {
+export type TenantPricingConfigProps = {
   overRentalEnabled: boolean;
   maxOverRentThreshold: number;
   weekendCountsAsOne: boolean;
@@ -52,24 +53,24 @@ export interface TenantPricingConfigProps {
   insuranceRatePercent: number;
   insuranceLabel: string;
   insuranceDescription: string;
-}
+};
 
-export interface TenantNotificationsConfigProps {
+export type TenantNotificationsConfigProps = {
   enabledChannels: TenantNotificationChannel[];
-}
+};
 
-export interface TenantCommunicationConfigProps {
+export type TenantCommunicationConfigProps = {
   orderCommunicationMode: TenantOrderCommunicationMode;
   whatsAppNumber?: string;
   showFloatingWhatsAppButton: boolean;
-}
+};
 
-export interface TenantRentalAssetBufferConfigProps {
+export type TenantRentalAssetBufferConfigProps = {
   beforeBufferMinutes: number;
   afterBufferMinutes: number;
-}
+};
 
-export interface TenantConfigProps {
+export type TenantConfigProps = {
   pricing: TenantPricingConfigProps;
   notifications: TenantNotificationsConfigProps;
   communication: TenantCommunicationConfigProps;
@@ -77,7 +78,7 @@ export interface TenantConfigProps {
   timezone: string;
   newArrivalsWindowDays: number;
   bookingMode: TenantBookingMode;
-}
+};
 
 export type TenantConfigPatch = {
   pricing?: Partial<TenantPricingConfigProps>;
@@ -130,8 +131,10 @@ export class TenantConfig {
     return new TenantConfig(normalizedProps);
   }
 
-  static reconstitute(props: TenantConfigProps): TenantConfig {
-    const normalizedProps = TenantConfig.normalizeProps(props, TenantConfig.normalizePricingForReconstitution);
+  static reconstitute(props: Prisma.JsonValue): TenantConfig {
+    // SAFETY: Tenant configuration is loaded from the validated persisted configuration shape and normalized before any fields are consumed.
+    const configProps = props as TenantConfigProps;
+    const normalizedProps = TenantConfig.normalizeProps(configProps, TenantConfig.normalizePricingForReconstitution);
     TenantConfig.validateRentalAssetBuffer(normalizedProps.rentalAssetBuffer);
     return new TenantConfig(normalizedProps);
   }
@@ -295,7 +298,7 @@ export class TenantConfig {
 
   private static validateRentalAssetBufferMinutes(
     field: 'beforeBufferMinutes' | 'afterBufferMinutes',
-    value: unknown,
+    value: number,
   ): void {
     if (!isValidBufferMinutes(value)) {
       throw new InvalidRentalAssetBufferMinutesError(field, value);

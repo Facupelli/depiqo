@@ -2,9 +2,10 @@ import { Injectable } from '@nestjs/common';
 import { err, ok, Result } from 'neverthrow';
 
 import { PrismaService } from 'src/core/database/prisma.service';
+import { Prisma } from 'src/generated/prisma/client';
 
 import { BranchFact, BranchFacts, BranchFactsError } from './branch-facts.public-api';
-import { TenantConfig, TenantConfigProps } from '../domain/value-objects/tenant-config.value-object';
+import { TenantConfig } from '../domain/value-objects/tenant-config.value-object';
 import { resolveEffectiveTimezone } from '../domain/utils/effective-timezone';
 
 @Injectable()
@@ -79,13 +80,9 @@ export class BranchFactsService extends BranchFacts {
 
     try {
       return ok(
-        branches.map((branch) => ({
-          branchId: branch.id,
-          displayName: branch.name,
-          isActive: branch.isActive,
-          isDeleted: branch.deletedAt !== null,
-          effectiveTimezone: resolveEffectiveTimezone(branch.timezone, config!.timezone),
-          operationalLocation:
+        branches.map((branch) => {
+          const effectiveTimezone = resolveEffectiveTimezone(branch.timezone, config!.timezone);
+          const operationalLocation =
             branch.operationalLocationFormattedAddress !== null &&
             branch.operationalLocationLatitude !== null &&
             branch.operationalLocationLongitude !== null
@@ -101,11 +98,30 @@ export class BranchFactsService extends BranchFacts {
                   country: branch.operationalLocationCountry,
                   providerPlaceId: branch.operationalLocationProviderPlaceId,
                 }
-              : null,
-          branchTimezone: branch.timezone,
-          tenantTimezone: config!.timezone,
-          timezoneSource: branch.timezone?.trim() ? 'BRANCH' : config!.timezone?.trim() ? 'TENANT' : 'DEFAULT',
-        })),
+              : null;
+          const branchTimezone = branch.timezone;
+          const tenantTimezone = config!.timezone;
+          let timezoneSource: BranchFact['timezoneSource'];
+          if (branch.timezone?.trim()) {
+            timezoneSource = 'BRANCH';
+          } else if (config!.timezone?.trim()) {
+            timezoneSource = 'TENANT';
+          } else {
+            timezoneSource = 'DEFAULT';
+          }
+
+          return {
+            branchId: branch.id,
+            displayName: branch.name,
+            isActive: branch.isActive,
+            isDeleted: branch.deletedAt !== null,
+            effectiveTimezone,
+            operationalLocation,
+            branchTimezone,
+            tenantTimezone,
+            timezoneSource,
+          };
+        }),
       );
     } catch {
       return err({
@@ -119,9 +135,9 @@ export class BranchFactsService extends BranchFacts {
     return { code: 'BranchNotFound', message: `Branch "${branchId}" was not found.` };
   }
 
-  private reconstituteTenantConfig(config: unknown): TenantConfig | null {
+  private reconstituteTenantConfig(config: Prisma.JsonValue): TenantConfig | null {
     try {
-      return TenantConfig.reconstitute(config as TenantConfigProps);
+      return TenantConfig.reconstitute(config);
     } catch {
       return null;
     }

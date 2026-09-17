@@ -3,6 +3,7 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { TestingModule } from '@nestjs/testing';
 
 import { PrismaService } from 'src/core/database/prisma.service';
+import { Prisma } from 'src/generated/prisma/client';
 import { parsePostgresRange } from 'src/core/utils/postgres-range.util';
 import { ConfirmedRentalEditedIntegrationEvent } from '../../public-api/events/rental-lifecycle.integration-events';
 import {
@@ -14,6 +15,14 @@ import { utcDate } from '../../../../../test/support/time';
 import { ConfirmedRentalFixtures } from '../../testing/confirmed-rental.fixtures';
 import { AddRentalSelectionCommand } from './add-rental-selection.command';
 import { AddRentalSelectionResult } from './add-rental-selection.handler';
+
+function readPersistedJsonObject(value: Prisma.JsonValue | null): Prisma.JsonObject {
+  if (value === null || typeof value !== 'object' || Array.isArray(value)) {
+    throw new Error('Expected a persisted JSON object.');
+  }
+
+  return value;
+}
 
 describe('AddRentalSelection integration', () => {
   let moduleRef: TestingModule;
@@ -99,7 +108,7 @@ describe('AddRentalSelection integration', () => {
       period: { start: before.rental.periodStart, end: before.rental.periodEnd },
     });
     const accessoryBefore = await fixtures.accessoryState(setup.rental.rentalId);
-    const oldSnapshot = before.rental.priceSnapshot as Record<string, unknown>;
+    const oldSnapshot = readPersistedJsonObject(before.rental.priceSnapshot);
     await prisma.client.v2Rental.update({
       where: { id: setup.rental.rentalId },
       data: {
@@ -156,6 +165,7 @@ describe('AddRentalSelection integration', () => {
     expect(blockPeriod.start).toEqual(lightAssignment.effectiveFrom);
     expect(blockPeriod.end).toEqual(new Date(after.rental.periodEnd.getTime() + 15 * 60_000));
 
+    // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
     const priceSnapshot = after.rental.priceSnapshot as {
       final: { lines: Array<{ rentalSelectionId: string; chargedUnits: number }> };
       durationPolicySnapshot?: unknown;
@@ -251,12 +261,12 @@ describe('AddRentalSelection integration', () => {
         : { start: new Date(now - 60 * 60_000), end: new Date(now + 60 * 60_000) };
     const setup = await scenario(period);
     const before = await fixtures.persistedState(setup.rental.rentalId);
-    const overrides =
-      failure === 'duplicate offer'
-        ? { rentalOfferId: setup.camera.offer.id }
-        : failure === 'stale version'
-          ? { expectedVersion: before.rental.version + 1 }
-          : {};
+    let overrides: Partial<AddRentalSelectionCommand['props']> = {};
+    if (failure === 'duplicate offer') {
+      overrides = { rentalOfferId: setup.camera.offer.id };
+    } else if (failure === 'stale version') {
+      overrides = { expectedVersion: before.rental.version + 1 };
+    }
     const result = await add(setup, overrides);
     expect(result.isErr() && result.error.code).toBe(expectedCode);
     expect(await fixtures.persistedState(setup.rental.rentalId)).toEqual(before);

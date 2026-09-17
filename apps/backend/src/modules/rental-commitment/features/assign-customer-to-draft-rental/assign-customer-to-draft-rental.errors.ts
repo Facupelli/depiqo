@@ -1,4 +1,4 @@
-import { ApplicationError } from 'src/core/errors/application-error';
+import { ApplicationError, ApplicationErrorContext } from 'src/core/errors/application-error';
 
 export type AssignCustomerToDraftRentalErrorCode =
   | 'rental_commitment.rental_not_found'
@@ -17,7 +17,7 @@ export function assignCustomerToDraftRentalError(
   code: AssignCustomerToDraftRentalErrorCode,
   message: string,
   cause?: unknown,
-  context?: Record<string, unknown>,
+  context?: ApplicationErrorContext,
 ): AssignCustomerToDraftRentalError {
   return { code, message, cause, context };
 }

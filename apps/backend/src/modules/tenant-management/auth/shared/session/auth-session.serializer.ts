@@ -34,7 +34,7 @@ export class AuthSessionSerializer extends PassportSerializer {
 
       return done(null, false);
     } catch (error) {
-      return done(error as Error);
+      return done(error instanceof Error ? error : new Error(String(error)));
     }
   }
 

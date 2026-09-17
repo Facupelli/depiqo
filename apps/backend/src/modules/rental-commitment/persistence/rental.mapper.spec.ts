@@ -9,6 +9,7 @@ import { AssignedAssetOwnershipSnapshot } from '../domain/value-objects/assigned
 import { RentalMapper, RentalPersistenceRecord } from './rental.mapper';
 
 describe('RentalMapper demand-line persistence', () => {
+  // SAFETY: These stable fixture identifiers are non-empty and are used only as opaque domain identifiers in this test.
   const partialLine = RentalDemandLine.reconstitute({
     id: 'demand-1' as RentalDemandLineId,
     tenantId: 'tenant-1',
@@ -95,6 +96,7 @@ describe('RentalMapper demand-line persistence', () => {
 
 describe('RentalMapper assigned asset persistence', () => {
   it('preserves temporal fields, identity, and createdAt for delete-and-recreate persistence', () => {
+    // SAFETY: These stable fixture identifiers are non-empty and are used only as opaque domain identifiers in this test.
     const assignment = AssignedAsset.reconstitute({
       id: 'assignment-1' as AssignedAssetId,
       tenantId: 'tenant-1',

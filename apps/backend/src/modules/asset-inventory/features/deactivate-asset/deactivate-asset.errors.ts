@@ -1,4 +1,4 @@
-import { ApplicationError } from 'src/core/errors/application-error';
+import { ApplicationError, ApplicationErrorContext } from 'src/core/errors/application-error';
 
 export type DeactivateAssetErrorCode =
   | 'asset_inventory.asset_not_found'
@@ -12,5 +12,5 @@ export const deactivateAssetError = (
   code: DeactivateAssetErrorCode,
   message: string,
   cause?: unknown,
-  context?: Record<string, unknown>,
+  context?: ApplicationErrorContext,
 ): DeactivateAssetError => ({ code, message, cause, context });

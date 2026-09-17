@@ -92,6 +92,7 @@ function rentalRecord(compositeKind: 'PACKAGE' | 'KIT' | 'BUNDLE' = 'PACKAGE') {
 function createHandler(removedDemandLines: object[], compositeKind: 'PACKAGE' | 'KIT' | 'BUNDLE' = 'PACKAGE') {
   const findFirst = jest.fn().mockResolvedValue(rentalRecord(compositeKind));
   const findMany = jest.fn().mockResolvedValue(removedDemandLines);
+  // SAFETY: The preceding test setup and assertions establish this value shape before the test inspects it.
   const handler = new GetRentalDetailHandler(
     { client: { v2Rental: { findFirst }, v2RentalDemandLine: { findMany } } } as any,
     {

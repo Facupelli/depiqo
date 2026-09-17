@@ -1,7 +1,7 @@
 import { Prisma } from 'src/generated/prisma/client';
 
 import { Tenant } from '../../../domain/entities/tenant.aggregate';
-import { TenantConfig, TenantConfigProps } from '../../../domain/value-objects/tenant-config.value-object';
+import { TenantConfig } from '../../../domain/value-objects/tenant-config.value-object';
 
 type PrismaTenantWithBranding = Prisma.V2TenantGetPayload<{
   include: { branding: true };
@@ -19,14 +19,14 @@ export class TenantMapper {
       accentColor: raw.branding?.accentColor ?? null,
       storefrontName: raw.branding?.storefrontName ?? null,
       tagline: raw.branding?.tagline ?? null,
-      config: TenantConfig.reconstitute(raw.config as unknown as TenantConfigProps),
+      config: TenantConfig.reconstitute(raw.config),
       activeBillingUnitId: null,
     });
   }
 
   static toConfigUpdateData(entity: Tenant): Prisma.V2TenantUpdateInput {
     return {
-      config: entity.config.toPlainObject() as unknown as Prisma.InputJsonValue,
+      config: entity.config.toPlainObject(),
     };
   }
 

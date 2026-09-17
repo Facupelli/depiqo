@@ -89,6 +89,7 @@ export class GetRentalsCalendarHandler implements IQueryHandler<GetRentalsCalend
       const periodStart = new Date(rental.periodStart);
       const periodEnd = new Date(rental.periodEnd);
 
+      // SAFETY: The value originates from the constrained persistence or validated request field represented by this closed domain type.
       return {
         id: rental.id,
         rentalNumber: rental.rentalNumber,

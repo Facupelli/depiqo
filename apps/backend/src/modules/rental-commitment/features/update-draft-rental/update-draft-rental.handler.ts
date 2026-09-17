@@ -1,3 +1,5 @@
+import type { ApplicationErrorContext } from 'src/core/errors/application-error';
+
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { err, ok, Result } from 'neverthrow';
 
@@ -116,7 +118,7 @@ export class UpdateDraftRentalHandler implements ICommandHandler<UpdateDraftRent
     fulfillmentMethod: FulfillmentMethod;
     deliveryIntent?: UpdateDraftRentalCommand['props']['deliveryIntent'];
     rental: Rental;
-    context: Record<string, unknown>;
+    context: ApplicationErrorContext;
   }): Result<DraftRentalDeliveryAuthoringInput | undefined, UpdateDraftRentalError> {
     if (input.fulfillmentMethod === FulfillmentMethod.Pickup) return ok(undefined);
 
@@ -158,12 +160,12 @@ export class UpdateDraftRentalHandler implements ICommandHandler<UpdateDraftRent
 
   private mapProposalError(
     error: DraftRentalProposalResolutionError,
-    context: Record<string, unknown>,
+    context: ApplicationErrorContext,
   ): UpdateDraftRentalError {
     return updateDraftRentalError(error.code, error.message, error.cause, { ...context, ...error.context });
   }
 
-  private mapDomainError(error: unknown, context: Record<string, unknown>): UpdateDraftRentalError {
+  private mapDomainError(error: unknown, context: ApplicationErrorContext): UpdateDraftRentalError {
     if (error instanceof RentalCannotBeEditedFromStatusError) {
       return this.error('rental_commitment.rental_cannot_be_edited_from_status', error.message, context, error);
     }
@@ -185,7 +187,7 @@ export class UpdateDraftRentalHandler implements ICommandHandler<UpdateDraftRent
     throw error;
   }
 
-  private versionConflict(rentalId: string, context: Record<string, unknown>): UpdateDraftRentalError {
+  private versionConflict(rentalId: string, context: ApplicationErrorContext): UpdateDraftRentalError {
     return this.error(
       'rental_commitment.rental_version_conflict',
       `Rental "${rentalId}" was modified by another request.`,
@@ -196,7 +198,7 @@ export class UpdateDraftRentalHandler implements ICommandHandler<UpdateDraftRent
   private error(
     code: UpdateDraftRentalError['code'],
     message: string,
-    context: Record<string, unknown>,
+    context: ApplicationErrorContext,
     cause?: unknown,
   ): UpdateDraftRentalError {
     return updateDraftRentalError(code, message, cause, context);

@@ -1,4 +1,4 @@
-import { ApplicationError } from 'src/core/errors/application-error';
+import { ApplicationError, ApplicationErrorContext } from 'src/core/errors/application-error';
 
 export type GetRentalDetailErrorCode = 'rental_commitment.rental_not_found';
 
@@ -10,7 +10,7 @@ export function getRentalDetailError(
   code: GetRentalDetailErrorCode,
   message: string,
   cause?: unknown,
-  context?: Record<string, unknown>,
+  context?: ApplicationErrorContext,
 ): GetRentalDetailError {
   return { code, message, cause, context };
 }

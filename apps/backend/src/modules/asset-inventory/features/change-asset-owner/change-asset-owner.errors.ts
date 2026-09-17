@@ -1,4 +1,4 @@
-import { ApplicationError } from 'src/core/errors/application-error';
+import { ApplicationError, ApplicationErrorContext } from 'src/core/errors/application-error';
 
 import {
   ActiveOwnerContractNotFoundError,
@@ -23,7 +23,7 @@ export function changeAssetOwnerError(
   code: ChangeAssetOwnerErrorCode,
   message: string,
   cause?: unknown,
-  context?: Record<string, unknown>,
+  context?: ApplicationErrorContext,
 ): ChangeAssetOwnerError {
   return { code, message, cause, context };
 }

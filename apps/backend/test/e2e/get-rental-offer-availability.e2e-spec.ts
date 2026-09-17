@@ -137,6 +137,7 @@ describe(`POST ${path}`, () => {
 
   it('returns zero capacity when the tenant buffer overlaps an otherwise adjacent block', async () => {
     const s = await scenario();
+    // SAFETY: The fixture or preceding response assertions establish this object shape before these fields are inspected.
     await prisma.client.v2Tenant.update({
       where: { id: s.tenant.id },
       data: {

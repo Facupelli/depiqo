@@ -1,4 +1,4 @@
-import { ApplicationError } from 'src/core/errors/application-error';
+import { ApplicationError, ApplicationErrorContext } from 'src/core/errors/application-error';
 
 export type DetachOfferPricingErrorCode = 'pricing.rental_offer_pricing_not_found';
 
@@ -10,7 +10,7 @@ export function detachOfferPricingError(
   code: DetachOfferPricingErrorCode,
   message: string,
   cause?: unknown,
-  context?: Record<string, unknown>,
+  context?: ApplicationErrorContext,
 ): DetachOfferPricingError {
   return { code, message, cause, context };
 }

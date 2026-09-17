@@ -1,3 +1,15 @@
+import type { OwnerContractBasis } from './owner-split-calculator.types';
+
+export interface OwnerSplitErrorDetails {
+  rentalSelectionId?: string;
+  assignedAssetId?: string;
+  assetId?: string;
+  contractId?: string;
+  basis?: OwnerContractBasis;
+  totalAmount?: string;
+  ownerShare?: string;
+}
+
 export type RentalOwnerSplitCalculationErrorCode =
   | 'MISSING_PRICE_LINE'
   | 'DUPLICATED_PRICE_LINE'
@@ -12,7 +24,7 @@ export class RentalOwnerSplitCalculationError extends Error {
   constructor(
     public readonly code: RentalOwnerSplitCalculationErrorCode,
     message: string,
-    public readonly details?: Record<string, unknown>,
+    public readonly details?: OwnerSplitErrorDetails,
   ) {
     super(message);
     this.name = 'RentalOwnerSplitCalculationError';

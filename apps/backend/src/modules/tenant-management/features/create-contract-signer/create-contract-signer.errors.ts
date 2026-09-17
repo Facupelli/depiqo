@@ -1,4 +1,4 @@
-import { ApplicationError } from 'src/core/errors/application-error';
+import { ApplicationError, ApplicationErrorContext } from 'src/core/errors/application-error';
 
 export type CreateContractSignerErrorCode = 'tenant_management.contract_signer_already_exists';
 
@@ -10,7 +10,7 @@ export function createContractSignerError(
   code: CreateContractSignerErrorCode,
   message: string,
   cause?: unknown,
-  context?: Record<string, unknown>,
+  context?: ApplicationErrorContext,
 ): CreateContractSignerError {
   return { code, message, cause, context };
 }

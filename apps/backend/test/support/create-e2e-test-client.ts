@@ -95,6 +95,7 @@ function isLocalStorefrontHost(host: string): boolean {
 }
 
 function readCsrfToken(response: Response): string {
+  // SAFETY: The fixture or preceding response assertions establish this object shape before these fields are inspected.
   const token = (response.body as { data?: { csrfToken?: unknown } } | undefined)?.data?.csrfToken;
 
   if (typeof token !== 'string' || token.length === 0) {

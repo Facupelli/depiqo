@@ -65,7 +65,10 @@ export class Branch {
       try {
         assertValidIanaTimezone(timezone);
       } catch (error) {
-        return err(error as TenantManagementError);
+        if (error instanceof TenantManagementError) {
+          return err(error);
+        }
+        throw error;
       }
     }
 
@@ -139,7 +142,10 @@ export class Branch {
       try {
         assertValidIanaTimezone(timezone);
       } catch (error) {
-        return err(error as TenantManagementError);
+        if (error instanceof TenantManagementError) {
+          return err(error);
+        }
+        throw error;
       }
     }
 

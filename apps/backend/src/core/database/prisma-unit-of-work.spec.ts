@@ -12,6 +12,10 @@ interface Deferred<T> {
   reject: (error: unknown) => void;
 }
 
+interface TestTransactionClient {
+  readonly id?: number;
+}
+
 function deferred<T>(): Deferred<T> {
   let resolve!: (value: T) => void;
   let reject!: (error: unknown) => void;
@@ -27,10 +31,11 @@ class TestIntegrationEventPublisher extends IntegrationEventPublisher {
 }
 
 function makeLogger(): PinoLogger {
+  // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
   return {
     error: jest.fn(),
     setContext: jest.fn(),
-  } as unknown as PinoLogger;
+  } as PinoLogger;
 }
 
 function makeEvent(overrides: Partial<IntegrationEvent> = {}): IntegrationEvent {
@@ -53,16 +58,18 @@ function makeEvent(overrides: Partial<IntegrationEvent> = {}): IntegrationEvent 
 function makePrisma() {
   let transactionsOpened = 0;
 
+  // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
   const prisma = {
     client: {
-      $transaction: jest.fn(async (work: (tx: object) => Promise<unknown>) => {
+      $transaction: jest.fn(async <T>(work: (tx: TestTransactionClient) => Promise<T>): Promise<T> => {
         transactionsOpened += 1;
         const tx = { id: transactionsOpened };
         return work(tx);
       }),
     },
-  } as unknown as PrismaService;
+  } as PrismaService;
 
+  // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
   return {
     prisma,
     transactionCalls: () => prisma.client.$transaction as jest.Mock,
@@ -89,6 +96,7 @@ describe('PrismaUnitOfWork', () => {
       const unitOfWork = new PrismaUnitOfWork(prisma, publisher, makeLogger());
 
       const result = await unitOfWork.runInTransaction(async ({ tx, integrationEvents }) => {
+        // SAFETY: The fixture or preceding response assertions establish this object shape before these fields are inspected.
         expect((tx as { id: number }).id).toBe(1);
         markers.push('work');
         integrationEvents.collect([event]);
@@ -206,9 +214,10 @@ describe('PrismaUnitOfWork', () => {
       const markers: string[] = [];
       const rollbackMarker = 'rollback';
 
+      // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
       const prisma = {
         client: {
-          $transaction: jest.fn(async (work: (tx: object) => Promise<unknown>) => {
+          $transaction: jest.fn(async <T>(work: (tx: TestTransactionClient) => Promise<T>): Promise<T> => {
             try {
               const value = await work({});
               markers.push('commit');
@@ -220,7 +229,7 @@ describe('PrismaUnitOfWork', () => {
             }
           }),
         },
-      } as unknown as PrismaService;
+      } as PrismaService;
 
       const publisher = new TestIntegrationEventPublisher();
       const unitOfWork = new PrismaUnitOfWork(prisma, publisher, makeLogger());
@@ -244,9 +253,10 @@ describe('PrismaUnitOfWork', () => {
     it('rolls back and rethrows the original exception', async () => {
       const markers: string[] = [];
 
+      // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
       const prisma = {
         client: {
-          $transaction: jest.fn(async (work: (tx: object) => Promise<unknown>) => {
+          $transaction: jest.fn(async <T>(work: (tx: TestTransactionClient) => Promise<T>): Promise<T> => {
             try {
               const value = await work({});
               markers.push('commit');
@@ -257,7 +267,7 @@ describe('PrismaUnitOfWork', () => {
             }
           }),
         },
-      } as unknown as PrismaService;
+      } as PrismaService;
 
       const publisher = new TestIntegrationEventPublisher();
       const unitOfWork = new PrismaUnitOfWork(prisma, publisher, makeLogger());

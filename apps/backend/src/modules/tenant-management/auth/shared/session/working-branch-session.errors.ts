@@ -1,4 +1,4 @@
-import { ApplicationError } from 'src/core/errors/application-error';
+import { ApplicationError, ApplicationErrorContext } from 'src/core/errors/application-error';
 
 export type WorkingBranchSessionErrorCode = 'tenant_management.branch_not_found';
 
@@ -10,7 +10,7 @@ export function workingBranchSessionError(
   code: WorkingBranchSessionErrorCode,
   message: string,
   cause?: unknown,
-  context?: Record<string, unknown>,
+  context?: ApplicationErrorContext,
 ): WorkingBranchSessionError {
   return { code, message, cause, context };
 }

@@ -95,8 +95,7 @@ function severityForStatus(status: number): 'info' | 'warn' | 'error' {
   return 'info';
 }
 
-function responseTime(value: unknown): number {
-  if (!value || typeof value !== 'object') return 0;
-  const duration = (value as { responseTime?: unknown }).responseTime;
+function responseTime(value: { responseTime?: number }): number {
+  const duration = value.responseTime;
   return typeof duration === 'number' && Number.isFinite(duration) ? duration : 0;
 }

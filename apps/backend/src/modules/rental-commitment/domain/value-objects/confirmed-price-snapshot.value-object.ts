@@ -1,4 +1,6 @@
 import Decimal from 'decimal.js';
+
+import { Prisma } from 'src/generated/prisma/client';
 import { err, ok, Result } from 'neverthrow';
 import { z } from 'zod';
 
@@ -152,7 +154,9 @@ export class ConfirmedPriceSnapshot extends JsonSnapshot {
     super(rawValue);
   }
 
-  static create(value: unknown): Result<ConfirmedPriceSnapshot, RentalCommitmentError> {
+  static create(
+    value: JsonValue | Prisma.JsonValue | Prisma.InputJsonValue,
+  ): Result<ConfirmedPriceSnapshot, RentalCommitmentError> {
     const parsed = acceptedSnapshotSchema.safeParse(value);
     if (!parsed.success) {
       const issue = parsed.error.issues[0];
@@ -180,7 +184,7 @@ function parseFiniteDecimal(value: string): Decimal | null {
   }
 }
 
-function toJsonValue(value: unknown): JsonValue {
+function toJsonValue(value: JsonValue | undefined): JsonValue {
   if (value === null || typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean')
     return value;
   if (Array.isArray(value)) return value.map(toJsonValue);

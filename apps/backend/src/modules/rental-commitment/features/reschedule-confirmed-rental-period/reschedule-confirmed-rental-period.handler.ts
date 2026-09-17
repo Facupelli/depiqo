@@ -1,3 +1,5 @@
+import type { ApplicationErrorContext } from 'src/core/errors/application-error';
+
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { err, ok, Result } from 'neverthrow';
 
@@ -78,6 +80,7 @@ export class RescheduleConfirmedRentalPeriodHandler implements ICommandHandler<
           throw new Error(`Confirmed rental "${rentalId}" has inconsistent current operational block periods.`);
         }
 
+        // SAFETY: This value comes from a persisted or already validated non-empty domain identifier; the brand adds no runtime representation.
         const assetIds = [...new Set(currentOperationalBlocks.map((block) => block.assetId))] as AssetId[];
         const conflictingAssetIds = await this.allocation.findConflictingExactAssetIds({
           tenantId,
@@ -106,11 +109,11 @@ export class RescheduleConfirmedRentalPeriodHandler implements ICommandHandler<
     }
   }
 
-  private notFound(rentalId: string, context: Record<string, unknown>) {
+  private notFound(rentalId: string, context: ApplicationErrorContext) {
     return this.error('rental_commitment.rental_not_found', `Rental "${rentalId}" was not found.`, context);
   }
 
-  private versionConflict(rentalId: string, context: Record<string, unknown>, cause?: unknown) {
+  private versionConflict(rentalId: string, context: ApplicationErrorContext, cause?: unknown) {
     return this.error(
       'rental_commitment.rental_version_conflict',
       `Rental "${rentalId}" was modified by another request.`,
@@ -119,7 +122,7 @@ export class RescheduleConfirmedRentalPeriodHandler implements ICommandHandler<
     );
   }
 
-  private assetsUnavailable(context: Record<string, unknown>, cause?: unknown) {
+  private assetsUnavailable(context: ApplicationErrorContext, cause?: unknown) {
     return this.error(
       'rental_commitment.assigned_assets_unavailable',
       'One or more currently assigned assets are unavailable for the proposed period.',
@@ -131,13 +134,13 @@ export class RescheduleConfirmedRentalPeriodHandler implements ICommandHandler<
   private error(
     code: RescheduleConfirmedRentalPeriodError['code'],
     message: string,
-    context: Record<string, unknown>,
+    context: ApplicationErrorContext,
     cause?: unknown,
   ) {
     return rescheduleConfirmedRentalPeriodError(code, message, cause, context);
   }
 
-  private map(error: unknown, context: Record<string, unknown>): RescheduleConfirmedRentalPeriodError {
+  private map(error: unknown, context: ApplicationErrorContext): RescheduleConfirmedRentalPeriodError {
     if (error instanceof RentalCannotBeEditedFromStatusError) {
       return this.error('rental_commitment.rental_cannot_be_edited_from_status', error.message, context, error);
     }

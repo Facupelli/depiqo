@@ -77,19 +77,19 @@ function mapCatalogError(error: CatalogError, command: CreateIndividualRentalCom
   if (error instanceof CatalogBranchNotFoundError) {
     return createIndividualRentalError('catalog.branch_not_found', error.message, error, {
       ...context,
-      branchId: error.branchId,
+      ...(error.branchId === undefined ? {} : { branchId: error.branchId }),
     });
   }
   if (error instanceof CatalogBranchInactiveError) {
     return createIndividualRentalError('catalog.branch_inactive', error.message, error, {
       ...context,
-      branchId: error.branchId,
+      ...(error.branchId === undefined ? {} : { branchId: error.branchId }),
     });
   }
   if (error instanceof CatalogBranchDeletedError) {
     return createIndividualRentalError('catalog.branch_deleted', error.message, error, {
       ...context,
-      branchId: error.branchId,
+      ...(error.branchId === undefined ? {} : { branchId: error.branchId }),
     });
   }
   if (error instanceof CatalogBranchContextUnavailableError) {

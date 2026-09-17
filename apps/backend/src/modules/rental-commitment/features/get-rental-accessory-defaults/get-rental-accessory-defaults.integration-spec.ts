@@ -37,7 +37,7 @@ describe('GetRentalAccessoryDefaults integration', () => {
     return moduleRef;
   });
 
-  async function scenario(ownerContractSnapshot: Record<string, unknown> | null) {
+  async function scenario(ownerContractSnapshot: Prisma.InputJsonValue | null) {
     const tenant = await core.createTenant();
     const branch = await core.createBranch({ tenantId: tenant.id });
     const sourceEquipmentType = await prisma.client.v2EquipmentType.create({
@@ -110,6 +110,7 @@ describe('GetRentalAccessoryDefaults integration', () => {
       where: { id: tenantId },
       select: { config: true },
     });
+    // SAFETY: The fixture or preceding response assertions establish this object shape before these fields are inspected.
     await prisma.client.v2Tenant.update({
       where: { id: tenantId },
       data: {

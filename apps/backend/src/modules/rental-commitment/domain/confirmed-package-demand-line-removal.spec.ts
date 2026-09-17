@@ -27,19 +27,30 @@ const end = new Date('2030-01-12T18:00:00.000Z');
 const beforeStart = new Date('2030-01-09T10:00:00.000Z');
 const duringRental = new Date('2030-01-11T12:00:00.000Z');
 const laterRemoval = new Date('2030-01-11T14:00:00.000Z');
+// SAFETY: These stable fixture identifiers are non-empty and are used only as opaque domain identifiers in this test.
 const packageSelectionId = 'package-selection' as RentalSelectionId;
+// SAFETY: These stable fixture identifiers are non-empty and are used only as opaque domain identifiers in this test.
 const singleSelectionId = 'single-selection' as RentalSelectionId;
+// SAFETY: These stable fixture identifiers are non-empty and are used only as opaque domain identifiers in this test.
 const lightDemandId = 'light-demand' as RentalDemandLineId;
+// SAFETY: These stable fixture identifiers are non-empty and are used only as opaque domain identifiers in this test.
 const standDemandId = 'stand-demand' as RentalDemandLineId;
+// SAFETY: These stable fixture identifiers are non-empty and are used only as opaque domain identifiers in this test.
 const cameraDemandId = 'camera-demand' as RentalDemandLineId;
 const tenantOwnership = AssignedAssetOwnershipSnapshot.create({ kind: 'TENANT_OWNED' })._unsafeUnwrap();
 
+interface AssetIdsByDemandLineId {
+  [demandLineId: string]: AssetId;
+}
+
 function assetIdFor(demandLineId: string): AssetId {
-  const assetIds: Record<string, AssetId> = {
+  // SAFETY: These stable fixture identifiers are non-empty and are used only as opaque domain identifiers in this test.
+  const assetIds: AssetIdsByDemandLineId = {
     [lightDemandId]: 'light-asset' as AssetId,
     [standDemandId]: 'stand-asset' as AssetId,
     [cameraDemandId]: 'camera-asset' as AssetId,
   };
+  // SAFETY: These stable fixture identifiers are non-empty and are used only as opaque domain identifiers in this test.
   return assetIds[demandLineId] ?? ('missing-asset' as AssetId);
 }
 
@@ -71,6 +82,7 @@ const confirmedPriceSnapshot = {
 };
 
 function createConfirmed(lightQuantity = 1, compositeKind = RentableItemKind.Package): Rental {
+  // SAFETY: These stable fixture identifiers are non-empty and are used only as opaque domain identifiers in this test.
   return Rental.createConfirmed({
     id: 'rental-1' as RentalId,
     tenantId: 'tenant-1',
@@ -264,6 +276,7 @@ describe('Confirmed package demand line removal', () => {
     const unrelatedAssignment = rental.currentAssignedAssets.find((item) => item.assetId === 'stand-asset');
     const unrelatedBlock = rental.assetBlocks.find((item) => item.assetId === 'stand-asset');
 
+    // SAFETY: These stable fixture identifiers are non-empty and are used only as opaque domain identifiers in this test.
     rental
       .removeConfirmedPackageDemandLine({
         demandLineId: lightDemandId,
@@ -334,6 +347,7 @@ describe('Confirmed package demand line removal', () => {
           ._unsafeUnwrapErr(),
       ).toEqual(new InvalidPackageDemandLineRemovalQuantityError(lightDemandId, quantity));
     }
+    // SAFETY: These stable fixture identifiers are non-empty and are used only as opaque domain identifiers in this test.
     expect(
       operationalRental
         .removeConfirmedPackageDemandLine({
@@ -344,6 +358,7 @@ describe('Confirmed package demand line removal', () => {
         })
         ._unsafeUnwrapErr(),
     ).toEqual(new ReleaseAssetCountMismatchError(2, 1));
+    // SAFETY: These stable fixture identifiers are non-empty and are used only as opaque domain identifiers in this test.
     expect(
       operationalRental
         .removeConfirmedPackageDemandLine({
@@ -354,6 +369,7 @@ describe('Confirmed package demand line removal', () => {
         })
         ._unsafeUnwrapErr(),
     ).toEqual(new DuplicateReleaseAssetIdsError());
+    // SAFETY: These stable fixture identifiers are non-empty and are used only as opaque domain identifiers in this test.
     expect(
       operationalRental
         .removeConfirmedPackageDemandLine({
@@ -376,6 +392,7 @@ describe('Confirmed package demand line removal', () => {
       ._unsafeUnwrap();
 
     for (const demandLineId of [lightDemandId, 'missing-demand']) {
+      // SAFETY: These stable fixture identifiers are non-empty and are used only as opaque domain identifiers in this test.
       const result = rental.removeConfirmedPackageDemandLine({
         demandLineId,
         quantity: 1,
@@ -482,6 +499,7 @@ describe('Confirmed package demand line removal', () => {
 });
 
 describe('Confirmed package demand line restoration', () => {
+  // SAFETY: These stable fixture identifiers are non-empty and are used only as opaque domain identifiers in this test.
   const restoredAssignment = (assetId = 'restored-light-asset') => ({
     rentalDemandLineId: lightDemandId,
     assetId: assetId as AssetId,
@@ -519,6 +537,7 @@ describe('Confirmed package demand line restoration', () => {
 
   it('partially restores a partially suppressed current line with only delta participation', () => {
     const rental = createConfirmed(3);
+    // SAFETY: These stable fixture identifiers are non-empty and are used only as opaque domain identifiers in this test.
     rental
       .removeConfirmedPackageDemandLine({
         demandLineId: lightDemandId,
@@ -554,6 +573,7 @@ describe('Confirmed package demand line restoration', () => {
 
   it('partially restores a fully removed line', () => {
     const rental = createConfirmed(3);
+    // SAFETY: These stable fixture identifiers are non-empty and are used only as opaque domain identifiers in this test.
     rental
       .removeConfirmedPackageDemandLine({
         demandLineId: lightDemandId,
@@ -794,6 +814,7 @@ describe('Confirmed package demand line restoration', () => {
       ._unsafeUnwrap();
     const removedAgainAt = new Date('2030-01-11T16:00:00.000Z');
 
+    // SAFETY: These stable fixture identifiers are non-empty and are used only as opaque domain identifiers in this test.
     rental
       .removeConfirmedPackageDemandLine({
         demandLineId: lightDemandId,

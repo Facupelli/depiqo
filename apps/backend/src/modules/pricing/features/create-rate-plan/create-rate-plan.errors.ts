@@ -1,4 +1,4 @@
-import { ApplicationError } from 'src/core/errors/application-error';
+import { ApplicationError, ApplicationErrorContext } from 'src/core/errors/application-error';
 
 export type CreateRatePlanErrorCode = 'pricing.rate_plan_name_already_in_use' | 'pricing.invalid_rate_plan';
 
@@ -10,7 +10,7 @@ export function createRatePlanError(
   code: CreateRatePlanErrorCode,
   message: string,
   cause?: unknown,
-  context?: Record<string, unknown>,
+  context?: ApplicationErrorContext,
 ): CreateRatePlanError {
   return { code, message, cause, context };
 }

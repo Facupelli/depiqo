@@ -12,6 +12,7 @@ import {
 } from './add-assets-to-equipment-type.request.dto';
 
 function requestInput() {
+  // SAFETY: This fixture supplies every field read by the unit under test; omitted members are outside this test path.
   return {
     params: { equipmentTypeId: 'equipment-type-1' } as AddAssetsToEquipmentTypeParamsDto,
     dto: {
@@ -23,7 +24,8 @@ function requestInput() {
 
 describe('AddAssetsToEquipmentTypeHttpController', () => {
   it('returns the created asset ids', async () => {
-    const commandBus = { execute: jest.fn().mockResolvedValue(ok({ assetIds: ['asset-1'] })) } as unknown as CommandBus;
+    // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
+    const commandBus = { execute: jest.fn().mockResolvedValue(ok({ assetIds: ['asset-1'] })) } as CommandBus;
     const controller = new AddAssetsToEquipmentTypeHttpController(commandBus);
     const input = requestInput();
 
@@ -38,7 +40,8 @@ describe('AddAssetsToEquipmentTypeHttpController', () => {
       cause,
       { equipmentTypeId: 'equipment-type-1' },
     );
-    const commandBus = { execute: jest.fn().mockResolvedValue(err(applicationError)) } as unknown as CommandBus;
+    // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
+    const commandBus = { execute: jest.fn().mockResolvedValue(err(applicationError)) } as CommandBus;
     const controller = new AddAssetsToEquipmentTypeHttpController(commandBus);
     const input = requestInput();
 
@@ -47,6 +50,7 @@ describe('AddAssetsToEquipmentTypeHttpController', () => {
       throw new Error('Expected controller to throw');
     } catch (error) {
       expect(error).toBeInstanceOf(ProblemException);
+      // SAFETY: The preceding expectation establishes this error subtype before subtype-specific fields are inspected.
       const problem = error as ProblemException;
       expect(problem.getStatus()).toBe(404);
       expect(problem.getProblemDetails()).toMatchObject({

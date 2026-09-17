@@ -1,18 +1,29 @@
 import { randomUUID } from 'node:crypto';
 
-import { TenantPermission, type TenantPermission as TenantPermissionId } from '@repo/api-contracts';
+import {
+  TenantPermission,
+  type CreateIndividualRentalBodyDto,
+  type CreatePackageBodyDto,
+  type CreateRentalOfferWithPricingBodyDto,
+  type TenantPermission as TenantPermissionId,
+} from '@repo/api-contracts';
 
 import { PrismaService } from '../../src/core/database/prisma.service';
 import type { E2ETestApp } from '../support/create-e2e-test-app';
 import { createE2ETestClient, type E2ETestClient } from '../support/create-e2e-test-client';
 import { createTestFixtures, type TestFixtures } from '../support/fixtures';
 
+type StaticAuthorizationRequestBody =
+  | CreateIndividualRentalBodyDto
+  | CreatePackageBodyDto
+  | CreateRentalOfferWithPricingBodyDto;
+
 type StaticAllAuthorizationCase = {
   name: string;
   path: string;
   firstPermission: TenantPermissionId;
   secondPermission: TenantPermissionId;
-  body: () => Record<string, unknown>;
+  body: () => StaticAuthorizationRequestBody;
 };
 
 const cases: readonly StaticAllAuthorizationCase[] = [

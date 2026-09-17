@@ -5,6 +5,7 @@ import { AssignedAssetOwnershipSnapshot } from './value-objects/assigned-asset-o
 import { OwnerContractBasis } from './value-objects/owner-contract-snapshot.value-object';
 
 describe('AssignedAsset', () => {
+  // SAFETY: These stable fixture identifiers are non-empty and are used only as opaque domain identifiers in this test.
   const baseProps = {
     tenantId: 'tenant-1',
     rentalId: 'rental-1',
@@ -57,6 +58,7 @@ describe('AssignedAsset', () => {
 
   it('returns an identity-preserving copy when moving effectiveFrom', () => {
     const createdAt = new Date('2026-08-20T09:00:00.000Z');
+    // SAFETY: These stable fixture identifiers are non-empty and are used only as opaque domain identifiers in this test.
     const assignment = AssignedAsset.reconstitute({
       ...baseProps,
       id: 'assignment-1' as AssignedAssetId,
@@ -82,6 +84,7 @@ describe('AssignedAsset', () => {
   it('preserves identity, temporal fields, and createdAt during reconstitution', () => {
     const createdAt = new Date('2026-08-20T09:00:00.000Z');
     const effectiveUntil = new Date('2026-08-25T11:00:00.000Z');
+    // SAFETY: These stable fixture identifiers are non-empty and are used only as opaque domain identifiers in this test.
     const assignment = AssignedAsset.reconstitute({
       ...baseProps,
       id: 'assignment-1' as AssignedAssetId,

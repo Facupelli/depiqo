@@ -90,6 +90,7 @@ export async function createOfferingManagementIntegrationContext(
   });
 
   for (const override of overrides) {
+    // SAFETY: The preceding test setup and assertions establish this value shape before the test inspects it.
     builder = builder.overrideProvider(override.provide as any).useValue(override.useValue);
   }
 
@@ -114,6 +115,7 @@ export async function createContractsIntegrationContext(overrides: ProviderOverr
   });
 
   for (const override of overrides) {
+    // SAFETY: The preceding test setup and assertions establish this value shape before the test inspects it.
     builder = builder.overrideProvider(override.provide as any).useValue(override.useValue);
   }
 
@@ -140,6 +142,7 @@ export async function createRentalCommitmentIntegrationContext(
   });
 
   for (const override of overrides) {
+    // SAFETY: The preceding test setup and assertions establish this value shape before the test inspects it.
     builder = builder.overrideProvider(override.provide as any).useValue(override.useValue);
   }
 

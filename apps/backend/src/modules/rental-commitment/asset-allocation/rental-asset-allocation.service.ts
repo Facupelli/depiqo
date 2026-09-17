@@ -177,6 +177,7 @@ export class RentalAssetAllocationService {
         return err(ownerContractSnapshot.error);
       }
 
+      // SAFETY: This value comes from a persisted or already validated non-empty domain identifier; the brand adds no runtime representation.
       candidates.push({
         tenantId: row.tenantId,
         assetId: row.assetId as AssetId,
@@ -208,16 +209,19 @@ export class RentalAssetAllocationService {
 
     const assetIds = params.assetIds.map(String);
 
-    const ignoredBlockScopeSql = params.ignoredBlockScope
-      ? 'allBlockTypes' in params.ignoredBlockScope
-        ? Prisma.sql`AND rental_id <> ${params.ignoredBlockScope.rentalId}`
-        : Prisma.sql`
+    let ignoredBlockScopeSql: Prisma.Sql = Prisma.empty;
+    if (params.ignoredBlockScope) {
+      if ('allBlockTypes' in params.ignoredBlockScope) {
+        ignoredBlockScopeSql = Prisma.sql`AND rental_id <> ${params.ignoredBlockScope.rentalId}`;
+      } else {
+        ignoredBlockScopeSql = Prisma.sql`
           AND NOT (
             rental_id = ${params.ignoredBlockScope.rentalId}
             AND block_type = ${params.ignoredBlockScope.blockType}::"V2AssetBlockType"
           )
-        `
-      : Prisma.empty;
+        `;
+      }
+    }
 
     const db = params.tx ?? this.prisma.client;
     const rows = await db.$queryRaw<ActiveAssetReservationRow[]>(Prisma.sql`
@@ -230,6 +234,7 @@ export class RentalAssetAllocationService {
         ${ignoredBlockScopeSql}
     `);
 
+    // SAFETY: This value comes from a persisted or already validated non-empty domain identifier; the brand adds no runtime representation.
     return rows.map((row) => ({ assetId: row.assetId as AssetId }));
   }
 

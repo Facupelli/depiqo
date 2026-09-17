@@ -12,7 +12,7 @@ import { PrismaService } from './prisma.service';
 export type PrismaTransactionClient = Parameters<PrismaService['client']['$transaction']>[0] extends (
   tx: infer T,
   ...args: never[]
-) => Promise<unknown>
+) => ReturnType<PrismaService['client']['$transaction']>
   ? T
   : never;
 
@@ -127,6 +127,6 @@ export class PrismaUnitOfWork {
   }
 }
 
-function toError(value: unknown): Error {
-  return value instanceof Error ? value : new Error('A non-Error value was thrown.', { cause: value });
+function toError(error: unknown): Error {
+  return error instanceof Error ? error : new Error('A non-Error value was thrown.', { cause: error });
 }

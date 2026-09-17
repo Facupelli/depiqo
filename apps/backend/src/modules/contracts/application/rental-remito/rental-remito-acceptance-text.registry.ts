@@ -11,6 +11,7 @@ export interface RentalRemitoAcceptanceText {
 }
 
 export function getRentalRemitoAcceptanceText(version: string): RentalRemitoAcceptanceText | null {
+  // SAFETY: The value originates from the constrained persistence or validated request field represented by this closed domain type.
   const text = acceptanceTexts[version as keyof typeof acceptanceTexts];
 
   return text ? { version, text } : null;

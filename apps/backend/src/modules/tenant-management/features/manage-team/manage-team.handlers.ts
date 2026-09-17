@@ -1,3 +1,5 @@
+import type { ApplicationErrorContext } from 'src/core/errors/application-error';
+
 import type {
   CreateTenantCollaboratorResponseDto,
   ResetTenantCollaboratorPasswordResponseDto,
@@ -438,7 +440,7 @@ function loadActorAuthorization(
 
 function parsePermissions(
   permissions: { permission: string }[],
-  context: Record<string, unknown>,
+  context: ApplicationErrorContext,
 ): Result<TenantPermission[], ManageTenantTeamError> {
   try {
     const persisted = new Set(permissions.map(({ permission }) => parseTenantPermission(permission)));
@@ -489,7 +491,7 @@ async function lockTenant(tx: TransactionClient, tenantId: string): Promise<void
   await tx.$queryRaw`SELECT id FROM v2_tenants WHERE id = ${tenantId} FOR UPDATE`;
 }
 
-function collaboratorManagementForbidden(context: Record<string, unknown>): ManageTenantTeamError {
+function collaboratorManagementForbidden(context: ApplicationErrorContext): ManageTenantTeamError {
   return manageTenantTeamError(
     'tenant_management.collaborator_management_forbidden',
     'The actor cannot manage a collaborator with a more privileged role.',
@@ -561,7 +563,7 @@ function invalidTransition(
 
 function invalidAuthorizationState(
   message: string,
-  context: Record<string, unknown>,
+  context: ApplicationErrorContext,
   cause?: unknown,
 ): ManageTenantTeamError {
   return manageTenantTeamError('tenant_management.team_authorization_state_invalid', message, cause, context);

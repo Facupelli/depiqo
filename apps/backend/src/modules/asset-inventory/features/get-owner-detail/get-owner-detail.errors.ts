@@ -1,4 +1,4 @@
-import { ApplicationError } from 'src/core/errors/application-error';
+import { ApplicationError, ApplicationErrorContext } from 'src/core/errors/application-error';
 
 export type GetOwnerDetailErrorCode = 'asset_inventory.owner_not_found';
 
@@ -10,7 +10,7 @@ export function getOwnerDetailError(
   code: GetOwnerDetailErrorCode,
   message: string,
   cause?: unknown,
-  context?: Record<string, unknown>,
+  context?: ApplicationErrorContext,
 ): GetOwnerDetailError {
   return { code, message, cause, context };
 }

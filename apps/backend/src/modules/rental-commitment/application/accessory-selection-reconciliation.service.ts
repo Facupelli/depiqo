@@ -78,6 +78,7 @@ export class AccessorySelectionReconciliationService {
       };
     });
 
+    // SAFETY: This value comes from a persisted or already validated non-empty domain identifier; the brand adds no runtime representation.
     const demandLines = plannedSelections
       .filter((selection) => selection.quantity > selection.keptAssetIds.length)
       .map((selection) => ({
@@ -87,6 +88,7 @@ export class AccessorySelectionReconciliationService {
         quantity: selection.quantity - selection.keptAssetIds.length,
       }));
     const retainedAssetIds = plannedSelections.flatMap((selection) => selection.keptAssetIds);
+    // SAFETY: This value comes from a persisted or already validated non-empty domain identifier; the brand adds no runtime representation.
     const allocation = await this.rentalAssetAllocation.planAllocations({
       tenantId: input.tenantId,
       branchId: input.branchId,

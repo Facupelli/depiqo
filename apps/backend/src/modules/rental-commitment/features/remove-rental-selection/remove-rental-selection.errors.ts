@@ -1,4 +1,4 @@
-import { ApplicationError } from 'src/core/errors/application-error';
+import { ApplicationError, ApplicationErrorContext } from 'src/core/errors/application-error';
 
 export type RemoveRentalSelectionErrorCode =
   | 'rental_commitment.rental_not_found'
@@ -19,5 +19,5 @@ export const removeRentalSelectionError = (
   code: RemoveRentalSelectionErrorCode,
   message: string,
   cause?: unknown,
-  context?: Record<string, unknown>,
+  context?: ApplicationErrorContext,
 ): RemoveRentalSelectionError => ({ code, message, cause, context });

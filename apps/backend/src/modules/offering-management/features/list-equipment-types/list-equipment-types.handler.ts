@@ -147,7 +147,11 @@ function translateBranchFactsError(error: BranchFactsError, query: ListEquipment
         'offering_management.equipment_types.branch_not_found',
         `Branch "${query.branchId}" was not found.`,
         error,
-        { useCase: 'ListEquipmentTypes', tenantId: query.tenantId, branchId: query.branchId },
+        {
+          useCase: 'ListEquipmentTypes',
+          tenantId: query.tenantId,
+          ...(query.branchId === undefined ? {} : { branchId: query.branchId }),
+        },
       );
     case 'TenantConfigurationInvalid':
       throw error;

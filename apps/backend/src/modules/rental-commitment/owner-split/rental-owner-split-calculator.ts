@@ -8,6 +8,7 @@ import {
   RentalOwnerSplitPriceLineInput,
 } from './owner-split-calculator.types';
 import { RentalOwnerSplitCalculationError } from './owner-split-calculator-errors';
+import type { OwnerSplitErrorDetails } from './owner-split-calculator-errors';
 import { Injectable } from '@nestjs/common';
 
 @Injectable()
@@ -239,7 +240,7 @@ export class RentalOwnerSplitCalculator {
     return result;
   }
 
-  private assertValidOwnerShare(ownerShare: string, details: Record<string, unknown>): void {
+  private assertValidOwnerShare(ownerShare: string, details: OwnerSplitErrorDetails): void {
     const share = new Decimal(ownerShare);
 
     if (share.isNegative() || share.gt(1)) {

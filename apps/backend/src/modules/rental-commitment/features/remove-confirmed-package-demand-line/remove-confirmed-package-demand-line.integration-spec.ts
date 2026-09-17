@@ -583,12 +583,15 @@ describe('RemoveConfirmedPackageDemandLine integration', () => {
     const setup = await scenario({ demandQuantities: [3, 1] });
     const targetId = setup.rental.demandLineIds[0];
     const before = await fixtures.persistedState(setup.rental.rentalId);
-    const effectiveOptions =
-      code === 'rental_commitment.duplicate_release_asset_ids'
-        ? { quantity: 2, releaseAssetIds: [setup.assetIdsByDemand[0][0], setup.assetIdsByDemand[0][0]] }
-        : code === 'rental_commitment.release_asset_demand_line_mismatch'
-          ? { quantity: 1, releaseAssetIds: [setup.assetIdsByDemand[1][0]] }
-          : options;
+    let effectiveOptions: Parameters<typeof remove>[3] = options;
+    if (code === 'rental_commitment.duplicate_release_asset_ids') {
+      effectiveOptions = {
+        quantity: 2,
+        releaseAssetIds: [setup.assetIdsByDemand[0][0], setup.assetIdsByDemand[0][0]],
+      };
+    } else if (code === 'rental_commitment.release_asset_demand_line_mismatch') {
+      effectiveOptions = { quantity: 1, releaseAssetIds: [setup.assetIdsByDemand[1][0]] };
+    }
 
     const result = await remove(setup, targetId, before.rental.version, effectiveOptions);
 

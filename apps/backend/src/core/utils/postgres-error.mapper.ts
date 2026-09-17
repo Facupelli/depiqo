@@ -32,7 +32,10 @@ export function isForeignKeyConstraintError(error: unknown): boolean {
  * normalized to their database (snake_case) form before comparison.
  */
 export function isUniqueConstraintViolation(error: unknown, expectedColumns: readonly string[]): boolean {
-  if (!isRecord(error) || error.code !== PRISMA_UNIQUE_CONSTRAINT_VIOLATION || !isRecord(error.meta)) {
+  if (!isPrismaErrorEnvelope(error) || error.code !== PRISMA_UNIQUE_CONSTRAINT_VIOLATION) {
+    return false;
+  }
+  if (!isPrismaErrorMetadata(error.meta)) {
     return false;
   }
 
@@ -47,48 +50,105 @@ export function isUniqueConstraintViolation(error: unknown, expectedColumns: rea
  * Reads the columns of the violated unique constraint from either metadata
  * shape and normalizes them to database (snake_case) column names.
  */
-function violatedUniqueConstraintColumns(meta: Record<string, unknown>): string[] {
-  const fields = uniqueConstraintFields(meta);
-  if (!Array.isArray(fields)) {
-    return [];
-  }
-
-  return fields.filter((field): field is string => typeof field === 'string').map(toDatabaseColumnName);
+function violatedUniqueConstraintColumns(meta: PrismaErrorMetadata): string[] {
+  return uniqueConstraintFields(meta).map(toDatabaseColumnName);
 }
 
-function uniqueConstraintFields(meta: Record<string, unknown>): unknown {
+function uniqueConstraintFields(meta: PrismaErrorMetadata): string[] {
   const target = meta.target;
-  if (target !== undefined && target !== null) {
-    return target;
+  if (Array.isArray(target)) {
+    return target.filter((field): field is string => typeof field === 'string');
   }
 
   // Driver-adapter shape: meta.driverAdapterError.cause.constraint.fields
-  const adapterError = meta.driverAdapterError;
-  if (!isRecord(adapterError)) {
-    return undefined;
+  if (!isDriverAdapterError(meta.driverAdapterError)) {
+    return [];
   }
-  const adapterCause = adapterError.cause;
-  if (!isRecord(adapterCause)) {
-    return undefined;
+  if (!isDriverAdapterCause(meta.driverAdapterError.cause)) {
+    return [];
   }
-  const constraint = adapterCause.constraint;
-  if (!isRecord(constraint)) {
-    return undefined;
+  if (!isPostgresConstraint(meta.driverAdapterError.cause.constraint)) {
+    return [];
   }
 
-  return constraint.fields;
+  const fields = meta.driverAdapterError.cause.constraint.fields;
+  return Array.isArray(fields) ? fields.filter((field): field is string => typeof field === 'string') : [];
 }
 
 function toDatabaseColumnName(field: string): string {
   return field.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`);
 }
 
-type ErrorWithCode = {
+interface PrismaErrorEnvelope {
+  code?: unknown;
+  meta?: unknown;
+}
+
+interface PrismaErrorMetadata {
+  target?: unknown;
+  driverAdapterError?: unknown;
+}
+
+interface DriverAdapterError {
+  cause?: unknown;
+}
+
+interface DriverAdapterCause {
+  constraint?: unknown;
+}
+
+interface PostgresAdapterCause {
+  kind?: unknown;
+  code?: unknown;
+  originalCode?: unknown;
+}
+
+interface PostgresConstraint {
+  fields?: unknown;
+}
+
+type ErrorWithCode = PrismaErrorEnvelope & {
   code: string;
 };
 
 function isErrorWithCode(error: unknown): error is ErrorWithCode {
-  return isRecord(error) && typeof error.code === 'string';
+  return isPrismaErrorEnvelope(error) && typeof error.code === 'string';
+}
+
+function isPrismaErrorEnvelope(value: unknown): value is PrismaErrorEnvelope {
+  return isNonArrayObject(value) && hasKnownProperty(value, ['code', 'meta']);
+}
+
+function isPrismaErrorMetadata(value: unknown): value is PrismaErrorMetadata {
+  return isNonArrayObject(value) && hasKnownProperty(value, ['target', 'driverAdapterError']);
+}
+
+function isDriverAdapterError(value: unknown): value is DriverAdapterError {
+  return isNonArrayObject(value) && hasKnownProperty(value, ['cause']);
+}
+
+function isDriverAdapterCause(value: unknown): value is DriverAdapterCause {
+  return isNonArrayObject(value) && hasKnownProperty(value, ['constraint']);
+}
+
+function isPostgresAdapterCause(value: unknown): value is PostgresAdapterCause {
+  return (
+    isNonArrayObject(value) &&
+    hasKnownProperty(value, ['kind', 'code', 'originalCode']) &&
+    Reflect.get(value, 'kind') === 'postgres'
+  );
+}
+
+function isPostgresConstraint(value: unknown): value is PostgresConstraint {
+  return isNonArrayObject(value) && hasKnownProperty(value, ['fields']);
+}
+
+function isNonArrayObject<T>(value: T): value is T & object {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function hasKnownProperty<T>(value: T, properties: readonly string[]): boolean {
+  return typeof value === 'object' && value !== null && properties.some((property) => Object.hasOwn(value, property));
 }
 
 function isPrismaWrappedPostgresExclusionViolation(error: unknown): boolean {
@@ -108,21 +168,16 @@ export function isPrismaRawQueryPostgresDeadlock(error: unknown): boolean {
   );
 }
 
-function prismaRawQueryPostgresCause(error: unknown): Record<string, unknown> | undefined {
-  if (!isRecord(error) || error.code !== PRISMA_RAW_QUERY_FAILED || !isRecord(error.meta)) {
+function prismaRawQueryPostgresCause(error: unknown): PostgresAdapterCause | undefined {
+  if (!isPrismaErrorEnvelope(error) || error.code !== PRISMA_RAW_QUERY_FAILED) {
+    return undefined;
+  }
+  if (!isPrismaErrorMetadata(error.meta) || !isDriverAdapterError(error.meta.driverAdapterError)) {
     return undefined;
   }
 
-  const driverAdapterError = error.meta.driverAdapterError;
-  if (!isRecord(driverAdapterError) || !isRecord(driverAdapterError.cause)) {
-    return undefined;
-  }
-
-  return driverAdapterError.cause.kind === 'postgres' ? driverAdapterError.cause : undefined;
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null;
+  const adapterCause = error.meta.driverAdapterError.cause;
+  return isPostgresAdapterCause(adapterCause) ? adapterCause : undefined;
 }
 
 /**

@@ -6,6 +6,7 @@ describe('RentalPhysicalAssignmentsService', () => {
       demandLines: [{ id: 'demand-1', assignedAssets: [{ assetId: 'current-asset' }] }],
       accessorySelections: [],
     });
+    // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
     const service = new RentalPhysicalAssignmentsService({
       client: { v2Rental: { findFirst } },
     } as never);

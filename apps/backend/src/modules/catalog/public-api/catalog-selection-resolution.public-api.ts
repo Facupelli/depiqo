@@ -1,3 +1,5 @@
+import type { ApplicationErrorContext } from 'src/core/errors/application-error';
+
 import { Result } from 'neverthrow';
 
 import { CatalogRentableItemKind } from './catalog-rentable-item.types';
@@ -73,7 +75,7 @@ export class CatalogSelectionResolutionError extends Error {
   constructor(
     public readonly code: CatalogSelectionResolutionErrorCode,
     message: string,
-    public readonly context?: Record<string, unknown>,
+    public readonly context?: ApplicationErrorContext,
   ) {
     super(message);
     this.name = 'CatalogSelectionResolutionError';

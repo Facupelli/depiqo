@@ -1,3 +1,5 @@
+import type { ApplicationErrorContext } from 'src/core/errors/application-error';
+
 import { Injectable } from '@nestjs/common';
 import { err, ok, Result } from 'neverthrow';
 
@@ -287,7 +289,7 @@ export class ResolveSelectedRentalOffersService {
 function catalogSelectionError(
   code: CatalogSelectionResolutionError['code'],
   message: string,
-  context?: Record<string, unknown>,
+  context?: ApplicationErrorContext,
 ): CatalogSelectionResolutionError {
   return new CatalogSelectionResolutionError(code, message, context);
 }

@@ -9,10 +9,7 @@ import { DateRange } from 'src/core/domain/value-objects/date-range.value-object
  *
  * Throws if the string cannot be parsed, surfacing data corruption early.
  */
-export function parsePostgresRange(rangeStr: string): {
-  start: Date;
-  end: Date;
-} {
+export function parsePostgresRange(rangeStr: string) {
   // Strip the leading/trailing bound characters: [ ( ] )
   const inner = rangeStr.replace(/^[\[(]/, '').replace(/[\])]$/, '');
 

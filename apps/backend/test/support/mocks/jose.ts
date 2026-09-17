@@ -1,6 +1,7 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
+import type { JWTPayload as JoseJWTPayload } from 'jose';
 
-type JwtPayload = Record<string, unknown>;
+type JwtPayload = JoseJWTPayload;
 type JwtVerifyOptions = {
   algorithms?: string[];
   typ?: string;
@@ -78,10 +79,11 @@ function sign(input: string, secret: Uint8Array): string {
   return createHmac('sha256', secret).update(input).digest('base64url');
 }
 
-function encodeJson(value: unknown): string {
+function encodeJson(value: ProtectedHeader | JwtPayload): string {
   return Buffer.from(JSON.stringify(value)).toString('base64url');
 }
 
 function decodeJson<T>(value: string): T {
+  // SAFETY: The preceding test setup and assertions establish this value shape before the test inspects it.
   return JSON.parse(Buffer.from(value, 'base64url').toString('utf8')) as T;
 }

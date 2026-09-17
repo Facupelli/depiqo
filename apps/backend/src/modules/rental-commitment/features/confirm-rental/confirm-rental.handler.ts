@@ -1,3 +1,5 @@
+import type { ApplicationErrorContext } from 'src/core/errors/application-error';
+
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { err, ok, Result } from 'neverthrow';
 
@@ -172,6 +174,7 @@ export class ConfirmRentalHandler implements ICommandHandler<ConfirmRentalComman
       clampStartAt: participationTiming.blockOperationTime,
     });
 
+    // SAFETY: This value comes from a persisted or already validated non-empty domain identifier; the brand adds no runtime representation.
     const assetAssignmentPlan = await this.rentalAssetAllocation.planAllocations({
       tenantId: rental.tenantId,
       branchId: rental.branchId,
@@ -282,7 +285,7 @@ export class ConfirmRentalHandler implements ICommandHandler<ConfirmRentalComman
     return ok(undefined);
   }
 
-  private toApplicationError(error: unknown, context: Record<string, unknown>): ConfirmRentalError {
+  private toApplicationError(error: unknown, context: ApplicationErrorContext): ConfirmRentalError {
     if (error instanceof RentalCannotBeConfirmedFromStatusError) {
       return confirmRentalError(
         'rental_commitment.rental_cannot_be_confirmed_from_status',

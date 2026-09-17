@@ -1,4 +1,4 @@
-import { ApplicationError } from 'src/core/errors/application-error';
+import { ApplicationError, ApplicationErrorContext } from 'src/core/errors/application-error';
 
 export type ConfirmRentalErrorCode =
   | 'rental_commitment.rental_not_found'
@@ -22,7 +22,7 @@ export function confirmRentalError(
   code: ConfirmRentalErrorCode,
   message: string,
   cause?: unknown,
-  context?: Record<string, unknown>,
+  context?: ApplicationErrorContext,
 ): ConfirmRentalError {
   return { code, message, cause, context };
 }

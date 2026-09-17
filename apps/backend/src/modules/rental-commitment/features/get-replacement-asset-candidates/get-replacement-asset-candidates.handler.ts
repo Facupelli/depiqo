@@ -1,3 +1,5 @@
+import type { ApplicationErrorContext } from 'src/core/errors/application-error';
+
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { err, ok, Result } from 'neverthrow';
 
@@ -113,7 +115,7 @@ export class GetReplacementAssetCandidatesHandler implements IQueryHandler<
     });
   }
 
-  private map(error: unknown, context: Record<string, unknown>): GetReplacementAssetCandidatesError {
+  private map(error: unknown, context: ApplicationErrorContext): GetReplacementAssetCandidatesError {
     if (error instanceof RentalCannotBeEditedFromStatusError) {
       return getReplacementAssetCandidatesError(
         'rental_commitment.rental_cannot_be_edited_from_status',

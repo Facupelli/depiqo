@@ -1,4 +1,4 @@
-import { ApplicationError } from 'src/core/errors/application-error';
+import { ApplicationError, ApplicationErrorContext } from 'src/core/errors/application-error';
 
 export type AddRentalSelectionErrorCode =
   | 'rental_commitment.rental_not_found'
@@ -26,7 +26,7 @@ export function addRentalSelectionError(
   code: AddRentalSelectionErrorCode,
   message: string,
   cause?: unknown,
-  context?: Record<string, unknown>,
+  context?: ApplicationErrorContext,
 ): AddRentalSelectionError {
   return { code, message, cause, context };
 }

@@ -4,6 +4,11 @@ import {
   CreateDraftRentalBodySchema,
   CreateOwnerWithContractBodySchema,
   GetRentalOfferAvailabilityRequestSchema,
+  type CalculateDraftRentalPriceBodyDto,
+  type CreateConfirmedRentalBodyDto,
+  type CreateDraftRentalBodyDto,
+  type CreateOwnerWithContractBodyDto,
+  type GetRentalOfferAvailabilityRequestDto,
 } from '@repo/api-contracts';
 
 import { CreateOwnerWithContractApplicationInputSchema } from './asset-inventory/features/create-owner-with-contract/create-owner-with-contract.request.dto';
@@ -12,10 +17,24 @@ import { CreateConfirmedRentalApplicationInputSchema } from './rental-commitment
 import { CreateDraftRentalApplicationInputSchema } from './rental-commitment/features/create-draft-rental/create-draft-rental.request.dto';
 import { GetRentalOfferAvailabilityApplicationInputSchema } from './rental-commitment/features/get-rental-offer-availability/get-rental-offer-availability.request.dto';
 
+type TemporalWireBody =
+  | CreateOwnerWithContractBodyDto
+  | CalculateDraftRentalPriceBodyDto
+  | CreateConfirmedRentalBodyDto
+  | CreateDraftRentalBodyDto
+  | GetRentalOfferAvailabilityRequestDto;
+
+type TemporalWireSchema = {
+  parse(data: TemporalWireBody): TemporalWireBody;
+  safeParse(data: TemporalWireBody): { success: boolean };
+};
+
+type TemporalWireCase = readonly [string, TemporalWireSchema, TemporalWireBody, (body: TemporalWireBody) => string];
+
 const period = { start: '2026-08-10T13:00:00Z', end: '2026-08-10T10:30:00-03:00' };
 const selectedOffers = [{ rentalOfferId: 'offer-1', quantity: 1 }];
 
-const wireCases = [
+const wireCases: readonly TemporalWireCase[] = [
   [
     'owner contract',
     CreateOwnerWithContractBodySchema,
@@ -23,33 +42,53 @@ const wireCases = [
       owner: { name: 'Owner' },
       contract: { basis: 'NET', ownerShare: '0.7', rentalShare: '0.3', validFrom: period.start, validTo: period.end },
     },
-    (body: { contract: { validFrom: string } }) => body.contract.validFrom,
+    instantFromBody,
   ],
   [
     'draft price',
     CalculateDraftRentalPriceBodySchema,
     { branchId: 'branch-1', period, selectedOffers },
-    (body: { period: { start: string } }) => body.period.start,
+    instantFromBody,
   ],
   [
     'confirmed rental',
     CreateConfirmedRentalBodySchema,
     { branchId: 'branch-1', period, selectedOffers, fulfillmentMethod: 'PICKUP' },
-    (body: { period: { start: string } }) => body.period.start,
+    instantFromBody,
   ],
   [
     'draft rental',
     CreateDraftRentalBodySchema,
     { branchId: 'branch-1', period, selectedOffers, fulfillmentMethod: 'PICKUP' },
-    (body: { period: { start: string } }) => body.period.start,
+    instantFromBody,
   ],
   [
     'offer availability',
     GetRentalOfferAvailabilityRequestSchema,
     { branchId: 'branch-1', periodStart: period.start, periodEnd: period.end, rentalOfferIds: ['offer-1'] },
-    (body: { periodStart: string }) => body.periodStart,
+    instantFromBody,
   ],
-] as const;
+];
+
+function instantFromBody(body: TemporalWireBody): string {
+  if ('period' in body) return body.period.start;
+  if ('contract' in body) return body.contract.validFrom;
+  return body.periodStart;
+}
+
+function withoutOffset(body: TemporalWireBody): TemporalWireBody {
+  const offsetless = structuredClone(body);
+
+  if ('period' in offsetless) {
+    offsetless.period.start = '2026-08-10T13:00:00';
+  } else if ('contract' in offsetless) {
+    offsetless.contract.validFrom = '2026-08-10T13:00:00';
+  } else {
+    offsetless.periodStart = '2026-08-10T13:00:00';
+  }
+
+  return offsetless;
+}
 
 describe('instant-bearing request boundaries', () => {
   it.each(wireCases)('%s preserves ISO instants as strings on the wire', (_name, schema, body, instant) => {
@@ -61,12 +100,7 @@ describe('instant-bearing request boundaries', () => {
 
   it.each(wireCases)('%s accepts Z and numeric offsets and rejects offset-less values', (_name, schema, body) => {
     expect(schema.safeParse(body).success).toBe(true);
-    const offsetless = structuredClone(body) as Record<string, unknown>;
-    if ('period' in offsetless) (offsetless.period as Record<string, string>).start = '2026-08-10T13:00:00';
-    else if ('contract' in offsetless)
-      (offsetless.contract as Record<string, string>).validFrom = '2026-08-10T13:00:00';
-    else if ('periodStart' in offsetless) offsetless.periodStart = '2026-08-10T13:00:00';
-    else (offsetless as Record<string, string>).start = '2026-08-10T13:00:00';
+    const offsetless = withoutOffset(body);
     expect(schema.safeParse(offsetless).success).toBe(false);
   });
 
@@ -85,10 +119,13 @@ describe('instant-bearing request boundaries', () => {
   });
 
   it('keeps owner-contract ordering offset-aware after conversion to Dates', () => {
+    const ownerContractBody = wireCases[0][2];
+    if (!('contract' in ownerContractBody)) throw new Error('Expected an owner-contract wire fixture.');
+
     const valid = {
-      ...wireCases[0][2],
+      ...ownerContractBody,
       contract: {
-        ...wireCases[0][2].contract,
+        ...ownerContractBody.contract,
         validFrom: '2026-08-10T12:00:00Z',
         validTo: '2026-08-10T10:00:00-03:00',
       },

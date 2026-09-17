@@ -110,6 +110,7 @@ describe('POST /rental-commitments/confirmed-rentals', () => {
     expect(response.body).toEqual({ data: { rentalNumber: expect.any(Number) } });
     expect(response.body.data.rentalNumber).toBeGreaterThan(0);
 
+    // SAFETY: The preceding test setup and assertions establish this value shape before the test inspects it.
     const rental = await prisma.client.v2Rental.findFirstOrThrow({
       where: {
         tenantId: setup.tenant.id,

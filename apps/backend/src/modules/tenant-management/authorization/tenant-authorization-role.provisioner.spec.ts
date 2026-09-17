@@ -11,6 +11,7 @@ describe('TenantAuthorizationRoleProvisioner', () => {
       .mockResolvedValueOnce({ id: 'member-role' });
     const provisioner = new TenantAuthorizationRoleProvisioner();
 
+    // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
     await expect(provisioner.provision({ v2TenantRole: { create } } as never, 'tenant-1')).resolves.toEqual({
       administratorRoleId: 'administrator-role',
       memberRoleId: 'member-role',

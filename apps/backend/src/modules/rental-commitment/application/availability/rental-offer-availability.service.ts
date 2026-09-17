@@ -123,6 +123,7 @@ export class RentalOfferAvailabilityService {
       return ok(input.rentalOfferIds.map((rentalOfferId) => this.requireUnavailable(rentalOfferId, unavailableById)));
     }
 
+    // SAFETY: This value comes from a persisted or already validated non-empty domain identifier; the brand adds no runtime representation.
     const equipmentTypeIds = [
       ...new Set(
         catalogResult.value.resolvedOffers.flatMap((offer) =>

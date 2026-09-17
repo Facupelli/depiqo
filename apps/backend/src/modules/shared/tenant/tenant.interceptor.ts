@@ -1,5 +1,7 @@
 import { CallHandler, ExecutionContext, Injectable, NestInterceptor } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { IncomingHttpHeaders } from 'node:http';
+
 import { Observable } from 'rxjs';
 
 import { Env } from 'src/config/env.schema';
@@ -37,7 +39,7 @@ export class TenantInterceptor implements NestInterceptor {
     });
   }
 
-  private getTrustedTenantId(headers: Record<string, unknown>): string | undefined {
+  private getTrustedTenantId(headers: IncomingHttpHeaders): string | undefined {
     const internalToken = this.getSingleHeaderValue(headers['x-internal-token']);
 
     if (!internalToken || internalToken !== this.internalApiToken) {
@@ -47,7 +49,7 @@ export class TenantInterceptor implements NestInterceptor {
     return this.getSingleHeaderValue(headers['x-tenant-id']);
   }
 
-  private getSingleHeaderValue(header: unknown): string | undefined {
+  private getSingleHeaderValue(header: IncomingHttpHeaders[string]): string | undefined {
     if (typeof header === 'string' && header.length > 0) {
       return header;
     }

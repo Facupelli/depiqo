@@ -1,5 +1,7 @@
 import { HttpException } from '@nestjs/common';
 
+import type { ApplicationErrorContext } from 'src/core/errors/application-error';
+
 import { createProblemDetails } from './problem-details.factory';
 import { ProblemDetailsBody, ProblemDetailsExtensions } from './problem-details';
 
@@ -7,10 +9,10 @@ export interface ProblemExceptionApplicationError {
   code: string;
   message: string;
   cause?: unknown;
-  context?: Record<string, unknown>;
+  context?: ApplicationErrorContext;
 }
 
-export type ProblemExceptionMetadata = Record<string, unknown>;
+export type ProblemExceptionMetadata = ApplicationErrorContext;
 
 interface LegacyProblemExceptionInput {
   type: string;
@@ -70,7 +72,7 @@ export class ProblemException extends HttpException {
     };
   }
 
-  getCause(): unknown {
+  getCause(): ProblemExceptionApplicationError['cause'] {
     return this.causeValue;
   }
 

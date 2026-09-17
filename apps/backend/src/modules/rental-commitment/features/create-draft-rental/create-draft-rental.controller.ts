@@ -56,6 +56,7 @@ export class CreateDraftRentalHttpController {
       );
     }
 
+    // SAFETY: The value originates from the constrained persistence or validated request field represented by this closed domain type.
     const result = await this.commandBus.execute<CreateDraftRentalCommand, CreateDraftRentalServiceResult>(
       new CreateDraftRentalCommand({
         tenantId: user.tenantId,

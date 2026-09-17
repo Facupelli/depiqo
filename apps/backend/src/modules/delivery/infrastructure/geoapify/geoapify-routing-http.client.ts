@@ -6,6 +6,14 @@ import { DeliveryProviderError } from '../../application/errors/delivery-provide
 
 const GEOAPIFY_REQUEST_TIMEOUT_MS = 10_000;
 
+export type GeoapifyRoutingJsonValue =
+  | null
+  | boolean
+  | number
+  | string
+  | GeoapifyRoutingJsonValue[]
+  | { [key: string]: GeoapifyRoutingJsonValue };
+
 @Injectable()
 export class GeoapifyRoutingHttpClient {
   private static readonly provider = 'Geoapify';
@@ -15,7 +23,7 @@ export class GeoapifyRoutingHttpClient {
     this.apiKey = configService.get('GEOAPIFY_API_KEY');
   }
 
-  async getJson(url: URL): Promise<unknown> {
+  async getJson(url: URL): Promise<GeoapifyRoutingJsonValue> {
     url.searchParams.set('apiKey', this.apiKey);
 
     let response: Response;

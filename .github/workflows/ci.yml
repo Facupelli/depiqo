@@ -36,6 +36,9 @@ jobs:
       - name: Backend lint
         run: pnpm --filter @repo/backend run lint:check
 
+      - name: Backend formatting
+        run: pnpm --filter @repo/backend run format:check
+
       - name: Backend build
         run: pnpm turbo run build --filter=@repo/backend
 

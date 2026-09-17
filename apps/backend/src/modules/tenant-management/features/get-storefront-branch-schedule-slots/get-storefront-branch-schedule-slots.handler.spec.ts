@@ -13,6 +13,7 @@ describe('GetStorefrontBranchScheduleSlotsHandler DST-date schedule lookup', () 
         { specificDate: new Date(`${date}T00:00:00.000Z`), openTime: 540, closeTime: 600, slotIntervalMinutes: 30 },
         { specificDate: null, openTime: 480, closeTime: 720, slotIntervalMinutes: 60 },
       ]);
+      // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
       const handler = new GetStorefrontBranchScheduleSlotsHandler({
         client: {
           v2Branch: {

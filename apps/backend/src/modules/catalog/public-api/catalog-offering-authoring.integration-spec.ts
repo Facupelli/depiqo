@@ -226,7 +226,7 @@ describe('CatalogOfferingAuthoring integration', () => {
     ['an infrastructure failure', (): Error => new Error('connection terminated unexpectedly')],
     [
       'a unique violation on an unrelated constraint',
-      (): { code: string; meta: { target: string[] } } => ({
+      () => ({
         code: 'P2002',
         meta: { target: ['tenantId', 'email'] },
       }),

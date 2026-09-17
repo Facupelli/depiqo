@@ -86,6 +86,7 @@ const acceptedDelivery = {
 } as const;
 
 function createConfirmed(fulfillmentMethod: FulfillmentMethod = FulfillmentMethod.Pickup): Rental {
+  // SAFETY: These stable fixture identifiers are non-empty and are used only as opaque domain identifiers in this test.
   return Rental.createConfirmed({
     id: 'rental-1' as RentalId,
     tenantId: 'tenant-1',
@@ -146,6 +147,7 @@ function withHistoryAndAccessoryBlocks(fulfillmentMethod: FulfillmentMethod): Re
   const seed = createConfirmed(fulfillmentMethod);
   const closedAt = new Date('2030-01-05T12:00:00.000Z');
   const historicalStart = new Date('2030-01-05T10:00:00.000Z');
+  // SAFETY: These stable fixture identifiers are non-empty and are used only as opaque domain identifiers in this test.
   const closedUnreleased = AssignedAsset.reconstitute({
     id: 'assignment-history-unreleased' as AssignedAssetId,
     tenantId: seed.tenantId,
@@ -157,6 +159,7 @@ function withHistoryAndAccessoryBlocks(fulfillmentMethod: FulfillmentMethod): Re
     effectiveUntil: closedAt,
     createdAt: new Date('2029-12-18T10:00:00.000Z'),
   });
+  // SAFETY: These stable fixture identifiers are non-empty and are used only as opaque domain identifiers in this test.
   const closedReleased = AssignedAsset.reconstitute({
     id: 'assignment-history-released' as AssignedAssetId,
     tenantId: seed.tenantId,
@@ -174,6 +177,7 @@ function withHistoryAndAccessoryBlocks(fulfillmentMethod: FulfillmentMethod): Re
     acceptedAfterBufferMinutes: buffer.afterBufferMinutes,
     acceptedDelivery: seed.acceptedDelivery,
   });
+  // SAFETY: These stable fixture identifiers are non-empty and are used only as opaque domain identifiers in this test.
   const historicalUnreleasedBlock = AssetBlock.create({
     id: 'block-history-unreleased' as AssetBlockId,
     tenantId: seed.tenantId,
@@ -182,6 +186,7 @@ function withHistoryAndAccessoryBlocks(fulfillmentMethod: FulfillmentMethod): Re
     period: historicalPeriod,
     blockType: AssetBlockType.Equipment,
   })._unsafeUnwrap();
+  // SAFETY: These stable fixture identifiers are non-empty and are used only as opaque domain identifiers in this test.
   const historicalReleasedBlock = AssetBlock.create({
     id: 'block-history-released' as AssetBlockId,
     tenantId: seed.tenantId,
@@ -191,6 +196,7 @@ function withHistoryAndAccessoryBlocks(fulfillmentMethod: FulfillmentMethod): Re
     blockType: AssetBlockType.Equipment,
     releasedAt: closedAt,
   })._unsafeUnwrap();
+  // SAFETY: These stable fixture identifiers are non-empty and are used only as opaque domain identifiers in this test.
   const accessoryActive = AssetBlock.create({
     id: 'block-accessory-active' as AssetBlockId,
     tenantId: seed.tenantId,
@@ -199,6 +205,7 @@ function withHistoryAndAccessoryBlocks(fulfillmentMethod: FulfillmentMethod): Re
     period: seed.assetBlocks[0].period,
     blockType: AssetBlockType.Accessory,
   })._unsafeUnwrap();
+  // SAFETY: These stable fixture identifiers are non-empty and are used only as opaque domain identifiers in this test.
   const accessoryReleased = AssetBlock.create({
     id: 'block-accessory-released' as AssetBlockId,
     tenantId: seed.tenantId,

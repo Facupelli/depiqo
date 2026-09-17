@@ -2,8 +2,9 @@ import { Injectable } from '@nestjs/common';
 import { err, ok, Result } from 'neverthrow';
 
 import { PrismaService } from 'src/core/database/prisma.service';
+import { Prisma } from 'src/generated/prisma/client';
 
-import { TenantConfig, TenantConfigProps } from '../domain/value-objects/tenant-config.value-object';
+import { TenantConfig } from '../domain/value-objects/tenant-config.value-object';
 import {
   GetTenantRentalAssetBufferSettingsInput,
   TenantRentalAssetBufferSettings,
@@ -41,9 +42,9 @@ export class TenantRentalAssetBufferSettingsService extends TenantRentalAssetBuf
     });
   }
 
-  private reconstituteTenantConfig(config: unknown): TenantConfig | null {
+  private reconstituteTenantConfig(config: Prisma.JsonValue): TenantConfig | null {
     try {
-      return TenantConfig.reconstitute(config as TenantConfigProps);
+      return TenantConfig.reconstitute(config);
     } catch {
       return null;
     }

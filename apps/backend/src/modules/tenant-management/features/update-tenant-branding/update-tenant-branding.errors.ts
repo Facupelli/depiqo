@@ -1,4 +1,4 @@
-import { ApplicationError } from 'src/core/errors/application-error';
+import { ApplicationError, ApplicationErrorContext } from 'src/core/errors/application-error';
 
 export type UpdateTenantBrandingErrorCode = 'tenant_management.tenant_not_found';
 
@@ -10,7 +10,7 @@ export function updateTenantBrandingError(
   code: UpdateTenantBrandingErrorCode,
   message: string,
   cause?: unknown,
-  context?: Record<string, unknown>,
+  context?: ApplicationErrorContext,
 ): UpdateTenantBrandingError {
   return { code, message, cause, context };
 }

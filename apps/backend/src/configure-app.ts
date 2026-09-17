@@ -11,11 +11,11 @@ import {
   SESSION_MAX_AGE_MS,
   SESSION_TTL_SECONDS,
 } from './modules/tenant-management/auth/shared/session/auth-session.constants';
-// eslint-disable-next-line @typescript-eslint/no-require-imports
+// oxlint-disable-next-line typescript/no-require-imports
 import passport = require('passport');
-// eslint-disable-next-line @typescript-eslint/no-require-imports
+// oxlint-disable-next-line typescript/no-require-imports
 const session = require('express-session');
-// eslint-disable-next-line @typescript-eslint/no-require-imports
+// oxlint-disable-next-line typescript/no-require-imports
 const connectPgSimple = require('connect-pg-simple');
 
 export type ConfigureAppOptions = {

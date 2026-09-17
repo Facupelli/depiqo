@@ -69,6 +69,12 @@ describe('isPrismaRawQueryPostgresDeadlock', () => {
 
 const RENTAL_OFFER_UNIQUE_COLUMNS = ['tenant_id', 'branch_id', 'rentable_item_id'];
 
+type PrismaRawQueryCauseFixture = {
+  kind?: 'postgres' | 'mysql';
+  code?: string;
+  originalCode?: string;
+};
+
 describe('isUniqueConstraintViolation', () => {
   it('matches a standard meta.target with camelCase field names', () => {
     const error = { code: 'P2002', meta: { target: ['tenantId', 'branchId', 'rentableItemId'] } };
@@ -84,6 +90,21 @@ describe('isUniqueConstraintViolation', () => {
           cause: {
             kind: 'postgres',
             code: '23505',
+            constraint: { fields: ['tenant_id', 'branch_id', 'rentable_item_id'] },
+          },
+        },
+      },
+    };
+
+    expect(isUniqueConstraintViolation(error, RENTAL_OFFER_UNIQUE_COLUMNS)).toBe(true);
+  });
+
+  it('matches driver-adapter constraint fields without a PostgreSQL kind discriminator', () => {
+    const error = {
+      code: 'P2002',
+      meta: {
+        driverAdapterError: {
+          cause: {
             constraint: { fields: ['tenant_id', 'branch_id', 'rentable_item_id'] },
           },
         },
@@ -115,11 +136,12 @@ function expectMappedExclusionViolation(error: unknown): void {
     throw new Error('Expected mapPostgresError to throw.');
   } catch (mappedError) {
     expect(mappedError).toBeInstanceOf(PostgresExclusionViolationError);
+    // SAFETY: The preceding expectation establishes this error subtype before subtype-specific fields are inspected.
     expect((mappedError as PostgresExclusionViolationError).cause).toBe(error);
   }
 }
 
-function prismaRawQueryError(cause: Record<string, unknown>): Record<string, unknown> {
+function prismaRawQueryError(cause: PrismaRawQueryCauseFixture) {
   return {
     code: 'P2010',
     meta: {

@@ -2,6 +2,7 @@ import { TenantPermission } from '@repo/api-contracts';
 import {
   ExecutionContext,
   ForbiddenException,
+  type Type,
   InternalServerErrorException,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -23,6 +24,7 @@ import { TenantAuthorization } from './tenant-authorization.public-api';
 import { TenantAuthorizationGuard } from './tenant-authorization.guard';
 
 describe('TenantAuthorizationGuard', () => {
+  // SAFETY: This fixture supplies every field read by the unit under test; omitted members are outside this test path.
   const tenantUser = {
     actorType: AUTH_ACTOR_TYPES.TENANT_USER,
     id: 'user-1',
@@ -30,12 +32,13 @@ describe('TenantAuthorizationGuard', () => {
   } as AuthActor;
 
   function fixture(actor: AuthActor | undefined = tenantUser, authenticated = true) {
+    // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
     const tenantAuthorization = {
       getEffectivePermissions: jest.fn(),
       hasPermission: jest.fn(),
       hasAnyPermission: jest.fn(),
       hasAllPermissions: jest.fn(),
-    } as unknown as jest.Mocked<TenantAuthorization>;
+    } as jest.Mocked<TenantAuthorization>;
     const guard = new TenantAuthorizationGuard(
       new Reflector(),
       new TenantAuthorizationHttpEnforcer(tenantAuthorization),
@@ -44,16 +47,17 @@ describe('TenantAuthorizationGuard', () => {
     return {
       guard,
       tenantAuthorization,
-      contextFor(handler: () => void, controller: object = class TestController {}) {
+      contextFor(handler: () => void, controller: Type<unknown> = class TestController {}) {
         const request = {
           user: actor,
           isAuthenticated: jest.fn().mockReturnValue(authenticated),
         };
+        // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
         const context = {
           getHandler: () => handler,
           getClass: () => controller,
           switchToHttp: () => ({ getRequest: () => request }),
-        } as unknown as ExecutionContext;
+        } as ExecutionContext;
 
         return { context, request };
       },
@@ -165,6 +169,7 @@ describe('TenantAuthorizationGuard', () => {
   });
 
   it('allows an authenticated tenant customer when tenant authorization metadata is missing', async () => {
+    // SAFETY: This fixture supplies every field read by the unit under test; omitted members are outside this test path.
     const customer = {
       actorType: AUTH_ACTOR_TYPES.TENANT_CUSTOMER,
       id: 'customer-1',
@@ -215,6 +220,7 @@ describe('TenantAuthorizationGuard', () => {
   });
 
   it('fails safely when a tenant-customer actor reaches a declared requirement', async () => {
+    // SAFETY: This fixture supplies every field read by the unit under test; omitted members are outside this test path.
     const customer = {
       actorType: AUTH_ACTOR_TYPES.TENANT_CUSTOMER,
       id: 'customer-1',
@@ -249,6 +255,7 @@ describe('TenantAuthorizationGuard', () => {
   });
 
   it('never reads the legacy scalar role', async () => {
+    // SAFETY: This fixture supplies every field read by the unit under test; omitted members are outside this test path.
     const actor = {
       actorType: AUTH_ACTOR_TYPES.TENANT_USER,
       id: 'user-1',
@@ -256,7 +263,7 @@ describe('TenantAuthorizationGuard', () => {
       get role(): never {
         throw new Error('legacy role was read');
       },
-    } as unknown as AuthActor;
+    } as AuthActor;
     const test = fixture(actor);
     test.tenantAuthorization.hasPermission.mockResolvedValue(ok(true));
     const handler = () => undefined;

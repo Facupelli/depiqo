@@ -1,4 +1,4 @@
-import { ApplicationError } from 'src/core/errors/application-error';
+import { ApplicationError, ApplicationErrorContext } from 'src/core/errors/application-error';
 
 export type GenerateRentalRemitoErrorCode =
   | 'contracts.rental_remito_rental_not_found'
@@ -15,7 +15,7 @@ export function generateRentalRemitoError(
   code: GenerateRentalRemitoErrorCode,
   message: string,
   cause?: unknown,
-  context?: Record<string, unknown>,
+  context?: ApplicationErrorContext,
 ): GenerateRentalRemitoError {
   return { code, message, cause, context };
 }

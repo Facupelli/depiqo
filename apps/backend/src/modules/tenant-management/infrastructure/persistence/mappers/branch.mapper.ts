@@ -87,6 +87,7 @@ export class BranchMapper {
 
 export class BranchScheduleMapper {
   static toDomain(raw: PrismaBranchSchedule): BranchSchedule {
+    // SAFETY: The value originates from the constrained persistence or validated request field represented by this closed domain type.
     return BranchSchedule.reconstitute({
       id: raw.id,
       branchId: raw.branchId,

@@ -1,4 +1,4 @@
-import { ApplicationError } from 'src/core/errors/application-error';
+import { ApplicationError, ApplicationErrorContext } from 'src/core/errors/application-error';
 
 export type RegisterTenantWithOwnerErrorCode =
   | 'tenant_management.public_registration_disabled'
@@ -13,7 +13,7 @@ export function registerTenantWithOwnerError(
   code: RegisterTenantWithOwnerErrorCode,
   message: string,
   cause?: unknown,
-  context?: Record<string, unknown>,
+  context?: ApplicationErrorContext,
 ): RegisterTenantWithOwnerError {
   return { code, message, cause, context };
 }
