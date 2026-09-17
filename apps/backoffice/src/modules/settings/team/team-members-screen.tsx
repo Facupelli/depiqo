@@ -160,7 +160,6 @@ export function TeamMembersScreen({
 							<TableHead>Integrante</TableHead>
 							<TableHead>Rol</TableHead>
 							<TableHead>Estado</TableHead>
-							<TableHead>Acceso</TableHead>
 							<TableHead className="hidden lg:table-cell">Creado</TableHead>
 							{canManage ? (
 								<TableHead className="w-12">
@@ -171,12 +170,12 @@ export function TeamMembersScreen({
 					</TableHeader>
 					<TableBody>
 						{membersQuery.isPending ? (
-							<LoadingRows columns={canManage ? 6 : 5} />
+							<LoadingRows columns={canManage ? 5 : 4} />
 						) : null}
 						{membersQuery.isError ? (
 							<TableRow>
 								<TableCell
-									colSpan={canManage ? 6 : 5}
+									colSpan={canManage ? 5 : 4}
 									className="h-28 text-center text-muted-foreground"
 								>
 									No pudimos cargar el equipo. Inténtalo nuevamente.
@@ -186,7 +185,7 @@ export function TeamMembersScreen({
 						{membersQuery.data?.length === 0 ? (
 							<TableRow>
 								<TableCell
-									colSpan={canManage ? 6 : 5}
+									colSpan={canManage ? 5 : 4}
 									className="h-28 text-center text-muted-foreground"
 								>
 									Todavía no hay integrantes para mostrar.
@@ -198,11 +197,18 @@ export function TeamMembersScreen({
 							return (
 								<TableRow key={member.id}>
 									<TableCell className="font-medium">
-										{member.email}
-										{isSelf ? (
-											<span className="ml-2 text-xs font-normal text-muted-foreground">
-												Tú
-											</span>
+										<div>
+											{member.email}
+											{isSelf ? (
+												<span className="ml-2 text-xs font-normal text-muted-foreground">
+													Tú
+												</span>
+											) : null}
+										</div>
+										{member.mustChangePassword ? (
+											<p className="mt-0.5 text-xs font-normal text-muted-foreground">
+												Debe cambiar la contraseña
+											</p>
 										) : null}
 									</TableCell>
 									<TableCell>
@@ -215,20 +221,6 @@ export function TeamMembersScreen({
 									</TableCell>
 									<TableCell>
 										<StatusBadge status={member.status} />
-									</TableCell>
-									<TableCell>
-										{member.mustChangePassword ? (
-											<Badge
-												variant="outline"
-												className="border-amber-200 bg-amber-50 text-amber-800"
-											>
-												Cambio pendiente
-											</Badge>
-										) : (
-											<span className="text-sm text-muted-foreground">
-												Normal
-											</span>
-										)}
 									</TableCell>
 									<TableCell className="hidden text-muted-foreground lg:table-cell">
 										{formatCreatedAt(member.createdAt)}
@@ -430,7 +422,6 @@ const loadingCellIds = [
 	"email",
 	"role",
 	"status",
-	"access",
 	"created",
 	"actions",
 ] as const;
