@@ -198,9 +198,7 @@ async function main(): Promise<void> {
         continue;
       }
 
-      const result = order
-        ? buildLegacyUpgrade(rental, order.financialSnapshot)
-        : buildNativeV2Upgrade(rental);
+      const result = order ? buildLegacyUpgrade(rental, order.financialSnapshot) : buildNativeV2Upgrade(rental);
       if (typeof result === 'string') failures.push(failure(rental, result));
       else validUpgrades.push(result);
     }
@@ -333,7 +331,9 @@ async function verifyWrites(prisma: PrismaClient, tenantId: string, upgrades: Va
     select: { id: true, rentalNumber: true, priceSnapshot: true },
   });
   if (upgradedRentals.length !== upgrades.length) {
-    throw new Error(`Post-write verification failed: expected ${upgrades.length} upgraded rental(s), found ${upgradedRentals.length}`);
+    throw new Error(
+      `Post-write verification failed: expected ${upgrades.length} upgraded rental(s), found ${upgradedRentals.length}`,
+    );
   }
 
   for (const rental of upgradedRentals) {
