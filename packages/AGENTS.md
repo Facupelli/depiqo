@@ -12,6 +12,5 @@ Follow package-local `AGENTS.md` files when present:
 
 - `types/AGENTS.md`
 - `typescript-config/AGENTS.md`
-- `jest-config/AGENTS.md`
 
 Treat changes in `packages/` as cross-workspace changes by default because they can affect both apps.

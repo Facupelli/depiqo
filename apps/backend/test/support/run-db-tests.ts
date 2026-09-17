@@ -4,18 +4,12 @@ import { createRequire } from 'node:module';
 import { resolve } from 'node:path';
 
 const projectRequire = createRequire(resolve(process.cwd(), 'package.json'));
-const runnerExecutables = {
-  jest: projectRequire.resolve('jest/bin/jest'),
-  vitest: projectRequire.resolve('vitest/vitest.mjs'),
-} as const;
-
-type TestRunner = keyof typeof runnerExecutables;
+const vitestExecutable = projectRequire.resolve('vitest/vitest.mjs');
 
 async function main(): Promise<void> {
-  const runner = process.argv[2];
-  const configPath = process.argv[3];
-  if (!isTestRunner(runner) || !configPath) {
-    throw new Error('Expected a test runner (jest or vitest) and config path.');
+  const configPath = process.argv[2];
+  if (!configPath) {
+    throw new Error('Expected a Vitest config path.');
   }
 
   const container = await new PostgreSqlContainer('postgres:18-alpine')
@@ -27,10 +21,6 @@ async function main(): Promise<void> {
   const env: NodeJS.ProcessEnv = {
     ...process.env,
     NODE_ENV: 'test',
-    NODE_OPTIONS:
-      runner === 'jest'
-        ? [process.env.NODE_OPTIONS, '--experimental-vm-modules'].filter(Boolean).join(' ')
-        : process.env.NODE_OPTIONS,
     LOG_LEVEL: 'silent',
     DATABASE_URL: container.getConnectionUri(),
     CORS_ALLOWED_ORIGINS: 'http://localhost',
@@ -64,8 +54,8 @@ async function main(): Promise<void> {
     console.log('Preparing test database...');
     run('pnpm', ['exec', 'prisma', 'migrate', 'deploy'], env);
     console.log('Test database ready.');
-    const runnerArgs = process.argv.slice(4).filter((argument) => argument !== '--');
-    testRun = startTestRunner(runner, ['--config', configPath, ...runnerArgs], env);
+    const runnerArgs = process.argv.slice(3).filter((argument) => argument !== '--');
+    testRun = startTestRunner(['--config', configPath, ...runnerArgs], env);
     outcome = await testRun.outcome;
   } finally {
     try {
@@ -89,10 +79,6 @@ async function main(): Promise<void> {
   process.exitCode = outcome.exitCode;
 }
 
-function isTestRunner(value: string | undefined): value is TestRunner {
-  return value !== undefined && Object.hasOwn(runnerExecutables, value);
-}
-
 type TestOutcome = { exitCode: number; signal: NodeJS.Signals | null };
 type TestRun = {
   outcome: Promise<TestOutcome>;
@@ -100,9 +86,9 @@ type TestRun = {
   removeSignalHandlers(): void;
 };
 
-function startTestRunner(runner: TestRunner, args: string[], env: NodeJS.ProcessEnv): TestRun {
+function startTestRunner(args: string[], env: NodeJS.ProcessEnv): TestRun {
   const usesProcessGroup = process.platform !== 'win32';
-  const child = spawn(process.execPath, [runnerExecutables[runner], ...args], {
+  const child = spawn(process.execPath, [vitestExecutable, ...args], {
     cwd: process.cwd(),
     env,
     stdio: 'inherit',
@@ -125,7 +111,7 @@ function startTestRunner(runner: TestRunner, args: string[], env: NodeJS.Process
       } catch (error) {
         // SAFETY: Node process signaling failures expose their stable error code through ErrnoException.
         if ((error as NodeJS.ErrnoException).code === 'ESRCH') return;
-        console.error(`Failed to forward ${signal} to the ${runner} process group:`, error);
+        console.error(`Failed to forward ${signal} to the Vitest process group:`, error);
       }
     }
     child.kill(signal);
@@ -146,7 +132,7 @@ function startTestRunner(runner: TestRunner, args: string[], env: NodeJS.Process
       resolve(result);
     };
     child.once('error', (error) => {
-      console.error(`Failed to start ${runner}:`, error);
+      console.error('Failed to start Vitest:', error);
       settle({ exitCode: 1, signal: null });
     });
     child.once('close', (exitCode, signal) => settle({ exitCode: exitCode ?? 1, signal }));

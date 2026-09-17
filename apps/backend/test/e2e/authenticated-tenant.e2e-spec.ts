@@ -1,3 +1,5 @@
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+
 import { randomUUID } from 'node:crypto';
 
 import request from 'supertest';
@@ -138,7 +140,7 @@ describe('authenticated tenant HTTP flow', () => {
     const unique = randomUUID();
     const tenantName = `Provisioning Rollback Tenant ${unique}`;
     const tenantSlug = `provisioning-rollback-tenant-${unique}`;
-    jest.spyOn(provisioner, 'provision').mockRejectedValueOnce(new Error('Role provisioning failed.'));
+    vi.spyOn(provisioner, 'provision').mockRejectedValueOnce(new Error('Role provisioning failed.'));
 
     await request(testApp.app.getHttpServer())
       .post('/tenant-management/register')

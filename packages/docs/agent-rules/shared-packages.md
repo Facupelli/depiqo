@@ -14,7 +14,6 @@ Package roles:
 
 - `@repo/api-contracts` holds backend/web API contracts, DTO schemas, and shared contract enums.
 - `@repo/typescript-config` holds shared TypeScript compiler config.
-- `@repo/jest-config` holds reusable Jest configuration presets.
 
 Validation guidance:
 

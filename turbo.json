@@ -27,7 +27,6 @@
       "inputs": [
         "src/**/*.ts",
         "test/**/*.ts",
-        "jest.config.ts",
         "vitest.config.ts"
       ],
       "outputs": ["coverage/**"],
@@ -38,7 +37,6 @@
       "inputs": [
         "src/**/*.ts",
         "test/**/*.ts",
-        "jest.config.ts",
         "vitest.config.ts"
       ],
       "outputs": ["coverage/**"],
@@ -46,12 +44,12 @@
     },
     "test:integration": {
       "dependsOn": ["^build"],
-      "inputs": ["src/**/*.ts", "jest.config.integration.ts"],
+      "inputs": ["src/**/*.ts", "test/**/*.ts", "vitest.config.integration.ts"],
       "cache": false
     },
     "test:e2e": {
       "dependsOn": ["^build"],
-      "inputs": ["src/**/*.ts", "test/**/*.ts", "jest.config.e2e.ts"],
+      "inputs": ["src/**/*.ts", "test/**/*.ts", "vitest.config.e2e.ts"],
       "cache": false
     }
   }
