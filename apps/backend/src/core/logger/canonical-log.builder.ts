@@ -11,7 +11,7 @@ export function buildCanonicalCompletion(
   response: ServerResponse,
   responseTime: number,
   error?: Error,
-): Record<string, unknown> {
+) {
   const context = LogContext.forRequest(request);
 
   return compact({
@@ -63,6 +63,13 @@ function requestId(request: IncomingMessage): string | undefined {
   return typeof id === 'string' || typeof id === 'number' ? String(id) : undefined;
 }
 
-function compact(value: Record<string, unknown>): Record<string, unknown> {
-  return Object.fromEntries(Object.entries(value).filter(([, entryValue]) => entryValue !== undefined));
+type Compact<T extends object> = {
+  [K in keyof T as undefined extends T[K] ? never : K]: T[K];
+} & {
+  [K in keyof T as undefined extends T[K] ? K : never]?: Exclude<T[K], undefined>;
+};
+
+function compact<T extends object>(value: T): Compact<T> {
+  // SAFETY: Object.fromEntries only removes entries whose runtime value is undefined; every retained key/value pair comes from the input shape.
+  return Object.fromEntries(Object.entries(value).filter(([, entryValue]) => entryValue !== undefined)) as Compact<T>;
 }

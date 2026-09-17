@@ -93,6 +93,21 @@ describe('isUniqueConstraintViolation', () => {
     expect(isUniqueConstraintViolation(error, RENTAL_OFFER_UNIQUE_COLUMNS)).toBe(true);
   });
 
+  it('matches driver-adapter constraint fields without a PostgreSQL kind discriminator', () => {
+    const error = {
+      code: 'P2002',
+      meta: {
+        driverAdapterError: {
+          cause: {
+            constraint: { fields: ['tenant_id', 'branch_id', 'rentable_item_id'] },
+          },
+        },
+      },
+    };
+
+    expect(isUniqueConstraintViolation(error, RENTAL_OFFER_UNIQUE_COLUMNS)).toBe(true);
+  });
+
   it('does not match a violation on different columns', () => {
     const error = { code: 'P2002', meta: { target: ['tenantId', 'email'] } };
 

@@ -9,7 +9,7 @@ import z from 'zod';
     NestConfigModule.forRoot({
       isGlobal: true,
       // 1. Validate ENV variables against Zod schema
-      validate: (env: Record<string, unknown>) => {
+      validate: (env: NodeJS.ProcessEnv) => {
         const parsed = EnvSchema.safeParse(env);
         if (!parsed.success) {
           console.error('❌ Invalid Environment Variables:', z.treeifyError(parsed.error));

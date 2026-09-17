@@ -43,8 +43,8 @@ function serializeError(error: Error, depth: number, seen: Set<Error>, includeSt
     message: readString(error, 'message') || '',
   };
 
-  const code = readValue(error, 'code');
-  if (typeof code === 'string' || (typeof code === 'number' && Number.isFinite(code))) {
+  const code = readCode(error);
+  if (code !== undefined) {
     serialized.code = code;
   }
 
@@ -55,7 +55,13 @@ function serializeError(error: Error, depth: number, seen: Set<Error>, includeSt
     }
   }
 
-  const cause = readValue(error, 'cause');
+  let cause: unknown;
+  try {
+    cause = Reflect.get(error, 'cause');
+  } catch {
+    return serialized;
+  }
+
   if (cause === undefined) {
     return serialized;
   }
@@ -100,17 +106,22 @@ function serializeOpaqueCause(cause: unknown): string | number | boolean | null 
 }
 
 function readString(error: Error, key: 'name' | 'message' | 'stack'): string | undefined {
-  const value = readValue(error, key);
-  return typeof value === 'string' ? value : undefined;
+  try {
+    const value = Reflect.get(error, key);
+    return typeof value === 'string' ? value : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
-function readValue<K extends 'name' | 'message' | 'stack' | 'code' | 'cause'>(
-  error: Error,
-  key: K,
-): (Error & Record<string, unknown>)[K] | undefined {
+function readCode(error: Error): string | number | undefined {
   try {
-    // SAFETY: The immediately preceding null and object checks establish that this value is a non-array object.
-    return (error as Error & Record<string, unknown>)[key];
+    const value = Reflect.get(error, 'code');
+    if (typeof value === 'string') {
+      return value;
+    }
+
+    return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
   } catch {
     return undefined;
   }
