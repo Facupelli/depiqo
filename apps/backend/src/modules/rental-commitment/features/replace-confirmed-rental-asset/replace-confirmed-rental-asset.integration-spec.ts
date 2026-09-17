@@ -21,6 +21,7 @@ import { ConfirmRentalCommand } from '../confirm-rental/confirm-rental.command';
 import { ConfirmRentalResult } from '../confirm-rental/confirm-rental.handler';
 import { ConfirmRentalFixtures } from '../confirm-rental/testing/confirm-rental.fixtures';
 import { ConfirmedRentalFixtures } from '../../testing/confirmed-rental.fixtures';
+import type { CandidateOverrides } from '../confirm-rental/testing/confirm-rental.fixtures';
 import { ChangeRentalDetailsCommand } from '../change-rental-details/change-rental-details.command';
 import { ChangeRentalDetailsResult } from '../change-rental-details/change-rental-details.handler';
 import { ReplaceConfirmedRentalAssetCommand } from './replace-confirmed-rental-asset.command';
@@ -73,7 +74,7 @@ describe('ReplaceConfirmedRentalAsset integration', () => {
     return { tenant, branch, customer, user, commercial, rental };
   }
 
-  async function candidate(setup: Awaited<ReturnType<typeof scenario>>, overrides: Record<string, unknown> = {}) {
+  async function candidate(setup: Awaited<ReturnType<typeof scenario>>, overrides: CandidateOverrides = {}) {
     return fixtures.createCandidate({
       tenantId: setup.tenant.id,
       branchId: setup.branch.id,
@@ -308,7 +309,7 @@ describe('ReplaceConfirmedRentalAsset integration', () => {
     expect(await fixtures.persistedState(unavailableSetup.rental.rentalId)).toEqual(before);
   });
 
-  it.each([
+  const candidatePolicyCases: ReadonlyArray<readonly [string, CandidateOverrides]> = [
     ['wrong equipment type', { equipmentTypeId: 'different-equipment-type' }],
     ['inactive asset status', { assetStatus: 'INACTIVE' }],
     ['retired asset status', { assetStatus: 'RETIRED' }],
@@ -317,14 +318,19 @@ describe('ReplaceConfirmedRentalAsset integration', () => {
       'third-party candidate without owner contract snapshot',
       { ownershipKind: 'THIRD_PARTY', ownerId: 'owner', ownerContractSnapshot: null },
     ],
-  ])('enforces the V2RentalAssetCandidate projection policy: %s', async (_name, overrides) => {
-    const setup = await scenario();
-    const replacementAssetId = await candidate(setup, overrides);
-    const before = await fixtures.persistedState(setup.rental.rentalId);
-    const result = await replace({ setup, replacementAssetId, expectedVersion: before.rental.version });
-    expect(result.isErr() && result.error.code).toBe('rental_commitment.replacement_asset_unavailable');
-    expect(await fixtures.persistedState(setup.rental.rentalId)).toEqual(before);
-  });
+  ];
+
+  it.each(candidatePolicyCases)(
+    'enforces the V2RentalAssetCandidate projection policy: %s',
+    async (_name, overrides) => {
+      const setup = await scenario();
+      const replacementAssetId = await candidate(setup, overrides);
+      const before = await fixtures.persistedState(setup.rental.rentalId);
+      const result = await replace({ setup, replacementAssetId, expectedVersion: before.rental.version });
+      expect(result.isErr() && result.error.code).toBe('rental_commitment.replacement_asset_unavailable');
+      expect(await fixtures.persistedState(setup.rental.rentalId)).toEqual(before);
+    },
+  );
 
   it('enforces tenant isolation through the V2RentalAssetCandidate projection', async () => {
     const setupA = await scenario();

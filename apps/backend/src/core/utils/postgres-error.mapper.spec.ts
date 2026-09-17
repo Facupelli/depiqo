@@ -69,6 +69,12 @@ describe('isPrismaRawQueryPostgresDeadlock', () => {
 
 const RENTAL_OFFER_UNIQUE_COLUMNS = ['tenant_id', 'branch_id', 'rentable_item_id'];
 
+type PrismaRawQueryCauseFixture = {
+  kind?: 'postgres' | 'mysql';
+  code?: string;
+  originalCode?: string;
+};
+
 describe('isUniqueConstraintViolation', () => {
   it('matches a standard meta.target with camelCase field names', () => {
     const error = { code: 'P2002', meta: { target: ['tenantId', 'branchId', 'rentableItemId'] } };
@@ -135,7 +141,7 @@ function expectMappedExclusionViolation(error: unknown): void {
   }
 }
 
-function prismaRawQueryError(cause: Record<string, unknown>) {
+function prismaRawQueryError(cause: PrismaRawQueryCauseFixture) {
   return {
     code: 'P2010',
     meta: {

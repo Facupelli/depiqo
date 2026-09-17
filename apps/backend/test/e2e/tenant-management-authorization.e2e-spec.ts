@@ -1,6 +1,10 @@
 import { randomUUID } from 'node:crypto';
 
-import { TenantPermission, type TenantPermission as TenantPermissionId } from '@repo/api-contracts';
+import {
+  TenantPermission,
+  type TenantPermission as TenantPermissionId,
+  type UpdateTenantConfigBodyDto,
+} from '@repo/api-contracts';
 import request from 'supertest';
 
 import { PrismaService } from '../../src/core/database/prisma.service';
@@ -117,7 +121,7 @@ describe('Tenant Management HTTP authorization', () => {
     const pricingManager = await clientWithPermissions(tenant.id, [TenantPermission.PricingManage]);
     const unrelated = await clientWithPermissions(tenant.id, [TenantPermission.CustomersRead]);
     const path = '/tenant-management/tenant/config';
-    const cases: Array<{ client: E2ETestClient; body: Record<string, unknown> }> = [
+    const cases: Array<{ client: E2ETestClient; body: UpdateTenantConfigBodyDto }> = [
       { client: settingsManager, body: { timezone: 'UTC' } },
       { client: settingsManager, body: { notifications: { enabledChannels: ['EMAIL'] } } },
       { client: settingsManager, body: { communication: { orderCommunicationMode: 'FORMAL' } } },

@@ -1,4 +1,8 @@
-import { PlatformProblemTypes, PROBLEM_DETAILS_CONTENT_TYPE } from '../../src/core/problem-details';
+import {
+  PlatformProblemTypes,
+  PROBLEM_DETAILS_CONTENT_TYPE,
+  type ProblemDetailsBody,
+} from '../../src/core/problem-details';
 import type { Response } from 'supertest';
 
 export type ExpectedProblemResponse = {
@@ -12,7 +16,7 @@ export function expectProblemResponse(response: Response, expected: ExpectedProb
   expect(response.status).toBe(expected.status);
 
   // SAFETY: The fixture or preceding response assertions establish this object shape before these fields are inspected.
-  const problem = response.body as Record<string, unknown>;
+  const problem = response.body as ProblemDetailsBody;
 
   expect(problem).toEqual(
     expect.objectContaining({
@@ -40,7 +44,7 @@ export function expectValidationProblem(response: Response): void {
   });
 
   // SAFETY: The fixture or preceding response assertions establish this object shape before these fields are inspected.
-  const invalidParams = (response.body as Record<string, unknown>)['invalid-params'];
+  const invalidParams = (response.body as ProblemDetailsBody)['invalid-params'];
 
   expect(invalidParams).toEqual(
     expect.arrayContaining([

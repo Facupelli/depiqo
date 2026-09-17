@@ -38,8 +38,7 @@ function getNullableStringFromJson(value: Prisma.JsonValue, key: string): string
     return null;
   }
 
-  // SAFETY: The immediately preceding null and object checks establish that this value is a non-array object.
-  const fieldValue = (value as Record<string, unknown>)[key];
+  const fieldValue = value[key];
 
   return typeof fieldValue === 'string' && fieldValue.trim().length > 0 ? fieldValue : null;
 }

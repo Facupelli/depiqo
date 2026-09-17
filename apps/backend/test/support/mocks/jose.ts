@@ -1,6 +1,7 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
+import type { JWTPayload as JoseJWTPayload } from 'jose';
 
-type JwtPayload = Record<string, unknown>;
+type JwtPayload = JoseJWTPayload;
 type JwtVerifyOptions = {
   algorithms?: string[];
   typ?: string;
