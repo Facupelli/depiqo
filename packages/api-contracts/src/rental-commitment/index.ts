@@ -7,6 +7,7 @@ export * from "./confirm-rental.contract";
 export * from "./create-confirmed-rental.contract";
 export * from "./create-draft-rental.contract";
 export * from "./get-rental-detail.contract";
+export * from "./get-rental-operations.contract";
 export * from "./get-rentals-calendar.contract";
 export * from "./get-rentals.contract";
 export * from "./get-rental-offer-availability.contract";

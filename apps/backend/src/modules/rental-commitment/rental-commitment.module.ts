@@ -51,6 +51,8 @@ import { RemoveRentalSelectionHttpController } from './features/remove-rental-se
 import { RemoveRentalSelectionHandler } from './features/remove-rental-selection/remove-rental-selection.handler';
 import { GetRentalDetailHttpController } from './features/get-rental-detail/get-rental-detail.controller';
 import { GetRentalDetailHandler } from './features/get-rental-detail/get-rental-detail.handler';
+import { GetRentalOperationsHttpController } from './features/get-rental-operations/get-rental-operations.controller';
+import { GetRentalOperationsHandler } from './features/get-rental-operations/get-rental-operations.handler';
 import { GetRentalsCalendarHttpController } from './features/get-rentals-calendar/get-rentals-calendar.controller';
 import { GetRentalsCalendarHandler } from './features/get-rentals-calendar/get-rentals-calendar.handler';
 import { GetRentalsHttpController } from './features/get-rentals/get-rentals.controller';
@@ -98,6 +100,7 @@ import { RentalLifecycleFactsService } from './public-api/rental-lifecycle-facts
     RestoreConfirmedPackageDemandLineHttpController,
     RemoveConfirmedPackageDemandLineHttpController,
     RemoveRentalSelectionHttpController,
+    GetRentalOperationsHttpController,
     GetRentalsCalendarHttpController,
     GetRentalDetailHttpController,
     GetRentalAccessoryDefaultsHttpController,
@@ -134,6 +137,7 @@ import { RentalLifecycleFactsService } from './public-api/rental-lifecycle-facts
     RemoveConfirmedPackageDemandLineHandler,
     RemoveRentalSelectionHandler,
     GetRentalDetailHandler,
+    GetRentalOperationsHandler,
     GetRentalAccessoryDefaultsHandler,
     GetRentalsCalendarHandler,
     GetRentalsHandler,
