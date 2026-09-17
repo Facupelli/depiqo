@@ -7,7 +7,12 @@ export type RemoveConfirmedPackageDemandLineErrorCode =
   | 'rental_commitment.rental_period_ended'
   | 'rental_commitment.rental_demand_line_referenced_by_accessory'
   | 'rental_commitment.rental_version_conflict'
-  | 'rental_commitment.invalid_rental_field';
+  | 'rental_commitment.demand_line_not_part_of_package'
+  | 'rental_commitment.package_must_retain_demand_line'
+  | 'rental_commitment.invalid_package_demand_line_removal_quantity'
+  | 'rental_commitment.release_asset_count_mismatch'
+  | 'rental_commitment.duplicate_release_asset_ids'
+  | 'rental_commitment.release_asset_demand_line_mismatch';
 
 export interface RemoveConfirmedPackageDemandLineError extends ApplicationError {
   code: RemoveConfirmedPackageDemandLineErrorCode;

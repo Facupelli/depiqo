@@ -67,6 +67,51 @@ export class RentalDemandLineNotFoundError extends RentalCommitmentError {
   }
 }
 
+export class RentalDemandLineNotPartOfPackageError extends RentalCommitmentError {
+  constructor(public readonly rentalDemandLineId: string) {
+    super(`Rental demand line "${rentalDemandLineId}" does not belong to a current composite selection.`);
+  }
+}
+
+export class RentalPackageMustRetainDemandLineError extends RentalCommitmentError {
+  constructor(public readonly rentalSelectionId: string) {
+    super(`Composite selection "${rentalSelectionId}" must retain operational demand.`);
+  }
+}
+
+export class InvalidPackageDemandLineRemovalQuantityError extends RentalCommitmentError {
+  constructor(
+    public readonly rentalDemandLineId: string,
+    public readonly quantity: number,
+  ) {
+    super(`Invalid removal quantity ${quantity} for rental demand line "${rentalDemandLineId}".`);
+  }
+}
+
+export class ReleaseAssetCountMismatchError extends RentalCommitmentError {
+  constructor(
+    public readonly quantity: number,
+    public readonly releaseAssetCount: number,
+  ) {
+    super(`Removal quantity ${quantity} requires ${quantity} release asset IDs but received ${releaseAssetCount}.`);
+  }
+}
+
+export class DuplicateReleaseAssetIdsError extends RentalCommitmentError {
+  constructor() {
+    super('Release asset IDs must be unique.');
+  }
+}
+
+export class ReleaseAssetDemandLineMismatchError extends RentalCommitmentError {
+  constructor(
+    public readonly assetId: string,
+    public readonly rentalDemandLineId: string,
+  ) {
+    super(`Asset "${assetId}" does not belong to rental demand line "${rentalDemandLineId}".`);
+  }
+}
+
 export class RentalCannotBeConfirmedFromStatusError extends RentalCommitmentError {
   constructor(rentalId: string, status: RentalStatus) {
     super(`Rental "${rentalId}" cannot be confirmed from status "${status}".`);

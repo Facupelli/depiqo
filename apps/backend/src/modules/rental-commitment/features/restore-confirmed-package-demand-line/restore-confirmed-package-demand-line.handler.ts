@@ -15,7 +15,7 @@ import {
   RentalPeriodHasEndedError,
   RentalSelectionNotFoundError,
 } from '../../domain/errors/rental-commitment.errors';
-import { RentalStatus, RentableItemKind } from '../../domain/rental-status';
+import { isCompositeRentableItemKind, RentalStatus } from '../../domain/rental-status';
 import { Rental } from '../../domain/rental.aggregate';
 import { RentalPeriod } from '../../domain/value-objects/rental-period.value-object';
 import { getConfirmedPriceSnapshotForOwnerSplits } from '../../owner-split/confirmed-price-snapshot-for-owner-splits';
@@ -94,13 +94,13 @@ export class RestoreConfirmedPackageDemandLineHandler implements ICommandHandler
         if (!parentSelection) {
           return err(this.map(new RentalSelectionNotFoundError(rentalId, demandLine.rentalSelectionId), context));
         }
-        if (parentSelection.rentableItemKindSnapshot !== RentableItemKind.Package || !parentSelection.isCurrent) {
+        if (!isCompositeRentableItemKind(parentSelection.rentableItemKindSnapshot) || !parentSelection.isCurrent) {
           return err(
             this.map(
               new RentalInvalidFieldError(
                 'demandLineId',
-                parentSelection.rentableItemKindSnapshot !== RentableItemKind.Package
-                  ? 'must belong to a PACKAGE selection'
+                !isCompositeRentableItemKind(parentSelection.rentableItemKindSnapshot)
+                  ? 'must belong to a composite selection'
                   : 'must belong to a current selection',
               ),
               context,

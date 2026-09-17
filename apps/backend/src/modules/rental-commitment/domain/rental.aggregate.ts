@@ -19,6 +19,10 @@ import {
   CurrentAssignedAssetDemandMismatchError,
   DemandLineSelectionMismatchError,
   DuplicateAssignedAssetError,
+  DuplicateReleaseAssetIdsError,
+  InvalidPackageDemandLineRemovalQuantityError,
+  ReleaseAssetCountMismatchError,
+  ReleaseAssetDemandLineMismatchError,
   RentalAlreadyCancelledError,
   RentalCannotBeCancelledFromStatusError,
   RentalCannotBeConfirmedFromStatusError,
@@ -28,6 +32,8 @@ import {
   RentalPeriodHasStartedError,
   RentalSelectionNotFoundError,
   RentalDemandLineNotFoundError,
+  RentalDemandLineNotPartOfPackageError,
+  RentalPackageMustRetainDemandLineError,
   RentalAssignedAssetNotFoundError,
   RentalConfirmationRequiresCustomerError,
   RentalChildRentalMismatchError,
@@ -43,7 +49,14 @@ import { deriveConfirmedSelectionQuantityChange } from './confirmed-selection-qu
 import { deriveConfirmationParticipationTiming } from './confirmation-participation-timing';
 import { AssetId, RentalId } from './types/rental-commitment-ids';
 import { CreateRentalDemandLineProps, RentalDemandLine } from './rental-demand-line.entity';
-import { AssetBlockType, FulfillmentMethod, RentableItemKind, RentalSource, RentalStatus } from './rental-status';
+import {
+  AssetBlockType,
+  FulfillmentMethod,
+  isCompositeRentableItemKind,
+  RentableItemKind,
+  RentalSource,
+  RentalStatus,
+} from './rental-status';
 import { CreateRentalSelectionProps, RentalSelection } from './rental-selection.entity';
 import { endAssignmentParticipation } from './release-assignment-participation';
 import { AssignedAssetOwnershipSnapshot } from './value-objects/assigned-asset-ownership-snapshot.value-object';
@@ -870,21 +883,22 @@ export class Rental extends AggregateRootBase {
 
     const selection = this.currentSelections.find((candidate) => candidate.id === demandLine.rentalSelectionId);
     if (!selection) return err(new RentalSelectionNotFoundError(this.id, demandLine.rentalSelectionId));
-    if (selection.rentableItemKindSnapshot !== RentableItemKind.Package) {
-      return err(new RentalInvalidFieldError('demandLineId', 'must belong to a current PACKAGE selection'));
+    if (!isCompositeRentableItemKind(selection.rentableItemKindSnapshot)) {
+      return err(new RentalDemandLineNotPartOfPackageError(demandLine.id));
     }
 
-    if (!Number.isInteger(params.quantity) || params.quantity <= 0) {
-      return err(new RentalInvalidFieldError('quantity', 'must be a positive integer'));
-    }
-    if (params.quantity > demandLine.operationalQuantity) {
-      return err(new RentalInvalidFieldError('quantity', 'must not exceed operationalQuantity'));
+    if (
+      !Number.isInteger(params.quantity) ||
+      params.quantity <= 0 ||
+      params.quantity > demandLine.operationalQuantity
+    ) {
+      return err(new InvalidPackageDemandLineRemovalQuantityError(demandLine.id, params.quantity));
     }
     if (params.releaseAssetIds.length !== params.quantity) {
-      return err(new RentalInvalidFieldError('releaseAssetIds', 'count must equal suppression quantity'));
+      return err(new ReleaseAssetCountMismatchError(params.quantity, params.releaseAssetIds.length));
     }
     if (new Set(params.releaseAssetIds).size !== params.releaseAssetIds.length) {
-      return err(new RentalInvalidFieldError('releaseAssetIds', 'must contain unique asset IDs'));
+      return err(new DuplicateReleaseAssetIdsError());
     }
 
     const resultingOperationalQuantity = demandLine.operationalQuantity - params.quantity;
@@ -892,7 +906,7 @@ export class Rental extends AggregateRootBase {
       .filter((candidate) => candidate.rentalSelectionId === selection.id && candidate.id !== demandLine.id)
       .reduce((total, candidate) => total + candidate.operationalQuantity, 0);
     if (resultingOperationalQuantity + siblingOperationalQuantity === 0) {
-      return err(new RentalInvalidFieldError('demandLineId', 'PACKAGE selection must retain operational demand'));
+      return err(new RentalPackageMustRetainDemandLineError(selection.id));
     }
 
     const assignmentsToRelease: AssignedAsset[] = [];
@@ -900,9 +914,7 @@ export class Rental extends AggregateRootBase {
       const assignment = this.currentAssignedAssets.find((candidate) => candidate.assetId === assetId);
       if (!assignment) return err(new RentalAssignedAssetNotFoundError(this.id, assetId));
       if (assignment.rentalDemandLineId !== demandLine.id) {
-        return err(
-          new RentalInvalidFieldError('releaseAssetIds', `asset "${assetId}" does not belong to the demand line`),
-        );
+        return err(new ReleaseAssetDemandLineMismatchError(assetId, demandLine.id));
       }
       assignmentsToRelease.push(assignment);
     }
@@ -972,8 +984,8 @@ export class Rental extends AggregateRootBase {
 
     const selection = this.props.selections.find((candidate) => candidate.id === demandLine.rentalSelectionId);
     if (!selection) return err(new RentalSelectionNotFoundError(this.id, demandLine.rentalSelectionId));
-    if (selection.rentableItemKindSnapshot !== RentableItemKind.Package) {
-      return err(new RentalInvalidFieldError('demandLineId', 'must belong to a PACKAGE selection'));
+    if (!isCompositeRentableItemKind(selection.rentableItemKindSnapshot)) {
+      return err(new RentalInvalidFieldError('demandLineId', 'must belong to a composite selection'));
     }
     if (!selection.isCurrent) {
       return err(new RentalInvalidFieldError('demandLineId', 'must belong to a current selection'));
@@ -1030,13 +1042,13 @@ export class Rental extends AggregateRootBase {
     const selection = this.currentSelections.find((candidate) => candidate.id === params.selectionId);
     if (!selection) return err(new RentalSelectionNotFoundError(this.id, params.selectionId));
     if (
-      selection.rentableItemKindSnapshot === RentableItemKind.Package &&
+      isCompositeRentableItemKind(selection.rentableItemKindSnapshot) &&
       this.props.demandLines.some((line) => line.rentalSelectionId === selection.id && line.removedQuantity > 0)
     ) {
       return err(
         new RentalInvalidFieldError(
           'selectionId',
-          'PACKAGE selection quantity cannot change while child demand is suppressed',
+          'composite selection quantity cannot change while child demand is suppressed',
         ),
       );
     }
@@ -1815,13 +1827,13 @@ export class Rental extends AggregateRootBase {
       }
       if (
         selection.isCurrent &&
-        selection.rentableItemKindSnapshot === RentableItemKind.Package &&
+        isCompositeRentableItemKind(selection.rentableItemKindSnapshot) &&
         selectionDemandLines.every((line) => line.operationalQuantity === 0)
       ) {
         return err(
           new RentalInvalidFieldError(
             'demandLines',
-            `current PACKAGE selection "${selection.id}" requires operational demand`,
+            `current composite selection "${selection.id}" requires operational demand`,
           ),
         );
       }

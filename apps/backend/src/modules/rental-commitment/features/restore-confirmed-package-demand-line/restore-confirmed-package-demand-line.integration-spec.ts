@@ -46,7 +46,9 @@ describe('RestoreConfirmedPackageDemandLine integration', () => {
 
   afterEach(() => jest.useRealTimers());
 
-  async function scenario(options: { period?: { start: Date; end: Date }; kind?: 'PACKAGE' | 'SINGLE' } = {}) {
+  async function scenario(
+    options: { period?: { start: Date; end: Date }; kind?: 'PACKAGE' | 'KIT' | 'BUNDLE' | 'SINGLE' } = {},
+  ) {
     const tenant = await core.createTenant();
     const branch = await core.createBranch({ tenantId: tenant.id });
     const { customer } = await core.createRentalCustomer({ tenantId: tenant.id });
@@ -166,6 +168,33 @@ describe('RestoreConfirmedPackageDemandLine integration', () => {
     expect(result.isOk()).toBe(true);
     return fixtures.persistedState(setup.rental.rentalId);
   }
+
+  it('restores a previously removed BUNDLE child with unchanged allocation and persistence behavior', async () => {
+    const setup = await scenario({ kind: 'BUNDLE' });
+    const targetId = setup.rental.demandLineIds[1];
+    const removed = await removeAt(setup, targetId, new Date('2030-01-20T10:00:00.000Z'));
+
+    jest.setSystemTime(new Date('2030-01-21T10:00:00.000Z'));
+    const result = await restore(setup, targetId, removed.rental.version);
+
+    expect(result.isOk()).toBe(true);
+    const after = await fixtures.persistedState(setup.rental.rentalId);
+    expect(after.rental.version).toBe(removed.rental.version + 1);
+    expect(after.rental.selections).toContainEqual(
+      expect.objectContaining({ id: setup.selectionId, rentableItemKindSnapshot: 'BUNDLE', removedAt: null }),
+    );
+    expect(after.rental.demandLines).toContainEqual(
+      expect.objectContaining({ id: targetId, removedQuantity: 0, removedAt: null }),
+    );
+    expect(
+      after.rental.assignedAssets.some(
+        (assignment) => assignment.rentalDemandLineId === targetId && assignment.effectiveUntil === null,
+      ),
+    ).toBe(true);
+    expect(after.blocks.some((block) => block.assetId === setup.assetIds[1] && block.releasedAt === null)).toBe(true);
+    expect(after.rental.priceSnapshot).toEqual(removed.rental.priceSnapshot);
+    expect(after.rental.acceptedCustomerTotal).toEqual(removed.rental.acceptedCustomerTotal);
+  });
 
   it('restores one unit of partially suppressed current demand and preserves existing participation', async () => {
     const setup = await scenario();

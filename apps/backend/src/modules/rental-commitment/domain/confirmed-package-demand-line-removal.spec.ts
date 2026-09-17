@@ -1,8 +1,14 @@
 import { AssetBlock } from './asset-block.entity';
 import { AssignedAsset } from './assigned-asset.entity';
 import {
+  DuplicateReleaseAssetIdsError,
+  InvalidPackageDemandLineRemovalQuantityError,
+  ReleaseAssetCountMismatchError,
+  ReleaseAssetDemandLineMismatchError,
   RentalDemandLineNotFoundError,
+  RentalDemandLineNotPartOfPackageError,
   RentalInvalidFieldError,
+  RentalPackageMustRetainDemandLineError,
   RentalPeriodHasEndedError,
 } from './errors/rental-commitment.errors';
 import { ConfirmedRentalEditedDomainEvent } from './events/rental-lifecycle.domain-events';
@@ -64,7 +70,7 @@ const confirmedPriceSnapshot = {
   total: '100.00',
 };
 
-function createConfirmed(lightQuantity = 1): Rental {
+function createConfirmed(lightQuantity = 1, compositeKind = RentableItemKind.Package): Rental {
   return Rental.createConfirmed({
     id: 'rental-1' as RentalId,
     tenantId: 'tenant-1',
@@ -81,7 +87,7 @@ function createConfirmed(lightQuantity = 1): Rental {
         rentalOfferId: 'package-offer',
         rentableItemId: 'package-item',
         rentableItemNameSnapshot: 'Lighting package',
-        rentableItemKindSnapshot: RentableItemKind.Package,
+        rentableItemKindSnapshot: compositeKind,
         quantity: 1,
       },
       {
@@ -209,12 +215,49 @@ describe('Confirmed package demand line removal', () => {
     expect(quantityChange._unsafeUnwrapErr()).toEqual(
       new RentalInvalidFieldError(
         'selectionId',
-        'PACKAGE selection quantity cannot change while child demand is suppressed',
+        'composite selection quantity cannot change while child demand is suppressed',
       ),
     );
     expect(rental.selections.find((selection) => selection.id === packageSelectionId)?.quantity).toBe(1);
     expect(rental.pullDomainEvents()).toEqual([expect.any(ConfirmedRentalEditedDomainEvent)]);
   });
+
+  it.each([RentableItemKind.Bundle, RentableItemKind.Kit])(
+    'treats %s as composite for removal and quantity-change suppression protection',
+    (compositeKind) => {
+      const rental = createConfirmed(1, compositeKind);
+
+      const removal = rental.removeConfirmedPackageDemandLine({
+        demandLineId: lightDemandId,
+        quantity: 1,
+        releaseAssetIds: [assetIdFor(lightDemandId)],
+        operationTime: beforeStart,
+      });
+
+      expect(removal.isOk()).toBe(true);
+      expect(rental.demandLines.find((line) => line.id === lightDemandId)).toMatchObject({
+        removedQuantity: 1,
+        operationalQuantity: 0,
+      });
+      expect(rental.currentAssignedAssets.some((assignment) => assignment.assetId === 'light-asset')).toBe(false);
+      expect(rental.assetBlocks.some((block) => block.assetId === 'light-asset')).toBe(false);
+
+      const quantityChange = rental.changeConfirmedSelectionQuantity({
+        selectionId: packageSelectionId,
+        newQuantity: 2,
+        releaseAssetIds: [],
+        newAssignments: [],
+        confirmedPriceSnapshot,
+        operationTime: beforeStart,
+      });
+      expect(quantityChange._unsafeUnwrapErr()).toEqual(
+        new RentalInvalidFieldError(
+          'selectionId',
+          'composite selection quantity cannot change while child demand is suppressed',
+        ),
+      );
+    },
+  );
 
   it('suppresses two units after participation starts and reuses the existing temporal rules', () => {
     const rental = createConfirmed(3);
@@ -253,9 +296,7 @@ describe('Confirmed package demand line removal', () => {
       operationTime: beforeStart,
     });
 
-    expect(result._unsafeUnwrapErr()).toEqual(
-      new RentalInvalidFieldError('demandLineId', 'must belong to a current PACKAGE selection'),
-    );
+    expect(result._unsafeUnwrapErr()).toEqual(new RentalDemandLineNotPartOfPackageError(cameraDemandId));
   });
 
   it('rejects removing the last current demand line of a PACKAGE', () => {
@@ -276,14 +317,12 @@ describe('Confirmed package demand line removal', () => {
       operationTime: beforeStart,
     });
 
-    expect(result._unsafeUnwrapErr()).toEqual(
-      new RentalInvalidFieldError('demandLineId', 'PACKAGE selection must retain operational demand'),
-    );
+    expect(result._unsafeUnwrapErr()).toEqual(new RentalPackageMustRetainDemandLineError(packageSelectionId));
   });
 
   it('rejects invalid suppression input, already removed demand, and unknown demand', () => {
     const operationalRental = createConfirmed(3);
-    for (const quantity of [0, -1, 4]) {
+    for (const quantity of [0, -1, 1.5, 4]) {
       expect(
         operationalRental
           .removeConfirmedPackageDemandLine({
@@ -292,9 +331,19 @@ describe('Confirmed package demand line removal', () => {
             releaseAssetIds: [],
             operationTime: beforeStart,
           })
-          .isErr(),
-      ).toBe(true);
+          ._unsafeUnwrapErr(),
+      ).toEqual(new InvalidPackageDemandLineRemovalQuantityError(lightDemandId, quantity));
     }
+    expect(
+      operationalRental
+        .removeConfirmedPackageDemandLine({
+          demandLineId: lightDemandId,
+          quantity: 2,
+          releaseAssetIds: ['light-asset' as AssetId],
+          operationTime: beforeStart,
+        })
+        ._unsafeUnwrapErr(),
+    ).toEqual(new ReleaseAssetCountMismatchError(2, 1));
     expect(
       operationalRental
         .removeConfirmedPackageDemandLine({
@@ -304,7 +353,7 @@ describe('Confirmed package demand line removal', () => {
           operationTime: beforeStart,
         })
         ._unsafeUnwrapErr(),
-    ).toEqual(new RentalInvalidFieldError('releaseAssetIds', 'must contain unique asset IDs'));
+    ).toEqual(new DuplicateReleaseAssetIdsError());
     expect(
       operationalRental
         .removeConfirmedPackageDemandLine({
@@ -314,7 +363,7 @@ describe('Confirmed package demand line removal', () => {
           operationTime: beforeStart,
         })
         ._unsafeUnwrapErr(),
-    ).toEqual(new RentalInvalidFieldError('releaseAssetIds', 'asset "stand-asset" does not belong to the demand line'));
+    ).toEqual(new ReleaseAssetDemandLineMismatchError('stand-asset', lightDemandId));
 
     const rental = createConfirmed();
     rental
@@ -369,6 +418,29 @@ describe('Confirmed package demand line removal', () => {
     );
   });
 
+  it.each([RentableItemKind.Package, RentableItemKind.Kit, RentableItemKind.Bundle])(
+    'requires current %s selections to retain operational demand',
+    (compositeKind) => {
+      const rental = createConfirmed(1, compositeKind);
+      const demandLines = rental.demandLines.map((line) =>
+        line.rentalSelectionId === packageSelectionId ? line.removeAt(beforeStart) : line,
+      );
+      const assignedAssets = rental.assignedAssets.filter(
+        (assignment) => ![lightDemandId, standDemandId].includes(assignment.rentalDemandLineId),
+      );
+      const assetBlocks = rental.assetBlocks.filter((block) => !['light-asset', 'stand-asset'].includes(block.assetId));
+
+      const result = reconstituteFrom(rental, { demandLines, assignedAssets, assetBlocks });
+
+      expect(result._unsafeUnwrapErr()).toEqual(
+        new RentalInvalidFieldError(
+          'demandLines',
+          `current composite selection "${packageSelectionId}" requires operational demand`,
+        ),
+      );
+    },
+  );
+
   it('rejects a removed selection with a current child', () => {
     const rental = createConfirmed();
     const selections = rental.selections.map((selection) =>
@@ -414,6 +486,35 @@ describe('Confirmed package demand line restoration', () => {
     rentalDemandLineId: lightDemandId,
     assetId: assetId as AssetId,
     ownershipSnapshot: tenantOwnership,
+  });
+
+  it('restores a previously removed BUNDLE child with the existing assignment and availability semantics', () => {
+    const rental = createConfirmed(1, RentableItemKind.Bundle);
+    rental
+      .removeConfirmedPackageDemandLine({
+        demandLineId: lightDemandId,
+        quantity: 1,
+        releaseAssetIds: [assetIdFor(lightDemandId)],
+        operationTime: beforeStart,
+      })
+      ._unsafeUnwrap();
+
+    const result = rental.restoreConfirmedPackageDemandLine({
+      quantity: 1,
+      demandLineId: lightDemandId,
+      assignedAssets: [restoredAssignment()],
+      operationTime: beforeStart,
+    });
+
+    expect(result.isOk()).toBe(true);
+    expect(rental.demandLines.find((line) => line.id === lightDemandId)).toMatchObject({
+      removedQuantity: 0,
+      operationalQuantity: 1,
+    });
+    expect(rental.currentAssignedAssets).toContainEqual(
+      expect.objectContaining({ rentalDemandLineId: lightDemandId, assetId: 'restored-light-asset' }),
+    );
+    expect(rental.assetBlocks).toContainEqual(expect.objectContaining({ assetId: 'restored-light-asset' }));
   });
 
   it('partially restores a partially suppressed current line with only delta participation', () => {
@@ -628,7 +729,7 @@ describe('Confirmed package demand line restoration', () => {
           operationTime: beforeStart,
         })
         ._unsafeUnwrapErr(),
-    ).toEqual(new RentalInvalidFieldError('demandLineId', 'must belong to a PACKAGE selection'));
+    ).toEqual(new RentalInvalidFieldError('demandLineId', 'must belong to a composite selection'));
   });
 
   it('rejects restoration at or after rental end and incomplete or mismatched allocation', () => {
