@@ -1,4 +1,4 @@
-import { ApplicationError } from 'src/core/errors/application-error';
+import { ApplicationError, ApplicationErrorContext } from 'src/core/errors/application-error';
 
 export type GetCustomerSummaryErrorCode = 'tenant_management.rental_customer_not_found';
 
@@ -10,7 +10,7 @@ export function getCustomerSummaryError(
   code: GetCustomerSummaryErrorCode,
   message: string,
   cause?: unknown,
-  context?: Record<string, unknown>,
+  context?: ApplicationErrorContext,
 ): GetCustomerSummaryError {
   return { code, message, cause, context };
 }

@@ -1,3 +1,5 @@
+import type { ApplicationErrorContext } from 'src/core/errors/application-error';
+
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { err, ok, Result } from 'neverthrow';
 
@@ -102,7 +104,7 @@ export class AssignCustomerToDraftRentalHandler implements ICommandHandler<
     }
   }
 
-  private toApplicationError(error: unknown, context: Record<string, unknown>): AssignCustomerToDraftRentalError {
+  private toApplicationError(error: unknown, context: ApplicationErrorContext): AssignCustomerToDraftRentalError {
     if (error instanceof RentalMustBeDraftToAssignCustomerError) {
       return assignCustomerToDraftRentalError('rental_commitment.rental_must_be_draft', error.message, error, context);
     }

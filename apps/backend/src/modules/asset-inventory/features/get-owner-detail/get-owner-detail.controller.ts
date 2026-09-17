@@ -50,7 +50,7 @@ function toGetOwnerDetailProblem(error: GetOwnerDetailError): ProblemException {
       detail: problem.detail,
       extensions: {
         code: error.code,
-        ownerId: error.context?.ownerId,
+        ...(error.context?.ownerId === undefined ? {} : { ownerId: error.context.ownerId }),
       },
     }),
     applicationError: error,

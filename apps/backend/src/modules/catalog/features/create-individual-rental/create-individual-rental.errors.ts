@@ -1,4 +1,4 @@
-import { ApplicationError } from 'src/core/errors/application-error';
+import { ApplicationError, ApplicationErrorContext } from 'src/core/errors/application-error';
 
 export type CreateIndividualRentalErrorCode =
   | 'catalog.invalid_individual_rental'
@@ -16,7 +16,7 @@ export function createIndividualRentalError(
   code: CreateIndividualRentalErrorCode,
   message: string,
   cause?: unknown,
-  context?: Record<string, unknown>,
+  context?: ApplicationErrorContext,
 ): CreateIndividualRentalError {
   return { code, message, cause, context };
 }

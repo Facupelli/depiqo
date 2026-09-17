@@ -78,7 +78,7 @@ function toGetEquipmentTypeAssetsProblem(error: GetEquipmentTypeAssetsError): Pr
       detail: problem.detail,
       extensions: {
         code: error.code,
-        equipmentTypeId: error.context?.equipmentTypeId,
+        ...(error.context?.equipmentTypeId === undefined ? {} : { equipmentTypeId: error.context.equipmentTypeId }),
       },
     }),
     applicationError: error,

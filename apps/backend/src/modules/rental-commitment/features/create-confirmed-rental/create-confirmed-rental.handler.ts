@@ -1,3 +1,5 @@
+import type { ApplicationErrorContext } from 'src/core/errors/application-error';
+
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { err, ok, Result } from 'neverthrow';
 
@@ -451,7 +453,7 @@ export class CreateConfirmedRentalService implements ICommandHandler<
   private resolveReplayResult(
     replay: { id: string; rentalNumber: number; confirmationFingerprint: string | null },
     operation: ConfirmationOperationPersistence,
-    context: Record<string, unknown>,
+    context: ApplicationErrorContext,
   ): CreateConfirmedRentalServiceResult {
     if (replay.confirmationFingerprint !== operation.fingerprint) {
       return err(
@@ -467,7 +469,7 @@ export class CreateConfirmedRentalService implements ICommandHandler<
     return ok({ rentalId: replay.id, rentalNumber: replay.rentalNumber });
   }
 
-  private toApplicationError(error: unknown, context: Record<string, unknown>): CreateConfirmedRentalError {
+  private toApplicationError(error: unknown, context: ApplicationErrorContext): CreateConfirmedRentalError {
     if (isCatalogSelectionError(error)) {
       switch (error.code) {
         case 'EmptySelection':
@@ -491,7 +493,7 @@ export class CreateConfirmedRentalService implements ICommandHandler<
             error,
             {
               ...context,
-              rentalOfferId: error.context?.rentalOfferId,
+              ...(error.context?.rentalOfferId === undefined ? {} : { rentalOfferId: error.context.rentalOfferId }),
             },
           );
         case 'RentalOfferNotFound':
@@ -500,7 +502,7 @@ export class CreateConfirmedRentalService implements ICommandHandler<
         case 'RentableItemNotActive':
           return createConfirmedRentalError('rental_commitment.catalog_selection_unavailable', error.message, error, {
             ...context,
-            rentalOfferId: error.context?.rentalOfferId,
+            ...(error.context?.rentalOfferId === undefined ? {} : { rentalOfferId: error.context.rentalOfferId }),
           });
         case 'InvalidFulfillmentDefinition':
           return createConfirmedRentalError(
@@ -520,7 +522,7 @@ export class CreateConfirmedRentalService implements ICommandHandler<
     if (error instanceof RentalOfferNotRentableError || error instanceof RentableItemNotActiveError) {
       return createConfirmedRentalError('rental_commitment.catalog_selection_unavailable', error.message, error, {
         ...context,
-        rentalOfferId: error instanceof RentalOfferNotRentableError ? error.rentalOfferId : undefined,
+        ...(error instanceof RentalOfferNotRentableError ? { rentalOfferId: error.rentalOfferId } : {}),
       });
     }
     if (error instanceof InvalidFulfillmentDefinitionError) {

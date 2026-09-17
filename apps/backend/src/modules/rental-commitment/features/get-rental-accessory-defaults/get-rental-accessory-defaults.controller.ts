@@ -49,7 +49,7 @@ function toGetRentalAccessoryDefaultsProblem(error: GetRentalAccessoryDefaultsEr
       detail: problem.detail,
       extensions: {
         code: error.code,
-        rentalId: error.context?.rentalId,
+        ...(error.context?.rentalId === undefined ? {} : { rentalId: error.context.rentalId }),
       },
     }),
     applicationError: error,

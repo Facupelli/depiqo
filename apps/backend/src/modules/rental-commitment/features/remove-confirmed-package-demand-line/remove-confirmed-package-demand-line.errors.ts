@@ -1,4 +1,4 @@
-import { ApplicationError } from 'src/core/errors/application-error';
+import { ApplicationError, ApplicationErrorContext } from 'src/core/errors/application-error';
 
 export type RemoveConfirmedPackageDemandLineErrorCode =
   | 'rental_commitment.rental_not_found'
@@ -22,5 +22,5 @@ export const removeConfirmedPackageDemandLineError = (
   code: RemoveConfirmedPackageDemandLineErrorCode,
   message: string,
   cause?: unknown,
-  context?: Record<string, unknown>,
+  context?: ApplicationErrorContext,
 ): RemoveConfirmedPackageDemandLineError => ({ code, message, cause, context });

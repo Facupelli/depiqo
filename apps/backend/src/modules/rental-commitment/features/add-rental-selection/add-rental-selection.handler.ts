@@ -1,3 +1,5 @@
+import type { ApplicationErrorContext } from 'src/core/errors/application-error';
+
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { err, ok, Result } from 'neverthrow';
 
@@ -302,7 +304,7 @@ export class AddRentalSelectionHandler implements ICommandHandler<AddRentalSelec
     }).splits;
   }
 
-  private notFound(rentalId: string, context: Record<string, unknown>): AddRentalSelectionError {
+  private notFound(rentalId: string, context: ApplicationErrorContext): AddRentalSelectionError {
     return addRentalSelectionError(
       'rental_commitment.rental_not_found',
       `Rental "${rentalId}" was not found.`,
@@ -311,7 +313,7 @@ export class AddRentalSelectionHandler implements ICommandHandler<AddRentalSelec
     );
   }
 
-  private toApplicationError(error: unknown, context: Record<string, unknown>): AddRentalSelectionError {
+  private toApplicationError(error: unknown, context: ApplicationErrorContext): AddRentalSelectionError {
     if (error instanceof CatalogSelectionResolutionError) {
       switch (error.code) {
         case 'InvalidSelectionQuantity':

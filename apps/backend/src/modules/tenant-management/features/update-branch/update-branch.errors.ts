@@ -1,4 +1,4 @@
-import { ApplicationError } from 'src/core/errors/application-error';
+import { ApplicationError, ApplicationErrorContext } from 'src/core/errors/application-error';
 
 export type UpdateBranchErrorCode =
   | 'tenant_management.branch_not_found'
@@ -14,7 +14,7 @@ export function updateBranchError(
   code: UpdateBranchErrorCode,
   message: string,
   cause?: unknown,
-  context?: Record<string, unknown>,
+  context?: ApplicationErrorContext,
 ): UpdateBranchError {
   return { code, message, cause, context };
 }

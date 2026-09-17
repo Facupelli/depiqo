@@ -1,4 +1,4 @@
-import { ApplicationError } from 'src/core/errors/application-error';
+import { ApplicationError, ApplicationErrorContext } from 'src/core/errors/application-error';
 
 export type DownloadRentalSignedRemitoErrorCode =
   | 'contracts.signed_remito_not_found'
@@ -11,7 +11,7 @@ export interface DownloadRentalSignedRemitoError extends ApplicationError {
 export function downloadRentalSignedRemitoError(
   code: DownloadRentalSignedRemitoErrorCode,
   message: string,
-  context?: Record<string, unknown>,
+  context?: ApplicationErrorContext,
 ): DownloadRentalSignedRemitoError {
   return { code, message, context };
 }

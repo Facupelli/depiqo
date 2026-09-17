@@ -1,4 +1,4 @@
-import { ApplicationError } from 'src/core/errors/application-error';
+import { ApplicationError, ApplicationErrorContext } from 'src/core/errors/application-error';
 
 export type RegisterCustomDomainErrorCode =
   | 'tenant_management.invalid_custom_domain'
@@ -15,7 +15,7 @@ export function registerCustomDomainError(
   code: RegisterCustomDomainErrorCode,
   message: string,
   cause?: unknown,
-  context?: Record<string, unknown>,
+  context?: ApplicationErrorContext,
 ): RegisterCustomDomainError {
   return { code, message, cause, context };
 }

@@ -1,4 +1,4 @@
-import { ApplicationError } from 'src/core/errors/application-error';
+import { ApplicationError, ApplicationErrorContext } from 'src/core/errors/application-error';
 
 export type ReactivateAssetErrorCode =
   | 'asset_inventory.asset_not_found'
@@ -12,5 +12,5 @@ export const reactivateAssetError = (
   code: ReactivateAssetErrorCode,
   message: string,
   cause?: unknown,
-  context?: Record<string, unknown>,
+  context?: ApplicationErrorContext,
 ): ReactivateAssetError => ({ code, message, cause, context });

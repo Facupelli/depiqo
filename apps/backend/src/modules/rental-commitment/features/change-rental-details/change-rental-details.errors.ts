@@ -1,4 +1,4 @@
-import { ApplicationError } from 'src/core/errors/application-error';
+import { ApplicationError, ApplicationErrorContext } from 'src/core/errors/application-error';
 
 export type ChangeRentalDetailsErrorCode =
   | 'rental_commitment.rental_not_found'
@@ -16,5 +16,5 @@ export const changeRentalDetailsError = (
   code: ChangeRentalDetailsErrorCode,
   message: string,
   cause?: unknown,
-  context?: Record<string, unknown>,
+  context?: ApplicationErrorContext,
 ): ChangeRentalDetailsError => ({ code, message, cause, context });

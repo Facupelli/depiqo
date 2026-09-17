@@ -1,3 +1,5 @@
+import type { ApplicationErrorContext } from 'src/core/errors/application-error';
+
 import type { ProspectiveCartCostResponseDto } from '@repo/api-contracts';
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { err, ok, Result } from 'neverthrow';
@@ -255,7 +257,7 @@ export class CalculateProspectiveCartCostHandler implements IQueryHandler<
     return { ...leg, scheduledAt: leg.scheduledAt.toISOString() };
   }
 
-  private tenantConfigurationError(cause: unknown, context: Record<string, unknown>) {
+  private tenantConfigurationError(cause: unknown, context: ApplicationErrorContext) {
     return calculateProspectiveCartCostError(
       'rental_commitment.tenant_config_unavailable',
       'Tenant pricing configuration is unavailable.',
@@ -264,7 +266,7 @@ export class CalculateProspectiveCartCostHandler implements IQueryHandler<
     );
   }
 
-  private mapCatalogError(error: CatalogSelectionResolutionError, context: Record<string, unknown>) {
+  private mapCatalogError(error: CatalogSelectionResolutionError, context: ApplicationErrorContext) {
     const code =
       error.code === 'RentalOfferNotFound'
         ? ('rental_commitment.rental_offer_not_found' as const)
@@ -274,7 +276,7 @@ export class CalculateProspectiveCartCostHandler implements IQueryHandler<
     return calculateProspectiveCartCostError(code, error.message, error, context);
   }
 
-  private mapPricingError(error: PricingCalculationError, context: Record<string, unknown>) {
+  private mapPricingError(error: PricingCalculationError, context: ApplicationErrorContext) {
     const code =
       error.code === 'pricing_calculation.coupon_not_applicable'
         ? ('rental_commitment.coupon_not_applicable' as const)

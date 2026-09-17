@@ -1,6 +1,8 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 import type { IncomingMessage } from 'node:http';
 
+import type { ApplicationErrorContext } from 'src/core/errors/application-error';
+
 export interface ProblemLogContext {
   kind: string;
   type: string;
@@ -8,11 +10,11 @@ export interface ProblemLogContext {
   detail: string;
   code?: string | number;
   errorCode?: string;
-  metadata?: Record<string, unknown>;
+  metadata?: ApplicationErrorContext;
   application?: {
     code: string;
     message: string;
-    context?: Record<string, unknown>;
+    context?: ApplicationErrorContext;
   };
 }
 

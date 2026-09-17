@@ -1,4 +1,4 @@
-import { ApplicationError } from 'src/core/errors/application-error';
+import { ApplicationError, ApplicationErrorContext } from 'src/core/errors/application-error';
 
 export type GetRentalAccessoryDefaultsErrorCode = 'asset_inventory.rental_not_found';
 
@@ -10,7 +10,7 @@ export function getRentalAccessoryDefaultsError(
   code: GetRentalAccessoryDefaultsErrorCode,
   message: string,
   cause?: unknown,
-  context?: Record<string, unknown>,
+  context?: ApplicationErrorContext,
 ): GetRentalAccessoryDefaultsError {
   return { code, message, cause, context };
 }

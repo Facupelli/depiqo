@@ -1,4 +1,4 @@
-import { ApplicationError } from 'src/core/errors/application-error';
+import { ApplicationError, ApplicationErrorContext } from 'src/core/errors/application-error';
 
 export type UpdateRentableItemDefinitionErrorCode =
   | 'catalog.rentable_item_not_found'
@@ -16,7 +16,7 @@ export function updateRentableItemDefinitionError(
   code: UpdateRentableItemDefinitionErrorCode,
   message: string,
   cause?: unknown,
-  context?: Record<string, unknown>,
+  context?: ApplicationErrorContext,
 ): UpdateRentableItemDefinitionError {
   return { code, message, cause, context };
 }

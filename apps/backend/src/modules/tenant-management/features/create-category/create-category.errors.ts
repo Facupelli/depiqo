@@ -1,4 +1,4 @@
-import { ApplicationError } from 'src/core/errors/application-error';
+import { ApplicationError, ApplicationErrorContext } from 'src/core/errors/application-error';
 
 export type CreateCategoryErrorCode = 'tenant_management.category_slug_already_in_use';
 
@@ -10,7 +10,7 @@ export function createCategoryError(
   code: CreateCategoryErrorCode,
   message: string,
   cause?: unknown,
-  context?: Record<string, unknown>,
+  context?: ApplicationErrorContext,
 ): CreateCategoryError {
   return { code, message, cause, context };
 }

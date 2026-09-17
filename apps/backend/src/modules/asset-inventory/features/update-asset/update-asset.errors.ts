@@ -1,4 +1,4 @@
-import { ApplicationError } from 'src/core/errors/application-error';
+import { ApplicationError, ApplicationErrorContext } from 'src/core/errors/application-error';
 
 export type UpdateAssetErrorCode = 'asset_inventory.asset_not_found';
 
@@ -10,5 +10,5 @@ export const updateAssetError = (
   code: UpdateAssetErrorCode,
   message: string,
   cause?: unknown,
-  context?: Record<string, unknown>,
+  context?: ApplicationErrorContext,
 ): UpdateAssetError => ({ code, message, cause, context });

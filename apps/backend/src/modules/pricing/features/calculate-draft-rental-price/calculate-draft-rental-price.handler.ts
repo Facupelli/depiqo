@@ -1,3 +1,5 @@
+import type { ApplicationErrorContext } from 'src/core/errors/application-error';
+
 import { randomUUID } from 'node:crypto';
 
 import { Injectable } from '@nestjs/common';
@@ -153,7 +155,7 @@ export class CalculateDraftRentalPriceHandler implements IQueryHandler<
       tenantId: query.tenantId,
       tenantUserId: query.tenantUserId,
       branchId: query.branchId,
-      rentalCustomerId: query.rentalCustomerId,
+      ...(query.rentalCustomerId === undefined ? {} : { rentalCustomerId: query.rentalCustomerId }),
       selectedOfferCount: query.selectedOffers.length,
       hasTargetTotalAdjustment: Boolean(query.targetTotalAdjustment),
     };
@@ -161,7 +163,7 @@ export class CalculateDraftRentalPriceHandler implements IQueryHandler<
 
   private validateQuery(
     query: CalculateDraftRentalPriceQuery,
-    context: Record<string, unknown>,
+    context: ApplicationErrorContext,
   ): CalculateDraftRentalPriceError | null {
     if (!query.tenantId.trim()) {
       return calculateDraftRentalPriceError(
@@ -272,7 +274,7 @@ export class CalculateDraftRentalPriceHandler implements IQueryHandler<
 
   private mapCatalogSelectionError(
     error: CatalogSelectionResolutionError,
-    context: Record<string, unknown>,
+    context: ApplicationErrorContext,
   ): CalculateDraftRentalPriceError {
     if (error.code === 'RentalOfferNotFound') {
       return calculateDraftRentalPriceError('pricing.rental_offer_not_found', error.message, error, context);
@@ -289,7 +291,7 @@ export class CalculateDraftRentalPriceHandler implements IQueryHandler<
 
   private toApplicationError(
     error: PricingCalculationError,
-    context: Record<string, unknown>,
+    context: ApplicationErrorContext,
   ): CalculateDraftRentalPriceError {
     if (error.code === 'pricing_calculation.invalid_request') {
       return calculateDraftRentalPriceError('pricing.invalid_draft_rental_selection', error.message, error, context);

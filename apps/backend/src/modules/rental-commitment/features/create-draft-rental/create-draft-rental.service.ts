@@ -1,3 +1,5 @@
+import type { ApplicationErrorContext } from 'src/core/errors/application-error';
+
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { err, ok, Result } from 'neverthrow';
 
@@ -44,7 +46,7 @@ export class CreateDraftRentalService implements ICommandHandler<
       tenantId: command.tenantId,
       tenantUserId: command.tenantUserId,
       branchId: command.branchId,
-      rentalCustomerId: command.rentalCustomerId,
+      ...(command.rentalCustomerId === undefined ? {} : { rentalCustomerId: command.rentalCustomerId }),
     };
 
     const proposal = await this.draftRentalProposalResolver.resolve({
@@ -94,12 +96,12 @@ export class CreateDraftRentalService implements ICommandHandler<
 
   private toCreateProposalError(
     error: DraftRentalProposalResolutionError,
-    context: Record<string, unknown>,
+    context: ApplicationErrorContext,
   ): CreateDraftRentalError {
     return createDraftRentalError(error.code, error.message, error.cause, { ...context, ...error.context });
   }
 
-  private toCreateError(error: unknown, context: Record<string, unknown>): CreateDraftRentalError {
+  private toCreateError(error: unknown, context: ApplicationErrorContext): CreateDraftRentalError {
     if (error instanceof RentalMustContainSelectionError) {
       return createDraftRentalError('rental_commitment.rental_requires_selection', error.message, error, context);
     }

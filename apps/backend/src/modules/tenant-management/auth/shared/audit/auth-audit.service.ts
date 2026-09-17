@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { JsonValue } from '@prisma/client/runtime/client';
+import type { ApplicationErrorContext } from 'src/core/errors/application-error';
 import { PrismaService } from 'src/core/database/prisma.service';
 import { V2AuthAuditEventType } from 'src/generated/prisma/enums';
 
@@ -12,7 +12,7 @@ export class AuthAuditService {
     type: V2AuthAuditEventType;
     ip?: string | null;
     userAgent?: string | null;
-    metadata?: Record<string, unknown>;
+    metadata?: ApplicationErrorContext;
   }): Promise<void> {
     try {
       // SAFETY: This value is composed only of JSON-compatible primitives, arrays, and objects before it crosses the Prisma JSON boundary.
@@ -22,7 +22,7 @@ export class AuthAuditService {
           type: input.type,
           ip: input.ip ?? null,
           userAgent: input.userAgent ?? null,
-          metadata: (input.metadata as JsonValue) ?? undefined,
+          metadata: input.metadata ?? undefined,
         },
       });
     } catch {

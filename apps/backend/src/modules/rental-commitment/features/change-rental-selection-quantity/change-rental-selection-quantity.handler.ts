@@ -1,3 +1,5 @@
+import type { ApplicationErrorContext } from 'src/core/errors/application-error';
+
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { err, ok, Result } from 'neverthrow';
 import { PrismaUnitOfWork } from 'src/core/database/prisma-unit-of-work';
@@ -256,12 +258,12 @@ export class ChangeRentalSelectionQuantityHandler implements ICommandHandler<
   private error(
     code: ChangeRentalSelectionQuantityError['code'],
     message: string,
-    context: Record<string, unknown>,
+    context: ApplicationErrorContext,
     cause?: unknown,
   ) {
     return changeRentalSelectionQuantityError(code, message, cause, context);
   }
-  private map(error: unknown, context: Record<string, unknown>): ChangeRentalSelectionQuantityError {
+  private map(error: unknown, context: ApplicationErrorContext): ChangeRentalSelectionQuantityError {
     if (error instanceof RentalSelectionNotFoundError)
       return this.error('rental_commitment.rental_selection_not_found', error.message, context, error);
     if (error instanceof RentalCannotBeEditedFromStatusError)

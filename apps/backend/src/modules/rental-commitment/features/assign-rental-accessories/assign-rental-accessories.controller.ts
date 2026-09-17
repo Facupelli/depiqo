@@ -1,3 +1,5 @@
+import type { ApplicationErrorContext } from 'src/core/errors/application-error';
+
 import { Body, Controller, HttpCode, HttpStatus, Param, Put, UseGuards } from '@nestjs/common';
 import { AssignRentalAccessoriesAvailabilityProblemExtensionsSchema } from '@repo/api-contracts';
 import { CommandBus } from '@nestjs/cqrs';
@@ -120,7 +122,7 @@ const assignRentalAccessoriesProblemMap = {
   { type: string; title: string; status: HttpStatus; detail: string }
 >;
 
-function availabilityProblemExtensions(error: AssignRentalAccessoriesError): Record<string, unknown> {
+function availabilityProblemExtensions(error: AssignRentalAccessoriesError): ApplicationErrorContext {
   if (error.code !== 'rental_commitment.insufficient_asset_availability') {
     return {};
   }

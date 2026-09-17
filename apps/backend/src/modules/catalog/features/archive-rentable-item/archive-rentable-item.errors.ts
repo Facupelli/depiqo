@@ -1,4 +1,4 @@
-import { ApplicationError } from 'src/core/errors/application-error';
+import { ApplicationError, ApplicationErrorContext } from 'src/core/errors/application-error';
 
 export type ArchiveRentableItemErrorCode = 'catalog.rentable_item_not_found';
 
@@ -10,7 +10,7 @@ export function archiveRentableItemError(
   code: ArchiveRentableItemErrorCode,
   message: string,
   cause?: unknown,
-  context?: Record<string, unknown>,
+  context?: ApplicationErrorContext,
 ): ArchiveRentableItemError {
   return { code, message, cause, context };
 }

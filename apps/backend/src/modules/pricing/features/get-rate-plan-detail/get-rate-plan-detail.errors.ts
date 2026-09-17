@@ -1,4 +1,4 @@
-import { ApplicationError } from 'src/core/errors/application-error';
+import { ApplicationError, ApplicationErrorContext } from 'src/core/errors/application-error';
 
 export type GetRatePlanDetailErrorCode = 'pricing.rate_plan_not_found';
 
@@ -10,7 +10,7 @@ export function getRatePlanDetailError(
   code: GetRatePlanDetailErrorCode,
   message: string,
   cause?: unknown,
-  context?: Record<string, unknown>,
+  context?: ApplicationErrorContext,
 ): GetRatePlanDetailError {
   return { code, message, cause, context };
 }

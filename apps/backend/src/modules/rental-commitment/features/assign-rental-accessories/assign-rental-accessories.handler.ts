@@ -1,3 +1,5 @@
+import type { ApplicationErrorContext } from 'src/core/errors/application-error';
+
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { err, ok, Result } from 'neverthrow';
 
@@ -212,7 +214,7 @@ export class AssignRentalAccessoriesHandler implements ICommandHandler<
     });
   }
 
-  private mapAllocationError(error: unknown, context: Record<string, unknown>): AssignRentalAccessoriesResult {
+  private mapAllocationError(error: unknown, context: ApplicationErrorContext): AssignRentalAccessoriesResult {
     if (!(error instanceof AccessoryReconciliationAvailabilityError)) throw error;
     return err(
       assignRentalAccessoriesError('rental_commitment.insufficient_asset_availability', error.message, error.cause, {
@@ -229,7 +231,7 @@ export class AssignRentalAccessoriesHandler implements ICommandHandler<
 
   private async validateInput(
     command: AssignRentalAccessoriesCommand,
-    context: Record<string, unknown>,
+    context: ApplicationErrorContext,
   ): Promise<AssignRentalAccessoriesResult> {
     const demandLineIds = new Set<string>();
     const keys = new Set<string>();

@@ -1,4 +1,4 @@
-import { ApplicationError } from 'src/core/errors/application-error';
+import { ApplicationError, ApplicationErrorContext } from 'src/core/errors/application-error';
 
 export type CreateConfirmedRentalErrorCode =
   | 'rental_commitment.invalid_rental_period'
@@ -32,7 +32,7 @@ export function createConfirmedRentalError(
   code: CreateConfirmedRentalErrorCode,
   message: string,
   cause?: unknown,
-  context?: Record<string, unknown>,
+  context?: ApplicationErrorContext,
 ): CreateConfirmedRentalError {
   return { code, message, cause, context };
 }

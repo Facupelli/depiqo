@@ -1,4 +1,4 @@
-import type { ApplicationError } from 'src/core/errors/application-error';
+import type { ApplicationError, ApplicationErrorContext } from 'src/core/errors/application-error';
 
 export type ChangePasswordErrorCode =
   | 'tenant_management.current_password_incorrect'
@@ -11,7 +11,7 @@ export interface ChangePasswordError extends ApplicationError {
 export function changePasswordError(
   code: ChangePasswordErrorCode,
   message: string,
-  context: Record<string, unknown>,
+  context: ApplicationErrorContext,
 ): ChangePasswordError {
   return { code, message, context };
 }

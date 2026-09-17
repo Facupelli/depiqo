@@ -1,4 +1,4 @@
-import { ApplicationError } from 'src/core/errors/application-error';
+import { ApplicationError, ApplicationErrorContext } from 'src/core/errors/application-error';
 
 export type CreatePackageErrorCode =
   | 'offering_setup.tenant_unavailable'
@@ -14,7 +14,7 @@ export function createPackageError(
   code: CreatePackageErrorCode,
   message: string,
   cause?: unknown,
-  context?: Record<string, unknown>,
+  context?: ApplicationErrorContext,
 ): CreatePackageError {
   return { code, message, cause, context };
 }

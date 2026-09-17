@@ -1,3 +1,5 @@
+import type { ApplicationErrorContext } from 'src/core/errors/application-error';
+
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { err, ok, Result } from 'neverthrow';
 
@@ -283,7 +285,7 @@ export class ConfirmRentalHandler implements ICommandHandler<ConfirmRentalComman
     return ok(undefined);
   }
 
-  private toApplicationError(error: unknown, context: Record<string, unknown>): ConfirmRentalError {
+  private toApplicationError(error: unknown, context: ApplicationErrorContext): ConfirmRentalError {
     if (error instanceof RentalCannotBeConfirmedFromStatusError) {
       return confirmRentalError(
         'rental_commitment.rental_cannot_be_confirmed_from_status',

@@ -60,7 +60,9 @@ export class ProblemDetailsFilter implements ExceptionFilter {
       ...problemDetails,
       status: defaults.status,
       instance: problemDetails.instance ?? defaults.instance,
-      requestId: problemDetails.requestId ?? defaults.requestId,
+      ...(problemDetails.requestId === undefined && defaults.requestId === undefined
+        ? {}
+        : { requestId: problemDetails.requestId ?? defaults.requestId }),
     };
   }
 }

@@ -1,4 +1,4 @@
-import { ApplicationError } from 'src/core/errors/application-error';
+import { ApplicationError, ApplicationErrorContext } from 'src/core/errors/application-error';
 
 import { EquipmentTypeNotFoundError } from '../../domain/errors/asset-inventory.errors';
 
@@ -40,7 +40,7 @@ export function createEquipmentTypeAccessoryDefaultsError(
   code: CreateEquipmentTypeAccessoryDefaultsErrorCode,
   message: string,
   cause?: unknown,
-  context?: Record<string, unknown>,
+  context?: ApplicationErrorContext,
 ): CreateEquipmentTypeAccessoryDefaultsError {
   return { code, message, cause, context };
 }

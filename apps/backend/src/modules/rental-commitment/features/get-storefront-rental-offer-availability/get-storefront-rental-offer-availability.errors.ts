@@ -1,4 +1,4 @@
-import type { ApplicationError } from 'src/core/errors/application-error';
+import type { ApplicationError, ApplicationErrorContext } from 'src/core/errors/application-error';
 
 export type GetStorefrontRentalOfferAvailabilityErrorCode =
   | 'rental_commitment.invalid_fulfillment_definition'
@@ -13,7 +13,7 @@ export function getStorefrontRentalOfferAvailabilityError(
   code: GetStorefrontRentalOfferAvailabilityErrorCode,
   message: string,
   cause?: unknown,
-  context?: Record<string, unknown>,
+  context?: ApplicationErrorContext,
 ): GetStorefrontRentalOfferAvailabilityError {
   return { code, message, cause, context };
 }

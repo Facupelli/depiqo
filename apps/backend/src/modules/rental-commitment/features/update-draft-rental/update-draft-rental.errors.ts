@@ -1,4 +1,4 @@
-import { ApplicationError } from 'src/core/errors/application-error';
+import { ApplicationError, ApplicationErrorContext } from 'src/core/errors/application-error';
 import { DraftRentalProposalResolutionErrorCode } from '../../application/draft-rental-proposal-resolver.service';
 
 export type UpdateDraftRentalErrorCode =
@@ -18,7 +18,7 @@ export function updateDraftRentalError(
   code: UpdateDraftRentalErrorCode,
   message: string,
   cause?: unknown,
-  context?: Record<string, unknown>,
+  context?: ApplicationErrorContext,
 ): UpdateDraftRentalError {
   return { code, message, cause, context };
 }

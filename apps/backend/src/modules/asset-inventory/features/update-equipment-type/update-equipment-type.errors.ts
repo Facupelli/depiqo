@@ -1,4 +1,4 @@
-import { ApplicationError } from 'src/core/errors/application-error';
+import { ApplicationError, ApplicationErrorContext } from 'src/core/errors/application-error';
 import {
   AssetInventoryError,
   DuplicateEquipmentTypeNameError,
@@ -18,7 +18,7 @@ export const updateEquipmentTypeError = (
   code: UpdateEquipmentTypeErrorCode,
   message: string,
   cause?: unknown,
-  context?: Record<string, unknown>,
+  context?: ApplicationErrorContext,
 ): UpdateEquipmentTypeError => ({ code, message, cause, context });
 export function mapUpdateEquipmentTypeError(error: AssetInventoryError): UpdateEquipmentTypeError {
   if (error instanceof InvalidEquipmentTypeFieldError)

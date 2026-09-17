@@ -1,4 +1,4 @@
-import { ApplicationError } from 'src/core/errors/application-error';
+import { ApplicationError, ApplicationErrorContext } from 'src/core/errors/application-error';
 
 export type GetReplacementAssetCandidatesErrorCode =
   | 'rental_commitment.rental_not_found'
@@ -15,7 +15,7 @@ export function getReplacementAssetCandidatesError(
   code: GetReplacementAssetCandidatesErrorCode,
   message: string,
   cause?: unknown,
-  context?: Record<string, unknown>,
+  context?: ApplicationErrorContext,
 ): GetReplacementAssetCandidatesError {
   return { code, message, cause, context };
 }

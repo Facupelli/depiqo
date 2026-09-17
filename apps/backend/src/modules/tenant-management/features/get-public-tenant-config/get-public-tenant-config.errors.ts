@@ -1,4 +1,4 @@
-import { ApplicationError } from 'src/core/errors/application-error';
+import { ApplicationError, ApplicationErrorContext } from 'src/core/errors/application-error';
 
 export type GetPublicTenantConfigErrorCode = 'tenant_management.tenant_not_found';
 
@@ -10,7 +10,7 @@ export function getPublicTenantConfigError(
   code: GetPublicTenantConfigErrorCode,
   message: string,
   cause?: unknown,
-  context?: Record<string, unknown>,
+  context?: ApplicationErrorContext,
 ): GetPublicTenantConfigError {
   return { code, message, cause, context };
 }

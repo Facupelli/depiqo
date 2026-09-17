@@ -1,3 +1,5 @@
+import type { ApplicationErrorContext } from 'src/core/errors/application-error';
+
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { err, ok, Result } from 'neverthrow';
 
@@ -82,7 +84,7 @@ export class CreatePromotionHandler implements ICommandHandler<
 
 function validatePromotion(
   command: CreatePromotionCommand,
-  context: Record<string, unknown>,
+  context: ApplicationErrorContext,
 ): CreatePromotionError | undefined {
   const promotionError = (code: CreatePromotionError['code'], message: string): CreatePromotionError =>
     createPromotionError(code, message, undefined, context);

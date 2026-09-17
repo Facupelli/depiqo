@@ -1,4 +1,4 @@
-import { ApplicationError } from 'src/core/errors/application-error';
+import { ApplicationError, ApplicationErrorContext } from 'src/core/errors/application-error';
 
 export type CalculateDraftRentalPriceErrorCode =
   | 'pricing.invalid_draft_rental_selection'
@@ -19,7 +19,7 @@ export function calculateDraftRentalPriceError(
   code: CalculateDraftRentalPriceErrorCode,
   message: string,
   cause?: unknown,
-  context?: Record<string, unknown>,
+  context?: ApplicationErrorContext,
 ): CalculateDraftRentalPriceError {
   return { code, message, cause, context };
 }

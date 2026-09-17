@@ -1,4 +1,4 @@
-import { ApplicationError } from 'src/core/errors/application-error';
+import { ApplicationError, ApplicationErrorContext } from 'src/core/errors/application-error';
 
 export type CreateDraftRentalErrorCode =
   | 'rental_commitment.invalid_rental_period'
@@ -25,7 +25,7 @@ export function createDraftRentalError(
   code: CreateDraftRentalErrorCode,
   message: string,
   cause?: unknown,
-  context?: Record<string, unknown>,
+  context?: ApplicationErrorContext,
 ): CreateDraftRentalError {
   return { code, message, cause, context };
 }

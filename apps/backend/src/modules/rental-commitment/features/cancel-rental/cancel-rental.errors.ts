@@ -1,4 +1,4 @@
-import { ApplicationError } from 'src/core/errors/application-error';
+import { ApplicationError, ApplicationErrorContext } from 'src/core/errors/application-error';
 
 export type CancelRentalErrorCode =
   | 'rental_commitment.rental_not_found'
@@ -14,7 +14,7 @@ export function cancelRentalError(
   code: CancelRentalErrorCode,
   message: string,
   cause?: unknown,
-  context?: Record<string, unknown>,
+  context?: ApplicationErrorContext,
 ): CancelRentalError {
   return { code, message, cause, context };
 }

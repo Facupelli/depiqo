@@ -98,7 +98,10 @@ function toGetEquipmentTypeRentalUsagesProblem(error: GetEquipmentTypeRentalUsag
       title: problem.title,
       status: problem.status,
       detail: problem.detail,
-      extensions: { code: error.code, equipmentTypeId: error.context?.equipmentTypeId },
+      extensions: {
+        code: error.code,
+        ...(error.context?.equipmentTypeId === undefined ? {} : { equipmentTypeId: error.context.equipmentTypeId }),
+      },
     }),
     applicationError: error,
     cause: error.cause,

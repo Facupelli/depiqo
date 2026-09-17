@@ -1,3 +1,5 @@
+import type { ApplicationErrorContext } from 'src/core/errors/application-error';
+
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { err, ok, Result } from 'neverthrow';
 
@@ -215,13 +217,13 @@ export class RestoreConfirmedPackageDemandLineHandler implements ICommandHandler
   private error(
     code: RestoreConfirmedPackageDemandLineError['code'],
     message: string,
-    context: Record<string, unknown>,
+    context: ApplicationErrorContext,
     cause?: unknown,
   ) {
     return restoreConfirmedPackageDemandLineError(code, message, cause, context);
   }
 
-  private map(error: unknown, context: Record<string, unknown>): RestoreConfirmedPackageDemandLineError {
+  private map(error: unknown, context: ApplicationErrorContext): RestoreConfirmedPackageDemandLineError {
     if (error instanceof RentalDemandLineNotFoundError) {
       return this.error('rental_commitment.rental_demand_line_not_found', error.message, context, error);
     }

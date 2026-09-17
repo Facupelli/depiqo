@@ -1,3 +1,5 @@
+import type { ApplicationErrorContext } from 'src/core/errors/application-error';
+
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { err, ok, Result } from 'neverthrow';
 
@@ -257,7 +259,7 @@ export class ReplaceRentalDemandLineAccessoriesHandler implements ICommandHandle
     return persisted ? ok(undefined) : err(this.versionConflict(rentalId, context));
   }
 
-  private versionConflict(rentalId: string, context: Record<string, unknown>): ReplaceRentalDemandLineAccessoriesError {
+  private versionConflict(rentalId: string, context: ApplicationErrorContext): ReplaceRentalDemandLineAccessoriesError {
     return replaceRentalDemandLineAccessoriesError(
       'rental_commitment.rental_version_conflict',
       `Rental "${rentalId}" was modified by another request.`,

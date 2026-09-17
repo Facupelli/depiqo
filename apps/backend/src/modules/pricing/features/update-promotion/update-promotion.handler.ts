@@ -1,3 +1,5 @@
+import type { ApplicationErrorContext } from 'src/core/errors/application-error';
+
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { err, ok, Result } from 'neverthrow';
 
@@ -115,7 +117,7 @@ export class UpdatePromotionHandler implements ICommandHandler<
 
 function validatePromotion(
   command: UpdatePromotionCommand,
-  context: Record<string, unknown>,
+  context: ApplicationErrorContext,
 ): UpdatePromotionError | undefined {
   const promotionError = (code: UpdatePromotionError['code'], message: string): UpdatePromotionError =>
     updatePromotionError(code, message, undefined, context);

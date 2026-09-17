@@ -1,4 +1,4 @@
-import { ApplicationError } from 'src/core/errors/application-error';
+import { ApplicationError, ApplicationErrorContext } from 'src/core/errors/application-error';
 
 export type CalculateProspectiveCartCostErrorCode =
   | 'rental_commitment.invalid_prospective_cart'
@@ -18,7 +18,7 @@ export function calculateProspectiveCartCostError(
   code: CalculateProspectiveCartCostErrorCode,
   message: string,
   cause?: unknown,
-  context?: Record<string, unknown>,
+  context?: ApplicationErrorContext,
 ): CalculateProspectiveCartCostError {
   return { code, message, cause, context };
 }

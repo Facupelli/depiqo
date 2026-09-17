@@ -1,4 +1,4 @@
-import { ApplicationError } from 'src/core/errors/application-error';
+import { ApplicationError, ApplicationErrorContext } from 'src/core/errors/application-error';
 
 export type RetireAssetErrorCode = 'asset_inventory.asset_not_found';
 
@@ -10,5 +10,5 @@ export const retireAssetError = (
   code: RetireAssetErrorCode,
   message: string,
   cause?: unknown,
-  context?: Record<string, unknown>,
+  context?: ApplicationErrorContext,
 ): RetireAssetError => ({ code, message, cause, context });

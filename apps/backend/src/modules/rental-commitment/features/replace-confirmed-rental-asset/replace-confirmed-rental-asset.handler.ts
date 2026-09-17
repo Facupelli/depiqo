@@ -1,3 +1,5 @@
+import type { ApplicationErrorContext } from 'src/core/errors/application-error';
+
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { err, ok, Result } from 'neverthrow';
 
@@ -245,7 +247,7 @@ export class ReplaceConfirmedRentalAssetHandler implements ICommandHandler<
     }).splits;
   }
 
-  private toApplicationError(error: unknown, context: Record<string, unknown>): ReplaceConfirmedRentalAssetError {
+  private toApplicationError(error: unknown, context: ApplicationErrorContext): ReplaceConfirmedRentalAssetError {
     if (error instanceof RentalCannotBeEditedFromStatusError) {
       return replaceConfirmedRentalAssetError(
         'rental_commitment.rental_cannot_be_edited_from_status',
