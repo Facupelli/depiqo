@@ -37,6 +37,7 @@ import dayjs from "@/lib/dates/dayjs";
 import { formatTimestampInTimezone } from "@/lib/dates/format";
 import { cn } from "@/lib/utils";
 import type { ParsedRentalListItem } from "@/modules/rentals/rental.queries";
+import { getFulfillmentMethodLabel } from "@/modules/rentals/shared/fulfillment-method";
 import { getRentalOrderStatusPresentation } from "@/modules/rentals/shared/rental-order-status";
 import { useTenantTimezone } from "@/shared/timezone/operational-timezone.hooks";
 import {
@@ -224,7 +225,7 @@ function createRentalOrdersColumns({
 			header: "Entrega",
 			cell: ({ row }) => (
 				<span className="text-sm text-foreground">
-					{getFulfillmentMethodLabel(row.original)}
+					{getFulfillmentMethodLabel(row.original.fulfillmentMethod)}
 				</span>
 			),
 		},
@@ -235,7 +236,7 @@ function createRentalOrdersColumns({
 				<div className="min-w-0 space-y-1">
 					<RentalOrderCustomer rental={row.original} />
 					<p className="text-xs text-muted-foreground @5xl/rentals-index:hidden">
-						{getFulfillmentMethodLabel(row.original)}
+						{getFulfillmentMethodLabel(row.original.fulfillmentMethod)}
 					</p>
 				</div>
 			),
@@ -343,12 +344,6 @@ function RentalOrderCustomer({ rental }: { rental: ParsedRentalListItem }) {
 			</span>
 		</div>
 	);
-}
-
-function getFulfillmentMethodLabel(
-	rental: ParsedRentalListItem,
-): "Delivery" | "Retiro" {
-	return rental.fulfillmentMethod === "DELIVERY" ? "Delivery" : "Retiro";
 }
 
 function RentalOrderStatusBadge({ rental }: { rental: ParsedRentalListItem }) {
@@ -617,7 +612,7 @@ function CompactRentalOrdersList({
 									<div className="min-w-0 space-y-1">
 										<RentalOrderCustomer rental={rental} />
 										<p className="text-xs text-muted-foreground">
-											{getFulfillmentMethodLabel(rental)}
+											{getFulfillmentMethodLabel(rental.fulfillmentMethod)}
 										</p>
 									</div>
 									<div className="grid grid-cols-2 gap-x-4 gap-y-2">
