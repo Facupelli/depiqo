@@ -64,9 +64,7 @@ describe('SendRentalRemitoSigningInvitationService', () => {
   });
 
   it('marks the pending request failed when dispatch fails', async () => {
-    const deliveryError = new RentalRemitoSigningInvitationDeliveryFailedError(
-      'provider rejected the invitation',
-    );
+    const deliveryError = new RentalRemitoSigningInvitationDeliveryFailedError('provider rejected the invitation');
     const { service, signingRequestService } = createSubject({
       signingUrl: 'https://example.com/signing',
       delivered: false,

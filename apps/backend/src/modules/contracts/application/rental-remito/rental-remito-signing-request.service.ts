@@ -119,15 +119,6 @@ export class RentalRemitoSigningRequestService {
         failedAt: null,
       },
     });
-    await this.prisma.client.v2DocumentSigningRequest.updateMany({
-      where: {
-        id: requestId,
-        status: V2DocumentSigningRequestStatus.SIGNED,
-        tokenHash: expectedTokenHash,
-        sentAt: null,
-      },
-      data: { sentAt },
-    });
   }
 
   async markFailed(requestId: string, expectedTokenHash: string): Promise<void> {

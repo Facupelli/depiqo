@@ -50,9 +50,7 @@ describe('PublicRentalRemitoSigningService', () => {
       prisma as never,
       { create: vi.fn().mockResolvedValue(Buffer.from('signed')) } as never,
       {
-        persist: vi.fn().mockResolvedValue(
-          ok({ id: 'signed-artifact-1', documentHash: 'signed-hash' }),
-        ),
+        persist: vi.fn().mockResolvedValue(ok({ id: 'signed-artifact-1', documentHash: 'signed-hash' })),
       } as never,
       { getObjectBuffer: vi.fn().mockResolvedValue(Buffer.from('unsigned')) } as never,
       { get: vi.fn().mockReturnValue(3600) } as never,
@@ -72,10 +70,7 @@ describe('PublicRentalRemitoSigningService', () => {
       expect.objectContaining({
         where: expect.objectContaining({
           status: {
-            in: expect.arrayContaining([
-              V2DocumentSigningRequestStatus.PENDING,
-              V2DocumentSigningRequestStatus.SENT,
-            ]),
+            in: expect.arrayContaining([V2DocumentSigningRequestStatus.PENDING, V2DocumentSigningRequestStatus.SENT]),
           },
         }),
         data: expect.objectContaining({ status: V2DocumentSigningRequestStatus.SIGNED }),
