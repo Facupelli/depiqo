@@ -32,7 +32,7 @@ export function RentalContractSigningCard() {
 
 	if (isLoading)
 		return (
-			<section className="rounded-lg border border-neutral-200 bg-white p-4 @5xl/rental-detail:p-5">
+			<section className="rounded-lg border border-neutral-200 bg-white p-4">
 				<div className="@5xl/rental-detail:hidden">
 					<p className="text-sm font-bold text-neutral-950">
 						Firma del contrato
@@ -53,7 +53,7 @@ export function RentalContractSigningCard() {
 
 	if (!summary)
 		return (
-			<section className="rounded-lg border border-neutral-200 bg-white p-4 @5xl/rental-detail:p-5">
+			<section className="rounded-lg border border-neutral-200 bg-white p-4">
 				<p className="text-sm font-bold text-neutral-950 @5xl/rental-detail:hidden">
 					Firma del contrato
 				</p>
@@ -70,7 +70,7 @@ export function RentalContractSigningCard() {
 	const isRequestSigned = request?.status === "SIGNED";
 
 	return (
-		<section className="rounded-lg border border-neutral-200 bg-white p-4 @5xl/rental-detail:p-5">
+		<section className="rounded-lg border border-neutral-200 bg-white p-4">
 			<button
 				type="button"
 				onClick={() => setIsExpanded((previous) => !previous)}
@@ -86,6 +86,14 @@ export function RentalContractSigningCard() {
 						<p className="mt-0.5 break-words text-sm text-neutral-600">
 							{state.label}
 						</p>
+						{state.tone === "success" &&
+						state.activityAt &&
+						state.activityLabel ? (
+							<p className="mt-1 text-xs text-neutral-500">
+								{state.activityLabel}:{" "}
+								{formatRentalContractSigningDate(state.activityAt, timezone)}
+							</p>
+						) : null}
 					</div>
 					<div className="hidden @5xl/rental-detail:block">
 						<SidebarHeader
@@ -111,9 +119,19 @@ export function RentalContractSigningCard() {
 							<p className="text-sm font-semibold text-neutral-950">
 								{state.label}
 							</p>
-							<p className="mt-0.5 text-xs text-neutral-500">
-								{state.description}
-							</p>
+							{state.tone !== "success" ? (
+								<p className="mt-0.5 text-xs text-neutral-500">
+									{state.description}
+								</p>
+							) : null}
+							{state.tone === "success" &&
+							state.activityAt &&
+							state.activityLabel ? (
+								<p className="mt-1 text-xs text-neutral-500">
+									{state.activityLabel}:{" "}
+									{formatRentalContractSigningDate(state.activityAt, timezone)}
+								</p>
+							) : null}
 						</div>
 					</div>
 				</div>
@@ -126,8 +144,8 @@ export function RentalContractSigningCard() {
 				id={contentId}
 				className={isExpanded ? "block" : "hidden @5xl/rental-detail:block"}
 			>
-				{state.activityAt && state.activityLabel ? (
-					<div className="mt-4 rounded-md border border-neutral-100 bg-neutral-50 px-3 py-2.5">
+				{state.tone !== "success" && state.activityAt && state.activityLabel ? (
+					<div className="mt-3 rounded-md border border-neutral-100 bg-neutral-50 px-3 py-2.5">
 						<p className="mb-1 font-mono text-[9px] uppercase tracking-wider text-neutral-400">
 							{state.activityLabel}
 						</p>
@@ -157,22 +175,10 @@ export function RentalContractSigningCard() {
 						{request ? (
 							<>
 								<SigningDetailRow label="Firmante" value={request.signerName} />
-								<SigningDetailRow label="Email" value={request.signerEmail} />
-								<SigningDetailRow
-									label="Teléfono"
-									value={request.signerPhone}
-								/>
 								<SigningDetailRow
 									label="Enviado"
 									value={formatRentalContractSigningDate(
 										request.sentAt,
-										timezone,
-									)}
-								/>
-								<SigningDetailRow
-									label="Visto"
-									value={formatRentalContractSigningDate(
-										request.viewedAt,
 										timezone,
 									)}
 								/>
@@ -236,8 +242,8 @@ function SidebarHeader({
 	title: string;
 }) {
 	return (
-		<div className="flex items-center gap-2 border-b border-neutral-100 mb-3 pb-1">
-			<span className="flex size-8 items-center justify-center text-neutral-600">
+		<div className="mb-2 flex items-center gap-2 border-b border-neutral-100 pb-2">
+			<span className="flex size-6 items-center justify-center text-neutral-600">
 				{icon}
 			</span>
 			<h2 className="text-sm font-bold text-neutral-950">{title}</h2>

@@ -101,7 +101,10 @@ export class SendRentalRemitoSigningInvitationService implements ICommandHandler
       expiresAt: request.value.expiresAt,
       resend: request.value.reusedExistingRequest,
     });
-    if (delivery.deliveryError) {
+    if (delivery.delivered) {
+      await this.signingRequestService.markSent(request.value.requestId, tokenHash);
+    } else if (delivery.deliveryError) {
+      await this.signingRequestService.markFailed(request.value.requestId, tokenHash);
       return err(
         sendRentalRemitoSigningInvitationError(
           'document_signing.invitation_delivery_failed',

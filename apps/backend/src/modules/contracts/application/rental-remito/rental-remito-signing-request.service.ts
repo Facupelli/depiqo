@@ -65,6 +65,9 @@ export class RentalRemitoSigningRequestService {
             tokenHash: input.tokenHash,
             expiresAt: input.expiresAt,
             status: V2DocumentSigningRequestStatus.PENDING,
+            sentAt: null,
+            viewedAt: null,
+            failedAt: null,
           },
           select: { id: true, expiresAt: true },
         });
@@ -88,7 +91,7 @@ export class RentalRemitoSigningRequestService {
           tokenHash: input.tokenHash,
           acceptanceTextVersion: RENTAL_REMITO_ACCEPTANCE_TEXT_VERSION,
           expiresAt: input.expiresAt,
-          status: V2DocumentSigningRequestStatus.SENT,
+          status: V2DocumentSigningRequestStatus.PENDING,
         },
         select: { id: true, expiresAt: true },
       });
@@ -100,5 +103,36 @@ export class RentalRemitoSigningRequestService {
     });
 
     return ok(request);
+  }
+
+  async markSent(requestId: string, expectedTokenHash: string): Promise<void> {
+    const sentAt = new Date();
+    await this.prisma.client.v2DocumentSigningRequest.updateMany({
+      where: {
+        id: requestId,
+        status: V2DocumentSigningRequestStatus.PENDING,
+        tokenHash: expectedTokenHash,
+      },
+      data: {
+        status: V2DocumentSigningRequestStatus.SENT,
+        sentAt,
+        failedAt: null,
+      },
+    });
+  }
+
+  async markFailed(requestId: string, expectedTokenHash: string): Promise<void> {
+    await this.prisma.client.v2DocumentSigningRequest.updateMany({
+      where: {
+        id: requestId,
+        status: V2DocumentSigningRequestStatus.PENDING,
+        tokenHash: expectedTokenHash,
+      },
+      data: {
+        status: V2DocumentSigningRequestStatus.FAILED,
+        sentAt: null,
+        failedAt: new Date(),
+      },
+    });
   }
 }

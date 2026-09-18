@@ -3,7 +3,6 @@ import { Button } from "@repo/ui/components/button";
 import {
 	ChevronDown,
 	Pencil,
-	Phone,
 	ReceiptText,
 	Truck,
 	User2Icon,
@@ -40,7 +39,7 @@ export function RentalSidebarCards({
 	const canReadContracts = can(permissions, TenantPermission.ContractsRead);
 
 	return (
-		<div className="flex flex-col gap-2 @5xl/rental-detail:gap-4">
+		<div className="flex flex-col gap-3">
 			<div className="order-1 @5xl/rental-detail:order-2">
 				<RentalClientCard />
 			</div>
@@ -88,31 +87,26 @@ function RentalClientCard() {
 			summary={summary}
 		>
 			{customer ? (
-				<>
-					<div className="flex items-center gap-3">
-						<div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-neutral-200">
-							<span className="text-sm font-bold text-neutral-600">
-								{getRentalCustomerInitials(customer.displayName)}
-							</span>
-						</div>
-						<div className="min-w-0">
-							<p className="text-sm font-bold leading-tight text-neutral-950">
-								{customer.displayName}
-							</p>
-							<p className="mt-0.5 min-w-0 break-words text-xs text-neutral-500">
-								{customer.email}
-							</p>
-						</div>
+				<div className="flex items-center gap-3">
+					<div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-neutral-200">
+						<span className="text-sm font-bold text-neutral-600">
+							{getRentalCustomerInitials(customer.displayName)}
+						</span>
 					</div>
-					<div className="space-y-2.5">
+					<div className="min-w-0">
+						<p className="text-sm font-bold leading-tight text-neutral-950">
+							{customer.displayName}
+						</p>
+						<p className="mt-0.5 min-w-0 break-words text-xs text-neutral-500">
+							{customer.email}
+						</p>
 						{customer.phone ? (
-							<SidebarField
-								icon={<Phone className="w-3.5 h-3.5" />}
-								value={customer.phone}
-							/>
+							<p className="mt-0.5 min-w-0 break-words text-xs text-neutral-500">
+								{customer.phone}
+							</p>
 						) : null}
 					</div>
-				</>
+				</div>
 			) : isCustomerSummaryLoading && hasLinkedCustomer ? (
 				<p className="text-sm text-neutral-500">Cargando cliente...</p>
 			) : isCustomerSummaryError && hasLinkedCustomer ? (
@@ -246,9 +240,9 @@ function RentalFinancialsCard() {
 
 	if (!pricing) {
 		return (
-			<section className="rounded-lg border border-neutral-200 bg-white p-4 @5xl/rental-detail:p-5">
+			<section className="rounded-lg border border-neutral-200 bg-white p-4">
 				<div className="@5xl/rental-detail:mb-3 @5xl/rental-detail:flex @5xl/rental-detail:items-center @5xl/rental-detail:gap-2 @5xl/rental-detail:border-neutral-100 @5xl/rental-detail:border-b @5xl/rental-detail:pb-1">
-					<span className="hidden size-8 items-center justify-center text-neutral-600 @5xl/rental-detail:flex">
+					<span className="hidden size-6 items-center justify-center text-neutral-600 @5xl/rental-detail:flex">
 						<ReceiptText className="size-4" />
 					</span>
 					<h2 className="text-sm font-bold text-neutral-950">
@@ -282,7 +276,7 @@ function RentalFinancialsCard() {
 				open={isEditPriceDialogOpen}
 				onOpenChange={setIsEditPriceDialogOpen}
 			/>
-			<section className="rounded-lg border border-neutral-200 bg-white p-4 @5xl/rental-detail:p-5">
+			<section className="rounded-lg border border-neutral-200 bg-white p-4">
 				<button
 					type="button"
 					onClick={() => setShowItems((prev) => !prev)}
@@ -298,7 +292,7 @@ function RentalFinancialsCard() {
 							{formatMoney(headlineTotal, pricing.currency)}
 						</span>
 					</span>
-					<span className="hidden min-w-0 flex-1 @5xl/rental-detail:block">
+					<span className="hidden min-w-0 flex-1 @5xl/rental-detail:block [&>div]:mb-0">
 						<SidebarHeader
 							icon={<ReceiptText className="size-4" />}
 							title="Resumen financiero"
@@ -602,7 +596,7 @@ function ResponsiveDisclosureCard({
 	const toggleExpanded = () => setIsExpanded((previous) => !previous);
 
 	return (
-		<section className="rounded-lg border border-neutral-200 bg-white p-4 @5xl/rental-detail:p-5">
+		<section className="rounded-lg border border-neutral-200 bg-white p-4">
 			<div className="flex min-w-0 items-center gap-1 @5xl/rental-detail:hidden">
 				<button
 					type="button"
@@ -659,23 +653,14 @@ function SidebarHeader({
 	action?: ReactNode;
 }) {
 	return (
-		<div className="mb-3 flex items-center gap-2 border-neutral-100 border-b pb-1">
-			<span className="flex size-8 items-center justify-center text-neutral-600">
+		<div className="mb-2 flex items-center gap-2 border-neutral-100 border-b pb-2">
+			<span className="flex size-6 items-center justify-center text-neutral-600">
 				{icon}
 			</span>
 			<h2 className="min-w-0 flex-1 text-sm font-bold text-neutral-950">
 				{title}
 			</h2>
 			{action}
-		</div>
-	);
-}
-
-function SidebarField({ icon, value }: { icon: ReactNode; value: string }) {
-	return (
-		<div className="flex items-center gap-2">
-			<span className="text-neutral-400 shrink-0">{icon}</span>
-			<span className="text-xs text-neutral-500">{value}</span>
 		</div>
 	);
 }
