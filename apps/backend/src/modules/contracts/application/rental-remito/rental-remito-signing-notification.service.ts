@@ -17,6 +17,7 @@ export type RentalRemitoSigningInvitationDeliveryResult =
   | {
       signingUrl: string;
       delivered: true;
+      suppressed: false;
       failureReason: null;
       failureMessage: null;
       deliveryError: null;
@@ -24,6 +25,15 @@ export type RentalRemitoSigningInvitationDeliveryResult =
   | {
       signingUrl: string;
       delivered: false;
+      suppressed: true;
+      failureReason: null;
+      failureMessage: null;
+      deliveryError: null;
+    }
+  | {
+      signingUrl: string;
+      delivered: false;
+      suppressed: false;
       failureReason: string;
       failureMessage: string;
       deliveryError: RentalRemitoSigningInvitationDeliveryFailedError;
@@ -82,6 +92,7 @@ export class RentalRemitoSigningNotificationService {
       return {
         signingUrl,
         delivered: true,
+        suppressed: false,
         failureReason: null,
         failureMessage: null,
         deliveryError: null,
@@ -98,7 +109,8 @@ export class RentalRemitoSigningNotificationService {
     ) {
       return {
         signingUrl,
-        delivered: true,
+        delivered: false,
+        suppressed: true,
         failureReason: null,
         failureMessage: null,
         deliveryError: null,
@@ -115,6 +127,7 @@ export class RentalRemitoSigningNotificationService {
     return {
       signingUrl,
       delivered: false,
+      suppressed: false,
       failureReason,
       failureMessage,
       deliveryError: new RentalRemitoSigningInvitationDeliveryFailedError(message),

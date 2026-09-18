@@ -175,22 +175,10 @@ export function RentalContractSigningCard() {
 						{request ? (
 							<>
 								<SigningDetailRow label="Firmante" value={request.signerName} />
-								<SigningDetailRow label="Email" value={request.signerEmail} />
-								<SigningDetailRow
-									label="Teléfono"
-									value={request.signerPhone}
-								/>
 								<SigningDetailRow
 									label="Enviado"
 									value={formatRentalContractSigningDate(
 										request.sentAt,
-										timezone,
-									)}
-								/>
-								<SigningDetailRow
-									label="Visto"
-									value={formatRentalContractSigningDate(
-										request.viewedAt,
 										timezone,
 									)}
 								/>
