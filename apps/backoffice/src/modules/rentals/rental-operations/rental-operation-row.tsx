@@ -1,7 +1,6 @@
 import type { RentalOperationSummaryDto } from "@repo/api-contracts";
 import { Link } from "@tanstack/react-router";
 import { formatTimestampInTimezone } from "@/lib/dates/format";
-import { getFulfillmentMethodLabel } from "@/modules/rentals/shared/fulfillment-method";
 import { formatOrderNumber } from "@/shared/utils/formatters";
 
 type RentalOperationRowProps = {
@@ -15,36 +14,51 @@ export function RentalOperationRow({
 	timezone,
 	isSingleDay,
 }: RentalOperationRowProps) {
-	const timestamp = formatTimestampInTimezone(
+	const time = formatTimestampInTimezone(
 		operation.scheduledAt,
 		timezone,
-		isSingleDay ? "HH:mm" : "DD MMM · HH:mm",
+		"HH:mm",
 	);
+	const date = isSingleDay
+		? null
+		: formatTimestampInTimezone(operation.scheduledAt, timezone, "DD MMM");
+	const equipmentCountLabel = `${operation.equipmentCount} ${
+		operation.equipmentCount === 1 ? "equipo" : "equipos"
+	}`;
 
 	return (
 		<li>
 			<Link
 				to="/dashboard/orders/$orderId"
 				params={{ orderId: operation.id }}
-				className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-1 px-4 py-3 transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:items-center"
+				className="grid min-w-0 grid-cols-[4.5rem_minmax(0,1fr)] items-start gap-x-3 px-4 py-3 transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset sm:grid-cols-[4.5rem_minmax(0,1fr)_auto]"
 			>
-				<p className="shrink-0 font-medium text-sm text-foreground">
-					#{formatOrderNumber(operation.rentalNumber)}
-				</p>
+				<time dateTime={operation.scheduledAt} className="tabular-nums">
+					{date && (
+						<span className="block text-xs leading-tight text-muted-foreground">
+							{date}
+						</span>
+					)}
+					<span className="block font-semibold text-base leading-tight text-foreground">
+						{time}
+					</span>
+				</time>
 				<div className="min-w-0">
-					<p className="truncate text-sm text-foreground">
+					<div className="flex min-w-0 items-baseline justify-between gap-2 sm:block">
+						<p className="min-w-0 truncate font-medium text-sm text-foreground">
+							#{formatOrderNumber(operation.rentalNumber)}
+						</p>
+						<p className="shrink-0 text-sm text-muted-foreground tabular-nums sm:hidden">
+							{equipmentCountLabel}
+						</p>
+					</div>
+					<p className="truncate text-sm text-muted-foreground">
 						{operation.customer?.displayName ?? "Sin cliente"}
 					</p>
-					<p className="text-xs text-muted-foreground">
-						{getFulfillmentMethodLabel(operation.fulfillmentMethod)}
-					</p>
 				</div>
-				<time
-					dateTime={operation.scheduledAt}
-					className="col-start-2 text-xs text-muted-foreground tabular-nums sm:col-start-auto sm:text-right sm:text-sm"
-				>
-					{timestamp}
-				</time>
+				<p className="hidden text-sm text-muted-foreground tabular-nums sm:block">
+					{equipmentCountLabel}
+				</p>
 			</Link>
 		</li>
 	);

@@ -51,10 +51,14 @@ export class GetRentalOperationsHandler implements IQueryHandler<GetRentalOperat
       ...comingBackRows.map((row) => row.customerId),
     ].filter((customerId): customerId is string => customerId !== null);
 
-    const customerFacts = await this.rentalCustomerProfileFacts.getRentalCustomerProfileFactsBatch({
-      tenantId: query.tenantId,
-      rentalCustomerIds: [...new Set(customerIds)],
-    });
+    const rentalIds = [...new Set([...goingOutRows.map((row) => row.id), ...comingBackRows.map((row) => row.id)])];
+    const [customerFacts, equipmentCountsByRentalId] = await Promise.all([
+      this.rentalCustomerProfileFacts.getRentalCustomerProfileFactsBatch({
+        tenantId: query.tenantId,
+        rentalCustomerIds: [...new Set(customerIds)],
+      }),
+      this.findEquipmentCounts(query.tenantId, rentalIds),
+    ]);
     const customersById = new Map(
       customerFacts.map((customer) => [
         customer.rentalCustomerId,
@@ -63,8 +67,8 @@ export class GetRentalOperationsHandler implements IQueryHandler<GetRentalOperat
     );
 
     return {
-      goingOut: this.toSummaries(goingOutRows, customersById),
-      comingBack: this.toSummaries(comingBackRows, customersById),
+      goingOut: this.toSummaries(goingOutRows, customersById, equipmentCountsByRentalId),
+      comingBack: this.toSummaries(comingBackRows, customersById, equipmentCountsByRentalId),
     };
   }
 
@@ -94,9 +98,41 @@ export class GetRentalOperationsHandler implements IQueryHandler<GetRentalOperat
     `);
   }
 
+  private async findEquipmentCounts(tenantId: string, rentalIds: string[]): Promise<Map<string, number>> {
+    if (rentalIds.length === 0) return new Map();
+
+    const [demandAssignmentCounts, accessoryAssignmentCounts] = await Promise.all([
+      this.prisma.client.v2AssignedAsset.groupBy({
+        by: ['rentalId'],
+        where: {
+          tenantId,
+          rentalId: { in: rentalIds },
+          effectiveUntil: null,
+        },
+        _count: { _all: true },
+      }),
+      this.prisma.client.v2RentalAccessoryAssetAssignment.groupBy({
+        by: ['rentalOrderId'],
+        where: {
+          tenantId,
+          rentalOrderId: { in: rentalIds },
+        },
+        _count: { _all: true },
+      }),
+    ]);
+
+    const countsByRentalId = new Map(demandAssignmentCounts.map(({ rentalId, _count }) => [rentalId, _count._all]));
+    for (const { rentalOrderId, _count } of accessoryAssignmentCounts) {
+      countsByRentalId.set(rentalOrderId, (countsByRentalId.get(rentalOrderId) ?? 0) + _count._all);
+    }
+
+    return countsByRentalId;
+  }
+
   private toSummaries(
     rows: RawRentalOperationRow[],
     customersById: Map<string, { id: string; displayName: string }>,
+    equipmentCountsByRentalId: Map<string, number>,
   ): RentalOperationSummaryDto[] {
     return rows.map((row) => ({
       id: row.id,
@@ -104,6 +140,7 @@ export class GetRentalOperationsHandler implements IQueryHandler<GetRentalOperat
       customer: row.customerId ? (customersById.get(row.customerId) ?? null) : null,
       fulfillmentMethod: row.fulfillmentMethod,
       scheduledAt: new Date(row.scheduledAt).toISOString(),
+      equipmentCount: equipmentCountsByRentalId.get(row.id) ?? 0,
     }));
   }
 }

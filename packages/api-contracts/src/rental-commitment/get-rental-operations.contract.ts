@@ -26,6 +26,7 @@ export const RentalOperationSummarySchema = z.object({
   customer: RentalOperationCustomerSchema.nullable(),
   fulfillmentMethod: GetRentalsFulfillmentMethodSchema,
   scheduledAt: z.iso.datetime(),
+  equipmentCount: z.number().int().nonnegative(),
 });
 
 export const GetRentalOperationsResponseSchema = z.object({
