@@ -14,8 +14,23 @@ export class RentalCustomerProfileFactsService extends RentalCustomerProfileFact
     tenantId: string;
     rentalCustomerId: string;
   }): Promise<RentalCustomerProfileFact | null> {
-    const customer = await this.prisma.client.v2RentalCustomer.findFirst({
-      where: { id: input.rentalCustomerId, tenantId: input.tenantId, deletedAt: null },
+    const facts = await this.getRentalCustomerProfileFactsBatch({
+      tenantId: input.tenantId,
+      rentalCustomerIds: [input.rentalCustomerId],
+    });
+
+    return facts[0] ?? null;
+  }
+
+  async getRentalCustomerProfileFactsBatch(input: {
+    tenantId: string;
+    rentalCustomerIds: string[];
+  }): Promise<RentalCustomerProfileFact[]> {
+    const rentalCustomerIds = [...new Set(input.rentalCustomerIds)];
+    if (rentalCustomerIds.length === 0) return [];
+
+    const customers = await this.prisma.client.v2RentalCustomer.findMany({
+      where: { id: { in: rentalCustomerIds }, tenantId: input.tenantId, deletedAt: null },
       select: {
         id: true,
         firstName: true,
@@ -28,9 +43,7 @@ export class RentalCustomerProfileFactsService extends RentalCustomerProfileFact
       },
     });
 
-    if (!customer) return null;
-
-    return {
+    return customers.map((customer) => ({
       rentalCustomerId: customer.id,
       fullName: customer.isCompany
         ? (customer.profile?.businessName ??
@@ -41,6 +54,6 @@ export class RentalCustomerProfileFactsService extends RentalCustomerProfileFact
       documentNumber: customer.profile?.documentNumber ?? null,
       address: customer.profile?.address ?? null,
       phone: customer.profile?.phone ?? null,
-    };
+    }));
   }
 }

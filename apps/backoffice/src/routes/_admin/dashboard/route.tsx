@@ -30,6 +30,7 @@ import {
 	CalendarDays,
 	Camera,
 	ChevronsUpDown,
+	LayoutGrid,
 	LogOut,
 	Settings,
 	ShoppingBag,
@@ -105,7 +106,12 @@ type SidebarItem = {
 };
 
 const sidebarItems: SidebarItem[] = [
-	// { name: "Inicio", icon: LayoutGrid, href: "/dashboard" },
+	{
+		name: "Inicio",
+		icon: LayoutGrid,
+		href: "/dashboard",
+		isVisible: (permissions) => can(permissions, TenantPermission.RentalsRead),
+	},
 	{
 		name: "Calendario",
 		icon: CalendarDays,
