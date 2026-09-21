@@ -41,6 +41,7 @@ export class RentalRemitoViewModelMapper {
           acceptedCustomerTotal,
           source.rental.acceptedPricing.total.currency,
         ),
+        insuranceSelected: source.rental.insuranceSelected,
         logoUrl: source.tenant.branding?.logoUrl ?? null,
         rentalSignatureUrl: source.contractSigner?.signatureUrl ?? null,
         presentation: {
