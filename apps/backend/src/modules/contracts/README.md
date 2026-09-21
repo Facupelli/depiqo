@@ -1,212 +1,75 @@
-# Contracts Module
+# Contracts
 
-Contracts owns the complete V2 rental contract signing lifecycle: Remito preparation, unsigned artifact generation, signing-request creation, invitation orchestration, public signing sessions, signature acceptance, signed artifacts, public receipt/download access, and re-signing state.
+Contracts turns rental facts into document artifacts and owns the resulting rental agreements, signing state, acceptance evidence, and post-signing document access. It does not own the rental commitment itself.
 
-Contracts derives documents from accepted rental facts owned by Rental Commitment and preserves the document and signing facts that must survive later changes.
+The signed Rental Remito is the legally binding rental agreement used by the product. It contains the relevant rental-owner/tenant and customer information, rental equipment, rental period, pricing information, and a legal annex containing the contractual terms of the rental. Contract/signing state is separate from Rental Commitment lifecycle state.
 
-Contracts currently exposes no module-to-module public capability. Its V2 invitation and public signing routes are Contracts-owned application behavior, implemented directly by Contracts use cases.
+## Domain concepts
 
-## Domain Concepts
+### Rental Contract / Remito
 
-### Contract
+The Rental Remito is the rental agreement associated with a rental and the contractual document presented to the customer for signing.
 
-A `Contract` is the logical/legal document record for one rental.
-
-It tracks the contract lifecycle and the snapshot used to generate its document artifacts.
-
-A contract is not the PDF file itself.
-
-### Contract Snapshot
-
-A contract snapshot preserves the data used to generate the contract document.
-
-It may contain rental facts, tenant signer facts, customer facts, selected items, assigned assets, accessories, accepted pricing, delivery details, legal text version, and template inputs.
-
-Later changes must not silently alter the facts represented by an already generated or signed contract.
+The logical contract/document state is distinct from the concrete rendered document artifact. Contracts can also produce document previews/budgets for draft rentals; those documents are not the signed Rental Remito.
 
 ### Contract Artifact
 
-A `ContractArtifact` is a concrete generated file representation of a contract.
+A Contract Artifact is the concrete rendered document associated with the logical contract.
 
-Common artifact kinds are:
+- The unsigned artifact is the exact agreement presented for review and acceptance.
+- The signed artifact is the resulting signed document.
+- A replacement or regenerated document is a new artifact, not a mutation of a previous historical artifact.
 
-```text
-UNSIGNED_PDF
-SIGNED_PDF
-```
-
-Artifacts preserve file metadata and proof metadata, including their document hash.
-
-The unsigned document hash identifies the exact document presented to and accepted by the signer.
-
-Unsigned and signed PDFs are different artifacts and have independent hashes.
+The exact document presented to the signer must remain identifiable so acceptance evidence can be tied to those exact bytes.
 
 ### Signing Request
 
-A `SigningRequest` is the invitation/session allowing a signer to review and sign a specific unsigned contract artifact.
-
-It references the exact unsigned artifact the signer is expected to review.
-
-Signing tokens must be stored as hashes rather than raw tokens and must no longer be usable for signing after successful acceptance.
+A Signing Request grants a recipient access to review and accept a particular unsigned rental agreement artifact. It is not itself proof that the agreement was accepted.
 
 ### Signature Acceptance
 
-A `SignatureAcceptance` is the immutable audit proof that a signer accepted a specific document.
+Signature Acceptance is the preserved evidence that a particular rental agreement artifact was accepted. It remains tied to the exact unsigned artifact presented to the signer.
 
-It preserves the signer and signing time together with the exact unsigned artifact, its document hash, signature evidence, acceptance wording, and the resulting signed artifact.
+Acceptance evidence may preserve the acknowledgement wording presented during signing and document identity/hash information needed to identify the accepted artifact. Versioning acknowledgement text versions the signing acknowledgement text only; it does not version the complete legal annex.
 
-The acceptance record preserves both:
+## Historical document semantics
 
-```text
-acceptanceTextVersion
-acceptanceTextSnapshot
-```
+A generated rental agreement is a historical rendering of the facts presented to the signer. It must preserve those facts well enough to remain understandable after mutable source information changes elsewhere.
 
-The version identifies the legal wording version. The snapshot preserves the exact wording accepted at signing time.
+Those facts can include:
 
-A signing request is not the legal proof of signing; the signature acceptance is.
+- the parties represented in the agreement;
+- equipment and quantities;
+- serial or reference information represented in the document;
+- rental period;
+- accepted price presentation;
+- insurance information;
+- tenant signer facts;
+- legal terms presented in the document.
 
-### Public Receipt / Download Token
+Later rental changes must not rewrite previously generated or signed artifacts. If an edit requires a new agreement, the new document is a new historical artifact, and previous artifacts and acceptance evidence remain historical.
 
-A public receipt/download token provides read-only access to the signed document after signing.
+## Signing and receipt access
 
-It is separate from the signing token:
+Signing access and post-signing receipt/download access serve different purposes:
 
-```text
-Signing token
-  Allows the signer to perform the signing action.
+- Signing access allows review and acceptance of a particular unsigned artifact. After successful signing, that signing credential must no longer authorize another acceptance.
+- Receipt access is read-only access to the resulting signed artifact.
 
-Receipt/download token
-  Allows access to the signed document after completion.
-```
+## Rental edits and re-signing
 
-Public download tokens must be purpose-specific, expiring, revocable, and stored as hashes.
+Rental Commitment owns whether and how a rental may be edited. Contracts owns the consequences of an edit for existing rental agreements and signing state.
 
-They must not grant signing capabilities.
+An edit may invalidate the current document/signing state and require generation and acceptance of a new agreement. Previously generated and signed artifacts, together with their acceptance evidence, remain historical rather than being rewritten.
 
-## Lifecycle
+Signing a Rental Remito does not make Rental Commitment itself immutable. Rental Commitment remains authoritative for whether rental changes are allowed; Contracts owns the resulting document and signing consequences.
 
-Contract states:
+## Tenant signer facts
 
-```text
-DRAFT
-  Contract exists but no generated artifact exists.
-
-GENERATED
-  An unsigned artifact exists.
-
-SIGNING_REQUESTED
-  A signing request exists or has been sent.
-
-SIGNED
-  A signature acceptance exists and a signed artifact was produced.
-
-RESIGN_REQUIRED
-  Rental or document inputs changed and a new signature is required.
-
-VOID
-  The contract was intentionally invalidated.
-```
-
-Signing request states:
-
-```text
-PENDING
-  Request exists but has not been sent.
-
-SENT
-  Signing link has been sent.
-
-VIEWED
-  Signer opened the signing page.
-
-SIGNED
-  Signer completed the acceptance flow.
-
-EXPIRED
-  Signing link expired.
-
-CANCELLED
-  Request was cancelled.
-
-FAILED
-  Sending or signing flow failed.
-```
-
-A generated contract must have an unsigned artifact.
-
-A signed contract must have a signature acceptance and should have a signed artifact.
-
-A signed contract must not be silently downgraded to `GENERATED`.
-
-Regeneration after signing must be explicit: reject it, mark the contract `RESIGN_REQUIRED`, or use an explicit versioned contract flow.
-
-Contract signing does not automatically make the rental immutable.
-
-If rental edits require re-signing, Contracts owns the re-signing status while Rental Commitment owns whether the rental edit itself is allowed.
-
-## Business Rules
-
-Generated contracts must use accepted rental facts and snapshots rather than current Pricing rules or current catalog definitions.
-
-Generated contracts must snapshot tenant signer data rather than relying on later live tenant configuration.
-
-Contract artifacts are immutable once recorded. Their bytes, storage key, metadata, and hash must not be overwritten. A replacement document is represented by a new artifact.
-
-A signature acceptance must preserve the unsigned artifact reference and unsigned document hash.
-
-A signature acceptance must preserve the legal acceptance text snapshot.
-
-Core signing/audit facts must not exist only inside provider-specific JSON metadata.
-
-External provider metadata must not become the sole source of signing truth.
-
-Raw public tokens must not be persisted.
-
-The signing token must be invalidated or cleared after successful signing.
-
-Post-sign document access must use the separate receipt/download token rather than the signing token.
-
-Object storage keys must not be returned directly to the public UI.
-
-Notification delivery failure must not change contract signing truth unless the signing request itself failed.
+Tenant Management owns current Tenant Contract Signer configuration. Contracts preserves the signer facts represented in a generated rental agreement so later Tenant Management changes do not reinterpret the historical document.
 
 ## Boundaries
 
-Rental Commitment owns rental lifecycle, confirmation, selections, demand lines, assignments, blocks, and accepted rental snapshots.
-
-Contracts composes the provider-owned Rental Commitment capabilities it needs to generate documents, including current lifecycle facts, accepted pricing facts, committed selections/demand, and physical assignments. Remito composition joins committed demand and accessory-selection snapshots with their assigned Asset references, then obtains current serial numbers from Asset Inventory display facts. It does not become their owner.
-
-Contracts must not use live Pricing calculations or current Asset Inventory data when accepted rental snapshots already contain the facts required for the document.
-
-Tenant Management owns current tenant configuration, branding, signer configuration, permissions, branch concerns, and customer profiles. Contracts composes the individual published current facts it needs while preparing a document, but generated contracts snapshot the signer data they use.
-
-Notifications owns message delivery and retry behavior. Contracts may request delivery of signing links or signed-document messages while remaining authoritative over signing state.
-
-Object storage infrastructure owns storage mechanics. Contracts owns the artifact records, metadata, and document hashes.
-
-Contracts does not control Rental Commitment state transitions. Any interaction between signing state and rental workflow must happen explicitly through public APIs or events.
-
-Contracts owns Remito preparation, signing-request creation, invitation orchestration, public signing-session HTTP use cases, acceptance, signed artifacts, and receipts.
-
-## Persistence / Compatibility
-
-For contracts generated after the artifact-persistence rollout, the Contracts V2 model is the sole legal/document source of truth:
-
-```text
-V2Contract
-  -> V2ContractArtifact
-  -> V2DocumentSigningRequest
-  -> V2DocumentSignatureAcceptance
-```
-
-`V2ContractArtifact`, `V2DocumentSigningRequest`, and `V2DocumentSignatureAcceptance` own document metadata, hashes, signing lifecycle, and acceptance evidence.
-
-Contracts owns persistence for contract records, artifacts, signing requests, signature acceptances, public contract access tokens, document numbers, and signing status.
-
-## References
-
-- `apps/backend/docs/architecture/overview.md`
-- `apps/backend/docs/architecture/adr/`
-- `apps/backend/src/modules/tenant-management/README.md`
-- `apps/backend/src/modules/rental-commitment/README.md`
+- Rental Commitment owns rental lifecycle and accepted rental facts; Contracts turns those facts into rental agreements and owns document/signing truth.
+- Tenant Management owns current tenant, customer, and signer facts; Contracts preserves the facts represented in a generated agreement.
+- Asset Inventory owns current physical asset facts; document artifacts preserve the equipment facts represented when generated.
