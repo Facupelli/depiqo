@@ -85,6 +85,10 @@ const s = StyleSheet.create({
     fontFamily: 'Helvetica-Bold',
     fontSize: 11,
   },
+  insuranceNote: {
+    fontSize: 7.5,
+    lineHeight: 1.25,
+  },
   divider: {
     borderTop: '2pt solid #111111',
     marginHorizontal: -16,
@@ -205,7 +209,15 @@ export function RemitoPage({ data, columns, isContinuation = false }: RemitoPage
                       </View>
                     </View>
 
-                    <View style={s.infoCell} />
+                    <View style={s.infoCell}>
+                      {document.insuranceSelected && (
+                        <Text style={s.insuranceNote}>
+                          El ARRENDATARIO se acoge a la Cobertura de daños accidentales (6% del importe del alquiler),
+                          conforme a la sección "Limitación de responsabilidad por daños accidentales" del presente
+                          contrato.
+                        </Text>
+                      )}
+                    </View>
                   </View>
                 </View>
               </View>

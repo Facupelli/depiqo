@@ -127,6 +127,7 @@ export class RentalBudgetDocumentService {
         returnDate: formatLocalDate(lifecycle.value.periodEnd, branch.value.effectiveTimezone),
         jornadas: acceptedPricing.value.chargedUnits,
         agreedPrice: formatAcceptedPricingForRentalRemito(acceptedPricing.value),
+        insuranceSelected: false,
         logoUrl: tenantBranding.value.logoUrl,
         rentalSignatureUrl: contractSigner?.signatureUrl ?? null,
         presentation: { includeLegalAnnex: false, showRentalSignatureBlock: false },
