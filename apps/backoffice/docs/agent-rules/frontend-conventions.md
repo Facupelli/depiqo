@@ -115,7 +115,7 @@ If two modules repeatedly need the same business-specific implementation, recons
 
 Do not add new business functionality to legacy `src/features/`. Place new work in its owning `src/modules/<module>/` boundary.
 
-For React feature structure, layering, and component responsibility boundaries, use the `react-modular-architecture` skill.
+For React feature structure, layering, and component responsibility boundaries, follow `apps/backoffice/docs/agent-rules/architecture.md`.
 
 For TanStack Query-specific structure and query key rules, use the `tanstack-query` skill.
 

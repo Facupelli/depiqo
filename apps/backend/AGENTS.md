@@ -44,9 +44,9 @@ Then load only the artifact-specific rule docs needed for the change, such as co
 
 Design cross-module work using the decision in `docs/architecture/overview.md`: use a synchronous published capability for an authoritative result needed now, an Integration Event for independently reactable completed facts, or a consumer-owned projection for repeated foreign facts where justified eventual consistency provides a concrete benefit. Do not require a new method on one module-wide `*.public-api.ts`; use the owning module's published/public boundary.
 
-## Backend Skills
+## Backend Implementation Guidance
 
-Use `backend-use-case-implementation` for backend command/query/controller/repository/use-case work.
+For backend command/query/controller/repository/use-case work, follow the routing guidance above, then load only the relevant artifact-specific rules under `docs/implementation-rules/`. Read `src/modules/<module>/README.md` for module-specific domain knowledge.
 
 ## Module Docs
 

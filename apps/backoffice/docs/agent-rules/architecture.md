@@ -681,5 +681,5 @@ Refactor implementation only when moving the existing structure unchanged would 
 * Do not edit generated files unless the task explicitly requires it.
 * Follow surrounding code conventions when they do not conflict with this architecture.
 
-For substantial React feature work, use the `react-modular-architecture` skill.
+For substantial React feature work, follow the architecture rules in this document and read the relevant `apps/backoffice/src/modules/<module>/README.md` for module-specific product meaning.
 
