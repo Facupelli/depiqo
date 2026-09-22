@@ -1,6 +1,7 @@
 import { IncomingMessage, ServerResponse } from 'node:http';
 
 import { LogContext } from './log-context';
+import { readRequestId } from './request-id';
 
 interface ExpressRequest extends IncomingMessage {
   originalUrl?: string;
@@ -13,10 +14,12 @@ export function buildCanonicalCompletion(
   error?: Error,
 ) {
   const context = LogContext.forRequest(request);
+  const requestId = readRequestId(request);
 
   return compact({
     type: 'canonical',
-    requestId: context?.requestId ?? requestId(request),
+    requestId,
+    requestIdInvariantViolation: requestId === undefined ? true : undefined,
     httpMethod: request.method,
     httpPath: requestPath(request),
     httpStatus: response.statusCode,
@@ -32,6 +35,7 @@ export function buildCanonicalCompletion(
     integrationEventsPublished: context?.integrationEventsPublished,
     integrationEventNames: context?.integrationEventNames,
     integrationEventPublishFailures: context?.integrationEventPublishFailures,
+    authorizationRequirement: context?.deniedAuthorizationRequirement,
 
     errorCode: context?.problem?.errorCode,
     problemKind: context?.problem?.kind,
@@ -40,6 +44,7 @@ export function buildCanonicalCompletion(
     problemDetail: context?.problem?.detail,
     problemCode: context?.problem?.code,
     problemMetadata: context?.problem?.metadata,
+    validationIssues: context?.problem?.validationIssues,
     application: context?.problem?.application,
 
     err: error,
@@ -56,11 +61,6 @@ export function requestPath(request: IncomingMessage): string {
   const url = expressRequest.originalUrl ?? request.url ?? '/';
   const queryIndex = url.indexOf('?');
   return queryIndex === -1 ? url : url.slice(0, queryIndex);
-}
-
-function requestId(request: IncomingMessage): string | undefined {
-  const id = request.id;
-  return typeof id === 'string' || typeof id === 'number' ? String(id) : undefined;
 }
 
 type Compact<T extends object> = {

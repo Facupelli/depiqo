@@ -30,9 +30,10 @@ export function expectProblemResponse(response: Response, expected: ExpectedProb
     }),
   );
 
-  if ('requestId' in problem) {
-    expect(problem.requestId).toEqual(expect.any(String));
-  }
+  expect(problem.requestId).toEqual(expect.any(String));
+  expect(problem.requestId).not.toBe('undefined');
+  expect(problem.requestId).not.toBe('null');
+  expect(response.headers['x-request-id']).toBe(problem.requestId);
 
   if (expected.code !== undefined) {
     expect(problem.code).toBe(expected.code);

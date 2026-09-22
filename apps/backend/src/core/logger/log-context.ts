@@ -3,6 +3,17 @@ import type { IncomingMessage } from 'node:http';
 
 import type { ApplicationErrorContext } from 'src/core/errors/application-error';
 
+export interface ValidationIssueLogContext {
+  path: string[];
+  code: string;
+  message: string;
+}
+
+export interface AuthorizationRequirementLogContext {
+  type: 'ONE' | 'ANY' | 'ALL';
+  permissions: string[];
+}
+
 export interface ProblemLogContext {
   kind: string;
   type: string;
@@ -11,6 +22,7 @@ export interface ProblemLogContext {
   code?: string | number;
   errorCode?: string;
   metadata?: ApplicationErrorContext;
+  validationIssues?: ValidationIssueLogContext[];
   application?: {
     code: string;
     message: string;
@@ -19,8 +31,6 @@ export interface ProblemLogContext {
 }
 
 export interface RequestLogContext {
-  requestId: string;
-
   userId?: string;
   userRole?: string;
 
@@ -32,6 +42,7 @@ export interface RequestLogContext {
   integrationEventNames?: string[];
   integrationEventPublishFailures?: number;
 
+  deniedAuthorizationRequirement?: AuthorizationRequirementLogContext;
   problem?: ProblemLogContext;
 }
 

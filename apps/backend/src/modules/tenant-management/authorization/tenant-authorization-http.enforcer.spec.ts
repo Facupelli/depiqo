@@ -3,6 +3,7 @@ import { ForbiddenException, InternalServerErrorException } from '@nestjs/common
 import { TenantPermission } from '@repo/api-contracts';
 import { err, ok } from 'neverthrow';
 
+import { LogContext, type RequestLogContext } from 'src/core/logger/log-context';
 import { AUTH_ACTOR_TYPES, type AuthActor } from 'src/modules/tenant-management/auth/shared/auth.types';
 
 import { TenantAuthorizationHttpEnforcer } from './tenant-authorization-http.enforcer';
@@ -15,6 +16,22 @@ describe('TenantAuthorizationHttpEnforcer', () => {
     id: 'user-1',
     tenantId: 'tenant-1',
   } as AuthActor;
+
+  function inLogContext(action: () => Promise<void>) {
+    const context: RequestLogContext = {
+      dbQueries: 0,
+      dbDurationMs: 0,
+      cacheHits: 0,
+      cacheMisses: 0,
+    };
+    let pendingAction: Promise<void> | undefined;
+    LogContext.run(context, () => {
+      pendingAction = action();
+    });
+
+    if (!pendingAction) throw new Error('Test action was not started.');
+    return { context, action: pendingAction };
+  }
 
   function fixture() {
     // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.
@@ -38,10 +55,18 @@ describe('TenantAuthorizationHttpEnforcer', () => {
     const test = fixture();
     test.tenantAuthorization.hasPermission.mockResolvedValue(ok(allowed));
 
-    const action = test.enforcer.requirePermission(tenantUser, TenantPermission.ProductsRead);
+    const execution = inLogContext(() => test.enforcer.requirePermission(tenantUser, TenantPermission.ProductsRead));
 
-    if (exception) await expect(action).rejects.toBeInstanceOf(exception);
-    else await expect(action).resolves.toBeUndefined();
+    if (exception) {
+      await expect(execution.action).rejects.toBeInstanceOf(exception);
+      expect(execution.context.deniedAuthorizationRequirement).toEqual({
+        type: 'ONE',
+        permissions: [TenantPermission.ProductsRead],
+      });
+    } else {
+      await expect(execution.action).resolves.toBeUndefined();
+      expect(execution.context.deniedAuthorizationRequirement).toBeUndefined();
+    }
   });
 
   it.each([
@@ -51,13 +76,20 @@ describe('TenantAuthorizationHttpEnforcer', () => {
     const test = fixture();
     test.tenantAuthorization.hasAnyPermission.mockResolvedValue(ok(allowed));
 
-    const action = test.enforcer.requireAnyPermissions(tenantUser, [
-      TenantPermission.ProductsRead,
-      TenantPermission.InventoryRead,
-    ]);
+    const execution = inLogContext(() =>
+      test.enforcer.requireAnyPermissions(tenantUser, [TenantPermission.ProductsRead, TenantPermission.InventoryRead]),
+    );
 
-    if (exception) await expect(action).rejects.toBeInstanceOf(exception);
-    else await expect(action).resolves.toBeUndefined();
+    if (exception) {
+      await expect(execution.action).rejects.toBeInstanceOf(exception);
+      expect(execution.context.deniedAuthorizationRequirement).toEqual({
+        type: 'ANY',
+        permissions: [TenantPermission.ProductsRead, TenantPermission.InventoryRead],
+      });
+    } else {
+      await expect(execution.action).resolves.toBeUndefined();
+      expect(execution.context.deniedAuthorizationRequirement).toBeUndefined();
+    }
   });
 
   it.each([
@@ -67,13 +99,23 @@ describe('TenantAuthorizationHttpEnforcer', () => {
     const test = fixture();
     test.tenantAuthorization.hasAllPermissions.mockResolvedValue(ok(allowed));
 
-    const action = test.enforcer.requireAllPermissions(tenantUser, [
-      TenantPermission.ProductsManage,
-      TenantPermission.ProductsAvailabilityManage,
-    ]);
+    const execution = inLogContext(() =>
+      test.enforcer.requireAllPermissions(tenantUser, [
+        TenantPermission.ProductsManage,
+        TenantPermission.ProductsAvailabilityManage,
+      ]),
+    );
 
-    if (exception) await expect(action).rejects.toBeInstanceOf(exception);
-    else await expect(action).resolves.toBeUndefined();
+    if (exception) {
+      await expect(execution.action).rejects.toBeInstanceOf(exception);
+      expect(execution.context.deniedAuthorizationRequirement).toEqual({
+        type: 'ALL',
+        permissions: [TenantPermission.ProductsManage, TenantPermission.ProductsAvailabilityManage],
+      });
+    } else {
+      await expect(execution.action).resolves.toBeUndefined();
+      expect(execution.context.deniedAuthorizationRequirement).toBeUndefined();
+    }
   });
 
   it('rejects a non-tenant-user actor with 403 without evaluating permissions', async () => {

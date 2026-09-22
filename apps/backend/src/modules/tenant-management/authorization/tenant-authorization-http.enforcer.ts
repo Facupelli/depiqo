@@ -1,6 +1,7 @@
 import { ForbiddenException, Injectable, InternalServerErrorException, UnauthorizedException } from '@nestjs/common';
 import type { TenantPermission } from '@repo/api-contracts';
 
+import { LogContext, type AuthorizationRequirementLogContext } from 'src/core/logger/log-context';
 import { AUTH_ACTOR_TYPES, type AuthActor } from 'src/modules/tenant-management/auth/shared/auth.types';
 
 import { TenantAuthorization } from './tenant-authorization.public-api';
@@ -30,6 +31,7 @@ export class TenantAuthorizationHttpEnforcer {
 
   async enforceRequirement(actor: AuthActor, requirement: TenantPermissionRequirement): Promise<void> {
     if (actor.actorType !== AUTH_ACTOR_TYPES.TENANT_USER) {
+      recordDeniedRequirement(requirement);
       throw new ForbiddenException('Authenticated actor is not allowed to access this resource.');
     }
 
@@ -60,7 +62,17 @@ export class TenantAuthorizationHttpEnforcer {
     }
 
     if (!result.value) {
+      recordDeniedRequirement(requirement);
       throw new ForbiddenException('Required tenant permission is missing.');
     }
   }
+}
+
+function recordDeniedRequirement(requirement: TenantPermissionRequirement): void {
+  const context: AuthorizationRequirementLogContext = {
+    type: requirement.type,
+    permissions: requirement.type === 'ONE' ? [requirement.permission] : [...requirement.permissions],
+  };
+
+  LogContext.set('deniedAuthorizationRequirement', context);
 }

@@ -39,7 +39,7 @@ export function configureApp(app: NestExpressApplication, options: ConfigureAppO
     },
     methods: ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'X-CSRF-Token'],
-    exposedHeaders: [],
+    exposedHeaders: ['X-Request-Id'],
     maxAge: 60 * 60,
   });
 

@@ -156,12 +156,33 @@ describe('POST /rental-commitments/draft-rentals', () => {
   ])('returns request validation Problem Details for %s', async (_name, makeBody) => {
     const setup = await scenario();
     const client = await tenantUserClient(setup);
+    const requestId = 'backoffice-request_123';
     const response = await client
       .withCsrf(client.request().post('/rental-commitments/draft-rentals'))
+      .set('x-request-id', requestId)
       .send(makeBody(setup));
     expectProblemResponse(response, { status: 400, type: PlatformProblemTypes.request.validationFailed });
+    expect(response.headers['x-request-id']).toBe(requestId);
+    expect(response.body.requestId).toBe(requestId);
     await expectNoDraft(setup);
   });
+
+  it.each(['', 'undefined', 'null', 'invalid request id'])(
+    'replaces an invalid request ID of %j',
+    async (requestId) => {
+      const setup = await scenario();
+      const client = await tenantUserClient(setup);
+      const response = await client
+        .withCsrf(client.request().post('/rental-commitments/draft-rentals'))
+        .set('x-request-id', requestId)
+        .send({ ...body(setup), selectedOffers: [{ rentalOfferId: setup.offer.offer.id, quantity: 0 }] });
+
+      expectProblemResponse(response, { status: 400, type: PlatformProblemTypes.request.validationFailed });
+      expect(response.headers['x-request-id']).toMatch(/^req_[a-f0-9]{16}$/);
+      expect(response.headers['x-request-id']).not.toBe(requestId);
+      await expectNoDraft(setup);
+    },
+  );
 
   it.each([
     ['equal', utcDate(2030, 1, 7, 10).toISOString(), utcDate(2030, 1, 7, 10).toISOString()],

@@ -1,8 +1,16 @@
-import { ProblemLogContext } from 'src/core/logger/log-context';
+import { ZodValidationException } from 'nestjs-zod';
+import { ZodError } from 'zod';
+
+import { ProblemLogContext, ValidationIssueLogContext } from 'src/core/logger/log-context';
 
 import { ProblemDetailsBody } from './problem-details';
 import { ProblemException, ProblemExceptionApplicationError } from './problem.exception';
 import { ResolvedProblemKind } from './resolve-exception-problem';
+
+const MAX_LOGGED_VALIDATION_ISSUES = 20;
+const MAX_VALIDATION_PATH_DEPTH = 10;
+const MAX_VALIDATION_PATH_SEGMENT_LENGTH = 128;
+const MAX_VALIDATION_MESSAGE_LENGTH = 512;
 
 export interface ProblemLogInformation {
   context: ProblemLogContext;
@@ -28,10 +36,32 @@ export function buildProblemLogInformation(input: {
       code: safeProblemCode(problemDetails.code),
       errorCode: applicationError?.code ?? errorCode(error),
       metadata,
+      validationIssues: zodValidationIssues(error),
       application: applicationError ? compactApplicationError(applicationError) : undefined,
     },
     error: loggingError(error, applicationError),
   };
+}
+
+function zodValidationIssues(error: unknown): ValidationIssueLogContext[] | undefined {
+  if (!(error instanceof ZodValidationException)) return undefined;
+
+  const zodError = error.getZodError();
+  if (!(zodError instanceof ZodError)) return undefined;
+
+  const issues = zodError.issues.slice(0, MAX_LOGGED_VALIDATION_ISSUES).map((issue) => ({
+    path: issue.path
+      .slice(0, MAX_VALIDATION_PATH_DEPTH)
+      .map((segment) => truncate(String(segment), MAX_VALIDATION_PATH_SEGMENT_LENGTH)),
+    code: issue.code,
+    message: truncate(issue.message, MAX_VALIDATION_MESSAGE_LENGTH),
+  }));
+
+  return issues.length > 0 ? issues : undefined;
+}
+
+function truncate(value: string, maximumLength: number): string {
+  return Array.from(value).slice(0, maximumLength).join('');
 }
 
 function loggingError(error: unknown, applicationError?: ProblemExceptionApplicationError): Error {

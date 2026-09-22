@@ -7,7 +7,6 @@ import { LogContext, RequestLogContext } from './log-context';
 export class LoggingMiddleware implements NestMiddleware {
   use(req: Request, _res: Response, next: NextFunction): void {
     const context: RequestLogContext = {
-      requestId: String(req.id),
       dbQueries: 0,
       dbDurationMs: 0,
       cacheHits: 0,
