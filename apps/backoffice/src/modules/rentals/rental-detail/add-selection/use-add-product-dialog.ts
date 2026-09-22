@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { buildR2PublicUrl } from "@/lib/r2-public-url";
 import { rentalOfferAvailabilityQueries } from "@/modules/rentals/shared/rental-offers/rental-offer-availability.queries";
-import { branchQueries } from "@/modules/settings/branches/public";
 import { useDebounce } from "@/shared/hooks/use-debounce";
 import { deriveConfirmedRentalEditAvailabilityPeriod } from "../confirmed-rental-edit-period";
 import { useRentalDetailContext } from "../rental-detail.context";
@@ -36,8 +35,6 @@ export function useAddProductDialog({ onClose }: UseAddProductDialogInput) {
 		null,
 	);
 	const debouncedSearch = useDebounce(search, SEARCH_DEBOUNCE_MS).trim();
-
-	const branchQuery = useQuery(branchQueries.detail(rental.branchId));
 
 	const offersQuery = useQuery(
 		rentalOfferSearchQueries.search({
@@ -224,12 +221,7 @@ export function useAddProductDialog({ onClose }: UseAddProductDialogInput) {
 	}
 
 	return {
-		branchName: branchQuery.data?.name ?? null,
-		branchState: branchQuery.isPending
-			? ("loading" as const)
-			: branchQuery.isError
-				? ("error" as const)
-				: ("ready" as const),
+		branchName: rental.retainedBranch.name,
 
 		search,
 		onSearchChange: handleSearchChange,

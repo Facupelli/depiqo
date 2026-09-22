@@ -54,7 +54,7 @@ vi.mock("@tanstack/react-query", async (importOriginal) => {
 					refetch: vi.fn(),
 				};
 			}
-			return { data: { name: "Main" }, isPending: false, isError: false };
+			throw new Error(`Unexpected query: ${key}`);
 		},
 	};
 });
@@ -64,6 +64,11 @@ vi.mock("../rental-detail.context", () => ({
 		rental: {
 			id: "rental-1",
 			branchId: "branch-1",
+			retainedBranch: {
+				id: "branch-1",
+				name: "Main",
+				timezone: "America/Argentina/Buenos_Aires",
+			},
 			version: 1,
 			period: { start: "2026-01-01", end: "2026-01-02" },
 			selections: testState.isAlreadyAdded ? [{ rentalOfferId: offer.id }] : [],
@@ -104,7 +109,13 @@ beforeEach(() => {
 	testState.isOfferVisible = true;
 });
 
-describe("useAddProductDialog selection state", () => {
+describe("useAddProductDialog", () => {
+	it("uses the retained rental branch name without querying branch detail", () => {
+		const hook = renderDialogHook();
+
+		expect(hook.result.current.branchName).toBe("Main");
+	});
+
 	it("lowers quantity when availability falls below it", async () => {
 		const hook = renderDialogHook();
 		selectOfferAndSetQuantity(hook.result, 5);
