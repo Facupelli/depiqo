@@ -55,10 +55,7 @@ function AddProductDialogContent({ onClose }: { onClose: () => void }) {
 
 	return (
 		<div className="space-y-4">
-			<BranchContextLine
-				branchName={dialog.branchName}
-				state={dialog.branchState}
-			/>
+			<BranchContextLine branchName={dialog.branchName} />
 
 			<div className="relative">
 				<Search className="-translate-y-1/2 absolute top-1/2 left-3 size-4 text-muted-foreground" />
@@ -145,26 +142,12 @@ function AddProductDialogContent({ onClose }: { onClose: () => void }) {
 	);
 }
 
-function BranchContextLine({
-	branchName,
-	state,
-}: {
-	branchName: string | null;
-	state: "loading" | "error" | "ready";
-}) {
-	let label = branchName;
-	if (state === "loading") {
-		label = "Cargando sucursal...";
-	}
-	if (state === "error") {
-		label = "No pudimos cargar la sucursal del pedido.";
-	}
-
+function BranchContextLine({ branchName }: { branchName: string }) {
 	return (
 		<div className="flex min-w-0 items-start gap-1.5 text-muted-foreground text-xs">
 			<MapPin className="mt-0.5 size-3.5 shrink-0" />
 			<span className="min-w-0 [overflow-wrap:anywhere]">
-				Sucursal: {label}
+				Sucursal: {branchName}
 			</span>
 		</div>
 	);

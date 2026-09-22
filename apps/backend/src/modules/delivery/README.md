@@ -1,48 +1,39 @@
-# Delivery Module
+# Delivery
 
-Delivery is the bounded context that owns current delivery configuration and authoritative current Delivery quote calculation through its public boundary.
+Delivery owns the tenant's current branch delivery policy. It uses that policy and current Branch facts to determine transportation serviceability and propose current Delivery and Collection terms for a rental. It does not own the historical delivery facts accepted by a rental; Rental Commitment owns those facts.
 
-## Dependency Direction
+## Business semantics
 
-```text
-Rental Commitment -> Delivery -> Tenant Management
-Rental Commitment -> Pricing
-```
+### Branch delivery policy
 
-Delivery remains independent from Rental Commitment and Pricing. Delivery may retain tenant and branch identifiers. Tenant Management remains authoritative for Branch identity, lifecycle, timezone, and operational location. Delivery owns Delivery enablement and all Delivery configuration. Delivery does not access Tenant Management persistence or model Tenant Management records as Delivery domain objects.
+A Branch may have a current Delivery policy that defines whether transportation is offered and under what conditions. The policy governs current Delivery and Collection quotes, including route- and distance-based coverage, eligible service windows, normal-service pricing windows, special-hours pricing, and the time transportation requires the equipment to remain reserved.
 
-## Domain Concepts
+Disabling Delivery makes the service unavailable for current quotes without discarding the configured policy. The policy can remain available for reuse if Delivery is enabled again later.
 
-### Branch Delivery Configuration
+### Coverage and serviceability
 
-`BranchDeliveryConfiguration` is the complete Delivery-owned configuration for one tenant branch. It owns:
+Delivery determines whether requested transportation is serviceable under the current branch policy. Coverage is based on the route between the Branch operational location and the customer destination together with the policy's coverage limits.
 
-- whether delivery is enabled
-- currency and maximum service distance
-- ordered distance price bands
-- eligible weekdays and local minute-of-day windows
-- the fixed special-hours surcharge
-- transport reservation duration
+### Delivery and Collection
 
-A disabled configuration remains complete and preserves all configured values. Distance bands are canonically ordered by their maximum distance; no separate position is stored.
+Delivery and Collection are separate transportation legs. Each may contribute its own quoted charge under the current branch Delivery policy.
 
-## Persistence
+### Service times
 
-Delivery owns:
+The policy distinguishes times when transportation is eligible to occur from normal-service times used for ordinary pricing. Transportation may be eligible outside normal-service hours while requiring special-hours pricing.
 
-```text
-v2_branch_delivery_configurations
-v2_branch_delivery_distance_price_bands
-```
+### Transport reservation
 
-The configuration owns its distance bands. The database has a tenant-safe physical foreign key from `(branch_id, tenant_id)` to Tenant Management's branch table, but the Prisma model intentionally has no relation to `V2Branch` or `V2Tenant`.
+Delivery terms may include transportation time that extends the period during which rental equipment must remain operationally reserved. Delivery determines the current proposed transportation terms; Rental Commitment uses the accepted transportation facts when establishing the rental's physical reservation period.
 
-## Current Scope
+## Current and accepted delivery terms
 
-Delivery owns and provides current branch Delivery configuration, customer location and road-distance resolution, current Delivery serviceability, Delivery and Collection pricing, special-hours classification, `transportReservationMinutes`, and authoritative current Delivery quotes through `DeliveryQuoteService`.
+Current Delivery configuration and quotes are mutable proposals. When a rental accepts Delivery or Collection terms, Rental Commitment owns the accepted historical delivery facts needed to understand that rental.
 
-Rental Commitment consumes the current quote and owns prospective rental orchestration, accepted Delivery snapshots at confirmation, the accepted customer total, and confirmed or historical transport timing.
+Later changes to branch Delivery configuration, coverage, pricing, schedules, or transportation rules must not reinterpret already accepted rental history. Existing rentals are understood from their accepted transportation facts, not from a newly calculated current quote.
 
-## Historical Boundary
+## Boundaries
 
-Delivery owns current quote calculation only. Once a quote is accepted at rental confirmation, Rental Commitment persists provider-neutral accepted Delivery facts. Historical reads and post-confirmation operations use those accepted facts; Delivery is not queried again to reconstruct historical truth.
+- Tenant Management owns Branch identity, operational location, and effective timezone. Delivery uses those current facts to evaluate transportation.
+- Delivery owns the current branch Delivery policy, serviceability, and proposed Delivery/Collection terms.
+- Rental Commitment owns Delivery/Collection terms once accepted as part of a rental's historical facts.

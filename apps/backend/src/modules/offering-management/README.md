@@ -1,48 +1,29 @@
-# Offering Management Module
+# Offering Setup
 
-Offering Management coordinates tenant-admin workflows for managing equipment and rental offerings.
+The `offering-management` module implements **Offering Setup**, the tenant-admin orchestration boundary for creating or composing related records across provider modules. Offering Setup coordinates cross-context authoring workflows while provider bounded contexts remain authoritative for the domain records they own. It owns no persisted domain records of its own.
 
-It is an application and orchestration boundary, not a provider bounded context. It owns cross-context workflows and consumer-shaped administrative read models, but it does not own the provider domain data those workflows create or compose.
+## Setup semantics
 
-## Responsibilities
+### Physical and commercial concepts
 
-Offering Management supports:
+Physical inventory concepts and commercial rental concepts are distinct. An Equipment Type describes the kind of physical equipment used operationally. A Rentable Item / Rental Offer describes what is commercially offered to customers. Creating a standalone rentable offering from an Equipment Type does not collapse those concepts into one domain object.
 
-- tenant-admin offering and equipment management workflows;
-- cross-context orchestration across Asset Inventory, Catalog, Pricing, and Tenant Management;
-- composed administrative read models needed to manage those offerings;
-- translation of tenant-admin intent into calls to provider-owned public capabilities.
+Commercial offerings express the equipment needed for fulfillment through fulfillment requirements. Those requirements describe operational demand; they are not physical Assets.
 
-Examples include creating equipment and packages, configuring rental offers with pricing, and listing equipment types with inventory, catalog, pricing, category, and branch facts.
+### Branch independence
+
+The Branch associated with a physical Asset and the Branch in which a Rental Offer is commercially available are independent concepts. Physical location does not automatically determine commercial availability, and commercial availability does not imply that a specific physical Asset belongs to that Branch.
+
+### Category independence
+
+The category used to classify an Equipment Type and the category used to classify its corresponding standalone commercial Rentable Item are independent. Physical equipment classification and commercial product classification may differ intentionally.
+
+### Coordinated setup
+
+A coordinated setup operation should have an all-or-nothing business outcome: if the overall operation fails, it should not leave a partial cross-context commercial, physical, or pricing setup. The provider modules remain owners of the resulting records.
 
 ## Boundaries
 
-- Tenant Management owns tenants, users, permissions, branches, product mode, and category taxonomy.
-- Asset Inventory owns equipment types, physical assets, ownership metadata, and equipment-type accessory defaults.
-- Catalog owns rentable items, fulfillment requirements, categories associated with catalog records, and rental offers.
-- Pricing owns rate plans, tiers, promotions, coupons, and rental-offer pricing assignments.
-
-Offering Management must use those modules' published capabilities. It must not query or mutate provider-owned persistence directly, duplicate provider invariants, or become authoritative over provider domain validity.
-
-Physical Asset branches and commercial Rental Offer branches remain independent. Neither is inferred from the other.
-
-## Persistence
-
-Offering Management is normally persistence-free. Provider records remain persisted by their owning modules. If workflow audit, idempotency, or history is introduced later, those records should describe orchestration attempts rather than duplicate provider data.
-
-## HTTP Surfaces
-
-HTTP routes are consumer-facing surfaces and do not define the backend architectural boundary. Existing routes may therefore retain paths such as:
-
-- `/offering-setup/equipment`
-- `/offering-setup/packages`
-- `/offering-setup/rental-offers`
-- `/backoffice/equipment-types`
-
-## References
-
-- `apps/backend/docs/architecture/overview.md`
-- `apps/backend/src/modules/tenant-management/README.md`
-- `apps/backend/src/modules/asset-inventory/README.md`
-- `apps/backend/src/modules/catalog/README.md`
-- `apps/backend/src/modules/pricing/README.md`
+- Offering Setup coordinates cross-context tenant-admin setup workflows but does not own the provider domain records they create.
+- Asset Inventory, Catalog, Pricing, Tenant Management, and other provider modules remain authoritative for their own concepts and invariants.
+- Physical inventory relationships and commercial offering relationships must not be conflated merely because Offering Setup coordinates them together.

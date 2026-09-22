@@ -1,188 +1,25 @@
-# Rental Catalog Module
+# Catalog
 
-Rental Catalog owns what a tenant offers for rent: rentable items, branch-specific rental offers, catalog presentation, visibility, rentability, and fulfillment requirements. It uses the shared tenant category taxonomy for catalog presentation.
+Catalog owns the tenant's current commercial rental offering. It defines the commercial identity of what can be rented, branch-specific rental offers, and the equipment requirements needed to fulfill those offerings. Catalog does not own physical asset allocation or rental fulfillment, and it does not represent historical confirmed-rental truth.
 
-It separates what customers or staff select from the physical assets eventually used to fulfill the rental.
-
-```text
-RentalOffer
-  = what the customer or staff selects
-
-RentableItem
-  = the commercial/catalog thing being rented
-
-FulfillmentRequirement
-  = the equipment type and quantity required to fulfill it
-```
-
-## Published Capabilities
-
-Rental Catalog publishes cohesive provider-owned capabilities under `public-api/`:
-
-- `CatalogSelectionResolution` resolves rental-offer fulfillment requirements in batches for rental workflows. It classifies requested offers individually when they are not found within the supplied tenant and branch scope, are not rentable, or reference an inactive rentable item. Foreign-tenant and wrong-branch offers are classified as not found to preserve non-disclosure. An invalid fulfillment definition fails the overall resolution rather than classifying the affected offer as unavailable.
-- `CatalogOfferingAuthoring` creates rentable item offerings and adds an existing rentable item to another branch.
-- `CatalogRentalOfferReferenceAuthority` validates tenant-owned Rental Offer references for cross-module authoring workflows without applying selection semantics.
-- `CatalogEquipmentTypeRentalUsages` returns current Rentable Item fulfillment relationships and nested Rental Offer facts for requested Equipment Types in a batch.
-
-Consumers use these capabilities rather than Catalog persistence or internal application services.
-
-## Domain Concepts
+## Domain concepts
 
 ### Rentable Item
 
-A `RentableItem` is the tenant-owned commercial/catalog identity that can be rented.
-
-It owns catalog-facing presentation such as:
-
-```text
-name
-description
-imageUrl
-category
-kind
-status
-```
-
-`V2RentableItem` is the catalog concept that owns the catalog image URL.
-
-A rentable item may be:
-
-```text
-SINGLE
-  Fulfilled by one equipment type requirement.
-
-PACKAGE
-  Fulfilled by multiple equipment type requirements.
-```
-
-The kind is useful for UI and business language, but fulfillment is defined by requirements rather than by the enum itself.
-
-A package is not composed of child rentable items.
+A Rentable Item is the tenant-owned commercial/catalog identity of something that can be offered for rent. Its fulfillment is described through equipment requirements rather than through child Rentable Items.
 
 ### Rental Offer
 
-A `RentalOffer` is the branch-specific commercial offer for a `RentableItem`.
+A Rental Offer makes a Rentable Item commercially available in a branch.
 
-Customers and staff select `RentalOffer` records in rental flows.
-
-Visibility and rentability are independent:
-
-| `isVisible` | `isRentable` | Meaning                                                       |
-| ----------- | ------------ | ------------------------------------------------------------- |
-| `true`      | `true`       | Discoverable and selectable.                                  |
-| `true`      | `false`      | Discoverable but unavailable for selection.                   |
-| `false`     | `true`       | Hidden from discovery but selectable through direct-ID flows. |
-| `false`     | `false`      | Hidden and not selectable.                                    |
-
-Storefront discovery uses `isVisible` and exposes `isRentable`.
-
-Selection and request validation use `isRentable`, not `isVisible`.
-
-Archived offers are neither discoverable nor selectable regardless of these flags.
+Visibility controls whether an offer is discoverable. Rentability controls whether an already-known offer may participate in rental selection. These are independent: a hidden but rentable offer can still be selected directly.
 
 ### Fulfillment Requirement
 
-A `FulfillmentRequirement` defines the equipment type and quantity required to fulfill one unit of a rentable item.
-
-```text
-SINGLE
-  RentableItem: Sony FX3 Camera
-    requires EquipmentType Sony FX3 x 1
-
-PACKAGE
-  RentableItem: Filming Kit
-    requires EquipmentType Sony FX3 x 1
-    requires EquipmentType Tripod x 1
-    requires EquipmentType LED Panel x 2
-```
-
-Fulfillment requirements bridge the commercial catalog to operational fulfillment.
-
-They define equipment demand but do not assign physical assets.
-
-### Category
-
-A category groups tenant-facing equipment and rentable items. The shared taxonomy is owned by Tenant Management; Rental Catalog references it for browsing and presentation.
-
-## Business Rules
-
-Rental flows select `RentalOffer`, not raw `RentableItem` or `EquipmentType` records.
-
-A standalone rentable item is modeled as a `RentableItem` with one fulfillment requirement.
-
-A package is modeled as a `RentableItem` with multiple fulfillment requirements.
-
-Package requirements reference `EquipmentType`, not child `RentableItem` records.
-
-Package requirement rows must not infer presentation images from unrelated standalone rentable items that reference the same equipment type.
-
-The package parent in rental UI and snapshots is the `RentalSelection`, not the first generated demand line.
-
-Archived or deleted rentable items and rental offers must not be selected for new rentals.
-
-A rental offer may be visible but not rentable.
-
-A rental offer may be hidden but rentable and still be selected through direct-ID flows.
-
-A rental offer may be rentable but not bookable if Pricing has no active pricing assignment.
-
-Catalog lifecycle is independent of current physical stock. A package may be created and a rentable item may be activated without current physical stock.
-
-Visible or rentable catalog state does not imply physical availability. Rental Commitment determines whether demand can be fulfilled at rental time.
-
-Catalog changes affect future selections, not already confirmed rentals.
-
-Rental Catalog may allow draft or incomplete setup states for admin workflows.
-
-For physical rentable items, fulfillment requirement quantities must be positive.
-
-An active physical rentable item must have at least one fulfillment requirement before it can be selected for confirmation.
-
-A tenant must not have duplicate active offers for the same rentable item and branch.
-
-If soft deletes are used, active-offer uniqueness may require a database partial unique index rather than a Prisma `@@unique` involving nullable `deletedAt`.
+Fulfillment requirements describe the equipment types and quantities needed to fulfill a Rentable Item. They express operational demand, but do not identify or reserve physical assets. Catalog composition is expressed through these requirements, not through child Rentable Items.
 
 ## Boundaries
 
-Asset Inventory owns `EquipmentType` and physical asset facts. Rental Catalog may reference `equipmentTypeId` in fulfillment requirements but does not own assets, condition, ownership, location, or assignment eligibility.
-
-Rental Catalog determines whether a rental offer can participate in a rental workflow and provides its fulfillment requirements. It does not calculate physical asset availability or rental-offer capacity and must not query rental asset blocks to do so. Rental Commitment consumes these Catalog-owned participation and fulfillment facts and owns physical availability.
-
-Pricing owns rate plans, pricing assignments, promotions, coupons, and price calculation for rental offers.
-
-Catalog rentability does not imply that valid pricing exists.
-
-Rental Commitment owns committed selections, generated demand lines, confirmed price snapshots, and physical assignment/blocking for a rental.
-
-Rental Commitment must use Rental Catalog public capabilities rather than querying catalog tables directly when reconstructing selected offers.
-
-Tenant Management owns tenants and branches, including branch schedules and configuration. Rental Catalog may reference and validate `tenantId` and `branchId`.
-
-Offering Setup may coordinate Rental Catalog with Asset Inventory and Pricing but does not own catalog data.
-
-Accessory preparation decisions and equipment-type accessory defaults do not belong to Rental Catalog.
-
-Rental Catalog must not directly assign assets, create asset blocks, recalculate confirmed rental prices, regenerate contracts, or deliver notifications.
-
-## Persistence
-
-Rental Catalog owns persistence for:
-
-```text
-rentable items
-rental offers
-fulfillment requirements
-```
-
-Pricing assignments, rental selections, demand lines, assignments, blocks, and confirmed rental snapshots are persisted by their owning modules.
-
-## References
-
-- `public-api/catalog-selection-resolution.public-api.ts`
-- `public-api/catalog-offering-authoring.public-api.ts`
-- `apps/backend/docs/architecture/overview.md`
-- `apps/backend/docs/architecture/adr/`
-- `apps/backend/src/modules/tenant-management/README.md`
-- `apps/backend/src/modules/asset-inventory/README.md`
-- `apps/backend/src/modules/pricing/README.md`
-- `apps/backend/src/modules/rental-commitment/README.md`
+- Asset Inventory owns equipment types and physical assets. Catalog references equipment types in fulfillment requirements.
+- Pricing determines proposed pricing. Catalog does not own pricing.
+- Rental Commitment owns accepted rental selections, physical availability, assignments, reservations, and historical rental facts.

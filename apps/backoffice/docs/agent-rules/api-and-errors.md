@@ -18,5 +18,3 @@ Error handling expectations:
 - Keep error messages actionable and specific.
 
 For TanStack Query structure, query key design, and mutation patterns, use the `tanstack-query` skill.
-
-For React-side effect decisions, use the `react-use-effect-guard` skill.
