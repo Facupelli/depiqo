@@ -3,6 +3,7 @@ import type { Request, Response } from 'express';
 
 import { LogContext } from 'src/core/logger/log-context';
 import { applyHttpErrorStackPolicy } from 'src/core/logger/pino-error.serializer';
+import { readRequestId } from 'src/core/logger/request-id';
 
 import { PROBLEM_DETAILS_CONTENT_TYPE, ProblemDetailsBody } from './problem-details';
 import { buildProblemLogInformation } from './problem-log-event';
@@ -26,7 +27,7 @@ export class ProblemDetailsFilter implements ExceptionFilter {
     const body = this.withResponseDefaults(resolvedProblem.problemDetails, {
       status: resolvedProblem.status,
       instance,
-      requestId: LogContext.forRequest(request)?.requestId ?? LogContext.get('requestId'),
+      requestId: readRequestId(request),
     });
 
     const logInformation = buildProblemLogInformation({
@@ -56,13 +57,14 @@ export class ProblemDetailsFilter implements ExceptionFilter {
       requestId?: string;
     },
   ): ProblemDetailsBody {
+    const responseDetails = { ...problemDetails };
+    delete responseDetails.requestId;
+
     return {
-      ...problemDetails,
+      ...responseDetails,
       status: defaults.status,
       instance: problemDetails.instance ?? defaults.instance,
-      ...(problemDetails.requestId === undefined && defaults.requestId === undefined
-        ? {}
-        : { requestId: problemDetails.requestId ?? defaults.requestId }),
+      ...(defaults.requestId === undefined ? {} : { requestId: defaults.requestId }),
     };
   }
 }

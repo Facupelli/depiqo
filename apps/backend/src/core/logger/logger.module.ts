@@ -12,6 +12,7 @@ import { Env } from 'src/config/env.schema';
 import { buildCanonicalCompletion, canonicalCompletionMessage } from './canonical-log.builder';
 import { LoggingMiddleware } from './logging.middleware';
 import { pinoErrorSerializer } from './pino-error.serializer';
+import { readRequestId } from './request-id';
 
 const requestsWithLoggerProps = new WeakSet<IncomingMessage>();
 
@@ -72,21 +73,26 @@ function createPinoHttpOptions(config: ConfigService<Env, true>): Options {
 function requestLogProps(request: IncomingMessage): { requestId: string } | Record<string, never> {
   if (requestsWithLoggerProps.has(request)) return {};
   requestsWithLoggerProps.add(request);
-  return { requestId: String(request.id) };
+
+  const requestId = readRequestId(request);
+  return requestId === undefined ? {} : { requestId };
 }
 
-function generateRequestId(request: IncomingMessage, _response: ServerResponse): string {
+function generateRequestId(request: IncomingMessage, response: ServerResponse): string {
   const incoming = request.headers['x-request-id'];
-  const candidate = Array.isArray(incoming) ? incoming[0] : incoming;
+  const requestId = isValidIncomingRequestId(incoming)
+    ? incoming.trim()
+    : `req_${randomUUID().replaceAll('-', '').slice(0, 16)}`;
 
-  if (candidate) {
-    const normalized = candidate.trim();
-    if (normalized.length > 0 && normalized.length <= 128 && !/[\r\n]/.test(normalized)) {
-      return normalized;
-    }
-  }
+  response.setHeader('X-Request-Id', requestId);
+  return requestId;
+}
 
-  return `req_${randomUUID().replaceAll('-', '').slice(0, 16)}`;
+function isValidIncomingRequestId(value: string | string[] | undefined): value is string {
+  if (typeof value !== 'string') return false;
+
+  const normalized = value.trim();
+  return /^(?!undefined$|null$)[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/i.test(normalized);
 }
 
 function severityForStatus(status: number): 'info' | 'warn' | 'error' {
