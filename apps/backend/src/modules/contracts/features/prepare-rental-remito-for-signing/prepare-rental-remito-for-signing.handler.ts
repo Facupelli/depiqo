@@ -68,6 +68,7 @@ export class PrepareRentalRemitoForSigningHandler implements IQueryHandler<
       tenantId: query.tenantId,
       rentalId: query.rentalId,
       purpose: 'signing',
+      recipientEmail: query.recipientEmail,
     });
     if (rendered.isErr()) return err(rendered.error);
     const contract = await this.contractWriter.upsertGeneratedContract({
@@ -84,7 +85,7 @@ export class PrepareRentalRemitoForSigningHandler implements IQueryHandler<
       fileName: `${rendered.value.fileName}.pdf`,
       buffer: rendered.value.buffer,
     });
-    if (persisted.isErr()) return err({ code: 'RentalNotFound', message: persisted.error.message });
+    if (persisted.isErr()) return err({ code: 'Unexpected', message: persisted.error.message, cause: persisted.error });
     await this.contractWriter.markGenerated(query.tenantId, contract.value.contractId);
     return ok({
       contractId: contract.value.contractId,

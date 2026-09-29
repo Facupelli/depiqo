@@ -24,7 +24,7 @@ The exact document presented to the signer must remain identifiable so acceptanc
 
 ### Signing Request
 
-A Signing Request grants a recipient access to review and accept a particular unsigned rental agreement artifact. It is not itself proof that the agreement was accepted.
+A Signing Request grants a recipient access to review and accept a particular unsigned rental agreement artifact. It is not itself proof that the agreement was accepted. The invitation recipient may be provided separately from the customer's stored email; sending an invitation does not change the customer profile or the facts preserved in the agreement.
 
 ### Signature Acceptance
 

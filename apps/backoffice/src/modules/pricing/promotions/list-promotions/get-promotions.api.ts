@@ -29,8 +29,9 @@ export async function getPromotions(
 		searchParams.set("search", parsedQuery.search);
 	}
 
-	const path = searchParams.size
-		? `${getPromotionsContract.path}?${searchParams.toString()}`
+	const serializedSearchParams = searchParams.toString();
+	const path = serializedSearchParams
+		? `${getPromotionsContract.path}?${serializedSearchParams}`
 		: getPromotionsContract.path;
 
 	const response = await apiFetch(path, {

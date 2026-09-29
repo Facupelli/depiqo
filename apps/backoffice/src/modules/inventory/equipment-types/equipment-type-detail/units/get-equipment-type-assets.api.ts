@@ -40,8 +40,9 @@ export async function getEquipmentTypeAssets(
 		":equipmentTypeId",
 		encodeURIComponent(params.equipmentTypeId),
 	);
-	const path = searchParams.size
-		? `${contractPath}?${searchParams.toString()}`
+	const serializedSearchParams = searchParams.toString();
+	const path = serializedSearchParams
+		? `${contractPath}?${serializedSearchParams}`
 		: contractPath;
 	const response = await apiFetch(path, {
 		method: getEquipmentTypeAssetsContract.method,

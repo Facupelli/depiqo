@@ -30,8 +30,9 @@ function buildSearchRentalOffersPath(query: SearchRentalOffersQueryDto) {
 		}
 	}
 
-	return searchParams.size
-		? `${searchRentalOffersContract.path}?${searchParams.toString()}`
+	const serializedSearchParams = searchParams.toString();
+	return serializedSearchParams
+		? `${searchRentalOffersContract.path}?${serializedSearchParams}`
 		: searchRentalOffersContract.path;
 }
 
