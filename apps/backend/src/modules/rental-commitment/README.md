@@ -29,6 +29,10 @@ Current or open participation contributes to current fulfillment. Closed partici
 
 Rental Commitment preserves the ownership and owner-contract facts needed to interpret an assignment historically. Later changes to current Asset Inventory ownership must not rewrite that history.
 
+### Owner Split
+
+An Owner Split records a third-party owner's share of accepted Rental Selection pricing attributable to a currently assigned asset, using the accepted ownership and owner-contract facts. It is not a payment or a record of earlier participation; supported rental edits may recalculate current splits while preserving historical asset participation.
+
 ## Reservation and availability
 
 ### Prospective availability

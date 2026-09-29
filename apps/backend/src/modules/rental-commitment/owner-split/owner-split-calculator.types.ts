@@ -10,23 +10,6 @@ export type AssignedAssetOwnershipSnapshotInput =
       ownerShare: string;
     };
 
-export type CalculateRentalOwnerSplitsInput = {
-  tenantId: string;
-  rentalId: string;
-  currency: string;
-
-  /**
-   * Defaults to 2 for most currencies.
-   * Keep it explicit so we can support special currencies later.
-   */
-  moneyScale?: number;
-
-  selections: RentalOwnerSplitSelectionInput[];
-  demandLines: RentalOwnerSplitDemandLineInput[];
-  fulfilledAssets: RentalOwnerSplitFulfilledAssetInput[];
-  priceLines: RentalOwnerSplitPriceLineInput[];
-};
-
 export type RentalOwnerSplitSelectionInput = {
   id: string;
 };
@@ -66,8 +49,4 @@ export type RentalOwnerSplitDraft = {
   ownerAmount: string;
 
   currency: string;
-};
-
-export type CalculateRentalOwnerSplitsOutput = {
-  splits: RentalOwnerSplitDraft[];
 };

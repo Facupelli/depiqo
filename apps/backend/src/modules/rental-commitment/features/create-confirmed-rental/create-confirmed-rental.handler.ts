@@ -43,7 +43,6 @@ import { RentalSelectionId } from '../../domain/ids/rental-selection-id';
 import { RentalDemandLineId } from '../../domain/ids/rental-demand-line-id';
 import { EquipmentTypeId } from '../../domain/types/rental-commitment-ids';
 import { RentalOwnerSplitCalculator } from '../../owner-split/rental-owner-split-calculator';
-import { RentalOwnerSplitDraft } from '../../owner-split/owner-split-calculator.types';
 import {
   BranchUnavailableForRentalError,
   DuplicateAssignedAssetError,
@@ -377,36 +376,7 @@ export class CreateConfirmedRentalService implements ICommandHandler<
 
         const confirmedRental = rental.value;
 
-        // TODO: make part of Rental Aggregate
-        const ownerSplitInput = {
-          tenantId: confirmedRental.tenantId,
-          rentalId: confirmedRental.id,
-          currency: pricingResult.final.currency,
-
-          selections: confirmedRental.selections.map((selection) => ({
-            id: selection.id,
-          })),
-
-          demandLines: confirmedRental.demandLines.map((demandLine) => ({
-            id: demandLine.id,
-            sourceSelectionId: demandLine.rentalSelectionId,
-          })),
-
-          fulfilledAssets: confirmedRental.currentAssignedAssets.map((assignment) => ({
-            id: assignment.id,
-            rentalDemandLineId: assignment.rentalDemandLineId,
-            assetId: assignment.assetId,
-            ownershipSnapshot: assignment.ownershipSnapshot.toJSON(),
-          })),
-
-          priceLines: pricingResult.final.lines.map((line) => ({
-            rentalSelectionId: line.lineReference,
-            netAmount: line.total,
-          })),
-        };
-
-        const { splits }: { splits: RentalOwnerSplitDraft[] } =
-          this.rentalOwnerSplitCalculator.calculate(ownerSplitInput);
+        const splits = this.rentalOwnerSplitCalculator.calculate(confirmedRental);
 
         await this.rentalRepository.save(confirmedRental, { ownerSplits: splits, confirmationOperation, tx });
         integrationEvents.collect(toRentalIntegrationEvents(confirmedRental.pullDomainEvents()));

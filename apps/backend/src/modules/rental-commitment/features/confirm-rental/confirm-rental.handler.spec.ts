@@ -155,7 +155,7 @@ describe('ConfirmRentalHandler deadlock retry', () => {
     };
     // SAFETY: The preceding test setup and assertions establish this value shape before the test inspects it.
     const ownerSplitCalculator = {
-      calculate: vi.fn().mockReturnValue({ splits }),
+      calculate: vi.fn().mockReturnValue(splits),
     } as RentalOwnerSplitCalculator;
     const publishedEvents: IntegrationEvent[] = [];
     const runInTransaction = vi.fn(async <T>(work: (context: PrismaTransactionContext) => Promise<T>): Promise<T> => {

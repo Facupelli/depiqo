@@ -27,7 +27,6 @@ import { Rental } from '../../domain/rental.aggregate';
 import { AssetId } from '../../domain/types/rental-commitment-ids';
 import { JsonValue } from '../../domain/value-objects/json-snapshot.value-object';
 import { RentalPeriod } from '../../domain/value-objects/rental-period.value-object';
-import { getConfirmedPriceSnapshotForOwnerSplits } from '../../owner-split/confirmed-price-snapshot-for-owner-splits';
 import { RentalOwnerSplitCalculator } from '../../owner-split/rental-owner-split-calculator';
 import { RentalRepository } from '../../persistence/rental.repository';
 import { ChangeRentalSelectionQuantityCommand } from './change-rental-selection-quantity.command';
@@ -204,27 +203,7 @@ export class ChangeRentalSelectionQuantityHandler implements ICommandHandler<
           operationTime,
         });
         if (changed.isErr()) return err(this.map(changed.error, context));
-        const snapshot = getConfirmedPriceSnapshotForOwnerSplits(current.confirmedPriceSnapshot);
-        const ownerSplits = this.splitCalculator.calculate({
-          tenantId,
-          rentalId,
-          currency: snapshot.currency,
-          selections: current.currentSelections.map(({ id }) => ({ id })),
-          demandLines: current.currentDemandLines.map((line) => ({
-            id: line.id,
-            sourceSelectionId: line.rentalSelectionId,
-          })),
-          fulfilledAssets: current.currentAssignedAssets.map((assignment) => ({
-            id: assignment.id,
-            rentalDemandLineId: assignment.rentalDemandLineId,
-            assetId: assignment.assetId,
-            ownershipSnapshot: assignment.ownershipSnapshot.toJSON(),
-          })),
-          priceLines: snapshot.lines.map((line) => ({
-            rentalSelectionId: line.rentalSelectionId,
-            netAmount: line.total,
-          })),
-        }).splits;
+        const ownerSplits = this.splitCalculator.calculate(current);
         const saved = await this.rentalRepository.save(current, {
           expectedVersion: command.props.expectedVersion,
           ownerSplits,

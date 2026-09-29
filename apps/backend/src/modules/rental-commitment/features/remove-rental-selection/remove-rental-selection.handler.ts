@@ -21,7 +21,6 @@ import {
   RentalSelectionNotFoundError,
 } from '../../domain/errors/rental-commitment.errors';
 import { RentalStatus } from '../../domain/rental-status';
-import { getConfirmedPriceSnapshotForOwnerSplits } from '../../owner-split/confirmed-price-snapshot-for-owner-splits';
 import { RentalOwnerSplitCalculator } from '../../owner-split/rental-owner-split-calculator';
 import { RentalRepository } from '../../persistence/rental.repository';
 import { RemoveRentalSelectionCommand } from './remove-rental-selection.command';
@@ -152,27 +151,7 @@ export class RemoveRentalSelectionHandler implements ICommandHandler<
       });
       if (removed.isErr()) return err(this.map(removed.error, context));
 
-      const snapshot = getConfirmedPriceSnapshotForOwnerSplits(current.confirmedPriceSnapshot);
-      const ownerSplits = this.splitCalculator.calculate({
-        tenantId,
-        rentalId,
-        currency: snapshot.currency,
-        selections: current.currentSelections.map(({ id }) => ({ id })),
-        demandLines: current.currentDemandLines.map((line) => ({
-          id: line.id,
-          sourceSelectionId: line.rentalSelectionId,
-        })),
-        fulfilledAssets: current.currentAssignedAssets.map((assignment) => ({
-          id: assignment.id,
-          rentalDemandLineId: assignment.rentalDemandLineId,
-          assetId: assignment.assetId,
-          ownershipSnapshot: assignment.ownershipSnapshot.toJSON(),
-        })),
-        priceLines: snapshot.lines.map((line) => ({
-          rentalSelectionId: line.rentalSelectionId,
-          netAmount: line.total,
-        })),
-      }).splits;
+      const ownerSplits = this.splitCalculator.calculate(current);
       const saved = await this.rentalRepository.save(current, { expectedVersion, ownerSplits, tx });
       if (!saved)
         return err(

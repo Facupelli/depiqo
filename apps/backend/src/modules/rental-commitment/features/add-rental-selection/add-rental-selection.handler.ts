@@ -39,11 +39,8 @@ import {
 import { RentalDemandLineId } from '../../domain/ids/rental-demand-line-id';
 import { RentalSelectionId } from '../../domain/ids/rental-selection-id';
 import { RentalStatus } from '../../domain/rental-status';
-import { Rental } from '../../domain/rental.aggregate';
 import { EquipmentTypeId } from '../../domain/types/rental-commitment-ids';
 import { RentalPeriod } from '../../domain/value-objects/rental-period.value-object';
-import { getConfirmedPriceSnapshotForOwnerSplits } from '../../owner-split/confirmed-price-snapshot-for-owner-splits';
-import { RentalOwnerSplitDraft } from '../../owner-split/owner-split-calculator.types';
 import { RentalOwnerSplitCalculator } from '../../owner-split/rental-owner-split-calculator';
 import { RentalRepository } from '../../persistence/rental.repository';
 import { AddRentalSelectionCommand } from './add-rental-selection.command';
@@ -245,7 +242,7 @@ export class AddRentalSelectionHandler implements ICommandHandler<AddRentalSelec
         });
         if (added.isErr()) return err(this.toApplicationError(added.error, context));
 
-        const ownerSplits = this.calculateOwnerSplits(currentRental);
+        const ownerSplits = this.rentalOwnerSplitCalculator.calculate(currentRental);
         const saved = await this.rentalRepository.save(currentRental, {
           expectedVersion: command.props.expectedVersion,
           ownerSplits,
@@ -278,30 +275,6 @@ export class AddRentalSelectionHandler implements ICommandHandler<AddRentalSelec
       }
       throw error;
     }
-  }
-
-  private calculateOwnerSplits(rental: Rental): RentalOwnerSplitDraft[] {
-    const priceSnapshot = getConfirmedPriceSnapshotForOwnerSplits(rental.confirmedPriceSnapshot);
-    return this.rentalOwnerSplitCalculator.calculate({
-      tenantId: rental.tenantId,
-      rentalId: rental.id,
-      currency: priceSnapshot.currency,
-      selections: rental.currentSelections.map((selection) => ({ id: selection.id })),
-      demandLines: rental.currentDemandLines.map((line) => ({
-        id: line.id,
-        sourceSelectionId: line.rentalSelectionId,
-      })),
-      fulfilledAssets: rental.currentAssignedAssets.map((assignment) => ({
-        id: assignment.id,
-        rentalDemandLineId: assignment.rentalDemandLineId,
-        assetId: assignment.assetId,
-        ownershipSnapshot: assignment.ownershipSnapshot.toJSON(),
-      })),
-      priceLines: priceSnapshot.lines.map((line) => ({
-        rentalSelectionId: line.rentalSelectionId,
-        netAmount: line.total,
-      })),
-    }).splits;
   }
 
   private notFound(rentalId: string, context: ApplicationErrorContext): AddRentalSelectionError {

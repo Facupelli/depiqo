@@ -20,7 +20,6 @@ import {
   RentalPeriodHasEndedError,
 } from '../../domain/errors/rental-commitment.errors';
 import { RentalStatus } from '../../domain/rental-status';
-import { Rental } from '../../domain/rental.aggregate';
 import {
   AcceptedRentalPricingBreakdown,
   AcceptedRentalPricingV3Snapshot,
@@ -28,7 +27,7 @@ import {
 } from '../../domain/value-objects/accepted-pricing-snapshot.type';
 import { ConfirmedPriceSnapshot } from '../../domain/value-objects/confirmed-price-snapshot.value-object';
 import { JsonValue } from '../../domain/value-objects/json-snapshot.value-object';
-import { getConfirmedPriceSnapshotForOwnerSplits } from '../../owner-split/confirmed-price-snapshot-for-owner-splits';
+import { Rental } from '../../domain/rental.aggregate';
 import { RentalOwnerSplitCalculator } from '../../owner-split/rental-owner-split-calculator';
 import { RentalOwnerSplitDraft } from '../../owner-split/owner-split-calculator.types';
 import { RentalRepository } from '../../persistence/rental.repository';
@@ -119,7 +118,7 @@ export class ChangeRentalDetailsHandler implements ICommandHandler<
       if (changed.isErr()) return err(this.map(changed.error, context));
 
       let ownerSplits: RentalOwnerSplitDraft[] | undefined;
-      if (change.pricingChanged) ownerSplits = this.calculateOwnerSplits(current);
+      if (change.pricingChanged) ownerSplits = this.splitCalculator.calculate(current);
 
       const saved = await this.rentals.save(current, {
         persistence: 'DETAILS',
@@ -237,27 +236,6 @@ export class ChangeRentalDetailsHandler implements ICommandHandler<
       setAtIso: input.setAtIso,
       ...(input.reason ? { reason: input.reason } : {}),
     };
-  }
-
-  private calculateOwnerSplits(rental: Rental): RentalOwnerSplitDraft[] {
-    const snapshot = getConfirmedPriceSnapshotForOwnerSplits(rental.confirmedPriceSnapshot);
-    return this.splitCalculator.calculate({
-      tenantId: rental.tenantId,
-      rentalId: rental.id,
-      currency: snapshot.currency,
-      selections: rental.currentSelections.map(({ id }) => ({ id })),
-      demandLines: rental.currentDemandLines.map((line) => ({
-        id: line.id,
-        sourceSelectionId: line.rentalSelectionId,
-      })),
-      fulfilledAssets: rental.currentAssignedAssets.map((assignment) => ({
-        id: assignment.id,
-        rentalDemandLineId: assignment.rentalDemandLineId,
-        assetId: assignment.assetId,
-        ownershipSnapshot: assignment.ownershipSnapshot.toJSON(),
-      })),
-      priceLines: snapshot.lines.map((line) => ({ rentalSelectionId: line.rentalSelectionId, netAmount: line.total })),
-    }).splits;
   }
 
   private error(

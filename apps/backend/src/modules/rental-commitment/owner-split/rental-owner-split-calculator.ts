@@ -1,19 +1,57 @@
 import Decimal from 'decimal.js';
+import { Rental } from '../domain/rental.aggregate';
 import {
-  CalculateRentalOwnerSplitsInput,
-  CalculateRentalOwnerSplitsOutput,
   RentalOwnerSplitFulfilledAssetInput,
   RentalOwnerSplitDemandLineInput,
   RentalOwnerSplitDraft,
   RentalOwnerSplitPriceLineInput,
+  RentalOwnerSplitSelectionInput,
 } from './owner-split-calculator.types';
 import { RentalOwnerSplitCalculationError } from './owner-split-calculator-errors';
 import type { OwnerSplitErrorDetails } from './owner-split-calculator-errors';
 import { Injectable } from '@nestjs/common';
 
+type CalculateRentalOwnerSplitsInput = {
+  tenantId: string;
+  rentalId: string;
+  currency: string;
+  moneyScale?: number;
+  selections: RentalOwnerSplitSelectionInput[];
+  demandLines: RentalOwnerSplitDemandLineInput[];
+  fulfilledAssets: RentalOwnerSplitFulfilledAssetInput[];
+  priceLines: RentalOwnerSplitPriceLineInput[];
+};
+
 @Injectable()
 export class RentalOwnerSplitCalculator {
-  calculate(input: CalculateRentalOwnerSplitsInput): CalculateRentalOwnerSplitsOutput {
+  calculate(rental: Rental): RentalOwnerSplitDraft[] {
+    const acceptedPrice = rental.confirmedPriceSnapshot;
+    if (!acceptedPrice) throw new Error('Confirmed price snapshot is required for owner split calculation.');
+
+    const final = acceptedPrice.snapshot.final;
+    return this.calculateFromFacts({
+      tenantId: rental.tenantId,
+      rentalId: rental.id,
+      currency: final.currency,
+      selections: rental.currentSelections.map(({ id }) => ({ id })),
+      demandLines: rental.currentDemandLines.map((line) => ({
+        id: line.id,
+        sourceSelectionId: line.rentalSelectionId,
+      })),
+      fulfilledAssets: rental.currentAssignedAssets.map((assignment) => ({
+        id: assignment.id,
+        rentalDemandLineId: assignment.rentalDemandLineId,
+        assetId: assignment.assetId,
+        ownershipSnapshot: assignment.ownershipSnapshot.toJSON(),
+      })),
+      priceLines: final.lines.map((line) => ({
+        rentalSelectionId: line.rentalSelectionId,
+        netAmount: line.total,
+      })),
+    });
+  }
+
+  private calculateFromFacts(input: CalculateRentalOwnerSplitsInput): RentalOwnerSplitDraft[] {
     const moneyScale = input.moneyScale ?? 2;
 
     const priceLinesBySelectionId = this.indexPriceLines(input.priceLines);
@@ -76,7 +114,7 @@ export class RentalOwnerSplitCalculator {
       }
     }
 
-    return { splits };
+    return splits;
   }
 
   private indexPriceLines(priceLines: RentalOwnerSplitPriceLineInput[]): Map<string, RentalOwnerSplitPriceLineInput> {
