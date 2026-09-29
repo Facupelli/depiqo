@@ -1,8 +1,11 @@
 import { ApplicationError, ApplicationErrorContext } from 'src/core/errors/application-error';
-import { DraftRentalProposalResolutionErrorCode } from '../../application/draft-rental-proposal-resolver.service';
+import { RentalProposalResolutionErrorCode } from '../../application/rental-proposal-resolver.service';
 
 export type UpdateDraftRentalErrorCode =
-  | DraftRentalProposalResolutionErrorCode
+  | RentalProposalResolutionErrorCode
+  | 'rental_commitment.tenant_unavailable'
+  | 'rental_commitment.branch_unavailable'
+  | 'rental_commitment.customer_unavailable'
   | 'rental_commitment.invalid_rental_period'
   | 'rental_commitment.rental_not_found'
   | 'rental_commitment.rental_cannot_be_edited_from_status'

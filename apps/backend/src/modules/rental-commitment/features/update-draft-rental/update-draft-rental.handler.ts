@@ -2,18 +2,24 @@ import type { ApplicationErrorContext } from 'src/core/errors/application-error'
 
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { err, ok, Result } from 'neverthrow';
+import { BranchFacts } from 'src/modules/tenant-management/public-api/branch-facts.public-api';
+import { TenantBillingPreferences } from 'src/modules/tenant-management/public-api/tenant-billing-preferences.public-api';
 
 import {
-  DraftRentalDeliveryAuthoringInput,
-  DraftRentalProposalResolutionError,
-  DraftRentalProposalResolver,
-} from '../../application/draft-rental-proposal-resolver.service';
+  RentalProposalDeliveryDestination,
+  RentalProposalResolutionError,
+  RentalProposalResolver,
+} from '../../application/rental-proposal-resolver.service';
+import { RentalOperationalFactsValidatorService } from '../../application/rental-operational-facts-validator.service';
 import {
+  BranchUnavailableForRentalError,
   DuplicateRentalOfferSelectionError,
   InvalidCatalogSelectionQuantityError,
   RentalCannotBeEditedFromStatusError,
   RentalInvalidFieldError,
   RentalMustContainSelectionError,
+  RentalCustomerUnavailableForRentalError,
+  TenantUnavailableForRentalError,
 } from '../../domain/errors/rental-commitment.errors';
 import { Rental } from '../../domain/rental.aggregate';
 import { FulfillmentMethod, RentalStatus } from '../../domain/rental-status';
@@ -29,7 +35,10 @@ export type UpdateDraftRentalResult = Result<
 @CommandHandler(UpdateDraftRentalCommand)
 export class UpdateDraftRentalHandler implements ICommandHandler<UpdateDraftRentalCommand, UpdateDraftRentalResult> {
   constructor(
-    private readonly proposalResolver: DraftRentalProposalResolver,
+    private readonly proposalResolver: RentalProposalResolver,
+    private readonly rentalOperationalFacts: RentalOperationalFactsValidatorService,
+    private readonly tenantBillingPreferences: TenantBillingPreferences,
+    private readonly branchFacts: BranchFacts,
     private readonly rentals: RentalRepository,
   ) {}
 
@@ -66,7 +75,37 @@ export class UpdateDraftRentalHandler implements ICommandHandler<UpdateDraftRent
     });
     if (deliveryDestination.isErr()) return err(deliveryDestination.error);
 
+    const validation = await this.rentalOperationalFacts.validateDraftFacts({
+      tenantId,
+      branchId,
+      rentalCustomerId,
+      fulfillmentMethod,
+    });
+    if (validation.isErr()) return err(this.mapDomainError(validation.error, context));
+
+    const [billingPreferences, branchFacts] = await Promise.all([
+      this.tenantBillingPreferences.getTenantBillingPreferences({ tenantId }),
+      this.branchFacts.getBranchFacts({ tenantId, branchId }),
+    ]);
+    if (billingPreferences.isErr()) {
+      return err(this.mapDomainError(new TenantUnavailableForRentalError(tenantId), context));
+    }
+    if (branchFacts.isErr()) {
+      return err(this.mapDomainError(new BranchUnavailableForRentalError(branchId), context));
+    }
+
     const proposal = await this.proposalResolver.resolve({
+      calculationFacts: {
+        effectiveTimezone: branchFacts.value.effectiveTimezone,
+        dailyBillingPolicy: billingPreferences.value.dailyBillingPolicy,
+        weekendCountsAsOne: billingPreferences.value.weekendCountsAsOne,
+      },
+      pricingIntent: {
+        context: 'DRAFT',
+        manualPricingAdjustment: manualPricingAdjustment
+          ? { ...manualPricingAdjustment, setByTenantUserId: tenantUserId }
+          : undefined,
+      },
       tenantId,
       branchId,
       rentalCustomerId,
@@ -75,9 +114,6 @@ export class UpdateDraftRentalHandler implements ICommandHandler<UpdateDraftRent
       fulfillmentMethod,
       insuranceSelected,
       deliveryDestination: deliveryDestination.value,
-      manualPricingAdjustment: manualPricingAdjustment
-        ? { ...manualPricingAdjustment, setByTenantUserId: tenantUserId }
-        : undefined,
     });
     if (proposal.isErr()) return err(this.mapProposalError(proposal.error, context));
 
@@ -119,7 +155,7 @@ export class UpdateDraftRentalHandler implements ICommandHandler<UpdateDraftRent
     deliveryIntent?: UpdateDraftRentalCommand['props']['deliveryIntent'];
     rental: Rental;
     context: ApplicationErrorContext;
-  }): Result<DraftRentalDeliveryAuthoringInput | undefined, UpdateDraftRentalError> {
+  }): Result<RentalProposalDeliveryDestination | undefined, UpdateDraftRentalError> {
     if (input.fulfillmentMethod === FulfillmentMethod.Pickup) return ok(undefined);
 
     if (!input.deliveryIntent) {
@@ -159,13 +195,22 @@ export class UpdateDraftRentalHandler implements ICommandHandler<UpdateDraftRent
   }
 
   private mapProposalError(
-    error: DraftRentalProposalResolutionError,
+    error: RentalProposalResolutionError,
     context: ApplicationErrorContext,
   ): UpdateDraftRentalError {
     return updateDraftRentalError(error.code, error.message, error.cause, { ...context, ...error.context });
   }
 
   private mapDomainError(error: unknown, context: ApplicationErrorContext): UpdateDraftRentalError {
+    if (error instanceof TenantUnavailableForRentalError) {
+      return this.error('rental_commitment.tenant_unavailable', error.message, context, error);
+    }
+    if (error instanceof BranchUnavailableForRentalError) {
+      return this.error('rental_commitment.branch_unavailable', error.message, context, error);
+    }
+    if (error instanceof RentalCustomerUnavailableForRentalError) {
+      return this.error('rental_commitment.customer_unavailable', error.message, context, error);
+    }
     if (error instanceof RentalCannotBeEditedFromStatusError) {
       return this.error('rental_commitment.rental_cannot_be_edited_from_status', error.message, context, error);
     }

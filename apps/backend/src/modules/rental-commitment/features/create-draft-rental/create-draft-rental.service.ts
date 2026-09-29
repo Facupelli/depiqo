@@ -4,16 +4,22 @@ import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { err, ok, Result } from 'neverthrow';
 
 import { PrismaUnitOfWork } from 'src/core/database/prisma-unit-of-work';
+import { BranchFacts } from 'src/modules/tenant-management/public-api/branch-facts.public-api';
+import { TenantBillingPreferences } from 'src/modules/tenant-management/public-api/tenant-billing-preferences.public-api';
 
 import {
-  DraftRentalProposalResolutionError,
-  DraftRentalProposalResolver,
-} from '../../application/draft-rental-proposal-resolver.service';
+  RentalProposalResolutionError,
+  RentalProposalResolver,
+} from '../../application/rental-proposal-resolver.service';
+import { RentalOperationalFactsValidatorService } from '../../application/rental-operational-facts-validator.service';
 import {
+  BranchUnavailableForRentalError,
   DuplicateRentalOfferSelectionError,
   InvalidCatalogSelectionQuantityError,
   RentalInvalidFieldError,
   RentalMustContainSelectionError,
+  RentalCustomerUnavailableForRentalError,
+  TenantUnavailableForRentalError,
 } from '../../domain/errors/rental-commitment.errors';
 import { Rental } from '../../domain/rental.aggregate';
 import { RentalSource } from '../../domain/rental-status';
@@ -34,7 +40,10 @@ export class CreateDraftRentalService implements ICommandHandler<
   CreateDraftRentalServiceResult
 > {
   constructor(
-    private readonly draftRentalProposalResolver: DraftRentalProposalResolver,
+    private readonly proposalResolver: RentalProposalResolver,
+    private readonly rentalOperationalFacts: RentalOperationalFactsValidatorService,
+    private readonly tenantBillingPreferences: TenantBillingPreferences,
+    private readonly branchFacts: BranchFacts,
     private readonly rentalRepository: RentalRepository,
     private readonly rentalNumberAllocator: RentalNumberAllocator,
     private readonly unitOfWork: PrismaUnitOfWork,
@@ -49,7 +58,37 @@ export class CreateDraftRentalService implements ICommandHandler<
       ...(command.rentalCustomerId === undefined ? {} : { rentalCustomerId: command.rentalCustomerId }),
     };
 
-    const proposal = await this.draftRentalProposalResolver.resolve({
+    const validation = await this.rentalOperationalFacts.validateDraftFacts({
+      tenantId: command.tenantId,
+      branchId: command.branchId,
+      rentalCustomerId: command.rentalCustomerId,
+      fulfillmentMethod: command.fulfillmentMethod,
+    });
+    if (validation.isErr()) return err(this.toCreateError(validation.error, context));
+
+    const [billingPreferences, branchFacts] = await Promise.all([
+      this.tenantBillingPreferences.getTenantBillingPreferences({ tenantId: command.tenantId }),
+      this.branchFacts.getBranchFacts({ tenantId: command.tenantId, branchId: command.branchId }),
+    ]);
+    if (billingPreferences.isErr()) {
+      return err(this.toCreateError(new TenantUnavailableForRentalError(command.tenantId), context));
+    }
+    if (branchFacts.isErr()) {
+      return err(this.toCreateError(new BranchUnavailableForRentalError(command.branchId), context));
+    }
+
+    const proposal = await this.proposalResolver.resolve({
+      calculationFacts: {
+        effectiveTimezone: branchFacts.value.effectiveTimezone,
+        dailyBillingPolicy: billingPreferences.value.dailyBillingPolicy,
+        weekendCountsAsOne: billingPreferences.value.weekendCountsAsOne,
+      },
+      pricingIntent: {
+        context: 'DRAFT',
+        manualPricingAdjustment: command.manualPricingAdjustment
+          ? { ...command.manualPricingAdjustment, setByTenantUserId: command.tenantUserId }
+          : undefined,
+      },
       tenantId: command.tenantId,
       branchId: command.branchId,
       rentalCustomerId: command.rentalCustomerId,
@@ -58,9 +97,6 @@ export class CreateDraftRentalService implements ICommandHandler<
       fulfillmentMethod: command.fulfillmentMethod,
       insuranceSelected: command.insuranceSelected,
       deliveryDestination: command.deliveryDetails,
-      manualPricingAdjustment: command.manualPricingAdjustment
-        ? { ...command.manualPricingAdjustment, setByTenantUserId: command.tenantUserId }
-        : undefined,
     });
     if (proposal.isErr()) return err(this.toCreateProposalError(proposal.error, context));
 
@@ -95,13 +131,22 @@ export class CreateDraftRentalService implements ICommandHandler<
   }
 
   private toCreateProposalError(
-    error: DraftRentalProposalResolutionError,
+    error: RentalProposalResolutionError,
     context: ApplicationErrorContext,
   ): CreateDraftRentalError {
     return createDraftRentalError(error.code, error.message, error.cause, { ...context, ...error.context });
   }
 
   private toCreateError(error: unknown, context: ApplicationErrorContext): CreateDraftRentalError {
+    if (error instanceof TenantUnavailableForRentalError) {
+      return createDraftRentalError('rental_commitment.tenant_unavailable', error.message, error, context);
+    }
+    if (error instanceof BranchUnavailableForRentalError) {
+      return createDraftRentalError('rental_commitment.branch_unavailable', error.message, error, context);
+    }
+    if (error instanceof RentalCustomerUnavailableForRentalError) {
+      return createDraftRentalError('rental_commitment.customer_unavailable', error.message, error, context);
+    }
     if (error instanceof RentalMustContainSelectionError) {
       return createDraftRentalError('rental_commitment.rental_requires_selection', error.message, error, context);
     }

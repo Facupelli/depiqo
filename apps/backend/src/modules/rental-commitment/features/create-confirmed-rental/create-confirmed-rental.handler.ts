@@ -6,26 +6,16 @@ import { err, ok, Result } from 'neverthrow';
 import { PrismaUnitOfWork } from 'src/core/database/prisma-unit-of-work';
 import { PrismaService } from 'src/core/database/prisma.service';
 import { PostgresExclusionViolationError, isUniqueConstraintViolation } from 'src/core/utils/postgres-error.mapper';
-import {
-  CatalogSelectionResolution,
-  CatalogSelectionResolutionError,
-} from 'src/modules/catalog/public-api/catalog-selection-resolution.public-api';
-import { AssetInventoryDisplayFacts } from 'src/modules/asset-inventory/public-api/asset-inventory-display-facts.public-api';
-import {
-  PricingCalculationError,
-  PricingCalculationRequest,
-} from 'src/modules/pricing/public-api/pricing-calculation.public-api';
+import { CatalogSelectionResolutionError } from 'src/modules/catalog/public-api/catalog-selection-resolution.public-api';
 import { BranchFacts } from 'src/modules/tenant-management/public-api/branch-facts.public-api';
 import { TenantBillingPreferences } from 'src/modules/tenant-management/public-api/tenant-billing-preferences.public-api';
 import { TenantRentalAssetBufferSettings } from 'src/modules/tenant-management/public-api/tenant-rental-asset-buffer-settings.public-api';
 
 import { RentalOperationalFactsValidatorService } from '../../application/rental-operational-facts-validator.service';
-import { ProspectiveRentalCostService } from '../../application/prospective-rental-cost.service';
-import { acceptedDeliverySnapshotFromQuote } from '../../application/accepted-delivery-snapshot.adapter';
-
-import { adaptPricingCalculationToSnapshot } from '../../application/accepted-pricing/adapt-pricing-calculation-to-snapshot';
-import { toRentalSelectionKind } from '../../application/catalog-selection-kind.mapper';
-import { resolveEquipmentTypeNames } from '../../application/equipment-type-display-facts';
+import {
+  RentalProposalResolver,
+  RentalProposalResolutionError,
+} from '../../application/rental-proposal-resolver.service';
 import { toRentalIntegrationEvents } from '../../application/rental-integration-event.mapper';
 import { buildConfirmationFingerprint } from './confirmation-operation-fingerprint';
 import { CreateConfirmedRentalCommand } from './create-confirmed-rental.command';
@@ -34,27 +24,19 @@ import { deriveConfirmedAssetBlockPeriod } from '../../domain/confirmed-asset-bl
 import { deriveConfirmationParticipationTiming } from '../../domain/confirmation-participation-timing';
 import { AcceptedDeliverySnapshot } from '../../domain/value-objects/accepted-delivery-snapshot.value-object';
 import { Rental } from '../../domain/rental.aggregate';
-import { FulfillmentMethod } from '../../domain/rental-status';
 import { createConfirmedRentalError, CreateConfirmedRentalError } from './create-confirmed-rental.errors';
 import { RentalNumberAllocator } from '../../persistence/rental-number.allocator';
 import { RentalRepository } from '../../persistence/rental.repository';
 import { RentalAssetAllocationService } from '../../asset-allocation/rental-asset-allocation.service';
-import { RentalSelectionId } from '../../domain/ids/rental-selection-id';
-import { RentalDemandLineId } from '../../domain/ids/rental-demand-line-id';
 import { EquipmentTypeId } from '../../domain/types/rental-commitment-ids';
 import { RentalOwnerSplitCalculator } from '../../owner-split/rental-owner-split-calculator';
 import {
   BranchUnavailableForRentalError,
   DuplicateAssignedAssetError,
   DuplicateRentalOfferSelectionError,
-  EquipmentTypeNotFoundError,
-  EquipmentTypeNotRentableError,
   InsufficientAssetAvailabilityError,
   InvalidCatalogSelectionQuantityError,
-  InvalidFulfillmentDefinitionError,
   PickupTimeOutsideBranchScheduleError,
-  RentableItemNotActiveError,
-  RentalOfferNotFoundError,
   RentalOfferNotRentableError,
   ProfessionalConfirmedRentalCreationDisabledError,
   RentalCustomerUnavailableForRentalError,
@@ -84,9 +66,7 @@ export class CreateConfirmedRentalService implements ICommandHandler<
     private readonly tenantRentalAssetBufferSettings: TenantRentalAssetBufferSettings,
     private readonly branchFacts: BranchFacts,
     private readonly rentalOperationalFacts: RentalOperationalFactsValidatorService,
-    private readonly catalogSelectionResolution: CatalogSelectionResolution,
-    private readonly assetInventoryDisplayFacts: AssetInventoryDisplayFacts,
-    private readonly prospectiveRentalCost: ProspectiveRentalCostService,
+    private readonly proposalResolver: RentalProposalResolver,
     private readonly rentalAssetAllocation: RentalAssetAllocationService,
     private readonly rentalOwnerSplitCalculator: RentalOwnerSplitCalculator,
     private readonly rentalNumberAllocator: RentalNumberAllocator,
@@ -143,122 +123,30 @@ export class CreateConfirmedRentalService implements ICommandHandler<
     if (branchFacts.isErr())
       return err(this.toApplicationError(new BranchUnavailableForRentalError(command.branchId), context));
 
-    const resolvedCatalogSelections = await this.catalogSelectionResolution.resolveSelectedRentalOffers({
+    const proposal = await this.proposalResolver.resolve({
       tenantId: command.tenantId,
       branchId: command.branchId,
-      selectedOffers: command.selectedOffers.map((selection) => ({
-        rentalOfferId: selection.rentalOfferId,
-        quantity: selection.quantity,
-      })),
-    });
-
-    if (resolvedCatalogSelections.isErr()) {
-      return err(this.toApplicationError(resolvedCatalogSelections.error, context));
-    }
-
-    const equipmentTypeNames = await resolveEquipmentTypeNames(this.assetInventoryDisplayFacts, {
-      tenantId: command.tenantId,
-      equipmentTypeIds: resolvedCatalogSelections.value.resolvedOffers.flatMap((offer) =>
-        offer.fulfillmentRequirements.map((requirement) => requirement.equipmentTypeId),
-      ),
-    });
-    if (equipmentTypeNames.isErr()) return err(this.toApplicationError(equipmentTypeNames.error, context));
-
-    const rentalSelectionsDraft = resolvedCatalogSelections.value.resolvedOffers.map((offer) => ({
-      rentalSelectionId: RentalSelectionId.create(),
-      rentalOfferId: offer.rentalOfferId,
-      rentableItemId: offer.rentableItem.id,
-      rentableItemNameSnapshot: offer.rentableItem.name,
-      rentableItemKindSnapshot: toRentalSelectionKind(offer.rentableItem.kind),
-      categoryId: offer.rentableItem.categoryId,
-      quantity: offer.quantity,
-      fulfillmentRequirements: offer.fulfillmentRequirements,
-    }));
-
-    const pricingRequest: PricingCalculationRequest = {
-      tenantId: command.tenantId,
-      customerId: command.rentalCustomerId,
-      rentalPeriod: {
-        start: command.period.start,
-        end: command.period.end,
-      },
+      rentalCustomerId: command.rentalCustomerId,
+      period: command.period,
+      selectedOffers: command.selectedOffers,
+      fulfillmentMethod: command.fulfillmentMethod,
+      insuranceSelected: command.insuranceSelected,
+      deliveryDestination: command.deliveryDetails,
       calculationFacts: {
         effectiveTimezone: branchFacts.value.effectiveTimezone,
         dailyBillingPolicy: billingPreferences.value.dailyBillingPolicy,
         weekendCountsAsOne: billingPreferences.value.weekendCountsAsOne,
       },
-      insuranceSelected: command.insuranceSelected ?? false,
-      lines: rentalSelectionsDraft.map((selection) => ({
-        lineReference: selection.rentalSelectionId,
-        rentalOfferId: selection.rentalOfferId,
-        rentableItemId: selection.rentableItemId,
-        rentableItemKind: selection.rentableItemKindSnapshot,
-        categoryId: selection.categoryId,
-        quantity: selection.quantity,
-      })),
-    };
+      pricingIntent: { context: 'CONFIRMED' },
+    });
+    if (proposal.isErr()) return err(this.toProposalError(proposal.error, context));
 
-    const deliveryDetails = command.deliveryDetails;
-    let prospectiveResult: Awaited<ReturnType<ProspectiveRentalCostService['calculate']>> | null = null;
-    if (command.fulfillmentMethod === FulfillmentMethod.Pickup) {
-      prospectiveResult = await this.prospectiveRentalCost.calculate({
-        fulfillmentMethod: 'PICKUP',
-        pricing: pricingRequest,
-      });
-    } else if (deliveryDetails) {
-      prospectiveResult = await this.prospectiveRentalCost.calculate({
-        fulfillmentMethod: 'DELIVERY',
-        pricing: pricingRequest,
-        branchId: command.branchId,
-        customerLocation: {
-          address: deliveryDetails.address,
-          locationId: deliveryDetails.locationId,
-        },
-      });
-    }
-
-    if (!prospectiveResult) {
-      return err(
-        this.toApplicationError(
-          new RentalInvalidFieldError('deliveryDetails', 'delivery rentals require delivery details'),
-          context,
-        ),
-      );
-    }
-
-    if (prospectiveResult.isErr()) {
-      return err(this.toApplicationError(prospectiveResult.error, context));
-    }
-    if (!prospectiveResult.value.available) {
-      return err(
-        createConfirmedRentalError(
-          'rental_commitment.delivery_not_serviceable',
-          `Delivery is not serviceable: ${prospectiveResult.value.reason}.`,
-          undefined,
-          { ...context, deliveryReason: prospectiveResult.value.reason },
-        ),
-      );
-    }
-
-    const pricingResult = prospectiveResult.value.pricing;
-    const deliveryQuote = prospectiveResult.value.deliveryQuote;
-    const acceptedDeliveryData = deliveryQuote ? acceptedDeliverySnapshotFromQuote(deliveryQuote) : undefined;
     let acceptedDelivery: AcceptedDeliverySnapshot | undefined;
-    if (acceptedDeliveryData) {
-      const acceptedDeliveryResult = AcceptedDeliverySnapshot.create(acceptedDeliveryData);
+    if (proposal.value.deliverySnapshot) {
+      const acceptedDeliveryResult = AcceptedDeliverySnapshot.create(proposal.value.deliverySnapshot);
       if (acceptedDeliveryResult.isErr()) throw acceptedDeliveryResult.error;
       acceptedDelivery = acceptedDeliveryResult.value;
     }
-
-    const equipmentDemandLines = rentalSelectionsDraft.flatMap((selection) =>
-      selection.fulfillmentRequirements.map((requirement) => ({
-        rentalDemandLineId: RentalDemandLineId.create(),
-        rentalSelectionId: selection.rentalSelectionId,
-        equipmentTypeId: requirement.equipmentTypeId,
-        equipmentNameSnapshot: equipmentTypeNames.value.get(requirement.equipmentTypeId),
-        quantity: selection.quantity * requirement.quantityPerItem,
-      })),
-    );
 
     const operationTime = new Date();
     const participationTiming = deriveConfirmationParticipationTiming(command.period, operationTime);
@@ -277,8 +165,8 @@ export class CreateConfirmedRentalService implements ICommandHandler<
       branchId: command.branchId,
       periodStart: operationalPeriod.start,
       periodEnd: operationalPeriod.end,
-      demandLines: equipmentDemandLines.map((line) => ({
-        rentalDemandLineId: line.rentalDemandLineId,
+      demandLines: proposal.value.demandLines.map((line) => ({
+        rentalDemandLineId: line.id,
         rentalSelectionId: line.rentalSelectionId,
         equipmentTypeId: line.equipmentTypeId as EquipmentTypeId,
         quantity: line.quantity,
@@ -297,9 +185,7 @@ export class CreateConfirmedRentalService implements ICommandHandler<
 
       const failedSelection =
         availabilityError instanceof InsufficientAssetAvailabilityError
-          ? rentalSelectionsDraft.find(
-              (selection) => selection.rentalSelectionId === availabilityError.rentalSelectionId,
-            )
+          ? proposal.value.selections.find((selection) => selection.id === availabilityError.rentalSelectionId)
           : undefined;
       return err(
         this.toApplicationError(availabilityError, {
@@ -321,47 +207,14 @@ export class CreateConfirmedRentalService implements ICommandHandler<
           notes: command.notes,
           insuranceSelected: command.insuranceSelected,
           bookingSnapshot: command.bookingSnapshot,
-          deliveryDetails:
-            command.fulfillmentMethod === FulfillmentMethod.Delivery && command.deliveryDetails && deliveryQuote
-              ? {
-                  address: command.deliveryDetails.address,
-                  formattedAddress: deliveryQuote.resolvedCustomerLocation.formattedAddress,
-                  latitude: deliveryQuote.resolvedCustomerLocation.latitude,
-                  longitude: deliveryQuote.resolvedCustomerLocation.longitude,
-                  providerPlaceId: deliveryQuote.resolvedCustomerLocation.providerPlaceId,
-                }
-              : undefined,
+          deliveryDetails: proposal.value.deliveryDetails,
           acceptedAssetBuffer,
           confirmedAt: operationTime,
-          confirmedPriceSnapshot: adaptPricingCalculationToSnapshot({
-            result: pricingResult,
-            context: 'CONFIRMED',
-            lineDisplayNames: Object.fromEntries(
-              rentalSelectionsDraft.map((selection) => [
-                selection.rentalSelectionId,
-                selection.rentableItemNameSnapshot,
-              ]),
-            ),
-          }),
-          acceptedDelivery: acceptedDeliveryData,
+          confirmedPriceSnapshot: proposal.value.priceSnapshot,
+          acceptedDelivery: proposal.value.deliverySnapshot,
           period: command.period,
-
-          selections: rentalSelectionsDraft.map((selection) => ({
-            id: selection.rentalSelectionId,
-            rentalOfferId: selection.rentalOfferId,
-            rentableItemId: selection.rentableItemId,
-            rentableItemNameSnapshot: selection.rentableItemNameSnapshot,
-            rentableItemKindSnapshot: selection.rentableItemKindSnapshot,
-            quantity: selection.quantity,
-          })),
-
-          demandLines: equipmentDemandLines.map((line) => ({
-            id: line.rentalDemandLineId,
-            rentalSelectionId: line.rentalSelectionId,
-            equipmentTypeId: line.equipmentTypeId as EquipmentTypeId,
-            equipmentTypeNameSnapshot: line.equipmentNameSnapshot,
-            quantity: line.quantity,
-          })),
+          selections: proposal.value.selections,
+          demandLines: proposal.value.demandLines,
 
           assignedAssets: assetAssignmentPlan.value.allocations.map((allocation) => ({
             rentalDemandLineId: allocation.rentalDemandLineId,
@@ -443,50 +296,27 @@ export class CreateConfirmedRentalService implements ICommandHandler<
     return ok({ rentalId: replay.id, rentalNumber: replay.rentalNumber });
   }
 
-  private toApplicationError(error: unknown, context: ApplicationErrorContext): CreateConfirmedRentalError {
-    if (isCatalogSelectionError(error)) {
-      switch (error.code) {
-        case 'EmptySelection':
-          return createConfirmedRentalError(
-            'rental_commitment.rental_requires_selection',
-            error.message,
-            error,
-            context,
-          );
-        case 'InvalidSelectionQuantity':
-          return createConfirmedRentalError(
-            'rental_commitment.invalid_catalog_selection_quantity',
-            error.message,
-            error,
-            context,
-          );
-        case 'DuplicateRentalOfferSelection':
-          return createConfirmedRentalError(
-            'rental_commitment.duplicate_rental_offer_selection',
-            error.message,
-            error,
-            {
-              ...context,
-              ...(error.context?.rentalOfferId === undefined ? {} : { rentalOfferId: error.context.rentalOfferId }),
-            },
-          );
-        case 'RentalOfferNotFound':
-          return createConfirmedRentalError('rental_commitment.rental_offer_not_found', error.message, error, context);
-        case 'RentalOfferNotRentable':
-        case 'RentableItemNotActive':
-          return createConfirmedRentalError('rental_commitment.catalog_selection_unavailable', error.message, error, {
-            ...context,
-            ...(error.context?.rentalOfferId === undefined ? {} : { rentalOfferId: error.context.rentalOfferId }),
-          });
-        case 'InvalidFulfillmentDefinition':
-          return createConfirmedRentalError(
-            'rental_commitment.invalid_fulfillment_definition',
-            error.message,
-            error,
-            context,
-          );
+  private toProposalError(
+    error: RentalProposalResolutionError,
+    context: ApplicationErrorContext,
+  ): CreateConfirmedRentalError {
+    let unavailableOfferId: string | undefined;
+    if (error.code === 'rental_commitment.catalog_selection_unavailable') {
+      if (error.cause instanceof CatalogSelectionResolutionError) {
+        const rentalOfferId = error.cause.context?.rentalOfferId;
+        unavailableOfferId = typeof rentalOfferId === 'string' ? rentalOfferId : undefined;
+      } else if (error.cause instanceof RentalOfferNotRentableError) {
+        unavailableOfferId = error.cause.rentalOfferId;
       }
     }
+    return createConfirmedRentalError(error.code, error.message, error.cause, {
+      ...context,
+      ...error.context,
+      ...(unavailableOfferId === undefined ? {} : { rentalOfferId: unavailableOfferId }),
+    });
+  }
+
+  private toApplicationError(error: unknown, context: ApplicationErrorContext): CreateConfirmedRentalError {
     if (error instanceof RentalPeriodCannotStartInPastError) {
       return createConfirmedRentalError(
         'rental_commitment.rental_period_must_start_in_future',
@@ -497,23 +327,6 @@ export class CreateConfirmedRentalService implements ICommandHandler<
     }
     if (error instanceof RentalMustContainSelectionError) {
       return createConfirmedRentalError('rental_commitment.rental_requires_selection', error.message, error, context);
-    }
-    if (error instanceof RentalOfferNotFoundError) {
-      return createConfirmedRentalError('rental_commitment.rental_offer_not_found', error.message, error, context);
-    }
-    if (error instanceof RentalOfferNotRentableError || error instanceof RentableItemNotActiveError) {
-      return createConfirmedRentalError('rental_commitment.catalog_selection_unavailable', error.message, error, {
-        ...context,
-        ...(error instanceof RentalOfferNotRentableError ? { rentalOfferId: error.rentalOfferId } : {}),
-      });
-    }
-    if (error instanceof InvalidFulfillmentDefinitionError) {
-      return createConfirmedRentalError(
-        'rental_commitment.invalid_fulfillment_definition',
-        error.message,
-        error,
-        context,
-      );
     }
     if (error instanceof DuplicateRentalOfferSelectionError) {
       return createConfirmedRentalError('rental_commitment.duplicate_rental_offer_selection', error.message, error, {
@@ -547,18 +360,6 @@ export class CreateConfirmedRentalService implements ICommandHandler<
     if (error instanceof RentalCustomerUnavailableForRentalError) {
       return createConfirmedRentalError('rental_commitment.customer_unavailable', error.message, error, context);
     }
-    if (error instanceof EquipmentTypeNotFoundError) {
-      return createConfirmedRentalError('rental_commitment.equipment_type_not_found', error.message, error, {
-        ...context,
-        equipmentTypeId: error.equipmentTypeId,
-      });
-    }
-    if (error instanceof EquipmentTypeNotRentableError) {
-      return createConfirmedRentalError('rental_commitment.equipment_type_not_rentable', error.message, error, {
-        ...context,
-        equipmentTypeId: error.equipmentTypeId,
-      });
-    }
     if (error instanceof PickupTimeOutsideBranchScheduleError) {
       return createConfirmedRentalError(
         'rental_commitment.pickup_time_outside_branch_schedule',
@@ -588,21 +389,10 @@ export class CreateConfirmedRentalService implements ICommandHandler<
         quantity: error.quantity,
       });
     }
-    if (error instanceof PricingCalculationError || isErrorWithCode(error, 'INVALID_PRICING_INPUT')) {
-      return createConfirmedRentalError('rental_commitment.invalid_pricing_input', error.message, error, context);
-    }
     if (error instanceof DuplicateAssignedAssetError) {
       return createConfirmedRentalError('rental_commitment.duplicate_assigned_asset', error.message, error, context);
     }
 
     throw error;
   }
-}
-
-function isCatalogSelectionError(error: unknown): error is CatalogSelectionResolutionError {
-  return error instanceof CatalogSelectionResolutionError;
-}
-
-function isErrorWithCode(error: unknown, code: string): error is Error & { code: string } {
-  return error instanceof Error && 'code' in error && error.code === code;
 }

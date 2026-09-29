@@ -15,28 +15,22 @@ import {
   CustomerLocationSelection,
   ResolvedCustomerLocation,
 } from 'src/modules/delivery/public-api/delivery-quote.public-api';
-import { BranchFacts } from 'src/modules/tenant-management/public-api/branch-facts.public-api';
-import { TenantBillingPreferences } from 'src/modules/tenant-management/public-api/tenant-billing-preferences.public-api';
 
 import { acceptedDeliverySnapshotFromQuote } from './accepted-delivery-snapshot.adapter';
 import { adaptPricingCalculationToSnapshot } from './accepted-pricing/adapt-pricing-calculation-to-snapshot';
 import { toRentalSelectionKind } from './catalog-selection-kind.mapper';
 import { resolveEquipmentTypeNames } from './equipment-type-display-facts';
 import { ProspectiveRentalCostService } from './prospective-rental-cost.service';
-import { RentalOperationalFactsValidatorService } from './rental-operational-facts-validator.service';
 import {
-  BranchUnavailableForRentalError,
   DuplicateRentalOfferSelectionError,
   EquipmentTypeNotFoundError,
   EquipmentTypeNotRentableError,
   InvalidCatalogSelectionQuantityError,
   InvalidFulfillmentDefinitionError,
-  RentalCustomerUnavailableForRentalError,
   RentalInvalidFieldError,
   RentalOfferNotFoundError,
   RentalOfferNotRentableError,
   RentableItemNotActiveError,
-  TenantUnavailableForRentalError,
 } from '../domain/errors/rental-commitment.errors';
 import { RentalDemandLineId } from '../domain/ids/rental-demand-line-id';
 import { RentalSelectionId } from '../domain/ids/rental-selection-id';
@@ -47,15 +41,12 @@ import { AcceptedRentalPricingV3Snapshot } from '../domain/value-objects/accepte
 import { RentalPeriod } from '../domain/value-objects/rental-period.value-object';
 import { RentalDeliveryDetails } from '../domain/rental.aggregate';
 
-export type DraftRentalProposalResolutionErrorCode =
+export type RentalProposalResolutionErrorCode =
   | 'rental_commitment.rental_requires_selection'
   | 'rental_commitment.rental_offer_not_found'
   | 'rental_commitment.catalog_selection_unavailable'
   | 'rental_commitment.invalid_fulfillment_definition'
   | 'rental_commitment.duplicate_rental_offer_selection'
-  | 'rental_commitment.tenant_unavailable'
-  | 'rental_commitment.branch_unavailable'
-  | 'rental_commitment.customer_unavailable'
   | 'rental_commitment.equipment_type_not_found'
   | 'rental_commitment.equipment_type_not_rentable'
   | 'rental_commitment.invalid_rental_field'
@@ -63,32 +54,40 @@ export type DraftRentalProposalResolutionErrorCode =
   | 'rental_commitment.invalid_pricing_input'
   | 'rental_commitment.delivery_not_serviceable';
 
-export interface DraftRentalProposalResolutionError extends ApplicationError {
-  code: DraftRentalProposalResolutionErrorCode;
+export interface RentalProposalResolutionError extends ApplicationError {
+  code: RentalProposalResolutionErrorCode;
 }
 
-export type DraftRentalDeliveryAuthoringInput =
+export type RentalProposalDeliveryDestination =
   | { address: string; locationId: string }
   | { address: string; resolvedLocation: ResolvedCustomerLocation };
 
-export interface DraftRentalProposalInput {
+export type RentalProposalInput = {
   tenantId: string;
   branchId: string;
-  rentalCustomerId?: string;
   period: RentalPeriod;
   selectedOffers: Array<{ rentalOfferId: string; quantity: number }>;
   fulfillmentMethod: FulfillmentMethod;
   insuranceSelected?: boolean;
-  deliveryDestination?: DraftRentalDeliveryAuthoringInput;
-  manualPricingAdjustment?: {
-    mode: 'TARGET_TOTAL';
-    targetTotal: string;
-    reason?: string;
-    setByTenantUserId: string;
-  };
-}
+  deliveryDestination?: RentalProposalDeliveryDestination;
+  calculationFacts: PricingCalculationRequest['calculationFacts'];
+} & (
+  | {
+      rentalCustomerId?: string;
+      pricingIntent: {
+        context: 'DRAFT';
+        manualPricingAdjustment?: {
+          mode: 'TARGET_TOTAL';
+          targetTotal: string;
+          reason?: string;
+          setByTenantUserId: string;
+        };
+      };
+    }
+  | { rentalCustomerId: string; pricingIntent: { context: 'CONFIRMED'; manualPricingAdjustment?: never } }
+);
 
-export interface ResolvedDraftRentalSelection {
+export interface ResolvedRentalSelection {
   id: RentalSelectionId;
   rentalOfferId: string;
   rentableItemId: string;
@@ -97,7 +96,7 @@ export interface ResolvedDraftRentalSelection {
   quantity: number;
 }
 
-export interface ResolvedDraftRentalDemandLine {
+export interface ResolvedRentalDemandLine {
   id: RentalDemandLineId;
   rentalSelectionId: RentalSelectionId;
   equipmentTypeId: EquipmentTypeId;
@@ -105,52 +104,28 @@ export interface ResolvedDraftRentalDemandLine {
   quantity: number;
 }
 
-export interface ResolvedDraftRentalProposal {
-  selections: ResolvedDraftRentalSelection[];
-  demandLines: ResolvedDraftRentalDemandLine[];
+export interface ResolvedRentalProposal {
+  selections: ResolvedRentalSelection[];
+  demandLines: ResolvedRentalDemandLine[];
   priceSnapshot: AcceptedRentalPricingV3Snapshot;
   deliveryDetails?: RentalDeliveryDetails;
   deliverySnapshot?: AcceptedDeliverySnapshotData;
 }
 
 @Injectable()
-export class DraftRentalProposalResolver {
+export class RentalProposalResolver {
   constructor(
-    private readonly tenantBillingPreferences: TenantBillingPreferences,
-    private readonly branchFacts: BranchFacts,
-    private readonly rentalOperationalFacts: RentalOperationalFactsValidatorService,
     private readonly catalogSelectionResolution: CatalogSelectionResolution,
     private readonly assetInventoryDisplayFacts: AssetInventoryDisplayFacts,
     private readonly prospectiveRentalCost: ProspectiveRentalCostService,
   ) {}
 
-  async resolve(
-    input: DraftRentalProposalInput,
-  ): Promise<Result<ResolvedDraftRentalProposal, DraftRentalProposalResolutionError>> {
+  async resolve(input: RentalProposalInput): Promise<Result<ResolvedRentalProposal, RentalProposalResolutionError>> {
     const context = {
       tenantId: input.tenantId,
       branchId: input.branchId,
       ...(input.rentalCustomerId === undefined ? {} : { rentalCustomerId: input.rentalCustomerId }),
     };
-
-    const operationalFacts = await this.rentalOperationalFacts.validateDraftFacts({
-      tenantId: input.tenantId,
-      branchId: input.branchId,
-      rentalCustomerId: input.rentalCustomerId,
-      fulfillmentMethod: input.fulfillmentMethod,
-    });
-    if (operationalFacts.isErr()) return err(this.toResolutionError(operationalFacts.error, context));
-
-    const [billingPreferences, branchFacts] = await Promise.all([
-      this.tenantBillingPreferences.getTenantBillingPreferences({ tenantId: input.tenantId }),
-      this.branchFacts.getBranchFacts({ tenantId: input.tenantId, branchId: input.branchId }),
-    ]);
-    if (billingPreferences.isErr()) {
-      return err(this.toResolutionError(new TenantUnavailableForRentalError(input.tenantId), context));
-    }
-    if (branchFacts.isErr()) {
-      return err(this.toResolutionError(new BranchUnavailableForRentalError(input.branchId), context));
-    }
 
     const catalogSelections = await this.catalogSelectionResolution.resolveSelectedRentalOffers({
       tenantId: input.tenantId,
@@ -181,12 +156,8 @@ export class DraftRentalProposalResolver {
     const pricingRequest: PricingCalculationRequest = {
       tenantId: input.tenantId,
       customerId: input.rentalCustomerId,
-      rentalPeriod: input.period,
-      calculationFacts: {
-        effectiveTimezone: branchFacts.value.effectiveTimezone,
-        dailyBillingPolicy: billingPreferences.value.dailyBillingPolicy,
-        weekendCountsAsOne: billingPreferences.value.weekendCountsAsOne,
-      },
+      rentalPeriod: { start: input.period.start, end: input.period.end },
+      calculationFacts: input.calculationFacts,
       insuranceSelected: input.insuranceSelected ?? false,
       lines: selectionsWithRequirements.map((selection) => ({
         lineReference: selection.id,
@@ -196,8 +167,8 @@ export class DraftRentalProposalResolver {
         categoryId: selection.categoryId,
         quantity: selection.quantity,
       })),
-      targetTotalAdjustment: input.manualPricingAdjustment
-        ? { targetTotal: input.manualPricingAdjustment.targetTotal }
+      targetTotalAdjustment: input.pricingIntent.manualPricingAdjustment
+        ? { targetTotal: input.pricingIntent.manualPricingAdjustment.targetTotal }
         : undefined,
     };
 
@@ -234,7 +205,7 @@ export class DraftRentalProposalResolver {
     }
 
     const deliveryQuote = prospectiveResult.value.deliveryQuote;
-    const selections: ResolvedDraftRentalSelection[] = selectionsWithRequirements.map((selection) => ({
+    const selections: ResolvedRentalSelection[] = selectionsWithRequirements.map((selection) => ({
       id: selection.id,
       rentalOfferId: selection.rentalOfferId,
       rentableItemId: selection.rentableItemId,
@@ -243,7 +214,7 @@ export class DraftRentalProposalResolver {
       quantity: selection.quantity,
     }));
     // SAFETY: This value comes from a persisted or already validated non-empty domain identifier; the brand adds no runtime representation.
-    const demandLines: ResolvedDraftRentalDemandLine[] = selectionsWithRequirements.flatMap((selection) =>
+    const demandLines: ResolvedRentalDemandLine[] = selectionsWithRequirements.flatMap((selection) =>
       selection.fulfillmentRequirements.map((requirement) => ({
         id: RentalDemandLineId.create(),
         rentalSelectionId: selection.id,
@@ -258,11 +229,11 @@ export class DraftRentalProposalResolver {
       demandLines,
       priceSnapshot: adaptPricingCalculationToSnapshot({
         result: prospectiveResult.value.pricing,
-        context: 'DRAFT',
+        context: input.pricingIntent.context,
         lineDisplayNames: Object.fromEntries(
           selections.map((selection) => [selection.id, selection.rentableItemNameSnapshot]),
         ),
-        manualPricingAdjustment: input.manualPricingAdjustment,
+        manualPricingAdjustment: input.pricingIntent.manualPricingAdjustment,
       }),
       deliveryDetails:
         input.fulfillmentMethod === FulfillmentMethod.Delivery && input.deliveryDestination && deliveryQuote
@@ -278,7 +249,7 @@ export class DraftRentalProposalResolver {
     });
   }
 
-  private toResolutionError(error: unknown, context: ApplicationErrorContext): DraftRentalProposalResolutionError {
+  private toResolutionError(error: unknown, context: ApplicationErrorContext): RentalProposalResolutionError {
     if (error instanceof CatalogSelectionResolutionError) {
       switch (error.code) {
         case 'EmptySelection':
@@ -314,15 +285,6 @@ export class DraftRentalProposalResolver {
         rentalOfferId: error.rentalOfferId,
       });
     }
-    if (error instanceof TenantUnavailableForRentalError) {
-      return resolutionError('rental_commitment.tenant_unavailable', error, context);
-    }
-    if (error instanceof BranchUnavailableForRentalError) {
-      return resolutionError('rental_commitment.branch_unavailable', error, context);
-    }
-    if (error instanceof RentalCustomerUnavailableForRentalError) {
-      return resolutionError('rental_commitment.customer_unavailable', error, context);
-    }
     if (error instanceof EquipmentTypeNotFoundError) {
       return resolutionError('rental_commitment.equipment_type_not_found', error, {
         ...context,
@@ -352,17 +314,17 @@ export class DraftRentalProposalResolver {
   }
 }
 
-function toCustomerLocationSelection(input: DraftRentalDeliveryAuthoringInput): CustomerLocationSelection {
+function toCustomerLocationSelection(input: RentalProposalDeliveryDestination): CustomerLocationSelection {
   return 'resolvedLocation' in input
     ? { resolvedLocation: input.resolvedLocation }
     : { address: input.address, locationId: input.locationId };
 }
 
 function resolutionError(
-  code: DraftRentalProposalResolutionErrorCode,
+  code: RentalProposalResolutionErrorCode,
   cause: Error,
   context: ApplicationErrorContext,
-): DraftRentalProposalResolutionError {
+): RentalProposalResolutionError {
   return { code, message: cause.message, cause, context };
 }
 
