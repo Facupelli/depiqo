@@ -209,14 +209,29 @@ describe('RentalAccessoryMutations integration', () => {
   it('rejects non-confirmed or ended rentals even when no accessories are requested', async () => {
     const s = await scenario();
     await prisma.client.v2Rental.update({ where: { id: s.rental.rentalId }, data: { status: 'PENDING' } });
-    const pending = await mutations.replaceRentalAccessories({ ...wholeInput(s), accessories: [] });
-    expect(pending.isErr() && pending.error.code).toBe('RentalStatusDoesNotAllowAccessoryAssignment');
+    const demandLineInput = {
+      tenantId: s.tenant.id,
+      rentalId: s.rental.rentalId,
+      rentalDemandLineId: s.rental.demandLineIds[0],
+      expectedVersion: 0,
+      accessories: [],
+    };
+    for (const result of [
+      await mutations.replaceRentalAccessories({ ...wholeInput(s), accessories: [] }),
+      await mutations.replaceDemandLineAccessories(demandLineInput),
+    ]) {
+      expect(result.isErr() && result.error.code).toBe('RentalStatusDoesNotAllowAccessoryAssignment');
+    }
     await prisma.client.v2Rental.update({
       where: { id: s.rental.rentalId },
       data: { status: 'CONFIRMED', periodEnd: utcDate(2020, 1, 2, 10) },
     });
-    const ended = await mutations.replaceRentalAccessories({ ...wholeInput(s), accessories: [] });
-    expect(ended.isErr() && ended.error.code).toBe('RentalStatusDoesNotAllowAccessoryAssignment');
+    for (const result of [
+      await mutations.replaceRentalAccessories({ ...wholeInput(s), accessories: [] }),
+      await mutations.replaceDemandLineAccessories(demandLineInput),
+    ]) {
+      expect(result.isErr() && result.error.code).toBe('RentalPeriodEnded');
+    }
     expect((await state(s.rental.rentalId)).rental.version).toBe(0);
   });
 

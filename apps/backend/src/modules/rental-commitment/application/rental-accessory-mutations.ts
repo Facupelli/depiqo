@@ -44,6 +44,7 @@ export type RentalAccessoryMutationErrorCode =
   | 'RentalNotFound'
   | 'RentalVersionConflict'
   | 'RentalStatusDoesNotAllowAccessoryAssignment'
+  | 'RentalPeriodEnded'
   | 'SourceRentalDemandLineNotFound'
   | 'InvalidAccessoryQuantity'
   | 'DuplicateAccessorySelection'
@@ -307,7 +308,7 @@ export class RentalAccessoryMutations {
     }
     if (getEffectiveRentalOperationTime(operationTime, rental.periodStart) >= rental.periodEnd) {
       return err({
-        code: 'RentalStatusDoesNotAllowAccessoryAssignment',
+        code: 'RentalPeriodEnded',
         message: 'Accessories cannot be assigned after the rental period has ended.',
       });
     }

@@ -176,7 +176,7 @@ export function RentalEquipmentSection() {
 							<span className="text-sm text-muted-foreground">
 								Confirma el pedido para asignar accesorios
 							</span>
-						) : canManageFulfillment ? (
+						) : canAssignDemandLineAccessories ? (
 							<Button
 								type="button"
 								variant="outline"
@@ -184,6 +184,11 @@ export function RentalEquipmentSection() {
 							>
 								Asignar accesorios
 							</Button>
+						) : canManageFulfillment && rental.status === "CONFIRMED" ? (
+							<span className="text-sm text-muted-foreground">
+								El período del alquiler ya terminó. No se pueden asignar
+								accesorios.
+							</span>
 						) : null}
 					</div>
 				</div>

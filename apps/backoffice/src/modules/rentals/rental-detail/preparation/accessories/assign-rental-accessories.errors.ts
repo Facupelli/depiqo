@@ -64,7 +64,15 @@ export function toAssignRentalAccessoriesUiError(
 	) {
 		return {
 			message:
-				"El estado actual del pedido no permite asignar accesorios. Actualizá la página e intentá nuevamente.",
+				"El pedido debe estar confirmado para asignar accesorios. Actualizá la página para ver su estado.",
+			shouldRefreshAvailability: false,
+		};
+	}
+
+	if (code === "rental_commitment.rental_period_ended") {
+		return {
+			message:
+				"No se pueden asignar accesorios porque el período del alquiler ya terminó.",
 			shouldRefreshAvailability: false,
 		};
 	}

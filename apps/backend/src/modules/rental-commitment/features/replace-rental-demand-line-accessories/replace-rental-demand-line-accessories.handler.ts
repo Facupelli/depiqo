@@ -51,6 +51,8 @@ function toFeatureCode(error: RentalAccessoryMutationError): ReplaceRentalDemand
       return 'rental_commitment.rental_version_conflict';
     case 'RentalStatusDoesNotAllowAccessoryAssignment':
       return 'rental_commitment.rental_status_does_not_allow_accessory_assignment';
+    case 'RentalPeriodEnded':
+      return 'rental_commitment.rental_period_ended';
     case 'SourceRentalDemandLineNotFound':
       return 'rental_commitment.source_rental_demand_line_not_found';
     case 'InvalidAccessoryQuantity':

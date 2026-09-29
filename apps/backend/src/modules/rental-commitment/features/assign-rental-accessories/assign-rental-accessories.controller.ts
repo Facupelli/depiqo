@@ -74,7 +74,13 @@ const assignRentalAccessoriesProblemMap = {
     type: createProblemType('rental_commitment.rental_status_does_not_allow_accessory_assignment'),
     title: 'Rental status does not allow accessory assignment',
     status: HttpStatus.UNPROCESSABLE_ENTITY,
-    detail: 'Accessories can only be assigned to a confirmed rental before its period ends.',
+    detail: 'Accessories can only be assigned to a confirmed rental.',
+  },
+  'rental_commitment.rental_period_ended': {
+    type: createProblemType('rental_commitment.rental_period_ended'),
+    title: 'Rental period ended',
+    status: HttpStatus.CONFLICT,
+    detail: 'Accessories cannot be assigned after the rental period has ended.',
   },
   'rental_commitment.invalid_accessory_quantity': {
     type: createProblemType('rental_commitment.invalid_accessory_quantity'),
