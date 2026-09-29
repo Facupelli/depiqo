@@ -32,8 +32,9 @@ function buildListEquipmentTypesPath(
 		if (value !== undefined) searchParams.set(key, String(value));
 	}
 
-	return searchParams.size
-		? `${listEquipmentTypesContract.path}?${searchParams.toString()}`
+	const serializedSearchParams = searchParams.toString();
+	return serializedSearchParams
+		? `${listEquipmentTypesContract.path}?${serializedSearchParams}`
 		: listEquipmentTypesContract.path;
 }
 

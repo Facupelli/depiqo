@@ -17,8 +17,9 @@ export async function getBranches(
 		searchParams.set("isActive", String(parsedQuery.isActive));
 	}
 
-	const path = searchParams.size
-		? `${getBranchesContract.path}?${searchParams.toString()}`
+	const serializedSearchParams = searchParams.toString();
+	const path = serializedSearchParams
+		? `${getBranchesContract.path}?${serializedSearchParams}`
 		: getBranchesContract.path;
 
 	const response = await apiFetch(path, {

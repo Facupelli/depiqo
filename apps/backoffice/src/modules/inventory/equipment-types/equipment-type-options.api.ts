@@ -30,8 +30,9 @@ export async function getEquipmentTypes(
 		searchParams.set("excludeIds", parsedQuery.excludeIds.join(","));
 	}
 
-	const path = searchParams.size
-		? `${getEquipmentTypesContract.path}?${searchParams.toString()}`
+	const serializedSearchParams = searchParams.toString();
+	const path = serializedSearchParams
+		? `${getEquipmentTypesContract.path}?${serializedSearchParams}`
 		: getEquipmentTypesContract.path;
 
 	const response = await apiFetch(path, {

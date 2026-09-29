@@ -39,8 +39,9 @@ function buildGetProductsPath(query?: GetRentableItemsQueryDto) {
 		}
 	}
 
-	return searchParams.size
-		? `${getRentableItemsContract.path}?${searchParams.toString()}`
+	const serializedSearchParams = searchParams.toString();
+	return serializedSearchParams
+		? `${getRentableItemsContract.path}?${serializedSearchParams}`
 		: getRentableItemsContract.path;
 }
 

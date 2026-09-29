@@ -19,8 +19,9 @@ export async function getAssets(
 		searchParams.set("ownerId", parsedFilters.ownerId);
 	}
 
-	const path = searchParams.size
-		? `${getAssetsContract.path}?${searchParams.toString()}`
+	const serializedSearchParams = searchParams.toString();
+	const path = serializedSearchParams
+		? `${getAssetsContract.path}?${serializedSearchParams}`
 		: getAssetsContract.path;
 
 	const response = await apiFetch(path, {
