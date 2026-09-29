@@ -9,6 +9,7 @@ import { Env } from 'src/config/env.schema';
 import { TenantIdentityFacts } from 'src/modules/tenant-management/public-api/tenant-identity-facts.public-api';
 
 import { RentalRemitoSigningNotificationService } from '../../application/rental-remito/rental-remito-signing-notification.service';
+import { RentalRemitoApplicationError } from '../../application/rental-remito/rental-remito-application.error';
 import { RentalRemitoSigningRequestService } from '../../application/rental-remito/rental-remito-signing-request.service';
 import { PrepareRentalRemitoForSigningResult } from '../prepare-rental-remito-for-signing/prepare-rental-remito-for-signing.handler';
 import { PrepareRentalRemitoForSigningQuery } from '../prepare-rental-remito-for-signing/prepare-rental-remito-for-signing.query';
@@ -20,9 +21,23 @@ import {
 import {
   sendRentalRemitoSigningInvitationError,
   SendRentalRemitoSigningInvitationError,
+  SendRentalRemitoSigningInvitationErrorCode,
 } from './send-rental-remito-signing-invitation.errors';
 
 export type SendRentalRemitoSigningInvitationCommandError = SendRentalRemitoSigningInvitationError;
+
+const preparationErrorCodeMap: Partial<
+  Record<RentalRemitoApplicationError['code'], SendRentalRemitoSigningInvitationErrorCode>
+> = {
+  RentalNotFound: 'document_signing.order_not_found',
+  RentalNotReady: 'document_signing.order_not_ready',
+  CustomerProfileMissing: 'document_signing.customer_profile_missing',
+  CustomerEmailMissing: 'document_signing.recipient_email_required',
+  TenantSignerMissing: 'document_signing.tenant_signer_missing',
+  BranchContextMissing: 'document_signing.branch_context_missing',
+  PriceSnapshotInvalid: 'document_signing.price_snapshot_invalid',
+  ContractAlreadySigned: 'document_signing.contract_already_signed',
+};
 
 @Injectable()
 @CommandHandler(SendRentalRemitoSigningInvitationCommand)
@@ -42,21 +57,18 @@ export class SendRentalRemitoSigningInvitationService implements ICommandHandler
     command: SendRentalRemitoSigningInvitationCommand,
   ): Promise<Result<SendRentalRemitoSigningInvitationResult, SendRentalRemitoSigningInvitationError>> {
     const input: SendRentalRemitoSigningInvitationInput = command;
+    const requestedEmail = input.recipientEmail?.trim().toLowerCase();
     const prepared = await this.queryBus.execute<
       PrepareRentalRemitoForSigningQuery,
       PrepareRentalRemitoForSigningResult
-    >(new PrepareRentalRemitoForSigningQuery(input.tenantId, input.orderId));
+    >(new PrepareRentalRemitoForSigningQuery(input.tenantId, input.orderId, requestedEmail));
     if (prepared.isErr()) {
-      return err(
-        sendRentalRemitoSigningInvitationError(
-          'document_signing.order_not_ready',
-          prepared.error.message,
-          prepared.error,
-        ),
-      );
+      const code = preparationErrorCodeMap[prepared.error.code];
+      if (!code) throw new Error(prepared.error.message, { cause: prepared.error });
+      return err(sendRentalRemitoSigningInvitationError(code, prepared.error.message, prepared.error));
     }
 
-    const recipientEmail = input.recipientEmail?.trim().toLowerCase() || prepared.value.customerEmail;
+    const recipientEmail = requestedEmail || prepared.value.customerEmail;
     if (!recipientEmail) {
       return err(
         sendRentalRemitoSigningInvitationError(
@@ -78,13 +90,7 @@ export class SendRentalRemitoSigningInvitationService implements ICommandHandler
       expiresAt,
     });
     if (request.isErr()) {
-      return err(
-        sendRentalRemitoSigningInvitationError(
-          'document_signing.order_not_ready',
-          request.error.message,
-          request.error,
-        ),
-      );
+      throw new Error(request.error.message, { cause: request.error });
     }
 
     const tenant = await this.tenantIdentityFacts.getTenantIdentityFacts({ tenantId: input.tenantId });

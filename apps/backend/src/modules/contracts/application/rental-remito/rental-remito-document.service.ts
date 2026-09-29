@@ -14,6 +14,7 @@ export interface RenderRentalRemitoInput {
   tenantId: string;
   rentalId: string;
   purpose: 'preview' | 'signing';
+  recipientEmail?: string;
   signedSummary?: SignedContractSummary;
 }
 
@@ -64,11 +65,11 @@ export class RentalRemitoDocumentService {
       );
     }
 
-    if (input.purpose === 'signing' && !source.customer.email) {
+    if (input.purpose === 'signing' && !input.recipientEmail && !source.customer.email) {
       return err(
         rentalRemitoApplicationError(
           'CustomerEmailMissing',
-          `Rental "${input.rentalId}" customer email is required to prepare remito signing.`,
+          `Rental "${input.rentalId}" needs a recipient email to prepare remito signing.`,
         ),
       );
     }

@@ -4,6 +4,10 @@ export type SendRentalRemitoSigningInvitationErrorCode =
   | 'document_signing.order_not_found'
   | 'document_signing.order_not_ready'
   | 'document_signing.customer_profile_missing'
+  | 'document_signing.tenant_signer_missing'
+  | 'document_signing.branch_context_missing'
+  | 'document_signing.price_snapshot_invalid'
+  | 'document_signing.contract_already_signed'
   | 'document_signing.recipient_email_required'
   | 'document_signing.invitation_delivery_failed'
   | 'document_signing.signing_request_conflict';
