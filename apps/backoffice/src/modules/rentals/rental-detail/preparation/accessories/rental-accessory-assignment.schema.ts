@@ -197,9 +197,11 @@ export function createRentalAccessoryAssignmentFormDefaultValues({
 
 export function toAssignRentalAccessoriesDto(
 	values: RentalAccessoryAssignmentFormValues,
+	expectedVersion: number,
 	generalAccessories: GetRentalDetailResponseDto["accessories"] = [],
 ): AssignRentalAccessoriesBodyDto {
 	const dto = {
+		expectedVersion,
 		accessories: [
 			...values.groups.flatMap((group) =>
 				group.accessories

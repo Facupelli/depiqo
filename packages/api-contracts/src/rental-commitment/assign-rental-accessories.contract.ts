@@ -13,6 +13,7 @@ export const AssignRentalAccessoriesItemSchema = z.object({
 });
 
 export const AssignRentalAccessoriesBodySchema = z.object({
+	expectedVersion: z.number().int().nonnegative(),
 	accessories: z.array(AssignRentalAccessoriesItemSchema),
 });
 

@@ -306,6 +306,7 @@ describe('GetRentalAccessoryDefaults integration', () => {
       new AssignRentalAccessoriesCommand({
         tenantId: s.tenant.id,
         rentalId: s.rental.rentalId,
+        expectedVersion: 0,
         accessories: [
           {
             sourceRentalDemandLineId: s.rental.demandLineIds[0],
@@ -328,7 +329,12 @@ describe('GetRentalAccessoryDefaults integration', () => {
     expect(period.end).toEqual(utcDate(2030, 1, 2, 10, 15));
 
     const removed = await commandBus.execute<AssignRentalAccessoriesCommand, AssignRentalAccessoriesResult>(
-      new AssignRentalAccessoriesCommand({ tenantId: s.tenant.id, rentalId: s.rental.rentalId, accessories: [] }),
+      new AssignRentalAccessoriesCommand({
+        tenantId: s.tenant.id,
+        rentalId: s.rental.rentalId,
+        expectedVersion: 1,
+        accessories: [],
+      }),
     );
     expect(removed.isOk()).toBe(true);
     expect(
@@ -346,6 +352,7 @@ describe('GetRentalAccessoryDefaults integration', () => {
       new AssignRentalAccessoriesCommand({
         tenantId: s.tenant.id,
         rentalId: s.rental.rentalId,
+        expectedVersion: 2,
         accessories: [
           {
             sourceRentalDemandLineId: s.rental.demandLineIds[0],
