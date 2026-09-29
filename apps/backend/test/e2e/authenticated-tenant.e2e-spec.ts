@@ -384,7 +384,7 @@ describe('authenticated tenant HTTP flow', () => {
     const googleIdentity = {
       provider: 'GOOGLE' as const,
       providerSubject: 'customer-google-subject',
-      email: 'customer-google@example.test',
+      email: 'Customer-Google@Example.Test',
       emailVerified: true,
       givenName: 'Customer',
       familyName: 'Google',
@@ -399,7 +399,7 @@ describe('authenticated tenant HTTP flow', () => {
     // SAFETY: The fixture or preceding response assertions establish this object shape before these fields are inspected.
     const firstCustomer = firstLogin.body.data.customer as { id: string; tenantId: string; email: string };
 
-    expect(firstCustomer).toMatchObject({ tenantId: tenant.id, email: googleIdentity.email });
+    expect(firstCustomer).toMatchObject({ tenantId: tenant.id, email: 'customer-google@example.test' });
     await expect(client.request().get('/auth/me')).resolves.toMatchObject({ status: 200 });
     await expect(
       prisma.client.v2RentalCustomerAuthIdentity.findUnique({
@@ -665,6 +665,12 @@ describe('authenticated tenant HTTP flow', () => {
     );
 
     expect(login.body.data.customer).toMatchObject({ email: rentalCustomer.customer.email });
+
+    const uppercaseLogin = await client.loginTenantCustomer(
+      { email: rentalCustomer.customer.email.toUpperCase(), password: rentalCustomer.password },
+      storefrontTenantContext(tenant),
+    );
+    expect(uppercaseLogin.body.data.customer).toMatchObject({ id: rentalCustomer.customer.id });
 
     const currentUser = await client.request().get('/auth/me').expect(200);
     expect(currentUser.body.data).toMatchObject({

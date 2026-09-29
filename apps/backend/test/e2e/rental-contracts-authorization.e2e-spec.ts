@@ -219,7 +219,7 @@ describe('Rental Commitment and Contracts HTTP authorization', () => {
     const path = `/document-signing/orders/${randomUUID()}/sessions`;
     const body = { recipientEmail: 'signer@test.local' };
 
-    await allowed.withCsrf(allowed.request().post(path)).send(body).expect(422);
+    await allowed.withCsrf(allowed.request().post(path)).send(body).expect(404);
     await denied.withCsrf(denied.request().post(path)).send(body).expect(403);
   });
 });

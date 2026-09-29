@@ -18,7 +18,7 @@ A Tenant User is a backoffice/admin actor belonging to a Tenant. Tenant Manageme
 
 A Rental Customer represents the customer side of the rental relationship and is distinct from a Tenant User.
 
-Tenant Management owns current customer identity/profile facts used by tenant workflows. When another module needs durable historical customer facts, it may preserve the accepted facts it requires rather than treating the mutable current profile as historical truth.
+Tenant Management owns current customer identity/profile facts used by tenant workflows. Within a tenant, customer email identifies an account regardless of letter casing. When another module needs durable historical customer facts, it may preserve the accepted facts it requires rather than treating the mutable current profile as historical truth.
 
 ### Branch
 
