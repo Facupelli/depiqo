@@ -22,6 +22,7 @@ export interface CreateEquipmentTypeWithInitialAssetsResult {
 }
 
 export type AssetInventoryAuthoringErrorCode =
+  | 'TenantUnavailable'
   | 'CategoryNotFound'
   | 'CategoryInactive'
   | 'BranchNotFound'
@@ -40,6 +41,7 @@ export interface AssetInventoryAuthoringError {
   message: string;
   details?: {
     field?: string;
+    reason?: string;
     name?: string;
     branchId?: string;
     ownerId?: string;

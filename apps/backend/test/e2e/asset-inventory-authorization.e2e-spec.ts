@@ -132,7 +132,7 @@ describe('Asset Inventory HTTP authorization', () => {
       .expect(403);
   });
 
-  it('conditionally protects third-party ownership on equipment type creation', async () => {
+  it('conditionally protects third-party ownership on inventory and offering-setup equipment creation', async () => {
     const tenant = await fixtures.createTenant();
     const branch = await fixtures.createBranch({ tenantId: tenant.id });
     const inventoryOnly = await clientWithPermissions(tenant.id, [TenantPermission.InventoryManage]);
@@ -159,6 +159,22 @@ describe('Asset Inventory HTTP authorization', () => {
       .withCsrf(ownershipOnly.request().post(path))
       .send({ name: `No inventory ${randomUUID()}` })
       .expect(403);
+
+    const offeringPath = '/offering-setup/equipment';
+    await inventoryOnly
+      .withCsrf(inventoryOnly.request().post(offeringPath))
+      .send({
+        equipment: { name: `Offering denied ${randomUUID()}` },
+        assets: [{ branchId: branch.id, ownerId: randomUUID() }],
+      })
+      .expect(403);
+    await fullyAllowed
+      .withCsrf(fullyAllowed.request().post(offeringPath))
+      .send({
+        equipment: { name: `Offering allowed ${randomUUID()}` },
+        assets: [{ branchId: branch.id, ownerId: randomUUID() }],
+      })
+      .expect(404);
   });
 
   it('conditionally protects third-party ownership when adding assets', async () => {

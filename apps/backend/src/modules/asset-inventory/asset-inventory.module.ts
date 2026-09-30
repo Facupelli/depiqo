@@ -24,7 +24,6 @@ import { CreateEquipmentTypeAccessoryDefaultsHttpController } from './features/c
 import { CreateEquipmentTypeAccessoryDefaultsHandler } from './features/create-equipment-type-accessory-defaults/create-equipment-type-accessory-defaults.handler';
 import { CreateEquipmentTypeHttpController } from './features/create-equipment-type/create-equipment-type.controller';
 import { CreateEquipmentTypeHandler } from './features/create-equipment-type/create-equipment-type.handler';
-import { CreateEquipmentTypeSetupService } from './features/create-equipment-type-setup/create-equipment-type-setup.service';
 import { CreateOwnerWithContractHttpController } from './features/create-owner-with-contract/create-owner-with-contract.controller';
 import { CreateOwnerWithContractHandler } from './features/create-owner-with-contract/create-owner-with-contract.handler';
 import { GetAssetSummariesHttpController } from './features/get-asset-summaries/get-asset-summaries.controller';
@@ -101,7 +100,6 @@ import { EquipmentTypePageFactsService } from './public-api/equipment-type-page-
     GetEquipmentTypesHandler,
     GetOwnerDetailHandler,
     GetOwnersHandler,
-    CreateEquipmentTypeSetupService,
     AssetBranchReferenceValidatorService,
     AssetCreationValidatorService,
     AssetOwnershipResolver,
@@ -109,7 +107,8 @@ import { EquipmentTypePageFactsService } from './public-api/equipment-type-page-
     EquipmentTypeRepository,
     { provide: AccessoryPreparationInventoryFacts, useClass: AccessoryPreparationInventoryFactsService },
     { provide: ActivePhysicalStockFacts, useClass: ActivePhysicalStockFactsService },
-    { provide: AssetInventoryAuthoring, useClass: AssetInventoryAuthoringService },
+    AssetInventoryAuthoringService,
+    { provide: AssetInventoryAuthoring, useExisting: AssetInventoryAuthoringService },
     { provide: EquipmentTypeReferenceAuthority, useClass: EquipmentTypeReferenceAuthorityService },
     { provide: AssetInventoryDisplayFacts, useClass: AssetInventoryDisplayFactsService },
     { provide: EquipmentTypePageFacts, useClass: EquipmentTypePageFactsService },
