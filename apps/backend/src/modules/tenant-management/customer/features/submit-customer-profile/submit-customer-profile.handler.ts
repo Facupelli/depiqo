@@ -120,7 +120,10 @@ export class SubmitCustomerProfileHandler implements ICommandHandler<
 
       await tx.v2RentalCustomer.update({
         where: { id: customer.id },
-        data: { onboardingStatus: V2RentalCustomerOnboardingStatus.PENDING },
+        data: {
+          onboardingStatus: V2RentalCustomerOnboardingStatus.PENDING,
+          lastSubmittedAt: new Date(),
+        },
       });
 
       return ok({ id: profile.id });

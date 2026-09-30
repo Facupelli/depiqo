@@ -23,6 +23,7 @@ export const GetRentalCustomersItemSchema = z.object({
   firstName: z.string(),
   lastName: z.string(),
   status: RentalCustomerOnboardingStatusSchema,
+  lastSubmittedAt: z.string().datetime().nullable(),
   createdAt: z.string().datetime(),
 });
 

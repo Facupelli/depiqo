@@ -21,6 +21,7 @@ export type GetCurrentRentalCustomerProfileResult = Result<
     companyName: string | null;
     isActive: boolean;
     onboardingStatus: 'NOT_STARTED' | 'PENDING' | 'APPROVED' | 'REJECTED';
+    lastSubmittedAt: string | null;
     createdAt: string;
     updatedAt: string;
     profile: {
@@ -86,6 +87,7 @@ export class GetCurrentRentalCustomerProfileHandler implements IQueryHandler<
         companyName: true,
         isActive: true,
         onboardingStatus: true,
+        lastSubmittedAt: true,
         createdAt: true,
         updatedAt: true,
         profile: {
@@ -155,6 +157,7 @@ export class GetCurrentRentalCustomerProfileHandler implements IQueryHandler<
       companyName: customer.companyName,
       isActive: customer.isActive,
       onboardingStatus: customer.onboardingStatus,
+      lastSubmittedAt: customer.lastSubmittedAt?.toISOString() ?? null,
       createdAt: customer.createdAt.toISOString(),
       updatedAt: customer.updatedAt.toISOString(),
       profile: {

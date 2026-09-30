@@ -100,7 +100,7 @@ function PendingProfileRow({
 			</TableCell>
 			<TableCell>
 				{formatTimestampInTimezone(
-					profile.createdAt,
+					profile.lastSubmittedAt ?? profile.createdAt,
 					timezone,
 					"DD MMM, YYYY · HH:mm",
 				)}

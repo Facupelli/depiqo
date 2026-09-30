@@ -1,5 +1,6 @@
 import { Button } from "@repo/ui/components/button";
 import { FieldError } from "@repo/ui/components/field";
+import { useQueryClient } from "@tanstack/react-query";
 import {
 	createFileRoute,
 	Link,
@@ -9,6 +10,7 @@ import {
 import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
 import { finalizeCustomerGoogleLogin } from "@/modules/tenant-management/auth/customer-google/customer-google-finalize.api";
+import { customerProfileKeys } from "@/modules/tenant-management/customer/customer-profile.queries";
 
 const searchSchema = z.object({ ticket: z.string().min(1) });
 
@@ -21,6 +23,7 @@ function CustomerGoogleFinalizePage() {
 	const { ticket } = Route.useSearch();
 	const navigate = useNavigate();
 	const router = useRouter();
+	const queryClient = useQueryClient();
 	const didFinalize = useRef(false);
 	const [error, setError] = useState<string | null>(null);
 
@@ -32,6 +35,7 @@ function CustomerGoogleFinalizePage() {
 		void finalizeCustomerGoogleLogin(ticket)
 			.then(async ({ redirectPath }) => {
 				if (!active) return;
+				queryClient.removeQueries({ queryKey: customerProfileKeys.all() });
 				await router.invalidate({ sync: true });
 				if (active) await navigate({ href: redirectPath, replace: true });
 			})
@@ -43,7 +47,7 @@ function CustomerGoogleFinalizePage() {
 		return () => {
 			active = false;
 		};
-	}, [navigate, router, ticket]);
+	}, [navigate, queryClient, router, ticket]);
 
 	if (error) {
 		return (

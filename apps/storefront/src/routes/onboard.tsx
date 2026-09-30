@@ -20,7 +20,10 @@ export const Route = createFileRoute("/onboard")({
 
 function OnboardPage() {
 	const { customer, storefrontTenant } = Route.useRouteContext();
-	const profileQuery = useCurrentRentalCustomerProfile();
+	const profileQuery = useCurrentRentalCustomerProfile(
+		customer.tenantId,
+		customer.id,
+	);
 
 	if (profileQuery.isPending) return <OnboardPageSkeleton />;
 	if (profileQuery.isError) return <ProfileLoadError />;
