@@ -89,6 +89,11 @@ const definitions: Record<ChangeRentalDetailsError['code'], { title: string; sta
     status: HttpStatus.UNPROCESSABLE_ENTITY,
     detail: 'The resulting rental could not be priced.',
   },
+  'rental_commitment.unsupported_pricing_currency': {
+    title: 'Unsupported pricing currency',
+    status: HttpStatus.UNPROCESSABLE_ENTITY,
+    detail: 'The rental currency does not support a new monetary operation.',
+  },
 };
 
 function toProblem(error: ChangeRentalDetailsError): ProblemException {

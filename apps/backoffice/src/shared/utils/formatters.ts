@@ -13,6 +13,30 @@ export function formatMoney(amount: string, currency = "ARS"): string {
 	}).format(Number.parseFloat(amount));
 }
 
+export function formatExactCurrencyRate(
+	amount: string,
+	currency: string,
+): string {
+	// Unit rates are exact authored decimals, not two-decimal payable amounts.
+	if (!/^\d+(?:\.\d+)?$/.test(amount)) return `${currency} ${amount}`;
+	const [integer, fraction] = amount.split(".");
+	try {
+		const parts = new Intl.NumberFormat("es-AR", {
+			style: "currency",
+			currency,
+			minimumFractionDigits: 0,
+			maximumFractionDigits: 0,
+		}).formatToParts(0);
+		const grouped = integer.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+		const digits = grouped + (fraction ? `,${fraction}` : "");
+		return parts
+			.map((part) => (part.type === "integer" ? digits : part.value))
+			.join("");
+	} catch {
+		return `${currency} ${amount}`;
+	}
+}
+
 export type RelativeOrderDateContext = {
 	label: string;
 	isToday: boolean;

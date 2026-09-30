@@ -18,10 +18,7 @@ import {
   RentalPackageMustRetainDemandLineError,
   RentalPeriodHasEndedError,
 } from '../../domain/errors/rental-commitment.errors';
-import { Rental } from '../../domain/rental.aggregate';
 import { isCompositeRentableItemKind } from '../../domain/rental-status';
-import { getConfirmedPriceSnapshotForOwnerSplits } from '../../owner-split/confirmed-price-snapshot-for-owner-splits';
-import { RentalOwnerSplitDraft } from '../../owner-split/owner-split-calculator.types';
 import { RentalOwnerSplitCalculator } from '../../owner-split/rental-owner-split-calculator';
 import { RentalRepository } from '../../persistence/rental.repository';
 import { RemoveConfirmedPackageDemandLineCommand } from './remove-confirmed-package-demand-line.command';
@@ -108,7 +105,7 @@ export class RemoveConfirmedPackageDemandLineHandler implements ICommandHandler<
       });
       if (removed.isErr()) return err(this.map(removed.error, context));
 
-      const ownerSplits = this.calculateOwnerSplits(rental);
+      const ownerSplits = this.splitCalculator.calculate(rental);
       const saved = await this.rentalRepository.save(rental, { expectedVersion, ownerSplits, tx });
       if (!saved) {
         return err(
@@ -123,30 +120,6 @@ export class RemoveConfirmedPackageDemandLineHandler implements ICommandHandler<
       integrationEvents.collect(toRentalIntegrationEvents(rental.pullDomainEvents()));
       return ok({ rentalId, version: saved.version, updatedAt: saved.updatedAt });
     });
-  }
-
-  private calculateOwnerSplits(rental: Rental): RentalOwnerSplitDraft[] {
-    const snapshot = getConfirmedPriceSnapshotForOwnerSplits(rental.confirmedPriceSnapshot);
-    return this.splitCalculator.calculate({
-      tenantId: rental.tenantId,
-      rentalId: rental.id,
-      currency: snapshot.currency,
-      selections: rental.currentSelections.map(({ id }) => ({ id })),
-      demandLines: rental.currentDemandLines.map((line) => ({
-        id: line.id,
-        sourceSelectionId: line.rentalSelectionId,
-      })),
-      fulfilledAssets: rental.currentAssignedAssets.map((assignment) => ({
-        id: assignment.id,
-        rentalDemandLineId: assignment.rentalDemandLineId,
-        assetId: assignment.assetId,
-        ownershipSnapshot: assignment.ownershipSnapshot.toJSON(),
-      })),
-      priceLines: snapshot.lines.map((line) => ({
-        rentalSelectionId: line.rentalSelectionId,
-        netAmount: line.total,
-      })),
-    }).splits;
   }
 
   private error(

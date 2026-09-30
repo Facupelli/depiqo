@@ -13,7 +13,7 @@ export class InvalidRatePlanNameError extends RatePlanDomainError {
 
 export class InvalidCurrencyCodeError extends RatePlanDomainError {
   constructor(currency: string) {
-    super(`Currency "${currency}" must be an ISO-4217 3-letter code.`);
+    super(`Currency "${currency}" is not supported for two-decimal Pricing (ARS, EUR, USD).`);
   }
 }
 

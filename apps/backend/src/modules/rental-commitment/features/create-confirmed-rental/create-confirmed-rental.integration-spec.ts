@@ -571,6 +571,9 @@ describe('CreateConfirmedRental integration', () => {
       expect(unavailableSelection.isErr() && unavailableSelection.error.code).toBe(
         'rental_commitment.catalog_selection_unavailable',
       );
+      if (unavailableSelection.isErr()) {
+        expect(unavailableSelection.error.context?.rentalOfferId).toBe(rentalOfferId);
+      }
     }
 
     const invalidDefinition = await create({

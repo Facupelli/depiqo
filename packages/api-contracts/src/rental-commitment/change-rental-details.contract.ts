@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import type { ApiContract } from "../api-contract";
+import { PayableTargetTotalSchema } from "../pricing/payable-target-total.schema";
 
 export const ChangeRentalDetailsParamsSchema = z.object({
   rentalId: z.string().trim().min(1),
@@ -13,7 +14,7 @@ export const ChangeRentalDetailsBodySchema = z.object({
   manualPricingAdjustment: z
     .object({
       mode: z.literal("TARGET_TOTAL"),
-      targetTotal: z.string().trim().min(1),
+      targetTotal: PayableTargetTotalSchema,
       reason: z.string().trim().min(1).optional(),
     })
     .nullable()

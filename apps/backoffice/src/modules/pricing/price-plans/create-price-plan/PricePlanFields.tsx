@@ -122,6 +122,9 @@ export const PricePlanFields = withForm({
 										placeholder="ARS"
 										maxLength={3}
 									/>
+									<p className="text-xs text-muted-foreground">
+										Monedas admitidas: ARS, EUR y USD.
+									</p>
 									{isInvalid && <FieldError errors={field.state.meta.errors} />}
 								</Field>
 							);

@@ -7,6 +7,7 @@ export type PricingTargetTotalAdjustmentRequest = {
   targetTotal: string;
   lines: Array<{
     lineReference: string;
+    rentalOfferId: string;
     currentTotal: string;
   }>;
 };
@@ -26,7 +27,18 @@ export type PricingTargetTotalAdjustmentResult = {
 };
 
 export class PricingTargetTotalAdjustmentError extends Error {
-  readonly code = 'pricing_target_total_adjustment.invalid_request' as const;
+  readonly code:
+    | 'pricing_target_total_adjustment.invalid_request'
+    | 'pricing_target_total_adjustment.unsupported_currency';
+
+  constructor(
+    message: string,
+    options?: ErrorOptions,
+    code: PricingTargetTotalAdjustmentError['code'] = 'pricing_target_total_adjustment.invalid_request',
+  ) {
+    super(message, options);
+    this.code = code;
+  }
 }
 
 export abstract class PricingTargetTotalAdjustment {

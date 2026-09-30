@@ -8,6 +8,7 @@ export type TargetTotalAllocationInput = {
 
 export type TargetTotalAllocationLineInput = {
   rentalSelectionId: string;
+  rentalOfferId: string;
   currentTotal: string;
 };
 

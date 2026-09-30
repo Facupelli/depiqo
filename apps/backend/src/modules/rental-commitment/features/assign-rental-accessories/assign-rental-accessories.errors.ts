@@ -3,6 +3,7 @@ import { ApplicationError, ApplicationErrorContext } from 'src/core/errors/appli
 export type AssignRentalAccessoriesErrorCode =
   | 'rental_commitment.rental_not_found'
   | 'rental_commitment.rental_status_does_not_allow_accessory_assignment'
+  | 'rental_commitment.rental_period_ended'
   | 'rental_commitment.invalid_accessory_quantity'
   | 'rental_commitment.duplicate_accessory_selection'
   | 'rental_commitment.equipment_type_not_found'

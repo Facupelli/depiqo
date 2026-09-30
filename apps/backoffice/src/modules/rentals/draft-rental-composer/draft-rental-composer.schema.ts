@@ -1,6 +1,7 @@
 import {
 	type CalculateDraftRentalPriceBodyDto,
 	CalculateDraftRentalPriceBodySchema,
+	PayableTargetTotalSchema,
 } from "@repo/api-contracts";
 import { z } from "zod";
 import {
@@ -56,7 +57,7 @@ const draftRentalComposerFormBaseSchema = z.object({
 	fulfillmentMethod: z.enum(["PICKUP", "DELIVERY"]),
 	deliveryDestination: draftRentalDeliveryDestinationFormSchema,
 	insuranceSelected: z.boolean(),
-	targetTotal: z.string(),
+	targetTotal: z.union([z.literal(""), PayableTargetTotalSchema]),
 	adjustmentReason: z.string(),
 });
 

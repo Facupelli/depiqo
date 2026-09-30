@@ -35,7 +35,7 @@ export class AddAssetsToEquipmentTypeHttpController {
     @Body() dto: AddAssetsToEquipmentTypeRequestDto,
     @CurrentUser() user: AuthUser,
   ): Promise<AddAssetsToEquipmentTypeResponseDto> {
-    if (dto.assets.some((asset) => asset.ownerId !== undefined && asset.ownerId !== null)) {
+    if (dto.assets.some((asset) => !!asset.ownerId?.trim())) {
       await this.authorizationEnforcer.requirePermission(user, TenantPermission.InventoryOwnershipManage);
     }
 

@@ -6,9 +6,9 @@ import { DeliveryModule } from '../delivery/delivery.module';
 import { PricingModule } from '../pricing/pricing.module';
 import { TenantManagementModule } from '../tenant-management/tenant-management.module';
 import { RentalOfferAvailabilityService } from './application/availability/rental-offer-availability.service';
-import { AccessorySelectionReconciliationService } from './application/accessory-selection-reconciliation.service';
+import { RentalAccessoryMutations } from './application/rental-accessory-mutations';
 import { ProspectiveRentalCostService } from './application/prospective-rental-cost.service';
-import { DraftRentalProposalResolver } from './application/draft-rental-proposal-resolver.service';
+import { RentalProposalResolver } from './application/rental-proposal-resolver.service';
 import { RentalAssetAllocationService } from './asset-allocation/rental-asset-allocation.service';
 import { AddRentalSelectionHttpController } from './features/add-rental-selection/add-rental-selection.controller';
 import { AddRentalSelectionHandler } from './features/add-rental-selection/add-rental-selection.handler';
@@ -114,10 +114,10 @@ import { RentalLifecycleFactsService } from './public-api/rental-lifecycle-facts
     RentalNumberAllocator,
     { provide: RentalRepository, useClass: PrismaRentalRepository },
     RentalAssetAllocationService,
-    AccessorySelectionReconciliationService,
+    RentalAccessoryMutations,
     RentalOfferAvailabilityService,
     ProspectiveRentalCostService,
-    DraftRentalProposalResolver,
+    RentalProposalResolver,
     AddRentalSelectionHandler,
     AssignRentalAccessoriesHandler,
     AssignCustomerToDraftRentalHandler,

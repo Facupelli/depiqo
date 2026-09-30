@@ -78,6 +78,29 @@ describe('Pricing authoring public capabilities integration', () => {
     ).resolves.toEqual(expect.objectContaining({ billingUnit: 'HOUR', currency: 'USD', isActive: true }));
   });
 
+  it('accepts exact sub-cent authored rates but rejects unsupported payable currencies', async () => {
+    const tenant = await fixtures.createTenant();
+    const result = await createRatePlan(tenant.id, {
+      tiers: [{ fromUnit: 1, toUnit: null, pricePerUnit: '0.005' }],
+    });
+    expect(result.isOk()).toBe(true);
+    if (result.isErr()) return;
+    const tier = await prisma.client.v2RatePlanTier.findFirstOrThrow({
+      where: { ratePlanId: result.value.ratePlanId },
+    });
+    expect(tier.pricePerUnit.toFixed(3)).toBe('0.005');
+
+    const unsupported = await ratePlanAuthoring.createRatePlan({
+      tenantId: tenant.id,
+      name: `Unsupported ${randomUUID()}`,
+      billingUnit: 'DAY',
+      currency: 'JPY',
+      isActive: true,
+      tiers: [{ fromUnit: 1, toUnit: null, pricePerUnit: '1' }],
+    });
+    expect(unsupported.isErr() && unsupported.error.code).toBe('InvalidRatePlan');
+  });
+
   it('rejects invalid Rate Plan tiers and duplicate Rate Plan names', async () => {
     const tenant = await fixtures.createTenant();
     const name = `Rate plan ${randomUUID()}`;

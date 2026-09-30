@@ -119,7 +119,7 @@ describe('instant-bearing request boundaries', () => {
     expect(offerAvailabilityInput.periodStart).toBeInstanceOf(Date);
   });
 
-  it('keeps owner-contract ordering offset-aware after conversion to Dates', () => {
+  it('validates owner-contract dates and exact shares at the request boundary', () => {
     const ownerContractBody = wireCases[0][2];
     if (!('contract' in ownerContractBody)) throw new Error('Expected an owner-contract wire fixture.');
 
@@ -139,5 +139,17 @@ describe('instant-bearing request boundaries', () => {
     expect(CreateOwnerWithContractBodySchema.parse(valid).contract.validTo).toBe(valid.contract.validTo);
     expect(CreateOwnerWithContractApplicationInputSchema.safeParse(valid).success).toBe(true);
     expect(CreateOwnerWithContractApplicationInputSchema.safeParse(invalid).success).toBe(false);
+    expect(
+      CreateOwnerWithContractBodySchema.safeParse({
+        ...valid,
+        contract: { ...valid.contract, ownerShare: '0.0001', rentalShare: '0.9999' },
+      }).success,
+    ).toBe(true);
+    expect(
+      CreateOwnerWithContractBodySchema.safeParse({
+        ...valid,
+        contract: { ...valid.contract, ownerShare: '0.5', rentalShare: '0.49999999995' },
+      }).success,
+    ).toBe(false);
   });
 });

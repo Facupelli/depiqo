@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { CommandBus } from '@nestjs/cqrs';
-import { err } from 'neverthrow';
+import { err, ok } from 'neverthrow';
 
 import { ProblemException } from 'src/core/problem-details';
 import { AuthUser } from 'src/modules/tenant-management/auth/shared/auth.types';
@@ -17,6 +17,7 @@ function requestInput() {
   return {
     params: { rentalId: 'rental-1' } as AssignRentalAccessoriesParamsDto,
     dto: {
+      expectedVersion: 4,
       accessories: [
         {
           sourceRentalDemandLineId: 'demand-line-1',
@@ -30,6 +31,17 @@ function requestInput() {
 }
 
 describe('AssignRentalAccessoriesHttpController', () => {
+  it('forwards the expected rental version to the command', async () => {
+    // SAFETY: This focused test double implements the only command-bus member exercised by the controller.
+    const commandBus = { execute: vi.fn().mockResolvedValue(ok(undefined)) } as CommandBus;
+    const input = requestInput();
+    await new AssignRentalAccessoriesHttpController(commandBus).assignAccessories(input.params, input.dto, input.user);
+
+    expect(commandBus.execute).toHaveBeenCalledWith(
+      expect.objectContaining({ expectedVersion: 4, rentalId: 'rental-1', tenantId: 'tenant-1' }),
+    );
+  });
+
   it('maps a deterministic availability failure with its safe extension', async () => {
     const applicationError = assignRentalAccessoriesError(
       'rental_commitment.insufficient_asset_availability',

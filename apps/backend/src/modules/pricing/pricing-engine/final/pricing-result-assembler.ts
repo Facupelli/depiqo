@@ -34,7 +34,7 @@ export class PricingResultAssembler {
         billingUnit: line.billingUnit,
         ratePlanId: line.ratePlanId,
         appliedTierId: line.appliedTierId,
-        pricePerUnit: line.pricePerUnit.toSnapshotString(),
+        pricePerUnit: line.pricePerUnit.toExactString(),
         subtotal: line.subtotal.toSnapshotString(),
         discountTotal: line.discountTotal.toSnapshotString(),
         total: line.total.toSnapshotString(),

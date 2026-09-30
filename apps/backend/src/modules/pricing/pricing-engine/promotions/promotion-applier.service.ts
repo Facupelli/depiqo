@@ -18,14 +18,21 @@ export class PromotionApplierService {
     private readonly allocationService = new DiscountAllocationService(),
   ) {}
 
+  payableDiscount(input: Pick<PromotionApplierInput, 'context' | 'eligiblePromotion'>): Money {
+    const raw = this.discountCalculator.calculateDiscount(input);
+    const eligibleTotal = input.eligiblePromotion.eligibleLines.reduce(
+      (total, line) => total.add(line.total),
+      Money.zero(input.context.currency),
+    );
+    const rounded = Money.settle(raw);
+    return rounded.isGreaterThan(eligibleTotal) ? eligibleTotal : rounded;
+  }
+
   apply(input: PromotionApplierInput): Money {
     const { context, eligiblePromotion, adjustmentType, couponId } = input;
     const { promotion, eligibleLines } = eligiblePromotion;
 
-    const discount = this.discountCalculator.calculateDiscount({
-      context,
-      eligiblePromotion,
-    });
+    const discount = this.payableDiscount({ context, eligiblePromotion });
 
     if (discount.isZero()) {
       return Money.zero(context.currency);

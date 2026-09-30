@@ -3,7 +3,7 @@ import { Link } from "@tanstack/react-router";
 import type { ColumnDef } from "@tanstack/react-table";
 import { PackageOpen } from "lucide-react";
 import { buildR2PublicUrl } from "@/lib/r2-public-url";
-import { formatMoney } from "@/shared/utils/formatters";
+import { formatExactCurrencyRate } from "@/shared/utils/formatters";
 import { ProductStatusBadge } from "../product-status-badge";
 import { ComboListRowActions } from "./combo-list-row-actions";
 
@@ -28,7 +28,7 @@ export function getComboStartingPriceLabel(
 ): string | null {
 	if (!item.startingPrice) return null;
 
-	return `Desde ${formatMoney(item.startingPrice.amount, item.startingPrice.currency)}/${billingUnitLabels[item.startingPrice.billingUnit]}`;
+	return `Desde ${formatExactCurrencyRate(item.startingPrice.amount, item.startingPrice.currency)}/${billingUnitLabels[item.startingPrice.billingUnit]}`;
 }
 
 export function getComboCategoryLabel(

@@ -6,6 +6,7 @@ import { err, ok, Result } from 'neverthrow';
 import { PrismaService } from 'src/core/database/prisma.service';
 import { localDateToPrismaDate } from 'src/core/temporal/local-date';
 import { PromotionEffectType } from 'src/generated/prisma/client';
+import { hasObviousPromotionPriorityConflict } from '../../application/obvious-promotion-priority-conflict';
 
 import { updatePromotionError, UpdatePromotionError } from './update-promotion.errors';
 import { UpdatePromotionCommand } from './update-promotion.command';
@@ -31,6 +32,16 @@ export class UpdatePromotionHandler implements ICommandHandler<
 
     if (validationError) {
       return err(validationError);
+    }
+    if (await hasObviousPromotionPriorityConflict(this.prisma, command)) {
+      return err(
+        updatePromotionError(
+          'pricing.invalid_promotion_configuration',
+          'An unrestricted promotion with this priority is already active for the same validity period.',
+          undefined,
+          context,
+        ),
+      );
     }
 
     const updatedPromotion = await this.prisma.client.$transaction(async (tx) => {

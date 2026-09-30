@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import type { ApiContract } from "../api-contract";
 import { ExplicitOffsetInstantWireSchema } from "../explicit-offset-instant.schema";
+import { PayableTargetTotalSchema } from "../pricing/payable-target-total.schema";
 import {
   CreateConfirmedRentalFulfillmentMethodSchema,
   CreateConfirmedRentalSelectedOfferSchema,
@@ -14,7 +15,7 @@ export const CreateDraftRentalDeliveryDetailsSchema = z.object({
 
 export const CreateDraftRentalManualPricingAdjustmentSchema = z.object({
   mode: z.literal("TARGET_TOTAL"),
-  targetTotal: z.string().trim().min(1),
+  targetTotal: PayableTargetTotalSchema,
   reason: z.string().trim().optional(),
 });
 

@@ -33,8 +33,6 @@ import {
   TenantUnavailableForRentalError,
 } from '../../domain/errors/rental-commitment.errors';
 import { EquipmentTypeId } from '../../domain/types/rental-commitment-ids';
-import { getConfirmedPriceSnapshotForOwnerSplits } from '../../owner-split/confirmed-price-snapshot-for-owner-splits';
-import { RentalOwnerSplitDraft } from '../../owner-split/owner-split-calculator.types';
 import { RentalOwnerSplitCalculator } from '../../owner-split/rental-owner-split-calculator';
 import { RentalRepository } from '../../persistence/rental.repository';
 import { ConfirmRentalCommand } from './confirm-rental.command';
@@ -215,28 +213,7 @@ export class ConfirmRentalHandler implements ICommandHandler<ConfirmRentalComman
       return err(this.toApplicationError(new ConfirmedRentalRequiresPriceSnapshotError(rental.id), context));
     }
 
-    const confirmedPriceSnapshot = getConfirmedPriceSnapshotForOwnerSplits(rental.confirmedPriceSnapshot);
-
-    const { splits }: { splits: RentalOwnerSplitDraft[] } = this.rentalOwnerSplitCalculator.calculate({
-      tenantId: rental.tenantId,
-      rentalId: rental.id,
-      currency: confirmedPriceSnapshot.currency,
-      selections: rental.selections.map((selection) => ({ id: selection.id })),
-      demandLines: rental.demandLines.map((demandLine) => ({
-        id: demandLine.id,
-        sourceSelectionId: demandLine.rentalSelectionId,
-      })),
-      fulfilledAssets: rental.currentAssignedAssets.map((assignment) => ({
-        id: assignment.id,
-        rentalDemandLineId: assignment.rentalDemandLineId,
-        assetId: assignment.assetId,
-        ownershipSnapshot: assignment.ownershipSnapshot.toJSON(),
-      })),
-      priceLines: confirmedPriceSnapshot.lines.map((line) => ({
-        rentalSelectionId: line.rentalSelectionId,
-        netAmount: line.total,
-      })),
-    });
+    const splits = this.rentalOwnerSplitCalculator.calculate(rental);
 
     const confirmationIntegrationEvents = toRentalIntegrationEvents(rental.pullDomainEvents());
 

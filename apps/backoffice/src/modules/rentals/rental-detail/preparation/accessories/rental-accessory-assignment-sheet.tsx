@@ -1,3 +1,4 @@
+import type { GetRentalAccessoryDefaultsResponseDto } from "@repo/api-contracts";
 import { Button } from "@repo/ui/components/button";
 import {
 	Sheet,
@@ -8,6 +9,7 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import { AlertCircle, PackagePlus } from "lucide-react";
 import { useState } from "react";
+import type { GetRentalDetailViewResponseDto } from "@/modules/rentals/rental-detail/get-rental-detail-view/get-rental-detail-view.schema";
 import { useRentalDetailContext } from "@/modules/rentals/rental-detail/rental-detail.context";
 import { rentalDetailViewQueries } from "@/modules/rentals/rental-detail/rental-detail.queries";
 import {
@@ -44,9 +46,11 @@ export function RentalAccessoryAssignmentSheet({
 						<SheetTitle>Asignar accesorios</SheetTitle>
 					</div>
 				</SheetHeader>
-				<RentalAccessoryAssignmentSheetBody
-					onClose={() => onOpenChange(false)}
-				/>
+				{open ? (
+					<RentalAccessoryAssignmentSheetBody
+						onClose={() => onOpenChange(false)}
+					/>
+				) : null}
 			</SheetContent>
 		</Sheet>
 	);
@@ -58,37 +62,7 @@ function RentalAccessoryAssignmentSheetBody({
 	onClose: () => void;
 }) {
 	const { rental } = useRentalDetailContext();
-	const queryClient = useQueryClient();
-	const [assignmentError, setAssignmentError] =
-		useState<AssignRentalAccessoriesUiError>();
-	const {
-		data: defaults,
-		isPending,
-		isError,
-	} = useRentalAccessoryDefaults(rental.id);
-	const assignAccessories = useAssignRentalAccessories();
-
-	async function handleSubmit(values: RentalAccessoryAssignmentFormValues) {
-		setAssignmentError(undefined);
-
-		try {
-			const body = toAssignRentalAccessoriesDto(values, rental.accessories);
-			await assignAccessories.mutateAsync({ rentalId: rental.id, body });
-			onClose();
-		} catch (error) {
-			const uiError = toAssignRentalAccessoriesUiError(error);
-			setAssignmentError(uiError);
-
-			if (uiError.shouldRefreshAvailability) {
-				await Promise.all([
-					queryClient.fetchQuery(
-						rentalAccessoryDefaultQueries.detail(rental.id),
-					),
-					queryClient.fetchQuery(rentalDetailViewQueries.detail(rental.id)),
-				]).catch(() => undefined);
-			}
-		}
-	}
+	const { data: defaults, isPending } = useRentalAccessoryDefaults(rental.id);
 
 	if (isPending) {
 		return (
@@ -100,7 +74,7 @@ function RentalAccessoryAssignmentSheetBody({
 		);
 	}
 
-	if (isError || !defaults) {
+	if (!defaults) {
 		return (
 			<div className="flex min-w-0 flex-1 items-center justify-center px-4 py-12 sm:px-6">
 				<div className="max-w-md text-center">
@@ -116,18 +90,144 @@ function RentalAccessoryAssignmentSheetBody({
 		);
 	}
 
-	const demandLines = rental.selections.flatMap(
+	return (
+		<RentalAccessoryAssignmentEditor
+			key={rental.id}
+			initialRental={rental}
+			initialDefaults={defaults}
+			onClose={onClose}
+		/>
+	);
+}
+
+function RentalAccessoryAssignmentEditor({
+	initialRental,
+	initialDefaults,
+	onClose,
+}: {
+	initialRental: GetRentalDetailViewResponseDto;
+	initialDefaults: GetRentalAccessoryDefaultsResponseDto;
+	onClose: () => void;
+}) {
+	const queryClient = useQueryClient();
+	const assignAccessories = useAssignRentalAccessories();
+	const [snapshot, setSnapshot] = useState({
+		rental: initialRental,
+		defaults: initialDefaults,
+		revision: 0,
+	});
+	const [assignmentError, setAssignmentError] =
+		useState<AssignRentalAccessoriesUiError>();
+	const [refreshFailed, setRefreshFailed] = useState(false);
+	const [isRefreshing, setIsRefreshing] = useState(false);
+
+	async function refreshAndRebuild() {
+		const [freshRental, freshDefaults] = await Promise.all([
+			queryClient.fetchQuery(
+				rentalDetailViewQueries.detail(snapshot.rental.id, { staleTime: 0 }),
+			),
+			queryClient.fetchQuery(
+				rentalAccessoryDefaultQueries.detail(snapshot.rental.id, {
+					staleTime: 0,
+				}),
+			),
+		]);
+		setSnapshot((current) => ({
+			rental: freshRental,
+			defaults: freshDefaults,
+			revision: current.revision + 1,
+		}));
+		setRefreshFailed(false);
+		setAssignmentError((current) =>
+			current
+				? {
+						...current,
+						message: `${current.message} Reiniciamos las cantidades con la información actual. Revisalas antes de guardar.`,
+					}
+				: current,
+		);
+	}
+
+	async function retryRefresh() {
+		setIsRefreshing(true);
+		try {
+			await refreshAndRebuild();
+		} catch {
+			setRefreshFailed(true);
+		} finally {
+			setIsRefreshing(false);
+		}
+	}
+
+	async function handleSubmit(values: RentalAccessoryAssignmentFormValues) {
+		setAssignmentError(undefined);
+		try {
+			const body = toAssignRentalAccessoriesDto(
+				values,
+				snapshot.rental.version,
+				snapshot.rental.accessories,
+			);
+			await assignAccessories.mutateAsync({
+				rentalId: snapshot.rental.id,
+				body,
+			});
+			onClose();
+		} catch (error) {
+			const uiError = toAssignRentalAccessoriesUiError(error);
+			setAssignmentError(uiError);
+			if (uiError.shouldRefreshAvailability) {
+				setIsRefreshing(true);
+				try {
+					await refreshAndRebuild();
+				} catch {
+					setRefreshFailed(true);
+				} finally {
+					setIsRefreshing(false);
+				}
+			}
+		}
+	}
+
+	if (refreshFailed) {
+		return (
+			<div className="flex min-w-0 flex-1 flex-col items-center justify-center gap-4 px-4 py-12 text-center sm:px-6">
+				<AlertCircle className="size-8 text-red-500" />
+				<p className="max-w-md text-sm text-red-950" role="alert">
+					No pudimos actualizar el pedido después de un cambio. Reintentá la
+					actualización antes de guardar los accesorios.
+				</p>
+				<div className="flex gap-2">
+					<Button type="button" variant="outline" onClick={onClose}>
+						Cerrar
+					</Button>
+					<Button type="button" onClick={retryRefresh} disabled={isRefreshing}>
+						{isRefreshing ? "Actualizando..." : "Reintentar actualización"}
+					</Button>
+				</div>
+			</div>
+		);
+	}
+
+	const demandLines = snapshot.rental.selections.flatMap(
 		(selection) => selection.demandLines,
 	);
 	const defaultValues = createRentalAccessoryAssignmentFormDefaultValues({
-		defaults,
+		defaults: snapshot.defaults,
 		demandLines,
-		existingAccessories: rental.accessories,
+		existingAccessories: snapshot.rental.accessories,
 	});
 
 	if (defaultValues.groups.length === 0) {
 		return (
 			<div className="flex min-w-0 flex-1 flex-col">
+				{assignmentError ? (
+					<p
+						className="mx-4 mt-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-red-950 text-sm sm:mx-6"
+						role="alert"
+					>
+						{assignmentError.message}
+					</p>
+				) : null}
 				<div className="flex min-w-0 flex-1 items-center justify-center px-4 py-12 sm:px-6">
 					<div className="max-w-md text-center">
 						<PackagePlus className="mx-auto mb-3 size-9 text-neutral-300" />
@@ -150,16 +250,16 @@ function RentalAccessoryAssignmentSheetBody({
 	}
 
 	const sharedCapacityByEquipmentType =
-		createSharedAccessoryCapacityByEquipmentType(defaults);
+		createSharedAccessoryCapacityByEquipmentType(snapshot.defaults);
 
 	return (
 		<div className="flex min-h-0 min-w-0 flex-1 flex-col">
 			<div className="min-w-0 flex-1 overflow-y-auto px-4 py-6 sm:px-6">
 				<RentalAccessoryAssignmentForm
-					key={defaults.rentalOrderId}
+					key={snapshot.revision}
 					defaultValues={defaultValues}
 					sharedCapacityByEquipmentType={sharedCapacityByEquipmentType}
-					isPending={assignAccessories.isPending}
+					isPending={assignAccessories.isPending || isRefreshing}
 					error={assignmentError}
 					onSubmit={handleSubmit}
 					onCancel={onClose}

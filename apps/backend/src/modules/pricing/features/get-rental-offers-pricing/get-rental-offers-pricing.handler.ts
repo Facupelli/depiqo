@@ -1,6 +1,7 @@
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 
 import { PrismaService } from 'src/core/database/prisma.service';
+import { exactRateString } from '../../domain/value-objects/exact-rate-string';
 
 import { GetRentalOffersPricingQuery } from './get-rental-offers-pricing.query';
 
@@ -81,7 +82,7 @@ export class GetRentalOffersPricingHandler implements IQueryHandler<
           tiers: rentalOfferPricing.ratePlan.tiers.map((tier) => ({
             fromUnit: tier.fromUnit,
             toUnit: tier.toUnit,
-            pricePerUnit: tier.pricePerUnit.toString(),
+            pricePerUnit: exactRateString(tier.pricePerUnit),
           })),
         },
       })),

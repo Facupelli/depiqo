@@ -11,7 +11,7 @@ import { useState } from "react";
 import { buildR2PublicUrl } from "@/lib/r2-public-url";
 import type { StorefrontRentalOfferListViewItemDto } from "@/modules/catalog/rental-offers/storefront-rental-offer-list-view.schema";
 import { useRentalOfferCartState } from "@/modules/rental-commitment/cart/add-rental-offer/use-rental-offer-cart-state";
-import { formatCurrency } from "@/shared/utils/price.utils";
+import { formatExactCurrencyRate } from "@/shared/utils/price.utils";
 
 type PackageComposition = NonNullable<
 	StorefrontRentalOfferListViewItemDto["packageComposition"]
@@ -86,9 +86,7 @@ export function PackageCard({
 }) {
 	const [isExpanded, setIsExpanded] = useState(false);
 	const cart = useRentalOfferCartState(branchId, product);
-	const unitPrice = product.pricing
-		? Number(product.pricing.ratePlan.tiers[0].pricePerUnit)
-		: null;
+	const unitPrice = product.pricing?.ratePlan.tiers[0].pricePerUnit ?? null;
 	const displayCurrency = product.pricing?.ratePlan.currency;
 	const productImage = buildR2PublicUrl(product.image, "catalog");
 	const composition =
@@ -135,8 +133,8 @@ export function PackageCard({
 					<div className="shrink-0 text-right">
 						{unitPrice != null && product.pricing && displayCurrency ? (
 							<>
-								<span className="font-bold">
-									{formatCurrency(
+								<span className="font-bold break-all">
+									{formatExactCurrencyRate(
 										unitPrice,
 										displayCurrency,
 										locale ?? "es-AR",

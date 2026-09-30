@@ -1,14 +1,6 @@
 import { ApplicationError, ApplicationErrorContext } from 'src/core/errors/application-error';
 
-import {
-  ActiveOwnerContractNotFoundError,
-  AssetInventoryError,
-  AssetOwnerNotFoundError,
-  DuplicateEquipmentTypeNameError,
-  InvalidAssetFieldError,
-  InvalidEquipmentTypeFieldError,
-  MultipleActiveOwnerContractsError,
-} from '../../domain/errors/asset-inventory.errors';
+import { AssetInventoryAuthoringError } from '../../public-api/asset-inventory-authoring.public-api';
 
 export type CreateEquipmentTypeErrorCode =
   | 'asset_inventory.category_not_found'
@@ -42,44 +34,27 @@ export function mapTenantValidationError(error: unknown): CreateEquipmentTypeErr
   );
 }
 
-export function mapAssetInventoryError(error: AssetInventoryError): CreateEquipmentTypeError {
-  if (error instanceof InvalidEquipmentTypeFieldError) {
-    return createEquipmentTypeError('asset_inventory.invalid_equipment_type_field', error.message, error, {
-      field: error.field,
-      reason: error.reason,
-    });
+export function mapAuthoringError(error: AssetInventoryAuthoringError): CreateEquipmentTypeError {
+  const codes: Partial<Record<AssetInventoryAuthoringError['code'], CreateEquipmentTypeErrorCode>> = {
+    CategoryNotFound: 'asset_inventory.category_not_found',
+    CategoryInactive: 'asset_inventory.category_inactive',
+    InvalidEquipmentTypeField: 'asset_inventory.invalid_equipment_type_field',
+    DuplicateEquipmentTypeName: 'asset_inventory.duplicate_equipment_type_name',
+    InvalidAssetField: 'asset_inventory.invalid_asset_field',
+    AssetOwnerNotFound: 'asset_inventory.asset_owner_not_found',
+    ActiveOwnerContractNotFound: 'asset_inventory.active_owner_contract_not_found',
+    MultipleActiveOwnerContracts: 'asset_inventory.multiple_active_owner_contracts',
+  };
+  if (
+    error.code === 'TenantUnavailable' ||
+    error.code === 'BranchNotFound' ||
+    error.code === 'BranchInactive' ||
+    error.code === 'BranchDeleted' ||
+    error.code === 'BranchReferenceUnavailable'
+  ) {
+    return mapTenantValidationError(error);
   }
-
-  if (error instanceof DuplicateEquipmentTypeNameError) {
-    return createEquipmentTypeError('asset_inventory.duplicate_equipment_type_name', error.message, error, {
-      name: error.name,
-    });
-  }
-
-  if (error instanceof InvalidAssetFieldError) {
-    return createEquipmentTypeError('asset_inventory.invalid_asset_field', error.message, error, {
-      field: error.field,
-      reason: error.reason,
-    });
-  }
-
-  if (error instanceof AssetOwnerNotFoundError) {
-    return createEquipmentTypeError('asset_inventory.asset_owner_not_found', error.message, error, {
-      ownerId: error.ownerId,
-    });
-  }
-
-  if (error instanceof ActiveOwnerContractNotFoundError) {
-    return createEquipmentTypeError('asset_inventory.active_owner_contract_not_found', error.message, error, {
-      ownerId: error.ownerId,
-    });
-  }
-
-  if (error instanceof MultipleActiveOwnerContractsError) {
-    return createEquipmentTypeError('asset_inventory.multiple_active_owner_contracts', error.message, error, {
-      ownerId: error.ownerId,
-    });
-  }
-
-  throw error;
+  const code = codes[error.code];
+  if (!code) throw error;
+  return createEquipmentTypeError(code, error.message, error, error.details);
 }

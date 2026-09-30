@@ -3,6 +3,7 @@ import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { err, ok, Result } from 'neverthrow';
 
 import { PrismaService } from 'src/core/database/prisma.service';
+import { exactRateString } from '../../domain/value-objects/exact-rate-string';
 
 import { getRatePlanDetailError, GetRatePlanDetailError } from './get-rate-plan-detail.errors';
 import { GetRatePlanDetailQuery } from './get-rate-plan-detail.query';
@@ -104,7 +105,7 @@ export class GetRatePlanDetailHandler implements IQueryHandler<
         id: tier.id,
         fromUnit: tier.fromUnit,
         toUnit: tier.toUnit,
-        pricePerUnit: tier.pricePerUnit.toString(),
+        pricePerUnit: exactRateString(tier.pricePerUnit),
       })),
       assignments,
       assignmentCount: assignments.length,

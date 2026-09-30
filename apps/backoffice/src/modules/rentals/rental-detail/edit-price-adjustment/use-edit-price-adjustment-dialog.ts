@@ -1,3 +1,4 @@
+import { PayableTargetTotalSchema } from "@repo/api-contracts";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -155,7 +156,7 @@ export function useEditPriceAdjustmentDialog({
 
 	const parsedTarget = parsePlainDecimal(targetTotal);
 	const parsedBasis = parsePlainDecimal(remoteBasis);
-	const isTargetValid = parsedTarget !== null && parsedTarget.units > 0n;
+	const isTargetValid = PayableTargetTotalSchema.safeParse(targetTotal).success;
 	const currentAdjustment = pricing.manualPricingAdjustment;
 	const parsedCurrentTarget = currentAdjustment
 		? parsePlainDecimal(currentAdjustment.targetTotal)

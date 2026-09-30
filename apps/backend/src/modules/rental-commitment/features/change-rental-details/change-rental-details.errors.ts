@@ -6,7 +6,8 @@ export type ChangeRentalDetailsErrorCode =
   | 'rental_commitment.rental_cannot_be_edited_from_status'
   | 'rental_commitment.rental_period_ended'
   | 'rental_commitment.invalid_rental_field'
-  | 'rental_commitment.invalid_pricing_input';
+  | 'rental_commitment.invalid_pricing_input'
+  | 'rental_commitment.unsupported_pricing_currency';
 
 export interface ChangeRentalDetailsError extends ApplicationError {
   code: ChangeRentalDetailsErrorCode;

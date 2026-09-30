@@ -56,6 +56,7 @@ function toReplaceEquipmentTypeAccessoryDefaultsProblem(
     'asset_inventory.accessory_equipment_type_not_found': 'accessoryEquipmentTypeId',
     'asset_inventory.duplicate_accessory_default_in_request': 'accessoryEquipmentTypeId',
     'asset_inventory.accessory_default_self_reference_not_allowed': 'equipmentTypeId',
+    'asset_inventory.invalid_accessory_default_quantity': 'accessoryEquipmentTypeId',
   };
   const contextKey = contextKeyByCode[error.code];
 
@@ -99,6 +100,12 @@ const replaceEquipmentTypeAccessoryDefaultsProblemMap = {
     title: 'Accessory default self-reference not allowed',
     status: HttpStatus.UNPROCESSABLE_ENTITY,
     detail: 'An equipment type cannot be configured as its own accessory default.',
+  },
+  'asset_inventory.invalid_accessory_default_quantity': {
+    type: createProblemType('asset_inventory.invalid_accessory_default_quantity'),
+    title: 'Invalid accessory default quantity',
+    status: HttpStatus.UNPROCESSABLE_ENTITY,
+    detail: 'Accessory default quantity must be a positive integer.',
   },
 } satisfies Record<
   ReplaceEquipmentTypeAccessoryDefaultsErrorCode,

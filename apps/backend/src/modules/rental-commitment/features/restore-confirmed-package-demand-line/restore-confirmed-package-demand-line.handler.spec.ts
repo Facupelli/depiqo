@@ -77,7 +77,7 @@ describe('RestoreConfirmedPackageDemandLineHandler', () => {
     } as RentalAssetAllocationService;
     // SAFETY: The preceding test setup and assertions establish this value shape before the test inspects it.
     const splitCalculator = {
-      calculate: vi.fn().mockReturnValue({ splits: [] }),
+      calculate: vi.fn().mockReturnValue([]),
     } as RentalOwnerSplitCalculator;
     // SAFETY: The preceding test setup and assertions establish this value shape before the test inspects it.
     const unitOfWork = {
@@ -143,7 +143,7 @@ describe('RestoreConfirmedPackageDemandLineHandler', () => {
       ],
       operationTime,
     });
-    expect(splitCalculator.calculate).toHaveBeenCalled();
+    expect(splitCalculator.calculate).toHaveBeenCalledWith(rental);
     expect(rentalRepository.save).toHaveBeenCalledWith(rental, {
       expectedVersion: 7,
       ownerSplits: [],

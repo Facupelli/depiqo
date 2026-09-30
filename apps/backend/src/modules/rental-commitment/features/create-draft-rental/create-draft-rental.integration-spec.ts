@@ -23,6 +23,8 @@ import { utcDate } from '../../../../../test/support/time';
 import { RentalPeriod } from '../../domain/value-objects/rental-period.value-object';
 import { CreateDraftRentalCommand } from './create-draft-rental.command';
 import { CreateDraftRentalServiceResult } from './create-draft-rental.service';
+import { UpdateDraftRentalCommand } from '../update-draft-rental/update-draft-rental.command';
+import { UpdateDraftRentalResult } from '../update-draft-rental/update-draft-rental.handler';
 
 const period = () => new RentalPeriod(utcDate(2030, 1, 7, 10), utcDate(2030, 1, 9, 10));
 const deliveryLocationId = 'test-delivery-location';
@@ -346,6 +348,126 @@ describe('CreateDraftRental integration', () => {
     expect(persisted.rental.acceptedCustomerTotal).toBeNull();
   });
 
+  it('updates a draft through shared proposal resolution without changing its identity', async () => {
+    const setup = await scenario();
+    const original = await offer(setup);
+    const replacement = await offer({ ...setup, quantitiesPerItem: [2, 3] });
+    const created = await create({ ...setup, selectedOffers: [{ rentalOfferId: original.offer.id, quantity: 1 }] });
+    expect(created.isOk()).toBe(true);
+    if (created.isErr()) return;
+    const before = await state(created.value.rentalId);
+
+    const updated = await commands.execute<UpdateDraftRentalCommand, UpdateDraftRentalResult>(
+      new UpdateDraftRentalCommand({
+        tenantId: setup.tenantId,
+        tenantUserId: setup.tenantUserId,
+        rentalId: created.value.rentalId,
+        expectedVersion: before.rental.version,
+        branchId: setup.branchId,
+        rentalCustomerId: setup.customerId,
+        period: period(),
+        selectedOffers: [{ rentalOfferId: replacement.offer.id, quantity: 2 }],
+        fulfillmentMethod: 'PICKUP',
+        manualPricingAdjustment: { mode: 'TARGET_TOTAL', targetTotal: '125', reason: 'Updated quote' },
+      }),
+    );
+    expect(updated.isOk()).toBe(true);
+    if (updated.isErr()) return;
+
+    const after = await state(created.value.rentalId);
+    expect(after.rental.version).toBe(updated.value.version);
+    expect(after.rental.selections).toEqual([
+      expect.objectContaining({ rentalOfferId: replacement.offer.id, quantity: 2 }),
+    ]);
+    expect(after.rental.demandLines.map((line) => line.quantity).sort()).toEqual([4, 6]);
+    expect(after.rental.priceSnapshot).toEqual(
+      expect.objectContaining({
+        context: 'DRAFT',
+        manualPricingAdjustment: expect.objectContaining({
+          targetTotal: '125.00',
+          reason: 'Updated quote',
+          setByTenantUserId: setup.tenantUserId,
+        }),
+      }),
+    );
+    expect(after.rental.assignedAssets).toEqual([]);
+    expect(after.blocks).toEqual([]);
+  });
+
+  it('leaves a draft unchanged when updated proposal pricing is invalid', async () => {
+    const setup = await scenario();
+    const catalog = await offer(setup);
+    const created = await create({ ...setup, selectedOffers: [{ rentalOfferId: catalog.offer.id, quantity: 1 }] });
+    expect(created.isOk()).toBe(true);
+    if (created.isErr()) return;
+    const before = await state(created.value.rentalId);
+
+    const updated = await commands.execute<UpdateDraftRentalCommand, UpdateDraftRentalResult>(
+      new UpdateDraftRentalCommand({
+        tenantId: setup.tenantId,
+        tenantUserId: setup.tenantUserId,
+        rentalId: created.value.rentalId,
+        expectedVersion: before.rental.version,
+        branchId: setup.branchId,
+        rentalCustomerId: setup.customerId,
+        period: period(),
+        selectedOffers: [{ rentalOfferId: catalog.offer.id, quantity: 2 }],
+        fulfillmentMethod: 'PICKUP',
+        manualPricingAdjustment: { mode: 'TARGET_TOTAL', targetTotal: '-1' },
+      }),
+    );
+    expect(updated.isErr() && updated.error.code).toBe('rental_commitment.invalid_pricing_input');
+    const after = await state(created.value.rentalId);
+    expect(after.rental.version).toBe(before.rental.version);
+    expect(after.rental.selections).toEqual(before.rental.selections);
+    expect(after.rental.demandLines).toEqual(before.rental.demandLines);
+    expect(after.rental.priceSnapshot).toEqual(before.rental.priceSnapshot);
+  });
+
+  it('re-quotes delivery while keeping an existing draft destination', async () => {
+    const setup = await scenario({
+      operationalLocationFormattedAddress: '1 Branch Road',
+      operationalLocationLatitude: 40.7,
+      operationalLocationLongitude: -74,
+    });
+    await persistServiceableBranchDeliveryConfiguration({ prisma, ...setup });
+    const catalog = await offer(setup);
+    const created = await create({
+      ...setup,
+      selectedOffers: [{ rentalOfferId: catalog.offer.id, quantity: 1 }],
+      fulfillmentMethod: 'DELIVERY',
+      deliveryDetails: { address: deliveryDisplayAddress, locationId: deliveryLocationId },
+    });
+    expect(created.isOk()).toBe(true);
+    if (created.isErr()) return;
+    const before = await state(created.value.rentalId);
+
+    const updated = await commands.execute<UpdateDraftRentalCommand, UpdateDraftRentalResult>(
+      new UpdateDraftRentalCommand({
+        tenantId: setup.tenantId,
+        tenantUserId: setup.tenantUserId,
+        rentalId: created.value.rentalId,
+        expectedVersion: before.rental.version,
+        branchId: setup.branchId,
+        rentalCustomerId: setup.customerId,
+        period: period(),
+        selectedOffers: [{ rentalOfferId: catalog.offer.id, quantity: 1 }],
+        fulfillmentMethod: 'DELIVERY',
+        deliveryIntent: { type: 'KEEP_CURRENT' },
+      }),
+    );
+    expect(updated.isOk()).toBe(true);
+    if (updated.isErr()) return;
+
+    const after = await state(created.value.rentalId);
+    expect(after.rental.deliveryDetails).toMatchObject({
+      address: deliveryDisplayAddress,
+      formattedAddress: deliveryDisplayAddress,
+    });
+    expect(after.rental.deliverySnapshot).toMatchObject({ deliveryTotal: '50' });
+    expect(after.rental.status).toBe('DRAFT');
+  });
+
   it('persists a valid target-total adjustment', async () => {
     const setup = await scenario();
     const catalog = await offer(setup);
@@ -437,6 +559,7 @@ describe('CreateDraftRental integration', () => {
     const catalog = await offer({ ...setup, ...catalogOverrides });
     const result = await create({ ...setup, selectedOffers: [{ rentalOfferId: catalog.offer.id, quantity: 1 }] });
     expect(result.isErr() && result.error.code).toBe(code);
+    if (result.isErr()) expect(result.error.context?.rentalOfferId).toBeUndefined();
     expect(await rentalCount(setup)).toBe(0);
   });
 

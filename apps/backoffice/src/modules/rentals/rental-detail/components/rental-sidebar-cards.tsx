@@ -398,6 +398,10 @@ function RentalFinancialsCard() {
 										{formatMoney(line.total, pricing.currency)}
 									</span>
 								</div>
+								<p className="pl-3 text-[11px] text-neutral-500 break-all">
+									Tarifa unitaria registrada: {line.pricePerUnit}{" "}
+									{pricing.currency}
+								</p>
 								{line.appliedAdjustments.map((adjustment) => (
 									<div
 										key={`${adjustment.promotionId}-${adjustment.name}`}

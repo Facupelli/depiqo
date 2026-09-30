@@ -26,6 +26,35 @@ describe("toAssignRentalAccessoriesUiError", () => {
 		});
 	});
 
+	it.each([
+		{
+			code: "rental_commitment.rental_status_does_not_allow_accessory_assignment",
+			message:
+				"El pedido debe estar confirmado para asignar accesorios. Actualizá la página para ver su estado.",
+		},
+		{
+			code: "rental_commitment.rental_period_ended",
+			message:
+				"No se pueden asignar accesorios porque el período del alquiler ya terminó.",
+		},
+	])(
+		"explains $code without suggesting an invalid retry",
+		({ code, message }) => {
+			const error = new ProblemDetailsError({
+				type: `https://api.depiqo.com/problems/${code.replace(".", "/")}`,
+				title: "Assignment not allowed",
+				status: 409,
+				detail: "ignored",
+				code,
+			});
+
+			expect(toAssignRentalAccessoriesUiError(error)).toEqual({
+				message,
+				shouldRefreshAvailability: false,
+			});
+		},
+	);
+
 	it("maps an availability race to sheet-level feedback only", () => {
 		const error = new ProblemDetailsError({
 			type: "https://api.depiqo.com/problems/rental_commitment/asset_availability_changed",

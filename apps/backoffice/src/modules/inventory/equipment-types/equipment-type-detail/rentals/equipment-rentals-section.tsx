@@ -36,7 +36,7 @@ import { usePricePlans } from "@/modules/pricing/price-plans/public";
 import { ArchiveProductAction } from "@/modules/products/archive-product/ArchiveProductAction";
 import { AddBranchAvailabilityDialog } from "@/modules/products/branch-availability/add-branch-availability/AddBranchAvailabilityDialog";
 import { ProductStatusBadge } from "@/modules/products/product-status-badge";
-import { formatMoney } from "@/shared/utils/formatters";
+import { formatExactCurrencyRate } from "@/shared/utils/formatters";
 import { useEquipmentTypeDetail } from "../equipment-type-detail-context";
 import { useEquipmentTypeRentalUsages } from "./equipment-type-rental-usages.queries";
 import { ManageRentalBranchesDialog } from "./manage-rental-branches-dialog";
@@ -517,9 +517,6 @@ function RentalSectionSkeleton() {
 
 const billingUnitLabels = { HOUR: "hora", DAY: "día", WEEK: "semana" } as const;
 function formatStartingPrice(price: EquipmentTypeRentalUsageStartingPriceDto) {
-	const amount = Number(price.amount);
-	const money = Number.isFinite(amount)
-		? formatMoney(price.amount, price.currency)
-		: `${price.currency} ${price.amount}`;
+	const money = formatExactCurrencyRate(price.amount, price.currency);
 	return `Desde ${money}/${billingUnitLabels[price.billingUnit]}`;
 }

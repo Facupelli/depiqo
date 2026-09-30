@@ -2,6 +2,8 @@ export * from "./attach-rate-plan-to-rental-offer.contract";
 export * from "./billing-unit.schema";
 export * from "./calculate-cart-price.contract";
 export * from "./calculate-draft-rental-price.contract";
+export * from "./payable-target-total.schema";
+export * from "./pricing-currency.schema";
 export * from "./correct-rate-plan.contract";
 export * from "./detach-offer-pricing.contract";
 export * from "./create-pricing-for-rental-offer.contract";

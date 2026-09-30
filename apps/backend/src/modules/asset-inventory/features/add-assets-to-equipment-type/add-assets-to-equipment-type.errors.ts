@@ -1,5 +1,7 @@
 import { ApplicationError, ApplicationErrorContext } from 'src/core/errors/application-error';
 
+import type { InventoryCreationError } from '../../public-api/asset-inventory-authoring.public-api.service';
+
 import {
   ActiveOwnerContractNotFoundError,
   AssetInventoryError,
@@ -36,6 +38,11 @@ export function mapTenantValidationError(error: unknown): AddAssetsToEquipmentTy
     'The tenant or selected branches are not available for asset creation.',
     error,
   );
+}
+
+export function mapInventoryCreationError(error: InventoryCreationError): AddAssetsToEquipmentTypeError {
+  if (!(error instanceof AssetInventoryError)) return mapTenantValidationError(error);
+  return mapAssetInventoryError(error);
 }
 
 export function mapAssetInventoryError(error: AssetInventoryError): AddAssetsToEquipmentTypeError {

@@ -32,23 +32,14 @@ export class DiscountAllocationService {
 
     const clampedDiscount = input.discount.isGreaterThan(discountableTotal) ? discountableTotal : input.discount;
 
-    const ratios = nonZeroLines.map((line) => this.toAllocationRatio(line.total));
-
-    const allocatedAmounts = clampedDiscount.allocateByRatios(ratios);
+    const allocatedAmounts = clampedDiscount.allocateByRatios(
+      nonZeroLines.map((line) => line.total.toDecimal()),
+      nonZeroLines.map((line) => line.rentalOfferId),
+    );
 
     return nonZeroLines.map((line, index) => ({
       line,
       amount: allocatedAmounts[index],
     }));
-  }
-
-  private toAllocationRatio(amount: Money): number {
-    const cents = amount.toDecimal().mul(100).floor().toNumber();
-
-    if (!Number.isSafeInteger(cents)) {
-      throw new Error(`Money amount is too large to be used as an allocation ratio: ${amount.toString()}`);
-    }
-
-    return cents;
   }
 }

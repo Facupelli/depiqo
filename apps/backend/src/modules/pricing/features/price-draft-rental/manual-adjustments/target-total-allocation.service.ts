@@ -1,4 +1,8 @@
-import { InvalidPricingInputError } from '../../../pricing-engine/errors/pricing.errors';
+import {
+  InvalidPricingInputError,
+  UnsupportedPricingCurrencyError,
+} from '../../../pricing-engine/errors/pricing.errors';
+import { isPayableCurrency } from '../../../domain/value-objects/payable-currency';
 import { Money } from '../../../pricing-engine/money/money.value-object';
 import {
   TargetTotalAllocationInput,
@@ -11,25 +15,30 @@ export class TargetTotalAllocationService {
     this.validateInput(input);
 
     const targetTotal = this.parseInputMoney(input.targetTotal, input.currency, 'Target total');
-    if (targetTotal.isZero()) {
-      throw new InvalidPricingInputError('Target total must be greater than zero.');
+    if (targetTotal.isZero() || !targetTotal.isPayable()) {
+      throw new InvalidPricingInputError('Target total must be positive and exactly representable in cents.');
     }
 
     const lines = input.lines.map((line) => ({
       rentalSelectionId: line.rentalSelectionId,
+      rentalOfferId: line.rentalOfferId,
       currentTotal: this.parseInputMoney(line.currentTotal, input.currency, 'Current line total'),
     }));
 
+    if (lines.some((line) => !line.currentTotal.isPayable())) {
+      throw new InvalidPricingInputError('Current line totals must be exactly representable in cents.');
+    }
     const currentTotal = lines.reduce((total, line) => total.add(line.currentTotal), Money.zero(input.currency));
 
     const finalLineTotals = currentTotal.isZero()
       ? this.allocateEvenly({
           targetTotal,
-          lineCount: lines.length,
+          keys: lines.map((line) => line.rentalOfferId),
         })
       : this.allocateProportionally({
           targetTotal,
           currentLineTotals: lines.map((line) => line.currentTotal),
+          keys: lines.map((line) => line.rentalOfferId),
         });
 
     const resultLines = lines.map((line, index): TargetTotalAllocationLineResult => {
@@ -58,14 +67,18 @@ export class TargetTotalAllocationService {
     };
   }
 
-  private allocateProportionally(input: { targetTotal: Money; currentLineTotals: Money[] }): Money[] {
-    const ratios = input.currentLineTotals.map((total) => this.toAllocationRatio(total));
-
-    return input.targetTotal.allocateByRatios(ratios);
+  private allocateProportionally(input: { targetTotal: Money; currentLineTotals: Money[]; keys: string[] }): Money[] {
+    return input.targetTotal.allocateByRatios(
+      input.currentLineTotals.map((total) => total.toDecimal()),
+      input.keys,
+    );
   }
 
-  private allocateEvenly(input: { targetTotal: Money; lineCount: number }): Money[] {
-    return input.targetTotal.allocateByRatios(Array.from({ length: input.lineCount }, () => 1));
+  private allocateEvenly(input: { targetTotal: Money; keys: string[] }): Money[] {
+    return input.targetTotal.allocateByRatios(
+      input.keys.map(() => 1),
+      input.keys,
+    );
   }
 
   private calculateOrderAdjustment(input: {
@@ -103,26 +116,18 @@ export class TargetTotalAllocationService {
     } satisfies TargetTotalAllocationLineResult['adjustment'];
   }
 
-  private toAllocationRatio(amount: Money): number {
-    const cents = amount.toDecimal().mul(100).floor().toNumber();
-
-    if (!Number.isSafeInteger(cents)) {
-      throw new Error(`Money amount is too large to be used as an allocation ratio: ${amount.toString()}`);
-    }
-
-    return cents;
-  }
-
   private validateInput(input: TargetTotalAllocationInput): void {
     if (!input.currency.trim()) {
       throw new InvalidPricingInputError('Currency is required for target total allocation.');
     }
+    if (!isPayableCurrency(input.currency)) throw new UnsupportedPricingCurrencyError(input.currency);
 
     if (input.lines.length === 0) {
       throw new InvalidPricingInputError('At least one line is required for target total allocation.');
     }
 
     const uniqueSelectionIds = new Set<string>();
+    const uniqueOfferIds = new Set<string>();
 
     for (const line of input.lines) {
       if (!line.rentalSelectionId.trim()) {
@@ -136,6 +141,13 @@ export class TargetTotalAllocationService {
       }
 
       uniqueSelectionIds.add(line.rentalSelectionId);
+
+      if (!line.rentalOfferId.trim() || uniqueOfferIds.has(line.rentalOfferId)) {
+        throw new InvalidPricingInputError(
+          'Rental offer ids must be distinct and nonempty for target total allocation.',
+        );
+      }
+      uniqueOfferIds.add(line.rentalOfferId);
     }
   }
 

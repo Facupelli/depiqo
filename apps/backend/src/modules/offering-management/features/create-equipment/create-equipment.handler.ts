@@ -68,6 +68,8 @@ export class CreateEquipmentHandler implements ICommandHandler<CreateEquipmentCo
 
 function mapAssetInventoryError(error: AssetInventoryAuthoringError): CreateEquipmentError {
   switch (error.code) {
+    case 'TenantUnavailable':
+      return createEquipmentError('offering_setup.tenant_unavailable', error.message, error);
     case 'InvalidEquipmentTypeField':
     case 'InvalidAssetField':
     case 'CategoryNotFound':

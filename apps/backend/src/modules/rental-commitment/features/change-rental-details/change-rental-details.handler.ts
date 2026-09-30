@@ -20,7 +20,6 @@ import {
   RentalPeriodHasEndedError,
 } from '../../domain/errors/rental-commitment.errors';
 import { RentalStatus } from '../../domain/rental-status';
-import { Rental } from '../../domain/rental.aggregate';
 import {
   AcceptedRentalPricingBreakdown,
   AcceptedRentalPricingV3Snapshot,
@@ -28,7 +27,7 @@ import {
 } from '../../domain/value-objects/accepted-pricing-snapshot.type';
 import { ConfirmedPriceSnapshot } from '../../domain/value-objects/confirmed-price-snapshot.value-object';
 import { JsonValue } from '../../domain/value-objects/json-snapshot.value-object';
-import { getConfirmedPriceSnapshotForOwnerSplits } from '../../owner-split/confirmed-price-snapshot-for-owner-splits';
+import { Rental } from '../../domain/rental.aggregate';
 import { RentalOwnerSplitCalculator } from '../../owner-split/rental-owner-split-calculator';
 import { RentalOwnerSplitDraft } from '../../owner-split/owner-split-calculator.types';
 import { RentalRepository } from '../../persistence/rental.repository';
@@ -119,7 +118,7 @@ export class ChangeRentalDetailsHandler implements ICommandHandler<
       if (changed.isErr()) return err(this.map(changed.error, context));
 
       let ownerSplits: RentalOwnerSplitDraft[] | undefined;
-      if (change.pricingChanged) ownerSplits = this.calculateOwnerSplits(current);
+      if (change.pricingChanged) ownerSplits = this.splitCalculator.calculate(current);
 
       const saved = await this.rentals.save(current, {
         persistence: 'DETAILS',
@@ -158,6 +157,7 @@ export class ChangeRentalDetailsHandler implements ICommandHandler<
       targetTotal: input.adjustment.targetTotal,
       lines: input.snapshot.calculated.lines.map((line) => ({
         lineReference: line.rentalSelectionId,
+        rentalOfferId: line.rentalOfferId,
         currentTotal: line.total,
       })),
     });
@@ -209,6 +209,7 @@ export class ChangeRentalDetailsHandler implements ICommandHandler<
   }): Promise<Result<AcceptedRentalPricingV3Snapshot, ChangeRentalDetailsError>> {
     const composition = await this.pricingCalculation.calculateInsuranceForEquipmentPrice({
       tenantId: input.tenantId,
+      currency: input.snapshot.calculated.currency,
       insuranceSelected: input.insuranceSelected,
       equipmentSubtotalBeforeDiscounts: input.snapshot.calculated.subtotal,
       equipmentTotal: input.snapshot.final.total,
@@ -239,27 +240,6 @@ export class ChangeRentalDetailsHandler implements ICommandHandler<
     };
   }
 
-  private calculateOwnerSplits(rental: Rental): RentalOwnerSplitDraft[] {
-    const snapshot = getConfirmedPriceSnapshotForOwnerSplits(rental.confirmedPriceSnapshot);
-    return this.splitCalculator.calculate({
-      tenantId: rental.tenantId,
-      rentalId: rental.id,
-      currency: snapshot.currency,
-      selections: rental.currentSelections.map(({ id }) => ({ id })),
-      demandLines: rental.currentDemandLines.map((line) => ({
-        id: line.id,
-        sourceSelectionId: line.rentalSelectionId,
-      })),
-      fulfilledAssets: rental.currentAssignedAssets.map((assignment) => ({
-        id: assignment.id,
-        rentalDemandLineId: assignment.rentalDemandLineId,
-        assetId: assignment.assetId,
-        ownershipSnapshot: assignment.ownershipSnapshot.toJSON(),
-      })),
-      priceLines: snapshot.lines.map((line) => ({ rentalSelectionId: line.rentalSelectionId, netAmount: line.total })),
-    }).splits;
-  }
-
   private error(
     code: ChangeRentalDetailsError['code'],
     message: string,
@@ -284,6 +264,12 @@ export class ChangeRentalDetailsHandler implements ICommandHandler<
       return this.error('rental_commitment.rental_period_ended', error.message, context, error);
     if (error instanceof RentalInvalidFieldError)
       return this.error('rental_commitment.invalid_rental_field', error.message, context, error);
+    if (
+      (error instanceof PricingTargetTotalAdjustmentError &&
+        error.code === 'pricing_target_total_adjustment.unsupported_currency') ||
+      (error instanceof PricingCalculationError && error.code === 'pricing_calculation.unsupported_currency')
+    )
+      return this.error('rental_commitment.unsupported_pricing_currency', error.message, context, error);
     if (
       error instanceof PricingTargetTotalAdjustmentError ||
       error instanceof PricingCalculationError ||

@@ -4,6 +4,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { PackageOpen } from "lucide-react";
 import type { ReactNode } from "react";
 import { buildR2PublicUrl } from "@/lib/r2-public-url";
+import { formatExactCurrencyRate } from "@/shared/utils/formatters";
 
 const billingUnitLabels = {
 	HOUR: "hora",
@@ -32,7 +33,7 @@ export function getEquipmentRentalSummaryLabel(
 
 	if (startingPrice) {
 		facts.push(
-			`Desde ${formatCurrency(startingPrice.amount, startingPrice.currency)}/${billingUnitLabels[startingPrice.billingUnit]}`,
+			`Desde ${formatExactCurrencyRate(startingPrice.amount, startingPrice.currency)}/${billingUnitLabels[startingPrice.billingUnit]}`,
 		);
 	}
 
@@ -132,15 +133,4 @@ export function createEquipmentListColumns({
 				]
 			: []),
 	];
-}
-
-function formatCurrency(amount: string, currency: string): string {
-	const numericAmount = Number(amount);
-	if (!Number.isFinite(numericAmount)) return `${currency} ${amount}`;
-
-	return new Intl.NumberFormat("es-AR", {
-		style: "currency",
-		currency,
-		maximumFractionDigits: 2,
-	}).format(numericAmount);
 }

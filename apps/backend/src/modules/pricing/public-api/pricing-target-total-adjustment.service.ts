@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { err, ok, Result } from 'neverthrow';
 
 import { TargetTotalAllocationService } from '../features/price-draft-rental/manual-adjustments/target-total-allocation.service';
-import { InvalidPricingInputError } from '../pricing-engine/errors/pricing.errors';
+import { InvalidPricingInputError, UnsupportedPricingCurrencyError } from '../pricing-engine/errors/pricing.errors';
 import {
   PricingTargetTotalAdjustment,
   PricingTargetTotalAdjustmentError,
@@ -23,6 +23,7 @@ export class PricingTargetTotalAdjustmentService extends PricingTargetTotalAdjus
         targetTotal: input.targetTotal,
         lines: input.lines.map((line) => ({
           rentalSelectionId: line.lineReference,
+          rentalOfferId: line.rentalOfferId,
           currentTotal: line.currentTotal,
         })),
       });
@@ -41,6 +42,15 @@ export class PricingTargetTotalAdjustmentService extends PricingTargetTotalAdjus
         })),
       });
     } catch (error) {
+      if (error instanceof UnsupportedPricingCurrencyError) {
+        return err(
+          new PricingTargetTotalAdjustmentError(
+            error.message,
+            { cause: error },
+            'pricing_target_total_adjustment.unsupported_currency',
+          ),
+        );
+      }
       if (error instanceof InvalidPricingInputError) {
         return err(new PricingTargetTotalAdjustmentError(error.message, { cause: error }));
       }

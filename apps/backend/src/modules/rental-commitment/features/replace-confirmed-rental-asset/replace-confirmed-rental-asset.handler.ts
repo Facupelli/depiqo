@@ -19,10 +19,7 @@ import {
   RentalPeriodHasEndedError,
 } from '../../domain/errors/rental-commitment.errors';
 import { RentalStatus } from '../../domain/rental-status';
-import { Rental } from '../../domain/rental.aggregate';
 import { RentalPeriod } from '../../domain/value-objects/rental-period.value-object';
-import { getConfirmedPriceSnapshotForOwnerSplits } from '../../owner-split/confirmed-price-snapshot-for-owner-splits';
-import { RentalOwnerSplitDraft } from '../../owner-split/owner-split-calculator.types';
 import { RentalOwnerSplitCalculator } from '../../owner-split/rental-owner-split-calculator';
 import { RentalRepository } from '../../persistence/rental.repository';
 import { ReplaceConfirmedRentalAssetCommand } from './replace-confirmed-rental-asset.command';
@@ -186,7 +183,7 @@ export class ReplaceConfirmedRentalAssetHandler implements ICommandHandler<
         });
         if (replacement.isErr()) return err(this.toApplicationError(replacement.error, context));
 
-        const ownerSplits = this.calculateOwnerSplits(currentRental);
+        const ownerSplits = this.rentalOwnerSplitCalculator.calculate(currentRental);
 
         const saved = await this.rentalRepository.save(currentRental, {
           expectedVersion: command.props.expectedVersion,
@@ -220,31 +217,6 @@ export class ReplaceConfirmedRentalAssetHandler implements ICommandHandler<
       }
       throw error;
     }
-  }
-
-  private calculateOwnerSplits(rental: Rental): RentalOwnerSplitDraft[] {
-    const priceSnapshot = getConfirmedPriceSnapshotForOwnerSplits(rental.confirmedPriceSnapshot);
-
-    return this.rentalOwnerSplitCalculator.calculate({
-      tenantId: rental.tenantId,
-      rentalId: rental.id,
-      currency: priceSnapshot.currency,
-      selections: rental.currentSelections.map((selection) => ({ id: selection.id })),
-      demandLines: rental.currentDemandLines.map((line) => ({
-        id: line.id,
-        sourceSelectionId: line.rentalSelectionId,
-      })),
-      fulfilledAssets: rental.currentAssignedAssets.map((assignment) => ({
-        id: assignment.id,
-        rentalDemandLineId: assignment.rentalDemandLineId,
-        assetId: assignment.assetId,
-        ownershipSnapshot: assignment.ownershipSnapshot.toJSON(),
-      })),
-      priceLines: priceSnapshot.lines.map((line) => ({
-        rentalSelectionId: line.rentalSelectionId,
-        netAmount: line.total,
-      })),
-    }).splits;
   }
 
   private toApplicationError(error: unknown, context: ApplicationErrorContext): ReplaceConfirmedRentalAssetError {

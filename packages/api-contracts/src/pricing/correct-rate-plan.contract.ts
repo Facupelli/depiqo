@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import type { ApiContract } from "../api-contract";
 import { CreateRatePlanTierBodySchema } from "./create-rate-plan.contract";
+import { SupportedPricingCurrencySchema } from "./pricing-currency.schema";
 
 export const CorrectRatePlanParamsSchema = z.object({
   ratePlanId: z.string().uuid(),
@@ -10,7 +11,7 @@ export const CorrectRatePlanParamsSchema = z.object({
 export const CorrectRatePlanBodySchema = z.object({
   name: z.string().trim().min(1),
   billingUnit: z.enum(["HOUR", "DAY", "WEEK"]),
-  currency: z.string().trim().toUpperCase().regex(/^[A-Z]{3}$/),
+  currency: SupportedPricingCurrencySchema,
   tiers: z.array(CreateRatePlanTierBodySchema).min(1),
   expectedAffectedRentalOfferIds: z.array(z.string().uuid()).refine((ids) => new Set(ids).size === ids.length, {
     message: "Affected rental offer IDs must be unique.",

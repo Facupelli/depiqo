@@ -5,6 +5,23 @@ import {
 import { z } from "zod";
 
 const CONTRACT_BASIS_VALUES = ["GROSS", "NET"] as const;
+const PERCENT_SCALE = 10n ** 28n;
+const SHARE_SCALE = 100n * PERCENT_SCALE;
+
+function scaledPercent(value: number): bigint | null {
+	if (!Number.isFinite(value)) return null;
+	const decimal = value.toString();
+	if (!/^\d+(?:\.\d+)?$/.test(decimal)) return null;
+
+	const [whole, fraction = ""] = decimal.split(".");
+	const significantFraction = fraction.replace(/0+$/, "");
+	if (significantFraction.length > 28) return null;
+
+	return (
+		BigInt(whole) * PERCENT_SCALE +
+		BigInt(significantFraction.padEnd(28, "0") || "0")
+	);
+}
 
 export const createOwnerWithContractFormSchema = z
 	.object({
@@ -25,9 +42,13 @@ export const createOwnerWithContractFormSchema = z
 		validTo: z.string(),
 	})
 	.refine(
-		(values) =>
-			Math.abs(values.ownerSharePercent + values.rentalSharePercent - 100) <
-			1e-10,
+		(values) => {
+			const owner = scaledPercent(values.ownerSharePercent);
+			const rental = scaledPercent(values.rentalSharePercent);
+			return (
+				owner !== null && rental !== null && owner + rental === SHARE_SCALE
+			);
+		},
 		{
 			message: "La suma de participaciones debe ser igual al 100%",
 			path: ["rentalSharePercent"],
@@ -64,7 +85,14 @@ function dateInputToUtcIso(value: string): string {
 }
 
 function percentToShare(value: number): string {
-	return (value / 100).toString();
+	const scaled = scaledPercent(value);
+	if (scaled === null) throw new Error("Invalid share percentage.");
+	const whole = scaled / SHARE_SCALE;
+	const fraction = (scaled % SHARE_SCALE)
+		.toString()
+		.padStart(30, "0")
+		.replace(/0+$/, "");
+	return fraction ? `${whole}.${fraction}` : whole.toString();
 }
 
 export function toCreateOwnerWithContractDto(
