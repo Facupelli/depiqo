@@ -1,13 +1,16 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
+import { err, ok, Result } from 'neverthrow';
 
 import { PrismaService } from 'src/core/database/prisma.service';
 
 import { CreateOwnerWithContractCommand } from './create-owner-with-contract.command';
+import { CreateOwnerWithContractError, createOwnerWithContractError } from './create-owner-with-contract.errors';
+import { validateOwnerContractTerms } from './owner-contract-terms';
 
-export interface CreateOwnerWithContractResult {
-  ownerId: string;
-  contractId: string;
-}
+export type CreateOwnerWithContractResult = Result<
+  { ownerId: string; contractId: string },
+  CreateOwnerWithContractError
+>;
 
 @CommandHandler(CreateOwnerWithContractCommand)
 export class CreateOwnerWithContractHandler implements ICommandHandler<
@@ -17,6 +20,16 @@ export class CreateOwnerWithContractHandler implements ICommandHandler<
   constructor(private readonly prisma: PrismaService) {}
 
   async execute(command: CreateOwnerWithContractCommand): Promise<CreateOwnerWithContractResult> {
+    const invalidTerm = validateOwnerContractTerms(command);
+    if (invalidTerm) {
+      return err(
+        createOwnerWithContractError(`Invalid contract ${invalidTerm.field}: ${invalidTerm.reason}.`, {
+          field: `contract.${invalidTerm.field}`,
+          reason: invalidTerm.reason,
+        }),
+      );
+    }
+
     return this.prisma.client.$transaction(async (tx) => {
       const owner = await tx.v2AssetOwner.create({
         data: {
@@ -39,10 +52,10 @@ export class CreateOwnerWithContractHandler implements ICommandHandler<
         select: { id: true },
       });
 
-      return {
+      return ok({
         ownerId: owner.id,
         contractId: contract.id,
-      };
+      });
     });
   }
 }
