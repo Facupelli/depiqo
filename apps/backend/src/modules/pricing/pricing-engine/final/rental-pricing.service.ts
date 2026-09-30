@@ -60,8 +60,8 @@ export class RentalPricingService {
       while (index < plannedPromotions.length && plannedPromotions[index].promotion.priority === priority) {
         group.push(plannedPromotions[index++]);
       }
-      const positive = group.filter((candidate) =>
-        !this.promotionApplier.payableDiscount({ context, eligiblePromotion: candidate }).isZero(),
+      const positive = group.filter(
+        (candidate) => !this.promotionApplier.payableDiscount({ context, eligiblePromotion: candidate }).isZero(),
       );
       if (positive.length > 1) {
         const occupied = new Set<string>();

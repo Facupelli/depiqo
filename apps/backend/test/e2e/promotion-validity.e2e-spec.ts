@@ -68,29 +68,40 @@ describe('promotion local-date validity HTTP flow', () => {
     const { client } = await tenantUserClient();
     const unrestricted = body('2026-08-10', '2026-08-10');
     const existing = await client.withCsrf(client.request().post('/pricing/promotions')).send(unrestricted).expect(201);
-    await client.withCsrf(client.request().post('/pricing/promotions'))
-      .send({ ...unrestricted, name: 'Conditional promotion', ...conditions }).expect(201);
+    await client
+      .withCsrf(client.request().post('/pricing/promotions'))
+      .send({ ...unrestricted, name: 'Conditional promotion', ...conditions })
+      .expect(201);
     // The existing conditional promotion must not block an unrestricted update either.
-    await client.withCsrf(client.request().put(`/pricing/promotions/${existing.body.data.id}`))
-      .send({ ...unrestricted, name: 'Renamed unrestricted promotion' }).expect(200);
+    await client
+      .withCsrf(client.request().put(`/pricing/promotions/${existing.body.data.id}`))
+      .send({ ...unrestricted, name: 'Renamed unrestricted promotion' })
+      .expect(200);
   });
 
   it('allows authoring and updating mutually exclusive rental-unit ranges at the same priority', async () => {
     const { client } = await tenantUserClient();
     const base = body('2026-08-10', '2026-08-10');
-    await client.withCsrf(client.request().post('/pricing/promotions'))
-      .send({ ...base, name: 'Short rental', minRentalUnits: 1, maxRentalUnits: 2 }).expect(201);
-    const long = await client.withCsrf(client.request().post('/pricing/promotions'))
-      .send({ ...base, name: 'Long rental', minRentalUnits: 3, maxRentalUnits: 5 }).expect(201);
-    await client.withCsrf(client.request().put(`/pricing/promotions/${long.body.data.id}`))
-      .send({ ...base, name: 'Long rental updated', minRentalUnits: 3, maxRentalUnits: 6 }).expect(200);
+    await client
+      .withCsrf(client.request().post('/pricing/promotions'))
+      .send({ ...base, name: 'Short rental', minRentalUnits: 1, maxRentalUnits: 2 })
+      .expect(201);
+    const long = await client
+      .withCsrf(client.request().post('/pricing/promotions'))
+      .send({ ...base, name: 'Long rental', minRentalUnits: 3, maxRentalUnits: 5 })
+      .expect(201);
+    await client
+      .withCsrf(client.request().put(`/pricing/promotions/${long.body.data.id}`))
+      .send({ ...base, name: 'Long rental updated', minRentalUnits: 3, maxRentalUnits: 6 })
+      .expect(200);
   });
 
   it('still rejects overlapping unrestricted all-lines promotions at the same priority', async () => {
     const { client } = await tenantUserClient();
     const unrestricted = body('2026-08-10', '2026-08-10');
     await client.withCsrf(client.request().post('/pricing/promotions')).send(unrestricted).expect(201);
-    const response = await client.withCsrf(client.request().post('/pricing/promotions'))
+    const response = await client
+      .withCsrf(client.request().post('/pricing/promotions'))
       .send({ ...unrestricted, name: 'Conflicting promotion' });
     expectProblemResponse(response, {
       status: 422,

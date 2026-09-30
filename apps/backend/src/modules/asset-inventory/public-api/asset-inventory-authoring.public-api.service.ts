@@ -226,7 +226,10 @@ function mapBranchValidationError(error: AssetBranchReferenceValidationError): A
   if (error.code === 'BranchDeleted') {
     return authoringError('BranchDeleted', `Branch "${error.branchId}" is deleted.`, { branchId: error.branchId });
   }
-  return authoringError('BranchReferenceUnavailable', 'Initial asset branch references could not be validated at this time.');
+  return authoringError(
+    'BranchReferenceUnavailable',
+    'Initial asset branch references could not be validated at this time.',
+  );
 }
 
 function authoringError(

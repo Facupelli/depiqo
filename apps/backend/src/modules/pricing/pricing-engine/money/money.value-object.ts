@@ -112,7 +112,9 @@ export class Money {
         remainder: sum.isZero() ? new ExactDecimal(0) : numerator.mod(sum),
       };
     });
-    let remainder = cents.minus(shares.reduce((total, share) => total.plus(share.units), new ExactDecimal(0))).toNumber();
+    let remainder = cents
+      .minus(shares.reduce((total, share) => total.plus(share.units), new ExactDecimal(0)))
+      .toNumber();
     for (const share of [...shares].sort((a, b) => {
       const difference = b.remainder.comparedTo(a.remainder);
       if (difference !== 0) return difference;

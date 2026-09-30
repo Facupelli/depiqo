@@ -1,7 +1,11 @@
 import { BaseRentalLineCalculator } from './base-rental-line-calculator';
 import { BasePricingResult } from './base-pricing-result.type';
 import { BasePricingInput } from './base-pricing-input.type';
-import { InvalidPricingInputError, MixedCurrencyError, UnsupportedPricingCurrencyError } from '../errors/pricing.errors';
+import {
+  InvalidPricingInputError,
+  MixedCurrencyError,
+  UnsupportedPricingCurrencyError,
+} from '../errors/pricing.errors';
 import { isPayableCurrency } from '../../domain/value-objects/payable-currency';
 import { Money } from '../money/money.value-object';
 import { RentalDurationCalculator } from './rental-duration-calculator';

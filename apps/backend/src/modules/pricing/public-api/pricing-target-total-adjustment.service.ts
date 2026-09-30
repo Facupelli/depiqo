@@ -43,7 +43,13 @@ export class PricingTargetTotalAdjustmentService extends PricingTargetTotalAdjus
       });
     } catch (error) {
       if (error instanceof UnsupportedPricingCurrencyError) {
-        return err(new PricingTargetTotalAdjustmentError(error.message, { cause: error }, 'pricing_target_total_adjustment.unsupported_currency'));
+        return err(
+          new PricingTargetTotalAdjustmentError(
+            error.message,
+            { cause: error },
+            'pricing_target_total_adjustment.unsupported_currency',
+          ),
+        );
       }
       if (error instanceof InvalidPricingInputError) {
         return err(new PricingTargetTotalAdjustmentError(error.message, { cause: error }));

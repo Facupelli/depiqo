@@ -176,8 +176,12 @@ export class PricingCalculationService extends PricingCalculation {
     input: PricingInsuranceCompositionRequest,
   ): Promise<Result<PricingInsuranceCompositionResult, PricingCalculationError>> {
     if (!isPayableCurrency(input.currency)) {
-      return err(new PricingCalculationError('pricing_calculation.unsupported_currency',
-        `Currency "${input.currency}" is not supported for two-decimal pricing.`));
+      return err(
+        new PricingCalculationError(
+          'pricing_calculation.unsupported_currency',
+          `Currency "${input.currency}" is not supported for two-decimal pricing.`,
+        ),
+      );
     }
     if (
       !input.tenantId.trim() ||
@@ -204,8 +208,11 @@ export class PricingCalculationService extends PricingCalculation {
     const terms = InsuranceCalculationService.resolveTerms(offeringTerms.value, input.insuranceSelected);
     const equipmentTotal = Money.of(input.equipmentTotal, input.currency);
     const insuranceAmount = terms.insuranceSelected
-      ? Money.settle(Money.of(input.equipmentSubtotalBeforeDiscounts, input.currency)
-          .multiplyByDecimal(new Decimal(terms.insuranceRatePercent).div(100)))
+      ? Money.settle(
+          Money.of(input.equipmentSubtotalBeforeDiscounts, input.currency).multiplyByDecimal(
+            new Decimal(terms.insuranceRatePercent).div(100),
+          ),
+        )
       : Money.zero(input.currency);
 
     return ok({

@@ -27,9 +27,15 @@ export type PricingTargetTotalAdjustmentResult = {
 };
 
 export class PricingTargetTotalAdjustmentError extends Error {
-  readonly code: 'pricing_target_total_adjustment.invalid_request' | 'pricing_target_total_adjustment.unsupported_currency';
+  readonly code:
+    | 'pricing_target_total_adjustment.invalid_request'
+    | 'pricing_target_total_adjustment.unsupported_currency';
 
-  constructor(message: string, options?: ErrorOptions, code: PricingTargetTotalAdjustmentError['code'] = 'pricing_target_total_adjustment.invalid_request') {
+  constructor(
+    message: string,
+    options?: ErrorOptions,
+    code: PricingTargetTotalAdjustmentError['code'] = 'pricing_target_total_adjustment.invalid_request',
+  ) {
     super(message, options);
     this.code = code;
   }

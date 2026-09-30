@@ -95,14 +95,27 @@ describe('POST /rental-commitments/draft-rentals', () => {
 
   it('keeps fractional-cent pricing stable between repeated previews and draft creation', async () => {
     const setup = await scenario('0.005');
-    const second = await catalog.createOffer({ tenantId: setup.tenant.id, branchId: setup.branch.id, pricePerDay: '0.005' });
+    const second = await catalog.createOffer({
+      tenantId: setup.tenant.id,
+      branchId: setup.branch.id,
+      pricePerDay: '0.005',
+    });
     const offerIds = [setup.offer.offer.id, second.offer.id].sort();
     const client = await tenantUserClient(setup);
-    await client.withCsrf(client.request().post('/pricing/promotions')).send({
-      name: 'Half off the first offer', activation: 'AUTOMATIC', priority: 1, stackable: true,
-      isActive: true, effectType: 'PERCENTAGE_OFF', effectValue: '50',
-      scopes: [{ type: 'RENTAL_OFFER', rentalOfferId: offerIds[0] }], exclusions: [],
-    }).expect(201);
+    await client
+      .withCsrf(client.request().post('/pricing/promotions'))
+      .send({
+        name: 'Half off the first offer',
+        activation: 'AUTOMATIC',
+        priority: 1,
+        stackable: true,
+        isActive: true,
+        effectType: 'PERCENTAGE_OFF',
+        effectValue: '50',
+        scopes: [{ type: 'RENTAL_OFFER', rentalOfferId: offerIds[0] }],
+        exclusions: [],
+      })
+      .expect(201);
     const requestBody = {
       ...body(setup),
       period: { start: utcDate(2030, 1, 7, 10).toISOString(), end: utcDate(2030, 1, 8, 10).toISOString() },
@@ -113,18 +126,26 @@ describe('POST /rental-commitments/draft-rentals', () => {
       { rentalOfferId: offerIds[1], subtotal: '0.00', discountTotal: '0.00', total: '0.00' },
     ];
     for (const selectedOffers of [requestBody.selectedOffers, [...requestBody.selectedOffers].reverse()]) {
-      const preview = await client.withCsrf(client.request().post('/pricing/draft-rentals/price'))
-        .send({ ...requestBody, selectedOffers }).expect(200);
+      const preview = await client
+        .withCsrf(client.request().post('/pricing/draft-rentals/price'))
+        .send({ ...requestBody, selectedOffers })
+        .expect(200);
       expect(preview.body.data.final).toMatchObject({
-        total: '0.00', lines: expect.arrayContaining(expectedLines.map((line) => expect.objectContaining(line))),
+        total: '0.00',
+        lines: expect.arrayContaining(expectedLines.map((line) => expect.objectContaining(line))),
       });
     }
-    const created = await client.withCsrf(client.request().post('/rental-commitments/draft-rentals'))
-      .send(requestBody).expect(201);
+    const created = await client
+      .withCsrf(client.request().post('/rental-commitments/draft-rentals'))
+      .send(requestBody)
+      .expect(201);
     const rental = await prisma.client.v2Rental.findUniqueOrThrow({ where: { id: created.body.data.id } });
     expect(rental.priceSnapshot).toMatchObject({
       total: '0.00',
-      final: { total: '0.00', lines: expect.arrayContaining(expectedLines.map((line) => expect.objectContaining(line))) },
+      final: {
+        total: '0.00',
+        lines: expect.arrayContaining(expectedLines.map((line) => expect.objectContaining(line))),
+      },
     });
   });
 

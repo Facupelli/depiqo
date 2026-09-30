@@ -28,7 +28,8 @@ export async function hasObviousPromotionPriorityConflict(
     input.minOrderSubtotal != null ||
     input.minRentalUnits != null ||
     input.maxRentalUnits != null
-  ) return false;
+  )
+    return false;
 
   const candidates = await prisma.client.v2Promotion.findMany({
     where: {
@@ -50,7 +51,8 @@ export async function hasObviousPromotionPriorityConflict(
     if (candidate.activation === 'COUPON_REQUIRED' && input.activation === 'COUPON_REQUIRED') return false;
     const from = candidate.validFrom ? prismaDateToLocalDate(candidate.validFrom) : null;
     const until = candidate.validUntil ? prismaDateToLocalDate(candidate.validUntil) : null;
-    return !(input.validUntil && from && input.validUntil < from) &&
-      !(input.validFrom && until && input.validFrom > until);
+    return (
+      !(input.validUntil && from && input.validUntil < from) && !(input.validFrom && until && input.validFrom > until)
+    );
   });
 }

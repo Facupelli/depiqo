@@ -34,12 +34,14 @@ export class UpdatePromotionHandler implements ICommandHandler<
       return err(validationError);
     }
     if (await hasObviousPromotionPriorityConflict(this.prisma, command)) {
-      return err(updatePromotionError(
-        'pricing.invalid_promotion_configuration',
-        'An unrestricted promotion with this priority is already active for the same validity period.',
-        undefined,
-        context,
-      ));
+      return err(
+        updatePromotionError(
+          'pricing.invalid_promotion_configuration',
+          'An unrestricted promotion with this priority is already active for the same validity period.',
+          undefined,
+          context,
+        ),
+      );
     }
 
     const updatedPromotion = await this.prisma.client.$transaction(async (tx) => {

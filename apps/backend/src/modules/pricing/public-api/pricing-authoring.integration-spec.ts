@@ -85,7 +85,9 @@ describe('Pricing authoring public capabilities integration', () => {
     });
     expect(result.isOk()).toBe(true);
     if (result.isErr()) return;
-    const tier = await prisma.client.v2RatePlanTier.findFirstOrThrow({ where: { ratePlanId: result.value.ratePlanId } });
+    const tier = await prisma.client.v2RatePlanTier.findFirstOrThrow({
+      where: { ratePlanId: result.value.ratePlanId },
+    });
     expect(tier.pricePerUnit.toFixed(3)).toBe('0.005');
 
     const unsupported = await ratePlanAuthoring.createRatePlan({

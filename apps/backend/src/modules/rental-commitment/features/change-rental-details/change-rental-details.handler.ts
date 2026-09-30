@@ -265,7 +265,8 @@ export class ChangeRentalDetailsHandler implements ICommandHandler<
     if (error instanceof RentalInvalidFieldError)
       return this.error('rental_commitment.invalid_rental_field', error.message, context, error);
     if (
-      (error instanceof PricingTargetTotalAdjustmentError && error.code === 'pricing_target_total_adjustment.unsupported_currency') ||
+      (error instanceof PricingTargetTotalAdjustmentError &&
+        error.code === 'pricing_target_total_adjustment.unsupported_currency') ||
       (error instanceof PricingCalculationError && error.code === 'pricing_calculation.unsupported_currency')
     )
       return this.error('rental_commitment.unsupported_pricing_currency', error.message, context, error);

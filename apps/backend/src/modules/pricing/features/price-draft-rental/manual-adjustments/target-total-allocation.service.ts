@@ -1,4 +1,7 @@
-import { InvalidPricingInputError, UnsupportedPricingCurrencyError } from '../../../pricing-engine/errors/pricing.errors';
+import {
+  InvalidPricingInputError,
+  UnsupportedPricingCurrencyError,
+} from '../../../pricing-engine/errors/pricing.errors';
 import { isPayableCurrency } from '../../../domain/value-objects/payable-currency';
 import { Money } from '../../../pricing-engine/money/money.value-object';
 import {
@@ -65,11 +68,17 @@ export class TargetTotalAllocationService {
   }
 
   private allocateProportionally(input: { targetTotal: Money; currentLineTotals: Money[]; keys: string[] }): Money[] {
-    return input.targetTotal.allocateByRatios(input.currentLineTotals.map((total) => total.toDecimal()), input.keys);
+    return input.targetTotal.allocateByRatios(
+      input.currentLineTotals.map((total) => total.toDecimal()),
+      input.keys,
+    );
   }
 
   private allocateEvenly(input: { targetTotal: Money; keys: string[] }): Money[] {
-    return input.targetTotal.allocateByRatios(input.keys.map(() => 1), input.keys);
+    return input.targetTotal.allocateByRatios(
+      input.keys.map(() => 1),
+      input.keys,
+    );
   }
 
   private calculateOrderAdjustment(input: {
@@ -134,7 +143,9 @@ export class TargetTotalAllocationService {
       uniqueSelectionIds.add(line.rentalSelectionId);
 
       if (!line.rentalOfferId.trim() || uniqueOfferIds.has(line.rentalOfferId)) {
-        throw new InvalidPricingInputError('Rental offer ids must be distinct and nonempty for target total allocation.');
+        throw new InvalidPricingInputError(
+          'Rental offer ids must be distinct and nonempty for target total allocation.',
+        );
       }
       uniqueOfferIds.add(line.rentalOfferId);
     }
