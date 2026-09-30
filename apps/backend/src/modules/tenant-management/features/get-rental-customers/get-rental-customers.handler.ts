@@ -12,6 +12,7 @@ export interface GetRentalCustomersItemReadModel {
   firstName: string;
   lastName: string;
   status: RentalCustomerOnboardingStatusDto;
+  lastSubmittedAt: string | null;
   createdAt: string;
 }
 
@@ -54,8 +55,12 @@ export class GetRentalCustomersHandler implements IQueryHandler<GetRentalCustome
           lastName: true,
           onboardingStatus: true,
           createdAt: true,
+          lastSubmittedAt: true,
         },
-        orderBy: { createdAt: 'desc' },
+        orderBy:
+          query.status === 'PENDING'
+            ? [{ lastSubmittedAt: { sort: 'desc', nulls: 'last' } }, { createdAt: 'desc' }]
+            : { createdAt: 'desc' },
         skip: (query.page - 1) * query.pageSize,
         take: query.pageSize,
       }),
@@ -69,6 +74,7 @@ export class GetRentalCustomersHandler implements IQueryHandler<GetRentalCustome
         firstName: customer.firstName,
         lastName: customer.lastName,
         status: customer.onboardingStatus,
+        lastSubmittedAt: customer.lastSubmittedAt?.toISOString() ?? null,
         createdAt: customer.createdAt.toISOString(),
       })),
       total,

@@ -25,6 +25,7 @@ model V2RentalCustomer {
   companyName      String?                          @map("company_name")
   isActive         Boolean                          @default(true) @map("is_active")
   onboardingStatus V2RentalCustomerOnboardingStatus @default(NOT_STARTED) @map("onboarding_status")
+  lastSubmittedAt DateTime?                        @map("last_submitted_at") @db.Timestamptz(3)
   profileSnapshot  Json                             @default("{}") @map("profile_snapshot")
 
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)

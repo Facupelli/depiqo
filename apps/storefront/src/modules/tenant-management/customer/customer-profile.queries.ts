@@ -12,23 +12,27 @@ import {
 
 export const customerProfileKeys = {
 	all: () => ["storefront", "customer-profile"] as const,
-	current: () => [...customerProfileKeys.all(), "current"] as const,
+	current: (tenantId: string, customerId: string) =>
+		[...customerProfileKeys.all(), tenantId, customerId, "current"] as const,
 };
 
 export const customerProfileQueries = {
-	current: () =>
+	current: (tenantId: string, customerId: string) =>
 		queryOptions<
 			GetCurrentRentalCustomerProfileResponseDto | null,
 			ProblemDetailsError
 		>({
-			queryKey: customerProfileKeys.current(),
+			queryKey: customerProfileKeys.current(tenantId, customerId),
 			queryFn: getCurrentRentalCustomerProfile,
 		}),
 };
 
-export function useCurrentRentalCustomerProfile() {
+export function useCurrentRentalCustomerProfile(
+	tenantId: string,
+	customerId: string,
+) {
 	return useQuery({
-		...customerProfileQueries.current(),
+		...customerProfileQueries.current(tenantId, customerId),
 		enabled: typeof window !== "undefined",
 	});
 }

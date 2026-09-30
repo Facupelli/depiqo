@@ -108,7 +108,7 @@ function toCustomerProfileReviewViewModel(
 		rejectionReason: profile.rejectionReason,
 		reviewedAt: profile.reviewedAt,
 		reviewedById: profile.reviewedById,
-		submittedAt: profile.createdAt,
+		submittedAt: customer.lastSubmittedAt ?? profile.createdAt,
 		status: customer.onboardingStatus,
 	};
 }
@@ -505,16 +505,17 @@ function CustomerProfileReviewActionsPanel({
 
 							<div className="space-y-2">
 								<p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-									Notas del auditor
+									Motivo de rechazo para el cliente
 								</p>
 								<Textarea
 									value={auditorNotes}
 									onChange={(event) => onAuditorNotesChange(event.target.value)}
-									placeholder="Escriba aqui sus observaciones internas sobre la verificacion del expediente..."
+									placeholder="Indicá qué datos debe corregir el cliente antes de reenviar su solicitud..."
 									className="min-h-24 resize-none"
 								/>
 								<p className="text-xs text-muted-foreground">
-									Estas notas son solo visibles para el equipo de auditoria.
+									Al rechazar, este motivo se mostrará al cliente para que sepa
+									qué corregir.
 								</p>
 								{errorMessage ? (
 									<p className="text-sm font-medium text-destructive">
@@ -531,7 +532,7 @@ function CustomerProfileReviewActionsPanel({
 							value={getReviewStatusLabel(profile.status)}
 						/>
 						<ReviewField
-							label="Fecha de envio"
+							label="Fecha de envío"
 							value={formatReviewDateTime(profile.submittedAt, timezone)}
 						/>
 						<ReviewField

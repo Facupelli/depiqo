@@ -49,6 +49,7 @@ export const GetCustomerProfileDetailResponseSchema = z.object({
   companyName: z.string().nullable(),
   isActive: z.boolean(),
   onboardingStatus: RentalCustomerOnboardingStatusSchema,
+  lastSubmittedAt: z.string().datetime().nullable(),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
   profile: CustomerProfileDetailProfileSchema,
