@@ -2,6 +2,7 @@ import { ApplicationError, ApplicationErrorContext } from 'src/core/errors/appli
 
 export type CreateConfirmedRentalErrorCode =
   | 'rental_commitment.invalid_rental_period'
+  | 'rental_commitment.rental_period_must_start_in_future'
   | 'rental_commitment.rental_requires_selection'
   | 'rental_commitment.rental_offer_not_found'
   | 'rental_commitment.catalog_selection_unavailable'

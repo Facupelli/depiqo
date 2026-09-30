@@ -1,4 +1,5 @@
 import type { BranchScheduleSlotDto } from "@repo/api-contracts";
+import { Link } from "@tanstack/react-router";
 import { Clock } from "lucide-react";
 import { dateParamToLocalDate } from "@/lib/dates/parse";
 import { useCartPeriodContext } from "../cart-page.context";
@@ -16,6 +17,7 @@ export function CartPagePeriod() {
 		returnSlots,
 		areSlotsLoading,
 		isPeriodInvalid,
+		isPickupExpired,
 	} = useCartPeriodContext();
 
 	return (
@@ -41,6 +43,22 @@ export function CartPagePeriod() {
 					onChange={setReturnSlot}
 				/>
 			</section>
+			{isPickupExpired && (
+				<p
+					role="alert"
+					className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800"
+				>
+					El horario de retiro ya pasó. Seleccioná un horario futuro o{" "}
+					<Link
+						to="/rental"
+						search={{ branchId: branch.id, periodStart, periodEnd }}
+						className="font-semibold underline underline-offset-4"
+					>
+						cambiá el período de alquiler
+					</Link>
+					.
+				</p>
+			)}
 			{isPeriodInvalid && (
 				<p className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
 					La devolución debe ser posterior al retiro.
@@ -109,7 +127,11 @@ function TimeCell({
 							{loading ? "Cargando..." : "Seleccionar"}
 						</option>
 						{slots?.map((slot) => (
-							<option key={slot.instant} value={slot.instant}>
+							<option
+								key={slot.instant}
+								value={slot.instant}
+								disabled={Date.parse(slot.instant) <= Date.now()}
+							>
 								{formatMinutes(slot.minuteOfDay)}
 							</option>
 						))}

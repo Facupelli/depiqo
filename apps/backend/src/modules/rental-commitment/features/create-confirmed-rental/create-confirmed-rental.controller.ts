@@ -92,6 +92,12 @@ const createConfirmedRentalProblemMap = {
     HttpStatus.UNPROCESSABLE_ENTITY,
     'The requested rental period is invalid.',
   ),
+  'rental_commitment.rental_period_must_start_in_future': problem(
+    'rental_period_must_start_in_future',
+    'Rental period must start in the future',
+    HttpStatus.UNPROCESSABLE_ENTITY,
+    'The requested pickup time must be in the future. Select another rental period.',
+  ),
   'rental_commitment.rental_requires_selection': problem(
     'rental_requires_selection',
     'Rental requires selection',

@@ -12,7 +12,7 @@ import {
 } from "@repo/ui/components/select";
 import { es } from "date-fns/locale";
 import type { DateRange } from "react-day-picker";
-import { localDateToDateParam } from "@/lib/dates/parse";
+import { getTodayInTimezone, localDateToDateParam } from "@/lib/dates/parse";
 import {
 	useStorefrontBranchScheduleSlots,
 	useStorefrontBranchSchedules,
@@ -23,6 +23,7 @@ type StorefrontBranchScheduleSlotType =
 
 type DateRangePickerContentProps = {
 	branchId?: string;
+	timezone?: string;
 	value: DateRange;
 	pickupInstant?: string;
 	returnInstant?: string;
@@ -34,6 +35,7 @@ type DateRangePickerContentProps = {
 
 export function DateRangePickerContent({
 	branchId,
+	timezone,
 	value,
 	pickupInstant,
 	returnInstant,
@@ -49,6 +51,7 @@ export function DateRangePickerContent({
 		branchId,
 		periodStart && periodEnd ? { periodStart, periodEnd } : undefined,
 	);
+	const today = timezone ? getTodayInTimezone(timezone) : undefined;
 	const boundaryType: StorefrontBranchScheduleSlotType =
 		value.from && !value.to ? "RETURN" : "PICKUP";
 	const pickupSlot = slots?.pickupSlots?.find(
@@ -69,6 +72,8 @@ export function DateRangePickerContent({
 				onSelect={onDateChange}
 				numberOfMonths={numberOfMonths}
 				disabled={(date) =>
+					!today ||
+					localDateToDateParam(date) < today ||
 					isScheduleBoundaryDisabled(date, boundaryType, schedules)
 				}
 			/>
@@ -79,7 +84,7 @@ export function DateRangePickerContent({
 						date={value.from}
 						value={pickupSlot?.instant}
 						slots={slots?.pickupSlots}
-						loading={isLoading}
+						loading={isLoading || !timezone}
 						onChange={onPickupChange}
 					/>
 					<TimeSelector
@@ -87,7 +92,7 @@ export function DateRangePickerContent({
 						date={value.to}
 						value={returnSlot?.instant}
 						slots={slots?.returnSlots}
-						loading={isLoading}
+						loading={isLoading || !timezone}
 						disableThrough={pickupSlot?.instant}
 						onChange={onReturnChange}
 					/>
@@ -159,8 +164,9 @@ function TimeSelector({
 							key={slot.instant}
 							value={slot.instant}
 							disabled={
-								disableThrough !== undefined &&
-								Date.parse(slot.instant) <= Date.parse(disableThrough)
+								Date.parse(slot.instant) <= Date.now() ||
+								(disableThrough !== undefined &&
+									Date.parse(slot.instant) <= Date.parse(disableThrough))
 							}
 						>
 							{formatMinutes(slot.minuteOfDay)}

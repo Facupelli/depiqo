@@ -62,8 +62,9 @@ function useCartBookingCommand() {
 	const { mutateAsync: createConfirmedRental, isPending } =
 		useCreateConfirmedRental();
 	const { clearCart } = useRentalCartActions();
-	const confirmedRentalRequest = useConfirmedRentalRequest();
-	const { periodStart, branch, pickupSlot } = useCartPeriodContext();
+	const buildConfirmedRentalRequest = useConfirmedRentalRequest();
+	const { periodStart, branch, pickupSlot, isPricingReady } =
+		useCartPeriodContext();
 	const { setUnavailableRentalOfferIds, clearUnavailableRentalOfferIds } =
 		useCartBookingFeedbackContext();
 	const { fulfillmentMethod, hasConfirmedDeliveryAddress } =
@@ -101,6 +102,7 @@ function useCartBookingCommand() {
 			return;
 		}
 
+		const confirmedRentalRequest = buildConfirmedRentalRequest();
 		if (!confirmedRentalRequest.ok) {
 			setErrorMessage(getRequestFailureMessage(confirmedRentalRequest.failure));
 			return;
@@ -166,7 +168,11 @@ function useCartBookingCommand() {
 
 	return {
 		errorMessage,
-		isDisabled: isCustomerPending || isPending || !isDeliveryConfirmationReady,
+		isDisabled:
+			isCustomerPending ||
+			isPending ||
+			!isPricingReady ||
+			!isDeliveryConfirmationReady,
 		isPending,
 		label: isCustomerPending
 			? "Verificando sesión..."
@@ -188,6 +194,8 @@ function getRequestFailureMessage(
 			return "Seleccioná los horarios de retiro y devolución para continuar.";
 		case "INVALID_RENTAL_PERIOD":
 			return "La devolución debe ser posterior al retiro.";
+		case "PICKUP_MUST_BE_IN_FUTURE":
+			return "El horario de retiro ya pasó. Seleccioná un horario futuro o cambiá el período de alquiler.";
 		case "DELIVERY_DETAILS_REQUIRED":
 			return "Completá y confirmá la dirección de entrega para continuar.";
 		case "EMPTY_CART":
@@ -205,6 +213,8 @@ function getSubmissionErrorMessage(kind: ConfirmedRentalErrorKind): string {
 			return "Uno de los equipos del carrito ya no está disponible para reservar. Ajustá el carrito y volvé a intentarlo.";
 		case "IDEMPOTENCY_CONFLICT":
 			return "Los datos de la reserva cambiaron durante el envío. Revisá la reserva y volvé a confirmarla.";
+		case "PICKUP_MUST_BE_IN_FUTURE":
+			return "El horario de retiro ya pasó. Seleccioná un horario futuro o cambiá el período de alquiler.";
 		case "OTHER":
 		case "UNAUTHENTICATED":
 			return "No pudimos confirmar la reserva. Intentá nuevamente.";

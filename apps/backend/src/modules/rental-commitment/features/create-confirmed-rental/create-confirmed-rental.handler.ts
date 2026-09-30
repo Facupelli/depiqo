@@ -61,6 +61,7 @@ import {
   RentalCustomerUnavailableForRentalError,
   RentalInvalidFieldError,
   RentalMustContainSelectionError,
+  RentalPeriodCannotStartInPastError,
   ReturnTimeOutsideBranchScheduleError,
   TenantUnavailableForRentalError,
 } from '../../domain/errors/rental-commitment.errors';
@@ -515,6 +516,14 @@ export class CreateConfirmedRentalService implements ICommandHandler<
             context,
           );
       }
+    }
+    if (error instanceof RentalPeriodCannotStartInPastError) {
+      return createConfirmedRentalError(
+        'rental_commitment.rental_period_must_start_in_future',
+        error.message,
+        error,
+        context,
+      );
     }
     if (error instanceof RentalMustContainSelectionError) {
       return createConfirmedRentalError('rental_commitment.rental_requires_selection', error.message, error, context);

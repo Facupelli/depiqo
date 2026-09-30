@@ -42,6 +42,7 @@ type RentalPeriodSlice = {
 	areSlotsLoading: boolean;
 	isPricingReady: boolean;
 	isPeriodInvalid: boolean;
+	isPickupExpired: boolean;
 };
 
 type AvailabilitySlice = {
@@ -172,7 +173,8 @@ export function CartPageProvider({
 	const start = pickupSlot ? new Date(pickupSlot.instant) : null;
 	const end = returnSlot ? new Date(returnSlot.instant) : null;
 	const isPeriodInvalid = Boolean(start && end && end <= start);
-	const isPricingReady = hasBothTimes && !isPeriodInvalid;
+	const isPickupExpired = Boolean(start && start.getTime() <= Date.now());
+	const isPricingReady = hasBothTimes && !isPeriodInvalid && !isPickupExpired;
 	const availabilityInput =
 		useMemo<GetCartRentalOfferAvailabilityInput | null>(() => {
 			const rentalOfferIds = items.map((item) => item.rentalOfferId).sort();
@@ -247,6 +249,7 @@ export function CartPageProvider({
 				pickupSlot,
 				returnSlot,
 				setPickupSlot: (slot) => {
+					if (Date.parse(slot.instant) <= Date.now()) return;
 					setUnavailableRentalOfferIds([]);
 					void navigate({
 						to: "/cart",
@@ -255,6 +258,7 @@ export function CartPageProvider({
 					});
 				},
 				setReturnSlot: (slot) => {
+					if (Date.parse(slot.instant) <= Date.now()) return;
 					setUnavailableRentalOfferIds([]);
 					void navigate({
 						to: "/cart",
@@ -267,6 +271,7 @@ export function CartPageProvider({
 				areSlotsLoading,
 				isPricingReady,
 				isPeriodInvalid,
+				isPickupExpired,
 			},
 			availability: {
 				availableCountByRentalOfferId,
@@ -364,6 +369,7 @@ export function CartPageProvider({
 			returnSlot,
 			isPricingReady,
 			isPeriodInvalid,
+			isPickupExpired,
 			availableProspectiveCost,
 			deliveryNotServiceableReason,
 			availabilityQuery.isFetching,
