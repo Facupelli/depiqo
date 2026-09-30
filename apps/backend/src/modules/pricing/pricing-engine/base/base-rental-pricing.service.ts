@@ -1,7 +1,8 @@
 import { BaseRentalLineCalculator } from './base-rental-line-calculator';
 import { BasePricingResult } from './base-pricing-result.type';
 import { BasePricingInput } from './base-pricing-input.type';
-import { InvalidPricingInputError, MixedCurrencyError } from '../errors/pricing.errors';
+import { InvalidPricingInputError, MixedCurrencyError, UnsupportedPricingCurrencyError } from '../errors/pricing.errors';
+import { isPayableCurrency } from '../../domain/value-objects/payable-currency';
 import { Money } from '../money/money.value-object';
 import { RentalDurationCalculator } from './rental-duration-calculator';
 
@@ -16,7 +17,7 @@ export class BaseRentalPricingService {
 
     const currency = this.resolveSingleCurrency(input);
 
-    const lines = input.selections.map((selection) =>
+    const rawLines = input.selections.map((selection) =>
       this.lineCalculator.calculateLine({
         rentalPeriod: input.rentalPeriod,
         pricingConfig: input.pricingConfig,
@@ -24,7 +25,17 @@ export class BaseRentalPricingService {
       }),
     );
 
-    const subtotal = lines.reduce((total, line) => total.add(Money.of(line.subtotal, currency)), Money.zero(currency));
+    const rawAmounts = rawLines.map((line) => Money.of(line.subtotal, currency));
+    const subtotal = Money.settle(rawAmounts.reduce((total, amount) => total.add(amount), Money.zero(currency)));
+    const settledAmounts = subtotal.allocateByRatios(
+      rawAmounts.map((amount) => amount.toDecimal()),
+      rawLines.map((line) => line.rentalOfferId),
+    );
+    const lines = rawLines.map((line, index) => ({
+      ...line,
+      subtotal: settledAmounts[index].toSnapshotString(),
+      total: settledAmounts[index].toSnapshotString(),
+    }));
 
     const subtotalSnapshot = subtotal.toSnapshotString();
     const zeroDiscount = Money.zero(currency).toSnapshotString();
@@ -107,6 +118,15 @@ export class BaseRentalPricingService {
     if (input.selections.length === 0) {
       throw new InvalidPricingInputError('At least one rental offer selection is required.');
     }
+    const references = input.selections.map((selection) => selection.rentalSelectionId);
+    if (references.some((reference) => !reference.trim()) || new Set(references).size !== references.length) {
+      throw new InvalidPricingInputError('Rental selection references must be distinct and nonempty.');
+    }
+
+    const offerIds = input.selections.map((selection) => selection.rentalOfferId);
+    if (new Set(offerIds).size !== offerIds.length) {
+      throw new InvalidPricingInputError('Rental offer ids must be distinct for monetary allocation.');
+    }
 
     for (const selection of input.selections) {
       this.validateSelection(selection);
@@ -174,6 +194,10 @@ export class BaseRentalPricingService {
 
     if (currencies.length > 1) {
       throw new MixedCurrencyError({ currencies });
+    }
+
+    if (!isPayableCurrency(currencies[0])) {
+      throw new UnsupportedPricingCurrencyError(currencies[0]);
     }
 
     return currencies[0];

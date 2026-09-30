@@ -40,6 +40,22 @@ export class MixedCurrencyError extends PricingError {
   }
 }
 
+export class UnsupportedPricingCurrencyError extends PricingError {
+  readonly code = 'UNSUPPORTED_PRICING_CURRENCY';
+
+  constructor(currency: string) {
+    super(`Currency "${currency}" is not supported for two-decimal pricing.`);
+  }
+}
+
+export class AmbiguousPromotionPriorityError extends PricingError {
+  readonly code = 'AMBIGUOUS_PROMOTION_PRIORITY';
+
+  constructor(priority: number) {
+    super(`Eligible promotions at priority ${priority} have an order-dependent payable outcome.`);
+  }
+}
+
 export class InvalidPromotionError extends PricingError {
   readonly code = 'INVALID_PROMOTION';
 

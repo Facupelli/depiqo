@@ -8,7 +8,7 @@ import {
 	type LucideIcon,
 } from "lucide-react";
 import type { ReactNode } from "react";
-import { formatMoney } from "@/shared/utils/formatters";
+import { formatExactCurrencyRate } from "@/shared/utils/formatters";
 
 type RentalOffer = GetRentableItemDetailResponseDto["offers"][number];
 type SetupStatus = RentalOffer["setupSummary"]["status"];
@@ -74,7 +74,7 @@ export function RentalOfferCard({
 						</p>
 						<p className="mt-2 font-semibold text-foreground">
 							{price
-								? `Desde ${formatMoney(price.startingPrice, price.currency)}/${billingUnitLabels[price.billingUnit]}`
+								? `Desde ${formatExactCurrencyRate(price.startingPrice, price.currency)}/${billingUnitLabels[price.billingUnit]}`
 								: "Sin precio asignado"}
 						</p>
 						{price ? (

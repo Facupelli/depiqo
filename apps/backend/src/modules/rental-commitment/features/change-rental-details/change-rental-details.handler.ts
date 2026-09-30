@@ -157,6 +157,7 @@ export class ChangeRentalDetailsHandler implements ICommandHandler<
       targetTotal: input.adjustment.targetTotal,
       lines: input.snapshot.calculated.lines.map((line) => ({
         lineReference: line.rentalSelectionId,
+        rentalOfferId: line.rentalOfferId,
         currentTotal: line.total,
       })),
     });
@@ -208,6 +209,7 @@ export class ChangeRentalDetailsHandler implements ICommandHandler<
   }): Promise<Result<AcceptedRentalPricingV3Snapshot, ChangeRentalDetailsError>> {
     const composition = await this.pricingCalculation.calculateInsuranceForEquipmentPrice({
       tenantId: input.tenantId,
+      currency: input.snapshot.calculated.currency,
       insuranceSelected: input.insuranceSelected,
       equipmentSubtotalBeforeDiscounts: input.snapshot.calculated.subtotal,
       equipmentTotal: input.snapshot.final.total,
@@ -262,6 +264,11 @@ export class ChangeRentalDetailsHandler implements ICommandHandler<
       return this.error('rental_commitment.rental_period_ended', error.message, context, error);
     if (error instanceof RentalInvalidFieldError)
       return this.error('rental_commitment.invalid_rental_field', error.message, context, error);
+    if (
+      (error instanceof PricingTargetTotalAdjustmentError && error.code === 'pricing_target_total_adjustment.unsupported_currency') ||
+      (error instanceof PricingCalculationError && error.code === 'pricing_calculation.unsupported_currency')
+    )
+      return this.error('rental_commitment.unsupported_pricing_currency', error.message, context, error);
     if (
       error instanceof PricingTargetTotalAdjustmentError ||
       error instanceof PricingCalculationError ||

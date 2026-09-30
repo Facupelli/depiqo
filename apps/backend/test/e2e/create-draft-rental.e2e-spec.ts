@@ -26,14 +26,14 @@ describe('POST /rental-commitments/draft-rentals', () => {
 
   afterAll(async () => app?.close());
 
-  async function scenario() {
+  async function scenario(pricePerDay?: string) {
     const tenant = await core.createTenant();
     const branch = await core.createBranch({
       tenantId: tenant.id,
     });
     const customer = await core.createRentalCustomer({ tenantId: tenant.id });
     const user = await core.createTenantUser({ tenantId: tenant.id });
-    const offer = await catalog.createOffer({ tenantId: tenant.id, branchId: branch.id });
+    const offer = await catalog.createOffer({ tenantId: tenant.id, branchId: branch.id, pricePerDay });
     return { tenant, branch, customer, user, offer };
   }
 
@@ -91,6 +91,41 @@ describe('POST /rental-commitments/draft-rentals', () => {
     expect(rental.assignedAssets).toEqual([]);
     expect(rental.ownerSplits).toEqual([]);
     expect(await prisma.client.v2AssetBlock.count({ where: { rentalId, releasedAt: null } })).toBe(0);
+  });
+
+  it('keeps fractional-cent pricing stable between repeated previews and draft creation', async () => {
+    const setup = await scenario('0.005');
+    const second = await catalog.createOffer({ tenantId: setup.tenant.id, branchId: setup.branch.id, pricePerDay: '0.005' });
+    const offerIds = [setup.offer.offer.id, second.offer.id].sort();
+    const client = await tenantUserClient(setup);
+    await client.withCsrf(client.request().post('/pricing/promotions')).send({
+      name: 'Half off the first offer', activation: 'AUTOMATIC', priority: 1, stackable: true,
+      isActive: true, effectType: 'PERCENTAGE_OFF', effectValue: '50',
+      scopes: [{ type: 'RENTAL_OFFER', rentalOfferId: offerIds[0] }], exclusions: [],
+    }).expect(201);
+    const requestBody = {
+      ...body(setup),
+      period: { start: utcDate(2030, 1, 7, 10).toISOString(), end: utcDate(2030, 1, 8, 10).toISOString() },
+      selectedOffers: offerIds.map((rentalOfferId) => ({ rentalOfferId, quantity: 1 })),
+    };
+    const expectedLines = [
+      { rentalOfferId: offerIds[0], subtotal: '0.01', discountTotal: '0.01', total: '0.00' },
+      { rentalOfferId: offerIds[1], subtotal: '0.00', discountTotal: '0.00', total: '0.00' },
+    ];
+    for (const selectedOffers of [requestBody.selectedOffers, [...requestBody.selectedOffers].reverse()]) {
+      const preview = await client.withCsrf(client.request().post('/pricing/draft-rentals/price'))
+        .send({ ...requestBody, selectedOffers }).expect(200);
+      expect(preview.body.data.final).toMatchObject({
+        total: '0.00', lines: expect.arrayContaining(expectedLines.map((line) => expect.objectContaining(line))),
+      });
+    }
+    const created = await client.withCsrf(client.request().post('/rental-commitments/draft-rentals'))
+      .send(requestBody).expect(201);
+    const rental = await prisma.client.v2Rental.findUniqueOrThrow({ where: { id: created.body.data.id } });
+    expect(rental.priceSnapshot).toMatchObject({
+      total: '0.00',
+      final: { total: '0.00', lines: expect.arrayContaining(expectedLines.map((line) => expect.objectContaining(line))) },
+    });
   });
 
   it('requires authentication', async () => {
@@ -258,16 +293,15 @@ describe('POST /rental-commitments/draft-rentals', () => {
     await expectNoDraft(setup);
   });
 
-  it.each(['not-money', '-1', '0'])('returns typed invalid pricing for target total %s', async (targetTotal) => {
+  it.each(['not-money', '-1', '0', '1.001'])('returns request validation for target total %s', async (targetTotal) => {
     const setup = await scenario();
     const client = await tenantUserClient(setup);
     const response = await client
       .withCsrf(client.request().post('/rental-commitments/draft-rentals'))
       .send({ ...body(setup), manualPricingAdjustment: { mode: 'TARGET_TOTAL', targetTotal } });
     expectProblemResponse(response, {
-      status: 422,
-      type: createProblemType('rental_commitment.invalid_pricing_input'),
-      code: 'rental_commitment.invalid_pricing_input',
+      status: 400,
+      type: PlatformProblemTypes.request.validationFailed,
     });
     await expectNoDraft(setup);
   });

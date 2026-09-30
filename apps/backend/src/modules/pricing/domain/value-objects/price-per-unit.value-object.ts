@@ -2,6 +2,7 @@ import Decimal from 'decimal.js';
 import { err, ok, Result } from 'neverthrow';
 
 import { InvalidRatePlanTierPriceError } from '../errors/rate-plan.errors';
+import { exactRateString } from './exact-rate-string';
 
 export class PricePerUnit {
   private constructor(private readonly amount: Decimal) {}
@@ -23,6 +24,6 @@ export class PricePerUnit {
   }
 
   toString(): string {
-    return this.amount.toString();
+    return exactRateString(this.amount);
   }
 }

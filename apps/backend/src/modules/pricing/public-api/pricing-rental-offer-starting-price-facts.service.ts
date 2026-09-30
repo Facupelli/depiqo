@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 
 import { PrismaService } from 'src/core/database/prisma.service';
+import { exactRateString } from '../domain/value-objects/exact-rate-string';
 
 import {
   GetPricingRentalOfferStartingPriceFactsInput,
@@ -52,7 +53,7 @@ export class PricingRentalOfferStartingPriceFactsService extends PricingRentalOf
         ? [
             {
               rentalOfferId: assignment.catalogRentalOfferId,
-              amount: tier.pricePerUnit.toString(),
+              amount: exactRateString(tier.pricePerUnit),
               currency: assignment.ratePlan.currency,
               billingUnit: assignment.ratePlan.billingUnit,
             },

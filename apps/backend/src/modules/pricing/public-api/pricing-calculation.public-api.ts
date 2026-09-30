@@ -76,6 +76,7 @@ export type PricingInsuranceCalculation = {
 
 export type PricingInsuranceCompositionRequest = {
   tenantId: string;
+  currency: string;
   insuranceSelected: boolean;
   equipmentSubtotalBeforeDiscounts: string;
   equipmentTotal: string;
@@ -102,6 +103,7 @@ export type PricingCalculationResult = PricingInsuranceCompositionResult & {
 export type PricingCalculationErrorCode =
   | 'pricing_calculation.invalid_request'
   | 'pricing_calculation.coupon_not_applicable'
+  | 'pricing_calculation.unsupported_currency'
   | 'pricing_calculation.configuration_unpriceable';
 
 export class PricingCalculationError extends Error {

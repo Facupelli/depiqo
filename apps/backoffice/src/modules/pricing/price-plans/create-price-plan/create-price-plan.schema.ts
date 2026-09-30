@@ -1,6 +1,7 @@
 import {
 	type CreateRatePlanBodyDto,
 	CreateRatePlanBodySchema,
+	SupportedPricingCurrencySchema,
 } from "@repo/api-contracts";
 import { z } from "zod";
 
@@ -33,7 +34,10 @@ export const createPricePlanBaseFormSchema = z.object({
 		.string()
 		.trim()
 		.min(1, "La moneda es obligatoria")
-		.regex(/^[A-Za-z]{3}$/, "Usa un código ISO de 3 letras"),
+		.refine(
+			(value) => SupportedPricingCurrencySchema.safeParse(value).success,
+			"Usa ARS, EUR o USD",
+		),
 	tiers: z
 		.array(createPricePlanTierFormSchema)
 		.min(1, "Agrega al menos un tramo de precio"),

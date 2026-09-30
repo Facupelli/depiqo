@@ -24,6 +24,7 @@ export class ManualPricingAdjustmentApplier {
       targetTotal: targetTotalAdjustment.targetTotal,
       lines: pricingResult.lines.map((line) => ({
         rentalSelectionId: line.rentalSelectionId,
+        rentalOfferId: line.rentalOfferId,
         currentTotal: line.total,
       })),
     });

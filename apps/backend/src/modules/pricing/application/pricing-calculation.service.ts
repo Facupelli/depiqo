@@ -21,12 +21,14 @@ import {
   CouponNotApplicableError,
   InvalidCouponError,
   InvalidPricingInputError,
+  UnsupportedPricingCurrencyError,
 } from '../pricing-engine/errors/pricing.errors';
 import { PricingInput } from '../pricing-engine/final/pricing-input.types';
 import { PricingResult } from '../pricing-engine/final/pricing-result.type';
 import { RentalPricingService } from '../pricing-engine/final/rental-pricing.service';
 import { ManualPricingAdjustmentApplier } from '../features/price-draft-rental/manual-adjustments/manual-pricing-adjustment-applier';
 import { Money } from '../pricing-engine/money/money.value-object';
+import { isPayableCurrency } from '../domain/value-objects/payable-currency';
 
 @Injectable()
 export class PricingCalculationService extends PricingCalculation {
@@ -91,6 +93,7 @@ export class PricingCalculationService extends PricingCalculation {
         const breakdown = this.toBreakdown(calculated, selections);
         const insurance = await this.calculateInsuranceForEquipmentPrice({
           tenantId: input.tenantId,
+          currency: breakdown.currency,
           insuranceSelected: input.insuranceSelected,
           equipmentSubtotalBeforeDiscounts: breakdown.subtotal,
           equipmentTotal: breakdown.total,
@@ -114,11 +117,11 @@ export class PricingCalculationService extends PricingCalculation {
           ),
         );
       }
-      if (target.isZero())
+      if (target.isZero() || !target.isPayable())
         return err(
           new PricingCalculationError(
             'pricing_calculation.invalid_request',
-            'targetTotalAdjustment.targetTotal must be greater than zero.',
+            'targetTotalAdjustment.targetTotal must be positive and exactly representable in cents.',
           ),
         );
       const adjusted = this.adjustmentApplier.apply({
@@ -129,6 +132,7 @@ export class PricingCalculationService extends PricingCalculation {
       const finalBreakdown = this.toBreakdown(adjusted.pricingResult, selections);
       const insurance = await this.calculateInsuranceForEquipmentPrice({
         tenantId: input.tenantId,
+        currency: calculatedBreakdown.currency,
         insuranceSelected: input.insuranceSelected,
         equipmentSubtotalBeforeDiscounts: calculatedBreakdown.subtotal,
         equipmentTotal: finalBreakdown.total,
@@ -151,6 +155,8 @@ export class PricingCalculationService extends PricingCalculation {
         return err(
           new PricingCalculationError('pricing_calculation.coupon_not_applicable', 'Coupon cannot be applied.'),
         );
+      if (error instanceof UnsupportedPricingCurrencyError)
+        return err(new PricingCalculationError('pricing_calculation.unsupported_currency', error.message));
       if (error instanceof PricingError)
         return err(
           new PricingCalculationError(
@@ -169,10 +175,14 @@ export class PricingCalculationService extends PricingCalculation {
   async calculateInsuranceForEquipmentPrice(
     input: PricingInsuranceCompositionRequest,
   ): Promise<Result<PricingInsuranceCompositionResult, PricingCalculationError>> {
+    if (!isPayableCurrency(input.currency)) {
+      return err(new PricingCalculationError('pricing_calculation.unsupported_currency',
+        `Currency "${input.currency}" is not supported for two-decimal pricing.`));
+    }
     if (
       !input.tenantId.trim() ||
-      !isValidDecimal(input.equipmentSubtotalBeforeDiscounts) ||
-      !isValidDecimal(input.equipmentTotal)
+      !isPayableAmount(input.equipmentSubtotalBeforeDiscounts, input.currency) ||
+      !isPayableAmount(input.equipmentTotal, input.currency)
     ) {
       return err(
         new PricingCalculationError('pricing_calculation.invalid_request', 'Insurance pricing input is invalid.'),
@@ -192,16 +202,19 @@ export class PricingCalculationService extends PricingCalculation {
     }
 
     const terms = InsuranceCalculationService.resolveTerms(offeringTerms.value, input.insuranceSelected);
-    const calculation = InsuranceCalculationService.calculate(input.equipmentSubtotalBeforeDiscounts, terms);
-    const totalBeforeInsurance = new Decimal(input.equipmentTotal).toFixed(2);
+    const equipmentTotal = Money.of(input.equipmentTotal, input.currency);
+    const insuranceAmount = terms.insuranceSelected
+      ? Money.settle(Money.of(input.equipmentSubtotalBeforeDiscounts, input.currency)
+          .multiplyByDecimal(new Decimal(terms.insuranceRatePercent).div(100)))
+      : Money.zero(input.currency);
 
     return ok({
       insurance: {
-        applied: calculation.insuranceApplied,
-        amount: calculation.insuranceAmount.toFixed(2),
+        applied: terms.insuranceSelected,
+        amount: insuranceAmount.toSnapshotString(),
       },
-      totalBeforeInsurance,
-      total: new Decimal(totalBeforeInsurance).plus(calculation.insuranceAmount).toFixed(2),
+      totalBeforeInsurance: equipmentTotal.toSnapshotString(),
+      total: equipmentTotal.add(insuranceAmount).toSnapshotString(),
     });
   }
 
@@ -282,9 +295,9 @@ export class PricingCalculationService extends PricingCalculation {
   }
 }
 
-function isValidDecimal(value: string): boolean {
+function isPayableAmount(value: string, currency: string): boolean {
   try {
-    return new Decimal(value).isFinite();
+    return Money.of(value, currency).isPayable();
   } catch {
     return false;
   }

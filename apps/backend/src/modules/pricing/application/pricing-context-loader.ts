@@ -5,6 +5,7 @@ import { prismaDateToLocalDate } from 'src/core/temporal/local-date';
 import { Prisma } from 'src/generated/prisma/client';
 
 import { BasePricingRatePlanInput } from '../pricing-engine/base/base-pricing-input.type';
+import { exactRateString } from '../domain/value-objects/exact-rate-string';
 import { CouponPricingInput } from '../pricing-engine/coupons/coupon-input.types';
 import { CouponNotApplicableError } from '../pricing-engine/errors/pricing.errors';
 import { PromotionPricingInput } from '../pricing-engine/promotions/promotion-input.types';
@@ -81,7 +82,7 @@ export class PricingContextLoader {
               id: tier.id,
               fromUnit: tier.fromUnit,
               toUnit: tier.toUnit,
-              pricePerUnit: String(tier.pricePerUnit),
+              pricePerUnit: exactRateString(tier.pricePerUnit),
             })),
           },
         ]),

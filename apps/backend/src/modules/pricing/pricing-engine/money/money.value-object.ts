@@ -1,6 +1,8 @@
-// src/modules/pricing/domain/money/money.ts
-
 import Decimal from 'decimal.js';
+
+// Prisma stores rates at up to 65 digits. Keep intermediate products and
+// allocations exact at that scale before settling to payable cents.
+const ExactDecimal = Decimal.clone({ precision: 200, rounding: Decimal.ROUND_HALF_UP });
 
 export class Money {
   private static readonly DEFAULT_DECIMAL_PLACES = 2;
@@ -20,7 +22,7 @@ export class Money {
       throw new Error('Currency is required.');
     }
 
-    const value = new Decimal(amount);
+    const value = new ExactDecimal(amount);
 
     if (!value.isFinite()) {
       throw new Error(`Invalid monetary amount: ${amount}`);
@@ -35,6 +37,18 @@ export class Money {
 
   static zero(currency: string): Money {
     return Money.of('0', currency);
+  }
+
+  static settle(amount: Money): Money {
+    return new Money(new ExactDecimal(amount.amount.toFixed(2, Decimal.ROUND_HALF_UP)), amount.currency);
+  }
+
+  isPayable(): boolean {
+    return this.amount.mul(100).isInteger();
+  }
+
+  toExactString(): string {
+    return this.amount.toFixed(this.amount.decimalPlaces());
   }
 
   add(other: Money): Money {
@@ -64,7 +78,7 @@ export class Money {
   }
 
   multiplyByDecimal(factor: Decimal | string): Money {
-    const value = new Decimal(factor);
+    const value = new ExactDecimal(factor);
 
     if (!value.isFinite() || value.isNegative()) {
       throw new Error(`Money multiplier must be a non-negative decimal: ${factor}`);
@@ -73,51 +87,44 @@ export class Money {
     return new Money(this.amount.mul(value), this.currency);
   }
 
-  allocateByRatios(ratios: number[], decimalPlaces = Money.DEFAULT_DECIMAL_PLACES): Money[] {
-    if (ratios.length === 0) {
-      throw new Error('At least one allocation ratio is required.');
+  allocateByRatios(ratios: Array<Decimal | string | number>, keys: string[]): Money[] {
+    if (ratios.length === 0 || keys.length !== ratios.length || new Set(keys).size !== keys.length) {
+      throw new Error('Allocation requires nonempty ratios and distinct stable line keys.');
+    }
+    if (!this.isPayable()) {
+      throw new Error('Only payable amounts can be allocated.');
     }
 
-    if (!Number.isInteger(decimalPlaces) || decimalPlaces < 0) {
-      throw new Error('Money allocation decimal places must be a non-negative integer.');
+    const weights = ratios.map((ratio) => new ExactDecimal(ratio));
+    if (weights.some((weight) => !weight.isFinite() || weight.isNegative())) {
+      throw new Error('Allocation ratios must be finite and non-negative.');
     }
-
-    if (ratios.some((ratio) => !Number.isInteger(ratio) || ratio < 0)) {
-      throw new Error('Money allocation ratios must be non-negative integers.');
+    const sum = weights.reduce((total, weight) => total.plus(weight), new ExactDecimal(0));
+    if (sum.isZero() && !this.isZero()) {
+      throw new Error('A positive allocation requires a positive ratio.');
     }
-
-    const totalRatio = ratios.reduce((total, ratio) => total + ratio, 0);
-
-    if (totalRatio <= 0) {
-      throw new Error('At least one allocation ratio must be greater than zero.');
+    const cents = this.amount.mul(100);
+    const shares = weights.map((weight, index) => {
+      const numerator = cents.mul(weight);
+      return {
+        key: keys[index],
+        units: sum.isZero() ? new ExactDecimal(0) : numerator.divToInt(sum),
+        remainder: sum.isZero() ? new ExactDecimal(0) : numerator.mod(sum),
+      };
+    });
+    let remainder = cents.minus(shares.reduce((total, share) => total.plus(share.units), new ExactDecimal(0))).toNumber();
+    for (const share of [...shares].sort((a, b) => {
+      const difference = b.remainder.comparedTo(a.remainder);
+      if (difference !== 0) return difference;
+      if (a.key < b.key) return -1;
+      if (a.key > b.key) return 1;
+      return 0;
+    })) {
+      if (remainder <= 0) break;
+      share.units = share.units.plus(1);
+      remainder -= 1;
     }
-
-    const scale = new Decimal(10).pow(decimalPlaces);
-    const totalMinorUnits = this.amount.mul(scale).floor();
-    const allocatedMinorUnits: Decimal[] = [];
-
-    let allocatedTotal = new Decimal(0);
-
-    for (const ratio of ratios) {
-      const share = totalMinorUnits.mul(ratio).div(totalRatio).floor();
-
-      allocatedMinorUnits.push(share);
-      allocatedTotal = allocatedTotal.plus(share);
-    }
-
-    let remainder = totalMinorUnits.minus(allocatedTotal).toNumber();
-    let index = 0;
-
-    while (remainder > 0) {
-      if (ratios[index] > 0) {
-        allocatedMinorUnits[index] = allocatedMinorUnits[index].plus(1);
-        remainder -= 1;
-      }
-
-      index = (index + 1) % allocatedMinorUnits.length;
-    }
-
-    return allocatedMinorUnits.map((minorUnits) => new Money(minorUnits.div(scale), this.currency));
+    return shares.map((share) => new Money(share.units.div(100), this.currency));
   }
 
   clampAbove(min: Money): Money {
@@ -151,6 +158,7 @@ export class Money {
   }
 
   toSnapshotString(): string {
+    if (!this.isPayable()) throw new Error('Cannot snapshot an unsettled monetary amount.');
     return this.amount.toFixed(Money.DEFAULT_DECIMAL_PLACES);
   }
 

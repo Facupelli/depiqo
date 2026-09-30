@@ -26,7 +26,11 @@ A coupon is a customer-supplied token used to activate a coupon-required promoti
 
 ## Price composition and accepted pricing
 
-Pricing produces an explainable proposed result rather than only a final total. Insurance is calculated from the pre-discount equipment subtotal. A manual target-total adjustment changes the equipment-pricing portion while insurance remains separately composed.
+Pricing produces an explainable proposed result rather than only a final total. An applied unit rate is exact, even when it includes fractions of a cent; it is distinct from the payable line charge. Pricing rounds the aggregate equipment charge half-up to payable cents, then allocates those cents across lines so the displayed breakdown reconciles exactly. Allocation ties use Rental Offer identity, not temporary selection references, so equivalent proposals agree across preview and acceptance. A positive-rate line may receive a zero payable charge. Supported payable currencies are ARS, EUR, and USD. Manual target totals must be exactly representable in cents.
+
+Promotions discount remaining payable charges in priority order. A promotion's aggregate discount is rounded once before allocation; a zero-payable-effect promotion does not block another. Equal-priority promotions may apply together only when Pricing can establish that their order cannot change the payable result.
+
+Insurance is calculated from the pre-discount equipment subtotal. A manual target-total adjustment changes the equipment-pricing portion while insurance remains separately composed.
 
 Pricing proposes current prices. Rental Commitment owns the accepted pricing facts of a rental, and changes to current Pricing configuration do not directly mutate those historical facts. Supported Rental Commitment edit workflows may intentionally request a new Pricing calculation and accept updated pricing facts.
 

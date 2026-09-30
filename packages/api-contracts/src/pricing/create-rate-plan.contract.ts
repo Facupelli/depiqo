@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import type { ApiContract } from "../api-contract";
+import { SupportedPricingCurrencySchema } from "./pricing-currency.schema";
 
 const PositiveDecimalSchema = z
   .union([z.string().trim().regex(/^\d+(?:\.\d+)?$/), z.number().positive()])
@@ -15,7 +16,7 @@ export const CreateRatePlanTierBodySchema = z.object({
 export const CreateRatePlanBodySchema = z.object({
   name: z.string().trim().min(1),
   billingUnit: z.enum(["HOUR", "DAY", "WEEK"]),
-  currency: z.string().trim().toUpperCase().regex(/^[A-Z]{3}$/),
+  currency: SupportedPricingCurrencySchema,
   isActive: z.boolean().default(true),
   tiers: z.array(CreateRatePlanTierBodySchema).min(1),
 });

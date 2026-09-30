@@ -14,6 +14,8 @@ const messages = {
 		"No se puede ajustar el precio porque el período del alquiler ya terminó.",
 	"rental_commitment.invalid_pricing_input":
 		"El total acordado no es válido para este pedido.",
+	"rental_commitment.unsupported_pricing_currency":
+		"La moneda de este pedido no permite ajustar el precio. Contactá al equipo de soporte.",
 	"rental_commitment.invalid_rental_field":
 		"Los datos del ajuste de precio no son válidos.",
 	"rental_commitment.rental_not_found":

@@ -53,10 +53,10 @@ export class BaseRentalLineCalculator {
       billingUnit: selection.ratePlan.billingUnit,
       ratePlanId: selection.ratePlan.id,
       appliedTierId: appliedTier.id,
-      pricePerUnit: pricePerUnit.toSnapshotString(),
-      subtotal: subtotal.toSnapshotString(),
+      pricePerUnit: pricePerUnit.toExactString(),
+      subtotal: subtotal.toExactString(),
       discountTotal: Money.zero(selection.ratePlan.currency).toSnapshotString(),
-      total: subtotal.toSnapshotString(),
+      total: subtotal.toExactString(),
     };
   }
 }

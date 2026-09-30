@@ -24,7 +24,7 @@ import { useStorefrontCombos } from "@/modules/catalog/storefront-combos.queries
 import { useStorefrontEquipment } from "@/modules/catalog/storefront-equipment.queries";
 import { useRentalOfferCartState } from "@/modules/rental-commitment/cart/add-rental-offer/use-rental-offer-cart-state";
 import { usePublicTenantConfig } from "@/modules/tenant-management/tenant/tenant.queries";
-import { formatCurrency } from "@/shared/utils/price.utils";
+import { formatExactCurrencyRate } from "@/shared/utils/price.utils";
 import { PackageCard } from "./package-card";
 import { CategoryFilter, SearchFilter } from "./product-catalog-filters";
 
@@ -239,9 +239,7 @@ function ProductCard({
 	branchId: string;
 }) {
 	const cart = useRentalOfferCartState(branchId, product);
-	const unitPrice = product.pricing
-		? Number(product.pricing.ratePlan.tiers[0].pricePerUnit)
-		: null;
+	const unitPrice = product.pricing?.ratePlan.tiers[0].pricePerUnit ?? null;
 	const displayCurrency = product.pricing?.ratePlan.currency;
 	const productImage = buildR2PublicUrl(product.image, "catalog");
 	return (
@@ -274,8 +272,12 @@ function ProductCard({
 				<div>
 					{unitPrice != null && product.pricing && displayCurrency ? (
 						<>
-							<span className="text-lg font-bold">
-								{formatCurrency(unitPrice, displayCurrency, locale ?? "es-AR")}
+							<span className="text-lg font-bold break-all">
+								{formatExactCurrencyRate(
+									unitPrice,
+									displayCurrency,
+									locale ?? "es-AR",
+								)}
 							</span>
 							<span className="text-xs text-muted-foreground">
 								{" "}

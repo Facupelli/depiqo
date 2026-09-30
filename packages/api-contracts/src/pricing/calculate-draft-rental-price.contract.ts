@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import type { ApiContract } from "../api-contract";
+import { PayableTargetTotalSchema } from "./payable-target-total.schema";
 import { ExplicitOffsetInstantWireSchema } from "../explicit-offset-instant.schema";
 
 const DecimalStringSchema = z.string();
@@ -12,7 +13,7 @@ export const CalculateDraftRentalPriceSelectedOfferSchema = z.object({
 
 export const CalculateDraftRentalPriceTargetTotalAdjustmentSchema = z.object({
   mode: z.literal("TARGET_TOTAL"),
-  targetTotal: z.string().trim().min(1),
+  targetTotal: PayableTargetTotalSchema,
 });
 
 export const CalculateDraftRentalPriceBodySchema = z.object({

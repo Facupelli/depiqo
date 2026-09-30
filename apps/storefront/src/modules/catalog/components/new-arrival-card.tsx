@@ -1,6 +1,6 @@
 import { buildR2PublicUrl } from "@/lib/r2-public-url";
 import type { StorefrontRentalOfferListViewItemDto } from "@/modules/catalog/rental-offers/storefront-rental-offer-list-view.schema";
-import { formatCurrency } from "@/shared/utils/price.utils";
+import { formatExactCurrencyRate } from "@/shared/utils/price.utils";
 
 interface NewArrivalCardProps {
 	product: StorefrontRentalOfferListViewItemDto;
@@ -39,9 +39,9 @@ export function NewArrivalCard({ product, locale }: NewArrivalCardProps) {
 				<div className="mt-1.5 text-sm">
 					{firstTier && displayCurrency ? (
 						<>
-							<span className="font-semibold">
-								{formatCurrency(
-									Number(firstTier.pricePerUnit),
+							<span className="font-semibold break-all">
+								{formatExactCurrencyRate(
+									firstTier.pricePerUnit,
 									displayCurrency,
 									locale ?? "es-AR",
 								)}
