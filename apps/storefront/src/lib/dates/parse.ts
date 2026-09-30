@@ -5,6 +5,11 @@ export function nowUtc(): Dayjs {
 	return dayjs.utc();
 }
 
+/** Today's calendar date in the branch's resolved timezone, not the browser's. */
+export function getTodayInTimezone(timezone: string): string {
+	return nowUtc().tz(timezone).format("YYYY-MM-DD");
+}
+
 /**
  * Convert a native Date object to a dayjs UTC instance.
  * Use at layer boundaries where external sources produce a native timestamp.

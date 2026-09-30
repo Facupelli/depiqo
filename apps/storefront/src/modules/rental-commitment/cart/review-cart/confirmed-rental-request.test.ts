@@ -1,8 +1,13 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { buildConfirmedRentalRequest } from "./confirmed-rental-request";
 
 describe("buildConfirmedRentalRequest", () => {
+	afterEach(() => vi.useRealTimers());
+
 	it("keeps schedule-slot instants as wire strings through contract validation and JSON serialization", () => {
+		vi.useFakeTimers({ toFake: ["Date"] });
+		vi.setSystemTime(new Date("2026-08-01T00:00:00Z"));
+
 		const result = buildConfirmedRentalRequest({
 			branchId: "branch-1",
 			items: [{ rentalOfferId: "offer-1", quantity: 1 }],

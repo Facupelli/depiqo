@@ -34,5 +34,7 @@ Thumbs.db
 *.swo
 
 .pi
+.agents
+skills-lock.json
 
 references

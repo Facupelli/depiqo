@@ -12,6 +12,7 @@ import {
   ProfessionalConfirmedRentalCreationDisabledError,
   RentalCommitmentError,
   RentalCustomerUnavailableForRentalError,
+  RentalPeriodCannotStartInPastError,
   ReturnTimeOutsideBranchScheduleError,
   TenantUnavailableForRentalError,
 } from '../domain/errors/rental-commitment.errors';
@@ -59,6 +60,8 @@ export class RentalOperationalFactsValidatorService {
     pickupAt: Date;
     returnAt: Date;
   }): Promise<Result<void, RentalCommitmentError>> {
+    if (input.pickupAt <= new Date()) return err(new RentalPeriodCannotStartInPastError());
+
     const tenant = await this.tenantOperationalFacts.getTenantOperationalFacts({ tenantId: input.tenantId });
     if (tenant.isErr()) return err(new TenantUnavailableForRentalError(input.tenantId));
     if (tenant.value.bookingMode !== 'INSTANT_BOOK') {

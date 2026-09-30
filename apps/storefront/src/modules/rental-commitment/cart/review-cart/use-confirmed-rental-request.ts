@@ -10,19 +10,21 @@ import {
 	type ConfirmedRentalRequestResult,
 } from "./confirmed-rental-request";
 
-export function useConfirmedRentalRequest(): ConfirmedRentalRequestResult {
+export function useConfirmedRentalRequest(): () => ConfirmedRentalRequestResult {
 	const { items } = useCartContext();
 	const { branch, pickupSlot, returnSlot } = useCartPeriodContext();
 	const { insuranceSelected } = useCartPricingContext();
 	const { fulfillmentMethod, deliveryRequest } = useCartFulfillmentContext();
 
-	return buildConfirmedRentalRequest({
-		branchId: branch.id,
-		items,
-		pickupSlot,
-		returnSlot,
-		fulfillmentMethod,
-		deliveryDetails: normalizeDeliveryRequest(deliveryRequest, "DELIVERY"),
-		insuranceSelected,
-	});
+	// Build on submission so a rendered request cannot outlive its pickup time.
+	return () =>
+		buildConfirmedRentalRequest({
+			branchId: branch.id,
+			items,
+			pickupSlot,
+			returnSlot,
+			fulfillmentMethod,
+			deliveryDetails: normalizeDeliveryRequest(deliveryRequest, "DELIVERY"),
+			insuranceSelected,
+		});
 }

@@ -7,6 +7,9 @@ const INSUFFICIENT_ASSET_AVAILABILITY_CODE =
 const CATALOG_SELECTION_UNAVAILABLE_TYPE = `${PROBLEM_TYPE_BASE_URL}/rental_commitment.catalog_selection_unavailable`;
 const CATALOG_SELECTION_UNAVAILABLE_CODE =
 	"rental_commitment.catalog_selection_unavailable";
+const PICKUP_MUST_BE_IN_FUTURE_CODE =
+	"rental_commitment.rental_period_must_start_in_future";
+const PICKUP_MUST_BE_IN_FUTURE_TYPE = `${PROBLEM_TYPE_BASE_URL}/${PICKUP_MUST_BE_IN_FUTURE_CODE}`;
 const UNAUTHORIZED_TYPE = `${PROBLEM_TYPE_BASE_URL}/auth/unauthorized`;
 const IDEMPOTENCY_KEY_CONFLICT_TYPE = `${PROBLEM_TYPE_BASE_URL}/rental_commitment.idempotency_key_reused_with_different_input`;
 const IDEMPOTENCY_KEY_CONFLICT_CODE =
@@ -17,6 +20,7 @@ export type ConfirmedRentalErrorKind =
 	| "CATALOG_SELECTION_UNAVAILABLE"
 	| "UNAUTHENTICATED"
 	| "IDEMPOTENCY_CONFLICT"
+	| "PICKUP_MUST_BE_IN_FUTURE"
 	| "OTHER";
 
 export function classifyConfirmedRentalError(
@@ -41,6 +45,13 @@ export function classifyConfirmedRentalError(
 		error.problemDetails.code === IDEMPOTENCY_KEY_CONFLICT_CODE
 	) {
 		return "IDEMPOTENCY_CONFLICT";
+	}
+
+	if (
+		error.problemDetails.type === PICKUP_MUST_BE_IN_FUTURE_TYPE ||
+		error.problemDetails.code === PICKUP_MUST_BE_IN_FUTURE_CODE
+	) {
+		return "PICKUP_MUST_BE_IN_FUTURE";
 	}
 
 	switch (error.problemDetails.type) {

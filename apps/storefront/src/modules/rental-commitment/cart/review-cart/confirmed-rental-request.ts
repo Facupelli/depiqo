@@ -30,6 +30,7 @@ export type ConfirmedRentalRequestFailure =
 	| { kind: "PICKUP_SLOT_REQUIRED" }
 	| { kind: "RETURN_SLOT_REQUIRED" }
 	| { kind: "INVALID_RENTAL_PERIOD" }
+	| { kind: "PICKUP_MUST_BE_IN_FUTURE" }
 	| { kind: "DELIVERY_DETAILS_REQUIRED" }
 	| { kind: "INVALID_REQUEST"; issues: string[] };
 
@@ -51,6 +52,9 @@ export function buildConfirmedRentalRequest(
 	const end = Date.parse(input.returnSlot.instant);
 	if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) {
 		return { ok: false, failure: { kind: "INVALID_RENTAL_PERIOD" } };
+	}
+	if (start <= Date.now()) {
+		return { ok: false, failure: { kind: "PICKUP_MUST_BE_IN_FUTURE" } };
 	}
 
 	if (

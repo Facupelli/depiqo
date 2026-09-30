@@ -11,8 +11,13 @@ import { CalendarIcon } from "lucide-react";
 import { lazy, Suspense, useState } from "react";
 import type { DateRange } from "react-day-picker";
 import dayjs from "@/lib/dates/dayjs";
-import { dateParamToLocalDate, localDateToDateParam } from "@/lib/dates/parse";
+import {
+	dateParamToLocalDate,
+	getTodayInTimezone,
+	localDateToDateParam,
+} from "@/lib/dates/parse";
 import { useStorefrontBranchScheduleSlots } from "@/modules/tenant-management/branches/branch-schedule.queries";
+import { useStorefrontBranches } from "@/modules/tenant-management/branches/branches.queries";
 
 const LazyDateRangePickerContent = lazy(() =>
 	import("./date-range-picker-content").then((module) => ({
@@ -52,6 +57,8 @@ export function DateRangePicker({
 	datesButtonClassName,
 	branchId,
 }: DateRangePickerProps) {
+	const { data: branches } = useStorefrontBranches();
+	const timezone = branches?.find((branch) => branch.id === branchId)?.timezone;
 	const [open, setOpen] = useState(false);
 	const [hasOpened, setHasOpened] = useState(false);
 	const committedValue: DateRange = {
@@ -80,6 +87,7 @@ export function DateRangePicker({
 			returnDate &&
 			committedPickupSlot &&
 			committedReturnSlot &&
+			Date.parse(committedPickupSlot.instant) > Date.now() &&
 			Date.parse(committedReturnSlot.instant) >
 				Date.parse(committedPickupSlot.instant),
 	);
@@ -102,6 +110,14 @@ export function DateRangePicker({
 	}
 
 	function handleDateChange(nextRange: DateRange | undefined) {
+		if (!timezone) return;
+		const today = getTodayInTimezone(timezone);
+		if (
+			(nextRange?.from && localDateToDateParam(nextRange.from) < today) ||
+			(nextRange?.to && localDateToDateParam(nextRange.to) < today)
+		)
+			return;
+
 		const previousPickup = draftValue?.from
 			? localDateToDateParam(draftValue.from)
 			: undefined;
@@ -125,12 +141,18 @@ export function DateRangePicker({
 	}
 
 	function handlePickupChange(slot: BranchScheduleSlotDto) {
+		if (Date.parse(slot.instant) <= Date.now()) return;
 		setDraftPickupInstant(slot.instant);
 		setDraftReturnInstant(undefined);
 	}
 
 	function handleReturnChange(slot: BranchScheduleSlotDto) {
 		if (!draftValue?.from || !draftValue.to || !draftPickupInstant) return;
+		if (Date.parse(draftPickupInstant) <= Date.now()) {
+			setDraftPickupInstant(undefined);
+			setDraftReturnInstant(undefined);
+			return;
+		}
 		if (Date.parse(slot.instant) <= Date.parse(draftPickupInstant)) return;
 
 		const period = {
@@ -200,6 +222,7 @@ export function DateRangePicker({
 					>
 						<LazyDateRangePickerContent
 							branchId={branchId}
+							timezone={timezone}
 							value={draftValue ?? EMPTY_DATE_RANGE}
 							pickupInstant={draftPickupInstant}
 							returnInstant={draftReturnInstant}
