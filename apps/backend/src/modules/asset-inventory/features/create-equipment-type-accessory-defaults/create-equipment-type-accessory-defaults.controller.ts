@@ -83,6 +83,8 @@ function publicErrorExtensions(error: CreateEquipmentTypeAccessoryDefaultsError)
     'asset_inventory.accessory_equipment_type_not_found': 'accessoryEquipmentTypeId',
     'asset_inventory.duplicate_accessory_default_in_request': 'accessoryEquipmentTypeId',
     'asset_inventory.accessory_default_self_reference_not_allowed': 'equipmentTypeId',
+    'asset_inventory.invalid_accessory_default_quantity': 'accessoryEquipmentTypeId',
+    'asset_inventory.empty_accessory_default_append': 'equipmentTypeId',
   };
   const contextKey = extensionByCode[error.code];
 
@@ -119,6 +121,18 @@ const createEquipmentTypeAccessoryDefaultsProblemMap = {
     title: 'Accessory default self-reference not allowed',
     status: HttpStatus.UNPROCESSABLE_ENTITY,
     detail: 'An equipment type cannot be configured as its own accessory default.',
+  },
+  'asset_inventory.invalid_accessory_default_quantity': {
+    type: createProblemType('asset_inventory.invalid_accessory_default_quantity'),
+    title: 'Invalid accessory default quantity',
+    status: HttpStatus.UNPROCESSABLE_ENTITY,
+    detail: 'Accessory default quantity must be a positive integer.',
+  },
+  'asset_inventory.empty_accessory_default_append': {
+    type: createProblemType('asset_inventory.empty_accessory_default_append'),
+    title: 'Empty accessory default append',
+    status: HttpStatus.UNPROCESSABLE_ENTITY,
+    detail: 'At least one accessory default is required.',
   },
 } satisfies Record<
   CreateEquipmentTypeAccessoryDefaultsErrorCode,

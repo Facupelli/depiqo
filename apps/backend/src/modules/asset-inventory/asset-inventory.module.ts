@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 
 import { TenantManagementModule } from '../tenant-management/tenant-management.module';
+import { AccessoryDefaultsWriter } from './application/accessory-defaults-writer';
 import { AssetBranchReferenceValidatorService } from './application/services/asset-branch-reference-validator.service';
 import { AssetCreationValidatorService } from './application/services/asset-creation-validator.service';
 import { AssetOwnershipResolver } from './application/services/asset-ownership-resolver.service';
@@ -81,6 +82,7 @@ import { EquipmentTypePageFactsService } from './public-api/equipment-type-page-
     GetOwnersHttpController,
   ],
   providers: [
+    AccessoryDefaultsWriter,
     AddAssetsToEquipmentTypeHandler,
     ChangeAssetOwnerHandler,
     DeactivateAssetHandler,
