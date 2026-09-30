@@ -248,6 +248,7 @@ export function CustomerOnboardingForm({
 					</Button>
 					{currentStep < 5 ? (
 						<Button
+							key="next"
 							type="button"
 							disabled={isBusy}
 							onClick={() => void handleNext()}
@@ -255,7 +256,12 @@ export function CustomerOnboardingForm({
 							Siguiente <ArrowRight className="size-4" />
 						</Button>
 					) : (
-						<Button type="submit" disabled={isBusy} className="min-w-30">
+						<Button
+							key="submit"
+							type="submit"
+							disabled={isBusy}
+							className="min-w-30"
+						>
 							{isBusy ? (
 								<>
 									<Loader2 className="size-4 animate-spin" />{" "}
