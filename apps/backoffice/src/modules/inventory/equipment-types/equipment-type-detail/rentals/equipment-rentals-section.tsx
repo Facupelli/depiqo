@@ -199,7 +199,7 @@ function IndividualRentalItem({ item }: { item: IndividualRentalUsageDto }) {
 					<div className="min-w-0">
 						<div className="flex flex-wrap items-center gap-2">
 							<h3 className="font-semibold">{item.name}</h3>
-							<ProductStatusBadge status={item.status} />
+							<ProductStatusBadge archivedAt={item.archivedAt} />
 						</div>
 						<p className="mt-1 text-muted-foreground text-sm">
 							{item.categoryName ?? "Sin categoría"}
@@ -227,8 +227,8 @@ function IndividualRentalItem({ item }: { item: IndividualRentalUsageDto }) {
 								<p className="font-medium text-sm">
 									{offer.branchName?.trim() || "Sucursal no disponible"}
 								</p>
-								<Badge variant={offer.isVisible ? "secondary" : "outline"}>
-									{offer.isVisible ? "Visible" : "Oculta"}
+								<Badge variant={offer.showInStore ? "secondary" : "outline"}>
+									{offer.showInStore ? "Visible" : "Oculta"}
 								</Badge>
 								<Badge variant={offer.isRentable ? "secondary" : "outline"}>
 									{offer.isRentable
@@ -286,7 +286,7 @@ function IndividualRentalItem({ item }: { item: IndividualRentalUsageDto }) {
 					onOpenChange={setAddOpen}
 				/>
 			) : null}
-			{capabilities.manageProducts && item.status !== "ARCHIVED" ? (
+			{capabilities.manageProducts && item.archivedAt === null ? (
 				<ArchiveProductAction
 					rentableItemId={item.rentableItemId}
 					open={archiveOpen}
@@ -340,7 +340,7 @@ function RentalActions({
 						Gestionar sucursales
 					</DropdownMenuItem>
 				) : null}
-				{capabilities.manageProducts && item.status !== "ARCHIVED" ? (
+				{capabilities.manageProducts && item.archivedAt === null ? (
 					<>
 						<DropdownMenuSeparator />
 						<DropdownMenuItem variant="destructive" onClick={onArchive}>
@@ -450,7 +450,7 @@ function ComboUsageRow({ item }: { item: ComboRentalUsageDto }) {
 				</div>
 			</TableCell>
 			<TableCell>
-				<ProductStatusBadge status={item.status} />
+				<ProductStatusBadge archivedAt={item.archivedAt} />
 			</TableCell>
 			<TableCell className="whitespace-nowrap font-medium text-sm">
 				{item.requirementQuantity}{" "}

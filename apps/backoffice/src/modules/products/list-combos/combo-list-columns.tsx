@@ -116,9 +116,11 @@ export function createComboListColumns({
 				),
 		},
 		{
-			id: "status",
+			id: "archival",
 			header: "Estado",
-			cell: ({ row }) => <ProductStatusBadge status={row.original.status} />,
+			cell: ({ row }) => (
+				<ProductStatusBadge archivedAt={row.original.archivedAt} />
+			),
 		},
 		{
 			id: "actions",

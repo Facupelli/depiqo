@@ -62,7 +62,7 @@ export function ComboListRowActions({
 					<Pencil className="size-4" />
 					Editar combo
 				</DropdownMenuItem>
-				{item.status !== "ARCHIVED" ? (
+				{item.archivedAt === null ? (
 					<>
 						<DropdownMenuSeparator />
 						<DropdownMenuItem

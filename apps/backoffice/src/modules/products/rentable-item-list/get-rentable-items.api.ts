@@ -10,10 +10,10 @@ import { apiFetch } from "@/lib/api/api-fetch";
 const GET_PRODUCTS_QUERY_PARAM_KEYS = [
 	"search",
 	"kinds",
-	"status",
+	"archived",
 	"categoryId",
 	"branchId",
-	"isVisible",
+	"showInStore",
 	"isRentable",
 	"hasActivePricing",
 	"page",

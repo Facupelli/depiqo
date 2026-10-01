@@ -43,7 +43,7 @@ export function ManageRentalBranchesDialog({
 										{offer.branchName?.trim() || "Sucursal no disponible"}
 									</p>
 									<p className="text-muted-foreground text-xs">
-										{offer.isVisible ? "Visible en el catálogo" : "Oculta"} ·{" "}
+										{offer.showInStore ? "Visible en el catálogo" : "Oculta"} ·{" "}
 										{offer.isRentable
 											? "Disponible para alquilar"
 											: "No disponible para alquilar"}
@@ -52,7 +52,7 @@ export function ManageRentalBranchesDialog({
 								<EditBranchAvailabilityDialog
 									rentalOfferId={offer.rentalOfferId}
 									branchName={offer.branchName}
-									isVisible={offer.isVisible}
+									isVisible={offer.showInStore}
 									isRentable={offer.isRentable}
 								/>
 							</div>

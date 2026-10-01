@@ -13,10 +13,12 @@ export function normalizeProductListQuery(
 		...(parsed.kinds
 			? { kinds: Array.from(new Set(parsed.kinds)).sort() }
 			: {}),
-		...(parsed.status ? { status: parsed.status } : {}),
+		...(parsed.archived === undefined ? {} : { archived: parsed.archived }),
 		...(parsed.categoryId ? { categoryId: parsed.categoryId } : {}),
 		...(parsed.branchId ? { branchId: parsed.branchId } : {}),
-		...(parsed.isVisible === undefined ? {} : { isVisible: parsed.isVisible }),
+		...(parsed.showInStore === undefined
+			? {}
+			: { showInStore: parsed.showInStore }),
 		...(parsed.isRentable === undefined
 			? {}
 			: { isRentable: parsed.isRentable }),

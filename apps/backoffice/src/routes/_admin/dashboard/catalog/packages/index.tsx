@@ -9,7 +9,7 @@ const combosSearchSchema = z.object({
 	page: z.coerce.number().int().positive().default(1),
 	pageSize: z.coerce.number().int().positive().max(100).default(20),
 	search: z.string().trim().min(1).optional(),
-	status: z.enum(["ALL", "DRAFT", "ACTIVE", "ARCHIVED"]).default("ACTIVE"),
+	archival: z.enum(["ALL", "UNARCHIVED", "ARCHIVED"]).default("ALL"),
 	categoryId: z.string().trim().min(1).optional(),
 	branchId: z.string().trim().min(1).optional(),
 	branchScope: z.literal("all").optional(),

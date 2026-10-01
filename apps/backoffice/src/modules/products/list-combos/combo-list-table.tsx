@@ -259,7 +259,7 @@ function CompactComboList({
 										<p className="text-muted-foreground text-xs">
 											{getComboCategoryLabel(item, categoryNameById)}
 										</p>
-										<ProductStatusBadge status={item.status} />
+										<ProductStatusBadge archivedAt={item.archivedAt} />
 									</div>
 								</div>
 								<div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-sm">

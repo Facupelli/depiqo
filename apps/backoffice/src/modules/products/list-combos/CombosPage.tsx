@@ -28,7 +28,7 @@ export type CombosSearch = {
 	page: number;
 	pageSize: number;
 	search?: string;
-	status: "ALL" | "DRAFT" | "ACTIVE" | "ARCHIVED";
+	archival: "ALL" | "UNARCHIVED" | "ARCHIVED";
 	categoryId?: string;
 	branchId?: string;
 	branchScope?: "all";
@@ -59,7 +59,8 @@ export function CombosPage({ search }: { search: CombosSearch }) {
 			page: search.page,
 			pageSize: search.pageSize,
 			search: search.search,
-			status: search.status === "ALL" ? undefined : search.status,
+			archived:
+				search.archival === "ALL" ? undefined : search.archival === "ARCHIVED",
 			categoryId: search.categoryId,
 			branchId: effectiveBranchId,
 			kinds: [...comboKinds],
@@ -70,7 +71,7 @@ export function CombosPage({ search }: { search: CombosSearch }) {
 			search.page,
 			search.pageSize,
 			search.search,
-			search.status,
+			search.archival,
 		],
 	);
 	const listQuery = useProducts(listInput, {
@@ -87,8 +88,7 @@ export function CombosPage({ search }: { search: CombosSearch }) {
 		search.search ||
 			search.categoryId ||
 			search.branchId ||
-			search.status === "DRAFT" ||
-			search.status === "ARCHIVED",
+			search.archival !== "ALL",
 	);
 	const hasZeroCurrentResults =
 		listQuery.isSuccess &&
@@ -97,7 +97,7 @@ export function CombosPage({ search }: { search: CombosSearch }) {
 	const needsTenantComboVerification =
 		hasZeroCurrentResults &&
 		!hasExplicitNarrowingFilters &&
-		(search.status === "ACTIVE" || Boolean(effectiveBranchId));
+		Boolean(effectiveBranchId);
 	const tenantComboCountQuery = useProducts(
 		{ kinds: [...comboKinds], page: 1, pageSize: 1 },
 		{
