@@ -8,7 +8,6 @@ import { RentableItemDefinitionUpdatedDomainEvent } from './events/rentable-item
 import {
   CatalogError,
   CatalogInvalidFieldError,
-  CatalogRentableItemArchivedError,
   CatalogRentableItemRequirementAlreadyExistsError,
 } from './errors/catalog.errors';
 import { CATALOG_RENTABLE_ITEM_KINDS, CatalogRentableItemKind } from './rentable-item.types';
@@ -127,11 +126,14 @@ export class RentableItem extends AggregateRootBase {
     return ok(true);
   }
 
-  updateDefinition(input: UpdateRentableItemDefinitionProps): Result<void, CatalogError> {
-    if (this.props.archivedAt !== null) {
-      return err(new CatalogRentableItemArchivedError(this.id));
-    }
+  /** Restores the item without changing its offer configuration or publication history. */
+  restore(): boolean {
+    if (this.props.archivedAt === null) return false;
+    this.props.archivedAt = null;
+    return true;
+  }
 
+  updateDefinition(input: UpdateRentableItemDefinitionProps): Result<void, CatalogError> {
     const kind = input.kind ?? this.props.kind;
     const candidateRequirements =
       input.requirements ??

@@ -113,6 +113,7 @@ describe('CatalogOfferingAuthoring integration', () => {
     const current = await setup();
     const additionalBranch = await fixtures.createBranch({ tenantId: current.tenant.id });
     const launchedBranch = await fixtures.createBranch({ tenantId: current.tenant.id });
+    const archivedBranch = await fixtures.createBranch({ tenantId: current.tenant.id });
 
     const created = await createOffering({
       tenantId: current.tenant.id,
@@ -174,6 +175,22 @@ describe('CatalogOfferingAuthoring integration', () => {
     const firstPublishedAt = offers.find((offer) => offer.id === launched.value.rentalOfferId)?.firstPublishedAt;
     expect(firstPublishedAt?.getTime()).toBeGreaterThanOrEqual(beforeLaunch.getTime());
     expect(firstPublishedAt?.getTime()).toBeLessThanOrEqual(afterLaunch.getTime());
+
+    await prisma.client.v2RentableItem.update({
+      where: { id: created.value.rentableItemId },
+      data: { archivedAt: new Date() },
+    });
+    const archivedOffer = await authoring.createRentalOfferForRentableItem({
+      tenantId: current.tenant.id,
+      rentableItemId: created.value.rentableItemId,
+      branchId: archivedBranch.id,
+      launch: true,
+    });
+    expect(archivedOffer.isOk()).toBe(true);
+    if (archivedOffer.isErr()) return;
+    expect(
+      await prisma.client.v2RentalOffer.findUniqueOrThrow({ where: { id: archivedOffer.value.rentalOfferId } }),
+    ).toEqual(expect.objectContaining({ showInStore: true, isRentable: true, firstPublishedAt: null }));
   });
 
   it.each([

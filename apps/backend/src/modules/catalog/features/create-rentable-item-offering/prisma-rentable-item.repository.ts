@@ -12,8 +12,8 @@ import { RentableItemMapper } from './rentable-item.mapper';
 export class PrismaRentableItemRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async load(tenantId: string, rentableItemId: string): Promise<RentableItem | null> {
-    const rentableItem = await this.prisma.client.v2RentableItem.findFirst({
+  async load(tenantId: string, rentableItemId: string, tx?: TransactionClient): Promise<RentableItem | null> {
+    const rentableItem = await (tx ?? this.prisma.client).v2RentableItem.findFirst({
       where: {
         id: rentableItemId,
         tenantId,
@@ -28,6 +28,15 @@ export class PrismaRentableItemRepository {
     }
 
     return RentableItemMapper.toDomain(rentableItem);
+  }
+
+  /** Persist only the lifecycle field after locking and loading the item in the same transaction. */
+  async saveArchivalState(rentableItem: RentableItem, tx: TransactionClient): Promise<void> {
+    const updated = await tx.v2RentableItem.updateMany({
+      where: { id: rentableItem.id, tenantId: rentableItem.tenantId },
+      data: RentableItemMapper.toArchivalUpdateData(rentableItem),
+    });
+    if (updated.count !== 1) throw new Error(`Rentable item "${rentableItem.id}" disappeared during archive/restore.`);
   }
 
   async save(rentableItem: RentableItem, tx?: TransactionClient): Promise<void> {

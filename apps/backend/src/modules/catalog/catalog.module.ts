@@ -4,6 +4,8 @@ import { AssetInventoryModule } from '../asset-inventory/asset-inventory.module'
 import { TenantManagementModule } from '../tenant-management/tenant-management.module';
 import { ArchiveRentableItemHttpController } from './features/archive-rentable-item/archive-rentable-item.controller';
 import { ArchiveRentableItemHandler } from './features/archive-rentable-item/archive-rentable-item.handler';
+import { RestoreRentableItemHttpController } from './features/restore-rentable-item/restore-rentable-item.controller';
+import { RestoreRentableItemHandler } from './features/restore-rentable-item/restore-rentable-item.handler';
 import { CreateIndividualRentalHttpController } from './features/create-individual-rental/create-individual-rental.controller';
 import { CreateIndividualRentalHandler } from './features/create-individual-rental/create-individual-rental.handler';
 import { CreateRentalOfferForRentableItemService } from './features/create-rental-offer-for-rentable-item/create-rental-offer-for-rentable-item.service';
@@ -41,6 +43,7 @@ import { CatalogRentalOfferDisplayFactsService } from './public-api/catalog-rent
   imports: [AssetInventoryModule, TenantManagementModule],
   controllers: [
     ArchiveRentableItemHttpController,
+    RestoreRentableItemHttpController,
     CreateIndividualRentalHttpController,
     GetRentableItemDetailHttpController,
     GetRentableItemSummariesHttpController,
@@ -57,6 +60,7 @@ import { CatalogRentalOfferDisplayFactsService } from './public-api/catalog-rent
     { provide: CatalogEquipmentTypeRentalUsages, useClass: CatalogEquipmentTypeRentalUsagesService },
     { provide: CatalogRentalOfferDisplayFacts, useClass: CatalogRentalOfferDisplayFactsService },
     ArchiveRentableItemHandler,
+    RestoreRentableItemHandler,
     CreateIndividualRentalHandler,
     CreateRentalOfferForRentableItemService,
     CreateRentableItemOfferingService,

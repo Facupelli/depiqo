@@ -58,6 +58,10 @@ export class RentableItemMapper {
     };
   }
 
+  static toArchivalUpdateData(rentableItem: RentableItem): Prisma.V2RentableItemUpdateManyMutationInput {
+    return { archivedAt: rentableItem.archivedAt };
+  }
+
   static toRequirementCreateData(
     requirement: RentableItemRequirement,
   ): Prisma.V2RentableItemRequirementCreateManyInput {

@@ -1,11 +1,12 @@
 import type { GetRentableItemDetailOfferSetupSummaryDto } from '@repo/api-contracts';
 
-type SetupSummary = GetRentableItemDetailOfferSetupSummaryDto;
+export type SetupSummary = Omit<GetRentableItemDetailOfferSetupSummaryDto, 'status'> & {
+  status: GetRentableItemDetailOfferSetupSummaryDto['status'] | 'ARCHIVED';
+};
 type SetupStatus = SetupSummary['status'];
 type SetupIssue = SetupSummary['issues'][number];
 type AvailableAction = SetupSummary['availableActions'][number];
 
-type ItemStatus = 'DRAFT' | 'ACTIVE' | 'ARCHIVED';
 type BillingUnit = 'HOUR' | 'DAY' | 'WEEK';
 
 interface BranchSetupFacts {
@@ -13,7 +14,7 @@ interface BranchSetupFacts {
 }
 
 interface OfferSetupFacts {
-  isVisible: boolean;
+  showInStore: boolean;
   isRentable: boolean;
 }
 
@@ -36,7 +37,7 @@ interface PricingSetupFacts {
 }
 
 export interface RentalOfferSetupSummaryInput {
-  itemStatus: ItemStatus;
+  itemArchived: boolean;
   branch: BranchSetupFacts | null;
   offer: OfferSetupFacts;
   pricing: PricingSetupFacts | null;
@@ -50,7 +51,7 @@ export function buildRentalOfferSetupSummary(input: RentalOfferSetupSummaryInput
     status: determineSetupStatus(input, branchIsAvailable, pricingIsValid),
     issues: collectSetupIssues(input),
     priceSummary: buildPriceSummary(input.pricing, pricingIsValid),
-    availableActions: determineAvailableActions(input.itemStatus, branchIsAvailable, pricingIsValid),
+    availableActions: determineAvailableActions(branchIsAvailable, pricingIsValid),
   };
 }
 
@@ -67,11 +68,12 @@ function determineSetupStatus(
   branchIsAvailable: boolean,
   pricingIsValid: boolean,
 ): SetupStatus {
+  if (input.itemArchived) return 'ARCHIVED';
   if (!branchIsAvailable) return 'BRANCH_UNAVAILABLE';
   if (!input.pricing) return 'MISSING_PRICING';
   if (!pricingIsValid) return 'INVALID_PRICING';
   if (!input.offer.isRentable) return 'NOT_RENTABLE';
-  if (!input.offer.isVisible) return 'NOT_VISIBLE';
+  if (!input.offer.showInStore) return 'NOT_VISIBLE';
 
   return 'READY';
 }
@@ -108,7 +110,7 @@ function addPricingIssues(issues: SetupIssue[], pricing: PricingSetupFacts | nul
 
 function addOfferIssues(issues: SetupIssue[], offer: OfferSetupFacts): void {
   if (!offer.isRentable) issues.push('OFFER_NOT_RENTABLE');
-  if (!offer.isVisible) issues.push('OFFER_NOT_VISIBLE');
+  if (!offer.showInStore) issues.push('OFFER_NOT_VISIBLE');
 }
 
 function buildPriceSummary(pricing: PricingSetupFacts | null, pricingIsValid: boolean): SetupSummary['priceSummary'] {
@@ -126,12 +128,8 @@ function buildPriceSummary(pricing: PricingSetupFacts | null, pricingIsValid: bo
   };
 }
 
-function determineAvailableActions(
-  itemStatus: ItemStatus,
-  branchIsAvailable: boolean,
-  pricingIsValid: boolean,
-): AvailableAction[] {
-  if (itemStatus === 'ARCHIVED' || !branchIsAvailable) return [];
+function determineAvailableActions(branchIsAvailable: boolean, pricingIsValid: boolean): AvailableAction[] {
+  if (!branchIsAvailable) return [];
   if (pricingIsValid) return ['EDIT_PRICING'];
 
   return ['ASSIGN_PRICE'];

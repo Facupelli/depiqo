@@ -3,7 +3,7 @@ import { PrismaTransactionClient } from 'src/core/database/prisma-unit-of-work';
 /**
  * Serialize offer publication with item archive/restore. All three workflows
  * must lock the tenant-scoped parent before reading or writing offer state.
- * Ticket 06 will use this same lock for archive and restore.
+ * Catalog offer creation, edits, archive and restore use this lock.
  */
 export async function lockRentableItem(
   tx: PrismaTransactionClient,

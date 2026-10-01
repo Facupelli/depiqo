@@ -6,13 +6,13 @@ Catalog owns the tenant's current commercial rental offering. It defines the com
 
 ### Rentable Item
 
-A Rentable Item is the tenant-owned commercial/catalog identity of something that can be offered for rent. Its fulfillment is described through equipment requirements rather than through child Rentable Items.
+A Rentable Item is the tenant-owned commercial/catalog identity of something that can be offered for rent. Its fulfillment is described through equipment requirements rather than through child Rentable Items. Archival withdraws it from new discovery and selection without freezing its configuration or changing accepted rental facts. Restoration re-exposes its configured offers; it does not guarantee pricing or physical availability.
 
 ### Rental Offer
 
 A Rental Offer makes a Rentable Item commercially available in a branch.
 
-Visibility controls whether an offer is discoverable. Rentability controls whether an already-known offer may participate in rental selection. These are independent: a hidden but rentable offer can still be selected directly.
+Visibility controls whether an offer is discoverable. Rentability controls whether an already-known offer may participate in rental selection. These are independent: a hidden but rentable offer can still be selected directly. An offer is first published when shown on an unarchived item; one shown while archived is first published on restoration. Its first-publication date never resets.
 
 ### Fulfillment Requirement
 

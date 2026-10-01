@@ -68,6 +68,89 @@ describe('Catalog HTTP authorization', () => {
 
     await allowed.withCsrf(allowed.request().post(path)).expect(404);
     await readOnly.withCsrf(readOnly.request().post(path)).expect(403);
+    const missingRestore = path.replace('/archive', '/restore');
+    await allowed.withCsrf(allowed.request().post(missingRestore)).expect(404);
+    await readOnly.withCsrf(readOnly.request().post(missingRestore)).expect(403);
+
+    const branch = await fixtures.createBranch({ tenantId: tenant.id });
+    const hiddenBranch = await fixtures.createBranch({ tenantId: tenant.id });
+    const previouslyPublishedBranch = await fixtures.createBranch({ tenantId: tenant.id });
+    const equipmentType = await prisma.client.v2EquipmentType.create({
+      data: { tenantId: tenant.id, name: `Equipment ${randomUUID()}` },
+    });
+    const item = await prisma.client.v2RentableItem.create({
+      data: {
+        tenantId: tenant.id,
+        name: `Item ${randomUUID()}`,
+        kind: 'SINGLE',
+        requirements: { create: { tenantId: tenant.id, equipmentTypeId: equipmentType.id, quantityPerItem: 1 } },
+      },
+    });
+    const priorPublication = new Date('2023-06-01T12:00:00Z');
+    const [shown, hidden, published] = await Promise.all([
+      prisma.client.v2RentalOffer.create({
+        data: {
+          tenantId: tenant.id,
+          rentableItemId: item.id,
+          branchId: branch.id,
+          showInStore: true,
+          isRentable: true,
+        },
+      }),
+      prisma.client.v2RentalOffer.create({
+        data: { tenantId: tenant.id, rentableItemId: item.id, branchId: hiddenBranch.id },
+      }),
+      prisma.client.v2RentalOffer.create({
+        data: {
+          tenantId: tenant.id,
+          rentableItemId: item.id,
+          branchId: previouslyPublishedBranch.id,
+          showInStore: true,
+          firstPublishedAt: priorPublication,
+        },
+      }),
+    ]);
+    const itemPath = `/catalog/rentable-items/${item.id}`;
+    const archivePath = `${itemPath}/archive`;
+    const restorePath = `${itemPath}/restore`;
+    const foreign = await clientWithPermissions((await fixtures.createTenant()).id, [TenantPermission.ProductsManage]);
+    await foreign.withCsrf(foreign.request().post(restorePath)).expect(404);
+    await allowed.withCsrf(allowed.request().post(archivePath)).expect(204);
+    const firstArchive = (await prisma.client.v2RentableItem.findUniqueOrThrow({ where: { id: item.id } })).archivedAt;
+    expect(firstArchive).toBeInstanceOf(Date);
+    await allowed.withCsrf(allowed.request().post(archivePath)).expect(204);
+    expect((await prisma.client.v2RentableItem.findUniqueOrThrow({ where: { id: item.id } })).archivedAt).toEqual(
+      firstArchive,
+    );
+    await allowed.withCsrf(allowed.request().patch(itemPath)).send({ name: 'Edited while archived' }).expect(204);
+    const beforeRestore = new Date();
+    await allowed.withCsrf(allowed.request().post(restorePath)).expect(204);
+    const afterRestore = new Date();
+    const firstPublication = (await prisma.client.v2RentalOffer.findUniqueOrThrow({ where: { id: shown.id } }))
+      .firstPublishedAt;
+    await allowed.withCsrf(allowed.request().post(restorePath)).expect(204);
+    expect((await prisma.client.v2RentalOffer.findUniqueOrThrow({ where: { id: shown.id } })).firstPublishedAt).toEqual(
+      firstPublication,
+    );
+    expect(await prisma.client.v2RentableItem.findUniqueOrThrow({ where: { id: item.id } })).toEqual(
+      expect.objectContaining({ name: 'Edited while archived', archivedAt: null }),
+    );
+    expect(await prisma.client.v2RentableItemRequirement.count({ where: { rentableItemId: item.id } })).toBe(1);
+    const restoredShown = await prisma.client.v2RentalOffer.findUniqueOrThrow({ where: { id: shown.id } });
+    expect(restoredShown).toEqual(expect.objectContaining({ showInStore: true, isRentable: true }));
+    expect(restoredShown.firstPublishedAt?.getTime()).toBeGreaterThanOrEqual(beforeRestore.getTime());
+    expect(restoredShown.firstPublishedAt?.getTime()).toBeLessThanOrEqual(afterRestore.getTime());
+    expect(
+      (await prisma.client.v2RentalOffer.findUniqueOrThrow({ where: { id: hidden.id } })).firstPublishedAt,
+    ).toBeNull();
+    expect(
+      (await prisma.client.v2RentalOffer.findUniqueOrThrow({ where: { id: published.id } })).firstPublishedAt,
+    ).toEqual(priorPublication);
+    await allowed.withCsrf(allowed.request().post(archivePath)).expect(204);
+    await allowed.withCsrf(allowed.request().post(restorePath)).expect(204);
+    expect((await prisma.client.v2RentalOffer.findUniqueOrThrow({ where: { id: shown.id } })).firstPublishedAt).toEqual(
+      firstPublication,
+    );
   });
 
   it('enforces products.availability.manage independently from products.manage', async () => {
