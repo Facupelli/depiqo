@@ -247,6 +247,12 @@ describe('AddRentalSelection integration', () => {
     expect(assignment.effectiveFrom).toEqual(state.rental.periodStart);
     expect(parsePostgresRange(block.period).start).toEqual(new Date(state.rental.periodStart.getTime() - 10 * 60_000));
     expect(parsePostgresRange(block.period).end).toEqual(new Date(state.rental.periodEnd.getTime() + 15 * 60_000));
+
+    const extra = await fixtures.createOffer({ tenantId: setup.tenant.id, branchId: setup.branch.id });
+    await prisma.client.v2RentableItem.update({ where: { id: extra.item.id }, data: { archivedAt: new Date() } });
+    const rejected = await add(setup, { rentalOfferId: extra.offer.id });
+    expect(rejected.isErr() && rejected.error.code).toBe('rental_commitment.catalog_selection_unavailable');
+    expect(await fixtures.persistedState(setup.rental.rentalId)).toEqual(state);
   });
 
   it.each([

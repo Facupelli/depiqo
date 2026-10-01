@@ -49,7 +49,8 @@ export function ComboRentalSection({
 				<div>
 					<h2 className="font-semibold">Sucursales</h2>
 					<p className="mt-1 text-sm text-muted-foreground">
-						Gestiona visibilidad, disponibilidad y precios para cada sucursal.
+						Configura por separado la visibilidad, los nuevos alquileres y el
+						precio. Asignar un precio no publica la oferta.
 					</p>
 				</div>
 				{canAddBranch ? (
@@ -119,7 +120,7 @@ export function ComboRentalSection({
 												<EditBranchAvailabilityDialog
 													rentalOfferId={offer.rentalOfferId}
 													branchName={offer.branchName}
-													isVisible={offer.isVisible}
+													showInStore={offer.showInStore}
 													isRentable={offer.isRentable}
 												/>
 											) : null}

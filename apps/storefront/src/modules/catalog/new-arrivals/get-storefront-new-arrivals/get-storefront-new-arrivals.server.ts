@@ -14,14 +14,14 @@ export async function getStorefrontNewArrivals(
 	input: GetStorefrontNewArrivalsInputDto,
 ): Promise<StorefrontRentalOfferListViewItemDto[]> {
 	const parsedInput = GetStorefrontNewArrivalsInputSchema.parse(input);
-	const publishedAfter = new Date(
+	const firstPublishedAfter = new Date(
 		Date.now() - parsedInput.windowDays * MILLISECONDS_PER_DAY,
 	).toISOString();
 	const page = await composeStorefrontRentalOfferListViewPage(requestContext, {
 		branchId: parsedInput.branchId,
 		kind: "SINGLE",
-		publishedAfter,
-		sort: "PUBLISHED_AT_DESC",
+		firstPublishedAfter,
+		sort: "FIRST_PUBLISHED_AT_DESC",
 		page: 1,
 		pageSize: NEW_ARRIVALS_PAGE_SIZE,
 	});

@@ -17,7 +17,6 @@ const BooleanQueryParamSchema = z.preprocess((value) => {
 }, z.boolean().optional());
 
 export const GetRentableItemsKindSchema = z.enum(["SINGLE", "PACKAGE", "KIT", "BUNDLE"]);
-export const GetRentableItemsStatusSchema = z.enum(["DRAFT", "ACTIVE", "ARCHIVED"]);
 
 const RentableItemKindsQuerySchema = z.preprocess((value) => {
   if (value === undefined || value === null || value === "") return undefined;
@@ -29,10 +28,10 @@ const RentableItemKindsQuerySchema = z.preprocess((value) => {
 export const GetRentableItemsQuerySchema = z.object({
   search: z.string().trim().min(1).optional(),
   kinds: RentableItemKindsQuerySchema,
-  status: GetRentableItemsStatusSchema.optional(),
+  archived: BooleanQueryParamSchema,
   categoryId: z.string().trim().min(1).optional(),
   branchId: z.string().trim().min(1).optional(),
-  isVisible: BooleanQueryParamSchema,
+  showInStore: BooleanQueryParamSchema,
   isRentable: BooleanQueryParamSchema,
   hasActivePricing: BooleanQueryParamSchema,
   page: z.coerce.number().int().positive().default(1),
@@ -43,7 +42,7 @@ export const GetRentableItemsOfferSchema = z.object({
   rentalOfferId: z.string(),
   branchId: z.string(),
   branchName: z.string().nullable(),
-  isVisible: z.boolean(),
+  showInStore: z.boolean(),
   isRentable: z.boolean(),
 });
 
@@ -65,7 +64,7 @@ export const GetRentableItemsItemSchema = z.object({
   kind: GetRentableItemsKindSchema,
   imageUrl: z.string().nullable(),
   categoryId: z.string().nullable(),
-  status: GetRentableItemsStatusSchema,
+  archivedAt: z.string().datetime().nullable(),
   offers: z.array(GetRentableItemsOfferSchema),
   startingPrice: GetRentableItemsStartingPriceSchema.nullable(),
   requiredEquipment: z.array(GetRentableItemsRequiredEquipmentSchema),

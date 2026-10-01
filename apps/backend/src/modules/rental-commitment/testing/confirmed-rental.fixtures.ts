@@ -29,7 +29,7 @@ export class ConfirmedRentalFixtures {
         tenantId: params.tenantId,
         name: `Item ${randomUUID()}`,
         kind: 'SINGLE',
-        status: 'ACTIVE',
+        archivedAt: null,
         requirements: {
           create: {
             tenantId: params.tenantId,
@@ -44,7 +44,7 @@ export class ConfirmedRentalFixtures {
         tenantId: params.tenantId,
         branchId: params.branchId,
         rentableItemId: item.id,
-        isVisible: true,
+        showInStore: true,
         isRentable: true,
       },
     });

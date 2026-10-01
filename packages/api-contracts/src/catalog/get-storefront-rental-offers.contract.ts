@@ -4,7 +4,7 @@ import type { ApiContract } from "../api-contract";
 import { ExplicitOffsetInstantWireSchema } from "../explicit-offset-instant.schema";
 
 export const GetStorefrontRentalOffersKindSchema = z.enum(["SINGLE", "PACKAGE", "KIT", "BUNDLE"]);
-export const GetStorefrontRentalOffersSortSchema = z.enum(["PUBLISHED_AT_DESC"]);
+export const GetStorefrontRentalOffersSortSchema = z.enum(["FIRST_PUBLISHED_AT_DESC"]);
 
 export const GetStorefrontRentalOffersQuerySchema = z.object({
   branchId: z.string().trim().min(1),
@@ -13,7 +13,7 @@ export const GetStorefrontRentalOffersQuerySchema = z.object({
   kind: GetStorefrontRentalOffersKindSchema.optional(),
   categoryId: z.string().trim().min(1).optional(),
   search: z.string().trim().min(1).optional(),
-  publishedAfter: ExplicitOffsetInstantWireSchema.optional(),
+  firstPublishedAfter: ExplicitOffsetInstantWireSchema.optional(),
   sort: GetStorefrontRentalOffersSortSchema.optional(),
 });
 

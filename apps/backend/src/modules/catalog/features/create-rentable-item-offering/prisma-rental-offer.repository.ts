@@ -3,7 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/core/database/prisma.service';
 import { mapPostgresError } from 'src/core/utils/postgres-error.mapper';
 
-import { RentalOffer } from '../../domain/rental-offer.entity';
+import { RentalOffer, UpdateRentalOfferSettingsProps } from '../../domain/rental-offer.entity';
 import { RentalOfferMapper } from './rental-offer.mapper';
 
 type TransactionClient = Parameters<Parameters<PrismaService['client']['$transaction']>[0]>[0];
@@ -21,8 +21,27 @@ export class PrismaRentalOfferRepository {
     return record ? RentalOfferMapper.toDomain(record) : null;
   }
 
-  async save(rentalOffer: RentalOffer, tx?: TransactionClient): Promise<void> {
-    await this.saveMany([rentalOffer], tx);
+  /** Called after locking the parent item and loading the offer in the same transaction. */
+  async updateSettings(
+    rentalOffer: RentalOffer,
+    supplied: UpdateRentalOfferSettingsProps,
+    firstPublishedAt: Date | null,
+    tx: TransactionClient,
+  ): Promise<void> {
+    const data = RentalOfferMapper.toSettingsUpdateData(rentalOffer, supplied, firstPublishedAt);
+    if (Object.keys(data).length === 0) return;
+
+    const updated = await tx.v2RentalOffer.updateMany({
+      where: {
+        id: rentalOffer.id,
+        tenantId: rentalOffer.tenantId,
+        ...(firstPublishedAt !== null && { firstPublishedAt: null }),
+      },
+      data,
+    });
+    if (updated.count !== 1) {
+      throw new Error(`Rental offer "${rentalOffer.id}" changed during its settings update.`);
+    }
   }
 
   async saveMany(rentalOffers: RentalOffer[], tx?: TransactionClient): Promise<void> {

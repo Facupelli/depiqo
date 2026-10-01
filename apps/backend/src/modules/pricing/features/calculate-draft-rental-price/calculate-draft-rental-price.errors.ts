@@ -7,7 +7,7 @@ export type CalculateDraftRentalPriceErrorCode =
   | 'pricing.tenant_config_unavailable'
   | 'pricing.rental_offer_not_found'
   | 'pricing.rental_offer_not_selectable'
-  | 'pricing.rentable_item_inactive'
+  | 'pricing.rentable_item_archived'
   | 'pricing.missing_active_pricing'
   | 'pricing.invalid_pricing_configuration';
 

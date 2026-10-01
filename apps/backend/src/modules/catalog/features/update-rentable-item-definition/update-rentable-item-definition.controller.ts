@@ -65,12 +65,6 @@ const updateRentableItemDefinitionProblemMap = {
     status: HttpStatus.NOT_FOUND,
     detail: 'The requested rentable item could not be found.',
   },
-  'catalog.rentable_item_archived': {
-    type: createProblemType('catalog.rentable_item_archived'),
-    title: 'Rentable item is archived',
-    status: HttpStatus.CONFLICT,
-    detail: 'Archived rentable items cannot be updated.',
-  },
   'catalog.rentable_item_invalid_definition': {
     type: createProblemType('catalog.rentable_item_invalid_definition'),
     title: 'Invalid rentable item definition',

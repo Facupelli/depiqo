@@ -1,6 +1,6 @@
 import { Prisma, V2RentalOffer } from 'src/generated/prisma/client';
 
-import { RentalOffer } from '../../domain/rental-offer.entity';
+import { RentalOffer, UpdateRentalOfferSettingsProps } from '../../domain/rental-offer.entity';
 
 export class RentalOfferMapper {
   static toDomain(record: V2RentalOffer): RentalOffer {
@@ -9,9 +9,9 @@ export class RentalOfferMapper {
       tenantId: record.tenantId,
       branchId: record.branchId,
       rentableItemId: record.rentableItemId,
-      isVisible: record.isVisible,
+      showInStore: record.showInStore,
       isRentable: record.isRentable,
-      publishedAt: record.publishedAt,
+      firstPublishedAt: record.firstPublishedAt,
       createdAt: record.createdAt,
       updatedAt: record.updatedAt,
     });
@@ -23,9 +23,9 @@ export class RentalOfferMapper {
       tenantId: rentalOffer.tenantId,
       branchId: rentalOffer.branchId,
       rentableItemId: rentalOffer.rentableItemId,
-      isVisible: rentalOffer.isVisible,
+      showInStore: rentalOffer.showInStore,
       isRentable: rentalOffer.isRentable,
-      publishedAt: rentalOffer.publishedAt,
+      firstPublishedAt: rentalOffer.firstPublishedAt,
     };
   }
 
@@ -35,8 +35,20 @@ export class RentalOfferMapper {
 
   static toUpdateData(rentalOffer: RentalOffer): Prisma.V2RentalOfferUpdateInput {
     return {
-      isVisible: rentalOffer.isVisible,
+      showInStore: rentalOffer.showInStore,
       isRentable: rentalOffer.isRentable,
+    };
+  }
+
+  static toSettingsUpdateData(
+    rentalOffer: RentalOffer,
+    supplied: UpdateRentalOfferSettingsProps,
+    firstPublishedAt: Date | null,
+  ): Prisma.V2RentalOfferUpdateManyMutationInput {
+    return {
+      ...(supplied.showInStore !== undefined && { showInStore: rentalOffer.showInStore }),
+      ...(supplied.isRentable !== undefined && { isRentable: rentalOffer.isRentable }),
+      ...(firstPublishedAt !== null && { firstPublishedAt }),
     };
   }
 }

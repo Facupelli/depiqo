@@ -6,8 +6,6 @@ const GENERIC_UPDATE_ERROR_MESSAGE =
 const formErrorMessages = {
 	"catalog.rentable_item_not_found":
 		"El combo ya no existe o dejó de estar disponible.",
-	"catalog.rentable_item_archived":
-		"El combo fue archivado mientras lo editabas y ya no puede modificarse.",
 	"catalog.category_not_found":
 		"La categoría seleccionada ya no está disponible. Elegí otra categoría.",
 	"catalog.category_inactive":

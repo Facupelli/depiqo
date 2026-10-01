@@ -73,16 +73,16 @@ describe('GetRentalOfferAvailability integration', () => {
     tenantId: string;
     branchId: string;
     requirements: Array<{ equipmentTypeId: string; quantityPerItem: number }>;
-    isVisible?: boolean;
+    showInStore?: boolean;
     isRentable?: boolean;
-    itemStatus?: 'DRAFT' | 'ACTIVE' | 'ARCHIVED';
+    archived?: boolean;
   }) {
     const item = await prisma.client.v2RentableItem.create({
       data: {
         tenantId: params.tenantId,
         name: `Item ${randomUUID()}`,
         kind: params.requirements.length > 1 ? 'PACKAGE' : 'SINGLE',
-        status: params.itemStatus ?? 'ACTIVE',
+        archivedAt: params.archived ? new Date() : null,
         requirements: {
           create: params.requirements.map((requirement) => ({ tenantId: params.tenantId, ...requirement })),
         },
@@ -93,7 +93,7 @@ describe('GetRentalOfferAvailability integration', () => {
         tenantId: params.tenantId,
         branchId: params.branchId,
         rentableItemId: item.id,
-        isVisible: params.isVisible ?? true,
+        showInStore: params.showInStore ?? true,
         isRentable: params.isRentable ?? true,
       },
     });
@@ -334,14 +334,14 @@ describe('GetRentalOfferAvailability integration', () => {
     expect(result.isErr() && result.error.code).toBe('rental_commitment.rental_offer_not_found');
   });
 
-  it('accepts a hidden but rentable offer and rejects unrentable and inactive offers', async () => {
+  it('accepts a hidden but rentable offer and rejects unrentable and archived offers', async () => {
     const s = await setup();
     const type = await equipmentType(s.tenant.id);
     const hidden = await offer({
       tenantId: s.tenant.id,
       branchId: s.branch.id,
       requirements: [{ equipmentTypeId: type.id, quantityPerItem: 1 }],
-      isVisible: false,
+      showInStore: false,
     });
     const unrentable = await offer({
       tenantId: s.tenant.id,
@@ -349,18 +349,18 @@ describe('GetRentalOfferAvailability integration', () => {
       requirements: [{ equipmentTypeId: type.id, quantityPerItem: 1 }],
       isRentable: false,
     });
-    const inactive = await offer({
+    const archived = await offer({
       tenantId: s.tenant.id,
       branchId: s.branch.id,
       requirements: [{ equipmentTypeId: type.id, quantityPerItem: 1 }],
-      itemStatus: 'DRAFT',
+      archived: true,
     });
     expect((await value(s.tenant.id, s.branch.id, [hidden.id]))[0].availableCount).toBe(0);
     expect((await availability(s.tenant.id, s.branch.id, [unrentable.id]))._unsafeUnwrapErr().code).toBe(
       'rental_commitment.rental_offer_not_rentable',
     );
-    expect((await availability(s.tenant.id, s.branch.id, [inactive.id]))._unsafeUnwrapErr().code).toBe(
-      'rental_commitment.rentable_item_not_active',
+    expect((await availability(s.tenant.id, s.branch.id, [archived.id]))._unsafeUnwrapErr().code).toBe(
+      'rental_commitment.rentable_item_archived',
     );
   });
 
@@ -470,7 +470,7 @@ describe('GetRentalOfferAvailability integration', () => {
     });
   });
 
-  it('maps wrong-branch, unrentable, and inactive storefront offers to zero', async () => {
+  it('maps wrong-branch, unrentable, and archived storefront offers to zero', async () => {
     const s = await setup();
     const otherBranch = await core.createBranch({ tenantId: s.tenant.id });
     const type = await equipmentType(s.tenant.id);
@@ -485,11 +485,11 @@ describe('GetRentalOfferAvailability integration', () => {
       requirements: [{ equipmentTypeId: type.id, quantityPerItem: 1 }],
       isRentable: false,
     });
-    const inactive = await offer({
+    const archived = await offer({
       tenantId: s.tenant.id,
       branchId: s.branch.id,
       requirements: [{ equipmentTypeId: type.id, quantityPerItem: 1 }],
-      itemStatus: 'DRAFT',
+      archived: true,
     });
 
     const result = await queryBus.execute<
@@ -500,12 +500,12 @@ describe('GetRentalOfferAvailability integration', () => {
         s.tenant.id,
         s.branch.id,
         new RentalPeriod(requestedPeriod.start, requestedPeriod.end),
-        [wrongBranch.id, unrentable.id, inactive.id],
+        [wrongBranch.id, unrentable.id, archived.id],
       ),
     );
 
     expect(result._unsafeUnwrap()).toEqual({
-      data: [wrongBranch.id, unrentable.id, inactive.id].map((rentalOfferId) => ({
+      data: [wrongBranch.id, unrentable.id, archived.id].map((rentalOfferId) => ({
         rentalOfferId,
         availableCount: 0,
       })),

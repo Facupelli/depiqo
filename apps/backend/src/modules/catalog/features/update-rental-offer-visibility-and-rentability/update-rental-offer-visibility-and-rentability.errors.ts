@@ -1,8 +1,6 @@
 import { ApplicationError, ApplicationErrorContext } from 'src/core/errors/application-error';
 
-export type UpdateRentalOfferVisibilityAndRentabilityErrorCode =
-  | 'catalog.rental_offer_not_found'
-  | 'catalog.rental_offer_archived';
+export type UpdateRentalOfferVisibilityAndRentabilityErrorCode = 'catalog.rental_offer_not_found';
 
 export interface UpdateRentalOfferVisibilityAndRentabilityError extends ApplicationError {
   code: UpdateRentalOfferVisibilityAndRentabilityErrorCode;

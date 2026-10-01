@@ -9,7 +9,6 @@ export interface RentalOfferReadModel {
   tenantId: string;
   branchId: string;
   rentableItemId: string;
-  isVisible: boolean;
   isRentable: boolean;
 }
 
@@ -18,7 +17,7 @@ export interface RentableItemReadModel {
   tenantId: string;
   name: string;
   kind: RentableItemKind;
-  status: 'DRAFT' | 'ACTIVE' | 'ARCHIVED';
+  archivedAt: Date | null;
   categoryId?: string | null;
 }
 
@@ -48,7 +47,6 @@ export class PrismaResolveSelectedRentalOffersReader {
         tenantId: true,
         branchId: true,
         rentableItemId: true,
-        isVisible: true,
         isRentable: true,
       },
     });
@@ -65,7 +63,7 @@ export class PrismaResolveSelectedRentalOffersReader {
         tenantId: true,
         name: true,
         kind: true,
-        status: true,
+        archivedAt: true,
         categoryId: true,
       },
     });

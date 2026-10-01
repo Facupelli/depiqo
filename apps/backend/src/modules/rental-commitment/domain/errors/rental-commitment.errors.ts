@@ -25,12 +25,6 @@ export class RentalOfferNotRentableError extends RentalInvalidFieldError {
   }
 }
 
-export class RentableItemNotActiveError extends RentalInvalidFieldError {
-  constructor(public readonly rentableItemId: string) {
-    super('rentableItemId', `item "${rentableItemId}" is not active`);
-  }
-}
-
 export class InvalidFulfillmentDefinitionError extends RentalInvalidFieldError {
   constructor(public readonly rentableItemId: string) {
     super('fulfillmentRequirements', `item "${rentableItemId}" has no requirements`);

@@ -34,13 +34,13 @@ export class CatalogEquipmentTypeRentalUsagesService extends CatalogEquipmentTyp
             imageUrl: true,
             categoryId: true,
             kind: true,
-            status: true,
+            archivedAt: true,
             rentalOffers: {
               where: { tenantId: input.tenantId },
               select: {
                 id: true,
                 branchId: true,
-                isVisible: true,
+                showInStore: true,
                 isRentable: true,
               },
             },
@@ -58,12 +58,12 @@ export class CatalogEquipmentTypeRentalUsagesService extends CatalogEquipmentTyp
         imageUrl: requirement.rentableItem.imageUrl,
         categoryId: requirement.rentableItem.categoryId,
         kind: requirement.rentableItem.kind,
-        status: requirement.rentableItem.status,
+        archivedAt: requirement.rentableItem.archivedAt,
         requirementQuantity: requirement.quantityPerItem,
         offers: requirement.rentableItem.rentalOffers.map((offer) => ({
           rentalOfferId: offer.id,
           branchId: offer.branchId,
-          isVisible: offer.isVisible,
+          showInStore: offer.showInStore,
           isRentable: offer.isRentable,
         })),
       });

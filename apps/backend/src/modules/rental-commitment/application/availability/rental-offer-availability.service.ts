@@ -16,7 +16,7 @@ import { RentalPeriod } from '../../domain/value-objects/rental-period.value-obj
 export type RentalOfferCatalogUnavailableReason =
   | 'RENTAL_OFFER_NOT_FOUND'
   | 'RENTAL_OFFER_NOT_RENTABLE'
-  | 'RENTABLE_ITEM_NOT_ACTIVE';
+  | 'RENTABLE_ITEM_ARCHIVED';
 
 export type RentalOfferAvailabilityOutcome =
   | {
@@ -210,15 +210,15 @@ export class RentalOfferAvailabilityService {
   }
 
   private mapUnavailableReason(
-    code: 'RentalOfferNotFound' | 'RentalOfferNotRentable' | 'RentableItemNotActive',
+    code: 'RentalOfferNotFound' | 'RentalOfferNotRentable' | 'RentableItemArchived',
   ): RentalOfferCatalogUnavailableReason {
     switch (code) {
       case 'RentalOfferNotFound':
         return 'RENTAL_OFFER_NOT_FOUND';
       case 'RentalOfferNotRentable':
         return 'RENTAL_OFFER_NOT_RENTABLE';
-      case 'RentableItemNotActive':
-        return 'RENTABLE_ITEM_NOT_ACTIVE';
+      case 'RentableItemArchived':
+        return 'RENTABLE_ITEM_ARCHIVED';
     }
   }
 
@@ -232,7 +232,7 @@ export class RentalOfferAvailabilityService {
         return this.error('rental_commitment.invalid_availability_selection', error.message, error);
       case 'RentalOfferNotFound':
       case 'RentalOfferNotRentable':
-      case 'RentableItemNotActive':
+      case 'RentableItemArchived':
         throw new Error(`Catalog requirement resolution unexpectedly returned whole-call error "${error.code}".`);
     }
   }

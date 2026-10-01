@@ -4,6 +4,7 @@ export * from "./get-rentable-item-detail.contract";
 export * from "./get-rentable-item-summaries.contract";
 export * from "./get-rentable-items.contract";
 export * from "./get-storefront-rental-offers.contract";
+export * from "./restore-rentable-item.contract";
 export * from "./search-rental-offers.contract";
 export * from "./update-rentable-item-definition.contract";
 export * from "./update-rental-offer-visibility-and-rentability.contract";

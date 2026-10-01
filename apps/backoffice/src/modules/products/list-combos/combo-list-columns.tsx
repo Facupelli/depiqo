@@ -1,10 +1,12 @@
 import type { GetRentableItemsItemDto } from "@repo/api-contracts";
+import { Badge } from "@repo/ui/components/badge";
 import { Link } from "@tanstack/react-router";
 import type { ColumnDef } from "@tanstack/react-table";
 import { PackageOpen } from "lucide-react";
 import { buildR2PublicUrl } from "@/lib/r2-public-url";
 import { formatExactCurrencyRate } from "@/shared/utils/formatters";
 import { ProductStatusBadge } from "../product-status-badge";
+import type { CombosSearch } from "./CombosPage";
 import { ComboListRowActions } from "./combo-list-row-actions";
 
 const billingUnitLabels = {
@@ -50,6 +52,18 @@ export function getComboBranchLabel(item: GetRentableItemsItemDto): string {
 	return names.length > 0 ? names.join(", ") : "Sin sucursales";
 }
 
+export function ComboListStatusBadge({
+	archivedAt,
+}: {
+	archivedAt: GetRentableItemsItemDto["archivedAt"];
+}) {
+	return archivedAt === null ? (
+		<Badge variant="secondary">Sin archivar</Badge>
+	) : (
+		<ProductStatusBadge archivedAt={archivedAt} />
+	);
+}
+
 export function ComboImage({ item }: { item: GetRentableItemsItemDto }) {
 	const imageUrl = buildR2PublicUrl(item.imageUrl, "catalog");
 
@@ -68,9 +82,11 @@ export function ComboImage({ item }: { item: GetRentableItemsItemDto }) {
 
 export function createComboListColumns({
 	categoryNameById,
+	archival,
 	onArchive,
 }: {
 	categoryNameById: Map<string, string>;
+	archival: CombosSearch["archival"];
 	onArchive?: (item: GetRentableItemsItemDto) => void;
 }): ColumnDef<GetRentableItemsItemDto>[] {
 	return [
@@ -115,11 +131,17 @@ export function createComboListColumns({
 					<span className="text-muted-foreground">-</span>
 				),
 		},
-		{
-			id: "status",
-			header: "Estado",
-			cell: ({ row }) => <ProductStatusBadge status={row.original.status} />,
-		},
+		...(archival === "UNARCHIVED"
+			? []
+			: [
+					{
+						id: "archival",
+						header: "Estado",
+						cell: ({ row }) => (
+							<ComboListStatusBadge archivedAt={row.original.archivedAt} />
+						),
+					} satisfies ColumnDef<GetRentableItemsItemDto>,
+				]),
 		{
 			id: "actions",
 			header: "Acciones",

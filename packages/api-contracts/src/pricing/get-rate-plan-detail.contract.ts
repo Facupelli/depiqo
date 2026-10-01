@@ -19,7 +19,7 @@ export const GetRatePlanDetailRentalOfferSchema = z.object({
   branchId: z.string(),
   rentableItemId: z.string(),
   rentableItemName: z.string(),
-  isVisible: z.boolean(),
+  showInStore: z.boolean(),
   isRentable: z.boolean(),
 });
 

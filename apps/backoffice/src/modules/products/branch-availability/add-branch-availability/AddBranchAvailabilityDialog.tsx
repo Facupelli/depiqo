@@ -351,12 +351,12 @@ function getDialogDescription(
 	branchLabel: string,
 ): string {
 	if (step === "attach-rate-plan") {
-		return `Crea la oferta en ${branchLabel} y asígnale un plan de precios existente.`;
+		return `Crea la oferta en ${branchLabel}, asígnale un plan de precios y actívala para la tienda y nuevos alquileres.`;
 	}
 	if (step === "create-rate-plan") {
-		return `Crea la oferta en ${branchLabel} junto con un nuevo plan de precios.`;
+		return `Crea la oferta en ${branchLabel} con un nuevo plan de precios y actívala para la tienda y nuevos alquileres.`;
 	}
-	return "Selecciona una sucursal activa y elige cómo quieres configurar sus precios.";
+	return "Selecciona una sucursal y su precio. La nueva oferta se mostrará en la tienda y permitirá nuevos alquileres al crearla.";
 }
 
 function getDialogContentClassName(step: AddOfferDialogStep) {

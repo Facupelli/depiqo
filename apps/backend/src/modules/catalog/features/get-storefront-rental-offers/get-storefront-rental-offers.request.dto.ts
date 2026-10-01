@@ -3,7 +3,9 @@ import { createZodDto } from 'nestjs-zod';
 
 const GetStorefrontRentalOffersApplicationInputSchema = GetStorefrontRentalOffersQuerySchema.transform((query) => ({
   ...query,
-  publishedAfter: query.publishedAfter ? ExplicitOffsetInstantSchema.parse(query.publishedAfter) : undefined,
+  firstPublishedAfter: query.firstPublishedAfter
+    ? ExplicitOffsetInstantSchema.parse(query.firstPublishedAfter)
+    : undefined,
 }));
 
 export class GetStorefrontRentalOffersRequestDto extends createZodDto(

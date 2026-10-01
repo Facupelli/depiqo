@@ -14,6 +14,7 @@ export const StorefrontRentalOfferListViewItemSchema = z.object({
 		.optional(),
 	pricing: GetStorefrontRentalOffersPricingItemSchema.nullable(),
 	availableCount: z.number().int().nonnegative().nullable(),
+	isRentable: z.boolean(),
 });
 
 export const StorefrontRentalOfferListViewPageSchema = z.object({

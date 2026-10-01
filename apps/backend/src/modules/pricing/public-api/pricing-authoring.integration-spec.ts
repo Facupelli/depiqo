@@ -4,6 +4,9 @@ import { randomUUID } from 'node:crypto';
 import { TestingModule } from '@nestjs/testing';
 
 import { PrismaService } from 'src/core/database/prisma.service';
+import { CatalogRentalOfferDisplayFacts } from '../../catalog/public-api/catalog-rental-offer-display-facts.public-api';
+import { GetRatePlanDetailHandler } from '../features/get-rate-plan-detail/get-rate-plan-detail.handler';
+import { GetRatePlanDetailQuery } from '../features/get-rate-plan-detail/get-rate-plan-detail.query';
 import {
   createPricingIntegrationContext,
   useIntegrationTestContext,
@@ -32,7 +35,7 @@ describe('Pricing authoring public capabilities integration', () => {
   async function createRentalOffer(tenantId: string) {
     const branch = await fixtures.createBranch({ tenantId });
     const item = await prisma.client.v2RentableItem.create({
-      data: { tenantId, name: `Item ${randomUUID()}`, kind: 'SINGLE', status: 'ACTIVE' },
+      data: { tenantId, name: `Item ${randomUUID()}`, kind: 'SINGLE' },
     });
     return prisma.client.v2RentalOffer.create({
       data: { tenantId, branchId: branch.id, rentableItemId: item.id },
@@ -119,7 +122,7 @@ describe('Pricing authoring public capabilities integration', () => {
     expect(invalid.isErr() && invalid.error.code).toBe('InvalidRatePlan');
   });
 
-  it('restores and preserves the existing assignment when reassigned after detach', async () => {
+  it('restores an assignment and maps tenant-scoped offer facts in Rate Plan detail', async () => {
     const tenant = await fixtures.createTenant();
     const rentalOffer = await createRentalOffer(tenant.id);
     const ratePlan = await createRatePlan(tenant.id);
@@ -147,6 +150,66 @@ describe('Pricing authoring public capabilities integration', () => {
     await expect(
       prisma.client.v2RentalOfferPricing.findUniqueOrThrow({ where: { id: assigned.value.rentalOfferPricingId } }),
     ).resolves.toEqual(expect.objectContaining({ isActive: true, deletedAt: null }));
+
+    const item = await prisma.client.v2RentableItem.findUniqueOrThrow({ where: { id: rentalOffer.rentableItemId } });
+    await prisma.client.v2RentalOffer.update({
+      where: { id: rentalOffer.id },
+      data: { showInStore: false, isRentable: false },
+    });
+    const otherTenant = await fixtures.createTenant();
+    const foreignOffer = await createRentalOffer(otherTenant.id);
+    const missingOfferId = randomUUID();
+    const [foreignAssignment, missingAssignment] = await Promise.all([
+      prisma.client.v2RentalOfferPricing.create({
+        data: { tenantId: tenant.id, ratePlanId: ratePlan.value.ratePlanId, catalogRentalOfferId: foreignOffer.id },
+      }),
+      prisma.client.v2RentalOfferPricing.create({
+        data: { tenantId: tenant.id, ratePlanId: ratePlan.value.ratePlanId, catalogRentalOfferId: missingOfferId },
+      }),
+    ]);
+
+    const displayFacts = moduleRef.get(CatalogRentalOfferDisplayFacts);
+    expect(
+      await displayFacts.getByIds({
+        tenantId: tenant.id,
+        rentalOfferIds: [rentalOffer.id, foreignOffer.id, missingOfferId],
+      }),
+    ).toEqual([
+      {
+        id: rentalOffer.id,
+        branchId: rentalOffer.branchId,
+        rentableItemId: rentalOffer.rentableItemId,
+        rentableItemName: item.name,
+        showInStore: false,
+        isRentable: false,
+      },
+    ]);
+
+    const detail = await moduleRef
+      .get(GetRatePlanDetailHandler)
+      .execute(new GetRatePlanDetailQuery({ tenantId: tenant.id, ratePlanId: ratePlan.value.ratePlanId }));
+    expect(detail.isOk()).toBe(true);
+    if (detail.isErr()) throw detail.error;
+    expect(detail.value.assignments).toEqual(
+      expect.arrayContaining([
+        {
+          rentalOfferPricingId: assigned.value.rentalOfferPricingId,
+          isActive: true,
+          rentalOffer: {
+            id: rentalOffer.id,
+            branchId: rentalOffer.branchId,
+            rentableItemId: rentalOffer.rentableItemId,
+            rentableItemName: item.name,
+            showInStore: false,
+            isRentable: false,
+          },
+        },
+        { rentalOfferPricingId: foreignAssignment.id, isActive: true, rentalOffer: null },
+        { rentalOfferPricingId: missingAssignment.id, isActive: true, rentalOffer: null },
+      ]),
+    );
+    expect(detail.value.assignmentCount).toBe(3);
+    expect(detail.value.activeAssignmentCount).toBe(3);
   });
 
   it('rejects missing and inactive Rate Plans during assignment', async () => {

@@ -17,7 +17,7 @@ export const EquipmentTypeRentalUsageOfferSchema = z.object({
   rentalOfferId: z.string(),
   branchId: z.string(),
   branchName: z.string().nullable(),
-  isVisible: z.boolean(),
+  showInStore: z.boolean(),
   isRentable: z.boolean(),
   pricing: z.object({
     configured: z.boolean(),
@@ -31,7 +31,7 @@ const EquipmentTypeRentalUsageBaseSchema = z.object({
   imageUrl: z.string().nullable(),
   categoryId: z.string().nullable(),
   categoryName: z.string().nullable(),
-  status: z.enum(["DRAFT", "ACTIVE", "ARCHIVED"]),
+  archivedAt: z.string().datetime().nullable(),
   requirementQuantity: z.number().int().positive(),
 });
 

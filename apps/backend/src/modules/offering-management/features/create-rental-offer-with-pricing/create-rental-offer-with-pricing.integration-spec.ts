@@ -33,7 +33,7 @@ describe('CreateRentalOfferWithPricing integration', () => {
     const tenant = await fixtures.createTenant();
     const branch = await fixtures.createBranch({ tenantId: tenant.id });
     const rentableItem = await prisma.client.v2RentableItem.create({
-      data: { tenantId: tenant.id, name: `Item ${randomUUID()}`, kind: 'SINGLE', status: 'ACTIVE' },
+      data: { tenantId: tenant.id, name: `Item ${randomUUID()}`, kind: 'SINGLE' },
     });
     return { tenant, branch, rentableItem };
   }
@@ -51,8 +51,9 @@ describe('CreateRentalOfferWithPricing integration', () => {
     return result.value;
   }
 
-  it('creates a Rate Plan and then assigns it to the created Rental Offer', async () => {
+  it('creates a Rate Plan and then assigns it to the launched Rental Offer', async () => {
     const current = await setup();
+    const beforeLaunch = new Date();
 
     const result = await handler.execute(
       new CreateRentalOfferWithPricingCommand({
@@ -71,6 +72,7 @@ describe('CreateRentalOfferWithPricing integration', () => {
       }),
     );
 
+    const afterLaunch = new Date();
     expect(result.isOk()).toBe(true);
     if (result.isErr()) return;
     expect(result.value).toEqual({
@@ -80,7 +82,12 @@ describe('CreateRentalOfferWithPricing integration', () => {
     });
     // The real assignment capability validated and linked rows created earlier
     // in this same workflow, proving ambient transaction read visibility.
-    await expect(prisma.client.v2RentalOffer.count({ where: { id: result.value.rentalOfferId } })).resolves.toBe(1);
+    const offer = await prisma.client.v2RentalOffer.findUniqueOrThrow({ where: { id: result.value.rentalOfferId } });
+    expect(offer).toEqual(
+      expect.objectContaining({ showInStore: true, isRentable: true, firstPublishedAt: expect.any(Date) }),
+    );
+    expect(offer.firstPublishedAt?.getTime()).toBeGreaterThanOrEqual(beforeLaunch.getTime());
+    expect(offer.firstPublishedAt?.getTime()).toBeLessThanOrEqual(afterLaunch.getTime());
     await expect(prisma.client.v2RatePlan.count({ where: { id: result.value.ratePlanId } })).resolves.toBe(1);
     await expect(prisma.client.v2RatePlanTier.count({ where: { ratePlanId: result.value.ratePlanId } })).resolves.toBe(
       1,
@@ -110,7 +117,11 @@ describe('CreateRentalOfferWithPricing integration', () => {
     );
 
     expect(result.isOk() && result.value.ratePlanId).toBe(ratePlan.ratePlanId);
-    await expect(prisma.client.v2RentalOffer.count({ where: { id: result.value.rentalOfferId } })).resolves.toBe(1);
+    await expect(
+      prisma.client.v2RentalOffer.findUniqueOrThrow({ where: { id: result.value.rentalOfferId } }),
+    ).resolves.toEqual(
+      expect.objectContaining({ showInStore: true, isRentable: true, firstPublishedAt: expect.any(Date) }),
+    );
     await expect(
       prisma.client.v2RentalOfferPricing.count({
         where: { catalogRentalOfferId: result.value.rentalOfferId, ratePlanId: ratePlan.ratePlanId },

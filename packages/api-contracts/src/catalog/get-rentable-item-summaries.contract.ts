@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import type { ApiContract } from "../api-contract";
-import { GetRentableItemsKindSchema, GetRentableItemsStatusSchema } from "./get-rentable-items.contract";
+import { GetRentableItemsKindSchema } from "./get-rentable-items.contract";
 
 export const GetRentableItemSummariesQuerySchema = z.object({
   ids: z
@@ -17,7 +17,7 @@ export const RentableItemSummarySchema = z.object({
   name: z.string(),
   kind: GetRentableItemsKindSchema,
   imageUrl: z.string().nullable(),
-  status: GetRentableItemsStatusSchema,
+  archivedAt: z.string().datetime().nullable(),
 });
 
 export const GetRentableItemSummariesResponseSchema = z.array(RentableItemSummarySchema);

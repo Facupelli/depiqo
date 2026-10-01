@@ -270,7 +270,7 @@ export class CalculateProspectiveCartCostHandler implements IQueryHandler<
     let code: CalculateProspectiveCartCostError['code'];
     if (error.code === 'RentalOfferNotFound') {
       code = 'rental_commitment.rental_offer_not_found';
-    } else if (error.code === 'RentalOfferNotRentable' || error.code === 'RentableItemNotActive') {
+    } else if (error.code === 'RentalOfferNotRentable' || error.code === 'RentableItemArchived') {
       code = 'rental_commitment.rental_offer_not_selectable';
     } else {
       code = 'rental_commitment.invalid_prospective_cart';

@@ -110,11 +110,11 @@ const calculateDraftRentalPriceProblemMap = {
     status: HttpStatus.CONFLICT,
     detail: 'One or more requested rental offers are not currently available.',
   },
-  'pricing.rentable_item_inactive': {
-    type: createProblemType('pricing.rentable_item_inactive'),
-    title: 'Rentable item inactive',
+  'pricing.rentable_item_archived': {
+    type: createProblemType('pricing.rentable_item_archived'),
+    title: 'Rentable item archived',
     status: HttpStatus.CONFLICT,
-    detail: 'One or more selected rentable items are not currently active.',
+    detail: 'One or more selected rentable items are archived.',
   },
   'pricing.missing_active_pricing': {
     type: createProblemType('pricing.missing_active_pricing'),

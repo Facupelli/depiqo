@@ -11,17 +11,21 @@ export function useRentalOfferCartState(
 	const { addRentalOffer, incrementRentalOffer, decrementRentalOffer } =
 		useRentalCartActions();
 	const quantity = item?.quantity ?? 0;
-	const unavailable = offer.availableCount === 0 || offer.pricing === null;
+	const unavailable =
+		!offer.isRentable || offer.availableCount === 0 || offer.pricing === null;
 	return {
 		quantity,
 		isInCart: !!item,
 		unavailable,
 		canIncrement:
-			offer.availableCount === null || quantity < offer.availableCount,
+			!unavailable &&
+			(offer.availableCount === null || quantity < offer.availableCount),
 		add: () => {
 			if (!unavailable) addRentalOffer(branchId, offer);
 		},
-		increment: () => incrementRentalOffer(offer.id, offer.availableCount),
+		increment: () => {
+			if (!unavailable) incrementRentalOffer(offer.id, offer.availableCount);
+		},
 		decrement: () => decrementRentalOffer(offer.id),
 	};
 }

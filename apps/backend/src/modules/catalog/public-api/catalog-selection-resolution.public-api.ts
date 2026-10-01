@@ -53,7 +53,7 @@ export interface ResolvedSelectedRentalOfferRequirements {
 
 export interface UnavailableSelectedRentalOfferRequirements {
   rentalOfferId: string;
-  code: 'RentalOfferNotFound' | 'RentalOfferNotRentable' | 'RentableItemNotActive';
+  code: 'RentalOfferNotFound' | 'RentalOfferNotRentable' | 'RentableItemArchived';
   rentableItemId?: string;
 }
 
@@ -68,7 +68,7 @@ export type CatalogSelectionResolutionErrorCode =
   | 'DuplicateRentalOfferSelection'
   | 'RentalOfferNotFound'
   | 'RentalOfferNotRentable'
-  | 'RentableItemNotActive'
+  | 'RentableItemArchived'
   | 'InvalidFulfillmentDefinition';
 
 export class CatalogSelectionResolutionError extends Error {

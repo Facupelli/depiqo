@@ -306,7 +306,7 @@ export class AddRentalSelectionHandler implements ICommandHandler<AddRentalSelec
         case 'RentalOfferNotFound':
           return addRentalSelectionError('rental_commitment.rental_offer_not_found', error.message, error, context);
         case 'RentalOfferNotRentable':
-        case 'RentableItemNotActive':
+        case 'RentableItemArchived':
           return addRentalSelectionError(
             'rental_commitment.catalog_selection_unavailable',
             error.message,

@@ -56,7 +56,8 @@ export function ArchiveProductAction({
 					<AlertDialogDescription>
 						Una vez archivado, este {terminology} ya no estará disponible para
 						nuevos alquileres. Los alquileres existentes no se modifican. Esta
-						acción no elimina el {terminology}.
+						acción no elimina el {terminology}: podrás editar su configuración y
+						restaurarlo más adelante.
 					</AlertDialogDescription>
 				</AlertDialogHeader>
 				{error ? (

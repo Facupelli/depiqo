@@ -77,11 +77,11 @@ const availabilityProblemMap = {
     status: HttpStatus.UNPROCESSABLE_ENTITY,
     detail: 'The requested rental offer is not rentable.',
   },
-  'rental_commitment.rentable_item_not_active': {
-    type: createProblemType('rental_commitment.rentable_item_not_active'),
-    title: 'Rentable item not active',
+  'rental_commitment.rentable_item_archived': {
+    type: createProblemType('rental_commitment.rentable_item_archived'),
+    title: 'Rentable item archived',
     status: HttpStatus.UNPROCESSABLE_ENTITY,
-    detail: 'The requested rental offer does not reference an active rentable item.',
+    detail: 'The requested rental offer references an archived rentable item.',
   },
   'rental_commitment.invalid_fulfillment_definition': {
     type: createProblemType('rental_commitment.invalid_fulfillment_definition'),

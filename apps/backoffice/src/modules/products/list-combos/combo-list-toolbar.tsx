@@ -15,11 +15,9 @@ import { BranchScopeSelect } from "@/components/branch-scope-select";
 import type { CombosSearch } from "./CombosPage";
 
 const ALL = "all";
-const ALL_STATUSES = "ALL";
-const statusItems = [
-	{ label: "Todos", value: ALL_STATUSES },
-	{ label: "Activos", value: "ACTIVE" },
-	{ label: "Borradores", value: "DRAFT" },
+const archivalItems = [
+	{ label: "Todos", value: "ALL" },
+	{ label: "Sin archivar", value: "UNARCHIVED" },
 	{ label: "Archivados", value: "ARCHIVED" },
 ];
 
@@ -70,7 +68,7 @@ export function ComboListToolbar({
 	const hasFilters = Boolean(
 		visibleSearchValue ||
 			filters.search ||
-			filters.status !== "ACTIVE" ||
+			filters.archival !== "UNARCHIVED" ||
 			filters.categoryId ||
 			filters.branchId ||
 			filters.branchScope,
@@ -112,20 +110,20 @@ export function ComboListToolbar({
 				</div>
 
 				<Select
-					value={filters.status}
-					items={statusItems}
+					value={filters.archival}
+					items={archivalItems}
 					onValueChange={(value) =>
 						onFilterChange({
-							status: value as CombosSearch["status"],
+							archival: value as CombosSearch["archival"],
 						})
 					}
 				>
 					<SelectTrigger className="h-9 w-full rounded-sm border-border/70 bg-background px-4 shadow-none">
-						<span className="mr-1 text-muted-foreground text-xs">Estado</span>
-						<SelectValue placeholder="Todos" />
+						<span className="mr-1 text-muted-foreground text-xs">Archivo</span>
+						<SelectValue placeholder="Sin archivar" />
 					</SelectTrigger>
 					<SelectContent>
-						{statusItems.map((item) => (
+						{archivalItems.map((item) => (
 							<SelectItem key={item.value} value={item.value}>
 								{item.label}
 							</SelectItem>

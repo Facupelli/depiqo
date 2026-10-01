@@ -2,7 +2,6 @@ import { ApplicationError, ApplicationErrorContext } from 'src/core/errors/appli
 
 export type UpdateRentableItemDefinitionErrorCode =
   | 'catalog.rentable_item_not_found'
-  | 'catalog.rentable_item_archived'
   | 'catalog.rentable_item_invalid_definition'
   | 'catalog.category_not_found'
   | 'catalog.category_inactive'

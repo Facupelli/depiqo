@@ -9,7 +9,7 @@ export interface RentableItemSummaryReadModel {
   name: string;
   kind: 'SINGLE' | 'PACKAGE' | 'KIT' | 'BUNDLE';
   imageUrl: string | null;
-  status: 'DRAFT' | 'ACTIVE' | 'ARCHIVED';
+  archivedAt: string | null;
 }
 
 export type GetRentableItemSummariesResult = RentableItemSummaryReadModel[];
@@ -28,7 +28,7 @@ export class GetRentableItemSummariesHandler implements IQueryHandler<
       return [];
     }
 
-    return this.prisma.client.v2RentableItem.findMany({
+    const items = await this.prisma.client.v2RentableItem.findMany({
       where: {
         tenantId: query.tenantId,
         id: { in: ids },
@@ -38,8 +38,9 @@ export class GetRentableItemSummariesHandler implements IQueryHandler<
         name: true,
         kind: true,
         imageUrl: true,
-        status: true,
+        archivedAt: true,
       },
     });
+    return items.map((item) => ({ ...item, archivedAt: item.archivedAt?.toISOString() ?? null }));
   }
 }

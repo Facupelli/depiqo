@@ -10,13 +10,20 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@repo/ui/components/dropdown-menu";
-import { Link, useNavigate } from "@tanstack/react-router";
-import { Archive, Ellipsis, PackageOpen, Pencil } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import {
+	Archive,
+	Ellipsis,
+	PackageOpen,
+	Pencil,
+	RotateCcw,
+} from "lucide-react";
 import { useState } from "react";
 import { can } from "@/auth/permissions";
 import { buildR2PublicUrl } from "@/lib/r2-public-url";
 import { ArchiveProductAction } from "../archive-product/ArchiveProductAction";
 import { ProductStatusBadge } from "../product-status-badge";
+import { RestoreProductAction } from "../restore-product/restore-product-action";
 
 export function ComboDetailHeader({
 	combo,
@@ -26,8 +33,8 @@ export function ComboDetailHeader({
 	permissions: readonly TenantPermissionId[];
 }) {
 	const [archiveOpen, setArchiveOpen] = useState(false);
+	const [restoreOpen, setRestoreOpen] = useState(false);
 	const canManageProducts = can(permissions, TenantPermission.ProductsManage);
-	const navigate = useNavigate();
 	const imageUrl = buildR2PublicUrl(combo.imageUrl, "catalog");
 	const visibleDescription = combo.description?.trim();
 	const requirementCount = combo.requiredEquipment.length;
@@ -57,7 +64,7 @@ export function ComboDetailHeader({
 							{combo.categoryName ?? "Sin categoría"}
 						</p>
 						<div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2">
-							<ProductStatusBadge status={combo.status} />
+							<ProductStatusBadge archivedAt={combo.archivedAt} />
 							<span className="text-sm text-neutral-500">
 								{requirementCount}{" "}
 								{requirementCount === 1
@@ -79,7 +86,7 @@ export function ComboDetailHeader({
 					</div>
 				</div>
 				<div className="flex shrink-0 items-center gap-2 self-start">
-					{canManageProducts && combo.status !== "ARCHIVED" ? (
+					{canManageProducts ? (
 						<Button
 							nativeButton={false}
 							render={
@@ -93,7 +100,7 @@ export function ComboDetailHeader({
 							Editar combo
 						</Button>
 					) : null}
-					{canManageProducts && combo.status !== "ARCHIVED" ? (
+					{canManageProducts ? (
 						<DropdownMenu>
 							<DropdownMenuTrigger
 								render={
@@ -107,26 +114,40 @@ export function ComboDetailHeader({
 								}
 							/>
 							<DropdownMenuContent align="end">
-								<DropdownMenuItem
-									variant="destructive"
-									onClick={() => setArchiveOpen(true)}
-								>
-									<Archive className="size-4" />
-									Archivar
-								</DropdownMenuItem>
+								{combo.archivedAt === null ? (
+									<DropdownMenuItem
+										variant="destructive"
+										onClick={() => setArchiveOpen(true)}
+									>
+										<Archive className="size-4" />
+										Archivar
+									</DropdownMenuItem>
+								) : (
+									<DropdownMenuItem onClick={() => setRestoreOpen(true)}>
+										<RotateCcw className="size-4" />
+										Restaurar
+									</DropdownMenuItem>
+								)}
 							</DropdownMenuContent>
 						</DropdownMenu>
 					) : null}
 				</div>
 			</div>
 			{canManageProducts ? (
-				<ArchiveProductAction
-					rentableItemId={combo.id}
-					terminology="combo"
-					open={archiveOpen}
-					onOpenChange={setArchiveOpen}
-					onSuccess={() => navigate({ to: "/dashboard/catalog/packages" })}
-				/>
+				<>
+					<ArchiveProductAction
+						rentableItemId={combo.id}
+						terminology="combo"
+						open={archiveOpen}
+						onOpenChange={setArchiveOpen}
+					/>
+					<RestoreProductAction
+						rentableItemId={combo.id}
+						terminology="combo"
+						open={restoreOpen}
+						onOpenChange={setRestoreOpen}
+					/>
+				</>
 			) : null}
 		</header>
 	);

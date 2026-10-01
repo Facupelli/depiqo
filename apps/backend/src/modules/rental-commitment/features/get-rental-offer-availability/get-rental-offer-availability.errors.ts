@@ -3,7 +3,7 @@ import { ApplicationError } from 'src/core/errors/application-error';
 export type GetRentalOfferAvailabilityErrorCode =
   | 'rental_commitment.rental_offer_not_found'
   | 'rental_commitment.rental_offer_not_rentable'
-  | 'rental_commitment.rentable_item_not_active'
+  | 'rental_commitment.rentable_item_archived'
   | 'rental_commitment.invalid_fulfillment_definition'
   | 'rental_commitment.invalid_candidate_projection'
   | 'rental_commitment.tenant_unavailable';

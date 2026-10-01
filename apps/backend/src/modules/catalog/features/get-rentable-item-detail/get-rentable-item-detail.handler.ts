@@ -7,7 +7,7 @@ import { BranchFacts } from 'src/modules/tenant-management/public-api/branch-fac
 
 import { GetRentableItemDetailError, getRentableItemDetailError } from './get-rentable-item-detail.errors';
 import { GetRentableItemDetailQuery } from './get-rentable-item-detail.query';
-import { buildRentalOfferSetupSummary } from './rental-offer-setup-summary.policy';
+import { buildRentalOfferSetupSummary, SetupSummary } from './rental-offer-setup-summary.policy';
 
 export interface GetRentableItemDetailRequiredEquipmentReadModel {
   equipmentTypeId: string;
@@ -38,11 +38,11 @@ export interface GetRentableItemDetailOfferReadModel {
   branchId: string;
   branchName: string | null;
   timezone: string | null;
-  isVisible: boolean;
+  showInStore: boolean;
   isRentable: boolean;
   updatedAt: string;
   activeRatePlan: GetRentableItemDetailActiveRatePlanReadModel | null;
-  setupSummary: import('@repo/api-contracts').GetRentableItemDetailOfferSetupSummaryDto;
+  setupSummary: SetupSummary;
   physicalStockCapacity: number;
 }
 
@@ -51,7 +51,7 @@ export interface GetRentableItemDetailReadModel {
   name: string;
   description: string | null;
   kind: 'SINGLE' | 'PACKAGE' | 'KIT' | 'BUNDLE';
-  status: 'DRAFT' | 'ACTIVE' | 'ARCHIVED';
+  archivedAt: string | null;
   imageUrl: string | null;
   categoryId: string | null;
   categoryName: string | null;
@@ -82,7 +82,7 @@ export class GetRentableItemDetailHandler implements IQueryHandler<
         name: true,
         description: true,
         kind: true,
-        status: true,
+        archivedAt: true,
         imageUrl: true,
         categoryId: true,
         createdAt: true,
@@ -92,7 +92,7 @@ export class GetRentableItemDetailHandler implements IQueryHandler<
           select: {
             id: true,
             branchId: true,
-            isVisible: true,
+            showInStore: true,
             isRentable: true,
             updatedAt: true,
           },
@@ -186,7 +186,7 @@ export class GetRentableItemDetailHandler implements IQueryHandler<
       name: item.name,
       description: item.description,
       kind: item.kind,
-      status: item.status,
+      archivedAt: item.archivedAt?.toISOString() ?? null,
       imageUrl: item.imageUrl,
       categoryId: item.categoryId,
       categoryName: item.category?.name ?? null,
@@ -222,7 +222,7 @@ export class GetRentableItemDetailHandler implements IQueryHandler<
             }
           : null;
         const setupSummary = buildRentalOfferSetupSummary({
-          itemStatus: item.status,
+          itemArchived: item.archivedAt !== null,
           branch: branch ? { isActive: branch.isActive } : null,
           offer,
           pricing: pricingForSetup,
@@ -240,7 +240,7 @@ export class GetRentableItemDetailHandler implements IQueryHandler<
           branchName: branch?.displayName ?? null,
           // This administrative setup read model exposes the branch override configuration, not an effective timezone.
           timezone: branch?.branchTimezone ?? null,
-          isVisible: offer.isVisible,
+          showInStore: offer.showInStore,
           isRentable: offer.isRentable,
           updatedAt: offer.updatedAt.toISOString(),
           activeRatePlan: hasActivePricing

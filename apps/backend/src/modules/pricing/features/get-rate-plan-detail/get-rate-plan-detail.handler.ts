@@ -3,6 +3,7 @@ import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { err, ok, Result } from 'neverthrow';
 
 import { PrismaService } from 'src/core/database/prisma.service';
+import { CatalogRentalOfferDisplayFacts } from '../../../catalog/public-api/catalog-rental-offer-display-facts.public-api';
 import { exactRateString } from '../../domain/value-objects/exact-rate-string';
 
 import { getRatePlanDetailError, GetRatePlanDetailError } from './get-rate-plan-detail.errors';
@@ -15,7 +16,10 @@ export class GetRatePlanDetailHandler implements IQueryHandler<
   GetRatePlanDetailQuery,
   Result<GetRatePlanDetailResult, GetRatePlanDetailError>
 > {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly catalogRentalOfferDisplayFacts: CatalogRentalOfferDisplayFacts,
+  ) {}
 
   async execute(query: GetRatePlanDetailQuery): Promise<Result<GetRatePlanDetailResult, GetRatePlanDetailError>> {
     const ratePlan = await this.prisma.client.v2RatePlan.findFirst({
@@ -56,21 +60,9 @@ export class GetRatePlanDetailHandler implements IQueryHandler<
 
     const rentalOfferIds = ratePlan.rentalOfferPricings.map((assignment) => assignment.catalogRentalOfferId);
 
-    // TODO: Replace this direct cross-module Prisma read with a Catalog public read API.
-    // Rental offers and rentable-item presentation data belong to the Catalog module.
-    const rentalOffers = await this.prisma.client.v2RentalOffer.findMany({
-      where: {
-        tenantId: query.tenantId,
-        id: { in: rentalOfferIds },
-      },
-      select: {
-        id: true,
-        branchId: true,
-        rentableItemId: true,
-        isVisible: true,
-        isRentable: true,
-        rentableItem: { select: { name: true } },
-      },
+    const rentalOffers = await this.catalogRentalOfferDisplayFacts.getByIds({
+      tenantId: query.tenantId,
+      rentalOfferIds,
     });
     const rentalOfferById = new Map(rentalOffers.map((rentalOffer) => [rentalOffer.id, rentalOffer]));
 
@@ -85,8 +77,8 @@ export class GetRatePlanDetailHandler implements IQueryHandler<
               id: rentalOffer.id,
               branchId: rentalOffer.branchId,
               rentableItemId: rentalOffer.rentableItemId,
-              rentableItemName: rentalOffer.rentableItem.name,
-              isVisible: rentalOffer.isVisible,
+              rentableItemName: rentalOffer.rentableItemName,
+              showInStore: rentalOffer.showInStore,
               isRentable: rentalOffer.isRentable,
             }
           : null,

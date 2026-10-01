@@ -109,9 +109,11 @@ describe('CatalogOfferingAuthoring integration', () => {
     expect(await prisma.client.v2RentableItem.count({ where: { tenantId: current.tenant.id } })).toBe(0);
   });
 
-  it('creates valid initial offers and adds the rentable item to another valid branch', async () => {
+  it('creates unlaunched initial and added offers, and launches only when explicitly requested', async () => {
     const current = await setup();
     const additionalBranch = await fixtures.createBranch({ tenantId: current.tenant.id });
+    const launchedBranch = await fixtures.createBranch({ tenantId: current.tenant.id });
+    const archivedBranch = await fixtures.createBranch({ tenantId: current.tenant.id });
 
     const created = await createOffering({
       tenantId: current.tenant.id,
@@ -131,19 +133,64 @@ describe('CatalogOfferingAuthoring integration', () => {
 
     expect(added.isOk()).toBe(true);
     if (added.isErr()) return;
+    const beforeLaunch = new Date();
+    const launched = await authoring.createRentalOfferForRentableItem({
+      tenantId: current.tenant.id,
+      rentableItemId: created.value.rentableItemId,
+      branchId: launchedBranch.id,
+      launch: true,
+    });
+    const afterLaunch = new Date();
+
+    expect(launched.isOk()).toBe(true);
+    if (launched.isErr()) return;
     expect(
       await prisma.client.v2RentableItem.findUniqueOrThrow({ where: { id: created.value.rentableItemId } }),
-    ).toEqual(expect.objectContaining({ status: 'DRAFT' }));
-    expect(
-      await prisma.client.v2RentalOffer.findMany({
-        where: { tenantId: current.tenant.id, rentableItemId: created.value.rentableItemId },
-      }),
-    ).toEqual(
+    ).toEqual(expect.objectContaining({ archivedAt: null }));
+    const offers = await prisma.client.v2RentalOffer.findMany({
+      where: { tenantId: current.tenant.id, rentableItemId: created.value.rentableItemId },
+    });
+    expect(offers).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ id: created.value.rentalOfferIds[0], isVisible: true, isRentable: true }),
-        expect.objectContaining({ id: added.value.rentalOfferId, isVisible: true, isRentable: true }),
+        expect.objectContaining({
+          id: created.value.rentalOfferIds[0],
+          showInStore: false,
+          isRentable: false,
+          firstPublishedAt: null,
+        }),
+        expect.objectContaining({
+          id: added.value.rentalOfferId,
+          showInStore: false,
+          isRentable: false,
+          firstPublishedAt: null,
+        }),
+        expect.objectContaining({
+          id: launched.value.rentalOfferId,
+          showInStore: true,
+          isRentable: true,
+          firstPublishedAt: expect.any(Date),
+        }),
       ]),
     );
+    const firstPublishedAt = offers.find((offer) => offer.id === launched.value.rentalOfferId)?.firstPublishedAt;
+    expect(firstPublishedAt?.getTime()).toBeGreaterThanOrEqual(beforeLaunch.getTime());
+    expect(firstPublishedAt?.getTime()).toBeLessThanOrEqual(afterLaunch.getTime());
+
+    await prisma.client.v2RentableItem.update({
+      where: { id: created.value.rentableItemId },
+      data: { archivedAt: new Date() },
+    });
+    const archivedOffer = await authoring.createRentalOfferForRentableItem({
+      tenantId: current.tenant.id,
+      rentableItemId: created.value.rentableItemId,
+      branchId: archivedBranch.id,
+      launch: true,
+    });
+    expect(archivedOffer.isOk()).toBe(true);
+    if (archivedOffer.isErr()) return;
+    expect(
+      await prisma.client.v2RentalOffer.findUniqueOrThrow({ where: { id: archivedOffer.value.rentalOfferId } }),
+    ).toEqual(expect.objectContaining({ showInStore: true, isRentable: true, firstPublishedAt: null }));
   });
 
   it.each([

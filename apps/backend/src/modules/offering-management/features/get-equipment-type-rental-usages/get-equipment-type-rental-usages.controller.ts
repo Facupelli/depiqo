@@ -49,7 +49,7 @@ export class GetEquipmentTypeRentalUsagesHttpController {
         categoryId: usage.categoryId,
         categoryName: usage.categoryName,
         kind: usage.kind,
-        status: usage.status,
+        archivedAt: usage.archivedAt,
         requirementQuantity: usage.requirementQuantity,
         startingPrice: usage.startingPrice
           ? {
@@ -62,7 +62,7 @@ export class GetEquipmentTypeRentalUsagesHttpController {
           rentalOfferId: offer.rentalOfferId,
           branchId: offer.branchId,
           branchName: offer.branchName,
-          isVisible: offer.isVisible,
+          showInStore: offer.showInStore,
           isRentable: offer.isRentable,
           pricing: {
             configured: offer.pricing.configured,
@@ -83,7 +83,7 @@ export class GetEquipmentTypeRentalUsagesHttpController {
         categoryId: usage.categoryId,
         categoryName: usage.categoryName,
         kind: usage.kind,
-        status: usage.status,
+        archivedAt: usage.archivedAt,
         requirementQuantity: usage.requirementQuantity,
       })),
     };

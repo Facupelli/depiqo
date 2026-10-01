@@ -21,6 +21,9 @@ import {
 import { utcDate } from '../../../../../test/support/time';
 
 import { RentalPeriod } from '../../domain/value-objects/rental-period.value-object';
+import { ConfirmRentalFixtures } from '../confirm-rental/testing/confirm-rental.fixtures';
+import { ConfirmRentalCommand } from '../confirm-rental/confirm-rental.command';
+import { ConfirmRentalResult } from '../confirm-rental/confirm-rental.handler';
 import { CreateDraftRentalCommand } from './create-draft-rental.command';
 import { CreateDraftRentalServiceResult } from './create-draft-rental.service';
 import { UpdateDraftRentalCommand } from '../update-draft-rental/update-draft-rental.command';
@@ -77,7 +80,7 @@ describe('CreateDraftRental integration', () => {
       quantitiesPerItem?: number[];
       pricePerDay?: string;
       rentable?: boolean;
-      itemStatus?: 'DRAFT' | 'ACTIVE' | 'ARCHIVED';
+      archived?: boolean;
     },
   ) {
     const quantities = input.quantitiesPerItem ?? [1];
@@ -95,7 +98,7 @@ describe('CreateDraftRental integration', () => {
         tenantId: input.tenantId,
         name: `Item ${randomUUID()}`,
         kind: quantities.length > 1 ? 'PACKAGE' : 'SINGLE',
-        status: input.itemStatus ?? 'ACTIVE',
+        archivedAt: input.archived ? new Date() : null,
         requirements: {
           create: quantities.map((quantityPerItem, index) => ({
             tenantId: input.tenantId,
@@ -110,7 +113,7 @@ describe('CreateDraftRental integration', () => {
         tenantId: input.tenantId,
         branchId: input.branchId,
         rentableItemId: item.id,
-        isVisible: true,
+        showInStore: true,
         isRentable: input.rentable ?? true,
       },
     });
@@ -169,7 +172,7 @@ describe('CreateDraftRental integration', () => {
     return prisma.client.v2Rental.count({ where: { tenantId: setup.tenantId, branchId: setup.branchId } });
   }
 
-  it('persists commercial selection, authoritative demand, draft pricing, and no confirmed-only facts', async () => {
+  it('persists accepted draft facts and confirms them after the item is archived', async () => {
     const setup = await scenario();
     const catalog = await offer({ ...setup, quantitiesPerItem: [3, 2] });
     const result = await create({ ...setup, selectedOffers: [{ rentalOfferId: catalog.offer.id, quantity: 2 }] });
@@ -223,6 +226,27 @@ describe('CreateDraftRental integration', () => {
     expect(persisted.rental.assignedAssets).toEqual([]);
     expect(persisted.blocks).toEqual([]);
     expect(persisted.rental.ownerSplits).toEqual([]);
+
+    await prisma.client.v2RentableItem.update({
+      where: { id: catalog.item.id },
+      data: { archivedAt: new Date() },
+    });
+    const candidates = new ConfirmRentalFixtures(prisma);
+    for (const [index, equipmentType] of catalog.equipmentTypes.entries()) {
+      const requiredCount = [6, 4][index];
+      for (let count = 0; count < requiredCount; count++) {
+        await candidates.createCandidate({
+          tenantId: setup.tenantId,
+          branchId: setup.branchId,
+          equipmentTypeId: equipmentType.id,
+        });
+      }
+    }
+    const confirmed = await commands.execute<ConfirmRentalCommand, ConfirmRentalResult>(
+      new ConfirmRentalCommand(setup.tenantId, result.value.rentalId),
+    );
+    expect(confirmed.isOk()).toBe(true);
+    expect((await state(result.value.rentalId)).rental.status).toBe('CONFIRMED');
   });
 
   it('allows pickup and return times outside branch schedules', async () => {
@@ -553,7 +577,7 @@ describe('CreateDraftRental integration', () => {
 
   it.each([
     ['unrentable offer', { rentable: false }, 'rental_commitment.catalog_selection_unavailable'],
-    ['inactive item', { itemStatus: 'ARCHIVED' as const }, 'rental_commitment.catalog_selection_unavailable'],
+    ['archived item', { archived: true }, 'rental_commitment.catalog_selection_unavailable'],
   ])('maps %s and leaves zero state', async (_name, catalogOverrides, code) => {
     const setup = await scenario();
     const catalog = await offer({ ...setup, ...catalogOverrides });
