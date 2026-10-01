@@ -68,7 +68,7 @@ export function ComboListToolbar({
 	const hasFilters = Boolean(
 		visibleSearchValue ||
 			filters.search ||
-			filters.archival !== "ALL" ||
+			filters.archival !== "UNARCHIVED" ||
 			filters.categoryId ||
 			filters.branchId ||
 			filters.branchScope,
@@ -120,7 +120,7 @@ export function ComboListToolbar({
 				>
 					<SelectTrigger className="h-9 w-full rounded-sm border-border/70 bg-background px-4 shadow-none">
 						<span className="mr-1 text-muted-foreground text-xs">Archivo</span>
-						<SelectValue placeholder="Todos" />
+						<SelectValue placeholder="Sin archivar" />
 					</SelectTrigger>
 					<SelectContent>
 						{archivalItems.map((item) => (

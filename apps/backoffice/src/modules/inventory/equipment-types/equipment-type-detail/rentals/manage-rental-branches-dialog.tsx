@@ -8,6 +8,10 @@ import {
 } from "@repo/ui/components/dialog";
 import type { ReactNode } from "react";
 import { EditBranchAvailabilityDialog } from "@/modules/products/branch-availability/edit-branch-availability/EditBranchAvailabilityDialog";
+import {
+	rentalPermissionLabel,
+	storeVisibilityLabel,
+} from "@/modules/products/branch-availability/offer-setting-labels";
 
 type Props = {
 	rental: IndividualRentalUsageDto;
@@ -43,10 +47,8 @@ export function ManageRentalBranchesDialog({
 										{offer.branchName?.trim() || "Sucursal no disponible"}
 									</p>
 									<p className="text-muted-foreground text-xs">
-										{offer.showInStore ? "Visible en el catálogo" : "Oculta"} ·{" "}
-										{offer.isRentable
-											? "Disponible para alquilar"
-											: "No disponible para alquilar"}
+										{storeVisibilityLabel(offer.showInStore)} ·{" "}
+										{rentalPermissionLabel(offer.isRentable)}
 									</p>
 								</div>
 								<EditBranchAvailabilityDialog

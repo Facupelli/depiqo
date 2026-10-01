@@ -10,6 +10,10 @@ import {
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { formatExactCurrencyRate } from "@/shared/utils/formatters";
+import {
+	rentalPermissionLabel,
+	storeVisibilityLabel,
+} from "./offer-setting-labels";
 
 type RentalOffer = GetRentableItemDetailResponseDto["offers"][number];
 type SetupStatus = RentalOffer["setupSummary"]["status"];
@@ -58,26 +62,32 @@ export function RentalOfferCard({
 							{presentation.label}
 						</Badge>
 						<Badge variant="outline">
-							{offer.showInStore
-								? "Mostrar en tienda: sí"
-								: "Mostrar en tienda: no"}
+							{storeVisibilityLabel(offer.showInStore)}
 						</Badge>
 						<Badge variant="outline">
-							{offer.isRentable
-								? "Permitir alquiler: sí"
-								: "Permitir alquiler: no"}
+							{rentalPermissionLabel(offer.isRentable)}
 						</Badge>
 					</div>
 				</div>
 			</div>
 			<div className="border-t p-4 lg:border-t-0 lg:border-l">
 				<div className="flex items-start gap-2 text-sm text-muted-foreground">
-					<StatusIcon className="mt-0.5 size-4 shrink-0" />
+					{presentation.description ? (
+						<StatusIcon className="mt-0.5 size-4 shrink-0" />
+					) : null}
 					<div>
-						<p className="font-medium text-foreground">
-							{presentation.description}
-						</p>
-						<p className="mt-2 font-semibold text-foreground">
+						{presentation.description ? (
+							<p className="font-medium text-foreground">
+								{presentation.description}
+							</p>
+						) : null}
+						<p
+							className={
+								presentation.description
+									? "mt-2 font-semibold text-foreground"
+									: "font-semibold text-foreground"
+							}
+						>
 							{price
 								? `Desde ${formatExactCurrencyRate(price.startingPrice, price.currency)}/${billingUnitLabels[price.billingUnit]}`
 								: offer.activeRatePlan
@@ -157,8 +167,7 @@ function getOfferPresentation(offer: RentalOffer): Presentation {
 			label: "Lista para alquilar",
 			badgeClassName: "border-emerald-200 bg-emerald-50 text-emerald-700",
 			icon: CheckCircle2,
-			description:
-				"Configurada para mostrarse y permitir alquileres. La disponibilidad de equipos se comprueba al reservar.",
+			description: "",
 		},
 	} satisfies Record<SetupStatus, Presentation>;
 	return presentations[offer.setupSummary.status];

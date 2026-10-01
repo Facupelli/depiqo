@@ -6,9 +6,7 @@ export function ProductStatusBadge({
 }: {
 	archivedAt: GetRentableItemsItemDto["archivedAt"];
 }) {
-	return archivedAt === null ? (
-		<Badge variant="secondary">Sin archivar</Badge>
-	) : (
+	return archivedAt === null ? null : (
 		<Badge variant="outline">Archivado</Badge>
 	);
 }

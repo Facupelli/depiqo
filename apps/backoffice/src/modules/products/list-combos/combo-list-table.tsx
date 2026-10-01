@@ -19,9 +19,10 @@ import {
 import { ChevronLeft, ChevronRight, Loader2, RotateCcw } from "lucide-react";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
-import { ProductStatusBadge } from "../product-status-badge";
+import type { CombosSearch } from "./CombosPage";
 import {
 	ComboImage,
+	ComboListStatusBadge,
 	createComboListColumns,
 	getComboCategoryLabel,
 	getComboEquipmentCountLabel,
@@ -30,6 +31,7 @@ import {
 import { ComboListRowActions } from "./combo-list-row-actions";
 
 interface ComboListTableProps {
+	archival: CombosSearch["archival"];
 	items: GetRentableItemsItemDto[];
 	total: number;
 	pagination: PaginationState;
@@ -47,6 +49,7 @@ interface ComboListTableProps {
 
 export function ComboListTable(props: ComboListTableProps) {
 	const {
+		archival,
 		items,
 		total,
 		pagination,
@@ -61,7 +64,11 @@ export function ComboListTable(props: ComboListTableProps) {
 		isFiltered,
 		emptyAction,
 	} = props;
-	const columns = createComboListColumns({ categoryNameById, onArchive });
+	const columns = createComboListColumns({
+		categoryNameById,
+		archival,
+		onArchive,
+	});
 	const pageCount = Math.max(1, Math.ceil(total / pagination.pageSize));
 	const table = useReactTable({
 		data: items,
@@ -203,6 +210,7 @@ export function ComboListTable(props: ComboListTableProps) {
 }
 
 function CompactComboList({
+	archival,
 	items,
 	categoryNameById,
 	onArchive,
@@ -259,7 +267,9 @@ function CompactComboList({
 										<p className="text-muted-foreground text-xs">
 											{getComboCategoryLabel(item, categoryNameById)}
 										</p>
-										<ProductStatusBadge archivedAt={item.archivedAt} />
+										{archival !== "UNARCHIVED" ? (
+											<ComboListStatusBadge archivedAt={item.archivedAt} />
+										) : null}
 									</div>
 								</div>
 								<div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-sm">
