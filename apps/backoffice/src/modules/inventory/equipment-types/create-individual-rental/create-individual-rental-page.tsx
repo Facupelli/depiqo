@@ -44,8 +44,9 @@ export function CreateIndividualRentalPage({
 					Nuevo alquiler individual
 				</h1>
 				<p className="mt-1 text-muted-foreground">
-					Crea una nueva presentación comercial de {equipmentType.name} y elige
-					las sucursales donde estará disponible.
+					Crea una presentación comercial de {equipmentType.name} y elige las
+					sucursales. Empezará oculta y sin permitir alquileres. Después podrás
+					asignarle precio y controlar ambas opciones por sucursal.
 				</p>
 			</header>
 

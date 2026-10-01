@@ -93,8 +93,8 @@ export function SetPricePlanAction({
 						</DialogTitle>
 						<DialogDescription>
 							{step === "choose"
-								? "Selecciona un plan existente o crea uno nuevo para este producto."
-								: `El plan quedará asignado al producto en ${branchLabel}.`}
+								? "Selecciona un plan existente o crea uno nuevo. Asignar precio no cambia la visibilidad ni habilita nuevos alquileres."
+								: `El plan quedará asignado en ${branchLabel}. La visibilidad y los nuevos alquileres se configuran por separado.`}
 						</DialogDescription>
 					</DialogHeader>
 					{step === "choose" ? (

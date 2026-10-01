@@ -1,6 +1,7 @@
 import type { GetRentableItemDetailResponseDto } from "@repo/api-contracts";
 import { Badge } from "@repo/ui/components/badge";
 import {
+	Archive,
 	Building2,
 	CheckCircle2,
 	CircleDollarSign,
@@ -57,10 +58,14 @@ export function RentalOfferCard({
 							{presentation.label}
 						</Badge>
 						<Badge variant="outline">
-							{offer.isVisible ? "Visible" : "Oculta"}
+							{offer.showInStore
+								? "Mostrar en tienda: sí"
+								: "Mostrar en tienda: no"}
 						</Badge>
 						<Badge variant="outline">
-							{offer.isRentable ? "Disponible" : "No disponible"}
+							{offer.isRentable
+								? "Permitir alquiler: sí"
+								: "Permitir alquiler: no"}
 						</Badge>
 					</div>
 				</div>
@@ -75,10 +80,21 @@ export function RentalOfferCard({
 						<p className="mt-2 font-semibold text-foreground">
 							{price
 								? `Desde ${formatExactCurrencyRate(price.startingPrice, price.currency)}/${billingUnitLabels[price.billingUnit]}`
-								: "Sin precio asignado"}
+								: offer.activeRatePlan
+									? "Sin precio válido"
+									: "Sin precio asignado"}
 						</p>
 						{price ? (
 							<p className="mt-1 text-xs">Plan: {price.ratePlanName}</p>
+						) : null}
+						{!offer.isRentable || !price ? (
+							<p className="mt-2 text-xs">
+								{!price && !offer.isRentable
+									? "Sin precio válido y con el alquiler deshabilitado, no se puede reservar."
+									: !price
+										? "Sin un precio válido, no se puede reservar."
+										: "Con el alquiler deshabilitado, no se puede reservar."}
+							</p>
 						) : null}
 					</div>
 				</div>
@@ -107,7 +123,8 @@ function getOfferPresentation(offer: RentalOffer): Presentation {
 			label: "Sin precio configurado",
 			badgeClassName: "border-amber-200 bg-amber-50 text-amber-800",
 			icon: CircleDollarSign,
-			description: "Esta oferta todavía no tiene un plan de precios asignado.",
+			description:
+				"Esta sucursal todavía no tiene un plan de precios asignado.",
 		},
 		INVALID_PRICING: {
 			label: "Precio incompleto",
@@ -127,13 +144,21 @@ function getOfferPresentation(offer: RentalOffer): Presentation {
 			badgeClassName: "border-muted bg-muted text-muted-foreground",
 			icon: EyeOff,
 			description:
-				"El producto está configurado, pero no se muestra en el catálogo.",
+				"La oferta está oculta en la tienda, pero aún puede seleccionarse directamente si se permiten alquileres.",
+		},
+		ARCHIVED: {
+			label: "Producto archivado",
+			badgeClassName: "border-neutral-200 bg-neutral-100 text-neutral-700",
+			icon: Archive,
+			description:
+				"Archivado: no se muestra ni permite nuevos alquileres. Puedes seguir configurándolo antes de restaurarlo.",
 		},
 		READY: {
 			label: "Lista para alquilar",
 			badgeClassName: "border-emerald-200 bg-emerald-50 text-emerald-700",
 			icon: CheckCircle2,
-			description: "Lista para alquilar",
+			description:
+				"Configurada para mostrarse y permitir alquileres. La disponibilidad de equipos se comprueba al reservar.",
 		},
 	} satisfies Record<SetupStatus, Presentation>;
 	return presentations[offer.setupSummary.status];

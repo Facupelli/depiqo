@@ -67,8 +67,9 @@ export function CreateComboPage({
 					Nuevo combo
 				</h1>
 				<p className="mt-1 text-muted-foreground">
-					Define la presentación, los equipos incluidos y las sucursales donde
-					estará disponible.
+					Define la presentación, los equipos incluidos y las sucursales. Las
+					ofertas nuevas empiezan ocultas y sin permitir alquileres. Después
+					podrás asignarles precio y controlar ambas opciones por separado.
 				</p>
 			</header>
 

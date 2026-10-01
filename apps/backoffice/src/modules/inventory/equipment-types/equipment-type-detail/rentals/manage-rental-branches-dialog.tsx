@@ -52,7 +52,7 @@ export function ManageRentalBranchesDialog({
 								<EditBranchAvailabilityDialog
 									rentalOfferId={offer.rentalOfferId}
 									branchName={offer.branchName}
-									isVisible={offer.showInStore}
+									showInStore={offer.showInStore}
 									isRentable={offer.isRentable}
 								/>
 							</div>

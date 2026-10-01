@@ -17,6 +17,7 @@ import { Switch } from "@repo/ui/components/switch";
 import { useForm } from "@tanstack/react-form";
 import { Pencil } from "lucide-react";
 import { useId, useState } from "react";
+import { getProblemDetailsCode, ProblemDetailsError } from "@/shared/errors";
 import { useUpdateBranchAvailability } from "./edit-branch-availability.mutation";
 import {
 	editBranchAvailabilityFormDefaultValues,
@@ -27,22 +28,29 @@ import {
 export type EditBranchAvailabilityDialogProps = {
 	rentalOfferId: string;
 	branchName: string | null;
-	isVisible: boolean;
+	showInStore: boolean;
 	isRentable: boolean;
 };
 
 export function EditBranchAvailabilityDialog({
 	rentalOfferId,
 	branchName,
-	isVisible,
+	showInStore,
 	isRentable,
 }: EditBranchAvailabilityDialogProps) {
 	const formId = useId();
 	const [open, setOpen] = useState(false);
 	const mutation = useUpdateBranchAvailability();
+	const [error, setError] = useState<string | null>(null);
 
 	return (
-		<Dialog open={open} onOpenChange={setOpen}>
+		<Dialog
+			open={open}
+			onOpenChange={(nextOpen) => {
+				setOpen(nextOpen);
+				if (!nextOpen) setError(null);
+			}}
+		>
 			<DialogTrigger
 				render={
 					<Button type="button" variant="outline">
@@ -55,23 +63,39 @@ export function EditBranchAvailabilityDialog({
 				<DialogHeader>
 					<DialogTitle>Configurar sucursal</DialogTitle>
 					<DialogDescription>
-						Actualiza la visibilidad y disponibilidad de esta oferta para{" "}
-						{branchName ?? "esta sucursal"}.
+						Configura por separado si se muestra en la tienda y si se permiten
+						nuevos alquileres en {branchName ?? "esta sucursal"}. Tener un
+						precio asignado no activa ninguna de estas opciones.
 					</DialogDescription>
 				</DialogHeader>
 				{open ? (
 					<EditBranchAvailabilityForm
 						key={rentalOfferId}
 						formId={formId}
-						offer={{ isVisible, isRentable }}
+						offer={{ showInStore, isRentable }}
+						error={error}
 						isPending={mutation.isPending}
 						onCancel={() => setOpen(false)}
-						onSubmit={async (values) => {
-							await mutation.mutateAsync({
-								rentalOfferId,
-								body: toUpdateRentalOfferVisibilityAndRentabilityDto(values),
-							});
-							setOpen(false);
+						onSubmit={async (values, original) => {
+							setError(null);
+							try {
+								await mutation.mutateAsync({
+									rentalOfferId,
+									body: toUpdateRentalOfferVisibilityAndRentabilityDto(
+										values,
+										original,
+									),
+								});
+								setOpen(false);
+							} catch (cause) {
+								setError(
+									cause instanceof ProblemDetailsError &&
+										getProblemDetailsCode(cause) ===
+											"catalog.rental_offer_not_found"
+										? "No encontramos esta sucursal del producto. Actualiza la página e inténtalo de nuevo."
+										: "No pudimos guardar la configuración. Inténtalo de nuevo.",
+								);
+							}
 						}}
 					/>
 				) : null}
@@ -83,22 +107,28 @@ export function EditBranchAvailabilityDialog({
 function EditBranchAvailabilityForm({
 	formId,
 	offer,
+	error,
 	isPending,
 	onCancel,
 	onSubmit,
 }: {
 	formId: string;
-	offer: { isVisible: boolean; isRentable: boolean };
+	offer: { showInStore: boolean; isRentable: boolean };
+	error: string | null;
 	isPending: boolean;
 	onCancel: () => void;
 	onSubmit: (
 		values: ReturnType<typeof editBranchAvailabilityFormDefaultValues>,
+		original: ReturnType<typeof editBranchAvailabilityFormDefaultValues>,
 	) => Promise<void>;
 }) {
+	const [initialValues] = useState(() =>
+		editBranchAvailabilityFormDefaultValues(offer),
+	);
 	const form = useForm({
-		defaultValues: editBranchAvailabilityFormDefaultValues(offer),
+		defaultValues: initialValues,
 		validators: { onSubmit: editBranchAvailabilityFormSchema },
-		onSubmit: async ({ value }) => onSubmit(value),
+		onSubmit: async ({ value }) => onSubmit(value, initialValues),
 	});
 
 	return (
@@ -112,7 +142,7 @@ function EditBranchAvailabilityForm({
 			className="space-y-6"
 		>
 			<FieldGroup>
-				<form.Field name="isVisible">
+				<form.Field name="showInStore">
 					{(field) => (
 						<Field orientation="horizontal">
 							<Switch
@@ -124,10 +154,11 @@ function EditBranchAvailabilityForm({
 							/>
 							<div>
 								<FieldLabel htmlFor={field.name}>
-									Visible en el catálogo
+									Mostrar en la tienda
 								</FieldLabel>
 								<FieldDescription>
-									Muestra esta oferta a los clientes en el catálogo.
+									Permite que los clientes la encuentren. Sin un precio válido o
+									con el alquiler deshabilitado, no podrán reservarla.
 								</FieldDescription>
 							</div>
 						</Field>
@@ -145,16 +176,23 @@ function EditBranchAvailabilityForm({
 							/>
 							<div>
 								<FieldLabel htmlFor={field.name}>
-									Disponible para alquilar
+									Permitir nuevos alquileres
 								</FieldLabel>
 								<FieldDescription>
-									Permite que esta oferta se seleccione para nuevos alquileres.
+									Permite nuevas selecciones, incluso si está oculta en la
+									tienda. Aún se requiere un precio válido y equipos
+									disponibles.
 								</FieldDescription>
 							</div>
 						</Field>
 					)}
 				</form.Field>
 			</FieldGroup>
+			{error ? (
+				<p role="alert" className="text-destructive text-sm">
+					{error}
+				</p>
+			) : null}
 			<div className="flex justify-end gap-3 border-t pt-4">
 				<Button
 					type="button"

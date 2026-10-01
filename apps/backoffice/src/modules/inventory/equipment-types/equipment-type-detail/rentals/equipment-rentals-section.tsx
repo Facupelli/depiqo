@@ -29,6 +29,7 @@ import {
 	MoreHorizontal,
 	Pencil,
 	Plus,
+	RotateCcw,
 } from "lucide-react";
 import { useState } from "react";
 import { buildR2PublicUrl } from "@/lib/r2-public-url";
@@ -36,6 +37,7 @@ import { usePricePlans } from "@/modules/pricing/price-plans/public";
 import { ArchiveProductAction } from "@/modules/products/archive-product/ArchiveProductAction";
 import { AddBranchAvailabilityDialog } from "@/modules/products/branch-availability/add-branch-availability/AddBranchAvailabilityDialog";
 import { ProductStatusBadge } from "@/modules/products/product-status-badge";
+import { RestoreProductAction } from "@/modules/products/restore-product/restore-product-action";
 import { formatExactCurrencyRate } from "@/shared/utils/formatters";
 import { useEquipmentTypeDetail } from "../equipment-type-detail-context";
 import { useEquipmentTypeRentalUsages } from "./equipment-type-rental-usages.queries";
@@ -164,6 +166,7 @@ function IndividualRentalItem({ item }: { item: IndividualRentalUsageDto }) {
 	const [manageOpen, setManageOpen] = useState(false);
 	const [addOpen, setAddOpen] = useState(false);
 	const [archiveOpen, setArchiveOpen] = useState(false);
+	const [restoreOpen, setRestoreOpen] = useState(false);
 	const { data: plans = [] } = usePricePlans(
 		{ isActive: true },
 		{ enabled: capabilities.managePricing && addOpen },
@@ -212,6 +215,7 @@ function IndividualRentalItem({ item }: { item: IndividualRentalUsageDto }) {
 					item={item}
 					onManage={() => setManageOpen(true)}
 					onArchive={() => setArchiveOpen(true)}
+					onRestore={() => setRestoreOpen(true)}
 				/>
 			</header>
 
@@ -286,12 +290,20 @@ function IndividualRentalItem({ item }: { item: IndividualRentalUsageDto }) {
 					onOpenChange={setAddOpen}
 				/>
 			) : null}
-			{capabilities.manageProducts && item.archivedAt === null ? (
-				<ArchiveProductAction
-					rentableItemId={item.rentableItemId}
-					open={archiveOpen}
-					onOpenChange={setArchiveOpen}
-				/>
+			{capabilities.manageProducts ? (
+				item.archivedAt === null ? (
+					<ArchiveProductAction
+						rentableItemId={item.rentableItemId}
+						open={archiveOpen}
+						onOpenChange={setArchiveOpen}
+					/>
+				) : (
+					<RestoreProductAction
+						rentableItemId={item.rentableItemId}
+						open={restoreOpen}
+						onOpenChange={setRestoreOpen}
+					/>
+				)
 			) : null}
 		</article>
 	);
@@ -301,10 +313,12 @@ function RentalActions({
 	item,
 	onManage,
 	onArchive,
+	onRestore,
 }: {
 	item: IndividualRentalUsageDto;
 	onManage: () => void;
 	onArchive: () => void;
+	onRestore: () => void;
 }) {
 	const { capabilities } = useEquipmentTypeDetail();
 	if (!capabilities.manageProducts && !capabilities.manageAvailability) {
@@ -340,13 +354,20 @@ function RentalActions({
 						Gestionar sucursales
 					</DropdownMenuItem>
 				) : null}
-				{capabilities.manageProducts && item.archivedAt === null ? (
+				{capabilities.manageProducts ? (
 					<>
 						<DropdownMenuSeparator />
-						<DropdownMenuItem variant="destructive" onClick={onArchive}>
-							<Archive className="size-4" />
-							Archivar
-						</DropdownMenuItem>
+						{item.archivedAt === null ? (
+							<DropdownMenuItem variant="destructive" onClick={onArchive}>
+								<Archive className="size-4" />
+								Archivar
+							</DropdownMenuItem>
+						) : (
+							<DropdownMenuItem onClick={onRestore}>
+								<RotateCcw className="size-4" />
+								Restaurar
+							</DropdownMenuItem>
+						)}
 					</>
 				) : null}
 			</DropdownMenuContent>
