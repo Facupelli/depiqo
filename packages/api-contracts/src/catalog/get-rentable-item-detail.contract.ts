@@ -2,7 +2,7 @@ import { z } from "zod";
 
 import type { ApiContract } from "../api-contract";
 import { PricingBillingUnitSchema } from "../pricing/billing-unit.schema";
-import { GetRentableItemsKindSchema, GetRentableItemsStatusSchema } from "./get-rentable-items.contract";
+import { GetRentableItemsKindSchema } from "./get-rentable-items.contract";
 
 export const GetRentableItemDetailParamsSchema = z.object({
   rentableItemId: z.string().trim().min(1),
@@ -38,6 +38,7 @@ export const GetRentableItemDetailOfferSetupStatusSchema = z.enum([
   "INVALID_PRICING",
   "NOT_RENTABLE",
   "NOT_VISIBLE",
+  "ARCHIVED",
   "READY",
 ]);
 
@@ -74,7 +75,7 @@ export const GetRentableItemDetailOfferSchema = z.object({
   branchId: z.string(),
   branchName: z.string().nullable(),
   timezone: z.string().nullable(),
-  isVisible: z.boolean(),
+  showInStore: z.boolean(),
   isRentable: z.boolean(),
   updatedAt: z.string().datetime(),
   activeRatePlan: GetRentableItemDetailActiveRatePlanSchema.nullable(),
@@ -87,7 +88,7 @@ export const GetRentableItemDetailResponseSchema = z.object({
   name: z.string(),
   description: z.string().nullable(),
   kind: GetRentableItemsKindSchema,
-  status: GetRentableItemsStatusSchema,
+  archivedAt: z.string().datetime().nullable(),
   imageUrl: z.string().nullable(),
   categoryId: z.string().nullable(),
   categoryName: z.string().nullable(),

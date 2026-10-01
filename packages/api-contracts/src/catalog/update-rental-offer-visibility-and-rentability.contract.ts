@@ -8,10 +8,10 @@ export const UpdateRentalOfferVisibilityAndRentabilityParamsSchema = z.object({
 
 export const UpdateRentalOfferVisibilityAndRentabilityBodySchema = z
   .object({
-    isVisible: z.boolean().optional(),
+    showInStore: z.boolean().optional(),
     isRentable: z.boolean().optional(),
   })
-  .refine((body) => body.isVisible !== undefined || body.isRentable !== undefined, {
+  .refine((body) => body.showInStore !== undefined || body.isRentable !== undefined, {
     message: "At least one field must be provided.",
   });
 

@@ -1,8 +1,6 @@
 import type { GetRentableItemDetailOfferSetupSummaryDto } from '@repo/api-contracts';
 
-export type SetupSummary = Omit<GetRentableItemDetailOfferSetupSummaryDto, 'status'> & {
-  status: GetRentableItemDetailOfferSetupSummaryDto['status'] | 'ARCHIVED';
-};
+export type SetupSummary = GetRentableItemDetailOfferSetupSummaryDto;
 type SetupStatus = SetupSummary['status'];
 type SetupIssue = SetupSummary['issues'][number];
 type AvailableAction = SetupSummary['availableActions'][number];

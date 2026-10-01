@@ -158,7 +158,7 @@ describe('Catalog HTTP authorization', () => {
     const allowed = await clientWithPermissions(tenant.id, [TenantPermission.ProductsAvailabilityManage]);
     const productManager = await clientWithPermissions(tenant.id, [TenantPermission.ProductsManage]);
     const path = `/catalog/rental-offers/${randomUUID()}`;
-    const body = { isVisible: false };
+    const body = { showInStore: false };
 
     await allowed.withCsrf(allowed.request().patch(path)).send(body).expect(404);
     await productManager.withCsrf(productManager.request().patch(path)).send(body).expect(403);
@@ -174,20 +174,20 @@ describe('Catalog HTTP authorization', () => {
     const foreign = await clientWithPermissions((await fixtures.createTenant()).id, [
       TenantPermission.ProductsAvailabilityManage,
     ]);
-    await foreign.withCsrf(foreign.request().patch(offerPath)).send({ isVisible: true }).expect(404);
+    await foreign.withCsrf(foreign.request().patch(offerPath)).send({ showInStore: true }).expect(404);
 
     await allowed.withCsrf(allowed.request().patch(offerPath)).send({ isRentable: true }).expect(204);
     expect(await prisma.client.v2RentalOffer.findUniqueOrThrow({ where: { id: offer.id } })).toEqual(
       expect.objectContaining({ showInStore: false, isRentable: true, firstPublishedAt: null }),
     );
 
-    await allowed.withCsrf(allowed.request().patch(offerPath)).send({ isVisible: true }).expect(204);
+    await allowed.withCsrf(allowed.request().patch(offerPath)).send({ showInStore: true }).expect(204);
     const published = await prisma.client.v2RentalOffer.findUniqueOrThrow({ where: { id: offer.id } });
     expect(published).toEqual(
       expect.objectContaining({ showInStore: true, isRentable: true, firstPublishedAt: expect.any(Date) }),
     );
-    await allowed.withCsrf(allowed.request().patch(offerPath)).send({ isVisible: false }).expect(204);
-    await allowed.withCsrf(allowed.request().patch(offerPath)).send({ isVisible: true }).expect(204);
+    await allowed.withCsrf(allowed.request().patch(offerPath)).send({ showInStore: false }).expect(204);
+    await allowed.withCsrf(allowed.request().patch(offerPath)).send({ showInStore: true }).expect(204);
     expect((await prisma.client.v2RentalOffer.findUniqueOrThrow({ where: { id: offer.id } })).firstPublishedAt).toEqual(
       published.firstPublishedAt,
     );
@@ -199,7 +199,7 @@ describe('Catalog HTTP authorization', () => {
     });
     await allowed
       .withCsrf(allowed.request().patch(`/catalog/rental-offers/${archivedOffer.id}`))
-      .send({ isVisible: true, isRentable: true })
+      .send({ showInStore: true, isRentable: true })
       .expect(204);
     expect(await prisma.client.v2RentalOffer.findUniqueOrThrow({ where: { id: archivedOffer.id } })).toEqual(
       expect.objectContaining({ showInStore: true, isRentable: true, firstPublishedAt: null }),

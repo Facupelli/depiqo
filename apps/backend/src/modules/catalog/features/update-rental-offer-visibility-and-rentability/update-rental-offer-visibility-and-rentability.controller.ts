@@ -36,7 +36,7 @@ export class UpdateRentalOfferVisibilityAndRentabilityHttpController {
       Result<void, UpdateRentalOfferVisibilityAndRentabilityError>
     >(
       new UpdateRentalOfferVisibilityAndRentabilityCommand(user.tenantId, params.rentalOfferId, {
-        showInStore: body.isVisible,
+        showInStore: body.showInStore,
         isRentable: body.isRentable,
       }),
     );
