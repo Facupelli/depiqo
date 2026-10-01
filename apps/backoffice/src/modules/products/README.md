@@ -61,11 +61,11 @@ FulfillmentRequirement          Required equipment / Included equipment
 EquipmentType                   Equipment type
 RentalOfferPricing              Product pricing
 RatePlan                        Price plan
-isVisible                       Visible in storefront
+showInStore                     Visible in storefront
 isRentable                      Available for rental
 PACKAGE                         Package
 SINGLE                          Single product / Product
-Archived offer/item             Archived product
+Archived rentable item          Archived product
 ```
 
 Concepts such as the following should normally remain invisible:

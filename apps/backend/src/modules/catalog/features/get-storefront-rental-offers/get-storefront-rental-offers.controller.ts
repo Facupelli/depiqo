@@ -32,7 +32,7 @@ export class GetStorefrontRentalOffersHttpController {
         dto.kind,
         dto.categoryId,
         dto.search,
-        dto.publishedAfter,
+        dto.firstPublishedAfter,
         dto.sort,
       ),
     );

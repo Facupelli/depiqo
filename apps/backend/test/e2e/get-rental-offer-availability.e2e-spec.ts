@@ -42,12 +42,11 @@ describe(`POST ${path}`, () => {
         tenantId: tenant.id,
         name: `Item ${randomUUID()}`,
         kind: 'SINGLE',
-        status: 'ACTIVE',
         requirements: { create: { tenantId: tenant.id, equipmentTypeId: equipmentType.id, quantityPerItem: 1 } },
       },
     });
     const offer = await prisma.client.v2RentalOffer.create({
-      data: { tenantId: tenant.id, branchId: branch.id, rentableItemId: item.id },
+      data: { tenantId: tenant.id, branchId: branch.id, rentableItemId: item.id, isRentable: true },
     });
     return { tenant, branch, user, equipmentType, offer };
   }

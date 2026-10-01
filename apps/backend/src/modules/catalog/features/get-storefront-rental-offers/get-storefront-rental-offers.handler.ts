@@ -51,7 +51,7 @@ export class GetStorefrontRentalOffersHandler implements IQueryHandler<
       tenantId: query.tenantId,
       branchId: query.branchId,
       showInStore: true,
-      ...(query.publishedAfter ? { firstPublishedAt: { not: null, gte: query.publishedAfter } } : {}),
+      ...(query.firstPublishedAfter ? { firstPublishedAt: { not: null, gte: query.firstPublishedAfter } } : {}),
       rentableItem: {
         archivedAt: null,
         ...(query.kind ? { kind: query.kind } : {}),
@@ -83,7 +83,7 @@ export class GetStorefrontRentalOffersHandler implements IQueryHandler<
           },
         },
         orderBy:
-          query.sort === 'PUBLISHED_AT_DESC'
+          query.sort === 'FIRST_PUBLISHED_AT_DESC'
             ? [{ firstPublishedAt: { sort: 'desc', nulls: 'last' } }, { id: 'asc' }]
             : { createdAt: 'asc' },
         skip: (query.page - 1) * query.pageSize,

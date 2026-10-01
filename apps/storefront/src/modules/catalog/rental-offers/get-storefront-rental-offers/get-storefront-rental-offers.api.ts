@@ -15,7 +15,7 @@ const GET_STOREFRONT_RENTAL_OFFERS_QUERY_PARAM_KEYS = [
 	"kind",
 	"categoryId",
 	"search",
-	"publishedAfter",
+	"firstPublishedAfter",
 	"sort",
 ] as const satisfies readonly (keyof GetStorefrontRentalOffersQueryDto)[];
 
