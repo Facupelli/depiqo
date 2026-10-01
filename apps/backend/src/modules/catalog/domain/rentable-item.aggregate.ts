@@ -9,15 +9,12 @@ import {
   CatalogError,
   CatalogInvalidFieldError,
   CatalogRentableItemArchivedError,
-  CatalogRentableItemCannotBeActivatedFromStatusError,
   CatalogRentableItemRequirementAlreadyExistsError,
 } from './errors/catalog.errors';
-import { CATALOG_RENTABLE_ITEM_KINDS, CatalogRentableItemKind, CatalogRentableItemStatus } from './rentable-item.types';
+import { CATALOG_RENTABLE_ITEM_KINDS, CatalogRentableItemKind } from './rentable-item.types';
 import { RentableItemRequirement } from './rentable-item-requirement.entity';
 
 export type RentableItemKind = CatalogRentableItemKind;
-export type RentableItemStatus = CatalogRentableItemStatus;
-
 export const RENTABLE_ITEM_KINDS: readonly RentableItemKind[] = CATALOG_RENTABLE_ITEM_KINDS;
 
 interface RentableItemProps {
@@ -27,7 +24,7 @@ interface RentableItemProps {
   imageUrl?: string | null;
   categoryId?: string | null;
   kind: RentableItemKind;
-  status: RentableItemStatus;
+  archivedAt: Date | null;
   requirements: RentableItemRequirement[];
   createdAt?: Date;
   updatedAt?: Date;
@@ -84,7 +81,7 @@ export class RentableItem extends AggregateRootBase {
     return ok(
       new RentableItem(props.id ?? randomUUID(), {
         ...normalized.value,
-        status: 'DRAFT',
+        archivedAt: null,
         requirements: [],
       }),
     );
@@ -120,31 +117,18 @@ export class RentableItem extends AggregateRootBase {
     });
   }
 
-  activate(): Result<void, CatalogError> {
-    if (this.props.status !== 'DRAFT') {
-      return err(new CatalogRentableItemCannotBeActivatedFromStatusError(this.id, this.props.status));
-    }
-
-    this.props.status = 'ACTIVE';
-    return ok(undefined);
-  }
-
-  /**
-   * Transitions the item to ARCHIVED. Allowed from DRAFT and ACTIVE.
-   * Archiving an already archived item is an idempotent no-op.
-   * Returns whether a transition occurred (false means it was already archived).
-   */
-  archive(): Result<boolean, CatalogError> {
-    if (this.props.status === 'ARCHIVED') {
+  /** Records the first archival instant; repeated archive attempts do not change it. */
+  archive(at: Date = new Date()): Result<boolean, CatalogError> {
+    if (this.props.archivedAt !== null) {
       return ok(false);
     }
 
-    this.props.status = 'ARCHIVED';
+    this.props.archivedAt = at;
     return ok(true);
   }
 
   updateDefinition(input: UpdateRentableItemDefinitionProps): Result<void, CatalogError> {
-    if (this.props.status === 'ARCHIVED') {
+    if (this.props.archivedAt !== null) {
       return err(new CatalogRentableItemArchivedError(this.id));
     }
 
@@ -240,8 +224,8 @@ export class RentableItem extends AggregateRootBase {
     return this.props.kind;
   }
 
-  get status(): RentableItemStatus {
-    return this.props.status;
+  get archivedAt(): Date | null {
+    return this.props.archivedAt;
   }
 
   get requirements(): readonly RentableItemRequirement[] {
@@ -258,7 +242,7 @@ export class RentableItem extends AggregateRootBase {
 
   private static normalizeCreateProps(
     props: CreateRentableItemProps,
-  ): Result<Omit<RentableItemProps, 'status' | 'requirements'>, CatalogError> {
+  ): Result<Omit<RentableItemProps, 'archivedAt' | 'requirements'>, CatalogError> {
     const tenantId = props.tenantId?.trim();
     if (!tenantId) {
       return err(new CatalogInvalidFieldError('tenantId', 'tenantId is required'));

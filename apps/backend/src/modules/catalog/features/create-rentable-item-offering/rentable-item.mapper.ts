@@ -17,7 +17,7 @@ export class RentableItemMapper {
       imageUrl: record.imageUrl,
       categoryId: record.categoryId,
       kind: record.kind,
-      status: record.status,
+      archivedAt: record.archivedAt,
       createdAt: record.createdAt,
       updatedAt: record.updatedAt,
       requirements: record.requirements.map((requirement) =>
@@ -43,7 +43,7 @@ export class RentableItemMapper {
       imageUrl: rentableItem.imageUrl ?? null,
       categoryId: rentableItem.categoryId ?? null,
       kind: rentableItem.kind,
-      status: rentableItem.status,
+      archivedAt: rentableItem.archivedAt,
     };
   }
 
@@ -54,7 +54,7 @@ export class RentableItemMapper {
       imageUrl: rentableItem.imageUrl ?? null,
       categoryId: rentableItem.categoryId ?? null,
       kind: rentableItem.kind,
-      status: rentableItem.status,
+      archivedAt: rentableItem.archivedAt,
     };
   }
 

@@ -9,9 +9,9 @@ export class RentalOfferMapper {
       tenantId: record.tenantId,
       branchId: record.branchId,
       rentableItemId: record.rentableItemId,
-      isVisible: record.isVisible,
+      showInStore: record.showInStore,
       isRentable: record.isRentable,
-      publishedAt: record.publishedAt,
+      firstPublishedAt: record.firstPublishedAt,
       createdAt: record.createdAt,
       updatedAt: record.updatedAt,
     });
@@ -23,9 +23,9 @@ export class RentalOfferMapper {
       tenantId: rentalOffer.tenantId,
       branchId: rentalOffer.branchId,
       rentableItemId: rentalOffer.rentableItemId,
-      isVisible: rentalOffer.isVisible,
+      showInStore: rentalOffer.showInStore,
       isRentable: rentalOffer.isRentable,
-      publishedAt: rentalOffer.publishedAt,
+      firstPublishedAt: rentalOffer.firstPublishedAt,
     };
   }
 
@@ -35,7 +35,7 @@ export class RentalOfferMapper {
 
   static toUpdateData(rentalOffer: RentalOffer): Prisma.V2RentalOfferUpdateInput {
     return {
-      isVisible: rentalOffer.isVisible,
+      showInStore: rentalOffer.showInStore,
       isRentable: rentalOffer.isRentable,
     };
   }

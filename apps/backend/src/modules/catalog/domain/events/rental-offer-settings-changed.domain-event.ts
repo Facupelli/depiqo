@@ -2,9 +2,9 @@ import { randomUUID } from 'node:crypto';
 
 import { DomainEvent } from 'src/core/domain/events/domain-event';
 
-export class RentalOfferVisibilityAndRentabilityChangedDomainEvent implements DomainEvent {
+export class RentalOfferSettingsChangedDomainEvent implements DomainEvent {
   readonly eventId: string;
-  readonly eventName = RentalOfferVisibilityAndRentabilityChangedDomainEvent.name;
+  readonly eventName = RentalOfferSettingsChangedDomainEvent.name;
   readonly aggregateId: string;
   readonly aggregateType = 'RentalOffer';
   readonly occurredAt: Date;
@@ -12,7 +12,7 @@ export class RentalOfferVisibilityAndRentabilityChangedDomainEvent implements Do
   constructor(
     public readonly rentalOfferId: string,
     public readonly tenantId: string,
-    public readonly isVisible: boolean,
+    public readonly showInStore: boolean,
     public readonly isRentable: boolean,
     occurredAt?: Date,
     eventId?: string,

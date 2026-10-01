@@ -4,16 +4,16 @@ import { err, ok, Result } from 'neverthrow';
 
 import { AggregateRootBase } from 'src/core/domain/aggregate-root.base';
 
-import { RentalOfferVisibilityAndRentabilityChangedDomainEvent } from './events/rental-offer-visibility-and-rentability-changed.domain-event';
+import { RentalOfferSettingsChangedDomainEvent } from './events/rental-offer-settings-changed.domain-event';
 import { CatalogError, CatalogInvalidFieldError } from './errors/catalog.errors';
 
 interface RentalOfferProps {
   tenantId: string;
   branchId: string;
   rentableItemId: string;
-  isVisible: boolean;
+  showInStore: boolean;
   isRentable: boolean;
-  publishedAt: Date | null;
+  firstPublishedAt: Date | null;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -23,15 +23,17 @@ export interface CreateRentalOfferProps {
   tenantId: string;
   branchId: string;
   rentableItemId: string;
-  publishedAt?: Date | null;
+  showInStore?: boolean;
+  isRentable?: boolean;
+  firstPublishedAt?: Date | null;
 }
 
 export interface ReconstituteRentalOfferProps extends RentalOfferProps {
   id: string;
 }
 
-export interface UpdateRentalOfferVisibilityAndRentabilityProps {
-  isVisible?: boolean;
+export interface UpdateRentalOfferSettingsProps {
+  showInStore?: boolean;
   isRentable?: boolean;
 }
 
@@ -64,9 +66,9 @@ export class RentalOffer extends AggregateRootBase {
         tenantId,
         branchId,
         rentableItemId,
-        isVisible: true,
-        isRentable: true,
-        publishedAt: props.publishedAt ?? null,
+        showInStore: props.showInStore ?? false,
+        isRentable: props.isRentable ?? false,
+        firstPublishedAt: props.firstPublishedAt ?? null,
       }),
     );
   }
@@ -75,18 +77,16 @@ export class RentalOffer extends AggregateRootBase {
     return new RentalOffer(props.id, props);
   }
 
-  updateVisibilityAndRentability(input: UpdateRentalOfferVisibilityAndRentabilityProps): Result<void, CatalogError> {
-    const isVisible = input.isVisible ?? this.props.isVisible;
+  updateSettings(input: UpdateRentalOfferSettingsProps): Result<void, CatalogError> {
+    const showInStore = input.showInStore ?? this.props.showInStore;
     const isRentable = input.isRentable ?? this.props.isRentable;
-    const changed = isVisible !== this.props.isVisible || isRentable !== this.props.isRentable;
+    const changed = showInStore !== this.props.showInStore || isRentable !== this.props.isRentable;
 
-    this.props.isVisible = isVisible;
+    this.props.showInStore = showInStore;
     this.props.isRentable = isRentable;
 
     if (changed) {
-      this.recordDomainEvent(
-        new RentalOfferVisibilityAndRentabilityChangedDomainEvent(this.id, this.tenantId, isVisible, isRentable),
-      );
+      this.recordDomainEvent(new RentalOfferSettingsChangedDomainEvent(this.id, this.tenantId, showInStore, isRentable));
     }
 
     return ok(undefined);
@@ -104,16 +104,16 @@ export class RentalOffer extends AggregateRootBase {
     return this.props.rentableItemId;
   }
 
-  get isVisible(): boolean {
-    return this.props.isVisible;
+  get showInStore(): boolean {
+    return this.props.showInStore;
   }
 
   get isRentable(): boolean {
     return this.props.isRentable;
   }
 
-  get publishedAt(): Date | null {
-    return this.props.publishedAt;
+  get firstPublishedAt(): Date | null {
+    return this.props.firstPublishedAt;
   }
 
   get createdAt(): Date | undefined {
