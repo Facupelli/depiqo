@@ -2,8 +2,7 @@ import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { err, ok, Result } from 'neverthrow';
 
 import { PrismaUnitOfWork } from 'src/core/database/prisma-unit-of-work';
-
-import { CatalogRentalOfferArchivedError } from '../../domain/errors/catalog.errors';
+import { lockRentableItem } from '../../application/lock-rentable-item';
 import { PrismaRentalOfferRepository } from '../create-rentable-item-offering/prisma-rental-offer.repository';
 import { UpdateRentalOfferVisibilityAndRentabilityCommand } from './update-rental-offer-visibility-and-rentability.command';
 import {
@@ -29,53 +28,40 @@ export class UpdateRentalOfferVisibilityAndRentabilityHandler implements IComman
       tenantId: command.tenantId,
       rentalOfferId: command.rentalOfferId,
     };
-    const rentalOffer = await this.rentalOfferRepository.load(command.tenantId, command.rentalOfferId);
-
-    if (!rentalOffer) {
-      return err(
-        updateRentalOfferVisibilityAndRentabilityError(
-          'catalog.rental_offer_not_found',
-          `Rental offer "${command.rentalOfferId}" was not found.`,
-          undefined,
-          context,
-        ),
-      );
-    }
-
-    const becomesVisible = rentalOffer.isVisible === false && command.props.isVisible === true;
-    const updateResult = rentalOffer.updateVisibilityAndRentability(command.props);
-    if (updateResult.isErr()) {
-      if (updateResult.error instanceof CatalogRentalOfferArchivedError) {
+    return this.unitOfWork.runInTransaction(async ({ tx }) => {
+      // The offer lookup identifies the parent; read its state only after taking
+      // the same tenant-scoped parent lock archive/restore will use in ticket 06.
+      const reference = await tx.v2RentalOffer.findFirst({
+        where: { id: command.rentalOfferId, tenantId: command.tenantId },
+        select: { rentableItemId: true },
+      });
+      if (!reference) {
         return err(
           updateRentalOfferVisibilityAndRentabilityError(
-            'catalog.rental_offer_archived',
-            updateResult.error.message,
-            updateResult.error,
+            'catalog.rental_offer_not_found',
+            `Rental offer "${command.rentalOfferId}" was not found.`,
+            undefined,
             context,
           ),
         );
       }
-      throw updateResult.error;
-    }
 
-    const publishedAt = becomesVisible ? new Date() : undefined;
-    await this.unitOfWork.runInTransaction(async ({ tx }) => {
-      await this.rentalOfferRepository.save(rentalOffer, tx);
-
-      if (publishedAt) {
-        await tx.v2RentalOffer.updateMany({
-          where: {
-            id: rentalOffer.id,
-            tenantId: command.tenantId,
-            isVisible: true,
-            publishedAt: null,
-            rentableItem: { status: 'ACTIVE' },
-          },
-          data: { publishedAt },
-        });
+      const item = await lockRentableItem(tx, command.tenantId, reference.rentableItemId);
+      const rentalOffer = await this.rentalOfferRepository.load(command.tenantId, command.rentalOfferId, tx);
+      if (!item || !rentalOffer) {
+        return err(
+          updateRentalOfferVisibilityAndRentabilityError(
+            'catalog.rental_offer_not_found',
+            `Rental offer "${command.rentalOfferId}" was not found.`,
+            undefined,
+            context,
+          ),
+        );
       }
-    });
 
-    return ok(undefined);
+      const firstPublishedAt = rentalOffer.updateSettings(command.props, item.archivedAt === null);
+      await this.rentalOfferRepository.updateSettings(rentalOffer, command.props, firstPublishedAt, tx);
+      return ok(undefined);
+    });
   }
 }

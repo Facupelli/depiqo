@@ -34,7 +34,12 @@ export class UpdateRentalOfferVisibilityAndRentabilityHttpController {
     const result = await this.commandBus.execute<
       UpdateRentalOfferVisibilityAndRentabilityCommand,
       Result<void, UpdateRentalOfferVisibilityAndRentabilityError>
-    >(new UpdateRentalOfferVisibilityAndRentabilityCommand(user.tenantId, params.rentalOfferId, body));
+    >(
+      new UpdateRentalOfferVisibilityAndRentabilityCommand(user.tenantId, params.rentalOfferId, {
+        showInStore: body.isVisible,
+        isRentable: body.isRentable,
+      }),
+    );
 
     if (result.isErr()) {
       throw toUpdateRentalOfferVisibilityAndRentabilityProblem(result.error);
@@ -66,12 +71,6 @@ const updateRentalOfferVisibilityAndRentabilityProblemMap = {
     title: 'Rental offer not found',
     status: HttpStatus.NOT_FOUND,
     detail: 'The requested rental offer could not be found.',
-  },
-  'catalog.rental_offer_archived': {
-    type: createProblemType('catalog.rental_offer_archived'),
-    title: 'Rental offer is archived',
-    status: HttpStatus.CONFLICT,
-    detail: 'Archived rental offers cannot be updated.',
   },
 } satisfies Record<
   UpdateRentalOfferVisibilityAndRentabilityErrorCode,

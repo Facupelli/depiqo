@@ -1,5 +1,5 @@
 export interface UpdateRentalOfferVisibilityAndRentabilityProps {
-  isVisible?: boolean;
+  showInStore?: boolean;
   isRentable?: boolean;
 }
 

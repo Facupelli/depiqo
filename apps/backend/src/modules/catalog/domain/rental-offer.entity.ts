@@ -77,19 +77,27 @@ export class RentalOffer extends AggregateRootBase {
     return new RentalOffer(props.id, props);
   }
 
-  updateSettings(input: UpdateRentalOfferSettingsProps): Result<void, CatalogError> {
+  updateSettings(input: UpdateRentalOfferSettingsProps, itemIsUnarchived: boolean, at: Date = new Date()): Date | null {
     const showInStore = input.showInStore ?? this.props.showInStore;
     const isRentable = input.isRentable ?? this.props.isRentable;
+    const becomesShown = !this.props.showInStore && showInStore;
     const changed = showInStore !== this.props.showInStore || isRentable !== this.props.isRentable;
 
     this.props.showInStore = showInStore;
     this.props.isRentable = isRentable;
 
     if (changed) {
-      this.recordDomainEvent(new RentalOfferSettingsChangedDomainEvent(this.id, this.tenantId, showInStore, isRentable));
+      this.recordDomainEvent(
+        new RentalOfferSettingsChangedDomainEvent(this.id, this.tenantId, showInStore, isRentable),
+      );
     }
 
-    return ok(undefined);
+    if (becomesShown && itemIsUnarchived && this.props.firstPublishedAt === null) {
+      this.props.firstPublishedAt = at;
+      return at;
+    }
+
+    return null;
   }
 
   get tenantId(): string {

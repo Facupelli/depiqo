@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { randomUUID } from 'node:crypto';
 
@@ -79,6 +79,48 @@ describe('Catalog HTTP authorization', () => {
 
     await allowed.withCsrf(allowed.request().patch(path)).send(body).expect(404);
     await productManager.withCsrf(productManager.request().patch(path)).send(body).expect(403);
+
+    const branch = await fixtures.createBranch({ tenantId: tenant.id });
+    const item = await prisma.client.v2RentableItem.create({
+      data: { tenantId: tenant.id, name: `Offer settings ${randomUUID()}`, kind: 'SINGLE' },
+    });
+    const offer = await prisma.client.v2RentalOffer.create({
+      data: { tenantId: tenant.id, rentableItemId: item.id, branchId: branch.id },
+    });
+    const offerPath = `/catalog/rental-offers/${offer.id}`;
+    const foreign = await clientWithPermissions((await fixtures.createTenant()).id, [
+      TenantPermission.ProductsAvailabilityManage,
+    ]);
+    await foreign.withCsrf(foreign.request().patch(offerPath)).send({ isVisible: true }).expect(404);
+
+    await allowed.withCsrf(allowed.request().patch(offerPath)).send({ isRentable: true }).expect(204);
+    expect(await prisma.client.v2RentalOffer.findUniqueOrThrow({ where: { id: offer.id } })).toEqual(
+      expect.objectContaining({ showInStore: false, isRentable: true, firstPublishedAt: null }),
+    );
+
+    await allowed.withCsrf(allowed.request().patch(offerPath)).send({ isVisible: true }).expect(204);
+    const published = await prisma.client.v2RentalOffer.findUniqueOrThrow({ where: { id: offer.id } });
+    expect(published).toEqual(
+      expect.objectContaining({ showInStore: true, isRentable: true, firstPublishedAt: expect.any(Date) }),
+    );
+    await allowed.withCsrf(allowed.request().patch(offerPath)).send({ isVisible: false }).expect(204);
+    await allowed.withCsrf(allowed.request().patch(offerPath)).send({ isVisible: true }).expect(204);
+    expect((await prisma.client.v2RentalOffer.findUniqueOrThrow({ where: { id: offer.id } })).firstPublishedAt).toEqual(
+      published.firstPublishedAt,
+    );
+
+    await prisma.client.v2RentableItem.update({ where: { id: item.id }, data: { archivedAt: new Date() } });
+    const archivedBranch = await fixtures.createBranch({ tenantId: tenant.id });
+    const archivedOffer = await prisma.client.v2RentalOffer.create({
+      data: { tenantId: tenant.id, rentableItemId: item.id, branchId: archivedBranch.id },
+    });
+    await allowed
+      .withCsrf(allowed.request().patch(`/catalog/rental-offers/${archivedOffer.id}`))
+      .send({ isVisible: true, isRentable: true })
+      .expect(204);
+    expect(await prisma.client.v2RentalOffer.findUniqueOrThrow({ where: { id: archivedOffer.id } })).toEqual(
+      expect.objectContaining({ showInStore: true, isRentable: true, firstPublishedAt: null }),
+    );
   });
 
   it('keeps storefront catalog discovery public', async () => {
