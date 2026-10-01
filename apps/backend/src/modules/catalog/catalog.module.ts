@@ -34,6 +34,8 @@ import { CatalogSelectionResolution } from './public-api/catalog-selection-resol
 import { CatalogSelectionResolutionService } from './public-api/catalog-selection-resolution.service';
 import { CatalogEquipmentTypeRentalUsages } from './public-api/catalog-equipment-type-rental-usages.public-api';
 import { CatalogEquipmentTypeRentalUsagesService } from './public-api/catalog-equipment-type-rental-usages.service';
+import { CatalogRentalOfferDisplayFacts } from './public-api/catalog-rental-offer-display-facts.public-api';
+import { CatalogRentalOfferDisplayFactsService } from './public-api/catalog-rental-offer-display-facts.service';
 
 @Module({
   imports: [AssetInventoryModule, TenantManagementModule],
@@ -53,6 +55,7 @@ import { CatalogEquipmentTypeRentalUsagesService } from './public-api/catalog-eq
     { provide: CatalogRentalOfferReferenceAuthority, useClass: CatalogRentalOfferReferenceAuthorityService },
     { provide: CatalogSelectionResolution, useClass: CatalogSelectionResolutionService },
     { provide: CatalogEquipmentTypeRentalUsages, useClass: CatalogEquipmentTypeRentalUsagesService },
+    { provide: CatalogRentalOfferDisplayFacts, useClass: CatalogRentalOfferDisplayFactsService },
     ArchiveRentableItemHandler,
     CreateIndividualRentalHandler,
     CreateRentalOfferForRentableItemService,
@@ -74,6 +77,7 @@ import { CatalogEquipmentTypeRentalUsagesService } from './public-api/catalog-eq
     CatalogRentalOfferReferenceAuthority,
     CatalogSelectionResolution,
     CatalogEquipmentTypeRentalUsages,
+    CatalogRentalOfferDisplayFacts,
   ],
 })
 export class CatalogModule {}
