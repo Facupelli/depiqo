@@ -2,15 +2,6 @@
 
 set -euo pipefail
 
-# =============================================================================
-# feature-map-audit
-#
-# Opens a new Herdr tab in the workspace where this command was invoked,
-# starts a fresh Pi agent, and launches the Depiqo Feature Map audit.
-#
-# Existing tabs, panes, and Pi sessions are not touched.
-# =============================================================================
-
 TAB_LABEL="feature-map-audit"
 THINKING_LEVEL="xhigh"
 START_TIMEOUT_SECONDS=10
@@ -20,37 +11,27 @@ PROMPT=$'/skill:feature-map-audit\n\nAudit the current branch changes against th
 # ── Preconditions ─────────────────────────────────────────────────────────────
 
 command -v herdr >/dev/null 2>&1 || {
-  echo "feature-map-audit: herdr is not available in PATH" >&2
+  echo "Feature Map audit: herdr is not available." >&2
   exit 1
 }
 
 command -v jq >/dev/null 2>&1 || {
-  echo "feature-map-audit: jq is required" >&2
+  echo "Feature Map audit: jq is not available." >&2
   exit 1
 }
 
 if [[ "${HERDR_ENV:-}" != "1" || -z "${HERDR_PANE_ID:-}" ]]; then
-  echo "feature-map-audit: run this command from inside a Herdr pane" >&2
+  echo "Feature Map audit: not running inside Herdr." >&2
   exit 1
 fi
 
 if [[ -z "${HERDR_SESSION:-}" ]]; then
-  echo "feature-map-audit: HERDR_SESSION is not available" >&2
+  echo "Feature Map audit: HERDR_SESSION is not available." >&2
   exit 1
 fi
 
 if [[ -z "${FEATURE_MAP_AUDIT_MODEL:-}" ]]; then
-  cat >&2 <<'EOF'
-feature-map-audit: FEATURE_MAP_AUDIT_MODEL is not set.
-
-Find the Luna model ID with:
-
-  pi --list-models luna
-
-Then export it, for example:
-
-  export FEATURE_MAP_AUDIT_MODEL="<provider/model-id>"
-EOF
+  echo "Feature Map audit: FEATURE_MAP_AUDIT_MODEL is not set." >&2
   exit 1
 fi
 
@@ -60,57 +41,66 @@ SHORT_SHA="$(git rev-parse --short HEAD)"
 SKILL_PATH="$REPO_ROOT/.pi/skills/feature-map-audit/SKILL.md"
 
 if [[ ! -f "$SKILL_PATH" ]]; then
-  echo "feature-map-audit: skill not found: $SKILL_PATH" >&2
+  echo "Feature Map audit: skill not found at $SKILL_PATH." >&2
   exit 1
 fi
 
 AGENT_NAME="fmap-${SHORT_SHA}-$$"
 
-# ── Resolve the live workspace ────────────────────────────────────────────────
+# ── Resolve current Herdr workspace ───────────────────────────────────────────
 
-PANE="$(
+if ! PANE="$(
   herdr pane get "$HERDR_PANE_ID" \
-    --session "$HERDR_SESSION"
-)"
+    --session "$HERDR_SESSION" \
+    2>&1
+)"; then
+  echo "Feature Map audit: failed to resolve current Herdr pane." >&2
+  echo "$PANE" >&2
+  exit 1
+fi
 
 WORKSPACE_ID="$(
   jq -r '.result.pane.workspace_id // empty' <<<"$PANE"
 )"
 
 if [[ -z "$WORKSPACE_ID" ]]; then
-  echo "feature-map-audit: could not resolve current Herdr workspace" >&2
+  echo "Feature Map audit: could not resolve current Herdr workspace." >&2
   exit 1
 fi
 
 # ── Create audit tab ──────────────────────────────────────────────────────────
 
-CREATED="$(
+if ! CREATED="$(
   herdr tab create \
     --workspace "$WORKSPACE_ID" \
     --cwd "$REPO_ROOT" \
     --label "$TAB_LABEL" \
     --no-focus \
-    --session "$HERDR_SESSION"
-)"
+    --session "$HERDR_SESSION" \
+    2>&1
+)"; then
+  echo "Feature Map audit: failed to create Herdr tab." >&2
+  echo "$CREATED" >&2
+  exit 1
+fi
 
 TAB_ID="$(jq -r '.result.tab.tab_id // empty' <<<"$CREATED")"
 PANE_ID="$(jq -r '.result.root_pane.pane_id // empty' <<<"$CREATED")"
 
 if [[ -z "$TAB_ID" || -z "$PANE_ID" ]]; then
-  echo "feature-map-audit: could not determine created tab/pane IDs" >&2
-  echo "$CREATED" >&2
+  echo "Feature Map audit: Herdr did not return the new tab/pane IDs." >&2
   exit 1
 fi
 
 # ── Start fresh Pi agent ──────────────────────────────────────────────────────
 #
-# A newly-created Herdr pane can exist briefly before its shell reaches the
-# interactive prompt. Retry only Herdr's transient agent_pane_busy condition.
+# A newly-created pane can briefly report agent_pane_busy while its shell is
+# becoming interactive. Retry only that transient condition.
 
 DEADLINE=$((SECONDS + START_TIMEOUT_SECONDS))
 
 while true; do
-  ERROR_FILE="$(mktemp)"
+  START_OUTPUT="$(mktemp)"
 
   if herdr agent start "$AGENT_NAME" \
     --kind pi \
@@ -122,37 +112,43 @@ while true; do
     --thinking "$THINKING_LEVEL" \
     --tools read,bash,grep,find,ls \
     --skill "$SKILL_PATH" \
-    2>"$ERROR_FILE"
+    >"$START_OUTPUT" 2>&1
   then
-    rm -f "$ERROR_FILE"
+    rm -f "$START_OUTPUT"
     break
   fi
 
   ERROR_CODE="$(
-    jq -r '.error.code // empty' "$ERROR_FILE" 2>/dev/null || true
+    jq -r '.error.code // empty' "$START_OUTPUT" 2>/dev/null || true
   )"
 
   if [[ "$ERROR_CODE" != "agent_pane_busy" || "$SECONDS" -ge "$DEADLINE" ]]; then
-    echo "feature-map-audit: failed to start Pi agent" >&2
-    cat "$ERROR_FILE" >&2
-    rm -f "$ERROR_FILE"
-
-    echo "Leaving Herdr tab $TAB_ID open for inspection." >&2
+    echo "Feature Map audit: failed to start Pi agent." >&2
+    cat "$START_OUTPUT" >&2
+    rm -f "$START_OUTPUT"
     exit 1
   fi
 
-  rm -f "$ERROR_FILE"
+  rm -f "$START_OUTPUT"
 
-  # Short retry backoff. This does not assume the pane is ready after a fixed
-  # duration; agent start remains the readiness authority.
+  # Backoff only. Herdr remains the authority on whether the pane is ready.
   sleep 0.1
 done
 
-# ── Start audit ───────────────────────────────────────────────────────────────
+# ── Submit audit ──────────────────────────────────────────────────────────────
 
-herdr agent prompt "$AGENT_NAME" "$PROMPT" \
-  --session "$HERDR_SESSION"
+PROMPT_OUTPUT="$(mktemp)"
 
-echo "Feature Map audit started."
-echo "Tab:   $TAB_ID"
-echo "Agent: $AGENT_NAME"
+if ! herdr agent prompt "$AGENT_NAME" "$PROMPT" \
+  --session "$HERDR_SESSION" \
+  >"$PROMPT_OUTPUT" 2>&1
+then
+  echo "Feature Map audit: failed to submit audit prompt." >&2
+  cat "$PROMPT_OUTPUT" >&2
+  rm -f "$PROMPT_OUTPUT"
+  exit 1
+fi
+
+rm -f "$PROMPT_OUTPUT"
+
+printf '\n✓ Feature Map audit started\n\n'
