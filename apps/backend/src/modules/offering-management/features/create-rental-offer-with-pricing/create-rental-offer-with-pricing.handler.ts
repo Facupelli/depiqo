@@ -58,6 +58,7 @@ export class CreateRentalOfferWithPricingHandler implements ICommandHandler<
         tenantId: command.tenantId,
         rentableItemId: command.rentableItemId,
         branchId: command.branchId,
+        launch: true,
       });
       if (rentalOffer.isErr()) return err(mapCatalogError(rentalOffer.error));
 

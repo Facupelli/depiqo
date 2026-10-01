@@ -54,14 +54,14 @@ export class CreateRentalOfferForRentableItemService {
 
     const rentableItem = await this.prisma.client.v2RentableItem.findFirst({
       where: { id: rentableItemId, tenantId },
-      select: { id: true, status: true },
+      select: { id: true, archivedAt: true },
     });
 
     if (!rentableItem) {
       return err(new CatalogRentableItemNotFoundError(rentableItemId));
     }
 
-    if (rentableItem.status === 'ARCHIVED') {
+    if (rentableItem.archivedAt !== null) {
       return err(new CatalogRentableItemArchivedError(rentableItemId));
     }
 
@@ -83,7 +83,9 @@ export class CreateRentalOfferForRentableItemService {
       tenantId,
       branchId,
       rentableItemId,
-      publishedAt: rentableItem.status === 'ACTIVE' ? new Date() : null,
+      showInStore: command.launch,
+      isRentable: command.launch,
+      firstPublishedAt: command.launch ? new Date() : null,
     });
 
     if (rentalOffer.isErr()) {

@@ -97,9 +97,16 @@ describe('CreateEquipment integration', () => {
     await expect(
       prisma.client.v2RentalOffer.findMany({
         where: { id: { in: result.value.standaloneRental.rentalOfferIds } },
-        select: { branchId: true },
+        select: { branchId: true, showInStore: true, isRentable: true, firstPublishedAt: true },
       }),
-    ).resolves.toEqual([{ branchId: commercialBranch.id }]);
+    ).resolves.toEqual([
+      {
+        branchId: commercialBranch.id,
+        showInStore: false,
+        isRentable: false,
+        firstPublishedAt: null,
+      },
+    ]);
   });
 
   it('keeps physical Asset and commercial RentalOffer branches independent', async () => {

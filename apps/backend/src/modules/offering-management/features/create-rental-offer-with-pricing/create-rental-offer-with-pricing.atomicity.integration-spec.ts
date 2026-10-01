@@ -40,7 +40,7 @@ describe('CreateRentalOfferWithPricing atomicity integration', () => {
     const tenant = await fixtures.createTenant();
     const branch = await fixtures.createBranch({ tenantId: tenant.id });
     const rentableItem = await prisma.client.v2RentableItem.create({
-      data: { tenantId: tenant.id, name: `Item ${randomUUID()}`, kind: 'SINGLE', status: 'ACTIVE' },
+      data: { tenantId: tenant.id, name: `Item ${randomUUID()}`, kind: 'SINGLE' },
     });
     return { tenant, branch, rentableItem };
   }

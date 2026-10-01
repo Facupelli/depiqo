@@ -26,6 +26,8 @@ export interface CreateRentalOfferForRentableItemInput {
   tenantId: string;
   rentableItemId: string;
   branchId: string;
+  /** Explicitly launch a priced branch offer; omitted for safe, unlaunched creation. */
+  launch?: boolean;
 }
 
 export interface CreateRentalOfferForRentableItemResult {
