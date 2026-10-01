@@ -1,4 +1,4 @@
-import { CatalogRentableItemKind, CatalogRentableItemStatus } from './catalog-rentable-item.types';
+import { CatalogRentableItemKind } from './catalog-rentable-item.types';
 
 export interface GetCatalogEquipmentTypeRentalUsagesInput {
   tenantId: string;
@@ -8,7 +8,7 @@ export interface GetCatalogEquipmentTypeRentalUsagesInput {
 export interface CatalogEquipmentTypeRentalUsageOffer {
   rentalOfferId: string;
   branchId: string;
-  isVisible: boolean;
+  showInStore: boolean;
   isRentable: boolean;
 }
 
@@ -18,7 +18,7 @@ export interface CatalogEquipmentTypeRentalUsage {
   imageUrl: string | null;
   categoryId: string | null;
   kind: CatalogRentableItemKind;
-  status: CatalogRentableItemStatus;
+  archivedAt: Date | null;
   requirementQuantity: number;
   offers: CatalogEquipmentTypeRentalUsageOffer[];
 }

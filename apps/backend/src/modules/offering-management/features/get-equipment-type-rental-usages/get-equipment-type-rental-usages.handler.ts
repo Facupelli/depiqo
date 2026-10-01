@@ -9,7 +9,6 @@ import {
   CatalogEquipmentTypeRentalUsage,
   CatalogEquipmentTypeRentalUsages,
 } from 'src/modules/catalog/public-api/catalog-equipment-type-rental-usages.public-api';
-import { CatalogRentableItemStatus } from 'src/modules/catalog/public-api/catalog-rentable-item.types';
 import {
   PricingRentalOfferStartingPriceFact,
   PricingRentalOfferStartingPriceFacts,
@@ -34,7 +33,7 @@ interface RentalUsageBase {
   imageUrl: string | null;
   categoryId: string | null;
   categoryName: string | null;
-  status: CatalogRentableItemStatus;
+  archivedAt: string | null;
   requirementQuantity: number;
 }
 
@@ -45,7 +44,7 @@ export interface IndividualRentalUsage extends RentalUsageBase {
     rentalOfferId: string;
     branchId: string;
     branchName: string | null;
-    isVisible: boolean;
+    showInStore: boolean;
     isRentable: boolean;
     pricing: {
       configured: boolean;
@@ -125,7 +124,7 @@ export class GetEquipmentTypeRentalUsagesHandler implements IQueryHandler<
         imageUrl: usage.imageUrl,
         categoryId: usage.categoryId,
         categoryName: usage.categoryId ? (categoryById.get(usage.categoryId)?.name ?? null) : null,
-        status: usage.status,
+        archivedAt: usage.archivedAt?.toISOString() ?? null,
         requirementQuantity: usage.requirementQuantity,
       };
 

@@ -35,7 +35,7 @@ describe('Pricing authoring public capabilities integration', () => {
   async function createRentalOffer(tenantId: string) {
     const branch = await fixtures.createBranch({ tenantId });
     const item = await prisma.client.v2RentableItem.create({
-      data: { tenantId, name: `Item ${randomUUID()}`, kind: 'SINGLE', status: 'ACTIVE' },
+      data: { tenantId, name: `Item ${randomUUID()}`, kind: 'SINGLE' },
     });
     return prisma.client.v2RentalOffer.create({
       data: { tenantId, branchId: branch.id, rentableItemId: item.id },
@@ -154,7 +154,7 @@ describe('Pricing authoring public capabilities integration', () => {
     const item = await prisma.client.v2RentableItem.findUniqueOrThrow({ where: { id: rentalOffer.rentableItemId } });
     await prisma.client.v2RentalOffer.update({
       where: { id: rentalOffer.id },
-      data: { isVisible: false, isRentable: false },
+      data: { showInStore: false, isRentable: false },
     });
     const otherTenant = await fixtures.createTenant();
     const foreignOffer = await createRentalOffer(otherTenant.id);
@@ -180,7 +180,7 @@ describe('Pricing authoring public capabilities integration', () => {
         branchId: rentalOffer.branchId,
         rentableItemId: rentalOffer.rentableItemId,
         rentableItemName: item.name,
-        isVisible: false,
+        showInStore: false,
         isRentable: false,
       },
     ]);
@@ -199,7 +199,7 @@ describe('Pricing authoring public capabilities integration', () => {
           branchId: rentalOffer.branchId,
           rentableItemId: rentalOffer.rentableItemId,
           rentableItemName: item.name,
-          isVisible: false,
+          showInStore: false,
           isRentable: false,
         },
       },

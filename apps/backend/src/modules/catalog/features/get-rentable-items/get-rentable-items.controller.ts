@@ -32,10 +32,10 @@ export class GetRentableItemsHttpController {
       new GetRentableItemsQuery(user.tenantId, {
         search: dto.search,
         kinds: dto.kinds,
-        status: dto.status,
+        archived: dto.archived,
         categoryId: dto.categoryId,
         branchId: dto.branchId,
-        isVisible: dto.isVisible,
+        showInStore: dto.showInStore,
         isRentable: dto.isRentable,
         hasActivePricing: dto.hasActivePricing,
         page: dto.page,

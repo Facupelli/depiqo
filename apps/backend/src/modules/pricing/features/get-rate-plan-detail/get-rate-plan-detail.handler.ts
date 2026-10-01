@@ -78,7 +78,7 @@ export class GetRatePlanDetailHandler implements IQueryHandler<
               branchId: rentalOffer.branchId,
               rentableItemId: rentalOffer.rentableItemId,
               rentableItemName: rentalOffer.rentableItemName,
-              isVisible: rentalOffer.isVisible,
+              showInStore: rentalOffer.showInStore,
               isRentable: rentalOffer.isRentable,
             }
           : null,

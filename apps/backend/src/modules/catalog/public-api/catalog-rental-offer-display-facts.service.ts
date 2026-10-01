@@ -23,7 +23,7 @@ export class CatalogRentalOfferDisplayFactsService extends CatalogRentalOfferDis
         id: true,
         branchId: true,
         rentableItemId: true,
-        isVisible: true,
+        showInStore: true,
         isRentable: true,
         rentableItem: { select: { name: true } },
       },
@@ -34,7 +34,7 @@ export class CatalogRentalOfferDisplayFactsService extends CatalogRentalOfferDis
       branchId: offer.branchId,
       rentableItemId: offer.rentableItemId,
       rentableItemName: offer.rentableItem.name,
-      isVisible: offer.isVisible,
+      showInStore: offer.showInStore,
       isRentable: offer.isRentable,
     }));
   }

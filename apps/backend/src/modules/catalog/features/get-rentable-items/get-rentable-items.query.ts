@@ -1,14 +1,14 @@
 import { IQuery } from '@nestjs/cqrs';
 
-import { RentableItemKind, RentableItemStatus } from '../../domain/rentable-item.aggregate';
+import { RentableItemKind } from '../../domain/rentable-item.aggregate';
 
 type GetRentableItemsQueryProps = {
   search?: string;
   kinds?: RentableItemKind[];
-  status?: RentableItemStatus;
+  archived?: boolean;
   categoryId?: string;
   branchId?: string;
-  isVisible?: boolean;
+  showInStore?: boolean;
   isRentable?: boolean;
   hasActivePricing?: boolean;
   page: number;
@@ -18,10 +18,10 @@ type GetRentableItemsQueryProps = {
 export class GetRentableItemsQuery implements IQuery {
   public readonly search?: string;
   public readonly kinds?: RentableItemKind[];
-  public readonly status?: RentableItemStatus;
+  public readonly archived?: boolean;
   public readonly categoryId?: string;
   public readonly branchId?: string;
-  public readonly isVisible?: boolean;
+  public readonly showInStore?: boolean;
   public readonly isRentable?: boolean;
   public readonly hasActivePricing?: boolean;
   public readonly page: number;
@@ -33,10 +33,10 @@ export class GetRentableItemsQuery implements IQuery {
   ) {
     this.search = props.search;
     this.kinds = props.kinds;
-    this.status = props.status;
+    this.archived = props.archived;
     this.categoryId = props.categoryId;
     this.branchId = props.branchId;
-    this.isVisible = props.isVisible;
+    this.showInStore = props.showInStore;
     this.isRentable = props.isRentable;
     this.hasActivePricing = props.hasActivePricing;
     this.page = props.page;

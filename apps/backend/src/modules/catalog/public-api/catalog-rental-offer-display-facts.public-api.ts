@@ -8,7 +8,7 @@ export interface CatalogRentalOfferDisplayFact {
   branchId: string;
   rentableItemId: string;
   rentableItemName: string;
-  isVisible: boolean;
+  showInStore: boolean;
   isRentable: boolean;
 }
 

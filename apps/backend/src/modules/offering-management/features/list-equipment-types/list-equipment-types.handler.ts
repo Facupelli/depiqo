@@ -115,7 +115,7 @@ function deriveListRentalFacts(usages: CatalogEquipmentTypeRentalUsage[], branch
   const facts = emptyRentalFacts();
 
   for (const usage of usages) {
-    if (usage.status === 'ARCHIVED') continue;
+    if (usage.archivedAt !== null) continue;
 
     const participatingOffers = branchId ? usage.offers.filter((offer) => offer.branchId === branchId) : usage.offers;
     if (participatingOffers.length === 0) continue;

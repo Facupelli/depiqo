@@ -9,7 +9,7 @@ export interface GetRentableItemsOfferReadModel {
   rentalOfferId: string;
   branchId: string;
   branchName: string | null;
-  isVisible: boolean;
+  showInStore: boolean;
   isRentable: boolean;
 }
 
@@ -30,7 +30,7 @@ export interface GetRentableItemsItemReadModel {
   name: string;
   kind: 'SINGLE' | 'PACKAGE' | 'KIT' | 'BUNDLE';
   categoryId: string | null;
-  status: 'DRAFT' | 'ACTIVE' | 'ARCHIVED';
+  archivedAt: string | null;
   imageUrl: string | null;
   offers: GetRentableItemsOfferReadModel[];
   startingPrice: GetRentableItemsStartingPriceReadModel | null;
@@ -46,7 +46,7 @@ export interface GetRentableItemsResult {
 
 type RentalOfferFilter = {
   branchId?: string;
-  isVisible?: boolean;
+  showInStore?: boolean;
   isRentable?: boolean;
   id?: { in: string[] };
 };
@@ -75,7 +75,7 @@ export class GetRentableItemsHandler implements IQueryHandler<GetRentableItemsQu
     const offerFilter = this.buildOfferFilter(query, activePricedOfferIds);
     const where = {
       tenantId: query.tenantId,
-      ...(query.status ? { status: query.status } : {}),
+      ...(query.archived === undefined ? {} : { archivedAt: query.archived ? { not: null } : null }),
       ...(query.search ? { name: { contains: query.search, mode: 'insensitive' as const } } : {}),
       ...(query.kinds?.length ? { kind: { in: query.kinds } } : {}),
       ...(query.categoryId ? { categoryId: query.categoryId } : {}),
@@ -90,14 +90,14 @@ export class GetRentableItemsHandler implements IQueryHandler<GetRentableItemsQu
           name: true,
           kind: true,
           categoryId: true,
-          status: true,
+          archivedAt: true,
           imageUrl: true,
           rentalOffers: {
             where: offerFilter,
             select: {
               id: true,
               branchId: true,
-              isVisible: true,
+              showInStore: true,
               isRentable: true,
             },
             orderBy: { createdAt: 'asc' },
@@ -193,13 +193,13 @@ export class GetRentableItemsHandler implements IQueryHandler<GetRentableItemsQu
           name: item.name,
           kind: item.kind,
           categoryId: item.categoryId,
-          status: item.status,
+          archivedAt: item.archivedAt?.toISOString() ?? null,
           imageUrl: item.imageUrl,
           offers: item.rentalOffers.map((offer) => ({
             rentalOfferId: offer.id,
             branchId: offer.branchId,
             branchName: branchNameById.get(offer.branchId) ?? null,
-            isVisible: offer.isVisible,
+            showInStore: offer.showInStore,
             isRentable: offer.isRentable,
           })),
           startingPrice,
@@ -236,7 +236,7 @@ export class GetRentableItemsHandler implements IQueryHandler<GetRentableItemsQu
   private buildOfferFilter(query: GetRentableItemsQuery, activePricedOfferIds: string[]): RentalOfferFilter {
     return {
       ...(query.branchId ? { branchId: query.branchId } : {}),
-      ...(query.isVisible === undefined ? {} : { isVisible: query.isVisible }),
+      ...(query.showInStore === undefined ? {} : { showInStore: query.showInStore }),
       ...(query.isRentable === undefined ? {} : { isRentable: query.isRentable }),
       ...(query.hasActivePricing === true ? { id: { in: activePricedOfferIds } } : {}),
     };
@@ -273,7 +273,7 @@ export class GetRentableItemsHandler implements IQueryHandler<GetRentableItemsQu
   }
 
   private hasOfferFiltersExcludingPricing(query: GetRentableItemsQuery): boolean {
-    return query.branchId !== undefined || query.isVisible !== undefined || query.isRentable !== undefined;
+    return query.branchId !== undefined || query.showInStore !== undefined || query.isRentable !== undefined;
   }
 
   private resolveStartingPrice(
