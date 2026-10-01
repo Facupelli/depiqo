@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+
+set -u
+
+REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)" || exit 0
+AUDIT_SCRIPT="$REPO_ROOT/bin/feature-map-audit"
+
+if [[ ! -f "$AUDIT_SCRIPT" ]]; then
+  exit 0
+fi
+
+if [[ "${HERDR_ENV:-}" != "1" || -z "${HERDR_PANE_ID:-}" ]]; then
+  exit 0
+fi
+
+if ! bash "$AUDIT_SCRIPT"; then
+  echo "⚠ Feature Map audit could not be started; continuing push." >&2
+fi
+
+exit 0

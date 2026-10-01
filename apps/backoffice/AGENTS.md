@@ -35,7 +35,6 @@ Then load only the additional rule documents relevant to the change.
 | Date, time, timezone, calendar, scheduling, or timestamp behavior          | `docs/agent-rules/dates-and-timezones.md`  |
 | React, TypeScript, component, and frontend implementation conventions      | `docs/agent-rules/frontend-conventions.md` |
 | TanStack Start routing, loaders, server functions, and framework patterns  | `docs/agent-rules/tanstack-start.md`       |
-| Testing and authenticated browser verification                             | `docs/agent-rules/testing.md`              |
 | Visual language, information hierarchy, layout, interaction, and UI states | `docs/agent-rules/ui-design.md`            |
 
 ## Local Conventions
@@ -51,5 +50,5 @@ Use local configuration as the primary source of truth for tooling and project b
 
 Do not hand-edit generated files such as `src/routeTree.gen.ts` unless the task explicitly requires it.
 
-For authenticated browser verification with `chrome-devtools-axi`, follow `docs/agent-rules/testing.md`, including its credential-handling instructions.
+For real-browser verification, follow `.pi/skills/verify-depiqo/SKILL.md` at the repository root.
 
