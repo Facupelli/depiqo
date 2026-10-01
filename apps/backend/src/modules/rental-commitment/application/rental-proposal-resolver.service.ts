@@ -30,7 +30,6 @@ import {
   RentalInvalidFieldError,
   RentalOfferNotFoundError,
   RentalOfferNotRentableError,
-  RentableItemNotActiveError,
 } from '../domain/errors/rental-commitment.errors';
 import { RentalDemandLineId } from '../domain/ids/rental-demand-line-id';
 import { RentalSelectionId } from '../domain/ids/rental-selection-id';
@@ -264,7 +263,7 @@ export class RentalProposalResolver {
         case 'RentalOfferNotFound':
           return resolutionError('rental_commitment.rental_offer_not_found', error, context);
         case 'RentalOfferNotRentable':
-        case 'RentableItemNotActive':
+        case 'RentableItemArchived':
           return resolutionError('rental_commitment.catalog_selection_unavailable', error, context);
         case 'InvalidFulfillmentDefinition':
           return resolutionError('rental_commitment.invalid_fulfillment_definition', error, context);
@@ -273,7 +272,7 @@ export class RentalProposalResolver {
     if (error instanceof RentalOfferNotFoundError) {
       return resolutionError('rental_commitment.rental_offer_not_found', error, context);
     }
-    if (error instanceof RentalOfferNotRentableError || error instanceof RentableItemNotActiveError) {
+    if (error instanceof RentalOfferNotRentableError) {
       return resolutionError('rental_commitment.catalog_selection_unavailable', error, context);
     }
     if (error instanceof InvalidFulfillmentDefinitionError) {

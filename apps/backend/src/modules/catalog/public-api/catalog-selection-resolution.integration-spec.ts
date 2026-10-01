@@ -2,8 +2,13 @@ import { describe, expect, it } from 'vitest';
 import { randomUUID } from 'node:crypto';
 
 import { TestingModule } from '@nestjs/testing';
+import { QueryBus } from '@nestjs/cqrs';
 
 import { PrismaService } from 'src/core/database/prisma.service';
+import { GetStorefrontRentalOffersQuery } from '../features/get-storefront-rental-offers/get-storefront-rental-offers.query';
+import { GetStorefrontRentalOffersResult } from '../features/get-storefront-rental-offers/get-storefront-rental-offers.handler';
+import { SearchRentalOffersQuery } from '../features/search-rental-offers/search-rental-offers.query';
+import { SearchRentalOffersResult } from '../features/search-rental-offers/search-rental-offers.handler';
 import {
   createCatalogIntegrationContext,
   useIntegrationTestContext,
@@ -17,12 +22,14 @@ describe('CatalogSelectionResolution requirement outcomes integration', () => {
   let prisma: PrismaService;
   let fixtures: TestFixtures;
   let resolution: CatalogSelectionResolution;
+  let queries: QueryBus;
 
   useIntegrationTestContext(async () => {
     moduleRef = await createCatalogIntegrationContext();
     prisma = moduleRef.get(PrismaService);
     fixtures = createTestFixtures(prisma);
     resolution = moduleRef.get(CatalogSelectionResolution);
+    queries = moduleRef.get(QueryBus);
     return moduleRef;
   });
 
@@ -40,7 +47,8 @@ describe('CatalogSelectionResolution requirement outcomes integration', () => {
     branchId: string;
     equipmentTypeId: string;
     isRentable?: boolean;
-    itemStatus?: 'DRAFT' | 'ACTIVE' | 'ARCHIVED';
+    archived?: boolean;
+    showInStore?: boolean;
     quantityPerItem?: number;
   }) {
     const item = await prisma.client.v2RentableItem.create({
@@ -48,7 +56,7 @@ describe('CatalogSelectionResolution requirement outcomes integration', () => {
         tenantId: params.tenantId,
         name: `Item ${randomUUID()}`,
         kind: 'SINGLE',
-        status: params.itemStatus ?? 'ACTIVE',
+        archivedAt: params.archived ? new Date() : null,
         requirements: {
           create: {
             tenantId: params.tenantId,
@@ -63,6 +71,7 @@ describe('CatalogSelectionResolution requirement outcomes integration', () => {
         tenantId: params.tenantId,
         branchId: params.branchId,
         rentableItemId: item.id,
+        showInStore: params.showInStore ?? false,
         isRentable: params.isRentable ?? true,
       },
     });
@@ -74,21 +83,24 @@ describe('CatalogSelectionResolution requirement outcomes integration', () => {
       tenantId: current.tenant.id,
       branchId: current.branch.id,
       equipmentTypeId: current.equipmentType.id,
+      showInStore: false,
     });
     const unrentable = await offer({
       tenantId: current.tenant.id,
       branchId: current.branch.id,
       equipmentTypeId: current.equipmentType.id,
+      showInStore: true,
       isRentable: false,
     });
-    const inactive = await offer({
+    const archived = await offer({
       tenantId: current.tenant.id,
       branchId: current.branch.id,
       equipmentTypeId: current.equipmentType.id,
-      itemStatus: 'DRAFT',
+      archived: true,
+      showInStore: true,
     });
     const missingId = randomUUID();
-    const requestedIds = [valid.id, missingId, unrentable.id, inactive.id];
+    const requestedIds = [valid.id, missingId, unrentable.id, archived.id];
 
     const result = await resolution.resolveSelectedRentalOfferRequirements({
       tenantId: current.tenant.id,
@@ -103,9 +115,9 @@ describe('CatalogSelectionResolution requirement outcomes integration', () => {
       { rentalOfferId: missingId, code: 'RentalOfferNotFound' },
       { rentalOfferId: unrentable.id, code: 'RentalOfferNotRentable' },
       {
-        rentalOfferId: inactive.id,
-        code: 'RentableItemNotActive',
-        rentableItemId: inactive.rentableItemId,
+        rentalOfferId: archived.id,
+        code: 'RentableItemArchived',
+        rentableItemId: archived.rentableItemId,
       },
     ]);
     expect(
@@ -114,6 +126,34 @@ describe('CatalogSelectionResolution requirement outcomes integration', () => {
         ...result.value.unavailableOffers.map((entry) => entry.rentalOfferId),
       ].sort(),
     ).toEqual([...requestedIds].sort());
+
+    const storefront = await queries.execute<GetStorefrontRentalOffersQuery, GetStorefrontRentalOffersResult>(
+      new GetStorefrontRentalOffersQuery(current.tenant.id, current.branch.id, 1, 20),
+    );
+    expect(storefront.data.map((entry) => entry.id)).toEqual([unrentable.id]);
+    const staff = await queries.execute<SearchRentalOffersQuery, SearchRentalOffersResult>(
+      new SearchRentalOffersQuery(current.tenant.id, current.branch.id, 1, 20),
+    );
+    expect(staff.data.map((entry) => entry.id)).toEqual([valid.id]);
+
+    const hiddenSelection = await resolution.resolveSelectedRentalOffers({
+      tenantId: current.tenant.id,
+      branchId: current.branch.id,
+      selectedOffers: [{ rentalOfferId: valid.id, quantity: 1 }],
+    });
+    expect(hiddenSelection.isOk()).toBe(true);
+    const archivedSelection = await resolution.resolveSelectedRentalOffers({
+      tenantId: current.tenant.id,
+      branchId: current.branch.id,
+      selectedOffers: [{ rentalOfferId: archived.id, quantity: 1 }],
+    });
+    expect(archivedSelection.isErr() && archivedSelection.error.code).toBe('RentableItemArchived');
+    const unrentableSelection = await resolution.resolveSelectedRentalOffers({
+      tenantId: current.tenant.id,
+      branchId: current.branch.id,
+      selectedOffers: [{ rentalOfferId: unrentable.id, quantity: 1 }],
+    });
+    expect(unrentableSelection.isErr() && unrentableSelection.error.code).toBe('RentalOfferNotRentable');
   });
 
   it.each(['wrong branch', 'foreign tenant'] as const)('classifies a %s offer as not found', async (kind) => {

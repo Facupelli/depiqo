@@ -282,8 +282,8 @@ export class CalculateDraftRentalPriceHandler implements IQueryHandler<
     if (error.code === 'RentalOfferNotRentable') {
       return calculateDraftRentalPriceError('pricing.rental_offer_not_selectable', error.message, error, context);
     }
-    if (error.code === 'RentableItemNotActive') {
-      return calculateDraftRentalPriceError('pricing.rentable_item_inactive', error.message, error, context);
+    if (error.code === 'RentableItemArchived') {
+      return calculateDraftRentalPriceError('pricing.rentable_item_archived', error.message, error, context);
     }
 
     return calculateDraftRentalPriceError('pricing.invalid_draft_rental_selection', error.message, error, context);

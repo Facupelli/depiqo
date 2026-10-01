@@ -50,10 +50,10 @@ export class GetStorefrontRentalOffersHandler implements IQueryHandler<
     const where: V2RentalOfferWhereInput = {
       tenantId: query.tenantId,
       branchId: query.branchId,
-      isVisible: true,
-      ...(query.publishedAfter ? { publishedAt: { not: null, gte: query.publishedAfter } } : {}),
+      showInStore: true,
+      ...(query.publishedAfter ? { firstPublishedAt: { not: null, gte: query.publishedAfter } } : {}),
       rentableItem: {
-        status: 'ACTIVE',
+        archivedAt: null,
         ...(query.kind ? { kind: query.kind } : {}),
         ...(query.categoryId ? { categoryId: query.categoryId } : {}),
         ...(query.search ? { name: { contains: query.search, mode: 'insensitive' } } : {}),
@@ -84,7 +84,7 @@ export class GetStorefrontRentalOffersHandler implements IQueryHandler<
         },
         orderBy:
           query.sort === 'PUBLISHED_AT_DESC'
-            ? [{ publishedAt: { sort: 'desc', nulls: 'last' } }, { id: 'asc' }]
+            ? [{ firstPublishedAt: { sort: 'desc', nulls: 'last' } }, { id: 'asc' }]
             : { createdAt: 'asc' },
         skip: (query.page - 1) * query.pageSize,
         take: query.pageSize,

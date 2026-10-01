@@ -113,7 +113,7 @@ describe('CreateConfirmedRental integration', () => {
         tenantId: input.tenantId,
         name: `Item ${randomUUID()}`,
         kind: 'SINGLE',
-        status: 'ACTIVE',
+        archivedAt: null,
         requirements: {
           create: requirements.map((requirement, index) => ({
             tenantId: input.tenantId,
@@ -128,7 +128,7 @@ describe('CreateConfirmedRental integration', () => {
         tenantId: input.tenantId,
         branchId: input.branchId,
         rentableItemId: item.id,
-        isVisible: true,
+        showInStore: true,
         isRentable: input.rentable ?? true,
       },
     });
@@ -553,8 +553,11 @@ describe('CreateConfirmedRental integration', () => {
   it('maps authoritative Catalog availability outcomes without writing', async () => {
     const setup = await scenario();
     const unavailable = await offer({ ...setup, rentable: false });
-    const inactiveItem = await offer(setup);
-    await prisma.client.v2RentableItem.update({ where: { id: inactiveItem.item.id }, data: { status: 'ARCHIVED' } });
+    const archivedItem = await offer(setup);
+    await prisma.client.v2RentableItem.update({
+      where: { id: archivedItem.item.id },
+      data: { archivedAt: new Date() },
+    });
     const invalidFulfillment = await offer(setup);
     await prisma.client.v2RentableItemRequirement.deleteMany({
       where: { rentableItemId: invalidFulfillment.item.id },
@@ -563,7 +566,7 @@ describe('CreateConfirmedRental integration', () => {
     const notFound = await create({ ...setup, selectedOffers: [{ rentalOfferId: randomUUID(), quantity: 1 }] });
     expect(notFound.isErr() && notFound.error.code).toBe('rental_commitment.rental_offer_not_found');
 
-    for (const rentalOfferId of [unavailable.offer.id, inactiveItem.offer.id]) {
+    for (const rentalOfferId of [unavailable.offer.id, archivedItem.offer.id]) {
       const unavailableSelection = await create({
         ...setup,
         selectedOffers: [{ rentalOfferId, quantity: 1 }],

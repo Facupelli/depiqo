@@ -34,7 +34,7 @@ export class SearchRentalOffersHandler implements IQueryHandler<SearchRentalOffe
       branchId: query.branchId,
       isRentable: true,
       rentableItem: {
-        status: 'ACTIVE',
+        archivedAt: null,
         ...(query.search ? { name: { contains: query.search, mode: 'insensitive' } } : {}),
       },
     };

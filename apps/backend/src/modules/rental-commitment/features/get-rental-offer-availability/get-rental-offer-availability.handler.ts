@@ -70,10 +70,10 @@ export class GetRentalOfferAvailabilityHandler implements IQueryHandler<
           'rental_commitment.rental_offer_not_rentable',
           `Rental offer "${outcome.rentalOfferId}" is not rentable.`,
         );
-      case 'RENTABLE_ITEM_NOT_ACTIVE':
+      case 'RENTABLE_ITEM_ARCHIVED':
         return getRentalOfferAvailabilityError(
-          'rental_commitment.rentable_item_not_active',
-          `Rentable item "${outcome.rentableItemId}" is not active.`,
+          'rental_commitment.rentable_item_archived',
+          `Rentable item "${outcome.rentableItemId}" is archived.`,
         );
     }
   }

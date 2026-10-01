@@ -26,7 +26,7 @@ type SelectableOffer = {
 
 type UnavailableOffer = {
   rentalOfferId: string;
-  code: 'RentalOfferNotFound' | 'RentalOfferNotRentable' | 'RentableItemNotActive';
+  code: 'RentalOfferNotFound' | 'RentalOfferNotRentable' | 'RentableItemArchived';
   rentableItemId?: string;
 };
 
@@ -156,32 +156,32 @@ export class ResolveSelectedRentalOffersService {
       rentableItemIds,
     });
     const rentableItemsById = this.indexById(rentableItems);
-    const activeOffers: Array<{ rentalOffer: RentalOfferReadModel; rentableItem: RentableItemReadModel }> = [];
+    const selectableOffers: Array<{ rentalOffer: RentalOfferReadModel; rentableItem: RentableItemReadModel }> = [];
 
     for (const rentalOffer of selectableRentalOffers) {
       const rentableItem = rentableItemsById.get(rentalOffer.rentableItemId);
 
-      if (!rentableItem || rentableItem.status !== 'ACTIVE') {
+      if (!rentableItem || rentableItem.archivedAt !== null) {
         unavailableOffers.push({
           rentalOfferId: rentalOffer.id,
-          code: 'RentableItemNotActive',
+          code: 'RentableItemArchived',
           rentableItemId: rentalOffer.rentableItemId,
         });
         continue;
       }
 
-      activeOffers.push({ rentalOffer, rentableItem });
+      selectableOffers.push({ rentalOffer, rentableItem });
     }
 
     const requirements = await this.reader.findFulfillmentRequirements({
       tenantId: input.tenantId,
-      rentableItemIds: [...new Set(activeOffers.map((offer) => offer.rentableItem.id))],
+      rentableItemIds: [...new Set(selectableOffers.map((offer) => offer.rentableItem.id))],
     });
     const requirementsByRentableItemId = this.groupRequirementsByRentableItemId(requirements);
 
     let validationError: CatalogSelectionResolutionError | undefined;
 
-    for (const rentableItemId of new Set(activeOffers.map((offer) => offer.rentableItem.id))) {
+    for (const rentableItemId of new Set(selectableOffers.map((offer) => offer.rentableItem.id))) {
       const itemRequirements = requirementsByRentableItemId.get(rentableItemId) ?? [];
 
       if (itemRequirements.length === 0) {
@@ -204,7 +204,7 @@ export class ResolveSelectedRentalOffersService {
     }
 
     return ok({
-      resolvedOffers: activeOffers.map(({ rentalOffer, rentableItem }) => ({
+      resolvedOffers: selectableOffers.map(({ rentalOffer, rentableItem }) => ({
         rentalOffer,
         rentableItem,
         requirements: requirementsByRentableItemId.get(rentableItem.id) ?? [],
@@ -226,12 +226,10 @@ export class ResolveSelectedRentalOffersService {
           `Rental offer "${offer.rentalOfferId}" is not rentable.`,
           { rentalOfferId: offer.rentalOfferId },
         );
-      case 'RentableItemNotActive':
-        return catalogSelectionError(
-          'RentableItemNotActive',
-          `Rentable item "${offer.rentableItemId}" is not active.`,
-          { rentalOfferId: offer.rentalOfferId },
-        );
+      case 'RentableItemArchived':
+        return catalogSelectionError('RentableItemArchived', `Rentable item "${offer.rentableItemId}" is archived.`, {
+          rentalOfferId: offer.rentalOfferId,
+        });
     }
   }
 
