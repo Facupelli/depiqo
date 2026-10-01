@@ -185,27 +185,29 @@ describe('Pricing authoring public capabilities integration', () => {
       },
     ]);
 
-    const detail = await moduleRef.get(GetRatePlanDetailHandler).execute(
-      new GetRatePlanDetailQuery({ tenantId: tenant.id, ratePlanId: ratePlan.value.ratePlanId }),
-    );
+    const detail = await moduleRef
+      .get(GetRatePlanDetailHandler)
+      .execute(new GetRatePlanDetailQuery({ tenantId: tenant.id, ratePlanId: ratePlan.value.ratePlanId }));
     expect(detail.isOk()).toBe(true);
     if (detail.isErr()) throw detail.error;
-    expect(detail.value.assignments).toEqual(expect.arrayContaining([
-      {
-        rentalOfferPricingId: assigned.value.rentalOfferPricingId,
-        isActive: true,
-        rentalOffer: {
-          id: rentalOffer.id,
-          branchId: rentalOffer.branchId,
-          rentableItemId: rentalOffer.rentableItemId,
-          rentableItemName: item.name,
-          showInStore: false,
-          isRentable: false,
+    expect(detail.value.assignments).toEqual(
+      expect.arrayContaining([
+        {
+          rentalOfferPricingId: assigned.value.rentalOfferPricingId,
+          isActive: true,
+          rentalOffer: {
+            id: rentalOffer.id,
+            branchId: rentalOffer.branchId,
+            rentableItemId: rentalOffer.rentableItemId,
+            rentableItemName: item.name,
+            showInStore: false,
+            isRentable: false,
+          },
         },
-      },
-      { rentalOfferPricingId: foreignAssignment.id, isActive: true, rentalOffer: null },
-      { rentalOfferPricingId: missingAssignment.id, isActive: true, rentalOffer: null },
-    ]));
+        { rentalOfferPricingId: foreignAssignment.id, isActive: true, rentalOffer: null },
+        { rentalOfferPricingId: missingAssignment.id, isActive: true, rentalOffer: null },
+      ]),
+    );
     expect(detail.value.assignmentCount).toBe(3);
     expect(detail.value.activeAssignmentCount).toBe(3);
   });
