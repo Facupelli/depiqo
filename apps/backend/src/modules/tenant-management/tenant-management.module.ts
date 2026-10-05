@@ -38,6 +38,8 @@ import { CreateBranchHttpController } from './features/create-branch/create-bran
 import { CreateBranchHandler } from './features/create-branch/create-branch.handler';
 import { GetBranchDetailHttpController } from './features/get-branch-detail/get-branch-detail.controller';
 import { GetBranchDetailHandler } from './features/get-branch-detail/get-branch-detail.handler';
+import { GetBackofficeCustomerProfileHttpController } from './features/get-backoffice-customer-profile/get-backoffice-customer-profile.controller';
+import { GetBackofficeCustomerProfileHandler } from './features/get-backoffice-customer-profile/get-backoffice-customer-profile.handler';
 import { GetCustomerProfileDetailHttpController } from './features/get-customer-profile-detail/get-customer-profile-detail.controller';
 import { GetCustomerProfileDetailHandler } from './features/get-customer-profile-detail/get-customer-profile-detail.handler';
 import { GetBranchesHttpController } from './features/get-branches/get-branches.controller';
@@ -133,6 +135,7 @@ import {
     GetBranchDetailHttpController,
     GetBranchesHttpController,
     GetCurrentRentalCustomerProfileHttpController,
+    GetBackofficeCustomerProfileHttpController,
     GetCustomerProfileDetailHttpController,
     GetContractSignerHttpController,
     GetCurrentTenantHttpController,
@@ -181,6 +184,7 @@ import {
     GetBranchesHandler,
     SearchBranchAddressSuggestionsHandler,
     GetCurrentRentalCustomerProfileHandler,
+    GetBackofficeCustomerProfileHandler,
     GetCustomerProfileDetailHandler,
     GetContractSignerHandler,
     GetCurrentTenantHandler,

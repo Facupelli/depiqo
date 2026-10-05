@@ -49,6 +49,9 @@ export const Route = createFileRoute("/_admin/dashboard/")({
 		if (canAny(permissions, customerListPermissions)) {
 			throw redirect({ to: "/dashboard/customers" });
 		}
+		if (can(permissions, TenantPermission.CustomersOnboardingManage)) {
+			throw redirect({ to: "/dashboard/customers/pending-profiles" });
+		}
 		if (canAny(permissions, promotionListPermissions)) {
 			throw redirect({ to: "/dashboard/promotions" });
 		}

@@ -6,6 +6,8 @@ export const customerKeys = {
 	list: (query?: GetRentalCustomersQueryDto) =>
 		[...customerKeys.lists(), query ?? {}] as const,
 	details: () => [...customerKeys.all(), "detail"] as const,
+	backofficeProfile: (customerId: string) =>
+		[...customerKeys.details(), customerId, "backoffice-profile"] as const,
 	profileDetail: (customerId?: string) =>
 		[...customerKeys.details(), customerId, "profile"] as const,
 };

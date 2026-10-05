@@ -23,7 +23,7 @@ import {
 	TableRow,
 } from "@repo/ui/components/table";
 import { keepPreviousData } from "@tanstack/react-query";
-import { useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import {
 	type ColumnDef,
 	flexRender,
@@ -118,7 +118,14 @@ function createCustomersColumns(
 			accessorFn: getCustomerName,
 			cell: ({ row }) => (
 				<div className="space-y-1">
-					<p className="font-medium leading-snug">
+					<Link
+						to="/dashboard/customers/$customerId"
+						params={{ customerId: row.original.id }}
+						preload={false}
+						aria-label={`Ver perfil de ${getCustomerName(row.original)}`}
+						className="absolute inset-0 rounded-sm focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-primary"
+					/>
+					<p className="font-medium leading-snug group-hover:text-primary">
 						{getCustomerName(row.original)}
 					</p>
 					{row.original.isCompany && (
@@ -445,7 +452,7 @@ function TableBodyContent({
 	}
 
 	return table.getRowModel().rows.map((row) => (
-		<TableRow key={row.id}>
+		<TableRow key={row.id} className="group relative cursor-pointer">
 			{row.getVisibleCells().map((cell) => (
 				<TableCell
 					key={cell.id}
@@ -516,7 +523,17 @@ function CompactCustomersList({
 	return (
 		<ul className="divide-y rounded-lg border bg-card @2xl/customers-index:hidden">
 			{customers.map((customer) => (
-				<li key={customer.id} className="space-y-2 p-4">
+				<li
+					key={customer.id}
+					className="relative space-y-2 p-4 hover:bg-muted/40"
+				>
+					<Link
+						to="/dashboard/customers/$customerId"
+						params={{ customerId: customer.id }}
+						preload={false}
+						aria-label={`Ver perfil de ${getCustomerName(customer)}`}
+						className="absolute inset-0 rounded-sm focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-primary"
+					/>
 					<div className="flex items-start justify-between gap-3">
 						<div className="min-w-0">
 							<p className="break-words font-medium leading-snug">

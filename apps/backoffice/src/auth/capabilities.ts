@@ -43,7 +43,6 @@ export const categoryWorkspacePermissions = [
 
 export const customerListPermissions = [
 	TenantPermission.CustomersRead,
-	TenantPermission.CustomersOnboardingManage,
 ] as const satisfies readonly TenantPermissionId[];
 
 export const promotionListPermissions = [
