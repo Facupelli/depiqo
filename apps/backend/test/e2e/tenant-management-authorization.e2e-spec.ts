@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { randomUUID } from 'node:crypto';
 
@@ -52,6 +52,26 @@ describe('Tenant Management HTTP authorization', () => {
 
     await allowed.request().get('/tenant-management/rental-customers').expect(200);
     await denied.request().get('/tenant-management/rental-customers').expect(403);
+
+    const { customer } = await fixtures.createRentalCustomer({ tenantId: tenant.id });
+    const sensitivePath = `/tenant-management/rental-customers/${customer.id}/backoffice-sensitive-profile`;
+    const sensitiveOnly = await clientWithPermissions(tenant.id, [TenantPermission.CustomersSensitiveRead]);
+    const authorized = await clientWithPermissions(tenant.id, [
+      TenantPermission.CustomersRead,
+      TenantPermission.CustomersSensitiveRead,
+    ]);
+    const reviewer = await clientWithPermissions(tenant.id, [TenantPermission.CustomersOnboardingManage]);
+    await allowed.request().get(sensitivePath).expect(403);
+    await sensitiveOnly.request().get(sensitivePath).expect(403);
+    await reviewer.request().get(sensitivePath).expect(403);
+    const noProfile = await authorized.request().get(sensitivePath).expect(200);
+    expect(noProfile.body.data).toEqual({ customerId: customer.id, submittedProfile: null });
+
+    const otherTenant = await fixtures.createTenant();
+    const { customer: foreignCustomer } = await fixtures.createRentalCustomer({ tenantId: otherTenant.id });
+    await authorized.request().get(sensitivePath.replace(customer.id, foreignCustomer.id)).expect(404);
+    await prisma.client.v2RentalCustomer.update({ where: { id: customer.id }, data: { deletedAt: new Date() } });
+    await authorized.request().get(sensitivePath).expect(404);
   });
 
   it('allows rental proposal management to use the customer selector', async () => {
@@ -74,16 +94,83 @@ describe('Tenant Management HTTP authorization', () => {
     await reader.withCsrf(reader.request().post(path)).send({ rejectionReason: 'Incomplete information' }).expect(403);
   });
 
-  it('requires onboarding permission as well as internal credentials for document descriptors', async () => {
+  it('requires internal credentials and either review or identity-document permission', async () => {
     const tenant = await fixtures.createTenant();
     const reviewer = await clientWithPermissions(tenant.id, [TenantPermission.CustomersOnboardingManage]);
     const reader = await clientWithPermissions(tenant.id, [TenantPermission.CustomersRead]);
-    const { customer } = await fixtures.createRentalCustomer({ tenantId: tenant.id });
+    const documentOnly = await clientWithPermissions(tenant.id, [TenantPermission.CustomersIdentityDocumentRead]);
+    const unrelated = await clientWithPermissions(tenant.id, [TenantPermission.RentalsRead]);
+    const generalDocumentReader = await clientWithPermissions(tenant.id, [
+      TenantPermission.CustomersRead,
+      TenantPermission.CustomersIdentityDocumentRead,
+    ]);
+    const { customer } = await fixtures.createRentalCustomer({
+      tenantId: tenant.id,
+      overrides: { onboardingStatus: 'PENDING' },
+    });
     const path = `/internal/tenant-management/rental-customers/${customer.id}/identity-document-descriptor`;
 
     await reader.request().get(path).set('x-internal-token', 'test-bff-token').expect(403);
+    await unrelated.request().get(path).set('x-internal-token', 'test-bff-token').expect(403);
+    await documentOnly.request().get(path).set('x-internal-token', 'test-bff-token').expect(404);
+    await documentOnly.request().get(path).expect(401);
+    await generalDocumentReader.request().get(path).expect(401);
+    await generalDocumentReader.request().get(path).set('x-internal-token', 'wrong').expect(401);
+    await generalDocumentReader.request().get(path).set('x-internal-token', 'test-bff-token').expect(404);
     await reviewer.request().get(path).set('x-internal-token', 'wrong').expect(401);
     await reviewer.request().get(path).set('x-internal-token', 'test-bff-token').expect(404);
+
+    const reference = `customers/${customer.id}/identity-document-123.pdf`;
+    await prisma.client.v2CustomerProfile.create({
+      data: {
+        customerId: customer.id,
+        fullName: 'Document Holder',
+        phone: '123',
+        birthDate: new Date('1990-03-15T00:00:00.000Z'),
+        documentNumber: '12345678',
+        identityDocumentPath: reference,
+        address: 'Street',
+        city: 'City',
+        stateRegion: 'Region',
+        country: 'Country',
+        occupation: 'Engineer',
+        contact1Name: 'Ref',
+        contact1Phone: '111',
+        contact1Relationship: 'Friend',
+        contact2Name: '',
+        contact2Phone: '',
+        contact2Relationship: '',
+      },
+    });
+    const generalDescriptor = await generalDocumentReader
+      .request()
+      .get(path)
+      .set('x-internal-token', 'test-bff-token')
+      .expect(200);
+    expect(generalDescriptor.body.data).toEqual({ objectPath: reference });
+    const directDescriptor = await documentOnly
+      .request()
+      .get(path)
+      .set('x-internal-token', 'test-bff-token')
+      .expect(200);
+    expect(directDescriptor.body.data).toEqual({ objectPath: reference });
+    await documentOnly
+      .request()
+      .get(`/tenant-management/rental-customers/${customer.id}/backoffice-profile`)
+      .expect(403);
+    await reviewer.request().get(path).set('x-internal-token', 'test-bff-token').expect(200);
+    for (const onboardingStatus of ['APPROVED', 'REJECTED'] as const) {
+      await prisma.client.v2RentalCustomer.update({ where: { id: customer.id }, data: { onboardingStatus } });
+      await generalDocumentReader.request().get(path).set('x-internal-token', 'test-bff-token').expect(200);
+      await reviewer.request().get(path).set('x-internal-token', 'test-bff-token').expect(200);
+    }
+    await reviewer.request().get(`/tenant-management/rental-customers/${customer.id}/backoffice-profile`).expect(403);
+    await prisma.client.v2CustomerProfile.update({
+      where: { customerId: customer.id },
+      data: { identityDocumentPath: `customers/${randomUUID()}/identity-document-123.pdf` },
+    });
+    await generalDocumentReader.request().get(path).set('x-internal-token', 'test-bff-token').expect(404);
+    await documentOnly.request().get(path).set('x-internal-token', 'test-bff-token').expect(404);
     const foreignTenant = await fixtures.createTenant();
     const { customer: foreignCustomer } = await fixtures.createRentalCustomer({ tenantId: foreignTenant.id });
     await reviewer
@@ -91,6 +178,19 @@ describe('Tenant Management HTTP authorization', () => {
       .get(path.replace(customer.id, foreignCustomer.id))
       .set('x-internal-token', 'test-bff-token')
       .expect(404);
+    await generalDocumentReader
+      .request()
+      .get(path.replace(customer.id, foreignCustomer.id))
+      .set('x-internal-token', 'test-bff-token')
+      .expect(404);
+    await documentOnly
+      .request()
+      .get(path.replace(customer.id, foreignCustomer.id))
+      .set('x-internal-token', 'test-bff-token')
+      .expect(404);
+    await prisma.client.v2RentalCustomer.update({ where: { id: customer.id }, data: { deletedAt: new Date() } });
+    await generalDocumentReader.request().get(path).set('x-internal-token', 'test-bff-token').expect(404);
+    await documentOnly.request().get(path).set('x-internal-token', 'test-bff-token').expect(404);
   });
 
   it('allows workflow roles to read branches and independently protects branch mutation', async () => {

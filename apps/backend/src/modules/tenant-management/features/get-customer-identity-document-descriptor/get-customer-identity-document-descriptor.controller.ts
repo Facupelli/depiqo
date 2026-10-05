@@ -3,7 +3,7 @@ import { Controller, Get, NotFoundException, Param, UseGuards } from '@nestjs/co
 import { QueryBus } from '@nestjs/cqrs';
 import { CurrentUser } from '../../auth/shared/current-user/current-user.decorator';
 import { AuthUser } from '../../auth/shared/auth.types';
-import { RequirePermission } from '../../authorization/tenant-authorization.decorators';
+import { RequireAnyPermission } from '../../authorization/tenant-authorization.decorators';
 import { InternalTokenGuard } from '../../tenant-context/guards/internal-token.guard';
 import { GetCustomerIdentityDocumentDescriptorParamsDto } from './get-customer-identity-document-descriptor.request.dto';
 import { GetCustomerIdentityDocumentDescriptorQuery } from './get-customer-identity-document-descriptor.query';
@@ -15,7 +15,7 @@ export class GetCustomerIdentityDocumentDescriptorHttpController {
   constructor(private readonly queryBus: QueryBus) {}
 
   @Get(':customerId/identity-document-descriptor')
-  @RequirePermission(TenantPermission.CustomersOnboardingManage)
+  @RequireAnyPermission(TenantPermission.CustomersOnboardingManage, TenantPermission.CustomersIdentityDocumentRead)
   async getDescriptor(
     @Param() params: GetCustomerIdentityDocumentDescriptorParamsDto,
     @CurrentUser() user: AuthUser,

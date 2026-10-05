@@ -5,10 +5,16 @@ import { err, ok, Result } from 'neverthrow';
 import { PrismaService } from 'src/core/database/prisma.service';
 import { resolveCustomerDisplayIdentity } from '../../customer/customer-display-identity';
 import { isCustomerIdentityDocumentReference } from '../../customer/customer-identity-document-reference';
-import { getBackofficeCustomerProfileError, GetBackofficeCustomerProfileError } from './get-backoffice-customer-profile.errors';
+import {
+  getBackofficeCustomerProfileError,
+  GetBackofficeCustomerProfileError,
+} from './get-backoffice-customer-profile.errors';
 import { GetBackofficeCustomerProfileQuery } from './get-backoffice-customer-profile.query';
 
-export type GetBackofficeCustomerProfileResult = Result<GetBackofficeCustomerProfileResponseDto, GetBackofficeCustomerProfileError>;
+export type GetBackofficeCustomerProfileResult = Result<
+  GetBackofficeCustomerProfileResponseDto,
+  GetBackofficeCustomerProfileError
+>;
 
 @QueryHandler(GetBackofficeCustomerProfileQuery)
 export class GetBackofficeCustomerProfileHandler implements IQueryHandler<
@@ -95,7 +101,7 @@ export class GetBackofficeCustomerProfileHandler implements IQueryHandler<
             country: customer.profile.country,
             reviewedAt: customer.profile.reviewedAt?.toISOString() ?? null,
             reviewerLabel: customer.profile.reviewedById
-              ? (reviewer?.name?.trim() || reviewer?.email || 'Revisor no disponible')
+              ? reviewer?.name?.trim() || reviewer?.email || 'Revisor no disponible'
               : null,
           }
         : null,

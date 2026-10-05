@@ -1,5 +1,6 @@
 import type { RentalCustomerOnboardingStatusDto } from "@repo/api-contracts";
 import { Badge } from "@repo/ui/components/badge";
+import { buttonVariants } from "@repo/ui/components/button";
 import {
 	Card,
 	CardContent,
@@ -12,6 +13,7 @@ import { PageBreadcrumb } from "@/components/detail-id-breadcrumb";
 import { formatTimestampInTimezone } from "@/lib/dates/format";
 import { useTenantTimezone } from "@/shared/timezone/operational-timezone.hooks";
 import { useCustomerProfile } from "./customer-profile.queries";
+import { CustomerSensitiveProfile } from "./customer-sensitive-profile";
 
 const statusLabels: Record<RentalCustomerOnboardingStatusDto, string> = {
 	NOT_STARTED: "Perfil no enviado",
@@ -58,7 +60,15 @@ function timestamp(value: string | null, timezone: string) {
 		: null;
 }
 
-export function CustomerProfilePage({ customerId }: { customerId: string }) {
+export function CustomerProfilePage({
+	customerId,
+	canReadSensitive,
+	canReadDocument,
+}: {
+	customerId: string;
+	canReadSensitive: boolean;
+	canReadDocument: boolean;
+}) {
 	const { data: customer } = useCustomerProfile(customerId);
 	const timezone = useTenantTimezone();
 	const submitted = customer.submittedProfile;
@@ -72,7 +82,7 @@ export function CustomerProfilePage({ customerId }: { customerId: string }) {
 				/>
 				<div className="flex flex-wrap items-start justify-between gap-4">
 					<div className="min-w-0 space-y-2">
-											<h1 className="break-words text-2xl font-semibold tracking-tight sm:text-3xl">
+						<h1 className="break-words text-2xl font-semibold tracking-tight sm:text-3xl">
 							{customer.primaryName ??
 								(customer.isCompany
 									? "Nombre de empresa no disponible"
@@ -134,7 +144,8 @@ export function CustomerProfilePage({ customerId }: { customerId: string }) {
 							<Card>
 								<CardHeader>
 									<CardTitle className="flex items-center gap-2 text-base">
-										<BriefcaseBusiness className="size-4" /> Información enviada
+										<BriefcaseBusiness className="size-4" /> Información
+										adicional
 									</CardTitle>
 								</CardHeader>
 								<CardContent>
@@ -155,7 +166,7 @@ export function CustomerProfilePage({ customerId }: { customerId: string }) {
 							<Card>
 								<CardHeader>
 									<CardTitle className="flex items-center gap-2 text-base">
-										<MapPin className="size-4" /> Ubicación general
+										<MapPin className="size-4" /> Ubicación
 									</CardTitle>
 								</CardHeader>
 								<CardContent>
@@ -167,6 +178,9 @@ export function CustomerProfilePage({ customerId }: { customerId: string }) {
 								</CardContent>
 							</Card>
 						</>
+					)}
+					{canReadSensitive && (
+						<CustomerSensitiveProfile customerId={customerId} />
 					)}
 				</main>
 
@@ -221,14 +235,30 @@ export function CustomerProfilePage({ customerId }: { customerId: string }) {
 						<CardContent className="flex items-start gap-3 text-sm">
 							<FileCheck2 className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
 							<div>
-								<p className="font-medium">
-									{customer.identityDocumentOnFile
-										? "Documento de identidad en archivo"
-										: "Sin documento válido en archivo"}
-								</p>
-								{customer.identityDocumentOnFile && (
+								<p className="font-medium">Documento de identidad</p>
+								{customer.identityDocumentOnFile ? (
+									<>
+										<p className="mt-1 text-muted-foreground">
+											Documento cargado.
+										</p>
+										{canReadDocument && (
+											<a
+												href={`/api/customers/${encodeURIComponent(customerId)}/identity-document`}
+												target="_blank"
+												rel="noreferrer"
+												className={buttonVariants({
+													variant: "outline",
+													size: "sm",
+													className: "mt-3",
+												})}
+											>
+												Ver documento
+											</a>
+										)}
+									</>
+								) : (
 									<p className="mt-1 text-muted-foreground">
-										La disponibilidad del archivo no ha sido verificada.
+										No se cargó un documento.
 									</p>
 								)}
 							</div>

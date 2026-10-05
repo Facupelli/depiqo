@@ -5,6 +5,7 @@ export * from "./contract-signer.contract";
 export * from "./create-branch.contract";
 export * from "./create-contract-signer.contract";
 export * from "./get-backoffice-customer-profile.contract";
+export * from "./get-backoffice-customer-sensitive-profile.contract";
 export * from "./get-branch-detail.contract";
 export * from "./get-contract-signer.contract";
 export * from "./get-branches.contract";

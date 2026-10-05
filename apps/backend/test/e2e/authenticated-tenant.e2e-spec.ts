@@ -4,6 +4,7 @@ import { randomUUID } from 'node:crypto';
 
 import request from 'supertest';
 import {
+  GetBackofficeCustomerSensitiveProfileResponseSchema,
   GetCurrentRentalCustomerProfileResponseSchema,
   GetCurrentUserResponseSchema,
   GetCustomerProfileDetailResponseSchema,
@@ -717,6 +718,42 @@ describe('authenticated tenant HTTP flow', () => {
       .set('x-internal-token', 'test-bff-token')
       .expect(404);
 
+    const ordinaryRead = await staffClient
+      .request()
+      .get(`/tenant-management/rental-customers/${customer.id}/backoffice-profile`)
+      .expect(200);
+    const sensitiveRead = await staffClient
+      .request()
+      .get(`/tenant-management/rental-customers/${customer.id}/backoffice-sensitive-profile`)
+      .expect(200);
+    expect(GetBackofficeCustomerSensitiveProfileResponseSchema.safeParse(sensitiveRead.body.data).success).toBe(true);
+    expect(sensitiveRead.body.data).toEqual({
+      customerId: customer.id,
+      submittedProfile: {
+        birthDate: '1990-03-15',
+        address: 'Street 123',
+        documentNumber: '12345678',
+        taxId: null,
+        referenceContacts: [
+          { name: 'Reference One', phone: '111', relationship: 'Friend' },
+          { name: 'Reference Two', phone: '222', relationship: 'Colleague' },
+        ],
+        rejectionReason: 'Needs another document',
+      },
+    });
+    for (const field of [
+      'birthDate',
+      'address',
+      'documentNumber',
+      'taxId',
+      'referenceContacts',
+      'rejectionReason',
+      'identityDocumentPath',
+    ]) {
+      expect(ordinaryRead.body.data).not.toHaveProperty(field);
+      expect(ordinaryRead.body.data.submittedProfile).not.toHaveProperty(field);
+      expect(sensitiveRead.body.data.submittedProfile).not.toHaveProperty('identityDocumentPath');
+    }
     expect(GetCustomerProfileDetailResponseSchema.safeParse(staffRead.body.data).success).toBe(true);
     expect(GetCurrentRentalCustomerProfileResponseSchema.safeParse(selfRead.body.data).success).toBe(true);
     expect(staffRead.body.data.profile).toMatchObject({ identityDocumentOnFile: true });

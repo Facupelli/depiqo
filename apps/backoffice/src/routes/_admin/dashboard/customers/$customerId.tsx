@@ -1,6 +1,6 @@
 import { TenantPermission } from "@repo/api-contracts";
 import { createFileRoute } from "@tanstack/react-router";
-import { can, requireRouteAccess } from "@/auth/permissions";
+import { can, canAll, requireRouteAccess } from "@/auth/permissions";
 import { customerProfileQueries } from "@/modules/customers/customer-profile/customer-profile.queries";
 import {
 	CustomerProfilePage,
@@ -33,8 +33,25 @@ export const Route = createFileRoute("/_admin/dashboard/customers/$customerId")(
 					forbiddenMessage="No tienes permisos para ver este cliente."
 				/>
 			),
-		component: () => (
-			<CustomerProfilePage customerId={Route.useParams().customerId} />
-		),
+		component: CustomerProfileRoute,
 	},
 );
+
+function CustomerProfileRoute() {
+	const { customerId } = Route.useParams();
+	const { user } = Route.useRouteContext();
+	return (
+		<CustomerProfilePage
+			key={customerId}
+			customerId={customerId}
+			canReadSensitive={canAll(user.permissions, [
+				TenantPermission.CustomersRead,
+				TenantPermission.CustomersSensitiveRead,
+			])}
+			canReadDocument={canAll(user.permissions, [
+				TenantPermission.CustomersRead,
+				TenantPermission.CustomersIdentityDocumentRead,
+			])}
+		/>
+	);
+}
