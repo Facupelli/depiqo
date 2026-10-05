@@ -11,6 +11,7 @@ type Classification =
   | 'PUBLIC'
   | 'TENANT_CUSTOMER'
   | 'INTERNAL'
+  | 'INTERNAL_TENANT_USER'
   | 'MISSING'
   | 'CONFLICT';
 
@@ -86,6 +87,7 @@ function resolveAuthorizationActor(
   }
   if (classification === 'PUBLIC') return 'PUBLIC';
   if (classification === 'INTERNAL') return 'INTERNAL';
+  if (classification === 'INTERNAL_TENANT_USER') return 'TENANT_USER (global default) AND INTERNAL';
   if (classification === 'EXEMPT' && (controller === 'GetCurrentUserController' || controller === 'LogoutController')) {
     return 'AUTHENTICATED_ACTOR';
   }
@@ -124,15 +126,21 @@ function classifyRoute(input: {
     issues.push('public metadata is combined with tenant authorization metadata');
   }
 
-  if (internalRoute && (classAuthorization.length > 0 || authorization.length > 0)) {
-    issues.push('internal route is combined with tenant authorization metadata');
+  const declaration = authorization[0] ?? classAuthorization[0];
+  const staffPermission =
+    declaration && ['RequirePermission', 'RequireAnyPermission', 'RequireAllPermissions'].includes(declaration.name);
+  if (internalRoute && !guards.includes('InternalTokenGuard')) {
+    issues.push('internal route must use InternalTokenGuard');
+  }
+  if (internalRoute && declaration && (!staffPermission || publicRoute || customerRoute)) {
+    issues.push('internal route with tenant authorization must require a non-public tenant-user permission');
   }
 
   if (authorization.length > 1) {
     issues.push('multiple authorization declarations apply to the method');
   }
 
-  if (internalRoute) return { classification: 'INTERNAL', issues };
+  if (internalRoute) return { classification: declaration ? 'INTERNAL_TENANT_USER' : 'INTERNAL', issues };
   if (publicRoute) return { classification: 'PUBLIC', issues };
   if (customerRoute) {
     if (authorization.length > 0 || classAuthorization.length > 0) {
@@ -141,7 +149,6 @@ function classifyRoute(input: {
     return { classification: 'TENANT_CUSTOMER', issues };
   }
 
-  const declaration = authorization[0] ?? classAuthorization[0];
   if (!declaration) return { classification: 'MISSING', issues };
 
   const classificationByDecorator = {
@@ -253,6 +260,7 @@ function printReport(routes: RouteAudit[]): void {
   }, {});
   const tenantUserRoutes = routes.filter(
     ({ classification }) =>
+      classification === 'INTERNAL_TENANT_USER' ||
       classification === 'STATIC_ONE' ||
       classification === 'STATIC_ANY' ||
       classification === 'STATIC_ALL' ||
@@ -274,7 +282,8 @@ function printReport(routes: RouteAudit[]): void {
   console.log(`- Missing/incorrect: ${findings.length}`);
   console.log(`- Public routes: ${counts.PUBLIC ?? 0}`);
   console.log(`- Tenant-customer routes: ${counts.TENANT_CUSTOMER ?? 0}`);
-  console.log(`- Internal routes: ${counts.INTERNAL ?? 0}`);
+  console.log(`- Internal routes: ${(counts.INTERNAL ?? 0) + (counts.INTERNAL_TENANT_USER ?? 0)}`);
+  console.log(`- Internal + tenant-user routes: ${counts.INTERNAL_TENANT_USER ?? 0}`);
 
   if (findings.length > 0) {
     console.error('\nAuthorization completeness findings:');

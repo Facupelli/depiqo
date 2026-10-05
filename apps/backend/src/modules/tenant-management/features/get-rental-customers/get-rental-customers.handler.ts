@@ -4,6 +4,7 @@ import { Prisma } from 'src/generated/prisma/client';
 
 import { PrismaService } from 'src/core/database/prisma.service';
 
+import { resolveCustomerDisplayIdentity } from '../../customer/customer-display-identity';
 import { GetRentalCustomersQuery } from './get-rental-customers.query';
 
 export interface GetRentalCustomersItemReadModel {
@@ -11,6 +12,10 @@ export interface GetRentalCustomersItemReadModel {
   email: string;
   firstName: string;
   lastName: string;
+  isCompany: boolean;
+  primaryName: string | null;
+  companyName: string | null;
+  contactName: string | null;
   status: RentalCustomerOnboardingStatusDto;
   lastSubmittedAt: string | null;
   createdAt: string;
@@ -30,19 +35,13 @@ export class GetRentalCustomersHandler implements IQueryHandler<GetRentalCustome
   constructor(private readonly prisma: PrismaService) {}
 
   async execute(query: GetRentalCustomersQuery): Promise<GetRentalCustomersResult> {
+    const search = query.search?.trim();
     const where: Prisma.V2RentalCustomerWhereInput = {
       tenantId: query.tenantId,
       deletedAt: null,
       ...(query.status === undefined ? {} : { onboardingStatus: query.status }),
       ...(query.isActive === undefined ? {} : { isActive: query.isActive }),
-      ...(query.search
-        ? {
-            OR: [
-              { firstName: { contains: query.search, mode: 'insensitive' } },
-              { lastName: { contains: query.search, mode: 'insensitive' } },
-            ],
-          }
-        : {}),
+      ...(search ? { OR: customerIdentitySearch(search) } : {}),
     };
 
     const [customers, total] = await this.prisma.client.$transaction([
@@ -53,6 +52,9 @@ export class GetRentalCustomersHandler implements IQueryHandler<GetRentalCustome
           email: true,
           firstName: true,
           lastName: true,
+          isCompany: true,
+          companyName: true,
+          profile: { select: { fullName: true, businessName: true } },
           onboardingStatus: true,
           createdAt: true,
           lastSubmittedAt: true,
@@ -73,6 +75,8 @@ export class GetRentalCustomersHandler implements IQueryHandler<GetRentalCustome
         email: customer.email,
         firstName: customer.firstName,
         lastName: customer.lastName,
+        isCompany: customer.isCompany,
+        ...resolveCustomerDisplayIdentity(customer),
         status: customer.onboardingStatus,
         lastSubmittedAt: customer.lastSubmittedAt?.toISOString() ?? null,
         createdAt: customer.createdAt.toISOString(),
@@ -82,4 +86,20 @@ export class GetRentalCustomersHandler implements IQueryHandler<GetRentalCustome
       pageSize: query.pageSize,
     };
   }
+}
+
+function customerIdentitySearch(search: string): Prisma.V2RentalCustomerWhereInput[] {
+  const contains = (value: string) => ({ contains: value, mode: 'insensitive' as const });
+  const tokens = search.split(/\s+/);
+
+  return [
+    { firstName: contains(search) },
+    { lastName: contains(search) },
+    { profile: { is: { fullName: contains(search) } } },
+    { isCompany: true, companyName: contains(search) },
+    { isCompany: true, profile: { is: { businessName: contains(search) } } },
+    ...(tokens.length > 1
+      ? [{ AND: tokens.map((token) => ({ OR: [{ firstName: contains(token) }, { lastName: contains(token) }] })) }]
+      : []),
+  ];
 }

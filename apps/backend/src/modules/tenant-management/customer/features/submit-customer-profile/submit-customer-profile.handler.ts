@@ -5,6 +5,7 @@ import { PrismaService } from 'src/core/database/prisma.service';
 import { localDateToPrismaDate } from 'src/core/temporal/local-date';
 import { V2RentalCustomerOnboardingStatus } from 'src/generated/prisma/enums';
 
+import { isCustomerIdentityDocumentReference } from '../../customer-identity-document-reference';
 import { SubmitCustomerProfileCommand } from './submit-customer-profile.command';
 import { submitCustomerProfileError, SubmitCustomerProfileError } from './submit-customer-profile.errors';
 
@@ -70,6 +71,17 @@ export class SubmitCustomerProfileHandler implements ICommandHandler<
           submitCustomerProfileError(
             'tenant_management.customer_profile_already_approved',
             'The customer profile has already been approved.',
+            undefined,
+            context,
+          ),
+        );
+      }
+
+      if (!isCustomerIdentityDocumentReference(command.profile.identityDocumentPath, customer.id)) {
+        return err(
+          submitCustomerProfileError(
+            'tenant_management.invalid_customer_identity_document_reference',
+            'The identity document reference does not belong to this rental customer.',
             undefined,
             context,
           ),

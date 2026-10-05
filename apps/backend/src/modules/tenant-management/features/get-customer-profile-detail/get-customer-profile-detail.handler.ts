@@ -3,6 +3,7 @@ import { err, ok, Result } from 'neverthrow';
 
 import { PrismaService } from 'src/core/database/prisma.service';
 import { prismaDateToLocalDate } from 'src/core/temporal/local-date';
+import { isCustomerIdentityDocumentReference } from '../../customer/customer-identity-document-reference';
 
 import { GetCustomerProfileDetailError, getCustomerProfileDetailError } from './get-customer-profile-detail.errors';
 import { GetCustomerProfileDetailQuery } from './get-customer-profile-detail.query';
@@ -27,7 +28,7 @@ export type GetCustomerProfileDetailResult = Result<
       phone: string;
       birthDate: string;
       documentNumber: string;
-      identityDocumentPath: string;
+      identityDocumentOnFile: boolean;
       address: string;
       city: string;
       stateRegion: string;
@@ -163,7 +164,7 @@ export class GetCustomerProfileDetailHandler implements IQueryHandler<
         phone: customer.profile.phone,
         birthDate: prismaDateToLocalDate(customer.profile.birthDate),
         documentNumber: customer.profile.documentNumber,
-        identityDocumentPath: customer.profile.identityDocumentPath,
+        identityDocumentOnFile: isCustomerIdentityDocumentReference(customer.profile.identityDocumentPath, customer.id),
         address: customer.profile.address,
         city: customer.profile.city,
         stateRegion: customer.profile.stateRegion,

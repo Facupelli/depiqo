@@ -13,6 +13,7 @@ const backendOriginSchema = z.url().refine((value) => {
 
 const serverEnvSchema = z.object({
 	BACKEND_URL: backendOriginSchema,
+	BFF_INTERNAL_TOKEN: z.string().min(1),
 	BACKEND_PROXY_TIMEOUT_MS: z.coerce.number().int().positive().default(60_000),
 	CLOUDFLARE_ACCOUNT_ID: z.string().min(1),
 	// R2 EQUIPMENT

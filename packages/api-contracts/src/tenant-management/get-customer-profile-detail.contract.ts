@@ -14,7 +14,7 @@ export const CustomerProfileDetailProfileSchema = z.object({
   phone: z.string(),
   birthDate: LocalDateSchema,
   documentNumber: z.string(),
-  identityDocumentPath: z.string(),
+  identityDocumentOnFile: z.boolean(),
   address: z.string(),
   city: z.string(),
   stateRegion: z.string(),

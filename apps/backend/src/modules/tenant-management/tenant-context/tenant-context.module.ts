@@ -6,5 +6,6 @@ import { InternalTokenGuard } from './guards/internal-token.guard';
 @Module({
   controllers: [InternalTenantContextController],
   providers: [TenantContextResolverService, InternalTokenGuard],
+  exports: [InternalTokenGuard],
 })
 export class TenantContextModule {}

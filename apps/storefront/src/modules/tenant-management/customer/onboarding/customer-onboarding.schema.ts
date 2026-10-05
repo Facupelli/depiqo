@@ -1,5 +1,5 @@
 import {
-	type CustomerProfileDetailProfileDto,
+	type CurrentRentalCustomerProfileProfileDto,
 	LocalDateSchema,
 	type SubmitCustomerProfileBodyDto,
 	SubmitCustomerProfileBodySchema,
@@ -166,7 +166,7 @@ export function createCustomerOnboardingFormDefaults(
 }
 
 export function fromCustomerProfileToOnboardingFormValues(
-	profile: CustomerProfileDetailProfileDto,
+	profile: CurrentRentalCustomerProfileProfileDto,
 ): CustomerOnboardingFormValues {
 	return createCustomerOnboardingFormDefaults({
 		fullName: profile.fullName,

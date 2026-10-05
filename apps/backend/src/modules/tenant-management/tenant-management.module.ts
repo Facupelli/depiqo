@@ -38,7 +38,13 @@ import { CreateBranchHttpController } from './features/create-branch/create-bran
 import { CreateBranchHandler } from './features/create-branch/create-branch.handler';
 import { GetBranchDetailHttpController } from './features/get-branch-detail/get-branch-detail.controller';
 import { GetBranchDetailHandler } from './features/get-branch-detail/get-branch-detail.handler';
+import { GetBackofficeCustomerProfileHttpController } from './features/get-backoffice-customer-profile/get-backoffice-customer-profile.controller';
+import { GetBackofficeCustomerProfileHandler } from './features/get-backoffice-customer-profile/get-backoffice-customer-profile.handler';
+import { GetBackofficeCustomerSensitiveProfileHttpController } from './features/get-backoffice-customer-sensitive-profile/get-backoffice-customer-sensitive-profile.controller';
+import { GetBackofficeCustomerSensitiveProfileHandler } from './features/get-backoffice-customer-sensitive-profile/get-backoffice-customer-sensitive-profile.handler';
 import { GetCustomerProfileDetailHttpController } from './features/get-customer-profile-detail/get-customer-profile-detail.controller';
+import { GetCustomerIdentityDocumentDescriptorHttpController } from './features/get-customer-identity-document-descriptor/get-customer-identity-document-descriptor.controller';
+import { GetCustomerIdentityDocumentDescriptorHandler } from './features/get-customer-identity-document-descriptor/get-customer-identity-document-descriptor.handler';
 import { GetCustomerProfileDetailHandler } from './features/get-customer-profile-detail/get-customer-profile-detail.handler';
 import { GetBranchesHttpController } from './features/get-branches/get-branches.controller';
 import { GetBranchesHandler } from './features/get-branches/get-branches.handler';
@@ -133,7 +139,10 @@ import {
     GetBranchDetailHttpController,
     GetBranchesHttpController,
     GetCurrentRentalCustomerProfileHttpController,
+    GetBackofficeCustomerProfileHttpController,
+    GetBackofficeCustomerSensitiveProfileHttpController,
     GetCustomerProfileDetailHttpController,
+    GetCustomerIdentityDocumentDescriptorHttpController,
     GetContractSignerHttpController,
     GetCurrentTenantHttpController,
     GetCustomDomainHttpController,
@@ -181,7 +190,10 @@ import {
     GetBranchesHandler,
     SearchBranchAddressSuggestionsHandler,
     GetCurrentRentalCustomerProfileHandler,
+    GetBackofficeCustomerProfileHandler,
+    GetBackofficeCustomerSensitiveProfileHandler,
     GetCustomerProfileDetailHandler,
+    GetCustomerIdentityDocumentDescriptorHandler,
     GetContractSignerHandler,
     GetCurrentTenantHandler,
     GetCustomDomainHandler,

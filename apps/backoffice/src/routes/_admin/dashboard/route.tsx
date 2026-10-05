@@ -254,7 +254,7 @@ function DashboardNavigation() {
 				href: canOpenDirectTarget
 					? item.href
 					: (children?.[0]?.href ?? item.href),
-				children,
+				children: canOpenDirectTarget ? children : undefined,
 			},
 		];
 	});
