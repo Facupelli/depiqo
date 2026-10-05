@@ -38,6 +38,9 @@ export async function proxyBackendRequest(
 	splat: string,
 ): Promise<Response> {
 	const requestId = crypto.randomUUID();
+	if (splat === "internal" || splat.startsWith("internal/")) {
+		return problemResponse(404, "Not Found", "Route not found.", requestId);
+	}
 	const originError = validateRequestOrigin(request);
 
 	if (originError) {

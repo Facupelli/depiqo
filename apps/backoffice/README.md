@@ -51,7 +51,7 @@ Upstream references: TanStack Router issue #7529 and PR #7591.
 
 Server configuration is validated in `src/config/server-env.ts`. The application requires backend proxy configuration, equipment-upload credentials, and branding-upload credentials.
 
-`CUSTOMERS_BUCKET` is a Cloudflare R2 binding used by the retained staff identity-document reader. Customer-facing document upload credentials do not belong to Backoffice.
+`CUSTOMERS_BUCKET` is the private Cloudflare R2 binding used by the staff identity-document reader. Customer-facing document upload credentials do not belong to Backoffice.
 
 Client configuration requires:
 

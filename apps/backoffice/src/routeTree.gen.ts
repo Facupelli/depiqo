@@ -26,7 +26,7 @@ import { Route as AdminDashboardOwnersIndexRouteImport } from './routes/_admin/d
 import { Route as AdminDashboardOrdersIndexRouteImport } from './routes/_admin/dashboard/orders/index'
 import { Route as AdminDashboardCustomersIndexRouteImport } from './routes/_admin/dashboard/customers/index'
 import { Route as AdminDashboardCalendarIndexRouteImport } from './routes/_admin/dashboard/calendar/index'
-import { Route as ApiCustomerProfilesCustomerProfileIdIdentityDocumentRouteImport } from './routes/api/customer-profiles/$customerProfileId/identity-document'
+import { Route as ApiCustomersCustomerIdIdentityDocumentRouteImport } from './routes/api/customers/$customerId/identity-document'
 import { Route as AdminDashboardSettingsStorefrontRouteImport } from './routes/_admin/dashboard/settings/storefront'
 import { Route as AdminDashboardSettingsRentalPoliciesRouteImport } from './routes/_admin/dashboard/settings/rental-policies'
 import { Route as AdminDashboardSettingsCustomerCommunicationRouteImport } from './routes/_admin/dashboard/settings/customer-communication'
@@ -156,10 +156,10 @@ const AdminDashboardCalendarIndexRoute =
     path: '/calendar/',
     getParentRoute: () => AdminDashboardRouteRoute,
   } as any)
-const ApiCustomerProfilesCustomerProfileIdIdentityDocumentRoute =
-  ApiCustomerProfilesCustomerProfileIdIdentityDocumentRouteImport.update({
-    id: '/api/customer-profiles/$customerProfileId/identity-document',
-    path: '/api/customer-profiles/$customerProfileId/identity-document',
+const ApiCustomersCustomerIdIdentityDocumentRoute =
+  ApiCustomersCustomerIdIdentityDocumentRouteImport.update({
+    id: '/api/customers/$customerId/identity-document',
+    path: '/api/customers/$customerId/identity-document',
     getParentRoute: () => rootRouteImport,
   } as any)
 const AdminDashboardSettingsStorefrontRoute =
@@ -418,7 +418,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/settings/customer-communication': typeof AdminDashboardSettingsCustomerCommunicationRoute
   '/dashboard/settings/rental-policies': typeof AdminDashboardSettingsRentalPoliciesRoute
   '/dashboard/settings/storefront': typeof AdminDashboardSettingsStorefrontRoute
-  '/api/customer-profiles/$customerProfileId/identity-document': typeof ApiCustomerProfilesCustomerProfileIdIdentityDocumentRoute
+  '/api/customers/$customerId/identity-document': typeof ApiCustomersCustomerIdIdentityDocumentRoute
   '/dashboard/calendar/': typeof AdminDashboardCalendarIndexRoute
   '/dashboard/customers/': typeof AdminDashboardCustomersIndexRoute
   '/dashboard/orders/': typeof AdminDashboardOrdersIndexRoute
@@ -471,7 +471,7 @@ export interface FileRoutesByTo {
   '/dashboard/settings/customer-communication': typeof AdminDashboardSettingsCustomerCommunicationRoute
   '/dashboard/settings/rental-policies': typeof AdminDashboardSettingsRentalPoliciesRoute
   '/dashboard/settings/storefront': typeof AdminDashboardSettingsStorefrontRoute
-  '/api/customer-profiles/$customerProfileId/identity-document': typeof ApiCustomerProfilesCustomerProfileIdIdentityDocumentRoute
+  '/api/customers/$customerId/identity-document': typeof ApiCustomersCustomerIdIdentityDocumentRoute
   '/dashboard/calendar': typeof AdminDashboardCalendarIndexRoute
   '/dashboard/customers': typeof AdminDashboardCustomersIndexRoute
   '/dashboard/orders': typeof AdminDashboardOrdersIndexRoute
@@ -527,7 +527,7 @@ export interface FileRoutesById {
   '/_admin/dashboard/settings/customer-communication': typeof AdminDashboardSettingsCustomerCommunicationRoute
   '/_admin/dashboard/settings/rental-policies': typeof AdminDashboardSettingsRentalPoliciesRoute
   '/_admin/dashboard/settings/storefront': typeof AdminDashboardSettingsStorefrontRoute
-  '/api/customer-profiles/$customerProfileId/identity-document': typeof ApiCustomerProfilesCustomerProfileIdIdentityDocumentRoute
+  '/api/customers/$customerId/identity-document': typeof ApiCustomersCustomerIdIdentityDocumentRoute
   '/_admin/dashboard/calendar/': typeof AdminDashboardCalendarIndexRoute
   '/_admin/dashboard/customers/': typeof AdminDashboardCustomersIndexRoute
   '/_admin/dashboard/orders/': typeof AdminDashboardOrdersIndexRoute
@@ -585,7 +585,7 @@ export interface FileRouteTypes {
     | '/dashboard/settings/customer-communication'
     | '/dashboard/settings/rental-policies'
     | '/dashboard/settings/storefront'
-    | '/api/customer-profiles/$customerProfileId/identity-document'
+    | '/api/customers/$customerId/identity-document'
     | '/dashboard/calendar/'
     | '/dashboard/customers/'
     | '/dashboard/orders/'
@@ -638,7 +638,7 @@ export interface FileRouteTypes {
     | '/dashboard/settings/customer-communication'
     | '/dashboard/settings/rental-policies'
     | '/dashboard/settings/storefront'
-    | '/api/customer-profiles/$customerProfileId/identity-document'
+    | '/api/customers/$customerId/identity-document'
     | '/dashboard/calendar'
     | '/dashboard/customers'
     | '/dashboard/orders'
@@ -693,7 +693,7 @@ export interface FileRouteTypes {
     | '/_admin/dashboard/settings/customer-communication'
     | '/_admin/dashboard/settings/rental-policies'
     | '/_admin/dashboard/settings/storefront'
-    | '/api/customer-profiles/$customerProfileId/identity-document'
+    | '/api/customers/$customerId/identity-document'
     | '/_admin/dashboard/calendar/'
     | '/_admin/dashboard/customers/'
     | '/_admin/dashboard/orders/'
@@ -735,7 +735,7 @@ export interface RootRouteChildren {
   ApiBrandingUploadRoute: typeof ApiBrandingUploadRoute
   ApiUploadRoute: typeof ApiUploadRoute
   BackendSplatRoute: typeof BackendSplatRoute
-  ApiCustomerProfilesCustomerProfileIdIdentityDocumentRoute: typeof ApiCustomerProfilesCustomerProfileIdIdentityDocumentRoute
+  ApiCustomersCustomerIdIdentityDocumentRoute: typeof ApiCustomersCustomerIdIdentityDocumentRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -859,11 +859,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminDashboardCalendarIndexRouteImport
       parentRoute: typeof AdminDashboardRouteRoute
     }
-    '/api/customer-profiles/$customerProfileId/identity-document': {
-      id: '/api/customer-profiles/$customerProfileId/identity-document'
-      path: '/api/customer-profiles/$customerProfileId/identity-document'
-      fullPath: '/api/customer-profiles/$customerProfileId/identity-document'
-      preLoaderRoute: typeof ApiCustomerProfilesCustomerProfileIdIdentityDocumentRouteImport
+    '/api/customers/$customerId/identity-document': {
+      id: '/api/customers/$customerId/identity-document'
+      path: '/api/customers/$customerId/identity-document'
+      fullPath: '/api/customers/$customerId/identity-document'
+      preLoaderRoute: typeof ApiCustomersCustomerIdIdentityDocumentRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_admin/dashboard/settings/storefront': {
@@ -1323,8 +1323,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiBrandingUploadRoute: ApiBrandingUploadRoute,
   ApiUploadRoute: ApiUploadRoute,
   BackendSplatRoute: BackendSplatRoute,
-  ApiCustomerProfilesCustomerProfileIdIdentityDocumentRoute:
-    ApiCustomerProfilesCustomerProfileIdIdentityDocumentRoute,
+  ApiCustomersCustomerIdIdentityDocumentRoute:
+    ApiCustomersCustomerIdIdentityDocumentRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

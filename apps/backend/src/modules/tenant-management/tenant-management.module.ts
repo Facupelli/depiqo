@@ -41,6 +41,8 @@ import { GetBranchDetailHandler } from './features/get-branch-detail/get-branch-
 import { GetBackofficeCustomerProfileHttpController } from './features/get-backoffice-customer-profile/get-backoffice-customer-profile.controller';
 import { GetBackofficeCustomerProfileHandler } from './features/get-backoffice-customer-profile/get-backoffice-customer-profile.handler';
 import { GetCustomerProfileDetailHttpController } from './features/get-customer-profile-detail/get-customer-profile-detail.controller';
+import { GetCustomerIdentityDocumentDescriptorHttpController } from './features/get-customer-identity-document-descriptor/get-customer-identity-document-descriptor.controller';
+import { GetCustomerIdentityDocumentDescriptorHandler } from './features/get-customer-identity-document-descriptor/get-customer-identity-document-descriptor.handler';
 import { GetCustomerProfileDetailHandler } from './features/get-customer-profile-detail/get-customer-profile-detail.handler';
 import { GetBranchesHttpController } from './features/get-branches/get-branches.controller';
 import { GetBranchesHandler } from './features/get-branches/get-branches.handler';
@@ -137,6 +139,7 @@ import {
     GetCurrentRentalCustomerProfileHttpController,
     GetBackofficeCustomerProfileHttpController,
     GetCustomerProfileDetailHttpController,
+    GetCustomerIdentityDocumentDescriptorHttpController,
     GetContractSignerHttpController,
     GetCurrentTenantHttpController,
     GetCustomDomainHttpController,
@@ -186,6 +189,7 @@ import {
     GetCurrentRentalCustomerProfileHandler,
     GetBackofficeCustomerProfileHandler,
     GetCustomerProfileDetailHandler,
+    GetCustomerIdentityDocumentDescriptorHandler,
     GetContractSignerHandler,
     GetCurrentTenantHandler,
     GetCustomDomainHandler,

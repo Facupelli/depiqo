@@ -74,6 +74,25 @@ describe('Tenant Management HTTP authorization', () => {
     await reader.withCsrf(reader.request().post(path)).send({ rejectionReason: 'Incomplete information' }).expect(403);
   });
 
+  it('requires onboarding permission as well as internal credentials for document descriptors', async () => {
+    const tenant = await fixtures.createTenant();
+    const reviewer = await clientWithPermissions(tenant.id, [TenantPermission.CustomersOnboardingManage]);
+    const reader = await clientWithPermissions(tenant.id, [TenantPermission.CustomersRead]);
+    const { customer } = await fixtures.createRentalCustomer({ tenantId: tenant.id });
+    const path = `/internal/tenant-management/rental-customers/${customer.id}/identity-document-descriptor`;
+
+    await reader.request().get(path).set('x-internal-token', 'test-bff-token').expect(403);
+    await reviewer.request().get(path).set('x-internal-token', 'wrong').expect(401);
+    await reviewer.request().get(path).set('x-internal-token', 'test-bff-token').expect(404);
+    const foreignTenant = await fixtures.createTenant();
+    const { customer: foreignCustomer } = await fixtures.createRentalCustomer({ tenantId: foreignTenant.id });
+    await reviewer
+      .request()
+      .get(path.replace(customer.id, foreignCustomer.id))
+      .set('x-internal-token', 'test-bff-token')
+      .expect(404);
+  });
+
   it('allows workflow roles to read branches and independently protects branch mutation', async () => {
     const tenant = await fixtures.createTenant();
     const workflowUser = await clientWithPermissions(tenant.id, [TenantPermission.RentalsProposalsManage]);

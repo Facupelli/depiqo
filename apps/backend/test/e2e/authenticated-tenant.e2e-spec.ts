@@ -691,19 +691,59 @@ describe('authenticated tenant HTTP flow', () => {
     await staffClient.loginTenantUser({ email: staff.user.email, password: staff.password });
     const customerClient = createE2ETestClient(testApp.app);
     await customerClient.loginTenantCustomer({ email: customer.email, password }, storefrontTenantContext(tenant));
-    const staffRead = await staffClient.request().get(`/tenant-management/rental-customers/${customer.id}/profile`).expect(200);
+    const staffRead = await staffClient
+      .request()
+      .get(`/tenant-management/rental-customers/${customer.id}/profile`)
+      .expect(200);
     const selfRequest = customerClient.request().get('/tenant-management/rental-customers/me/profile');
     await customerClient.withStorefrontTenantContext(selfRequest, storefrontTenantContext(tenant));
     const selfRead = await selfRequest.expect(200);
 
+    const descriptorPath = `/internal/tenant-management/rental-customers/${customer.id}/identity-document-descriptor`;
+    await staffClient.request().get(descriptorPath).expect(401);
+    await request(testApp.app.getHttpServer())
+      .get(descriptorPath)
+      .set('x-internal-token', 'test-bff-token')
+      .expect(401);
+    const descriptor = await staffClient
+      .request()
+      .get(descriptorPath)
+      .set('x-internal-token', 'test-bff-token')
+      .expect(200);
+    expect(descriptor.body.data).toEqual({ objectPath: documentPath });
+    await staffClient
+      .request()
+      .get(descriptorPath.replace('/internal/', '/'))
+      .set('x-internal-token', 'test-bff-token')
+      .expect(404);
+
     expect(GetCustomerProfileDetailResponseSchema.safeParse(staffRead.body.data).success).toBe(true);
     expect(GetCurrentRentalCustomerProfileResponseSchema.safeParse(selfRead.body.data).success).toBe(true);
-    expect(staffRead.body.data).toEqual(selfRead.body.data);
+    expect(staffRead.body.data.profile).toMatchObject({ identityDocumentOnFile: true });
+    expect(staffRead.body.data.profile).not.toHaveProperty('identityDocumentPath');
+    expect({
+      ...staffRead.body.data,
+      profile: { ...staffRead.body.data.profile, identityDocumentPath: documentPath },
+    }).toMatchObject(selfRead.body.data);
     expect(selfRead.body.data.profile).toMatchObject({
       identityDocumentPath: documentPath,
       birthDate: '1990-03-15',
       rejectionReason: 'Needs another document',
     });
+
+    await prisma.client.v2CustomerProfile.update({
+      where: { customerId: customer.id },
+      data: { identityDocumentPath: `customers/${randomUUID()}/identity-document-123.pdf` },
+    });
+    await staffClient.request().get(descriptorPath).set('x-internal-token', 'test-bff-token').expect(404);
+    const invalidReview = await staffClient
+      .request()
+      .get(`/tenant-management/rental-customers/${customer.id}/profile`)
+      .expect(200);
+    expect(invalidReview.body.data.profile.identityDocumentOnFile).toBe(false);
+
+    await prisma.client.v2RentalCustomer.update({ where: { id: customer.id }, data: { deletedAt: new Date() } });
+    await staffClient.request().get(descriptorPath).set('x-internal-token', 'test-bff-token').expect(404);
   });
 
   it('preserves no-profile errors for staff review and customer self-profile', async () => {
@@ -714,7 +754,10 @@ describe('authenticated tenant HTTP flow', () => {
 
     const staffClient = createE2ETestClient(testApp.app);
     await staffClient.loginTenantUser({ email: staff.user.email, password: staff.password });
-    const staffRead = await staffClient.request().get(`/tenant-management/rental-customers/${customer.id}/profile`).expect(404);
+    const staffRead = await staffClient
+      .request()
+      .get(`/tenant-management/rental-customers/${customer.id}/profile`)
+      .expect(404);
 
     const customerClient = createE2ETestClient(testApp.app);
     await customerClient.loginTenantCustomer({ email: customer.email, password }, storefrontTenantContext(tenant));

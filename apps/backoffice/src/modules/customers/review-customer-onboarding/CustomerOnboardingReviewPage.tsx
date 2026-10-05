@@ -30,11 +30,7 @@ import { ProblemDetailsError } from "@/shared/errors";
 import { useTenantTimezone } from "@/shared/timezone/operational-timezone.hooks";
 import { useApproveSubmittedCustomerOnboarding } from "./approve-customer-onboarding.mutation";
 import { useCustomerOnboardingProfile } from "./customer-onboarding-profile.queries";
-import {
-	getDocumentFileName,
-	getDocumentPreviewType,
-	getInstagramProfileUrl,
-} from "./customer-onboarding-review.utils";
+import { getInstagramProfileUrl } from "./customer-onboarding-review.utils";
 import { useRejectSubmittedCustomerOnboarding } from "./reject-customer-onboarding.mutation";
 
 type CustomerOnboardingReviewPageProps = {
@@ -87,7 +83,7 @@ function toCustomerProfileReviewViewModel(
 		phone: profile.phone,
 		birthDate: profile.birthDate,
 		documentNumber: profile.documentNumber,
-		identityDocumentPath: profile.identityDocumentPath,
+		identityDocumentOnFile: profile.identityDocumentOnFile,
 		address: profile.address,
 		city: profile.city,
 		stateRegion: profile.stateRegion,
@@ -120,11 +116,7 @@ function CustomerProfileReviewView({
 }) {
 	const profile = toCustomerProfileReviewViewModel(customer);
 	const timezone = useTenantTimezone();
-	const encodedObjectPath = encodeURIComponent(profile.identityDocumentPath);
-	const documentUrl = `/api/customer-profiles/${profile.customerId}/identity-document?objectPath=${encodedObjectPath}`;
-	const documentPreviewType = getDocumentPreviewType(
-		profile.identityDocumentPath,
-	);
+	const documentUrl = `/api/customers/${profile.customerId}/identity-document`;
 
 	const navigate = useNavigate();
 	const approveMutation = useApproveSubmittedCustomerOnboarding();
@@ -195,47 +187,25 @@ function CustomerProfileReviewView({
 
 					<ReviewSectionCard
 						icon={FileText}
-						title="Documentacion"
+						title="Documento de identidad"
 						actions={
-							<a
-								aria-label="Abrir documento enviado"
-								href={documentUrl}
-								target="_blank"
-								rel="noreferrer"
-								className={buttonVariants({ variant: "outline", size: "sm" })}
-							>
-								Abrir documento
-							</a>
+							profile.identityDocumentOnFile ? (
+								<a
+									href={documentUrl}
+									target="_blank"
+									rel="noreferrer"
+									className={buttonVariants({ variant: "outline", size: "sm" })}
+								>
+									Ver documento
+								</a>
+							) : null
 						}
 					>
-						<div className="space-y-4 rounded-lg border border-dashed bg-muted/30 p-4">
-							<p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-								Archivo enviado
-							</p>
-							<p className="mt-2 text-sm font-medium text-foreground">
-								{getDocumentFileName(profile.identityDocumentPath)}
-							</p>
-							<div className="overflow-hidden rounded-lg border bg-background">
-								{documentPreviewType === "image" ? (
-									<img
-										alt="Documento de identidad del cliente"
-										className="h-96 w-full bg-muted/20 object-contain"
-										src={documentUrl}
-									/>
-								) : documentPreviewType === "pdf" ? (
-									<iframe
-										title="Documento de identidad del cliente"
-										className="h-96 w-full bg-background"
-										src={documentUrl}
-									/>
-								) : (
-									<div className="flex h-96 items-center justify-center p-6 text-center text-sm text-muted-foreground">
-										No pudimos generar una vista previa para este archivo. Usa
-										el boton para abrirlo en una pestana nueva.
-									</div>
-								)}
-							</div>
-						</div>
+						<p className="text-sm text-muted-foreground">
+							{profile.identityDocumentOnFile
+								? "Documento cargado"
+								: "No se cargó un documento."}
+						</p>
 					</ReviewSectionCard>
 
 					<ReviewSectionCard icon={MapPin} title="Direccion">
