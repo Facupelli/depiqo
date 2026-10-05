@@ -3,7 +3,12 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { randomUUID } from 'node:crypto';
 
 import request from 'supertest';
-import { GetCurrentUserResponseSchema, TenantPermission } from '@repo/api-contracts';
+import {
+  GetCurrentRentalCustomerProfileResponseSchema,
+  GetCurrentUserResponseSchema,
+  GetCustomerProfileDetailResponseSchema,
+  TenantPermission,
+} from '@repo/api-contracts';
 
 import { PrismaService } from '../../src/core/database/prisma.service';
 import { V2TenantStatus, V2UserStatus } from '../../src/generated/prisma/enums';
@@ -645,6 +650,80 @@ describe('authenticated tenant HTTP flow', () => {
     expect(results.every((result) => result.status === 'fulfilled' && result.value.status === 200)).toBe(true);
     await expect(prisma.client.v2RentalCustomer.count({ where: { tenantId: tenant.id } })).resolves.toBe(1);
     await expect(prisma.client.v2RentalCustomerAuthIdentity.count({ where: { tenantId: tenant.id } })).resolves.toBe(1);
+  });
+
+  it('keeps staff review and customer self-profile HTTP representations compatible', async () => {
+    const prisma = testApp.app.get(PrismaService);
+    const fixtures = createTestFixtures(prisma);
+    const tenant = await fixtures.createTenant();
+    const staff = await fixtures.createAdministratorTenantUser({ tenantId: tenant.id });
+    const { customer, password } = await fixtures.createRentalCustomer({
+      tenantId: tenant.id,
+      localCredential: {},
+      overrides: { onboardingStatus: 'REJECTED', isCompany: true, companyName: 'Account Company' },
+    });
+    const documentPath = `customers/${customer.id}/identity-document-123.pdf`;
+    await prisma.client.v2CustomerProfile.create({
+      data: {
+        customerId: customer.id,
+        fullName: 'Submitted Contact',
+        phone: '123456789',
+        birthDate: new Date('1990-03-15T00:00:00.000Z'),
+        documentNumber: '12345678',
+        identityDocumentPath: documentPath,
+        address: 'Street 123',
+        city: 'City',
+        stateRegion: 'Region',
+        country: 'Country',
+        occupation: 'Engineer',
+        businessName: 'Submitted Company',
+        contact1Name: 'Reference One',
+        contact1Phone: '111',
+        contact1Relationship: 'Friend',
+        contact2Name: 'Reference Two',
+        contact2Phone: '222',
+        contact2Relationship: 'Colleague',
+        rejectionReason: 'Needs another document',
+      },
+    });
+
+    const staffClient = createE2ETestClient(testApp.app);
+    await staffClient.loginTenantUser({ email: staff.user.email, password: staff.password });
+    const customerClient = createE2ETestClient(testApp.app);
+    await customerClient.loginTenantCustomer({ email: customer.email, password }, storefrontTenantContext(tenant));
+    const staffRead = await staffClient.request().get(`/tenant-management/rental-customers/${customer.id}/profile`).expect(200);
+    const selfRequest = customerClient.request().get('/tenant-management/rental-customers/me/profile');
+    await customerClient.withStorefrontTenantContext(selfRequest, storefrontTenantContext(tenant));
+    const selfRead = await selfRequest.expect(200);
+
+    expect(GetCustomerProfileDetailResponseSchema.safeParse(staffRead.body.data).success).toBe(true);
+    expect(GetCurrentRentalCustomerProfileResponseSchema.safeParse(selfRead.body.data).success).toBe(true);
+    expect(staffRead.body.data).toEqual(selfRead.body.data);
+    expect(selfRead.body.data.profile).toMatchObject({
+      identityDocumentPath: documentPath,
+      birthDate: '1990-03-15',
+      rejectionReason: 'Needs another document',
+    });
+  });
+
+  it('preserves no-profile errors for staff review and customer self-profile', async () => {
+    const fixtures = createTestFixtures(testApp.app.get(PrismaService));
+    const tenant = await fixtures.createTenant();
+    const staff = await fixtures.createAdministratorTenantUser({ tenantId: tenant.id });
+    const { customer, password } = await fixtures.createRentalCustomer({ tenantId: tenant.id, localCredential: {} });
+
+    const staffClient = createE2ETestClient(testApp.app);
+    await staffClient.loginTenantUser({ email: staff.user.email, password: staff.password });
+    const staffRead = await staffClient.request().get(`/tenant-management/rental-customers/${customer.id}/profile`).expect(404);
+
+    const customerClient = createE2ETestClient(testApp.app);
+    await customerClient.loginTenantCustomer({ email: customer.email, password }, storefrontTenantContext(tenant));
+    const selfRequest = customerClient.request().get('/tenant-management/rental-customers/me/profile');
+    await customerClient.withStorefrontTenantContext(selfRequest, storefrontTenantContext(tenant));
+    const selfRead = await selfRequest.expect(404);
+
+    expect(staffRead.body.code).toBe('tenant_management.customer_profile_not_found');
+    expect(selfRead.body.code).toBe('tenant_management.customer_profile_not_found');
   });
 
   it('authenticates a fixture-created rental customer', async () => {

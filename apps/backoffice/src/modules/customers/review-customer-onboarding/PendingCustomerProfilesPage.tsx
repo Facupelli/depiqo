@@ -95,8 +95,18 @@ function PendingProfileRow({
 }) {
 	return (
 		<TableRow>
-			<TableCell className="font-medium">
-				{profile.firstName} {profile.lastName}
+			<TableCell>
+				<p className="font-medium">
+					{profile.primaryName ??
+						(profile.isCompany
+							? "Nombre de empresa no disponible"
+							: "Nombre no disponible")}
+				</p>
+				{profile.isCompany && (
+					<p className="text-xs text-muted-foreground">
+						Contacto: {profile.contactName ?? "Nombre no disponible"}
+					</p>
+				)}
 			</TableCell>
 			<TableCell>
 				{formatTimestampInTimezone(

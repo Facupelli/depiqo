@@ -143,7 +143,19 @@ const metadataByPermission = {
     TenantPermission.CustomersOnboardingManage,
     TenantPermissionGroup.Customers,
     'Gestionar altas de clientes',
-    'Permite revisar, aprobar y rechazar solicitudes de registro de clientes.',
+    'Permite consultar expedientes de alta y revisar, aprobar y rechazar solicitudes de registro de clientes.',
+  ),
+  [TenantPermission.CustomersSensitiveRead]: permission(
+    TenantPermission.CustomersSensitiveRead,
+    TenantPermissionGroup.Customers,
+    'Ver datos sensibles de clientes',
+    'Permite consultar datos sensibles del perfil junto con el permiso para ver clientes.',
+  ),
+  [TenantPermission.CustomersIdentityDocumentRead]: permission(
+    TenantPermission.CustomersIdentityDocumentRead,
+    TenantPermissionGroup.Customers,
+    'Ver documentos de identidad de clientes',
+    'Permite abrir documentos de identidad desde el perfil junto con el permiso para ver clientes.',
   ),
   [TenantPermission.BranchesManage]: permission(
     TenantPermission.BranchesManage,
@@ -191,8 +203,16 @@ export const ALL_TENANT_PERMISSIONS: readonly TenantPermissionId[] = Object.free
   TENANT_PERMISSION_REGISTRY.map(({ id }) => id),
 );
 
+const PRIVILEGED_CUSTOMER_PERMISSIONS: readonly TenantPermissionId[] = [
+  TenantPermission.CustomersOnboardingManage,
+  TenantPermission.CustomersSensitiveRead,
+  TenantPermission.CustomersIdentityDocumentRead,
+];
+
 export const DEFAULT_MEMBER_TENANT_PERMISSIONS: readonly TenantPermissionId[] = Object.freeze(
-  TENANT_PERMISSION_REGISTRY.filter(({ group }) => group !== TenantPermissionGroup.Team).map(({ id }) => id),
+  TENANT_PERMISSION_REGISTRY.filter(
+    ({ id, group }) => group !== TenantPermissionGroup.Team && !PRIVILEGED_CUSTOMER_PERMISSIONS.includes(id),
+  ).map(({ id }) => id),
 );
 
 export function getTenantPermissionMetadata(permissionId: TenantPermissionId): TenantPermissionMetadata {

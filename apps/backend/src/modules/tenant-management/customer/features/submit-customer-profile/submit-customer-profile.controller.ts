@@ -78,6 +78,12 @@ const submitCustomerProfileProblemMap = {
     status: HttpStatus.CONFLICT,
     detail: 'The customer profile has already been approved.',
   },
+  'tenant_management.invalid_customer_identity_document_reference': {
+    type: createProblemType('tenant-management/invalid-customer-identity-document-reference'),
+    title: 'Invalid identity document reference',
+    status: HttpStatus.UNPROCESSABLE_ENTITY,
+    detail: 'The identity document reference must belong to the current customer.',
+  },
 } satisfies Record<
   SubmitCustomerProfileErrorCode,
   {

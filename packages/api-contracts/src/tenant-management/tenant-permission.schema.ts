@@ -21,6 +21,8 @@ export const TenantPermission = {
   PricingManage: "pricing.manage",
   CustomersRead: "customers.read",
   CustomersOnboardingManage: "customers.onboarding.manage",
+  CustomersSensitiveRead: "customers.sensitive.read",
+  CustomersIdentityDocumentRead: "customers.identity_document.read",
   BranchesManage: "branches.manage",
   TenantSettingsManage: "tenant.settings.manage",
   TenantStorefrontManage: "tenant.storefront.manage",

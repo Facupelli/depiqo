@@ -76,7 +76,16 @@ const ONBOARDING_STATUS_VARIANT: Record<
 };
 
 function getCustomerName(customer: GetRentalCustomersItemDto) {
-	return `${customer.firstName} ${customer.lastName}`;
+	return (
+		customer.primaryName ??
+		(customer.isCompany
+			? "Nombre de empresa no disponible"
+			: "Nombre no disponible")
+	);
+}
+
+function getCustomerContact(customer: GetRentalCustomersItemDto) {
+	return customer.contactName ?? "Nombre no disponible";
 }
 
 function getCustomerEmail(customer: GetRentalCustomersItemDto) {
@@ -112,6 +121,11 @@ function createCustomersColumns(
 					<p className="font-medium leading-snug">
 						{getCustomerName(row.original)}
 					</p>
+					{row.original.isCompany && (
+						<p className="text-xs text-muted-foreground">
+							Contacto: {getCustomerContact(row.original)}
+						</p>
+					)}
 					<p className="text-xs text-muted-foreground tabular-nums @5xl/customers-index:hidden">
 						{formatCustomerCreatedDate(row.original.createdAt, timezone)}
 					</p>
@@ -335,7 +349,7 @@ function CustomersToolbar({
 	return (
 		<section className="flex flex-col items-stretch gap-2 rounded-sm border border-border/70 bg-background px-4 py-3 shadow-xs @sm/customers-index:flex-row @sm/customers-index:flex-wrap @sm/customers-index:items-center">
 			<Input
-				placeholder="Search by name, email…"
+				placeholder="Buscar por nombre o empresa…"
 				value={searchInput}
 				onChange={(event) => onSearchInputChange(event.target.value)}
 				className="h-9 w-full @sm/customers-index:w-64"
@@ -504,9 +518,16 @@ function CompactCustomersList({
 			{customers.map((customer) => (
 				<li key={customer.id} className="space-y-2 p-4">
 					<div className="flex items-start justify-between gap-3">
-						<p className="min-w-0 break-words font-medium leading-snug">
-							{getCustomerName(customer)}
-						</p>
+						<div className="min-w-0">
+							<p className="break-words font-medium leading-snug">
+								{getCustomerName(customer)}
+							</p>
+							{customer.isCompany && (
+								<p className="text-xs text-muted-foreground">
+									Contacto: {getCustomerContact(customer)}
+								</p>
+							)}
+						</div>
 						<CustomerOnboardingBadge status={customer.status} />
 					</div>
 					<p className="break-all text-sm text-muted-foreground">

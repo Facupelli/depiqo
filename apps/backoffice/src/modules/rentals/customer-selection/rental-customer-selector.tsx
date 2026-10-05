@@ -129,6 +129,11 @@ export function RentalCustomerSelector({
 								<span className="block truncate font-medium">
 									{customerName(customer)}
 								</span>
+								{customer.isCompany && (
+									<span className="block truncate text-muted-foreground text-xs">
+										Contacto: {customer.contactName ?? "Nombre no disponible"}
+									</span>
+								)}
 								<span className="block truncate text-muted-foreground text-xs">
 									{customer.email}
 								</span>
@@ -154,7 +159,12 @@ export function RentalCustomerSelector({
 type Customer = GetRentalCustomersItemDto;
 
 function customerName(customer: Customer) {
-	return `${customer.firstName} ${customer.lastName}`.trim();
+	return (
+		customer.primaryName ??
+		(customer.isCompany
+			? "Nombre de empresa no disponible"
+			: "Nombre no disponible")
+	);
 }
 
 function customerLabel(customer: Customer) {
