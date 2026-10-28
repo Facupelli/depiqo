@@ -8,6 +8,7 @@ export const TenantPermissionGroup = {
   Finances: 'Finanzas',
   Rentals: 'Alquileres',
   Contracts: 'Contratos',
+  Invoicing: 'Facturación',
   Products: 'Productos',
   Inventory: 'Inventario',
   Pricing: 'Precios',
@@ -91,6 +92,18 @@ const metadataByPermission = {
     TenantPermissionGroup.Contracts,
     'Enviar contratos para firma',
     'Permite enviar invitaciones a clientes para que firmen contratos de alquiler.',
+  ),
+  [TenantPermission.InvoicingRead]: permission(
+    TenantPermission.InvoicingRead,
+    TenantPermissionGroup.Invoicing,
+    'Ver facturas',
+    'Permite consultar registros de facturas y su historial, sin otorgar acceso a los reportes financieros.',
+  ),
+  [TenantPermission.InvoicingManage]: permission(
+    TenantPermission.InvoicingManage,
+    TenantPermissionGroup.Invoicing,
+    'Gestionar registros de facturas',
+    'Permite registrar, corregir y quitar registros de facturas externas, sin cancelar las facturas originales ni modificar los alquileres.',
   ),
   [TenantPermission.ProductsRead]: permission(
     TenantPermission.ProductsRead,
@@ -212,6 +225,8 @@ export const ALL_TENANT_PERMISSIONS: readonly TenantPermissionId[] = Object.free
 
 const DEFAULT_MEMBER_EXCLUDED_PERMISSIONS: readonly TenantPermissionId[] = [
   TenantPermission.FinancesRead,
+  TenantPermission.InvoicingRead,
+  TenantPermission.InvoicingManage,
   TenantPermission.CustomersOnboardingManage,
   TenantPermission.CustomersSensitiveRead,
   TenantPermission.CustomersIdentityDocumentRead,

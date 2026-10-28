@@ -12,6 +12,8 @@ export const TenantPermission = {
   ContractsRead: "contracts.read",
   ContractsGenerate: "contracts.generate",
   ContractsSigningSend: "contracts.signing.send",
+  InvoicingRead: "invoicing.read",
+  InvoicingManage: "invoicing.manage",
   ProductsRead: "products.read",
   ProductsManage: "products.manage",
   ProductsAvailabilityManage: "products.availability.manage",
