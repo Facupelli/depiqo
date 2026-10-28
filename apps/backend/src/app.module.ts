@@ -20,6 +20,7 @@ import { RentalCommitmentModule } from './modules/rental-commitment/rental-commi
 import { ContractsModule } from './modules/contracts/contracts.module';
 import { DeliveryModule } from './modules/delivery/delivery.module';
 import { InvoicingModule } from './modules/invoicing/invoicing.module';
+import { ReportsModule } from './modules/reports/reports.module';
 
 @Module({
   imports: [
@@ -41,6 +42,7 @@ import { InvoicingModule } from './modules/invoicing/invoicing.module';
     ContractsModule,
     DeliveryModule,
     InvoicingModule,
+    ReportsModule,
   ],
   providers: [
     {

@@ -3,6 +3,11 @@ import {
 	type TenantPermission as TenantPermissionId,
 } from "@repo/api-contracts";
 
+export const reportWorkspacePermissions = [
+	TenantPermission.ReportsRentalsRead,
+	TenantPermission.ReportsEquipmentRead,
+] as const satisfies readonly TenantPermissionId[];
+
 export const rentalWorkspacePermissions = [
 	TenantPermission.RentalsRead,
 	TenantPermission.RentalsProposalsManage,

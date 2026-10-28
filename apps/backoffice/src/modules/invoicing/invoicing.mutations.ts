@@ -4,6 +4,7 @@ import {
 	useMutation,
 	useQueryClient,
 } from "@tanstack/react-query";
+import { reportKeys } from "@/modules/reports/public";
 import {
 	type CorrectInvoiceRegistrationVariables,
 	correctInvoiceRegistration,
@@ -33,6 +34,7 @@ function invoiceMutationTargets({
 	return [
 		invoicingKeys.rentalLists(rentalId),
 		invoicingKeys.invoiceDetails(invoiceId),
+		reportKeys.rentals(),
 	];
 }
 
@@ -63,8 +65,10 @@ export function useRegisterExternalInvoice() {
 		mutationFn: registerExternalInvoice,
 		retry: false,
 		meta: {
-			invalidates: (variables: RegisterExternalInvoiceBodyDto) =>
+			invalidates: (variables: RegisterExternalInvoiceBodyDto) => [
 				invoicingKeys.rentalLists(variables.rentalId),
+				reportKeys.rentals(),
+			],
 		},
 	});
 }

@@ -1,6 +1,7 @@
 import type { ApproveSubmittedCustomerOnboardingResponseDto } from "@repo/api-contracts";
 import type { MutationOptions } from "@tanstack/react-query";
 import { useMutation } from "@tanstack/react-query";
+import { reportKeys } from "@/modules/reports/public";
 import type { ProblemDetailsError } from "@/shared/errors";
 import { customerKeys } from "../customer.query-keys";
 import {
@@ -28,7 +29,7 @@ export function useApproveSubmittedCustomerOnboarding(
 		...options,
 		mutationFn: approveSubmittedCustomerOnboarding,
 		meta: {
-			invalidates: customerKeys.all(),
+			invalidates: [customerKeys.all(), reportKeys.rentals()],
 			...options?.meta,
 		},
 	});

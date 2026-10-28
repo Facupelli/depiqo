@@ -2,6 +2,7 @@ import type { AssignRentalAccessoriesResponseDto } from "@repo/api-contracts";
 import type { MutationOptions } from "@tanstack/react-query";
 import { useMutation } from "@tanstack/react-query";
 import { rentalKeys } from "@/modules/rentals/rental.queries";
+import { reportKeys } from "@/modules/reports/public";
 import type { ProblemDetailsError } from "@/shared/errors";
 import { contractKeys } from "../../documents/signing/rental-contract-signing.queries";
 import {
@@ -32,6 +33,7 @@ export function useAssignRentalAccessories(
 		meta: {
 			invalidates: (variables: AssignRentalAccessoriesVariables) => [
 				rentalKeys.detail(variables.rentalId),
+				reportKeys.equipment(),
 				rentalAccessoryDefaultKeys.detail(variables.rentalId),
 				contractKeys.rentalSigningSummary(variables.rentalId),
 			],

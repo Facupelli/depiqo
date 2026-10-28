@@ -6,6 +6,7 @@ import {
 
 export const TenantPermissionGroup = {
   Finances: 'Finanzas',
+  Reports: 'Reportes',
   Rentals: 'Alquileres',
   Contracts: 'Contratos',
   Invoicing: 'Facturación',
@@ -32,6 +33,18 @@ const metadataByPermission = {
     TenantPermissionGroup.Finances,
     'Ver finanzas',
     'Permite consultar reportes agregados de alquileres e importes contractuales de terceros. No modifica el acceso a los importes del detalle de cada alquiler.',
+  ),
+  [TenantPermission.ReportsRentalsRead]: permission(
+    TenantPermission.ReportsRentalsRead,
+    TenantPermissionGroup.Reports,
+    'Ver reporte de alquileres',
+    'Permite consultar el reporte de alquileres, incluidos los nombres de clientes, importes aceptados y registros de facturas. No otorga acceso a la gestión de alquileres, facturas ni Finanzas.',
+  ),
+  [TenantPermission.ReportsEquipmentRead]: permission(
+    TenantPermission.ReportsEquipmentRead,
+    TenantPermissionGroup.Reports,
+    'Ver reporte de equipos más reservados',
+    'Permite consultar cantidades de alquileres y unidades comprometidas por tipo de equipo. No otorga acceso a la gestión de alquileres ni del inventario.',
   ),
   [TenantPermission.RentalsRead]: permission(
     TenantPermission.RentalsRead,
@@ -225,6 +238,8 @@ export const ALL_TENANT_PERMISSIONS: readonly TenantPermissionId[] = Object.free
 
 const DEFAULT_MEMBER_EXCLUDED_PERMISSIONS: readonly TenantPermissionId[] = [
   TenantPermission.FinancesRead,
+  TenantPermission.ReportsRentalsRead,
+  TenantPermission.ReportsEquipmentRead,
   TenantPermission.InvoicingRead,
   TenantPermission.InvoicingManage,
   TenantPermission.CustomersOnboardingManage,

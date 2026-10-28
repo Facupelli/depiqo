@@ -7,6 +7,7 @@ import {
 	productWorkspacePermissions,
 	promotionListPermissions,
 	rentalWorkspacePermissions,
+	reportWorkspacePermissions,
 	settingsPermissions,
 } from "@/auth/capabilities";
 import { can, canAny, requireRouteAccess } from "@/auth/permissions";
@@ -60,6 +61,9 @@ export const Route = createFileRoute("/_admin/dashboard/")({
 		}
 		if (can(permissions, TenantPermission.FinancesRead)) {
 			throw redirect({ to: "/dashboard/finances" });
+		}
+		if (canAny(permissions, reportWorkspacePermissions)) {
+			throw redirect({ to: "/dashboard/reports" });
 		}
 
 		requireRouteAccess(false);
