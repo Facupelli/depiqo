@@ -91,10 +91,10 @@ export function RentalEquipmentSection() {
 	const selectedAccessoryDemandLine = rental.selections
 		.flatMap((selection) => selection.demandLines)
 		.find((demandLine) => demandLine.id === selectedAccessoryDemandLineId);
+	const isConfirmedPeriodOpen =
+		rental.status === "CONFIRMED" && Date.now() < Date.parse(rental.period.end);
 	const canAssignDemandLineAccessories =
-		canManageFulfillment &&
-		rental.status === "CONFIRMED" &&
-		Date.now() < Date.parse(rental.period.end);
+		canManageFulfillment && isConfirmedPeriodOpen;
 
 	return (
 		<div className="space-y-8">
@@ -164,7 +164,7 @@ export function RentalEquipmentSection() {
 						Equipos y accesorios
 					</h2>
 					<div className="flex min-w-0 flex-col items-start gap-2 @sm/rental-detail:flex-row @sm/rental-detail:flex-wrap @sm/rental-detail:items-center @3xl/rental-detail:justify-end">
-						{canManageConfirmed && rental.status === "CONFIRMED" ? (
+						{canManageConfirmed && isConfirmedPeriodOpen ? (
 							<Button
 								type="button"
 								onClick={() => setIsAddProductDialogOpen(true)}
@@ -184,11 +184,6 @@ export function RentalEquipmentSection() {
 							>
 								Asignar accesorios
 							</Button>
-						) : canManageFulfillment && rental.status === "CONFIRMED" ? (
-							<span className="text-sm text-muted-foreground">
-								El período del alquiler ya terminó. No se pueden asignar
-								accesorios.
-							</span>
 						) : null}
 					</div>
 				</div>

@@ -109,7 +109,7 @@ function RentalClientCard() {
 	return (
 		<ResponsiveDisclosureCard
 			icon={<User2Icon className="size-4" />}
-			title="Información del cliente"
+			title="Cliente"
 			summary={summary}
 		>
 			{customer ? (
@@ -271,9 +271,7 @@ function RentalFinancialsCard() {
 					<span className="hidden size-6 items-center justify-center text-neutral-600 @5xl/rental-detail:flex">
 						<ReceiptText className="size-4" />
 					</span>
-					<h2 className="text-sm font-bold text-neutral-950">
-						Resumen financiero
-					</h2>
+					<h2 className="text-sm font-bold text-neutral-950">Importe</h2>
 				</div>
 				<p className="mt-0.5 break-words text-sm text-neutral-500 @5xl/rental-detail:mt-0">
 					Sin precio calculado.
@@ -312,7 +310,7 @@ function RentalFinancialsCard() {
 				>
 					<span className="min-w-0 flex-1 @5xl/rental-detail:hidden">
 						<span className="block text-sm font-bold text-neutral-950">
-							Resumen financiero
+							Importe
 						</span>
 						<span className="mt-0.5 block break-words font-mono text-sm font-semibold text-neutral-950">
 							{formatMoney(headlineTotal, pricing.currency)}
@@ -321,7 +319,7 @@ function RentalFinancialsCard() {
 					<span className="hidden min-w-0 flex-1 @5xl/rental-detail:block [&>div]:mb-0">
 						<SidebarHeader
 							icon={<ReceiptText className="size-4" />}
-							title="Resumen financiero"
+							title="Importe"
 						/>
 					</span>
 					<ChevronDown
