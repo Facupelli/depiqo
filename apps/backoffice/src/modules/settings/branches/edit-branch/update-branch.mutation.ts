@@ -2,6 +2,7 @@ import type { UpdateBranchResponseDto } from "@repo/api-contracts";
 import type { MutationOptions } from "@tanstack/react-query";
 import { useMutation } from "@tanstack/react-query";
 import { productKeys } from "@/modules/products/products.queries";
+import { reportKeys } from "@/modules/reports/public";
 import type { ProblemDetailsError } from "@/shared/errors";
 import { branchKeys } from "../branches.queries";
 import { type UpdateBranchVariables, updateBranch } from "./update-branch.api";
@@ -24,7 +25,7 @@ export function useUpdateBranch(options?: UpdateBranchOptions) {
 		...options,
 		mutationFn: updateBranch,
 		meta: {
-			invalidates: [branchKeys.all(), productKeys.all()],
+			invalidates: [branchKeys.all(), productKeys.all(), reportKeys.rentals()],
 			...options?.meta,
 		},
 	});

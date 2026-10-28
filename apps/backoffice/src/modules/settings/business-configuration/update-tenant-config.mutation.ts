@@ -3,6 +3,7 @@ import type { MutationOptions } from "@tanstack/react-query";
 import { useMutation } from "@tanstack/react-query";
 import { currentBusinessKeys } from "@/application/current-business/current-business.queries";
 import { rentalFinancialReportKeys } from "@/modules/finances/rental-financial-report/rental-financial-report.queries";
+import { reportKeys } from "@/modules/reports/public";
 import type { ProblemDetailsError } from "@/shared/errors";
 import {
 	type UpdateTenantConfigVariables,
@@ -27,7 +28,11 @@ export function useUpdateTenantConfig(options?: UpdateTenantConfigOptions) {
 		...options,
 		mutationFn: updateTenantConfig,
 		meta: {
-			invalidates: [currentBusinessKeys.all(), rentalFinancialReportKeys.all()],
+			invalidates: [
+				currentBusinessKeys.all(),
+				rentalFinancialReportKeys.all(),
+				reportKeys.all(),
+			],
 			...options?.meta,
 		},
 	});

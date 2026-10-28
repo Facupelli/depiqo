@@ -2,6 +2,7 @@ import type { UpdateEquipmentTypeResponseDto } from "@repo/api-contracts";
 import type { MutationOptions } from "@tanstack/react-query";
 import { useMutation } from "@tanstack/react-query";
 import { productKeys } from "@/modules/products/products.queries";
+import { reportKeys } from "@/modules/reports/public";
 import type { ProblemDetailsError } from "@/shared/errors";
 import { equipmentTypeSummaryKeys } from "../equipment-type-detail/equipment-type-summary.queries";
 import { equipmentTypeOptionKeys } from "../equipment-type-options.queries";
@@ -34,6 +35,7 @@ export function useUpdateEquipmentType(options?: UpdateEquipmentTypeOptions) {
 				listEquipmentTypeKeys.lists(),
 				equipmentTypeOptionKeys.all(),
 				productKeys.all(),
+				reportKeys.equipment(),
 			],
 			...options?.meta,
 		},

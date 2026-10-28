@@ -30,6 +30,7 @@ import {
 	BarChart3,
 	CalendarDays,
 	Camera,
+	ChartNoAxesCombined,
 	ChevronsUpDown,
 	LayoutGrid,
 	LogOut,
@@ -47,6 +48,7 @@ import {
 	productWorkspacePermissions,
 	promotionListPermissions,
 	rentalWorkspacePermissions,
+	reportWorkspacePermissions,
 	settingsPermissions,
 	workingBranchContextPermissions,
 } from "@/auth/capabilities";
@@ -94,6 +96,7 @@ type PermissionPredicate = (
 type SidebarChild = {
 	name: string;
 	href: string;
+	matchDescendants?: boolean;
 	isVisible: PermissionPredicate;
 };
 
@@ -142,6 +145,7 @@ const sidebarItems: SidebarItem[] = [
 			{
 				name: "Combos",
 				href: "/dashboard/catalog/packages",
+				matchDescendants: true,
 				isVisible: (permissions) =>
 					canAny(permissions, productWorkspacePermissions),
 			},
@@ -184,6 +188,27 @@ const sidebarItems: SidebarItem[] = [
 		icon: BarChart3,
 		href: "/dashboard/finances",
 		isVisible: (permissions) => can(permissions, TenantPermission.FinancesRead),
+	},
+	{
+		name: "Reportes",
+		icon: ChartNoAxesCombined,
+		href: "/dashboard/reports",
+		matchDescendants: true,
+		isVisible: (permissions) => canAny(permissions, reportWorkspacePermissions),
+		children: [
+			{
+				name: "Alquileres",
+				href: "/dashboard/reports/rentals",
+				isVisible: (permissions) =>
+					can(permissions, TenantPermission.ReportsRentalsRead),
+			},
+			{
+				name: "Equipos más reservados",
+				href: "/dashboard/reports/equipment",
+				isVisible: (permissions) =>
+					can(permissions, TenantPermission.ReportsEquipmentRead),
+			},
+		],
 	},
 	{
 		name: "Ajustes",
@@ -303,7 +328,10 @@ function DashboardNavigation() {
 												render={
 													<Link
 														to={child.href}
-														activeOptions={{ exact: true }}
+														activeOptions={{
+															exact: !child.matchDescendants,
+															includeSearch: false,
+														}}
 														onClick={closeNavigation}
 													/>
 												}

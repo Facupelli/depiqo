@@ -12,7 +12,7 @@ A Query represents a user's intent to retrieve data. A Query Handler executes it
 
 Queries are read-only. They must never mutate state, write to the database, or trigger side effects.
 
-Query Handlers are deliberately allowed to bypass aggregate repositories and read directly with Prisma. Read models do not need to pass through entities, aggregates, or mappers. Direct Prisma access is limited to models owned by the Query Handler's module.
+Query Handlers are deliberately allowed to bypass aggregate repositories and read directly with Prisma. Read models do not need to pass through entities, aggregates, or mappers. Direct Prisma access is limited to models owned by the Query Handler's module, except for Reports as defined in `docs/architecture/overview.md`.
 
 ## Repo Convention
 
@@ -21,7 +21,7 @@ Query Handlers are deliberately allowed to bypass aggregate repositories and rea
 - Query classes are plain classes with `readonly` properties and a single constructor.
 - Query Handlers are decorated with `@QueryHandler(TheQuery)` and implement `IQueryHandler<TQuery, TResult>`.
 - Query Handlers inject `PrismaService` directly by default for models owned by their module (see `docs/architecture/overview.md` for cross-module access rules).
-- Cross-module reads go through the owning module's public API or a local projection explicitly owned by the consuming module (see `docs/architecture/overview.md`).
+- Cross-module reads go through the owning module's public API or a local projection explicitly owned by the consuming module, subject to the Reports exception in `docs/architecture/overview.md`.
 - Query Handlers return caller-shaped read models.
 - Query Handlers usually bypass repositories, aggregates, and mappers.
 - Tenant-scoped queries must include `tenantId`.
@@ -46,7 +46,7 @@ Query Handlers are deliberately allowed to bypass aggregate repositories and rea
 - Do not use domain mappers in a Query Handler by default.
 - Do not call Domain Services in a Query Handler by default.
 - Do not route read models through command-side repositories by default.
-- Do not query another module's owned Prisma models directly (see `docs/architecture/overview.md` for full cross-module access rules).
+- Do not query another module's owned persistence directly outside the Reports exception in `docs/architecture/overview.md`.
 - Do not return raw Prisma records blindly.
 - Do not omit tenant scoping for tenant-scoped data.
 

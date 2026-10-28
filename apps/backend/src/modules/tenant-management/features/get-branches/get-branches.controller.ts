@@ -17,6 +17,8 @@ export class GetBranchesHttpController {
   @Get()
   @RequireAnyPermission(
     TenantPermission.BranchesManage,
+    TenantPermission.ReportsRentalsRead,
+    TenantPermission.ReportsEquipmentRead,
     TenantPermission.RentalsRead,
     TenantPermission.RentalsProposalsManage,
     TenantPermission.RentalsConfirm,

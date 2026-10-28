@@ -13,4 +13,5 @@ export * from "./offering-setup";
 export * from "./pricing";
 export * from "./problem-details.schema";
 export * from "./rental-commitment";
+export * from "./reports";
 export * from "./tenant-management";

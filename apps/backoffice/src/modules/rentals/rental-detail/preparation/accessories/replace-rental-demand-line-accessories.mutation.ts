@@ -1,6 +1,7 @@
 import type { ReplaceRentalDemandLineAccessoriesResponseDto } from "@repo/api-contracts";
 import { type MutationOptions, useMutation } from "@tanstack/react-query";
 import { rentalKeys } from "@/modules/rentals/rental.queries";
+import { reportKeys } from "@/modules/reports/public";
 import type { ProblemDetailsError } from "@/shared/errors";
 import { contractKeys } from "../../documents/signing/rental-contract-signing.queries";
 import { rentalAccessoryDefaultKeys } from "./rental-accessory-defaults.queries";
@@ -29,6 +30,7 @@ export function useReplaceRentalDemandLineAccessories(options?: Options) {
 		meta: {
 			invalidates: (variables: ReplaceRentalDemandLineAccessoriesVariables) => [
 				rentalKeys.detail(variables.rentalId),
+				reportKeys.equipment(),
 				rentalAccessoryDefaultKeys.detail(variables.rentalId),
 				contractKeys.rentalSigningSummary(variables.rentalId),
 			],
