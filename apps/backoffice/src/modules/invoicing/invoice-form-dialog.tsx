@@ -1,3 +1,4 @@
+import type { InvoiceDto } from "@repo/api-contracts";
 import { Button } from "@repo/ui/components/button";
 import {
 	Dialog,
@@ -22,21 +23,37 @@ import { formatTimestampInTimezone } from "@/lib/dates/format";
 import { useTenantTimezone } from "@/shared/timezone/operational-timezone.hooks";
 import {
 	createInvoiceFormDefaults,
+	hasInvoiceRegistrationChanges,
 	invoiceFormSchema,
+	invoiceToFormValues,
+	toCorrectInvoiceRegistrationBody,
 	toRegisterExternalInvoiceBody,
 } from "./invoice-form.schema";
 import { type InvoicingUiError, toInvoicingUiError } from "./invoicing.errors";
-import { useRegisterExternalInvoice } from "./invoicing.mutations";
+import {
+	useCorrectInvoiceRegistration,
+	useRegisterExternalInvoice,
+} from "./invoicing.mutations";
 
 type InvoiceFormDialogProps = {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
-	rentalId: string;
-	acceptedCustomerTotal: string | null;
-	currency: string | null;
-	registrationEligible: boolean;
-	onRentalContextStale: () => Promise<void>;
-};
+} & (
+	| {
+			mode: "register";
+			rentalId: string;
+			acceptedCustomerTotal: string | null;
+			currency: string | null;
+			registrationEligible: boolean;
+			onRentalContextStale: () => Promise<void>;
+	  }
+	| {
+			mode: "correct";
+			// The snapshot captured when the user starts editing, not live query data.
+			invoice: InvoiceDto;
+			blockedMessage: string | null;
+	  }
+);
 
 const invoiceFields = [
 	{
@@ -69,59 +86,74 @@ const invoiceFields = [
 export function InvoiceFormDialog(props: InvoiceFormDialogProps) {
 	if (!props.open) return null;
 
-	return <OpenInvoiceFormDialog key={props.rentalId} {...props} />;
+	const id = props.mode === "register" ? props.rentalId : props.invoice.id;
+	return <OpenInvoiceFormDialog key={`${props.mode}:${id}`} {...props} />;
 }
 
-function OpenInvoiceFormDialog({
-	onOpenChange,
-	rentalId,
-	acceptedCustomerTotal,
-	currency,
-	registrationEligible,
-	onRentalContextStale,
-}: InvoiceFormDialogProps) {
+function OpenInvoiceFormDialog(props: InvoiceFormDialogProps) {
+	const { onOpenChange } = props;
 	const formId = useId();
 	const timezone = useTenantTimezone();
 	const registerInvoice = useRegisterExternalInvoice();
+	const correctInvoice = useCorrectInvoiceRegistration();
+	const currency = props.mode === "register" ? props.currency : props.invoice.currency;
 	const [defaultValues] = useState(() =>
-		createInvoiceFormDefaults(
-			acceptedCustomerTotal,
-			formatTimestampInTimezone(new Date(), timezone, "YYYY-MM-DD"),
-		),
+		props.mode === "register"
+			? createInvoiceFormDefaults(
+					props.acceptedCustomerTotal,
+					formatTimestampInTimezone(new Date(), timezone, "YYYY-MM-DD"),
+				)
+			: invoiceToFormValues(props.invoice),
 	);
 	const [serverError, setServerError] = useState<InvoicingUiError | null>(null);
-	const submissionBlocked =
-		!registrationEligible ||
-		serverError?.kind === "unauthorized" ||
-		serverError?.kind === "forbidden" ||
-		serverError?.kind === "rental-ineligible" ||
-		serverError?.kind === "rental-not-found";
+	const blockedMessage = props.mode === "correct"
+		? props.blockedMessage
+		: props.registrationEligible
+			? null
+			: "Este alquiler ya no admite nuevos registros de factura. Cerrá el diálogo y revisá su estado actual.";
+	const submissionBlocked = blockedMessage !== null || Boolean(
+		serverError && serverError.kind !== "validation" && serverError.kind !== "unknown",
+	);
+	const isMutationPending = registerInvoice.isPending || correctInvoice.isPending;
 	const form = useForm({
 		defaultValues,
 		validators: { onSubmit: invoiceFormSchema },
 		onSubmit: async ({ value }) => {
-			if (submissionBlocked || registerInvoice.isPending) return;
+			if (submissionBlocked || isMutationPending) return;
 			setServerError(null);
 
 			try {
-				await registerInvoice.mutateAsync(
-					toRegisterExternalInvoiceBody(rentalId, value),
-				);
-				toast.success("Factura registrada en Depiqo");
+				if (props.mode === "correct") {
+					const body = toCorrectInvoiceRegistrationBody(props.invoice, value);
+					if (!body) return;
+					await correctInvoice.mutateAsync({
+						rentalId: props.invoice.rentalId,
+						invoiceId: props.invoice.id,
+						body,
+					});
+					toast.success("Registro de factura corregido");
+				} else {
+					await registerInvoice.mutateAsync(
+						toRegisterExternalInvoiceBody(props.rentalId, value),
+					);
+					toast.success("Factura registrada en Depiqo");
+				}
 				onOpenChange(false);
 			} catch (error) {
 				const uiError = toInvoicingUiError(
 					error,
-					"No pudimos registrar la factura. Revisá tu conexión e intentá nuevamente.",
+					props.mode === "correct"
+						? "No pudimos guardar la corrección. Revisá tu conexión e intentá nuevamente."
+						: "No pudimos registrar la factura. Revisá tu conexión e intentá nuevamente.",
 				);
 				setServerError(uiError);
 
 				if (
-					uiError.kind === "rental-ineligible" ||
-					uiError.kind === "rental-not-found"
+					props.mode === "register" &&
+					(uiError.kind === "rental-ineligible" || uiError.kind === "rental-not-found")
 				) {
 					try {
-						await onRentalContextStale();
+						await props.onRentalContextStale();
 					} catch {
 						setServerError({
 							...uiError,
@@ -133,7 +165,7 @@ function OpenInvoiceFormDialog({
 		},
 	});
 	const isSubmitting = useStore(form.store, (state) => state.isSubmitting);
-	const isPending = isSubmitting || registerInvoice.isPending;
+	const isPending = isSubmitting || isMutationPending;
 
 	function handleOpenChange(nextOpen: boolean) {
 		if (!nextOpen && isPending) return;
@@ -151,10 +183,13 @@ function OpenInvoiceFormDialog({
 				showCloseButton={!isPending}
 			>
 				<DialogHeader>
-					<DialogTitle>Registrar factura</DialogTitle>
+					<DialogTitle>
+						{props.mode === "correct" ? "Corregir registro de factura" : "Registrar factura"}
+					</DialogTitle>
 					<DialogDescription>
-						Registrá una factura ya emitida en un sistema externo. Depiqo no
-						genera ni cancela esa factura.
+						{props.mode === "correct"
+							? "Solo se corregirán los datos registrados en Depiqo. La factura del sistema externo no se modificará."
+							: "Registrá una factura ya emitida en un sistema externo. Depiqo no genera ni cancela esa factura."}
 					</DialogDescription>
 				</DialogHeader>
 
@@ -217,6 +252,12 @@ function OpenInvoiceFormDialog({
 							role="alert"
 						>
 							<p>{serverError.message}</p>
+							{props.mode === "correct" && submissionBlocked ? (
+								<p>
+									Tus cambios siguen en pantalla. Cerrá el diálogo y revisá el
+									registro actual antes de volver a editarlo.
+								</p>
+							) : null}
 							{serverError.kind === "unauthorized" ? (
 								<a
 									href="/login"
@@ -226,10 +267,9 @@ function OpenInvoiceFormDialog({
 								</a>
 							) : null}
 						</div>
-					) : !registrationEligible ? (
+					) : blockedMessage && !isPending ? (
 						<p className="text-sm text-destructive" role="alert">
-							Este alquiler ya no admite nuevos registros de factura. Cerrá el
-							diálogo y revisá su estado actual.
+							{blockedMessage}
 						</p>
 					) : null}
 
@@ -242,16 +282,24 @@ function OpenInvoiceFormDialog({
 						>
 							Cancelar
 						</Button>
-						<form.Subscribe selector={(state) => state.canSubmit}>
-							{(canSubmit) => (
-								<Button
-									type="submit"
-									disabled={!canSubmit || isPending || submissionBlocked}
-								>
-									{isPending ? <Loader2 className="size-4 animate-spin" /> : null}
-									{isPending ? "Registrando..." : "Registrar factura"}
-								</Button>
-							)}
+						<form.Subscribe
+							selector={(state) => [state.canSubmit, state.values] as const}
+						>
+							{([canSubmit, values]) => {
+								const hasChanges = props.mode === "register" ||
+									hasInvoiceRegistrationChanges(props.invoice, values);
+								return (
+									<Button
+										type="submit"
+										disabled={!canSubmit || !hasChanges || isPending || submissionBlocked}
+									>
+										{isPending ? <Loader2 className="size-4 animate-spin" /> : null}
+										{props.mode === "correct"
+											? isPending ? "Guardando..." : "Guardar corrección"
+											: isPending ? "Registrando..." : "Registrar factura"}
+									</Button>
+								);
+							}}
 						</form.Subscribe>
 					</DialogFooter>
 				</form>

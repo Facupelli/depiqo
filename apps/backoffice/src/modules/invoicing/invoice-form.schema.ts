@@ -1,5 +1,9 @@
 import {
+	type CorrectInvoiceRegistrationBodyDto,
+	CorrectInvoiceRegistrationBodySchema,
 	InvoiceAmountSchema,
+	type InvoiceDto,
+	InvoiceRegistrationFieldsSchema,
 	InvoiceExternalUrlSchema,
 	InvoiceReferenceSchema,
 	InvoiceSourceSystemSchema,
@@ -8,6 +12,7 @@ import {
 	RegisterExternalInvoiceBodySchema,
 } from "@repo/api-contracts";
 import { z } from "zod";
+import { decimalsEqual, parsePlainDecimal } from "@/shared/utils/decimal-string";
 import { emptyToNull } from "@/shared/utils/form.utils";
 
 function normalizeInvoiceAmountInput(value: string): string {
@@ -54,17 +59,67 @@ export function createInvoiceFormDefaults(
 	};
 }
 
-export function toRegisterExternalInvoiceBody(
-	rentalId: string,
-	values: InvoiceFormValues,
-): RegisterExternalInvoiceBodyDto {
+function toInvoiceRegistrationFields(values: InvoiceFormValues) {
 	const parsed = invoiceFormSchema.parse(values);
-	return RegisterExternalInvoiceBodySchema.parse({
-		rentalId,
-		reference: parsed.reference,
-		issuedOn: parsed.issuedOn,
+	return InvoiceRegistrationFieldsSchema.parse({
+		...parsed,
 		amount: normalizeInvoiceAmountInput(parsed.amount),
 		externalUrl: emptyToNull(parsed.externalUrl),
 		sourceSystem: emptyToNull(parsed.sourceSystem),
 	});
+}
+
+export function toRegisterExternalInvoiceBody(
+	rentalId: string,
+	values: InvoiceFormValues,
+): RegisterExternalInvoiceBodyDto {
+	return RegisterExternalInvoiceBodySchema.parse({
+		rentalId,
+		...toInvoiceRegistrationFields(values),
+	});
+}
+
+export function invoiceToFormValues(invoice: InvoiceDto): InvoiceFormValues {
+	return {
+		reference: invoice.reference,
+		issuedOn: invoice.issuedOn,
+		amount: invoice.amount,
+		externalUrl: invoice.externalUrl ?? "",
+		sourceSystem: invoice.sourceSystem ?? "",
+	};
+}
+
+export function toCorrectInvoiceRegistrationBody(
+	invoice: InvoiceDto,
+	values: InvoiceFormValues,
+): CorrectInvoiceRegistrationBodyDto | null {
+	const fields = toInvoiceRegistrationFields(values);
+	const body: CorrectInvoiceRegistrationBodyDto = {
+		expectedVersion: invoice.version,
+	};
+	if (fields.reference !== invoice.reference) body.reference = fields.reference;
+	if (fields.issuedOn !== invoice.issuedOn) body.issuedOn = fields.issuedOn;
+	const amount = parsePlainDecimal(fields.amount);
+	const originalAmount = parsePlainDecimal(invoice.amount);
+	if (!amount || !originalAmount || !decimalsEqual(amount, originalAmount)) {
+		body.amount = fields.amount;
+	}
+	if (fields.externalUrl !== invoice.externalUrl) {
+		body.externalUrl = fields.externalUrl;
+	}
+	if (fields.sourceSystem !== invoice.sourceSystem) {
+		body.sourceSystem = fields.sourceSystem;
+	}
+	// expectedVersion alone is not an update, including equivalent decimals.
+	if (Object.keys(body).length === 1) return null;
+	return CorrectInvoiceRegistrationBodySchema.parse(body);
+}
+
+export function hasInvoiceRegistrationChanges(
+	invoice: InvoiceDto,
+	values: InvoiceFormValues,
+): boolean {
+	// Invalid edits must still allow submit-time field validation to run.
+	if (!invoiceFormSchema.safeParse(values).success) return true;
+	return toCorrectInvoiceRegistrationBody(invoice, values) !== null;
 }

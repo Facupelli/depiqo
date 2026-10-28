@@ -5,14 +5,14 @@ import {
 import { Button } from "@repo/ui/components/button";
 import { Skeleton } from "@repo/ui/components/skeleton";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronDown, ExternalLink, FileText, Plus } from "lucide-react";
+import { ChevronDown, FileText, Plus } from "lucide-react";
 import { type ReactNode, useId, useState } from "react";
 import { can } from "@/auth/permissions";
-import { formatExactCurrencyRate } from "@/shared/utils/formatters";
 import { InvoiceFormDialog } from "./invoice-form-dialog";
-import { formatInvoiceDate } from "./invoice.utils";
+import { InvoiceListRow } from "./invoice-list-row";
 import { toInvoicingUiError } from "./invoicing.errors";
 import { invoicingQueries } from "./invoicing.queries";
+import { RentalInvoicesSheet } from "./rental-invoices-sheet";
 
 type RentalInvoicesCardProps = {
 	rentalId: string;
@@ -76,6 +76,7 @@ function AvailableRentalInvoicesCard(props: RentalInvoicesCardProps) {
 			)}
 			{canManage ? (
 				<InvoiceFormDialog
+					mode="register"
 					open={registrationOpen}
 					onOpenChange={setRegistrationOpen}
 					rentalId={props.rentalId}
@@ -98,6 +99,9 @@ function ReadableRentalInvoicesCard({
 	permissions: readonly TenantPermissionId[];
 	registrationControl: ReactNode;
 }) {
+	const [browseTarget, setBrowseTarget] = useState<{
+		invoiceId: string | null;
+	} | null>(null);
 	const query = useQuery(
 		invoicingQueries.rentalList(rentalId, { permissions }),
 	);
@@ -162,43 +166,13 @@ function ReadableRentalInvoicesCard({
 					<div className="space-y-2">
 						<ul className="divide-y divide-neutral-100">
 							{invoices.slice(-2).reverse().map((invoice) => (
-								<li key={invoice.id} className="min-w-0 space-y-1.5 py-2 first:pt-0 last:pb-0">
-									<div className="flex min-w-0 items-start justify-between gap-2">
-										<p
-											className="min-w-0 line-clamp-2 text-sm font-medium text-neutral-950 [overflow-wrap:anywhere]"
-											title={invoice.reference}
-										>
-											{invoice.reference}
-										</p>
-										{invoice.externalUrl ? (
-											<a
-												href={invoice.externalUrl}
-												target="_blank"
-												rel="noopener noreferrer"
-												aria-label={`Abrir factura ${invoice.reference} en el sistema externo`}
-												className="flex size-7 shrink-0 items-center justify-center rounded-md text-primary hover:bg-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-											>
-												<ExternalLink className="size-3.5" />
-											</a>
-										) : null}
-									</div>
-									<div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-										<time dateTime={invoice.issuedOn} className="text-xs text-neutral-500">
-											{formatInvoiceDate(invoice.issuedOn)}
-										</time>
-										<p className="min-w-0 break-words font-mono text-sm text-neutral-950">
-											{formatExactCurrencyRate(invoice.amount, invoice.currency)}{" "}
-											<span className="text-xs text-neutral-500">{invoice.currency}</span>
-										</p>
-									</div>
-								</li>
+								<InvoiceListRow
+									key={invoice.id}
+									invoice={invoice}
+									onSelect={() => setBrowseTarget({ invoiceId: invoice.id })}
+								/>
 							))}
 						</ul>
-						{invoices.length > 2 ? (
-							<p className="text-xs text-neutral-500">
-								Mostrando las 2 más recientes de {invoices.length} facturas.
-							</p>
-						) : null}
 					</div>
 				)
 			) : !uiError ? (
@@ -206,6 +180,27 @@ function ReadableRentalInvoicesCard({
 					<Skeleton className="h-10 w-full" />
 					<Skeleton className="h-10 w-full" />
 				</div>
+			) : null}
+			{!hideData ? (
+				<Button
+					type="button"
+					variant="link"
+					size="sm"
+					className="h-auto px-0"
+					onClick={() => setBrowseTarget({ invoiceId: null })}
+				>
+					{(invoices?.length ?? 0) > 2
+						? `Ver todas (${invoices?.length})`
+						: "Ver registros"}
+				</Button>
+			) : null}
+			{browseTarget && !hideData ? (
+				<RentalInvoicesSheet
+					rentalId={rentalId}
+					permissions={permissions}
+					initialInvoiceId={browseTarget.invoiceId}
+					onClose={() => setBrowseTarget(null)}
+				/>
 			) : null}
 		</InvoiceCard>
 	);
