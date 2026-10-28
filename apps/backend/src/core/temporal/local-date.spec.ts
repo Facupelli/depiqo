@@ -48,7 +48,7 @@ describe('LocalDate', () => {
       process.execPath,
       [
         '-r',
-        'ts-node/register',
+        'ts-node/register/transpile-only',
         '-e',
         `const { localDateToPrismaDate, prismaDateToLocalDate } = require(${JSON.stringify(modulePath)}); const value = '1990-03-15'; const override = '2026-08-10'; process.stdout.write([prismaDateToLocalDate(localDateToPrismaDate(value)), prismaDateToLocalDate(localDateToPrismaDate(override))].join(','));`,
       ],
@@ -56,6 +56,7 @@ describe('LocalDate', () => {
         cwd: process.cwd(),
         env: { ...process.env, TZ: 'America/Argentina/Buenos_Aires' },
         encoding: 'utf8',
+        timeout: 5_000,
       },
     );
 

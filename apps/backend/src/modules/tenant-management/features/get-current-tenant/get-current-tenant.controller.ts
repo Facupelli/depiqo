@@ -6,9 +6,12 @@ import { createProblemDetails, createProblemType, ProblemException } from 'src/c
 import { AuthUser } from '../../auth/shared/auth.types';
 import { CurrentUser } from '../../auth/shared/current-user/current-user.decorator';
 import { AuthorizationExempt } from '../../authorization/tenant-authorization.decorators';
-import { GetCurrentTenantError, GetCurrentTenantErrorCode } from './get-current-tenant.errors';
-import { GetCurrentTenantResult } from './get-current-tenant.handler';
-import { GetCurrentTenantQuery } from './get-current-tenant.query';
+import {
+  GetCurrentTenantQuery,
+  type GetCurrentTenantError,
+  type GetCurrentTenantErrorCode,
+  type GetCurrentTenantResult,
+} from '../../public-api/get-current-tenant.public-api';
 import { GetCurrentTenantResponseDto } from './get-current-tenant.response.dto';
 
 @Controller('tenant-management/tenant')

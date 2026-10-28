@@ -247,7 +247,7 @@ function ActivityLogSkeleton() {
 			<div className="mb-5 flex items-center gap-2">
 				<Skeleton className="size-4 rounded-full" />
 				<span className="text-sm font-semibold text-neutral-950">
-					Activity Log
+					Actividad
 				</span>
 			</div>
 			<div className="flex min-w-0 items-start gap-4">

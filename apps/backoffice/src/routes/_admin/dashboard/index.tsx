@@ -58,6 +58,9 @@ export const Route = createFileRoute("/_admin/dashboard/")({
 		if (canAny(permissions, settingsPermissions)) {
 			throw redirect({ to: "/dashboard/settings" });
 		}
+		if (can(permissions, TenantPermission.FinancesRead)) {
+			throw redirect({ to: "/dashboard/finances" });
+		}
 
 		requireRouteAccess(false);
 	},

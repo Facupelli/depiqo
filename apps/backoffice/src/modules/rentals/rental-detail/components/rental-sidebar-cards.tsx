@@ -1,5 +1,6 @@
 import { TenantPermission } from "@repo/api-contracts";
 import { Button } from "@repo/ui/components/button";
+import { useQueryClient } from "@tanstack/react-query";
 import {
 	ChevronDown,
 	Pencil,
@@ -9,17 +10,18 @@ import {
 } from "lucide-react";
 import { type ReactNode, useId, useState } from "react";
 import { can } from "@/auth/permissions";
+import { RentalInvoicesCard } from "@/modules/invoicing/public";
 import { useBranchTimezone } from "@/shared/timezone/operational-timezone.hooks";
+import {
+	isZeroDecimal,
+	sumDecimalStrings,
+} from "@/shared/utils/decimal-string";
 import { formatMoney } from "@/shared/utils/formatters";
 import { AssignCustomerToDraftRentalDialog } from "../assign-customer/assign-customer-to-draft-rental-dialog";
 import { RentalContractSigningCard } from "../documents/signing/rental-contract-signing-card";
-import {
-	isZeroDecimal,
-	normalizeDecimal,
-	parsePlainDecimal,
-} from "../edit-price-adjustment/decimal-string";
 import { EditPriceAdjustmentDialog } from "../edit-price-adjustment/edit-price-adjustment-dialog";
 import { useRentalDetailContext } from "../rental-detail.context";
+import { rentalDetailViewQueries } from "../rental-detail.queries";
 import {
 	formatRentalDetailDateBlock,
 	getRentalCustomerInitials,
@@ -35,8 +37,16 @@ export function RentalSidebarCards({
 }: {
 	periodEditAction?: PeriodEditAction;
 }) {
-	const { permissions } = useRentalDetailContext();
+	const { rental, permissions } = useRentalDetailContext();
+	const queryClient = useQueryClient();
 	const canReadContracts = can(permissions, TenantPermission.ContractsRead);
+	const canAccessInvoices =
+		can(permissions, TenantPermission.InvoicingRead) ||
+		can(permissions, TenantPermission.InvoicingManage);
+	const invoiceRegistrationEligible =
+		rental.status === "CONFIRMED" ||
+		rental.status === "COMPLETED" ||
+		(rental.status === "CANCELLED" && rental.confirmedAt !== null);
 
 	return (
 		<div className="flex flex-col gap-3">
@@ -54,6 +64,22 @@ export function RentalSidebarCards({
 			<div className="order-4">
 				<RentalFinancialsCard />
 			</div>
+			{canAccessInvoices ? (
+				<div className="order-5">
+					<RentalInvoicesCard
+						rentalId={rental.id}
+						permissions={permissions}
+						acceptedCustomerTotal={rental.acceptedCustomerTotal}
+						currency={rental.pricing?.currency ?? null}
+						registrationEligible={invoiceRegistrationEligible}
+						onRentalContextStale={async () => {
+							await queryClient.fetchQuery(
+								rentalDetailViewQueries.detail(rental.id, { staleTime: 0 }),
+							);
+						}}
+					/>
+				</div>
+			) : null}
 		</div>
 	);
 }
@@ -83,7 +109,7 @@ function RentalClientCard() {
 	return (
 		<ResponsiveDisclosureCard
 			icon={<User2Icon className="size-4" />}
-			title="Información del cliente"
+			title="Cliente"
 			summary={summary}
 		>
 			{customer ? (
@@ -245,9 +271,7 @@ function RentalFinancialsCard() {
 					<span className="hidden size-6 items-center justify-center text-neutral-600 @5xl/rental-detail:flex">
 						<ReceiptText className="size-4" />
 					</span>
-					<h2 className="text-sm font-bold text-neutral-950">
-						Resumen financiero
-					</h2>
+					<h2 className="text-sm font-bold text-neutral-950">Importe</h2>
 				</div>
 				<p className="mt-0.5 break-words text-sm text-neutral-500 @5xl/rental-detail:mt-0">
 					Sin precio calculado.
@@ -286,7 +310,7 @@ function RentalFinancialsCard() {
 				>
 					<span className="min-w-0 flex-1 @5xl/rental-detail:hidden">
 						<span className="block text-sm font-bold text-neutral-950">
-							Resumen financiero
+							Importe
 						</span>
 						<span className="mt-0.5 block break-words font-mono text-sm font-semibold text-neutral-950">
 							{formatMoney(headlineTotal, pricing.currency)}
@@ -295,7 +319,7 @@ function RentalFinancialsCard() {
 					<span className="hidden min-w-0 flex-1 @5xl/rental-detail:block [&>div]:mb-0">
 						<SidebarHeader
 							icon={<ReceiptText className="size-4" />}
-							title="Resumen financiero"
+							title="Importe"
 						/>
 					</span>
 					<ChevronDown
@@ -483,22 +507,6 @@ function OwnerPayoutsSection() {
 			</div>
 		</div>
 	);
-}
-
-function sumDecimalStrings(values: string[]): string {
-	const parsed = values.map(parsePlainDecimal);
-	if (parsed.some((value) => value === null)) {
-		throw new Error("Invalid owner payout amount.");
-	}
-
-	const decimals = parsed.filter((value) => value !== null);
-	const scale = Math.max(0, ...decimals.map((value) => value.scale));
-	const units = decimals.reduce(
-		(total, value) => total + value.units * 10n ** BigInt(scale - value.scale),
-		0n,
-	);
-
-	return normalizeDecimal({ units, scale });
 }
 
 function MoneyRow({

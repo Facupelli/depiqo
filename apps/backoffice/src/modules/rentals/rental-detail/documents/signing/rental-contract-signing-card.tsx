@@ -34,9 +34,7 @@ export function RentalContractSigningCard() {
 		return (
 			<section className="rounded-lg border border-neutral-200 bg-white p-4">
 				<div className="@5xl/rental-detail:hidden">
-					<p className="text-sm font-bold text-neutral-950">
-						Firma del contrato
-					</p>
+					<p className="text-sm font-bold text-neutral-950">Contrato</p>
 					<p className="mt-0.5 text-sm text-neutral-500">
 						Cargando contrato...
 					</p>
@@ -44,7 +42,7 @@ export function RentalContractSigningCard() {
 				<div className="hidden @5xl/rental-detail:block">
 					<SidebarHeader
 						icon={<FileSignature className="size-4" />}
-						title="Firma del contrato"
+						title="Contrato"
 					/>
 					<p className="pl-2">cargando...</p>
 				</div>
@@ -55,7 +53,7 @@ export function RentalContractSigningCard() {
 		return (
 			<section className="rounded-lg border border-neutral-200 bg-white p-4">
 				<p className="text-sm font-bold text-neutral-950 @5xl/rental-detail:hidden">
-					Firma del contrato
+					Contrato
 				</p>
 				<p className="mt-0.5 text-sm text-neutral-500 @5xl/rental-detail:hidden">
 					Sin contrato generado
@@ -80,9 +78,7 @@ export function RentalContractSigningCard() {
 			>
 				<div className="min-w-0 flex-1">
 					<div className="@5xl/rental-detail:hidden">
-						<p className="text-sm font-bold text-neutral-950">
-							Firma del contrato
-						</p>
+						<p className="text-sm font-bold text-neutral-950">Contrato</p>
 						<p className="mt-0.5 break-words text-sm text-neutral-600">
 							{state.label}
 						</p>
@@ -98,7 +94,7 @@ export function RentalContractSigningCard() {
 					<div className="hidden @5xl/rental-detail:block">
 						<SidebarHeader
 							icon={<FileSignature className="size-4" />}
-							title="Firma del contrato"
+							title="Contrato"
 						/>
 					</div>
 					<div className="hidden items-center gap-3 @5xl/rental-detail:flex">

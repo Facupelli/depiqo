@@ -56,7 +56,9 @@ model V2Rental {
   ownerSplits               V2RentalOwnerSplit[]
   accessorySelections       V2RentalAccessorySelection[]
   accessoryAssetAssignments V2RentalAccessoryAssetAssignment[]
+  invoices                  V2Invoice[]
 
+  @@unique([id, tenantId])
   @@unique([tenantId, rentalNumber])
   @@unique([tenantId, confirmationOperationId])
   @@index([tenantId, branchId, status, createdAt(sort: Desc)])

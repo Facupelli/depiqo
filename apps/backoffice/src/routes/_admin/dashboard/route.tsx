@@ -27,6 +27,7 @@ import {
 import type { LucideIcon } from "lucide-react";
 import {
 	BadgePercent,
+	BarChart3,
 	CalendarDays,
 	Camera,
 	ChevronsUpDown,
@@ -177,6 +178,12 @@ const sidebarItems: SidebarItem[] = [
 		icon: BadgePercent,
 		href: "/dashboard/promotions",
 		isVisible: (permissions) => canAny(permissions, promotionListPermissions),
+	},
+	{
+		name: "Finanzas",
+		icon: BarChart3,
+		href: "/dashboard/finances",
+		isVisible: (permissions) => can(permissions, TenantPermission.FinancesRead),
 	},
 	{
 		name: "Ajustes",

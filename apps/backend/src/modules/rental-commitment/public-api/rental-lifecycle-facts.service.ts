@@ -35,6 +35,7 @@ export class RentalLifecycleFactsService extends RentalLifecycleFacts {
         branchId: true,
         customerId: true,
         status: true,
+        confirmedAt: true,
         periodStart: true,
         periodEnd: true,
       },
@@ -51,6 +52,7 @@ export class RentalLifecycleFactsService extends RentalLifecycleFacts {
       branchId: rental.branchId,
       rentalCustomerId: rental.customerId,
       status: rental.status as RentalLifecycleStatus,
+      confirmedAt: rental.confirmedAt,
       periodStart: rental.periodStart,
       periodEnd: rental.periodEnd,
     });

@@ -12,7 +12,7 @@ export function RentalActivityLog() {
 			<div className="mb-5 flex items-center gap-2">
 				<Clock className="size-4 text-neutral-400" />
 				<span className="text-sm font-semibold text-neutral-950">
-					Activity Log
+					Actividad
 				</span>
 			</div>
 			<ActivityEntry

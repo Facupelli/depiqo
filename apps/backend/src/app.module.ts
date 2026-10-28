@@ -19,6 +19,7 @@ import { PricingModule } from './modules/pricing/pricing.module';
 import { RentalCommitmentModule } from './modules/rental-commitment/rental-commitment.module';
 import { ContractsModule } from './modules/contracts/contracts.module';
 import { DeliveryModule } from './modules/delivery/delivery.module';
+import { InvoicingModule } from './modules/invoicing/invoicing.module';
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { DeliveryModule } from './modules/delivery/delivery.module';
     RentalCommitmentModule,
     ContractsModule,
     DeliveryModule,
+    InvoicingModule,
   ],
   providers: [
     {

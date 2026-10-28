@@ -5,8 +5,10 @@ import {
 } from '@repo/api-contracts';
 
 export const TenantPermissionGroup = {
+  Finances: 'Finanzas',
   Rentals: 'Alquileres',
   Contracts: 'Contratos',
+  Invoicing: 'Facturación',
   Products: 'Productos',
   Inventory: 'Inventario',
   Pricing: 'Precios',
@@ -25,6 +27,12 @@ export interface TenantPermissionMetadata {
 }
 
 const metadataByPermission = {
+  [TenantPermission.FinancesRead]: permission(
+    TenantPermission.FinancesRead,
+    TenantPermissionGroup.Finances,
+    'Ver finanzas',
+    'Permite consultar reportes agregados de alquileres e importes contractuales de terceros. No modifica el acceso a los importes del detalle de cada alquiler.',
+  ),
   [TenantPermission.RentalsRead]: permission(
     TenantPermission.RentalsRead,
     TenantPermissionGroup.Rentals,
@@ -84,6 +92,18 @@ const metadataByPermission = {
     TenantPermissionGroup.Contracts,
     'Enviar contratos para firma',
     'Permite enviar invitaciones a clientes para que firmen contratos de alquiler.',
+  ),
+  [TenantPermission.InvoicingRead]: permission(
+    TenantPermission.InvoicingRead,
+    TenantPermissionGroup.Invoicing,
+    'Ver facturas',
+    'Permite consultar registros de facturas y su historial, sin otorgar acceso a los reportes financieros.',
+  ),
+  [TenantPermission.InvoicingManage]: permission(
+    TenantPermission.InvoicingManage,
+    TenantPermissionGroup.Invoicing,
+    'Gestionar registros de facturas',
+    'Permite registrar, corregir y quitar registros de facturas externas, sin cancelar las facturas originales ni modificar los alquileres.',
   ),
   [TenantPermission.ProductsRead]: permission(
     TenantPermission.ProductsRead,
@@ -203,7 +223,10 @@ export const ALL_TENANT_PERMISSIONS: readonly TenantPermissionId[] = Object.free
   TENANT_PERMISSION_REGISTRY.map(({ id }) => id),
 );
 
-const PRIVILEGED_CUSTOMER_PERMISSIONS: readonly TenantPermissionId[] = [
+const DEFAULT_MEMBER_EXCLUDED_PERMISSIONS: readonly TenantPermissionId[] = [
+  TenantPermission.FinancesRead,
+  TenantPermission.InvoicingRead,
+  TenantPermission.InvoicingManage,
   TenantPermission.CustomersOnboardingManage,
   TenantPermission.CustomersSensitiveRead,
   TenantPermission.CustomersIdentityDocumentRead,
@@ -211,7 +234,7 @@ const PRIVILEGED_CUSTOMER_PERMISSIONS: readonly TenantPermissionId[] = [
 
 export const DEFAULT_MEMBER_TENANT_PERMISSIONS: readonly TenantPermissionId[] = Object.freeze(
   TENANT_PERMISSION_REGISTRY.filter(
-    ({ id, group }) => group !== TenantPermissionGroup.Team && !PRIVILEGED_CUSTOMER_PERMISSIONS.includes(id),
+    ({ id, group }) => group !== TenantPermissionGroup.Team && !DEFAULT_MEMBER_EXCLUDED_PERMISSIONS.includes(id),
   ).map(({ id }) => id),
 );
 

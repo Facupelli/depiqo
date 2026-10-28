@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import { TenantPermission } from '@repo/api-contracts';
 import { V2TenantSystemRole } from 'src/generated/prisma/enums';
 
 import { TenantAuthorizationRoleProvisioner } from './tenant-authorization-role.provisioner';
@@ -26,6 +27,7 @@ describe('TenantAuthorizationRoleProvisioner', () => {
       },
       select: { id: true },
     });
+    expect(DEFAULT_MEMBER_TENANT_PERMISSIONS).not.toContain(TenantPermission.FinancesRead);
     expect(create).toHaveBeenNthCalledWith(2, {
       data: {
         tenantId: 'tenant-1',
