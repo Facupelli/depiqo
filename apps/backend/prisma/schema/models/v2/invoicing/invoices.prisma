@@ -1,0 +1,62 @@
+// ---------------------------------------------------------------------------
+// V2 INVOICING - INVOICES AND REGISTRATION HISTORY
+// ---------------------------------------------------------------------------
+
+enum V2InvoiceOrigin {
+  EXTERNAL
+}
+
+enum V2InvoiceHistoryAction {
+  REGISTERED
+  CORRECTED
+  REMOVED
+}
+
+model V2Invoice {
+  id       String @id @default(uuid())
+  tenantId String @map("tenant_id")
+  rentalId String @map("rental_id")
+
+  origin V2InvoiceOrigin @default(EXTERNAL)
+
+  reference String
+  issuedOn  DateTime @map("issued_on") @db.Date
+  amount    Decimal  @db.Decimal(19, 4)
+  currency  String
+
+  externalUrl  String? @map("external_url")
+  sourceSystem String? @map("source_system")
+
+  createdAt             DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  createdByTenantUserId String    @map("created_by_tenant_user_id")
+  updatedAt             DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  updatedByTenantUserId String    @map("updated_by_tenant_user_id")
+  removedAt             DateTime? @map("removed_at") @db.Timestamptz(3)
+  removedByTenantUserId String?   @map("removed_by_tenant_user_id")
+
+  version Int @default(0)
+
+  rental  V2Rental                @relation(fields: [rentalId, tenantId], references: [id, tenantId], onDelete: Restrict, onUpdate: Restrict)
+  history V2InvoiceHistoryEntry[]
+
+  @@unique([id, tenantId])
+  @@index([tenantId, rentalId, createdAt])
+  @@map("v2_invoices")
+}
+
+model V2InvoiceHistoryEntry {
+  id        String @id @default(uuid())
+  tenantId  String @map("tenant_id")
+  invoiceId String @map("invoice_id")
+
+  version           Int
+  action            V2InvoiceHistoryAction
+  actorTenantUserId String                 @map("actor_tenant_user_id")
+  occurredAt        DateTime               @default(now()) @map("occurred_at") @db.Timestamptz(3)
+  snapshot          Json
+
+  invoice V2Invoice @relation(fields: [invoiceId, tenantId], references: [id, tenantId], onDelete: Restrict, onUpdate: Restrict)
+
+  @@unique([invoiceId, version])
+  @@map("v2_invoice_history_entries")
+}
