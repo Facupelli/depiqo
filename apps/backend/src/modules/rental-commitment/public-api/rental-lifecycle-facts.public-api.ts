@@ -13,6 +13,7 @@ export interface RentalLifecycleFactsResult {
   branchId: string;
   rentalCustomerId: string | null;
   status: RentalLifecycleStatus;
+  confirmedAt: Date | null;
   periodStart: Date;
   periodEnd: Date;
 }
