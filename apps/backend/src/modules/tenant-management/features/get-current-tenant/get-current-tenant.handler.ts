@@ -1,24 +1,12 @@
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
-import { TenantBrandingDto, TenantConfigDto } from '@repo/api-contracts';
-import { err, ok, Result } from 'neverthrow';
+import type { TenantConfigDto } from '@repo/api-contracts';
+import { err, ok } from 'neverthrow';
 
 import { PrismaService } from 'src/core/database/prisma.service';
 
 import { TenantConfig } from '../../domain/value-objects/tenant-config.value-object';
-import { GetCurrentTenantError, getCurrentTenantError } from './get-current-tenant.errors';
-import { GetCurrentTenantQuery } from './get-current-tenant.query';
-
-export interface GetCurrentTenantReadModel {
-  id: string;
-  name: string;
-  slug: string;
-  config: TenantConfigDto;
-  branding: TenantBrandingDto;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export type GetCurrentTenantResult = Result<GetCurrentTenantReadModel, GetCurrentTenantError>;
+import { GetCurrentTenantQuery, type GetCurrentTenantResult } from '../../public-api/get-current-tenant.public-api';
+import { getCurrentTenantError } from './get-current-tenant.errors';
 
 @QueryHandler(GetCurrentTenantQuery)
 export class GetCurrentTenantHandler implements IQueryHandler<GetCurrentTenantQuery, GetCurrentTenantResult> {

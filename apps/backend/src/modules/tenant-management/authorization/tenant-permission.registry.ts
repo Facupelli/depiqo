@@ -5,6 +5,7 @@ import {
 } from '@repo/api-contracts';
 
 export const TenantPermissionGroup = {
+  Finances: 'Finanzas',
   Rentals: 'Alquileres',
   Contracts: 'Contratos',
   Products: 'Productos',
@@ -25,6 +26,12 @@ export interface TenantPermissionMetadata {
 }
 
 const metadataByPermission = {
+  [TenantPermission.FinancesRead]: permission(
+    TenantPermission.FinancesRead,
+    TenantPermissionGroup.Finances,
+    'Ver finanzas',
+    'Permite consultar reportes agregados de alquileres e importes contractuales de terceros. No modifica el acceso a los importes del detalle de cada alquiler.',
+  ),
   [TenantPermission.RentalsRead]: permission(
     TenantPermission.RentalsRead,
     TenantPermissionGroup.Rentals,
@@ -203,7 +210,8 @@ export const ALL_TENANT_PERMISSIONS: readonly TenantPermissionId[] = Object.free
   TENANT_PERMISSION_REGISTRY.map(({ id }) => id),
 );
 
-const PRIVILEGED_CUSTOMER_PERMISSIONS: readonly TenantPermissionId[] = [
+const DEFAULT_MEMBER_EXCLUDED_PERMISSIONS: readonly TenantPermissionId[] = [
+  TenantPermission.FinancesRead,
   TenantPermission.CustomersOnboardingManage,
   TenantPermission.CustomersSensitiveRead,
   TenantPermission.CustomersIdentityDocumentRead,
@@ -211,7 +219,7 @@ const PRIVILEGED_CUSTOMER_PERMISSIONS: readonly TenantPermissionId[] = [
 
 export const DEFAULT_MEMBER_TENANT_PERMISSIONS: readonly TenantPermissionId[] = Object.freeze(
   TENANT_PERMISSION_REGISTRY.filter(
-    ({ id, group }) => group !== TenantPermissionGroup.Team && !PRIVILEGED_CUSTOMER_PERMISSIONS.includes(id),
+    ({ id, group }) => group !== TenantPermissionGroup.Team && !DEFAULT_MEMBER_EXCLUDED_PERMISSIONS.includes(id),
   ).map(({ id }) => id),
 );
 

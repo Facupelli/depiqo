@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 export const TenantPermission = {
+  FinancesRead: "finances.read",
   RentalsRead: "rentals.read",
   RentalsProposalsManage: "rentals.proposals.manage",
   RentalsConfirm: "rentals.confirm",

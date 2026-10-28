@@ -10,14 +10,13 @@ import {
 import { type ReactNode, useId, useState } from "react";
 import { can } from "@/auth/permissions";
 import { useBranchTimezone } from "@/shared/timezone/operational-timezone.hooks";
+import {
+	isZeroDecimal,
+	sumDecimalStrings,
+} from "@/shared/utils/decimal-string";
 import { formatMoney } from "@/shared/utils/formatters";
 import { AssignCustomerToDraftRentalDialog } from "../assign-customer/assign-customer-to-draft-rental-dialog";
 import { RentalContractSigningCard } from "../documents/signing/rental-contract-signing-card";
-import {
-	isZeroDecimal,
-	normalizeDecimal,
-	parsePlainDecimal,
-} from "../edit-price-adjustment/decimal-string";
 import { EditPriceAdjustmentDialog } from "../edit-price-adjustment/edit-price-adjustment-dialog";
 import { useRentalDetailContext } from "../rental-detail.context";
 import {
@@ -483,22 +482,6 @@ function OwnerPayoutsSection() {
 			</div>
 		</div>
 	);
-}
-
-function sumDecimalStrings(values: string[]): string {
-	const parsed = values.map(parsePlainDecimal);
-	if (parsed.some((value) => value === null)) {
-		throw new Error("Invalid owner payout amount.");
-	}
-
-	const decimals = parsed.filter((value) => value !== null);
-	const scale = Math.max(0, ...decimals.map((value) => value.scale));
-	const units = decimals.reduce(
-		(total, value) => total + value.units * 10n ** BigInt(scale - value.scale),
-		0n,
-	);
-
-	return normalizeDecimal({ units, scale });
 }
 
 function MoneyRow({

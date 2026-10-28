@@ -83,6 +83,7 @@ The primary tenant-facing business areas are:
 ```text
 src/modules/
   rentals/
+  finances/
   products/
   inventory/
   customers/
@@ -156,6 +157,9 @@ Use questions such as:
 ```text
 Manage this rental?
   → Rentals
+
+Understand agreed rental amounts and third-party participation?
+  → Finances
 
 Manage what I offer for rent?
   → Products

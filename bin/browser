@@ -2,8 +2,17 @@
 
 set -euo pipefail
 
+REPO_ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
+MCP_PATH="${REPO_ROOT}/node_modules/chrome-devtools-mcp/build/src/bin/chrome-devtools-mcp.js"
+
+if [[ ! -f "${MCP_PATH}" ]]; then
+  printf 'Browser dependency missing: %s\nRun pnpm install at %s and retry.\n' "${MCP_PATH}" "${REPO_ROOT}" >&2
+  exit 1
+fi
+
 SESSION_ID="${PI_SESSION_ID:-default}"
 
 export CHROME_DEVTOOLS_AXI_SESSION="depiqo-${SESSION_ID}"
+export CHROME_DEVTOOLS_AXI_MCP_PATH="${MCP_PATH}"
 
-exec pnpm exec chrome-devtools-axi "$@"
+exec pnpm --dir "${REPO_ROOT}" exec chrome-devtools-axi "$@"

@@ -3,7 +3,7 @@ import { TenantPermission } from '@repo/api-contracts';
 import { V2TenantSystemRole } from 'src/generated/prisma/enums';
 
 import { TenantAuthorizationService } from './tenant-authorization.service';
-import { ALL_TENANT_PERMISSIONS } from './tenant-permission.registry';
+import { ALL_TENANT_PERMISSIONS, DEFAULT_MEMBER_TENANT_PERMISSIONS } from './tenant-permission.registry';
 
 describe('TenantAuthorizationService', () => {
   const subject = { tenantId: 'tenant-1', tenantUserId: 'user-1' };
@@ -105,6 +105,32 @@ describe('TenantAuthorizationService', () => {
 
     expect(allowed._unsafeUnwrap()).toBe(true);
     expect(denied._unsafeUnwrap()).toBe(false);
+  });
+
+  it('automatically authorizes Administrator to read financial reports', async () => {
+    const { service } = createService(userWithRole({ systemRole: V2TenantSystemRole.ADMIN }));
+
+    const result = await service.hasPermission(subject, TenantPermission.FinancesRead);
+
+    expect(result._unsafeUnwrap()).toBe(true);
+  });
+
+  it('does not grant financial reporting to the default member or existing operational roles', async () => {
+    const { service } = createService(userWithRole({ permissions: [...DEFAULT_MEMBER_TENANT_PERMISSIONS] }));
+
+    const result = await service.hasPermission(subject, TenantPermission.FinancesRead);
+
+    expect(result._unsafeUnwrap()).toBe(false);
+  });
+
+  it('requires an explicit financial-report grant and reflects its revocation', async () => {
+    const fixture = createService(userWithRole({ permissions: [TenantPermission.RentalsRead] }));
+
+    expect((await fixture.service.hasPermission(subject, TenantPermission.FinancesRead))._unsafeUnwrap()).toBe(false);
+    fixture.setUser(userWithRole({ permissions: [TenantPermission.RentalsRead, TenantPermission.FinancesRead] }));
+    expect((await fixture.service.hasPermission(subject, TenantPermission.FinancesRead))._unsafeUnwrap()).toBe(true);
+    fixture.setUser(userWithRole({ permissions: [TenantPermission.RentalsRead] }));
+    expect((await fixture.service.hasPermission(subject, TenantPermission.FinancesRead))._unsafeUnwrap()).toBe(false);
   });
 
   it('checks whether any requested permission is effective', async () => {

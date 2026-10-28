@@ -1,10 +1,6 @@
-import { ApplicationError, ApplicationErrorContext } from 'src/core/errors/application-error';
+import type { ApplicationErrorContext } from 'src/core/errors/application-error';
 
-export type GetCurrentTenantErrorCode = 'tenant_management.tenant_not_found';
-
-export interface GetCurrentTenantError extends ApplicationError {
-  code: GetCurrentTenantErrorCode;
-}
+import type { GetCurrentTenantError, GetCurrentTenantErrorCode } from '../../public-api/get-current-tenant.public-api';
 
 export function getCurrentTenantError(
   code: GetCurrentTenantErrorCode,

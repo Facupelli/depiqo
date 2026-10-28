@@ -2,15 +2,15 @@ import { PayableTargetTotalSchema } from "@repo/api-contracts";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import type { GetRentalDetailViewResponseDto } from "../get-rental-detail-view/get-rental-detail-view.schema";
-import { useRentalDetailContext } from "../rental-detail.context";
-import { rentalDetailViewQueries } from "../rental-detail.queries";
 import {
 	decimalsEqual,
 	normalizeDecimal,
 	parsePlainDecimal,
 	subtractDecimals,
-} from "./decimal-string";
+} from "@/shared/utils/decimal-string";
+import type { GetRentalDetailViewResponseDto } from "../get-rental-detail-view/get-rental-detail-view.schema";
+import { useRentalDetailContext } from "../rental-detail.context";
+import { rentalDetailViewQueries } from "../rental-detail.queries";
 import { toEditPriceAdjustmentUiError } from "./edit-price-adjustment.errors";
 import { useEditPriceAdjustment } from "./edit-price-adjustment.mutation";
 
