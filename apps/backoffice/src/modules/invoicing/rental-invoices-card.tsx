@@ -1,18 +1,26 @@
 import {
+	type InvoiceDto,
 	TenantPermission,
 	type TenantPermission as TenantPermissionId,
 } from "@repo/api-contracts";
 import { Button } from "@repo/ui/components/button";
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogHeader,
+	DialogTitle,
+} from "@repo/ui/components/dialog";
 import { Skeleton } from "@repo/ui/components/skeleton";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronDown, FileText, Plus } from "lucide-react";
 import { type ReactNode, useId, useState } from "react";
 import { can } from "@/auth/permissions";
 import { InvoiceFormDialog } from "./invoice-form-dialog";
-import { InvoiceListRow } from "./invoice-list-row";
-import { toInvoicingUiError } from "./invoicing.errors";
+import { InvoiceListRow, type InvoiceRowAction } from "./invoice-list-row";
+import { InvoiceRecordDialog } from "./invoice-record-dialog";
+import { type InvoicingUiError, toInvoicingUiError } from "./invoicing.errors";
 import { invoicingQueries } from "./invoicing.queries";
-import { RentalInvoicesSheet } from "./rental-invoices-sheet";
 
 type RentalInvoicesCardProps = {
 	rentalId: string;
@@ -35,25 +43,26 @@ function AvailableRentalInvoicesCard(props: RentalInvoicesCardProps) {
 	const [registrationOpen, setRegistrationOpen] = useState(false);
 	const canRead = can(props.permissions, TenantPermission.InvoicingRead);
 	const canManage = can(props.permissions, TenantPermission.InvoicingManage);
-	const registrationControl = canManage ? (
-		props.registrationEligible ? (
+	const registrationControl =
+		canManage && props.registrationEligible ? (
 			<Button
 				type="button"
 				variant="outline"
 				size="sm"
-				className="w-full"
+				className="h-7 shrink-0 px-2 text-xs"
 				onClick={() => setRegistrationOpen(true)}
 			>
 				<Plus className="size-3.5" />
-				Registrar factura
+				Registrar
 			</Button>
-		) : (
+		) : null;
+	const registrationHint =
+		canManage && !props.registrationEligible ? (
 			<p className="text-xs text-neutral-500">
 				Podés registrar facturas para alquileres confirmados, completados o
 				cancelados después de su confirmación.
 			</p>
-		)
-	) : null;
+		) : null;
 
 	return (
 		<>
@@ -62,6 +71,7 @@ function AvailableRentalInvoicesCard(props: RentalInvoicesCardProps) {
 					rentalId={props.rentalId}
 					permissions={props.permissions}
 					registrationControl={registrationControl}
+					registrationHint={registrationHint}
 				/>
 			) : (
 				<InvoiceCard
@@ -72,6 +82,7 @@ function AvailableRentalInvoicesCard(props: RentalInvoicesCardProps) {
 						Podés registrar facturas, pero no tenés permiso para consultar las
 						registradas.
 					</p>
+					{registrationHint}
 				</InvoiceCard>
 			)}
 			{canManage ? (
@@ -94,14 +105,19 @@ function ReadableRentalInvoicesCard({
 	rentalId,
 	permissions,
 	registrationControl,
+	registrationHint,
 }: {
 	rentalId: string;
 	permissions: readonly TenantPermissionId[];
 	registrationControl: ReactNode;
+	registrationHint: ReactNode;
 }) {
-	const [browseTarget, setBrowseTarget] = useState<{
-		invoiceId: string | null;
+	const [allInvoicesOpen, setAllInvoicesOpen] = useState(false);
+	const [action, setAction] = useState<{
+		invoice: InvoiceDto;
+		type: InvoiceRowAction;
 	} | null>(null);
+	const canManage = can(permissions, TenantPermission.InvoicingManage);
 	const query = useQuery(
 		invoicingQueries.rentalList(rentalId, { permissions }),
 	);
@@ -113,10 +129,7 @@ function ReadableRentalInvoicesCard({
 					: "No pudimos cargar las facturas. Revisá tu conexión e intentá nuevamente.",
 			)
 		: null;
-	const hideData =
-		uiError?.kind === "unauthorized" ||
-		uiError?.kind === "forbidden" ||
-		uiError?.kind === "rental-not-found";
+	const hideData = shouldHideInvoices(uiError);
 	const invoices = hideData ? undefined : query.data;
 	const summary = uiError
 		? uiError.message
@@ -126,8 +139,22 @@ function ReadableRentalInvoicesCard({
 				: `${invoices.length} ${invoices.length === 1 ? "factura registrada" : "facturas registradas"}`
 			: "Cargando facturas...";
 	const hideRegistration =
-		uiError?.kind === "unauthorized" ||
-		uiError?.kind === "rental-not-found";
+		uiError?.kind === "unauthorized" || uiError?.kind === "rental-not-found";
+
+	function handleAction(invoice: InvoiceDto, type: InvoiceRowAction) {
+		setAction({ invoice, type });
+	}
+
+	const recordDialog =
+		action && !hideData ? (
+			<InvoiceRecordDialog
+				key={`${action.type}:${action.invoice.id}`}
+				invoice={action.invoice}
+				action={action.type}
+				permissions={permissions}
+				onClose={() => setAction(null)}
+			/>
+		) : null;
 
 	return (
 		<InvoiceCard
@@ -135,74 +162,187 @@ function ReadableRentalInvoicesCard({
 			registrationControl={hideRegistration ? null : registrationControl}
 		>
 			{uiError ? (
-				<div className="space-y-2 text-sm" role="alert">
-					<p className="text-destructive">{uiError.message}</p>
-					{uiError.kind === "unauthorized" ? (
-						<a
-							href="/login"
-							className="font-medium text-primary underline underline-offset-4"
-						>
-							Volver a iniciar sesión
-						</a>
-					) : uiError.kind !== "forbidden" &&
-						uiError.kind !== "rental-not-found" ? (
-						<Button
-							type="button"
-							variant="outline"
-							size="sm"
-							disabled={query.isFetching}
-							onClick={() => void query.refetch()}
-						>
-							{query.isFetching ? "Actualizando..." : "Reintentar"}
-						</Button>
-					) : null}
-				</div>
+				<InvoiceListError
+					error={uiError}
+					isFetching={query.isFetching}
+					onRetry={() => void query.refetch()}
+				/>
 			) : null}
-
 			{invoices ? (
 				invoices.length === 0 ? (
 					<p className="text-sm text-neutral-500">Sin facturas registradas</p>
 				) : (
-					<div className="space-y-2">
-						<ul className="divide-y divide-neutral-100">
-							{invoices.slice(-2).reverse().map((invoice) => (
+					<ul className="divide-y divide-neutral-100">
+						{invoices
+							.slice(-3)
+							.reverse()
+							.map((invoice) => (
 								<InvoiceListRow
 									key={invoice.id}
 									invoice={invoice}
-									onSelect={() => setBrowseTarget({ invoiceId: invoice.id })}
+									canManage={canManage}
+									mutationDisabled={query.isFetching || Boolean(query.error)}
+									onAction={handleAction}
 								/>
 							))}
-						</ul>
-					</div>
+					</ul>
 				)
 			) : !uiError ? (
-				<div className="space-y-2" aria-busy="true" aria-label="Cargando facturas">
-					<Skeleton className="h-10 w-full" />
-					<Skeleton className="h-10 w-full" />
-				</div>
+				<InvoiceListLoadingState />
 			) : null}
-			{!hideData ? (
+			{invoices && invoices.length > 3 ? (
 				<Button
 					type="button"
 					variant="link"
 					size="sm"
-					className="h-auto px-0"
-					onClick={() => setBrowseTarget({ invoiceId: null })}
+					className="h-auto px-0 text-xs"
+					onClick={() => setAllInvoicesOpen(true)}
 				>
-					{(invoices?.length ?? 0) > 2
-						? `Ver todas (${invoices?.length})`
-						: "Ver registros"}
+					Ver todas ({invoices.length})
 				</Button>
 			) : null}
-			{browseTarget && !hideData ? (
-				<RentalInvoicesSheet
+			{registrationHint}
+			{allInvoicesOpen && !hideData ? (
+				<InvoiceListDialog
 					rentalId={rentalId}
 					permissions={permissions}
-					initialInvoiceId={browseTarget.invoiceId}
-					onClose={() => setBrowseTarget(null)}
-				/>
-			) : null}
+					onAction={handleAction}
+					onClose={() => !action && setAllInvoicesOpen(false)}
+				>
+					{recordDialog}
+				</InvoiceListDialog>
+			) : (
+				recordDialog
+			)}
 		</InvoiceCard>
+	);
+}
+
+function InvoiceListDialog({
+	rentalId,
+	permissions,
+	onAction,
+	onClose,
+	children,
+}: {
+	rentalId: string;
+	permissions: readonly TenantPermissionId[];
+	onAction: (invoice: InvoiceDto, action: InvoiceRowAction) => void;
+	onClose: () => void;
+	children: ReactNode;
+}) {
+	const query = useQuery(
+		invoicingQueries.rentalList(rentalId, { permissions }),
+	);
+	const uiError = query.error
+		? toInvoicingUiError(
+				query.error,
+				query.data
+					? "No pudimos actualizar la lista. La información mostrada puede estar desactualizada."
+					: "No pudimos cargar las facturas. Revisá tu conexión e intentá nuevamente.",
+			)
+		: null;
+	const invoices = shouldHideInvoices(uiError) ? undefined : query.data;
+
+	return (
+		<Dialog open onOpenChange={(open) => !open && onClose()}>
+			<DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto">
+				<DialogHeader className="pr-6">
+					<DialogTitle>Facturas</DialogTitle>
+					<DialogDescription>
+						Facturas emitidas fuera de Depiqo y registradas en este alquiler.
+					</DialogDescription>
+				</DialogHeader>
+				{uiError ? (
+					<InvoiceListError
+						error={uiError}
+						isFetching={query.isFetching}
+						onRetry={() => void query.refetch()}
+					/>
+				) : null}
+				{invoices ? (
+					invoices.length === 0 ? (
+						<p className="text-sm text-neutral-500">Sin facturas registradas</p>
+					) : (
+						<ul className="divide-y divide-neutral-100">
+							{invoices
+								.slice()
+								.reverse()
+								.map((invoice) => (
+									<InvoiceListRow
+										key={invoice.id}
+										invoice={invoice}
+										canManage={can(
+											permissions,
+											TenantPermission.InvoicingManage,
+										)}
+										mutationDisabled={query.isFetching || Boolean(query.error)}
+										onAction={onAction}
+									/>
+								))}
+						</ul>
+					)
+				) : !uiError ? (
+					<InvoiceListLoadingState />
+				) : null}
+			</DialogContent>
+			{children}
+		</Dialog>
+	);
+}
+
+function shouldHideInvoices(error: InvoicingUiError | null): boolean {
+	return (
+		error?.kind === "unauthorized" ||
+		error?.kind === "forbidden" ||
+		error?.kind === "rental-not-found"
+	);
+}
+
+function InvoiceListError({
+	error,
+	isFetching,
+	onRetry,
+}: {
+	error: InvoicingUiError;
+	isFetching: boolean;
+	onRetry: () => void;
+}) {
+	return (
+		<div className="space-y-2 text-sm" role="alert">
+			<p className="text-destructive">{error.message}</p>
+			{error.kind === "unauthorized" ? (
+				<a
+					href="/login"
+					className="font-medium text-primary underline underline-offset-4"
+				>
+					Volver a iniciar sesión
+				</a>
+			) : !shouldHideInvoices(error) ? (
+				<Button
+					type="button"
+					variant="outline"
+					size="sm"
+					disabled={isFetching}
+					onClick={onRetry}
+				>
+					{isFetching ? "Actualizando..." : "Reintentar"}
+				</Button>
+			) : null}
+		</div>
+	);
+}
+
+function InvoiceListLoadingState() {
+	return (
+		<section
+			className="space-y-2"
+			aria-busy="true"
+			aria-label="Cargando facturas"
+		>
+			<Skeleton className="h-10 w-full" />
+			<Skeleton className="h-10 w-full" />
+		</section>
 	);
 }
 
@@ -220,28 +360,40 @@ function InvoiceCard({
 
 	return (
 		<section className="rounded-lg border border-neutral-200 bg-white p-4">
-			<button
-				type="button"
-				className="flex w-full min-w-0 items-start justify-between gap-3 text-left @5xl/rental-detail:hidden"
-				onClick={() => setIsExpanded((previous) => !previous)}
-				aria-expanded={isExpanded}
-				aria-controls={contentId}
-			>
-				<span className="min-w-0">
-					<span className="block text-sm font-bold text-neutral-950">Facturas</span>
+			<div className="flex min-w-0 items-center gap-2 @5xl/rental-detail:mb-3 @5xl/rental-detail:border-b @5xl/rental-detail:border-neutral-100 @5xl/rental-detail:pb-2">
+				<span className="hidden size-6 items-center justify-center text-neutral-600 @5xl/rental-detail:flex">
+					<FileText className="size-4" />
+				</span>
+				<h2 className="hidden min-w-0 flex-1 text-sm font-bold text-neutral-950 @5xl/rental-detail:block">
+					Facturas
+				</h2>
+				<button
+					type="button"
+					className="min-w-0 flex-1 rounded-sm text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring @5xl/rental-detail:hidden"
+					onClick={() => setIsExpanded((previous) => !previous)}
+					aria-expanded={isExpanded}
+					aria-controls={contentId}
+				>
+					<span className="block text-sm font-bold text-neutral-950">
+						Facturas
+					</span>
 					<span className="mt-0.5 block break-words text-sm text-neutral-600">
 						{summary}
 					</span>
-				</span>
-				<ChevronDown
-					className={`size-4 shrink-0 text-neutral-400 transition-transform ${isExpanded ? "rotate-180" : ""}`}
-				/>
-			</button>
-			<div className="mb-2 hidden items-center gap-2 border-b border-neutral-100 pb-2 @5xl/rental-detail:flex">
-				<span className="flex size-6 items-center justify-center text-neutral-600">
-					<FileText className="size-4" />
-				</span>
-				<h2 className="text-sm font-bold text-neutral-950">Facturas</h2>
+				</button>
+				{registrationControl}
+				<button
+					type="button"
+					className="flex size-8 shrink-0 items-center justify-center rounded-md text-neutral-400 hover:bg-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring @5xl/rental-detail:hidden"
+					onClick={() => setIsExpanded((previous) => !previous)}
+					aria-expanded={isExpanded}
+					aria-controls={contentId}
+					aria-label={`${isExpanded ? "Contraer" : "Expandir"} Facturas`}
+				>
+					<ChevronDown
+						className={`size-4 transition-transform ${isExpanded ? "rotate-180" : ""}`}
+					/>
+				</button>
 			</div>
 			<div
 				id={contentId}
@@ -253,7 +405,6 @@ function InvoiceCard({
 			>
 				{children}
 			</div>
-			{registrationControl ? <div className="mt-3">{registrationControl}</div> : null}
 		</section>
 	);
 }

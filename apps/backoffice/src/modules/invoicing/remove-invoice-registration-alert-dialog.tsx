@@ -29,9 +29,13 @@ export function RemoveInvoiceRegistrationAlertDialog({
 }) {
 	const removeInvoice = useRemoveInvoiceRegistration();
 	const [serverError, setServerError] = useState<InvoicingUiError | null>(null);
-	const submissionBlocked = blockedMessage !== null || Boolean(
-		serverError && serverError.kind !== "validation" && serverError.kind !== "unknown",
-	);
+	const submissionBlocked =
+		blockedMessage !== null ||
+		Boolean(
+			serverError &&
+				serverError.kind !== "validation" &&
+				serverError.kind !== "unknown",
+		);
 
 	async function handleRemove() {
 		if (removeInvoice.isPending || submissionBlocked) return;
@@ -45,10 +49,12 @@ export function RemoveInvoiceRegistrationAlertDialog({
 			toast.success("Registro de factura eliminado de Depiqo");
 			onRemoved();
 		} catch (error) {
-			setServerError(toInvoicingUiError(
-				error,
-				"No pudimos eliminar el registro. Revisá tu conexión e intentá nuevamente.",
-			));
+			setServerError(
+				toInvoicingUiError(
+					error,
+					"No pudimos eliminar el registro. Revisá tu conexión e intentá nuevamente.",
+				),
+			);
 		}
 	}
 
@@ -63,8 +69,8 @@ export function RemoveInvoiceRegistrationAlertDialog({
 				<AlertDialogHeader>
 					<AlertDialogTitle>Eliminar registro de factura</AlertDialogTitle>
 					<AlertDialogDescription>
-						Se eliminará únicamente el registro de esta factura en Depiqo.
-						La factura del sistema externo no se cancelará ni se eliminará.
+						Se eliminará únicamente el registro de esta factura en Depiqo. La
+						factura del sistema externo no se cancelará ni se eliminará.
 					</AlertDialogDescription>
 				</AlertDialogHeader>
 				<div className="min-w-0 space-y-1 rounded-lg border border-neutral-200 bg-neutral-50 px-4 py-3">
@@ -72,26 +78,36 @@ export function RemoveInvoiceRegistrationAlertDialog({
 						{invoice.reference}
 					</p>
 					<p className="break-words font-mono text-sm text-neutral-600">
-						{formatExactCurrencyRate(invoice.amount, invoice.currency)} {invoice.currency}
+						{formatExactCurrencyRate(invoice.amount, invoice.currency)}
 					</p>
 				</div>
 				{serverError ? (
 					<div className="space-y-2 text-sm text-destructive" role="alert">
 						<p>{serverError.message}</p>
 						{submissionBlocked ? (
-							<p>Cerrá este diálogo y revisá el registro actual antes de volver a intentarlo.</p>
+							<p>
+								Cerrá este diálogo y revisá el registro actual antes de volver a
+								intentarlo.
+							</p>
 						) : null}
 						{serverError.kind === "unauthorized" ? (
-							<a href="/login" className="font-medium underline underline-offset-4">
+							<a
+								href="/login"
+								className="font-medium underline underline-offset-4"
+							>
 								Volver a iniciar sesión
 							</a>
 						) : null}
 					</div>
 				) : blockedMessage && !removeInvoice.isPending ? (
-					<p className="text-sm text-destructive" role="alert">{blockedMessage}</p>
+					<p className="text-sm text-destructive" role="alert">
+						{blockedMessage}
+					</p>
 				) : null}
 				<AlertDialogFooter>
-					<AlertDialogCancel disabled={removeInvoice.isPending}>Cancelar</AlertDialogCancel>
+					<AlertDialogCancel disabled={removeInvoice.isPending}>
+						Cancelar
+					</AlertDialogCancel>
 					<AlertDialogAction
 						variant="destructive"
 						disabled={removeInvoice.isPending || submissionBlocked}
@@ -100,7 +116,9 @@ export function RemoveInvoiceRegistrationAlertDialog({
 							void handleRemove();
 						}}
 					>
-						{removeInvoice.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
+						{removeInvoice.isPending ? (
+							<Loader2 className="size-4 animate-spin" />
+						) : null}
 						{removeInvoice.isPending ? "Eliminando..." : "Eliminar registro"}
 					</AlertDialogAction>
 				</AlertDialogFooter>

@@ -3,16 +3,19 @@ import {
 	CorrectInvoiceRegistrationBodySchema,
 	InvoiceAmountSchema,
 	type InvoiceDto,
-	InvoiceRegistrationFieldsSchema,
 	InvoiceExternalUrlSchema,
 	InvoiceReferenceSchema,
+	InvoiceRegistrationFieldsSchema,
 	InvoiceSourceSystemSchema,
 	LocalDateSchema,
 	type RegisterExternalInvoiceBodyDto,
 	RegisterExternalInvoiceBodySchema,
 } from "@repo/api-contracts";
 import { z } from "zod";
-import { decimalsEqual, parsePlainDecimal } from "@/shared/utils/decimal-string";
+import {
+	decimalsEqual,
+	parsePlainDecimal,
+} from "@/shared/utils/decimal-string";
 import { emptyToNull } from "@/shared/utils/form.utils";
 
 function normalizeInvoiceAmountInput(value: string): string {
@@ -20,27 +23,38 @@ function normalizeInvoiceAmountInput(value: string): string {
 }
 
 export const invoiceFormSchema = z.object({
-	reference: z.string().refine(
-		(value) => InvoiceReferenceSchema.safeParse(value).success,
-		"Ingresá una referencia de hasta 255 caracteres.",
-	),
-	issuedOn: z.string().refine(
-		(value) => LocalDateSchema.safeParse(value).success,
-		"Ingresá una fecha de emisión válida.",
-	),
-	amount: z.string().refine(
-		(value) =>
-			InvoiceAmountSchema.safeParse(normalizeInvoiceAmountInput(value)).success,
-		"Ingresá un importe mayor a cero, con hasta 15 dígitos enteros y 4 decimales, sin separadores de miles.",
-	),
-	externalUrl: z.string().refine(
-		(value) => InvoiceExternalUrlSchema.safeParse(value).success,
-		"Ingresá un enlace HTTP(S) completo, sin credenciales y de hasta 2048 caracteres.",
-	),
-	sourceSystem: z.string().refine(
-		(value) => InvoiceSourceSystemSchema.safeParse(value).success,
-		"El sistema de origen puede tener hasta 100 caracteres.",
-	),
+	reference: z
+		.string()
+		.refine(
+			(value) => InvoiceReferenceSchema.safeParse(value).success,
+			"Ingresá una referencia de hasta 255 caracteres.",
+		),
+	issuedOn: z
+		.string()
+		.refine(
+			(value) => LocalDateSchema.safeParse(value).success,
+			"Ingresá una fecha de emisión válida.",
+		),
+	amount: z
+		.string()
+		.refine(
+			(value) =>
+				InvoiceAmountSchema.safeParse(normalizeInvoiceAmountInput(value))
+					.success,
+			"Ingresá un importe mayor a cero, con hasta 15 dígitos enteros y 4 decimales, sin separadores de miles.",
+		),
+	externalUrl: z
+		.string()
+		.refine(
+			(value) => InvoiceExternalUrlSchema.safeParse(value).success,
+			"Ingresá un enlace HTTP(S) completo, sin credenciales y de hasta 2048 caracteres.",
+		),
+	sourceSystem: z
+		.string()
+		.refine(
+			(value) => InvoiceSourceSystemSchema.safeParse(value).success,
+			"El sistema de origen puede tener hasta 100 caracteres.",
+		),
 });
 
 export type InvoiceFormValues = z.infer<typeof invoiceFormSchema>;

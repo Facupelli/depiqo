@@ -96,7 +96,8 @@ function OpenInvoiceFormDialog(props: InvoiceFormDialogProps) {
 	const timezone = useTenantTimezone();
 	const registerInvoice = useRegisterExternalInvoice();
 	const correctInvoice = useCorrectInvoiceRegistration();
-	const currency = props.mode === "register" ? props.currency : props.invoice.currency;
+	const currency =
+		props.mode === "register" ? props.currency : props.invoice.currency;
 	const [defaultValues] = useState(() =>
 		props.mode === "register"
 			? createInvoiceFormDefaults(
@@ -106,15 +107,21 @@ function OpenInvoiceFormDialog(props: InvoiceFormDialogProps) {
 			: invoiceToFormValues(props.invoice),
 	);
 	const [serverError, setServerError] = useState<InvoicingUiError | null>(null);
-	const blockedMessage = props.mode === "correct"
-		? props.blockedMessage
-		: props.registrationEligible
-			? null
-			: "Este alquiler ya no admite nuevos registros de factura. Cerrá el diálogo y revisá su estado actual.";
-	const submissionBlocked = blockedMessage !== null || Boolean(
-		serverError && serverError.kind !== "validation" && serverError.kind !== "unknown",
-	);
-	const isMutationPending = registerInvoice.isPending || correctInvoice.isPending;
+	const blockedMessage =
+		props.mode === "correct"
+			? props.blockedMessage
+			: props.registrationEligible
+				? null
+				: "Este alquiler ya no admite nuevos registros de factura. Cerrá el diálogo y revisá su estado actual.";
+	const submissionBlocked =
+		blockedMessage !== null ||
+		Boolean(
+			serverError &&
+				serverError.kind !== "validation" &&
+				serverError.kind !== "unknown",
+		);
+	const isMutationPending =
+		registerInvoice.isPending || correctInvoice.isPending;
 	const form = useForm({
 		defaultValues,
 		validators: { onSubmit: invoiceFormSchema },
@@ -150,7 +157,8 @@ function OpenInvoiceFormDialog(props: InvoiceFormDialogProps) {
 
 				if (
 					props.mode === "register" &&
-					(uiError.kind === "rental-ineligible" || uiError.kind === "rental-not-found")
+					(uiError.kind === "rental-ineligible" ||
+						uiError.kind === "rental-not-found")
 				) {
 					try {
 						await props.onRentalContextStale();
@@ -184,7 +192,9 @@ function OpenInvoiceFormDialog(props: InvoiceFormDialogProps) {
 			>
 				<DialogHeader>
 					<DialogTitle>
-						{props.mode === "correct" ? "Corregir registro de factura" : "Registrar factura"}
+						{props.mode === "correct"
+							? "Corregir registro de factura"
+							: "Registrar factura"}
 					</DialogTitle>
 					<DialogDescription>
 						{props.mode === "correct"
@@ -286,17 +296,29 @@ function OpenInvoiceFormDialog(props: InvoiceFormDialogProps) {
 							selector={(state) => [state.canSubmit, state.values] as const}
 						>
 							{([canSubmit, values]) => {
-								const hasChanges = props.mode === "register" ||
+								const hasChanges =
+									props.mode === "register" ||
 									hasInvoiceRegistrationChanges(props.invoice, values);
 								return (
 									<Button
 										type="submit"
-										disabled={!canSubmit || !hasChanges || isPending || submissionBlocked}
+										disabled={
+											!canSubmit ||
+											!hasChanges ||
+											isPending ||
+											submissionBlocked
+										}
 									>
-										{isPending ? <Loader2 className="size-4 animate-spin" /> : null}
+										{isPending ? (
+											<Loader2 className="size-4 animate-spin" />
+										) : null}
 										{props.mode === "correct"
-											? isPending ? "Guardando..." : "Guardar corrección"
-											: isPending ? "Registrando..." : "Registrar factura"}
+											? isPending
+												? "Guardando..."
+												: "Guardar corrección"
+											: isPending
+												? "Registrando..."
+												: "Registrar factura"}
 									</Button>
 								);
 							}}

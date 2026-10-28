@@ -168,7 +168,7 @@ export function RentalFinancialReportChart({
 						/>
 						<ChartLegend
 							itemSorter={(item) =>
-								componentKeys.findIndex((key) => key === item.dataKey)
+								componentKeys.indexOf(item.dataKey as ComponentKey)
 							}
 							content={
 								<ChartLegendContent className="flex-wrap text-[10px] text-neutral-500" />

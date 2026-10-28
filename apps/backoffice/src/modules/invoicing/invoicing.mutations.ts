@@ -7,8 +7,8 @@ import {
 import {
 	type CorrectInvoiceRegistrationVariables,
 	correctInvoiceRegistration,
-	registerExternalInvoice,
 	type RemoveInvoiceRegistrationVariables,
+	registerExternalInvoice,
 	removeInvoiceRegistration,
 } from "./invoicing.api";
 import { toInvoicingUiError } from "./invoicing.errors";

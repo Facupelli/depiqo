@@ -1,53 +1,110 @@
 import type { InvoiceDto } from "@repo/api-contracts";
-import { Badge } from "@repo/ui/components/badge";
-import { ExternalLink } from "lucide-react";
+import { Button } from "@repo/ui/components/button";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
+} from "@repo/ui/components/dropdown-menu";
+import {
+	ExternalLink,
+	History,
+	MoreHorizontal,
+	Pencil,
+	Trash2,
+} from "lucide-react";
 import { formatExactCurrencyRate } from "@/shared/utils/formatters";
 import { formatInvoiceDate } from "./invoice.utils";
 
+export type InvoiceRowAction = "correct" | "history" | "remove";
+
 export function InvoiceListRow({
 	invoice,
-	onSelect,
+	canManage,
+	mutationDisabled,
+	onAction,
 }: {
 	invoice: InvoiceDto;
-	onSelect: () => void;
+	canManage: boolean;
+	mutationDisabled: boolean;
+	onAction: (invoice: InvoiceDto, action: InvoiceRowAction) => void;
 }) {
 	return (
-		<li className="flex min-w-0 items-start gap-2 py-2 first:pt-0 last:pb-0">
-			<button
-				type="button"
-				onClick={onSelect}
-				aria-label={`Ver registro de factura ${invoice.reference}`}
-				className="group min-w-0 flex-1 space-y-1.5 rounded-md text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-			>
-				<span className="flex min-w-0 flex-wrap items-start gap-2">
-					<span className="min-w-0 line-clamp-2 text-sm font-medium text-neutral-950 group-hover:text-primary [overflow-wrap:anywhere]">
-						{invoice.reference}
-					</span>
-					{invoice.removedAt ? (
-						<Badge variant="secondary">Registro eliminado</Badge>
-					) : null}
-				</span>
-				<span className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-					<time dateTime={invoice.issuedOn} className="text-xs text-neutral-500">
+		<li className="flex min-w-0 items-start gap-2 py-2.5 first:pt-0 last:pb-0">
+			<div className="min-w-0 flex-1 space-y-1">
+				<p className="line-clamp-2 text-sm font-medium text-neutral-950 [overflow-wrap:anywhere]">
+					{invoice.reference}
+				</p>
+				<div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+					<time
+						dateTime={invoice.issuedOn}
+						className="text-xs text-neutral-500"
+					>
 						{formatInvoiceDate(invoice.issuedOn)}
 					</time>
 					<span className="min-w-0 break-words font-mono text-sm text-neutral-950">
-						{formatExactCurrencyRate(invoice.amount, invoice.currency)}{" "}
-						<span className="text-xs text-neutral-500">{invoice.currency}</span>
+						{formatExactCurrencyRate(invoice.amount, invoice.currency)}
 					</span>
-				</span>
-			</button>
-			{invoice.externalUrl ? (
-				<a
-					href={invoice.externalUrl}
-					target="_blank"
-					rel="noopener noreferrer"
-					aria-label={`Abrir factura ${invoice.reference} en el sistema externo`}
-					className="flex size-7 shrink-0 items-center justify-center rounded-md text-primary hover:bg-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-				>
-					<ExternalLink className="size-3.5" />
-				</a>
-			) : null}
+				</div>
+			</div>
+			<DropdownMenu>
+				<DropdownMenuTrigger
+					render={
+						<Button
+							type="button"
+							variant="ghost"
+							size="icon-sm"
+							className="shrink-0 text-neutral-500"
+							aria-label={`Acciones para la factura ${invoice.reference}`}
+						>
+							<MoreHorizontal className="size-4" />
+						</Button>
+					}
+				/>
+				<DropdownMenuContent align="end" className="min-w-48">
+					{canManage && !invoice.removedAt ? (
+						<DropdownMenuItem
+							disabled={mutationDisabled}
+							onClick={() => onAction(invoice, "correct")}
+						>
+							<Pencil className="size-3.5" />
+							Editar registro
+						</DropdownMenuItem>
+					) : null}
+					<DropdownMenuItem onClick={() => onAction(invoice, "history")}>
+						<History className="size-3.5" />
+						Ver historial
+					</DropdownMenuItem>
+					{invoice.externalUrl ? (
+						<DropdownMenuItem
+							render={
+								<a
+									href={invoice.externalUrl}
+									target="_blank"
+									rel="noopener noreferrer"
+								>
+									<ExternalLink className="size-3.5" />
+									Abrir factura externa
+								</a>
+							}
+						/>
+					) : null}
+					{canManage && !invoice.removedAt ? (
+						<>
+							<DropdownMenuSeparator />
+							<DropdownMenuItem
+								variant="destructive"
+								disabled={mutationDisabled}
+								onClick={() => onAction(invoice, "remove")}
+							>
+								<Trash2 className="size-3.5" />
+								Eliminar registro
+							</DropdownMenuItem>
+						</>
+					) : null}
+				</DropdownMenuContent>
+			</DropdownMenu>
 		</li>
 	);
 }

@@ -36,7 +36,11 @@ function retryInvoiceQuery(failureCount: number, error: Error): boolean {
 export const invoicingQueries = {
 	rentalList: (
 		rentalId: string,
-		{ permissions, includeRemoved = false, enabled = true }: InvoiceQueryOptions,
+		{
+			permissions,
+			includeRemoved = false,
+			enabled = true,
+		}: InvoiceQueryOptions,
 	) =>
 		queryOptions({
 			queryKey: invoicingKeys.rentalList(rentalId, includeRemoved),
@@ -47,7 +51,11 @@ export const invoicingQueries = {
 		}),
 	invoiceDetail: (
 		invoiceId: string,
-		{ permissions, includeRemoved = false, enabled = true }: InvoiceQueryOptions,
+		{
+			permissions,
+			includeRemoved = false,
+			enabled = true,
+		}: InvoiceQueryOptions,
 	) =>
 		queryOptions({
 			queryKey: invoicingKeys.invoiceDetail(invoiceId, includeRemoved),
