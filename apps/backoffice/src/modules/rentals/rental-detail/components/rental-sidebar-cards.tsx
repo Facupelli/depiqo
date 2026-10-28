@@ -1,5 +1,6 @@
 import { TenantPermission } from "@repo/api-contracts";
 import { Button } from "@repo/ui/components/button";
+import { useQueryClient } from "@tanstack/react-query";
 import {
 	ChevronDown,
 	Pencil,
@@ -9,6 +10,7 @@ import {
 } from "lucide-react";
 import { type ReactNode, useId, useState } from "react";
 import { can } from "@/auth/permissions";
+import { RentalInvoicesCard } from "@/modules/invoicing/public";
 import { useBranchTimezone } from "@/shared/timezone/operational-timezone.hooks";
 import {
 	isZeroDecimal,
@@ -19,6 +21,7 @@ import { AssignCustomerToDraftRentalDialog } from "../assign-customer/assign-cus
 import { RentalContractSigningCard } from "../documents/signing/rental-contract-signing-card";
 import { EditPriceAdjustmentDialog } from "../edit-price-adjustment/edit-price-adjustment-dialog";
 import { useRentalDetailContext } from "../rental-detail.context";
+import { rentalDetailViewQueries } from "../rental-detail.queries";
 import {
 	formatRentalDetailDateBlock,
 	getRentalCustomerInitials,
@@ -34,8 +37,16 @@ export function RentalSidebarCards({
 }: {
 	periodEditAction?: PeriodEditAction;
 }) {
-	const { permissions } = useRentalDetailContext();
+	const { rental, permissions } = useRentalDetailContext();
+	const queryClient = useQueryClient();
 	const canReadContracts = can(permissions, TenantPermission.ContractsRead);
+	const canAccessInvoices =
+		can(permissions, TenantPermission.InvoicingRead) ||
+		can(permissions, TenantPermission.InvoicingManage);
+	const invoiceRegistrationEligible =
+		rental.status === "CONFIRMED" ||
+		rental.status === "COMPLETED" ||
+		(rental.status === "CANCELLED" && rental.confirmedAt !== null);
 
 	return (
 		<div className="flex flex-col gap-3">
@@ -53,6 +64,22 @@ export function RentalSidebarCards({
 			<div className="order-4">
 				<RentalFinancialsCard />
 			</div>
+			{canAccessInvoices ? (
+				<div className="order-5">
+					<RentalInvoicesCard
+						rentalId={rental.id}
+						permissions={permissions}
+						acceptedCustomerTotal={rental.acceptedCustomerTotal}
+						currency={rental.pricing?.currency ?? null}
+						registrationEligible={invoiceRegistrationEligible}
+						onRentalContextStale={async () => {
+							await queryClient.fetchQuery(
+								rentalDetailViewQueries.detail(rental.id, { staleTime: 0 }),
+							);
+						}}
+					/>
+				</div>
+			) : null}
 		</div>
 	);
 }
