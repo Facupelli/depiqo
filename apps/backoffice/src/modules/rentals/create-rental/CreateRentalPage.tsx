@@ -1,6 +1,7 @@
 import { TenantPermission } from "@repo/api-contracts";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
+import { useRef } from "react";
 import { currentAuthQueries } from "@/auth/auth.queries";
 import { can } from "@/auth/permissions";
 import { PageBreadcrumb } from "@/components/detail-id-breadcrumb";
@@ -30,6 +31,10 @@ export function CreateRentalPage() {
 			? activeBranches[0].id
 			: "";
 	const createDraftRental = useCreateDraftRental();
+	const creationAttempt = useRef<{
+		body: string;
+		idempotencyKey: string;
+	} | null>(null);
 	const canManagePriceAdjustment =
 		currentAuth.actorType === "TENANT_USER" &&
 		can(currentAuth.permissions, TenantPermission.RentalsPriceAdjustmentManage);
@@ -43,7 +48,18 @@ export function CreateRentalPage() {
 		timezone: string,
 	) {
 		const body = toCreateDraftRentalDto(values, timezone);
-		const response = await createDraftRental.mutateAsync({ body });
+		const serializedBody = JSON.stringify(body);
+		// A lost response must not turn a retry of the same submission into a new draft.
+		if (creationAttempt.current?.body !== serializedBody) {
+			creationAttempt.current = {
+				body: serializedBody,
+				idempotencyKey: crypto.randomUUID(),
+			};
+		}
+		const response = await createDraftRental.mutateAsync({
+			body,
+			idempotencyKey: creationAttempt.current.idempotencyKey,
+		});
 
 		navigate({
 			to: "/dashboard/orders/$orderId",

@@ -40,6 +40,7 @@ describe('POST /rental-commitments/draft-rentals', () => {
   async function tenantUserClient(setup: Awaited<ReturnType<typeof scenario>>): Promise<E2ETestClient> {
     const client = createE2ETestClient(app.app);
     await client.loginTenantUser({ email: setup.user.user.email, password: setup.user.password });
+    client.request().set('idempotency-key', randomUUID());
     return client;
   }
 

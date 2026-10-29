@@ -21,6 +21,7 @@ export interface CreateDraftRentalDeliveryDetailsCommand {
 export class CreateDraftRentalCommand {
   public readonly tenantId: string;
   public readonly tenantUserId: string;
+  public readonly draftCreationOperationId: string;
   public readonly branchId: string;
   public readonly rentalCustomerId?: string;
   public readonly period: RentalPeriod;
@@ -35,6 +36,7 @@ export class CreateDraftRentalCommand {
   constructor(props: {
     tenantId: string;
     tenantUserId: string;
+    draftCreationOperationId: string;
     branchId: string;
     rentalCustomerId?: string;
     period: RentalPeriod;
@@ -48,6 +50,7 @@ export class CreateDraftRentalCommand {
   }) {
     this.tenantId = props.tenantId;
     this.tenantUserId = props.tenantUserId;
+    this.draftCreationOperationId = props.draftCreationOperationId;
     this.branchId = props.branchId;
     this.rentalCustomerId = props.rentalCustomerId;
     this.period = props.period;
