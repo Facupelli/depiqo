@@ -27,16 +27,19 @@ export function RentalsListPage({
 }: RentalsListPageProps) {
 	return (
 		<RentalOrdersListProvider search={search} onSearchChange={onSearchChange}>
-			<div className="space-y-4">
+			<div className="min-w-0 space-y-4">
 				<h1 className="sr-only">Alquileres</h1>
 
-				<div className="@container/rentals-index space-y-4">
+				<div className="@container/rentals-index min-w-0 space-y-5">
 					<RentalOrdersToolbar
 						toolbarActions={
 							can(permissions, TenantPermission.RentalsProposalsManage) ? (
 								<Link
 									to="/dashboard/orders/new"
-									className={buttonVariants({ className: "shrink-0" })}
+									className={buttonVariants({
+										className:
+											"h-10 shrink-0 rounded-lg shadow-none pointer-coarse:min-h-11",
+									})}
 								>
 									Nuevo borrador
 								</Link>

@@ -27,8 +27,8 @@ export const Route = createFileRoute("/_admin/dashboard/orders/")({
 		return (
 			<AdminRouteError
 				error={error}
-				genericMessage="No pudimos cargar los pedidos."
-				forbiddenMessage="No tienes permisos para ver los pedidos."
+				genericMessage="No pudimos cargar los alquileres."
+				forbiddenMessage="No tienes permisos para ver los alquileres."
 			/>
 		);
 	},
