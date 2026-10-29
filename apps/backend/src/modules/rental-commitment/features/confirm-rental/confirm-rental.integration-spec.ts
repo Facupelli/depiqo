@@ -372,9 +372,9 @@ describe('ConfirmRental integration', () => {
   it.each([
     ['inactive asset status', { assetStatus: 'INACTIVE' as const }],
     ['retired asset status', { assetStatus: 'RETIRED' as const }],
-    ['wrong equipment type projection', { equipmentTypeId: 'wrong-equipment-type' }],
-    ['wrong branch projection', { branchId: 'wrong-branch' }],
-  ])('enforces the V2RentalAssetCandidate eligibility contract: %s', async (_name, overrides) => {
+    ['wrong equipment type', { equipmentTypeId: 'wrong-equipment-type' }],
+    ['wrong branch', { branchId: 'wrong-branch' }],
+  ])('enforces current Inventory eligibility: %s', async (_name, overrides) => {
     const scenario = await base();
     await rentalFixtures.createCandidate({
       tenantId: scenario.tenant.id,

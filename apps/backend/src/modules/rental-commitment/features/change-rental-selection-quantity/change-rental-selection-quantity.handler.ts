@@ -180,6 +180,7 @@ export class ChangeRentalSelectionQuantityHandler implements ICommandHandler<
           const plan = await this.allocation.planAllocations({
             tenantId,
             branchId: current.branchId,
+            operationTime,
             periodStart: operationalPeriod.start,
             periodEnd: operationalPeriod.end,
             demandLines: deltaLines,

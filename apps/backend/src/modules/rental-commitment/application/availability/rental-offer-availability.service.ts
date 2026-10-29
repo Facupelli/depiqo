@@ -76,6 +76,7 @@ export class RentalOfferAvailabilityService {
   ) {}
 
   async calculate(input: CalculateRentalOfferAvailabilityInput): Promise<CalculateRentalOfferAvailabilityResult> {
+    const operationTime = new Date();
     if (
       input.transportReservationMinutes !== undefined &&
       (!Number.isInteger(input.transportReservationMinutes) || input.transportReservationMinutes < 0)
@@ -136,6 +137,7 @@ export class RentalOfferAvailabilityService {
       tenantId: input.tenantId,
       branchId: input.branchId,
       equipmentTypeIds,
+      operationTime,
       periodStart: operationalPeriod.start,
       periodEnd: operationalPeriod.end,
     });

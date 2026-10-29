@@ -130,6 +130,7 @@ export class RestoreConfirmedPackageDemandLineHandler implements ICommandHandler
         const plan = await this.allocation.planAllocations({
           tenantId,
           branchId: rental.branchId,
+          operationTime,
           periodStart: operationalPeriod.start,
           periodEnd: operationalPeriod.end,
           demandLines: [

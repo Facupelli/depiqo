@@ -49,6 +49,8 @@ import { AccessoryPreparationInventoryFactsService } from './public-api/accessor
 import { AccessoryPreparationInventoryFacts } from './public-api/accessory-preparation-inventory-facts.public-api';
 import { ActivePhysicalStockFactsService } from './public-api/active-physical-stock-facts.public-api.service';
 import { ActivePhysicalStockFacts } from './public-api/active-physical-stock-facts.public-api';
+import { AssetAssignmentFacts } from './public-api/asset-assignment-facts.public-api';
+import { AssetAssignmentFactsService } from './public-api/asset-assignment-facts.public-api.service';
 import { AssetInventoryDisplayFactsService } from './public-api/asset-inventory-display-facts.public-api.service';
 import { AssetInventoryDisplayFacts } from './public-api/asset-inventory-display-facts.public-api';
 import { AssetInventoryAuthoringService } from './public-api/asset-inventory-authoring.public-api.service';
@@ -109,6 +111,7 @@ import { EquipmentTypePageFactsService } from './public-api/equipment-type-page-
     EquipmentTypeRepository,
     { provide: AccessoryPreparationInventoryFacts, useClass: AccessoryPreparationInventoryFactsService },
     { provide: ActivePhysicalStockFacts, useClass: ActivePhysicalStockFactsService },
+    { provide: AssetAssignmentFacts, useClass: AssetAssignmentFactsService },
     AssetInventoryAuthoringService,
     { provide: AssetInventoryAuthoring, useExisting: AssetInventoryAuthoringService },
     { provide: EquipmentTypeReferenceAuthority, useClass: EquipmentTypeReferenceAuthorityService },
@@ -118,6 +121,7 @@ import { EquipmentTypePageFactsService } from './public-api/equipment-type-page-
   exports: [
     AccessoryPreparationInventoryFacts,
     ActivePhysicalStockFacts,
+    AssetAssignmentFacts,
     AssetInventoryAuthoring,
     EquipmentTypeReferenceAuthority,
     AssetInventoryDisplayFacts,

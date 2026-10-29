@@ -285,6 +285,9 @@ describe('RentalAccessoryMutations integration', () => {
     expect(after.blocks).toHaveLength(2);
     expect(after.rental.version).toBe(2);
 
+    await prisma.client.v2Asset.deleteMany({
+      where: { tenantId: s.tenant.id, equipmentTypeId: s.equipmentType.id },
+    });
     await prisma.client.v2EquipmentType.delete({ where: { id: s.equipmentType.id } });
     const unchanged = await mutations.replaceDemandLineAccessories({
       tenantId: s.tenant.id,

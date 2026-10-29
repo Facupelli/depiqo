@@ -84,12 +84,6 @@ describe('Rental Remito current committed demand integration', () => {
           serialNumber: `SERIAL-${index + 1}`,
         },
       });
-      await rentals.createCandidate({
-        tenantId: tenant.id,
-        branchId: branch.id,
-        equipmentTypeId: rental.equipmentTypeIds[index],
-        assetId: asset.id,
-      });
       await prisma.client.v2AssignedAsset.create({
         data: {
           tenantId: tenant.id,

@@ -146,6 +146,7 @@ export class ReplaceConfirmedRentalAssetHandler implements ICommandHandler<
         const allocationPlan = await this.rentalAssetAllocation.planAllocations({
           tenantId,
           branchId: currentRental.branchId,
+          operationTime,
           periodStart: operationalPeriod.start,
           periodEnd: operationalPeriod.end,
           demandLines: [
