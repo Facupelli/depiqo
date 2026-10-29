@@ -250,7 +250,7 @@ describe('GetRentalOfferAvailability integration', () => {
     expect((await value(s.tenant.id, s.branch.id, [rentalOffer.id]))[0].availableCount).toBe(1);
   });
 
-  it('applies projection eligibility, tenant isolation, and branch isolation', async () => {
+  it('applies Inventory eligibility, tenant isolation, and branch isolation', async () => {
     const s = await setup();
     const otherTenant = await core.createTenant();
     const otherBranch = await core.createBranch({ tenantId: s.tenant.id });
@@ -552,12 +552,12 @@ describe('GetRentalOfferAvailability integration', () => {
   });
 
   async function persistenceCounts() {
-    const [rentalsCount, assignments, candidates, blocks] = await Promise.all([
+    const [rentalsCount, assignments, assets, blocks] = await Promise.all([
       prisma.client.v2Rental.count(),
       prisma.client.v2AssignedAsset.count(),
-      prisma.client.v2RentalAssetCandidate.count(),
+      prisma.client.v2Asset.count(),
       prisma.client.$queryRaw<Array<{ count: bigint }>>`SELECT COUNT(*) AS count FROM v2_asset_blocks`,
     ]);
-    return { rentals: rentalsCount, assignments, candidates, blocks: Number(blocks[0].count) };
+    return { rentals: rentalsCount, assignments, assets, blocks: Number(blocks[0].count) };
   }
 });

@@ -21,7 +21,7 @@ export class ChangeAssetOwnerHandler implements ICommandHandler<ChangeAssetOwner
 
   async execute(command: ChangeAssetOwnerCommand): Promise<ChangeAssetOwnerResult> {
     return this.unitOfWork.runInTransaction(async ({ tx, integrationEvents }) => {
-      const asset = await this.repository.loadByIdForTenant(
+      const asset = await this.repository.loadByIdForTenantForUpdate(
         {
           tenantId: command.tenantId,
           assetId: command.assetId,

@@ -95,6 +95,7 @@ export class GetReplacementAssetCandidatesHandler implements IQueryHandler<
       tenantId,
       branchId: rental.branchId,
       equipmentTypeIds: [demandLine.equipmentTypeId],
+      operationTime,
       periodStart: operationalPeriod.start,
       periodEnd: operationalPeriod.end,
       excludeAssetIds: rental.currentAssignedAssets.map((assignment) => assignment.assetId),

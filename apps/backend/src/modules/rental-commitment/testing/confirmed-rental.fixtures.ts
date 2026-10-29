@@ -108,8 +108,8 @@ export class ConfirmedRentalFixtures {
               equipmentTypeId: params.equipmentTypeId,
             });
       if (index === 0 && params.assetId) {
-        const exists = await this.prisma.client.v2RentalAssetCandidate.findUnique({
-          where: { tenantId_assetId: { tenantId: params.tenantId, assetId } },
+        const exists = await this.prisma.client.v2Asset.findFirst({
+          where: { tenantId: params.tenantId, id: assetId },
         });
         if (!exists) {
           await this.rentals.createCandidate({

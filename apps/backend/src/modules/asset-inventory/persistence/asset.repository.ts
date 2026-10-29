@@ -20,12 +20,26 @@ export class AssetRepository {
     return record ? AssetMapper.toDomain(record) : null;
   }
 
-  async save(asset: Asset, tx?: TransactionClient): Promise<void> {
-    const client = tx ?? this.prisma.client;
-    await client.v2Asset.upsert({
-      where: { id: asset.id },
-      create: AssetMapper.toCreateData(asset),
-      update: AssetMapper.toUpdateData(asset),
+  async loadByIdForTenantForUpdate(
+    input: { tenantId: string; assetId: string },
+    tx: TransactionClient,
+  ): Promise<Asset | null> {
+    const rows = await tx.$queryRaw<Array<{ id: string }>>`
+      SELECT id FROM v2_assets
+      WHERE id = ${input.assetId} AND tenant_id = ${input.tenantId}
+      FOR UPDATE
+    `;
+    if (rows.length === 0) {
+      return null;
+    }
+
+    return this.loadByIdForTenant(input, tx);
+  }
+
+  async save(asset: Asset, tx: TransactionClient): Promise<void> {
+    await tx.v2Asset.update({
+      where: { id: asset.id, tenantId: asset.tenantId },
+      data: AssetMapper.toUpdateData(asset),
     });
   }
 

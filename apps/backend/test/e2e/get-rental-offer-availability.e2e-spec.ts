@@ -173,12 +173,12 @@ describe(`POST ${path}`, () => {
   });
 
   async function counts() {
-    const [rentalCount, assignments, candidates, blockRows] = await Promise.all([
+    const [rentalCount, assignments, assets, blockRows] = await Promise.all([
       prisma.client.v2Rental.count(),
       prisma.client.v2AssignedAsset.count(),
-      prisma.client.v2RentalAssetCandidate.count(),
+      prisma.client.v2Asset.count(),
       prisma.client.$queryRaw<Array<{ count: bigint }>>`SELECT COUNT(*) AS count FROM v2_asset_blocks`,
     ]);
-    return { rentalCount, assignments, candidates, blocks: Number(blockRows[0].count) };
+    return { rentalCount, assignments, assets, blocks: Number(blockRows[0].count) };
   }
 });

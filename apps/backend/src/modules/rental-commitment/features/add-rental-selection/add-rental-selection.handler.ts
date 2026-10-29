@@ -216,6 +216,7 @@ export class AddRentalSelectionHandler implements ICommandHandler<AddRentalSelec
         const allocation = await this.rentalAssetAllocation.planAllocations({
           tenantId,
           branchId: currentRental.branchId,
+          operationTime,
           periodStart: operationalPeriod.start,
           periodEnd: operationalPeriod.end,
           demandLines: demandLines.map((line) => ({

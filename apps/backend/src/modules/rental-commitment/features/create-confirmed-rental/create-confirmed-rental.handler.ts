@@ -163,6 +163,7 @@ export class CreateConfirmedRentalService implements ICommandHandler<
     const assetAssignmentPlan = await this.rentalAssetAllocation.planAllocations({
       tenantId: command.tenantId,
       branchId: command.branchId,
+      operationTime,
       periodStart: operationalPeriod.start,
       periodEnd: operationalPeriod.end,
       demandLines: proposal.value.demandLines.map((line) => ({

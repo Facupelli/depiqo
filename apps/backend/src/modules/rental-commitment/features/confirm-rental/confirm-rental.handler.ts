@@ -176,6 +176,7 @@ export class ConfirmRentalHandler implements ICommandHandler<ConfirmRentalComman
     const assetAssignmentPlan = await this.rentalAssetAllocation.planAllocations({
       tenantId: rental.tenantId,
       branchId: rental.branchId,
+      operationTime,
       periodStart: operationalPeriod.start,
       periodEnd: operationalPeriod.end,
       demandLines: rental.demandLines.map((line) => ({

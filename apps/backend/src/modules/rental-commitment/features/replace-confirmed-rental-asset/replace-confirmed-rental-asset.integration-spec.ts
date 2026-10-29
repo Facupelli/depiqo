@@ -321,19 +321,16 @@ describe('ReplaceConfirmedRentalAsset integration', () => {
     ],
   ];
 
-  it.each(candidatePolicyCases)(
-    'enforces the V2RentalAssetCandidate projection policy: %s',
-    async (_name, overrides) => {
-      const setup = await scenario();
-      const replacementAssetId = await candidate(setup, overrides);
-      const before = await fixtures.persistedState(setup.rental.rentalId);
-      const result = await replace({ setup, replacementAssetId, expectedVersion: before.rental.version });
-      expect(result.isErr() && result.error.code).toBe('rental_commitment.replacement_asset_unavailable');
-      expect(await fixtures.persistedState(setup.rental.rentalId)).toEqual(before);
-    },
-  );
+  it.each(candidatePolicyCases)('enforces current Inventory eligibility: %s', async (_name, overrides) => {
+    const setup = await scenario();
+    const replacementAssetId = await candidate(setup, overrides);
+    const before = await fixtures.persistedState(setup.rental.rentalId);
+    const result = await replace({ setup, replacementAssetId, expectedVersion: before.rental.version });
+    expect(result.isErr() && result.error.code).toBe('rental_commitment.replacement_asset_unavailable');
+    expect(await fixtures.persistedState(setup.rental.rentalId)).toEqual(before);
+  });
 
-  it('enforces tenant isolation through the V2RentalAssetCandidate projection', async () => {
+  it('enforces tenant isolation through current Inventory facts', async () => {
     const setupA = await scenario();
     const setupB = await scenario();
     const foreignAssetId = await candidate(setupB);

@@ -78,16 +78,6 @@ describe('GetRentalAccessoryDefaults integration', () => {
       overrides: {
         ownershipKind: 'THIRD_PARTY',
         ownerId: owner.id,
-        ownerContractSnapshot,
-      },
-    });
-    await prisma.client.v2Asset.create({
-      data: {
-        id: assetId,
-        tenantId: tenant.id,
-        branchId: branch.id,
-        equipmentTypeId: accessoryEquipmentType.id,
-        ownerId: owner.id,
       },
     });
     if (ownerContractSnapshot) {

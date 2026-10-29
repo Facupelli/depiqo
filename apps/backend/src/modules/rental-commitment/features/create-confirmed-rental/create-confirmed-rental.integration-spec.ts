@@ -433,10 +433,10 @@ describe('CreateConfirmedRental integration', () => {
   });
 
   it.each([
-    ['inactive asset status projection', { assetStatus: 'INACTIVE' as const }],
-    ['wrong branch projection', { branchId: randomUUID() }],
-    ['third-party projection without owner contract', { ownershipKind: 'THIRD_PARTY' as const, ownerId: randomUUID() }],
-  ])('enforces V2RentalAssetCandidate projection-policy eligibility: %s', async (_name, overrides) => {
+    ['inactive asset status', { assetStatus: 'INACTIVE' as const }],
+    ['wrong branch', { branchId: randomUUID() }],
+    ['third-party asset without owner contract', { ownershipKind: 'THIRD_PARTY' as const, ownerId: randomUUID() }],
+  ])('enforces current Inventory eligibility: %s', async (_name, overrides) => {
     const setup = await scenario();
     const catalog = await offer(setup);
     await candidate({ ...setup, equipmentTypeId: catalog.equipmentTypes[0].id, overrides });

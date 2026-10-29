@@ -250,9 +250,9 @@ describe('RestoreConfirmedPackageDemandLine integration', () => {
     const preservedAssignment = suppressed.rental.assignedAssets.find(
       (assignment) => assignment.assetId === additionalAssetIds[1],
     );
-    await prisma.client.v2RentalAssetCandidate.updateMany({
-      where: { tenantId: setup.tenant.id, assetId: { in: [setup.assetIds[1], additionalAssetIds[0]] } },
-      data: { assetStatus: 'INACTIVE' },
+    await prisma.client.v2Asset.updateMany({
+      where: { tenantId: setup.tenant.id, id: { in: [setup.assetIds[1], additionalAssetIds[0]] } },
+      data: { status: 'INACTIVE' },
     });
     const replacementAssetId = await rentalFixtures.createCandidate({
       tenantId: setup.tenant.id,
@@ -410,9 +410,9 @@ describe('RestoreConfirmedPackageDemandLine integration', () => {
       branchId: setup.branch.id,
       equipmentTypeId: setup.rental.equipmentTypeIds[1],
     });
-    await prisma.client.v2RentalAssetCandidate.update({
-      where: { tenantId_assetId: { tenantId: setup.tenant.id, assetId: setup.assetIds[1] } },
-      data: { assetStatus: 'INACTIVE' },
+    await prisma.client.v2Asset.update({
+      where: { tenantId: setup.tenant.id, id: setup.assetIds[1] },
+      data: { status: 'INACTIVE' },
     });
 
     const events: ConfirmedRentalEditedIntegrationEvent[] = [];
@@ -522,9 +522,9 @@ describe('RestoreConfirmedPackageDemandLine integration', () => {
     const setup = await scenario();
     const targetId = setup.rental.demandLineIds[1];
     await removeAt(setup, targetId, new Date('2030-01-20T10:00:00.000Z'));
-    await prisma.client.v2RentalAssetCandidate.update({
-      where: { tenantId_assetId: { tenantId: setup.tenant.id, assetId: setup.assetIds[1] } },
-      data: { assetStatus: 'INACTIVE' },
+    await prisma.client.v2Asset.update({
+      where: { tenantId: setup.tenant.id, id: setup.assetIds[1] },
+      data: { status: 'INACTIVE' },
     });
     const before = await fixtures.persistedState(setup.rental.rentalId);
     const events: ConfirmedRentalEditedIntegrationEvent[] = [];
@@ -544,9 +544,9 @@ describe('RestoreConfirmedPackageDemandLine integration', () => {
     const setup = await scenario();
     const targetId = setup.rental.demandLineIds[1];
     const removed = await removeAt(setup, targetId, new Date('2030-01-20T10:00:00.000Z'));
-    await prisma.client.v2RentalAssetCandidate.update({
-      where: { tenantId_assetId: { tenantId: setup.tenant.id, assetId: setup.assetIds[1] } },
-      data: { assetStatus: 'INACTIVE' },
+    await prisma.client.v2Asset.update({
+      where: { tenantId: setup.tenant.id, id: setup.assetIds[1] },
+      data: { status: 'INACTIVE' },
     });
     const ownerId = randomUUID();
     const contractId = randomUUID();
@@ -645,9 +645,9 @@ describe('RestoreConfirmedPackageDemandLine integration', () => {
       expectedVersion += 1;
     }
     if (state !== 'current' && state !== 'unknown') {
-      await prisma.client.v2RentalAssetCandidate.update({
-        where: { tenantId_assetId: { tenantId: setup.tenant.id, assetId: setup.assetIds[1] } },
-        data: { assetStatus: 'INACTIVE' },
+      await prisma.client.v2Asset.update({
+        where: { tenantId: setup.tenant.id, id: setup.assetIds[1] },
+        data: { status: 'INACTIVE' },
       });
     }
     if (ended) vi.setSystemTime(new Date('2030-01-03T10:00:00.000Z'));

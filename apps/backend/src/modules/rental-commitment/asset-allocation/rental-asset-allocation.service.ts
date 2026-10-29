@@ -5,6 +5,10 @@ import { PrismaService } from 'src/core/database/prisma.service';
 import { PrismaTransactionClient } from 'src/core/database/prisma-unit-of-work';
 import { Prisma } from 'src/generated/prisma/client';
 import { V2AssetBlockType } from 'src/generated/prisma/enums';
+import {
+  AssetAssignmentFact,
+  AssetAssignmentFacts,
+} from 'src/modules/asset-inventory/public-api/asset-assignment-facts.public-api';
 
 import {
   OverlappingReservedAsset,
@@ -12,7 +16,7 @@ import {
   RentalAssetAllocationPlan,
   RentalAssetAllocationPolicy,
 } from './rental-asset-allocation-policy';
-import { AssetCandidate, RentalAssetCandidateStatus, RentalAssetOwnershipKind } from './asset-candidate.projection';
+import { AssetCandidate, RentalAssetCandidateStatus, RentalAssetOwnershipKind } from './asset-candidate';
 import { RentalCommitmentError, RentalInvalidFieldError } from '../domain/errors/rental-commitment.errors';
 import {
   OwnerContractBasis,
@@ -25,6 +29,7 @@ import { RentalDemandLineId } from '../domain/ids/rental-demand-line-id';
 interface PlanAssetAllocationsParams {
   tenantId: string;
   branchId: string;
+  operationTime: Date;
   periodStart: Date;
   periodEnd: Date;
   demandLines: readonly RentalAssetAllocationDemandLine[];
@@ -55,12 +60,16 @@ type IgnoredBlockScope =
 export class RentalAssetAllocationService {
   private readonly allocationPolicy = new RentalAssetAllocationPolicy();
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly assetAssignmentFacts: AssetAssignmentFacts,
+  ) {}
 
   async findEligibleAvailableCandidates(params: {
     tenantId: string;
     branchId: string;
     equipmentTypeIds: readonly EquipmentTypeId[];
+    operationTime: Date;
     periodStart: Date;
     periodEnd: Date;
     excludeAssetIds?: readonly AssetId[];
@@ -69,6 +78,7 @@ export class RentalAssetAllocationService {
       tenantId: params.tenantId,
       branchId: params.branchId,
       equipmentTypeIds: params.equipmentTypeIds,
+      operationTime: params.operationTime,
     });
     if (candidates.isErr()) return err(candidates.error);
 
@@ -118,7 +128,7 @@ export class RentalAssetAllocationService {
       tenantId: params.tenantId,
       branchId: params.branchId,
       equipmentTypeIds,
-      tx: params.tx,
+      operationTime: params.operationTime,
     });
     if (candidates.isErr()) {
       return err(candidates.error);
@@ -148,40 +158,30 @@ export class RentalAssetAllocationService {
     tenantId: string;
     branchId: string;
     equipmentTypeIds: readonly EquipmentTypeId[];
-    tx?: PrismaTransactionClient;
+    operationTime: Date;
   }): Promise<Result<AssetCandidate[], RentalCommitmentError>> {
-    const db = params.tx ?? this.prisma.client;
-    const rows = await db.v2RentalAssetCandidate.findMany({
-      where: {
-        tenantId: params.tenantId,
-        branchId: params.branchId,
-        equipmentTypeId: { in: [...params.equipmentTypeIds] },
-      },
-    });
+    const rows = await this.assetAssignmentFacts.getAssetAssignmentFacts(params);
 
     const candidates: AssetCandidate[] = [];
 
     for (const row of rows) {
-      const ownershipKind = this.mapOwnershipKind(row.ownershipKind);
-      if (!ownershipKind) {
-        return err(new RentalInvalidFieldError('ownershipKind', `unsupported value "${row.ownershipKind}"`));
-      }
-
-      const assetStatus = this.mapAssetStatus(row.assetStatus);
+      const ownershipKind =
+        row.ownerId === null ? RentalAssetOwnershipKind.TenantOwned : RentalAssetOwnershipKind.ThirdParty;
+      const assetStatus = this.mapAssetStatus(row.status);
       if (!assetStatus) {
-        return err(new RentalInvalidFieldError('assetStatus', `unsupported value "${row.assetStatus}"`));
+        return err(new RentalInvalidFieldError('assetStatus', `unsupported value "${row.status}"`));
       }
 
-      const ownerContractSnapshot = this.mapOwnerContractSnapshot(row.ownerContractSnapshot);
+      const ownerContractSnapshot = this.mapOwnerContractSnapshot(row.ownerId, row.ownerContract);
       if (ownerContractSnapshot.isErr()) {
         return err(ownerContractSnapshot.error);
       }
 
       // SAFETY: This value comes from a persisted or already validated non-empty domain identifier; the brand adds no runtime representation.
       candidates.push({
-        tenantId: row.tenantId,
+        tenantId: params.tenantId,
         assetId: row.assetId as AssetId,
-        branchId: row.branchId,
+        branchId: params.branchId,
         equipmentTypeId: row.equipmentTypeId as EquipmentTypeId,
         assetStatus,
         ownershipKind,
@@ -238,31 +238,26 @@ export class RentalAssetAllocationService {
     return rows.map((row) => ({ assetId: row.assetId as AssetId }));
   }
 
-  private mapOwnershipKind(value: string): RentalAssetOwnershipKind | undefined {
-    return Object.values(RentalAssetOwnershipKind).find((kind) => kind === value);
-  }
-
   private mapAssetStatus(value: string): RentalAssetCandidateStatus | undefined {
     return Object.values(RentalAssetCandidateStatus).find((status) => status === value);
   }
 
   private mapOwnerContractSnapshot(
-    value: Prisma.JsonValue,
+    ownerId: string | null,
+    value: AssetAssignmentFact['ownerContract'],
   ): Result<OwnerContractSnapshot | null, RentalCommitmentError> {
-    if (value === null || typeof value !== 'object' || Array.isArray(value)) {
-      return value === null ? ok(null) : err(new RentalInvalidFieldError('ownerContractSnapshot', 'must be an object'));
-    }
+    if (value === null) return ok(null);
 
-    const basis = value.basis;
-    if (basis !== OwnerContractBasis.Gross && basis !== OwnerContractBasis.Net) {
+    const basis = Object.values(OwnerContractBasis).find((basis) => basis === value.basis);
+    if (!basis) {
       return err(new RentalInvalidFieldError('basis', 'must be a valid owner contract basis'));
     }
 
     return OwnerContractSnapshot.create({
-      ownerId: typeof value.ownerId === 'string' ? value.ownerId : '',
-      contractId: typeof value.contractId === 'string' ? value.contractId : '',
-      ownerShare: Number(value.ownerShare),
-      rentalShare: Number(value.rentalShare),
+      ownerId: ownerId ?? '',
+      contractId: value.contractId,
+      ownerShare: value.ownerShare,
+      rentalShare: value.rentalShare,
       basis,
     });
   }

@@ -201,6 +201,7 @@ export class RentalAccessoryMutations {
           currentSelections,
           desiredSelections,
           protectedAssetIds,
+          operationTime,
           tx,
         });
         if (plan.isErr()) return err(plan.error);
@@ -469,6 +470,7 @@ export class RentalAccessoryMutations {
     currentSelections: AccessorySelection[];
     desiredSelections: Array<DesiredAccessorySelection & { equipmentTypeNameSnapshot: string }>;
     protectedAssetIds: readonly string[];
+    operationTime: Date;
     tx: PrismaTransactionClient;
   }): Promise<Result<PlannedAccessorySelection[], RentalAccessoryMutationError>> {
     const currentByKey = new Map(input.currentSelections.map((selection) => [selectionKey(selection), selection]));
@@ -503,6 +505,7 @@ export class RentalAccessoryMutations {
     const allocation = await this.rentalAssetAllocation.planAllocations({
       tenantId: input.tenantId,
       branchId: input.branchId,
+      operationTime: input.operationTime,
       periodStart: input.operationalPeriod.start,
       periodEnd: input.operationalPeriod.end,
       demandLines,

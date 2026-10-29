@@ -117,17 +117,54 @@ export class ConfirmRentalFixtures {
     const assetId = params.assetId ?? randomUUID();
     const overrides = params.overrides ?? {};
 
-    await this.prisma.client.v2RentalAssetCandidate.create({
+    const equipmentTypeId = overrides.equipmentTypeId ?? params.equipmentTypeId;
+    const ownerId = overrides.ownerId ?? (overrides.ownershipKind === 'THIRD_PARTY' ? randomUUID() : null);
+
+    await this.prisma.client.v2EquipmentType.createMany({
+      data: { id: equipmentTypeId, tenantId: params.tenantId, name: `Equipment ${equipmentTypeId}` },
+      skipDuplicates: true,
+    });
+
+    if (ownerId !== null) {
+      await this.prisma.client.v2AssetOwner.createMany({
+        data: { id: ownerId, tenantId: params.tenantId, name: `Owner ${ownerId}` },
+        skipDuplicates: true,
+      });
+
+      const snapshot = overrides.ownerContractSnapshot;
+      if (snapshot) {
+        if (
+          typeof snapshot !== 'object' ||
+          !('contractId' in snapshot) ||
+          typeof snapshot.contractId !== 'string' ||
+          (snapshot.basis !== 'GROSS' && snapshot.basis !== 'NET')
+        ) {
+          throw new Error('Candidate fixture requires valid owner contract facts.');
+        }
+
+        await this.prisma.client.v2OwnerContract.createMany({
+          data: {
+            id: snapshot.contractId,
+            tenantId: params.tenantId,
+            ownerId,
+            basis: snapshot.basis,
+            ownerShare: String(snapshot.ownerShare),
+            rentalShare: String(snapshot.rentalShare),
+            validFrom: new Date(0),
+          },
+          skipDuplicates: true,
+        });
+      }
+    }
+
+    await this.prisma.client.v2Asset.create({
       data: {
+        id: assetId,
         tenantId: params.tenantId,
-        assetId,
         branchId: overrides.branchId ?? params.branchId,
-        equipmentTypeId: overrides.equipmentTypeId ?? params.equipmentTypeId,
-        assetStatus: overrides.assetStatus ?? 'ACTIVE',
-        ownershipKind: overrides.ownershipKind ?? 'TENANT_OWNED',
-        ownerId: overrides.ownerId,
-        ownerContractSnapshot:
-          overrides.ownerContractSnapshot === null ? Prisma.JsonNull : overrides.ownerContractSnapshot,
+        equipmentTypeId,
+        status: overrides.assetStatus ?? 'ACTIVE',
+        ownerId,
       },
     });
 

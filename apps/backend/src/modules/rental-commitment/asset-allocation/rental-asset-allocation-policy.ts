@@ -1,6 +1,6 @@
 import { err, ok, Result } from 'neverthrow';
 
-import { AssetCandidate, RentalAssetCandidateStatus, RentalAssetOwnershipKind } from './asset-candidate.projection';
+import { AssetCandidate, RentalAssetCandidateStatus, RentalAssetOwnershipKind } from './asset-candidate';
 import {
   InsufficientAssetAvailabilityError,
   RentalCommitmentError,
