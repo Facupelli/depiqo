@@ -18,25 +18,28 @@ export class RetireAssetHandler implements ICommandHandler<RetireAssetCommand, R
   ) {}
 
   async execute(command: RetireAssetCommand): Promise<RetireAssetResult> {
-    const asset = await this.repository.loadByIdForTenant({ tenantId: command.tenantId, assetId: command.assetId });
-    if (!asset) {
-      return err(
-        retireAssetError('asset_inventory.asset_not_found', 'Asset not found.', undefined, {
-          assetId: command.assetId,
-        }),
+    return this.unitOfWork.runInTransaction(async ({ tx, integrationEvents }) => {
+      const asset = await this.repository.loadByIdForTenantForUpdate(
+        { tenantId: command.tenantId, assetId: command.assetId },
+        tx,
       );
-    }
+      if (!asset) {
+        return err(
+          retireAssetError('asset_inventory.asset_not_found', 'Asset not found.', undefined, {
+            assetId: command.assetId,
+          }),
+        );
+      }
 
-    const retired = asset.retire();
-    if (!retired) {
-      return ok(undefined);
-    }
+      const retired = asset.retire();
+      if (!retired) {
+        return ok(undefined);
+      }
 
-    await this.unitOfWork.runInTransaction(async ({ tx, integrationEvents }) => {
       await this.repository.save(asset, tx);
       integrationEvents.collect(toAssetInventoryIntegrationEvents(asset.pullDomainEvents()));
-    });
 
-    return ok(undefined);
+      return ok(undefined);
+    });
   }
 }
