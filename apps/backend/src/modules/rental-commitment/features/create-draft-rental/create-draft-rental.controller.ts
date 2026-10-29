@@ -1,6 +1,6 @@
-import { Body, Controller, HttpCode, HttpStatus, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Headers, HttpCode, HttpStatus, Post, UseGuards } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
-import { TenantPermission } from '@repo/api-contracts';
+import { CreateDraftRentalHeadersSchema, TenantPermission } from '@repo/api-contracts';
 
 import { createProblemDetails, createProblemType, ProblemException } from 'src/core/problem-details';
 import { AUTH_ACTOR_TYPES, AuthUser } from 'src/modules/tenant-management/auth/shared/auth.types';
@@ -36,11 +36,24 @@ export class CreateDraftRentalHttpController {
   @AllowAuthActors(AUTH_ACTOR_TYPES.TENANT_USER)
   @UseGuards(SessionAuthGuard, TenantUserSessionGuard)
   async create(
+    @Headers('idempotency-key') idempotencyKey: string | undefined,
     @Body() dto: CreateDraftRentalRequestDto,
     @CurrentUser() user: AuthUser,
   ): Promise<CreateDraftRentalResponseDto> {
     if (dto.manualPricingAdjustment !== undefined) {
       await this.authorizationEnforcer.requirePermission(user, TenantPermission.RentalsPriceAdjustmentManage);
+    }
+
+    const headers = CreateDraftRentalHeadersSchema.safeParse({ 'idempotency-key': idempotencyKey });
+    if (!headers.success) {
+      throw toCreateDraftRentalProblem(
+        createDraftRentalError(
+          'rental_commitment.invalid_idempotency_key',
+          'The Idempotency-Key header must be a UUID.',
+          undefined,
+          { useCase: 'CreateDraftRental', tenantId: user.tenantId },
+        ),
+      );
     }
 
     let period: RentalPeriod;
@@ -61,6 +74,7 @@ export class CreateDraftRentalHttpController {
       new CreateDraftRentalCommand({
         tenantId: user.tenantId,
         tenantUserId: user.id,
+        draftCreationOperationId: headers.data['idempotency-key'],
         branchId: dto.branchId,
         rentalCustomerId: dto.rentalCustomerId,
         period,
@@ -97,6 +111,18 @@ function toCreateDraftRentalProblem(error: CreateDraftRentalError): ProblemExcep
 }
 
 const createDraftRentalProblemMap = {
+  'rental_commitment.invalid_idempotency_key': problem(
+    'invalid_idempotency_key',
+    'Invalid idempotency key',
+    HttpStatus.BAD_REQUEST,
+    'A valid Idempotency-Key header containing a UUID is required.',
+  ),
+  'rental_commitment.idempotency_key_reused_with_different_input': problem(
+    'idempotency_key_reused_with_different_input',
+    'Idempotency key reuse',
+    HttpStatus.CONFLICT,
+    'The Idempotency-Key was already used with a different draft creation request.',
+  ),
   'rental_commitment.invalid_rental_period': problem(
     'invalid_rental_period',
     'Invalid rental period',

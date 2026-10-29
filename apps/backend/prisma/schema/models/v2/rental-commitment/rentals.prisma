@@ -32,6 +32,9 @@ model V2Rental {
   confirmationOperationId String? @map("confirmation_operation_id")
   confirmationFingerprint String? @map("confirmation_fingerprint")
 
+  draftCreationOperationId String? @map("draft_creation_operation_id")
+  draftCreationFingerprint String? @map("draft_creation_fingerprint")
+
   acceptedBeforeBufferMinutes Int? @map("accepted_before_buffer_minutes")
   acceptedAfterBufferMinutes  Int?     @map("accepted_after_buffer_minutes")
   deliverySnapshot            Json?    @map("accepted_delivery_snapshot")
@@ -61,6 +64,7 @@ model V2Rental {
   @@unique([id, tenantId])
   @@unique([tenantId, rentalNumber])
   @@unique([tenantId, confirmationOperationId])
+  @@unique([tenantId, draftCreationOperationId])
   @@index([tenantId, branchId, status, createdAt(sort: Desc)])
   @@index([tenantId, branchId, periodStart, periodEnd])
   @@index([tenantId, customerId])

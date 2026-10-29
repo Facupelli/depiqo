@@ -1,11 +1,14 @@
 import type { LocalDate } from '@repo/api-contracts';
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
+import { err, ok, Result } from 'neverthrow';
 import { Prisma } from 'src/generated/prisma/client';
 import { V2RentalStatus } from 'src/generated/prisma/enums';
 
 import { PrismaService } from 'src/core/database/prisma.service';
 import { BranchFacts } from 'src/modules/tenant-management/public-api/branch-facts.public-api';
+import { RentalCustomerIdentityFacts } from 'src/modules/tenant-management/public-api/rental-customer-identity-facts.public-api';
 
+import { GetRentalsCalendarError, getRentalsCalendarError } from './get-rentals-calendar.errors';
 import { GetRentalsCalendarQuery } from './get-rentals-calendar.query';
 
 const RENTAL_CALENDAR_STATUSES = [V2RentalStatus.PENDING, V2RentalStatus.DRAFT, V2RentalStatus.CONFIRMED] as const;
@@ -30,7 +33,7 @@ export interface RentalsCalendarItemReadModel {
   customer: RentalsCalendarCustomerReadModel | null;
 }
 
-export type GetRentalsCalendarResult = RentalsCalendarItemReadModel[];
+export type GetRentalsCalendarResult = Result<RentalsCalendarItemReadModel[], GetRentalsCalendarError>;
 
 type RawRentalCalendarRow = {
   id: string;
@@ -47,10 +50,13 @@ export class GetRentalsCalendarHandler implements IQueryHandler<GetRentalsCalend
   constructor(
     private readonly prisma: PrismaService,
     private readonly tenantManagementApi: BranchFacts,
+    private readonly rentalCustomerIdentityFacts: RentalCustomerIdentityFacts,
   ) {}
 
   async execute(query: GetRentalsCalendarQuery): Promise<GetRentalsCalendarResult> {
-    const timezone = await this.resolveCalendarTimezone(query.tenantId, query.branchId);
+    const timezoneResult = await this.resolveCalendarTimezone(query.tenantId, query.branchId);
+    if (timezoneResult.isErr()) return err(timezoneResult.error);
+    const timezone = timezoneResult.value;
 
     // Calendar request dates are inclusive branch-local dates. Convert their half-open
     // [from midnight, day-after-to midnight) interval to absolute instants.
@@ -78,12 +84,24 @@ export class GetRentalsCalendarHandler implements IQueryHandler<GetRentalsCalend
       ORDER BY r.period_start ASC, r.period_end ASC, r.created_at DESC, r.id ASC
     `);
 
-    const customersById = await this.getCustomersById(
-      query.tenantId,
-      rentals.map((rental) => rental.customerId).filter((customerId): customerId is string => customerId !== null),
+    const customerFacts = await this.rentalCustomerIdentityFacts.getRentalCustomerIdentityFactsBatch({
+      tenantId: query.tenantId,
+      rentalCustomerIds: rentals
+        .map((rental) => rental.customerId)
+        .filter((customerId): customerId is string => customerId !== null),
+    });
+    const customersById = new Map(
+      customerFacts.map((customer) => [
+        customer.rentalCustomerId,
+        {
+          id: customer.rentalCustomerId,
+          displayName: customer.displayName,
+          isCompany: customer.isCompany,
+        },
+      ]),
     );
 
-    return rentals.map((rental) => {
+    const items = rentals.map((rental) => {
       const customer = rental.customerId ? (customersById.get(rental.customerId) ?? null) : null;
       const createdAt = new Date(rental.createdAt);
       const periodStart = new Date(rental.periodStart);
@@ -102,66 +120,43 @@ export class GetRentalsCalendarHandler implements IQueryHandler<GetRentalsCalend
         customer,
       };
     });
+
+    return ok(items);
   }
 
-  private async resolveCalendarTimezone(tenantId: string, branchId: string): Promise<string> {
+  private async resolveCalendarTimezone(
+    tenantId: string,
+    branchId: string,
+  ): Promise<Result<string, GetRentalsCalendarError>> {
     const branchContext = await this.tenantManagementApi.getBranchFacts({ tenantId, branchId });
 
     if (branchContext.isErr()) {
-      throw new Error(branchContext.error.message, { cause: branchContext.error });
+      const context = { useCase: 'GetRentalsCalendar', tenantId, branchId };
+      switch (branchContext.error.code) {
+        case 'BranchNotFound':
+          return err(
+            getRentalsCalendarError(
+              'rental_commitment.branch_not_found',
+              branchContext.error.message,
+              branchContext.error,
+              context,
+            ),
+          );
+        case 'TenantConfigurationInvalid':
+          return err(
+            getRentalsCalendarError(
+              'rental_commitment.tenant_config_invalid',
+              branchContext.error.message,
+              branchContext.error,
+              context,
+            ),
+          );
+        default:
+          throw new Error('Unexpected branch facts failure.', { cause: branchContext.error });
+      }
     }
 
-    return branchContext.value.effectiveTimezone;
-  }
-
-  private async getCustomersById(
-    tenantId: string,
-    customerIds: readonly string[],
-  ): Promise<Map<string, RentalsCalendarCustomerReadModel>> {
-    const uniqueCustomerIds = [...new Set(customerIds)];
-
-    if (uniqueCustomerIds.length === 0) {
-      return new Map();
-    }
-
-    const customers = await this.prisma.client.v2RentalCustomer.findMany({
-      where: {
-        tenantId,
-        id: { in: uniqueCustomerIds },
-        deletedAt: null,
-      },
-      select: {
-        id: true,
-        firstName: true,
-        lastName: true,
-        companyName: true,
-        isCompany: true,
-      },
-    });
-
-    return new Map(
-      customers.map((customer) => [
-        customer.id,
-        {
-          id: customer.id,
-          displayName: this.resolveCustomerDisplayName(customer),
-          isCompany: customer.isCompany,
-        },
-      ]),
-    );
-  }
-
-  private resolveCustomerDisplayName(customer: {
-    firstName: string;
-    lastName: string;
-    companyName: string | null;
-    isCompany: boolean;
-  }): string {
-    if (customer.isCompany && customer.companyName) {
-      return customer.companyName;
-    }
-
-    return `${customer.firstName} ${customer.lastName}`.trim();
+    return ok(branchContext.value.effectiveTimezone);
   }
 
   private toDateKey(date: Date, timezone: string): LocalDate {

@@ -145,6 +145,7 @@ describe('CreateDraftRental integration', () => {
       new CreateDraftRentalCommand({
         tenantId: input.tenantId,
         tenantUserId: input.tenantUserId,
+        draftCreationOperationId: randomUUID(),
         branchId: input.branchId,
         rentalCustomerId: input.customerId === null ? undefined : input.customerId,
         period: period(),

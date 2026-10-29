@@ -4,6 +4,8 @@ import { GeocodingModule } from '../shared/geocoding/geocoding.module';
 import { BranchAddressResolver } from './application/services/branch-address-resolver.service';
 import { TenantCategoryTaxonomyService } from './public-api/tenant-category-taxonomy.service';
 import { RentalCustomerContactFactsService } from './public-api/rental-customer-contact-facts.service';
+import { RentalCustomerIdentityFacts } from './public-api/rental-customer-identity-facts.public-api';
+import { RentalCustomerIdentityFactsService } from './public-api/rental-customer-identity-facts.service';
 import { TenantIdentityFactsService } from './public-api/tenant-identity-facts.service';
 import { TenantBrandingFactsService } from './public-api/tenant-branding-facts.service';
 import { TenantContractSignerFactsService } from './public-api/tenant-contract-signer-facts.service';
@@ -213,6 +215,7 @@ import {
     UpdateTenantBrandingHandler,
     UpdateTenantConfigHandler,
     { provide: RentalCustomerContactFacts, useClass: RentalCustomerContactFactsService },
+    { provide: RentalCustomerIdentityFacts, useClass: RentalCustomerIdentityFactsService },
     { provide: TenantIdentityFacts, useClass: TenantIdentityFactsService },
     { provide: TenantBrandingFacts, useClass: TenantBrandingFactsService },
     { provide: TenantContractSignerFacts, useClass: TenantContractSignerFactsService },
@@ -232,6 +235,7 @@ import {
   exports: [
     TenantAuthorizationModule,
     RentalCustomerContactFacts,
+    RentalCustomerIdentityFacts,
     TenantIdentityFacts,
     TenantBrandingFacts,
     TenantContractSignerFacts,

@@ -4,6 +4,8 @@ import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { err, ok, Result } from 'neverthrow';
 
 import { PrismaUnitOfWork } from 'src/core/database/prisma-unit-of-work';
+import { PrismaService } from 'src/core/database/prisma.service';
+import { isUniqueConstraintViolation } from 'src/core/utils/postgres-error.mapper';
 import { BranchFacts } from 'src/modules/tenant-management/public-api/branch-facts.public-api';
 import { TenantBillingPreferences } from 'src/modules/tenant-management/public-api/tenant-billing-preferences.public-api';
 
@@ -24,9 +26,10 @@ import {
 import { Rental } from '../../domain/rental.aggregate';
 import { RentalSource } from '../../domain/rental-status';
 import { RentalNumberAllocator } from '../../persistence/rental-number.allocator';
-import { RentalRepository } from '../../persistence/rental.repository';
+import { DraftCreationOperationPersistence, RentalRepository } from '../../persistence/rental.repository';
 import { CreateDraftRentalCommand } from './create-draft-rental.command';
 import { createDraftRentalError, CreateDraftRentalError } from './create-draft-rental.errors';
+import { buildDraftCreationFingerprint } from './draft-creation-operation-fingerprint';
 
 export interface CreateDraftRentalResult {
   rentalId: string;
@@ -45,6 +48,7 @@ export class CreateDraftRentalService implements ICommandHandler<
     private readonly tenantBillingPreferences: TenantBillingPreferences,
     private readonly branchFacts: BranchFacts,
     private readonly rentalRepository: RentalRepository,
+    private readonly prisma: PrismaService,
     private readonly rentalNumberAllocator: RentalNumberAllocator,
     private readonly unitOfWork: PrismaUnitOfWork,
   ) {}
@@ -57,6 +61,13 @@ export class CreateDraftRentalService implements ICommandHandler<
       branchId: command.branchId,
       ...(command.rentalCustomerId === undefined ? {} : { rentalCustomerId: command.rentalCustomerId }),
     };
+
+    const draftCreationOperation: DraftCreationOperationPersistence = {
+      operationId: command.draftCreationOperationId,
+      fingerprint: buildDraftCreationFingerprint(command),
+    };
+    const replay = await this.findCreatedRentalByOperation(command.tenantId, draftCreationOperation.operationId);
+    if (replay) return this.resolveReplayResult(replay, draftCreationOperation, context);
 
     const validation = await this.rentalOperationalFacts.validateDraftFacts({
       tenantId: command.tenantId,
@@ -122,12 +133,47 @@ export class CreateDraftRentalService implements ICommandHandler<
 
         if (rental.isErr()) throw rental.error;
 
-        await this.rentalRepository.save(rental.value, { tx });
+        await this.rentalRepository.save(rental.value, { draftCreationOperation, tx });
         return ok({ rentalId: rental.value.id });
       });
     } catch (error) {
+      if (isUniqueConstraintViolation(error, ['tenant_id', 'draft_creation_operation_id'])) {
+        // Resolve only after rollback, through the normal client rather than the failed transaction.
+        const replay = await this.findCreatedRentalByOperation(command.tenantId, draftCreationOperation.operationId);
+        if (replay) return this.resolveReplayResult(replay, draftCreationOperation, context);
+      }
+
       return err(this.toCreateError(error, context));
     }
+  }
+
+  private async findCreatedRentalByOperation(
+    tenantId: string,
+    operationId: string,
+  ): Promise<{ id: string; draftCreationFingerprint: string | null } | null> {
+    return this.prisma.client.v2Rental.findFirst({
+      where: { tenantId, draftCreationOperationId: operationId },
+      select: { id: true, draftCreationFingerprint: true },
+    });
+  }
+
+  private resolveReplayResult(
+    replay: { id: string; draftCreationFingerprint: string | null },
+    operation: DraftCreationOperationPersistence,
+    context: ApplicationErrorContext,
+  ): CreateDraftRentalServiceResult {
+    if (replay.draftCreationFingerprint !== operation.fingerprint) {
+      return err(
+        createDraftRentalError(
+          'rental_commitment.idempotency_key_reused_with_different_input',
+          'The idempotency key was already used for a different draft creation request.',
+          undefined,
+          context,
+        ),
+      );
+    }
+
+    return ok({ rentalId: replay.id });
   }
 
   private toCreateProposalError(

@@ -80,6 +80,9 @@ describe('Rental Commitment and Contracts HTTP authorization', () => {
       fulfillmentMethod: 'PICKUP',
     };
     const path = '/rental-commitments/draft-rentals';
+    for (const client of [proposalOnly, priceOnly, fullyAllowed]) {
+      client.request().set('idempotency-key', randomUUID());
+    }
 
     await proposalOnly.withCsrf(proposalOnly.request().post(path)).send(ordinaryBody).expect(422);
     await proposalOnly

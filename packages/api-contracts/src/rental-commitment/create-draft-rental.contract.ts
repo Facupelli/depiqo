@@ -45,6 +45,10 @@ export const CreateDraftRentalBodySchema = z
         : undefined,
   }));
 
+export const CreateDraftRentalHeadersSchema = z.object({
+  "idempotency-key": z.string().uuid(),
+});
+
 export const CreateDraftRentalResponseSchema = z.object({
   id: z.string(),
 });
@@ -62,12 +66,13 @@ export type CreateDraftRentalResponseDto = z.infer<
 export const createDraftRentalContract = {
   method: "POST",
   path: "/rental-commitments/draft-rentals",
+  headers: CreateDraftRentalHeadersSchema,
   body: CreateDraftRentalBodySchema,
   response: CreateDraftRentalResponseSchema,
 } satisfies ApiContract<
   undefined,
   undefined,
-  undefined,
+  typeof CreateDraftRentalHeadersSchema,
   typeof CreateDraftRentalBodySchema,
   typeof CreateDraftRentalResponseSchema
 >;

@@ -8,10 +8,16 @@ export interface ConfirmationOperationPersistence {
   fingerprint: string;
 }
 
+export interface DraftCreationOperationPersistence {
+  operationId: string;
+  fingerprint: string;
+}
+
 export interface SaveRentalOptions {
   persistence?: 'DETAILS';
   ownerSplits?: RentalOwnerSplitDraft[];
   confirmationOperation?: ConfirmationOperationPersistence;
+  draftCreationOperation?: DraftCreationOperationPersistence;
   expectedVersion?: number;
   tx?: PrismaTransactionClient;
 }

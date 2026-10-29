@@ -24,7 +24,7 @@ import {
 import { BookingSnapshot, JsonValue } from '../domain/value-objects/json-snapshot.value-object';
 import { RentalPeriod } from '../domain/value-objects/rental-period.value-object';
 import { RentalOwnerSplitDraft } from '../owner-split/owner-split-calculator.types';
-import { ConfirmationOperationPersistence } from './rental.repository';
+import { ConfirmationOperationPersistence, DraftCreationOperationPersistence } from './rental.repository';
 
 export interface RentalPersistenceRecord {
   id: string;
@@ -221,6 +221,7 @@ export class RentalMapper {
   static toRentalCreateData(
     rental: Rental,
     confirmationOperation?: ConfirmationOperationPersistence,
+    draftCreationOperation?: DraftCreationOperationPersistence,
   ): Prisma.V2RentalUncheckedCreateInput {
     return {
       id: rental.id,
@@ -241,6 +242,8 @@ export class RentalMapper {
       confirmedAt: rental.confirmedAt,
       confirmationOperationId: confirmationOperation?.operationId,
       confirmationFingerprint: confirmationOperation?.fingerprint,
+      draftCreationOperationId: draftCreationOperation?.operationId,
+      draftCreationFingerprint: draftCreationOperation?.fingerprint,
       acceptedBeforeBufferMinutes: rental.acceptedAssetBuffer?.beforeBufferMinutes,
       acceptedAfterBufferMinutes: rental.acceptedAssetBuffer?.afterBufferMinutes,
       deliverySnapshot: toPrismaJsonInput(rental.deliverySnapshot?.toJSON()),
