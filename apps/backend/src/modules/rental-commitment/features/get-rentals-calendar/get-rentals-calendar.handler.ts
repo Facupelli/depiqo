@@ -6,6 +6,7 @@ import { V2RentalStatus } from 'src/generated/prisma/enums';
 
 import { PrismaService } from 'src/core/database/prisma.service';
 import { BranchFacts } from 'src/modules/tenant-management/public-api/branch-facts.public-api';
+import { RentalCustomerIdentityFacts } from 'src/modules/tenant-management/public-api/rental-customer-identity-facts.public-api';
 
 import { GetRentalsCalendarError, getRentalsCalendarError } from './get-rentals-calendar.errors';
 import { GetRentalsCalendarQuery } from './get-rentals-calendar.query';
@@ -49,6 +50,7 @@ export class GetRentalsCalendarHandler implements IQueryHandler<GetRentalsCalend
   constructor(
     private readonly prisma: PrismaService,
     private readonly tenantManagementApi: BranchFacts,
+    private readonly rentalCustomerIdentityFacts: RentalCustomerIdentityFacts,
   ) {}
 
   async execute(query: GetRentalsCalendarQuery): Promise<GetRentalsCalendarResult> {
@@ -82,9 +84,21 @@ export class GetRentalsCalendarHandler implements IQueryHandler<GetRentalsCalend
       ORDER BY r.period_start ASC, r.period_end ASC, r.created_at DESC, r.id ASC
     `);
 
-    const customersById = await this.getCustomersById(
-      query.tenantId,
-      rentals.map((rental) => rental.customerId).filter((customerId): customerId is string => customerId !== null),
+    const customerFacts = await this.rentalCustomerIdentityFacts.getRentalCustomerIdentityFactsBatch({
+      tenantId: query.tenantId,
+      rentalCustomerIds: rentals
+        .map((rental) => rental.customerId)
+        .filter((customerId): customerId is string => customerId !== null),
+    });
+    const customersById = new Map(
+      customerFacts.map((customer) => [
+        customer.rentalCustomerId,
+        {
+          id: customer.rentalCustomerId,
+          displayName: customer.displayName,
+          isCompany: customer.isCompany,
+        },
+      ]),
     );
 
     const items = rentals.map((rental) => {
@@ -143,56 +157,6 @@ export class GetRentalsCalendarHandler implements IQueryHandler<GetRentalsCalend
     }
 
     return ok(branchContext.value.effectiveTimezone);
-  }
-
-  private async getCustomersById(
-    tenantId: string,
-    customerIds: readonly string[],
-  ): Promise<Map<string, RentalsCalendarCustomerReadModel>> {
-    const uniqueCustomerIds = [...new Set(customerIds)];
-
-    if (uniqueCustomerIds.length === 0) {
-      return new Map();
-    }
-
-    const customers = await this.prisma.client.v2RentalCustomer.findMany({
-      where: {
-        tenantId,
-        id: { in: uniqueCustomerIds },
-        deletedAt: null,
-      },
-      select: {
-        id: true,
-        firstName: true,
-        lastName: true,
-        companyName: true,
-        isCompany: true,
-      },
-    });
-
-    return new Map(
-      customers.map((customer) => [
-        customer.id,
-        {
-          id: customer.id,
-          displayName: this.resolveCustomerDisplayName(customer),
-          isCompany: customer.isCompany,
-        },
-      ]),
-    );
-  }
-
-  private resolveCustomerDisplayName(customer: {
-    firstName: string;
-    lastName: string;
-    companyName: string | null;
-    isCompany: boolean;
-  }): string {
-    if (customer.isCompany && customer.companyName) {
-      return customer.companyName;
-    }
-
-    return `${customer.firstName} ${customer.lastName}`.trim();
   }
 
   private toDateKey(date: Date, timezone: string): LocalDate {

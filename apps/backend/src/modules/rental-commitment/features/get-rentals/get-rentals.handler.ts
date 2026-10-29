@@ -10,6 +10,7 @@ import { V2FulfillmentMethod, V2RentalStatus } from 'src/generated/prisma/enums'
 
 import { PrismaService } from 'src/core/database/prisma.service';
 import { BranchFacts } from 'src/modules/tenant-management/public-api/branch-facts.public-api';
+import { RentalCustomerIdentityFacts } from 'src/modules/tenant-management/public-api/rental-customer-identity-facts.public-api';
 
 import { GetRentalsQuery } from './get-rentals.query';
 
@@ -22,10 +23,6 @@ type RawRentalRow = {
   pickupAt: Date;
   returnAt: Date;
   customerId: string | null;
-  customerFirstName: string | null;
-  customerLastName: string | null;
-  customerCompanyName: string | null;
-  customerIsCompany: boolean | null;
   branchId: string;
 };
 
@@ -52,6 +49,7 @@ export class GetRentalsHandler implements IQueryHandler<GetRentalsQuery, GetRent
   constructor(
     private readonly prisma: PrismaService,
     private readonly branchFacts: BranchFacts,
+    private readonly rentalCustomerIdentityFacts: RentalCustomerIdentityFacts,
   ) {}
 
   async execute(query: GetRentalsQuery): Promise<GetRentalsResponseDto> {
@@ -86,18 +84,10 @@ export class GetRentalsHandler implements IQueryHandler<GetRentalsQuery, GetRent
           r.created_at AS "createdAt",
           r.period_start AS "pickupAt",
           r.period_end AS "returnAt",
-          c.id AS "customerId",
-          c.first_name AS "customerFirstName",
-          c.last_name AS "customerLastName",
-          c.company_name AS "customerCompanyName",
-          c.is_company AS "customerIsCompany",
+          r.customer_id AS "customerId",
           r.branch_id AS "branchId"
         FROM v2_rentals r
         JOIN branch_facts bf ON bf.branch_id = r.branch_id
-        LEFT JOIN v2_rental_customers c
-          ON c.id = r.customer_id
-          AND c.tenant_id = r.tenant_id
-          AND c.deleted_at IS NULL
         WHERE ${Prisma.join(whereFilters, ' AND ')}
         ORDER BY ${orderBy}
         OFFSET ${offset}
@@ -109,13 +99,26 @@ export class GetRentalsHandler implements IQueryHandler<GetRentalsQuery, GetRent
         SELECT COUNT(*) AS "total"
         FROM v2_rentals r
         JOIN branch_facts bf ON bf.branch_id = r.branch_id
-        LEFT JOIN v2_rental_customers c
-          ON c.id = r.customer_id
-          AND c.tenant_id = r.tenant_id
-          AND c.deleted_at IS NULL
         WHERE ${Prisma.join(whereFilters, ' AND ')}
       `),
     ]);
+
+    const customerFacts = await this.rentalCustomerIdentityFacts.getRentalCustomerIdentityFactsBatch({
+      tenantId: query.tenantId,
+      rentalCustomerIds: rows
+        .map((row) => row.customerId)
+        .filter((customerId): customerId is string => customerId !== null),
+    });
+    const customersById = new Map(
+      customerFacts.map((customer) => [
+        customer.rentalCustomerId,
+        {
+          id: customer.rentalCustomerId,
+          displayName: customer.displayName,
+          isCompany: customer.isCompany,
+        },
+      ]),
+    );
 
     return {
       data: rows.map((row) => ({
@@ -126,13 +129,7 @@ export class GetRentalsHandler implements IQueryHandler<GetRentalsQuery, GetRent
         createdAt: row.createdAt.toISOString(),
         pickupAt: row.pickupAt.toISOString(),
         returnAt: row.returnAt.toISOString(),
-        customer: row.customerId
-          ? {
-              id: row.customerId,
-              displayName: this.resolveCustomerDisplayName(row),
-              isCompany: row.customerIsCompany ?? false,
-            }
-          : null,
+        customer: row.customerId ? (customersById.get(row.customerId) ?? null) : null,
         branchId: row.branchId,
       })),
       total: Number(countRows[0]?.total ?? 0),
@@ -328,13 +325,5 @@ export class GetRentalsHandler implements IQueryHandler<GetRentalsQuery, GetRent
     }
 
     return 'asc';
-  }
-
-  private resolveCustomerDisplayName(row: RawRentalRow): string {
-    if (row.customerIsCompany && row.customerCompanyName) {
-      return row.customerCompanyName;
-    }
-
-    return `${row.customerFirstName ?? ''} ${row.customerLastName ?? ''}`.trim();
   }
 }
