@@ -70,7 +70,8 @@ export function RentalConfirmationDialog({
 					<AlertDialogTitle>Confirmar alquiler</AlertDialogTitle>
 					<AlertDialogDescription>
 						Revisá el período, los equipos y el total antes de bloquear su
-						disponibilidad para otros pedidos.
+						disponibilidad para otros pedidos. La disponibilidad de los equipos
+						se verifica al confirmar.
 					</AlertDialogDescription>
 				</AlertDialogHeader>
 				{summary ? (
@@ -103,13 +104,6 @@ export function RentalConfirmationDialog({
 							Reintentar cálculo
 						</Button>
 					</div>
-				) : null}
-				{costQuery.data?.deliveryReviewRequired ? (
-					<output className="block text-sm text-muted-foreground">
-						Entrega coordinada por el equipo: se muestran los importes
-						guardados. La confirmación de esta modalidad todavía no está
-						disponible.
-					</output>
 				) : null}
 				{versionConflict ? (
 					<p className="text-sm text-destructive">

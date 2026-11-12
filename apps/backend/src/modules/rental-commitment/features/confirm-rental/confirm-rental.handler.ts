@@ -4,6 +4,7 @@ import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { err, ok, Result } from 'neverthrow';
 
 import { PrismaUnitOfWork } from 'src/core/database/prisma-unit-of-work';
+import { DomainException } from 'src/core/exceptions/domain.exception';
 import {
   isPrismaRawQueryPostgresDeadlock,
   PostgresExclusionViolationError,
@@ -18,6 +19,8 @@ import { deriveConfirmedAssetBlockPeriod } from '../../domain/confirmed-asset-bl
 import { deriveConfirmationParticipationTiming } from '../../domain/confirmation-participation-timing';
 import { ConfirmedPriceSnapshot } from '../../domain/value-objects/confirmed-price-snapshot.value-object';
 import { FulfillmentMethod } from '../../domain/rental-status';
+import type { Rental } from '../../domain/rental.aggregate';
+import type { RentalPeriod } from '../../domain/value-objects/rental-period.value-object';
 import { RentalAssetAllocationService } from '../../asset-allocation/rental-asset-allocation.service';
 import {
   BranchUnavailableForRentalError,
@@ -56,7 +59,14 @@ export class ConfirmRentalHandler implements ICommandHandler<ConfirmRentalComman
       tenantId: command.tenantId,
       rentalId: command.rentalId,
     };
-    const rental = await this.rentalRepository.findById(command.tenantId, command.rentalId);
+    let rental: Rental | null;
+    try {
+      rental = await this.rentalRepository.findById(command.tenantId, command.rentalId);
+    } catch (error) {
+      // Persisted delivery facts are validated while reconstituting the aggregate, too.
+      if (error instanceof RentalInvalidFieldError) return err(this.toApplicationError(error, context));
+      throw error;
+    }
 
     if (!rental) {
       return err(
@@ -120,10 +130,13 @@ export class ConfirmRentalHandler implements ICommandHandler<ConfirmRentalComman
         return err(this.toApplicationError(new ConfirmedRentalRequiresPriceSnapshotError(rental.id), context));
       }
       const acceptedPricing = ConfirmedPriceSnapshot.create(rental.priceSnapshot.toJSON());
-      if (acceptedPricing.isErr()) throw acceptedPricing.error;
+      if (acceptedPricing.isErr()) return err(this.toApplicationError(acceptedPricing.error, context));
       if (acceptedPricing.value.snapshot.final.currency !== acceptedDelivery.snapshot.currency) {
-        throw new Error(
-          `Pricing currency ${acceptedPricing.value.snapshot.final.currency} does not match Delivery currency ${acceptedDelivery.snapshot.currency}.`,
+        return err(
+          this.toApplicationError(
+            new RentalInvalidFieldError('acceptedDelivery.currency', 'must match accepted Pricing currency'),
+            context,
+          ),
         );
       }
     }
@@ -131,13 +144,26 @@ export class ConfirmRentalHandler implements ICommandHandler<ConfirmRentalComman
     const operationTime = new Date();
     const participationTiming = deriveConfirmationParticipationTiming(rental.period, operationTime);
     const acceptedAssetBuffer = { ...bufferSettings.value };
-    const operationalPeriod = deriveConfirmedAssetBlockPeriod({
-      participationPeriod: participationTiming.participationPeriod,
-      acceptedBeforeBufferMinutes: acceptedAssetBuffer.beforeBufferMinutes,
-      acceptedAfterBufferMinutes: acceptedAssetBuffer.afterBufferMinutes,
-      acceptedDelivery,
-      clampStartAt: participationTiming.blockOperationTime,
-    });
+    let operationalPeriod: RentalPeriod;
+    try {
+      operationalPeriod = deriveConfirmedAssetBlockPeriod({
+        participationPeriod: participationTiming.participationPeriod,
+        acceptedBeforeBufferMinutes: acceptedAssetBuffer.beforeBufferMinutes,
+        acceptedAfterBufferMinutes: acceptedAssetBuffer.afterBufferMinutes,
+        acceptedDelivery,
+        clampStartAt: participationTiming.blockOperationTime,
+      });
+    } catch (error) {
+      if (!(error instanceof DomainException)) throw error;
+      return err(
+        confirmRentalError(
+          'rental_commitment.invalid_rental_field',
+          'Accepted transportation conditions cannot produce a safe equipment reservation period.',
+          error,
+          { ...context, field: 'acceptedDelivery.transportReservationMinutes' },
+        ),
+      );
+    }
 
     // SAFETY: This value comes from a persisted or already validated non-empty domain identifier; the brand adds no runtime representation.
     const assetAssignmentPlan = await this.rentalAssetAllocation.planAllocations({

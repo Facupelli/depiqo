@@ -278,6 +278,27 @@ export class RentalMapper {
     };
   }
 
+  static toConfirmedDeliveryUpdateData(
+    rental: Rental,
+  ): Pick<Prisma.V2RentalUpdateManyMutationInput, 'deliverySnapshot' | 'acceptedCustomerTotal'> {
+    return {
+      deliverySnapshot: toPrismaJsonInput(rental.acceptedDelivery?.toJSON()) ?? Prisma.DbNull,
+      acceptedCustomerTotal: rental.acceptedCustomerTotal,
+    };
+  }
+
+  static toDeliveryDetailsUpdateData(rental: Rental): Prisma.V2RentalDeliveryDetailsUpdateManyMutationInput {
+    const details = rental.deliveryDetails;
+    if (!details) throw new Error('Confirmed delivery editing requires delivery details.');
+    return {
+      address: details.address,
+      formattedAddress: details.formattedAddress ?? null,
+      latitude: details.latitude ?? null,
+      longitude: details.longitude ?? null,
+      providerPlaceId: details.providerPlaceId ?? null,
+    };
+  }
+
   static toRentalUpdateData(rental: Rental): Prisma.V2RentalUncheckedUpdateInput {
     return {
       branchId: rental.branchId,

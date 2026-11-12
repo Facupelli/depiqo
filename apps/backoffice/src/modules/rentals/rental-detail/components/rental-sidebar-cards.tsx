@@ -296,7 +296,7 @@ function RentalFinancialsCard() {
 		can(permissions, TenantPermission.RentalsDeliveryManage) &&
 		rental.status === "CONFIRMED" &&
 		rental.fulfillment.method === "DELIVERY" &&
-		acceptedDelivery?.arrangement === "ROUTED" &&
+		acceptedDelivery !== null &&
 		Date.now() < Date.parse(rental.period.end);
 	const adjustmentSign =
 		manualAdjustment?.direction === "INCREASE"

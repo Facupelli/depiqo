@@ -63,31 +63,36 @@ export class GetRentalConfirmationSummaryHandler implements IQueryHandler<
     let storedDelivery: AcceptedDeliverySnapshot | undefined;
     if (rental.deliverySnapshot) {
       const parsed = AcceptedDeliverySnapshot.create(rental.deliverySnapshot);
-      if (parsed.isErr()) throw parsed.error;
+      if (parsed.isErr()) {
+        return err(confirmRentalError('rental_commitment.invalid_rental_field', parsed.error.message, parsed.error));
+      }
       storedDelivery = parsed.value;
     }
     const storedStaffArrangement =
       rental.fulfillmentMethod === 'DELIVERY' && storedDelivery?.snapshot.arrangement === 'STAFF_ARRANGED';
     const deliveryDetails = toDeliveryDetailsResponse(rental.deliveryDetails);
-    // Displaying stored terms does not authorize confirmation. Do not change the shared command service.
-    const delivery = storedStaffArrangement
-      ? ok(storedDelivery)
-      : await this.confirmationDelivery.resolve({
-          tenantId: query.tenantId,
-          branchId: rental.branchId,
-          period: new RentalPeriod(rental.periodStart, rental.periodEnd),
-          fulfillmentMethod: rental.fulfillmentMethod,
-          deliveryDetails: deliveryDetails ?? undefined,
-          existing: storedDelivery?.snapshot,
-        });
+    // Advisory delivery validation only. Equipment availability is checked by final confirmation.
+    const delivery = await this.confirmationDelivery.resolve({
+      tenantId: query.tenantId,
+      branchId: rental.branchId,
+      period: new RentalPeriod(rental.periodStart, rental.periodEnd),
+      fulfillmentMethod: rental.fulfillmentMethod,
+      deliveryDetails: deliveryDetails ?? undefined,
+      existing: storedDelivery?.snapshot,
+    });
     if (delivery.isErr()) return err(delivery.error);
     if (rental.fulfillmentMethod === 'DELIVERY' && !delivery.value) {
       throw new Error('Delivery confirmation requires revalidated delivery terms.');
     }
     const price = pricing.value.snapshot;
     if (delivery.value && delivery.value.snapshot.currency !== price.final.currency) {
-      throw new Error(
-        `Pricing currency ${price.final.currency} does not match Delivery currency ${delivery.value.snapshot.currency}.`,
+      return err(
+        confirmRentalError(
+          'rental_commitment.invalid_rental_field',
+          'Delivery currency must match accepted Pricing currency.',
+          undefined,
+          { field: 'acceptedDelivery.currency' },
+        ),
       );
     }
     const deliverySource = storedStaffArrangement ? 'STORED' : 'REVALIDATED';
@@ -99,7 +104,7 @@ export class GetRentalConfirmationSummaryHandler implements IQueryHandler<
       delivery: delivery.value ? toAcceptedDeliveryResponse(delivery.value) : null,
       deliveryDetails,
       deliverySource: delivery.value ? deliverySource : null,
-      deliveryReviewRequired: storedStaffArrangement,
+      deliveryReviewRequired: false,
       customerTotal: new Decimal(price.total).plus(delivery.value?.effectiveDeliveryCharge ?? '0').toString(),
       currency: price.final.currency,
     });

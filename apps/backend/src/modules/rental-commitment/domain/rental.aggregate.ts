@@ -4,10 +4,12 @@ import Decimal from 'decimal.js';
 import { err, ok, Result } from 'neverthrow';
 
 import { AggregateRootBase } from 'src/core/domain/aggregate-root.base';
+import { DomainException } from 'src/core/exceptions/domain.exception';
 import { isValidBufferMinutes } from 'src/core/domain/rental-asset-buffer';
 
 import { AssetBlock } from './asset-block.entity';
 import { deriveConfirmedAssetBlockPeriod } from './confirmed-asset-block-period';
+import { validateRentalDeliveryDetails } from './rental-delivery-details';
 import { AssignedAsset, CreateAssignedAssetProps } from './assigned-asset.entity';
 import {
   AssetBlockPeriodMismatchError,
@@ -255,6 +257,7 @@ export interface ReconstituteRentalProps {
 }
 
 interface ConfirmedRentalStateChanges {
+  deliveryDetails?: RentalDeliveryDetails;
   period?: RentalPeriod;
   notes?: string;
   insuranceSelected?: boolean;
@@ -676,6 +679,96 @@ export class Rental extends AggregateRootBase {
 
     this.props = candidate.value.props;
     return ok(undefined);
+  }
+
+  validateConfirmedDeliveryChange(operationTime: Date): Result<void, RentalCommitmentError> {
+    if (this.status !== RentalStatus.Confirmed) {
+      return err(new RentalCannotBeEditedFromStatusError(this.id, this.status));
+    }
+    // Conservative product cutoff until physical delivery/collection completion is authoritative.
+    if (operationTime >= this.period.start) return err(new RentalPeriodHasStartedError(this.id));
+    if (this.fulfillmentMethod !== FulfillmentMethod.Delivery || !this.acceptedDelivery || !this.deliveryDetails) {
+      return err(new RentalInvalidFieldError('acceptedDelivery', 'requires an existing confirmed delivery'));
+    }
+    return ok(undefined);
+  }
+
+  changeConfirmedDelivery(params: {
+    deliveryDetails: RentalDeliveryDetails;
+    acceptedDelivery: AcceptedDeliverySnapshot;
+    operationTime: Date;
+  }): Result<'CHANGED' | 'UNCHANGED', RentalCommitmentError> {
+    const eligible = this.validateConfirmedDeliveryChange(params.operationTime);
+    if (eligible.isErr()) return err(eligible.error);
+    const minutesChanged =
+      params.acceptedDelivery.snapshot.transportReservationMinutes !==
+      this.acceptedDelivery!.snapshot.transportReservationMinutes;
+    const blocks = [...this.props.assetBlocks];
+    if (minutesChanged) {
+      const buffer = this.requireAcceptedAssetBuffer();
+      const derive = (
+        participationPeriod: RentalPeriod,
+        acceptedDelivery: AcceptedDeliverySnapshot,
+        clampStartAt?: Date,
+      ) =>
+        deriveConfirmedAssetBlockPeriod({
+          participationPeriod,
+          acceptedBeforeBufferMinutes: buffer.beforeBufferMinutes,
+          acceptedAfterBufferMinutes: buffer.afterBufferMinutes,
+          acceptedDelivery,
+          clampStartAt,
+        });
+      const currentIds = new Set(this.currentOperationalAssetBlocks.map((block) => block.id));
+      for (let index = 0; index < blocks.length; index++) {
+        const block = blocks[index]!;
+        if (!currentIds.has(block.id)) continue;
+        // Current equipment participation can have a different, operationally clamped start.
+        const assignment = this.currentAssignedAssets.find((item) => item.assetId === block.assetId);
+        const participation = assignment ? new RentalPeriod(assignment.effectiveFrom, this.period.end) : this.period;
+        const clamp = assignment && assignment.effectiveFrom > this.period.start ? assignment.effectiveFrom : undefined;
+        const previousPeriod = derive(participation, this.acceptedDelivery!, clamp);
+        let proposedPeriod: RentalPeriod;
+        try {
+          proposedPeriod = derive(participation, params.acceptedDelivery, clamp);
+        } catch (error) {
+          if (!(error instanceof DomainException)) throw error;
+          return err(
+            new RentalInvalidFieldError('transportReservationMinutes', 'produces an invalid reservation period'),
+          );
+        }
+        if (block.period.equals(proposedPeriod)) continue;
+        if (!block.isActive || block.period.end <= params.operationTime || !block.period.equals(previousPeriod)) {
+          return err(
+            new RentalInvalidFieldError('assetBlocks', 'cannot safely resize historical or unexpected blocks'),
+          );
+        }
+        blocks[index] = block.resizePeriod(proposedPeriod);
+      }
+    }
+    const details = this.deliveryDetails!;
+    const sameDetails =
+      details.address === params.deliveryDetails.address &&
+      details.formattedAddress === params.deliveryDetails.formattedAddress &&
+      details.latitude === params.deliveryDetails.latitude &&
+      details.longitude === params.deliveryDetails.longitude &&
+      details.providerPlaceId === params.deliveryDetails.providerPlaceId;
+    if (
+      !minutesChanged &&
+      sameDetails &&
+      JSON.stringify(this.acceptedDelivery!.snapshot) === JSON.stringify(params.acceptedDelivery.snapshot)
+    )
+      return ok('UNCHANGED');
+
+    // Reconstitution checks all assignments and untouched historical blocks. If the new
+    // minutes would invalidate historical participation, reject rather than rewriting it.
+    const changed = this.applyConfirmedStateChanges({
+      deliveryDetails: params.deliveryDetails,
+      deliverySnapshot: params.acceptedDelivery,
+      ...(minutesChanged ? { assetBlocks: blocks } : {}),
+    });
+    if (changed.isErr()) return err(changed.error);
+    this.recordConfirmedRentalEditedEvent(params.operationTime);
+    return ok('CHANGED');
   }
 
   changeConfirmedDeliveryAgreement(params: {
@@ -1801,79 +1894,13 @@ export class Rental extends AggregateRootBase {
   private validateDeliveryDetailsInvariant(
     acceptedDelivery = this.props.deliverySnapshot,
   ): Result<void, RentalCommitmentError> {
-    if (this.fulfillmentMethod === FulfillmentMethod.Delivery) {
-      if (!this.props.deliveryDetails) {
-        return err(new RentalInvalidFieldError('deliveryDetails', 'delivery rentals require delivery details'));
-      }
-      if (
-        this.props.deliveryDetails.address.trim() === '' ||
-        this.props.deliveryDetails.address !== this.props.deliveryDetails.address.trim()
-      ) {
-        return err(new RentalInvalidFieldError('deliveryDetails.address', 'delivery address must be a trimmed string'));
-      }
-      if (
-        this.props.deliveryDetails.formattedAddress !== undefined &&
-        (this.props.deliveryDetails.formattedAddress.trim() === '' ||
-          this.props.deliveryDetails.formattedAddress !== this.props.deliveryDetails.formattedAddress.trim())
-      ) {
-        return err(
-          new RentalInvalidFieldError(
-            'deliveryDetails.formattedAddress',
-            'formatted delivery address must be a trimmed string',
-          ),
-        );
-      }
-      const { latitude, longitude, formattedAddress, providerPlaceId } = this.props.deliveryDetails;
-      if ((latitude === undefined) !== (longitude === undefined)) {
-        return err(new RentalInvalidFieldError('deliveryDetails', 'coordinates must be supplied together'));
-      }
-      if (latitude !== undefined && (!Number.isFinite(latitude) || latitude < -90 || latitude > 90)) {
-        return err(new RentalInvalidFieldError('deliveryDetails.latitude', 'must be between -90 and 90'));
-      }
-      if (longitude !== undefined && (!Number.isFinite(longitude) || longitude < -180 || longitude > 180)) {
-        return err(new RentalInvalidFieldError('deliveryDetails.longitude', 'must be between -180 and 180'));
-      }
-
-      const terms = acceptedDelivery?.snapshot;
-      if (terms) {
-        if (
-          Date.parse(terms.delivery.scheduledAt) !== this.period.start.getTime() ||
-          Date.parse(terms.collection.scheduledAt) !== this.period.end.getTime()
-        ) {
-          return err(new RentalInvalidFieldError('acceptedDelivery', 'scheduled times must match the rental period'));
-        }
-        if (terms.arrangement === 'ROUTED') {
-          if (latitude === undefined || longitude === undefined || !formattedAddress) {
-            return err(
-              new RentalInvalidFieldError(
-                'deliveryDetails',
-                'ROUTED delivery requires resolved coordinates and address',
-              ),
-            );
-          }
-          const destination = terms.resolvedDestination;
-          if (
-            (terms.branchId !== undefined && terms.branchId !== this.branchId) ||
-            (destination !== undefined &&
-              (destination.formattedAddress !== formattedAddress ||
-                destination.latitude !== latitude ||
-                destination.longitude !== longitude ||
-                destination.providerPlaceId !== providerPlaceId))
-          ) {
-            return err(
-              new RentalInvalidFieldError('acceptedDelivery', 'must match the rental branch and delivery destination'),
-            );
-          }
-        }
-      }
-      return ok(undefined);
-    }
-
-    if (this.props.deliveryDetails) {
-      return err(new RentalInvalidFieldError('deliveryDetails', 'only delivery rentals can have delivery details'));
-    }
-
-    return ok(undefined);
+    return validateRentalDeliveryDetails({
+      fulfillmentMethod: this.fulfillmentMethod,
+      deliveryDetails: this.props.deliveryDetails,
+      acceptedDelivery,
+      period: this.period,
+      branchId: this.branchId,
+    });
   }
 
   private validateChildOwnershipAndTraceability(): Result<void, RentalCommitmentError> {

@@ -8,7 +8,7 @@ import {
 } from "./delivery-representation.schema";
 
 // Advisory costs, not a promise of reservation or eligibility.
-// Staff-arranged facts are stored context only; confirmation remains unsupported.
+// Staff-arranged terms are validated from stored facts; routed terms are reevaluated.
 export const GetRentalConfirmationSummaryResponseSchema = z.object({
   rentalVersion: z.number().int().nonnegative(),
   equipmentAmount: z.string(),

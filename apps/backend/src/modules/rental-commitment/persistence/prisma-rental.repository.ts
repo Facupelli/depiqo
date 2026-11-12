@@ -7,6 +7,7 @@ import { mapPostgresError } from 'src/core/utils/postgres-error.mapper';
 import { Rental } from '../domain/rental.aggregate';
 import { RentalStatus } from '../domain/rental-status';
 import {
+  ChangeConfirmedDeliveryOptions,
   RentalPersistenceStateMismatchError,
   RentalRepository,
   ReplaceDraftRentalOptions,
@@ -111,6 +112,54 @@ export class PrismaRentalRepository extends RentalRepository {
         }
       }
 
+      return options.tx.v2Rental.findUniqueOrThrow({
+        where: { id: rental.id },
+        select: { version: true, updatedAt: true },
+      });
+    } catch (error) {
+      mapPostgresError(error);
+    }
+  }
+
+  async changeConfirmedDelivery(
+    rental: Rental,
+    options: ChangeConfirmedDeliveryOptions,
+  ): Promise<SaveRentalResult | null> {
+    try {
+      const claimed = await options.tx.v2Rental.updateMany({
+        where: {
+          id: rental.id,
+          tenantId: rental.tenantId,
+          status: 'CONFIRMED',
+          fulfillmentMethod: 'DELIVERY',
+          version: options.expectedVersion,
+          // Recheck server time at the write as well as after transactional reload.
+          periodStart: { gt: new Date() },
+        },
+        data: { ...RentalMapper.toConfirmedDeliveryUpdateData(rental), version: { increment: 1 } },
+      });
+      if (claimed.count === 0) return null;
+      const details = await options.tx.v2RentalDeliveryDetails.updateMany({
+        where: { tenantId: rental.tenantId, rentalOrderId: rental.id },
+        data: RentalMapper.toDeliveryDetailsUpdateData(rental),
+      });
+      if (details.count !== 1) throw new RentalPersistenceStateMismatchError(rental.id, 'delivery details', rental.id);
+
+      for (const blockId of options.changedBlockIds) {
+        const block = rental.currentOperationalAssetBlocks.find((item) => item.id === blockId);
+        if (!block) throw new RentalPersistenceStateMismatchError(rental.id, 'asset block', blockId);
+        const updated = await options.tx.$executeRaw`
+          UPDATE v2_asset_blocks
+          SET period = ${block.period.toPostgresRange()}::tstzrange
+          WHERE id = ${block.id}
+            AND tenant_id = ${rental.tenantId}
+            AND rental_id = ${rental.id}
+            AND asset_id = ${block.assetId}
+            AND block_type = ${block.blockType}::"V2AssetBlockType"
+            AND released_at IS NULL
+        `;
+        if (updated !== 1) throw new RentalPersistenceStateMismatchError(rental.id, 'asset block', block.id);
+      }
       return options.tx.v2Rental.findUniqueOrThrow({
         where: { id: rental.id },
         select: { version: true, updatedAt: true },

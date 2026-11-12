@@ -74,10 +74,9 @@ function OpenDeliveryAgreementDialog({ onClose }: { onClose: () => void }) {
 	const { rental: currentRental } = useRentalDetailContext();
 	// Keep the persisted values and concurrency token from this editing session.
 	const [rental] = useState(() => currentRental);
-	const delivery =
-		rental.acceptedDelivery?.arrangement === "ROUTED"
-			? rental.acceptedDelivery
-			: null;
+	const delivery = rental.acceptedDelivery;
+	const calculatedTotal =
+		delivery?.arrangement === "ROUTED" ? delivery.deliveryTotal : undefined;
 	const timezone = useTenantTimezone();
 	const mutation = useEditDeliveryAgreement();
 	const queryClient = useQueryClient();
@@ -120,7 +119,11 @@ function OpenDeliveryAgreementDialog({ onClose }: { onClose: () => void }) {
 			)
 				return;
 			const parsed = formSchema.parse(value);
-			if (parsed.mode === "CLEAR" && delivery.deliveryTotal === undefined)
+			if (
+				parsed.mode === "CLEAR" &&
+				(delivery.arrangement === "STAFF_ARRANGED" ||
+					calculatedTotal === undefined)
+			)
 				return;
 			const agreement: ChangeConfirmedRentalDeliveryAgreementBodyDto["agreement"] =
 				parsed.mode === "CLEAR"
@@ -179,14 +182,16 @@ function OpenDeliveryAgreementDialog({ onClose }: { onClose: () => void }) {
 					</DialogDescription>
 				</DialogHeader>
 				<dl className="space-y-3 rounded-lg border bg-neutral-50 p-4 text-sm">
-					<div className="flex justify-between gap-4">
-						<dt>Precio calculado</dt>
-						<dd className="text-right font-mono font-semibold">
-							{delivery.deliveryTotal !== undefined
-								? formatMoney(delivery.deliveryTotal, delivery.currency)
-								: "Sin precio calculado"}
-						</dd>
-					</div>
+					{delivery.arrangement === "ROUTED" ? (
+						<div className="flex justify-between gap-4">
+							<dt>Precio calculado</dt>
+							<dd className="text-right font-mono font-semibold">
+								{calculatedTotal !== undefined
+									? formatMoney(calculatedTotal, delivery.currency)
+									: "Sin precio calculado"}
+							</dd>
+						</div>
+					) : null}
 					<div className="flex justify-between gap-4">
 						<dt>Importe aplicado actualmente</dt>
 						<dd className="text-right font-mono font-semibold">
@@ -240,40 +245,43 @@ function OpenDeliveryAgreementDialog({ onClose }: { onClose: () => void }) {
 						void form.handleSubmit();
 					}}
 				>
-					<form.Field name="mode">
-						{(field) => (
-							<fieldset disabled={locked} className="space-y-2">
-								<legend className="mb-2 text-sm font-medium">
-									Precio a aplicar
-								</legend>
-								<label className="flex items-center gap-2 text-sm">
-									<input
-										type="radio"
-										name={modeName}
-										checked={field.state.value === "SET"}
-										onChange={() => field.handleChange("SET")}
-									/>
-									Importe acordado
-								</label>
-								<label className="flex items-center gap-2 text-sm">
-									<input
-										type="radio"
-										name={modeName}
-										checked={field.state.value === "CLEAR"}
-										disabled={delivery.deliveryTotal === undefined}
-										onChange={() => field.handleChange("CLEAR")}
-									/>
-									Usar precio calculado
-								</label>
-								{delivery.deliveryTotal === undefined ? (
-									<p className="text-sm text-muted-foreground">
-										No se puede quitar el acuerdo porque no hay un precio
-										calculado guardado. Podés actualizar el importe o el motivo.
-									</p>
-								) : null}
-							</fieldset>
-						)}
-					</form.Field>
+					{delivery.arrangement === "ROUTED" ? (
+						<form.Field name="mode">
+							{(field) => (
+								<fieldset disabled={locked} className="space-y-2">
+									<legend className="mb-2 text-sm font-medium">
+										Precio a aplicar
+									</legend>
+									<label className="flex items-center gap-2 text-sm">
+										<input
+											type="radio"
+											name={modeName}
+											checked={field.state.value === "SET"}
+											onChange={() => field.handleChange("SET")}
+										/>
+										Importe acordado
+									</label>
+									<label className="flex items-center gap-2 text-sm">
+										<input
+											type="radio"
+											name={modeName}
+											checked={field.state.value === "CLEAR"}
+											disabled={calculatedTotal === undefined}
+											onChange={() => field.handleChange("CLEAR")}
+										/>
+										Usar precio calculado
+									</label>
+									{calculatedTotal === undefined ? (
+										<p className="text-sm text-muted-foreground">
+											No se puede quitar el acuerdo porque no hay un precio
+											calculado guardado. Podés actualizar el importe o el
+											motivo.
+										</p>
+									) : null}
+								</fieldset>
+							)}
+						</form.Field>
+					) : null}
 					<form.Subscribe selector={(state) => state.values.mode}>
 						{(mode) =>
 							mode === "SET" ? (
@@ -329,9 +337,7 @@ function OpenDeliveryAgreementDialog({ onClose }: { onClose: () => void }) {
 					<form.Subscribe selector={(state) => state.values}>
 						{(values) => {
 							const nextAmount =
-								values.mode === "CLEAR"
-									? delivery.deliveryTotal
-									: values.amount;
+								values.mode === "CLEAR" ? calculatedTotal : values.amount;
 							return nextAmount !== undefined &&
 								formSchema.safeParse(values).success &&
 								!amountsEqual(nextAmount, delivery.effectiveDeliveryCharge) ? (

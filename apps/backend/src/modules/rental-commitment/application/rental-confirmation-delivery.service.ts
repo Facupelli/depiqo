@@ -5,6 +5,7 @@ import type { ApplicationError } from 'src/core/errors/application-error';
 import { DeliveryQuoteService } from 'src/modules/delivery/public-api/delivery-quote.public-api';
 
 import type { RentalDeliveryDetails } from '../domain/rental.aggregate';
+import { validateRentalDeliveryDetails } from '../domain/rental-delivery-details';
 import {
   ACCEPTED_DELIVERY_SNAPSHOT_SCHEMA,
   ACCEPTED_DELIVERY_SNAPSHOT_VERSION,
@@ -35,9 +36,29 @@ export class RentalConfirmationDeliveryService {
     existing?: AcceptedDeliverySnapshotData;
   }): Promise<Result<AcceptedDeliverySnapshot | undefined, RentalConfirmationDeliveryError>> {
     if (input.fulfillmentMethod === 'PICKUP') return ok(undefined);
+    if (input.existing?.arrangement === 'STAFF_ARRANGED') {
+      const accepted = AcceptedDeliverySnapshot.create(input.existing);
+      if (accepted.isErr()) {
+        return err({
+          code: 'rental_commitment.invalid_rental_field',
+          message: accepted.error.message,
+          cause: accepted.error,
+        });
+      }
+      const validation = validateRentalDeliveryDetails({ ...input, acceptedDelivery: accepted.value });
+      if (validation.isErr()) {
+        return err({
+          code: 'rental_commitment.invalid_rental_field',
+          message: validation.error.message,
+          cause: validation.error,
+          context: { field: validation.error.field },
+        });
+      }
+      // These are already authorized persisted terms, not a new transportation proposal.
+      return ok(accepted.value);
+    }
     const details = input.deliveryDetails;
     if (
-      input.existing?.arrangement === 'STAFF_ARRANGED' ||
       !details ||
       details.formattedAddress === undefined ||
       details.latitude === undefined ||
