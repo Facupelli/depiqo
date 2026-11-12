@@ -5,7 +5,7 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@repo/ui/components/card";
-import { Loader2 } from "lucide-react";
+import { Info, Loader2 } from "lucide-react";
 import { formatMoney } from "@/shared/utils/formatters";
 
 export function DraftRentalFinancialSummary({
@@ -18,18 +18,27 @@ export function DraftRentalFinancialSummary({
 	const currency = preview?.currency ?? "USD";
 	const deliveryCurrency = preview?.delivery?.currency ?? currency;
 	const adjustment = preview?.pricing.targetTotalAdjustment;
+	const delivery = preview?.delivery;
+	const pendingExplanation =
+		preview?.customerTotal != null
+			? null
+			: delivery?.effectiveCharge === null
+				? "Completá el precio de entrega y retiro para calcular el total final."
+				: isFetching
+					? "El total estará disponible cuando termine el cálculo."
+					: "Completá los datos del alquiler para calcular el total final.";
 	const money = (amount: string | null | undefined, unit = currency) =>
 		amount != null ? formatMoney(amount, unit) : "-";
 	return (
 		<Card size="sm" className="gap-3 shadow-none">
-			<CardHeader>
+			<CardHeader className="border-b pb-3">
 				<CardTitle className="text-base">Resumen</CardTitle>
 			</CardHeader>
 			<CardContent>
-				<div className="rounded-lg border bg-muted/20 p-3">
+				<div>
 					<div className="space-y-2">
 						<SummaryRow
-							label="Equipos (calculado)"
+							label="Equipos"
 							value={money(preview?.pricing.calculated.total)}
 						/>
 						{adjustment && adjustment.direction !== "NONE" ? (
@@ -38,56 +47,53 @@ export function DraftRentalFinancialSummary({
 								value={`${adjustment.direction === "DECREASE" ? "-" : "+"}${money(adjustment.adjustmentTotal)}`}
 							/>
 						) : null}
-						<SummaryRow
-							label="Equipos (final)"
-							value={money(preview?.pricing.final.total)}
-						/>
-						<SummaryRow
-							label="Seguro"
-							value={money(preview?.pricing.insurance.amount)}
-						/>
-						{preview?.delivery ? (
-							<>
-								<SummaryRow
-									label="Envío calculado (referencia)"
-									value={
-										preview.delivery.calculatedCharge === null
-											? "No disponible"
-											: money(
-													preview.delivery.calculatedCharge,
-													deliveryCurrency,
-												)
-									}
-								/>
-								{preview.delivery.staffAgreedAmount !== null ? (
-									<SummaryRow
-										label="Envío acordado"
-										value={money(
-											preview.delivery.staffAgreedAmount,
-											deliveryCurrency,
-										)}
-									/>
-								) : null}
-								<SummaryRow
-									label="Envío a cobrar"
-									value={
-										preview.delivery.effectiveCharge === null
-											? "Pendiente"
-											: money(
-													preview.delivery.effectiveCharge,
-													deliveryCurrency,
-												)
-									}
-								/>
-							</>
+						{adjustment && adjustment.direction !== "NONE" ? (
+							<SummaryRow
+								label="Equipos a cobrar"
+								value={money(preview?.pricing.final.total)}
+							/>
+						) : null}
+						{preview?.pricing.insurance.applied ? (
+							<SummaryRow
+								label="Seguro"
+								value={money(preview.pricing.insurance.amount)}
+							/>
 						) : null}
 					</div>
-					<div className="my-2.5 border-t" />
+					{delivery ? (
+						<div className="mt-4 space-y-1.5 border-t pt-4">
+							<SummaryRow
+								label="Entrega y retiro"
+								value={
+									delivery.effectiveCharge === null
+										? "Por definir"
+										: money(delivery.effectiveCharge, deliveryCurrency)
+								}
+							/>
+							{delivery.effectiveCharge !== null &&
+							delivery.staffAgreedAmount !== null ? (
+								<p className="text-muted-foreground text-xs">
+									Importe acordado manualmente
+								</p>
+							) : null}
+						</div>
+					) : null}
+					<div className="my-4 border-t" />
 					<SummaryRow
 						label="Total del cliente"
-						value={money(preview?.customerTotal)}
+						value={
+							preview?.customerTotal != null
+								? money(preview.customerTotal)
+								: "Pendiente"
+						}
 						strong
 					/>
+					{pendingExplanation ? (
+						<p className="mt-3 flex items-start gap-2 text-muted-foreground text-xs">
+							<Info className="mt-0.5 size-3.5 shrink-0" />
+							{pendingExplanation}
+						</p>
+					) : null}
 					{isFetching ? (
 						<p className="mt-2.5 flex items-center gap-2 text-muted-foreground text-xs">
 							<Loader2 className="size-3 animate-spin" /> Calculando precio...
@@ -109,12 +115,16 @@ function SummaryRow({
 	strong?: boolean;
 }) {
 	return (
-		<div className="flex items-center justify-between gap-3 text-sm">
-			<span className="text-muted-foreground">{label}</span>
+		<div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 text-sm">
+			<span
+				className={strong ? "font-semibold text-base" : "text-muted-foreground"}
+			>
+				{label}
+			</span>
 			<span
 				className={
 					strong
-						? "font-semibold text-lg tabular-nums tracking-tight"
+						? "font-semibold text-2xl tabular-nums tracking-tight"
 						: "font-medium tabular-nums"
 				}
 			>
