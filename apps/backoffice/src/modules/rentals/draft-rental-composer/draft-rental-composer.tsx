@@ -2,11 +2,9 @@ import type {
 	GetBranchesBranchDto,
 	GetRentalDetailResponseDto,
 } from "@repo/api-contracts";
-import { Card, CardContent } from "@repo/ui/components/card";
 import { useSelector, useStore } from "@tanstack/react-form";
 import { useQueryClient } from "@tanstack/react-query";
 import { shallow } from "@tanstack/react-store";
-import { AlertCircle } from "lucide-react";
 import { useMemo } from "react";
 import { useAppForm } from "@/shared/contexts/form.context";
 import { useBranchTimezoneResolver } from "@/shared/timezone/operational-timezone.hooks";
@@ -113,7 +111,11 @@ function DraftRentalComposerLayout({
 	}, [activeBranches, resolveBranchTimezone]);
 	const form = useAppForm({
 		defaultValues,
-		validators: { onChange: formSchema, onSubmit: formSchema },
+		validators: {
+			onChange: formSchema,
+			onBlur: formSchema,
+			onSubmit: formSchema,
+		},
 		onSubmit: async ({ value }) => {
 			// Re-read the exact proposal's cache after Form validation, never a captured older preview.
 			const timezone = resolveBranchTimezone(value.branchId);
@@ -201,7 +203,10 @@ function DraftRentalComposerLayout({
 			canManageDelivery,
 			storedAgreement,
 			storedDeliveryCurrency,
-			blockingMessages: readiness.messages,
+			// Input validation belongs next to the fields, not in the pricing summary.
+			blockingMessages: readiness.messages.filter(
+				(message) => !proposal.messages.includes(message),
+			),
 		},
 		meta: {
 			isPriceLoading: priceQuery.isFetching,
@@ -219,19 +224,12 @@ function DraftRentalComposerLayout({
 	};
 	return (
 		<DraftRentalComposerProvider value={contextValue}>
-			{branchMissing ? (
-				<Card className="mb-4 border-amber-200 bg-amber-50">
-					<CardContent className="flex items-center gap-2 py-3 text-sm text-amber-900">
-						<AlertCircle className="size-4" />
-						{missingBranchMessage}
-					</CardContent>
-				</Card>
-			) : null}
 			<div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
 				<div className="space-y-3">
 					<DraftRentalSetupSection
 						form={form}
 						activeBranches={activeBranches}
+						missingBranchMessage={missingBranchMessage}
 						initialBranch={initialBranch}
 						initialCustomer={initialCustomer}
 					/>

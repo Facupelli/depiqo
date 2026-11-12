@@ -35,7 +35,7 @@ export function EditRentalPage({ orderId }: EditRentalPageProps) {
 		currentAuth.actorType === "TENANT_USER" &&
 		can(currentAuth.permissions, TenantPermission.RentalsPriceAdjustmentManage);
 	const { data: business } = useSuspenseQuery(currentBusinessQueries.current());
-	const { data: branches = [] } = useBranches();
+	const { data: branches = [], isPending, isLoadingError } = useBranches();
 	const [baseline] = useState(() => {
 		const operationalTimezone = resolveOperationalTimezone({
 			branchTimezone: rental.retainedBranch.timezone,
@@ -126,26 +126,34 @@ export function EditRentalPage({ orderId }: EditRentalPageProps) {
 				</h1>
 			</div>
 
-			<Composer
-				activeBranches={activeBranches}
-				canManageDelivery={
-					currentAuth.actorType === "TENANT_USER" &&
-					can(currentAuth.permissions, TenantPermission.RentalsDeliveryManage)
-				}
-				rentalId={orderId}
-				expectedVersion={baseline.editor.expectedVersion}
-				storedAgreement={baseline.rental.draftDelivery?.staffAgreement}
-				storedDeliveryCurrency={baseline.rental.draftDelivery?.currency}
-				defaultValues={baseline.editor.defaultValues}
-				initialBranch={baseline.editor.initialBranch}
-				initialCustomer={baseline.editor.initialCustomer}
-				onSubmit={handleSubmit}
-				isSubmitting={updateDraftRental.isPending}
-				submitDisabled={submissionBlocked}
-				submitError={submitError}
-				submitLabel="Guardar cambios"
-				missingBranchMessage="La sucursal guardada ya no está disponible. Seleccioná una sucursal activa para poder guardar cambios."
-			/>
+			{isPending ? (
+				<output className="text-sm text-muted-foreground">
+					Cargando sucursales...
+				</output>
+			) : isLoadingError ? (
+				<GenericErrorPage message="No pudimos cargar las sucursales. Intentá nuevamente." />
+			) : (
+				<Composer
+					activeBranches={activeBranches}
+					canManageDelivery={
+						currentAuth.actorType === "TENANT_USER" &&
+						can(currentAuth.permissions, TenantPermission.RentalsDeliveryManage)
+					}
+					rentalId={orderId}
+					expectedVersion={baseline.editor.expectedVersion}
+					storedAgreement={baseline.rental.draftDelivery?.staffAgreement}
+					storedDeliveryCurrency={baseline.rental.draftDelivery?.currency}
+					defaultValues={baseline.editor.defaultValues}
+					initialBranch={baseline.editor.initialBranch}
+					initialCustomer={baseline.editor.initialCustomer}
+					onSubmit={handleSubmit}
+					isSubmitting={updateDraftRental.isPending}
+					submitDisabled={submissionBlocked}
+					submitError={submitError}
+					submitLabel="Guardar cambios"
+					missingBranchMessage="La sucursal guardada ya no está disponible. Seleccioná una sucursal activa para poder guardar cambios."
+				/>
+			)}
 		</div>
 	);
 }

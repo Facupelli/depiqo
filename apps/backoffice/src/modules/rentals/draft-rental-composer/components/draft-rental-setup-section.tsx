@@ -39,16 +39,22 @@ export const DraftRentalSetupSection = withForm({
 	defaultValues: createDraftRentalComposerDefaultValues(),
 	props: {
 		activeBranches: [] as GetBranchesBranchDto[],
+		missingBranchMessage: "",
 		initialBranch: undefined as DraftRentalBranchDisplayFacts | undefined,
 		initialCustomer: undefined as RentalCustomerDisplayFacts | undefined,
 	},
 	render: function Render({
 		form,
 		activeBranches,
+		missingBranchMessage,
 		initialBranch,
 		initialCustomer,
 	}) {
 		const periodId = useId();
+		const submissionAttempts = useStore(
+			form.store,
+			(state) => state.submissionAttempts,
+		);
 		const {
 			state: { selectedBranchName, branchMissing },
 		} = useDraftRentalComposer();
@@ -95,7 +101,9 @@ export const DraftRentalSetupSection = withForm({
 							<form.Field name="branchId">
 								{(field) => {
 									const isInvalid =
-										field.state.meta.isTouched && !field.state.meta.isValid;
+										branchMissing ||
+										((field.state.meta.isTouched || submissionAttempts > 0) &&
+											!field.state.meta.isValid);
 
 									return (
 										<Field data-invalid={isInvalid}>
@@ -124,7 +132,13 @@ export const DraftRentalSetupSection = withForm({
 												</SelectContent>
 											</Select>
 											{isInvalid ? (
-												<FieldError errors={field.state.meta.errors} />
+												<FieldError
+													errors={
+														branchMissing
+															? [{ message: missingBranchMessage }]
+															: field.state.meta.errors
+													}
+												/>
 											) : null}
 										</Field>
 									);
@@ -156,18 +170,20 @@ export const DraftRentalSetupSection = withForm({
 											{(endDateField) => (
 												<form.Field name="periodEndTime">
 													{(endTimeField) => {
-														const periodInvalid = [
+														const periodFields = [
 															startDateField,
 															startTimeField,
 															endDateField,
 															endTimeField,
-														].some((field) => !field.state.meta.isValid);
-														const periodErrors = [
-															...startDateField.state.meta.errors,
-															...startTimeField.state.meta.errors,
-															...endDateField.state.meta.errors,
-															...endTimeField.state.meta.errors,
 														];
+														const visibleErrors = periodFields.map((field) =>
+															field.state.meta.isTouched ||
+															submissionAttempts > 0
+																? field.state.meta.errors
+																: [],
+														);
+														const periodErrors = visibleErrors.flat();
+														const periodInvalid = periodErrors.length > 0;
 
 														return (
 															<Field
@@ -186,12 +202,10 @@ export const DraftRentalSetupSection = withForm({
 																		endTime: endTimeField.state.value,
 																	}}
 																	invalid={{
-																		startDate:
-																			!startDateField.state.meta.isValid,
-																		startTime:
-																			!startTimeField.state.meta.isValid,
-																		endDate: !endDateField.state.meta.isValid,
-																		endTime: !endTimeField.state.meta.isValid,
+																		startDate: visibleErrors[0].length > 0,
+																		startTime: visibleErrors[1].length > 0,
+																		endDate: visibleErrors[2].length > 0,
+																		endTime: visibleErrors[3].length > 0,
 																	}}
 																	onStartDateChange={(value) => {
 																		if (value !== startDateField.state.value)
