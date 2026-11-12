@@ -40,6 +40,20 @@ export const draftRentalDeliveryDestinationFormSchema = z.discriminatedUnion(
 	],
 );
 
+export const draftRentalEquipmentAmountSchema = z.union(
+	[z.literal(""), PayableTargetTotalSchema],
+	{ error: "Ingresá un total de equipos positivo y con hasta dos decimales." },
+);
+
+export const draftRentalDeliveryAmountSchema = z.string().refine(
+	(value) =>
+		UpdateDraftRentalDeliveryDecisionsSchema.shape.pricingAgreement.safeParse({
+			type: "SET",
+			amount: normalizeAgreementAmount(value),
+		}).success,
+	"Ingresá un importe no negativo, con hasta dos decimales.",
+);
+
 const draftRentalDerivationBaseSchema = z.object({
 	branchId: z.string().min(1, "Seleccioná una sucursal"),
 	rentalCustomerId: z.string(),
@@ -61,9 +75,7 @@ const draftRentalDerivationBaseSchema = z.object({
 	fulfillmentMethod: z.enum(["PICKUP", "DELIVERY"]),
 	deliveryDestination: draftRentalDeliveryDestinationFormSchema,
 	insuranceSelected: z.boolean(),
-	targetTotal: z.union([z.literal(""), PayableTargetTotalSchema], {
-		error: "Ingresá un total de equipos positivo y con hasta dos decimales.",
-	}),
+	targetTotal: draftRentalEquipmentAmountSchema,
 	deliveryAgreementDecision: z.enum(["", "SET", "CLEAR", "KEEP"]),
 	deliveryAgreementAmount: z.string(),
 	deliveryExceptionAccepted: z.boolean(),
@@ -125,11 +137,8 @@ export function createDraftRentalDerivationSchema({
 		if (value.fulfillmentMethod === "DELIVERY") {
 			if (
 				value.deliveryAgreementDecision === "SET" &&
-				!UpdateDraftRentalDeliveryDecisionsSchema.shape.pricingAgreement.safeParse(
-					{
-						type: "SET",
-						amount: normalizeAgreementAmount(value.deliveryAgreementAmount),
-					},
+				!draftRentalDeliveryAmountSchema.safeParse(
+					value.deliveryAgreementAmount,
 				).success
 			) {
 				ctx.addIssue({

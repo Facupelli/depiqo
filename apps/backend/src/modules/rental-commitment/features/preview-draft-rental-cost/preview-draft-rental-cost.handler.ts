@@ -233,7 +233,7 @@ export class PreviewDraftRentalCostHandler implements IQueryHandler<
       ...response,
       delivery,
       customerTotal:
-        delivery.effectiveCharge === null
+        delivery.technicalFailure !== null || delivery.effectiveCharge === null
           ? null
           : new Decimal(calculated.total).plus(delivery.effectiveCharge).toString(),
     });

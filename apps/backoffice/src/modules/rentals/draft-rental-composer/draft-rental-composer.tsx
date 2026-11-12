@@ -113,7 +113,6 @@ function DraftRentalComposerLayout({
 		defaultValues,
 		validators: {
 			onChange: formSchema,
-			onBlur: formSchema,
 			onSubmit: formSchema,
 		},
 		onSubmit: async ({ value }) => {

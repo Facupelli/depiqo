@@ -323,9 +323,16 @@ export class DraftRentalDeliveryResolver {
       result.collection = snapshot.collection;
       result.transportReservationMinutes = snapshot.transportReservationMinutes;
       result.restrictions = snapshot.policyException?.overriddenRestrictions ?? [];
+    } else if (!inspection.evaluation.transportValid) {
+      result.technicalFailure = inspection.evaluation.reason;
+      conditionsChanged = inspection.conditionsChanged;
+      // Commercial agreement validation does not establish operational readiness.
+      terms = {
+        currency: input.pricingCurrency,
+        staffAgreement: input.existing?.snapshot.staffAgreement,
+      };
     } else {
       const { evaluation } = inspection;
-      if (!evaluation.transportValid) return { ...result, technicalFailure: evaluation.reason };
       const location = evaluation.resolvedCustomerLocation;
       result.resolvedDestination = {
         formattedAddress: location.formattedAddress,
@@ -372,7 +379,9 @@ export class DraftRentalDeliveryResolver {
       result.staffAgreedAmount = input.existing?.snapshot.staffAgreement?.amount ?? null;
     } else {
       result.staffAgreedAmount = agreement.value?.amount ?? null;
-      result.effectiveCharge = agreement.value?.amount ?? terms.deliveryTotal ?? null;
+      if (!result.technicalFailure) {
+        result.effectiveCharge = agreement.value?.amount ?? terms.deliveryTotal ?? null;
+      }
     }
     if (terms.currency !== input.pricingCurrency) {
       result.requirements.push('CURRENCY_MISMATCH');

@@ -1,20 +1,14 @@
 import { Button } from "@repo/ui/components/button";
-import {
-	Card,
-	CardContent,
-	CardHeader,
-	CardTitle,
-} from "@repo/ui/components/card";
-import { Field, FieldError, FieldLabel } from "@repo/ui/components/field";
-import { Input } from "@repo/ui/components/input";
-import { Textarea } from "@repo/ui/components/textarea";
 import { useStore } from "@tanstack/react-form";
-import { useId, useState } from "react";
+import { Pencil, Trash2 } from "lucide-react";
+import { useState } from "react";
 import { withForm } from "@/shared/contexts/form.context";
+import { formatMoney } from "@/shared/utils/formatters";
 import { useDraftRentalComposer } from "../draft-rental-composer.context";
 import { createDraftRentalComposerDefaultValues } from "../draft-rental-composer.schema";
 import { DraftRentalDeliveryReview } from "./draft-rental-delivery-review";
 import { DraftRentalFinancialSummary } from "./draft-rental-financial-summary";
+import { DraftRentalPricingDialog } from "./draft-rental-pricing-dialog";
 
 export const DraftRentalReviewPanel = createDraftRentalReviewPanel(false);
 export const PriceAdjustableDraftRentalReviewPanel =
@@ -41,143 +35,281 @@ function createDraftRentalReviewPanel(includeManualPriceAdjustment: boolean) {
 					submitLabel,
 				},
 			} = useDraftRentalComposer();
-			const targetTotal = useStore(
-				form.store,
-				(state) => state.values.targetTotal,
+			const values = useStore(form.store, (state) => state.values);
+			const [editor, setEditor] = useState<"equipment" | "delivery" | null>(
+				null,
 			);
-			const adjustmentFieldsId = useId();
-			const [isAdjustmentEditing, setIsAdjustmentEditing] = useState(() =>
-				Boolean(targetTotal.trim()),
+			const delivery = pricePreview?.delivery;
+			const hasEquipmentAdjustment = Boolean(values.targetTotal.trim());
+			const hasDeliveryAgreement =
+				values.deliveryAgreementDecision === "SET" ||
+				(values.deliveryAgreementDecision !== "CLEAR" &&
+					Boolean(storedAgreement));
+			const needsDecision = Boolean(
+				delivery?.requirements.some(
+					(item) =>
+						item === "AGREEMENT_DECISION_REQUIRED" ||
+						item === "CURRENCY_DECISION_REQUIRED",
+				),
 			);
-			function removeAdjustment() {
-				form.setFieldValue("targetTotal", "");
-				form.setFieldValue("adjustmentReason", "");
-				setIsAdjustmentEditing(false);
-			}
+			const canClearDelivery =
+				delivery?.calculatedCharge != null &&
+				delivery.technicalFailure === null &&
+				!isPriceLoading &&
+				!retryPricePreview;
+			const showDelivery = values.fulfillmentMethod === "DELIVERY";
 			return (
-				<div className="space-y-2">
+				<>
 					<DraftRentalFinancialSummary
 						preview={pricePreview}
 						isFetching={isPriceLoading}
-					/>
-					<DraftRentalDeliveryReview
-						form={form}
-						delivery={pricePreview?.delivery}
-						canManageDelivery={canManageDelivery}
-						storedAgreement={storedAgreement}
-						storedCurrency={storedDeliveryCurrency}
-					/>
-					{blockingMessages.map((message) => (
-						<p key={message} className="text-xs text-destructive" role="alert">
-							{message}
-						</p>
-					))}
-					{retryPricePreview ? (
-						<Button
-							type="button"
-							size="sm"
-							variant="outline"
-							className="w-full"
-							onClick={retryPricePreview}
-						>
-							Reintentar cálculo
-						</Button>
-					) : null}
-					{includeManualPriceAdjustment ? (
-						<Card size="sm" className="gap-3 shadow-none">
-							<CardHeader className="grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
-								<CardTitle className="text-base">Ajustar equipos</CardTitle>
-								{isAdjustmentEditing && targetTotal.trim() ? (
+						showDelivery={showDelivery}
+						hasEquipmentAdjustment={hasEquipmentAdjustment}
+						equipmentAction={
+							includeManualPriceAdjustment ? (
+								<div className="flex items-center gap-1">
 									<Button
 										type="button"
 										variant="ghost"
-										size="sm"
-										className="h-auto px-2 py-1 text-muted-foreground"
-										onClick={removeAdjustment}
+										size="icon-sm"
+										className="text-muted-foreground"
+										title={
+											hasEquipmentAdjustment
+												? "Editar ajuste de equipos"
+												: "Ajustar precio de equipos"
+										}
+										aria-label={
+											hasEquipmentAdjustment
+												? "Editar ajuste de equipos"
+												: "Ajustar precio de equipos"
+										}
+										disabled={isSubmitting}
+										onClick={() => setEditor("equipment")}
 									>
-										Quitar ajuste
+										<Pencil className="size-3.5" />
 									</Button>
-								) : null}
-							</CardHeader>
-							<CardContent>
-								{isAdjustmentEditing ? (
-									<div id={adjustmentFieldsId} className="space-y-3">
-										<form.Field name="targetTotal">
-											{(field) => (
-												<Field
-													className="gap-1.5"
-													data-invalid={!field.state.meta.isValid}
-												>
-													<FieldLabel htmlFor={field.name}>
-														Total de equipos
-													</FieldLabel>
-													<Input
-														id={field.name}
-														inputMode="decimal"
-														placeholder="Ingresá un total"
-														value={field.state.value}
-														onBlur={field.handleBlur}
-														onChange={(event) =>
-															field.handleChange(event.target.value)
-														}
-													/>
-													{!field.state.meta.isValid ? (
-														<FieldError errors={field.state.meta.errors} />
-													) : null}
-												</Field>
-											)}
-										</form.Field>
-										<form.Field name="adjustmentReason">
-											{(field) => (
-												<Field className="gap-1.5">
-													<FieldLabel htmlFor={field.name}>Motivo</FieldLabel>
-													<Textarea
-														id={field.name}
-														placeholder="Opcional"
-														value={field.state.value}
-														onBlur={field.handleBlur}
-														onChange={(event) =>
-															field.handleChange(event.target.value)
-														}
-														className="min-h-16"
-													/>
-												</Field>
-											)}
-										</form.Field>
-									</div>
-								) : (
+									{hasEquipmentAdjustment ? (
+										<Button
+											type="button"
+											variant="ghost"
+											size="icon-sm"
+											className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive dark:hover:bg-destructive/20"
+											title="Quitar ajuste"
+											aria-label="Quitar ajuste"
+											disabled={isSubmitting}
+											onClick={() => {
+												form.setFieldValue("targetTotal", "");
+												form.setFieldValue("adjustmentReason", "");
+											}}
+										>
+											<Trash2 className="size-3.5" />
+										</Button>
+									) : null}
+								</div>
+							) : null
+						}
+						deliveryAction={
+							canManageDelivery ? (
+								<div className="flex items-center gap-1">
 									<Button
 										type="button"
-										variant="outline"
-										className="w-full"
-										aria-expanded={false}
-										aria-controls={adjustmentFieldsId}
-										onClick={() => setIsAdjustmentEditing(true)}
+										variant="ghost"
+										size="icon-sm"
+										className="text-muted-foreground"
+										title={
+											hasDeliveryAgreement
+												? "Editar precio de entrega y retiro"
+												: "Acordar precio de entrega y retiro"
+										}
+										aria-label={
+											hasDeliveryAgreement
+												? "Editar precio de entrega y retiro"
+												: "Acordar precio de entrega y retiro"
+										}
+										disabled={isSubmitting}
+										onClick={() => setEditor("delivery")}
 									>
-										Definir total de equipos
+										<Pencil className="size-3.5" />
+									</Button>
+									{hasDeliveryAgreement && canClearDelivery ? (
+										<Button
+											type="button"
+											variant="ghost"
+											size="icon-sm"
+											className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive dark:hover:bg-destructive/20"
+											title="Usar precio calculado"
+											aria-label="Usar precio calculado"
+											disabled={isSubmitting}
+											onClick={() => {
+												form.setFieldValue(
+													"deliveryAgreementDecision",
+													"CLEAR",
+												);
+											}}
+										>
+											<Trash2 className="size-3.5" />
+										</Button>
+									) : null}
+								</div>
+							) : null
+						}
+						deliveryDetails={
+							<>
+								{needsDecision ? (
+									<p className="text-xs font-medium">
+										Cambiaron las condiciones de transporte. Revisá el acuerdo
+										de precio.
+									</p>
+								) : null}
+								{storedAgreement &&
+								(needsDecision || values.deliveryAgreementDecision) ? (
+									<details className="rounded-md border text-xs">
+										<summary className="cursor-pointer px-3 py-2 font-medium">
+											Acuerdo guardado
+										</summary>
+										<div className="space-y-2 border-t p-3">
+											<p>
+												{formatMoney(
+													storedAgreement.amount,
+													storedDeliveryCurrency ??
+														pricePreview?.currency ??
+														"USD",
+												)}
+											</p>
+											{storedAgreement.reason ? (
+												<p className="whitespace-pre-wrap break-words">
+													Motivo: {storedAgreement.reason}
+												</p>
+											) : null}
+											{needsDecision ||
+											values.deliveryAgreementDecision !== "KEEP" ? (
+												<Button
+													type="button"
+													variant="outline"
+													size="sm"
+													disabled={isSubmitting}
+													onClick={() =>
+														form.setFieldValue(
+															"deliveryAgreementDecision",
+															"KEEP",
+														)
+													}
+												>
+													Conservar importe guardado
+												</Button>
+											) : null}
+										</div>
+									</details>
+								) : null}
+								{values.deliveryAgreementDecision ? (
+									<Button
+										type="button"
+										variant="link"
+										size="sm"
+										className="h-auto p-0 text-xs"
+										disabled={isSubmitting}
+										onClick={() =>
+											form.setFieldValue("deliveryAgreementDecision", "")
+										}
+									>
+										Deshacer decisión de precio
+									</Button>
+								) : null}
+								<DraftRentalDeliveryReview
+									form={form}
+									delivery={delivery}
+									canManageDelivery={canManageDelivery}
+								/>
+							</>
+						}
+					>
+						<div className="mt-4 space-y-2 border-t pt-4">
+							{blockingMessages.map((message) => (
+								<p
+									key={message}
+									className="text-xs text-destructive"
+									role="alert"
+								>
+									{message}
+								</p>
+							))}
+							{retryPricePreview ? (
+								<Button
+									type="button"
+									size="sm"
+									variant="outline"
+									className="w-full"
+									onClick={retryPricePreview}
+								>
+									Reintentar cálculo
+								</Button>
+							) : null}
+							{submitError ? (
+								<p className="text-sm text-destructive">{submitError}</p>
+							) : null}
+							<form.Subscribe selector={(state) => state.isSubmitting}>
+								{(formIsSubmitting) => (
+									<Button
+										type="button"
+										className="w-full"
+										disabled={submitDisabled || formIsSubmitting}
+										onClick={() => form.handleSubmit()}
+									>
+										{isSubmitting || formIsSubmitting
+											? "Guardando..."
+											: submitLabel}
 									</Button>
 								)}
-							</CardContent>
-						</Card>
+							</form.Subscribe>
+						</div>
+					</DraftRentalFinancialSummary>
+					{editor === "equipment" && includeManualPriceAdjustment ? (
+						<DraftRentalPricingDialog
+							kind="equipment"
+							defaultValues={{
+								amount: values.targetTotal,
+								reason: values.adjustmentReason,
+							}}
+							calculatedAmount={pricePreview?.pricing.calculated.total}
+							currency={pricePreview?.currency ?? "USD"}
+							onSave={(value) => {
+								form.setFieldValue("targetTotal", value.amount);
+								form.setFieldValue("adjustmentReason", value.reason);
+							}}
+							onClose={() => setEditor(null)}
+						/>
 					) : null}
-					{submitError ? (
-						<p className="pt-1 text-sm text-destructive">{submitError}</p>
+					{editor === "delivery" && showDelivery && canManageDelivery ? (
+						<DraftRentalPricingDialog
+							kind="delivery"
+							defaultValues={{
+								amount:
+									values.deliveryAgreementDecision === "SET"
+										? values.deliveryAgreementAmount
+										: (storedAgreement?.amount ?? ""),
+								reason:
+									values.deliveryAgreementDecision === "SET"
+										? values.deliveryAgreementReason
+										: (storedAgreement?.reason ?? ""),
+							}}
+							calculatedAmount={
+								canClearDelivery ? delivery?.calculatedCharge : null
+							}
+							currency={
+								delivery?.currency ??
+								storedDeliveryCurrency ??
+								pricePreview?.currency ??
+								"USD"
+							}
+							onSave={(value) => {
+								form.setFieldValue("deliveryAgreementDecision", "SET");
+								form.setFieldValue("deliveryAgreementAmount", value.amount);
+								form.setFieldValue("deliveryAgreementReason", value.reason);
+							}}
+							onClose={() => setEditor(null)}
+						/>
 					) : null}
-					<form.Subscribe selector={(state) => state.isSubmitting}>
-						{(formIsSubmitting) => (
-							<Button
-								type="button"
-								className="mt-3 w-full"
-								disabled={submitDisabled || formIsSubmitting}
-								onClick={() => form.handleSubmit()}
-							>
-								{isSubmitting || formIsSubmitting
-									? "Guardando..."
-									: submitLabel}
-							</Button>
-						)}
-					</form.Subscribe>
-				</div>
+				</>
 			);
 		},
 	});

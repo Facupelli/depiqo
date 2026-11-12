@@ -45,13 +45,37 @@ const technicalFailureLabels: Record<
 	NO_ROUTE: "No se encontró una ruta hasta el destino.",
 	INVALID_PERIOD: "El período no es válido para el transporte.",
 };
+// An amount returned alongside an agreement issue is stored context only.
+export function getAcknowledgedDeliveryAgreementAmount(
+	delivery: PreviewDraftRentalCostDeliveryDto | null | undefined,
+): string | null {
+	if (!delivery) return null;
+	const agreementUnresolved = delivery.requirements.some((requirement) =>
+		[
+			"AGREEMENT_DECISION_REQUIRED",
+			"AGREEMENT_REQUIRED",
+			"INVALID_AGREEMENT_AMOUNT",
+			"KEEP_REQUIRES_EXISTING_AGREEMENT",
+			"AUTOMATIC_QUOTE_REQUIRED",
+			"CURRENCY_DECISION_REQUIRED",
+			"CURRENCY_MISMATCH",
+		].includes(requirement),
+	);
+	return agreementUnresolved ? null : delivery.staffAgreedAmount;
+}
+
 export function deliveryBlockingMessages(
 	delivery: PreviewDraftRentalCostDeliveryDto | null | undefined,
 ) {
 	if (!delivery) return [];
 	return [
 		...(delivery.technicalFailure
-			? [technicalFailureLabels[delivery.technicalFailure]]
+			? [
+					delivery.technicalFailure === "BRANCH_LOCATION_MISSING" &&
+					getAcknowledgedDeliveryAgreementAmount(delivery) !== null
+						? "El precio manual está definido. Configurá la ubicación de la sucursal para validar el transporte y crear el borrador."
+						: technicalFailureLabels[delivery.technicalFailure],
+				]
 			: []),
 		...delivery.requirements.map(
 			(requirement) => deliveryRequirementLabels[requirement],

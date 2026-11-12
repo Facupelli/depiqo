@@ -6,27 +6,47 @@ import {
 	CardTitle,
 } from "@repo/ui/components/card";
 import { Info, Loader2 } from "lucide-react";
+import type { ReactNode } from "react";
 import { formatMoney } from "@/shared/utils/formatters";
+import { getAcknowledgedDeliveryAgreementAmount } from "../delivery-preview";
 
 export function DraftRentalFinancialSummary({
 	preview,
 	isFetching,
+	equipmentAction,
+	deliveryAction,
+	deliveryDetails,
+	showDelivery,
+	hasEquipmentAdjustment,
+	children,
 }: {
 	preview: PreviewDraftRentalCostResponseDto | undefined;
 	isFetching: boolean;
+	equipmentAction?: ReactNode;
+	deliveryAction?: ReactNode;
+	deliveryDetails?: ReactNode;
+	showDelivery: boolean;
+	hasEquipmentAdjustment: boolean;
+	children?: ReactNode;
 }) {
 	const currency = preview?.currency ?? "USD";
 	const deliveryCurrency = preview?.delivery?.currency ?? currency;
 	const adjustment = preview?.pricing.targetTotalAdjustment;
 	const delivery = preview?.delivery;
+	const agreedAmount = getAcknowledgedDeliveryAgreementAmount(delivery);
+	const deliveryAmount = agreedAmount ?? delivery?.effectiveCharge;
 	const pendingExplanation =
 		preview?.customerTotal != null
 			? null
-			: delivery?.effectiveCharge === null
-				? "Completá el precio de entrega y retiro para calcular el total final."
-				: isFetching
-					? "El total estará disponible cuando termine el cálculo."
-					: "Completá los datos del alquiler para calcular el total final.";
+			: agreedAmount !== null
+				? "El precio manual está definido. Falta validar el transporte para calcular el total final."
+				: delivery?.technicalFailure
+					? "Revisá las condiciones de transporte para calcular el total final."
+					: delivery?.effectiveCharge === null
+						? "Revisá los requisitos de precio y transporte para calcular el total final."
+						: isFetching
+							? "El total estará disponible cuando termine el cálculo."
+							: "Completá los datos del alquiler para calcular el total final.";
 	const money = (amount: string | null | undefined, unit = currency) =>
 		amount != null ? formatMoney(amount, unit) : "-";
 	return (
@@ -40,11 +60,17 @@ export function DraftRentalFinancialSummary({
 						<SummaryRow
 							label="Equipos"
 							value={money(preview?.pricing.calculated.total)}
+							action={!hasEquipmentAdjustment ? equipmentAction : undefined}
 						/>
-						{adjustment && adjustment.direction !== "NONE" ? (
+						{hasEquipmentAdjustment ? (
 							<SummaryRow
 								label="Ajuste manual"
-								value={`${adjustment.direction === "DECREASE" ? "-" : "+"}${money(adjustment.adjustmentTotal)}`}
+								value={
+									adjustment
+										? `${adjustment.direction === "DECREASE" ? "-" : adjustment.direction === "INCREASE" ? "+" : ""}${money(adjustment.adjustmentTotal)}`
+										: "Pendiente"
+								}
+								action={equipmentAction}
 							/>
 						) : null}
 						{adjustment && adjustment.direction !== "NONE" ? (
@@ -60,22 +86,29 @@ export function DraftRentalFinancialSummary({
 							/>
 						) : null}
 					</div>
-					{delivery ? (
+					{showDelivery ? (
 						<div className="mt-4 space-y-1.5 border-t pt-4">
 							<SummaryRow
 								label="Entrega y retiro"
 								value={
-									delivery.effectiveCharge === null
+									deliveryAmount == null
 										? "Por definir"
-										: money(delivery.effectiveCharge, deliveryCurrency)
+										: money(deliveryAmount, deliveryCurrency)
 								}
+								action={deliveryAction}
 							/>
-							{delivery.effectiveCharge !== null &&
-							delivery.staffAgreedAmount !== null ? (
+							{agreedAmount !== null ? (
 								<p className="text-muted-foreground text-xs">
-									Importe acordado manualmente
+									Importe acordado
 								</p>
-							) : null}
+							) : (
+								<p className="text-muted-foreground text-xs">
+									{delivery?.effectiveCharge != null
+										? "Precio calculado automáticamente"
+										: "No se pudo calcular automáticamente. Podés acordar un importe manual."}
+								</p>
+							)}
+							{deliveryDetails}
 						</div>
 					) : null}
 					<div className="my-4 border-t" />
@@ -100,6 +133,7 @@ export function DraftRentalFinancialSummary({
 						</p>
 					) : null}
 				</div>
+				{children}
 			</CardContent>
 		</Card>
 	);
@@ -109,13 +143,21 @@ function SummaryRow({
 	label,
 	value,
 	strong,
+	action,
 }: {
 	label: string;
 	value: string;
 	strong?: boolean;
+	action?: ReactNode;
 }) {
 	return (
-		<div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 text-sm">
+		<div
+			className={
+				strong
+					? "grid grid-cols-[minmax(0,1fr)_max-content] items-baseline gap-x-3 text-sm"
+					: "grid min-h-8 grid-cols-[minmax(0,1fr)_max-content_4.25rem] items-center gap-x-2 text-sm"
+			}
+		>
 			<span
 				className={strong ? "font-semibold text-base" : "text-muted-foreground"}
 			>
@@ -124,12 +166,13 @@ function SummaryRow({
 			<span
 				className={
 					strong
-						? "font-semibold text-2xl tabular-nums tracking-tight"
-						: "font-medium tabular-nums"
+						? "text-right font-semibold text-2xl tabular-nums tracking-tight"
+						: "text-right font-medium tabular-nums"
 				}
 			>
 				{value}
 			</span>
+			{!strong ? <div className="w-17">{action}</div> : null}
 		</div>
 	);
 }

@@ -1,14 +1,4 @@
-import type {
-	GetRentalDetailResponseDto,
-	PreviewDraftRentalCostDeliveryDto,
-} from "@repo/api-contracts";
-import { Button } from "@repo/ui/components/button";
-import {
-	Card,
-	CardContent,
-	CardHeader,
-	CardTitle,
-} from "@repo/ui/components/card";
+import type { PreviewDraftRentalCostDeliveryDto } from "@repo/api-contracts";
 import { Checkbox } from "@repo/ui/components/checkbox";
 import { Field, FieldError, FieldLabel } from "@repo/ui/components/field";
 import { Input } from "@repo/ui/components/input";
@@ -18,178 +8,37 @@ import { deliveryRestrictionLabels } from "../delivery-preview";
 import { resetPendingDeliveryReview } from "../draft-rental-composer.form-utils";
 import { createDraftRentalComposerDefaultValues } from "../draft-rental-composer.schema";
 
-type DeliveryReviewProps = {
-	delivery: PreviewDraftRentalCostDeliveryDto | null | undefined;
-	canManageDelivery: boolean;
-	storedAgreement:
-		| NonNullable<GetRentalDetailResponseDto["draftDelivery"]>["staffAgreement"]
-		| undefined;
-	storedCurrency: string | undefined;
-};
-
 export const DraftRentalDeliveryReview = withForm({
 	defaultValues: createDraftRentalComposerDefaultValues(),
-	props: {} as DeliveryReviewProps,
-	render: function Render({
-		form,
-		delivery,
-		canManageDelivery,
-		storedAgreement,
-		storedCurrency,
-	}) {
-		const exceptionId = useId();
-		const needsDecision = delivery?.requirements.some(
-			(item) =>
-				item === "AGREEMENT_DECISION_REQUIRED" ||
-				item === "CURRENCY_DECISION_REQUIRED",
-		);
-		function chooseDecision(type: "SET" | "CLEAR" | "KEEP" | "") {
-			form.setFieldValue("deliveryAgreementDecision", type);
-			if (type === "SET") {
-				form.setFieldValue("deliveryAgreementAmount", "");
-				form.setFieldValue("deliveryAgreementReason", "");
-			}
-		}
+	props: {} as {
+		delivery: PreviewDraftRentalCostDeliveryDto | null | undefined;
+		canManageDelivery: boolean;
+	},
+	render: function Render({ form, delivery, canManageDelivery }) {
+		const id = useId();
 		return (
-			<form.Subscribe selector={(state) => state.values.fulfillmentMethod}>
-				{(method) =>
-					method !== "DELIVERY" ? null : (
-						<Card size="sm" className="gap-3 shadow-none">
-							<CardHeader>
-								<CardTitle className="text-base">
-									Entrega y recolección
-								</CardTitle>
-							</CardHeader>
-							<CardContent className="space-y-3">
-								{storedAgreement ? (
-									<p className="text-xs text-muted-foreground">
-										Acuerdo guardado: {storedAgreement.amount} {storedCurrency}.{" "}
-										{storedAgreement.reason
-											? `Motivo: ${storedAgreement.reason}. `
-											: ""}
-										Se conserva si no cambian las condiciones de transporte.
-									</p>
-								) : null}
-								{needsDecision ? (
-									<p className="text-sm font-medium">
-										Cambiaron las condiciones de transporte. Elegí qué hacer con
-										el acuerdo.
-									</p>
-								) : null}
-								<form.Field name="deliveryAgreementDecision">
-									{(field) => (
-										<>
-											{storedAgreement &&
-											(needsDecision || field.state.value) ? (
-												<Button
-													type="button"
-													variant={
-														field.state.value === "KEEP"
-															? "secondary"
-															: "outline"
-													}
-													size="sm"
-													className="w-full"
-													onClick={() => chooseDecision("KEEP")}
-												>
-													Conservar importe guardado
-												</Button>
-											) : null}
-											{canManageDelivery ? (
-												<>
-													{field.state.value !== "SET" ? (
-														<Button
-															type="button"
-															variant="outline"
-															size="sm"
-															className="w-full"
-															onClick={() => chooseDecision("SET")}
-														>
-															{storedAgreement
-																? "Definir otro importe de envío"
-																: "Acordar importe de envío"}
-														</Button>
-													) : (
-														<>
-															<form.Field name="deliveryAgreementAmount">
-																{(amount) => (
-																	<Field
-																		className="gap-1.5"
-																		data-invalid={!amount.state.meta.isValid}
-																	>
-																		<FieldLabel htmlFor={amount.name}>
-																			Importe combinado de entrega y recolección
-																		</FieldLabel>
-																		<Input
-																			id={amount.name}
-																			inputMode="decimal"
-																			value={amount.state.value}
-																			onBlur={amount.handleBlur}
-																			onChange={(event) =>
-																				amount.handleChange(event.target.value)
-																			}
-																			placeholder="0,00"
-																			aria-invalid={!amount.state.meta.isValid}
-																		/>
-																		<FieldError
-																			errors={amount.state.meta.errors}
-																		/>
-																	</Field>
-																)}
-															</form.Field>
-															<form.Field name="deliveryAgreementReason">
-																{(reason) => (
-																	<Field className="gap-1.5">
-																		<FieldLabel htmlFor={reason.name}>
-																			Motivo del acuerdo (opcional)
-																		</FieldLabel>
-																		<Input
-																			id={reason.name}
-																			value={reason.state.value}
-																			onBlur={reason.handleBlur}
-																			onChange={(event) =>
-																				reason.handleChange(event.target.value)
-																			}
-																		/>
-																	</Field>
-																)}
-															</form.Field>
-														</>
-													)}
-													{delivery?.calculatedCharge != null &&
-													(storedAgreement || field.state.value) ? (
-														<Button
-															type="button"
-															variant={
-																field.state.value === "CLEAR"
-																	? "secondary"
-																	: "outline"
-															}
-															size="sm"
-															className="w-full"
-															onClick={() => chooseDecision("CLEAR")}
-														>
-															Usar precio automático
-														</Button>
-													) : null}
-												</>
-											) : null}
-											{field.state.value ? (
-												<Button
-													type="button"
-													variant="ghost"
-													size="sm"
-													className="w-full"
-													onClick={() => chooseDecision("")}
-												>
-													Deshacer decisión de precio
-												</Button>
-											) : null}
-										</>
-									)}
-								</form.Field>
+			<form.Subscribe
+				selector={(state) => state.values.transportReservationMinutes}
+			>
+				{(minutes) =>
+					delivery?.restrictions.length ||
+					delivery?.requirements.includes(
+						"TRANSPORT_RESERVATION_MINUTES_REQUIRED",
+					) ||
+					minutes !== "" ? (
+						<details className="mt-3 rounded-md border text-xs">
+							<summary className="cursor-pointer px-3 py-2 font-medium">
+								Condiciones de entrega
+								{delivery?.policyExceptionRequired ||
+								delivery?.requirements.includes(
+									"TRANSPORT_RESERVATION_MINUTES_REQUIRED",
+								)
+									? " · Requiere revisión"
+									: ""}
+							</summary>
+							<div className="space-y-3 border-t p-3">
 								{delivery?.restrictions.length ? (
-									<div className="space-y-2 rounded-md border border-amber-200 bg-amber-50 p-3 text-xs text-amber-950">
+									<div className="space-y-2 rounded-md border border-amber-200 bg-amber-50 p-3 text-amber-950">
 										{delivery.restrictions.map((restriction) => (
 											<p key={restriction}>
 												{deliveryRestrictionLabels[restriction]}
@@ -205,11 +54,11 @@ export const DraftRentalDeliveryReview = withForm({
 												<form.Field name="deliveryExceptionAccepted">
 													{(field) => (
 														<label
-															htmlFor={exceptionId}
+															htmlFor={`${id}-exception`}
 															className="flex items-start gap-2"
 														>
 															<Checkbox
-																id={exceptionId}
+																id={`${id}-exception`}
 																checked={field.state.value}
 																onCheckedChange={(checked) =>
 																	field.handleChange(checked === true)
@@ -225,11 +74,11 @@ export const DraftRentalDeliveryReview = withForm({
 												<form.Field name="deliveryExceptionReason">
 													{(field) => (
 														<Field className="gap-1.5">
-															<FieldLabel htmlFor={field.name}>
+															<FieldLabel htmlFor={`${id}-reason`}>
 																Motivo de la excepción (opcional)
 															</FieldLabel>
 															<Input
-																id={field.name}
+																id={`${id}-reason`}
 																value={field.state.value}
 																onChange={(event) =>
 																	field.handleChange(event.target.value)
@@ -254,11 +103,11 @@ export const DraftRentalDeliveryReview = withForm({
 												className="gap-1.5"
 												data-invalid={!field.state.meta.isValid}
 											>
-												<FieldLabel htmlFor={field.name}>
+												<FieldLabel htmlFor={`${id}-minutes`}>
 													Minutos de reserva para transporte
 												</FieldLabel>
 												<Input
-													id={field.name}
+													id={`${id}-minutes`}
 													inputMode="numeric"
 													value={field.state.value}
 													onChange={(event) => {
@@ -270,7 +119,7 @@ export const DraftRentalDeliveryReview = withForm({
 													placeholder="Entero no negativo, incluyendo 0"
 													aria-invalid={!field.state.meta.isValid}
 												/>
-												<p className="text-xs text-muted-foreground">
+												<p className="text-muted-foreground">
 													Dejá vacío para usar la configuración cuando esté
 													disponible.
 												</p>
@@ -279,9 +128,9 @@ export const DraftRentalDeliveryReview = withForm({
 										) : null
 									}
 								</form.Field>
-							</CardContent>
-						</Card>
-					)
+							</div>
+						</details>
+					) : null
 				}
 			</form.Subscribe>
 		);
