@@ -98,6 +98,11 @@ export class UpdateDraftRentalHttpController {
 type ProblemDefinition = { title: string; status: HttpStatus; detail: string };
 
 const definitions: Record<UpdateDraftRentalError['code'], ProblemDefinition> = {
+  'rental_commitment.delivery_management_permission_denied': {
+    title: 'Delivery management permission required',
+    status: HttpStatus.FORBIDDEN,
+    detail: 'Establishing or changing delivery terms requires rentals.delivery.manage.',
+  },
   'rental_commitment.invalid_rental_period': unprocessable(
     'Invalid rental period',
     'The requested rental period is invalid.',

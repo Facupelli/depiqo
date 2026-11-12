@@ -1,3 +1,4 @@
+import type { DraftRentalDeliveryDestination } from '../../application/rental-proposal-resolver.service';
 import type { DraftRentalDeliveryDecisions } from '../../application/draft-rental-delivery-resolver.service';
 import { FulfillmentMethod } from '../../domain/rental-status';
 import { BookingSnapshot } from '../../domain/value-objects/json-snapshot.value-object';
@@ -14,10 +15,7 @@ export interface CreateDraftRentalManualPricingAdjustmentCommand {
   reason?: string;
 }
 
-export interface CreateDraftRentalDeliveryDetailsCommand {
-  address: string;
-  locationId: string;
-}
+export type CreateDraftRentalDeliveryDetailsCommand = DraftRentalDeliveryDestination;
 
 export class CreateDraftRentalCommand {
   public readonly tenantId: string;

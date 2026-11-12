@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import type { PreviewDraftRentalCostDeliveryDto } from '@repo/api-contracts';
+import { TenantPermission, type PreviewDraftRentalCostDeliveryDto } from '@repo/api-contracts';
 import Decimal from 'decimal.js';
 import { err, ok, Result } from 'neverthrow';
 
@@ -8,6 +8,7 @@ import {
   DeliveryQuoteService,
   ResolvedCustomerLocation,
 } from 'src/modules/delivery/public-api/delivery-quote.public-api';
+import { TenantAuthorization } from 'src/modules/tenant-management/authorization/tenant-authorization.public-api';
 
 import { RentalInvalidFieldError } from '../domain/errors/rental-commitment.errors';
 import { RentalDeliveryDetails } from '../domain/rental.aggregate';
@@ -23,6 +24,7 @@ import { acceptedDeliverySnapshotFromQuote } from './accepted-delivery-snapshot.
 import type {
   RentalProposalDeliveryDestination,
   RentalProposalResolutionError,
+  RoutedProposalDeliveryDestination,
 } from './rental-proposal-resolver.service';
 
 export interface DraftRentalDeliveryDecisions {
@@ -42,6 +44,8 @@ export interface DraftRentalDeliveryIntent {
   tenantUserId: string;
   decisions?: DraftRentalDeliveryDecisions;
   existing?: ExistingDraftDelivery;
+  /** Set only by the application when resolving KEEP_CURRENT (or preview omission). */
+  keepCurrent?: boolean;
 }
 
 type DraftDeliveryInput = DraftRentalDeliveryIntent & {
@@ -52,7 +56,23 @@ type DraftDeliveryInput = DraftRentalDeliveryIntent & {
   pricingCurrency: string;
 };
 
-type DeliveryInspectionInput = Omit<DraftDeliveryInput, 'tenantUserId' | 'pricingCurrency'>;
+type RoutedDraftDeliveryInput = DraftDeliveryInput & { destination: RoutedProposalDeliveryDestination };
+type DeliveryInspectionInput = Omit<RoutedDraftDeliveryInput, 'tenantUserId' | 'pricingCurrency'>;
+
+export interface DraftDeliveryAuthorizationError {
+  code: 'rental_commitment.delivery_management_permission_denied';
+  message: string;
+  cause?: unknown;
+}
+
+type ProposedStaffTerms = {
+  details: RentalDeliveryDetails;
+  currency: string;
+  agreement: { amount: string; reason?: string };
+  persistedAgreement?: AcceptedDeliverySnapshotData['staffAgreement'];
+  minutes: number;
+  changed: boolean;
+};
 type DeliveryInspection =
   | { preserved: true; existing: ExistingDraftDelivery }
   | { preserved: false; evaluation: DeliveryEvaluationOutcome; conditionsChanged: boolean };
@@ -75,7 +95,105 @@ type DraftDeliveryTerms = {
 /** Draft-only orchestration. Preserved terms are not a promise of confirmability. */
 @Injectable()
 export class DraftRentalDeliveryResolver {
-  constructor(private readonly delivery: DeliveryQuoteService) {}
+  constructor(
+    private readonly delivery: DeliveryQuoteService,
+    private readonly authorization: TenantAuthorization,
+  ) {}
+
+  /** Mutations authorize trusted tenant-user identity; previews only propose terms. */
+  async authorizeChange(
+    input: Omit<DraftDeliveryInput, 'pricingCurrency'>,
+  ): Promise<Result<void, DraftDeliveryAuthorizationError>> {
+    const decision = input.decisions?.pricingAgreement;
+    const staffChange =
+      input.destination.arrangement === 'STAFF_ARRANGED' && (!input.keepCurrent || this.staffConditionsChanged(input));
+    if (!staffChange && decision?.type !== 'SET' && decision?.type !== 'CLEAR' && !input.decisions?.policyException) {
+      return ok(undefined);
+    }
+    const allowed = await this.authorization.hasPermission(
+      { tenantId: input.tenantId, tenantUserId: input.tenantUserId },
+      TenantPermission.RentalsDeliveryManage,
+    );
+    if (allowed.isErr() && allowed.error.code === 'TenantAuthorizationStateInvalid') throw allowed.error;
+    if (allowed.isErr() || !allowed.value) {
+      return err({
+        code: 'rental_commitment.delivery_management_permission_denied',
+        message: 'Delivery-management permission is required to establish or change delivery terms.',
+        ...(allowed.isErr() ? { cause: allowed.error } : {}),
+      });
+    }
+    return ok(undefined);
+  }
+
+  private staffConditionsChanged(input: Omit<DraftDeliveryInput, 'tenantUserId' | 'pricingCurrency'>): boolean {
+    const existing = input.existing;
+    return (
+      existing?.snapshot.arrangement !== 'STAFF_ARRANGED' ||
+      existing.branchId !== input.branchId ||
+      existing.period.start.getTime() !== input.period.start.getTime() ||
+      existing.period.end.getTime() !== input.period.end.getTime() ||
+      (input.decisions?.transportReservationMinutes !== undefined &&
+        input.decisions.transportReservationMinutes !== existing.snapshot.transportReservationMinutes)
+    );
+  }
+
+  /** Resolves proposal facts without creating accepted agreement metadata or consulting Delivery. */
+  private proposeStaff(
+    input: Omit<DraftDeliveryInput, 'tenantUserId'>,
+  ): Result<ProposedStaffTerms, RentalProposalResolutionError> {
+    const destination = input.destination;
+    if (destination.arrangement !== 'STAFF_ARRANGED') throw new Error('Expected staff-arranged destination.');
+    const existing = input.existing?.snapshot.arrangement === 'STAFF_ARRANGED' ? input.existing : undefined;
+    const decision = input.decisions?.pricingAgreement;
+    if (input.decisions?.policyException)
+      return err(this.invalid('policyException', 'staff delivery has no policy exceptions'));
+    if ((!input.keepCurrent || !existing) && decision?.type !== 'SET') {
+      return err(this.invalid('pricingAgreement', 'new staff-arranged destinations require SET'));
+    }
+    const changed = !input.keepCurrent || this.staffConditionsChanged(input);
+    if (changed && decision?.type !== 'SET' && decision?.type !== 'KEEP') {
+      return err(this.invalid('pricingAgreement', 'changed staff-arranged terms require SET or KEEP'));
+    }
+    if (decision?.type === 'CLEAR') return err(this.invalid('pricingAgreement', 'staff agreement cannot be cleared'));
+    const minutes =
+      input.decisions?.transportReservationMinutes ??
+      (input.keepCurrent ? existing?.snapshot.transportReservationMinutes : undefined);
+    if (minutes === undefined || !Number.isInteger(minutes) || minutes < 0) {
+      return err(this.invalid('transportReservationMinutes', 'explicit non-negative integer minutes are required'));
+    }
+    const details =
+      input.keepCurrent && existing ? existing.details : { address: destination.address, ...destination.geocoding };
+    const { latitude, longitude, formattedAddress, providerPlaceId } = details;
+    if (!details.address.trim() || details.address !== details.address.trim()) {
+      return err(this.invalid('address', 'must be a non-empty trimmed address'));
+    }
+    if (
+      (latitude === undefined) !== (longitude === undefined) ||
+      (latitude !== undefined && (!Number.isFinite(latitude) || latitude < -90 || latitude > 90)) ||
+      (longitude !== undefined && (!Number.isFinite(longitude) || longitude < -180 || longitude > 180)) ||
+      (formattedAddress !== undefined && (!formattedAddress.trim() || formattedAddress !== formattedAddress.trim())) ||
+      (providerPlaceId !== undefined && (!providerPlaceId.trim() || providerPlaceId !== providerPlaceId.trim()))
+    )
+      return err(this.invalid('geocoding', 'must contain valid, complete coordinates and non-empty metadata'));
+    if (existing && existing.snapshot.currency !== input.pricingCurrency && decision?.type !== 'SET') {
+      return err(this.invalid('currency', 'currency changes require SET for staff-arranged delivery'));
+    }
+    const selected = this.selectAgreement(
+      { decisions: input.decisions, existing },
+      { currency: input.pricingCurrency, staffAgreement: existing?.snapshot.staffAgreement },
+      changed,
+    );
+    if (selected.isErr()) return err(this.invalid('pricingAgreement', agreementMessages[selected.error]));
+    if (!selected.value) return err(this.invalid('pricingAgreement', 'staff agreement is required'));
+    return ok({
+      details,
+      currency: input.pricingCurrency,
+      agreement: selected.value,
+      persistedAgreement: decision?.type === 'SET' ? undefined : existing?.snapshot.staffAgreement,
+      minutes,
+      changed: changed || decision?.type === 'SET',
+    });
+  }
 
   /** Shared inspection never attributes an agreement or authorizes an exception. */
   private async inspect(input: DeliveryInspectionInput): Promise<DeliveryInspection> {
@@ -119,10 +237,39 @@ export class DraftRentalDeliveryResolver {
   }
 
   async resolve(input: DraftDeliveryInput): Promise<Result<DraftDeliveryTerms, RentalProposalResolutionError>> {
-    const { existing, decisions } = input;
-    if (existing?.snapshot.arrangement === 'STAFF_ARRANGED') {
-      return err(this.invalid('arrangement', 'STAFF_ARRANGED draft workflows are not yet supported'));
+    if (input.destination.arrangement === 'STAFF_ARRANGED') {
+      const proposal = this.proposeStaff(input);
+      if (proposal.isErr()) return err(proposal.error);
+      const terms = proposal.value;
+      const staffAgreement =
+        input.decisions?.pricingAgreement?.type === 'SET'
+          ? { ...terms.agreement, agreedBy: input.tenantUserId, agreedAt: new Date().toISOString() }
+          : terms.persistedAgreement;
+      const validated = AcceptedDeliverySnapshot.create({
+        schema: ACCEPTED_DELIVERY_SNAPSHOT_SCHEMA,
+        version: ACCEPTED_DELIVERY_SNAPSHOT_VERSION,
+        arrangement: 'STAFF_ARRANGED',
+        delivery: { scheduledAt: input.period.start.toISOString() },
+        collection: { scheduledAt: input.period.end.toISOString() },
+        currency: terms.currency,
+        staffAgreement,
+        transportReservationMinutes: terms.minutes,
+      });
+      if (validated.isErr()) return err(this.invalid('snapshot', validated.error.message));
+      return ok({ deliveryDetails: terms.details, deliverySnapshot: validated.value.snapshot });
     }
+    return this.resolveRouted({
+      ...input,
+      destination: input.destination,
+      // An explicit transition must not inherit staff-arranged commercial or operational facts.
+      existing: input.existing?.snapshot.arrangement === 'ROUTED' ? input.existing : undefined,
+    });
+  }
+
+  private async resolveRouted(
+    input: RoutedDraftDeliveryInput,
+  ): Promise<Result<DraftDeliveryTerms, RentalProposalResolutionError>> {
+    const { existing, decisions } = input;
     const suppliedMinutes = decisions?.transportReservationMinutes;
     if (suppliedMinutes !== undefined && (!Number.isInteger(suppliedMinutes) || suppliedMinutes < 0)) {
       return err(this.invalid('transportReservationMinutes', 'must be a non-negative integer'));
@@ -230,7 +377,7 @@ export class DraftRentalDeliveryResolver {
     conditionsChanged: boolean,
   ): Result<DraftDeliveryTerms, RentalProposalResolutionError> {
     if (original.arrangement !== 'ROUTED') {
-      return err(this.invalid('arrangement', 'STAFF_ARRANGED draft workflows are not yet supported'));
+      throw new Error('Expected routed delivery terms.');
     }
     if (original.currency !== input.pricingCurrency) {
       return err(this.invalid('currency', 'delivery and rental pricing must use the same currency'));
@@ -297,7 +444,61 @@ export class DraftRentalDeliveryResolver {
     return ok(agreement);
   }
 
-  async preview(input: Omit<DraftDeliveryInput, 'tenantUserId'>): Promise<PreviewDraftRentalCostDeliveryDto> {
+  async preview(
+    input: Omit<DraftDeliveryInput, 'tenantUserId'>,
+  ): Promise<Result<PreviewDraftRentalCostDeliveryDto, RentalProposalResolutionError>> {
+    if (input.destination.arrangement === 'STAFF_ARRANGED') {
+      // A preserved agreement is denominated in its stored currency, even if equipment pricing changed.
+      const storedCurrency =
+        input.keepCurrent && input.decisions?.pricingAgreement?.type !== 'SET'
+          ? input.existing?.snapshot.currency
+          : undefined;
+      const proposal = this.proposeStaff({ ...input, pricingCurrency: storedCurrency ?? input.pricingCurrency });
+      if (proposal.isErr()) return err(proposal.error);
+      const terms = proposal.value;
+      const details = terms.details;
+      const currencyMismatch = terms.currency !== input.pricingCurrency;
+      return ok({
+        arrangement: 'STAFF_ARRANGED',
+        source: terms.changed ? 'PROPOSED' : 'STORED',
+        technicalFailure: null,
+        restrictions: [],
+        policyExceptionRequired: false,
+        requirements: currencyMismatch ? ['CURRENCY_MISMATCH'] : [],
+        deliveryDetails: details,
+        resolvedDestination:
+          details.formattedAddress !== undefined && details.latitude !== undefined && details.longitude !== undefined
+            ? {
+                formattedAddress: details.formattedAddress,
+                latitude: details.latitude,
+                longitude: details.longitude,
+                providerPlaceId: details.providerPlaceId,
+              }
+            : null,
+        distanceMeters: null,
+        currency: terms.currency,
+        delivery: { scheduledAt: input.period.start.toISOString() },
+        collection: { scheduledAt: input.period.end.toISOString() },
+        transportReservationMinutes: terms.minutes,
+        calculatedCharge: null,
+        // SET is only a proposal. KEEP may expose the already persisted agreement as context.
+        staffAgreement: terms.persistedAgreement,
+        staffAgreedAmount: terms.agreement.amount,
+        effectiveCharge: currencyMismatch ? null : terms.agreement.amount,
+      });
+    }
+    return ok(
+      await this.previewRouted({
+        ...input,
+        destination: input.destination,
+        existing: input.existing?.snapshot.arrangement === 'ROUTED' ? input.existing : undefined,
+      }),
+    );
+  }
+
+  private async previewRouted(
+    input: Omit<RoutedDraftDeliveryInput, 'tenantUserId'>,
+  ): Promise<PreviewDraftRentalCostDeliveryDto> {
     const inspection = await this.inspect(input);
     const result: Extract<PreviewDraftRentalCostDeliveryDto, { arrangement: 'ROUTED' }> = {
       arrangement: 'ROUTED',
@@ -321,7 +522,7 @@ export class DraftRentalDeliveryResolver {
     if (inspection.preserved) {
       const { snapshot, details } = inspection.existing;
       if (snapshot.arrangement !== 'ROUTED') {
-        throw new Error('Staff-arranged previews must use the stored-facts read path.');
+        throw new Error('Expected routed delivery terms.');
       }
       terms = snapshot;
       result.resolvedDestination =
@@ -417,6 +618,40 @@ export class DraftRentalDeliveryResolver {
       context: { field: cause.field },
     };
   }
+}
+
+/** KEEP_CURRENT uses persisted arrangement, never the presence of coordinates. */
+export function existingDraftDeliveryDestination(
+  existing: ExistingDraftDelivery,
+): RentalProposalDeliveryDestination | undefined {
+  const details = existing.details;
+  if (existing.snapshot.arrangement === 'STAFF_ARRANGED') {
+    return {
+      arrangement: 'STAFF_ARRANGED',
+      address: details.address,
+      geocoding:
+        details.latitude !== undefined && details.longitude !== undefined
+          ? {
+              latitude: details.latitude,
+              longitude: details.longitude,
+              formattedAddress: details.formattedAddress,
+              providerPlaceId: details.providerPlaceId,
+            }
+          : undefined,
+    };
+  }
+  if (details.formattedAddress === undefined || details.latitude === undefined || details.longitude === undefined)
+    return undefined;
+  return {
+    arrangement: 'ROUTED',
+    address: details.address,
+    resolvedLocation: {
+      formattedAddress: details.formattedAddress,
+      latitude: details.latitude,
+      longitude: details.longitude,
+      providerPlaceId: details.providerPlaceId,
+    },
+  };
 }
 
 const agreementMessages: Record<AgreementIssue, string> = {

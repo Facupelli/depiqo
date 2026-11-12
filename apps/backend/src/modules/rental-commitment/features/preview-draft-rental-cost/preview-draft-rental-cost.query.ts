@@ -1,3 +1,5 @@
+import type { UpdateDraftRentalDeliveryIntent } from '../update-draft-rental/update-draft-rental.command';
+
 export class PreviewDraftRentalCostQuery {
   constructor(
     public readonly props: {
@@ -10,7 +12,7 @@ export class PreviewDraftRentalCostQuery {
       targetTotalAdjustment?: { mode: 'TARGET_TOTAL'; targetTotal: string };
       insuranceSelected: boolean;
       fulfillmentMethod: 'PICKUP' | 'DELIVERY';
-      deliveryIntent?: { type: 'KEEP_CURRENT' } | { type: 'NEW_DESTINATION'; address: string; locationId: string };
+      deliveryIntent?: UpdateDraftRentalDeliveryIntent;
       deliveryDecisions?: {
         pricingAgreement?: { type: 'SET'; amount: string; reason?: string } | { type: 'CLEAR' } | { type: 'KEEP' };
         transportReservationMinutes?: number;

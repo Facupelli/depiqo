@@ -123,6 +123,12 @@ function toCreateDraftRentalProblem(error: CreateDraftRentalError): ProblemExcep
 }
 
 const createDraftRentalProblemMap = {
+  'rental_commitment.delivery_management_permission_denied': problem(
+    'delivery_management_permission_denied',
+    'Delivery management permission required',
+    HttpStatus.FORBIDDEN,
+    'Establishing or changing delivery terms requires rentals.delivery.manage.',
+  ),
   'rental_commitment.invalid_idempotency_key': problem(
     'invalid_idempotency_key',
     'Invalid idempotency key',

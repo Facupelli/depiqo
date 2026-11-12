@@ -29,10 +29,7 @@ export function buildDraftCreationFingerprint(command: CreateDraftRentalCommand)
           .map((selection) => ({ rentalOfferId: selection.rentalOfferId, quantity: selection.quantity }))
           .sort((a, b) => a.rentalOfferId.localeCompare(b.rentalOfferId)),
         fulfillmentMethod: command.fulfillmentMethod,
-        deliveryDetails:
-          command.fulfillmentMethod === FulfillmentMethod.Delivery && command.deliveryDetails
-            ? { address: command.deliveryDetails.address, locationId: command.deliveryDetails.locationId }
-            : null,
+        deliveryDetails: deliveryDestinationFingerprint(command),
         // Omit for old requests so existing idempotency fingerprints remain replayable.
         ...(command.deliveryDecisions === undefined
           ? {}
@@ -67,4 +64,24 @@ export function buildDraftCreationFingerprint(command: CreateDraftRentalCommand)
       }),
     )
     .digest('hex');
+}
+
+function deliveryDestinationFingerprint(command: CreateDraftRentalCommand) {
+  const destination = command.deliveryDetails;
+  if (command.fulfillmentMethod !== FulfillmentMethod.Delivery || !destination) return null;
+  if (destination.arrangement !== 'STAFF_ARRANGED') {
+    return { arrangement: 'ROUTED', address: destination.address, locationId: destination.locationId };
+  }
+  return {
+    arrangement: 'STAFF_ARRANGED',
+    address: destination.address,
+    geocoding: destination.geocoding
+      ? {
+          latitude: destination.geocoding.latitude,
+          longitude: destination.geocoding.longitude,
+          formattedAddress: destination.geocoding.formattedAddress ?? null,
+          providerPlaceId: destination.geocoding.providerPlaceId ?? null,
+        }
+      : null,
+  };
 }

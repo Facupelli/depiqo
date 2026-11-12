@@ -12,11 +12,8 @@ import { TenantBillingPreferences } from 'src/modules/tenant-management/public-a
 import {
   DraftRentalDeliveryResolver,
   ExistingDraftDelivery,
+  existingDraftDeliveryDestination,
 } from '../../application/draft-rental-delivery-resolver.service';
-import {
-  toAcceptedDeliveryResponse,
-  toDeliveryDetailsResponse,
-} from '../../application/delivery-representation.mapper';
 import { ProspectiveRentalCostService } from '../../application/prospective-rental-cost.service';
 import type { RentalProposalDeliveryDestination } from '../../application/rental-proposal-resolver.service';
 import { AcceptedDeliverySnapshot } from '../../domain/value-objects/accepted-delivery-snapshot.value-object';
@@ -98,27 +95,6 @@ export class PreviewDraftRentalCostHandler implements IQueryHandler<
         },
         snapshot: snapshot.value.snapshot,
       };
-    }
-
-    const storedStaffDelivery = existing?.snapshot.arrangement === 'STAFF_ARRANGED' ? existing : undefined;
-    if (storedStaffDelivery) {
-      const decisions = input.deliveryDecisions;
-      const conditionsChanged =
-        input.fulfillmentMethod !== 'DELIVERY' ||
-        input.branchId !== storedStaffDelivery.branchId ||
-        period.start.getTime() !== storedStaffDelivery.period.start.getTime() ||
-        period.end.getTime() !== storedStaffDelivery.period.end.getTime() ||
-        input.deliveryIntent?.type === 'NEW_DESTINATION' ||
-        (decisions?.transportReservationMinutes !== undefined &&
-          decisions.transportReservationMinutes !== storedStaffDelivery.snapshot.transportReservationMinutes) ||
-        (decisions?.pricingAgreement !== undefined && decisions.pricingAgreement.type !== 'KEEP');
-      if (conditionsChanged) {
-        return err({
-          code: 'rental_commitment.delivery_review_required',
-          message: 'Changed staff-arranged delivery terms require review; this preview only displays stored terms.',
-          context: { field: 'deliveryIntent', arrangement: 'STAFF_ARRANGED' },
-        });
-      }
     }
 
     const [billing, branch] = await Promise.all([
@@ -211,64 +187,15 @@ export class PreviewDraftRentalCostHandler implements IQueryHandler<
     };
     if (input.fulfillmentMethod === 'PICKUP') return ok(response);
 
-    if (storedStaffDelivery && draft) {
-      const parsed = AcceptedDeliverySnapshot.create(storedStaffDelivery.snapshot);
-      if (parsed.isErr()) throw parsed.error;
-      const accepted = toAcceptedDeliveryResponse(parsed.value);
-      if (accepted.arrangement !== 'STAFF_ARRANGED') throw new Error('Expected stored staff-arranged terms.');
-      const details = toDeliveryDetailsResponse(draft.deliveryDetails);
-      if (!details) throw new Error('Staff-arranged delivery requires an address.');
-      const currencyMismatch = accepted.currency !== response.currency;
-      const effectiveCharge = currencyMismatch ? null : accepted.effectiveDeliveryCharge;
-      return ok({
-        ...response,
-        delivery: {
-          arrangement: 'STAFF_ARRANGED',
-          source: 'STORED',
-          technicalFailure: null,
-          restrictions: [],
-          policyExceptionRequired: false,
-          requirements: currencyMismatch ? ['CURRENCY_MISMATCH'] : [],
-          deliveryDetails: details,
-          resolvedDestination:
-            details.formattedAddress !== undefined && details.latitude !== undefined && details.longitude !== undefined
-              ? {
-                  formattedAddress: details.formattedAddress,
-                  latitude: details.latitude,
-                  longitude: details.longitude,
-                  providerPlaceId: details.providerPlaceId,
-                }
-              : null,
-          distanceMeters: null,
-          currency: accepted.currency,
-          delivery: accepted.delivery,
-          collection: accepted.collection,
-          transportReservationMinutes: accepted.transportReservationMinutes,
-          calculatedCharge: null,
-          staffAgreement: accepted.staffAgreement,
-          staffAgreedAmount: accepted.staffAgreement.amount,
-          effectiveCharge,
-        },
-        customerTotal: effectiveCharge === null ? null : new Decimal(calculated.total).plus(effectiveCharge).toString(),
-      });
-    }
-
     let destination: RentalProposalDeliveryDestination | undefined;
     if (input.deliveryIntent?.type === 'NEW_DESTINATION') {
-      destination = { address: input.deliveryIntent.address, locationId: input.deliveryIntent.locationId };
-    } else if (draft?.deliveryDetails) {
-      const details = draft.deliveryDetails;
-      if (details.formattedAddress !== null && details.latitude !== null && details.longitude !== null) {
-        destination = {
-          address: details.address,
-          resolvedLocation: {
-            formattedAddress: details.formattedAddress,
-            latitude: details.latitude,
-            longitude: details.longitude,
-            providerPlaceId: details.providerPlaceId ?? undefined,
-          },
-        };
-      }
+      const intent = input.deliveryIntent;
+      destination =
+        intent.arrangement === 'STAFF_ARRANGED'
+          ? { arrangement: 'STAFF_ARRANGED', address: intent.address, geocoding: intent.geocoding }
+          : { arrangement: 'ROUTED', address: intent.address, locationId: intent.locationId };
+    } else if (existing) {
+      destination = existingDraftDeliveryDestination(existing);
     }
     if (!destination) {
       return ok({
@@ -293,7 +220,7 @@ export class PreviewDraftRentalCostHandler implements IQueryHandler<
         },
       });
     }
-    const delivery = await this.delivery.preview({
+    const preview = await this.delivery.preview({
       tenantId: input.tenantId,
       branchId: input.branchId,
       period,
@@ -301,7 +228,17 @@ export class PreviewDraftRentalCostHandler implements IQueryHandler<
       pricingCurrency: response.currency,
       existing,
       decisions: input.deliveryDecisions,
+      keepCurrent: input.deliveryIntent?.type !== 'NEW_DESTINATION',
     });
+    if (preview.isErr()) {
+      return err({
+        code: 'rental_commitment.preview_invalid_input',
+        message: preview.error.message,
+        cause: preview.error.cause,
+        context: preview.error.context,
+      });
+    }
+    const delivery = preview.value;
     return ok({
       ...response,
       delivery,

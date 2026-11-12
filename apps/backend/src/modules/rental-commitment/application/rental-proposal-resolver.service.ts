@@ -58,9 +58,22 @@ export interface RentalProposalResolutionError extends ApplicationError {
   code: RentalProposalResolutionErrorCode;
 }
 
+export type DraftRentalDeliveryDestination =
+  | { arrangement?: 'ROUTED'; address: string; locationId: string }
+  | {
+      arrangement: 'STAFF_ARRANGED';
+      address: string;
+      geocoding?: { latitude: number; longitude: number; formattedAddress?: string; providerPlaceId?: string };
+    };
+
 export type RentalProposalDeliveryDestination =
-  | { address: string; locationId: string }
-  | { address: string; resolvedLocation: ResolvedCustomerLocation };
+  | DraftRentalDeliveryDestination
+  | { arrangement?: 'ROUTED'; address: string; resolvedLocation: ResolvedCustomerLocation };
+
+export type RoutedProposalDeliveryDestination = Exclude<
+  RentalProposalDeliveryDestination,
+  { arrangement: 'STAFF_ARRANGED' }
+>;
 
 export type RentalProposalInput = {
   tenantId: string;
@@ -184,7 +197,7 @@ export class RentalProposalResolver {
         fulfillmentMethod: 'PICKUP',
         pricing: pricingRequest,
       });
-    } else if (input.deliveryDestination) {
+    } else if (input.deliveryDestination && input.deliveryDestination.arrangement !== 'STAFF_ARRANGED') {
       prospectiveResult = await this.prospectiveRentalCost.calculate({
         fulfillmentMethod: 'DELIVERY',
         pricing: pricingRequest,
@@ -337,7 +350,7 @@ export class RentalProposalResolver {
   }
 }
 
-function toCustomerLocationSelection(input: RentalProposalDeliveryDestination): CustomerLocationSelection {
+function toCustomerLocationSelection(input: RoutedProposalDeliveryDestination): CustomerLocationSelection {
   return 'resolvedLocation' in input
     ? { resolvedLocation: input.resolvedLocation }
     : { address: input.address, locationId: input.locationId };

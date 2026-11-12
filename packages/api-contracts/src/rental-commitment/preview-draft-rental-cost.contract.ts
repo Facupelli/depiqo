@@ -99,14 +99,14 @@ const routedDelivery = z.object({
   effectiveCharge: z.string().nullable(),
 });
 
-// Stored staff-arranged facts are context only, never fresh operational validation.
+// Staff terms are stored context or an unsaved proposal, never confirmation/availability validation.
 export const PreviewDraftRentalCostDeliverySchema = z.discriminatedUnion(
   "arrangement",
   [
     routedDelivery,
     z.strictObject({
       arrangement: z.literal("STAFF_ARRANGED"),
-      source: z.literal("STORED"),
+      source: z.enum(["STORED", "PROPOSED"]),
       technicalFailure: z.null(),
       restrictions: z.array(z.never()),
       policyExceptionRequired: z.literal(false),
@@ -119,7 +119,9 @@ export const PreviewDraftRentalCostDeliverySchema = z.discriminatedUnion(
       collection: StaffArrangedDeliveryLegSchema,
       transportReservationMinutes: z.number().int().nonnegative(),
       calculatedCharge: z.null(),
-      staffAgreement: DeliveryStaffAgreementSchema,
+      // Present only when referring to an already persisted agreement (including proposed KEEP).
+      // A proposed SET has an amount below, but no trusted acceptance metadata.
+      staffAgreement: DeliveryStaffAgreementSchema.optional(),
       staffAgreedAmount: z.string(),
       effectiveCharge: z.string().nullable(),
     }),
