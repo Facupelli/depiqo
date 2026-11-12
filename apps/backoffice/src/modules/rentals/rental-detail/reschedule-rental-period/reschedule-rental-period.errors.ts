@@ -3,6 +3,7 @@ import { getProblemDetailsCode, ProblemDetailsError } from "@/shared/errors";
 export type RescheduleRentalPeriodErrorKind =
 	| "stale"
 	| "period-conflict"
+	| "delivery-review"
 	| "unknown";
 
 export interface RescheduleRentalPeriodUiError {
@@ -11,6 +12,36 @@ export interface RescheduleRentalPeriodUiError {
 }
 
 const errorsByCode = {
+	"rental_commitment.delivery_review_required": {
+		kind: "delivery-review",
+		message:
+			"Cambiaron el precio o las condiciones de transporte. Volvé a revisar los cambios antes de guardar.",
+	},
+	"rental_commitment.delivery_evaluation_unavailable": {
+		kind: "delivery-review",
+		message:
+			"El cálculo de la ruta no está disponible temporalmente. Volvé a intentar la revisión.",
+	},
+	"rental_commitment.delivery_technical_failure": {
+		kind: "delivery-review",
+		message:
+			"No pudimos validar la entrega y el retiro. Revisá la sucursal, el destino y la ruta antes de volver a intentar la revisión.",
+	},
+	"rental_commitment.delivery_exception_authorization_required": {
+		kind: "delivery-review",
+		message:
+			"Falta autorizar expresamente la excepción de transporte. Volvé a revisar las condiciones y autorizalas antes de guardar.",
+	},
+	"rental_commitment.delivery_exception_permission_denied": {
+		kind: "delivery-review",
+		message:
+			"No tenés permiso para autorizar esta excepción de entrega. Se necesita alguien con permiso para gestionar entregas.",
+	},
+	"rental_commitment.invalid_rescheduling_delivery_input": {
+		kind: "delivery-review",
+		message:
+			"Las decisiones de entrega están incompletas o ya no son válidas. Volvé a revisar los requisitos antes de guardar.",
+	},
 	"rental_commitment.rental_version_conflict": {
 		kind: "stale",
 		message:

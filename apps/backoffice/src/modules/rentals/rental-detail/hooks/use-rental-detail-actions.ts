@@ -96,6 +96,11 @@ export function useRentalDetailActions() {
 		rescheduleDialogProps: {
 			rentalId: rental.id,
 			rentalVersion: rental.version,
+			fulfillmentMethod: rental.fulfillment.method,
+			canAuthorizeDeliveryException: can(
+				permissions,
+				TenantPermission.RentalsDeliveryManage,
+			),
 			currentPeriodStart: rental.period.start,
 			currentPeriodEnd: rental.period.end,
 			operationalTimezone,
