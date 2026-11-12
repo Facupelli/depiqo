@@ -131,6 +131,7 @@ const snapshotSchema = z
   });
 
 export type AcceptedDeliverySnapshotData = z.infer<typeof snapshotSchema>;
+export type DeliveryAgreementChange = { type: 'SET'; amount: string; reason?: string } | { type: 'CLEAR' };
 
 export class AcceptedDeliverySnapshot extends JsonSnapshot {
   private constructor(
@@ -189,6 +190,65 @@ export class AcceptedDeliverySnapshot extends JsonSnapshot {
       collection: {
         ...this.data.collection,
         scheduledAt: params.collectionScheduledAt.toISOString(),
+      },
+    });
+  }
+
+  changeAgreement(params: {
+    agreement: DeliveryAgreementChange;
+    tenantUserId: string;
+    operationTime: Date;
+  }): Result<AcceptedDeliverySnapshot, RentalCommitmentError> {
+    const { agreement, tenantUserId, operationTime } = params;
+    const existing = this.data.staffAgreement;
+    if (agreement.type === 'CLEAR') {
+      if (this.data.deliveryTotal === undefined) {
+        return err(
+          new RentalInvalidFieldError(
+            'acceptedDelivery.staffAgreement',
+            'cannot clear without a calculated delivery total',
+          ),
+        );
+      }
+      if (!existing) return ok(this);
+      const snapshot = this.snapshot;
+      delete snapshot.staffAgreement;
+      return AcceptedDeliverySnapshot.create(snapshot);
+    }
+
+    let amount: Decimal;
+    try {
+      amount = new Decimal(agreement.amount);
+    } catch {
+      return err(
+        new RentalInvalidFieldError(
+          'acceptedDelivery.staffAgreement.amount',
+          'must be a non-negative amount exactly representable in cents',
+        ),
+      );
+    }
+    if (!amount.isFinite() || amount.lt(0) || amount.decimalPlaces() > 2) {
+      return err(
+        new RentalInvalidFieldError(
+          'acceptedDelivery.staffAgreement.amount',
+          'must be a non-negative amount exactly representable in cents',
+        ),
+      );
+    }
+    const reason = agreement.reason?.trim() || undefined;
+    if (existing && amount.equals(existing.amount) && reason === (existing.reason?.trim() || undefined)) {
+      return ok(this);
+    }
+    if (!(operationTime instanceof Date) || Number.isNaN(operationTime.getTime())) {
+      return err(new RentalInvalidFieldError('acceptedDelivery.staffAgreement.agreedAt', 'must be a valid timestamp'));
+    }
+    return AcceptedDeliverySnapshot.create({
+      ...this.snapshot,
+      staffAgreement: {
+        amount: amount.toFixed(2),
+        ...(reason ? { reason } : {}),
+        agreedBy: tenantUserId,
+        agreedAt: operationTime.toISOString(),
       },
     });
   }

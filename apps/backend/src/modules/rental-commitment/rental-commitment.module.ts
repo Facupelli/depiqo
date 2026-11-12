@@ -31,6 +31,8 @@ import { CalculateProspectiveCartCostHttpController } from './features/calculate
 import { CalculateProspectiveCartCostHandler } from './features/calculate-prospective-cart-cost/calculate-prospective-cart-cost.handler';
 import { ChangeRentalDetailsHttpController } from './features/change-rental-details/change-rental-details.controller';
 import { ChangeRentalDetailsHandler } from './features/change-rental-details/change-rental-details.handler';
+import { ChangeConfirmedRentalDeliveryAgreementHttpController } from './features/change-confirmed-rental-delivery-agreement/change-confirmed-rental-delivery-agreement.controller';
+import { ChangeConfirmedRentalDeliveryAgreementHandler } from './features/change-confirmed-rental-delivery-agreement/change-confirmed-rental-delivery-agreement.handler';
 import { ChangeRentalSelectionQuantityHttpController } from './features/change-rental-selection-quantity/change-rental-selection-quantity.controller';
 import { ChangeRentalSelectionQuantityHandler } from './features/change-rental-selection-quantity/change-rental-selection-quantity.handler';
 import { ConfirmRentalHttpController } from './features/confirm-rental/confirm-rental.controller';
@@ -96,6 +98,7 @@ import { RentalLifecycleFactsService } from './public-api/rental-lifecycle-facts
     CalculateProspectiveCartCostHttpController,
     PreviewDraftRentalCostHttpController,
     ChangeRentalDetailsHttpController,
+    ChangeConfirmedRentalDeliveryAgreementHttpController,
     ChangeRentalSelectionQuantityHttpController,
     ConfirmRentalHttpController,
     GetRentalConfirmationSummaryHttpController,
@@ -136,6 +139,7 @@ import { RentalLifecycleFactsService } from './public-api/rental-lifecycle-facts
     CalculateProspectiveCartCostHandler,
     PreviewDraftRentalCostHandler,
     ChangeRentalDetailsHandler,
+    ChangeConfirmedRentalDeliveryAgreementHandler,
     ChangeRentalSelectionQuantityHandler,
     ConfirmRentalHandler,
     RentalConfirmationDeliveryService,

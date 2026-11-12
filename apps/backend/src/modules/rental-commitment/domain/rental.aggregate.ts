@@ -60,7 +60,10 @@ import {
 import { CreateRentalSelectionProps, RentalSelection } from './rental-selection.entity';
 import { endAssignmentParticipation } from './release-assignment-participation';
 import { AssignedAssetOwnershipSnapshot } from './value-objects/assigned-asset-ownership-snapshot.value-object';
-import { AcceptedDeliverySnapshot } from './value-objects/accepted-delivery-snapshot.value-object';
+import {
+  AcceptedDeliverySnapshot,
+  DeliveryAgreementChange,
+} from './value-objects/accepted-delivery-snapshot.value-object';
 import { toAcceptedRentalPricingV3Snapshot } from './value-objects/accepted-pricing-snapshot.type';
 import { ConfirmedPriceSnapshot } from './value-objects/confirmed-price-snapshot.value-object';
 import { BookingSnapshot, JsonSnapshot, JsonValue } from './value-objects/json-snapshot.value-object';
@@ -672,6 +675,39 @@ export class Rental extends AggregateRootBase {
 
     this.props = candidate.value.props;
     return ok(undefined);
+  }
+
+  changeConfirmedDeliveryAgreement(params: {
+    agreement: DeliveryAgreementChange;
+    tenantUserId: string;
+    operationTime: Date;
+  }): Result<'UNCHANGED' | 'METADATA_CHANGED' | 'PRICE_CHANGED', RentalCommitmentError> {
+    if (this.status !== RentalStatus.Confirmed) {
+      return err(new RentalCannotBeEditedFromStatusError(this.id, this.status));
+    }
+    if (params.operationTime >= this.period.end) {
+      return err(new RentalPeriodHasEndedError(this.id));
+    }
+    const existing = this.deliverySnapshot;
+    if (this.fulfillmentMethod !== FulfillmentMethod.Delivery || !existing) {
+      return err(
+        new RentalInvalidFieldError(
+          'acceptedDelivery',
+          'requires delivery fulfillment and an accepted delivery snapshot',
+        ),
+      );
+    }
+    const transformed = existing.changeAgreement(params);
+    if (transformed.isErr()) return err(transformed.error);
+    if (transformed.value === existing) return ok('UNCHANGED');
+
+    const priceChanged = !new Decimal(existing.effectiveDeliveryCharge).equals(
+      transformed.value.effectiveDeliveryCharge,
+    );
+    const transition = this.applyConfirmedStateChanges({ deliverySnapshot: transformed.value });
+    if (transition.isErr()) return err(transition.error);
+    if (priceChanged) this.recordConfirmedRentalEditedEvent(params.operationTime);
+    return ok(priceChanged ? 'PRICE_CHANGED' : 'METADATA_CHANGED');
   }
 
   changeConfirmedDetails(params: ChangeConfirmedRentalDetailsProps): Result<void, RentalCommitmentError> {
@@ -1421,11 +1457,14 @@ export class Rental extends AggregateRootBase {
   }
 
   private applyConfirmedStateChanges(changes: ConfirmedRentalStateChanges): Result<void, RentalCommitmentError> {
-    const acceptedCustomerTotal = changes.confirmedPriceSnapshot
-      ? new Decimal(changes.confirmedPriceSnapshot.snapshot.total)
-          .plus(this.props.deliverySnapshot?.effectiveDeliveryCharge ?? 0)
-          .toString()
-      : this.props.acceptedCustomerTotal;
+    const pricing = changes.confirmedPriceSnapshot ?? this.props.confirmedPriceSnapshot;
+    const delivery = Object.prototype.hasOwnProperty.call(changes, 'deliverySnapshot')
+      ? changes.deliverySnapshot
+      : this.props.deliverySnapshot;
+    const acceptedCustomerTotal =
+      pricing && (changes.confirmedPriceSnapshot || Object.prototype.hasOwnProperty.call(changes, 'deliverySnapshot'))
+        ? new Decimal(pricing.snapshot.total).plus(delivery?.effectiveDeliveryCharge ?? 0).toString()
+        : this.props.acceptedCustomerTotal;
     const candidate = Rental.createFromEntities(this.status, {
       ...this.props,
       ...changes,

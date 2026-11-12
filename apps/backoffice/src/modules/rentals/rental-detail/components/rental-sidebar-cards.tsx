@@ -19,6 +19,7 @@ import {
 import { formatMoney } from "@/shared/utils/formatters";
 import { AssignCustomerToDraftRentalDialog } from "../assign-customer/assign-customer-to-draft-rental-dialog";
 import { RentalContractSigningCard } from "../documents/signing/rental-contract-signing-card";
+import { EditDeliveryAgreementDialog } from "../edit-delivery-agreement/edit-delivery-agreement-dialog";
 import { EditPriceAdjustmentDialog } from "../edit-price-adjustment/edit-price-adjustment-dialog";
 import { useRentalDetailContext } from "../rental-detail.context";
 import { rentalDetailViewQueries } from "../rental-detail.queries";
@@ -260,6 +261,7 @@ function RentalFinancialsCard() {
 	);
 	const [showItems, setShowItems] = useState(false);
 	const [isEditPriceDialogOpen, setIsEditPriceDialogOpen] = useState(false);
+	const [isDeliveryAgreementOpen, setIsDeliveryAgreementOpen] = useState(false);
 	const financialContentId = useId();
 
 	const pricing = rental.pricing;
@@ -287,6 +289,12 @@ function RentalFinancialsCard() {
 		canAdjustPrice &&
 		rental.status === "CONFIRMED" &&
 		Date.now() < Date.parse(rental.period.end);
+	const canEditDelivery =
+		can(permissions, TenantPermission.RentalsDeliveryManage) &&
+		rental.status === "CONFIRMED" &&
+		rental.fulfillment.method === "DELIVERY" &&
+		acceptedDelivery !== null &&
+		Date.now() < Date.parse(rental.period.end);
 	const adjustmentSign =
 		manualAdjustment?.direction === "INCREASE"
 			? "+"
@@ -296,6 +304,12 @@ function RentalFinancialsCard() {
 
 	return (
 		<>
+			{isDeliveryAgreementOpen ? (
+				<EditDeliveryAgreementDialog
+					open
+					onOpenChange={setIsDeliveryAgreementOpen}
+				/>
+			) : null}
 			<EditPriceAdjustmentDialog
 				open={isEditPriceDialogOpen}
 				onOpenChange={setIsEditPriceDialogOpen}
@@ -351,11 +365,37 @@ function RentalFinancialsCard() {
 						/>
 					) : null}
 					{acceptedDelivery ? (
-						<MoneyRow
-							label="Delivery"
-							value={acceptedDelivery.effectiveDeliveryCharge}
-							currency={acceptedDelivery.currency}
-						/>
+						<div className="space-y-1">
+							<div className="flex items-center gap-2">
+								<div className="min-w-0 flex-1">
+									<MoneyRow
+										label="Entrega y retiro"
+										value={acceptedDelivery.effectiveDeliveryCharge}
+										currency={acceptedDelivery.currency}
+									/>
+								</div>
+								{canEditDelivery ? (
+									<Button
+										type="button"
+										variant="ghost"
+										size="icon-sm"
+										aria-label="Editar precio de entrega y retiro"
+										title="Editar precio de entrega y retiro"
+										onClick={() => setIsDeliveryAgreementOpen(true)}
+									>
+										<Pencil className="size-3.5" />
+									</Button>
+								) : null}
+							</div>
+							{acceptedDelivery.staffAgreement ? (
+								<p className="text-xs text-neutral-500">
+									Importe acordado
+									{acceptedDelivery.staffAgreement.reason
+										? `: ${acceptedDelivery.staffAgreement.reason}`
+										: ""}
+								</p>
+							) : null}
+						</div>
 					) : null}
 					<div>
 						<div className="grid grid-cols-[1fr_auto_auto] items-center gap-2">
