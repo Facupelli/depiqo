@@ -128,6 +128,14 @@ export function EditRentalPage({ orderId }: EditRentalPageProps) {
 
 			<Composer
 				activeBranches={activeBranches}
+				canManageDelivery={
+					currentAuth.actorType === "TENANT_USER" &&
+					can(currentAuth.permissions, TenantPermission.RentalsDeliveryManage)
+				}
+				rentalId={orderId}
+				expectedVersion={baseline.editor.expectedVersion}
+				storedAgreement={baseline.rental.draftDelivery?.staffAgreement}
+				storedDeliveryCurrency={baseline.rental.draftDelivery?.currency}
 				defaultValues={baseline.editor.defaultValues}
 				initialBranch={baseline.editor.initialBranch}
 				initialCustomer={baseline.editor.initialCustomer}

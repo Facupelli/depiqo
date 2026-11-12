@@ -8,10 +8,14 @@ import {
 	AlertDialogHeader,
 	AlertDialogTitle,
 } from "@repo/ui/components/alert-dialog";
+import { Button } from "@repo/ui/components/button";
+import { useQuery } from "@tanstack/react-query";
 import { AlertCircle, CalendarDays, Package, ReceiptText } from "lucide-react";
 import type { ReactNode } from "react";
+import { ProblemDetailsError } from "@/shared/errors";
 import { useBranchTimezone } from "@/shared/timezone/operational-timezone.hooks";
 import { formatMoney } from "@/shared/utils/formatters";
+import { rentalConfirmationSummaryOptions } from "../confirm-rental/get-rental-confirmation-summary.queries";
 import { buildRentalConfirmationSummary } from "../rental-confirmation-summary";
 import { useRentalDetailContext } from "../rental-detail.context";
 import { formatRentalDetailDateBlock } from "../rental-detail.utils";
@@ -35,7 +39,28 @@ export function RentalConfirmationDialog({
 }: RentalConfirmationDialogProps) {
 	const { rental } = useRentalDetailContext();
 	const timezone = useBranchTimezone(rental.branchId);
-	const summary = buildRentalConfirmationSummary(rental, timezone);
+	const costQuery = useQuery({
+		...rentalConfirmationSummaryOptions(rental.id, rental.version),
+		enabled: open && rental.status === "DRAFT",
+	});
+	const summary = buildRentalConfirmationSummary(
+		rental,
+		timezone,
+		costQuery.data,
+	);
+	const versionConflict =
+		costQuery.data && costQuery.data.rentalVersion !== rental.version;
+	const summaryReady =
+		Boolean(summary) &&
+		costQuery.isSuccess &&
+		!costQuery.isFetching &&
+		!versionConflict;
+	const costError =
+		costQuery.error instanceof ProblemDetailsError &&
+		costQuery.error.problemDetails.code ===
+			"rental_commitment.delivery_review_required"
+			? "Revisá el acuerdo y la autorización de envío desde Editar borrador."
+			: "No pudimos obtener el total a confirmar. Revisá el pedido e intentá nuevamente.";
 
 	return (
 		<AlertDialog open={open} onOpenChange={onOpenChange}>
@@ -47,7 +72,42 @@ export function RentalConfirmationDialog({
 						disponibilidad para otros pedidos.
 					</AlertDialogDescription>
 				</AlertDialogHeader>
-				{summary ? <RentalConfirmationReview summary={summary} /> : null}
+				{summary ? (
+					<RentalConfirmationReview
+						summary={summary}
+						totalVerified={summaryReady}
+					/>
+				) : null}
+				{costQuery.isFetching ? (
+					<output className="block text-sm text-muted-foreground">
+						{summary
+							? "Actualizando total del cliente. Esperá antes de confirmar..."
+							: "Calculando total del cliente..."}
+					</output>
+				) : null}
+				{costQuery.isError ? (
+					<div className="space-y-2">
+						<p className="text-sm text-destructive" role="alert">
+							{costError}
+						</p>
+						<Button
+							type="button"
+							size="sm"
+							variant="outline"
+							disabled={costQuery.isFetching}
+							onClick={() => {
+								void costQuery.refetch();
+							}}
+						>
+							Reintentar cálculo
+						</Button>
+					</div>
+				) : null}
+				{versionConflict ? (
+					<p className="text-sm text-destructive">
+						El borrador cambió. Volvé a cargar el pedido antes de confirmarlo.
+					</p>
+				) : null}
 				{errorMessage ? (
 					<div className="flex min-w-0 items-start gap-2 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-900">
 						<AlertCircle className="mt-0.5 size-4 shrink-0" />
@@ -57,10 +117,10 @@ export function RentalConfirmationDialog({
 				<AlertDialogFooter>
 					<AlertDialogCancel disabled={isPending}>Volver</AlertDialogCancel>
 					<AlertDialogAction
-						disabled={!canConfirm || isPending}
+						disabled={!canConfirm || !summaryReady || isPending}
 						onClick={(event) => {
 							event.preventDefault();
-							onConfirm();
+							if (summaryReady) onConfirm();
 						}}
 					>
 						{isPending ? "Confirmando..." : "Confirmar alquiler"}
@@ -73,8 +133,10 @@ export function RentalConfirmationDialog({
 
 function RentalConfirmationReview({
 	summary,
+	totalVerified,
 }: {
 	summary: NonNullable<ReturnType<typeof buildRentalConfirmationSummary>>;
+	totalVerified: boolean;
 }) {
 	const start = formatRentalDetailDateBlock(
 		summary.period.start,
@@ -142,10 +204,36 @@ function RentalConfirmationReview({
 				</div>
 			</section>
 
+			<div className="space-y-2 text-sm">
+				<p className="flex justify-between gap-3">
+					<span>Equipos</span>
+					<span>
+						{formatMoney(summary.equipmentAmount, summary.total.currency)}
+					</span>
+				</p>
+				<p className="flex justify-between gap-3">
+					<span>Seguro</span>
+					<span>
+						{formatMoney(summary.insuranceAmount, summary.total.currency)}
+					</span>
+				</p>
+				{summary.deliveryCharge !== null ? (
+					<p className="flex justify-between gap-3">
+						<span>Entrega y recolección</span>
+						<span>
+							{formatMoney(summary.deliveryCharge, summary.total.currency)}
+						</span>
+					</p>
+				) : null}
+			</div>
 			<div className="flex flex-col gap-2 rounded-lg border border-neutral-200 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
 				<div className="flex min-w-0 items-center gap-2 text-sm font-medium">
 					<ReceiptText className="size-4 shrink-0" />
-					<span className="[overflow-wrap:anywhere]">Total a confirmar</span>
+					<span className="[overflow-wrap:anywhere]">
+						{totalVerified
+							? "Total a confirmar"
+							: "Total pendiente de verificar"}
+					</span>
 				</div>
 				<span className="min-w-0 font-mono text-lg font-bold [overflow-wrap:anywhere]">
 					{formatMoney(summary.total.amount, summary.total.currency)}

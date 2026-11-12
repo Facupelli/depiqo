@@ -6,6 +6,7 @@ import {
 	buildDraftRentalPeriod,
 	type DraftRentalComposerFormValues,
 	emptyDraftRentalValueToUndefined,
+	toDraftRentalDeliveryDecisions,
 	toDraftRentalManualPricingAdjustment,
 	toDraftRentalSelectedOffers,
 } from "../draft-rental-composer/draft-rental-composer.schema";
@@ -27,6 +28,10 @@ export function toCreateDraftRentalDto(
 		};
 	}
 
+	const decisions = toDraftRentalDeliveryDecisions(values);
+	if (decisions?.pricingAgreement?.type === "KEEP") {
+		throw new Error("A new draft has no agreement to keep");
+	}
 	const dto = {
 		branchId: values.branchId,
 		rentalCustomerId: emptyDraftRentalValueToUndefined(values.rentalCustomerId),
@@ -34,6 +39,12 @@ export function toCreateDraftRentalDto(
 		selectedOffers: toDraftRentalSelectedOffers(values),
 		fulfillmentMethod: values.fulfillmentMethod,
 		deliveryDetails: deliveryDetailsDto,
+		deliveryDecisions: decisions
+			? {
+					...decisions,
+					pricingAgreement: decisions.pricingAgreement,
+				}
+			: undefined,
 		insuranceSelected: values.insuranceSelected,
 		manualPricingAdjustment: toDraftRentalManualPricingAdjustment(values),
 	};

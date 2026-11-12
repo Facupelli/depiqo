@@ -82,6 +82,10 @@ export function CreateRentalPage() {
 
 			<Composer
 				activeBranches={activeBranches}
+				canManageDelivery={
+					currentAuth.actorType === "TENANT_USER" &&
+					can(currentAuth.permissions, TenantPermission.RentalsDeliveryManage)
+				}
 				defaultValues={createDraftRentalComposerDefaultValues(initialBranchId)}
 				onSubmit={handleSubmit}
 				isSubmitting={createDraftRental.isPending}

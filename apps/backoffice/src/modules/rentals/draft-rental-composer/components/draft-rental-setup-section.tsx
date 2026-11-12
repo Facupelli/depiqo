@@ -30,6 +30,7 @@ import { RentalPeriodPicker } from "@/modules/rentals/shared/rental-period/renta
 import { withForm } from "@/shared/contexts/form.context";
 import type { DraftRentalBranchDisplayFacts } from "../draft-rental-composer";
 import { useDraftRentalComposer } from "../draft-rental-composer.context";
+import { resetPendingDeliveryReview } from "../draft-rental-composer.form-utils";
 import { createDraftRentalComposerDefaultValues } from "../draft-rental-composer.schema";
 import { DeliveryAddressAutocomplete } from "./delivery-address-autocomplete";
 import { RentalCustomerCombobox } from "./rental-customer-combobox";
@@ -74,7 +75,8 @@ export const DraftRentalSetupSection = withForm({
 			const nextBranch = activeBranches.find(
 				(branch) => branch.id === nextBranchId,
 			);
-			if (!nextBranch) return;
+			if (!nextBranch || nextBranchId === form.state.values.branchId) return;
+			resetPendingDeliveryReview(form);
 
 			form.setFieldValue("branchId", nextBranchId);
 			form.setFieldValue("selectedOffers", []);
@@ -191,17 +193,29 @@ export const DraftRentalSetupSection = withForm({
 																		endDate: !endDateField.state.meta.isValid,
 																		endTime: !endTimeField.state.meta.isValid,
 																	}}
-																	onStartDateChange={
-																		startDateField.handleChange
-																	}
+																	onStartDateChange={(value) => {
+																		if (value !== startDateField.state.value)
+																			resetPendingDeliveryReview(form);
+																		startDateField.handleChange(value);
+																	}}
 																	onStartDateBlur={startDateField.handleBlur}
-																	onStartTimeChange={
-																		startTimeField.handleChange
-																	}
+																	onStartTimeChange={(value) => {
+																		if (value !== startTimeField.state.value)
+																			resetPendingDeliveryReview(form);
+																		startTimeField.handleChange(value);
+																	}}
 																	onStartTimeBlur={startTimeField.handleBlur}
-																	onEndDateChange={endDateField.handleChange}
+																	onEndDateChange={(value) => {
+																		if (value !== endDateField.state.value)
+																			resetPendingDeliveryReview(form);
+																		endDateField.handleChange(value);
+																	}}
 																	onEndDateBlur={endDateField.handleBlur}
-																	onEndTimeChange={endTimeField.handleChange}
+																	onEndTimeChange={(value) => {
+																		if (value !== endTimeField.state.value)
+																			resetPendingDeliveryReview(form);
+																		endTimeField.handleChange(value);
+																	}}
 																	onEndTimeBlur={endTimeField.handleBlur}
 																/>
 																<FieldError errors={periodErrors} />
@@ -230,6 +244,8 @@ export const DraftRentalSetupSection = withForm({
 													nextValue === "PICKUP" ||
 													nextValue === "DELIVERY"
 												) {
+													if (nextValue !== field.state.value)
+														resetPendingDeliveryReview(form);
 													field.handleChange(nextValue);
 												}
 											}}
@@ -307,12 +323,15 @@ const DeliveryFields = withForm({
 									isInvalid={isInvalid}
 									onBlur={field.handleBlur}
 									onChange={(address) => {
+										if (address === field.state.value) return;
+										resetPendingDeliveryReview(form);
 										form.setFieldValue("deliveryDestination", {
 											status: "INVALID",
 											address,
 										});
 									}}
 									onSelect={(suggestion) => {
+										resetPendingDeliveryReview(form);
 										form.setFieldValue("deliveryDestination", {
 											status: "NEW_DESTINATION",
 											address: suggestion.formattedAddress,

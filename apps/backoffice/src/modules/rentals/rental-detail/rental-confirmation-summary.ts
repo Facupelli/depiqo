@@ -1,3 +1,4 @@
+import type { GetRentalConfirmationSummaryResponseDto } from "@repo/api-contracts";
 import type { GetRentalDetailViewResponseDto } from "./get-rental-detail-view/get-rental-detail-view.schema";
 
 export type RentalConfirmationSummary = {
@@ -21,6 +22,9 @@ export type RentalConfirmationSummary = {
 		name: string;
 		quantity: number;
 	}>;
+	deliveryCharge: string | null;
+	equipmentAmount: string;
+	insuranceAmount: string;
 	total: {
 		amount: string;
 		currency: string;
@@ -30,8 +34,9 @@ export type RentalConfirmationSummary = {
 export function buildRentalConfirmationSummary(
 	rental: GetRentalDetailViewResponseDto,
 	timezone: string,
+	cost?: GetRentalConfirmationSummaryResponseDto,
 ): RentalConfirmationSummary | null {
-	if (!rental.pricing) {
+	if (!cost || cost.rentalVersion !== rental.version) {
 		return null;
 	}
 
@@ -59,9 +64,12 @@ export function buildRentalConfirmationSummary(
 			name: accessory.equipmentTypeName,
 			quantity: accessory.quantity,
 		})),
+		deliveryCharge: cost.deliveryCharge,
+		equipmentAmount: cost.equipmentAmount,
+		insuranceAmount: cost.insuranceAmount,
 		total: {
-			amount: rental.pricing.total,
-			currency: rental.pricing.currency,
+			amount: cost.customerTotal,
+			currency: cost.currency,
 		},
 	};
 }

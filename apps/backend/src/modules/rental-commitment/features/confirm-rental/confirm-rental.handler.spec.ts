@@ -15,6 +15,7 @@ import { FulfillmentMethod, RentalStatus } from '../../domain/rental-status';
 import { RentalOwnerSplitCalculator } from '../../owner-split/rental-owner-split-calculator';
 import { RentalRepository } from '../../persistence/rental.repository';
 import { ConfirmRentalCommand } from './confirm-rental.command';
+import { RentalConfirmationDeliveryService } from '../../application/rental-confirmation-delivery.service';
 import { ConfirmRentalHandler } from './confirm-rental.handler';
 
 describe('ConfirmRentalHandler deadlock retry', () => {
@@ -174,7 +175,7 @@ describe('ConfirmRentalHandler deadlock retry', () => {
         repository,
         operationalFacts,
         bufferSettings as never,
-        deliveryQuoteService,
+        new RentalConfirmationDeliveryService(deliveryQuoteService),
         allocation,
         ownerSplitCalculator,
         unitOfWork,

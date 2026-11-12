@@ -1,7 +1,10 @@
 import { hydrateRentalPeriod } from "@/modules/rentals/shared/rental-period/rental-period";
 import type { RentalCustomerDisplayFacts } from "../customer-selection/rental-customer-selector";
 import type { DraftRentalBranchDisplayFacts } from "../draft-rental-composer/draft-rental-composer";
-import type { DraftRentalComposerFormValues } from "../draft-rental-composer/draft-rental-composer.schema";
+import {
+	createDraftRentalComposerDefaultValues,
+	type DraftRentalComposerFormValues,
+} from "../draft-rental-composer/draft-rental-composer.schema";
 import type { GetRentalDetailViewResponseDto } from "../rental-detail/get-rental-detail-view/get-rental-detail-view.schema";
 
 export type HydratedDraftRentalEditor = {
@@ -25,6 +28,7 @@ export function hydrateRentalDetailToComposer(
 
 	return {
 		defaultValues: {
+			...createDraftRentalComposerDefaultValues(),
 			branchId: rental.branchId,
 			rentalCustomerId: rental.customerId ?? "",
 			periodStartDate: period.startDate,

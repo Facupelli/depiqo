@@ -1,5 +1,12 @@
 import { Module } from '@nestjs/common';
 
+import { RentalConfirmationDeliveryService } from './application/rental-confirmation-delivery.service';
+import { GetRentalConfirmationSummaryHttpController } from './features/get-rental-confirmation-summary/get-rental-confirmation-summary.controller';
+import { GetRentalConfirmationSummaryHandler } from './features/get-rental-confirmation-summary/get-rental-confirmation-summary.handler';
+
+import { PreviewDraftRentalCostHttpController } from './features/preview-draft-rental-cost/preview-draft-rental-cost.controller';
+import { PreviewDraftRentalCostHandler } from './features/preview-draft-rental-cost/preview-draft-rental-cost.handler';
+
 import { AssetInventoryModule } from '../asset-inventory/asset-inventory.module';
 import { CatalogModule } from '../catalog/catalog.module';
 import { DeliveryModule } from '../delivery/delivery.module';
@@ -87,9 +94,11 @@ import { RentalLifecycleFactsService } from './public-api/rental-lifecycle-facts
     AssignCustomerToDraftRentalHttpController,
     CancelRentalHttpController,
     CalculateProspectiveCartCostHttpController,
+    PreviewDraftRentalCostHttpController,
     ChangeRentalDetailsHttpController,
     ChangeRentalSelectionQuantityHttpController,
     ConfirmRentalHttpController,
+    GetRentalConfirmationSummaryHttpController,
     CreateConfirmedRentalHttpController,
     CreateDraftRentalHttpController,
     UpdateDraftRentalHttpController,
@@ -125,9 +134,12 @@ import { RentalLifecycleFactsService } from './public-api/rental-lifecycle-facts
     AssignCustomerToDraftRentalHandler,
     CancelRentalHandler,
     CalculateProspectiveCartCostHandler,
+    PreviewDraftRentalCostHandler,
     ChangeRentalDetailsHandler,
     ChangeRentalSelectionQuantityHandler,
     ConfirmRentalHandler,
+    RentalConfirmationDeliveryService,
+    GetRentalConfirmationSummaryHandler,
     CreateConfirmedRentalService,
     CreateDraftRentalService,
     UpdateDraftRentalHandler,

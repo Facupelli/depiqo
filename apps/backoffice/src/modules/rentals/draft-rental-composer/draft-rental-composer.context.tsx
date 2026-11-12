@@ -1,4 +1,7 @@
-import type { CalculateDraftRentalPriceResponseDto } from "@repo/api-contracts";
+import type {
+	GetRentalDetailResponseDto,
+	PreviewDraftRentalCostResponseDto,
+} from "@repo/api-contracts";
 import { createContext, use } from "react";
 
 export type DraftRentalComposerContextValue = {
@@ -6,11 +9,17 @@ export type DraftRentalComposerContextValue = {
 		selectedBranchName: string | null;
 		branchMissing: boolean;
 		timezone: string;
-		pricePreview: CalculateDraftRentalPriceResponseDto | undefined;
+		pricePreview: PreviewDraftRentalCostResponseDto | undefined;
+		canManageDelivery: boolean;
+		storedAgreement?: NonNullable<
+			GetRentalDetailResponseDto["draftDelivery"]
+		>["staffAgreement"];
+		storedDeliveryCurrency?: string;
+		blockingMessages: string[];
 	};
 	meta: {
 		isPriceLoading: boolean;
-		isPriceError: boolean;
+		retryPricePreview?: () => void;
 		isSubmitting: boolean;
 		submitDisabled: boolean;
 		submitError: string | null;

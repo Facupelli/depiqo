@@ -6,6 +6,7 @@ import {
 	buildDraftRentalPeriod,
 	type DraftRentalComposerFormValues,
 	emptyDraftRentalValueToUndefined,
+	toDraftRentalDeliveryDecisions,
 	toDraftRentalManualPricingAdjustment,
 	toDraftRentalSelectedOffers,
 } from "../draft-rental-composer/draft-rental-composer.schema";
@@ -50,6 +51,7 @@ export function toUpdateDraftRentalVariables(
 		insuranceSelected: values.insuranceSelected,
 		manualPricingAdjustment: toDraftRentalManualPricingAdjustment(values),
 		deliveryIntent,
+		deliveryDecisions: toDraftRentalDeliveryDecisions(values),
 	};
 
 	return {

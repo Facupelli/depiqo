@@ -2,6 +2,10 @@ import {
 	type CalculateDraftRentalPriceBodyDto,
 	CalculateDraftRentalPriceBodySchema,
 	PayableTargetTotalSchema,
+	type PreviewDraftRentalCostBodyDto,
+	PreviewDraftRentalCostBodySchema,
+	type UpdateDraftRentalBodyDto,
+	UpdateDraftRentalDeliveryDecisionsSchema,
 } from "@repo/api-contracts";
 import { z } from "zod";
 import {
@@ -36,7 +40,7 @@ export const draftRentalDeliveryDestinationFormSchema = z.discriminatedUnion(
 	],
 );
 
-const draftRentalComposerFormBaseSchema = z.object({
+const draftRentalDerivationBaseSchema = z.object({
 	branchId: z.string().min(1, "Seleccioná una sucursal"),
 	rentalCustomerId: z.string(),
 	periodStartDate: z.string().min(1, "La fecha de inicio es obligatoria"),
@@ -57,13 +61,45 @@ const draftRentalComposerFormBaseSchema = z.object({
 	fulfillmentMethod: z.enum(["PICKUP", "DELIVERY"]),
 	deliveryDestination: draftRentalDeliveryDestinationFormSchema,
 	insuranceSelected: z.boolean(),
-	targetTotal: z.union([z.literal(""), PayableTargetTotalSchema]),
-	adjustmentReason: z.string(),
+	targetTotal: z.union([z.literal(""), PayableTargetTotalSchema], {
+		error: "Ingresá un total de equipos positivo y con hasta dos decimales.",
+	}),
+	deliveryAgreementDecision: z.enum(["", "SET", "CLEAR", "KEEP"]),
+	deliveryAgreementAmount: z.string(),
+	deliveryExceptionAccepted: z.boolean(),
+	transportReservationMinutes: z.string(),
 });
+
+const draftRentalReasonFields = {
+	adjustmentReason: z.string(),
+	deliveryAgreementReason: z.string(),
+	deliveryExceptionReason: z.string(),
+};
+const draftRentalComposerFormBaseSchema =
+	draftRentalDerivationBaseSchema.extend(draftRentalReasonFields);
 
 export type DraftRentalComposerFormValues = z.infer<
 	typeof draftRentalComposerFormBaseSchema
 >;
+export type DraftRentalDerivationValues = Pick<
+	DraftRentalComposerFormValues,
+	| "branchId"
+	| "rentalCustomerId"
+	| "periodStartDate"
+	| "periodStartTime"
+	| "periodEndDate"
+	| "periodEndTime"
+	| "selectedOffers"
+	| "fulfillmentMethod"
+	| "deliveryDestination"
+	| "insuranceSelected"
+	| "targetTotal"
+	| "deliveryAgreementDecision"
+	| "deliveryAgreementAmount"
+	| "deliveryExceptionAccepted"
+	| "transportReservationMinutes"
+>;
+
 export type DraftRentalSelectedOfferFormValues = z.infer<
 	typeof draftRentalSelectedOfferFormSchema
 >;
@@ -73,11 +109,47 @@ export type DraftRentalComposerValidationContext = {
 	resolveBranchTimezone: (branchId: string) => string;
 };
 
-export function createDraftRentalComposerFormSchema({
+export function createDraftRentalComposerFormSchema(
+	context: DraftRentalComposerValidationContext,
+) {
+	return createDraftRentalDerivationSchema(context).safeExtend(
+		draftRentalReasonFields,
+	);
+}
+
+export function createDraftRentalDerivationSchema({
 	selectableBranchIds,
 	resolveBranchTimezone,
 }: DraftRentalComposerValidationContext) {
-	return draftRentalComposerFormBaseSchema.superRefine((value, ctx) => {
+	return draftRentalDerivationBaseSchema.superRefine((value, ctx) => {
+		if (value.fulfillmentMethod === "DELIVERY") {
+			if (
+				value.deliveryAgreementDecision === "SET" &&
+				!UpdateDraftRentalDeliveryDecisionsSchema.shape.pricingAgreement.safeParse(
+					{
+						type: "SET",
+						amount: normalizeAgreementAmount(value.deliveryAgreementAmount),
+					},
+				).success
+			) {
+				ctx.addIssue({
+					code: "custom",
+					path: ["deliveryAgreementAmount"],
+					message: "Ingresá un importe no negativo, con hasta dos decimales.",
+				});
+			}
+			const minutes = value.transportReservationMinutes.trim();
+			if (
+				minutes &&
+				(!/^\d+$/.test(minutes) || !Number.isSafeInteger(Number(minutes)))
+			) {
+				ctx.addIssue({
+					code: "custom",
+					path: ["transportReservationMinutes"],
+					message: "Los minutos de transporte deben ser un entero no negativo.",
+				});
+			}
+		}
 		if (value.branchId && !selectableBranchIds.has(value.branchId)) {
 			ctx.addIssue({
 				code: "custom",
@@ -168,6 +240,12 @@ export function createDraftRentalComposerDefaultValues(
 		insuranceSelected: false,
 		targetTotal: "",
 		adjustmentReason: "",
+		deliveryAgreementDecision: "",
+		deliveryAgreementAmount: "",
+		deliveryAgreementReason: "",
+		deliveryExceptionAccepted: false,
+		deliveryExceptionReason: "",
+		transportReservationMinutes: "",
 	};
 }
 
@@ -191,7 +269,7 @@ export function emptyDraftRentalValueToUndefined(
 }
 
 export function buildDraftRentalPeriod(
-	values: DraftRentalComposerFormValues,
+	values: DraftRentalDerivationValues,
 	timezone: string,
 ) {
 	const resolution = resolveRentalPeriod(
@@ -216,7 +294,7 @@ export function buildDraftRentalPeriod(
 }
 
 export function toDraftRentalSelectedOffers(
-	values: DraftRentalComposerFormValues,
+	values: DraftRentalDerivationValues,
 ) {
 	return values.selectedOffers.map((offer) => ({
 		rentalOfferId: offer.rentalOfferId,
@@ -239,23 +317,103 @@ export function toDraftRentalManualPricingAdjustment(
 }
 
 export function toCalculateDraftRentalPriceDto(
-	values: DraftRentalComposerFormValues,
+	values: DraftRentalDerivationValues,
 	timezone: string,
 ): CalculateDraftRentalPriceBodyDto {
-	const adjustment = toDraftRentalManualPricingAdjustment(values);
+	const targetTotal = emptyDraftRentalValueToUndefined(values.targetTotal);
 	const dto = {
 		branchId: values.branchId,
 		rentalCustomerId: emptyDraftRentalValueToUndefined(values.rentalCustomerId),
 		period: buildDraftRentalPeriod(values, timezone),
 		selectedOffers: toDraftRentalSelectedOffers(values),
-		targetTotalAdjustment: adjustment
+		targetTotalAdjustment: targetTotal
 			? {
 					mode: "TARGET_TOTAL" as const,
-					targetTotal: adjustment.targetTotal,
+					targetTotal,
 				}
 			: undefined,
 	};
 
-	CalculateDraftRentalPriceBodySchema.parse(dto);
-	return dto;
+	return CalculateDraftRentalPriceBodySchema.parse(dto);
+}
+
+function normalizeAgreementAmount(value: string) {
+	return value.trim().replace(",", ".");
+}
+
+export function toDraftRentalDeliveryDecisions(
+	values: DraftRentalComposerFormValues,
+): UpdateDraftRentalBodyDto["deliveryDecisions"] {
+	if (values.fulfillmentMethod !== "DELIVERY") return undefined;
+	const type = values.deliveryAgreementDecision;
+	const minutes = values.transportReservationMinutes.trim();
+	return {
+		pricingAgreement:
+			type === "SET"
+				? {
+						type,
+						amount: normalizeAgreementAmount(values.deliveryAgreementAmount),
+						reason: emptyDraftRentalValueToUndefined(
+							values.deliveryAgreementReason,
+						),
+					}
+				: type
+					? { type }
+					: undefined,
+		policyException: values.deliveryExceptionAccepted
+			? {
+					type: "AUTHORIZE",
+					reason: emptyDraftRentalValueToUndefined(
+						values.deliveryExceptionReason,
+					),
+				}
+			: undefined,
+		transportReservationMinutes: minutes ? Number(minutes) : undefined,
+	};
+}
+
+export function toPreviewDraftRentalCostDto(
+	values: DraftRentalDerivationValues,
+	timezone: string,
+	rentalId?: string,
+): PreviewDraftRentalCostBodyDto {
+	const type = values.deliveryAgreementDecision;
+	const minutes = values.transportReservationMinutes.trim();
+	const destination = values.deliveryDestination;
+	const dto: PreviewDraftRentalCostBodyDto = {
+		...toCalculateDraftRentalPriceDto(values, timezone),
+		rentalId,
+		insuranceSelected: values.insuranceSelected,
+		fulfillmentMethod: values.fulfillmentMethod,
+		deliveryIntent:
+			values.fulfillmentMethod !== "DELIVERY"
+				? undefined
+				: destination.status === "NEW_DESTINATION"
+					? {
+							type: "NEW_DESTINATION",
+							address: destination.address,
+							locationId: destination.locationId,
+						}
+					: destination.status === "EXISTING"
+						? { type: "KEEP_CURRENT" }
+						: undefined,
+		deliveryDecisions:
+			values.fulfillmentMethod === "DELIVERY"
+				? {
+						pricingAgreement:
+							type === "SET"
+								? {
+										type,
+										amount: normalizeAgreementAmount(
+											values.deliveryAgreementAmount,
+										),
+									}
+								: type
+									? { type }
+									: undefined,
+						transportReservationMinutes: minutes ? Number(minutes) : undefined,
+					}
+				: undefined,
+	};
+	return PreviewDraftRentalCostBodySchema.parse(dto);
 }
