@@ -69,6 +69,8 @@ Delivery may provide current proposed delivery terms. Rental Commitment preserve
 
 Staff may agree on a combined delivery-and-collection amount, including zero. This agreement determines the effective transportation charge in the customer total without changing the calculated reference prices or operational transportation facts. Without an agreement, the calculated total applies. Agreement attribution and time are established by the server, not supplied as customer pricing inputs.
 
+Agreed pricing does not authorize policy exceptions. An exception authorizes only the accepted transportation conditions; changes require fresh evaluation and reauthorization. Neither decision waives equipment reservation conflicts. Authorization attribution and time must come from trusted server context.
+
 ### Asset ownership
 
 Asset Inventory owns current physical ownership. Rental Commitment preserves the ownership and owner-contract facts needed to interpret historical asset participation, so current ownership changes must not reinterpret past rental assignments.

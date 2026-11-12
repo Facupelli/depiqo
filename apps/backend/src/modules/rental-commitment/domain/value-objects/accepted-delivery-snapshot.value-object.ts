@@ -22,16 +22,43 @@ const nonNegativeDecimal = z.string().refine((value) => {
 const legSchema = z
   .object({
     scheduledAt: z.string().datetime(),
-    serviceLevel: z.enum(['NORMAL', 'SPECIAL']),
-    basePrice: nonNegativeDecimal,
-    surcharge: nonNegativeDecimal,
-    total: nonNegativeDecimal,
+    serviceLevel: z.enum(['NORMAL', 'SPECIAL']).optional(),
+    basePrice: nonNegativeDecimal.optional(),
+    surcharge: nonNegativeDecimal.optional(),
+    total: nonNegativeDecimal.optional(),
   })
   .superRefine((leg, context) => {
-    if (!new Decimal(leg.basePrice).plus(leg.surcharge).equals(leg.total)) {
+    const values = [leg.serviceLevel, leg.basePrice, leg.surcharge, leg.total];
+    if (values.some((value) => value !== undefined) && values.some((value) => value === undefined)) {
+      context.addIssue({ code: 'custom', message: 'calculated leg terms must be all present or all absent' });
+    }
+    if (
+      leg.basePrice !== undefined &&
+      leg.surcharge !== undefined &&
+      leg.total !== undefined &&
+      !new Decimal(leg.basePrice).plus(leg.surcharge).equals(leg.total)
+    ) {
       context.addIssue({ code: 'custom', path: ['total'], message: 'must equal basePrice plus surcharge' });
     }
   });
+
+const policyExceptionSchema = z.object({
+  overriddenRestrictions: z
+    .array(
+      z.enum([
+        'NOT_CONFIGURED',
+        'DISABLED',
+        'BEYOND_MAX_DISTANCE',
+        'DELIVERY_OUTSIDE_SERVICE_HOURS',
+        'COLLECTION_OUTSIDE_SERVICE_HOURS',
+      ]),
+    )
+    .min(1)
+    .refine((values) => new Set(values).size === values.length, 'must not contain duplicates'),
+  reason: z.string().trim().min(1).optional(),
+  authorizedBy: z.string().trim().min(1),
+  authorizedAt: z.string().datetime(),
+});
 
 const snapshotSchema = z
   .object({
@@ -41,7 +68,19 @@ const snapshotSchema = z
     delivery: legSchema,
     collection: legSchema,
     currency: z.string().trim().min(1),
-    deliveryTotal: nonNegativeDecimal,
+    deliveryTotal: nonNegativeDecimal.optional(),
+    // The authorization applies to this snapshot's branch, destination, times and reservation minutes.
+    branchId: z.string().trim().min(1).optional(),
+    resolvedDestination: z
+      .object({
+        formattedAddress: z.string().trim().min(1),
+        latitude: z.number().min(-90).max(90),
+        longitude: z.number().min(-180).max(180),
+        providerPlaceId: z.string().trim().min(1).optional(),
+      })
+      .optional(),
+    // Future commands must establish attribution from trusted server context, never request metadata.
+    policyException: policyExceptionSchema.optional(),
     // Future agreement-writing commands must establish actor and timestamp from trusted server context.
     staffAgreement: z
       .object({
@@ -54,7 +93,35 @@ const snapshotSchema = z
     transportReservationMinutes: z.number().int().nonnegative(),
   })
   .superRefine((snapshot, context) => {
-    if (!new Decimal(snapshot.delivery.total).plus(snapshot.collection.total).equals(snapshot.deliveryTotal)) {
+    if (Date.parse(snapshot.collection.scheduledAt) <= Date.parse(snapshot.delivery.scheduledAt)) {
+      context.addIssue({ code: 'custom', path: ['collection.scheduledAt'], message: 'must be after delivery' });
+    }
+    const hasQuote = snapshot.deliveryTotal !== undefined;
+    if (
+      hasQuote !== (snapshot.delivery.total !== undefined) ||
+      hasQuote !== (snapshot.collection.total !== undefined)
+    ) {
+      context.addIssue({ code: 'custom', message: 'automatic quote must be complete or entirely absent' });
+    }
+    if (!hasQuote && (!snapshot.staffAgreement || !snapshot.policyException)) {
+      context.addIssue({
+        code: 'custom',
+        message: 'without an automatic quote, staff agreement and policy exception are required',
+      });
+    }
+    if (snapshot.policyException && (!snapshot.branchId || !snapshot.resolvedDestination)) {
+      context.addIssue({
+        code: 'custom',
+        path: ['policyException'],
+        message: 'requires a branch and resolved destination',
+      });
+    }
+    if (
+      snapshot.delivery.total !== undefined &&
+      snapshot.collection.total !== undefined &&
+      snapshot.deliveryTotal !== undefined &&
+      !new Decimal(snapshot.delivery.total).plus(snapshot.collection.total).equals(snapshot.deliveryTotal)
+    ) {
       context.addIssue({
         code: 'custom',
         path: ['deliveryTotal'],
@@ -88,6 +155,8 @@ export class AcceptedDeliverySnapshot extends JsonSnapshot {
   reschedule(params: {
     deliveryScheduledAt: Date;
     collectionScheduledAt: Date;
+    // Supplied only after fresh evaluation and authorization by the owning server workflow.
+    reauthorizedPolicyException?: AcceptedDeliverySnapshotData['policyException'];
   }): Result<AcceptedDeliverySnapshot, RentalCommitmentError> {
     for (const [field, value] of [
       ['delivery.scheduledAt', params.deliveryScheduledAt],
@@ -98,8 +167,21 @@ export class AcceptedDeliverySnapshot extends JsonSnapshot {
       }
     }
 
+    const conditionsChanged =
+      params.deliveryScheduledAt.getTime() !== Date.parse(this.data.delivery.scheduledAt) ||
+      params.collectionScheduledAt.getTime() !== Date.parse(this.data.collection.scheduledAt);
+    if (conditionsChanged && this.data.policyException && !params.reauthorizedPolicyException) {
+      return err(
+        new RentalInvalidFieldError(
+          'acceptedDelivery.policyException',
+          'changed transportation conditions require reauthorization',
+        ),
+      );
+    }
+
     return AcceptedDeliverySnapshot.create({
       ...this.snapshot,
+      policyException: params.reauthorizedPolicyException ?? this.data.policyException,
       delivery: {
         ...this.data.delivery,
         scheduledAt: params.deliveryScheduledAt.toISOString(),
@@ -112,7 +194,8 @@ export class AcceptedDeliverySnapshot extends JsonSnapshot {
   }
 
   get effectiveDeliveryCharge(): string {
-    return this.data.staffAgreement?.amount ?? this.data.deliveryTotal;
+    // Construction guarantees an agreement whenever the calculated total is absent.
+    return this.data.staffAgreement?.amount ?? this.data.deliveryTotal!;
   }
 
   get snapshot(): AcceptedDeliverySnapshotData {

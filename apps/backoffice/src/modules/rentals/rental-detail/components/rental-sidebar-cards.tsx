@@ -353,7 +353,7 @@ function RentalFinancialsCard() {
 					{acceptedDelivery ? (
 						<MoneyRow
 							label="Delivery"
-							value={acceptedDelivery.deliveryTotal}
+							value={acceptedDelivery.effectiveDeliveryCharge}
 							currency={acceptedDelivery.currency}
 						/>
 					) : null}

@@ -26,10 +26,10 @@ export const GetRentalDetailDeliveryDetailsSchema = z.object({
 
 export const GetRentalDetailAcceptedDeliveryLegSchema = z.object({
 	scheduledAt: z.string().datetime(),
-	serviceLevel: z.enum(["NORMAL", "SPECIAL"]),
-	basePrice: z.string(),
-	surcharge: z.string(),
-	total: z.string(),
+	serviceLevel: z.enum(["NORMAL", "SPECIAL"]).optional(),
+	basePrice: z.string().optional(),
+	surcharge: z.string().optional(),
+	total: z.string().optional(),
 });
 
 export const GetRentalDetailAcceptedDeliverySchema = z.object({
@@ -37,7 +37,23 @@ export const GetRentalDetailAcceptedDeliverySchema = z.object({
 	delivery: GetRentalDetailAcceptedDeliveryLegSchema,
 	collection: GetRentalDetailAcceptedDeliveryLegSchema,
 	currency: z.string(),
-	deliveryTotal: z.string(),
+	deliveryTotal: z.string().optional(),
+	branchId: z.string().optional(),
+	resolvedDestination: z.object({
+		formattedAddress: z.string(),
+		latitude: z.number().min(-90).max(90),
+		longitude: z.number().min(-180).max(180),
+		providerPlaceId: z.string().optional(),
+	}).optional(),
+	policyException: z.object({
+		overriddenRestrictions: z.array(z.enum([
+			"NOT_CONFIGURED", "DISABLED", "BEYOND_MAX_DISTANCE",
+			"DELIVERY_OUTSIDE_SERVICE_HOURS", "COLLECTION_OUTSIDE_SERVICE_HOURS",
+		])).min(1),
+		reason: z.string().optional(),
+		authorizedBy: z.string(),
+		authorizedAt: z.string().datetime(),
+	}).optional(),
 	staffAgreement: z
 		.object({
 			amount: z.string(),

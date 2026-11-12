@@ -88,6 +88,12 @@ const metadataByPermission = {
     'Gestionar ajustes de precio',
     'Permite aplicar y modificar ajustes manuales de precio en los alquileres.',
   ),
+  [TenantPermission.RentalsDeliveryManage]: permission(
+    TenantPermission.RentalsDeliveryManage,
+    TenantPermissionGroup.Rentals,
+    'Gestionar acuerdos y excepciones de entrega',
+    'Permite acordar precios de entrega y retiro y autorizar excepciones a las políticas de entrega de la sucursal.',
+  ),
   [TenantPermission.ContractsRead]: permission(
     TenantPermission.ContractsRead,
     TenantPermissionGroup.Contracts,
@@ -237,6 +243,7 @@ export const ALL_TENANT_PERMISSIONS: readonly TenantPermissionId[] = Object.free
 );
 
 const DEFAULT_MEMBER_EXCLUDED_PERMISSIONS: readonly TenantPermissionId[] = [
+  TenantPermission.RentalsDeliveryManage,
   TenantPermission.FinancesRead,
   TenantPermission.ReportsRentalsRead,
   TenantPermission.ReportsEquipmentRead,

@@ -335,6 +335,9 @@ export class GetRentalDetailHandler implements IQueryHandler<GetRentalDetailQuer
       currency,
       deliveryTotal,
       staffAgreement,
+      branchId,
+      resolvedDestination,
+      policyException,
       transportReservationMinutes,
     } = snapshot.value.snapshot;
     return {
@@ -344,6 +347,9 @@ export class GetRentalDetailHandler implements IQueryHandler<GetRentalDetailQuer
       currency,
       deliveryTotal,
       staffAgreement,
+      branchId,
+      resolvedDestination,
+      policyException,
       effectiveDeliveryCharge: snapshot.value.effectiveDeliveryCharge,
       transportReservationMinutes,
     };

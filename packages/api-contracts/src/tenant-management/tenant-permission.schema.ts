@@ -11,6 +11,7 @@ export const TenantPermission = {
   RentalsFulfillmentManage: "rentals.fulfillment.manage",
   RentalsCancel: "rentals.cancel",
   RentalsPriceAdjustmentManage: "rentals.price_adjustment.manage",
+  RentalsDeliveryManage: "rentals.delivery.manage",
   ContractsRead: "contracts.read",
   ContractsGenerate: "contracts.generate",
   ContractsSigningSend: "contracts.signing.send",
