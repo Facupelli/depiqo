@@ -68,7 +68,13 @@ export class GetRentalConfirmationSummaryHandler implements IQueryHandler<
       period: new RentalPeriod(rental.periodStart, rental.periodEnd),
       fulfillmentMethod: rental.fulfillmentMethod,
       deliveryDetails: rental.deliveryDetails
-        ? { ...rental.deliveryDetails, providerPlaceId: rental.deliveryDetails.providerPlaceId ?? undefined }
+        ? {
+            address: rental.deliveryDetails.address,
+            formattedAddress: rental.deliveryDetails.formattedAddress ?? undefined,
+            latitude: rental.deliveryDetails.latitude ?? undefined,
+            longitude: rental.deliveryDetails.longitude ?? undefined,
+            providerPlaceId: rental.deliveryDetails.providerPlaceId ?? undefined,
+          }
         : undefined,
       existing: storedDelivery?.snapshot,
     });

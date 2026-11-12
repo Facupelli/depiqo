@@ -86,7 +86,10 @@ export class PreviewDraftRentalCostHandler implements IQueryHandler<
         branchId: draft.branchId,
         period: new RentalPeriod(draft.periodStart, draft.periodEnd),
         details: {
-          ...draft.deliveryDetails,
+          address: draft.deliveryDetails.address,
+          formattedAddress: draft.deliveryDetails.formattedAddress ?? undefined,
+          latitude: draft.deliveryDetails.latitude ?? undefined,
+          longitude: draft.deliveryDetails.longitude ?? undefined,
           providerPlaceId: draft.deliveryDetails.providerPlaceId ?? undefined,
         },
         snapshot: snapshot.value.snapshot,
@@ -188,6 +191,9 @@ export class PreviewDraftRentalCostHandler implements IQueryHandler<
       destination = { address: input.deliveryIntent.address, locationId: input.deliveryIntent.locationId };
     } else if (draft?.deliveryDetails) {
       const details = draft.deliveryDetails;
+      if (details.formattedAddress === null || details.latitude === null || details.longitude === null) {
+        throw new Error('Unresolved delivery destinations require the V2 delivery preview workflow.');
+      }
       destination = {
         address: details.address,
         resolvedLocation: {

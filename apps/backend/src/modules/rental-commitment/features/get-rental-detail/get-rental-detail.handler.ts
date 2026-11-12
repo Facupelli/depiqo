@@ -164,6 +164,20 @@ export class GetRentalDetailHandler implements IQueryHandler<GetRentalDetailQuer
 
     if (branchFactsResult.isErr()) throw new Error(branchFactsResult.error.message);
     const retainedBranch = branchFactsResult.value;
+    const deliveryDetails = (() => {
+      const details = rental.deliveryDetails;
+      if (!details) return null;
+      if (details.formattedAddress === null || details.latitude === null || details.longitude === null) {
+        throw new Error('Unresolved delivery destinations require the V2 delivery API contract.');
+      }
+      return {
+        address: details.address,
+        formattedAddress: details.formattedAddress,
+        latitude: details.latitude,
+        longitude: details.longitude,
+        providerPlaceId: details.providerPlaceId ?? undefined,
+      };
+    })();
 
     return ok({
       id: rental.id,
@@ -193,15 +207,7 @@ export class GetRentalDetailHandler implements IQueryHandler<GetRentalDetailQuer
       },
       fulfillment: {
         method: rental.fulfillmentMethod,
-        deliveryDetails: rental.deliveryDetails
-          ? {
-              address: rental.deliveryDetails.address,
-              formattedAddress: rental.deliveryDetails.formattedAddress,
-              latitude: rental.deliveryDetails.latitude,
-              longitude: rental.deliveryDetails.longitude,
-              providerPlaceId: rental.deliveryDetails.providerPlaceId ?? undefined,
-            }
-          : null,
+        deliveryDetails,
       },
       selections: rental.selections.map((selection) => ({
         id: selection.id,

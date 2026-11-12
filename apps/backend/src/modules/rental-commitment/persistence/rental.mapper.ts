@@ -59,9 +59,9 @@ export interface RentalPersistenceRecord {
 
 interface RentalDeliveryDetailsPersistenceRecord {
   address: string;
-  formattedAddress: string;
-  latitude: number;
-  longitude: number;
+  formattedAddress: string | null;
+  latitude: number | null;
+  longitude: number | null;
   providerPlaceId: string | null;
 }
 
@@ -376,9 +376,9 @@ export class RentalMapper {
   static toDeliveryDetailsDomain(record: RentalDeliveryDetailsPersistenceRecord): RentalDeliveryDetails {
     return {
       address: record.address,
-      formattedAddress: record.formattedAddress,
-      latitude: record.latitude,
-      longitude: record.longitude,
+      formattedAddress: record.formattedAddress ?? undefined,
+      latitude: record.latitude ?? undefined,
+      longitude: record.longitude ?? undefined,
       providerPlaceId: record.providerPlaceId ?? undefined,
     };
   }
@@ -387,11 +387,6 @@ export class RentalMapper {
     const details = rental.deliveryDetails;
     if (!details) {
       return undefined;
-    }
-
-    // Persistence remains geocoded-only until the delivery-details schema migration.
-    if (details.formattedAddress === undefined || details.latitude === undefined || details.longitude === undefined) {
-      throw new RentalInvalidFieldError('deliveryDetails', 'unresolved delivery details cannot yet be persisted');
     }
 
     return {
