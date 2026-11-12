@@ -329,6 +329,10 @@ export class GetRentalDetailHandler implements IQueryHandler<GetRentalDetailQuer
     if (deliverySnapshot === null) return null;
     const snapshot = AcceptedDeliverySnapshot.create(deliverySnapshot);
     if (snapshot.isErr()) throw snapshot.error;
+    const data = snapshot.value.snapshot;
+    if (data.arrangement !== 'ROUTED') {
+      throw new Error('STAFF_ARRANGED requires the V2 delivery API contract.');
+    }
     const {
       distanceMeters,
       delivery,
@@ -340,7 +344,7 @@ export class GetRentalDetailHandler implements IQueryHandler<GetRentalDetailQuer
       resolvedDestination,
       policyException,
       transportReservationMinutes,
-    } = snapshot.value.snapshot;
+    } = data;
     return {
       distanceMeters,
       delivery,

@@ -16,6 +16,7 @@ import {
   ACCEPTED_DELIVERY_SNAPSHOT_VERSION,
   AcceptedDeliverySnapshot,
   AcceptedDeliverySnapshotData,
+  RoutedDeliverySnapshotData,
 } from '../domain/value-objects/accepted-delivery-snapshot.value-object';
 import { RentalPeriod } from '../domain/value-objects/rental-period.value-object';
 import { acceptedDeliverySnapshotFromQuote } from './accepted-delivery-snapshot.adapter';
@@ -119,6 +120,9 @@ export class DraftRentalDeliveryResolver {
 
   async resolve(input: DraftDeliveryInput): Promise<Result<DraftDeliveryTerms, RentalProposalResolutionError>> {
     const { existing, decisions } = input;
+    if (existing?.snapshot.arrangement === 'STAFF_ARRANGED') {
+      return err(this.invalid('arrangement', 'STAFF_ARRANGED draft workflows are not yet supported'));
+    }
     const suppliedMinutes = decisions?.transportReservationMinutes;
     if (suppliedMinutes !== undefined && (!Number.isInteger(suppliedMinutes) || suppliedMinutes < 0)) {
       return err(this.invalid('transportReservationMinutes', 'must be a non-negative integer'));
@@ -176,6 +180,7 @@ export class DraftRentalDeliveryResolver {
       ...(evaluation.quote
         ? acceptedDeliverySnapshotFromQuote(evaluation.quote)
         : {
+            arrangement: 'ROUTED',
             schema: ACCEPTED_DELIVERY_SNAPSHOT_SCHEMA,
             version: ACCEPTED_DELIVERY_SNAPSHOT_VERSION,
             distanceMeters: evaluation.distanceMeters,
@@ -224,6 +229,9 @@ export class DraftRentalDeliveryResolver {
     original: AcceptedDeliverySnapshotData,
     conditionsChanged: boolean,
   ): Result<DraftDeliveryTerms, RentalProposalResolutionError> {
+    if (original.arrangement !== 'ROUTED') {
+      return err(this.invalid('arrangement', 'STAFF_ARRANGED draft workflows are not yet supported'));
+    }
     if (original.currency !== input.pricingCurrency) {
       return err(this.invalid('currency', 'delivery and rental pricing must use the same currency'));
     }
@@ -290,6 +298,12 @@ export class DraftRentalDeliveryResolver {
   }
 
   async preview(input: Omit<DraftDeliveryInput, 'tenantUserId'>): Promise<PreviewDraftRentalCostDeliveryDto> {
+    if (input.existing?.snapshot.arrangement === 'STAFF_ARRANGED') {
+      throw new RentalInvalidFieldError(
+        'acceptedDelivery.arrangement',
+        'STAFF_ARRANGED previews are not yet supported',
+      );
+    }
     const inspection = await this.inspect(input);
     const result: PreviewDraftRentalCostDeliveryDto = {
       source: inspection.preserved ? 'STORED' : 'EVALUATED',
@@ -307,18 +321,27 @@ export class DraftRentalDeliveryResolver {
       staffAgreedAmount: null,
       effectiveCharge: null,
     };
-    let terms: Pick<AcceptedDeliverySnapshotData, 'currency' | 'deliveryTotal' | 'staffAgreement'>;
+    let terms: Pick<RoutedDeliverySnapshotData, 'currency' | 'deliveryTotal' | 'staffAgreement'>;
     let conditionsChanged = false;
     if (inspection.preserved) {
       const { snapshot, details } = inspection.existing;
+      if (snapshot.arrangement !== 'ROUTED') {
+        throw new RentalInvalidFieldError(
+          'acceptedDelivery.arrangement',
+          'STAFF_ARRANGED previews are not yet supported',
+        );
+      }
       terms = snapshot;
-      result.resolvedDestination = {
-        formattedAddress: details.formattedAddress,
-        latitude: details.latitude,
-        longitude: details.longitude,
-        providerPlaceId: details.providerPlaceId,
-      };
-      result.distanceMeters = snapshot.distanceMeters;
+      result.resolvedDestination =
+        details.formattedAddress !== undefined && details.latitude !== undefined && details.longitude !== undefined
+          ? {
+              formattedAddress: details.formattedAddress,
+              latitude: details.latitude,
+              longitude: details.longitude,
+              providerPlaceId: details.providerPlaceId,
+            }
+          : null;
+      result.distanceMeters = snapshot.distanceMeters ?? null;
       result.delivery = snapshot.delivery;
       result.collection = snapshot.collection;
       result.transportReservationMinutes = snapshot.transportReservationMinutes;

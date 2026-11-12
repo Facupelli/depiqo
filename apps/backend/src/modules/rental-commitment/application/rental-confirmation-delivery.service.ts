@@ -36,7 +36,13 @@ export class RentalConfirmationDeliveryService {
   }): Promise<Result<AcceptedDeliverySnapshot | undefined, RentalConfirmationDeliveryError>> {
     if (input.fulfillmentMethod === 'PICKUP') return ok(undefined);
     const details = input.deliveryDetails;
-    if (!details) {
+    if (
+      input.existing?.arrangement === 'STAFF_ARRANGED' ||
+      !details ||
+      details.formattedAddress === undefined ||
+      details.latitude === undefined ||
+      details.longitude === undefined
+    ) {
       return err({
         code: 'rental_commitment.invalid_rental_field',
         message: 'Delivery rentals require resolved Delivery details.',
@@ -107,6 +113,7 @@ export class RentalConfirmationDeliveryService {
       ...(deliveryOutcome.quote
         ? acceptedDeliverySnapshotFromQuote(deliveryOutcome.quote)
         : {
+            arrangement: 'ROUTED',
             schema: ACCEPTED_DELIVERY_SNAPSHOT_SCHEMA,
             version: ACCEPTED_DELIVERY_SNAPSHOT_VERSION,
             distanceMeters: deliveryOutcome.distanceMeters,

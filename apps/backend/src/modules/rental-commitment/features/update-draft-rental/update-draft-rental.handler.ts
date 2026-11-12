@@ -186,7 +186,13 @@ export class UpdateDraftRentalHandler implements ICommandHandler<UpdateDraftRent
     }
 
     const existing = input.rental.deliveryDetails;
-    if (!existing) {
+    if (
+      input.rental.acceptedDelivery?.snapshot.arrangement === 'STAFF_ARRANGED' ||
+      !existing ||
+      existing.formattedAddress === undefined ||
+      existing.latitude === undefined ||
+      existing.longitude === undefined
+    ) {
       return err(
         this.error(
           'rental_commitment.current_delivery_destination_missing',

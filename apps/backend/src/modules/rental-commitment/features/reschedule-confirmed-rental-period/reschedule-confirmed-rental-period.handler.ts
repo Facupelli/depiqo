@@ -57,7 +57,8 @@ export class RescheduleConfirmedRentalPeriodHandler implements ICommandHandler<
     });
     if (acceptedDelivery.isErr())
       return err({ ...acceptedDelivery.error, context: { ...acceptedDelivery.error.context, ...context } });
-    if (acceptedDelivery.value?.snapshot.policyException) {
+    const acceptedTerms = acceptedDelivery.value?.snapshot;
+    if (acceptedTerms?.arrangement === 'ROUTED' && acceptedTerms.policyException) {
       const allowed = await this.authorization.hasPermission(
         { tenantId, tenantUserId },
         TenantPermission.RentalsDeliveryManage,

@@ -112,7 +112,14 @@ export class ConfirmedRentalReschedulingPreparationService {
 
     const existing = rental.acceptedDelivery;
     const details = rental.deliveryDetails;
-    if (!existing || !details) {
+    if (
+      !existing ||
+      existing.snapshot.arrangement !== 'ROUTED' ||
+      !details ||
+      details.formattedAddress === undefined ||
+      details.latitude === undefined ||
+      details.longitude === undefined
+    ) {
       return err(
         failure('rental_commitment.invalid_rescheduling_delivery_input', 'Accepted delivery details are required.'),
       );
@@ -249,6 +256,7 @@ export class ConfirmedRentalReschedulingPreparationService {
         ? undefined
         : {
             ...(quoteTerms ?? {
+              arrangement: 'ROUTED',
               schema: ACCEPTED_DELIVERY_SNAPSHOT_SCHEMA,
               version: ACCEPTED_DELIVERY_SNAPSHOT_VERSION,
               distanceMeters: evaluation.distanceMeters,

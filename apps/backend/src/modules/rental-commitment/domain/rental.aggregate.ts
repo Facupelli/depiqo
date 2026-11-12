@@ -81,9 +81,9 @@ export interface AcceptedRentalAssetBuffer {
 
 export interface RentalDeliveryDetails {
   address: string;
-  formattedAddress: string;
-  latitude: number;
-  longitude: number;
+  formattedAddress?: string;
+  latitude?: number;
+  longitude?: number;
   providerPlaceId?: string;
 }
 
@@ -763,15 +763,17 @@ export class Rental extends AggregateRootBase {
       }
       const proposed = acceptedDelivery.snapshot;
       const previous = this.acceptedDelivery.snapshot;
-      const destination = proposed.resolvedDestination;
+      const destination = proposed.arrangement === 'ROUTED' ? proposed.resolvedDestination : undefined;
       const details = this.deliveryDetails;
       if (
-        proposed.branchId !== this.branchId ||
-        !destination ||
-        destination.formattedAddress !== details.formattedAddress ||
-        destination.latitude !== details.latitude ||
-        destination.longitude !== details.longitude ||
-        destination.providerPlaceId !== details.providerPlaceId ||
+        proposed.arrangement !== previous.arrangement ||
+        (proposed.arrangement === 'ROUTED' &&
+          (proposed.branchId !== this.branchId ||
+            !destination ||
+            destination.formattedAddress !== details.formattedAddress ||
+            destination.latitude !== details.latitude ||
+            destination.longitude !== details.longitude ||
+            destination.providerPlaceId !== details.providerPlaceId)) ||
         Date.parse(proposed.delivery.scheduledAt) !== params.period.start.getTime() ||
         Date.parse(proposed.collection.scheduledAt) !== params.period.end.getTime() ||
         JSON.stringify(proposed.staffAgreement) !== JSON.stringify(previous.staffAgreement)
@@ -1428,6 +1430,9 @@ export class Rental extends AggregateRootBase {
       return err(new RentalInvalidFieldError('acceptedDelivery.currency', 'must match accepted Pricing currency'));
     }
 
+    const deliveryValidation = this.validateDeliveryDetailsInvariant(acceptedDelivery);
+    if (deliveryValidation.isErr()) return err(deliveryValidation.error);
+
     const confirmedAt = params.confirmedAt ? new Date(params.confirmedAt) : new Date();
     const participationTiming = deriveConfirmationParticipationTiming(this.period, confirmedAt);
     const assignedAssets = Rental.createAssignedAssets(
@@ -1793,7 +1798,9 @@ export class Rental extends AggregateRootBase {
     return ok(undefined);
   }
 
-  private validateDeliveryDetailsInvariant(): Result<void, RentalCommitmentError> {
+  private validateDeliveryDetailsInvariant(
+    acceptedDelivery = this.props.deliverySnapshot,
+  ): Result<void, RentalCommitmentError> {
     if (this.fulfillmentMethod === FulfillmentMethod.Delivery) {
       if (!this.props.deliveryDetails) {
         return err(new RentalInvalidFieldError('deliveryDetails', 'delivery rentals require delivery details'));
@@ -1805,8 +1812,9 @@ export class Rental extends AggregateRootBase {
         return err(new RentalInvalidFieldError('deliveryDetails.address', 'delivery address must be a trimmed string'));
       }
       if (
-        this.props.deliveryDetails.formattedAddress.trim() === '' ||
-        this.props.deliveryDetails.formattedAddress !== this.props.deliveryDetails.formattedAddress.trim()
+        this.props.deliveryDetails.formattedAddress !== undefined &&
+        (this.props.deliveryDetails.formattedAddress.trim() === '' ||
+          this.props.deliveryDetails.formattedAddress !== this.props.deliveryDetails.formattedAddress.trim())
       ) {
         return err(
           new RentalInvalidFieldError(
@@ -1815,21 +1823,49 @@ export class Rental extends AggregateRootBase {
           ),
         );
       }
-      if (
-        !Number.isFinite(this.props.deliveryDetails.latitude) ||
-        this.props.deliveryDetails.latitude < -90 ||
-        this.props.deliveryDetails.latitude > 90
-      ) {
+      const { latitude, longitude, formattedAddress, providerPlaceId } = this.props.deliveryDetails;
+      if ((latitude === undefined) !== (longitude === undefined)) {
+        return err(new RentalInvalidFieldError('deliveryDetails', 'coordinates must be supplied together'));
+      }
+      if (latitude !== undefined && (!Number.isFinite(latitude) || latitude < -90 || latitude > 90)) {
         return err(new RentalInvalidFieldError('deliveryDetails.latitude', 'must be between -90 and 90'));
       }
-      if (
-        !Number.isFinite(this.props.deliveryDetails.longitude) ||
-        this.props.deliveryDetails.longitude < -180 ||
-        this.props.deliveryDetails.longitude > 180
-      ) {
+      if (longitude !== undefined && (!Number.isFinite(longitude) || longitude < -180 || longitude > 180)) {
         return err(new RentalInvalidFieldError('deliveryDetails.longitude', 'must be between -180 and 180'));
       }
 
+      const terms = acceptedDelivery?.snapshot;
+      if (terms) {
+        if (
+          Date.parse(terms.delivery.scheduledAt) !== this.period.start.getTime() ||
+          Date.parse(terms.collection.scheduledAt) !== this.period.end.getTime()
+        ) {
+          return err(new RentalInvalidFieldError('acceptedDelivery', 'scheduled times must match the rental period'));
+        }
+        if (terms.arrangement === 'ROUTED') {
+          if (latitude === undefined || longitude === undefined || !formattedAddress) {
+            return err(
+              new RentalInvalidFieldError(
+                'deliveryDetails',
+                'ROUTED delivery requires resolved coordinates and address',
+              ),
+            );
+          }
+          const destination = terms.resolvedDestination;
+          if (
+            (terms.branchId !== undefined && terms.branchId !== this.branchId) ||
+            (destination !== undefined &&
+              (destination.formattedAddress !== formattedAddress ||
+                destination.latitude !== latitude ||
+                destination.longitude !== longitude ||
+                destination.providerPlaceId !== providerPlaceId))
+          ) {
+            return err(
+              new RentalInvalidFieldError('acceptedDelivery', 'must match the rental branch and delivery destination'),
+            );
+          }
+        }
+      }
       return ok(undefined);
     }
 

@@ -67,13 +67,15 @@ A supported rental edit may intentionally obtain and accept a new proposed price
 
 Delivery may provide current proposed delivery terms. Rental Commitment preserves the delivery facts accepted for the rental. Where accepted delivery affects the physical reservation period, that relationship is interpreted using the accepted delivery facts rather than later proposals.
 
-Staff may agree on a combined delivery-and-collection amount, including zero. This agreement determines the effective transportation charge in the customer total without changing the calculated reference prices or operational transportation facts. Without an agreement, the calculated total applies. Agreement attribution and time are established by the server, not supplied as customer pricing inputs.
+Staff-arranged delivery is an independent staff commitment, not a policy exception to routed delivery.
+
+Staff may agree on a combined delivery-and-collection amount, including zero. This agreement determines the effective transportation charge in the customer total without changing the calculated reference prices or operational transportation facts. For routed delivery without an agreement, the calculated total applies. Agreement attribution and time are established by the server, not supplied as customer pricing inputs.
 
 Draft edits unrelated to transportation preserve the complete proposed delivery terms, including their calculated reference prices and staff decisions. Changing transportation conditions requires an explicit decision about an existing agreement. Preserving proposed terms in a draft does not establish current eligibility for confirmation.
 
-Agreed pricing does not authorize policy exceptions. An exception authorizes only the accepted transportation conditions; changes require fresh evaluation and reauthorization. Neither decision waives equipment reservation conflicts. Authorization attribution and time must come from trusted server context.
+For routed delivery, agreed pricing does not authorize policy exceptions. An exception authorizes only the accepted transportation conditions; changes require fresh evaluation and reauthorization. Neither decision waives equipment reservation conflicts. Authorization attribution and time must come from trusted server context.
 
-Draft confirmation reevaluates transportation validity and current policy restrictions. Existing agreements retain their amount and attribution, while automatic-only drafts accept fresh automatic pricing. Existing exceptions cover only their recorded restrictions within the unchanged authorized scope, including reservation minutes. New restrictions or scope changes require draft review and explicit authorization, not additional delivery-management permission merely to confirm an already authorized arrangement.
+Routed draft confirmation reevaluates transportation validity and current policy restrictions. Existing agreements retain their amount and attribution, while automatic-only drafts accept fresh automatic pricing. Existing exceptions cover only their recorded restrictions within the unchanged authorized scope, including reservation minutes. New restrictions or scope changes require draft review and explicit authorization, not additional delivery-management permission merely to confirm an already authorized arrangement.
 
 ### Asset ownership
 

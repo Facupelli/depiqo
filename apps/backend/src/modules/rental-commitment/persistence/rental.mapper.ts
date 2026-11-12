@@ -389,6 +389,11 @@ export class RentalMapper {
       return undefined;
     }
 
+    // Persistence remains geocoded-only until the delivery-details schema migration.
+    if (details.formattedAddress === undefined || details.latitude === undefined || details.longitude === undefined) {
+      throw new RentalInvalidFieldError('deliveryDetails', 'unresolved delivery details cannot yet be persisted');
+    }
+
     return {
       tenantId: rental.tenantId,
       rentalOrderId: rental.id,

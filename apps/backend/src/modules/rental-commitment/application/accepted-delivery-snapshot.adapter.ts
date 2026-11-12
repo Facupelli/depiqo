@@ -2,11 +2,12 @@ import type { DeliveryQuote } from '../../delivery/public-api/delivery-quote.pub
 import {
   ACCEPTED_DELIVERY_SNAPSHOT_SCHEMA,
   ACCEPTED_DELIVERY_SNAPSHOT_VERSION,
-  AcceptedDeliverySnapshotData,
+  RoutedDeliverySnapshotData,
 } from '../domain/value-objects/accepted-delivery-snapshot.value-object';
 
-export function acceptedDeliverySnapshotFromQuote(quote: DeliveryQuote): AcceptedDeliverySnapshotData {
+export function acceptedDeliverySnapshotFromQuote(quote: DeliveryQuote): RoutedDeliverySnapshotData {
   return {
+    arrangement: 'ROUTED',
     schema: ACCEPTED_DELIVERY_SNAPSHOT_SCHEMA,
     version: ACCEPTED_DELIVERY_SNAPSHOT_VERSION,
     distanceMeters: quote.distanceMeters,

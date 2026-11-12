@@ -8,7 +8,7 @@ import { RentalCommitmentError, RentalInvalidFieldError } from '../errors/rental
 import { JsonSnapshot, JsonValue } from './json-snapshot.value-object';
 
 export const ACCEPTED_DELIVERY_SNAPSHOT_SCHEMA = 'v2.accepted-delivery' as const;
-export const ACCEPTED_DELIVERY_SNAPSHOT_VERSION = 1 as const;
+export const ACCEPTED_DELIVERY_SNAPSHOT_VERSION = 2 as const;
 
 const nonNegativeDecimal = z.string().refine((value) => {
   try {
@@ -60,8 +60,16 @@ const policyExceptionSchema = z.object({
   authorizedAt: z.string().datetime(),
 });
 
-const snapshotSchema = z
+const staffAgreementSchema = z.object({
+  amount: nonNegativeDecimal,
+  reason: z.string().trim().min(1).optional(),
+  agreedBy: z.string().trim().min(1),
+  agreedAt: z.string().datetime(),
+});
+
+const routedSnapshotSchema = z
   .object({
+    arrangement: z.literal('ROUTED'),
     schema: z.literal(ACCEPTED_DELIVERY_SNAPSHOT_SCHEMA),
     version: z.literal(ACCEPTED_DELIVERY_SNAPSHOT_VERSION),
     distanceMeters: z.number().int().nonnegative(),
@@ -82,20 +90,10 @@ const snapshotSchema = z
     // Future commands must establish attribution from trusted server context, never request metadata.
     policyException: policyExceptionSchema.optional(),
     // Future agreement-writing commands must establish actor and timestamp from trusted server context.
-    staffAgreement: z
-      .object({
-        amount: nonNegativeDecimal,
-        reason: z.string().trim().min(1).optional(),
-        agreedBy: z.string().trim().min(1),
-        agreedAt: z.string().datetime(),
-      })
-      .optional(),
+    staffAgreement: staffAgreementSchema.optional(),
     transportReservationMinutes: z.number().int().nonnegative(),
   })
   .superRefine((snapshot, context) => {
-    if (Date.parse(snapshot.collection.scheduledAt) <= Date.parse(snapshot.delivery.scheduledAt)) {
-      context.addIssue({ code: 'custom', path: ['collection.scheduledAt'], message: 'must be after delivery' });
-    }
     const hasQuote = snapshot.deliveryTotal !== undefined;
     if (
       hasQuote !== (snapshot.delivery.total !== undefined) ||
@@ -130,7 +128,31 @@ const snapshotSchema = z
     }
   });
 
+const staffArrangedLegSchema = z.strictObject({
+  scheduledAt: z.string().datetime(),
+});
+
+const staffArrangedSnapshotSchema = z.strictObject({
+  schema: z.literal(ACCEPTED_DELIVERY_SNAPSHOT_SCHEMA),
+  version: z.literal(ACCEPTED_DELIVERY_SNAPSHOT_VERSION),
+  arrangement: z.literal('STAFF_ARRANGED'),
+  delivery: staffArrangedLegSchema,
+  collection: staffArrangedLegSchema,
+  currency: z.string().trim().min(1),
+  staffAgreement: staffAgreementSchema,
+  transportReservationMinutes: z.number().int().nonnegative(),
+});
+
+const snapshotSchema = z
+  .discriminatedUnion('arrangement', [routedSnapshotSchema, staffArrangedSnapshotSchema])
+  .superRefine((snapshot, context) => {
+    if (Date.parse(snapshot.collection.scheduledAt) <= Date.parse(snapshot.delivery.scheduledAt)) {
+      context.addIssue({ code: 'custom', path: ['collection', 'scheduledAt'], message: 'must be after delivery' });
+    }
+  });
+
 export type AcceptedDeliverySnapshotData = z.infer<typeof snapshotSchema>;
+export type RoutedDeliverySnapshotData = Extract<AcceptedDeliverySnapshotData, { arrangement: 'ROUTED' }>;
 export type DeliveryAgreementChange = { type: 'SET'; amount: string; reason?: string } | { type: 'CLEAR' };
 
 export class AcceptedDeliverySnapshot extends JsonSnapshot {
@@ -157,7 +179,7 @@ export class AcceptedDeliverySnapshot extends JsonSnapshot {
     deliveryScheduledAt: Date;
     collectionScheduledAt: Date;
     // Supplied only after fresh evaluation and authorization by the owning server workflow.
-    reauthorizedPolicyException?: AcceptedDeliverySnapshotData['policyException'];
+    reauthorizedPolicyException?: RoutedDeliverySnapshotData['policyException'];
   }): Result<AcceptedDeliverySnapshot, RentalCommitmentError> {
     for (const [field, value] of [
       ['delivery.scheduledAt', params.deliveryScheduledAt],
@@ -171,7 +193,20 @@ export class AcceptedDeliverySnapshot extends JsonSnapshot {
     const conditionsChanged =
       params.deliveryScheduledAt.getTime() !== Date.parse(this.data.delivery.scheduledAt) ||
       params.collectionScheduledAt.getTime() !== Date.parse(this.data.collection.scheduledAt);
-    if (conditionsChanged && this.data.policyException && !params.reauthorizedPolicyException) {
+    if (this.data.arrangement === 'STAFF_ARRANGED' && params.reauthorizedPolicyException) {
+      return err(
+        new RentalInvalidFieldError(
+          'acceptedDelivery.policyException',
+          'STAFF_ARRANGED cannot have a policy exception',
+        ),
+      );
+    }
+    if (
+      conditionsChanged &&
+      this.data.arrangement === 'ROUTED' &&
+      this.data.policyException &&
+      !params.reauthorizedPolicyException
+    ) {
       return err(
         new RentalInvalidFieldError(
           'acceptedDelivery.policyException',
@@ -182,7 +217,9 @@ export class AcceptedDeliverySnapshot extends JsonSnapshot {
 
     return AcceptedDeliverySnapshot.create({
       ...this.snapshot,
-      policyException: params.reauthorizedPolicyException ?? this.data.policyException,
+      ...(this.data.arrangement === 'ROUTED'
+        ? { policyException: params.reauthorizedPolicyException ?? this.data.policyException }
+        : {}),
       delivery: {
         ...this.data.delivery,
         scheduledAt: params.deliveryScheduledAt.toISOString(),
@@ -202,7 +239,7 @@ export class AcceptedDeliverySnapshot extends JsonSnapshot {
     const { agreement, tenantUserId, operationTime } = params;
     const existing = this.data.staffAgreement;
     if (agreement.type === 'CLEAR') {
-      if (this.data.deliveryTotal === undefined) {
+      if (this.data.arrangement === 'STAFF_ARRANGED' || this.data.deliveryTotal === undefined) {
         return err(
           new RentalInvalidFieldError(
             'acceptedDelivery.staffAgreement',
@@ -255,7 +292,9 @@ export class AcceptedDeliverySnapshot extends JsonSnapshot {
 
   get effectiveDeliveryCharge(): string {
     // Construction guarantees an agreement whenever the calculated total is absent.
-    return this.data.staffAgreement?.amount ?? this.data.deliveryTotal!;
+    return this.data.arrangement === 'STAFF_ARRANGED'
+      ? this.data.staffAgreement.amount
+      : (this.data.staffAgreement?.amount ?? this.data.deliveryTotal!);
   }
 
   get snapshot(): AcceptedDeliverySnapshotData {
