@@ -6,6 +6,7 @@ import {
   CreateDraftRentalManualPricingAdjustmentSchema,
 } from "./create-draft-rental.contract";
 import { CreateConfirmedRentalSelectedOfferSchema } from "./create-confirmed-rental.contract";
+import { UpdateDraftRentalDeliveryDecisionsSchema } from "./draft-rental-delivery-decisions.schema";
 
 export const UpdateDraftRentalParamsSchema = z.object({
   rentalId: z.string().trim().min(1),
@@ -36,12 +37,20 @@ const UpdateDraftRentalProposalSchema = z.object({
 export const UpdateDraftRentalBodySchema = UpdateDraftRentalProposalSchema.extend({
   fulfillmentMethod: z.enum(["PICKUP", "DELIVERY"]),
   deliveryIntent: UpdateDraftRentalDeliveryIntentSchema.optional(),
+  deliveryDecisions: UpdateDraftRentalDeliveryDecisionsSchema.optional(),
 }).superRefine((value, context) => {
   if (value.fulfillmentMethod === "DELIVERY" && !value.deliveryIntent) {
     context.addIssue({
       code: "custom",
       path: ["deliveryIntent"],
       message: "Delivery rentals require a delivery intent.",
+    });
+  }
+  if (value.fulfillmentMethod === "PICKUP" && value.deliveryDecisions !== undefined) {
+    context.addIssue({
+      code: "custom",
+      path: ["deliveryDecisions"],
+      message: "Pickup rentals cannot include delivery decisions.",
     });
   }
   if (value.fulfillmentMethod === "PICKUP" && value.deliveryIntent) {

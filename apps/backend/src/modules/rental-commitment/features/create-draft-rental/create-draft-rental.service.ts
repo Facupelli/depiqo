@@ -108,6 +108,10 @@ export class CreateDraftRentalService implements ICommandHandler<
       fulfillmentMethod: command.fulfillmentMethod,
       insuranceSelected: command.insuranceSelected,
       deliveryDestination: command.deliveryDetails,
+      draftDelivery: {
+        tenantUserId: command.tenantUserId,
+        decisions: command.deliveryDecisions,
+      },
     });
     if (proposal.isErr()) return err(this.toCreateProposalError(proposal.error, context));
 

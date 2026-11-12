@@ -114,6 +114,19 @@ export class UpdateDraftRentalHandler implements ICommandHandler<UpdateDraftRent
       fulfillmentMethod,
       insuranceSelected,
       deliveryDestination: deliveryDestination.value,
+      draftDelivery: {
+        tenantUserId,
+        decisions: command.props.deliveryDecisions,
+        existing:
+          rental.fulfillmentMethod === FulfillmentMethod.Delivery && rental.deliveryDetails && rental.deliverySnapshot
+            ? {
+                branchId: rental.branchId,
+                period: rental.period,
+                details: rental.deliveryDetails,
+                snapshot: rental.deliverySnapshot.snapshot,
+              }
+            : undefined,
+      },
     });
     if (proposal.isErr()) return err(this.mapProposalError(proposal.error, context));
 

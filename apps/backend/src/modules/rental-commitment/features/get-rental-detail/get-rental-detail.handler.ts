@@ -239,6 +239,7 @@ export class GetRentalDetailHandler implements IQueryHandler<GetRentalDetailQuer
       pricing: this.resolvePricing(rental.priceSnapshot),
       acceptedCustomerTotal: rental.confirmedAt ? (rental.acceptedCustomerTotal?.toString() ?? null) : null,
       acceptedDelivery: rental.confirmedAt ? this.resolveAcceptedDelivery(rental.deliverySnapshot) : null,
+      draftDelivery: rental.status === 'DRAFT' ? this.resolveAcceptedDelivery(rental.deliverySnapshot) : null,
       ownerPayouts,
     });
   }

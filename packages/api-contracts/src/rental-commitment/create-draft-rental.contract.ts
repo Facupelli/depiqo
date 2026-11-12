@@ -3,6 +3,7 @@ import { z } from "zod";
 import type { ApiContract } from "../api-contract";
 import { ExplicitOffsetInstantWireSchema } from "../explicit-offset-instant.schema";
 import { PayableTargetTotalSchema } from "../pricing/payable-target-total.schema";
+import { CreateDraftRentalDeliveryDecisionsSchema } from "./draft-rental-delivery-decisions.schema";
 import {
   CreateConfirmedRentalFulfillmentMethodSchema,
   CreateConfirmedRentalSelectedOfferSchema,
@@ -32,10 +33,20 @@ export const CreateDraftRentalBodySchema = z
       .default([]),
     fulfillmentMethod: CreateConfirmedRentalFulfillmentMethodSchema,
     deliveryDetails: CreateDraftRentalDeliveryDetailsSchema.optional(),
+    deliveryDecisions: CreateDraftRentalDeliveryDecisionsSchema.optional(),
     notes: z.string().optional(),
     insuranceSelected: z.boolean().optional(),
     manualPricingAdjustment:
       CreateDraftRentalManualPricingAdjustmentSchema.optional(),
+  })
+  .superRefine((value, context) => {
+    if (value.fulfillmentMethod === "PICKUP" && value.deliveryDecisions !== undefined) {
+      context.addIssue({
+        code: "custom",
+        path: ["deliveryDecisions"],
+        message: "Pickup rentals cannot include delivery decisions.",
+      });
+    }
   })
   .transform((value) => ({
     ...value,

@@ -39,6 +39,14 @@ export class UpdateDraftRentalHttpController {
       await this.authorizationEnforcer.requirePermission(user, TenantPermission.RentalsPriceAdjustmentManage);
     }
 
+    if (
+      dto.deliveryDecisions?.pricingAgreement?.type === 'SET' ||
+      dto.deliveryDecisions?.pricingAgreement?.type === 'CLEAR' ||
+      dto.deliveryDecisions?.policyException !== undefined
+    ) {
+      await this.authorizationEnforcer.requirePermission(user, TenantPermission.RentalsDeliveryManage);
+    }
+
     let period: RentalPeriod;
     try {
       period = new RentalPeriod(dto.period.start, dto.period.end);
@@ -63,6 +71,7 @@ export class UpdateDraftRentalHttpController {
       selectedOffers: dto.selectedOffers,
       insuranceSelected: dto.insuranceSelected,
       manualPricingAdjustment: dto.manualPricingAdjustment,
+      deliveryDecisions: dto.deliveryDecisions,
     };
     const command =
       dto.fulfillmentMethod === 'DELIVERY'
@@ -190,7 +199,10 @@ function toProblem(error: UpdateDraftRentalError): ProblemException {
       extensions: {
         code: error.code,
         ...(error.code === 'rental_commitment.delivery_not_serviceable'
-          ? { reason: error.context?.deliveryReason }
+          ? { reason: error.context?.deliveryReason, restrictions: error.context?.deliveryRestrictions }
+          : {}),
+        ...(error.code === 'rental_commitment.invalid_rental_field'
+          ? { field: error.context?.field, reason: error.message }
           : {}),
       },
     }),
