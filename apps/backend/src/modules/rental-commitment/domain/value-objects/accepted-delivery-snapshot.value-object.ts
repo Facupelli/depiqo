@@ -42,6 +42,15 @@ const snapshotSchema = z
     collection: legSchema,
     currency: z.string().trim().min(1),
     deliveryTotal: nonNegativeDecimal,
+    // Future agreement-writing commands must establish actor and timestamp from trusted server context.
+    staffAgreement: z
+      .object({
+        amount: nonNegativeDecimal,
+        reason: z.string().trim().min(1).optional(),
+        agreedBy: z.string().trim().min(1),
+        agreedAt: z.string().datetime(),
+      })
+      .optional(),
     transportReservationMinutes: z.number().int().nonnegative(),
   })
   .superRefine((snapshot, context) => {
@@ -100,6 +109,10 @@ export class AcceptedDeliverySnapshot extends JsonSnapshot {
         scheduledAt: params.collectionScheduledAt.toISOString(),
       },
     });
+  }
+
+  get effectiveDeliveryCharge(): string {
+    return this.data.staffAgreement?.amount ?? this.data.deliveryTotal;
   }
 
   get snapshot(): AcceptedDeliverySnapshotData {

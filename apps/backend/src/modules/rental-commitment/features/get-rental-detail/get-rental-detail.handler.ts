@@ -328,8 +328,24 @@ export class GetRentalDetailHandler implements IQueryHandler<GetRentalDetailQuer
     if (deliverySnapshot === null) return null;
     const snapshot = AcceptedDeliverySnapshot.create(deliverySnapshot);
     if (snapshot.isErr()) throw snapshot.error;
-    const { distanceMeters, delivery, collection, currency, deliveryTotal, transportReservationMinutes } =
-      snapshot.value.snapshot;
-    return { distanceMeters, delivery, collection, currency, deliveryTotal, transportReservationMinutes };
+    const {
+      distanceMeters,
+      delivery,
+      collection,
+      currency,
+      deliveryTotal,
+      staffAgreement,
+      transportReservationMinutes,
+    } = snapshot.value.snapshot;
+    return {
+      distanceMeters,
+      delivery,
+      collection,
+      currency,
+      deliveryTotal,
+      staffAgreement,
+      effectiveDeliveryCharge: snapshot.value.effectiveDeliveryCharge,
+      transportReservationMinutes,
+    };
   }
 }

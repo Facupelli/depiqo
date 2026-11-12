@@ -38,6 +38,15 @@ export const GetRentalDetailAcceptedDeliverySchema = z.object({
 	collection: GetRentalDetailAcceptedDeliveryLegSchema,
 	currency: z.string(),
 	deliveryTotal: z.string(),
+	staffAgreement: z
+		.object({
+			amount: z.string(),
+			reason: z.string().optional(),
+			agreedBy: z.string(),
+			agreedAt: z.string().datetime(),
+		})
+		.optional(),
+	effectiveDeliveryCharge: z.string(),
 	transportReservationMinutes: z.number().int().nonnegative(),
 });
 

@@ -164,7 +164,10 @@ export class GetRentalFinancialReportHandler implements IQueryHandler<
           (r.price_snapshot ->> 'totalBeforeInsurance')::numeric AS before_insurance,
           (r.price_snapshot ->> 'total')::numeric AS pricing_total,
           CASE WHEN r.fulfillment_method = 'PICKUP' THEN 0::numeric
-            ELSE (r.accepted_delivery_snapshot ->> 'deliveryTotal')::numeric
+            ELSE COALESCE(
+              (r.accepted_delivery_snapshot #>> '{staffAgreement,amount}')::numeric,
+              (r.accepted_delivery_snapshot ->> 'deliveryTotal')::numeric
+            )
           END AS delivery_amount,
           r.accepted_delivery_snapshot ->> 'currency' AS delivery_currency,
           r.fulfillment_method,

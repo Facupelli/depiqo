@@ -515,7 +515,7 @@ export class Rental extends AggregateRootBase {
       acceptedDelivery = snapshot.value;
     }
     const acceptedCustomerTotal = new Decimal(confirmedPriceSnapshot.value.snapshot.total)
-      .plus(acceptedDelivery?.snapshot.deliveryTotal ?? 0)
+      .plus(acceptedDelivery?.effectiveDeliveryCharge ?? 0)
       .toString();
 
     // SAFETY: randomUUID() always returns a non-empty UUID string, which satisfies this opaque identifier brand.
@@ -1409,7 +1409,7 @@ export class Rental extends AggregateRootBase {
     this.props.confirmedPriceSnapshot = confirmedPriceSnapshot.value;
     this.props.deliverySnapshot = acceptedDelivery;
     this.props.acceptedCustomerTotal = new Decimal(confirmedPriceSnapshot.value.snapshot.total)
-      .plus(acceptedDelivery?.snapshot.deliveryTotal ?? 0)
+      .plus(acceptedDelivery?.effectiveDeliveryCharge ?? 0)
       .toString();
     this.props.acceptedAssetBuffer = { ...params.acceptedAssetBuffer };
     this.props.assignedAssets = assignedAssets.value;
@@ -1423,7 +1423,7 @@ export class Rental extends AggregateRootBase {
   private applyConfirmedStateChanges(changes: ConfirmedRentalStateChanges): Result<void, RentalCommitmentError> {
     const acceptedCustomerTotal = changes.confirmedPriceSnapshot
       ? new Decimal(changes.confirmedPriceSnapshot.snapshot.total)
-          .plus(this.props.deliverySnapshot?.snapshot.deliveryTotal ?? 0)
+          .plus(this.props.deliverySnapshot?.effectiveDeliveryCharge ?? 0)
           .toString()
       : this.props.acceptedCustomerTotal;
     const candidate = Rental.createFromEntities(this.status, {
@@ -1647,7 +1647,7 @@ export class Rental extends AggregateRootBase {
     if (delivery && pricing.final.currency !== delivery.currency) {
       return err(new RentalInvalidFieldError('acceptedDelivery.currency', 'must match accepted Pricing currency'));
     }
-    const expectedTotal = new Decimal(pricing.total).plus(delivery?.deliveryTotal ?? 0);
+    const expectedTotal = new Decimal(pricing.total).plus(this.props.deliverySnapshot?.effectiveDeliveryCharge ?? 0);
     if (!expectedTotal.equals(this.props.acceptedCustomerTotal)) {
       return err(
         new RentalInvalidFieldError('acceptedCustomerTotal', 'must equal accepted Pricing plus accepted Delivery'),
