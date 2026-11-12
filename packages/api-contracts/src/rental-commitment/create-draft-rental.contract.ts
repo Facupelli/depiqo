@@ -3,16 +3,26 @@ import { z } from "zod";
 import type { ApiContract } from "../api-contract";
 import { ExplicitOffsetInstantWireSchema } from "../explicit-offset-instant.schema";
 import { PayableTargetTotalSchema } from "../pricing/payable-target-total.schema";
-import { CreateDraftRentalDeliveryDecisionsSchema } from "./draft-rental-delivery-decisions.schema";
+import {
+  CreateDraftRentalDeliveryDecisionsSchema,
+  validateNewStaffArrangedDeliveryDecisions,
+} from "./draft-rental-delivery-decisions.schema";
+import {
+  DraftRentalRoutedDestinationSchema,
+  DraftRentalStaffArrangedDestinationSchema,
+} from "./draft-rental-delivery-destination.schema";
 import {
   CreateConfirmedRentalFulfillmentMethodSchema,
   CreateConfirmedRentalSelectedOfferSchema,
 } from "./create-confirmed-rental.contract";
 
-export const CreateDraftRentalDeliveryDetailsSchema = z.object({
-  address: z.string().trim().min(1),
-  locationId: z.string().trim().min(1),
-});
+export const CreateDraftRentalDeliveryDetailsSchema = z.discriminatedUnion(
+  "arrangement",
+  [
+    DraftRentalRoutedDestinationSchema,
+    DraftRentalStaffArrangedDestinationSchema,
+  ],
+);
 
 export const CreateDraftRentalManualPricingAdjustmentSchema = z.object({
   mode: z.literal("TARGET_TOTAL"),
@@ -40,7 +50,23 @@ export const CreateDraftRentalBodySchema = z
       CreateDraftRentalManualPricingAdjustmentSchema.optional(),
   })
   .superRefine((value, context) => {
-    if (value.fulfillmentMethod === "PICKUP" && value.deliveryDecisions !== undefined) {
+    if (value.deliveryDetails?.arrangement === "STAFF_ARRANGED") {
+      if (value.fulfillmentMethod !== "DELIVERY") {
+        context.addIssue({
+          code: "custom",
+          path: ["deliveryDetails"],
+          message: "Staff-arranged destinations require delivery fulfillment.",
+        });
+      }
+      validateNewStaffArrangedDeliveryDecisions(
+        value.deliveryDecisions,
+        context,
+      );
+    }
+    if (
+      value.fulfillmentMethod === "PICKUP" &&
+      value.deliveryDecisions !== undefined
+    ) {
       context.addIssue({
         code: "custom",
         path: ["deliveryDecisions"],

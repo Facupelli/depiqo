@@ -74,7 +74,10 @@ function OpenDeliveryAgreementDialog({ onClose }: { onClose: () => void }) {
 	const { rental: currentRental } = useRentalDetailContext();
 	// Keep the persisted values and concurrency token from this editing session.
 	const [rental] = useState(() => currentRental);
-	const delivery = rental.acceptedDelivery;
+	const delivery =
+		rental.acceptedDelivery?.arrangement === "ROUTED"
+			? rental.acceptedDelivery
+			: null;
 	const timezone = useTenantTimezone();
 	const mutation = useEditDeliveryAgreement();
 	const queryClient = useQueryClient();

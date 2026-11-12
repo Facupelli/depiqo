@@ -9,6 +9,7 @@ export * from "./get-rental-confirmation-summary.contract";
 export * from "./create-confirmed-rental.contract";
 export * from "./create-draft-rental.contract";
 export * from "./draft-rental-delivery-decisions.schema";
+export * from "./delivery-representation.schema";
 export * from "./get-rental-detail.contract";
 export * from "./get-rental-financial-report.contract";
 export * from "./get-rental-operations.contract";

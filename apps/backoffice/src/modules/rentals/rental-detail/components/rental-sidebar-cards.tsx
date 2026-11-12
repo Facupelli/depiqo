@@ -218,10 +218,13 @@ function RentalLogisticsCard({
 			{deliveryDetails ? (
 				<div className="mt-3 border-t border-neutral-100">
 					<p className="mt-3 mb-1 font-mono text-[10px] uppercase tracking-wider text-neutral-400">
-						Pedido de delivery
+						{(rental.acceptedDelivery ?? rental.draftDelivery)?.arrangement ===
+						"STAFF_ARRANGED"
+							? "Entrega coordinada por el equipo"
+							: "Pedido de delivery"}
 					</p>
 					<p className="text-sm text-neutral-700">
-						{deliveryDetails.formattedAddress}
+						{deliveryDetails.formattedAddress ?? deliveryDetails.address}
 					</p>
 				</div>
 			) : null}
@@ -293,7 +296,7 @@ function RentalFinancialsCard() {
 		can(permissions, TenantPermission.RentalsDeliveryManage) &&
 		rental.status === "CONFIRMED" &&
 		rental.fulfillment.method === "DELIVERY" &&
-		acceptedDelivery !== null &&
+		acceptedDelivery?.arrangement === "ROUTED" &&
 		Date.now() < Date.parse(rental.period.end);
 	const adjustmentSign =
 		manualAdjustment?.direction === "INCREASE"

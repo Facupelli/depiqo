@@ -5,7 +5,18 @@ import {
   CalculateDraftRentalPriceBodySchema,
   CalculateDraftRentalPriceResponseSchema,
 } from "../pricing/calculate-draft-rental-price.contract";
-import { UpdateDraftRentalDeliveryDecisionsSchema } from "./draft-rental-delivery-decisions.schema";
+import {
+  AcceptedDeliveryLegSchema,
+  DeliveryRestrictionSchema,
+  DeliveryResolvedDestinationSchema,
+  DeliveryStaffAgreementSchema,
+  RentalDeliveryDetailsSchema,
+  StaffArrangedDeliveryLegSchema,
+} from "./delivery-representation.schema";
+import {
+  UpdateDraftRentalDeliveryDecisionsSchema,
+  validateNewStaffArrangedDeliveryDecisions,
+} from "./draft-rental-delivery-decisions.schema";
 import { UpdateDraftRentalDeliveryIntentSchema } from "./update-draft-rental.contract";
 
 // A complete proposed selection, not a patch. rentalId only supplies stored delivery context.
@@ -14,13 +25,23 @@ export const PreviewDraftRentalCostBodySchema =
     rentalId: z.string().trim().min(1).optional(),
     insuranceSelected: z.boolean().default(false),
     fulfillmentMethod: z.enum(["PICKUP", "DELIVERY"]),
-    // Omission reuses the draft's resolved destination. New drafts need NEW_DESTINATION.
+    // Omission preserves the draft destination, including a staff-arranged free-text address.
+    // New destinations explicitly establish their arrangement and terms.
     deliveryIntent: UpdateDraftRentalDeliveryIntentSchema.optional(),
     // A preview cannot request authorization or supply attribution.
     deliveryDecisions: UpdateDraftRentalDeliveryDecisionsSchema.omit({
       policyException: true,
     }).optional(),
   }).superRefine((value, context) => {
+    if (
+      value.deliveryIntent?.type === "NEW_DESTINATION" &&
+      value.deliveryIntent.arrangement === "STAFF_ARRANGED"
+    ) {
+      validateNewStaffArrangedDeliveryDecisions(
+        value.deliveryDecisions,
+        context,
+      );
+    }
     if (
       value.fulfillmentMethod === "PICKUP" &&
       (value.deliveryIntent || value.deliveryDecisions)
@@ -33,22 +54,8 @@ export const PreviewDraftRentalCostBodySchema =
     }
   });
 
-const restriction = z.enum([
-  "NOT_CONFIGURED",
-  "DISABLED",
-  "BEYOND_MAX_DISTANCE",
-  "DELIVERY_OUTSIDE_SERVICE_HOURS",
-  "COLLECTION_OUTSIDE_SERVICE_HOURS",
-]);
-const leg = z.object({
-  scheduledAt: z.string().datetime(),
-  serviceLevel: z.enum(["NORMAL", "SPECIAL"]).optional(),
-  basePrice: z.string().optional(),
-  surcharge: z.string().optional(),
-  total: z.string().optional(),
-});
-
-export const PreviewDraftRentalCostDeliverySchema = z.object({
+const routedDelivery = z.object({
+  arrangement: z.literal("ROUTED"),
   // STORED terms are preserved, not freshly evaluated for confirmation eligibility.
   source: z.enum(["STORED", "EVALUATED"]),
   technicalFailure: z
@@ -61,7 +68,7 @@ export const PreviewDraftRentalCostDeliverySchema = z.object({
     ])
     .nullable(),
   // For STORED terms, these are the restrictions recorded in the existing exception.
-  restrictions: z.array(restriction),
+  restrictions: z.array(DeliveryRestrictionSchema),
   policyExceptionRequired: z.boolean(),
   requirements: z.array(
     z.enum([
@@ -77,25 +84,47 @@ export const PreviewDraftRentalCostDeliverySchema = z.object({
       "TRANSPORT_RESERVATION_MINUTES_CONFLICT",
     ]),
   ),
-  resolvedDestination: z
-    .object({
-      formattedAddress: z.string(),
-      latitude: z.number(),
-      longitude: z.number(),
-      providerPlaceId: z.string().optional(),
-    })
-    .nullable(),
+  resolvedDestination: DeliveryResolvedDestinationSchema.nullable(),
   distanceMeters: z.number().nonnegative().nullable(),
   currency: z.string().nullable(),
-  delivery: leg.nullable(),
-  collection: leg.nullable(),
+  delivery: AcceptedDeliveryLegSchema.nullable(),
+  collection: AcceptedDeliveryLegSchema.nullable(),
   transportReservationMinutes: z.number().int().nonnegative().nullable(),
   calculatedCharge: z.string().nullable(),
   // When an agreement requirement is unresolved, this is the existing amount for review only.
   // Only effectiveCharge participates in customerTotal.
   staffAgreedAmount: z.string().nullable(),
+  // Only accepted agreements have attribution; a proposed SET has not been accepted.
+  staffAgreement: DeliveryStaffAgreementSchema.optional(),
   effectiveCharge: z.string().nullable(),
 });
+
+// Stored staff-arranged facts are context only, never fresh operational validation.
+export const PreviewDraftRentalCostDeliverySchema = z.discriminatedUnion(
+  "arrangement",
+  [
+    routedDelivery,
+    z.strictObject({
+      arrangement: z.literal("STAFF_ARRANGED"),
+      source: z.literal("STORED"),
+      technicalFailure: z.null(),
+      restrictions: z.array(z.never()),
+      policyExceptionRequired: z.literal(false),
+      requirements: z.array(z.literal("CURRENCY_MISMATCH")),
+      deliveryDetails: RentalDeliveryDetailsSchema,
+      resolvedDestination: DeliveryResolvedDestinationSchema.nullable(),
+      distanceMeters: z.null(),
+      currency: z.string(),
+      delivery: StaffArrangedDeliveryLegSchema,
+      collection: StaffArrangedDeliveryLegSchema,
+      transportReservationMinutes: z.number().int().nonnegative(),
+      calculatedCharge: z.null(),
+      staffAgreement: DeliveryStaffAgreementSchema,
+      staffAgreedAmount: z.string(),
+      effectiveCharge: z.string().nullable(),
+    }),
+  ],
+);
 
 export const PreviewDraftRentalCostResponseSchema = z.object({
   // Equipment-only calculated/final breakdowns, followed by insurance composition.

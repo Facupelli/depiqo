@@ -54,7 +54,8 @@ export function RentalConfirmationDialog({
 		Boolean(summary) &&
 		costQuery.isSuccess &&
 		!costQuery.isFetching &&
-		!versionConflict;
+		!versionConflict &&
+		!costQuery.data?.deliveryReviewRequired;
 	const costError =
 		costQuery.error instanceof ProblemDetailsError &&
 		costQuery.error.problemDetails.code ===
@@ -102,6 +103,13 @@ export function RentalConfirmationDialog({
 							Reintentar cálculo
 						</Button>
 					</div>
+				) : null}
+				{costQuery.data?.deliveryReviewRequired ? (
+					<output className="block text-sm text-muted-foreground">
+						Entrega coordinada por el equipo: se muestran los importes
+						guardados. La confirmación de esta modalidad todavía no está
+						disponible.
+					</output>
 				) : null}
 				{versionConflict ? (
 					<p className="text-sm text-destructive">

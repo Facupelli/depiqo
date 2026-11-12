@@ -2,13 +2,22 @@ import { z } from "zod";
 
 import type { ApiContract } from "../api-contract";
 import { ConfirmRentalParamsSchema } from "./confirm-rental.contract";
+import {
+  AcceptedDeliverySchema,
+  RentalDeliveryDetailsSchema,
+} from "./delivery-representation.schema";
 
-// Advisory costs under confirmation rules, not a promise of reservation or eligibility.
+// Advisory costs, not a promise of reservation or eligibility.
+// Staff-arranged facts are stored context only; confirmation remains unsupported.
 export const GetRentalConfirmationSummaryResponseSchema = z.object({
   rentalVersion: z.number().int().nonnegative(),
   equipmentAmount: z.string(),
   insuranceAmount: z.string(),
   deliveryCharge: z.string().nullable(),
+  delivery: AcceptedDeliverySchema.nullable(),
+  deliveryDetails: RentalDeliveryDetailsSchema.nullable(),
+  deliverySource: z.enum(["STORED", "REVALIDATED"]).nullable(),
+  deliveryReviewRequired: z.boolean(),
   customerTotal: z.string(),
   currency: z.string(),
 });

@@ -298,14 +298,9 @@ export class DraftRentalDeliveryResolver {
   }
 
   async preview(input: Omit<DraftDeliveryInput, 'tenantUserId'>): Promise<PreviewDraftRentalCostDeliveryDto> {
-    if (input.existing?.snapshot.arrangement === 'STAFF_ARRANGED') {
-      throw new RentalInvalidFieldError(
-        'acceptedDelivery.arrangement',
-        'STAFF_ARRANGED previews are not yet supported',
-      );
-    }
     const inspection = await this.inspect(input);
-    const result: PreviewDraftRentalCostDeliveryDto = {
+    const result: Extract<PreviewDraftRentalCostDeliveryDto, { arrangement: 'ROUTED' }> = {
+      arrangement: 'ROUTED',
       source: inspection.preserved ? 'STORED' : 'EVALUATED',
       technicalFailure: null,
       restrictions: [],
@@ -326,10 +321,7 @@ export class DraftRentalDeliveryResolver {
     if (inspection.preserved) {
       const { snapshot, details } = inspection.existing;
       if (snapshot.arrangement !== 'ROUTED') {
-        throw new RentalInvalidFieldError(
-          'acceptedDelivery.arrangement',
-          'STAFF_ARRANGED previews are not yet supported',
-        );
+        throw new Error('Staff-arranged previews must use the stored-facts read path.');
       }
       terms = snapshot;
       result.resolvedDestination =
@@ -402,6 +394,9 @@ export class DraftRentalDeliveryResolver {
       result.staffAgreedAmount = input.existing?.snapshot.staffAgreement?.amount ?? null;
     } else {
       result.staffAgreedAmount = agreement.value?.amount ?? null;
+      if (agreement.value && input.decisions?.pricingAgreement?.type !== 'SET') {
+        result.staffAgreement = input.existing?.snapshot.staffAgreement;
+      }
       if (!result.technicalFailure) {
         result.effectiveCharge = agreement.value?.amount ?? terms.deliveryTotal ?? null;
       }

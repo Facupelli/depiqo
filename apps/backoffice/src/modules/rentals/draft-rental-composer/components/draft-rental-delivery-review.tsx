@@ -16,6 +16,16 @@ export const DraftRentalDeliveryReview = withForm({
 	},
 	render: function Render({ form, delivery, canManageDelivery }) {
 		const id = useId();
+		if (delivery?.arrangement === "STAFF_ARRANGED") {
+			return (
+				<p className="mt-3 text-xs text-muted-foreground">
+					Entrega coordinada por el equipo. Se conservan las condiciones
+					guardadas, sin validar nuevamente el transporte:{" "}
+					{delivery.deliveryDetails.address}. Reserva para transporte:{" "}
+					{delivery.transportReservationMinutes} min.
+				</p>
+			);
+		}
 		return (
 			<form.Subscribe
 				selector={(state) => state.values.transportReservationMinutes}

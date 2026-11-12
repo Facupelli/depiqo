@@ -3,6 +3,11 @@ import { z } from "zod";
 import type { ApiContract } from "../api-contract";
 import { GetRentableItemsKindSchema } from "../catalog/get-rentable-items.contract";
 import {
+	AcceptedDeliverySchema,
+	AcceptedDeliveryLegSchema,
+	RentalDeliveryDetailsSchema,
+} from "./delivery-representation.schema";
+import {
 	GetRentalsFulfillmentMethodSchema,
 	GetRentalsStatusSchema,
 } from "./get-rentals.contract";
@@ -16,55 +21,10 @@ export const GetRentalDetailPeriodSchema = z.object({
 	end: z.string().datetime(),
 });
 
-export const GetRentalDetailDeliveryDetailsSchema = z.object({
-	address: z.string(),
-	formattedAddress: z.string(),
-	latitude: z.number(),
-	longitude: z.number(),
-	providerPlaceId: z.string().optional(),
-});
-
-export const GetRentalDetailAcceptedDeliveryLegSchema = z.object({
-	scheduledAt: z.string().datetime(),
-	serviceLevel: z.enum(["NORMAL", "SPECIAL"]).optional(),
-	basePrice: z.string().optional(),
-	surcharge: z.string().optional(),
-	total: z.string().optional(),
-});
-
-export const GetRentalDetailAcceptedDeliverySchema = z.object({
-	distanceMeters: z.number().int().nonnegative(),
-	delivery: GetRentalDetailAcceptedDeliveryLegSchema,
-	collection: GetRentalDetailAcceptedDeliveryLegSchema,
-	currency: z.string(),
-	deliveryTotal: z.string().optional(),
-	branchId: z.string().optional(),
-	resolvedDestination: z.object({
-		formattedAddress: z.string(),
-		latitude: z.number().min(-90).max(90),
-		longitude: z.number().min(-180).max(180),
-		providerPlaceId: z.string().optional(),
-	}).optional(),
-	policyException: z.object({
-		overriddenRestrictions: z.array(z.enum([
-			"NOT_CONFIGURED", "DISABLED", "BEYOND_MAX_DISTANCE",
-			"DELIVERY_OUTSIDE_SERVICE_HOURS", "COLLECTION_OUTSIDE_SERVICE_HOURS",
-		])).min(1),
-		reason: z.string().optional(),
-		authorizedBy: z.string(),
-		authorizedAt: z.string().datetime(),
-	}).optional(),
-	staffAgreement: z
-		.object({
-			amount: z.string(),
-			reason: z.string().optional(),
-			agreedBy: z.string(),
-			agreedAt: z.string().datetime(),
-		})
-		.optional(),
-	effectiveDeliveryCharge: z.string(),
-	transportReservationMinutes: z.number().int().nonnegative(),
-});
+export const GetRentalDetailDeliveryDetailsSchema = RentalDeliveryDetailsSchema;
+export const GetRentalDetailAcceptedDeliveryLegSchema =
+	AcceptedDeliveryLegSchema;
+export const GetRentalDetailAcceptedDeliverySchema = AcceptedDeliverySchema;
 
 export const GetRentalDetailAssignedAssetSchema = z.object({
 	assetId: z.string(),
@@ -151,14 +111,16 @@ export const GetRentalDetailManualPricingAdjustmentDirectionSchema = z.enum([
 	"NONE",
 ]);
 
-export const GetRentalDetailPricingLineManualPricingAdjustmentSchema = z.object({
-	mode: z.literal("TARGET_TOTAL_ALLOCATION"),
-	direction: GetRentalDetailManualPricingAdjustmentDirectionSchema,
-	amount: z.string(),
-	setByTenantUserId: z.string(),
-	setAtIso: z.string().datetime(),
-	reason: z.string().optional(),
-});
+export const GetRentalDetailPricingLineManualPricingAdjustmentSchema = z.object(
+	{
+		mode: z.literal("TARGET_TOTAL_ALLOCATION"),
+		direction: GetRentalDetailManualPricingAdjustmentDirectionSchema,
+		amount: z.string(),
+		setByTenantUserId: z.string(),
+		setAtIso: z.string().datetime(),
+		reason: z.string().optional(),
+	},
+);
 
 export const GetRentalDetailManualPricingAdjustmentSchema = z.object({
 	mode: z.literal("TARGET_TOTAL"),

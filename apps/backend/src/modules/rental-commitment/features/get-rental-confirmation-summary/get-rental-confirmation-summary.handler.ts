@@ -5,6 +5,10 @@ import { err, ok, Result } from 'neverthrow';
 
 import { PrismaService } from 'src/core/database/prisma.service';
 
+import {
+  toAcceptedDeliveryResponse,
+  toDeliveryDetailsResponse,
+} from '../../application/delivery-representation.mapper';
 import { RentalConfirmationDeliveryService } from '../../application/rental-confirmation-delivery.service';
 import { AcceptedDeliverySnapshot } from '../../domain/value-objects/accepted-delivery-snapshot.value-object';
 import { ConfirmedPriceSnapshot } from '../../domain/value-objects/confirmed-price-snapshot.value-object';
@@ -62,22 +66,20 @@ export class GetRentalConfirmationSummaryHandler implements IQueryHandler<
       if (parsed.isErr()) throw parsed.error;
       storedDelivery = parsed.value;
     }
-    const delivery = await this.confirmationDelivery.resolve({
-      tenantId: query.tenantId,
-      branchId: rental.branchId,
-      period: new RentalPeriod(rental.periodStart, rental.periodEnd),
-      fulfillmentMethod: rental.fulfillmentMethod,
-      deliveryDetails: rental.deliveryDetails
-        ? {
-            address: rental.deliveryDetails.address,
-            formattedAddress: rental.deliveryDetails.formattedAddress ?? undefined,
-            latitude: rental.deliveryDetails.latitude ?? undefined,
-            longitude: rental.deliveryDetails.longitude ?? undefined,
-            providerPlaceId: rental.deliveryDetails.providerPlaceId ?? undefined,
-          }
-        : undefined,
-      existing: storedDelivery?.snapshot,
-    });
+    const storedStaffArrangement =
+      rental.fulfillmentMethod === 'DELIVERY' && storedDelivery?.snapshot.arrangement === 'STAFF_ARRANGED';
+    const deliveryDetails = toDeliveryDetailsResponse(rental.deliveryDetails);
+    // Displaying stored terms does not authorize confirmation. Do not change the shared command service.
+    const delivery = storedStaffArrangement
+      ? ok(storedDelivery)
+      : await this.confirmationDelivery.resolve({
+          tenantId: query.tenantId,
+          branchId: rental.branchId,
+          period: new RentalPeriod(rental.periodStart, rental.periodEnd),
+          fulfillmentMethod: rental.fulfillmentMethod,
+          deliveryDetails: deliveryDetails ?? undefined,
+          existing: storedDelivery?.snapshot,
+        });
     if (delivery.isErr()) return err(delivery.error);
     if (rental.fulfillmentMethod === 'DELIVERY' && !delivery.value) {
       throw new Error('Delivery confirmation requires revalidated delivery terms.');
@@ -88,11 +90,16 @@ export class GetRentalConfirmationSummaryHandler implements IQueryHandler<
         `Pricing currency ${price.final.currency} does not match Delivery currency ${delivery.value.snapshot.currency}.`,
       );
     }
+    const deliverySource = storedStaffArrangement ? 'STORED' : 'REVALIDATED';
     return ok({
       rentalVersion: rental.version,
       equipmentAmount: price.final.total,
       insuranceAmount: price.insurance.amount,
       deliveryCharge: delivery.value?.effectiveDeliveryCharge ?? null,
+      delivery: delivery.value ? toAcceptedDeliveryResponse(delivery.value) : null,
+      deliveryDetails,
+      deliverySource: delivery.value ? deliverySource : null,
+      deliveryReviewRequired: storedStaffArrangement,
       customerTotal: new Decimal(price.total).plus(delivery.value?.effectiveDeliveryCharge ?? '0').toString(),
       currency: price.final.currency,
     });

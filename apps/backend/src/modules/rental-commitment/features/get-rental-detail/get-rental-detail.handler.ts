@@ -10,6 +10,10 @@ import { BranchFacts } from 'src/modules/tenant-management/public-api/branch-fac
 import { RetainedRentalCustomerProfileFacts } from 'src/modules/tenant-management/public-api/retained-rental-customer-profile-facts.public-api';
 import { getRentalDetailError, GetRentalDetailError } from './get-rental-detail.errors';
 import { toRentalDetailPricing } from '../../application/accepted-pricing/accepted-pricing-snapshot.projections';
+import {
+  toAcceptedDeliveryResponse,
+  toDeliveryDetailsResponse,
+} from '../../application/delivery-representation.mapper';
 import { COMPOSITE_RENTABLE_ITEM_KINDS } from '../../domain/rental-status';
 import { AcceptedDeliverySnapshot } from '../../domain/value-objects/accepted-delivery-snapshot.value-object';
 import { ConfirmedPriceSnapshot } from '../../domain/value-objects/confirmed-price-snapshot.value-object';
@@ -164,20 +168,7 @@ export class GetRentalDetailHandler implements IQueryHandler<GetRentalDetailQuer
 
     if (branchFactsResult.isErr()) throw new Error(branchFactsResult.error.message);
     const retainedBranch = branchFactsResult.value;
-    const deliveryDetails = (() => {
-      const details = rental.deliveryDetails;
-      if (!details) return null;
-      if (details.formattedAddress === null || details.latitude === null || details.longitude === null) {
-        throw new Error('Unresolved delivery destinations require the V2 delivery API contract.');
-      }
-      return {
-        address: details.address,
-        formattedAddress: details.formattedAddress,
-        latitude: details.latitude,
-        longitude: details.longitude,
-        providerPlaceId: details.providerPlaceId ?? undefined,
-      };
-    })();
+    const deliveryDetails = toDeliveryDetailsResponse(rental.deliveryDetails);
 
     return ok({
       id: rental.id,
@@ -335,34 +326,6 @@ export class GetRentalDetailHandler implements IQueryHandler<GetRentalDetailQuer
     if (deliverySnapshot === null) return null;
     const snapshot = AcceptedDeliverySnapshot.create(deliverySnapshot);
     if (snapshot.isErr()) throw snapshot.error;
-    const data = snapshot.value.snapshot;
-    if (data.arrangement !== 'ROUTED') {
-      throw new Error('STAFF_ARRANGED requires the V2 delivery API contract.');
-    }
-    const {
-      distanceMeters,
-      delivery,
-      collection,
-      currency,
-      deliveryTotal,
-      staffAgreement,
-      branchId,
-      resolvedDestination,
-      policyException,
-      transportReservationMinutes,
-    } = data;
-    return {
-      distanceMeters,
-      delivery,
-      collection,
-      currency,
-      deliveryTotal,
-      staffAgreement,
-      branchId,
-      resolvedDestination,
-      policyException,
-      effectiveDeliveryCharge: snapshot.value.effectiveDeliveryCharge,
-      transportReservationMinutes,
-    };
+    return toAcceptedDeliveryResponse(snapshot.value);
   }
 }

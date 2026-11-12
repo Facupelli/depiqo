@@ -69,6 +69,10 @@ const problems: Record<PreviewDraftRentalCostError['code'], [HttpStatus, string]
   'rental_commitment.rental_not_found': [HttpStatus.NOT_FOUND, 'Rental not found'],
   'rental_commitment.rental_not_draft': [HttpStatus.CONFLICT, 'Rental is not a draft'],
   'rental_commitment.preview_invalid_input': [HttpStatus.UNPROCESSABLE_ENTITY, 'Invalid rental proposal'],
+  'rental_commitment.delivery_review_required': [
+    HttpStatus.CONFLICT,
+    'Staff-arranged delivery changes require review and are not yet supported',
+  ],
   'rental_commitment.preview_selection_unavailable': [HttpStatus.UNPROCESSABLE_ENTITY, 'Rental selection unavailable'],
   'rental_commitment.preview_configuration_unavailable': [
     HttpStatus.SERVICE_UNAVAILABLE,

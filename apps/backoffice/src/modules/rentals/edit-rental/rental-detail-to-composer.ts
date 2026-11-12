@@ -46,7 +46,8 @@ export function hydrateRentalDetailToComposer(
 				rental.fulfillment.method === "DELIVERY" && deliveryDetails
 					? {
 							status: "EXISTING",
-							address: deliveryDetails.formattedAddress,
+							address:
+								deliveryDetails.formattedAddress ?? deliveryDetails.address,
 						}
 					: { status: "INVALID", address: "" },
 			insuranceSelected: rental.insuranceSelected,
