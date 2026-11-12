@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
 
+import { ConfirmedRentalReschedulingPreparationService } from './application/confirmed-rental-rescheduling-preparation.service';
+import { PreviewConfirmedRentalPeriodHandler } from './features/reschedule-confirmed-rental-period/preview-confirmed-rental-period.handler';
 import { RentalConfirmationDeliveryService } from './application/rental-confirmation-delivery.service';
 import { GetRentalConfirmationSummaryHttpController } from './features/get-rental-confirmation-summary/get-rental-confirmation-summary.controller';
 import { GetRentalConfirmationSummaryHandler } from './features/get-rental-confirmation-summary/get-rental-confirmation-summary.handler';
@@ -143,6 +145,8 @@ import { RentalLifecycleFactsService } from './public-api/rental-lifecycle-facts
     ChangeRentalSelectionQuantityHandler,
     ConfirmRentalHandler,
     RentalConfirmationDeliveryService,
+    ConfirmedRentalReschedulingPreparationService,
+    PreviewConfirmedRentalPeriodHandler,
     GetRentalConfirmationSummaryHandler,
     CreateConfirmedRentalService,
     CreateDraftRentalService,

@@ -1,3 +1,5 @@
+import type { ConfirmedRentalReschedulingDecisions } from '../../application/confirmed-rental-rescheduling-preparation.service';
+
 export class RescheduleConfirmedRentalPeriodCommand {
   constructor(
     public readonly props: {
@@ -7,6 +9,7 @@ export class RescheduleConfirmedRentalPeriodCommand {
       expectedVersion: number;
       periodStart: Date;
       periodEnd: Date;
+      deliveryDecisions?: ConfirmedRentalReschedulingDecisions;
     },
   ) {}
 }

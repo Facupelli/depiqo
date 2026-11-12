@@ -1,5 +1,7 @@
 import type { DeliveryQuote, ResolvedCustomerLocation } from '../domain/delivery-quote.types';
 
+export { DeliveryProviderError } from '../application/errors/delivery-provider.error';
+
 export type {
   DeliveryQuote,
   DeliveryQuoteLeg,

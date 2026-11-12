@@ -1,5 +1,6 @@
 import {
   ExplicitOffsetInstantSchema,
+  PreviewConfirmedRentalPeriodBodySchema,
   RescheduleConfirmedRentalPeriodBodySchema,
   RescheduleConfirmedRentalPeriodParamsSchema,
 } from '@repo/api-contracts';
@@ -13,6 +14,16 @@ export const RescheduleConfirmedRentalPeriodApplicationInputSchema =
       end: ExplicitOffsetInstantSchema.parse(body.period.end),
     },
   }));
+
+export class PreviewConfirmedRentalPeriodRequestDto extends createZodDto(
+  PreviewConfirmedRentalPeriodBodySchema.transform((body) => ({
+    ...body,
+    period: {
+      start: ExplicitOffsetInstantSchema.parse(body.period.start),
+      end: ExplicitOffsetInstantSchema.parse(body.period.end),
+    },
+  })),
+) {}
 
 export class RescheduleConfirmedRentalPeriodParamsDto extends createZodDto(
   RescheduleConfirmedRentalPeriodParamsSchema,

@@ -148,6 +148,7 @@ export interface ChangeConfirmedRentalDetailsProps {
 export interface RescheduleConfirmedRentalPeriodProps {
   period: RentalPeriod;
   operationTime: Date;
+  acceptedDelivery?: AcceptedDeliverySnapshot;
 }
 
 export interface AddConfirmedRentalSelectionProps {
@@ -733,7 +734,10 @@ export class Rental extends AggregateRootBase {
     return ok(undefined);
   }
 
-  rescheduleConfirmedPeriod(params: RescheduleConfirmedRentalPeriodProps): Result<void, RentalCommitmentError> {
+  validateConfirmedPeriodReschedule(params: {
+    period: RentalPeriod;
+    operationTime: Date;
+  }): Result<void, RentalCommitmentError> {
     if (this.status !== RentalStatus.Confirmed) {
       return err(new RentalCannotBeEditedFromStatusError(this.id, this.status));
     }
@@ -744,15 +748,43 @@ export class Rental extends AggregateRootBase {
       return err(new RentalPeriodCannotStartInPastError());
     }
 
+    return ok(undefined);
+  }
+
+  rescheduleConfirmedPeriod(params: RescheduleConfirmedRentalPeriodProps): Result<void, RentalCommitmentError> {
+    const eligibility = this.validateConfirmedPeriodReschedule(params);
+    if (eligibility.isErr()) return err(eligibility.error);
+
     const acceptedAssetBuffer = this.requireAcceptedAssetBuffer();
-    let acceptedDelivery = this.acceptedDelivery;
-    if (acceptedDelivery) {
-      const rescheduledDelivery = acceptedDelivery.reschedule({
-        deliveryScheduledAt: params.period.start,
-        collectionScheduledAt: params.period.end,
-      });
-      if (rescheduledDelivery.isErr()) return err(rescheduledDelivery.error);
-      acceptedDelivery = rescheduledDelivery.value;
+    const acceptedDelivery = params.acceptedDelivery;
+    if (this.fulfillmentMethod === FulfillmentMethod.Delivery) {
+      if (!acceptedDelivery || !this.acceptedDelivery || !this.deliveryDetails) {
+        return err(new RentalInvalidFieldError('acceptedDelivery', 'rescheduling requires evaluated Delivery terms'));
+      }
+      const proposed = acceptedDelivery.snapshot;
+      const previous = this.acceptedDelivery.snapshot;
+      const destination = proposed.resolvedDestination;
+      const details = this.deliveryDetails;
+      if (
+        proposed.branchId !== this.branchId ||
+        !destination ||
+        destination.formattedAddress !== details.formattedAddress ||
+        destination.latitude !== details.latitude ||
+        destination.longitude !== details.longitude ||
+        destination.providerPlaceId !== details.providerPlaceId ||
+        Date.parse(proposed.delivery.scheduledAt) !== params.period.start.getTime() ||
+        Date.parse(proposed.collection.scheduledAt) !== params.period.end.getTime() ||
+        JSON.stringify(proposed.staffAgreement) !== JSON.stringify(previous.staffAgreement)
+      ) {
+        return err(
+          new RentalInvalidFieldError(
+            'acceptedDelivery',
+            'must preserve destination, branch and staff agreement and match the proposed period',
+          ),
+        );
+      }
+    } else if (acceptedDelivery) {
+      return err(new RentalInvalidFieldError('acceptedDelivery', 'Pickup rentals cannot have Delivery terms'));
     }
 
     const blockPeriod = deriveConfirmedAssetBlockPeriod({
