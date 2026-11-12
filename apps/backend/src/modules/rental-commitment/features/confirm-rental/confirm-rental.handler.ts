@@ -17,7 +17,12 @@ import { acceptedDeliverySnapshotFromQuote } from '../../application/accepted-de
 import { toRentalIntegrationEvents } from '../../application/rental-integration-event.mapper';
 import { deriveConfirmedAssetBlockPeriod } from '../../domain/confirmed-asset-block-period';
 import { deriveConfirmationParticipationTiming } from '../../domain/confirmation-participation-timing';
-import { AcceptedDeliverySnapshot } from '../../domain/value-objects/accepted-delivery-snapshot.value-object';
+import {
+  ACCEPTED_DELIVERY_SNAPSHOT_SCHEMA,
+  ACCEPTED_DELIVERY_SNAPSHOT_VERSION,
+  AcceptedDeliverySnapshot,
+  AcceptedDeliverySnapshotData,
+} from '../../domain/value-objects/accepted-delivery-snapshot.value-object';
 import { ConfirmedPriceSnapshot } from '../../domain/value-objects/confirmed-price-snapshot.value-object';
 import { FulfillmentMethod } from '../../domain/rental-status';
 import { RentalAssetAllocationService } from '../../asset-allocation/rental-asset-allocation.service';
@@ -105,7 +110,7 @@ export class ConfirmRentalHandler implements ICommandHandler<ConfirmRentalComman
       );
     }
 
-    let acceptedDeliveryData;
+    let acceptedDeliveryData: AcceptedDeliverySnapshotData | undefined;
     let acceptedDelivery: AcceptedDeliverySnapshot | undefined;
     if (fulfillmentMethod === FulfillmentMethod.Delivery) {
       const deliveryDetails = rental.deliveryDetails;
@@ -118,7 +123,7 @@ export class ConfirmRentalHandler implements ICommandHandler<ConfirmRentalComman
         );
       }
 
-      const deliveryOutcome = await this.deliveryQuoteService.getQuote({
+      const deliveryOutcome = await this.deliveryQuoteService.evaluate({
         tenantId: rental.tenantId,
         branchId: rental.branchId,
         customerLocation: {
@@ -133,7 +138,7 @@ export class ConfirmRentalHandler implements ICommandHandler<ConfirmRentalComman
         rentalEnd: rental.period.end,
       });
 
-      if (!deliveryOutcome.serviceable) {
+      if (!deliveryOutcome.transportValid) {
         return err(
           confirmRentalError(
             'rental_commitment.delivery_not_serviceable',
@@ -144,7 +149,74 @@ export class ConfirmRentalHandler implements ICommandHandler<ConfirmRentalComman
         );
       }
 
-      acceptedDeliveryData = acceptedDeliverySnapshotFromQuote(deliveryOutcome.quote);
+      const existing = rental.deliverySnapshot?.snapshot;
+      const policyException = existing?.policyException;
+      const staffAgreement = existing?.staffAgreement;
+      // Without configuration, retain the draft's validated explicit minutes, including zero.
+      const minutes = deliveryOutcome.transportReservationMinutes ?? existing?.transportReservationMinutes;
+      const destination = deliveryOutcome.resolvedCustomerLocation;
+      const unauthorizedRestrictions = deliveryOutcome.restrictions.filter(
+        (restriction) => !policyException?.overriddenRestrictions.includes(restriction),
+      );
+      // Revalidation can consume an authorization, never grant it or move it to a different scope.
+      const exceptionScopeChanged =
+        existing !== undefined &&
+        policyException !== undefined &&
+        (existing.branchId !== deliveryOutcome.branchId ||
+          existing.resolvedDestination?.formattedAddress !== destination.formattedAddress ||
+          existing.resolvedDestination?.latitude !== destination.latitude ||
+          existing.resolvedDestination?.longitude !== destination.longitude ||
+          existing.resolvedDestination?.providerPlaceId !== destination.providerPlaceId ||
+          Date.parse(existing.delivery.scheduledAt) !== deliveryOutcome.deliveryScheduledAt.getTime() ||
+          Date.parse(existing.collection.scheduledAt) !== deliveryOutcome.collectionScheduledAt.getTime() ||
+          existing.transportReservationMinutes !== minutes);
+
+      if (
+        exceptionScopeChanged ||
+        unauthorizedRestrictions.length ||
+        minutes === undefined ||
+        (!deliveryOutcome.quote && (!staffAgreement || !policyException)) ||
+        (staffAgreement && deliveryOutcome.currency !== undefined && existing.currency !== deliveryOutcome.currency)
+      ) {
+        return err(
+          confirmRentalError(
+            'rental_commitment.delivery_review_required',
+            'Review the draft delivery terms, agree pricing where needed, and explicitly authorize the current restrictions and transportation scope before confirming.',
+            undefined,
+            {
+              ...context,
+              deliveryRestrictions: deliveryOutcome.restrictions,
+              unauthorizedRestrictions,
+              exceptionScopeChanged,
+            },
+          ),
+        );
+      }
+
+      acceptedDeliveryData = {
+        ...(deliveryOutcome.quote
+          ? acceptedDeliverySnapshotFromQuote(deliveryOutcome.quote)
+          : {
+              schema: ACCEPTED_DELIVERY_SNAPSHOT_SCHEMA,
+              version: ACCEPTED_DELIVERY_SNAPSHOT_VERSION,
+              distanceMeters: deliveryOutcome.distanceMeters,
+              delivery: { scheduledAt: deliveryOutcome.deliveryScheduledAt.toISOString() },
+              collection: { scheduledAt: deliveryOutcome.collectionScheduledAt.toISOString() },
+              // The guard above requires an existing agreement and exception for quote-less terms.
+              currency: existing!.currency,
+              transportReservationMinutes: minutes,
+            }),
+        branchId: deliveryOutcome.branchId,
+        resolvedDestination: {
+          formattedAddress: destination.formattedAddress,
+          latitude: destination.latitude,
+          longitude: destination.longitude,
+          providerPlaceId: destination.providerPlaceId,
+        },
+        transportReservationMinutes: minutes,
+        staffAgreement,
+        policyException,
+      };
       const acceptedDeliveryResult = AcceptedDeliverySnapshot.create(acceptedDeliveryData);
       if (acceptedDeliveryResult.isErr()) throw acceptedDeliveryResult.error;
       acceptedDelivery = acceptedDeliveryResult.value;

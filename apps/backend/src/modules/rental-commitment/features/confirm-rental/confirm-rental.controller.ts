@@ -46,6 +46,13 @@ function toConfirmRentalProblem(error: ConfirmRentalError): ProblemException {
         ...(error.code === 'rental_commitment.delivery_not_serviceable'
           ? { reason: error.context?.deliveryReason }
           : {}),
+        ...(error.code === 'rental_commitment.delivery_review_required'
+          ? {
+              restrictions: error.context?.deliveryRestrictions,
+              unauthorizedRestrictions: error.context?.unauthorizedRestrictions,
+              exceptionScopeChanged: error.context?.exceptionScopeChanged,
+            }
+          : {}),
       },
     }),
     applicationError: error,
@@ -95,6 +102,13 @@ const confirmRentalProblemMap = {
     title: 'Delivery not serviceable',
     status: HttpStatus.UNPROCESSABLE_ENTITY,
     detail: 'Delivery is not serviceable for the selected location and rental period.',
+  },
+  'rental_commitment.delivery_review_required': {
+    type: createProblemType('rental_commitment.delivery_review_required'),
+    title: 'Draft delivery review required',
+    status: HttpStatus.UNPROCESSABLE_ENTITY,
+    detail:
+      'Review the draft delivery terms, agree pricing where needed, and explicitly authorize the current restrictions and transportation scope before confirming.',
   },
   'rental_commitment.duplicate_assigned_asset': {
     type: createProblemType('rental_commitment.duplicate_assigned_asset'),

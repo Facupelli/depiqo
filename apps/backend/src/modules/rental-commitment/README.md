@@ -73,6 +73,8 @@ Draft edits unrelated to transportation preserve the complete proposed delivery 
 
 Agreed pricing does not authorize policy exceptions. An exception authorizes only the accepted transportation conditions; changes require fresh evaluation and reauthorization. Neither decision waives equipment reservation conflicts. Authorization attribution and time must come from trusted server context.
 
+Draft confirmation reevaluates transportation validity and current policy restrictions. Existing agreements retain their amount and attribution, while automatic-only drafts accept fresh automatic pricing. Existing exceptions cover only their recorded restrictions within the unchanged authorized scope, including reservation minutes. New restrictions or scope changes require draft review and explicit authorization, not additional delivery-management permission merely to confirm an already authorized arrangement.
+
 ### Asset ownership
 
 Asset Inventory owns current physical ownership. Rental Commitment preserves the ownership and owner-contract facts needed to interpret historical asset participation, so current ownership changes must not reinterpret past rental assignments.
