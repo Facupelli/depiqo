@@ -50,9 +50,21 @@ export const PreviewConfirmedRentalPeriodResponseSchema = z.object({
   reviewIdentity: z.string().nullable(),
   currency: z.string(),
   proposedAcceptedCustomerTotal: z.string().nullable(),
+  // Advisory envelope of the individual reservations, not an availability guarantee.
   reservationPeriod: z
     .object({ start: z.string().datetime(), end: z.string().datetime() })
     .nullable(),
+  // Empty only when delivery requirements prevent deriving an operational proposal.
+  assetReservations: z.array(
+    z.object({
+      assetBlockId: z.string(),
+      assetId: z.string(),
+      period: z.object({
+        start: z.string().datetime(),
+        end: z.string().datetime(),
+      }),
+    }),
+  ),
   delivery: z
     .object({
       currentEffectiveCharge: z.string(),

@@ -63,7 +63,9 @@ export function mapRescheduleConfirmedRentalPeriodError(
   }
   if (error instanceof RentalInvalidFieldError) {
     return rescheduleConfirmedRentalPeriodError(
-      'rental_commitment.invalid_rescheduling_delivery_input',
+      error.field === 'period'
+        ? 'rental_commitment.invalid_rental_period'
+        : 'rental_commitment.invalid_rescheduling_delivery_input',
       error.message,
       error,
       context,

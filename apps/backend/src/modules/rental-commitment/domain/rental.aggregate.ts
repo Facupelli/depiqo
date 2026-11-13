@@ -844,15 +844,98 @@ export class Rental extends AggregateRootBase {
     return ok(undefined);
   }
 
+  /** Read-only operational proposal shared by preview and the authoritative aggregate operation. */
+  planConfirmedPeriodReschedule(params: {
+    period: RentalPeriod;
+    operationTime: Date;
+    transportReservationMinutes: number;
+  }): Result<{ assignedAssets: AssignedAsset[]; assetBlocks: AssetBlock[] }, RentalCommitmentError> {
+    const eligibility = this.validateConfirmedPeriodReschedule(params);
+    if (eligibility.isErr()) return err(eligibility.error);
+    const invalid = (message: string) => err(new RentalInvalidFieldError('period', message));
+    if (!Number.isSafeInteger(params.transportReservationMinutes) || params.transportReservationMinutes < 0) {
+      return invalid('transportation reservation minutes must be a non-negative safe integer');
+    }
+    const buffer = this.requireAcceptedAssetBuffer();
+    const derive = (period: RentalPeriod, minutes: number, assignment?: AssignedAsset) =>
+      deriveConfirmedAssetBlockPeriod({
+        participationPeriod: assignment ? new RentalPeriod(assignment.effectiveFrom, period.end) : period,
+        acceptedBeforeBufferMinutes: buffer.beforeBufferMinutes,
+        acceptedAfterBufferMinutes: buffer.afterBufferMinutes,
+        acceptedTransportReservationMinutes: minutes,
+        clampStartAt: assignment && assignment.effectiveFrom > period.start ? assignment.effectiveFrom : undefined,
+      });
+    const assignedAssets = this.props.assignedAssets.map((assignment) =>
+      assignment.isActive && assignment.effectiveFrom.getTime() === this.period.start.getTime()
+        ? assignment.moveEffectiveFrom(params.period.start)
+        : assignment,
+    );
+    for (const assignment of assignedAssets) {
+      if (
+        assignment.effectiveFrom < params.period.start ||
+        assignment.effectiveFrom >= params.period.end ||
+        (assignment.effectiveUntil !== undefined && assignment.effectiveUntil > params.period.end)
+      ) {
+        return invalid('the proposed period excludes preserved asset participation');
+      }
+    }
+    const currentIds = new Set(this.currentOperationalAssetBlocks.map((block) => block.id));
+    const currentAssignmentsByAsset = new Map(
+      this.currentAssignedAssets.map((assignment) => [assignment.assetId, assignment]),
+    );
+    const proposedAssignmentsById = new Map(assignedAssets.map((assignment) => [assignment.id, assignment]));
+    const assetBlocks = [...this.props.assetBlocks];
+    try {
+      for (let index = 0; index < assetBlocks.length; index++) {
+        const block = assetBlocks[index]!;
+        if (!currentIds.has(block.id)) continue;
+        const previousAssignment =
+          block.blockType === AssetBlockType.Equipment ? currentAssignmentsByAsset.get(block.assetId) : undefined;
+        const assignment = previousAssignment ? proposedAssignmentsById.get(previousAssignment.id) : undefined;
+        const previousPeriod = derive(
+          this.period,
+          this.acceptedDelivery?.snapshot.transportReservationMinutes ?? 0,
+          previousAssignment,
+        );
+        if (!block.period.equals(previousPeriod)) {
+          return invalid('cannot safely resize an unexpected operational reservation');
+        }
+        const proposedPeriod = derive(params.period, params.transportReservationMinutes, assignment);
+        if (block.period.equals(proposedPeriod)) continue;
+        if (
+          block.period.end <= params.operationTime ||
+          (block.period.start.getTime() !== proposedPeriod.start.getTime() &&
+            (block.period.start <= params.operationTime || proposedPeriod.start <= params.operationTime)) ||
+          proposedPeriod.end <= params.operationTime
+        ) {
+          return invalid('cannot rewrite a completed reservation or its historical start');
+        }
+        assetBlocks[index] = block.resizePeriod(proposedPeriod);
+      }
+      // Untouched historical blocks must still satisfy their original participation and clamping.
+      const valid = this.validateActiveEquipmentBlocks({
+        assignedAssets,
+        assetBlocks,
+        acceptedAssetBuffer: buffer,
+        acceptedTransportReservationMinutes: params.transportReservationMinutes,
+        period: params.period,
+      });
+      if (valid.isErr()) return invalid(valid.error.message);
+    } catch (error) {
+      if (!(error instanceof DomainException)) throw error;
+      return invalid('the proposed participation or reservation period is invalid');
+    }
+    return ok({ assignedAssets, assetBlocks });
+  }
+
   rescheduleConfirmedPeriod(params: RescheduleConfirmedRentalPeriodProps): Result<void, RentalCommitmentError> {
     const eligibility = this.validateConfirmedPeriodReschedule(params);
     if (eligibility.isErr()) return err(eligibility.error);
 
-    const acceptedAssetBuffer = this.requireAcceptedAssetBuffer();
     const acceptedDelivery = params.acceptedDelivery;
     if (this.fulfillmentMethod === FulfillmentMethod.Delivery) {
       if (!acceptedDelivery || !this.acceptedDelivery || !this.deliveryDetails) {
-        return err(new RentalInvalidFieldError('acceptedDelivery', 'rescheduling requires evaluated Delivery terms'));
+        return err(new RentalInvalidFieldError('acceptedDelivery', 'rescheduling requires accepted Delivery terms'));
       }
       const proposed = acceptedDelivery.snapshot;
       const previous = this.acceptedDelivery.snapshot;
@@ -860,6 +943,9 @@ export class Rental extends AggregateRootBase {
       const details = this.deliveryDetails;
       if (
         proposed.arrangement !== previous.arrangement ||
+        proposed.currency !== previous.currency ||
+        (proposed.arrangement === 'STAFF_ARRANGED' &&
+          proposed.transportReservationMinutes !== previous.transportReservationMinutes) ||
         (proposed.arrangement === 'ROUTED' &&
           (proposed.branchId !== this.branchId ||
             !destination ||
@@ -882,25 +968,16 @@ export class Rental extends AggregateRootBase {
       return err(new RentalInvalidFieldError('acceptedDelivery', 'Pickup rentals cannot have Delivery terms'));
     }
 
-    const blockPeriod = deriveConfirmedAssetBlockPeriod({
-      participationPeriod: params.period,
-      acceptedBeforeBufferMinutes: acceptedAssetBuffer.beforeBufferMinutes,
-      acceptedAfterBufferMinutes: acceptedAssetBuffer.afterBufferMinutes,
-      acceptedDelivery,
+    const reservations = this.planConfirmedPeriodReschedule({
+      ...params,
+      transportReservationMinutes: acceptedDelivery?.snapshot.transportReservationMinutes ?? 0,
     });
-    const currentOperationalBlockIds = new Set(this.currentOperationalAssetBlocks.map((block) => block.id));
-    const assignedAssets = this.props.assignedAssets.map((assignment) =>
-      assignment.isActive ? assignment.moveEffectiveFrom(params.period.start) : assignment,
-    );
-    const assetBlocks = this.props.assetBlocks.map((block) =>
-      currentOperationalBlockIds.has(block.id) ? block.resizePeriod(blockPeriod) : block,
-    );
+    if (reservations.isErr()) return err(reservations.error);
 
     const transition = this.applyConfirmedStateChanges({
       period: params.period,
       deliverySnapshot: acceptedDelivery,
-      assignedAssets,
-      assetBlocks,
+      ...reservations.value,
     });
     if (transition.isErr()) return err(transition.error);
 
@@ -2035,6 +2112,7 @@ export class Rental extends AggregateRootBase {
     assetBlocks: readonly AssetBlock[];
     acceptedAssetBuffer: AcceptedRentalAssetBuffer;
     acceptedDelivery?: AcceptedDeliverySnapshot;
+    acceptedTransportReservationMinutes?: number;
     period: RentalPeriod;
   }): Result<void, RentalCommitmentError> {
     const equipmentBlocks = params.assetBlocks.filter((block) => block.blockType === AssetBlockType.Equipment);
@@ -2051,6 +2129,7 @@ export class Rental extends AggregateRootBase {
         acceptedBeforeBufferMinutes: params.acceptedAssetBuffer.beforeBufferMinutes,
         acceptedAfterBufferMinutes: params.acceptedAssetBuffer.afterBufferMinutes,
         acceptedDelivery: params.acceptedDelivery,
+        acceptedTransportReservationMinutes: params.acceptedTransportReservationMinutes,
         ...(assignment.effectiveFrom > params.period.start ? { clampStartAt: assignment.effectiveFrom } : {}),
       });
       const block = equipmentBlocks.find((candidate) => {

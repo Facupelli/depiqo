@@ -12,7 +12,6 @@ import {
   DeliveryQuoteService,
 } from 'src/modules/delivery/public-api/delivery-quote.public-api';
 
-import { deriveBufferedAssetBlockPeriod } from '../domain/asset-block-period';
 import { Rental } from '../domain/rental.aggregate';
 import {
   ACCEPTED_DELIVERY_SNAPSHOT_SCHEMA,
@@ -65,7 +64,8 @@ export class ConfirmedRentalReschedulingPreparationService {
       if (!(error instanceof DomainException)) throw error;
       return err(failure('rental_commitment.invalid_rental_period', error.message, error));
     }
-    const eligibility = rental.validateConfirmedPeriodReschedule({ period, operationTime: new Date() });
+    const operationTime = new Date();
+    const eligibility = rental.validateConfirmedPeriodReschedule({ period, operationTime });
     if (eligibility.isErr()) return err(mapRescheduleConfirmedRentalPeriodError(eligibility.error));
 
     const pricing = rental.confirmedPriceSnapshot?.snapshot;
@@ -74,23 +74,26 @@ export class ConfirmedRentalReschedulingPreparationService {
     const reservationPeriod = (
       minutes: number,
     ): Result<{ start: string; end: string }, RescheduleConfirmedRentalPeriodError> => {
-      try {
-        const block = deriveBufferedAssetBlockPeriod({
-          participationPeriod: period,
-          beforeBufferMinutes: buffer.beforeBufferMinutes + minutes,
-          afterBufferMinutes: buffer.afterBufferMinutes + minutes,
-        });
-        return ok({ start: block.start.toISOString(), end: block.end.toISOString() });
-      } catch (error) {
-        if (!(error instanceof DomainException)) throw error;
-        return err(
-          failure(
-            'rental_commitment.invalid_rescheduling_delivery_input',
-            'Reservation minutes produce an invalid reservation period.',
-            error,
-          ),
-        );
-      }
+      const planned = rental.planConfirmedPeriodReschedule({
+        period,
+        operationTime,
+        transportReservationMinutes: minutes,
+      });
+      if (planned.isErr()) return err(mapRescheduleConfirmedRentalPeriodError(planned.error));
+      const currentIds = new Set(rental.currentOperationalAssetBlocks.map((block) => block.id));
+      const blocks = planned.value.assetBlocks.filter((block) => currentIds.has(block.id));
+      if (!blocks.length) throw new Error('Confirmed rental has no current operational asset blocks.');
+      preview.assetReservations = blocks
+        .map((block) => ({
+          assetBlockId: block.id,
+          assetId: block.assetId,
+          period: { start: block.period.start.toISOString(), end: block.period.end.toISOString() },
+        }))
+        .sort((a, b) => a.assetBlockId.localeCompare(b.assetBlockId));
+      return ok({
+        start: new Date(Math.min(...blocks.map((block) => block.period.start.getTime()))).toISOString(),
+        end: new Date(Math.max(...blocks.map((block) => block.period.end.getTime()))).toISOString(),
+      });
     };
     const preview: PreviewConfirmedRentalPeriodResponseDto = {
       rentalId: rental.id,
@@ -100,6 +103,7 @@ export class ConfirmedRentalReschedulingPreparationService {
       currency: pricing.final.currency,
       proposedAcceptedCustomerTotal: new Decimal(pricing.total).toString(),
       reservationPeriod: null,
+      assetReservations: [],
       delivery: null,
       requirements: [],
     };
@@ -112,14 +116,50 @@ export class ConfirmedRentalReschedulingPreparationService {
 
     const existing = rental.acceptedDelivery;
     const details = rental.deliveryDetails;
-    if (
-      !existing ||
-      existing.snapshot.arrangement !== 'ROUTED' ||
-      !details ||
-      details.formattedAddress === undefined ||
-      details.latitude === undefined ||
-      details.longitude === undefined
-    ) {
+    if (!existing || !details) {
+      return err(
+        failure('rental_commitment.invalid_rescheduling_delivery_input', 'Accepted delivery details are required.'),
+      );
+    }
+    if (existing.snapshot.arrangement === 'STAFF_ARRANGED') {
+      const rescheduled = existing.reschedule({ deliveryScheduledAt: period.start, collectionScheduledAt: period.end });
+      if (rescheduled.isErr()) return err(mapRescheduleConfirmedRentalPeriodError(rescheduled.error));
+      const deliveryTerms = rescheduled.value.snapshot;
+      const reservation = reservationPeriod(deliveryTerms.transportReservationMinutes);
+      if (reservation.isErr()) return err(reservation.error);
+      preview.reservationPeriod = reservation.value;
+      preview.proposedAcceptedCustomerTotal = new Decimal(pricing.total)
+        .plus(existing.effectiveDeliveryCharge)
+        .toString();
+      if (deliveryTerms.currency !== pricing.final.currency) preview.requirements.push('CURRENCY_MISMATCH');
+      preview.delivery = {
+        currentEffectiveCharge: money(existing.effectiveDeliveryCharge),
+        currentPricingSource: 'STAFF_AGREEMENT',
+        proposedCalculatedReference: null,
+        proposedEffectiveCharge: money(existing.effectiveDeliveryCharge),
+        staffAgreementPreserved: true,
+        effectiveChargeDifference: '0',
+        policyRestrictions: [],
+        requiresExceptionAuthorization: false,
+        transportReservationMinutes: deliveryTerms.transportReservationMinutes,
+        requiresExplicitMinuteAcceptance: false,
+      };
+      preview.reviewIdentity = `v1:${createHash('sha256')
+        .update(
+          JSON.stringify({
+            tenantId: rental.tenantId,
+            branchId: rental.branchId,
+            preview,
+            destination: details,
+            deliveryTerms,
+            acceptedEquipmentTotal: money(pricing.total),
+            acceptedAssetBuffer: buffer,
+          }),
+        )
+        .digest('hex')}`;
+      return ok({ period, preview, deliveryTerms });
+    }
+    if (details.formattedAddress === undefined || details.latitude === undefined || details.longitude === undefined) {
       return err(
         failure('rental_commitment.invalid_rescheduling_delivery_input', 'Accepted delivery details are required.'),
       );
@@ -330,18 +370,22 @@ export class ConfirmedRentalReschedulingPreparationService {
         ),
       );
     }
-    const snapshot = AcceptedDeliverySnapshot.create({
-      ...prepared.deliveryTerms,
-      // Irrelevant authorization input is safely ignored when no restrictions apply.
-      policyException: delivery.requiresExceptionAuthorization
-        ? {
-            overriddenRestrictions: delivery.policyRestrictions,
-            reason: decisions.policyException?.reason?.trim(),
-            authorizedBy: input.tenantUserId,
-            authorizedAt: input.operationTime.toISOString(),
-          }
-        : undefined,
-    });
+    const snapshot = AcceptedDeliverySnapshot.create(
+      prepared.deliveryTerms.arrangement === 'STAFF_ARRANGED'
+        ? prepared.deliveryTerms
+        : {
+            ...prepared.deliveryTerms,
+            // Irrelevant authorization input is safely ignored when no restrictions apply.
+            policyException: delivery.requiresExceptionAuthorization
+              ? {
+                  overriddenRestrictions: delivery.policyRestrictions,
+                  reason: decisions.policyException?.reason?.trim(),
+                  authorizedBy: input.tenantUserId,
+                  authorizedAt: input.operationTime.toISOString(),
+                }
+              : undefined,
+          },
+    );
     if (snapshot.isErr()) return err(mapRescheduleConfirmedRentalPeriodError(snapshot.error));
     return ok(snapshot.value);
   }

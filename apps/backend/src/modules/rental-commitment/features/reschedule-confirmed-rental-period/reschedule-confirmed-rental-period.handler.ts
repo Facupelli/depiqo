@@ -12,7 +12,6 @@ import { ConfirmedRentalReschedulingPreparationService } from '../../application
 import { toRentalIntegrationEvents } from '../../application/rental-integration-event.mapper';
 import { RentalAssetAllocationService } from '../../asset-allocation/rental-asset-allocation.service';
 
-import { AssetId } from '../../domain/types/rental-commitment-ids';
 import { RentalPersistenceStateMismatchError, RentalRepository } from '../../persistence/rental.repository';
 import { RescheduleConfirmedRentalPeriodCommand } from './reschedule-confirmed-rental-period.command';
 import {
@@ -89,26 +88,17 @@ export class RescheduleConfirmedRentalPeriodHandler implements ICommandHandler<
         });
         if (rescheduled.isErr()) return err(mapRescheduleConfirmedRentalPeriodError(rescheduled.error, context));
 
-        const currentOperationalBlocks = rental.currentOperationalAssetBlocks;
-        const blockPeriod = currentOperationalBlocks[0]?.period;
-        if (!blockPeriod) {
-          throw new Error(`Confirmed rental "${rentalId}" has no current operational asset blocks.`);
+        for (const block of rental.currentOperationalAssetBlocks) {
+          const conflictingAssetIds = await this.allocation.findConflictingExactAssetIds({
+            tenantId,
+            currentRentalId: rentalId,
+            assetIds: [block.assetId],
+            periodStart: block.period.start,
+            periodEnd: block.period.end,
+            tx,
+          });
+          if (conflictingAssetIds.length > 0) return err(this.assetsUnavailable(context));
         }
-        if (currentOperationalBlocks.some((block) => !block.period.equals(blockPeriod))) {
-          throw new Error(`Confirmed rental "${rentalId}" has inconsistent current operational block periods.`);
-        }
-
-        // SAFETY: This value comes from a persisted or already validated non-empty domain identifier; the brand adds no runtime representation.
-        const assetIds = [...new Set(currentOperationalBlocks.map((block) => block.assetId))] as AssetId[];
-        const conflictingAssetIds = await this.allocation.findConflictingExactAssetIds({
-          tenantId,
-          currentRentalId: rentalId,
-          assetIds,
-          periodStart: blockPeriod.start,
-          periodEnd: blockPeriod.end,
-          tx,
-        });
-        if (conflictingAssetIds.length > 0) return err(this.assetsUnavailable(context));
 
         const saved = await this.rentals.rescheduleConfirmedPeriod(rental, { expectedVersion, tx });
         if (!saved) return err(this.versionConflict(rentalId, context));
