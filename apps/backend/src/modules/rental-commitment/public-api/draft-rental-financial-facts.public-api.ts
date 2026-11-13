@@ -9,6 +9,7 @@ export interface DraftRentalFinancialFactsResult {
   rentalVersion: number;
   equipmentAndInsuranceAmount: string;
   deliveryCharge: string | null;
+  deliveryArrangement: 'ROUTED' | 'STAFF_ARRANGED' | null;
   customerTotal: string;
   currency: string;
   chargedUnits: number;

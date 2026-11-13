@@ -131,6 +131,7 @@ export class RentalBudgetDocumentService {
         budgetPricing: {
           equipmentAndInsurance: formatAmount(financial.equipmentAndInsuranceAmount),
           deliveryAndCollection: financial.deliveryCharge === null ? null : formatAmount(financial.deliveryCharge),
+          deliveryArrangement: financial.deliveryArrangement,
           total: formatAmount(financial.customerTotal),
         },
         insuranceSelected: false,

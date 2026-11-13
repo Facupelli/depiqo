@@ -61,8 +61,8 @@ export function RentalConfirmationDialog({
 		costQuery.error instanceof ProblemDetailsError &&
 		costQuery.error.problemDetails.code ===
 			"rental_commitment.delivery_review_required"
-			? "Revisá el acuerdo y la autorización de envío desde Editar borrador."
-			: "No pudimos obtener el total a confirmar. Revisá el pedido e intentá nuevamente.";
+			? "Revisá el importe y las condiciones de envío desde Editar borrador."
+			: "No pudimos obtener el total a confirmar. Revisá el alquiler e intentá nuevamente.";
 
 	return (
 		<AlertDialog open={open} onOpenChange={onOpenChange}>
@@ -93,8 +93,8 @@ export function RentalConfirmationDialog({
 				{costQuery.isFetching ? (
 					<output className="block text-sm text-muted-foreground">
 						{summary
-							? "Actualizando total del cliente. Esperá antes de confirmar..."
-							: "Calculando total del cliente..."}
+							? "Actualizando el total del alquiler. Esperá antes de confirmar..."
+							: "Calculando el total del alquiler..."}
 					</output>
 				) : null}
 				{costQuery.isError ? (
@@ -117,7 +117,8 @@ export function RentalConfirmationDialog({
 				) : null}
 				{versionConflict ? (
 					<p className="text-sm text-destructive">
-						El borrador cambió. Volvé a cargar el pedido antes de confirmarlo.
+						El borrador cambió. Volvé a cargar el alquiler y revisalo antes de
+						confirmar.
 					</p>
 				) : null}
 				{errorMessage ? (

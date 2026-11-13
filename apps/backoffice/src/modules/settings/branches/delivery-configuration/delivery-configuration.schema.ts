@@ -9,17 +9,17 @@ const requiredDecimalSchema = z
 	.string()
 	.trim()
 	.min(1, "Este campo es obligatorio")
-	.regex(/^\d+(?:\.\d+)?$/, "Introduce un importe válido");
+	.regex(/^\d+(?:\.\d+)?$/, "Ingresá un importe válido");
 const requiredTimeSchema = z
 	.string()
-	.regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Introduce una hora válida");
+	.regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Ingresá una hora válida");
 const positiveDistanceSchema = z
 	.string()
 	.trim()
 	.min(1, "La distancia es obligatoria")
 	.refine(
 		(value) => parseKilometersToMeters(value) !== null,
-		"Introduce una distancia positiva con hasta 3 decimales",
+		"Ingresá una distancia mayor que 0, con hasta 3 decimales",
 	);
 
 export const deliveryConfigurationFormSchema = z
@@ -28,7 +28,7 @@ export const deliveryConfigurationFormSchema = z
 		currency: z
 			.string()
 			.trim()
-			.regex(/^[A-Za-z]{3}$/, "Usa un código de moneda de 3 letras"),
+			.regex(/^[A-Za-z]{3}$/, "Usá un código de moneda de 3 letras"),
 		distancePriceBands: z
 			.array(
 				z.object({
@@ -37,10 +37,10 @@ export const deliveryConfigurationFormSchema = z
 					price: requiredDecimalSchema,
 				}),
 			)
-			.min(1, "Agrega al menos un tramo"),
+			.min(1, "Agregá al menos un tramo"),
 		eligibleWeekdays: z
 			.array(z.number().int().min(0).max(6))
-			.min(1, "Selecciona al menos un día"),
+			.min(1, "Seleccioná al menos un día"),
 		eligibilityStartTime: requiredTimeSchema,
 		eligibilityEndTime: requiredTimeSchema,
 		normalServiceStartTime: requiredTimeSchema,
@@ -50,7 +50,10 @@ export const deliveryConfigurationFormSchema = z
 			.string()
 			.trim()
 			.min(1, "Este campo es obligatorio")
-			.regex(/^\d+$/, "Introduce un número entero no negativo"),
+			.regex(
+				/^\d+$/,
+				"Ingresá el tiempo para transporte en minutos enteros. Puede ser 0.",
+			),
 	})
 	.superRefine((values, context) => {
 		if (

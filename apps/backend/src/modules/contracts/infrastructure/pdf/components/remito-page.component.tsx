@@ -180,7 +180,7 @@ export function RemitoPage({ data, columns, isContinuation = false }: RemitoPage
                   <View style={s.infoRowGrid}>
                     <View style={s.infoCell}>
                       <View style={s.infoInline}>
-                        <Text style={s.infoLabel}>FECHA DE RETIRO:</Text>
+                        <Text style={s.infoLabel}>FECHA DE INICIO:</Text>
                         <Text style={s.infoValue}>{document.pickupDate}</Text>
                       </View>
                     </View>
@@ -248,8 +248,13 @@ export function RemitoPage({ data, columns, isContinuation = false }: RemitoPage
                 </View>
                 {document.budgetPricing && (
                   <Text style={s.budgetNote}>
-                    Condiciones propuestas, sujetas a confirmación. No constituye un contrato ni garantiza
-                    disponibilidad de entrega. La entrega con ruta se reevalúa al confirmar.
+                    Condiciones propuestas, sujetas a confirmación. No constituye un contrato
+                    {document.budgetPricing.deliveryArrangement === null
+                      ? '.'
+                      : ' ni garantiza disponibilidad de entrega.'}
+                    {document.budgetPricing.deliveryArrangement === 'ROUTED' && (
+                      <> Las condiciones de envío se vuelven a evaluar al confirmar.</>
+                    )}
                   </Text>
                 )}
               </View>

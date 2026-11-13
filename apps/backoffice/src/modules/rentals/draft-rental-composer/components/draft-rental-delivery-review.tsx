@@ -26,12 +26,11 @@ export const DraftRentalDeliveryReview = withForm({
 			return (
 				<p className="mt-3 text-xs text-muted-foreground">
 					{delivery.source === "PROPOSED"
-						? "Condiciones propuestas, pendientes de guardar."
-						: "Condiciones guardadas."}{" "}
-					Entrega coordinada por el equipo: {delivery.deliveryDetails.address}.{" "}
-					Importe de entrega y retiro:{" "}
-					{formatMoney(delivery.staffAgreedAmount, delivery.currency)}. Reserva
-					para transporte: {delivery.transportReservationMinutes} min.
+						? "Condiciones propuestas."
+						: "Condiciones actuales."}{" "}
+					Envío a medida. Destino: {delivery.deliveryDetails.address}. Entrega y
+					retiro: {formatMoney(delivery.staffAgreedAmount, delivery.currency)}.
+					Tiempo para transporte: {delivery.transportReservationMinutes} min.
 				</p>
 			);
 		}
@@ -65,8 +64,8 @@ export const DraftRentalDeliveryReview = withForm({
 										))}
 										{!delivery.policyExceptionRequired ? (
 											<p>
-												Excepción guardada. Se conserva para estas condiciones
-												de transporte.
+												Excepción autorizada para estas condiciones de
+												transporte.
 											</p>
 										) : canManageDelivery ? (
 											<>
@@ -84,8 +83,8 @@ export const DraftRentalDeliveryReview = withForm({
 																}
 															/>
 															<span>
-																Autorizar esta entrega excepcional con las
-																condiciones actuales
+																Autorizar una excepción para estas condiciones
+																de envío
 															</span>
 														</label>
 													)}
@@ -123,7 +122,7 @@ export const DraftRentalDeliveryReview = withForm({
 												data-invalid={!field.state.meta.isValid}
 											>
 												<FieldLabel htmlFor={`${id}-minutes`}>
-													Margen para transporte (min)
+													Tiempo para transporte (min)
 												</FieldLabel>
 												<Input
 													id={`${id}-minutes`}
@@ -138,14 +137,13 @@ export const DraftRentalDeliveryReview = withForm({
 														field.handleChange(event.target.value);
 													}}
 													onBlur={field.handleBlur}
-													placeholder="Entero no negativo, incluyendo 0"
+													placeholder="0"
 													aria-invalid={!field.state.meta.isValid}
 												/>
 												<p className="text-muted-foreground">
-													Reservamos tiempo adicional antes y después del
-													alquiler para entregar y retirar los equipos. Dejá
-													vacío para usar la configuración de la sucursal cuando
-													esté disponible.
+													Los equipos quedan reservados este tiempo antes y
+													después del alquiler. Dejá vacío para usar el tiempo
+													de la sucursal, si está configurado.
 												</p>
 												<FieldError errors={field.state.meta.errors} />
 											</Field>

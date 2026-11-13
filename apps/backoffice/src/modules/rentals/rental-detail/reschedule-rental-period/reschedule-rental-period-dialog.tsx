@@ -316,7 +316,7 @@ function OpenRescheduleRentalPeriodDialog(
 					<p className="text-muted-foreground text-sm">
 						{isDelivery
 							? deliveryArrangement === "STAFF_ARRANGED"
-								? "El precio de los equipos, del seguro y el importe acordado de entrega y retiro no cambiarán. Revisá las reservas antes de guardar."
+								? "Los importes de equipos, seguro, entrega y retiro se mantienen. Revisá las reservas antes de guardar."
 								: "El precio de los equipos y del seguro no cambiará. Revisá el precio, las condiciones de entrega y retiro y las reservas antes de guardar."
 							: "El precio acordado y los equipos asignados no cambiarán. Revisá las reservas para el nuevo período antes de guardar."}
 					</p>

@@ -258,13 +258,15 @@ function RentalLogisticsCard({
 						</div>
 						<p className="text-sm font-medium text-neutral-950">
 							{delivery?.arrangement === "STAFF_ARRANGED"
-								? "Personalizada"
-								: "Automática"}
+								? "A medida"
+								: delivery?.arrangement === "ROUTED"
+									? "Según configuración"
+									: "Condiciones de envío no disponibles"}
 						</p>
 						<p className="mt-0.5 break-words text-sm text-neutral-500">
 							{deliveryDetails?.formattedAddress ??
 								deliveryDetails?.address ??
-								"Sin dirección configurada"}
+								"Sin destino de entrega"}
 						</p>
 					</div>
 				) : null}

@@ -70,7 +70,7 @@ export function EditDeliveryDialog({ onClose }: { onClose: () => void }) {
 			if (Date.now() >= Date.parse(rental.period.start)) {
 				setError({
 					message:
-						"Ya se alcanzó el inicio programado. No se pueden cambiar las condiciones de entrega.",
+						"Ya pasó la hora de inicio del alquiler. No se pueden cambiar las condiciones de entrega.",
 					stale: false,
 					blocked: true,
 				});
@@ -131,25 +131,38 @@ export function EditDeliveryDialog({ onClose }: { onClose: () => void }) {
 			values.authorizeException ||
 			(values.changeMinutes &&
 				Number(values.minutes) !== delivery.transportReservationMinutes));
+	const preservedAgreement =
+		!transition && values.pricing === "KEEP" ? delivery.staffAgreement : null;
+	const calculatedReference =
+		!transition && !staff && delivery.arrangement === "ROUTED"
+			? delivery.deliveryTotal
+			: undefined;
 	const priceSummary =
 		values.pricing === "SET"
 			? values.amount && /^\d+(\.\d{1,2})?$/.test(values.amount.trim())
 				? formatMoney(values.amount, delivery.currency)
 				: "Ingresá un importe"
-			: values.pricing === "CLEAR" ||
-					(automaticReevaluation && !delivery.staffAgreement)
-				? "Precio automático por calcular"
-				: formatMoney(delivery.effectiveDeliveryCharge, delivery.currency);
+			: automaticReevaluation && !preservedAgreement
+				? "Precio por calcular al guardar"
+				: values.pricing === "CLEAR" && calculatedReference !== undefined
+					? formatMoney(calculatedReference, delivery.currency)
+					: transition
+						? staff
+							? "Ingresá un importe"
+							: "Precio por calcular al guardar"
+						: formatMoney(delivery.effectiveDeliveryCharge, delivery.currency);
 	const priceDetail =
 		values.pricing === "SET"
-			? "Nuevo importe acordado"
-			: values.pricing === "KEEP" && delivery.staffAgreement
-				? "Importe acordado"
-				: "Según dirección, ruta y configuración de la sucursal";
+			? "Importe propuesto"
+			: preservedAgreement
+				? "Importe definido"
+				: staff
+					? "Definí un nuevo importe"
+					: "Precio calculado";
 	const minutesSummary = values.changeMinutes
 		? values.minutes.trim()
 			? `${values.minutes} minutos`
-			: "Ingresá los minutos"
+			: "Ingresá el tiempo en minutos"
 		: transition
 			? "Según configuración de la sucursal"
 			: `${delivery.transportReservationMinutes} minutos`;
@@ -196,21 +209,21 @@ export function EditDeliveryDialog({ onClose }: { onClose: () => void }) {
 									{(field) => (
 										<fieldset className="pb-5">
 											<legend className="mb-3 text-sm font-semibold">
-												Tipo de entrega
+												Condiciones de envío
 											</legend>
 											<div className="grid gap-3 sm:grid-cols-2">
 												{(
 													[
 														[
 															"ROUTED",
-															"De la sucursal",
-															"Costo según dirección",
+															"Según configuración",
+															"Dirección y condiciones de la sucursal",
 															Truck,
 														],
 														[
 															"STAFF_ARRANGED",
-															"Personalizada",
-															"Coordinada por el equipo",
+															"A medida",
+															"Destino, importe y tiempo definidos por vos",
 															Handshake,
 														],
 													] as const
@@ -253,16 +266,19 @@ export function EditDeliveryDialog({ onClose }: { onClose: () => void }) {
 								</form.Field>
 								{transition ? (
 									<p className="mb-4 text-xs text-muted-foreground">
-										Configurá la nueva entrega. El acuerdo, los minutos y las
-										excepciones anteriores no se trasladan.
+										Definí las condiciones del nuevo envío. Revisá el destino,
+										el importe y el tiempo para transporte.
 									</p>
 								) : null}
 								<DeliverySection
 									key={`${values.arrangement}-address`}
-									title="Dirección de entrega"
+									title={staff ? "Destino de entrega" : "Dirección de entrega"}
 									inputId={`${id}-address`}
 									icon={<MapPin />}
-									summary={proposedAddress || "Ingresá una dirección"}
+									summary={
+										proposedAddress ||
+										(staff ? "Ingresá un destino" : "Ingresá una dirección")
+									}
 									initialOpen={transition}
 								>
 									<form.Field name="address">
@@ -304,8 +320,8 @@ export function EditDeliveryDialog({ onClose }: { onClose: () => void }) {
 												<FieldError errors={field.state.meta.errors} />
 												<p className="text-xs text-muted-foreground">
 													{staff
-														? "Ingresá la dirección o referencia coordinada con el equipo."
-														: "Seleccioná una sugerencia. La ubicación y la ruta se validan al guardar."}
+														? "Ingresá la dirección o una referencia para la entrega."
+														: "Seleccioná una dirección de la lista. Validaremos la ubicación y la ruta al guardar."}
 												</p>
 											</Field>
 										)}
@@ -324,7 +340,9 @@ export function EditDeliveryDialog({ onClose }: { onClose: () => void }) {
 												form.setFieldValue("locationId", "");
 											}}
 										>
-											Restablecer dirección actual
+											{staff
+												? "Restablecer destino actual"
+												: "Restablecer dirección actual"}
 										</Button>
 									) : null}
 								</DeliverySection>
@@ -397,21 +415,25 @@ export function EditDeliveryDialog({ onClose }: { onClose: () => void }) {
 												}
 												onClick={() => form.setFieldValue("pricing", "CLEAR")}
 											>
-												Usar precio automático
+												Usar precio calculado
 											</Button>
 											<p className="text-xs text-muted-foreground">
 												{canRequestAutomaticDeliveryPrice(values, rental)
-													? values.pricing === "CLEAR"
-														? "Precio automático seleccionado. Se validará al guardar."
-														: "Se validará al guardar; el importe puede cambiar."
-													: "Requiere cambiar la dirección o los minutos para obtener un nuevo cálculo."}
+													? automaticReevaluation
+														? values.pricing === "CLEAR"
+															? "El precio se calculará al guardar y puede cambiar."
+															: "Si usás el precio calculado, se calculará al guardar y puede cambiar."
+														: values.pricing === "CLEAR"
+															? "Se aplicará el precio calculado actual."
+															: "Podés usar el precio calculado actual."
+													: "No hay un precio calculado disponible. Revisá las condiciones de envío."}
 											</p>
 										</div>
 									) : null}
 								</DeliverySection>
 								<DeliverySection
 									key={`${values.arrangement}-minutes`}
-									title="Tiempo reservado para transporte"
+									title="Tiempo para transporte"
 									inputId={`${id}-minutes`}
 									icon={<Clock3 />}
 									summary={minutesSummary}
@@ -442,11 +464,12 @@ export function EditDeliveryDialog({ onClose }: { onClose: () => void }) {
 												</div>
 												<FieldError errors={field.state.meta.errors} />
 												<p className="text-xs text-muted-foreground">
+													Los equipos quedan reservados este tiempo antes y
+													después del alquiler.{" "}
 													{staff
-														? "Usá un número entero. Puede ser 0."
-														: "Debe respetar la configuración de transporte de la sucursal."}{" "}
-													Los cambios se validan contra las reservas de equipos
-													al guardar.
+														? "Ingresá minutos enteros; puede ser 0."
+														: "Usá el tiempo configurado en la sucursal, si está disponible."}{" "}
+													Verificaremos la disponibilidad al guardar.
 												</p>
 											</Field>
 										)}
@@ -467,36 +490,34 @@ export function EditDeliveryDialog({ onClose }: { onClose: () => void }) {
 											}}
 										>
 											{transition
-												? "Usar configuración de la sucursal"
-												: "Restablecer minutos actuales"}
+												? "Usar tiempo de la sucursal"
+												: "Restablecer tiempo actual"}
 										</Button>
 									) : null}
 								</DeliverySection>
 								{!staff ? (
 									<details key={values.arrangement} className="py-4 text-sm">
 										<summary className="cursor-pointer text-xs text-muted-foreground">
-											Opciones avanzadas · Excepción a la política de entrega
-											{values.authorizeException
-												? " · Autorización pendiente"
-												: ""}
+											Opciones avanzadas · Excepción a las condiciones de envío
+											{values.authorizeException ? " · Por aplicar" : ""}
 										</summary>
 										<div className="mt-4 space-y-3 rounded-lg border p-4">
 											<p className="flex items-center gap-2 font-medium">
 												<ShieldCheck className="size-4" aria-hidden="true" />
-												Excepción a la política de entrega
+												Excepción a las condiciones de envío
 											</p>
 											<p className="text-xs text-muted-foreground">
-												Autorizá solo si necesitás exceptuar una restricción de
-												entrega. No omite la validación de ubicación, ruta ni
-												disponibilidad de equipos. Las restricciones se evalúan
+												Autorizá una excepción solo para las restricciones de
+												envío. La dirección, la ruta y la disponibilidad de
+												equipos deben ser válidas. Evaluaremos las restricciones
 												al guardar.
 											</p>
 											{delivery.arrangement === "ROUTED" &&
 											delivery.policyException ? (
 												<div className="space-y-1 text-xs text-muted-foreground">
 													<p>
-														Excepción actual (no se traslada a condiciones
-														nuevas):
+														Excepción actual. Si cambian las condiciones de
+														envío, revisá la autorización.
 													</p>
 													{delivery.policyException.overriddenRestrictions.map(
 														(restriction) => (
@@ -520,13 +541,14 @@ export function EditDeliveryDialog({ onClose }: { onClose: () => void }) {
 													>
 														<Checkbox
 															id={`${id}-exception-authorize`}
-															aria-label="Autorizar excepción para estas condiciones"
+															aria-label="Autorizar una excepción para estas condiciones de envío"
 															checked={field.state.value}
 															onCheckedChange={(checked) =>
 																field.handleChange(checked === true)
 															}
 														/>
-														Autorizar excepción para estas condiciones
+														Autorizar una excepción para estas condiciones de
+														envío
 													</label>
 												)}
 											</form.Field>
@@ -633,7 +655,7 @@ function DeliverySection({
 					variant="ghost"
 					size="sm"
 					className="shrink-0"
-					aria-label={`${open ? "Aceptar" : "Cambiar"}: ${title}`}
+					aria-label={`${open ? "Listo" : "Cambiar"}: ${title}`}
 					aria-expanded={open}
 					aria-controls={id}
 					onClick={() => {
@@ -642,9 +664,7 @@ function DeliverySection({
 					}}
 				>
 					{open ? <Check className="size-4" /> : <Pencil className="size-4" />}
-					<span className="hidden sm:inline">
-						{open ? "Aceptar" : "Cambiar"}
-					</span>
+					<span className="hidden sm:inline">{open ? "Listo" : "Cambiar"}</span>
 				</Button>
 			</div>
 		</section>
@@ -664,6 +684,14 @@ function DeliveryChangeReview({
 	const agreement = decisions?.pricingAgreement;
 	const arrangement = body.destination?.arrangement ?? current.arrangement;
 	const transition = arrangement !== current.arrangement;
+	const preservedAgreement =
+		!transition && agreement?.type !== "SET" && agreement?.type !== "CLEAR"
+			? current.staffAgreement
+			: null;
+	const calculatedReference =
+		!transition && arrangement === "ROUTED" && current.arrangement === "ROUTED"
+			? current.deliveryTotal
+			: undefined;
 	const nextMinutes = decisions?.transportReservationMinutes;
 	const reevaluated =
 		arrangement === "ROUTED" &&
@@ -673,13 +701,13 @@ function DeliveryChangeReview({
 				decisions?.policyException,
 		);
 	const arrangementLabel = (value: typeof arrangement) =>
-		value === "ROUTED" ? "De la sucursal" : "Personalizada";
+		value === "ROUTED" ? "Según configuración" : "A medida";
 	return (
 		<div className="space-y-4 pb-4 text-sm">
 			<dl className="space-y-4 rounded-lg border bg-neutral-50 p-4">
 				<div>
 					<dt className="font-medium">
-						Tipo de entrega · {transition ? "Cambia" : "Se conserva"}
+						Condiciones de envío · {transition ? "Cambian" : "Se conservan"}
 					</dt>
 					<dd>
 						{transition ? `${arrangementLabel(current.arrangement)} → ` : ""}
@@ -688,7 +716,8 @@ function DeliveryChangeReview({
 				</div>
 				<div>
 					<dt className="font-medium">
-						Dirección · {body.destination ? "Cambia" : "Se conserva"}
+						{arrangement === "STAFF_ARRANGED" ? "Destino" : "Dirección"} ·{" "}
+						{body.destination ? "Cambia" : "Se conserva"}
 					</dt>
 					<dd className="break-words">
 						{rental.fulfillment.deliveryDetails?.formattedAddress ??
@@ -698,28 +727,36 @@ function DeliveryChangeReview({
 				</div>
 				<div>
 					<dt className="font-medium">
-						Precio ·{" "}
-						{agreement?.type === "SET" || agreement?.type === "CLEAR"
-							? "Cambia"
-							: current.staffAgreement
-								? "Se conserva el acuerdo"
-								: reevaluated
-									? "Se recalcula"
-									: "Se conserva"}
+						Entrega y retiro ·{" "}
+						{agreement?.type === "SET"
+							? "Importe propuesto"
+							: transition || agreement?.type === "CLEAR"
+								? "Cambia"
+								: preservedAgreement
+									? "Se conserva el importe definido"
+									: reevaluated
+										? "Se recalcula"
+										: "Se conserva"}
 					</dt>
 					<dd>
 						{agreement?.type === "SET"
 							? `${formatMoney(current.effectiveDeliveryCharge, current.currency)} → ${formatMoney(agreement.amount, current.currency)}`
 							: agreement?.type === "CLEAR"
-								? "Se solicita precio automático. El importe se determinará al guardar."
-								: current.staffAgreement
-									? `${formatMoney(current.staffAgreement.amount, current.currency)} (acuerdo actual)`
+								? reevaluated
+									? "Precio por calcular al guardar"
+									: calculatedReference !== undefined
+										? `Se aplicará el precio calculado actual: ${formatMoney(calculatedReference, current.currency)}.`
+										: "No hay un precio calculado disponible."
+								: preservedAgreement
+									? `${formatMoney(preservedAgreement.amount, current.currency)} (importe actual)`
 									: reevaluated
-										? "Precio automático por calcular al guardar."
-										: formatMoney(
-												current.effectiveDeliveryCharge,
-												current.currency,
-											)}
+										? "Precio por calcular al guardar"
+										: transition
+											? "Definí un nuevo importe."
+											: formatMoney(
+													current.effectiveDeliveryCharge,
+													current.currency,
+												)}
 					</dd>
 					{agreement?.type === "SET" && agreement.reason ? (
 						<dd className="whitespace-pre-wrap break-words">
@@ -729,22 +766,22 @@ function DeliveryChangeReview({
 				</div>
 				<div>
 					<dt className="font-medium">
-						Tiempo reservado para transporte ·{" "}
+						Tiempo para transporte ·{" "}
 						{nextMinutes !== undefined || transition ? "Cambia" : "Se conserva"}
 					</dt>
 					<dd>
 						{nextMinutes !== undefined
 							? `${current.transportReservationMinutes} → ${nextMinutes} minutos`
 							: transition
-								? "Se usará la configuración actual de la sucursal, no los minutos anteriores."
-								: `${current.transportReservationMinutes} minutos, sujetos a validación si cambian las condiciones.`}
+								? "Se usará el tiempo configurado en la sucursal."
+								: `${current.transportReservationMinutes} minutos. Verificaremos la disponibilidad al guardar.`}
 					</dd>
 				</div>
 				{decisions?.policyException ? (
 					<div>
-						<dt className="font-medium">Excepción solicitada</dt>
+						<dt className="font-medium">Excepción por aplicar</dt>
 						<dd>
-							Se autoriza para las nuevas condiciones.
+							Autorizás una excepción para las nuevas condiciones de envío.
 							{decisions.policyException.reason
 								? ` Motivo: ${decisions.policyException.reason}`
 								: ""}

@@ -6,19 +6,19 @@ const messages = {
 	"rental_commitment.rental_cannot_be_edited_from_status":
 		"El alquiler ya no está confirmado. No se pueden cambiar sus condiciones de entrega.",
 	"rental_commitment.rental_period_started":
-		"Ya se alcanzó el inicio programado. No se pueden cambiar las condiciones de entrega.",
+		"Ya pasó la hora de inicio del alquiler. No se pueden cambiar las condiciones de entrega.",
 	"rental_commitment.delivery_management_permission_denied":
 		"No tenés permiso para modificar las condiciones de entrega.",
 	"rental_commitment.invalid_rental_field":
-		"Revisá la dirección, la decisión de precio y los minutos. Si la sucursal tiene minutos configurados, deben coincidir con esa configuración. No se puede conservar un acuerdo al cambiar de modalidad ni quitarlo de una entrega coordinada.",
+		"Revisá el destino, el importe y el tiempo para transporte antes de guardar.",
 	"rental_commitment.delivery_not_serviceable":
-		"No se pudo aceptar la entrega. Revisá el destino y las restricciones de la sucursal. Una excepción autorizada no permite omitir una ruta o ubicación válida.",
+		"No pudimos validar el envío. Revisá la dirección y las restricciones de la sucursal. Una excepción no reemplaza la validación de la dirección y la ruta.",
 	"rental_commitment.delivery_evaluation_unavailable":
-		"No pudimos resolver la ubicación o calcular la ruta. Conservamos tus cambios; intentá nuevamente más tarde.",
+		"No pudimos validar la dirección o calcular la ruta. Tus cambios siguen en este editor, pero no se guardaron. Intentá nuevamente más tarde.",
 	"rental_commitment.assigned_assets_unavailable":
-		"Los nuevos minutos generan un conflicto con otra reserva de equipos. Revisá los minutos o la asignación de equipos antes de reintentar.",
+		"El tiempo para transporte coincide con otra reserva de equipos. Revisá el tiempo o las asignaciones antes de reintentar.",
 	"rental_commitment.unsafe_delivery_reservation_change":
-		"No se pueden cambiar los minutos porque afectaría reservas históricas de equipos. Conservá los minutos actuales.",
+		"No se puede cambiar el tiempo para transporte de este alquiler. Conservá el tiempo actual.",
 	"rental_commitment.rental_not_found":
 		"No encontramos el alquiler. Actualizá la página.",
 } as const;

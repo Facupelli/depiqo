@@ -55,7 +55,7 @@ export const draftRentalDeliveryAmountSchema = z.string().refine(
 			type: "SET",
 			amount: normalizeAgreementAmount(value),
 		}).success,
-	"Ingresá un importe no negativo, con hasta dos decimales.",
+	"Ingresá un importe de 0 o más, con hasta 2 decimales.",
 );
 
 const draftRentalDerivationBaseSchema = z.object({
@@ -166,14 +166,14 @@ export function createDraftRentalDerivationSchema(
 						code: "custom",
 						path: ["deliveryDestination", "address"],
 						message:
-							"Necesitás permiso para cambiar las condiciones de la entrega coordinada.",
+							"Necesitás permiso para cambiar las condiciones del envío a medida.",
 					});
 				}
 				if (!value.deliveryDestination.address.trim()) {
 					ctx.addIssue({
 						code: "custom",
 						path: ["deliveryDestination", "address"],
-						message: "La dirección es obligatoria",
+						message: "Ingresá el destino de entrega.",
 					});
 				}
 				if (
@@ -186,8 +186,8 @@ export function createDraftRentalDerivationSchema(
 						code: "custom",
 						path: ["deliveryAgreementDecision"],
 						message: newArrangement
-							? "Definí el importe acordado para esta entrega."
-							: "Cambiaron las condiciones de transporte. Conservá el importe guardado o acordá uno nuevo.",
+							? "Definí el importe de entrega y retiro."
+							: "Cambiaron las condiciones de envío. Conservá el importe actual o definí uno nuevo.",
 					});
 				}
 				if (!value.transportReservationMinutes.trim()) {
@@ -195,7 +195,7 @@ export function createDraftRentalDerivationSchema(
 						code: "custom",
 						path: ["transportReservationMinutes"],
 						message:
-							"Ingresá los minutos de reserva para transporte, incluyendo cero.",
+							"Ingresá el tiempo para transporte en minutos. Puede ser 0.",
 					});
 				}
 			}
@@ -208,7 +208,7 @@ export function createDraftRentalDerivationSchema(
 				ctx.addIssue({
 					code: "custom",
 					path: ["deliveryAgreementAmount"],
-					message: "Ingresá un importe no negativo, con hasta dos decimales.",
+					message: "Ingresá un importe de 0 o más, con hasta 2 decimales.",
 				});
 			}
 			const minutes = value.transportReservationMinutes.trim();
@@ -219,7 +219,8 @@ export function createDraftRentalDerivationSchema(
 				ctx.addIssue({
 					code: "custom",
 					path: ["transportReservationMinutes"],
-					message: "Los minutos de transporte deben ser un entero no negativo.",
+					message:
+						"Ingresá el tiempo para transporte en minutos enteros. Puede ser 0.",
 				});
 			}
 		}
@@ -265,9 +266,10 @@ export function createDraftRentalDerivationSchema(
 			ctx.addIssue({
 				code: "custom",
 				path: ["deliveryDestination", "address"],
-				message: value.deliveryDestination.address.trim()
-					? "Seleccioná una dirección de la lista"
-					: "La dirección es obligatoria",
+				message:
+					value.deliveryArrangement === "STAFF_ARRANGED"
+						? "Ingresá el destino de entrega."
+						: "Seleccioná una dirección de entrega de la lista.",
 			});
 		}
 	});

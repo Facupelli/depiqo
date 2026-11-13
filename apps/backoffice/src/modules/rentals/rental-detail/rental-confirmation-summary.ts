@@ -87,8 +87,10 @@ export function buildRentalConfirmationSummary(
 			? {
 					label:
 						cost.delivery?.arrangement === "STAFF_ARRANGED"
-							? "Entrega personalizada"
-							: "Entrega a domicilio",
+							? "Envío a medida"
+							: cost.delivery?.arrangement === "ROUTED"
+								? "Envío según configuración"
+								: "Envío",
 					address:
 						cost.deliveryDetails.formattedAddress ||
 						cost.deliveryDetails.address,

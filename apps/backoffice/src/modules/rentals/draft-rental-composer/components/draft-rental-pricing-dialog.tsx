@@ -85,13 +85,13 @@ export function DraftRentalPricingDialog({
 					<DialogTitle>
 						{isEquipment
 							? "Ajustar equipos"
-							: "Acordar precio de entrega y retiro"}
+							: "Definir importe de entrega y retiro"}
 					</DialogTitle>
 					<DialogDescription>
 						{isEquipment
 							? "Definí el total de equipos que pagará el cliente."
-							: "Definí el importe combinado de entrega y retiro que pagará el cliente."}{" "}
-						Los cambios se aplican al borrador al guardar.
+							: "Definí el importe total de entrega y retiro."}{" "}
+						Para guardar los cambios, guardá el borrador.
 					</DialogDescription>
 				</DialogHeader>
 				<div className="flex justify-between gap-4 rounded-md bg-muted px-3 py-3 text-sm">
@@ -148,8 +148,8 @@ export function DraftRentalPricingDialog({
 					</form.Field>
 					{!isEquipment && calculatedAmount == null ? (
 						<p className="text-xs text-muted-foreground">
-							No hay un precio automático disponible. El importe acordado
-							permite definir el precio de entrega y retiro.
+							No hay un precio calculado disponible. Definí el importe de
+							entrega y retiro.
 						</p>
 					) : null}
 				</form>

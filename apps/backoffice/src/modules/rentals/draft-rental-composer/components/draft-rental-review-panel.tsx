@@ -50,6 +50,7 @@ function createDraftRentalReviewPanel(includeManualPriceAdjustment: boolean) {
 						isFetching={isPriceLoading}
 						showDelivery={values.fulfillmentMethod === "DELIVERY"}
 						staffArranged={values.deliveryArrangement === "STAFF_ARRANGED"}
+						deliveryAmountProposed={values.deliveryAgreementDecision === "SET"}
 						hasEquipmentAdjustment={hasEquipmentAdjustment}
 						equipmentAction={
 							includeManualPriceAdjustment ? (

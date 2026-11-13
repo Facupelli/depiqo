@@ -47,12 +47,11 @@ export const RoutedDeliveryPricingFields = withForm({
 					</span>
 				</div>
 				<p className="text-xs text-muted-foreground">
-					Podés usar el precio calculado o definir un importe acordado con el
-					cliente.
+					Podés usar el precio calculado o definir otro importe.
 				</p>
 				{storedAgreement ? (
 					<p className="text-xs text-muted-foreground">
-						Importe guardado:{" "}
+						Importe actual:{" "}
 						{storedDeliveryCurrency
 							? formatMoney(storedAgreement.amount, storedDeliveryCurrency)
 							: storedAgreement.amount}
@@ -79,7 +78,7 @@ export const RoutedDeliveryPricingFields = withForm({
 								form.setFieldValue("deliveryAgreementDecision", "SET");
 							}}
 						>
-							Acordar importe
+							Definir importe
 						</Button>
 						<Button
 							type="button"
@@ -113,7 +112,7 @@ export const RoutedDeliveryPricingFields = withForm({
 									form.setFieldValue("deliveryAgreementDecision", "KEEP")
 								}
 							>
-								Conservar importe guardado
+								Conservar importe actual
 							</Button>
 						) : null}
 					</div>
@@ -144,7 +143,7 @@ export const RoutedDeliveryPricingFields = withForm({
 							{(field) => (
 								<Field>
 									<FieldLabel htmlFor={`${id}-reason`}>
-										Motivo del acuerdo (opcional)
+										Motivo del importe (opcional)
 									</FieldLabel>
 									<Input
 										id={`${id}-reason`}

@@ -10,6 +10,7 @@ export type RentalRemitoPdfData = {
     budgetPricing?: {
       equipmentAndInsurance: string;
       deliveryAndCollection: string | null;
+      deliveryArrangement: 'ROUTED' | 'STAFF_ARRANGED' | null;
       total: string;
     };
     insuranceSelected: boolean;

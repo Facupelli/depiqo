@@ -15,7 +15,7 @@ const errorsByCode = {
 	"rental_commitment.delivery_review_required": {
 		kind: "delivery-review",
 		message:
-			"Cambiaron el precio o las condiciones de transporte. Volvé a revisar los cambios antes de guardar.",
+			"Cambiaron el precio o las condiciones de envío. Volvé a revisar antes de guardar.",
 	},
 	"rental_commitment.delivery_evaluation_unavailable": {
 		kind: "delivery-review",
@@ -30,17 +30,17 @@ const errorsByCode = {
 	"rental_commitment.delivery_exception_authorization_required": {
 		kind: "delivery-review",
 		message:
-			"Falta autorizar expresamente la excepción de transporte. Volvé a revisar las condiciones y autorizalas antes de guardar.",
+			"Falta autorizar la excepción a las condiciones de envío. Revisala y autorizala antes de guardar.",
 	},
 	"rental_commitment.delivery_exception_permission_denied": {
 		kind: "delivery-review",
 		message:
-			"No tenés permiso para autorizar esta excepción de entrega. Se necesita alguien con permiso para gestionar entregas.",
+			"No tenés permiso para autorizar esta excepción a las condiciones de envío.",
 	},
 	"rental_commitment.invalid_rescheduling_delivery_input": {
 		kind: "delivery-review",
 		message:
-			"Las decisiones de entrega están incompletas o ya no son válidas. Volvé a revisar los requisitos antes de guardar.",
+			"Las condiciones de envío están incompletas o cambiaron. Volvé a revisarlas antes de guardar.",
 	},
 	"rental_commitment.rental_version_conflict": {
 		kind: "stale",
@@ -67,7 +67,7 @@ const errorsByCode = {
 	"rental_commitment.invalid_rental_period": {
 		kind: "period-conflict",
 		message:
-			"Las fechas propuestas no son válidas o la participación y las reservas existentes de los equipos impiden el cambio. Revisá el período y las asignaciones antes de volver a intentarlo.",
+			"No se puede aplicar el período propuesto. Revisá las fechas, las reservas y las asignaciones de equipos antes de volver a intentar.",
 	},
 	"rental_commitment.assigned_assets_unavailable": {
 		kind: "period-conflict",

@@ -116,7 +116,7 @@ export function EditBranchPage({
 			<Tabs value={activeTab} onValueChange={setActiveTab} className="gap-6">
 				<TabsList>
 					<TabsTrigger value="general">General</TabsTrigger>
-					<TabsTrigger value="delivery">Delivery</TabsTrigger>
+					<TabsTrigger value="delivery">Envíos</TabsTrigger>
 				</TabsList>
 
 				<TabsContent value="general" keepMounted className="space-y-6">

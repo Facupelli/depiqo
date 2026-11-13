@@ -58,7 +58,7 @@ export const StaffArrangedDeliveryFields = withForm({
 						{(field) => (
 							<Field data-invalid={!field.state.meta.isValid}>
 								<FieldLabel htmlFor={field.name}>
-									Margen para transporte (min)
+									Tiempo para transporte (min)
 								</FieldLabel>
 								<Input
 									id={field.name}
@@ -78,8 +78,8 @@ export const StaffArrangedDeliveryFields = withForm({
 									}}
 								/>
 								<p className="text-xs text-muted-foreground">
-									Reservamos tiempo adicional antes y después del alquiler para
-									entregar y retirar los equipos.
+									Los equipos quedan reservados este tiempo antes y después del
+									alquiler, para la entrega y el retiro.
 								</p>
 								<FieldError errors={field.state.meta.errors} />
 							</Field>
@@ -90,7 +90,7 @@ export const StaffArrangedDeliveryFields = withForm({
 					{(field) => (
 						<Field>
 							<FieldLabel htmlFor={field.name}>
-								Motivo del acuerdo (opcional)
+								Motivo del importe (opcional)
 							</FieldLabel>
 							<Input
 								id={field.name}
@@ -133,7 +133,7 @@ export const StaffArrangedDeliveryFields = withForm({
 											field.handleChange("KEEP");
 										}}
 									>
-										Conservar importe guardado
+										Conservar importe actual
 									</Button>
 									<Button
 										type="button"
@@ -143,15 +143,15 @@ export const StaffArrangedDeliveryFields = withForm({
 										}
 										onClick={() => field.handleChange("SET")}
 									>
-										Registrar nuevo acuerdo
+										Definir nuevo importe
 									</Button>
 								</div>
 							) : null}
 							{field.state.value !== "SET" ? (
 								<p className="text-xs text-muted-foreground">
 									{field.state.value === "KEEP"
-										? "Se conserva el importe, el motivo y la atribución originales del acuerdo."
-										: "Si cambiás la dirección o las condiciones de transporte, elegí conservar el acuerdo o registrar uno nuevo."}
+										? "Se conservan el importe actual y su motivo."
+										: "Elegí si querés conservar el importe actual o definir uno nuevo."}
 								</p>
 							) : null}
 							<FieldError errors={field.state.meta.errors} />

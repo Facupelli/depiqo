@@ -8,7 +8,6 @@ import { can } from "@/auth/permissions";
 import { PageBreadcrumb } from "@/components/detail-id-breadcrumb";
 import { useBranches } from "@/modules/settings/branches/public";
 import { GenericErrorPage } from "@/shared/components/generic-error-page";
-import { ProblemDetailsError } from "@/shared/errors";
 import { resolveOperationalTimezone } from "@/shared/timezone/operational-timezone";
 import {
 	DraftRentalComposer,
@@ -16,6 +15,7 @@ import {
 } from "../draft-rental-composer/draft-rental-composer";
 import type { DraftRentalComposerFormValues } from "../draft-rental-composer/draft-rental-composer.schema";
 import { rentalDetailViewQueries } from "../rental-detail/rental-detail.queries";
+import { getDeliveryErrorMessage } from "../shared/delivery-error-messages";
 import { hydrateRentalDetailToComposer } from "./rental-detail-to-composer";
 import { classifyUpdateDraftRentalError } from "./update-draft-rental.errors";
 import { useUpdateDraftRental } from "./update-draft-rental.mutation";
@@ -159,13 +159,8 @@ export function EditRentalPage({ orderId }: EditRentalPageProps) {
 }
 
 function getUpdateErrorMessage(error: unknown): string {
-	if (error instanceof ProblemDetailsError) {
-		return (
-			error.problemDetails.detail ||
-			error.problemDetails.title ||
-			"No pudimos guardar los cambios del pedido."
-		);
-	}
-
-	return "No pudimos guardar los cambios del pedido. Intentá nuevamente.";
+	return (
+		getDeliveryErrorMessage(error) ??
+		"No pudimos guardar los cambios del pedido. Intentá nuevamente."
+	);
 }

@@ -42,7 +42,7 @@ export function FulfillmentForm() {
 	return (
 		<section className="rounded-xl border bg-card p-5">
 			<h2 className="flex items-center gap-2 text-lg font-bold">
-				<Truck className="size-5" /> Entrega
+				<Truck className="size-5" /> Modalidad
 			</h2>
 			<div className="mt-4 grid grid-cols-2 gap-2">
 				<Button
@@ -85,7 +85,8 @@ export function FulfillmentForm() {
 					) : delivery && !isPriceError ? (
 						<p className="mt-2 flex items-center gap-2 text-sm text-emerald-700">
 							<CheckCircle2 className="size-4" />
-							Entrega disponible en esta dirección.
+							Podemos realizar el envío con los datos seleccionados. Se
+							verificará al confirmar.
 						</p>
 					) : deliveryStatusMessage && !isPriceError ? (
 						<p className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">

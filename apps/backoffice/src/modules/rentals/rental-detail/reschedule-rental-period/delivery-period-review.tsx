@@ -25,13 +25,13 @@ const restrictionLabels: Record<
 
 const blockerLabels = {
 	TRANSPORT_RESERVATION_MINUTES_REQUIRED:
-		"Faltan los minutos de reserva para transporte. Configuralos antes de reprogramar.",
+		"Falta definir el tiempo para transporte. Completalo antes de reprogramar.",
 	STAFF_AGREEMENT_REQUIRED:
-		"Se necesita un importe acordado de entrega y retiro. Definilo en el editor de precio de entrega antes de reprogramar.",
+		"Falta definir el importe de entrega y retiro. Completalo en Editar precio de entrega y retiro antes de reprogramar.",
 	CURRENCY_MISMATCH:
-		"La moneda del envío no coincide con la del alquiler. Corregí el precio de entrega antes de reprogramar.",
+		"La moneda del envío no coincide con la del alquiler. Revisá el importe de entrega y retiro antes de reprogramar.",
 	AUTOMATIC_QUOTE_OR_POLICY_RESTRICTION_REQUIRED:
-		"No hay una cotización automática ni una restricción que permita autorizar una excepción. Revisá la configuración de envío.",
+		"No pudimos evaluar el envío. Revisá la configuración de la sucursal y volvé a intentar.",
 } satisfies Partial<Record<Preview["requirements"][number], string>>;
 
 export function deliveryReviewBlockers(preview: Preview): string[] {
@@ -98,13 +98,13 @@ export function DeliveryPeriodReview({
 		return (
 			<section
 				className="mt-5 space-y-3 border-t border-neutral-200 pt-4 text-sm"
-				aria-label="Entrega coordinada por el equipo"
+				aria-label="Envío a medida"
 				aria-live="polite"
 			>
-				<h3 className="font-medium">Entrega coordinada por el equipo</h3>
+				<h3 className="font-medium">Envío a medida</h3>
 				<dl className="space-y-2">
 					<MoneyRow
-						label="Importe acordado de entrega y retiro"
+						label="Entrega y retiro · Importe actual"
 						value={money(delivery.currentEffectiveCharge)}
 					/>
 					<MoneyRow
@@ -113,12 +113,11 @@ export function DeliveryPeriodReview({
 					/>
 				</dl>
 				<p className="text-muted-foreground">
-					El importe acordado se mantiene sin cambios. Se conservan el destino,
-					el acuerdo y quién lo registró. Solo cambian las fechas de entrega y
-					retiro.
+					Se mantienen el destino, el importe y el tiempo para transporte. Solo
+					cambian las fechas de entrega y retiro.
 				</p>
 				<p className="text-muted-foreground">
-					Reserva para transporte: {delivery.transportReservationMinutes}{" "}
+					Tiempo para transporte: {delivery.transportReservationMinutes}{" "}
 					minutos, sin cambios.
 				</p>
 				{blockers.map((message) => (
@@ -131,8 +130,8 @@ export function DeliveryPeriodReview({
 				delivery.proposedEffectiveCharge === null ||
 				preview.proposedAcceptedCustomerTotal === null ? (
 					<p className="text-destructive" role="alert">
-						No se pudo confirmar la conservación de las condiciones acordadas.
-						Volvé a revisar antes de guardar.
+						No pudimos verificar las condiciones actuales del envío. Volvé a
+						revisar antes de guardar.
 					</p>
 				) : null}
 			</section>
@@ -148,14 +147,12 @@ export function DeliveryPeriodReview({
 			<h3 className="font-medium text-sm">Cambios en entrega y retiro</h3>
 			<dl className="space-y-2 text-sm">
 				<MoneyRow
-					label={
-						manual ? "Importe acordado" : "Precio actual de entrega y retiro"
-					}
+					label={manual ? "Importe definido actual" : "Precio calculado actual"}
 					value={money(delivery.currentEffectiveCharge)}
 				/>
 				{manual && delivery.proposedCalculatedReference ? (
 					<MoneyRow
-						label="Nuevo precio calculado"
+						label="Precio calculado de referencia"
 						value={money(
 							delivery.proposedCalculatedReference.total,
 							delivery.proposedCalculatedReference.currency,
@@ -163,11 +160,7 @@ export function DeliveryPeriodReview({
 					/>
 				) : null}
 				<MoneyRow
-					label={
-						manual
-							? "Importe que pagará el cliente por entrega y retiro"
-							: "Nuevo precio de entrega y retiro"
-					}
+					label="Entrega y retiro · Importe propuesto"
 					value={money(delivery.proposedEffectiveCharge)}
 				/>
 				{!manual ? (
@@ -183,19 +176,21 @@ export function DeliveryPeriodReview({
 				) : null}
 				<div className="border-t border-neutral-200 pt-2 font-semibold">
 					<MoneyRow
-						label={manual ? "Total del alquiler" : "Nuevo total del alquiler"}
+						label={
+							manual ? "Total del alquiler" : "Total propuesto del alquiler"
+						}
 						value={money(preview.proposedAcceptedCustomerTotal)}
 					/>
 				</div>
 			</dl>
 			<p className="text-muted-foreground text-sm">
 				{manual && delivery.staffAgreementPreserved
-					? "El importe acordado se mantiene al reprogramar."
+					? "El importe definido se mantiene al reprogramar."
 					: !manual && unchanged
 						? "El importe de entrega y retiro se mantiene sin cambios."
 						: !manual
-							? "Al guardar los cambios, aceptás el nuevo precio de entrega y retiro mostrado."
-							: "No se pudo confirmar que el importe acordado se conserve. Volvé a revisar antes de guardar."}
+							? "Al guardar, se aplicará el importe de entrega y retiro mostrado."
+							: "No pudimos verificar que se mantenga el importe actual. Volvé a revisar antes de guardar."}
 			</p>
 			{delivery.policyRestrictions.length > 0 ? (
 				<div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-amber-950 text-sm">
@@ -221,8 +216,8 @@ export function DeliveryPeriodReview({
 									}
 								/>
 								<span>
-									Autorizo excepcionalmente las condiciones de transporte
-									evaluadas para las nuevas fechas.
+									Autorizar una excepción a las condiciones de envío para las
+									nuevas fechas
 								</span>
 							</label>
 							{authorized ? (
@@ -241,16 +236,15 @@ export function DeliveryPeriodReview({
 						</>
 					) : (
 						<p className="text-destructive">
-							Se requiere autorización de alguien con permiso para gestionar
-							entregas. No podés guardar estos cambios con tus permisos
-							actuales.
+							Necesitás permiso para autorizar esta excepción. No podés guardar
+							estos cambios.
 						</p>
 					)}
 				</div>
 			) : null}
 			{delivery.transportReservationMinutes !== null ? (
 				<p className="text-muted-foreground text-sm">
-					Reserva para transporte:{" "}
+					Tiempo para transporte:{" "}
 					<span className="font-medium tabular-nums">
 						{delivery.transportReservationMinutes} minutos
 					</span>
@@ -260,8 +254,8 @@ export function DeliveryPeriodReview({
 			{needsMinuteAcceptance(preview) &&
 			delivery.transportReservationMinutes === null ? (
 				<p className="text-destructive text-sm">
-					No están disponibles los minutos de transporte que se deben aceptar.
-					Volvé a revisar las condiciones antes de guardar.
+					No pudimos obtener el tiempo para transporte. Volvé a revisar antes de
+					guardar.
 				</p>
 			) : null}
 			{needsMinuteAcceptance(preview) &&
@@ -276,8 +270,8 @@ export function DeliveryPeriodReview({
 						}
 					/>
 					<span>
-						Acepto reutilizar los {delivery.transportReservationMinutes} minutos
-						de reserva para transporte aceptados anteriormente.
+						Mantener el tiempo actual para transporte:{" "}
+						{delivery.transportReservationMinutes} min
 					</span>
 				</label>
 			) : null}
@@ -292,8 +286,8 @@ export function DeliveryPeriodReview({
 			delivery.proposedEffectiveCharge === null ||
 			preview.proposedAcceptedCustomerTotal === null ? (
 				<p className="text-destructive text-sm">
-					La propuesta está incompleta. Resolvé los requisitos y volvé a revisar
-					los cambios antes de guardar.
+					Falta completar las condiciones de envío. Revisá los avisos y volvé a
+					revisar los cambios antes de guardar.
 				</p>
 			) : null}
 		</section>

@@ -19,6 +19,7 @@ export function DraftRentalFinancialSummary({
 	deliveryDetails,
 	showDelivery,
 	staffArranged,
+	deliveryAmountProposed,
 	hasEquipmentAdjustment,
 	children,
 }: {
@@ -32,6 +33,7 @@ export function DraftRentalFinancialSummary({
 	deliveryDetails?: ReactNode;
 	showDelivery: boolean;
 	staffArranged: boolean;
+	deliveryAmountProposed: boolean;
 	hasEquipmentAdjustment: boolean;
 	children?: ReactNode;
 }) {
@@ -52,16 +54,16 @@ export function DraftRentalFinancialSummary({
 		preview?.customerTotal != null || isFetching
 			? null
 			: deliveryUnconfigured && equipmentPreview
-				? "Configurá la entrega para conocer el total final."
+				? "Configurá la entrega para consultar el total."
 				: staffArranged
-					? "Configurá la entrega personalizada para calcular el total final."
+					? "Completá las condiciones del envío a medida para consultar el total."
 					: agreedAmount !== null
-						? "El precio manual está definido. Falta validar el transporte para calcular el total final."
+						? "El importe está definido. Falta validar el envío para consultar el total."
 						: delivery?.technicalFailure
-							? "Revisá las condiciones de transporte para calcular el total final."
+							? "Revisá las condiciones de envío para consultar el total."
 							: delivery?.effectiveCharge === null
-								? "Revisá los requisitos de precio y transporte para calcular el total final."
-								: "Completá los datos del alquiler para calcular el total final.";
+								? "Completá el importe y las condiciones de envío para consultar el total."
+								: "Completá los datos del alquiler para consultar el total.";
 	const money = (amount: string | null | undefined, unit = currency) =>
 		amount != null ? formatMoney(amount, unit) : "-";
 	return (
@@ -106,7 +108,7 @@ export function DraftRentalFinancialSummary({
 						<div className="mt-3 space-y-2 border-t pt-3">
 							{pricing ? (
 								<SummaryRow
-									label="Subtotal sin entrega"
+									label="Subtotal sin entrega y retiro"
 									value={money(pricing.total)}
 									emphasis
 								/>
@@ -123,25 +125,28 @@ export function DraftRentalFinancialSummary({
 								action={deliveryAction}
 							/>
 							{agreedAmount !== null ? (
-								delivery?.arrangement === "STAFF_ARRANGED" &&
-								delivery.source === "PROPOSED" ? null : (
-									<p className="text-muted-foreground text-xs">
-										Importe acordado
-									</p>
-								)
+								<p className="text-muted-foreground text-xs">
+									{deliveryAmountProposed
+										? "Importe propuesto"
+										: "Importe definido"}
+								</p>
 							) : (
 								<p className="text-muted-foreground text-xs">
 									{!preview
 										? isFetching
-											? "Calculando el costo del envío..."
-											: "Completá los datos para consultar el costo del envío."
+											? staffArranged
+												? "Actualizando el total..."
+												: "Calculando entrega y retiro..."
+											: staffArranged
+												? "Completá los datos para consultar el total."
+												: "Completá los datos para consultar el precio de entrega y retiro."
 										: deliveryUnconfigured
 											? "Completá la configuración de entrega y retiro."
 											: staffArranged
-												? "Definí el importe acordado y el margen para transporte."
+												? "Definí el importe y el tiempo para transporte."
 												: delivery?.effectiveCharge != null
-													? "Precio calculado automáticamente"
-													: "No se pudo calcular automáticamente. Podés acordar un importe manual."}
+													? "Precio calculado"
+													: "No hay un precio calculado disponible. Podés definir un importe; el envío debe poder validarse."}
 								</p>
 							)}
 							{deliveryDetails}
@@ -149,7 +154,7 @@ export function DraftRentalFinancialSummary({
 					) : null}
 					<div className="my-4 border-t" />
 					<SummaryRow
-						label="Total del cliente"
+						label="Total del alquiler"
 						value={
 							preview?.customerTotal != null
 								? money(preview.customerTotal)
@@ -165,7 +170,7 @@ export function DraftRentalFinancialSummary({
 					) : null}
 					{isFetching ? (
 						<p className="mt-2.5 flex items-center gap-2 text-muted-foreground text-xs">
-							<Loader2 className="size-3 animate-spin" /> Calculando...
+							<Loader2 className="size-3 animate-spin" /> Actualizando...
 						</p>
 					) : null}
 				</div>

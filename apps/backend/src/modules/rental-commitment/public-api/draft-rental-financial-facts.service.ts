@@ -42,6 +42,7 @@ export class DraftRentalFinancialFactsService extends DraftRentalFinancialFacts 
     if (pricing.isErr()) return invalid(pricing.error.message);
     const { total, chargedUnits } = toAcceptedRentalPricingFacts(pricing.value.snapshot);
     let deliveryCharge: string | null = null;
+    let deliveryArrangement: DraftRentalFinancialFactsResult['deliveryArrangement'] = null;
     if (rental.fulfillmentMethod === 'DELIVERY') {
       if (!rental.deliverySnapshot) return invalid('Draft delivery terms are missing.');
       const delivery = AcceptedDeliverySnapshot.create(rental.deliverySnapshot);
@@ -50,6 +51,7 @@ export class DraftRentalFinancialFactsService extends DraftRentalFinancialFacts 
         return invalid('Draft delivery currency must match equipment pricing currency.');
       }
       deliveryCharge = delivery.value.effectiveDeliveryCharge;
+      deliveryArrangement = delivery.value.snapshot.arrangement;
     } else if (rental.deliverySnapshot !== null) {
       return invalid('Pickup rentals cannot have delivery terms.');
     }
@@ -58,6 +60,7 @@ export class DraftRentalFinancialFactsService extends DraftRentalFinancialFacts 
       rentalVersion: rental.version,
       equipmentAndInsuranceAmount: total.amount,
       deliveryCharge,
+      deliveryArrangement,
       customerTotal: new Decimal(total.amount).plus(deliveryCharge ?? '0').toString(),
       currency: total.currency,
       chargedUnits,

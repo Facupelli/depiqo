@@ -293,7 +293,7 @@ export const DraftRentalSetupSection = withForm({
 						<form.Field name="fulfillmentMethod">
 							{(field) => (
 								<FieldSet className="w-full gap-0 [&_[data-slot=field-legend]]:mb-1.5">
-									<FieldLegend variant="label">Entrega</FieldLegend>
+									<FieldLegend variant="label">Modalidad</FieldLegend>
 									<ToggleGroup
 										variant="outline"
 										value={[field.state.value]}
@@ -372,8 +372,8 @@ const DeliveryConfiguration = withForm({
 							<>
 								<p className="font-medium">
 									{values.deliveryArrangement === "STAFF_ARRANGED"
-										? "Entrega personalizada"
-										: "Envío de la sucursal"}
+										? "Envío a medida"
+										: "Envío según configuración"}
 								</p>
 								<p className="break-words text-muted-foreground">
 									{values.deliveryDestination.address}
@@ -508,8 +508,8 @@ function DeliveryDialog({
 				<DialogHeader>
 					<DialogTitle>Configurar entrega</DialogTitle>
 					<DialogDescription>
-						Definí cómo entregar y retirar los equipos. Los cambios se aplican
-						al borrador, sin guardarlo todavía.
+						Definí las condiciones de entrega y retiro. Para guardarlas, guardá
+						el borrador.
 					</DialogDescription>
 				</DialogHeader>
 				<form
@@ -544,8 +544,9 @@ function DeliveryDialog({
 					{query.isError ? (
 						<div className="space-y-2">
 							<p className="text-sm text-destructive">
-								No pudimos calcular el envío. Podés aplicar la configuración y
-								reintentar desde el borrador.
+								{values.deliveryArrangement === "STAFF_ARRANGED"
+									? "No pudimos actualizar el total. Podés aplicar los cambios y reintentar desde el borrador."
+									: "No pudimos evaluar el envío. Podés aplicar los cambios y reintentar desde el borrador."}
 							</p>
 							<Button
 								type="button"
@@ -553,14 +554,14 @@ function DeliveryDialog({
 								variant="outline"
 								onClick={() => void query.refetch()}
 							>
-								Reintentar cálculo
+								Reintentar
 							</Button>
 						</div>
 					) : null}
 					{!proposal.body ? (
 						<p className="text-xs text-muted-foreground">
-							El costo se calculará al completar los datos del alquiler y la
-							entrega.
+							Completá los datos del alquiler y la entrega para consultar el
+							total.
 						</p>
 					) : null}
 				</form>
@@ -594,7 +595,7 @@ const DeliveryFields = withForm({
 				<form.Field name="deliveryArrangement">
 					{(field) => (
 						<FieldSet className="gap-1.5">
-							<FieldLegend variant="label">Modalidad de envío</FieldLegend>
+							<FieldLegend variant="label">Condiciones de envío</FieldLegend>
 							<ToggleGroup
 								variant="outline"
 								value={[field.state.value]}
@@ -640,25 +641,24 @@ const DeliveryFields = withForm({
 								}}
 							>
 								<ToggleGroupItem value="ROUTED" disabled={!canManageDelivery}>
-									Envío de la sucursal
+									Según configuración
 								</ToggleGroupItem>
 								<ToggleGroupItem
 									value="STAFF_ARRANGED"
 									disabled={!canManageDelivery}
 								>
-									Entrega personalizada
+									A medida
 								</ToggleGroupItem>
 							</ToggleGroup>
 							<p className="text-xs text-muted-foreground">
 								{staffArranged
-									? "Coordiná la entrega directamente con el cliente y definí un importe acordado."
-									: "Calculamos el costo del envío según la dirección y las condiciones de la sucursal."}
+									? "Ingresá el destino y definí el importe de entrega y retiro y el tiempo para transporte."
+									: "Evaluamos la dirección y las condiciones de envío de la sucursal. Podés usar el precio calculado o definir otro importe."}
 							</p>
 							{!canManageDelivery ? (
 								<p className="text-xs text-muted-foreground">
-									Necesitás permiso para gestionar entregas coordinadas por el
-									equipo. Podés conservar las condiciones guardadas al editar
-									otros datos.
+									Necesitás permiso para modificar las condiciones de envío.
+									Podés conservar las actuales y editar otros datos.
 								</p>
 							) : null}
 						</FieldSet>
@@ -673,7 +673,9 @@ const DeliveryFields = withForm({
 						return (
 							<Field data-invalid={isInvalid}>
 								<FieldLabel htmlFor={field.name}>
-									Dirección de entrega
+									{staffArranged
+										? "Destino de entrega"
+										: "Dirección de entrega"}
 								</FieldLabel>
 								{staffArranged ? (
 									<Input

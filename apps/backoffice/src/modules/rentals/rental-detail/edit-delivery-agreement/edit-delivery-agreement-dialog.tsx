@@ -47,8 +47,7 @@ const formSchema = z
 			context.addIssue({
 				code: "custom",
 				path: ["amount"],
-				message:
-					"Ingresá un importe mayor o igual a cero con precisión de centavos.",
+				message: "Ingresá un importe de 0 o más, con hasta 2 decimales.",
 			});
 		}
 	});
@@ -193,7 +192,7 @@ function OpenDeliveryAgreementDialog({ onClose }: { onClose: () => void }) {
 						</div>
 					) : null}
 					<div className="flex justify-between gap-4">
-						<dt>Importe aplicado actualmente</dt>
+						<dt>Importe actual</dt>
 						<dd className="text-right font-mono font-semibold">
 							{formatMoney(delivery.effectiveDeliveryCharge, delivery.currency)}
 						</dd>
@@ -211,7 +210,7 @@ function OpenDeliveryAgreementDialog({ onClose }: { onClose: () => void }) {
 							{delivery.staffAgreement.reason ? (
 								<div>
 									<dt className="text-muted-foreground">
-										Motivo del acuerdo actual
+										Motivo del importe actual
 									</dt>
 									<dd className="whitespace-pre-wrap break-words">
 										{delivery.staffAgreement.reason}
@@ -219,7 +218,9 @@ function OpenDeliveryAgreementDialog({ onClose }: { onClose: () => void }) {
 								</div>
 							) : null}
 							<div>
-								<dt className="text-muted-foreground">Fecha del acuerdo</dt>
+								<dt className="text-muted-foreground">
+									Fecha de definición del importe
+								</dt>
 								<dd>
 									{formatTimestampInTimezone(
 										delivery.staffAgreement.agreedAt,
@@ -259,7 +260,7 @@ function OpenDeliveryAgreementDialog({ onClose }: { onClose: () => void }) {
 											checked={field.state.value === "SET"}
 											onChange={() => field.handleChange("SET")}
 										/>
-										Importe acordado
+										Definir importe
 									</label>
 									<label className="flex items-center gap-2 text-sm">
 										<input
@@ -273,9 +274,8 @@ function OpenDeliveryAgreementDialog({ onClose }: { onClose: () => void }) {
 									</label>
 									{calculatedTotal === undefined ? (
 										<p className="text-sm text-muted-foreground">
-											No se puede quitar el acuerdo porque no hay un precio
-											calculado guardado. Podés actualizar el importe o el
-											motivo.
+											No hay un precio calculado disponible. Podés modificar el
+											importe actual o su motivo.
 										</p>
 									) : null}
 								</fieldset>
@@ -290,7 +290,7 @@ function OpenDeliveryAgreementDialog({ onClose }: { onClose: () => void }) {
 										{(field) => (
 											<Field data-invalid={!field.state.meta.isValid}>
 												<FieldLabel htmlFor={amountId}>
-													Importe acordado
+													Importe de entrega y retiro
 												</FieldLabel>
 												<Input
 													id={amountId}
@@ -305,8 +305,8 @@ function OpenDeliveryAgreementDialog({ onClose }: { onClose: () => void }) {
 												/>
 												{!field.state.meta.isValid ? (
 													<FieldError>
-														Ingresá un importe mayor o igual a cero con
-														precisión de centavos.
+														Ingresá un importe de 0 o más, con hasta 2
+														decimales.
 													</FieldError>
 												) : null}
 											</Field>
@@ -342,8 +342,8 @@ function OpenDeliveryAgreementDialog({ onClose }: { onClose: () => void }) {
 								formSchema.safeParse(values).success &&
 								!amountsEqual(nextAmount, delivery.effectiveDeliveryCharge) ? (
 								<p className="text-sm text-muted-foreground">
-									Al cambiar el importe aplicado, la firma del contrato
-									existente puede requerir renovación.
+									Si cambiás el importe, puede ser necesario volver a firmar el
+									contrato.
 								</p>
 							) : null;
 						}}

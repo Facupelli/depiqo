@@ -46,20 +46,18 @@ export function ReservationPeriodReview({
 			{preview.reservationPeriod ? (
 				<div className="space-y-1">
 					<p className="text-muted-foreground text-xs">
-						Período global de reserva
+						Desde la primera reserva hasta la última
 					</p>
 					<p className="font-medium tabular-nums">
 						{formatPeriod(preview.reservationPeriod)}
 					</p>
 					<p className="text-muted-foreground text-xs">
-						Desde la primera reserva hasta la última. No representa el período
-						de cada equipo.
+						Cada equipo puede tener un período de reserva diferente.
 					</p>
 				</div>
 			) : (
 				<p className="text-muted-foreground">
-					Las reservas no están disponibles. Resolvé los requisitos y volvé a
-					revisar.
+					No pudimos obtener las reservas. Revisá los avisos y volvé a intentar.
 				</p>
 			)}
 			{distinctPeriods > 1 ? (

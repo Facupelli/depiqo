@@ -8,9 +8,9 @@ const messages = {
 	"rental_commitment.rental_period_ended":
 		"El período del alquiler ya terminó. No se puede cambiar el precio de entrega y retiro.",
 	"rental_commitment.invalid_rental_field":
-		"Revisá el importe. No se puede quitar un acuerdo si no hay un precio calculado de referencia.",
+		"No hay un precio calculado disponible. Conservá el importe actual o definí uno nuevo.",
 	"rental_commitment.rental_not_found":
-		"No encontramos el pedido. Actualizá la página.",
+		"No encontramos el alquiler. Actualizá la página.",
 } as const;
 
 export function toDeliveryAgreementError(error: unknown) {

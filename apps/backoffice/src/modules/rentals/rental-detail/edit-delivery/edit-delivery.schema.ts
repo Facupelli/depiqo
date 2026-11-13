@@ -108,25 +108,27 @@ export function createDeliveryFormSchema(rental: DeliveryRental) {
 				value.arrangement !== rental.acceptedDelivery?.arrangement;
 			if (transition || value.changeAddress) {
 				if (!value.address.trim())
-					issue("address", "Ingresá una dirección de entrega.");
+					issue(
+						"address",
+						value.arrangement === "STAFF_ARRANGED"
+							? "Ingresá el destino de entrega."
+							: "Ingresá una dirección de entrega.",
+					);
 				if (value.arrangement === "ROUTED" && !value.locationId.trim())
-					issue("address", "Seleccioná una dirección de las sugerencias.");
+					issue("address", "Seleccioná una dirección de entrega de la lista.");
 			}
 			if (!["KEEP", "SET", "CLEAR"].includes(value.pricing))
-				issue("pricing", "Elegí cómo aplicar el precio de entrega y retiro.");
+				issue("pricing", "Elegí el importe de entrega y retiro.");
 			if (transition && value.pricing === "KEEP")
 				issue(
 					"pricing",
-					"El cambio de modalidad requiere una nueva decisión de precio.",
+					"Definí el precio para las nuevas condiciones de envío.",
 				);
 			if (
 				value.arrangement === "STAFF_ARRANGED" &&
 				(value.pricing === "CLEAR" || (transition && value.pricing !== "SET"))
 			)
-				issue(
-					"pricing",
-					"La entrega coordinada requiere un nuevo importe acordado.",
-				);
+				issue("pricing", "El envío a medida requiere un importe definido.");
 			if (
 				value.pricing === "CLEAR" &&
 				value.arrangement === "ROUTED" &&
@@ -134,7 +136,7 @@ export function createDeliveryFormSchema(rental: DeliveryRental) {
 			)
 				issue(
 					"pricing",
-					"No hay un precio automático guardado. Conservá o editá el acuerdo actual.",
+					"No hay un precio calculado disponible. Conservá el importe actual o definí uno nuevo.",
 				);
 			if (
 				value.pricing === "SET" &&
@@ -142,7 +144,7 @@ export function createDeliveryFormSchema(rental: DeliveryRental) {
 			)
 				issue(
 					"amount",
-					"Ingresá un importe mayor o igual a cero con precisión de centavos.",
+					"Ingresá un importe de 0 o más, con hasta 2 decimales.",
 				);
 			if (
 				value.changeMinutes ||
@@ -152,7 +154,10 @@ export function createDeliveryFormSchema(rental: DeliveryRental) {
 					!/^\d+$/.test(value.minutes.trim()) ||
 					!Number.isSafeInteger(Number(value.minutes))
 				)
-					issue("minutes", "Ingresá minutos enteros mayores o iguales a cero.");
+					issue(
+						"minutes",
+						"Ingresá el tiempo para transporte en minutos enteros. Puede ser 0.",
+					);
 			}
 		});
 }

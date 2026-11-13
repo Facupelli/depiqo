@@ -15,6 +15,7 @@ import {
 	createDraftRentalComposerDefaultValues,
 	type DraftRentalComposerFormValues,
 } from "../draft-rental-composer/draft-rental-composer.schema";
+import { getDeliveryErrorMessage } from "../shared/delivery-error-messages";
 import { useCreateDraftRental } from "./create-draft-rental.mutation";
 import { toCreateDraftRentalDto } from "./create-draft-rental.schema";
 
@@ -99,7 +100,12 @@ export function CreateRentalPage() {
 					)}
 					onSubmit={handleSubmit}
 					isSubmitting={createDraftRental.isPending}
-					submitError={null}
+					submitError={
+						createDraftRental.error
+							? (getDeliveryErrorMessage(createDraftRental.error) ??
+								"No pudimos crear el borrador. Revisá los datos e intentá nuevamente.")
+							: null
+					}
 					submitLabel="Crear borrador"
 					missingBranchMessage="Seleccioná una sucursal para crear un nuevo borrador."
 				/>

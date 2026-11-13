@@ -20,7 +20,10 @@ import {
 const chartConfig = {
 	equipmentAmount: { label: "Equipos", color: "var(--color-depiqo-blue-600)" },
 	insuranceAmount: { label: "Seguro", color: "var(--color-depiqo-blue-300)" },
-	deliveryAmount: { label: "Entrega", color: "var(--color-depiqo-blue-100)" },
+	deliveryAmount: {
+		label: "Entrega y retiro",
+		color: "var(--color-depiqo-blue-100)",
+	},
 } satisfies ChartConfig;
 type ComponentKey = keyof typeof chartConfig;
 const componentKeys: ComponentKey[] = [

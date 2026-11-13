@@ -10,30 +10,30 @@ export const deliveryRestrictionLabels: Record<
 	DELIVERY_OUTSIDE_SERVICE_HOURS:
 		"La entrega está fuera del horario de servicio.",
 	COLLECTION_OUTSIDE_SERVICE_HOURS:
-		"La recolección está fuera del horario de servicio.",
+		"El retiro está fuera del horario de servicio.",
 };
 export const deliveryRequirementLabels: Record<
 	PreviewDraftRentalCostDeliveryDto["requirements"][number],
 	string
 > = {
-	DESTINATION_REQUIRED: "Seleccioná una dirección de envío válida.",
+	DESTINATION_REQUIRED: "Seleccioná una dirección de entrega de la lista.",
 	AGREEMENT_DECISION_REQUIRED:
-		"Cambiaron las condiciones de transporte. Revisá el importe acordado.",
+		"Cambiaron las condiciones de envío. Revisá el importe definido.",
 	AGREEMENT_REQUIRED:
-		"Sin cotización automática, necesitás acordar un importe de entrega y recolección.",
+		"No hay un precio calculado disponible. Definí el importe de entrega y retiro.",
 	INVALID_AGREEMENT_AMOUNT:
-		"Ingresá un importe no negativo, con hasta dos decimales.",
+		"Ingresá un importe de 0 o más, con hasta 2 decimales.",
 	KEEP_REQUIRES_EXISTING_AGREEMENT:
-		"No hay un acuerdo guardado para conservar.",
+		"No hay un importe definido para conservar.",
 	AUTOMATIC_QUOTE_REQUIRED:
-		"No hay una cotización automática disponible para quitar el acuerdo.",
+		"No hay un precio calculado disponible para reemplazar el importe definido.",
 	CURRENCY_DECISION_REQUIRED:
-		"Cambió la moneda. Definí otro importe o usá el precio automático.",
+		"Cambió la moneda. Definí otro importe o usá el precio calculado.",
 	CURRENCY_MISMATCH: "La moneda del envío no coincide con la del alquiler.",
 	TRANSPORT_RESERVATION_MINUTES_REQUIRED:
-		"Ingresá los minutos de reserva para transporte, incluyendo cero.",
+		"Ingresá el tiempo para transporte en minutos. Puede ser 0.",
 	TRANSPORT_RESERVATION_MINUTES_CONFLICT:
-		"Los minutos deben coincidir con la configuración. Quitá el valor ingresado para usarla.",
+		"Usá el tiempo para transporte de la sucursal. Dejá el campo vacío para aplicarlo.",
 };
 const technicalFailureLabels: Record<
 	NonNullable<PreviewDraftRentalCostDeliveryDto["technicalFailure"]>,
@@ -41,7 +41,8 @@ const technicalFailureLabels: Record<
 > = {
 	BRANCH_UNAVAILABLE: "La sucursal no está disponible para el envío.",
 	BRANCH_LOCATION_MISSING: "La sucursal no tiene una ubicación configurada.",
-	CUSTOMER_LOCATION_UNRESOLVED: "No se pudo resolver la ubicación de destino.",
+	CUSTOMER_LOCATION_UNRESOLVED:
+		"No pudimos identificar la ubicación de entrega.",
 	NO_ROUTE: "No se encontró una ruta hasta el destino.",
 	INVALID_PERIOD: "El período no es válido para el transporte.",
 };
@@ -73,7 +74,7 @@ export function deliveryBlockingMessages(
 			? [
 					delivery.technicalFailure === "BRANCH_LOCATION_MISSING" &&
 					getAcknowledgedDeliveryAgreementAmount(delivery) !== null
-						? "El precio manual está definido. Configurá la ubicación de la sucursal para validar el transporte y crear el borrador."
+						? "El importe está definido. Configurá la ubicación de la sucursal para validar el envío."
 						: technicalFailureLabels[delivery.technicalFailure],
 				]
 			: []),

@@ -54,7 +54,7 @@ export function RentalFinancialReportTable({
 								)}
 							</TableHead>
 							<TableHead className="text-right">
-								Entrega
+								Entrega y retiro
 								{!selection.includeDelivery && (
 									<span className="block text-xs font-normal text-muted-foreground">
 										Excluida del total

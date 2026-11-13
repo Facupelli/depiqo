@@ -3,6 +3,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { can } from "@/auth/permissions";
 import { useBranchTimezone } from "@/shared/timezone/operational-timezone.hooks";
+import { getDeliveryErrorMessage } from "../../shared/delivery-error-messages";
 import { useCancelRental } from "../cancel-rental/cancel-rental.mutation";
 import { useConfirmRental } from "../confirm-rental/confirm-rental.mutation";
 import {
@@ -15,7 +16,7 @@ import { useRentalSigningInvitationActions } from "../documents/signing/use-rent
 import { useRentalDetailContext } from "../rental-detail.context";
 
 const CONFIRM_RENTAL_FALLBACK_ERROR =
-	"No pudimos confirmar el alquiler. Revisá que tenga cliente, precio calculado y equipos disponibles para el período.";
+	"No pudimos confirmar el alquiler. Revisá el cliente, los importes, las condiciones de envío y la disponibilidad de equipos.";
 
 export function useRentalDetailActions() {
 	const navigate = useNavigate();
@@ -56,10 +57,9 @@ export function useRentalDetailActions() {
 		rental.status === "CONFIRMED" &&
 		new Date(rental.period.start).getTime() > Date.now();
 	const confirmRentalErrorMessage = confirmationVersionConflict
-		? "El alquiler cambió. Actualizá el pedido y revisalo antes de confirmar nuevamente."
+		? "El alquiler cambió. Actualizá la información y revisala antes de confirmar nuevamente."
 		: confirmRental.error
-			? (confirmRental.error.problemDetails.detail ??
-				confirmRental.error.problemDetails.title ??
+			? (getDeliveryErrorMessage(confirmRental.error) ??
 				CONFIRM_RENTAL_FALLBACK_ERROR)
 			: null;
 

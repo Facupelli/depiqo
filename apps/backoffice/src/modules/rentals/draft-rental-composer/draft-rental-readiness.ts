@@ -3,7 +3,7 @@ import type {
 	PreviewDraftRentalCostResponseDto,
 } from "@repo/api-contracts";
 import type { z } from "zod";
-import { ProblemDetailsError } from "@/shared/errors";
+import { getDeliveryErrorMessage } from "../shared/delivery-error-messages";
 import { deliveryBlockingMessages } from "./delivery-preview";
 import {
 	type DraftRentalDerivationValues,
@@ -66,22 +66,20 @@ export function getDraftRentalReadiness({
 			values.deliveryAgreementDecision === "CLEAR");
 	if (previewError) {
 		messages.push(
-			previewError instanceof ProblemDetailsError
-				? previewError.problemDetails.detail ||
-						"No pudimos calcular el costo. Revisá los datos e intentá nuevamente."
-				: "No pudimos calcular el costo. Revisá los datos e intentá nuevamente.",
+			getDeliveryErrorMessage(previewError) ??
+				"No pudimos actualizar el total. Revisá los datos e intentá nuevamente.",
 		);
 	}
 	if (preview?.delivery?.policyExceptionRequired && !exceptionAccepted) {
 		messages.push(
 			canManageDelivery
-				? "Aceptá explícitamente la excepción de envío para guardar."
-				: "Se requiere permiso para autorizar esta excepción de envío.",
+				? "Autorizá la excepción a las condiciones de envío para guardar."
+				: "Necesitás permiso para autorizar esta excepción.",
 		);
 	}
 	if (!canManageDelivery && (exceptionAccepted || agreementChanged)) {
 		messages.push(
-			"No tenés permiso para modificar acuerdos o autorizar excepciones de envío.",
+			"No tenés permiso para modificar importes ni autorizar excepciones de envío.",
 		);
 	}
 	if (
@@ -95,7 +93,7 @@ export function getDraftRentalReadiness({
 	}
 	if (preview?.customerTotal === null && messages.length === 0) {
 		messages.push(
-			"El costo del envío está pendiente. Revisá las condiciones de transporte.",
+			"El importe de entrega y retiro está pendiente. Revisá las condiciones de envío.",
 		);
 	}
 	const canSave =

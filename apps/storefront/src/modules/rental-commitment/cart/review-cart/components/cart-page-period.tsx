@@ -2,9 +2,13 @@ import type { BranchScheduleSlotDto } from "@repo/api-contracts";
 import { Link } from "@tanstack/react-router";
 import { Clock } from "lucide-react";
 import { dateParamToLocalDate } from "@/lib/dates/parse";
-import { useCartPeriodContext } from "../cart-page.context";
+import {
+	useCartFulfillmentContext,
+	useCartPeriodContext,
+} from "../cart-page.context";
 
 export function CartPagePeriod() {
+	const { fulfillmentMethod } = useCartFulfillmentContext();
 	const {
 		branch,
 		periodStart,
@@ -27,7 +31,7 @@ export function CartPagePeriod() {
 					<strong>{branch.name}</strong>
 				</InfoCell>
 				<TimeCell
-					label="Retiro"
+					label={fulfillmentMethod === "DELIVERY" ? "Inicio" : "Retiro"}
 					date={periodStart}
 					value={pickupSlot}
 					slots={pickupSlots}
@@ -48,7 +52,9 @@ export function CartPagePeriod() {
 					role="alert"
 					className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800"
 				>
-					El horario de retiro ya pasó. Seleccioná un horario futuro o{" "}
+					{fulfillmentMethod === "DELIVERY"
+						? "El horario de inicio ya pasó. Seleccioná un horario futuro o "
+						: "El horario de retiro ya pasó. Seleccioná un horario futuro o "}
 					<Link
 						to="/rental"
 						search={{ branchId: branch.id, periodStart, periodEnd }}
@@ -61,7 +67,9 @@ export function CartPagePeriod() {
 			)}
 			{isPeriodInvalid && (
 				<p className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-					La devolución debe ser posterior al retiro.
+					{fulfillmentMethod === "DELIVERY"
+						? "La devolución debe ser posterior al inicio."
+						: "La devolución debe ser posterior al retiro."}
 				</p>
 			)}
 		</div>
