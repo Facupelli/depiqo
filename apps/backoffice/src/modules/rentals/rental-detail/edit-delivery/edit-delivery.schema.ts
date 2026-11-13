@@ -34,7 +34,7 @@ export function deliveryDefaults(
 			? ""
 			: (rental.fulfillment.deliveryDetails?.address ?? ""),
 		locationId: "",
-		pricing: transition ? "" : "KEEP",
+		pricing: transition ? (arrangement === "ROUTED" ? "CLEAR" : "SET") : "KEEP",
 		amount: transition ? "" : (delivery?.staffAgreement?.amount ?? ""),
 		reason: transition ? "" : (delivery?.staffAgreement?.reason ?? ""),
 		changeMinutes: transition && arrangement === "STAFF_ARRANGED",
