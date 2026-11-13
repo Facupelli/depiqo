@@ -10,15 +10,16 @@ import {
 } from "@repo/ui/components/alert-dialog";
 import { Button } from "@repo/ui/components/button";
 import { useQuery } from "@tanstack/react-query";
-import { AlertCircle, CalendarDays, Package, ReceiptText } from "lucide-react";
+import { AlertCircle, CalendarDays, Layers, Truck, X } from "lucide-react";
 import type { ReactNode } from "react";
+import { formatTimestampInTimezone } from "@/lib/dates/format";
 import { ProblemDetailsError } from "@/shared/errors";
 import { useBranchTimezone } from "@/shared/timezone/operational-timezone.hooks";
+import { sumDecimalStrings } from "@/shared/utils/decimal-string";
 import { formatMoney } from "@/shared/utils/formatters";
 import { rentalConfirmationSummaryOptions } from "../confirm-rental/get-rental-confirmation-summary.queries";
 import { buildRentalConfirmationSummary } from "../rental-confirmation-summary";
 import { useRentalDetailContext } from "../rental-detail.context";
-import { formatRentalDetailDateBlock } from "../rental-detail.utils";
 
 export type RentalConfirmationDialogProps = {
 	open: boolean;
@@ -65,14 +66,23 @@ export function RentalConfirmationDialog({
 
 	return (
 		<AlertDialog open={open} onOpenChange={onOpenChange}>
-			<AlertDialogContent className="max-h-[calc(100dvh-2rem)] max-w-[calc(100%-2rem)] overflow-y-auto">
-				<AlertDialogHeader>
-					<AlertDialogTitle>Confirmar alquiler</AlertDialogTitle>
+			<AlertDialogContent className="max-h-[calc(100dvh-2rem)] gap-7 overflow-y-auto p-6 data-[size=default]:max-w-[calc(100%-2rem)] sm:p-8 data-[size=default]:sm:max-w-2xl">
+				<AlertDialogHeader className="relative place-items-start gap-3 pr-10 text-left">
+					<AlertDialogTitle className="text-2xl font-semibold tracking-tight">
+						Confirmar alquiler
+					</AlertDialogTitle>
 					<AlertDialogDescription>
-						Revisá el período, los equipos y el total antes de bloquear su
-						disponibilidad para otros pedidos. La disponibilidad de los equipos
-						se verifica al confirmar.
+						Al confirmar, los equipos quedarán reservados para este alquiler.
 					</AlertDialogDescription>
+					<AlertDialogCancel
+						aria-label="Cerrar"
+						variant="outline"
+						size="icon-sm"
+						className="absolute top-0 right-0"
+						disabled={isPending}
+					>
+						<X className="size-4" />
+					</AlertDialogCancel>
 				</AlertDialogHeader>
 				{summary ? (
 					<RentalConfirmationReview
@@ -116,7 +126,7 @@ export function RentalConfirmationDialog({
 						<p className="min-w-0 [overflow-wrap:anywhere]">{errorMessage}</p>
 					</div>
 				) : null}
-				<AlertDialogFooter>
+				<AlertDialogFooter className="mt-3">
 					<AlertDialogCancel disabled={isPending}>Volver</AlertDialogCancel>
 					<AlertDialogAction
 						disabled={!canConfirm || !summaryReady || isPending}
@@ -142,104 +152,74 @@ function RentalConfirmationReview({
 	summary: NonNullable<ReturnType<typeof buildRentalConfirmationSummary>>;
 	totalVerified: boolean;
 }) {
-	const start = formatRentalDetailDateBlock(
+	const start = formatTimestampInTimezone(
 		summary.period.start,
 		summary.period.timezone,
+		"D MMM, HH:mm",
 	);
-	const end = formatRentalDetailDateBlock(
+	const end = formatTimestampInTimezone(
 		summary.period.end,
 		summary.period.timezone,
+		"D MMM, HH:mm",
 	);
 
 	return (
-		<div className="space-y-4">
-			<section className="rounded-lg border border-neutral-200 bg-neutral-50 p-4">
-				<ReviewSectionTitle icon={<CalendarDays className="size-4" />}>
-					Período del alquiler
-				</ReviewSectionTitle>
-				<div className="mt-3 grid gap-3 sm:grid-cols-2">
-					<PeriodDate label="Retiro" date={start.date} time={start.time} />
-					<PeriodDate label="Devolución" date={end.date} time={end.time} />
-				</div>
-			</section>
+		<div className="space-y-7">
+			<dl className="divide-y divide-neutral-200 rounded-xl border border-neutral-200 bg-neutral-50/70 px-4 sm:px-5">
+				<ReviewRow
+					icon={<CalendarDays className="size-5" />}
+					label="Período del alquiler"
+				>
+					{start} - {end}
+				</ReviewRow>
+				<ReviewRow
+					icon={<Layers className="size-5" />}
+					label="Equipos a reservar"
+				>
+					{summary.reservedEquipmentCount}{" "}
+					{summary.reservedEquipmentCount === 1 ? "unidad" : "unidades"}
+				</ReviewRow>
+				{summary.delivery ? (
+					<ReviewRow
+						icon={<Truck className="size-5" />}
+						label={summary.delivery.label}
+					>
+						{summary.delivery.address}
+					</ReviewRow>
+				) : null}
+			</dl>
 
-			<section className="rounded-lg border border-neutral-200 p-4">
-				<ReviewSectionTitle icon={<Package className="size-4" />}>
-					Equipos a bloquear
-				</ReviewSectionTitle>
-				<div className="mt-3 max-h-56 space-y-3 overflow-y-auto pr-1">
-					{summary.equipment.map((equipment) => (
-						<div key={equipment.id} className="space-y-2">
-							<EquipmentRow
-								name={equipment.name}
-								quantity={equipment.quantity}
-							/>
-							{equipment.children.length > 0 ? (
-								<div className="space-y-1.5 border-neutral-100 border-l pl-3">
-									{equipment.children.map((child) => (
-										<EquipmentRow
-											key={child.id}
-											name={child.name}
-											quantity={child.quantity}
-											compact
-										/>
-									))}
-								</div>
-							) : null}
-						</div>
-					))}
-					{summary.accessories.length > 0 ? (
-						<div className="border-neutral-100 border-t pt-3">
-							<p className="mb-2 text-xs font-medium text-neutral-500">
-								Accesorios a bloquear
-							</p>
-							<div className="space-y-1.5">
-								{summary.accessories.map((accessory) => (
-									<EquipmentRow
-										key={accessory.id}
-										name={accessory.name}
-										quantity={accessory.quantity}
-										compact
-									/>
-								))}
-							</div>
-						</div>
-					) : null}
-				</div>
-			</section>
-
-			<div className="space-y-2 text-sm">
-				<p className="flex justify-between gap-3">
-					<span>Equipos</span>
-					<span>
-						{formatMoney(summary.equipmentAmount, summary.total.currency)}
-					</span>
-				</p>
-				<p className="flex justify-between gap-3">
-					<span>Seguro</span>
-					<span>
-						{formatMoney(summary.insuranceAmount, summary.total.currency)}
+			<div className="space-y-3 text-sm">
+				<p className="flex justify-between gap-4">
+					<span className="text-muted-foreground">Equipos y seguro</span>
+					<span className="text-right tabular-nums">
+						{formatMoney(
+							sumDecimalStrings([
+								summary.equipmentAmount,
+								summary.insuranceAmount,
+							]),
+							summary.total.currency,
+						)}
 					</span>
 				</p>
 				{summary.deliveryCharge !== null ? (
 					<p className="flex justify-between gap-3">
-						<span>Entrega y recolección</span>
-						<span>
+						<span className="text-muted-foreground">Entrega y retiro</span>
+						<span className="text-right tabular-nums">
 							{formatMoney(summary.deliveryCharge, summary.total.currency)}
 						</span>
 					</p>
 				) : null}
 			</div>
-			<div className="flex flex-col gap-2 rounded-lg border border-neutral-200 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-				<div className="flex min-w-0 items-center gap-2 text-sm font-medium">
-					<ReceiptText className="size-4 shrink-0" />
+			<div className="flex flex-wrap items-baseline justify-between gap-3 border-t border-neutral-200 pt-5">
+				<div className="min-w-0 text-lg font-semibold">
 					<span className="[overflow-wrap:anywhere]">
 						{totalVerified
 							? "Total a confirmar"
 							: "Total pendiente de verificar"}
 					</span>
 				</div>
-				<span className="min-w-0 font-mono text-lg font-bold [overflow-wrap:anywhere]">
+				<span className="min-w-0 text-right text-2xl font-bold tracking-tight tabular-nums [overflow-wrap:anywhere]">
 					{formatMoney(summary.total.amount, summary.total.currency)}
 				</span>
 			</div>
@@ -247,64 +227,24 @@ function RentalConfirmationReview({
 	);
 }
 
-function ReviewSectionTitle({
+function ReviewRow({
 	icon,
+	label,
 	children,
 }: {
 	icon: ReactNode;
+	label: string;
 	children: ReactNode;
 }) {
 	return (
-		<div className="flex items-center gap-2 text-sm font-semibold text-neutral-950">
-			<span className="text-neutral-500">{icon}</span>
-			<h2>{children}</h2>
-		</div>
-	);
-}
-
-function PeriodDate({
-	label,
-	date,
-	time,
-}: {
-	label: string;
-	date: string;
-	time: string;
-}) {
-	return (
-		<div className="rounded-md border border-neutral-200 bg-white px-3 py-2">
-			<p className="text-[10px] font-medium tracking-wider text-neutral-400 uppercase">
-				{label}
-			</p>
-			<p className="mt-0.5 text-sm font-medium text-neutral-950">{date}</p>
-			<p className="text-xs text-neutral-500">{time}</p>
-		</div>
-	);
-}
-
-function EquipmentRow({
-	name,
-	quantity,
-	compact = false,
-}: {
-	name: string;
-	quantity: number;
-	compact?: boolean;
-}) {
-	return (
-		<div className="flex min-w-0 flex-wrap items-start justify-between gap-x-3 gap-y-1">
-			<p
-				className={`min-w-0 flex-1 [overflow-wrap:anywhere] ${
-					compact
-						? "text-sm text-neutral-600"
-						: "text-sm font-medium text-neutral-900"
-				}`}
-			>
-				{name}
-			</p>
-			<span className="shrink-0 text-xs text-neutral-500">
-				{quantity} {quantity === 1 ? "unidad" : "unidades"}
+		<div className="grid grid-cols-[1.25rem_1fr] items-start gap-x-3 gap-y-2 py-4 text-sm sm:grid-cols-[1.25rem_1fr_1.5fr] sm:items-center sm:gap-x-4 sm:py-5">
+			<span aria-hidden="true" className="text-muted-foreground">
+				{icon}
 			</span>
+			<dt>{label}</dt>
+			<dd className="col-start-2 min-w-0 font-semibold [overflow-wrap:anywhere] sm:col-start-3">
+				{children}
+			</dd>
 		</div>
 	);
 }
