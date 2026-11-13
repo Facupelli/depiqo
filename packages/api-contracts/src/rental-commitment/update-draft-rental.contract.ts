@@ -6,7 +6,7 @@ import { CreateDraftRentalManualPricingAdjustmentSchema } from "./create-draft-r
 import { CreateConfirmedRentalSelectedOfferSchema } from "./create-confirmed-rental.contract";
 import {
   UpdateDraftRentalDeliveryDecisionsSchema,
-  validateNewStaffArrangedDeliveryDecisions,
+  validateStaffArrangedDeliveryEditDecisions,
 } from "./draft-rental-delivery-decisions.schema";
 import {
   DraftRentalRoutedDestinationSchema,
@@ -57,7 +57,7 @@ export const UpdateDraftRentalBodySchema =
       value.deliveryIntent?.type === "NEW_DESTINATION" &&
       value.deliveryIntent.arrangement === "STAFF_ARRANGED"
     ) {
-      validateNewStaffArrangedDeliveryDecisions(
+      validateStaffArrangedDeliveryEditDecisions(
         value.deliveryDecisions,
         context,
       );

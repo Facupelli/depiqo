@@ -50,10 +50,36 @@ export const UpdateDraftRentalDeliveryDecisionsSchema = z
   })
   .strict();
 
-// A new staff destination establishes new terms, including on arrangement transitions.
-// KEEP_CURRENT (or preview omission) preserves stored terms. Whether KEEP/CLEAR is
-// valid for that stored arrangement must be checked by the backend.
-// These decisions never grant rentals.delivery.manage or supply trusted attribution.
+// Editing may change a destination within an existing staff arrangement. The
+// backend must verify persisted arrangement/agreement eligibility for KEEP and
+// require explicit minutes when establishing a new arrangement. Neither decision
+// grants rentals.delivery.manage or supplies trusted attribution.
+export function validateStaffArrangedDeliveryEditDecisions(
+  decisions:
+    | z.infer<typeof UpdateDraftRentalDeliveryDecisionsSchema>
+    | undefined,
+  context: z.RefinementCtx,
+): void {
+  if (
+    decisions?.pricingAgreement?.type !== "SET" &&
+    decisions?.pricingAgreement?.type !== "KEEP"
+  ) {
+    context.addIssue({
+      code: "custom",
+      path: ["deliveryDecisions", "pricingAgreement"],
+      message: "Changing a staff-arranged destination requires SET or KEEP.",
+    });
+  }
+  if (decisions?.policyException !== undefined) {
+    context.addIssue({
+      code: "custom",
+      path: ["deliveryDecisions", "policyException"],
+      message: "Staff-arranged delivery cannot include a policy exception.",
+    });
+  }
+}
+
+// Creation has no persisted terms to preserve, including transportation minutes.
 export function validateNewStaffArrangedDeliveryDecisions(
   decisions:
     | z.infer<typeof UpdateDraftRentalDeliveryDecisionsSchema>

@@ -16,6 +16,7 @@ import {
 import {
   UpdateDraftRentalDeliveryDecisionsSchema,
   validateNewStaffArrangedDeliveryDecisions,
+  validateStaffArrangedDeliveryEditDecisions,
 } from "./draft-rental-delivery-decisions.schema";
 import { UpdateDraftRentalDeliveryIntentSchema } from "./update-draft-rental.contract";
 
@@ -26,7 +27,7 @@ export const PreviewDraftRentalCostBodySchema =
     insuranceSelected: z.boolean().default(false),
     fulfillmentMethod: z.enum(["PICKUP", "DELIVERY"]),
     // Omission preserves the draft destination, including a staff-arranged free-text address.
-    // New destinations explicitly establish their arrangement and terms.
+    // Explicit destinations may change an existing arrangement's address.
     deliveryIntent: UpdateDraftRentalDeliveryIntentSchema.optional(),
     // A preview cannot request authorization or supply attribution.
     deliveryDecisions: UpdateDraftRentalDeliveryDecisionsSchema.omit({
@@ -37,10 +38,10 @@ export const PreviewDraftRentalCostBodySchema =
       value.deliveryIntent?.type === "NEW_DESTINATION" &&
       value.deliveryIntent.arrangement === "STAFF_ARRANGED"
     ) {
-      validateNewStaffArrangedDeliveryDecisions(
-        value.deliveryDecisions,
-        context,
-      );
+      const validateDecisions = value.rentalId
+        ? validateStaffArrangedDeliveryEditDecisions
+        : validateNewStaffArrangedDeliveryDecisions;
+      validateDecisions(value.deliveryDecisions, context);
     }
     if (
       value.fulfillmentMethod === "PICKUP" &&

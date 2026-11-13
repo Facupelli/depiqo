@@ -147,8 +147,10 @@ export class DraftRentalDeliveryResolver {
     const decision = input.decisions?.pricingAgreement;
     if (input.decisions?.policyException)
       return err(this.invalid('policyException', 'staff delivery has no policy exceptions'));
-    if ((!input.keepCurrent || !existing) && decision?.type !== 'SET') {
-      return err(this.invalid('pricingAgreement', 'new staff-arranged destinations require SET'));
+    // Only persisted staff-arranged agreements are eligible, never routed agreements.
+    // A new destination alone does not establish a new arrangement.
+    if (!existing?.snapshot.staffAgreement && decision?.type !== 'SET') {
+      return err(this.invalid('pricingAgreement', 'new staff-arranged arrangements require SET'));
     }
     const changed = !input.keepCurrent || this.staffConditionsChanged(input);
     if (changed && decision?.type !== 'SET' && decision?.type !== 'KEEP') {
@@ -157,7 +159,7 @@ export class DraftRentalDeliveryResolver {
     if (decision?.type === 'CLEAR') return err(this.invalid('pricingAgreement', 'staff agreement cannot be cleared'));
     const minutes =
       input.decisions?.transportReservationMinutes ??
-      (input.keepCurrent ? existing?.snapshot.transportReservationMinutes : undefined);
+      (existing?.snapshot.staffAgreement ? existing.snapshot.transportReservationMinutes : undefined);
     if (minutes === undefined || !Number.isInteger(minutes) || minutes < 0) {
       return err(this.invalid('transportReservationMinutes', 'explicit non-negative integer minutes are required'));
     }
@@ -450,8 +452,8 @@ export class DraftRentalDeliveryResolver {
     if (input.destination.arrangement === 'STAFF_ARRANGED') {
       // A preserved agreement is denominated in its stored currency, even if equipment pricing changed.
       const storedCurrency =
-        input.keepCurrent && input.decisions?.pricingAgreement?.type !== 'SET'
-          ? input.existing?.snapshot.currency
+        input.existing?.snapshot.arrangement === 'STAFF_ARRANGED' && input.decisions?.pricingAgreement?.type !== 'SET'
+          ? input.existing.snapshot.currency
           : undefined;
       const proposal = this.proposeStaff({ ...input, pricingCurrency: storedCurrency ?? input.pricingCurrency });
       if (proposal.isErr()) return err(proposal.error);

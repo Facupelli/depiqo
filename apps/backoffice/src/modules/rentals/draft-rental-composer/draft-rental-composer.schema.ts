@@ -147,8 +147,11 @@ export function createDraftRentalDerivationSchema({
 		if (value.fulfillmentMethod === "DELIVERY") {
 			if (value.deliveryArrangement === "STAFF_ARRANGED") {
 				const newDestination = value.deliveryDestination.status !== "EXISTING";
+				const newArrangement = !canPreserveStaffAgreement(initialValues);
 				const changed =
-					!initialValues || staffTransportationChanged(value, initialValues);
+					newDestination ||
+					!initialValues ||
+					staffTransportationChanged(value, initialValues);
 				if (!canManageDelivery && (newDestination || changed)) {
 					ctx.addIssue({
 						code: "custom",
@@ -166,14 +169,14 @@ export function createDraftRentalDerivationSchema({
 				}
 				if (
 					value.deliveryAgreementDecision === "CLEAR" ||
-					(newDestination && value.deliveryAgreementDecision !== "SET") ||
+					(newArrangement && value.deliveryAgreementDecision !== "SET") ||
 					(changed &&
 						!["KEEP", "SET"].includes(value.deliveryAgreementDecision))
 				) {
 					ctx.addIssue({
 						code: "custom",
 						path: ["deliveryAgreementDecision"],
-						message: newDestination
+						message: newArrangement
 							? "Definí el importe acordado para esta entrega."
 							: "Cambiaron las condiciones de transporte. Conservá el importe guardado o acordá uno nuevo.",
 					});
@@ -397,6 +400,19 @@ export function toCalculateDraftRentalPriceDto(
 	};
 
 	return CalculateDraftRentalPriceBodySchema.parse(dto);
+}
+
+// Hydrated amounts include zero. A typed address is not an arrangement transition.
+export function canPreserveStaffAgreement(
+	initial: DraftRentalComposerFormValues | undefined,
+) {
+	return (
+		initial?.fulfillmentMethod === "DELIVERY" &&
+		initial.deliveryArrangement === "STAFF_ARRANGED" &&
+		initial.deliveryDestination.status === "EXISTING" &&
+		draftRentalDeliveryAmountSchema.safeParse(initial.deliveryAgreementAmount)
+			.success
+	);
 }
 
 export function staffTransportationChanged(

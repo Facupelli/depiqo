@@ -32,7 +32,10 @@ import { withForm } from "@/shared/contexts/form.context";
 import type { DraftRentalBranchDisplayFacts } from "../draft-rental-composer";
 import { useDraftRentalComposer } from "../draft-rental-composer.context";
 import { resetPendingDeliveryReview } from "../draft-rental-composer.form-utils";
-import { createDraftRentalComposerDefaultValues } from "../draft-rental-composer.schema";
+import {
+	canPreserveStaffAgreement,
+	createDraftRentalComposerDefaultValues,
+} from "../draft-rental-composer.schema";
 import { DeliveryAddressAutocomplete } from "./delivery-address-autocomplete";
 import { RentalCustomerCombobox } from "./rental-customer-combobox";
 import { StaffArrangedDeliveryFields } from "./staff-arranged-delivery-fields";
@@ -406,11 +409,20 @@ const DeliveryFields = withForm({
 										aria-invalid={isInvalid}
 										onBlur={field.handleBlur}
 										onChange={(event) => {
+											const initial = form.options.defaultValues;
+											const preservable = canPreserveStaffAgreement(initial);
+											const address = event.target.value;
 											form.setFieldValue("deliveryDestination", {
-												status: "NEW_STAFF_DESTINATION",
-												address: event.target.value,
+												status:
+													preservable &&
+													address.trim() ===
+														initial?.deliveryDestination.address
+														? "EXISTING"
+														: "NEW_STAFF_DESTINATION",
+												address,
 											});
-											resetPendingDeliveryReview(form);
+											// Address corrections do not replace an accepted agreement.
+											if (!preservable) resetPendingDeliveryReview(form);
 										}}
 									/>
 								) : (

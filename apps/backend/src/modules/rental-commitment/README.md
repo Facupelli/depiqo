@@ -71,7 +71,7 @@ Staff-arranged delivery is an independent staff commitment, not a policy excepti
 
 Staff may agree on a combined delivery-and-collection amount, including zero. This agreement determines the effective transportation charge in the customer total without changing the calculated reference prices or operational transportation facts. For routed delivery without an agreement, the calculated total applies. Agreement attribution and time are established by the server, not supplied as customer pricing inputs.
 
-Draft edits unrelated to transportation preserve the complete proposed delivery terms, including their calculated reference prices and staff decisions. Changing transportation conditions requires an explicit decision about an existing agreement. Preserving proposed terms in a draft does not establish current eligibility for confirmation.
+Draft edits unrelated to transportation preserve the complete proposed delivery terms, including their calculated reference prices and staff decisions. Changing transportation conditions requires an explicit decision about an existing agreement. A staff-arranged draft's address may change while explicitly preserving the agreement's amount, reason, and original attribution; address-only changes retain transportation minutes. Agreements cannot be inherited across arrangement transitions. Preserving proposed terms in a draft does not establish current eligibility for confirmation.
 
 For routed delivery, agreed pricing does not authorize policy exceptions. An exception authorizes only the accepted transportation conditions; changes require fresh evaluation and reauthorization. Neither decision waives equipment reservation conflicts. Authorization attribution and time must come from trusted server context.
 

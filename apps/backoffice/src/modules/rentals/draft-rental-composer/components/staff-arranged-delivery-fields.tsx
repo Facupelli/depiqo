@@ -5,7 +5,10 @@ import { useStore } from "@tanstack/react-form";
 import { withForm } from "@/shared/contexts/form.context";
 import { useDraftRentalComposer } from "../draft-rental-composer.context";
 import { resetPendingDeliveryReview } from "../draft-rental-composer.form-utils";
-import { createDraftRentalComposerDefaultValues } from "../draft-rental-composer.schema";
+import {
+	canPreserveStaffAgreement,
+	createDraftRentalComposerDefaultValues,
+} from "../draft-rental-composer.schema";
 
 export const StaffArrangedDeliveryFields = withForm({
 	defaultValues: createDraftRentalComposerDefaultValues(),
@@ -14,10 +17,14 @@ export const StaffArrangedDeliveryFields = withForm({
 		const {
 			state: { storedAgreement },
 		} = useDraftRentalComposer();
-		const existing = useStore(
+		const existing =
+			canPreserveStaffAgreement(form.options.defaultValues) &&
+			Boolean(storedAgreement);
+		const decision = useStore(
 			form.store,
-			(state) => state.values.deliveryDestination.status === "EXISTING",
+			(state) => state.values.deliveryAgreementDecision,
 		);
+		const preserving = existing && decision !== "SET";
 		return (
 			<div className="space-y-3">
 				<div className="grid gap-3 sm:grid-cols-2">
@@ -31,8 +38,11 @@ export const StaffArrangedDeliveryFields = withForm({
 									id={field.name}
 									inputMode="decimal"
 									placeholder="0,00"
-									value={field.state.value}
+									value={
+										preserving ? storedAgreement?.amount : field.state.value
+									}
 									disabled={!canManageDelivery}
+									readOnly={preserving}
 									onBlur={field.handleBlur}
 									aria-invalid={!field.state.meta.isValid}
 									onChange={(event) => {
@@ -80,8 +90,13 @@ export const StaffArrangedDeliveryFields = withForm({
 							</FieldLabel>
 							<Input
 								id={field.name}
-								value={field.state.value}
+								value={
+									preserving
+										? (storedAgreement?.reason ?? "")
+										: field.state.value
+								}
 								disabled={!canManageDelivery}
+								readOnly={preserving}
 								onBlur={field.handleBlur}
 								onChange={(event) => {
 									field.handleChange(event.target.value);
@@ -124,14 +139,16 @@ export const StaffArrangedDeliveryFields = withForm({
 										}
 										onClick={() => field.handleChange("SET")}
 									>
-										Aplicar importe ingresado
+										Registrar nuevo acuerdo
 									</Button>
 								</div>
 							) : null}
 							<p className="text-xs text-muted-foreground">
 								{field.state.value === "SET"
 									? "Acuerdo propuesto. Se registrará al guardar el borrador."
-									: "Se conserva el acuerdo guardado, salvo que cambies las condiciones de transporte."}
+									: field.state.value === "KEEP"
+										? "Se conserva el importe, el motivo y la atribución originales del acuerdo."
+										: "Si cambiás la dirección o las condiciones de transporte, elegí conservar el acuerdo o registrar uno nuevo."}
 							</p>
 							<FieldError errors={field.state.meta.errors} />
 						</Field>
