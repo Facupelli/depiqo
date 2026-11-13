@@ -1,4 +1,5 @@
 import type { GetBranchesBranchDto } from "@repo/api-contracts";
+import { Button } from "@repo/ui/components/button";
 import {
 	Card,
 	CardContent,
@@ -6,6 +7,14 @@ import {
 	CardTitle,
 } from "@repo/ui/components/card";
 import { Checkbox } from "@repo/ui/components/checkbox";
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+} from "@repo/ui/components/dialog";
 import {
 	Field,
 	FieldError,
@@ -25,19 +34,29 @@ import {
 import { ToggleGroup, ToggleGroupItem } from "@repo/ui/components/toggle-group";
 import { useStore } from "@tanstack/react-form";
 import { Truck, Warehouse } from "lucide-react";
-import { useId } from "react";
+import { useId, useState } from "react";
+import { z } from "zod";
 import type { RentalCustomerDisplayFacts } from "@/modules/rentals/customer-selection/rental-customer-selector";
 import { RentalPeriodPicker } from "@/modules/rentals/shared/rental-period/rental-period-picker";
-import { withForm } from "@/shared/contexts/form.context";
+import { useAppForm, withForm } from "@/shared/contexts/form.context";
+import { formatMoney } from "@/shared/utils/formatters";
+import { deliveryBlockingMessages } from "../delivery-preview";
 import type { DraftRentalBranchDisplayFacts } from "../draft-rental-composer";
 import { useDraftRentalComposer } from "../draft-rental-composer.context";
 import { resetPendingDeliveryReview } from "../draft-rental-composer.form-utils";
 import {
 	canPreserveStaffAgreement,
 	createDraftRentalComposerDefaultValues,
+	createDraftRentalComposerFormSchema,
+	type DraftRentalComposerFormValues,
 } from "../draft-rental-composer.schema";
+import { getCurrentDraftRentalCostPreview } from "../draft-rental-preview";
+import { buildDraftRentalProposal } from "../draft-rental-readiness";
+import { useDraftRentalCostPreview } from "../preview-draft-rental-cost.queries";
 import { DeliveryAddressAutocomplete } from "./delivery-address-autocomplete";
+import { DraftRentalDeliveryReview } from "./draft-rental-delivery-review";
 import { RentalCustomerCombobox } from "./rental-customer-combobox";
+import { RoutedDeliveryPricingFields } from "./routed-delivery-pricing-fields";
 import { StaffArrangedDeliveryFields } from "./staff-arranged-delivery-fields";
 
 export const DraftRentalSetupSection = withForm({
@@ -312,7 +331,7 @@ export const DraftRentalSetupSection = withForm({
 					</div>
 
 					{fulfillmentMethod === "DELIVERY" ? (
-						<DeliveryFields form={form} />
+						<DeliveryConfiguration form={form} />
 					) : null}
 				</CardContent>
 			</Card>
@@ -320,11 +339,246 @@ export const DraftRentalSetupSection = withForm({
 	},
 });
 
+const deliveryKeys = [
+	"deliveryArrangement",
+	"deliveryDestination",
+	"deliveryAgreementDecision",
+	"deliveryAgreementAmount",
+	"deliveryAgreementReason",
+	"transportReservationMinutes",
+	"deliveryExceptionAccepted",
+	"deliveryExceptionReason",
+] as const;
+
+const DeliveryConfiguration = withForm({
+	defaultValues: createDraftRentalComposerDefaultValues(),
+	render: function Render({ form }) {
+		const [open, setOpen] = useState(false);
+		const values = useStore(form.store, (state) => state.values);
+		const {
+			state: { costPreview, storedDeliveryCurrency },
+			meta: { isSubmitting, isPriceLoading },
+		} = useDraftRentalComposer();
+		const preview = getCurrentDraftRentalCostPreview(values, costPreview);
+		const delivery = preview?.delivery;
+		const configured =
+			values.deliveryDestination.status !== "INVALID" &&
+			Boolean(values.deliveryDestination.address.trim());
+		const amount = delivery?.effectiveCharge;
+		const currency =
+			delivery?.currency ?? storedDeliveryCurrency ?? preview?.currency;
+		return (
+			<>
+				<div className="flex items-center justify-between gap-4 rounded-lg border bg-muted/20 p-3">
+					<div className="min-w-0 space-y-1 text-sm">
+						{configured ? (
+							<>
+								<p className="font-medium">
+									{values.deliveryArrangement === "STAFF_ARRANGED"
+										? "Entrega personalizada"
+										: "Envío de la sucursal"}
+								</p>
+								<p className="break-words text-muted-foreground">
+									{values.deliveryDestination.address}
+								</p>
+								<p className="text-xs text-muted-foreground">
+									Entrega y retiro:{" "}
+									{isPriceLoading
+										? "Calculando..."
+										: amount != null && amount !== "" && currency
+											? formatMoney(amount, currency)
+											: "Por definir"}
+								</p>
+							</>
+						) : (
+							<p className="text-muted-foreground">
+								Configurá la entrega para continuar
+							</p>
+						)}
+					</div>
+					<Button
+						type="button"
+						variant="outline"
+						size="sm"
+						disabled={isSubmitting}
+						onClick={() => setOpen(true)}
+					>
+						{configured ? "Editar" : "Configurar entrega"}
+					</Button>
+				</div>
+				{open ? (
+					<DeliveryDialog
+						defaultValues={structuredClone(values)}
+						onClose={() => setOpen(false)}
+						onApply={(value) => {
+							form.setFieldValue(
+								"deliveryArrangement",
+								value.deliveryArrangement,
+							);
+							form.setFieldValue(
+								"deliveryDestination",
+								value.deliveryDestination,
+							);
+							form.setFieldValue(
+								"deliveryAgreementDecision",
+								value.deliveryAgreementDecision,
+							);
+							form.setFieldValue(
+								"deliveryAgreementAmount",
+								value.deliveryAgreementAmount,
+							);
+							form.setFieldValue(
+								"deliveryAgreementReason",
+								value.deliveryAgreementReason,
+							);
+							form.setFieldValue(
+								"transportReservationMinutes",
+								value.transportReservationMinutes,
+							);
+							form.setFieldValue(
+								"deliveryExceptionAccepted",
+								value.deliveryExceptionAccepted,
+							);
+							form.setFieldValue(
+								"deliveryExceptionReason",
+								value.deliveryExceptionReason,
+							);
+						}}
+					/>
+				) : null}
+			</>
+		);
+	},
+});
+
+function DeliveryDialog({
+	defaultValues,
+	onApply,
+	onClose,
+}: {
+	defaultValues: DraftRentalComposerFormValues;
+	onApply: (values: DraftRentalComposerFormValues) => void;
+	onClose: () => void;
+}) {
+	const {
+		state: { validationContext, timezone, rentalId, canManageDelivery },
+	} = useDraftRentalComposer();
+	const schema = createDraftRentalComposerFormSchema(validationContext);
+	const deliverySchema = z
+		.custom<DraftRentalComposerFormValues>()
+		.superRefine((value, ctx) => {
+			const result = schema.safeParse(value);
+			if (!result.success)
+				for (const issue of result.error.issues) {
+					if (deliveryKeys.some((key) => key === issue.path[0]))
+						ctx.addIssue({
+							code: "custom",
+							path: issue.path,
+							message: issue.message,
+						});
+				}
+		});
+	const form = useAppForm({
+		defaultValues,
+		validators: { onChange: deliverySchema, onSubmit: deliverySchema },
+		onSubmit: ({ value }) => {
+			onApply(value);
+			onClose();
+		},
+	});
+	const values = useStore(form.store, (state) => state.values);
+	const proposal = buildDraftRentalProposal(values, schema, timezone, rentalId);
+	const query = useDraftRentalCostPreview(proposal.body);
+	const preview = getCurrentDraftRentalCostPreview(values, {
+		values,
+		query: proposal.body ? query : undefined,
+	});
+	const id = useId();
+	return (
+		<Dialog
+			open
+			onOpenChange={(open) => {
+				if (!open) onClose();
+			}}
+		>
+			<DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-xl">
+				<DialogHeader>
+					<DialogTitle>Configurar entrega</DialogTitle>
+					<DialogDescription>
+						Definí cómo entregar y retirar los equipos. Los cambios se aplican
+						al borrador, sin guardarlo todavía.
+					</DialogDescription>
+				</DialogHeader>
+				<form
+					id={id}
+					className="space-y-4"
+					onSubmit={(event) => {
+						event.preventDefault();
+						event.stopPropagation();
+						void form.handleSubmit();
+					}}
+				>
+					<DeliveryFields form={form} />
+					{values.deliveryArrangement === "ROUTED" ? (
+						<>
+							<RoutedDeliveryPricingFields
+								form={form}
+								delivery={preview?.delivery}
+								loading={query.isFetching}
+							/>
+							<DraftRentalDeliveryReview
+								form={form}
+								delivery={preview?.delivery}
+								canManageDelivery={canManageDelivery}
+							/>
+						</>
+					) : null}
+					{deliveryBlockingMessages(preview?.delivery).map((message) => (
+						<p key={message} className="text-xs text-destructive" role="alert">
+							{message}
+						</p>
+					))}
+					{query.isError ? (
+						<div className="space-y-2">
+							<p className="text-sm text-destructive">
+								No pudimos calcular el envío. Podés aplicar la configuración y
+								reintentar desde el borrador.
+							</p>
+							<Button
+								type="button"
+								size="sm"
+								variant="outline"
+								onClick={() => void query.refetch()}
+							>
+								Reintentar cálculo
+							</Button>
+						</div>
+					) : null}
+					{!proposal.body ? (
+						<p className="text-xs text-muted-foreground">
+							El costo se calculará al completar los datos del alquiler y la
+							entrega.
+						</p>
+					) : null}
+				</form>
+				<DialogFooter>
+					<Button type="button" variant="outline" onClick={onClose}>
+						Cancelar
+					</Button>
+					<Button type="submit" form={id}>
+						Aplicar entrega
+					</Button>
+				</DialogFooter>
+			</DialogContent>
+		</Dialog>
+	);
+}
+
 const DeliveryFields = withForm({
 	defaultValues: createDraftRentalComposerDefaultValues(),
 	render: function Render({ form }) {
 		const {
-			state: { canManageDelivery },
+			state: { canManageDelivery, validationContext },
 		} = useDraftRentalComposer();
 		const arrangement = useStore(
 			form.store,
@@ -333,7 +587,7 @@ const DeliveryFields = withForm({
 		const staffArranged = arrangement === "STAFF_ARRANGED";
 		const attempts = useStore(form.store, (state) => state.submissionAttempts);
 		return (
-			<div className="space-y-3 rounded-lg border bg-muted/20 p-3">
+			<div className="space-y-3">
 				<form.Field name="deliveryArrangement">
 					{(field) => (
 						<FieldSet className="gap-1.5">
@@ -350,7 +604,7 @@ const DeliveryFields = withForm({
 										next === field.state.value
 									)
 										return;
-									const initial = form.options.defaultValues;
+									const initial = validationContext.initialValues;
 									const restoreStoredDestination =
 										initial?.fulfillmentMethod === "DELIVERY" &&
 										initial.deliveryArrangement === next &&
@@ -378,23 +632,26 @@ const DeliveryFields = withForm({
 											? initial.transportReservationMinutes
 											: "",
 									);
-									resetPendingDeliveryReview(form);
+									resetPendingDeliveryReview(
+										form,
+										validationContext.initialValues,
+									);
 								}}
 							>
 								<ToggleGroupItem value="ROUTED" disabled={!canManageDelivery}>
-									Envío automático
+									Envío de la sucursal
 								</ToggleGroupItem>
 								<ToggleGroupItem
 									value="STAFF_ARRANGED"
 									disabled={!canManageDelivery}
 								>
-									Coordinado por el equipo
+									Entrega personalizada
 								</ToggleGroupItem>
 							</ToggleGroup>
 							<p className="text-xs text-muted-foreground">
 								{staffArranged
-									? "Dirección libre, precio acordado y reserva de transporte definidos por el equipo. No requiere configurar el servicio de envío."
-									: "Seleccioná una dirección para evaluar el transporte. También podés acordar un precio manual."}
+									? "Coordiná la entrega directamente con el cliente y definí un importe acordado."
+									: "Calculamos el costo del envío según la dirección y las condiciones de la sucursal."}
 							</p>
 							{!canManageDelivery ? (
 								<p className="text-xs text-muted-foreground">
@@ -426,7 +683,7 @@ const DeliveryFields = withForm({
 										aria-invalid={isInvalid}
 										onBlur={field.handleBlur}
 										onChange={(event) => {
-											const initial = form.options.defaultValues;
+											const initial = validationContext.initialValues;
 											const preservable = canPreserveStaffAgreement(initial);
 											const address = event.target.value;
 											form.setFieldValue("deliveryDestination", {
@@ -439,7 +696,11 @@ const DeliveryFields = withForm({
 												address,
 											});
 											// Address corrections do not replace an accepted agreement.
-											if (!preservable) resetPendingDeliveryReview(form);
+											if (!preservable)
+												resetPendingDeliveryReview(
+													form,
+													validationContext.initialValues,
+												);
 										}}
 									/>
 								) : (
@@ -451,14 +712,20 @@ const DeliveryFields = withForm({
 										onBlur={field.handleBlur}
 										onChange={(address) => {
 											if (address === field.state.value) return;
-											resetPendingDeliveryReview(form);
+											resetPendingDeliveryReview(
+												form,
+												validationContext.initialValues,
+											);
 											form.setFieldValue("deliveryDestination", {
 												status: "INVALID",
 												address,
 											});
 										}}
 										onSelect={(suggestion) => {
-											resetPendingDeliveryReview(form);
+											resetPendingDeliveryReview(
+												form,
+												validationContext.initialValues,
+											);
 											form.setFieldValue("deliveryDestination", {
 												status: "NEW_DESTINATION",
 												address: suggestion.formattedAddress,

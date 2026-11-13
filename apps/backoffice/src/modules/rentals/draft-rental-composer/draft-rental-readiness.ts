@@ -70,8 +70,6 @@ export function getDraftRentalReadiness({
 						"No pudimos calcular el costo. Revisá los datos e intentá nuevamente."
 				: "No pudimos calcular el costo. Revisá los datos e intentá nuevamente.",
 		);
-	} else if (!preview && inputMessages.length === 0) {
-		messages.push("Esperá el cálculo del costo para guardar.");
 	}
 	if (preview?.delivery?.policyExceptionRequired && !exceptionAccepted) {
 		messages.push(

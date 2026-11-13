@@ -15,10 +15,10 @@ export const StaffArrangedDeliveryFields = withForm({
 	props: { canManageDelivery: false },
 	render: function Render({ form, canManageDelivery }) {
 		const {
-			state: { storedAgreement },
+			state: { storedAgreement, validationContext },
 		} = useDraftRentalComposer();
 		const existing =
-			canPreserveStaffAgreement(form.options.defaultValues) &&
+			canPreserveStaffAgreement(validationContext.initialValues) &&
 			Boolean(storedAgreement);
 		const decision = useStore(
 			form.store,
@@ -58,7 +58,7 @@ export const StaffArrangedDeliveryFields = withForm({
 						{(field) => (
 							<Field data-invalid={!field.state.meta.isValid}>
 								<FieldLabel htmlFor={field.name}>
-									Minutos de reserva para transporte
+									Margen para transporte (min)
 								</FieldLabel>
 								<Input
 									id={field.name}
@@ -70,18 +70,22 @@ export const StaffArrangedDeliveryFields = withForm({
 									aria-invalid={!field.state.meta.isValid}
 									onChange={(event) => {
 										if (event.target.value !== field.state.value)
-											resetPendingDeliveryReview(form);
+											resetPendingDeliveryReview(
+												form,
+												validationContext.initialValues,
+											);
 										field.handleChange(event.target.value);
 									}}
 								/>
+								<p className="text-xs text-muted-foreground">
+									Reservamos tiempo adicional antes y después del alquiler para
+									entregar y retirar los equipos.
+								</p>
 								<FieldError errors={field.state.meta.errors} />
 							</Field>
 						)}
 					</form.Field>
 				</div>
-				<p className="text-xs text-muted-foreground">
-					El importe y los minutos son obligatorios. Ambos pueden ser cero.
-				</p>
 				<form.Field name="deliveryAgreementReason">
 					{(field) => (
 						<Field>
@@ -143,13 +147,13 @@ export const StaffArrangedDeliveryFields = withForm({
 									</Button>
 								</div>
 							) : null}
-							<p className="text-xs text-muted-foreground">
-								{field.state.value === "SET"
-									? "Acuerdo propuesto. Se registrará al guardar el borrador."
-									: field.state.value === "KEEP"
+							{field.state.value !== "SET" ? (
+								<p className="text-xs text-muted-foreground">
+									{field.state.value === "KEEP"
 										? "Se conserva el importe, el motivo y la atribución originales del acuerdo."
 										: "Si cambiás la dirección o las condiciones de transporte, elegí conservar el acuerdo o registrar uno nuevo."}
-							</p>
+								</p>
+							) : null}
 							<FieldError errors={field.state.meta.errors} />
 						</Field>
 					)}

@@ -12,11 +12,12 @@ export function resetPendingDeliveryReview(
 		FormLikeAPI<DraftRentalComposerFormValues, never>,
 		"setFieldValue" | "getFieldValue"
 	> & { options: { defaultValues?: DraftRentalComposerFormValues } },
+	initialValues = form.options.defaultValues,
 ) {
 	form.setFieldValue(
 		"deliveryAgreementDecision",
 		form.getFieldValue("deliveryArrangement") === "STAFF_ARRANGED" &&
-			!canPreserveStaffAgreement(form.options.defaultValues)
+			!canPreserveStaffAgreement(initialValues)
 			? "SET"
 			: "",
 	);

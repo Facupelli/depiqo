@@ -6,6 +6,7 @@ import { useId } from "react";
 import { withForm } from "@/shared/contexts/form.context";
 import { formatMoney } from "@/shared/utils/formatters";
 import { deliveryRestrictionLabels } from "../delivery-preview";
+import { useDraftRentalComposer } from "../draft-rental-composer.context";
 import { resetPendingDeliveryReview } from "../draft-rental-composer.form-utils";
 import { createDraftRentalComposerDefaultValues } from "../draft-rental-composer.schema";
 
@@ -17,6 +18,9 @@ export const DraftRentalDeliveryReview = withForm({
 	},
 	render: function Render({ form, delivery, canManageDelivery }) {
 		const id = useId();
+		const {
+			state: { validationContext },
+		} = useDraftRentalComposer();
 		if (!delivery) return null;
 		if (delivery?.arrangement === "STAFF_ARRANGED") {
 			return (
@@ -41,7 +45,7 @@ export const DraftRentalDeliveryReview = withForm({
 						"TRANSPORT_RESERVATION_MINUTES_REQUIRED",
 					) ||
 					minutes !== "" ? (
-						<details className="mt-3 rounded-md border text-xs">
+						<details open className="mt-3 rounded-md border text-xs">
 							<summary className="cursor-pointer px-3 py-2 font-medium">
 								Condiciones de entrega
 								{delivery?.policyExceptionRequired ||
@@ -119,7 +123,7 @@ export const DraftRentalDeliveryReview = withForm({
 												data-invalid={!field.state.meta.isValid}
 											>
 												<FieldLabel htmlFor={`${id}-minutes`}>
-													Minutos de reserva para transporte
+													Margen para transporte (min)
 												</FieldLabel>
 												<Input
 													id={`${id}-minutes`}
@@ -127,7 +131,10 @@ export const DraftRentalDeliveryReview = withForm({
 													value={field.state.value}
 													onChange={(event) => {
 														if (event.target.value !== field.state.value)
-															resetPendingDeliveryReview(form);
+															resetPendingDeliveryReview(
+																form,
+																validationContext.initialValues,
+															);
 														field.handleChange(event.target.value);
 													}}
 													onBlur={field.handleBlur}
@@ -135,8 +142,10 @@ export const DraftRentalDeliveryReview = withForm({
 													aria-invalid={!field.state.meta.isValid}
 												/>
 												<p className="text-muted-foreground">
-													Dejá vacío para usar la configuración cuando esté
-													disponible.
+													Reservamos tiempo adicional antes y después del
+													alquiler para entregar y retirar los equipos. Dejá
+													vacío para usar la configuración de la sucursal cuando
+													esté disponible.
 												</p>
 												<FieldError errors={field.state.meta.errors} />
 											</Field>

@@ -193,16 +193,20 @@ function DraftRentalComposerLayout({
 	});
 	const contextValue: DraftRentalComposerContextValue = {
 		state: {
+			validationContext: {
+				selectableBranchIds: new Set(activeBranches.map((branch) => branch.id)),
+				resolveBranchTimezone,
+				initialValues: defaultValues,
+				canManageDelivery,
+			},
+			rentalId,
 			selectedBranchName: selectedBranch?.name ?? persistedBranch?.name ?? null,
 			branchMissing,
 			timezone,
 			costPreview,
 			canManageDelivery,
-			// Agreements cannot be inherited across an explicit arrangement transition.
-			storedAgreement:
-				values.deliveryArrangement === defaultValues.deliveryArrangement
-					? storedAgreement
-					: undefined,
+			// Dialogs compare their local arrangement with the persisted terms before reusing an agreement.
+			storedAgreement,
 			storedDeliveryCurrency,
 			// Input validation belongs next to the fields, not in the pricing summary.
 			blockingMessages: readiness.messages.filter(

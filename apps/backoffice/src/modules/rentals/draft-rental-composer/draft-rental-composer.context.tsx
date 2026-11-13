@@ -1,9 +1,12 @@
 import type { GetRentalDetailResponseDto } from "@repo/api-contracts";
 import { createContext, use } from "react";
+import type { DraftRentalComposerValidationContext } from "./draft-rental-composer.schema";
 import type { DraftRentalCostPreviewSnapshot } from "./draft-rental-preview";
 
 export type DraftRentalComposerContextValue = {
 	state: {
+		validationContext: DraftRentalComposerValidationContext;
+		rentalId?: string;
 		selectedBranchName: string | null;
 		branchMissing: boolean;
 		timezone: string;

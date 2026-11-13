@@ -38,19 +38,17 @@ export function DraftRentalFinancialSummary({
 	const agreedAmount = getAcknowledgedDeliveryAgreementAmount(delivery);
 	const deliveryAmount = agreedAmount ?? delivery?.effectiveCharge;
 	const pendingExplanation =
-		preview?.customerTotal != null
+		preview?.customerTotal != null || isFetching
 			? null
-			: isFetching
-				? "El total estará disponible cuando termine el cálculo."
-				: staffArranged
-					? "Completá las condiciones de entrega coordinada para calcular el total final."
-					: agreedAmount !== null
-						? "El precio manual está definido. Falta validar el transporte para calcular el total final."
-						: delivery?.technicalFailure
-							? "Revisá las condiciones de transporte para calcular el total final."
-							: delivery?.effectiveCharge === null
-								? "Revisá los requisitos de precio y transporte para calcular el total final."
-								: "Completá los datos del alquiler para calcular el total final.";
+			: staffArranged
+				? "Configurá la entrega personalizada para calcular el total final."
+				: agreedAmount !== null
+					? "El precio manual está definido. Falta validar el transporte para calcular el total final."
+					: delivery?.technicalFailure
+						? "Revisá las condiciones de transporte para calcular el total final."
+						: delivery?.effectiveCharge === null
+							? "Revisá los requisitos de precio y transporte para calcular el total final."
+							: "Completá los datos del alquiler para calcular el total final.";
 	const money = (amount: string | null | undefined, unit = currency) =>
 		amount != null ? formatMoney(amount, unit) : "-";
 	return (
@@ -115,7 +113,7 @@ export function DraftRentalFinancialSummary({
 											? "Calculando el costo del envío..."
 											: "Completá los datos para consultar el costo del envío."
 										: staffArranged
-											? "Definí el importe acordado y los minutos de transporte."
+											? "Definí el importe acordado y el margen para transporte."
 											: delivery?.effectiveCharge != null
 												? "Precio calculado automáticamente"
 												: "No se pudo calcular automáticamente. Podés acordar un importe manual."}
@@ -142,7 +140,7 @@ export function DraftRentalFinancialSummary({
 					) : null}
 					{isFetching ? (
 						<p className="mt-2.5 flex items-center gap-2 text-muted-foreground text-xs">
-							<Loader2 className="size-3 animate-spin" /> Calculando precio...
+							<Loader2 className="size-3 animate-spin" /> Calculando...
 						</p>
 					) : null}
 				</div>
