@@ -44,6 +44,7 @@ export class GenerateRentalBudgetHandler implements IQueryHandler<
 const errorCodeMap: Record<RentalBudgetDocumentError['code'], GenerateRentalBudgetErrorCode> = {
   RentalNotFound: 'contracts.rental_budget_rental_not_found',
   RentalNotDraft: 'contracts.rental_budget_rental_not_draft',
+  RentalVersionChanged: 'contracts.rental_budget_rental_version_changed',
   CustomerNameMissing: 'contracts.rental_budget_customer_name_missing',
   ContextMissing: 'contracts.rental_budget_context_missing',
   PriceSnapshotInvalid: 'contracts.rental_budget_price_snapshot_invalid',

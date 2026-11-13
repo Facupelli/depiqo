@@ -84,6 +84,8 @@ import { RentalNumberAllocator } from './persistence/rental-number.allocator';
 import { PrismaRentalRepository } from './persistence/prisma-rental.repository';
 import { RentalRepository } from './persistence/rental.repository';
 import { RentalOwnerSplitCalculator } from './owner-split/rental-owner-split-calculator';
+import { DraftRentalFinancialFacts } from './public-api/draft-rental-financial-facts.public-api';
+import { DraftRentalFinancialFactsService } from './public-api/draft-rental-financial-facts.service';
 import { AcceptedRentalPricingFacts } from './public-api/accepted-rental-pricing-facts.public-api';
 import { AcceptedRentalPricingFactsService } from './public-api/accepted-rental-pricing-facts.service';
 import { CommittedRentalSelectionsAndDemand } from './public-api/committed-rental-selections-and-demand.public-api';
@@ -175,12 +177,14 @@ import { RentalLifecycleFactsService } from './public-api/rental-lifecycle-facts
     GetStorefrontRentalOfferAvailabilityHandler,
     RentalOwnerSplitCalculator,
     { provide: AcceptedRentalPricingFacts, useClass: AcceptedRentalPricingFactsService },
+    { provide: DraftRentalFinancialFacts, useClass: DraftRentalFinancialFactsService },
     { provide: CommittedRentalSelectionsAndDemand, useClass: CommittedRentalSelectionsAndDemandService },
     { provide: RentalLifecycleFacts, useClass: RentalLifecycleFactsService },
     { provide: RentalPhysicalAssignments, useClass: RentalPhysicalAssignmentsService },
   ],
   exports: [
     AcceptedRentalPricingFacts,
+    DraftRentalFinancialFacts,
     CommittedRentalSelectionsAndDemand,
     RentalLifecycleFacts,
     RentalPhysicalAssignments,

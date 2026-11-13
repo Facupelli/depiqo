@@ -27,7 +27,7 @@ import { rentalDetailViewQueries } from "../rental-detail.queries";
 import {
 	formatRentalDetailDateBlock,
 	getRentalCustomerInitials,
-	getRentalDisplayTotal,
+	getRentalDetailFinancialSummary,
 } from "../rental-detail.utils";
 
 type PeriodEditAction = {
@@ -310,7 +310,14 @@ function RentalFinancialsCard() {
 	}
 
 	const acceptedDelivery = rental.acceptedDelivery;
-	const headlineTotal = getRentalDisplayTotal(rental, pricing);
+	const { delivery, total: headlineTotal } = getRentalDetailFinancialSummary(
+		rental,
+		pricing,
+	);
+	const formattedTotal =
+		headlineTotal === null
+			? "Total no disponible"
+			: formatMoney(headlineTotal, pricing.currency);
 	const manualAdjustment = pricing.manualPricingAdjustment ?? null;
 	const canEditPrice =
 		canAdjustPrice &&
@@ -354,7 +361,7 @@ function RentalFinancialsCard() {
 							Importe
 						</span>
 						<span className="mt-0.5 block break-words font-mono text-sm font-semibold text-neutral-950">
-							{formatMoney(headlineTotal, pricing.currency)}
+							{formattedTotal}
 						</span>
 					</span>
 					<span className="hidden min-w-0 flex-1 @5xl/rental-detail:block [&>div]:mb-0">
@@ -370,7 +377,7 @@ function RentalFinancialsCard() {
 				<div className="hidden items-baseline justify-between pt-3 pb-3 @5xl/rental-detail:flex">
 					<span className="text-sm font-bold text-neutral-950">Total</span>
 					<span className="break-words font-mono text-xl font-bold tracking-tight text-neutral-950">
-						{formatMoney(headlineTotal, pricing.currency)}
+						{formattedTotal}
 					</span>
 				</div>
 				<div
@@ -391,14 +398,14 @@ function RentalFinancialsCard() {
 							prefix="-"
 						/>
 					) : null}
-					{acceptedDelivery ? (
+					{delivery ? (
 						<div className="space-y-1">
 							<div className="flex items-center gap-2">
 								<div className="min-w-0 flex-1">
 									<MoneyRow
 										label="Entrega y retiro"
-										value={acceptedDelivery.effectiveDeliveryCharge}
-										currency={acceptedDelivery.currency}
+										value={delivery.effectiveDeliveryCharge}
+										currency={delivery.currency}
 									/>
 								</div>
 								{canEditDelivery ? (
@@ -414,15 +421,20 @@ function RentalFinancialsCard() {
 									</Button>
 								) : null}
 							</div>
-							{acceptedDelivery.staffAgreement ? (
+							{delivery.staffAgreement ? (
 								<p className="text-xs text-neutral-500">
 									Importe acordado
-									{acceptedDelivery.staffAgreement.reason
-										? `: ${acceptedDelivery.staffAgreement.reason}`
+									{delivery.staffAgreement.reason
+										? `: ${delivery.staffAgreement.reason}`
 										: ""}
 								</p>
 							) : null}
 						</div>
+					) : rental.status === "DRAFT" &&
+						rental.fulfillment.method === "DELIVERY" ? (
+						<p className="text-sm text-neutral-500">
+							Entrega y retiro: importe no disponible.
+						</p>
 					) : null}
 					<div>
 						<div className="grid grid-cols-[1fr_auto_auto] items-center gap-2">

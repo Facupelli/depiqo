@@ -85,6 +85,11 @@ const s = StyleSheet.create({
     fontFamily: 'Helvetica-Bold',
     fontSize: 11,
   },
+  budgetNote: {
+    fontSize: 8,
+    lineHeight: 1.25,
+    marginTop: 6,
+  },
   insuranceNote: {
     fontSize: 7.5,
     lineHeight: 1.25,
@@ -182,8 +187,12 @@ export function RemitoPage({ data, columns, isContinuation = false }: RemitoPage
 
                     <View style={s.infoCell}>
                       <View style={s.infoInline}>
-                        <Text style={s.infoLabel}>PRECIO ACORDADO:</Text>
-                        <Text style={s.infoValue}>{document.agreedPrice} + IVA</Text>
+                        <Text style={s.infoLabel}>
+                          {document.budgetPricing ? 'EQUIPOS Y SEGURO:' : 'PRECIO ACORDADO:'}
+                        </Text>
+                        <Text style={s.infoValue}>
+                          {document.budgetPricing?.equipmentAndInsurance ?? document.agreedPrice} + IVA
+                        </Text>
                       </View>
                     </View>
                   </View>
@@ -197,7 +206,18 @@ export function RemitoPage({ data, columns, isContinuation = false }: RemitoPage
                     </View>
 
                     <View style={s.infoCell}>
-                      <Text style={s.infoNote}>IMPORTANTE: VER CONDICIONES ANEXO I</Text>
+                      {document.budgetPricing ? (
+                        <View style={s.infoInline}>
+                          <Text style={s.infoLabel}>ENTREGA Y RETIRO:</Text>
+                          <Text style={s.infoValue}>
+                            {document.budgetPricing.deliveryAndCollection === null
+                              ? 'No aplica'
+                              : `${document.budgetPricing.deliveryAndCollection} + IVA`}
+                          </Text>
+                        </View>
+                      ) : (
+                        <Text style={s.infoNote}>IMPORTANTE: VER CONDICIONES ANEXO I</Text>
+                      )}
                     </View>
                   </View>
 
@@ -210,6 +230,12 @@ export function RemitoPage({ data, columns, isContinuation = false }: RemitoPage
                     </View>
 
                     <View style={s.infoCell}>
+                      {document.budgetPricing && (
+                        <View style={s.infoInline}>
+                          <Text style={s.infoLabel}>TOTAL PRESUPUESTADO:</Text>
+                          <Text style={s.infoValue}>{document.budgetPricing.total} + IVA</Text>
+                        </View>
+                      )}
                       {document.insuranceSelected && (
                         <Text style={s.insuranceNote}>
                           El ARRENDATARIO se acoge a la Cobertura de daños accidentales (6% del importe del alquiler),
@@ -220,6 +246,12 @@ export function RemitoPage({ data, columns, isContinuation = false }: RemitoPage
                     </View>
                   </View>
                 </View>
+                {document.budgetPricing && (
+                  <Text style={s.budgetNote}>
+                    Condiciones propuestas, sujetas a confirmación. No constituye un contrato ni garantiza
+                    disponibilidad de entrega. La entrega con ruta se reevalúa al confirmar.
+                  </Text>
+                )}
               </View>
             )}
 

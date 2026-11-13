@@ -7,6 +7,11 @@ export type RentalRemitoPdfData = {
     returnDate: string;
     jornadas: number;
     agreedPrice: string;
+    budgetPricing?: {
+      equipmentAndInsurance: string;
+      deliveryAndCollection: string | null;
+      total: string;
+    };
     insuranceSelected: boolean;
     logoUrl: string | null;
     rentalSignatureUrl: string | null;

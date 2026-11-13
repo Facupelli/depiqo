@@ -350,17 +350,34 @@ const DeliveryFields = withForm({
 										next === field.state.value
 									)
 										return;
+									const initial = form.options.defaultValues;
+									const restoreStoredDestination =
+										initial?.fulfillmentMethod === "DELIVERY" &&
+										initial.deliveryArrangement === next &&
+										initial.deliveryDestination.status === "EXISTING";
 									field.handleChange(next);
-									form.setFieldValue("deliveryDestination", {
-										status:
-											next === "STAFF_ARRANGED"
-												? "NEW_STAFF_DESTINATION"
-												: "INVALID",
-										address: "",
-									});
+									// Returning to persisted terms is not a destination replacement.
+									// Never restore an unsaved agreement or exception decision.
+									form.setFieldValue(
+										"deliveryDestination",
+										restoreStoredDestination
+											? { ...initial.deliveryDestination }
+											: {
+													status:
+														next === "STAFF_ARRANGED"
+															? "NEW_STAFF_DESTINATION"
+															: "INVALID",
+													address: "",
+												},
+									);
 									form.setFieldValue("deliveryAgreementAmount", "");
 									form.setFieldValue("deliveryAgreementReason", "");
-									form.setFieldValue("transportReservationMinutes", "");
+									form.setFieldValue(
+										"transportReservationMinutes",
+										restoreStoredDestination
+											? initial.transportReservationMinutes
+											: "",
+									);
 									resetPendingDeliveryReview(form);
 								}}
 							>

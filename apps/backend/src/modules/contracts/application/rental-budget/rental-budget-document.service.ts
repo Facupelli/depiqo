@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { err, ok, Result } from 'neverthrow';
 
-import { AcceptedRentalPricingFacts } from 'src/modules/rental-commitment/public-api/accepted-rental-pricing-facts.public-api';
+import { DraftRentalFinancialFacts } from 'src/modules/rental-commitment/public-api/draft-rental-financial-facts.public-api';
 import { CommittedRentalSelectionsAndDemand } from 'src/modules/rental-commitment/public-api/committed-rental-selections-and-demand.public-api';
 import { RentalLifecycleFacts } from 'src/modules/rental-commitment/public-api/rental-lifecycle-facts.public-api';
 import { BranchFacts } from 'src/modules/tenant-management/public-api/branch-facts.public-api';
@@ -11,7 +11,7 @@ import { TenantContractSignerFacts } from 'src/modules/tenant-management/public-
 import { TenantIdentityFacts } from 'src/modules/tenant-management/public-api/tenant-identity-facts.public-api';
 
 import { RentalRemitoRendererPort } from '../../domain/ports/rental-remito-renderer.port';
-import { formatAcceptedPricingForRentalRemito, formatLocalDate } from '../rental-remito/rental-remito-formatters';
+import { formatProposedRentalBudgetAmount, formatLocalDate } from '../rental-remito/rental-remito-formatters';
 import { RentalRemitoPdfData } from '../rental-remito/rental-remito-pdf-data';
 
 export interface RentalBudgetCustomerOverride {
@@ -35,6 +35,7 @@ export interface RenderRentalBudgetResult {
 export type RentalBudgetDocumentErrorCode =
   | 'RentalNotFound'
   | 'RentalNotDraft'
+  | 'RentalVersionChanged'
   | 'CustomerNameMissing'
   | 'ContextMissing'
   | 'PriceSnapshotInvalid';
@@ -51,7 +52,7 @@ export type RenderRentalBudgetUseCaseResult = Result<RenderRentalBudgetResult, R
 export class RentalBudgetDocumentService {
   constructor(
     private readonly rentalLifecycleFacts: RentalLifecycleFacts,
-    private readonly acceptedRentalPricingFacts: AcceptedRentalPricingFacts,
+    private readonly draftRentalFinancialFacts: DraftRentalFinancialFacts,
     private readonly committedRentalSelectionsAndDemand: CommittedRentalSelectionsAndDemand,
     private readonly tenantIdentityFacts: TenantIdentityFacts,
     private readonly tenantBrandingFacts: TenantBrandingFacts,
@@ -62,24 +63,22 @@ export class RentalBudgetDocumentService {
   ) {}
 
   async render(input: RenderRentalBudgetInput): Promise<RenderRentalBudgetUseCaseResult> {
+    const financialFacts = await this.draftRentalFinancialFacts.getDraftRentalFinancialFacts({
+      tenantId: input.tenantId,
+      rentalId: input.rentalId,
+    });
+    if (financialFacts.isErr()) return err(this.mapRentalError(financialFacts.error));
+
     const lifecycle = await this.rentalLifecycleFacts.getRentalLifecycleFacts({
       tenantId: input.tenantId,
       rentalId: input.rentalId,
     });
     if (lifecycle.isErr()) return err(this.mapRentalError(lifecycle.error));
 
-    const [acceptedPricing, selectionsAndDemand] = await Promise.all([
-      this.acceptedRentalPricingFacts.getAcceptedRentalPricingFacts({
-        tenantId: input.tenantId,
-        rentalId: input.rentalId,
-      }),
-      this.committedRentalSelectionsAndDemand.getCommittedRentalSelectionsAndDemand({
-        tenantId: input.tenantId,
-        rentalId: input.rentalId,
-      }),
-    ]);
-
-    if (acceptedPricing.isErr()) return err(this.mapRentalError(acceptedPricing.error));
+    const selectionsAndDemand = await this.committedRentalSelectionsAndDemand.getCommittedRentalSelectionsAndDemand({
+      tenantId: input.tenantId,
+      rentalId: input.rentalId,
+    });
     if (selectionsAndDemand.isErr()) return err(this.mapRentalError(selectionsAndDemand.error));
 
     if (lifecycle.value.status !== 'DRAFT') {
@@ -117,6 +116,8 @@ export class RentalBudgetDocumentService {
       });
     }
 
+    const financial = financialFacts.value;
+    const formatAmount = (amount: string) => formatProposedRentalBudgetAmount(amount, financial.currency);
     const documentNumber = `${tenantIdentity.value.slug}-${lifecycle.value.rentalNumber}`.toUpperCase();
     const data: RentalRemitoPdfData = {
       document: {
@@ -125,8 +126,13 @@ export class RentalBudgetDocumentService {
         equipmentTitle: 'LISTA DE EQUIPOS PRESUPUESTADOS',
         pickupDate: formatLocalDate(lifecycle.value.periodStart, branch.value.effectiveTimezone),
         returnDate: formatLocalDate(lifecycle.value.periodEnd, branch.value.effectiveTimezone),
-        jornadas: acceptedPricing.value.chargedUnits,
-        agreedPrice: formatAcceptedPricingForRentalRemito(acceptedPricing.value),
+        jornadas: financial.chargedUnits,
+        agreedPrice: formatAmount(financial.customerTotal),
+        budgetPricing: {
+          equipmentAndInsurance: formatAmount(financial.equipmentAndInsuranceAmount),
+          deliveryAndCollection: financial.deliveryCharge === null ? null : formatAmount(financial.deliveryCharge),
+          total: formatAmount(financial.customerTotal),
+        },
         insuranceSelected: false,
         logoUrl: tenantBranding.value.logoUrl,
         rentalSignatureUrl: contractSigner?.signatureUrl ?? null,
@@ -149,6 +155,19 @@ export class RentalBudgetDocumentService {
     };
 
     const buffer = await this.renderer.render(data);
+    // Bracket every rental fact read, including rendering, with the monotonic draft version.
+    // Never return a PDF assembled while another operation changed the persisted proposal.
+    const current = await this.draftRentalFinancialFacts.getDraftRentalFinancialFacts({
+      tenantId: input.tenantId,
+      rentalId: input.rentalId,
+    });
+    if (current.isErr()) return err(this.mapRentalError(current.error));
+    if (current.value.rentalVersion !== financial.rentalVersion) {
+      return err({
+        code: 'RentalVersionChanged',
+        message: 'Rental changed during budget generation. Retry with the current draft.',
+      });
+    }
     return ok({
       buffer,
       fileName: `presupuesto-${normalizeFileNameSegment(customer.fullName)}-${lifecycle.value.rentalNumber}.pdf`,
@@ -157,7 +176,8 @@ export class RentalBudgetDocumentService {
 
   private mapRentalError(error: { code: string; message: string }): RentalBudgetDocumentError {
     if (error.code === 'RentalNotFound') return { code: 'RentalNotFound', message: error.message, cause: error };
-    if (error.code === 'AcceptedPricingSnapshotInvalid' || error.code === 'AcceptedPricingUnitsIncomplete') {
+    if (error.code === 'RentalNotDraft') return { code: 'RentalNotDraft', message: error.message, cause: error };
+    if (error.code === 'DraftFinancialFactsInvalid') {
       return { code: 'PriceSnapshotInvalid', message: error.message, cause: error };
     }
     throw new Error(error.message, { cause: error });
