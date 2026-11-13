@@ -46,7 +46,6 @@ export class PreviewDraftRentalCostHandler implements IQueryHandler<
       return err({ code: 'rental_commitment.preview_invalid_input', message: 'Invalid rental period.', cause });
     }
 
-    // Rental Commitment owns these facts. No aggregate is instantiated or persisted by this query.
     const draft =
       input.rentalId === undefined
         ? null
@@ -80,7 +79,6 @@ export class PreviewDraftRentalCostHandler implements IQueryHandler<
 
     let existing: ExistingDraftDelivery | undefined;
     if (draft?.fulfillmentMethod === 'DELIVERY' && draft.deliveryDetails && draft.deliverySnapshot) {
-      // Validate stored terms with the same value object used by the mutation path.
       const snapshot = AcceptedDeliverySnapshot.create(draft.deliverySnapshot);
       if (snapshot.isErr()) throw snapshot.error;
       existing = {
@@ -132,8 +130,6 @@ export class PreviewDraftRentalCostHandler implements IQueryHandler<
         cause: selections.error,
       });
 
-    // Pickup here composes equipment and insurance only. Staff delivery inspection is separate
-    // from Storefront's strict serviceability flow, which remains unchanged.
     const pricing = await this.cost.calculate({
       fulfillmentMethod: 'PICKUP',
       pricing: {
@@ -187,6 +183,14 @@ export class PreviewDraftRentalCostHandler implements IQueryHandler<
     };
     if (input.fulfillmentMethod === 'PICKUP') return ok(response);
 
+    if (input.deliveryIntent?.type === 'INCOMPLETE') {
+      return ok({
+        ...response,
+        customerTotal: null,
+        pendingDelivery: { arrangement: input.deliveryIntent.arrangement, reason: 'INPUT_REQUIRED' },
+      });
+    }
+
     let destination: RentalProposalDeliveryDestination | undefined;
     if (input.deliveryIntent?.type === 'NEW_DESTINATION') {
       const intent = input.deliveryIntent;
@@ -231,11 +235,10 @@ export class PreviewDraftRentalCostHandler implements IQueryHandler<
       keepCurrent: input.deliveryIntent?.type !== 'NEW_DESTINATION',
     });
     if (preview.isErr()) {
-      return err({
-        code: 'rental_commitment.preview_invalid_input',
-        message: preview.error.message,
-        cause: preview.error.cause,
-        context: preview.error.context,
+      return ok({
+        ...response,
+        customerTotal: null,
+        pendingDelivery: { arrangement: destination.arrangement ?? 'ROUTED', reason: 'INVALID_TERMS' },
       });
     }
     const delivery = preview.value;

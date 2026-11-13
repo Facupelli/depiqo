@@ -13,36 +13,27 @@ import {
   RentalDeliveryDetailsSchema,
   StaffArrangedDeliveryLegSchema,
 } from "./delivery-representation.schema";
-import {
-  UpdateDraftRentalDeliveryDecisionsSchema,
-  validateNewStaffArrangedDeliveryDecisions,
-  validateStaffArrangedDeliveryEditDecisions,
-} from "./draft-rental-delivery-decisions.schema";
+import { UpdateDraftRentalDeliveryDecisionsSchema } from "./draft-rental-delivery-decisions.schema";
 import { UpdateDraftRentalDeliveryIntentSchema } from "./update-draft-rental.contract";
 
-// A complete proposed selection, not a patch. rentalId only supplies stored delivery context.
 export const PreviewDraftRentalCostBodySchema =
   CalculateDraftRentalPriceBodySchema.extend({
     rentalId: z.string().trim().min(1).optional(),
     insuranceSelected: z.boolean().default(false),
     fulfillmentMethod: z.enum(["PICKUP", "DELIVERY"]),
-    // Omission preserves the draft destination, including a staff-arranged free-text address.
-    // Explicit destinations may change an existing arrangement's address.
-    deliveryIntent: UpdateDraftRentalDeliveryIntentSchema.optional(),
-    // A preview cannot request authorization or supply attribution.
+    deliveryIntent: z
+      .union([
+        UpdateDraftRentalDeliveryIntentSchema,
+        z.strictObject({
+          type: z.literal("INCOMPLETE"),
+          arrangement: z.enum(["ROUTED", "STAFF_ARRANGED"]),
+        }),
+      ])
+      .optional(),
     deliveryDecisions: UpdateDraftRentalDeliveryDecisionsSchema.omit({
       policyException: true,
     }).optional(),
   }).superRefine((value, context) => {
-    if (
-      value.deliveryIntent?.type === "NEW_DESTINATION" &&
-      value.deliveryIntent.arrangement === "STAFF_ARRANGED"
-    ) {
-      const validateDecisions = value.rentalId
-        ? validateStaffArrangedDeliveryEditDecisions
-        : validateNewStaffArrangedDeliveryDecisions;
-      validateDecisions(value.deliveryDecisions, context);
-    }
     if (
       value.fulfillmentMethod === "PICKUP" &&
       (value.deliveryIntent || value.deliveryDecisions)
@@ -57,7 +48,6 @@ export const PreviewDraftRentalCostBodySchema =
 
 const routedDelivery = z.object({
   arrangement: z.literal("ROUTED"),
-  // STORED terms are preserved, not freshly evaluated for confirmation eligibility.
   source: z.enum(["STORED", "EVALUATED"]),
   technicalFailure: z
     .enum([
@@ -68,7 +58,6 @@ const routedDelivery = z.object({
       "INVALID_PERIOD",
     ])
     .nullable(),
-  // For STORED terms, these are the restrictions recorded in the existing exception.
   restrictions: z.array(DeliveryRestrictionSchema),
   policyExceptionRequired: z.boolean(),
   requirements: z.array(
@@ -92,15 +81,11 @@ const routedDelivery = z.object({
   collection: AcceptedDeliveryLegSchema.nullable(),
   transportReservationMinutes: z.number().int().nonnegative().nullable(),
   calculatedCharge: z.string().nullable(),
-  // When an agreement requirement is unresolved, this is the existing amount for review only.
-  // Only effectiveCharge participates in customerTotal.
   staffAgreedAmount: z.string().nullable(),
-  // Only accepted agreements have attribution; a proposed SET has not been accepted.
   staffAgreement: DeliveryStaffAgreementSchema.optional(),
   effectiveCharge: z.string().nullable(),
 });
 
-// Staff terms are stored context or an unsaved proposal, never confirmation/availability validation.
 export const PreviewDraftRentalCostDeliverySchema = z.discriminatedUnion(
   "arrangement",
   [
@@ -120,8 +105,6 @@ export const PreviewDraftRentalCostDeliverySchema = z.discriminatedUnion(
       collection: StaffArrangedDeliveryLegSchema,
       transportReservationMinutes: z.number().int().nonnegative(),
       calculatedCharge: z.null(),
-      // Present only when referring to an already persisted agreement (including proposed KEEP).
-      // A proposed SET has an amount below, but no trusted acceptance metadata.
       staffAgreement: DeliveryStaffAgreementSchema.optional(),
       staffAgreedAmount: z.string(),
       effectiveCharge: z.string().nullable(),
@@ -130,14 +113,18 @@ export const PreviewDraftRentalCostDeliverySchema = z.discriminatedUnion(
 );
 
 export const PreviewDraftRentalCostResponseSchema = z.object({
-  // Equipment-only calculated/final breakdowns, followed by insurance composition.
   pricing: CalculateDraftRentalPriceResponseSchema.extend({
     insurance: z.object({ applied: z.boolean(), amount: z.string() }),
     totalBeforeInsurance: z.string(),
     total: z.string(),
   }),
   delivery: PreviewDraftRentalCostDeliverySchema.nullable(),
-  // Null when the charge cannot be determined. A total is not permission to save or confirm.
+  pendingDelivery: z
+    .object({
+      arrangement: z.enum(["ROUTED", "STAFF_ARRANGED"]),
+      reason: z.enum(["INPUT_REQUIRED", "INVALID_TERMS"]),
+    })
+    .optional(),
   customerTotal: z.string().nullable(),
   currency: z.string(),
   draftVersion: z.number().int().nonnegative().optional(),

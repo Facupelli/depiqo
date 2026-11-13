@@ -13,21 +13,22 @@ import {
 export function buildDraftRentalProposal(
 	values: DraftRentalDerivationValues,
 	schema: z.ZodType<DraftRentalDerivationValues>,
+	previewSchema: z.ZodType<DraftRentalDerivationValues>,
 	timezone: string,
 	rentalId?: string,
 ): { body: PreviewDraftRentalCostBodyDto | null; messages: string[] } {
 	const validation = schema.safeParse(values);
-	if (!validation.success) {
-		return {
-			body: null,
-			messages: [
-				...new Set(validation.error.issues.map((issue) => issue.message)),
-			],
-		};
-	}
+	const issues = validation.success ? [] : validation.error.issues;
+	const messages = [...new Set(issues.map((issue) => issue.message))];
+	const previewValidation = previewSchema.safeParse(values);
+	if (!previewValidation.success) return { body: null, messages };
 	return {
-		body: toPreviewDraftRentalCostDto(validation.data, timezone, rentalId),
-		messages: [],
+		body: toPreviewDraftRentalCostDto(
+			previewValidation.data,
+			timezone,
+			rentalId,
+		),
+		messages,
 	};
 }
 

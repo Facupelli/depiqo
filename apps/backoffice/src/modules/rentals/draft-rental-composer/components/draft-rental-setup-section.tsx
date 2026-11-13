@@ -48,6 +48,7 @@ import {
 	canPreserveStaffAgreement,
 	createDraftRentalComposerDefaultValues,
 	createDraftRentalComposerFormSchema,
+	createDraftRentalPreviewSchema,
 	type DraftRentalComposerFormValues,
 } from "../draft-rental-composer.schema";
 import { getCurrentDraftRentalCostPreview } from "../draft-rental-preview";
@@ -183,9 +184,7 @@ export const DraftRentalSetupSection = withForm({
 							form={form}
 							initialCustomer={initialCustomer}
 						/>
-					</div>
 
-					<div className="space-y-3">
 						<form.Field name="periodStartDate">
 							{(startDateField) => (
 								<form.Field name="periodStartTime">
@@ -211,7 +210,7 @@ export const DraftRentalSetupSection = withForm({
 
 														return (
 															<Field
-																className="gap-1.5 md:max-w-[calc(50%-0.375rem)]"
+																className="gap-1.5"
 																data-invalid={periodInvalid}
 															>
 																<FieldLabel htmlFor={periodId}>
@@ -268,66 +267,64 @@ export const DraftRentalSetupSection = withForm({
 							)}
 						</form.Field>
 
-						<div className="grid items-end gap-3 sm:grid-cols-[minmax(0,28rem)_auto]">
-							<form.Field name="fulfillmentMethod">
-								{(field) => (
-									<FieldSet className="w-full gap-0 [&_[data-slot=field-legend]]:mb-1.5">
-										<FieldLegend variant="label">Entrega</FieldLegend>
-										<ToggleGroup
-											variant="outline"
-											value={[field.state.value]}
-											onValueChange={(value) => {
-												const nextValue = value[0];
-												if (
-													nextValue === "PICKUP" ||
-													nextValue === "DELIVERY"
-												) {
-													if (nextValue !== field.state.value)
-														resetPendingDeliveryReview(form);
-													field.handleChange(nextValue);
-												}
-											}}
-											className="grid w-full grid-cols-2"
-										>
-											<ToggleGroupItem
-												value="PICKUP"
-												className="min-w-0 gap-2 data-[state=on]:bg-primary/5 data-[state=on]:text-primary"
-											>
-												<Warehouse className="size-4" />
-												Retiro
-											</ToggleGroupItem>
-											<ToggleGroupItem
-												value="DELIVERY"
-												className="min-w-0 gap-2 data-[state=on]:bg-primary/5 data-[state=on]:text-primary"
-											>
-												<Truck className="size-4" />
-												Envío
-											</ToggleGroupItem>
-										</ToggleGroup>
-									</FieldSet>
-								)}
-							</form.Field>
+						<form.Field name="insuranceSelected">
+							{(field) => (
+								<Field className="gap-1.5">
+									<FieldTitle>Seguro</FieldTitle>
+									<label
+										htmlFor={field.name}
+										className="flex h-9 w-fit items-center gap-2 text-sm font-medium"
+									>
+										<Checkbox
+											id={field.name}
+											checked={field.state.value}
+											onCheckedChange={(checked) =>
+												field.handleChange(checked === true)
+											}
+										/>
+										Incluir seguro de daños
+									</label>
+								</Field>
+							)}
+						</form.Field>
+					</div>
 
-							<form.Field name="insuranceSelected">
-								{(field) => (
-									<Field className="justify-end gap-1.5">
-										<label
-											htmlFor={field.name}
-											className="flex h-9 w-fit items-center gap-2 text-sm font-medium"
+					<div className="max-w-md">
+						<form.Field name="fulfillmentMethod">
+							{(field) => (
+								<FieldSet className="w-full gap-0 [&_[data-slot=field-legend]]:mb-1.5">
+									<FieldLegend variant="label">Entrega</FieldLegend>
+									<ToggleGroup
+										variant="outline"
+										value={[field.state.value]}
+										onValueChange={(value) => {
+											const nextValue = value[0];
+											if (nextValue === "PICKUP" || nextValue === "DELIVERY") {
+												if (nextValue !== field.state.value)
+													resetPendingDeliveryReview(form);
+												field.handleChange(nextValue);
+											}
+										}}
+										className="grid w-full grid-cols-2"
+									>
+										<ToggleGroupItem
+											value="PICKUP"
+											className="min-w-0 gap-2 data-[state=on]:bg-primary/5 data-[state=on]:text-primary"
 										>
-											<Checkbox
-												id={field.name}
-												checked={field.state.value}
-												onCheckedChange={(checked) =>
-													field.handleChange(checked === true)
-												}
-											/>
-											Seguro
-										</label>
-									</Field>
-								)}
-							</form.Field>
-						</div>
+											<Warehouse className="size-4" />
+											Retiro
+										</ToggleGroupItem>
+										<ToggleGroupItem
+											value="DELIVERY"
+											className="min-w-0 gap-2 data-[state=on]:bg-primary/5 data-[state=on]:text-primary"
+										>
+											<Truck className="size-4" />
+											Envío
+										</ToggleGroupItem>
+									</ToggleGroup>
+								</FieldSet>
+							)}
+						</form.Field>
 					</div>
 
 					{fulfillmentMethod === "DELIVERY" ? (
@@ -487,7 +484,13 @@ function DeliveryDialog({
 		},
 	});
 	const values = useStore(form.store, (state) => state.values);
-	const proposal = buildDraftRentalProposal(values, schema, timezone, rentalId);
+	const proposal = buildDraftRentalProposal(
+		values,
+		schema,
+		createDraftRentalPreviewSchema(validationContext),
+		timezone,
+		rentalId,
+	);
 	const query = useDraftRentalCostPreview(proposal.body);
 	const preview = getCurrentDraftRentalCostPreview(values, {
 		values,
@@ -610,8 +613,6 @@ const DeliveryFields = withForm({
 										initial.deliveryArrangement === next &&
 										initial.deliveryDestination.status === "EXISTING";
 									field.handleChange(next);
-									// Returning to persisted terms is not a destination replacement.
-									// Never restore an unsaved agreement or exception decision.
 									form.setFieldValue(
 										"deliveryDestination",
 										restoreStoredDestination
@@ -695,7 +696,6 @@ const DeliveryFields = withForm({
 														: "NEW_STAFF_DESTINATION",
 												address,
 											});
-											// Address corrections do not replace an accepted agreement.
 											if (!preservable)
 												resetPendingDeliveryReview(
 													form,

@@ -137,14 +137,23 @@ export function createDraftRentalComposerFormSchema(
 	);
 }
 
-export function createDraftRentalDerivationSchema({
-	selectableBranchIds,
-	resolveBranchTimezone,
-	initialValues,
-	canManageDelivery = true,
-}: DraftRentalComposerValidationContext) {
+export function createDraftRentalPreviewSchema(
+	context: DraftRentalComposerValidationContext,
+) {
+	return createDraftRentalDerivationSchema(context, "PREVIEW");
+}
+
+export function createDraftRentalDerivationSchema(
+	{
+		selectableBranchIds,
+		resolveBranchTimezone,
+		initialValues,
+		canManageDelivery = true,
+	}: DraftRentalComposerValidationContext,
+	purpose: "SAVE" | "PREVIEW" = "SAVE",
+) {
 	return draftRentalDerivationBaseSchema.superRefine((value, ctx) => {
-		if (value.fulfillmentMethod === "DELIVERY") {
+		if (purpose === "SAVE" && value.fulfillmentMethod === "DELIVERY") {
 			if (value.deliveryArrangement === "STAFF_ARRANGED") {
 				const newDestination = value.deliveryDestination.status !== "EXISTING";
 				const newArrangement = !canPreserveStaffAgreement(initialValues);
@@ -249,6 +258,7 @@ export function createDraftRentalDerivationSchema({
 		}
 
 		if (
+			purpose === "SAVE" &&
 			value.fulfillmentMethod === "DELIVERY" &&
 			value.deliveryDestination.status === "INVALID"
 		) {
@@ -402,7 +412,6 @@ export function toCalculateDraftRentalPriceDto(
 	return CalculateDraftRentalPriceBodySchema.parse(dto);
 }
 
-// Hydrated amounts include zero. A typed address is not an arrangement transition.
 export function canPreserveStaffAgreement(
 	initial: DraftRentalComposerFormValues | undefined,
 ) {
@@ -494,6 +503,15 @@ export function toPreviewDraftRentalCostDto(
 	const type = values.deliveryAgreementDecision;
 	const minutes = values.transportReservationMinutes.trim();
 	const destination = values.deliveryDestination;
+	const incompleteDelivery =
+		destination.status === "INVALID" ||
+		(destination.status === "NEW_STAFF_DESTINATION" &&
+			!destination.address.trim()) ||
+		(type === "SET" &&
+			!draftRentalDeliveryAmountSchema.safeParse(values.deliveryAgreementAmount)
+				.success) ||
+		(Boolean(minutes) &&
+			(!/^\d+$/.test(minutes) || !Number.isSafeInteger(Number(minutes))));
 	const dto: PreviewDraftRentalCostBodyDto = {
 		...toCalculateDraftRentalPriceDto(values, timezone),
 		rentalId,
@@ -502,21 +520,23 @@ export function toPreviewDraftRentalCostDto(
 		deliveryIntent:
 			values.fulfillmentMethod !== "DELIVERY"
 				? undefined
-				: destination.status === "NEW_DESTINATION"
-					? {
-							type: "NEW_DESTINATION",
-							...toDraftRentalNewDestination(destination),
-						}
-					: destination.status === "NEW_STAFF_DESTINATION"
+				: incompleteDelivery
+					? { type: "INCOMPLETE", arrangement: values.deliveryArrangement }
+					: destination.status === "NEW_DESTINATION"
 						? {
 								type: "NEW_DESTINATION",
 								...toDraftRentalNewDestination(destination),
 							}
-						: destination.status === "EXISTING"
-							? { type: "KEEP_CURRENT" }
-							: undefined,
+						: destination.status === "NEW_STAFF_DESTINATION"
+							? {
+									type: "NEW_DESTINATION",
+									...toDraftRentalNewDestination(destination),
+								}
+							: destination.status === "EXISTING"
+								? { type: "KEEP_CURRENT" }
+								: undefined,
 		deliveryDecisions:
-			values.fulfillmentMethod === "DELIVERY"
+			values.fulfillmentMethod === "DELIVERY" && !incompleteDelivery
 				? {
 						pricingAgreement:
 							type === "SET"

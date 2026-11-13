@@ -22,6 +22,7 @@ import {
 import {
 	createDraftRentalComposerFormSchema,
 	createDraftRentalDerivationSchema,
+	createDraftRentalPreviewSchema,
 	type DraftRentalComposerFormValues,
 } from "./draft-rental-composer.schema";
 import {
@@ -103,7 +104,7 @@ function DraftRentalComposerLayout({
 				: resolveKnownBranchTimezone(branchId),
 		[initialBranch, resolveKnownBranchTimezone],
 	);
-	const { formSchema, derivationSchema } = useMemo(() => {
+	const { formSchema, derivationSchema, previewSchema } = useMemo(() => {
 		const context = {
 			selectableBranchIds: new Set(activeBranches.map((branch) => branch.id)),
 			resolveBranchTimezone,
@@ -113,6 +114,7 @@ function DraftRentalComposerLayout({
 		return {
 			formSchema: createDraftRentalComposerFormSchema(context),
 			derivationSchema: createDraftRentalDerivationSchema(context),
+			previewSchema: createDraftRentalPreviewSchema(context),
 		};
 	}, [activeBranches, resolveBranchTimezone, defaultValues, canManageDelivery]);
 	const form = useAppForm({
@@ -122,11 +124,11 @@ function DraftRentalComposerLayout({
 			onSubmit: formSchema,
 		},
 		onSubmit: async ({ value }) => {
-			// Re-read the exact proposal's cache after Form validation, never a captured older preview.
 			const timezone = resolveBranchTimezone(value.branchId);
 			const proposal = buildDraftRentalProposal(
 				value,
 				formSchema,
+				previewSchema,
 				timezone,
 				rentalId,
 			);
@@ -152,7 +154,6 @@ function DraftRentalComposerLayout({
 			if (readiness.canSubmit) await onSubmit(value, timezone);
 		},
 	});
-	// Reasons belong only to submission. Acceptance also affects readiness, not pricing.
 	const values = useSelector(
 		form.store,
 		({ values }) => selectDraftRentalDerivationValues(values),
@@ -170,13 +171,13 @@ function DraftRentalComposerLayout({
 	const proposal = buildDraftRentalProposal(
 		values,
 		derivationSchema,
+		previewSchema,
 		timezone,
 		rentalId,
 	);
 	const priceQuery = useDraftRentalCostPreview(proposal.body);
 	const costPreview: DraftRentalCostPreviewSnapshot = {
 		values,
-		// The existing query key identifies the complete request; no previous-data placeholder is used.
 		query: proposal.body ? priceQuery : undefined,
 	};
 	const preview = getCurrentDraftRentalCostPreview(values, costPreview);
@@ -205,10 +206,8 @@ function DraftRentalComposerLayout({
 			timezone,
 			costPreview,
 			canManageDelivery,
-			// Dialogs compare their local arrangement with the persisted terms before reusing an agreement.
 			storedAgreement,
 			storedDeliveryCurrency,
-			// Input validation belongs next to the fields, not in the pricing summary.
 			blockingMessages: readiness.messages.filter(
 				(message) => !proposal.messages.includes(message),
 			),

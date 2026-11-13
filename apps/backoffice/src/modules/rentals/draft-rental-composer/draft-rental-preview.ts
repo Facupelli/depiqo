@@ -12,7 +12,6 @@ export type DraftRentalCostPreviewSnapshot = {
 		| undefined;
 };
 
-// Shared projection keeps preview identity independent of submission-only reasons.
 export function selectDraftRentalDerivationValues(
 	values: DraftRentalDerivationValues,
 ): DraftRentalDerivationValues {
@@ -36,6 +35,33 @@ export function selectDraftRentalDerivationValues(
 	};
 }
 
+export function getCurrentDraftRentalEquipmentPreview(
+	values: DraftRentalDerivationValues,
+	snapshot: DraftRentalCostPreviewSnapshot,
+): Pick<PreviewDraftRentalCostResponseDto, "pricing" | "currency"> | undefined {
+	const equipmentInputs = (input: DraftRentalDerivationValues) => ({
+		branchId: input.branchId,
+		rentalCustomerId: input.rentalCustomerId,
+		periodStartDate: input.periodStartDate,
+		periodStartTime: input.periodStartTime,
+		periodEndDate: input.periodEndDate,
+		periodEndTime: input.periodEndTime,
+		selectedOffers: input.selectedOffers.map(({ rentalOfferId, quantity }) => ({
+			rentalOfferId,
+			quantity,
+		})),
+		insuranceSelected: input.insuranceSelected,
+		targetTotal: input.targetTotal,
+	});
+	if (
+		snapshot.query?.status !== "success" ||
+		JSON.stringify(equipmentInputs(values)) !==
+			JSON.stringify(equipmentInputs(snapshot.values))
+	)
+		return undefined;
+	return snapshot.query.data;
+}
+
 export function getCurrentDraftRentalCostPreview(
 	values: DraftRentalDerivationValues,
 	snapshot: DraftRentalCostPreviewSnapshot,
@@ -47,7 +73,6 @@ export function getCurrentDraftRentalCostPreview(
 		!query.data
 	)
 		return undefined;
-	// Form subscribers can observe new inputs before the parent publishes its next query snapshot.
 	if (
 		JSON.stringify(selectDraftRentalDerivationValues(values)) !==
 		JSON.stringify(selectDraftRentalDerivationValues(snapshot.values))
@@ -57,7 +82,8 @@ export function getCurrentDraftRentalCostPreview(
 	if (
 		values.fulfillmentMethod === "PICKUP"
 			? delivery !== null
-			: delivery?.arrangement !== values.deliveryArrangement
+			: (delivery?.arrangement ?? query.data.pendingDelivery?.arrangement) !==
+				values.deliveryArrangement
 	)
 		return undefined;
 	return query.data;

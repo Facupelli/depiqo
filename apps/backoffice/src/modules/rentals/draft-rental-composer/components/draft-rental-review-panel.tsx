@@ -5,7 +5,10 @@ import { useState } from "react";
 import { withForm } from "@/shared/contexts/form.context";
 import { useDraftRentalComposer } from "../draft-rental-composer.context";
 import { createDraftRentalComposerDefaultValues } from "../draft-rental-composer.schema";
-import { getCurrentDraftRentalCostPreview } from "../draft-rental-preview";
+import {
+	getCurrentDraftRentalCostPreview,
+	getCurrentDraftRentalEquipmentPreview,
+} from "../draft-rental-preview";
 import { DraftRentalFinancialSummary } from "./draft-rental-financial-summary";
 import { DraftRentalPricingDialog } from "./draft-rental-pricing-dialog";
 
@@ -34,11 +37,16 @@ function createDraftRentalReviewPanel(includeManualPriceAdjustment: boolean) {
 				values,
 				costPreview,
 			);
+			const equipmentPreview = getCurrentDraftRentalEquipmentPreview(
+				values,
+				costPreview,
+			);
 			const hasEquipmentAdjustment = Boolean(values.targetTotal.trim());
 			return (
 				<>
 					<DraftRentalFinancialSummary
 						preview={pricePreview}
+						equipmentPreview={equipmentPreview}
 						isFetching={isPriceLoading}
 						showDelivery={values.fulfillmentMethod === "DELIVERY"}
 						staffArranged={values.deliveryArrangement === "STAFF_ARRANGED"}
@@ -49,7 +57,7 @@ function createDraftRentalReviewPanel(includeManualPriceAdjustment: boolean) {
 									<Button
 										type="button"
 										variant="ghost"
-										size="icon-sm"
+										size="icon-xs"
 										className="text-muted-foreground"
 										title={
 											hasEquipmentAdjustment
@@ -70,7 +78,7 @@ function createDraftRentalReviewPanel(includeManualPriceAdjustment: boolean) {
 										<Button
 											type="button"
 											variant="ghost"
-											size="icon-sm"
+											size="icon-xs"
 											className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive dark:hover:bg-destructive/20"
 											title="Quitar ajuste"
 											aria-label="Quitar ajuste"
@@ -136,8 +144,8 @@ function createDraftRentalReviewPanel(includeManualPriceAdjustment: boolean) {
 								amount: values.targetTotal,
 								reason: values.adjustmentReason,
 							}}
-							calculatedAmount={pricePreview?.pricing.calculated.total}
-							currency={pricePreview?.currency ?? "USD"}
+							calculatedAmount={equipmentPreview?.pricing.calculated.total}
+							currency={equipmentPreview?.currency ?? "USD"}
 							onSave={(value) => {
 								form.setFieldValue("targetTotal", value.amount);
 								form.setFieldValue("adjustmentReason", value.reason);

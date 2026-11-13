@@ -12,7 +12,9 @@ export class PreviewDraftRentalCostQuery {
       targetTotalAdjustment?: { mode: 'TARGET_TOTAL'; targetTotal: string };
       insuranceSelected: boolean;
       fulfillmentMethod: 'PICKUP' | 'DELIVERY';
-      deliveryIntent?: UpdateDraftRentalDeliveryIntent;
+      deliveryIntent?:
+        | UpdateDraftRentalDeliveryIntent
+        | { type: 'INCOMPLETE'; arrangement: 'ROUTED' | 'STAFF_ARRANGED' };
       deliveryDecisions?: {
         pricingAgreement?: { type: 'SET'; amount: string; reason?: string } | { type: 'CLEAR' } | { type: 'KEEP' };
         transportReservationMinutes?: number;
