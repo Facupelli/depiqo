@@ -1,4 +1,4 @@
-import { Controller, HttpCode, HttpStatus, Param, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, HttpCode, HttpStatus, Param, Post, UseGuards } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
 import { TenantPermission } from '@repo/api-contracts';
 
@@ -12,7 +12,7 @@ import { TenantUserSessionGuard } from 'src/modules/tenant-management/auth/share
 import { ConfirmRentalCommand } from './confirm-rental.command';
 import { ConfirmRentalResult } from './confirm-rental.handler';
 import { toConfirmRentalProblem } from './confirm-rental.http-errors';
-import { ConfirmRentalParamsDto } from './confirm-rental.request.dto';
+import { ConfirmRentalBodyDto, ConfirmRentalParamsDto } from './confirm-rental.request.dto';
 
 @Controller('rental-commitments/rentals')
 export class ConfirmRentalHttpController {
@@ -23,9 +23,13 @@ export class ConfirmRentalHttpController {
   @HttpCode(HttpStatus.NO_CONTENT)
   @AllowAuthActors(AUTH_ACTOR_TYPES.TENANT_USER)
   @UseGuards(SessionAuthGuard, TenantUserSessionGuard)
-  async confirm(@Param() params: ConfirmRentalParamsDto, @CurrentUser() user: AuthUser): Promise<void> {
+  async confirm(
+    @Param() params: ConfirmRentalParamsDto,
+    @Body() body: ConfirmRentalBodyDto,
+    @CurrentUser() user: AuthUser,
+  ): Promise<void> {
     const result = await this.commandBus.execute<ConfirmRentalCommand, ConfirmRentalResult>(
-      new ConfirmRentalCommand(user.tenantId, params.rentalId),
+      new ConfirmRentalCommand(user.tenantId, params.rentalId, body.expectedVersion),
     );
     if (result.isErr()) throw toConfirmRentalProblem(result.error);
   }

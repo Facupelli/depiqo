@@ -47,7 +47,7 @@ Asset blocks represent the physical reservation of assets for rental participati
 
 ## Confirmed rental semantics
 
-Confirmation creates the accepted commercial and operational rental commitment.
+Confirmation creates the accepted commercial and operational rental commitment. It must accept only the persisted draft version reviewed by the confirming staff member; a concurrent draft edit requires a fresh review. Authoritative reevaluation of routed delivery does not authorize accepting a newer draft version.
 
 `CONFIRMED` does not mean that the customer has picked up the equipment, that delivery has occurred, or that equipment has been returned. It also does not imply legal or historical immutability. Supported confirmed-rental edits may change current accepted facts while preserving prior historical participation where required.
 

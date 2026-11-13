@@ -79,7 +79,16 @@ export class ConfirmRentalHandler implements ICommandHandler<ConfirmRentalComman
       );
     }
 
-    const expectedVersion = rental.version;
+    if (rental.version !== command.expectedVersion) {
+      return err(
+        confirmRentalError(
+          'rental_commitment.rental_version_conflict',
+          `Rental "${command.rentalId}" was modified by another request.`,
+          undefined,
+          context,
+        ),
+      );
+    }
 
     if (!rental.rentalCustomerId) {
       const error = new RentalConfirmationRequiresCustomerError(rental.id);
@@ -213,7 +222,11 @@ export class ConfirmRentalHandler implements ICommandHandler<ConfirmRentalComman
 
     const persistConfirmation = () =>
       this.unitOfWork.runInTransaction(async ({ tx, integrationEvents }) => {
-        const saved = await this.rentalRepository.save(rental, { expectedVersion, ownerSplits: splits, tx });
+        const saved = await this.rentalRepository.save(rental, {
+          expectedVersion: command.expectedVersion,
+          ownerSplits: splits,
+          tx,
+        });
         if (!saved) {
           return err(
             confirmRentalError(

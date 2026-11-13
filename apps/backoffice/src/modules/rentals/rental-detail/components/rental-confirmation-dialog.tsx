@@ -26,7 +26,7 @@ export type RentalConfirmationDialogProps = {
 	canConfirm: boolean;
 	isPending: boolean;
 	errorMessage: string | null;
-	onConfirm: () => void;
+	onConfirm: (expectedVersion: number) => void;
 };
 
 export function RentalConfirmationDialog({
@@ -122,7 +122,9 @@ export function RentalConfirmationDialog({
 						disabled={!canConfirm || !summaryReady || isPending}
 						onClick={(event) => {
 							event.preventDefault();
-							if (summaryReady) onConfirm();
+							if (summaryReady && costQuery.data) {
+								onConfirm(costQuery.data.rentalVersion);
+							}
 						}}
 					>
 						{isPending ? "Confirmando..." : "Confirmar alquiler"}

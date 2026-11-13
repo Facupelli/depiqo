@@ -43,16 +43,25 @@ export function useRentalDetailActions() {
 	const canSendSigningInvitation = customerSummary !== null;
 	const hasConfirmPrerequisites =
 		customerSummary !== null && rental.pricing !== null;
-	const canConfirmRental = isDraftRental && hasConfirmPrerequisites;
+	const confirmationVersionConflict =
+		confirmRental.error?.problemDetails.code ===
+		"rental_commitment.rental_version_conflict";
+	const rejectedReview =
+		confirmationVersionConflict &&
+		confirmRental.variables?.expectedVersion === rental.version;
+	const canConfirmRental =
+		isDraftRental && hasConfirmPrerequisites && !rejectedReview;
 	const canCancelRental = !["CANCELLED", "COMPLETED"].includes(rental.status);
 	const canRescheduleRental =
 		rental.status === "CONFIRMED" &&
 		new Date(rental.period.start).getTime() > Date.now();
-	const confirmRentalErrorMessage = confirmRental.error
-		? (confirmRental.error.problemDetails.detail ??
-			confirmRental.error.problemDetails.title ??
-			CONFIRM_RENTAL_FALLBACK_ERROR)
-		: null;
+	const confirmRentalErrorMessage = confirmationVersionConflict
+		? "El alquiler cambió. Actualizá el pedido y revisalo antes de confirmar nuevamente."
+		: confirmRental.error
+			? (confirmRental.error.problemDetails.detail ??
+				confirmRental.error.problemDetails.title ??
+				CONFIRM_RENTAL_FALLBACK_ERROR)
+			: null;
 
 	async function submitRentalBudgetCustomer(
 		values: RentalBudgetCustomerFormValues,
@@ -131,7 +140,8 @@ export function useRentalDetailActions() {
 			canConfirm: canConfirmRental,
 			isPending: confirmRental.isPending,
 			errorMessage: confirmRentalErrorMessage,
-			onConfirm: () => confirmRental.mutate({ rentalId: rental.id }),
+			onConfirm: (expectedVersion: number) =>
+				confirmRental.mutate({ rentalId: rental.id, expectedVersion }),
 		},
 		cancelDialogProps: {
 			open: isCancelDialogOpen,

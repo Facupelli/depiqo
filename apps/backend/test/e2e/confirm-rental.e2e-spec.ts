@@ -57,6 +57,7 @@ describe('POST /rental-commitments/rentals/:rentalId/confirm', () => {
 
     await client
       .withCsrf(client.request().post(`/rental-commitments/rentals/${setup.rental.rentalId}/confirm`))
+      .send({ expectedVersion: setup.rental.version })
       .expect(204);
 
     const rental = await prisma.client.v2Rental.findUniqueOrThrow({
@@ -71,7 +72,7 @@ describe('POST /rental-commitments/rentals/:rentalId/confirm', () => {
     const client = createE2ETestClient(testApp.app);
     await client.getCsrfToken();
     const response = await client.withCsrf(
-      client.request().post(`/rental-commitments/rentals/${randomUUID()}/confirm`),
+      client.request().post(`/rental-commitments/rentals/${randomUUID()}/confirm`).send({ expectedVersion: 0 }),
     );
     expectProblemResponse(response, { status: 401, type: PlatformProblemTypes.auth.unauthorized });
   });
@@ -82,7 +83,10 @@ describe('POST /rental-commitments/rentals/:rentalId/confirm', () => {
   ])('rejects an authenticated request with a %s CSRF token', async (_name, token) => {
     const setup = await scenario();
     const client = await login(setup.user);
-    let request = client.request().post(`/rental-commitments/rentals/${setup.rental.rentalId}/confirm`);
+    let request = client
+      .request()
+      .post(`/rental-commitments/rentals/${setup.rental.rentalId}/confirm`)
+      .send({ expectedVersion: setup.rental.version });
     if (token) request = request.set('x-csrf-token', token);
     const response = await request;
     expectProblemResponse(response, { status: 403, type: PlatformProblemTypes.auth.forbidden });
@@ -98,7 +102,10 @@ describe('POST /rental-commitments/rentals/:rentalId/confirm', () => {
     const client = await login(userA);
 
     const response = await client.withCsrf(
-      client.request().post(`/rental-commitments/rentals/${setupB.rental.rentalId}/confirm`),
+      client
+        .request()
+        .post(`/rental-commitments/rentals/${setupB.rental.rentalId}/confirm`)
+        .send({ expectedVersion: setupB.rental.version }),
     );
     expectProblemResponse(response, {
       status: 404,
@@ -119,7 +126,10 @@ describe('POST /rental-commitments/rentals/:rentalId/confirm', () => {
     const client = await login(setup.user);
 
     const response = await client.withCsrf(
-      client.request().post(`/rental-commitments/rentals/${setup.rental.rentalId}/confirm`),
+      client
+        .request()
+        .post(`/rental-commitments/rentals/${setup.rental.rentalId}/confirm`)
+        .send({ expectedVersion: setup.rental.version }),
     );
     expectProblemResponse(response, {
       status: 409,

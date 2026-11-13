@@ -669,7 +669,7 @@ describe('CreateConfirmedRental integration', () => {
 
     const outcomes = await runConcurrently<CreateConfirmedRentalServiceResult | ConfirmRentalResult>([
       () => create({ ...setup, selectedOffers: [{ rentalOfferId: catalog.offer.id, quantity: 1 }] }),
-      () => commandBus.execute(new ConfirmRentalCommand(setup.tenantId, draft.rentalId)),
+      () => commandBus.execute(new ConfirmRentalCommand(setup.tenantId, draft.rentalId, draft.version)),
     ]);
     expect(outcomes.every((outcome) => outcome.status === 'fulfilled')).toBe(true);
     // SAFETY: This focused test double implements every member exercised by the subject; unimplemented framework or service members are never accessed.

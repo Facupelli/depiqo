@@ -220,14 +220,14 @@ describe('CancelRental integration', () => {
     });
 
     const unavailable = await commandBus.execute<ConfirmRentalCommand, ConfirmRentalResult>(
-      new ConfirmRentalCommand(rentalA.tenant.id, rentalB.rentalId),
+      new ConfirmRentalCommand(rentalA.tenant.id, rentalB.rentalId, rentalB.version),
     );
     expect(unavailable.isErr() && unavailable.error.code).toBe('rental_commitment.insufficient_asset_availability');
     expect((await cancel(rentalA.tenant.id, rentalA.rental.rentalId)).isOk()).toBe(true);
     expect(
       (
         await commandBus.execute<ConfirmRentalCommand, ConfirmRentalResult>(
-          new ConfirmRentalCommand(rentalA.tenant.id, rentalB.rentalId),
+          new ConfirmRentalCommand(rentalA.tenant.id, rentalB.rentalId, rentalB.version),
         )
       ).isOk(),
     ).toBe(true);
@@ -334,7 +334,8 @@ describe('CancelRental integration', () => {
     try {
       const outcomes = await runConcurrently<CancelRentalResult | ConfirmRentalResult>([
         () => cancel(setup.tenant.id, setup.rental.rentalId),
-        () => commandBus.execute(new ConfirmRentalCommand(setup.tenant.id, setup.rental.rentalId)),
+        () =>
+          commandBus.execute(new ConfirmRentalCommand(setup.tenant.id, setup.rental.rentalId, setup.rental.version)),
       ]);
       // SAFETY: The preceding status assertion establishes that this Promise.allSettled result is fulfilled before its value is inspected.
       const results = outcomes.map(

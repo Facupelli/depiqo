@@ -25,6 +25,7 @@ export function useConfirmRental(options?: ConfirmRentalOptions) {
 	>({
 		...options,
 		mutationFn: confirmRental,
+		retry: false,
 		meta: {
 			invalidates: rentalKeys.all(),
 			...options?.meta,

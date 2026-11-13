@@ -244,7 +244,7 @@ describe('CreateDraftRental integration', () => {
       }
     }
     const confirmed = await commands.execute<ConfirmRentalCommand, ConfirmRentalResult>(
-      new ConfirmRentalCommand(setup.tenantId, result.value.rentalId),
+      new ConfirmRentalCommand(setup.tenantId, result.value.rentalId, persisted.rental.version),
     );
     expect(confirmed.isOk()).toBe(true);
     expect((await state(result.value.rentalId)).rental.status).toBe('CONFIRMED');
