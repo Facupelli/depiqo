@@ -337,6 +337,17 @@ function RentalFinancialsCard() {
 		headlineTotal === null
 			? "Total no disponible"
 			: formatMoney(headlineTotal, pricing.currency);
+	const formattedEquipmentTotal = formatMoney(
+		pricing.totalBeforeInsurance,
+		pricing.currency,
+	);
+	const showEquipmentTotal =
+		showItems || formattedEquipmentTotal !== formattedTotal;
+	const hasAdditionalChargeRows =
+		pricing.insurance.applied ||
+		delivery !== null ||
+		(rental.status === "DRAFT" && rental.fulfillment.method === "DELIVERY");
+	const hasFinancialBreakdown = showEquipmentTotal || hasAdditionalChargeRows;
 	const manualAdjustment = pricing.manualPricingAdjustment ?? null;
 	const canEditPrice =
 		canAdjustPrice &&
@@ -458,20 +469,28 @@ function RentalFinancialsCard() {
 							) : null}
 						</div>
 					</div>
-					<div className={showItems ? "border-b border-neutral-200 pb-3" : ""}>
-						<FinancialSummaryRow
-							label={
-								<span className="text-sm text-neutral-950">
-									Equipos a cobrar
-								</span>
+					{showEquipmentTotal ? (
+						<div
+							className={
+								showItems && hasAdditionalChargeRows
+									? "border-b border-neutral-200 pb-3"
+									: ""
 							}
-							amount={
-								<span className="font-mono text-sm text-neutral-950">
-									{formatMoney(pricing.totalBeforeInsurance, pricing.currency)}
-								</span>
-							}
-						/>
-					</div>
+						>
+							<FinancialSummaryRow
+								label={
+									<span className="text-sm text-neutral-950">
+										Equipos a cobrar
+									</span>
+								}
+								amount={
+									<span className="font-mono text-sm text-neutral-950">
+										{formattedEquipmentTotal}
+									</span>
+								}
+							/>
+						</div>
+					) : null}
 					{pricing.insurance.applied ? (
 						<MoneyRow
 							label={showItems ? "Seguro de equipos" : "Seguro"}
@@ -506,7 +525,9 @@ function RentalFinancialsCard() {
 							Entrega y retiro: importe no disponible.
 						</p>
 					) : null}
-					<div className="flex items-center gap-2 border-t border-neutral-200 pt-3 text-sm text-neutral-500">
+					<div
+						className={`flex items-center gap-2 text-sm text-neutral-500 ${hasFinancialBreakdown ? "border-t border-neutral-200 pt-3" : ""}`}
+					>
 						<CalendarDays className="size-4 shrink-0" />
 						<span>
 							{pricing.chargedDays}{" "}
