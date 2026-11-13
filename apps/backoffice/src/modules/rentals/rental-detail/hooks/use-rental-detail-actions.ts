@@ -97,6 +97,18 @@ export function useRentalDetailActions() {
 			rentalId: rental.id,
 			rentalVersion: rental.version,
 			fulfillmentMethod: rental.fulfillment.method,
+			deliveryArrangement: rental.acceptedDelivery?.arrangement ?? null,
+			reservationAssetLabels: Object.fromEntries(
+				[
+					...rental.selections.flatMap((selection) => selection.demandLines),
+					...rental.accessories,
+				].flatMap((line) =>
+					line.assignedAssets.map((asset) => [
+						asset.assetId,
+						`${line.equipmentTypeName} · ${asset.assetId}`,
+					]),
+				),
+			),
 			canAuthorizeDeliveryException: can(
 				permissions,
 				TenantPermission.RentalsDeliveryManage,

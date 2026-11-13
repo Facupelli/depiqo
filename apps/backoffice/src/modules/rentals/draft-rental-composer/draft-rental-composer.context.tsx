@@ -1,15 +1,13 @@
-import type {
-	GetRentalDetailResponseDto,
-	PreviewDraftRentalCostResponseDto,
-} from "@repo/api-contracts";
+import type { GetRentalDetailResponseDto } from "@repo/api-contracts";
 import { createContext, use } from "react";
+import type { DraftRentalCostPreviewSnapshot } from "./draft-rental-preview";
 
 export type DraftRentalComposerContextValue = {
 	state: {
 		selectedBranchName: string | null;
 		branchMissing: boolean;
 		timezone: string;
-		pricePreview: PreviewDraftRentalCostResponseDto | undefined;
+		costPreview: DraftRentalCostPreviewSnapshot;
 		canManageDelivery: boolean;
 		storedAgreement?: NonNullable<
 			GetRentalDetailResponseDto["draftDelivery"]

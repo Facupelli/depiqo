@@ -1,4 +1,7 @@
-import type { PreviewConfirmedRentalPeriodResponseDto } from "@repo/api-contracts";
+import type {
+	AcceptedDeliveryDto,
+	PreviewConfirmedRentalPeriodResponseDto,
+} from "@repo/api-contracts";
 import { Checkbox } from "@repo/ui/components/checkbox";
 import { Field, FieldLabel } from "@repo/ui/components/field";
 import { Textarea } from "@repo/ui/components/textarea";
@@ -56,6 +59,7 @@ export function needsMinuteAcceptance(preview: Preview) {
 }
 
 export function DeliveryPeriodReview({
+	arrangement,
 	preview,
 	canAuthorize,
 	authorized,
@@ -66,6 +70,7 @@ export function DeliveryPeriodReview({
 	onReasonChange,
 	onMinutesAcceptedChange,
 }: {
+	arrangement: AcceptedDeliveryDto["arrangement"] | null;
 	preview: Preview;
 	canAuthorize: boolean;
 	authorized: boolean;
@@ -88,6 +93,51 @@ export function DeliveryPeriodReview({
 	const money = (amount: string | null, currency = preview.currency) =>
 		amount === null ? "No disponible" : formatMoney(amount, currency);
 	const blockers = deliveryReviewBlockers(preview);
+
+	if (arrangement === "STAFF_ARRANGED") {
+		return (
+			<section
+				className="mt-5 space-y-3 border-t border-neutral-200 pt-4 text-sm"
+				aria-label="Entrega coordinada por el equipo"
+				aria-live="polite"
+			>
+				<h3 className="font-medium">Entrega coordinada por el equipo</h3>
+				<dl className="space-y-2">
+					<MoneyRow
+						label="Importe acordado de entrega y retiro"
+						value={money(delivery.currentEffectiveCharge)}
+					/>
+					<MoneyRow
+						label="Total del alquiler"
+						value={money(preview.proposedAcceptedCustomerTotal)}
+					/>
+				</dl>
+				<p className="text-muted-foreground">
+					El importe acordado se mantiene sin cambios. Se conservan el destino,
+					el acuerdo y quién lo registró. Solo cambian las fechas de entrega y
+					retiro.
+				</p>
+				<p className="text-muted-foreground">
+					Reserva para transporte: {delivery.transportReservationMinutes}{" "}
+					minutos, sin cambios.
+				</p>
+				{blockers.map((message) => (
+					<p key={message} className="text-destructive" role="alert">
+						{message}
+					</p>
+				))}
+				{!preview.reviewIdentity ||
+				!delivery.staffAgreementPreserved ||
+				delivery.proposedEffectiveCharge === null ||
+				preview.proposedAcceptedCustomerTotal === null ? (
+					<p className="text-destructive" role="alert">
+						No se pudo confirmar la conservación de las condiciones acordadas.
+						Volvé a revisar antes de guardar.
+					</p>
+				) : null}
+			</section>
+		);
+	}
 
 	return (
 		<section

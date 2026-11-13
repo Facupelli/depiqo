@@ -8,6 +8,7 @@ import {
 	emptyDraftRentalValueToUndefined,
 	toDraftRentalDeliveryDecisions,
 	toDraftRentalManualPricingAdjustment,
+	toDraftRentalNewDestination,
 	toDraftRentalSelectedOffers,
 } from "../draft-rental-composer/draft-rental-composer.schema";
 
@@ -18,14 +19,16 @@ export function toCreateDraftRentalDto(
 	let deliveryDetailsDto: CreateDraftRentalBodyDto["deliveryDetails"];
 
 	if (values.fulfillmentMethod === "DELIVERY") {
-		if (values.deliveryDestination.status !== "NEW_DESTINATION") {
+		if (
+			values.deliveryDestination.status !== "NEW_DESTINATION" &&
+			values.deliveryDestination.status !== "NEW_STAFF_DESTINATION"
+		) {
 			throw new Error("Delivery requires a newly selected address");
 		}
 
-		deliveryDetailsDto = {
-			address: values.deliveryDestination.address.trim(),
-			locationId: values.deliveryDestination.locationId.trim(),
-		};
+		deliveryDetailsDto = toDraftRentalNewDestination(
+			values.deliveryDestination,
+		);
 	}
 
 	const decisions = toDraftRentalDeliveryDecisions(values);

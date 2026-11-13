@@ -33,6 +33,10 @@ export const draftRentalDeliveryDestinationFormSchema = z.discriminatedUnion(
 			address: z.string().trim().min(1),
 		}),
 		z.object({
+			status: z.literal("NEW_STAFF_DESTINATION"),
+			address: z.string(),
+		}),
+		z.object({
 			status: z.literal("NEW_DESTINATION"),
 			address: z.string().trim().min(1),
 			locationId: z.string().trim().min(1),
@@ -73,6 +77,7 @@ const draftRentalDerivationBaseSchema = z.object({
 		.array(draftRentalSelectedOfferFormSchema)
 		.min(1, "Añadí al menos un producto"),
 	fulfillmentMethod: z.enum(["PICKUP", "DELIVERY"]),
+	deliveryArrangement: z.enum(["ROUTED", "STAFF_ARRANGED"]),
 	deliveryDestination: draftRentalDeliveryDestinationFormSchema,
 	insuranceSelected: z.boolean(),
 	targetTotal: draftRentalEquipmentAmountSchema,
@@ -103,6 +108,7 @@ export type DraftRentalDerivationValues = Pick<
 	| "periodEndTime"
 	| "selectedOffers"
 	| "fulfillmentMethod"
+	| "deliveryArrangement"
 	| "deliveryDestination"
 	| "insuranceSelected"
 	| "targetTotal"
@@ -119,6 +125,8 @@ export type DraftRentalSelectedOfferFormValues = z.infer<
 export type DraftRentalComposerValidationContext = {
 	selectableBranchIds: ReadonlySet<string>;
 	resolveBranchTimezone: (branchId: string) => string;
+	initialValues?: DraftRentalComposerFormValues;
+	canManageDelivery?: boolean;
 };
 
 export function createDraftRentalComposerFormSchema(
@@ -132,9 +140,53 @@ export function createDraftRentalComposerFormSchema(
 export function createDraftRentalDerivationSchema({
 	selectableBranchIds,
 	resolveBranchTimezone,
+	initialValues,
+	canManageDelivery = true,
 }: DraftRentalComposerValidationContext) {
 	return draftRentalDerivationBaseSchema.superRefine((value, ctx) => {
 		if (value.fulfillmentMethod === "DELIVERY") {
+			if (value.deliveryArrangement === "STAFF_ARRANGED") {
+				const newDestination = value.deliveryDestination.status !== "EXISTING";
+				const changed =
+					!initialValues || staffTransportationChanged(value, initialValues);
+				if (!canManageDelivery && (newDestination || changed)) {
+					ctx.addIssue({
+						code: "custom",
+						path: ["deliveryDestination", "address"],
+						message:
+							"Necesitás permiso para cambiar las condiciones de la entrega coordinada.",
+					});
+				}
+				if (!value.deliveryDestination.address.trim()) {
+					ctx.addIssue({
+						code: "custom",
+						path: ["deliveryDestination", "address"],
+						message: "La dirección es obligatoria",
+					});
+				}
+				if (
+					value.deliveryAgreementDecision === "CLEAR" ||
+					(newDestination && value.deliveryAgreementDecision !== "SET") ||
+					(changed &&
+						!["KEEP", "SET"].includes(value.deliveryAgreementDecision))
+				) {
+					ctx.addIssue({
+						code: "custom",
+						path: ["deliveryAgreementDecision"],
+						message: newDestination
+							? "Definí el importe acordado para esta entrega."
+							: "Cambiaron las condiciones de transporte. Conservá el importe guardado o acordá uno nuevo.",
+					});
+				}
+				if (!value.transportReservationMinutes.trim()) {
+					ctx.addIssue({
+						code: "custom",
+						path: ["transportReservationMinutes"],
+						message:
+							"Ingresá los minutos de reserva para transporte, incluyendo cero.",
+					});
+				}
+			}
 			if (
 				value.deliveryAgreementDecision === "SET" &&
 				!draftRentalDeliveryAmountSchema.safeParse(
@@ -242,6 +294,7 @@ export function createDraftRentalComposerDefaultValues(
 		periodEndTime: 18 * 60,
 		selectedOffers: [],
 		fulfillmentMethod: "PICKUP",
+		deliveryArrangement: "ROUTED",
 		deliveryDestination: {
 			status: "INVALID",
 			address: "",
@@ -346,6 +399,40 @@ export function toCalculateDraftRentalPriceDto(
 	return CalculateDraftRentalPriceBodySchema.parse(dto);
 }
 
+export function staffTransportationChanged(
+	values: DraftRentalDerivationValues,
+	initial: DraftRentalComposerFormValues,
+) {
+	return (
+		values.branchId !== initial.branchId ||
+		values.periodStartDate !== initial.periodStartDate ||
+		values.periodStartTime !== initial.periodStartTime ||
+		values.periodEndDate !== initial.periodEndDate ||
+		values.periodEndTime !== initial.periodEndTime ||
+		values.transportReservationMinutes.trim() === "" ||
+		Number(values.transportReservationMinutes) !==
+			Number(initial.transportReservationMinutes)
+	);
+}
+
+export function toDraftRentalNewDestination(
+	destination: Extract<
+		DraftRentalComposerFormValues["deliveryDestination"],
+		{ status: "NEW_DESTINATION" | "NEW_STAFF_DESTINATION" }
+	>,
+) {
+	return destination.status === "NEW_STAFF_DESTINATION"
+		? {
+				arrangement: "STAFF_ARRANGED" as const,
+				address: destination.address.trim(),
+			}
+		: {
+				arrangement: "ROUTED" as const,
+				address: destination.address.trim(),
+				locationId: destination.locationId.trim(),
+			};
+}
+
 function normalizeAgreementAmount(value: string) {
 	return value.trim().replace(",", ".");
 }
@@ -369,14 +456,16 @@ export function toDraftRentalDeliveryDecisions(
 				: type
 					? { type }
 					: undefined,
-		policyException: values.deliveryExceptionAccepted
-			? {
-					type: "AUTHORIZE",
-					reason: emptyDraftRentalValueToUndefined(
-						values.deliveryExceptionReason,
-					),
-				}
-			: undefined,
+		policyException:
+			values.deliveryArrangement === "ROUTED" &&
+			values.deliveryExceptionAccepted
+				? {
+						type: "AUTHORIZE",
+						reason: emptyDraftRentalValueToUndefined(
+							values.deliveryExceptionReason,
+						),
+					}
+				: undefined,
 		transportReservationMinutes: minutes ? Number(minutes) : undefined,
 	};
 }
@@ -400,12 +489,16 @@ export function toPreviewDraftRentalCostDto(
 				: destination.status === "NEW_DESTINATION"
 					? {
 							type: "NEW_DESTINATION",
-							address: destination.address,
-							locationId: destination.locationId,
+							...toDraftRentalNewDestination(destination),
 						}
-					: destination.status === "EXISTING"
-						? { type: "KEEP_CURRENT" }
-						: undefined,
+					: destination.status === "NEW_STAFF_DESTINATION"
+						? {
+								type: "NEW_DESTINATION",
+								...toDraftRentalNewDestination(destination),
+							}
+						: destination.status === "EXISTING"
+							? { type: "KEEP_CURRENT" }
+							: undefined,
 		deliveryDecisions:
 			values.fulfillmentMethod === "DELIVERY"
 				? {

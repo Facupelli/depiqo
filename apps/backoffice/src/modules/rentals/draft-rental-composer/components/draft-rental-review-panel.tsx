@@ -6,6 +6,7 @@ import { withForm } from "@/shared/contexts/form.context";
 import { formatMoney } from "@/shared/utils/formatters";
 import { useDraftRentalComposer } from "../draft-rental-composer.context";
 import { createDraftRentalComposerDefaultValues } from "../draft-rental-composer.schema";
+import { getCurrentDraftRentalCostPreview } from "../draft-rental-preview";
 import { DraftRentalDeliveryReview } from "./draft-rental-delivery-review";
 import { DraftRentalFinancialSummary } from "./draft-rental-financial-summary";
 import { DraftRentalPricingDialog } from "./draft-rental-pricing-dialog";
@@ -20,7 +21,7 @@ function createDraftRentalReviewPanel(includeManualPriceAdjustment: boolean) {
 		render: function Render({ form }) {
 			const {
 				state: {
-					pricePreview,
+					costPreview,
 					blockingMessages,
 					canManageDelivery,
 					storedAgreement,
@@ -38,6 +39,10 @@ function createDraftRentalReviewPanel(includeManualPriceAdjustment: boolean) {
 			const values = useStore(form.store, (state) => state.values);
 			const [editor, setEditor] = useState<"equipment" | "delivery" | null>(
 				null,
+			);
+			const pricePreview = getCurrentDraftRentalCostPreview(
+				values,
+				costPreview,
 			);
 			const delivery = pricePreview?.delivery;
 			const hasEquipmentAdjustment = Boolean(values.targetTotal.trim());
@@ -58,12 +63,14 @@ function createDraftRentalReviewPanel(includeManualPriceAdjustment: boolean) {
 				!isPriceLoading &&
 				!retryPricePreview;
 			const showDelivery = values.fulfillmentMethod === "DELIVERY";
+			const staffArranged = values.deliveryArrangement === "STAFF_ARRANGED";
 			return (
 				<>
 					<DraftRentalFinancialSummary
 						preview={pricePreview}
 						isFetching={isPriceLoading}
 						showDelivery={showDelivery}
+						staffArranged={staffArranged}
 						hasEquipmentAdjustment={hasEquipmentAdjustment}
 						equipmentAction={
 							includeManualPriceAdjustment ? (
@@ -109,7 +116,7 @@ function createDraftRentalReviewPanel(includeManualPriceAdjustment: boolean) {
 							) : null
 						}
 						deliveryAction={
-							canManageDelivery ? (
+							canManageDelivery && !staffArranged ? (
 								<div className="flex items-center gap-1">
 									<Button
 										type="button"
@@ -181,8 +188,10 @@ function createDraftRentalReviewPanel(includeManualPriceAdjustment: boolean) {
 													Motivo: {storedAgreement.reason}
 												</p>
 											) : null}
-											{needsDecision ||
-											values.deliveryAgreementDecision !== "KEEP" ? (
+											{canManageDelivery &&
+											!staffArranged &&
+											(needsDecision ||
+												values.deliveryAgreementDecision !== "KEEP") ? (
 												<Button
 													type="button"
 													variant="outline"
@@ -201,7 +210,9 @@ function createDraftRentalReviewPanel(includeManualPriceAdjustment: boolean) {
 										</div>
 									</details>
 								) : null}
-								{values.deliveryAgreementDecision ? (
+								{canManageDelivery &&
+								!staffArranged &&
+								values.deliveryAgreementDecision ? (
 									<Button
 										type="button"
 										variant="link"
@@ -252,7 +263,9 @@ function createDraftRentalReviewPanel(includeManualPriceAdjustment: boolean) {
 									<Button
 										type="button"
 										className="w-full"
-										disabled={submitDisabled || formIsSubmitting}
+										disabled={
+											submitDisabled || !pricePreview || formIsSubmitting
+										}
 										onClick={() => form.handleSubmit()}
 									>
 										{isSubmitting || formIsSubmitting

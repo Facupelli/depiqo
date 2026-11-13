@@ -66,7 +66,8 @@ const errorsByCode = {
 	},
 	"rental_commitment.invalid_rental_period": {
 		kind: "period-conflict",
-		message: "El período seleccionado no es válido.",
+		message:
+			"Las fechas propuestas no son válidas o la participación y las reservas existentes de los equipos impiden el cambio. Revisá el período y las asignaciones antes de volver a intentarlo.",
 	},
 	"rental_commitment.assigned_assets_unavailable": {
 		kind: "period-conflict",

@@ -14,6 +14,7 @@ import {
 	FieldSet,
 	FieldTitle,
 } from "@repo/ui/components/field";
+import { Input } from "@repo/ui/components/input";
 import {
 	Select,
 	SelectContent,
@@ -34,6 +35,7 @@ import { resetPendingDeliveryReview } from "../draft-rental-composer.form-utils"
 import { createDraftRentalComposerDefaultValues } from "../draft-rental-composer.schema";
 import { DeliveryAddressAutocomplete } from "./delivery-address-autocomplete";
 import { RentalCustomerCombobox } from "./rental-customer-combobox";
+import { StaffArrangedDeliveryFields } from "./staff-arranged-delivery-fields";
 
 export const DraftRentalSetupSection = withForm({
 	defaultValues: createDraftRentalComposerDefaultValues(),
@@ -318,42 +320,128 @@ export const DraftRentalSetupSection = withForm({
 const DeliveryFields = withForm({
 	defaultValues: createDraftRentalComposerDefaultValues(),
 	render: function Render({ form }) {
+		const {
+			state: { canManageDelivery },
+		} = useDraftRentalComposer();
+		const arrangement = useStore(
+			form.store,
+			(state) => state.values.deliveryArrangement,
+		);
+		const staffArranged = arrangement === "STAFF_ARRANGED";
+		const attempts = useStore(form.store, (state) => state.submissionAttempts);
 		return (
-			<div className="rounded-lg border bg-muted/20 p-3">
+			<div className="space-y-3 rounded-lg border bg-muted/20 p-3">
+				<form.Field name="deliveryArrangement">
+					{(field) => (
+						<FieldSet className="gap-1.5">
+							<FieldLegend variant="label">Modalidad de envío</FieldLegend>
+							<ToggleGroup
+								variant="outline"
+								value={[field.state.value]}
+								className="grid w-full grid-cols-1 sm:grid-cols-2"
+								onValueChange={(value) => {
+									const next = value[0];
+									if (
+										!canManageDelivery ||
+										(next !== "ROUTED" && next !== "STAFF_ARRANGED") ||
+										next === field.state.value
+									)
+										return;
+									field.handleChange(next);
+									form.setFieldValue("deliveryDestination", {
+										status:
+											next === "STAFF_ARRANGED"
+												? "NEW_STAFF_DESTINATION"
+												: "INVALID",
+										address: "",
+									});
+									form.setFieldValue("deliveryAgreementAmount", "");
+									form.setFieldValue("deliveryAgreementReason", "");
+									form.setFieldValue("transportReservationMinutes", "");
+									resetPendingDeliveryReview(form);
+								}}
+							>
+								<ToggleGroupItem value="ROUTED" disabled={!canManageDelivery}>
+									Envío automático
+								</ToggleGroupItem>
+								<ToggleGroupItem
+									value="STAFF_ARRANGED"
+									disabled={!canManageDelivery}
+								>
+									Coordinado por el equipo
+								</ToggleGroupItem>
+							</ToggleGroup>
+							<p className="text-xs text-muted-foreground">
+								{staffArranged
+									? "Dirección libre, precio acordado y reserva de transporte definidos por el equipo. No requiere configurar el servicio de envío."
+									: "Seleccioná una dirección para evaluar el transporte. También podés acordar un precio manual."}
+							</p>
+							{!canManageDelivery ? (
+								<p className="text-xs text-muted-foreground">
+									Necesitás permiso para gestionar entregas coordinadas por el
+									equipo. Podés conservar las condiciones guardadas al editar
+									otros datos.
+								</p>
+							) : null}
+						</FieldSet>
+					)}
+				</form.Field>
 				<form.Field name="deliveryDestination.address">
 					{(field) => {
 						const isInvalid =
-							field.state.meta.isTouched && !field.state.meta.isValid;
+							(staffArranged || field.state.meta.isTouched || attempts > 0) &&
+							!field.state.meta.isValid;
 
 						return (
 							<Field data-invalid={isInvalid}>
 								<FieldLabel htmlFor={field.name}>
 									Dirección de entrega
 								</FieldLabel>
-								<DeliveryAddressAutocomplete
-									id={field.name}
-									name={field.name}
-									value={field.state.value}
-									isInvalid={isInvalid}
-									onBlur={field.handleBlur}
-									onChange={(address) => {
-										if (address === field.state.value) return;
-										resetPendingDeliveryReview(form);
-										form.setFieldValue("deliveryDestination", {
-											status: "INVALID",
-											address,
-										});
-									}}
-									onSelect={(suggestion) => {
-										resetPendingDeliveryReview(form);
-										form.setFieldValue("deliveryDestination", {
-											status: "NEW_DESTINATION",
-											address: suggestion.formattedAddress,
-											locationId: suggestion.locationId,
-										});
-										form.validateField("deliveryDestination.address", "change");
-									}}
-								/>
+								{staffArranged ? (
+									<Input
+										id={field.name}
+										name={field.name}
+										value={field.state.value}
+										disabled={!canManageDelivery}
+										aria-invalid={isInvalid}
+										onBlur={field.handleBlur}
+										onChange={(event) => {
+											form.setFieldValue("deliveryDestination", {
+												status: "NEW_STAFF_DESTINATION",
+												address: event.target.value,
+											});
+											resetPendingDeliveryReview(form);
+										}}
+									/>
+								) : (
+									<DeliveryAddressAutocomplete
+										id={field.name}
+										name={field.name}
+										value={field.state.value}
+										isInvalid={isInvalid}
+										onBlur={field.handleBlur}
+										onChange={(address) => {
+											if (address === field.state.value) return;
+											resetPendingDeliveryReview(form);
+											form.setFieldValue("deliveryDestination", {
+												status: "INVALID",
+												address,
+											});
+										}}
+										onSelect={(suggestion) => {
+											resetPendingDeliveryReview(form);
+											form.setFieldValue("deliveryDestination", {
+												status: "NEW_DESTINATION",
+												address: suggestion.formattedAddress,
+												locationId: suggestion.locationId,
+											});
+											form.validateField(
+												"deliveryDestination.address",
+												"change",
+											);
+										}}
+									/>
+								)}
 								{isInvalid ? (
 									<FieldError errors={field.state.meta.errors} />
 								) : null}
@@ -361,6 +449,12 @@ const DeliveryFields = withForm({
 						);
 					}}
 				</form.Field>
+				{staffArranged ? (
+					<StaffArrangedDeliveryFields
+						form={form}
+						canManageDelivery={canManageDelivery}
+					/>
+				) : null}
 			</div>
 		);
 	},

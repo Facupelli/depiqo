@@ -1,4 +1,7 @@
-import type { RescheduleConfirmedRentalPeriodBodyDto } from "@repo/api-contracts";
+import type {
+	AcceptedDeliveryDto,
+	RescheduleConfirmedRentalPeriodBodyDto,
+} from "@repo/api-contracts";
 import { Button } from "@repo/ui/components/button";
 import {
 	Dialog,
@@ -35,11 +38,14 @@ import {
 	hydrateConfirmedRentalPeriod,
 	toRescheduleConfirmedRentalPeriodBody,
 } from "./reschedule-rental-period.schema";
+import { ReservationPeriodReview } from "./reservation-period-review";
 
 export interface RescheduleRentalPeriodDialogProps {
 	rentalId: string;
 	rentalVersion: number;
 	fulfillmentMethod: "PICKUP" | "DELIVERY";
+	deliveryArrangement: AcceptedDeliveryDto["arrangement"] | null;
+	reservationAssetLabels: Record<string, string>;
 	canAuthorizeDeliveryException: boolean;
 	currentPeriodStart: string;
 	currentPeriodEnd: string;
@@ -68,12 +74,15 @@ function OpenRescheduleRentalPeriodDialog(
 		currentPeriodEnd,
 		operationalTimezone,
 		fulfillmentMethod,
+		deliveryArrangement,
+		reservationAssetLabels,
 	} = opening;
 	const { onOpenChange, canAuthorizeDeliveryException } = props;
 	const isDelivery = fulfillmentMethod === "DELIVERY";
 	const previewPeriod = usePreviewRentalPeriod();
 	const generation = useRef(0);
 	const operationInFlight = useRef(false);
+	const decisionReviewIdentity = useRef<string | null>(null);
 	const [authorized, setAuthorized] = useState(false);
 	const [reason, setReason] = useState("");
 	const [minutesAccepted, setMinutesAccepted] = useState(false);
@@ -96,17 +105,26 @@ function OpenRescheduleRentalPeriodDialog(
 		currentOperationTime,
 	});
 
-	function invalidateReview() {
-		generation.current += 1;
-		if (!previewPeriod.isPending) previewPeriod.reset();
+	function clearDecisions() {
 		setAuthorized(false);
 		setReason("");
 		setMinutesAccepted(false);
+		decisionReviewIdentity.current = null;
+	}
+
+	function invalidateReview(clearDeliveryDecisions = false) {
+		generation.current += 1;
+		if (!previewPeriod.isPending) previewPeriod.reset();
+		if (clearDeliveryDecisions) clearDecisions();
 	}
 
 	function matchingReview(body: RescheduleConfirmedRentalPeriodBodyDto) {
 		const result = previewPeriod.data;
-		if (!result || result.request.generation !== generation.current)
+		if (
+			previewPeriod.isPending ||
+			!result ||
+			result.request.generation !== generation.current
+		)
 			return null;
 		const { request, preview } = result;
 		if (
@@ -125,8 +143,12 @@ function OpenRescheduleRentalPeriodDialog(
 
 	function reviewIsComplete(body: RescheduleConfirmedRentalPeriodBodyDto) {
 		const preview = matchingReview(body);
+		if (!preview?.reservationPeriod || preview.assetReservations.length === 0)
+			return false;
+		if (!isDelivery) return true;
 		if (
-			!preview?.reviewIdentity ||
+			!deliveryArrangement ||
+			!preview.reviewIdentity ||
 			!preview.delivery ||
 			preview.delivery.proposedEffectiveCharge === null ||
 			preview.proposedAcceptedCustomerTotal === null ||
@@ -152,7 +174,7 @@ function OpenRescheduleRentalPeriodDialog(
 	async function handleServerError(error: unknown) {
 		const uiError = toRescheduleRentalPeriodUiError(error);
 		setServerError(uiError);
-		if (isDelivery) invalidateReview();
+		invalidateReview();
 		if (uiError.kind === "stale") {
 			await Promise.all([
 				queryClient.invalidateQueries({ queryKey: rentalKeys.all() }),
@@ -181,21 +203,28 @@ function OpenRescheduleRentalPeriodDialog(
 				rentalVersion,
 			);
 			const review = matchingReview(body);
-			if (isDelivery && review && (!reviewIsComplete(body) || serverError))
-				return;
+			if (review && (!reviewIsComplete(body) || serverError)) return;
 			operationInFlight.current = true;
 			setServerError(null);
 
 			try {
-				if (isDelivery && !review) {
+				if (!review) {
 					invalidateReview();
 					const requestGeneration = generation.current;
 					try {
-						await previewPeriod.mutateAsync({
+						const result = await previewPeriod.mutateAsync({
 							rentalId,
 							body,
 							generation: requestGeneration,
 						});
+						if (requestGeneration === generation.current) {
+							if (
+								decisionReviewIdentity.current !== null &&
+								decisionReviewIdentity.current !== result.preview.reviewIdentity
+							)
+								clearDecisions();
+							decisionReviewIdentity.current = result.preview.reviewIdentity;
+						}
 					} catch (error) {
 						if (
 							requestGeneration === generation.current ||
@@ -233,6 +262,7 @@ function OpenRescheduleRentalPeriodDialog(
 	const isStale = serverError?.kind === "stale";
 	const isPending = previewPeriod.isPending || reschedulePeriod.isPending;
 	const review =
+		!previewPeriod.isPending &&
 		previewPeriod.data?.request.generation === generation.current
 			? previewPeriod.data.preview
 			: null;
@@ -242,8 +272,8 @@ function OpenRescheduleRentalPeriodDialog(
 		onOpenChange(nextOpen);
 	}
 
-	function clearCorrectableServerError() {
-		invalidateReview();
+	function clearCorrectableServerError(clearDeliveryDecisions = true) {
+		invalidateReview(clearDeliveryDecisions);
 		if (serverError?.kind !== "stale") setServerError(null);
 	}
 
@@ -285,8 +315,10 @@ function OpenRescheduleRentalPeriodDialog(
 
 					<p className="text-muted-foreground text-sm">
 						{isDelivery
-							? "El precio de los equipos y del seguro no cambiará. Revisá el precio y las condiciones de entrega y retiro antes de guardar."
-							: "El precio acordado y los equipos asignados no cambiarán. Solo se actualizará el período del alquiler."}
+							? deliveryArrangement === "STAFF_ARRANGED"
+								? "El precio de los equipos, del seguro y el importe acordado de entrega y retiro no cambiarán. Revisá las reservas antes de guardar."
+								: "El precio de los equipos y del seguro no cambiará. Revisá el precio, las condiciones de entrega y retiro y las reservas antes de guardar."
+							: "El precio acordado y los equipos asignados no cambiarán. Revisá las reservas para el nuevo período antes de guardar."}
 					</p>
 
 					<form
@@ -377,17 +409,25 @@ function OpenRescheduleRentalPeriodDialog(
 						</fieldset>
 
 						{review ? (
-							<DeliveryPeriodReview
-								preview={review}
-								canAuthorize={canAuthorizeDeliveryException}
-								authorized={authorized}
-								reason={reason}
-								minutesAccepted={minutesAccepted}
-								disabled={isPending}
-								onAuthorizedChange={setAuthorized}
-								onReasonChange={setReason}
-								onMinutesAcceptedChange={setMinutesAccepted}
-							/>
+							<>
+								<DeliveryPeriodReview
+									arrangement={deliveryArrangement}
+									preview={review}
+									canAuthorize={canAuthorizeDeliveryException}
+									authorized={authorized}
+									reason={reason}
+									minutesAccepted={minutesAccepted}
+									disabled={isPending}
+									onAuthorizedChange={setAuthorized}
+									onReasonChange={setReason}
+									onMinutesAcceptedChange={setMinutesAccepted}
+								/>
+								<ReservationPeriodReview
+									preview={review}
+									assetLabels={reservationAssetLabels}
+									timezone={operationalTimezone}
+								/>
+							</>
 						) : null}
 
 						{serverError ? (
@@ -438,7 +478,7 @@ function OpenRescheduleRentalPeriodDialog(
 										: false;
 									return (
 										<>
-											{isDelivery && hasReview ? (
+											{hasReview ? (
 												<Button
 													type="button"
 													variant="ghost"
@@ -447,7 +487,7 @@ function OpenRescheduleRentalPeriodDialog(
 													}
 													onClick={() => {
 														if (operationInFlight.current) return;
-														clearCorrectableServerError();
+														clearCorrectableServerError(false);
 														form.handleSubmit();
 													}}
 												>
@@ -461,18 +501,17 @@ function OpenRescheduleRentalPeriodDialog(
 													isSubmitting ||
 													isPending ||
 													isStale ||
-													(isDelivery &&
-														(!valid ||
-															(hasReview &&
-																(!body ||
-																	!reviewIsComplete(body) ||
-																	serverError !== null))))
+													!valid ||
+													(hasReview &&
+														(!body ||
+															!reviewIsComplete(body) ||
+															serverError !== null))
 												}
 											>
 												{isSubmitting || isPending ? (
 													<Loader2 className="size-4 animate-spin" />
 												) : null}
-												{isDelivery && !hasReview
+												{!hasReview
 													? "Revisar cambios"
 													: isDelivery
 														? "Guardar cambios"

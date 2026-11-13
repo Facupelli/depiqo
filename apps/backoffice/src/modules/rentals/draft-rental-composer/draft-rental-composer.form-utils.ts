@@ -2,14 +2,20 @@ import type { FormLikeAPI } from "@tanstack/react-form";
 import type { DraftRentalComposerFormValues } from "./draft-rental-composer.schema";
 
 // Called synchronously by transportation-input handlers, never by an Effect.
-// Clearing the decision prevents it from reviving after an A -> B -> A edit.
+// Discard pending decisions instead of reviving them after an A -> B -> A edit.
+// A new staff destination always establishes its terms through SET.
 export function resetPendingDeliveryReview(
 	form: Pick<
 		FormLikeAPI<DraftRentalComposerFormValues, never>,
-		"setFieldValue"
+		"setFieldValue" | "getFieldValue"
 	>,
 ) {
-	form.setFieldValue("deliveryAgreementDecision", "");
+	form.setFieldValue(
+		"deliveryAgreementDecision",
+		form.getFieldValue("deliveryDestination").status === "NEW_STAFF_DESTINATION"
+			? "SET"
+			: "",
+	);
 	form.setFieldValue("deliveryExceptionAccepted", false);
 	form.setFieldValue("deliveryExceptionReason", "");
 }

@@ -23,8 +23,12 @@ import {
 	createDraftRentalComposerFormSchema,
 	createDraftRentalDerivationSchema,
 	type DraftRentalComposerFormValues,
-	type DraftRentalDerivationValues,
 } from "./draft-rental-composer.schema";
+import {
+	type DraftRentalCostPreviewSnapshot,
+	getCurrentDraftRentalCostPreview,
+	selectDraftRentalDerivationValues,
+} from "./draft-rental-preview";
 import {
 	buildDraftRentalProposal,
 	getDraftRentalReadiness,
@@ -103,12 +107,14 @@ function DraftRentalComposerLayout({
 		const context = {
 			selectableBranchIds: new Set(activeBranches.map((branch) => branch.id)),
 			resolveBranchTimezone,
+			initialValues: defaultValues,
+			canManageDelivery,
 		};
 		return {
 			formSchema: createDraftRentalComposerFormSchema(context),
 			derivationSchema: createDraftRentalDerivationSchema(context),
 		};
-	}, [activeBranches, resolveBranchTimezone]);
+	}, [activeBranches, resolveBranchTimezone, defaultValues, canManageDelivery]);
 	const form = useAppForm({
 		defaultValues,
 		validators: {
@@ -132,7 +138,10 @@ function DraftRentalComposerLayout({
 			const readiness = getDraftRentalReadiness({
 				values: value,
 				inputMessages: proposal.messages,
-				preview: query?.data,
+				preview: getCurrentDraftRentalCostPreview(value, {
+					values: value,
+					query,
+				}),
 				previewError: query?.error,
 				canManageDelivery,
 				expectedVersion,
@@ -146,23 +155,7 @@ function DraftRentalComposerLayout({
 	// Reasons belong only to submission. Acceptance also affects readiness, not pricing.
 	const values = useSelector(
 		form.store,
-		({ values }): DraftRentalDerivationValues => ({
-			branchId: values.branchId,
-			rentalCustomerId: values.rentalCustomerId,
-			periodStartDate: values.periodStartDate,
-			periodStartTime: values.periodStartTime,
-			periodEndDate: values.periodEndDate,
-			periodEndTime: values.periodEndTime,
-			selectedOffers: values.selectedOffers,
-			fulfillmentMethod: values.fulfillmentMethod,
-			deliveryDestination: values.deliveryDestination,
-			insuranceSelected: values.insuranceSelected,
-			targetTotal: values.targetTotal,
-			deliveryAgreementDecision: values.deliveryAgreementDecision,
-			deliveryAgreementAmount: values.deliveryAgreementAmount,
-			transportReservationMinutes: values.transportReservationMinutes,
-			deliveryExceptionAccepted: values.deliveryExceptionAccepted,
-		}),
+		({ values }) => selectDraftRentalDerivationValues(values),
 		{ compare: shallow },
 	);
 	const formValid = useStore(form.store, (state) => state.isValid);
@@ -181,7 +174,12 @@ function DraftRentalComposerLayout({
 		rentalId,
 	);
 	const priceQuery = useDraftRentalCostPreview(proposal.body);
-	const preview = proposal.body ? priceQuery.data : undefined;
+	const costPreview: DraftRentalCostPreviewSnapshot = {
+		values,
+		// The existing query key identifies the complete request; no previous-data placeholder is used.
+		query: proposal.body ? priceQuery : undefined,
+	};
+	const preview = getCurrentDraftRentalCostPreview(values, costPreview);
 	const readiness = getDraftRentalReadiness({
 		values,
 		inputMessages: proposal.messages,
@@ -198,9 +196,13 @@ function DraftRentalComposerLayout({
 			selectedBranchName: selectedBranch?.name ?? persistedBranch?.name ?? null,
 			branchMissing,
 			timezone,
-			pricePreview: preview,
+			costPreview,
 			canManageDelivery,
-			storedAgreement,
+			// Agreements cannot be inherited across an explicit arrangement transition.
+			storedAgreement:
+				values.deliveryArrangement === defaultValues.deliveryArrangement
+					? storedAgreement
+					: undefined,
 			storedDeliveryCurrency,
 			// Input validation belongs next to the fields, not in the pricing summary.
 			blockingMessages: readiness.messages.filter(

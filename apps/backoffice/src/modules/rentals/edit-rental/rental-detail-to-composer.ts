@@ -25,6 +25,8 @@ export function hydrateRentalDetailToComposer(
 	);
 	const manualAdjustment = rental.pricing?.manualPricingAdjustment;
 	const deliveryDetails = rental.fulfillment.deliveryDetails;
+	const delivery = rental.draftDelivery;
+	const arrangement = delivery?.arrangement ?? "ROUTED";
 
 	return {
 		defaultValues: {
@@ -42,12 +44,22 @@ export function hydrateRentalDetailToComposer(
 				availableCount: null,
 			})),
 			fulfillmentMethod: rental.fulfillment.method,
+			deliveryArrangement: arrangement,
+			deliveryAgreementAmount: delivery?.staffAgreement?.amount ?? "",
+			deliveryAgreementReason: delivery?.staffAgreement?.reason ?? "",
+			transportReservationMinutes:
+				arrangement === "STAFF_ARRANGED" && delivery
+					? String(delivery.transportReservationMinutes)
+					: "",
 			deliveryDestination:
 				rental.fulfillment.method === "DELIVERY" && deliveryDetails
 					? {
 							status: "EXISTING",
 							address:
-								deliveryDetails.formattedAddress ?? deliveryDetails.address,
+								arrangement === "STAFF_ARRANGED"
+									? deliveryDetails.address
+									: (deliveryDetails.formattedAddress ??
+										deliveryDetails.address),
 						}
 					: { status: "INVALID", address: "" },
 			insuranceSelected: rental.insuranceSelected,

@@ -17,6 +17,7 @@ export function DraftRentalFinancialSummary({
 	deliveryAction,
 	deliveryDetails,
 	showDelivery,
+	staffArranged,
 	hasEquipmentAdjustment,
 	children,
 }: {
@@ -26,6 +27,7 @@ export function DraftRentalFinancialSummary({
 	deliveryAction?: ReactNode;
 	deliveryDetails?: ReactNode;
 	showDelivery: boolean;
+	staffArranged: boolean;
 	hasEquipmentAdjustment: boolean;
 	children?: ReactNode;
 }) {
@@ -38,15 +40,17 @@ export function DraftRentalFinancialSummary({
 	const pendingExplanation =
 		preview?.customerTotal != null
 			? null
-			: agreedAmount !== null
-				? "El precio manual está definido. Falta validar el transporte para calcular el total final."
-				: delivery?.technicalFailure
-					? "Revisá las condiciones de transporte para calcular el total final."
-					: delivery?.effectiveCharge === null
-						? "Revisá los requisitos de precio y transporte para calcular el total final."
-						: isFetching
-							? "El total estará disponible cuando termine el cálculo."
-							: "Completá los datos del alquiler para calcular el total final.";
+			: isFetching
+				? "El total estará disponible cuando termine el cálculo."
+				: staffArranged
+					? "Completá las condiciones de entrega coordinada para calcular el total final."
+					: agreedAmount !== null
+						? "El precio manual está definido. Falta validar el transporte para calcular el total final."
+						: delivery?.technicalFailure
+							? "Revisá las condiciones de transporte para calcular el total final."
+							: delivery?.effectiveCharge === null
+								? "Revisá los requisitos de precio y transporte para calcular el total final."
+								: "Completá los datos del alquiler para calcular el total final.";
 	const money = (amount: string | null | undefined, unit = currency) =>
 		amount != null ? formatMoney(amount, unit) : "-";
 	return (
@@ -99,13 +103,22 @@ export function DraftRentalFinancialSummary({
 							/>
 							{agreedAmount !== null ? (
 								<p className="text-muted-foreground text-xs">
-									Importe acordado
+									{delivery?.arrangement === "STAFF_ARRANGED" &&
+									delivery.source === "PROPOSED"
+										? "Importe propuesto"
+										: "Importe acordado"}
 								</p>
 							) : (
 								<p className="text-muted-foreground text-xs">
-									{delivery?.effectiveCharge != null
-										? "Precio calculado automáticamente"
-										: "No se pudo calcular automáticamente. Podés acordar un importe manual."}
+									{!preview
+										? isFetching
+											? "Calculando el costo del envío..."
+											: "Completá los datos para consultar el costo del envío."
+										: staffArranged
+											? "Definí el importe acordado y los minutos de transporte."
+											: delivery?.effectiveCharge != null
+												? "Precio calculado automáticamente"
+												: "No se pudo calcular automáticamente. Podés acordar un importe manual."}
 								</p>
 							)}
 							{deliveryDetails}

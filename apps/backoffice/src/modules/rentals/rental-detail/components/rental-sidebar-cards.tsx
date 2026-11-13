@@ -19,6 +19,7 @@ import {
 import { formatMoney } from "@/shared/utils/formatters";
 import { AssignCustomerToDraftRentalDialog } from "../assign-customer/assign-customer-to-draft-rental-dialog";
 import { RentalContractSigningCard } from "../documents/signing/rental-contract-signing-card";
+import { EditDeliveryDialog } from "../edit-delivery/edit-delivery-dialog";
 import { EditDeliveryAgreementDialog } from "../edit-delivery-agreement/edit-delivery-agreement-dialog";
 import { EditPriceAdjustmentDialog } from "../edit-price-adjustment/edit-price-adjustment-dialog";
 import { useRentalDetailContext } from "../rental-detail.context";
@@ -176,59 +177,82 @@ function RentalLogisticsCard({
 }: {
 	periodEditAction?: PeriodEditAction;
 }) {
-	const { rental } = useRentalDetailContext();
+	const { rental, permissions } = useRentalDetailContext();
+	const [isDeliveryOpen, setIsDeliveryOpen] = useState(false);
+	const canEditDelivery =
+		can(permissions, TenantPermission.RentalsDeliveryManage) &&
+		rental.status === "CONFIRMED" &&
+		rental.fulfillment.method === "DELIVERY" &&
+		Date.now() < Date.parse(rental.period.start);
 	const deliveryDetails = rental.fulfillment.deliveryDetails;
 	const timezone = useBranchTimezone(rental.branchId);
 	const pickup = formatRentalDetailDateBlock(rental.period.start, timezone);
 	const returnDate = formatRentalDetailDateBlock(rental.period.end, timezone);
 
 	return (
-		<ResponsiveDisclosureCard
-			icon={<Truck className="size-4" />}
-			title="Logística"
-			summary={`${pickup.date} ${pickup.time} → ${returnDate.date} ${returnDate.time}`}
-			headerAction={
-				periodEditAction ? (
+		<>
+			{isDeliveryOpen ? (
+				<EditDeliveryDialog onClose={() => setIsDeliveryOpen(false)} />
+			) : null}
+			<ResponsiveDisclosureCard
+				icon={<Truck className="size-4" />}
+				title="Logística"
+				summary={`${pickup.date} ${pickup.time} → ${returnDate.date} ${returnDate.time}`}
+				headerAction={
+					periodEditAction ? (
+						<Button
+							type="button"
+							variant="ghost"
+							size="icon-sm"
+							className="shrink-0 text-neutral-500 hover:text-neutral-950"
+							onClick={periodEditAction.onOpen}
+							aria-label="Editar período"
+							title="Editar período"
+						>
+							<Pencil className="size-3.5" />
+						</Button>
+					) : null
+				}
+			>
+				<div className="grid grid-cols-2 gap-x-6 gap-y-1">
+					<DateBlock
+						label="Fecha de retiro"
+						value={rental.period.start}
+						timezone={timezone}
+					/>
+					<DateBlock
+						label="Fecha de devolución"
+						value={rental.period.end}
+						timezone={timezone}
+					/>
+				</div>
+				{canEditDelivery ? (
 					<Button
 						type="button"
-						variant="ghost"
-						size="icon-sm"
-						className="shrink-0 text-neutral-500 hover:text-neutral-950"
-						onClick={periodEditAction.onOpen}
-						aria-label="Editar período"
-						title="Editar período"
+						variant="outline"
+						size="sm"
+						className="mt-3"
+						onClick={() => setIsDeliveryOpen(true)}
 					>
 						<Pencil className="size-3.5" />
+						Editar entrega
 					</Button>
-				) : null
-			}
-		>
-			<div className="grid grid-cols-2 gap-x-6 gap-y-1">
-				<DateBlock
-					label="Fecha de retiro"
-					value={rental.period.start}
-					timezone={timezone}
-				/>
-				<DateBlock
-					label="Fecha de devolución"
-					value={rental.period.end}
-					timezone={timezone}
-				/>
-			</div>
-			{deliveryDetails ? (
-				<div className="mt-3 border-t border-neutral-100">
-					<p className="mt-3 mb-1 font-mono text-[10px] uppercase tracking-wider text-neutral-400">
-						{(rental.acceptedDelivery ?? rental.draftDelivery)?.arrangement ===
-						"STAFF_ARRANGED"
-							? "Entrega coordinada por el equipo"
-							: "Pedido de delivery"}
-					</p>
-					<p className="text-sm text-neutral-700">
-						{deliveryDetails.formattedAddress ?? deliveryDetails.address}
-					</p>
-				</div>
-			) : null}
-		</ResponsiveDisclosureCard>
+				) : null}
+				{deliveryDetails ? (
+					<div className="mt-3 border-t border-neutral-100">
+						<p className="mt-3 mb-1 font-mono text-[10px] uppercase tracking-wider text-neutral-400">
+							{(rental.acceptedDelivery ?? rental.draftDelivery)
+								?.arrangement === "STAFF_ARRANGED"
+								? "Entrega coordinada por el equipo"
+								: "Pedido de delivery"}
+						</p>
+						<p className="text-sm text-neutral-700">
+							{deliveryDetails.formattedAddress ?? deliveryDetails.address}
+						</p>
+					</div>
+				) : null}
+			</ResponsiveDisclosureCard>
+		</>
 	);
 }
 
