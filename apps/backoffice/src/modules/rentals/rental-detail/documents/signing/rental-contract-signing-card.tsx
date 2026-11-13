@@ -6,6 +6,7 @@ import {
 	FileSignature,
 } from "lucide-react";
 import { useId, useState } from "react";
+import { CardHeaderIcon } from "@/components/card-header-icon";
 import { useRentalDetailContext } from "@/modules/rentals/rental-detail/rental-detail.context";
 import { useTenantTimezone } from "@/shared/timezone/operational-timezone.hooks";
 import {
@@ -33,32 +34,16 @@ export function RentalContractSigningCard() {
 	if (isLoading)
 		return (
 			<section className="rounded-lg border border-neutral-200 bg-white p-4">
-				<div className="@5xl/rental-detail:hidden">
-					<p className="text-sm font-bold text-neutral-950">Contrato</p>
-					<p className="mt-0.5 text-sm text-neutral-500">
-						Cargando contrato...
-					</p>
-				</div>
-				<div className="hidden @5xl/rental-detail:block">
-					<SidebarHeader
-						icon={<FileSignature className="size-4" />}
-						title="Contrato"
-					/>
-					<p className="pl-2">cargando...</p>
-				</div>
+				<SidebarHeader icon={<FileSignature />} title="Contrato" />
+				<p className="text-sm text-neutral-500">Cargando contrato...</p>
 			</section>
 		);
 
 	if (!summary)
 		return (
 			<section className="rounded-lg border border-neutral-200 bg-white p-4">
-				<p className="text-sm font-bold text-neutral-950 @5xl/rental-detail:hidden">
-					Contrato
-				</p>
-				<p className="mt-0.5 text-sm text-neutral-500 @5xl/rental-detail:hidden">
-					Sin contrato generado
-				</p>
-				<div className="hidden @5xl/rental-detail:block">no hay firma</div>
+				<SidebarHeader icon={<FileSignature />} title="Contrato" />
+				<p className="text-sm text-neutral-500">Sin contrato generado</p>
 			</section>
 		);
 
@@ -78,10 +63,17 @@ export function RentalContractSigningCard() {
 			>
 				<div className="min-w-0 flex-1">
 					<div className="@5xl/rental-detail:hidden">
-						<p className="text-sm font-bold text-neutral-950">Contrato</p>
-						<p className="mt-0.5 break-words text-sm text-neutral-600">
-							{state.label}
-						</p>
+						<div className="flex items-center gap-2">
+							<CardHeaderIcon>
+								<FileSignature />
+							</CardHeaderIcon>
+							<div className="min-w-0">
+								<p className="text-sm font-bold text-neutral-950">Contrato</p>
+								<p className="mt-0.5 break-words text-sm text-neutral-600">
+									{state.label}
+								</p>
+							</div>
+						</div>
 						{state.tone === "success" &&
 						state.activityAt &&
 						state.activityLabel ? (
@@ -239,9 +231,7 @@ function SidebarHeader({
 }) {
 	return (
 		<div className="mb-2 flex items-center gap-2 border-b border-neutral-100 pb-2">
-			<span className="flex size-6 items-center justify-center text-neutral-600">
-				{icon}
-			</span>
+			<CardHeaderIcon>{icon}</CardHeaderIcon>
 			<h2 className="text-sm font-bold text-neutral-950">{title}</h2>
 		</div>
 	);

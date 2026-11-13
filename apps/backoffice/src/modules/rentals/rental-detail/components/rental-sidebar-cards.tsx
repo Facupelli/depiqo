@@ -2,6 +2,7 @@ import { TenantPermission } from "@repo/api-contracts";
 import { Button } from "@repo/ui/components/button";
 import { useQueryClient } from "@tanstack/react-query";
 import {
+	CalendarDays,
 	ChevronDown,
 	Pencil,
 	ReceiptText,
@@ -10,6 +11,7 @@ import {
 } from "lucide-react";
 import { type ReactNode, useId, useState } from "react";
 import { can } from "@/auth/permissions";
+import { CardHeaderIcon } from "@/components/card-header-icon";
 import { RentalInvoicesCard } from "@/modules/invoicing/public";
 import { useBranchTimezone } from "@/shared/timezone/operational-timezone.hooks";
 import {
@@ -296,13 +298,13 @@ function RentalFinancialsCard() {
 	if (!pricing) {
 		return (
 			<section className="rounded-lg border border-neutral-200 bg-white p-4">
-				<div className="@5xl/rental-detail:mb-3 @5xl/rental-detail:flex @5xl/rental-detail:items-center @5xl/rental-detail:gap-2 @5xl/rental-detail:border-neutral-100 @5xl/rental-detail:border-b @5xl/rental-detail:pb-1">
-					<span className="hidden size-6 items-center justify-center text-neutral-600 @5xl/rental-detail:flex">
-						<ReceiptText className="size-4" />
-					</span>
-					<h2 className="text-sm font-bold text-neutral-950">Importe</h2>
+				<div className="mb-4 flex items-center gap-3 border-b border-neutral-200 pb-4">
+					<CardHeaderIcon>
+						<ReceiptText />
+					</CardHeaderIcon>
+					<h2 className="text-base font-bold text-neutral-950">Importe</h2>
 				</div>
-				<p className="mt-0.5 break-words text-sm text-neutral-500 @5xl/rental-detail:mt-0">
+				<p className="break-words text-sm text-neutral-500">
 					Sin precio calculado.
 				</p>
 			</section>
@@ -352,132 +354,149 @@ function RentalFinancialsCard() {
 				<button
 					type="button"
 					onClick={() => setShowItems((prev) => !prev)}
-					className="flex w-full min-w-0 items-start justify-between gap-4 text-left"
-					aria-controls={financialContentId}
+					className="flex w-full min-w-0 items-center justify-between gap-3 border-b border-neutral-200 pb-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+					aria-controls={`${financialContentId} ${financialContentId}-items`}
 					aria-expanded={showItems}
 				>
-					<span className="min-w-0 flex-1 @5xl/rental-detail:hidden">
-						<span className="block text-sm font-bold text-neutral-950">
-							Importe
-						</span>
-						<span className="mt-0.5 block break-words font-mono text-sm font-semibold text-neutral-950">
-							{formattedTotal}
-						</span>
-					</span>
-					<span className="hidden min-w-0 flex-1 @5xl/rental-detail:block [&>div]:mb-0">
-						<SidebarHeader
-							icon={<ReceiptText className="size-4" />}
-							title="Importe"
-						/>
-					</span>
+					<CardHeaderIcon>
+						<ReceiptText />
+					</CardHeaderIcon>
+					<h2 className="min-w-0 flex-1 text-base font-bold text-neutral-950">
+						Importe
+					</h2>
 					<ChevronDown
 						className={`size-4 shrink-0 text-neutral-400 transition-transform ${showItems ? "rotate-180" : ""}`}
 					/>
 				</button>
-				<div className="hidden items-baseline justify-between pt-3 pb-3 @5xl/rental-detail:flex">
-					<span className="text-sm font-bold text-neutral-950">Total</span>
+				<div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b border-neutral-200 py-3">
+					<span className="text-sm font-bold text-neutral-950">
+						Total del alquiler
+					</span>
 					<span className="break-words font-mono text-xl font-bold tracking-tight text-neutral-950">
 						{formattedTotal}
 					</span>
 				</div>
-				<div
-					id={financialContentId}
-					className={`${showItems ? "mt-4 block" : "hidden"} space-y-2 border-neutral-200 border-t border-dashed pt-3 @5xl/rental-detail:mt-0 @5xl/rental-detail:block`}
-				>
-					<MoneyRow
-						label="Subtotal"
-						value={pricing.subtotal}
-						currency={pricing.currency}
-					/>
-					{!isZeroDecimal(pricing.discountTotal) ? (
+				<div className="space-y-2 pt-3">
+					<div
+						id={financialContentId}
+						hidden={!showItems}
+						className="space-y-2"
+					>
 						<MoneyRow
-							label="Descuentos"
-							value={pricing.discountTotal}
+							label="Equipos"
+							value={pricing.subtotal}
 							currency={pricing.currency}
-							tone="success"
-							prefix="-"
+						/>
+						{!isZeroDecimal(pricing.discountTotal) ? (
+							<MoneyRow
+								label="Descuentos"
+								value={pricing.discountTotal}
+								currency={pricing.currency}
+								tone="success"
+								prefix="-"
+							/>
+						) : null}
+						<div>
+							<FinancialSummaryRow
+								label={
+									<span className="text-sm text-neutral-500">
+										Ajuste manual
+									</span>
+								}
+								amount={
+									<span className="font-mono text-sm text-neutral-950">
+										{manualAdjustment
+											? `${adjustmentSign}${formatMoney(manualAdjustment.adjustmentTotal, pricing.currency)}`
+											: "Sin ajuste"}
+									</span>
+								}
+								action={
+									canEditPrice ? (
+										<Button
+											type="button"
+											variant="ghost"
+											size="icon-sm"
+											className="size-5"
+											aria-label={
+												manualAdjustment
+													? "Editar ajuste manual"
+													: "Añadir ajuste manual"
+											}
+											title={
+												manualAdjustment
+													? "Editar ajuste manual"
+													: "Añadir ajuste manual"
+											}
+											onClick={() => setIsEditPriceDialogOpen(true)}
+										>
+											<Pencil className="size-3.5" />
+										</Button>
+									) : null
+								}
+							/>
+							{manualAdjustment?.reason ? (
+								<p className="mt-1 text-xs text-neutral-500">
+									Motivo: {manualAdjustment.reason}
+								</p>
+							) : null}
+						</div>
+					</div>
+					<div className={showItems ? "border-b border-neutral-200 pb-3" : ""}>
+						<FinancialSummaryRow
+							label={
+								<span className="text-sm text-neutral-950">
+									Equipos a cobrar
+								</span>
+							}
+							amount={
+								<span className="font-mono text-sm text-neutral-950">
+									{formatMoney(pricing.totalBeforeInsurance, pricing.currency)}
+								</span>
+							}
+						/>
+					</div>
+					{pricing.insurance.applied ? (
+						<MoneyRow
+							label={showItems ? "Seguro de equipos" : "Seguro"}
+							value={pricing.insurance.amount}
+							currency={pricing.currency}
 						/>
 					) : null}
 					{delivery ? (
-						<div className="space-y-1">
-							<div className="flex items-center gap-2">
-								<div className="min-w-0 flex-1">
-									<MoneyRow
-										label="Entrega y retiro"
-										value={delivery.effectiveDeliveryCharge}
-										currency={delivery.currency}
-									/>
-								</div>
-								{canEditDelivery ? (
+						<MoneyRow
+							label="Entrega y retiro"
+							value={delivery.effectiveDeliveryCharge}
+							currency={delivery.currency}
+							action={
+								canEditDelivery ? (
 									<Button
 										type="button"
 										variant="ghost"
 										size="icon-sm"
+										className="size-5"
 										aria-label="Editar precio de entrega y retiro"
 										title="Editar precio de entrega y retiro"
 										onClick={() => setIsDeliveryAgreementOpen(true)}
 									>
 										<Pencil className="size-3.5" />
 									</Button>
-								) : null}
-							</div>
-							{delivery.staffAgreement ? (
-								<p className="text-xs text-neutral-500">
-									Importe acordado
-									{delivery.staffAgreement.reason
-										? `: ${delivery.staffAgreement.reason}`
-										: ""}
-								</p>
-							) : null}
-						</div>
+								) : null
+							}
+						/>
 					) : rental.status === "DRAFT" &&
 						rental.fulfillment.method === "DELIVERY" ? (
 						<p className="text-sm text-neutral-500">
 							Entrega y retiro: importe no disponible.
 						</p>
 					) : null}
-					<div>
-						<div className="grid grid-cols-[1fr_auto_auto] items-center gap-2">
-							<span className="text-sm text-neutral-500">Ajuste manual</span>
-							<span className="font-mono text-sm text-neutral-950">
-								{manualAdjustment
-									? `${adjustmentSign}${formatMoney(manualAdjustment.adjustmentTotal, pricing.currency)}`
-									: "Sin ajuste"}
-							</span>
-							{canEditPrice ? (
-								<Button
-									type="button"
-									variant="ghost"
-									size="sm"
-									className="h-7 px-2"
-									onClick={() => setIsEditPriceDialogOpen(true)}
-								>
-									<Pencil className="size-3.5" />
-									{manualAdjustment ? "Editar" : "Añadir"}
-								</Button>
-							) : null}
-						</div>
-						{manualAdjustment?.reason ? (
-							<p className="mt-1 pl-2 text-xs text-neutral-500">
-								<span className="font-medium">Motivo: </span>
-								{manualAdjustment.reason}
-							</p>
-						) : null}
-					</div>
-					{pricing.insurance.applied ? (
-						<MoneyRow
-							label="Seguro de equipos"
-							value={pricing.insurance.amount}
-							currency={pricing.currency}
-						/>
-					) : null}
-					<div className="flex items-center justify-between">
-						<span className="text-sm text-neutral-500">Días cobrados</span>
-						<span className="font-mono text-sm text-neutral-950">
-							{pricing.chargedDays}
+					<div className="flex items-center gap-2 border-t border-neutral-200 pt-3 text-sm text-neutral-500">
+						<CalendarDays className="size-4 shrink-0" />
+						<span>
+							{pricing.chargedDays}{" "}
+							{pricing.chargedDays === 1 ? "día cobrado" : "días cobrados"}
 						</span>
 					</div>
-					{pricing.appliedCoupon ? (
+					{showItems && pricing.appliedCoupon ? (
 						<div className="flex items-center justify-between">
 							<span className="text-sm text-neutral-500">Cupón</span>
 							<span className="font-mono text-sm text-neutral-950">
@@ -486,52 +505,57 @@ function RentalFinancialsCard() {
 						</div>
 					) : null}
 				</div>
-				{showItems ? (
-					<div className="border-t border-neutral-100 mt-3 pt-3">
-						{pricing.lines.map((line) => (
-							<div
-								key={`${line.rentalOfferId}-${line.rentableItemId}`}
-								className="border-b border-neutral-100 py-2"
-							>
-								<div className="flex items-center justify-between">
-									<span className="text-sm text-neutral-500">
-										{line.rentableItemName} ×{line.quantity}
+				<div
+					id={`${financialContentId}-items`}
+					hidden={!showItems}
+					className="mt-3 border-t border-neutral-200 pt-3"
+				>
+					<h3 className="mb-1 text-sm font-bold text-neutral-950">
+						Detalle por equipo
+					</h3>
+					{pricing.lines.map((line) => (
+						<div
+							key={`${line.rentalOfferId}-${line.rentableItemId}`}
+							className="space-y-1 border-b border-neutral-100 py-2 last:border-b-0 last:pb-0"
+						>
+							<div className="flex items-baseline justify-between gap-3">
+								<span className="min-w-0 text-sm font-semibold text-neutral-950">
+									{line.rentableItemName} ×{line.quantity}
+								</span>
+								<span className="shrink-0 font-mono text-sm font-semibold text-neutral-950">
+									{formatMoney(line.total, pricing.currency)}
+								</span>
+							</div>
+							<p className="pl-3 text-xs text-neutral-500">
+								Tarifa registrada:{" "}
+								{formatMoney(line.pricePerUnit, pricing.currency)}
+							</p>
+							{line.appliedAdjustments.map((adjustment) => (
+								<div
+									key={`${adjustment.promotionId}-${adjustment.name}`}
+									className="flex items-baseline justify-between gap-3 pl-3"
+								>
+									<span className="text-xs text-neutral-500">
+										{adjustment.name}
 									</span>
-									<span className="font-mono text-sm text-neutral-950">
-										{formatMoney(line.total, pricing.currency)}
+									<span className="shrink-0 font-mono text-xs text-green-700">
+										-{formatMoney(adjustment.amount, pricing.currency)}
 									</span>
 								</div>
-								<p className="pl-3 text-[11px] text-neutral-500 break-all">
-									Tarifa unitaria registrada: {line.pricePerUnit}{" "}
-									{pricing.currency}
-								</p>
-								{line.appliedAdjustments.map((adjustment) => (
-									<div
-										key={`${adjustment.promotionId}-${adjustment.name}`}
-										className="flex items-center justify-between pl-3"
-									>
-										<span className="text-[11px] text-neutral-400">
-											{adjustment.name}
-										</span>
-										<span className="font-mono text-[11px] text-emerald-600">
-											-{formatMoney(adjustment.amount, pricing.currency)}
-										</span>
-									</div>
-								))}
-								{line.manualPricingAdjustment ? (
-									<ManualAdjustmentRow
-										label="Ajuste asignado"
-										amount={line.manualPricingAdjustment.amount}
-										direction={line.manualPricingAdjustment.direction}
-										currency={pricing.currency}
-										compact
-									/>
-								) : null}
-							</div>
-						))}
-						<OwnerPayoutsSection />
-					</div>
-				) : null}
+							))}
+							{line.manualPricingAdjustment ? (
+								<ManualAdjustmentRow
+									label="Ajuste manual asignado"
+									amount={line.manualPricingAdjustment.amount}
+									direction={line.manualPricingAdjustment.direction}
+									currency={pricing.currency}
+									compact
+								/>
+							) : null}
+						</div>
+					))}
+					<OwnerPayoutsSection />
+				</div>
 			</section>
 		</>
 	);
@@ -588,41 +612,66 @@ function OwnerPayoutsSection() {
 	);
 }
 
+function FinancialSummaryRow({
+	label,
+	amount,
+	action,
+}: {
+	label: ReactNode;
+	amount: ReactNode;
+	action?: ReactNode;
+}) {
+	return (
+		<div className="grid min-h-5 grid-cols-[minmax(0,1fr)_auto_1.25rem] items-center gap-x-2">
+			{label}
+			{amount}
+			<div className="flex size-5 items-center justify-center">{action}</div>
+		</div>
+	);
+}
+
 function MoneyRow({
 	label,
 	value,
 	currency,
 	tone = "default",
 	prefix = "",
+	action,
 }: {
 	label: string;
 	value: string;
 	currency: string;
 	tone?: "default" | "success";
 	prefix?: string;
+	action?: ReactNode;
 }) {
 	return (
-		<div className="flex items-center justify-between">
-			<span
-				className={
-					tone === "success"
-						? "text-sm text-green-700"
-						: "text-sm text-neutral-500"
-				}
-			>
-				{label}
-			</span>
-			<span
-				className={
-					tone === "success"
-						? "font-mono text-sm font-semibold text-green-700"
-						: "font-mono text-sm text-neutral-950"
-				}
-			>
-				{prefix}
-				{formatMoney(value, currency)}
-			</span>
-		</div>
+		<FinancialSummaryRow
+			label={
+				<span
+					className={
+						tone === "success"
+							? "text-sm text-green-700"
+							: "text-sm text-neutral-500"
+					}
+				>
+					{label}
+				</span>
+			}
+			amount={
+				<span
+					className={
+						tone === "success"
+							? "shrink-0 font-mono text-sm font-semibold text-green-700"
+							: "shrink-0 font-mono text-sm text-neutral-950"
+					}
+				>
+					{prefix}
+					{formatMoney(value, currency)}
+				</span>
+			}
+			action={action}
+		/>
 	);
 }
 
@@ -650,17 +699,17 @@ function ManualAdjustmentRow({
 
 	return (
 		<div
-			className={`flex items-center justify-between ${compact ? "pl-3" : ""}`}
+			className={`flex items-center justify-between gap-3 ${compact ? "pl-3" : ""}`}
 		>
 			<span
 				className={
-					compact ? "text-[11px] text-neutral-400" : "text-sm text-amber-700"
+					compact ? "text-xs text-neutral-500" : "text-sm text-amber-700"
 				}
 			>
 				{label}
 			</span>
 			<span
-				className={`${compact ? "text-[11px]" : "text-sm font-semibold"} font-mono ${valueClassName}`}
+				className={`${compact ? "text-xs" : "text-sm font-semibold"} shrink-0 font-mono ${valueClassName}`}
 			>
 				{sign}
 				{formatMoney(amount, currency)}
@@ -691,16 +740,19 @@ function ResponsiveDisclosureCard({
 			<div className="flex min-w-0 items-center gap-1 @5xl/rental-detail:hidden">
 				<button
 					type="button"
-					className="min-w-0 flex-1 text-left"
+					className="flex min-w-0 flex-1 items-center gap-2 text-left"
 					onClick={toggleExpanded}
 					aria-controls={contentId}
 					aria-expanded={isExpanded}
 				>
-					<span className="block text-sm font-bold text-neutral-950">
-						{title}
-					</span>
-					<span className="mt-0.5 block min-w-0 break-words text-sm text-neutral-600">
-						{summary}
+					<CardHeaderIcon>{icon}</CardHeaderIcon>
+					<span className="min-w-0">
+						<span className="block text-sm font-bold text-neutral-950">
+							{title}
+						</span>
+						<span className="mt-0.5 block break-words text-sm text-neutral-600">
+							{summary}
+						</span>
 					</span>
 				</button>
 				{headerAction}
@@ -745,9 +797,7 @@ function SidebarHeader({
 }) {
 	return (
 		<div className="mb-2 flex items-center gap-2 border-neutral-100 border-b pb-2">
-			<span className="flex size-6 items-center justify-center text-neutral-600">
-				{icon}
-			</span>
+			<CardHeaderIcon>{icon}</CardHeaderIcon>
 			<h2 className="min-w-0 flex-1 text-sm font-bold text-neutral-950">
 				{title}
 			</h2>
