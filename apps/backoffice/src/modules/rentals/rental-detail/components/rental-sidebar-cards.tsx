@@ -186,10 +186,26 @@ function RentalLogisticsCard({
 		rental.status === "CONFIRMED" &&
 		rental.fulfillment.method === "DELIVERY" &&
 		Date.now() < Date.parse(rental.period.start);
+	const hasDelivery = rental.fulfillment.method === "DELIVERY";
 	const deliveryDetails = rental.fulfillment.deliveryDetails;
+	const delivery = rental.acceptedDelivery ?? rental.draftDelivery;
 	const timezone = useBranchTimezone(rental.branchId);
 	const pickup = formatRentalDetailDateBlock(rental.period.start, timezone);
 	const returnDate = formatRentalDetailDateBlock(rental.period.end, timezone);
+
+	const periodEditButton = periodEditAction ? (
+		<Button
+			type="button"
+			variant="ghost"
+			size="icon-sm"
+			className="size-5 shrink-0"
+			onClick={periodEditAction.onOpen}
+			aria-label="Editar período"
+			title="Editar período"
+		>
+			<Pencil className="size-3.5" />
+		</Button>
+	) : null;
 
 	return (
 		<>
@@ -200,56 +216,55 @@ function RentalLogisticsCard({
 				icon={<Truck className="size-4" />}
 				title="Logística"
 				summary={`${pickup.date} ${pickup.time} → ${returnDate.date} ${returnDate.time}`}
-				headerAction={
-					periodEditAction ? (
-						<Button
-							type="button"
-							variant="ghost"
-							size="icon-sm"
-							className="shrink-0 text-neutral-500 hover:text-neutral-950"
-							onClick={periodEditAction.onOpen}
-							aria-label="Editar período"
-							title="Editar período"
-						>
-							<Pencil className="size-3.5" />
-						</Button>
-					) : null
-				}
+				headerAction={!hasDelivery ? periodEditButton : null}
 			>
-				<div className="grid grid-cols-2 gap-x-6 gap-y-1">
+				{hasDelivery ? (
+					<div className="mb-3 flex items-center justify-between gap-3">
+						<h3 className="text-sm font-bold text-neutral-950">
+							Período del alquiler
+						</h3>
+						{periodEditButton}
+					</div>
+				) : null}
+				<div className="grid grid-cols-2 gap-x-4 gap-y-3 py-1">
 					<DateBlock
-						label="Fecha de retiro"
+						label="Inicio"
 						value={rental.period.start}
 						timezone={timezone}
 					/>
 					<DateBlock
-						label="Fecha de devolución"
+						label="Fin"
 						value={rental.period.end}
 						timezone={timezone}
 					/>
 				</div>
-				{canEditDelivery ? (
-					<Button
-						type="button"
-						variant="outline"
-						size="sm"
-						className="mt-3"
-						onClick={() => setIsDeliveryOpen(true)}
-					>
-						<Pencil className="size-3.5" />
-						Editar entrega
-					</Button>
-				) : null}
-				{deliveryDetails ? (
-					<div className="mt-3 border-t border-neutral-100">
-						<p className="mt-3 mb-1 font-mono text-[10px] uppercase tracking-wider text-neutral-400">
-							{(rental.acceptedDelivery ?? rental.draftDelivery)
-								?.arrangement === "STAFF_ARRANGED"
-								? "Entrega coordinada por el equipo"
-								: "Pedido de delivery"}
+				{hasDelivery ? (
+					<div className="mt-4 border-t border-neutral-100 pt-3">
+						<div className="mb-2 flex min-h-8 items-center justify-between gap-3">
+							<h3 className="text-sm font-bold text-neutral-950">Entrega</h3>
+							{canEditDelivery ? (
+								<Button
+									type="button"
+									variant="ghost"
+									size="icon-sm"
+									className="size-5 shrink-0"
+									aria-label="Editar entrega"
+									title="Editar entrega"
+									onClick={() => setIsDeliveryOpen(true)}
+								>
+									<Pencil className="size-3.5" />
+								</Button>
+							) : null}
+						</div>
+						<p className="text-sm font-medium text-neutral-950">
+							{delivery?.arrangement === "STAFF_ARRANGED"
+								? "Personalizada"
+								: "Automática"}
 						</p>
-						<p className="text-sm text-neutral-700">
-							{deliveryDetails.formattedAddress ?? deliveryDetails.address}
+						<p className="mt-0.5 break-words text-sm text-neutral-500">
+							{deliveryDetails?.formattedAddress ??
+								deliveryDetails?.address ??
+								"Sin dirección configurada"}
 						</p>
 					</div>
 				) : null}
