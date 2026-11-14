@@ -19,12 +19,14 @@ export class SearchStorefrontDeliveryAddressSuggestionsHandler implements IQuery
     const suggestions = await this.addressGeocoder.search({ text: query.text });
 
     return {
-      suggestions: suggestions.map((suggestion) => ({
-        locationId: suggestion.locationId,
-        formattedAddress: suggestion.formattedAddress,
-        ...(suggestion.addressLine1 === undefined ? {} : { addressLine1: suggestion.addressLine1 }),
-        ...(suggestion.addressLine2 === undefined ? {} : { addressLine2: suggestion.addressLine2 }),
-      })),
+      suggestions: suggestions
+        .filter((suggestion) => suggestion.resultType === 'building' || suggestion.resultType === 'amenity')
+        .map((suggestion) => ({
+          locationId: suggestion.locationId,
+          formattedAddress: suggestion.formattedAddress,
+          ...(suggestion.addressLine1 === undefined ? {} : { addressLine1: suggestion.addressLine1 }),
+          ...(suggestion.addressLine2 === undefined ? {} : { addressLine2: suggestion.addressLine2 }),
+        })),
     };
   }
 }

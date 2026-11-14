@@ -37,6 +37,9 @@ const deliveryRouteDistanceMeters = 10_000;
 const addressGeocoder = new FakeAddressGeocoder({
   [deliveryLocationId]: {
     formattedAddress: deliveryDisplayAddress,
+    street: 'Rental Road',
+    streetNumber: '10',
+    providerPlaceId: deliveryLocationId,
     ...deliveryCustomerCoordinates,
   },
 });
@@ -358,7 +361,7 @@ describe('CreateDraftRental integration', () => {
         address: deliveryDisplayAddress,
         formattedAddress: deliveryDisplayAddress,
         ...deliveryCustomerCoordinates,
-        providerPlaceId: null,
+        providerPlaceId: deliveryLocationId,
       }),
     );
     expect(persisted.rental.deliverySnapshot).toEqual(

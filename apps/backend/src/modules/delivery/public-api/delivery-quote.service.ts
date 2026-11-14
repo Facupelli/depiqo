@@ -6,6 +6,7 @@ import { BranchFacts } from '../../tenant-management/public-api/branch-facts.pub
 import { RoadRouteDistanceProvider } from '../application/ports/road-route-distance-provider.port';
 import { BranchDeliveryConfiguration } from '../domain/branch-delivery-configuration.aggregate';
 import { DeliveryQuoteCalculator } from '../domain/delivery-quote-calculator';
+import { isSpecificDeliveryDestination } from '../domain/delivery-destination-validity';
 import { InvalidDeliveryQuoteInputError } from '../domain/errors/delivery.errors';
 import { BranchDeliveryConfigurationRepository } from '../persistence/branch-delivery-configuration.repository';
 import {
@@ -136,14 +137,22 @@ export class DeliveryQuoteServiceImpl extends DeliveryQuoteService {
   ): Promise<ResolvedCustomerLocation | { reason: 'CUSTOMER_LOCATION_UNRESOLVED' }> {
     if ('resolvedLocation' in input.customerLocation) {
       const location = input.customerLocation.resolvedLocation;
-      return this.isValidLocation(location) ? location : { reason: 'CUSTOMER_LOCATION_UNRESOLVED' };
+      const locationId = location.providerPlaceId?.trim();
+      if (!this.isValidLocation(location) || !locationId) return { reason: 'CUSTOMER_LOCATION_UNRESOLVED' };
+      const resolved = await this.addressGeocoder.resolve({ locationId });
+      return resolved &&
+        this.isValidLocation(this.toResolvedCustomerLocation(resolved)) &&
+        isSpecificDeliveryDestination(resolved)
+        ? location
+        : { reason: 'CUSTOMER_LOCATION_UNRESOLVED' };
     }
 
     const locationId = input.customerLocation.locationId.trim();
     if (!locationId) return { reason: 'CUSTOMER_LOCATION_UNRESOLVED' };
 
     const location = await this.addressGeocoder.resolve({ locationId });
-    const resolved = location ? this.toResolvedCustomerLocation(location) : undefined;
+    const resolved =
+      location && isSpecificDeliveryDestination(location) ? this.toResolvedCustomerLocation(location) : undefined;
     return resolved && this.isValidLocation(resolved) ? resolved : { reason: 'CUSTOMER_LOCATION_UNRESOLVED' };
   }
 
