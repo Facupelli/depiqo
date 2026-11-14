@@ -39,16 +39,7 @@ export function formatAcceptedCustomerTotalForRentalRemito(amount: string, curre
 }
 
 export function formatProposedRentalBudgetAmount(amount: string, currency: string): string {
-  try {
-    return new Intl.NumberFormat(resolveLocaleForCurrency(currency), {
-      style: 'currency',
-      currency,
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(Number(amount));
-  } catch {
-    return `${currency} ${Number(amount).toFixed(2)}`;
-  }
+  return formatCurrency(Number(amount), currency);
 }
 
 function formatCurrency(amount: number, currency: string): string {
@@ -56,7 +47,8 @@ function formatCurrency(amount: number, currency: string): string {
     return new Intl.NumberFormat(resolveLocaleForCurrency(currency), {
       style: 'currency',
       currency,
-      maximumFractionDigits: 0,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
     }).format(amount);
   } catch {
     return `${currency} ${amount.toFixed(2)}`;
