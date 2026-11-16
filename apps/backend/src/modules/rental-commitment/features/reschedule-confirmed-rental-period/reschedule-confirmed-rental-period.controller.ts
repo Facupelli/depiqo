@@ -1,5 +1,5 @@
-import { Body, Controller, HttpStatus, Param, Patch, UseGuards } from '@nestjs/common';
-import { CommandBus } from '@nestjs/cqrs';
+import { Body, Controller, HttpCode, HttpStatus, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { TenantPermission } from '@repo/api-contracts';
 
 import { createProblemDetails, createProblemType, ProblemException } from 'src/core/problem-details';
@@ -10,18 +10,50 @@ import { AllowAuthActors } from 'src/modules/tenant-management/auth/shared/sessi
 import { SessionAuthGuard } from 'src/modules/tenant-management/auth/shared/session/session-auth.guard';
 import { TenantUserSessionGuard } from 'src/modules/tenant-management/auth/shared/session/tenant-user-session.guard';
 
+import { PreviewConfirmedRentalPeriodQuery } from './preview-confirmed-rental-period.query';
+import { PreviewConfirmedRentalPeriodResult } from './preview-confirmed-rental-period.handler';
 import { RescheduleConfirmedRentalPeriodCommand } from './reschedule-confirmed-rental-period.command';
 import { RescheduleConfirmedRentalPeriodError } from './reschedule-confirmed-rental-period.errors';
 import { RescheduleConfirmedRentalPeriodResult } from './reschedule-confirmed-rental-period.handler';
 import {
+  PreviewConfirmedRentalPeriodRequestDto,
   RescheduleConfirmedRentalPeriodParamsDto,
   RescheduleConfirmedRentalPeriodRequestDto,
 } from './reschedule-confirmed-rental-period.request.dto';
-import { RescheduleConfirmedRentalPeriodResponseDto } from './reschedule-confirmed-rental-period.response.dto';
+import {
+  PreviewConfirmedRentalPeriodResponseDto,
+  RescheduleConfirmedRentalPeriodResponseDto,
+} from './reschedule-confirmed-rental-period.response.dto';
 
 @Controller('rental-commitments/confirmed-rentals')
 export class RescheduleConfirmedRentalPeriodHttpController {
-  constructor(private readonly commandBus: CommandBus) {}
+  constructor(
+    private readonly commandBus: CommandBus,
+    private readonly queryBus: QueryBus,
+  ) {}
+
+  @Post(':rentalId/period/preview')
+  @HttpCode(HttpStatus.OK)
+  @RequirePermission(TenantPermission.RentalsConfirmedManage)
+  @AllowAuthActors(AUTH_ACTOR_TYPES.TENANT_USER)
+  @UseGuards(SessionAuthGuard, TenantUserSessionGuard)
+  async preview(
+    @Param() params: RescheduleConfirmedRentalPeriodParamsDto,
+    @Body() dto: PreviewConfirmedRentalPeriodRequestDto,
+    @CurrentUser() user: AuthUser,
+  ): Promise<PreviewConfirmedRentalPeriodResponseDto> {
+    const result = await this.queryBus.execute<PreviewConfirmedRentalPeriodQuery, PreviewConfirmedRentalPeriodResult>(
+      new PreviewConfirmedRentalPeriodQuery({
+        tenantId: user.tenantId,
+        rentalId: params.rentalId,
+        expectedVersion: dto.expectedVersion,
+        periodStart: dto.period.start,
+        periodEnd: dto.period.end,
+      }),
+    );
+    if (result.isErr()) throw toProblem(result.error);
+    return result.value;
+  }
 
   @Patch(':rentalId/period')
   @RequirePermission(TenantPermission.RentalsConfirmedManage)
@@ -43,6 +75,11 @@ export class RescheduleConfirmedRentalPeriodHttpController {
         expectedVersion: dto.expectedVersion,
         periodStart: dto.period.start,
         periodEnd: dto.period.end,
+        deliveryDecisions: {
+          reviewIdentity: dto.reviewIdentity,
+          policyException: dto.policyException,
+          acceptReusedTransportReservationMinutes: dto.acceptReusedTransportReservationMinutes,
+        },
       }),
     );
     if (result.isErr()) throw toProblem(result.error);
@@ -59,6 +96,36 @@ const definitions: Record<
   RescheduleConfirmedRentalPeriodError['code'],
   { title: string; status: HttpStatus; detail: string }
 > = {
+  'rental_commitment.delivery_evaluation_unavailable': {
+    title: 'Delivery evaluation unavailable',
+    status: HttpStatus.SERVICE_UNAVAILABLE,
+    detail: 'Delivery routing is temporarily unavailable. Retry the preview before saving.',
+  },
+  'rental_commitment.delivery_technical_failure': {
+    title: 'Delivery evaluation failed',
+    status: HttpStatus.UNPROCESSABLE_ENTITY,
+    detail: 'Transportation could not be validated. Check the branch, destination and route before retrying.',
+  },
+  'rental_commitment.delivery_review_required': {
+    title: 'Delivery review required',
+    status: HttpStatus.CONFLICT,
+    detail: 'Delivery consequences are missing or have changed. Request a new preview and review it before saving.',
+  },
+  'rental_commitment.delivery_exception_authorization_required': {
+    title: 'Delivery exception authorization required',
+    status: HttpStatus.UNPROCESSABLE_ENTITY,
+    detail: 'Explicitly authorize the restrictions shown by the current preview before saving.',
+  },
+  'rental_commitment.delivery_exception_permission_denied': {
+    title: 'Delivery authorization forbidden',
+    status: HttpStatus.FORBIDDEN,
+    detail: 'Authorizing a delivery exception requires rentals.delivery.manage.',
+  },
+  'rental_commitment.invalid_rescheduling_delivery_input': {
+    title: 'Delivery decisions are invalid or incomplete',
+    status: HttpStatus.UNPROCESSABLE_ENTITY,
+    detail: 'Review delivery currency, pricing requirements and transportation-minute acceptance before saving.',
+  },
   'rental_commitment.rental_not_found': {
     title: 'Rental not found',
     status: HttpStatus.NOT_FOUND,

@@ -585,7 +585,7 @@ describe('ReplaceConfirmedRentalAsset integration', () => {
       () => replace({ setup: target, replacementAssetId, expectedVersion: before.rental.version }),
       () =>
         commandBus.execute<ConfirmRentalCommand, ConfirmRentalResult>(
-          new ConfirmRentalCommand(target.tenant.id, draft.rentalId),
+          new ConfirmRentalCommand(target.tenant.id, draft.rentalId, draft.version),
         ),
     ]);
     const targetAfter = await fixtures.persistedState(target.rental.rentalId);

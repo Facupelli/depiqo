@@ -71,6 +71,12 @@ const generateRentalBudgetProblemMap = {
     status: HttpStatus.CONFLICT,
     detail: 'A budget can only be generated for a draft rental.',
   },
+  'contracts.rental_budget_rental_version_changed': {
+    type: createProblemType('contracts.rental_budget_rental_version_changed'),
+    title: 'Rental changed',
+    status: HttpStatus.CONFLICT,
+    detail: 'The rental changed during budget generation. Generate the budget again from the current draft.',
+  },
   'contracts.rental_budget_customer_name_missing': {
     type: createProblemType('contracts.rental_budget_customer_name_missing'),
     title: 'Customer name missing',
@@ -87,6 +93,6 @@ const generateRentalBudgetProblemMap = {
     type: createProblemType('contracts.rental_budget_price_snapshot_invalid'),
     title: 'Rental price snapshot invalid',
     status: HttpStatus.CONFLICT,
-    detail: 'The rental does not have a valid price snapshot.',
+    detail: 'The rental does not have valid persisted equipment pricing and delivery financial facts.',
   },
 } satisfies Record<GenerateRentalBudgetErrorCode, { type: string; title: string; status: HttpStatus; detail: string }>;

@@ -1,4 +1,5 @@
 import { Button } from "@repo/ui/components/button";
+import { FieldError } from "@repo/ui/components/field";
 import { Input } from "@repo/ui/components/input";
 import { useStore } from "@tanstack/react-form";
 import { Minus, Package, Plus, Trash2 } from "lucide-react";
@@ -19,6 +20,10 @@ export const DraftRentalSelectedOffersSection = withForm({
 			state: { branchMissing, timezone },
 		} = useDraftRentalComposer();
 		const values = useStore(form.store, (state) => state.values);
+		const submissionAttempts = useStore(
+			form.store,
+			(state) => state.submissionAttempts,
+		);
 		const selectedOffers = values.selectedOffers;
 		const effectivePeriod = buildEffectiveRentalPeriod(values, timezone);
 		const rentalOfferIds = [
@@ -207,6 +212,13 @@ export const DraftRentalSelectedOffersSection = withForm({
 						})}
 					</div>
 				)}
+				<form.Field name="selectedOffers" mode="array">
+					{(field) =>
+						field.state.meta.isTouched || submissionAttempts > 0 ? (
+							<FieldError className="mt-2" errors={field.state.meta.errors} />
+						) : null
+					}
+				</form.Field>
 			</section>
 		);
 	},

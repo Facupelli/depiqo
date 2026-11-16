@@ -6,6 +6,10 @@ import { BranchFacts } from 'src/modules/tenant-management/public-api/branch-fac
 import { TenantBillingPreferences } from 'src/modules/tenant-management/public-api/tenant-billing-preferences.public-api';
 
 import {
+  DraftRentalDeliveryResolver,
+  existingDraftDeliveryDestination,
+} from '../../application/draft-rental-delivery-resolver.service';
+import {
   RentalProposalDeliveryDestination,
   RentalProposalResolutionError,
   RentalProposalResolver,
@@ -36,6 +40,7 @@ export type UpdateDraftRentalResult = Result<
 export class UpdateDraftRentalHandler implements ICommandHandler<UpdateDraftRentalCommand, UpdateDraftRentalResult> {
   constructor(
     private readonly proposalResolver: RentalProposalResolver,
+    private readonly draftDelivery: DraftRentalDeliveryResolver,
     private readonly rentalOperationalFacts: RentalOperationalFactsValidatorService,
     private readonly tenantBillingPreferences: TenantBillingPreferences,
     private readonly branchFacts: BranchFacts,
@@ -94,6 +99,29 @@ export class UpdateDraftRentalHandler implements ICommandHandler<UpdateDraftRent
       return err(this.mapDomainError(new BranchUnavailableForRentalError(branchId), context));
     }
 
+    const existing =
+      rental.fulfillmentMethod === FulfillmentMethod.Delivery && rental.deliveryDetails && rental.deliverySnapshot
+        ? {
+            branchId: rental.branchId,
+            period: rental.period,
+            details: rental.deliveryDetails,
+            snapshot: rental.deliverySnapshot.snapshot,
+          }
+        : undefined;
+    if (deliveryDestination.value) {
+      const authorized = await this.draftDelivery.authorizeChange({
+        tenantId,
+        tenantUserId,
+        branchId,
+        period,
+        destination: deliveryDestination.value,
+        decisions: command.props.deliveryDecisions,
+        existing,
+        keepCurrent: deliveryIntent?.type === 'KEEP_CURRENT',
+      });
+      if (authorized.isErr()) return err({ ...authorized.error, context });
+    }
+
     const proposal = await this.proposalResolver.resolve({
       calculationFacts: {
         effectiveTimezone: branchFacts.value.effectiveTimezone,
@@ -114,6 +142,12 @@ export class UpdateDraftRentalHandler implements ICommandHandler<UpdateDraftRent
       fulfillmentMethod,
       insuranceSelected,
       deliveryDestination: deliveryDestination.value,
+      draftDelivery: {
+        tenantUserId,
+        decisions: command.props.deliveryDecisions,
+        existing,
+        keepCurrent: deliveryIntent?.type === 'KEEP_CURRENT',
+      },
     });
     if (proposal.isErr()) return err(this.mapProposalError(proposal.error, context));
 
@@ -169,11 +203,25 @@ export class UpdateDraftRentalHandler implements ICommandHandler<UpdateDraftRent
     }
 
     if (input.deliveryIntent.type === 'NEW_DESTINATION') {
-      return ok({ address: input.deliveryIntent.address, locationId: input.deliveryIntent.locationId });
+      const intent = input.deliveryIntent;
+      return ok(
+        intent.arrangement === 'STAFF_ARRANGED'
+          ? { arrangement: 'STAFF_ARRANGED', address: intent.address, geocoding: intent.geocoding }
+          : { arrangement: 'ROUTED', address: intent.address, locationId: intent.locationId },
+      );
     }
 
-    const existing = input.rental.deliveryDetails;
-    if (!existing) {
+    const rental = input.rental;
+    const destination =
+      rental.fulfillmentMethod === FulfillmentMethod.Delivery && rental.deliveryDetails && rental.deliverySnapshot
+        ? existingDraftDeliveryDestination({
+            branchId: rental.branchId,
+            period: rental.period,
+            details: rental.deliveryDetails,
+            snapshot: rental.deliverySnapshot.snapshot,
+          })
+        : undefined;
+    if (!destination) {
       return err(
         this.error(
           'rental_commitment.current_delivery_destination_missing',
@@ -183,15 +231,7 @@ export class UpdateDraftRentalHandler implements ICommandHandler<UpdateDraftRent
       );
     }
 
-    return ok({
-      address: existing.address,
-      resolvedLocation: {
-        formattedAddress: existing.formattedAddress,
-        latitude: existing.latitude,
-        longitude: existing.longitude,
-        ...(existing.providerPlaceId ? { providerPlaceId: existing.providerPlaceId } : {}),
-      },
-    });
+    return ok(destination);
   }
 
   private mapProposalError(

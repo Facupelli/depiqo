@@ -9,6 +9,7 @@ import { isUniqueConstraintViolation } from 'src/core/utils/postgres-error.mappe
 import { BranchFacts } from 'src/modules/tenant-management/public-api/branch-facts.public-api';
 import { TenantBillingPreferences } from 'src/modules/tenant-management/public-api/tenant-billing-preferences.public-api';
 
+import { DraftRentalDeliveryResolver } from '../../application/draft-rental-delivery-resolver.service';
 import {
   RentalProposalResolutionError,
   RentalProposalResolver,
@@ -44,6 +45,7 @@ export class CreateDraftRentalService implements ICommandHandler<
 > {
   constructor(
     private readonly proposalResolver: RentalProposalResolver,
+    private readonly draftDelivery: DraftRentalDeliveryResolver,
     private readonly rentalOperationalFacts: RentalOperationalFactsValidatorService,
     private readonly tenantBillingPreferences: TenantBillingPreferences,
     private readonly branchFacts: BranchFacts,
@@ -88,6 +90,18 @@ export class CreateDraftRentalService implements ICommandHandler<
       return err(this.toCreateError(new BranchUnavailableForRentalError(command.branchId), context));
     }
 
+    if (command.fulfillmentMethod === 'DELIVERY' && command.deliveryDetails) {
+      const authorized = await this.draftDelivery.authorizeChange({
+        tenantId: command.tenantId,
+        tenantUserId: command.tenantUserId,
+        branchId: command.branchId,
+        period: command.period,
+        destination: command.deliveryDetails,
+        decisions: command.deliveryDecisions,
+      });
+      if (authorized.isErr()) return err({ ...authorized.error, context });
+    }
+
     const proposal = await this.proposalResolver.resolve({
       calculationFacts: {
         effectiveTimezone: branchFacts.value.effectiveTimezone,
@@ -108,6 +122,10 @@ export class CreateDraftRentalService implements ICommandHandler<
       fulfillmentMethod: command.fulfillmentMethod,
       insuranceSelected: command.insuranceSelected,
       deliveryDestination: command.deliveryDetails,
+      draftDelivery: {
+        tenantUserId: command.tenantUserId,
+        decisions: command.deliveryDecisions,
+      },
     });
     if (proposal.isErr()) return err(this.toCreateProposalError(proposal.error, context));
 

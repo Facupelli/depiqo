@@ -3,6 +3,7 @@ import { RentalProposalResolutionErrorCode } from '../../application/rental-prop
 
 export type UpdateDraftRentalErrorCode =
   | RentalProposalResolutionErrorCode
+  | 'rental_commitment.delivery_management_permission_denied'
   | 'rental_commitment.tenant_unavailable'
   | 'rental_commitment.branch_unavailable'
   | 'rental_commitment.customer_unavailable'

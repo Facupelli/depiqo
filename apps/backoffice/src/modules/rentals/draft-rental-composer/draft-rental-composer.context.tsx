@@ -1,16 +1,26 @@
-import type { CalculateDraftRentalPriceResponseDto } from "@repo/api-contracts";
+import type { GetRentalDetailResponseDto } from "@repo/api-contracts";
 import { createContext, use } from "react";
+import type { DraftRentalComposerValidationContext } from "./draft-rental-composer.schema";
+import type { DraftRentalCostPreviewSnapshot } from "./draft-rental-preview";
 
 export type DraftRentalComposerContextValue = {
 	state: {
+		validationContext: DraftRentalComposerValidationContext;
+		rentalId?: string;
 		selectedBranchName: string | null;
 		branchMissing: boolean;
 		timezone: string;
-		pricePreview: CalculateDraftRentalPriceResponseDto | undefined;
+		costPreview: DraftRentalCostPreviewSnapshot;
+		canManageDelivery: boolean;
+		storedAgreement?: NonNullable<
+			GetRentalDetailResponseDto["draftDelivery"]
+		>["staffAgreement"];
+		storedDeliveryCurrency?: string;
+		blockingMessages: string[];
 	};
 	meta: {
 		isPriceLoading: boolean;
-		isPriceError: boolean;
+		retryPricePreview?: () => void;
 		isSubmitting: boolean;
 		submitDisabled: boolean;
 		submitError: string | null;

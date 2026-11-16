@@ -40,6 +40,8 @@ export function createRescheduleRentalPeriodFormSchema({
 	const currentOperationTimeMs = currentOperationTime.getTime();
 
 	return rescheduleRentalPeriodFormBaseSchema.superRefine((value, ctx) => {
+		// The picker emits incomplete ranges while staff selects the new dates.
+		if (!rescheduleRentalPeriodFormBaseSchema.safeParse(value).success) return;
 		const resolution = resolveRentalPeriod(value, operationalTimezone);
 		if (resolution.kind === "nonexistent") {
 			ctx.addIssue({

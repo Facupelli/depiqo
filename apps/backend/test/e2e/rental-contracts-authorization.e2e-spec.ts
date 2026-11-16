@@ -167,8 +167,8 @@ describe('Rental Commitment and Contracts HTTP authorization', () => {
     const proposalOnly = await clientWithPermissions(tenant.id, [TenantPermission.RentalsProposalsManage]);
     const path = `/rental-commitments/rentals/${randomUUID()}/confirm`;
 
-    await allowed.withCsrf(allowed.request().post(path)).expect(404);
-    await proposalOnly.withCsrf(proposalOnly.request().post(path)).expect(403);
+    await allowed.withCsrf(allowed.request().post(path)).send({ expectedVersion: 0 }).expect(404);
+    await proposalOnly.withCsrf(proposalOnly.request().post(path)).send({ expectedVersion: 0 }).expect(403);
   });
 
   it('enforces rentals.confirmed.manage on confirmed-rental changes', async () => {

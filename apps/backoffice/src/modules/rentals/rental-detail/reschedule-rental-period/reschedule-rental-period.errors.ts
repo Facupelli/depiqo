@@ -3,6 +3,7 @@ import { getProblemDetailsCode, ProblemDetailsError } from "@/shared/errors";
 export type RescheduleRentalPeriodErrorKind =
 	| "stale"
 	| "period-conflict"
+	| "delivery-review"
 	| "unknown";
 
 export interface RescheduleRentalPeriodUiError {
@@ -11,6 +12,36 @@ export interface RescheduleRentalPeriodUiError {
 }
 
 const errorsByCode = {
+	"rental_commitment.delivery_review_required": {
+		kind: "delivery-review",
+		message:
+			"Cambiaron el precio o las condiciones de envío. Volvé a revisar antes de guardar.",
+	},
+	"rental_commitment.delivery_evaluation_unavailable": {
+		kind: "delivery-review",
+		message:
+			"El cálculo de la ruta no está disponible temporalmente. Volvé a intentar la revisión.",
+	},
+	"rental_commitment.delivery_technical_failure": {
+		kind: "delivery-review",
+		message:
+			"No pudimos validar la entrega y el retiro. Revisá la sucursal, el destino y la ruta antes de volver a intentar la revisión.",
+	},
+	"rental_commitment.delivery_exception_authorization_required": {
+		kind: "delivery-review",
+		message:
+			"Falta autorizar la excepción a las condiciones de envío. Revisala y autorizala antes de guardar.",
+	},
+	"rental_commitment.delivery_exception_permission_denied": {
+		kind: "delivery-review",
+		message:
+			"No tenés permiso para autorizar esta excepción a las condiciones de envío.",
+	},
+	"rental_commitment.invalid_rescheduling_delivery_input": {
+		kind: "delivery-review",
+		message:
+			"Las condiciones de envío están incompletas o cambiaron. Volvé a revisarlas antes de guardar.",
+	},
 	"rental_commitment.rental_version_conflict": {
 		kind: "stale",
 		message:
@@ -35,7 +66,8 @@ const errorsByCode = {
 	},
 	"rental_commitment.invalid_rental_period": {
 		kind: "period-conflict",
-		message: "El período seleccionado no es válido.",
+		message:
+			"No se puede aplicar el período propuesto. Revisá las fechas, las reservas y las asignaciones de equipos antes de volver a intentar.",
 	},
 	"rental_commitment.assigned_assets_unavailable": {
 		kind: "period-conflict",

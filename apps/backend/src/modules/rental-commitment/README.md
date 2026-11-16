@@ -47,7 +47,7 @@ Asset blocks represent the physical reservation of assets for rental participati
 
 ## Confirmed rental semantics
 
-Confirmation creates the accepted commercial and operational rental commitment.
+Confirmation creates the accepted commercial and operational rental commitment. It must accept only the persisted draft version reviewed by the confirming staff member; a concurrent draft edit requires a fresh review. Authoritative reevaluation of routed delivery does not authorize accepting a newer draft version.
 
 `CONFIRMED` does not mean that the customer has picked up the equipment, that delivery has occurred, or that equipment has been returned. It also does not imply legal or historical immutability. Supported confirmed-rental edits may change current accepted facts while preserving prior historical participation where required.
 
@@ -66,6 +66,20 @@ A supported rental edit may intentionally obtain and accept a new proposed price
 ### Delivery
 
 Delivery may provide current proposed delivery terms. Rental Commitment preserves the delivery facts accepted for the rental. Where accepted delivery affects the physical reservation period, that relationship is interpreted using the accepted delivery facts rather than later proposals.
+
+Staff-arranged delivery is an independent staff commitment, not a policy exception to routed delivery. Confirmation accepts its unchanged, previously authorized agreement and explicit transportation reservation time without requiring routing or branch delivery configuration. The accepted times and currency must still match the rental, and equipment availability and reservation conflicts remain authoritative. A valid delivery summary does not guarantee equipment availability or successful confirmation.
+
+Staff may agree on a combined delivery-and-collection amount, including zero. This agreement determines the effective transportation charge in the customer total without changing the calculated reference prices or operational transportation facts. For routed delivery without an agreement, the calculated total applies. Agreement attribution and time are established by the server, not supplied as customer pricing inputs.
+
+Draft edits unrelated to transportation preserve the complete proposed delivery terms, including their calculated reference prices and staff decisions. Changing transportation conditions requires an explicit decision about an existing agreement. A staff-arranged draft's address may change while explicitly preserving the agreement's amount, reason, and original attribution; address-only changes retain transportation minutes. Agreements cannot be inherited across arrangement transitions. Preserving proposed terms in a draft does not establish current eligibility for confirmation.
+
+For routed delivery, agreed pricing does not authorize policy exceptions. An exception authorizes only the accepted transportation conditions; changes require fresh evaluation and reauthorization. Neither decision waives equipment reservation conflicts. Authorization attribution and time must come from trusted server context.
+
+Routed draft confirmation reevaluates transportation validity and current policy restrictions. Existing agreements retain their amount and attribution, while automatic-only drafts accept fresh automatic pricing. Existing exceptions cover only their recorded restrictions within the unchanged authorized scope, including reservation minutes. New restrictions or scope changes require draft review and explicit authorization, not additional delivery-management permission merely to confirm an already authorized arrangement.
+
+Confirmed delivery-condition edits use the scheduled rental start as a conservative cutoff, checked against server time and current persisted state. This is an explicit product limitation, not evidence of physical delivery: even an undelivered rental cannot have its destination or transportation conditions edited after its scheduled start. Revisit this decision when authoritative delivery and collection completion events exist. Price-only delivery agreement editing retains its separate existing lifecycle rules.
+
+Delivery-condition changes preserve the rental period, accepted equipment pricing, assignments, and reservation identities. Transportation-minute changes may resize current reservations using accepted buffers and operational clamping, but must not rewrite historical participation or completed reservations. Changes incompatible with preserved history or conflicting reservations are rejected. Address-only edits retain accepted minutes; routed reevaluation must not silently replace them with later branch configuration.
 
 ### Asset ownership
 

@@ -10,6 +10,10 @@ import { BranchFacts } from 'src/modules/tenant-management/public-api/branch-fac
 import { RetainedRentalCustomerProfileFacts } from 'src/modules/tenant-management/public-api/retained-rental-customer-profile-facts.public-api';
 import { getRentalDetailError, GetRentalDetailError } from './get-rental-detail.errors';
 import { toRentalDetailPricing } from '../../application/accepted-pricing/accepted-pricing-snapshot.projections';
+import {
+  toAcceptedDeliveryResponse,
+  toDeliveryDetailsResponse,
+} from '../../application/delivery-representation.mapper';
 import { COMPOSITE_RENTABLE_ITEM_KINDS } from '../../domain/rental-status';
 import { AcceptedDeliverySnapshot } from '../../domain/value-objects/accepted-delivery-snapshot.value-object';
 import { ConfirmedPriceSnapshot } from '../../domain/value-objects/confirmed-price-snapshot.value-object';
@@ -164,6 +168,7 @@ export class GetRentalDetailHandler implements IQueryHandler<GetRentalDetailQuer
 
     if (branchFactsResult.isErr()) throw new Error(branchFactsResult.error.message);
     const retainedBranch = branchFactsResult.value;
+    const deliveryDetails = toDeliveryDetailsResponse(rental.deliveryDetails);
 
     return ok({
       id: rental.id,
@@ -193,15 +198,7 @@ export class GetRentalDetailHandler implements IQueryHandler<GetRentalDetailQuer
       },
       fulfillment: {
         method: rental.fulfillmentMethod,
-        deliveryDetails: rental.deliveryDetails
-          ? {
-              address: rental.deliveryDetails.address,
-              formattedAddress: rental.deliveryDetails.formattedAddress,
-              latitude: rental.deliveryDetails.latitude,
-              longitude: rental.deliveryDetails.longitude,
-              providerPlaceId: rental.deliveryDetails.providerPlaceId ?? undefined,
-            }
-          : null,
+        deliveryDetails,
       },
       selections: rental.selections.map((selection) => ({
         id: selection.id,
@@ -239,6 +236,7 @@ export class GetRentalDetailHandler implements IQueryHandler<GetRentalDetailQuer
       pricing: this.resolvePricing(rental.priceSnapshot),
       acceptedCustomerTotal: rental.confirmedAt ? (rental.acceptedCustomerTotal?.toString() ?? null) : null,
       acceptedDelivery: rental.confirmedAt ? this.resolveAcceptedDelivery(rental.deliverySnapshot) : null,
+      draftDelivery: rental.status === 'DRAFT' ? this.resolveAcceptedDelivery(rental.deliverySnapshot) : null,
       ownerPayouts,
     });
   }
@@ -328,8 +326,6 @@ export class GetRentalDetailHandler implements IQueryHandler<GetRentalDetailQuer
     if (deliverySnapshot === null) return null;
     const snapshot = AcceptedDeliverySnapshot.create(deliverySnapshot);
     if (snapshot.isErr()) throw snapshot.error;
-    const { distanceMeters, delivery, collection, currency, deliveryTotal, transportReservationMinutes } =
-      snapshot.value.snapshot;
-    return { distanceMeters, delivery, collection, currency, deliveryTotal, transportReservationMinutes };
+    return toAcceptedDeliveryResponse(snapshot.value);
   }
 }

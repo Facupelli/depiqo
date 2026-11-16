@@ -165,6 +165,9 @@ describe('RentalProposalResolver', () => {
       },
     };
     const delivery: DeliveryQuoteService = {
+      async evaluate() {
+        throw new Error('Not used by proposal resolution');
+      },
       async getQuote(request) {
         deliveryRequests.push(request);
         return serviceable ? { serviceable: true, quote } : { serviceable: false, reason: 'NO_ROUTE' };

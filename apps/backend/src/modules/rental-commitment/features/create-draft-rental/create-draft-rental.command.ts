@@ -1,3 +1,5 @@
+import type { DraftRentalDeliveryDestination } from '../../application/rental-proposal-resolver.service';
+import type { DraftRentalDeliveryDecisions } from '../../application/draft-rental-delivery-resolver.service';
 import { FulfillmentMethod } from '../../domain/rental-status';
 import { BookingSnapshot } from '../../domain/value-objects/json-snapshot.value-object';
 import { RentalPeriod } from '../../domain/value-objects/rental-period.value-object';
@@ -13,10 +15,7 @@ export interface CreateDraftRentalManualPricingAdjustmentCommand {
   reason?: string;
 }
 
-export interface CreateDraftRentalDeliveryDetailsCommand {
-  address: string;
-  locationId: string;
-}
+export type CreateDraftRentalDeliveryDetailsCommand = DraftRentalDeliveryDestination;
 
 export class CreateDraftRentalCommand {
   public readonly tenantId: string;
@@ -32,6 +31,7 @@ export class CreateDraftRentalCommand {
   public readonly bookingSnapshot?: BookingSnapshot;
   public readonly deliveryDetails?: CreateDraftRentalDeliveryDetailsCommand;
   public readonly manualPricingAdjustment?: CreateDraftRentalManualPricingAdjustmentCommand;
+  public readonly deliveryDecisions?: DraftRentalDeliveryDecisions;
 
   constructor(props: {
     tenantId: string;
@@ -47,6 +47,7 @@ export class CreateDraftRentalCommand {
     bookingSnapshot?: BookingSnapshot;
     deliveryDetails?: CreateDraftRentalDeliveryDetailsCommand;
     manualPricingAdjustment?: CreateDraftRentalManualPricingAdjustmentCommand;
+    deliveryDecisions?: DraftRentalDeliveryDecisions;
   }) {
     this.tenantId = props.tenantId;
     this.tenantUserId = props.tenantUserId;
@@ -61,5 +62,6 @@ export class CreateDraftRentalCommand {
     this.bookingSnapshot = props.bookingSnapshot;
     this.deliveryDetails = props.deliveryDetails;
     this.manualPricingAdjustment = props.manualPricingAdjustment;
+    this.deliveryDecisions = props.deliveryDecisions;
   }
 }

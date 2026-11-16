@@ -6,6 +6,7 @@ import { currentAuthQueries } from "@/auth/auth.queries";
 import { can } from "@/auth/permissions";
 import { PageBreadcrumb } from "@/components/detail-id-breadcrumb";
 import { useBranches } from "@/modules/settings/branches/public";
+import { GenericErrorPage } from "@/shared/components/generic-error-page";
 import {
 	DraftRentalComposer,
 	PriceAdjustableDraftRentalComposer,
@@ -14,13 +15,14 @@ import {
 	createDraftRentalComposerDefaultValues,
 	type DraftRentalComposerFormValues,
 } from "../draft-rental-composer/draft-rental-composer.schema";
+import { getDeliveryErrorMessage } from "../shared/delivery-error-messages";
 import { useCreateDraftRental } from "./create-draft-rental.mutation";
 import { toCreateDraftRentalDto } from "./create-draft-rental.schema";
 
 export function CreateRentalPage() {
 	const navigate = useNavigate();
 	const { data: currentAuth } = useSuspenseQuery(currentAuthQueries.current());
-	const { data: branches = [] } = useBranches();
+	const { data: branches = [], isPending, isLoadingError } = useBranches();
 	const activeBranches = branches.filter((branch) => branch.isActive);
 	const workingBranchIsActive = activeBranches.some(
 		(branch) => branch.id === currentAuth.workingBranchId,
@@ -80,15 +82,34 @@ export function CreateRentalPage() {
 				</h1>
 			</div>
 
-			<Composer
-				activeBranches={activeBranches}
-				defaultValues={createDraftRentalComposerDefaultValues(initialBranchId)}
-				onSubmit={handleSubmit}
-				isSubmitting={createDraftRental.isPending}
-				submitError={null}
-				submitLabel="Crear borrador"
-				missingBranchMessage="Seleccioná una sucursal para crear un nuevo borrador."
-			/>
+			{isPending ? (
+				<output className="text-sm text-muted-foreground">
+					Cargando sucursales...
+				</output>
+			) : isLoadingError ? (
+				<GenericErrorPage message="No pudimos cargar las sucursales. Intentá nuevamente." />
+			) : (
+				<Composer
+					activeBranches={activeBranches}
+					canManageDelivery={
+						currentAuth.actorType === "TENANT_USER" &&
+						can(currentAuth.permissions, TenantPermission.RentalsDeliveryManage)
+					}
+					defaultValues={createDraftRentalComposerDefaultValues(
+						initialBranchId,
+					)}
+					onSubmit={handleSubmit}
+					isSubmitting={createDraftRental.isPending}
+					submitError={
+						createDraftRental.error
+							? (getDeliveryErrorMessage(createDraftRental.error) ??
+								"No pudimos crear el borrador. Revisá los datos e intentá nuevamente.")
+							: null
+					}
+					submitLabel="Crear borrador"
+					missingBranchMessage="Seleccioná una sucursal para crear un nuevo borrador."
+				/>
+			)}
 		</div>
 	);
 }

@@ -21,6 +21,7 @@ import {
 	CalendarDays,
 	ChevronLeft,
 	ChevronRight,
+	X,
 } from "lucide-react";
 import { useRef } from "react";
 import dayjs from "@/lib/dates/dayjs";
@@ -34,6 +35,7 @@ import { formatOrderNumber } from "@/shared/utils/formatters";
 import {
 	getInclusiveCalendarRange,
 	getOrdersCalendarEventOrder,
+	getOrdersCalendarEventRange,
 	ORDERS_CALENDAR_VIEW_LABELS,
 	type OrdersCalendarRange,
 	type OrdersCalendarView,
@@ -232,9 +234,35 @@ export function OrdersCalendar({
 								? "orders-calendar-popover-header"
 								: "orders-calendar-day-header"
 						}
+						popoverFormat={{
+							weekday: "long",
+							day: "numeric",
+							month: "long",
+							year: "numeric",
+						}}
+						dayHeaderContent={(info) => {
+							if (!info.inPopover) return info.text;
+
+							const date = info.view.calendar.formatIso(info.date, true);
+							const count = orders.filter((order) => {
+								const range = getOrdersCalendarEventRange(order, timezone);
+								return date >= range.startDate && date < range.exclusiveEndDate;
+							}).length;
+
+							return (
+								<div className="min-w-0 space-y-1">
+									<p className="text-sm font-semibold leading-snug text-foreground first-letter:uppercase">
+										{info.text}
+									</p>
+									<p className="text-xs font-normal text-muted-foreground">
+										{count} {count === 1 ? "alquiler" : "alquileres"}
+									</p>
+								</div>
+							);
+						}}
 						dayCellClass={(info) =>
 							info.inPopover
-								? "orders-calendar-popover-body"
+								? "orders-calendar-popover-body min-h-0 overflow-y-auto overscroll-contain"
 								: cn(
 										"orders-calendar-day-cell",
 										info.isToday && "orders-calendar-day-cell--today",
@@ -252,12 +280,19 @@ export function OrdersCalendar({
 									)
 						}
 						dayCellInnerClass={(info) =>
-							info.inPopover ? "" : "orders-calendar-day-events"
+							info.inPopover
+								? "orders-calendar-popover-events space-y-1"
+								: "orders-calendar-day-events"
 						}
 						moreLinkClick="popover"
 						moreLinkClass="orders-calendar-more-link"
 						moreLinkInnerClass="orders-calendar-more-link-inner"
-						popoverClass="orders-calendar-popover"
+						popoverClass="orders-calendar-popover w-96 max-w-[calc(100vw-2rem)] rounded-xl border border-neutral-200 bg-popover p-4 text-popover-foreground shadow-lg"
+						popoverCloseClass="orders-calendar-popover-close inline-flex size-7 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+						popoverCloseContent={() => (
+							<X className="size-4" aria-hidden="true" />
+						)}
+						closeHint="Cerrar"
 						events={events}
 						eventDisplay="block"
 						now={new Date().toISOString()}

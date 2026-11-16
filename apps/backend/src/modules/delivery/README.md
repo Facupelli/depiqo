@@ -14,6 +14,8 @@ Disabling Delivery makes the service unavailable for current quotes without disc
 
 Delivery determines whether requested transportation is serviceable under the current branch policy. Coverage is based on the route between the Branch operational location and the customer destination together with the policy's coverage limits.
 
+Staff may authorize policy exceptions, but never waive technical transportation validity. Storefront remains subject to automatic branch policy.
+
 ### Delivery and Collection
 
 Delivery and Collection are separate transportation legs. Each may contribute its own quoted charge under the current branch Delivery policy.
@@ -24,7 +26,7 @@ The policy distinguishes times when transportation is eligible to occur from nor
 
 ### Transport reservation
 
-Delivery terms may include transportation time that extends the period during which rental equipment must remain operationally reserved. Delivery determines the current proposed transportation terms; Rental Commitment uses the accepted transportation facts when establishing the rental's physical reservation period.
+Delivery terms may include transportation time that extends the period during which rental equipment must remain operationally reserved. Delivery determines the current proposed transportation terms; Rental Commitment uses the accepted transportation facts when establishing the rental's physical reservation period. Policy exceptions do not waive configured transportation time; absent configuration requires an explicit staff decision, never an implicit zero.
 
 ## Current and accepted delivery terms
 

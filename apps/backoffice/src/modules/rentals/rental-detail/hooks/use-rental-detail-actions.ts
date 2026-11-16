@@ -3,6 +3,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { can } from "@/auth/permissions";
 import { useBranchTimezone } from "@/shared/timezone/operational-timezone.hooks";
+import { getDeliveryErrorMessage } from "../../shared/delivery-error-messages";
 import { useCancelRental } from "../cancel-rental/cancel-rental.mutation";
 import { useConfirmRental } from "../confirm-rental/confirm-rental.mutation";
 import {
@@ -15,7 +16,7 @@ import { useRentalSigningInvitationActions } from "../documents/signing/use-rent
 import { useRentalDetailContext } from "../rental-detail.context";
 
 const CONFIRM_RENTAL_FALLBACK_ERROR =
-	"No pudimos confirmar el alquiler. Revisá que tenga cliente, precio calculado y equipos disponibles para el período.";
+	"No pudimos confirmar el alquiler. Revisá el cliente, los importes, las condiciones de envío y la disponibilidad de equipos.";
 
 export function useRentalDetailActions() {
 	const navigate = useNavigate();
@@ -43,16 +44,24 @@ export function useRentalDetailActions() {
 	const canSendSigningInvitation = customerSummary !== null;
 	const hasConfirmPrerequisites =
 		customerSummary !== null && rental.pricing !== null;
-	const canConfirmRental = isDraftRental && hasConfirmPrerequisites;
+	const confirmationVersionConflict =
+		confirmRental.error?.problemDetails.code ===
+		"rental_commitment.rental_version_conflict";
+	const rejectedReview =
+		confirmationVersionConflict &&
+		confirmRental.variables?.expectedVersion === rental.version;
+	const canConfirmRental =
+		isDraftRental && hasConfirmPrerequisites && !rejectedReview;
 	const canCancelRental = !["CANCELLED", "COMPLETED"].includes(rental.status);
 	const canRescheduleRental =
 		rental.status === "CONFIRMED" &&
 		new Date(rental.period.start).getTime() > Date.now();
-	const confirmRentalErrorMessage = confirmRental.error
-		? (confirmRental.error.problemDetails.detail ??
-			confirmRental.error.problemDetails.title ??
-			CONFIRM_RENTAL_FALLBACK_ERROR)
-		: null;
+	const confirmRentalErrorMessage = confirmationVersionConflict
+		? "El alquiler cambió. Actualizá la información y revisala antes de confirmar nuevamente."
+		: confirmRental.error
+			? (getDeliveryErrorMessage(confirmRental.error) ??
+				CONFIRM_RENTAL_FALLBACK_ERROR)
+			: null;
 
 	async function submitRentalBudgetCustomer(
 		values: RentalBudgetCustomerFormValues,
@@ -96,6 +105,23 @@ export function useRentalDetailActions() {
 		rescheduleDialogProps: {
 			rentalId: rental.id,
 			rentalVersion: rental.version,
+			fulfillmentMethod: rental.fulfillment.method,
+			deliveryArrangement: rental.acceptedDelivery?.arrangement ?? null,
+			reservationAssetLabels: Object.fromEntries(
+				[
+					...rental.selections.flatMap((selection) => selection.demandLines),
+					...rental.accessories,
+				].flatMap((line) =>
+					line.assignedAssets.map((asset) => [
+						asset.assetId,
+						`${line.equipmentTypeName} · ${asset.assetId}`,
+					]),
+				),
+			),
+			canAuthorizeDeliveryException: can(
+				permissions,
+				TenantPermission.RentalsDeliveryManage,
+			),
 			currentPeriodStart: rental.period.start,
 			currentPeriodEnd: rental.period.end,
 			operationalTimezone,
@@ -114,7 +140,8 @@ export function useRentalDetailActions() {
 			canConfirm: canConfirmRental,
 			isPending: confirmRental.isPending,
 			errorMessage: confirmRentalErrorMessage,
-			onConfirm: () => confirmRental.mutate({ rentalId: rental.id }),
+			onConfirm: (expectedVersion: number) =>
+				confirmRental.mutate({ rentalId: rental.id, expectedVersion }),
 		},
 		cancelDialogProps: {
 			open: isCancelDialogOpen,

@@ -136,8 +136,12 @@ export function RentalCreatedByCustomerEmailContent({
       </Section>
 
       <DetailRow label="Estado" value={formatRentalStatus(status)} accent />
-      <DetailRow label="Método de entrega" value={formatFulfillmentMethod(fulfillmentMethod)} />
-      <DetailRow label="Retiro" value={pickupDate} secondaryValue={pickupTime} />
+      <DetailRow label="Modalidad" value={formatFulfillmentMethod(fulfillmentMethod)} />
+      <DetailRow
+        label={fulfillmentMethod === 'DELIVERY' ? 'Inicio' : 'Retiro'}
+        value={pickupDate}
+        secondaryValue={pickupTime}
+      />
       <DetailRow label="Devolución" value={returnDate} secondaryValue={returnTime} />
       {locationName ? <DetailRow label="Ubicación" value={locationName} /> : null}
       {timezone ? <DetailRow label="Zona horaria" value={timezone} /> : null}

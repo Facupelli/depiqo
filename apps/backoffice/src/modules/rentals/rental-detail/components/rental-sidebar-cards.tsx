@@ -2,6 +2,7 @@ import { TenantPermission } from "@repo/api-contracts";
 import { Button } from "@repo/ui/components/button";
 import { useQueryClient } from "@tanstack/react-query";
 import {
+	CalendarDays,
 	ChevronDown,
 	Pencil,
 	ReceiptText,
@@ -10,6 +11,7 @@ import {
 } from "lucide-react";
 import { type ReactNode, useId, useState } from "react";
 import { can } from "@/auth/permissions";
+import { CardHeaderIcon } from "@/components/card-header-icon";
 import { RentalInvoicesCard } from "@/modules/invoicing/public";
 import { useBranchTimezone } from "@/shared/timezone/operational-timezone.hooks";
 import {
@@ -19,13 +21,15 @@ import {
 import { formatMoney } from "@/shared/utils/formatters";
 import { AssignCustomerToDraftRentalDialog } from "../assign-customer/assign-customer-to-draft-rental-dialog";
 import { RentalContractSigningCard } from "../documents/signing/rental-contract-signing-card";
+import { EditDeliveryDialog } from "../edit-delivery/edit-delivery-dialog";
+import { EditDeliveryAgreementDialog } from "../edit-delivery-agreement/edit-delivery-agreement-dialog";
 import { EditPriceAdjustmentDialog } from "../edit-price-adjustment/edit-price-adjustment-dialog";
 import { useRentalDetailContext } from "../rental-detail.context";
 import { rentalDetailViewQueries } from "../rental-detail.queries";
 import {
 	formatRentalDetailDateBlock,
 	getRentalCustomerInitials,
-	getRentalDisplayTotal,
+	getRentalDetailFinancialSummary,
 } from "../rental-detail.utils";
 
 type PeriodEditAction = {
@@ -175,56 +179,99 @@ function RentalLogisticsCard({
 }: {
 	periodEditAction?: PeriodEditAction;
 }) {
-	const { rental } = useRentalDetailContext();
+	const { rental, permissions } = useRentalDetailContext();
+	const [isDeliveryOpen, setIsDeliveryOpen] = useState(false);
+	const canEditDelivery =
+		can(permissions, TenantPermission.RentalsDeliveryManage) &&
+		rental.status === "CONFIRMED" &&
+		rental.fulfillment.method === "DELIVERY" &&
+		Date.now() < Date.parse(rental.period.start);
+	const hasDelivery = rental.fulfillment.method === "DELIVERY";
 	const deliveryDetails = rental.fulfillment.deliveryDetails;
+	const delivery = rental.acceptedDelivery ?? rental.draftDelivery;
 	const timezone = useBranchTimezone(rental.branchId);
 	const pickup = formatRentalDetailDateBlock(rental.period.start, timezone);
 	const returnDate = formatRentalDetailDateBlock(rental.period.end, timezone);
 
-	return (
-		<ResponsiveDisclosureCard
-			icon={<Truck className="size-4" />}
-			title="Logística"
-			summary={`${pickup.date} ${pickup.time} → ${returnDate.date} ${returnDate.time}`}
-			headerAction={
-				periodEditAction ? (
-					<Button
-						type="button"
-						variant="ghost"
-						size="icon-sm"
-						className="shrink-0 text-neutral-500 hover:text-neutral-950"
-						onClick={periodEditAction.onOpen}
-						aria-label="Editar período"
-						title="Editar período"
-					>
-						<Pencil className="size-3.5" />
-					</Button>
-				) : null
-			}
+	const periodEditButton = periodEditAction ? (
+		<Button
+			type="button"
+			variant="ghost"
+			size="icon-sm"
+			className="size-5 shrink-0"
+			onClick={periodEditAction.onOpen}
+			aria-label="Editar período"
+			title="Editar período"
 		>
-			<div className="grid grid-cols-2 gap-x-6 gap-y-1">
-				<DateBlock
-					label="Fecha de retiro"
-					value={rental.period.start}
-					timezone={timezone}
-				/>
-				<DateBlock
-					label="Fecha de devolución"
-					value={rental.period.end}
-					timezone={timezone}
-				/>
-			</div>
-			{deliveryDetails ? (
-				<div className="mt-3 border-t border-neutral-100">
-					<p className="mt-3 mb-1 font-mono text-[10px] uppercase tracking-wider text-neutral-400">
-						Pedido de delivery
-					</p>
-					<p className="text-sm text-neutral-700">
-						{deliveryDetails.formattedAddress}
-					</p>
-				</div>
+			<Pencil className="size-3.5" />
+		</Button>
+	) : null;
+
+	return (
+		<>
+			{isDeliveryOpen ? (
+				<EditDeliveryDialog onClose={() => setIsDeliveryOpen(false)} />
 			) : null}
-		</ResponsiveDisclosureCard>
+			<ResponsiveDisclosureCard
+				icon={<Truck className="size-4" />}
+				title="Logística"
+				summary={`${pickup.date} ${pickup.time} → ${returnDate.date} ${returnDate.time}`}
+				headerAction={!hasDelivery ? periodEditButton : null}
+			>
+				{hasDelivery ? (
+					<div className="mb-3 flex items-center justify-between gap-3">
+						<h3 className="text-sm font-bold text-neutral-950">
+							Período del alquiler
+						</h3>
+						{periodEditButton}
+					</div>
+				) : null}
+				<div className="grid grid-cols-2 gap-x-4 gap-y-3 py-1">
+					<DateBlock
+						label="Inicio"
+						value={rental.period.start}
+						timezone={timezone}
+					/>
+					<DateBlock
+						label="Fin"
+						value={rental.period.end}
+						timezone={timezone}
+					/>
+				</div>
+				{hasDelivery ? (
+					<div className="mt-4 border-t border-neutral-100 pt-3">
+						<div className="mb-2 flex min-h-8 items-center justify-between gap-3">
+							<h3 className="text-sm font-bold text-neutral-950">Entrega</h3>
+							{canEditDelivery ? (
+								<Button
+									type="button"
+									variant="ghost"
+									size="icon-sm"
+									className="size-5 shrink-0"
+									aria-label="Editar entrega"
+									title="Editar entrega"
+									onClick={() => setIsDeliveryOpen(true)}
+								>
+									<Pencil className="size-3.5" />
+								</Button>
+							) : null}
+						</div>
+						<p className="text-sm font-medium text-neutral-950">
+							{delivery?.arrangement === "STAFF_ARRANGED"
+								? "A medida"
+								: delivery?.arrangement === "ROUTED"
+									? "Según configuración"
+									: "Condiciones de envío no disponibles"}
+						</p>
+						<p className="mt-0.5 break-words text-sm text-neutral-500">
+							{deliveryDetails?.formattedAddress ??
+								deliveryDetails?.address ??
+								"Sin destino de entrega"}
+						</p>
+					</div>
+				) : null}
+			</ResponsiveDisclosureCard>
+		</>
 	);
 }
 
@@ -260,6 +307,7 @@ function RentalFinancialsCard() {
 	);
 	const [showItems, setShowItems] = useState(false);
 	const [isEditPriceDialogOpen, setIsEditPriceDialogOpen] = useState(false);
+	const [isDeliveryAgreementOpen, setIsDeliveryAgreementOpen] = useState(false);
 	const financialContentId = useId();
 
 	const pricing = rental.pricing;
@@ -267,13 +315,13 @@ function RentalFinancialsCard() {
 	if (!pricing) {
 		return (
 			<section className="rounded-lg border border-neutral-200 bg-white p-4">
-				<div className="@5xl/rental-detail:mb-3 @5xl/rental-detail:flex @5xl/rental-detail:items-center @5xl/rental-detail:gap-2 @5xl/rental-detail:border-neutral-100 @5xl/rental-detail:border-b @5xl/rental-detail:pb-1">
-					<span className="hidden size-6 items-center justify-center text-neutral-600 @5xl/rental-detail:flex">
-						<ReceiptText className="size-4" />
-					</span>
-					<h2 className="text-sm font-bold text-neutral-950">Importe</h2>
+				<div className="mb-4 flex items-center gap-3 border-b border-neutral-200 pb-4">
+					<CardHeaderIcon>
+						<ReceiptText />
+					</CardHeaderIcon>
+					<h2 className="text-base font-bold text-neutral-950">Importe</h2>
 				</div>
-				<p className="mt-0.5 break-words text-sm text-neutral-500 @5xl/rental-detail:mt-0">
+				<p className="break-words text-sm text-neutral-500">
 					Sin precio calculado.
 				</p>
 			</section>
@@ -281,11 +329,35 @@ function RentalFinancialsCard() {
 	}
 
 	const acceptedDelivery = rental.acceptedDelivery;
-	const headlineTotal = getRentalDisplayTotal(rental, pricing);
+	const { delivery, total: headlineTotal } = getRentalDetailFinancialSummary(
+		rental,
+		pricing,
+	);
+	const formattedTotal =
+		headlineTotal === null
+			? "Total no disponible"
+			: formatMoney(headlineTotal, pricing.currency);
+	const formattedEquipmentTotal = formatMoney(
+		pricing.totalBeforeInsurance,
+		pricing.currency,
+	);
+	const showEquipmentTotal =
+		showItems || formattedEquipmentTotal !== formattedTotal;
+	const hasAdditionalChargeRows =
+		pricing.insurance.applied ||
+		delivery !== null ||
+		(rental.status === "DRAFT" && rental.fulfillment.method === "DELIVERY");
+	const hasFinancialBreakdown = showEquipmentTotal || hasAdditionalChargeRows;
 	const manualAdjustment = pricing.manualPricingAdjustment ?? null;
 	const canEditPrice =
 		canAdjustPrice &&
 		rental.status === "CONFIRMED" &&
+		Date.now() < Date.parse(rental.period.end);
+	const canEditDelivery =
+		can(permissions, TenantPermission.RentalsDeliveryManage) &&
+		rental.status === "CONFIRMED" &&
+		rental.fulfillment.method === "DELIVERY" &&
+		acceptedDelivery !== null &&
 		Date.now() < Date.parse(rental.period.end);
 	const adjustmentSign =
 		manualAdjustment?.direction === "INCREASE"
@@ -296,6 +368,12 @@ function RentalFinancialsCard() {
 
 	return (
 		<>
+			{isDeliveryAgreementOpen ? (
+				<EditDeliveryAgreementDialog
+					open
+					onOpenChange={setIsDeliveryAgreementOpen}
+				/>
+			) : null}
 			<EditPriceAdjustmentDialog
 				open={isEditPriceDialogOpen}
 				onOpenChange={setIsEditPriceDialogOpen}
@@ -304,101 +382,159 @@ function RentalFinancialsCard() {
 				<button
 					type="button"
 					onClick={() => setShowItems((prev) => !prev)}
-					className="flex w-full min-w-0 items-start justify-between gap-4 text-left"
-					aria-controls={financialContentId}
+					className="flex w-full min-w-0 items-center justify-between gap-3 border-b border-neutral-200 pb-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+					aria-controls={`${financialContentId} ${financialContentId}-items`}
 					aria-expanded={showItems}
 				>
-					<span className="min-w-0 flex-1 @5xl/rental-detail:hidden">
-						<span className="block text-sm font-bold text-neutral-950">
-							Importe
-						</span>
-						<span className="mt-0.5 block break-words font-mono text-sm font-semibold text-neutral-950">
-							{formatMoney(headlineTotal, pricing.currency)}
-						</span>
-					</span>
-					<span className="hidden min-w-0 flex-1 @5xl/rental-detail:block [&>div]:mb-0">
-						<SidebarHeader
-							icon={<ReceiptText className="size-4" />}
-							title="Importe"
-						/>
-					</span>
+					<CardHeaderIcon>
+						<ReceiptText />
+					</CardHeaderIcon>
+					<h2 className="min-w-0 flex-1 text-base font-bold text-neutral-950">
+						Importe
+					</h2>
 					<ChevronDown
 						className={`size-4 shrink-0 text-neutral-400 transition-transform ${showItems ? "rotate-180" : ""}`}
 					/>
 				</button>
-				<div className="hidden items-baseline justify-between pt-3 pb-3 @5xl/rental-detail:flex">
-					<span className="text-sm font-bold text-neutral-950">Total</span>
+				<div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b border-neutral-200 py-3">
+					<span className="text-sm font-bold text-neutral-950">
+						Total del alquiler
+					</span>
 					<span className="break-words font-mono text-xl font-bold tracking-tight text-neutral-950">
-						{formatMoney(headlineTotal, pricing.currency)}
+						{formattedTotal}
 					</span>
 				</div>
-				<div
-					id={financialContentId}
-					className={`${showItems ? "mt-4 block" : "hidden"} space-y-2 border-neutral-200 border-t border-dashed pt-3 @5xl/rental-detail:mt-0 @5xl/rental-detail:block`}
-				>
-					<MoneyRow
-						label="Subtotal"
-						value={pricing.subtotal}
-						currency={pricing.currency}
-					/>
-					{!isZeroDecimal(pricing.discountTotal) ? (
+				<div className="space-y-2 pt-3">
+					<div
+						id={financialContentId}
+						hidden={!showItems}
+						className="space-y-2"
+					>
 						<MoneyRow
-							label="Descuentos"
-							value={pricing.discountTotal}
+							label="Equipos"
+							value={pricing.subtotal}
 							currency={pricing.currency}
-							tone="success"
-							prefix="-"
 						/>
-					) : null}
-					{acceptedDelivery ? (
-						<MoneyRow
-							label="Delivery"
-							value={acceptedDelivery.deliveryTotal}
-							currency={acceptedDelivery.currency}
-						/>
-					) : null}
-					<div>
-						<div className="grid grid-cols-[1fr_auto_auto] items-center gap-2">
-							<span className="text-sm text-neutral-500">Ajuste manual</span>
-							<span className="font-mono text-sm text-neutral-950">
-								{manualAdjustment
-									? `${adjustmentSign}${formatMoney(manualAdjustment.adjustmentTotal, pricing.currency)}`
-									: "Sin ajuste"}
-							</span>
-							{canEditPrice ? (
-								<Button
-									type="button"
-									variant="ghost"
-									size="sm"
-									className="h-7 px-2"
-									onClick={() => setIsEditPriceDialogOpen(true)}
-								>
-									<Pencil className="size-3.5" />
-									{manualAdjustment ? "Editar" : "Añadir"}
-								</Button>
+						{!isZeroDecimal(pricing.discountTotal) ? (
+							<MoneyRow
+								label="Descuentos"
+								value={pricing.discountTotal}
+								currency={pricing.currency}
+								tone="success"
+								prefix="-"
+							/>
+						) : null}
+						<div>
+							<FinancialSummaryRow
+								label={
+									<span className="text-sm text-neutral-500">
+										Ajuste manual
+									</span>
+								}
+								amount={
+									<span className="font-mono text-sm text-neutral-950">
+										{manualAdjustment
+											? `${adjustmentSign}${formatMoney(manualAdjustment.adjustmentTotal, pricing.currency)}`
+											: "Sin ajuste"}
+									</span>
+								}
+								action={
+									canEditPrice ? (
+										<Button
+											type="button"
+											variant="ghost"
+											size="icon-sm"
+											className="size-5"
+											aria-label={
+												manualAdjustment
+													? "Editar ajuste manual"
+													: "Añadir ajuste manual"
+											}
+											title={
+												manualAdjustment
+													? "Editar ajuste manual"
+													: "Añadir ajuste manual"
+											}
+											onClick={() => setIsEditPriceDialogOpen(true)}
+										>
+											<Pencil className="size-3.5" />
+										</Button>
+									) : null
+								}
+							/>
+							{manualAdjustment?.reason ? (
+								<p className="mt-1 text-xs text-neutral-500">
+									Motivo: {manualAdjustment.reason}
+								</p>
 							) : null}
 						</div>
-						{manualAdjustment?.reason ? (
-							<p className="mt-1 pl-2 text-xs text-neutral-500">
-								<span className="font-medium">Motivo: </span>
-								{manualAdjustment.reason}
-							</p>
-						) : null}
 					</div>
+					{showEquipmentTotal ? (
+						<div
+							className={
+								showItems && hasAdditionalChargeRows
+									? "border-b border-neutral-200 pb-3"
+									: ""
+							}
+						>
+							<FinancialSummaryRow
+								label={
+									<span className="text-sm text-neutral-950">
+										Equipos a cobrar
+									</span>
+								}
+								amount={
+									<span className="font-mono text-sm text-neutral-950">
+										{formattedEquipmentTotal}
+									</span>
+								}
+							/>
+						</div>
+					) : null}
 					{pricing.insurance.applied ? (
 						<MoneyRow
-							label="Seguro de equipos"
+							label={showItems ? "Seguro de equipos" : "Seguro"}
 							value={pricing.insurance.amount}
 							currency={pricing.currency}
 						/>
 					) : null}
-					<div className="flex items-center justify-between">
-						<span className="text-sm text-neutral-500">Días cobrados</span>
-						<span className="font-mono text-sm text-neutral-950">
-							{pricing.chargedDays}
+					{delivery ? (
+						<MoneyRow
+							label="Entrega y retiro"
+							value={delivery.effectiveDeliveryCharge}
+							currency={delivery.currency}
+							action={
+								canEditDelivery ? (
+									<Button
+										type="button"
+										variant="ghost"
+										size="icon-sm"
+										className="size-5"
+										aria-label="Editar precio de entrega y retiro"
+										title="Editar precio de entrega y retiro"
+										onClick={() => setIsDeliveryAgreementOpen(true)}
+									>
+										<Pencil className="size-3.5" />
+									</Button>
+								) : null
+							}
+						/>
+					) : rental.status === "DRAFT" &&
+						rental.fulfillment.method === "DELIVERY" ? (
+						<p className="text-sm text-neutral-500">
+							Entrega y retiro: importe no disponible.
+						</p>
+					) : null}
+					<div
+						className={`flex items-center gap-2 text-sm text-neutral-500 ${hasFinancialBreakdown ? "border-t border-neutral-200 pt-3" : ""}`}
+					>
+						<CalendarDays className="size-4 shrink-0" />
+						<span>
+							{pricing.chargedDays}{" "}
+							{pricing.chargedDays === 1 ? "día cobrado" : "días cobrados"}
 						</span>
 					</div>
-					{pricing.appliedCoupon ? (
+					{showItems && pricing.appliedCoupon ? (
 						<div className="flex items-center justify-between">
 							<span className="text-sm text-neutral-500">Cupón</span>
 							<span className="font-mono text-sm text-neutral-950">
@@ -407,52 +543,57 @@ function RentalFinancialsCard() {
 						</div>
 					) : null}
 				</div>
-				{showItems ? (
-					<div className="border-t border-neutral-100 mt-3 pt-3">
-						{pricing.lines.map((line) => (
-							<div
-								key={`${line.rentalOfferId}-${line.rentableItemId}`}
-								className="border-b border-neutral-100 py-2"
-							>
-								<div className="flex items-center justify-between">
-									<span className="text-sm text-neutral-500">
-										{line.rentableItemName} ×{line.quantity}
+				<div
+					id={`${financialContentId}-items`}
+					hidden={!showItems}
+					className="mt-3 border-t border-neutral-200 pt-3"
+				>
+					<h3 className="mb-1 text-sm font-bold text-neutral-950">
+						Detalle por equipo
+					</h3>
+					{pricing.lines.map((line) => (
+						<div
+							key={`${line.rentalOfferId}-${line.rentableItemId}`}
+							className="space-y-1 border-b border-neutral-100 py-2 last:border-b-0 last:pb-0"
+						>
+							<div className="flex items-baseline justify-between gap-3">
+								<span className="min-w-0 text-sm font-semibold text-neutral-950">
+									{line.rentableItemName} ×{line.quantity}
+								</span>
+								<span className="shrink-0 font-mono text-sm font-semibold text-neutral-950">
+									{formatMoney(line.total, pricing.currency)}
+								</span>
+							</div>
+							<p className="pl-3 text-xs text-neutral-500">
+								Tarifa registrada:{" "}
+								{formatMoney(line.pricePerUnit, pricing.currency)}
+							</p>
+							{line.appliedAdjustments.map((adjustment) => (
+								<div
+									key={`${adjustment.promotionId}-${adjustment.name}`}
+									className="flex items-baseline justify-between gap-3 pl-3"
+								>
+									<span className="text-xs text-neutral-500">
+										{adjustment.name}
 									</span>
-									<span className="font-mono text-sm text-neutral-950">
-										{formatMoney(line.total, pricing.currency)}
+									<span className="shrink-0 font-mono text-xs text-green-700">
+										-{formatMoney(adjustment.amount, pricing.currency)}
 									</span>
 								</div>
-								<p className="pl-3 text-[11px] text-neutral-500 break-all">
-									Tarifa unitaria registrada: {line.pricePerUnit}{" "}
-									{pricing.currency}
-								</p>
-								{line.appliedAdjustments.map((adjustment) => (
-									<div
-										key={`${adjustment.promotionId}-${adjustment.name}`}
-										className="flex items-center justify-between pl-3"
-									>
-										<span className="text-[11px] text-neutral-400">
-											{adjustment.name}
-										</span>
-										<span className="font-mono text-[11px] text-emerald-600">
-											-{formatMoney(adjustment.amount, pricing.currency)}
-										</span>
-									</div>
-								))}
-								{line.manualPricingAdjustment ? (
-									<ManualAdjustmentRow
-										label="Ajuste asignado"
-										amount={line.manualPricingAdjustment.amount}
-										direction={line.manualPricingAdjustment.direction}
-										currency={pricing.currency}
-										compact
-									/>
-								) : null}
-							</div>
-						))}
-						<OwnerPayoutsSection />
-					</div>
-				) : null}
+							))}
+							{line.manualPricingAdjustment ? (
+								<ManualAdjustmentRow
+									label="Ajuste manual asignado"
+									amount={line.manualPricingAdjustment.amount}
+									direction={line.manualPricingAdjustment.direction}
+									currency={pricing.currency}
+									compact
+								/>
+							) : null}
+						</div>
+					))}
+					<OwnerPayoutsSection />
+				</div>
 			</section>
 		</>
 	);
@@ -509,41 +650,66 @@ function OwnerPayoutsSection() {
 	);
 }
 
+function FinancialSummaryRow({
+	label,
+	amount,
+	action,
+}: {
+	label: ReactNode;
+	amount: ReactNode;
+	action?: ReactNode;
+}) {
+	return (
+		<div className="grid min-h-5 grid-cols-[minmax(0,1fr)_auto_1.25rem] items-center gap-x-2">
+			{label}
+			{amount}
+			<div className="flex size-5 items-center justify-center">{action}</div>
+		</div>
+	);
+}
+
 function MoneyRow({
 	label,
 	value,
 	currency,
 	tone = "default",
 	prefix = "",
+	action,
 }: {
 	label: string;
 	value: string;
 	currency: string;
 	tone?: "default" | "success";
 	prefix?: string;
+	action?: ReactNode;
 }) {
 	return (
-		<div className="flex items-center justify-between">
-			<span
-				className={
-					tone === "success"
-						? "text-sm text-green-700"
-						: "text-sm text-neutral-500"
-				}
-			>
-				{label}
-			</span>
-			<span
-				className={
-					tone === "success"
-						? "font-mono text-sm font-semibold text-green-700"
-						: "font-mono text-sm text-neutral-950"
-				}
-			>
-				{prefix}
-				{formatMoney(value, currency)}
-			</span>
-		</div>
+		<FinancialSummaryRow
+			label={
+				<span
+					className={
+						tone === "success"
+							? "text-sm text-green-700"
+							: "text-sm text-neutral-500"
+					}
+				>
+					{label}
+				</span>
+			}
+			amount={
+				<span
+					className={
+						tone === "success"
+							? "shrink-0 font-mono text-sm font-semibold text-green-700"
+							: "shrink-0 font-mono text-sm text-neutral-950"
+					}
+				>
+					{prefix}
+					{formatMoney(value, currency)}
+				</span>
+			}
+			action={action}
+		/>
 	);
 }
 
@@ -571,17 +737,17 @@ function ManualAdjustmentRow({
 
 	return (
 		<div
-			className={`flex items-center justify-between ${compact ? "pl-3" : ""}`}
+			className={`flex items-center justify-between gap-3 ${compact ? "pl-3" : ""}`}
 		>
 			<span
 				className={
-					compact ? "text-[11px] text-neutral-400" : "text-sm text-amber-700"
+					compact ? "text-xs text-neutral-500" : "text-sm text-amber-700"
 				}
 			>
 				{label}
 			</span>
 			<span
-				className={`${compact ? "text-[11px]" : "text-sm font-semibold"} font-mono ${valueClassName}`}
+				className={`${compact ? "text-xs" : "text-sm font-semibold"} shrink-0 font-mono ${valueClassName}`}
 			>
 				{sign}
 				{formatMoney(amount, currency)}
@@ -612,16 +778,19 @@ function ResponsiveDisclosureCard({
 			<div className="flex min-w-0 items-center gap-1 @5xl/rental-detail:hidden">
 				<button
 					type="button"
-					className="min-w-0 flex-1 text-left"
+					className="flex min-w-0 flex-1 items-center gap-2 text-left"
 					onClick={toggleExpanded}
 					aria-controls={contentId}
 					aria-expanded={isExpanded}
 				>
-					<span className="block text-sm font-bold text-neutral-950">
-						{title}
-					</span>
-					<span className="mt-0.5 block min-w-0 break-words text-sm text-neutral-600">
-						{summary}
+					<CardHeaderIcon>{icon}</CardHeaderIcon>
+					<span className="min-w-0">
+						<span className="block text-sm font-bold text-neutral-950">
+							{title}
+						</span>
+						<span className="mt-0.5 block break-words text-sm text-neutral-600">
+							{summary}
+						</span>
 					</span>
 				</button>
 				{headerAction}
@@ -666,9 +835,7 @@ function SidebarHeader({
 }) {
 	return (
 		<div className="mb-2 flex items-center gap-2 border-neutral-100 border-b pb-2">
-			<span className="flex size-6 items-center justify-center text-neutral-600">
-				{icon}
-			</span>
+			<CardHeaderIcon>{icon}</CardHeaderIcon>
 			<h2 className="min-w-0 flex-1 text-sm font-bold text-neutral-950">
 				{title}
 			</h2>

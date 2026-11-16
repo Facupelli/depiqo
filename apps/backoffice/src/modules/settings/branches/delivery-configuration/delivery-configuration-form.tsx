@@ -81,10 +81,11 @@ export function DeliveryConfigurationForm({
 							<Field orientation="horizontal" className="rounded-lg border p-4">
 								<div className="flex-1 space-y-1">
 									<FieldLabel htmlFor={field.name}>
-										Delivery habilitado
+										Envíos habilitados
 									</FieldLabel>
 									<FieldDescription>
-										Permite cotizar entregas y recogidas desde esta sucursal.
+										Permite calcular precios de entrega y retiro desde esta
+										sucursal.
 									</FieldDescription>
 								</div>
 								<Switch
@@ -117,9 +118,8 @@ export function DeliveryConfigurationForm({
 				</CardHeader>
 				<CardContent className="space-y-5">
 					<p className="text-sm text-muted-foreground">
-						Cada importe corresponde a un traslado. Delivery y Collection se
-						cobran de forma independiente, al igual que el recargo por horario
-						especial.
+						Cada importe corresponde a un traslado. La entrega y el retiro se
+						calculan por separado, al igual que el recargo por horario especial.
 					</p>
 					<form.Field name="distancePriceBands" mode="array">
 						{(field: DeliveryFormField) => (
@@ -198,7 +198,7 @@ export function DeliveryConfigurationForm({
 				</CardHeader>
 				<CardContent className="space-y-6">
 					<p className="text-sm text-muted-foreground">
-						Los mismos días y horarios se aplican a Delivery y Collection.
+						Los mismos días y horarios se aplican a la entrega y al retiro.
 					</p>
 					<form.Field name="eligibleWeekdays">
 						{(field: DeliveryFormField) => (
@@ -270,18 +270,18 @@ export function DeliveryConfigurationForm({
 
 			<Card>
 				<CardHeader>
-					<CardTitle>Reserva de transporte</CardTitle>
+					<CardTitle>Tiempo para transporte</CardTitle>
 				</CardHeader>
 				<CardContent className="space-y-4">
 					<p className="text-sm text-muted-foreground">
-						Tiempo reservado antes y después del alquiler para realizar el
-						traslado del equipo.
+						Los equipos quedan reservados este tiempo antes y después del
+						alquiler, para la entrega y el retiro.
 					</p>
 					<form.Field name="transportReservationMinutes">
 						{(field: DeliveryFormField) => (
 							<TextField
 								field={field}
-								label="Tiempo reservado"
+								label="Tiempo para transporte"
 								suffix="minutos"
 								inputMode="numeric"
 								placeholder="0"

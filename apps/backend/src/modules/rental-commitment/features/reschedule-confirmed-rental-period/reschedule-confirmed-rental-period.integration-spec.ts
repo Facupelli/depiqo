@@ -3,6 +3,7 @@ import { CommandBus } from '@nestjs/cqrs';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { TestingModule } from '@nestjs/testing';
 
+import { PrismaUnitOfWork } from 'src/core/database/prisma-unit-of-work';
 import { PrismaService } from 'src/core/database/prisma.service';
 import { Prisma } from 'src/generated/prisma/client';
 import { PostgresExclusionViolationError } from 'src/core/utils/postgres-error.mapper';
@@ -11,6 +12,7 @@ import {
   useIntegrationTestContext,
 } from '../../../../../test/support/integration-test-context';
 import { createTestFixtures, TestFixtures } from '../../../../../test/support/fixtures';
+import { ConfirmedRentalReschedulingPreparationService } from '../../application/confirmed-rental-rescheduling-preparation.service';
 import { RentalAssetAllocationService } from '../../asset-allocation/rental-asset-allocation.service';
 import { RentalPersistenceStateMismatchError, RentalRepository } from '../../persistence/rental.repository';
 import { ConfirmedRentalEditedIntegrationEvent } from '../../public-api/events/rental-lifecycle.integration-events';
@@ -21,6 +23,7 @@ import {
 } from '../../domain/value-objects/accepted-delivery-snapshot.value-object';
 import { RescheduleConfirmedRentalPeriodCommand } from './reschedule-confirmed-rental-period.command';
 import { RescheduleConfirmedRentalPeriodResult } from './reschedule-confirmed-rental-period.handler';
+import { RescheduleConfirmedRentalPeriodApplicationInputSchema } from './reschedule-confirmed-rental-period.request.dto';
 
 function readAcceptedDeliverySnapshot(value: Prisma.JsonValue | null): AcceptedDeliverySnapshotData {
   if (value === null) {
@@ -51,7 +54,9 @@ describe('RescheduleConfirmedRentalPeriod integration', () => {
     return moduleRef;
   });
 
-  async function scenario(options: { delivery?: boolean; startHours?: number; endHours?: number } = {}) {
+  async function scenario(
+    options: { delivery?: 'ROUTED' | 'STAFF_ARRANGED'; startHours?: number; endHours?: number } = {},
+  ) {
     const tenant = await core.createTenant();
     const branch = await core.createBranch({ tenantId: tenant.id });
     const { customer } = await core.createRentalCustomer({ tenantId: tenant.id });
@@ -86,28 +91,41 @@ describe('RescheduleConfirmedRentalPeriod integration', () => {
               longitude: -58.4,
             },
           },
-          deliverySnapshot: {
-            schema: 'v2.accepted-delivery',
-            version: 1,
-            distanceMeters: 12500,
-            delivery: {
-              scheduledAt: period.start.toISOString(),
-              serviceLevel: 'SPECIAL',
-              basePrice: '20.00',
-              surcharge: '5.00',
-              total: '25.00',
-            },
-            collection: {
-              scheduledAt: period.end.toISOString(),
-              serviceLevel: 'NORMAL',
-              basePrice: '15.00',
-              surcharge: '0.00',
-              total: '15.00',
-            },
-            currency: 'USD',
-            deliveryTotal: '40.00',
-            transportReservationMinutes: 45,
-          },
+          deliverySnapshot:
+            options.delivery === 'STAFF_ARRANGED'
+              ? {
+                  schema: 'v2.accepted-delivery',
+                  version: 2,
+                  arrangement: 'STAFF_ARRANGED',
+                  delivery: { scheduledAt: period.start.toISOString() },
+                  collection: { scheduledAt: period.end.toISOString() },
+                  currency: 'USD',
+                  staffAgreement: { amount: '40.00', agreedBy: user.id, agreedAt: new Date().toISOString() },
+                  transportReservationMinutes: 45,
+                }
+              : {
+                  schema: 'v2.accepted-delivery',
+                  version: 2,
+                  arrangement: 'ROUTED',
+                  distanceMeters: 12500,
+                  delivery: {
+                    scheduledAt: period.start.toISOString(),
+                    serviceLevel: 'SPECIAL',
+                    basePrice: '20.00',
+                    surcharge: '5.00',
+                    total: '25.00',
+                  },
+                  collection: {
+                    scheduledAt: period.end.toISOString(),
+                    serviceLevel: 'NORMAL',
+                    basePrice: '15.00',
+                    surcharge: '0.00',
+                    total: '15.00',
+                  },
+                  currency: 'USD',
+                  deliveryTotal: '40.00',
+                  transportReservationMinutes: 45,
+                },
         },
       });
       await prisma.client.$executeRaw`
@@ -123,6 +141,7 @@ describe('RescheduleConfirmedRentalPeriod integration', () => {
     setup: Awaited<ReturnType<typeof scenario>>,
     period: { start: Date; end: Date },
     expectedVersion?: number,
+    deliveryDecisions?: RescheduleConfirmedRentalPeriodCommand['props']['deliveryDecisions'],
   ): Promise<RescheduleConfirmedRentalPeriodResult> {
     const current = await prisma.client.v2Rental.findUniqueOrThrow({ where: { id: setup.rental.rentalId } });
     return bus.execute(
@@ -133,9 +152,88 @@ describe('RescheduleConfirmedRentalPeriod integration', () => {
         expectedVersion: expectedVersion ?? current.version,
         periodStart: period.start,
         periodEnd: period.end,
+        deliveryDecisions,
       }),
     );
   }
+
+  it.each([undefined, 'ROUTED', 'STAFF_ARRANGED'] as const)(
+    'does not prepare, persist, or publish an unchanged %s period, including equivalent offsets',
+    async (delivery) => {
+      const setup = await scenario({ delivery });
+      const before = await fixtures.persistedState(setup.rental.rentalId);
+      const preparation = moduleRef.get(ConfirmedRentalReschedulingPreparationService);
+      const prepare = vi.spyOn(preparation, 'prepare');
+      const accept = vi.spyOn(preparation, 'accept');
+      const persist = vi.spyOn(moduleRef.get(RentalRepository), 'rescheduleConfirmedPeriod');
+      const allocate = vi.spyOn(moduleRef.get(RentalAssetAllocationService), 'findConflictingExactAssetIds');
+      const transaction = vi.spyOn(moduleRef.get(PrismaUnitOfWork), 'runResultInTransaction');
+      const events = vi.fn();
+      const emitter = moduleRef.get(EventEmitter2);
+      emitter.on(ConfirmedRentalEditedIntegrationEvent.name, events);
+      try {
+        const offset = (date: Date) => new Date(date.getTime() + 3_600_000).toISOString().replace('Z', '+01:00');
+        const equivalent = RescheduleConfirmedRentalPeriodApplicationInputSchema.parse({
+          expectedVersion: before.rental.version,
+          period: { start: offset(setup.period.start), end: offset(setup.period.end) },
+        });
+        for (const period of [setup.period, equivalent.period]) {
+          const result = await reschedule(setup, period, before.rental.version);
+          expect(result._unsafeUnwrap()).toEqual({
+            rentalId: setup.rental.rentalId,
+            version: before.rental.version,
+            updatedAt: before.rental.updatedAt,
+          });
+        }
+        expect(await fixtures.persistedState(setup.rental.rentalId)).toEqual(before);
+        expect(prepare).not.toHaveBeenCalled();
+        expect(accept).not.toHaveBeenCalled();
+        expect(persist).not.toHaveBeenCalled();
+        expect(allocate).not.toHaveBeenCalled();
+        expect(transaction).not.toHaveBeenCalled();
+        expect(events).not.toHaveBeenCalled();
+      } finally {
+        emitter.off(ConfirmedRentalEditedIntegrationEvent.name, events);
+        prepare.mockRestore();
+        accept.mockRestore();
+        persist.mockRestore();
+        allocate.mockRestore();
+        transaction.mockRestore();
+      }
+    },
+  );
+
+  it.each([
+    ['stale', 'rental_commitment.rental_version_conflict'],
+    ['cancelled', 'rental_commitment.rental_cannot_be_edited_from_status'],
+    ['started', 'rental_commitment.rental_period_has_started'],
+  ] as const)('rejects an unchanged period for a %s rental without side effects', async (restriction, code) => {
+    const setup = await scenario({ startHours: restriction === 'started' ? -1 : 48 });
+    if (restriction === 'cancelled') {
+      await prisma.client.v2Rental.update({ where: { id: setup.rental.rentalId }, data: { status: 'CANCELLED' } });
+    }
+    if (restriction === 'stale') {
+      await prisma.client.v2Rental.update({
+        where: { id: setup.rental.rentalId },
+        data: { version: { increment: 1 } },
+      });
+    }
+    const before = await fixtures.persistedState(setup.rental.rentalId);
+    const prepare = vi.spyOn(moduleRef.get(ConfirmedRentalReschedulingPreparationService), 'prepare');
+    const events = vi.fn();
+    const emitter = moduleRef.get(EventEmitter2);
+    emitter.on(ConfirmedRentalEditedIntegrationEvent.name, events);
+    try {
+      const result = await reschedule(setup, setup.period, before.rental.version - (restriction === 'stale' ? 1 : 0));
+      expect(result._unsafeUnwrapErr().code).toBe(code);
+      expect(await fixtures.persistedState(setup.rental.rentalId)).toEqual(before);
+      expect(prepare).not.toHaveBeenCalled();
+      expect(events).not.toHaveBeenCalled();
+    } finally {
+      emitter.off(ConfirmedRentalEditedIntegrationEvent.name, events);
+      prepare.mockRestore();
+    }
+  });
 
   it.each([
     ['later start', 60, 84],
@@ -148,7 +246,10 @@ describe('RescheduleConfirmedRentalPeriod integration', () => {
       branchId: setup.branch.id,
       rentalId: setup.rental.rentalId,
       sourceRentalDemandLineId: setup.rental.demandLineIds[0],
-      period: setup.period,
+      period: {
+        start: new Date(setup.period.start.getTime() - 30 * 60_000),
+        end: new Date(setup.period.end.getTime() + 60 * 60_000),
+      },
     });
     const before = await fixtures.persistedState(setup.rental.rentalId);
     const proposed = { start: new Date(Date.now() + start * 3_600_000), end: new Date(Date.now() + end * 3_600_000) };
@@ -168,8 +269,8 @@ describe('RescheduleConfirmedRentalPeriod integration', () => {
     expect(after.blocks.find(({ id }) => id === accessory.blockId)).toBeDefined();
   });
 
-  it('reschedules DELIVERY timestamps and preserves every accepted commercial fact', async () => {
-    const setup = await scenario({ delivery: true });
+  it('reschedules STAFF_ARRANGED delivery timestamps and preserves every accepted commercial fact', async () => {
+    const setup = await scenario({ delivery: 'STAFF_ARRANGED' });
     const before = await fixtures.persistedState(setup.rental.rentalId);
     const proposed = { start: new Date(Date.now() + 60 * 3_600_000), end: new Date(Date.now() + 90 * 3_600_000) };
     const events: ConfirmedRentalEditedIntegrationEvent[] = [];
@@ -177,7 +278,21 @@ describe('RescheduleConfirmedRentalPeriod integration', () => {
     const listener = (event: ConfirmedRentalEditedIntegrationEvent) => events.push(event);
     emitter.on(ConfirmedRentalEditedIntegrationEvent.name, listener);
     try {
-      expect((await reschedule(setup, proposed)).isOk()).toBe(true);
+      const rental = await moduleRef.get(RentalRepository).findById(setup.tenant.id, setup.rental.rentalId);
+      const prepared = await moduleRef.get(ConfirmedRentalReschedulingPreparationService).prepare({
+        rental: rental!,
+        expectedVersion: before.rental.version,
+        periodStart: proposed.start,
+        periodEnd: proposed.end,
+      });
+      const { preview } = prepared._unsafeUnwrap();
+      expect(
+        (
+          await reschedule(setup, proposed, before.rental.version, {
+            reviewIdentity: preview.reviewIdentity!,
+          })
+        ).isOk(),
+      ).toBe(true);
     } finally {
       emitter.off(ConfirmedRentalEditedIntegrationEvent.name, listener);
     }
@@ -249,7 +364,10 @@ describe('RescheduleConfirmedRentalPeriod integration', () => {
               branchId: setup.branch.id,
               rentalId: setup.rental.rentalId,
               sourceRentalDemandLineId: setup.rental.demandLineIds[0],
-              period: setup.period,
+              period: {
+                start: new Date(setup.period.start.getTime() - 30 * 60_000),
+                end: new Date(setup.period.end.getTime() + 60 * 60_000),
+              },
             })
           : undefined;
       const assetId = accessory?.assetId ?? setup.rental.assetIds[0];

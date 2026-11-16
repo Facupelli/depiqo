@@ -1,9 +1,11 @@
+import type { DraftRentalDeliveryDestination } from '../../application/rental-proposal-resolver.service';
+import type { DraftRentalDeliveryDecisions } from '../../application/draft-rental-delivery-resolver.service';
 import { FulfillmentMethod } from '../../domain/rental-status';
 import { RentalPeriod } from '../../domain/value-objects/rental-period.value-object';
 
 export type UpdateDraftRentalDeliveryIntent =
   | { type: 'KEEP_CURRENT' }
-  | { type: 'NEW_DESTINATION'; address: string; locationId: string };
+  | ({ type: 'NEW_DESTINATION' } & DraftRentalDeliveryDestination);
 
 export type UpdateDraftRentalCommandProps = {
   tenantId: string;
@@ -15,6 +17,7 @@ export type UpdateDraftRentalCommandProps = {
   period: RentalPeriod;
   selectedOffers: Array<{ rentalOfferId: string; quantity: number }>;
   insuranceSelected?: boolean;
+  deliveryDecisions?: DraftRentalDeliveryDecisions;
   manualPricingAdjustment?: {
     mode: 'TARGET_TOTAL';
     targetTotal: string;

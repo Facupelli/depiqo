@@ -54,8 +54,8 @@ describe('ConfirmRental integration', () => {
     return { tenant, branch, customer, rental };
   }
 
-  async function confirm(tenantId: string, rentalId: string): Promise<ConfirmRentalResult> {
-    return commandBus.execute(new ConfirmRentalCommand(tenantId, rentalId));
+  async function confirm(tenantId: string, rentalId: string, expectedVersion: number): Promise<ConfirmRentalResult> {
+    return commandBus.execute(new ConfirmRentalCommand(tenantId, rentalId, expectedVersion));
   }
 
   async function setRentalAssetBuffer(tenantId: string, beforeBufferMinutes: number, afterBufferMinutes: number) {
@@ -117,7 +117,7 @@ describe('ConfirmRental integration', () => {
       });
       await setRentalAssetBuffer(scenario.tenant.id, 30, 45);
 
-      const result = await confirm(scenario.tenant.id, scenario.rental.rentalId);
+      const result = await confirm(scenario.tenant.id, scenario.rental.rentalId, scenario.rental.version);
       expect(result.isOk()).toBe(true);
 
       const state = await persisted(scenario.rental.rentalId);
@@ -165,7 +165,9 @@ describe('ConfirmRental integration', () => {
       emitter.on(RentalConfirmedIntegrationEvent.name, listener);
 
       try {
-        expect((await confirm(scenario.tenant.id, scenario.rental.rentalId)).isOk()).toBe(true);
+        expect((await confirm(scenario.tenant.id, scenario.rental.rentalId, scenario.rental.version)).isOk()).toBe(
+          true,
+        );
 
         const state = await persisted(scenario.rental.rentalId);
         expect(events).toEqual([
@@ -184,7 +186,7 @@ describe('ConfirmRental integration', () => {
           }),
         ]);
 
-        const repeated = await confirm(scenario.tenant.id, scenario.rental.rentalId);
+        const repeated = await confirm(scenario.tenant.id, scenario.rental.rentalId, state.rental.version);
         expect(repeated.isErr() && repeated.error.code).toBe(
           'rental_commitment.rental_cannot_be_confirmed_from_status',
         );
@@ -271,7 +273,7 @@ describe('ConfirmRental integration', () => {
       },
     });
 
-    expect((await confirm(scenario.tenant.id, scenario.rental.rentalId)).isOk()).toBe(true);
+    expect((await confirm(scenario.tenant.id, scenario.rental.rentalId, scenario.rental.version)).isOk()).toBe(true);
 
     const state = await persisted(scenario.rental.rentalId);
     expect(state.rental.ownerSplits).toHaveLength(1);
@@ -301,7 +303,7 @@ describe('ConfirmRental integration', () => {
       ),
     );
 
-    expect((await confirm(scenario.tenant.id, scenario.rental.rentalId)).isOk()).toBe(true);
+    expect((await confirm(scenario.tenant.id, scenario.rental.rentalId, scenario.rental.version)).isOk()).toBe(true);
     const state = await persisted(scenario.rental.rentalId);
     expect(new Set(state.rental.assignedAssets.map((assignment) => assignment.assetId))).toEqual(new Set(assets));
     expect(new Set(state.blocks.map((block) => block.assetId))).toEqual(new Set(assets));
@@ -319,7 +321,7 @@ describe('ConfirmRental integration', () => {
       equipmentTypeId: scenario.rental.equipmentTypeIds[0],
     });
 
-    const result = await confirm(scenario.tenant.id, scenario.rental.rentalId);
+    const result = await confirm(scenario.tenant.id, scenario.rental.rentalId, scenario.rental.version);
     expect(result.isErr() && result.error.code).toBe('rental_commitment.insufficient_asset_availability');
     await expectUnconfirmed(scenario.rental.rentalId);
   });
@@ -343,7 +345,7 @@ describe('ConfirmRental integration', () => {
       }
     }
 
-    expect((await confirm(initial.tenant.id, rental.rentalId)).isOk()).toBe(true);
+    expect((await confirm(initial.tenant.id, rental.rentalId, rental.version)).isOk()).toBe(true);
     const state = await persisted(rental.rentalId);
     expect(state.rental.assignedAssets).toHaveLength(3);
     expect(state.blocks).toHaveLength(3);
@@ -364,7 +366,7 @@ describe('ConfirmRental integration', () => {
       equipmentTypeId: rental.equipmentTypeIds[0],
     });
 
-    const result = await confirm(initial.tenant.id, rental.rentalId);
+    const result = await confirm(initial.tenant.id, rental.rentalId, rental.version);
     expect(result.isErr() && result.error.code).toBe('rental_commitment.insufficient_asset_availability');
     await expectUnconfirmed(rental.rentalId);
   });
@@ -383,7 +385,7 @@ describe('ConfirmRental integration', () => {
       overrides,
     });
 
-    const result = await confirm(scenario.tenant.id, scenario.rental.rentalId);
+    const result = await confirm(scenario.tenant.id, scenario.rental.rentalId, scenario.rental.version);
     expect(result.isErr() && result.error.code).toBe('rental_commitment.insufficient_asset_availability');
     await expectUnconfirmed(scenario.rental.rentalId);
   });
@@ -434,7 +436,7 @@ describe('ConfirmRental integration', () => {
         period: periodBetween(10, 12),
       });
 
-      const result = await confirm(scenario.tenant.id, scenario.rental.rentalId);
+      const result = await confirm(scenario.tenant.id, scenario.rental.rentalId, scenario.rental.version);
       expect(result.isOk()).toBe(succeeds);
       if (!succeeds) await expectUnconfirmed(scenario.rental.rentalId);
     });
@@ -462,7 +464,7 @@ describe('ConfirmRental integration', () => {
       releasedAt: utcDate(2029, 12, 1),
     });
 
-    expect((await confirm(scenario.tenant.id, scenario.rental.rentalId)).isOk()).toBe(true);
+    expect((await confirm(scenario.tenant.id, scenario.rental.rentalId, scenario.rental.version)).isOk()).toBe(true);
   });
 
   it('rejects sequential repeat confirmation without duplicating persisted state', async () => {
@@ -472,9 +474,10 @@ describe('ConfirmRental integration', () => {
       branchId: scenario.branch.id,
       equipmentTypeId: scenario.rental.equipmentTypeIds[0],
     });
-    expect((await confirm(scenario.tenant.id, scenario.rental.rentalId)).isOk()).toBe(true);
+    expect((await confirm(scenario.tenant.id, scenario.rental.rentalId, scenario.rental.version)).isOk()).toBe(true);
 
-    const repeated = await confirm(scenario.tenant.id, scenario.rental.rentalId);
+    const confirmed = await persisted(scenario.rental.rentalId);
+    const repeated = await confirm(scenario.tenant.id, scenario.rental.rentalId, confirmed.rental.version);
     expect(repeated.isErr() && repeated.error.code).toBe('rental_commitment.rental_cannot_be_confirmed_from_status');
     const state = await persisted(scenario.rental.rentalId);
     expect(state.rental.assignedAssets).toHaveLength(1);
@@ -490,7 +493,7 @@ describe('ConfirmRental integration', () => {
       equipmentTypeId: scenarioB.rental.equipmentTypeIds[0],
     });
 
-    const result = await confirm(tenantA.id, scenarioB.rental.rentalId);
+    const result = await confirm(tenantA.id, scenarioB.rental.rentalId, scenarioB.rental.version);
     expect(result.isErr() && result.error.code).toBe('rental_commitment.rental_not_found');
     await expectUnconfirmed(scenarioB.rental.rentalId);
   });
@@ -498,7 +501,7 @@ describe('ConfirmRental integration', () => {
   it('requires a customer and an existing price snapshot without partial state', async () => {
     const scenario = await base();
     await prisma.client.v2Rental.update({ where: { id: scenario.rental.rentalId }, data: { customerId: null } });
-    const missingCustomer = await confirm(scenario.tenant.id, scenario.rental.rentalId);
+    const missingCustomer = await confirm(scenario.tenant.id, scenario.rental.rentalId, scenario.rental.version);
     expect(missingCustomer.isErr() && missingCustomer.error.code).toBe(
       'rental_commitment.rental_confirmation_requires_customer',
     );
@@ -513,7 +516,7 @@ describe('ConfirmRental integration', () => {
       branchId: scenario.branch.id,
       equipmentTypeId: scenario.rental.equipmentTypeIds[0],
     });
-    const missingPrice = await confirm(scenario.tenant.id, scenario.rental.rentalId);
+    const missingPrice = await confirm(scenario.tenant.id, scenario.rental.rentalId, scenario.rental.version);
     expect(missingPrice.isErr() && missingPrice.error.code).toBe(
       'rental_commitment.confirmed_rental_requires_price_snapshot',
     );
@@ -539,8 +542,8 @@ describe('ConfirmRental integration', () => {
     });
 
     const outcomes = await runConcurrently([
-      () => confirm(first.tenant.id, first.rental.rentalId),
-      () => confirm(first.tenant.id, second.rentalId),
+      () => confirm(first.tenant.id, first.rental.rentalId, first.rental.version),
+      () => confirm(first.tenant.id, second.rentalId, second.version),
     ]);
     const rejectedOutcome = outcomes.find((outcome): outcome is PromiseRejectedResult => outcome.status === 'rejected');
     if (rejectedOutcome) throw rejectedOutcome.reason;
@@ -585,8 +588,8 @@ describe('ConfirmRental integration', () => {
 
     try {
       const outcomes = await runConcurrently([
-        () => confirm(scenario.tenant.id, scenario.rental.rentalId),
-        () => confirm(scenario.tenant.id, scenario.rental.rentalId),
+        () => confirm(scenario.tenant.id, scenario.rental.rentalId, scenario.rental.version),
+        () => confirm(scenario.tenant.id, scenario.rental.rentalId, scenario.rental.version),
       ]);
       expect(outcomes.every((outcome) => outcome.status === 'fulfilled')).toBe(true);
       // SAFETY: The preceding status assertion establishes that this Promise.allSettled result is fulfilled before its value is inspected.

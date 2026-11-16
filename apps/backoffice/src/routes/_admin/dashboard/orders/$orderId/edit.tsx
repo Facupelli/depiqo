@@ -4,6 +4,7 @@ import { can, requireRouteAccess } from "@/auth/permissions";
 import { EditRentalPage } from "@/modules/rentals/edit-rental/EditRentalPage";
 import { RentalDetailPageSkeleton } from "@/modules/rentals/rental-detail/components/rental-detail-page-skeleton";
 import { rentalDetailViewQueries } from "@/modules/rentals/rental-detail/rental-detail.queries";
+import { branchQueries } from "@/modules/settings/branches/public";
 import { AdminRouteError } from "@/shared/components/admin-route-error";
 
 export const Route = createFileRoute("/_admin/dashboard/orders/$orderId/edit")({
@@ -13,7 +14,10 @@ export const Route = createFileRoute("/_admin/dashboard/orders/$orderId/edit")({
 		);
 	},
 	loader: async ({ context: { queryClient }, params: { orderId } }) => {
-		await queryClient.ensureQueryData(rentalDetailViewQueries.detail(orderId));
+		await Promise.all([
+			queryClient.ensureQueryData(rentalDetailViewQueries.detail(orderId)),
+			queryClient.prefetchQuery(branchQueries.list()),
+		]);
 	},
 	pendingComponent: RentalDetailPageSkeleton,
 	pendingMs: 0,

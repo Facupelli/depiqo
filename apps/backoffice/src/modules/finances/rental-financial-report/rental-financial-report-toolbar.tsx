@@ -101,14 +101,14 @@ export function RentalFinancialReportToolbar({
 					>
 						<Switch
 							id={`${id}-delivery`}
-							aria-label="Incluir entrega"
+							aria-label="Incluir entrega y retiro"
 							checked={selection.includeDelivery}
 							onCheckedChange={(checked) =>
 								onChange({ ...selection, includeDelivery: checked })
 							}
 							className="data-checked:bg-depiqo-blue-600"
 						/>
-						Incluir entrega
+						Incluir entrega y retiro
 					</label>
 				</div>
 			</fieldset>

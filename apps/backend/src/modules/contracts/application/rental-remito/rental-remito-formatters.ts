@@ -38,12 +38,17 @@ export function formatAcceptedCustomerTotalForRentalRemito(amount: string, curre
   return formatCurrency(Number(amount), currency);
 }
 
+export function formatProposedRentalBudgetAmount(amount: string, currency: string): string {
+  return formatCurrency(Number(amount), currency);
+}
+
 function formatCurrency(amount: number, currency: string): string {
   try {
     return new Intl.NumberFormat(resolveLocaleForCurrency(currency), {
       style: 'currency',
       currency,
-      maximumFractionDigits: 0,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
     }).format(amount);
   } catch {
     return `${currency} ${amount.toFixed(2)}`;

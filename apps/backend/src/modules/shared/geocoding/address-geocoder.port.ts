@@ -2,6 +2,7 @@ import { GeocodedLocation } from './geocoded-location';
 
 export type AddressSuggestion = {
   locationId: string;
+  resultType?: string;
   formattedAddress: string;
   addressLine1?: string;
   addressLine2?: string;

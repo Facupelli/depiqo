@@ -3,7 +3,8 @@ import { AcceptedDeliverySnapshot } from './accepted-delivery-snapshot.value-obj
 
 const snapshotData = {
   schema: 'v2.accepted-delivery',
-  version: 1,
+  version: 2,
+  arrangement: 'ROUTED',
   distanceMeters: 12500,
   delivery: {
     scheduledAt: '2030-01-10T10:00:00.000Z',

@@ -65,8 +65,11 @@ const confirmedPriceSnapshot = {
 };
 const acceptedDelivery = {
   schema: 'v2.accepted-delivery',
-  version: 1,
+  version: 2,
+  arrangement: 'ROUTED',
   distanceMeters: 12500,
+  branchId: 'branch-1',
+  resolvedDestination: { formattedAddress: 'Main Street 1, City', latitude: 10, longitude: 20 },
   delivery: {
     scheduledAt: originalStart.toISOString(),
     serviceLevel: 'SPECIAL',
@@ -146,8 +149,8 @@ function createConfirmed(fulfillmentMethod: FulfillmentMethod = FulfillmentMetho
 
 function withHistoryAndAccessoryBlocks(fulfillmentMethod: FulfillmentMethod): Rental {
   const seed = createConfirmed(fulfillmentMethod);
-  const closedAt = new Date('2030-01-05T12:00:00.000Z');
-  const historicalStart = new Date('2030-01-05T10:00:00.000Z');
+  const closedAt = new Date('2030-01-10T12:00:00.000Z');
+  const historicalStart = new Date('2030-01-10T11:00:00.000Z');
   // SAFETY: These stable fixture identifiers are non-empty and are used only as opaque domain identifiers in this test.
   const closedUnreleased = AssignedAsset.reconstitute({
     id: 'assignment-history-unreleased' as AssignedAssetId,
@@ -174,6 +177,7 @@ function withHistoryAndAccessoryBlocks(fulfillmentMethod: FulfillmentMethod): Re
   });
   const historicalPeriod = deriveConfirmedAssetBlockPeriod({
     participationPeriod: new RentalPeriod(historicalStart, closedAt),
+    clampStartAt: historicalStart,
     acceptedBeforeBufferMinutes: buffer.beforeBufferMinutes,
     acceptedAfterBufferMinutes: buffer.afterBufferMinutes,
     acceptedDelivery: seed.acceptedDelivery,
@@ -217,7 +221,7 @@ function withHistoryAndAccessoryBlocks(fulfillmentMethod: FulfillmentMethod): Re
     releasedAt: operationTime,
   })._unsafeUnwrap();
 
-  return Rental.reconstitute({
+  const result = Rental.reconstitute({
     id: seed.id,
     tenantId: seed.tenantId,
     rentalNumber: seed.rentalNumber,
@@ -245,7 +249,9 @@ function withHistoryAndAccessoryBlocks(fulfillmentMethod: FulfillmentMethod): Re
       accessoryReleased,
     ],
     confirmedAt: seed.confirmedAt,
-  })._unsafeUnwrap();
+  });
+  if (result.isErr()) throw result.error;
+  return result.value;
 }
 
 describe('Rental currentOperationalAssetBlocks', () => {
@@ -336,7 +342,15 @@ describe('Rental rescheduleConfirmedPeriod', () => {
     const original = rental.acceptedDelivery!.snapshot;
     const period = new RentalPeriod(new Date('2030-01-11T10:00:00.000Z'), new Date('2030-01-14T18:00:00.000Z'));
 
-    rental.rescheduleConfirmedPeriod({ period, operationTime })._unsafeUnwrap();
+    rental
+      .rescheduleConfirmedPeriod({
+        period,
+        operationTime,
+        acceptedDelivery: rental
+          .acceptedDelivery!.reschedule({ deliveryScheduledAt: period.start, collectionScheduledAt: period.end })
+          ._unsafeUnwrap(),
+      })
+      ._unsafeUnwrap();
 
     expect(rental.acceptedDelivery!.snapshot).toEqual({
       ...original,
@@ -359,7 +373,8 @@ describe('Rental rescheduleConfirmedPeriod', () => {
     const currentAssignment = rental.currentAssignedAssets[0];
     const currentEquipmentBlock = rental.assetBlocks.find((block) => block.id === rental.assetBlocks[0].id)!;
     const currentAccessoryBlock = rental.assetBlocks.find((block) => block.id === 'block-accessory-active')!;
-    const period = new RentalPeriod(new Date('2030-01-11T10:00:00.000Z'), new Date('2030-01-14T18:00:00.000Z'));
+    // Preserve historical participation inside both the original and proposed rental periods.
+    const period = new RentalPeriod(new Date('2030-01-09T10:00:00.000Z'), new Date('2030-01-14T18:00:00.000Z'));
     const expectedBlockPeriod = deriveConfirmedAssetBlockPeriod({
       participationPeriod: period,
       acceptedBeforeBufferMinutes: buffer.beforeBufferMinutes,
@@ -367,7 +382,14 @@ describe('Rental rescheduleConfirmedPeriod', () => {
       acceptedDelivery: rental.acceptedDelivery,
     });
 
-    rental.rescheduleConfirmedPeriod({ period, operationTime })._unsafeUnwrap();
+    const result = rental.rescheduleConfirmedPeriod({
+      period,
+      operationTime,
+      acceptedDelivery: rental
+        .acceptedDelivery!.reschedule({ deliveryScheduledAt: period.start, collectionScheduledAt: period.end })
+        ._unsafeUnwrap(),
+    });
+    if (result.isErr()) throw result.error;
 
     const movedAssignment = rental.currentAssignedAssets[0];
     expect(movedAssignment.id).toBe(currentAssignment.id);

@@ -37,10 +37,16 @@ export interface RescheduleConfirmedRentalOptions {
   tx: PrismaTransactionClient;
 }
 
+export interface ChangeConfirmedDeliveryOptions {
+  expectedVersion: number;
+  changedBlockIds: readonly string[];
+  tx: PrismaTransactionClient;
+}
+
 export class RentalPersistenceStateMismatchError extends Error {
   constructor(
     public readonly rentalId: string,
-    public readonly resource: 'assignment' | 'asset block',
+    public readonly resource: 'assignment' | 'asset block' | 'delivery details',
     public readonly resourceId: string,
   ) {
     super(`Rental "${rentalId}" expected current ${resource} "${resourceId}" was not updated.`);
@@ -65,6 +71,10 @@ export abstract class RentalRepository {
   abstract rescheduleConfirmedPeriod(
     rental: Rental,
     options: RescheduleConfirmedRentalOptions,
+  ): Promise<SaveRentalResult | null>;
+  abstract changeConfirmedDelivery(
+    rental: Rental,
+    options: ChangeConfirmedDeliveryOptions,
   ): Promise<SaveRentalResult | null>;
   abstract replaceDraft(rental: Rental, options: ReplaceDraftRentalOptions): Promise<SaveRentalResult | null>;
 }

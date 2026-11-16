@@ -17,6 +17,7 @@ export interface DemandFixtureInput {
 
 export interface RentalScenarioFixture {
   rentalId: string;
+  version: number;
   selectionIds: string[];
   demandLineIds: string[];
   equipmentTypeIds: string[];
@@ -55,7 +56,7 @@ export class ConfirmRentalFixtures {
     const wasConfirmed = status !== 'DRAFT' && status !== 'PENDING';
     const acceptedCustomerTotal = this.acceptedCustomerTotal(wasConfirmed, priceSnapshot);
 
-    await this.prisma.client.$transaction(async (tx) => {
+    const rental = await this.prisma.client.$transaction(async (tx) => {
       const counter = await tx.v2RentalNumberCounter.upsert({
         where: { tenantId: params.tenantId },
         create: { tenantId: params.tenantId, lastIssuedNumber: 1 },
@@ -63,7 +64,7 @@ export class ConfirmRentalFixtures {
         select: { lastIssuedNumber: true },
       });
 
-      await tx.v2Rental.create({
+      return tx.v2Rental.create({
         data: {
           id: rentalId,
           tenantId: params.tenantId,
@@ -104,7 +105,14 @@ export class ConfirmRentalFixtures {
       });
     });
 
-    return { rentalId, selectionIds, demandLineIds, equipmentTypeIds, priceSnapshot: priceSnapshot! };
+    return {
+      rentalId,
+      version: rental.version,
+      selectionIds,
+      demandLineIds,
+      equipmentTypeIds,
+      priceSnapshot: priceSnapshot!,
+    };
   }
 
   async createCandidate(params: {

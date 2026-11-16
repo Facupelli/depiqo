@@ -123,8 +123,12 @@ export function RentalConfirmedConfirmationEmailContent({
 
       <Text style={styles.sectionTitle}>Detalle del alquiler</Text>
 
-      <DetailRow label="Método de entrega" value={formatFulfillmentMethod(fulfillmentMethod)} />
-      <DetailRow label="Retiro" value={pickupDate} secondaryValue={pickupTime} />
+      <DetailRow label="Modalidad" value={formatFulfillmentMethod(fulfillmentMethod)} />
+      <DetailRow
+        label={fulfillmentMethod === 'DELIVERY' ? 'Inicio' : 'Retiro'}
+        value={pickupDate}
+        secondaryValue={pickupTime}
+      />
       <DetailRow label="Devolución" value={returnDate} secondaryValue={returnTime} />
     </>
   );

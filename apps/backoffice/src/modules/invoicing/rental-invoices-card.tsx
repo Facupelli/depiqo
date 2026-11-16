@@ -16,6 +16,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ChevronDown, FileText, Plus } from "lucide-react";
 import { type ReactNode, useId, useState } from "react";
 import { can } from "@/auth/permissions";
+import { CardHeaderIcon } from "@/components/card-header-icon";
 import { InvoiceFormDialog } from "./invoice-form-dialog";
 import { InvoiceListRow, type InvoiceRowAction } from "./invoice-list-row";
 import { InvoiceRecordDialog } from "./invoice-record-dialog";
@@ -361,9 +362,9 @@ function InvoiceCard({
 	return (
 		<section className="rounded-lg border border-neutral-200 bg-white p-4">
 			<div className="flex min-w-0 items-center gap-2 @5xl/rental-detail:mb-3 @5xl/rental-detail:border-b @5xl/rental-detail:border-neutral-100 @5xl/rental-detail:pb-2">
-				<span className="hidden size-6 items-center justify-center text-neutral-600 @5xl/rental-detail:flex">
-					<FileText className="size-4" />
-				</span>
+				<CardHeaderIcon>
+					<FileText />
+				</CardHeaderIcon>
 				<h2 className="hidden min-w-0 flex-1 text-sm font-bold text-neutral-950 @5xl/rental-detail:block">
 					Facturas
 				</h2>

@@ -21,6 +21,7 @@ import { adaptPricingCalculationToSnapshot } from './accepted-pricing/adapt-pric
 import { toRentalSelectionKind } from './catalog-selection-kind.mapper';
 import { resolveEquipmentTypeNames } from './equipment-type-display-facts';
 import { ProspectiveRentalCostService } from './prospective-rental-cost.service';
+import { DraftRentalDeliveryIntent, DraftRentalDeliveryResolver } from './draft-rental-delivery-resolver.service';
 import {
   DuplicateRentalOfferSelectionError,
   EquipmentTypeNotFoundError,
@@ -57,9 +58,22 @@ export interface RentalProposalResolutionError extends ApplicationError {
   code: RentalProposalResolutionErrorCode;
 }
 
+export type DraftRentalDeliveryDestination =
+  | { arrangement?: 'ROUTED'; address: string; locationId: string }
+  | {
+      arrangement: 'STAFF_ARRANGED';
+      address: string;
+      geocoding?: { latitude: number; longitude: number; formattedAddress?: string; providerPlaceId?: string };
+    };
+
 export type RentalProposalDeliveryDestination =
-  | { address: string; locationId: string }
-  | { address: string; resolvedLocation: ResolvedCustomerLocation };
+  | DraftRentalDeliveryDestination
+  | { arrangement?: 'ROUTED'; address: string; resolvedLocation: ResolvedCustomerLocation };
+
+export type RoutedProposalDeliveryDestination = Exclude<
+  RentalProposalDeliveryDestination,
+  { arrangement: 'STAFF_ARRANGED' }
+>;
 
 export type RentalProposalInput = {
   tenantId: string;
@@ -73,6 +87,7 @@ export type RentalProposalInput = {
 } & (
   | {
       rentalCustomerId?: string;
+      draftDelivery?: DraftRentalDeliveryIntent;
       pricingIntent: {
         context: 'DRAFT';
         manualPricingAdjustment?: {
@@ -83,7 +98,11 @@ export type RentalProposalInput = {
         };
       };
     }
-  | { rentalCustomerId: string; pricingIntent: { context: 'CONFIRMED'; manualPricingAdjustment?: never } }
+  | {
+      rentalCustomerId: string;
+      draftDelivery?: never;
+      pricingIntent: { context: 'CONFIRMED'; manualPricingAdjustment?: never };
+    }
 );
 
 export interface ResolvedRentalSelection {
@@ -117,6 +136,7 @@ export class RentalProposalResolver {
     private readonly catalogSelectionResolution: CatalogSelectionResolution,
     private readonly assetInventoryDisplayFacts: AssetInventoryDisplayFacts,
     private readonly prospectiveRentalCost: ProspectiveRentalCostService,
+    private readonly draftDeliveryResolver: DraftRentalDeliveryResolver,
   ) {}
 
   async resolve(input: RentalProposalInput): Promise<Result<ResolvedRentalProposal, RentalProposalResolutionError>> {
@@ -172,12 +192,12 @@ export class RentalProposalResolver {
     };
 
     let prospectiveResult: Awaited<ReturnType<ProspectiveRentalCostService['calculate']>> | null = null;
-    if (input.fulfillmentMethod === FulfillmentMethod.Pickup) {
+    if (input.fulfillmentMethod === FulfillmentMethod.Pickup || (input.draftDelivery && input.deliveryDestination)) {
       prospectiveResult = await this.prospectiveRentalCost.calculate({
         fulfillmentMethod: 'PICKUP',
         pricing: pricingRequest,
       });
-    } else if (input.deliveryDestination) {
+    } else if (input.deliveryDestination && input.deliveryDestination.arrangement !== 'STAFF_ARRANGED') {
       prospectiveResult = await this.prospectiveRentalCost.calculate({
         fulfillmentMethod: 'DELIVERY',
         pricing: pricingRequest,
@@ -204,6 +224,32 @@ export class RentalProposalResolver {
     }
 
     const deliveryQuote = prospectiveResult.value.deliveryQuote;
+    let deliveryDetails: RentalDeliveryDetails | undefined;
+    let deliverySnapshot: AcceptedDeliverySnapshotData | undefined;
+    if (input.fulfillmentMethod === FulfillmentMethod.Delivery && input.deliveryDestination) {
+      if (input.draftDelivery) {
+        const terms = await this.draftDeliveryResolver.resolve({
+          ...input.draftDelivery,
+          tenantId: input.tenantId,
+          branchId: input.branchId,
+          period: input.period,
+          destination: input.deliveryDestination,
+          pricingCurrency: prospectiveResult.value.pricing.final.currency,
+        });
+        if (terms.isErr()) return err(terms.error);
+        deliveryDetails = terms.value.deliveryDetails;
+        deliverySnapshot = terms.value.deliverySnapshot;
+      } else if (deliveryQuote) {
+        deliveryDetails = {
+          address: input.deliveryDestination.address,
+          formattedAddress: deliveryQuote.resolvedCustomerLocation.formattedAddress,
+          latitude: deliveryQuote.resolvedCustomerLocation.latitude,
+          longitude: deliveryQuote.resolvedCustomerLocation.longitude,
+          providerPlaceId: deliveryQuote.resolvedCustomerLocation.providerPlaceId,
+        };
+        deliverySnapshot = acceptedDeliverySnapshotFromQuote(deliveryQuote);
+      }
+    }
     const selections: ResolvedRentalSelection[] = selectionsWithRequirements.map((selection) => ({
       id: selection.id,
       rentalOfferId: selection.rentalOfferId,
@@ -234,17 +280,8 @@ export class RentalProposalResolver {
         ),
         manualPricingAdjustment: input.pricingIntent.manualPricingAdjustment,
       }),
-      deliveryDetails:
-        input.fulfillmentMethod === FulfillmentMethod.Delivery && input.deliveryDestination && deliveryQuote
-          ? {
-              address: input.deliveryDestination.address,
-              formattedAddress: deliveryQuote.resolvedCustomerLocation.formattedAddress,
-              latitude: deliveryQuote.resolvedCustomerLocation.latitude,
-              longitude: deliveryQuote.resolvedCustomerLocation.longitude,
-              providerPlaceId: deliveryQuote.resolvedCustomerLocation.providerPlaceId,
-            }
-          : undefined,
-      deliverySnapshot: deliveryQuote ? acceptedDeliverySnapshotFromQuote(deliveryQuote) : undefined,
+      deliveryDetails,
+      deliverySnapshot,
     });
   }
 
@@ -313,7 +350,7 @@ export class RentalProposalResolver {
   }
 }
 
-function toCustomerLocationSelection(input: RentalProposalDeliveryDestination): CustomerLocationSelection {
+function toCustomerLocationSelection(input: RoutedProposalDeliveryDestination): CustomerLocationSelection {
   return 'resolvedLocation' in input
     ? { resolvedLocation: input.resolvedLocation }
     : { address: input.address, locationId: input.locationId };

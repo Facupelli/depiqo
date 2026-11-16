@@ -3,6 +3,7 @@ import { ApplicationError, ApplicationErrorContext } from 'src/core/errors/appli
 export type GenerateRentalBudgetErrorCode =
   | 'contracts.rental_budget_rental_not_found'
   | 'contracts.rental_budget_rental_not_draft'
+  | 'contracts.rental_budget_rental_version_changed'
   | 'contracts.rental_budget_customer_name_missing'
   | 'contracts.rental_budget_context_missing'
   | 'contracts.rental_budget_price_snapshot_invalid';

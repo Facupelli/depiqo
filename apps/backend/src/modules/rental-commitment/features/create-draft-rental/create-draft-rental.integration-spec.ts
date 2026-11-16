@@ -37,6 +37,9 @@ const deliveryRouteDistanceMeters = 10_000;
 const addressGeocoder = new FakeAddressGeocoder({
   [deliveryLocationId]: {
     formattedAddress: deliveryDisplayAddress,
+    street: 'Rental Road',
+    streetNumber: '10',
+    providerPlaceId: deliveryLocationId,
     ...deliveryCustomerCoordinates,
   },
 });
@@ -244,7 +247,7 @@ describe('CreateDraftRental integration', () => {
       }
     }
     const confirmed = await commands.execute<ConfirmRentalCommand, ConfirmRentalResult>(
-      new ConfirmRentalCommand(setup.tenantId, result.value.rentalId),
+      new ConfirmRentalCommand(setup.tenantId, result.value.rentalId, persisted.rental.version),
     );
     expect(confirmed.isOk()).toBe(true);
     expect((await state(result.value.rentalId)).rental.status).toBe('CONFIRMED');
@@ -358,7 +361,7 @@ describe('CreateDraftRental integration', () => {
         address: deliveryDisplayAddress,
         formattedAddress: deliveryDisplayAddress,
         ...deliveryCustomerCoordinates,
-        providerPlaceId: null,
+        providerPlaceId: deliveryLocationId,
       }),
     );
     expect(persisted.rental.deliverySnapshot).toEqual(

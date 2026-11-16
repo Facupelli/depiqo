@@ -6,7 +6,9 @@ import {
 	buildDraftRentalPeriod,
 	type DraftRentalComposerFormValues,
 	emptyDraftRentalValueToUndefined,
+	toDraftRentalDeliveryDecisions,
 	toDraftRentalManualPricingAdjustment,
+	toDraftRentalNewDestination,
 	toDraftRentalSelectedOffers,
 } from "../draft-rental-composer/draft-rental-composer.schema";
 import type { UpdateDraftRentalVariables } from "./update-draft-rental.api";
@@ -29,10 +31,10 @@ export function toUpdateDraftRentalVariables(
 				deliveryIntent = { type: "KEEP_CURRENT" };
 				break;
 			case "NEW_DESTINATION":
+			case "NEW_STAFF_DESTINATION":
 				deliveryIntent = {
 					type: "NEW_DESTINATION",
-					address: values.deliveryDestination.address.trim(),
-					locationId: values.deliveryDestination.locationId.trim(),
+					...toDraftRentalNewDestination(values.deliveryDestination),
 				};
 				break;
 			case "INVALID":
@@ -50,6 +52,7 @@ export function toUpdateDraftRentalVariables(
 		insuranceSelected: values.insuranceSelected,
 		manualPricingAdjustment: toDraftRentalManualPricingAdjustment(values),
 		deliveryIntent,
+		deliveryDecisions: toDraftRentalDeliveryDecisions(values),
 	};
 
 	return {

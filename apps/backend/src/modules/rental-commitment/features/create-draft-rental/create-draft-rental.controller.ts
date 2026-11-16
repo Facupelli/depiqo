@@ -44,6 +44,14 @@ export class CreateDraftRentalHttpController {
       await this.authorizationEnforcer.requirePermission(user, TenantPermission.RentalsPriceAdjustmentManage);
     }
 
+    if (
+      dto.deliveryDecisions?.pricingAgreement?.type === 'SET' ||
+      dto.deliveryDecisions?.pricingAgreement?.type === 'CLEAR' ||
+      dto.deliveryDecisions?.policyException !== undefined
+    ) {
+      await this.authorizationEnforcer.requirePermission(user, TenantPermission.RentalsDeliveryManage);
+    }
+
     const headers = CreateDraftRentalHeadersSchema.safeParse({ 'idempotency-key': idempotencyKey });
     if (!headers.success) {
       throw toCreateDraftRentalProblem(
@@ -84,6 +92,7 @@ export class CreateDraftRentalHttpController {
         notes: dto.notes,
         insuranceSelected: dto.insuranceSelected,
         manualPricingAdjustment: dto.manualPricingAdjustment,
+        deliveryDecisions: dto.deliveryDecisions,
       }),
     );
 
@@ -101,7 +110,10 @@ function toCreateDraftRentalProblem(error: CreateDraftRentalError): ProblemExcep
       extensions: {
         code: error.code,
         ...(error.code === 'rental_commitment.delivery_not_serviceable'
-          ? { reason: error.context?.deliveryReason }
+          ? { reason: error.context?.deliveryReason, restrictions: error.context?.deliveryRestrictions }
+          : {}),
+        ...(error.code === 'rental_commitment.invalid_rental_field'
+          ? { field: error.context?.field, reason: error.message }
           : {}),
       },
     }),
@@ -111,6 +123,12 @@ function toCreateDraftRentalProblem(error: CreateDraftRentalError): ProblemExcep
 }
 
 const createDraftRentalProblemMap = {
+  'rental_commitment.delivery_management_permission_denied': problem(
+    'delivery_management_permission_denied',
+    'Delivery management permission required',
+    HttpStatus.FORBIDDEN,
+    'Establishing or changing delivery terms requires rentals.delivery.manage.',
+  ),
   'rental_commitment.invalid_idempotency_key': problem(
     'invalid_idempotency_key',
     'Invalid idempotency key',

@@ -1,7 +1,10 @@
 import { hydrateRentalPeriod } from "@/modules/rentals/shared/rental-period/rental-period";
 import type { RentalCustomerDisplayFacts } from "../customer-selection/rental-customer-selector";
 import type { DraftRentalBranchDisplayFacts } from "../draft-rental-composer/draft-rental-composer";
-import type { DraftRentalComposerFormValues } from "../draft-rental-composer/draft-rental-composer.schema";
+import {
+	createDraftRentalComposerDefaultValues,
+	type DraftRentalComposerFormValues,
+} from "../draft-rental-composer/draft-rental-composer.schema";
 import type { GetRentalDetailViewResponseDto } from "../rental-detail/get-rental-detail-view/get-rental-detail-view.schema";
 
 export type HydratedDraftRentalEditor = {
@@ -22,9 +25,12 @@ export function hydrateRentalDetailToComposer(
 	);
 	const manualAdjustment = rental.pricing?.manualPricingAdjustment;
 	const deliveryDetails = rental.fulfillment.deliveryDetails;
+	const delivery = rental.draftDelivery;
+	const arrangement = delivery?.arrangement ?? "ROUTED";
 
 	return {
 		defaultValues: {
+			...createDraftRentalComposerDefaultValues(),
 			branchId: rental.branchId,
 			rentalCustomerId: rental.customerId ?? "",
 			periodStartDate: period.startDate,
@@ -38,11 +44,22 @@ export function hydrateRentalDetailToComposer(
 				availableCount: null,
 			})),
 			fulfillmentMethod: rental.fulfillment.method,
+			deliveryArrangement: arrangement,
+			deliveryAgreementAmount: delivery?.staffAgreement?.amount ?? "",
+			deliveryAgreementReason: delivery?.staffAgreement?.reason ?? "",
+			transportReservationMinutes:
+				arrangement === "STAFF_ARRANGED" && delivery
+					? String(delivery.transportReservationMinutes)
+					: "",
 			deliveryDestination:
 				rental.fulfillment.method === "DELIVERY" && deliveryDetails
 					? {
 							status: "EXISTING",
-							address: deliveryDetails.formattedAddress,
+							address:
+								arrangement === "STAFF_ARRANGED"
+									? deliveryDetails.address
+									: (deliveryDetails.formattedAddress ??
+										deliveryDetails.address),
 						}
 					: { status: "INVALID", address: "" },
 			insuranceSelected: rental.insuranceSelected,

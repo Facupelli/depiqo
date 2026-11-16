@@ -1,5 +1,17 @@
 import { Module } from '@nestjs/common';
 
+import { ConfirmedRentalReschedulingPreparationService } from './application/confirmed-rental-rescheduling-preparation.service';
+import { ConfirmedRentalDeliveryPreparationService } from './application/confirmed-rental-delivery-preparation.service';
+import { ChangeConfirmedRentalDeliveryHttpController } from './features/change-confirmed-rental-delivery/change-confirmed-rental-delivery.controller';
+import { ChangeConfirmedRentalDeliveryHandler } from './features/change-confirmed-rental-delivery/change-confirmed-rental-delivery.handler';
+import { PreviewConfirmedRentalPeriodHandler } from './features/reschedule-confirmed-rental-period/preview-confirmed-rental-period.handler';
+import { RentalConfirmationDeliveryService } from './application/rental-confirmation-delivery.service';
+import { GetRentalConfirmationSummaryHttpController } from './features/get-rental-confirmation-summary/get-rental-confirmation-summary.controller';
+import { GetRentalConfirmationSummaryHandler } from './features/get-rental-confirmation-summary/get-rental-confirmation-summary.handler';
+
+import { PreviewDraftRentalCostHttpController } from './features/preview-draft-rental-cost/preview-draft-rental-cost.controller';
+import { PreviewDraftRentalCostHandler } from './features/preview-draft-rental-cost/preview-draft-rental-cost.handler';
+
 import { AssetInventoryModule } from '../asset-inventory/asset-inventory.module';
 import { CatalogModule } from '../catalog/catalog.module';
 import { DeliveryModule } from '../delivery/delivery.module';
@@ -9,6 +21,7 @@ import { RentalOfferAvailabilityService } from './application/availability/renta
 import { RentalAccessoryMutations } from './application/rental-accessory-mutations';
 import { ProspectiveRentalCostService } from './application/prospective-rental-cost.service';
 import { RentalProposalResolver } from './application/rental-proposal-resolver.service';
+import { DraftRentalDeliveryResolver } from './application/draft-rental-delivery-resolver.service';
 import { RentalAssetAllocationService } from './asset-allocation/rental-asset-allocation.service';
 import { AddRentalSelectionHttpController } from './features/add-rental-selection/add-rental-selection.controller';
 import { AddRentalSelectionHandler } from './features/add-rental-selection/add-rental-selection.handler';
@@ -23,6 +36,8 @@ import { CalculateProspectiveCartCostHttpController } from './features/calculate
 import { CalculateProspectiveCartCostHandler } from './features/calculate-prospective-cart-cost/calculate-prospective-cart-cost.handler';
 import { ChangeRentalDetailsHttpController } from './features/change-rental-details/change-rental-details.controller';
 import { ChangeRentalDetailsHandler } from './features/change-rental-details/change-rental-details.handler';
+import { ChangeConfirmedRentalDeliveryAgreementHttpController } from './features/change-confirmed-rental-delivery-agreement/change-confirmed-rental-delivery-agreement.controller';
+import { ChangeConfirmedRentalDeliveryAgreementHandler } from './features/change-confirmed-rental-delivery-agreement/change-confirmed-rental-delivery-agreement.handler';
 import { ChangeRentalSelectionQuantityHttpController } from './features/change-rental-selection-quantity/change-rental-selection-quantity.controller';
 import { ChangeRentalSelectionQuantityHandler } from './features/change-rental-selection-quantity/change-rental-selection-quantity.handler';
 import { ConfirmRentalHttpController } from './features/confirm-rental/confirm-rental.controller';
@@ -69,6 +84,8 @@ import { RentalNumberAllocator } from './persistence/rental-number.allocator';
 import { PrismaRentalRepository } from './persistence/prisma-rental.repository';
 import { RentalRepository } from './persistence/rental.repository';
 import { RentalOwnerSplitCalculator } from './owner-split/rental-owner-split-calculator';
+import { DraftRentalFinancialFacts } from './public-api/draft-rental-financial-facts.public-api';
+import { DraftRentalFinancialFactsService } from './public-api/draft-rental-financial-facts.service';
 import { AcceptedRentalPricingFacts } from './public-api/accepted-rental-pricing-facts.public-api';
 import { AcceptedRentalPricingFactsService } from './public-api/accepted-rental-pricing-facts.service';
 import { CommittedRentalSelectionsAndDemand } from './public-api/committed-rental-selections-and-demand.public-api';
@@ -86,9 +103,13 @@ import { RentalLifecycleFactsService } from './public-api/rental-lifecycle-facts
     AssignCustomerToDraftRentalHttpController,
     CancelRentalHttpController,
     CalculateProspectiveCartCostHttpController,
+    PreviewDraftRentalCostHttpController,
     ChangeRentalDetailsHttpController,
+    ChangeConfirmedRentalDeliveryAgreementHttpController,
+    ChangeConfirmedRentalDeliveryHttpController,
     ChangeRentalSelectionQuantityHttpController,
     ConfirmRentalHttpController,
+    GetRentalConfirmationSummaryHttpController,
     CreateConfirmedRentalHttpController,
     CreateDraftRentalHttpController,
     UpdateDraftRentalHttpController,
@@ -118,14 +139,23 @@ import { RentalLifecycleFactsService } from './public-api/rental-lifecycle-facts
     RentalOfferAvailabilityService,
     ProspectiveRentalCostService,
     RentalProposalResolver,
+    DraftRentalDeliveryResolver,
     AddRentalSelectionHandler,
     AssignRentalAccessoriesHandler,
     AssignCustomerToDraftRentalHandler,
     CancelRentalHandler,
     CalculateProspectiveCartCostHandler,
+    PreviewDraftRentalCostHandler,
     ChangeRentalDetailsHandler,
+    ChangeConfirmedRentalDeliveryAgreementHandler,
+    ChangeConfirmedRentalDeliveryHandler,
+    ConfirmedRentalDeliveryPreparationService,
     ChangeRentalSelectionQuantityHandler,
     ConfirmRentalHandler,
+    RentalConfirmationDeliveryService,
+    ConfirmedRentalReschedulingPreparationService,
+    PreviewConfirmedRentalPeriodHandler,
+    GetRentalConfirmationSummaryHandler,
     CreateConfirmedRentalService,
     CreateDraftRentalService,
     UpdateDraftRentalHandler,
@@ -147,12 +177,14 @@ import { RentalLifecycleFactsService } from './public-api/rental-lifecycle-facts
     GetStorefrontRentalOfferAvailabilityHandler,
     RentalOwnerSplitCalculator,
     { provide: AcceptedRentalPricingFacts, useClass: AcceptedRentalPricingFactsService },
+    { provide: DraftRentalFinancialFacts, useClass: DraftRentalFinancialFactsService },
     { provide: CommittedRentalSelectionsAndDemand, useClass: CommittedRentalSelectionsAndDemandService },
     { provide: RentalLifecycleFacts, useClass: RentalLifecycleFactsService },
     { provide: RentalPhysicalAssignments, useClass: RentalPhysicalAssignmentsService },
   ],
   exports: [
     AcceptedRentalPricingFacts,
+    DraftRentalFinancialFacts,
     CommittedRentalSelectionsAndDemand,
     RentalLifecycleFacts,
     RentalPhysicalAssignments,

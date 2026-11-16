@@ -101,7 +101,9 @@ export function RentalOperationalSummary() {
 							{formatMoney(total, pricing.currency)}
 						</span>
 					) : (
-						<span className="text-neutral-500">Sin precio calculado</span>
+						<span className="text-neutral-500">
+							{pricing ? "Total no disponible" : "Sin precio calculado"}
+						</span>
 					)}
 				</SummaryItem>
 			</div>

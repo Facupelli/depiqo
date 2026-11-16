@@ -59,9 +59,9 @@ export interface RentalPersistenceRecord {
 
 interface RentalDeliveryDetailsPersistenceRecord {
   address: string;
-  formattedAddress: string;
-  latitude: number;
-  longitude: number;
+  formattedAddress: string | null;
+  latitude: number | null;
+  longitude: number | null;
   providerPlaceId: string | null;
 }
 
@@ -266,11 +266,36 @@ export class RentalMapper {
 
   static toConfirmedPeriodRescheduleUpdateData(
     rental: Rental,
-  ): Pick<Prisma.V2RentalUpdateManyMutationInput, 'periodStart' | 'periodEnd' | 'deliverySnapshot'> {
+  ): Pick<
+    Prisma.V2RentalUpdateManyMutationInput,
+    'periodStart' | 'periodEnd' | 'deliverySnapshot' | 'acceptedCustomerTotal'
+  > {
     return {
       periodStart: rental.period.start,
       periodEnd: rental.period.end,
       deliverySnapshot: toPrismaJsonInput(rental.acceptedDelivery?.toJSON()) ?? Prisma.DbNull,
+      acceptedCustomerTotal: rental.acceptedCustomerTotal,
+    };
+  }
+
+  static toConfirmedDeliveryUpdateData(
+    rental: Rental,
+  ): Pick<Prisma.V2RentalUpdateManyMutationInput, 'deliverySnapshot' | 'acceptedCustomerTotal'> {
+    return {
+      deliverySnapshot: toPrismaJsonInput(rental.acceptedDelivery?.toJSON()) ?? Prisma.DbNull,
+      acceptedCustomerTotal: rental.acceptedCustomerTotal,
+    };
+  }
+
+  static toDeliveryDetailsUpdateData(rental: Rental): Prisma.V2RentalDeliveryDetailsUpdateManyMutationInput {
+    const details = rental.deliveryDetails;
+    if (!details) throw new Error('Confirmed delivery editing requires delivery details.');
+    return {
+      address: details.address,
+      formattedAddress: details.formattedAddress ?? null,
+      latitude: details.latitude ?? null,
+      longitude: details.longitude ?? null,
+      providerPlaceId: details.providerPlaceId ?? null,
     };
   }
 
@@ -372,9 +397,9 @@ export class RentalMapper {
   static toDeliveryDetailsDomain(record: RentalDeliveryDetailsPersistenceRecord): RentalDeliveryDetails {
     return {
       address: record.address,
-      formattedAddress: record.formattedAddress,
-      latitude: record.latitude,
-      longitude: record.longitude,
+      formattedAddress: record.formattedAddress ?? undefined,
+      latitude: record.latitude ?? undefined,
+      longitude: record.longitude ?? undefined,
       providerPlaceId: record.providerPlaceId ?? undefined,
     };
   }

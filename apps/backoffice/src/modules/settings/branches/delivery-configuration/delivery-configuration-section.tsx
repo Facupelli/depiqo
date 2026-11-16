@@ -6,7 +6,7 @@ import { PackageOpen } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useCurrentBusiness } from "@/application/current-business/current-business.queries";
-import { ProblemDetailsError } from "@/shared/errors";
+import { getProblemDetailsCode } from "@/shared/errors";
 import { usePutDeliveryConfiguration } from "./delivery-configuration.mutation";
 import { useDeliveryConfiguration } from "./delivery-configuration.queries";
 import {
@@ -42,7 +42,7 @@ export function DeliveryConfigurationSection({
 				branchId,
 				body: toPutDeliveryConfigurationBodyDto(values),
 			});
-			toast.success("Configuración de delivery guardada");
+			toast.success("Configuración de envíos guardada");
 			return true;
 		} catch (error) {
 			setSubmitErrorMessage(getDeliverySaveErrorMessage(error));
@@ -63,7 +63,7 @@ export function DeliveryConfigurationSection({
 		return (
 			<Alert variant="destructive">
 				<AlertDescription className="flex flex-wrap items-center justify-between gap-3">
-					<span>No pudimos cargar la configuración de delivery.</span>
+					<span>No pudimos cargar la configuración de envíos.</span>
 					<Button
 						type="button"
 						variant="outline"
@@ -85,9 +85,9 @@ export function DeliveryConfigurationSection({
 					<div className="mb-4 flex size-11 items-center justify-center rounded-full bg-muted">
 						<PackageOpen className="size-5 text-muted-foreground" />
 					</div>
-					<h2 className="font-semibold">Delivery no configurado</h2>
+					<h2 className="font-semibold">Envíos sin configurar</h2>
 					<p className="mt-2 max-w-md text-sm text-muted-foreground">
-						Configura la cobertura, precios, horarios y tiempo de reserva de
+						Configurá la cobertura, los precios, los horarios y el tiempo para
 						transporte.
 					</p>
 					<Button
@@ -95,7 +95,7 @@ export function DeliveryConfigurationSection({
 						className="mt-5"
 						onClick={() => setIsConfiguring(true)}
 					>
-						Configurar delivery
+						Configurar envíos
 					</Button>
 				</CardContent>
 			</Card>
@@ -118,12 +118,12 @@ export function DeliveryConfigurationSection({
 }
 
 function getDeliverySaveErrorMessage(error: unknown): string {
-	if (error instanceof ProblemDetailsError) {
-		return (
-			error.problemDetails.detail ??
-			error.problemDetails.title ??
-			"No pudimos guardar la configuración de delivery."
-		);
+	switch (getProblemDetailsCode(error)) {
+		case "delivery.branch_not_found":
+			return "No encontramos la sucursal. Actualizá la página.";
+		case "delivery.configuration_invalid":
+			return "Revisá la cobertura, los precios, los horarios y el tiempo para transporte.";
+		default:
+			return "No pudimos guardar la configuración de envíos. Intentá nuevamente.";
 	}
-	return "No pudimos guardar la configuración de delivery. Inténtalo nuevamente.";
 }

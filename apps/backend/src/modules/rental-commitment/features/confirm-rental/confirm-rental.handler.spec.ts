@@ -15,6 +15,7 @@ import { FulfillmentMethod, RentalStatus } from '../../domain/rental-status';
 import { RentalOwnerSplitCalculator } from '../../owner-split/rental-owner-split-calculator';
 import { RentalRepository } from '../../persistence/rental.repository';
 import { ConfirmRentalCommand } from './confirm-rental.command';
+import { RentalConfirmationDeliveryService } from '../../application/rental-confirmation-delivery.service';
 import { ConfirmRentalHandler } from './confirm-rental.handler';
 
 describe('ConfirmRentalHandler deadlock retry', () => {
@@ -27,7 +28,7 @@ describe('ConfirmRentalHandler deadlock retry', () => {
     const setup = createSetup();
     setup.save.mockRejectedValueOnce(deadlockError()).mockResolvedValueOnce({ version: 8, updatedAt: new Date() });
 
-    const result = await setup.handler.execute(new ConfirmRentalCommand(tenantId, rentalId));
+    const result = await setup.handler.execute(new ConfirmRentalCommand(tenantId, rentalId, expectedVersion));
 
     expect(result.isOk()).toBe(true);
     expect(setup.runInTransaction).toHaveBeenCalledTimes(2);
@@ -46,7 +47,7 @@ describe('ConfirmRentalHandler deadlock retry', () => {
       .mockRejectedValueOnce(deadlockError())
       .mockRejectedValueOnce(new PostgresExclusionViolationError({ code: '23P01' }));
 
-    const result = await setup.handler.execute(new ConfirmRentalCommand(tenantId, rentalId));
+    const result = await setup.handler.execute(new ConfirmRentalCommand(tenantId, rentalId, expectedVersion));
 
     expect(result.isErr() && result.error.code).toBe('rental_commitment.insufficient_asset_availability');
     expect(setup.runInTransaction).toHaveBeenCalledTimes(2);
@@ -58,7 +59,9 @@ describe('ConfirmRentalHandler deadlock retry', () => {
     const failure = new Error('database unavailable');
     setup.save.mockRejectedValueOnce(failure);
 
-    await expect(setup.handler.execute(new ConfirmRentalCommand(tenantId, rentalId))).rejects.toBe(failure);
+    await expect(setup.handler.execute(new ConfirmRentalCommand(tenantId, rentalId, expectedVersion))).rejects.toBe(
+      failure,
+    );
     expect(setup.runInTransaction).toHaveBeenCalledTimes(1);
     expect(setup.save).toHaveBeenCalledTimes(1);
   });
@@ -68,7 +71,9 @@ describe('ConfirmRentalHandler deadlock retry', () => {
     const secondDeadlock = deadlockError();
     setup.save.mockRejectedValueOnce(deadlockError()).mockRejectedValueOnce(secondDeadlock);
 
-    await expect(setup.handler.execute(new ConfirmRentalCommand(tenantId, rentalId))).rejects.toBe(secondDeadlock);
+    await expect(setup.handler.execute(new ConfirmRentalCommand(tenantId, rentalId, expectedVersion))).rejects.toBe(
+      secondDeadlock,
+    );
     expect(setup.runInTransaction).toHaveBeenCalledTimes(2);
     expect(setup.save).toHaveBeenCalledTimes(2);
   });
@@ -174,7 +179,7 @@ describe('ConfirmRentalHandler deadlock retry', () => {
         repository,
         operationalFacts,
         bufferSettings as never,
-        deliveryQuoteService,
+        new RentalConfirmationDeliveryService(deliveryQuoteService),
         allocation,
         ownerSplitCalculator,
         unitOfWork,

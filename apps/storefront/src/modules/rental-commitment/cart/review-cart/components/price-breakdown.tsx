@@ -55,7 +55,9 @@ export function PriceBreakdown() {
 				<p className="mt-4 rounded-lg bg-muted p-3 text-sm text-muted-foreground">
 					{isPeriodInvalid
 						? "Corregí los horarios para calcular el precio."
-						: "Seleccioná los horarios de retiro y devolución para calcular el precio."}
+						: fulfillmentMethod === "DELIVERY"
+							? "Seleccioná los horarios de inicio y devolución para calcular el precio."
+							: "Seleccioná los horarios de retiro y devolución para calcular el precio."}
 				</p>
 			) : isPriceLoading && !pricing ? (
 				<div className="mt-5 space-y-3">
@@ -146,7 +148,7 @@ export function PriceBreakdown() {
 						)}
 						{fulfillmentMethod === "DELIVERY" && (
 							<MoneyRow
-								label="Entrega y recogida"
+								label="Entrega y retiro"
 								amount={delivery?.total}
 								pending={isDeliveryUpdating}
 								pendingLabel="Calculando…"

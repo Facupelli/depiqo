@@ -42,7 +42,7 @@ export function FulfillmentForm() {
 	return (
 		<section className="rounded-xl border bg-card p-5">
 			<h2 className="flex items-center gap-2 text-lg font-bold">
-				<Truck className="size-5" /> Entrega
+				<Truck className="size-5" /> Modalidad
 			</h2>
 			<div className="mt-4 grid grid-cols-2 gap-2">
 				<Button
@@ -85,7 +85,8 @@ export function FulfillmentForm() {
 					) : delivery && !isPriceError ? (
 						<p className="mt-2 flex items-center gap-2 text-sm text-emerald-700">
 							<CheckCircle2 className="size-4" />
-							Entrega disponible en esta dirección.
+							Podemos realizar el envío con los datos seleccionados. Se
+							verificará al confirmar.
 						</p>
 					) : deliveryStatusMessage && !isPriceError ? (
 						<p className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">
@@ -105,8 +106,10 @@ function getDeliveryUnavailableMessage(
 	>["deliveryNotServiceableReason"],
 ): string {
 	switch (reason) {
+		case "DISABLED":
+			return "Esta sucursal no ofrece servicio de envío.";
 		case "CUSTOMER_LOCATION_UNRESOLVED":
-			return "No pudimos encontrar esa dirección. Revisala e intentá nuevamente.";
+			return "No pudimos validar un destino específico. Seleccioná una dirección, un edificio o un establecimiento de la lista.";
 		case "BEYOND_MAX_DISTANCE":
 			return "La dirección está fuera de nuestra zona de entrega.";
 		case "DELIVERY_OUTSIDE_SERVICE_HOURS":
@@ -137,7 +140,10 @@ function DeliveryAddressSheet() {
 	const searchableAddress =
 		debouncedAddress.length >= 3 ? debouncedAddress : "";
 	const suggestionsQuery = useDeliveryAddressSuggestions(searchableAddress);
-	const suggestions = suggestionsQuery.data?.suggestions ?? [];
+	const suggestions =
+		trimmedAddress === debouncedAddress
+			? (suggestionsQuery.data?.suggestions ?? [])
+			: [];
 	const isSearchPending =
 		trimmedAddress.length >= 3 &&
 		(trimmedAddress !== debouncedAddress || suggestionsQuery.isFetching);
@@ -195,13 +201,15 @@ function DeliveryAddressSheet() {
 				<SheetHeader>
 					<SheetTitle>Dirección de entrega</SheetTitle>
 					<SheetDescription>
-						Ingresá la dirección completa donde querés recibir el equipo.
+						Seleccioná una dirección, un edificio o un establecimiento
+						específico. Una ciudad o zona no es suficiente.
 					</SheetDescription>
 				</SheetHeader>
 				<div className="px-4 pb-4">
 					{showDeliveryError && (
 						<p className="mb-4 rounded-lg border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-							Seleccioná una dirección de la lista.
+							Seleccioná una dirección, un edificio o un establecimiento de la
+							lista.
 						</p>
 					)}
 					<div className="text-xs font-semibold">

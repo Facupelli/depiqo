@@ -3,6 +3,11 @@ import { z } from "zod";
 import type { ApiContract } from "../api-contract";
 import { GetRentableItemsKindSchema } from "../catalog/get-rentable-items.contract";
 import {
+	AcceptedDeliverySchema,
+	AcceptedDeliveryLegSchema,
+	RentalDeliveryDetailsSchema,
+} from "./delivery-representation.schema";
+import {
 	GetRentalsFulfillmentMethodSchema,
 	GetRentalsStatusSchema,
 } from "./get-rentals.contract";
@@ -16,30 +21,10 @@ export const GetRentalDetailPeriodSchema = z.object({
 	end: z.string().datetime(),
 });
 
-export const GetRentalDetailDeliveryDetailsSchema = z.object({
-	address: z.string(),
-	formattedAddress: z.string(),
-	latitude: z.number(),
-	longitude: z.number(),
-	providerPlaceId: z.string().optional(),
-});
-
-export const GetRentalDetailAcceptedDeliveryLegSchema = z.object({
-	scheduledAt: z.string().datetime(),
-	serviceLevel: z.enum(["NORMAL", "SPECIAL"]),
-	basePrice: z.string(),
-	surcharge: z.string(),
-	total: z.string(),
-});
-
-export const GetRentalDetailAcceptedDeliverySchema = z.object({
-	distanceMeters: z.number().int().nonnegative(),
-	delivery: GetRentalDetailAcceptedDeliveryLegSchema,
-	collection: GetRentalDetailAcceptedDeliveryLegSchema,
-	currency: z.string(),
-	deliveryTotal: z.string(),
-	transportReservationMinutes: z.number().int().nonnegative(),
-});
+export const GetRentalDetailDeliveryDetailsSchema = RentalDeliveryDetailsSchema;
+export const GetRentalDetailAcceptedDeliveryLegSchema =
+	AcceptedDeliveryLegSchema;
+export const GetRentalDetailAcceptedDeliverySchema = AcceptedDeliverySchema;
 
 export const GetRentalDetailAssignedAssetSchema = z.object({
 	assetId: z.string(),
@@ -126,14 +111,16 @@ export const GetRentalDetailManualPricingAdjustmentDirectionSchema = z.enum([
 	"NONE",
 ]);
 
-export const GetRentalDetailPricingLineManualPricingAdjustmentSchema = z.object({
-	mode: z.literal("TARGET_TOTAL_ALLOCATION"),
-	direction: GetRentalDetailManualPricingAdjustmentDirectionSchema,
-	amount: z.string(),
-	setByTenantUserId: z.string(),
-	setAtIso: z.string().datetime(),
-	reason: z.string().optional(),
-});
+export const GetRentalDetailPricingLineManualPricingAdjustmentSchema = z.object(
+	{
+		mode: z.literal("TARGET_TOTAL_ALLOCATION"),
+		direction: GetRentalDetailManualPricingAdjustmentDirectionSchema,
+		amount: z.string(),
+		setByTenantUserId: z.string(),
+		setAtIso: z.string().datetime(),
+		reason: z.string().optional(),
+	},
+);
 
 export const GetRentalDetailManualPricingAdjustmentSchema = z.object({
 	mode: z.literal("TARGET_TOTAL"),
@@ -256,6 +243,8 @@ export const GetRentalDetailResponseSchema = z.object({
 	pricing: GetRentalDetailPricingSchema.nullable(),
 	acceptedCustomerTotal: z.string().nullable(),
 	acceptedDelivery: GetRentalDetailAcceptedDeliverySchema.nullable(),
+	// Proposed draft terms, distinct from facts accepted at confirmation.
+	draftDelivery: GetRentalDetailAcceptedDeliverySchema.nullable().optional(),
 	ownerPayouts: z.array(GetRentalDetailOwnerPayoutSchema),
 });
 

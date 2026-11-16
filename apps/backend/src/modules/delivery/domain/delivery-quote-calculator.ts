@@ -57,6 +57,24 @@ export class DeliveryQuoteCalculator {
     });
   }
 
+  getPolicyRestrictions(input: CalculateDeliveryQuoteInput): DeliveryQuoteNonServiceability[] {
+    const restrictions: DeliveryQuoteNonServiceability[] = [];
+    if (!input.configuration.distancePriceBands.some((band) => input.distanceMeters <= band.maxDistanceMeters)) {
+      restrictions.push({ code: 'BEYOND_MAX_DISTANCE' });
+    }
+    if (!this.isEligible(input, input.rentalStart)) restrictions.push({ code: 'DELIVERY_OUTSIDE_SERVICE_HOURS' });
+    if (!this.isEligible(input, input.rentalEnd)) restrictions.push({ code: 'COLLECTION_OUTSIDE_SERVICE_HOURS' });
+    return restrictions;
+  }
+
+  private isEligible(input: CalculateDeliveryQuoteInput, scheduledAt: Date): boolean {
+    const local = toZonedDateTimeParts(scheduledAt, input.effectiveTimezone);
+    return (
+      input.configuration.eligibleWeekdays.includes(local.dayOfWeek) &&
+      input.configuration.eligibilityWindow.containsMinute(local.minuteOfDay)
+    );
+  }
+
   private calculateLeg(
     input: CalculateDeliveryQuoteInput,
     scheduledAt: Date,
@@ -65,12 +83,7 @@ export class DeliveryQuoteCalculator {
     const local = toZonedDateTimeParts(scheduledAt, input.effectiveTimezone);
     const configuration = input.configuration;
 
-    if (
-      !configuration.eligibleWeekdays.includes(local.dayOfWeek) ||
-      !configuration.eligibilityWindow.containsMinute(local.minuteOfDay)
-    ) {
-      return null;
-    }
+    if (!this.isEligible(input, scheduledAt)) return null;
 
     const normal = configuration.normalServiceWindow.containsMinute(local.minuteOfDay);
     const surcharge = normal ? NonNegativeMoneyAmount.zero() : configuration.specialHoursSurcharge;

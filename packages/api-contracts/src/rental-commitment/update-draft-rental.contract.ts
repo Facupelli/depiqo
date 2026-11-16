@@ -2,23 +2,36 @@ import { z } from "zod";
 
 import type { ApiContract } from "../api-contract";
 import { ExplicitOffsetInstantWireSchema } from "../explicit-offset-instant.schema";
-import {
-  CreateDraftRentalManualPricingAdjustmentSchema,
-} from "./create-draft-rental.contract";
+import { CreateDraftRentalManualPricingAdjustmentSchema } from "./create-draft-rental.contract";
 import { CreateConfirmedRentalSelectedOfferSchema } from "./create-confirmed-rental.contract";
+import {
+  UpdateDraftRentalDeliveryDecisionsSchema,
+  validateStaffArrangedDeliveryEditDecisions,
+} from "./draft-rental-delivery-decisions.schema";
+import {
+  DraftRentalRoutedDestinationSchema,
+  DraftRentalStaffArrangedDestinationSchema,
+} from "./draft-rental-delivery-destination.schema";
 
 export const UpdateDraftRentalParamsSchema = z.object({
   rentalId: z.string().trim().min(1),
 });
 
-export const UpdateDraftRentalDeliveryIntentSchema = z.discriminatedUnion("type", [
-  z.object({ type: z.literal("KEEP_CURRENT") }),
-  z.object({
-    type: z.literal("NEW_DESTINATION"),
-    address: z.string().trim().min(1),
-    locationId: z.string().trim().min(1),
-  }),
-]);
+export const UpdateDraftRentalDeliveryIntentSchema = z.discriminatedUnion(
+  "type",
+  [
+    // No arrangement here: keeping the destination also keeps its arrangement.
+    z.object({ type: z.literal("KEEP_CURRENT") }).strict(),
+    z.discriminatedUnion("arrangement", [
+      DraftRentalRoutedDestinationSchema.extend({
+        type: z.literal("NEW_DESTINATION"),
+      }),
+      DraftRentalStaffArrangedDestinationSchema.extend({
+        type: z.literal("NEW_DESTINATION"),
+      }),
+    ]),
+  ],
+);
 
 const UpdateDraftRentalProposalSchema = z.object({
   expectedVersion: z.number().int().nonnegative(),
@@ -30,28 +43,50 @@ const UpdateDraftRentalProposalSchema = z.object({
   }),
   selectedOffers: z.array(CreateConfirmedRentalSelectedOfferSchema),
   insuranceSelected: z.boolean().optional(),
-  manualPricingAdjustment: CreateDraftRentalManualPricingAdjustmentSchema.optional(),
+  manualPricingAdjustment:
+    CreateDraftRentalManualPricingAdjustmentSchema.optional(),
 });
 
-export const UpdateDraftRentalBodySchema = UpdateDraftRentalProposalSchema.extend({
-  fulfillmentMethod: z.enum(["PICKUP", "DELIVERY"]),
-  deliveryIntent: UpdateDraftRentalDeliveryIntentSchema.optional(),
-}).superRefine((value, context) => {
-  if (value.fulfillmentMethod === "DELIVERY" && !value.deliveryIntent) {
-    context.addIssue({
-      code: "custom",
-      path: ["deliveryIntent"],
-      message: "Delivery rentals require a delivery intent.",
-    });
-  }
-  if (value.fulfillmentMethod === "PICKUP" && value.deliveryIntent) {
-    context.addIssue({
-      code: "custom",
-      path: ["deliveryIntent"],
-      message: "Pickup rentals cannot include a delivery intent.",
-    });
-  }
-});
+export const UpdateDraftRentalBodySchema =
+  UpdateDraftRentalProposalSchema.extend({
+    fulfillmentMethod: z.enum(["PICKUP", "DELIVERY"]),
+    deliveryIntent: UpdateDraftRentalDeliveryIntentSchema.optional(),
+    deliveryDecisions: UpdateDraftRentalDeliveryDecisionsSchema.optional(),
+  }).superRefine((value, context) => {
+    if (
+      value.deliveryIntent?.type === "NEW_DESTINATION" &&
+      value.deliveryIntent.arrangement === "STAFF_ARRANGED"
+    ) {
+      validateStaffArrangedDeliveryEditDecisions(
+        value.deliveryDecisions,
+        context,
+      );
+    }
+    if (value.fulfillmentMethod === "DELIVERY" && !value.deliveryIntent) {
+      context.addIssue({
+        code: "custom",
+        path: ["deliveryIntent"],
+        message: "Delivery rentals require a delivery intent.",
+      });
+    }
+    if (
+      value.fulfillmentMethod === "PICKUP" &&
+      value.deliveryDecisions !== undefined
+    ) {
+      context.addIssue({
+        code: "custom",
+        path: ["deliveryDecisions"],
+        message: "Pickup rentals cannot include delivery decisions.",
+      });
+    }
+    if (value.fulfillmentMethod === "PICKUP" && value.deliveryIntent) {
+      context.addIssue({
+        code: "custom",
+        path: ["deliveryIntent"],
+        message: "Pickup rentals cannot include a delivery intent.",
+      });
+    }
+  });
 
 export const UpdateDraftRentalResponseSchema = z.object({
   id: z.string(),
@@ -59,9 +94,15 @@ export const UpdateDraftRentalResponseSchema = z.object({
   updatedAt: z.string().datetime(),
 });
 
-export type UpdateDraftRentalParamsDto = z.infer<typeof UpdateDraftRentalParamsSchema>;
-export type UpdateDraftRentalBodyDto = z.infer<typeof UpdateDraftRentalBodySchema>;
-export type UpdateDraftRentalResponseDto = z.infer<typeof UpdateDraftRentalResponseSchema>;
+export type UpdateDraftRentalParamsDto = z.infer<
+  typeof UpdateDraftRentalParamsSchema
+>;
+export type UpdateDraftRentalBodyDto = z.infer<
+  typeof UpdateDraftRentalBodySchema
+>;
+export type UpdateDraftRentalResponseDto = z.infer<
+  typeof UpdateDraftRentalResponseSchema
+>;
 
 export const updateDraftRentalContract = {
   method: "PUT",

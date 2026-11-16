@@ -88,6 +88,7 @@ export class GeoapifyAddressGeocoderAdapter extends AddressGeocoder {
 
     return {
       locationId,
+      resultType: this.optionalString(result.result_type),
       formattedAddress,
       addressLine1: this.optionalString(result.address_line1),
       addressLine2: this.optionalString(result.address_line2),
@@ -117,6 +118,10 @@ export class GeoapifyAddressGeocoderAdapter extends AddressGeocoder {
       formattedAddress,
       latitude,
       longitude,
+      name: this.optionalString(result.name),
+      categories: Array.isArray(result.categories)
+        ? result.categories.filter((category): category is string => typeof category === 'string')
+        : undefined,
       street: this.optionalString(result.street),
       streetNumber: this.optionalString(result.housenumber),
       city: this.optionalString(result.city),
