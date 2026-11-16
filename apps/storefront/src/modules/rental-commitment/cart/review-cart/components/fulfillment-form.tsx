@@ -106,6 +106,8 @@ function getDeliveryUnavailableMessage(
 	>["deliveryNotServiceableReason"],
 ): string {
 	switch (reason) {
+		case "DISABLED":
+			return "Esta sucursal no ofrece servicio de envío.";
 		case "CUSTOMER_LOCATION_UNRESOLVED":
 			return "No pudimos validar un destino específico. Seleccioná una dirección, un edificio o un establecimiento de la lista.";
 		case "BEYOND_MAX_DISTANCE":

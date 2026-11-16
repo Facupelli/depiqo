@@ -11,6 +11,11 @@ import {
 import { createTestFixtures, TestFixtures } from '../../../../test/support/fixtures';
 
 import { FulfillmentMethod } from '../domain/rental-status';
+import {
+  ACCEPTED_DELIVERY_SNAPSHOT_SCHEMA,
+  ACCEPTED_DELIVERY_SNAPSHOT_VERSION,
+  AcceptedDeliverySnapshot,
+} from '../domain/value-objects/accepted-delivery-snapshot.value-object';
 import { RentalPeriod } from '../domain/value-objects/rental-period.value-object';
 import { ConfirmedRentalFixtures } from '../testing/confirmed-rental.fixtures';
 import { RentalRepository } from './rental.repository';
@@ -61,13 +66,21 @@ describe('PrismaRentalRepository confirmed period reschedule persistence', () =>
     return { tenant, branch, customer, offer, rental };
   }
 
-  async function reschedule(tenantId: string, rentalId: string, expectedVersion?: number) {
+  async function reschedule(
+    tenantId: string,
+    rentalId: string,
+    options: { expectedVersion?: number; period?: RentalPeriod } = {},
+  ) {
+    const period = options.period ?? rescheduledPeriod;
     return unitOfWork.runInTransaction(async ({ tx }) => {
       const rental = await repository.findById(tenantId, rentalId, tx);
       if (!rental) throw new Error('Expected rental fixture to exist.');
-      rental.rescheduleConfirmedPeriod({ period: rescheduledPeriod, operationTime })._unsafeUnwrap();
+      const acceptedDelivery = rental.acceptedDelivery
+        ?.reschedule({ deliveryScheduledAt: period.start, collectionScheduledAt: period.end })
+        ._unsafeUnwrap();
+      rental.rescheduleConfirmedPeriod({ period, operationTime, acceptedDelivery })._unsafeUnwrap();
       return repository.rescheduleConfirmedPeriod(rental, {
-        expectedVersion: expectedVersion ?? rental.version,
+        expectedVersion: options.expectedVersion ?? rental.version,
         tx,
       });
     });
@@ -75,12 +88,17 @@ describe('PrismaRentalRepository confirmed period reschedule persistence', () =>
 
   it('updates a PICKUP rental and current operational rows in place while preserving history and commercial facts', async () => {
     const scenario = await setup();
+    // Move the start earlier so closed participation remains inside the rental period.
+    const period = new RentalPeriod(new Date('2030-01-09T11:00:00.000Z'), rescheduledPeriod.end);
     const accessory = await rentalFixtures.createAccessoryState({
       tenantId: scenario.tenant.id,
       branchId: scenario.branch.id,
       rentalId: scenario.rental.rentalId,
       sourceRentalDemandLineId: scenario.rental.demandLineIds[0],
-      period: originalPeriod,
+      period: {
+        start: new Date(originalPeriod.start.getTime() - 30 * 60_000),
+        end: new Date(originalPeriod.end.getTime() + 45 * 60_000),
+      },
     });
     const historicalAssetId = await rentalFixtures.createCandidate({
       tenantId: scenario.tenant.id,
@@ -94,8 +112,8 @@ describe('PrismaRentalRepository confirmed period reschedule persistence', () =>
         rentalDemandLineId: scenario.rental.demandLineIds[0],
         assetId: historicalAssetId,
         ownershipSnapshot: { kind: 'TENANT_OWNED' },
-        effectiveFrom: new Date('2029-12-01T10:00:00.000Z'),
-        effectiveUntil: new Date('2029-12-02T10:00:00.000Z'),
+        effectiveFrom: new Date('2030-01-10T12:00:00.000Z'),
+        effectiveUntil: new Date('2030-01-11T10:00:00.000Z'),
       },
     });
     const historicalBlockId = await rentalFixtures.createActiveBlock({
@@ -103,7 +121,7 @@ describe('PrismaRentalRepository confirmed period reschedule persistence', () =>
       rentalId: scenario.rental.rentalId,
       assetId: historicalAssetId,
       period: {
-        start: new Date(historicalAssignment.effectiveFrom.getTime() - 30 * 60_000),
+        start: historicalAssignment.effectiveFrom,
         end: new Date(historicalAssignment.effectiveUntil!.getTime() + 45 * 60_000),
       },
     });
@@ -119,18 +137,18 @@ describe('PrismaRentalRepository confirmed period reschedule persistence', () =>
     `;
 
     const before = await rentalFixtures.persistedState(scenario.rental.rentalId);
-    const result = await reschedule(scenario.tenant.id, scenario.rental.rentalId);
+    const result = await reschedule(scenario.tenant.id, scenario.rental.rentalId, { period });
     const after = await rentalFixtures.persistedState(scenario.rental.rentalId);
 
     expect(result).toEqual(expect.objectContaining({ version: before.rental.version + 1 }));
-    expect(after.rental.periodStart).toEqual(rescheduledPeriod.start);
-    expect(after.rental.periodEnd).toEqual(rescheduledPeriod.end);
+    expect(after.rental.periodStart).toEqual(period.start);
+    expect(after.rental.periodEnd).toEqual(period.end);
     expect(after.rental.deliverySnapshot).toBeNull();
     expect(after.rental.version).toBe(before.rental.version + 1);
 
     const currentBefore = before.rental.assignedAssets.find((row) => row.effectiveUntil === null)!;
     const currentAfter = after.rental.assignedAssets.find((row) => row.id === currentBefore.id)!;
-    expect(currentAfter).toEqual({ ...currentBefore, effectiveFrom: rescheduledPeriod.start });
+    expect(currentAfter).toEqual({ ...currentBefore, effectiveFrom: period.start });
     expect(after.rental.assignedAssets.find((row) => row.id === historicalAssignment.id)).toEqual(
       before.rental.assignedAssets.find((row) => row.id === historicalAssignment.id),
     );
@@ -140,7 +158,7 @@ describe('PrismaRentalRepository confirmed period reschedule persistence', () =>
       accessory.blockId,
     ]);
     for (const block of after.blocks.filter((row) => resizedIds.has(row.id))) {
-      expect(block.period.startsWith('["2030-01-20 10:30:00+00"')).toBe(true);
+      expect(block.period.startsWith('["2030-01-09 10:30:00+00"')).toBe(true);
       expect(block.period.endsWith('"2030-01-23 19:45:00+00")')).toBe(true);
       expect(before.blocks.find((row) => row.id === block.id)).toEqual(
         expect.objectContaining({ id: block.id, createdAt: block.createdAt }),
@@ -168,8 +186,11 @@ describe('PrismaRentalRepository confirmed period reschedule persistence', () =>
   it('updates only DELIVERY schedule timestamps inside the accepted snapshot', async () => {
     const scenario = await setup();
     const acceptedDelivery = {
-      schema: 'v2.accepted-delivery',
-      version: 1,
+      schema: ACCEPTED_DELIVERY_SNAPSHOT_SCHEMA,
+      version: ACCEPTED_DELIVERY_SNAPSHOT_VERSION,
+      arrangement: 'ROUTED',
+      branchId: scenario.branch.id,
+      resolvedDestination: { formattedAddress: 'Main Street 1, City', latitude: 10, longitude: 20 },
       distanceMeters: 12500,
       delivery: {
         scheduledAt: originalPeriod.start.toISOString(),
@@ -234,7 +255,7 @@ describe('PrismaRentalRepository confirmed period reschedule persistence', () =>
     const before = await rentalFixtures.persistedState(scenario.rental.rentalId);
 
     await expect(
-      reschedule(scenario.tenant.id, scenario.rental.rentalId, before.rental.version - 1),
+      reschedule(scenario.tenant.id, scenario.rental.rentalId, { expectedVersion: before.rental.version - 1 }),
     ).resolves.toBeNull();
 
     expect(await rentalFixtures.persistedState(scenario.rental.rentalId)).toEqual(before);
@@ -243,8 +264,11 @@ describe('PrismaRentalRepository confirmed period reschedule persistence', () =>
   it('maps an exclusion conflict and rolls back the rental, delivery, assignments, and earlier block resize', async () => {
     const scenario = await setup(2);
     const acceptedDelivery = {
-      schema: 'v2.accepted-delivery',
-      version: 1,
+      schema: ACCEPTED_DELIVERY_SNAPSHOT_SCHEMA,
+      version: ACCEPTED_DELIVERY_SNAPSHOT_VERSION,
+      arrangement: 'ROUTED',
+      branchId: scenario.branch.id,
+      resolvedDestination: { formattedAddress: 'Conflict Street 1, City', latitude: 10, longitude: 20 },
       distanceMeters: 1000,
       delivery: {
         scheduledAt: originalPeriod.start.toISOString(),
@@ -293,7 +317,19 @@ describe('PrismaRentalRepository confirmed period reschedule persistence', () =>
     const before = await rentalFixtures.persistedState(scenario.rental.rentalId);
     const aggregate = await repository.findById(scenario.tenant.id, scenario.rental.rentalId);
     if (!aggregate) throw new Error('Expected rental fixture to exist.');
-    aggregate.rescheduleConfirmedPeriod({ period: rescheduledPeriod, operationTime })._unsafeUnwrap();
+    aggregate
+      .rescheduleConfirmedPeriod({
+        period: rescheduledPeriod,
+        operationTime,
+        acceptedDelivery: AcceptedDeliverySnapshot.create(acceptedDelivery)
+          ._unsafeUnwrap()
+          .reschedule({
+            deliveryScheduledAt: rescheduledPeriod.start,
+            collectionScheduledAt: rescheduledPeriod.end,
+          })
+          ._unsafeUnwrap(),
+      })
+      ._unsafeUnwrap();
     const currentBlocks = aggregate.currentOperationalAssetBlocks;
     expect(currentBlocks).toHaveLength(2);
     const conflictingAssetId = currentBlocks[currentBlocks.length - 1].assetId;

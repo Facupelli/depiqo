@@ -653,7 +653,7 @@ const DeliveryFields = withForm({
 							<p className="text-xs text-muted-foreground">
 								{staffArranged
 									? "Ingresá el destino y definí el importe de entrega y retiro y el tiempo para transporte."
-									: "Evaluamos la dirección y las condiciones de envío de la sucursal. Podés usar el precio calculado o definir otro importe."}
+									: "Evaluamos la dirección y las condiciones de envío de la sucursal."}
 							</p>
 							{!canManageDelivery ? (
 								<p className="text-xs text-muted-foreground">

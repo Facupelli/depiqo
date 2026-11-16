@@ -6,6 +6,7 @@ import { useStore } from "@tanstack/react-form";
 import { useId } from "react";
 import { withForm } from "@/shared/contexts/form.context";
 import { formatMoney } from "@/shared/utils/formatters";
+import { getDeliveryTechnicalFailureMessage } from "../delivery-preview";
 import { useDraftRentalComposer } from "../draft-rental-composer.context";
 import { createDraftRentalComposerDefaultValues } from "../draft-rental-composer.schema";
 
@@ -47,7 +48,10 @@ export const RoutedDeliveryPricingFields = withForm({
 					</span>
 				</div>
 				<p className="text-xs text-muted-foreground">
-					Podés usar el precio calculado o definir otro importe.
+					{getDeliveryTechnicalFailureMessage(delivery) ??
+						(delivery
+							? "Podés usar el precio calculado o definir otro importe."
+							: "Completá las condiciones de envío para consultar el precio.")}
 				</p>
 				{storedAgreement ? (
 					<p className="text-xs text-muted-foreground">

@@ -8,7 +8,10 @@ import {
 import { Info, Loader2 } from "lucide-react";
 import type { ReactNode } from "react";
 import { formatMoney } from "@/shared/utils/formatters";
-import { getAcknowledgedDeliveryAgreementAmount } from "../delivery-preview";
+import {
+	getAcknowledgedDeliveryAgreementAmount,
+	getDeliveryTechnicalFailureMessage,
+} from "../delivery-preview";
 
 export function DraftRentalFinancialSummary({
 	preview,
@@ -144,9 +147,10 @@ export function DraftRentalFinancialSummary({
 											? "Completá la configuración de entrega y retiro."
 											: staffArranged
 												? "Definí el importe y el tiempo para transporte."
-												: delivery?.effectiveCharge != null
-													? "Precio calculado"
-													: "No hay un precio calculado disponible. Podés definir un importe; el envío debe poder validarse."}
+												: (getDeliveryTechnicalFailureMessage(delivery) ??
+													(delivery?.effectiveCharge != null
+														? "Precio calculado"
+														: "No hay un precio calculado disponible. Podés definir un importe; el envío debe poder validarse."))}
 								</p>
 							)}
 							{deliveryDetails}

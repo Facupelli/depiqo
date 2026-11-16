@@ -40,7 +40,8 @@ const technicalFailureLabels: Record<
 	string
 > = {
 	BRANCH_UNAVAILABLE: "La sucursal no está disponible para el envío.",
-	BRANCH_LOCATION_MISSING: "La sucursal no tiene una ubicación configurada.",
+	BRANCH_LOCATION_MISSING:
+		"Configurá las coordenadas de la sucursal para validar el envío. Definir un importe no reemplaza este requisito.",
 	CUSTOMER_LOCATION_UNRESOLVED:
 		"No pudimos identificar la ubicación de entrega.",
 	NO_ROUTE: "No se encontró una ruta hasta el destino.",
@@ -65,21 +66,25 @@ export function getAcknowledgedDeliveryAgreementAmount(
 	return agreementUnresolved ? null : delivery.staffAgreedAmount;
 }
 
+export function getDeliveryTechnicalFailureMessage(
+	delivery: PreviewDraftRentalCostDeliveryDto | null | undefined,
+): string | null {
+	if (!delivery?.technicalFailure) return null;
+	return technicalFailureLabels[delivery.technicalFailure];
+}
+
 export function deliveryBlockingMessages(
 	delivery: PreviewDraftRentalCostDeliveryDto | null | undefined,
 ) {
 	if (!delivery) return [];
+	const technicalFailure = getDeliveryTechnicalFailureMessage(delivery);
 	return [
-		...(delivery.technicalFailure
-			? [
-					delivery.technicalFailure === "BRANCH_LOCATION_MISSING" &&
-					getAcknowledgedDeliveryAgreementAmount(delivery) !== null
-						? "El importe está definido. Configurá la ubicación de la sucursal para validar el envío."
-						: technicalFailureLabels[delivery.technicalFailure],
-				]
-			: []),
-		...delivery.requirements.map(
-			(requirement) => deliveryRequirementLabels[requirement],
-		),
+		...(technicalFailure ? [technicalFailure] : []),
+		...delivery.requirements
+			.filter(
+				(requirement) =>
+					!technicalFailure || requirement !== "AGREEMENT_REQUIRED",
+			)
+			.map((requirement) => deliveryRequirementLabels[requirement]),
 	];
 }
