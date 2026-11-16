@@ -14,6 +14,7 @@ import type { BranchScopeFilter } from "@/application/branch-scope/branch-scope-
 import { resolveEffectiveBranchId } from "@/application/branch-scope/resolve-effective-branch-id";
 import { currentAuthQueries } from "@/auth/auth.queries";
 import { can, canAll } from "@/auth/permissions";
+import { EquipmentWorkspaceHeader } from "@/components/equipment-workspace-header";
 import { useBranches } from "@/modules/settings/branches/public";
 import { useCategories } from "@/modules/settings/categories/public";
 import useDebounce from "@/shared/hooks/use-debounce";
@@ -224,7 +225,7 @@ export function EquipmentTypesPage({
 
 	return (
 		<div className="space-y-4">
-			<h1 className="sr-only">Equipos</h1>
+			<EquipmentWorkspaceHeader current="Equipos" />
 			<div className="@container/equipment-index space-y-4">
 				<EquipmentListToolbar
 					filters={search}

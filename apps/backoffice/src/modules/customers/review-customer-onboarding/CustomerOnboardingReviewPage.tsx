@@ -52,7 +52,7 @@ export function CustomerOnboardingReviewPage({
 			<div className="space-y-4">
 				<PageBreadcrumb
 					parent={{
-						label: "Altas de cliente",
+						label: "Solicitudes de alta",
 						to: "/dashboard/customers/pending-profiles",
 					}}
 					current="Revision"
@@ -324,7 +324,7 @@ function CustomerProfileReviewHeader({
 		<div className="border-b border-border pb-4">
 			<PageBreadcrumb
 				parent={{
-					label: "Altas de cliente",
+					label: "Solicitudes de alta",
 					to: "/dashboard/customers/pending-profiles",
 				}}
 				current={profile.fullName}

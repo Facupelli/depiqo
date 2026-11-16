@@ -1,3 +1,4 @@
+import { EquipmentWorkspaceHeader } from "@/components/equipment-workspace-header";
 import { useTenantTimezone } from "@/shared/timezone/operational-timezone.hooks";
 import { useCategories } from "../categories.queries";
 import { CreateCategoryDialog } from "../create-category/create-category-dialog";
@@ -9,12 +10,10 @@ export function CategoriesPage() {
 
 	return (
 		<div className="space-y-4">
-			<div className="flex items-start justify-between gap-4">
-				<h1 className="sr-only">Categorías</h1>
-				<div className="ml-auto">
-					<CreateCategoryDialog />
-				</div>
-			</div>
+			<EquipmentWorkspaceHeader
+				current="Categorías"
+				actions={<CreateCategoryDialog />}
+			/>
 
 			{isError ? (
 				<p className="text-sm text-destructive">

@@ -1,8 +1,4 @@
 import {
-	TenantPermission,
-	type TenantPermission as TenantPermissionId,
-} from "@repo/api-contracts";
-import {
 	Popover,
 	PopoverContent,
 	PopoverTrigger,
@@ -24,37 +20,17 @@ import {
 	useNavigate,
 	useRouterState,
 } from "@tanstack/react-router";
-import type { LucideIcon } from "lucide-react";
-import {
-	BadgePercent,
-	BarChart3,
-	CalendarDays,
-	Camera,
-	ChartNoAxesCombined,
-	ChevronsUpDown,
-	LayoutGrid,
-	LogOut,
-	Settings,
-	ShoppingBag,
-	User,
-	Users,
-} from "lucide-react";
+import { ChevronsUpDown, LogOut, User } from "lucide-react";
 import { currentBusinessQueries } from "@/application/current-business/current-business.queries";
 import { currentAuthQueries } from "@/auth/auth.queries";
-import {
-	categoryWorkspacePermissions,
-	customerListPermissions,
-	inventoryWorkspacePermissions,
-	productWorkspacePermissions,
-	promotionListPermissions,
-	rentalWorkspacePermissions,
-	reportWorkspacePermissions,
-	settingsPermissions,
-	workingBranchContextPermissions,
-} from "@/auth/capabilities";
+import { workingBranchContextPermissions } from "@/auth/capabilities";
 import { useLogout } from "@/auth/logout/logout.mutation";
-import { can, canAny } from "@/auth/permissions";
+import { canAny } from "@/auth/permissions";
 import { useUpdateWorkingBranch } from "@/auth/update-working-branch/update-working-branch.mutation";
+import {
+	getDashboardNavigation,
+	matchesNavigationPath,
+} from "@/components/dashboard-navigation";
 import {
 	Sidebar,
 	SidebarContent,
@@ -89,135 +65,6 @@ export const Route = createFileRoute("/_admin/dashboard")({
 	component: DashboardLayout,
 });
 
-type PermissionPredicate = (
-	permissions: readonly TenantPermissionId[],
-) => boolean;
-
-type SidebarChild = {
-	name: string;
-	href: string;
-	matchDescendants?: boolean;
-	isVisible: PermissionPredicate;
-};
-
-type SidebarItem = {
-	name: string;
-	icon: LucideIcon;
-	href: string;
-	matchDescendants?: boolean;
-	isVisible?: PermissionPredicate;
-	children?: SidebarChild[];
-};
-
-const sidebarItems: SidebarItem[] = [
-	{
-		name: "Inicio",
-		icon: LayoutGrid,
-		href: "/dashboard",
-		isVisible: (permissions) => can(permissions, TenantPermission.RentalsRead),
-	},
-	{
-		name: "Calendario",
-		icon: CalendarDays,
-		href: "/dashboard/calendar",
-		isVisible: (permissions) => can(permissions, TenantPermission.RentalsRead),
-	},
-	{
-		name: "Alquileres",
-		icon: ShoppingBag,
-		href: "/dashboard/orders",
-		isVisible: (permissions) => canAny(permissions, rentalWorkspacePermissions),
-		// children: [
-		// 	{
-		// 		name: "Pendientes de revisión",
-		// 		href: "/dashboard/orders/pending-review",
-		// 	},
-		// ],
-	},
-	{
-		name: "Equipos",
-		icon: Camera,
-		href: "/dashboard/inventory/equipment-types",
-		matchDescendants: true,
-		isVisible: (permissions) =>
-			canAny(permissions, inventoryWorkspacePermissions),
-		children: [
-			{
-				name: "Combos",
-				href: "/dashboard/catalog/packages",
-				matchDescendants: true,
-				isVisible: (permissions) =>
-					canAny(permissions, productWorkspacePermissions),
-			},
-			{
-				name: "Categorías",
-				href: "/dashboard/catalog/categories",
-				isVisible: (permissions) =>
-					canAny(permissions, categoryWorkspacePermissions),
-			},
-			{
-				name: "Dueños de Equipo",
-				href: "/dashboard/owners",
-				isVisible: (permissions) =>
-					canAny(permissions, inventoryWorkspacePermissions),
-			},
-		],
-	},
-	{
-		name: "Clientes",
-		icon: Users,
-		href: "/dashboard/customers",
-		isVisible: (permissions) => canAny(permissions, customerListPermissions),
-		children: [
-			{
-				name: "Altas de cliente",
-				href: "/dashboard/customers/pending-profiles",
-				isVisible: (permissions) =>
-					can(permissions, TenantPermission.CustomersOnboardingManage),
-			},
-		],
-	},
-	{
-		name: "Promociones",
-		icon: BadgePercent,
-		href: "/dashboard/promotions",
-		isVisible: (permissions) => canAny(permissions, promotionListPermissions),
-	},
-	{
-		name: "Finanzas",
-		icon: BarChart3,
-		href: "/dashboard/finances",
-		isVisible: (permissions) => can(permissions, TenantPermission.FinancesRead),
-	},
-	{
-		name: "Reportes",
-		icon: ChartNoAxesCombined,
-		href: "/dashboard/reports",
-		matchDescendants: true,
-		isVisible: (permissions) => canAny(permissions, reportWorkspacePermissions),
-		children: [
-			{
-				name: "Alquileres",
-				href: "/dashboard/reports/rentals",
-				isVisible: (permissions) =>
-					can(permissions, TenantPermission.ReportsRentalsRead),
-			},
-			{
-				name: "Equipos más reservados",
-				href: "/dashboard/reports/equipment",
-				isVisible: (permissions) =>
-					can(permissions, TenantPermission.ReportsEquipmentRead),
-			},
-		],
-	},
-	{
-		name: "Ajustes",
-		icon: Settings,
-		href: "/dashboard/settings",
-		isVisible: (permissions) => canAny(permissions, settingsPermissions),
-	},
-];
-
 function DashboardLayout() {
 	const { user } = Route.useRouteContext();
 	const { data: business } = useSuspenseQuery(currentBusinessQueries.current());
@@ -245,7 +92,8 @@ function DashboardLayout() {
 				<SidebarContent className="px-4">
 					<DashboardNavigation />
 				</SidebarContent>
-				<SidebarFooter className="p-4">
+				<SidebarFooter className="gap-4 p-4">
+					<DashboardNavigation footer />
 					<UserPopover name={user.name} email={user.email} />
 				</SidebarFooter>
 			</Sidebar>
@@ -267,85 +115,81 @@ function DashboardLayout() {
 	);
 }
 
-function DashboardNavigation() {
+function DashboardNavigation({ footer = false }: { footer?: boolean }) {
 	const { user } = Route.useRouteContext();
 	const { setOpenMobile } = useSidebar();
-	const visibleItems = sidebarItems.flatMap((item) => {
-		const children = item.children?.filter((child) =>
-			child.isVisible(user.permissions),
-		);
-		const canOpenDirectTarget = item.isVisible?.(user.permissions) ?? false;
-
-		if (!canOpenDirectTarget && !children?.length) {
-			return [];
-		}
-
-		return [
-			{
-				...item,
-				href: canOpenDirectTarget
-					? item.href
-					: (children?.[0]?.href ?? item.href),
-				children: canOpenDirectTarget ? children : undefined,
-			},
-		];
+	const pathname = useRouterState({
+		select: (state) => state.location.pathname.replace(/\/$/, ""),
 	});
-
-	function closeNavigation() {
-		setOpenMobile(false);
-	}
+	const groups = getDashboardNavigation(user.permissions);
+	const visibleGroups = (
+		footer ? groups.slice(-1) : groups.slice(0, -1)
+	).filter((group) => group.length > 0);
 
 	return (
-		<nav aria-label="Navegación principal">
-			<SidebarMenu>
-				{visibleItems.map((item) => {
-					const Icon = item.icon;
-					return (
-						<SidebarMenuItem key={item.href}>
-							<SidebarMenuButton
-								className="text-neutral-400 hover:bg-white/5 hover:text-white aria-[current=page]:bg-white/10 aria-[current=page]:text-white"
-								render={
-									<Link
-										to={item.href}
-										activeOptions={{
-											exact: !item.matchDescendants,
-											includeSearch: false,
-										}}
-										preload={false}
-										onClick={closeNavigation}
-									/>
-								}
-							>
-								<Icon />
-								{item.name}
-							</SidebarMenuButton>
-							{item.children ? (
-								<SidebarMenuSub className="border-white/10">
-									{item.children.map((child) => (
-										<SidebarMenuSubItem key={child.href}>
-											<SidebarMenuSubButton
-												className="text-neutral-400 hover:text-neutral-300 aria-[current=page]:font-medium aria-[current=page]:text-white"
-												render={
-													<Link
-														to={child.href}
-														activeOptions={{
-															exact: !child.matchDescendants,
-															includeSearch: false,
-														}}
-														onClick={closeNavigation}
-													/>
-												}
-											>
-												{child.name}
-											</SidebarMenuSubButton>
-										</SidebarMenuSubItem>
-									))}
-								</SidebarMenuSub>
-							) : null}
-						</SidebarMenuItem>
-					);
-				})}
-			</SidebarMenu>
+		<nav
+			aria-label={footer ? "Cuenta y ajustes" : "Navegación principal"}
+			className="space-y-5"
+		>
+			{visibleGroups.map((group) => (
+				<SidebarMenu key={group[0].name}>
+					{group.map((item) => {
+						const Icon = item.icon;
+						const active =
+							pathname === item.href ||
+							(item.paths ?? [item.href]).some((path) =>
+								matchesNavigationPath(pathname, path),
+							);
+						const childActive = item.children?.some((child) =>
+							matchesNavigationPath(pathname, child.href),
+						);
+						return (
+							<SidebarMenuItem key={item.name}>
+								<SidebarMenuButton
+									data-selected={(active && !childActive) || undefined}
+									data-contextual={childActive || undefined}
+									className="text-neutral-400 hover:bg-white/5 hover:text-white data-[contextual=true]:text-neutral-100 data-[selected=true]:bg-blue-500/20 data-[selected=true]:text-blue-200"
+									render={
+										<Link
+											to={item.href}
+											activeOptions={{ exact: true, includeSearch: false }}
+											aria-current={
+												active && !childActive ? "location" : undefined
+											}
+											preload={false}
+											onClick={() => setOpenMobile(false)}
+										/>
+									}
+								>
+									<Icon />
+									{item.name}
+								</SidebarMenuButton>
+								{item.children?.length ? (
+									<SidebarMenuSub className="ml-5 border-0 pl-3">
+										{item.children.map((child) => (
+											<SidebarMenuSubItem key={child.href}>
+												<SidebarMenuSubButton
+													className="px-3 text-neutral-400 hover:bg-white/5 hover:text-white aria-[current=page]:bg-blue-500/20 aria-[current=page]:font-semibold aria-[current=page]:text-blue-200"
+													render={
+														<Link
+															to={child.href}
+															activeOptions={{ includeSearch: false }}
+															preload={false}
+															onClick={() => setOpenMobile(false)}
+														/>
+													}
+												>
+													{child.name}
+												</SidebarMenuSubButton>
+											</SidebarMenuSubItem>
+										))}
+									</SidebarMenuSub>
+								) : null}
+							</SidebarMenuItem>
+						);
+					})}
+				</SidebarMenu>
+			))}
 		</nav>
 	);
 }
