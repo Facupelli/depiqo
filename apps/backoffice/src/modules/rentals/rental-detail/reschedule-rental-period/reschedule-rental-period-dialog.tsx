@@ -118,6 +118,13 @@ function OpenRescheduleRentalPeriodDialog(
 		if (clearDeliveryDecisions) clearDecisions();
 	}
 
+	function periodHasChanged(body: RescheduleConfirmedRentalPeriodBodyDto) {
+		return (
+			Date.parse(body.period.start) !== Date.parse(currentPeriodStart) ||
+			Date.parse(body.period.end) !== Date.parse(currentPeriodEnd)
+		);
+	}
+
 	function matchingReview(body: RescheduleConfirmedRentalPeriodBodyDto) {
 		const result = previewPeriod.data;
 		if (
@@ -202,6 +209,7 @@ function OpenRescheduleRentalPeriodDialog(
 				operationalTimezone,
 				rentalVersion,
 			);
+			if (!periodHasChanged(body)) return;
 			const review = matchingReview(body);
 			if (review && (!reviewIsComplete(body) || serverError)) return;
 			operationInFlight.current = true;
@@ -502,6 +510,8 @@ function OpenRescheduleRentalPeriodDialog(
 													isPending ||
 													isStale ||
 													!valid ||
+													!body ||
+													!periodHasChanged(body) ||
 													(hasReview &&
 														(!body ||
 															!reviewIsComplete(body) ||

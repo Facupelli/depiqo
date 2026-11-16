@@ -125,12 +125,7 @@ export function EditDeliveryDialog({ onClose }: { onClose: () => void }) {
 	const proposedAddress =
 		transition || values.changeAddress ? values.address : currentAddress;
 	const automaticReevaluation =
-		!staff &&
-		(transition ||
-			values.changeAddress ||
-			values.authorizeException ||
-			(values.changeMinutes &&
-				Number(values.minutes) !== delivery.transportReservationMinutes));
+		!staff && (transition || values.changeAddress || values.authorizeException);
 	const preservedAgreement =
 		!transition && values.pricing === "KEEP" ? delivery.staffAgreement : null;
 	const calculatedReference =
@@ -159,13 +154,14 @@ export function EditDeliveryDialog({ onClose }: { onClose: () => void }) {
 				: staff
 					? "Definí un nuevo importe"
 					: "Precio calculado";
-	const minutesSummary = values.changeMinutes
-		? values.minutes.trim()
-			? `${values.minutes} minutos`
-			: "Ingresá el tiempo en minutos"
-		: transition
-			? "Según configuración de la sucursal"
-			: `${delivery.transportReservationMinutes} minutos`;
+	const minutesSummary =
+		staff && values.changeMinutes
+			? values.minutes.trim()
+				? `${values.minutes} minutos`
+				: "Ingresá el tiempo en minutos"
+			: transition
+				? "Según configuración de la sucursal"
+				: `${delivery.transportReservationMinutes} minutos`;
 
 	return (
 		<Dialog
@@ -434,65 +430,71 @@ export function EditDeliveryDialog({ onClose }: { onClose: () => void }) {
 								<DeliverySection
 									key={`${values.arrangement}-minutes`}
 									title="Tiempo para transporte"
-									inputId={`${id}-minutes`}
+									inputId={staff ? `${id}-minutes` : undefined}
 									icon={<Clock3 />}
 									summary={minutesSummary}
+									description={
+										staff
+											? undefined
+											: transition
+												? "Se determinará al guardar según la configuración de la sucursal."
+												: "Tiempo aceptado según la configuración de la sucursal. No se puede modificar manualmente."
+									}
 									initialOpen={transition && staff}
+									editable={staff}
 								>
-									<form.Field name="minutes">
-										{(field) => (
-											<Field data-invalid={!field.state.meta.isValid}>
-												<div className="flex items-center gap-2">
-													<Input
-														className="w-28"
-														id={`${id}-minutes`}
-														type="number"
-														min="0"
-														step="1"
-														inputMode="numeric"
-														value={field.state.value}
-														onBlur={field.handleBlur}
-														aria-invalid={!field.state.meta.isValid}
-														onChange={(event) => {
-															field.handleChange(event.target.value);
-															form.setFieldValue("changeMinutes", true);
-														}}
-													/>
-													<span className="text-sm text-muted-foreground">
-														min
-													</span>
-												</div>
-												<FieldError errors={field.state.meta.errors} />
-												<p className="text-xs text-muted-foreground">
-													Los equipos quedan reservados este tiempo antes y
-													después del alquiler.{" "}
-													{staff
-														? "Ingresá minutos enteros; puede ser 0."
-														: "Usá el tiempo configurado en la sucursal, si está disponible."}{" "}
-													Verificaremos la disponibilidad al guardar.
-												</p>
-											</Field>
-										)}
-									</form.Field>
-									{values.changeMinutes && !(transition && staff) ? (
-										<Button
-											type="button"
-											variant="ghost"
-											size="sm"
-											onClick={() => {
-												form.setFieldValue("changeMinutes", false);
-												form.setFieldValue(
-													"minutes",
-													transition
-														? ""
-														: String(delivery.transportReservationMinutes),
-												);
-											}}
-										>
-											{transition
-												? "Usar tiempo de la sucursal"
-												: "Restablecer tiempo actual"}
-										</Button>
+									{staff ? (
+										<>
+											<form.Field name="minutes">
+												{(field) => (
+													<Field data-invalid={!field.state.meta.isValid}>
+														<div className="flex items-center gap-2">
+															<Input
+																className="w-28"
+																id={`${id}-minutes`}
+																type="number"
+																min="0"
+																step="1"
+																inputMode="numeric"
+																value={field.state.value}
+																onBlur={field.handleBlur}
+																aria-invalid={!field.state.meta.isValid}
+																onChange={(event) => {
+																	field.handleChange(event.target.value);
+																	form.setFieldValue("changeMinutes", true);
+																}}
+															/>
+															<span className="text-sm text-muted-foreground">
+																min
+															</span>
+														</div>
+														<FieldError errors={field.state.meta.errors} />
+														<p className="text-xs text-muted-foreground">
+															Los equipos quedan reservados este tiempo antes y
+															después del alquiler. Ingresá minutos enteros;
+															puede ser 0. Verificaremos la disponibilidad al
+															guardar.
+														</p>
+													</Field>
+												)}
+											</form.Field>
+											{values.changeMinutes && !transition ? (
+												<Button
+													type="button"
+													variant="ghost"
+													size="sm"
+													onClick={() => {
+														form.setFieldValue("changeMinutes", false);
+														form.setFieldValue(
+															"minutes",
+															String(delivery.transportReservationMinutes),
+														);
+													}}
+												>
+													Restablecer tiempo actual
+												</Button>
+											) : null}
+										</>
 									) : null}
 								</DeliverySection>
 								{!staff ? (
@@ -607,6 +609,7 @@ function DeliverySection({
 	summary,
 	description,
 	initialOpen = false,
+	editable = true,
 	onEdit,
 	children,
 }: {
@@ -616,6 +619,7 @@ function DeliverySection({
 	summary: ReactNode;
 	description?: string;
 	initialOpen?: boolean;
+	editable?: boolean;
 	onEdit?: () => void;
 	children: ReactNode;
 }) {
@@ -650,22 +654,30 @@ function DeliverySection({
 						{children}
 					</div>
 				</div>
-				<Button
-					type="button"
-					variant="ghost"
-					size="sm"
-					className="shrink-0"
-					aria-label={`${open ? "Listo" : "Cambiar"}: ${title}`}
-					aria-expanded={open}
-					aria-controls={id}
-					onClick={() => {
-						if (!open) onEdit?.();
-						setOpen(!open);
-					}}
-				>
-					{open ? <Check className="size-4" /> : <Pencil className="size-4" />}
-					<span className="hidden sm:inline">{open ? "Listo" : "Cambiar"}</span>
-				</Button>
+				{editable ? (
+					<Button
+						type="button"
+						variant="ghost"
+						size="sm"
+						className="shrink-0"
+						aria-label={`${open ? "Listo" : "Cambiar"}: ${title}`}
+						aria-expanded={open}
+						aria-controls={id}
+						onClick={() => {
+							if (!open) onEdit?.();
+							setOpen(!open);
+						}}
+					>
+						{open ? (
+							<Check className="size-4" />
+						) : (
+							<Pencil className="size-4" />
+						)}
+						<span className="hidden sm:inline">
+							{open ? "Listo" : "Cambiar"}
+						</span>
+					</Button>
+				) : null}
 			</div>
 		</section>
 	);

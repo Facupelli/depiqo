@@ -59,8 +59,8 @@ function deliveryEditIntent(value: DeliveryFormValues, rental: DeliveryRental) {
 				value.address.trim() !==
 					rental.fulfillment.deliveryDetails?.address.trim()));
 	const minutesChanged =
-		(value.changeMinutes ||
-			(transition && value.arrangement === "STAFF_ARRANGED")) &&
+		value.arrangement === "STAFF_ARRANGED" &&
+		(value.changeMinutes || transition) &&
 		(transition ||
 			Number(value.minutes) !==
 				rental.acceptedDelivery?.transportReservationMinutes);
@@ -147,8 +147,8 @@ export function createDeliveryFormSchema(rental: DeliveryRental) {
 					"Ingresá un importe de 0 o más, con hasta 2 decimales.",
 				);
 			if (
-				value.changeMinutes ||
-				(transition && value.arrangement === "STAFF_ARRANGED")
+				value.arrangement === "STAFF_ARRANGED" &&
+				(value.changeMinutes || transition)
 			) {
 				if (
 					!/^\d+$/.test(value.minutes.trim()) ||
