@@ -85,7 +85,7 @@ function SidebarProvider({
 			<div
 				data-slot="sidebar-wrapper"
 				className={cn(
-					"flex min-h-svh w-full min-w-0 [--sidebar-width:17.5rem]",
+					"flex min-h-svh w-full min-w-0 [--sidebar-width:16.5rem]",
 					className,
 				)}
 				{...props}
@@ -260,7 +260,7 @@ function SidebarMenuButton({
 		props: mergeProps<"button">(
 			{
 				className: cn(
-					"flex min-h-11 w-full items-center gap-2 rounded-md px-3 py-1.5 text-left text-sm font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-sidebar-ring lg:min-h-8 pointer-coarse:min-h-11 [&_svg]:size-4 [&_svg]:shrink-0",
+					"flex min-h-11 w-full items-center gap-2 rounded-md px-3 py-1.5 text-left text-sm font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-sidebar-ring lg:min-h-10 pointer-coarse:min-h-11 [&_svg]:size-4 [&_svg]:shrink-0",
 					className,
 				),
 			},
@@ -298,7 +298,7 @@ function SidebarMenuSubButton({
 		props: mergeProps<"a">(
 			{
 				className: cn(
-					"flex min-h-11 min-w-0 items-center rounded-md py-1 text-sm outline-none transition-colors focus-visible:ring-2 focus-visible:ring-sidebar-ring lg:min-h-7 pointer-coarse:min-h-11",
+					"flex min-h-11 min-w-0 items-center rounded-md py-1 text-sm outline-none transition-colors focus-visible:ring-2 focus-visible:ring-sidebar-ring lg:min-h-10 pointer-coarse:min-h-11",
 					className,
 				),
 			},

@@ -1,5 +1,6 @@
 import type { GetOwnersItemDto } from "@repo/api-contracts";
 import type { ReactNode } from "react";
+import { EquipmentWorkspaceHeader } from "@/components/equipment-workspace-header";
 import { useTenantTimezone } from "@/shared/timezone/operational-timezone.hooks";
 import { CreateOwnerWithContractDialog } from "../create-owner/components/create-owner-with-contract-dialog";
 import { useOwnerOptions } from "../owner-options.queries";
@@ -22,7 +23,7 @@ export function OwnersPage({
 }: OwnersPageProps) {
 	return (
 		<div className="space-y-4">
-			<h1 className="sr-only">Propietarios de equipos</h1>
+			<EquipmentWorkspaceHeader current="Dueños de Equipo" />
 
 			<OwnersTable
 				onOwnerSelect={onOwnerSelect}

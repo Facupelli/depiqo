@@ -36,6 +36,7 @@ import { useMemo, useState } from "react";
 import { formatTimestampInTimezone } from "@/lib/dates/format";
 import useDebounce from "@/shared/hooks/use-debounce";
 import { useTenantTimezone } from "@/shared/timezone/operational-timezone.hooks";
+import { CustomerWorkspaceHeader } from "../customer-workspace-header";
 import { useCustomers } from "./list-customers.queries";
 
 export type CustomersListSearch = {
@@ -264,7 +265,7 @@ export function CustomersListPage({ search }: { search: CustomersListSearch }) {
 
 	return (
 		<div className="space-y-4">
-			<h1 className="sr-only">Clientes</h1>
+			<CustomerWorkspaceHeader />
 			<div className="@container/customers-index space-y-4">
 				<CustomersToolbar
 					search={search}

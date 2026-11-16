@@ -12,6 +12,7 @@ import {
 import { useNavigate } from "@tanstack/react-router";
 import { formatTimestampInTimezone } from "@/lib/dates/format";
 import { useTenantTimezone } from "@/shared/timezone/operational-timezone.hooks";
+import { CustomerWorkspaceHeader } from "../customer-workspace-header";
 import { useCustomers } from "../list-customers/list-customers.queries";
 
 export function PendingCustomerProfilesPage() {
@@ -26,7 +27,7 @@ export function PendingCustomerProfilesPage() {
 
 	return (
 		<div className="space-y-4">
-			<h1 className="sr-only">Altas de cliente</h1>
+			<CustomerWorkspaceHeader onboarding />
 
 			<div className="rounded-md border bg-background">
 				<Table>
