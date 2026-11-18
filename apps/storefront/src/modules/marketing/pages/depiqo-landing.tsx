@@ -405,21 +405,19 @@ export function DepiqoLandingPage({ demoMonth }: { demoMonth: string }) {
 					<section
 						id="about"
 						aria-labelledby="about-title"
-						className="border-t border-[#f0f2f6] py-20 text-center"
+						className="border-t border-[#f0f2f6] py-10 text-center min-[641px]:py-12"
 					>
-						<Eyebrow>Depiqo</Eyebrow>
 						<h2
 							id="about-title"
-							className="mx-auto my-4 max-w-[570px] text-balance text-4xl font-bold leading-[1.15] tracking-[-2px] min-[641px]:text-[clamp(34px,4.6vw,49px)]"
+							className="mx-auto mb-3 max-w-[570px] text-balance text-[28px] font-bold leading-[1.2] tracking-[-1px] min-[641px]:text-[32px]"
 						>
-							El mismo equipo, muchos alquileres.
+							Empezá a organizar tus alquileres.
 						</h2>
-						<p className="mx-auto mb-7 max-w-[610px] text-sm leading-[1.75] text-muted-foreground min-[641px]:text-[15px]">
-							Un equipo se alquila, vuelve y se alquila otra vez. Depiqo conecta
-							tus productos, las reservas y los equipos que tenés para que
-							puedas seguir ese movimiento.
+						<p className="mx-auto mb-5 max-w-[520px] text-pretty text-sm leading-[1.65] text-muted-foreground min-[641px]:text-[15px]">
+							Creá tu cuenta para configurar tus equipos, preparar tu catálogo y
+							gestionar las reservas desde Depiqo.
 						</p>
-						<CreateAccountLink arrow />
+						<CreateAccountLink />
 					</section>
 				</main>
 				<footer className="flex items-center justify-between gap-4 border-t border-[#eef1f5] py-[23px] text-[11px] text-muted-foreground">

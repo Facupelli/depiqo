@@ -33,6 +33,7 @@ export function KitPreview() {
 							width={24}
 							height={24}
 							alt=""
+							loading="lazy"
 							className="size-6"
 						/>
 						{label}
