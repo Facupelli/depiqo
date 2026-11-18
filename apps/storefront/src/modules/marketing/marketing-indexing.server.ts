@@ -28,7 +28,10 @@ export function marketingRedirect(url: URL): Response | null {
 export function shouldNoindex(hostname: string, pathname: string): boolean {
 	return (
 		isPreviewHostname(hostname) ||
-		(isMarketingHostname(hostname) && pathname !== "/")
+		(isMarketingHostname(hostname) &&
+			pathname !== "/" &&
+			pathname !== "/sitemap.xml" &&
+			pathname !== "/robots.txt")
 	);
 }
 
