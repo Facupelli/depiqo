@@ -1,21 +1,21 @@
 import { createFileRoute, notFound } from "@tanstack/react-router";
 import marketingCss from "@/modules/marketing/marketing.css?url";
+import {
+	marketingImage,
+	marketingJsonLdScript,
+	marketingSeo,
+	marketingUrl,
+} from "@/modules/marketing/marketing-seo";
 import { DepiqoLandingPage } from "@/modules/marketing/pages/depiqo-landing";
 import { getDemoMonth } from "@/modules/marketing/reservation-demo";
 import { tenantLandingRegistry } from "@/modules/tenant-landings/tenant-landing-registry";
 import { getResolvedTenantBranding } from "@/modules/tenant-management/tenant-branding/tenant-branding";
 
 const platformSeo = {
-	title: "Depiqo | Software para alquiler de equipos",
-	description:
-		"Ofrecé tus equipos en un catálogo online, recibí reservas y controlá la disponibilidad sin planillas. Conocé Depiqo para negocios de alquiler.",
-	ogTitle: "Depiqo · Software para alquiler de equipos",
-	ogDescription:
-		"Reservas online y disponibilidad de equipos en un solo sistema.",
+	...marketingSeo,
+	ogTitle: marketingSeo.title,
+	ogDescription: marketingSeo.description,
 };
-
-const platformUrl = "https://depiqo.com/";
-const platformOgImageUrl = "https://www.depiqo.com/og/depiqo-og.png";
 
 export const Route = createFileRoute("/")({
 	loader: ({ context: { tenantContext } }) => {
@@ -75,12 +75,16 @@ export const Route = createFileRoute("/")({
 			meta: [
 				...meta,
 				{ property: "og:site_name", content: "DEPIQO" },
-				{ property: "og:url", content: platformUrl },
-				{ property: "og:image", content: platformOgImageUrl },
-				{ name: "twitter:image", content: platformOgImageUrl },
+				{ property: "og:url", content: marketingUrl },
+				{ property: "og:image", content: marketingImage.url },
+				{ property: "og:image:width", content: String(marketingImage.width) },
+				{ property: "og:image:height", content: String(marketingImage.height) },
+				{ property: "og:image:alt", content: marketingImage.alt },
+				{ name: "twitter:image", content: marketingImage.url },
+				{ name: "twitter:image:alt", content: marketingImage.alt },
 			],
 			links: [
-				{ rel: "canonical", href: platformUrl },
+				{ rel: "canonical", href: marketingUrl },
 				{ rel: "stylesheet", href: marketingCss },
 				{
 					rel: "preload",
@@ -98,6 +102,9 @@ export const Route = createFileRoute("/")({
 					sizes: "96x96",
 				},
 				{ rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
+			],
+			scripts: [
+				{ type: "application/ld+json", children: marketingJsonLdScript },
 			],
 		};
 	},

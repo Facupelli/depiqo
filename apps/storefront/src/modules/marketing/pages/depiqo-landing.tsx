@@ -241,8 +241,9 @@ export function DepiqoLandingPage({ demoMonth }: { demoMonth: string }) {
 							Alquilá tus equipos sin llevar la disponibilidad en planillas.
 						</h1>
 						<p className="mb-7 max-w-[620px] text-pretty text-sm leading-[1.65] text-muted-foreground min-[641px]:text-base">
-							Ofrecé tus equipos en un catálogo online, recibí reservas y
-							consultá qué tenés libre para cada fecha desde Depiqo.
+							Depiqo es un software de gestión para negocios de alquiler de
+							equipos. Conectá tu catálogo online con el panel donde gestionás
+							inventario, alquileres y disponibilidad.
 						</p>
 						<CreateAccountLink arrow />
 					</section>
@@ -256,11 +257,16 @@ export function DepiqoLandingPage({ demoMonth }: { demoMonth: string }) {
 								Del catálogo a tu calendario.
 							</h2>
 							<p className={introClass}>
-								Elegí unas fechas y confirmá la reserva. La misma operación
-								aparece en el panel del negocio.
+								Tus clientes pueden explorar el catálogo y confirmar reservas
+								cuando hay disponibilidad. Al confirmar, se reservan los equipos
+								necesarios y el alquiler aparece en tu panel. Consultar
+								disponibilidad no reserva equipos.
 							</p>
 						</div>
 						<ReservationDemo month={demoMonth} />
+						<p className="mt-3 text-xs text-muted-foreground">
+							Demostración con datos de ejemplo. No genera reservas reales.
+						</p>
 					</section>
 					<CustomerSection />
 					<section
@@ -342,8 +348,9 @@ export function DepiqoLandingPage({ demoMonth }: { demoMonth: string }) {
 							Para distintos negocios de alquiler.
 						</h2>
 						<p className={introClass}>
-							Cámaras, herramientas o equipos para eventos. Depiqo no depende de
-							un tipo específico de equipo.
+							Cámaras, herramientas o equipos para eventos. Configurá tus
+							productos y evaluá si Depiqo se adapta a la operación de tu
+							negocio.
 						</p>
 						<div className="grid grid-cols-3 gap-2.5 min-[641px]:gap-4">
 							{audiences.map(({ title, copy, image }) => (

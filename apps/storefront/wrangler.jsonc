@@ -44,7 +44,9 @@
       "zone_name": "depiqo.com",
     },
   ],
-  "workers_dev": true,
-  "preview_urls": true,
+  // Public worker aliases must not compete with the production marketing host.
+  // Use authenticated local/CI previews rather than publicly indexable aliases.
+  "workers_dev": false,
+  "preview_urls": false,
 }
 

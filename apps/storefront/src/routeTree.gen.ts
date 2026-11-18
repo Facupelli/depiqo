@@ -9,7 +9,9 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SigningRouteImport } from './routes/signing'
+import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as OnboardRouteImport } from './routes/onboard'
 import { Route as LoginRouteImport } from './routes/login'
@@ -25,9 +27,19 @@ import { Route as AuthGoogleStartRouteImport } from './routes/auth/google/start'
 import { Route as AuthGoogleFinalizeRouteImport } from './routes/auth/google/finalize'
 import { Route as AuthGoogleCallbackRouteImport } from './routes/auth/google/callback'
 
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SigningRoute = SigningRouteImport.update({
   id: '/signing',
   path: '/signing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RobotsDottxtRoute = RobotsDottxtRouteImport.update({
+  id: '/robots.txt',
+  path: '/robots.txt',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RegisterRoute = RegisterRouteImport.update({
@@ -108,7 +120,9 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/onboard': typeof OnboardRoute
   '/register': typeof RegisterRoute
+  '/robots.txt': typeof RobotsDottxtRoute
   '/signing': typeof SigningRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/api/customer-upload': typeof ApiCustomerUploadRoute
   '/public-signing/$': typeof PublicSigningSplatRoute
   '/session/$': typeof SessionSplatRoute
@@ -125,7 +139,9 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/onboard': typeof OnboardRoute
   '/register': typeof RegisterRoute
+  '/robots.txt': typeof RobotsDottxtRoute
   '/signing': typeof SigningRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/api/customer-upload': typeof ApiCustomerUploadRoute
   '/public-signing/$': typeof PublicSigningSplatRoute
   '/session/$': typeof SessionSplatRoute
@@ -143,7 +159,9 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/onboard': typeof OnboardRoute
   '/register': typeof RegisterRoute
+  '/robots.txt': typeof RobotsDottxtRoute
   '/signing': typeof SigningRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/api/customer-upload': typeof ApiCustomerUploadRoute
   '/public-signing/$': typeof PublicSigningSplatRoute
   '/session/$': typeof SessionSplatRoute
@@ -162,7 +180,9 @@ export interface FileRouteTypes {
     | '/login'
     | '/onboard'
     | '/register'
+    | '/robots.txt'
     | '/signing'
+    | '/sitemap.xml'
     | '/api/customer-upload'
     | '/public-signing/$'
     | '/session/$'
@@ -179,7 +199,9 @@ export interface FileRouteTypes {
     | '/login'
     | '/onboard'
     | '/register'
+    | '/robots.txt'
     | '/signing'
+    | '/sitemap.xml'
     | '/api/customer-upload'
     | '/public-signing/$'
     | '/session/$'
@@ -196,7 +218,9 @@ export interface FileRouteTypes {
     | '/login'
     | '/onboard'
     | '/register'
+    | '/robots.txt'
     | '/signing'
+    | '/sitemap.xml'
     | '/api/customer-upload'
     | '/public-signing/$'
     | '/session/$'
@@ -214,7 +238,9 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   OnboardRoute: typeof OnboardRoute
   RegisterRoute: typeof RegisterRoute
+  RobotsDottxtRoute: typeof RobotsDottxtRoute
   SigningRoute: typeof SigningRoute
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   ApiCustomerUploadRoute: typeof ApiCustomerUploadRoute
   PublicSigningSplatRoute: typeof PublicSigningSplatRoute
   SessionSplatRoute: typeof SessionSplatRoute
@@ -227,11 +253,25 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/signing': {
       id: '/signing'
       path: '/signing'
       fullPath: '/signing'
       preLoaderRoute: typeof SigningRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/robots.txt': {
+      id: '/robots.txt'
+      path: '/robots.txt'
+      fullPath: '/robots.txt'
+      preLoaderRoute: typeof RobotsDottxtRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/register': {
@@ -342,7 +382,9 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   OnboardRoute: OnboardRoute,
   RegisterRoute: RegisterRoute,
+  RobotsDottxtRoute: RobotsDottxtRoute,
   SigningRoute: SigningRoute,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
   ApiCustomerUploadRoute: ApiCustomerUploadRoute,
   PublicSigningSplatRoute: PublicSigningSplatRoute,
   SessionSplatRoute: SessionSplatRoute,
