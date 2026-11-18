@@ -1,22 +1,31 @@
 import { createFileRoute, notFound } from "@tanstack/react-router";
+import marketingCss from "@/modules/marketing/marketing.css?url";
 import { DepiqoLandingPage } from "@/modules/marketing/pages/depiqo-landing";
+import { getDemoMonth } from "@/modules/marketing/reservation-demo";
 import { tenantLandingRegistry } from "@/modules/tenant-landings/tenant-landing-registry";
 import { getResolvedTenantBranding } from "@/modules/tenant-management/tenant-branding/tenant-branding";
 
 const platformSeo = {
-	title: "DEPIQO - Gestión de alquileres, simplificado.",
-	description: "Inventario, alquileres y operación en un solo lugar.",
-	ogTitle: "DEPIQO - Gestión de alquileres, simplificado.",
-	ogDescription: "Inventario, alquileres y operación en un solo lugar.",
+	title: "Depiqo | Software para alquiler de equipos",
+	description:
+		"Ofrecé tus equipos en un catálogo online, recibí reservas y controlá la disponibilidad sin planillas. Conocé Depiqo para negocios de alquiler.",
+	ogTitle: "Depiqo · Software para alquiler de equipos",
+	ogDescription:
+		"Reservas online y disponibilidad de equipos en un solo sistema.",
 };
 
-const platformUrl = "https://www.depiqo.com/";
+const platformUrl = "https://depiqo.com/";
 const platformOgImageUrl = "https://www.depiqo.com/og/depiqo-og.png";
 
 export const Route = createFileRoute("/")({
 	loader: ({ context: { tenantContext } }) => {
 		if (!tenantContext || tenantContext.face === "platform") {
-			return { seo: platformSeo, branding: null, landingSlug: null };
+			return {
+				seo: platformSeo,
+				branding: null,
+				landingSlug: null,
+				demoMonth: getDemoMonth(new Date()),
+			};
 		}
 
 		if (tenantContext.face !== "storefront") throw notFound();
@@ -27,6 +36,7 @@ export const Route = createFileRoute("/")({
 			seo: landing.seo,
 			branding: getResolvedTenantBranding(tenantContext),
 			landingSlug: tenantContext.tenant.slug,
+			demoMonth: null,
 		};
 	},
 	head: ({ loaderData }) => {
@@ -71,6 +81,14 @@ export const Route = createFileRoute("/")({
 			],
 			links: [
 				{ rel: "canonical", href: platformUrl },
+				{ rel: "stylesheet", href: marketingCss },
+				{
+					rel: "preload",
+					href: "/fonts/manrope/manrope-latin-variable.woff2",
+					as: "font",
+					type: "font/woff2",
+					crossOrigin: "anonymous",
+				},
 				{ rel: "icon", href: "/favicon.ico", sizes: "48x48" },
 				{ rel: "icon", href: "/favicon.svg", type: "image/svg+xml" },
 				{
@@ -88,10 +106,10 @@ export const Route = createFileRoute("/")({
 
 function HomePage() {
 	const { tenantContext } = Route.useRouteContext();
-	const { branding, landingSlug } = Route.useLoaderData();
+	const { branding, landingSlug, demoMonth } = Route.useLoaderData();
 
-	if (!tenantContext || tenantContext.face === "platform")
-		return <DepiqoLandingPage />;
+	if ((!tenantContext || tenantContext.face === "platform") && demoMonth)
+		return <DepiqoLandingPage demoMonth={demoMonth} />;
 	if (!branding || !landingSlug) throw notFound();
 	const LandingPage = tenantLandingRegistry[landingSlug]?.component;
 	if (!LandingPage) throw notFound();
