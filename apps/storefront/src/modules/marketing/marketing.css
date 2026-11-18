@@ -1,0 +1,34 @@
+@font-face {
+	font-family: "Manrope";
+	font-style: normal;
+	font-weight: 400 800;
+	font-display: swap;
+	src: url("/fonts/manrope/manrope-latin-variable.woff2") format("woff2");
+}
+
+.depiqo-marketing {
+	color-scheme: light;
+	font-family: "Manrope", system-ui, sans-serif;
+	--background: #fff;
+	--foreground: #111f37;
+	--card: #fff;
+	--card-foreground: #111f37;
+	--primary: #155eef;
+	--primary-foreground: #fff;
+	--muted: #f7f9fd;
+	--muted-foreground: #66768d;
+	--border: #e6ebf2;
+	--ring: #9ac1ff;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	html:has(.depiqo-marketing) {
+		scroll-behavior: auto;
+	}
+
+	.depiqo-marketing *,
+	.depiqo-marketing *::before,
+	.depiqo-marketing *::after {
+		transition: none;
+	}
+}
