@@ -9,6 +9,10 @@ on:
     branches:
       - main
 
+permissions:
+  contents: read
+  pull-requests: read
+
 jobs:
   ci:
     name: Validate repository
@@ -17,6 +21,28 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
+
+      - name: Detect changed applications
+        id: changes
+        uses: dorny/paths-filter@v4
+        with:
+          base: ${{ github.ref }}
+          predicate-quantifier: some-with-excludes
+          filters: |
+            shared:
+              - '**'
+              - '!apps/backend/**'
+              - '!apps/backoffice/**'
+              - '!apps/storefront/**'
+
+            backend:
+              - 'apps/backend/**'
+
+            backoffice:
+              - 'apps/backoffice/**'
+
+            storefront:
+              - 'apps/storefront/**'
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v6
@@ -30,39 +56,53 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # Backend
       - name: Generate Prisma client
+        if: steps.changes.outputs.backend == 'true' || steps.changes.outputs.shared == 'true'
         run: pnpm --filter @repo/backend run prisma:generate
 
       - name: Backend lint
+        if: steps.changes.outputs.backend == 'true' || steps.changes.outputs.shared == 'true'
         run: pnpm --filter @repo/backend run lint:check
 
       - name: Backend formatting
+        if: steps.changes.outputs.backend == 'true' || steps.changes.outputs.shared == 'true'
         run: pnpm --filter @repo/backend run format:check
 
       - name: Backend build
+        if: steps.changes.outputs.backend == 'true' || steps.changes.outputs.shared == 'true'
         run: pnpm turbo run build --filter=@repo/backend
 
       - name: Backend unit tests
+        if: steps.changes.outputs.backend == 'true' || steps.changes.outputs.shared == 'true'
         run: pnpm --filter @repo/backend run test
 
       - name: Backend database tests
+        if: steps.changes.outputs.backend == 'true' || steps.changes.outputs.shared == 'true'
         run: pnpm --filter @repo/backend run test:db:ci
 
+      # Backoffice
+      - name: Backoffice build
+        if: steps.changes.outputs.backoffice == 'true' || steps.changes.outputs.shared == 'true'
+        run: pnpm turbo run build --filter=@repo/backoffice
+
       - name: Backoffice lint
+        if: steps.changes.outputs.backoffice == 'true' || steps.changes.outputs.shared == 'true'
         run: pnpm --filter @repo/backoffice run lint
 
       - name: Backoffice typecheck
+        if: steps.changes.outputs.backoffice == 'true' || steps.changes.outputs.shared == 'true'
         run: pnpm --filter @repo/backoffice run typecheck
 
-      - name: Backoffice build
-        run: pnpm turbo run build --filter=@repo/backoffice
+      # Storefront
+      - name: Storefront build
+        if: steps.changes.outputs.storefront == 'true' || steps.changes.outputs.shared == 'true'
+        run: pnpm turbo run build --filter=@repo/storefront
 
       - name: Storefront lint
+        if: steps.changes.outputs.storefront == 'true' || steps.changes.outputs.shared == 'true'
         run: pnpm --filter @repo/storefront run lint
 
       - name: Storefront typecheck
+        if: steps.changes.outputs.storefront == 'true' || steps.changes.outputs.shared == 'true'
         run: pnpm --filter @repo/storefront run typecheck
-
-      - name: Storefront build
-        run: pnpm turbo run build --filter=@repo/storefront
-
