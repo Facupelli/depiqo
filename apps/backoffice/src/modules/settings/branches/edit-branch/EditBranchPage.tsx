@@ -12,6 +12,7 @@ import { BranchForm } from "../BranchForm";
 import { getBranchSaveErrorMessage } from "../branch-save-errors";
 import { useBranchDetail } from "../branches.queries";
 import { DeliveryConfigurationSection } from "../delivery-configuration/delivery-configuration-section";
+import { RentalAssetBufferSection } from "../rental-asset-buffer/rental-asset-buffer-section";
 import {
 	toUpdateBranchBodyDto,
 	toUpdateBranchFormDefaults,
@@ -114,9 +115,15 @@ export function EditBranchPage({
 			</div>
 
 			<Tabs value={activeTab} onValueChange={setActiveTab} className="gap-6">
-				<TabsList>
+				<TabsList className="max-w-full max-sm:group-data-horizontal/tabs:h-auto">
 					<TabsTrigger value="general">General</TabsTrigger>
 					<TabsTrigger value="delivery">Envíos</TabsTrigger>
+					<TabsTrigger
+						value="equipment-availability"
+						className="max-sm:whitespace-normal"
+					>
+						Margen entre alquileres
+					</TabsTrigger>
 				</TabsList>
 
 				<TabsContent value="general" keepMounted className="space-y-6">
@@ -139,6 +146,10 @@ export function EditBranchPage({
 
 				<TabsContent value="delivery" keepMounted>
 					<DeliveryConfigurationSection branchId={branchId} />
+				</TabsContent>
+
+				<TabsContent value="equipment-availability" keepMounted>
+					<RentalAssetBufferSection branchId={branchId} />
 				</TabsContent>
 			</Tabs>
 		</div>

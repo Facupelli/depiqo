@@ -3,7 +3,7 @@ import type { ApplicationError, ApplicationErrorContext } from 'src/core/errors/
 export type GetStorefrontRentalOfferAvailabilityErrorCode =
   | 'rental_commitment.invalid_fulfillment_definition'
   | 'rental_commitment.invalid_candidate_projection'
-  | 'rental_commitment.tenant_unavailable';
+  | 'rental_commitment.branch_unavailable';
 
 export interface GetStorefrontRentalOfferAvailabilityError extends ApplicationError {
   code: GetStorefrontRentalOfferAvailabilityErrorCode;

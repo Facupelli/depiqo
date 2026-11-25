@@ -10,7 +10,7 @@ import {
   PostgresExclusionViolationError,
 } from 'src/core/utils/postgres-error.mapper';
 import { V2AssetBlockType } from 'src/generated/prisma/enums';
-import { TenantRentalAssetBufferSettings } from 'src/modules/tenant-management/public-api/tenant-rental-asset-buffer-settings.public-api';
+import { BranchRentalAssetBufferSettings } from 'src/modules/tenant-management/public-api/branch-rental-asset-buffer-settings.public-api';
 import { RentalConfirmationDeliveryService } from '../../application/rental-confirmation-delivery.service';
 import { RentalOperationalFactsValidatorService } from '../../application/rental-operational-facts-validator.service';
 
@@ -46,7 +46,7 @@ export class ConfirmRentalHandler implements ICommandHandler<ConfirmRentalComman
   constructor(
     private readonly rentalRepository: RentalRepository,
     private readonly rentalOperationalFacts: RentalOperationalFactsValidatorService,
-    private readonly tenantRentalAssetBufferSettings: TenantRentalAssetBufferSettings,
+    private readonly branchRentalAssetBufferSettings: BranchRentalAssetBufferSettings,
     private readonly confirmationDelivery: RentalConfirmationDeliveryService,
     private readonly rentalAssetAllocation: RentalAssetAllocationService,
     private readonly rentalOwnerSplitCalculator: RentalOwnerSplitCalculator,
@@ -107,13 +107,14 @@ export class ConfirmRentalHandler implements ICommandHandler<ConfirmRentalComman
       return err(this.toApplicationError(tenantValidation.error, context));
     }
 
-    const bufferSettings = await this.tenantRentalAssetBufferSettings.getTenantRentalAssetBufferSettings({
+    const bufferSettings = await this.branchRentalAssetBufferSettings.getBranchRentalAssetBufferSettings({
       tenantId: rental.tenantId,
+      branchId: rental.branchId,
     });
     if (bufferSettings.isErr()) {
       return err(
         confirmRentalError(
-          'rental_commitment.tenant_unavailable',
+          'rental_commitment.branch_unavailable',
           bufferSettings.error.message,
           bufferSettings.error,
           context,

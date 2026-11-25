@@ -2,7 +2,8 @@ import { ApplicationError, ApplicationErrorContext } from 'src/core/errors/appli
 
 export type UpdateTenantConfigErrorCode =
   | 'tenant_management.tenant_not_found'
-  | 'tenant_management.invalid_tenant_config';
+  | 'tenant_management.invalid_tenant_config'
+  | 'tenant_management.rental_asset_buffer_is_branch_scoped';
 
 export interface UpdateTenantConfigError extends ApplicationError {
   code: UpdateTenantConfigErrorCode;

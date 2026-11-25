@@ -101,11 +101,11 @@ const storefrontAvailabilityProblemMap = {
     status: HttpStatus.UNPROCESSABLE_ENTITY,
     detail: 'Availability could not be determined from the current asset candidate projection.',
   },
-  'rental_commitment.tenant_unavailable': {
-    type: createProblemType('rental_commitment.tenant_unavailable'),
-    title: 'Tenant unavailable',
+  'rental_commitment.branch_unavailable': {
+    type: createProblemType('rental_commitment.branch_unavailable'),
+    title: 'Branch unavailable',
     status: HttpStatus.UNPROCESSABLE_ENTITY,
-    detail: 'The tenant is not available for rental availability.',
+    detail: 'The branch is not available for rental availability.',
   },
 } satisfies Record<
   GetStorefrontRentalOfferAvailabilityErrorCode,

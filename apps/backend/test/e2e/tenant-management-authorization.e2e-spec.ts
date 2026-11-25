@@ -246,7 +246,7 @@ describe('Tenant Management HTTP authorization', () => {
       { client: settingsManager, body: { timezone: 'UTC' } },
       { client: settingsManager, body: { notifications: { enabledChannels: ['EMAIL'] } } },
       { client: settingsManager, body: { communication: { orderCommunicationMode: 'FORMAL' } } },
-      { client: settingsManager, body: { rentalAssetBuffer: { beforeBufferMinutes: 5 } } },
+      { client: settingsManager, body: { rentalAssetBuffer: { beforeBufferMinutes: 0 } } },
       { client: storefrontManager, body: { bookingMode: 'instant-book' } },
       { client: storefrontManager, body: { newArrivalsWindowDays: 14 } },
       { client: storefrontManager, body: { communication: { showFloatingWhatsAppButton: false } } },
@@ -257,6 +257,67 @@ describe('Tenant Management HTTP authorization', () => {
       await testCase.client.withCsrf(testCase.client.request().patch(path)).send(testCase.body).expect(200);
       await unrelated.withCsrf(unrelated.request().patch(path)).send(testCase.body).expect(403);
     }
+  });
+
+  it('rejects changes to the legacy tenant asset buffer', async () => {
+    const tenant = await fixtures.createTenant();
+    const manager = await clientWithPermissions(tenant.id, [TenantPermission.TenantSettingsManage]);
+    const response = await manager
+      .withCsrf(manager.request().patch('/tenant-management/tenant/config'))
+      .send({ rentalAssetBuffer: { beforeBufferMinutes: 5 } })
+      .expect(422);
+    expect(response.body.code).toBe('tenant_management.rental_asset_buffer_is_branch_scoped');
+  });
+
+  it('allows branch managers to configure each branch independently and enforces tenant boundaries', async () => {
+    const tenant = await fixtures.createTenant();
+    const foreignTenant = await fixtures.createTenant();
+    const [branch, sibling, foreignBranch] = await Promise.all([
+      fixtures.createBranch({ tenantId: tenant.id }),
+      fixtures.createBranch({ tenantId: tenant.id }),
+      fixtures.createBranch({ tenantId: foreignTenant.id }),
+    ]);
+    const manager = await clientWithPermissions(tenant.id, [TenantPermission.BranchesManage]);
+    const unrelated = await clientWithPermissions(tenant.id, [TenantPermission.TenantSettingsManage]);
+    const path = (id: string) => `/tenant-management/branches/${id}/rental-asset-buffer`;
+    const buffer = { beforeBufferMinutes: 12, afterBufferMinutes: 24 };
+    const zero = { beforeBufferMinutes: 0, afterBufferMinutes: 0 };
+
+    await unrelated.request().get(path(branch.id)).expect(403);
+    await unrelated
+      .withCsrf(unrelated.request().put(path(branch.id)))
+      .send(buffer)
+      .expect(403);
+    await manager.request().get(path(foreignBranch.id)).expect(404);
+    await manager
+      .withCsrf(manager.request().put(path(foreignBranch.id)))
+      .send(buffer)
+      .expect(404);
+    await manager.request().get(path(branch.id)).expect(200, { data: zero });
+    await manager
+      .withCsrf(manager.request().put(path(branch.id)))
+      .send(buffer)
+      .expect(204);
+    await manager.request().get(path(branch.id)).expect(200, { data: buffer });
+    await manager.request().get(path(sibling.id)).expect(200, { data: zero });
+
+    for (const invalid of [
+      { beforeBufferMinutes: 12 },
+      { ...buffer, beforeBufferMinutes: -1 },
+      { ...buffer, beforeBufferMinutes: 1.5 },
+      { ...buffer, afterBufferMinutes: 2 ** 31 },
+    ]) {
+      await manager
+        .withCsrf(manager.request().put(path(branch.id)))
+        .send(invalid)
+        .expect(400);
+    }
+    await manager.request().get(path(branch.id)).expect(200, { data: buffer });
+    await manager
+      .withCsrf(manager.request().put(path(branch.id)))
+      .send(zero)
+      .expect(204);
+    await manager.request().get(path(branch.id)).expect(200, { data: zero });
   });
 
   it('requires all permissions represented by a multi-group tenant config patch', async () => {

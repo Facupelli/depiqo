@@ -26,6 +26,8 @@ model V2Branch {
   operationalLocationProviderPlaceId  String? @map("operational_location_provider_place_id")
   isActive Boolean @default(true) @map("is_active")
 
+  rentalAssetBeforeBufferMinutes Int @default(0) @map("rental_asset_before_buffer_minutes")
+  rentalAssetAfterBufferMinutes  Int @default(0) @map("rental_asset_after_buffer_minutes")
 
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)

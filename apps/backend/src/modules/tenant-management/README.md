@@ -22,11 +22,11 @@ Tenant Management owns current customer identity/profile facts used by tenant wo
 
 ### Branch
 
-A Branch is a tenant-owned operational location. Its current facts include branch identity, pickup/return schedules, effective timezone, and operational location. Other workflows use these current Branch facts.
+A Branch is a tenant-owned operational location. Its current facts include branch identity, pickup/return schedules, effective timezone, operational location, and the before/after rental asset buffer. Every branch owns its buffer independently of delivery configuration; there is no tenant fallback. Rental Commitment applies it to new work and snapshots it at confirmation. Delivery transport time is a separate fact.
 
 ### Tenant Configuration
 
-Tenant configuration represents current tenant-level preferences and operational defaults. It must not become the owner of business rules that belong to other bounded contexts.
+Tenant configuration represents current tenant-level preferences and operational defaults. It must not become the owner of business rules that belong to other bounded contexts. The legacy tenant rental asset buffer remains readable for compatibility, but it is not a default and can no longer be changed.
 
 ### Tenant Branding
 

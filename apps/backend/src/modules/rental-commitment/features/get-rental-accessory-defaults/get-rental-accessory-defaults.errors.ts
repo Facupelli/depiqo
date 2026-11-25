@@ -1,6 +1,8 @@
 import { ApplicationError, ApplicationErrorContext } from 'src/core/errors/application-error';
 
-export type GetRentalAccessoryDefaultsErrorCode = 'asset_inventory.rental_not_found';
+export type GetRentalAccessoryDefaultsErrorCode =
+  | 'asset_inventory.rental_not_found'
+  | 'rental_commitment.branch_unavailable';
 
 export interface GetRentalAccessoryDefaultsError extends ApplicationError {
   code: GetRentalAccessoryDefaultsErrorCode;

@@ -9,7 +9,7 @@ import { PostgresExclusionViolationError, isUniqueConstraintViolation } from 'sr
 import { CatalogSelectionResolutionError } from 'src/modules/catalog/public-api/catalog-selection-resolution.public-api';
 import { BranchFacts } from 'src/modules/tenant-management/public-api/branch-facts.public-api';
 import { TenantBillingPreferences } from 'src/modules/tenant-management/public-api/tenant-billing-preferences.public-api';
-import { TenantRentalAssetBufferSettings } from 'src/modules/tenant-management/public-api/tenant-rental-asset-buffer-settings.public-api';
+import { BranchRentalAssetBufferSettings } from 'src/modules/tenant-management/public-api/branch-rental-asset-buffer-settings.public-api';
 
 import { RentalOperationalFactsValidatorService } from '../../application/rental-operational-facts-validator.service';
 import {
@@ -63,7 +63,7 @@ export class CreateConfirmedRentalService implements ICommandHandler<
     private readonly rentalRepository: RentalRepository,
     private readonly prisma: PrismaService,
     private readonly tenantBillingPreferences: TenantBillingPreferences,
-    private readonly tenantRentalAssetBufferSettings: TenantRentalAssetBufferSettings,
+    private readonly branchRentalAssetBufferSettings: BranchRentalAssetBufferSettings,
     private readonly branchFacts: BranchFacts,
     private readonly rentalOperationalFacts: RentalOperationalFactsValidatorService,
     private readonly proposalResolver: RentalProposalResolver,
@@ -105,7 +105,10 @@ export class CreateConfirmedRentalService implements ICommandHandler<
 
     const [billingPreferences, bufferSettings, branchFacts] = await Promise.all([
       this.tenantBillingPreferences.getTenantBillingPreferences({ tenantId: command.tenantId }),
-      this.tenantRentalAssetBufferSettings.getTenantRentalAssetBufferSettings({ tenantId: command.tenantId }),
+      this.branchRentalAssetBufferSettings.getBranchRentalAssetBufferSettings({
+        tenantId: command.tenantId,
+        branchId: command.branchId,
+      }),
       this.branchFacts.getBranchFacts({ tenantId: command.tenantId, branchId: command.branchId }),
     ]);
     if (billingPreferences.isErr())
@@ -113,7 +116,7 @@ export class CreateConfirmedRentalService implements ICommandHandler<
     if (bufferSettings.isErr()) {
       return err(
         createConfirmedRentalError(
-          'rental_commitment.tenant_unavailable',
+          'rental_commitment.branch_unavailable',
           bufferSettings.error.message,
           bufferSettings.error,
           context,

@@ -58,6 +58,12 @@ function toGetRentalAccessoryDefaultsProblem(error: GetRentalAccessoryDefaultsEr
 }
 
 const getRentalAccessoryDefaultsProblemMap = {
+  'rental_commitment.branch_unavailable': {
+    type: createProblemType('rental_commitment.branch_unavailable'),
+    title: 'Branch unavailable',
+    status: HttpStatus.UNPROCESSABLE_ENTITY,
+    detail: 'The rental branch is not available.',
+  },
   'asset_inventory.rental_not_found': {
     type: createProblemType('asset_inventory.rental_not_found'),
     title: 'Rental not found',

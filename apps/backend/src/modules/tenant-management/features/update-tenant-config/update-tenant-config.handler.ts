@@ -34,8 +34,26 @@ export class UpdateTenantConfigHandler implements ICommandHandler<
       );
     }
 
+    const { rentalAssetBuffer, ...patch } = command.patch;
+    const legacyBuffer = tenant.config.rentalAssetBuffer;
+    if (
+      (rentalAssetBuffer?.beforeBufferMinutes !== undefined &&
+        rentalAssetBuffer.beforeBufferMinutes !== legacyBuffer.beforeBufferMinutes) ||
+      (rentalAssetBuffer?.afterBufferMinutes !== undefined &&
+        rentalAssetBuffer.afterBufferMinutes !== legacyBuffer.afterBufferMinutes)
+    ) {
+      return err(
+        updateTenantConfigError(
+          'tenant_management.rental_asset_buffer_is_branch_scoped',
+          'Rental asset buffers are now configured per branch.',
+          undefined,
+          context,
+        ),
+      );
+    }
+
     try {
-      tenant.updateConfig(command.patch);
+      tenant.updateConfig(patch);
     } catch (error) {
       if (error instanceof TenantManagementError) {
         return err(updateTenantConfigError('tenant_management.invalid_tenant_config', error.message, error, context));

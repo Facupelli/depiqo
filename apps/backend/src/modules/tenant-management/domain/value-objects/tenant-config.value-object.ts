@@ -84,7 +84,6 @@ export type TenantConfigPatch = {
   pricing?: Partial<TenantPricingConfigProps>;
   notifications?: Partial<TenantNotificationsConfigProps>;
   communication?: Partial<TenantCommunicationConfigProps>;
-  rentalAssetBuffer?: Partial<TenantRentalAssetBufferConfigProps>;
   timezone?: string;
   newArrivalsWindowDays?: number;
   bookingMode?: TenantBookingMode;
@@ -179,10 +178,7 @@ export class TenantConfig {
         ...this.communication,
         ...patch.communication,
       },
-      rentalAssetBuffer: {
-        ...this.rentalAssetBuffer,
-        ...patch.rentalAssetBuffer,
-      },
+      rentalAssetBuffer: { ...this.rentalAssetBuffer },
       pricing: {
         ...this.pricing,
         ...patch.pricing,

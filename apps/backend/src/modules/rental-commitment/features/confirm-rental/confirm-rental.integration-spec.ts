@@ -58,23 +58,6 @@ describe('ConfirmRental integration', () => {
     return commandBus.execute(new ConfirmRentalCommand(tenantId, rentalId, expectedVersion));
   }
 
-  async function setRentalAssetBuffer(tenantId: string, beforeBufferMinutes: number, afterBufferMinutes: number) {
-    const tenant = await prisma.client.v2Tenant.findUniqueOrThrow({
-      where: { id: tenantId },
-      select: { config: true },
-    });
-    // SAFETY: The fixture or preceding response assertions establish this object shape before these fields are inspected.
-    await prisma.client.v2Tenant.update({
-      where: { id: tenantId },
-      data: {
-        config: {
-          ...(tenant.config as Prisma.JsonObject),
-          rentalAssetBuffer: { beforeBufferMinutes, afterBufferMinutes },
-        },
-      },
-    });
-  }
-
   async function persisted(rentalId: string) {
     const rental = await prisma.client.v2Rental.findUniqueOrThrow({
       where: { id: rentalId },
@@ -115,7 +98,10 @@ describe('ConfirmRental integration', () => {
         branchId: scenario.branch.id,
         equipmentTypeId: scenario.rental.equipmentTypeIds[0],
       });
-      await setRentalAssetBuffer(scenario.tenant.id, 30, 45);
+      await prisma.client.v2Branch.update({
+        where: { id: scenario.branch.id },
+        data: { rentalAssetBeforeBufferMinutes: 30, rentalAssetAfterBufferMinutes: 45 },
+      });
 
       const result = await confirm(scenario.tenant.id, scenario.rental.rentalId, scenario.rental.version);
       expect(result.isOk()).toBe(true);

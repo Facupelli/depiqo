@@ -29,7 +29,7 @@ function EditBranchRoute() {
 	const { branchId } = Route.useParams();
 	const navigate = useNavigate();
 	const goBackToBranches = () =>
-		navigate({ to: "/dashboard/settings", search: { section: "branches" } });
+		navigate({ to: "/dashboard/settings/branches" });
 
 	return (
 		<EditBranchPage

@@ -6,7 +6,7 @@ import { PrismaService } from 'src/core/database/prisma.service';
 import { Prisma } from 'src/generated/prisma/client';
 import { V2AssetBlockType, V2RentalStatus } from 'src/generated/prisma/enums';
 import { AccessoryPreparationInventoryFacts } from 'src/modules/asset-inventory/public-api/accessory-preparation-inventory-facts.public-api';
-import { TenantRentalAssetBufferSettings } from 'src/modules/tenant-management/public-api/tenant-rental-asset-buffer-settings.public-api';
+import { BranchRentalAssetBufferSettings } from 'src/modules/tenant-management/public-api/branch-rental-asset-buffer-settings.public-api';
 
 import { deriveBufferedAssetBlockPeriod } from '../../domain/asset-block-period';
 import { deriveConfirmedAssetBlockPeriod } from '../../domain/confirmed-asset-block-period';
@@ -35,7 +35,7 @@ export class GetRentalAccessoryDefaultsHandler implements IQueryHandler<
   constructor(
     private readonly prisma: PrismaService,
     private readonly inventoryFacts: AccessoryPreparationInventoryFacts,
-    private readonly tenantBufferSettings: TenantRentalAssetBufferSettings,
+    private readonly branchBufferSettings: BranchRentalAssetBufferSettings,
   ) {}
 
   async execute(query: GetRentalAccessoryDefaultsQuery): Promise<GetRentalAccessoryDefaultsResult> {
@@ -88,9 +88,23 @@ export class GetRentalAccessoryDefaultsHandler implements IQueryHandler<
     if (inventory.defaults.length === 0) return ok({ rentalOrderId: rental.id, suggestions: [] });
 
     const usesAcceptedFacts = rental.status === V2RentalStatus.CONFIRMED || rental.confirmedAt !== null;
-    const buffer = usesAcceptedFacts
-      ? this.resolveAcceptedBuffer(rental.acceptedBeforeBufferMinutes, rental.acceptedAfterBufferMinutes)
-      : await this.resolveCurrentBuffer(query.tenantId);
+    const bufferSettings = usesAcceptedFacts
+      ? ok(this.resolveAcceptedBuffer(rental.acceptedBeforeBufferMinutes, rental.acceptedAfterBufferMinutes))
+      : await this.branchBufferSettings.getBranchRentalAssetBufferSettings({
+          tenantId: query.tenantId,
+          branchId: rental.branchId,
+        });
+    if (bufferSettings.isErr()) {
+      return err(
+        getRentalAccessoryDefaultsError(
+          'rental_commitment.branch_unavailable',
+          bufferSettings.error.message,
+          bufferSettings.error,
+          { rentalId: rental.id, branchId: rental.branchId },
+        ),
+      );
+    }
+    const buffer = bufferSettings.value;
     const participationStart =
       operationTime >= rental.periodStart && operationTime < rental.periodEnd ? operationTime : rental.periodStart;
     const participationPeriod = new RentalPeriod(participationStart, rental.periodEnd);
@@ -163,12 +177,6 @@ export class GetRentalAccessoryDefaultsHandler implements IQueryHandler<
       throw new RentalInvalidFieldError('acceptedAssetBuffer', 'persisted buffer values must both be present');
     }
     return { beforeBufferMinutes: before, afterBufferMinutes: after };
-  }
-
-  private async resolveCurrentBuffer(tenantId: string) {
-    const result = await this.tenantBufferSettings.getTenantRentalAssetBufferSettings({ tenantId });
-    if (result.isErr()) throw result.error;
-    return result.value;
   }
 
   private async findBlockedAssetIds(params: {
