@@ -3,9 +3,6 @@ export type DateInterval = {
   end: Date;
 };
 
-/**
- * Creates an absolute UTC timestamp from human-readable, one-based calendar components.
- */
 export function utcDate(
   year: number,
   month: number,
@@ -37,9 +34,6 @@ export function oneMillisecondAfter(timestamp: Date): Date {
   return new Date(timestamp.getTime() + 1);
 }
 
-/**
- * Groups timestamps without assigning interval validity, overlap, or boundary semantics.
- */
 export function dateInterval(start: Date, end: Date): DateInterval {
   return { start: new Date(start), end: new Date(end) };
 }

@@ -6,17 +6,6 @@ import {
   CreateConfirmedRentalOfferSelectionCommand,
 } from './create-confirmed-rental.command';
 
-/**
- * Deterministic fingerprint of the material confirmation intent carried by a
- * CreateConfirmedRentalCommand. Two commands with equal fingerprints represent
- * the same logical confirmation operation even if they arrive through
- * different transports or with equivalent-but-differently-encoded values.
- *
- * Server-derived outcomes (rental number, pricing snapshot, asset allocations)
- * and non-intent transport data (booking snapshots) are deliberately excluded:
- * they are either not supplied by the caller or must not affect replay
- * resolution.
- */
 export function buildConfirmationFingerprint(command: CreateConfirmedRentalCommand): string {
   return createHash('sha256')
     .update(

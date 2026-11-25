@@ -79,8 +79,6 @@ function AvailableInvoiceRecordDialog({
 		onClose();
 	}
 
-	// Wait for the opening recheck before capturing the editable snapshot.
-	// Once mounted, keep that snapshot and any user edits through background updates.
 	if (action !== "history" && query.isFetchedAfterMount && query.data) {
 		return (
 			<InvoiceMutationDialog

@@ -8,7 +8,6 @@ import z from 'zod';
   imports: [
     NestConfigModule.forRoot({
       isGlobal: true,
-      // 1. Validate ENV variables against Zod schema
       validate: (env: NodeJS.ProcessEnv) => {
         const parsed = EnvSchema.safeParse(env);
         if (!parsed.success) {
@@ -17,7 +16,6 @@ import z from 'zod';
         }
         return parsed.data;
       },
-      // 2. Load specific configuration files (optional, keeps AppModule clean)
       load: [() => ({ database: { url: process.env.DATABASE_URL } })],
     }),
   ],

@@ -246,9 +246,6 @@ describe('CatalogOfferingAuthoring integration', () => {
     });
     if (created.isErr()) throw created.error;
 
-    // Deterministic race simulation: force the application duplicate pre-check
-    // to miss so the real upsert reaches the
-    // v2_rental_offers_tenant_branch_item_key unique index.
     const originalFindFirst = prisma.client.v2RentalOffer.findFirst;
     const findFirstSpy = vi.spyOn(prisma.client.v2RentalOffer, 'findFirst').mockResolvedValue(null);
 
@@ -260,8 +257,6 @@ describe('CatalogOfferingAuthoring integration', () => {
         branchId: current.branch.id,
       });
     } finally {
-      // Prisma delegates are proxies, so Vitest cannot restore their property descriptor reliably.
-      // Restore the original implementation while retaining the harmless spy wrapper.
       findFirstSpy.mockImplementation(originalFindFirst);
     }
 
@@ -296,8 +291,6 @@ describe('CatalogOfferingAuthoring integration', () => {
     const saveManySpy = vi.spyOn(repository, 'saveMany').mockRejectedValueOnce(rejection);
 
     try {
-      // A fresh branch keeps the duplicate pre-check happy so the flow reaches
-      // the repository write.
       const additionalBranch = await fixtures.createBranch({ tenantId: current.tenant.id });
 
       await expect(

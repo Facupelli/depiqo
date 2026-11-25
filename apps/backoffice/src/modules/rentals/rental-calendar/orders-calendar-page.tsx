@@ -138,7 +138,6 @@ export function OrdersCalendarPage({
 					}
 				/>
 			) : (
-				// TODO: Support all-branches Calendar through a backend Calendar capability, not frontend query fan-out.
 				<div className="flex min-h-64 items-center justify-center rounded-lg border border-dashed px-4 py-10 text-center text-sm text-muted-foreground">
 					Selecciona una sucursal para ver el calendario.
 				</div>

@@ -20,6 +20,5 @@ export function deriveConfirmationParticipationTiming(
     };
   }
 
-  // Confirmation after rental end was historically allowed and planned participation from the rental start.
   return { participationPeriod: rentalPeriod };
 }

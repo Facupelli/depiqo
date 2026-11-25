@@ -30,7 +30,6 @@ export class PrismaRentableItemRepository {
     return RentableItemMapper.toDomain(rentableItem);
   }
 
-  /** Persist only the lifecycle field after locking and loading the item in the same transaction. */
   async saveArchivalState(rentableItem: RentableItem, tx: TransactionClient): Promise<void> {
     const updated = await tx.v2RentableItem.updateMany({
       where: { id: rentableItem.id, tenantId: rentableItem.tenantId },

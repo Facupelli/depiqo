@@ -8,7 +8,6 @@ export const ChangeConfirmedRentalDeliveryParamsSchema = z.object({
 });
 
 // Supplying a destination explicitly selects its arrangement. Omission preserves it.
-// No tenant, attribution, rental period, or accepted pricing facts are client inputs.
 export const ChangeConfirmedRentalDeliveryBodySchema = z
   .strictObject({
     expectedVersion: z.number().int().nonnegative(),

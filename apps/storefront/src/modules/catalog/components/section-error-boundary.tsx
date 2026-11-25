@@ -12,7 +12,6 @@ function SectionErrorFallback({
 }: SectionErrorFallbackProps) {
 	return (
 		<div className="flex min-h-64 w-full flex-col items-center justify-center rounded-sm bg-neutral-50 px-6 py-12 text-center">
-			{/* Warning icon */}
 			<svg
 				xmlns="http://www.w3.org/2000/svg"
 				width="28"

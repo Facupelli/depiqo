@@ -56,7 +56,6 @@ export class RescheduleConfirmedRentalPeriodHandler implements ICommandHandler<
       if (eligibility.isErr()) return err(mapRescheduleConfirmedRentalPeriodError(eligibility.error, context));
       return ok({ rentalId, version: initial.version, updatedAt: initial.updatedAt! });
     }
-    // Routing and delivery configuration reads are deliberately outside the write transaction.
     const prepared = await this.preparation.prepare({ rental: initial, expectedVersion, periodStart, periodEnd });
     if (prepared.isErr()) return err({ ...prepared.error, context: { ...prepared.error.context, ...context } });
     const acceptedDelivery = this.preparation.accept({

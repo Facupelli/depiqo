@@ -1,9 +1,6 @@
 import { PrismaService } from 'src/core/database/prisma.service';
 import { prismaDateToLocalDate } from 'src/core/temporal/local-date';
 
-// Conservative authoring preflight. Only reject a conflict that is obvious
-// without a rental: two unrestricted all-lines promotions with overlapping
-// validity. The calculation remains the authoritative guard for all others.
 export async function hasObviousPromotionPriorityConflict(
   prisma: PrismaService,
   input: {

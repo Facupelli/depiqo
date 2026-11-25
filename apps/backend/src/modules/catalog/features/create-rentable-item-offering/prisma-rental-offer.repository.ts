@@ -21,7 +21,6 @@ export class PrismaRentalOfferRepository {
     return record ? RentalOfferMapper.toDomain(record) : null;
   }
 
-  /** Called after locking the parent item and loading the offer in the same transaction. */
   async updateSettings(
     rentalOffer: RentalOffer,
     supplied: UpdateRentalOfferSettingsProps,

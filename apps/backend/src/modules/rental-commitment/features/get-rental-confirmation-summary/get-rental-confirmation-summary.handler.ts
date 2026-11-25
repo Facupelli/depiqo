@@ -57,7 +57,6 @@ export class GetRentalConfirmationSummaryHandler implements IQueryHandler<
           'Confirmation requires existing pricing.',
         ),
       );
-    // Confirmation accepts persisted equipment/insurance pricing. Never resolve current Catalog offers here.
     const pricing = ConfirmedPriceSnapshot.create(rental.priceSnapshot);
     if (pricing.isErr()) throw pricing.error;
     let storedDelivery: AcceptedDeliverySnapshot | undefined;
@@ -71,7 +70,6 @@ export class GetRentalConfirmationSummaryHandler implements IQueryHandler<
     const storedStaffArrangement =
       rental.fulfillmentMethod === 'DELIVERY' && storedDelivery?.snapshot.arrangement === 'STAFF_ARRANGED';
     const deliveryDetails = toDeliveryDetailsResponse(rental.deliveryDetails);
-    // Advisory delivery validation only. Equipment availability is checked by final confirmation.
     const delivery = await this.confirmationDelivery.resolve({
       tenantId: query.tenantId,
       branchId: rental.branchId,

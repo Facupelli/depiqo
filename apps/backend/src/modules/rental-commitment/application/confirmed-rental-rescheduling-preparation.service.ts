@@ -30,7 +30,6 @@ import { acceptedDeliverySnapshotFromQuote } from './accepted-delivery-snapshot.
 export interface ConfirmedRentalReschedulingPreparation {
   period: RentalPeriod;
   preview: PreviewConfirmedRentalPeriodResponseDto;
-  // Proposed terms are not an accepted snapshot until all decisions have been checked.
   deliveryTerms?: AcceptedDeliverySnapshotData;
 }
 
@@ -42,7 +41,6 @@ export interface ConfirmedRentalReschedulingDecisions {
 
 type ReviewRequirement = PreviewConfirmedRentalPeriodResponseDto['requirements'][number];
 
-/** One read-only evaluation/composition path for preview and authoritative rescheduling. */
 @Injectable()
 export class ConfirmedRentalReschedulingPreparationService {
   constructor(private readonly delivery: DeliveryQuoteService) {}
@@ -276,7 +274,6 @@ export class ConfirmedRentalReschedulingPreparationService {
       collectionScheduledAt: evaluation.collectionScheduledAt.toISOString(),
       evaluatedCurrency: evaluation.currency ?? null,
     };
-    // Explicitly select material facts. Authorization/agreement attribution and calculatedAt are not review inputs.
     preview.reviewIdentity = `v1:${createHash('sha256')
       .update(
         JSON.stringify({
@@ -309,7 +306,6 @@ export class ConfirmedRentalReschedulingPreparationService {
             resolvedDestination: scope.resolvedDestination,
             transportReservationMinutes: minutes,
             staffAgreement: agreement,
-            // Never carry a previous exception into the newly evaluated scope.
             policyException: undefined,
           };
     return ok({ period, preview, deliveryTerms });
@@ -375,7 +371,6 @@ export class ConfirmedRentalReschedulingPreparationService {
         ? prepared.deliveryTerms
         : {
             ...prepared.deliveryTerms,
-            // Irrelevant authorization input is safely ignored when no restrictions apply.
             policyException: delivery.requiresExceptionAuthorization
               ? {
                   overriddenRestrictions: delivery.policyRestrictions,

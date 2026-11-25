@@ -62,7 +62,6 @@ export const invoicingQueries = {
 			queryFn: ({ signal }) =>
 				getInvoice(invoiceId, { includeRemoved }, signal),
 			enabled: enabled && can(permissions, TenantPermission.InvoicingRead),
-			// Recheck the current version when opening an invoice workflow.
 			staleTime: 0,
 			retry: retryInvoiceQuery,
 		}),

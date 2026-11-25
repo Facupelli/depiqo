@@ -63,7 +63,6 @@ export class ChangeConfirmedRentalDeliveryHandler implements ICommandHandler<
     const initial = await this.rentals.findById(tenantId, rentalId);
     if (!initial) return failure('rental_commitment.rental_not_found', 'Rental not found.');
     if (initial.version !== expectedVersion) return conflict();
-    // Routing and branch configuration reads stay outside the equipment write transaction.
     const prepared = await this.preparation.prepare({
       rental: initial,
       tenantUserId,
@@ -78,7 +77,6 @@ export class ChangeConfirmedRentalDeliveryHandler implements ICommandHandler<
         if (!rental) return failure('rental_commitment.rental_not_found', 'Rental not found.');
         if (rental.version !== expectedVersion) return conflict();
         const previousPeriods = new Map(rental.assetBlocks.map((block) => [block.id, block.period]));
-        // Domain checks lifecycle and server time against this freshly persisted state.
         const changed = rental.changeConfirmedDelivery({ ...prepared.value, operationTime: new Date() });
         if (changed.isErr()) return err(mapChangeConfirmedRentalDeliveryError(changed.error, context));
         if (changed.value === 'UNCHANGED')
@@ -86,7 +84,6 @@ export class ChangeConfirmedRentalDeliveryHandler implements ICommandHandler<
         const changedBlocks = rental.currentOperationalAssetBlocks.filter(
           (block) => !previousPeriods.get(block.id)?.equals(block.period),
         );
-        // Batch identical periods without assuming all operational starts are equal.
         const reservationGroups = new Map<string, { period: RentalPeriod; assetIds: AssetId[] }>();
         for (const block of changedBlocks) {
           const key = block.period.toPostgresRange();

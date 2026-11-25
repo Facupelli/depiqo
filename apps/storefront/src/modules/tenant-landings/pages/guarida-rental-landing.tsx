@@ -41,19 +41,15 @@ export function GuaridaRentalLandingPage({
         .anim-6 { animation: fadeIn   1.0s ease forwards; animation-delay: 1.10s; opacity: 0; }
       `}</style>
 
-			{/* ── Root ── */}
 			<section className="relative min-h-svh w-full overflow-hidden">
-				{/* ── Background image: grayscale + lighter than before ── */}
 				<img
 					src="https://images.pexels.com/photos/2512258/pexels-photo-2512258.jpeg"
 					alt="Dark film studio interior"
 					className="absolute inset-0 w-full h-full object-cover object-center grayscale brightness-[0.38] contrast-[1.15]"
 				/>
 
-				{/* ── Dark vignette: edges darker, center breathes ── */}
 				<div className="absolute inset-0 bg-[radial-gradient(ellipse_65%_55%_at_50%_45%,rgba(0,0,0,0.2)_0%,rgba(0,0,0,0.65)_60%,rgba(0,0,0,0.88)_100%)]" />
 
-				{/* ── Grain texture ── */}
 				<div
 					className="absolute inset-0 opacity-[0.035] pointer-events-none"
 					style={{
@@ -64,7 +60,6 @@ export function GuaridaRentalLandingPage({
 					}}
 				/>
 
-				{/* ── Sidebar coordinate text ── */}
 				<div
 					className="anim-6 pointer-events-none absolute top-1/2 left-0 hidden flex-col items-center gap-2 select-none pl-3 md:flex"
 					style={{
@@ -80,19 +75,15 @@ export function GuaridaRentalLandingPage({
 					</span>
 				</div>
 
-				{/* ── Content grid: nav / main / footer ── */}
 				<div className="relative z-10 grid min-h-svh grid-rows-[auto_1fr_auto]">
-					{/* ── Navbar ── */}
 					<nav className="flex items-center justify-between bg-black/80 px-4 py-2.5 md:px-10 md:py-5 backdrop-blur-sm">
 						{branding.logoSrc ? (
-							// <div className="bg-neutral-50 p-2 rounded-md">
 							<img
 								src={branding.logoSrc}
 								alt={branding.tenantName}
 								className="h-8 md:h-12 w-auto max-w-48 object-contain"
 							/>
 						) : (
-							// </div>
 							<span className="text-white text-xl md:text-2xl tracking-widest select-none">
 								{branding.tenantName}
 							</span>
@@ -109,9 +100,7 @@ export function GuaridaRentalLandingPage({
 						</Link>
 					</nav>
 
-					{/* ── Hero ── */}
 					<main className="flex min-h-0 flex-col justify-end px-6 pt-3 pb-6 text-left md:items-center md:justify-center md:gap-6 md:px-6 md:pt-0 md:pb-0 md:text-center">
-						{/* "MADRID CENTRO" label */}
 						<div className="anim-1 flex items-center gap-3 self-start md:self-center">
 							<span className="block h-px w-8 bg-[#C85C3E] md:w-10" />
 							<span className="text-[10px] font-semibold tracking-[0.3em] text-[#C85C3E] uppercase md:text-sm md:tracking-[0.35em]">
@@ -120,19 +109,16 @@ export function GuaridaRentalLandingPage({
 							<span className="block h-px w-8 bg-[#C85C3E] md:w-10" />
 						</div>
 
-						{/* Main headline */}
 						<h1 className="anim-2 pt-1 text-[clamp(2.5rem,13vw,5.4rem)] leading-[0.9] font-semibold tracking-[-0.04em] text-white uppercase md:mt-0 md:max-w-none md:text-[clamp(3rem,8vw,7.5rem)] md:tracking-wide">
 							No somos un
 							<br />
 							simple rental
 						</h1>
 
-						{/* Subheadline */}
 						<p className="anim-3 mt-4 max-w-[18rem] text-[14px] font-semibold tracking-[0.24em] uppercase text-white/70 md:mt-0 md:max-w-4xl md:text-xl md:tracking-[0.28em]">
 							LOS COMBOS MÁS BARATOS DE MADRID
 						</p>
 
-						{/* Service icons */}
 						<div className="anim-4 mt-6 grid gap-4 md:mt-4 md:grid-cols-3 md:gap-10">
 							{SERVICES.map(({ icon, label }) => (
 								<div
@@ -149,7 +135,6 @@ export function GuaridaRentalLandingPage({
 							))}
 						</div>
 
-						{/* CTA */}
 						<Link
 							to="/rental"
 							className="anim-5 mt-5 flex w-full max-w-100 items-stretch self-start md:mt-4 md:w-auto md:max-w-none md:self-center"
@@ -189,7 +174,6 @@ export function GuaridaRentalLandingPage({
 						</span>
 					</a>
 
-					{/* ── Footer ── */}
 					<footer className="hidden items-end justify-between px-10 py-6 md:flex">
 						<p className=" text-[10px] font-light tracking-[0.18em] uppercase text-white/30">
 							©{new Date().getFullYear()}{" "}

@@ -3,7 +3,6 @@ import {
 	ReportRentalStatusSchema,
 } from "@repo/api-contracts";
 
-/** Default to the tenant-local current year; an omitted month means the full year. */
 export function resolveReportPeriod(
 	search: { year?: number; month?: number },
 	timezone: string,
@@ -24,7 +23,6 @@ export function resolveReportPeriod(
 	};
 }
 
-/** Rental reports open on the current month; an explicit year still allows the full year. */
 export function resolveRentalReportPeriod(
 	search: { year?: number; month?: number },
 	timezone: string,

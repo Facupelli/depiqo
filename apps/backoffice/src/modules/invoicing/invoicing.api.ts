@@ -106,7 +106,6 @@ export async function removeInvoiceRegistration({
 	const search = new URLSearchParams({
 		expectedVersion: String(parsedQuery.expectedVersion),
 	});
-	// apiFetch returns null for HTTP 204; there is no response body to parse.
 	await apiFetch(`${path}?${search}`, {
 		method: removeInvoiceRegistrationContract.method,
 	});

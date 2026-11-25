@@ -29,8 +29,6 @@ export class UpdateRentalOfferVisibilityAndRentabilityHandler implements IComman
       rentalOfferId: command.rentalOfferId,
     };
     return this.unitOfWork.runInTransaction(async ({ tx }) => {
-      // The offer lookup identifies the parent; read its state only after taking
-      // the same tenant-scoped parent lock used by archive/restore.
       const reference = await tx.v2RentalOffer.findFirst({
         where: { id: command.rentalOfferId, tenantId: command.tenantId },
         select: { rentableItemId: true },

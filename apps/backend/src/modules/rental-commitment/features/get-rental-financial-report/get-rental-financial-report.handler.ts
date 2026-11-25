@@ -77,7 +77,6 @@ export class GetRentalFinancialReportHandler implements IQueryHandler<
     if (typeof timezone !== 'string' || timezone.length === 0 || !/^[A-Z]{3}$/.test(currency)) {
       throw new Error('Tenant financial reporting configuration is invalid.');
     }
-    // This is the tenant's configured timezone, not a branch timezone or a fallback.
     Intl.DateTimeFormat(undefined, { timeZone: timezone });
 
     const rawRows = await this.getFinancialRows(query, timezone, currency);
@@ -148,9 +147,6 @@ export class GetRentalFinancialReportHandler implements IQueryHandler<
     const from = `${String(query.year).padStart(4, '0')}-01-01`;
     const until = `${String(query.year + 1).padStart(4, '0')}-01-01`;
 
-    // One statement provides a shared snapshot for validation, revenue and owner
-    // breakdowns. Period 0 is the annual total; periods 1-12 are calendar months.
-    // GROUPING SETS keeps annual arithmetic in PostgreSQL numeric, without JS rounding.
     return this.prisma.client.$queryRaw<RawFinancialReportRow[]>(Prisma.sql`
       WITH rental_facts AS MATERIALIZED (
         SELECT

@@ -17,6 +17,5 @@ export type NotificationDispatchRequest<T extends NotificationType = Notificatio
   source?: NotificationSourceCorrelation;
   metadata?: Record<string, string>;
   idempotencyKey?: string;
-  /** Values that must not be retained in the persisted content snapshot. */
   contentSnapshotRedactions?: readonly string[];
 };

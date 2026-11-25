@@ -10,20 +10,12 @@ export interface SerializedPinoError {
 const MAX_CAUSE_DEPTH = 5;
 const errorsWithoutStacks = new WeakSet<Error>();
 
-/**
- * Applies the HTTP status stack policy before Pino invokes its serializer.
- * The WeakSet keeps this policy private and avoids adding logging metadata to
- * application Error objects.
- */
 export function applyHttpErrorStackPolicy(error: Error, status: number, isProduction: boolean): void {
   if (isProduction && status < 500) {
     errorsWithoutStacks.add(error);
   }
 }
 
-/**
- * Serializes only explicitly allowlisted native Error information.
- */
 export function pinoErrorSerializer(error: unknown): SerializedPinoError {
   if (!(error instanceof Error)) {
     return {

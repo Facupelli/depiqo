@@ -2,7 +2,6 @@ import type { AcceptedDeliveryDto, RentalDeliveryDetailsDto } from '@repo/api-co
 
 import { AcceptedDeliverySnapshot } from '../domain/value-objects/accepted-delivery-snapshot.value-object';
 
-/** API whitelist, shared by reads without reinterpreting accepted domain pricing. */
 export function toAcceptedDeliveryResponse(accepted: AcceptedDeliverySnapshot): AcceptedDeliveryDto {
   const data = accepted.snapshot;
   const common = {

@@ -32,8 +32,6 @@ export class CreateRatePlanOperation {
   async createRatePlan(
     input: CreateRatePlanOperationInput,
   ): Promise<Result<CreateRatePlanOperationResult, CreateRatePlanOperationError>> {
-    // Joins the caller's ambient transaction when one is active (e.g. Offering
-    // Setup coordination); standalone calls open their own transaction.
     return this.unitOfWork.runInTransaction(async ({ tx }) => {
       const name = input.name.trim();
       const existingRatePlan = await tx.v2RatePlan.findFirst({

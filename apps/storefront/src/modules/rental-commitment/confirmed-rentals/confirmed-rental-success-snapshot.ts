@@ -30,9 +30,7 @@ export function writeConfirmedRentalSuccessSnapshot(
 			getStorageKey(rentalNumber),
 			JSON.stringify(confirmedRentalSuccessSnapshotSchema.parse(snapshot)),
 		);
-	} catch {
-		// Storage can be unavailable. The success page will use its generic view.
-	}
+	} catch {}
 }
 
 export function readConfirmedRentalSuccessSnapshot(

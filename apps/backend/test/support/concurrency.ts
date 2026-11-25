@@ -9,12 +9,6 @@ export type Barrier = {
 
 const DEFAULT_BARRIER_TIMEOUT_MS = 5_000;
 
-/**
- * Coordinates a fixed number of test participants at an explicit rendezvous point.
- *
- * The timeout starts when the first participant arrives. Once released, timed out,
- * or aborted, the barrier is terminal.
- */
 export function createBarrier(participantCount: number, options: BarrierOptions = {}): Barrier {
   if (!Number.isInteger(participantCount) || participantCount < 1) {
     throw new Error(`Barrier participant count must be a positive integer, received ${participantCount}.`);

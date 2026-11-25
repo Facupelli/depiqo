@@ -8,7 +8,9 @@
   "scripts": {
     "build": "turbo run build",
     "dev": "turbo run dev",
-    "lint": "turbo run lint",
+    "lint": "pnpm run lint:comments && turbo run lint",
+    "lint:comments": "oxlint --config oxlint.comments.json --disable-nested-config apps packages",
+    "lint:comments:baseline": "node scripts/comment-baseline.mjs",
     "clean": "turbo run clean && rm -rf node_modules"
   },
   "packageManager": "pnpm@11.0.9+sha512.34ce82e6780233cf9cad8685029a8f81d2e06196c5a9bad98879f7424940c6817c4e4524fb7d38b8553ceed48b9758b8ebaf1abd3600c232c4c8cf7366086f38",
@@ -16,6 +18,7 @@
   "devDependencies": {
     "chrome-devtools-axi": "0.1.38",
     "chrome-devtools-mcp": "1.12.0",
+    "oxlint": "1.83.0",
     "turbo": "2.10.9",
     "typescript": "^5.0.0"
   }

@@ -64,7 +64,6 @@ describe(`GET ${path}`, () => {
     const rentalId = await createRental({
       tenantId: tenant.id,
       branchId: branch.id,
-      // This instant is August 10 in Tokyo and August 9 in Buenos Aires.
       periodStart: '2026-08-09T23:30:00Z',
       periodEnd: '2026-08-10T01:00:00Z',
     });
@@ -117,14 +116,12 @@ describe(`GET ${path}`, () => {
     const springForwardRental = await createRental({
       tenantId: tenant.id,
       branchId: branch.id,
-      // March 8, 2026 is 23 hours in New York: [05:00Z, 04:00Z next day).
       periodStart: '2026-03-08T05:00:00Z',
       periodEnd: '2026-03-09T04:00:00Z',
     });
     const firstRepeatedHour = await createRental({
       tenantId: tenant.id,
       branchId: branch.id,
-      // These are the two distinct 01:30 local instants on November 1, 2026.
       periodStart: '2026-11-01T05:30:00Z',
       periodEnd: '2026-11-01T05:45:00Z',
     });
@@ -175,7 +172,6 @@ describe(`GET ${path}`, () => {
     });
 
     const rows = await prisma.client.$transaction(async (tx) => {
-      // SET LOCAL is transaction-scoped. It verifies the expressions without changing a pooled connection.
       await tx.$executeRawUnsafe("SET LOCAL TIME ZONE 'Pacific/Auckland'");
 
       return tx.$queryRaw<

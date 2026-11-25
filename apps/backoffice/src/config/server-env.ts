@@ -16,11 +16,9 @@ const serverEnvSchema = z.object({
 	BFF_INTERNAL_TOKEN: z.string().min(1),
 	BACKEND_PROXY_TIMEOUT_MS: z.coerce.number().int().positive().default(60_000),
 	CLOUDFLARE_ACCOUNT_ID: z.string().min(1),
-	// R2 EQUIPMENT
 	R2_EQUIPMENT_ACCESS_KEY_ID: z.string().min(1),
 	R2_EQUIPMENT_SECRET_ACCESS_KEY: z.string().min(1),
 	R2_EQUIPMENT_BUCKET_NAME: z.string().min(1),
-	// R2 BRANDING
 	R2_BRANDING_BUCKET_NAME: z.string().min(1),
 	R2_BRANDING_ACCESS_KEY_ID: z.string().min(1),
 	R2_BRANDING_SECRET_ACCESS_KEY: z.string().min(1),

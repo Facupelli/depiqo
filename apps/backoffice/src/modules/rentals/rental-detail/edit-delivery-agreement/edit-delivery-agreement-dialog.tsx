@@ -71,7 +71,6 @@ export function EditDeliveryAgreementDialog({
 
 function OpenDeliveryAgreementDialog({ onClose }: { onClose: () => void }) {
 	const { rental: currentRental } = useRentalDetailContext();
-	// Keep the persisted values and concurrency token from this editing session.
 	const [rental] = useState(() => currentRental);
 	const delivery = rental.acceptedDelivery;
 	const calculatedTotal =

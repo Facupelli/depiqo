@@ -23,7 +23,6 @@ export class DraftRentalFinancialFactsService extends DraftRentalFinancialFacts 
   async getDraftRentalFinancialFacts(
     input: GetDraftRentalFinancialFactsInput,
   ): Promise<Result<DraftRentalFinancialFactsResult, DraftRentalFinancialFactsError>> {
-    // All monetary facts and their version come from the same persisted row read.
     const rental = await this.prisma.client.v2Rental.findFirst({
       where: { id: input.rentalId, tenantId: input.tenantId },
       select: {

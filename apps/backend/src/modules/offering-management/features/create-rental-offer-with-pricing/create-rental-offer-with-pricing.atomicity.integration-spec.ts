@@ -105,13 +105,10 @@ describe('CreateRentalOfferWithPricing atomicity integration', () => {
     if (result.isOk()) return;
     expect(result.error.code).toBe('offering_setup.rate_plan_not_found');
 
-    // The assignment seam runs after the real Catalog write has executed inside
-    // the outer transaction, so a rolled back RentalOffer proves atomicity.
     expect(attachRatePlanToRentalOffer).toHaveBeenCalledTimes(1);
 
     await expect(prisma.client.v2RentalOffer.count({ where: { tenantId: current.tenant.id } })).resolves.toBe(0);
     await expect(prisma.client.v2RentalOfferPricing.count({ where: { tenantId: current.tenant.id } })).resolves.toBe(0);
-    // The pre-existing RatePlan was created before the workflow and must survive.
     await expect(prisma.client.v2RatePlan.count({ where: { id: ratePlan.id } })).resolves.toBe(1);
   });
 
@@ -129,7 +126,6 @@ describe('CreateRentalOfferWithPricing atomicity integration', () => {
     if (result.isOk()) return;
     expect(result.error.code).toBe('offering_setup.rate_plan_not_found');
 
-    // Both earlier writes executed for real before the seam failed.
     expect(attachRatePlanToRentalOffer).toHaveBeenCalledTimes(1);
     expect(attachRatePlanToRentalOffer).toHaveBeenCalledWith(
       expect.objectContaining({

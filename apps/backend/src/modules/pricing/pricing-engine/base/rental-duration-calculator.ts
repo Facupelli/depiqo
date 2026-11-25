@@ -139,10 +139,6 @@ export class RentalDurationCalculator {
     return Math.max(input.minimumChargedDays, normalChargedDays - this.countQualifyingWeekendPairs(input));
   }
 
-  /**
-   * Calendar dates identify an adjustment only. Daily units remain calculated
-   * from elapsed duration and the selected daily billing policy.
-   */
   private countQualifyingWeekendPairs(input: { start: Date; end: Date; timezone: string }): number {
     const firstLocalDate = instantToLocalDate(input.start, input.timezone);
     const lastLocalDate = instantToLocalDate(input.end, input.timezone);

@@ -21,7 +21,7 @@ const uploadRouter: Router = {
 	routes: {
 		catalogImages: route({
 			fileTypes: ["image/webp"],
-			maxFileSize: 1024 * 1024 * 3, // 3MB after client-side compression
+			maxFileSize: 1024 * 1024 * 3,
 			onBeforeUpload: async () => {
 				let tenantId: string;
 
@@ -35,7 +35,7 @@ const uploadRouter: Router = {
 
 				return {
 					objectInfo: { key },
-					metadata: { key }, // echoed back to client after upload
+					metadata: { key },
 				};
 			},
 		}),

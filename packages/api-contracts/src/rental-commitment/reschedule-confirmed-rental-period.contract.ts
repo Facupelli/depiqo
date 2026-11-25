@@ -15,10 +15,8 @@ export const PreviewConfirmedRentalPeriodBodySchema = z.strictObject({
   }),
 });
 
-/** Decisions are supplied only to PATCH, never to the read-only preview. */
 export const RescheduleConfirmedRentalPeriodBodySchema =
   PreviewConfirmedRentalPeriodBodySchema.extend({
-    // Required by the application for DELIVERY; optional for PICKUP.
     reviewIdentity: z
       .string()
       .regex(/^v1:[a-f0-9]{64}$/)
@@ -54,7 +52,6 @@ export const PreviewConfirmedRentalPeriodResponseSchema = z.object({
   reservationPeriod: z
     .object({ start: z.string().datetime(), end: z.string().datetime() })
     .nullable(),
-  // Empty only when delivery requirements prevent deriving an operational proposal.
   assetReservations: z.array(
     z.object({
       assetBlockId: z.string(),

@@ -63,7 +63,6 @@ export class ConfirmRentalHandler implements ICommandHandler<ConfirmRentalComman
     try {
       rental = await this.rentalRepository.findById(command.tenantId, command.rentalId);
     } catch (error) {
-      // Persisted delivery facts are validated while reconstituting the aggregate, too.
       if (error instanceof RentalInvalidFieldError) return err(this.toApplicationError(error, context));
       throw error;
     }

@@ -40,7 +40,6 @@ export const Route = createFileRoute("/_admin/dashboard/finances/")({
 			can(context.user.permissions, TenantPermission.FinancesRead),
 		);
 	},
-	// Period and inclusion options only change presentation of the yearly report.
 	loaderDeps: ({ search }) => ({ year: search.year }),
 	loader: async ({ context: { queryClient }, deps }) => {
 		const business = await queryClient.ensureQueryData(

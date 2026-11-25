@@ -127,9 +127,6 @@ export class GetRentableItemDetailHandler implements IQueryHandler<
     const equipmentTypeIds = [...new Set(item.requirements.map((requirement) => requirement.equipmentTypeId))];
     const offerIds = item.rentalOffers.map((offer) => offer.id);
 
-    // TODO: This read model currently composes cross-boundary data with Prisma direct reads.
-    // Replace with module-owned read facades or a dedicated denormalized read model once Catalog,
-    // Pricing, Tenant Management, and Asset Inventory public read APIs stabilize.
     const [branchFactsResult, equipmentTypes, pricings] = await Promise.all([
       this.branchFacts.getBranchFactsBatch({ tenantId: query.tenantId, branchIds }),
       this.prisma.client.v2EquipmentType.findMany({

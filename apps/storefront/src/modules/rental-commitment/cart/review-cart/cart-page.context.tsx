@@ -157,8 +157,6 @@ export function CartPageProvider({
 	const [unavailableRentalOfferIds, setUnavailableRentalOfferIds] = useState<
 		string[]
 	>([]);
-	// TODO(persistence): fulfillment state is lost across navigation (e.g. login
-	// round-trips). Track as a separate task.
 	const [fulfillmentMethod, setFulfillmentMethod] =
 		useState<FulfillmentMethod>("PICKUP");
 	const [deliveryRequest, setDeliveryRequest] = useState(() =>

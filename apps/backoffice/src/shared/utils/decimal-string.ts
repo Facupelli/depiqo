@@ -3,10 +3,6 @@ export type ParsedDecimal = {
 	scale: number;
 };
 
-/**
- * Parses plain decimals with `.` or `,` as the decimal separator, without
- * thousands separators or currency symbols. Returns null for invalid input.
- */
 export function parsePlainDecimal(value: string): ParsedDecimal | null {
 	const match = /^([+-]?)(\d+)(?:[.,](\d+))?$/.exec(value.trim());
 	if (!match) return null;
@@ -22,7 +18,6 @@ function decimalUnitsAtScale(value: ParsedDecimal, scale: number): bigint {
 	return value.units * 10n ** BigInt(scale - value.scale);
 }
 
-/** Serializes at the supplied scale, preserving trailing fractional zeros. */
 export function normalizeDecimal(value: ParsedDecimal): string {
 	const negative = value.units < 0n;
 	const digits = (negative ? -value.units : value.units)
@@ -72,7 +67,6 @@ export function sumDecimalStrings(values: readonly string[]): string {
 	return normalizeDecimal({ units, scale });
 }
 
-/** Returns true only for valid decimal representations of zero; invalid input returns false. */
 export function isZeroDecimal(value: string): boolean {
 	const parsed = parsePlainDecimal(value);
 	return parsed !== null && parsed.units === 0n;
@@ -97,10 +91,6 @@ function getCurrencyFormatter(currency: string): Intl.NumberFormat {
 	return formatter;
 }
 
-/**
- * Round only at display time, without converting monetary amounts to Number.
- * Keep BigInt formatting for targets without exact Intl decimal-string support.
- */
 export function formatExactMoney(amount: string, currency: string): string {
 	const parsed = parsePlainDecimal(amount);
 	if (!parsed) throw new Error("Invalid monetary amount.");

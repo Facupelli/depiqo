@@ -53,9 +53,7 @@ export async function createE2ETestApp(): Promise<E2ETestApp> {
   } catch (error) {
     try {
       await closeE2ETestApp(app, resources);
-    } catch {
-      // Preserve the application initialization error.
-    }
+    } catch {}
 
     throw error;
   }

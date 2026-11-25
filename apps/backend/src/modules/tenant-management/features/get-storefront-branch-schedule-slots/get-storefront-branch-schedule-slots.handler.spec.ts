@@ -10,7 +10,6 @@ describe('GetStorefrontBranchScheduleSlotsHandler DST-date schedule lookup', () 
     'preserves the local date, Sunday weekday, and specific-date override on the %s transition',
     async (_name, date, utcHour) => {
       const findMany = vi.fn().mockResolvedValue([
-        // A date override wins over the normal Sunday schedule without interpreting it as an instant.
         { specificDate: new Date(`${date}T00:00:00.000Z`), openTime: 540, closeTime: 600, slotIntervalMinutes: 30 },
         { specificDate: null, openTime: 480, closeTime: 720, slotIntervalMinutes: 60 },
       ]);

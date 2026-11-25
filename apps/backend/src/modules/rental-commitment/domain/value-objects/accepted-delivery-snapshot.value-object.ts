@@ -77,7 +77,6 @@ const routedSnapshotSchema = z
     collection: legSchema,
     currency: z.string().trim().min(1),
     deliveryTotal: nonNegativeDecimal.optional(),
-    // The authorization applies to this snapshot's branch, destination, times and reservation minutes.
     branchId: z.string().trim().min(1).optional(),
     resolvedDestination: z
       .object({
@@ -87,9 +86,7 @@ const routedSnapshotSchema = z
         providerPlaceId: z.string().trim().min(1).optional(),
       })
       .optional(),
-    // Future commands must establish attribution from trusted server context, never request metadata.
     policyException: policyExceptionSchema.optional(),
-    // Future agreement-writing commands must establish actor and timestamp from trusted server context.
     staffAgreement: staffAgreementSchema.optional(),
     transportReservationMinutes: z.number().int().nonnegative(),
   })
@@ -178,7 +175,6 @@ export class AcceptedDeliverySnapshot extends JsonSnapshot {
   reschedule(params: {
     deliveryScheduledAt: Date;
     collectionScheduledAt: Date;
-    // Supplied only after fresh evaluation and authorization by the owning server workflow.
     reauthorizedPolicyException?: RoutedDeliverySnapshotData['policyException'];
   }): Result<AcceptedDeliverySnapshot, RentalCommitmentError> {
     for (const [field, value] of [
@@ -291,7 +287,6 @@ export class AcceptedDeliverySnapshot extends JsonSnapshot {
   }
 
   get effectiveDeliveryCharge(): string {
-    // Construction guarantees an agreement whenever the calculated total is absent.
     return this.data.arrangement === 'STAFF_ARRANGED'
       ? this.data.staffAgreement.amount
       : (this.data.staffAgreement?.amount ?? this.data.deliveryTotal!);

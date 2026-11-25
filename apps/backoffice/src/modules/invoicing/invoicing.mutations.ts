@@ -16,7 +16,6 @@ import { toInvoicingUiError } from "./invoicing.errors";
 import { invoicingKeys } from "./invoicing.queries";
 
 type InvoiceMutationContext = {
-	// Cache context only; rental association is never sent in PATCH or DELETE.
 	rentalId: string;
 	invoiceId: string;
 };
@@ -52,7 +51,6 @@ async function refreshInvoiceAfterError(
 		return;
 	}
 
-	// Refresh cached truth, but never rebase or retry the failed mutation.
 	await Promise.all(
 		invoiceMutationTargets(variables).map((queryKey) =>
 			queryClient.invalidateQueries({ queryKey }),

@@ -49,7 +49,6 @@ type InvoiceFormDialogProps = {
 	  }
 	| {
 			mode: "correct";
-			// The snapshot captured when the user starts editing, not live query data.
 			invoice: InvoiceDto;
 			blockedMessage: string | null;
 	  }

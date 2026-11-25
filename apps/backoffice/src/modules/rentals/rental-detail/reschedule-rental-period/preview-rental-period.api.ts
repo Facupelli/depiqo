@@ -25,7 +25,6 @@ export async function previewRentalPeriod({
 		},
 	);
 	const preview = contract.response.parse(response);
-	// Fail closed if a response ever belongs to a different request.
 	if (
 		preview.rentalId !== params.rentalId ||
 		preview.expectedVersion !== body.expectedVersion ||

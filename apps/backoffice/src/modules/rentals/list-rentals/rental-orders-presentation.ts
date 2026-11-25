@@ -39,7 +39,6 @@ export function getRentalListDate(
 ) {
 	const value = rental[endpoint].tz(timezone);
 	const relative = getRelativeOrderDateContext(value, now.tz(timezone));
-	// Scheduled instants do not establish whether pickup or return actually happened.
 	const relevantEndpoint = now.isBefore(rental.pickupAt)
 		? "pickupAt"
 		: "returnAt";

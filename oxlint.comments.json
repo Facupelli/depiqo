@@ -1,0 +1,20 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "categories": { "correctness": "allow" },
+  "options": { "respectEslintDisableDirectives": false },
+  "jsPlugins": [{ "name": "depiqo-comments", "specifier": "./tools/oxlint/comments.mjs" }],
+  "ignorePatterns": [
+    "/apps/backend/prisma.config.ts",
+    "/apps/backend/src/generated/prisma/",
+    "/apps/backend/tools/oxlint/anti-slop/",
+    "/apps/backoffice/src/routeTree.gen.ts",
+    "/apps/backoffice/worker-configuration.d.ts",
+    "/apps/storefront/src/routeTree.gen.ts"
+  ],
+  "overrides": [
+    {
+      "files": ["apps/**/*.ts", "apps/**/*.tsx", "packages/**/*.ts", "packages/**/*.tsx"],
+      "rules": { "depiqo-comments/no-comments": "error" }
+    }
+  ]
+}

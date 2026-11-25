@@ -23,10 +23,6 @@ export class EquipmentTypeReferenceAuthorityService extends EquipmentTypeReferen
       return ok(undefined);
     }
 
-    // Reading through runInTransaction keeps this validation consistent with
-    // uncommitted writes when called inside a caller's ambient transaction
-    // (e.g. Offering Setup coordination); standalone it opens a short read
-    // transaction.
     const equipmentTypes = await this.unitOfWork.runInTransaction(({ tx }) =>
       tx.v2EquipmentType.findMany({
         where: {

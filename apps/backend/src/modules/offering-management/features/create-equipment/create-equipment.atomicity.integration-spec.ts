@@ -81,8 +81,6 @@ describe('CreateEquipment atomicity integration', () => {
     if (result.isOk()) return;
     expect(result.error.code).toBe('offering_setup.branch_unavailable');
 
-    // The reference authority is invoked during the Catalog phase, after the
-    // real Inventory writes have executed inside the outer transaction.
     expect(validateEquipmentTypeReferences).toHaveBeenCalledTimes(1);
 
     await expectNoSurvivingRecords(tenant.id);

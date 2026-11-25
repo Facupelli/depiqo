@@ -65,7 +65,6 @@ export function RescheduleRentalPeriodDialog(
 function OpenRescheduleRentalPeriodDialog(
 	props: RescheduleRentalPeriodDialogProps,
 ) {
-	// Keep the opening version, dates, and timezone together until the dialog closes.
 	const [opening] = useState(() => props);
 	const {
 		rentalId,

@@ -24,6 +24,8 @@ Availability is planned before the persistence transaction. The transaction itse
 
 Application-level availability checks do not replace this database invariant. The `v2_asset_blocks` exclusion constraint must remain authoritative even if application-level locking is introduced later.
 
+Confirmed accessory replacement also locks the tenant-scoped rental row before its transactional read of selections, even for a request that will turn out to be a no-op. This serializes the read and plan against other edits to the same rental, which claim that row through version-checked updates. The rental-row lock does not replace the asset-level exclusion constraint.
+
 The following behavior is part of this decision:
 
 ```text

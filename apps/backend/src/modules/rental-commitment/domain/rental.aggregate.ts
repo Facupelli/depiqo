@@ -685,7 +685,6 @@ export class Rental extends AggregateRootBase {
     if (this.status !== RentalStatus.Confirmed) {
       return err(new RentalCannotBeEditedFromStatusError(this.id, this.status));
     }
-    // Conservative product cutoff until physical delivery/collection completion is authoritative.
     if (operationTime >= this.period.start) return err(new RentalPeriodHasStartedError(this.id));
     if (this.fulfillmentMethod !== FulfillmentMethod.Delivery || !this.acceptedDelivery || !this.deliveryDetails) {
       return err(new RentalInvalidFieldError('acceptedDelivery', 'requires an existing confirmed delivery'));
@@ -722,7 +721,6 @@ export class Rental extends AggregateRootBase {
       for (let index = 0; index < blocks.length; index++) {
         const block = blocks[index]!;
         if (!currentIds.has(block.id)) continue;
-        // Current equipment participation can have a different, operationally clamped start.
         const assignment = this.currentAssignedAssets.find((item) => item.assetId === block.assetId);
         const participation = assignment ? new RentalPeriod(assignment.effectiveFrom, this.period.end) : this.period;
         const clamp = assignment && assignment.effectiveFrom > this.period.start ? assignment.effectiveFrom : undefined;
@@ -759,8 +757,6 @@ export class Rental extends AggregateRootBase {
     )
       return ok('UNCHANGED');
 
-    // Reconstitution checks all assignments and untouched historical blocks. If the new
-    // minutes would invalidate historical participation, reject rather than rewriting it.
     const changed = this.applyConfirmedStateChanges({
       deliveryDetails: params.deliveryDetails,
       deliverySnapshot: params.acceptedDelivery,
@@ -844,7 +840,6 @@ export class Rental extends AggregateRootBase {
     return ok(undefined);
   }
 
-  /** Read-only operational proposal shared by preview and the authoritative aggregate operation. */
   planConfirmedPeriodReschedule(params: {
     period: RentalPeriod;
     operationTime: Date;
@@ -912,7 +907,6 @@ export class Rental extends AggregateRootBase {
         }
         assetBlocks[index] = block.resizePeriod(proposedPeriod);
       }
-      // Untouched historical blocks must still satisfy their original participation and clamping.
       const valid = this.validateActiveEquipmentBlocks({
         assignedAssets,
         assetBlocks,

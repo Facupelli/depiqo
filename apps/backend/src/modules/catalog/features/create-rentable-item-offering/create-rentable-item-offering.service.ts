@@ -110,8 +110,6 @@ export class CreateRentableItemOfferingService {
       rentalOffers.push(rentalOfferResult.value);
     }
 
-    // Joins the caller's ambient transaction when one is active (e.g. Offering
-    // Setup coordination); standalone calls open their own transaction.
     await this.unitOfWork.runInTransaction(async ({ tx }) => {
       await this.rentableItemRepository.save(rentableItem, tx);
       await this.rentalOfferRepository.saveMany(rentalOffers, tx);

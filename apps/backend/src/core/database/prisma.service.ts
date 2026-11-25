@@ -12,31 +12,30 @@ import { LogContext } from '../logger/log-context';
 export const DIRECT_TENANT_WHERE_EXCLUDED_MODELS = new Set([
   'Tenant',
   'CustomDomain',
-  'BillingUnit', // Global lookup table, no tenant scope.
-  'TenantBillingUnit', // Join table — tenantId is the FK, not a scope guard.
+  'BillingUnit',
+  'TenantBillingUnit',
   'RefreshToken',
-  'UserProfile', // Scoped through User.
-  'Asset', // Scoped through Location.
-  'AssetAssignment', // Scoped through Asset.
-  'OrderItem', // Scoped through Order.
+  'UserProfile',
+  'Asset',
+  'AssetAssignment',
+  'OrderItem',
   'OwnerPaymentSplit',
   'OrderItemOwnerSplit',
-  'BundleComponent', // Scoped through Bundle.
-  'BundleSnapshot', // Scoped through OrderItem.
-  'BundleSnapshotComponent', // Scoped through BundleSnapshot.
-  'PricingTier', // Scoped through ProductType or Bundle.
-  'RolePermission', // Scoped through Role.
-  'UserRole', // Scoped through User.
-  'LocationSchedule', // Scoped through Location.
-  'CouponRedemption', // Scoped through Coupon / Order.
-  'LongRentalDiscountExclusion', // Scoped through LongRentalDiscount.
-  'PromotionExclusion', // Scoped through Promotion.
+  'BundleComponent',
+  'BundleSnapshot',
+  'BundleSnapshotComponent',
+  'PricingTier',
+  'RolePermission',
+  'UserRole',
+  'LocationSchedule',
+  'CouponRedemption',
+  'LongRentalDiscountExclusion',
+  'PromotionExclusion',
   'OrderDeliveryRequest',
   'CustomerProfile',
 
-  // V2
   'V2Tenant',
-  'V2TenantRolePermission', // Scoped through V2TenantRole.
+  'V2TenantRolePermission',
   'V2BranchSchedule',
   'V2BranchDeliveryDistancePriceBand',
   'V2Contract',

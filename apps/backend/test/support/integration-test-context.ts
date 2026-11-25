@@ -21,7 +21,6 @@ export interface ProviderOverride {
   useValue: unknown;
 }
 
-/** Registers one shared integration context for the enclosing spec. */
 export function useIntegrationTestContext<T extends Closable>(createContext: () => Promise<T>): void {
   let context: T | undefined;
 
@@ -34,10 +33,6 @@ export function useIntegrationTestContext<T extends Closable>(createContext: () 
   });
 }
 
-/**
- * Compiles the real Rental Commitment module graph without creating an HTTP
- * application or running configureApp().
- */
 export async function createCatalogIntegrationContext(): Promise<TestingModule> {
   const moduleRef = await Test.createTestingModule({
     imports: [

@@ -88,8 +88,6 @@ describe('target-total monetary reconciliation', () => {
       pricingResult: priced,
       targetTotalAdjustment: { targetTotal: '0.030' },
     });
-    // Manual targets remain proportional to the existing payable breakdown;
-    // a zero-charge line has zero weight while another line is payable.
     expect(result.pricingResult.lines.map((line) => line.total)).toEqual(['0.03', '0.00']);
     expect(result.pricingResult.total).toBe('0.03');
     expect(result.targetTotalAdjustment).toMatchObject({

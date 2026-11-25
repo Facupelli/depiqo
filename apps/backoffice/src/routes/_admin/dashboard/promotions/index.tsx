@@ -70,7 +70,6 @@ function RouteComponent() {
 						) : null
 					}
 				/>
-				{/* TODO: Restore the coupon creation dialog after it is migrated to v2 promotion queries. */}
 			</div>
 		</div>
 	);

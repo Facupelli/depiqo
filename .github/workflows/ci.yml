@@ -21,6 +21,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
 
       - name: Detect changed applications
         id: changes
@@ -55,6 +57,14 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Check the comment ratchet
+        env:
+          COMMENT_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          node --test scripts/comment-lint.test.mjs
+          pnpm run lint:comments
+          pnpm run lint:comments:baseline check "$COMMENT_BASE"
 
       # Backend
       - name: Generate Prisma client

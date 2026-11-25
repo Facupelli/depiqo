@@ -133,7 +133,6 @@ export class PrismaRentalRepository extends RentalRepository {
           status: 'CONFIRMED',
           fulfillmentMethod: 'DELIVERY',
           version: options.expectedVersion,
-          // Recheck server time at the write as well as after transactional reload.
           periodStart: { gt: new Date() },
         },
         data: { ...RentalMapper.toConfirmedDeliveryUpdateData(rental), version: { increment: 1 } },

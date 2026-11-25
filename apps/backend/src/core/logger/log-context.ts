@@ -54,10 +54,6 @@ interface RequestWithLogContext extends IncomingMessage {
 
 const store = new AsyncLocalStorage<RequestLogContext>();
 
-/**
- * Accumulates DEPIQO-specific request data. HTTP completion and log emission
- * are owned by pino-http, not by this context.
- */
 export class LogContext {
   static run(log: RequestLogContext, fn: () => void): void {
     store.run(log, fn);

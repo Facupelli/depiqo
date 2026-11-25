@@ -245,8 +245,6 @@ export class CreateConfirmedRentalService implements ICommandHandler<
       const isAssetBlockConflict = error instanceof PostgresExclusionViolationError;
 
       if (isIdempotencyConflict || isAssetBlockConflict) {
-        // The failed transaction has fully rolled back before runInTransaction
-        // rejects. Resolve through the normal Prisma client, never the failed tx.
         const replay = await this.findCommittedRentalByOperation(command.tenantId, confirmationOperation.operationId);
         if (replay) {
           return this.resolveReplayResult(replay, confirmationOperation, context);

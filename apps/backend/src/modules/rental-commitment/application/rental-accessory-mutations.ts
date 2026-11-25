@@ -176,8 +176,6 @@ export class RentalAccessoryMutations {
 
     try {
       return await this.unitOfWork.runInTransaction(async ({ tx, integrationEvents }) => {
-        // Serialize accessory edits on this rental before reading selections, including no-op requests.
-        // Other confirmed edits claim the same rental row through optimistic version updates.
         await tx.$queryRaw`SELECT id FROM v2_rentals WHERE id = ${input.rentalId} AND tenant_id = ${input.tenantId} FOR UPDATE`;
         const rental = await this.loadRental(input.tenantId, input.rentalId, tx);
         const operationTime = new Date();
