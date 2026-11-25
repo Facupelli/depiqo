@@ -8,9 +8,10 @@
    its boundaries, dependencies and invariants.
 
 3. Design the change.
-   Evaluate whether the existing design accommodates the new requirements.
+   Use `architect` for non-trivial architectural changes.
    Apply relevant engineering principles.
-   Choose the design before writing implementation code.
+   Establish the chosen design before writing
+   implementation code.
 
 4. Implement the change.
    Work in small, independently verifiable units.

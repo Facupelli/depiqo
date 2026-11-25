@@ -49,8 +49,7 @@ Principle skills are located in sibling directories.
 
 ## Autonomy
 
-Proceed independently on reversible decisions within
-the requested scope.
+Proceed independently on reversible decisions within the requested scope.
 
 Ask before irreversible operations or when a missing business requirement materially affects correctness.
 

@@ -1,7 +1,6 @@
 ---
 name: how
-description: Understand subsystem architecture, runtime behavior,
-  responsibilities and boundaries before making changes.
+description: Understand subsystem architecture, runtime behavior, responsibilities and boundaries before making changes.
 ---
 
 # How
