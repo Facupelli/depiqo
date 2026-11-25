@@ -110,6 +110,12 @@ const updateTenantConfigProblemMap = {
     status: HttpStatus.NOT_FOUND,
     detail: 'The current tenant could not be found.',
   },
+  'tenant_management.rental_asset_buffer_is_branch_scoped': {
+    type: createProblemType('tenant-management/rental-asset-buffer-is-branch-scoped'),
+    title: 'Rental asset buffers are branch-scoped',
+    status: HttpStatus.UNPROCESSABLE_ENTITY,
+    detail: 'Update the rental asset buffer on the branch instead of the tenant.',
+  },
   'tenant_management.invalid_tenant_config': {
     type: createProblemType('tenant-management/invalid-tenant-config'),
     title: 'Invalid tenant config',

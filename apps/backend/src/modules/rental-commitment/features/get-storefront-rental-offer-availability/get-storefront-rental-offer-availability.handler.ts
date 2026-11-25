@@ -55,7 +55,7 @@ export class GetStorefrontRentalOfferAvailabilityHandler implements IQueryHandle
 
   private mapCalculationError(error: RentalOfferAvailabilityError): GetStorefrontRentalOfferAvailabilityError {
     switch (error.code) {
-      case 'rental_commitment.tenant_unavailable':
+      case 'rental_commitment.branch_unavailable':
       case 'rental_commitment.invalid_fulfillment_definition':
       case 'rental_commitment.invalid_candidate_projection':
         return getStorefrontRentalOfferAvailabilityError(error.code, error.message, error.cause);

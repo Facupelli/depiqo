@@ -1,6 +1,7 @@
 export * from "./auth";
 export * from "./approve-submitted-customer-onboarding.contract";
 export * from "./branch-operational-location.schema";
+export * from "./branch-rental-asset-buffer.contract";
 export * from "./contract-signer.contract";
 export * from "./create-branch.contract";
 export * from "./create-contract-signer.contract";

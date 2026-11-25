@@ -3,7 +3,6 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { randomUUID } from 'node:crypto';
 
 import { PrismaService } from '../../src/core/database/prisma.service';
-import { Prisma } from '../../src/generated/prisma/client';
 import { createProblemType, PlatformProblemTypes } from '../../src/core/problem-details';
 import { ConfirmRentalFixtures } from '../../src/modules/rental-commitment/features/confirm-rental/testing/confirm-rental.fixtures';
 import { createE2ETestApp, E2ETestApp } from '../support/create-e2e-test-app';
@@ -136,18 +135,8 @@ describe(`POST ${path}`, () => {
     });
   });
 
-  it('returns zero capacity when the tenant buffer overlaps an otherwise adjacent block', async () => {
+  it('blocks otherwise adjacent capacity after configuring a buffer at a branch without delivery', async () => {
     const s = await scenario();
-    // SAFETY: The fixture or preceding response assertions establish this object shape before these fields are inspected.
-    await prisma.client.v2Tenant.update({
-      where: { id: s.tenant.id },
-      data: {
-        config: {
-          ...(s.tenant.config as Prisma.JsonObject),
-          rentalAssetBuffer: { beforeBufferMinutes: 30, afterBufferMinutes: 45 },
-        },
-      },
-    });
     const assetId = await rentals.createCandidate({
       tenantId: s.tenant.id,
       branchId: s.branch.id,
@@ -164,12 +153,18 @@ describe(`POST ${path}`, () => {
       assetId,
       period: { start: utcDate(2030, 1, 1, 8), end: periodStart },
     });
-    const client = await login(s.user);
-    const response = await client
-      .withCsrf(client.request().post(path))
-      .send(body(s.branch.id, [s.offer.id]))
-      .expect(200);
-    expect(response.body).toEqual({ data: [{ rentalOfferId: s.offer.id, availableCount: 0 }] });
+    const client = await login(await core.createAdministratorTenantUser({ tenantId: s.tenant.id }));
+    const checkAvailability = () => client.withCsrf(client.request().post(path)).send(body(s.branch.id, [s.offer.id]));
+    const before = await checkAvailability().expect(200);
+    expect(before.body).toEqual({ data: [{ rentalOfferId: s.offer.id, availableCount: 1 }] });
+
+    await client
+      .withCsrf(client.request().put(`/tenant-management/branches/${s.branch.id}/rental-asset-buffer`))
+      .send({ beforeBufferMinutes: 30, afterBufferMinutes: 45 })
+      .expect(204);
+
+    const after = await checkAvailability().expect(200);
+    expect(after.body).toEqual({ data: [{ rentalOfferId: s.offer.id, availableCount: 0 }] });
   });
 
   async function counts() {

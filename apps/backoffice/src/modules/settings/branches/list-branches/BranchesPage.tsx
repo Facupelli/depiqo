@@ -1,12 +1,5 @@
-import {
-	Alert,
-	AlertAction,
-	AlertDescription,
-	AlertTitle,
-} from "@repo/ui/components/alert";
 import { Button } from "@repo/ui/components/button";
-import { Info, Plus, X } from "lucide-react";
-import { useState } from "react";
+import { Plus } from "lucide-react";
 import { useBranches } from "../branches.queries";
 import { BranchesTable } from "./BranchesTable";
 
@@ -21,8 +14,6 @@ export function BranchesPage({
 	onCreateBranch,
 	onEditBranch,
 }: BranchesPageProps) {
-	const [isInfoDismissed, setIsInfoDismissed] = useState(false);
-
 	return (
 		<div className="space-y-4">
 			<div className="flex items-start justify-between">
@@ -46,28 +37,6 @@ export function BranchesPage({
 			</div>
 
 			<BranchesList onEditBranch={onEditBranch} />
-
-			{isInfoDismissed ? null : (
-				<Alert className="bg-muted/50">
-					<Info />
-					<AlertTitle>Una sucursal es una ubicación física</AlertTitle>
-					<AlertDescription>
-						Puedes administrar múltiples sucursales, pero cada pedido se crea en
-						una sola ubicación.
-					</AlertDescription>
-					<AlertAction>
-						<Button
-							variant="ghost"
-							size="icon"
-							className="size-7 text-muted-foreground"
-							aria-label="Descartar"
-							onClick={() => setIsInfoDismissed(true)}
-						>
-							<X className="size-4" />
-						</Button>
-					</AlertAction>
-				</Alert>
-			)}
 		</div>
 	);
 }

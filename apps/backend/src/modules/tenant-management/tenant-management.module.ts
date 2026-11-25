@@ -15,7 +15,7 @@ import { TenantNotificationPreferencesService } from './public-api/tenant-notifi
 import { TenantBillingPreferencesService } from './public-api/tenant-billing-preferences.service';
 import { TenantInsuranceOfferingTermsService } from './public-api/tenant-insurance-offering-terms.service';
 import { TenantPresentationPreferencesService } from './public-api/tenant-presentation-preferences.service';
-import { TenantRentalAssetBufferSettingsService } from './public-api/tenant-rental-asset-buffer-settings.service';
+import { BranchRentalAssetBufferSettingsService } from './public-api/branch-rental-asset-buffer-settings.service';
 import { BranchFactsService } from './public-api/branch-facts.service';
 import { BranchFacts } from './public-api/branch-facts.public-api';
 import { BranchScheduleEligibilityService } from './public-api/branch-schedule-eligibility.service';
@@ -38,6 +38,12 @@ import { CreateContractSignerHttpController } from './features/create-contract-s
 import { CreateContractSignerHandler } from './features/create-contract-signer/create-contract-signer.handler';
 import { CreateBranchHttpController } from './features/create-branch/create-branch.controller';
 import { CreateBranchHandler } from './features/create-branch/create-branch.handler';
+import {
+  GetBranchRentalAssetBufferHttpController,
+  UpdateBranchRentalAssetBufferHttpController,
+} from './features/branch-rental-asset-buffer/branch-rental-asset-buffer.controller';
+import { GetBranchRentalAssetBufferHandler } from './features/branch-rental-asset-buffer/get-branch-rental-asset-buffer.handler';
+import { UpdateBranchRentalAssetBufferHandler } from './features/branch-rental-asset-buffer/update-branch-rental-asset-buffer.handler';
 import { GetBranchDetailHttpController } from './features/get-branch-detail/get-branch-detail.controller';
 import { GetBranchDetailHandler } from './features/get-branch-detail/get-branch-detail.handler';
 import { GetBackofficeCustomerProfileHttpController } from './features/get-backoffice-customer-profile/get-backoffice-customer-profile.controller';
@@ -96,7 +102,7 @@ import { TenantNotificationPreferences } from './public-api/tenant-notification-
 import { TenantBillingPreferences } from './public-api/tenant-billing-preferences.public-api';
 import { TenantInsuranceOfferingTerms } from './public-api/tenant-insurance-offering-terms.public-api';
 import { TenantPresentationPreferences } from './public-api/tenant-presentation-preferences.public-api';
-import { TenantRentalAssetBufferSettings } from './public-api/tenant-rental-asset-buffer-settings.public-api';
+import { BranchRentalAssetBufferSettings } from './public-api/branch-rental-asset-buffer-settings.public-api';
 import { TenantContextModule } from './tenant-context/tenant-context.module';
 import { CustomHostnameProvider } from './application/ports/custom-hostname-provider.port';
 import { CloudflareCustomHostnameService } from './infrastructure/cloudflare-custom-hostname.service';
@@ -139,6 +145,8 @@ import {
     CreateContractSignerHttpController,
     SearchBranchAddressSuggestionsHttpController,
     GetBranchDetailHttpController,
+    GetBranchRentalAssetBufferHttpController,
+    UpdateBranchRentalAssetBufferHttpController,
     GetBranchesHttpController,
     GetCurrentRentalCustomerProfileHttpController,
     GetBackofficeCustomerProfileHttpController,
@@ -189,6 +197,8 @@ import {
     CreateBranchHandler,
     CreateContractSignerHandler,
     GetBranchDetailHandler,
+    GetBranchRentalAssetBufferHandler,
+    UpdateBranchRentalAssetBufferHandler,
     GetBranchesHandler,
     SearchBranchAddressSuggestionsHandler,
     GetCurrentRentalCustomerProfileHandler,
@@ -226,7 +236,7 @@ import {
     { provide: TenantBillingPreferences, useClass: TenantBillingPreferencesService },
     { provide: TenantInsuranceOfferingTerms, useClass: TenantInsuranceOfferingTermsService },
     { provide: TenantPresentationPreferences, useClass: TenantPresentationPreferencesService },
-    { provide: TenantRentalAssetBufferSettings, useClass: TenantRentalAssetBufferSettingsService },
+    { provide: BranchRentalAssetBufferSettings, useClass: BranchRentalAssetBufferSettingsService },
     { provide: TenantOperationalFacts, useClass: TenantOperationalFactsService },
     { provide: BranchFacts, useClass: BranchFactsService },
     { provide: BranchScheduleEligibility, useClass: BranchScheduleEligibilityService },
@@ -246,7 +256,7 @@ import {
     TenantBillingPreferences,
     TenantInsuranceOfferingTerms,
     TenantPresentationPreferences,
-    TenantRentalAssetBufferSettings,
+    BranchRentalAssetBufferSettings,
     TenantOperationalFacts,
     BranchFacts,
     BranchScheduleEligibility,

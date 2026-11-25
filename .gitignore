@@ -37,6 +37,11 @@ Thumbs.db
 !.pi/skills/
 .pi/skills/*
 !.pi/skills/delete-comment/
+!.pi/skills/depiqo-mode/
+!.pi/skills/how/
+!.pi/skills/principle-model-the-domain/
+!.pi/skills/principle-prove-it-works/
+!.pi/skills/principle-redesign-from-first-principles/
 .agents
 skills-lock.json
 

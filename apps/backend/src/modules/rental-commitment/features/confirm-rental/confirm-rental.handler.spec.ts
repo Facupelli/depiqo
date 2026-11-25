@@ -154,7 +154,7 @@ describe('ConfirmRentalHandler deadlock retry', () => {
       ),
     } as RentalAssetAllocationService;
     const bufferSettings = {
-      getTenantRentalAssetBufferSettings: vi
+      getBranchRentalAssetBufferSettings: vi
         .fn()
         .mockResolvedValue(ok({ beforeBufferMinutes: 0, afterBufferMinutes: 0 })),
     };

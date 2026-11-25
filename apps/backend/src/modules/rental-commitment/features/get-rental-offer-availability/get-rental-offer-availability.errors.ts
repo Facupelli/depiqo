@@ -6,7 +6,7 @@ export type GetRentalOfferAvailabilityErrorCode =
   | 'rental_commitment.rentable_item_archived'
   | 'rental_commitment.invalid_fulfillment_definition'
   | 'rental_commitment.invalid_candidate_projection'
-  | 'rental_commitment.tenant_unavailable';
+  | 'rental_commitment.branch_unavailable';
 
 export interface GetRentalOfferAvailabilityError extends ApplicationError {
   code: GetRentalOfferAvailabilityErrorCode;

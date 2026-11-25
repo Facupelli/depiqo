@@ -96,20 +96,10 @@ describe('GetRentalAccessoryDefaults integration', () => {
     return { tenant, branch, rental, sourceEquipmentType, accessoryEquipmentType, assetId };
   }
 
-  async function setRentalAssetBuffer(tenantId: string, beforeBufferMinutes: number, afterBufferMinutes: number) {
-    const tenant = await prisma.client.v2Tenant.findUniqueOrThrow({
-      where: { id: tenantId },
-      select: { config: true },
-    });
-    // SAFETY: The fixture or preceding response assertions establish this object shape before these fields are inspected.
-    await prisma.client.v2Tenant.update({
-      where: { id: tenantId },
-      data: {
-        config: {
-          ...(tenant.config as Prisma.JsonObject),
-          rentalAssetBuffer: { beforeBufferMinutes, afterBufferMinutes },
-        },
-      },
+  async function setRentalAssetBuffer(branchId: string, beforeBufferMinutes: number, afterBufferMinutes: number) {
+    await prisma.client.v2Branch.update({
+      where: { id: branchId },
+      data: { rentalAssetBeforeBufferMinutes: beforeBufferMinutes, rentalAssetAfterBufferMinutes: afterBufferMinutes },
     });
   }
 
@@ -155,13 +145,13 @@ describe('GetRentalAccessoryDefaults integration', () => {
     expect(result.value.suggestions[0].availableCount).toBe(0);
   });
 
-  it('uses the accepted snapshot after confirmation even when the rental is cancelled and tenant settings change', async () => {
+  it('uses the accepted snapshot after confirmation even when the rental is cancelled and branch settings change', async () => {
     const s = await scenario({ ownerId: randomUUID() });
     await prisma.client.v2Rental.update({
       where: { id: s.rental.rentalId },
       data: { status: V2RentalStatus.CANCELLED, confirmedAt: utcDate(2029, 12, 1) },
     });
-    await setRentalAssetBuffer(s.tenant.id, 0, 0);
+    await setRentalAssetBuffer(s.branch.id, 0, 0);
     await blockCandidateImmediatelyBeforeRental({
       tenantId: s.tenant.id,
       branchId: s.branch.id,
@@ -175,13 +165,13 @@ describe('GetRentalAccessoryDefaults integration', () => {
     expect(result.value.suggestions[0].availableCount).toBe(0);
   });
 
-  it('treats a zero-minute accepted snapshot as present after tenant settings change', async () => {
+  it('treats a zero-minute accepted snapshot as present after branch settings change', async () => {
     const s = await scenario({ ownerId: randomUUID() });
     await prisma.client.v2Rental.update({
       where: { id: s.rental.rentalId },
       data: { acceptedBeforeBufferMinutes: 0, acceptedAfterBufferMinutes: 0 },
     });
-    await setRentalAssetBuffer(s.tenant.id, 10, 10);
+    await setRentalAssetBuffer(s.branch.id, 10, 10);
     await blockCandidateImmediatelyBeforeRental({
       tenantId: s.tenant.id,
       branchId: s.branch.id,
@@ -195,7 +185,7 @@ describe('GetRentalAccessoryDefaults integration', () => {
     expect(result.value.suggestions[0].availableCount).toBe(1);
   });
 
-  it('uses current tenant settings for a never-confirmed rental', async () => {
+  it('uses current branch settings for a never-confirmed rental', async () => {
     const s = await scenario({ ownerId: randomUUID() });
     await prisma.client.v2Rental.update({
       where: { id: s.rental.rentalId },
@@ -206,7 +196,7 @@ describe('GetRentalAccessoryDefaults integration', () => {
         acceptedAfterBufferMinutes: null,
       },
     });
-    await setRentalAssetBuffer(s.tenant.id, 10, 10);
+    await setRentalAssetBuffer(s.branch.id, 10, 10);
     await blockCandidateImmediatelyBeforeRental({
       tenantId: s.tenant.id,
       branchId: s.branch.id,

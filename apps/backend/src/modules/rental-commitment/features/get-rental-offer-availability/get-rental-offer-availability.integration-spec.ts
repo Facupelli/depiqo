@@ -4,7 +4,6 @@ import { QueryBus } from '@nestjs/cqrs';
 import { TestingModule } from '@nestjs/testing';
 
 import { PrismaService } from 'src/core/database/prisma.service';
-import { Prisma } from 'src/generated/prisma/client';
 import {
   createRentalCommitmentIntegrationContext,
   useIntegrationTestContext,
@@ -44,23 +43,6 @@ describe('GetRentalOfferAvailability integration', () => {
     const tenant = await core.createTenant();
     const branch = await core.createBranch({ tenantId: tenant.id });
     return { tenant, branch };
-  }
-
-  async function setRentalAssetBuffer(tenantId: string, beforeBufferMinutes: number, afterBufferMinutes: number) {
-    const tenant = await prisma.client.v2Tenant.findUniqueOrThrow({
-      where: { id: tenantId },
-      select: { config: true },
-    });
-    // SAFETY: The fixture or preceding response assertions establish this object shape before these fields are inspected.
-    await prisma.client.v2Tenant.update({
-      where: { id: tenantId },
-      data: {
-        config: {
-          ...(tenant.config as Prisma.JsonObject),
-          rentalAssetBuffer: { beforeBufferMinutes, afterBufferMinutes },
-        },
-      },
-    });
   }
 
   async function equipmentType(tenantId: string) {
@@ -217,7 +199,10 @@ describe('GetRentalOfferAvailability integration', () => {
 
   it('ignores released blocks and checks active blocks against the buffered operational period', async () => {
     const s = await setup();
-    await setRentalAssetBuffer(s.tenant.id, 30, 45);
+    await prisma.client.v2Branch.update({
+      where: { id: s.branch.id },
+      data: { rentalAssetBeforeBufferMinutes: 30, rentalAssetAfterBufferMinutes: 45 },
+    });
     const type = await equipmentType(s.tenant.id);
     const rentalOffer = await offer({
       tenantId: s.tenant.id,

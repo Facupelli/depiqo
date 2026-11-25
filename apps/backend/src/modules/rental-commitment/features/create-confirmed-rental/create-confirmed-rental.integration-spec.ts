@@ -150,23 +150,6 @@ describe('CreateConfirmedRental integration', () => {
     return { offer: rentalOffer, item, equipmentTypes };
   }
 
-  async function setRentalAssetBuffer(tenantId: string, beforeBufferMinutes: number, afterBufferMinutes: number) {
-    const tenant = await prisma.client.v2Tenant.findUniqueOrThrow({
-      where: { id: tenantId },
-      select: { config: true },
-    });
-    // SAFETY: The fixture or preceding response assertions establish this object shape before these fields are inspected.
-    await prisma.client.v2Tenant.update({
-      where: { id: tenantId },
-      data: {
-        config: {
-          ...(tenant.config as Prisma.JsonObject),
-          rentalAssetBuffer: { beforeBufferMinutes, afterBufferMinutes },
-        },
-      },
-    });
-  }
-
   async function candidate(
     input: Scenario & {
       equipmentTypeId: string;
@@ -267,7 +250,10 @@ describe('CreateConfirmedRental integration', () => {
     const setup = await scenario();
     const catalog = await offer(setup);
     const assetId = await candidate({ ...setup, equipmentTypeId: catalog.equipmentTypes[0].id });
-    await setRentalAssetBuffer(setup.tenantId, 30, 45);
+    await prisma.client.v2Branch.update({
+      where: { id: setup.branchId },
+      data: { rentalAssetBeforeBufferMinutes: 30, rentalAssetAfterBufferMinutes: 45 },
+    });
 
     const result = await create({ ...setup, selectedOffers: [{ rentalOfferId: catalog.offer.id, quantity: 1 }] });
     expect(result.isOk()).toBe(true);

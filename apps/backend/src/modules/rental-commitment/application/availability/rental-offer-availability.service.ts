@@ -6,7 +6,7 @@ import {
   CatalogSelectionResolution,
   CatalogSelectionResolutionError,
 } from 'src/modules/catalog/public-api/catalog-selection-resolution.public-api';
-import { TenantRentalAssetBufferSettings } from 'src/modules/tenant-management/public-api/tenant-rental-asset-buffer-settings.public-api';
+import { BranchRentalAssetBufferSettings } from 'src/modules/tenant-management/public-api/branch-rental-asset-buffer-settings.public-api';
 
 import { RentalAssetAllocationService } from '../../asset-allocation/rental-asset-allocation.service';
 import { deriveBufferedAssetBlockPeriod } from '../../domain/asset-block-period';
@@ -32,7 +32,7 @@ export type RentalOfferAvailabilityOutcome =
     };
 
 export type RentalOfferAvailabilityErrorCode =
-  | 'rental_commitment.tenant_unavailable'
+  | 'rental_commitment.branch_unavailable'
   | 'rental_commitment.invalid_fulfillment_definition'
   | 'rental_commitment.invalid_availability_selection'
   | 'rental_commitment.invalid_candidate_projection';
@@ -72,7 +72,7 @@ export class RentalOfferAvailabilityService {
   constructor(
     private readonly catalogSelectionResolution: CatalogSelectionResolution,
     private readonly rentalAssetAllocation: RentalAssetAllocationService,
-    private readonly tenantRentalAssetBufferSettings: TenantRentalAssetBufferSettings,
+    private readonly branchRentalAssetBufferSettings: BranchRentalAssetBufferSettings,
   ) {}
 
   async calculate(input: CalculateRentalOfferAvailabilityInput): Promise<CalculateRentalOfferAvailabilityResult> {
@@ -89,12 +89,13 @@ export class RentalOfferAvailabilityService {
       );
     }
 
-    const bufferSettings = await this.tenantRentalAssetBufferSettings.getTenantRentalAssetBufferSettings({
+    const bufferSettings = await this.branchRentalAssetBufferSettings.getBranchRentalAssetBufferSettings({
       tenantId: input.tenantId,
+      branchId: input.branchId,
     });
     if (bufferSettings.isErr()) {
       return err(
-        this.error('rental_commitment.tenant_unavailable', bufferSettings.error.message, bufferSettings.error),
+        this.error('rental_commitment.branch_unavailable', bufferSettings.error.message, bufferSettings.error),
       );
     }
 
