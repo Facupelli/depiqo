@@ -20,7 +20,6 @@ export interface DraftRentalFinancialFactsError {
   message: string;
 }
 
-/** Persisted proposal amounts only. Does not evaluate current prices or delivery availability. */
 export abstract class DraftRentalFinancialFacts {
   abstract getDraftRentalFinancialFacts(
     input: GetDraftRentalFinancialFactsInput,

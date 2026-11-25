@@ -48,7 +48,6 @@ import {
 
 export function EditDeliveryDialog({ onClose }: { onClose: () => void }) {
 	const { rental: currentRental, permissions } = useRentalDetailContext();
-	// Keep accepted facts and their concurrency token together for this session.
 	const [rental] = useState(() => currentRental);
 	const delivery = rental.acceptedDelivery;
 	const mutation = useEditDelivery();

@@ -13,8 +13,6 @@ import { cn } from "@repo/ui/lib/utils";
 import { MenuIcon, XIcon } from "lucide-react";
 import * as React from "react";
 
-// Backoffice's local shadcn Sidebar adaptation. Keep this query aligned with
-// the lg utilities below. Only modal presentation needs a JS media query.
 const SIDEBAR_CONSTRAINED_QUERY = "(width < 64rem)";
 
 function subscribeToViewport(onChange: () => void) {
@@ -62,8 +60,6 @@ function SidebarProvider({
 	const [openMobile, setOpenMobile] = React.useState(false);
 	const triggerRef = React.useRef<HTMLButtonElement>(null);
 
-	// A resize to the permanent presentation dismisses the modal and must not
-	// reopen it if the viewport later becomes constrained again.
 	if (!isConstrained && openMobile) {
 		setOpenMobile(false);
 	}
@@ -102,7 +98,6 @@ function Sidebar({
 	children,
 	...props
 }: React.ComponentProps<"div"> & {
-	// This shell deliberately has no icon-only or collapsed desktop mode.
 	collapsible?: "offcanvas";
 }) {
 	const { isConstrained, openMobile, setOpenMobile, triggerRef } = useSidebar();

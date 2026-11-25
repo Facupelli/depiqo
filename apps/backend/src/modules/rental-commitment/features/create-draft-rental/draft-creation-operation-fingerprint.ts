@@ -9,7 +9,6 @@ import Decimal from 'decimal.js';
 import { FulfillmentMethod } from '../../domain/rental-status';
 import { CreateDraftRentalCommand } from './create-draft-rental.command';
 
-/** Fingerprint caller intent, not mutable proposals or generated persistence facts. */
 export function buildDraftCreationFingerprint(command: CreateDraftRentalCommand): string {
   const adjustment = CreateDraftRentalManualPricingAdjustmentSchema.safeParse(command.manualPricingAdjustment);
   const decisions = CreateDraftRentalDeliveryDecisionsSchema.safeParse(command.deliveryDecisions);
@@ -30,7 +29,6 @@ export function buildDraftCreationFingerprint(command: CreateDraftRentalCommand)
           .sort((a, b) => a.rentalOfferId.localeCompare(b.rentalOfferId)),
         fulfillmentMethod: command.fulfillmentMethod,
         deliveryDetails: deliveryDestinationFingerprint(command),
-        // Omit for old requests so existing idempotency fingerprints remain replayable.
         ...(command.deliveryDecisions === undefined
           ? {}
           : {
@@ -53,7 +51,6 @@ export function buildDraftCreationFingerprint(command: CreateDraftRentalCommand)
             }),
         notes: command.notes ?? null,
         insuranceSelected: command.insuranceSelected ?? false,
-        // Invalid command input must still reach the existing pricing validation.
         manualPricingAdjustment: adjustment.success
           ? {
               mode: adjustment.data.mode,

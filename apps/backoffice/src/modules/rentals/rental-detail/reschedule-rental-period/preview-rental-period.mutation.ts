@@ -4,7 +4,6 @@ import {
 	previewRentalPeriod,
 } from "./preview-rental-period.api";
 
-// An imperative, read-only review: never reuse a cached commercial proposal.
 export function usePreviewRentalPeriod() {
 	return useMutation({
 		retry: false,

@@ -62,7 +62,6 @@ export const draftRentalOfferQueries = {
 			queryFn: async () =>
 				searchDraftRentalOffersFn({
 					data: input,
-					// TODO: fix-clean
 					headers:
 						typeof window !== "undefined"
 							? { "x-csrf-token": await getCsrfToken() }

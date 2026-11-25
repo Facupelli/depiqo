@@ -154,8 +154,6 @@ function useCartBookingCommand() {
 				return;
 			}
 			if (kind === "IDEMPOTENCY_CONFLICT") {
-				// The stale attempt key no longer matches the current intent; start a
-				// fresh confirmation attempt on the next submit.
 				clearConfirmationAttemptKey();
 			}
 			if (

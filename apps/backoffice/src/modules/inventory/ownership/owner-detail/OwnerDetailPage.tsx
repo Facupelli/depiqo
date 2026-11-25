@@ -51,7 +51,6 @@ function OwnerDetailContent({ ownerId }: OwnerDetailPageProps) {
 					current={owner.name}
 				/>
 
-				{/* Page header */}
 				<div className="mb-8 flex items-start justify-between gap-4">
 					<div>
 						<h1 className="text-3xl font-bold tracking-tight text-neutral-900">
@@ -63,13 +62,11 @@ function OwnerDetailContent({ ownerId }: OwnerDetailPageProps) {
 					</div>
 				</div>
 
-				{/* Top grid: owner card + active contract */}
 				<div className="grid grid-cols-1 gap-4 lg:grid-cols-[340px_1fr]">
 					<OwnerCard owner={owner} isActive={Boolean(activeContract)} />
 					<ActiveContractCard contract={activeContract} />
 				</div>
 
-				{/* Equipment units */}
 				<OwnerAssetsSection ownerId={ownerId} />
 			</div>
 		</div>
@@ -93,12 +90,10 @@ function OwnerCard({ owner, isActive }: OwnerCardProps) {
 		<Card className="border-neutral-200 bg-white shadow-none">
 			<CardContent>
 				<div className="flex items-center gap-4">
-					{/* Avatar */}
 					<div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-neutral-900 font-mono text-lg font-semibold text-white">
 						{initials}
 					</div>
 
-					{/* Name + status */}
 					<div className="flex-1 min-w-0">
 						<div className="flex items-center gap-2 flex-wrap">
 							<h2 className="text-xl font-semibold text-neutral-900 leading-tight">
@@ -113,7 +108,6 @@ function OwnerCard({ owner, isActive }: OwnerCardProps) {
 					</div>
 				</div>
 
-				{/* Contact fields */}
 				<dl className="mt-6 space-y-3">
 					<div className="flex items-center gap-3">
 						<Mail className="h-3.5 w-3.5 shrink-0 text-neutral-400" />
@@ -199,7 +193,6 @@ function ActiveContractCard({ contract }: ActiveContractCardProps) {
 
 			<CardContent>
 				<div className="grid grid-cols-3 gap-6">
-					{/* Split */}
 					<div>
 						<p className="text-xs uppercase tracking-wider text-neutral-500">
 							Reparto
@@ -214,7 +207,6 @@ function ActiveContractCard({ contract }: ActiveContractCardProps) {
 						</p>
 					</div>
 
-					{/* Basis */}
 					<div>
 						<p className="text-xs uppercase tracking-wider text-neutral-500">
 							Base
@@ -224,7 +216,6 @@ function ActiveContractCard({ contract }: ActiveContractCardProps) {
 						</p>
 					</div>
 
-					{/* Dates */}
 					<div>
 						<p className="text-xs uppercase tracking-wider text-neutral-500 flex items-center gap-1.5">
 							<CalendarRange className="h-3 w-3" />
@@ -339,10 +330,8 @@ function OwnerDetailSkeleton() {
 	return (
 		<div>
 			<div className="w-full py-10">
-				{/* Breadcrumb */}
 				<Skeleton className="mb-6 h-3 w-40" />
 
-				{/* Header */}
 				<div className="mb-8 flex items-start justify-between">
 					<div className="space-y-2">
 						<Skeleton className="h-8 w-64" />
@@ -350,13 +339,11 @@ function OwnerDetailSkeleton() {
 					</div>
 				</div>
 
-				{/* Top grid */}
 				<div className="grid grid-cols-1 gap-4 lg:grid-cols-[340px_1fr]">
 					<Skeleton className="h-52 rounded-lg" />
 					<Skeleton className="h-52 rounded-lg" />
 				</div>
 
-				{/* History list */}
 				<Skeleton className="mt-6 h-64 rounded-lg" />
 			</div>
 		</div>

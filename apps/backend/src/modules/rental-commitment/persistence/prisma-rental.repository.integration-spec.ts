@@ -88,7 +88,6 @@ describe('PrismaRentalRepository confirmed period reschedule persistence', () =>
 
   it('updates a PICKUP rental and current operational rows in place while preserving history and commercial facts', async () => {
     const scenario = await setup();
-    // Move the start earlier so closed participation remains inside the rental period.
     const period = new RentalPeriod(new Date('2030-01-09T11:00:00.000Z'), rescheduledPeriod.end);
     const accessory = await rentalFixtures.createAccessoryState({
       tenantId: scenario.tenant.id,

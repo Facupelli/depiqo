@@ -27,7 +27,6 @@ export class PreviewConfirmedRentalPeriodHandler implements IQueryHandler<
 
   async execute(query: PreviewConfirmedRentalPeriodQuery): Promise<PreviewConfirmedRentalPeriodResult> {
     const { tenantId, rentalId } = query.props;
-    // Intentional aggregate read: the advisory result uses the same domain computation and invariants as PATCH.
     const rental = await this.rentals.findById(tenantId, rentalId);
     if (!rental)
       return err(rescheduleConfirmedRentalPeriodError('rental_commitment.rental_not_found', 'Rental not found.'));

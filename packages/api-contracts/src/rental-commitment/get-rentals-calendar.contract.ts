@@ -28,7 +28,6 @@ export const GetRentalsCalendarQuerySchema = z
 			return;
 		}
 
-		// Count inclusive calendar dates, not elapsed hours in the branch timezone.
 		const inclusiveDays =
 			(Date.parse(`${to}T00:00:00.000Z`) -
 				Date.parse(`${from}T00:00:00.000Z`)) /

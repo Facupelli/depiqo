@@ -50,9 +50,6 @@ export class CreateRentalOfferWithPricingHandler implements ICommandHandler<
     );
     if (tenantValidation.isErr()) return err(mapTenantError(tenantValidation.error));
 
-    // Offering Management owns the outer transaction for this workflow. Catalog and
-    // Pricing join it through their own transactional boundaries, so a Pricing
-    // failure rolls back the Catalog write too.
     return this.unitOfWork.runResultInTransaction(async () => {
       const rentalOffer = await this.catalog.createRentalOfferForRentableItem({
         tenantId: command.tenantId,

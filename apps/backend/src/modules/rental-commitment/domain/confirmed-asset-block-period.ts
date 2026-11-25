@@ -7,7 +7,6 @@ export function deriveConfirmedAssetBlockPeriod(params: {
   acceptedBeforeBufferMinutes: number;
   acceptedAfterBufferMinutes: number;
   acceptedDelivery?: AcceptedDeliverySnapshot;
-  // Read-only rescheduling proposals can supply evaluated minutes before delivery decisions are accepted.
   acceptedTransportReservationMinutes?: number;
   clampStartAt?: Date;
 }): RentalPeriod {

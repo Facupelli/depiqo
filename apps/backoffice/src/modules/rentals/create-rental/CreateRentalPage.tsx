@@ -51,7 +51,6 @@ export function CreateRentalPage() {
 	) {
 		const body = toCreateDraftRentalDto(values, timezone);
 		const serializedBody = JSON.stringify(body);
-		// A lost response must not turn a retry of the same submission into a new draft.
 		if (creationAttempt.current?.body !== serializedBody) {
 			creationAttempt.current = {
 				body: serializedBody,

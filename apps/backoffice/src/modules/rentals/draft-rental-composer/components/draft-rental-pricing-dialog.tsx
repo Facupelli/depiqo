@@ -33,7 +33,6 @@ type PricingDialogProps = {
 	onClose: () => void;
 };
 
-// Mounted only while open: defaults are a snapshot of the composer, not synchronized state.
 export function DraftRentalPricingDialog({
 	kind,
 	defaultValues,

@@ -156,7 +156,6 @@ export class CreateDraftRentalService implements ICommandHandler<
       });
     } catch (error) {
       if (isUniqueConstraintViolation(error, ['tenant_id', 'draft_creation_operation_id'])) {
-        // Resolve only after rollback, through the normal client rather than the failed transaction.
         const replay = await this.findCreatedRentalByOperation(command.tenantId, draftCreationOperation.operationId);
         if (replay) return this.resolveReplayResult(replay, draftCreationOperation, context);
       }

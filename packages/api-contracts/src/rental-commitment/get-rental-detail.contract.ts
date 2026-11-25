@@ -243,7 +243,6 @@ export const GetRentalDetailResponseSchema = z.object({
 	pricing: GetRentalDetailPricingSchema.nullable(),
 	acceptedCustomerTotal: z.string().nullable(),
 	acceptedDelivery: GetRentalDetailAcceptedDeliverySchema.nullable(),
-	// Proposed draft terms, distinct from facts accepted at confirmation.
 	draftDelivery: GetRentalDetailAcceptedDeliverySchema.nullable().optional(),
 	ownerPayouts: z.array(GetRentalDetailOwnerPayoutSchema),
 });

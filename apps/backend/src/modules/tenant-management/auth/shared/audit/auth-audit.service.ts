@@ -25,8 +25,6 @@ export class AuthAuditService {
           metadata: input.metadata ?? undefined,
         },
       });
-    } catch {
-      // Audit logging should not break the authentication flow.
-    }
+    } catch {}
   }
 }

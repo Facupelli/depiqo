@@ -1,9 +1,7 @@
 export function ServiceUnavailablePage() {
 	return (
 		<div className="relative flex min-h-screen flex-col items-center justify-center bg-white px-6">
-			{/* Center content */}
 			<div className="flex flex-col items-center text-center">
-				{/* X icon in a bordered square */}
 				<div className="mb-8 flex h-16 w-16 items-center justify-center border border-neutral-300">
 					<svg
 						xmlns="http://www.w3.org/2000/svg"

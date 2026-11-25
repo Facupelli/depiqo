@@ -116,7 +116,6 @@ export class RentableItem extends AggregateRootBase {
     });
   }
 
-  /** Records the first archival instant; repeated archive attempts do not change it. */
   archive(at: Date = new Date()): Result<boolean, CatalogError> {
     if (this.props.archivedAt !== null) {
       return ok(false);
@@ -126,7 +125,6 @@ export class RentableItem extends AggregateRootBase {
     return ok(true);
   }
 
-  /** Restores the item without changing its offer configuration or publication history. */
   restore(): boolean {
     if (this.props.archivedAt === null) return false;
     this.props.archivedAt = null;

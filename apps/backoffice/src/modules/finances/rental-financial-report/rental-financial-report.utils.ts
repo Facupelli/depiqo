@@ -90,7 +90,6 @@ export function getSelectedFinancialReportTotals(
 	return selected;
 }
 
-/** Rounded to tenths of a percent using exact source amounts. */
 export function getOwnerSharePercentage(amount: string, total: string): number {
 	const part = parsePlainDecimal(amount);
 	const whole = parsePlainDecimal(total);

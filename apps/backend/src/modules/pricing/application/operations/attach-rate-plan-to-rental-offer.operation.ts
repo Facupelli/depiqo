@@ -31,11 +31,6 @@ export class AttachRatePlanToRentalOfferOperation {
   async attachRatePlanToRentalOffer(
     input: AttachRatePlanToRentalOfferOperationInput,
   ): Promise<Result<AttachRatePlanToRentalOfferOperationResult, AttachRatePlanToRentalOfferOperationError>> {
-    // Joins the caller's ambient transaction when one is active (e.g. Offering
-    // Setup coordination); standalone calls open their own transaction. The
-    // validation reads must run on the ambient tx client because the RentalOffer
-    // and, in Offering Setup workflows, the RatePlan may have been created
-    // earlier inside the same uncommitted transaction.
     return this.unitOfWork.runInTransaction(async ({ tx }) => {
       const [rentalOfferReference, ratePlan] = await Promise.all([
         this.rentalOfferReferenceAuthority.validateRentalOfferReference({

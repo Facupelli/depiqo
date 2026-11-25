@@ -35,7 +35,6 @@ export function getDemoCalendar(month: string) {
 	};
 }
 
-// This illustrative demo uses inclusive days, not the real rental availability engine.
 export function demoPeriodsOverlap(a: DemoPeriod, b: DemoPeriod): boolean {
 	return a.start <= b.end && b.start <= a.end;
 }

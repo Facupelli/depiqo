@@ -101,7 +101,6 @@ export class AssetInventoryAuthoringService extends AssetInventoryAuthoring {
     return ok({ equipmentTypeId: equipmentType.value.id, assetIds: assets.value.map((asset) => asset.id) });
   }
 
-  // Inventory-internal operation: not exposed through the published authoring interface.
   async addAssetsToEquipmentType(input: {
     tenantId: string;
     equipmentTypeId: string;

@@ -23,7 +23,6 @@ export const Route = createFileRoute("/_admin/dashboard/reports/equipment")({
 			can(context.user.permissions, TenantPermission.ReportsEquipmentRead),
 		);
 	},
-	// Every validated search field affects the report request.
 	loaderDeps: ({ search }) => search,
 	loader: async ({ context: { queryClient }, deps }) => {
 		const business = await queryClient.ensureQueryData(

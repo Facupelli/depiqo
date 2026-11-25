@@ -80,8 +80,6 @@ describe('CreateRentalOfferWithPricing integration', () => {
       ratePlanId: expect.any(String),
       rentalOfferPricingId: expect.any(String),
     });
-    // The real assignment capability validated and linked rows created earlier
-    // in this same workflow, proving ambient transaction read visibility.
     const offer = await prisma.client.v2RentalOffer.findUniqueOrThrow({ where: { id: result.value.rentalOfferId } });
     expect(offer).toEqual(
       expect.objectContaining({ showInStore: true, isRentable: true, firstPublishedAt: expect.any(Date) }),

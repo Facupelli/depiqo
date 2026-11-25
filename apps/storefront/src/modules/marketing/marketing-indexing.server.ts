@@ -35,8 +35,6 @@ export function shouldNoindex(hostname: string, pathname: string): boolean {
 	);
 }
 
-// Keep the existing general crawler policy, including GPTBot. No crawler-specific
-// exception is needed for Googlebot, Bingbot, or OAI-SearchBot.
 export function robotsResponse(hostname: string): Response {
 	const sitemap = isMarketingHostname(hostname)
 		? `\nSitemap: ${marketingUrl}sitemap.xml\n`

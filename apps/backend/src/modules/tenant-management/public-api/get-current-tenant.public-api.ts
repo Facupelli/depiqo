@@ -3,7 +3,6 @@ import type { Result } from 'neverthrow';
 
 import type { ApplicationError } from 'src/core/errors/application-error';
 
-/** Published synchronous query, dispatched through QueryBus using the caller's trusted tenant context. */
 export class GetCurrentTenantQuery {
   constructor(public readonly tenantId: string) {}
 }

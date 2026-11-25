@@ -156,8 +156,6 @@ export class RentalBudgetDocumentService {
     };
 
     const buffer = await this.renderer.render(data);
-    // Bracket every rental fact read, including rendering, with the monotonic draft version.
-    // Never return a PDF assembled while another operation changed the persisted proposal.
     const current = await this.draftRentalFinancialFacts.getDraftRentalFinancialFacts({
       tenantId: input.tenantId,
       rentalId: input.rentalId,

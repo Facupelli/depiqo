@@ -7,29 +7,18 @@ import {
 	resolveTenantTimezone,
 } from "./operational-timezone";
 
-/**
- * Resolves the timezone for tenant-level administrative timestamps.
- *
- * Dashboard routes preload the tenant query consumed here.
- */
 export function useTenantTimezone(): string {
 	const { data: business } = useSuspenseQuery(currentBusinessQueries.current());
 
 	return resolveTenantTimezone(business.config.timezone);
 }
 
-/**
- * Resolves the timezone for timestamps operationally owned by a branch.
- *
- * Dashboard routes preload the tenant and branch-list queries consumed here.
- */
 export function useBranchTimezone(branchId: string | null | undefined): string {
 	const resolveBranchTimezone = useBranchTimezoneResolver();
 
 	return resolveBranchTimezone(branchId);
 }
 
-/** Resolves operational timezones without coupling resolution to one branch selection. */
 export function useBranchTimezoneResolver(): (
 	branchId: string | null | undefined,
 ) => string {

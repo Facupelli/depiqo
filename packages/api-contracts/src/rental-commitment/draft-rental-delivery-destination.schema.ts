@@ -1,6 +1,5 @@
 import { z } from "zod";
 
-// Omission remains compatible with existing routed requests.
 export const DraftRentalRoutedDestinationSchema = z.object({
   arrangement: z.literal("ROUTED").optional(),
   address: z.string().trim().min(1),

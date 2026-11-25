@@ -44,7 +44,6 @@ export interface DraftRentalDeliveryIntent {
   tenantUserId: string;
   decisions?: DraftRentalDeliveryDecisions;
   existing?: ExistingDraftDelivery;
-  /** Set only by the application when resolving KEEP_CURRENT (or preview omission). */
   keepCurrent?: boolean;
 }
 
@@ -92,7 +91,6 @@ type DraftDeliveryTerms = {
   deliverySnapshot: AcceptedDeliverySnapshotData;
 };
 
-/** Draft-only orchestration. Preserved terms are not a promise of confirmability. */
 @Injectable()
 export class DraftRentalDeliveryResolver {
   constructor(
@@ -100,7 +98,6 @@ export class DraftRentalDeliveryResolver {
     private readonly authorization: TenantAuthorization,
   ) {}
 
-  /** Mutations authorize trusted tenant-user identity; previews only propose terms. */
   async authorizeChange(
     input: Omit<DraftDeliveryInput, 'pricingCurrency'>,
   ): Promise<Result<void, DraftDeliveryAuthorizationError>> {
@@ -137,7 +134,6 @@ export class DraftRentalDeliveryResolver {
     );
   }
 
-  /** Resolves proposal facts without creating accepted agreement metadata or consulting Delivery. */
   private proposeStaff(
     input: Omit<DraftDeliveryInput, 'tenantUserId'>,
   ): Result<ProposedStaffTerms, RentalProposalResolutionError> {
@@ -147,8 +143,6 @@ export class DraftRentalDeliveryResolver {
     const decision = input.decisions?.pricingAgreement;
     if (input.decisions?.policyException)
       return err(this.invalid('policyException', 'staff delivery has no policy exceptions'));
-    // Only persisted staff-arranged agreements are eligible, never routed agreements.
-    // A new destination alone does not establish a new arrangement.
     if (!existing?.snapshot.staffAgreement && decision?.type !== 'SET') {
       return err(this.invalid('pricingAgreement', 'new staff-arranged arrangements require SET'));
     }
@@ -197,7 +191,6 @@ export class DraftRentalDeliveryResolver {
     });
   }
 
-  /** Shared inspection never attributes an agreement or authorizes an exception. */
   private async inspect(input: DeliveryInspectionInput): Promise<DeliveryInspection> {
     const { existing, decisions } = input;
     const suppliedMinutes = decisions?.transportReservationMinutes;
@@ -212,7 +205,6 @@ export class DraftRentalDeliveryResolver {
       'resolvedLocation' in input.destination &&
       sameDestination(input.destination.resolvedLocation, existing.details);
 
-    // Equipment/customer/insurance/pricing edits and agreement-only edits must not re-route or re-quote.
     if (sameInputs && knownSameDestination && !decisions?.policyException) {
       return { preserved: true, existing };
     }
@@ -229,7 +221,6 @@ export class DraftRentalDeliveryResolver {
     });
     if (!evaluation.transportValid) return { preserved: false, evaluation, conditionsChanged: true };
 
-    // A newly selected address may resolve to the very same destination. Compare server-resolved facts.
     const conditionsChanged =
       !sameInputs || !existing || !sameDestination(evaluation.resolvedCustomerLocation, existing.details);
     if (existing && !conditionsChanged && !decisions?.policyException) {
@@ -263,7 +254,6 @@ export class DraftRentalDeliveryResolver {
     return this.resolveRouted({
       ...input,
       destination: input.destination,
-      // An explicit transition must not inherit staff-arranged commercial or operational facts.
       existing: input.existing?.snapshot.arrangement === 'ROUTED' ? input.existing : undefined,
     });
   }
@@ -347,7 +337,6 @@ export class DraftRentalDeliveryResolver {
       },
       transportReservationMinutes: minutes,
       staffAgreement: existing?.snapshot.staffAgreement,
-      // An old exception never authorizes a newly evaluated arrangement.
       policyException: evaluation.restrictions.length
         ? {
             overriddenRestrictions: evaluation.restrictions,
@@ -410,7 +399,6 @@ export class DraftRentalDeliveryResolver {
     return ok({ deliveryDetails: details, deliverySnapshot: validated.value.snapshot });
   }
 
-  /** Pricing decisions only. No authorization or attribution is established here. */
   private selectAgreement(
     input: Pick<DraftDeliveryInput, 'existing' | 'decisions'>,
     terms: { currency: string; deliveryTotal?: string; staffAgreement?: { amount: string; reason?: string } },
@@ -544,7 +532,6 @@ export class DraftRentalDeliveryResolver {
     } else if (!inspection.evaluation.transportValid) {
       result.technicalFailure = inspection.evaluation.reason;
       conditionsChanged = inspection.conditionsChanged;
-      // Commercial agreement validation does not establish operational readiness.
       terms = {
         currency: input.pricingCurrency,
         staffAgreement: input.existing?.snapshot.staffAgreement,
@@ -622,7 +609,6 @@ export class DraftRentalDeliveryResolver {
   }
 }
 
-/** KEEP_CURRENT uses persisted arrangement, never the presence of coordinates. */
 export function existingDraftDeliveryDestination(
   existing: ExistingDraftDelivery,
 ): RentalProposalDeliveryDestination | undefined {

@@ -51,11 +51,6 @@ function makeEvent(overrides: Partial<IntegrationEvent> = {}): IntegrationEvent 
   };
 }
 
-/**
- * Test double that mimics Prisma transaction semantics:
- * the work callback runs against a fresh tx client and a rejected
- * callback means the transaction rolled back.
- */
 function makePrisma() {
   let transactionsOpened = 0;
 
@@ -224,7 +219,6 @@ describe('PrismaUnitOfWork', () => {
               markers.push('commit');
               return value;
             } catch (error) {
-              // A rejected callback means Prisma rolls the transaction back.
               markers.push(rollbackMarker);
               throw error;
             }

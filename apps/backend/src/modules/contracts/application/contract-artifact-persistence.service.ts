@@ -132,9 +132,7 @@ export class ContractArtifactPersistenceService {
         where: { id: artifactId },
         data: { storageStatus: V2ContractArtifactStorageStatus.UPLOAD_FAILED },
       });
-    } catch {
-      // The PENDING_UPLOAD row remains a traceable record for reconciliation.
-    }
+    } catch {}
   }
 
   private buildStorageKey(input: {

@@ -292,7 +292,6 @@ function buildNativeV2Upgrade(rental: CandidateRental): ValidUpgrade | string {
   if (!parsedV1.success) return `invalid V1 snapshot: ${firstZodIssue(parsedV1.error)}`;
 
   // Insurance pricing was disabled while native V2 rentals wrote version-1 snapshots.
-  // Migrated rentals are FORMAL and must instead reconcile against their legacy Order.
   return validateUpgrade(rental, parsedV1.data, false, '0.00', parsedV1.data.final.total);
 }
 

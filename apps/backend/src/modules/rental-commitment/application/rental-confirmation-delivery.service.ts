@@ -22,7 +22,6 @@ export interface RentalConfirmationDeliveryError extends ApplicationError {
     | 'rental_commitment.delivery_review_required';
 }
 
-/** Read-only revalidation shared by the advisory summary and final confirmation. */
 @Injectable()
 export class RentalConfirmationDeliveryService {
   constructor(private readonly deliveryQuoteService: DeliveryQuoteService) {}
@@ -54,7 +53,6 @@ export class RentalConfirmationDeliveryService {
           context: { field: validation.error.field },
         });
       }
-      // These are already authorized persisted terms, not a new transportation proposal.
       return ok(accepted.value);
     }
     const details = input.deliveryDetails;
@@ -94,13 +92,11 @@ export class RentalConfirmationDeliveryService {
     const existing = input.existing;
     const policyException = existing?.policyException;
     const staffAgreement = existing?.staffAgreement;
-    // Without configuration, retain the draft's validated explicit minutes, including zero.
     const minutes = deliveryOutcome.transportReservationMinutes ?? existing?.transportReservationMinutes;
     const destination = deliveryOutcome.resolvedCustomerLocation;
     const unauthorizedRestrictions = deliveryOutcome.restrictions.filter(
       (restriction) => !policyException?.overriddenRestrictions.includes(restriction),
     );
-    // Revalidation can consume an authorization, never grant it or move it to a different scope.
     const exceptionScopeChanged =
       existing !== undefined &&
       policyException !== undefined &&

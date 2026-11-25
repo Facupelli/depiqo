@@ -3,7 +3,6 @@ import { describe, expect, it } from 'vitest';
 
 import { GetTenantPermissionCatalogHandler } from './manage-roles.handlers';
 
-// Role-management controls render this catalog directly, including its groups.
 describe('GetTenantPermissionCatalogHandler', () => {
   it('publishes the grantable financial-report permission with its limited scope', async () => {
     const catalog = await new GetTenantPermissionCatalogHandler().execute();

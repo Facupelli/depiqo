@@ -138,8 +138,6 @@ function createUpstreamRequestHeaders(
 	for (const [name, value] of incomingHeaders) {
 		const normalizedName = name.toLowerCase();
 
-		// Origin is validated at this same-origin boundary. It is not forwarded
-		// because NestJS CORS configuration should not govern server-to-server I/O.
 		if (
 			HOP_BY_HOP_HEADERS.has(normalizedName) ||
 			INTERNAL_REQUEST_HEADERS.has(normalizedName) ||

@@ -16,7 +16,6 @@ export function useConfirmedRentalRequest(): () => ConfirmedRentalRequestResult 
 	const { insuranceSelected } = useCartPricingContext();
 	const { fulfillmentMethod, deliveryRequest } = useCartFulfillmentContext();
 
-	// Build on submission so a rendered request cannot outlive its pickup time.
 	return () =>
 		buildConfirmedRentalRequest({
 			branchId: branch.id,

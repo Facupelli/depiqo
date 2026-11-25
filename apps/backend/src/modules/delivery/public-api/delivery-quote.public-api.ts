@@ -72,6 +72,5 @@ export type DeliveryEvaluationOutcome =
 export abstract class DeliveryQuoteService {
   abstract getQuote(input: GetDeliveryQuoteInput): Promise<DeliveryQuoteOutcome>;
 
-  // Evaluation reports policy restrictions, but never grants authority to override them.
   abstract evaluate(input: GetDeliveryQuoteInput): Promise<DeliveryEvaluationOutcome>;
 }

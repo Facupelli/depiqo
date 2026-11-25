@@ -1,8 +1,5 @@
 import type { LocalDate } from '@repo/api-contracts';
 
-/**
- * Converts an absolute instant to its calendar date in an IANA timezone.
- */
 export function instantToLocalDate(instant: Date, timezone: string): LocalDate {
   const parts = new Intl.DateTimeFormat('en-CA', {
     timeZone: timezone,
@@ -16,10 +13,6 @@ export function instantToLocalDate(instant: Date, timezone: string): LocalDate {
   return `${get('year')}-${get('month')}-${get('day')}`;
 }
 
-/**
- * Maps Prisma's DateTime representation for a PostgreSQL DATE to a local-date key.
- * PostgreSQL DATE contains no timezone. UTC components avoid machine-timezone conversion.
- */
 export function prismaDateToLocalDate(value: Date): LocalDate {
   const year = String(value.getUTCFullYear()).padStart(4, '0');
   const month = String(value.getUTCMonth() + 1).padStart(2, '0');
@@ -28,16 +21,10 @@ export function prismaDateToLocalDate(value: Date): LocalDate {
   return `${year}-${month}-${day}`;
 }
 
-/**
- * Prisma requires Date for DateTime @db.Date fields. This encoding is persistence-only.
- */
 export function localDateToPrismaDate(value: LocalDate): Date {
   return new Date(`${value}T00:00:00.000Z`);
 }
 
-/**
- * Returns the Gregorian weekday for a local calendar date: 0 = Sunday through 6 = Saturday.
- */
 export function localDateDayOfWeek(value: LocalDate): number {
   const [year, month, day] = value.split('-').map(Number);
   const adjustedYear = month < 3 ? year - 1 : year;

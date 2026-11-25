@@ -81,6 +81,14 @@ The backend is organized around domain responsibilities such as:
 
 This keeps concepts such as what can be rented, how it is priced, and which physical assets fulfill a booking from becoming one tightly coupled model.
 
+### Source comments
+
+`pnpm lint:comments` runs the Oxlint comment rule on handwritten TypeScript and TSX under `apps/` and `packages/`. Existing comments are grandfathered by file and fingerprint. After a cleanup, run `pnpm lint:comments:baseline prune` and include the smaller baseline in your change.
+
+Keep required compiler, lint, and test directives and backend `SAFETY:` annotations. For a new required comment, review an exact exception in `oxlint.comments.json` instead of growing the baseline. Set `functionalExceptions` in the rule options to a map of repository-relative paths to full comment strings, including delimiters. Review native `oxlint-disable` changes explicitly; Oxlint honors them even for custom rules.
+
+In Pi, use `/skill:delete-comment` to repeat the audit.
+
 ## Tech stack
 
 ### Backend

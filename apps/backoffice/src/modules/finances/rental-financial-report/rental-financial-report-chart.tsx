@@ -55,7 +55,6 @@ export function RentalFinancialReportChart({
 			(key === "insuranceAmount" && inclusions.includeInsurance) ||
 			(key === "deliveryAmount" && inclusions.includeDelivery),
 	);
-	// Numbers determine geometry only. Tooltip values come from the exact DTO.
 	const data = report.periods.map((period, index) => ({
 		month: financialReportMonthNames[index],
 		equipmentAmount: Number(period.equipmentAmount),

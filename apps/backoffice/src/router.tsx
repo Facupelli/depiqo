@@ -31,14 +31,9 @@ function resolveInvalidateTargets(
 }
 
 export function getRouter() {
-	// Fresh QueryClient per call — critical for Cloudflare Workers.
-	// A singleton here would leak data between requests in the same isolate.
 	const queryClient = new QueryClient({
 		defaultOptions: {
 			queries: {
-				// Prevents an immediate refetch on the client right after SSR hydration.
-				// Without this, the client sees hydrated data as already stale and
-				// re-fetches it, wasting the SSR prefetch entirely.
 				staleTime: 60 * 1000,
 			},
 		},
@@ -69,9 +64,6 @@ export function getRouter() {
 		defaultPreloadStaleTime: 0,
 	});
 
-	// Wires up automatic SSR dehydration/hydration and streaming.
-	// By default this also wraps the router with <QueryClientProvider>,
-	// so you do NOT need a manual provider in __root.tsx.
 	setupRouterSsrQueryIntegration({ router, queryClient });
 
 	return router;

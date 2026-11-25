@@ -1,4 +1,3 @@
-// Production marketing identity, independent of request hosts and preview URLs.
 export const marketingUrl = "https://depiqo.com/";
 export const marketingImage = {
 	url: `${marketingUrl}og/depiqo-og.png`,

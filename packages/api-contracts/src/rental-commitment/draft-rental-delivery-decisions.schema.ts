@@ -1,7 +1,5 @@
 import { z } from "zod";
 
-// Like equipment pricing targets, amounts must be exactly representable in cents.
-// Delivery agreements also allow zero.
 const agreementAmount = z
   .string()
   .trim()
@@ -50,10 +48,6 @@ export const UpdateDraftRentalDeliveryDecisionsSchema = z
   })
   .strict();
 
-// Editing may change a destination within an existing staff arrangement. The
-// backend must verify persisted arrangement/agreement eligibility for KEEP and
-// require explicit minutes when establishing a new arrangement. Neither decision
-// grants rentals.delivery.manage or supplies trusted attribution.
 export function validateStaffArrangedDeliveryEditDecisions(
   decisions:
     | z.infer<typeof UpdateDraftRentalDeliveryDecisionsSchema>
@@ -79,7 +73,6 @@ export function validateStaffArrangedDeliveryEditDecisions(
   }
 }
 
-// Creation has no persisted terms to preserve, including transportation minutes.
 export function validateNewStaffArrangedDeliveryDecisions(
   decisions:
     | z.infer<typeof UpdateDraftRentalDeliveryDecisionsSchema>

@@ -1,7 +1,6 @@
 export function NotFoundPage() {
 	return (
 		<div className="relative flex min-h-screen flex-col items-center justify-center bg-white px-6">
-			{/* Center content */}
 			<div className="flex flex-col items-center text-center">
 				<p className="mb-6 text-xs font-medium text-neutral-400 uppercase">
 					Error 404
@@ -33,7 +32,6 @@ export function NotFoundPage() {
 				</div>
 			</div>
 
-			{/* Footer */}
 			<footer className="absolute bottom-6 left-0 right-0 flex justify-center">
 				<p className="text-xs text-neutral-400">
 					© {new Date().getFullYear()} Portal Platform. All rights reserved.

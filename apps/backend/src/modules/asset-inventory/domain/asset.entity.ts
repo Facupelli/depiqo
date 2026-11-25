@@ -196,10 +196,6 @@ export class Asset extends AggregateRootBase {
     }
   }
 
-  /**
-   * RETIRED is terminal. Retiring an already-retired asset is an idempotent
-   * no-op and returns false without recording a domain event.
-   */
   retire(): boolean {
     if (this.props.status === 'RETIRED') {
       return false;

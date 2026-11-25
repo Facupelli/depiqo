@@ -17,7 +17,6 @@ export function formatExactCurrencyRate(
 	amount: string,
 	currency: string,
 ): string {
-	// Unit rates are exact authored decimals, not two-decimal payable amounts.
 	if (!/^\d+(?:\.\d+)?$/.test(amount)) return `${currency} ${amount}`;
 	const [integer, fraction] = amount.split(".");
 	try {

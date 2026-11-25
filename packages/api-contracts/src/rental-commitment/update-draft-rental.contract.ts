@@ -20,7 +20,6 @@ export const UpdateDraftRentalParamsSchema = z.object({
 export const UpdateDraftRentalDeliveryIntentSchema = z.discriminatedUnion(
   "type",
   [
-    // No arrangement here: keeping the destination also keeps its arrangement.
     z.object({ type: z.literal("KEEP_CURRENT") }).strict(),
     z.discriminatedUnion("arrangement", [
       DraftRentalRoutedDestinationSchema.extend({

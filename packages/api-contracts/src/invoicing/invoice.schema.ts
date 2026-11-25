@@ -2,8 +2,6 @@ import { z } from "zod";
 
 import { LocalDateSchema } from "../local-date.schema";
 
-// NUMERIC(19,4): up to 15 integer digits (ignoring leading zeroes) and
-// four fractional digits. Keep strings exact, without coercion or rounding.
 export const InvoiceAmountSchema = z
   .string()
   .trim()

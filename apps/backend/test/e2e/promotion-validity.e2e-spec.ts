@@ -72,7 +72,6 @@ describe('promotion local-date validity HTTP flow', () => {
       .withCsrf(client.request().post('/pricing/promotions'))
       .send({ ...unrestricted, name: 'Conditional promotion', ...conditions })
       .expect(201);
-    // The existing conditional promotion must not block an unrestricted update either.
     await client
       .withCsrf(client.request().put(`/pricing/promotions/${existing.body.data.id}`))
       .send({ ...unrestricted, name: 'Renamed unrestricted promotion' })

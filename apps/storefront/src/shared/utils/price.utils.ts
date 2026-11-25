@@ -3,8 +3,6 @@ export function formatExactCurrencyRate(
 	currency: string,
 	locale: string,
 ): string {
-	// Never coerce an authored rate through a floating-point number or a
-	// fixed-decimal currency formatter. Payable totals use formatCurrency.
 	if (!/^\d+(?:\.\d+)?$/.test(amount)) return `${currency} ${amount}`;
 	const [integer, fraction] = amount.split(".");
 	try {
@@ -48,7 +46,6 @@ export const formatCurrency = (
 			maximumFractionDigits: fractionDigits,
 		}).format(amount);
 	} catch {
-		// Graceful degradation: show raw number + currency code
 		return `${currency} ${amount.toFixed(2)}`;
 	}
 };

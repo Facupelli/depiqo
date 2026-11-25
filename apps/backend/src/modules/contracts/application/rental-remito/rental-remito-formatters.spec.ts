@@ -6,7 +6,6 @@ import {
   formatProposedRentalBudgetAmount,
 } from './rental-remito-formatters';
 
-// Intl uses a non-breaking space before the currency symbol in Spanish locales.
 const normalizeSpaces = (value: string) => value.replace(/\u00a0/g, ' ');
 
 describe('Rental document monetary precision', () => {

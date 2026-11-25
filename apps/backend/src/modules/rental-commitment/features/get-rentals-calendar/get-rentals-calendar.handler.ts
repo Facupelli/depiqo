@@ -58,8 +58,6 @@ export class GetRentalsCalendarHandler implements IQueryHandler<GetRentalsCalend
     if (timezoneResult.isErr()) return err(timezoneResult.error);
     const timezone = timezoneResult.value;
 
-    // Calendar request dates are inclusive branch-local dates. Convert their half-open
-    // [from midnight, day-after-to midnight) interval to absolute instants.
     const rangeStart = Prisma.sql`(${query.from}::date)::timestamp AT TIME ZONE ${timezone}`;
     const rangeEnd = Prisma.sql`(${query.to}::date + 1)::timestamp AT TIME ZONE ${timezone}`;
 

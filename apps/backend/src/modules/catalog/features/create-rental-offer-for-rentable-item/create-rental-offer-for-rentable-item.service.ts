@@ -75,8 +75,6 @@ export class CreateRentalOfferForRentableItemService {
       return err(branchValidation.error);
     }
 
-    // Joins Offering Setup's transaction when one is active. The parent lock
-    // serializes creation with archive/restore and offer publication edits.
     try {
       return await this.unitOfWork.runInTransaction(async ({ tx }) => {
         const item = await lockRentableItem(tx, tenantId, rentableItemId);
@@ -96,9 +94,6 @@ export class CreateRentalOfferForRentableItemService {
         return ok({ rentalOfferId: rentalOffer.value.id });
       });
     } catch (error) {
-      // Race backstop for the duplicate-offer pre-check above: the database is
-      // enforcing the same Catalog invariant, so a concurrent insert surfaces as
-      // a typed conflict instead of an infrastructure failure.
       if (isUniqueConstraintViolation(error, ['tenant_id', 'branch_id', 'rentable_item_id'])) {
         return err(new CatalogRentalOfferAlreadyExistsError(rentableItemId, branchId));
       }

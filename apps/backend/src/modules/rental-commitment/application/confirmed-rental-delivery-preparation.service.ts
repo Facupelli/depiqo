@@ -29,7 +29,6 @@ export interface PreparedConfirmedDelivery {
   acceptedDelivery: AcceptedDeliverySnapshot;
 }
 
-/** Evaluates only delivery terms, never equipment prices or the rental period. */
 @Injectable()
 export class ConfirmedRentalDeliveryPreparationService {
   constructor(private readonly delivery: DeliveryQuoteService) {}
@@ -57,7 +56,6 @@ export class ConfirmedRentalDeliveryPreparationService {
     if (agreementDecision?.type === 'KEEP' && !previous.staffAgreement)
       return invalid('KEEP requires an existing agreement.');
     if (agreementDecision?.type === 'SET') {
-      // Reuse the existing price-agreement value-object validation, including cent precision.
       const validated = rental.acceptedDelivery!.changeAgreement({
         agreement: agreementDecision,
         tenantUserId: input.tenantUserId,
@@ -129,7 +127,6 @@ export class ConfirmedRentalDeliveryPreparationService {
     if (!customerLocation || (transition && destination?.arrangement !== 'ROUTED'))
       return invalid('Routed delivery requires a location selection or an existing routed destination.');
     const minutesChanged = minutes !== undefined && minutes !== previous.transportReservationMinutes;
-    // Unaffected routed terms are accepted facts, not an invitation to consult mutable configuration.
     if (previous.arrangement === 'ROUTED' && !destination && !minutesChanged && !decisions.policyException) {
       return finish(details, { ...previous, staffAgreement });
     }
@@ -170,8 +167,6 @@ export class ConfirmedRentalDeliveryPreparationService {
         minutes ?? (transition ? evaluation.transportReservationMinutes : previous.transportReservationMinutes);
       if (proposedMinutes === undefined)
         return invalid('Explicit transportation minutes are required without configured minutes.');
-      // Existing routed policy makes configured minutes authoritative. Never silently
-      // replace accepted minutes on an address-only edit if configuration has changed.
       if (
         evaluation.transportReservationMinutes !== undefined &&
         proposedMinutes !== evaluation.transportReservationMinutes
@@ -195,7 +190,6 @@ export class ConfirmedRentalDeliveryPreparationService {
         resolvedDestination: location,
         transportReservationMinutes: proposedMinutes,
         staffAgreement,
-        // Prior exceptions never authorize a freshly evaluated scope.
         policyException: evaluation.restrictions.length
           ? {
               overriddenRestrictions: [...new Set(evaluation.restrictions)],

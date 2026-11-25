@@ -33,7 +33,10 @@ Thumbs.db
 *.swp
 *.swo
 
-.pi
+.pi/*
+!.pi/skills/
+.pi/skills/*
+!.pi/skills/delete-comment/
 .agents
 skills-lock.json
 

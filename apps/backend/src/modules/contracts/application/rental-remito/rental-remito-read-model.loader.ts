@@ -30,7 +30,6 @@ export class RentalRemitoReadModelLoader {
     tenantId: string,
     rentalId: string,
   ): Promise<Result<RentalRemitoSourceReadModel, RentalRemitoApplicationError>> {
-    // TODO(v2-contract-boundaries): Replace this cross-context Prisma read with a public read API/facade.
     const rental = await this.prisma.client.v2Rental.findFirst({
       where: {
         id: rentalId,
@@ -199,7 +198,6 @@ export class RentalRemitoReadModelLoader {
   }
 
   private async loadTenant(tenantId: string): Promise<RentalRemitoSourceReadModel['tenant'] | null> {
-    // TODO(v2-contract-boundaries): Replace this cross-context Prisma read with a public read API/facade.
     const tenant = await this.prisma.client.v2Tenant.findFirst({
       where: {
         id: tenantId,
@@ -267,7 +265,6 @@ export class RentalRemitoReadModelLoader {
   private async loadDefaultContractSigner(
     tenantId: string,
   ): Promise<RentalRemitoSourceReadModel['contractSigner'] | null> {
-    // TODO(v2-contract-boundaries): Replace this cross-context Prisma read with a public read API/facade.
     const signer = await this.prisma.client.v2TenantContractSigner.findFirst({
       where: {
         tenantId,

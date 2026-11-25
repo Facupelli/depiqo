@@ -6,7 +6,6 @@ import { FulfillmentMethod } from './rental-status';
 import type { AcceptedDeliverySnapshot } from './value-objects/accepted-delivery-snapshot.value-object';
 import type { RentalPeriod } from './value-objects/rental-period.value-object';
 
-/** The same accepted transportation invariants apply to draft review and aggregate confirmation. */
 export function validateRentalDeliveryDetails(input: {
   fulfillmentMethod: `${FulfillmentMethod}`;
   deliveryDetails?: RentalDeliveryDetails;

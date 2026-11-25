@@ -45,7 +45,6 @@ export function RentalFilters({
 			<div className="hidden md:block">
 				<div className="dark rounded-2xl bg-background p-4">
 					<div className="flex flex-wrap items-end gap-6">
-						{/* Location */}
 						<div className="flex flex-col gap-2">
 							<p className="text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
 								Ubicación del rental
@@ -82,7 +81,6 @@ export function RentalFilters({
 							)}
 						</div>
 
-						{/* Date range */}
 						<div className="flex flex-col gap-2">
 							<p className="text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
 								Periodo de alquiler
@@ -136,7 +134,6 @@ export function RentalFilters({
 					</Select>
 				)}
 
-				{/* ── Filters sheet button — mobile only ── */}
 				{isMobile && (
 					<div className="ml-auto md:hidden">
 						<FiltersSheet

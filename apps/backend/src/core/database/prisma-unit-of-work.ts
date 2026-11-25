@@ -21,10 +21,6 @@ export interface PrismaTransactionContext {
   integrationEvents: IntegrationEventsCollector;
 }
 
-/**
- * Private infrastructure signal used to make Prisma roll back when an
- * application workflow returns `Err`. It never carries application data.
- */
 class TransactionRollbackSignal extends Error {
   constructor() {
     super('Transaction rollback requested by a result-aware workflow.');
@@ -32,7 +28,6 @@ class TransactionRollbackSignal extends Error {
   }
 }
 
-/** Thrown when a result-aware transaction boundary is used while a transaction is already active. */
 export class NestedResultAwareTransactionError extends Error {
   constructor() {
     super(
@@ -81,8 +76,6 @@ export class PrismaUnitOfWork {
 
     const integrationEvents = new InMemoryIntegrationEventsCollector();
 
-    // The captured Err stays in this local variable; the rollback signal
-    // itself never carries the Result across the Prisma $transaction boundary.
     let capturedErr: Result<T, E> | undefined;
 
     try {

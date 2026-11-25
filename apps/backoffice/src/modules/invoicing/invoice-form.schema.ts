@@ -124,7 +124,6 @@ export function toCorrectInvoiceRegistrationBody(
 	if (fields.sourceSystem !== invoice.sourceSystem) {
 		body.sourceSystem = fields.sourceSystem;
 	}
-	// expectedVersion alone is not an update, including equivalent decimals.
 	if (Object.keys(body).length === 1) return null;
 	return CorrectInvoiceRegistrationBodySchema.parse(body);
 }
