@@ -73,7 +73,7 @@ jobs:
 
       - name: Backend lint
         if: steps.changes.outputs.backend == 'true' || steps.changes.outputs.shared == 'true'
-        run: pnpm --filter @repo/backend run lint:check
+        run: pnpm --filter @repo/backend run lint
 
       - name: Backend formatting
         if: steps.changes.outputs.backend == 'true' || steps.changes.outputs.shared == 'true'
@@ -98,7 +98,7 @@ jobs:
 
       - name: Backoffice lint
         if: steps.changes.outputs.backoffice == 'true' || steps.changes.outputs.shared == 'true'
-        run: pnpm --filter @repo/backoffice run lint
+        run: pnpm --filter @repo/backoffice exec biome lint
 
       - name: Backoffice typecheck
         if: steps.changes.outputs.backoffice == 'true' || steps.changes.outputs.shared == 'true'

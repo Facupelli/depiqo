@@ -9,7 +9,7 @@ Route and server-function guidance:
 - Keep router context compatible with the existing root route and query provider setup.
 - Do not hand-edit generated routing artifacts such as `src/routeTree.gen.ts` to register routes.
 
-When changing route structure or framework-sensitive files, verify with `pnpm build`.
+When changing route structure or framework-sensitive files, run the Backoffice build described in the [non-browser verification guide](../../../../docs/verification.md).
 
 ## TanStack Router / Query Data-Loading Rules
 

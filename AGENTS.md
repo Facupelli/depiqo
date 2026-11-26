@@ -4,15 +4,7 @@ Monorepo for a B2B multi-tenant equipment rental platform with frontend and back
 
 Use `pnpm` workspaces.
 
-Validation commands:
-
-- For work confined to one app or package, run validation from that workspace only.
-- Do not run root workspace commands such as `pnpm build` or `pnpm lint` by default.
-- Run root workspace commands only when the change spans multiple workspaces, validating an affected shared package requires downstream consumers, or the user explicitly requests repository-wide validation.
-
-App-local commands:
-
-- Follow each app's local `AGENTS.md` for its validation commands.
+Use the [non-browser verification guide](docs/verification.md) for Backend and Backoffice setup, commands, and timeouts. Run checks from the affected workspace by default. Use root commands for shared prerequisites, cross-workspace validation, or explicitly requested repository-wide checks.
 
 Top-level structure:
 

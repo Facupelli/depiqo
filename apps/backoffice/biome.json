@@ -30,7 +30,6 @@
 	"javascript": {
 		"formatter": {
 			"quoteStyle": "double",
-			"enabled": true,
 			"indentStyle": "tab",
 			"indentWidth": 2,
 			"lineEnding": "lf",

@@ -42,6 +42,10 @@ Rental businesses manage their catalog, physical inventory, pricing, customers, 
 - Customer-facing storefront
 - Internal operations backoffice
 
+## Development verification
+
+See the [non-browser verification guide](docs/verification.md) for fresh-checkout setup, Backend and Backoffice checks, and focused or full tests.
+
 ## Engineering highlights
 
 ### Availability and concurrent bookings

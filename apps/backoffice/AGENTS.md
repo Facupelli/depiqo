@@ -8,15 +8,9 @@ Run commands from `apps/backoffice/` unless there is a clear reason to run from 
 
 Use `pnpm`.
 
-## Commands
+## Verification
 
-Backoffice-local:
-
-* `pnpm dev`
-* `pnpm build`
-* `pnpm test`
-* `pnpm lint`
-* `pnpm check`
+Follow the [non-browser verification guide](../../docs/verification.md) for setup, app-local checks, and focused or full test runs.
 
 ## Documentation Map
 

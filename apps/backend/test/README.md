@@ -1,7 +1,6 @@
 # Backend Testing
 
-This document defines the intended backend testing architecture. Run all commands from
-`apps/backend/`.
+This document describes backend test design. For prerequisites, focused and full test commands, and timeouts, see the [non-browser verification guide](../../../docs/verification.md).
 
 ## Test types
 
@@ -62,11 +61,11 @@ Both Integration and E2E commands use this outer lifecycle:
 outer test runner
   -> start one disposable PostgreSQL Testcontainer
   -> run prisma migrate deploy once
-  -> run Jest serially
+  -> run Vitest serially
   -> stop the container in finally
 ```
 
-Jest does not own the Testcontainer lifecycle. The container must use the same
+Vitest does not own the Testcontainer lifecycle. The container must use the same
 PostgreSQL major version as production. Database-backed tests must never target a
 persistent development database.
 
@@ -126,18 +125,9 @@ Every long-lived resource has one explicit owner:
 - Direct `pg` clients or pools: the helper or test that created them
 - PostgreSQL Testcontainer: outer test runner
 
-Close resources through their owner. Do not rely on Jest `--forceExit`.
+Close resources through their owner.
 
 ## Execution model
 
 Keep database-backed suites serial for now. If parallel execution becomes necessary,
-prefer an isolated database per Jest worker, not per test case.
-
-## Commands
-
-```bash
-pnpm run test              # unit tests
-pnpm run test:integration  # integration tests
-pnpm run test:e2e          # E2E tests
-pnpm run test:db:ci        # integration, then E2E
-```
+prefer an isolated database per Vitest worker, not per test case.
