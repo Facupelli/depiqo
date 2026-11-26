@@ -7,10 +7,8 @@ import { PrismaUnitOfWork } from 'src/core/database/prisma-unit-of-work';
 import { PrismaService } from 'src/core/database/prisma.service';
 import { Prisma } from 'src/generated/prisma/client';
 import { PostgresExclusionViolationError } from 'src/core/utils/postgres-error.mapper';
-import {
-  createRentalCommitmentIntegrationContext,
-  useIntegrationTestContext,
-} from '../../../../../test/support/integration-test-context';
+import { createRentalCommitmentIntegrationContext } from '../../../../../test/support/integration-contexts/rental-commitment';
+import { useIntegrationTestContext } from '../../../../../test/support/integration-test-context';
 import { createTestFixtures, TestFixtures } from '../../../../../test/support/fixtures';
 import { ConfirmedRentalReschedulingPreparationService } from '../../application/confirmed-rental-rescheduling-preparation.service';
 import { RentalAssetAllocationService } from '../../asset-allocation/rental-asset-allocation.service';

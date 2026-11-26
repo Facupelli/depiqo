@@ -1,7 +1,6 @@
 # Backend Testing
 
-This document defines the intended backend testing architecture. Run all commands from
-`apps/backend/`.
+This document describes backend test design. For prerequisites, focused and full test commands, and timeouts, see the [non-browser verification guide](../../../docs/verification.md).
 
 ## Test types
 
@@ -62,11 +61,11 @@ Both Integration and E2E commands use this outer lifecycle:
 outer test runner
   -> start one disposable PostgreSQL Testcontainer
   -> run prisma migrate deploy once
-  -> run Jest serially
+  -> run Vitest serially
   -> stop the container in finally
 ```
 
-Jest does not own the Testcontainer lifecycle. The container must use the same
+Vitest does not own the Testcontainer lifecycle. The container must use the same
 PostgreSQL major version as production. Database-backed tests must never target a
 persistent development database.
 
@@ -101,7 +100,28 @@ Use deterministic, explicit test values. For absolute timestamps, use the helper
 ## Application lifecycle
 
 For Integration specs, normally create the application context once per spec, create
-fixtures per test, and close the context once after the spec.
+fixtures per test, and close the context once after the spec. Pass a context factory
+to [`useIntegrationTestContext`](support/integration-test-context.ts). This helper
+only registers the Vitest hooks: it calls the factory in `beforeAll` and closes the
+returned context in `afterAll`. It does not import Nest or Prisma.
+
+Choose the narrowest context that exercises the behavior under test:
+
+- If only Prisma and PostgreSQL are needed, use
+  [`createDirectDatabaseTestContext`](support/direct-database-test-context.ts).
+  Do not import a Nest context just to register the lifecycle hooks.
+- If the spec needs Nest-managed providers, the command bus, or event wiring,
+  import the factory for that root module directly from its file in
+  [`support/integration-contexts/`](support/integration-contexts). Its imports
+  include the root's real dependencies, so do not add other roots by default.
+
+Each Nest factory selects a root module and delegates to the
+[shared builder](support/integration-contexts/create-nest-integration-context.ts),
+which adds common infrastructure, applies any provider overrides before compilation,
+and initializes the testing module. For a new root, add a dedicated entry point
+rather than a barrel or registry of factories. Vitest evaluates static imports
+during collection, before it runs the hooks, so a shared barrel would load
+unrelated contexts in each isolated spec.
 
 For E2E specs, normally create the full Nest application once per spec with
 `createE2ETestApp()`, create fixtures per test, and close the application and its
@@ -126,18 +146,9 @@ Every long-lived resource has one explicit owner:
 - Direct `pg` clients or pools: the helper or test that created them
 - PostgreSQL Testcontainer: outer test runner
 
-Close resources through their owner. Do not rely on Jest `--forceExit`.
+Close resources through their owner.
 
 ## Execution model
 
 Keep database-backed suites serial for now. If parallel execution becomes necessary,
-prefer an isolated database per Jest worker, not per test case.
-
-## Commands
-
-```bash
-pnpm run test              # unit tests
-pnpm run test:integration  # integration tests
-pnpm run test:e2e          # E2E tests
-pnpm run test:db:ci        # integration, then E2E
-```
+prefer an isolated database per Vitest worker, not per test case.

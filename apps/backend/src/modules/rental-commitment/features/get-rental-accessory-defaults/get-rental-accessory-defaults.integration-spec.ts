@@ -11,10 +11,8 @@ import { V2RentalStatus } from 'src/generated/prisma/enums';
 import { AssignRentalAccessoriesCommand } from 'src/modules/rental-commitment/features/assign-rental-accessories/assign-rental-accessories.command';
 import { AssignRentalAccessoriesResult } from 'src/modules/rental-commitment/features/assign-rental-accessories/assign-rental-accessories.handler';
 import { ConfirmRentalFixtures } from 'src/modules/rental-commitment/features/confirm-rental/testing/confirm-rental.fixtures';
-import {
-  createRentalCommitmentIntegrationContext,
-  useIntegrationTestContext,
-} from '../../../../../test/support/integration-test-context';
+import { createRentalCommitmentIntegrationContext } from '../../../../../test/support/integration-contexts/rental-commitment';
+import { useIntegrationTestContext } from '../../../../../test/support/integration-test-context';
 import { createTestFixtures, TestFixtures } from '../../../../../test/support/fixtures';
 import { utcDate } from '../../../../../test/support/time';
 import { GetRentalAccessoryDefaultsHandler } from './get-rental-accessory-defaults.handler';

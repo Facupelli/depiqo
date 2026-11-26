@@ -6,10 +6,8 @@ import { TestingModule } from '@nestjs/testing';
 import { PrismaService } from 'src/core/database/prisma.service';
 import { V2ContractArtifactKind, V2ContractStatus, V2DocumentSigningRequestStatus } from 'src/generated/prisma/enums';
 import { ConfirmedRentalEditedIntegrationEvent } from 'src/modules/rental-commitment/public-api/events/rental-lifecycle.integration-events';
-import {
-  createContractsIntegrationContext,
-  useIntegrationTestContext,
-} from '../../../../../test/support/integration-test-context';
+import { createContractsIntegrationContext } from '../../../../../test/support/integration-contexts/contracts';
+import { useIntegrationTestContext } from '../../../../../test/support/integration-test-context';
 import { createTestFixtures, TestFixtures } from '../../../../../test/support/fixtures';
 import { HandleConfirmedRentalEditedEventHandler } from './handle-confirmed-rental-edited.event-handler';
 

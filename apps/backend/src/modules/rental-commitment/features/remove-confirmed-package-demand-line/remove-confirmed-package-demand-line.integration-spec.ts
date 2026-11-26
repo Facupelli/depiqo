@@ -8,10 +8,8 @@ import { TestingModule } from '@nestjs/testing';
 import { PrismaService } from 'src/core/database/prisma.service';
 import { parsePostgresRange } from 'src/core/utils/postgres-range.util';
 import { Prisma } from 'src/generated/prisma/client';
-import {
-  createRentalCommitmentIntegrationContext,
-  useIntegrationTestContext,
-} from '../../../../../test/support/integration-test-context';
+import { createRentalCommitmentIntegrationContext } from '../../../../../test/support/integration-contexts/rental-commitment';
+import { useIntegrationTestContext } from '../../../../../test/support/integration-test-context';
 import { createTestFixtures, TestFixtures } from '../../../../../test/support/fixtures';
 import { RentalRepository } from '../../persistence/rental.repository';
 import { CommittedRentalSelectionsAndDemand } from '../../public-api/committed-rental-selections-and-demand.public-api';

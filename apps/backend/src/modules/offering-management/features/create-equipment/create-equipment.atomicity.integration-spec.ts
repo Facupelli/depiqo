@@ -9,10 +9,8 @@ import { IntegrationEventPublisher } from 'src/core/domain/events/integration-ev
 import { PrismaService } from 'src/core/database/prisma.service';
 import { AssetCreatedIntegrationEvent } from 'src/modules/asset-inventory/public-api/events/asset-created.integration-event';
 import { EquipmentTypeReferenceAuthority } from 'src/modules/asset-inventory/public-api/equipment-type-reference-authority.public-api';
-import {
-  createOfferingManagementIntegrationContext,
-  useIntegrationTestContext,
-} from '../../../../../test/support/integration-test-context';
+import { createOfferingManagementIntegrationContext } from '../../../../../test/support/integration-contexts/offering-management';
+import { useIntegrationTestContext } from '../../../../../test/support/integration-test-context';
 import { createTestFixtures, TestFixtures } from '../../../../../test/support/fixtures';
 import { CreateEquipmentCommand } from './create-equipment.command';
 import { CreateEquipmentHandler } from './create-equipment.handler';

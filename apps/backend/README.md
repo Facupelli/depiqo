@@ -7,6 +7,10 @@
 **Target Audience:** Rental businesses ranging from construction machinery (heavy assets) to event gear (bulk stock).
 **Key Differentiator:** Specialized support for both serialized asset tracking (maintenance history, depreciation) and bulk quantity management within a unified system.
 
+## Verification
+
+See the [non-browser verification guide](../../docs/verification.md) for setup, Backend checks, and test commands. See [Backend Testing](test/README.md) for test design and isolation rules.
+
 ## Temporal Semantics
 
 For active V2 fields, use the canonical [temporal semantics](./docs/architecture/temporal-semantics.md) guide to select between absolute instants, local dates, local times, ranges, and timezone-derived values.

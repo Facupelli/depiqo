@@ -7,7 +7,7 @@
     "build": "vite build",
     "build:production": "vite build --mode production",
     "preview": "vite preview",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit --incremental --tsBuildInfoFile node_modules/.cache/storefront-typecheck.tsbuildinfo",
     "test": "vitest run --passWithNoTests",
     "format": "biome format",
     "lint": "biome lint",

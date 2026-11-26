@@ -4,10 +4,8 @@ import { TestingModule } from '@nestjs/testing';
 
 import { PrismaService } from 'src/core/database/prisma.service';
 import { AssetId } from '../domain/types/rental-commitment-ids';
-import {
-  createRentalCommitmentIntegrationContext,
-  useIntegrationTestContext,
-} from '../../../../test/support/integration-test-context';
+import { createRentalCommitmentIntegrationContext } from '../../../../test/support/integration-contexts/rental-commitment';
+import { useIntegrationTestContext } from '../../../../test/support/integration-test-context';
 import { createTestFixtures, TestFixtures } from '../../../../test/support/fixtures';
 import { utcDate } from '../../../../test/support/time';
 import { ConfirmRentalFixtures, RentalPeriodFixture } from '../features/confirm-rental/testing/confirm-rental.fixtures';

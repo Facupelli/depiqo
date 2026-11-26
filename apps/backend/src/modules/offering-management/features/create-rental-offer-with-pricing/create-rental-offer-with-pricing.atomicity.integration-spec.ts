@@ -7,10 +7,8 @@ import { err } from 'neverthrow';
 
 import { PrismaService } from 'src/core/database/prisma.service';
 import { AttachRatePlanToRentalOfferOperation } from '../../../pricing/application/operations/attach-rate-plan-to-rental-offer.operation';
-import {
-  createOfferingManagementIntegrationContext,
-  useIntegrationTestContext,
-} from '../../../../../test/support/integration-test-context';
+import { createOfferingManagementIntegrationContext } from '../../../../../test/support/integration-contexts/offering-management';
+import { useIntegrationTestContext } from '../../../../../test/support/integration-test-context';
 import { createTestFixtures, TestFixtures } from '../../../../../test/support/fixtures';
 import { CreateRentalOfferWithPricingCommand } from './create-rental-offer-with-pricing.command';
 import { CreateRentalOfferWithPricingHandler } from './create-rental-offer-with-pricing.handler';

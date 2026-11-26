@@ -9,10 +9,8 @@ import { GetStorefrontRentalOffersQuery } from '../features/get-storefront-renta
 import { GetStorefrontRentalOffersResult } from '../features/get-storefront-rental-offers/get-storefront-rental-offers.handler';
 import { SearchRentalOffersQuery } from '../features/search-rental-offers/search-rental-offers.query';
 import { SearchRentalOffersResult } from '../features/search-rental-offers/search-rental-offers.handler';
-import {
-  createCatalogIntegrationContext,
-  useIntegrationTestContext,
-} from '../../../../test/support/integration-test-context';
+import { createCatalogIntegrationContext } from '../../../../test/support/integration-contexts/catalog';
+import { useIntegrationTestContext } from '../../../../test/support/integration-test-context';
 import { createTestFixtures, TestFixtures } from '../../../../test/support/fixtures';
 
 import { CatalogSelectionResolution } from './catalog-selection-resolution.public-api';

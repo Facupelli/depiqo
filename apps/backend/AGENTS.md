@@ -6,15 +6,9 @@ Run commands from `apps/backend/` unless there is a clear reason to run from the
 
 Use `pnpm`.
 
-## Commands
+## Verification
 
-Backend-local:
-
-- `pnpm run build`
-- `pnpm run lint`
-- `pnpm run test`
-- `pnpm run test:integration`
-- `pnpm run test:e2e`
+Follow the [non-browser verification guide](../../docs/verification.md) for setup, app-local checks, and focused or full test runs.
 
 ## Documentation Map
 

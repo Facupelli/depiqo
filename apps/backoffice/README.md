@@ -28,13 +28,9 @@ See the Backoffice architecture documentation and the `README.md` inside each `s
 Run commands from `apps/backoffice/`:
 
 ```bash
-pnpm dev
-pnpm build
-pnpm test
-pnpm lint
-pnpm check
+pnpm run dev
 pnpm run cf-typegen
-pnpm deploy
+pnpm run deploy
 ```
 
 The development server listens on `http://localhost:3001`.
@@ -72,6 +68,6 @@ The legacy single `repo-web` production Worker migration is still pending. The c
 
 ## Validation
 
-Run `pnpm check` and `pnpm build` after Backoffice changes. Run `pnpm run cf-typegen` after changing `wrangler.jsonc` and commit the regenerated `worker-configuration.d.ts`. The command intentionally ignores local environment files so generated types reflect checked-in Worker configuration only.
+Follow the [non-browser verification guide](../../docs/verification.md) for setup, checks, and tests. Run `pnpm run cf-typegen` after changing `wrangler.jsonc` and commit the regenerated `worker-configuration.d.ts`. The command intentionally ignores local environment files so generated types reflect checked-in Worker configuration only.
 
 

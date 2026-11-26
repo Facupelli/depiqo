@@ -1,28 +1,96 @@
-import { PostgreSqlContainer } from '@testcontainers/postgresql';
-import { spawn, spawnSync } from 'node:child_process';
+import { PostgreSqlContainer, type StartedPostgreSqlContainer } from '@testcontainers/postgresql';
+import { spawn } from 'node:child_process';
 import { createRequire } from 'node:module';
+import { constants } from 'node:os';
 import { resolve } from 'node:path';
+import { performance } from 'node:perf_hooks';
 
-const projectRequire = createRequire(resolve(process.cwd(), 'package.json'));
-const vitestExecutable = projectRequire.resolve('vitest/vitest.mjs');
+const interruptSignals = ['SIGINT', 'SIGTERM', 'SIGHUP'] as const;
+const shutdownGraceMs = 5_000;
+
+class RunInterrupted extends Error {
+  constructor(readonly signal: (typeof interruptSignals)[number]) {
+    super(`Received ${signal}`);
+  }
+}
+
+class CommandFailed extends Error {
+  constructor(
+    message: string,
+    readonly exitCode: number,
+  ) {
+    super(message);
+  }
+}
 
 async function main(): Promise<void> {
-  const configPath = process.argv[2];
-  if (!configPath) {
-    throw new Error('Expected a Vitest config path.');
+  const startedAt = performance.now();
+  const cancellation = new AbortController();
+  const handlers = interruptSignals.map((signal) => {
+    const onSignal = (): void => {
+      if (cancellation.signal.aborted) return;
+      console.error(`[db-tests] Received ${signal}; cancelling and cleaning up.`);
+      cancellation.abort(new RunInterrupted(signal));
+    };
+    process.on(signal, onSignal);
+    return { signal, onSignal };
+  });
+  let container: StartedPostgreSqlContainer | undefined;
+  let exitCode = 0;
+
+  try {
+    const [configPath, ...args] = process.argv.slice(2);
+    if (!configPath) throw new Error('Expected a Vitest config path.');
+    const projectRequire = createRequire(resolve(process.cwd(), 'package.json'));
+    const vitestExecutable = projectRequire.resolve('vitest/vitest.mjs');
+
+    container = await runPhase('PostgreSQL startup', () =>
+      new PostgreSqlContainer('postgres:18-alpine')
+        .withDatabase('depiqo_test')
+        .withUsername('test')
+        .withPassword('test')
+        .start(),
+    );
+    cancellation.signal.throwIfAborted();
+    const env = testEnvironment(container.getConnectionUri());
+    await runPhase('Prisma migrate deploy', () =>
+      runCommand('pnpm', ['exec', 'prisma', 'migrate', 'deploy'], env, cancellation.signal),
+    );
+    await runPhase('Vitest', () =>
+      runCommand(
+        process.execPath,
+        [vitestExecutable, 'run', '--config', configPath, ...args.filter((arg) => arg !== '--')],
+        env,
+        cancellation.signal,
+      ),
+    );
+  } catch (error) {
+    if (!(error instanceof RunInterrupted)) console.error('[db-tests]', error);
+    exitCode = error instanceof CommandFailed ? error.exitCode : 1;
+  } finally {
+    if (container) {
+      const startedContainer = container;
+      try {
+        await runPhase('PostgreSQL teardown', () => startedContainer.stop());
+      } catch (error) {
+        console.error(`[db-tests] Could not remove PostgreSQL container ${startedContainer.getId()}:`, error);
+        if (exitCode === 0) exitCode = 1;
+      }
+    }
+    const interruption = cancellation.signal.reason;
+    if (interruption instanceof RunInterrupted) exitCode = signalExitCode(interruption.signal);
+    process.exitCode = exitCode;
+    console.log(`[db-tests] Finished in ${elapsed(startedAt)} (exit ${exitCode}).`);
+    for (const { signal, onSignal } of handlers) process.removeListener(signal, onSignal);
   }
+}
 
-  const container = await new PostgreSqlContainer('postgres:18-alpine')
-    .withDatabase('depiqo_test')
-    .withUsername('test')
-    .withPassword('test')
-    .start();
-
-  const env: NodeJS.ProcessEnv = {
+function testEnvironment(databaseUrl: string): NodeJS.ProcessEnv {
+  return {
     ...process.env,
     NODE_ENV: 'test',
     LOG_LEVEL: 'silent',
-    DATABASE_URL: container.getConnectionUri(),
+    DATABASE_URL: databaseUrl,
     CORS_ALLOWED_ORIGINS: 'http://localhost',
     BFF_INTERNAL_TOKEN: 'test-bff-token',
     STOREFRONT_TENANT_JWT_SECRET: 'test-storefront-secret',
@@ -45,128 +113,83 @@ async function main(): Promise<void> {
     ROOT_DOMAIN: 'localhost',
     GEOAPIFY_API_KEY: 'test-geoapify-key',
   };
-
-  let testRun: TestRun | undefined;
-  let outcome: TestOutcome | undefined;
-  let cleanupError: unknown;
-
-  try {
-    console.log('Preparing test database...');
-    run('pnpm', ['exec', 'prisma', 'migrate', 'deploy'], env);
-    console.log('Test database ready.');
-    const runnerArgs = process.argv.slice(3).filter((argument) => argument !== '--');
-    testRun = startTestRunner(['run', '--config', configPath, ...runnerArgs], env);
-    outcome = await testRun.outcome;
-  } finally {
-    try {
-      await container.stop();
-    } catch (error) {
-      cleanupError = error;
-      console.error('Failed to stop the PostgreSQL test container:', error);
-    } finally {
-      testRun?.removeSignalHandlers();
-    }
-  }
-
-  if (!testRun || !outcome) return;
-
-  const terminationSignal = testRun.receivedSignal() ?? outcome.signal;
-  if (terminationSignal) {
-    process.kill(process.pid, terminationSignal);
-    return;
-  }
-  if (cleanupError) throw cleanupError;
-  process.exitCode = outcome.exitCode;
 }
 
-type TestOutcome = { exitCode: number; signal: NodeJS.Signals | null };
-type TestRun = {
-  outcome: Promise<TestOutcome>;
-  receivedSignal(): NodeJS.Signals | null;
-  removeSignalHandlers(): void;
-};
+async function runPhase<T>(label: string, run: () => Promise<T>): Promise<T> {
+  const startedAt = performance.now();
+  console.log(`[db-tests] ${label} started.`);
+  try {
+    const result = await run();
+    console.log(`[db-tests] ${label} completed in ${elapsed(startedAt)}.`);
+    return result;
+  } catch (error) {
+    const status = error instanceof RunInterrupted ? 'interrupted' : 'failed';
+    console.error(`[db-tests] ${label} ${status} after ${elapsed(startedAt)}.`);
+    throw error;
+  }
+}
 
-function startTestRunner(args: string[], env: NodeJS.ProcessEnv): TestRun {
+function elapsed(startedAt: number): string {
+  return `${((performance.now() - startedAt) / 1000).toFixed(2)}s`;
+}
+
+function signalExitCode(signal: NodeJS.Signals): number {
+  return 128 + constants.signals[signal];
+}
+
+async function runCommand(
+  executable: string,
+  args: string[],
+  env: NodeJS.ProcessEnv,
+  cancellation: AbortSignal,
+): Promise<void> {
+  cancellation.throwIfAborted();
   const usesProcessGroup = process.platform !== 'win32';
-  const child = spawn(process.execPath, [vitestExecutable, ...args], {
-    cwd: process.cwd(),
-    env,
-    stdio: 'inherit',
-    detached: usesProcessGroup,
-  });
-  const handledSignals: NodeJS.Signals[] = ['SIGINT', 'SIGTERM', 'SIGHUP'];
-  const signalHandlers = new Map<NodeJS.Signals, () => void>();
-  let firstReceivedSignal: NodeJS.Signals | null = null;
-  let childClosed = false;
+  const child = spawn(executable, args, { env, stdio: 'inherit', detached: usesProcessGroup });
+  const pid = child.pid;
+  let forceStop: NodeJS.Timeout | undefined;
 
-  const forwardSignal = (signal: NodeJS.Signals): void => {
-    if (firstReceivedSignal) return;
-    firstReceivedSignal = signal;
-    if (childClosed) return;
-
-    if (usesProcessGroup && child.pid !== undefined) {
-      try {
-        process.kill(-child.pid, signal);
-        return;
-      } catch (error) {
-        // SAFETY: Node process signaling failures expose their stable error code through ErrnoException.
-        if ((error as NodeJS.ErrnoException).code === 'ESRCH') return;
-        console.error(`Failed to forward ${signal} to the Vitest process group:`, error);
+  const send = (signal: NodeJS.Signals): void => {
+    if (pid === undefined) return;
+    try {
+      if (usesProcessGroup) process.kill(-pid, signal);
+      else child.kill(signal);
+    } catch (error) {
+      // SAFETY: Node process signaling failures expose their stable error code through ErrnoException.
+      if ((error as NodeJS.ErrnoException).code !== 'ESRCH') {
+        console.error(`[db-tests] Could not send ${signal}:`, error);
       }
     }
-    child.kill(signal);
   };
+  const onAbort = (): void => {
+    const reason = cancellation.reason;
+    if (!(reason instanceof RunInterrupted)) return;
+    send(reason.signal);
+    forceStop = setTimeout(() => {
+      console.error('[db-tests] Child did not stop within the grace period; sending SIGKILL.');
+      send('SIGKILL');
+    }, shutdownGraceMs);
+  };
+  cancellation.addEventListener('abort', onAbort, { once: true });
 
-  for (const signal of handledSignals) {
-    const handler = (): void => forwardSignal(signal);
-    signalHandlers.set(signal, handler);
-    process.on(signal, handler);
-  }
-
-  const outcome = new Promise<TestOutcome>((resolve) => {
-    let settled = false;
-    const settle = (result: TestOutcome): void => {
-      if (settled) return;
-      settled = true;
-      childClosed = true;
-      resolve(result);
-    };
-    child.once('error', (error) => {
-      console.error('Failed to start Vitest:', error);
-      settle({ exitCode: 1, signal: null });
+  try {
+    await new Promise<void>((resolve, reject) => {
+      child.once('error', reject);
+      child.once('close', (code, signal) => {
+        if (signal) reject(new CommandFailed(`Child terminated by ${signal}.`, signalExitCode(signal)));
+        else if (code !== 0) reject(new CommandFailed(`Child exited with status ${code}.`, code ?? 1));
+        else resolve();
+      });
     });
-    child.once('close', (exitCode, signal) => settle({ exitCode: exitCode ?? 1, signal }));
-  });
-
-  return {
-    outcome,
-    receivedSignal: () => firstReceivedSignal,
-    removeSignalHandlers: () => {
-      for (const [signal, handler] of signalHandlers) process.removeListener(signal, handler);
-    },
-  };
-}
-
-function run(command: string, args: string[], commandEnv: NodeJS.ProcessEnv): void {
-  const result = spawnSync(command, args, {
-    cwd: process.cwd(),
-    env: commandEnv,
-    stdio: ['inherit', 'pipe', 'pipe'],
-    encoding: 'utf8',
-    maxBuffer: 50 * 1024 * 1024,
-  });
-
-  if (result.error || result.signal || result.status !== 0) {
-    if (result.stdout) process.stdout.write(result.stdout);
-    if (result.stderr) process.stderr.write(result.stderr);
-
-    const commandDescription = `${command} ${args.join(' ')}`;
-    if (result.error) {
-      throw new Error(`Failed to execute ${commandDescription}: ${result.error.message}`, { cause: result.error });
-    }
-    if (result.signal) throw new Error(`${commandDescription} was terminated by signal ${result.signal}`);
-    throw new Error(`${commandDescription} failed with status ${result.status}`);
+  } catch (error) {
+    cancellation.throwIfAborted();
+    throw error;
+  } finally {
+    cancellation.removeEventListener('abort', onAbort);
+    clearTimeout(forceStop);
+    if (cancellation.aborted && usesProcessGroup) send('SIGKILL');
   }
+  cancellation.throwIfAborted();
 }
 
 void main().catch((error: unknown) => {

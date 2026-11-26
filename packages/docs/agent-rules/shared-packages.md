@@ -18,8 +18,7 @@ Package roles:
 Validation guidance:
 
 - For package-only changes, run the package's own build or lint command when available.
-- For changes to `api-contracts`, also validate the affected consumer app or run workspace validation because it is consumed across the repo.
-- Prefer workspace `pnpm build` or `pnpm lint` when a package change has likely app-level impact.
+- When a shared package change affects apps, rebuild the package and validate the affected consumers. See the [non-browser verification guide](../../../docs/verification.md) for Backend and Backoffice setup and checks.
 
 Representative examples:
 

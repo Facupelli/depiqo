@@ -4,10 +4,8 @@ import { randomUUID } from 'node:crypto';
 import { TestingModule } from '@nestjs/testing';
 
 import { PrismaService } from 'src/core/database/prisma.service';
-import {
-  createCatalogIntegrationContext,
-  useIntegrationTestContext,
-} from '../../../../test/support/integration-test-context';
+import { createCatalogIntegrationContext } from '../../../../test/support/integration-contexts/catalog';
+import { useIntegrationTestContext } from '../../../../test/support/integration-test-context';
 import { createTestFixtures, TestFixtures } from '../../../../test/support/fixtures';
 
 import { PrismaRentalOfferRepository } from '../features/create-rentable-item-offering/prisma-rental-offer.repository';
