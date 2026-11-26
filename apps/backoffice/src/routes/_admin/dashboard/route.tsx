@@ -246,6 +246,15 @@ function BranchSelector({ className }: { className?: string }) {
 					});
 				}
 				break;
+			case "/dashboard/inventory/unit-availability":
+				if (typeof location.search.branchId === "string") {
+					await navigate({
+						to: "/dashboard/inventory/unit-availability",
+						search: (previous) => ({ ...previous, branchId: undefined }),
+						replace: true,
+					});
+				}
+				break;
 			case "/dashboard/orders":
 			case "/dashboard/inventory/equipment-types":
 				if (

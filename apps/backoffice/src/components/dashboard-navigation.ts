@@ -6,17 +6,20 @@ import {
 	BadgePercent,
 	BarChart3,
 	CalendarDays,
+	CalendarRange,
 	Camera,
 	ChartNoAxesCombined,
 	LayoutGrid,
 	type LucideIcon,
 	Settings,
 	ShoppingBag,
+	Tags,
 	Users,
 } from "lucide-react";
 import {
 	categoryWorkspacePermissions,
 	customerListPermissions,
+	inventoryReadPermissions,
 	inventoryWorkspacePermissions,
 	productWorkspacePermissions,
 	promotionListPermissions,
@@ -39,18 +42,27 @@ export const equipmentDestinations = [
 			canAny(permissions, productWorkspacePermissions),
 	},
 	{
+		name: "Disponibilidad",
+		href: "/dashboard/inventory/unit-availability",
+		menuIcon: CalendarRange,
+		isVisible: (permissions: readonly Permission[]) =>
+			canAny(permissions, inventoryReadPermissions),
+	},
+	{
 		name: "Categorías",
 		href: "/dashboard/catalog/categories",
+		menuIcon: Tags,
 		isVisible: (permissions: readonly Permission[]) =>
 			canAny(permissions, categoryWorkspacePermissions),
 	},
 	{
 		name: "Dueños de Equipo",
 		href: "/dashboard/owners",
+		menuIcon: Users,
 		isVisible: (permissions: readonly Permission[]) =>
 			canAny(permissions, inventoryWorkspacePermissions),
 	},
-];
+] as const;
 
 export const customerDestinations = [
 	{
@@ -105,7 +117,9 @@ export function getDashboardNavigation(permissions: readonly Permission[]) {
 	const reports = reportDestinations.filter((item) =>
 		item.isVisible(permissions),
 	);
-	const combos = equipment.find((item) => item.name === "Combos");
+	const combos = equipment.find(
+		(item) => item.href === "/dashboard/catalog/packages",
+	);
 	const groups: DashboardNavItem[][] = [
 		[
 			{

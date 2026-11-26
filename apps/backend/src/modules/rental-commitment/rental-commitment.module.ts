@@ -70,6 +70,8 @@ import { GetRentalFinancialReportHttpController } from './features/get-rental-fi
 import { GetRentalFinancialReportHandler } from './features/get-rental-financial-report/get-rental-financial-report.handler';
 import { GetRentalOperationsHttpController } from './features/get-rental-operations/get-rental-operations.controller';
 import { GetRentalOperationsHandler } from './features/get-rental-operations/get-rental-operations.handler';
+import { GetAssetAvailabilityTimelineHttpController } from './features/get-asset-availability-timeline/get-asset-availability-timeline.controller';
+import { GetAssetAvailabilityTimelineHandler } from './features/get-asset-availability-timeline/get-asset-availability-timeline.handler';
 import { GetRentalsCalendarHttpController } from './features/get-rentals-calendar/get-rentals-calendar.controller';
 import { GetRentalsCalendarHandler } from './features/get-rentals-calendar/get-rentals-calendar.handler';
 import { GetRentalsHttpController } from './features/get-rentals/get-rentals.controller';
@@ -138,6 +140,7 @@ import { RentalLifecycleFactsService } from './public-api/rental-lifecycle-facts
     RemoveConfirmedPackageDemandLineHttpController,
     RemoveRentalSelectionHttpController,
     GetRentalOperationsHttpController,
+    GetAssetAvailabilityTimelineHttpController,
     GetRentalsCalendarHttpController,
     GetRentalDetailHttpController,
     GetRentalFinancialReportHttpController,
@@ -192,6 +195,7 @@ import { RentalLifecycleFactsService } from './public-api/rental-lifecycle-facts
     GetRentalFinancialReportHandler,
     GetRentalOperationsHandler,
     GetRentalAccessoryDefaultsHandler,
+    GetAssetAvailabilityTimelineHandler,
     GetRentalsCalendarHandler,
     GetRentalsHandler,
     GetRentalOfferAvailabilityHandler,
