@@ -27,6 +27,7 @@ import {
 } from "@repo/ui/components/table";
 import {
 	Archive,
+	CalendarClock,
 	ChevronLeft,
 	ChevronRight,
 	CirclePlay,
@@ -45,6 +46,7 @@ import { EditAssetDialog } from "@/modules/inventory/assets/edit-asset/edit-asse
 import { useReactivateAsset } from "@/modules/inventory/assets/reactivate-asset/reactivate-asset.mutation";
 import { useRetireAsset } from "@/modules/inventory/assets/retire-asset/retire-asset.mutation";
 import { RetireAssetAlertDialog } from "@/modules/inventory/assets/retire-asset/retire-asset-alert-dialog";
+import { TemporaryUnavailabilityDialog } from "@/modules/inventory/assets/temporary-unavailability/temporary-unavailability-dialog";
 import { useOwnerOptions } from "@/modules/inventory/ownership/public";
 import { useBranches } from "@/modules/settings/branches/public";
 import { ProblemDetailsError } from "@/shared/errors";
@@ -72,6 +74,10 @@ export function EquipmentUnitsSection({
 		actions: { openAddUnits },
 		capabilities,
 	} = useEquipmentTypeDetail();
+	const canReadUnavailability =
+		capabilities.readInventory || capabilities.manageInventory;
+	const [unavailabilityUnit, setUnavailabilityUnit] =
+		useState<GetEquipmentTypeAssetsItemDto | null>(null);
 	const [searchInput, setSearchInput] = useState(search.search ?? "");
 	const [editUnit, setEditUnit] =
 		useState<GetEquipmentTypeAssetsItemDto | null>(null);
@@ -185,13 +191,19 @@ export function EquipmentUnitsSection({
 	}
 
 	const actions = (unit: GetEquipmentTypeAssetsItemDto) => {
-		if (!capabilities.manageInventory && !capabilities.manageOwnership) {
+		if (!canReadUnavailability && !capabilities.manageOwnership) {
 			return null;
 		}
 		const isLifecyclePending = pendingLifecycleAssetId === unit.id;
 
 		return (
 			<UnitRowActionsMenu>
+				{canReadUnavailability && (
+					<DropdownMenuItem onClick={() => setUnavailabilityUnit(unit)}>
+						<CalendarClock className="mr-2 size-4" />
+						Bloqueos de disponibilidad
+					</DropdownMenuItem>
+				)}
 				{capabilities.manageInventory ? (
 					<DropdownMenuItem onClick={() => setEditUnit(unit)}>
 						<Pencil className="mr-2 size-4" />
@@ -401,6 +413,13 @@ export function EquipmentUnitsSection({
 				/>
 			) : null}
 
+			{canReadUnavailability && unavailabilityUnit && (
+				<TemporaryUnavailabilityDialog
+					unit={unavailabilityUnit}
+					canManage={capabilities.manageInventory}
+					onClose={() => setUnavailabilityUnit(null)}
+				/>
+			)}
 			{capabilities.manageInventory && editUnit ? (
 				<EditAssetDialog
 					open

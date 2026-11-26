@@ -21,6 +21,10 @@ import {
   AcceptedDeliverySnapshot,
   AcceptedDeliverySnapshotData,
 } from '../../domain/value-objects/accepted-delivery-snapshot.value-object';
+import {
+  AssetUnavailabilityResult,
+  ScheduleAssetUnavailabilityCommand,
+} from '../manage-asset-unavailability/asset-unavailability.handler';
 import { RescheduleConfirmedRentalPeriodCommand } from './reschedule-confirmed-rental-period.command';
 import { RescheduleConfirmedRentalPeriodResult } from './reschedule-confirmed-rental-period.handler';
 import { RescheduleConfirmedRentalPeriodApplicationInputSchema } from './reschedule-confirmed-rental-period.request.dto';
@@ -399,6 +403,28 @@ describe('RescheduleConfirmedRentalPeriod integration', () => {
       expect((await fixtures.persistedState(setup.rental.rentalId)).rental.assignedAssets).toHaveLength(1);
     },
   );
+
+  it('does not ignore temporary unavailability when a confirmed rental extends its own reservation', async () => {
+    const setup = await scenario();
+    const before = await fixtures.persistedState(setup.rental.rentalId);
+    const endsAt = new Date(setup.period.end.getTime() + 3 * 3_600_000);
+    const block = await bus.execute<ScheduleAssetUnavailabilityCommand, AssetUnavailabilityResult<{ id: string }>>(
+      new ScheduleAssetUnavailabilityCommand(
+        { tenantId: setup.tenant.id, assetId: setup.rental.assetIds[0] },
+        {
+          startsAt: new Date(setup.period.end.getTime() + 2 * 3_600_000),
+          endsAt,
+          reason: 'Repair',
+        },
+      ),
+    );
+    expect(block.isOk()).toBe(true);
+
+    const result = await reschedule(setup, { start: setup.period.start, end: endsAt });
+
+    expect(result._unsafeUnwrapErr().code).toBe('rental_commitment.assigned_assets_unavailable');
+    expect(await fixtures.persistedState(setup.rental.rentalId)).toEqual(before);
+  });
 
   it('maps exclusion races and persistence mismatches while rolling back and publishing no event', async () => {
     const setup = await scenario();

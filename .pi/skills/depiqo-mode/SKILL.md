@@ -9,14 +9,21 @@ description: Engineering workflow for developing Depiqo. Use when explicitly inv
 
 Restate the user's goal and identify the scope of the task.
 
-Read the matching playbook in full. Copy its steps into the todo list before adding task-specific steps.
+Read the matching playbook in full. Copy its steps into the todo list using the `todo` tool before adding task-specific steps.
 
 Track all agreed requirements as task-specific todos.
-Keep the todo list updated throughout execution.
+
+Use the todo tool throughout execution:
+- `create` to register tasks.
+- `start` before working on a task.
+- `complete` when a task is finished.
+- `reopen` when completed work requires correction.
+- `list` to recover or reconcile workflow state.
+
+The todo list is the source of truth for execution progress.
+Do not replace it with conversational checklists.
 
 Continue until all agreed requirements are implemented and verified, unless blocked.
-
-If no todo list tool is available, maintain an explicit checklist instead.
 
 ## Playbooks
 
