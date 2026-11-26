@@ -1,6 +1,6 @@
 # Non-browser verification
 
-Use this guide for local Backend and Backoffice checks. Run checks from the affected app unless the change also affects a shared package or another app. Browser verification and deployment are separate workflows.
+Use this guide for local Backend and Backoffice checks and Storefront typechecking. Run checks from the affected app unless the change also affects a shared package or another app. Browser verification and deployment are separate workflows.
 
 ## Fresh checkout
 
@@ -11,7 +11,7 @@ pnpm install --frozen-lockfile
 pnpm --filter @repo/api-contracts --filter @repo/temporal run build
 ```
 
-Both apps consume built outputs from `@repo/api-contracts` and `@repo/temporal`. Rebuild the affected package when its source changes or its `dist/` output is missing. `@repo/ui` exports source and does not need a separate build.
+All three apps consume built outputs from `@repo/api-contracts` and `@repo/temporal`. Rebuild the affected package when its source changes or its `dist/` output is missing. `@repo/ui` exports source and does not need a separate build.
 
 For Backend checks, generate the Prisma client from `apps/backend/`:
 
@@ -29,12 +29,14 @@ Run these from `apps/backend/` or `apps/backoffice/` as appropriate:
 
 | Purpose | Command | Effect |
 | --- | --- | --- |
-| Type-check | `pnpm run typecheck` | No source edits. Backend checks the app build inputs, not specs, and uses a separate incremental cache. |
+| Type-check | `pnpm run typecheck` | Also available from `apps/storefront/`. No source edits or build output. Each app uses a separate incremental cache. Backend checks app build inputs, not specs; Backoffice and Storefront use their full `tsconfig.json`, including tests. |
 | Lint | `pnpm run lint` | Read-only. Uses Oxlint in Backend. Backoffice checks Biome lint rules and assists (including import organization), without checking formatting. |
 | Check formatting | `pnpm run format:check` | Read-only. Uses Prettier in Backend and Biome in Backoffice. |
 | Apply lint fixes | `pnpm run lint:fix` | May edit files. Backoffice also applies Biome assists without running the formatter. Review the diff. |
 | Apply formatting | `pnpm run format:write` | May edit files. Review the diff. |
 | Check packaging | `pnpm run build` | Writes build artifacts. Backoffice may regenerate its route tree; its build is not a TypeScript check. |
+
+Backoffice and Storefront store their typecheck caches in their own `node_modules/.cache/` directories as `backoffice-typecheck.tsbuildinfo` and `storefront-typecheck.tsbuildinfo`, respectively. These files are Git-ignored and separate from build output. Delete the app's cache file to force a cold typecheck.
 
 The existing Backoffice CI lint step checks lint rules only. The local `lint` script also checks assists.
 
