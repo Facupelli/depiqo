@@ -6,10 +6,8 @@ import { PrismaService } from 'src/core/database/prisma.service';
 import { V2ContractArtifactKind, V2ContractArtifactStorageStatus, V2ContractStatus } from 'src/generated/prisma/enums';
 import { RemoveConfirmedPackageDemandLineCommand } from 'src/modules/rental-commitment/features/remove-confirmed-package-demand-line/remove-confirmed-package-demand-line.command';
 import { ConfirmRentalFixtures } from 'src/modules/rental-commitment/features/confirm-rental/testing/confirm-rental.fixtures';
-import {
-  createContractsIntegrationContext,
-  useIntegrationTestContext,
-} from '../../../../../test/support/integration-test-context';
+import { createContractsIntegrationContext } from '../../../../../test/support/integration-contexts/contracts';
+import { useIntegrationTestContext } from '../../../../../test/support/integration-test-context';
 import { createTestFixtures, TestFixtures } from '../../../../../test/support/fixtures';
 import { RentalRemitoReadModelLoader } from './rental-remito-read-model.loader';
 

@@ -9,10 +9,8 @@ import { PrismaService } from 'src/core/database/prisma.service';
 import { Prisma } from 'src/generated/prisma/client';
 import { V2RentalStatus } from 'src/generated/prisma/enums';
 import { RentalConfirmedIntegrationEvent } from 'src/modules/rental-commitment/public-api/events/rental-lifecycle.integration-events';
-import {
-  createRentalCommitmentIntegrationContext,
-  useIntegrationTestContext,
-} from '../../../../../test/support/integration-test-context';
+import { createRentalCommitmentIntegrationContext } from '../../../../../test/support/integration-contexts/rental-commitment';
+import { useIntegrationTestContext } from '../../../../../test/support/integration-test-context';
 import { createTestFixtures, TestFixtures } from '../../../../../test/support/fixtures';
 import { createBarrier, runConcurrently } from '../../../../../test/support/concurrency';
 import { oneMillisecondAfter, oneMillisecondBefore, utcDate } from '../../../../../test/support/time';

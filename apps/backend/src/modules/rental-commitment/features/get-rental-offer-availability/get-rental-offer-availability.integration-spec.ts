@@ -4,10 +4,8 @@ import { QueryBus } from '@nestjs/cqrs';
 import { TestingModule } from '@nestjs/testing';
 
 import { PrismaService } from 'src/core/database/prisma.service';
-import {
-  createRentalCommitmentIntegrationContext,
-  useIntegrationTestContext,
-} from '../../../../../test/support/integration-test-context';
+import { createRentalCommitmentIntegrationContext } from '../../../../../test/support/integration-contexts/rental-commitment';
+import { useIntegrationTestContext } from '../../../../../test/support/integration-test-context';
 import { runConcurrently } from '../../../../../test/support/concurrency';
 import { createTestFixtures, TestFixtures } from '../../../../../test/support/fixtures';
 import { oneMillisecondAfter, oneMillisecondBefore, utcDate } from '../../../../../test/support/time';

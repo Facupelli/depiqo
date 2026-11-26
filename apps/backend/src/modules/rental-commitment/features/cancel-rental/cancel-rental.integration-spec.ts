@@ -8,10 +8,8 @@ import { TestingModule } from '@nestjs/testing';
 import { PrismaService } from 'src/core/database/prisma.service';
 import { V2RentalStatus } from 'src/generated/prisma/enums';
 import { createBarrier, runConcurrently } from '../../../../../test/support/concurrency';
-import {
-  createRentalCommitmentIntegrationContext,
-  useIntegrationTestContext,
-} from '../../../../../test/support/integration-test-context';
+import { createRentalCommitmentIntegrationContext } from '../../../../../test/support/integration-contexts/rental-commitment';
+import { useIntegrationTestContext } from '../../../../../test/support/integration-test-context';
 import { createTestFixtures, TestFixtures } from '../../../../../test/support/fixtures';
 import { utcDate } from '../../../../../test/support/time';
 import { RentalRepository } from '../../persistence/rental.repository';

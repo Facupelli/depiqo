@@ -7,10 +7,8 @@ import { PrismaService } from 'src/core/database/prisma.service';
 import { CatalogRentalOfferDisplayFacts } from '../../catalog/public-api/catalog-rental-offer-display-facts.public-api';
 import { GetRatePlanDetailHandler } from '../features/get-rate-plan-detail/get-rate-plan-detail.handler';
 import { GetRatePlanDetailQuery } from '../features/get-rate-plan-detail/get-rate-plan-detail.query';
-import {
-  createPricingIntegrationContext,
-  useIntegrationTestContext,
-} from '../../../../test/support/integration-test-context';
+import { createPricingIntegrationContext } from '../../../../test/support/integration-contexts/pricing';
+import { useIntegrationTestContext } from '../../../../test/support/integration-test-context';
 import { createTestFixtures, TestFixtures } from '../../../../test/support/fixtures';
 
 import { PRICING_RATE_PLAN_BILLING_UNITS, PricingRatePlanAuthoring } from './pricing-rate-plan-authoring.public-api';

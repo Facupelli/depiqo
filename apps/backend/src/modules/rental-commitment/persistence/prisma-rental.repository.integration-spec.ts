@@ -4,10 +4,8 @@ import { TestingModule } from '@nestjs/testing';
 import { PrismaService } from 'src/core/database/prisma.service';
 import { PrismaUnitOfWork } from 'src/core/database/prisma-unit-of-work';
 import { PostgresExclusionViolationError } from 'src/core/utils/postgres-error.mapper';
-import {
-  createRentalCommitmentIntegrationContext,
-  useIntegrationTestContext,
-} from '../../../../test/support/integration-test-context';
+import { createRentalCommitmentIntegrationContext } from '../../../../test/support/integration-contexts/rental-commitment';
+import { useIntegrationTestContext } from '../../../../test/support/integration-test-context';
 import { createTestFixtures, TestFixtures } from '../../../../test/support/fixtures';
 
 import { FulfillmentMethod } from '../domain/rental-status';

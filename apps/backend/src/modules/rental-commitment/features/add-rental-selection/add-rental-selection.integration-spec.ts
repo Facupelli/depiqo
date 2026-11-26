@@ -7,10 +7,8 @@ import { PrismaService } from 'src/core/database/prisma.service';
 import { Prisma } from 'src/generated/prisma/client';
 import { parsePostgresRange } from 'src/core/utils/postgres-range.util';
 import { ConfirmedRentalEditedIntegrationEvent } from '../../public-api/events/rental-lifecycle.integration-events';
-import {
-  createRentalCommitmentIntegrationContext,
-  useIntegrationTestContext,
-} from '../../../../../test/support/integration-test-context';
+import { createRentalCommitmentIntegrationContext } from '../../../../../test/support/integration-contexts/rental-commitment';
+import { useIntegrationTestContext } from '../../../../../test/support/integration-test-context';
 import { createTestFixtures, TestFixtures } from '../../../../../test/support/fixtures';
 import { utcDate } from '../../../../../test/support/time';
 import { ConfirmedRentalFixtures } from '../../testing/confirmed-rental.fixtures';

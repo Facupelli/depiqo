@@ -9,10 +9,8 @@ import { Prisma } from 'src/generated/prisma/client';
 import { RoadRouteDistanceProvider } from 'src/modules/delivery/application/ports/road-route-distance-provider.port';
 import { persistServiceableBranchDeliveryConfiguration } from 'src/modules/delivery/testing/serviceable-delivery.fixtures';
 import { AddressGeocoder } from 'src/modules/shared/geocoding/address-geocoder.port';
-import {
-  createRentalCommitmentIntegrationContext,
-  useIntegrationTestContext,
-} from '../../../../../test/support/integration-test-context';
+import { createRentalCommitmentIntegrationContext } from '../../../../../test/support/integration-contexts/rental-commitment';
+import { useIntegrationTestContext } from '../../../../../test/support/integration-test-context';
 import { createTestFixtures, TestFixtures } from '../../../../../test/support/fixtures';
 import {
   FakeAddressGeocoder,

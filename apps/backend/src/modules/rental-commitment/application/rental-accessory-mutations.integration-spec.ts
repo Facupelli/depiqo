@@ -6,10 +6,8 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { PrismaService } from 'src/core/database/prisma.service';
 import { parsePostgresRange } from 'src/core/utils/postgres-range.util';
-import {
-  createRentalCommitmentIntegrationContext,
-  useIntegrationTestContext,
-} from '../../../../test/support/integration-test-context';
+import { createRentalCommitmentIntegrationContext } from '../../../../test/support/integration-contexts/rental-commitment';
+import { useIntegrationTestContext } from '../../../../test/support/integration-test-context';
 import { createTestFixtures, TestFixtures } from '../../../../test/support/fixtures';
 import { utcDate } from '../../../../test/support/time';
 
