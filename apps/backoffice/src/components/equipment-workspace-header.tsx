@@ -14,7 +14,7 @@ import {
 	DropdownMenuTrigger,
 } from "@repo/ui/components/dropdown-menu";
 import { Link, useRouteContext } from "@tanstack/react-router";
-import { ChevronDown, Tags, Users } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import type { ReactNode } from "react";
 import { equipmentDestinations } from "./dashboard-navigation";
 
@@ -30,9 +30,7 @@ export function EquipmentWorkspaceHeader({
 		item.isVisible(user.permissions),
 	);
 	const parent = destinations[0];
-	const menuItems = destinations.filter(
-		(item) => item.name === "Categorías" || item.name === "Dueños de Equipo",
-	);
+	const menuItems = destinations.filter((item) => "menuIcon" in item);
 	return (
 		<div className="flex flex-wrap items-center justify-between gap-3">
 			<div className="space-y-2">
@@ -73,11 +71,7 @@ export function EquipmentWorkspaceHeader({
 									className="min-h-11 gap-2.5 px-3 whitespace-nowrap"
 									render={<Link to={item.href} />}
 								>
-									{item.name === "Categorías" ? (
-										<Tags aria-hidden="true" className="size-4" />
-									) : (
-										<Users aria-hidden="true" className="size-4" />
-									)}
+									<item.menuIcon aria-hidden="true" className="size-4" />
 									<span className="truncate">{item.name}</span>
 								</DropdownMenuItem>
 							))}

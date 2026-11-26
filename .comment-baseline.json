@@ -549,9 +549,6 @@
     "1a38a6e3269c733ab5be80b579fcdb7ce59122b5e890aa14f9df3e6462ad4f2d",
     "ec9baf18d9c6d4b19bd4f1969b9eca4db2bf67e93ee38ead1243095caf94446b"
   ],
-  "packages/api-contracts/src/rental-commitment/get-rentals-calendar.contract.ts": [
-    "ff0deddac009ef6305678188d7374d9faf06e51b29d3e2993ccbd0a36a0e27a8"
-  ],
   "packages/api-contracts/src/rental-commitment/reschedule-confirmed-rental-period.contract.ts": [
     "2094ee6c593724278698636ab28b64e7fa36c4b54da52ee38f6a773f8e69d154",
     "bffd6a91c71d746f4a519de80cf8807b0bd3b7902104a4e8a8814c6be9974426"

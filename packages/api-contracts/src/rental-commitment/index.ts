@@ -14,6 +14,7 @@ export * from "./delivery-representation.schema";
 export * from "./get-rental-detail.contract";
 export * from "./get-rental-financial-report.contract";
 export * from "./get-rental-operations.contract";
+export * from "./get-asset-availability-timeline.contract";
 export * from "./get-rentals-calendar.contract";
 export * from "./get-rentals.contract";
 export * from "./get-rental-offer-availability.contract";

@@ -2,46 +2,9 @@ import { z } from "zod";
 
 import type { ApiContract } from "../api-contract";
 import { LocalDateSchema } from "../local-date.schema";
+import { BranchCalendarWindowSchema } from "./branch-calendar-window.schema";
 
-const MAX_CALENDAR_DAYS = 62;
-const MILLISECONDS_PER_DAY = 86_400_000;
-
-// PostgreSQL calendar-date casts do not support ISO year zero.
-const CalendarDateSchema = LocalDateSchema.refine(
-	(value) => !value.startsWith("0000-"),
-	{ message: "Year zero is not supported." },
-);
-
-export const GetRentalsCalendarQuerySchema = z
-	.object({
-		branchId: z.string().trim().min(1),
-		from: CalendarDateSchema,
-		to: CalendarDateSchema,
-	})
-	.superRefine(({ from, to }, context) => {
-		if (from > to) {
-			context.addIssue({
-				code: "custom",
-				path: ["to"],
-				message: "to must be on or after from.",
-			});
-			return;
-		}
-
-		const inclusiveDays =
-			(Date.parse(`${to}T00:00:00.000Z`) -
-				Date.parse(`${from}T00:00:00.000Z`)) /
-				MILLISECONDS_PER_DAY +
-			1;
-
-		if (inclusiveDays > MAX_CALENDAR_DAYS) {
-			context.addIssue({
-				code: "custom",
-				path: ["to"],
-				message: `Calendar ranges must not exceed ${MAX_CALENDAR_DAYS} inclusive days.`,
-			});
-		}
-	});
+export const GetRentalsCalendarQuerySchema = BranchCalendarWindowSchema;
 
 export const GetRentalsCalendarStatusSchema = z.enum([
 	"PENDING",

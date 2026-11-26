@@ -20,9 +20,13 @@ export const rentalWorkspacePermissions = [
 	TenantPermission.ContractsSigningSend,
 ] as const satisfies readonly TenantPermissionId[];
 
-export const inventoryWorkspacePermissions = [
+export const inventoryReadPermissions = [
 	TenantPermission.InventoryRead,
 	TenantPermission.InventoryManage,
+] as const satisfies readonly TenantPermissionId[];
+
+export const inventoryWorkspacePermissions = [
+	...inventoryReadPermissions,
 	TenantPermission.InventoryOwnershipManage,
 ] as const satisfies readonly TenantPermissionId[];
 

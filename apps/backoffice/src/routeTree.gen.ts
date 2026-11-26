@@ -41,6 +41,7 @@ import { Route as AdminDashboardReportsEquipmentRouteImport } from './routes/_ad
 import { Route as AdminDashboardPromotionsNewRouteImport } from './routes/_admin/dashboard/promotions/new'
 import { Route as AdminDashboardOwnersOwnerIdRouteImport } from './routes/_admin/dashboard/owners/$ownerId'
 import { Route as AdminDashboardOrdersNewRouteImport } from './routes/_admin/dashboard/orders/new'
+import { Route as AdminDashboardInventoryUnitAvailabilityRouteImport } from './routes/_admin/dashboard/inventory/unit-availability'
 import { Route as AdminDashboardCustomersCustomerIdRouteImport } from './routes/_admin/dashboard/customers/$customerId'
 import { Route as AdminDashboardBranchesNewRouteImport } from './routes/_admin/dashboard/branches/new'
 import { Route as AdminDashboardSettingsTeamRouteRouteImport } from './routes/_admin/dashboard/settings/team/route'
@@ -250,6 +251,12 @@ const AdminDashboardOrdersNewRoute = AdminDashboardOrdersNewRouteImport.update({
   path: '/orders/new',
   getParentRoute: () => AdminDashboardRouteRoute,
 } as any)
+const AdminDashboardInventoryUnitAvailabilityRoute =
+  AdminDashboardInventoryUnitAvailabilityRouteImport.update({
+    id: '/inventory/unit-availability',
+    path: '/inventory/unit-availability',
+    getParentRoute: () => AdminDashboardRouteRoute,
+  } as any)
 const AdminDashboardCustomersCustomerIdRoute =
   AdminDashboardCustomersCustomerIdRouteImport.update({
     id: '/customers/$customerId',
@@ -445,6 +452,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/settings/team': typeof AdminDashboardSettingsTeamRouteRouteWithChildren
   '/dashboard/branches/new': typeof AdminDashboardBranchesNewRoute
   '/dashboard/customers/$customerId': typeof AdminDashboardCustomersCustomerIdRoute
+  '/dashboard/inventory/unit-availability': typeof AdminDashboardInventoryUnitAvailabilityRoute
   '/dashboard/orders/new': typeof AdminDashboardOrdersNewRoute
   '/dashboard/owners/$ownerId': typeof AdminDashboardOwnersOwnerIdRoute
   '/dashboard/promotions/new': typeof AdminDashboardPromotionsNewRoute
@@ -502,6 +510,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AdminDashboardIndexRoute
   '/dashboard/branches/new': typeof AdminDashboardBranchesNewRoute
   '/dashboard/customers/$customerId': typeof AdminDashboardCustomersCustomerIdRoute
+  '/dashboard/inventory/unit-availability': typeof AdminDashboardInventoryUnitAvailabilityRoute
   '/dashboard/orders/new': typeof AdminDashboardOrdersNewRoute
   '/dashboard/owners/$ownerId': typeof AdminDashboardOwnersOwnerIdRoute
   '/dashboard/promotions/new': typeof AdminDashboardPromotionsNewRoute
@@ -563,6 +572,7 @@ export interface FileRoutesById {
   '/_admin/dashboard/settings/team': typeof AdminDashboardSettingsTeamRouteRouteWithChildren
   '/_admin/dashboard/branches/new': typeof AdminDashboardBranchesNewRoute
   '/_admin/dashboard/customers/$customerId': typeof AdminDashboardCustomersCustomerIdRoute
+  '/_admin/dashboard/inventory/unit-availability': typeof AdminDashboardInventoryUnitAvailabilityRoute
   '/_admin/dashboard/orders/new': typeof AdminDashboardOrdersNewRoute
   '/_admin/dashboard/owners/$ownerId': typeof AdminDashboardOwnersOwnerIdRoute
   '/_admin/dashboard/promotions/new': typeof AdminDashboardPromotionsNewRoute
@@ -626,6 +636,7 @@ export interface FileRouteTypes {
     | '/dashboard/settings/team'
     | '/dashboard/branches/new'
     | '/dashboard/customers/$customerId'
+    | '/dashboard/inventory/unit-availability'
     | '/dashboard/orders/new'
     | '/dashboard/owners/$ownerId'
     | '/dashboard/promotions/new'
@@ -683,6 +694,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/dashboard/branches/new'
     | '/dashboard/customers/$customerId'
+    | '/dashboard/inventory/unit-availability'
     | '/dashboard/orders/new'
     | '/dashboard/owners/$ownerId'
     | '/dashboard/promotions/new'
@@ -743,6 +755,7 @@ export interface FileRouteTypes {
     | '/_admin/dashboard/settings/team'
     | '/_admin/dashboard/branches/new'
     | '/_admin/dashboard/customers/$customerId'
+    | '/_admin/dashboard/inventory/unit-availability'
     | '/_admin/dashboard/orders/new'
     | '/_admin/dashboard/owners/$ownerId'
     | '/_admin/dashboard/promotions/new'
@@ -1025,6 +1038,13 @@ declare module '@tanstack/react-router' {
       path: '/orders/new'
       fullPath: '/dashboard/orders/new'
       preLoaderRoute: typeof AdminDashboardOrdersNewRouteImport
+      parentRoute: typeof AdminDashboardRouteRoute
+    }
+    '/_admin/dashboard/inventory/unit-availability': {
+      id: '/_admin/dashboard/inventory/unit-availability'
+      path: '/inventory/unit-availability'
+      fullPath: '/dashboard/inventory/unit-availability'
+      preLoaderRoute: typeof AdminDashboardInventoryUnitAvailabilityRouteImport
       parentRoute: typeof AdminDashboardRouteRoute
     }
     '/_admin/dashboard/customers/$customerId': {
@@ -1349,6 +1369,7 @@ interface AdminDashboardRouteRouteChildren {
   AdminDashboardIndexRoute: typeof AdminDashboardIndexRoute
   AdminDashboardBranchesNewRoute: typeof AdminDashboardBranchesNewRoute
   AdminDashboardCustomersCustomerIdRoute: typeof AdminDashboardCustomersCustomerIdRoute
+  AdminDashboardInventoryUnitAvailabilityRoute: typeof AdminDashboardInventoryUnitAvailabilityRoute
   AdminDashboardOrdersNewRoute: typeof AdminDashboardOrdersNewRoute
   AdminDashboardOwnersOwnerIdRoute: typeof AdminDashboardOwnersOwnerIdRoute
   AdminDashboardPromotionsNewRoute: typeof AdminDashboardPromotionsNewRoute
@@ -1382,6 +1403,8 @@ const AdminDashboardRouteRouteChildren: AdminDashboardRouteRouteChildren = {
   AdminDashboardBranchesNewRoute: AdminDashboardBranchesNewRoute,
   AdminDashboardCustomersCustomerIdRoute:
     AdminDashboardCustomersCustomerIdRoute,
+  AdminDashboardInventoryUnitAvailabilityRoute:
+    AdminDashboardInventoryUnitAvailabilityRoute,
   AdminDashboardOrdersNewRoute: AdminDashboardOrdersNewRoute,
   AdminDashboardOwnersOwnerIdRoute: AdminDashboardOwnersOwnerIdRoute,
   AdminDashboardPromotionsNewRoute: AdminDashboardPromotionsNewRoute,
