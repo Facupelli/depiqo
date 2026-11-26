@@ -1,6 +1,7 @@
 export * from "./add-assets-to-equipment-type.contract";
 export * from "./change-asset-owner.contract";
 export * from "./asset.schemas";
+export * from "./asset-unavailability.contract";
 export * from "./create-equipment-type-accessory-defaults.contract";
 export * from "./create-equipment-type.contract";
 export * from "./create-owner-with-contract.contract";

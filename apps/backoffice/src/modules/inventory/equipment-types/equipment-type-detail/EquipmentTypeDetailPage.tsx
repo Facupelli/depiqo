@@ -30,6 +30,7 @@ export function EquipmentTypeDetailPage({
 	const [addUnitsOpen, setAddUnitsOpen] = useState(false);
 	const imageUrl = buildR2PublicUrl(summary.imageUrl, "catalog");
 	const capabilities = {
+		readInventory: can(permissions, TenantPermission.InventoryRead),
 		manageInventory: can(permissions, TenantPermission.InventoryManage),
 		manageOwnership: can(
 			permissions,

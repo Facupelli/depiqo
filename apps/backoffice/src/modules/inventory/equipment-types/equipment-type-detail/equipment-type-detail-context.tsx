@@ -5,6 +5,7 @@ type EquipmentTypeDetailContextValue = {
 		openAddUnits: () => void;
 	};
 	capabilities: {
+		readInventory: boolean;
 		manageInventory: boolean;
 		manageOwnership: boolean;
 		manageProducts: boolean;

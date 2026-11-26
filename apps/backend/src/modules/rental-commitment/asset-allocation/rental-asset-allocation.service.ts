@@ -212,11 +212,11 @@ export class RentalAssetAllocationService {
     let ignoredBlockScopeSql: Prisma.Sql = Prisma.empty;
     if (params.ignoredBlockScope) {
       if ('allBlockTypes' in params.ignoredBlockScope) {
-        ignoredBlockScopeSql = Prisma.sql`AND rental_id <> ${params.ignoredBlockScope.rentalId}`;
+        ignoredBlockScopeSql = Prisma.sql`AND rental_id IS DISTINCT FROM ${params.ignoredBlockScope.rentalId}`;
       } else {
         ignoredBlockScopeSql = Prisma.sql`
           AND NOT (
-            rental_id = ${params.ignoredBlockScope.rentalId}
+            rental_id IS NOT DISTINCT FROM ${params.ignoredBlockScope.rentalId}
             AND block_type = ${params.ignoredBlockScope.blockType}::"V2AssetBlockType"
           )
         `;

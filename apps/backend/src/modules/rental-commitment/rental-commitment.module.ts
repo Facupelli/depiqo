@@ -80,6 +80,19 @@ import { GetStorefrontBranchesHttpController } from './features/get-storefront-b
 import { GetStorefrontBranchesHandler } from './features/get-storefront-branches/get-storefront-branches.handler';
 import { GetStorefrontRentalOfferAvailabilityHttpController } from './features/get-storefront-rental-offer-availability/get-storefront-rental-offer-availability.controller';
 import { GetStorefrontRentalOfferAvailabilityHandler } from './features/get-storefront-rental-offer-availability/get-storefront-rental-offer-availability.handler';
+import {
+  CancelAssetUnavailabilityHttpController,
+  ListAssetUnavailabilityHttpController,
+  RescheduleAssetUnavailabilityHttpController,
+  ScheduleAssetUnavailabilityHttpController,
+} from './features/manage-asset-unavailability/asset-unavailability.controller';
+import {
+  CancelAssetUnavailabilityHandler,
+  ChangeAssetUnavailability,
+  ListAssetUnavailabilityHandler,
+  RescheduleAssetUnavailabilityHandler,
+  ScheduleAssetUnavailabilityHandler,
+} from './features/manage-asset-unavailability/asset-unavailability.handler';
 import { RentalNumberAllocator } from './persistence/rental-number.allocator';
 import { PrismaRentalRepository } from './persistence/prisma-rental.repository';
 import { RentalRepository } from './persistence/rental.repository';
@@ -98,6 +111,10 @@ import { RentalLifecycleFactsService } from './public-api/rental-lifecycle-facts
 @Module({
   imports: [AssetInventoryModule, CatalogModule, DeliveryModule, PricingModule, TenantManagementModule],
   controllers: [
+    ListAssetUnavailabilityHttpController,
+    ScheduleAssetUnavailabilityHttpController,
+    RescheduleAssetUnavailabilityHttpController,
+    CancelAssetUnavailabilityHttpController,
     AddRentalSelectionHttpController,
     AssignRentalAccessoriesHttpController,
     AssignCustomerToDraftRentalHttpController,
@@ -131,6 +148,11 @@ import { RentalLifecycleFactsService } from './public-api/rental-lifecycle-facts
     GetStorefrontRentalOfferAvailabilityHttpController,
   ],
   providers: [
+    ListAssetUnavailabilityHandler,
+    ScheduleAssetUnavailabilityHandler,
+    RescheduleAssetUnavailabilityHandler,
+    CancelAssetUnavailabilityHandler,
+    ChangeAssetUnavailability,
     RentalOperationalFactsValidatorService,
     RentalNumberAllocator,
     { provide: RentalRepository, useClass: PrismaRentalRepository },

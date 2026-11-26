@@ -43,7 +43,9 @@ Catalog supplies the fulfillment requirements, and Rental Commitment evaluates p
 
 ### Asset Blocks
 
-Asset blocks represent the physical reservation of assets for rental participation. A physical asset cannot have overlapping active reservation periods.
+The asset-block calendar records physical reservations for rental participation and staff-scheduled temporary unavailability. The database prevents overlapping unreleased blocks for the same physical asset, regardless of reason. Rental edits and cancellations can only change rental-owned reservations.
+
+Temporary unavailability does not change the asset's inventory status. Staff schedule a finite, half-open interval with a reason. It cannot overlap an existing rental's operational reservation (including buffers and transport), and it prevents new reservations for the same time. Future periods can be rescheduled or cancelled. In-progress periods can change their expected end without changing their start or reason, or be ended immediately while preserving elapsed unavailability. Completed periods are read-only.
 
 ## Confirmed rental semantics
 

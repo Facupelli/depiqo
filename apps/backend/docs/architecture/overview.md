@@ -92,7 +92,7 @@ Owns rental orders as commercial and operational commitments.
 
 It owns rental lifecycle, selected offer snapshots, operational demand lines, assigned asset references, rental-created asset blocks, accepted price snapshots, accessory preparation decisions, delivery details, and owner split snapshots.
 
-`AssetBlock` belongs to Rental Commitment because it prevents the same physical asset from being committed to overlapping rentals.
+The asset-block calendar belongs to Rental Commitment and is the authority on overlapping physical occupancy. It holds both rental reservations and staff-scheduled temporary unavailability. Asset Inventory remains authoritative for asset identity and lifecycle.
 
 ### Contracts
 

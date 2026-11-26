@@ -18,6 +18,10 @@ import {
 import { createTestFixtures, TestFixtures } from '../../../../../test/support/fixtures';
 import { utcDate } from '../../../../../test/support/time';
 import { GetRentalAccessoryDefaultsHandler } from './get-rental-accessory-defaults.handler';
+import {
+  ScheduleAssetUnavailabilityCommand,
+  AssetUnavailabilityResult,
+} from '../manage-asset-unavailability/asset-unavailability.handler';
 import { GetRentalAccessoryDefaultsQuery } from './get-rental-accessory-defaults.query';
 
 describe('GetRentalAccessoryDefaults integration', () => {
@@ -265,6 +269,43 @@ describe('GetRentalAccessoryDefaults integration', () => {
         }),
       ]),
     );
+  });
+
+  it('excludes temporarily unavailable accessories from suggestions and assignment', async () => {
+    const s = await scenario({ ownerId: randomUUID() });
+    const blocked = await commandBus.execute<
+      ScheduleAssetUnavailabilityCommand,
+      AssetUnavailabilityResult<{ id: string }>
+    >(
+      new ScheduleAssetUnavailabilityCommand(
+        { tenantId: s.tenant.id, assetId: s.assetId },
+        {
+          startsAt: utcDate(2030, 1, 1, 9),
+          endsAt: utcDate(2030, 1, 1, 9, 55),
+          reason: 'Inspection',
+        },
+      ),
+    );
+    expect(blocked.isOk()).toBe(true);
+    const defaults = await handler.execute(new GetRentalAccessoryDefaultsQuery(s.tenant.id, s.rental.rentalId));
+    expect(defaults._unsafeUnwrap().suggestions[0].availableCount).toBe(0);
+
+    const assignment = await commandBus.execute<AssignRentalAccessoriesCommand, AssignRentalAccessoriesResult>(
+      new AssignRentalAccessoriesCommand({
+        tenantId: s.tenant.id,
+        rentalId: s.rental.rentalId,
+        expectedVersion: 0,
+        accessories: [
+          {
+            sourceRentalDemandLineId: s.rental.demandLineIds[0],
+            equipmentTypeId: s.accessoryEquipmentType.id,
+            quantity: 1,
+          },
+        ],
+      }),
+    );
+    expect(assignment._unsafeUnwrapErr().code).toBe('rental_commitment.insufficient_asset_availability');
+    expect(await prisma.client.v2AssetBlock.count({ where: { rentalId: s.rental.rentalId } })).toBe(0);
   });
 
   it('counts a third-party candidate with an owner contract snapshot and the assignment succeeds', async () => {

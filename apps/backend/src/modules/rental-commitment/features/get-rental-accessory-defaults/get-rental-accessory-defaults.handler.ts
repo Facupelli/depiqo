@@ -193,7 +193,10 @@ export class GetRentalAccessoryDefaultsHandler implements IQueryHandler<
         AND released_at IS NULL
         AND asset_id IN (${Prisma.join(params.assetIds)})
         AND period && ${params.period}::tstzrange
-        AND NOT (rental_id = ${params.rentalId} AND block_type = ${V2AssetBlockType.ACCESSORY})
+        AND NOT (
+          rental_id IS NOT DISTINCT FROM ${params.rentalId}
+          AND block_type = ${V2AssetBlockType.ACCESSORY}::"V2AssetBlockType"
+        )
     `;
     return new Set(rows.map((row) => row.assetId));
   }
